@@ -31,7 +31,7 @@ const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parse
 
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
-export function list_remove<T>(xs: T[], x: unknown): void {
+export function list_remove<T>(xs: T[], x: T): void {
   const i = xs.findIndex((y) => py_eq(y, x));
   if (i < 0) throw new ValueError("list.remove(x): x not in list");
   xs.splice(i, 1);

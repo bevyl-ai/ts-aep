@@ -25,16 +25,42 @@
  * immutable.
  */
 
-/** Heterogeneous spec-tree data, read dynamically by the skeleton builder. */
-type SpecBody = Record<string, any>;
-type SpecNode = [string, string, SpecBody];
+/** A leaf of a spec: a literal, or a `$`-prefixed expression over the env names. */
+export type SpecValue = string | number | boolean;
+/** Chunk constructor keywords (`tdsb`, `tdb4`, `ldta`) by field name. */
+export type SpecFields = Record<string, SpecValue>;
+/** The body of a `prop` node: one `LIST:tdbs`. */
+export type PropSpec = {
+  tdsb?: SpecFields;
+  tdsn: string;
+  tdb4: SpecFields;
+  cdat?: SpecValue[];
+  tdum?: number[];
+  tduM?: number[];
+  gate?: string;
+};
+/** The body of an `orientation` node: a `tdbs` body plus the `otda` values. */
+export type OrientationSpec = PropSpec & { otda: SpecValue[] };
+/** The body of a `group` node: one `LIST:tdgp`. */
+export type GroupSpec = { children: SpecNode[]; tdsb?: SpecFields; tdsn?: string; gate?: string };
+/** Raw chunks written after a node's match name, as `(chunk_type, hex payload)`. */
+export type SpecExtras = [kind: string, payload: string][];
+/** A child of a group: `(kind, match_name, body)`, optionally followed by extras. */
+export type SpecNode =
+  | [kind: "group", match_name: string, body: GroupSpec, extras?: SpecExtras]
+  | [kind: "prop", match_name: string, body: PropSpec, extras?: SpecExtras]
+  | [kind: "orientation", match_name: string, body: OrientationSpec, extras?: SpecExtras];
+/** A prop node (the kind `_bool_prop` / `_coefficient_prop` build and `_gated` restricts). */
+type PropNode = Extract<SpecNode, { 0: "prop" }>;
+/** A viewer pseudo-layer. */
+export type LayerSpec = { list_type: string; name: string; ldta: SpecFields; tdgp: GroupSpec; gate?: string };
 
 // ---------------------------------------------------------------------------
 // Shared tdb4 layouts
 // ---------------------------------------------------------------------------
 
 // 1-D scalar property (sliders, rotations, opacity).
-export const _TDB4_SCALAR: Record<string, number | string | boolean> = {
+export const _TDB4_SCALAR: SpecFields = {
   value_hint_type: 1,
   value_hint_flag: 255,
   cvot_flags: 255,
@@ -44,7 +70,7 @@ export const _TDB4_SCALAR: Record<string, number | string | boolean> = {
 };
 
 // Boolean / checkbox property.
-export const _TDB4_BOOL: Record<string, number | string | boolean> = {
+export const _TDB4_BOOL: SpecFields = {
   value_hint_type: 65535,
   cvot_flags: 4,
   time_base: "$TB",
@@ -53,7 +79,7 @@ export const _TDB4_BOOL: Record<string, number | string | boolean> = {
 };
 
 // 3-D spatial point (Anchor Point / Position).
-export const _TDB4_SPATIAL: Record<string, number | string | boolean> = {
+export const _TDB4_SPATIAL: SpecFields = {
   dimensions: 3,
   spatial_static_flags: 15,
   pad2a: 3,
@@ -76,7 +102,7 @@ export const _TDB4_SPATIAL: Record<string, number | string | boolean> = {
 export function _bool_prop(
   match_name: string,
   value: number,
-): SpecNode {
+): PropNode {
   return [
     "prop",
     match_name,
@@ -93,7 +119,7 @@ export function _bool_prop(
 export function _coefficient_prop(
   match_name: string,
   value: number,
-): SpecNode {
+): PropNode {
   return [
     "prop",
     match_name,
@@ -123,7 +149,7 @@ export function _position_prop(
   x: number | string,
   y: number | string,
   z: number | string,
-): SpecNode {
+): PropNode {
   return [
     "prop",
     "ADBE Position",
@@ -196,9 +222,9 @@ export const _ENVIR_APPEAR: SpecNode = _bool_prop(
 
 /** `node` restricted to the releases that write the `gate` part. */
 export function _gated(
-  node: SpecNode,
+  node: PropNode,
   gate: string,
-): SpecNode {
+): PropNode {
   const [kind, match_name, body] = node;
   return [kind, match_name, { ...body, gate }];
 }
@@ -213,7 +239,7 @@ export function _view_layer(
   name: string,
   position: [number | string, number | string, number | string] | null,
   kw: { has_scale: boolean },
-): SpecBody {
+): LayerSpec {
   const { has_scale } = kw;
   const children: SpecNode[] = [_ANCHOR_POINT];
   if (position != null) {
@@ -281,7 +307,7 @@ export const _LAYER_STYLE_NAMES: string[] = [
   "frameFX",
 ];
 
-export const _MARKERS_LAYER: SpecBody = {
+export const _MARKERS_LAYER: LayerSpec = {
   list_type: "SecL",
   name: "Markers",
   ldta: {
@@ -374,7 +400,7 @@ export const _MARKERS_LAYER: SpecBody = {
               },
             ],
             ..._LAYER_STYLE_NAMES.map(
-              (style) => [
+              (style): SpecNode => [
                 "group",
                 `${style}/enabled`,
                 {
@@ -444,7 +470,7 @@ export const _MARKERS_LAYER: SpecBody = {
                   cdat: ["$SHADOW_ALPHA", ...Array(11).fill(0.0)],
                 },
               ],
-            ] satisfies SpecNode[]).map((node) => _gated(node, "markers material")),
+            ] satisfies PropNode[]).map((node) => _gated(node, "markers material")),
             _bool_prop("ADBE Appears in Reflections", 1.0),
             ...([
               ["ADBE Ambient Coefficient", 100.0],
@@ -500,7 +526,7 @@ export const _MARKERS_LAYER: SpecBody = {
 
 // ---------------------------------------------------------------------------
 
-export const COMP_VIEW_LAYER_SPECS: SpecBody[] = [
+export const COMP_VIEW_LAYER_SPECS: LayerSpec[] = [
   {
     ..._view_layer("DLay", "Default", null, { has_scale: true }),
     gate: "default view layer",

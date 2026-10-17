@@ -26,7 +26,7 @@ import {
 import type { IO } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET, read_bytes, to_dividend_divisor, to_fixed_16_16, truncate_utf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
-import { Chunk } from "./chunk.ts";
+import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
 import { ascii_field, bool_field, bytes_field, f4_field, f8_field, s2_field, s4_field, str_field, u1_field, u2_field, u4_field, u8_field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { CineonRoptChunk } from "./render_chunks.ts";
@@ -906,7 +906,7 @@ export function build_ai_layer_opti_data(
   return buf;
 }
 
-type _OptiReadKw = { chunk_type?: string; [key: string]: unknown };
+type _OptiReadKw = ChunkReadKwargs;
 
 /**
  * Footage asset info chunk (polymorphic).

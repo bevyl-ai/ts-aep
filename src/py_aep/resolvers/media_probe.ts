@@ -630,7 +630,7 @@ export const _TIFF_BASE_CHANNELS: Map<number, number> = new Map([
 ]);
 
 /** Struct codes for the IFD value types BigTIFF stores dimensions in. */
-export const _BIGTIFF_VALUE_FMT: Map<number, string> = new Map([
+export const _BIGTIFF_VALUE_FMT: Map<number, "H" | "I" | "Q"> = new Map([
   [3, "H"],
   [4, "I"],
   [16, "Q"],
@@ -667,7 +667,7 @@ export const _TIFF_COLOR_MODES: Map<number, number> = new Map([
  * `Layr` block (`Lr16`/`Lr32` at 16/32 bits) opens with the signed layer
  * count. 0 when no such block is found.
  */
-export function _tiff_photoshop_layer_count(fp: ProbeStream, en: string, offset: number, length: number): number {
+export function _tiff_photoshop_layer_count(fp: ProbeStream, en: "<" | ">", offset: number, length: number): number {
   if (length < _PHOTOSHOP_DATA_HEADER.length) return 0;
   const end = offset + length;
   fp.seek(offset);
@@ -681,11 +681,11 @@ export function _tiff_photoshop_layer_count(fp: ProbeStream, en: string, offset:
       key = key.reverse();
     }
     if (!bytes_eq(signature, b("8BIM"))) break;
-    const block_len = struct.unpack(en + "I", head.slice(8, 12))[0];
+    const block_len = struct.unpack(`${en}I`, head.slice(8, 12))[0];
     if (_LAYER_RECORD_KEYS.some((k) => bytes_eq(key, k))) {
       const count_raw = fp.read(2);
       if (count_raw.length < 2) return 0;
-      const count: number = struct.unpack(en + "h", count_raw)[0];
+      const count: number = struct.unpack(`${en}h`, count_raw)[0];
       return Math.abs(count);
     }
     fp.seek(block_len + ((4 - (block_len % 4)) % 4), SEEK_CUR); // blocks are padded to 4 bytes
@@ -710,7 +710,7 @@ export function _tiff_photoshop_layer_count(fp: ProbeStream, en: string, offset:
  */
 export function _tiff_media_info(
   fp: ProbeStream,
-  en: string,
+  en: "<" | ">",
   width: number,
   height: number,
   samples: number,
@@ -723,7 +723,7 @@ export function _tiff_media_info(
 ): MediaInfo {
   if (bits_offset != null) {
     fp.seek(bits_offset);
-    bits = struct.unpack(en + "H", fp.read(2))[0];
+    bits = struct.unpack(`${en}H`, fp.read(2))[0];
   }
   let icc_profile: Uint8Array | null = null;
   if (icc_span != null) {
@@ -767,10 +767,10 @@ export function _tiff_media_info(
  *
  * AE reads BigTIFF, so returning 0x0 would write an unusable footage item.
  */
-export function _probe_bigtiff(fp: ProbeStream, en: string): MediaInfo {
-  if (struct.unpack(en + "H", fp.read(2))[0] !== 8) throw new ValueError("Unsupported BigTIFF offset size (expected 8)");
+export function _probe_bigtiff(fp: ProbeStream, en: "<" | ">"): MediaInfo {
+  if (struct.unpack(`${en}H`, fp.read(2))[0] !== 8) throw new ValueError("Unsupported BigTIFF offset size (expected 8)");
   fp.read(2); // reserved, always 0
-  fp.seek(Number(struct.unpack(en + "Q", fp.read(8))[0]));
+  fp.seek(Number(struct.unpack(`${en}Q`, fp.read(8))[0]));
   let width = 0;
   let height = 0;
   let samples = 1;
@@ -780,30 +780,30 @@ export function _probe_bigtiff(fp: ProbeStream, en: string): MediaInfo {
   let bits_offset: number | null = null;
   let icc_span: [number, number] | null = null;
   let photoshop_span: [number, number] | null = null;
-  for (let i = 0, n = Number(struct.unpack(en + "Q", fp.read(8))[0]); i < n; i++) {
+  for (let i = 0, n = Number(struct.unpack(`${en}Q`, fp.read(8))[0]); i < n; i++) {
     const entry = fp.read(20);
     if (entry.length < 20) break;
-    const [tag, typ] = struct.unpack(en + "HH", entry.slice(0, 4));
-    const length = Number(struct.unpack_from(en + "Q", entry, 4)[0]);
+    const [tag, typ] = struct.unpack(`${en}HH`, entry.slice(0, 4));
+    const length = Number(struct.unpack_from(`${en}Q`, entry, 4)[0]);
     if (tag === _TIFF_ICC_TAG) {
-      if (length > 8) icc_span = [Number(struct.unpack_from(en + "Q", entry, 12)[0]), length]; // values this long are stored by offset
+      if (length > 8) icc_span = [Number(struct.unpack_from(`${en}Q`, entry, 12)[0]), length]; // values this long are stored by offset
       continue;
     }
     if (tag === _TIFF_PHOTOSHOP_LAYERS_TAG) {
-      photoshop_span = [Number(struct.unpack_from(en + "Q", entry, 12)[0]), length];
+      photoshop_span = [Number(struct.unpack_from(`${en}Q`, entry, 12)[0]), length];
       continue;
     }
     const fmt = _BIGTIFF_VALUE_FMT.get(typ) ?? null;
     if (fmt == null) continue;
     // A value of 8 bytes or fewer is stored inline in the value field.
-    const val = Number(struct.unpack_from(en + fmt, entry, 12)[0]);
+    const val = Number(struct.unpack_from(`${en}${fmt}`, entry, 12)[0]);
     if (tag === 0x0100) {
       width = val;
     } else if (tag === 0x0101) {
       height = val;
     } else if (tag === 0x0102) {
       // BitsPerSample, one SHORT per sample
-      if (length > 4) bits_offset = Number(struct.unpack_from(en + "Q", entry, 12)[0]);
+      if (length > 4) bits_offset = Number(struct.unpack_from(`${en}Q`, entry, 12)[0]);
       else bits = val;
     } else if (tag === 0x0106) {
       photometric = val;
@@ -821,12 +821,12 @@ export function _probe_tiff(fp: ProbeStream): MediaInfo {
   const bo = fp.read(2);
   if (!(bytes_eq(bo, b("II")) || bytes_eq(bo, b("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${repr(bo)})`);
   const en = bytes_eq(bo, b("II")) ? "<" : ">";
-  const version = struct.unpack(en + "H", fp.read(2))[0];
+  const version = struct.unpack(`${en}H`, fp.read(2))[0];
   if (version === 43) return _probe_bigtiff(fp, en);
   if (version !== 42) throw new ValueError(`Not a valid TIFF file (bad magic ${version})`);
-  const ifd_offset = struct.unpack(en + "I", fp.read(4))[0];
+  const ifd_offset = struct.unpack(`${en}I`, fp.read(4))[0];
   fp.seek(ifd_offset);
-  const count = struct.unpack(en + "H", fp.read(2))[0];
+  const count = struct.unpack(`${en}H`, fp.read(2))[0];
   let width = 0;
   let height = 0;
   let samples = 1;
@@ -838,16 +838,16 @@ export function _probe_tiff(fp: ProbeStream): MediaInfo {
   let photoshop_span: [number, number] | null = null;
   for (let i = 0; i < count; i++) {
     const entry = fp.read(12);
-    const [tag, typ] = struct.unpack(en + "HH", entry.slice(0, 4));
-    const length = struct.unpack(en + "I", entry.slice(4, 8))[0];
-    const val = typ === 3 ? struct.unpack(en + "H", entry.slice(8, 10))[0] : struct.unpack(en + "I", entry.slice(8, 12))[0];
+    const [tag, typ] = struct.unpack(`${en}HH`, entry.slice(0, 4));
+    const length = struct.unpack(`${en}I`, entry.slice(4, 8))[0];
+    const val = typ === 3 ? struct.unpack(`${en}H`, entry.slice(8, 10))[0] : struct.unpack(`${en}I`, entry.slice(8, 12))[0];
     if (tag === 0x0100) {
       width = val;
     } else if (tag === 0x0101) {
       height = val;
     } else if (tag === 0x0102) {
       // BitsPerSample, one SHORT per sample
-      if (length > 2) bits_offset = struct.unpack(en + "I", entry.slice(8, 12))[0];
+      if (length > 2) bits_offset = struct.unpack(`${en}I`, entry.slice(8, 12))[0];
       else bits = val;
     } else if (tag === 0x0106) {
       photometric = val;
@@ -2324,25 +2324,25 @@ export function _probe_crw(fp: ProbeStream): MediaInfo {
   if (order == null || !bytes_eq(bytes_.slice(data, 6, 14), b("HEAPCCDR"))) {
     throw new ValueError("Not a Canon CRW file (missing CIFF heap header)");
   }
-  const [header_length] = struct.unpack(order + "I", bytes_.slice(data, 2, 6));
+  const [header_length] = struct.unpack(`${order}I`, bytes_.slice(data, 2, 6));
   const info = _ciff_record(data, order, header_length, data.length, _CIFF_IMAGE_INFO);
   if (info == null) throw new ValueError("CRW file has no ImageInfo record");
   // Camera Raw develops the image at the ImageInfo size, turned by its
   // rotation (AE 2026 reports a CRW marked 90 or 270 degrees upright).
-  let [width, height, , rotation] = struct.unpack(order + "IIfi", info.slice(0, 16));
+  let [width, height, , rotation] = struct.unpack(`${order}IIfi`, info.slice(0, 16));
   if (mod(rotation, 180) === 90) [width, height] = [height, width];
   // AE 2026 caches a developed raw as 16-bit RGB (crw.crw: depth 48).
   return new MediaInfo({ width, height, depth: _color_depth(false, 16) });
 }
 
 /** The body of the first `wanted` record in the CIFF heap `[start, end)`. */
-export function _ciff_record(data: Uint8Array, order: string, start: number, end: number, wanted: number): Uint8Array | null {
-  const [table_rel] = struct.unpack(order + "I", bytes_.slice(data, end - 4, end));
+export function _ciff_record(data: Uint8Array, order: "<" | ">", start: number, end: number, wanted: number): Uint8Array | null {
+  const [table_rel] = struct.unpack(`${order}I`, bytes_.slice(data, end - 4, end));
   const table = table_rel + start;
-  const [count] = struct.unpack(order + "H", bytes_.slice(data, table, table + 2));
+  const [count] = struct.unpack(`${order}H`, bytes_.slice(data, table, table + 2));
   for (let i = 0, n = count; i < n; i++) {
     const entry = table + 2 + i * 10;
-    const [tag, size, offset] = struct.unpack(order + "HII", bytes_.slice(data, entry, entry + 10));
+    const [tag, size, offset] = struct.unpack(`${order}HII`, bytes_.slice(data, entry, entry + 10));
     if (tag & 0xc000) continue; // value stored in the entry itself: not a heap
     const body = start + offset;
     if ([0x2800, 0x3000].includes(tag & 0x3800)) {
@@ -2464,7 +2464,7 @@ export function* _asf_objects(body: Uint8Array, start: number, end: number): Gen
  * BOOL is 16-bit here (only the Extended Content Description Object widens
  * it to 32), so 2 and 5 share a code.
  */
-export const _ASF_INT_TYPES: Map<number, string> = new Map([
+export const _ASF_INT_TYPES: Map<number, "<H" | "<I" | "<Q"> = new Map([
   [2, "<H"],
   [3, "<I"],
   [4, "<Q"],
@@ -2603,8 +2603,8 @@ export function _probe_dpx_cineon(fp: ProbeStream): MediaInfo {
   // --- DPX (SMPTE 268M) ---
   if (bytes_eq(magic, b("SDPX")) || bytes_eq(magic, b("XPDS"))) {
     const endian = bytes_eq(magic, b("SDPX")) ? ">" : "<";
-    const n_elem = struct.unpack(endian + "H", bytes_.slice(header, 770, 772))[0];
-    const [width, height] = struct.unpack(endian + "II", bytes_.slice(header, 772, 780));
+    const n_elem = struct.unpack(`${endian}H`, bytes_.slice(header, 770, 772))[0];
+    const [width, height] = struct.unpack(`${endian}II`, bytes_.slice(header, 772, 780));
     let has_alpha = false;
     let bit_depth = 8;
     for (let i = 0, n = Math.min(n_elem, 8); i < n; i++) {
@@ -2637,7 +2637,7 @@ export function _probe_dpx_cineon(fp: ProbeStream): MediaInfo {
       const offset = 196 + i * 28;
       if (offset + 12 > header.length) break;
       const [, , bits] = struct.unpack("BBBB", bytes_.slice(header, offset, offset + 4));
-      const [w, h] = struct.unpack(endian + "II", bytes_.slice(header, offset + 4, offset + 12));
+      const [w, h] = struct.unpack(`${endian}II`, bytes_.slice(header, offset + 4, offset + 12));
       if (i === 0) {
         bit_depth = bits;
         width = w;

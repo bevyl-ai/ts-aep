@@ -29,18 +29,18 @@ import {
   py_or,
   repr,
   struct,
-  type Attribute,
   type IO,
 } from "../../pyrt/index.ts";
 import { _struct_for, read_bytes, read_fmt, read_pad, write_bytes, write_pad } from "./bin_utils.ts";
-import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtItem, type InitKwargs } from "./fmt_field.ts";
+import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtAttribute, type FmtItem, type InitKwargs } from "./fmt_field.ts";
 import { CHUNK_TYPES, register, registered } from "./registry.ts";
 import type { HeadChunk } from "./item_chunks.ts";
+import type { LdatItemType } from "./ldat_chunks.ts";
 
-const _PREFIX_STRUCTS = new WeakMap<readonly Attribute[], struct.Struct[]>();
+const _PREFIX_STRUCTS = new WeakMap<readonly FmtAttribute[], struct.Struct[]>();
 
 /** Big-endian struct for the first `n` of `data_fields`. */
-function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.Struct {
+function _prefix_struct(data_fields: readonly FmtAttribute[], n: number): struct.Struct {
   let by_n = _PREFIX_STRUCTS.get(data_fields);
   if (by_n === undefined) _PREFIX_STRUCTS.set(data_fields, (by_n = []));
   return (by_n[n] ??= _struct_for(data_fields.slice(0, n).map((f) => f.metadata["fmt"]).join("")));
@@ -48,9 +48,9 @@ function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.St
 
 /** The required-field format and each optional field's format and size. */
 type OptionalLayout = { req_fmt: string | null; req_size: number; optional: [fmt: string, size: number][] };
-const _OPTIONAL_LAYOUTS = new WeakMap<readonly Attribute[], OptionalLayout>();
+const _OPTIONAL_LAYOUTS = new WeakMap<readonly FmtAttribute[], OptionalLayout>();
 
-function _optional_layout(data_fields: readonly Attribute[], optional_start: number): OptionalLayout {
+function _optional_layout(data_fields: readonly FmtAttribute[], optional_start: number): OptionalLayout {
   let layout = _OPTIONAL_LAYOUTS.get(data_fields);
   if (layout === undefined) {
     const req_parts = data_fields.slice(0, optional_start).map((f) => f.metadata["fmt"]);
@@ -108,9 +108,9 @@ export class Chunk extends AttrsBase {
   /** Whether `read` takes the nesting context `read_chunks` passes. */
   static _nests = false;
 
-  static read(fp: IO, size: number, kwargs: { chunk_type?: string; [k: string]: unknown } = {}): Chunk {
+  static read(fp: IO, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
     const { chunk_type = "" } = kwargs;
-    const cls: any = this;
+    const cls = this;
     // Get fields
     const info = _struct_info(cls);
     if (info == null) {
@@ -301,7 +301,7 @@ export class Chunk extends AttrsBase {
     return written;
   }
 
-  static frombytes(data: Uint8Array, kwargs: Record<string, unknown> = {}): Chunk {
+  static frombytes(data: Uint8Array, kwargs: ChunkReadKwargs = {}): Chunk {
     /** Parse a chunk body from raw bytes. */
     const f = new BytesIO(data);
     return this.read(f, data.length, kwargs);
@@ -352,13 +352,7 @@ export class ListChunk extends Chunk {
   static read(
     fp: IO,
     size: number,
-    kwargs: {
-      chunk_type?: string;
-      ctx?: ReadContext | null;
-      defer_list_types?: ReadonlySet<string> | null;
-      parent_result?: Chunk[] | null;
-      [k: string]: unknown;
-    } = {},
+    kwargs: ChunkReadKwargs = {},
   ): ListChunk {
     const { chunk_type = "LIST", defer_list_types = null } = kwargs;
     if (size < 4) throw new OSError(`${chunk_type} body too small: ${size}`);
@@ -538,12 +532,7 @@ export class ContainerChunk extends Chunk {
   static read(
     fp: IO,
     size: number,
-    kwargs: {
-      chunk_type?: string;
-      ctx?: ReadContext | null;
-      defer_list_types?: ReadonlySet<string> | null;
-      [k: string]: unknown;
-    } = {},
+    kwargs: ChunkReadKwargs = {},
   ): ContainerChunk {
     const { chunk_type = "" } = kwargs;
     const ctx = kwargs.ctx ?? EMPTY_CTX;
@@ -730,15 +719,35 @@ export class ReadContext {
 
 export const EMPTY_CTX = new ReadContext();
 
+/** The keywords a context resolver adds for its chunk type's `read`. */
+export type ResolvedContext = {
+  is_le?: boolean;
+  item_type?: LdatItemType;
+  item_size?: number;
+  count?: number;
+  is_spatial?: boolean;
+  is_color?: boolean;
+  is_integer?: boolean;
+  renderer_match_name?: string;
+};
+
+/** The keywords `read_chunks` passes to every `cls.read`. */
+export type ChunkReadKwargs = {
+  chunk_type?: string;
+  ctx?: ReadContext | null;
+  defer_list_types?: ReadonlySet<string> | null;
+  parent_result?: Chunk[] | null;
+} & ResolvedContext;
+
 // ---------------------------------------------------------------------------
 // Context resolvers
 // ---------------------------------------------------------------------------
 
-export function _resolve_cdat_context(siblings: Chunk[], ctx: ReadContext): Record<string, boolean> {
+export function _resolve_cdat_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   return { is_le: ctx.grandparent_list_type === "otst" };
 }
 
-export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   // Registry lookup instead of a deferred import: ldat_chunks subclasses Chunk,
   // so a top-level import would be circular.
   const Lhd3Chunk = registered("lhd3");
@@ -746,7 +755,7 @@ export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Reco
   const lhd3_sibling: Chunk = siblings[0];
   if (!(lhd3_sibling instanceof Lhd3Chunk)) return {};
   const lhd3 = lhd3_sibling;
-  const result: Record<string, unknown> = {
+  const result: ResolvedContext = {
     item_type: lhd3.item_type,
     item_size: lhd3.item_size,
     count: lhd3.count,
@@ -757,25 +766,27 @@ export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Reco
     ctx.parent_siblings != null &&
     ctx.parent_siblings.length > 2
   ) {
-    const tdb4_sibling: any = ctx.parent_siblings[2];
-    if (hasattr(tdb4_sibling, "is_spatial")) {
+    // `hasattr(tdb4_sibling, "is_spatial")`: only Tdb4Chunk declares it.
+    const tdb4_sibling = ctx.parent_siblings[2];
+    if (tdb4_sibling instanceof registered("tdb4")) {
       result.is_spatial = tdb4_sibling.is_spatial;
     }
   }
   return result;
 }
 
-export function _resolve_tdum_context(siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_tdum_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   if (siblings.length > 2) {
-    const tdb4: any = siblings[2];
-    if (hasattr(tdb4, "color") && hasattr(tdb4, "integer")) {
+    // `hasattr(tdb4, "color") and hasattr(tdb4, "integer")`: only Tdb4Chunk declares `integer`.
+    const tdb4 = siblings[2];
+    if (tdb4 instanceof registered("tdb4")) {
       return { is_color: tdb4.color, is_integer: tdb4.integer };
     }
   }
   return {};
 }
 
-export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): Record<string, string> {
+export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   // Registry lookup instead of a deferred import: misc_chunks subclasses Chunk,
   // so a top-level import would be circular.
   const PrinChunk = registered("prin");
@@ -787,7 +798,7 @@ export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): Reco
   return {};
 }
 
-export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => Record<string, unknown>> =
+export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => ResolvedContext> =
   new Map([
     ["cdat", _resolve_cdat_context],
     ["ldat", _resolve_ldat_context],
@@ -797,7 +808,7 @@ export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContex
   ]);
 
 /** Compute kwargs for parameterized chunk types. */
-export function _resolve_context(chunk_type: string, siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_context(chunk_type: string, siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   const resolver = _CONTEXT_RESOLVERS.get(chunk_type);
   if (resolver == null) return {};
   return resolver(siblings, ctx);

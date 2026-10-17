@@ -313,7 +313,7 @@ export function alas_platform(fullpath: string): number {
  * Serialize an `alas` record the way After Effects writes it: sorted
  * keys, no whitespace.
  */
-export function dump_alas(data: Map<string, unknown>): string {
+export function dump_alas(data: AlasData): string {
   return json_dumps(data, { sort_keys: true, separators: [",", ":"] });
 }
 
@@ -334,7 +334,7 @@ export function build_als2_list(
   kw: { target_is_folder: boolean },
 ): ListChunk {
   const { target_is_folder } = kw;
-  const data = new Map<string, unknown>([
+  const data: AlasData = new Map<string, JsonValue>([
     ["ascendcount_base", PENDING_ASCENDCOUNT],
     ["ascendcount_target", PENDING_ASCENDCOUNT],
     ["fullpath", fullpath],

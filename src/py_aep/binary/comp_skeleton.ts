@@ -11,7 +11,7 @@
  */
 
 import { ae_writes } from "../ae_version.ts";
-import { COMP_VIEW_LAYER_SPECS } from "../data/comp_skeleton_specs.ts";
+import { COMP_VIEW_LAYER_SPECS, type GroupSpec, type LayerSpec, type PropSpec, type SpecExtras, type SpecValue } from "../data/comp_skeleton_specs.ts";
 import { Chunk, ListChunk } from "./chunk.ts";
 import { CdtaChunk, CsctChunk, frame_grid } from "./composition_chunks.ts";
 import { IdtaChunk } from "./item_chunks.ts";
@@ -20,7 +20,7 @@ import { ClassicPrdaChunk, PrinChunk } from "./misc_chunks.ts";
 import { build_gide_list, build_item_id_chunks, build_ovdg, build_ovg2 } from "./mutations.ts";
 import { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk } from "./property_chunks.ts";
 import { S2Chunk, S4Chunk, U1Chunk, U4Chunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { b, bytes_, float, floordiv, len, repr, round, ValueError } from "../../pyrt/index.ts";
+import { b, bytes_, float, floordiv, repr, round, ValueError } from "../../pyrt/index.ts";
 
 /** Build the `fvdv` ... `fifl` view-data septet AE writes after every
  * item's `LIST:Item` (and twice after each comp viewer layer). */
@@ -48,10 +48,6 @@ export function build_layer_view_block(): Chunk[] {
 
 // NOTE(port): the only specs in data/comp_skeleton_specs.ts are `+`/`-`/unary minus over env names and int
 // literals (`W2 - ZV`, `-ZV`, `H2 + 5000`, `TB`); there JS doubles and CPython eval agree, so Function stands in.
-/** A node of the comp skeleton spec tree (JSON-like data from data/comp_skeleton_specs.ts). */
-export type SpecDict = Record<string, any>;
-/** A leaf of a spec: a literal, or a `$`-prefixed expression over the env names. */
-export type SpecValue = string | number | boolean;
 
 export function _evaluate(value: SpecValue, env: Record<string, number>): SpecValue {
   if (typeof value === "string" && value.startsWith("$")) {
@@ -61,7 +57,7 @@ export function _evaluate(value: SpecValue, env: Record<string, number>): SpecVa
   return value;
 }
 
-export function _build_tdbs(spec: SpecDict, env: Record<string, number>): ListChunk {
+export function _build_tdbs(spec: PropSpec, env: Record<string, number>): ListChunk {
   const tdb4 = new Tdb4Chunk(
     Object.fromEntries(Object.entries<SpecValue>(spec["tdb4"]).map(([k, v]) => [k, _evaluate(v, env)])),
   );
@@ -75,21 +71,22 @@ export function _build_tdbs(spec: SpecDict, env: Record<string, number>): ListCh
     TdsnChunk.new_(spec["tdsn"]),
     tdb4,
   ];
-  if ("cdat" in spec) {
+  const { cdat, tdum, tduM } = spec;
+  if (cdat !== undefined) {
     chunks.push(
-      new CdatChunk({ values: spec["cdat"].map((v: SpecValue) => float(_evaluate(v, env))) }),
+      new CdatChunk({ values: cdat.map((v) => float(_evaluate(v, env))) }),
     );
   }
-  if ("tdum" in spec) {
-    chunks.push(new TdumChunk({ chunk_type: "tdum", values: [...spec["tdum"]] }));
+  if (tdum !== undefined) {
+    chunks.push(new TdumChunk({ chunk_type: "tdum", values: [...tdum] }));
   }
-  if ("tduM" in spec) {
-    chunks.push(new TdumChunk({ chunk_type: "tduM", values: [...spec["tduM"]] }));
+  if (tduM !== undefined) {
+    chunks.push(new TdumChunk({ chunk_type: "tduM", values: [...tduM] }));
   }
   return new ListChunk({ list_type: "tdbs", chunks });
 }
 
-export function _build_extras(extras: [string, string][]): Chunk[] {
+export function _build_extras(extras: SpecExtras): Chunk[] {
   const out: Chunk[] = [];
   for (const [kind, payload] of extras) {
     if (kind === "OvG2") {
@@ -102,7 +99,7 @@ export function _build_extras(extras: [string, string][]): Chunk[] {
 }
 
 export function _build_tdgp(
-  spec: SpecDict,
+  spec: GroupSpec,
   env: Record<string, number>,
   ae_major: number,
 ): ListChunk {
@@ -111,17 +108,17 @@ export function _build_tdgp(
     TdsnChunk.new_(spec["tdsn"] ?? ""),
   ];
   for (const node of spec["children"]) {
-    const [kind, match_name, body] = [node[0], node[1], node[2]];
-    if ("gate" in body && !ae_writes(body["gate"], ae_major)) continue;
+    const [kind, match_name, body, extras] = node;
+    if (body.gate !== undefined && !ae_writes(body.gate, ae_major)) continue;
     chunks.push(new TdmnChunk({ value: match_name }));
-    if (len(node) > 3) chunks.push(..._build_extras(node[3]));
+    if (extras !== undefined) chunks.push(..._build_extras(extras));
     if (kind === "group") {
       chunks.push(_build_tdgp(body, env, ae_major));
     } else if (kind === "prop") {
       chunks.push(_build_tdbs(body, env));
     } else if (kind === "orientation") {
-      const otda_values = body["otda"].map((v: SpecValue) => float(_evaluate(v, env)));
-      const inner = Object.fromEntries(Object.entries(body).filter(([k]) => k !== "otda"));
+      const otda_values = body.otda.map((v) => float(_evaluate(v, env)));
+      const { otda: _otda, ...inner } = body;
       const otky = new ListChunk({
         list_type: "otky",
         chunks: [new OtdaChunk({ values: otda_values })],
@@ -141,7 +138,7 @@ export function _build_tdgp(
 }
 
 export function _build_view_layer(
-  spec: SpecDict,
+  spec: LayerSpec,
   env: Record<string, number>,
   layer_id: number,
   ae_major: number,
@@ -323,7 +320,7 @@ export function build_new_comp_item(kw: {
   }
   children.push(prin);
   for (const spec of COMP_VIEW_LAYER_SPECS) {
-    if ("gate" in spec && !ae_writes(spec["gate"], ae_major)) continue;
+    if (spec.gate !== undefined && !ae_writes(spec.gate, ae_major)) continue;
     children.push(_build_view_layer(spec, env, allocate_layer_id(), ae_major));
     children.push(...build_layer_view_block());
   }
