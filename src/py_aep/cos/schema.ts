@@ -48,9 +48,35 @@ export const cos_node: z.ZodMiniType<CosNode> = z.lazy(() =>
   ]),
 );
 
+/**
+ * {@link cos_node}'s check written out by hand: running the zod union over
+ * every value of a text document cost more than parsing the document.
+ * zod's `z.number()` refuses `NaN` and infinities, hence `Number.isFinite`.
+ */
+function is_cos_node(x: CosNode): boolean {
+  if (x === null || typeof x === "boolean" || typeof x === "string") return true;
+  if (typeof x === "number") return Number.isFinite(x);
+  if (Array.isArray(x)) return x.every(is_cos_node);
+  if (x instanceof Map) {
+    for (const [key, value] of x) {
+      if (typeof key !== "string" || !is_cos_node(value)) return false;
+    }
+    return true;
+  }
+  return (
+    x instanceof PyFloat ||
+    x instanceof CosString ||
+    x instanceof Uint8Array ||
+    x instanceof CosName ||
+    x instanceof IndirectObject ||
+    x instanceof IndirectReference ||
+    x instanceof Stream
+  );
+}
+
 /** Whether `tree` is a COS dictionary whose every value is a COS value (see {@link cos_node}). */
 function is_cos_dict(tree: CosNode): tree is CosDict {
-  return tree instanceof Map && cos_node.safeParse(tree).success;
+  return tree instanceof Map && is_cos_node(tree);
 }
 
 /**
