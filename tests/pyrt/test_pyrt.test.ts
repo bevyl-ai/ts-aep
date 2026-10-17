@@ -33,6 +33,7 @@ import {
 } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
+import * as datetime from "../../src/pyrt/datetime.ts";
 import { CPY } from "./cpython_fixtures.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
@@ -163,6 +164,25 @@ describe("unicodedata", () => {
   ])("code point %d", (cp, bidi, ccc) => {
     const chr = String.fromCodePoint(cp);
     expect([unicodedata.bidirectional(chr), unicodedata.combining(chr)]).toEqual([bidi, ccc]);
+  });
+});
+
+describe("datetime", () => {
+  // CPython 3.12's C fromisoformat, quirks included.
+  test.each<[string, string]>([
+    ["2020-01-01T12:34W+05", "2020,1,1,12,34,0,0,18000000000"],
+    ["2021-02-23-", "ValueError: Invalid isoformat string: '2021-02-23-'"],
+    ["2020W0118", "ValueError: Invalid isoformat string: '2020W0118'"],
+    [
+      "2020-01-01T12:34+75",
+      "ValueError: offset must be a timedelta strictly between -timedelta(hours=24) and timedelta(hours=24), not datetime.timedelta(days=3, seconds=10800).",
+    ],
+    ["2020-01-01T00:00+00:00:00.5", "2020,1,1,0,0,0,0,0"],
+    ["2021-02-29", "ValueError: day is out of range for month"],
+    ["2020-W53-7", "2021,1,3,0,0,0,0,"],
+    ["2021-W53", "ValueError: Invalid isoformat string: '2021-W53'"],
+  ])("fromisoformat(%j)", (s, out) => {
+    expect(run(() => Object.values(datetime.fromisoformat(s)).join(","))).toBe(out);
   });
 });
 

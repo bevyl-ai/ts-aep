@@ -9,6 +9,7 @@
  * This reads external media files (not `.aep` chunks), so `struct` is used here.
  */
 
+import * as datetime from "../../pyrt/datetime.ts";
 import * as zlib from "../../pyrt/zlib.ts";
 import {
   AttributeError,
@@ -1785,53 +1786,37 @@ export function _naive_datetime_us(y: number, mo: number, d: number, h: number, 
  *
  * Returns a naive `datetime` (any timezone offset is dropped - all samples
  * in a stream share one offset, so the inter-sample span is unaffected) or
- * `null` if the value cannot be parsed. Here a naive datetime is returned as
- * its microseconds since the epoch, which keeps differences exact.
- *
- * TODO(port): the `datetime.fromisoformat` fallback accepts only YYYY-MM-DD with an optional
- * `T`/space HH[:MM[:SS[.f\{1,6\}]]]; CPython 3.12 also accepts basic format (YYYYMMDD,
- * HHMMSS), ISO week dates (YYYY-Www-D) and 3/6-digit-only fractions with comma separators,
- * so such mgjson sample times yield None here but a value in Python.
+ * `null` if the value cannot be parsed. Here a datetime is its microseconds
+ * since the epoch (UTC for the aware datetimes `fromisoformat` can return),
+ * which keeps differences exact.
  */
-export function _parse_mgjson_time(t: JsonValue): number | null {
+export function _parse_mgjson_time(t: JsonValue): { us: number; aware: boolean } | null {
   if (typeof t !== "string") throw new AttributeError(`'${type_name(t)}' object has no attribute 'strip'`);
   let s = strip(t);
   // Drop a trailing 'Z' or numeric UTC offset (+HH:MM / +HHMM); the span
   // between samples is offset-independent.
-  s = s.replace(/(Z|[+-]\d{2}:?\d{2})$/, "");
+  s = s.replace(/(Z|[+-]\p{Nd}{2}:?\p{Nd}{2})$/u, "");
   // Clamp over-long fractional seconds to 6 digits (strptime %f accepts 1-6).
-  s = s.replace(/(\.\d{6})\d+/g, "$1");
+  s = s.replace(/(\.\p{Nd}{6})\p{Nd}+/gu, "$1");
   // strptime formats "%Y-%m-%dT%H:%M:%S.%f" and "%Y-%m-%dT%H:%M:%S": the
   // whole string must match, fraction right-padded to microseconds.
-  const strp = /^(\d{4})-(1[0-2]|0[1-9]|[1-9])-(3[01]|[12]\d|0[1-9]|[1-9]| [1-9])[Tt](2[0-3]|[0-1]\d|\d):([0-5]\d|\d):(6[0-1]|[0-5]\d|\d)(?:\.(\d{1,6}))?$/;
+  const strp =
+    /^(\p{Nd}{4})-(1[0-2]|0[1-9]|[1-9])-(3[01]|[12]\p{Nd}|0[1-9]|[1-9]| [1-9])[Tt](2[0-3]|[0-1]\p{Nd}|\p{Nd}):([0-5]\p{Nd}|\p{Nd}):(6[0-1]|[0-5]\p{Nd}|\p{Nd})(?:\.([0-9]{1,6}))?$/u;
   const m = strp.exec(s);
   if (m) {
     const frac = m[7] === undefined ? "" : m[7].padEnd(6, "0");
-    const us = _naive_datetime_us(
-      Number(m[1]),
-      Number(m[2]),
-      Number(m[3].trim()),
-      Number(m[4]),
-      Number(m[5]),
-      Number(m[6]),
-      Number(frac || "0"),
-    );
-    if (us !== null) return us;
+    const us = _naive_datetime_us(int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]), int(m[6]), int(frac || "0"));
+    if (us !== null) return { us, aware: false };
   }
-  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d{1,6}))?)?)?)?$/.exec(s);
-  if (iso) {
-    const frac = iso[7] === undefined ? "" : iso[7].padEnd(6, "0");
-    return _naive_datetime_us(
-      Number(iso[1]),
-      Number(iso[2]),
-      Number(iso[3]),
-      Number(iso[4] ?? 0),
-      Number(iso[5] ?? 0),
-      Number(iso[6] ?? 0),
-      Number(frac || "0"),
-    );
+  try {
+    const d = datetime.fromisoformat(s);
+    const us = _naive_datetime_us(d.year, d.month, d.day, d.hour, d.minute, d.second, d.microsecond);
+    if (us === null) return null;
+    return d.utcoffset === null ? { us, aware: false } : { us: us - d.utcoffset, aware: true };
+  } catch (e) {
+    if (!(e instanceof ValueError)) throw e;
+    return null;
   }
-  return null;
 }
 
 /** `iter(x)` on a parsed JSON value: list items, str characters, dict keys. */
@@ -1844,7 +1829,7 @@ export function _json_iter(x: JsonValue): JsonValue[] {
 
 export function _probe_mgjson(fp: ProbeStream): MediaInfo {
   const doc = json_loads(fp.read());
-  const times: number[] = [];
+  const times: { us: number; aware: boolean }[] = [];
   for (const stream of _json_iter(json_get(doc, "dataDynamicSamples", []))) {
     for (const sample of _json_iter(json_get(stream, "samples", []))) {
       const t = json_get(sample, "time", null);
@@ -1855,7 +1840,12 @@ export function _probe_mgjson(fp: ProbeStream): MediaInfo {
     }
   }
   if (!times.length) return new MediaInfo({ frame_rate: 30.0 });
-  const span = (max(times) - min(times)) / 1e6;
+  // Ordering a naive and an aware datetime raises, as max()/min() do.
+  if (times.some((x) => x.aware !== times[0].aware)) {
+    throw new TypeError_("can't compare offset-naive and offset-aware datetimes");
+  }
+  const us = times.map((x) => x.us);
+  const span = (max(us) - min(us)) / 1e6;
   // AE imports mgjson at a fixed 30 fps and reports the span plus one frame.
   return new MediaInfo({ duration: span + 1.0 / 30.0, frame_rate: 30.0 });
 }
