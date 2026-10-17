@@ -11,6 +11,7 @@ import {
   isclose,
   len,
   Path,
+  py_assert,
   py_bool,
   py_eq,
   round,
@@ -24,7 +25,8 @@ import { GuideOrientationType, ShadowMapResolution } from "../../src/py_aep/enum
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { get_comp, parse_project_fresh } from "../helpers.ts";
+import { LdatChunk, Lhd3Chunk } from "../../src/py_aep/binary/ldat_chunks.ts";
+import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "composition");
 const LAYER_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
@@ -848,7 +850,7 @@ describe("TestCompTimeWrites", () => {
     expect(comp.display_start_frame).toBe(expected);
   });
 
-  test.each([
+  test.each<[number, [number, number]]>([
     [0.51, [2139095, 4194304]],
     [0.5, [1, 2]],
     [0.00002 / 24, [330, 396000001]],
@@ -864,7 +866,7 @@ describe("TestCompTimeWrites", () => {
     expect(py_eq([cdta.work_area_start_divisor, cdta.time_divisor], [24576, 24576])).toBe(true);
   });
 
-  test.each([
+  test.each<[number, number, [number, number]]>([
     [24.0, 13, [13312, 24576]],
     [29.97, 52, [41600, 23976]],
   ])("test_display_start_frame_write[%#]", (fps: number, frames: number, ratio: [number, number]) => {
@@ -1273,7 +1275,7 @@ describe("TestAddGuide", () => {
     const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
     const comp = get_comp(project, "guides_both");
     comp.add_guide(0, 123);
-    expect(len(comp._ldat.items)).toBe(comp._lhd3.count);
+    expect(len(as_instance(comp._ldat, LdatChunk).items)).toBe(as_instance(comp._lhd3, Lhd3Chunk).count);
   });
 });
 
@@ -1310,7 +1312,7 @@ describe("TestRemoveGuide", () => {
     // zero guides; deleting the container entirely leaves a project AE opens
     // but cannot re-save. The container stays with count 0 and no ldat.
     expect(comp._gide != null).toBe(true);
-    expect(comp._lhd3 != null).toBe(true);
+    py_assert(comp._lhd3 != null);
     expect(comp._lhd3.count).toBe(0);
     expect(comp._ldat == null).toBe(true);
 
@@ -1335,7 +1337,7 @@ describe("TestRemoveGuide", () => {
     const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
     const comp = get_comp(project, "guides_both");
     comp.remove_guide(0);
-    expect(len(comp._ldat.items)).toBe(comp._lhd3.count);
+    expect(len(as_instance(comp._ldat, LdatChunk).items)).toBe(as_instance(comp._lhd3, Lhd3Chunk).count);
   });
 
   test("test_remove_all_then_add", () => {
@@ -1371,7 +1373,7 @@ describe("TestRemoveAllGuides", () => {
     expect(py_eq(comp.guides, [])).toBe(true);
     // Same end state as removing the last guide by index: the empty
     // LIST:Gide stays, its ldat is dropped.
-    expect(comp._lhd3 != null).toBe(true);
+    py_assert(comp._lhd3 != null);
     expect(comp._lhd3.count).toBe(0);
     expect(comp._ldat == null).toBe(true);
 
@@ -1718,7 +1720,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
       const project = parse_project_fresh(MARKER_SAMPLES_DIR.div(sample));
       const comp = project.compositions.at(0)!;
       const marker = on_comp ? comp.marker_property : _layer_marker(comp);
-      expect(marker != null).toBe(true);
+      py_assert(marker != null);
       marker.keyframes[0].time = 3.0;
 
       comp.frame_rate = 30.0;
@@ -1727,7 +1729,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
 
       const comp2 = parse_aep(out).project.compositions.at(0)!;
       const marker2 = on_comp ? comp2.marker_property : _layer_marker(comp2);
-      expect(marker2 != null).toBe(true);
+      py_assert(marker2 != null);
       expect(marker2.keyframes[0].time).toBe(3.0);
     },
   );

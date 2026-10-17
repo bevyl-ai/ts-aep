@@ -10,7 +10,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx as pytest_approx, raises, warns } from "../../src/pyrt/pytest.ts";
-import { b, bytes_, encode, getitem, len, py_eq, range, sorted } from "../../src/pyrt/index.ts";
+import { b, bytes_, encode, getitem, len, py_assert, py_eq, range, sorted } from "../../src/pyrt/index.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
 import { EMPTY_BOX, footage_size, read_ai_layer_bounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
@@ -26,7 +26,7 @@ const CR = String.fromCodePoint(13);
 
 type Box = [number, number, number, number];
 type PdfKw = { extra_objects?: string; resources?: string };
-type Approx = { expected: Box; opts: { abs: number } };
+type Approx = { expected: Box | null; opts: { abs: number } };
 
 /**
  * A minimal layered PDF with one optional content group per `layers` body.
@@ -91,14 +91,14 @@ function measure(content: string, kw: PdfKw = {}): Box | null {
 }
 
 /** `pytest.approx(box)` with a couple of 1/65536 quanta of tolerance. */
-function approx(box: Box): Approx {
+function approx(box: Box | null): Approx {
   // A couple of 1/65536 quanta: After Effects' own arithmetic differs from
   // ours in the last fixed-point step or two.
   return { expected: box, opts: { abs: 3 / 65536 } };
 }
 
 /** The Python `actual == approx(...)` assertion. */
-function expect_approx(actual: any, ap: Approx): void {
+function expect_approx(actual: Box | null, ap: Approx): void {
   expect(pytest_approx(actual, ap.expected, ap.opts)).toBe(true);
 }
 
@@ -163,7 +163,7 @@ describe("TestStrokes", () => {
     );
   });
 
-  test.each([
+  test.each<[number, Box]>([
     [2, [35.0, 395.0, 105.0, 445.0]],
     [4, [30.0, 390.0, 110.0, 450.0]],
   ])("test_joined_stroke_scales_with_the_miter_limit[%#]", (miter: number, expected: Box) => {
@@ -266,7 +266,7 @@ describe("TestState", () => {
 
   test("test_saturates_at_the_fixed_point_range", () => {
     const box = measure("40000 40000 5000 5000 re f");
-    expect(box).not.toBe(null);
+    py_assert(box != null);
     const limit = (2 ** 31 - 1) / 65536;
     expect(pytest_approx(box[2], limit, { abs: 1e-4 })).toBe(true);
     expect(pytest_approx(box[3], limit, { abs: 1e-4 })).toBe(true);
@@ -351,21 +351,21 @@ describe("TestText", () => {
   test("test_vertical_extent_is_the_font_bbox_not_ascent_descent", () => {
     // 1.4 em tall (the FontBBox), not 1.0 em (Ascent minus Descent).
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    expect(box).not.toBe(null);
+    py_assert(box != null);
     expect(pytest_approx(box[3] - box[1], 33.6, { abs: 1e-3 })).toBe(true);
     expect(pytest_approx(box[1], 100 - 0.4 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_horizontal_extent_is_the_full_advance", () => {
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    expect(box).not.toBe(null);
+    py_assert(box != null);
     expect(pytest_approx(box[2] - box[0], 2 * 0.6 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_character_spacing_widens_the_cell", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const spaced = _probe("BT /F1 24 Tf 5 Tc 40 100 Td (Hg) Tj ET");
-    expect(plain != null && spaced != null).toBe(true);
+    py_assert(plain != null && spaced != null);
     expect(
       pytest_approx((spaced[2] - spaced[0]) - (plain[2] - plain[0]), 10.0, { abs: 1e-3 }),
     ).toBe(true);
@@ -374,7 +374,7 @@ describe("TestText", () => {
   test("test_horizontal_scaling_widens_only_the_advance", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const scaled = _probe("BT /F1 24 Tf 200 Tz 40 100 Td (Hg) Tj ET");
-    expect(plain != null && scaled != null).toBe(true);
+    py_assert(plain != null && scaled != null);
     expect(pytest_approx(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(
       true,
     );
@@ -390,7 +390,7 @@ describe("TestText", () => {
   test("test_stroking_render_mode_grows_the_cell", () => {
     const box = _probe("BT /F1 24 Tf 1 Tr 10 w 40 100 Td (Hg) Tj ET");
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    expect(box != null && plain != null).toBe(true);
+    py_assert(box != null && plain != null);
     expect(pytest_approx(box[0], plain[0] - 5.0, { abs: 1e-3 })).toBe(true);
     expect(pytest_approx(box[2], plain[2] + 5.0, { abs: 1e-3 })).toBe(true);
   });
@@ -406,7 +406,7 @@ describe("TestText", () => {
         extra_objects: _bare_font(font),
         resources: _RES,
       });
-      expect(box).not.toBe(null);
+      py_assert(box != null);
       expect(pytest_approx(box[1], 300.0 + ymin / 20.0)).toBe(true);
       expect(pytest_approx(box[3], 300.0 + ymax / 20.0)).toBe(true);
     },
@@ -421,7 +421,7 @@ describe("TestText", () => {
         extra_objects: _bare_font(font),
         resources: _RES,
       });
-      expect(box).not.toBe(null);
+      py_assert(box != null);
       expect(pytest_approx(box[0], 40.0)).toBe(true);
       expect(pytest_approx(box[2], 40.0 + expected / 20.0)).toBe(true);
     },
@@ -443,7 +443,7 @@ describe("TestText", () => {
         extra_objects: _bare_font("Times-Roman", encoding),
         resources: _RES,
       });
-      expect(box).not.toBe(null);
+      py_assert(box != null);
       expect(pytest_approx(box[2], 40.0 + expected / 20.0)).toBe(true);
     }
   });
@@ -484,7 +484,7 @@ describe("TestText", () => {
       extra_objects: _bare_font("Verdana"),
       resources: _RES,
     });
-    expect(box).not.toBe(null);
+    py_assert(box != null);
     expect(pytest_approx([box[1], box[3]], [287.5, 337.5])).toBe(true);
   });
 

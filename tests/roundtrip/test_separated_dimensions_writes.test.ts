@@ -14,8 +14,8 @@ import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
-import type { Property } from "../../src/py_aep/models/properties/property.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 
@@ -31,8 +31,8 @@ function _state(comp: CompItem): Map<string, any> {
     [
       "followers",
       Array.from(range(3), (dim) => [
-        position.get_separation_follower(dim).value,
-        position.get_separation_follower(dim)._is_live(),
+        as_instance(position.get_separation_follower(dim), Property).value,
+        as_instance(position.get_separation_follower(dim), Property)._is_live(),
       ]),
     ],
   ]);
@@ -60,8 +60,8 @@ describe("TestSeparate", () => {
 
     position.dimensions_separated = true;
 
-    expect(approx(position.get_separation_follower(0).value, 960.0)).toBe(true);
-    expect(approx(position.get_separation_follower(1).value, 540.0)).toBe(true);
+    expect(approx(as_instance(position.get_separation_follower(0), Property).value, 960.0)).toBe(true);
+    expect(approx(as_instance(position.get_separation_follower(1), Property).value, 540.0)).toBe(true);
   });
 
   test("test_z_stays_synthetic_on_a_2d_layer", () => {
@@ -71,9 +71,9 @@ describe("TestSeparate", () => {
 
     position.dimensions_separated = true;
 
-    expect(position.get_separation_follower(0)._is_live()).toBe(true);
-    expect(position.get_separation_follower(1)._is_live()).toBe(true);
-    expect(!position.get_separation_follower(2)._is_live()).toBe(true);
+    expect(as_instance(position.get_separation_follower(0), Property)._is_live()).toBe(true);
+    expect(as_instance(position.get_separation_follower(1), Property)._is_live()).toBe(true);
+    expect(!as_instance(position.get_separation_follower(2), Property)._is_live()).toBe(true);
   });
 
   test("test_leader_is_parked_on_its_default", () => {
@@ -100,8 +100,8 @@ describe("TestRecombine", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep"));
     const position = _position(project.compositions[0]);
-    position.get_separation_follower(0).value = 111.0;
-    position.get_separation_follower(1).value = 222.0;
+    as_instance(position.get_separation_follower(0), Property).value = 111.0;
+    as_instance(position.get_separation_follower(1), Property).value = 222.0;
 
     position.dimensions_separated = false;
 
@@ -116,7 +116,7 @@ describe("TestRecombine", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep"));
     const position = _position(project.compositions[0]);
-    expect(position.get_separation_follower(0)._is_live()).toBe(true);
+    expect(as_instance(position.get_separation_follower(0), Property)._is_live()).toBe(true);
 
     position.dimensions_separated = false;
 
@@ -124,7 +124,7 @@ describe("TestRecombine", () => {
     project.save(out);
     const reloaded = _position(parse_aep(out).project.compositions[0]);
     for (const dimension of range(3)) {
-      expect(!reloaded.get_separation_follower(dimension)._is_live()).toBe(true);
+      expect(!as_instance(reloaded.get_separation_follower(dimension), Property)._is_live()).toBe(true);
     }
   });
 });
@@ -138,17 +138,17 @@ describe("TestGuards", () => {
      */
     const project = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep"));
     const position = _position(project.compositions[0]);
-    position.get_separation_follower(0).value = 777.0;
+    as_instance(position.get_separation_follower(0), Property).value = 777.0;
 
     position.dimensions_separated = true;
 
-    expect(approx(position.get_separation_follower(0).value, 777.0)).toBe(true);
+    expect(approx(as_instance(position.get_separation_follower(0), Property).value, 777.0)).toBe(true);
   });
 
   test("test_non_leader_is_rejected", () => {
     /** AE silently ignores this; py-aep raises. */
     const project = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep"));
-    const follower = _position(project.compositions[0]).get_separation_follower(0);
+    const follower = as_instance(_position(project.compositions[0]).get_separation_follower(0), Property);
     raises(
       ValueError,
       () => {
@@ -172,7 +172,7 @@ describe("TestGuards", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_separated_dimensions.aep"));
     const position = _position(project.compositions[0]);
-    const followers = Array.from(range(3), (dim) => position.get_separation_follower(dim));
+    const followers = Array.from(range(3), (dim) => as_instance(position.get_separation_follower(dim), Property));
     const x_times = followers[0].keyframes.map((k) => k.time);
     const y_times = followers[1].keyframes.map((k) => k.time);
     expect(py_eq(x_times, y_times)).toBe(false);
@@ -247,7 +247,7 @@ describe("TestAnimatedSeparation", () => {
 
     position.dimensions_separated = true;
 
-    const follower = position.get_separation_follower(0);
+    const follower = as_instance(position.get_separation_follower(0), Property);
     // (in speed, in influence, out speed, out influence) per keyframe.
     const expected = [
       [0.0, 100.0 / 6.0, 1200.0, 2.0],
@@ -272,7 +272,7 @@ describe("TestAnimatedSeparation", () => {
 
     expect(py_eq(position.keyframes, [])).toBe(true);
     for (const dimension of range(2)) {
-      const follower = position.get_separation_follower(dimension);
+      const follower = as_instance(position.get_separation_follower(dimension), Property);
       expect(follower.keyframes.length).toBe(TIMES.length);
       expect(approx(follower.keyframes.map((k) => k.time), TIMES)).toBe(true);
     }
@@ -357,8 +357,8 @@ describe("TestLeaderIsNotWritable", () => {
     /** What AE tells you to do instead, and it round-trips. */
     const project = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep"));
     const position = _position(project.compositions[0]);
-    position.get_separation_follower(0).value = 11.0;
-    position.get_separation_follower(1).value = 22.0;
+    as_instance(position.get_separation_follower(0), Property).value = 11.0;
+    as_instance(position.get_separation_follower(1), Property).value = 22.0;
 
     expect(approx(position.value, [11.0, 22.0, 0.0])).toBe(true);
     const out = tmp_path.div("modified.aep");
@@ -398,10 +398,10 @@ describe("TestSeparatedCompensation", () => {
      */
     const comp = parse_project_fresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0];
     const position = _position(comp);
-    expect(position.get_separation_follower(2)._is_live()).toBe(false);
+    expect(as_instance(position.get_separation_follower(2), Property)._is_live()).toBe(false);
 
     position._set_separated_value([11.0, 22.0, 0.0], position._separation_followers()!);
 
-    expect(position.get_separation_follower(2)._is_live()).toBe(false);
+    expect(as_instance(position.get_separation_follower(2), Property)._is_live()).toBe(false);
   });
 });

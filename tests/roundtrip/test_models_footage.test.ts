@@ -6,6 +6,8 @@ import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { AlphaMode, AVLayer, FieldSeparationType, FootageItem, LinearLightMode, PulldownPhase, SolidSource, parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
+import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { default_icc_directories } from "../../src/py_aep/color/icc.ts";
 import { resolve_ocio_config } from "../../src/py_aep/color/ocio.ts";
 import { profile_id_for_name } from "../../src/py_aep/enums/mappings.ts";
@@ -680,7 +682,7 @@ describe("TestRoundtripMediaColorSpace", () => {
     const source2 = _first_source(parse_aep(out).project);
     expect(source2.media_color_space).toBe("Apple RGB");
     // apid is the catalogued ICC profile ID (matches AE ground truth).
-    const apid = source2._clrs.chunks.find((c) => c.chunk_type === "apid")!;
+    const apid = as_instance(source2._clrs, ListChunk).chunks.find((c) => c.chunk_type === "apid")!;
     expect(py_eq(apid.data, profile_id_for_name("Apple RGB"))).toBe(true);
   });
 });
@@ -722,7 +724,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id)!;
     expect(py_eq((reparsed.main_source._opti as any).solid_name, "Opti Backed")).toBe(true);
-    expect(py_eq(reparsed._name_utf8.value, "")).toBe(true);
+    expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "")).toBe(true);
   });
 
   test("test_rename_placeholder_persists", () => {
@@ -736,7 +738,7 @@ describe("TestRoundtripFootageItemName", () => {
     const reparsed = parse_aep(out).project.footages.find((f) => f.id === placeholder.id)!;
     expect(py_eq(reparsed.name, "Renamed Placeholder")).toBe(true);
     expect(py_eq((reparsed.main_source._opti as any).placeholder_name, "Renamed Placeholder")).toBe(true);
-    expect(py_eq(reparsed._name_utf8.value, "")).toBe(true);
+    expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "")).toBe(true);
   });
 
   test("test_rename_file_footage_persists", () => {
@@ -749,7 +751,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parse_aep(out).project.footages.find((f) => f.id === footage.id)!;
     expect(py_eq(reparsed.name, "Renamed File Item")).toBe(true);
-    expect(py_eq(reparsed._name_utf8.value, "Renamed File Item")).toBe(true);
+    expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "Renamed File Item")).toBe(true);
   });
 
   test("test_rename_solid_accepts_255_utf8_bytes", () => {

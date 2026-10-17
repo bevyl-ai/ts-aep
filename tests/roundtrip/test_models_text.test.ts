@@ -8,7 +8,7 @@ import { get_comp } from "../helpers.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { CosName } from "../../src/py_aep/cos/index.ts";
 import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, DigitSet, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
-import { contains, getattr, getitem, Path, py_bool, py_eq, ValueError } from "../../src/pyrt/index.ts";
+import { contains, getattr, getitem, Path, py_eq, ValueError } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
@@ -17,7 +17,7 @@ const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "
 function _get_text_document(aep_path: Path, comp_name: string | null = null): [any, any] {
   const app = parse_aep(aep_path);
   let comp: any;
-  if (py_bool(comp_name)) {
+  if (comp_name) {
     comp = get_comp(app.project, comp_name);
   } else {
     comp = app.project.compositions[0];

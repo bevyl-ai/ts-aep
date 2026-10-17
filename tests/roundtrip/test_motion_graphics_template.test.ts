@@ -26,6 +26,9 @@ import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, write_chunk } from "../../src/py_aep/binary/chunk.ts";
+import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { build_media_cctl } from "../../src/py_aep/binary/mutations.ts";
 import { _path_json, _source_property_path } from "../../src/py_aep/resolvers/motion_graphics.ts";
@@ -119,7 +122,7 @@ describe("TestCanAddProperty", () => {
     // (AE 2026 headless run), so the path is unambiguous and addable.
     const project = parse_project_fresh(EG_DIR.parent.div("property", "mask_add.aep"));
     const comp = project.compositions[0];
-    const mask = comp.layers[0].masks.__getitem__(0);
+    const mask = as_instance(comp.layers[0].masks, PropertyGroup).__getitem__(0);
     const mask_opacity = next((mask as any).properties, (p: any) => p.match_name === "ADBE Mask Opacity");
     expect(mask_opacity.property_value_type).toBe(PropertyValueType.OneD);
     expect(mask_opacity.can_add_to_motion_graphics_template(comp)).toBe(true);
@@ -140,9 +143,9 @@ describe("TestCanAddProperty", () => {
     // controller (menu entries included), which py_aep does not build.
     const project = parse_project_fresh(EG_DIR.div("dropdown_controller.aep"));
     const comp = get_comp(project, "primary");
-    const effects = next(comp.layers[0].properties, (p: any) => p.match_name === "ADBE Effect Parade");
-    const pseudo = next(effects.properties, (p: any) => p.match_name.startsWith("Pseudo/"));
-    const menu = pseudo.properties[0];
+    const effects = as_instance(next(comp.layers[0].properties, (p: any) => p.match_name === "ADBE Effect Parade"), PropertyGroup);
+    const pseudo = as_instance(next(effects.properties, (p: any) => p.match_name.startsWith("Pseudo/")), PropertyGroup);
+    const menu = as_instance(pseudo.properties[0], Property);
     expect(menu.can_add_to_motion_graphics_template(comp)).toBe(false);
   });
 });
@@ -236,11 +239,11 @@ class TestEffectParamPaths {
   static _stored_json(comp: any, ctrl_name: string): string {
     // The CPrp JSON of the named controller, straight from the chunks.
     for (const cctl of _cif3_cctls(comp)) {
-      const cps2 = next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CpS2");
-      const name = next(cps2.chunks, (c: any) => c.chunk_type === "Utf8").value;
+      const cps2 = as_instance(next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CpS2"), ListChunk);
+      const name = as_instance(next(cps2.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
       if (!py_eq(name, ctrl_name)) continue;
-      const cprp = next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp");
-      return next(cprp.chunks, (c: any) => c.chunk_type === "Utf8").value;
+      const cprp = as_instance(next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
+      return as_instance(next(cprp.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
     }
     throw new AssertionError_(`controller ${repr(ctrl_name)} not found`);
   }
@@ -382,7 +385,7 @@ describe("TestIndexedGroupControllers", () => {
       const layer = getitem(comp.layers_by_id, a_ctrl.source_layer_id);
       const a = _walk_source_property(layer as any, a_ctrl.source_property_path);
       const b = _walk_source_property(layer as any, b_ctrl.source_property_path);
-      expect(a != null && b != null).toBe(true);
+      py_assert(a != null && b != null);
       expect(a.match_name).toBe(b.match_name);
       expect(a).not.toBe(b);
     }
@@ -425,7 +428,7 @@ describe("TestIndexedGroupControllers", () => {
     const fx = next(effects.properties, (p: any) => p.match_name === "ADBE Fractal Noise");
     const prop = next(fx.properties, (p: any) => p.match_name === "ADBE Fractal Noise-0010");
     const resolved = _source_property_path(prop);
-    expect(resolved != null).toBe(true);
+    py_assert(resolved != null);
     expect(
       py_eq(
         resolved[0].map((n: any) => [n.match_name, n.prop_index]),
@@ -502,8 +505,8 @@ describe("TestAddLayerMediaReplacement", () => {
     const utf8s = fixture_cctl.chunks.filter((c: any) => c.chunk_type === "Utf8");
     const uuid_str = (utf8s[0] as any).value;
     const thumbnail = (utf8s[3] as any).value;
-    const cprp = next(fixture_cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp");
-    const path_json = next(cprp.chunks, (c: any) => c.chunk_type === "Utf8").value;
+    const cprp = as_instance(next(fixture_cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
+    const path_json = as_instance(next(cprp.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
 
     const [built, _name, _ctyp] = build_media_cctl(
       "image_with_alpha.png",

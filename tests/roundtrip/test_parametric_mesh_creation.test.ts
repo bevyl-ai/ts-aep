@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { getattr, getitem, Path } from "../../src/pyrt/index.ts";
+import { getattr, getitem, Path, setattr } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { LayerType, ParametricMeshType } from "../../src/py_aep/enums/index.ts";
@@ -46,7 +46,7 @@ describe("TestAddParametricMesh", () => {
     const comp = project.compositions[0];
     const layer = comp.add_parametric_mesh(`M ${ParametricMeshType.name_of(mesh_type)}`, { mesh_type });
     const field = getitem(_FIRST_FIELD, mesh_type);
-    layer.parametric_mesh_options[field] = 321.0;
+    setattr(layer.parametric_mesh_options, field, 321.0);
 
     const fresh = _save_reparse(project, tmp_path);
     const fresh_layer = as_instance(

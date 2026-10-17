@@ -6,6 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
+import { TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { StopIteration, getattr, hasattr, len, py_bool, range, str } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
@@ -194,7 +195,7 @@ describe("TestCameraAndLightSeparate", () => {
     expect(py_bool(pos2.dimensions_separated)).toBe(true);
     // The Z the camera/light is positioned at must survive.
     expect(approx(pos2.value, before)).toBe(true);
-    expect(approx(pos2.get_separation_follower(2).value, before[2])).toBe(true);
+    expect(approx(as_instance(pos2.get_separation_follower(2), py_aep.Property).value, before[2])).toBe(true);
   });
 
   /**
@@ -209,7 +210,7 @@ describe("TestCameraAndLightSeparate", () => {
     const comp = next(app.project.compositions, (c) => c.name === "lightType_AMBIENT");
     const pos = (comp.layers[0].property("Transform") as py_aep.PropertyGroup).property("ADBE Position");
 
-    expect(pos._tdsb.hidden).toBe(true);
+    expect(as_instance(pos._tdsb, TdsbChunk).hidden).toBe(true);
     expect(pos.dimensions_separated).toBe(false);
   });
 });

@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { approx, make_tmp_path, warns } from "../../src/pyrt/pytest.ts";
-import { NotImplementedError, Path, py_eq } from "../../src/pyrt/index.ts";
+import { NotImplementedError, Path, py_assert, py_eq } from "../../src/pyrt/index.ts";
 import * as reader_mod from "../../src/py_aep/svg/reader.ts";
 import { read_svg } from "../../src/py_aep/svg/index.ts";
 import { parse_path } from "../../src/py_aep/svg/path_data.ts";
@@ -202,7 +202,7 @@ test("test_reader_text_stroke", () => {
   expect(doc.drawables.length).toBe(1);
   const d = doc.drawables[0];
   expect(d.fill == null).toBe(true);
-  expect(d.stroke != null).toBe(true);
+  py_assert(d.stroke != null);
   expect(py_eq(Array.from((d.stroke.paint as any).color.slice(0, 3)), [0.0, 1.0, 0.0])).toBe(true);
   expect(d.stroke.width).toBe(4.0);
 });
