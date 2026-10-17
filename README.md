@@ -32,7 +32,7 @@ on a manual workflow run):
   byte-identical saved files.
 - Parse → save is byte-identical on all 644 samples, in Node, Bun, a browser and
   workerd.
-- `tsc` reports 0 errors with `strict` on for the library. The code holds 16
+- `tsc` reports 0 errors with `strict` on everywhere (library, tests, tools). The library holds 16
   `any` and 54 type assertions, most of them where py-aep itself uses an unchecked
   `cast()`; the gate fails if either count grows. 26 `TODO(port)` markers name the
   remaining known gaps (fontkit/harfbuzzjs vs fontTools/uharfbuzz text metrics,
