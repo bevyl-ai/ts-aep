@@ -61,8 +61,6 @@ export function approx(actual: ApproxOperand, expected: ApproxOperand, opts: { r
   return Math.abs(actual - expected) <= Math.max(rel * Math.abs(expected), abs);
 }
 
-export class Skipped extends Error {}
-
 /** `pytest.skip(reason)` - throw-free: `return skip("why")` from the test body. */
 export function skip(reason = ""): void {
   console.log(`skipped: ${reason}`);

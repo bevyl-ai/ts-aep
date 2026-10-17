@@ -1,7 +1,7 @@
 // xml.etree.ElementTree: the subset py_aep uses, with CPython 3.12 / expat semantics.
 //
-// Element (tag, attrib, text, tail, children), SubElement, fromstring/XML, tostring,
-// register_namespace, ParseError, and the ElementPath subset (find / findall / findtext /
+// Element (tag, attrib, text, tail, children), SubElement, fromstring, tostring,
+// ParseError, and the ElementPath subset (find / findall / findtext /
 // iterfind: child, `*`, `.`, `..`, `//`, `[@a]`, `[@a='v']`, `[@a!='v']`, `[tag]`,
 // `[tag='v']`, `[.='v']`, `[n]`, `[last()]`, `[last()-n]`, `{ns}tag`, `{*}tag`, `{ns}*`).
 //
@@ -173,10 +173,6 @@ export function SubElement(
   const e = new Element(tag, attrib, extra);
   parent.append(e);
   return e;
-}
-
-export function iselement(element: unknown): element is Element {
-  return element instanceof Element;
 }
 
 // ---------------------------------------------------------------------------
@@ -497,14 +493,6 @@ const _namespace_map = new Map<string, string>([
   ["http://www.w3.org/2001/XMLSchema-instance", "xsi"],
   ["http://purl.org/dc/elements/1.1/", "dc"],
 ]);
-
-export function register_namespace(prefix: string, uri: string): void {
-  if (/^ns\d+$/.test(prefix)) throw new ValueError("Prefix format reserved for internal use");
-  for (const [k, v] of [..._namespace_map]) {
-    if (k === uri || v === prefix) _namespace_map.delete(k);
-  }
-  _namespace_map.set(uri, prefix);
-}
 
 function _escape_cdata(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1160,5 +1148,3 @@ export function fromstring(text: string | Uint8Array): Element {
   s = s.replace(/\r\n?/g, "\n");
   return new _Parser(s).parse();
 }
-
-export const XML = fromstring;

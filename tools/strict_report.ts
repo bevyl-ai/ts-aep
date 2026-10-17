@@ -1,7 +1,6 @@
 // Bottom-up typing ratchet: strict-mode errors and loose-type counts per layer.
 // usage: bun tools/strict_report.ts [--json] [--files <layer>]
 import ts from "typescript";
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
