@@ -66,7 +66,10 @@ export class BytesIO {
   write(data: Uint8Array): number {
     const end = this.pos + data.length;
     this.reserve(end);
-    this.buf.set(data, this.pos);
+    // A native `set` costs more than a loop for the 4-byte tags and small fields most
+    // writes are. (`data` could only overlap `buf` as a `getbuffer()` view.)
+    if (data.length <= 16) for (let i = 0; i < data.length; i++) this.buf[this.pos + i] = data[i];
+    else this.buf.set(data, this.pos);
     this.pos = end;
     if (end > this.len) this.len = end;
     return data.length;
