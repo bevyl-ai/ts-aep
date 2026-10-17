@@ -35,6 +35,11 @@ export class BytesIO {
     return out;
   }
 
+  /** `fp.read(1)[0]` without allocating, or -1 at the end of the data. */
+  read_byte(): number {
+    return this.pos < this.len ? this.buf[this.pos++] : -1;
+  }
+
   /**
    * `s.unpack(fp.read(s.size))` without the intermediate copy. Returns null,
    * leaving the position alone, when fewer than `s.size` bytes remain.
