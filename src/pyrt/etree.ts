@@ -5,12 +5,15 @@
 // iterfind: child, `*`, `.`, `..`, `//`, `[@a]`, `[@a='v']`, `[@a!='v']`, `[tag]`,
 // `[tag='v']`, `[.='v']`, `[n]`, `[last()]`, `[last()-n]`, `{ns}tag`, `{*}tag`, `{ns}*`).
 //
-// TODO(port): internal general entities whose literal replacement text contains markup (`<`,
-// e.g. <!ENTITY e "<a/>"> then `&e;` in element content) raise ParseError("not well-formed")
-// in _Parser.expand_entity_value; expat re-parses the replacement as content and yields the
-// nested elements. Fixing it needs a re-entrant content parser over the replacement text
-// (reference() currently returns a flat string). Only affects input with an internal DTD
-// subset declaring such an entity; entities with plain text or nested `&x;` refs are exact.
+// TODO(port): internal general entities follow expat only for plain-text replacement text.
+// expat expands character references in an entity value at declaration and parses replacement
+// text holding markup (`<!ENTITY e "<a/>">`, or `"&#60;"`) as content: nested elements, else
+// "unclosed token" / "asynchronous entity"; in an attribute value such text is "not
+// well-formed". Here a literal `<` raises "not well-formed" in both contexts and a char-ref
+// `<` stays text. Error positions also differ: expat reports a fault inside an entity at the
+// reference in content and at the start tag in an attribute value; here it is the reference
+// (attribute) or the offset within the replacement text (nested reference). Fixing it needs
+// declaration-time char-ref expansion and a re-entrant content parser over replacement text.
 // External and parameter entities are ignored (expat without a resolver also skips them).
 
 import { latin1_bytes, latin1_str } from "./bytes.ts";
