@@ -22,10 +22,11 @@ export function Factory<T>(fn: () => T): Factory<T> {
 const NOTHING: unique symbol = Symbol("NOTHING");
 
 /**
- * `attrs` field metadata: free-form per field and read back by key (a chunk
- * field's struct format, encoding, item class, ...), so its values are dynamic.
+ * `attrs` field metadata, read back by key. Each module that stores
+ * metadata declares its keys by augmenting this interface (`fmt_field`'s
+ * struct format, encoding, item class, ...).
  */
-export type Metadata = Readonly<Record<string, any>>;
+export interface Metadata {}
 
 /** `attrs.field(...)` for a field holding a `V`: the default and converter produce a `V`. */
 export type FieldSpec<V = unknown> = {

@@ -29,19 +29,18 @@ import {
   py_or,
   repr,
   struct,
-  type Attribute,
   type IO,
 } from "../../pyrt/index.ts";
 import { _struct_for, read_bytes, read_fmt, read_pad, write_bytes, write_pad } from "./bin_utils.ts";
-import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtItem, type InitKwargs } from "./fmt_field.ts";
+import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtAttribute, type FmtItem, type InitKwargs } from "./fmt_field.ts";
 import { CHUNK_TYPES, register, registered } from "./registry.ts";
 import type { HeadChunk } from "./item_chunks.ts";
 import type { LdatItemType } from "./ldat_chunks.ts";
 
-const _PREFIX_STRUCTS = new WeakMap<readonly Attribute[], struct.Struct[]>();
+const _PREFIX_STRUCTS = new WeakMap<readonly FmtAttribute[], struct.Struct[]>();
 
 /** Big-endian struct for the first `n` of `data_fields`. */
-function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.Struct {
+function _prefix_struct(data_fields: readonly FmtAttribute[], n: number): struct.Struct {
   let by_n = _PREFIX_STRUCTS.get(data_fields);
   if (by_n === undefined) _PREFIX_STRUCTS.set(data_fields, (by_n = []));
   return (by_n[n] ??= _struct_for(data_fields.slice(0, n).map((f) => f.metadata["fmt"]).join("")));
@@ -49,9 +48,9 @@ function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.St
 
 /** The required-field format and each optional field's format and size. */
 type OptionalLayout = { req_fmt: string | null; req_size: number; optional: [fmt: string, size: number][] };
-const _OPTIONAL_LAYOUTS = new WeakMap<readonly Attribute[], OptionalLayout>();
+const _OPTIONAL_LAYOUTS = new WeakMap<readonly FmtAttribute[], OptionalLayout>();
 
-function _optional_layout(data_fields: readonly Attribute[], optional_start: number): OptionalLayout {
+function _optional_layout(data_fields: readonly FmtAttribute[], optional_start: number): OptionalLayout {
   let layout = _OPTIONAL_LAYOUTS.get(data_fields);
   if (layout === undefined) {
     const req_parts = data_fields.slice(0, optional_start).map((f) => f.metadata["fmt"]);
