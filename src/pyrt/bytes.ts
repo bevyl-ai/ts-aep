@@ -4,8 +4,6 @@
 
 import { ValueError } from "./errors.ts";
 
-export type bytes = Uint8Array;
-
 /** A bytes literal: `b("\x00vsc")` is Python `b"\x00vsc"` (each char a byte). */
 export function b(literal: string): Uint8Array {
   const out = new Uint8Array(literal.length);
@@ -74,16 +72,6 @@ export function find(data: Uint8Array, sub: Uint8Array | number, start = 0, end?
   const needle = as_needle(sub);
   const stop = (end ?? data.length) - needle.length;
   outer: for (let i = Math.max(0, start); i <= stop; i++) {
-    for (let j = 0; j < needle.length; j++) if (data[i + j] !== needle[j]) continue outer;
-    return i;
-  }
-  return -1;
-}
-
-/** `data.rfind(sub)` */
-export function rfind(data: Uint8Array, sub: Uint8Array | number): number {
-  const needle = as_needle(sub);
-  outer: for (let i = data.length - needle.length; i >= 0; i--) {
     for (let j = 0; j < needle.length; j++) if (data[i + j] !== needle[j]) continue outer;
     return i;
   }
@@ -160,14 +148,6 @@ export function ljust(data: Uint8Array, width: number, fill = 0): Uint8Array {
   return out;
 }
 
-/** `data.rjust(width, fill)` */
-export function rjust(data: Uint8Array, width: number, fill = 0): Uint8Array {
-  if (data.length >= width) return data.slice();
-  const out = new Uint8Array(width).fill(fill);
-  out.set(data, width - data.length);
-  return out;
-}
-
 /** `data.split(sep)` */
 export function split(data: Uint8Array, sep?: Uint8Array | null, maxsplit = -1): Uint8Array[] {
   if (sep == null) return split_whitespace(data, maxsplit);
@@ -236,21 +216,6 @@ export function int_to_bytes(value: number | bigint, length: number, byteorder: 
     v >>= 8n;
   }
   return out;
-}
-
-/** Python `repr(bytes)` (used in messages). */
-export function bytes_repr(data: Uint8Array): string {
-  let s = "";
-  for (const c of data) {
-    if (c === 0x5c) s += "\\\\";
-    else if (c === 0x27) s += "\\'";
-    else if (c === 0x09) s += "\\t";
-    else if (c === 0x0a) s += "\\n";
-    else if (c === 0x0d) s += "\\r";
-    else if (c >= 0x20 && c < 0x7f) s += String.fromCharCode(c);
-    else s += "\\x" + c.toString(16).padStart(2, "0");
-  }
-  return `b'${s}'`;
 }
 
 /** `bytes.isspace()` bytes: space, \t, \n, \v, \f, \r. */

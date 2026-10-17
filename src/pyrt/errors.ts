@@ -56,12 +56,7 @@ export function py_assert(cond: unknown, message = ""): asserts cond {
 
 export function warn(message: string): void {
   warnings.push(message);
-  if (warnings_echo) console.warn(message);
 }
 
 /** Captured `warnings.warn` messages, for `pytest.warns` translations. */
 export const warnings: string[] = [];
-let warnings_echo = false;
-export function set_warnings_echo(on: boolean): void {
-  warnings_echo = on;
-}
