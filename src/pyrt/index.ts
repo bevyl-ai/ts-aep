@@ -14,7 +14,7 @@ export { ContextVar } from "./contextvar.ts";
 export { define, field, fields, has as attrs_has, Factory, AttrsBase, NO_INIT, attrs_init, attrs_eq, init_name, type Attribute, type FieldSpec } from "./attrs.ts";
 export { py_enum, int_enum, auto, type EnumValue } from "./enum.ts";
 export { Path, PurePath, PurePosixPath, PureWindowsPath, fspath, type PathLike } from "./pathlib.ts";
-export { descriptor, get_descriptor, descriptors_of, py_object, object_setattr, object_getattr, instance_dict, type ClassAttributes, type Descriptor } from "./dunder.ts";
+export { descriptor, get_descriptor, descriptors_of, py_object, py_class_hooks, object_setattr, object_getattr, instance_dict, type ClassAttributes, type Descriptor } from "./dunder.ts";
 export * from "./pytest.ts";
 export { deferred } from "./deferred.ts";
 export * as etree from "./etree.ts";

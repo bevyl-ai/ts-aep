@@ -16,7 +16,7 @@ import {
   object_getattr,
   object_setattr,
   py_assert,
-  py_object,
+  py_class_hooks,
   py_or,
   repr,
   split,
@@ -549,12 +549,9 @@ export class PropertyGroup extends PropertyBase {
     ) {
       this._elided = true;
     }
-    // Children must point at the proxy (Python's `self`), not the raw target.
-    const self = py_object(this);
-    for (const child of self._properties) {
-      child._parent_property = self;
+    for (const child of this._properties) {
+      child._parent_property = this;
     }
-    return self;
   }
 
   /** The automatic (display) name derived from `match_name`. */
@@ -1372,6 +1369,11 @@ export class PropertyGroup extends PropertyBase {
     return this.__getitem__(key);
   }
 }
+
+// `__getattr__` (child lookup by attribute name) and `__setattr__` without a proxy
+// around each group. Exact here: `__setattr__` (this one and `Layer`'s) passes every
+// existing attribute through and only refuses new public names.
+py_class_hooks(PropertyGroup, { setattr_passes_private: true });
 
 // Python `@requires_version(26)` on `add_variable_font_axis`: the
 // decorator wraps the method once the class body has been evaluated.
