@@ -20,6 +20,7 @@ import {
   py_eq,
   py_or,
   repr,
+  setattr,
   setdefault,
   tkey,
   zip,
@@ -29,12 +30,13 @@ import { as_instance, get_comp as get_comp_, get_first_layer as get_first_layer_
 
 import { parse as parse_aep_, new as py_aep_new, Project } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType } from "../../src/py_aep/enums/index.ts";
-import { AVLayer, Keyframe, Layer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
+import { AVLayer, CompItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import { ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { _baked_effect_def } from "../../src/py_aep/models/properties/property_group.ts";
 import { build_expression_control } from "../../src/py_aep/binary/mutations.ts";
 import { EXPRESSION_CONTROLS } from "../../src/py_aep/data/effect_controls.ts";
 import { find_by_type, recursive_find } from "../../src/py_aep/binary/utils.ts";
+import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { NORMALIZED_ARC_ACCURACY } from "../../src/py_aep/resolvers/interpolation.ts";
 
 // `Path(__file__).parent.parent.parent / ...` in the Python source.
@@ -393,7 +395,7 @@ describe("TestRoundtripKeyframeLabel", () => {
     const comp = get_comp(project, "keyframe_bezier_ease_in_out_1D");
     const layer = comp.layers[0];
     // Find the animated opacity property
-    const prop = _find_property(layer, "ADBE Opacity");
+    const prop = as_instance(_find_property(layer, "ADBE Opacity"), Property);
     expect(prop.keyframes.length >= 2).toBe(true);
     const original_label = prop.keyframes[0].label;
     expect(original_label).not.toBe(Label.RED);
@@ -405,7 +407,7 @@ describe("TestRoundtripKeyframeLabel", () => {
     const project2 = parse_aep(out).project;
     const comp2 = get_comp(project2, "keyframe_bezier_ease_in_out_1D");
     const layer2 = comp2.layers[0];
-    const prop2 = _find_property(layer2, "ADBE Opacity");
+    const prop2 = as_instance(_find_property(layer2, "ADBE Opacity"), Property);
     expect(prop2.keyframes[0].label).toBe(Label.RED);
   });
 
@@ -416,10 +418,10 @@ describe("TestRoundtripKeyframeLabel", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("keyframe_bezier_multi_ease_1D.aep")).project;
-    const opacity = _find_property(
+    const opacity = as_instance(_find_property(
       get_comp(project, "TestComp").layers[0],
       "ADBE Opacity",
-    );
+    ), Property);
     for (const [kf, label] of zip(opacity.keyframes, [Label.of(1), Label.of(5), Label.of(16)])) {
       kf.label = label;
     }
@@ -428,7 +430,7 @@ describe("TestRoundtripKeyframeLabel", () => {
 
     const key_flag_bytes = (path: Path): Uint8Array[] => {
       const proj = parse_aep(path).project;
-      const prop = _find_property(get_comp(proj, "TestComp").layers[0], "ADBE Opacity");
+      const prop = as_instance(_find_property(get_comp(proj, "TestComp").layers[0], "ADBE Opacity"), Property);
       return prop.keyframes.map((kf) => bytes_.slice(kf._ldat_item.tobytes(), 6, 8));
     };
 
@@ -440,7 +442,7 @@ describe("TestRoundtripKeyframeLabel", () => {
     const project = parse_aep(SAMPLES_DIR.div("keyframe_1D.aep")).project;
     const comp = get_comp(project, "keyframe_bezier_ease_in_out_1D");
     const layer = comp.layers[0];
-    const prop = _find_property(layer, "ADBE Opacity");
+    const prop = as_instance(_find_property(layer, "ADBE Opacity"), Property);
     expect(prop.keyframes.length >= 2).toBe(true);
     // Roving can only meaningfully be set on middle keyframes
     if (prop.keyframes.length >= 3) {
@@ -450,7 +452,7 @@ describe("TestRoundtripKeyframeLabel", () => {
 
       const project2 = parse_aep(out).project;
       const comp2 = get_comp(project2, "keyframe_bezier_ease_in_out_1D");
-      const prop2 = _find_property(comp2.layers[0], "ADBE Opacity");
+      const prop2 = as_instance(_find_property(comp2.layers[0], "ADBE Opacity"), Property);
       expect(prop2.keyframes[1].roving).toBe(true);
     }
   });
@@ -464,7 +466,7 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     const project = parse_aep(SAMPLES_DIR.div("keyframe_interpolation.aep")).project;
     const comp = get_comp(project, "keyframe_LINEAR");
     const layer = comp.layers[0];
-    const prop = _find_property(layer, "ADBE Position");
+    const prop = as_instance(_find_property(layer, "ADBE Position"), Property);
     expect(prop.keyframes.length >= 2).toBe(true);
     expect(prop.keyframes[0].out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
 
@@ -473,10 +475,10 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(project2, "keyframe_LINEAR").layers[0],
       "ADBE Position",
-    );
+    ), Property);
     expect(prop2.keyframes[0].out_interpolation_type).toBe(KeyframeInterpolationType.HOLD);
   });
 
@@ -485,7 +487,7 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     const project = parse_aep(SAMPLES_DIR.div("keyframe_interpolation.aep")).project;
     const comp = get_comp(project, "keyframe_BEZIER");
     const layer = comp.layers[0];
-    const prop = _find_property(layer, "ADBE Position");
+    const prop = as_instance(_find_property(layer, "ADBE Position"), Property);
     expect(prop.keyframes.length >= 2).toBe(true);
 
     prop.keyframes[1].in_interpolation_type = KeyframeInterpolationType.LINEAR;
@@ -493,10 +495,10 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(project2, "keyframe_BEZIER").layers[0],
       "ADBE Position",
-    );
+    ), Property);
     expect(prop2.keyframes[1].in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
   });
 });
@@ -525,10 +527,10 @@ describe("TestRoundtripExpression", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(project2, "expression_enabled").layers[0],
       match_name,
-    );
+    ), Property);
     expect(prop2.expression).toBe("wiggle(5, 50)");
   });
 });
@@ -603,19 +605,21 @@ describe("TestRoundtripMaskShapeOnEachLayerKind", () => {
       const tmp_path = make_tmp_path();
       const vertices = [[-10.0, -10.0], [30.0, -10.0], [30.0, 20.0], [-10.0, 20.0]];
       const project = parse_project_fresh(SAMPLES_DIR.div("mask_shape_and_text_layers.aep"));
-      const layer = project.compositions
-        .flatMap((c) => c.layers)
-        .find((ly) => ly.name === layer_name);
-      expect(layer.masks == null).toBe(false);
-      layer.masks.__getitem__(0).__getitem__("ADBE Mask Shape").value = new Shape(vertices);
+      const layer = as_instance(
+        project.compositions.flatMap((c: CompItem) => c.layers).find((ly: Layer) => ly.name === layer_name),
+        Layer,
+      );
+      py_assert(layer.masks != null);
+      as_instance(layer.masks.__getitem__(0), MaskPropertyGroup).__getitem__("ADBE Mask Shape").value = new Shape(vertices);
       const out = tmp_path.div("masks.aep");
       project.save(out);
 
-      const reopened = parse_aep(out)
-        .project.compositions.flatMap((c) => c.layers)
-        .find((ly) => ly.name === layer_name);
-      expect(reopened.masks == null).toBe(false);
-      const shape = reopened.masks.__getitem__(0).__getitem__("ADBE Mask Shape").value;
+      const reopened = as_instance(
+        parse_aep(out).project.compositions.flatMap((c: CompItem) => c.layers).find((ly: Layer) => ly.name === layer_name),
+        Layer,
+      );
+      py_assert(reopened.masks != null);
+      const shape = as_instance(reopened.masks.__getitem__(0), MaskPropertyGroup).__getitem__("ADBE Mask Shape").value;
       for (const [vertex, want] of zip(shape.vertices, vertices)) {
         expect(approx(vertex, want, { abs: 1e-4 })).toBe(true);
       }
@@ -631,7 +635,7 @@ describe("TestRoundtripKeyframeEase", () => {
     const comp = get_comp(project, "keyframe_BEZIER");
     const layer = comp.layers[0];
     const prop = _find_property(layer, "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop.keyframes.length >= 2).toBe(true);
 
     const kf = prop.keyframes[0];
@@ -647,7 +651,7 @@ describe("TestRoundtripKeyframeEase", () => {
       get_comp(project2, "keyframe_BEZIER").layers[0],
       "ADBE Position",
     );
-    expect(prop2 != null).toBe(true);
+    py_assert(prop2 != null);
     expect(Math.abs(prop2.keyframes[0].out_temporal_ease[0].speed - 42.0) < 0.01).toBe(true);
     expect(Math.abs(prop2.keyframes[0].out_temporal_ease[0].influence - 75.0) < 0.01).toBe(true);
   });
@@ -670,7 +674,7 @@ describe("TestValidateKeyframeEaseInfluence", () => {
     const comp = get_comp(project, "keyframe_BEZIER");
     const layer = comp.layers[0];
     const prop = _find_property(layer, "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     const kf = prop.keyframes[0];
     raises(ValueError, () => {
       kf.out_temporal_ease[0].influence = -0.1;
@@ -682,7 +686,7 @@ describe("TestValidateKeyframeEaseInfluence", () => {
     const project = parse_aep(SAMPLES_DIR.div("keyframe_interpolation.aep")).project;
     const comp = get_comp(project, "keyframe_BEZIER");
     const prop = _find_property(comp.layers[0], "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     prop.keyframes[0].out_temporal_ease[0].influence = 1.0 / 12.0;
     expect(approx(prop.keyframes[0].out_temporal_ease[0].influence, 1.0 / 12.0)).toBe(true);
   });
@@ -692,7 +696,7 @@ describe("TestValidateKeyframeEaseInfluence", () => {
     const comp = get_comp(project, "keyframe_BEZIER");
     const layer = comp.layers[0];
     const prop = _find_property(layer, "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     const kf = prop.keyframes[0];
     raises(ValueError, () => {
       kf.out_temporal_ease[0].influence = 100.1;
@@ -708,7 +712,7 @@ describe("TestRoundtripPropertyValue", () => {
     const project = parse_aep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const layer = project.compositions[0].layers[0];
     const prop = _find_property(layer, "ADBE Rotate X");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop._cdat != null).toBe(true);
 
     prop.value = 45.0;
@@ -716,7 +720,7 @@ describe("TestRoundtripPropertyValue", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(project2.compositions[0].layers[0], "ADBE Rotate X");
+    const prop2 = as_instance(_find_property(project2.compositions[0].layers[0], "ADBE Rotate X"), Property);
     expect(Math.abs(prop2.value - 45.0) < 0.01).toBe(true);
   });
 
@@ -725,7 +729,7 @@ describe("TestRoundtripPropertyValue", () => {
     const project = parse_aep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const layer = project.compositions[0].layers[0];
     const prop = _find_property(layer, "ADBE Orientation");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop._cdat != null).toBe(true);
 
     prop.value = [10.0, 20.0, 30.0];
@@ -733,7 +737,7 @@ describe("TestRoundtripPropertyValue", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(project2.compositions[0].layers[0], "ADBE Orientation");
+    const prop2 = as_instance(_find_property(project2.compositions[0].layers[0], "ADBE Orientation"), Property);
     expect(Math.abs(prop2.value[0] - 10.0) < 0.01).toBe(true);
     expect(Math.abs(prop2.value[1] - 20.0) < 0.01).toBe(true);
     expect(Math.abs(prop2.value[2] - 30.0) < 0.01).toBe(true);
@@ -748,7 +752,7 @@ describe("TestRoundtripExpressionCreate", () => {
     const project = parse_aep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const layer = project.compositions[0].layers[0];
     const prop = _find_property(layer, "ADBE Rotate Z");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop.expression).toBe("");
     expect(prop._expression_utf8 == null).toBe(true);
 
@@ -758,7 +762,7 @@ describe("TestRoundtripExpressionCreate", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(project2.compositions[0].layers[0], "ADBE Rotate Z");
+    const prop2 = as_instance(_find_property(project2.compositions[0].layers[0], "ADBE Rotate Z"), Property);
     expect(prop2.expression).toBe("time * 90");
   });
 
@@ -771,7 +775,7 @@ describe("TestRoundtripExpressionCreate", () => {
      */
     const project = parse_aep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const prop = _find_property(project.compositions[0].layers[0], "ADBE Rotate Z");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop._tdb4.has_expression).toBe(false);
 
     prop.expression = "time * 90";
@@ -807,10 +811,10 @@ describe("TestRoundtripExpressionEnabled", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(project2, "expression_enabled").layers[0],
       match_name,
-    );
+    ), Property);
     expect(prop2.expression_enabled).toBe(false);
     expect(prop2.expression !== "").toBe(true);
   });
@@ -835,10 +839,10 @@ describe("TestRoundtripExpressionEnabled", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(project2, "expression_disabled").layers[0],
       match_name,
-    );
+    ), Property);
     expect(prop2.expression_enabled).toBe(true);
   });
 
@@ -866,10 +870,10 @@ describe("TestRoundtripExpressionEnabled", () => {
 
     const out = tmp_path.div("reenabled_expr.aep");
     project.save(out);
-    const prop2 = _find_property(
+    const prop2 = as_instance(_find_property(
       get_comp(parse_aep(out).project, "expression_disabled").layers[0],
       match_name,
-    );
+    ), Property);
     expect(prop2.expression).toBe("100");
     expect(prop2.expression_enabled).toBe(true);
   });
@@ -922,8 +926,8 @@ describe("TestKeyedEffectPointArcMetric", () => {
 
   /** Static method `_effects` in the Python class. */
   function _effects(project: Project): any {
-    const comp = project.compositions.find((c) => c.name === "MASK_LAYER_SPACE");
-    const layer = comp.layers.find((lyr) => lyr.name === "solid_3000x200");
+    const comp = as_instance(project.compositions.find((c) => c.name === "MASK_LAYER_SPACE"), CompItem);
+    const layer = as_instance(comp.layers.find((lyr) => lyr.name === "solid_3000x200"), Layer);
     return layer.__getitem__("ADBE Effect Parade");
   }
 
@@ -960,7 +964,7 @@ describe("TestRoundtripDimensionsSeparated", () => {
     const project = parse_aep(SAMPLES_DIR.div("transform_separated.aep")).project;
     const layer = project.compositions[0].layers[0];
     const prop = _find_property(layer, "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop.dimensions_separated).toBe(true);
 
     prop.dimensions_separated = false;
@@ -968,7 +972,7 @@ describe("TestRoundtripDimensionsSeparated", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(project2.compositions[0].layers[0], "ADBE Position");
+    const prop2 = as_instance(_find_property(project2.compositions[0].layers[0], "ADBE Position"), Property);
     expect(prop2.dimensions_separated).toBe(false);
   });
 
@@ -977,7 +981,7 @@ describe("TestRoundtripDimensionsSeparated", () => {
     const project = parse_aep(SAMPLES_DIR.div("transform_separated.aep")).project;
     const layer = project.compositions[0].layers[0];
     const prop = _find_property(layer, "ADBE Position");
-    expect(prop != null).toBe(true);
+    py_assert(prop != null);
     expect(prop.dimensions_separated).toBe(true);
 
     prop.dimensions_separated = false;
@@ -985,7 +989,7 @@ describe("TestRoundtripDimensionsSeparated", () => {
     project.save(out);
 
     const project2 = parse_aep(out).project;
-    const prop2 = _find_property(project2.compositions[0].layers[0], "ADBE Position");
+    const prop2 = as_instance(_find_property(project2.compositions[0].layers[0], "ADBE Position"), Property);
     expect(prop2.dimensions_separated).toBe(false);
   });
 });
@@ -1225,7 +1229,7 @@ describe("TestMaskMutations", () => {
 
   /** Static method `_parade_chunk_types` in the Python class. */
   function _parade_chunk_types(parade: PropertyGroup): string[] {
-    expect(parade._tdgp != null).toBe(true);
+    py_assert(parade._tdgp != null);
     return parade._tdgp.chunks.map((c) => py_or(getattr(c, "list_type", null), c.chunk_type));
   }
 
@@ -1296,7 +1300,7 @@ describe("TestMaskMutations", () => {
     expect(layer.masks != null).toBe(true);
     const new_prop = layer.masks.properties[0].duplicate();
     expect(new_prop instanceof MaskPropertyGroup).toBe(true);
-    expect(py_eq(new_prop.properties.map((c) => c.name), [
+    expect(py_eq(new_prop.properties.map((c: Property | PropertyGroup) => c.name), [
       "Mask Path",
       "Mask Feather",
       "Mask Opacity",
@@ -1316,15 +1320,15 @@ describe("TestMaskMutations", () => {
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.masks != null).toBe(true);
     expect(layer2.masks.properties.length).toBe(3);
-    expect(layer2.masks.properties.every((m) => m instanceof MaskPropertyGroup)).toBe(true);
+    expect(layer2.masks.properties.every((m: Property | PropertyGroup) => m instanceof MaskPropertyGroup)).toBe(true);
     // AE inserts the copy after the source and names it "Mask 3" (max id
     // + 1), with a matching unique mask id - not a duplicate "Mask 1"/id 1.
-    expect(py_eq(layer2.masks.properties.map((m) => m.name), [
+    expect(py_eq(layer2.masks.properties.map((m: Property | PropertyGroup) => m.name), [
       "Mask 1",
       "Mask 3",
       "Mask 2",
     ])).toBe(true);
-    const ids = layer2.masks.properties.map((m) => m._mkif.mask_id);
+    const ids = layer2.masks.properties.map((m: Property | PropertyGroup) => as_instance(m, MaskPropertyGroup)._mkif.mask_id);
     expect(py_eq(ids, [1, 3, 2])).toBe(true);
     expect(new Set(ids).size === ids.length).toBe(true);
   });
@@ -1353,12 +1357,12 @@ describe("TestMaskMutations", () => {
     const layer = app.project.compositions[0].layers[0];
     expect(layer.masks != null).toBe(true);
     layer.masks.properties[1].move_to(0);
-    expect(py_eq(layer.masks.properties.map((m) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
+    expect(py_eq(layer.masks.properties.map((m: Property | PropertyGroup) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.masks != null).toBe(true);
-    expect(py_eq(layer2.masks.properties.map((m) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
+    expect(py_eq(layer2.masks.properties.map((m: Property | PropertyGroup) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
   });
 });
 
@@ -1425,8 +1429,8 @@ describe("TestAddProperty", () => {
     expect(layer2.masks != null).toBe(true);
     const mask2 = layer2.masks.properties.at(-1)!;
     expect(mask2._tdgp != null).toBe(true);
-    const oms = mask2._tdgp.chunks.find((c) => getattr(c, "list_type", null) === "om-s");
-    expect(py_eq(oms.chunks.map((c) => getattr(c, "list_type", null)), ["tdbs", "omks"])).toBe(true);
+    const oms = mask2._tdgp.chunks.find((c: Chunk) => getattr(c, "list_type", null) === "om-s");
+    expect(py_eq(oms.chunks.map((c: Chunk) => getattr(c, "list_type", null)), ["tdbs", "omks"])).toBe(true);
     const path = mask2.__getitem__("ADBE Mask Shape");
     expect(path.expression).toBe("value");
     const [w, h] = layer2._mask_scale;
@@ -1449,7 +1453,7 @@ describe("TestAddProperty", () => {
     expect(layer.masks != null).toBe(true);
     const new_mask = layer.masks.add_property("ADBE Mask Atom");
     expect(new_mask instanceof MaskPropertyGroup).toBe(true);
-    expect(py_eq(new_mask.properties.map((c) => c.name), [
+    expect(py_eq(new_mask.properties.map((c: Property | PropertyGroup) => c.name), [
       "Mask Path",
       "Mask Feather",
       "Mask Opacity",
@@ -1468,7 +1472,7 @@ describe("TestAddProperty", () => {
     const new_mask = layer.masks.add_property("ADBE Mask Atom");
     expect(new_mask instanceof MaskPropertyGroup).toBe(true);
     expect(new_mask._tdgp != null).toBe(true);
-    expect(py_eq(new_mask._tdgp.chunks.map((c) => py_or(getattr(c, "list_type", null), c.chunk_type)), [
+    expect(py_eq(new_mask._tdgp.chunks.map((c: Chunk) => py_or(getattr(c, "list_type", null), c.chunk_type)), [
       "tdsb",
       "tdsn",
       "tdmn",
@@ -1487,7 +1491,7 @@ describe("TestAddProperty", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.masks != null).toBe(true);
-    expect(py_eq(layer2.masks.properties.map((m) => m.name), [
+    expect(py_eq(layer2.masks.properties.map((m: Property | PropertyGroup) => m.name), [
       "Mask 1",
       "Mask 2",
       "Mask 3",
@@ -1496,7 +1500,7 @@ describe("TestAddProperty", () => {
     expect(mask3 instanceof MaskPropertyGroup).toBe(true);
     expect(mask3.mask_mode).toBe(MaskMode.ADD);
     expect(mask3._mkif.mask_id).toBe(3);
-    expect(py_eq(mask3.properties.map((c) => c.name), [
+    expect(py_eq(mask3.properties.map((c: Property | PropertyGroup) => c.name), [
       "Mask Path",
       "Mask Feather",
       "Mask Opacity",
@@ -1525,17 +1529,17 @@ describe("TestAddProperty", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.masks != null).toBe(true);
-    expect(py_eq(layer2.masks.properties.map((m) => m.name), ["Mask 1"])).toBe(true);
+    expect(py_eq(layer2.masks.properties.map((m: Property | PropertyGroup) => m.name), ["Mask 1"])).toBe(true);
     // Parade must be written before the Transform Group, as AE does.
     const chunks = layer2._tdgp.chunks;
     const parade_idx = chunks.findIndex(
-      (c, i) =>
+      (c: Chunk, i: number) =>
         c.chunk_type === "tdmn" &&
         getattr(c, "value", null) === "ADBE Mask Parade" &&
         !c.synthetic,
     );
     const transform_idx = chunks.findIndex(
-      (c, i) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
     );
     expect(parade_idx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transform_idx >= 0).toBe(true);
@@ -1593,9 +1597,9 @@ describe("TestAddProperty", () => {
     const m_new = masks.add_property("ADBE Mask Atom");
     expect(m_new instanceof MaskPropertyGroup).toBe(true);
     const ids = masks.properties
-      .filter((m) => m instanceof MaskPropertyGroup)
-      .map((m) => m._mkif.mask_id);
-    const names = masks.properties.map((m) => m.name);
+      .filter((m: Property | PropertyGroup) => m instanceof MaskPropertyGroup)
+      .map((m: Property | PropertyGroup) => as_instance(m, MaskPropertyGroup)._mkif.mask_id);
+    const names = masks.properties.map((m: Property | PropertyGroup) => m.name);
     py_assert(new Set(ids).size === ids.length, `duplicate mask ids: ${repr(ids)}`);
     py_assert(new Set(names).size === names.length, `duplicate mask names: ${repr(names)}`);
     expect(m_new._mkif.mask_id).toBe(4); // max(1, 3) + 1, not count(2) + 1
@@ -1619,19 +1623,19 @@ describe("TestAddProperty", () => {
     expect(mask.roto_bezier).toBe(true);
     // The Mask Path now exposes the default full-frame rectangle (4
     // bezier vertices), not None, and exactly one Mask Shape is written.
-    const mask_path = mask.properties.find((p) => p.match_name === "ADBE Mask Shape");
+    const mask_path = mask.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Mask Shape");
     expect(mask_path instanceof Property).toBe(true);
     expect(mask_path.value instanceof Shape).toBe(true);
     expect(mask_path.value.vertices.length).toBe(4);
     expect(
-      mask._tdgp.chunks.filter((c) => getattr(c, "value", null) === "ADBE Mask Shape").length,
+      mask._tdgp.chunks.filter((c: Chunk) => getattr(c, "value", null) === "ADBE Mask Shape").length,
     ).toBe(1);
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const m2 = parse_aep(out).project.compositions[0].layers[0].masks.properties.at(-1)!;
     expect(m2 instanceof MaskPropertyGroup).toBe(true);
     expect(m2.roto_bezier).toBe(true);
-    const mp2 = m2.properties.find((p) => p.match_name === "ADBE Mask Shape");
+    const mp2 = m2.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Mask Shape");
     expect(mp2 instanceof Property).toBe(true);
     expect(mp2.value instanceof Shape).toBe(true);
     expect(mp2.value.vertices.length).toBe(4);
@@ -1700,7 +1704,7 @@ describe("TestAddProperty", () => {
     mask.roto_bezier = false;
     expect(mask.roto_bezier).toBe(false);
     expect(
-      mask._tdgp.chunks.some((c) => getattr(c, "value", null) === "ADBE Mask Shape"),
+      mask._tdgp.chunks.some((c: Chunk) => getattr(c, "value", null) === "ADBE Mask Shape"),
     ).toBe(false);
   });
 
@@ -1739,7 +1743,7 @@ describe("TestAddProperty", () => {
     expect(fx.name).toBe("Dropdown Menu Control");
     expect(fx.match_name.startsWith("Pseudo/@@")).toBe(true);
     expect(fx.match_name.length).toBe("Pseudo/@@".length + 22);
-    expect(py_eq(fx.properties.map((c) => c.name), ["Menu", "Compositing Options"])).toBe(true);
+    expect(py_eq(fx.properties.map((c: Property | PropertyGroup) => c.name), ["Menu", "Compositing Options"])).toBe(true);
     const menu = fx.properties[0];
     expect(menu instanceof Property).toBe(true);
     expect(menu.value).toBe(1);
@@ -1821,7 +1825,7 @@ describe("TestSetPropertyParameters", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
-    const fx2 = layer2.effects.properties.find((e) => e.match_name === fx.match_name);
+    const fx2 = layer2.effects.properties.find((e: Property | PropertyGroup) => e.match_name === fx.match_name);
     const menu2 = fx2.properties[0];
     expect(py_eq(menu2.property_parameters, ITEMS)).toBe(true);
     expect(menu2.nb_options).toBe(5);
@@ -1834,7 +1838,7 @@ describe("TestSetPropertyParameters", () => {
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
     const blur = layer.effects.properties[0];
-    const blur_dims = blur.properties.find((p) => p.name === "Blur Dimensions");
+    const blur_dims = blur.properties.find((p: Property | PropertyGroup) => p.name === "Blur Dimensions");
     expect(blur_dims.property_parameters != null).toBe(true);
     raises(ValueError, () => {
       blur_dims.property_parameters = ["A", "B"];
@@ -1905,7 +1909,7 @@ describe("TestAddEffect", () => {
     expect(layer.effects != null).toBe(true);
     const fx = layer.effects.add_property("Slider Control");
     expect(fx instanceof PropertyGroup).toBe(true);
-    expect(py_eq(fx.properties.map((c) => c.name), ["Slider", "Compositing Options"])).toBe(true);
+    expect(py_eq(fx.properties.map((c: Property | PropertyGroup) => c.name), ["Slider", "Compositing Options"])).toBe(true);
     const slider = fx.properties[0];
     expect(slider instanceof Property).toBe(true);
     expect(slider.value).toBe(0.0);
@@ -1952,16 +1956,16 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
-    expect(py_eq(layer2.effects.properties.map((e) => e.name), ["Slider Control"])).toBe(true);
+    expect(py_eq(layer2.effects.properties.map((e: Property | PropertyGroup) => e.name), ["Slider Control"])).toBe(true);
     const chunks = layer2._tdgp.chunks;
     const parade_idx = chunks.findIndex(
-      (c, i) =>
+      (c: Chunk, i: number) =>
         c.chunk_type === "tdmn" &&
         getattr(c, "value", null) === "ADBE Effect Parade" &&
         !c.synthetic,
     );
     const transform_idx = chunks.findIndex(
-      (c, i) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
     );
     expect(parade_idx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transform_idx >= 0).toBe(true);
@@ -1994,7 +1998,7 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
-    expect(py_eq(layer2.effects.properties.map((e) => e.name), [
+    expect(py_eq(layer2.effects.properties.map((e: Property | PropertyGroup) => e.name), [
       "Slider Control",
       "Color Control",
     ])).toBe(true);
@@ -2023,7 +2027,7 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
-    expect(py_eq(layer2.effects.properties.map((e) => e.name), [
+    expect(py_eq(layer2.effects.properties.map((e: Property | PropertyGroup) => e.name), [
       "Slider Control",
       "Color Control",
       "Slider Control 2",
@@ -2065,7 +2069,7 @@ describe("TestAddEffect", () => {
     expect(s3.name).toBe("Slider Control 3");
     parade.properties[1].remove(); // remove Slider Control 2
     const s_new = parade.add_property("ADBE Slider Control");
-    const names = parade.properties.map((p) => p.name);
+    const names = parade.properties.map((p: Property | PropertyGroup) => p.name);
     py_assert(new Set(names).size === names.length, `duplicate effect names: ${repr(names)}`);
     expect(s_new.name !== "Slider Control 3").toBe(true);
   });
@@ -2115,7 +2119,7 @@ describe("TestBakedBuiltinEffects", () => {
     expect(effect instanceof PropertyGroup).toBe(true);
     expect(effect.match_name).toBe("ADBE Geometry2");
     expect(effect.name).toBe("Transform");
-    const names = effect.properties.map((child) => child.name);
+    const names = effect.properties.map((child: Property | PropertyGroup) => child.name);
     expect(names.includes("Position")).toBe(true);
     expect(names.includes("Anchor Point")).toBe(true);
     expect(effect.__getitem__("Scale Height").value).toBe(100.0);
@@ -2221,7 +2225,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(AEP);
     const layer = get_layer(app.project, "effect_3dPoint");
-    const effect = layer.effects.properties.find((e) => e.name === "CC Sphere");
+    const effect = layer.effects.properties.find((e: Property | PropertyGroup) => e.name === "CC Sphere");
     const prop = effect.__getitem__("Light Color");
     expect(prop._is_live()).toBe(false);
     prop.value = [1.0, 0.0, 0.0, 1.0];
@@ -2230,7 +2234,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     app.project.save(out);
     const reloaded = get_layer(parse_aep(out).project, "effect_3dPoint");
     const written = reloaded.effects.properties
-      .find((e) => e.name === "CC Sphere")
+      .find((e: Property | PropertyGroup) => e.name === "CC Sphere")
       .__getitem__("Light Color");
     expect(written._is_live()).toBe(true);
     expect(py_eq(written.value, [1.0, 0.0, 0.0, 1.0])).toBe(true);
@@ -2244,7 +2248,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
      */
     const app = parse_aep(AEP);
     const layer = get_layer(app.project, "effect_3dPoint");
-    const effect = layer.effects.properties.find((e) => e.name === "CC Sphere");
+    const effect = layer.effects.properties.find((e: Property | PropertyGroup) => e.name === "CC Sphere");
     const prop = effect.__getitem__("Light Color");
     expect(prop._tdb4._spatial_static_flags).toBe(0x07);
     expect(prop.is_spatial).toBe(true);
@@ -2377,7 +2381,7 @@ describe("TestAddInstalledEffect", () => {
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const reparsed = parse_aep(out);
-    const comp2 = reparsed.project.compositions.find((c) => c.name === "60fps");
+    const comp2 = reparsed.project.compositions.find((c: CompItem) => c.name === "60fps");
     const effect2 = comp2.layers[0].effects.properties[0];
     for (const child of effect2.properties) {
       const tdb4 = getattr(child, "_tdb4", null);
@@ -2430,11 +2434,11 @@ describe("TestAddInstalledEffect", () => {
   });
 
   /** The Effect Parade's direct chunks, `engv` with its value. */
-  function _parade_layout(layer: any): string[] {
-    expect(layer.effects != null).toBe(true);
+  function _parade_layout(layer: Layer): string[] {
+    py_assert(layer.effects != null);
     [...layer.effects.properties];
     const tdgp = layer.effects._tdgp;
-    expect(tdgp != null).toBe(true);
+    py_assert(tdgp != null);
     return tdgp.chunks
       .filter((c) => c.chunk_type === "tdmn" || c.chunk_type === "engv")
       .map((c) =>
@@ -2494,7 +2498,7 @@ describe("TestAddInstalledEffect", () => {
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
     const added = layer.effects.add_property("ADBE Gaussian Blur 2");
-    const blur = added.properties.find((p) => p.match_name === "ADBE Gaussian Blur 2-0001");
+    const blur = added.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Gaussian Blur 2-0001");
     expect(blur.value).toBe(blur.default_value);
     expect(blur.default_value).toBe(25.0);
   });
@@ -2512,7 +2516,7 @@ describe("TestAddInstalledEffect", () => {
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
     const added = layer.effects.add_property("ADBE Gaussian Blur 2");
-    const blur = added.properties.find((p) => p.match_name === "ADBE Gaussian Blur 2-0001");
+    const blur = added.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Gaussian Blur 2-0001");
     expect(blur.keyframes.length).toBe(0);
     expect(blur.value).toBe(blur.default_value);
     expect(blur.default_value).toBe(25.0);
@@ -2533,7 +2537,7 @@ describe("TestAddInstalledEffect", () => {
     expect(layer.effects != null).toBe(true);
     const existing = [...layer.effects].filter((e) => e.match_name === "ADBE Gaussian Blur 2");
     const added = layer.effects.add_property("ADBE Gaussian Blur 2");
-    const blur = added.properties.find((p) => p.match_name === "ADBE Gaussian Blur 2-0001");
+    const blur = added.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Gaussian Blur 2-0001");
     expect(blur.expression).toBe("");
     expect(blur.expression_enabled).toBe(false);
     expect(blur.keyframes.length).toBe(0);
@@ -2541,7 +2545,7 @@ describe("TestAddInstalledEffect", () => {
     expect(blur.default_value).toBe(25.0);
     // The pre-existing expression-bearing instance is untouched.
     const first_blur = existing[0].properties.find(
-      (p) => p.match_name === "ADBE Gaussian Blur 2-0001",
+      (p: Property | PropertyGroup) => p.match_name === "ADBE Gaussian Blur 2-0001",
     );
     expect(first_blur.expression).toBe("42");
   });
@@ -2558,7 +2562,7 @@ describe("TestAddInstalledEffect", () => {
     const layer2 = parse_aep(out).project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
     const added = [...layer2.effects].filter((e) => e.match_name === "ADBE Gaussian Blur 2").at(-1)!;
-    const blur = added.properties.find((p) => p.match_name === "ADBE Gaussian Blur 2-0001");
+    const blur = added.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Gaussian Blur 2-0001");
     expect(blur.value).toBe(25.0);
   });
 });
@@ -2571,7 +2575,7 @@ describe("TestAddTextSelector", () => {
   /** Method `_selectors` in the Python class. */
   function _selectors(app: any): any {
     const comp = app.project.compositions[0];
-    const layer = comp.layers.find((lyr) => lyr.name === "Animate Me");
+    const layer = comp.layers.find((lyr: Layer) => lyr.name === "Animate Me");
     const animator = layer
       .__getitem__("ADBE Text Properties")
       .__getitem__("ADBE Text Animators").properties[0];
@@ -2607,7 +2611,7 @@ describe("TestAddTextSelector", () => {
     const sel = _selectors(parse_aep(AEP));
     const rng = sel.add_property("ADBE Text Selector");
     expect(rng instanceof PropertyGroup).toBe(true);
-    expect(py_eq(rng.properties.map((c) => c.name), [
+    expect(py_eq(rng.properties.map((c: Property | PropertyGroup) => c.name), [
       "Start",
       "End",
       "Offset",
@@ -2618,7 +2622,7 @@ describe("TestAddTextSelector", () => {
     ])).toBe(true);
     const advanced = rng.__getitem__("ADBE Text Range Advanced");
     expect(advanced instanceof PropertyGroup).toBe(true);
-    expect(py_eq(advanced.properties.map((c) => c.name), [
+    expect(py_eq(advanced.properties.map((c: Property | PropertyGroup) => c.name), [
       "Units",
       "Based On",
       "Mode",
@@ -2637,7 +2641,7 @@ describe("TestAddTextSelector", () => {
     const sel = _selectors(parse_aep(AEP));
     const wiggly = sel.add_property("ADBE Text Wiggly Selector");
     expect(wiggly instanceof PropertyGroup).toBe(true);
-    expect(py_eq(wiggly.properties.map((c) => c.name), [
+    expect(py_eq(wiggly.properties.map((c: Property | PropertyGroup) => c.name), [
       "Mode",
       "Max Amount",
       "Min Amount",
@@ -2651,7 +2655,7 @@ describe("TestAddTextSelector", () => {
     ])).toBe(true);
     const expr = sel.add_property("ADBE Text Expressible Selector");
     expect(expr instanceof PropertyGroup).toBe(true);
-    expect(py_eq(expr.properties.map((c) => c.name), ["Based On", "Amount"])).toBe(true);
+    expect(py_eq(expr.properties.map((c: Property | PropertyGroup) => c.name), ["Based On", "Amount"])).toBe(true);
     const amount = expr.properties[1];
     expect(amount instanceof Property).toBe(true);
     expect(py_eq(amount.value, [100.0, 100.0, 100.0])).toBe(true);
@@ -2679,7 +2683,7 @@ describe("TestAddTextSelector", () => {
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const sel2 = _selectors(parse_aep(out));
-    expect(py_eq(sel2.properties.map((s) => [s.name, s.match_name]), [
+    expect(py_eq(sel2.properties.map((s: Property | PropertyGroup) => [s.name, s.match_name]), [
       ["Range Selector 1", "ADBE Text Selector"],
       ["Wiggly Selector 1", "ADBE Text Wiggly Selector"],
       ["Expression Selector 1", "ADBE Text Expressible Selector"],
@@ -2693,7 +2697,7 @@ describe("TestAddTextSelector", () => {
     sel.add_property("ADBE Text Wiggly Selector");
     expect(sel.properties.length).toBe(2);
     sel.properties[1].remove();
-    expect(py_eq(sel.properties.map((s) => s.match_name), ["ADBE Text Selector"])).toBe(true);
+    expect(py_eq(sel.properties.map((s: Property | PropertyGroup) => s.match_name), ["ADBE Text Selector"])).toBe(true);
   });
 });
 
@@ -2705,7 +2709,7 @@ describe("TestAddTextAnimator", () => {
   /** Method `_animators` in the Python class. */
   function _animators(app: any): PropertyGroup {
     const comp = app.project.compositions[0];
-    const layer = comp.layers.find((lyr) => lyr instanceof TextLayer);
+    const layer = comp.layers.find((lyr: Layer) => lyr instanceof TextLayer);
     const anims = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators");
     expect(anims instanceof PropertyGroup).toBe(true);
     return anims;
@@ -2729,7 +2733,7 @@ describe("TestAddTextAnimator", () => {
     expect(a1.name).toBe("Animator 1");
     expect(a1.can_set_enabled).toBe(true);
     expect(a1.is_modified).toBe(false);
-    expect(py_eq(a1.properties.map((c) => [c.name, c.match_name]), [
+    expect(py_eq(a1.properties.map((c: Property | PropertyGroup) => [c.name, c.match_name]), [
       ["Selectors", "ADBE Text Selectors"],
       ["Properties", "ADBE Text Animator Properties"],
     ])).toBe(true);
@@ -2789,7 +2793,7 @@ describe("TestAddAnimatorProperty", () => {
   /** Method `_props` in the Python class. */
   function _props(app: any): PropertyGroup {
     const comp = app.project.compositions[0];
-    const layer = comp.layers.find((lyr) => lyr instanceof TextLayer);
+    const layer = comp.layers.find((lyr: Layer) => lyr instanceof TextLayer);
     const anims = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators");
     const pg = anims.add_property("ADBE Text Animator").__getitem__("ADBE Text Animator Properties");
     expect(pg instanceof PropertyGroup).toBe(true);
@@ -2855,17 +2859,17 @@ describe("TestAddAnimatorProperty", () => {
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const layer2 = parse_aep(out).project.compositions[0].layers.find(
-      (lyr) => lyr instanceof TextLayer,
+      (lyr: Layer) => lyr instanceof TextLayer,
     );
     const pg2 = layer2
       .__getitem__("ADBE Text Properties")
       .__getitem__("ADBE Text Animators")
       .properties[0].__getitem__("ADBE Text Animator Properties");
     expect(pg2.properties.length).toBe(103);
-    const op2 = pg2.properties.find((p) => p.match_name === "ADBE Text Opacity");
+    const op2 = pg2.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Text Opacity");
     expect(op2 instanceof Property).toBe(true);
     expect(op2.value).toBe(40.0);
-    const fill2 = pg2.properties.find((p) => p.match_name === "ADBE Text Fill Color");
+    const fill2 = pg2.properties.find((p: Property | PropertyGroup) => p.match_name === "ADBE Text Fill Color");
     expect(fill2 instanceof Property).toBe(true);
     expect(py_eq(fill2.value, [0.0, 1.0, 0.0, 1.0])).toBe(true);
   });
@@ -2929,12 +2933,12 @@ describe("TestAddShapeElement", () => {
     const rect = contents.add_property("ADBE Vector Shape - Rect");
     expect(rect instanceof PropertyGroup).toBe(true);
     expect(rect._tdgp != null).toBe(true);
-    expect(py_eq(rect._tdgp.chunks.map((c) => py_or(getattr(c, "list_type", null), c.chunk_type)), [
+    expect(py_eq(rect._tdgp.chunks.map((c: Chunk) => py_or(getattr(c, "list_type", null), c.chunk_type)), [
       "tdsb",
       "tdsn",
       "tdmn",
     ])).toBe(true);
-    expect(py_eq(rect.properties.map((c) => c.name), [
+    expect(py_eq(rect.properties.map((c: Property | PropertyGroup) => c.name), [
       "Shape Direction",
       "Size",
       "Position",
@@ -2983,10 +2987,10 @@ describe("TestAddShapeElement", () => {
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const layer2 = comp2.layers.find((lyr) => lyr instanceof ShapeLayer);
+    const layer2 = comp2.layers.find((lyr: Layer) => lyr instanceof ShapeLayer);
     const contents2 = layer2.__getitem__("ADBE Root Vectors Group");
     expect(contents2 instanceof PropertyGroup).toBe(true);
-    expect(py_eq(contents2.properties.map((e) => e.name), [
+    expect(py_eq(contents2.properties.map((e: Property | PropertyGroup) => e.name), [
       "Group 1",
       "Rectangle Path 1",
       "Fill 1",
@@ -2996,7 +3000,7 @@ describe("TestAddShapeElement", () => {
     expect(group2 instanceof PropertyGroup).toBe(true);
     const inner2 = group2.__getitem__("ADBE Vectors Group");
     expect(inner2 instanceof PropertyGroup).toBe(true);
-    expect(py_eq(inner2.properties.map((e) => e.name), ["Polystar Path 1"])).toBe(true);
+    expect(py_eq(inner2.properties.map((e: Property | PropertyGroup) => e.name), ["Polystar Path 1"])).toBe(true);
   });
 
   test("test_add_fill_then_set_color", () => {
@@ -3008,18 +3012,18 @@ describe("TestAddShapeElement", () => {
     const [app, contents] = _new_contents();
     const fill = contents.add_property("ADBE Vector Graphic - Fill");
     expect(fill instanceof PropertyGroup).toBe(true);
-    const color = fill.properties.find((p) => p.name === "Color");
+    const color = fill.properties.find((p: Property | PropertyGroup) => p.name === "Color");
     expect(color instanceof Property).toBe(true);
     color.value = [0.0, 1.0, 0.0, 1.0];
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const layer2 = comp2.layers.find((lyr) => lyr instanceof ShapeLayer);
+    const layer2 = comp2.layers.find((lyr: Layer) => lyr instanceof ShapeLayer);
     const contents2 = layer2.__getitem__("ADBE Root Vectors Group");
     expect(contents2 instanceof PropertyGroup).toBe(true);
     const fill2 = contents2.properties[0];
     expect(fill2 instanceof PropertyGroup).toBe(true);
-    const color2 = fill2.properties.find((p) => p.name === "Color");
+    const color2 = fill2.properties.find((p: Property | PropertyGroup) => p.name === "Color");
     expect(color2 instanceof Property).toBe(true);
     expect(py_eq(color2.value, [0.0, 1.0, 0.0, 1.0])).toBe(true);
   });
@@ -3049,14 +3053,14 @@ describe("TestAddShapeElement", () => {
     for (const [match_name, child_names] of expected) {
       const el = contents.add_property(match_name);
       expect(el instanceof PropertyGroup).toBe(true);
-      expect(py_eq(el.properties.map((c) => c.name), child_names)).toBe(true);
+      expect(py_eq(el.properties.map((c: Property | PropertyGroup) => c.name), child_names)).toBe(true);
     }
 
     const wiggler = contents.add_property("ADBE Vector Filter - Wiggler");
     expect(wiggler instanceof PropertyGroup).toBe(true);
     const transform = wiggler.__getitem__("ADBE Vector Wiggler Transform");
     expect(transform instanceof PropertyGroup).toBe(true);
-    expect(py_eq(transform.properties.map((c) => c.name), [
+    expect(py_eq(transform.properties.map((c: Property | PropertyGroup) => c.name), [
       "Anchor Point",
       "Position",
       "Scale",
@@ -3089,7 +3093,7 @@ describe("TestAddShapeElement", () => {
     const [_app, contents] = _new_contents();
     const path = contents.add_property("ADBE Vector Shape - Group");
     expect(path instanceof PropertyGroup).toBe(true);
-    expect(py_eq(path.properties.map((c) => c.name), ["Shape Direction", "Path"])).toBe(true);
+    expect(py_eq(path.properties.map((c: Property | PropertyGroup) => c.name), ["Shape Direction", "Path"])).toBe(true);
     const path_prop = path.properties[1];
     expect(path_prop instanceof Property).toBe(true);
     expect(path_prop.is_spatial).toBe(true);
@@ -3135,7 +3139,7 @@ describe("TestAddShapeElement", () => {
     expect(shph.open).toBe(false);
 
     const comp2 = reparsed.compositions[0];
-    const layer2 = comp2.layers.find((lyr) => lyr instanceof ShapeLayer);
+    const layer2 = comp2.layers.find((lyr: Layer) => lyr instanceof ShapeLayer);
     const contents2 = layer2.__getitem__("ADBE Root Vectors Group");
     expect(contents2 instanceof PropertyGroup).toBe(true);
     const path2 = contents2.properties[0];
@@ -3158,7 +3162,7 @@ describe("TestAddShapeElement", () => {
     expect(group instanceof PropertyGroup).toBe(true);
     const transform = group.__getitem__("ADBE Vector Transform Group");
     expect(transform instanceof PropertyGroup).toBe(true);
-    const pos = transform.properties.find((p) => p.name === "Position");
+    const pos = transform.properties.find((p: Property | PropertyGroup) => p.name === "Position");
     expect(pos instanceof Property).toBe(true);
     pos.value = [200.0, 160.0];
     expect(pos._tdb4 != null).toBe(true);
@@ -3170,12 +3174,12 @@ describe("TestAddShapeElement", () => {
     const out = tmp_path.div("vpos.aep");
     app.project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const layer2 = comp2.layers.find((lyr) => lyr instanceof ShapeLayer);
+    const layer2 = comp2.layers.find((lyr: Layer) => lyr instanceof ShapeLayer);
     const group2 = layer2.__getitem__("ADBE Root Vectors Group").properties[0];
     expect(group2 instanceof PropertyGroup).toBe(true);
     const pos2 = group2
       .__getitem__("ADBE Vector Transform Group")
-      .properties.find((p) => p.name === "Position");
+      .properties.find((p: Property | PropertyGroup) => p.name === "Position");
     expect(py_eq(pos2.value, [200.0, 160.0])).toBe(true);
   });
 });
@@ -3222,7 +3226,7 @@ describe("TestRoundtripProxyBody", () => {
 
   /** Find a synthesized effect property by match name. */
   function _find_synthesized_effect_prop(layer: Layer, effect_index: number, match_name: string): Property {
-    const effect: any = layer.effects.properties[effect_index];
+    const effect: any = as_instance(layer.effects, PropertyGroup).properties[effect_index];
     expect(effect instanceof PropertyGroup).toBe(true);
     for (const prop of effect.properties) {
       if (prop instanceof Property && prop.match_name === match_name) {
@@ -3318,7 +3322,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
-    expect(opacity != null).toBe(true);
+    py_assert(opacity != null);
     _deanimate(opacity);
     expect(opacity.has_min).toBe(true);
     expect(opacity.min_value).toBe(0);
@@ -3332,7 +3336,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
-    expect(opacity != null).toBe(true);
+    py_assert(opacity != null);
     _deanimate(opacity);
     expect(opacity.has_max).toBe(true);
     expect(opacity.max_value).toBe(100);
@@ -3346,7 +3350,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
-    expect(opacity != null).toBe(true);
+    py_assert(opacity != null);
     _deanimate(opacity);
     opacity.value = 50.0;
     expect(opacity.value).toBe(50.0);
@@ -3357,7 +3361,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_3D_position");
     const position = _find_property(layer, "ADBE Position");
-    expect(position != null).toBe(true);
+    py_assert(position != null);
     _deanimate(position);
     expect(position.dimensions).toBe(3);
     raises(ValueError, () => {
@@ -3370,7 +3374,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
-    expect(opacity != null).toBe(true);
+    py_assert(opacity != null);
     _deanimate(opacity);
     expect(opacity.dimensions).toBe(1);
     raises(TypeError_, () => {
@@ -3383,7 +3387,7 @@ describe("TestValueValidation", () => {
     const project = parse_aep(SAMPLES_DIR.div("property_types.aep")).project;
     const layer = get_layer(project, "property_3D_position");
     const position = _find_property(layer, "ADBE Position");
-    expect(position != null).toBe(true);
+    py_assert(position != null);
     _deanimate(position);
     expect(position.dimensions).toBe(3);
     raises(TypeError_, () => {
@@ -3406,7 +3410,7 @@ describe("TestValueInPlaceMutation", () => {
     const project = parse_aep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const layer = project.compositions[0].layers[0];
     const pos = _find_property(layer, "ADBE Position");
-    expect(pos != null).toBe(true);
+    py_assert(pos != null);
     const original = [...pos.value];
 
     const v = pos.value;
@@ -3417,7 +3421,7 @@ describe("TestValueInPlaceMutation", () => {
     project.save(out);
     const project2 = parse_aep(out).project;
     const pos2 = _find_property(project2.compositions[0].layers[0], "ADBE Position");
-    expect(pos2 != null).toBe(true);
+    py_assert(pos2 != null);
     expect(approx(pos2.value[0], original[0] + 123.0)).toBe(true);
   });
 });
@@ -3460,7 +3464,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
 
   test("test_set_time_remapping_value", () => {
     const tr = _find_descendant(_layer(), "ADBE Time Remapping");
-    expect(tr != null && !py_bool(tr.keyframes)).toBe(true);
+    py_assert(tr != null && !py_bool(tr.keyframes));
     tr.value = 5.0; // used to raise "must be <= 0.0"
     expect(approx(tr.value, 5.0)).toBe(true);
     // Read bounds still match ExtendScript (hasMax True, maxValue 0).
@@ -3470,7 +3474,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
 
   test("test_set_separated_position_dimension", () => {
     const px = _find_descendant(_layer(), "ADBE Position_0");
-    expect(px != null && !py_bool(px.keyframes)).toBe(true);
+    py_assert(px != null && !py_bool(px.keyframes));
     px.value = -50.0; // used to raise; only 0.0 was accepted
     expect(approx(px.value, -50.0)).toBe(true);
     // ExtendScript reports no bounds for separated Position dimensions.
@@ -3480,7 +3484,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
 
   test("test_set_scale_value", () => {
     const scale = _find_descendant(_layer(), "ADBE Scale");
-    expect(scale != null && !py_bool(scale.keyframes)).toBe(true);
+    py_assert(scale != null && !py_bool(scale.keyframes));
     scale.value = [150.0, 150.0, 150.0];
     expect(approx(scale.value, [150.0, 150.0, 150.0])).toBe(true);
     expect(scale.has_max).toBe(false);
@@ -3488,7 +3492,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
 
   test("test_real_bounds_still_enforced", () => {
     const op = _find_descendant(_layer(), "ADBE Opacity");
-    expect(op != null).toBe(true);
+    py_assert(op != null);
     expect(py_eq([op.min_value, op.max_value], [0, 100])).toBe(true);
     raises(ValueError, () => {
       op.value = 150.0;
@@ -3514,7 +3518,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
         break;
       }
     }
-    expect(falloff != null).toBe(true);
+    py_assert(falloff != null);
     expect(falloff.min_value).toBe(0);
     raises(ValueError, () => {
       falloff.value = -5.0;
@@ -3613,9 +3617,9 @@ describe("TestIsInterpolationTypeValid", () => {
 
   test("test_source_text_is_hold_only", () => {
     const project = parse_aep(SAMPLES_DIR.parent.div("text", "text_ranges.aep")).project;
-    const layer = project.compositions
-      .flatMap((comp) => comp.layers)
-      .find((ly) => ly instanceof TextLayer);
+    const layer = as_instance(project.compositions
+      .flatMap((comp: CompItem) => comp.layers)
+      .find((ly: Layer) => ly instanceof TextLayer), TextLayer);
     const prop = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Document");
     expect(prop instanceof Property).toBe(true);
     expect(py_eq(_table(prop), [false, false, true])).toBe(true);
@@ -3690,7 +3694,7 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
   test.each(hold_only_rows)("test_hold_only_property_rejects_non_hold[%#]", (side, interp) => {
     const kf = _marker_keyframe();
     raises(ValueError, () => {
-      kf[side] = interp;
+      setattr(kf, side, interp);
     }, "not a valid interpolation type");
     expect(getattr(kf, side)).toBe(KeyframeInterpolationType.HOLD);
   });
@@ -3698,7 +3702,7 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
   test.each(SIDES)("test_hold_only_property_accepts_hold[%#]", (side) => {
     // A no-op rewrite of an AE-written marker keyframe must not raise.
     const kf = _marker_keyframe();
-    kf[side] = KeyframeInterpolationType.HOLD;
+    setattr(kf, side, KeyframeInterpolationType.HOLD);
     expect(getattr(kf, side)).toBe(KeyframeInterpolationType.HOLD);
   });
 
@@ -3716,18 +3720,18 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
   test.each(normal_rows)("test_normal_property_accepts_every_type[%#]", (side, interp) => {
     const project = parse_aep(SAMPLES_DIR.div("keyframe_interpolation.aep")).project;
     const layer = get_comp(project, "keyframe_LINEAR").layers[0];
-    const prop = _find_property(layer, "ADBE Position");
-    prop.keyframes[0][side] = interp;
+    const prop = as_instance(_find_property(layer, "ADBE Position"), Property);
+    setattr(prop.keyframes[0], side, interp);
     expect(getattr(prop.keyframes[0], side)).toBe(interp);
   });
 
   test.each(SIDES)("test_out_of_enum_value_rejected[%#]", (side) => {
     const kf = _marker_keyframe();
     raises(ValueError, () => {
-      kf[side] = 9999;
+      setattr(kf, side, 9999);
     });
     raises(TypeError_, () => {
-      kf[side] = "hold";
+      setattr(kf, side, "hold");
     });
   });
 });
@@ -3919,7 +3923,7 @@ describe("TestDeanimateMatchesAe", () => {
 
   /** Method `_prop` in the Python class. */
   function _prop(project: Project, path: string[]): Property {
-    const layer = get_comp(project, "type_camera").layers.find((lyr) => lyr.name === "XF");
+    const layer = get_comp(project, "type_camera").layers.find((lyr: Layer) => lyr.name === "XF");
     let prop: any = layer;
     for (const match_name of path) {
       prop = prop.__getitem__(match_name);
@@ -3938,7 +3942,7 @@ describe("TestDeanimateMatchesAe", () => {
     const prop2 = _prop(parse_aep(out).project, path);
     const [tdb4_hex, cdat_hex] = getitem(_AE_STATIC, tkey(...path));
     expect(bytes_.hex(prop2._tdb4.tobytes())).toBe(tdb4_hex);
-    expect(prop2._cdat != null).toBe(true);
+    py_assert(prop2._cdat != null);
     expect(bytes_.hex(prop2._cdat.tobytes())).toBe(cdat_hex);
   });
 
@@ -3950,7 +3954,7 @@ describe("TestDeanimateMatchesAe", () => {
      * bit, value-hint/cvot bytes and category of the animated state).
      */
     const project = parse_project_fresh(LAYER_SAMPLES_DIR.div("shape_source_rect.aep"));
-    const layer = get_comp(project, "SHAPE_RECTS").layers.find((lyr) => lyr.name === "animated_rect");
+    const layer = get_comp(project, "SHAPE_RECTS").layers.find((lyr: Layer) => lyr.name === "animated_rect");
     const group = layer.__getitem__("ADBE Root Vectors Group").__getitem__("ADBE Vector Group");
     const pos = group
       .__getitem__("ADBE Vector Transform Group")
@@ -3970,7 +3974,7 @@ describe("TestDeanimateMatchesAe", () => {
     const out = tmp_path.div("shape_deanimated.aep");
     project.save(out);
     const layer2 = get_comp(parse_aep(out).project, "SHAPE_RECTS").layers.find(
-      (lyr) => lyr.name === "animated_rect",
+      (lyr: Layer) => lyr.name === "animated_rect",
     );
     const group2 = layer2.__getitem__("ADBE Root Vectors Group").__getitem__("ADBE Vector Group");
     const pos2 = group2
@@ -4181,7 +4185,7 @@ describe("TestKeyPathlessMask", () => {
   /** Static method `_mask_path` in the Python class. */
   function _mask_path(project: any): any {
     const comp = get_comp(project, "Comp 1");
-    const layer = comp.layers.find((layer) => layer.name === "Gray Solid 1");
+    const layer = comp.layers.find((layer: Layer) => layer.name === "Gray Solid 1");
     return layer.masks.properties[0].property("ADBE Mask Shape");
   }
 
@@ -4210,7 +4214,7 @@ describe("TestKeyPathlessMask", () => {
 
 /** The serialized `LIST:om-s` of a mask's stored Mask Shape. */
 function _mask_shape_bytes(mask: MaskPropertyGroup): Uint8Array {
-  expect(mask._tdgp != null).toBe(true);
+  py_assert(mask._tdgp != null);
   const chunks = mask._tdgp.chunks;
   const index = chunks.findIndex(
     (c) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Mask Shape",
@@ -4231,8 +4235,8 @@ describe("TestMaskLayerSpaceWrites", () => {
   /** Static method `_masks` in the Python class. */
   function _masks(project: any, layer_name: string): Map<string, MaskPropertyGroup> {
     const comp = get_comp(project, "MASK_LAYER_SPACE");
-    const layer = comp.layers.find((lay) => lay.name === layer_name);
-    return new Map(layer.masks.properties.map((m) => [m.name, m] as [string, MaskPropertyGroup]));
+    const layer = comp.layers.find((lay: Layer) => lay.name === layer_name);
+    return new Map(layer.masks.properties.map((m: Property | PropertyGroup) => [m.name, m] as [string, MaskPropertyGroup]));
   }
 
   test("test_reading_unstored_paths_writes_nothing", () => {
@@ -4302,9 +4306,9 @@ describe("TestRotoBezierWrites", () => {
   function _keyed(project: any): any {
     const comp = get_comp(project, "ROTO");
     return comp.layers
-      .flatMap((layer) => layer.masks.properties.map((m) => [layer, m] as const))
-      .filter(([, m]) => m.name === "keyed")
-      .map(([, m]) => m.property("ADBE Mask Shape"))[0];
+      .flatMap((layer: Layer) => as_instance(layer.masks, PropertyGroup).properties.map((m) => [layer, m] as const))
+      .filter(([, m]: readonly [Layer, Property | PropertyGroup]) => m.name === "keyed")
+      .map(([, m]: readonly [Layer, Property | PropertyGroup]) => as_instance(m, MaskPropertyGroup).property("ADBE Mask Shape"))[0];
   }
 
   test("test_reading_derived_tangents_writes_nothing", () => {
@@ -4338,7 +4342,7 @@ describe("TestRotoBezierWrites", () => {
     const out = tmp_path.div("keyed.aep");
     project.save(out);
     const reparsed = _keyed(parse_project_fresh(out));
-    const value = reparsed.keyframes.find((kf) => kf.time === 0.5).value;
+    const value = reparsed.keyframes.find((kf: Keyframe) => kf.time === 0.5).value;
     expect(approx(value.vertices[0], [200.0, 150.0], { abs: 1e-3 })).toBe(true);
     expect(approx(value._stored_tangents(-1)[0], [-15.0, 5.0], { abs: 1e-3 })).toBe(true);
     expect(approx(value._stored_tangents(1)[0], [20.0, -10.0], { abs: 1e-3 })).toBe(true);

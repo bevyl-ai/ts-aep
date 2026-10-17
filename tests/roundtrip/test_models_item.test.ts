@@ -5,12 +5,14 @@ import { getattr, Path, StopIteration } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { Label } from "../../src/py_aep/enums/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { get_comp } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "item");
 const COMP_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "composition");
@@ -163,7 +165,7 @@ describe("TestProxySource", () => {
       ];
       for (const [name, assigned] of rows) {
         const item = _find(proxy_project_, name, cls);
-        expect([name, cls.name, item._idta.tobytes()[0x38]]).toEqual([name, cls.name, assigned]);
+        expect([name, cls.name, as_instance(item._idta, IdtaChunk).tobytes()[0x38]]).toEqual([name, cls.name, assigned]);
       }
     }
   });
@@ -178,7 +180,7 @@ describe("TestProxySource", () => {
     proxy_project_.save(out);
     const item2 = _find(parse_aep(out).project, "proxy_enabled", FootageItem);
     expect(item2.use_proxy).toBe(false);
-    expect(item2._idta.tobytes()[0x38]).toBe(1);
+    expect(as_instance(item2._idta, IdtaChunk).tobytes()[0x38]).toBe(1);
   });
 
   test("test_set_proxy_then_disable", () => {
@@ -187,7 +189,7 @@ describe("TestProxySource", () => {
     const item = _find(proxy_project_, "no_proxy", CompItem);
     item.set_proxy(SAMPLES_DIR.parent.parent.div("assets", "image_with_alpha.png"));
     item.use_proxy = false;
-    expect(item._idta.tobytes()[0x38]).toBe(1);
+    expect(as_instance(item._idta, IdtaChunk).tobytes()[0x38]).toBe(1);
   });
 
   test("test_set_proxy_to_none_clears_assigned_byte", () => {
@@ -195,6 +197,6 @@ describe("TestProxySource", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_disabled", FootageItem);
     item.set_proxy_to_none();
-    expect(item._idta.tobytes()[0x38]).toBe(0);
+    expect(as_instance(item._idta, IdtaChunk).tobytes()[0x38]).toBe(0);
   });
 });

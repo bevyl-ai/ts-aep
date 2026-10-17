@@ -120,7 +120,9 @@ describe("TestComment", () => {
   test("test_emptying_drops_chunk_and_flag", () => {
     const project = parse_project_fresh(SAMPLES.div("versions", "ae2026", "complete.aep"));
     const comp = project.compositions.find((c: any) => c.name === "Main_Comp");
+    if (comp == null) throw new Error("no comp 'Main_Comp'");
     const layer = comp.layers.find((ly: any) => ly.name === "Null_Controller");
+    if (layer == null) throw new Error("no layer 'Null_Controller'");
     expect(layer.comment).toBe("Parent null for shapes");
     layer.comment = "";
     expect(layer._cmta == null).toBe(true);
@@ -133,7 +135,9 @@ describe("TestComment", () => {
   test("test_unflagged_comment_reads_empty", () => {
     const project = parse_project_fresh(SAMPLES.div("versions", "ae2026", "complete.aep"));
     const comp = project.compositions.find((c: any) => c.name === "Main_Comp");
+    if (comp == null) throw new Error("no comp 'Main_Comp'");
     const layer = comp.layers.find((ly: any) => ly.name === "Null_Controller");
+    if (layer == null) throw new Error("no layer 'Null_Controller'");
     layer._ldta.has_comment = false;
     expect(layer.comment).toBe("");
   });
