@@ -10,6 +10,9 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
 import { psd_comp_layer_styles, psd_footage_dimensions, psd_footage_layer_styles } from "../../src/py_aep/models/preferences.ts";
 import { recursive_find } from "../../src/py_aep/binary/utils.ts";
+import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
+import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
+import { as_instance } from "../helpers.ts";
 import { _RESIZE_TO_STRINGS, build_resize_to_strings } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { PrefsFile, decode_pref_bool, decode_pref_number, decode_pref_string, find_prefs_file } from "../../src/py_aep/parsers/prefs.ts";
 
@@ -119,6 +122,7 @@ describe("TestPrefsFileParsing", () => {
     const prefs = PrefsFile.from_text(_INDEP_PREFS);
     const raw = prefs.get_raw("Strings Section", "Long Value");
     expect(raw != null).toBe(true);
+    if (raw == null) throw new Error("no raw 'Long Value' pref");
     expect(decode_pref_string(raw)).toBe("part one and part two");
   });
 
@@ -313,11 +317,11 @@ describe("TestCreationWiring", () => {
     const prefs_dir = prefs_dir_fixture(make_tmp_path());
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(comp._idta.label).toBe(9);
-    expect(app.project.root_folder.add_folder("F")._idta.label).toBe(12);
+    expect(as_instance(comp._idta, IdtaChunk).label).toBe(9);
+    expect(as_instance(app.project.root_folder.add_folder("F")._idta, IdtaChunk).label).toBe(12);
     const solid = comp.add_solid([1.0, 0.0, 0.0]);
     expect(solid._ldta.label).toBe(4);
-    expect(solid.source._idta.label).toBe(4);
+    expect(as_instance(as_instance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(4);
     expect(comp.add_null()._ldta.label).toBe(6);
     expect(comp.add_text("hi")._ldta.label).toBe(3);
     expect(comp.add_shape()._ldta.label).toBe(13);
@@ -329,11 +333,11 @@ describe("TestCreationWiring", () => {
     // Probed in AE 2026 with factory label preferences.
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(comp._idta.label).toBe(15);
-    expect(app.project.root_folder.add_folder("F")._idta.label).toBe(2);
+    expect(as_instance(comp._idta, IdtaChunk).label).toBe(15);
+    expect(as_instance(app.project.root_folder.add_folder("F")._idta, IdtaChunk).label).toBe(2);
     const solid = comp.add_solid([1.0, 0.0, 0.0]);
     expect(solid._ldta.label).toBe(1);
-    expect(solid.source._idta.label).toBe(1);
+    expect(as_instance(as_instance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(1);
     expect(comp.add_null()._ldta.label).toBe(1);
     expect(comp.add_text("hi")._ldta.label).toBe(1);
     expect(comp.add_shape()._ldta.label).toBe(8);
@@ -346,7 +350,7 @@ describe("TestCreationWiring", () => {
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
     app.preferences.set_pref_as_number("Label Preference Indices Section 5", "Comp Label Index 2", 16, INDEP);
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(comp._idta.label).toBe(16);
+    expect(as_instance(comp._idta, IdtaChunk).label).toBe(16);
   });
 
   test("test_solids_folder_name_from_prefs", () => {
@@ -741,7 +745,9 @@ describe("TestTextStyleSheet", () => {
     const prefs = _text_style_dir(tmp_path, _CUSTOM_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
-    const td = comp.add_text("probe").text.__getitem__("ADBE Text Document").value;
+    const text = comp.add_text("probe").text;
+    if (text == null) throw new Error("text layer has no text group");
+    const td = text.__getitem__("ADBE Text Document").value;
     expect(td.font).toBe("ArialMT");
     expect(approx(td.font_size, 48.0)).toBe(true);
     expect(approx(td.fill_color, [0.25, 0.5, 0.75])).toBe(true);
@@ -789,7 +795,9 @@ describe("TestTextStyleSheet", () => {
     const prefs = _text_style_dir(tmp_path, _FACTORY_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
-    const td = comp.add_text("probe").text.__getitem__("ADBE Text Document").value;
+    const text = comp.add_text("probe").text;
+    if (text == null) throw new Error("text layer has no text group");
+    const td = text.__getitem__("ADBE Text Document").value;
     expect(td.font).toBe("MyriadPro-Regular");
     expect(approx(td.font_size, 36.0)).toBe(true);
     expect(approx(td.fill_color, [0.921569, 0.921569, 0.921569], { abs: 1e-5 })).toBe(true);
@@ -801,7 +809,9 @@ describe("TestTextStyleSheet", () => {
     const prefs = _text_style_dir(tmp_path, _CUSTOM_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
-    const td = comp.add_box_text([80.0, 40.0], "boxed").text.__getitem__("ADBE Text Document").value;
+    const text = comp.add_box_text([80.0, 40.0], "boxed").text;
+    if (text == null) throw new Error("text layer has no text group");
+    const td = text.__getitem__("ADBE Text Document").value;
     expect(td.font).toBe("ArialMT");
     expect(approx(td.font_size, 48.0)).toBe(true);
   });

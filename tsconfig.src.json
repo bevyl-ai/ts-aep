@@ -1,10 +1,6 @@
 {
-  // The library itself is strict (bottom-up typing pass); tests and tools are not yet.
+  // The library alone, for the per-layer loose-type report and the build.
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true
-  },
   "include": ["src"],
   "exclude": []
 }

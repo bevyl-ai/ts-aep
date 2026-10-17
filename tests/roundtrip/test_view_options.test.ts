@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, isclose } from "../../src/pyrt/index.ts";
+import { Path, TypeError_, ValueError, isclose, py_assert } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse_app_fresh } from "../helpers.ts";
 
@@ -26,7 +26,7 @@ const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "
 /** Parse a project and return the ViewOptions of the active viewer's first view. */
 function _get_active_view_options(aep_path: Path): ViewOptions {
   const app = parse_app_fresh(aep_path);
-  expect(app.active_viewer != null).toBe(true);
+  py_assert(app.active_viewer != null);
   expect(app.active_viewer.type).toBe(ViewerType.VIEWER_COMPOSITION);
   expect(app.active_viewer.views.length >= 1).toBe(true);
   return app.active_viewer.views[0].options;
@@ -35,7 +35,7 @@ function _get_active_view_options(aep_path: Path): ViewOptions {
 /** Parse a non-cached app and return (app, active view options). */
 function _get_active_app_and_options(aep_path: Path): [Application, ViewOptions] {
   const app = parse_aep(aep_path);
-  expect(app.active_viewer != null).toBe(true);
+  py_assert(app.active_viewer != null);
   expect(app.active_viewer.views.length >= 1).toBe(true);
   return [app, app.active_viewer.views[0].options];
 }
@@ -45,7 +45,7 @@ function _roundtrip_options(app: Application, tmp_path: Path): ViewOptions {
   const out = tmp_path.div("modified.aep");
   app.project.save(out);
   const app2 = parse_aep(out);
-  expect(app2.active_viewer != null).toBe(true);
+  py_assert(app2.active_viewer != null);
   expect(app2.active_viewer.views.length >= 1).toBe(true);
   return app2.active_viewer.views[0].options;
 }
@@ -54,14 +54,14 @@ describe("TestViewActive", () => {
   /** The first view should be active by default. */
   test("test_first_view_active_by_default", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_base.aep"));
-    expect(app.active_viewer != null).toBe(true);
+    py_assert(app.active_viewer != null);
     expect(app.active_viewer.views[0].active).toBe(true);
   });
 
   /** set_active() should update the viewer's active_view_index. */
   test("test_set_active_changes_index", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_left_viewer.aep"));
-    expect(app.active_viewer != null).toBe(true);
+    py_assert(app.active_viewer != null);
     const viewer = app.active_viewer;
     expect(viewer.views.length).toBe(2);
     expect(viewer.active_view_index).toBe(0);
@@ -77,7 +77,7 @@ describe("TestViewActive", () => {
   /** Setting an invalid active_view_index should raise ValueError. */
   test("test_active_view_index_setter_validation", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_base.aep"));
-    expect(app.active_viewer != null).toBe(true);
+    py_assert(app.active_viewer != null);
     const viewer = app.active_viewer;
     raises(ValueError, () => {
       viewer.active_view_index = 99;

@@ -20,8 +20,9 @@ import {
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { AudioChannels, AudioCodec, MPEGAudioFormat, MPEGMultiplexer, OutputChannels, OutputColorDepth, VideoCodec } from "../../src/py_aep/enums/index.ts";
 import { parse_format_options } from "../../src/py_aep/parsers/format_options.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_app, parse_project_fresh, SAMPLES_DIR } from "../helpers.ts";
+import { as_instance, parse_app, parse_project_fresh, SAMPLES_DIR } from "../helpers.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this test's
 // directory (tests/roundtrip), so two `.parent` hops reach the package root.
@@ -44,7 +45,7 @@ test.each(_CORPUS.map((p) => [_rel_id(p), p]))(
   "test_parent_om_backref_is_wired[%s]",
   (_id: string, aep_path: Path) => {
     const app = parse_app(aep_path);
-    for (const rqi of app.project.render_queue.items) {
+    for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
       for (const om of rqi.output_modules) {
         if (om.format_options != null) {
           expect(om.format_options._parent_om).toBe(om);
@@ -63,7 +64,7 @@ test("test_parent_om_backref_survives_apply_template", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("targa", "base.aep"));
   const om = _om(project);
   const fo_before = om.format_options;
-  const rqi = project.render_queue.items[0];
+  const rqi = as_instance(project.render_queue, RenderQueue).items[0];
   om._format_options = parse_format_options(rqi._lom.chunks);
   om._format_options._parent_om = om; // what _apply_output_template does
   expect(om.format_options).not.toBe(fo_before);

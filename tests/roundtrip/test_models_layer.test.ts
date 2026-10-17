@@ -12,6 +12,7 @@ import {
   setdefault,
   py_slice,
   isclose,
+  StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
@@ -21,7 +22,8 @@ import { AutoOrientType, BlendingMode, FrameBlendingType, KeyframeInterpolationT
 import { AVLayer, LightLayer, ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_layer.ts";
-import { AVItem, FootageItem } from "../../src/py_aep/models/items/index.ts";
+import { AVItem, CompItem, FootageItem } from "../../src/py_aep/models/items/index.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { as_instance, get_comp, get_first_layer, get_layer, parse_project_fresh } from "../helpers.ts";
@@ -733,6 +735,7 @@ describe("TestRoundtripTrackMatteType", () => {
       }
     }
     expect(matte_layer != null).toBe(true);
+    if (matte_layer == null) throw new Error("no alpha-matte layer in comp");
 
     matte_layer.track_matte_type = TrackMatteType.LUMA;
     const out = tmp_path.div("modified.aep");
@@ -1084,7 +1087,7 @@ describe("TestReplaceSource", () => {
     }
     // Find a layer in sub_comp that has a source (not text/shape)
     let sub_layer = null;
-    for (const ly of sub_comp.av_layers) {
+    for (const ly of as_instance(sub_comp, CompItem).av_layers) {
       if (ly.source != null) {
         sub_layer = ly;
         break;
@@ -1488,6 +1491,7 @@ describe("TestLayerDuplicate", () => {
     );
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
+    if (layer.effects == null) throw new Error("layer has no effects group");
     // Layer Control references the containing layer by default.
     layer.effects.add_property("ADBE Layer Control");
     const original_id = layer.id;
@@ -1509,6 +1513,7 @@ describe("TestLayerDuplicate", () => {
     );
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
+    if (layer.effects == null) throw new Error("layer has no effects group");
     layer.effects.add_property("ADBE Layer Control");
     const original_id = layer.id;
     const dup = layer.duplicate();
@@ -1516,6 +1521,7 @@ describe("TestLayerDuplicate", () => {
     app.project.save(tmp_path.div("out.aep"));
     const comp2 = parse_aep(tmp_path.div("out.aep")).project.compositions[0];
     const dup2 = comp2.layers.find((lyr) => lyr.id === dup_id);
+    if (dup2 === undefined) throw new StopIteration();
     const dup2_tdpi = _tdpi_by_param_suffix(dup2);
     expect(py_eq(new Set(getitem(dup2_tdpi, "-0000")), new Set([dup_id]))).toBe(true);
     expect(py_eq(getitem(dup2_tdpi, "-0001"), [original_id])).toBe(true);
@@ -1626,6 +1632,8 @@ describe("TestDuplicateComplexValueLayers", () => {
     const original = comp.layers[0];
     expect(original instanceof TextLayer).toBe(true);
     const dup = original.duplicate();
+    if (original.text == null) throw new Error("original has no text group");
+    if (dup.text == null) throw new Error("duplicate has no text group");
     const src = original.text.property("ADBE Text Document").value;
     const dup_src = dup.text.property("ADBE Text Document").value;
     expect(py_eq(dup_src.text, src.text)).toBe(true);
@@ -1636,6 +1644,8 @@ describe("TestDuplicateComplexValueLayers", () => {
     const comp = get_comp(app.project, "shape_closed_oval");
     const original = comp.layers[0];
     const dup = original.duplicate();
+    if (original.masks == null) throw new Error("original has no masks group");
+    if (dup.masks == null) throw new Error("duplicate has no masks group");
     const orig_shape = (original.masks.__getitem__(0) as any).property("ADBE Mask Shape").value;
     const dup_shape = (dup.masks.__getitem__(0) as any).property("ADBE Mask Shape").value;
     expect(py_eq(dup_shape.vertices, orig_shape.vertices)).toBe(true);
@@ -1777,9 +1787,12 @@ describe("TestGeometryAutoOrientGuard", () => {
    */
 
   // @staticmethod in Python: a plain helper scoped to this describe block.
-  function _probe_layer(project: any, name: string): any {
+  function _probe_layer(project: Project, name: string): any {
     const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
-    return comp.layers.find((ly) => ly.name === name);
+    if (comp === undefined) throw new StopIteration();
+    const layer = comp.layers.find((ly) => ly.name === name);
+    if (layer === undefined) throw new StopIteration();
+    return layer;
   }
 
   test("test_along_path_with_separated_position_raises", () => {
@@ -1825,7 +1838,10 @@ describe("TestForwardRayOnly", () => {
   function _probe_3d_layer(): any {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
-    return comp.layers.find((ly) => ly.name === "solid_3d");
+    if (comp === undefined) throw new StopIteration();
+    const layer = comp.layers.find((ly) => ly.name === "solid_3d");
+    if (layer === undefined) throw new StopIteration();
+    return layer;
   }
 
   test("test_layer_in_front_resolves", () => {
@@ -1920,7 +1936,9 @@ describe("TestParentToCameraRig", () => {
   test("test_two_node_camera_compensation_matches_ae", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("auto_orient.aep"));
     const comp = project.compositions.find((c) => c.name === "ORIENT_CAM");
+    if (comp === undefined) throw new StopIteration();
     const child = comp.layers.find((ly) => ly.name === "child_of_cam");
+    if (child === undefined) throw new StopIteration();
     const camera = child.parent;
     child.parent = null;
     child.transform.__getitem__("ADBE Position").value = [960.0, 540.0, 0.0];
@@ -1938,9 +1956,12 @@ describe("TestTextSourceRectRefusals", () => {
    */
 
   // @staticmethod in Python: a plain helper scoped to this describe block.
-  function _hello(project: any): any {
+  function _hello(project: Project): any {
     const comp = project.compositions.find((c) => c.name === "TEXT_INK");
-    return comp.layers.find((ly) => ly.name === "Hello_36");
+    if (comp === undefined) throw new StopIteration();
+    const layer = comp.layers.find((ly) => ly.name === "Hello_36");
+    if (layer === undefined) throw new StopIteration();
+    return layer;
   }
 
   test("test_faux_bold_raises", () => {

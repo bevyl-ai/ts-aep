@@ -15,6 +15,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   Path,
   degrees,
   enumerate,
@@ -152,14 +153,14 @@ function _cases(): [string, string, string, string][] {
  */
 function _expected_frames(base: string, comp_name: string, layer_name: string, match_name: string): any[] {
   const data = load_expected(VAT_DIR, `${base}_value_at_time`);
-  const comp_data = data.comps.find((c) => c.name === comp_name);
+  const comp_data = data.comps.find((c: { name: string }) => c.name === comp_name);
   if (comp_data === undefined) throw new StopIteration();
-  const layers = comp_data.layers.filter((ly) => ly.name === layer_name);
+  const layers = comp_data.layers.filter((ly: { name: string }) => ly.name === layer_name);
   py_assert(
     len(layers) === 1,
     `${base}/${comp_name}: expected 1 layer named ${layer_name}, got ${len(layers)}`,
   );
-  const props = layers[0].properties.filter((p) => p.matchName === match_name);
+  const props = layers[0].properties.filter((p: { matchName: string }) => p.matchName === match_name);
   py_assert(
     len(props) === 1,
     `${base}/${comp_name}/${layer_name}: expected 1 ${match_name}, got ${len(props)}`,
@@ -307,6 +308,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0], [-5.0, 5.0]]);
     const blended = interpolate_shapes(left, right, 0.0);
     expect(blended != null).toBe(true);
+    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
     // At progress 0 the blend IS the resampled left path: the same
     // outline, two extra vertices, and still straight.
     expect(
@@ -334,6 +336,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]], undefined, undefined, { closed: false });
     const blended = interpolate_shapes(left, right, 0.0);
     expect(blended != null).toBe(true);
+    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
     expect(py_eq(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
     expect(py_eq(blended.out_tangents[0], [20.0, 0.0])).toBe(true);
     expect(py_eq(blended.in_tangents[2], [-20.0, 0.0])).toBe(true);
@@ -348,6 +351,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [10.0, 0.0]], undefined, undefined, { closed: true });
     const blended = interpolate_shapes(left, right, 0.5);
     expect(blended != null).toBe(true);
+    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
     expect(blended.closed).toBe(false);
   });
 });

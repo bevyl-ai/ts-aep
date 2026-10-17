@@ -92,6 +92,7 @@ function _find_property(layer: Layer, match_name: string): Property | null {
 
 /** Find a synthesized effect property by match name. */
 function _find_synthesized_effect_prop(layer: Layer, effect_index: number, match_name: string): Property {
+  if (layer.effects == null) throw new Error("layer has no effects group");
   const effect = layer.effects.properties[effect_index];
   py_assert(effect instanceof PropertyGroup);
   for (const prop of effect.properties) {
@@ -174,6 +175,7 @@ describe("TestMaterializationLifecycle", () => {
     const app = parse_aep(PROPERTY_DIR.div("2_gaussian.aep"));
     const layer = get_first_layer(app.project);
     expect(layer.effects != null).toBe(true);
+    if (layer.effects == null) throw new Error("layer has no effects group");
     const effect = layer.effects.properties[0];
 
     effect.name = "Custom Blur Name";
@@ -184,6 +186,7 @@ describe("TestMaterializationLifecycle", () => {
     const app2 = parse_aep(out);
     const layer2 = get_first_layer(app2.project);
     expect(layer2.effects != null).toBe(true);
+    if (layer2.effects == null) throw new Error("layer has no effects group");
     expect(layer2.effects.properties[0].name).toBe("Custom Blur Name");
   });
 });
@@ -200,6 +203,7 @@ describe("TestParseTimeWriteGuard", () => {
     const layer = get_first_layer(app.project);
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity != null).toBe(true);
+    if (opacity == null) throw new Error("no ADBE Opacity property");
 
     // Python `with _suppress_materialization():` is `.run(() => body)`.
     _suppress_materialization().run(() => {
@@ -215,6 +219,7 @@ describe("TestParseTimeWriteGuard", () => {
     const layer = get_first_layer(app.project);
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity != null).toBe(true);
+    if (opacity == null) throw new Error("no ADBE Opacity property");
 
     _suppress_materialization().run(() => {
       instance_dict(opacity).set("enabled", false);

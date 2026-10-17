@@ -150,7 +150,6 @@ export function get_sample_files(samples_dir: Path): string[] {
   return samples_dir.glob("*.aep").map((f) => f.stem);
 }
 
-/** Get the first layer from the first composition that has layers. */
 /**
  * `value` as an instance of `cls`, failing the test when it is not. Python
  * tests read a subclass attribute straight off a `Layer` or a group child;
@@ -164,6 +163,7 @@ export function as_instance<T>(value: unknown, cls: abstract new (...args: never
   return value;
 }
 
+/** Get the first layer from the first composition that has layers. */
 export function get_first_layer(project: Project): Layer {
   py_assert(len(project.compositions) >= 1);
   for (const comp of project.compositions) {
@@ -222,6 +222,7 @@ export function get_folder(project: Project, name: string): FolderItem {
 
 /** Get a render queue item by its composition name. */
 export function get_rqi(project: Project, comp_name: string): RenderQueueItem {
+  if (project.render_queue === null) throw new AssertionError_("project.render_queue is None");
   for (const rqi of project.render_queue.items) {
     if (rqi.comp.name === comp_name) return rqi;
   }

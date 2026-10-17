@@ -134,6 +134,7 @@ describe("TestEffectParameterIsNotIndexed", () => {
     const app = parse_app_fresh(PROPERTY_DIR.div("2_gaussian.aep"));
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
+    if (layer.effects == null) throw new Error("layer has no effects group");
     const before = len(layer.effects.properties);
 
     layer.effects.properties[0].duplicate();
@@ -143,6 +144,7 @@ describe("TestEffectParameterIsNotIndexed", () => {
     const app2 = parse_app_fresh(out);
     const layer2 = app2.project.compositions[0].layers[0];
     expect(layer2.effects != null).toBe(true);
+    if (layer2.effects == null) throw new Error("layer has no effects group");
     expect(len(layer2.effects.properties)).toBe(before + 1);
   });
 });

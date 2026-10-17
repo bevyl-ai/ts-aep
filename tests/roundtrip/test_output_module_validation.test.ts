@@ -8,8 +8,9 @@
 
 import { expect, test } from "bun:test";
 
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
 import { OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode } from "../../src/py_aep/enums/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { Path, py_assert, py_eq, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
@@ -89,7 +90,7 @@ test("test_quicktime_supports_alpha", () => {
       .div("quicktime")
       .div("apple_prores_4444.aep"),
   );
-  const om = project.render_queue.items[0].output_modules[0];
+  const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
   om.settings.__setitem__("Channels", OutputChannels.RGBA);
   expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   project.save(tmp_path.div("out.aep"));

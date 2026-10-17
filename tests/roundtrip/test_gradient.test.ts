@@ -308,6 +308,7 @@ test("test_gradient_add_color_stop_serializes", () => {
   // Re-parse from utf8 to confirm serialization
   const reparsed = parse_gradient_xml(gradient._utf8);
   expect(reparsed != null).toBe(true);
+  if (reparsed == null) throw new Error("gradient XML did not reparse");
   expect(reparsed.color_stops.length).toBe(original_count + 1);
 });
 
@@ -328,5 +329,6 @@ test("test_gradient_remove_color_stop_serializes", () => {
   expect(gradient.color_stops.length).toBe(original_count - 1);
   const reparsed = parse_gradient_xml(gradient._utf8);
   expect(reparsed != null).toBe(true);
+  if (reparsed == null) throw new Error("gradient XML did not reparse");
   expect(reparsed.color_stops.length).toBe(original_count - 1);
 });

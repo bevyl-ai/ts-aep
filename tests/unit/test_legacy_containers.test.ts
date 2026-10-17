@@ -16,7 +16,9 @@ import { TDSN_SENTINEL, TdsnChunk } from "../../src/py_aep/binary/property_chunk
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { recursive_find } from "../../src/py_aep/binary/utils.ts";
 import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _nnhd_from_nhed } from "../../src/py_aep/parsers/project.ts";
+import { as_instance } from "../helpers.ts";
 import {
   AttributeError,
   BytesIO,
@@ -256,7 +258,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   (solid.__getitem__("ADBE Mask Parade") as any).add_property("ADBE Mask Atom").name = "mask";
   (solid.__getitem__("ADBE Effect Parade") as any).add_property("ADBE Slider Control").name = "slider";
   (solid.__getitem__("ADBE Effect Parade") as any).add_property("ADBE Checkbox Control");
-  project.render_queue.add(comp).comment = "note";
+  as_instance(project.render_queue, RenderQueue).add(comp).comment = "note";
   project._head.file_format_version = 91;
   const out = tmp_path.div("older.aep");
   project.save(out);
@@ -279,7 +281,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
       ["slider", "Checkbox Control"],
     ),
   ).toBe(true);
-  expect(py_eq(back.render_queue.items[0].comment, "note")).toBe(true);
+  expect(py_eq(as_instance(back.render_queue, RenderQueue).items[0].comment, "note")).toBe(true);
 });
 
 test("test_an_older_project_cannot_be_relabelled", () => {

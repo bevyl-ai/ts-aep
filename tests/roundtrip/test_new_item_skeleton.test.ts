@@ -137,7 +137,7 @@ describe("TestNewLayerSkeleton", () => {
     const kinds = inner.chunks.map((c: any) => getattr(c, "list_type", c.chunk_type));
     const j = kinds.indexOf("blsv");
     if (j < 0) throw new ValueError("'blsv' is not in list");
-    expect(at(kinds, j + 1)).toBe("blsi");
+    expect<string>(at(kinds, j + 1)).toBe("blsi");
     const tdbs: any = at(inner.chunks, j + 2);
     const cdat: any = find_by_type(tdbs.chunks, "cdat");
     expect(cdat.values.length).toBe(0); // 4-zero-byte no-value marker

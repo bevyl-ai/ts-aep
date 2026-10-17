@@ -15,6 +15,7 @@
 import { describe, expect, test } from "bun:test";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import {
+  AssertionError_,
   dict_get,
   float,
   getattr,
@@ -55,7 +56,9 @@ function _doc(project: any, comp_name: string, layer_name: string): TextDocument
   const comp = project.compositions.find((c: any) => c.name === comp_name)!;
   const layer = comp.layers.find((ly: any) => ly.name === layer_name)!;
   py_assert(layer instanceof TextLayer);
-  return layer.text.__getitem__("ADBE Text Document").value;
+  const text = layer.text;
+  if (text == null) throw new AssertionError_(`text layer ${layer_name} has no text properties`);
+  return text.__getitem__("ADBE Text Document").value;
 }
 
 describe("TestBaselineLocs", () => {

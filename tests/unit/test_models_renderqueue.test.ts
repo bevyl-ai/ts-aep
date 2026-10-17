@@ -237,6 +237,7 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     const [templates, default_] = parse_render_templates(tmp_path);
     expect(py_eq(templates.map((t) => t.clean_template_name), ["Draft", "Best"])).toBe(true);
     expect(default_).toBe(1);
+    if (default_ == null) throw new Error("no default render template");
     expect(templates[default_].clean_template_name).toBe("Best");
   });
 
@@ -255,6 +256,7 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     const [templates, default_] = parse_output_templates(tmp_path);
     expect(py_eq(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
     expect(default_).toBe(0);
+    if (default_ == null) throw new Error("no default output template");
     expect(templates[default_].name).toBe("Lossless");
   });
 });

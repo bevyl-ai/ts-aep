@@ -19,6 +19,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   at,
   b,
   BytesIO,
@@ -44,8 +45,10 @@ import type { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import type { S4Chunk, Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { filter_by_list_type, filter_by_type, find_by_list_type, recursive_find } from "../../src/py_aep/binary/utils.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
+import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { Project } from "../../src/py_aep/index.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
 
 const SAMPLE = new Path(import.meta.path).parent.parent.parent.div(
   "samples",
@@ -170,7 +173,7 @@ describe("TestDuplicateAgainstAE", () => {
     const dup = src.duplicate();
     // AE numbering: "DupSrc 2" is taken by AE's own duplicate.
     expect(dup.name).toBe("DupSrc 3");
-    const folder_items = src.parent_folder.items;
+    const folder_items = as_instance(src.parent_folder, FolderItem).items;
     expect(folder_items.indexOf(dup)).toBe(folder_items.indexOf(src) + 1);
     expect(getitem(project.items, dup.id)).toBe(dup);
   });
@@ -262,7 +265,9 @@ describe("TestDuplicateAgainstAE", () => {
         tdpi.value = getitem(id_map, tdpi.value);
       }
     }
-    py_dup._idta.item_id = ae_dup.id;
+    const py_idta = py_dup._idta;
+    if (py_idta == null) throw new AssertionError_("duplicate has no idta chunk");
+    py_idta.item_id = ae_dup.id;
     for (const chunk of py_dup._item_list.chunks) {
       if (chunk.chunk_type === "iide") {
         (chunk as any).value = ae_dup.id;
@@ -333,7 +338,7 @@ describe("TestDuplicateAgainstAE", () => {
       inner_layer.properties,
       (p) => p.match_name === "ADBE Layer Overrides",
     );
-    expect(py_eq(overrides.properties.map((p) => p.value), [42.0])).toBe(true);
+    expect(py_eq(overrides.properties.map((p: Property) => p.value), [42.0])).toBe(true);
     expect(py_eq(dup.motion_graphics_controllers.map((c) => c.source_comp_id), [dup.id])).toBe(true);
     const ids = _all_ids(project2);
     expect(len(ids)).toBe(len(new Set(ids)));

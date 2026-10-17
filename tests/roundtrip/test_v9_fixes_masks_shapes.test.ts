@@ -10,7 +10,8 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { filter_by_list_type, find_by_type } from "../../src/py_aep/binary/utils.ts";
-import { Shape } from "../../src/py_aep/models/properties/shape.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { FeatherPoint, Shape } from "../../src/py_aep/models/properties/shape.ts";
 import {
   AttributeError,
   len,
@@ -22,7 +23,7 @@ import {
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { project_bytes } from "../helpers.ts";
+import { as_instance, project_bytes } from "../helpers.ts";
 
 // Python `Path(__file__).parent.parent.parent / "samples"`.
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -36,7 +37,7 @@ function _solid_mask(width = 200, height = 100): any[] {
   const app = py_aep.new();
   const comp = app.project.root_folder.add_comp("C", 400, 300, 1.0, 5.0, 24.0);
   const solid = comp.add_solid([1.0, 0.0, 0.0], "S", width, height, 1.0);
-  const mask = solid.masks.add_property("ADBE Mask Atom");
+  const mask = as_instance(solid.masks, PropertyGroup).add_property("ADBE Mask Atom");
   return [app, comp, solid, mask];
 }
 
@@ -44,13 +45,13 @@ function _reparse_mask(app: py_aep.Application, tmp_path: Path): any {
   const path = tmp_path.div("out.aep");
   app.project.save(path);
   const comp = parse(path).project.compositions.find((c) => String(c.name) === "C")!;
-  return comp.layers.find((lyr) => String(lyr.name) === "S")!.masks.properties[0];
+  return as_instance(comp.layers.find((lyr) => String(lyr.name) === "S")!.masks, PropertyGroup).properties[0];
 }
 
 function _tensions(path_prop: any): number[][] {
   const shaps = filter_by_list_type(path_prop._kf_value_container.chunks, "shap");
   return shaps.map((s) =>
-    (find_by_type(s.chunks, "omtn") as any).tensions.map((t) => round(t.value, 6)),
+    find_by_type(s.chunks, "omtn").tensions.map((t) => round(t.value, 6)),
   );
 }
 
@@ -354,7 +355,7 @@ describe("TestShapeCopies", () => {
     const comp = app.project.root_folder.add_comp("C", 800, 600, 1.0, 5.0, 24.0);
     const a = comp.add_solid([1.0, 0.0, 0.0], "A", 200, 100, 1.0);
     const b = comp.add_solid([0.0, 1.0, 0.0], "B", 400, 400, 1.0);
-    const mask_a = a.masks.add_property("ADBE Mask Atom") as any;
+    const mask_a = as_instance(a.masks, PropertyGroup).add_property("ADBE Mask Atom") as any;
     mask_a.property("ADBE Mask Shape").value = new Shape(TRIANGLE);
     return [app, comp, b, mask_a];
   };
@@ -373,7 +374,7 @@ describe("TestShapeCopies", () => {
     const b2 = comp.layers.find((lyr) => String(lyr.name) === "B")!;
     expect(
       py_eq(
-        _round((b2.masks.properties[0] as any).property("ADBE Mask Shape").value.vertices),
+        _round((as_instance(b2.masks, PropertyGroup).properties[0] as any).property("ADBE Mask Shape").value.vertices),
         TRIANGLE,
       ),
     ).toBe(true);
@@ -394,11 +395,11 @@ describe("TestFeatherPoints", () => {
   test("test_new_shape_keeps_feather_points", () => {
     const tmp_path = make_tmp_path();
     const app = parse(FEATHER);
-    const path = (app.project.compositions[0].layers[0].masks.properties[0] as any).property(
+    const path = (as_instance(app.project.compositions[0].layers[0].masks, PropertyGroup).properties[0] as any).property(
       "ADBE Mask Shape",
     );
     const value = path.value;
-    const expected = value.feather_points.map((fp) => [fp.seg_loc, fp.rel_seg_loc, fp.radius]);
+    const expected = value.feather_points.map((fp: FeatherPoint) => [fp.seg_loc, fp.rel_seg_loc, fp.radius]);
     expect(len(expected)).toBe(4);
     path.value = new Shape(value.vertices, value.in_tangents, value.out_tangents, {
       closed: value.closed,
@@ -406,11 +407,11 @@ describe("TestFeatherPoints", () => {
     });
     const out = tmp_path.div("feather.aep");
     app.project.save(out);
-    const reread = parse(out).project.compositions[0].layers[0].masks.properties[0] as any;
+    const reread = as_instance(parse(out).project.compositions[0].layers[0].masks, PropertyGroup).properties[0] as any;
     const points = reread.property("ADBE Mask Shape").value.feather_points;
     expect(
       py_eq(
-        points.map((fp) => [fp.seg_loc, fp.rel_seg_loc, fp.radius]),
+        points.map((fp: FeatherPoint) => [fp.seg_loc, fp.rel_seg_loc, fp.radius]),
         expected,
       ),
     ).toBe(true);

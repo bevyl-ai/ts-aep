@@ -12,7 +12,8 @@ import { Path, contains, enumerate, getitem, KeyError, len, py_eq, ValueError } 
 import "../../src/py_aep/binary/_register.ts";
 import { get_rqi, load_expected, parse_project } from "../conftest.ts";
 import { ConvertToLinearLight, GetSettingsFormat } from "../../src/py_aep/enums/index.ts";
-import { OutputModule } from "../../src/py_aep/models/renderqueue/index.ts";
+import { OutputModule, RenderQueue } from "../../src/py_aep/models/renderqueue/index.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
@@ -39,7 +40,7 @@ describe("TestRenderQueueBasic", () => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
     expect(expected["renderQueue"]["numItems"]).toBe(expected_count);
-    expect(len(project.render_queue.items)).toBe(expected_count);
+    expect(len(as_instance(project.render_queue, RenderQueue).items)).toBe(expected_count);
   });
 });
 
@@ -49,7 +50,7 @@ describe("TestOutputModule", () => {
   test("test_outputModule_file", () => {
     load_expected(OM_SAMPLES_DIR, "file");
     const project = parse_project(OM_SAMPLES_DIR.div("file.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     expect(len(rqi.output_modules) >= 1).toBe(true);
     const om = rqi.output_modules[0];
     expect(om instanceof OutputModule).toBe(true);
@@ -59,7 +60,7 @@ describe("TestOutputModule", () => {
   test("test_outputModule_template", () => {
     load_expected(OM_SAMPLES_DIR, "template");
     const project = parse_project(OM_SAMPLES_DIR.div("template.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     expect(len(rqi.output_modules) >= 1).toBe(true);
     const om = rqi.output_modules[0];
     expect(om.name != null).toBe(true);
@@ -71,7 +72,7 @@ describe("TestOutputModule", () => {
      * correctly (Utf8 chunks identified by position relative to Als2).
      */
     const project = parse_project(BUGS_DIR.div("outputmodule_path.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     const om = rqi.output_modules[0];
     expect(om.name).toBe("H.264 - Match Render Settings - 15 Mbps");
     expect(contains(String(om.file_template), "[compName]")).toBe(true);
@@ -81,7 +82,7 @@ describe("TestOutputModule", () => {
   test("test_numOutputModules_2", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "numOutputModules_2");
     const project = parse_project(OM_SAMPLES_DIR.div("numOutputModules_2.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     const exp_oms = expected["renderQueue"]["items"][0]["outputModules"];
     expect(len(rqi.output_modules)).toBe(len(exp_oms));
     expect(len(exp_oms)).toBe(2);
@@ -96,7 +97,7 @@ describe("TestOutputModule", () => {
 
   test("test_include_source_xmp_off", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("include_source_xmp_data_off.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.include_source_xmp).toBe(false);
   });
 
@@ -109,14 +110,14 @@ describe("TestOutputModule", () => {
 
   test("test_crop_unchecked", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("crop_unchecked.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.settings.__getitem__("Crop")).toBe(false);
   });
 
   test("test_crop_bottom_10", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "crop_bottom_10");
     const project = parse_project(OM_SAMPLES_DIR.div("crop_bottom_10.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.__getitem__("Crop")).toBe(true);
     expect(om.settings.__getitem__("Crop Bottom")).toBe(exp_om["settings"]["Crop Bottom"]);
@@ -127,7 +128,7 @@ describe("TestOutputModule", () => {
   test("test_crop_top_10", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "crop_top_10");
     const project = parse_project(OM_SAMPLES_DIR.div("crop_top_10.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.__getitem__("Crop")).toBe(true);
     expect(om.settings.__getitem__("Crop Top")).toBe(exp_om["settings"]["Crop Top"]);
@@ -141,7 +142,7 @@ describe("TestOutputModule", () => {
     ["convert_to_linear_light_on_for_32_bpc", ConvertToLinearLight.ON_FOR_32_BPC],
   ])("test_convert_to_linear_light[%#]", (sample_name: string, expected_value: ConvertToLinearLight) => {
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.settings.__getitem__("Convert to Linear Light")).toBe(expected_value);
   });
 
@@ -151,7 +152,7 @@ describe("TestOutputModule", () => {
   ])("test_preserve_rgb[%#]", (sample_name: string, expected_value: boolean) => {
     // The two AE samples differ in one byte of the settings record, 0x5E.
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.settings.__getitem__("Preserve RGB")).toBe(expected_value);
   });
 });
@@ -169,7 +170,7 @@ describe("TestRouuFrameRateAndDepth", () => {
   ])("test_frame_rate_and_depth[%#]", (sample_name: string, item_index: number, frame_rate: number) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[item_index].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[item_index].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][item_index]["outputModules"][0];
     expect(approx(om._roou.frame_rate, frame_rate, { abs: 1e-4 })).toBe(true);
     expect(om._roou.depth).toBe(exp_om["settings"]["Depth"]);
@@ -192,8 +193,8 @@ describe("TestCompLinking", () => {
   test("test_2_rqitems_comp_linking", () => {
     const expected = load_expected(SAMPLES_DIR, "2_rqitems");
     const project = parse_project(SAMPLES_DIR.div("2_rqitems.aep"));
-    expect(len(project.render_queue.items)).toBe(2);
-    for (const [i, rqi] of enumerate(project.render_queue.items)) {
+    expect(len(as_instance(project.render_queue, RenderQueue).items)).toBe(2);
+    for (const [i, rqi] of enumerate(as_instance(project.render_queue, RenderQueue).items)) {
       const exp_name = expected["renderQueue"]["items"][i]["compName"];
       expect(rqi.comp_name).toBe(exp_name);
     }
@@ -206,7 +207,7 @@ describe("TestRenderQueueItemAttributes", () => {
   test("test_render_unchecked", () => {
     const expected = load_expected(SAMPLES_DIR, "render_unchecked");
     const project = parse_project(SAMPLES_DIR.div("render_unchecked.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     const exp_rqi = expected["renderQueue"]["items"][0];
     expect(rqi.render).toBe(false);
     expect(exp_rqi["render"]).toBe(false);
@@ -214,7 +215,7 @@ describe("TestRenderQueueItemAttributes", () => {
 
   test("test_comment", () => {
     const project = parse_project(SAMPLES_DIR.div("comment_aaaaa.aep"));
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     expect(rqi.comment).toBe("aaaaa");
   });
 });
@@ -247,7 +248,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_starting_number[%#]", (sample_name: string, expected_value: number) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.__getitem__("Starting #")).toBe(exp_om["settings"]["Starting #"]);
     expect(om.settings.__getitem__("Starting #")).toBe(expected_value);
@@ -259,7 +260,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_use_comp_frame_number[%#]", (sample_name: string, expected_value: boolean) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.__getitem__("Use Comp Frame Number")).toBe(expected_value);
     expect(exp_om["settings"]["Use Comp Frame Number"]).toBe(expected_value);
@@ -285,14 +286,14 @@ describe("TestOutputColorSpace", () => {
     ["arriflex_daylight", "ARRIFLEX D-20 Daylight Log (by Adobe)"],
   ])("test_output_color_space[%#]", (sample_name: string, expected_value: string) => {
     const project = parse_project(OCS_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.output_color_space).toBe(expected_value);
   });
 
   test("test_output_color_space_working", () => {
     /** Working Color Space should resolve to the project's working space. */
     const project = parse_project(OCS_SAMPLES_DIR.div("working_color_space.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(om.output_color_space).toBe(project.working_space);
   });
 });

@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path } from "../../src/pyrt/index.ts";
+import { Path, py_assert } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ChannelType, FastPreviewType, ViewerType } from "../../src/py_aep/index.ts";
 import type { ViewOptions } from "../../src/py_aep/index.ts";
@@ -25,7 +25,7 @@ const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples
 /** Parse a project and return the ViewOptions of the active viewer's first view. */
 function _get_active_view_options(aep_path: Path): ViewOptions {
   const app = parse_app(aep_path);
-  expect(app.active_viewer != null).toBe(true);
+  py_assert(app.active_viewer != null);
   expect(app.active_viewer.type === ViewerType.VIEWER_COMPOSITION).toBe(true);
   expect(app.active_viewer.views.length >= 1).toBe(true);
   return app.active_viewer.views[0].options;

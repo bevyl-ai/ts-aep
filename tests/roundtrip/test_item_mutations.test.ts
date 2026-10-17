@@ -2,9 +2,9 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, TypeError_, ValueError, contains, dict_get, getitem, len, py_bool, py_eq } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, TypeError_, ValueError, contains, dict_get, getitem, len, py_bool, py_eq } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
@@ -284,6 +284,7 @@ describe("TestItemRemove", () => {
     const n = len(root.items);
     // Find the first folder
     const folder = root.items.find((i) => i instanceof FolderItem);
+    if (folder === undefined) throw new StopIteration();
     const folder_id = folder.id;
     folder.remove();
     expect(len(root.items)).toBe(n - 1);
@@ -410,10 +411,12 @@ describe("TestItemRemove", () => {
 
 /** Tests for moving items between folders via parent_folder. */
 describe("TestParentFolderSetter", () => {
-  function _folders(app: any) {
+  function _folders(app: Application): [FolderItem, FolderItem, FolderItem] {
     const root = app.project.root_folder;
     const fwi = root.folders.find((f) => f.name === "FolderWithItems");
+    if (fwi === undefined) throw new StopIteration();
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
+    if (empty === undefined) throw new StopIteration();
     return [root, fwi, empty];
   }
 
@@ -421,6 +424,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     comp1.parent_folder = empty;
     expect(comp1.parent_folder === empty).toBe(true);
   });
@@ -429,6 +433,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     comp1.parent_folder = empty;
     expect(contains(fwi.items, comp1)).toBe(false);
   });
@@ -437,6 +442,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     comp1.parent_folder = empty;
     expect(contains(empty.items, comp1)).toBe(true);
   });
@@ -446,6 +452,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     const comp1_id = comp1.id;
     comp1.parent_folder = empty;
 
@@ -454,7 +461,9 @@ describe("TestParentFolderSetter", () => {
 
     const comp1_2 = getitem(app2.project.items, comp1_id);
     const empty2 = app2.project.root_folder.folders.find((f) => f.name === "EmptyFolder");
+    if (empty2 === undefined) throw new StopIteration();
     const fwi2 = app2.project.root_folder.folders.find((f) => f.name === "FolderWithItems");
+    if (fwi2 === undefined) throw new StopIteration();
     expect(comp1_2.parent_folder === empty2).toBe(true);
     expect(contains(empty2.items, comp1_2)).toBe(true);
     expect(contains(fwi2.items, comp1_2)).toBe(false);
@@ -464,7 +473,9 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const fwi = root.folders.find((f) => f.name === "FolderWithItems");
+    if (fwi === undefined) throw new StopIteration();
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     comp1.parent_folder = root;
     expect(comp1.parent_folder === root).toBe(true);
     expect(contains(root.items, comp1)).toBe(true);
@@ -476,6 +487,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const root_folder = root.folders.find((f) => f.name === "RootFolder");
+    if (root_folder === undefined) throw new StopIteration();
     const level1 = root_folder.folders[0];
     const level2 = level1.folders[0];
     const child_names = level2.folders.map((f) => f.name);
@@ -490,6 +502,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
+    if (empty === undefined) throw new StopIteration();
     const n = len(root.items);
     empty.parent_folder = root;
     expect(empty.parent_folder === root).toBe(true);
@@ -500,6 +513,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
+    if (empty === undefined) throw new StopIteration();
     raises(ValueError, () => {
       empty.parent_folder = empty;
     }, "cannot be moved inside itself");
@@ -509,6 +523,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const root_folder = root.folders.find((f) => f.name === "RootFolder");
+    if (root_folder === undefined) throw new StopIteration();
     const level2 = root_folder.folders[0].folders[0];
     raises(ValueError, () => {
       root_folder.parent_folder = level2;
@@ -519,6 +534,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
+    if (empty === undefined) throw new StopIteration();
     raises(ValueError, () => {
       root.parent_folder = empty;
     }, "Cannot move the root folder");
@@ -528,7 +544,9 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.root_folder;
     const fwi = root.folders.find((f) => f.name === "FolderWithItems");
+    if (fwi === undefined) throw new StopIteration();
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
+    if (comp1 === undefined) throw new StopIteration();
     raises(TypeError_, () => {
       comp1.parent_folder = comp1.id as any;
     }, "must be a FolderItem");
@@ -539,6 +557,7 @@ describe("TestParentFolderSetter", () => {
     const app = parse_aep(SAMPLES_DIR.div("composition", "selection_both_layers.aep"));
     const root = app.project.root_folder;
     const comp = root.compositions.find((c) => c._viewer != null && contains(root.items, c));
+    if (comp === undefined) throw new StopIteration();
     const viewer = comp._viewer;
     expect(contains(root._viewers, viewer)).toBe(true);
 
