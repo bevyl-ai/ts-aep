@@ -561,7 +561,7 @@ export function copy(x: unknown): unknown {
 /** `functools.lru_cache(maxsize=None)` for functions of primitive / object-identity arguments. */
 export function lru_cache<A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) & { cache_clear(): void } {
   /** One argument position of the cache trie; `result` is set once a call ends here. */
-  type Node = { next: Map<unknown, Node>; result?: { value: R } };
+  type Node = { next: Map<A[number], Node>; result?: { value: R } };
   const root: Node = { next: new Map() };
   const single = new Map<A[0], { value: R }>();
   const wrapped = (...args: A): R => {
