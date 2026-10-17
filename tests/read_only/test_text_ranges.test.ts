@@ -19,6 +19,7 @@ import {
   getitem,
   int,
   len,
+  lru_cache,
   py_assert,
   py_bool,
   py_eq,
@@ -28,6 +29,7 @@ import {
 } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import { parse_project } from "../helpers.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in the Python source.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "text");
@@ -90,7 +92,11 @@ const ATTR_MAP: Map<string, string> = new Map([
 const _AE_ERROR_PREFIX = "Error: After Effects error: ";
 const _MARKER_RE = /<U\+([0-9A-F]{4})>/g;
 
-function _load_probe(): any {
+type ProbeJson = null | boolean | number | string | ProbeJson[] | { [key: string]: ProbeJson };
+type ProbeRecord = { [key: string]: ProbeJson };
+type ProbeResult<V> = { ok: true; value: V } | { ok: false; error: string };
+
+function _load_probe() {
   return JSON.parse(fs.readFileSync(fspath(PROBE), "utf-8"));
 }
 
@@ -108,7 +114,7 @@ function _expected_text(value: string): string {
 }
 
 /** Build the CharacterRange a probe dict key describes (e.g. `0_-1`). */
-function _range_from_key(doc: any, key: string): any {
+function _range_from_key(doc: TextDocument, key: string) {
   const i = key.lastIndexOf("_");
   const start_s = key.slice(0, i);
   const end_s = key.slice(i + 1);
@@ -118,18 +124,19 @@ function _range_from_key(doc: any, key: string): any {
 }
 
 /** Return a mismatch description, or `null` when values agree. */
-function _compare(py_val: any, expected: any, attr: string): string | null {
+function _compare(py_val: unknown, expected: ProbeJson, attr: string): string | null {
   if (expected === "<<undefined>>") {
     if (py_val == null) return null;
     return `${attr}: expected None (ES undefined), got ${repr(py_val)}`;
   }
   if (attr === "fontObject") {
     const expected_name = typeof expected === "string" ? at(split(expected, ":", 1), 1) : null;
-    const actual_name = py_val != null ? py_val.post_script_name : null;
+    const actual_name = py_val != null ? getattr(py_val, "post_script_name") : null;
     if (py_eq(actual_name, expected_name)) return null;
     return `${attr}: expected ${repr(expected_name)}, got ${repr(actual_name)}`;
   }
   if (attr === "text") {
+    py_assert(typeof expected === "string");
     expected = _expected_text(expected);
     if (py_eq(py_val, expected)) return null;
     return `${attr}: expected ${repr(expected)}, got ${repr(py_val)}`;
@@ -149,7 +156,7 @@ function _compare(py_val: any, expected: any, attr: string): string | null {
 }
 
 /** Python repr of a JSON-decoded value (dict/list/scalars). */
-function _dict_repr(v: any): string {
+function _dict_repr(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(_dict_repr).join(", ")}]`;
   if (v != null && typeof v === "object") {
     return `{${Object.entries(v).map(([k, x]) => `${repr(k)}: ${_dict_repr(x)}`).join(", ")}}`;
@@ -158,26 +165,25 @@ function _dict_repr(v: any): string {
 }
 
 /** Python dict equality: py_eq cannot compare plain records, so lift them to Maps. */
-function _as_dict(d: any): any {
+function _as_dict(d: object) {
   return d instanceof Map ? d : new Map(Object.entries(d));
 }
 
 // Module-scoped fixtures from the Python file, as lazily cached module state.
-const _cache: { probe?: any; docs?: Map<string, any> } = {};
+const probe = lru_cache(_load_probe);
 
-function probe(): any {
-  return (_cache.probe ??= _load_probe());
-}
-
-function docs(): Map<string, any> {
-  if (_cache.docs === undefined) {
-    // NOTE(port): parse_project is synchronous in the TS helpers, as in Python.
-    const project = parse_project(SAMPLE);
-    const comp = project.compositions[0];
-    _cache.docs = new Map(comp.text_layers.map((layer: any) => [layer.name, layer.text.source_text.value]));
-  }
-  return _cache.docs;
-}
+const docs = lru_cache((): Map<string, TextDocument> => {
+  // NOTE(port): parse_project is synchronous in the TS helpers, as in Python.
+  const project = parse_project(SAMPLE);
+  const comp = project.compositions[0];
+  return new Map(
+    comp.text_layers.map((layer): [string, TextDocument] => {
+      const text = layer.text;
+      py_assert(text != null);
+      return [layer.name, text.source_text.value];
+    }),
+  );
+});
 
 const LAYER_NAMES = [
   "RangesPoint",
@@ -254,17 +260,17 @@ describe("TestRangeBoundaries", () => {
     const doc = getitem(docs(), name);
     const layer_probe = probe().layers[name];
     // NOTE(port): Object.entries orders integer-like keys ascending; the probe JSON keys are already in ascending order.
-    for (const [idx_s, entry] of Object.entries(layer_probe.paragraphCharacterIndexesAt)) {
-      if ((entry as any).ok) {
+    for (const [idx_s, entry] of Object.entries<ProbeResult<ProbeRecord>>(layer_probe.paragraphCharacterIndexesAt)) {
+      if (entry.ok) {
         expect(
-          py_eq(_as_dict(doc.paragraph_character_indexes_at(int(idx_s))), _as_dict((entry as any).value)),
+          py_eq(_as_dict(doc.paragraph_character_indexes_at(int(idx_s))), _as_dict(entry.value)),
         ).toBe(true);
       }
     }
-    for (const [idx_s, entry] of Object.entries(layer_probe.composedLineCharacterIndexesAt)) {
-      if ((entry as any).ok) {
+    for (const [idx_s, entry] of Object.entries<ProbeResult<ProbeRecord>>(layer_probe.composedLineCharacterIndexesAt)) {
+      if (entry.ok) {
         expect(
-          py_eq(_as_dict(doc.composed_line_character_indexes_at(int(idx_s))), _as_dict((entry as any).value)),
+          py_eq(_as_dict(doc.composed_line_character_indexes_at(int(idx_s))), _as_dict(entry.value)),
         ).toBe(true);
       }
     }
@@ -276,7 +282,7 @@ describe("TestCharacterRangeAttributes", () => {
   test.each(LAYER_NAMES)("test_attribute_parity[%#]", (name: string) => {
     const doc = getitem(docs(), name);
     const mismatches: string[] = [];
-    for (const [key, entry] of Object.entries(probe().layers[name].charRanges) as [string, any][]) {
+    for (const [key, entry] of Object.entries<ProbeResult<ProbeRecord>>(probe().layers[name].charRanges)) {
       if (!entry.ok) {
         // Creation must fail on the py side too.
         raises(ValueError, () => _range_from_key(doc, key));
@@ -296,7 +302,7 @@ describe("TestCharacterRangeAttributes", () => {
 
 /** Creation-time errors and zero-span semantics from the edge probes. */
 describe("TestEdgeCases", () => {
-  const _assert_edge = (doc: any, edge: any, build: () => unknown): void => {
+  const _assert_edge = (doc: TextDocument, edge: ProbeResult<ProbeJson>, build: () => unknown): void => {
     if (edge.ok) {
       build();
       return;

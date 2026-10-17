@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  at,
   AttributeError,
   contains,
   getattr,
@@ -20,7 +21,7 @@ import {
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { AdvancedRendererOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { AdvancedRendererOptions, AVItem, ClassicRendererOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
 import { GuideOrientationType, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -35,49 +36,54 @@ const MARKER_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "mod
 const FOOTAGE_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "footage");
 const EG_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "essential_graphics");
 
+function next_<T>(found: T | undefined): T {
+  if (found === undefined) throw new StopIteration();
+  return found;
+}
+
 describe("TestRoundtripRenderer", () => {
   /** Roundtrip tests for CompItem.renderer. */
 
   test("test_modify_renderer_to_advanced", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     expect(comp.renderer).toBe("ADBE Advanced 3d");
 
     comp.renderer = "ADBE Calder";
     const out = tmp_path.div("modified_renderer.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Calder");
   });
 
   test("test_modify_renderer_to_cinema_4d", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
 
     comp.renderer = "ADBE Ernst";
     const out = tmp_path.div("modified_renderer_c4d.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Ernst");
   });
 
   test("test_modify_renderer_back_to_classic", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("renderer_advanced_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     expect(comp.renderer).toBe("ADBE Calder");
 
     comp.renderer = "ADBE Advanced 3d";
     const out = tmp_path.div("modified_renderer_classic.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Advanced 3d");
   });
 
   test("test_renderer_validation_rejects_invalid", () => {
-    const comp = parse_project_fresh(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions.at(0)!;
+    const comp = at(parse_project_fresh(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions, 0);
     raises(ValueError, () => {
       comp.renderer = "Not A Renderer";
     }, "must be one of");
@@ -94,28 +100,28 @@ describe("TestRoundtripRenderer", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
-    expect((comp.renderer_options as any).shadow_map_resolution === ShadowMapResolution.RES_750).toBe(true);
+    const comp = at(project.compositions, 0);
+    expect(as_instance(comp.renderer_options, ClassicRendererOptions).shadow_map_resolution === ShadowMapResolution.RES_750).toBe(true);
 
     comp.renderer = "ADBE Calder";
     const out = tmp_path.div("switched_renderer.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(py_eq(comp2._prin.display_name, "Advanced 3D")).toBe(true);
     const opts = comp2.renderer_options;
     expect(opts instanceof AdvancedRendererOptions).toBe(true);
     // Advanced 3D defaults, not Classic leftovers read as Quality.
-    expect((opts as AdvancedRendererOptions).quality).toBe(8);
+    expect(as_instance(opts, AdvancedRendererOptions).quality).toBe(8);
   });
 
   test("test_renderer_reassign_same_value_keeps_options", () => {
     const project = parse_aep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
 
     comp.renderer = "ADBE Advanced 3d"; // already Classic 3D
 
-    expect((comp.renderer_options as any).shadow_map_resolution === ShadowMapResolution.RES_750).toBe(true);
+    expect(as_instance(comp.renderer_options, ClassicRendererOptions).shadow_map_resolution === ShadowMapResolution.RES_750).toBe(true);
   });
 });
 
@@ -127,7 +133,8 @@ describe("TestCompItemLazyLayerParsing", () => {
 
     expect(comp._layers_loaded).toBe(false);
     expect(comp._deferred_layers != null).toBe(true);
-    expect(len(comp._deferred_layers!.at(0)!)).toBe(1);
+    py_assert(comp._deferred_layers != null);
+    expect(len(comp._deferred_layers[0])).toBe(1);
 
     // Non-layer attributes should not trigger layer parsing.
     void comp.width;
@@ -153,7 +160,7 @@ describe("TestCompItemLazyLayerParsing", () => {
 
   test("test_source_used_in_linking_without_layer_parse", () => {
     const project = parse_aep(FOOTAGE_SAMPLES_DIR.div("footage_not_missing.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
 
     expect(comp._layers_loaded).toBe(false);
     expect(comp._deferred_layers != null).toBe(true);
@@ -161,7 +168,7 @@ describe("TestCompItemLazyLayerParsing", () => {
     // Trigger lazy linking via used_in - source IDs are extracted
     // on-demand from DeferredListChunk raw bytes.
     const footage_items = [...project.items.values()].filter((it) => hasattr(it, "_used_in"));
-    const linked = footage_items.filter((it) => contains((it as any).used_in, comp));
+    const linked = footage_items.filter((it) => contains(as_instance(it, AVItem).used_in, comp));
     expect(py_bool(linked)).toBe(true);
     expect(comp._layers_loaded).toBe(false);
   });
@@ -1193,7 +1200,8 @@ describe("TestValidateGuidePosition", () => {
     );
     // type: ignore[assignment] in Python; the TS setter receives the string as-is.
     raises(TypeError_, () => {
-      (comp.guides[0] as any).position = "nope";
+      // @ts-expect-error deliberately assigns a string to a numeric setter
+      comp.guides[0].position = "nope";
     });
   });
 });
@@ -1406,12 +1414,12 @@ describe("TestRoundtripDraft3d", () => {
   test("test_toggle_draft3d", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
 
     comp.draft3d = true;
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2.draft3d).toBe(true);
 
     comp2.draft3d = false;
@@ -1419,11 +1427,11 @@ describe("TestRoundtripDraft3d", () => {
     parse_aep(out).project.save(out2);
     // Re-parse to check original state preserved
     const project3 = parse_aep(out).project;
-    const comp3 = project3.compositions.at(0)!;
+    const comp3 = at(project3.compositions, 0);
     comp3.draft3d = false;
     const out3 = tmp_path.div("toggled_back.aep");
     project3.save(out3);
-    const comp4 = parse_aep(out3).project.compositions.at(0)!;
+    const comp4 = at(parse_aep(out3).project.compositions, 0);
     expect(comp4.draft3d).toBe(false);
   });
 });
@@ -1481,39 +1489,39 @@ describe("TestRoundtripEssentialGraphics", () => {
   test("test_rename_template", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
-    // Python `next(c for c in ... if ...)`; `.find(...)!` is the TS twin.
-    const comp = project.compositions.find((c) => c.name === "primary")!;
+    // Python `next(c for c in ... if ...)`; `next_(....find(...))` is the TS twin.
+    const comp = next_(project.compositions.find((c) => c.name === "primary"));
     expect(comp.motion_graphics_template_name).toBe("Untitled");
 
     comp.motion_graphics_template_name = "My New Name";
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.find((c) => c.name === "primary")!;
+    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motion_graphics_template_name).toBe("My New Name");
   });
 
   test("test_rename_controller", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
-    const comp = project.compositions.find((c) => c.name === "primary")!;
+    const comp = next_(project.compositions.find((c) => c.name === "primary"));
     expect(comp.motion_graphics_controllers[0].name).toBe("Fill Color");
 
     comp.motion_graphics_controllers[0].name = "New Controller Name";
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.find((c) => c.name === "primary")!;
+    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motion_graphics_controllers[0].name).toBe("New Controller Name");
   });
 
   test("test_rename_multiple_controllers", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(EG_SAMPLES_DIR.div("multiple_controllers.aep")).project;
-    const comp = project.compositions.find((c) => c.name === "primary")!;
+    const comp = next_(project.compositions.find((c) => c.name === "primary"));
 
     comp.motion_graphics_controllers[1].name = "Renamed Opacity";
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.find((c) => c.name === "primary")!;
+    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motion_graphics_controllers[0].name).toBe("Brightness");
     expect(comp2.motion_graphics_controllers[1].name).toBe("Renamed Opacity");
     expect(comp2.motion_graphics_controllers[2].name).toBe("Background Color");
@@ -1526,14 +1534,14 @@ describe("TestRoundtripEssentialGraphics", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_aep(EG_SAMPLES_DIR.div("base.aep")).project;
-    const comp = project.compositions.find((c) => c.name === "main")!;
+    const comp = next_(project.compositions.find((c) => c.name === "main"));
     expect(comp.motion_graphics_template_name).toBe("Untitled");
 
     // Overwrite existing template name
     comp.motion_graphics_template_name = "Brand New Template";
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions.find((c) => c.name === "main")!;
+    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "main"));
     expect(comp2.motion_graphics_template_name).toBe("Brand New Template");
   });
 
@@ -1543,7 +1551,7 @@ describe("TestRoundtripEssentialGraphics", () => {
      * is None creates a new CIF3 chunk structure in memory.
      */
     const project = parse_aep(EG_SAMPLES_DIR.div("base.aep")).project;
-    const comp = project.compositions.find((c) => c.name === "main")!;
+    const comp = next_(project.compositions.find((c) => c.name === "main"));
     // Force deferred EG parsing, then clear to simulate from-scratch.
     comp._ensure_comp_parsed();
     comp._eg_template_name_utf8 = null;
@@ -1576,7 +1584,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
   function _layer_marker(comp: CompItem): Property {
     for (const layer of comp.layers) {
       for (const child of layer) {
-        if (getattr(child, "match_name", "") === "ADBE Marker") return child as Property;
+        if (getattr(child, "match_name", "") === "ADBE Marker") return as_instance(child, Property);
       }
     }
     // Python next(...) with no default raises StopIteration here.
@@ -1591,7 +1599,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     const before = new Map(
       Array.from(_keyed(comp), (p) => [p.match_name, p.keyframes.map((k) => k.time)] as const),
     );
@@ -1601,7 +1609,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     const after = new Map(
       Array.from(_keyed(comp2), (p) => [p.match_name, p.keyframes.map((k) => k.time)] as const),
     );
@@ -1616,7 +1624,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("effect_point_speed.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     expect(comp.frame_rate).toBe(25.0);
     expect(comp._cdta.internal_timebase).toBe(25600);
     const before = new Map(
@@ -1627,7 +1635,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2._cdta.internal_timebase).toBe(30720);
     for (const prop of _keyed(comp2)) {
       const expected = getitem(before, prop.match_name).map((u) => round((u * 30720) / 25600));
@@ -1643,7 +1651,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     comp.frame_rate = 30.0;
     const units_at_30 = new Map(
       Array.from(_keyed(comp), (p) => [p.match_name, p.keyframes.map((k) => k._ldat_item.time_units)] as const),
@@ -1656,7 +1664,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(comp2._cdta.internal_timebase).toBe(30720);
     expect(comp2.time_scale).toBe(2.0);
     for (const prop of _keyed(comp2)) {
@@ -1673,12 +1681,12 @@ describe("TestRoundtripFrameRateRetiming", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     comp.frame_rate = 30.0;
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     const timebase = comp2._cdta.internal_timebase;
     expect(timebase).toBe(30720);
     const stamps = new Set(
@@ -1696,14 +1704,14 @@ describe("TestRoundtripFrameRateRetiming", () => {
      */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     comp.duration = 253.0 / 24.0;
 
     comp.frame_rate = 25.0;
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
-    const comp2 = parse_aep(out).project.compositions.at(0)!;
+    const comp2 = at(parse_aep(out).project.compositions, 0);
     expect(approx(comp2.duration, 10.56)).toBe(true);
     expect(round(comp2.duration * 25.0)).toBe(264);
   });
@@ -1718,7 +1726,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
       const tmp_path = make_tmp_path();
       const on_comp = sample.startsWith("comp");
       const project = parse_project_fresh(MARKER_SAMPLES_DIR.div(sample));
-      const comp = project.compositions.at(0)!;
+      const comp = at(project.compositions, 0);
       const marker = on_comp ? comp.marker_property : _layer_marker(comp);
       py_assert(marker != null);
       marker.keyframes[0].time = 3.0;
@@ -1727,7 +1735,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
       const out = tmp_path.div("modified.aep");
       project.save(out);
 
-      const comp2 = parse_aep(out).project.compositions.at(0)!;
+      const comp2 = at(parse_aep(out).project.compositions, 0);
       const marker2 = on_comp ? comp2.marker_property : _layer_marker(comp2);
       py_assert(marker2 != null);
       expect(marker2.keyframes[0].time).toBe(3.0);
@@ -1765,7 +1773,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * legitimately off-grid.
      */
     const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
-    const comp = project.compositions.at(0)!;
+    const comp = at(project.compositions, 0);
     comp.duration = 253.0 / 24.0;
     const before_duration = comp.duration;
     const before_units = Array.from(_keyed(comp)).flatMap((p) =>

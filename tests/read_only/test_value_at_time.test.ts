@@ -26,23 +26,29 @@ import {
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Property } from "../../src/py_aep/index.ts";
+import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { get_first_layer, load_expected, parse_project } from "../conftest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples").div("models").div("property");
 const VAT_DIR = SAMPLES_DIR.div("value_at_time");
 
 // Maps matchName -> function to find the property from a parsed layer
-const _FINDERS: Map<string, (ly: any) => any> = new Map<string, (ly: any) => any>([
-  ["ADBE Opacity", (ly: any) => ly.transform.property("ADBE Opacity")],
-  ["ADBE Position", (ly: any) => ly.transform.property("ADBE Position")],
-  ["ADBE Anchor Point", (ly: any) => ly.transform.property("ADBE Anchor Point")],
-  ["ADBE Position_0", (ly: any) => ly.transform.property("ADBE Position_0")],
-  ["ADBE Scale", (ly: any) => ly.transform.property("ADBE Scale")],
-  ["ADBE Rotate Z", (ly: any) => ly.transform.property("ADBE Rotate Z")],
+const _FINDERS: Map<string, (ly: Layer) => Property> = new Map<string, (ly: Layer) => Property>([
+  ["ADBE Opacity", (ly) => ly.transform.property("ADBE Opacity")],
+  ["ADBE Position", (ly) => ly.transform.property("ADBE Position")],
+  ["ADBE Anchor Point", (ly) => ly.transform.property("ADBE Anchor Point")],
+  ["ADBE Position_0", (ly) => ly.transform.property("ADBE Position_0")],
+  ["ADBE Scale", (ly) => ly.transform.property("ADBE Scale")],
+  ["ADBE Rotate Z", (ly) => ly.transform.property("ADBE Rotate Z")],
 ]);
 
+interface _VatFrame {
+  time: number;
+  value: number | number[];
+}
+
 /** Load value_at_time JSON and return (matchName, frames). */
-function _load_vat(base_name: string): [string, any[]] {
+function _load_vat(base_name: string): [string, _VatFrame[]] {
   const data = load_expected(VAT_DIR, `${base_name}_value_at_time`);
   const prop = data.comps[0].layers[0].properties[0];
   return [prop.matchName, prop.frames];
@@ -61,7 +67,7 @@ function _get_prop(base_name: string): Property {
 }
 
 /** Compute maximum abs error across all frames. */
-function _max_error(prop: Property, frames: any[]): number {
+function _max_error(prop: Property, frames: _VatFrame[]): number {
   let max_err = 0.0;
   for (const f of frames) {
     const got = prop.value_at_time(f.time);
@@ -156,10 +162,10 @@ describe("TestValueAtTimeSpatial", () => {
   test("test_eased_roving_run_times", () => {
     /** The roving keys' derived times are the ticks AE stored. */
     const prop = _get_prop("keyframe_roving_eased");
-    const stored = prop.keyframes.map((kf: any) => kf._ldat_item.time_units);
+    const stored = prop.keyframes.map((kf) => kf._ldat_item.time_units);
     expect(py_eq(stored, [0, 56852, 74884, 122880])).toBe(true);
     prop._redistribute_roving_keyframes();
-    expect(py_eq(prop.keyframes.map((kf: any) => kf._ldat_item.time_units), stored)).toBe(true);
+    expect(py_eq(prop.keyframes.map((kf) => kf._ldat_item.time_units), stored)).toBe(true);
   });
 });
 
@@ -183,8 +189,8 @@ describe("TestValueAtTimeAPI", () => {
       if (typeof expected === "number") {
         expect(Math.abs(float(result) - float(expected)) < 0.001).toBe(true);
       } else if (Array.isArray(expected)) {
-        for (const [g, e] of zip(result as any, expected as any)) {
-          expect(Math.abs((g as number) - (e as number)) < 0.001).toBe(true);
+        for (const [g, e] of zip(result, expected)) {
+          expect(Math.abs(g - e) < 0.001).toBe(true);
         }
       }
     }

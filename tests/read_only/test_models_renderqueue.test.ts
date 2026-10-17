@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { Path, contains, enumerate, getitem, KeyError, len, py_eq, ValueError } from "../../src/pyrt/index.ts";
+import { Path, contains, enumerate, getitem, KeyError, len, py_eq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_rqi, load_expected, parse_project } from "../conftest.ts";
 import { ConvertToLinearLight, GetSettingsFormat } from "../../src/py_aep/enums/index.ts";
@@ -186,7 +186,12 @@ describe("TestCompLinking", () => {
     const expected = load_expected(SAMPLES_DIR, "render_settings");
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const exp_rqi = expected["renderQueue"]["items"].find((item: any) => item["compName"] === "base");
+    const exp_rqi = (() => {
+      for (const item of expected["renderQueue"]["items"]) {
+        if (item["compName"] === "base") return item;
+      }
+      throw new StopIteration();
+    })();
     expect(rqi.comp_name).toBe(exp_rqi["compName"]);
   });
 
@@ -358,7 +363,8 @@ describe("TestGetSettings", () => {
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
-      rqi.get_settings(9999 as any); // intentionally invalid format
+      // @ts-expect-error intentionally invalid format
+      rqi.get_settings(9999);
     });
   });
 
@@ -421,7 +427,8 @@ describe("TestGetSettings", () => {
     const rqi = get_rqi(project, "base");
     const om = rqi.output_modules[0];
     raises(ValueError, () => {
-      om.get_settings(9999 as any); // intentionally invalid format
+      // @ts-expect-error intentionally invalid format
+      om.get_settings(9999);
     });
   });
 });
