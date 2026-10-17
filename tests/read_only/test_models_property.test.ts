@@ -2154,6 +2154,97 @@ describe("TestEffectMetadata", () => {
     expect(flare_center.value[0] <= comp.width).toBe(true);
     expect(flare_center.value[1] <= comp.height).toBe(true);
   });
+
+  /**
+   * AE 2026 reports isDropdownEffect on a Dropdown Menu Control's menu,
+   * not on an effect's own popup.
+   */
+  test("test_only_dropdown_menu_controls_are_dropdown_effects", () => {
+    const comp = get_comp(
+      parse_project(SAMPLES_DIR.parent.div("essential_graphics", "dropdown_controller.aep")),
+      "primary",
+    );
+    let layer = comp.layers.find((ly) => ly.name === "Gray Solid 1");
+    if (layer === undefined) throw new StopIteration();
+    const control = as_instance(
+      layer.property("ADBE Effect Parade").property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ"),
+      PropertyGroup,
+    );
+    expect(as_instance(control.property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ-0001"), Property).is_dropdown_effect).toBe(
+      true,
+    );
+
+    layer = get_first_layer(parse_project(SAMPLES_DIR.div("2_gaussian.aep")));
+    const blur = as_instance(layer.property("ADBE Effect Parade").property("ADBE Gaussian Blur 2"), PropertyGroup);
+    expect(as_instance(blur.property("ADBE Gaussian Blur 2-0002"), Property).is_dropdown_effect).toBe(false);
+  });
+
+  /**
+   * AE 2026 bounds a checkbox 0-1 even when it cannot vary over time,
+   * except Puppet's (and Paint's) On Transparent.
+   */
+  test("test_checkboxes_are_bounded_0_1", () => {
+    const comp = get_comp(parse_project(SAMPLES_DIR.div("all_animated.aep")), "type_camera");
+    let layer = comp.layers.find((ly) => ly.name === "XF");
+    if (layer === undefined) throw new StopIteration();
+    const fill = as_instance(layer.property("ADBE Effect Parade").property("ADBE Fill"), PropertyGroup);
+    const all_masks = as_instance(fill.property("ADBE Fill-0007"), Property);
+    expect(all_masks.can_vary_over_time).toBe(false);
+    expect(py_eq([all_masks.has_min, all_masks.min_value, all_masks.max_value], [true, 0, 1])).toBe(true);
+    layer = get_layer(parse_project(SAMPLES_DIR.div("effects.aep")), "effect_puppet");
+    const puppet = as_instance(layer.property("ADBE Effect Parade").property("ADBE FreePin3"), PropertyGroup);
+    const on_transparent = as_instance(puppet.property("ADBE FreePin3 On Transparent"), Property);
+    expect(py_eq([on_transparent.has_min, on_transparent.has_max], [false, false])).toBe(true);
+    const auto_rotate = as_instance(puppet.property("ADBE FreePin3 Auto Rotate Pins"), Property);
+    expect(py_eq([auto_rotate.has_min, auto_rotate.has_max], [true, true])).toBe(true);
+  });
+});
+
+describe("TestTextPathOptions", () => {
+  /** A text layer's Path picks one of its masks, None reading 0. */
+  test("test_path_is_a_mask_index", () => {
+    const comp = get_comp(parse_project(SAMPLES_DIR.div("all_animated.aep")), "type_text");
+    const layer = comp.layers.find((ly) => ly.name === "TextLayer");
+    if (layer === undefined) throw new StopIteration();
+    const path = layer
+      .property("ADBE Text Properties")
+      .property("ADBE Text Path Options")
+      .property("ADBE Text Path");
+    expect(path.property_value_type).toBe(PropertyValueType.MASK_INDEX);
+    expect(path.value).toBe(0);
+  });
+});
+
+/** A 2D solid in a Classic 3D comp, each sample read by its own AE. */
+class TestMaterialOptionsByVersion {
+  static _materials(version: string): PropertyGroup {
+    const comp = get_comp(parse_project(VERSIONS_DIR.div(version, "complete.aep")), "DropFrame_Comp");
+    const layer = comp.layers.find((ly) => ly.name === "DF_Solid");
+    if (layer === undefined) throw new StopIteration();
+    py_assert(as_instance(layer, AVLayer).three_d_layer === false);
+    return layer.property("ADBE Material Options Group");
+  }
+}
+
+describe("TestMaterialOptionsByVersion", () => {
+  /** AE 15.1, 22.5 and 23.6 show these options on a 2D layer too. */
+  test.each<[string, boolean]>([
+    ["ae2023", true],
+    ["ae2024", false],
+  ])("test_2d_layer_options_take_expressions_until_ae_23[%#]", (version, expected) => {
+    const materials = TestMaterialOptionsByVersion._materials(version);
+    for (const mn of ["ADBE Light Transmission", "ADBE Diffuse Coefficient"]) {
+      expect(as_instance(materials.property(mn), Property).can_set_expression).toBe(expected);
+    }
+  });
+
+  test.each<[string, boolean]>([
+    ["ae2023", false],
+    ["ae2024", true],
+  ])("test_shadow_color_from_ae_24[%#]", (version, expected) => {
+    const names = TestMaterialOptionsByVersion._materials(version).properties.map((p) => p.match_name);
+    expect(names.includes("ADBE Shadow Color")).toBe(expected);
+  });
 });
 
 class TestCanSetExpression {

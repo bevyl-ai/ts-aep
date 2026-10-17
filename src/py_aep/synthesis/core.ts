@@ -149,8 +149,10 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       anchor_w = 0;
       anchor_h = 0;
     } else {
-      anchor_w = layer.width;
-      anchor_h = layer.height;
+      // An audio-only source has no pixels: AE 2026 centres the anchor
+      // on a 1x1 box, [0.5, 0.5, 0].
+      anchor_w = layer.width || 1;
+      anchor_h = layer.height || 1;
     }
   } else {
     anchor_w = comp_w;

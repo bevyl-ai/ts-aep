@@ -22,6 +22,7 @@ import { _validate_number, validate_bool, validate_enum, validate_f8, validate_n
 import type { FolderItem } from "../items/folder.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "../layers/av_layer.ts";
+import type { Layer } from "../layers/layer.ts";
 import type { Project } from "../project.ts";
 import { Curves } from "./curves.ts";
 import type { Gradient } from "./gradient.ts";
@@ -2864,7 +2865,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** `true` if the property is the Menu property of a Dropdown Menu Control effect. */
   get is_dropdown_effect(): boolean {
-    return this._property_control_type === PropertyControlType.ENUM;
+    // A Dropdown Menu Control is a `Pseudo/@@<id>` effect (its Essential
+    // Graphics override leaf keeps that match name). AE 2026 reports
+    // false on every other popup, named pseudo effects' ones included.
+    return (
+      this._property_control_type === PropertyControlType.ENUM &&
+      this.match_name.startsWith("Pseudo/@@")
+    );
   }
 
   /** `true` if the named property has keyframes or an enabled expression. */
@@ -4447,7 +4454,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // to [100, 50, 7] on a 200x100 layer stores [0.5, 0.5, 0.07], and
       // only 7/100 gives 0.07 (probed in AE 2026 across three
       // comp/layer size pairs).
-      const size = this._layer_pixel_size();
+      const size = this._effect_point_size();
       if (size != null) {
         scale = [...size];
         if (this.property_control_type === PropertyControlType.THREE_D) scale.push(size[1]);
@@ -4478,6 +4485,29 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (!(e instanceof ValueError)) throw e;
       return null;
     }
+  }
+
+  /**
+   * The size an effect point is stored normalized against, or `null`.
+   *
+   * The layer's, except on an adjustment layer, whose effects render in
+   * its composition: AE 2026 stores a Transform anchor set to [30, 40]
+   * on a 200x100 adjustment solid in a 1920x1080 comp as 30 / 1920,
+   * 40 / 1080, and defaults it to the comp's centre (as AE 15.1 does).
+   */
+  _effect_point_size(): [number, number] | null {
+    let layer: Layer;
+    try {
+      layer = this._containing_layer;
+    } catch (e) {
+      if (!(e instanceof ValueError)) throw e;
+      return null;
+    }
+    if (layer.adjustment_layer) {
+      const comp = layer.containing_comp;
+      return [comp.width, comp.height];
+    }
+    return layer._pixel_size;
   }
 }
 

@@ -45,8 +45,9 @@ export function list_remove<T>(xs: T[], x: unknown): void {
   xs.splice(list_index(xs, x), 1);
 }
 
-// Match names of groups that support add/remove/move/duplicate on children.
-// "ADBE Vectors Group" is a nested shape group's own contents.
+// Match names of groups that support add/remove/move/duplicate on children
+// (AE 2026 reports them INDEXED_GROUP, empty or not). "ADBE Vectors Group" is
+// a nested shape group's own contents.
 export const _INDEXED_GROUP_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
   "ADBE Effect Parade",
   "ADBE Mask Parade",
@@ -55,6 +56,10 @@ export const _INDEXED_GROUP_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
   "ADBE Text Selectors",
   "ADBE Root Vectors Group",
   "ADBE Vectors Group",
+  "ADBE MTrackers",
+  "ADBE Layer Sets",
+  "ADBE Paint Group",
+  "ADBE Samurai Strokes Group",
 ]);
 
 // Text animator + selectors expose an enable toggle (canSetEnabled).

@@ -29,7 +29,7 @@ import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { as_instance, get_comp as get_comp_, get_first_layer as get_first_layer_, get_layer as get_layer_, parse_project_fresh as parse_project_fresh_ } from "../helpers.ts";
 
 import { parse as parse_aep_, new as py_aep_new, Project } from "../../src/py_aep/index.ts";
-import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType } from "../../src/py_aep/enums/index.ts";
+import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { AVLayer, CompItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import { ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { _baked_effect_def } from "../../src/py_aep/models/properties/property_group.ts";
@@ -4346,5 +4346,49 @@ describe("TestRotoBezierWrites", () => {
     expect(approx(value.vertices[0], [200.0, 150.0], { abs: 1e-3 })).toBe(true);
     expect(approx(value._stored_tangents(-1)[0], [-15.0, 5.0], { abs: 1e-3 })).toBe(true);
     expect(approx(value._stored_tangents(1)[0], [20.0, -10.0], { abs: 1e-3 })).toBe(true);
+  });
+});
+
+class TestTextPathWrite {
+  static _text_layer(project: Project): TextLayer {
+    const comp = get_comp_(project, "type_text");
+    const layer = comp.layers.find((ly) => ly.name === "TextLayer");
+    return as_instance(layer, TextLayer);
+  }
+
+  static _path(layer: TextLayer): Property<number> {
+    const text = layer.text;
+    py_assert(text != null);
+    return text.property("ADBE Text Path Options").property("ADBE Text Path");
+  }
+}
+
+describe("TestTextPathWrite", () => {
+  /**
+   * A text layer's Path set to a mask is written as AE 2026 writes it
+   * (and reads back py_aep's file): a mask index in a `tdli`.
+   */
+  test("test_path_set_to_a_mask", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(SAMPLES_DIR.div("all_animated.aep"));
+    const layer = TestTextPathWrite._text_layer(project);
+    py_assert(layer.masks != null);
+    layer.masks.add_property("ADBE Mask Atom");
+    TestTextPathWrite._path(layer).value = 1;
+    const out = tmp_path.div("text_path.aep");
+    project.save(out);
+
+    const path = TestTextPathWrite._path(TestTextPathWrite._text_layer(parse_project_fresh_(out)));
+    py_assert(path._tdsb != null);
+    expect(path._tdsb.synthetic).toBe(false);
+    expect(path.property_value_type).toBe(PropertyValueType.MASK_INDEX);
+    expect(path.value).toBe(1);
+    const tdb4 = path._tdb4;
+    expect(
+      py_eq(
+        [tdb4._spatial_static_flags, tdb4._value_hint_type, tdb4._cvot_flags, tdb4._type_flags, tdb4._property_category],
+        [0x01, 1, 0x00, 0x04, 0x04],
+      ),
+    ).toBe(true);
   });
 });

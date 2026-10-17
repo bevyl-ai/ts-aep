@@ -4,6 +4,7 @@ import { warn } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
 import { find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { PropertyValueType } from "../enums/index.ts";
 import { _suppress_materialization } from "../models/descriptors.ts";
 import { Keyframe } from "../models/properties/keyframe.ts";
 import { Property } from "../models/properties/property.ts";
@@ -50,8 +51,14 @@ export const parse_property = _suppress_materialization().decorate(function pars
   // layer index can be resolved lazily (it changes on layer reorder).
   // tdli stores the 1-based mask index directly and is stable.
   const tdpi = find_by_type_or_null(tdbs_child_chunks, "tdpi");
+  // AE writes a tdli only for mask-index properties; their tdb4 alone reads
+  // as OneD (e.g. a text layer's Path).
+  let property_value_type: PropertyValueType | null = null;
   const tdli = find_by_type_or_null(tdbs_child_chunks, "tdli");
-  if (tdli !== null) value = tdli.value;
+  if (tdli !== null) {
+    value = tdli.value;
+    property_value_type = PropertyValueType.MASK_INDEX;
+  }
 
   const expression_utf8 = find_by_type_or_null(tdbs_child_chunks, "Utf8");
 
@@ -80,6 +87,7 @@ export const parse_property = _suppress_materialization().decorate(function pars
     property_depth,
     keyframes,
     value,
+    property_value_type,
   });
 
   return prop;

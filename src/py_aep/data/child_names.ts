@@ -84,7 +84,6 @@ export const CHILD_MATCH_NAMES = {
     light_transmission: "ADBE Light Transmission",
     accepts_shadows: "ADBE Accepts Shadows",
     accepts_lights: "ADBE Accepts Lights",
-    shadow_color: "ADBE Shadow Color",
     appears_in_reflections: "ADBE Appears in Reflections",
     ambient: "ADBE Ambient Coefficient",
     diffuse: "ADBE Diffuse Coefficient",

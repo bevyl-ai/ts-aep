@@ -92,7 +92,7 @@ function mismatches(root: CosDict): string[] {
 describe("btdk schema", () => {
   test("every sample's btdk tree decodes and takes the typed path", () => {
     const files = fs.globSync("samples/**/*.aep").sort();
-    expect(files.length).toBe(644);
+    expect(files.length).toBe(645);
     let trees = 0;
     let checked = 0;
     const failures: string[] = [];
@@ -110,8 +110,8 @@ describe("btdk schema", () => {
       }
     }
     expect(failures).toEqual([]);
-    expect(trees).toBe(239);
-    expect(checked).toBe(1884);
+    expect(trees).toBe(242);
+    expect(checked).toBe(1902);
   }, 120_000);
 
   test("the point-text template conforms", () => {

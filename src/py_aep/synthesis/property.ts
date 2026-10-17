@@ -285,6 +285,8 @@ export const _MATERIAL_SPECS: PropSpec[] = [
     has_time_base: true,
     spatial_flags: 0x07,
     value_hint_type: 2,
+    // AE 24.6 lists it, AE 15.1 / 22.5 / 23.6 do not.
+    min_major: 24,
   }),
   _spec("ADBE Appears in Reflections", "Appears in Reflections", 1.0, PropertyValueType.OneD, {
     integer: true,
@@ -947,8 +949,14 @@ export const _CAMERA_SPECS: PropSpec[] = [
 
 // Canonical children of "ADBE Text Path Options".
 export const _TEXT_PATH_OPTIONS_SPECS: PropSpec[] = [
-  _spec("ADBE Text Path", "Path", 0.0, PropertyValueType.CUSTOM_VALUE, {
+  _spec("ADBE Text Path", "Path", 0, PropertyValueType.MASK_INDEX, {
     can_vary_over_time: false,
+    // As AE 2026 writes a text layer's Path set to a mask.
+    integer: true,
+    has_time_base: true,
+    spatial_flags: 0x01,
+    cvot: 0x00,
+    value_hint_type: 1,
   }),
   _spec("ADBE Text Reverse Path", "Reverse Path", 0.0, PropertyValueType.OneD),
   _spec("ADBE Text Perpendicular To Path", "Perpendicular To Path", 1.0, PropertyValueType.OneD),

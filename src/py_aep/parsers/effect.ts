@@ -21,8 +21,13 @@ import {
   deferred,
   int,
   split,
+  strip,
   warn,
   zip,
+  decode,
+  encode,
+  LookupError,
+  UnicodeDecodeError,
 } from "../../pyrt/index.ts";
 
 const _property = deferred<typeof import("./property.ts")>("py_aep/parsers/property");
@@ -235,10 +240,13 @@ export function _scale_point_to_pixels(prop: Property, size: [number, number]): 
  * describe the control type, default values, and ranges.
  *
  * @param sspc_child_chunks - The SSPC chunk's child chunks.
+ * @param code_page - The project's system code page (`nnhd`), which older
+ *   projects store parameter names in.
  * @returns Map of parameter match names to definition dicts.
  */
 export function parse_effect_param_defs(
   sspc_child_chunks: Chunk[],
+  code_page: number,
 ): Map<string, ParamDef> {
   const part_chunk = find_by_list_type(sspc_child_chunks, "parT");
   const param_defs = new Map<string, ParamDef>();
@@ -247,10 +255,48 @@ export function parse_effect_param_defs(
   for (const [index, [match_name, parameter_chunks]] of [...chunks_by_parameter].entries()) {
     // Skip first, it describes parent
     if (index === 0) continue;
-    param_defs.set(match_name, _parse_effect_parameter_def(parameter_chunks));
+    const param_def = _parse_effect_parameter_def(parameter_chunks, code_page);
+    if (_UNBOUNDED_CHECKBOXES.has(match_name)) {
+      delete param_def.min_value;
+      delete param_def.max_value;
+    }
+    param_defs.set(match_name, param_def);
   }
 
   return param_defs;
+}
+
+// Checkboxes AE 2026 reports without min / max. Nothing in their pard sets
+// them apart: the other 2067 checkboxes of the effect samples, including
+// ones with the same flags, are bounded 0-1.
+export const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
+  "ADBE Paint On Transparent",
+  "ADBE FreePin3 On Transparent",
+]);
+
+// Codecs of the `nnhd` code pages that are not `cp<number>`.
+export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
+  [0x0100, "mac_roman"],
+  [65001, "utf-8"],
+]);
+
+/**
+ * A `pard` name in the project's code page.
+ *
+ * The chunk decodes the name as UTF-8 (keeping other bytes as surrogates
+ * for the round trip), but projects saved before AE 26 store it in the
+ * system code page: "Set Red To Source 1's" holds 0x92 in a Windows
+ * (1252) project. Names that are valid UTF-8 are returned as they are.
+ */
+export function _decode_pard_name(name: string, code_page: number): string {
+  if (!/[\udc80-\udcff]/u.test(name)) return name;
+  const codec = _CODE_PAGE_CODECS.get(code_page) ?? `cp${code_page}`;
+  try {
+    return decode(encode(name, "utf-8", "surrogateescape"), codec);
+  } catch (e) {
+    if (!(e instanceof LookupError || e instanceof UnicodeDecodeError)) throw e;
+    return name;
+  }
 }
 
 /**
@@ -359,11 +405,13 @@ export function _parse_effect_properties(
   group_match_name = "",
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
-  // Point parameters normalize against the LAYER. The layer is only
-  // reachable once the effect is attached, so callers that already know
-  // it pass its size; during the initial parse it is unknown and the
+  // Point parameters normalize against the LAYER, or the composition for
+  // an adjustment layer (see `Property._effect_point_size`). The layer is
+  // only reachable once the effect is attached, so callers that already
+  // know it pass it; during the initial parse it is unknown and the
   // composition stands in (what py_aep has always used).
-  const point_size: [number, number] = layer?._pixel_size ?? [composition.width, composition.height];
+  const layer_size = layer != null && !layer.adjustment_layer ? layer._pixel_size : null;
+  const point_size: [number, number] = layer_size ?? [composition.width, composition.height];
 
   // Skip index-0 internal parameters (not exposed in ExtendScript).
   const property_runs = [...get_match_name_runs(tdgp_chunk)].filter(
@@ -467,7 +515,10 @@ export const parse_effect = _suppress_materialization().decorate(function parse_
 
   let param_defs: Map<string, ParamDef>;
   try {
-    param_defs = parse_effect_param_defs(sspc_child_chunks);
+    param_defs = parse_effect_param_defs(
+      sspc_child_chunks,
+      composition._project._nnhd._system_code_page,
+    );
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
     param_defs = new Map();
@@ -670,13 +721,16 @@ _pard_extractor(
 )(_extract_no_value);
 
 /** Parse effect parameter definition from pard chunk, returning a map of values. */
-export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef {
+export function _parse_effect_parameter_def(
+  parameter_chunks: Chunk[],
+  code_page: number,
+): ParamDef {
   const pard_chunk = find_by_type(parameter_chunks, "pard");
 
   const control_type = PropertyControlType.of(pard_chunk.property_control_type);
 
   const result: ParamDef = {
-    name: pard_chunk.name,
+    name: _decode_pard_name(pard_chunk.name, code_page),
     property_control_type: control_type,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
@@ -701,7 +755,15 @@ export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef
     const pdnm_data = utf8_chunk.value;
     if (control_type === PropertyControlType.ENUM) {
       result.property_parameters = split(pdnm_data, "|");
-    } else if (pdnm_data) {
+    } else if (
+      pdnm_data &&
+      control_type === PropertyControlType.BOOLEAN &&
+      !strip(result.name)
+    ) {
+      // A checkbox's pdnm is the label beside its box (a button's, the
+      // button text): AE 2026 names the parameter by it only when the
+      // pard name is blank (2102 / 2102 such checkboxes, 279 / 279
+      // named ones keep the pard name, as do buttons).
       result.name = pdnm_data;
     }
   } catch (e) {
@@ -719,11 +781,13 @@ export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef
  * include a parT chunk.
  *
  * @param root_chunks - The root chunks of the AEP file.
+ * @param code_page - The project's system code page (`nnhd`).
  * @returns Map of effect match names to their parameter definitions (effect_match_name -\>
  *   param_match_name -\> param_def).
  */
 export function parse_effect_definitions(
   root_chunks: Chunk[],
+  code_page: number,
 ): Map<string, Map<string, ParamDef>> {
   const efdg_chunk = find_by_list_type_or_null(root_chunks, "EfdG");
   if (efdg_chunk === null) return new Map();
@@ -738,7 +802,7 @@ export function parse_effect_definitions(
     const effect_match_name = tdmn_chunk.value;
 
     const sspc_chunk = find_by_list_type(efdf_child_chunks, "sspc");
-    const param_defs = parse_effect_param_defs(sspc_chunk.chunks);
+    const param_defs = parse_effect_param_defs(sspc_chunk.chunks, code_page);
     effect_defs.set(effect_match_name, param_defs);
   }
 

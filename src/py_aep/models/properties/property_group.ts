@@ -541,6 +541,8 @@ export class PropertyGroup extends PropertyBase {
         "ADBE Text Animators",
         "ADBE Text Selectors",
         "ADBE Text Animator Properties",
+        // The Paint effect's stroke list.
+        "ADBE Paint Group",
       ].includes(match_name)
     ) {
       this._elided = true;
