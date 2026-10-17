@@ -1314,7 +1314,11 @@ export function* _atoms(data: Uint8Array, start: number, end: number): Generator
   }
 }
 
-// TODO(port): n == 8 fields return a JS `number` (no bigint), so values above 2^53 lose precision where Python's int is exact; affects only 64-bit header fields >= 2^53 (e.g. corrupt/huge MP4 sizes).
+// TODO(port): an n == 8 field above 2^53 rounds to a double where Python's int is exact. Atom
+// sizes are unaffected (any size >= 2^53 exceeds the file either way); the v1 mvhd/mdhd
+// durations and elst segment duration are not: `dur / ts` can differ in the last bit, and an
+// elst value within 1024 of the 2^64-1 empty-edit sentinel reads as the sentinel. Only
+// durations >= 2^53 ticks (285 years at a 1 MHz timescale) reach this.
 export function _u(data: Uint8Array, off: number, n: number): number {
   return bytes_.int_from_bytes(bytes_.slice(data, off, off + n), "big");
 }

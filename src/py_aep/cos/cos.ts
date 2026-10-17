@@ -655,7 +655,9 @@ export class CosParser {
         break;
       }
     }
-    // TODO(port): Python's int() is unbounded but int(head) here yields a JS number, so COS integer literals beyond 2**53 (e.g. 9007199254740993) round to the nearest double.
+    // TODO(port): Python's int() is exact; COS integers are JS numbers throughout CosNode,
+    // the kinds and the serializer, so a literal beyond 2**53 (e.g. 9007199254740993) rounds
+    // to the nearest double and re-serializes rounded.
     // Python's int() gets bytes, so its error message shows b'+' rather than '+'.
     let value: number;
     try {
