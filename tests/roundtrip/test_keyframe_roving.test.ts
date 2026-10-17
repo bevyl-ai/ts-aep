@@ -37,14 +37,14 @@ function _position(sample: string): Property {
   const layer: Layer = project.compositions[0].layers[0];
   const prop = layer.transform.property("ADBE Position");
   py_assert(prop != null);
-  return prop as Property;
+  return prop;
 }
 
 function _position_from(project: Project): Property {
   const layer: Layer = project.compositions[0].layers[0];
   const prop = layer.transform.property("ADBE Position");
   py_assert(prop != null);
-  return prop as Property;
+  return prop;
 }
 
 /** Stored (sub-frame) keyframe times, which `frame_time` would round. */
@@ -76,10 +76,10 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
 
   test("test_bounding_keyframes_keep_their_times", () => {
     const prop = _position("keyframe_roving.aep");
-    const [first, last] = [_times(prop)[0], _times(prop).at(-1)!];
+    const [first, last] = [_times(prop)[0], at(_times(prop), -1)];
     prop.keyframes[2].roving = true;
     expect(_times(prop)[0]).toBe(first);
-    expect(_times(prop).at(-1)!).toBe(last);
+    expect(at(_times(prop), -1)).toBe(last);
   });
 
   test("test_times_stay_ordered", () => {
@@ -104,11 +104,11 @@ describe("TestRoundtripRovingFollowsBoundingEase", () => {
 
   test("test_ease_in_out_pulls_the_run_inward", () => {
     const prop = _position("keyframe_roving.aep");
-    const span = _times(prop).at(-1)!;
+    const span = at(_times(prop), -1);
     expect(py_eq(_times(prop).slice(1, 3), [floordiv(span, 3), floordiv(span * 2, 3)])).toBe(true);
 
     prop.keyframes[0].out_temporal_ease[0].influence = 100.0 / 3.0;
-    prop.keyframes.at(-1)!.in_temporal_ease[0].influence = 100.0 / 3.0;
+    at(prop.keyframes, -1).in_temporal_ease[0].influence = 100.0 / 3.0;
     prop.keyframes[1].roving = true;
 
     const eased = _times(prop);
@@ -290,7 +290,7 @@ describe("TestOrientationInert", () => {
     for (const layer of project.compositions[0].layers) {
       const candidate = layer.transform.property("ADBE Orientation");
       if (candidate != null) {
-        prop = candidate as Property;
+        prop = candidate;
         break;
       }
     }
@@ -336,9 +336,9 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
   test("test_an_anchor_still_moves_and_retimes_the_run", () => {
     const prop = _position("keyframe_roving.aep");
     const before = _times(prop);
-    prop.keyframes.at(-1)!.time = prop.keyframes.at(-1)!.time + 1.0;
+    at(prop.keyframes, -1).time = at(prop.keyframes, -1).time + 1.0;
     const after = _times(prop);
-    expect(after.at(-1)! > before.at(-1)!).toBe(true);
+    expect(at(after, -1) > at(before, -1)).toBe(true);
     expect(!py_eq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
   });
 

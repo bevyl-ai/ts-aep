@@ -227,7 +227,8 @@ describe("TestImportOptionsLayerSelection", () => {
   test("test_layer_index_rejects_non_int", () => {
     const opts = new ImportOptions(new Path("a.psd"));
     raises(TypeError_, () => {
-      (opts as any).layer_index = "Layer 1";
+      // @ts-expect-error a layer name is not an index; the setter must reject it at runtime
+      opts.layer_index = "Layer 1";
     });
   });
 
@@ -238,7 +239,7 @@ describe("TestImportOptionsLayerSelection", () => {
     raises(
       ValueError,
       () => {
-        (opts as any).layer_index = CURRENT_VALUE;
+        opts.layer_index = CURRENT_VALUE;
       },
       "only valid for FootageItem.replace",
     );
@@ -289,7 +290,8 @@ describe("TestImportOptionsRange", () => {
       opts.range_start = -1;
     });
     raises(TypeError_, () => {
-      (opts as any).range_end = "5";
+      // @ts-expect-error a str is not an int; the setter must reject it at runtime
+      opts.range_end = "5";
     });
   });
 

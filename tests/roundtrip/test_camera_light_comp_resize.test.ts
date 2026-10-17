@@ -18,8 +18,9 @@ import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { get_comp, parse_project_fresh } from "../helpers.ts";
-import { Path } from "../../src/pyrt/index.ts";
+import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { Path, py_assert, setattr } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in Python is the
@@ -29,9 +30,9 @@ const CAMERA_SAMPLE = SAMPLES_DIR.div("camera_default_position.aep");
 const LIGHT_SAMPLE = SAMPLES_DIR.div("light_default_position.aep");
 
 function _prop(layer: Layer, group: string, match_name: string): Property {
-  const prop = (layer.__getitem__(group) as any).__getitem__(match_name);
-  expect(prop instanceof Property).toBe(true);
-  return prop as Property;
+  const prop = as_instance(layer.__getitem__(group), PropertyGroup).__getitem__(match_name);
+  py_assert(prop instanceof Property);
+  return prop;
 }
 
 function _reopened(project: Project, tmp_path: Path, comp_name: string, layer_name: string): Layer {
@@ -45,15 +46,15 @@ function _reopened(project: Project, tmp_path: Path, comp_name: string, layer_na
 }
 
 function _assert_written(prop: Property, value: number[] | number): void {
-  expect(prop._tdsb != null).toBe(true);
-  expect(prop._tdsb!.synthetic).toBe(false);
+  py_assert(prop._tdsb != null);
+  expect(prop._tdsb.synthetic).toBe(false);
   expect(approx(prop.value, value)).toBe(true);
   expect(prop.is_modified).toBe(true);
 }
 
 function _assert_left_out(prop: Property, value: number[] | number): void {
-  expect(prop._tdsb != null).toBe(true);
-  expect(prop._tdsb!.synthetic).toBe(true);
+  py_assert(prop._tdsb != null);
+  expect(prop._tdsb.synthetic).toBe(true);
   expect(approx(prop.value, value)).toBe(true);
   expect(prop.is_modified).toBe(false);
 }
@@ -104,7 +105,7 @@ describe("TestLightCompResize", () => {
   test.each(rows)("test_writes_position[%#]", (attr, value) => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(LIGHT_SAMPLE);
-    (get_comp(project, "1920x1080") as any)[attr] = value;
+    setattr(get_comp(project, "1920x1080"), attr, value);
 
     const light = _reopened(project, tmp_path, "1920x1080", "Point");
 
