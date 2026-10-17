@@ -79,7 +79,10 @@ export class Path {
 
   read_bytes(): Uint8Array {
     try {
-      return new Uint8Array(fs.readFileSync(this.path));
+      // A plain view of the host's buffer (a Node `Buffer` subclasses Uint8Array with other
+      // `slice` semantics) instead of a copy of the whole file.
+      const data = fs.readFileSync(this.path);
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
     } catch (e: unknown) {
       if (error_code(e) === "ENOENT") throw new FileNotFoundError(`[Errno 2] No such file or directory: '${this.path}'`);
       throw e;
