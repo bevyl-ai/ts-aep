@@ -1363,8 +1363,9 @@ export class FileSource extends FootageSource {
       // scandir's entries know their type, and the cheap name test runs
       // first: no stat per file of a large frame folder.
       file_names = sorted(
-        host.fs
-          .readdirSync(file.parent.path)
+        host
+          .scandir(file.parent.path)
+          .map((ent) => ent.name)
           .filter(
             (name) =>
               _splitext_ext(name).toLowerCase() === suffix && file.parent.div(name).is_file(),

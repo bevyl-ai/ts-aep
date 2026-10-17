@@ -34,6 +34,8 @@ import {
 import { raises } from "../../src/pyrt/pytest.ts";
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import * as datetime from "../../src/pyrt/datetime.ts";
+import { Path } from "../../src/pyrt/pathlib.ts";
+import { fs, memfs, use_host_fs, use_memory_fs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
@@ -187,6 +189,22 @@ describe("datetime", () => {
 });
 
 describe("pathlib", () => {
+  test("rglob order", () => {
+    // CPython 3.12 lists each directory of walk() in turn; walk() names a directory's
+    // subdirectories as it lists it, then descends depth first.
+    use_memory_fs();
+    try {
+      memfs.write("/rg/a/x/f1", new Uint8Array(0));
+      memfs.write("/rg/b/g", new Uint8Array(0));
+      memfs.write("/rg/c", new Uint8Array(0));
+      fs.mkdirSync("/rg/a/y");
+      const names = new Path("/rg").rglob("*").map((p) => p.path.slice("/rg/".length));
+      expect(names).toEqual(["a", "b", "c", "a/x", "a/y", "b/g", "a/x/f1"]);
+    } finally {
+      use_host_fs();
+    }
+  });
+
   test.each(CPY.paths.map((r) => [...r]))("%s(%j)", (cls, t, ...exp) => {
     const p = cls === "PurePosixPath" ? new PurePosixPath(t as string) : new PureWindowsPath(t as string);
     expect([String(p), p.parts, p.drive, p.root, p.name, p.stem, p.suffix, String(p.parent), String(p.div("f.png"))]).toEqual(exp as any);

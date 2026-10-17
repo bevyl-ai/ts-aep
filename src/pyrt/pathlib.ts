@@ -1,6 +1,6 @@
 // The `pathlib.Path` subset py_aep uses, over the host fs / path (pyrt/host).
 
-import { fs, homedir, path as nodepath, type HostStats } from "./host.ts";
+import { fs, homedir, path as nodepath, scandir, type HostDirent, type HostStats } from "./host.ts";
 import { error_code, FileNotFoundError } from "./errors.ts";
 
 export class Path {
@@ -120,26 +120,46 @@ export class Path {
   }
 
   iterdir(): Path[] {
-    return fs.readdirSync(this.path).sort().map((n) => this.div(n));
+    return scandir(this.path).map((ent) => this.div(ent.name));
   }
 
-  /** `glob` with `*`, `?` and a leading `**` segment. */
+  /**
+   * `glob` with `*`, `?` and a leading `**` segment, in CPython 3.12's order:
+   * the directories of `walk()` (each one's subdirectories as it is listed,
+   * then depth first), each listed in readdir order.
+   */
   glob(pattern: string): Path[] {
     const recursive = pattern.startsWith("**/");
     const leaf = recursive ? pattern.slice(3) : pattern;
     const re = new RegExp(
       "^" + leaf.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]") + "$",
     );
-    const out: Path[] = [];
-    const walk = (dir: string): void => {
-      if (!fs.existsSync(dir)) return;
-      for (const ent of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-        const full = nodepath.join(dir, ent.name);
-        if (re.test(ent.name)) out.push(new Path(full));
-        if (recursive && ent.isDirectory()) walk(full);
+    if (!this.is_dir()) return [];
+    // An unreadable directory (OSError) is skipped.
+    const list = (dir: string): HostDirent[] => {
+      try {
+        return scandir(dir);
+      } catch (e) {
+        if (error_code(e) === undefined) throw e;
+        return [];
       }
     };
-    walk(this.path);
+    const dirs = [this.path];
+    if (recursive) {
+      const stack = [this.path];
+      for (let dir = stack.pop(); dir !== undefined; dir = stack.pop()) {
+        const parent = dir;
+        const children = list(parent)
+          .filter((ent) => ent.isDirectory())
+          .map((ent) => nodepath.join(parent, ent.name));
+        dirs.push(...children);
+        stack.push(...children.slice().reverse());
+      }
+    }
+    const out: Path[] = [];
+    for (const dir of dirs) {
+      for (const ent of list(dir)) if (re.test(ent.name)) out.push(new Path(nodepath.join(dir, ent.name)));
+    }
     return out;
   }
 

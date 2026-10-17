@@ -259,9 +259,6 @@ export function _index_postscript(
  */
 export function* _walk_font_files(): Generator<Path> {
   for (const directory of _font_dirs()) {
-    // TODO(port): pyrt rglob yields entries sorted by name; CPython's rglob
-    // follows filesystem (scandir) order, which is not reproducible here. Only
-    // affects which file wins when two font files share the same index key.
     for (const path of directory.rglob("*")) {
       if (_FONT_SUFFIXES.includes(path.suffix.toLowerCase())) {
         yield path;
