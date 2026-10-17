@@ -8,7 +8,6 @@ import {
   NotImplementedError,
   ValueError,
   float_repr,
-  getattr,
   hasattr,
   max,
   min,
@@ -19,6 +18,8 @@ import {
 } from "../../../pyrt/index.ts";
 import { requires_version } from "../../ae_version.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
+import { find_by_list_type, find_by_type } from "../../binary/utils.ts";
+import { get_chunks_by_match_name } from "../../parsers/utils.ts";
 import type { EssentialGraphicsController } from "../essential_graphics.ts";
 import { resolve_essential_property_controllers } from "../../resolvers/essential_properties.ts";
 import { can_add_layer } from "../../resolvers/motion_graphics.ts";
@@ -151,8 +152,11 @@ export class AVLayer extends Layer {
 
   /**
    * `true` if this is an environment layer in a Ray-traced 3D
-   * composition. Setting this to `true` automatically sets
-   * {@link three_d_layer} to `true`. Read / Write.
+   * composition. Read / Write.
+   *
+   * Setting this to `true` turns {@link three_d_layer} off, as After Effects
+   * 2026 does: contrary to the Scripting Guide, it does not make the layer
+   * 3D. A 2D layer stays as it is.
    */
   get environment_layer(): boolean {
     return false;
@@ -200,9 +204,9 @@ export class AVLayer extends Layer {
   declare sampling_quality: LayerSamplingQuality;
 
   /**
-   * `true` if this layer is a 3D layer. Setting this to `true`
-   * automatically sets {@link environment_layer} to `false`.
-   * Read / Write.
+   * `true` if this layer is a 3D layer. Read / Write.
+   *
+   * Setting it leaves {@link environment_layer} as it is (After Effects 2026).
    */
   declare three_d_layer: boolean;
 
@@ -343,8 +347,10 @@ export class AVLayer extends Layer {
   }
 
   _on_environment_layer_set(): void {
-    if (this._ldta.environment_layer) {
-      this._ldta.three_d_layer = true;
+    if (this._ldta.environment_layer && this._ldta.three_d_layer) {
+      // Through the 3-D switch, which AE turns off here, with all a
+      // toggle does.
+      this.three_d_layer = false;
     }
   }
 
@@ -353,9 +359,6 @@ export class AVLayer extends Layer {
     // AE renames "Rotation" <-> "Z Rotation" the moment the 3-D switch is
     // toggled, and normalizes a 2-D layer's dead Scale Z to 100 in the
     // chunk on either side of it - so the setter always writes through.
-    if (this._ldta.three_d_layer) {
-      this._ldta.environment_layer = false;
-    }
     _core().apply_dimensionality_naming(this, { reset_scale_z: true });
   }
 
@@ -466,6 +469,10 @@ export class AVLayer extends Layer {
       }
       return null;
     }
+  }
+
+  get _source_item(): AVItem | null {
+    return this.source;
   }
 
   /**
@@ -586,8 +593,8 @@ export class AVLayer extends Layer {
       return false;
     }
 
-    const any_solo = this.containing_comp.solo_layers.some((layer) =>
-      py_bool(getattr(layer, "has_audio", false)),
+    const any_solo = this.containing_comp.solo_layers.some(
+      (layer) => layer instanceof AVLayer && layer.has_audio,
     );
     if (any_solo && !this.solo) {
       return false;
@@ -868,12 +875,14 @@ export class AVLayer extends Layer {
 
   /** `true` if time remapping is enabled for this layer. Read / Write. */
   get time_remap_enabled(): boolean {
-    const prop = this._child_or_null("ADBE Time Remapping");
-    if (prop === null) return false;
-    if (!(prop instanceof Property)) {
-      return false;
-    }
-    return !!prop._animated;
+    // From the chunks, not the property: reading a layer's times
+    // (`in_point`, `out_point`) then leaves its property tree unbuilt.
+    py_assert(this._tdgp != null);
+    const chunks = get_chunks_by_match_name(this._tdgp).get("ADBE Time Remapping");
+    if (chunks == null || chunks.length === 0) return false;
+    const tdbs = find_by_list_type(chunks, "tdbs");
+    const tdb4 = find_by_type(tdbs.chunks, "tdb4");
+    return tdb4.animated;
   }
 
   set time_remap_enabled(value: boolean) {
@@ -1100,39 +1109,23 @@ export class AVLayer extends Layer {
   /**
    * Re-derive the transform defaults a null layer had.
    *
-   * Synthesis gives a null the origin as its Anchor Point and forces its
-   * Opacity to 0; with a real source both come from the source instead.
-   * Only touches a property AE never wrote - once the user has set one,
-   * the value is theirs and a source swap must not move it.
+   * Synthesis gives a null the origin as its Anchor Point and 0 as its
+   * default Opacity; with a real source the anchor is the source's centre
+   * and the Opacity defaults to 100. Only a left-out Opacity moves - once
+   * the user has set one, the value is theirs and a source swap must not
+   * move it.
    */
   _refresh_former_null_defaults(): void {
+    // Circular: synthesis.core imports the layer classes it synthesizes for.
     const transform = this.transform;
     if (transform == null) {
       return;
     }
-    const size = this._pixel_size;
+    _core().follow_source_anchor(transform.property("ADBE Anchor Point"));
 
-    const synthesized = (match_name: string): Property | null => {
-      const prop = transform.property(match_name);
-      if (!(prop instanceof Property) || prop.keyframes?.length > 0) {
-        return null;
-      }
-      if (prop._tdbs == null || !prop._tdbs.synthetic) {
-        return null;
-      }
-      return prop;
-    };
-
-    const anchor = synthesized("ADBE Anchor Point");
-    if (anchor != null && size != null) {
-      const default_ = [size[0] / 2.0, size[1] / 2.0, 0.0];
-      anchor.default_value = default_;
-      anchor._cache_value(default_);
-    }
-
-    const opacity = synthesized("ADBE Opacity");
-    if (opacity != null && opacity.value === 0.0) {
-      opacity.default_value = 100.0;
+    const opacity = transform.property("ADBE Opacity");
+    opacity.default_value = 100.0;
+    if (!opacity._is_live()) {
       opacity._cache_value(100.0);
     }
   }
@@ -1231,7 +1224,12 @@ descriptor(
 descriptor(
   AVLayer,
   "three_d_layer",
-  ChunkField.bool("_ldta", "three_d_layer", { post_set: "_on_three_d_layer_set" }),
+  ChunkField.bool("_ldta", "three_d_layer", {
+    // Built at the dimensionality the file has, so the toggle sees the
+    // dead 2-D Scale Z it normalizes.
+    pre_set: "_load_property_tree",
+    post_set: "_on_three_d_layer_set",
+  }),
 );
 descriptor(AVLayer, "three_d_per_char", ChunkField.bool("_ldta", "three_d_per_char"));
 descriptor(AVLayer, "_source_id", new ChunkField("_ldta", "source_id"));

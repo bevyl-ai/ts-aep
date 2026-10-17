@@ -7,10 +7,10 @@ import type { OptiChunk, SspcChunk } from "./footage_chunks.ts";
 import type { CmtaChunk, HeadChunk, IdpcChunk, IdtaChunk, NhedChunk, NnhdChunk } from "./item_chunks.ts";
 import type { LdtaChunk } from "./layer_chunks.ts";
 import type { GdtaChunk, LdatChunk, Lhd3Chunk } from "./ldat_chunks.ts";
-import type { ApidChunk, DcuiChunk, DropChunk, DwgaChunk, EmbpChunk, EmpdChunk, EpidChunk, EwotChunk, EwotItem, FeatherPointItem, FipsChunk, FtgiChunk, Fth5Chunk, HdrmChunk, IpwsChunk, LinlChunk, McspChunk, MkifChunk, NmhdChunk, OcspChunk, OmtnChunk, OtlnChunk, OtlnItem, PardChunk, PguiChunk, PrdaChunk, PrgbChunk, PrinChunk, SfdtChunk, ShphChunk, StrtChunk, TensionItem } from "./misc_chunks.ts";
+import type { ApidChunk, DcuiChunk, DropChunk, DwgaChunk, EmbpChunk, EmpdChunk, EpidChunk, EwotChunk, FipsChunk, FtgiChunk, Fth5Chunk, HdrmChunk, IpwsChunk, LinlChunk, McspChunk, MkifChunk, NmhdChunk, OcspChunk, OmtnChunk, OtlnChunk, PardChunk, PguiChunk, PrdaChunk, PrgbChunk, PrinChunk, SfdtChunk, ShphChunk, StrtChunk } from "./misc_chunks.ts";
 import type { CpidChunk, FdtaChunk, RhedChunk, SvapChunk, WsnmChunk, WsnsChunk } from "./project_chunks.ts";
-import type { CdatChunk, CurvesRecordItem, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, VfdnChunk } from "./property_chunks.ts";
-import type { ArsiChunk, RoptChunk, RoutChunk, RoutItem, RouuChunk } from "./render_chunks.ts";
+import type { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, VfdnChunk } from "./property_chunks.ts";
+import type { ArsiChunk, RoptChunk, RoutChunk, RouuChunk } from "./render_chunks.ts";
 import type { AsciiChunk, F8Chunk, S2Chunk, S4Chunk, U1Chunk, U2Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 
 /** Registered chunk class by `chunk_type`. */

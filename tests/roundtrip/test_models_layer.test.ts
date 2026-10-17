@@ -12,6 +12,7 @@ import {
   setdefault,
   py_slice,
   isclose,
+  RuntimeError,
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
@@ -24,9 +25,11 @@ import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_layer.ts";
 import { AVItem, CompItem, FootageItem } from "../../src/py_aep/models/items/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
-import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
+import { DeferredListChunk, ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance, get_comp, get_first_layer, get_layer, parse_project_fresh } from "../helpers.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
+import { as_instance, get_comp, get_first_layer, get_layer, parse_project_fresh, project_bytes } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");
@@ -271,38 +274,64 @@ describe("TestRoundtripAVLayerFlags", () => {
     expect(layer2.three_d_layer).toBe(false);
   });
 
-  test("test_environment_layer_sets_three_d_layer", () => {
+  test("test_environment_layer_makes_a_3d_layer_2d", () => {
+    /**
+     * AE 2026 turns the 3D switch off, as a toggle does (contrary to
+     * the Scripting Guide, which says the layer becomes 3D).
+     */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "threeDLayer_true"), AVLayer);
     expect(layer.environment_layer).toBe(false);
 
     layer.environment_layer = true;
-    expect(layer.three_d_layer).toBe(true);
+    expect(layer.three_d_layer).toBe(false);
+    expect(layer.transform.property("ADBE Rotate Z").name).toBe("Rotation");
 
     const out = tmp_path.div("modified_env.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "threeDLayer_true"), AVLayer);
     expect(layer2.environment_layer).toBe(true);
-    expect(layer2.three_d_layer).toBe(true);
+    expect(layer2.three_d_layer).toBe(false);
   });
 
-  test("test_three_d_layer_clears_environment_layer", () => {
+  test("test_environment_layer_leaves_a_2d_layer_alone", () => {
+    /** AE 2026 keeps a 2D layer 2D and its dead Scale Z in the file. */
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh(SAMPLES_DIR.div("light_source_default.aep"));
+    const layer = as_instance(get_comp(project, "crystal").layers[1], AVLayer);
+    expect(layer.three_d_layer).toBe(false);
+    layer.transform.property("ADBE Scale").value = [50.0, 60.0, 40.0];
+
+    layer.environment_layer = true;
+    expect(layer.three_d_layer).toBe(false);
+
+    const out = tmp_path.div("env_2d.aep");
+    project.save(out);
+    const scale = get_comp(parse_aep(out).project, "crystal").layers[1].transform.property("ADBE Scale");
+    expect(py_eq(scale.value, [50.0, 60.0, 100.0])).toBe(true);
+    const raw = scale._read_cdat_raw();
+    expect(Array.isArray(raw) && approx(raw[2], 0.4)).toBe(true);
+  });
+
+  test("test_three_d_layer_keeps_environment_layer", () => {
+    /**
+     * AE 2026: both switches on after `environmentLayer` then
+     * `threeDLayer`.
+     */
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "threeDLayer_true"), AVLayer);
 
     layer.environment_layer = true;
-    expect(layer.environment_layer).toBe(true);
-
     layer.three_d_layer = true;
-    expect(layer.environment_layer).toBe(false);
+    expect(layer.environment_layer).toBe(true);
 
     const out = tmp_path.div("modified_3d_env.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "threeDLayer_true"), AVLayer);
     expect(layer2.three_d_layer).toBe(true);
-    expect(layer2.environment_layer).toBe(false);
+    expect(layer2.environment_layer).toBe(true);
   });
 });
 
@@ -1978,5 +2007,310 @@ describe("TestTextSourceRectRefusals", () => {
     raises(NotImplementedError, () => {
       layer.source_rect_at_time(0.0, false);
     }, "animators");
+  });
+});
+
+describe("TestPointOfInterestDefault", () => {
+  /**
+   * A camera or light's Point of Interest defaults to the comp centre: on
+   * a resize AE 2026 keeps it where it was and reports it modified.
+   */
+
+  test.each([
+    ["True", true],
+    ["False", false],
+  ])("test_follows_the_comp_centre[%s]", (_id: string, build_first: boolean) => {
+    const comp = get_comp(parse_project_fresh(VERSIONS_DIR.div("ae2024", "complete.aep")), "Main_Comp");
+    const light = comp.layers.find((la) => la.name === "Light_Point");
+    if (light === undefined) throw new StopIteration();
+    if (build_first) {
+      void light.properties;
+    }
+    comp.width += 64;
+    const poi = light.transform.property("ADBE Anchor Point");
+    expect(py_eq(poi.value, [960.0, 540.0, 0.0])).toBe(true);
+    expect(py_eq(poi.default_value, [992.0, 540.0, 0.0])).toBe(true);
+    expect(poi.is_modified).toBe(true);
+  });
+});
+
+describe("TestNullOpacity", () => {
+  /**
+   * A null's Opacity defaults to 0: left out, it reads 0, while a written
+   * value reads back as written (AE 2026 reads 100 from py's file).
+   */
+
+  test.each([[100.0], [50.0]])("test_written_opacity_reads_back[%p]", (written: number) => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh(SAMPLES_DIR.div("auto_orient.aep"));
+    const layer = project.compositions[0].layers[1];
+    expect(layer.null_layer).toBe(true);
+    let opacity = layer.transform.property("ADBE Opacity");
+    expect([opacity.value, opacity.is_modified]).toEqual([0.0, false]);
+    opacity.value = written;
+    const out = tmp_path.div("opacity.aep");
+    project.save(out);
+    const reopened = parse_project_fresh(out).compositions[0].layers[1];
+    opacity = reopened.transform.property("ADBE Opacity");
+    expect([opacity.value, opacity.default_value, opacity.is_modified]).toEqual([written, 0.0, true]);
+  });
+});
+
+describe("TestAnchorFollowsSource", () => {
+  /**
+   * A footage, solid or precomp layer stores its Anchor Point as a
+   * fraction of its source, read against the source's current size: left
+   * out, it reads the centre, unmodified (AE 2026).
+   */
+
+  test.each([
+    ["replace_source", [200.0, 100.0, 0.0], [60.0, 80.0, 0.0]],
+    ["solid_resize", [200.0, 50.0, 0.0], [60.0, 40.0, 0.0]],
+    ["precomp_resize", [200.0, 50.0, 0.0], [60.0, 40.0, 0.0]],
+  ])("test_anchor_follows_its_source[%s]", (change: string, centre: number[], stored: number[]) => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh(SAMPLES_DIR.parent.div("composition", "duplicate.aep"));
+    const comp = get_comp(project, "AltSrc");
+    const precomp = project.root_folder.add_comp("pc", 200, 100, 1.0, 10.0, 24.0);
+    const layers = [0, 1].map((i) =>
+      change === "precomp_resize"
+        ? comp.add(precomp)
+        : comp.add_solid([1.0, 0.0, 0.0], `S${i}`, 200, 100, 1.0),
+    );
+    layers[1].transform.property("ADBE Anchor Point").value = [30.0, 40.0, 0.0];
+    if (change === "replace_source") {
+      const big = comp.add_solid([0.0, 0.0, 1.0], "Big", 400, 200, 1.0).source;
+      if (big == null) throw new StopIteration();
+      for (const layer of layers) {
+        layer.replace_source(big);
+      }
+    } else if (change === "solid_resize") {
+      for (const layer of layers) {
+        const solid = as_instance(layer.source, FootageItem);
+        const main_source = as_instance(solid.main_source, SolidSource);
+        solid.replace_with_solid(main_source.color, solid.name, 400, 100);
+      }
+    } else {
+      precomp.width = 400;
+    }
+
+    function anchors(layers: Layer[]): [number[], boolean][] {
+      const props = layers.map((layer) => layer.transform.property("ADBE Anchor Point"));
+      return props.map((p): [number[], boolean] => [[...p.value], p.is_modified]);
+    }
+
+    const expected = [
+      [centre, false],
+      [stored, true],
+    ];
+    expect(py_eq(anchors(layers), expected)).toBe(true);
+    const out = tmp_path.div("changed.aep");
+    project.save(out);
+    const by_id = new Map(get_comp(parse_project_fresh(out), "AltSrc").layers.map((la): [number, Layer] => [la.id, la]));
+    expect(py_eq(anchors(layers.map((layer) => getitem(by_id, layer.id))), expected)).toBe(true);
+  });
+});
+
+describe("TestLazyPropertyTree", () => {
+  /**
+   * A layer's properties are decoded and built on first access, so a
+   * reader of layer attributes alone never pays for them.
+   */
+
+  const SAMPLE = VERSIONS_DIR.div("ae2026", "complete.aep");
+
+  // @staticmethod in Python: a plain helper scoped to this describe block.
+  function _layers(project: Project): Layer[] {
+    return project.compositions.flatMap((comp) => comp.layers);
+  }
+
+  test("test_layer_attributes_leave_the_tree_unbuilt", () => {
+    const layers = _layers(parse_project_fresh(SAMPLE));
+    expect(layers.length > 0).toBe(true);
+    for (const layer of layers) {
+      void [layer.name, layer.in_point, layer.out_point, layer.enabled];
+      void layer.label;
+      if (layer instanceof AVLayer) {
+        // (A missing attribute would search the children by name.)
+        void layer.source;
+      }
+      expect(layer._tree_param_defs != null).toBe(true);
+      // Times may decode the root tdgp (Time Remapping), not its groups.
+      const root = as_instance(layer._tdgp, DeferredListChunk);
+      const groups = (root.is_parsed ? root.chunks : []).filter(
+        (c) => c instanceof ListChunk && c.list_type === "tdgp",
+      );
+      expect(groups.every((g) => g instanceof DeferredListChunk && !g.is_parsed)).toBe(true);
+    }
+  });
+
+  test("test_first_access_builds_the_tree", () => {
+    const layer = _layers(parse_project_fresh(SAMPLE))[0];
+    expect(layer.transform != null).toBe(true);
+    expect(layer._tree_param_defs == null).toBe(true);
+    expect(layer.properties.every((p) => p.parent_property === layer)).toBe(true);
+  });
+
+  test("test_unbuilt_layers_save_unchanged", () => {
+    const project = parse_project_fresh(SAMPLE);
+    for (const layer of _layers(project)) {
+      void [layer.in_point, layer.out_point];
+    }
+    expect(py_eq(project_bytes(project), SAMPLE.read_bytes())).toBe(true);
+  });
+
+  const mutations: [string, (comp: CompItem, layer: Layer) => void][] = [
+    ["width", (comp) => (comp.width = comp.width + 64)],
+    ["height", (comp) => (comp.height = comp.height + 64)],
+    ["pixel_aspect", (comp) => (comp.pixel_aspect = 2.0)],
+    ["three_d_layer", (_comp, layer) => (as_instance(layer, AVLayer).three_d_layer = true)],
+    ["stretch", (_comp, layer) => (layer.stretch = 200.0)],
+  ];
+
+  test.each(mutations)(
+    "test_change_before_first_access_matches_a_built_tree[%s]",
+    (_id: string, mutate: (comp: CompItem, layer: Layer) => void) => {
+      /**
+       * State a built tree depends on, changed before the tree is built,
+       * saves what the change on a built tree saves.
+       */
+      const tmp_path = make_tmp_path();
+      const sample = new Path(import.meta.path).parent.parent.parent.div("samples/models/property/2_gaussian.aep");
+      const saved: Uint8Array[] = [];
+      for (const build_first of [true, false]) {
+        const project = parse_project_fresh(sample);
+        const comp = project.compositions[0];
+        const layer = comp.layers[0];
+        if (build_first) {
+          for (const each of comp.layers) {
+            void each.properties;
+          }
+        }
+        mutate(comp, layer);
+        // `save`, which writes out the moved left-out defaults.
+        const out = tmp_path.div(`built_${build_first ? "True" : "False"}.aep`);
+        project.save(out);
+        saved.push(out.read_bytes());
+      }
+      expect(py_eq(saved[0], saved[1])).toBe(true);
+    },
+  );
+
+  test.each([
+    ["True", true],
+    ["False", false],
+  ])("test_effect_definitions_do_not_depend_on_build_order[%s]", (_id: string, holder_first: boolean) => {
+    /**
+     * AE writes an effect's parameter definitions in one of its
+     * instances only (this project has no `EfdG`): a layer built before
+     * that one still finds them.
+     */
+    const comps = parse_project_fresh(BUGS_DIR.div("29.97_fps_time_scale_3.125.aep")).compositions;
+    const holder = comps[0].layers[0];
+    const other = comps[1].layers[0];
+    for (const layer of holder_first ? [holder, other] : [other, holder]) {
+      void layer.properties;
+    }
+    const effect = as_instance(other.property("ADBE Effect Parade").property("ADBE Geometry2"), PropertyGroup);
+    // As AE 15.1 reports: GPU Rendering is an effect parameter in AE 15,
+    // not a Compositing Options one.
+    expect(effect.num_properties).toBe(14);
+    expect(effect.properties[12].match_name).toBe("ADBE Force CPU GPU");
+    expect(as_instance(effect.property("ADBE Effect Built In Params"), PropertyGroup).num_properties).toBe(2);
+  });
+
+  test.each([["layer"], ["effect"], ["comp"]])(
+    "test_effect_definitions_outlive_their_holder[%s]",
+    (removed: string) => {
+      /**
+       * Removing the instance that holds an effect's definitions hands
+       * them to the next one, as AE 15's own save does: the file has no
+       * `EfdG` to hold them instead.
+       */
+      const tmp_path = make_tmp_path();
+      const project = parse_project_fresh(BUGS_DIR.div("29.97_fps_time_scale_3.125.aep"));
+      const [holder_comp, other_comp] = project.compositions;
+      const holder = holder_comp.layers[0];
+      if (removed === "layer") {
+        holder.remove();
+      } else if (removed === "effect") {
+        holder.property("ADBE Effect Parade").property("ADBE Geometry2").remove();
+      } else {
+        holder_comp.remove();
+      }
+      const other_id = other_comp.id;
+      let effect = as_instance(
+        other_comp.layers[0].property("ADBE Effect Parade").property("ADBE Geometry2"),
+        PropertyGroup,
+      );
+      expect(effect.num_properties).toBe(14);
+      const out = tmp_path.div("removed.aep");
+      project.save(out);
+      const reopened = parse_project_fresh(out).compositions.find((c) => c.id === other_id);
+      if (reopened === undefined) throw new StopIteration();
+      effect = as_instance(reopened.layers[0].property("ADBE Effect Parade").property("ADBE Geometry2"), PropertyGroup);
+      expect(effect.num_properties).toBe(14);
+    },
+  );
+
+  test("test_failed_build_raises_again", () => {
+    /** A build that fails leaves the layer unbuilt, not half-built. */
+    const layer = _layers(parse_project_fresh(SAMPLE))[0];
+
+    // NOTE(port): Python monkeypatches `layer.parse_properties`; ESM bindings are read-only, so the
+    // instance's `_build_property_tree` (whose first call is `parse_properties`) fails instead.
+    layer._build_property_tree = () => {
+      throw new RuntimeError("corrupt layer");
+    };
+    for (let i = 0; i < 2; i++) {
+      raises(RuntimeError, () => {
+        void layer.properties;
+      }, "corrupt layer");
+    }
+    Reflect.deleteProperty(layer, "_build_property_tree");
+    expect(layer.transform != null).toBe(true);
+  });
+
+  test("test_comp_resize_writes_a_moved_left_out_position", () => {
+    /**
+     * AE 2026 keeps a left-out Position where it was when its comp is
+     * resized and writes it (a solid, a text, a shape and a null layer).
+     */
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh(SAMPLES_DIR.div("enabled_false.aep"));
+    const comp = get_comp(project, "TestComp");
+    expect(comp.layers[0].transform.property("ADBE Position")._tdsb?.synthetic).toBe(true);
+    comp.width = 164;
+    const out = tmp_path.div("resized.aep");
+    project.save(out);
+    const position = get_comp(parse_project_fresh(out), "TestComp").layers[0].transform.property("ADBE Position");
+    expect(position._tdsb?.synthetic).toBe(false);
+    expect(py_eq(position.value, [50.0, 50.0, 0.0])).toBe(true);
+    expect(position.is_modified).toBe(true);
+  });
+
+  test("test_time_remap_enabled_leaves_the_tree_unbuilt", () => {
+    const project = parse_project_fresh(SAMPLE);
+    const layers = _layers(project).filter((la) => la instanceof AVLayer);
+    const flags = layers.map((la) => la.time_remap_enabled);
+    expect(layers.every((la) => la._tree_param_defs != null)).toBe(true);
+    // The same answer as the property it is read from.
+    expect(flags).toEqual(
+      layers.map((la) =>
+        la.properties.map((p) => p.match_name).includes("ADBE Time Remapping")
+          ? !!la.property("ADBE Time Remapping")._animated
+          : false,
+      ),
+    );
+    expect(flags.some((f) => f)).toBe(true);
+  });
+
+  test("test_essential_property_uuids_leave_the_tree_unbuilt", () => {
+    const project = parse_project_fresh(
+      new Path(import.meta.path).parent.parent.parent.div("samples", "models", "essential_graphics", "multiple_controllers.aep"),
+    );
+    const main = get_comp(project, "main");
+    expect(main.layers.filter((la) => la.essential_property_uuids.length === 3).length).toBe(1);
+    expect(main.layers.every((la) => la._tree_param_defs != null)).toBe(true);
   });
 });

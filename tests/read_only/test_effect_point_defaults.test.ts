@@ -13,12 +13,14 @@
 
 import { test, expect } from "bun:test";
 
-import { Path, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "property");
@@ -84,5 +86,35 @@ test.each([
   (comp_name: string, layer_name: string, match_name: string, default_: number[]) => {
     const prop = _effect_props(comp_name, layer_name).find((p) => p.match_name === match_name)!;
     expect(approx(prop.default_value, default_, { abs: 1e-9 })).toBe(true);
+  },
+);
+
+test.each<[string, number[]]>([
+  ["normal", [100.0, 50.0]],
+  ["adjustment", [960.0, 540.0]],
+])(
+  "test_adjustment_layer_point_is_a_percentage_of_the_comp[%#]",
+  /**
+   * `effect_point_adjustment.aep`: a Transform effect whose Anchor Point
+   * and Position AE 2026 set to 30,40 and 10,20 by script on two 200x100
+   * solids of a 1920x1080 comp, one of them an adjustment layer. AE stores
+   * the adjustment layer's points against the comp, and centres their
+   * defaults on it.
+   */
+  (layer_name, center) => {
+    const comp = get_comp(parse_project(SAMPLES_DIR.div("effect_point_adjustment.aep")), "coverage");
+    const layer = comp.layers.find((ly) => ly.name === layer_name);
+    if (layer === undefined) throw new StopIteration();
+    py_assert(layer.effects != null);
+    const transform = as_instance(layer.effects.property("ADBE Geometry2"), PropertyGroup);
+    const points: [string, number[]][] = [
+      ["ADBE Geometry2-0001", [30.0, 40.0]],
+      ["ADBE Geometry2-0002", [10.0, 20.0]],
+    ];
+    for (const [match_name, value] of points) {
+      const prop = as_instance(transform.property(match_name), Property);
+      expect(approx(prop.value, value)).toBe(true);
+      expect(approx(prop.default_value, center)).toBe(true);
+    }
   },
 );

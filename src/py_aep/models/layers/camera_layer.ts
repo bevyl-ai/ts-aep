@@ -41,7 +41,8 @@ export class CameraLayer extends Layer {
   }
 
   static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [
-    ["ADBE Transform Group", "ADBE Position"],
+    ...Layer._LIVE_DEFAULTS,
+    ["ADBE Transform Group", "ADBE Anchor Point"],
     ["ADBE Camera Options Group", "ADBE Camera Zoom"],
     ["ADBE Camera Options Group", "ADBE Camera Focus Distance"],
   ];

@@ -449,7 +449,6 @@ export function str(x: unknown): string {
 /** `str.isdigit()`, `.isalpha()`, `.isspace()`, `.isupper()`, `.islower()` (Unicode-aware). */
 export const isdigit = (s: string): boolean => s.length > 0 && /^\p{Nd}+$/u.test(s);
 export const isalpha = (s: string): boolean => s.length > 0 && /^\p{L}+$/u.test(s);
-export const isalnum = (s: string): boolean => s.length > 0 && /^[\p{L}\p{N}]+$/u.test(s);
 export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
 export const isupper = (s: string): boolean => /\p{Lu}|\p{Lt}/u.test(s) && !/\p{Ll}/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
