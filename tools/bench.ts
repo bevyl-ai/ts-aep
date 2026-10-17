@@ -22,6 +22,7 @@ const files = fs.globSync("samples/**/*.aep").filter((f) => f.includes(filter)).
 // `parse` takes a path; one warm-up read puts every file in the page cache.
 for (const f of files) fs.readFileSync(f);
 
+/** `Project.save` up to the file write. */
 function save_to_memory(app: py_aep.Application): Uint8Array {
   const project = app.project;
   for (const comp of project.compositions) {
@@ -31,7 +32,7 @@ function save_to_memory(app: py_aep.Application): Uint8Array {
   }
   const buf = new BytesIO();
   write_aep(buf, project._rifx, project._xmp);
-  return buf.getvalue();
+  return buf.getbuffer();
 }
 
 const PHASES = ["parse", "save", "load", "save_loaded", "cos"] as const;

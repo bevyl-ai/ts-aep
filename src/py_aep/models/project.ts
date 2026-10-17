@@ -2125,7 +2125,8 @@ export class Project {
       try {
         const buf = new BytesIO();
         module_globals.write_aep(buf, this._rifx, this._xmp);
-        host.fs.writeSync(fd, buf.getvalue());
+        // `getbuffer()`: the written bytes without copying the whole file once more.
+        host.fs.writeSync(fd, buf.getbuffer());
       } finally {
         host.fs.closeSync(fd);
       }
