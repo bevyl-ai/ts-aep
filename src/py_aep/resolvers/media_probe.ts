@@ -9,7 +9,6 @@
  * This reads external media files (not `.aep` chunks), so `struct` is used here.
  */
 
-import * as host from "../../pyrt/host.ts";
 import * as zlib from "../../pyrt/zlib.ts";
 import {
   AttributeError,

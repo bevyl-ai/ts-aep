@@ -63,10 +63,6 @@ export interface ChunkOwner {
 /** Effect match name → parameter match name → pard field bag. */
 export type EffectParamDefs = Map<string, Map<string, ParamDef>>;
 
-
-/** Python `**kwargs` that `ChunkField.enum` rewrites key by key before forwarding them. */
-type Kwargs<V> = ChunkFieldOptions<V, object>;
-
 /**
  * Keyword arguments of `ChunkField` for a field reading as `T` on an `O`.
  * The owner `O` is never inferred from the callbacks, only from the class

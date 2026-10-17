@@ -34,7 +34,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getitem, isclose, py_eq, sorted, warn, int, round, floordiv, TypeError_, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, py_assert, repr, hasattr, getattr, min, max, zip, float, lshift, rshift, and, or, b, descriptor, list_mul, type_name, type ClassAttributes, py_or } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getitem, isclose, py_eq, sorted, warn, int, round, floordiv, TypeError_, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, py_assert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, b, descriptor, list_mul, type_name, type ClassAttributes, py_or } from "../../../pyrt/index.ts";
 
 const _property_group = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
