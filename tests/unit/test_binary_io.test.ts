@@ -23,7 +23,7 @@ import {
   struct,
 } from "../../src/pyrt/index.ts";
 import { is_readable, read_bytes, read_fmt, read_pad, write_bytes, write_fmt, write_pad } from "../../src/py_aep/binary/bin_utils.ts";
-import { Chunk, ContainerChunk, ListChunk, ReadContext, _resolve_cdat_context, _resolve_ldat_context, _resolve_tdum_context, read_aep, read_chunks, read_header, write_aep, write_chunk } from "../../src/py_aep/binary/chunk.ts";
+import { _CONTEXT_RESOLVERS, Chunk, ContainerChunk, ListChunk, ReadContext, _resolve_cdat_context, _resolve_ldat_context, _resolve_tdum_context, read_aep, read_chunks, read_header, write_aep, write_chunk } from "../../src/py_aep/binary/chunk.ts";
 import { CHUNK_TYPES, register } from "../../src/py_aep/binary/registry.ts";
 import { _struct_info, ascii_field, bytes_field, u1_field, u2_field, u4_field } from "../../src/py_aep/binary/fmt_field.ts";
 import { U4Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
@@ -424,6 +424,23 @@ describe("TestRegistry", () => {
 // -----------------------------------------------------------------------
 
 describe("TestContextResolvers", () => {
+  /**
+   * `read_chunks` passes a resolver's arguments to leaf chunks only: a
+   * nesting chunk (LIST, container) takes the reading context.
+   */
+  test("test_resolvers_only_target_leaf_chunks", () => {
+    for (const chunk_type of _CONTEXT_RESOLVERS.keys()) {
+      expect([chunk_type, (CHUNK_TYPES.get(chunk_type) ?? Chunk)._nests]).toEqual([chunk_type, false]);
+    }
+  });
+
+  test("test_nesting_flag_matches_the_container_classes", () => {
+    for (const [chunk_type, cls] of CHUNK_TYPES) {
+      const nests = cls.prototype instanceof ListChunk || cls === ListChunk || cls.prototype instanceof ContainerChunk || cls === ContainerChunk;
+      expect([chunk_type, cls._nests]).toEqual([chunk_type, nests]);
+    }
+  });
+
   test("test_cdat_context_otst", () => {
     const ctx = new ReadContext("tdbs", "otst");
     const result = _resolve_cdat_context([], ctx);
