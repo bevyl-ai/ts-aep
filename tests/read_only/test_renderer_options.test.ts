@@ -2,9 +2,10 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { AttributeError, KeyError, Path, len, py_eq, dict } from "../../src/pyrt/index.ts";
+import { AttributeError, KeyError, Path, len, py_assert, py_eq, dict } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { RayTracedRendererOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { as_instance } from "../helpers.ts";
 import { EnvironmentLightShadowResolution, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / "models"` in the Python source.
@@ -42,7 +43,7 @@ describe("TestRenderOptionEnums", () => {
 describe("TestRendererOptionsReads", () => {
   test("test_classic_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_classic_3d.aep")).project.compositions[0];
-    const opts = comp.renderer_options as any;
+    const opts = as_instance(comp.renderer_options, ClassicRendererOptions);
 
     expect(opts.shadow_map_resolution).toBe(ShadowMapResolution.COMP_SIZE);
     expect(opts.__getitem__("Shadow Map Resolution")).toBe(ShadowMapResolution.COMP_SIZE);
@@ -50,7 +51,7 @@ describe("TestRendererOptionsReads", () => {
 
   test("test_advanced_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_advanced_3d.aep")).project.compositions[0];
-    const opts = comp.renderer_options as any;
+    const opts = as_instance(comp.renderer_options, AdvancedRendererOptions);
 
     expect(opts.quality).toBe(8);
     expect(opts.resolution).toBe(EnvironmentLightShadowResolution.FULL);
@@ -63,13 +64,13 @@ describe("TestRendererOptionsReads", () => {
   test("test_cinema_4d_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
 
-    expect((comp.renderer_options as any).quality).toBe(25);
+    expect(as_instance(comp.renderer_options, Cinema4DRendererOptions).quality).toBe(25);
   });
 
   /** renderer_options returns a Mapping. */
   test("test_is_a_mapping", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
-    const opts = comp.renderer_options as any;
+    const opts = comp.renderer_options;
 
     expect(py_eq(dict(opts), new Map([["Quality", 25]]))).toBe(true);
     expect(py_eq([...opts.keys()], ["Quality"])).toBe(true);
@@ -79,15 +80,16 @@ describe("TestRendererOptionsReads", () => {
   /** AE 26.3 cannot author this renderer, so we do not let anyone edit it. */
   test("test_ray_traced_is_read_only", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_ray_traced.aep")).project.compositions[0];
-    const opts = comp.renderer_options as any;
+    const opts = comp.renderer_options;
 
-    expect(opts instanceof RayTracedRendererOptions).toBe(true);
+    py_assert(opts instanceof RayTracedRendererOptions);
     expect(py_eq(dict(opts), new Map())).toBe(true);
     raises(KeyError, () => {
       opts.__setitem__("Quality", 1);
     });
     raises(AttributeError, () => {
-      (opts as any).quality = 1;
+      // @ts-expect-error a ray-traced renderer has no quality; the write must raise at runtime
+      opts.quality = 1;
     });
   });
 });
@@ -97,22 +99,22 @@ describe("TestRendererOptionsNonDefaults", () => {
   test("test_classic_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_classic_3d.aep")).project.compositions[0];
 
-    expect((comp.renderer_options as any).shadow_map_resolution).toBe(ShadowMapResolution.RES_750);
+    expect(as_instance(comp.renderer_options, ClassicRendererOptions).shadow_map_resolution).toBe(ShadowMapResolution.RES_750);
   });
 
   test("test_cinema_4d_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_cinema_4d.aep")).project.compositions[0];
 
-    expect((comp.renderer_options as any).quality).toBe(44);
+    expect(as_instance(comp.renderer_options, Cinema4DRendererOptions).quality).toBe(44);
   });
 
   test("test_advanced_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_advanced_3d.aep")).project.compositions[0];
 
-    expect((comp.renderer_options as any).quality).toBe(61);
-    expect((comp.renderer_options as any).resolution).toBe(EnvironmentLightShadowResolution.DOUBLE);
-    expect((comp.renderer_options as any).smoothness).toBe(6);
-    expect(approx((comp.renderer_options as any).casting_box_size, 600.0)).toBe(true);
-    expect(approx((comp.renderer_options as any).casting_box_center, [400.0, 600.0, -100.0])).toBe(true);
+    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).quality).toBe(61);
+    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).resolution).toBe(EnvironmentLightShadowResolution.DOUBLE);
+    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).smoothness).toBe(6);
+    expect(approx(as_instance(comp.renderer_options, AdvancedRendererOptions).casting_box_size, 600.0)).toBe(true);
+    expect(approx(as_instance(comp.renderer_options, AdvancedRendererOptions).casting_box_center, [400.0, 600.0, -100.0])).toBe(true);
   });
 });

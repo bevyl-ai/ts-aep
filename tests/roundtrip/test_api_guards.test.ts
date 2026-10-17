@@ -4,18 +4,24 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { NotImplementedError, OSError, Path, py_bool, py_eq, RuntimeError, ValueError, zip } from "../../src/pyrt/index.ts";
+import { at, NotImplementedError, OSError, Path, py_assert, py_bool, py_eq, RuntimeError, setattr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep, Property } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, Property, type Application } from "../../src/py_aep/index.ts";
 import * as project_mod from "../../src/py_aep/models/project.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
+import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 
 // `monkeypatch.setattr` on a mutable holder (project_mod.module_globals); returns the undo.
-const monkeypatch_setattr = (obj: any, name: string, value: unknown): (() => void) => {
+const monkeypatch_setattr = <O extends object, K extends keyof O>(obj: O, name: K, value: O[K]): (() => void) => {
   const old = obj[name];
   obj[name] = value;
   return () => {
@@ -55,25 +61,31 @@ describe("TestValueSetterOnKeyframedProperty", () => {
 describe("TestSetAlternateSource", () => {
   const EG = SAMPLES_DIR.div("essential_graphics", "media_replacement.aep");
 
-  const _override_leaf = (app: any): [any, any] => {
-    const host = app.project.compositions.find((c: any) => c.name === "image_with_alpha 2")!;
-    const layer = host.layers.find((la: any) => py_bool(la.essential_property_uuids))!;
-    const overrides = layer.properties.find((p: any) => p.match_name === "ADBE Layer Overrides")!;
-    return [layer, overrides.properties[0]];
+  const _override_leaf = (app: Application): [Layer, Property] => {
+    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
+    if (host == null) throw new StopIteration();
+    const layer = host.layers.find((la) => py_bool(la.essential_property_uuids));
+    if (layer == null) throw new StopIteration();
+    const overrides = as_instance(
+      layer.properties.find((p) => p.match_name === "ADBE Layer Overrides"),
+      PropertyGroup,
+    );
+    return [layer, as_instance(overrides.properties[0], Property)];
   };
 
   test("test_set_alternate_source_roundtrips", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
-    const master = app.project.compositions.find((c) => c.name === "image_with_alpha")!;
+    const master = app.project.compositions.find((c) => c.name === "image_with_alpha");
+    if (master == null) throw new StopIteration();
     alt.alternate_source = master;
     const out = tmp_path.div("media.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
     const [, alt2] = _override_leaf(app2);
     expect(alt2.alternate_source != null).toBe(true);
-    expect(alt2.alternate_source!.id).toBe(master.id);
+    expect(alt2.alternate_source?.id).toBe(master.id);
   });
 
   test("test_set_alternate_source_footage_autowraps", () => {
@@ -84,8 +96,9 @@ describe("TestSetAlternateSource", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
-    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2")!;
-    const gif = [...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif")!;
+    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
+    if (host == null) throw new StopIteration();
+    const gif = as_instance([...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"), FootageItem);
     const before = new Set(app.project.items.keys());
     alt.alternate_source = gif;
     const created = [...new Set(app.project.items.keys())].filter((k) => !before.has(k));
@@ -96,23 +109,23 @@ describe("TestSetAlternateSource", () => {
     const app2 = parse_aep(out);
     const [, alt2] = _override_leaf(app2);
     const wrapper = alt2.alternate_source;
-    expect(wrapper instanceof CompItem).toBe(true);
+    py_assert(wrapper instanceof CompItem);
     expect(wrapper.name).toBe("image_with_alpha.png_sequence");
-    expect(wrapper.parent_folder.name).toBe("Media Replacement Comps");
+    expect(wrapper.parent_folder?.name).toBe("Media Replacement Comps");
     expect(py_eq([wrapper.width, wrapper.height], [host.width, host.height])).toBe(true);
     expect(wrapper.duration).toBe(host.duration);
     // cdta cloned from the host comp (not add_comp's fresh skeleton).
     expect(wrapper._cdta.shutter_phase).toBe(host._cdta.shutter_phase);
     expect(wrapper._cdta.time_divisor).toBe(host._cdta.time_divisor);
     expect(wrapper.num_layers).toBe(1);
-    expect(wrapper.layers[0].source.name).toBe("sequence_[001-003].gif");
+    expect(as_instance(wrapper.layers[0], AVLayer).source?.name).toBe("sequence_[001-003].gif");
   });
 
   test("test_set_alternate_source_reuses_wrapper_folder", () => {
     // The `Media Replacement Comps` folder is reused, not duplicated.
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
-    const gif = [...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif")!;
+    const gif = as_instance([...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"), FootageItem);
     const folders_before = [...app.project.items.values()].filter(
       (it) => it.constructor.name === "FolderItem" && it.name === "Media Replacement Comps",
     );
@@ -127,7 +140,8 @@ describe("TestSetAlternateSource", () => {
   test("test_set_alternate_source_on_non_slot_raises", () => {
     const app = parse_aep(EG);
     const [layer] = _override_leaf(app);
-    const master = app.project.compositions.find((c) => c.name === "image_with_alpha")!;
+    const master = app.project.compositions.find((c) => c.name === "image_with_alpha");
+    if (master == null) throw new StopIteration();
     const pos = layer.transform.property("ADBE Position");
     raises(
       ValueError,
@@ -145,7 +159,8 @@ describe("TestSetAlternateSource", () => {
     // but is_media_replacement_compatible is False.
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
-    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2")!;
+    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
+    if (host == null) throw new StopIteration();
     const solid = host.add_solid([1.0, 0.0, 0.0], "Guard Solid").source;
     if (solid == null) throw new Error("solid layer has no source");
     expect(app.project.items.has(solid.id)).toBe(true);
@@ -164,16 +179,19 @@ describe("TestSetAlternateSource", () => {
     // assignment would still leak a wrapper comp into the project.
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
-    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2")!;
+    const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
+    if (host == null) throw new StopIteration();
     const solid = host.add_solid([0.0, 1.0, 0.0], "Guard Solid 2").source;
+    py_assert(solid != null);
     // Snapshot after add_solid (which legitimately adds the solid and
     // AE's `Solids` folder) so this measures only the failed assignment.
+    py_assert(alt._blsi != null);
     const before_blsi = alt._blsi.value;
     const before_items = new Set(app.project.items.keys());
     raises(ValueError, () => {
       alt.alternate_source = solid;
     });
-    expect(py_eq(alt._blsi.value, before_blsi)).toBe(true);
+    expect(py_eq(alt._blsi?.value, before_blsi)).toBe(true);
     expect(py_eq(new Set(app.project.items.keys()), before_items)).toBe(true); // no wrapper leaked
   });
 });
@@ -246,18 +264,19 @@ describe("TestParentValidation", () => {
       c.layers.filter((la) => la.name === "XF").map((la) => [c, la] as const),
     );
     // Python's loop keeps the last match.
-    const [comp, lyr] = matches.length ? matches[matches.length - 1] : [null, null];
-    expect(lyr != null).toBe(true);
-    const anchor = lyr!.transform.property("ADBE Anchor Point");
+    const last = matches.length ? matches[matches.length - 1] : null;
+    py_assert(last != null);
+    const [comp, lyr] = last;
+    const anchor = lyr.transform.property("ADBE Anchor Point");
     anchor.set_value_at_time(0.0, [10.0, 20.0, 0.0]);
     anchor.set_value_at_time(1.0, [70.0, 80.0, 0.0]);
-    const null_ = comp!.add_null();
+    const null_ = comp.add_null();
     const null_pos = null_.transform.property("ADBE Position");
     null_pos.value = [10.0, 20.0, 0.0];
     const null_rot = null_.transform.property("ADBE Rotate Z");
     null_rot.value = 30.0;
 
-    lyr!.parent = null_;
+    lyr.parent = null_;
 
     // Anchor keyframes are in layer-source space; AE never touches them.
     expect(py_eq(anchor.keyframes.map((k) => k.value), [
@@ -265,16 +284,16 @@ describe("TestParentValidation", () => {
       [70.0, 80.0, 0.0],
     ])).toBe(true);
 
-    const pos = lyr!.transform.property("ADBE Position");
+    const pos = lyr.transform.property("ADBE Position");
     const expected = [
       [117.942286340599, 24.2820323027551, 0.0],
       [564.352447854375, -2.51288694035714, 50.0],
     ];
-    for (const [kf, exp] of zip(pos.keyframes as any[], expected)) {
+    for (const [kf, exp] of zip(pos.keyframes, expected)) {
       expect(approx(kf.value, exp, { abs: 1e-6 })).toBe(true);
     }
-    const scale = lyr!.transform.property("ADBE Scale");
-    const rot = lyr!.transform.property("ADBE Rotate Z");
+    const scale = lyr.transform.property("ADBE Scale");
+    const rot = lyr.transform.property("ADBE Rotate Z");
     expect(py_eq(scale.keyframes.map((k) => k.value), [
       [50.0, 50.0, 100.0],
       [150.0, 150.0, 100.0],
@@ -371,7 +390,7 @@ describe("TestLongKeyframeTimes", () => {
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
     if (prop2 == null) throw new Error("no keyframed transform property after save");
-    expect(approx(prop2.keyframes.at(-1)!.time, 9999.0)).toBe(true);
+    expect(approx(at(prop2.keyframes, -1).time, 9999.0)).toBe(true);
   });
 
   test("test_nearby_keyframe_still_works", () => {
@@ -398,10 +417,13 @@ describe("TestLongKeyframeTimes", () => {
 describe("TestTextRangeNumericValidation", () => {
   const SAMPLE = SAMPLES_DIR.div("text", "text_ranges.aep");
 
-  const _doc = (app: any, name = "RangesPoint"): any => {
+  const _doc = (app: Application, name = "RangesPoint"): TextDocument => {
     const comp = app.project.compositions[0];
-    const layer = comp.text_layers.find((ly: any) => ly.name === name)!;
-    return layer.text.source_text.value;
+    const layer = comp.text_layers.find((ly) => ly.name === name);
+    if (layer == null) throw new StopIteration();
+    const text = layer.text;
+    py_assert(text != null);
+    return text.source_text.value;
   };
 
   const bads = [NaN, Infinity];
@@ -418,7 +440,7 @@ describe("TestTextRangeNumericValidation", () => {
     raises(
       ValueError,
       () => {
-        (rng as any)[field] = bad;
+        setattr(rng, field, bad);
       },
       "finite",
     );
@@ -429,7 +451,7 @@ describe("TestTextRangeNumericValidation", () => {
     raises(
       ValueError,
       () => {
-        (rng as any)[field] = bad;
+        setattr(rng, field, bad);
       },
       "finite",
     );
@@ -442,7 +464,7 @@ describe("TestTextRangeNumericValidation", () => {
     raises(
       ValueError,
       () => {
-        (doc as any)[field] = NaN;
+        setattr(doc, field, NaN);
       },
       "finite",
     );
@@ -466,6 +488,7 @@ describe("TestTextRangeNumericValidation", () => {
     raises(
       ValueError,
       () => {
+        // @ts-expect-error 999 is not a ParagraphJustification; the setter must reject it at runtime
         cr.justification = 999;
       },
       "not a valid",
@@ -477,6 +500,7 @@ describe("TestTextRangeNumericValidation", () => {
     raises(
       ValueError,
       () => {
+        // @ts-expect-error 999 is not a ParagraphJustification; the setter must reject it at runtime
         doc.justification = 999;
       },
       "not a valid",

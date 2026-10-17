@@ -8,8 +8,10 @@ import {
   len,
   lshift,
   Path,
+  py_assert,
   py_eq,
   split,
+  StopIteration,
   str,
   ValueError,
 } from "../../src/pyrt/index.ts";
@@ -655,7 +657,7 @@ describe("TestRoundtripGpuAccelType", () => {
     const tmp_path = make_tmp_path();
     const uuid = "01234567-89ab-cdef-0123-456789abcdef";
     const project = parse_aep(SAMPLES_DIR.div("gpuAccelType_mercury_software_only.aep")).project;
-    (project as any).gpu_accel_type = uuid;
+    project.gpu_accel_type = uuid;
     expect(project.gpu_accel_type).toBe(uuid);
     const out = tmp_path.div("modified.aep");
     project.save(out);
@@ -669,7 +671,7 @@ describe("TestRoundtripGpuAccelType", () => {
     raises(
       ValueError,
       () => {
-        (project as any).gpu_accel_type = "not-a-uuid";
+        project.gpu_accel_type = "not-a-uuid";
       },
       "UUID",
     );
@@ -694,7 +696,9 @@ class TestRoundtripWorkingSpaceProfileId {
   );
 
   static _cpid(project: Project): Uint8Array {
-    return project._rifx.chunks.find((c) => c.chunk_type === "cpid")!.tobytes();
+    const cpid = project._rifx.chunks.find((c) => c.chunk_type === "cpid");
+    if (cpid == null) throw new StopIteration();
+    return cpid.tobytes();
   }
 }
 
@@ -704,8 +708,8 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     // The ACEScct ICC exactly as AE embedded it, next to the cpid AE
     // wrote for it.
     const donor = parse_aep(TestRoundtripWorkingSpaceProfileId.ACESCCT_DONOR).project;
-    expect(donor._ws_utf8 != null).toBe(true);
-    const icc = parse_envelope(donor._ws_utf8!.value).data;
+    py_assert(donor._ws_utf8 != null);
+    const icc = parse_envelope(donor._ws_utf8.value).data;
     expect(bytes_.hex(TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe("ae27d1e66d65c5a0a50fe0ec149a24fa");
     const icc_dir = tmp_path.div("icc");
     icc_dir.mkdir();
