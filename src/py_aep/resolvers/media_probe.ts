@@ -2076,7 +2076,11 @@ export function _probe_aac(fp: ProbeStream): MediaInfo {
 // SWF - file header (AE rasterizes the movie to video)
 // ---------------------------------------------------------------------------
 
-// TODO(port): no LZMA decoder (node:zlib has none, pyrt has none); ZWS-compressed SWF files raise NotImplementedError here where Python's lzma.decompress(format=FORMAT_ALONE) returns the header.
+// TODO(port): no LZMA decoder, so ZWS (LZMA) SWF files raise NotImplementedError where Python's
+// lzma.decompress(format=FORMAT_ALONE) returns the header. The pure-JS packages are a global
+// script whose decompress returns a string for UTF-8 output (lzma 2.3.2) or ship the encoder
+// with the decoder (lzma1);
+// a port needs a FORMAT_ALONE decoder with CPython's end-marker, trailing-data and LZMAError behavior.
 export function _lzma_alone_decompress(data: Uint8Array): Uint8Array {
   throw new NotImplementedError(`LZMA (FORMAT_ALONE) decoding is not ported yet (${data.length} bytes)`);
 }
