@@ -98,7 +98,6 @@ export function _from_bytes(raw: Uint8Array): string {
   return _translate(decode(raw, "latin-1"), _OVERRIDES);
 }
 
-// NOTE(port): matches str.translate(dict): iterates code points, maps present keys, passes the rest through (no pyrt shim exists).
 export function _translate(text: string, table: Map<number, number>): string {
   let out = "";
   for (const ch of text) {

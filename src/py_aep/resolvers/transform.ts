@@ -440,7 +440,7 @@ export function _prop_value<K extends _PropertyName>(
   time: number | null,
 ): _PropertyValueOf<K>;
 export function _prop_value(group: PropertyGroup, match_name: _PropertyName, time: number | null) {
-  const prop = group.__getitem__(match_name);
+  const prop = group.property(match_name);
   if (time == null) return prop.value;
   return prop.value_at_time(time);
 }
@@ -590,7 +590,7 @@ export function _auto_rotation(layer: Layer, time: number, position: number[]): 
   const mode = layer.auto_orient;
   const three_d = !!layer._ldta.three_d_layer;
   if (mode === AutoOrientType.ALONG_PATH) {
-    const prop = layer.transform.__getitem__("ADBE Position");
+    const prop = layer.transform.property("ADBE Position");
     if (prop.dimensions_separated) {
       throw new NotImplementedError(
         `layer ${repr(layer.name)} auto-orients along a path with separated ` +
@@ -1072,7 +1072,7 @@ export function camera_ray(
   const world = build_world_matrix(camera, time, undefined, { as_parent: true });
   const position = world.transform_point([0.0, 0.0, 0.0]);
 
-  const camera_options = camera.__getitem__("ADBE Camera Options Group");
+  const camera_options = camera.property("ADBE Camera Options Group");
   const zoom = _prop_value(camera_options, "ADBE Camera Zoom", time);
 
   // The image plane is in square pixels; the rig matrix narrows the ray

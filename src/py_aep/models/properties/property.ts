@@ -34,7 +34,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getitem, isclose, py_eq, sorted, warn, int, round, floordiv, TypeError_, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, py_assert, repr, hasattr, getattr, min, max, range, zip, float, lshift, rshift, and, or, b, descriptor, list_mul, type_name, type ClassAttributes, py_or } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getitem, isclose, py_eq, sorted, warn, int, round, floordiv, TypeError_, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, py_assert, repr, hasattr, getattr, min, max, zip, float, lshift, rshift, and, or, b, descriptor, list_mul, type_name, type ClassAttributes, py_or } from "../../../pyrt/index.ts";
 
 const _property_group = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -1514,7 +1514,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _separation_followers(): Property<number>[] | null {
     if (!this.is_separation_leader || !this.dimensions_separated) return null;
-    const followers = Array.from(range(3), (dim) => this.get_separation_follower(dim));
+    const followers = Array.from({ length: 3 }, (_, dim) => this.get_separation_follower(dim));
     if (!followers.every((follower) => follower != null)) return null;
     return followers;
   }
@@ -2143,7 +2143,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return;
     }
 
-    const followers = Array.from(range(3), (dim) => this.get_separation_follower(dim));
+    const followers = Array.from({ length: 3 }, (_, dim) => this.get_separation_follower(dim));
     if (!followers.every((follower) => follower != null)) {
       throw new ValueError(`${repr(this.match_name)} has no separation followers to transfer to`);
     }
@@ -2215,8 +2215,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** Incoming and outgoing segment durations for each keyframe. */
   static _segment_spans(times: number[]): [number[], number[]] {
-    const incoming = [0.0, ...Array.from(range(1, times.length), (i) => times[i] - times[i - 1])];
-    const outgoing = [...Array.from(range(times.length - 1), (i) => times[i + 1] - times[i]), 0.0];
+    const incoming = [0.0, ...Array.from({ length: times.length - 1 }, (_, i) => times[i + 1] - times[i])];
+    const outgoing = [...Array.from({ length: times.length - 1 }, (_, i) => times[i + 1] - times[i]), 0.0];
     return [incoming, outgoing];
   }
 
@@ -2658,7 +2658,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * of the composition is 0.
    */
   nearest_key_index(time: number): number {
-    return min(Array.from(range(this.keyframes.length)), (i: number) => Math.abs(this.keyframes[i].time - time));
+    return min(Array.from({ length: this.keyframes.length }, (_, i) => i), (i: number) => Math.abs(this.keyframes[i].time - time));
   }
 
   /**
@@ -4288,8 +4288,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // rejects the whole call instead of leaving the earlier keys added.
     validate_sequence({})(times);
     for (const value of new_values) _validate_key_value(this, value);
-    for (const [time, value] of zip(times, new_values)) {
-      this.set_value_at_time(time, value);
+    for (let i = 0; i < times.length; i++) {
+      this.set_value_at_time(times[i], new_values[i]);
     }
   }
 
@@ -4502,7 +4502,7 @@ export function _segment_components(prev_kf: Keyframe, next_kf: Keyframe): [numb
   }
   if (Array.isArray(v0) && Array.isArray(v1) && v0.length === v1.length) {
     if (![...v0, ...v1].every((x) => typeof x === "number" || typeof x === "boolean")) return null;
-    return [zip(v0, v1).map(([a, b]) => [a, b]), v0.length];
+    return [v0.map((a, i) => [a, v1[i]]), v0.length];
   }
   return null;
 }

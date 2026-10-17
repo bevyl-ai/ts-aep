@@ -593,7 +593,6 @@ export class OutputModule {
   }
 
   set settings(value: Map<string, unknown> | SettingsView) {
-    // NOTE(port): Python accepts any `Mapping`; a `Map` and a `SettingsView` are accepted here.
     if (!(value instanceof Map || value instanceof SettingsView)) {
       throw new ValueError("Settings must be a dictionary of key-value pairs");
     }

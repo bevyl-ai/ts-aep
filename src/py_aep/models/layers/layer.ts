@@ -35,7 +35,6 @@ import {
   py_bool,
   py_eq,
   py_or,
-  range,
   repr,
   round,
   warn,
@@ -742,7 +741,7 @@ export class Layer extends PropertyGroup {
    * {@link PropertyGroup.properties | properties}.
    */
   get transform(): MatchNameTypes["ADBE Transform Group"] {
-    const group = this.__getitem__("ADBE Transform Group");
+    const group = this.property("ADBE Transform Group");
     py_assert(group instanceof PropertyGroup);
     return group;
   }
@@ -821,8 +820,8 @@ export class Layer extends PropertyGroup {
    */
   _write_out_moved_defaults(): void {
     for (const [group_name, match_name] of this.constructor._LIVE_DEFAULTS) {
-      const group = this.__getitem__(group_name);
-      const prop = group.__getitem__(match_name);
+      const group = this.property(group_name);
+      const prop = group.property(match_name);
       if (prop._tdsb == null || !prop._tdsb.synthetic) continue;
       if (prop.is_modified) prop._ensure_materialized();
     }
@@ -954,7 +953,7 @@ export class Layer extends PropertyGroup {
     const transform = this.transform;
 
     const current = (match_name: "ADBE Anchor Point" | "ADBE Orientation" | "ADBE Scale"): number[] => {
-      const prop = transform.__getitem__(match_name);
+      const prop = transform.property(match_name);
       return prop.keyframes?.length > 0 ? prop.value_at_time(time) : prop.value;
     };
 
@@ -990,7 +989,7 @@ export class Layer extends PropertyGroup {
       // synthetic properties unnecessarily. Keyframed scale / rotation
       // values are left untouched, matching ExtendScript (the layer
       // may visually jump for those).
-      const prop = transform.__getitem__(match_name);
+      const prop = transform.property(match_name);
       if (prop.keyframes?.length > 0) return;
       if (!py_eq(prop.value, new_value)) prop.value = new_value;
     };
@@ -1027,10 +1026,10 @@ export class Layer extends PropertyGroup {
     // scaled to 50% each key doubles, and under one scaled
     // [200, 50, 100] each key is divided per axis. Skipping them left
     // the layer 25 px out at one time and 62 px at another.
-    const scale_prop = transform.__getitem__("ADBE Scale");
+    const scale_prop = transform.property("ADBE Scale");
     if (scale_prop.keyframes?.length > 0) {
       const scale_now = current("ADBE Scale");
-      const factors = Array.from(range(new_scale.length), (axis) =>
+      const factors = Array.from({ length: new_scale.length }, (_, axis) =>
         axis < scale_now.length && scale_now[axis] !== 0
           ? new_scale[axis] / scale_now[axis]
           : 1.0,
@@ -1051,7 +1050,7 @@ export class Layer extends PropertyGroup {
 
     // ExtendScript remaps every POSITION keyframe into the new parent's
     // space (measured in AE 2026).
-    const pos = transform.__getitem__("ADBE Position");
+    const pos = transform.property("ADBE Position");
     const separated = pos._separation_followers();
     if (separated != null) {
       // AE refuses `setValue` on a separated leader, but compensates
@@ -1086,7 +1085,7 @@ export class Layer extends PropertyGroup {
       // Position (a two-node camera's POI [900, 500, 0] under a null at
       // [700, 400, -100] turned 30 degrees about Y became
       // [123.2, 100, 186.6]).
-      const poi = transform.__getitem__("ADBE Anchor Point");
+      const poi = transform.property("ADBE Anchor Point");
       if (poi.keyframes?.length > 0) {
         for (const kf of poi.keyframes) {
           const kf_value = kf.value;
@@ -1116,7 +1115,7 @@ export class Layer extends PropertyGroup {
       // A 2D layer has no Orientation to use, so AE puts the rotation
       // into Rotate Z (measured: a 2D child under a 30-degree parent
       // gets rotZ = -30 and orientation stays [0,0,0]).
-      const rotation = transform.__getitem__("ADBE Rotate Z");
+      const rotation = transform.property("ADBE Rotate Z");
       if (rotation.keyframes?.length > 0) {
         // AE offsets every rotation keyframe rather than giving up on
         // an animated one - keys of 15 and 75 under a 30-degree
@@ -1144,7 +1143,7 @@ export class Layer extends PropertyGroup {
     // keyframed properties: a child with a keyframed Rotate Z would get
     // its position compensated but not its rotation, and jump by 362 px
     // in a case where AE does not move it at all.
-    const orientation_prop = transform.__getitem__("ADBE Orientation");
+    const orientation_prop = transform.property("ADBE Orientation");
     if (orientation_prop.keyframes?.length > 0) {
       for (const keyframe of orientation_prop.keyframes) {
         keyframe.value = compose_orientation(keyframe.value, rotation_delta);

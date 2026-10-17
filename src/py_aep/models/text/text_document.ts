@@ -3,7 +3,6 @@
  */
 
 import {
-  at,
   deepcopy,
   descriptor,
   float,
@@ -1066,7 +1065,7 @@ export class TextDocument {
       // cached path never yields an empty list.
       return true;
     }
-    return at(spans, -1)[1] < u16_len(_raw_text(this));
+    return spans[spans.length - 1][1] < u16_len(_raw_text(this));
   }
 
   /**
@@ -1121,7 +1120,8 @@ export class TextDocument {
     const offset_x = box_pos != null ? cos_float(box_pos[0]) : 0.0;
     const offset_y = box_pos != null ? cos_float(box_pos[1]) : 0.0;
     const out: number[] = [];
-    for (const [[start, end], node] of zip(spans, nodes)) {
+    for (const [i, [start, end]] of spans.entries()) {
+      const node = nodes[i];
       const advances = _line_advances(node);
       let line_text = u16_slice(raw, start, end);
       // The stored advances carry one entry per GLYPH, not per

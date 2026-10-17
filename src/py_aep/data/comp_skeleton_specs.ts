@@ -25,8 +25,6 @@
  * immutable.
  */
 
-import { range } from "../../pyrt/index.ts";
-
 /** Heterogeneous spec-tree data, read dynamically by the skeleton builder. */
 type SpecBody = Record<string, any>;
 type SpecNode = [string, string, SpecBody];
@@ -139,9 +137,7 @@ export function _position_prop(
 }
 
 // X / Y / Z separation followers (ADBE Position_0 / _1 / _2).
-export const _SPLIT_POSITIONS: SpecNode[] = [
-  ...range(3),
-].map(
+export const _SPLIT_POSITIONS: SpecNode[] = [0, 1, 2].map(
   (i): SpecNode => [
     "prop",
     `ADBE Position_${i}`,

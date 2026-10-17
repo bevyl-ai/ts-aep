@@ -24,7 +24,6 @@ import {
   IndexError,
   py_eq,
   py_slice,
-  range,
   repr,
   rstrip,
   struct,
@@ -648,8 +647,8 @@ export function read_psd_layers(file: PathLike, kw: { mask_boxes?: boolean } = {
 export function _user_mask(mask: Uint8Array, file_name: string, layer_name: string): _UserMask | null {
   if (mask.length < 18) return null;
   let [top, left, bottom, right] = struct.unpack(">iiii", bytes_.slice(mask, 0, 16));
-  const default_ = at(mask, 16);
-  const flags = at(mask, 17);
+  const default_ = mask[16];
+  const flags = mask[17];
   let pos = 18;
   if (flags & 0x10) {
     const parameters = at(mask, pos);
@@ -665,8 +664,8 @@ export function _user_mask(mask: Uint8Array, file_name: string, layer_name: stri
     pos += (parameters & 0x04 ? 1 : 0) + (parameters & 0x08 ? 8 : 0);
   }
   if (mask.length - pos >= 18) {
-    const real_flags = at(mask, pos);
-    const real_default = at(mask, pos + 1);
+    const real_flags = mask[pos];
+    const real_default = mask[pos + 1];
     [top, left, bottom, right] = struct.unpack(">iiii", bytes_.slice(mask, pos + 2, pos + 18));
     if (real_flags & 0x02) return null;
     return new _UserMask(-3, [left, top, right, bottom], real_default);
@@ -702,14 +701,14 @@ export function _visible_box(
   const default_row = bytes_.repeat(b(mask.default_ ? "\x01" : "\x00"), width);
   // Outside its rectangle the mask takes its default color, so with a black
   // default only the rectangle's rows can show.
-  const rows = mask.default_ ? range(rt, rb) : range(Math.max(rt, mt), Math.min(rb, mb));
+  const [y0, y1] = mask.default_ ? [rt, rb] : [Math.max(rt, mt), Math.min(rb, mb)];
   const x0 = Math.max(ml, rl);
   const x1 = Math.min(mr, rr);
   let min_x: number | null = null;
   let min_y: number | null = null;
   let max_x: number | null = null;
   let max_y: number | null = null;
-  for (const y of rows) {
+  for (let y = y0; y < y1; y++) {
     const row = default_row.slice();
     if (mask_rows.length > 0 && mt <= y && y < mb && x0 < x1) {
       row.set(bytes_.slice(mask_rows[y - mt], x0 - ml, x1 - ml), x0 - rl);

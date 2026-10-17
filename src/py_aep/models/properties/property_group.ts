@@ -735,7 +735,7 @@ export class PropertyGroup extends PropertyBase {
       throw e;
     }
     try {
-      return this.__getitem__(name);
+      return this.property(name);
     } catch (e) {
       if (e instanceof KeyError) {
         throw new AttributeError(`'${this.constructor.name}' has no property '${name}'`);
@@ -930,7 +930,7 @@ export class PropertyGroup extends PropertyBase {
       // Python `layer.text.source_text.value`: only a text layer has the group.
       const text = this._containing_layer.text;
       if (text == null) throw new AttributeError("'NoneType' object has no attribute 'source_text'");
-      const text_doc = text.__getitem__("ADBE Text Document").value;
+      const text_doc = text.property("ADBE Text Document").value;
       const ps_name: string = py_or(text_doc.font, "");
       const family = split(ps_name, "-", 1)[0];
       const resolved = family ? resolve_font_exact(family) : null;

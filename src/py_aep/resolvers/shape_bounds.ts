@@ -160,7 +160,7 @@ export function _value<K extends _VectorProp>(
   time: number,
 ): MatchNameTypes[K] extends Property<infer V> ? V : never;
 export function _value(group: PropertyGroup, match_name: _VectorProp, time: number) {
-  return group.__getitem__(match_name).value_at_time(time);
+  return group.property(match_name).value_at_time(time);
 }
 
 // ---------------------------------------------------------------------------
@@ -334,7 +334,7 @@ export function _polystar_path(item: PropertyGroup, time: number): _Path {
 }
 
 export function _bezier_path(item: PropertyGroup, time: number): _Path {
-  const shape = item.__getitem__("ADBE Vector Shape").value_at_time(
+  const shape = item.property("ADBE Vector Shape").value_at_time(
     time,
   );
   const vertices: _Point[] = shape.vertices.map((v): _Point => [v[0], v[1]]);
@@ -433,11 +433,11 @@ export function _walk(
     const path_builder = _PATH_BUILDERS.get(match_name);
     if (match_name === "ADBE Vector Group" && group != null) {
       const local = _group_matrix(
-        group.__getitem__("ADBE Vector Transform Group"),
+        group.property("ADBE Vector Transform Group"),
         time,
       );
       const children = _walk(
-        group.__getitem__("ADBE Vectors Group"),
+        group.property("ADBE Vectors Group"),
         time,
         to_layer.multiply(local),
         geometry,

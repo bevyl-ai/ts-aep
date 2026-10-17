@@ -31,7 +31,7 @@ export const _GRAD_TYPE = new Map<string, number>([
 
 /** Return a child leaf property (narrowed from `Property | PropertyGroup`). */
 export function _leaf<K extends _LeafName>(group: PropertyGroup, match_name: K): MatchNameTypes[K] {
-  return group.__getitem__(match_name);
+  return group.property(match_name);
 }
 
 /** Narrow an `add_property` / child result to `PropertyGroup`. */
@@ -57,7 +57,7 @@ export function build_shape_layer_contents(
 
 export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): void {
   const group = _grp(contents.add_property("ADBE Vector Group"));
-  const inner = _grp(group.__getitem__("ADBE Vectors Group"));
+  const inner = _grp(group.property("ADBE Vectors Group"));
 
   // AE stores each group's vertices centred on the box of their vertices
   // and tangent handles and puts the offset in the group's Vector Position
@@ -92,7 +92,7 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
     _add_fill(inner, drawable.fill, cx, cy, drawable.opacity);
   }
 
-  const transform = _grp(group.__getitem__("ADBE Vector Transform Group"));
+  const transform = _grp(group.property("ADBE Vector Transform Group"));
   _leaf(transform, "ADBE Vector Position").value = [cx, cy];
 }
 

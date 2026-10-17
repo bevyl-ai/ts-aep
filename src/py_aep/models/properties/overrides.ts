@@ -12,7 +12,6 @@
 
 // Bounds for properties without effect parameter definitions (effect
 // parameters derive their valid range from the pard chunk).
-// NOTE(port): every Python literal here is an int, and so is the TS number; no float-spelled bound exists, so nothing is lost.
 export const _PROPERTY_MIN_MAX: Map<string, readonly [number, number]> = new Map<string, readonly [number, number]>([
   // Transform
   ["ADBE Opacity", [0, 100]],

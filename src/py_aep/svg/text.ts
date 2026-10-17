@@ -22,7 +22,6 @@ import {
   type Path,
   fspath,
   py_eq,
-  range,
   sum,
   zip,
   hypot,
@@ -299,7 +298,7 @@ export function outline_runs(
   const glyph_data = runs.map((run) =>
     _glyphs(_load_font(run.font_path, run.font_number), run.text),
   );
-  const widths = zip(runs, glyph_data).map(([run, gd]) => _advance_width(run, gd));
+  const widths = runs.map((run, k) => _advance_width(run, glyph_data[k]));
   const result: Subpath[][] = runs.map(() => []);
   let pen_x = origin_x;
   let pen_y = origin_y;
@@ -310,7 +309,7 @@ export function outline_runs(
     let j = i + 1;
     while (j < n && runs[j].abs_x == null) j += 1;
     const first = runs[i];
-    const chunk_advance = sum(Array.from(range(i, j), (k) => widths[k] + runs[k].dx));
+    const chunk_advance = sum(Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx));
     const chunk_anchor = first.anchor || anchor;
     const shift =
       chunk_anchor === "middle"
@@ -430,7 +429,8 @@ export function outline_text_path(
 
   let dist = start_offset_frac != null ? start_offset_frac * total : start_offset;
   const subpaths: Subpath[] = [];
-  for (const [gname, advance] of zip(names, advances)) {
+  for (const [k, gname] of names.entries()) {
+    const advance = advances[k];
     const advance_user = advance * scale + letter_spacing;
     const mid = dist + advance_user / 2.0;
     if (gname != null && _in_glyph_set(glyph_set, gname) && 0.0 <= mid && mid <= total) {

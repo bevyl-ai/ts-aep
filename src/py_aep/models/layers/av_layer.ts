@@ -796,7 +796,7 @@ export class AVLayer extends Layer {
       return this._text_ink_rect(comp_time);
     }
     if (layer_type === LayerType.SHAPE) {
-      const contents = this.__getitem__("ADBE Root Vectors Group");
+      const contents = this.property("ADBE Root Vectors Group");
       return shape_layer_rect(contents, comp_time, extents);
     }
     return {
@@ -808,13 +808,13 @@ export class AVLayer extends Layer {
   }
 
   _text_ink_rect(time: number): { top: number; left: number; width: number; height: number } {
-    const text = this.__getitem__("ADBE Text Properties");
-    const animators = text.__getitem__("ADBE Text Animators");
+    const text = this.property("ADBE Text Properties");
+    const animators = text.property("ADBE Text Animators");
     if (animators.properties?.length > 0) {
       throw new NotImplementedError("source_rect_at_time does not model text animators");
     }
-    const path_options = text.__getitem__("ADBE Text Path Options");
-    const text_path = path_options.__getitem__("ADBE Text Path");
+    const path_options = text.property("ADBE Text Path Options");
+    const text_path = path_options.property("ADBE Text Path");
     if (!(text_path instanceof Property)) {
       throw new AttributeError(`'${type_name(text_path)}' object has no attribute 'value'`);
     }
@@ -824,7 +824,7 @@ export class AVLayer extends Layer {
     if (this._ldta.three_d_per_char) {
       throw new NotImplementedError("source_rect_at_time does not model per-character 3D text");
     }
-    const document = text.__getitem__("ADBE Text Document").value_at_time(time);
+    const document = text.property("ADBE Text Document").value_at_time(time);
     return text_ink_rect(document);
   }
 
@@ -883,7 +883,7 @@ export class AVLayer extends Layer {
         "'time_remap_enabled' is read-only when 'can_set_time_remap_enabled' is False.",
       );
     }
-    const prop = this.__getitem__("ADBE Time Remapping");
+    const prop = this.property("ADBE Time Remapping");
     if (!(prop instanceof Property)) {
       return;
     }

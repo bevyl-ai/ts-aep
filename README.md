@@ -32,10 +32,11 @@ on a manual workflow run):
   byte-identical saved files.
 - Parse → save is byte-identical on all 644 samples, in Node, Bun, a browser and
   workerd.
-- `tsc` reports 0 errors. 33 `TODO(port)` markers name the remaining known gaps
-  (fontkit/harfbuzzjs vs fontTools/uharfbuzz text metrics, argparse help text in
-  the CLIs, integers beyond 2^53, no LZMA decoder); 232 `NOTE(port)` comments
-  record why a spot already matches Python.
+- `tsc` reports 0 errors with `strict` on for the library. The code holds 16
+  `any` and 54 type assertions, most of them where py-aep itself uses an unchecked
+  `cast()`; the gate fails if either count grows. 26 `TODO(port)` markers name the
+  remaining known gaps (fontkit/harfbuzzjs vs fontTools/uharfbuzz text metrics,
+  argparse help text in the CLIs, integers beyond 2^53, no LZMA decoder).
 
 ## Install
 
@@ -58,6 +59,25 @@ The API is py-aep's: `parse(path)` and `Project.save(path)` take paths. All
 host access goes through `src/pyrt/host.ts`: Node and Bun use their own
 `node:fs`, `node:path` and `node:os` (via `process.getBuiltinModule`); hosts
 without them get an in-memory file system and POSIX paths.
+
+### Types
+
+Children are typed by match name: `group.property("ADBE Position")` is a
+`Property<number[]>` and `layer.property("ADBE Transform Group")` a group. The
+children of the built-in groups (Transform, Text, camera / light / material
+options, masks, shape fills, strokes and transforms) are also typed by their
+attribute name, as in py-aep:
+
+```ts
+const layer = comp.layers[0];
+const position: number[] = layer.transform.position.value;
+const text = comp.text_layers[0].text?.source_text.value.text;
+```
+
+A child whose attribute name depends on the layer (`anchor_point` on an AV
+layer is a camera's `point_of_interest`; `rotation` becomes `z_rotation` on a 3D
+layer) is reached by match name instead. Other children, such as effect
+parameters, still resolve by attribute name at runtime, untyped.
 
 ### Node / Bun
 

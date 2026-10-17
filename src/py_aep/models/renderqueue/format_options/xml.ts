@@ -72,7 +72,6 @@ export const _PARAM_RULE_KEYS = new Map<string, string>([
 type ETElement = ET.Element;
 
 /** `dict(*args).items()` for `ParamsDict.update`. */
-// NOTE(port): covers every `dict(*args)` source `update` receives: mapping, list of pairs, plain record.
 export type DictSource = Map<string, string> | Iterable<[string, string]> | Record<string, string>;
 
 export function _dict_items(args: DictSource[]): Iterable<[string, string]> {

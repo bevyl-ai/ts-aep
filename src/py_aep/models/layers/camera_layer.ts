@@ -57,8 +57,8 @@ export class CameraLayer extends Layer {
    */
   _default_position(): number[] {
     const comp = this.containing_comp;
-    const options = this.__getitem__("ADBE Camera Options Group");
-    const zoom = options.__getitem__("ADBE Camera Zoom");
+    const options = this.property("ADBE Camera Options Group");
+    const zoom = options.property("ADBE Camera Zoom");
     // The layer's time 0 is the comp time it starts at.
     const z = zoom.value_at_time(this.start_time);
     return [comp.width / 2.0, comp.height / 2.0, -z];

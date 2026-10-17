@@ -19,7 +19,6 @@ import type { Layer } from "../models/layers/layer.ts";
 import {
   and,
   deferred,
-  enumerate,
   int,
   split,
   warn,
@@ -245,7 +244,7 @@ export function parse_effect_param_defs(
   const param_defs = new Map<string, ParamDef>();
 
   const chunks_by_parameter = get_chunks_by_match_name(part_chunk);
-  for (const [index, [match_name, parameter_chunks]] of enumerate(chunks_by_parameter)) {
+  for (const [index, [match_name, parameter_chunks]] of [...chunks_by_parameter].entries()) {
     // Skip first, it describes parent
     if (index === 0) continue;
     param_defs.set(match_name, _parse_effect_parameter_def(parameter_chunks));

@@ -174,7 +174,6 @@ export function _expand_template(template: string, match: string): string {
   return out.join("");
 }
 
-// NOTE(port): matches math.gcd (non-negative result for negative inputs; gcd(0, 0) == 0).
 export function gcd(a: number, b: number): number {
   let x = Math.abs(a);
   let y = Math.abs(b);

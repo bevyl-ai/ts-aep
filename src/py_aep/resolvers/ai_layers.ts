@@ -24,7 +24,6 @@ import {
   type PathLike,
 } from "../../pyrt/index.ts";
 import { CosParser, IndirectObject, IndirectReference, decode_pdf_text_string } from "../cos/index.ts";
-// NOTE(port): `SyntaxError_` is the pyrt class the COS parser raises (re-exported by cos.ts), i.e. Python's `SyntaxError`.
 import { SyntaxError_, type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
 import { is, py_str } from "../cos/kinds.ts";
 

@@ -47,7 +47,6 @@ import {
   decode,
   dict_get,
   float,
-  at,
   getitem,
   int,
   num_str,
@@ -172,7 +171,6 @@ export function _max2(a: number, b_: number): number {
 }
 
 /** `sep.join(parts)` for bytes. */
-// NOTE(port): interleaves sep then concatenates, equal to bytes.join.
 export function join_bytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
   const out: Uint8Array[] = [];
   parts.forEach((part, i) => {
@@ -183,7 +181,6 @@ export function join_bytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
 }
 
 /** `bytes.isdigit()`: non-empty and every byte an ASCII digit. */
-// NOTE(port): bytes.isdigit is ASCII-only in CPython (0x30-0x39), same as this check.
 export function _isdigit_bytes(data: Uint8Array): boolean {
   return data.length > 0 && Array.from(data).every((c) => c >= 0x30 && c <= 0x39);
 }
@@ -885,7 +882,8 @@ export function _vertical_extent(
 
 /** Strip a subset tag and a style suffix from a `/BaseFont` name. */
 export function _base_font(name: string): string {
-  return split(at(split(name, "+"), -1), ",")[0];
+  const parts = split(name, "+");
+  return split(parts[parts.length - 1], ",")[0];
 }
 
 // --------------------------------------------------------------------------
@@ -949,21 +947,21 @@ export class _Measurer {
         // Python multiplies the raw operands: a non-number raises TypeError.
         gs.ctm = _mat_mul(operands.slice(-6).map(cos_num), gs.ctm);
       } else if (op === "w" && operands.length > 0) {
-        gs.line_width = cos_float(at(operands, -1));
+        gs.line_width = cos_float(operands[operands.length - 1]);
       } else if (op === "M" && operands.length > 0) {
-        gs.miter = cos_float(at(operands, -1));
+        gs.miter = cos_float(operands[operands.length - 1]);
       } else if (op === "gs" && operands.length > 0) {
-        const ext = this._resource(resources, "ExtGState", at(operands, -1));
+        const ext = this._resource(resources, "ExtGState", operands[operands.length - 1]);
         if (ext instanceof Map && ext.has("LW")) {
           gs.line_width = this._doc.number(getitem(ext, "LW"), gs.line_width);
         }
       }
       // ---- path construction
       else if (op === "m" && operands.length >= 2) {
-        const point: Pt = [cos_float(at(operands, -2)), cos_float(at(operands, -1))];
+        const point: Pt = [cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])];
         current = start = point;
       } else if (op === "l" && operands.length >= 2 && current != null) {
-        const point: Pt = [cos_float(at(operands, -2)), cos_float(at(operands, -1))];
+        const point: Pt = [cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])];
         segments.push(["l", current, point]);
         current = point;
       } else if (op === "c" && operands.length >= 6 && current != null) {
@@ -1016,7 +1014,7 @@ export class _Measurer {
           target.add_box(_clamp(_grow(gs.clip, FILL_PAD, FILL_PAD)));
         }
       } else if (op === "Do" && operands.length > 0) {
-        this._draw_xobject(gs, resources, at(operands, -1));
+        this._draw_xobject(gs, resources, operands[operands.length - 1]);
       } else if (op === "BI") {
         // Inferred from the `q_image` probe layer rather than measured
         // on its own: an inline image is the same painting operator as
@@ -1026,8 +1024,8 @@ export class _Measurer {
       // ---- optional content
       else if (op === "BDC" || op === "BMC") {
         let number = -1;
-        if (op === "BDC" && operands.length >= 2 && str(at(operands, -2)) === "OC") {
-          const reference = this._resource_ref(resources, "Properties", at(operands, -1));
+        if (op === "BDC" && operands.length >= 2 && str(operands[operands.length - 2]) === "OC") {
+          const reference = this._resource_ref(resources, "Properties", operands[operands.length - 1]);
           if (reference instanceof IndirectReference) number = reference.object_number;
         }
         this._stack.push(number);
@@ -1038,19 +1036,19 @@ export class _Measurer {
       else if (op === "BT") {
         text_matrix = line_matrix = _IDENTITY;
       } else if (op === "Tf" && operands.length >= 2) {
-        const font = this._resource(resources, "Font", at(operands, -2));
+        const font = this._resource(resources, "Font", operands[operands.length - 2]);
         gs.font = font instanceof Map ? font : null;
         // The metrics are a property of the font, so they are resolved
         // here rather than rebuilt for every text-showing operator.
         gs.metrics = _font_metrics(this._doc, gs.font);
-        gs.size = cos_float(at(operands, -1));
+        gs.size = cos_float(operands[operands.length - 1]);
       } else if (op === "Tm" && operands.length >= 6) {
         const tm = operands.slice(-6).map(cos_float);
         text_matrix = line_matrix = tm;
       } else if ((op === "Td" || op === "TD") && operands.length >= 2) {
-        if (op === "TD") gs.leading = -cos_float(at(operands, -1));
+        if (op === "TD") gs.leading = -cos_float(operands[operands.length - 1]);
         line_matrix = _mat_mul(
-          [1.0, 0.0, 0.0, 1.0, cos_float(at(operands, -2)), cos_float(at(operands, -1))],
+          [1.0, 0.0, 0.0, 1.0, cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])],
           line_matrix,
         );
         text_matrix = line_matrix;
@@ -1058,23 +1056,23 @@ export class _Measurer {
         line_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], line_matrix);
         text_matrix = line_matrix;
       } else if (op === "TL" && operands.length > 0) {
-        gs.leading = cos_float(at(operands, -1));
+        gs.leading = cos_float(operands[operands.length - 1]);
       } else if (op === "Tc" && operands.length > 0) {
-        gs.char_spacing = cos_float(at(operands, -1));
+        gs.char_spacing = cos_float(operands[operands.length - 1]);
       } else if (op === "Tw" && operands.length > 0) {
-        gs.word_spacing = cos_float(at(operands, -1));
+        gs.word_spacing = cos_float(operands[operands.length - 1]);
       } else if (op === "Tz" && operands.length > 0) {
-        gs.h_scale = cos_float(at(operands, -1));
+        gs.h_scale = cos_float(operands[operands.length - 1]);
       } else if (op === "Ts" && operands.length > 0) {
-        gs.rise = cos_float(at(operands, -1));
+        gs.rise = cos_float(operands[operands.length - 1]);
       } else if (op === "Tr" && operands.length > 0) {
-        gs.render_mode = cos_int(at(operands, -1));
+        gs.render_mode = cos_int(operands[operands.length - 1]);
       } else if ((op === "Tj" || op === "TJ" || op === "'" || op === '"') && operands.length > 0) {
         if (op === "'" || op === '"') {
           line_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], line_matrix);
           text_matrix = line_matrix;
         }
-        const shown = at(operands, -1);
+        const shown = operands[operands.length - 1];
         const items: CosNode[] = Array.isArray(shown) ? shown : [shown];
         text_matrix = this._show_text(gs, text_matrix, items);
       }

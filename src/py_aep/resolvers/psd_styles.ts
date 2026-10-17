@@ -45,7 +45,6 @@ import {
   json_float,
   py_bool,
   radians,
-  range,
   repr,
   round,
   rstrip,
@@ -174,7 +173,7 @@ export function _parse_item(reader: _Reader, os_type: string): _Value {
     return out;
   }
   if (os_type === "VlLs") {
-    return Array.from(range(reader.u4()), () => _parse_item(reader, decode(reader.raw(4), "latin-1")));
+    return Array.from({ length: reader.u4() }, () => _parse_item(reader, decode(reader.raw(4), "latin-1")));
   }
   if (os_type === "doub") {
     return struct.unpack(">d", reader.raw(8))[0];
@@ -358,7 +357,6 @@ export function _bool01(value: _Value): number {
 }
 
 /** Python int/float/bool operand for `/`: bool counts as 0/1, anything else raises. */
-// NOTE(port): bool->int, number passthrough, everything else TypeError, exactly Python's `/` operand rules for descriptor values
 export function _arith(value: _Value): number {
   if (typeof value === "number") return value;
   if (typeof value === "boolean") return value ? 1 : 0;
@@ -372,7 +370,6 @@ export function _subscript(obj: _Value, key: string): _Value {
 }
 
 /** Python `for x in value` over a parsed descriptor value. */
-// NOTE(port): list, dict keys, str chars (by code point) cover every type the descriptor parser yields; others raise TypeError like Python
 export function _py_iter(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
   if (value instanceof Map) return [...value.keys()];

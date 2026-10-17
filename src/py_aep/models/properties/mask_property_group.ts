@@ -11,7 +11,7 @@ import { validate_bool, validate_rgb_color } from "../validators.ts";
 // NOTE(port): property_group.ts reaches this module only through `deferred(...)` (the
 // port of Python's in-method import), so `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insert_before_group_end } from "./property_group.ts";
-import { AttributeError, deferred, descriptor, mod, py_assert, zip, instance_dict } from "../../../pyrt/index.ts";
+import { AttributeError, deferred, descriptor, mod, py_assert, instance_dict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
@@ -147,8 +147,8 @@ export class MaskPropertyGroup extends PropertyGroup {
         keyframe_tensions([], s._stored_tangents(-1), s._stored_tangents(1)),
       );
       this._mask_shape_tdsb.roto_bezier = true;
-      for (const [shape, shape_tensions] of zip(shapes, tensions)) {
-        shape._set_tensions(shape_tensions);
+      for (const [i, shape] of shapes.entries()) {
+        shape._set_tensions(tensions[i]);
         shape._write_geometry(shape.vertices, shape.in_tangents, shape.out_tangents);
       }
     } else {
@@ -156,7 +156,8 @@ export class MaskPropertyGroup extends PropertyGroup {
       // handles and drops the tensions.
       const drawn = shapes.map((s) => [s.in_tangents, s.out_tangents] as const);
       this._mask_shape_tdsb.roto_bezier = false;
-      for (const [shape, [ins, outs]] of zip(shapes, drawn)) {
+      for (const [i, shape] of shapes.entries()) {
+        const [ins, outs] = drawn[i];
         shape._set_tensions([]);
         shape._write_geometry(shape.vertices, ins, outs);
       }

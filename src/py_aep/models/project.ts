@@ -117,7 +117,6 @@ import { build_shape_layer_contents } from "../svg/build.ts";
 import type { AVLayer } from "./layers/av_layer.ts";
 
 /** `itertools.count(start)` (the clip-run counter). */
-// NOTE(port): matches `itertools.count(start)`: an unbounded counter yielding start, start+1, ...
 export function* count(start = 0): Generator<number> {
   for (let i = start; ; i++) yield i;
 }
@@ -1389,8 +1388,8 @@ export class Project {
     // py_aep does not model; the origin avoids that and renders the
     // same.)
     const transform = layer.transform;
-    transform.__getitem__("ADBE Anchor Point").value = [0.0, 0.0, 0.0];
-    transform.__getitem__("ADBE Position").value = [0.0, 0.0, 0.0];
+    transform.property("ADBE Anchor Point").value = [0.0, 0.0, 0.0];
+    transform.property("ADBE Position").value = [0.0, 0.0, 0.0];
     const contents = layer.property("ADBE Root Vectors Group");
     build_shape_layer_contents(contents, doc.drawables);
     return comp;
@@ -1542,8 +1541,8 @@ export class Project {
       if (spec.transform != null) {
         const [[anchor_x, anchor_y], [position_x, position_y]] = spec.transform;
         const transform = layer.transform;
-        transform.__getitem__("ADBE Anchor Point").value = [anchor_x, anchor_y, 0.0];
-        transform.__getitem__("ADBE Position").value = [position_x, position_y, 0.0];
+        transform.property("ADBE Anchor Point").value = [anchor_x, anchor_y, 0.0];
+        transform.property("ADBE Position").value = [position_x, position_y, 0.0];
       }
       if (spec.is_adjustment) layer.adjustment_layer = true;
       if (spec.preserve_transparency) layer.preserve_transparency = true;
@@ -1862,7 +1861,7 @@ export class Project {
       for (const layer of comp.layers) {
         const group = layer.text;
         if (group == null) continue;
-        const source_text = group.__getitem__("ADBE Text Document");
+        const source_text = group.property("ADBE Text Document");
         if (source_text instanceof Property) yield [layer, source_text];
       }
     }
@@ -2606,7 +2605,7 @@ export function _style_leaf_map(group: PropertyGroup): Map<string, Property> {
  * 0x02 - functional bits, fixture-pinned).
  */
 export function _serialize_import_layer_styles(layer: AVLayer, styles: PsdLayerStyles | null, source_name: string): void {
-  const container = layer.__getitem__("ADBE Layer Styles");
+  const container = layer.property("ADBE Layer Styles");
   // AE enables the container + Blend Options chain when any style is
   // enabled OR the layer carries blend-options data (a Photoshop Fill
   // slider away from 100% enables the chain with zero styles - the

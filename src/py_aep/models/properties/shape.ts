@@ -10,7 +10,6 @@ import {
   floordiv,
   min,
   max,
-  zip,
   descriptor,
   truediv,
 } from "../../../pyrt/index.ts";
@@ -263,8 +262,14 @@ export class Shape {
     const mask_size = this._is_mask ? this._comp_size : null;
     const [sx, sy] = mask_size ?? [1.0, 1.0];
     const verts = vertices.map(([x, y]) => [truediv(x, sx), truediv(y, sy)]);
-    const ins = zip(verts, in_tangents).map(([[vx, vy], [x, y]]) => [vx + truediv(x, sx), vy + truediv(y, sy)]);
-    const outs = zip(verts, out_tangents).map(([[vx, vy], [x, y]]) => [vx + truediv(x, sx), vy + truediv(y, sy)]);
+    const ins = verts.map(([vx, vy], i) => {
+      const [x, y] = in_tangents[i];
+      return [vx + truediv(x, sx), vy + truediv(y, sy)];
+    });
+    const outs = verts.map(([vx, vy], i) => {
+      const [x, y] = out_tangents[i];
+      return [vx + truediv(x, sx), vy + truediv(y, sy)];
+    });
     for (const pt of [...ins, ...outs]) {
       // A vertex plus its tangent can overflow even when both fit.
       validate_f4_point(pt);

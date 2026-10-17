@@ -1,4 +1,4 @@
-import { ValueError, descriptor, enumerate, round, py_or } from "../../../pyrt/index.ts";
+import { ValueError, descriptor, round, py_or } from "../../../pyrt/index.ts";
 import { Label } from "../../enums/index.ts";
 
 import { NmhdChunk } from "../../binary/misc_chunks.ts";
@@ -145,7 +145,7 @@ export class MarkerValue {
     _validate_params(value);
     const old = this._param_utf8s;
     const new_: Utf8Chunk[] = [];
-    for (const [i, [key, val]] of enumerate(value)) {
+    for (const [i, [key, val]] of [...value].entries()) {
       if (2 * i + 1 < old.length) {
         // Reuse existing chunk pairs in place (keeps tree position).
         old[2 * i].value = key;

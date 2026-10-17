@@ -38,22 +38,18 @@ import {
   max,
   py_bool,
   py_eq,
-  range,
   repr,
   sorted,
   str,
   sum,
-  zip,
   SystemExit,
   json_dumps,
 } from "../../pyrt/index.ts";
 
-// NOTE(port): print(*args) with default sep=" " and end="\n"; console.log of one pre-joined string appends the same newline.
 export function print(...args: string[]): void {
   console.log(args.join(" "));
 }
 
-// NOTE(port): print(..., file=sys.stderr); console.error of one string appends the same newline.
 export function eprint(message: string): void {
   console.error(message);
 }
@@ -281,7 +277,9 @@ export function _gradient_xml_only_float_diff(s1: string | String, s2: string | 
   if (f1.length !== f2.length) return false;
   // Everything except the float values must be byte-identical.
   if (s1.replace(_FLOAT_TAG_RE, "<float/>") !== s2.replace(_FLOAT_TAG_RE, "<float/>")) return false;
-  for (const [a, b_] of zip(f1, f2)) {
+  for (let i = 0; i < f1.length; i++) {
+    const a = f1[i];
+    const b_ = f2[i];
     // `<float>` content is normally numeric in AE's prop.map output; an
     // empty/non-numeric tag is not a pure float-precision diff (and must
     // not crash the comparison), so treat it as a real difference.
@@ -314,7 +312,7 @@ export function _only_float_diff(c1: Chunk, c2: Chunk): boolean {
   if (f1 == null) return false;
   const f2 = _chunk_floats(c2);
   if (f2 == null || f1.length !== f2.length) return false;
-  if (!zip(f1, f2).every(([a, b_]) => _floats_close(a, b_))) return false;
+  if (!f1.every((a, i) => _floats_close(a, f2[i]))) return false;
   // Rebuild c1 with c2's float values; equal bytes => only the (in-
   // tolerance) floats differed, everything else is byte-identical.
   const rebuilt: Uint8Array = _with_floats(c1, f2).tobytes();
@@ -503,7 +501,7 @@ export function compare_multi_aep_files(
       if (present.length < 2) continue;
     }
 
-    const data_list = Array.from(range(files.length), (i) => all_data[i].get(path) ?? b(""));
+    const data_list = Array.from({ length: files.length }, (_, i) => all_data[i].get(path) ?? b(""));
     const sizes = data_list.map((d) => d.length);
     const max_len = max(sizes);
 

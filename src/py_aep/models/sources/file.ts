@@ -802,8 +802,8 @@ export class FileSource extends FootageSource {
         utf8_before_opti = [];
       }
       if (utf8_before_opti.length >= 2) {
-        const prefix = at(utf8_before_opti, -2).value;
-        const extension = at(utf8_before_opti, -1).value;
+        const prefix = utf8_before_opti[utf8_before_opti.length - 2].value;
+        const extension = utf8_before_opti[utf8_before_opti.length - 1].value;
         if (prefix || extension) {
           const first_frame =
             `${prefix}${format(_sspc.start_frame, `0${_sspc.frame_padding}d`)}` +
@@ -1416,7 +1416,7 @@ export class FileSource extends FootageSource {
         end_frame = range_end;
       } else {
         start_frame = frames[0][0];
-        end_frame = at(frames, -1)[0];
+        end_frame = frames[frames.length - 1][0];
       }
     }
 
@@ -1791,8 +1791,8 @@ export class FileSource extends FootageSource {
 
     if (utf8_before_opti.length < 2) return "";
 
-    const prefix = at(utf8_before_opti, -2).value;
-    const extension = at(utf8_before_opti, -1).value;
+    const prefix = utf8_before_opti[utf8_before_opti.length - 2].value;
+    const extension = utf8_before_opti[utf8_before_opti.length - 1].value;
 
     if (!prefix && !extension) return "";
 

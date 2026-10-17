@@ -96,18 +96,11 @@ export function get_ae_version_major(obj: any): number {
 /**
  * Restrict a model method to files from a minimum AE major version.
  *
- *
- *
- * NOTE(port): Python applies this as `@requires_version(n)` on a method; call
- * sites apply it as `requires_version(n)(fn)` and assign the result to the
- * class prototype, which is exactly what the decorator syntax desugars to.
- *
  * @param min_major - Minimum AE major version number (e.g. 23 for AE 23.x).
  * @throws {@link AttributeError} If the file predates the required version.
  */
 export function requires_version(min_major: number) {
   return function decorator<T, A extends unknown[], R>(method: (this: T, ...args: A) => R): (this: T, ...args: A) => R {
-    // NOTE(port): functools.wraps; __name__ is the only attribute read back (error message and introspection).
     const wrapper = function (this: T, ...args: A): R {
       const major = get_ae_version_major(this);
       if (major < min_major) {

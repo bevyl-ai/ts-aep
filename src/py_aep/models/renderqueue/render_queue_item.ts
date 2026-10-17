@@ -36,7 +36,6 @@ export const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
 /** Convert Mac HFS+ epoch timestamp to datetime, or None if 0. */
 export function _start_time_from_binary(value: number): Date | null {
   if (!value) return null;
-  // NOTE(port): value is a u4 whole-second count, so the Date's millisecond precision loses nothing.
   return new Date(_AEP_EPOCH.getTime() + value * 1000);
 }
 
@@ -540,7 +539,6 @@ export class RenderQueueItem {
   }
 
   set settings(value: Map<string, unknown> | SettingsView) {
-    // NOTE(port): Python isinstance(value, Mapping) accepts dict and SettingsView (a MutableMapping); Map and SettingsView are their TS counterparts.
     if (!(value instanceof Map || value instanceof SettingsView)) {
       throw new ValueError("Settings must be a dictionary of key-value pairs");
     }

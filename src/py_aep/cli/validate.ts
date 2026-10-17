@@ -355,7 +355,7 @@ export function compare_values(expected: ToDictValue, parsed: ToDictValue, toler
   if (typeof expected === "string" && typeof parsed === "string") return expected === parsed;
   if (Array.isArray(expected) && Array.isArray(parsed)) {
     if (expected.length !== parsed.length) return false;
-    return zip(expected, parsed).every(([e, p]) => compare_values(e, p, tolerance));
+    return expected.every((e, i) => compare_values(e, parsed[i], tolerance));
   }
   return py_eq(expected, parsed);
 }

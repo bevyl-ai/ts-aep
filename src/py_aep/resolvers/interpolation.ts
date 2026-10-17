@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, floordiv, getitem, int, max, min, mod, radians, range, sorted, sum, tkey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, floordiv, getitem, int, max, min, mod, radians, sorted, sum, tkey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -1107,7 +1107,7 @@ export function roving_keyframe_times(keyframes: Keyframe[], metric: ArcMetric):
     const start = anchors[k];
     const end = anchors[k + 1];
     if (end - start < 2) continue;
-    if (!Array.from(range(start, end + 1)).every((i) => Array.isArray(keyframes[i]._stored_value))) continue;
+    if (!keyframes.slice(start, end + 1).every((kf) => Array.isArray(kf._stored_value))) continue;
     const [splines, total] = _run_splines(keyframes, start, end, metric);
     if (total <= 0) continue;
     const first = keyframes[start];
@@ -1598,7 +1598,6 @@ export function _split_cubic(cubic: _Cubic, t: number): [_Cubic, _Cubic] {
  * lopsided segments, both cut identically).
  */
 export function _subdivision_cuts(segment_count: number, target_count: number): number[][] {
-  // NOTE(port): an array with shift() (popleft) and push() is order-identical to `collections.deque` here.
   const pieces: [number, number, number][] = [];
   for (let index = 0; index < segment_count; index++) pieces.push([index, 0.0, 1.0]);
   while (pieces.length < target_count) {
@@ -1749,7 +1748,7 @@ export function interpolate_shapes(start: Shape, end: Shape, progress: number): 
   );
   blended._mask_path = start._mask_path;
   if (tensions != null && tensions[0].length === tensions[1].length && tensions[1].length === verts_a.length) {
-    blended._tensions = zip(tensions[0], tensions[1]).map(([a, b]) => a + (b - a) * progress);
+    blended._tensions = tensions[0].map((a, k) => a + (tensions[1][k] - a) * progress);
   }
   return blended;
 }

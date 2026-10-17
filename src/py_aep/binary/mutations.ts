@@ -51,7 +51,6 @@ export const ITEM_SIZE_BY_TYPE: Map<LdatItemType, number> = new Map<LdatItemType
 ]);
 
 /** `[0.0] * n` (Python list repetition; no pyrt shim for lists). */
-// NOTE(port): local stand-in for `[0.0] * n`; yields n fresh 0.0 values like CPython (n <= 0 gives []).
 export function zeros_list(n: number): number[] {
   return Array.from({ length: n }, () => 0.0);
 }

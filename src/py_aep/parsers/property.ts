@@ -18,7 +18,7 @@ import { parse_markers } from "./marker.ts";
 import { parse_property } from "./property_value.ts";
 import { parse_gradient, parse_orientation, parse_shape, parse_text_document } from "./specialized_properties.ts";
 import { get_chunks_by_match_name, get_match_name_runs } from "./utils.ts";
-import { enumerate, warn, zip } from "../../pyrt/index.ts";
+import { warn, zip } from "../../pyrt/index.ts";
 import { Property, _EssentialOverrideProperty } from "../models/properties/property.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
@@ -203,7 +203,7 @@ export function _dispatch_tdgp(ctx: _ParseContext): (Property | PropertyGroup)[]
     const tdgps = [...filter_by_list_type(ctx.chunks, "tdgp")];
     const mkifs = [...filter_by_type(ctx.chunks, "mkif")];
     const masks: (Property | PropertyGroup)[] = [];
-    for (const [i, [tdmn, tdgp_c, mkif_c]] of enumerate(zip(tdmns, tdgps, mkifs), 1)) {
+    for (const [i, [tdmn, tdgp_c, mkif_c]] of zip(tdmns, tdgps, mkifs).entries()) {
       const mask = _parse_mask_atom(
         tdgp_c,
         mkif_c,
@@ -213,7 +213,7 @@ export function _dispatch_tdgp(ctx: _ParseContext): (Property | PropertyGroup)[]
         tdmn,
         ctx.layer,
       );
-      mask._auto_name = `Mask ${i}`;
+      mask._auto_name = `Mask ${i + 1}`;
       masks.push(mask);
     }
     return masks;

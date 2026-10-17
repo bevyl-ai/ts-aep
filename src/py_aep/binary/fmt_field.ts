@@ -483,8 +483,6 @@ export function _decode_fields(
     }
     if (decode_kw !== null) return decode_kw(values);
   }
-  // NOTE(port): kwargs dict is a plain object: keys are init-name identifiers
-  // passed straight to `cls(**kw)`, never iterated for numeric-looking keys.
   const kw: FieldKwargs = {};
   const n = Math.min(data_fields.length, values.length);
   for (let i = 0; i < n; i++) {
@@ -563,7 +561,6 @@ export class FmtItem extends AttrsBase {
     }
     let kw: FieldKwargs;
     if (simple) {
-      // NOTE(port): kwargs keys are Python identifiers (never numeric-looking), so insertion order matches dict order.
       kw = {};
       for (let i = 0; i < Math.min(init_names.length, values.length); i++) kw[init_names[i]] = values[i];
       for (const [i, crc] of coerces) {

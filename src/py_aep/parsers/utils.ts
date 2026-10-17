@@ -1,6 +1,6 @@
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { TdmnChunk } from "../binary/property_chunks.ts";
-import { at, py_bool, setdefault } from "../../pyrt/index.ts";
+import { py_bool, setdefault } from "../../pyrt/index.ts";
 
 export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
 
@@ -26,12 +26,12 @@ export function get_match_name_runs(root_chunk: ListChunk): [string, Chunk[]][] 
           continue;
         }
         skip_to_next_tdmn_flag = false;
-        if (runs.length === 0 || at(runs, -1)[0] !== match_name) {
+        if (runs.length === 0 || runs[runs.length - 1][0] !== match_name) {
           runs.push([match_name, []]);
         }
-        at(runs, -1)[1].push(chunk);
+        runs[runs.length - 1][1].push(chunk);
       } else if (!skip_to_next_tdmn_flag && !_SKIP_CHUNK_TYPES.includes(chunk.chunk_type)) {
-        at(runs, -1)[1].push(chunk);
+        runs[runs.length - 1][1].push(chunk);
       }
     }
   }

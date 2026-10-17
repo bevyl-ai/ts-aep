@@ -24,7 +24,6 @@ export const FrameRateSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `FrameRateSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: FrameRateSetting): string {
       return _FRAME_RATE_SETTING_LABELS[self];
     },
@@ -54,7 +53,6 @@ export const RenderQuality = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `RenderQuality.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: RenderQuality): string {
       return _RENDER_QUALITY_LABELS[self];
     },
@@ -95,7 +93,6 @@ export const FieldRender = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `FieldRender.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: FieldRender): string {
       return _FIELD_RENDER_LABELS[self];
     },
@@ -128,7 +125,6 @@ export const PulldownSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `PulldownSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: PulldownSetting): string {
       return _PULLDOWN_SETTING_LABELS[self];
     },
@@ -161,7 +157,6 @@ export const MotionBlurSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `MotionBlurSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: MotionBlurSetting): string {
       return _MOTION_BLUR_SETTING_LABELS[self];
     },
@@ -196,7 +191,6 @@ export const FrameBlendingSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `FrameBlendingSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: FrameBlendingSetting): string {
       return _FRAME_BLENDING_SETTING_LABELS[self];
     },
@@ -231,7 +225,6 @@ export const EffectsSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `EffectsSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: EffectsSetting): string {
       return _EFFECTS_SETTING_LABELS[self];
     },
@@ -267,7 +260,6 @@ export const ProxyUseSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `ProxyUseSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: ProxyUseSetting): string {
       return _PROXY_USE_SETTING_LABELS[self];
     },
@@ -302,7 +294,6 @@ export const SoloSwitchesSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `SoloSwitchesSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: SoloSwitchesSetting): string {
       return _SOLO_SWITCHES_SETTING_LABELS[self];
     },
@@ -335,7 +326,6 @@ export const GuideLayers = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `GuideLayers.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: GuideLayers): string {
       return _GUIDE_LAYERS_LABELS[self];
     },
@@ -368,7 +358,6 @@ export const DiskCacheSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `DiskCacheSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: DiskCacheSetting): string {
       return _DISK_CACHE_SETTING_LABELS[self];
     },
@@ -403,7 +392,6 @@ export const ColorDepthSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `ColorDepthSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: ColorDepthSetting): string {
       return _COLOR_DEPTH_SETTING_LABELS[self];
     },
@@ -444,7 +432,6 @@ export const TimeSpanSource = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `TimeSpanSource.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: TimeSpanSource): string {
       return _TIME_SPAN_SOURCE_LABELS[self];
     },
@@ -480,7 +467,6 @@ export const PostRenderActionSetting = int_enum(
   },
   {
     /** ExtendScript STRING format label. */
-    // NOTE(port): Python `@property label` is `PostRenderActionSetting.label(member)` per RULEBOOK enum mapping (members are plain numbers); same labels-table lookup.
     label(self: PostRenderActionSetting): string {
       return _POST_RENDER_ACTION_SETTING_LABELS[self];
     },

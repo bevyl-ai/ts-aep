@@ -130,7 +130,6 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   __contains__(key: unknown): boolean {
-    // NOTE(port): every spec key is a str; a non-str key is simply absent.
     return typeof key === "string" && this._specs.has(key);
   }
 

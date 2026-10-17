@@ -60,7 +60,6 @@ import { validate_bool, validate_enum, validate_font_name, validate_normalized_f
 import { FontObject } from "./font_object.ts";
 import type { TextDocument } from "./text_document.ts";
 
-// NOTE(port): thin alias of pyrt py_bool (Python truthiness), exported under the builtin name.
 export const bool = (x: CosNode): boolean => py_bool(x);
 
 // AE's exact error strings (AE 26.3, English locale); py_aep raises these
@@ -1441,7 +1440,6 @@ export class CharacterRange extends _TextRange {
       // the kern-clearing side effects below.
       return;
     }
-    // NOTE(port): AutoKernType(value).to_binary() == static to_binary(AutoKernType.of(value)); enum shim members are plain ints.
     _apply_char_key(doc, start, end, "11", AutoKernType.to_binary(AutoKernType.of(value)));
     if (value !== AutoKernType.NO_AUTO_KERN) {
       const values = _kern_values(doc);
