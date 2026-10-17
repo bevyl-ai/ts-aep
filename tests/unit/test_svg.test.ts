@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
 import { Path, b, getitem, min, py_eq, sorted, zip } from "../../src/pyrt/index.ts";
-import { GradientPaint, SolidPaint, SvgDocument, UnsupportedSVGError, read_svg } from "../../src/py_aep/svg/index.ts";
+import { GradientPaint, type GradientStop, SolidPaint, SvgDocument, UnsupportedSVGError, read_svg } from "../../src/py_aep/svg/index.ts";
 import { parse_color } from "../../src/py_aep/svg/colors.ts";
 import { parse_path } from "../../src/py_aep/svg/path_data.ts";
 import { cubics_to_subpath, element_subpaths } from "../../src/py_aep/svg/shapes.ts";
@@ -148,6 +148,7 @@ describe("TestShapes", () => {
       new Map([["x", "0"], ["y", "0"], ["width", "4"], ["height", "2"]]),
     );
     const sp = cubics_to_subpath(raws[0], IDENTITY);
+    if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
     expect(py_eq(sp.vertices, [[0, 0], [4, 0], [4, 2], [0, 2]])).toBe(true);
     expect(sp.out_tangents.every((t) => py_eq(t, [0.0, 0.0]))).toBe(true);
@@ -159,6 +160,7 @@ describe("TestShapes", () => {
       new Map([["width", "10"], ["height", "10"], ["rx", "2"], ["ry", "2"]]),
     );
     const sp = cubics_to_subpath(raws[0], IDENTITY);
+    if (sp == null) throw new Error("no subpath");
     expect(sp.vertices.length).toBe(8);
     expect(sp.in_tangents.some((t) => !py_eq(t, [0.0, 0.0]))).toBe(true);
   });
@@ -169,6 +171,7 @@ describe("TestShapes", () => {
       new Map([["cx", "0"], ["cy", "0"], ["rx", "10"], ["ry", "5"]]),
     );
     const sp = cubics_to_subpath(raws[0], IDENTITY);
+    if (sp == null) throw new Error("no subpath");
     expect(sp.vertices.length).toBe(4);
     expect(sp.closed).toBe(true);
     // AE 2026 starts an imported circle/ellipse at the top vertex and runs
@@ -181,6 +184,7 @@ describe("TestShapes", () => {
   test("test_polygon_closed", () => {
     const raws = element_subpaths("polygon", new Map([["points", "0,0 10,0 5,8"]]));
     const sp = cubics_to_subpath(raws[0], IDENTITY);
+    if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
     expect(py_eq(sp.vertices, [[0, 0], [10, 0], [5, 8]])).toBe(true);
   });
@@ -188,6 +192,7 @@ describe("TestShapes", () => {
   test("test_polyline_open", () => {
     const raws = element_subpaths("polyline", new Map([["points", "0,0 10,0 5,8"]]));
     const sp = cubics_to_subpath(raws[0], IDENTITY);
+    if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(false);
   });
 
@@ -198,6 +203,7 @@ describe("TestShapes", () => {
   test("test_transform_applied_to_vertices", () => {
     const raws = element_subpaths("rect", new Map([["width", "2"], ["height", "2"]]));
     const sp = cubics_to_subpath(raws[0], parse_transform("translate(100,50)"));
+    if (sp == null) throw new Error("no subpath");
     expect(py_eq(sp.vertices[0], [100.0, 50.0])).toBe(true);
   });
 });
@@ -337,6 +343,7 @@ describe("TestReadSvgSample", () => {
     const drawable = read_svg(svg).drawables[0];
     expect(drawable.fill instanceof SolidPaint).toBe(true);
     expect(approx((drawable.fill as any).color[3], 0.4)).toBe(true);
+    if (drawable.stroke == null) throw new Error("drawable has no stroke");
     expect(drawable.stroke.paint instanceof SolidPaint).toBe(true);
     expect(approx((drawable.stroke.paint as any).color[3], 0.25)).toBe(true);
     expect(drawable.opacity).toBe(1.0);
@@ -362,7 +369,7 @@ describe("TestReadSvgSample", () => {
       '<rect width="4" height="4" fill="url(#g)" fill-opacity="0.5"/></svg>';
     const fill = read_svg(svg).drawables[0].fill as any;
     expect(fill instanceof GradientPaint).toBe(true);
-    expect(approx(fill.stops.map((s) => s.color[3]), [0.5, 0.25])).toBe(true);
+    expect(approx(fill.stops.map((s: GradientStop) => s.color[3]), [0.5, 0.25])).toBe(true);
   });
 
   test("test_first_drawable_geometry_absolute", () => {

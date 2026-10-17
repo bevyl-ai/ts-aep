@@ -102,7 +102,7 @@ test("test_to_dict_emits_the_curves", () => {
   const rgb = getitem(getitem(data, "channels") as any, "rgb") as any;
   expect(py_eq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
   expect(py_eq(getitem(rgb, "map"), [...range(256)])).toBe(true);
-  expect(getitem(rgb, "selected")).toBe(-1);
+  expect<number>(getitem(rgb, "selected")).toBe(-1);
 });
 
 test("test_junk_selected_point_reads_as_none", () => {

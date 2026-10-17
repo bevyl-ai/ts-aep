@@ -13,6 +13,7 @@ import { Path, py_eq, TypeError_, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { as_instance, get_comp } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
+import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
 
 const SAMPLES = new Path(import.meta.dir).parent.parent.div("samples", "models");
 
@@ -111,6 +112,7 @@ describe("TestPrecomposeMove", () => {
     const nc2 = get_comp(parse_aep(String(out)).project, "PC par");
     const child2 = nc2.layers.find((ly: any) => ly.name === "ChildLayer")!;
     expect(child2.parent != null).toBe(true);
+    if (child2.parent == null) throw new Error("ChildLayer lost its parent");
     expect(child2.parent.name).toBe("ParentNull");
   });
 
@@ -207,7 +209,7 @@ describe("TestPrecomposeLeaveAttributes", () => {
     const comp2 = get_comp(app2.project, "Comp 1");
     const nc2 = get_comp(app2.project, "PC leave");
     expect(as_instance(comp2.layers[1], AVLayer).source).toBe(nc2);
-    expect(as_instance(nc2.layers[0], AVLayer).source.name).toBe("Gray Solid 2");
+    expect(as_instance(as_instance(nc2.layers[0], AVLayer).source, AVItem).name).toBe("Gray Solid 2");
   });
 
   test("test_new_comp_sized_from_source", () => {

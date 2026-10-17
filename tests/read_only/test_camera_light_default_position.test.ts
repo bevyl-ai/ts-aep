@@ -83,9 +83,9 @@ function _position(layer: Layer, match_name = "ADBE Position"): Property {
 function _expected_transform(sample: string, comp_name: string, layer_name: string): Map<string, any> {
   const expected = load_expected(SAMPLES_DIR, sample);
   const comp_json = get_comp_from_json_by_name(expected, comp_name);
-  const layer_json = comp_json["layers"].find((ly) => ly["name"] === layer_name);
-  const group = layer_json["properties"].find((p) => p["matchName"] === "ADBE Transform Group");
-  return new Map(group["properties"].map((p): [string, any] => [p["matchName"], p]));
+  const layer_json = comp_json["layers"].find((ly: { name: string }) => ly["name"] === layer_name);
+  const group = layer_json["properties"].find((p: { matchName: string }) => p["matchName"] === "ADBE Transform Group");
+  return new Map(group["properties"].map((p: { matchName: string }): [string, any] => [p["matchName"], p]));
 }
 
 function _assert_matches_json(sample: string, comp_name: string, layer_name: string): void {

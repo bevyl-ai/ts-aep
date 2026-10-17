@@ -274,14 +274,18 @@ describe("TestActiveItem", () => {
 
   test("test_comp1_active", () => {
     const project = parse_project(VIEW_SAMPLES_DIR.div("comp1_active.aep"));
-    expect(project.active_item != null).toBe(true);
-    expect(project.active_item.name).toBe("Comp 1");
+    const active_item = project.active_item;
+    expect(active_item != null).toBe(true);
+    if (active_item == null) throw new Error("project has no active item");
+    expect(active_item.name).toBe("Comp 1");
   });
 
   test("test_comp2_active", () => {
     const project = parse_project(VIEW_SAMPLES_DIR.div("comp2_active.aep"));
-    expect(project.active_item != null).toBe(true);
-    expect(project.active_item.name).toBe("Comp 2");
+    const active_item = project.active_item;
+    expect(active_item != null).toBe(true);
+    if (active_item == null) throw new Error("project has no active item");
+    expect(active_item.name).toBe("Comp 2");
   });
 });
 
