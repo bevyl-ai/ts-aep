@@ -10,7 +10,7 @@ import { b, bytes_, decode, define, descriptor, fields, getattr, len, py_assert,
 import type { IO } from "../../pyrt/index.ts";
 import { read_bytes, to_dividend_divisor, to_fixed_16_16 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
-import { Chunk } from "./chunk.ts";
+import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
 import { FmtItem, ascii_field, bool_field, bytes_field, f4_field, f8_field, items_field, s2_field, s4_field, str_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
@@ -176,7 +176,7 @@ export class RoptChunk extends Chunk {
     return "";
   }
 
-  static read(fp: IO, size: number, kw: { chunk_type?: string; [k: string]: unknown } = {}): RoptChunk {
+  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): RoptChunk {
     const { chunk_type = "" } = kw;
     if (this !== RoptChunk) {
       // Variant subclass - use standard fmt_field parsing

@@ -27,7 +27,7 @@ import {
 } from "../../pyrt/index.ts";
 import { read_bytes, write_bytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
-import { Chunk, ContainerChunk } from "./chunk.ts";
+import { Chunk, ContainerChunk, type ChunkReadKwargs } from "./chunk.ts";
 import { FmtItem, bool_field, bytes_field, f8_field, items_field, s4_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { Utf8Chunk, _StringChunkBase } from "./scalar_chunks.ts";
@@ -419,7 +419,7 @@ export class CdatChunk extends Chunk {
   static read(
     fp: IO,
     size: number,
-    kw: { chunk_type?: string; is_le?: boolean } & Record<string, unknown> = {},
+    kw: ChunkReadKwargs = {},
   ): CdatChunk {
     const { chunk_type = "", is_le = false } = kw;
     const count = floordiv(size, 8);
@@ -480,7 +480,7 @@ export class TdumChunk extends Chunk {
   static read(
     fp: IO,
     size: number,
-    kw: { chunk_type?: string; is_color?: boolean; is_integer?: boolean } & Record<string, unknown> = {},
+    kw: ChunkReadKwargs = {},
   ): TdumChunk {
     const { chunk_type = "", is_color = false } = kw;
     let { is_integer = false } = kw;
@@ -545,7 +545,7 @@ export class OtdaChunk extends Chunk {
   declare chunk_type: string;
   declare values: number[];
 
-  static read(fp: IO, size: number, kw: { chunk_type?: string } & Record<string, unknown> = {}): OtdaChunk {
+  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
     const { chunk_type = "" } = kw;
     const raw = read_bytes(fp, size);
     const n = floordiv(size, 8);
@@ -582,7 +582,7 @@ export class TdmnChunk extends _StringChunkBase {
   declare chunk_type: string;
   static _ENCODING = "UTF-8";
 
-  static read(fp: IO, size: number, kw: { chunk_type?: string } & Record<string, unknown> = {}): TdmnChunk {
+  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
     const { chunk_type = "" } = kw;
     const raw = read_bytes(fp, size);
     return new this({ chunk_type, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
