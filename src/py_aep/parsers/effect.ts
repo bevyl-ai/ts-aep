@@ -304,6 +304,8 @@ export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
  * system code page: "Set Red To Source 1's" holds 0x92 in a Windows
  * (1252) project. Names that are valid UTF-8 are returned as they are.
  */
+// TODO(port): pyrt decodes only cp1252, mac_roman and utf-8; a name on any other
+// code page (cp932, cp1250, ...) keeps its raw form, where Python decodes it.
 export function _decode_pard_name(name: string, code_page: number): string {
   if (!/[\udc80-\udcff]/u.test(name)) return name;
   const codec = _CODE_PAGE_CODECS.get(code_page) ?? `cp${code_page}`;
