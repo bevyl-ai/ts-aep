@@ -86,6 +86,7 @@ test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_re
   const project = py_aep.new(getitem(_VERSIONS, year), { platform: "windows" }).project;
   const comp = project.root_folder.add_comp("Comp", 100, 100, 1.0, 1.0, 25.0);
   const solid = comp.add_solid([1.0, 0.0, 0.0]).source;
+  if (solid == null) throw new Error("solid layer has no source");
   const out = tmp_path.div("solid.aep");
   project.save(out);
   const ours = (getitem(parse_aep(out).project.items, solid.id) as any).main_source;

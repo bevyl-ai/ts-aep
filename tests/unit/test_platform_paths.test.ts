@@ -37,7 +37,7 @@ test.each([
   expect(platform_path(path, { windows: true })).toBe(windows);
 });
 
-test.each([
+test.each<[string, string, boolean, [number, number]]>([
   // AE 2026 Windows saves of samples/models/import/*.aep.
   [
     "C:\\repo\\samples\\models\\import\\x.aep",

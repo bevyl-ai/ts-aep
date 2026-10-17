@@ -638,7 +638,7 @@ describe("TestTrackMatte", () => {
     const matted_layer = comp.layers.find((layer) => as_instance(layer, AVLayer).has_track_matte) ?? null;
     expect(matted_layer != null).toBe(true);
     expect(as_instance(matted_layer, AVLayer).track_matte_layer != null).toBe(true);
-    expect(as_instance(matted_layer, AVLayer).track_matte_layer.is_track_matte).toBe(true);
+    expect(as_instance(as_instance(matted_layer, AVLayer).track_matte_layer, AVLayer).is_track_matte).toBe(true);
   });
 
   test("test_track_matte_layer_none", () => {
@@ -658,6 +658,7 @@ describe("TestParenting", () => {
     const comp = get_comp(project, "parent");
     const child_layer = comp.layers.find((layer) => layer._parent_id !== 0) ?? null;
     expect(child_layer != null).toBe(true);
+    if (child_layer == null) throw new Error("no parented layer in comp 'parent'");
     for (const item of expected["items"]) {
       if (item["name"] === "parent" && "layers" in item) {
         for (const layer_json of item["layers"]) {
@@ -1055,8 +1056,10 @@ describe("TestThreeDModelLayer", () => {
     const project = parse_project(SAMPLES_DIR.div("three_d_model_layer.aep"));
     const layer = get_first_layer(project);
     expect(layer instanceof ThreeDModelLayer).toBe(true);
-    expect(as_instance(layer, ThreeDModelLayer).source != null).toBe(true);
-    expect(as_instance(layer, ThreeDModelLayer).source.name).toBe("crystal.fbx");
+    const source = as_instance(layer, ThreeDModelLayer).source;
+    expect(source != null).toBe(true);
+    if (source == null) throw new Error("ThreeDModelLayer has no source");
+    expect(source.name).toBe("crystal.fbx");
   });
 
   /** CompItem.three_d_model_layers filters correctly. */

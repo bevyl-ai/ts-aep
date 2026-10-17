@@ -226,7 +226,7 @@ describe("TestRovingRunIsOneEasedSpan", () => {
     [7.0, [742.754934, 202.898026]],
   ]);
 
-  function _build(): any {
+  function _build(): Property<number[]> {
     const [_app, comp] = _new_comp(800, 400);
     const layer = comp.add_solid([0, 0, 1], "Roving", 100, 100, 1.0);
     const pos = layer.property("Transform").property("Position");
@@ -346,10 +346,13 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const pos = app.project.compositions[0].layers[0].transform.__getitem__("ADBE Position");
     const k0 = pos.keyframes[0];
     const k1 = pos.keyframes[1];
+    const out_tangent = k0.out_spatial_tangent;
+    const in_tangent = k1.in_spatial_tangent;
+    if (out_tangent == null || in_tangent == null) throw new Error("spatial keyframe has no tangents");
     const curve = [
       k0.value,
-      zip(k0.value, k0.out_spatial_tangent).map(([v, t]) => (v as number) + (t as number)),
-      zip(k1.value, k1.in_spatial_tangent).map(([v, t]) => (v as number) + (t as number)),
+      zip(k0.value, out_tangent).map(([v, t]) => (v as number) + (t as number)),
+      zip(k1.value, in_tangent).map(([v, t]) => (v as number) + (t as number)),
       k1.value,
     ];
     const path = Array.from({ length: 2001 }, (_, i) => point(curve, i / 2000));

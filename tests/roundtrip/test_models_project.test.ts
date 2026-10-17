@@ -763,6 +763,7 @@ describe("TestRoundtripRevision", () => {
 
     // NOTE(port): models/project.ts parses xmp_packet via pyrt etree (ET_fromstring), whose Element has the same get/set API.
     const xmp_packet = project.xmp_packet;
+    if (xmp_packet == null) throw new Error("project has no XMP packet");
     xmp_packet.set("py_aep_test_marker", "1");
     project.xmp_packet = xmp_packet;
 
@@ -770,7 +771,9 @@ describe("TestRoundtripRevision", () => {
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.xmp_packet.get("py_aep_test_marker")).toBe("1");
+    const xmp_packet2 = project2.xmp_packet;
+    if (xmp_packet2 == null) throw new Error("saved project has no XMP packet");
+    expect(xmp_packet2.get("py_aep_test_marker")).toBe("1");
   });
 });
 

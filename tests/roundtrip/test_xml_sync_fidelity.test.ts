@@ -17,7 +17,9 @@ import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { Path, b, bytes_, len, py_eq, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
+import { as_instance } from "../helpers.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _LEN_BODY_OFFSET, _LEN_XML_OFFSET, _XML_TERMINATOR } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
 
 const FORMAT_DIR = new Path(import.meta.filename).parent.parent.parent.div("samples", "models", "format_options");
@@ -37,7 +39,7 @@ const PER_FORMAT: [Path, string][] = [
 
 function _options(path: Path): [any, any] {
   const project = parse(path).project;
-  const opts = project.render_queue.items[0].output_modules[0].format_options;
+  const opts = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options;
   return [project, opts];
 }
 

@@ -31,6 +31,7 @@ describe("TestValueSetterOnKeyframedProperty", () => {
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
+    if (prop == null) throw new Error("no keyframed transform property");
     raises(
       ValueError,
       () => {
@@ -146,6 +147,7 @@ describe("TestSetAlternateSource", () => {
     const [, alt] = _override_leaf(app);
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2")!;
     const solid = host.add_solid([1.0, 0.0, 0.0], "Guard Solid").source;
+    if (solid == null) throw new Error("solid layer has no source");
     expect(app.project.items.has(solid.id)).toBe(true);
     expect(solid.is_media_replacement_compatible).toBe(false);
     raises(
@@ -330,7 +332,9 @@ describe("TestUnicodeNames", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_text");
-    const prop = comp.text_layers[0].text.property("ADBE Text Document");
+    const text = comp.text_layers[0].text;
+    if (text == null) throw new Error("text layer has no Text group");
+    const prop = text.property("ADBE Text Document");
     const doc = prop.value;
     doc.text = "你好 \u{1f600}";
     prop.value = doc;
@@ -338,7 +342,9 @@ describe("TestUnicodeNames", () => {
     app.project.save(out);
     const app2 = parse_aep(out);
     const comp2 = get_comp(app2.project, "type_text");
-    const prop2 = comp2.text_layers[0].text.property("ADBE Text Document");
+    const text2 = comp2.text_layers[0].text;
+    if (text2 == null) throw new Error("text layer has no Text group");
+    const prop2 = text2.property("ADBE Text Document");
     expect(prop2.value.text).toBe("你好 \u{1f600}");
   });
 });
@@ -355,6 +361,7 @@ describe("TestLongKeyframeTimes", () => {
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
+    if (prop == null) throw new Error("no keyframed transform property");
     prop.set_value_at_time(9999.0, prop.keyframes[0].value);
     const out = tmp_path.div("far.aep");
     app.project.save(out);
@@ -363,6 +370,7 @@ describe("TestLongKeyframeTimes", () => {
     const prop2 = comp2.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
+    if (prop2 == null) throw new Error("no keyframed transform property after save");
     expect(approx(prop2.keyframes.at(-1)!.time, 9999.0)).toBe(true);
   });
 
@@ -373,6 +381,7 @@ describe("TestLongKeyframeTimes", () => {
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
+    if (prop == null) throw new Error("no keyframed transform property");
     prop.set_value_at_time(2.0, prop.keyframes[0].value);
     app.project.save(tmp_path.div("ok.aep"));
   });

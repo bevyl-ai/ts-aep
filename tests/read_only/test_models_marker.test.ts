@@ -5,7 +5,7 @@
 // `math.isclose` is the pyrt `isclose` (num.ts).
 
 import { describe, expect, test } from "bun:test";
-import { isclose, len, py_assert, py_bool, Path } from "../../src/pyrt/index.ts";
+import { isclose, len, py_assert, Path } from "../../src/pyrt/index.ts";
 import { get_comp, get_comp_marker_from_json_by_name, get_layer_marker_from_json_by_comp, load_expected, parse_project } from "../conftest.ts";
 import type { MarkerValue, Project } from "../../src/py_aep/index.ts";
 
@@ -16,7 +16,7 @@ const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "mode
 /** Get the first marker value from a composition. */
 function get_first_comp_marker(project: Project, comp_name: string | null = null): MarkerValue {
   let comp;
-  if (py_bool(comp_name)) {
+  if (comp_name) {
     comp = get_comp(project, comp_name);
   } else {
     py_assert(len(project.compositions) >= 1);
@@ -29,7 +29,7 @@ function get_first_comp_marker(project: Project, comp_name: string | null = null
 /** Get the first marker value from the first layer of a composition. */
 function get_first_layer_marker(project: Project, comp_name: string | null = null): MarkerValue {
   let comp;
-  if (py_bool(comp_name)) {
+  if (comp_name) {
     comp = get_comp(project, comp_name);
   } else {
     py_assert(len(project.compositions) >= 1);

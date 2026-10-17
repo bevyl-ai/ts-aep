@@ -15,6 +15,7 @@ import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { probe_media } from "../../src/py_aep/resolvers/media_probe.ts";
 import { AttributeError, ValueError, Path, b, bytes_, int, py_eq, repr } from "../../src/pyrt/index.ts";
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
+import { as_instance } from "../helpers.ts";
 
 const __file__ = new Path(import.meta.path);
 const SAMPLES_DIR = __file__.parent.parent.parent.div("samples", "models", "footage");
@@ -329,9 +330,10 @@ describe("TestMediaColorProfileRecord", () => {
 
   test("test_embedded_profile_is_recorded_by_id", () => {
     const source = _import("image_with_alpha.png");
-    const epid = find_by_type(source._clrs.chunks, "epid");
+    const epid = find_by_type(as_instance(source._clrs, ListChunk).chunks, "epid");
     const blob = probe_media(SAMPLES.parent.div("assets", "image_with_alpha.png")).icc_profile;
     expect(blob != null).toBe(true);
+    if (blob == null) throw new Error("image_with_alpha.png has no ICC profile");
     expect(py_eq(epid.data, icc_profile_id(blob))).toBe(true);
   });
 
@@ -342,7 +344,7 @@ describe("TestMediaColorProfileRecord", () => {
      * writes for an untagged JPEG, and AE fills the name in on open.
      */
     const source = _import("mov_480.mov");
-    const clrs = source._clrs;
+    const clrs = as_instance(source._clrs, ListChunk);
     expect((find_by_type(clrs.chunks, "ipws") as any).value).toBe(0);
     expect(py_eq(find_by_type(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(source.media_color_space).toBe("Embedded");
@@ -378,10 +380,11 @@ describe("TestMediaColorProfileRecord", () => {
     const source = _import("8bits.tif");
     const blob = probe_media(SAMPLES.parent.div("assets", "8bits.tif")).icc_profile;
     expect(blob != null).toBe(true);
+    if (blob == null) throw new Error("8bits.tif has no ICC profile");
     const catalogued = default_icc_library().bytes_for("sRGB IEC61966-2.1");
     expect(py_eq(blob, catalogued)).toBe(false); // the file's copy differs...
     expect(py_eq(icc_profile_id(blob), icc_profile_id(catalogued))).toBe(true); // ...but not in id
-    const epid = find_by_type(source._clrs.chunks, "epid");
+    const epid = find_by_type(as_instance(source._clrs, ListChunk).chunks, "epid");
     expect(py_eq(epid.data, icc_profile_id(catalogued))).toBe(true);
   });
 
