@@ -25,6 +25,8 @@ import type { Element as ETElement } from "../../src/pyrt/etree.ts";
 import { AudioCodec, CineonFileFormat, DnxResolution, Hdr10ColorPrimaries, JpegFormatType, MPEGAudioFormat, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, OpenExrCompression, OutputChannels, OutputColorDepth, PngCompression, VideoCodec } from "../../src/py_aep/enums/index.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import { as_instance } from "../helpers.ts";
 
 const FORMAT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "format_options");
 const CINEON_DIR = FORMAT_DIR.div("cineon");
@@ -33,7 +35,7 @@ const AVI_DIR = FORMAT_DIR.div("avi");
 /** Parse without caching and return (project, format_options). */
 function _parse_fresh(path: Path): [any, any] {
   const project = parse(path).project;
-  const opts = project.render_queue.items[0].output_modules[0].format_options;
+  const opts = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options;
   return [project, opts];
 }
 
@@ -538,7 +540,7 @@ class TestFormatOptionsBoolValidation {
 describe("TestFormatOptionsBoolValidation", () => {
   const BAD_VALUES: unknown[] = ["no", 2, 1, 0, null, []];
   const REJECT_ROWS = TestFormatOptionsBoolValidation.BOOL_FIELDS.flatMap(([sample, field]) =>
-    BAD_VALUES.map((bad) => [sample, field, bad]),
+    BAD_VALUES.map((bad): [string, string, unknown] => [sample, field, bad]),
   );
 
   test.each(REJECT_ROWS)("test_rejects_non_bool[%#]", (sample: string, field: string, bad: unknown) => {
@@ -832,7 +834,7 @@ describe("TestRoundtripXmlParamsDict", () => {
     project.save(tmp_path.div("out.aep"));
     const [, opts2] = _parse_fresh(tmp_path.div("out.aep"));
     expect(opts2 instanceof XmlFormatOptions).toBe(true);
-    expect(getitem(opts2.params, "BitRate")).toBe("128");
+    expect<string>(getitem(opts2.params, "BitRate")).toBe("128");
     expect(opts2.bitrate).toBe(128);
   });
 
@@ -855,7 +857,7 @@ describe("TestRoundtripXmlParamsDict", () => {
     project.save(tmp_path.div("out.aep"));
     const [, opts2] = _parse_fresh(tmp_path.div("out.aep"));
     expect(opts2 instanceof XmlFormatOptions).toBe(true);
-    expect(getitem(opts2.params, "ADBEUnusedParam")).toBe("7");
+    expect<string>(getitem(opts2.params, "ADBEUnusedParam")).toBe("7");
   });
 
   test("test_setdefault_keeps_existing", () => {
@@ -883,7 +885,7 @@ const _PNG_LOCKSTEP: [OutputChannels, OutputColorDepth, [boolean, number, number
 
 describe("TestPngOptionsFollowTheModule", () => {
   const PNG_ROWS = ["base.aep", "compression_none.aep"].flatMap((sample) =>
-    _PNG_LOCKSTEP.map(([channels, depth, expected]) => [sample, channels, depth, expected]),
+    _PNG_LOCKSTEP.map(([channels, depth, expected]): [string, OutputChannels, OutputColorDepth, [boolean, number, number]] => [sample, channels, depth, expected]),
   );
 
   test.each(PNG_ROWS)(
@@ -898,7 +900,7 @@ describe("TestPngOptionsFollowTheModule", () => {
       // AE renders from the module's Channels / Depth either way (a stale
       // PNG option renders the module's choice), but stores them in step.
       const app = parse(FORMAT_DIR.div("png", sample));
-      const om = app.project.render_queue.items[0].output_modules[0];
+      const om = as_instance(app.project.render_queue, RenderQueue).items[0].output_modules[0];
       om.batch_edit(() => {
         om.settings.__setitem__("Channels", channels);
         om.settings.__setitem__("Depth", depth);
@@ -906,14 +908,14 @@ describe("TestPngOptionsFollowTheModule", () => {
       expect(py_eq(_png_option_fields(om), expected)).toBe(true);
       const out = tmp_path.div("png.aep");
       app.project.save(out);
-      const reread = parse(out).project.render_queue.items[0].output_modules[0];
+      const reread = as_instance(parse(out).project.render_queue, RenderQueue).items[0].output_modules[0];
       expect(py_eq(_png_option_fields(reread), expected)).toBe(true);
     },
   );
 
   test("test_single_writes_update_the_png_options", () => {
     const app = parse(FORMAT_DIR.div("png", "base.aep")); // RGB + Alpha, Trillions+
-    const om = app.project.render_queue.items[0].output_modules[0];
+    const om = as_instance(app.project.render_queue, RenderQueue).items[0].output_modules[0];
     om.settings.__setitem__("Channels", OutputChannels.RGB); // pairs Depth to Trillions
     expect(py_eq(_png_option_fields(om), [false, 3, 16])).toBe(true);
     om.settings.__setitem__("Depth", OutputColorDepth.MILLIONS_OF_COLORS);
@@ -925,7 +927,7 @@ describe("TestPngOptionsFollowTheModule", () => {
       _PNG_LOCKSTEP.map(([c, d, fields]) => [tkey(int(c), int(d)), fields]),
     );
     for (const path of sorted(FORMAT_DIR.div("png").glob("*.aep"), (p: Path) => p.toString())) {
-      const om = parse(path).project.render_queue.items[0].output_modules[0];
+      const om = as_instance(parse(path).project.render_queue, RenderQueue).items[0].output_modules[0];
       const key = tkey(int(om.settings.__getitem__("Channels")), int(om.settings.__getitem__("Depth")));
       py_assert(py_eq(_png_option_fields(om), getitem(lockstep, key)), path.name);
     }

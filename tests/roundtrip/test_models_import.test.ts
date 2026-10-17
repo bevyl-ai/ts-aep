@@ -41,6 +41,9 @@ import { get_file_format, platform_source_format } from "../../src/py_aep/data/f
 import { Label } from "../../src/py_aep/enums/index.ts";
 import { ai_layer_opti_boxes, as_instance, parse_project_fresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
+import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
+import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
+import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 
 /** Tests for media-file probing and file-source creation via import_file. */
 
@@ -68,6 +71,7 @@ function _comp_opts(file: Path): ImportOptions {
 
 /** The embedded-profile name from a FileSource's CLRS (Utf8 after empd). */
 function _embedded_profile(source: FileSource): string | null {
+  if (source._clrs == null) throw new Error("source has no CLRS chunk");
   const chunks = source._clrs.chunks;
   const types = chunks.map((c: any) => c.chunk_type);
   if (!types.includes("empd")) return null;
@@ -378,10 +382,10 @@ describe("TestImportFileSingle", () => {
     expect((item as any).main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
     // The merged-layer opti is exposed via file_attributes.
     const attrs = (item as any).main_source.file_attributes;
-    expect(getitem(attrs, "psd_layer_index")).toBe(0xffffffff);
-    expect(getitem(attrs, "psd_bit_depth")).toBe(8);
-    expect(getitem(attrs, "psd_channels")).toBe(4);
-    expect(getitem(attrs, "psd_layer_count")).toBe(2);
+    expect<number>(getitem(attrs, "psd_layer_index")).toBe(0xffffffff);
+    expect<number>(getitem(attrs, "psd_bit_depth")).toBe(8);
+    expect<number>(getitem(attrs, "psd_channels")).toBe(4);
+    expect<number>(getitem(attrs, "psd_layer_count")).toBe(2);
     expect(py_eq([getitem(attrs, "psd_canvas_width"), getitem(attrs, "psd_canvas_height")], [25, 26])).toBe(true);
   });
 
@@ -465,11 +469,11 @@ describe("TestImportFileSequence", () => {
     // Indices Section 5 factory values).
     const project = parse_aep(BASE).project;
     const png = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
-    expect(png._idta.label).toBe(5);
+    expect(as_instance(png._idta, IdtaChunk).label).toBe(5);
     const wav = project.import_file(new ImportOptions(ASSETS.div("wav.wav")));
-    expect(wav._idta.label).toBe(7);
+    expect(as_instance(wav._idta, IdtaChunk).label).toBe(7);
     const mov = project.import_file(new ImportOptions(ASSETS.div("mov_480.mov")));
-    expect(mov._idta.label).toBe(3);
+    expect(as_instance(mov._idta, IdtaChunk).label).toBe(3);
   });
 
   test("test_add_layer_spans_and_labels", () => {
@@ -633,7 +637,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replace(ASSETS.div("mov_480.mov"));
     expect(item.name).toBe("Custom Name");
-    expect(item._name_utf8.value).toBe("Custom Name");
+    expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("Custom Name");
   });
 
   test("test_replace_leaves_default_name_derived", () => {
@@ -641,7 +645,7 @@ describe("TestReplaceAndProxy", () => {
     item.replace(ASSETS.div("mov_480.mov"));
     expect(item.name).toBe("mov_480.mov");
     // AE derives the name from the source rather than storing it.
-    expect(item._name_utf8.value).toBe("");
+    expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
   });
 
   test("test_replace_with_sequence_keeps_user_assigned_name", () => {
@@ -655,7 +659,7 @@ describe("TestReplaceAndProxy", () => {
     const [, item] = _png_footage();
     item.replace_with_sequence(ASSETS.div("new_exr.0002.exr"));
     expect(item.name).toBe("new_exr.[0002-0003].exr");
-    expect(item._name_utf8.value).toBe("");
+    expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
   });
 
   test("test_replace_with_solid_overrides_user_assigned_name", () => {
@@ -663,7 +667,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replace_with_solid([0.0, 1.0, 0.0], "Solid D", 50, 50);
     expect(item.name).toBe("Solid D");
-    expect(item._name_utf8.value).toBe("");
+    expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
     expect((item.main_source._opti as any).solid_name).toBe("Solid D");
   });
 
@@ -672,7 +676,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replace_with_placeholder("PH C", 120, 120, 25.0, 5.0);
     expect(item.name).toBe("PH C");
-    expect(item._name_utf8.value).toBe("");
+    expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
     expect((item.main_source._opti as any).placeholder_name).toBe("PH C");
   });
 
@@ -699,7 +703,7 @@ describe("TestReplaceAndProxy", () => {
     const [, item] = _png_footage();
     item.set_proxy_with_sequence(ASSETS.div("new_exr.0002.exr"));
     expect(item.proxy_source instanceof FileSource).toBe(true);
-    expect(item.proxy_source.is_still).toBe(false);
+    expect(as_instance(item.proxy_source, FileSource).is_still).toBe(false);
   });
 
   test("test_set_proxy_roundtrip", () => {
@@ -719,7 +723,7 @@ describe("TestReplaceAndProxy", () => {
     expect(item.main_source instanceof FileSource).toBe(true);
     expect(item.name).toBe("8bits.psd");
     expect(py_eq([item.width, item.height], [25, 26])).toBe(true);
-    expect(getitem((item.main_source as any).file_attributes, "psd_layer_index")).toBe(0xffffffff);
+    expect<number>(getitem((item.main_source as any).file_attributes, "psd_layer_index")).toBe(0xffffffff);
   });
 });
 
@@ -995,6 +999,7 @@ describe("TestReplaceKeepsInterpretation", () => {
     const project = parse_aep(BASE).project;
     const item = project.import_file(new ImportOptions(ASSETS.div("mov_23_976.mov")));
     item.set_proxy_with_sequence(_twelve_frame_sequence(tmp_path.div("seq")));
+    if (item.proxy_source == null) throw new Error("item has no proxy source");
     expect(item.proxy_source.conform_frame_rate).toBe(30.0);
     item.proxy_source.conform_frame_rate = 25.0;
     item.proxy_source.conform_frame_rate = 0.0;
@@ -1002,6 +1007,7 @@ describe("TestReplaceKeepsInterpretation", () => {
     project.save(out);
     const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
     const proxy = reparsed.proxy_source;
+    if (proxy == null) throw new Error("reparsed item has no proxy source");
     const sspc = proxy._sspc;
     expect(proxy.conform_frame_rate).toBe(25.0);
     expect(py_eq([sspc.native_frame_rate, sspc.conform_frame_rate], [25.0, 0.0])).toBe(true);
@@ -1287,7 +1293,7 @@ describe("TestImportGapFormats", () => {
         expect(py_eq((item as any).main_source._opti.data, truth.main_source._opti.data)).toBe(true);
       }
       expect((item as any).main_source.has_alpha).toBe(truth.main_source.has_alpha);
-      expect(item._idta.label).toBe(truth._idta.label);
+      expect(as_instance(item._idta, IdtaChunk).label).toBe(truth._idta.label);
     }
   });
 });
@@ -1618,7 +1624,7 @@ describe("TestImportAiCroppedComp", () => {
       const anchor = layer.transform.__getitem__("ADBE Anchor Point").value;
       const position = layer.transform.__getitem__("ADBE Position").value;
       out.set(layer.name, [
-        [as_instance(layer, AVLayer).source.width, as_instance(layer, AVLayer).source.height],
+        [as_instance(as_instance(layer, AVLayer).source, AVItem).width, as_instance(as_instance(layer, AVLayer).source, AVItem).height],
         [anchor[0], anchor[1]],
         [position[0], position[1]],
       ]);
@@ -3105,7 +3111,7 @@ describe("TestFileSourceReload", () => {
     const reparsed = parse_aep(out).project;
     const item2 = reparsed.footages.find((i: any) => i.name === "reload_src.png")!;
     expect(item2.proxy_source instanceof FileSource).toBe(true);
-    expect(py_eq([item2.proxy_source._width, item2.proxy_source._height], [640, 346])).toBe(true);
+    expect(py_eq([as_instance(item2.proxy_source, FileSource)._width, as_instance(item2.proxy_source, FileSource)._height], [640, 346])).toBe(true);
   });
 
   test("test_reload_proxy_leaves_main_source_alone", () => {

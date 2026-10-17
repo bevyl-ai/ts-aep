@@ -207,7 +207,7 @@ describe("TestLayerTimebase", () => {
 
 describe("TestStretchEncoding", () => {
   // The ldta ratio AE 2026 stored for `layer.stretch = percent`.
-  test.each([
+  test.each<[number, [number, number]]>([
     [133.33, [11184531, 8388608]],
     [33.333, [11184699, 33554432]],
     [1.0, [5368709, 536870912]],

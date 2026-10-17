@@ -227,6 +227,7 @@ describe("TestRecomposition", () => {
     const app = parse_app_fresh(SAMPLE);
     const comp = app.project.compositions[0];
     const layer = comp.text_layers.find((ly: any) => ly.name === "RangesBox")!;
+    if (layer.text == null) throw new Error("text layer has no text group");
     const prop = layer.text.__getitem__("ADBE Text Document");
     prop.add_key(0.0);
     prop.add_key(1.0);

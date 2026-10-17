@@ -9,7 +9,9 @@ import { describe, expect, test } from "bun:test";
 import { Path, getitem, int, py_bool, py_eq, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { load_expected, parse_project } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 import { PostRenderAction } from "../../src/py_aep/enums/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
@@ -20,7 +22,7 @@ describe("TestRenderSettings", () => {
   test("test_base_settings", () => {
     /** Test base render settings template. */
     const project = parse_project(SAMPLES_DIR.div("base.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs != null).toBe(true);
     expect(rs.__getitem__("Quality")).toBe(2); // Best
@@ -32,7 +34,7 @@ describe("TestRenderSettings", () => {
   test("test_quality_draft", () => {
     /** Test draft quality setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_quality_draft.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Quality")).toBe(1); // Draft
   });
@@ -40,7 +42,7 @@ describe("TestRenderSettings", () => {
   test("test_quality_wireframe", () => {
     /** Test wireframe quality setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_quality_wireframe.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Quality")).toBe(0); // Wireframe
   });
@@ -48,7 +50,7 @@ describe("TestRenderSettings", () => {
   test("test_resolution_half", () => {
     /** Test half resolution setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_resolution_half.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_eq(rs.__getitem__("Resolution"), [2, 2])).toBe(true); // Half
   });
@@ -56,7 +58,7 @@ describe("TestRenderSettings", () => {
   test("test_resolution_third", () => {
     /** Test third resolution setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_resolution_third.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_eq(rs.__getitem__("Resolution"), [3, 3])).toBe(true); // Third
   });
@@ -64,7 +66,7 @@ describe("TestRenderSettings", () => {
   test("test_resolution_quarter", () => {
     /** Test quarter resolution setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_resolution_quarter.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_eq(rs.__getitem__("Resolution"), [4, 4])).toBe(true); // Quarter
   });
@@ -74,7 +76,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("custom_resolution_custom_7_horizontal_3_vertical.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_eq(rs.__getitem__("Resolution"), [7, 3])).toBe(true); // Custom 7x3
   });
@@ -82,7 +84,7 @@ describe("TestRenderSettings", () => {
   test("test_color_depth_8bit", () => {
     /** Test 8-bit color depth setting. */
     const project = parse_project(SAMPLES_DIR.div("color_depth_8.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Color Depth")).toBe(0); // 8-bit
   });
@@ -90,7 +92,7 @@ describe("TestRenderSettings", () => {
   test("test_color_depth_16bit", () => {
     /** Test 16-bit color depth setting. */
     const project = parse_project(SAMPLES_DIR.div("color_depth_16.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Color Depth")).toBe(1); // 16-bit
   });
@@ -98,7 +100,7 @@ describe("TestRenderSettings", () => {
   test("test_color_depth_32bit", () => {
     /** Test 32-bit color depth setting. */
     const project = parse_project(SAMPLES_DIR.div("color_depth_32.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Color Depth")).toBe(2); // 32-bit
   });
@@ -106,7 +108,7 @@ describe("TestRenderSettings", () => {
   test("test_field_render_lower_first", () => {
     /** Test lower field first setting. */
     const project = parse_project(SAMPLES_DIR.div("field_render_lower_field_first.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Field Render")).toBe(2); // Lower Field First
   });
@@ -114,7 +116,7 @@ describe("TestRenderSettings", () => {
   test("test_field_render_upper_first", () => {
     /** Test upper field first setting. */
     const project = parse_project(SAMPLES_DIR.div("field_render_upper_field_first.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Field Render")).toBe(1); // Upper Field First
   });
@@ -124,7 +126,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wssww.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("3:2 Pulldown")).toBe(1); // WSSWW
   });
@@ -134,7 +136,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("field_render_upper_field_first_pulldown_sswww.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("3:2 Pulldown")).toBe(2); // SSWWW
   });
@@ -144,7 +146,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("field_render_upper_field_first_pulldown_swwws.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("3:2 Pulldown")).toBe(3); // SWWWS
   });
@@ -154,7 +156,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwwss.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("3:2 Pulldown")).toBe(4); // WWWSS
   });
@@ -164,7 +166,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwssw.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("3:2 Pulldown")).toBe(5); // WWSSW
   });
@@ -172,7 +174,7 @@ describe("TestRenderSettings", () => {
   test("test_frame_blending_current", () => {
     /** Test frame blending current settings. */
     const project = parse_project(SAMPLES_DIR.div("frame_blending_current.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Frame Blending")).toBe(2); // Current Settings
   });
@@ -180,7 +182,7 @@ describe("TestRenderSettings", () => {
   test("test_frame_blending_off", () => {
     /** Test frame blending off for all layers. */
     const project = parse_project(SAMPLES_DIR.div("frame_blending_off_for_all_layers.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Frame Blending")).toBe(0); // Off for All Layers
   });
@@ -188,7 +190,7 @@ describe("TestRenderSettings", () => {
   test("test_motion_blur_current", () => {
     /** Test motion blur current settings. */
     const project = parse_project(SAMPLES_DIR.div("motion_blur_current.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Motion Blur")).toBe(2); // Current Settings
   });
@@ -196,7 +198,7 @@ describe("TestRenderSettings", () => {
   test("test_motion_blur_off", () => {
     /** Test motion blur off for all layers. */
     const project = parse_project(SAMPLES_DIR.div("motion_blur_off_for_all_layers.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Motion Blur")).toBe(0); // Off for All Layers
   });
@@ -204,7 +206,7 @@ describe("TestRenderSettings", () => {
   test("test_use_this_frame_rate_24", () => {
     /** Test custom frame rate 24fps. */
     const project = parse_project(SAMPLES_DIR.div("use_this_frame_rate_24.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_bool(rs.__getitem__("Frame Rate"))).toBe(true);
     expect(rs.__getitem__("Use this frame rate")).toBe(24.0);
@@ -213,7 +215,7 @@ describe("TestRenderSettings", () => {
   test("test_use_this_frame_rate_30", () => {
     /** Test custom frame rate 30fps. */
     const project = parse_project(SAMPLES_DIR.div("use_this_frame_rate_30.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(py_bool(rs.__getitem__("Frame Rate"))).toBe(true);
     expect(rs.__getitem__("Use this frame rate")).toBe(30.0);
@@ -222,7 +224,7 @@ describe("TestRenderSettings", () => {
   test("test_proxy_use_all_proxies", () => {
     /** Test use all proxies setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_proxy_use_use_all_proxies.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Proxy Use")).toBe(1); // Use All Proxies
   });
@@ -232,7 +234,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("custom_proxy_use_use_comp_proxies_only.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Proxy Use")).toBe(3); // Use Comp Proxies Only
   });
@@ -240,7 +242,7 @@ describe("TestRenderSettings", () => {
   test("test_effects_all_on", () => {
     /** Test effects all on setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_effects_all_on.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Effects")).toBe(1); // All On
   });
@@ -248,7 +250,7 @@ describe("TestRenderSettings", () => {
   test("test_effects_all_off", () => {
     /** Test effects all off setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_effects_all_off.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Effects")).toBe(0); // All Off
   });
@@ -256,7 +258,7 @@ describe("TestRenderSettings", () => {
   test("test_solo_switches_all_off", () => {
     /** Test solo switches all off setting. */
     const project = parse_project(SAMPLES_DIR.div("custom_solo_switches_all_off.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Solo Switches")).toBe(0); // All Off
   });
@@ -264,7 +266,7 @@ describe("TestRenderSettings", () => {
   test("test_guide_layers_current", () => {
     /** Test guide layers current settings. */
     const project = parse_project(SAMPLES_DIR.div("guide_layers_current.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Guide Layers")).toBe(2); // Current Settings
   });
@@ -272,7 +274,7 @@ describe("TestRenderSettings", () => {
   test("test_disk_cache_read_only", () => {
     /** Test disk cache read only (default). */
     const project = parse_project(SAMPLES_DIR.div("custom.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Disk Cache")).toBe(0); // Read Only
   });
@@ -280,7 +282,7 @@ describe("TestRenderSettings", () => {
   test("test_disk_cache_current_settings", () => {
     /** Test disk cache current settings. */
     const project = parse_project(SAMPLES_DIR.div("custom_disk_cache_current.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Disk Cache")).toBe(2); // Current Settings
   });
@@ -288,7 +290,7 @@ describe("TestRenderSettings", () => {
   test("test_time_span_length_of_comp", () => {
     /** Test time span length of comp. */
     const project = parse_project(SAMPLES_DIR.div("time_span_length_of_comp.aep"));
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Time Span")).toBe(0); // Length of Comp
   });
@@ -298,7 +300,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(rs.__getitem__("Time Span Start")).toBe(0.0);
   });
@@ -308,7 +310,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     // 1s + 23 frames at 24fps = 1 + 23/24 = 1.9583... seconds
     expect(Math.abs(rs.__getitem__("Time Span Start") - (1 + 23 / 24)) < 0.0001).toBe(true);
@@ -319,7 +321,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     // 24s + 13 frames at 24fps = 24 + 13/24 = 24.5416... seconds
     expect(Math.abs(rs.__getitem__("Time Span Duration") - (24 + 13 / 24)) < 0.0001).toBe(true);
@@ -330,7 +332,7 @@ describe("TestRenderSettings", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"),
     );
-    const rs = project.render_queue.items[0].settings;
+    const rs = as_instance(project.render_queue, RenderQueue).items[0].settings;
 
     expect(Math.abs(rs.__getitem__("Time Span Duration") - 29.9583333333333) < 0.0001).toBe(true);
   });
@@ -342,7 +344,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_base_output_module", () => {
     /** Test base output module settings. */
     const project = parse_project(SAMPLES_DIR.div("base.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.settings != null).toBe(true);
     expect(om.settings.__getitem__("Audio Channels")).toBe(2); // Stereo
@@ -367,7 +369,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_audio_output[%#]", (filename: string, expected_output_audio: number) => {
     /** Test audio output settings. */
     const project = parse_project(OM_SAMPLES_DIR.div(filename));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect<number>(settings.__getitem__("Output Audio")).toBe(expected_output_audio);
   });
@@ -380,8 +382,8 @@ describe("TestOutputModuleSettings", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "audio_settings_matrix");
     const keys = ["Output Audio", "Audio Bit Depth", "Audio Channels", "Audio Sample Rate"] as const;
     const items = expected["renderQueue"]["items"];
-    expect(items.length).toBe(project.render_queue.items.length);
-    for (const [rqi, rqi_json] of zip(project.render_queue.items, items)) {
+    expect(items.length).toBe(as_instance(project.render_queue, RenderQueue).items.length);
+    for (const [rqi, rqi_json] of zip(as_instance(project.render_queue, RenderQueue).items, items)) {
       const settings = rqi.output_modules[0].settings;
       const want = rqi_json["outputModules"][0]["settings"];
       const got = new Map(keys.map((k) => [k, int(settings.__getitem__(k))] as const));
@@ -394,7 +396,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_audio_mono", () => {
     /** Test mono audio channel. */
     const project = parse_project(OM_SAMPLES_DIR.div("audio_mono.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Audio Channels")).toBe(1); // Mono
   });
@@ -402,7 +404,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_audio_8bit", () => {
     /** Test 8-bit audio depth. */
     const project = parse_project(OM_SAMPLES_DIR.div("audio_8bit.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Audio Bit Depth")).toBe(1); // 8-bit
   });
@@ -410,7 +412,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_audio_32bit", () => {
     /** Test 32-bit audio depth. */
     const project = parse_project(OM_SAMPLES_DIR.div("audio_32bit.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Audio Bit Depth")).toBe(4); // 32-bit
   });
@@ -424,7 +426,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_audio_sample_rate[%#]", (filename: string, expected_rate: number) => {
     /** Test audio sample rate parsing. */
     const project = parse_project(OM_SAMPLES_DIR.div(filename));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect<number>(settings.__getitem__("Audio Sample Rate")).toBe(expected_rate);
   });
@@ -436,7 +438,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_channels[%#]", (filename: string, expected_channels: number) => {
     /** Test output channels parsing. */
     const project = parse_project(OM_SAMPLES_DIR.div(filename));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect<number>(settings.__getitem__("Channels")).toBe(expected_channels);
   });
@@ -451,7 +453,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_depth[%#]", (filename: string, expected_depth: number) => {
     /** Test output color depth parsing. */
     const project = parse_project(OM_SAMPLES_DIR.div(filename));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect<number>(settings.__getitem__("Depth")).toBe(expected_depth);
   });
@@ -476,7 +478,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_format[%#]", (filename: string, expected_format: number) => {
     /** Test output format parsing. */
     const project = parse_project(SAMPLES_DIR.div(filename));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect<number>(settings.__getitem__("Format")).toBe(expected_format);
   });
@@ -484,7 +486,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_color_straight_unmatted", () => {
     /** Test straight (unmatted) color mode. */
     const project = parse_project(OM_SAMPLES_DIR.div("color_straight_unmatted.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Color")).toBe(0); // Straight (Unmatted)
   });
@@ -492,7 +494,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_include_project_link_off", () => {
     /** Test include project link is False when disabled. */
     const project = parse_project(OM_SAMPLES_DIR.div("include_project_link_off.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Include Project Link")).toBe(false);
   });
@@ -500,7 +502,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_include_project_link_on", () => {
     /** Test include project link is True when enabled. */
     const project = parse_project(OM_SAMPLES_DIR.div("include_project_link_on.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Include Project Link")).toBe(true);
   });
@@ -508,7 +510,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_use_region_of_interest_unchecked", () => {
     /** Test Use Region of Interest is False when unchecked. */
     const project = parse_project(OM_SAMPLES_DIR.div("crop_use_roi_unchecked.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Use Region of Interest")).toBe(false);
   });
@@ -516,7 +518,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_use_region_of_interest_checked", () => {
     /** Test Use Region of Interest is True when checked. */
     const project = parse_project(OM_SAMPLES_DIR.div("crop_use_roi_checked.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Use Region of Interest")).toBe(true);
   });
@@ -524,7 +526,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_lock_aspect_ratio_off", () => {
     /** Test Lock Aspect Ratio is False when disabled. */
     const project = parse_project(SAMPLES_DIR.div("lock_aspect_ratio_off.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Lock Aspect Ratio")).toBe(false);
   });
@@ -532,7 +534,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_lock_aspect_ratio_on", () => {
     /** Test Lock Aspect Ratio is True when enabled. */
     const project = parse_project(SAMPLES_DIR.div("lock_aspect_ratio_on.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Lock Aspect Ratio")).toBe(true);
   });
@@ -540,7 +542,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_unchecked", () => {
     /** Test Resize is False when unchecked. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_unchecked.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Resize")).toBe(false);
   });
@@ -548,7 +550,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_checked", () => {
     /** Test Resize is True when checked. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_checked.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Resize")).toBe(true);
   });
@@ -556,7 +558,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_quality_low", () => {
     /** Test Resize Quality is 0 when set to low. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_quality_low.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Resize Quality")).toBe(0);
   });
@@ -564,7 +566,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_quality_high", () => {
     /** Test Resize Quality is 1 when set to high. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_quality_high.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(settings.__getitem__("Resize Quality")).toBe(1);
   });
@@ -572,7 +574,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_to_hd", () => {
     /** Test Resize to HD 1920x1080. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_hd_1920x1080_29.97_fps.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(py_eq(settings.__getitem__("Resize to"), [1920, 1080])).toBe(true);
   });
@@ -582,7 +584,7 @@ describe("TestOutputModuleSettings", () => {
     const project = parse_project(
       OM_SAMPLES_DIR.div("resize_dvcpro_hd_960x720_1.33_23.976_fps.aep"),
     );
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(py_eq(settings.__getitem__("Resize to"), [960, 720])).toBe(true);
   });
@@ -590,7 +592,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_resize_to_custom", () => {
     /** Test Resize to custom 960x540. */
     const project = parse_project(OM_SAMPLES_DIR.div("resize_custom_960x540.aep"));
-    const settings = project.render_queue.items[0].output_modules[0].settings;
+    const settings = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings;
 
     expect(py_eq(settings.__getitem__("Resize to"), [960, 540])).toBe(true);
   });
@@ -598,7 +600,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_default", () => {
     /** Test Output File Info with default [compName].[fileExtension]. */
     const project = parse_project(SAMPLES_DIR.div("output_to_comp_and_frame_range.aep"));
-    const info = project.render_queue.items[0].output_modules[0].settings.__getitem__("Output File Info");
+    const info = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings.__getitem__("Output File Info");
 
     expect(getitem(info, "File Template")).toBe("[compName].[fileExtension]");
     expect(getitem(info, "Subfolder Path")).toBe("");
@@ -610,7 +612,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_comp_folder", () => {
     /** Test Output File Info with [compName] subfolder in base path. */
     const project = parse_project(SAMPLES_DIR.div("output_to_comp_folder_and_name.aep"));
-    const info = project.render_queue.items[0].output_modules[0].settings.__getitem__("Output File Info");
+    const info = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings.__getitem__("Output File Info");
 
     expect((getitem(info, "Base Path") as string).includes("[compName]")).toBe(true);
     expect(getitem(info, "File Template")).toBe("[compName].[fileExtension]");
@@ -621,7 +623,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_custom_all_fields", () => {
     /** Test Output File Info with all available template tokens. */
     const project = parse_project(SAMPLES_DIR.div("output_to_custom_all_fields.aep"));
-    const info = project.render_queue.items[0].output_modules[0].settings.__getitem__("Output File Info");
+    const info = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings.__getitem__("Output File Info");
 
     const template = getitem(info, "File Template") as string;
     expect(template.includes("[projectFolder]")).toBe(true);
@@ -637,7 +639,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_project_and_comp", () => {
     /** Test Output File Info with project and comp name template. */
     const project = parse_project(SAMPLES_DIR.div("output_to_project_and_comp_name.aep"));
-    const info = project.render_queue.items[0].output_modules[0].settings.__getitem__("Output File Info");
+    const info = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].settings.__getitem__("Output File Info");
 
     expect(getitem(info, "File Template")).toBe("[projectName]_[compName].[fileExtension]");
   });
@@ -645,7 +647,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_subfolder", () => {
     /** Test Output File Info with subfolder in file name template. */
     const project = parse_project(SAMPLES_DIR.div("save_in_subfolder_toto.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const info = om.settings.__getitem__("Output File Info");
 
     expect(getitem(info, "Subfolder Path")).toBe("toto");
@@ -660,7 +662,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_video_output_on", () => {
     /** Test video output is enabled (default). */
     const project = parse_project(OM_SAMPLES_DIR.div("custom_h264.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.settings.__getitem__("Video Output")).toBe(true);
   });
@@ -668,7 +670,7 @@ describe("TestOutputModuleSettings", () => {
   test("test_video_output_off", () => {
     /** Test video output is disabled. */
     const project = parse_project(OM_SAMPLES_DIR.div("custom_has_video_off.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.settings.__getitem__("Video Output")).toBe(false);
   });
@@ -680,7 +682,7 @@ describe("TestOutputModule", () => {
   test("test_post_render_action_none", () => {
     /** Test post_render_action is NONE by default. */
     const project = parse_project(SAMPLES_DIR.div("base.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.post_render_action).toBe(PostRenderAction.NONE);
   });
@@ -688,7 +690,7 @@ describe("TestOutputModule", () => {
   test("test_post_render_action_import", () => {
     /** Test post_render_action is IMPORT. */
     const project = parse_project(SAMPLES_DIR.div("post_render_import.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.post_render_action).toBe(PostRenderAction.IMPORT);
   });
@@ -698,7 +700,7 @@ describe("TestOutputModule", () => {
     const project = parse_project(
       SAMPLES_DIR.div("post_render_import_and_replace_this_comp.aep"),
     );
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.post_render_action).toBe(PostRenderAction.IMPORT_AND_REPLACE_USAGE);
   });
@@ -706,7 +708,7 @@ describe("TestOutputModule", () => {
   test("test_post_render_action_set_proxy", () => {
     /** Test post_render_action is SET_PROXY. */
     const project = parse_project(SAMPLES_DIR.div("post_render_set_proxy_this_comp.aep"));
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 
     expect(om.post_render_action).toBe(PostRenderAction.SET_PROXY);
   });
@@ -718,7 +720,7 @@ describe("TestRenderQueueItem", () => {
   test("test_render_enabled", () => {
     /** Test render flag is True when item is queued. */
     const project = parse_project(SAMPLES_DIR.div("base.aep"));
-    const item = project.render_queue.items[0];
+    const item = as_instance(project.render_queue, RenderQueue).items[0];
 
     expect(item.render).toBe(true);
   });
@@ -728,7 +730,7 @@ describe("TestRenderQueueItem", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"),
     );
-    const item = project.render_queue.items[0];
+    const item = as_instance(project.render_queue, RenderQueue).items[0];
 
     expect(Math.abs(item.time_span_start - (1 + 23 / 24)) < 0.0001).toBe(true);
   });
@@ -738,7 +740,7 @@ describe("TestRenderQueueItem", () => {
     const project = parse_project(
       SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"),
     );
-    const item = project.render_queue.items[0];
+    const item = as_instance(project.render_queue, RenderQueue).items[0];
 
     expect(Math.abs(item.time_span_duration - 29.9583333333333) < 0.0001).toBe(true);
   });
@@ -746,7 +748,7 @@ describe("TestRenderQueueItem", () => {
   test("test_default_comment", () => {
     /** Test RenderQueueItem.comment is None when no comment set. */
     const project = parse_project(SAMPLES_DIR.div("base.aep"));
-    const item = project.render_queue.items[0];
+    const item = as_instance(project.render_queue, RenderQueue).items[0];
 
     expect(item.comment).toBe("");
   });

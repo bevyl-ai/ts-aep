@@ -20,10 +20,11 @@ import {
   TypeError_,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse_app_fresh, parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_app_fresh, parse_project_fresh } from "../helpers.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
-import type { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
+import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
+import { Viewer } from "../../src/py_aep/models/viewer/viewer.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const LAYER = SAMPLES.div("models", "layer", "enabled_false.aep");
@@ -45,8 +46,8 @@ function _first_mask(): MaskPropertyGroup {
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
       const masks = getattr(layer, "masks", null);
-      if (py_bool(masks) && len(masks) > 0) {
-        return masks.__getitem__(0);
+      if (masks != null && py_bool(masks) && len(masks) > 0) {
+        return as_instance(masks.__getitem__(0), MaskPropertyGroup);
       }
     }
   }
@@ -83,7 +84,7 @@ const CASES: [string, () => any, string][] = [
   ],
   ["footage.invert_alpha", _file_source, "invert_alpha"],
   ["mask.inverted", _first_mask, "inverted"],
-  ["view.grid", () => parse_app_fresh(VIEW).active_viewer.views[0].options, "grid"],
+  ["view.grid", () => as_instance(parse_app_fresh(VIEW).active_viewer, Viewer).views[0].options, "grid"],
   ["import.sequence", () => new ImportOptions(str(LAYER)), "sequence"],
   [
     "import.force_alphabetical",
