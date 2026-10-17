@@ -32,6 +32,7 @@ import {
   ZeroDivisionError,
 } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
+import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import { CPY } from "./cpython_fixtures.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
@@ -143,6 +144,25 @@ describe("codecs", () => {
     ["80", "ascii", "strict", "UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0: ordinal not in range(128)"],
   ])("decode(%s, %s, %s)", (hex, enc, err, out) => {
     expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err)))).toBe(out);
+  });
+});
+
+describe("unicodedata", () => {
+  // CPython 3.12 (Unicode 15.0.0); U+1C89 is assigned only from Unicode 16.
+  test.each<[number, string, number]>([
+    [0x61, "L", 0],
+    [0x60c, "CS", 0],
+    [0x903, "L", 0],
+    [0x300, "NSM", 230],
+    [0x5d0, "R", 0],
+    [0x660, "AN", 0],
+    [0x627, "AL", 0],
+    [0x378, "", 0],
+    [0x1c89, "", 0],
+    [0xe48, "NSM", 107],
+  ])("code point %d", (cp, bidi, ccc) => {
+    const chr = String.fromCodePoint(cp);
+    expect([unicodedata.bidirectional(chr), unicodedata.combining(chr)]).toEqual([bidi, ccc]);
   });
 });
 
