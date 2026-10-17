@@ -8,6 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   BytesIO,
   at,
   contains,
@@ -28,6 +29,8 @@ import { write_aep } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
+import type { Keyframe } from "../../src/py_aep/models/properties/keyframe.ts";
+import type { ShphChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import { MarkerValue } from "../../src/py_aep/models/properties/marker.ts";
@@ -153,7 +156,9 @@ describe("TestKeyframeValuePersistence", () => {
     v[0] += 7.0;
     pos.keyframes[0].value = v;
     const app2 = _roundtrip(app, tmp_path);
-    expect(approx(_prop(app2, "ADBE Position").keyframes[0].value[0], v[0])).toBe(true);
+    const pos2_value = _prop(app2, "ADBE Position").keyframes[0].value;
+    if (!Array.isArray(pos2_value)) throw new AssertionError_("ADBE Position keyframe value is not a list");
+    expect(approx(pos2_value[0], v[0])).toBe(true);
   });
 });
 
@@ -206,6 +211,7 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const [prop, _, li] = _find_static(app, "ADBE Rotate Z");
     expect(prop != null).toBe(true);
+    if (prop == null || li == null) throw new AssertionError_("no static ADBE Rotate Z property");
     prop.add_key(0.0);
     prop.add_key(1.0);
     prop.keyframes[1].value = 25.0;
@@ -229,6 +235,7 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const [scale, _, li] = _find_static(app, "ADBE Scale");
     expect(scale != null).toBe(true);
+    if (scale == null || li == null) throw new AssertionError_("no static ADBE Scale property");
     scale.set_value_at_time(0.0, [50.0, 50.0, 100.0]);
     scale.set_value_at_time(1.0, [120.0, 120.0, 100.0]);
     expect(scale._animated).toBe(true);
@@ -600,7 +607,7 @@ describe("TestComplexTypeKeyframes", () => {
     expect(t.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmp_path);
     const t2 = get_text(app2);
-    const texts = t2.keyframes.map((k) => k.value.text);
+    const texts = t2.keyframes.map((k: Keyframe<TextDocument>) => k.value.text);
     expect(contains(texts, "NewLine")).toBe(true);
     expect(t2.keyframes.length).toBe(n0 + 1);
     t2.remove_key(0);
@@ -633,7 +640,7 @@ describe("TestComplexTypeKeyframes", () => {
     ms.add_key(t);
     const idx = ms.nearest_key_index(t);
     const new_shph = ms.keyframes[idx].value._shph;
-    const others = ms.keyframes.filter((_k, j) => j !== idx).map((k) => k.value._shph);
+    const others: (ShphChunk | null)[] = ms.keyframes.filter((_k: Keyframe<Shape>, j: number) => j !== idx).map((k: Keyframe<Shape>) => k.value._shph);
     expect(others.every((o) => new_shph !== o)).toBe(true);
   });
 
@@ -814,7 +821,7 @@ describe("TestComplexTypeKeyframes", () => {
     t2.set_value_at_time(2.0, "Second");
     const app3 = _roundtrip(app2, tmp_path);
     const t3 = get_text(app3);
-    expect(py_eq(t3.keyframes.map((k) => k.value.text), [original, "Second"])).toBe(true);
+    expect(py_eq(t3.keyframes.map((k: Keyframe<TextDocument>) => k.value.text), [original, "Second"])).toBe(true);
   });
 
   test("test_animate_static_mask_shape", () => {

@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import { approx, make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
 import {
+  AssertionError_,
   BytesIO,
   OSError,
   Path,
@@ -479,6 +480,7 @@ describe("TestFmtField", () => {
   test("test_struct_info_returns_format_for_u4", () => {
     const info = _struct_info(U4Chunk);
     expect(info != null).toBe(true);
+    if (info == null) throw new AssertionError_("U4Chunk has no struct info");
     const [
       fmt,
       data_fields,
@@ -514,6 +516,7 @@ describe("TestFmtField", () => {
 
     const info = _struct_info(BadChunk);
     expect(info != null).toBe(true);
+    if (info == null) throw new AssertionError_("BadChunk has no struct info");
     const [fmt, data_fields, encodings, optional_start, endians, items_info, , , simple] = info;
     expect(fmt).toBe("IHB");
     expect(data_fields.length).toBe(3);
@@ -527,6 +530,7 @@ describe("TestFmtField", () => {
   test("test_struct_info_encoding_tracked", () => {
     const info = _struct_info(PrinChunk);
     expect(info != null).toBe(true);
+    if (info == null) throw new AssertionError_("PrinChunk has no struct info");
     const encodings = info[2];
     const simple = info[8];
     // PrinChunk has match_name (field index 1) and display_name (index 2)

@@ -40,7 +40,7 @@ const VERSIONS = SAMPLES.div("versions");
 const PNG = SAMPLES.div("assets", "image_with_alpha.png");
 
 /** samples/versions folder -> the version its complete.aep was saved with. */
-const RELEASES = {
+const RELEASES: Record<string, string> = {
   ae2018: "15.1x69",
   ae2022: "22.5x53",
   ae2023: "23.6x62",

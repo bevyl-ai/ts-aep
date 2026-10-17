@@ -10,7 +10,7 @@ import { AlphaMode, FieldSeparationType } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { find_by_list_type } from "../../src/py_aep/binary/utils.ts";
 import { get_comp, get_first_footage, get_footage, get_footage_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { Path, isclose, py_eq } from "../../src/pyrt/index.ts";
+import { AssertionError_, Path, isclose, py_eq } from "../../src/pyrt/index.ts";
 import { as_instance } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
@@ -25,7 +25,7 @@ describe("TestFootageSize", () => {
   test("test_size_1920x1080", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const comp = get_comp(project, "solid_size_1920x1080");
-    const footage = as_instance(comp.layers[0], AVLayer).source;
+    const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
     expect(footage.width).toBe(1920);
     expect(footage.height).toBe(1080);
   });
@@ -33,7 +33,7 @@ describe("TestFootageSize", () => {
   test("test_size_3840x2160", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const comp = get_comp(project, "solid_size_3840x2160");
-    const footage = as_instance(comp.layers[0], AVLayer).source;
+    const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
     expect(footage.width).toBe(3840);
     expect(footage.height).toBe(2160);
   });
@@ -134,7 +134,7 @@ describe("TestIsMediaReplacementCompatible", () => {
 
   test("test_solid_is_not_compatible", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
-    const solid = as_instance(get_comp(project, "solid_size_1920x1080").layers[0], AVLayer).source;
+    const solid = as_instance(as_instance(get_comp(project, "solid_size_1920x1080").layers[0], AVLayer).source, FootageItem);
     expect(solid.is_media_replacement_compatible).toBe(false);
   });
 
@@ -328,6 +328,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
     );
     expect(footage != null).toBe(true);
+    if (footage == null) throw new AssertionError_("sample has no footage item");
     expect(footage.main_source.conform_frame_rate).toBe(2.5);
   });
 
@@ -341,6 +342,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
     );
     expect(footage != null).toBe(true);
+    if (footage == null) throw new AssertionError_("sample has no footage item");
     expect(footage.duration).toBe(footage_json["duration"]);
     expect(footage_json["duration"]).toBe(19.2);
   });
@@ -356,7 +358,7 @@ describe("TestFootageSettings", () => {
   test("test_pixelAspect_2", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const comp = get_comp(project, "solid_pixelAspect_2");
-    const footage = as_instance(comp.layers[0], AVLayer).source;
+    const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
     expect(isclose(footage.pixel_aspect, 2)).toBe(true);
   });
 
@@ -440,17 +442,17 @@ describe("TestDisplayFrameRate", () => {
   });
 
   test("test_display_frame_rate_with_pulldown", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep")),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.conform_frame_rate).toBe(2.5);
     expect(source.display_frame_rate).toBe(2.0);
   });
 
   test("test_display_frame_rate_without_pulldown", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.conform_frame_rate).toBe(2.5);
     expect(source.display_frame_rate).toBe(2.5);
   });
@@ -459,34 +461,34 @@ describe("TestDisplayFrameRate", () => {
 /** Tests for FootageSource.media_color_space. */
 describe("TestOverrideMediaColorSpace", () => {
   test("test_embedded", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("override_media_colorspace_embedded.aep")),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.media_color_space).toBe("Embedded");
   });
 
   test("test_custom_profile", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("override_media_colorspace_apple_rgb.aep")),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.media_color_space).toBe("Apple RGB");
   });
 
   test("test_working_colorspace", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(
         SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-.aep"),
       ),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.media_color_space).toBe("Working Color Space");
   });
 
   test("test_working_colorspace_aces", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project(
         SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-aces_cg_or_cct.aep"),
       ),
-    ).main_source;
+    ), FootageItem).main_source;
     expect(source.media_color_space).toBe("Working Color Space");
   });
 });

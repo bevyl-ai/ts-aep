@@ -20,7 +20,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { SAMPLES_DIR, as_instance, parse_app_fresh } from "../helpers.ts";
-import { ValueError, float, getattr, getitem, max, py_eq } from "../../src/pyrt/index.ts";
+import { AssertionError_, ValueError, float, getattr, getitem, max, py_eq } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
@@ -87,7 +87,8 @@ describe("TestStretchedLayerTimebase", () => {
   test("test_ae_authored_stretched_layer_reads_back", () => {
     /** `layer_timing.aep` is AE-authored and carries a 200 % layer. */
     const app = parse_app_fresh(LAYER_DIR.div("layer_timing.aep"));
-    const comp = app.project.compositions.find((c: any) => c.name === "stretch_200");
+    const comp = app.project.compositions.find((c) => c.name === "stretch_200");
+    if (comp === undefined) throw new AssertionError_("no composition named stretch_200");
     const layer = comp.layers[0];
     expect(layer.stretch).toBe(200.0);
 

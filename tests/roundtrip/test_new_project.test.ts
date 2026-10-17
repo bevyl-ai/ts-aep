@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   bytes_,
   bytes_eq,
   getitem,
@@ -22,7 +23,8 @@ import { find_by_type, recursive_find } from "../../src/py_aep/binary/utils.ts";
 import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
 import { to_dict } from "../../src/py_aep/cli/validate.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { project_bytes } from "../helpers.ts";
+import { as_instance, project_bytes } from "../helpers.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 
 const EMPTIER = new Path(import.meta.path).parent.parent.parent.div(
   "samples",
@@ -55,6 +57,7 @@ describe("TestNewEmpty", () => {
   test("test_empty_render_queue", () => {
     const rq = py_aep.new().project.render_queue;
     expect(rq != null).toBe(true);
+    if (rq == null) throw new AssertionError_("new project has no render queue");
     expect(len(rq.items)).toBe(0);
   });
 
@@ -327,11 +330,11 @@ describe("TestNewRenderQueue", () => {
     if (prefs == null) return skip("no AE preferences dir (render templates unavailable)");
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.root_folder.add_comp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
-    app.project.render_queue.add(comp);
+    as_instance(app.project.render_queue, RenderQueue).add(comp);
     const path = tmp_path.div("rq.aep");
     app.project.save(path);
     const proj = py_aep.parse(path, { ae_preferences_dir: prefs }).project;
-    expect(len(proj.render_queue.items)).toBe(1);
-    expect(proj.render_queue.items[0].comp.name).toBe("Comp 1");
+    expect(len(as_instance(proj.render_queue, RenderQueue).items)).toBe(1);
+    expect(as_instance(proj.render_queue, RenderQueue).items[0].comp.name).toBe("Comp 1");
   });
 });

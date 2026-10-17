@@ -12,6 +12,7 @@ import { Path, len, py_assert, py_eq, AssertionError_, repr } from "../../src/py
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_first_layer, get_layer } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -82,7 +83,7 @@ function _find_property(layer: Layer, match_name: string): Property | null {
 
 /** Find a synthesized effect property by match name. */
 function _find_synthesized_effect_prop(layer: Layer, effect_index: number, match_name: string): Property {
-  const effect = layer.effects.properties[effect_index];
+  const effect = as_instance(layer.effects, PropertyGroup).properties[effect_index];
   py_assert(effect instanceof PropertyGroup);
   for (const prop of effect.properties) {
     if (prop instanceof Property && prop.match_name === match_name) {
@@ -150,6 +151,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     const layer = get_first_layer(app.project);
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation != null).toBe(true);
+    if (orientation == null) throw new AssertionError_("no ADBE Orientation property");
     expect(len(orientation.keyframes) > 0).toBe(true);
 
     const out = tmp_path.div("roundtrip.aep");
@@ -167,6 +169,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     const layer = get_layer(app.project, "keyframe_spatial_bezier_arc");
     const position = _find_property(layer, "ADBE Position");
     expect(position != null).toBe(true);
+    if (position == null) throw new AssertionError_("no ADBE Position property");
     expect(position.is_spatial).toBe(true);
     expect(len(position.keyframes) > 0).toBe(true);
 
@@ -185,6 +188,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     const layer = get_first_layer(app.project);
     const position = _find_property(layer, "ADBE Position");
     expect(position != null).toBe(true);
+    if (position == null) throw new AssertionError_("no ADBE Position property");
     expect(position.is_spatial).toBe(true);
     expect(len(position.keyframes) > 0).toBe(true);
 
@@ -203,7 +207,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     const layer = get_first_layer(app.project);
     // Verify effects parsed
     expect(layer.effects != null).toBe(true);
-    expect(len(layer.effects.properties) > 0).toBe(true);
+    expect(len(as_instance(layer.effects, PropertyGroup).properties) > 0).toBe(true);
 
     const out = tmp_path.div("roundtrip.aep");
     app.project.save(out);
@@ -220,6 +224,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     const layer = get_first_layer(app.project);
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity != null).toBe(true);
+    if (opacity == null) throw new AssertionError_("no ADBE Opacity property");
     expect(len(opacity.keyframes) > 0).toBe(true);
     expect(opacity.is_spatial).toBe(false);
 

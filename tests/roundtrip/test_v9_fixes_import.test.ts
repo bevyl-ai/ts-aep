@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { at, b, bytes_, concat, dict_get, encode, floordiv, format, getattr, getitem, len, mod, Path, fspath, py_bool, py_eq, py_or, range, sorted, struct, sum, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError_, at, b, bytes_, concat, dict_get, encode, floordiv, format, getattr, getitem, len, mod, Path, fspath, py_bool, py_eq, py_or, range, sorted, struct, sum, TypeError_, ValueError } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, parse as parse_aep } from "../../src/py_aep/index.ts";
 import { default_icc_directories, default_icc_library, icc_profile_id } from "../../src/py_aep/color/icc.ts";
@@ -531,7 +531,9 @@ test.each([
 // --- C3: colour profiles (Adobe CMS project) -----------------------------
 
 function _clrs(source: FileSource): Map<string, any> {
-  const chunks = source._clrs.chunks;
+  const clrs = source._clrs;
+  if (clrs == null) throw new AssertionError_("source has no LIST:CLRS");
+  const chunks = clrs.chunks;
   const out = new Map<string, any>();
   for (const [index, chunk] of chunks.entries()) {
     if (["epid", "apid"].includes(chunk.chunk_type)) {

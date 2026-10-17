@@ -606,6 +606,7 @@ describe("TestCosFieldScalarReverse", () => {
   test("test_none_value_removes_key", () => {
     const style = new Map<string, any>([["1", 12]]);
     const model = new _CosModel(style);
+    // @ts-expect-error runtime null handling outside the declared number type (Python: type: ignore[assignment])
     model.font_size = null;
     expect(style.has("1")).toBe(false);
   });
