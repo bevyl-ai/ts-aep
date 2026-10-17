@@ -14,10 +14,15 @@ import {
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { project_bytes } from "../helpers.ts";
+import * as py_aep from "../../src/py_aep/index.ts";
 import { type Project, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { find_by_list_type } from "../../src/py_aep/binary/utils.ts";
 import { parse_envelope } from "../../src/py_aep/color/envelope.ts";
+import { ColorProfileNotFoundError, icc_profile_id } from "../../src/py_aep/color/icc.ts";
 import { BitsPerChannel, ColorManagementSystem, FeetFramesFilmType, FootageTimecodeDisplayStartType, FramesCountType, GpuAccelType, LutInterpolationMethod, TimeDisplayType } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
+import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "view");
@@ -724,6 +729,134 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     project.ocio_configuration_file = str(config);
     project.working_space = "ACEScg";
     expect(py_eq(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(true);
+  });
+});
+
+function _profile_pool(project: Project): Chunk[] {
+  return find_by_list_type(project._rifx.chunks, "CPPl").chunks;
+}
+
+/**
+ * Before AE 22 the working space is a `pprf` ICC in `LIST:CPPl`, named
+ * by its profile id in `cpid`.
+ *
+ * Measured on AE 15.1: it re-saves this pool as py_aep writes it, keeps a
+ * profile nothing refers to anymore, sorts the pool by profile id, and
+ * renders a new 15.1 project with an sRGB working space like its own
+ * template.
+ */
+class TestRoundtripPre22WorkingSpace {
+  // An AE 15 pool: sRGB IEC61966-2.1 (the working space), then SDTV NTSC.
+  static DONOR = VERSIONS_DIR.div("ae2018", "complete.aep");
+  static SRGB = "sRGB IEC61966-2.1";
+  static SRGB_ID = bytes_.fromhex("1d3fda2edb4a89ab60a23c5f7c7d81dd");
+  static NTSC_ID = bytes_.fromhex("2734184f30e0dfca20be1a95a0a65519");
+
+  static _icc_dir(tmp_path: Path): Path {
+    // The ICCs exactly as AE stored them, so no installed profile is needed.
+    const icc_dir = tmp_path.div("icc");
+    icc_dir.mkdir();
+    for (const [i, pprf] of _profile_pool(parse_aep(this.DONOR).project).entries()) {
+      icc_dir.div(`${i}.icc`).write_bytes(pprf.data);
+    }
+    return icc_dir;
+  }
+}
+
+describe("TestRoundtripPre22WorkingSpace", () => {
+  const C = TestRoundtripPre22WorkingSpace;
+
+  test("test_new_15_project_settings_round_trip", () => {
+    const tmp_path = make_tmp_path();
+    const project = py_aep.new("15.1x69").project;
+    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    project.bits_per_channel = BitsPerChannel.THIRTY_TWO;
+    project.time_display_type = TimeDisplayType.FRAMES;
+    project.gpu_accel_type = GpuAccelType.SOFTWARE;
+    project.linearize_working_space = true;
+    project.working_space = C.SRGB;
+
+    const out = tmp_path.div("new15.aep");
+    project.save(out);
+    const app2 = parse_aep(out);
+    const project2 = app2.project;
+
+    expect(app2.version).toBe("15.1x69");
+    expect(project2.working_space).toBe(C.SRGB);
+    expect(project2.linearize_working_space).toBe(true);
+    expect(project2.bits_per_channel).toBe(BitsPerChannel.THIRTY_TWO);
+    expect(project2.time_display_type).toBe(TimeDisplayType.FRAMES);
+    expect(project2.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+    // AE 15.1's own template: the pool holds just the working space's
+    // ICC, and `lnrp` sits between `cpid` and `dwga`.
+    const donor_icc = _profile_pool(parse_aep(C.DONOR).project)[0].data;
+    expect(py_eq(_profile_pool(project2).map((c) => c.data), [donor_icc])).toBe(true);
+    expect(py_eq(project2._cpid.data, C.SRGB_ID)).toBe(true);
+    const types = project2._rifx.chunks.map((c) => c.chunk_type);
+    const i = types.indexOf("cpid");
+    expect(types.slice(i, i + 3)).toEqual(["cpid", "lnrp", "dwga"]);
+  });
+
+  test("test_new_profile_is_inserted_in_id_order", () => {
+    const tmp_path = make_tmp_path();
+    const project = py_aep.new("15.1x69").project;
+    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    project.working_space = "SDTV NTSC";
+    project.working_space = C.SRGB;
+
+    const out = tmp_path.div("ws.aep");
+    project.save(out);
+    const project2 = parse_aep(out).project;
+
+    expect(project2.working_space).toBe(C.SRGB);
+    expect(py_eq(project2._cpid.data, C.SRGB_ID)).toBe(true);
+    // The replaced SDTV NTSC stays, after the lower sRGB id.
+    const pool_ids = _profile_pool(project2).map((c) => icc_profile_id(c.data));
+    expect(py_eq(pool_ids, [C.SRGB_ID, C.NTSC_ID])).toBe(true);
+  });
+
+  test("test_pooled_profile_is_reused", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_aep(C.DONOR).project;
+    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    const before = project_bytes(project);
+    project.working_space = project.working_space;
+    expect(py_eq(project_bytes(project), before)).toBe(true);
+
+    project.working_space = "SDTV NTSC";
+    const out = tmp_path.div("ws.aep");
+    project.save(out);
+    const project2 = parse_aep(out).project;
+
+    expect(project2.working_space).toBe("SDTV NTSC");
+    expect(py_eq(project2._cpid.data, C.NTSC_ID)).toBe(true);
+    expect(_profile_pool(project2).length).toBe(2);
+  });
+
+  test("test_none_keeps_the_pool", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_aep(C.DONOR).project;
+    const pool = _profile_pool(project).map((c) => c.data);
+    project.working_space = "None";
+
+    const out = tmp_path.div("ws.aep");
+    project.save(out);
+    const project2 = parse_aep(out).project;
+
+    expect(project2.working_space).toBe("None");
+    expect(py_eq(project2._cpid.data, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(py_eq(_profile_pool(project2).map((c) => c.data), pool)).toBe(true);
+  });
+
+  test("test_unknown_profile_leaves_project_unchanged", () => {
+    const tmp_path = make_tmp_path();
+    const project = py_aep.new("15.1x69").project;
+    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    const before = project_bytes(project);
+    raises(ColorProfileNotFoundError, () => {
+      project.working_space = "Not A Profile";
+    });
+    expect(py_eq(project_bytes(project), before)).toBe(true);
   });
 });
 

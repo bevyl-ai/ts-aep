@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { NotImplementedError, Path, py_bool, py_eq, RuntimeError, ValueError, zip } from "../../src/pyrt/index.ts";
+import { NotImplementedError, OSError, Path, py_bool, py_eq, RuntimeError, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep, Property } from "../../src/py_aep/index.ts";
 import * as project_mod from "../../src/py_aep/models/project.ts";
@@ -552,6 +552,35 @@ describe("TestAtomicSave", () => {
       undo();
     }
     expect(target.exists()).toBe(false);
+    expect(tmp_path.iterdir().length).toBe(0);
+  });
+
+  test("test_failed_write_leaves_no_file", () => {
+    const tmp_path = make_tmp_path();
+    // The temp file is created, then writing it fails part-way (a full
+    // disk, a dropped network share): the partial temp file is removed.
+    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    // `monkeypatch.setattr(Path, "open", ...)`: save opens its temp file
+    // through the host's `node:fs`.
+    const node_fs = process.getBuiltinModule("node:fs");
+    const real_open = node_fs.openSync;
+
+    const open_then_fail = (...args: Parameters<typeof real_open>): never => {
+      const fd = real_open(...args);
+      try {
+        node_fs.writeSync(fd, "partial");
+      } finally {
+        node_fs.closeSync(fd);
+      }
+      throw new OSError("simulated write failure");
+    };
+
+    node_fs.openSync = open_then_fail;
+    try {
+      raises(OSError, () => app.project.save(tmp_path.div("out.aep")));
+    } finally {
+      node_fs.openSync = real_open;
+    }
     expect(tmp_path.iterdir().length).toBe(0);
   });
 });
