@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   bytes_,
   isclose,
   len,
@@ -135,6 +136,7 @@ describe("TestRoundtripMarkerDuration", () => {
     const comp = get_comp(project, "label_3");
     const marker = new MarkerValue("w_new");
     marker.duration = 2.5;
+    if (comp.marker_property === null) throw new AssertionError_("comp.marker_property is None");
     comp.marker_property.set_value_at_time(2.0, marker);
     const out = tmp_path.div("new_marker.aep");
     project.save(out);

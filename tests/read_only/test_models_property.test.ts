@@ -4,7 +4,9 @@ import { describe, expect, test } from "bun:test";
 import { approx, skip, fail } from "../../src/pyrt/pytest.ts";
 import {
   AssertionError_,
+  IndexError,
   Path,
+  StopIteration,
   float,
   getattr,
   getitem,
@@ -25,10 +27,10 @@ import {
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp, get_comp_from_json_by_name, get_first_layer, get_layer, load_expected, parse_project } from "../conftest.ts";
 import { as_instance } from "../helpers.ts";
-import { Project, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { Project, parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { AVLayer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
-import type { Layer } from "../../src/py_aep/models/index.ts";
+import type { CompItem, Layer } from "../../src/py_aep/models/index.ts";
 
 // `from __future__ import annotations` is dropped: no annotation here is
 // evaluated at runtime. `json.loads` becomes `JSON.parse` (plain objects).
@@ -98,8 +100,9 @@ function _json_values_by_match_name(expected: any): Map<string, any> {
 }
 
 /** Return the `ADBE Mask Shape` property from the first mask. */
-function _get_mask_shape(layer: any): Property {
+function _get_mask_shape(layer: Layer): Property<Shape> {
   expect(layer.masks).not.toBeNull();
+  if (layer.masks === null) throw new AssertionError_("layer.masks is None");
   const mask = layer.masks.properties[0] as MaskPropertyGroup;
   for (const prop of mask.properties) {
     if (prop.match_name === "ADBE Mask Shape") {
@@ -116,6 +119,7 @@ describe("TestExpressions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_enabled");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position.expression_enabled).toBe(true);
     expect(position.expression).toBe("wiggle(2, 50)");
     // Verify against JSON
@@ -133,6 +137,7 @@ describe("TestExpressions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_disabled");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.expression_enabled).toBe(false);
     expect(opacity.expression).toBe("50");
     // Value should be the static value, not the expression result
@@ -151,6 +156,7 @@ describe("TestExpressions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_time");
     const rotation = _find_property(layer, "ADBE Rotate Z");
     expect(rotation).not.toBeNull();
+    if (rotation === null) throw new AssertionError_("rotation is None");
     expect(rotation.expression_enabled).toBe(true);
     expect(rotation.expression).toBe("time * 36");
     // Verify against JSON
@@ -174,6 +180,7 @@ describe("TestKeyframeLabel", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_labels.aep")), "TestComp");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(py_eq(opacity.keyframes.map((kf) => int(kf.label)), [1, 5, 16, 0, 0])).toBe(true);
   });
 });
@@ -189,6 +196,7 @@ describe("TestKeyframes", () => {
     );
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
     for (const kf of position.keyframes) {
@@ -206,6 +214,7 @@ describe("TestKeyframes", () => {
     );
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
     for (const kf of position.keyframes) {
@@ -220,6 +229,7 @@ describe("TestKeyframes", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_HOLD");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity._animated).toBe(true);
     expect(len(opacity.keyframes)).toBe(3);
     // Keyframe 2 (index 1) is HOLD
@@ -246,6 +256,7 @@ describe("TestPropertyStructure", () => {
   test("test_effect_depth", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("effects.aep")), "effect_2dPoint");
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(len(layer.effects.properties) > 0).toBe(true);
     const effect = layer.effects.properties[0] as PropertyGroup;
     expect(effect.property_depth).toBe(2);
@@ -259,6 +270,7 @@ describe("TestPropertyStructure", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.is_time_varying).toBe(true);
   });
 
@@ -267,6 +279,7 @@ describe("TestPropertyStructure", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_enabled");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position.is_time_varying).toBe(true);
   });
 
@@ -276,6 +289,7 @@ describe("TestPropertyStructure", () => {
     // Only ADBE Rotate Z is animated; ADBE Rotate X is static
     const rotate_x = _find_property(layer, "ADBE Rotate X");
     expect(rotate_x).not.toBeNull();
+    if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(py_bool(rotate_x._animated)).toBe(false);
     expect(rotate_x.is_time_varying).toBe(false);
   });
@@ -289,6 +303,7 @@ describe("TestPropertyDimensions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.dimensions).toBe(1);
     expect(opacity._animated).toBe(true);
     expect(len(opacity.keyframes)).toBe(2);
@@ -304,6 +319,7 @@ describe("TestPropertyDimensions", () => {
     expect(comp_json["layers"][0]["threeDLayer"]).toBe(false);
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
   });
@@ -318,6 +334,7 @@ describe("TestPropertyDimensions", () => {
     expect(comp_json["layers"][0]["threeDLayer"]).toBe(true);
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
   });
@@ -328,6 +345,7 @@ describe("TestPropertyDimensions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     const rotation = _find_property(layer, "ADBE Rotate Z");
     expect(rotation).not.toBeNull();
+    if (rotation === null) throw new AssertionError_("rotation is None");
     expect(rotation.dimensions).toBe(1);
     expect(rotation._animated).toBe(true);
     expect(len(rotation.keyframes)).toBe(2);
@@ -345,6 +363,7 @@ describe("TestPropertyDimensions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_scale");
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     expect(scale._animated).toBe(true);
     expect(len(scale.keyframes)).toBe(2);
     // Verify against JSON
@@ -368,6 +387,7 @@ describe("TestPropertyDimensions", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_scale");
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     expect(scale.dimensions).toBe(3);
     expect(scale.property_value_type).toBe(PropertyValueType.ThreeD);
     for (const keyframe of scale.keyframes) {
@@ -390,6 +410,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_0.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(py_eq(orientation.value, [0.0, 0.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
@@ -399,6 +420,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_5_0_0.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(py_eq(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
     expect(orientation.is_spatial).toBe(true);
@@ -409,6 +431,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_0_279_0.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(py_eq(orientation.value, [0.0, 279.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
@@ -418,6 +441,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_0_0_5.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(py_eq(orientation.value, [0.0, 0.0, 5.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
@@ -427,6 +451,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_5_0_0.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.name).toBe("Orientation");
     expect(orientation.match_name).toBe("ADBE Orientation");
     expect(orientation.is_spatial).toBe(true);
@@ -439,6 +464,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_with_keyframes.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation._animated).toBe(true);
     expect(len(orientation.keyframes)).toBe(2);
     expect(py_eq(orientation.keyframes[0].value, [5.0, 0.0, 0.0])).toBe(true);
@@ -450,6 +476,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_with_keyframes.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.keyframes[0].frame_time).toBe(0);
     expect(orientation.keyframes[1].frame_time).toBe(240);
   });
@@ -459,6 +486,7 @@ describe("TestOrientation", () => {
     const layer = get_first_layer(parse_project(LAYER_SAMPLES_DIR.div("orientation_with_keyframes.aep")));
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.dimensions).toBe(3);
     expect(orientation.is_spatial).toBe(true);
     expect(orientation._vector).toBe(true);
@@ -501,6 +529,7 @@ describe("TestEffectProperties", () => {
     const project = parse_project(SAMPLES_DIR.div("2_gaussian.aep"));
     const layer = get_first_layer(project);
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(len(layer.effects.properties)).toBe(2);
     for (const effect of layer.effects as Iterable<PropertyGroup>) {
       expect(effect.match_name).toBe("ADBE Gaussian Blur 2");
@@ -516,6 +545,7 @@ describe("TestEffectProperties", () => {
     const project = parse_project(SAMPLES_DIR.div("2_gaussian_20_30.aep"));
     const layer = get_first_layer(project);
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(len(layer.effects.properties)).toBe(2);
 
     // Each effect should have a Blurriness property with modified value
@@ -528,6 +558,7 @@ describe("TestEffectProperties", () => {
       }
     }
     expect(blurriness_0).not.toBeNull();
+    if (blurriness_0 === null) throw new AssertionError_("blurriness_0 is None");
     expect(blurriness_0.value).toBe(20.0);
 
     const effect_1 = layer.effects.properties[1] as PropertyGroup;
@@ -539,6 +570,7 @@ describe("TestEffectProperties", () => {
       }
     }
     expect(blurriness_1).not.toBeNull();
+    if (blurriness_1 === null) throw new AssertionError_("blurriness_1 is None");
     expect(blurriness_1.value).toBe(30.0);
   });
 
@@ -620,6 +652,7 @@ describe("TestEffectProperties", () => {
     expect(py_eq(getitem(_json_values_by_match_name(expected), "ADBE Path Text-0020"), [80, 50])).toBe(true);
     const layer = get_layer(project, "type_null");
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const prop = as_instance(
       (layer.effects.__getitem__("ADBE Path Text") as PropertyGroup).__getitem__("ADBE Path Text-0020"),
       Property,
@@ -680,8 +713,9 @@ describe("TestEffectProperties", () => {
           if (effect.match_name !== "S_BlurDirectional") {
             continue;
           }
-          const prop = effect.__getitem__(match_name);
+          const prop = as_instance(effect, PropertyGroup).__getitem__(match_name);
           expect(prop instanceof Property).toBe(true);
+          if (!(prop instanceof Property)) throw new AssertionError_("prop is not a Property");
           expect(prop.value).toBe(expected);
           expect(prop.default_value).toBe(expected);
           expect(prop.is_modified).toBe(false);
@@ -700,6 +734,7 @@ describe("TestMasks", () => {
   test("test_is_mask_true_single", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     expect(layer.masks.is_mask).toBe(false);
     expect(layer.masks.match_name).toBe("ADBE Mask Parade");
     expect(layer.masks.property_type).toBe(PropertyType.INDEXED_GROUP);
@@ -711,6 +746,7 @@ describe("TestMasks", () => {
   test("test_is_mask_multiple", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_multiple");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     expect(layer.masks.is_mask).toBe(false);
     expect(len(layer.masks.properties)).toBe(2);
     for (const mask of layer.masks.properties) {
@@ -733,7 +769,9 @@ describe("TestMasks", () => {
     const project = parse_project(SAMPLES_DIR.div("mask_shape_and_text_layers.aep"));
     const comp = get_comp(project, "masks_on_layer_kinds");
     const layer = comp.layers.find((layer) => layer.name === layer_name);
+    if (layer === undefined) throw new StopIteration();
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const shape = (layer.masks.properties[0] as PropertyGroup).property("ADBE Mask Shape").value;
     expect(len(shape.vertices)).toBe(len(expected));
     for (const [vertex, want] of zip(shape.vertices, expected)) {
@@ -751,6 +789,7 @@ describe("TestMasks", () => {
   test("test_mask_parent_property", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     for (const mask of layer.masks.properties) {
       expect(mask.parent_property).toBe(layer.masks);
     }
@@ -760,6 +799,7 @@ describe("TestMasks", () => {
   test("test_mask_atom_is_mask_property_group", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     expect(len(layer.masks.properties)).toBe(1);
     expect(layer.masks.properties[0] instanceof MaskPropertyGroup).toBe(true);
   });
@@ -768,6 +808,7 @@ describe("TestMasks", () => {
   test("test_mask_atom_inverted_default", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     expect(mask.inverted).toBe(false);
@@ -777,6 +818,7 @@ describe("TestMasks", () => {
   test("test_mask_atom_locked_default", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     expect(mask.locked).toBe(false);
@@ -786,6 +828,7 @@ describe("TestMasks", () => {
   test("test_mask_atom_mode_default", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     expect(mask.mask_mode).toBe(MaskMode.ADD);
@@ -795,6 +838,7 @@ describe("TestMasks", () => {
   test("test_mask_multiple_all_mask_property_groups", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_multiple");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     for (const mask of layer.masks.properties) {
       expect(mask instanceof MaskPropertyGroup).toBe(true);
     }
@@ -804,6 +848,7 @@ describe("TestMasks", () => {
   test("test_mask_children_parent_is_mask_group", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     for (const child of mask.properties) {
@@ -818,6 +863,7 @@ class TestMaskAttributes {
     const project = parse_project(SAMPLES_DIR.div(filename));
     const layer = get_first_layer(project);
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     return mask;
@@ -994,6 +1040,7 @@ describe("TestIsModified", () => {
   test("test_effect_parade_indexed_group_with_children", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("is_modified_false.aep")));
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(layer.effects.property_type).toBe(PropertyType.INDEXED_GROUP);
     expect(len(layer.effects.properties) > 0).toBe(true);
     expect(layer.effects.is_modified).toBe(true);
@@ -1004,6 +1051,7 @@ describe("TestIsModified", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity._animated).toBe(true);
     expect(opacity.is_modified).toBe(true);
   });
@@ -1013,6 +1061,7 @@ describe("TestIsModified", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_enabled");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position.expression_enabled).toBe(true);
     expect(position.is_modified).toBe(true);
   });
@@ -1022,6 +1071,7 @@ describe("TestIsModified", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("expression.aep")), "expression_disabled");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.expression_enabled).toBe(false);
     // AE considers a property modified whenever an expression exists,
     // regardless of whether the expression is enabled.
@@ -1045,6 +1095,7 @@ describe("TestIsModified", () => {
   test("test_effect_properties_at_default", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("is_modified_false.aep")));
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     for (const effect of layer.effects as Iterable<PropertyGroup>) {
       for (const prop of effect.properties) {
         if (prop instanceof Property && prop.default_value != null) {
@@ -1063,6 +1114,7 @@ describe("TestIsModified", () => {
     const project = parse_project(SAMPLES_DIR.div("2_gaussian_20_30.aep"));
     const layer = get_first_layer(project);
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     let blurriness: Property | null = null;
     for (const prop of effect.properties) {
@@ -1072,6 +1124,7 @@ describe("TestIsModified", () => {
       }
     }
     expect(blurriness).not.toBeNull();
+    if (blurriness === null) throw new AssertionError_("blurriness is None");
     expect(blurriness.value).toBe(20.0);
     // Blurriness default from pard chunk is 0.0
     if (blurriness.default_value != null) {
@@ -1107,6 +1160,7 @@ describe("TestSeparation", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_separated.aep")));
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
+    if (pos === null) throw new AssertionError_("pos is None");
     expect(pos.is_separation_leader).toBe(true);
     expect(pos.is_separation_follower).toBe(false);
     expect(pos.separation_dimension).toBeNull();
@@ -1133,6 +1187,7 @@ describe("TestSeparation", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_separated.aep")));
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
+    if (pos === null) throw new AssertionError_("pos is None");
     for (const dim of range(3)) {
       const follower = pos.get_separation_follower(dim);
       py_assert(follower != null, `follower dim ${dim} is None`);
@@ -1146,6 +1201,7 @@ describe("TestSeparation", () => {
     const pos = _find_property(layer, "ADBE Position");
     const x_pos = _find_property(layer, "ADBE Position_0");
     expect(x_pos).not.toBeNull();
+    if (x_pos === null) throw new AssertionError_("x_pos is None");
     expect(x_pos.separation_leader).toBe(pos);
   });
 
@@ -1154,11 +1210,13 @@ describe("TestSeparation", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("before_separation.aep")));
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
+    if (pos === null) throw new AssertionError_("pos is None");
     expect(pos.is_separation_leader).toBe(true);
     expect(pos.dimensions_separated).toBe(false);
 
     const x_pos = _find_property(layer, "ADBE Position_0");
     expect(x_pos).not.toBeNull();
+    if (x_pos === null) throw new AssertionError_("x_pos is None");
     expect(x_pos.is_separation_follower).toBe(true);
     expect(x_pos.separation_dimension).toBe(0);
   });
@@ -1168,6 +1226,7 @@ describe("TestSeparation", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_separated.aep")));
     const opa = _find_property(layer, "ADBE Opacity");
     expect(opa).not.toBeNull();
+    if (opa === null) throw new AssertionError_("opa is None");
     expect(opa.is_separation_leader).toBe(false);
     expect(opa.is_separation_follower).toBe(false);
     expect(opa.separation_dimension).toBeNull();
@@ -1180,11 +1239,13 @@ describe("TestSeparation", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_unseparated.aep")));
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
+    if (pos === null) throw new AssertionError_("pos is None");
     expect(pos.is_separation_leader).toBe(true);
     expect(pos.dimensions_separated).toBe(false);
 
     const y_pos = _find_property(layer, "ADBE Position_1");
     expect(y_pos).not.toBeNull();
+    if (y_pos === null) throw new AssertionError_("y_pos is None");
     expect(y_pos.is_separation_follower).toBe(true);
     expect(y_pos.separation_dimension).toBe(1);
   });
@@ -1235,6 +1296,7 @@ describe("TestTransformSynthesis", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.default_value).not.toBeNull();
     expect(orientation.is_modified).toBe(false);
   });
@@ -1244,6 +1306,7 @@ describe("TestTransformSynthesis", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const rotate_x = _find_property(layer, "ADBE Rotate X");
     expect(rotate_x).not.toBeNull();
+    if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(rotate_x.dimensions).toBe(1);
     expect(rotate_x.default_value).not.toBeNull();
     expect(rotate_x.is_modified).toBe(false);
@@ -1263,10 +1326,12 @@ describe("TestTransformSynthesis", () => {
     // Verify specific properties
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.is_modified).toBe(false);
 
     const rotate_x = _find_property(layer, "ADBE Rotate X");
     expect(rotate_x).not.toBeNull();
+    if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(rotate_x.value).toBe(0.0);
     expect(rotate_x.is_modified).toBe(false);
   });
@@ -1277,6 +1342,7 @@ describe("TestTransformSynthesis", () => {
     for (const match_name of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y"]) {
       const prop = _find_property(layer, match_name);
       expect(prop).not.toBeNull();
+      if (prop === null) throw new AssertionError_("prop is None");
       py_assert(!prop._animated, `${match_name} should not be animated`);
       expect(prop.expression).toBe("");
       expect(py_eq(prop.keyframes, [])).toBe(true);
@@ -1296,6 +1362,7 @@ describe("TestTransformSynthesis", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const envir = _find_property(layer, "ADBE Envir Appear in Reflect");
     expect(envir).not.toBeNull();
+    if (envir === null) throw new AssertionError_("envir is None");
     expect(envir.name).toBe("Appears in Reflections");
     expect(envir.value).toBe(1.0);
     expect(envir.default_value).toBe(1.0);
@@ -1328,10 +1395,12 @@ describe("TestUnitsText", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const anchor = _find_property(layer, "ADBE Anchor Point");
     expect(anchor).not.toBeNull();
+    if (anchor === null) throw new AssertionError_("anchor is None");
     expect(anchor.units_text).toBe("pixels");
 
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(position.units_text).toBe("pixels");
   });
 
@@ -1340,10 +1409,12 @@ describe("TestUnitsText", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     expect(scale.units_text).toBe("percent");
 
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.units_text).toBe("percent");
   });
 
@@ -1352,10 +1423,12 @@ describe("TestUnitsText", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     const rotate_z = _find_property(layer, "ADBE Rotate Z");
     expect(rotate_z).not.toBeNull();
+    if (rotate_z === null) throw new AssertionError_("rotate_z is None");
     expect(rotate_z.units_text).toBe("degrees");
 
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
+    if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.units_text).toBe("degrees");
   });
 
@@ -1364,6 +1437,7 @@ describe("TestUnitsText", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const envir = _find_property(layer, "ADBE Envir Appear in Reflect");
     expect(envir).not.toBeNull();
+    if (envir === null) throw new AssertionError_("envir is None");
     expect(envir.units_text).toBe("");
   });
 
@@ -1385,6 +1459,7 @@ describe("TestUnitsText", () => {
   test("test_mask_feather_pixels", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("mask_add.aep")));
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     // Mask children: [0]=MaskPath, [1]=Feather, [2]=Opacity, [3]=Expansion
     const feather = as_instance(mask.properties[1], Property);
@@ -1396,6 +1471,7 @@ describe("TestUnitsText", () => {
   test("test_mask_opacity_percent", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("mask_add.aep")));
     expect(layer.masks).not.toBeNull();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = layer.masks.properties[0] as MaskPropertyGroup;
     const opacity = as_instance(mask.properties[2], Property);
     expect(opacity.match_name).toBe("ADBE Mask Opacity");
@@ -1408,6 +1484,7 @@ describe("TestUnitsText", () => {
   test("test_effect_mask_opacity_percent", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("effects.aep")), "effect_2dPoint");
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     // Compositing Options group is the last child of an effect
     let comp_opts: PropertyGroup | null = null;
@@ -1418,6 +1495,7 @@ describe("TestUnitsText", () => {
       }
     }
     expect(comp_opts).not.toBeNull();
+    if (comp_opts === null) throw new AssertionError_("comp_opts is None");
     let opacity: Property | null = null;
     for (const child of comp_opts.properties) {
       if (child.match_name === "ADBE Effect Mask Opacity") {
@@ -1426,6 +1504,7 @@ describe("TestUnitsText", () => {
       }
     }
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity.units_text).toBe("percent");
   });
 
@@ -1434,6 +1513,7 @@ describe("TestUnitsText", () => {
     const project = parse_project(SAMPLES_DIR.div("effects.aep"));
     const layer = get_layer(project, "effect_2dPoint");
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     for (const effect of layer.effects as Iterable<PropertyGroup>) {
       const comp_opts = effect.property("ADBE Effect Built In Params");
       py_assert(comp_opts != null, `Effect ${repr(effect.name)} missing Compositing Options`);
@@ -1449,6 +1529,7 @@ describe("TestUnitsText", () => {
   test("test_effect_property_no_unit", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("2_gaussian_20_30.aep")));
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     let blurriness: Property | null = null;
     for (const child of effect.properties) {
@@ -1458,6 +1539,7 @@ describe("TestUnitsText", () => {
       }
     }
     expect(blurriness).not.toBeNull();
+    if (blurriness === null) throw new AssertionError_("blurriness is None");
     expect(blurriness.units_text).toBe("");
   });
 
@@ -1468,6 +1550,7 @@ describe("TestUnitsText", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     const envir = _find_property(layer, "ADBE Envir Appear in Reflect");
     expect(envir).not.toBeNull();
+    if (envir === null) throw new AssertionError_("envir is None");
     expect(envir.units_text).toBe("");
   });
 });
@@ -1480,6 +1563,7 @@ describe("TestKeyframeInterpolationTypes", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
       expect(kf.in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
       expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
@@ -1491,6 +1575,7 @@ describe("TestKeyframeInterpolationTypes", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_BEZIER");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
       expect(kf.in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
       expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
@@ -1502,6 +1587,7 @@ describe("TestKeyframeInterpolationTypes", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(len(opacity.keyframes)).toBe(4);
     // KF[0]: LINEAR in/out
     expect(opacity.keyframes[0].in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
@@ -1526,6 +1612,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_bezier_ease_in_out_1D");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     for (const kf of opacity.keyframes) {
       expect(len(kf.in_temporal_ease)).toBe(1);
       expect(len(kf.out_temporal_ease)).toBe(1);
@@ -1537,6 +1624,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_misc.aep")), "keyframe_bezier_ease_scale");
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     expect(len(scale.keyframes) >= 2).toBe(true);
     for (const kf of scale.keyframes) {
       expect(len(kf.in_temporal_ease)).toBe(3);
@@ -1549,6 +1637,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_misc.aep")), "keyframe_bezier_ease_scale");
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     // KF0 out_ease all 75%
     for (const ease of scale.keyframes[0].out_temporal_ease) {
       expect(Math.abs(ease.influence - 75.0) < 0.01).toBe(true);
@@ -1564,6 +1653,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_bezier_nonzero_speed");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF0 out speed = 20 (%/sec), KF1 in speed = 15 (%/sec)
     expect(Math.abs(opacity.keyframes[0].out_temporal_ease[0].speed - 20.0) < 0.1).toBe(true);
     expect(Math.abs(opacity.keyframes[1].in_temporal_ease[0].speed - 15.0) < 0.1).toBe(true);
@@ -1577,6 +1667,7 @@ describe("TestTemporalEase", () => {
     );
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // Should have at least 2 keyframes with different in/out
     const kf0 = opacity.keyframes[0];
     expect(len(kf0.in_temporal_ease)).toBe(1);
@@ -1588,6 +1679,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_spatial.aep")), "keyframe_spatial_bezier_arc");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
       expect(len(kf.in_temporal_ease)).toBe(1);
       expect(len(kf.out_temporal_ease)).toBe(1);
@@ -1599,6 +1691,7 @@ describe("TestTemporalEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_bounce_pattern");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(len(opacity.keyframes)).toBe(10);
     for (const kf of opacity.keyframes) {
       expect(len(kf.in_temporal_ease)).toBe(1);
@@ -1615,6 +1708,7 @@ describe("TestSpatialTangents", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_spatial.aep")), "keyframe_spatial_bezier_arc");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
       expect(kf.in_spatial_tangent).not.toBeNull();
       expect(kf.out_spatial_tangent).not.toBeNull();
@@ -1628,8 +1722,10 @@ describe("TestSpatialTangents", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_spatial.aep")), "keyframe_spatial_bezier_arc");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf0 = position.keyframes[0];
     expect(kf0.out_spatial_tangent).not.toBeNull();
+    if (kf0.out_spatial_tangent === null) throw new AssertionError_("kf0.out_spatial_tangent is None");
     expect(Math.abs(kf0.out_spatial_tangent[0] - 60.0) < 0.01).toBe(true);
     expect(Math.abs(kf0.out_spatial_tangent[1] - -80.0) < 0.01).toBe(true);
     expect(Math.abs(kf0.out_spatial_tangent[2] - 0.0) < 0.01).toBe(true);
@@ -1640,6 +1736,7 @@ describe("TestSpatialTangents", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_bezier_ease_in_out_1D");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     for (const kf of opacity.keyframes) {
       expect(kf.in_spatial_tangent).toBeNull();
       expect(kf.out_spatial_tangent).toBeNull();
@@ -1651,6 +1748,7 @@ describe("TestSpatialTangents", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_spatial.aep")), "keyframe_spatial_bezier_3D");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
       expect(kf.in_spatial_tangent).not.toBeNull();
       expect(kf.out_spatial_tangent).not.toBeNull();
@@ -1664,8 +1762,10 @@ describe("TestSpatialTangents", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_spatial.aep")), "keyframe_spatial_bezier_s_curve");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf1 = position.keyframes[1];
     expect(kf1.in_spatial_tangent).not.toBeNull();
+    if (kf1.in_spatial_tangent === null) throw new AssertionError_("kf1.in_spatial_tangent is None");
     expect(Math.abs(kf1.in_spatial_tangent[0] - -40.0) < 0.01).toBe(true);
     expect(Math.abs(kf1.in_spatial_tangent[1] - -60.0) < 0.01).toBe(true);
   });
@@ -1688,6 +1788,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf0 = position.keyframes[0];
     // [0,50,0] > [100,50,0] over 5 seconds (120 frames @ 24fps)
     // distance = 100, speed = 100/5 = 20
@@ -1700,6 +1801,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf1 = position.keyframes[1];
     expect(Math.abs(kf1.in_temporal_ease[0].speed - 20.0) < 0.01).toBe(true);
     expect(Math.abs(kf1.in_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
@@ -1710,6 +1812,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf0 = position.keyframes[0];
     expect(Math.abs(kf0.in_temporal_ease[0].speed) < 0.001).toBe(true);
     expect(Math.abs(kf0.in_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
@@ -1720,7 +1823,9 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     const kf_last = position.keyframes.at(-1);
+    if (kf_last === undefined) throw new IndexError("list index out of range");
     expect(Math.abs(kf_last.out_temporal_ease[0].speed) < 0.001).toBe(true);
     expect(
       Math.abs(kf_last.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001,
@@ -1732,6 +1837,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[0] (100%) > KF[1] (0%) over 3 sec (72 frames @ 24fps)
     // speed = (0 - 100) / 3 = -33.333
     const kf0 = opacity.keyframes[0];
@@ -1744,6 +1850,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[1]: BEZIER in, HOLD out
     const kf1 = opacity.keyframes[1];
     expect(Math.abs(kf1.out_temporal_ease[0].speed) < 0.001).toBe(true);
@@ -1755,6 +1862,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[2]: HOLD in, LINEAR out
     const kf2 = opacity.keyframes[2];
     expect(Math.abs(kf2.in_temporal_ease[0].speed) < 0.001).toBe(true);
@@ -1766,6 +1874,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[2] (100%) > KF[3] (50%) over 3 sec (72 frames @ 24fps)
     // speed = (50 - 100) / 3 = -16.667
     const kf2 = opacity.keyframes[2];
@@ -1778,6 +1887,7 @@ describe("TestLinearHoldEase", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_mixed_interpolation");
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[1]: BEZIER in - binary stores (speed=0, influence=0)
     const kf1 = opacity.keyframes[1];
     expect(Math.abs(kf1.in_temporal_ease[0].speed) < 0.001).toBe(true);
@@ -1917,10 +2027,14 @@ class TestTextAnimatorPool {
    */
   static AEP = SAMPLES_DIR.div("text_animator.aep");
 
-  static _props(app: any): PropertyGroup {
+  static _props(app: Application): PropertyGroup {
     const comp = app.project.compositions[0];
     const layer = comp.layers.find((lyr) => lyr.name === "Animate Me");
-    const animator = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators").properties[0];
+    if (layer === undefined) throw new StopIteration();
+    const animator = as_instance(
+      layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators").properties[0],
+      PropertyGroup,
+    );
     const props = animator.__getitem__("ADBE Text Animator Properties");
     expect(props instanceof PropertyGroup).toBe(true);
     return props;
@@ -1977,6 +2091,7 @@ describe("TestEffectMetadata", () => {
     const project = parse_project(SAMPLES_DIR.div("2_gaussian.aep"));
     const layer = get_first_layer(project);
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     let blur_dims: Property | null = null;
     for (const prop of effect.properties) {
@@ -1986,8 +2101,10 @@ describe("TestEffectMetadata", () => {
       }
     }
     expect(blur_dims).not.toBeNull();
+    if (blur_dims === null) throw new AssertionError_("blur_dims is None");
     expect(blur_dims.nb_options).toBe(3);
     expect(blur_dims.property_parameters).not.toBeNull();
+    if (blur_dims.property_parameters === null) throw new AssertionError_("blur_dims.property_parameters is None");
     expect(len(blur_dims.property_parameters)).toBe(3);
   });
 
@@ -1996,6 +2113,7 @@ describe("TestEffectMetadata", () => {
     const project = parse_project(SAMPLES_DIR.div("2_gaussian.aep"));
     const layer = get_first_layer(project);
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     // Repeat Edge Pixels is a boolean at its default - should not be modified
     let repeat_edge: Property | null = null;
@@ -2006,6 +2124,7 @@ describe("TestEffectMetadata", () => {
       }
     }
     expect(repeat_edge).not.toBeNull();
+    if (repeat_edge === null) throw new AssertionError_("repeat_edge is None");
     expect(repeat_edge.is_modified).toBe(false);
   });
 
@@ -2016,6 +2135,7 @@ describe("TestEffectMetadata", () => {
     expect(len(comp.layers) >= 1).toBe(true);
     const layer = comp.layers[0];
     expect(layer.effects).not.toBeNull();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const effect = layer.effects.properties[0] as PropertyGroup;
     let flare_center: Property | null = null;
     for (const prop of effect.properties) {
@@ -2025,6 +2145,7 @@ describe("TestEffectMetadata", () => {
       }
     }
     expect(flare_center).not.toBeNull();
+    if (flare_center === null) throw new AssertionError_("flare_center is None");
     expect(flare_center.property_value_type).toBe(PropertyValueType.TwoD_SPATIAL);
     // Value should be in pixel coordinates, not parT's 0-512 range
     expect(Array.isArray(flare_center.value)).toBe(true);
@@ -2093,8 +2214,11 @@ describe("TestCanSetExpression", () => {
     const opacity = _find_property(layer, "ADBE Opacity");
     const position = _find_property(layer, "ADBE Position");
     expect(scale).not.toBeNull();
+    if (scale === null) throw new AssertionError_("scale is None");
     expect(opacity).not.toBeNull();
+    if (opacity === null) throw new AssertionError_("opacity is None");
     expect(position).not.toBeNull();
+    if (position === null) throw new AssertionError_("position is None");
     expect(scale.can_set_expression).toBe(false);
     expect(opacity.can_set_expression).toBe(false);
     expect(position.can_set_expression).toBe(true);
@@ -2216,6 +2340,7 @@ describe("TestCanAddProperty", () => {
     const comp = project.compositions[0];
     const layer = comp.layers[0];
     const effect_parade = layer.effects;
+    if (effect_parade === null) throw new AssertionError_("layer.effects is None");
     expect(effect_parade.can_add_property("")).toBe(false);
   });
 
@@ -2228,6 +2353,7 @@ describe("TestCanAddProperty", () => {
     const comp = project.compositions[0];
     const layer = comp.layers[0];
     const effect_parade = layer.effects;
+    if (effect_parade === null) throw new AssertionError_("layer.effects is None");
     expect(effect_parade.match_name).toBe("ADBE Effect Parade");
     expect(effect_parade.property_type).toBe(PropertyType.INDEXED_GROUP);
     expect(effect_parade.can_add_property("ADBE Slider Control")).toBe(true);
@@ -2315,9 +2441,9 @@ class TestEffectPointSpeed {
   static SAMPLE = SAMPLES_DIR.div("effect_point_speed.aep");
   static MATCH_NAME = "ADBE Ramp-0001";
 
-  static _ramp_start(project: any): Property {
+  static _ramp_start(project: Project): Property {
     const comp = get_comp(project, "EffectPoint");
-    const prop = (comp.layers[0].effects.__getitem__(0) as PropertyGroup).property(TestEffectPointSpeed.MATCH_NAME);
+    const prop = (as_instance(comp.layers[0].effects, PropertyGroup).__getitem__(0) as PropertyGroup).property(TestEffectPointSpeed.MATCH_NAME);
     expect(prop instanceof Property).toBe(true);
     return prop as Property;
   }
@@ -2480,6 +2606,7 @@ describe("TestEffectPointNormalization", () => {
     expect(py_eq([comp.width, comp.height], [1920, 1080])).toBe(true);
     expect(py_eq([layer.width, layer.height], [200, 100])).toBe(true);
 
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const point = as_instance(
       layer.effects.properties
         .filter((effect) => effect.name === "Point Control")
@@ -2501,6 +2628,8 @@ describe("TestEffectPointNormalization", () => {
     const project = parse_aep(LAYER_SAMPLES_DIR.div("geometry_probe.aep")).project;
     const comp = get_comp(project, "PROBE_MAIN");
     const layer = comp.layers.find((lay) => lay.name === "solid_default");
+    if (layer === undefined) throw new StopIteration();
+    if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const point = as_instance(
       layer.effects.properties
         .filter((effect) => effect.name === "3D Point Control")
@@ -2529,10 +2658,10 @@ class TestMaskLayerSpace {
    * layer's mask space - its source's size, a unit square on a text or
    * shape layer, where a stored path is kept in layer pixels.
    */
-  static _comp: any = null;
+  static _comp: CompItem | null = null;
 
   /** Class-scoped fixture (`@pytest.fixture(scope="class")`), cached once per run. */
-  static comp(): any {
+  static comp(): CompItem {
     if (TestMaskLayerSpace._comp == null) {
       const project = parse_project(SAMPLES_DIR.div("mask_layer_space.aep"));
       TestMaskLayerSpace._comp = get_comp(project, "MASK_LAYER_SPACE");
@@ -2547,7 +2676,12 @@ describe("TestMaskLayerSpace", () => {
     const [layer_name, mask_name] = key.split("/");
     const expected = _MASK_LAYER_SPACE_PROBE[key];
     const layer = comp.layers.find((lay) => lay.name === layer_name);
-    const mask = layer.masks.properties.find((m) => m.name === mask_name);
+    if (layer === undefined) throw new StopIteration();
+    if (layer.masks === null) throw new AssertionError_("layer.masks is None");
+    const mask = as_instance(
+      layer.masks.properties.find((m) => m.name === mask_name),
+      MaskPropertyGroup,
+    );
     // The fixture's fresh masks really are path-less.
     expect(mask._mask_shape_tdsb == null).toBe(mask_name === "Mask 1");
     const mask_path = mask.property("ADBE Mask Shape");
@@ -2609,6 +2743,7 @@ describe("TestRotoBezierTangents", () => {
       const comp = get_comp(parse_project(SAMPLES_DIR.div(`${stem}.aep`)), "ROTO");
       let mask: any = null;
       outer: for (const layer of comp.layers) {
+        if (layer.masks === null) throw new AssertionError_("layer.masks is None");
         for (const m of layer.masks.properties) {
           if (m.name === mask_name) {
             mask = m;
@@ -2664,6 +2799,7 @@ describe("TestAnchorPointNormalization", () => {
   ])("test_static_anchor_point[%#]", (layer_name: string, expected: number[]) => {
     const comp = get_comp(parse_aep(SAMPLES_DIR.div("anchor_point_z.aep")).project, "anchor_z");
     const layer = comp.layers.find((lay) => lay.name === layer_name);
+    if (layer === undefined) throw new StopIteration();
     const anchor = (layer.property("ADBE Transform Group") as PropertyGroup).property("ADBE Anchor Point");
     expect(approx(anchor.value, expected)).toBe(true);
   });
@@ -2671,6 +2807,7 @@ describe("TestAnchorPointNormalization", () => {
   test("test_animated_anchor_point", () => {
     const comp = get_comp(parse_aep(SAMPLES_DIR.div("anchor_point_z.aep")).project, "anchor_z");
     const layer = comp.layers.find((lay) => lay.name === "solid_animated");
+    if (layer === undefined) throw new StopIteration();
     const anchor = (layer.property("ADBE Transform Group") as PropertyGroup).property("ADBE Anchor Point");
     const values = anchor.keyframes.map((kf) => kf.value);
     expect(len(values)).toBe(2);
