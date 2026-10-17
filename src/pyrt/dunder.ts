@@ -87,7 +87,8 @@ export function descriptors_of(cls: Function): Map<string, Descriptor> {
   return out;
 }
 
-const TARGET: unique symbol = Symbol("target");
+// `py_object` proxy -> the instance it wraps.
+const PROXY_TARGETS = new WeakMap<object, object>();
 
 function _has_getattr(x: object): x is { __getattr__(name: string): unknown } {
   return "__getattr__" in x && typeof x.__getattr__ === "function";
@@ -107,7 +108,6 @@ export function py_object<T extends object>(self: T): T {
   if (!has_getattr && !has_setattr) return self;
   const proxy = new Proxy(self, {
     get(target, key, receiver) {
-      if (key === TARGET) return target;
       if (typeof key === "symbol" || key in target || !has_getattr) return Reflect.get(target, key, receiver);
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
       // Python looks special methods (`__bool__`, `__eq__`, `__len__`, ...) up on the type,
@@ -123,20 +123,78 @@ export function py_object<T extends object>(self: T): T {
       return true;
     },
   });
+  PROXY_TARGETS.set(proxy, self);
   return proxy;
 }
 
+/**
+ * `__getattr__` / `__setattr__` for every instance of `cls` and its
+ * subclasses, without wrapping each instance in a `py_object` proxy: one
+ * proxy is spliced into the prototype chain between `cls.prototype` and its
+ * base's. A read of an own field or of a member of `cls` or a subclass
+ * stops before it; base-class members and misses reach it, and a miss goes
+ * to `__getattr__`. Shaped for speed: a `py_object` proxy traps every read
+ * and write, and most traffic on these objects is own fields and their own
+ * class's members.
+ *
+ * A write to an own field or to an accessor above the proxy skips
+ * `__setattr__`, so this is exact only for a `__setattr__` that lets every
+ * existing attribute through (as `object.__setattr__` would) and rules on
+ * new names alone. `setattr_passes_private`: `__setattr__` (on every
+ * subclass too) hands `_`-prefixed names straight to `object.__setattr__`,
+ * so a constructor's private fields skip it.
+ */
+export function py_class_hooks(cls: Function, kw: { setattr_passes_private?: boolean } = {}): void {
+  const private_pass = kw.setattr_passes_private ?? false;
+  // An empty target over the base prototype: the proxy then reports that prototype as its
+  // own, so `instanceof Base` still finds it in the chain.
+  const base: object = Object.create(Object.getPrototypeOf(cls.prototype));
+  const hooks = new Proxy(base, {
+    get(target, key, receiver) {
+      if (typeof key === "symbol" || key in target) return Reflect.get(target, key, receiver);
+      if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
+      // Special methods are looked up on the type, never through `__getattr__` (see `py_object`).
+      if (key.length > 4 && key.startsWith("__") && key.endsWith("__")) return undefined;
+      if (_has_getattr(receiver)) return receiver.__getattr__(key);
+      return undefined;
+    },
+    set(target, key, value, receiver) {
+      if (typeof key === "symbol" || (private_pass && key.startsWith("_")) || receiver === setattr_target || !_has_setattr(receiver)) {
+        return Reflect.set(target, key, value, receiver);
+      }
+      // `__setattr__` passes an existing name on to `object.__setattr__`, which reports no
+      // failure (a getter-only accessor ignores the write).
+      if (key in target) Reflect.set(target, key, value, receiver);
+      else receiver.__setattr__(key, value);
+      return true;
+    },
+  });
+  Object.setPrototypeOf(cls.prototype, hooks);
+}
+
 const in_setattr = new WeakSet<object>();
+// The object `object_setattr` is writing to (a `py_class_hooks` instance), if any.
+let setattr_target: object | null = null;
 
 /** The object a `py_object` proxy wraps (`self` itself when it is not one). */
 function target_of(self: object): object {
-  const target: unknown = Reflect.get(self, TARGET);
-  return typeof target === "object" && target !== null ? target : self;
+  return PROXY_TARGETS.get(self) ?? self;
 }
 
 /** `object.__setattr__(self, name, value)` - bypasses `__setattr__`, still runs descriptors. */
 export function object_setattr(self: object, name: string, value: unknown): void {
   const target = target_of(self);
+  if (target === self) {
+    // Not a `py_object` proxy: only a `py_class_hooks` proxy can see this write.
+    const outer = setattr_target;
+    setattr_target = self;
+    try {
+      Reflect.set(self, name, value);
+    } finally {
+      setattr_target = outer;
+    }
+    return;
+  }
   in_setattr.add(target);
   try {
     Reflect.set(target, name, value, self);
