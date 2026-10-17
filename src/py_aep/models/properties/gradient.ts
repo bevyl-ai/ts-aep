@@ -24,7 +24,7 @@ import { validate_normalized_float, validate_positive_int, validate_rgb_color, t
  * Used on `GradientColorStop`, `GradientAlphaStop`, and `Gradient` to
  * automatically re-serialize gradient XML when a field is modified.
  */
-export class _GradientField<T = unknown> {
+export class _GradientField<T> {
   declare ["constructor"]: ClassAttributes<typeof _GradientField>;
   static _VALIDATORS: Map<string, Validator> = new Map<string, Validator>([
     ["offset", validate_normalized_float],

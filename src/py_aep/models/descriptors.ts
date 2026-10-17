@@ -80,7 +80,7 @@ export type ChunkFieldOptions<T, O> = {
    * field is accepted.
    */
   transform?: { read(value: FieldValue): T }["read"] | null;
-  reverse?: ((value: NoInfer<T>) => unknown) | null;
+  reverse?: ((value: NoInfer<T>) => FieldValue) | null;
   read_only?: boolean;
   validate?: ((value: NoInfer<T>, obj: NoInfer<O>) => void) | null;
   default?: NoInfer<T>;
@@ -270,7 +270,7 @@ export class ChunkField<
   declare chunk_attr: string;
   declare field: string;
   declare transform: ((value: FieldValue) => T) | null;
-  declare reverse: ((value: T) => unknown) | null;
+  declare reverse: ((value: T) => FieldValue) | null;
   declare read_only: boolean;
   declare validate: ((value: T, obj: O) => void) | null;
   declare default: T | typeof _SENTINEL;
