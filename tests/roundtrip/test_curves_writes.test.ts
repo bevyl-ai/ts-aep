@@ -7,7 +7,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { BytesIO, getitem, Path, py_assert, py_bool, py_eq } from "../../src/pyrt/index.ts";
+import { at, BytesIO, getitem, Path, py_assert, py_bool, py_eq } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { type Chunk, write_chunk } from "../../src/py_aep/binary/chunk.ts";
@@ -16,8 +16,8 @@ import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
 
 const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "property", "curves.aep");
@@ -29,10 +29,11 @@ function _layer(project: Project, name: string): Layer {
 }
 
 function _curves(layer: Layer, index = 0): Property {
-  const prop = ((layer.__getitem__("ADBE Effect Parade") as PropertyGroup).properties[index] as PropertyGroup)
-    .__getitem__("ADBE CurvesCustom-0001");
+  const prop = as_instance(layer.__getitem__("ADBE Effect Parade").properties[index], PropertyGroup).__getitem__(
+    "ADBE CurvesCustom-0001",
+  );
   py_assert(prop instanceof Property);
-  return prop as Property;
+  return prop;
 }
 
 function _bytes(...chunks: (Chunk | null)[]): Uint8Array[] {
@@ -55,7 +56,7 @@ test("test_add_property_writes_an_untouched_curves", () => {
   // AE 2026's addProperty("ADBE CurvesCustom") writes an untouched
   // instance's bytes here, although the stored definition is keyed.
   const project = parse_project_fresh(SAMPLE);
-  (_layer(project, "keyed").__getitem__("ADBE Effect Parade") as PropertyGroup).add_property("ADBE CurvesCustom");
+  _layer(project, "keyed").__getitem__("ADBE Effect Parade").add_property("ADBE CurvesCustom");
   const out = tmp_path.div("out.aep");
   project.save(out);
 
@@ -79,14 +80,14 @@ test("test_moving_a_key_moves_its_curves", () => {
   const project = parse_project_fresh(SAMPLE);
   const prop = _curves(_layer(project, "keyed"));
   const first = prop.keyframes[0].value;
-  expect(first instanceof Curves).toBe(true);
+  py_assert(first instanceof Curves);
   prop.keyframes[0].time = 3.0;
   const out = tmp_path.div("out.aep");
   project.save(out);
 
   const keys = _curves(_layer(parse_aep(out).project, "keyed")).keyframes;
-  const moved = keys.at(-1)!.value;
-  expect(keys.at(-1)!.time).toBe(3.0);
-  expect(moved instanceof Curves).toBe(true);
-  expect(py_eq((getitem((moved as any).channels, "rgb") as any).points, (getitem((first as any).channels, "rgb") as any).points)).toBe(true);
+  const moved = at(keys, -1).value;
+  expect(at(keys, -1).time).toBe(3.0);
+  py_assert(moved instanceof Curves);
+  expect(py_eq(getitem(moved.channels, "rgb").points, getitem(first.channels, "rgb").points)).toBe(true);
 });

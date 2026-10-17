@@ -25,10 +25,10 @@ import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
 
-function _opacity_with_keys(comp: any, stretch: number): [any, any] {
+function _opacity_with_keys(comp: py_aep.CompItem, stretch: number): [py_aep.AVLayer, py_aep.Property<number>] {
   const layer = comp.add_solid([1, 0, 0], "L", 320, 240, 1.0);
   layer.stretch = stretch;
-  const op = layer.property("Transform").property("Opacity");
+  const op = as_instance(as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
   for (const [t, v] of [
     [1.0, 10.0],
     [4.0, 50.0],
@@ -64,14 +64,14 @@ describe("TestStretchedLayerTimebase", () => {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 320, 240, 1.0, 40.0, 24.0);
     const [_layer, op] = _opacity_with_keys(comp, stretch);
-    expect(approx(op.keyframes.map((kf: any) => kf.time), [1.0, 4.0, 7.0])).toBe(true);
+    expect(approx(op.keyframes.map((kf) => kf.time), [1.0, 4.0, 7.0])).toBe(true);
 
     const out = tmp_path.div("stretched.aep");
     app.project.save(out);
 
     const app2 = parse_app_fresh(out);
     const op2 = as_instance(as_instance(app2.project.compositions[0].layers[0].property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
-    expect(approx(op2.keyframes.map((kf: any) => kf.time), [1.0, 4.0, 7.0])).toBe(true);
+    expect(approx(op2.keyframes.map((kf) => kf.time), [1.0, 4.0, 7.0])).toBe(true);
   });
 
   test("test_ticks_are_layer_time", () => {
@@ -116,7 +116,7 @@ describe("TestStretchRetimesKeyframes", () => {
    * the layer is stretched to 200 % - composition seconds 2 and 10.
    */
 
-  function _animated(fps = 24.0): [any, any, any] {
+  function _animated(fps = 24.0): [py_aep.Application, py_aep.AVLayer, py_aep.Property<number>] {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 320, 240, 1.0, 40.0, fps);
     const layer = comp.add_solid([1, 1, 1], "L", 320, 240, 1.0);
@@ -128,13 +128,13 @@ describe("TestStretchRetimesKeyframes", () => {
 
   test("test_ticks_and_timebase_match_after_effects", () => {
     const [_app, layer, op] = _animated();
-    expect(py_eq(op.keyframes.map((kf: any) => kf._ldat_item.time_units), [24576, 122880])).toBe(true);
+    expect(py_eq(op.keyframes.map((kf) => kf._ldat_item.time_units), [24576, 122880])).toBe(true);
 
     layer.stretch = 200.0;
 
     expect(op._tdb4._time_base).toBe(49152);
-    expect(py_eq(op.keyframes.map((kf: any) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
-    expect(approx(op.keyframes.map((kf: any) => kf.time), [2.0, 10.0])).toBe(true);
+    expect(py_eq(op.keyframes.map((kf) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
+    expect(approx(op.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
   });
 
   test("test_stretching_back_restores_the_times", () => {
@@ -142,7 +142,7 @@ describe("TestStretchRetimesKeyframes", () => {
     layer.stretch = 200.0;
     layer.stretch = 100.0;
 
-    expect(approx(op.keyframes.map((kf: any) => kf.time), [1.0, 5.0])).toBe(true);
+    expect(approx(op.keyframes.map((kf) => kf.time), [1.0, 5.0])).toBe(true);
   });
 
   test("test_survives_a_roundtrip", () => {
@@ -154,8 +154,8 @@ describe("TestStretchRetimesKeyframes", () => {
     app.project.save(out);
 
     const op2 = as_instance(as_instance(parse_app_fresh(out).project.compositions[0].layers[0].property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
-    expect(approx(op2.keyframes.map((kf: any) => kf.time), [2.0, 10.0])).toBe(true);
-    expect(py_eq(op2.keyframes.map((kf: any) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
+    expect(approx(op2.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
+    expect(py_eq(op2.keyframes.map((kf) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
   });
 });
 
@@ -194,7 +194,7 @@ describe("TestNegativeStretchOffset", () => {
     op.set_value_at_time(4.0, 90.0);
     layer.stretch = stretch;
 
-    const got = op.keyframes.map((kf: any) => kf.time);
+    const got = op.keyframes.map((kf) => kf.time);
     expect(approx(got, getitem(AE, stretch), { abs: 1e-6 })).toBe(true);
   });
 
@@ -207,7 +207,7 @@ describe("TestNegativeStretchOffset", () => {
     op.set_value_at_time(4.0, 90.0);
     layer.stretch = 150.0;
 
-    expect(approx(op.keyframes.map((kf: any) => kf.time), [1.5, 6.0])).toBe(true);
+    expect(approx(op.keyframes.map((kf) => kf.time), [1.5, 6.0])).toBe(true);
   });
 });
 
@@ -217,7 +217,7 @@ describe("TestValueAtTimeRejectsNaN", () => {
    * accepted and evaluates to the last keyframe.
    */
 
-  function _animated(): any {
+  function _animated(): py_aep.Property<number> {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 200, 200, 1.0, 10.0, 24.0);
     const layer = comp.add_solid([1, 0, 0], "L", 100, 100, 1.0);

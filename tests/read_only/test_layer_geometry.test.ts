@@ -35,6 +35,8 @@ import {
 import "../../src/py_aep/binary/_register.ts";
 import { parse_project } from "../conftest.ts";
 import { font_version_string } from "../../src/py_aep/svg/fonts.ts";
+import { AVLayer, CompItem, Layer, Project } from "../../src/py_aep/index.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");
@@ -53,12 +55,14 @@ const CAMERA_POINTS = [[0.0, 0.0], [100.0, 50.0], [200.0, 100.0]];
  *
  * Returns true when the test must be skipped; callers `return` on true.
  */
-function _skip_unless_fonts_match(layer: any): boolean {
+function _skip_unless_fonts_match(layer: Layer): boolean {
   // TODO(port): harfbuzzjs (0.4.7) vs uharfbuzz shaping cannot be closed here. This
   // check only proves the package resolves; text-layer sourceRectAtTime cases
   // (TEXT_INK fixture) may differ from uharfbuzz-measured advances.
   if (!importorskip("harfbuzzjs")) return true;
-  const document = layer.text.__getitem__("ADBE Text Document").value;
+  const text = layer.text;
+  py_assert(text != null, "not a text layer");
+  const document = text.__getitem__("ADBE Text Document").value;
   for (const font of document._fonts) {
     if (!py_eq(font_version_string(font.post_script_name), font.version)) {
       skip(`${font.post_script_name} not installed at the fixture's version`);
@@ -73,20 +77,67 @@ function _pt_repr(pt: number[]): string {
   return `[${pt.map(float_repr).join(", ")}]`;
 }
 
-function _fixture(name: string): any {
+// Shapes of the AE probe JSON fixtures.
+interface PointProbe {
+  ok: boolean;
+  value: number[];
+}
+interface PointsEntry {
+  s2c: PointProbe[];
+  c2s: PointProbe[];
+}
+interface CtfpValue {
+  anchorPoint: number[];
+  position: number[];
+  xRotation: number;
+  yRotation: number;
+  zRotation: number;
+  scale: number[];
+}
+interface Rect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+type PointsProbeJson = Record<string, Record<string, PointsEntry>>;
+type CameraRigsProbeJson = Record<string, { conv: Record<string, PointsEntry> }>;
+type CtfpProbeJson = Record<string, Record<string, { value: CtfpValue }>>;
+type RectsProbeJson = Record<string, Record<string, { value: Rect }>>;
+type ShapeRectsProbeJson = Record<string, { time: number; ext: Rect; noext: Rect }>;
+// Per layer: `autoOrient` (a string) plus one record of points per `t<time>` key.
+type AutoOrientProbeJson = Record<string, Record<string, Record<string, number[]> | string>>;
+type TextInkProbeJson = Record<string, { ext: Rect; noext: Rect }>;
+
+function _fixture<T>(name: string): T {
   return JSON.parse(SAMPLES_DIR.div(name).read_text("utf-8"));
 }
 
-function _probe_comp(project: any): any {
-  const found = project.compositions.find((c: any) => py_eq(c.name, "PROBE_MAIN"));
-  if (found === undefined) throw new StopIteration();
-  return found;
+// NOTE(port): local stand-in for Python `next(genexpr)`; first match or StopIteration, as in CPython.
+function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
+  for (const x of items) if (pred(x)) return x;
+  throw new StopIteration();
 }
 
-function _layer(comp: any, name: string): any {
-  const found = comp.layers.find((ly: any) => py_eq(ly.name, name));
-  if (found === undefined) throw new StopIteration();
-  return found;
+function _comp(project: Project, name: string): CompItem {
+  return _next(project.compositions, (c) => py_eq(c.name, name));
+}
+
+function _probe_comp(project: Project): CompItem {
+  return _comp(project, "PROBE_MAIN");
+}
+
+function _layer(comp: CompItem, name: string): AVLayer {
+  return as_instance(
+    _next(comp.layers, (ly) => py_eq(ly.name, name)),
+    AVLayer,
+  );
+}
+
+// `[*v]` on a transform value: a scalar is not iterable in Python either.
+function _vec(v: number | number[]): number[] {
+  if (typeof v === "number") throw new TypeError_("'float' object is not iterable");
+  return v;
 }
 
 describe("TestPointConversions", () => {
@@ -96,12 +147,12 @@ describe("TestPointConversions", () => {
     ["time0", 0.0],
     ["time1.5", 1.5],
   ])("test_all_layers_match_ae[%#]", (time_key, time_val) => {
-    const expected = _fixture("geometry_points_probe.json")[time_key];
+    const expected = _fixture<PointsProbeJson>("geometry_points_probe.json")[time_key];
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     for (const [layer_name, entry] of Object.entries(expected)) {
       const layer = _layer(comp, layer_name);
       for (const [pi, pt] of POINTS.entries()) {
-        const want = (entry as any)["s2c"][pi];
+        const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.source_point_to_comp(pt, time_val);
           py_assert(
@@ -109,7 +160,7 @@ describe("TestPointConversions", () => {
             `${layer_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
           );
         }
-        const want_c2s = (entry as any)["c2s"][pi];
+        const want_c2s = entry["c2s"][pi];
         if (want_c2s["ok"]) {
           const got = layer.comp_point_to_source(pt, time_val);
           py_assert(
@@ -156,14 +207,14 @@ describe("TestPointConversionsUnderCameras", () => {
     ["CAM_KEYED", "keyed_zoom"],
     ["CAM_NONE", "no_camera"],
   ])("test_rig_matches_ae[%#]", (comp_name, fixture_key) => {
-    const expected = _fixture("camera_rigs_probe.json")[fixture_key]["conv"];
+    const expected = _fixture<CameraRigsProbeJson>("camera_rigs_probe.json")[fixture_key]["conv"];
     const project = parse_project(CAMERAS_AEP);
-    const comp = project.compositions.find((c: any) => py_eq(c.name, comp_name));
+    const comp = _comp(project, comp_name);
     const layer = _layer(comp, "target3d");
     for (const [time_key, entry] of Object.entries(expected)) {
-      const time_val = float((time_key as string).slice(1));
+      const time_val = float(time_key.slice(1));
       for (const [pi, pt] of CAMERA_POINTS.entries()) {
-        const want = (entry as any)["s2c"][pi];
+        const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.source_point_to_comp(pt, time_val);
           py_assert(
@@ -171,7 +222,7 @@ describe("TestPointConversionsUnderCameras", () => {
             `${comp_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
           );
         }
-        const want_c2s = (entry as any)["c2s"][pi];
+        const want_c2s = entry["c2s"][pi];
         if (want_c2s["ok"]) {
           const got = layer.comp_point_to_source(pt, time_val);
           py_assert(
@@ -207,7 +258,7 @@ describe("TestCalculateTransformFromPoints", () => {
     ["rect200x100", [[0, 0, 0], [200, 0, 0], [0, 100, 0]]],
   ]);
 
-  function _assert_matches(got: any, want: any): void {
+  function _assert_matches(got: Record<string, number | number[]>, want: CtfpValue): void {
     expect(py_eq(got["anchor_point"], want["anchorPoint"])).toBe(true);
     expect(approx(got["position"], want["position"], { abs: 1e-9 })).toBe(true);
     expect(approx(got["x_rotation"], want["xRotation"], { abs: 1e-4 })).toBe(true);
@@ -217,7 +268,7 @@ describe("TestCalculateTransformFromPoints", () => {
   }
 
   test.each([["layer2d"], ["layer3d"]])("test_solid_point_sets[%#]", (layer_key) => {
-    const expected = _fixture("geometry_ctfp_probe.json")[layer_key];
+    const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe.json")[layer_key];
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, layer_key === "layer2d" ? "solid_default" : "solid_3d");
     for (const [key, [tl, tr, bl]] of SETS) {
@@ -227,7 +278,7 @@ describe("TestCalculateTransformFromPoints", () => {
   });
 
   test("test_mirrored_point_sets", () => {
-    const expected = _fixture("geometry_ctfp_probe2.json")["solid"];
+    const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe2.json")["solid"];
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     for (const [key, [tl, tr, bl]] of MIRROR_SETS) {
@@ -238,7 +289,7 @@ describe("TestCalculateTransformFromPoints", () => {
 
   test("test_source_dimension_divisor", () => {
     // 640x346 footage: confirms the scale divisor is the SOURCE size.
-    const expected = _fixture("geometry_ctfp_probe2.json")["footage"];
+    const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe2.json")["footage"];
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "footage_layer");
     for (const [key, [tl, tr, bl]] of FOOTAGE_SETS) {
@@ -260,7 +311,7 @@ describe("TestSourceRectAtTime", () => {
   /** Footage/solid/precomp/shape rects; text refuses. */
 
   test("test_rects_match_ae", () => {
-    const expected = _fixture("geometry_rects_probe.json");
+    const expected = _fixture<RectsProbeJson>("geometry_rects_probe.json");
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     for (const layer_name of [
       "solid_default",
@@ -288,14 +339,14 @@ describe("TestSourceRectAtTime", () => {
   });
 
   test.each([["text_point"], ["text_box"], ["text_animated"]])("test_text_rects_match_ae[%#]", (layer_name) => {
-    const expected = _fixture("geometry_rects_probe.json")[layer_name];
+    const expected = _fixture<RectsProbeJson>("geometry_rects_probe.json")[layer_name];
     const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), layer_name);
     if (_skip_unless_fonts_match(layer)) return;
     for (const [key, record] of Object.entries(expected)) {
       const [time_key, suffix] = split(key, "_");
       const got = layer.source_rect_at_time(float(time_key.slice(1)), suffix === "ext");
-      for (const side of ["top", "left", "width", "height"]) {
-        expect(approx(got[side], (record as any)["value"][side], { abs: 1e-3 })).toBe(true);
+      for (const side of ["top", "left", "width", "height"] as const) {
+        expect(approx(got[side], record["value"][side], { abs: 1e-3 })).toBe(true);
       }
     }
   });
@@ -303,8 +354,14 @@ describe("TestSourceRectAtTime", () => {
   test("test_invalid_args_raise", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
-    raises(TypeError_, () => layer.source_rect_at_time([0.0] as any, false));
-    raises(TypeError_, () => layer.source_rect_at_time(0.0, "yes" as any));
+    raises(TypeError_, () =>
+      // @ts-expect-error deliberately passes a list time to check runtime validation
+      layer.source_rect_at_time([0.0], false),
+    );
+    raises(TypeError_, () =>
+      // @ts-expect-error deliberately passes a string extents to check runtime validation
+      layer.source_rect_at_time(0.0, "yes"),
+    );
   });
 });
 
@@ -329,14 +386,14 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
         [0.0, magnitude, 0.0],
       );
       const values = [
-        ...got["anchor_point"],
-        ...got["position"],
-        ...got["scale"],
+        ..._vec(got["anchor_point"]),
+        ..._vec(got["position"]),
+        ..._vec(got["scale"]),
         got["x_rotation"],
         got["y_rotation"],
         got["z_rotation"],
       ];
-      py_assert(values.every((v: number) => Number.isFinite(v)), repr(got));
+      py_assert(values.every((v) => Number.isFinite(v)), repr(got));
     },
   );
 
@@ -349,12 +406,12 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
       [1e300, 0.0, 0.0],
       [0.0, 1e300, 0.0],
     );
-    expect(approx(got["scale"][0], (1e300 / layer.width) * 100.0)).toBe(true);
-    expect(approx(got["scale"][1], (1e300 / layer.height) * 100.0)).toBe(true);
+    expect(approx(_vec(got["scale"])[0], (1e300 / layer.width) * 100.0)).toBe(true);
+    expect(approx(_vec(got["scale"])[1], (1e300 / layer.height) * 100.0)).toBe(true);
   });
 });
 
-const _SHAPE_TRUTH = _fixture("shape_source_rect_probe.json");
+const _SHAPE_TRUTH = _fixture<ShapeRectsProbeJson>("shape_source_rect_probe.json");
 const _UNMODELED_SHAPES = new Set(["mod_offset", "ps_k2_p5.5_r50"]);
 
 describe("TestShapeSourceRect", () => {
@@ -366,10 +423,10 @@ describe("TestShapeSourceRect", () => {
    */
 
   // `@pytest.fixture(scope="class") def comp` - parsed once, on first use.
-  let _comp: any;
-  function comp_fixture(): any {
-    _comp ??= parse_project(SHAPES_AEP).compositions.find((c: any) => py_eq(c.name, "SHAPE_RECTS"));
-    return _comp;
+  let _shapes_comp: CompItem | undefined;
+  function comp_fixture(): CompItem {
+    _shapes_comp ??= _comp(parse_project(SHAPES_AEP), "SHAPE_RECTS");
+    return _shapes_comp;
   }
 
   const SHAPE_NAMES = sorted(Object.keys(_SHAPE_TRUTH).filter((n) => !_UNMODELED_SHAPES.has(n)));
@@ -380,7 +437,7 @@ describe("TestShapeSourceRect", () => {
     const record = _SHAPE_TRUTH[name];
     const want = record[extents ? "ext" : "noext"];
     const got = _layer(comp, name).source_rect_at_time(record["time"], extents);
-    for (const key of ["top", "left", "width", "height"]) {
+    for (const key of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
       py_assert(approx(got[key], want[key], { abs: 1e-3 }), key);
     }
@@ -395,7 +452,7 @@ describe("TestShapeSourceRect", () => {
   );
 });
 
-const _ORIENT_TRUTH = _fixture("auto_orient_probe.json");
+const _ORIENT_TRUTH = _fixture<AutoOrientProbeJson>("auto_orient_probe.json");
 
 describe("TestAutoOrientPointConversions", () => {
   /**
@@ -408,9 +465,9 @@ describe("TestAutoOrientPointConversions", () => {
    * point lights.
    */
 
-  let _comps: Map<string, any> | undefined;
-  function comps_fixture(): Map<string, any> {
-    _comps ??= new Map(parse_project(AUTO_ORIENT_AEP).compositions.map((comp: any) => [String(comp.name), comp]));
+  let _comps: Map<string, CompItem> | undefined;
+  function comps_fixture(): Map<string, CompItem> {
+    _comps ??= new Map(parse_project(AUTO_ORIENT_AEP).compositions.map((comp) => [String(comp.name), comp]));
     return _comps;
   }
 
@@ -420,16 +477,17 @@ describe("TestAutoOrientPointConversions", () => {
     const layer = _layer(getitem(comps, comp_name), layer_name);
     for (const [time_key, record] of Object.entries(_ORIENT_TRUTH[key])) {
       if (!time_key.startsWith("t")) continue;
+      py_assert(typeof record !== "string", time_key);
       const time = float(time_key.slice(1));
       // All three conversions run before any comparison, as in the Python tuple.
-      const probes = [
+      const probes: [string, number[]][] = [
         ["p00", layer.source_point_to_comp([0.0, 0.0], time)],
         ["p10050", layer.source_point_to_comp([100.0, 50.0], time)],
         ["inv", layer.comp_point_to_source([500.0, 400.0], time)],
       ];
       for (const [point, got] of probes) {
         py_assert(
-          approx(got, (record as any)[point], { abs: 1e-2 }),
+          approx(got, record[point], { abs: 1e-2 }),
           `(${repr(time_key)}, ${repr(point)})`,
         );
       }
@@ -437,7 +495,7 @@ describe("TestAutoOrientPointConversions", () => {
   });
 });
 
-const _TEXT_TRUTH = _fixture("text_ink_probe.json");
+const _TEXT_TRUTH = _fixture<TextInkProbeJson>("text_ink_probe.json");
 
 describe("TestTextSourceRect", () => {
   /**
@@ -446,10 +504,10 @@ describe("TestTextSourceRect", () => {
    * TrueType fonts, justification, leading, tracking and stroke.
    */
 
-  let _comp: any;
-  function comp_fixture(): any {
-    _comp ??= parse_project(TEXT_INK_AEP).compositions.find((c: any) => py_eq(c.name, "TEXT_INK"));
-    return _comp;
+  let _text_comp: CompItem | undefined;
+  function comp_fixture(): CompItem {
+    _text_comp ??= _comp(parse_project(TEXT_INK_AEP), "TEXT_INK");
+    return _text_comp;
   }
 
   const TEXT_CASES = sorted(Object.keys(_TEXT_TRUTH)).flatMap((name) => [false, true].map((extents): [string, boolean] => [name, extents]));
@@ -459,7 +517,7 @@ describe("TestTextSourceRect", () => {
     if (_skip_unless_fonts_match(layer)) return;
     const want = _TEXT_TRUTH[name][extents ? "ext" : "noext"];
     const got = layer.source_rect_at_time(0.0, extents);
-    for (const side of ["top", "left", "width", "height"]) {
+    for (const side of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
       py_assert(approx(got[side], want[side], { abs: 1e-3 }), side);
     }

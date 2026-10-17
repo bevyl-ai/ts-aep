@@ -16,7 +16,7 @@ import { Mat4, _rotate_x, _rotate_y, _rotate_z, _translation, build_local_matrix
 // ------------------------------------------------------------------
 
 /** Assert two values (scalar or nested list) are approximately equal. */
-function _approx(a: any, b: any, tol = 1e-6): void {
+function _approx(a: number | number[], b: number | number[], tol = 1e-6): void {
   if (Array.isArray(a) && Array.isArray(b)) {
     py_assert(a.length === b.length, `length mismatch: ${a.length} vs ${b.length}`);
     for (const [i, [ai, bi]] of enumerate(zip(a, b))) {

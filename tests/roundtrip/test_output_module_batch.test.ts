@@ -4,16 +4,25 @@
 
 import { expect, test } from "bun:test";
 
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
 import { AudioChannels, AudioCodec, OutputChannels, OutputColorDepth, OutputColorMode } from "../../src/py_aep/enums/index.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
+import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { int, Path, py_eq, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("format_options");
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
-function _om(project: any): any {
-  return project.render_queue.items[0].output_modules[0];
+function _om(project: Project): OutputModule {
+  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+}
+
+function _fo(om: OutputModule): XmlFormatOptions {
+  return as_instance(om.format_options, XmlFormatOptions);
 }
 
 /** The write order that raises outside a batch passes inside one. */
@@ -25,7 +34,7 @@ test("test_coupled_writes_succeed_in_any_order", () => {
   const om = _om(project);
   om.batch_edit(() => {
     om.settings.__setitem__("Audio Sample Rate", 22050);
-    om.format_options.audio_codec = AudioCodec.GSM_6_10;
+    _fo(om).audio_codec = AudioCodec.GSM_6_10;
     om.settings.__setitem__("Audio Channels", AudioChannels.MONO);
   });
   project.save(tmp_path.div("a.aep"));
@@ -33,7 +42,7 @@ test("test_coupled_writes_succeed_in_any_order", () => {
   const project2 = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om2 = _om(project2);
   om2.batch_edit(() => {
-    om2.format_options.audio_codec = AudioCodec.GSM_6_10;
+    _fo(om2).audio_codec = AudioCodec.GSM_6_10;
     om2.settings.__setitem__("Audio Channels", AudioChannels.MONO);
     om2.settings.__setitem__("Audio Sample Rate", 22050);
   });
@@ -41,7 +50,7 @@ test("test_coupled_writes_succeed_in_any_order", () => {
 
   for (const name of ["a.aep", "b.aep"]) {
     const om3 = _om(parse_project_fresh(tmp_path.div(name)));
-    expect(om3.format_options.audio_codec).toBe(AudioCodec.GSM_6_10);
+    expect(_fo(om3).audio_codec).toBe(AudioCodec.GSM_6_10);
     expect(om3.settings.__getitem__("Audio Channels")).toBe(AudioChannels.MONO);
     expect(int(om3.settings.__getitem__("Audio Sample Rate"))).toBe(22050);
   }
@@ -51,10 +60,10 @@ test("test_invalid_final_state_rolls_back_everything", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
   const before = om.get_settings();
-  const before_codec = om.format_options.audio_codec;
+  const before_codec = _fo(om).audio_codec;
   const excinfo = raises(ValueError, () => {
     om.batch_edit(() => {
-      om.format_options.audio_codec = AudioCodec.GSM_6_10;
+      _fo(om).audio_codec = AudioCodec.GSM_6_10;
       om.settings.__setitem__("Audio Sample Rate", 96000); // invalid under GSM
       om.settings.__setitem__("Audio Channels", AudioChannels.STEREO); // invalid
     });
@@ -63,7 +72,7 @@ test("test_invalid_final_state_rolls_back_everything", () => {
   expect(excinfo.message.includes("Audio Sample Rate")).toBe(true);
   expect(excinfo.message.includes("Audio Channels")).toBe(true);
   expect(py_eq(om.get_settings(), before)).toBe(true);
-  expect(om.format_options.audio_codec).toBe(before_codec);
+  expect(_fo(om).audio_codec).toBe(before_codec);
 });
 
 test("test_body_exception_rolls_back_and_propagates", () => {
@@ -71,11 +80,11 @@ test("test_body_exception_rolls_back_and_propagates", () => {
   const om = _om(project);
   raises(RuntimeError, () => {
     om.batch_edit(() => {
-      om.format_options.bitrate = 320;
+      _fo(om).bitrate = 320;
       throw new RuntimeError("boom");
     });
   });
-  expect(om.format_options.bitrate).toBe(128);
+  expect(_fo(om).bitrate).toBe(128);
 });
 
 /** A rolled-back batch leaves no trace in the saved bytes. */
@@ -89,7 +98,7 @@ test("test_rollback_restores_byte_identical_save", () => {
   const om = _om(project2);
   raises(ValueError, () => {
     om.batch_edit(() => {
-      om.format_options.audio_codec = AudioCodec.GSM_6_10;
+      _fo(om).audio_codec = AudioCodec.GSM_6_10;
       om.settings.__setitem__("Audio Sample Rate", 96000);
     });
   });
@@ -107,11 +116,11 @@ test("test_stale_untouched_dependent_is_flagged", () => {
   const om = _om(project);
   const excinfo = raises(ValueError, () => {
     om.batch_edit(() => {
-      om.format_options.bitrate = 320; // stored rate stays 44100
+      _fo(om).bitrate = 320; // stored rate stays 44100
     });
   });
   expect(excinfo.message.includes("Audio Sample Rate")).toBe(true);
-  expect(om.format_options.bitrate).toBe(128); // rolled back
+  expect(_fo(om).bitrate).toBe(128); // rolled back
 });
 
 /**
@@ -119,7 +128,7 @@ test("test_stale_untouched_dependent_is_flagged", () => {
  * converge on the same final state (no in-batch pairing flips).
  */
 test("test_depth_and_channels_converge_in_any_order", () => {
-  const results: any[] = [];
+  const results: SettingValue[] = [];
   for (const [first, second] of [
     ["depth", "channels"],
     ["channels", "depth"],
