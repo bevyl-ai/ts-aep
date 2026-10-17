@@ -1,7 +1,7 @@
 /** Tests for CompItem layer creation methods. */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, contains, len, py_eq } from "../../src/pyrt/index.ts";
+import { Path, TypeError_, ValueError, contains, len, py_assert, py_eq } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { new as new_, parse as parse_aep } from "../../src/py_aep/index.ts";
 import { LineOrientation } from "../../src/py_aep/enums/index.ts";
@@ -11,6 +11,8 @@ import { LightLayer } from "../../src/py_aep/models/layers/light_layer.ts";
 import { ShapeLayer } from "../../src/py_aep/models/layers/shape_layer.ts";
 import { TextLayer } from "../../src/py_aep/models/layers/text_layer.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { as_instance } from "../helpers.ts";
@@ -85,7 +87,7 @@ describe("TestAddNull", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_null();
-    expect(layer.source != null).toBe(true);
+    py_assert(layer.source != null);
     expect(layer.source.name).toBe("Null 1");
   });
 
@@ -94,14 +96,19 @@ describe("TestAddNull", () => {
     // solid.
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "layer_misc.aep"));
-    const ae_solid = app.project.footages.find((f) => f.name === "Null 1");
+    const ae_solid = as_instance(app.project.footages.find((f) => f.name === "Null 1"), FootageItem);
     const layer = app.project.compositions[0].add_null();
     app.project.save(tmp_path.div("out.aep"));
-    const solid = parse_aep(tmp_path.div("out.aep")).project.footages.find(
-      (f) => f.id === layer.source.id,
+    const solid = as_instance(
+      parse_aep(tmp_path.div("out.aep")).project.footages.find(
+        (f) => f.id === as_instance(layer.source, FootageItem).id,
+      ),
+      FootageItem,
     );
-    expect(py_eq((solid as any).main_source.color, (ae_solid as any).main_source.color)).toBe(true);
-    expect(py_eq((ae_solid as any).main_source.color, [1.0, 1.0, 1.0])).toBe(true);
+    const solid_color = as_instance(solid.main_source, SolidSource).color;
+    const ae_solid_color = as_instance(ae_solid.main_source, SolidSource).color;
+    expect(py_eq(solid_color, ae_solid_color)).toBe(true);
+    expect(py_eq(ae_solid_color, [1.0, 1.0, 1.0])).toBe(true);
     expect(py_eq([solid.width, solid.height], [ae_solid.width, ae_solid.height])).toBe(true);
   });
 
@@ -415,7 +422,7 @@ describe("TestAddSolid", () => {
     const app = new_();
     let comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 24.0);
     const first = comp.add_solid([1.0, 0.0, 0.0], "A");
-    const folder = first.source.parent_folder;
+    const folder = as_instance(as_instance(first.source, FootageItem).parent_folder, FolderItem);
     expect(app.project._solids_folder_id).toBe(folder.id);
     folder.name = "Renamed";
     const holder = app.project.root_folder.add_folder("Holder");
@@ -426,7 +433,7 @@ describe("TestAddSolid", () => {
     const project = parse_aep(out).project;
     comp = project.compositions[0];
     const second = comp.add_solid([0.0, 1.0, 0.0], "B");
-    expect(second.source.parent_folder.name).toBe("Renamed");
+    expect(as_instance(as_instance(second.source, FootageItem).parent_folder, FolderItem).name).toBe("Renamed");
     expect(py_eq(project.root_folder.folders.map((f) => f.name), ["Holder"])).toBe(true);
   });
 
@@ -439,7 +446,7 @@ describe("TestAddSolid", () => {
     const existing = app.project.root_folder.add_folder("Solids");
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 24.0);
     const layer = comp.add_solid([1.0, 0.0, 0.0], "A");
-    expect(layer.source.parent_folder).toBe(existing);
+    expect(as_instance(layer.source, FootageItem).parent_folder).toBe(existing);
     expect(app.project._solids_folder_id).toBe(0);
   });
 
@@ -598,6 +605,7 @@ describe("TestAddText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_text("Hello World");
+    py_assert(layer.text != null);
     const st = layer.text.property("ADBE Text Document");
     expect(st instanceof Property).toBe(true);
     expect(st.value != null).toBe(true);
@@ -624,6 +632,7 @@ describe("TestAddText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_text("Test");
+    py_assert(layer.text != null);
     const st = layer.text.property("ADBE Text Document");
     expect(approx(st.value.font_size, 36.0)).toBe(true);
   });
@@ -632,6 +641,7 @@ describe("TestAddText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_text("Big Text");
+    py_assert(layer.text != null);
     const st = layer.text.property("ADBE Text Document");
     const td = st.value;
     td.font_size = 72.0;
@@ -653,6 +663,7 @@ describe("TestAddText", () => {
     const lyr2 = comp2.layers[0];
     expect(lyr2.id).toBe(layer_id);
     expect(lyr2 instanceof TextLayer).toBe(true);
+    py_assert(lyr2.text != null);
     const st = lyr2.text.property("ADBE Text Document");
     expect(st.value.text).toBe("Hello World");
   });
@@ -662,6 +673,7 @@ describe("TestAddText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_text("Sized");
+    py_assert(layer.text != null);
     const st = layer.text.property("ADBE Text Document");
     const td = st.value;
     td.font_size = 48.0;
@@ -670,7 +682,9 @@ describe("TestAddText", () => {
     const app2 = parse_aep(tmp_path.div("out.aep"));
     const comp2 = app2.project.compositions[0];
 
-    const st2 = comp2.layers[0].text.property("ADBE Text Document");
+    const text2 = comp2.layers[0].text;
+    py_assert(text2 != null);
+    const st2 = text2.property("ADBE Text Document");
     expect(approx(st2.value.font_size, 48.0)).toBe(true);
   });
 });
@@ -691,6 +705,7 @@ describe("TestAddBoxText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_box_text([400, 200], "Paragraph Text");
+    py_assert(layer.text != null);
     const st = layer.text.property("ADBE Text Document");
     expect(st.value.text).toBe("Paragraph Text");
   });
@@ -710,6 +725,7 @@ describe("TestAddBoxText", () => {
     const lyr2 = comp2.layers[0];
     expect(lyr2.id).toBe(layer_id);
     expect(lyr2 instanceof TextLayer).toBe(true);
+    py_assert(lyr2.text != null);
     const st = lyr2.text.property("ADBE Text Document");
     expect(st.value.text).toBe("Box Text");
   });
@@ -731,6 +747,7 @@ describe("TestAddVerticalText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_vertical_text("Hello");
+    py_assert(layer.text != null);
     const td = layer.text.property("ADBE Text Document").value;
     expect(td.text).toBe("Hello");
     expect(td.line_orientation).toBe(LineOrientation.VERTICAL_RIGHT_TO_LEFT);
@@ -752,6 +769,7 @@ describe("TestAddVerticalText", () => {
     const lyr2 = comp2.layers[0];
     expect(lyr2.id).toBe(layer_id);
     expect(lyr2 instanceof TextLayer).toBe(true);
+    py_assert(lyr2.text != null);
     const td = lyr2.text.property("ADBE Text Document").value;
     expect(td.text).toBe("Vertical");
     expect(td.line_orientation).toBe(LineOrientation.VERTICAL_RIGHT_TO_LEFT);
@@ -774,6 +792,7 @@ describe("TestAddVerticalBoxText", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.add_vertical_box_text([400, 200], "VBox");
+    py_assert(layer.text != null);
     const td = layer.text.property("ADBE Text Document").value;
     expect(td.text).toBe("VBox");
     expect(td.line_orientation).toBe(LineOrientation.VERTICAL_RIGHT_TO_LEFT);
@@ -796,6 +815,7 @@ describe("TestAddVerticalBoxText", () => {
     const lyr2 = comp2.layers[0];
     expect(lyr2.id).toBe(layer_id);
     expect(lyr2 instanceof TextLayer).toBe(true);
+    py_assert(lyr2.text != null);
     const td = lyr2.text.property("ADBE Text Document").value;
     expect(td.text).toBe("VBox Text");
     expect(td.line_orientation).toBe(LineOrientation.VERTICAL_RIGHT_TO_LEFT);

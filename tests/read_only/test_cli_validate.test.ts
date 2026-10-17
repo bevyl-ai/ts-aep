@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { load_expected, parse_project } from "../conftest.ts";
-import { ValidationResult, compare_layer, compare_project_level, compare_property, to_dict, validate_aep } from "../../src/py_aep/cli/validate.ts";
+import { type Dict, ValidationResult, compare_layer, compare_project_level, compare_property, to_dict, validate_aep } from "../../src/py_aep/cli/validate.ts";
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Path, contains, dict_get, getitem, len, py_bool, py_eq } from "../../src/pyrt/index.ts";
@@ -94,11 +94,11 @@ describe("TestCompareLayer", () => {
     // Find matching comp and layers
     for (const item of getitem(expected, "items") as any[]) {
       if (contains(item, "layers") && len(getitem(item, "layers")) > 0) {
-        const exp_layer = getitem(item, "layers")[0];
+        const exp_layer = getitem<string, Dict[]>(item, "layers")[0];
         // Get parsed comp layers
         const parsed_comps = dict_get(parsed, "_compositions", []);
         if (py_bool(parsed_comps)) {
-          const parsed_layers = dict_get(parsed_comps[0], "layers", []);
+          const parsed_layers = dict_get<string, Dict[], Dict[]>(parsed_comps[0], "layers", []);
           if (py_bool(parsed_layers)) {
             const result = new ValidationResult();
             compare_layer(

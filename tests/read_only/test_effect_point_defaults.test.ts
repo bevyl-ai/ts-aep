@@ -13,7 +13,7 @@
 
 import { test, expect } from "bun:test";
 
-import { Path, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
+import { Path, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
 
@@ -54,9 +54,10 @@ test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, l
   let checked = 0;
   for (const prop of _effect_props(comp_name, layer_name)) {
     if (
-      !(
-        [PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.ENUM] as PropertyControlType[]
-      ).includes(prop._property_control_type)
+      !contains(
+        [PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.ENUM],
+        prop._property_control_type,
+      )
     ) {
       continue;
     }

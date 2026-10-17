@@ -9,9 +9,11 @@ import { approx } from "../../src/pyrt/pytest.ts";
 import { Path, contains, dict_get, getitem, len, py_eq } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse_project } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 import { CineonRoptChunk, OpenExrRoptChunk } from "../../src/py_aep/binary/render_chunks.ts";
 import { find_by_type } from "../../src/py_aep/binary/utils.ts";
 import { AudioCodec, CineonFileFormat, Hdr10ColorPrimaries, JpegFormatType, MPEGAudioFormat, MPEGMultiplexer, MPEGMuxStreamCompatibility, OpenExrCompression, PngCompression, VideoCodec } from "../../src/py_aep/enums/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
@@ -23,11 +25,11 @@ const AVI_DIR = FORMAT_DIR.div("avi");
 test.each([
   ["cineon", CineonRoptChunk],
   ["openexr", OpenExrRoptChunk],
-])("test_ropt_defaults_are_after_effects_bytes[%#]", (folder: string, chunk_cls: any) => {
+])("test_ropt_defaults_are_after_effects_bytes[%#]", (folder: string, chunk_cls: typeof CineonRoptChunk | typeof OpenExrRoptChunk) => {
   // A fresh chunk reproduces the Ropt AE 2026 writes for the format's
   // default output module (black point 0; DWA compression level 45).
   const project = parse_project(FORMAT_DIR.div(folder, "base.aep"));
-  const lom = project.render_queue.items[0].output_modules[0]._parent_rqi._lom;
+  const lom = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0]._parent_rqi._lom;
   const ae_ropt = find_by_type(lom.chunks, "Ropt");
   expect(py_eq(new chunk_cls({}).tobytes(), ae_ropt.tobytes())).toBe(true);
 });
@@ -35,7 +37,7 @@ test.each([
 /** Parse a Cineon sample and return its CineonFormatOptions. */
 function _cineon_opts(name: string): CineonFormatOptions {
   const project = parse_project(CINEON_DIR.div(`${name}.aep`));
-  const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+  const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, CineonFormatOptions);
   expect(opts instanceof CineonFormatOptions).toBe(true);
   return opts;
 }
@@ -43,7 +45,7 @@ function _cineon_opts(name: string): CineonFormatOptions {
 /** Parse an AVI sample and return its XmlFormatOptions. */
 function _avi_opts(name: string): XmlFormatOptions {
   const project = parse_project(AVI_DIR.div(`${name}.aep`));
-  const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+  const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
   expect(opts instanceof XmlFormatOptions).toBe(true);
   return opts;
 }
@@ -51,7 +53,7 @@ function _avi_opts(name: string): XmlFormatOptions {
 /** Parse a sample from the given format dir and return XmlFormatOptions. */
 function _format_opts(fmt_dir: string, name = "base"): XmlFormatOptions {
   const project = parse_project(FORMAT_DIR.div(fmt_dir, `${name}.aep`));
-  const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+  const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
   expect(opts instanceof XmlFormatOptions).toBe(true);
   return opts;
 }
@@ -307,7 +309,7 @@ describe("TestFormatOptionsNone", () => {
     const samples_dir = new Path(import.meta.dir).parent.parent.div("samples", "models");
     const rq_base = samples_dir.div("renderqueue", "base.aep");
     const project = parse_project(rq_base);
-    const om = project.render_queue.items[0].output_modules[0];
+    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     expect(
       om.format_options == null ||
         [
@@ -341,7 +343,7 @@ describe("TestH264FormatOptions", () => {
   /** MPEG audio format sample has MPEG format and layer I. */
   test("test_audio_format_mpeg", () => {
     const project = parse_project(FORMAT_DIR.div("h.264", "audio_format_mpeg.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     expect(opts.mpeg_audio_format).toBe(MPEGAudioFormat.MPEG);
     expect(getitem(opts.params, "ADBEMPEGAudioLayer")).toBe("1");
@@ -349,7 +351,7 @@ describe("TestH264FormatOptions", () => {
 
   test("test_mpeg_audio_layer_ii", () => {
     const project = parse_project(FORMAT_DIR.div("h.264", "audio_format_mpeg_layer_II.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     expect(getitem(opts.params, "ADBEMPEGAudioLayer")).toBe("2");
   });
@@ -580,7 +582,7 @@ describe("TestWavFormatOptions", () => {
 describe("TestJpegFormatOptions", () => {
   function _opts(stem: string): JpegFormatOptions {
     const project = parse_project(FORMAT_DIR.div("jpeg", `${stem}.aep`));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, JpegFormatOptions);
     expect(opts instanceof JpegFormatOptions).toBe(true);
     return opts;
   }
@@ -630,7 +632,7 @@ describe("TestJpegFormatOptions", () => {
 describe("TestOpenExrFormatOptions", () => {
   test("test_base_defaults", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "base.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.ZIP);
     expect(opts.luminance_chroma).toBe(false);
@@ -640,56 +642,56 @@ describe("TestOpenExrFormatOptions", () => {
 
   test("test_compression_none", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_none.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.NONE);
   });
 
   test("test_compression_rle", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_rle.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.RLE);
   });
 
   test("test_compression_zip16", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_zip16.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.ZIP16);
   });
 
   test("test_compression_piz", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_piz.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.PIZ);
   });
 
   test("test_compression_pxr24", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_pxr24.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.PXR24);
   });
 
   test("test_compression_b44", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_b44.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.B44);
   });
 
   test("test_compression_b44a", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_b44a.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.B44A);
   });
 
   test("test_compression_dwaa", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_dwaa_45.0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.DWAA);
     expect(opts.dwa_compression_level).toBe(45.0);
@@ -697,7 +699,7 @@ describe("TestOpenExrFormatOptions", () => {
 
   test("test_compression_dwab", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_dwab_200.0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.compression).toBe(OpenExrCompression.DWAB);
     expect(opts.dwa_compression_level).toBe(200.0);
@@ -705,35 +707,35 @@ describe("TestOpenExrFormatOptions", () => {
 
   test("test_luminance_chroma_on", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_zip_luminance_chroma.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.luminance_chroma).toBe(true);
   });
 
   test("test_32_bit_float_on", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_zip_32_bit_float.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.thirty_two_bit_float).toBe(true);
   });
 
   test("test_dwa_compression_level_dwaa_custom", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_dwaa_1.0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.dwa_compression_level).toBe(1.0);
   });
 
   test("test_dwa_compression_level_dwaa_large", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_dwaa_10000000000.0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.dwa_compression_level).toBe(10000000000.0);
   });
 
   test("test_dwa_compression_level_dwab", () => {
     const project = parse_project(FORMAT_DIR.div("openexr", "compression_dwab_200.0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, OpenExrFormatOptions);
     expect(opts instanceof OpenExrFormatOptions).toBe(true);
     expect(opts.dwa_compression_level).toBe(200.0);
   });
@@ -743,7 +745,7 @@ describe("TestOpenExrFormatOptions", () => {
 describe("TestPngFormatOptions", () => {
   test("test_base_defaults", () => {
     const project = parse_project(FORMAT_DIR.div("png", "base.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.width).toBe(1920);
     expect(opts.height).toBe(1080);
@@ -757,21 +759,21 @@ describe("TestPngFormatOptions", () => {
 
   test("test_compression_none", () => {
     const project = parse_project(FORMAT_DIR.div("png", "compression_none.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.compression).toBe(PngCompression.NONE);
   });
 
   test("test_compression_interlaced", () => {
     const project = parse_project(FORMAT_DIR.div("png", "compression_interlaced.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.compression).toBe(PngCompression.INTERLACED);
   });
 
   test("test_include_hdr10_metadata_on", () => {
     const project = parse_project(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.include_hdr10_metadata).toBe(true);
     expect(opts.color_primaries).toBe(Hdr10ColorPrimaries.P3_D65);
@@ -779,35 +781,35 @@ describe("TestPngFormatOptions", () => {
 
   test("test_color_primaries_rec709", () => {
     const project = parse_project(FORMAT_DIR.div("png", "color_primaries_rec709.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.color_primaries).toBe(Hdr10ColorPrimaries.REC709);
   });
 
   test("test_color_primaries_rec2020", () => {
     const project = parse_project(FORMAT_DIR.div("png", "color_primaries_rec2020.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.color_primaries).toBe(Hdr10ColorPrimaries.REC2020);
   });
 
   test("test_color_primaries_p3d65", () => {
     const project = parse_project(FORMAT_DIR.div("png", "color_primaries_p3d65.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.color_primaries).toBe(Hdr10ColorPrimaries.P3_D65);
   });
 
   test("test_luminance_min_zero", () => {
     const project = parse_project(FORMAT_DIR.div("png", "luminance_min_0.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.luminance_min).toBe(0.0);
   });
 
   test("test_luminance_max_set", () => {
     const project = parse_project(FORMAT_DIR.div("png", "luminance_max_1.797693e+308.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.luminance_max).toBe(1.7976931348623157e308);
   });
@@ -816,7 +818,7 @@ describe("TestPngFormatOptions", () => {
     const project = parse_project(
       FORMAT_DIR.div("png", "content_light_levels_maximum_1.797693e+308.aep"),
     );
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.content_light_max).toBe(1.7976931348623157e308);
   });
@@ -825,7 +827,7 @@ describe("TestPngFormatOptions", () => {
     const project = parse_project(
       FORMAT_DIR.div("png", "content_light_levels_average_1.797693e+308.aep"),
     );
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, PngFormatOptions);
     expect(opts instanceof PngFormatOptions).toBe(true);
     expect(opts.content_light_average).toBe(1.7976931348623157e308);
   });
@@ -835,7 +837,7 @@ describe("TestPngFormatOptions", () => {
 describe("TestTargaFormatOptions", () => {
   test("test_base_defaults", () => {
     const project = parse_project(FORMAT_DIR.div("targa", "base.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TargaFormatOptions);
     expect(opts instanceof TargaFormatOptions).toBe(true);
     expect(opts.bits_per_pixel).toBe(32);
     expect(opts.rle_compression).toBe(false);
@@ -843,21 +845,21 @@ describe("TestTargaFormatOptions", () => {
 
   test("test_24_bits_per_pixel", () => {
     const project = parse_project(FORMAT_DIR.div("targa", "24_bits_per_pixel.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TargaFormatOptions);
     expect(opts instanceof TargaFormatOptions).toBe(true);
     expect(opts.bits_per_pixel).toBe(24);
   });
 
   test("test_32_bits_per_pixel", () => {
     const project = parse_project(FORMAT_DIR.div("targa", "32_bits_per_pixel.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TargaFormatOptions);
     expect(opts instanceof TargaFormatOptions).toBe(true);
     expect(opts.bits_per_pixel).toBe(32);
   });
 
   test("test_rle_compression_on", () => {
     const project = parse_project(FORMAT_DIR.div("targa", "rle_compression_on.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TargaFormatOptions);
     expect(opts instanceof TargaFormatOptions).toBe(true);
     expect(opts.rle_compression).toBe(true);
     expect(opts.bits_per_pixel).toBe(24);
@@ -868,7 +870,7 @@ describe("TestTargaFormatOptions", () => {
 describe("TestTiffFormatOptions", () => {
   test("test_base_defaults", () => {
     const project = parse_project(FORMAT_DIR.div("tiff", "base.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TiffFormatOptions);
     expect(opts instanceof TiffFormatOptions).toBe(true);
     expect(opts.lzw_compression).toBe(false);
     expect(opts.ibm_pc_byte_order).toBe(false);
@@ -876,7 +878,7 @@ describe("TestTiffFormatOptions", () => {
 
   test("test_lzw_compression_on", () => {
     const project = parse_project(FORMAT_DIR.div("tiff", "lze_compression_on.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TiffFormatOptions);
     expect(opts instanceof TiffFormatOptions).toBe(true);
     expect(opts.lzw_compression).toBe(true);
     expect(opts.ibm_pc_byte_order).toBe(false);
@@ -884,7 +886,7 @@ describe("TestTiffFormatOptions", () => {
 
   test("test_ibm_pc_byte_order_on", () => {
     const project = parse_project(FORMAT_DIR.div("tiff", "ibm_pc_byte_order_on.aep"));
-    const opts = project.render_queue.items[0].output_modules[0].format_options as any;
+    const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, TiffFormatOptions);
     expect(opts instanceof TiffFormatOptions).toBe(true);
     expect(opts.ibm_pc_byte_order).toBe(true);
     expect(opts.lzw_compression).toBe(false);

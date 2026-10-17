@@ -10,7 +10,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { parse_project, parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project, parse_project_fresh } from "../helpers.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { Path, py_eq } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 
@@ -22,14 +23,14 @@ const SAMPLE = new Path(import.meta.dir)
 describe("TestNegativeTimeSpanDecode", () => {
   test("test_negative_start_decodes_signed", () => {
     const project = parse_project(SAMPLE);
-    const rqi = project.render_queue.items[0];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
     expect(rqi.time_span_start).toBe(-5.0);
     expect(rqi.time_span_duration).toBe(15.0);
   });
 
   test("test_negative_duration_decodes_signed", () => {
     const project = parse_project(SAMPLE);
-    const rqi = project.render_queue.items[1];
+    const rqi = as_instance(project.render_queue, RenderQueue).items[1];
     expect(rqi.time_span_start).toBe(110.0);
     expect(rqi.time_span_duration).toBe(-100.0);
   });
