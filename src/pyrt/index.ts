@@ -7,7 +7,7 @@ export * from "./num.ts";
 export * as struct from "./struct.ts";
 export * as bytes_ from "./bytes.ts";
 export { b, concat, bytes_eq } from "./bytes.ts";
-export { decode, encode } from "./codecs.ts";
+export { decode, encode, ord } from "./codecs.ts";
 export { BytesIO, StringIO, FileReader, open_rb, type IO } from "./bytesio.ts";
 export { Fraction } from "./fraction.ts";
 export { ContextVar } from "./contextvar.ts";
