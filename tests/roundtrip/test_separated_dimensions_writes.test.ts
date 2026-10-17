@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { enumerate, Path, py_bool, py_eq, range, sorted, ValueError, zip } from "../../src/pyrt/index.ts";
+import { at, enumerate, Path, py_assert, py_bool, py_eq, range, sorted, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
@@ -19,13 +19,13 @@ import { as_instance, parse_project_fresh } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 
-function _position(comp: CompItem): Property {
-  return comp.layers[0].transform.__getitem__("ADBE Position") as Property;
+function _position(comp: CompItem): Property<number[]> {
+  return comp.layers[0].transform.__getitem__("ADBE Position");
 }
 
-function _state(comp: CompItem): Map<string, any> {
+function _state(comp: CompItem): Map<string, unknown> {
   const position = _position(comp);
-  return new Map<string, any>([
+  return new Map<string, unknown>([
     ["separated", position.dimensions_separated],
     ["leader_stored", position._read_cdat_raw()],
     [
@@ -189,7 +189,7 @@ describe("TestGuards", () => {
     expect(reloaded.dimensions_separated).toBe(false);
     expect(approx(reloaded.keyframes.map((k) => k.time), expected_times)).toBe(true);
     for (const [index, keyframe] of enumerate(reloaded.keyframes)) {
-      const composed: any = keyframe.value;
+      const composed = keyframe.value;
       expect(approx(composed.slice(0, 2), expected[index].slice(0, 2))).toBe(true);
     }
   });
@@ -229,7 +229,7 @@ describe("TestAnimatedSeparation", () => {
     }
     for (const [time, value] of zip(TIMES, VALUES)) {
       position.add_key(time);
-      position.keyframes.at(-1)!.value = [...value];
+      at(position.keyframes, -1).value = [...value];
     }
     for (const keyframe of position.keyframes) {
       keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
@@ -384,7 +384,9 @@ describe("TestSeparatedCompensation", () => {
     const position = _position(comp);
     const parked = position._read_cdat_raw();
 
-    position._set_separated_value([11.0, 22.0, 0.0], position._separation_followers()!);
+    const followers = position._separation_followers();
+    py_assert(followers != null);
+    position._set_separated_value([11.0, 22.0, 0.0], followers);
 
     expect(approx(position.value, [11.0, 22.0, 0.0])).toBe(true);
     // The dead leader stays on the default AE parks it on.
@@ -400,7 +402,9 @@ describe("TestSeparatedCompensation", () => {
     const position = _position(comp);
     expect(as_instance(position.get_separation_follower(2), Property)._is_live()).toBe(false);
 
-    position._set_separated_value([11.0, 22.0, 0.0], position._separation_followers()!);
+    const followers = position._separation_followers();
+    py_assert(followers != null);
+    position._set_separated_value([11.0, 22.0, 0.0], followers);
 
     expect(as_instance(position.get_separation_follower(2), Property)._is_live()).toBe(false);
   });

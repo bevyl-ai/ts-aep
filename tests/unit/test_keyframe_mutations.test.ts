@@ -17,7 +17,7 @@ const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "
 const SAMPLES_ROOT = new Path(import.meta.path).parent.parent.parent.div("samples");
 
 /** Compare two lists of [x, y] pairs within tolerance. */
-function _approx_points(actual: any, expected: any, abs_tol = 1e-2): boolean {
+function _approx_points(actual: number[][], expected: number[][], abs_tol = 1e-2): boolean {
   if (len(actual) !== len(expected)) return false;
   return zip(actual, expected).every(([a, e]) => approx(a, e, { abs: abs_tol }));
 }
