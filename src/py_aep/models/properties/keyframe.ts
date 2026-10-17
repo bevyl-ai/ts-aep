@@ -616,11 +616,13 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * that carry no value, this is `null`.
    */
   get value(): V {
-    if (this._property == null) return this._declared(this._stored_value);
-    if (this._property._arbs != null) {
+    if (this._property != null && this._property._arbs != null) {
       return this._declared(this._property._keyframe_curves(this));
     }
-    return this._declared(this._property._mask_inert_z(this._stored_value));
+    const value =
+      this._property == null ? this._stored_value : this._property._mask_inert_z(this._stored_value);
+    // A list is handed out as a copy: the keyframe's own is its cache.
+    return this._declared(Array.isArray(value) ? [...value] : value);
   }
 
   /** A stored value as the keyframe's declared value type (see `Property._declared`). */
@@ -687,10 +689,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if (prop != null && (typeof value === "number" || Array.isArray(value))) {
       const raw = prop._unresolve_value(value);
       this._write_kf_value(raw);
-      this._value = raw;
+      // Copies: the caller's list (or another property's value list)
+      // must not become this keyframe's cache.
+      this._value = Array.isArray(raw) ? [...raw] : raw;
       prop._redistribute_roving_keyframes();
     } else {
-      this._value = value;
+      this._value = Array.isArray(value) ? [...value] : value;
     }
   }
 

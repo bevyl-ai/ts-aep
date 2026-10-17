@@ -25,7 +25,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, type_name, float_repr, hasattr, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, type_name, float_repr, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -402,7 +402,7 @@ export function build_world_matrix(
 
 /** Pixel aspect of a layer's own pixels: its source's, else square. */
 export function layer_source_aspect(layer: Layer): number {
-  const source = _is_av_layer(layer) && hasattr(layer, "source") ? layer.source : null;
+  const source = layer._source_item;
   const aspect = source != null && "pixel_aspect" in source ? source.pixel_aspect : null;
   return aspect != null && aspect !== 0 ? aspect : 1.0;
 }

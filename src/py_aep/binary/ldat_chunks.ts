@@ -20,7 +20,7 @@ import {
 import type { EnumValue, IO } from "../../pyrt/index.ts";
 import { read_bytes, write_bytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
-import { Chunk } from "./chunk.ts";
+import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
 import { FmtItem, bytes_field, f4_field, f8_field, u1_field, u4_field, u8_field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "./render_chunks.ts";
@@ -523,14 +523,7 @@ export class LdatChunk extends Chunk {
   static read(
     fp: IO,
     size: number,
-    kw: {
-      chunk_type?: string;
-      item_type?: LdatItemType;
-      item_size?: number;
-      count?: number;
-      is_spatial?: boolean;
-      [key: string]: unknown;
-    } = {},
+    kw: ChunkReadKwargs = {},
   ): LdatChunk {
     let { chunk_type = "", item_type = LdatItemType.unknown, item_size = 0, count = 0, is_spatial = false } = kw;
     // Spatial promotion: three_d -> three_d_spatial

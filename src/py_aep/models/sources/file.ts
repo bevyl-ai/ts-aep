@@ -207,7 +207,7 @@ export class PsdLayerFootage {
     this.depth = depth;
   }
 
-  *[Symbol.iterator](): Generator<unknown> {
+  *[Symbol.iterator](): Generator<PsdLayerFootage["box" | "opti_data" | "data_size" | "has_alpha" | "depth"]> {
     yield this.box;
     yield this.opti_data;
     yield this.data_size;

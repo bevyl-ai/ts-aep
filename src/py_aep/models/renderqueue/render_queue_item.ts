@@ -2,7 +2,7 @@
 
 import { ColorDepthSetting, DiskCacheSetting, EffectsSetting, FieldRender, FrameBlendingSetting, FrameRateSetting, GetSettingsFormat, GuideLayers, LogType, MotionBlurSetting, ProxyUseSetting, PulldownSetting, RenderQuality, RQItemStatus, SoloSwitchesSetting, TimeSpanSource } from "../../enums/index.ts";
 import { ContainerChunk, ListChunk } from "../../binary/chunk.ts";
-import { LHD3_BLOCK_SINGLE, set_lhd3_count, type LdatChunk, type Lhd3Chunk } from "../../binary/ldat_chunks.ts";
+import { LHD3_BLOCK_SINGLE, set_lhd3_count } from "../../binary/ldat_chunks.ts";
 import { build_om_container, build_rout_block, clone_chunk_tree } from "../../binary/mutations.ts";
 import { RenderSettingsItem, type RoutItem } from "../../binary/render_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";

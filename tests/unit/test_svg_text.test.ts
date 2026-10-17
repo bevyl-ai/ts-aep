@@ -6,7 +6,7 @@
  * independent. Reader-level tests monkeypatch font resolution for determinism.
  */
 
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 
 import { approx, make_tmp_path, warns } from "../../src/pyrt/pytest.ts";
 import { NotImplementedError, Path, py_assert, py_eq } from "../../src/pyrt/index.ts";

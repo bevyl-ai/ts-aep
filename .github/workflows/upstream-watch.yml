@@ -1,0 +1,69 @@
+# Weekly: compare py-aep's main with UPSTREAM_COMMIT and keep one open issue
+# listing the new upstream commits and the TS twin each changed file maps to
+# (tools/sync_upstream.py). Closes the issue once the pin has caught up.
+name: upstream-watch
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LABEL: upstream-sync
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone py-aep (history only, no LFS content)
+        env:
+          GIT_LFS_SKIP_SMUDGE: "1"
+        run: git clone --quiet --filter=blob:none https://github.com/forticheprod/py-aep.git .upstream
+
+      - name: Plan the sync
+        id: plan
+        run: |
+          python3 tools/sync_upstream.py origin/main
+          base=$(cat UPSTREAM_COMMIT)
+          head=$(git -C .upstream rev-parse origin/main)
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          {
+            echo "py-aep \`main\` is ahead of \`UPSTREAM_COMMIT\` (\`${base:0:7}\` → \`${head:0:7}\`)."
+            echo
+            echo "### Commits"
+            git -C .upstream log --reverse --format='- %h %ad %s' --date=short "$base..$head" | cut -c1-140
+            echo
+            echo "### Files and their TS twins"
+            python3 - <<'PY'
+          import json
+          plan = json.load(open(".sync/plan.json"))
+          for e in plan["files"]:
+              print(f"- `{e['status']}` `{e['py']}` → `{e['ts']}`")
+          print()
+          print(f"{plan['changed_samples']} sample file(s) changed.")
+          PY
+            echo
+            echo "Port one upstream commit at a time (RULEBOOK.md), bump \`UPSTREAM_COMMIT\`, run \`tools/fetch-samples.sh\` and \`tools/gate.sh\`."
+          } > .sync/issue.md
+
+      - name: Open, update or close the issue
+        run: |
+          gh label create "$LABEL" --color 5319e7 --description "py-aep has commits the port lacks" --force >/dev/null
+          issue=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+          if [ "${{ steps.plan.outputs.base }}" = "${{ steps.plan.outputs.head }}" ]; then
+            if [ -n "$issue" ]; then gh issue close "$issue" --comment "UPSTREAM_COMMIT matches py-aep main."; fi
+            exit 0
+          fi
+          head="${{ steps.plan.outputs.head }}"; title="Sync py-aep to ${head:0:7}"
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --title "$title" --body-file .sync/issue.md
+          else
+            gh issue create --label "$LABEL" --title "$title" --body-file .sync/issue.md
+          fi

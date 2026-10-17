@@ -27,7 +27,7 @@
 import * as z from "zod/mini";
 import { PyFloat } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
-import { py_int, py_number, py_str } from "./kinds.ts";
+import { py_int, py_number } from "./kinds.ts";
 
 /** Any COS value, checked recursively (dictionaries and arrays included). */
 export const cos_node: z.ZodMiniType<CosNode> = z.lazy(() =>

@@ -11,6 +11,7 @@ import {
   IndexError,
   KeyError,
   Path,
+  StopIteration,
   TypeError_,
   ValueError,
   isclose,
@@ -699,6 +700,22 @@ describe("TestAudio", () => {
     expect(layer_json["audioEnabled"]).toBe(false);
     expect(as_instance(layer, AVLayer).audio_enabled).toBe(layer_json["audioEnabled"]);
   });
+
+  /** An audio-only layer has no pixels: AE centres its anchor on a 1x1 box. */
+  test("test_audio_only_anchor_point", () => {
+    const expected = load_expected(SAMPLES_DIR, "audioEnabled");
+    const layer = get_layer(parse_project(SAMPLES_DIR.div("audioEnabled.aep")), "audioEnabled_true");
+    const layer_json = get_layer_from_json_by_comp(expected, "audioEnabled_true");
+    type JsonProp = { matchName: string; properties: JsonProp[]; value: number[] };
+    const layer_props: JsonProp[] = layer_json["properties"];
+    const transform_json = layer_props.find((p) => p.matchName === "ADBE Transform Group");
+    if (transform_json === undefined) throw new StopIteration();
+    const anchor_json = transform_json.properties.find((p) => p.matchName === "ADBE Anchor Point");
+    if (anchor_json === undefined) throw new StopIteration();
+    const anchor = layer.property("ADBE Transform Group").property("ADBE Anchor Point");
+    expect(py_eq(anchor.value, anchor_json.value)).toBe(true);
+    expect(py_eq(anchor_json.value, [0.5, 0.5, 0])).toBe(true);
+  });
 });
 
 /** Regression tests for layer name encoding edge cases. */
@@ -1247,6 +1264,14 @@ describe("TestTopLevelSpecialCases", () => {
     const layer_sets = layer.properties.find((p) => p.match_name === "ADBE Layer Sets")!;
     expect(layer_sets instanceof PropertyGroup).toBe(true);
     expect(layer_sets.elided).toBe(true);
+  });
+
+  /** AE 2026 reports both as indexed groups, empty or not. */
+  test("test_trackers_and_layer_sets_are_indexed_groups", () => {
+    const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
+    for (const mn of ["ADBE MTrackers", "ADBE Layer Sets"]) {
+      expect(layer.property(mn).property_type).toBe(PropertyType.INDEXED_GROUP);
+    }
   });
 
   /** Every canonical top-level group has property_depth == 1. */

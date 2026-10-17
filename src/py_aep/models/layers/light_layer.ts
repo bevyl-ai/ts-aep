@@ -5,7 +5,7 @@ import { default_camera_zoom } from "../../resolvers/transform.ts";
 import {ChunkField, type EffectParamDefs} from "../descriptors.ts";
 import { label_index } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
-import { _UNDEFINED_ID, Layer, _no_source_id } from "./layer.ts";
+import { _UNDEFINED_ID, Layer, _no_source_id, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
 import { AttributeError, ValueError, descriptor, py_cmp } from "../../../pyrt/index.ts";
 import type { CompItem } from "../items/composition.ts";
 
@@ -52,7 +52,10 @@ export class LightLayer extends Layer {
   // (2 * tan(fov/2) rounds to 0.72; AE uses the exact ratio).
   static _zoom_dividend: number = 0.72;
 
-  static _LIVE_DEFAULTS = [["ADBE Transform Group", "ADBE Position"]] as const;
+  static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [
+    ...Layer._LIVE_DEFAULTS,
+    ["ADBE Transform Group", "ADBE Anchor Point"],
+  ];
 
   /** Always `true`: a camera / light layer only exists in 3D space.
    * Read-only. */

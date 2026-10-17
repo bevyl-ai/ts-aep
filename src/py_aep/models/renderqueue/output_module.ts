@@ -16,7 +16,7 @@ import { CompItem } from "../items/composition.ts";
 import { _validate_number, validate_bool, validate_enum, validate_sequence, validate_string } from "../validators.ts";
 import { CineonFormatOptions, PngFormatOptions, XmlFormatOptions, type JpegFormatOptions, type OpenExrFormatOptions, type TargaFormatOptions, type TiffFormatOptions } from "./format_options/index.ts";
 import { SettingsView, build_resize_to_strings, settings_to_number, settings_to_string, type SettingsSpec, type SettingValue, type SettingValues } from "./settings.ts";
-import { LHD3_BLOCK_SINGLE, set_lhd3_count, type LdatChunk, type Lhd3Chunk } from "../../binary/ldat_chunks.ts";
+import { LHD3_BLOCK_SINGLE, set_lhd3_count } from "../../binary/ldat_chunks.ts";
 import { HdrmChunk } from "../../binary/misc_chunks.ts";
 import { OutputModuleSettingsItem, RoptChunk, RouuChunk, TiffRoptChunk, type RenderSettingsItem } from "../../binary/render_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
@@ -103,7 +103,7 @@ export function _label_or_name(key: string | null, v: RuleValue): string {
 }
 
 /** Python `getattr(v, "name", None) or str(v)` (see `_label_or_name`). */
-export function _name_or_str(key: string | null, v: unknown): string {
+export function _name_or_str(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.name_of(v);
   return str(v);

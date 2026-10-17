@@ -1,18 +1,18 @@
 {
-  "pass": 15585,
+  "pass": 15657,
   "skip": 35,
-  "samples": 644,
-  "fault_cases": 2640,
+  "samples": 646,
+  "fault_cases": 2760,
   "loose_types": {
     "0 pyrt": {
-      "any": 5,
-      "unknown": 114,
+      "any": 4,
+      "unknown": 112,
       "casts": 7
     },
     "1 binary+enums+data": {
-      "any": 8,
-      "unknown": 22,
-      "casts": 13
+      "any": 3,
+      "unknown": 3,
+      "casts": 10
     },
     "2 cos+color": {
       "any": 0,
@@ -26,8 +26,8 @@
     },
     "4 models": {
       "any": 1,
-      "unknown": 86,
-      "casts": 27
+      "unknown": 75,
+      "casts": 26
     },
     "5 resolvers+svg": {
       "any": 0,

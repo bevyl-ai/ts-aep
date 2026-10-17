@@ -44,6 +44,34 @@ export type FieldValue = struct.PackValue | string | _NulTailStr | null;
 /** `coerce=` callable of a `fmt_field` (e.g. `bool`, applied after unpack). */
 export type Coerce = (value: FieldValue) => FieldValue;
 
+declare module "../../pyrt/attrs.ts" {
+  /** The keys `fmt_field` and `items_field` store. */
+  interface Metadata {
+    readonly fmt?: string;
+    readonly encoding?: string;
+    readonly optional?: boolean;
+    readonly endian?: string;
+    readonly coerce?: Coerce;
+    readonly items?: boolean;
+    readonly item_cls?: typeof FmtItem;
+    readonly item_size?: number;
+  }
+}
+
+/** A `fmt_field`: its metadata carries the struct format. */
+export type FmtAttribute = Attribute & { readonly metadata: { readonly fmt: string } };
+
+/** An `items_field`, which always stores the item class and size. */
+type ItemsAttribute = Attribute & { readonly metadata: { readonly item_cls: typeof FmtItem; readonly item_size: number } };
+
+function _is_fmt_field(f: Attribute): f is FmtAttribute {
+  return f.metadata["fmt"] != null;
+}
+
+function _is_items_field(f: Attribute): f is ItemsAttribute {
+  return !!f.metadata["items"];
+}
+
 /** Decoded field values (and `chunk_type`) keyed by init-parameter name. */
 export type FieldKwargs = Record<string, FieldValue>;
 
@@ -52,7 +80,7 @@ export type InitKwargs = Record<string, FieldValue | FmtItem[]>;
 
 export type _StructInfo = [
   string,
-  readonly Attribute[],
+  readonly FmtAttribute[],
   Map<number, string>,
   number,
   Map<number, string>,
@@ -289,7 +317,7 @@ export function _struct_info_uncached(cls: Function): _StructInfo | null {
       ? new Set(fields(_chunk().Chunk).map((f) => f.name))
       : new Set();
   const fmt_parts: string[] = [];
-  const data_fields: Attribute[] = [];
+  const data_fields: FmtAttribute[] = [];
   const encodings = new Map<number, string>();
   const endians = new Map<number, string>();
   const coerces = new Map<number, Coerce>();
@@ -298,12 +326,12 @@ export function _struct_info_uncached(cls: Function): _StructInfo | null {
 
   for (const f of fields(cls)) {
     if (base_names.has(f.name)) continue;
-    if (f.metadata["items"]) {
+    if (_is_items_field(f)) {
       items_info = [_init_name(f.name), f.metadata["item_cls"], f.metadata["item_size"]];
       continue;
     }
-    const fmt_char = f.metadata["fmt"];
-    if (fmt_char != null) {
+    if (_is_fmt_field(f)) {
+      const fmt_char = f.metadata["fmt"];
       const is_opt = f.metadata["optional"] ?? false;
       if (is_opt) {
         if (optional_start == null) optional_start = data_fields.length;
@@ -469,7 +497,7 @@ export function _field_encoder(info: _StructInfo): EncodeFields | null {
  * field's value is bytes only because its format is `Ns`.
  */
 export function _decode_fields(
-  data_fields: readonly Attribute[],
+  data_fields: readonly FmtAttribute[],
   values: struct.Unpacked<string>,
   encodings: Map<number, string>,
   coerces: Map<number, Coerce>,

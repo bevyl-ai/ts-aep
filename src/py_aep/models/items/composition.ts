@@ -9,7 +9,7 @@ import { _LDTA_SOURCE_ID_END, _LDTA_SOURCE_ID_OFFSET } from "../../binary/layer_
 import { _PRDA_VARIANTS, PguiChunk, type PrdaChunk, type PrinChunk } from "../../binary/misc_chunks.ts";
 import { build_checkbox_cctl, build_color_cctl, build_media_cctl, build_ovg2, build_slider_cctl, build_source_alternate_extras, build_text_cctl, clone_chunk_tree, collect_layer_ref_tdpi_ids, remap_layer_ref_tdpi, rewrite_owner_tdpi, strip_synthetic } from "../../binary/mutations.ts";
 import { TDSN_SENTINEL, CdatChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
-import { F8Chunk, S4Chunk, type U1Chunk, type U4Chunk, type U4LeChunk, type Utf8Chunk } from "../../binary/scalar_chunks.ts";
+import { F8Chunk, S4Chunk, type U1Chunk, type U4Chunk, type Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import { block_slice, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null, index_by_identity, list_type_of, recursive_find } from "../../binary/utils.ts";
 import { Label, LayerType, LineOrientation, ParametricMeshType, PREFType } from "../../enums/index.ts";
 import { parse_essential_graphics } from "../../parsers/essential_graphics.ts";
@@ -24,7 +24,6 @@ import {
   deferred,
   descriptor,
   float,
-  getattr,
   getitem,
   int,
   py_assert,
@@ -528,9 +527,9 @@ export class CompItem extends AVItem {
   declare preserve_nested_resolution: boolean;
 
   // Left-out camera and light properties follow the comp's size and pixel
-  // aspect. Loading the layers before a change builds them at the size the
-  // file has, so `save` writes the ones the change moves where they were,
-  // as AE does.
+  // aspect. Building them before a change builds them at the size the file
+  // has, so `save` writes the ones the change moves where they were, as AE
+  // does.
 
   /** The width of the item in pixels. Read / Write. */
   declare width: number;
@@ -1316,6 +1315,19 @@ export class CompItem extends AVItem {
 
     this._layers_loaded = true;
     this._invalidate_layer_cache();
+  }
+
+  /**
+   * Build the property trees of the layers whose left-out defaults
+   * follow this comp (see `width`).
+   */
+  _build_live_defaults(): void {
+    this._ensure_layers_loaded();
+    for (const layer of this._layers) {
+      if (layer._tree_param_defs != null && layer._leaves_out_live_defaults()) {
+        layer._load_property_tree();
+      }
+    }
   }
 
   _ensure_comp_parsed(): void {
@@ -2543,7 +2555,7 @@ export class CompItem extends AVItem {
     // Source usage bookkeeping for the moved (and copied) layers.
     project._ensure_used_in_linked();
     for (const new_layer of new_comp._layers) {
-      const source = getattr(new_layer, "source", null);
+      const source = new_layer._source_item;
       if (source != null && "_used_in" in source) {
         _unregister_source_usage(source, this);
         source._used_in.add(new_comp);
@@ -2835,7 +2847,7 @@ descriptor(
   "width",
   new ChunkField("_cdta", "width", {
     validate: validate_footage_dimension,
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 
@@ -2845,7 +2857,7 @@ descriptor(
   "height",
   new ChunkField("_cdta", "height", {
     validate: validate_footage_dimension,
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 
@@ -2910,7 +2922,7 @@ descriptor(
   new ChunkField("_cdta", "pixel_aspect", {
     validate: validate_pixel_aspect,
     // See `width`.
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 

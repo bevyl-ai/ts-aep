@@ -29,18 +29,18 @@ import {
   py_or,
   repr,
   struct,
-  type Attribute,
   type IO,
 } from "../../pyrt/index.ts";
 import { _struct_for, read_bytes, read_fmt, read_pad, write_bytes, write_pad } from "./bin_utils.ts";
-import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtItem, type InitKwargs } from "./fmt_field.ts";
+import { _decode_fields, _encode_value, _field_encoder, _struct_info, type Coerce, type FieldKwargs, type FieldValue, type FmtAttribute, type FmtItem, type InitKwargs } from "./fmt_field.ts";
 import { CHUNK_TYPES, register, registered } from "./registry.ts";
 import type { HeadChunk } from "./item_chunks.ts";
+import type { LdatItemType } from "./ldat_chunks.ts";
 
-const _PREFIX_STRUCTS = new WeakMap<readonly Attribute[], struct.Struct[]>();
+const _PREFIX_STRUCTS = new WeakMap<readonly FmtAttribute[], struct.Struct[]>();
 
 /** Big-endian struct for the first `n` of `data_fields`. */
-function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.Struct {
+function _prefix_struct(data_fields: readonly FmtAttribute[], n: number): struct.Struct {
   let by_n = _PREFIX_STRUCTS.get(data_fields);
   if (by_n === undefined) _PREFIX_STRUCTS.set(data_fields, (by_n = []));
   return (by_n[n] ??= _struct_for(data_fields.slice(0, n).map((f) => f.metadata["fmt"]).join("")));
@@ -48,9 +48,9 @@ function _prefix_struct(data_fields: readonly Attribute[], n: number): struct.St
 
 /** The required-field format and each optional field's format and size. */
 type OptionalLayout = { req_fmt: string | null; req_size: number; optional: [fmt: string, size: number][] };
-const _OPTIONAL_LAYOUTS = new WeakMap<readonly Attribute[], OptionalLayout>();
+const _OPTIONAL_LAYOUTS = new WeakMap<readonly FmtAttribute[], OptionalLayout>();
 
-function _optional_layout(data_fields: readonly Attribute[], optional_start: number): OptionalLayout {
+function _optional_layout(data_fields: readonly FmtAttribute[], optional_start: number): OptionalLayout {
   let layout = _OPTIONAL_LAYOUTS.get(data_fields);
   if (layout === undefined) {
     const req_parts = data_fields.slice(0, optional_start).map((f) => f.metadata["fmt"]);
@@ -105,9 +105,12 @@ export class Chunk extends AttrsBase {
   declare synthetic: boolean;
   declare _trailing: Uint8Array;
 
-  static read(fp: IO, size: number, kwargs: { chunk_type?: string; [k: string]: unknown } = {}): Chunk {
+  /** Whether `read` takes the nesting context `read_chunks` passes. */
+  static _nests = false;
+
+  static read(fp: IO, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
     const { chunk_type = "" } = kwargs;
-    const cls: any = this;
+    const cls = this;
     // Get fields
     const info = _struct_info(cls);
     if (info == null) {
@@ -298,7 +301,7 @@ export class Chunk extends AttrsBase {
     return written;
   }
 
-  static frombytes(data: Uint8Array, kwargs: Record<string, unknown> = {}): Chunk {
+  static frombytes(data: Uint8Array, kwargs: ChunkReadKwargs = {}): Chunk {
     /** Parse a chunk body from raw bytes. */
     const f = new BytesIO(data);
     return this.read(f, data.length, kwargs);
@@ -344,16 +347,12 @@ export class ListChunk extends Chunk {
   declare chunks: Chunk[];
   declare chunk_type: string;
 
+  static _nests = true;
+
   static read(
     fp: IO,
     size: number,
-    kwargs: {
-      chunk_type?: string;
-      ctx?: ReadContext | null;
-      defer_list_types?: ReadonlySet<string> | null;
-      parent_result?: Chunk[] | null;
-      [k: string]: unknown;
-    } = {},
+    kwargs: ChunkReadKwargs = {},
   ): ListChunk {
     const { chunk_type = "LIST", defer_list_types = null } = kwargs;
     if (size < 4) throw new OSError(`${chunk_type} body too small: ${size}`);
@@ -413,6 +412,23 @@ define(ListChunk, {
   chunk_type: field({ default: "LIST" }),
 });
 register("LIST", "RIFX")(ListChunk);
+
+export const _TDGP: ReadonlySet<string> = new Set(["tdgp"]);
+
+/**
+ * The children a deferred LIST keeps deferred in turn once decoded.
+ *
+ * A layer's property tree (its root `tdgp`) waits until its properties
+ * are read, and decoding that root leaves each top-level group (Transform,
+ * Effects, Masks, ...) to its own first access: the root's direct
+ * properties, such as Time Remapping, are then readable on their own.
+ */
+export function _deferred_children(list_type: string, parent_list_type: string): ReadonlySet<string> | null {
+  if (list_type === "Layr" || (list_type === "tdgp" && parent_list_type === "Layr")) {
+    return _TDGP;
+  }
+  return null;
+}
 
 /**
  * A LIST chunk whose children are parsed lazily from stored raw bytes.
@@ -480,7 +496,10 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
     if (parsed == null) {
       const body = this._raw_body;
       const ctx = this._raw_ctx || EMPTY_CTX;
-      parsed = read_chunks(new BytesIO(body), body.length, { ctx });
+      parsed = read_chunks(new BytesIO(body), body.length, {
+        ctx,
+        defer_list_types: _deferred_children(this.list_type, ctx.grandparent_list_type),
+      });
       this._parsed_chunks = parsed;
       this._raw_body = b("");
       this._raw_ctx = null;
@@ -508,15 +527,12 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
 export class ContainerChunk extends Chunk {
   declare chunks: Chunk[];
 
+  static _nests = true;
+
   static read(
     fp: IO,
     size: number,
-    kwargs: {
-      chunk_type?: string;
-      ctx?: ReadContext | null;
-      defer_list_types?: ReadonlySet<string> | null;
-      [k: string]: unknown;
-    } = {},
+    kwargs: ChunkReadKwargs = {},
   ): ContainerChunk {
     const { chunk_type = "" } = kwargs;
     const ctx = kwargs.ctx ?? EMPTY_CTX;
@@ -703,15 +719,35 @@ export class ReadContext {
 
 export const EMPTY_CTX = new ReadContext();
 
+/** The keywords a context resolver adds for its chunk type's `read`. */
+export type ResolvedContext = {
+  is_le?: boolean;
+  item_type?: LdatItemType;
+  item_size?: number;
+  count?: number;
+  is_spatial?: boolean;
+  is_color?: boolean;
+  is_integer?: boolean;
+  renderer_match_name?: string;
+};
+
+/** The keywords `read_chunks` passes to every `cls.read`. */
+export type ChunkReadKwargs = {
+  chunk_type?: string;
+  ctx?: ReadContext | null;
+  defer_list_types?: ReadonlySet<string> | null;
+  parent_result?: Chunk[] | null;
+} & ResolvedContext;
+
 // ---------------------------------------------------------------------------
 // Context resolvers
 // ---------------------------------------------------------------------------
 
-export function _resolve_cdat_context(siblings: Chunk[], ctx: ReadContext): Record<string, boolean> {
+export function _resolve_cdat_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   return { is_le: ctx.grandparent_list_type === "otst" };
 }
 
-export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   // Registry lookup instead of a deferred import: ldat_chunks subclasses Chunk,
   // so a top-level import would be circular.
   const Lhd3Chunk = registered("lhd3");
@@ -719,7 +755,7 @@ export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Reco
   const lhd3_sibling: Chunk = siblings[0];
   if (!(lhd3_sibling instanceof Lhd3Chunk)) return {};
   const lhd3 = lhd3_sibling;
-  const result: Record<string, unknown> = {
+  const result: ResolvedContext = {
     item_type: lhd3.item_type,
     item_size: lhd3.item_size,
     count: lhd3.count,
@@ -730,25 +766,27 @@ export function _resolve_ldat_context(siblings: Chunk[], ctx: ReadContext): Reco
     ctx.parent_siblings != null &&
     ctx.parent_siblings.length > 2
   ) {
-    const tdb4_sibling: any = ctx.parent_siblings[2];
-    if (hasattr(tdb4_sibling, "is_spatial")) {
+    // `hasattr(tdb4_sibling, "is_spatial")`: only Tdb4Chunk declares it.
+    const tdb4_sibling = ctx.parent_siblings[2];
+    if (tdb4_sibling instanceof registered("tdb4")) {
       result.is_spatial = tdb4_sibling.is_spatial;
     }
   }
   return result;
 }
 
-export function _resolve_tdum_context(siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_tdum_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   if (siblings.length > 2) {
-    const tdb4: any = siblings[2];
-    if (hasattr(tdb4, "color") && hasattr(tdb4, "integer")) {
+    // `hasattr(tdb4, "color") and hasattr(tdb4, "integer")`: only Tdb4Chunk declares `integer`.
+    const tdb4 = siblings[2];
+    if (tdb4 instanceof registered("tdb4")) {
       return { is_color: tdb4.color, is_integer: tdb4.integer };
     }
   }
   return {};
 }
 
-export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): Record<string, string> {
+export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   // Registry lookup instead of a deferred import: misc_chunks subclasses Chunk,
   // so a top-level import would be circular.
   const PrinChunk = registered("prin");
@@ -760,7 +798,7 @@ export function _resolve_prda_context(siblings: Chunk[], ctx: ReadContext): Reco
   return {};
 }
 
-export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => Record<string, unknown>> =
+export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => ResolvedContext> =
   new Map([
     ["cdat", _resolve_cdat_context],
     ["ldat", _resolve_ldat_context],
@@ -770,7 +808,7 @@ export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContex
   ]);
 
 /** Compute kwargs for parameterized chunk types. */
-export function _resolve_context(chunk_type: string, siblings: Chunk[], ctx: ReadContext): Record<string, unknown> {
+export function _resolve_context(chunk_type: string, siblings: Chunk[], ctx: ReadContext): ResolvedContext {
   const resolver = _CONTEXT_RESOLVERS.get(chunk_type);
   if (resolver == null) return {};
   return resolver(siblings, ctx);
@@ -864,10 +902,14 @@ export function read_chunks(
     const [chunk_type, len_body] = read_header(fp);
     const cls = CHUNK_TYPES.get(chunk_type) ?? Chunk;
 
-    const read_kw = { chunk_type, ctx, parent_result: result, defer_list_types };
     const resolver = _CONTEXT_RESOLVERS.get(chunk_type);
-    if (resolver) Object.assign(read_kw, resolver(result, ctx));
-    const chunk = cls.read(fp, len_body, read_kw);
+    const chunk: Chunk = cls._nests
+      ? // No resolver targets a nesting chunk (tests/unit/test_binary_io.test.ts).
+        cls.read(fp, len_body, { chunk_type, ctx, parent_result: result, defer_list_types })
+      : resolver != null
+        ? cls.read(fp, len_body, { chunk_type, ...resolver(result, ctx) })
+        : // Leaf chunks take no reading context.
+          cls.read(fp, len_body, { chunk_type });
     result.push(chunk);
 
     // Consume pad byte if len_body is odd

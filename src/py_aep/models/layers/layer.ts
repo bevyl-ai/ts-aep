@@ -11,16 +11,18 @@ import { CmtaChunk } from "../../binary/item_chunks.ts";
 import { build_gide_list, build_ovdg, clone_chunk_tree, remap_layer_ref_tdpi, rewrite_owner_tdpi, rewrite_time_base } from "../../binary/mutations.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { find_by_type, index_by_identity, list_type_of } from "../../binary/utils.ts";
+import { filter_by_list_type, filter_by_type, find_by_type, index_by_identity, list_type_of } from "../../binary/utils.ts";
+import { _effect_instances, rehome_effect_definitions } from "../../parsers/effect.ts";
 import { parse_properties } from "../../parsers/property.ts";
-import { get_match_name_runs } from "../../parsers/utils.ts";
+import { get_chunks_by_match_name, get_match_name_runs } from "../../parsers/utils.ts";
 import { Mat4, aspect_scale, build_world_matrix, compose_orientation, decompose_transform, layer_source_aspect, position_space_aspect, rig_aims_at_poi, rotation_part, square_pixels, strip_orientation } from "../../resolvers/transform.ts";
-import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
+import { ChunkField, _suppress_materialization, type EffectParamDefs } from "../descriptors.ts";
 import { auto_name } from "../naming.ts";
 import { Property } from "../properties/property.ts";
 import { PropertyBase } from "../properties/property_base.ts";
 import { PropertyGroup } from "../properties/property_group.ts";
 import { _validate_number, validate_int, validate_number, validate_string } from "../validators.ts";
+import type { AVItem } from "../items/av_item.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "./av_layer.ts";
 import {
@@ -84,6 +86,28 @@ export function _no_source_id(comp: CompItem): number {
   return ae_writes("light source id", major) ? _UNDEFINED_ID : 0;
 }
 
+/**
+ * Extract Essential Properties override UUIDs from LIST:OvG2 chunks.
+ *
+ * @param tdgp_chunks - The children of the layer's root `tdgp` group, where `LIST:OvG2` is a direct
+ *   child (beside the "ADBE Layer Overrides" marker). NOT the layer LIST's own children - `OvG2`
+ *   sits one level deeper than that.
+ * @returns A list of controller UUID strings from the OvG2/CPrp/Utf8 entries; each matches an
+ *   `EssentialGraphicsController.uuid` on the source comp.
+ */
+export function _parse_ovg2_uuids(tdgp_chunks: Chunk[]): string[] {
+  const uuids: string[] = [];
+  for (const ovg2_list of filter_by_list_type(tdgp_chunks, "OvG2")) {
+    for (const cprp of filter_by_list_type(ovg2_list.chunks, "CPrp")) {
+      const utf8_chunks = filter_by_type(cprp.chunks, "Utf8");
+      if (utf8_chunks.length > 0) {
+        uuids.push(utf8_chunks[0].value);
+      }
+    }
+  }
+  return uuids;
+}
+
 /** World matrix a child of `parent` is placed in, at comp `time`. */
 export function _parent_world(parent: Layer | null, time: number, child_is_3d: boolean): Mat4 {
   if (parent == null) return Mat4.identity();
@@ -110,7 +134,7 @@ export function _list_remove<T>(xs: T[], x: T): void {
 /** A group holding a property whose left-out default follows other state (see `Layer._LIVE_DEFAULTS`). */
 export type LiveDefaultGroup = "ADBE Transform Group" | "ADBE Camera Options Group";
 /** A property whose left-out default follows other state (see `Layer._LIVE_DEFAULTS`). */
-export type LiveDefaultProperty = "ADBE Position" | "ADBE Camera Zoom" | "ADBE Camera Focus Distance";
+export type LiveDefaultProperty = "ADBE Position" | "ADBE Anchor Point" | "ADBE Camera Zoom" | "ADBE Camera Focus Distance";
 
 /** Keyword arguments of `Layer._new`. */
 type LayerNewKw = {
@@ -128,8 +152,6 @@ type LayerInitKw = {
   _name_utf8: Utf8Chunk;
   _layer_list: ListChunk;
   containing_comp: CompItem;
-  properties: (Property | PropertyGroup)[];
-  essential_property_uuids: string[];
 };
 
 /**
@@ -172,7 +194,23 @@ export class Layer extends PropertyGroup {
 
   // The (group, property) match names whose default follows other state,
   // which `_write_out_moved_defaults` writes once that state moves it.
-  static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [];
+  static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [
+    ["ADBE Transform Group", "ADBE Position"],
+  ];
+
+  _comp_centre(): number[] {
+    const comp = this.containing_comp;
+    return [comp.width / 2.0, comp.height / 2.0, 0.0];
+  }
+
+  /**
+   * AE's default Position: the comp centre. A left-out Position stays
+   * where it was when the comp is resized, and AE writes it: measured on
+   * AE 2026 for a solid, a text, a shape and a null layer.
+   */
+  _default_position(): number[] {
+    return this._comp_centre();
+  }
 
   /**
    * When `true`, the layer is enabled. Overrides `PropertyBase.enabled`
@@ -221,13 +259,7 @@ export class Layer extends PropertyGroup {
    */
   declare auto_orient: AutoOrientType;
 
-  /**
-   * UUIDs of Essential Properties overrides on this layer.
-   *
-   * Each UUID corresponds to an {@link EssentialGraphicsController} in
-   * the source composition's Essential Graphics panel.
-   */
-  declare essential_property_uuids: string[];
+  declare _essential_property_uuids: string[] | null;
 
   declare _ldta: LdtaChunk;
   declare _cmta: CmtaChunk | null;
@@ -341,10 +373,8 @@ export class Layer extends PropertyGroup {
       _name_utf8,
       _layer_list,
       containing_comp,
-      properties,
-      essential_property_uuids,
     } = kw;
-    // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
+    // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
     const layer_type_raw = _ldta.layer_type;
     const layer_type = LayerType.of_or_null(layer_type_raw);
@@ -362,13 +392,14 @@ export class Layer extends PropertyGroup {
       match_name,
       auto_name: "",
       property_depth: 0,
-      properties,
+      properties: [],
     });
 
     this._ldta = _ldta;
     this._cmta = _cmta;
     this._layer_list = _layer_list;
-    this.essential_property_uuids = essential_property_uuids;
+    // Read from the root tdgp on first access.
+    this._essential_property_uuids = null;
 
     this._containing_comp = containing_comp;
     // PropertyGroup's constructor already returns the py_object proxy that
@@ -411,23 +442,83 @@ export class Layer extends PropertyGroup {
       _name_utf8: name_utf8,
       _layer_list: layer_list,
       containing_comp,
-      properties: [],
-      essential_property_uuids: [],
     });
     layer._tdgp = root_tdgp;
-
-    const props = parse_properties(
-      get_match_name_runs(root_tdgp),
-      1,
-      py_or(effect_param_defs, new Map()),
-      containing_comp,
-      layer,
-    );
-    layer._properties = props;
-    for (const child of props) child._parent_property = layer;
-
-    _synthesis_core().synthesize_layer_properties(layer);
+    layer._build_property_tree(py_or(effect_param_defs, new Map()));
     return layer;
+  }
+
+  // The effect definitions a parsed layer's property tree is built with on
+  // first access, or `null` once it is built: opening a composition's
+  // layers then only decodes their `ldta`, and a reader of layer
+  // attributes alone (times, names, sources) never pays for the
+  // properties. Until then `_properties` is absent from the instance, so
+  // its first read lands in `__getattr__`; after that it is a plain
+  // attribute, with nothing to check on each access.
+  // NOTE(port): a Python class attribute, installed on the prototype below the class.
+  declare _tree_param_defs: EffectParamDefs | null;
+
+  __getattr__(name: string): Property | PropertyGroup {
+    // A public name may be a child looked up by attribute: build first.
+    if (this._tree_param_defs != null && (name === "_properties" || !name.startsWith("_"))) {
+      this._load_property_tree();
+      // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
+      return getattr(this, name);
+    }
+    return super.__getattr__(name);
+  }
+
+  /** Build the property tree of a parsed layer, if not built yet. */
+  _load_property_tree(): void {
+    _suppress_materialization().run(() => {
+      const effect_param_defs = this._tree_param_defs;
+      if (effect_param_defs == null) return;
+      // Cleared first, with an empty tree in place as during an eager
+      // parse: parsing and synthesis read the layer's own properties.
+      this._tree_param_defs = null;
+      this._properties = [];
+      try {
+        this._build_property_tree(effect_param_defs);
+      } catch (e) {
+        // Unbuilt again, so the next read raises too rather than seeing
+        // a partial tree.
+        Reflect.deleteProperty(this, "_properties");
+        this._tree_param_defs = effect_param_defs;
+        throw e;
+      }
+    });
+  }
+
+  /**
+   * Parse the root tdgp into this layer's properties and synthesize
+   * the ones the file leaves out.
+   */
+  _build_property_tree(effect_param_defs: EffectParamDefs): void {
+    py_assert(this._tdgp != null);
+    const props = parse_properties(
+      get_match_name_runs(this._tdgp),
+      1,
+      effect_param_defs,
+      this.containing_comp,
+      this,
+    );
+    this._properties = props;
+    for (const child of props) child._parent_property = this;
+    _synthesis_core().synthesize_layer_properties(this);
+  }
+
+  /**
+   * UUIDs of Essential Properties overrides on this layer.
+   *
+   * Each UUID corresponds to an {@link EssentialGraphicsController} in
+   * the source composition's Essential Graphics panel.
+   */
+  get essential_property_uuids(): string[] {
+    if (this._essential_property_uuids == null) {
+      py_assert(this._tdgp != null);
+      this._essential_property_uuids = _parse_ovg2_uuids(this._tdgp.chunks);
+    }
+    return this._essential_property_uuids;
   }
 
   __repr__(): string {
@@ -547,6 +638,33 @@ export class Layer extends PropertyGroup {
    */
   get _pixel_size(): [number, number] | null {
     return null;
+  }
+
+  /**
+   * The layer's source item: none for a camera or a light (see
+   * `AVLayer.source`). For code handling any kind of layer, where
+   * `getattr(layer, "source", null)` would search the layer's properties
+   * for a child of that name.
+   */
+  get _source_item(): AVItem | null {
+    return null;
+  }
+
+  /**
+   * The size the layer's effect points are stored normalized against.
+   *
+   * The layer's pixel size, except on an adjustment layer, whose effects
+   * render in its composition: AE 2026 stores a Transform anchor set to
+   * [30, 40] on a 200x100 adjustment solid in a 1920x1080 comp as
+   * 30 / 1920, 40 / 1080, and defaults it to the comp's centre (as AE
+   * 15.1 does).
+   */
+  get _effect_point_size(): [number, number] | null {
+    if (this.adjustment_layer) {
+      const comp = this.containing_comp;
+      return [comp.width, comp.height];
+    }
+    return this._pixel_size;
   }
 
   get _stretch_factor(): number {
@@ -809,6 +927,22 @@ export class Layer extends PropertyGroup {
   }
 
   /**
+   * Whether the file leaves out one of `_LIVE_DEFAULTS`, read from the
+   * chunks so that the tree stays unbuilt when none is.
+   */
+  _leaves_out_live_defaults(): boolean {
+    py_assert(this._tdgp != null);
+    const groups = get_chunks_by_match_name(this._tdgp);
+    for (const [group_name, match_name] of this.constructor._LIVE_DEFAULTS) {
+      const group = filter_by_list_type(groups.get(group_name) ?? [], "tdgp");
+      if (group.length === 0 || !get_chunks_by_match_name(group[0]).has(match_name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Write the left-out properties whose default has moved.
    *
    * AE leaves a property at its default out of the file, and some
@@ -819,6 +953,10 @@ export class Layer extends PropertyGroup {
    * Run on save, so every way of changing the state is covered.
    */
   _write_out_moved_defaults(): void {
+    if (this._tree_param_defs != null) {
+      // Never built, so nothing moved (`CompItem._build_live_defaults`).
+      return;
+    }
     for (const [group_name, match_name] of this.constructor._LIVE_DEFAULTS) {
       const group = this.property(group_name);
       const prop = group.property(match_name);
@@ -843,7 +981,7 @@ export class Layer extends PropertyGroup {
     // Walk up from the candidate; hitting self means a cycle. The
     // visited set keeps this terminating even on a file that already
     // contains a parenting cycle.
-    const seen = new Set<unknown>([this]);
+    const seen = new Set<Layer>([this]);
     let current: Layer | null = new_parent;
     while (current != null) {
       if (seen.has(current)) {
@@ -1259,14 +1397,15 @@ export class Layer extends PropertyGroup {
 
     // Update source _used_in if this layer references a source item
     comp._project._ensure_used_in_linked();
-    const source = getattr(this, "source", null);
+    const source = this._source_item;
     if (source != null && "_used_in" in source) {
       _av_layer()._unregister_source_usage(source, comp, { exclude: this });
     }
 
     // Remove chunk block from comp's chunk list
     const [start, end] = comp._layer_block_slice(this);
-    comp._item_list.chunks.splice(start, end - start);
+    const removed = comp._item_list.chunks.splice(start, end - start);
+    rehome_effect_definitions(comp._project, _effect_instances(removed));
 
     // Remove from model list and rebuild caches
     _list_remove(comp._layers, this);
@@ -1440,7 +1579,7 @@ export class Layer extends PropertyGroup {
 
     // Register source _used_in for the cloned layer
     into_comp._project._ensure_used_in_linked();
-    const new_source = getattr(new_layer, "source", null);
+    const new_source = new_layer._source_item;
     if (new_source != null && "_used_in" in new_source) {
       new_source._used_in.add(into_comp);
     }
@@ -1584,6 +1723,10 @@ export class Layer extends PropertyGroup {
     comp._invalidate_layer_cache();
   }
 }
+
+// `_tree_param_defs: ... = None` in the class body: on the prototype, so
+// `__getattr__` finds it before the instance sets its own.
+Layer.prototype._tree_param_defs = null;
 
 // Descriptors assigned in the class body (`enabled = ChunkField.bool(...)`)
 // are installed on the prototype after the class is defined.

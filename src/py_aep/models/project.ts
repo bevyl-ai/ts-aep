@@ -7,8 +7,7 @@ import { fromstring, tostring } from "../../pyrt/etree.ts";
 import { ae_writes, requires_version } from "../ae_version.ts";
 import { to_f4, truncate_utf8 } from "../binary/bin_utils.ts";
 import { write_aep as _write_aep } from "../binary/chunk.ts";
-import type { Chunk } from "../binary/chunk.ts";
-import { ListChunk } from "../binary/chunk.ts";
+import { Chunk, ListChunk } from "../binary/chunk.ts";
 import { build_ai_layer_opti_data, build_psd_flattened_opti_data, build_text_opti_data } from "../binary/footage_chunks.ts";
 import { HeadChunk, NhedChunk, NnhdChunk, TimeDisplayPrefItem } from "../binary/item_chunks.ts";
 import { DwgaChunk } from "../binary/misc_chunks.ts";
@@ -75,6 +74,7 @@ import {
   max,
   py_assert,
   py_bool,
+  py_cmp,
   py_eq,
   py_or,
   repr,
@@ -170,7 +170,7 @@ export const _LAYERED_COMP_DURATION_SECONDS = 30.0;
 
 /** Wrap a setter with `@requires_version(N)`: the setter body is passed to the
  * decorator factory once, at module load, and invoked with the project as `this`. */
-export const _set_linearize_working_space = requires_version(16)(function linearize_working_space(
+export const _set_linearize_working_space = requires_version(15)(function linearize_working_space(
   this: Project,
   value: boolean,
 ): void {
@@ -861,6 +861,10 @@ export class Project {
    * {@link icc_profile_dirs}) and embedded; `ColorProfileNotFoundError` is
    * raised if it is not installed. Assigning `"None"` removes the working
    * space.
+   *
+   * In a project from before After Effects 22, the profile is added to the
+   * project's list of ICC profiles; as in After Effects, a profile that is
+   * no longer the working space stays in that list.
    */
   get working_space(): string {
     if (this._ws_utf8 != null) return envelope_profile_name(this._ws_utf8.value);
@@ -880,6 +884,10 @@ export class Project {
 
   set working_space(value: string) {
     validate_string(value);
+    if (!this._root_chunks.some((c) => c.chunk_type === "pcms")) {
+      this._set_cppl_working_space(value);
+      return;
+    }
     let envelope: string;
     let profile_id: Uint8Array;
     if (this.color_management_system === ColorManagementSystem.OCIO) {
@@ -901,6 +909,34 @@ export class Project {
     this._ws_utf8 = this._rewrite_color_profile("PwCs", envelope);
     // AE 2026 rewrites `cpid` to the new profile's id when a script sets
     // workingSpace; OCIO projects store all 0xFF.
+    this._cpid.data = profile_id;
+  }
+
+  /**
+   * Set the working space of a project from before After Effects 22.
+   *
+   * These projects keep each ICC profile they use as a `pprf` in
+   * `LIST:CPPl`, and `cpid` holds the working space's id. Measured on AE
+   * 15.1: it saves the list sorted by ICC profile id and keeps profiles
+   * nothing uses anymore, so a new profile is inserted in order and a
+   * replaced one stays.
+   */
+  _set_cppl_working_space(value: string): void {
+    if (value === "None") {
+      this._cpid.data = bytes_.repeat(b("\xff"), 16);
+      return;
+    }
+    const icc = this._icc_lib().bytes_for(value);
+    const profile_id = icc_profile_id(icc);
+    const cppl = find_by_list_type(this._root_chunks, "CPPl");
+    // The first profile whose id is not below the new one: the same
+    // profile (reused) or the one the new profile goes before.
+    const at = cppl.chunks.findIndex((pprf) => py_cmp(icc_profile_id(pprf.data), profile_id) >= 0);
+    if (at === -1) {
+      cppl.chunks.push(new Chunk({ chunk_type: "pprf", data: icc }));
+    } else if (py_cmp(icc_profile_id(cppl.chunks[at].data), profile_id) > 0) {
+      cppl.chunks.splice(at, 0, new Chunk({ chunk_type: "pprf", data: icc }));
+    }
     this._cpid.data = profile_id;
   }
 
@@ -2114,25 +2150,12 @@ export class Project {
     const filled = this._fill_relative_path_counts(
       platform_path(host.path.resolve(String(path_obj)), { windows: this._windows }),
     );
-    // Write to a sibling temp file then rename, so a serialization
-    // error can never leave a truncated .aep at the target path. The
-    // temp name is unique and created exclusively: a fixed one would
-    // overwrite, then move away, any file of the user's carrying it.
-    const tmp_path = path_obj.with_name(`${path_obj.name}.${uuid4().replace(/-/g, "")}.tmp`);
+    // Serialize in memory: the writer seeks back to fill in each chunk's
+    // length, and on a network share every seek is a round trip (a 29 MB
+    // project took minutes to write there, under a second in one call).
+    const buffer = new BytesIO();
     try {
-      // `tmp_path.open("xb")`: created exclusively before anything is written.
-      const fd = host.fs.openSync(tmp_path.path, "wx");
-      try {
-        const buf = new BytesIO();
-        module_globals.write_aep(buf, this._rifx, this._xmp);
-        // `getbuffer()`: the written bytes without copying the whole file once more.
-        host.fs.writeSync(fd, buf.getbuffer());
-      } finally {
-        host.fs.closeSync(fd);
-      }
-    } catch (e) {
-      if (tmp_path.exists()) tmp_path.unlink(); // missing_ok needs Python 3.8
-      throw e;
+      module_globals.write_aep(buffer, this._rifx, this._xmp);
     } finally {
       // Back to pending, so a later save computes them for its own
       // location.
@@ -2140,7 +2163,26 @@ export class Project {
         alas.value = text;
       }
     }
-    tmp_path.replace(path_obj);
+    // Write to a sibling temp file then rename, so a failed write can
+    // never leave a truncated .aep at the target path. The temp name is
+    // unique and created exclusively: a fixed one would overwrite, then
+    // move away, any file of the user's carrying it. A failed rename (a
+    // scanner still holding the temp file on Windows) removes it too.
+    const tmp_path = path_obj.with_name(`${path_obj.name}.${uuid4().replace(/-/g, "")}.tmp`);
+    try {
+      // `tmp_path.open("xb")`: created exclusively before anything is written.
+      const fd = host.fs.openSync(tmp_path.path, "wx");
+      try {
+        // `getbuffer()`: the written bytes without copying the whole file once more.
+        host.fs.writeSync(fd, buffer.getbuffer());
+      } finally {
+        host.fs.closeSync(fd);
+      }
+      tmp_path.replace(path_obj);
+    } catch (e) {
+      if (tmp_path.exists()) tmp_path.unlink(); // missing_ok needs Python 3.8
+      throw e;
+    }
     this._file = fspath(path);
   }
 

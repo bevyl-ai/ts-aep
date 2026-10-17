@@ -1,9 +1,9 @@
 /** Effect and parameter definition parsers. */
 
-import type { Chunk, ListChunk } from "../binary/chunk.ts";
+import { ListChunk, type Chunk } from "../binary/chunk.ts";
 import type { AnglePardChunk, BooleanPardChunk, ColorPardChunk, EnumPardChunk, IntegerPardChunk, PardChunk, ScalarPardChunk, SliderPardChunk, ThreeDPardChunk, TwoDPardChunk } from "../binary/misc_chunks.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null, index_by_identity } from "../binary/utils.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { EFFECT_PARAM_SPATIAL_FLAGS } from "../data/spatial_flags.ts";
 import { PropertyControlType, PropertyType, PropertyValueType } from "../enums/index.ts";
@@ -16,13 +16,19 @@ import { PropSpec } from "../synthesis/property.ts";
 import { get_chunks_by_match_name, get_match_name_runs } from "./utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
+import type { Project } from "../models/project.ts";
 import {
   and,
+  at,
   deferred,
   int,
   split,
+  strip,
   warn,
-  zip,
+  decode,
+  encode,
+  LookupError,
+  UnicodeDecodeError,
 } from "../../pyrt/index.ts";
 
 const _property = deferred<typeof import("./property.ts")>("py_aep/parsers/property");
@@ -111,7 +117,7 @@ export function _param_def_to_spec(match_name: string, param_def: ParamDef): Pro
  * Resolve value and default_value for a synthesized effect property.
  *
  * Returns pre-rescale values - point defaults stay in percent of the
- * layer size; `_scale_point_to_pixels` converts them to pixels.
+ * layer size; `_normalize_synthetic_point` stores them as fractions.
  *
  * @param match_name - The property's match name.
  * @param param_def - The parameter definition from parT parsing.
@@ -180,10 +186,14 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
   // source of an Essential Graphics slider controller's Smin/Smax.
   prop._slider_min = param_def.slider_min ?? null;
   prop._slider_max = param_def.slider_max ?? null;
-  prop.nb_options = param_def.nb_options ?? null;
+  // Popup-only: written when present, so other properties keep the class
+  // default (`null`).
+  const nb_options = param_def.nb_options ?? null;
+  if (nb_options != null) prop.nb_options = nb_options;
   // Direct write: the public setter has user-write semantics (validation
   // plus pdnm/pard chunk rewrites).
-  prop._property_parameters = param_def.property_parameters ?? null;
+  const property_parameters = param_def.property_parameters ?? null;
+  if (property_parameters != null) prop._property_parameters = property_parameters;
   const units = param_def.units_text ?? null;
   if (units != null) prop._units_text = units;
   // The pard param flags carry the authoritative can-vary bit; the
@@ -198,34 +208,46 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
 }
 
 /**
- * A point parameter's parT default, converted to pixel coordinates.
- *
- * `raw` is the pard default, in percent of the LAYER size - the same
- * reference the instance `cdat` uses - so the conversion is
- * `raw / 100 * layer_size`, with a 3D point's Z sharing the height
- * divisor (`Property._effect_scale`).
- *
- * Measured in AE 2026: an untouched Gradient Ramp `End of Ramp` (pard
- * default 50 %, 100 %) reports [100, 100] on a 200x100 layer in an
- * 800x600 comp, and [128, 256] on a 256x256 layer in a 512x512 comp.
- * Only the layer reproduces both; normalizing against the composition
- * gives [400, 600] and [128, 256] - right only when layer and comp match,
- * which is why this went unnoticed.
- *
- * Returns `null` when the value is not a point.
+ * A point parameter's pard default (percent of the layer) as the fraction
+ * its `cdat` stores, or `null` when it is not a point.
  */
-export function _point_default_pixels(raw: PropertyValue, size: [number, number]): number[] | null {
+export function _point_fraction(raw: PropertyValue): number[] | null {
   if (!Array.isArray(raw) || raw.length < 2) return null;
-  const scale = [size[0], size[1], size[1]];
-  return zip(raw, scale).map(([v, factor]) => v / 100.0 * factor);
+  return raw.map((v) => v / 100.0);
 }
 
-/** Convert a synthesized point property's value and default in place. */
-export function _scale_point_to_pixels(prop: Property, size: [number, number]): void {
-  const value = _point_default_pixels(prop._value, size);
-  if (value != null) prop._value = value;
-  const default_ = _point_default_pixels(prop.default_value, size);
-  if (default_ != null) prop.default_value = default_;
+export function _point_pixels(prop: Property, fraction: number[]): PropertyValue {
+  return prop._resolve_value([...fraction]);
+}
+
+/**
+ * Give a point parameter its pard default, read like its stored value.
+ *
+ * The default is a percentage of the LAYER (the composition for an
+ * adjustment layer, `Property._effect_scale`), so it follows the layer's
+ * current size as the stored point does. Measured in AE 2026: an untouched
+ * Gradient Ramp `End of Ramp` (pard default 50 %, 100 %) reports [100, 100]
+ * on a 200x100 layer in an 800x600 comp, and [128, 256] on a 256x256 layer
+ * in a 512x512 comp; a fresh Point Control on a 200x100 solid reports
+ * [100, 50], then [200, 50] once the solid is 400 wide and [960, 540] once
+ * it is an adjustment layer in a 1920x1080 comp - unmodified throughout.
+ */
+export function _bind_point_default(prop: Property, raw: PropertyValue): void {
+  const fraction = _point_fraction(raw);
+  if (fraction != null) prop._default_value_source = () => _point_pixels(prop, fraction);
+}
+
+/**
+ * Keep a synthesized point as the fraction AE stores, read through the
+ * layer's current size, with the default `_bind_point_default` gives.
+ */
+export function _normalize_synthetic_point(prop: Property): void {
+  const raw = prop._value;
+  const fraction = _point_fraction(raw);
+  if (fraction == null || prop._cdat == null) return;
+  prop._cdat.values = fraction;
+  prop._value = null;
+  _bind_point_default(prop, raw);
 }
 
 /**
@@ -235,10 +257,13 @@ export function _scale_point_to_pixels(prop: Property, size: [number, number]): 
  * describe the control type, default values, and ranges.
  *
  * @param sspc_child_chunks - The SSPC chunk's child chunks.
+ * @param code_page - The project's system code page (`nnhd`), which older
+ *   projects store parameter names in.
  * @returns Map of parameter match names to definition dicts.
  */
 export function parse_effect_param_defs(
   sspc_child_chunks: Chunk[],
+  code_page: number,
 ): Map<string, ParamDef> {
   const part_chunk = find_by_list_type(sspc_child_chunks, "parT");
   const param_defs = new Map<string, ParamDef>();
@@ -247,10 +272,49 @@ export function parse_effect_param_defs(
   for (const [index, [match_name, parameter_chunks]] of [...chunks_by_parameter].entries()) {
     // Skip first, it describes parent
     if (index === 0) continue;
-    param_defs.set(match_name, _parse_effect_parameter_def(parameter_chunks));
+    const param_def = _parse_effect_parameter_def(parameter_chunks, code_page);
+    if (_UNBOUNDED_CHECKBOXES.has(match_name)) {
+      delete param_def.min_value;
+      delete param_def.max_value;
+    }
+    param_defs.set(match_name, param_def);
   }
 
   return param_defs;
+}
+
+// Checkboxes AE 2026 reports without min / max. Nothing in their pard sets
+// them apart: the other 2067 checkboxes of the effect samples, including
+// ones with the same flags, are bounded 0-1.
+export const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
+  "ADBE Paint On Transparent",
+  "ADBE FreePin3 On Transparent",
+]);
+
+// Codecs of the `nnhd` code pages that are not `cp<number>`.
+export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
+  [0x0100, "mac_roman"],
+]);
+
+/**
+ * A `pard` name in the project's code page.
+ *
+ * The chunk decodes the name as UTF-8 (keeping other bytes as surrogates
+ * for the round trip), but projects saved before AE 26 store it in the
+ * system code page: "Set Red To Source 1's" holds 0x92 in a Windows
+ * (1252) project. Names that are valid UTF-8 are returned as they are.
+ */
+// TODO(port): pyrt decodes only cp1252, mac_roman and utf-8; a name on any other
+// code page (cp932, cp1250, ...) keeps its raw form, where Python decodes it.
+export function _decode_pard_name(name: string, code_page: number): string {
+  if (!/[\udc80-\udcff]/u.test(name)) return name;
+  const codec = _CODE_PAGE_CODECS.get(code_page) ?? `cp${code_page}`;
+  try {
+    return decode(encode(name, "utf-8", "surrogateescape"), codec);
+  } catch (e) {
+    if (!(e instanceof LookupError || e instanceof UnicodeDecodeError)) throw e;
+    return name;
+  }
 }
 
 /**
@@ -261,13 +325,8 @@ export function parse_effect_param_defs(
  *
  * @param prop - The property to update in place.
  * @param param_def - The parameter definition.
- * @param point_size - The layer size a point parameter's default is relative to.
  */
-export function _merge_param_def(
-  prop: Property,
-  param_def: ParamDef,
-  point_size: [number, number],
-): void {
+export function _merge_param_def(prop: Property, param_def: ParamDef): void {
   prop._auto_name = param_def.name || prop._auto_name;
   prop._property_control_type = param_def.property_control_type;
   if (prop._arbs != null && param_def.default_arbp !== undefined) {
@@ -285,7 +344,7 @@ export function _merge_param_def(
     param_def.property_control_type === PropertyControlType.TWO_D ||
     param_def.property_control_type === PropertyControlType.THREE_D
   ) {
-    prop.default_value = _point_default_pixels(param_def.default_value ?? null, point_size);
+    _bind_point_default(prop, param_def.default_value ?? null);
   } else if (param_def.property_control_type !== PropertyControlType.LAYER) {
     prop.default_value = param_def.default_value ?? null;
   }
@@ -359,12 +418,6 @@ export function _parse_effect_properties(
   group_match_name = "",
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
-  // Point parameters normalize against the LAYER. The layer is only
-  // reachable once the effect is attached, so callers that already know
-  // it pass its size; during the initial parse it is unknown and the
-  // composition stands in (what py_aep has always used).
-  const point_size: [number, number] = layer?._pixel_size ?? [composition.width, composition.height];
-
   // Skip index-0 internal parameters (not exposed in ExtendScript).
   const property_runs = [...get_match_name_runs(tdgp_chunk)].filter(
     ([name]) => !name.endsWith("-0000"),
@@ -390,12 +443,9 @@ export function _parse_effect_properties(
     const existing = parsed_by_mn.get(match_name) ?? null;
     if (existing != null) {
       if (existing instanceof Property) {
-        _merge_param_def(existing, param_def, point_size);
+        _merge_param_def(existing, param_def);
       }
       ordered.push(existing);
-    } else if (match_name === "ADBE Force CPU GPU") {
-      // Belongs inside ADBE Effect Built In Params, not here.
-      continue;
     } else {
       const synth = _synthesize_effect_property(match_name, param_def, child_depth, {
         parent_property,
@@ -405,7 +455,7 @@ export function _parse_effect_properties(
         (synth._property_control_type === PropertyControlType.TWO_D ||
           synth._property_control_type === PropertyControlType.THREE_D)
       ) {
-        _scale_point_to_pixels(synth, point_size);
+        _normalize_synthetic_point(synth);
       }
       ordered.push(synth);
     }
@@ -429,6 +479,91 @@ export function _parse_effect_properties(
   }
 
   return ordered;
+}
+
+export const _ITEM_CONTAINERS: ReadonlySet<string> = new Set(["Fold", "Item", "Sfdr"]);
+
+/**
+ * Every effect instance under `chunks` (folder, item or layer lists) as
+ * `(match name, sspc)`, in file order. Only the layers' Effects groups are
+ * decoded.
+ */
+export function* _effect_instances(chunks: Chunk[]): Generator<[string, ListChunk]> {
+  for (const chunk of chunks) {
+    if (!(chunk instanceof ListChunk)) continue;
+    const list_type = chunk.list_type;
+    if (_ITEM_CONTAINERS.has(list_type)) {
+      yield* _effect_instances(chunk.chunks);
+    } else if (list_type === "Layr") {
+      const root = filter_by_list_type(chunk.chunks, "tdgp");
+      const parade = get_chunks_by_match_name(at(root, 0)).get("ADBE Effect Parade");
+      const effects = filter_by_list_type(parade ?? [], "tdgp");
+      if (effects.length === 0) continue;
+      for (const [name, run] of get_chunks_by_match_name(effects[0])) {
+        for (const sspc of filter_by_list_type(run, "sspc")) {
+          yield [name, sspc];
+        }
+      }
+    }
+  }
+}
+
+/** The instance's `parT`, if it holds its effect's definitions. */
+export function _held_definitions(sspc: ListChunk): ListChunk | null {
+  const parts = filter_by_list_type(sspc.chunks, "parT");
+  return parts.length > 0 && parts[0].chunks.length > 0 ? parts[0] : null;
+}
+
+/**
+ * The parameter definitions of effect `match_name` from the instance in
+ * the project that holds them.
+ *
+ * AE writes an effect's `parT` in its first instance in file order only and
+ * leaves the others' empty (every effect used more than once in samples/,
+ * AE 15 to 26); a project saved by an older version (AE 15 in samples/) has
+ * no `LIST:EfdG` to hold them instead.
+ */
+export function _project_param_defs(composition: CompItem, match_name: string): Map<string, ParamDef> {
+  const project = composition._project;
+  for (const [name, sspc] of _effect_instances(project._rifx.chunks)) {
+    if (name === match_name && _held_definitions(sspc) != null) {
+      return parse_effect_param_defs(sspc.chunks, project._nnhd._system_code_page);
+    }
+  }
+  return new Map();
+}
+
+/**
+ * Hand the definitions held by `removed` effect instances to the first
+ * remaining instance of each effect, where AE keeps them (see
+ * `_project_param_defs`); AE 15 and AE 2026 write them there on their own
+ * save. AE rewrites the instance-specific bytes of each `pard` (UI flags
+ * such as disabled, last values) when it saves; a moved `parT` keeps the
+ * removed instance's, which AE 15 opens with the same parameters.
+ *
+ * Only a project without `LIST:EfdG` needs it: nothing else holds the
+ * definitions there, so the other instances would reopen without them.
+ */
+export function rehome_effect_definitions(project: Project, removed: Iterable<[string, ListChunk]>): void {
+  const root_chunks = project._rifx.chunks;
+  if (filter_by_list_type(root_chunks, "EfdG").length > 0) return;
+  const held = new Map<string, ListChunk>();
+  for (const [name, sspc] of removed) {
+    const part = _held_definitions(sspc);
+    if (part != null && !held.has(name)) held.set(name, part);
+  }
+  if (held.size === 0) return;
+  for (const [name, sspc] of _effect_instances(root_chunks)) {
+    const part = held.get(name) ?? null;
+    held.delete(name);
+    if (part != null) {
+      const parts = filter_by_list_type(sspc.chunks, "parT");
+      if (parts.length > 0 && parts[0].chunks.length === 0) {
+        sspc.chunks[index_by_identity(sspc.chunks, parts[0])] = part;
+      }
+    }
+    if (held.size === 0) return;
+  }
 }
 
 /**
@@ -467,7 +602,10 @@ export const parse_effect = _suppress_materialization().decorate(function parse_
 
   let param_defs: Map<string, ParamDef>;
   try {
-    param_defs = parse_effect_param_defs(sspc_child_chunks);
+    param_defs = parse_effect_param_defs(
+      sspc_child_chunks,
+      composition._project._nnhd._system_code_page,
+    );
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
     param_defs = new Map();
@@ -475,15 +613,20 @@ export const parse_effect = _suppress_materialization().decorate(function parse_
 
   // Layer-level sspc may have an empty parT when the same effect type
   // is used more than once (AE doesn't duplicate the data).  Fall back
-  // to previously cached or project-level EfdG definitions.
-  const cached_param_defs = effect_param_defs.get(group_match_name);
-  if (!param_defs?.size && cached_param_defs !== undefined) {
-    param_defs = cached_param_defs;
+  // to previously cached or project-level EfdG definitions, else to the
+  // instance that holds them, whichever layer was built first.
+  if (param_defs.size === 0) {
+    let cached = effect_param_defs.get(group_match_name);
+    if (cached === undefined) {
+      cached = _project_param_defs(composition, group_match_name);
+      effect_param_defs.set(group_match_name, cached);
+    }
+    param_defs = cached;
   }
 
   // Cache successful parT parsing so later instances of the same
   // effect can reuse the definitions.
-  if (param_defs?.size > 0 && !effect_param_defs.has(group_match_name)) {
+  if (param_defs.size > 0 && !((effect_param_defs.get(group_match_name)?.size ?? 0) > 0)) {
     effect_param_defs.set(group_match_name, param_defs);
   }
   // Resolve _name_utf8 from the effect tdgp's tdsn child
@@ -670,13 +813,16 @@ _pard_extractor(
 )(_extract_no_value);
 
 /** Parse effect parameter definition from pard chunk, returning a map of values. */
-export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef {
+export function _parse_effect_parameter_def(
+  parameter_chunks: Chunk[],
+  code_page: number,
+): ParamDef {
   const pard_chunk = find_by_type(parameter_chunks, "pard");
 
   const control_type = PropertyControlType.of(pard_chunk.property_control_type);
 
   const result: ParamDef = {
-    name: pard_chunk.name,
+    name: _decode_pard_name(pard_chunk.name, code_page),
     property_control_type: control_type,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
@@ -701,7 +847,15 @@ export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef
     const pdnm_data = utf8_chunk.value;
     if (control_type === PropertyControlType.ENUM) {
       result.property_parameters = split(pdnm_data, "|");
-    } else if (pdnm_data) {
+    } else if (
+      pdnm_data &&
+      control_type === PropertyControlType.BOOLEAN &&
+      !strip(result.name)
+    ) {
+      // A checkbox's pdnm is the label beside its box (a button's, the
+      // button text): AE 2026 names the parameter by it only when the
+      // pard name is blank (2102 / 2102 such checkboxes, 279 / 279
+      // named ones keep the pard name, as do buttons).
       result.name = pdnm_data;
     }
   } catch (e) {
@@ -719,11 +873,13 @@ export function _parse_effect_parameter_def(parameter_chunks: Chunk[]): ParamDef
  * include a parT chunk.
  *
  * @param root_chunks - The root chunks of the AEP file.
+ * @param code_page - The project's system code page (`nnhd`).
  * @returns Map of effect match names to their parameter definitions (effect_match_name -\>
  *   param_match_name -\> param_def).
  */
 export function parse_effect_definitions(
   root_chunks: Chunk[],
+  code_page: number,
 ): Map<string, Map<string, ParamDef>> {
   const efdg_chunk = find_by_list_type_or_null(root_chunks, "EfdG");
   if (efdg_chunk === null) return new Map();
@@ -738,7 +894,7 @@ export function parse_effect_definitions(
     const effect_match_name = tdmn_chunk.value;
 
     const sspc_chunk = find_by_list_type(efdf_child_chunks, "sspc");
-    const param_defs = parse_effect_param_defs(sspc_chunk.chunks);
+    const param_defs = parse_effect_param_defs(sspc_chunk.chunks, code_page);
     effect_defs.set(effect_match_name, param_defs);
   }
 

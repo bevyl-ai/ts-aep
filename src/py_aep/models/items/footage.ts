@@ -237,16 +237,17 @@ export class FootageItem extends AVItem {
 
   /** The footage type (placeholder, solid, file). Read-only. */
   get asset_type(): string {
-    if (this._main_source instanceof SolidSource) {
+    const main_source: object | null = this._main_source;
+    if (main_source instanceof SolidSource) {
       return "solid";
-    } else if (this._main_source instanceof FileSource) {
+    } else if (main_source instanceof FileSource) {
       return "file";
-    } else if (this._main_source instanceof PlaceholderSource) {
+    } else if (main_source instanceof PlaceholderSource) {
       return "placeholder";
     } else {
       // TODO(port): Python formats `type(src)` as `<class 'py_aep.<module>.<Name>'>`; JS has no module path, so only the bare class name is printed. Affects only this unreachable-in-practice error message.
       throw new TypeError_(
-        `Unexpected source type for ${this.name}: ${(this._main_source as object)?.constructor?.name}`,
+        `Unexpected source type for ${this.name}: ${main_source?.constructor?.name}`,
       );
     }
   }

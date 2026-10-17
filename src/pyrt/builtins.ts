@@ -449,7 +449,6 @@ export function str(x: unknown): string {
 /** `str.isdigit()`, `.isalpha()`, `.isspace()`, `.isupper()`, `.islower()` (Unicode-aware). */
 export const isdigit = (s: string): boolean => s.length > 0 && /^\p{Nd}+$/u.test(s);
 export const isalpha = (s: string): boolean => s.length > 0 && /^\p{L}+$/u.test(s);
-export const isalnum = (s: string): boolean => s.length > 0 && /^[\p{L}\p{N}]+$/u.test(s);
 export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
 export const isupper = (s: string): boolean => /\p{Lu}|\p{Lt}/u.test(s) && !/\p{Ll}/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
@@ -561,7 +560,7 @@ export function copy(x: unknown): unknown {
 /** `functools.lru_cache(maxsize=None)` for functions of primitive / object-identity arguments. */
 export function lru_cache<A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) & { cache_clear(): void } {
   /** One argument position of the cache trie; `result` is set once a call ends here. */
-  type Node = { next: Map<unknown, Node>; result?: { value: R } };
+  type Node = { next: Map<A[number], Node>; result?: { value: R } };
   const root: Node = { next: new Map() };
   const single = new Map<A[0], { value: R }>();
   const wrapped = (...args: A): R => {

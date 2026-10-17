@@ -9,7 +9,6 @@
 
 import { deferred } from "../../pyrt/index.ts";
 import { PropertyType } from "../enums/general.ts";
-import type { CompItem } from "../models/items/composition.ts";
 import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
 import type { Project } from "../models/project.ts";

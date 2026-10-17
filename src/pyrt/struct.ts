@@ -514,10 +514,3 @@ export function pack_into(format: string, buffer: Uint8Array, offset: number, ..
 export function calcsize(format: string): number {
   return get(format).size;
 }
-
-/** `struct.iter_unpack(fmt, data)` */
-export function* iter_unpack(format: string, data: Uint8Array): Generator<PackValue[]> {
-  const s = get(format);
-  if (data.length % s.size) throw new StructError(`iterative unpacking requires a buffer of a multiple of ${s.size} bytes`);
-  for (let p = 0; p < data.length; p += s.size) yield s.unpack_from(data, p);
-}
