@@ -549,6 +549,23 @@ export class Layer extends PropertyGroup {
     return null;
   }
 
+  /**
+   * The size the layer's effect points are stored normalized against.
+   *
+   * The layer's pixel size, except on an adjustment layer, whose effects
+   * render in its composition: AE 2026 stores a Transform anchor set to
+   * [30, 40] on a 200x100 adjustment solid in a 1920x1080 comp as
+   * 30 / 1920, 40 / 1080, and defaults it to the comp's centre (as AE
+   * 15.1 does).
+   */
+  get _effect_point_size(): [number, number] | null {
+    if (this.adjustment_layer) {
+      const comp = this.containing_comp;
+      return [comp.width, comp.height];
+    }
+    return this._pixel_size;
+  }
+
   get _stretch_factor(): number {
     const stretch = this.stretch;
     return stretch !== 0.0 ? stretch / 100.0 : 1.0;

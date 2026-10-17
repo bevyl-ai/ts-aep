@@ -23,7 +23,6 @@ import {
   split,
   strip,
   warn,
-  zip,
   decode,
   encode,
   LookupError,
@@ -116,7 +115,7 @@ export function _param_def_to_spec(match_name: string, param_def: ParamDef): Pro
  * Resolve value and default_value for a synthesized effect property.
  *
  * Returns pre-rescale values - point defaults stay in percent of the
- * layer size; `_scale_point_to_pixels` converts them to pixels.
+ * layer size; `_normalize_synthetic_point` stores them as fractions.
  *
  * @param match_name - The property's match name.
  * @param param_def - The parameter definition from parT parsing.
@@ -185,10 +184,14 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
   // source of an Essential Graphics slider controller's Smin/Smax.
   prop._slider_min = param_def.slider_min ?? null;
   prop._slider_max = param_def.slider_max ?? null;
-  prop.nb_options = param_def.nb_options ?? null;
+  // Popup-only: written when present, so other properties keep the class
+  // default (`null`).
+  const nb_options = param_def.nb_options ?? null;
+  if (nb_options != null) prop.nb_options = nb_options;
   // Direct write: the public setter has user-write semantics (validation
   // plus pdnm/pard chunk rewrites).
-  prop._property_parameters = param_def.property_parameters ?? null;
+  const property_parameters = param_def.property_parameters ?? null;
+  if (property_parameters != null) prop._property_parameters = property_parameters;
   const units = param_def.units_text ?? null;
   if (units != null) prop._units_text = units;
   // The pard param flags carry the authoritative can-vary bit; the
@@ -203,34 +206,46 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
 }
 
 /**
- * A point parameter's parT default, converted to pixel coordinates.
- *
- * `raw` is the pard default, in percent of the LAYER size - the same
- * reference the instance `cdat` uses - so the conversion is
- * `raw / 100 * layer_size`, with a 3D point's Z sharing the height
- * divisor (`Property._effect_scale`).
- *
- * Measured in AE 2026: an untouched Gradient Ramp `End of Ramp` (pard
- * default 50 %, 100 %) reports [100, 100] on a 200x100 layer in an
- * 800x600 comp, and [128, 256] on a 256x256 layer in a 512x512 comp.
- * Only the layer reproduces both; normalizing against the composition
- * gives [400, 600] and [128, 256] - right only when layer and comp match,
- * which is why this went unnoticed.
- *
- * Returns `null` when the value is not a point.
+ * A point parameter's pard default (percent of the layer) as the fraction
+ * its `cdat` stores, or `null` when it is not a point.
  */
-export function _point_default_pixels(raw: PropertyValue, size: [number, number]): number[] | null {
+export function _point_fraction(raw: PropertyValue): number[] | null {
   if (!Array.isArray(raw) || raw.length < 2) return null;
-  const scale = [size[0], size[1], size[1]];
-  return zip(raw, scale).map(([v, factor]) => v / 100.0 * factor);
+  return raw.map((v) => v / 100.0);
 }
 
-/** Convert a synthesized point property's value and default in place. */
-export function _scale_point_to_pixels(prop: Property, size: [number, number]): void {
-  const value = _point_default_pixels(prop._value, size);
-  if (value != null) prop._value = value;
-  const default_ = _point_default_pixels(prop.default_value, size);
-  if (default_ != null) prop.default_value = default_;
+export function _point_pixels(prop: Property, fraction: number[]): PropertyValue {
+  return prop._resolve_value([...fraction]);
+}
+
+/**
+ * Give a point parameter its pard default, read like its stored value.
+ *
+ * The default is a percentage of the LAYER (the composition for an
+ * adjustment layer, `Property._effect_scale`), so it follows the layer's
+ * current size as the stored point does. Measured in AE 2026: an untouched
+ * Gradient Ramp `End of Ramp` (pard default 50 %, 100 %) reports [100, 100]
+ * on a 200x100 layer in an 800x600 comp, and [128, 256] on a 256x256 layer
+ * in a 512x512 comp; a fresh Point Control on a 200x100 solid reports
+ * [100, 50], then [200, 50] once the solid is 400 wide and [960, 540] once
+ * it is an adjustment layer in a 1920x1080 comp - unmodified throughout.
+ */
+export function _bind_point_default(prop: Property, raw: PropertyValue): void {
+  const fraction = _point_fraction(raw);
+  if (fraction != null) prop._default_value_source = () => _point_pixels(prop, fraction);
+}
+
+/**
+ * Keep a synthesized point as the fraction AE stores, read through the
+ * layer's current size, with the default `_bind_point_default` gives.
+ */
+export function _normalize_synthetic_point(prop: Property): void {
+  const raw = prop._value;
+  const fraction = _point_fraction(raw);
+  if (fraction == null || prop._cdat == null) return;
+  prop._cdat.values = fraction;
+  prop._value = null;
+  _bind_point_default(prop, raw);
 }
 
 /**
@@ -277,7 +292,6 @@ export const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
 // Codecs of the `nnhd` code pages that are not `cp<number>`.
 export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
   [0x0100, "mac_roman"],
-  [65001, "utf-8"],
 ]);
 
 /**
@@ -307,13 +321,8 @@ export function _decode_pard_name(name: string, code_page: number): string {
  *
  * @param prop - The property to update in place.
  * @param param_def - The parameter definition.
- * @param point_size - The layer size a point parameter's default is relative to.
  */
-export function _merge_param_def(
-  prop: Property,
-  param_def: ParamDef,
-  point_size: [number, number],
-): void {
+export function _merge_param_def(prop: Property, param_def: ParamDef): void {
   prop._auto_name = param_def.name || prop._auto_name;
   prop._property_control_type = param_def.property_control_type;
   if (prop._arbs != null && param_def.default_arbp !== undefined) {
@@ -331,7 +340,7 @@ export function _merge_param_def(
     param_def.property_control_type === PropertyControlType.TWO_D ||
     param_def.property_control_type === PropertyControlType.THREE_D
   ) {
-    prop.default_value = _point_default_pixels(param_def.default_value ?? null, point_size);
+    _bind_point_default(prop, param_def.default_value ?? null);
   } else if (param_def.property_control_type !== PropertyControlType.LAYER) {
     prop.default_value = param_def.default_value ?? null;
   }
@@ -405,14 +414,6 @@ export function _parse_effect_properties(
   group_match_name = "",
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
-  // Point parameters normalize against the LAYER, or the composition for
-  // an adjustment layer (see `Property._effect_point_size`). The layer is
-  // only reachable once the effect is attached, so callers that already
-  // know it pass it; during the initial parse it is unknown and the
-  // composition stands in (what py_aep has always used).
-  const layer_size = layer != null && !layer.adjustment_layer ? layer._pixel_size : null;
-  const point_size: [number, number] = layer_size ?? [composition.width, composition.height];
-
   // Skip index-0 internal parameters (not exposed in ExtendScript).
   const property_runs = [...get_match_name_runs(tdgp_chunk)].filter(
     ([name]) => !name.endsWith("-0000"),
@@ -438,7 +439,7 @@ export function _parse_effect_properties(
     const existing = parsed_by_mn.get(match_name) ?? null;
     if (existing != null) {
       if (existing instanceof Property) {
-        _merge_param_def(existing, param_def, point_size);
+        _merge_param_def(existing, param_def);
       }
       ordered.push(existing);
     } else if (match_name === "ADBE Force CPU GPU") {
@@ -453,7 +454,7 @@ export function _parse_effect_properties(
         (synth._property_control_type === PropertyControlType.TWO_D ||
           synth._property_control_type === PropertyControlType.THREE_D)
       ) {
-        _scale_point_to_pixels(synth, point_size);
+        _normalize_synthetic_point(synth);
       }
       ordered.push(synth);
     }

@@ -2200,6 +2200,10 @@ describe("TestEffectMetadata", () => {
   });
 });
 
+// TestInstanceDictSize (CPython's shared instance-dict key table) measures
+// CPython object layout; a JS object has no `__dict__` to size, so it has no
+// twin here.
+
 describe("TestTextPathOptions", () => {
   /** A text layer's Path picks one of its masks, None reading 0. */
   test("test_path_is_a_mask_index", () => {

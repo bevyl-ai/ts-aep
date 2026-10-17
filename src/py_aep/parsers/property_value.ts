@@ -41,22 +41,18 @@ export const parse_property = _suppress_materialization().decorate(function pars
 
   const tdb4_chunk = find_by_type(tdbs_child_chunks, "tdb4");
 
+  // The optional chunks, first of each type (py-aep gathers them in one
+  // pass; the typed lookups here keep each chunk's class).
   const cdat = find_by_type_or_null(tdbs_child_chunks, "cdat");
-
-  // Static value is read lazily by Property.value from _cdat via
-  // _resolve_value.  Only extract here for non-cdat overrides.
-  let value: number | null = null;
 
   // For LAYER control properties, keep the tdpi chunk reference so the
   // layer index can be resolved lazily (it changes on layer reorder).
-  // tdli stores the 1-based mask index directly and is stable.
   const tdpi = find_by_type_or_null(tdbs_child_chunks, "tdpi");
-  // AE writes a tdli only for mask-index properties; their tdb4 alone reads
-  // as OneD (e.g. a text layer's Path).
+  // AE writes a tdli (the mask's id, resolved lazily by
+  // `Property._mask_index`) only for mask-index properties; their tdb4
+  // alone reads as OneD (e.g. a text layer's Path).
   let property_value_type: PropertyValueType | null = null;
-  const tdli = find_by_type_or_null(tdbs_child_chunks, "tdli");
-  if (tdli !== null) {
-    value = tdli.value;
+  if (find_by_type_or_null(tdbs_child_chunks, "tdli") !== null) {
     property_value_type = PropertyValueType.MASK_INDEX;
   }
 
@@ -86,7 +82,8 @@ export const parse_property = _suppress_materialization().decorate(function pars
     match_name,
     property_depth,
     keyframes,
-    value,
+    // Read lazily from the chunks (`Property._stored_static_value`).
+    value: null,
     property_value_type,
   });
 

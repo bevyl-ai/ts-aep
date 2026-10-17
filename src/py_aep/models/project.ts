@@ -2166,7 +2166,8 @@ export class Project {
     // Write to a sibling temp file then rename, so a failed write can
     // never leave a truncated .aep at the target path. The temp name is
     // unique and created exclusively: a fixed one would overwrite, then
-    // move away, any file of the user's carrying it.
+    // move away, any file of the user's carrying it. A failed rename (a
+    // scanner still holding the temp file on Windows) removes it too.
     const tmp_path = path_obj.with_name(`${path_obj.name}.${uuid4().replace(/-/g, "")}.tmp`);
     try {
       // `tmp_path.open("xb")`: created exclusively before anything is written.
@@ -2176,11 +2177,11 @@ export class Project {
       } finally {
         host.fs.closeSync(fd);
       }
+      tmp_path.replace(path_obj);
     } catch (e) {
       if (tmp_path.exists()) tmp_path.unlink(); // missing_ok needs Python 3.8
       throw e;
     }
-    tmp_path.replace(path_obj);
     this._file = fspath(path);
   }
 

@@ -9,7 +9,8 @@ import { layer_timebase } from "../../binary/composition_chunks.ts";
 import { LHD3_BLOCK_KEYFRAMES, KfPosition, LdatItemType, ShapePoint, set_lhd3_count, LdatChunk, LdatItem, Lhd3Chunk } from "../../binary/ldat_chunks.ts";
 import { EnumPardChunk } from "../../binary/misc_chunks.ts";
 import { ITEM_SIZE_BY_TYPE, build_keyframe_list, build_kf_data, build_ldat_item, build_parallel_ldat_item, build_shap } from "../../binary/mutations.ts";
-import { TDSN_SENTINEL, CdatChunk, CurvesArbpChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, VfdnChunk, tdb4_apply_animated_template, tdb4_apply_static_template, tdb4_clear_keyframe_record } from "../../binary/property_chunks.ts";
+import { TDSN_SENTINEL, CdatChunk, CurvesArbpChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, tdb4_apply_animated_template, tdb4_apply_static_template, tdb4_clear_keyframe_record } from "../../binary/property_chunks.ts";
+import type { VfdnChunk } from "../../binary/property_chunks.ts";
 import { S4Chunk, Utf8Chunk, U4Chunk } from "../../binary/scalar_chunks.ts";
 import { ChunkNotFoundError, find_by_list_type_or_null, find_by_type, index_by_identity } from "../../binary/utils.ts";
 import { VF_AXIS_PREFIX } from "../../data/match_names.ts";
@@ -115,6 +116,15 @@ export const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValu
   PropertyValueType.COLOR,
 ]);
 
+// Effect controls whose values AE reports rounded (`_round_half_up`). Matched
+// against the control type the effect declares (`_property_control_type`):
+// the type inferred for other properties reads BOOLEAN for plain scalars,
+// and a shape's Star Points of 5.5 reports 5.5 (AE 2026).
+export const _ROUNDED_CONTROL_TYPES: ReadonlySet<PropertyControlType> = new Set<PropertyControlType>([
+  PropertyControlType.BOOLEAN,
+  PropertyControlType.ENUM,
+]);
+
 export function _get_dimensions(prop: Property): number {
   const d: number = prop.dimensions;
   // Color properties use dimensions=1 but store 4-element lists.
@@ -149,6 +159,25 @@ export function _validate_value(prop: Property, value: unknown): void {
   if (prop._parallel_kind() === SHAPE_KIND && !(value instanceof Shape)) {
     throw new TypeError_(`${repr(prop.match_name)} takes a Shape, got ${type_name(value)}`);
   }
+  if (prop.match_name === "ADBE Mask Shape") {
+    const layer = prop._containing_layer;
+    if (!(layer instanceof _av_layer().AVLayer)) throw new AttributeError("_mask_scale");
+    if (layer._mask_scale.includes(0)) {
+      // Mask paths are stored normalized to the layer's source, so on an
+      // audio-only layer (0 x 0) every path reads back as four points at
+      // the origin. AE 2026 hangs on the same write.
+      throw new ValueError("an audio-only layer's mask paths cannot be set");
+    }
+  }
+  if (prop.property_value_type === PropertyValueType.MASK_INDEX) {
+    // A mask of the layer, 1-based, or 0 for none: AE 2026 refuses -1,
+    // 1.6 and true ("is not an unsigned integer") and a mask the layer
+    // lacks ("Value 2 out of range 0 to 1").
+    const ids = _mask_ids(prop);
+    const count = ids != null ? ids.length : null;
+    _validate_number({ min: 0, max: count, integer: true })(value);
+    return;
+  }
   if (value == null) return;
   // Variable-font axis properties are 2-dimensional in the binary
   // ([value, tag]) but scalar in ExtendScript. They carry the
@@ -164,6 +193,24 @@ export function _validate_value(prop: Property, value: unknown): void {
   const expects_list = prop.dimensions > 1 || prop._color;
   if (expects_list) _validate_list(value, prop);
   else _validate_scalar(value, prop);
+}
+
+/**
+ * The ids of the masks a mask-index value picks from, in order, or `null`
+ * for a property with no layer (an effect definition).
+ */
+export function _mask_ids(prop: Property): number[] | null {
+  let masks: PropertyGroup | null;
+  try {
+    masks = prop._containing_layer.masks;
+  } catch (e) {
+    if (!(e instanceof ValueError)) throw e;
+    return null;
+  }
+  if (masks == null) return [];
+  return masks.properties
+    .filter((m) => m instanceof _mask_property_group().MaskPropertyGroup)
+    .map((m) => m._mkif.mask_id);
 }
 
 export function _validate_key_value(prop: Property, value: unknown): void {
@@ -220,6 +267,79 @@ export function _values_equal(a: unknown, b: unknown): boolean {
   }
   if (typeof a === "number" && typeof b === "number") return isclose(a, b, 1e-9, 1e-6);
   return py_eq(a, b);
+}
+
+/**
+ * A checkbox / popup value as After Effects reports it.
+ *
+ * AE stores what it is given (a float32 0.6 for `setValue(0.6)`) but
+ * reports checkbox and popup values rounded half up: 0.4 -\> 0, 0.5 -\> 1,
+ * 1.5 -\> 2, -0.5 -\> 0 (AE 2026: Puppet On Transparent, Gaussian Blur
+ * Repeat Edge Pixels, a Checkbox Control and Blur Dimensions; static
+ * values, keyframes and `valueAtTime` alike).
+ */
+export function _round_half_up<T>(value: T): T | number {
+  return typeof value === "number" ? Math.floor(value + 0.5) : value;
+}
+
+/**
+ * `value`, with a list copied so no other holder shares it.
+ *
+ * Synthesized properties start from the spec tables' lists, shared by every
+ * property of the spec in the process; a list read or passed in by the user
+ * must not stay linked to the property either. Complex values (Shape,
+ * TextDocument, ...) write through to their chunks and are kept as is.
+ */
+export function _own_list(value: PropertyValue): PropertyValue {
+  return Array.isArray(value) ? [...value] : value;
+}
+
+/**
+ * A list {@link Property.value | value} that writes item assignments back.
+ *
+ * `prop.value[0] = 50` sets component 0 of the property through the
+ * `value` setter, from the property's current stored value (so a list
+ * read earlier does not reset the other components, and a 2-D layer's
+ * stored Z, read as 0, is kept). ExtendScript hands out a detached array
+ * instead, where the same line does nothing. Other array methods act on
+ * this copy only; copying it gives a plain array. The property is held
+ * weakly, so a kept value does not keep its project alive.
+ *
+ * A JS array cannot override item assignment, so `bind` returns a Proxy
+ * over a plain copy whose `set` trap is Python's `__setitem__`; methods
+ * run on the plain copy, as the list methods py-aep does not override.
+ */
+export class _PropertyValueList {
+  static bind<T>(value: readonly T[], prop: Property): T[] {
+    const _prop = new WeakRef(prop);
+    const list: T[] = [...value];
+    return new Proxy(list, {
+      get(target, key) {
+        const got: T | number | Function | undefined = Reflect.get(target, key);
+        return typeof got === "function" && key !== "constructor" ? got.bind(target) : got;
+      },
+      set(target, key, item) {
+        if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) return Reflect.set(target, key, item);
+        const index = Number(key);
+        const owner = _prop.deref();
+        if (owner == null) {
+          if (index >= target.length) throw new IndexError("list assignment index out of range");
+          return Reflect.set(target, key, item);
+        }
+        // A copy: for a keyed property this is the first key's own value,
+        // which the setter then refuses to replace.
+        const stored = owner._stored_static_value();
+        if (!Array.isArray(stored)) throw new TypeError_(`'${type_name(stored)}' object is not iterable`);
+        const new_ = [...stored];
+        if (index >= new_.length) throw new IndexError("list assignment index out of range");
+        new_[index] = item;
+        owner.value = new_;
+        const current = owner.value;
+        target.splice(0, target.length, ...(Array.isArray(current) ? current : []));
+        return true;
+      },
+    });
+  }
 }
 
 
@@ -531,12 +651,43 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   declare _cdat: CdatChunk | null;
   declare _tdpi: S4Chunk | null;
   declare _composition: CompItem | null;
+  /**
+   * Whether AE writes tdum/tduM placeholder bounds for this property when
+   * materialized. Set from the synthesis spec in `_new`.
+   */
   declare _bound_chunks_hint: boolean;
+  /**
+   * The tdum/tduM values AE writes at materialization (UI slider hints),
+   * set from `PropSpec.hint_bounds` in `_new`; `null` keeps the family
+   * behavior in `_ensure_bound_chunks`.
+   */
+  declare _hint_bounds: [number, number] | null;
+  /**
+   * Parallel per-keyframe value container for complex value types (otky /
+   * mrky / omks / GCky), one value chunk per keyframe, aligned with
+   * `keyframes`. Set by the specialized parsers.
+   */
   declare _kf_value_container: ListChunk | null;
+  /**
+   * The wrapper LIST holding this property's tdbs + value container (otst
+   * / mrst / om-s / GCst / btds). Set by the specialized parsers; null for
+   * ordinary numeric properties and for complex properties whose pristine
+   * state stores a bare tdbs.
+   */
   declare _wrapper: ListChunk | null;
   declare _blsv: U4Chunk | null;
+  /**
+   * Media-replacement slot chunks (blsv/blsi), siblings of this leaf's tdbs
+   * inside an `ADBE Layer Source Alternate` group run. Set by the tdbs
+   * dispatcher only for that match name. `blsi` is the alternate-source item
+   * id (0 = no replacement set).
+   */
   declare _blsi: U4Chunk | null;
   declare _can_vary_over_time: boolean | null;
+  /**
+   * Expressions can never be set on this parameter (from the pard
+   * definition header flag; set by _apply_param_def_metadata).
+   */
   declare _expressions_disabled: boolean;
   declare _dimensions_separated: boolean | null;
   declare _expression_enabled: boolean | null;
@@ -545,6 +696,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   declare _property_value_type: PropertyValueType | null;
   declare _value: PropertyValue;
   declare _units_text: string | null;
+  /**
+   * A default that follows other state (a camera's Position follows its
+   * Zoom) reads from this callable instead of `_default_value`.
+   */
   declare _default_value_source: (() => V) | null;
   declare _default_value: V | null;
   declare _keyframe_positions: Map<Keyframe, number> | null;
@@ -557,10 +712,26 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   declare _scale_z_override: number | null;
   declare _property_parameters: string[] | null;
   declare _property_type: PropertyType;
+  /**
+   * Cached raw axis-tag number for variable-font axis properties; survives
+   * de-animation (the tag lives in the value data, which keyframe removal
+   * deletes before `_deanimate` re-writes it).
+   */
   declare _vf_tag_cache: number | null;
+  /**
+   * The axis display-name container AE writes after an active variable-font
+   * axis slot's tdbs (set by the parser).
+   */
   declare _vfdn: VfdnChunk | null;
+  /**
+   * The Curves effect's curves, its arbitrary data (set by the parser): a
+   * LIST:aRbs of one aRbp, or of one per keyframe when keyed, in key order.
+   * `value` decodes them as {@link Curves}.
+   */
   declare _arbs: ListChunk | null;
+  /** The static aRbp decoded, on first read. */
   declare _curves: Curves | null;
+  /** The Curves effect's default curves, from its parT (set by the parser). */
   declare _default_arbp: Chunk | null;
 
   constructor(kw: {
@@ -581,11 +752,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     auto_name?: string | null;
     keyframes: Keyframe<KeyframeValue<NoInfer<V>>>[];
     value: PropertyValue;
-    expression_enabled?: boolean | null;
-    expression?: string | null;
     property_control_type?: PropertyControlType | null;
     property_value_type?: PropertyValueType | null;
-    dimensions_separated?: boolean | null;
     units_text?: string | null;
     can_vary_over_time?: boolean | null;
   }) {
@@ -607,11 +775,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       auto_name = null,
       keyframes,
       value,
-      expression_enabled = null,
-      expression = null,
       property_control_type = null,
       property_value_type = null,
-      dimensions_separated = null,
       units_text = null,
       can_vary_over_time = null,
     } = kw;
@@ -623,48 +788,35 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       auto_name,
       property_depth,
     });
-    this._tdmn = _tdmn;
-    this._tdb4 = _tdb4;
+    // py-aep keeps these as class defaults, set on an instance only when it
+    // has a value (CPython instance-dict sizing); here every instance starts
+    // at the same defaults.
     this._expression_utf8 = _expression_utf8;
-    this._tdbs = _tdbs;
-    this._tdum = _tdum;
-    this._tduM = _tduM;
-    this._cdat = _cdat;
     this._tdpi = _tdpi;
-    this._composition = _composition;
-
-    // Whether AE writes tdum/tduM placeholder bounds for this property
-    // when materialized. Set from the synthesis spec in `_new`.
-    this._bound_chunks_hint = false;
-
-    // Parallel per-keyframe value container for complex value types
-    // (otky / mrky / omks / GCky). Set by the specialized parsers.
-    // Holds one value chunk per keyframe, aligned with `keyframes`.
+    this._units_text = units_text;
+    this.expression_error = "";
+    this.nb_options = null;
+    this._dimensions_separated = null;
+    this._expression_enabled = null;
+    this._expression = null;
     this._kf_value_container = null;
-
-    // The wrapper LIST holding this property's tdbs + value container
-    // (otst / mrst / om-s / GCst / btds). Set by the specialized
-    // parsers; None for ordinary numeric properties and for complex
-    // properties whose pristine state stores a bare tdbs.
     this._wrapper = null;
-
-    // Media-replacement slot chunks (blsv/blsi), siblings of this leaf's
-    // tdbs inside an `ADBE Layer Source Alternate` group run. Set by the
-    // tdbs dispatcher only for that match name; None otherwise. `blsi` is
-    // the alternate-source item id (0 = no replacement set).
     this._blsv = null;
     this._blsi = null;
-
-    this._can_vary_over_time = can_vary_over_time;
-
-    // Expressions can never be set on this parameter (from the pard
-    // definition header flag; set by _apply_param_def_metadata).
     this._expressions_disabled = false;
+    this._default_value_source = null;
+    this._scale_z_override = null;
+    this._property_parameters = null;
+    this._vf_tag_cache = null;
+    this._vfdn = null;
+    this._arbs = null;
+    this._curves = null;
+    this._default_arbp = null;
 
-    this._dimensions_separated = dimensions_separated;
-
-    this._expression_enabled = expression_enabled;
-    this._expression = expression;
+    this._tdmn = _tdmn;
+    this._tdb4 = _tdb4;
+    this._tdbs = _tdbs;
+    this._cdat = _cdat;
 
     this.keyframes = keyframes;
     this._link_keyframes();
@@ -673,52 +825,26 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
     this._property_value_type = property_value_type;
 
-    this._value = value;
+    this._value = _own_list(value);
 
-    this._units_text = units_text;
-
-    // A default that follows other state (a camera's Position follows its
-    // Zoom) reads from this callable instead of `_default_value`.
-    this._default_value_source = null;
-    this.default_value = null;
-
-    this.expression_error = "";
-
-    this.last_value = null;
+    this._default_value = null;
 
     this._min_value_fallback = _UNSET;
     this._max_value_fallback = _UNSET;
-    // The pard UI slider range (effect params only; None elsewhere).
-    this._slider_min = null;
-    this._slider_max = null;
-    this._scale_z_override = null;
-
-    this.nb_options = null;
-
-    this._property_parameters = null;
 
     this._property_type = PropertyType.PROPERTY;
 
-    // Cached raw axis-tag number for variable-font axis properties;
-    // survives de-animation (the tag lives in the value data, which
-    // keyframe removal deletes before `_deanimate` re-writes it).
-    this._vf_tag_cache = null;
-
-    // The axis display-name container AE writes after an active
-    // variable-font axis slot's tdbs (set by the parser).
-    this._vfdn = null;
-
-    // The Curves effect's curves, its arbitrary data (set by the
-    // parser): a LIST:aRbs of one aRbp, or of one per keyframe when keyed,
-    // in key order. `value` decodes them as [Curves][].
-    this._arbs = null;
-
-    // The static aRbp decoded, on first read.
-    this._curves = null;
-
-    // The Curves effect's default curves, from its parT (set by the
-    // parser).
-    this._default_arbp = null;
+    this._tdum = _tdum;
+    this._tduM = _tduM;
+    this._composition = _composition;
+    this._can_vary_over_time = can_vary_over_time;
+    this._bound_chunks_hint = false;
+    this._hint_bounds = null;
+    this._types_memo = null;
+    this.last_value = null;
+    // The pard UI slider range (effect params only; None elsewhere).
+    this._slider_min = null;
+    this._slider_max = null;
   }
 
   /** `true` for a variable-font axis slot property. */
@@ -1032,9 +1158,34 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _ensure_mask_index_chunks(): void {
     if (this.property_value_type !== PropertyValueType.MASK_INDEX) return;
-    if (this._tdbs.chunks.some((c) => ("chunk_type" in c ? c.chunk_type : "") === "tdli")) return;
-    const index = (typeof this._value === "number" && Number.isInteger(this._value)) || typeof this._value === "boolean" ? this._value : 0;
-    this._tdbs.chunks.push(new S4Chunk({ chunk_type: "tdli", value: index }));
+    if (this._tdli_chunk() != null) return;
+    // No mask; a value write that follows stores its mask's id.
+    this._tdbs.chunks.push(new S4Chunk({ chunk_type: "tdli", value: 0 }));
+  }
+
+  _tdli_chunk(): S4Chunk | null {
+    for (const chunk of this._tdbs.chunks) {
+      if (chunk.chunk_type === "tdli" && chunk instanceof S4Chunk) return chunk;
+    }
+    return null;
+  }
+
+  /**
+   * A mask-index property's value: the 1-based position of the mask it
+   * names, or 0.
+   *
+   * The `tdli` stores the mask's id (`mkif`), not its position, so the
+   * reference follows the mask. On AE 2026, a text Path on mask id 2
+   * reads 1 once that mask is moved first, once the mask before it is
+   * removed, and after it is duplicated (the copy gets id 3 and goes
+   * after it). An id no mask has reads 0.
+   */
+  _mask_index(): number {
+    const tdli = this._tdli_chunk();
+    if (tdli == null || tdli.value === 0) return 0;
+    const ids = _mask_ids(this);
+    if (ids == null) return tdli.value;
+    return ids.includes(tdli.value) ? ids.indexOf(tdli.value) + 1 : 0;
   }
 
   /**
@@ -1160,12 +1311,6 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     );
   }
 
-  // The tdum/tduM values AE writes for this property at materialization
-  // (UI slider hints); set from `PropSpec.hint_bounds` in `_new`, `None`
-  // (the class default, covering parsed properties) keeps the family
-  // behavior in `_ensure_bound_chunks`.
-  _hint_bounds: [number, number] | null = null;
-
   // Numeric value types whose binary value is a cdat run.
   static _NUMERIC_PVTS: ReadonlySet<PropertyValueType> = new Set<PropertyValueType>([
     PropertyValueType.OneD,
@@ -1289,6 +1434,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     const dims = this._tdb4.dimensions;
     let value = this._value;
+    // A synthesized effect point keeps its raw fraction in the cdat and
+    // no cached value (`_normalize_synthetic_point`): re-deriving the
+    // fraction from pixels would round it.
+    const keep_cdat = value == null && this._cdat != null;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) value = this.default_value;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) {
       value = dims <= 1 ? 0.0 : list_mul([0.0], dims);
@@ -1302,7 +1451,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     } else if (this._cdat.values.length < target) {
       this._cdat.values = [...this._cdat.values, ...list_mul([0.0], target - this._cdat.values.length)];
     }
-    this._write_cdat(value);
+    if (!keep_cdat) this._write_cdat(value);
   }
 
   /**
@@ -1413,7 +1562,28 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
         raw = this._apply_effect_scale(raw);
       }
     }
+    // 4. Checkbox / popup: reported rounded, stored as given
+    if (this._property_control_type != null && _ROUNDED_CONTROL_TYPES.has(this._property_control_type)) {
+      raw = _round_half_up(raw);
+    }
     return raw;
+  }
+
+  /**
+   * A cached value (one the setter or synthesis stored) as AE reports it,
+   * as `_resolve_value` does for a stored one: a 2-D layer's Scale Z is 100
+   * whatever was written (AE 2026 stores the 40 of `setValue([50, 60, 40])`
+   * and reports `[50, 60, 100]`), a checkbox or popup value is rounded.
+   */
+  _reported(value: PropertyValue): PropertyValue {
+    if (Array.isArray(value)) {
+      if (this._scale_z_override != null && value.length >= 3) {
+        value[2] = this._scale_z_override;
+      }
+    } else if (this._property_control_type != null && _ROUNDED_CONTROL_TYPES.has(this._property_control_type)) {
+      value = _round_half_up(value);
+    }
+    return value;
   }
 
   /**
@@ -1611,8 +1781,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   set default_value(value: V | null) {
-    this._default_value = value;
-    this._default_value_source = null;
+    this._default_value = this._declared(_own_list(value));
+    // back to the class default
+    if (this._default_value_source != null) this._default_value_source = null;
   }
 
   /**
@@ -1639,9 +1810,24 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * text_doc.font_size = 72; // persists automatically
    * // prop.value = text_doc; // unnecessary - same object
    * ```
+   *
+   * So does item assignment on a list value, one component at a time
+   * through the setter (in ExtendScript the array is a copy and the
+   * same line does nothing). Other array methods act on a copy:
+   *
+   * ```ts
+   * import { parse } from "@bevyl-ai/ts-aep";
+   *
+   * const app = parse("project.aep");
+   * const position = app.project.compositions[0].layers[0].transform.property("ADBE Position");
+   * position.value[0] = 960; // sets X, keeps Y and Z
+   * position.value[1] += 10;
+   * ```
    */
   get value(): V {
-    return this._declared(this._mask_inert_z(this._stored_static_value()));
+    const value = this._mask_inert_z(this._stored_static_value());
+    if (Array.isArray(value)) return this._declared(_PropertyValueList.bind(value, this));
+    return this._declared(value);
   }
 
   set value(value: V) {
@@ -1663,10 +1849,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (layer_id === 0) return 0;
       return (this._composition._layer_id_to_index.get(layer_id) ?? -1) + 1;
     }
+    if (this._property_value_type === PropertyValueType.MASK_INDEX) return this._mask_index();
     const separated = this._separated_value();
     if (separated != null) return separated;
     if (this._arbs != null && !this.keyframes?.length) return this._static_curves();
-    if (this._value != null) return this._wire_text_version(this._value);
+    // A copy of a cached list: `value_at_time` hands it out too.
+    if (this._value != null) return this._reported(_own_list(this._wire_text_version(this._value)));
     if (this.keyframes?.length > 0) return this._stored_value_at(0);
     if (this._cdat != null) return this._resolve_value(this._read_cdat_raw());
     if (this.match_name === "ADBE Mask Shape") {
@@ -1780,20 +1968,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return;
     }
     if (this.property_value_type === PropertyValueType.MASK_INDEX) {
-      // The mask index lives in the `tdli` chunk, not the cdat (which
+      // The mask's id lives in the `tdli` chunk, not the cdat (which
       // stays all-zeros); _ensure_materialized has appended one.
+      const ids = _mask_ids(this);
       const index = typeof value === "number" || typeof value === "boolean" ? int(value) : 0;
-      for (const chunk of this._tdbs.chunks) {
-        if (("chunk_type" in chunk ? chunk.chunk_type : "") === "tdli" && chunk instanceof S4Chunk) {
-          chunk.value = index;
-          break;
-        }
-      }
-      this._value = value;
+      const tdli = this._tdli_chunk();
+      if (tdli == null) throw new AttributeError("'NoneType' object has no attribute 'value'");
+      tdli.value = index !== 0 && ids != null ? ids[index - 1] : index;
       return;
     }
     this._write_cdat(value);
-    this._value = value;
+    this._cache_written(value);
   }
 
   /**
@@ -1807,7 +1992,24 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _cache_value(value: _ValueType): void {
     this._write_cdat(value);
-    this._value = value;
+    this._cache_written(value);
+  }
+
+  /**
+   * Cache a numeric value `_write_cdat` just stored.
+   *
+   * Not an effect point's: it is stored normalized and AE re-reads the
+   * stored fraction against the layer's current size - [30, 40] on a
+   * 200x100 solid reads [60, 40] once the solid is 400 wide, and
+   * [288, 432] once it is an adjustment layer in a 1920x1080 comp (AE
+   * 2026) - so its value is always read back from the cdat.
+   */
+  _cache_written(value: _ValueType): void {
+    if (this._cdat != null && this.match_name !== "ADBE Anchor Point" && this._effect_scale != null) {
+      this._value = null;
+    } else {
+      this._value = _own_list(value);
+    }
   }
 
   /**
@@ -4056,7 +4258,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // the container chunk is inserted above, so set the shadow directly:
     // the public `kf.value` setter would re-route complex kinds back into
     // the container write path, rebuilding the just-inserted chunk.
-    kf._value = new_value;
+    kf._value = _own_list(new_value);
     // Re-bind the keyframe's model to the chunk just inserted (when the
     // kind wraps); new_value (held or user-supplied) is backed by a
     // different chunk, so edits to it would never reach the serialized
@@ -4265,12 +4467,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
         // afterwards would otherwise reach the caller's chunk -
         // corrupting any other keyframe that shares it.
         const wrapped = kind.wrap_value_chunk(this, value_chunk);
-        kf._value = wrapped ?? value;
+        kf._value = wrapped ?? _own_list(value);
       } else {
-        kf._value = value;
+        kf._value = _own_list(value);
       }
     } else {
-      kf._value = value;
+      kf._value = _own_list(value);
     }
     kind.bind_keyframe(kf._value, kf);
     this._ensure_materialized();
@@ -4453,8 +4655,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // A 3D point's Z shares the HEIGHT divisor: a Point3D Control set
       // to [100, 50, 7] on a 200x100 layer stores [0.5, 0.5, 0.07], and
       // only 7/100 gives 0.07 (probed in AE 2026 across three
-      // comp/layer size pairs).
-      const size = this._effect_point_size();
+      // comp/layer size pairs). An adjustment layer normalizes against
+      // its composition (`Layer._effect_point_size`).
+      let size: [number, number] | null;
+      try {
+        size = this._containing_layer._effect_point_size;
+      } catch (e) {
+        // an EfdG definition: no layer yet
+        if (!(e instanceof ValueError)) throw e;
+        size = null;
+      }
       if (size != null) {
         scale = [...size];
         if (this.property_control_type === PropertyControlType.THREE_D) scale.push(size[1]);
@@ -4485,29 +4695,6 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (!(e instanceof ValueError)) throw e;
       return null;
     }
-  }
-
-  /**
-   * The size an effect point is stored normalized against, or `null`.
-   *
-   * The layer's, except on an adjustment layer, whose effects render in
-   * its composition: AE 2026 stores a Transform anchor set to [30, 40]
-   * on a 200x100 adjustment solid in a 1920x1080 comp as 30 / 1920,
-   * 40 / 1080, and defaults it to the comp's centre (as AE 15.1 does).
-   */
-  _effect_point_size(): [number, number] | null {
-    let layer: Layer;
-    try {
-      layer = this._containing_layer;
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return null;
-    }
-    if (layer.adjustment_layer) {
-      const comp = layer.containing_comp;
-      return [comp.width, comp.height];
-    }
-    return layer._pixel_size;
   }
 }
 

@@ -1,8 +1,8 @@
 {
-  "pass": 15609,
+  "pass": 15632,
   "skip": 35,
-  "samples": 645,
-  "fault_cases": 2700,
+  "samples": 646,
+  "fault_cases": 2760,
   "loose_types": {
     "0 pyrt": {
       "any": 5,

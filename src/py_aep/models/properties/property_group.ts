@@ -266,7 +266,9 @@ export function _reorder_and_fill(
     if (child !== undefined) {
       child._auto_name = spec.auto_name;
       if (!(spec instanceof GroupSpec) && child instanceof Property) {
-        instance_dict(child).set("_color", spec.color);
+        // Only where the stored flag disagrees: an override is an
+        // instance-dict key (see the class defaults of `Property`).
+        if (child._color !== spec.color) instance_dict(child).set("_color", spec.color);
         if (spec.chunk_bounds_are_hints) {
           // tdum/tduM hold UI slider hints, not real bounds:
           // the spec is authoritative (None = unbounded).
@@ -807,9 +809,10 @@ export class PropertyGroup extends PropertyBase {
   _child_or_null(name: string): Property | PropertyGroup | null;
   _child_or_null(name: string): Property | PropertyGroup | null {
     for (const prop of this.properties) {
-      if (prop.name === name || prop.match_name === name || prop.name.toLowerCase().replaceAll(" ", "_") === name) {
-        return prop;
-      }
+      // The match name first: `name` is derived, not stored.
+      if (prop.match_name === name) return prop;
+      const prop_name = prop.name;
+      if (prop_name === name || prop_name.toLowerCase().replaceAll(" ", "_") === name) return prop;
     }
     return null;
   }

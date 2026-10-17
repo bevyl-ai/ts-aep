@@ -583,4 +583,28 @@ describe("TestAtomicSave", () => {
     }
     expect(tmp_path.iterdir().length).toBe(0);
   });
+
+  test("test_failed_rename_leaves_no_file", () => {
+    const tmp_path = make_tmp_path();
+    // The temp file is written, then renaming it fails (a scanner still
+    // holding it on Windows): the temp file is removed.
+    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    // `monkeypatch.setattr(project_mod.os, "replace", boom)`: save renames
+    // its temp file through the host's `node:fs`. pyrt has no
+    // PermissionError; its base OSError stands in.
+    const node_fs = process.getBuiltinModule("node:fs");
+    const real_rename = node_fs.renameSync;
+
+    const boom = (..._args: Parameters<typeof real_rename>): never => {
+      throw new OSError("simulated rename failure");
+    };
+
+    node_fs.renameSync = boom;
+    try {
+      raises(OSError, () => app.project.save(tmp_path.div("out.aep")));
+    } finally {
+      node_fs.renameSync = real_rename;
+    }
+    expect(tmp_path.iterdir().length).toBe(0);
+  });
 });

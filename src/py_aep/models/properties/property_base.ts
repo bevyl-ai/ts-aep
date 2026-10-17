@@ -12,7 +12,7 @@ import {
   repr,
   split,
 } from "../../../pyrt/index.ts";
-import { PropertyType } from "../../enums/index.ts";
+import { PropertyType, PropertyValueType } from "../../enums/index.ts";
 import { get_ae_version_major } from "../../ae_version.ts";
 import { ListChunk, type Chunk } from "../../binary/chunk.ts";
 import { clone_chunk_tree } from "../../binary/mutations.ts";
@@ -92,6 +92,25 @@ export function _renumber_mask_auto_names(parent: PropertyGroup): void {
       child._auto_name = `Mask ${i}`;
       i += 1;
     }
+  }
+}
+
+/**
+ * Reset the layer's references to a mask being removed.
+ *
+ * A text Path or an effect's mask parameter (Fill \> Fill Mask) stores the
+ * id of the mask it names (`Property._mask_index`). Removing that mask
+ * resets it to none, left out of the file as an untouched parameter is
+ * (AE 2026), so a later mask reusing the id is not picked up.
+ */
+export function _clear_mask_references(mask: MaskPropertyGroup): void {
+  const mask_id = mask._mkif.mask_id;
+  for (const prop of mask._containing_layer._leaf_properties()) {
+    if (prop.property_value_type !== PropertyValueType.MASK_INDEX) continue;
+    const tdli = prop._tdli_chunk();
+    if (tdli == null || tdli.value !== mask_id) continue;
+    tdli.value = 0;
+    if (!prop.expression) prop._revert_to_synthetic();
   }
 }
 
@@ -553,6 +572,7 @@ export class PropertyBase {
    */
   remove(): void {
     const [parent, parent_tdgp] = this._can_mutate();
+    if (this._is_mask && this instanceof _mask_property_group().MaskPropertyGroup) _clear_mask_references(this);
     const [start, end] = this._find_chunk_span(parent_tdgp);
     parent_tdgp.chunks.splice(start, end - start);
     list_remove(parent.properties, this);

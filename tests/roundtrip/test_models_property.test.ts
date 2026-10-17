@@ -12,6 +12,8 @@ import {
   b,
   bytes_,
   contains,
+  copy,
+  deepcopy,
   getattr,
   getitem,
   len,
@@ -30,7 +32,7 @@ import { as_instance, get_comp as get_comp_, get_first_layer as get_first_layer_
 
 import { parse as parse_aep_, new as py_aep_new, Project } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
-import { AVLayer, CompItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
+import { AVLayer, CompItem, FootageItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import { ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { _baked_effect_def } from "../../src/py_aep/models/properties/property_group.ts";
 import { build_expression_control } from "../../src/py_aep/binary/mutations.ts";
@@ -3486,7 +3488,8 @@ describe("TestPlaceholderBoundsValueSetter", () => {
     const scale = _find_descendant(_layer(), "ADBE Scale");
     py_assert(scale != null && !py_bool(scale.keyframes));
     scale.value = [150.0, 150.0, 150.0];
-    expect(approx(scale.value, [150.0, 150.0, 150.0])).toBe(true);
+    // A 2-D layer reports Scale Z as 100 whatever was written.
+    expect(approx(scale.value, [150.0, 150.0, 100.0])).toBe(true);
     expect(scale.has_max).toBe(false);
   });
 
@@ -4349,6 +4352,154 @@ describe("TestRotoBezierWrites", () => {
   });
 });
 
+describe("TestSyntheticValuesAreOwned", () => {
+  /**
+   * Default properties a file leaves out are built from shared spec values;
+   * each must own its value, as AE hands out a fresh array on every read.
+   */
+
+  const AEP = VERSIONS_DIR.div("ae2025", "complete.aep");
+
+  /** Static method `_audio_levels` in the Python class. */
+  function _audio_levels(project: Project, comp_name: string): Property<number[]> {
+    const layer = get_layer_(project, comp_name);
+    return as_instance(layer.property("ADBE Audio Group").property("ADBE Audio Levels"), Property<number[]>);
+  }
+
+  function _synthetic(prop: Property): boolean {
+    py_assert(prop._tdsb != null);
+    return prop._tdsb.synthetic;
+  }
+
+  test("test_read_modify_write_touches_one_property", () => {
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    const other = _audio_levels(project, "HighFPS_Comp");
+    py_assert(_synthetic(levels) && _synthetic(other));
+    const value = levels.value;
+    value[0] = 3.0;
+    levels.value = value;
+    expect(py_eq(levels.value, [3.0, 0.0])).toBe(true);
+    expect(py_eq(other.value, [0.0, 0.0])).toBe(true);
+    expect(py_eq(other.default_value, [0.0, 0.0])).toBe(true);
+    // Nor does it reach a later parse in the same process.
+    const fresh = _audio_levels(parse_project_fresh_(AEP), "HighFPS_Comp");
+    expect(py_eq(fresh.value, [0.0, 0.0])).toBe(true);
+  });
+
+  test("test_item_assignment_writes_the_property", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    py_assert(_synthetic(levels));
+    levels.value[0] = 3.0;
+    expect(py_eq(levels.value, [3.0, 0.0])).toBe(true);
+    py_assert(!_synthetic(levels));
+    const value = levels.value;
+    value[1] += 1.5;
+    expect(py_eq(value, [3.0, 1.5])).toBe(true);
+    // `levels.value[:] = [4.0, 5.0]`: JS has no slice assignment; assigning
+    // the items one by one goes through the same item writes.
+    Object.assign(levels.value, [4.0, 5.0]);
+    const default_value = levels.default_value;
+    py_assert(default_value != null);
+    default_value[0] = 3.0;
+    expect(py_eq(_audio_levels(project, "HighFPS_Comp").value, [0.0, 0.0])).toBe(true);
+    expect(py_eq(_audio_levels(project, "HighFPS_Comp").default_value, [0.0, 0.0])).toBe(true);
+    const out = tmp_path.div("levels.aep");
+    project.save(out);
+    const saved = _audio_levels(parse_project_fresh_(out), "DropFrame_Comp");
+    expect(py_eq(saved.value, [4.0, 5.0])).toBe(true);
+  });
+
+  /** A list read earlier only sets the item it is given. */
+  test("test_item_assignment_starts_from_the_current_value", () => {
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    const stale = levels.value;
+    levels.value = [1.0, 2.0];
+    stale[0] = 3.0;
+    expect(py_eq(levels.value, [3.0, 2.0])).toBe(true);
+    expect(py_eq(stale, [3.0, 2.0])).toBe(true);
+  });
+
+  /** A 2-D layer reads Position Z as 0 but keeps the stored one. */
+  test("test_item_assignment_keeps_a_2d_layers_stored_z", () => {
+    const project = parse_project_fresh_(AEP);
+    const layer = as_instance(get_layer_(project, "DropFrame_Comp"), AVLayer);
+    expect(layer.three_d_layer).toBe(false);
+    const position = layer.property("ADBE Transform Group").property("ADBE Position");
+    position.value = [10.0, 20.0, 40.0];
+    position.value[0] = 5.0;
+    expect(py_eq(position.value, [5.0, 20.0, 0.0])).toBe(true);
+    const stored = position._stored_static_value();
+    py_assert(Array.isArray(stored));
+    expect(stored[2]).toBe(40.0);
+  });
+
+  test("test_item_assignment_follows_the_setter_rules", () => {
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    levels.add_key(0.0);
+    raises(
+      ValueError,
+      () => {
+        levels.value[0] = 3.0;
+      },
+      "keyframes",
+    );
+  });
+
+  /**
+   * A keyframe keeps a copy of the list it is given and hands out a copy:
+   * editing either never reaches another property.
+   */
+  test("test_keyframe_values_are_detached", () => {
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    const other = _audio_levels(project, "HighFPS_Comp");
+    levels.set_value_at_time(0.0, other.value);
+    levels.keyframes[0].value[0] = 9.0;
+    expect(py_eq(levels.keyframes[0].value, [0.0, 0.0])).toBe(true);
+    expect(py_eq(other.value, [0.0, 0.0])).toBe(true);
+    py_assert(_synthetic(other));
+  });
+
+  test("test_a_kept_value_does_not_keep_its_project", async () => {
+    // `del project; gc.collect()`. JSC's collector scans the stack
+    // conservatively, so a stale slot can keep a freshly parsed project
+    // alive whatever holds it (a bare parse included); a strong reference
+    // from the value would keep every attempt alive, so one collected
+    // attempt is the proof.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const [value, ref] = (() => {
+        const project = parse_project_fresh_(AEP);
+        return [_audio_levels(project, "DropFrame_Comp").value, new WeakRef(project)] as const;
+      })();
+      for (let i = 0; i < 5 && ref.deref() !== undefined; i++) {
+        await Bun.sleep(1);
+        Bun.gc(true);
+      }
+      if (ref.deref() !== undefined) continue;
+      value[0] = 3.0; // the property is gone: a plain list
+      expect(py_eq(value, [3.0, 0.0])).toBe(true);
+      return;
+    }
+    throw new AssertionError_("no attempt's project was collected");
+  });
+
+  test("test_copies_are_plain_lists", () => {
+    const project = parse_project_fresh_(AEP);
+    const levels = _audio_levels(project, "DropFrame_Comp");
+    for (const duplicate of [copy(levels.value), deepcopy(levels.value)]) {
+      expect(Object.getPrototypeOf(duplicate)).toBe(Array.prototype);
+      duplicate[0] = 3.0;
+    }
+    expect(py_eq(levels.value, [0.0, 0.0])).toBe(true);
+    py_assert(_synthetic(levels));
+  });
+});
+
 class TestTextPathWrite {
   static _text_layer(project: Project): TextLayer {
     const comp = get_comp_(project, "type_text");
@@ -4390,5 +4541,269 @@ describe("TestTextPathWrite", () => {
         [0x01, 1, 0x00, 0x04, 0x04],
       ),
     ).toBe(true);
+  });
+
+  /**
+   * AE 2026 refuses a mask the layer lacks ("Value 2 out of range 0 to 1")
+   * and -1 / 1.6 / true ("is not an unsigned integer").
+   */
+  test("test_path_value_is_validated", () => {
+    const project = parse_project_fresh_(SAMPLES_DIR.div("all_animated.aep"));
+    const layer = TestTextPathWrite._text_layer(project);
+    py_assert(layer.masks != null);
+    layer.masks.add_property("ADBE Mask Atom");
+    const path = TestTextPathWrite._path(layer);
+    const bad_values: unknown[] = [2, -1, 1.6, true, "1"];
+    for (const bad of bad_values) {
+      // `pytest.raises((TypeError, ValueError))`; the untyped values go
+      // through the setter as Python's dynamic ones do.
+      const e = raises(Error, () => Reflect.set(path, "value", bad));
+      py_assert(e instanceof TypeError_ || e instanceof ValueError);
+    }
+    path.value = 0;
+    expect(path.value).toBe(0);
+  });
+});
+
+describe("TestMaskReferences", () => {
+  /**
+   * A text Path or an effect's mask parameter stores the id (`mkif`) of
+   * the mask it names in a `tdli`, so it follows the mask (AE 2026).
+   */
+
+  /** Static method `_text_path` in the Python class. */
+  function _text_path(project: Project): [TextLayer, Property<number>] {
+    const layer = TestTextPathWrite._text_layer(project);
+    return [layer, TestTextPathWrite._path(layer)];
+  }
+
+  /** Static method `_fill_mask` in the Python class. */
+  function _fill_mask(project: Project): [AVLayer, Property] {
+    const layer = as_instance(
+      get_comp_(project, "coverage").layers.find((ly) => ly.name === "normal"),
+      AVLayer,
+    );
+    py_assert(layer.effects != null);
+    const fill = as_instance(layer.effects.property("ADBE Fill"), PropertyGroup);
+    return [layer, as_instance(fill.property("ADBE Fill-0001"), Property)];
+  }
+
+  function _masks(layer: Layer): PropertyGroup {
+    py_assert(layer.masks != null);
+    return layer.masks;
+  }
+
+  /** AE moved the Fill Mask's mask (id 2) first and kept the id. */
+  test("test_reads_the_moved_mask_position", () => {
+    const [layer, fill_mask] = _fill_mask(parse_project_fresh_(SAMPLES_DIR.div("mask_reference_moved.aep")));
+    const masks = _masks(layer).properties;
+    expect(masks.map((m) => as_instance(m, MaskPropertyGroup)._mkif.mask_id)).toEqual([2, 1]);
+    expect(fill_mask._tdli_chunk()?.value).toBe(2);
+    expect(fill_mask.value).toBe(1);
+  });
+
+  test("test_follows_a_moved_mask", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(SAMPLES_DIR.div("mask_reference_moved.aep"));
+    const [layer, fill_mask] = _fill_mask(project);
+    const masks = _masks(layer);
+    masks.properties[0].move_to(1);
+    expect(fill_mask.value).toBe(2);
+    const out = tmp_path.div("moved.aep");
+    project.save(out);
+    expect(_fill_mask(parse_project_fresh_(out))[1].value).toBe(2);
+  });
+
+  test("test_follows_masks_removed_or_duplicated_around_it", () => {
+    const project = parse_project_fresh_(SAMPLES_DIR.div("all_animated.aep"));
+    const [layer, path] = _text_path(project);
+    const masks = _masks(layer);
+    for (let i = 0; i < 3; i++) masks.add_property("ADBE Mask Atom");
+    path.value = 2;
+    masks.properties[0].duplicate(); // the copy goes before the path's
+    expect(path.value).toBe(3);
+    masks.properties[2].duplicate(); // a copy of the path's mask, after it
+    expect(path.value).toBe(3);
+    masks.properties[0].remove();
+    expect(path.value).toBe(2);
+    masks.properties[3].remove();
+    expect(path.value).toBe(2);
+  });
+
+  /**
+   * AE 2026 leaves the reset reference out of the file, and a mask that
+   * later takes the removed mask's id is not picked up.
+   */
+  test("test_removing_the_named_mask_resets_it", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(SAMPLES_DIR.div("all_animated.aep"));
+    const [layer, path] = _text_path(project);
+    const masks = _masks(layer);
+    masks.add_property("ADBE Mask Atom");
+    masks.add_property("ADBE Mask Atom");
+    path.value = 2;
+    masks.properties[1].remove();
+    expect(path.value).toBe(0);
+    py_assert(path._tdsb != null);
+    expect(path._tdsb.synthetic).toBe(true);
+    masks.add_property("ADBE Mask Atom"); // takes id 2 again
+    expect(path.value).toBe(0);
+    const out = tmp_path.div("reset.aep");
+    project.save(out);
+    expect(_text_path(parse_project_fresh_(out))[1].value).toBe(0);
+  });
+});
+
+describe("TestRoundedControls", () => {
+  /**
+   * AE 2026 stores a checkbox or popup value as given and reports it
+   * rounded half up, statically and on keys.
+   */
+
+  function _dims(project: Project): Property {
+    const effects = get_first_layer_(project).effects;
+    py_assert(effects != null);
+    const blur = as_instance(effects.properties[0], PropertyGroup);
+    return as_instance(blur.property("ADBE Gaussian Blur 2-0002"), Property);
+  }
+
+  test("test_popup_value_reported_rounded", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(SAMPLES_DIR.div("2_gaussian.aep"));
+    const dims = _dims(project);
+    for (const [written, reported] of [
+      [1.4, 1],
+      [1.5, 2],
+      [2.5, 3],
+    ]) {
+      dims.value = written;
+      expect(dims.value).toBe(reported);
+    }
+    const out = tmp_path.div("rounded.aep");
+    project.save(out);
+    const saved = _dims(parse_project_fresh_(out));
+    expect(saved._read_cdat_raw()).toBe(2.5);
+    expect(saved.value).toBe(3);
+  });
+
+  /** A shape's Star Points infers a BOOLEAN control type, yet 5.5 reports 5.5. */
+  test("test_non_effect_scalar_not_rounded", () => {
+    const project = parse_project_fresh_(LAYER_SAMPLES_DIR.div("shape_source_rect.aep"));
+    const layer = get_comp_(project, "SHAPE_RECTS").layers.find((ly) => ly.name === "ps_k2_p5.5_r50");
+    py_assert(layer != null);
+    const points = [...layer._leaf_properties()].find((p) => p.match_name === "ADBE Vector Star Points");
+    py_assert(points != null);
+    expect(points.value).toBe(5.5);
+  });
+});
+
+describe("TestEffectPointBasis", () => {
+  /**
+   * Effect points are stored normalized to the layer (the comp for an
+   * adjustment layer), and AE 2026 re-reads values and pard defaults
+   * against the current basis.
+   */
+
+  /** Static method `_layer` in the Python class. */
+  function _layer(project: Project): AVLayer {
+    return as_instance(
+      get_comp_(project, "coverage").layers.find((ly) => ly.name === "normal"),
+      AVLayer,
+    );
+  }
+
+  /** Static method `_point` in the Python class. */
+  function _point(layer: AVLayer): Property {
+    py_assert(layer.effects != null);
+    const effect = as_instance(layer.effects.property("ADBE Point Control"), PropertyGroup);
+    return as_instance(effect.property("ADBE Point Control-0001"), Property);
+  }
+
+  test("test_untouched_point_follows_an_adjustment_toggle", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(SAMPLES_DIR.div("effect_point_adjustment.aep"));
+    const layer = _layer(project);
+    py_assert(layer.effects != null);
+    layer.effects.add_property("ADBE Point Control");
+    const point = _point(layer);
+    // A 200 x 100 solid in a 1920 x 1080 comp.
+    expect(py_eq(point.value, point.default_value) && py_eq(point.default_value, [100.0, 50.0])).toBe(true);
+    layer.adjustment_layer = true;
+    expect(py_eq(point.value, point.default_value) && py_eq(point.default_value, [960.0, 540.0])).toBe(true);
+    expect(point.is_modified).toBe(false);
+    const out = tmp_path.div("toggled.aep");
+    project.save(out);
+    expect(py_eq(_point(_layer(parse_project_fresh_(out))).value, [960.0, 540.0])).toBe(true);
+  });
+
+  test("test_written_point_follows_a_resize", () => {
+    const project = parse_project_fresh_(SAMPLES_DIR.div("effect_point_adjustment.aep"));
+    const layer = _layer(project);
+    py_assert(layer.effects != null);
+    layer.effects.add_property("ADBE Point Control");
+    const point = _point(layer);
+    point.value = [30.0, 40.0];
+    const source = as_instance(layer.source, FootageItem);
+    source.replace_with_solid([1.0, 0.0, 0.0], "wide", 400, 100);
+    expect(py_eq(point.value, [60.0, 40.0])).toBe(true);
+    expect(py_eq(point.default_value, [200.0, 50.0])).toBe(true);
+  });
+});
+
+describe("TestAudioLayerMasks", () => {
+  /**
+   * An audio-only layer's mask space is 0 x 0: AE 2026 reports its default
+   * path as four points at the origin and hangs writing one.
+   */
+
+  /** Static method `_mask_path` in the Python class. */
+  function _mask_path(project: Project): Property<Shape> {
+    const layer = get_layer_(project, "audioEnabled_true");
+    py_assert(layer.masks != null);
+    const mask = layer.masks.add_property("ADBE Mask Atom");
+    return mask.property("ADBE Mask Shape");
+  }
+
+  test("test_value_write_refused", () => {
+    const path = _mask_path(parse_project_fresh_(LAYER_SAMPLES_DIR.div("audioEnabled.aep")));
+    expect(path.value.vertices).toEqual([
+      [0.0, 0.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ]);
+    raises(
+      ValueError,
+      () => {
+        path.value = new Shape([
+          [0, 0],
+          [0, 10],
+          [10, 10],
+          [10, 0],
+        ]);
+      },
+      "audio-only",
+    );
+  });
+
+  /** AE 2026 opens py_aep's file and reads the same. */
+  test("test_expression_write_saves", () => {
+    const tmp_path = make_tmp_path();
+    const project = parse_project_fresh_(LAYER_SAMPLES_DIR.div("audioEnabled.aep"));
+    _mask_path(project).expression = "value";
+    const out = tmp_path.div("audio_mask.aep");
+    project.save(out);
+    const layer = get_layer_(parse_project_fresh_(out), "audioEnabled_true");
+    py_assert(layer.masks != null);
+    const path = as_instance(as_instance(layer.masks.properties[0], MaskPropertyGroup).property("ADBE Mask Shape"), Property);
+    expect(path.expression).toBe("value");
+    const value = as_instance(path.value, Shape);
+    expect(value.vertices).toEqual([
+      [0.0, 0.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ]);
+    expect(value.closed).toBe(true);
   });
 });

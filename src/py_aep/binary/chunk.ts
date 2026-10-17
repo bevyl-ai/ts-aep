@@ -105,6 +105,9 @@ export class Chunk extends AttrsBase {
   declare synthetic: boolean;
   declare _trailing: Uint8Array;
 
+  /** Whether `read` takes the nesting context `read_chunks` passes. */
+  static _nests = false;
+
   static read(fp: IO, size: number, kwargs: { chunk_type?: string; [k: string]: unknown } = {}): Chunk {
     const { chunk_type = "" } = kwargs;
     const cls: any = this;
@@ -344,6 +347,8 @@ export class ListChunk extends Chunk {
   declare chunks: Chunk[];
   declare chunk_type: string;
 
+  static _nests = true;
+
   static read(
     fp: IO,
     size: number,
@@ -507,6 +512,8 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
  */
 export class ContainerChunk extends Chunk {
   declare chunks: Chunk[];
+
+  static _nests = true;
 
   static read(
     fp: IO,
@@ -864,10 +871,14 @@ export function read_chunks(
     const [chunk_type, len_body] = read_header(fp);
     const cls = CHUNK_TYPES.get(chunk_type) ?? Chunk;
 
-    const read_kw = { chunk_type, ctx, parent_result: result, defer_list_types };
     const resolver = _CONTEXT_RESOLVERS.get(chunk_type);
-    if (resolver) Object.assign(read_kw, resolver(result, ctx));
-    const chunk = cls.read(fp, len_body, read_kw);
+    const chunk: Chunk = cls._nests
+      ? // No resolver targets a nesting chunk (tests/unit/test_binary_io.test.ts).
+        cls.read(fp, len_body, { chunk_type, ctx, parent_result: result, defer_list_types })
+      : resolver != null
+        ? cls.read(fp, len_body, { chunk_type, ...resolver(result, ctx) })
+        : // Leaf chunks take no reading context.
+          cls.read(fp, len_body, { chunk_type });
     result.push(chunk);
 
     // Consume pad byte if len_body is odd
