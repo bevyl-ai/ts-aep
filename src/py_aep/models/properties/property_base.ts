@@ -12,7 +12,7 @@ import {
   repr,
   split,
 } from "../../../pyrt/index.ts";
-import { PropertyType } from "../../enums/index.ts";
+import { PropertyType, PropertyValueType } from "../../enums/index.ts";
 import { get_ae_version_major } from "../../ae_version.ts";
 import { ListChunk, type Chunk } from "../../binary/chunk.ts";
 import { clone_chunk_tree } from "../../binary/mutations.ts";
@@ -45,8 +45,9 @@ export function list_remove<T>(xs: T[], x: unknown): void {
   xs.splice(list_index(xs, x), 1);
 }
 
-// Match names of groups that support add/remove/move/duplicate on children.
-// "ADBE Vectors Group" is a nested shape group's own contents.
+// Match names of groups that support add/remove/move/duplicate on children
+// (AE 2026 reports them INDEXED_GROUP, empty or not). "ADBE Vectors Group" is
+// a nested shape group's own contents.
 export const _INDEXED_GROUP_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
   "ADBE Effect Parade",
   "ADBE Mask Parade",
@@ -55,6 +56,10 @@ export const _INDEXED_GROUP_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
   "ADBE Text Selectors",
   "ADBE Root Vectors Group",
   "ADBE Vectors Group",
+  "ADBE MTrackers",
+  "ADBE Layer Sets",
+  "ADBE Paint Group",
+  "ADBE Samurai Strokes Group",
 ]);
 
 // Text animator + selectors expose an enable toggle (canSetEnabled).
@@ -87,6 +92,25 @@ export function _renumber_mask_auto_names(parent: PropertyGroup): void {
       child._auto_name = `Mask ${i}`;
       i += 1;
     }
+  }
+}
+
+/**
+ * Reset the layer's references to a mask being removed.
+ *
+ * A text Path or an effect's mask parameter (Fill \> Fill Mask) stores the
+ * id of the mask it names (`Property._mask_index`). Removing that mask
+ * resets it to none, left out of the file as an untouched parameter is
+ * (AE 2026), so a later mask reusing the id is not picked up.
+ */
+export function _clear_mask_references(mask: MaskPropertyGroup): void {
+  const mask_id = mask._mkif.mask_id;
+  for (const prop of mask._containing_layer._leaf_properties()) {
+    if (prop.property_value_type !== PropertyValueType.MASK_INDEX) continue;
+    const tdli = prop._tdli_chunk();
+    if (tdli == null || tdli.value !== mask_id) continue;
+    tdli.value = 0;
+    if (!prop.expression) prop._revert_to_synthetic();
   }
 }
 
@@ -548,8 +572,15 @@ export class PropertyBase {
    */
   remove(): void {
     const [parent, parent_tdgp] = this._can_mutate();
+    if (this._is_mask && this instanceof _mask_property_group().MaskPropertyGroup) _clear_mask_references(this);
     const [start, end] = this._find_chunk_span(parent_tdgp);
-    parent_tdgp.chunks.splice(start, end - start);
+    const removed = parent_tdgp.chunks.splice(start, end - start);
+    _effect().rehome_effect_definitions(
+      this._containing_layer.containing_comp._project,
+      removed
+        .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
+        .map((chunk): [string, ListChunk] => [this.match_name, chunk]),
+    );
     list_remove(parent.properties, this);
     if (this._is_mask) _renumber_mask_auto_names(parent);
   }

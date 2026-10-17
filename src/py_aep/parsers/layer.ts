@@ -1,6 +1,6 @@
 import { warn } from "../../pyrt/index.ts";
-import type { Chunk, ListChunk } from "../binary/chunk.ts";
-import { filter_by_list_type, filter_by_type, find_by_list_type, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import type { ListChunk } from "../binary/chunk.ts";
+import { find_by_list_type, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
 import { LayerType } from "../enums/index.ts";
 import { _suppress_materialization } from "../models/descriptors.ts";
 import { AVLayer } from "../models/layers/av_layer.ts";
@@ -10,10 +10,7 @@ import { ParametricMeshLayer } from "../models/layers/parametric_mesh_layer.ts";
 import { ShapeLayer } from "../models/layers/shape_layer.ts";
 import { TextLayer } from "../models/layers/text_layer.ts";
 import { ThreeDModelLayer } from "../models/layers/three_d_model_layer.ts";
-import { synthesize_layer_properties } from "../synthesis/core.ts";
 import type { ParamDef } from "./effect.ts";
-import { parse_properties } from "./property.ts";
-import { get_match_name_runs } from "./utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 
@@ -27,28 +24,6 @@ export const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof 
   [LayerType.THREE_D_MODEL, ThreeDModelLayer],
   [LayerType.PARAMETRIC_MESH, ParametricMeshLayer],
 ]);
-
-/**
- * Extract Essential Properties override UUIDs from LIST:OvG2 chunks.
- *
- * @param tdgp_chunks - The children of the layer's root `tdgp` group, where `LIST:OvG2` is a direct
- *   child (beside the "ADBE Layer Overrides" marker). NOT the layer LIST's own children - `OvG2`
- *   sits one level deeper than that.
- * @returns A list of controller UUID strings from the OvG2/CPrp/Utf8 entries; each matches an
- *   `EssentialGraphicsController.uuid` on the source comp.
- */
-export function _parse_ovg2_uuids(tdgp_chunks: Chunk[]): string[] {
-  const uuids: string[] = [];
-  for (const ovg2_list of filter_by_list_type(tdgp_chunks, "OvG2")) {
-    for (const cprp of filter_by_list_type(ovg2_list.chunks, "CPrp")) {
-      const utf8_chunks = filter_by_type(cprp.chunks, "Utf8");
-      if (utf8_chunks?.length > 0) {
-        uuids.push(utf8_chunks[0].value);
-      }
-    }
-  }
-  return uuids;
-}
 
 /**
  * Parse a composition layer.
@@ -84,34 +59,16 @@ export const parse_layer = _suppress_materialization().decorate(function parse_l
     layer_cls = AVLayer;
   }
 
-  // OvG2 (Essential Properties overrides) is a direct child of the layer's
-  // root tdgp, not of the layer LIST itself, so resolve the root tdgp first.
-  const root_tdgp_chunk = find_by_list_type(child_chunks, "tdgp");
-
   const layer = new layer_cls({
     _ldta: ldta,
     _cmta: cmta,
     _name_utf8: name_utf8,
     _layer_list: layer_chunk,
     containing_comp: composition,
-    properties: [],
-    essential_property_uuids: _parse_ovg2_uuids(root_tdgp_chunk.chunks),
   });
-
-  const properties = parse_properties(
-    get_match_name_runs(root_tdgp_chunk),
-    1,
-    effect_param_defs,
-    composition,
-    layer,
-  );
-
-  layer._properties = properties;
-  layer._tdgp = root_tdgp_chunk;
-  for (const child of properties) {
-    child._parent_property = layer;
-  }
-
-  synthesize_layer_properties(layer);
+  layer._tdgp = find_by_list_type(child_chunks, "tdgp");
+  // The property tree is built on first access (`Layer._tree_param_defs`).
+  Reflect.deleteProperty(layer, "_properties");
+  layer._tree_param_defs = effect_param_defs;
   return layer;
 });

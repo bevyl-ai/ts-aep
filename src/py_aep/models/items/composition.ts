@@ -24,7 +24,6 @@ import {
   deferred,
   descriptor,
   float,
-  getattr,
   getitem,
   int,
   py_assert,
@@ -528,9 +527,9 @@ export class CompItem extends AVItem {
   declare preserve_nested_resolution: boolean;
 
   // Left-out camera and light properties follow the comp's size and pixel
-  // aspect. Loading the layers before a change builds them at the size the
-  // file has, so `save` writes the ones the change moves where they were,
-  // as AE does.
+  // aspect. Building them before a change builds them at the size the file
+  // has, so `save` writes the ones the change moves where they were, as AE
+  // does.
 
   /** The width of the item in pixels. Read / Write. */
   declare width: number;
@@ -1316,6 +1315,19 @@ export class CompItem extends AVItem {
 
     this._layers_loaded = true;
     this._invalidate_layer_cache();
+  }
+
+  /**
+   * Build the property trees of the layers whose left-out defaults
+   * follow this comp (see `width`).
+   */
+  _build_live_defaults(): void {
+    this._ensure_layers_loaded();
+    for (const layer of this._layers) {
+      if (layer._tree_param_defs != null && layer._leaves_out_live_defaults()) {
+        layer._load_property_tree();
+      }
+    }
   }
 
   _ensure_comp_parsed(): void {
@@ -2543,7 +2555,7 @@ export class CompItem extends AVItem {
     // Source usage bookkeeping for the moved (and copied) layers.
     project._ensure_used_in_linked();
     for (const new_layer of new_comp._layers) {
-      const source = getattr(new_layer, "source", null);
+      const source = new_layer._source_item;
       if (source != null && "_used_in" in source) {
         _unregister_source_usage(source, this);
         source._used_in.add(new_comp);
@@ -2835,7 +2847,7 @@ descriptor(
   "width",
   new ChunkField("_cdta", "width", {
     validate: validate_footage_dimension,
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 
@@ -2845,7 +2857,7 @@ descriptor(
   "height",
   new ChunkField("_cdta", "height", {
     validate: validate_footage_dimension,
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 
@@ -2910,7 +2922,7 @@ descriptor(
   new ChunkField("_cdta", "pixel_aspect", {
     validate: validate_pixel_aspect,
     // See `width`.
-    pre_set: "_ensure_layers_loaded",
+    pre_set: "_build_live_defaults",
   }),
 );
 

@@ -26,6 +26,8 @@ import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 
 const _folder = deferred<typeof import("./folder.ts")>("py_aep/models/items/folder");
+// NOTE(port): a module-level import in Python; parsers/effect imports the item subclasses, which extend Item.
+const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
@@ -324,7 +326,8 @@ export class Item {
    */
   remove(): void {
     // Remove from parent folder's binary chunks
-    this._remove_from_parent_chunks();
+    const removed = this._remove_from_parent_chunks();
+    _effect().rehome_effect_definitions(this._project, _effect()._effect_instances(removed));
 
     // Remove from model collections
     py_assert(this._parent_folder != null);

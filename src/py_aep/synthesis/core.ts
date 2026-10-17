@@ -12,7 +12,8 @@
  * * Set `min_value` / `max_value` on properties with known bounds.
  *
  * The single public entry point is `synthesize_layer_properties`, called
- * once per layer at the end of `parse_layer`.
+ * once per layer when its property tree is built
+ * (`Layer._build_property_tree`).
  *
  * **Note:** Effect parameter synthesis remains a separate dynamic step inside
  * `parse_effect()`, because it relies on binary parT/pard data rather
@@ -29,6 +30,7 @@ import { TextLayer } from "../models/layers/text_layer.ts";
 import { ThreeDModelLayer } from "../models/layers/three_d_model_layer.ts";
 import { Property } from "../models/properties/property.ts";
 import { PropertyGroup, _apply_bounds, _derive_layer_styles_enabled, _reorder_and_fill } from "../models/properties/property_group.ts";
+import { _bind_point_default } from "../parsers/effect.ts";
 import { _PARAMETRIC_MESH_TOP_LEVEL_SPECS, _SKIP_FOR_CAMERA, _SKIP_FOR_LIGHT, _SKIP_FOR_REGULAR_AV, _SKIP_FOR_SHAPE, _SKIP_FOR_TEXT, _TOP_LEVEL_SPECS, _TRANSFORM_FIXED_DEFAULTS, _TRANSFORM_SPECS } from "./property.ts";
 import type { GroupSpec, PropSpec } from "./property.ts";
 import type { Layer } from "../models/layers/layer.ts";
@@ -135,6 +137,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   const comp_h = layer.containing_comp.height;
   let anchor_w: number;
   let anchor_h: number;
+  let source_backed = false;
   if (layer instanceof AVLayer) {
     if (
       layer instanceof TextLayer ||
@@ -149,18 +152,17 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       anchor_w = 0;
       anchor_h = 0;
     } else {
-      anchor_w = layer.width;
-      anchor_h = layer.height;
+      // The centre of the source, at its current size: set by
+      // `follow_source_anchor` below.
+      anchor_w = anchor_h = 0;
+      source_backed = true;
     }
   } else {
     anchor_w = comp_w;
     anchor_h = comp_h;
   }
 
-  let position: number[] = [comp_w / 2.0, comp_h / 2.0, 0.0];
-  if (layer instanceof CameraLayer || layer instanceof LightLayer) {
-    position = layer._default_position();
-  }
+  const position = layer._default_position();
 
   // Spatial defaults depend on layer dimensions. The X / Y / Z followers
   // default to the leader's components: separating a camera or light
@@ -228,14 +230,18 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
     ae_major,
   });
 
-  // For null layers where opacity was already parsed from binary,
-  // override the value to 0 (matching ExtendScript behavior).
+  // A null's Opacity defaults to 0: left out, it reads 0, while a written
+  // 100 reads 100 (AE 2026, a file py writes too).
   if (layer instanceof AVLayer && layer.null_layer) {
     const opacity = transform.property("ADBE Opacity");
-    if (opacity instanceof Property && opacity.value === 100.0) {
+    opacity.default_value = 0.0;
+    if (!opacity._is_live()) {
       opacity._value = 0.0;
-      opacity.default_value = 0.0;
     }
+  }
+
+  if (source_backed) {
+    follow_source_anchor(transform.property("ADBE Anchor Point"));
   }
 
   // --- Phase 3: context-dependent naming ----------------------------------
@@ -258,6 +264,25 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   }
 }
 
+/**
+ * Read a source-backed layer's default Anchor Point - and the anchor
+ * itself when left out - as the centre of the source at its current size.
+ *
+ * AE stores a footage, solid or precomp layer's anchor as a fraction of its
+ * source (`Property._effect_scale`): measured on AE 2026, a left-out one
+ * reads the new centre, unmodified, after `replaceSource`, a solid resize
+ * or a precomp resize. An audio-only source has no pixels to scale by, so
+ * the fraction reads as is: AE 2026 reports [0.5, 0.5, 0].
+ */
+export function follow_source_anchor(anchor: Property): void {
+  const cdat = anchor._cdat;
+  if (!anchor._is_live() && cdat != null) {
+    cdat.values = [0.5, 0.5, 0.0];
+    anchor._value = null;
+  }
+  _bind_point_default(anchor, [50.0, 50.0, 0.0]);
+}
+
 /** One component of the vector `source` returns, read on each call. */
 export function _component(source: () => number[], dim: number): () => number {
   return () => source()[dim];
@@ -266,17 +291,23 @@ export function _component(source: () => number[], dim: number): () => number {
 /**
  * Make the defaults that follow other state read it as it changes.
  *
- * A camera or light's Position follows its comp's size, and a camera's its
- * Zoom too; a camera's Zoom and Focus Distance follow the comp's width and
- * pixel aspect. `Layer._write_out_moved_defaults` writes them once moved.
+ * A layer's Position follows its comp's size, and a camera's its Zoom too;
+ * a camera or light's Point of Interest follows the comp's centre; a
+ * camera's Zoom and Focus Distance follow the comp's width and pixel
+ * aspect. `Layer._write_out_moved_defaults` writes them once moved (AE
+ * 2026 keeps a Point of Interest where it was, modified, on a resize).
  */
-export function _follow_live_defaults(layer: CameraLayer | LightLayer): void {
+export function _follow_live_defaults(layer: Layer): void {
   const transform = layer.transform;
   const position = transform.property("ADBE Position");
   position._default_value_source = () => layer._default_position();
   for (const dim of [0, 1, 2] as const) {
     const follower = transform.property(`ADBE Position_${dim}`);
     follower._default_value_source = _component(() => layer._default_position(), dim);
+  }
+  if (layer instanceof CameraLayer || layer instanceof LightLayer) {
+    const poi = transform.property("ADBE Anchor Point");
+    poi._default_value_source = () => layer._comp_centre();
   }
   if (layer instanceof CameraLayer) {
     const options = layer.property("ADBE Camera Options Group");
@@ -388,7 +419,8 @@ export function apply_dimensionality_naming(layer: Layer, kw: { reset_scale_z?: 
  * transform defaults, top-level group ordering, recursive child
  * synthesis, and min/max bounds application.
  *
- * Called once per layer at the end of `parse_layer`.
+ * Called once per layer when its property tree is built
+ * (`Layer._build_property_tree`).
  *
  * @param layer - The layer whose property tree should be finalized.
  */
@@ -418,7 +450,5 @@ export function synthesize_layer_properties(layer: Layer): void {
   // After the pass: a camera's default Position reads its Zoom, which is
   // only synthesized (when AE left it out) once its group is registered.
   _set_transform_defaults(layer, ae_major);
-  if (layer instanceof CameraLayer || layer instanceof LightLayer) {
-    _follow_live_defaults(layer);
-  }
+  _follow_live_defaults(layer);
 }

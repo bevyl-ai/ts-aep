@@ -60,6 +60,13 @@ host access goes through `src/pyrt/host.ts`: Node and Bun use their own
 `node:fs`, `node:path` and `node:os` (via `process.getBuiltinModule`); hosts
 without them get an in-memory file system and POSIX paths.
 
+A project decodes lazily: `comp.layers` builds each layer from its own
+settings, and a layer's properties (Transform, Effects, Masks, Text, ...) are
+decoded the first time one is read. A script that reads layer attributes only
+(names, times, labels, switches, sources) never builds a property. Reading an
+attribute a layer does not have (`source` on a camera) looks it up among its
+properties, which builds them; test the layer's type instead.
+
 ### Types
 
 Children are typed by match name: `group.property("ADBE Position")` is a

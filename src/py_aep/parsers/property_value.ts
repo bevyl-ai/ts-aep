@@ -4,6 +4,7 @@ import { warn } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
 import { find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { PropertyValueType } from "../enums/index.ts";
 import { _suppress_materialization } from "../models/descriptors.ts";
 import { Keyframe } from "../models/properties/keyframe.ts";
 import { Property } from "../models/properties/property.ts";
@@ -40,18 +41,20 @@ export const parse_property = _suppress_materialization().decorate(function pars
 
   const tdb4_chunk = find_by_type(tdbs_child_chunks, "tdb4");
 
+  // The optional chunks, first of each type (py-aep gathers them in one
+  // pass; the typed lookups here keep each chunk's class).
   const cdat = find_by_type_or_null(tdbs_child_chunks, "cdat");
-
-  // Static value is read lazily by Property.value from _cdat via
-  // _resolve_value.  Only extract here for non-cdat overrides.
-  let value: number | null = null;
 
   // For LAYER control properties, keep the tdpi chunk reference so the
   // layer index can be resolved lazily (it changes on layer reorder).
-  // tdli stores the 1-based mask index directly and is stable.
   const tdpi = find_by_type_or_null(tdbs_child_chunks, "tdpi");
-  const tdli = find_by_type_or_null(tdbs_child_chunks, "tdli");
-  if (tdli !== null) value = tdli.value;
+  // AE writes a tdli (the mask's id, resolved lazily by
+  // `Property._mask_index`) only for mask-index properties; their tdb4
+  // alone reads as OneD (e.g. a text layer's Path).
+  let property_value_type: PropertyValueType | null = null;
+  if (find_by_type_or_null(tdbs_child_chunks, "tdli") !== null) {
+    property_value_type = PropertyValueType.MASK_INDEX;
+  }
 
   const expression_utf8 = find_by_type_or_null(tdbs_child_chunks, "Utf8");
 
@@ -79,7 +82,9 @@ export const parse_property = _suppress_materialization().decorate(function pars
     match_name,
     property_depth,
     keyframes,
-    value,
+    // Read lazily from the chunks (`Property._stored_static_value`).
+    value: null,
+    property_value_type,
   });
 
   return prop;

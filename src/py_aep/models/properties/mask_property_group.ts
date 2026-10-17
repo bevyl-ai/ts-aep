@@ -301,7 +301,9 @@ export class MaskPropertyGroup extends PropertyGroup {
     // measured in this space, so 1.0 would bend them: keep the aspect.
     const pixel_aspect = source != null ? source.pixel_aspect : 1.0;
     const [tdmn, oms] = build_default_mask_shape(comp._cdta.internal_timebase, {
-      aspect: (width * pixel_aspect) / height,
+      // An audio-only layer has a 0x0 mask space (its default path is
+      // four points at the origin) and no aspect to stamp.
+      aspect: height !== 0 ? (width * pixel_aspect) / height : 1.0,
       roto_bezier,
     });
 
@@ -342,10 +344,17 @@ export class MaskPropertyGroup extends PropertyGroup {
     // reach the saved file.
     const existing = this._properties.find((c) => c.match_name === "ADBE Mask Shape") ?? null;
     if (existing != null) {
-      // `existing.__dict__.update(mask_path.__dict__)`: plain own attributes, plus the
-      // `instance_dict` Map (non-enumerable, so Object.assign alone would skip it).
+      // `existing.__dict__ = mask_path.__dict__`: replace, not merge - a key
+      // the parsed property leaves to its class default must not keep the
+      // placeholder's value. Plain own attributes, plus the `instance_dict`
+      // Map (non-enumerable, so Object.assign alone would skip it).
+      for (const k of Object.keys(existing)) {
+        if (!Object.prototype.hasOwnProperty.call(mask_path, k)) Reflect.deleteProperty(existing, k);
+      }
       Object.assign(existing, mask_path);
-      for (const [k, v] of instance_dict(mask_path)) instance_dict(existing).set(k, v);
+      const existing_dict = instance_dict(existing);
+      existing_dict.clear();
+      for (const [k, v] of instance_dict(mask_path)) existing_dict.set(k, v);
       if (!(existing instanceof _property_model().Property)) throw new AttributeError("_link_keyframes");
       existing._link_keyframes();
     } else {
