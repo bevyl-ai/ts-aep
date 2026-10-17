@@ -3,7 +3,7 @@ replace and interpretation (area C). Each expectation is AE 2026 ground
 truth from an AE import / reload / render of the same file (see the
 comments), or an exact law. */
 
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";

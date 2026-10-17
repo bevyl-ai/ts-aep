@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { NotImplementedError, Path, py_bool, py_eq, RuntimeError, ValueError, zip } from "../../src/pyrt/index.ts";
+import { Path, py_bool, py_eq, RuntimeError, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep, Property } from "../../src/py_aep/index.ts";
 import * as project_mod from "../../src/py_aep/models/project.ts";
