@@ -7,8 +7,9 @@
  */
 
 import { expect, test } from "bun:test";
-import { parse_app, SAMPLES_DIR } from "../helpers.ts";
+import { as_instance, parse_app, SAMPLES_DIR } from "../helpers.ts";
 import { GetSettingsFormat, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import { Path, sorted } from "../../src/pyrt/index.ts";
 
@@ -29,7 +30,7 @@ const _IDS = _CORPUS.map((p) => p.path.slice(SAMPLES_DIR.path.length + 1));
 
 test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_settings_and_format_options_reads_never_raise[%s]", (_id: string, aep_path: Path) => {
   const app = parse_app(aep_path);
-  for (const rqi of app.project.render_queue.items) {
+  for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
     for (const om of rqi.output_modules) {
       om.get_settings(GetSettingsFormat.STRING);
       om.get_settings(GetSettingsFormat.NUMBER);
@@ -52,7 +53,7 @@ test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_rouu_depth_and_fra
   // frame rate, including the 29.97 fps modules whose rate fraction sits
   // right before the depth.
   const app = parse_app(aep_path);
-  for (const rqi of app.project.render_queue.items) {
+  for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
     for (const om of rqi.output_modules) {
       expect(OutputColorDepth.has(om._roou.depth)).toBe(true);
       expect(om._roou.frame_rate > 0).toBe(true);

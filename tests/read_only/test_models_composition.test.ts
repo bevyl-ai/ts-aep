@@ -6,6 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  AssertionError_,
   getitem,
   isclose,
   len,
@@ -835,6 +836,7 @@ describe("TestEssentialGraphics", () => {
     const blur = getitem(by_name, "Gaussian Blur Blurriness");
     const src_layer = _resolve_controller_source_layer(project, blur);
     expect(src_layer != null).toBe(true);
+    if (src_layer == null) throw new AssertionError_("blur controller has no source layer");
     const leaf_node = _walk_source_property(src_layer, blur.source_property_path);
     expect(leaf_node != null).toBe(true);
     const leaf = as_instance(leaf_node, Property);
@@ -847,10 +849,9 @@ describe("TestEssentialGraphics", () => {
     // The override leaf carries its OWN value; the source Property here is
     // the effect's source value ([1,0,0,1]), distinct from any override.
     const fill = getitem(by_name, "Fill Color");
-    const fill_leaf_node = _walk_source_property(
-      _resolve_controller_source_layer(project, fill),
-      fill.source_property_path,
-    );
+    const fill_src_layer = _resolve_controller_source_layer(project, fill);
+    if (fill_src_layer == null) throw new AssertionError_("fill controller has no source layer");
+    const fill_leaf_node = _walk_source_property(fill_src_layer, fill.source_property_path);
     expect(fill_leaf_node != null).toBe(true);
     const fill_leaf = as_instance(fill_leaf_node, Property);
     expect(fill_leaf.match_name).toBe("ADBE Fill-0002");
@@ -898,7 +899,7 @@ describe("TestEssentialGraphics", () => {
     expect(fill.has_min && fill.has_max).toBe(true);
     expect(round(fill.max_value, 2)).toBe(3921568.63);
     expect(fill.is_modified).toBe(true); // override differs from source [1,0,0,1]
-    expect(py_eq(fill.value.map((c) => round(c, 4)), [0.2475, 0.7255, 0.6299, 1.0])).toBe(true);
+    expect(py_eq(fill.value.map((c: number) => round(c, 4)), [0.2475, 0.7255, 0.6299, 1.0])).toBe(true);
 
     // Public essential_property_source resolves the override to its source
     // Property (a different object than the override leaf).
