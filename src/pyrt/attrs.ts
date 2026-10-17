@@ -40,7 +40,7 @@ export type FieldSpec<V = unknown> = {
 };
 
 /** The fields `define` records for instances `I`, each typed by the field it declares. */
-export type FieldSpecs<I> = { [K in keyof I]?: FieldSpec<I[K]> };
+export type FieldSpecs<I> = { [K in keyof I as Exclude<K, "constructor">]?: FieldSpec<I[K]> };
 
 /** `attrs.Attribute` as `attrs.fields(cls)` returns it. */
 export type Attribute = {

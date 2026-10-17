@@ -7,7 +7,7 @@
  */
 
 import { b, bytes_, decode, define, descriptor, fields, getattr, len, py_assert, py_bool, setattr, strip } from "../../pyrt/index.ts";
-import type { IO } from "../../pyrt/index.ts";
+import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { read_bytes, to_dividend_divisor, to_fixed_16_16 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -437,6 +437,7 @@ descriptor(RoutItem, "render", new BitField("_flags", 6));
  * Stored as ldat items in the LIST:list under LIST:LRdr.
  */
 export class RenderSettingsItem extends FmtItem {
+  declare ["constructor"]: ClassAttributes<typeof RenderSettingsItem>;
   // Reserved-region defaults reproduce the constant bytes AE writes for a
   // render-queue item (verified identical across real items). Without them
   // AE reports "missing data in file" when opening a py_aep-created item.
@@ -544,7 +545,7 @@ export class RenderSettingsItem extends FmtItem {
    * are preserved.
    */
   copy_settings_from(source: RenderSettingsItem): void {
-    for (const field of (this.constructor as typeof RenderSettingsItem)._TEMPLATE_FIELDS) {
+    for (const field of this.constructor._TEMPLATE_FIELDS) {
       setattr(this, field, getattr(source, field));
     }
   }
@@ -671,6 +672,7 @@ descriptor(RenderSettingsItem, "render_checked", new BitField("_flag_byte", 0));
  * `OutputModuleSettingsItem()` is valid with no preferences needed.
  */
 export class OutputModuleSettingsItem extends FmtItem {
+  declare ["constructor"]: ClassAttributes<typeof OutputModuleSettingsItem>;
   declare _reserved_00: Uint8Array;
   /**
    * Byte 7: bit 6=include_source_xmp, bit 5=has_output_file,
@@ -765,7 +767,7 @@ export class OutputModuleSettingsItem extends FmtItem {
    * `post_render_use_comp` are preserved.
    */
   copy_settings_from(source: OutputModuleSettingsItem): void {
-    for (const field of (this.constructor as typeof OutputModuleSettingsItem)._TEMPLATE_FIELDS) {
+    for (const field of this.constructor._TEMPLATE_FIELDS) {
       setattr(this, field, getattr(source, field));
     }
   }
