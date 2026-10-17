@@ -326,7 +326,8 @@ const add_import = (file: string, name: string) => {
 };
 const sorted_types = [...types].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 for (const { cls, file } of types.values()) add_import(file, cls);
-for (const { file, refs } of owned) for (const r of refs) add_import(file, r);
+// An item class declared in the augmented module resolves inside `declare module` without an import.
+for (const { file, refs } of owned) for (const r of refs) if (!classes.has(`${file}:${r}`)) add_import(file, r);
 const ident = (name: string) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name));
 const by_module = new Map<string, OwnedFields[]>();
 const module_group = (file: string): OwnedFields[] => {
