@@ -148,6 +148,8 @@ function repr200(x: string): string {
 
 const ASCII_WS = /^[ \t\n\v\f\r]+|[ \t\n\v\f\r]+$/g;
 const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
+const SHORT_DECIMAL_INT = /^[+-]?[0-9]{1,15}$/;
+const SIMPLE_DECIMAL_FLOAT = /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)$/;
 
 /**
  * `int(x)` / `int(text, base)`: floats truncate toward zero (raising like
@@ -161,6 +163,9 @@ export function int(x: number | string | boolean | bigint | PyFloat | String, ba
   if (typeof x === "bigint") return Number(x);
   if (typeof x === "string" || x instanceof String) {
     const orig = String(x);
+    // Fast path for plain ASCII decimal text short enough to be exact as a double; the
+    // general parse below walks a BigInt per digit. `+ 0` turns "-0" into 0.
+    if (base === 10 && SHORT_DECIMAL_INT.test(orig)) return Number(orig) + 0;
     if (base !== 0 && (base < 2 || base > 36)) throw new ValueError("int() base must be >= 2 and <= 36, or 0");
     const bad = (): never => {
       throw new ValueError(`invalid literal for int() with base ${base}: ${repr200(orig)}`);
@@ -212,6 +217,8 @@ export function float(x: string | number | boolean | PyFloat | String): number {
   if (typeof x === "number") return x;
   if (typeof x === "boolean") return x ? 1 : 0;
   const orig = String(x);
+  // Plain ASCII decimal text needs none of the normalization below.
+  if (SIMPLE_DECIMAL_FLOAT.test(orig)) return Number(orig);
   const bad = (): never => {
     throw new ValueError(`could not convert string to float: ${repr200(orig)}`);
   };
