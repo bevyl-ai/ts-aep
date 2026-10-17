@@ -123,6 +123,27 @@ describe("codecs", () => {
   test.each(CPY.u32_enc.map((r) => [...r]))("encode(%j, %s)", (text, enc, hex) => {
     expect(bytes_.hex(encode(text, enc))).toBe(hex);
   });
+
+  // Code pages, from CPython 3.12 (tools/gen_codepages.ts checks every one- and two-byte sequence).
+  test.each<[string, string, Parameters<typeof decode>[2], string]>([
+    ["41a0b1fd8140", "cp932", "strict", "'A\\uf8f0ｱ\\uf8f1\\u3000'"],
+    ["82a0e0408120", "cp932", "strict", "UnicodeDecodeError: 'cp932' codec can't decode byte 0x81 in position 4: illegal multibyte sequence"],
+    ["418281", "cp932", "surrogateescape", "'Aａ'"],
+    ["4182", "cp932", "strict", "UnicodeDecodeError: 'cp932' codec can't decode byte 0x82 in position 1: incomplete multibyte sequence"],
+    ["80c4e3baf3", "cp936", "strict", "UnicodeDecodeError: 'gbk' codec can't decode byte 0x80 in position 0: illegal multibyte sequence"],
+    ["a140", "gbk", "strict", "UnicodeDecodeError: 'gbk' codec can't decode byte 0xa1 in position 0: illegal multibyte sequence"],
+    ["8130a1a1", "cp936", "replace", "'�0\\u3000'"],
+    ["b0a1c9a1", "cp949", "strict", "UnicodeDecodeError: 'cp949' codec can't decode byte 0xc9 in position 2: illegal multibyte sequence"],
+    ["c9a1", "uhc", "strict", "UnicodeDecodeError: 'cp949' codec can't decode byte 0xc9 in position 0: illegal multibyte sequence"],
+    ["a440c6a1f9fe", "cp950", "strict", "'一ヾ▓'"],
+    ["8740", "cp950", "surrogateescape", "'\\udc87@'"],
+    ["8a9e", "cp1250", "strict", "'Šž'"],
+    ["81", "windows-1250", "strict", "UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 0: character maps to <undefined>"],
+    ["a1db", "cp874", "strict", "UnicodeDecodeError: 'charmap' codec can't decode byte 0xdb in position 1: character maps to <undefined>"],
+    ["80", "ascii", "strict", "UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0: ordinal not in range(128)"],
+  ])("decode(%s, %s, %s)", (hex, enc, err, out) => {
+    expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err)))).toBe(out);
+  });
 });
 
 describe("pathlib", () => {
