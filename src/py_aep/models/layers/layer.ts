@@ -843,7 +843,7 @@ export class Layer extends PropertyGroup {
     // Walk up from the candidate; hitting self means a cycle. The
     // visited set keeps this terminating even on a file that already
     // contains a parenting cycle.
-    const seen = new Set<unknown>([this]);
+    const seen = new Set<Layer>([this]);
     let current: Layer | null = new_parent;
     while (current != null) {
       if (seen.has(current)) {

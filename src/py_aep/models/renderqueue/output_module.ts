@@ -103,7 +103,7 @@ export function _label_or_name(key: string | null, v: RuleValue): string {
 }
 
 /** Python `getattr(v, "name", None) or str(v)` (see `_label_or_name`). */
-export function _name_or_str(key: string | null, v: unknown): string {
+export function _name_or_str(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.name_of(v);
   return str(v);

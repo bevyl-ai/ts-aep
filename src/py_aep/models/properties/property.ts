@@ -206,7 +206,7 @@ export function _vf_tag_from_str(tag: string): number {
   return n;
 }
 
-export function _values_equal(a: unknown, b: unknown): boolean {
+export function _values_equal(a: PropertyValue, b: PropertyValue): boolean {
   // Compare two property values with float tolerance.
   //
   // Handles scalars, arrays, booleans, and null.
@@ -547,7 +547,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   declare _default_value_source: (() => V) | null;
   declare _default_value: V | null;
   declare _keyframe_positions: Map<Keyframe, number> | null;
-  declare _types_memo: [unknown[], [PropertyControlType, PropertyValueType]] | null;
+  declare _types_memo: [number[], [PropertyControlType, PropertyValueType]] | null;
   declare _effect_scale_dict: { value: number[] | null } | null;
   declare _min_value_fallback: number | null | typeof _UNSET;
   declare _max_value_fallback: number | null | typeof _UNSET;
@@ -2518,7 +2518,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _determine_property_types(): [PropertyControlType, PropertyValueType] {
     const tdb4 = this._tdb4;
-    let key: unknown[] | null;
+    let key: number[] | null;
     if (tdb4 != null) {
       key = [tdb4.dimensions, tdb4._type_flags, tdb4._spatial_static_flags, tdb4._no_value_flags];
       const memo = this._types_memo;
