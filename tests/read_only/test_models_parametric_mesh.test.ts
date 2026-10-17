@@ -10,7 +10,7 @@
 // evaluated at runtime. `Path(__file__).parent...` becomes `import.meta.dir`.
 
 import { describe, expect, test } from "bun:test";
-import { getitem, Path, py_assert, len } from "../../src/pyrt/index.ts";
+import { at, getitem, Path, py_assert, len } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse_project } from "../conftest.ts";
 import { as_instance } from "../helpers.ts";
@@ -36,26 +36,26 @@ describe("TestParametricMeshModel", () => {
     const comp = project.compositions[0];
     const by_name = new Map(comp.layers.map((layer) => [layer.name, layer] as const));
 
-    const cube = getitem(by_name, "Cube Mesh Layer 1") as ParametricMeshLayer;
-    expect(cube instanceof ParametricMeshLayer).toBe(true);
+    const cube = getitem(by_name, "Cube Mesh Layer 1");
+    py_assert(cube instanceof ParametricMeshLayer);
     expect(cube.parametric_mesh_type === ParametricMeshType.CUBE).toBe(true);
     expect(cube.parametric_mesh_options instanceof CubeMeshOptions).toBe(true);
 
-    const cyl = getitem(by_name, "Cylinder Mesh Layer 1") as ParametricMeshLayer;
+    const cyl = as_instance(getitem(by_name, "Cylinder Mesh Layer 1"), ParametricMeshLayer);
     expect(cyl.parametric_mesh_type === ParametricMeshType.CYLINDER).toBe(true);
     expect(cyl.parametric_mesh_options instanceof CylinderMeshOptions).toBe(true);
   });
 
   test("test_layer_type_string_is_parametric_mesh", () => {
     const project = parse_project(MESH_AEP);
-    const cube = project.compositions[0].layers.at(-1)!;
+    const cube = at(project.compositions[0].layers, -1);
     // AE reports these as their own type, not AVLayer.
     expect(cube.layer_type === "ParametricMeshLayer").toBe(true);
   });
 
   test("test_cannot_set_collapse_transformation", () => {
     const project = parse_project(MESH_AEP);
-    const cube = project.compositions[0].layers.at(-1)!;
+    const cube = at(project.compositions[0].layers, -1);
     expect(as_instance(cube, ParametricMeshLayer).can_set_collapse_transformation).toBe(false);
   });
 
