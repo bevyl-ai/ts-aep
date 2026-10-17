@@ -1,9 +1,9 @@
 /** Effect and parameter definition parsers. */
 
-import type { Chunk, ListChunk } from "../binary/chunk.ts";
+import { ListChunk, type Chunk } from "../binary/chunk.ts";
 import type { AnglePardChunk, BooleanPardChunk, ColorPardChunk, EnumPardChunk, IntegerPardChunk, PardChunk, ScalarPardChunk, SliderPardChunk, ThreeDPardChunk, TwoDPardChunk } from "../binary/misc_chunks.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null, index_by_identity } from "../binary/utils.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { EFFECT_PARAM_SPATIAL_FLAGS } from "../data/spatial_flags.ts";
 import { PropertyControlType, PropertyType, PropertyValueType } from "../enums/index.ts";
@@ -16,8 +16,10 @@ import { PropSpec } from "../synthesis/property.ts";
 import { get_chunks_by_match_name, get_match_name_runs } from "./utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
+import type { Project } from "../models/project.ts";
 import {
   and,
+  at,
   deferred,
   int,
   split,
@@ -442,9 +444,6 @@ export function _parse_effect_properties(
         _merge_param_def(existing, param_def);
       }
       ordered.push(existing);
-    } else if (match_name === "ADBE Force CPU GPU") {
-      // Belongs inside ADBE Effect Built In Params, not here.
-      continue;
     } else {
       const synth = _synthesize_effect_property(match_name, param_def, child_depth, {
         parent_property,
@@ -478,6 +477,91 @@ export function _parse_effect_properties(
   }
 
   return ordered;
+}
+
+export const _ITEM_CONTAINERS: ReadonlySet<string> = new Set(["Fold", "Item", "Sfdr"]);
+
+/**
+ * Every effect instance under `chunks` (folder, item or layer lists) as
+ * `(match name, sspc)`, in file order. Only the layers' Effects groups are
+ * decoded.
+ */
+export function* _effect_instances(chunks: Chunk[]): Generator<[string, ListChunk]> {
+  for (const chunk of chunks) {
+    if (!(chunk instanceof ListChunk)) continue;
+    const list_type = chunk.list_type;
+    if (_ITEM_CONTAINERS.has(list_type)) {
+      yield* _effect_instances(chunk.chunks);
+    } else if (list_type === "Layr") {
+      const root = filter_by_list_type(chunk.chunks, "tdgp");
+      const parade = get_chunks_by_match_name(at(root, 0)).get("ADBE Effect Parade");
+      const effects = filter_by_list_type(parade ?? [], "tdgp");
+      if (effects.length === 0) continue;
+      for (const [name, run] of get_chunks_by_match_name(effects[0])) {
+        for (const sspc of filter_by_list_type(run, "sspc")) {
+          yield [name, sspc];
+        }
+      }
+    }
+  }
+}
+
+/** The instance's `parT`, if it holds its effect's definitions. */
+export function _held_definitions(sspc: ListChunk): ListChunk | null {
+  const parts = filter_by_list_type(sspc.chunks, "parT");
+  return parts.length > 0 && parts[0].chunks.length > 0 ? parts[0] : null;
+}
+
+/**
+ * The parameter definitions of effect `match_name` from the instance in
+ * the project that holds them.
+ *
+ * AE writes an effect's `parT` in its first instance in file order only and
+ * leaves the others' empty (every effect used more than once in samples/,
+ * AE 15 to 26); a project saved by an older version (AE 15 in samples/) has
+ * no `LIST:EfdG` to hold them instead.
+ */
+export function _project_param_defs(composition: CompItem, match_name: string): Map<string, ParamDef> {
+  const project = composition._project;
+  for (const [name, sspc] of _effect_instances(project._rifx.chunks)) {
+    if (name === match_name && _held_definitions(sspc) != null) {
+      return parse_effect_param_defs(sspc.chunks, project._nnhd._system_code_page);
+    }
+  }
+  return new Map();
+}
+
+/**
+ * Hand the definitions held by `removed` effect instances to the first
+ * remaining instance of each effect, where AE keeps them (see
+ * `_project_param_defs`); AE 15 and AE 2026 write them there on their own
+ * save. AE rewrites the instance-specific bytes of each `pard` (UI flags
+ * such as disabled, last values) when it saves; a moved `parT` keeps the
+ * removed instance's, which AE 15 opens with the same parameters.
+ *
+ * Only a project without `LIST:EfdG` needs it: nothing else holds the
+ * definitions there, so the other instances would reopen without them.
+ */
+export function rehome_effect_definitions(project: Project, removed: Iterable<[string, ListChunk]>): void {
+  const root_chunks = project._rifx.chunks;
+  if (filter_by_list_type(root_chunks, "EfdG").length > 0) return;
+  const held = new Map<string, ListChunk>();
+  for (const [name, sspc] of removed) {
+    const part = _held_definitions(sspc);
+    if (part != null && !held.has(name)) held.set(name, part);
+  }
+  if (held.size === 0) return;
+  for (const [name, sspc] of _effect_instances(root_chunks)) {
+    const part = held.get(name) ?? null;
+    held.delete(name);
+    if (part != null) {
+      const parts = filter_by_list_type(sspc.chunks, "parT");
+      if (parts.length > 0 && parts[0].chunks.length === 0) {
+        sspc.chunks[index_by_identity(sspc.chunks, parts[0])] = part;
+      }
+    }
+    if (held.size === 0) return;
+  }
 }
 
 /**
@@ -527,15 +611,20 @@ export const parse_effect = _suppress_materialization().decorate(function parse_
 
   // Layer-level sspc may have an empty parT when the same effect type
   // is used more than once (AE doesn't duplicate the data).  Fall back
-  // to previously cached or project-level EfdG definitions.
-  const cached_param_defs = effect_param_defs.get(group_match_name);
-  if (!param_defs?.size && cached_param_defs !== undefined) {
-    param_defs = cached_param_defs;
+  // to previously cached or project-level EfdG definitions, else to the
+  // instance that holds them, whichever layer was built first.
+  if (param_defs.size === 0) {
+    let cached = effect_param_defs.get(group_match_name);
+    if (cached === undefined) {
+      cached = _project_param_defs(composition, group_match_name);
+      effect_param_defs.set(group_match_name, cached);
+    }
+    param_defs = cached;
   }
 
   // Cache successful parT parsing so later instances of the same
   // effect can reuse the definitions.
-  if (param_defs?.size > 0 && !effect_param_defs.has(group_match_name)) {
+  if (param_defs.size > 0 && !((effect_param_defs.get(group_match_name)?.size ?? 0) > 0)) {
     effect_param_defs.set(group_match_name, param_defs);
   }
   // Resolve _name_utf8 from the effect tdgp's tdsn child

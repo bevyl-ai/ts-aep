@@ -18,12 +18,14 @@
  * type, the comp renderer) and stay stale once saved.
  */
 
-import { getattr, py_bool } from "../../pyrt/index.ts";
+import { AttributeError, deferred } from "../../pyrt/index.ts";
 import { get_ae_version_major } from "../ae_version.ts";
 import { LayerType, PropertyControlType, PropertyValueType } from "../enums/index.ts";
 import { _CAMERA_NO_EXPRESSION, _CANSETEXPR_2D_ONLY, _CANSETEXPR_3D_ONLY, _CANSETEXPR_EXTRUSION_DEPTHS, _CANSETEXPR_FALSE_OVERRIDES, _CANSETEXPR_RENDERER_3D_ONLY, _LIGHT_AMBIENT_NO_EXPRESSION, _LIGHT_ENVIRONMENT_NO_EXPRESSION, _LIGHT_NO_EXPRESSION, _LIGHT_PARALLEL_NO_EXPRESSION, _LIGHT_POINT_NO_EXPRESSION, _LIGHT_SPOT_NO_EXPRESSION, _MATERIAL_COEFFICIENTS, _MODEL_LAYER_HIDDEN_MATERIALS, _PARAMETRIC_MESH_CHECKBOX_STREAMS, _PARAMETRIC_MESH_GROUP_TYPE, _PARAMETRIC_MESH_NO_EXPRESSION } from "../models/properties/overrides.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { Layer } from "../models/layers/layer.ts";
+
+const _av_layer = deferred<typeof import("../models/layers/av_layer.ts")>("py_aep/models/layers/av_layer");
 
 // PVT sets where can_set_expression is always True / False regardless
 // of other signals.
@@ -102,8 +104,13 @@ export function resolve_can_set_expression(prop: Property): boolean {
   }
 
   if (mn === "ADBE Time Remapping") {
+    // Only AV layers have one.
     const layer = prop._containing_layer;
-    return py_bool(getattr(layer, "time_remap_enabled", false));
+    if (!(layer instanceof _av_layer().AVLayer)) {
+      // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
+      throw new AttributeError(`'${layer.constructor.name}' has no property 'time_remap_enabled'`);
+    }
+    return layer.time_remap_enabled;
   }
 
   if (!prop.can_vary_over_time) {

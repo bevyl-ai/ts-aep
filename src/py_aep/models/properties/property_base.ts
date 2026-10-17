@@ -574,7 +574,13 @@ export class PropertyBase {
     const [parent, parent_tdgp] = this._can_mutate();
     if (this._is_mask && this instanceof _mask_property_group().MaskPropertyGroup) _clear_mask_references(this);
     const [start, end] = this._find_chunk_span(parent_tdgp);
-    parent_tdgp.chunks.splice(start, end - start);
+    const removed = parent_tdgp.chunks.splice(start, end - start);
+    _effect().rehome_effect_definitions(
+      this._containing_layer.containing_comp._project,
+      removed
+        .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
+        .map((chunk): [string, ListChunk] => [this.match_name, chunk]),
+    );
     list_remove(parent.properties, this);
     if (this._is_mask) _renumber_mask_auto_names(parent);
   }

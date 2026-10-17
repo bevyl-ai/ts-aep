@@ -417,10 +417,12 @@ export const _COMPOSITING_OPTIONS_SPECS: (PropSpec | GroupSpec)[] = [
     min_value: 0,
     max_value: 100,
   }),
+  // AE 15 lists it among the effect's own parameters (`parT`) instead.
   _spec("ADBE Force CPU GPU", "GPU Rendering", 1.0, PropertyValueType.OneD, {
     min_value: 1,
     max_value: 3,
     can_vary_over_time: false,
+    min_major: 16,
   }),
 ];
 

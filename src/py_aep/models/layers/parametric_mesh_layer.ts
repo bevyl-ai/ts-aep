@@ -120,27 +120,22 @@ export class ParametricMeshLayer extends AVLayer {
 
   /** Update the parametric mesh options from the layer's current state. */
   _update_options(): void {
+    // Plain instance attributes, read as own properties (Python's
+    // `__dict__`): `getattr` on a missing one would search the layer's
+    // properties for that name.
     const options_cls = OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_options = getattr(this, "parametric_mesh_options", null);
+    const old_options = Object.hasOwn(this, "parametric_mesh_options") ? this.parametric_mesh_options : null;
     if (_type_of(old_options) !== options_cls) {
-      try {
-        Reflect.deleteProperty(this, "parametric_mesh_options");
-      } catch (e) {
-        if (!(e instanceof AttributeError)) throw e;
-      }
+      Reflect.deleteProperty(this, "parametric_mesh_options");
       if (options_cls != null) {
         this.parametric_mesh_options = new options_cls(this);
       }
     }
 
     const bevel_cls = BEVEL_OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_bevel = getattr(this, "parametric_bevel_options", null);
+    const old_bevel = Object.hasOwn(this, "parametric_bevel_options") ? this.parametric_bevel_options : null;
     if (_type_of(old_bevel) !== bevel_cls) {
-      try {
-        Reflect.deleteProperty(this, "parametric_bevel_options");
-      } catch (e) {
-        if (!(e instanceof AttributeError)) throw e;
-      }
+      Reflect.deleteProperty(this, "parametric_bevel_options");
       if (bevel_cls != null) {
         this.parametric_bevel_options = new bevel_cls(this);
       }

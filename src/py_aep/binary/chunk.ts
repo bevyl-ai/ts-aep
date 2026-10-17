@@ -419,6 +419,23 @@ define(ListChunk, {
 });
 register("LIST", "RIFX")(ListChunk);
 
+export const _TDGP: ReadonlySet<string> = new Set(["tdgp"]);
+
+/**
+ * The children a deferred LIST keeps deferred in turn once decoded.
+ *
+ * A layer's property tree (its root `tdgp`) waits until its properties
+ * are read, and decoding that root leaves each top-level group (Transform,
+ * Effects, Masks, ...) to its own first access: the root's direct
+ * properties, such as Time Remapping, are then readable on their own.
+ */
+export function _deferred_children(list_type: string, parent_list_type: string): ReadonlySet<string> | null {
+  if (list_type === "Layr" || (list_type === "tdgp" && parent_list_type === "Layr")) {
+    return _TDGP;
+  }
+  return null;
+}
+
 /**
  * A LIST chunk whose children are parsed lazily from stored raw bytes.
  *
@@ -485,7 +502,10 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
     if (parsed == null) {
       const body = this._raw_body;
       const ctx = this._raw_ctx || EMPTY_CTX;
-      parsed = read_chunks(new BytesIO(body), body.length, { ctx });
+      parsed = read_chunks(new BytesIO(body), body.length, {
+        ctx,
+        defer_list_types: _deferred_children(this.list_type, ctx.grandparent_list_type),
+      });
       this._parsed_chunks = parsed;
       this._raw_body = b("");
       this._raw_ctx = null;

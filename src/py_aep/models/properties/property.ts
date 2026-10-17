@@ -1232,7 +1232,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const scale = this._effect_scale;
     if (scale == null || scale[1] === 0 || !this._has_motion_path) return;
     const layer = this._containing_layer;
-    const source: AVLayer["source"] | null = getattr(layer, "source", null);
+    const source = layer._source_item;
     const pixel_aspect = source != null ? source.pixel_aspect : layer.containing_comp.pixel_aspect;
     this._tdb4.pixel_aspect = (scale[0] * pixel_aspect) / scale[1];
     this._tdb4._arc_accuracy = NORMALIZED_ARC_ACCURACY;
@@ -1557,10 +1557,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       }
     }
     // 3. Effect point (0-1 fraction -> pixel coordinates)
-    if (this._effect_scale != null) {
-      if (Array.isArray(raw) && raw.length >= 2) {
-        raw = this._apply_effect_scale(raw);
-      }
+    if (Array.isArray(raw) && raw.length >= 2) {
+      raw = this._apply_effect_scale(raw);
     }
     // 4. Checkbox / popup: reported rounded, stored as given
     if (this._property_control_type != null && _ROUNDED_CONTROL_TYPES.has(this._property_control_type)) {
@@ -1606,10 +1604,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return value;
     }
     // 3. Reverse effect point (pixel coordinates -> 0-1 fraction)
-    if (this._effect_scale != null) {
-      if (Array.isArray(value) && value.length >= 2) {
-        value = this._apply_effect_scale(value, { invert: true });
-      }
+    if (Array.isArray(value) && value.length >= 2) {
+      value = this._apply_effect_scale(value, { invert: true });
     }
     // 2. Reverse color (RGBA 0-1 -> ARGB 0-255)
     if (this._color) {
@@ -2002,10 +1998,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * stored fraction against the layer's current size - [30, 40] on a
    * 200x100 solid reads [60, 40] once the solid is 400 wide, and
    * [288, 432] once it is an adjustment layer in a 1920x1080 comp (AE
-   * 2026) - so its value is always read back from the cdat.
+   * 2026) - so its value is always read back from the cdat. Nor a
+   * footage, solid or precomp layer's Anchor Point, stored normalized
+   * against its source: [30, 40] on a 200x100 solid reads [60, 40] once
+   * the solid is 400 wide, and [60, 80] after `replaceSource` with a
+   * 400x200 one (AE 2026).
    */
   _cache_written(value: _ValueType): void {
-    if (this._cdat != null && this.match_name !== "ADBE Anchor Point" && this._effect_scale != null) {
+    if (this._cdat != null && this._effect_scale != null) {
       this._value = null;
     } else {
       this._value = _own_list(value);
@@ -3178,7 +3178,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       Array.isArray(value) &&
       value.length === 3 &&
       (this.match_name === "ADBE Position" || this.match_name === "ADBE Anchor Point") &&
-      !getattr(this._containing_layer, "three_d_layer", true)
+      !this._containing_layer.is_3d
     ) {
       return [value[0], value[1], 0.0];
     }
@@ -3268,7 +3268,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   _inert_dimensions(): ReadonlySet<number> {
     if (this.match_name !== "ADBE Scale") return new Set<number>();
     const layer = this._containing_layer;
-    if (layer == null || getattr(layer, "three_d_layer", false)) return new Set<number>();
+    if (layer == null || layer.is_3d) return new Set<number>();
     return new Set<number>([2]);
   }
 
@@ -4625,8 +4625,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.match_name === "ADBE Anchor Point") {
       // Only footage/comp layers normalize the anchor to source size;
       // source-less layers (shape, text, null) store it in raw pixels.
-      if (getattr(this._containing_layer, "source", null) != null) {
-        const size = this._layer_pixel_size();
+      const layer = this._containing_layer;
+      if (layer._source_item != null) {
+        const size = layer._pixel_size;
         if (size != null) {
           // Z shares the height divisor, as on a 3-D effect point
           // (AE 2026: an anchor at Z 80 on a 400x300 solid stores
