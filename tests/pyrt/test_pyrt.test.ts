@@ -21,6 +21,7 @@ import {
   list_mul,
   pattern_findall,
   pattern_match,
+  py_assert,
   py_eq,
   py_re,
   pyfloat,
@@ -39,7 +40,8 @@ function fromhex(s: string): number {
   if (s === "inf") return Infinity;
   if (s === "-inf") return -Infinity;
   if (s === "nan") return NaN;
-  const m = /^(-?)0x([01])\.([0-9a-f]+)p([+-]\d+)$/.exec(s)!;
+  const m = /^(-?)0x([01])\.([0-9a-f]+)p([+-]\d+)$/.exec(s);
+  py_assert(m != null);
   const mant = Number(BigInt("0x" + m[2] + m[3]));
   const e = Number(m[4]) - 4 * m[3].length;
   const v = e >= -1022 ? mant * 2 ** e : mant * 2 ** (e + 600) * 2 ** -600;
@@ -49,7 +51,8 @@ function fromhex(s: string): number {
 const run = (f: () => string): string => {
   try {
     return f();
-  } catch (e: any) {
+  } catch (e) {
+    if (!(e instanceof Error)) throw e;
     return `${e.constructor.name}: ${e.message}`;
   }
 };
@@ -62,7 +65,7 @@ describe("math", () => {
 
 describe("json", () => {
   test.each(CPY.dumps.map((r) => [...r]))("dumps(loads(%j), %j)", (text, opts, out) => {
-    expect(json_dumps(json_loads(text as string), { ...(opts as any) })).toBe(out as string);
+    expect(json_dumps(json_loads(text), { ...opts })).toBe(out);
   });
 
   test.each(CPY.errs.map((r) => [...r]))("loads(%j) error", (text, msg) => {
@@ -99,9 +102,9 @@ describe("num", () => {
 
 describe("re", () => {
   test.each(CPY.re.map((r) => [...r]))("search(%j, %j, %d)", (p, s, f, exp) => {
-    const m = py_re(p as string, f as number).exec(s as string);
-    const span = m == null ? null : [Array.from((s as string).slice(0, m.index)).length, Array.from((s as string).slice(0, m.index + m[0].length)).length];
-    expect(span).toEqual(exp as any);
+    const m = py_re(p, f).exec(s);
+    const span: readonly number[] | null = m == null ? null : [Array.from(s.slice(0, m.index)).length, Array.from(s.slice(0, m.index + m[0].length)).length];
+    expect(span).toEqual(exp);
   });
 
   test.each(CPY.re_escape.map((r) => [...r]))("escape(%j)", (s, out) => {
@@ -117,7 +120,7 @@ describe("re", () => {
 
 describe("codecs", () => {
   test.each(CPY.u32.map((r) => [...r]))("decode(%s, %s, %s)", (hex, enc, err, out) => {
-    expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err as any)))).toBe(out);
+    expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err)))).toBe(out);
   });
 
   test.each(CPY.u32_enc.map((r) => [...r]))("encode(%j, %s)", (text, enc, hex) => {
@@ -127,8 +130,9 @@ describe("codecs", () => {
 
 describe("pathlib", () => {
   test.each(CPY.paths.map((r) => [...r]))("%s(%j)", (cls, t, ...exp) => {
-    const p = cls === "PurePosixPath" ? new PurePosixPath(t as string) : new PureWindowsPath(t as string);
-    expect([String(p), p.parts, p.drive, p.root, p.name, p.stem, p.suffix, String(p.parent), String(p.div("f.png"))]).toEqual(exp as any);
+    const p = cls === "PurePosixPath" ? new PurePosixPath(t) : new PureWindowsPath(t);
+    const got: readonly (string | readonly string[])[] = [String(p), p.parts, p.drive, p.root, p.name, p.stem, p.suffix, String(p.parent), String(p.div("f.png"))];
+    expect(got).toEqual(exp);
   });
 });
 
@@ -137,7 +141,7 @@ describe("builtins", () => {
     const values = [
       new Map(),
       new Map([["a", 1]]),
-      new Map<string, any>([["a", [1, 2.5, null, true]], ["b", new Map([["c", "d"]])]]),
+      new Map<string, unknown>([["a", [1, 2.5, null, true]], ["b", new Map([["c", "d"]])]]),
       new Set(),
       new Set([1]),
       "a﻿b​",
@@ -163,7 +167,7 @@ describe("builtins", () => {
 
 describe("bytes and io", () => {
   test.each(CPY.bsplit.map((r) => [...r]))("split(%s, None, %d)", (hex, maxsplit, parts) => {
-    expect(bytes_.split(bytes_.fromhex(hex as string), null, maxsplit as number).map((p) => bytes_.hex(p))).toEqual(parts as any);
+    expect(bytes_.split(bytes_.fromhex(hex), null, maxsplit).map((p) => bytes_.hex(p))).toEqual([...parts]);
   });
 
   test("pack_into", () => {

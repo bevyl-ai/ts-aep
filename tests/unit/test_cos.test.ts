@@ -3,9 +3,9 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { BytesIO, b, bytes_, py_eq } from "../../src/pyrt/index.ts";
+import { BytesIO, b, bytes_, py_assert, py_eq } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError_ is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
-import { CosParser, IndirectObject, IndirectReference, Stream, SyntaxError_ } from "../../src/py_aep/cos/cos.ts";
+import { CosParser, IndirectObject, IndirectReference, Stream, SyntaxError_, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
 
 describe("TestCosParserPrimitives", () => {
@@ -110,12 +110,12 @@ describe("TestCosParserPrimitives", () => {
   test("test_parse_identifier", () => {
     // Top-level identifier triggers dict-content mode
     const result = _parse(b("/Name 42"));
-    expect(py_eq(result, new Map<string, any>([["Name", 42]]))).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>([["Name", 42]]))).toBe(true);
   });
 
   test("test_parse_identifier_hex_escape", () => {
     const result = _parse(b("/Name#20Here 1"));
-    expect(py_eq(result, new Map<string, any>([["Name Here", 1]]))).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>([["Name Here", 1]]))).toBe(true);
   });
 });
 
@@ -124,17 +124,17 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_dict", () => {
     const result = _parse(b("<< /Key1 42 /Key2 (hello) >>"));
-    expect(py_eq(result, new Map<string, any>([["Key1", 42], ["Key2", "hello"]]))).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>([["Key1", 42], ["Key2", "hello"]]))).toBe(true);
   });
 
   test("test_parse_empty_dict", () => {
     const result = _parse(b("<< >>"));
-    expect(py_eq(result, new Map<string, any>())).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>())).toBe(true);
   });
 
   test("test_parse_nested_dict", () => {
     const result = _parse(b("<< /outer << /inner 1 >> >>"));
-    expect(py_eq(result, new Map<string, any>([["outer", new Map<string, any>([["inner", 1]])]]))).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>([["outer", new Map<string, CosNode>([["inner", 1]])]]))).toBe(true);
   });
 
   test("test_parse_array", () => {
@@ -159,7 +159,7 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_dict_in_array", () => {
     const result = _parse(b("[<< /a 1 >>]"));
-    expect(py_eq(result, [new Map<string, any>([["a", 1]])])).toBe(true);
+    expect(py_eq(result, [new Map<string, CosNode>([["a", 1]])])).toBe(true);
   });
 
   test("test_parse_bare_values_as_array", () => {
@@ -174,7 +174,7 @@ describe("TestCosParserIndirect", () => {
 
   test("test_parse_indirect_object", () => {
     const result = _parse(b("1 0 obj 42 endobj"));
-    expect(result).toBeInstanceOf(IndirectObject);
+    py_assert(result instanceof IndirectObject);
     expect(result.object_number).toBe(1);
     expect(result.generation_number).toBe(0);
     expect(result.data).toBe(42);
@@ -182,7 +182,7 @@ describe("TestCosParserIndirect", () => {
 
   test("test_parse_indirect_reference", () => {
     const result = _parse(b("<< /Ref 5 0 R >>"));
-    expect(py_eq(result, new Map<string, any>([["Ref", new IndirectReference(5, 0)]]))).toBe(true);
+    expect(py_eq(result, new Map<string, CosNode>([["Ref", new IndirectReference(5, 0)]]))).toBe(true);
   });
 });
 
@@ -193,9 +193,9 @@ describe("TestCosParserStream", () => {
     const data = b("<< /Length 5 >>\nstream\nhelloendstream");
     const f = new BytesIO(data);
     const parser = new CosParser(f, data.length);
-    const result: any = parser.parse();
-    expect(result).toBeInstanceOf(Stream);
-    expect(py_eq(result.dictionary, new Map<string, any>([["Length", 5]]))).toBe(true);
+    const result = parser.parse();
+    py_assert(result instanceof Stream);
+    expect(py_eq(result.dictionary, new Map<string, CosNode>([["Length", 5]]))).toBe(true);
     expect(py_eq(result.data, b("hello"))).toBe(true);
   });
 });
@@ -322,7 +322,7 @@ describe("TestCosSerializer", () => {
 // ---------------------------------------------------------------------------
 
 /** Parse COS data from bytes. */
-function _parse(data: Uint8Array): any {
+function _parse(data: Uint8Array): CosNode {
   const f = new BytesIO(data);
   const parser = new CosParser(f, data.length);
   return parser.parse();

@@ -15,6 +15,7 @@ import {
   len,
   Path,
   py_bool,
+  setattr,
   StopIteration,
   str,
   TypeError_,
@@ -35,7 +36,7 @@ const VIEW = SAMPLES.div("models", "view", "grid_on.aep");
 function _file_source(): FootageSource {
   const project = parse_project_fresh(FOOTAGE);
   const footage = project.footages.find(
-    (f: any) => getattr(f, "main_source", null)?.constructor?.name === "FileSource",
+    (f) => getattr(f, "main_source", null)?.constructor?.name === "FileSource",
   );
   if (footage === undefined) throw new StopIteration();
   return footage.main_source;
@@ -55,7 +56,7 @@ function _first_mask(): MaskPropertyGroup {
 }
 
 // (id, factory returning a fresh mutable object, bool attribute name)
-const CASES: [string, () => any, string][] = [
+const CASES: [string, () => object, string][] = [
   [
     "comp.motion_blur",
     () => parse_project_fresh(LAYER).compositions[0],
@@ -94,30 +95,30 @@ const CASES: [string, () => any, string][] = [
 ];
 
 const _IDS = CASES.map((c) => c[0]);
-const _PARAMS = CASES.map((c): [() => any, string] => [c[1], c[2]]);
+const _PARAMS = CASES.map((c): [() => object, string] => [c[1], c[2]]);
 // pytest `ids=_IDS`: the id is prepended to each row so `%s` renders it in the test name.
-const _ROWS = _PARAMS.map((p, i): [string, () => any, string] => [_IDS[i], p[0], p[1]]);
+const _ROWS = _PARAMS.map((p, i): [string, () => object, string] => [_IDS[i], p[0], p[1]]);
 
 describe("TestStrictBool", () => {
-  test.each(_ROWS)("test_rejects_non_bool_string[%s]", (_id: string, factory: () => any, attr: string) => {
+  test.each(_ROWS)("test_rejects_non_bool_string[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
     raises(TypeError_, () => {
-      (obj as any)[attr] = "no";
+      setattr(obj, attr, "no");
     });
   });
 
-  test.each(_ROWS)("test_rejects_bare_int[%s]", (_id: string, factory: () => any, attr: string) => {
+  test.each(_ROWS)("test_rejects_bare_int[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
     raises(TypeError_, () => {
-      (obj as any)[attr] = 1;
+      setattr(obj, attr, 1);
     });
   });
 
-  test.each(_ROWS)("test_accepts_true_and_false[%s]", (_id: string, factory: () => any, attr: string) => {
+  test.each(_ROWS)("test_accepts_true_and_false[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
-    (obj as any)[attr] = true;
+    setattr(obj, attr, true);
     expect(getattr(obj, attr)).toBe(true);
-    (obj as any)[attr] = false;
+    setattr(obj, attr, false);
     expect(getattr(obj, attr)).toBe(false);
   });
 });

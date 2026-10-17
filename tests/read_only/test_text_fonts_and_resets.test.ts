@@ -25,6 +25,7 @@ import {
   py_eq,
   py_or,
   sorted,
+  StopIteration,
   ValueError,
   zip,
   mod,
@@ -36,7 +37,8 @@ import { AutoKernType } from "../../src/py_aep/enums/index.ts";
 import { TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { _char_run_spans } from "../../src/py_aep/models/text/ranges.ts";
-import { cos_get } from "../../src/py_aep/cos/cos.ts";
+import { cos_get, type CosNode } from "../../src/py_aep/cos/cos.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
 
 // Path(__file__).parent x3 is the TS root (this file lives in tests/read_only).
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");
@@ -48,13 +50,17 @@ const RESET_AEP = SAMPLES_DIR.div("reset_style.aep");
 // AE reports an empty line's start/end as the maximum 32-bit float.
 const FLT_MAX = 3.4028234663852886e38;
 
-function _fixture(name: string): any {
+type UsedFontRecord = { font: { postScriptName: string }; usedAt: { layerID: number; layerTimeD: number }[] };
+
+function _fixture(name: string) {
   return JSON.parse(SAMPLES_DIR.div(name).read_text());
 }
 
-function _doc(project: any, comp_name: string, layer_name: string): TextDocument {
-  const comp = project.compositions.find((c: any) => c.name === comp_name)!;
-  const layer = comp.layers.find((ly: any) => ly.name === layer_name)!;
+function _doc(project: Project, comp_name: string, layer_name: string): TextDocument {
+  const comp = project.compositions.find((c) => c.name === comp_name);
+  if (comp === undefined) throw new StopIteration();
+  const layer = comp.layers.find((ly) => ly.name === layer_name);
+  if (layer === undefined) throw new StopIteration();
   py_assert(layer instanceof TextLayer);
   const text = layer.text;
   if (text == null) throw new AssertionError_(`text layer ${layer_name} has no text properties`);
@@ -64,11 +70,11 @@ function _doc(project: any, comp_name: string, layer_name: string): TextDocument
 describe("TestBaselineLocs", () => {
   /** TextDocument.baseline_locs vs AE's own baselineLocs dump. */
   test.each(["text_point", "text_box", "text_animated"])("test_matches_ae[%#]", (layer_name: string) => {
-    const expected = _fixture("baseline_locs_probe.json")[layer_name].baselineLocs.value;
+    const expected: number[] = _fixture("baseline_locs_probe.json")[layer_name].baselineLocs.value;
     const got = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", layer_name).baseline_locs;
     expect(len(got)).toBe(len(expected));
     for (const [g, w] of zip(got, expected)) {
-      if ((w as number) > 1e38) {
+      if (w > 1e38) {
         // empty-line sentinel
         expect(approx(g, FLT_MAX)).toBe(true);
       } else {
@@ -102,17 +108,17 @@ describe("TestBaselineLocs", () => {
 });
 
 class TestUsedFonts {
-  _snapshot(project: any): any[] {
-    return project.used_fonts.map((entry: any) => [
+  _snapshot(project: Project) {
+    return project.used_fonts.map((entry) => [
       entry.font.post_script_name,
-      entry.used_at.map((u: any) => [u.layer_id, u.layer_time]),
+      entry.used_at.map((u) => [u.layer_id, u.layer_time]),
     ]);
   }
 
-  _expected(records: any[]): any[] {
-    return records.map((rec: any) => [
+  _expected(records: UsedFontRecord[]) {
+    return records.map((rec) => [
       rec.font.postScriptName,
-      rec.usedAt.map((u: any) => [u.layerID, float(u.layerTimeD)]),
+      rec.usedAt.map((u) => [u.layerID, float(u.layerTimeD)]),
     ]);
   }
 }
@@ -136,27 +142,31 @@ describe("TestUsedFonts", () => {
 
   test("test_sorted_by_post_script_name", () => {
     const names = parse_project(REPLACE_FONT_AEP).used_fonts.map(
-      (e: any) => e.font.post_script_name,
+      (e) => e.font.post_script_name,
     );
     expect(py_eq(names, sorted(names))).toBe(true);
   });
 });
 
 class TestReplaceFont {
-  _layer_state(project: any): Map<string, any> {
-    const comp = project.compositions.find((c: any) => c.name === "RFONT")!;
-    const state = new Map<string, any>();
+  _layer_state(project: Project) {
+    const comp = project.compositions.find((c) => c.name === "RFONT");
+    if (comp === undefined) throw new StopIteration();
+    const state = new Map<string, [string[], [number, number, CosNode][][]]>();
     for (const name of ["rfont_uniform", "rfont_mixed", "rfont_keyed"]) {
-      const layer = comp.layers.find((ly: any) => ly.name === name)!;
-      const prop = layer.text.__getitem__("ADBE Text Document");
-      const docs: any[] = py_or(
-        prop.keyframes.map((kf: any) => kf.value),
+      const layer = comp.layers.find((ly) => ly.name === name);
+      if (layer === undefined) throw new StopIteration();
+      const text = layer.text;
+      py_assert(text != null);
+      const prop = text.__getitem__("ADBE Text Document");
+      const docs = py_or(
+        prop.keyframes.map((kf) => kf.value),
         [prop.value],
       );
       state.set(name, [
-        docs[0]._fonts.map((f: any) => f.post_script_name),
-        docs.map((d: any) =>
-          _char_run_spans(d).map(([s, e, style]: any) => [s, e, dict_get(style, "0")]),
+        docs[0]._fonts.map((f) => f.post_script_name),
+        docs.map((d) =>
+          _char_run_spans(d).map(([s, e, style]) => [s, e, dict_get(style, "0")]),
         ),
       ]);
     }
@@ -182,13 +192,13 @@ describe("TestReplaceFont", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
     project.replace_font("Verdana", "Georgia");
     const expected = _fixture("replace_font_probe.json").after.usedFonts.value;
-    const got = project.used_fonts.map((e: any) => [
+    const got = project.used_fonts.map((e) => [
       e.font.post_script_name,
-      e.used_at.map((u: any) => [u.layer_id, u.layer_time]),
+      e.used_at.map((u) => [u.layer_id, u.layer_time]),
     ]);
-    const want = expected.map((r: any) => [
+    const want = expected.map((r: UsedFontRecord) => [
       r.font.postScriptName,
-      r.usedAt.map((u: any) => [u.layerID, float(u.layerTimeD)]),
+      r.usedAt.map((u) => [u.layerID, float(u.layerTimeD)]),
     ]);
     expect(py_eq(got, want)).toBe(true);
   });
@@ -208,8 +218,9 @@ describe("TestReplaceFont", () => {
   test("test_accepts_font_objects", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
     const verdana = project.used_fonts
-      .map((e: any) => e.font)
-      .find((f: any) => f.post_script_name === "Verdana")!;
+      .map((e) => e.font)
+      .find((f) => f.post_script_name === "Verdana");
+    if (verdana === undefined) throw new StopIteration();
     expect(project.replace_font(verdana, "Georgia")).toBe(true);
   });
 
@@ -220,7 +231,7 @@ describe("TestReplaceFont", () => {
     const out = tmp_path.div("replaced.aep");
     project.save(out);
     const names = parse_project_fresh(out).used_fonts.map(
-      (e: any) => e.font.post_script_name,
+      (e) => e.font.post_script_name,
     );
     expect(names.includes("Georgia")).toBe(true);
     expect(names.includes("Verdana")).toBe(false);
@@ -401,21 +412,21 @@ describe("TestFuzzRegressions", () => {
     // only the first silently skipped the layer.
     const project = parse_project_fresh(REPLACE_FONT_AEP);
     const doc = _doc(project, "RESET", "reset_para");
-    const names = doc._fonts.map((f: any) => f.post_script_name);
+    const names = doc._fonts.map((f) => f.post_script_name);
     py_assert(
-      names.filter((n: string) => n === "MyriadPro-Regular").length === 2,
+      names.filter((n) => n === "MyriadPro-Regular").length === 2,
       "sample lost its duplicate",
     );
-    expect(py_eq(doc._used_font_objects().map((f: any) => f.post_script_name), ["MyriadPro-Regular"])).toBe(
+    expect(py_eq(doc._used_font_objects().map((f) => f.post_script_name), ["MyriadPro-Regular"])).toBe(
       true,
     );
 
     expect(project.replace_font("MyriadPro-Regular", "Georgia")).toBe(true);
 
-    expect(py_eq(doc._used_font_objects().map((f: any) => f.post_script_name), ["Georgia"])).toBe(true);
+    expect(py_eq(doc._used_font_objects().map((f) => f.post_script_name), ["Georgia"])).toBe(true);
     expect(
       project.used_fonts
-        .map((e: any) => e.font.post_script_name)
+        .map((e) => e.font.post_script_name)
         .includes("MyriadPro-Regular"),
     ).toBe(false);
   });
