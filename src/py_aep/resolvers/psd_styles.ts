@@ -41,7 +41,7 @@ import {
   truthy,
   radians,
   literal,
-  setdefault,
+  getOrInsert,
   struct,
   warn,
   type PathLike, ascii } from "../../pyrt/index.ts";
@@ -583,9 +583,9 @@ export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _V
   const instances = new Map<string, _Value[]>();
   for (const [key, value] of descriptor) {
     if (_STYLES.has(key)) {
-      setdefault(instances, key, []).push(value);
+      getOrInsert(instances, key, []).push(value);
     } else if (_MULTI_KEYS.has(key) && Array.isArray(value)) {
-      setdefault(instances, _MULTI_KEYS.get(key), []).push(...value);
+      getOrInsert(instances, _MULTI_KEYS.get(key), []).push(...value);
     }
   }
   return instances;

@@ -32,7 +32,7 @@ import {
   Bytes,
   decode,
   encode,
-  setdefault,
+  getOrInsert,
   ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
@@ -163,7 +163,7 @@ export class PrefsFile {
     for (const line of collapseContinuationLines(text)) {
       const sectionMatch = _SECTION_RE.exec(line);
       if (sectionMatch) {
-        current = setdefault(sections, sectionMatch[1], new Map<string, string>());
+        current = getOrInsert(sections, sectionMatch[1], new Map<string, string>());
         continue;
       }
       const keyMatch = _KEY_RE.exec(line);

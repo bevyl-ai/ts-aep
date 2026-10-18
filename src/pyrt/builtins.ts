@@ -232,7 +232,7 @@ export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D
 }
 
 /** `d.setdefault(k, v)` */
-export function setdefault<K, V>(d: Map<K, V>, k: K, v: V): V {
+export function getOrInsert<K, V>(d: Map<K, V>, k: K, v: V): V {
   const cur = d.get(k);
   if (cur !== undefined) return cur;
   d.set(k, v);

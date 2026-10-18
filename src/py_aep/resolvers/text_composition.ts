@@ -655,7 +655,7 @@ export function composeLines(doc: TextDocument): ComposedLines {
   const baselines: number[] = [];
   let y = 0.0;
   for (const [lineNo, [start, end]] of spans.entries()) {
-    const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [styles.at(-1)!]);
+    const lineStyles = styles.slice(start, Math.min(end, styles.length))?.length ? styles.slice(start, Math.min(end, styles.length)) : [styles.at(-1)!];
     if (lineNo === 0) {
       y += Math.max(...lineStyles.map(
           (s) => (_ascenderRatio(s.font) + (s.fauxbold ? _FAUX_BOLD_ADVANCE / 2 : 0.0)) * s.size,

@@ -17,7 +17,7 @@ import {
   compositeKey,
   zip,
   typeName,
-  truthyOr, compare } from "../../pyrt/index.ts";
+  compare } from "../../pyrt/index.ts";
 
 export const _validatePrefType = validateEnum(PREFType);
 
@@ -337,7 +337,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
 
   const fill = [number("Fill Red"), number("Fill Green"), number("Fill Blue")];
   if (fill.every((n) => n !== null)) {
-    const currentFill = truthyOr(document.fillColor, [0.0, 0.0, 0.0]);
+    const currentFill = document.fillColor?.length ? document.fillColor : [0.0, 0.0, 0.0];
     if (zip(currentFill, fill).some(([c, n]) => differs(c, n))) {
       document.fillColor = [...fill];
     }
@@ -376,7 +376,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
       }
       const stroke = [number("Stroke Red"), number("Stroke Green"), number("Stroke Blue")];
       if (stroke.every((n) => n !== null)) {
-        const current = truthyOr(document.strokeColor, [0.0, 0.0, 0.0]);
+        const current = document.strokeColor?.length ? document.strokeColor : [0.0, 0.0, 0.0];
         if (zip(current, stroke).some(([c, n]) => differs(c, n))) {
           document.strokeColor = [...stroke];
         }

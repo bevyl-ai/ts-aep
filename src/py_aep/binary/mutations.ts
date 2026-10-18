@@ -12,7 +12,6 @@ import {
   struct,
   ValueError,
   assert,
-  truthyOr,
 } from "../../pyrt/index.ts";
 import { aeWrites } from "../ae_version.ts";
 import { DROPDOWN_CONTROL } from "../data/dropdown_control.ts";
@@ -430,7 +429,7 @@ export function buildShap(
   });
   const inner = new ListChunk({ listType: "list", chunks: [lhd3, ldat] });
   const omtn = new OmtnChunk({
-    tensions: truthyOr(tensions, []).map((t) => new TensionItem({ value: t })),
+    tensions: (tensions ?? []).map((t) => new TensionItem({ value: t })),
   });
   const chunks: Chunk[] = [shph, inner, omtn];
   if (featherPoints != null && featherPoints.length > 0) {
@@ -786,7 +785,7 @@ export function buildPinList(
     chunks: [
       sspc,
       new Utf8Chunk({ value: layerName }),
-      ...truthyOr(pathChunks, []),
+      ...(pathChunks ?? []),
       opti,
       PguiChunk.new_(),
       clrs,

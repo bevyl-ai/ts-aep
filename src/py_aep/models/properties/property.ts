@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, ord, descriptor, typeName, type ClassAttributes } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -2438,8 +2438,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const keyframes = [...this.keyframes];
     const times = keyframes.map((keyframe) => keyframe.time);
     const values = keyframes.map((keyframe) => keyframe.value as number[]);
-    const inTangents = keyframes.map((keyframe) => truthyOr(keyframe.inSpatialTangent, []));
-    const outTangents = keyframes.map((keyframe) => truthyOr(keyframe.outSpatialTangent, []));
+    const inTangents = keyframes.map((keyframe) => keyframe.inSpatialTangent ?? []);
+    const outTangents = keyframes.map((keyframe) => keyframe.outSpatialTangent ?? []);
     const interpolation = keyframes.map(
       (keyframe) => [keyframe.inInterpolationType, keyframe.outInterpolationType] as const,
     );
@@ -3758,8 +3758,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
     return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
@@ -3794,8 +3794,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
     if (_tangentsAreZero(outTangent) && _tangentsAreZero(inTangent)) return;
     const [leftOut, newIn, _split, newOut, rightIn] = splitSpatialPath(v0, v1, outTangent, inTangent, u);
     prevKf.outSpatialTangent = leftOut;
@@ -3965,7 +3965,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * not). A mask path keeps the value's feather points.
    */
   _buildShapChunk(shape: Shape): Chunk {
-    const points = truthyOr(shape._points, []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
+    const points = (shape._points ?? []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
     const src = shape._shph;
     let bbox: number[];
     if (src != null) {

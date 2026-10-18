@@ -23,7 +23,7 @@ import {
   truthyOr,
   repr,
   setattr,
-  setdefault,
+  getOrInsert,
   compositeKey,
   zip,
 } from "../../src/pyrt/index.ts";
@@ -2200,7 +2200,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
             if (tdb4 == null || control == null) {
               continue;
             }
-            setdefault(seen, control, new Set<number>()).add(tdb4._spatialStaticFlags);
+            getOrInsert(seen, control, new Set<number>()).add(tdb4._spatialStaticFlags);
           }
         }
       }
@@ -3566,7 +3566,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
     const collect = (node: Layer | PropertyGroup): void => {
       for (const p of node) {
         if (p instanceof Property) {
-          setdefault(found, p.matchName, p);
+          getOrInsert(found, p.matchName, p);
         } else if (p instanceof PropertyGroup) {
           collect(p);
         }

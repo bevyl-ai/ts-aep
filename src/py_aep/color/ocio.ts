@@ -30,7 +30,7 @@ import {
   typeName,
   truthyOr,
   compositeKey,
-  setdefault,
+  getOrInsert,
   literal,
   encode,
   decode,
@@ -491,7 +491,7 @@ export const _guidTableCached = lruCache(
       const [name, data] = _outputEnvelope(index, colorSpace);
       // Two names can resolve to the same envelope (e.g. two roles sharing
       // a target); keep the first, like the linear scan this table replaces.
-      setdefault(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
+      getOrInsert(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
     }
     return table;
   },

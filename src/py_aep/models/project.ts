@@ -74,7 +74,7 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  setdefault,
+  getOrInsert,
   compositeKey,
   warn,
   bytesEqual,
@@ -2090,7 +2090,7 @@ export class Project {
     for (const footage of this.footages) {
       const key = footage._consolidationKey();
       if (key == null) continue;
-      setdefault(groups, key, []).push(footage);
+      getOrInsert(groups, key, []).push(footage);
     }
     let removed = 0;
     for (const duplicates of groups.values()) {
@@ -2546,7 +2546,7 @@ export function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
       for (const [name, leaf] of _styleLeafMap(child)) {
-        setdefault(leaves, name, leaf);
+        getOrInsert(leaves, name, leaf);
       }
     } else if (!leaves.has(child.matchName)) {
       leaves.set(child.matchName, child);

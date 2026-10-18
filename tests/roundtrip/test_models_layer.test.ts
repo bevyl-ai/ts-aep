@@ -11,7 +11,7 @@ import {
   valueEquals,
   range,
   getOrThrow,
-  setdefault,
+  getOrInsert,
   pySlice,
   isclose,
   RuntimeError,
@@ -55,7 +55,7 @@ function _tdpiByParamSuffix(layer: Layer): Map<string, number[]> {
         if (body instanceof ListChunk) {
           for (const inner of body.chunks) {
             if (inner.chunkType === "tdpi") {
-              setdefault(result, pySlice(asInstance(c, TdmnChunk).value, -5, null), []).push(asInstance(inner, S4Chunk).value);
+              getOrInsert(result, pySlice(asInstance(c, TdmnChunk).value, -5, null), []).push(asInstance(inner, S4Chunk).value);
             }
           }
         }

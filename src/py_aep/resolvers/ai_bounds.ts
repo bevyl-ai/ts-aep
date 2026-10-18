@@ -48,7 +48,7 @@ import {
   numStr,
   truthyOr,
   valueEquals,
-  setdefault,
+  getOrInsert,
   warn,
   isReal,
   ascii } from "../../pyrt/index.ts";
@@ -888,7 +888,7 @@ export class _Measurer {
   _target(): _Acc | null {
     for (let i = this._stack.length - 1; i >= 0; i--) {
       const number = this._stack[i];
-      if (number >= 0) return setdefault(this.boxes, number, new _Acc());
+      if (number >= 0) return getOrInsert(this.boxes, number, new _Acc());
     }
     return null;
   }

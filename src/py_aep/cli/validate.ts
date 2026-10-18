@@ -26,7 +26,7 @@ import {
   truthy,
   valueEquals,
   literal,
-  setdefault,
+  getOrInsert,
   zip,
   isReal,
   jsonLoads,
@@ -503,7 +503,7 @@ export function _compareChildrenByMatchName(
   const parsedByMatchName = new Map<string, Dict[]>();
   for (const p of parsedProps) {
     const mn = p.has("matchName") ? p.get("matchName") : "";
-    if (truthy(mn)) setdefault(parsedByMatchName, mn, []).push(p);
+    if (truthy(mn)) getOrInsert(parsedByMatchName, mn, []).push(p);
   }
 
   // Track how many of each match_name we have consumed.

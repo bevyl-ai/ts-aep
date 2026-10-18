@@ -11,7 +11,7 @@
  * module only produces the geometric/stop representation.
  */
 
-import { setdefault, degrees } from "../../pyrt/index.ts";
+import { getOrInsert, degrees } from "../../pyrt/index.ts";
 import { LengthContext, localName, parseLength, parseRatio } from "./_util.ts";
 import { parseColor } from "./colors.ts";
 import { _splitDeclarations } from "./style.ts";
@@ -81,7 +81,7 @@ export function collectGradients(root: Element): Map<string, GradientDef> {
         gd.stops = [...parent.stops];
       }
       for (const [k, v] of parent.attrs) {
-        setdefault(gd.attrs, k, v);
+        getOrInsert(gd.attrs, k, v);
       }
       ref = parent.href;
     }

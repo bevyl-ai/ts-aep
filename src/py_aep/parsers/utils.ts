@@ -1,6 +1,6 @@
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { TdmnChunk } from "../binary/property_chunks.ts";
-import { truthy, setdefault } from "../../pyrt/index.ts";
+import { truthy, getOrInsert } from "../../pyrt/index.ts";
 
 export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
 
@@ -48,7 +48,7 @@ export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
 export function getChunksByMatchName(rootChunk: ListChunk): Map<string, Chunk[]> {
   const chunksByMatchName = new Map<string, Chunk[]>();
   for (const [matchName, chunks] of getMatchNameRuns(rootChunk)) {
-    setdefault(chunksByMatchName, matchName, []).push(...chunks);
+    getOrInsert(chunksByMatchName, matchName, []).push(...chunks);
   }
   return chunksByMatchName;
 }

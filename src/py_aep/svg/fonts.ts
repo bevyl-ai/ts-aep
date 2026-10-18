@@ -13,7 +13,7 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   Path,
-  setdefault,
+  getOrInsert,
   StopIteration,
 } from "../../pyrt/index.ts";
 
@@ -336,8 +336,8 @@ export function _indexFile(
     const family = _name(font, 16, 1);
     const subfamily = _name(font, 17, 2) || "Regular";
     if (family) {
-      setdefault(
-        setdefault(idx, family.toLowerCase(), new Map<string, [Path, number]>()),
+      getOrInsert(
+        getOrInsert(idx, family.toLowerCase(), new Map<string, [Path, number]>()),
         subfamily.toLowerCase(),
         [path, face],
       );
