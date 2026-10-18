@@ -1,6 +1,6 @@
 /** Gradient color data model for gradient fill/stroke properties. */
 
-import { INSPECT } from "../../../pyrt/index.ts";
+import { INSPECT, describe } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
@@ -90,11 +90,7 @@ export class GradientColorStop {
 
   [INSPECT](): string {
     const [r, g, b] = this.color;
-    // NOTE(port): fields are annotated float (parsed/default values are floats), so float_repr matches f"{x}"; only out-of-annotation int args would differ.
-    return (
-      `GradientColorStop(offset=${floatRepr(this.offset)}, midpoint=${floatRepr(this.midpoint)}, ` +
-      `color=(${floatRepr(r)}, ${floatRepr(g)}, ${floatRepr(b)}))`
-    );
+    return describe("GradientColorStop", { offset: this.offset, midpoint: this.midpoint, color: [r, g, b] });
   }
 
   equals(other: unknown): boolean {
@@ -143,11 +139,7 @@ export class GradientAlphaStop {
   }
 
   [INSPECT](): string {
-    // NOTE(port): see GradientColorStop.__repr__.
-    return (
-      `GradientAlphaStop(offset=${floatRepr(this.offset)}, midpoint=${floatRepr(this.midpoint)}, ` +
-      `alpha=${floatRepr(this.alpha)})`
-    );
+    return describe("GradientAlphaStop", { offset: this.offset, midpoint: this.midpoint, alpha: this.alpha });
   }
 
   equals(other: unknown): boolean {
@@ -369,10 +361,7 @@ export class Gradient {
   }
 
   [INSPECT](): string {
-    return (
-      `Gradient(color_stops=${this.colorStops.length}, ` +
-      `alpha_stops=${this.alphaStops.length}, version=${repr(this.version)})`
-    );
+    return describe("Gradient", { colorStops: this.colorStops.length, alphaStops: this.alphaStops.length, version: this.version });
   }
 
   equals(other: unknown): boolean {

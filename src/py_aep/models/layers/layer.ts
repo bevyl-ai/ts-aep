@@ -1,6 +1,6 @@
 // Port of py_aep/models/layers/layer.py
 
-import { INSPECT } from "../../../pyrt/index.ts";
+import { INSPECT, describe } from "../../../pyrt/index.ts";
 import type { LdtaChunk } from "../../binary/layer_chunks.ts";
 import type { Keyframe } from "../properties/keyframe.ts";
 import type { MarkerValue } from "../properties/marker.ts";
@@ -521,7 +521,7 @@ export class Layer extends PropertyGroup {
   }
 
   [INSPECT](): string {
-    return `${this.constructor.name}(enabled=${repr(this.enabled)}, match_name=${repr(this.matchName)}, name=${repr(this.name)})`;
+    return describe(this.constructor.name, { enabled: this.enabled, matchName: this.matchName, name: this.name });
   }
 
   get name(): string {

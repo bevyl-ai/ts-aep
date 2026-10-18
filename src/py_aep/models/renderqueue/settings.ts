@@ -6,7 +6,7 @@
  * model attribute (either a ChunkField descriptor or a `@property`).
  */
 
-import { INSPECT } from "../../../pyrt/index.ts";
+import { INSPECT, describe } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   KeyError,
@@ -219,7 +219,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   [INSPECT](): string {
-    return `SettingsView(${repr(new Map(this.items()))})`;
+    return describe("SettingsView", Object.fromEntries(this.items()));
   }
 
   equals(other: unknown): boolean {

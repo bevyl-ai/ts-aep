@@ -5,7 +5,7 @@
  * the recursive reader/writer.
  */
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import {
   AttrsBase,
   BytesIO,
@@ -323,9 +323,8 @@ export class Chunk extends AttrsBase {
   }
 
   [INSPECT](): string {
-    // attrs-generated `__repr__`: repr=True fields in declaration order.
-    const parts = fields(this.constructor).filter((f) => f.repr).map((f) => `${f.name}=${repr(Reflect.get(this, f.name))}`);
-    return `${this.constructor.name}(${parts.join(", ")})`;
+    // attrs' repr=True fields, in declaration order.
+    return describe(this.constructor.name, Object.fromEntries(fields(this.constructor).filter((f) => f.repr).map((f) => [f.name, Reflect.get(this, f.name)])));
   }
 }
 

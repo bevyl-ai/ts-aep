@@ -1,6 +1,6 @@
 // Port of py_aep/models/application.py.
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import { aeWrites } from "../ae_version.ts";
 import { LEGACY_NAME_FORMAT } from "../binary/chunk.ts";
 import type { HeadChunk } from "../binary/item_chunks.ts";
@@ -137,7 +137,7 @@ export class Application {
   }
 
   [INSPECT](): string {
-    return `Application(version=${repr(this.version)}, build_number=${repr(this.buildNumber)}, app_name=${repr(this.appName)})`;
+    return describe("Application", { version: this.version, buildNumber: this.buildNumber, appName: this.appName });
   }
 
   /** The project that is currently loaded. Read-only. */
