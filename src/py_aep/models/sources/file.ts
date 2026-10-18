@@ -36,7 +36,6 @@ import {
   b,
   bytesEq,
   concat,
-  floordiv,
   format,
   getattr,
   setattr,
@@ -279,7 +278,7 @@ export function _platformMediaInfo(
   const { windows } = kw;
   if (windows && fmt.sourceFormat === "AIDE" && info.hasAlpha) {
     // The same channels without the alpha one (32 -> 24 on Windows).
-    return _replace(info, { hasAlpha: false, depth: floordiv(info.depth, 4) * 3 });
+    return _replace(info, { hasAlpha: false, depth: Math.floor(info.depth / 4) * 3 });
   }
   return info;
 }

@@ -1283,7 +1283,7 @@ export function psdLayerChannels(info: MediaInfo, hasTransparency: boolean): num
  * `width * height * channels * bytes per channel`.
  */
 export function pixelBufferSize(width: number, height: number, channels: number, bitDepth: number): number {
-  return width * height * channels * floordiv(bitDepth, 8);
+  return width * height * channels * Math.floor(bitDepth / 8);
 }
 
 // ---------------------------------------------------------------------------
@@ -2103,7 +2103,7 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
   // Frame size is a bit-packed RECT (twips): nbits in the top 5 bits, then
   // four nbits-wide fields (xmin, xmax, ymin, ymax). The stage is non-negative.
   const nbits = _byteAt(body, 0) >> 3;
-  const rectBytes = floordiv(5 + 4 * nbits + 7, 8);
+  const rectBytes = Math.floor((5 + 4 * nbits + 7) / 8);
   const bits = Array.from(body.slice(0, rectBytes), (x) => x.toString(2).padStart(8, "0")).join("");
   const vals: number[] = [];
   let pos = 5;
@@ -2111,8 +2111,8 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
     vals.push(int(bits.slice(pos, pos + nbits), 2));
     pos += nbits;
   }
-  const width = floordiv(vals[1] - vals[0], 20);
-  const height = floordiv(vals[3] - vals[2], 20);
+  const width = Math.floor((vals[1] - vals[0]) / 20);
+  const height = Math.floor((vals[3] - vals[2]) / 20);
   const frRaw = struct.unpackFrom("<H", body, rectBytes)[0];
   const frameRate = frRaw / 256.0; // 8.8 fixed-point
   const frameCount = struct.unpackFrom("<H", body, rectBytes + 2)[0];

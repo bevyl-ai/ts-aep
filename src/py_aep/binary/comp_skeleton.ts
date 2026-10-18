@@ -216,7 +216,7 @@ export function _buildCif(listType: string): ListChunk {
  */
 export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: number): number {
   const units = round(seconds * timebase);
-  return floordiv(units + floordiv(unitsPerFrame, 2), unitsPerFrame) * unitsPerFrame;
+  return floordiv(units + Math.floor(unitsPerFrame / 2), unitsPerFrame) * unitsPerFrame;
 }
 
 /** A comp duration in timebase units, snapped like `_frameUnits`.

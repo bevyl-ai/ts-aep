@@ -16,7 +16,6 @@ import {
   Bytes,
   concat,
   decode,
-  floordiv,
   int,
   assert,
   rstrip,
@@ -125,7 +124,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
 
   const rawDefaultIndex = _extractIntValue(lines, "Default RS Index");
 
-  const count = floordiv(remaining, _RS_PREFS_ITEM_SIZE);
+  const count = Math.floor(remaining / _RS_PREFS_ITEM_SIZE);
   const templates: RenderSettingsItem[] = [];
   let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {
@@ -203,7 +202,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
   const rawDefaultIndex = _extractIntValue(lines, "Default OM Index");
 
   const remaining = raw.length - _HEADER_SIZE;
-  const count = floordiv(remaining, _OM_PREFS_ITEM_SIZE);
+  const count = Math.floor(remaining / _OM_PREFS_ITEM_SIZE);
   const templates: OutputModuleTemplate[] = [];
   let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {

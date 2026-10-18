@@ -96,7 +96,7 @@ export function frameGrid(fps: number): [number, number] {
 export function layerTimebase(internalTimebase: number, stretch: number): number {
   const fixed = Math.floor(Math.abs(stretch) * 65536 + 0.5);
   if (fixed <= 65536) return internalTimebase;
-  return Math.min(floordiv(internalTimebase * fixed, 65536), _MAX_TIMEBASE);
+  return Math.min(Math.floor((internalTimebase * fixed) / 65536), _MAX_TIMEBASE);
 }
 
 /**

@@ -10,7 +10,7 @@
 import "../binary/_register.ts";
 import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { BytesIO, floordiv, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
+import { BytesIO, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /**
@@ -164,7 +164,7 @@ export function extractLeafChunksTyped(
  */
 export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
   const lines: string[] = [];
-  const mid = floordiv(bytesPerLine, 2);
+  const mid = Math.floor(bytesPerLine / 2);
 
   if (bytesPerLine === 0) throw new ValueError("range() arg 3 must not be zero");
   for (let i = 0; bytesPerLine > 0 && i < data.length; i += bytesPerLine) {
