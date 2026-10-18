@@ -104,7 +104,7 @@ export class PsdStyleBlocks {
   }
 
   /** NamedTuple equality: tuple-wise comparison of the fields. */
-  __eq__(other: Iterable<unknown> | null | undefined): boolean {
+  equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
     return py_eq([...this], [...other]);
   }
@@ -254,7 +254,7 @@ export class PsdLayer {
   }
 
   /** NamedTuple equality: tuple-wise comparison of the fields. */
-  __eq__(other: Iterable<unknown> | null | undefined): boolean {
+  equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
     return py_eq([...this], [...other]);
   }
@@ -320,7 +320,7 @@ export class PsdGroup {
   }
 
   /** NamedTuple equality: tuple-wise comparison of the fields. */
-  __eq__(other: Iterable<unknown> | null | undefined): boolean {
+  equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
     return py_eq([...this], [...other]);
   }

@@ -132,7 +132,7 @@ export class PropSpec {
   }
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
-  __eq__(other: Iterable<PropSpecField> | null | undefined): boolean {
+  equals(other: Iterable<PropSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
     return py_eq([...this], [...other]);
   }
@@ -184,7 +184,7 @@ export class GroupSpec {
   ) {}
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
-  __eq__(other: Iterable<GroupSpecField> | null | undefined): boolean {
+  equals(other: Iterable<GroupSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
     return py_eq([...this], [...other]);
   }

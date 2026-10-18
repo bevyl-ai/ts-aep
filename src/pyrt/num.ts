@@ -1,5 +1,6 @@
 // Python numeric semantics that differ from JS operators.
 
+import { INSPECT } from "./inspect.ts";
 import { OverflowError, ValueError, ZeroDivisionError } from "./errors.ts";
 import { ord } from "./codecs.ts";
 
@@ -26,13 +27,13 @@ export class PyFloat {
   toJSON(): number {
     return this.value;
   }
-  __repr__(): string {
+  [INSPECT](): string {
     return float_repr(this.value);
   }
   __bool__(): boolean {
     return this.value !== 0;
   }
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     return unbox(other) === this.value;
   }
   __deepcopy__(): PyFloat {

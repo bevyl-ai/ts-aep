@@ -27,6 +27,7 @@
  *   and lines that fall wholly outside raise.
  */
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   NotImplementedError,
@@ -1118,7 +1119,7 @@ export class _TextRange {
     return `${this.constructor.name}(${this._start},${this._signed_end})`;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `<py_aep.${this.constructor.name}(${this._start},${this._signed_end})>`;
   }
 }

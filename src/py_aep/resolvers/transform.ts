@@ -17,6 +17,7 @@
  * Standard rotation matrices apply without sign flips.
  */
 
+import { INSPECT } from "../../pyrt/index.ts";
 import { AutoOrientType, LayerType, LightType } from "../enums/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { AVLayer } from "../models/layers/av_layer.ts";
@@ -174,7 +175,7 @@ export class Mat4 {
     ]);
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // rows hold floats: render each through float_repr so 1 prints as "1.0" like Python
     return `Mat4([${this._rows.map((row) => `[${row.map((x) => float_repr(x)).join(", ")}]`).join(", ")}])`;
   }

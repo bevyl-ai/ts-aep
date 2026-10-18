@@ -37,7 +37,7 @@ export class Affine {
     yield this.f;
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     return other instanceof Affine && this.a === other.a && this.b === other.b && this.c === other.c && this.d === other.d && this.e === other.e && this.f === other.f;
   }
 

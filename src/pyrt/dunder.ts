@@ -112,7 +112,7 @@ export function py_object<T extends object>(self: T): T {
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
       // Python looks special methods (`__bool__`, `__eq__`, `__len__`, ...) up on the type,
       // never through `__getattr__`; pyrt probes them as property reads, so a miss is undefined.
-      if (key.length > 4 && key.startsWith("__") && key.endsWith("__")) return undefined;
+      if (_is_special(key)) return undefined;
       if (_has_getattr(receiver)) return receiver.__getattr__(key);
     },
     set(target, key, value, receiver) {
@@ -154,7 +154,7 @@ export function py_class_hooks(cls: Function, kw: { setattr_passes_private?: boo
       if (typeof key === "symbol" || key in target) return Reflect.get(target, key, receiver);
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
       // Special methods are looked up on the type, never through `__getattr__` (see `py_object`).
-      if (key.length > 4 && key.startsWith("__") && key.endsWith("__")) return undefined;
+      if (_is_special(key)) return undefined;
       if (_has_getattr(receiver)) return receiver.__getattr__(key);
       return undefined;
     },
@@ -229,4 +229,12 @@ export function instance_dict(obj: object): Map<string, any> {
     });
   }
   return Reflect.get(obj, "__dict__");
+}
+
+/** The JS protocol methods pyrt's builtins probe for in place of Python's special methods. */
+const PROTOCOL = new Set(["equals", "has"]);
+
+/** Python looks special methods up on the type, never through `__getattr__`. */
+function _is_special(key: string): boolean {
+  return (key.length > 4 && key.startsWith("__") && key.endsWith("__")) || PROTOCOL.has(key);
 }

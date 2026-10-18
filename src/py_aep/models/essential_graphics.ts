@@ -6,6 +6,7 @@
  * can have an EGP definition stored in a `LIST:CIF3` chunk.
  */
 
+import { INSPECT } from "../../pyrt/index.ts";
 import { descriptor, repr } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validate_name } from "./validators.ts";
@@ -47,7 +48,7 @@ export class SourcePropertyRef {
   }
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (other == null || typeof other === "string" || !_is_iterable(other)) return false;
     const o = [...other];
     return o.length === 2 && o[0] === this.match_name && o[1] === this.prop_index;
@@ -141,7 +142,7 @@ export class EssentialGraphicsController {
      */
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return (
       `EssentialGraphicsController(name=${repr(this.name)},` +
       ` type=${this.controller_type},` +

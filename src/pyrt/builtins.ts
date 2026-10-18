@@ -3,13 +3,15 @@
 import { AttributeError, IndexError, KeyError, TypeError_, ValueError } from "./errors.ts";
 import { float_repr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
+import { INSPECT } from "./inspect.ts";
+
+export { INSPECT };
 
 /** The dunder methods the builtins below probe for. */
 type DunderProbe = {
   __bool__?: () => boolean;
   has?: (x: unknown) => boolean;
-  __eq__?: (other: unknown) => boolean;
-  __repr__?: () => string;
+  equals?: (other: unknown) => boolean;
 };
 
 /** Objects and functions can carry dunder methods; reading one off a primitive yields nothing. */
@@ -34,6 +36,8 @@ export function py_bool(x: unknown): boolean {
   if (x instanceof Map || x instanceof Set) return x.size > 0;
   if (_probeable(x)) {
     if (typeof x.__bool__ === "function") return x.__bool__();
+    const n = _sized_length(x);
+    if (n !== null) return n > 0;
   }
   return true;
 }
@@ -57,6 +61,8 @@ export function len(x: unknown): number {
   if (typeof x === "string" || Array.isArray(x)) return x.length;
   if (ArrayBuffer.isView(x) && "length" in x && typeof x.length === "number") return x.length;
   if (x instanceof Map || x instanceof Set) return x.size;
+  const n = _probeable(x) ? _sized_length(x) : null;
+  if (n !== null) return n;
   throw new TypeError(`object of type '${x?.constructor?.name}' has no len()`);
 }
 
@@ -293,7 +299,7 @@ export function contains(container: unknown, x: unknown): boolean {
   throw new TypeError("argument of type is not iterable");
 }
 
-/** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `__eq__`). */
+/** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `equals`). */
 export function py_eq(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a instanceof PyFloat) a = a.value;
@@ -317,7 +323,7 @@ export function py_eq(a: unknown, b: unknown): boolean {
     return true;
   }
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => b.has(x));
-  if (_probeable(a) && typeof a.__eq__ === "function") return a.__eq__(b);
+  if (_probeable(a) && typeof a.equals === "function") return a.equals(b);
   return false;
 }
 
@@ -366,7 +372,7 @@ export function repr(x: unknown): string {
   if (Array.isArray(x)) return `[${x.map(repr).join(", ")}]`;
   if (x instanceof Map) return `{${[...x].map(([k, v]) => `${repr(k)}: ${repr(v)}`).join(", ")}}`;
   if (x instanceof Set) return x.size ? `{${[...x].map(repr).join(", ")}}` : "set()";
-  if (_probeable(x) && typeof x.__repr__ === "function") return x.__repr__();
+  if (_probeable(x) && INSPECT in x && typeof x[INSPECT] === "function") return String(x[INSPECT]());
   return String(x);
 }
 
@@ -597,4 +603,15 @@ function _has_own_to_string(x: unknown): x is { toString(): string } {
     if (Object.prototype.hasOwnProperty.call(p, "toString")) return true;
   }
   return false;
+}
+
+/** A class's container size: a `length` or `size` getter on its prototype chain (Python's `__len__`). */
+function _sized_length(x: object): number | null {
+  for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+    for (const name of ["length", "size"]) {
+      const get = Object.getOwnPropertyDescriptor(p, name)?.get;
+      if (get) return Number(get.call(x));
+    }
+  }
+  return null;
 }

@@ -1,5 +1,6 @@
 // The `pathlib.Path` subset py_aep uses, over the host fs / path (pyrt/host).
 
+import { INSPECT } from "./inspect.ts";
 import { fs, homedir, path as nodepath, scandir, type HostDirent, type HostStats } from "./host.ts";
 import { error_code, FileNotFoundError } from "./errors.ts";
 
@@ -19,8 +20,8 @@ export class Path {
     return this.path;
   }
 
-  /** `PurePath.__eq__`: equal when same flavour and same normalised path. */
-  __eq__(other: unknown): boolean {
+  /** `PurePath.__eq__` as `equals`: equal when same flavour and same normalised path. */
+  equals(other: unknown): boolean {
     return other instanceof Path && other.path === this.path;
   }
 
@@ -358,14 +359,14 @@ export class PurePath {
     return this._tail.join(f.sep) || ".";
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (!(other instanceof PurePath) || other._flavour !== this._flavour) return false;
     const a = String(this);
     const b = String(other);
     return this._flavour.casefold ? a.toLowerCase() === b.toLowerCase() : a === b;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `${this.constructor.name}('${this.toString()}')`;
   }
 }

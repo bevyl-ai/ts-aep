@@ -178,7 +178,7 @@ export class MediaInfo implements MediaInfoFields {
   }
 
   /** Tuple equality: field-wise, in declaration order. */
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     return other instanceof MediaInfo && py_eq([...this], [...other]);
   }
 

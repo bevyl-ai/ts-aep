@@ -6,6 +6,7 @@
  * model attribute (either a ChunkField descriptor or a `@property`).
  */
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   KeyError,
@@ -218,11 +219,11 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     }
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `SettingsView(${repr(new Map(this.items()))})`;
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
       return py_eq(new Map(this.items()), new Map(mapping_items(other)));
     }

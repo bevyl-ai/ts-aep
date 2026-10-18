@@ -1,5 +1,6 @@
 /** Shared plumbing for the per-renderer option wrappers. */
 
+import { INSPECT } from "../../../../pyrt/index.ts";
 import { AttributeError, object_setattr, py_object, repr } from "../../../../pyrt/index.ts";
 import { SettingsView, type SettingsSpec } from "../../renderqueue/settings.ts";
 import type { CompItem } from "../composition.ts";
@@ -55,7 +56,7 @@ export class RendererOptionsBase extends SettingsView {
     object_setattr(this, name, value);
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `${this.constructor.name}(${repr(new Map(this.items()))})`;
   }
 }

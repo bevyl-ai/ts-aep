@@ -1,5 +1,6 @@
 // Port of py_aep/models/renderqueue/render_queue_item.py
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import { ColorDepthSetting, DiskCacheSetting, EffectsSetting, FieldRender, FrameBlendingSetting, FrameRateSetting, GetSettingsFormat, GuideLayers, LogType, MotionBlurSetting, ProxyUseSetting, PulldownSetting, RenderQuality, RQItemStatus, SoloSwitchesSetting, TimeSpanSource } from "../../enums/index.ts";
 import { ContainerChunk, ListChunk } from "../../binary/chunk.ts";
 import { LHD3_BLOCK_SINGLE, set_lhd3_count } from "../../binary/ldat_chunks.ts";
@@ -334,7 +335,7 @@ export class RenderQueueItem {
     return [...this.output_modules][Symbol.iterator]();
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // Python's repr of an IntEnum member is `<RQItemStatus.X: n>` (members are plain numbers here).
     const status = this.status;
     const status_repr = RQItemStatus.has(status)

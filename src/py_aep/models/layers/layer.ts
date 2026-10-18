@@ -1,5 +1,6 @@
 // Port of py_aep/models/layers/layer.py
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import type { LdtaChunk } from "../../binary/layer_chunks.ts";
 import type { Keyframe } from "../properties/keyframe.ts";
 import type { MarkerValue } from "../properties/marker.ts";
@@ -356,7 +357,7 @@ export class Layer extends PropertyGroup {
   // which could produce unexpected results or hit circular references.
   // `__hash__ = object.__hash__` is not carried over: instances are hashed by
   // identity already, which is what a Map/Set keyed by a Layer uses.
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     return this === other;
   }
 
@@ -519,7 +520,7 @@ export class Layer extends PropertyGroup {
     return this._essential_property_uuids;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `${this.constructor.name}(enabled=${repr(this.enabled)}, match_name=${repr(this.match_name)}, name=${repr(this.name)})`;
   }
 

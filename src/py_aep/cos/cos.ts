@@ -3,6 +3,7 @@
 // source: https://gitlab.com/mattbas/python-lottie/-/blob/master/lib/lottie/parsers/aep/cos.py
 // documentation: https://github.com/hunger-zh/lottie-docs/blob/main/docs/aep.md#list-btdk
 
+import { INSPECT } from "../../pyrt/index.ts";
 import {
   at,
   auto,
@@ -241,11 +242,11 @@ export class Token {
     this.value = value;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `Token(type=${enum_repr(TokenType, this.type)}, value=${repr_field(this.value)})`;
   }
 
-  __eq__(other: Token): boolean {
+  equals(other: Token): boolean {
     return other instanceof Token && this.type === other.type && py_eq(this.value, other.value);
   }
 }
@@ -262,11 +263,11 @@ export class IndirectObject {
     this.data = data;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `IndirectObject(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)}, data=${repr_field(this.data)})`;
   }
 
-  __eq__(other: IndirectObject): boolean {
+  equals(other: IndirectObject): boolean {
     return (
       other instanceof IndirectObject &&
       this.object_number === other.object_number &&
@@ -286,11 +287,11 @@ export class IndirectReference {
     this.generation_number = generation_number;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `IndirectReference(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)})`;
   }
 
-  __eq__(other: IndirectReference): boolean {
+  equals(other: IndirectReference): boolean {
     return (
       other instanceof IndirectReference &&
       this.object_number === other.object_number &&
@@ -345,11 +346,11 @@ export class CosName {
     return this.value;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `CosName(value=${repr(this.value)})`;
   }
 
-  __eq__(other: CosName): boolean {
+  equals(other: CosName): boolean {
     return other instanceof CosName && this.value === other.value;
   }
 }
@@ -364,11 +365,11 @@ export class Stream {
     this.data = data;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `Stream(dictionary=${repr_field(this.dictionary)}, data=${repr_bytes(this.data)})`;
   }
 
-  __eq__(other: Stream): boolean {
+  equals(other: Stream): boolean {
     return other instanceof Stream && py_eq(this.dictionary, other.dictionary) && py_eq(this.data, other.data);
   }
 }

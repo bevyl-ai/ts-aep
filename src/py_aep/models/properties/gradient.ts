@@ -1,5 +1,6 @@
 /** Gradient color data model for gradient fill/stroke properties. */
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
@@ -87,7 +88,7 @@ export class GradientColorStop {
     this._color = color;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     const [r, g, b] = this.color;
     // NOTE(port): fields are annotated float (parsed/default values are floats), so float_repr matches f"{x}"; only out-of-annotation int args would differ.
     return (
@@ -96,7 +97,7 @@ export class GradientColorStop {
     );
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof GradientColorStop)) return false;
     return (
@@ -139,7 +140,7 @@ export class GradientAlphaStop {
     this._alpha = alpha;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // NOTE(port): see GradientColorStop.__repr__.
     return (
       `GradientAlphaStop(offset=${float_repr(this.offset)}, midpoint=${float_repr(this.midpoint)}, ` +
@@ -147,7 +148,7 @@ export class GradientAlphaStop {
     );
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof GradientAlphaStop)) return false;
     return (
@@ -363,14 +364,14 @@ export class Gradient {
     this._utf8.value = lines.join("\n") + "\n";
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return (
       `Gradient(color_stops=${this.color_stops.length}, ` +
       `alpha_stops=${this.alpha_stops.length}, version=${repr(this.version)})`
     );
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof Gradient)) return false;
     return (

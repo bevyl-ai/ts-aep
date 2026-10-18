@@ -5,6 +5,7 @@
  * the recursive reader/writer.
  */
 
+import { INSPECT } from "../../pyrt/index.ts";
 import {
   AttrsBase,
   BytesIO,
@@ -315,12 +316,12 @@ export class Chunk extends AttrsBase {
     return f.getvalue();
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     // attrs-generated `__eq__`: eq=True fields, compared with Python equality.
     return attrs_eq(this, other, py_eq);
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // attrs-generated `__repr__`: repr=True fields in declaration order.
     const parts = fields(this.constructor).filter((f) => f.repr).map((f) => `${f.name}=${repr(Reflect.get(this, f.name))}`);
     return `${this.constructor.name}(${parts.join(", ")})`;

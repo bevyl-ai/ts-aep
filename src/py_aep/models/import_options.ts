@@ -1,5 +1,6 @@
 /** Import options for importing files into an After Effects project. */
 
+import { INSPECT } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, get_file_format, get_import_as_types, type FileFormat } from "../data/file_formats.ts";
 import { ImportAsType } from "../enums/index.ts";
 import { validate_bool, validate_enum, validate_one_of, validate_path, validate_positive_int, validate_u4 } from "./validators.ts";
@@ -10,7 +11,7 @@ export const _NUMBERED_RE = py_re(String.raw`(\d+)$`);
 
 /** Type of the `CURRENT_VALUE` sentinel. */
 export class _CurrentValue {
-  __repr__(): string {
+  [INSPECT](): string {
     return "CURRENT_VALUE";
   }
 }
@@ -352,7 +353,7 @@ export class ImportOptions {
     return [false, 0];
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // NOTE(port): CPython prints `PosixPath('...')` for `{self._file!r}` on POSIX; spelled out here.
     return (
       `ImportOptions(file=PosixPath(${repr(this._file.toString())}), ` +
