@@ -13,7 +13,8 @@ import { describe, expect, test } from "bun:test";
 import { asInstance, parseProject, parseProjectFresh } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { Path, valueEquals } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is the directory of
 // this file (`__file__.parent`), so two more `.parent` reach the package root.

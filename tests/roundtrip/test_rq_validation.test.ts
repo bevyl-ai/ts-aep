@@ -15,11 +15,12 @@
 
 import { describe, expect, test } from "bun:test";
 import { Path, ValueError, valueEquals } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { RenderQueueItem } from "../../src/py_aep/models/renderqueue/render_queue_item.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "output_module", "file.aep");

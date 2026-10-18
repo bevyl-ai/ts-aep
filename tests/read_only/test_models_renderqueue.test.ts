@@ -7,13 +7,15 @@
 // `_register.ts` to do the same.
 
 import { describe, expect, test } from "bun:test";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { Path, contains, enumerate, getOrThrow, KeyError, len, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
+import { Path, contains, getOrThrow, KeyError, len, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getRqi, loadExpected, parseProject } from "../conftest.ts";
 import { ConvertToLinearLight, GetSettingsFormat } from "../../src/py_aep/enums/index.ts";
 import { OutputModule, RenderQueue } from "../../src/py_aep/models/renderqueue/index.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, raises } from "../support/pytest.ts";
+import { enumerate } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");

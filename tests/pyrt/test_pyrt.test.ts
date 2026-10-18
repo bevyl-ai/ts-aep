@@ -1,42 +1,16 @@
 /** pyrt shims checked against CPython 3.12 results (tests/pyrt/cpython_fixtures.ts). */
 
 import { describe, expect, test } from "bun:test";
-import {
-  BytesIO,
-  JSONDecodeError,
-  PurePosixPath,
-  PureWindowsPath,
-  StringIO,
-  Bytes,
-  decode,
-  dict,
-  encode,
-  float,
-  floatRepr,
-  hypot,
-  int,
-  jsonDumps,
-  jsonGetitem,
-  jsonLoads,
-  patternFindall,
-  patternMatch,
-  assert,
-  valueEquals,
-  pyRe,
-  boxFloat,
-  reEscape,
-  repr,
-  struct,
-  truediv,
-  typeName,
-  ZeroDivisionError,
-} from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { ByteStream, JSONDecodeError, PurePosixPath, PureWindowsPath, Bytes, decode, encode, float, floatRepr, hypot, int, stringifyJson, jsonRequire, parseJson, patternMatch, assert, valueEquals, pyRe, boxFloat, reEscape, repr, struct, truediv, typeName, ZeroDivisionError } from "../../src/pyrt/index.ts";
+
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import * as datetime from "../../src/pyrt/datetime.ts";
 import { Path } from "../../src/pyrt/pathlib.ts";
 import { fs, memfs, useHostFs, useMemoryFs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
+import { raises } from "../support/pytest.ts";
+import { dict, patternFindall } from "../support/python.ts";
+import { StringIO } from "../support/python.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
 function fromhex(s: string): number {
@@ -68,21 +42,21 @@ describe("math", () => {
 
 describe("json", () => {
   test.each(CPY.dumps.map((r) => [...r]))("dumps(loads(%j), %j)", (text, opts, out) => {
-    expect(jsonDumps(jsonLoads(text), { ...opts })).toBe(out);
+    expect(stringifyJson(parseJson(text), { ...opts })).toBe(out);
   });
 
   test.each(CPY.errs.map((r) => [...r]))("loads(%j) error", (text, msg) => {
-    expect(raises(JSONDecodeError, () => jsonLoads(text)).message).toBe(msg);
+    expect(raises(JSONDecodeError, () => parseJson(text)).message).toBe(msg);
   });
 
   test("python types", () => {
-    const d = jsonLoads('{"2": 1.0, "1": 12345678901234567890, "x": -0}');
+    const d = parseJson('{"2": 1.0, "1": 12345678901234567890, "x": -0}');
     if (!(d instanceof Map)) throw new Error("expected a JSON object");
     expect([...d.keys()]).toEqual(["2", "1", "x"]);
     expect(typeName(d.get("2"))).toBe("number");
     expect(d.get("1")).toBe(12345678901234567890n);
     expect(Object.is(d.get("x"), 0)).toBe(true);
-    expect(jsonGetitem(jsonLoads(encode('{"a": 1}', "utf-32")), "a")).toBe(1);
+    expect(jsonRequire(parseJson(encode('{"a": 1}', "utf-32")), "a")).toBe(1);
   });
 });
 
@@ -229,8 +203,8 @@ describe("builtins", () => {
   });
 
   test("typeName", () => {
-    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
-      "number", "number", "number", "bigint", "string", "Uint8Array", "Array", "Map", "Set", "null", "boolean", "BytesIO",
+    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new ByteStream()].map(typeName)).toEqual([
+      "number", "number", "number", "bigint", "string", "Uint8Array", "Array", "Map", "Set", "null", "boolean", "ByteStream",
     ]);
   });
 
@@ -255,7 +229,7 @@ describe("bytes and io", () => {
   });
 
   test("readline", () => {
-    const fp = new BytesIO(encode("ab\ncd", "utf-8"));
+    const fp = new ByteStream(encode("ab\ncd", "utf-8"));
     expect(Bytes.toHex(fp.readline())).toBe("61620a");
     expect(Bytes.toHex(fp.readline(1))).toBe("63");
     expect(Bytes.toHex(fp.readline())).toBe("64");

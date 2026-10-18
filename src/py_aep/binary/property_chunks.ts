@@ -7,21 +7,7 @@
  * have variable-length or context-dependent layouts.
  */
 
-import {
-  BytesIO,
-  Factory,
-  ValueError,
-  Bytes,
-  decode,
-  define,
-  descriptor,
-  encode,
-  field,
-  objectSetattr,
-  assert,
-  struct,
-  type IO,
-} from "../../pyrt/index.ts";
+import { ByteStream, Factory, ValueError, Bytes, decode, define, descriptor, encode, field, objectSetattr, assert, struct } from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, ContainerChunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -420,7 +406,7 @@ export class CdatChunk extends Chunk {
   declare pad: Uint8Array;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kw: ChunkReadKwargs = {},
   ): CdatChunk {
@@ -438,7 +424,7 @@ export class CdatChunk extends Chunk {
     return new this({ chunkType, values: vals, isLe, pad });
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     let written = 0;
     if (this.values?.length > 0) {
       const count = this.values.length;
@@ -481,7 +467,7 @@ export class TdumChunk extends Chunk {
   declare isInteger: boolean;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kw: ChunkReadKwargs = {},
   ): TdumChunk {
@@ -516,7 +502,7 @@ export class TdumChunk extends Chunk {
     return instance;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     let raw: Uint8Array;
     if (this.isColor) {
       raw = struct.pack(">4f", ...this.values);
@@ -548,7 +534,7 @@ export class OtdaChunk extends Chunk {
   declare chunkType: string;
   declare values: number[];
 
-  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
     const n = Math.floor(size / 8);
@@ -561,7 +547,7 @@ export class OtdaChunk extends Chunk {
     return instance;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     const raw = struct.pack(`>${this.values.length}d`, ...this.values);
     let written = writeBytes(fp, raw);
     if (this._trailing?.length > 0) {
@@ -585,13 +571,13 @@ export class TdmnChunk extends _StringChunkBase {
   declare chunkType: string;
   static _ENCODING = "UTF-8";
 
-  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
     return new this({ chunkType, value: decode(Bytes.trimEnd(raw, new Uint8Array(1)), "UTF-8") });
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     const encoded = encode(this.value, "UTF-8").slice(0, 40);
     const padded = Bytes.padEnd(encoded, 40);
     return writeBytes(fp, padded);
@@ -735,7 +721,7 @@ export class CurvesArbpChunk extends Chunk {
     if (arbp.data.length !== CURVES_ARBP_SIZE) {
       throw new ValueError(`a Curves aRbp is ${CURVES_ARBP_SIZE} bytes, not ${arbp.data.length}`);
     }
-    const chunk = this.read(new BytesIO(arbp.data), arbp.data.length, { chunkType: "aRbp" });
+    const chunk = this.read(new ByteStream(arbp.data), arbp.data.length, { chunkType: "aRbp" });
     assert(chunk instanceof this);
     return chunk;
   }

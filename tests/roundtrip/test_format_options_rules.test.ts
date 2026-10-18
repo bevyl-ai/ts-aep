@@ -9,16 +9,8 @@
 
 import { expect, test } from "bun:test";
 
-import {
-  dictPop,
-  assert,
-  int,
-  Path,
-  RuntimeError,
-  sorted,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { dictPop, assert, int, Path, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
+
 import { AudioChannels, AudioCodec, MPEGAudioFormat, MPEGMultiplexer, OutputChannels, OutputColorDepth, VideoCodec } from "../../src/py_aep/enums/index.ts";
 import { parseFormatOptions } from "../../src/py_aep/parsers/format_options.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
@@ -30,6 +22,8 @@ import { FormatOptionsBase } from "../../src/py_aep/models/renderqueue/format_op
 import { OpenExrFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/openexr.ts";
 import { TargaFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/targa.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this test's
 // directory (tests/roundtrip), so two `.parent` hops reach the package root.

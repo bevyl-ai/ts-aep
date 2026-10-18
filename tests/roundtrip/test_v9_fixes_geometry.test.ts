@@ -23,25 +23,8 @@ AE 2026 headless, which also recorded its own answers next to them:
 */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AttributeError,
-  contains,
-  getMember,
-  getOrThrow,
-  isclose,
-  mod,
-  NotImplementedError,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  repr,
-  sorted,
-  StopIteration,
-  ValueError,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AttributeError, contains, getMember, getOrThrow, isclose, mod, NotImplementedError, Path, assert, truthy, valueEquals, repr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep, type CompItem, type Layer, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { LightType } from "../../src/py_aep/enums/index.ts";
@@ -50,6 +33,8 @@ import { asInstance, parseProjectFresh } from "../helpers.ts";
 import { AVLayer, LightLayer, ThreeDModelLayer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 // Python `Path(__file__).parent.parent.parent / "samples"`.
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");

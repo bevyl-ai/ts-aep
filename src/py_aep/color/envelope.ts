@@ -23,7 +23,7 @@
  * order; reproducing it exactly is required for byte-identical output.
  */
 
-import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, typeName, type JsonValue } from "../../pyrt/index.ts";
+import { encode, stringifyJson, jsonGet, jsonRequire, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
 
 // baseProfileType values.
@@ -50,7 +50,7 @@ export const OCIO_TYPE_COLORSPACE = 2;
  * would break the byte-identical round-trip.
  */
 export function _compact(obj: object): string {
-  return jsonDumps(obj, { separators: [",", ":"], ensureAscii: false });
+  return stringifyJson(obj, { separators: [",", ":"], ensureAscii: false });
 }
 
 export function _b64(text: string): string {
@@ -175,9 +175,9 @@ export class ColorProfile {
   /** The OCIO `(colorSpace1[, colorSpace2])` names, or an empty array if not OCIO. */
   get ocioColorSpaces(): readonly string[] {
     if (!this.isOcio) return [];
-    const inner = jsonLoads(this.data);
-    const names = [jsonGetitem(inner, "colorSpace1")];
-    if (inner instanceof Map && inner.has("colorSpace2")) names.push(jsonGetitem(inner, "colorSpace2"));
+    const inner = parseJson(this.data);
+    const names = [jsonRequire(inner, "colorSpace1")];
+    if (inner instanceof Map && inner.has("colorSpace2")) names.push(jsonRequire(inner, "colorSpace2"));
     return names.map((name) => _envelopeString(name, "OCIO color space"));
   }
 }
@@ -198,11 +198,11 @@ function _envelopeString(value: JsonValue, field: string): string {
  * @param envelopeJson - The raw `Utf8` chunk value (the outer JSON string).
  */
 export function parseEnvelope(envelopeJson: string): ColorProfile {
-  const outer = jsonLoads(envelopeJson);
-  const base = jsonGetitem(outer, "baseColorProfile");
-  const name = jsonGetitem(base, "colorProfileName");
-  const profileType = jsonGetitem(outer, "baseProfileType");
-  const data = jsonGetitem(base, "colorProfileData");
+  const outer = parseJson(envelopeJson);
+  const base = jsonRequire(outer, "baseColorProfile");
+  const name = jsonRequire(base, "colorProfileName");
+  const profileType = jsonRequire(outer, "baseProfileType");
+  const data = jsonRequire(base, "colorProfileData");
   if (typeof profileType !== "number") throw new TypeError(`baseProfileType must be an int, not '${typeName(profileType)}'`);
   return new ColorProfile(_envelopeString(name, "colorProfileName"), profileType, b64decode(_envelopeString(data, "colorProfileData")));
 }
@@ -215,6 +215,6 @@ export function parseEnvelope(envelopeJson: string): ColorProfile {
  * Unlike `parseEnvelope`, this does not require `colorProfileData`.
  */
 export function envelopeProfileName(envelopeJson: string): string {
-  const outer = jsonLoads(envelopeJson);
+  const outer = parseJson(envelopeJson);
   return String(jsonGet(jsonGet(outer, "baseColorProfile", new Map<string, JsonValue>()), "colorProfileName", "None"));
 }

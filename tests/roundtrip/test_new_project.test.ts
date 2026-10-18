@@ -1,24 +1,8 @@
 /** Tests for newProject() - creating an empty project from scratch. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  Bytes,
-  bytesEqual,
-  getOrThrow,
-  isdigit,
-  len,
-  Path,
-  truthy,
-  valueEquals,
-  truthyOr,
-  getMember,
-  sorted,
-  split,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AssertionError, Bytes, bytesEqual, getOrThrow, isdigit, len, Path, truthy, valueEquals, truthyOr, getMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { findByType, recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
@@ -26,6 +10,8 @@ import { toDict } from "../../src/py_aep/cli/validate.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, projectBytes } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import { makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { sorted, split } from "../support/python.ts";
 
 const EMPTIER = new Path(import.meta.path).parent.parent.parent.div(
   "samples",

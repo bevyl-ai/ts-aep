@@ -10,7 +10,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { PROFILE_TYPE_ICC, PROFILE_TYPE_OCIO, buildIccEnvelope, buildOcioColorspaceEnvelope, buildOcioDisplayEnvelope, parseEnvelope } from "../../src/py_aep/color/envelope.ts";
-import { b, concat, valueEquals, range } from "../../src/pyrt/index.ts";
+import { b, concat, valueEquals } from "../../src/pyrt/index.ts";
+import { range } from "../support/python.ts";
 
 // Verbatim AE output.
 const WORKING_ACESCG =

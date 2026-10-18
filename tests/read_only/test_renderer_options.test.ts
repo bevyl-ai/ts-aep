@@ -1,12 +1,14 @@
 /** Tests for CompItem.rendererOptions (3D renderer options). */
 
 import { describe, expect, test } from "bun:test";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { AttributeError, KeyError, Path, len, assert, valueEquals, dict } from "../../src/pyrt/index.ts";
+
+import { AttributeError, KeyError, Path, len, assert, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
 import { EnvironmentLightShadowResolution, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
+import { approx, raises } from "../support/pytest.ts";
+import { dict } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / "models"` in the Python source.
 // A TS file's `import.meta.dir` is already its directory, so two `.parent` steps reach the root.

@@ -5,7 +5,7 @@
 // keyword-only `abs_tol=` becomes its fourth positional argument.
 
 import { describe, expect, test } from "bun:test";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 import {
   AttributeError,
   IndexError,
@@ -31,6 +31,7 @@ import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_l
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyBase } from "../../src/py_aep/models/properties/property_base.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { raises } from "../support/pytest.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.

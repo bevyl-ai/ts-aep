@@ -11,11 +11,13 @@
  */
 
 import { expect, test } from "bun:test";
-import { approx } from "../../src/pyrt/pytest.ts";
-import { AssertionError, Path, getOrThrow, assert, truthyOr, range } from "../../src/pyrt/index.ts";
+
+import { AssertionError, Path, getOrThrow, assert, truthyOr } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, getLayerFromJson, loadExpected, parseProject, type ExpectedProperty } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { approx } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "property");
 

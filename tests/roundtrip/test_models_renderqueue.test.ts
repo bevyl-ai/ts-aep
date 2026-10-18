@@ -1,35 +1,8 @@
 /** Tests for RenderQueue model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  AttributeError,
-  BytesIO,
-  KeyError,
-  NotImplementedError,
-  Path,
-  ValueError,
-  b,
-  Bytes,
-  concat,
-  contains,
-  dictPop,
-  fields,
-  fspath,
-  getMember,
-  getOrThrow,
-  int,
-  len,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  sorted,
-  StopIteration,
-  PureWindowsPath,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AssertionError, AttributeError, ByteStream, KeyError, NotImplementedError, Path, ValueError, b, Bytes, concat, contains, dictPop, fields, fspath, getMember, getOrThrow, int, len, assert, truthy, valueEquals, truthyOr, repr, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, readAep, writeAep } from "../../src/py_aep/binary/chunk.ts";
@@ -45,6 +18,8 @@ import type { RenderQueue } from "../../src/py_aep/models/renderqueue/render_que
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { TiffFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/tiff.ts";
 import { asInstance, getRqi } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const TEST_FILE = new Path(import.meta.path);
 const SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "renderqueue");
@@ -1430,9 +1405,9 @@ describe("TestRQAddWithoutPreferences", () => {
     const ropt = rqi._lom.chunks.find((c) => c.chunkType === "Ropt");
     if (ropt === undefined) throw new StopIteration();
     expect(ropt instanceof TiffRoptChunk).toBe(true);
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     ropt.write(buf);
-    expect(len(buf.getvalue())).toBe(602);
+    expect(len(buf.toBytes())).toBe(602);
   });
 
   test("test_add_without_prefs_roundtrips", () => {
@@ -1538,9 +1513,9 @@ describe("TestRQAddWithoutPreferences", () => {
   test("test_tiff_ropt_default_is_602_bytes", () => {
     // A default TiffRoptChunk reproduces AE's exact 602-byte TIFF Ropt
     // (the markers, incl. 0x025A = 602, are split across _pad + chunk_size).
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     new TiffRoptChunk().write(buf);
-    const data = buf.getvalue();
+    const data = buf.toBytes();
     expect(len(data)).toBe(602);
     expect(valueEquals(Bytes.slice(data, 0, 4), b("TIF "))).toBe(true);
     expect(new TiffRoptChunk().chunkSize).toBe(602);
@@ -1865,7 +1840,7 @@ describe("TestCompRemoveWithRenderQueue", () => {
 describe("TestRenderQueueMissingScaffolding", () => {
   function _stripScaffolding(tmpPath: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
-    const [rifx, xmp] = readAep(new BytesIO(src.readBytes()));
+    const [rifx, xmp] = readAep(new ByteStream(src.readBytes()));
     const lrdr = findByListType(rifx.chunks, "LRdr");
     lrdr.chunks = lrdr.chunks.filter(
       (c) =>
@@ -1873,9 +1848,9 @@ describe("TestRenderQueueMissingScaffolding", () => {
         !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.listType)),
     );
     const out = tmpPath.div("stripped.aep");
-    const f = new BytesIO();
+    const f = new ByteStream();
     writeAep(f, rifx, xmp);
-    out.writeBytes(f.getvalue());
+    out.writeBytes(f.toBytes());
     return out;
   }
 
@@ -1910,12 +1885,12 @@ describe("TestRenderQueueMissingScaffolding", () => {
 describe("TestRenderQueueNoLRdr", () => {
   function _stripLrdr(tmpPath: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
-    const [rifx, xmp] = readAep(new BytesIO(src.readBytes()));
+    const [rifx, xmp] = readAep(new ByteStream(src.readBytes()));
     rifx.chunks = rifx.chunks.filter((c) => !(c instanceof ListChunk && c.listType === "LRdr"));
     const out = tmpPath.div("no_lrdr.aep");
-    const f = new BytesIO();
+    const f = new ByteStream();
     writeAep(f, rifx, xmp);
-    out.writeBytes(f.getvalue());
+    out.writeBytes(f.toBytes());
     return out;
   }
 

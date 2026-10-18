@@ -7,8 +7,8 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, format, getMember, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, getMember, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, struct, ValueError } from "../../src/pyrt/index.ts";
+
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/import_options.ts";
@@ -24,6 +24,8 @@ import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { listLayers } from "../../src/py_aep/resolvers/source_layers.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, parseProjectFresh, projectBytes } from "../helpers.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { format, range, sorted, sum } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const ASSETS = SAMPLES.div("assets");

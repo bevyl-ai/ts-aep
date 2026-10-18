@@ -40,7 +40,7 @@ import type { RenderQueueItem } from "../src/py_aep/models/renderqueue/render_qu
 import {
   AssertionError,
   b,
-  BytesIO,
+  ByteStream,
   Bytes,
   bytesEqual,
   decode,
@@ -391,9 +391,9 @@ export function parseProjectFresh(aepFilePath: PathLike): Project {
 
 /** Serialize `project` to `.aep` bytes in memory, as `save()` writes it. */
 export function projectBytes(project: Project): Uint8Array {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   writeAep(buf, project._rifx, project._xmp);
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 function _expectedText(samplesDir: string, sampleName: string): string {

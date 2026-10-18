@@ -1,31 +1,8 @@
 import "../../src/py_aep/binary/_register.ts";
 import { realpathSync } from "node:fs";
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  b,
-  BytesIO,
-  Bytes,
-  concat,
-  encode,
-  enumerate,
-  getMember,
-  getOrThrow,
-  len,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  round,
-  sorted,
-  struct,
-  StopIteration,
-  ValueError,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, warns } from "../../src/pyrt/pytest.ts";
+import { AssertionError, b, ByteStream, Bytes, concat, encode, getMember, getOrThrow, len, Path, assert, truthy, valueEquals, truthyOr, repr, struct, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+
 import { AlphaMode, FieldSeparationType, ImportAsType, PulldownPhase, parse as parseAep } from "../../src/py_aep/index.ts";
 import { ListChunk, writeChunk, type Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { buildAiLayerOptiData, buildGenericOptiData, buildPsdFlattenedOptiData, buildPsdLayerOptiData, buildTextOptiData, PlaceholderOptiChunk, PsdOptiChunk, SoliOptiChunk, TextOptiChunk } from "../../src/py_aep/binary/footage_chunks.ts";
@@ -51,6 +28,8 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { approx, makeTmpPath, raises, warns } from "../support/pytest.ts";
+import { enumerate, round, sorted } from "../support/python.ts";
 
 /** Tests for media-file probing and file-source creation via import_file. */
 
@@ -104,9 +83,9 @@ function _aePsdLayerOpti(project: Project, groupName: string): Uint8Array | null
     const source = getMember(item, "mainSource", null);
     if (source instanceof FileSource && getMember(source._opti, "assetType", "") === "8BPS") {
       if (asInstance(source._opti, PsdOptiChunk).psdGroupName === groupName) {
-        const buffer = new BytesIO();
+        const buffer = new ByteStream();
         source._opti.write(buffer);
-        return buffer.getvalue();
+        return buffer.toBytes();
       }
     }
   }
@@ -114,15 +93,15 @@ function _aePsdLayerOpti(project: Project, groupName: string): Uint8Array | null
 }
 
 function _optiBytes(source: FileSource): Uint8Array {
-  const buffer = new BytesIO();
+  const buffer = new ByteStream();
   source._opti.write(buffer);
-  return buffer.getvalue();
+  return buffer.toBytes();
 }
 
 function _sspcBytes(source: FileSource): Uint8Array {
-  const buffer = new BytesIO();
+  const buffer = new ByteStream();
   source._sspc.write(buffer);
-  return buffer.getvalue();
+  return buffer.toBytes();
 }
 
 /** Map layer group-name -> the per-layer 8BPS footage item. */
@@ -1961,9 +1940,9 @@ describe("TestImportPsdComp", () => {
     for (const compLayer of comp.layers) {
       const source = _footageSource(compLayer).mainSource;
       assert(source instanceof FileSource);
-      const buffer = new BytesIO();
+      const buffer = new ByteStream();
       source._opti.write(buffer);
-      const mine = buffer.getvalue();
+      const mine = buffer.toBytes();
       const psdLayer = layers[getOrThrow(indexByName, compLayer.name)];
       expect(
         valueEquals(
@@ -3261,9 +3240,9 @@ const SINGLE_PSD = ASSETS.div("psd_layer_styles_8bits_single.psd");
 /** Serialize a chunk subtree exactly as write_aep would (skip synthetic). */
 function _serializeTree(chunk: Chunk | null): Uint8Array {
   assert(chunk != null);
-  const buffer = new BytesIO();
+  const buffer = new ByteStream();
   writeChunk(buffer, chunk);
-  return buffer.getvalue();
+  return buffer.toBytes();
 }
 
 function _stylesTdgp(project: Project, compName: string, layerName: string): ListChunk | null {

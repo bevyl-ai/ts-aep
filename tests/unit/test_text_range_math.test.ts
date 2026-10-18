@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 // Importing `py_aep.cos` in Python runs `py_aep/__init__`, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
 import { CosField, CosName } from "../../src/py_aep/cos/index.ts";
@@ -15,20 +15,10 @@ import { CosString, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.
 import { cosAt, cosItem, cosIter, cosNum, cosSetitem } from "../../src/py_aep/cos/kinds.ts";
 import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composedLineSpans, _mergeAdjacentRuns, _snapToPairs, _splitRunArray, u16Len, u16Slice } from "../../src/py_aep/models/text/ranges.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
-import {
-  ValueError,
-  deepcopy,
-  descriptorsOf,
-  getOr,
-  getDescriptor,
-  valueEquals,
-  truthyOr,
-  repr,
-  setMember,
-  str,
-  sum,
-} from "../../src/pyrt/index.ts";
+import { ValueError, deepcopy, descriptorsOf, getOr, getDescriptor, valueEquals, truthyOr, repr, setMember, str } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
+import { raises } from "../support/pytest.ts";
+import { sum } from "../support/python.ts";
 
 const EMOJI = "\u{1f600}";
 

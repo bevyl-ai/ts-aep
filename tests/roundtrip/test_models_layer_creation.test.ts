@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { Path, ValueError, contains, len, assert, valueEquals } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import { LineOrientation } from "../../src/py_aep/enums/index.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -16,6 +16,7 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 

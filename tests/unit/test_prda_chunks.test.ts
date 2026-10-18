@@ -2,11 +2,12 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { BytesIO, Bytes, valueEquals } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+import { ByteStream, Bytes, valueEquals } from "../../src/pyrt/index.ts";
+
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
 import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, PrdaChunk, RayTracedPrdaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
+import { approx } from "../support/pytest.ts";
 
 const PRDA_CLASSIC_DEFAULT = Bytes.fromHex("000000010000000000000000");
 // big-endian head: version, renderer tag, quality 8, two reserved words
@@ -54,9 +55,9 @@ describe("TestPrdaVariants", () => {
       chunkType: "prda",
       rendererMatchName: matchName,
     });
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     chunk.write(buf);
-    expect(valueEquals(buf.getvalue(), body)).toBe(true);
+    expect(valueEquals(buf.toBytes(), body)).toBe(true);
   });
 
   test("test_classic_shadow_map_resolution", () => {
@@ -108,9 +109,9 @@ describe("TestPrdaVariants", () => {
     [AdvancedPrdaChunk, PRDA_ADVANCED_DEFAULT],
   ])("test_defaults_match_after_effects[%#]", (cls, expected) => {
     /** A default-constructed variant equals AE's own default blob. */
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     new cls().write(buf);
-    expect(valueEquals(buf.getvalue(), expected)).toBe(true);
+    expect(valueEquals(buf.toBytes(), expected)).toBe(true);
   });
 
   test.each<[Uint8Array, string]>([
@@ -127,8 +128,8 @@ describe("TestPrdaVariants", () => {
       rendererMatchName: matchName,
     });
     expect(chunk.constructor).toBe(PrdaChunk);
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     chunk.write(buf);
-    expect(valueEquals(buf.getvalue(), body)).toBe(true);
+    expect(valueEquals(buf.toBytes(), body)).toBe(true);
   });
 });

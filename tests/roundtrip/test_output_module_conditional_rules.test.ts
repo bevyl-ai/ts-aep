@@ -9,7 +9,7 @@
 import { expect, test } from "bun:test";
 
 import { int, Path, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
@@ -18,6 +18,7 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { AudioBitDepth, AudioChannels, OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this test's
 // directory (tests/roundtrip), so two `.parent` hops reach the package root.

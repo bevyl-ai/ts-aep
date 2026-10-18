@@ -10,10 +10,11 @@ import "../../src/py_aep/binary/_register.ts";
 import { describe, expect, test } from "bun:test";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { Path, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance, getComp } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES = new Path(import.meta.dir).parent.parent.div("samples", "models");
 

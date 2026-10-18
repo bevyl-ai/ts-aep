@@ -7,9 +7,11 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { ValueError, enumerate, floatRepr, assert, zip } from "../../src/pyrt/index.ts";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
+import { ValueError, floatRepr, assert, zip } from "../../src/pyrt/index.ts";
+
 import { Mat4, _rotateX, _rotateY, _rotateZ, _translation, buildLocalMatrix, composeOrientation, decomposeTransform } from "../../src/py_aep/resolvers/transform.ts";
+import { approx, raises } from "../support/pytest.ts";
+import { enumerate } from "../support/python.ts";
 
 // ------------------------------------------------------------------
 // Helpers

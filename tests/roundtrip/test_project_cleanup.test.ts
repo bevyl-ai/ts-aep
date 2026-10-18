@@ -8,11 +8,12 @@
 
 import { describe, expect, test } from "bun:test";
 import { getOrThrow, len, Path, truthy, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
 const FOOTAGE_MISC = SAMPLES_DIR.div("footage", "footage_misc.aep");

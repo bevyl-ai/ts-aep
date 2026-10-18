@@ -9,9 +9,10 @@
 import { expect, test } from "bun:test";
 
 import { Path, ValueError, b, Bytes, valueEquals } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 import { GUID_SEED, murmurhash3X64128 } from "../../src/py_aep/color/murmur3.ts";
 import { ocioColorSpaceForProfileId, ocioOutputProfileId } from "../../src/py_aep/color/ocio.ts";
+import { raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: tests/unit/<file> -> repo root.
 const CONFIG = new Path(import.meta.dir)

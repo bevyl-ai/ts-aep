@@ -15,27 +15,15 @@
 // tolerance options object of pyrt `approx`.
 
 import { describe, expect, test } from "bun:test";
-import { approx, raises, skip, importorskip } from "../../src/pyrt/pytest.ts";
-import {
-  NotImplementedError,
-  Path,
-  StopIteration,
-  ValueError,
-  float,
-  floatRepr,
-  format,
-  getOrThrow,
-  assert,
-  valueEquals,
-  repr,
-  sorted,
-  split,
-} from "../../src/pyrt/index.ts";
+
+import { NotImplementedError, Path, StopIteration, ValueError, float, floatRepr, getOrThrow, assert, valueEquals, repr } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { fontVersionString } from "../../src/py_aep/svg/fonts.ts";
 import { AVLayer, CompItem, Layer, Project } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, raises, skip, importorskip } from "../support/pytest.ts";
+import { format, sorted, split } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");

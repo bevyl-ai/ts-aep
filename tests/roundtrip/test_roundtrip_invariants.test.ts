@@ -9,7 +9,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { AttributeError, AssertionError, Path, assert, valueEquals, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import "../../src/py_aep/binary/_register.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
@@ -17,6 +17,7 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { _suppressMaterialization } from "../../src/py_aep/models/descriptors.ts";
 import { getFirstLayer } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");

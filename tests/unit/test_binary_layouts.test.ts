@@ -11,16 +11,16 @@ import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { WsnsChunk } from "../../src/py_aep/binary/project_chunks.ts";
 import { Tdb4Chunk, TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { CHUNK_TYPES } from "../../src/py_aep/binary/registry.ts";
-import { BytesIO, b, getMember, getOrThrow, len, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { ByteStream, b, getMember, getOrThrow, len, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { asInstance } from "../helpers.ts";
 
 function _read(chunkType: string, body: Uint8Array): Chunk {
   const cls = getOrThrow(CHUNK_TYPES, chunkType);
-  const chunk = cls.read(new BytesIO(body), len(body), { chunkType: chunkType });
-  const out = new BytesIO();
+  const chunk = cls.read(new ByteStream(body), len(body), { chunkType: chunkType });
+  const out = new ByteStream();
   chunk.write(out);
-  assert(valueEquals(out.getvalue(), body));
+  assert(valueEquals(out.toBytes(), body));
   return chunk;
 }
 

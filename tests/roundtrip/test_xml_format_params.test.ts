@@ -7,12 +7,13 @@
 import { expect, test } from "bun:test";
 
 import { getMember, Path, assert, setMember, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
 
 import { AudioInterleave, MPEGAudioFormat, MPEGAudioLayer } from "../../src/py_aep/enums/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this file's
 // directory (tests/roundtrip), so two `.parent` reach the package root.

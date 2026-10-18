@@ -26,7 +26,7 @@ import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/proper
 import { iterImageResources } from "./media_probe.ts";
 import type { PsdGroup, PsdLayer, PsdStyleBlocks } from "./psd_layers.ts";
 import {
-  BytesIO,
+  ByteStream,
   FileNotFoundError,
   KeyError,
   NotImplementedError,
@@ -672,7 +672,7 @@ export function _convertStyle(
 export function readGlobalLight(file: PathLike): [number, number] {
   let angle = 120.0,
     altitude = 30.0;
-  const fp = new BytesIO(
+  const fp = new ByteStream(
     (() => {
       try {
         return host.fs.readFileSync(fspath(file));

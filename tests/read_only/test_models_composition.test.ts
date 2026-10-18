@@ -5,21 +5,7 @@
 // keyword-only `rel_tol=` becomes its third positional argument.
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  getMember,
-  getOrThrow,
-  isclose,
-  len,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  repr,
-  round,
-  StopIteration,
-  zip,
-} from "../../src/pyrt/index.ts";
+import { AssertionError, getMember, getOrThrow, isclose, len, Path, assert, truthy, valueEquals, repr, StopIteration, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -31,6 +17,7 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
 import { _resolveControllerSourceLayer, _walkSourceProperty, resolveEssentialPropertyControllers } from "../../src/py_aep/resolvers/essential_properties.ts";
+import { round } from "../support/python.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.

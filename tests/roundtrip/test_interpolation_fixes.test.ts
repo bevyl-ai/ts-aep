@@ -9,10 +9,12 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { KeyframeEase, KeyframeInterpolationType, Property, PropertyGroup, type Application, type AVLayer, type CompItem } from "../../src/py_aep/index.ts";
-import { at, getMember, len, max, min, assert, truthy, StopIteration, sum, zip } from "../../src/pyrt/index.ts";
+import { at, getMember, len, assert, truthy, StopIteration, zip } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { max, min, sum } from "../support/python.ts";
 
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 

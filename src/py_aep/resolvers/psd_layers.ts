@@ -12,7 +12,7 @@
 import * as zlib from "../../pyrt/zlib.ts";
 
 import {
-  BytesIO,
+  ByteStream,
   Path,
   Bytes,
   bytesEqual,
@@ -500,8 +500,8 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
   try {
     // Read only up to the Layer Info block: the layer records precede the
     // channel image data, which dominates a PSD's size.
-    // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a BytesIO here, so parsed results are identical (only peak memory differs).
-    const fp = new BytesIO(new Path(file).readBytes());
+    // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a ByteStream here, so parsed results are identical (only peak memory differs).
+    const fp = new ByteStream(new Path(file).readBytes());
     const header = fp.read(26);
     if (!bytesEqual(header.slice(0, 4), ascii("8BPS"))) {
       throw new UnsupportedPsdLayersError(`${name}: not a valid PSD/PSB file.`);

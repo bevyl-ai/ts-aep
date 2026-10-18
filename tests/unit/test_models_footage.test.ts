@@ -15,8 +15,9 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { AttributeError, ValueError, Path, b, Bytes, int, valueEquals, repr } from "../../src/pyrt/index.ts";
-import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
+
 import { asInstance } from "../helpers.ts";
+import { approx, raises, skip } from "../support/pytest.ts";
 
 const __file__ = new Path(import.meta.path);
 const SAMPLES_DIR = __file__.parent.parent.parent.div("samples", "models", "footage");

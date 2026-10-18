@@ -19,12 +19,13 @@ import {
   StopIteration,
   str,
 } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance, parseAppFresh, parseProjectFresh } from "../helpers.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
 import { Viewer } from "../../src/py_aep/models/viewer/viewer.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const LAYER = SAMPLES.div("models", "layer", "enabled_false.aep");

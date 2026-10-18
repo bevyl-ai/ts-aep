@@ -4,20 +4,13 @@ import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/property.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
-import {
-  AttributeError,
-  Path,
-  ValueError,
-  len,
-  assert,
-  truthy,
-  truthyOr,
-  range,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AttributeError, Path, ValueError, len, assert, truthy, truthyOr } from "../../src/pyrt/index.ts";
+
 import { asInstance } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 // `Path(__file__)` → `import.meta.dir` (Bun); three `.parent` hops → `tests/roundtrip/../../`.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");

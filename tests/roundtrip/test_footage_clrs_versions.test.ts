@@ -21,8 +21,10 @@ import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
-import { getOrThrow, Path, assert, valueEquals, sorted, StopIteration } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { getOrThrow, Path, assert, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
+
 
 // `Path(__file__).parent.parent.parent / "samples"`: `import.meta.dir` is already
 // the directory of this file (tests/roundtrip), so two `.parent` reach the package root.

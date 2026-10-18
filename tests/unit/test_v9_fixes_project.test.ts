@@ -13,8 +13,10 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { projectBytes } from "../helpers.ts";
-import { b, Bytes, bytesEqual, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { b, Bytes, bytesEqual, valueEquals, ValueError } from "../../src/pyrt/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
+
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
 // Python `pytest.raises((A, B))` tuple form (isinstance any-match, rethrow otherwise).

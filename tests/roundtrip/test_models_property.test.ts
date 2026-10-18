@@ -1,33 +1,8 @@
 /** Tests for Property model parsing with strengthened assertions. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  AttributeError,
-  IndexError,
-  StopIteration,
-  Path,
-  ValueError,
-  and,
-  b,
-  Bytes,
-  contains,
-  copy,
-  deepcopy,
-  getMember,
-  getOrThrow,
-  len,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  setMember,
-  getOrInsert,
-  compositeKey,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AssertionError, AttributeError, IndexError, StopIteration, Path, ValueError, b, Bytes, contains, copy, deepcopy, getMember, getOrThrow, len, assert, truthy, valueEquals, truthyOr, repr, setMember, getOrInsert, compositeKey, zip } from "../../src/pyrt/index.ts";
+
 import { asInstance, getComp, getFirstLayer, getLayer, parseProjectFresh } from "../helpers.ts";
 
 import { parse as parseAep, newProject as pyAepNew, Project } from "../../src/py_aep/index.ts";
@@ -41,6 +16,8 @@ import { PguiChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { findByType, recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { ListChunk, type Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { NORMALIZED_ARC_ACCURACY } from "../../src/py_aep/resolvers/interpolation.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { and } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent / ...` in the Python source.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "property");

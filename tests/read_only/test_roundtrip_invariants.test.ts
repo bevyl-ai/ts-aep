@@ -9,7 +9,7 @@
 
 import { describe, test, expect } from "bun:test";
 import { Path, len, assert, valueEquals, AssertionError, repr } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import "../../src/py_aep/binary/_register.ts";
 import { getFirstLayer, getLayer } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -17,6 +17,7 @@ import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { makeTmpPath } from "../support/pytest.ts";
 
 // Samples are read from the ts-aep root (same layout as upstream `repo/samples`).
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");

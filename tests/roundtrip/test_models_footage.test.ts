@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { isclose, Path, assert, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { AlphaMode, AVLayer, FieldSeparationType, FootageItem, LinearLightMode, PulldownPhase, SolidSource, parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -12,6 +12,7 @@ import { defaultIccDirectories } from "../../src/py_aep/color/icc.ts";
 import { resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
 import { profileIdForName } from "../../src/py_aep/enums/mappings.ts";
 import { asInstance, getComp, getFirstFootage, getFootage, parseProjectFresh } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "footage");
 // Adobe-CMS ICC embedding needs the installed Adobe Color profiles on disk.

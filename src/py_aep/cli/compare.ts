@@ -24,15 +24,14 @@ import { CdatChunk } from "../binary/property_chunks.ts";
 import { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import { chunkLabel, extractLeafChunks, extractLeafChunksTyped } from "./_chunk_helpers.ts";
 import {
-  BytesIO,
+  ByteStream,
   Path,
   bytesEqual,
   deepcopy,
   getOrThrow,
   valueEquals,
-  literal,
-  SystemExit,
-  jsonDumps, compare } from "../../pyrt/index.ts";
+  stringifyJson, compare } from "../../pyrt/index.ts";
+import { intOption, parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 export function print(...args: string[]): void {
   console.log(args.join(" "));
@@ -438,8 +437,8 @@ export function _compareStructureRecursive(c1: Chunk, c2: Chunk, path: string, d
 export function compareStructure(file1: Path, file2: Path): StructuralDifference[] {
   // `with open(file, "rb") as f: read_aep(f)` is modelled by reading the
   // whole file first; read_aep consumes all of it, so the handle can close.
-  const [rifx1] = readAep(new BytesIO(file1.readBytes()));
-  const [rifx2] = readAep(new BytesIO(file2.readBytes()));
+  const [rifx1] = readAep(new ByteStream(file1.readBytes()));
+  const [rifx2] = readAep(new ByteStream(file2.readBytes()));
   const diffs: StructuralDifference[] = [];
   _compareStructureRecursive(rifx1, rifx2, "", diffs);
   return diffs;
@@ -823,12 +822,7 @@ export function _reportSuppressed(suppressed: number, exact: boolean): void {
   }
 }
 
-// TODO(port): no argparse shim; parse_args hand-implements this CLI's options (prefix matching,
-// `--opt=value`, `--`, nargs="+" runs, exit-2 errors). HELP/USAGE are argparse's layout for its
-// default 80-column (non-tty) width; argparse wraps to COLUMNS or the terminal width instead.
-// An unrecognized option errors at once where argparse first reports missing positionals.
 export const PROG = "aep-compare";
-export const OPTIONS = ["--help", "--json", "--filter", "--context", "--exact"];
 
 export const USAGE =
   `usage: ${PROG} [-h] [--json] [--filter FILTER] [--context N] [--exact]\n` +
@@ -866,26 +860,12 @@ Output shows for each different byte:
     - Bit position (7-0) if only one bit differs
         `;
 
-/** argparse's `parser.error`: usage plus message to stderr, exit status 2. */
-export function parserError(message: string): never {
-  eprint(USAGE);
-  eprint(`${PROG}: error: ${message}`);
-  throw new SystemExit(2);
-}
-
-export function isNegativeNumber(arg: string): boolean {
-  return /^-\d+$|^-\d*\.\d+$/.test(arg);
-}
-
-/** Long-option prefix matching as argparse does by default (allow_abbrev). */
-export function resolveOption(name: string, arg: string = name): string | null {
-  if (name === "-h") return "--help";
-  if (!name.startsWith("--")) return null;
-  if (OPTIONS.includes(name)) return name;
-  const hits = OPTIONS.filter((o) => o.startsWith(name));
-  if (hits.length > 1) parserError(`ambiguous option: ${arg} could match ${hits.join(", ")}`);
-  return hits.length === 1 ? hits[0] : null;
-}
+const COMPARE: Command = {
+  prog: PROG,
+  usage: USAGE,
+  help: HELP,
+  options: { json: { type: "boolean" }, filter: { type: "string" }, context: { type: "string" }, exact: { type: "boolean" } },
+};
 
 export type Args = {
   files: Path[];
@@ -896,78 +876,15 @@ export type Args = {
 };
 
 export function parseArgs(argv: string[]): Args {
-  const out: Args = { files: [], json: false, filter: null, context: 0, exact: false };
-  const positionals: string[] = [];
-  const extras: string[] = [];
-  // argparse with `files` nargs="+": once an option splits the run of
-  // positionals, later positionals are "unrecognized arguments".
-  let runClosed = false;
-  let onlyPositional = false;
-  let i = 0;
-  while (i < argv.length) {
-    const arg = argv[i];
-    if (!onlyPositional && arg === "--") {
-      onlyPositional = true;
-      i++;
-      continue;
-    }
-    const isOption = !onlyPositional && arg.startsWith("-") && arg !== "-" && !isNegativeNumber(arg);
-    if (!isOption) {
-      if (runClosed) extras.push(arg);
-      else positionals.push(arg);
-      i++;
-      continue;
-    }
-
-    if (positionals.length) runClosed = true;
-    let name = arg;
-    let value: string | null = null;
-    if (arg.startsWith("--") && arg.includes("=")) {
-      name = arg.slice(0, arg.indexOf("="));
-      value = arg.slice(arg.indexOf("=") + 1);
-    }
-    const opt = resolveOption(name, arg);
-    if (opt === null) {
-      extras.push(arg);
-      i++;
-      continue;
-    }
-
-    if (opt === "--help") {
-      print(HELP);
-      throw new SystemExit(0);
-    }
-    if (opt === "--json" || opt === "--exact") {
-      if (value !== null) parserError(`argument ${opt}: ignored explicit argument '${value}'`);
-      if (opt === "--json") out.json = true;
-      else out.exact = true;
-      i++;
-      continue;
-    }
-
-    // --filter / --context take exactly one value.
-    if (value === null) {
-      const next = argv[i + 1];
-      if (next === undefined || (next.startsWith("-") && next !== "-" && !isNegativeNumber(next))) {
-        parserError(`argument ${opt}: expected one argument`);
-      }
-      value = next;
-      i += 2;
-    } else {
-      i += 1;
-    }
-    if (opt === "--filter") {
-      out.filter = value;
-    } else {
-      if (!/^\s*[+-]?\d+\s*$/.test(value)) parserError(`argument --context: invalid int value: ${literal(value)}`);
-      out.context = Number(value);
-    }
-  }
-
-  if (!positionals.length) parserError("the following arguments are required: files");
-  if (extras.length) parserError(`unrecognized arguments: ${extras.join(" ")}`);
-  out.files = positionals.map((p) => new Path(p));
-  return out;
+  const { values, positionals } = parseCommandLine(COMPARE, argv);
+  if (!positionals.length) usageError(COMPARE, "the following arguments are required: files");
+  return {
+    files: positionals.map((p) => new Path(p)),
+    json: values.json === true,
+    filter: typeof values.filter === "string" ? values.filter : null,
+    context: typeof values.context === "string" ? intOption(COMPARE, "context", values.context) : 0,
+    exact: values.exact === true,
+  };
 }
 
 /** CLI entry point for aep-compare command. */
@@ -1030,7 +947,7 @@ export function main(): number {
   // Output results
   if (args.json) {
     const output = toJsonOutput(file1, file2, diffs, only1, only2, suppressed.length);
-    print(jsonDumps(output, { indent: 2 }));
+    print(stringifyJson(output, { indent: 2 }));
   } else {
     printResults(file1, file2, diffs, only1, only2, args.context, ctx1, ctx2, structDiffs);
   }
@@ -1040,11 +957,4 @@ export function main(): number {
 }
 
 // `if __name__ == "__main__": sys.exit(main())`
-if (import.meta.main) {
-  try {
-    process.exit(main());
-  } catch (e) {
-    if (e instanceof SystemExit) process.exit(typeof e.code === "number" ? e.code : e.code == null ? 0 : 1);
-    throw e;
-  }
-}
+if (import.meta.main) runMain(main);

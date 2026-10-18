@@ -7,10 +7,10 @@
  * bytes suitable for writing back into a btdk chunk's `binary_data`.
  */
 
-import { BytesIO, Bytes, concat, encode, BoxedFloat, typeName, unbox, ascii } from "../../pyrt/index.ts";
+import { ByteStream, Bytes, concat, encode, BoxedFloat, typeName, unbox, ascii } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
-// Literals written per token, built once (`BytesIO.write` copies them).
+// Literals written per token, built once (`ByteStream.write` copies them).
 const SPACE = ascii(" ");
 const TRUE = ascii("true");
 const FALSE = ascii("false");
@@ -28,15 +28,15 @@ const RPAREN = ascii(")");
  * @returns The COS binary representation.
  */
 export function serialize(data: CosNode): Uint8Array {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   // AE's btdk blob begins with a leading space before the first token.
   buf.write(SPACE);
   _writeValue(buf, data, { topLevel: true });
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 /** Write a space separator unless the buffer already ends with whitespace. */
-export function _space(buf: BytesIO): void {
+export function _space(buf: ByteStream): void {
   const pos = buf.tell();
   if (pos === 0) return;
   buf.seek(pos - 1);
@@ -46,7 +46,7 @@ export function _space(buf: BytesIO): void {
 }
 
 /** Dispatch `value` to the appropriate serialization handler. */
-export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boolean } = {}): void {
+export function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: boolean } = {}): void {
   const { topLevel = false } = kw;
   if (value instanceof Map) {
     if (topLevel) {
@@ -122,7 +122,7 @@ export function _formatFloat(value: number): Uint8Array {
 }
 
 /** Write a COS dictionary: `<< /key value /key value >>`. */
-export function _writeDict(buf: BytesIO, d: CosDict): void {
+export function _writeDict(buf: ByteStream, d: CosDict): void {
   buf.write(ascii("<<"));
   _writeDictContent(buf, d);
   _space(buf);
@@ -130,7 +130,7 @@ export function _writeDict(buf: BytesIO, d: CosDict): void {
 }
 
 /** Write Map key/value pairs without the `<<`/`>>` delimiters. */
-export function _writeDictContent(buf: BytesIO, d: CosDict): void {
+export function _writeDictContent(buf: ByteStream, d: CosDict): void {
   for (const [key, val] of d) {
     _space(buf);
     _writeIdentifier(buf, key);
@@ -139,7 +139,7 @@ export function _writeDictContent(buf: BytesIO, d: CosDict): void {
 }
 
 /** Write a COS array: `[ val val val ]`. */
-export function _writeArray(buf: BytesIO, lst: CosNode[]): void {
+export function _writeArray(buf: ByteStream, lst: CosNode[]): void {
   buf.write(ascii("["));
   _writeArrayContent(buf, lst);
   _space(buf);
@@ -147,7 +147,7 @@ export function _writeArray(buf: BytesIO, lst: CosNode[]): void {
 }
 
 /** Write array elements without `[`/`]` delimiters. */
-export function _writeArrayContent(buf: BytesIO, lst: CosNode[]): void {
+export function _writeArrayContent(buf: ByteStream, lst: CosNode[]): void {
   for (const item of lst) {
     _writeValue(buf, item);
   }
@@ -158,7 +158,7 @@ const PRINTABLE_ASCII = /^[!-~]*$/;
 const IDENTIFIER_ESCAPED = /[()[\]<>{}/%#]/;
 
 /** Write a COS identifier (name object): `/foo`. */
-export function _writeIdentifier(buf: BytesIO, name: string): void {
+export function _writeIdentifier(buf: ByteStream, name: string): void {
   buf.write(SLASH);
   if (PRINTABLE_ASCII.test(name) && !IDENTIFIER_ESCAPED.test(name)) {
     buf.write(encode(name, "ascii"));
@@ -184,7 +184,7 @@ export function _writeIdentifier(buf: BytesIO, name: string): void {
  * raw ASCII / UTF-8 (e.g. bit-flag strings), in which case the original
  * single-byte encoding is reproduced for byte fidelity.
  */
-export function _writeString(buf: BytesIO, s: string | CosString): void {
+export function _writeString(buf: ByteStream, s: string | CosString): void {
   let raw: Uint8Array;
   if (!(s instanceof CosString) || s.cosUtf16) {
     raw = concat(Uint8Array.of(0xfe, 0xff), encode(String(s), "utf-16-be"));
@@ -218,14 +218,14 @@ export function _escapeString(raw: Uint8Array): Uint8Array {
 }
 
 /** Write a COS hex string: `<hexdata>`. */
-export function _writeHexString(buf: BytesIO, data: Uint8Array): void {
+export function _writeHexString(buf: ByteStream, data: Uint8Array): void {
   buf.write(ascii("<"));
   buf.write(encode(Bytes.toHex(data), "ascii"));
   buf.write(ascii(">"));
 }
 
 /** Write `N G obj <data> endobj`. */
-export function _writeIndirectObject(buf: BytesIO, obj: IndirectObject): void {
+export function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void {
   buf.write(encode(`${obj.objectNumber}`, "ascii"));
   buf.write(ascii(" "));
   buf.write(encode(`${obj.generationNumber}`, "ascii"));
@@ -235,7 +235,7 @@ export function _writeIndirectObject(buf: BytesIO, obj: IndirectObject): void {
 }
 
 /** Write `N G R`. */
-export function _writeIndirectReference(buf: BytesIO, ref: IndirectReference): void {
+export function _writeIndirectReference(buf: ByteStream, ref: IndirectReference): void {
   buf.write(encode(`${ref.objectNumber}`, "ascii"));
   buf.write(ascii(" "));
   buf.write(encode(`${ref.generationNumber}`, "ascii"));
@@ -243,7 +243,7 @@ export function _writeIndirectReference(buf: BytesIO, ref: IndirectReference): v
 }
 
 /** Write `<< dict >> stream\n<bytes>endstream`. */
-export function _writeStream(buf: BytesIO, stream: Stream): void {
+export function _writeStream(buf: ByteStream, stream: Stream): void {
   _writeDict(buf, stream.dictionary);
   buf.write(ascii("stream\n"));
   buf.write(stream.data);

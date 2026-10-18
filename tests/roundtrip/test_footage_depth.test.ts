@@ -1,14 +1,16 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { Bytes, fspath, getOrThrow, lshift, Path, valueEquals, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { Bytes, fspath, getOrThrow, Path, valueEquals, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+
 import { asInstance, parseProject } from "../helpers.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { lshift, sorted } from "../support/python.ts";
 
 /**
  * Imported footage caches After Effects' input depth and alpha in `sspc`.

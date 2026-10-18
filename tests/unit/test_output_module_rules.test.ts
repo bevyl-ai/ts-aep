@@ -18,17 +18,8 @@ import {
 } from "../../src/py_aep/data/output_module_rules.ts";
 import { AudioChannels, AudioCodec, FormatKind, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat } from "../../src/py_aep/enums/index.ts";
 import { _DEPTH_MINUS, _DEPTH_PLUS, OM_SETTINGS } from "../../src/py_aep/models/renderqueue/output_module.ts";
-import {
-  getOr,
-  getOrThrow,
-  int,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  sorted,
-} from "../../src/pyrt/index.ts";
+import { getOr, getOrThrow, int, assert, truthy, valueEquals, truthyOr, repr } from "../../src/pyrt/index.ts";
+import { sorted } from "../support/python.ts";
 
 // Context keys the OutputModule._rules_context builder can provide.
 const _CONDITION_KEYS = new Set([

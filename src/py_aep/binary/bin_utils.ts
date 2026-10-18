@@ -15,7 +15,7 @@ import {
   encode,
   floatRepr,
   struct,
-  type IO,
+  type ByteStream,
 } from "../../pyrt/index.ts";
 
 export const _HEADER_STRUCT = new struct.Struct(">4sI");
@@ -115,8 +115,8 @@ export function _structFor(fmt: string, endian = ">"): struct.Struct {
  *
  * @throws {@link IOError} If fewer bytes are available than the format requires.
  */
-export function readFmt<F extends string>(fmt: F, fp: IO, endian?: string): struct.Unpacked<F>;
-export function readFmt(fmt: string, fp: IO, endian = ">"): struct.Unpacked<string> {
+export function readFmt<F extends string>(fmt: F, fp: ByteStream, endian?: string): struct.Unpacked<F>;
+export function readFmt(fmt: string, fp: ByteStream, endian = ">"): struct.Unpacked<string> {
   const s = _structFor(fmt, endian);
   const values = fp.unpack(s);
   if (values === null) {
@@ -138,7 +138,7 @@ export type WriteFmtOptions = { endian?: string };
 function _isWriteFmtOptions(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
   return v != null && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype;
 }
-export function writeFmt(fp: IO, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
+export function writeFmt(fp: ByteStream, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
   const items: (struct.PackValue | WriteFmtOptions)[] = args;
   const last = items[items.length - 1];
   const opts = _isWriteFmtOptions(last) ? last : {};
@@ -159,7 +159,7 @@ export function toF4(value: number): number {
  *
  * @throws {@link IOError} If fewer bytes are available than requested.
  */
-export function readBytes(fp: IO, size: number): Uint8Array {
+export function readBytes(fp: ByteStream, size: number): Uint8Array {
   const data = fp.read(size);
   if (data.length < size) {
     throw new OSError(`Short read: expected ${size} bytes, got ${data.length}`);
@@ -168,7 +168,7 @@ export function readBytes(fp: IO, size: number): Uint8Array {
 }
 
 /** Write raw bytes to `fp`. Returns bytes written. */
-export function writeBytes(fp: IO, data: Uint8Array): number {
+export function writeBytes(fp: ByteStream, data: Uint8Array): number {
   fp.write(data);
   return data.length;
 }
@@ -186,7 +186,7 @@ export function truncateUtf8(value: string, maxBytes: number): Uint8Array {
 }
 
 /** Check if `size` bytes can be read without consuming them. */
-export function isReadable(fp: IO, size = 1): boolean {
+export function isReadable(fp: ByteStream, size = 1): boolean {
   const pos = fp.tell();
   const data = fp.read(size);
   fp.seek(pos);
@@ -197,7 +197,7 @@ export function isReadable(fp: IO, size = 1): boolean {
 const _PAD = new Uint8Array(1);
 
 /** Write a pad byte if `size` is odd. Returns bytes written (0 or 1). */
-export function writePad(fp: IO, size: number): number {
+export function writePad(fp: ByteStream, size: number): number {
   if (size % 2 !== 0) {
     fp.write(_PAD);
     return 1;
@@ -206,7 +206,7 @@ export function writePad(fp: IO, size: number): number {
 }
 
 /** Consume a pad byte if `size` is odd. */
-export function readPad(fp: IO, size: number): void {
+export function readPad(fp: ByteStream, size: number): void {
   if (size % 2 !== 0) {
     fp.readByte();
   }

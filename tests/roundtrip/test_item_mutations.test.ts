@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { Path, StopIteration, ValueError, contains, getOr, getOrThrow, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -13,6 +13,7 @@ import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { PlaceholderSource } from "../../src/py_aep/models/sources/placeholder.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath, raises, skip } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 

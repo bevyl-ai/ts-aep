@@ -9,11 +9,13 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx as pytestApprox, raises, warns } from "../../src/pyrt/pytest.ts";
-import { b, Bytes, encode, getOrThrow, len, assert, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
+
+import { b, Bytes, encode, getOrThrow, len, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
 import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
+import { approx as pytestApprox, raises, warns } from "../support/pytest.ts";
+import { range, sorted } from "../support/python.ts";
 
 const PAGE = 600;
 

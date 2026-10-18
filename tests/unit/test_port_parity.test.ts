@@ -6,13 +6,14 @@
  */
 
 import { expect, test } from "bun:test";
-import { BytesIO, encode } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
-import { _probeMgjson } from "../../src/py_aep/resolvers/media_probe.ts";
+import { ByteStream, encode } from "../../src/pyrt/index.ts";
 
-function mgjson(times: string[]): BytesIO {
+import { _probeMgjson } from "../../src/py_aep/resolvers/media_probe.ts";
+import { raises } from "../support/pytest.ts";
+
+function mgjson(times: string[]): ByteStream {
   const doc = { dataDynamicSamples: [{ samples: times.map((time) => ({ time })) }] };
-  return new BytesIO(encode(JSON.stringify(doc), "utf-8"));
+  return new ByteStream(encode(JSON.stringify(doc), "utf-8"));
 }
 
 test.each<[string[], number]>([

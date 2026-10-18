@@ -2,23 +2,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-  AttributeError,
-  contains,
-  float,
-  getMember,
-  getOrThrow,
-  int,
-  len,
-  Path,
-  assert,
-  valueEquals,
-  setMember,
-  sorted,
-  compositeKey,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AttributeError, contains, float, getMember, getOrThrow, int, len, Path, assert, valueEquals, setMember, compositeKey, ValueError } from "../../src/pyrt/index.ts";
+
 import { parse, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Element as ETElement } from "../../src/pyrt/etree.ts";
@@ -27,6 +12,8 @@ import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormat
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const FORMAT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "format_options");
 const CINEON_DIR = FORMAT_DIR.div("cineon");

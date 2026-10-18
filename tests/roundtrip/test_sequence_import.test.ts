@@ -15,7 +15,8 @@ import { asInstance } from "../helpers.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { UNDEFINED_FRAME, findByListType } from "../../src/py_aep/binary/utils.ts";
 import { Path, ValueError, b, assert, valueEquals } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
 const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");

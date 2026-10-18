@@ -4,8 +4,8 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { BytesIO, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, compositeKey } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { ByteStream, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, compositeKey } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
 import { psdCompLayerStyles, psdFootageDimensions, psdFootageLayerStyles } from "../../src/py_aep/models/preferences.ts";
@@ -16,6 +16,7 @@ import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { asInstance } from "../helpers.ts";
 import { _RESIZE_TO_STRINGS, buildResizeToStrings } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile } from "../../src/py_aep/parsers/prefs.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const MACHINE = PREFType.PREF_Type_MACHINE_SPECIFIC;
 const INDEP = PREFType.PREF_Type_MACHINE_INDEPENDENT;
@@ -734,9 +735,9 @@ function _textStyleDir(tmpPath: Path, sheet: string): Path {
 function _btdkBytes(layer: Layer): Uint8Array {
   const matches = recursiveFind(layer._layerList.chunks, undefined, "btdk");
   assert(matches.length === 1);
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   matches[0].write(buf);
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 /**
@@ -768,9 +769,9 @@ describe("TestTextStyleSheet", () => {
     const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const layerBytes = _btdkBytes(comp.addText("probe"));
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     new py_aep.TextDocument("probe")._btdkBody.write(buf);
-    expect(valueEquals(layerBytes, buf.getvalue())).toBe(true);
+    expect(valueEquals(layerBytes, buf.toBytes())).toBe(true);
   });
 
   test("test_identity_fields_are_not_rewritten", () => {

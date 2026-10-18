@@ -28,7 +28,7 @@ import type { FootageItem } from "../items/footage.ts";
 import type { Project } from "../project.ts";
 import {
   Path,
-  BytesIO,
+  ByteStream,
   NotImplementedError,
   OSError,
   ValueError,
@@ -1007,7 +1007,7 @@ export class FileSource extends FootageSource {
     // file_attributes immediately, not just after a save/reparse.
     let opti: OptiChunk;
     if (optiData?.length > 0) {
-      opti = OptiChunk.read(new BytesIO(optiData), optiData.length, { chunkType: "opti" });
+      opti = OptiChunk.read(new ByteStream(optiData), optiData.length, { chunkType: "opti" });
     } else {
       opti = new OptiChunk({ chunkType: "opti" });
     }
@@ -1595,7 +1595,7 @@ export class FileSource extends FootageSource {
       const optiData = _optiData(fmt, info, path, { sequence: false, data });
       let newOpti: OptiChunk;
       if (optiData?.length > 0) {
-        newOpti = OptiChunk.read(new BytesIO(optiData), optiData.length, { chunkType: "opti" });
+        newOpti = OptiChunk.read(new ByteStream(optiData), optiData.length, { chunkType: "opti" });
       } else {
         newOpti = new OptiChunk({ chunkType: "opti" });
       }

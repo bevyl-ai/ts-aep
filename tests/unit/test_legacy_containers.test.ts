@@ -19,22 +19,10 @@ import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _nnhdFromNhed } from "../../src/py_aep/parsers/project.ts";
 import { asInstance } from "../helpers.ts";
-import {
-  AttributeError,
-  BytesIO,
-  ValueError,
-  b,
-  Bytes,
-  concat,
-  decode,
-  encode,
-  len,
-  truthy,
-  valueEquals,
-  range,
-  struct,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AttributeError, ByteStream, ValueError, b, Bytes, concat, decode, encode, len, truthy, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
+
 
 function _chunk(chunkType: string, body: Uint8Array): Uint8Array {
   const pad = len(body) & 1 ? b("\x00") : b("");
@@ -42,15 +30,15 @@ function _chunk(chunkType: string, body: Uint8Array): Uint8Array {
 }
 
 function _read(data: Uint8Array): Chunk[] {
-  return readChunks(new BytesIO(data), len(data));
+  return readChunks(new ByteStream(data), len(data));
 }
 
 function _write(chunks: Chunk[]): Uint8Array {
-  const out = new BytesIO();
+  const out = new ByteStream();
   for (const chunk of chunks) {
     writeChunk(out, chunk);
   }
-  return out.getvalue();
+  return out.toBytes();
 }
 
 test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
@@ -224,9 +212,9 @@ function _olderProjectBytes(nameChunks: Chunk[], fileFormatVersion: number): Uin
     listType: "Egg!",
     chunks: [head, ...nameChunks],
   });
-  const out = new BytesIO();
+  const out = new ByteStream();
   writeAep(out, rifx, "");
-  return out.getvalue();
+  return out.toBytes();
 }
 
 test("test_new_names_in_an_older_project_are_written_as_strings", () => {

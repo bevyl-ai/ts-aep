@@ -5,21 +5,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-  AssertionError,
-  BytesIO,
-  Path,
-  StopIteration,
-  getMember,
-  getOrThrow,
-  len,
-  assert,
-  truthy,
-  valueEquals,
-  repr,
-  sum,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { AssertionError, ByteStream, Path, StopIteration, getMember, getOrThrow, len, assert, truthy, valueEquals, repr } from "../../src/pyrt/index.ts";
+
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 
@@ -34,6 +21,8 @@ import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { buildMediaCctl } from "../../src/py_aep/binary/mutations.ts";
 import { _pathJson, _sourcePropertyPath } from "../../src/py_aep/resolvers/motion_graphics.ts";
 import { _walkSourceProperty } from "../../src/py_aep/resolvers/essential_properties.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { sum } from "../support/python.ts";
 
 const EG_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "essential_graphics");
 const BASE = EG_DIR.div("base.aep");
@@ -70,9 +59,9 @@ function _cif3Cctls(comp: CompItem): ListChunk[] {
 }
 
 function _chunkBytes(chunk: ListChunk): Uint8Array {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   writeChunk(buf, chunk);
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 /** Number of CCtl children per CIF container of a comp. */

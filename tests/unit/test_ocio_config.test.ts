@@ -9,7 +9,8 @@ import { describe, expect, test } from "bun:test";
 
 import { listConfigColorSpaces, resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
 import { Path, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+
 
 const CONFIG = new Path(import.meta.dir, "..", "..", "samples", "assets", "config.ocio");
 

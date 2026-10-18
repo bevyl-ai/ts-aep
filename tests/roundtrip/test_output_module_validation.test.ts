@@ -15,7 +15,8 @@ import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_mo
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { Path, assert, valueEquals, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+
 
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 

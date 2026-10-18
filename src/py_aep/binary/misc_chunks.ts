@@ -8,7 +8,7 @@
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
 import { define, field, Bytes, decode, encode, assert, descriptor, ValueError } from "../../pyrt/index.ts";
-import type { IO } from "../../pyrt/index.ts";
+import type { ByteStream } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
@@ -98,7 +98,7 @@ export class PrdaChunk extends Chunk {
   declare chunkType: string;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kw: { chunkType?: string; rendererMatchName?: string } = {},
   ): PrdaChunk {
@@ -579,7 +579,7 @@ export class PardChunk extends Chunk {
   }
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kw: { chunkType?: string } = {},
   ): PardChunk {

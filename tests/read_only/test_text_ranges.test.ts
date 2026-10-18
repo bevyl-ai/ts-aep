@@ -9,27 +9,12 @@
 
 import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
-import {
-  Path,
-  ValueError,
-  at,
-  getOr,
-  fspath,
-  getMember,
-  getOrThrow,
-  int,
-  len,
-  lruCache,
-  assert,
-  truthy,
-  valueEquals,
-  repr,
-  split,
-  str,
-} from "../../src/pyrt/index.ts";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
+import { Path, ValueError, at, getOr, fspath, getMember, getOrThrow, int, len, lruCache, assert, truthy, valueEquals, repr, str } from "../../src/pyrt/index.ts";
+
 import { parseProject } from "../helpers.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
+import { approx, raises } from "../support/pytest.ts";
+import { split } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in the Python source.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "text");

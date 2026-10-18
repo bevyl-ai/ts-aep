@@ -5,7 +5,8 @@ import "../../src/py_aep/binary/_register.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { Path, ValueError } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { raises } from "../support/pytest.ts";
+
 
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "assets");

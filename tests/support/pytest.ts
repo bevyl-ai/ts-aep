@@ -14,10 +14,10 @@
 //   tmp_path fixture                        const tmp_path = make_tmp_path()
 //   assert a == b                           expect(py_eq(a, b)).toBe(true)  or  expect(a).toBe(b) for primitives
 
-import { fs, path as nodepath, tmpdir } from "./host.ts";
-import { valueEquals } from "./builtins.ts";
-import { setWarningHandler } from "./errors.ts";
-import { Path } from "./pathlib.ts";
+import { fs, path as nodepath, tmpdir } from "../../src/pyrt/host.ts";
+import { valueEquals } from "../../src/pyrt/builtins.ts";
+import { setWarningHandler } from "../../src/pyrt/errors.ts";
+import { Path } from "../../src/pyrt/pathlib.ts";
 
 export function raises<E extends Error>(cls: abstract new (...a: never[]) => E, fn: () => void, match?: string | RegExp): E {
   try {

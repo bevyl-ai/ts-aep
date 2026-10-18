@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { BytesIO, b, concat, assert, valueEquals } from "../../src/pyrt/index.ts";
+import { ByteStream, b, concat, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { CosParser, decodePdfTextString } from "../../src/py_aep/cos/index.ts";
 import { CosString } from "../../src/py_aep/cos/cos.ts";
 
@@ -73,7 +73,7 @@ test.each([
     lexer decodes anything that is valid UTF-8 before this function ever
     sees it, so only a literal exercises the case that matters.
     */
-    const token = new CosParser(new BytesIO(concat(literal, b(")")))).lexString();
+    const token = new CosParser(new ByteStream(concat(literal, b(")")))).lexString();
     const value = token.value;
     assert(value instanceof Uint8Array || value instanceof CosString);
     expect(valueEquals(decodePdfTextString(value), expected)).toBe(true);

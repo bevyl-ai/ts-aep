@@ -21,7 +21,8 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { Path, assert, setMember } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in Python is the
 // package root's `samples/`; from this file's directory that is two `.parent`s.

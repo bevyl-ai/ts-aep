@@ -1,4 +1,4 @@
-// `io.BytesIO`, the `IO[bytes]` every chunk reader/writer takes, plus
+// `io.ByteStream`, the `IO[bytes]` every chunk reader/writer takes, plus
 // `io.StringIO` and a read-only `open(path, "rb")`.
 
 import { fs } from "./host.ts";
@@ -7,7 +7,7 @@ import type { PackValue, Struct, Unpacked } from "./struct.ts";
 
 const PACK_SCRATCH = new Uint8Array(64);
 
-export class BytesIO {
+export class ByteStream {
   private buf: Uint8Array;
   private len: number;
   private pos = 0;
@@ -73,7 +73,7 @@ export class BytesIO {
     const end = this.pos + data.length;
     this.reserve(end);
     // A native `set` costs more than a loop for the 4-byte tags and small fields most
-    // writes are. (`data` could only overlap `buf` as a `getbuffer()` view.)
+    // writes are. (`data` could only overlap `buf` as a `view()`.)
     if (data.length <= 16) for (let i = 0; i < data.length; i++) this.buf[this.pos + i] = data[i];
     else this.buf.set(data, this.pos);
     this.pos = end;
@@ -124,12 +124,12 @@ export class BytesIO {
     return this.pos;
   }
 
-  getvalue(): Uint8Array {
+  toBytes(): Uint8Array {
     return this.buf.slice(0, this.len);
   }
 
-  /** `getbuffer()` - a view without copying. */
-  getbuffer(): Uint8Array {
+  /** The written bytes as a view, without copying. */
+  view(): Uint8Array {
     this.own();
     return this.buf.subarray(0, this.len);
   }
@@ -142,69 +142,6 @@ export class BytesIO {
   close(): void {}
 }
 
-export type IO = BytesIO;
-
-/**
- * `io.StringIO` (newline=None translation is not modelled: text is stored
- * as written). Positions count code points, as in Python.
- */
-export class StringIO {
-  private chars: string[];
-  private pos = 0;
-
-  constructor(initialValue = "") {
-    this.chars = Array.from(initialValue);
-  }
-
-  /** `write(s)`: overwrite/extend at the position; returns the code points written. */
-  write(s: string): number {
-    const cs = Array.from(s);
-    if (this.pos > this.chars.length) this.chars.push(...new Array(this.pos - this.chars.length).fill("\0"));
-    this.chars.splice(this.pos, cs.length, ...cs);
-    this.pos += cs.length;
-    return cs.length;
-  }
-
-  /** `read(size)`; `size` omitted or negative reads to the end. */
-  read(size?: number | null): string {
-    const end = size == null || size < 0 ? this.chars.length : Math.min(this.chars.length, this.pos + size);
-    const out = this.chars.slice(this.pos, end).join("");
-    this.pos = Math.max(this.pos, end);
-    return out;
-  }
-
-  /** `readline(size)`: through the next `\n`. */
-  readline(size?: number | null): string {
-    let end = this.chars.length;
-    if (size != null && size >= 0) end = Math.min(end, this.pos + size);
-    let i = this.pos;
-    while (i < end && this.chars[i] !== "\n") i++;
-    if (i < end) i++;
-    const out = this.chars.slice(this.pos, i).join("");
-    this.pos = Math.max(this.pos, i);
-    return out;
-  }
-
-  getvalue(): string {
-    return this.chars.join("");
-  }
-
-  tell(): number {
-    return this.pos;
-  }
-
-  seek(offset: number, whence: 0 | 1 | 2 = 0): number {
-    this.pos = whence === 0 ? offset : whence === 1 ? this.pos + offset : this.chars.length + offset;
-    return this.pos;
-  }
-
-  truncate(size?: number | null): number {
-    this.chars.length = Math.min(this.chars.length, size ?? this.pos);
-    return this.chars.length;
-  }
-
-  close(): void {}
-}
 
 /**
  * `open(path, "rb")`: a read-only binary file over `node:fs` with the
@@ -212,7 +149,7 @@ export class StringIO {
  * tell, close). Missing files raise `FileNotFoundError` with CPython's text;
  * other OS failures raise `OSError`.
  */
-export class FileReader {
+export class FileStream {
   private readonly fd: number;
   private pos = 0;
   private readonly _size: number;
@@ -297,6 +234,6 @@ export class FileReader {
 }
 
 /** `open(path, "rb")` */
-export function openRb(path: string | { toString(): string }): FileReader {
-  return new FileReader(String(path));
+export function openFile(path: string | { toString(): string }): FileStream {
+  return new FileStream(String(path));
 }

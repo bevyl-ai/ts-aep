@@ -1,6 +1,6 @@
 // Python builtins whose JS spelling differs in behavior, not just syntax.
 
-import { AttributeError, IndexError, KeyError, ValueError } from "./errors.ts";
+import { AttributeError, IndexError, KeyError } from "./errors.ts";
 import { floatRepr, BoxedFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
 import { INSPECT } from "./inspect.ts";
@@ -52,11 +52,6 @@ export function truthyOr<A, B>(a: A, b: B): A | B {
   return truthy(a) ? a : b;
 }
 
-/** `a and b` with Python truthiness. */
-export function pyAnd<A, B>(a: A, b: B): A | B {
-  return truthy(a) ? b : a;
-}
-
 /** `len(x)` */
 export function len(x: unknown): number {
   if (typeof x === "string" || Array.isArray(x)) return x.length;
@@ -65,13 +60,6 @@ export function len(x: unknown): number {
   const n = _probeable(x) ? _sizedLength(x) : null;
   if (n !== null) return n;
   throw new TypeError(`object of type '${x?.constructor?.name}' has no len()`);
-}
-
-/** `range(stop)` / `range(start, stop, step)` */
-export function* range(a: number, b?: number, step = 1): Generator<number> {
-  const [start, stop] = b === undefined ? [0, a] : [a, b];
-  if (step > 0) for (let i = start; i < stop; i += step) yield i;
-  else for (let i = start; i > stop; i += step) yield i;
 }
 
 /** `zip(a, b, ...)` (shortest; `strict` raises on length mismatch). */
@@ -87,12 +75,6 @@ export function zip<T>(...arrays: T[][]): T[][] {
     out.push(row);
   }
   return out;
-}
-
-/** `enumerate(xs, start)` */
-export function* enumerate<T>(xs: Iterable<T>, start = 0): Generator<[number, T]> {
-  let i = start;
-  for (const x of xs) yield [i++, x];
 }
 
 /** Python ordering of numbers, strings, bools, and tuples/lists (lexicographic). */
@@ -114,46 +96,6 @@ export function compare(a: unknown, b: unknown): number {
   if (a instanceof Uint8Array && b instanceof Uint8Array) return compare(Array.from(a), Array.from(b));
   if (a == null || b == null) throw new TypeError("'<' not supported between instances of 'NoneType'");
   return a < b ? -1 : a > b ? 1 : 0;
-}
-
-/** `sorted(xs, key=..., reverse=...)` - stable, Python ordering. */
-export function sorted<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, reverse = false): T[] {
-  const arr = [...xs];
-  const k: (x: T) => K | T = key ?? ((x: T) => x);
-  const decorated = arr.map((x, i) => [k(x), i, x] as const);
-  decorated.sort((p, q) => {
-    const c = compare(p[0], q[0]);
-    return (reverse ? -c : c) || p[1] - q[1];
-  });
-  return decorated.map((d) => d[2]);
-}
-
-/** `min(xs, key=..., default=...)` - first minimal element, like Python. */
-export function min<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: [] | [T]): T {
-  let best: { x: T; k: K | T } | null = null;
-  for (const x of xs) {
-    const k = key ? key(x) : x;
-    if (best === null || compare(k, best.k) < 0) best = { x, k };
-  }
-  if (best === null) {
-    if (dflt.length) return dflt[0];
-    throw new ValueError("min() iterable argument is empty");
-  }
-  return best.x;
-}
-
-/** `max(xs, key=..., default=...)` - first maximal element, like Python. */
-export function max<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: [] | [T]): T {
-  let best: { x: T; k: K | T } | null = null;
-  for (const x of xs) {
-    const k = key ? key(x) : x;
-    if (best === null || compare(k, best.k) > 0) best = { x, k };
-  }
-  if (best === null) {
-    if (dflt.length) return dflt[0];
-    throw new ValueError("max() iterable argument is empty");
-  }
-  return best.x;
 }
 
 /** `xs[i]` with Python's negative indexes and IndexError. */
@@ -279,18 +221,6 @@ export function setMember(obj: object, name: string, value: unknown): void {
   }
 }
 
-/** `hasattr(obj, name)` */
-export function hasMember(obj: unknown, name: string): boolean {
-  if (obj == null || !(name in Object(obj))) return false;
-  try {
-    void Reflect.get(Object(obj), name, obj);
-    return true;
-  } catch (e) {
-    if (e instanceof AttributeError) return false;
-    throw e;
-  }
-}
-
 /** `x in container` for arrays, strings (substring), Maps (keys), Sets. */
 export function contains(container: unknown, x: unknown): boolean {
   if (typeof container === "string") return container.includes(String(x));
@@ -388,9 +318,9 @@ export function typeName(x: unknown): string {
 
 /** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */
 export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
-type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
+export type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
 
-function isKeyedMapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
+export function isKeyedMapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
   return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "get") === "function";
 }
 
@@ -407,29 +337,6 @@ export function mappingItems<K, V>(m: Mapping<K, V>): [K, V][] {
   throw new TypeError(`'${typeName(m)}' object is not a mapping`);
 }
 
-/**
- * `dict(arg)`: a new `Map` from a mapping (`Map`, an object with `keys()` /
- * `get()`) or an iterable of key/value pairs, in iteration order.
- */
-export function dict<K, V>(arg?: KeyedMapping<K, V> | Map<K, V> | Iterable<[K, V]> | null): Map<K, V> {
-  if (arg == null) return new Map();
-  if (arg instanceof Map) return new Map(arg);
-  // CPython: anything with `keys()` is a mapping, read through `keys()` + `get()`.
-  if (isKeyedMapping(arg)) {
-    return new Map([...arg.keys()].map((k): [K, V] => [k, arg.get(k)]));
-  }
-  const out = new Map<K, V>();
-  let i = 0;
-  for (const pair of arg) {
-    if (pair.length !== 2) {
-      throw new ValueError(`dictionary update sequence element #${i} has length ${pair.length}; 2 is required`);
-    }
-    out.set(pair[0], pair[1]);
-    i++;
-  }
-  return out;
-}
-
 /** Python `str(x)` for messages. */
 export function str(x: unknown): string {
   if (typeof x === "string") return x;
@@ -440,57 +347,8 @@ export function str(x: unknown): string {
 
 /** `str.isdigit()`, `.isalpha()`, `.isspace()`, `.isupper()`, `.islower()` (Unicode-aware). */
 export const isdigit = (s: string): boolean => s.length > 0 && /^\p{Nd}+$/u.test(s);
-export const isalpha = (s: string): boolean => s.length > 0 && /^\p{L}+$/u.test(s);
 export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
-export const isupper = (s: string): boolean => /\p{Lu}|\p{Lt}/u.test(s) && !/\p{Ll}/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
-
-/** `s.strip(chars)` / `.lstrip` / `.rstrip` (whitespace when chars omitted). */
-export function strip(s: string, chars?: string | null): string {
-  return rstrip(lstrip(s, chars), chars);
-}
-export function lstrip(s: string, chars?: string | null): string {
-  if (chars == null) return s.replace(/^\s+/u, "");
-  let i = 0;
-  while (i < s.length && chars.includes(s[i])) i++;
-  return s.slice(i);
-}
-export function rstrip(s: string, chars?: string | null): string {
-  if (chars == null) return s.replace(/\s+$/u, "");
-  let e = s.length;
-  while (e > 0 && chars.includes(s[e - 1])) e--;
-  return s.slice(0, e);
-}
-
-// One `str.isspace()` character (all are in the BMP).
-const PY_WS = /^[\t\n\v\f\r\x1c-\x20\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]$/;
-
-/** `s.split(sep, maxsplit)`; `sep=None` splits on whitespace runs. */
-export function split(s: string, sep?: string | null, maxsplit = -1): string[] {
-  if (sep == null) {
-    // Runs of str.isspace() characters separate fields; a maxsplit remainder keeps its trailing whitespace.
-    const out: string[] = [];
-    const n = s.length;
-    let i = 0;
-    while (i < n) {
-      while (i < n && PY_WS.test(s[i])) i++;
-      if (i === n) break;
-      if (maxsplit >= 0 && out.length === maxsplit) {
-        out.push(s.slice(i));
-        break;
-      }
-      let j = i;
-      while (j < n && !PY_WS.test(s[j])) j++;
-      out.push(s.slice(i, j));
-      i = j;
-    }
-    return out;
-  }
-  if (sep === "") throw new ValueError("empty separator");
-  const parts = s.split(sep);
-  if (maxsplit < 0 || parts.length <= maxsplit + 1) return parts;
-  return [...parts.slice(0, maxsplit), parts.slice(maxsplit).join(sep)];
-}
 
 /** `copy.deepcopy`: clones arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
 export function deepcopy<T>(x: T, memo?: Map<object, object>): T;

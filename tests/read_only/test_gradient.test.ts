@@ -1,13 +1,15 @@
 /** Tests for gradient color property parsing. */
 
 import { expect, test } from "bun:test";
-import { approx } from "../../src/pyrt/pytest.ts";
-import { Path, StopIteration, hasMember, len, valueEquals } from "../../src/pyrt/index.ts";
+
+import { Path, StopIteration, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
 import { asInstance } from "../helpers.ts";
+import { approx } from "../support/pytest.ts";
+import { hasMember } from "../support/python.ts";
 
 // Python's SAMPLE is cwd-relative ("samples/..."); resolved from this file so
 // the test does not depend on where bun is started.

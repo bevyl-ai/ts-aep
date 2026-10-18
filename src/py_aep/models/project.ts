@@ -61,7 +61,7 @@ import {
   KeyError,
   NotImplementedError,
   Bytes,
-  BytesIO,
+  ByteStream,
   Path,
   decode,
   fspath,
@@ -80,8 +80,8 @@ import {
   bytesEqual,
   descriptor,
   instanceDict,
-  jsonDumps,
-  jsonLoads,
+  stringifyJson,
+  parseJson,
   typeName,
   type ClassAttributes,
   AttributeError,
@@ -2142,7 +2142,7 @@ export class Project {
     // Serialize in memory: the writer seeks back to fill in each chunk's
     // length, and on a network share every seek is a round trip (a 29 MB
     // project took minutes to write there, under a second in one call).
-    const buffer = new BytesIO();
+    const buffer = new ByteStream();
     try {
       moduleGlobals.writeAep(buffer, this._rifx, this._xmp);
     } finally {
@@ -2162,8 +2162,8 @@ export class Project {
       // `tmp_path.open("xb")`: created exclusively before anything is written.
       const fd = host.fs.openSync(tmpPath.path, "wx");
       try {
-        // `getbuffer()`: the written bytes without copying the whole file once more.
-        host.fs.writeSync(fd, buffer.getbuffer());
+        // `view()`: the written bytes without copying the whole file once more.
+        host.fs.writeSync(fd, buffer.view());
       } finally {
         host.fs.closeSync(fd);
       }
@@ -2189,7 +2189,7 @@ export class Project {
     for (const chunk of recursiveFind(this._rifx.chunks, "alas", undefined, true)) {
       const alas = chunk;
       const text = alas.value;
-      const data = text ? jsonLoads(text) : new Map<string, JsonValue>();
+      const data = text ? parseJson(text) : new Map<string, JsonValue>();
       if (!(data instanceof Map)) throw new AttributeError(`'${typeName(data)}' object has no attribute 'get'`);
       if (!valueEquals(data.get("ascendcount_base") ?? null, PENDING_ASCENDCOUNT)) continue;
       const counts = relativePathCounts(projectFile, alasFullpath(data), {
@@ -2340,7 +2340,7 @@ export class Project {
   _getCmsSettings(): Map<string, JsonValue> {
     const merged = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
     if (this._cmsUtf8 != null) {
-      const cmsData = jsonLoads(this._cmsUtf8.value);
+      const cmsData = parseJson(this._cmsUtf8.value);
       if (!(cmsData instanceof Map)) throw new TypeError(`'${typeName(cmsData)}' object is not a mapping`);
       for (const [k, v] of cmsData) merged.set(k, v);
     }
@@ -2350,14 +2350,14 @@ export class Project {
   /** Update a single key in the CMS settings JSON chunk. */
   _updateCmsSetting(key: string, value: number | string): void {
     if (this._cmsUtf8 != null) {
-      const data = jsonLoads(this._cmsUtf8.value);
+      const data = parseJson(this._cmsUtf8.value);
       if (!(data instanceof Map)) throw new TypeError(`'${typeName(data)}' object does not support item assignment`);
       data.set(key, value);
-      this._cmsUtf8.value = jsonDumps(data);
+      this._cmsUtf8.value = stringifyJson(data);
     } else {
       const data = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
       data.set(key, value);
-      const chunk = new Utf8Chunk({ value: jsonDumps(data) });
+      const chunk = new Utf8Chunk({ value: stringifyJson(data) });
       this._rifx.chunks.push(chunk);
       this._cmsUtf8 = chunk;
     }

@@ -12,23 +12,15 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { raises } from "../../src/pyrt/pytest.ts";
-import {
-  getOr,
-  float,
-  format,
-  max,
-  NotImplementedError,
-  Path,
-  assert,
-  valueEquals,
-  zip,
-} from "../../src/pyrt/index.ts";
+
+import { getOr, float, NotImplementedError, Path, assert, valueEquals, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Property } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { getFirstLayer, parseProject } from "../conftest.ts";
 import { loadExpectedValueAtTime, type ExpectedFrame } from "../helpers.ts";
+import { raises } from "../support/pytest.ts";
+import { format, max } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples").div("models").div("property");
 const VAT_DIR = SAMPLES_DIR.div("value_at_time");

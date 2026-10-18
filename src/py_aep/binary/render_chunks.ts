@@ -7,7 +7,7 @@
  */
 
 import { Bytes, decode, define, descriptor, fields, getMember, assert, truthy, setMember, ascii } from "../../pyrt/index.ts";
-import type { ClassAttributes, IO } from "../../pyrt/index.ts";
+import type { ClassAttributes, ByteStream } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -176,7 +176,7 @@ export class RoptChunk extends Chunk {
     return "";
   }
 
-  static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): RoptChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): RoptChunk {
     const { chunkType = "" } = kw;
     if (this !== RoptChunk) {
       // Variant subclass - use standard fmt_field parsing

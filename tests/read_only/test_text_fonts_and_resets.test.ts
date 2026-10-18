@@ -13,23 +13,8 @@
 // statics.
 
 import { describe, expect, test } from "bun:test";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
-import {
-  AssertionError,
-  getOr,
-  float,
-  getMember,
-  len,
-  Path,
-  assert,
-  valueEquals,
-  truthyOr,
-  sorted,
-  StopIteration,
-  ValueError,
-  zip,
-  mod,
-} from "../../src/pyrt/index.ts";
+
+import { AssertionError, getOr, float, getMember, len, Path, assert, valueEquals, truthyOr, StopIteration, ValueError, zip, mod } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { parseProjectFresh } from "../helpers.ts";
@@ -39,6 +24,8 @@ import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { _charRunSpans } from "../../src/py_aep/models/text/ranges.ts";
 import { cosGet, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 // Path(__file__).parent x3 is the TS root (this file lives in tests/read_only).
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");

@@ -13,23 +13,8 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { parseAppFresh } from "../helpers.ts";
-import {
-  AttributeError,
-  getOr,
-  deepcopy,
-  getMember,
-  len,
-  Path,
-  assert,
-  valueEquals,
-  truthyOr,
-  range,
-  repr,
-  StopIteration,
-  ValueError,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AttributeError, getOr, deepcopy, getMember, len, Path, assert, valueEquals, truthyOr, repr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+
 import { serialize } from "../../src/py_aep/cos/index.ts";
 // noqa: F401 (documents the data source)
 import { type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
@@ -48,6 +33,8 @@ import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts
 import { AutoKernType, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
 import { _kernValues } from "../../src/py_aep/models/text/ranges.ts";
 import { fontVersionString } from "../../src/py_aep/svg/fonts.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");
 const FIXTURE = SAMPLES_DIR.div("text_writes.aep");

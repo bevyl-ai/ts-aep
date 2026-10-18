@@ -2,11 +2,12 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { BytesIO, b, Bytes, assert, valueEquals } from "../../src/pyrt/index.ts";
+
+import { ByteStream, b, Bytes, assert, valueEquals } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
 import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
+import { approx, raises } from "../support/pytest.ts";
 
 describe("TestCosParserPrimitives", () => {
   /** Tests for parsing individual COS value types. */
@@ -191,7 +192,7 @@ describe("TestCosParserStream", () => {
 
   test("test_parse_stream", () => {
     const data = b("<< /Length 5 >>\nstream\nhelloendstream");
-    const f = new BytesIO(data);
+    const f = new ByteStream(data);
     const parser = new CosParser(f, data.length);
     const result = parser.parse();
     assert(result instanceof Stream);
@@ -242,14 +243,14 @@ describe("TestCosParserMaxPos", () => {
   /** Tests for max_pos limit. */
 
   test("test_max_pos_truncates", () => {
-    const f = new BytesIO(b("42 99"));
+    const f = new ByteStream(b("42 99"));
     const parser = new CosParser(f, 2);
     const result = parser.parse();
     expect(result).toBe(42);
   });
 
   test("test_max_pos_none_reads_all", () => {
-    const f = new BytesIO(b("[1 2]"));
+    const f = new ByteStream(b("[1 2]"));
     const parser = new CosParser(f, 5);
     const result = parser.parse();
     expect(valueEquals(result, [1, 2])).toBe(true);
@@ -260,7 +261,7 @@ describe("TestCosParserSaveRestore", () => {
   /** Tests for save_state / restore_state. */
 
   test("test_save_restore_rewinds", () => {
-    const f = new BytesIO(b("42 99"));
+    const f = new ByteStream(b("42 99"));
     const parser = new CosParser(f);
     parser.lex();
     const state = parser.saveState();
@@ -323,7 +324,7 @@ describe("TestCosSerializer", () => {
 
 /** Parse COS data from bytes. */
 function _parse(data: Uint8Array): CosNode {
-  const f = new BytesIO(data);
+  const f = new ByteStream(data);
   const parser = new CosParser(f, data.length);
   return parser.parse();
 }

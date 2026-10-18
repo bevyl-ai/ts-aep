@@ -3,11 +3,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { getMember, getOrThrow, Path, setMember } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { LayerType, ParametricMeshType } from "../../src/py_aep/enums/index.ts";
 import { ParametricMeshLayer } from "../../src/py_aep/models/layers/parametric_mesh_layer.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 // comp_misc.aep has an empty Advanced-3D comp named "comment" (100x100, 1s).

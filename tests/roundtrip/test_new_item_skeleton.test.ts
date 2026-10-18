@@ -7,8 +7,8 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, BytesIO, Bytes, getMember, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { at, ByteStream, Bytes, getMember, Path, valueEquals, repr, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, readAep } from "../../src/py_aep/binary/chunk.ts";
@@ -19,6 +19,8 @@ import { filterByListType, findByListType, findByType, recursiveFind } from "../
 import { getComp } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { round } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 // default 3D render-options blob (Classic)
@@ -27,7 +29,7 @@ const PRDA_CLASSIC_DEFAULT = Bytes.fromHex("000000010000000000000000");
 function _savedRifx(app: Application, tmpPath: Path): ListChunk {
   const out = tmpPath.div("out.aep");
   app.project.save(out);
-  const f = new BytesIO(out.readBytes());
+  const f = new ByteStream(out.readBytes());
   const [rifx] = readAep(f);
   return rifx;
 }
@@ -262,8 +264,8 @@ describe("TestNewCompPrda", () => {
     const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     app.project.rootFolder.addComp("PrdaComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _savedRifx(app, tmpPath);
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     _findPrda(rifx, "PrdaComp").write(buf);
-    expect(valueEquals(buf.getvalue(), PRDA_CLASSIC_DEFAULT)).toBe(true);
+    expect(valueEquals(buf.toBytes(), PRDA_CLASSIC_DEFAULT)).toBe(true);
   });
 });

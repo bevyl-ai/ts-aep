@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 import { AssertionError, Path, RuntimeError, b } from "../../src/pyrt/index.ts";
 import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import * as specialized_properties from "../../src/py_aep/parsers/specialized_properties.ts";
+import { raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 

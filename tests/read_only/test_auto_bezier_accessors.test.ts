@@ -14,11 +14,12 @@
 
 import { expect, test } from "bun:test";
 import { getOr, Path, assert, truthy, truthyOr, compositeKey, zip } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { loadExpected, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
+import { approx } from "../support/pytest.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 

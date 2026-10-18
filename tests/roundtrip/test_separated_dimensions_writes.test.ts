@@ -9,13 +9,15 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, enumerate, Path, assert, truthy, valueEquals, range, sorted, ValueError, zip } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, Path, assert, truthy, valueEquals, ValueError, zip } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { enumerate, range, sorted } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 

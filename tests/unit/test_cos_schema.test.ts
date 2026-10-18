@@ -26,7 +26,7 @@ import {
   type Layout,
 } from "../../src/py_aep/cos/schema.ts";
 import { getCosTemplate } from "../../src/py_aep/cos/text.ts";
-import { BytesIO, assert } from "../../src/pyrt/index.ts";
+import { ByteStream, assert } from "../../src/pyrt/index.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { LineOrientation, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
 
@@ -97,9 +97,9 @@ describe("btdk schema", () => {
     let checked = 0;
     const failures: string[] = [];
     for (const file of files) {
-      const [rifx] = readAep(new BytesIO(new Uint8Array(fs.readFileSync(file))));
+      const [rifx] = readAep(new ByteStream(new Uint8Array(fs.readFileSync(file))));
       for (const chunk of btdkChunks(rifx)) {
-        const root = decodeBtdk(new CosParser(new BytesIO(chunk.data), chunk.data.length).parse());
+        const root = decodeBtdk(new CosParser(new ByteStream(chunk.data), chunk.data.length).parse());
         trees++;
         if (root == null) {
           failures.push(`${file}: does not decode`);

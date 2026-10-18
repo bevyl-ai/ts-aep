@@ -16,7 +16,8 @@ import { describe, expect, test } from "bun:test";
 import { parseEnvelope } from "../../src/py_aep/color/envelope.ts";
 import { ocioColorProfileEnvelope, resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
 import { decode, Path, ValueError } from "../../src/pyrt/index.ts";
-import { raises, skip } from "../../src/pyrt/pytest.ts";
+import { raises, skip } from "../support/pytest.ts";
+
 
 const ROOT = new Path(import.meta.path).parent.parent.parent;
 const CONFIG = ROOT.div("samples/models/output_module/output_color_space_ocio/sergb.ocio");

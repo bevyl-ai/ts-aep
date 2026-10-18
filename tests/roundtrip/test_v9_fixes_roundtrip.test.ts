@@ -10,8 +10,8 @@
 
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { and, b, Bytes, bytesEqual, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { b, Bytes, bytesEqual, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
+
 import { ImportOptions, parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { OptiChunk, SoliOptiChunk, SspcChunk } from "../../src/py_aep/binary/footage_chunks.ts";
@@ -19,6 +19,8 @@ import { Tdb4Chunk } from "../../src/py_aep/binary/property_chunks.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { asInstance, projectBytes } from "../helpers.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { and } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const ASSETS = SAMPLES.div("assets");

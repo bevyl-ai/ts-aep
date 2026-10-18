@@ -8,14 +8,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, float, getOrThrow, max, Path, valueEquals, range, round, StopIteration, zip, AssertionError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { at, float, getOrThrow, Path, valueEquals, StopIteration, zip, AssertionError } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { buildWorldMatrix, type Mat4 } from "../../src/py_aep/resolvers/transform.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { max, range, round } from "../support/python.ts";
 
 const LAYER_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 const PROPERTY_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");

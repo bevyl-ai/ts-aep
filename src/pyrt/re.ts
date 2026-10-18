@@ -68,11 +68,6 @@ export function reMatch(pattern: string, s: string, flags = 0): RegExpExecArray 
   return patternMatch(pyRe(pattern, flags), s);
 }
 
-/** `re.fullmatch(pattern, s, flags)` */
-export function reFullmatch(pattern: string, s: string, flags = 0): RegExpExecArray | null {
-  return patternMatch(pyRe(`(?:${pattern})\\Z`, flags), s);
-}
-
 /** `re.escape(s)`: a backslash before each of `()[]{}?*+-|^$\\.&~#` and ASCII whitespace. */
 export function reEscape(s: string): string {
   return s.replace(/[()[\]{}?*+\-|^$\\.&~# \t\n\r\v\f]/g, "\\$&");
@@ -327,7 +322,6 @@ function translate(p: string, flags: number): [string, number] {
 // Compiled-pattern methods over a RegExp (from `pyRe` or a literal).
 
 const sticky = new WeakMap<RegExp, RegExp>();
-const global = new WeakMap<RegExp, RegExp>();
 
 function variant(cache: WeakMap<RegExp, RegExp>, re: RegExp, flag: string): RegExp {
   let v = cache.get(re);
@@ -343,26 +337,4 @@ export function patternMatch(re: RegExp, s: string, pos = 0): RegExpExecArray | 
   const y = variant(sticky, re, "y");
   y.lastIndex = pos;
   return y.exec(s);
-}
-
-/** `pattern.search(s, pos)`: the first match at or after `pos`, or `null`. */
-export function patternSearch(re: RegExp, s: string, pos = 0): RegExpExecArray | null {
-  const g = variant(global, re, "g");
-  g.lastIndex = pos;
-  return g.exec(s);
-}
-
-/**
- * `pattern.findall(s)`: every non-overlapping match - the whole match when
- * the pattern has no groups, group 1 when it has one, else an array of all
- * groups (an unmatched group is "").
- */
-export function patternFindall(re: RegExp, s: string): (string | string[])[] {
-  const out: (string | string[])[] = [];
-  for (const m of s.matchAll(variant(global, re, "g"))) {
-    if (m.length === 1) out.push(m[0]);
-    else if (m.length === 2) out.push(m[1] ?? "");
-    else out.push(m.slice(1).map((g) => g ?? ""));
-  }
-  return out;
 }

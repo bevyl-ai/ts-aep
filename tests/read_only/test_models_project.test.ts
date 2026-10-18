@@ -7,10 +7,11 @@
 // and `member.name` is `E.name_of(member)`.
 
 import { describe, expect, test } from "bun:test";
-import { contains, format, len, Path, truthy, valueEquals, split, StopIteration } from "../../src/pyrt/index.ts";
+import { contains, len, Path, truthy, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { loadExpected, parseProject } from "../conftest.ts";
 import { ColorManagementSystem, GpuAccelType, LutInterpolationMethod } from "../../src/py_aep/enums/index.ts";
+import { format, split } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "view");

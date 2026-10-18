@@ -41,7 +41,7 @@ import {
   RuntimeError,
   ValueError,
   NotImplementedError,
-  jsonLoads,
+  parseJson,
   type ClassAttributes, compare } from "../../../pyrt/index.ts";
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
@@ -1321,7 +1321,7 @@ export class OutputModule {
     if (!text) {
       return new Map();
     }
-    const data = jsonLoads(text);
+    const data = parseJson(text);
     return data instanceof Map ? data : new Map();
   }
 
