@@ -62,9 +62,9 @@ export type SettingValues = Record<string, SettingValue>;
 /**
  * Map-like view mapping ExtendScript setting keys to model attributes.
  *
- * Every read delegates to `getattr(owner, attr_name)` and every write
- * delegates to `setattr(owner, attr_name, value)`. Validation is handled by
- * the underlying ChunkField descriptors or `@property` setters.
+ * Every read is `getMember(owner, attrName)` and every write
+ * `setMember(owner, attrName, value)`. Validation is handled by
+ * the underlying ChunkField descriptors or setters.
  *
  * When `enumClass` is provided for a key, `__setitem__` coerces
  * the value (int, string label, or enum member) before passing it

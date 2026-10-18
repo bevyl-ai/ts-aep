@@ -453,7 +453,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
       throw new TypeError(`expected an int or IntEnum for ${literal(key)}, got ${typeName(value)}`);
     }
-    // int() normalizes IntEnum members so str() yields the numeric form.
+    // A plain number, so the stored text is the numeric form.
     const intValue = Math.trunc(value);
     if (enumCls != null && !enumCls.has(intValue)) {
       const members = enumCls

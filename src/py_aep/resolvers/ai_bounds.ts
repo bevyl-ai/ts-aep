@@ -592,7 +592,7 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
           digits += String.fromCharCode(data[pos]);
           pos += 1;
         }
-        // CPython's int(b"89", 8) raises with the bytes repr (b'89'); pyrt int() takes the str.
+        // An octal escape with 8 or 9 is malformed (CPython raises on int(b"89", 8)).
         if (/[89]/.test(digits)) {
           throw new ValueError(`invalid literal for int() with base 8: b'${digits}'`);
         }
