@@ -11,7 +11,7 @@ import { COMP_CONVERSION_EXTENSIONS, getFileFormat } from "../../src/py_aep/data
 describe("TestImportOptions", () => {
   test("test_constructor", () => {
     const opts = new ImportOptions(new Path("footage/shot.png"));
-    expect(valueEquals(opts.file, new Path("footage/shot.png"))).toBe(true);
+    expect(opts.file).toBe("footage/shot.png");
     expect(opts.importAs).toBe(ImportAsType.FOOTAGE);
     expect(opts.sequence).toBe(false);
     expect(opts.forceAlphabetical).toBe(false);
@@ -19,13 +19,13 @@ describe("TestImportOptions", () => {
 
   test("test_constructor_accepts_path", () => {
     const opts = new ImportOptions(new Path("footage/shot.png"));
-    expect(opts.file instanceof Path).toBe(true);
+    expect(opts.file).toBe("footage/shot.png");
   });
 
   test("test_file_setter", () => {
     const opts = new ImportOptions(new Path("a.png"));
     opts.file = new Path("b.psd");
-    expect(valueEquals(opts.file, new Path("b.psd"))).toBe(true);
+    expect(opts.file).toBe("b.psd");
   });
 
   test("test_import_as_setter", () => {
