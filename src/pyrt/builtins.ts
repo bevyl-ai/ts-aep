@@ -5,7 +5,14 @@ import { float_repr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
 
 /** The dunder methods the builtins below probe for. */
-type DunderProbe = { __bool__?: unknown; __len__?: unknown; __contains__?: unknown; __eq__?: unknown; __repr__?: unknown; __str__?: unknown };
+type DunderProbe = {
+  __bool__?: () => boolean;
+  __len__?: () => number;
+  __contains__?: (x: unknown) => boolean;
+  __eq__?: (other: unknown) => boolean;
+  __repr__?: () => string;
+  __str__?: () => string;
+};
 
 /** Objects and functions can carry dunder methods; reading one off a primitive yields nothing. */
 function _probeable(x: unknown): x is DunderProbe {
@@ -39,7 +46,7 @@ export type Falsy = null | undefined | false | 0 | "" | 0n;
 
 /** `a or b` with Python truthiness (returns the operand, not a boolean). */
 export function py_or<A, B>(a: A, b: B): Exclude<A, Falsy> | B;
-export function py_or(a: unknown, b: unknown): unknown {
+export function py_or<A, B>(a: A, b: B): A | B {
   return py_bool(a) ? a : b;
 }
 
@@ -66,13 +73,13 @@ export function* range(a: number, b?: number, step = 1): Generator<number> {
 
 /** `zip(a, b, ...)` (shortest; `strict` raises on length mismatch). */
 export function zip<T extends unknown[][]>(...arrays: T): { [K in keyof T]: T[K][number] }[];
-export function zip(...arrays: unknown[][]): unknown[][] {
+export function zip<T>(...arrays: T[][]): T[][] {
   let n = Infinity;
   for (const a of arrays) n = Math.min(n, a.length);
   if (n === Infinity) n = 0;
-  const out: unknown[][] = [];
+  const out: T[][] = [];
   for (let i = 0; i < n; i++) {
-    const row = [];
+    const row: T[] = [];
     for (const a of arrays) row.push(a[i]);
     out.push(row);
   }
@@ -107,9 +114,9 @@ export function py_cmp(a: unknown, b: unknown): number {
 }
 
 /** `sorted(xs, key=..., reverse=...)` - stable, Python ordering. */
-export function sorted<T>(xs: Iterable<T>, key?: ((x: T) => unknown) | null, reverse = false): T[] {
+export function sorted<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, reverse = false): T[] {
   const arr = [...xs];
-  const k = key ?? ((x: T) => x);
+  const k: (x: T) => K | T = key ?? ((x: T) => x);
   const decorated = arr.map((x, i) => [k(x), i, x] as const);
   decorated.sort((p, q) => {
     const c = py_cmp(p[0], q[0]);
@@ -119,8 +126,8 @@ export function sorted<T>(xs: Iterable<T>, key?: ((x: T) => unknown) | null, rev
 }
 
 /** `min(xs, key=..., default=...)` - first minimal element, like Python. */
-export function min<T>(xs: Iterable<T>, key?: ((x: T) => unknown) | null, ...dflt: [] | [T]): T {
-  let best: { x: T; k: unknown } | null = null;
+export function min<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: [] | [T]): T {
+  let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
     if (best === null || py_cmp(k, best.k) < 0) best = { x, k };
@@ -133,8 +140,8 @@ export function min<T>(xs: Iterable<T>, key?: ((x: T) => unknown) | null, ...dfl
 }
 
 /** `max(xs, key=..., default=...)` - first maximal element, like Python. */
-export function max<T>(xs: Iterable<T>, key?: ((x: T) => unknown) | null, ...dflt: [] | [T]): T {
-  let best: { x: T; k: unknown } | null = null;
+export function max<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: [] | [T]): T {
+  let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
     if (best === null || py_cmp(k, best.k) > 0) best = { x, k };
@@ -501,8 +508,8 @@ export function split(s: string, sep?: string | null, maxsplit = -1): string[] {
 }
 
 /** `copy.deepcopy`: clones arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
-export function deepcopy<T>(x: T, memo?: Map<unknown, unknown>): T;
-export function deepcopy(x: unknown, memo = new Map<unknown, unknown>()): unknown {
+export function deepcopy<T>(x: T, memo?: Map<object, object>): T;
+export function deepcopy(x: unknown, memo = new Map<object, object>()): unknown {
   if (x === null || typeof x !== "object") return x;
   if (memo.has(x)) return memo.get(x);
   if (x instanceof Uint8Array) return x.slice();
