@@ -17,8 +17,6 @@ import {
   getOrThrow,
   literal,
   round,
-  split,
-  strip,
   compositeKey,
   zip,
   typeName,
@@ -245,11 +243,9 @@ export function defaultCharacterStyle(preferences: Preferences) {
     vertical_scale: number("Vertical Scale", factory.vertical_scale * _SCALE_PERCENT) / _SCALE_PERCENT,
     baseline_shift: number("Baseline Shift", factory.baseline_shift),
     auto_leading: flag("Auto Leading", factory.auto_leading),
-    auto_kern_type: _AUTO_KERN_BY_PREF.get(strip(
-        preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+    auto_kern_type: _AUTO_KERN_BY_PREF.get(preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
           default: "Metric Auto Kerning",
-        }),
-      )) ?? factory.auto_kern_type,
+        }).trim()) ?? factory.auto_kern_type,
   };
 }
 
@@ -267,7 +263,7 @@ export function defaultParagraphStyle(preferences: Preferences) {
   const rawJustification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
     default: "Left",
   });
-  const justification = _JUSTIFICATION_BY_PREF.get(strip(split(rawJustification, "|")[0])) ?? factory.justification;
+  const justification = _JUSTIFICATION_BY_PREF.get(rawJustification.split("|")[0].trim()) ?? factory.justification;
   return {
     justification,
     first_line_indent: number("First Line Indent", factory.first_line_indent),
@@ -291,7 +287,7 @@ export function _defaultOutPoint(preferences: Preferences, key: string): number 
   const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });
-  const parts = split(raw, "/");
+  const parts = raw.split("/");
   if (parts.length !== 2) return null;
   // try/except ValueError around float(): None when either half is malformed.
   const valueScale = (() => {

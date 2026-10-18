@@ -26,7 +26,6 @@ import {
   bytesEqual,
   decode,
   literal,
-  rstrip,
   compare, ascii } from "../../pyrt/index.ts";
 import { profileIdForName } from "../enums/mappings.ts";
 
@@ -101,7 +100,7 @@ export function iccProfileDescription(data: Uint8Array): string | null {
         const text16 =
           dec16.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD") +
           (raw16.length % 2 === 1 && !oddAfterHigh ? "\uFFFD" : "");
-        return rstrip(text16, "\x00");
+        return text16.replace(/\0+$/, "");
       }
     }
     offset += 12;

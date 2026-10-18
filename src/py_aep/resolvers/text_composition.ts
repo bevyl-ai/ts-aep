@@ -48,8 +48,6 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  rstrip,
-  split,
   sum,
   compositeKey,
   ValueError,
@@ -570,7 +568,7 @@ export function _breakParagraph(
     while (take < rest.length) {
       const nextSpace = rest.indexOf(" ", take);
       let candidateEnd = nextSpace === -1 ? rest.length : nextSpace;
-      const candidate = rstrip(rest.slice(0, candidateEnd), " ");
+      const candidate = rest.slice(0, candidateEnd).replace(/ +$/, "");
       if (_width(candidate, styles, restOffset) > currentLimit) {
         break;
       }
@@ -631,7 +629,7 @@ export function composeLines(doc: TextDocument): ComposedLines {
   }
 
   const body = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
-  const paragraphs = split(body, "\r");
+  const paragraphs = body.split("\r");
   if (paraGeo.length !== paragraphs.length) {
     // AE stores exactly one paragraph run per paragraph (and
     // _splice_text preserves that); a mismatch means a malformed

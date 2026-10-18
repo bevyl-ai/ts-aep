@@ -7,7 +7,6 @@ import {
   assert,
   valueEquals,
   literal,
-  split,
 } from "../../../pyrt/index.ts";
 import { PropertyType, PropertyValueType } from "../../enums/index.ts";
 import { getAeVersionMajor } from "../../ae_version.ts";
@@ -363,7 +362,7 @@ export class PropertyBase {
   get name(): string {
     if (this._name != null) return this._name;
     if (this._nameUtf8 != null) {
-      const text: string = split(this._nameUtf8.value, "\0")[0];
+      const text: string = this._nameUtf8.value.split("\0")[0];
       if (text && text !== TDSN_SENTINEL) return text;
     }
     return this.autoName;
@@ -398,7 +397,7 @@ export class PropertyBase {
   get isNameSet(): boolean {
     if (this._name != null) return true;
     if (this._nameUtf8 != null) {
-      const text: string = split(this._nameUtf8.value, "\0")[0];
+      const text: string = this._nameUtf8.value.split("\0")[0];
       return !!text && text !== TDSN_SENTINEL;
     }
     return false;

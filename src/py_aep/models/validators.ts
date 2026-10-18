@@ -19,7 +19,6 @@ import {
   floatRepr,
   max,
   literal,
-  split,
   FileExistsError,
   typeName,
 } from "../../pyrt/index.ts";
@@ -432,7 +431,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
  */
 export function validateAeRelease(value: unknown, instance: unknown = null): void {
   validateAeVersion(value);
-  const major = Number.parseInt(split(String(value), ".", 1)[0], 10);
+  const major = Number.parseInt(String(value).split(".")[0], 10);
   if (!FORMAT_VERSIONS.has(major) && major < max([...FORMAT_VERSIONS.keys()])) {
     throw new ValueError(
       `After Effects ${major} is not a release py_aep writes; ` +

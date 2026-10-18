@@ -41,8 +41,6 @@ import {
   truthy,
   truthyOr,
   literal,
-  rstrip,
-  split,
   compositeKey,
   zip,
 } from "../../pyrt/index.ts";
@@ -200,7 +198,7 @@ export function _justifiedOrigin(
   width: number,
   text: string,
 ): number {
-  if (text !== rstrip(text, " ")) {
+  if (text !== text.replace(/ +$/, "")) {
     throw _refuse("trailing spaces on a centered or right-justified line");
   }
   if (justification === ParagraphJustification.CENTER_JUSTIFY) {
@@ -261,7 +259,7 @@ export function _pointTextInk(
   box: BoxAccumulator,
 ): void {
   const body = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
-  const paragraphs = split(body, "\r");
+  const paragraphs = body.split("\r");
   if (paragraphStyles.length !== paragraphs.length) {
     throw _refuse("paragraph runs that do not cover the paragraphs");
   }
@@ -326,7 +324,7 @@ export function _boxTextInk(
     for (let k = 0; k < end - start; k++) paragraphOf.push(index);
   }
   for (const [[start, end], baseline] of zip(composed.spans, composed.baselines)) {
-    const text = rstrip(raw.slice(start, end), "\r");
+    const text = raw.slice(start, end).replace(/\r+$/, "");
     if (!text) continue;
     const style = paragraphStyles[paragraphOf[start]];
     if (_justification(style) !== ParagraphJustification.LEFT_JUSTIFY) {

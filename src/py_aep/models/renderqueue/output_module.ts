@@ -38,7 +38,6 @@ import {
   truthyOr,
   literal,
   round,
-  rstrip,
   Path,
   RuntimeError,
   ValueError,
@@ -1307,7 +1306,7 @@ export class OutputModule {
 
     if (isFolder) {
       const pathSep = folderPath.includes("\\") ? "\\" : "/";
-      const cleanedPath = rstrip(folderPath, pathSep);
+      const cleanedPath = folderPath.replace(pathSep === "\\" ? /\\+$/ : /\/+$/, "");
       return `${cleanedPath}${pathSep}${fileNameTemplate}`;
     }
 

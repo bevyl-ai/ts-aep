@@ -1,6 +1,6 @@
 /** Font object model for After Effects text layers. */
 
-import { descriptor, split, str, instanceDict } from "../../../pyrt/index.ts";
+import { descriptor, str, instanceDict } from "../../../pyrt/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
 import { CosField, type InstanceValue } from "../../cos/descriptors.ts";
 import { cosIter, cosNum } from "../../cos/kinds.ts";
@@ -69,7 +69,7 @@ export class FontObject {
    */
   get familyPrefix(): string | null {
     if (!this.hasDesignAxes) return null;
-    return split(this.postScriptName, "-", 1)[0];
+    return this.postScriptName.split("-")[0];
   }
 
   constructor(kw: {

@@ -33,10 +33,7 @@ import {
   decode,
   encode,
   float,
-  rstrip,
   setdefault,
-  split,
-  strip,
   ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
@@ -70,14 +67,14 @@ export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {
  * are appended to the previous logical line.
  */
 export function collapseContinuationLines(text: string): string[] {
-  const lines = split(text, "\n");
+  const lines = text.split("\n");
   const result: string[] = [];
   for (const line of lines) {
-    const stripped = rstrip(line);
+    const stripped = line.trimEnd();
     if (!stripped) continue;
     // Continuation lines start with tab and contain hex data
     if (result.length > 0 && stripped.startsWith("\t") && !stripped.startsWith('\t"')) {
-      result[result.length - 1] += strip(stripped);
+      result[result.length - 1] += stripped.trim();
     } else {
       result.push(stripped);
     }
@@ -113,7 +110,7 @@ export function parseHexValue(value: string): Uint8Array {
 
 /** Parse decimal text into an int when integral, else a float. */
 export function parseNumberText(text: string): number {
-  const stripped = strip(text);
+  const stripped = text.trim();
   // "30.0" and "30" both read as 30: integral values are plain numbers. `+ 0` turns "-0" into 0.
   return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : float(stripped);
 }

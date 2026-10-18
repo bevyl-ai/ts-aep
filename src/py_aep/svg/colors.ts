@@ -6,7 +6,7 @@
  * `transparent` and `currentColor`.
  */
 
-import { float, mod, rstrip, strip, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
+import { float, mod, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -171,7 +171,7 @@ export const _RGB_RE = pyRe(String.raw`rgba?\(([^)]*)\)`, reFlags.IGNORECASE);
 export const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
 
 export function _component(token: string, scale: number = 255.0): number {
-  token = strip(token);
+  token = token.trim();
   if (token.endsWith("%")) return float(token.slice(0, -1)) / 100.0;
   return float(token) / scale;
 }
@@ -185,7 +185,7 @@ export function _component(token: string, scale: number = 255.0): number {
  */
 export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0, 1.0]): Rgba | null {
   if (!value) return null;
-  const v = strip(value).toLowerCase();
+  const v = value.trim().toLowerCase();
   if (v === "none" || v === "transparent") return null;
   if (v === "currentcolor") return current;
   if (v.startsWith("#")) return _parseHex(v.slice(1));
@@ -197,7 +197,7 @@ export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0,
         const r = _component(parts[0]);
         const g = _component(parts[1]);
         const b = _component(parts[2]);
-        const a = parts.length > 3 ? float(rstrip(parts[3], "%")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
+        const a = parts.length > 3 ? float(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
         return [clamp01(r), clamp01(g), clamp01(b), clamp01(a)];
       }
     }
@@ -236,12 +236,12 @@ export function _parseHsl(v: string): Rgba | null {
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
   if (parts.length < 3) return null;
-  const h = mod(float(rstrip(parts[0], "%")), 360.0) / 360.0;
+  const h = mod(float(parts[0].replace(/%+$/, "")), 360.0) / 360.0;
   // CSS clamps saturation and lightness to [0, 100 %] before converting
   // (hsl(400, 150%, -5%) is black), not the converted channels.
-  const s = clamp01(float(rstrip(parts[1], "%")) / 100.0);
-  const light = clamp01(float(rstrip(parts[2], "%")) / 100.0);
-  const a = parts.length > 3 ? float(rstrip(parts[3], "%")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
+  const s = clamp01(float(parts[1].replace(/%+$/, "")) / 100.0);
+  const light = clamp01(float(parts[2].replace(/%+$/, "")) / 100.0);
+  const a = parts.length > 3 ? float(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
 
   function hue(p: number, q: number, t: number): number {
     if (t < 0) t += 1;

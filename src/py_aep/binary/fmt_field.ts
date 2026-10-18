@@ -16,7 +16,6 @@ import {
   field,
   fields,
   getattr,
-  lstrip,
   truthy,
   struct,
   ValueError,
@@ -407,7 +406,7 @@ export function _structInfo(cls: Function): _StructInfo | null {
  * the `__init__` signature: `_trailing` -\> `trailing=`.
  */
 export function _initName(name: string): string {
-  return name.startsWith("_") ? lstrip(name, "_") : name;
+  return name.startsWith("_") ? name.replace(/^_+/, "") : name;
 }
 
 type DecodeKw = (values: readonly FieldValue[]) => FieldKwargs;

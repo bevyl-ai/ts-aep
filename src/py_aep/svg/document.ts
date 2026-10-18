@@ -1,6 +1,6 @@
 /** SVG root parsing: canvas size and the viewBox origin transform. */
 
-import { float, min, max, valueEquals, split } from "../../pyrt/index.ts";
+import { float, min, max, valueEquals } from "../../pyrt/index.ts";
 import { NUMBER_RE, parseLength } from "./_util.ts";
 import { Affine } from "./transform.ts";
 
@@ -73,7 +73,7 @@ export function viewportTransform(
   const [minX, minY, vbW, vbH] = vb;
   let sx = width / vbW;
   let sy = height / vbH;
-  const tokens = split(preserveAspectRatio || "").filter((t) => t !== "defer");
+  const tokens = (preserveAspectRatio || "").split(/\s+/).filter(Boolean).filter((t) => t !== "defer");
   const align = tokens.length > 0 ? tokens[0] : "xMidYMid";
   if (align !== "none") {
     const s = valueEquals(tokens.slice(1, 2), ["slice"]) ? max([sx, sy]) : min([sx, sy]);

@@ -9,7 +9,6 @@ import {
   assert,
   truthy,
   valueEquals,
-  rstrip,
   ValueError,
   zip,
   boxFloat,
@@ -1144,7 +1143,7 @@ export class TextDocument {
       }
       // A wrapped line keeps the space group it broke on, but that
       // group sits outside the reported extent (probed AE 2026).
-      tail += u16Len(lineText) - u16Len(rstrip(lineText, " "));
+      tail += u16Len(lineText) - u16Len(lineText.replace(/ +$/, ""));
       const index = advances.length - tail - 1;
       const advance = 0 <= index && index < advances.length ? advances[index] : 0.0;
       const [originX, originY] = _lineOrigin(node);

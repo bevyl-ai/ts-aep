@@ -6,7 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { Bytes, decode, define, descriptor, fields, getattr, assert, truthy, setattr, strip, ascii } from "../../pyrt/index.ts";
+import { Bytes, decode, define, descriptor, fields, getattr, assert, truthy, setattr, ascii } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -561,7 +561,7 @@ export class RenderSettingsItem extends FmtItem {
 
   /** Template name with trailing null bytes stripped. */
   get cleanTemplateName(): string {
-    return strip(this.templateName, "\x00");
+    return this.templateName.replace(/^\0+|\0+$/g, "");
   }
 
   // -- Computed properties -----------------------------------------------

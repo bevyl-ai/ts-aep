@@ -9,7 +9,6 @@ import {
   copy,
   encode,
   getOrThrow,
-  rstrip,
   struct,
   ValueError,
   assert,
@@ -1175,7 +1174,7 @@ export function buildDropdownControl(kw: {
   const { tdsnName, timeBase, layerId } = kw;
   // uuid4().bytes is 16 random bytes; base64 of those, padding stripped.
   const matchName =
-    "Pseudo/@@" + rstrip(b64encode(uuid4Bytes()), "=");
+    "Pseudo/@@" + b64encode(uuid4Bytes()).replace(/=+$/, "");
   const partBytes = Bytes.replace(
     Bytes.fromHex(DROPDOWN_CONTROL.part),
     encode(DROPDOWN_CONTROL.placeholder, "ascii"),

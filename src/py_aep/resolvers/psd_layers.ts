@@ -22,7 +22,6 @@ import {
   valueEquals,
   pySlice,
   literal,
-  rstrip,
   struct,
   StructError,
   sum,
@@ -939,7 +938,7 @@ export function _parseLayerExtra(
     const block = extra.slice(blockStart, blockStart + blockLen);
     if (bytesEqual(key, ascii("luni"))) {
       const charCount = struct.unpack(">I", block.slice(0, 4))[0];
-      unicodeName = rstrip(decode(block.slice(4, 4 + charCount * 2), "utf-16-be"), "\x00");
+      unicodeName = decode(block.slice(4, 4 + charCount * 2), "utf-16-be").replace(/\0+$/, "");
     } else if (bytesEqual(key, ascii("lyid"))) {
       layerId = struct.unpack(">I", block.slice(0, 4))[0];
     } else if (bytesEqual(key, ascii("lsct")) && blockLen >= 4) {

@@ -15,7 +15,6 @@ import {
   assert,
   pyClassHooks,
   literal,
-  split,
   instanceDict,
   typeName,
 } from "../../../pyrt/index.ts";
@@ -554,7 +553,7 @@ export class PropertyGroup extends PropertyBase {
   get autoName(): string {
     if (this._autoName != null) return this._autoName;
     if (this._fnamUtf8 != null) {
-      const name: string = split(this._fnamUtf8.value, "\0")[0];
+      const name: string = this._fnamUtf8.value.split("\0")[0];
       return name;
     }
     return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
@@ -929,7 +928,7 @@ export class PropertyGroup extends PropertyBase {
       if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
       const textDoc = text.property("ADBE Text Document").value;
       const psName: string = textDoc.font || "";
-      const family = split(psName, "-", 1)[0];
+      const family = psName.split("-")[0];
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
         throw new ValueError(

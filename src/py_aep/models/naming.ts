@@ -1,6 +1,6 @@
 /** Name generation and incrementing utilities for project items. */
 
-import { ValueError, rstrip } from "../../pyrt/index.ts";
+import { ValueError } from "../../pyrt/index.ts";
 
 // pyrt isdigit is Nd-only; Python str.isdigit() also accepts superscripts, subscripts and
 // circled digits (which then make int() raise ValueError).
@@ -54,7 +54,7 @@ export function _nextSuffix(prefix: string, existingNames: Set<string>): number 
       } else {
         maxSuffix = 1n > maxSuffix ? 1n : maxSuffix;
       }
-    } else if (name === rstrip(prefix)) {
+    } else if (name === prefix.trimEnd()) {
       maxSuffix = 1n > maxSuffix ? 1n : maxSuffix;
     }
   }

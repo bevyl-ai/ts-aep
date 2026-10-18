@@ -22,7 +22,6 @@ import {
   min,
   valueEquals,
   pySlice,
-  strip,
   zip,
 } from "../../pyrt/index.ts";
 
@@ -65,7 +64,7 @@ export function _f(
 
 /** An absent or `auto` corner radius, which takes the other radius. */
 export function _isAuto(raw: string | null): boolean {
-  return raw == null || ["", "auto"].includes(strip(raw));
+  return raw == null || ["", "auto"].includes(raw.trim());
 }
 
 /**
@@ -182,9 +181,9 @@ export function _ellipse(
     ry = _f(attrs, "ry", ctx);
     // `auto` takes the other radius (SVG 2). AE 2026 reads it as 0 and
     // imports `rx="auto" ry="20"` as a zero-width ellipse.
-    if (strip(attrs.get("rx") || "") === "auto") {
+    if ((attrs.get("rx") || "").trim() === "auto") {
       rx = ry;
-    } else if (strip(attrs.get("ry") || "") === "auto") {
+    } else if ((attrs.get("ry") || "").trim() === "auto") {
       ry = rx;
     }
   }

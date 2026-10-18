@@ -41,7 +41,6 @@ import {
   valueEquals,
   literal,
   round,
-  split,
   descriptor,
   boxFloat,
 } from "../../../pyrt/index.ts";
@@ -742,7 +741,7 @@ export function _spliceText(
   _markLayoutDirty(doc);
   const kernValues = _kernValues(doc);
   const newRaw = u16Slice(raw, 0, start) + newText + u16Slice(raw, end, total);
-  let parts = split(newRaw, "\r");
+  let parts = newRaw.split("\r");
   if (parts[parts.length - 1] === "") parts = parts.slice(0, -1);
   const inner = cosSetdefault(doc._doc, "0", new Map());
 

@@ -50,7 +50,6 @@ import {
   truthyOr,
   valueEquals,
   setdefault,
-  split,
   warn,
   round,
   isReal,
@@ -877,8 +876,8 @@ export function _verticalExtent(
 
 /** Strip a subset tag and a style suffix from a `/BaseFont` name. */
 export function _baseFont(name: string): string {
-  const parts = split(name, "+");
-  return split(parts[parts.length - 1], ",")[0];
+  const parts = name.split("+");
+  return parts[parts.length - 1].split(",")[0];
 }
 
 // --------------------------------------------------------------------------

@@ -16,7 +16,6 @@ import {
   mod,
   objectSetattr,
   literal,
-  split,
   ValueError,
   pyRe,
 } from "../../pyrt/index.ts";
@@ -489,7 +488,7 @@ export class CmtaChunk extends Chunk {
 
   /** Decoded comment text, LF line endings, no trailing null. */
   get value(): string {
-    return split(decode(this.data, "UTF-8"), "\x00")[0].replaceAll("\r\n", "\n");
+    return decode(this.data, "UTF-8").split("\x00")[0].replaceAll("\r\n", "\n");
   }
 
   set value(text: string) {

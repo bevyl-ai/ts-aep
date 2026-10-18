@@ -2,7 +2,7 @@
  * Shared low-level helpers for the SVG reader package.
  */
 
-import { float, strip, hypot, patternMatch, pyRe } from "../../pyrt/index.ts";
+import { float, hypot, patternMatch, pyRe } from "../../pyrt/index.ts";
 
 /** An SVG/CSS number token: optional sign, decimal or integer, optional exponent. */
 export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
@@ -76,7 +76,7 @@ export function clamp01(value: number): number {
  */
 export function parseNumber(text: string | null, default_: number = 0.0): number {
   if (!text) return default_;
-  const m = patternMatch(NUMBER_RE, strip(text));
+  const m = patternMatch(NUMBER_RE, text.trim());
   return m ? float(m[0]) : default_;
 }
 
@@ -93,7 +93,7 @@ export function parseLength(
   fontSize: number = DEFAULT_FONT_SIZE,
 ): number {
   if (!text) return default_;
-  const m = patternMatch(_LENGTH_RE, strip(text));
+  const m = patternMatch(_LENGTH_RE, text.trim());
   if (m == null) return default_;
   const value = float(m[1]);
   const unit = (m[2] ?? "").toLowerCase();
@@ -115,7 +115,7 @@ export function parseLength(
  */
 export function parseRatio(text: string | null, default_: number): number {
   if (text == null) return default_;
-  text = strip(text);
+  text = text.trim();
   const m = patternMatch(NUMBER_RE, text);
   if (m == null) return default_;
   const val = float(m[0]);

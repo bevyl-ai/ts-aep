@@ -77,7 +77,6 @@ import {
   literal,
   round,
   setdefault,
-  strip,
   compositeKey,
   warn,
   bytesEqual,
@@ -2424,7 +2423,7 @@ export class Project {
     }));
     // The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
     descriptor(this, "xmpPacket", new ChunkField("_aep", "_xmp", {
-      transform: (s) => (!!s && strip(s) ? ET_fromstring(s) : null),
+      transform: (s) => (!!s && s.trim() ? ET_fromstring(s) : null),
       reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
     }));
   }

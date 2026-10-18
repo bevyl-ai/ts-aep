@@ -42,7 +42,6 @@ import {
   radians,
   literal,
   round,
-  rstrip,
   setdefault,
   struct,
   warn,
@@ -148,7 +147,7 @@ export class _Reader {
 
   ustr(): string {
     const n = this.u4();
-    return rstrip(decode(this.raw(2 * n), "utf-16-be"), "\x00");
+    return decode(this.raw(2 * n), "utf-16-be").replace(/\0+$/, "");
   }
 }
 

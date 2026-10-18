@@ -19,8 +19,6 @@ import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
 import {
   at,
-  split,
-  strip,
   warn,
   decode,
   encode,
@@ -841,11 +839,11 @@ export function _parseEffectParameterDef(
     const utf8Chunk = findByType(pdnmChunk.chunks, "Utf8");
     const pdnmData = utf8Chunk.value;
     if (controlType === PropertyControlType.ENUM) {
-      result.propertyParameters = split(pdnmData, "|");
+      result.propertyParameters = pdnmData.split("|");
     } else if (
       pdnmData &&
       controlType === PropertyControlType.BOOLEAN &&
-      !strip(result.name)
+      !result.name.trim()
     ) {
       // A checkbox's pdnm is the label beside its box (a button's, the
       // button text): AE 2026 names the parameter by it only when the

@@ -32,8 +32,6 @@ import {
   valueEquals,
   literal,
   round,
-  rstrip,
-  strip,
   struct,
   compositeKey,
   type FileReader,
@@ -1789,7 +1787,7 @@ export function _naiveDatetimeUs(y: number, mo: number, d: number, h: number, mi
  */
 export function _parseMgjsonTime(t: JsonValue): { us: number; aware: boolean } | null {
   if (typeof t !== "string") throw new AttributeError(`'${typeName(t)}' object has no attribute 'strip'`);
-  let s = strip(t);
+  let s = t.trim();
   // Drop a trailing 'Z' or numeric UTC offset (+HH:MM / +HHMM); the span
   // between samples is offset-independent.
   s = s.replace(/(Z|[+-]\p{Nd}{2}:?\p{Nd}{2})$/u, "");
@@ -2482,7 +2480,7 @@ export function _asfMetadata(body: Uint8Array, start: number, end: number): Map<
     if (valueAt + valueLen > end) break;
     const fmt = _ASF_INT_TYPES.get(valueType) ?? null;
     if (fmt != null && valueLen >= struct.calcsize(fmt)) {
-      const name = rstrip(decode(body.slice(nameAt, valueAt), "utf-16-le", "replace"), "\x00");
+      const name = decode(body.slice(nameAt, valueAt), "utf-16-le", "replace").replace(/\0+$/, "");
       out.set(compositeKey(stream, name), Number(struct.unpackFrom(fmt, body, valueAt)[0]));
     }
     pos = valueAt + valueLen;
