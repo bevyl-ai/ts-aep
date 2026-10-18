@@ -967,8 +967,8 @@ export class Project {
    * Adobe Color directories. Assign an array of folders containing `.icc`/
    * `.icm` files to override (e.g. for a non-default install or CI).
    */
-  get iccProfileDirs(): Path[] | null {
-    return this._iccProfileDirs;
+  get iccProfileDirs(): string[] | null {
+    return this._iccProfileDirs?.map(String) ?? null;
   }
 
   set iccProfileDirs(value: PathLike[] | null) {
