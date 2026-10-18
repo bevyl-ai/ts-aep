@@ -193,10 +193,13 @@ export function is_readable(fp: IO, size = 1): boolean {
   return data.length >= size;
 }
 
+/** The pad byte; `write` copies it out. */
+const _PAD = b("\x00");
+
 /** Write a pad byte if `size` is odd. Returns bytes written (0 or 1). */
 export function write_pad(fp: IO, size: number): number {
   if (size % 2 !== 0) {
-    fp.write(b("\x00"));
+    fp.write(_PAD);
     return 1;
   }
   return 0;

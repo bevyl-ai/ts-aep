@@ -173,9 +173,10 @@ export class Chunk extends AttrsBase {
       for (const [i, f] of data_fields.entries()) {
         const fe = endians.get(i) ?? ">";
         const ff = f.metadata["fmt"];
-        const f_size = struct.calcsize(fe + ff);
+        const s = _struct_for(ff, fe);
+        const f_size = s.size;
         if (remaining_me >= f_size) {
-          const [v] = struct.unpack(fe + ff, fp.read(f_size));
+          const [v] = s.unpack(fp.read(f_size));
           values.push(v);
           remaining_me -= f_size;
         } else if (i < optional_start) {
@@ -277,7 +278,7 @@ export class Chunk extends AttrsBase {
         const fe = endians.get(i) ?? ">";
         let value = getattr(this, f.name);
         value = _encode_value(value, i, encodings, coerces, fe, f.metadata["fmt"]);
-        written += write_bytes(fp, struct.pack(fe + f.metadata["fmt"], value));
+        written += fp.pack(_struct_for(f.metadata["fmt"], fe), [value]);
       }
     } else {
       const encode_fields = last_idx === data_fields.length ? _field_encoder(info) : null;
@@ -826,6 +827,8 @@ const _TYPE_NAMES = new Map<number, string>();
 /** Encoded chunk types; `write_bytes` copies them out, never in. */
 const _TYPE_BYTES = new Map<string, Uint8Array>();
 const _LEN_BODY = new struct.Struct(">I");
+/** `write_chunk`'s backpatch value; `pack` reads it before returning. */
+const _LEN_VALUE: struct.PackValue[] = [0];
 
 /** Read the 8-byte chunk header: (chunk_type, len_body). */
 export function read_header(fp: IO): [string, number] {
@@ -875,7 +878,8 @@ export function write_chunk(fp: IO, chunk: Chunk): number {
   // Backpatch len_body
   const current = fp.tell();
   fp.seek(len_pos);
-  fp.pack(_LEN_BODY, [body_size]);
+  _LEN_VALUE[0] = body_size;
+  fp.pack(_LEN_BODY, _LEN_VALUE);
   fp.seek(current);
 
   // Pad to even boundary
