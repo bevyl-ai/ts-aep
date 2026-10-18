@@ -6,8 +6,8 @@
  * the same child (by match name) on every instance, in every layer kind and
  * After Effects version the sample corpus covers, so the types can promise
  * them; `tests/read_only/test_child_attributes.test.ts` checks the promise.
- * Names that depend on the layer (`anchorPoint` vs `point_of_interest`,
- * `rotation` vs `z_rotation` with the 3D switch) or on the version are left
+ * Names that depend on the layer (`anchorPoint` vs `pointOfInterest`,
+ * `rotation` vs `zRotation` with the 3D switch) or on the version are left
  * out: reach those children by match name.
  */
 export const CHILD_MATCH_NAMES = {

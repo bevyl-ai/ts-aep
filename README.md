@@ -82,19 +82,39 @@ const position: number[] = layer.transform.position.value;
 const text = comp.textLayers[0].text?.sourceText.value.text;
 ```
 
-A child whose attribute name depends on the layer (`anchor_point` on an AV
-layer is a camera's `point_of_interest`; `rotation` becomes `z_rotation` on a 3D
+A child whose attribute name depends on the layer (`anchorPoint` on an AV
+layer is a camera's `pointOfInterest`; `rotation` becomes `zRotation` on a 3D
 layer) is reached by match name instead. Other children, such as effect
 parameters, still resolve by attribute name at runtime, untyped.
 
 ### Node / Bun
 
 ```ts
-import * as py_aep from "./src/py_aep/index.ts";
+import * as aep from "@bevyl-ai/ts-aep";
 
-const app = py_aep.parse("project.aep");
+const app = aep.parse("project.aep");
 app.project.save("copy.aep");
 ```
+
+### Errors
+
+Errors ts-aep raises extend `AepError`, and each carries the name of the
+Python exception py-aep raises in the same case (`ValueError`, `KeyError`,
+`FileNotFoundError`, ...), all exported:
+
+```ts
+import { AepError, FileNotFoundError, parse } from "@bevyl-ai/ts-aep";
+
+try {
+  parse("missing.aep");
+} catch (e) {
+  if (e instanceof FileNotFoundError) console.log("no such file");
+  else if (e instanceof AepError) console.log(e.name, e.message);
+  else throw e;
+}
+```
+
+Bad arguments throw JS's own `TypeError`.
 
 ### Browsers and Workers
 
