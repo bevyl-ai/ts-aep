@@ -19,7 +19,7 @@ import { Project } from "./project.ts";
 export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] as const;
 
 /** A version whose file layout matches the project's. */
-export function _validate_version(value: unknown, obj: Application): void {
+export function _validate_version(value: string, obj: Application): void {
   validate_ae_version(value);
   const current = obj._head.ae_version_major;
   const target = int(split(str(value), ".", 1)[0]);

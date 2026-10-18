@@ -35,13 +35,13 @@ const _property_value = deferred<typeof import("../../parsers/property_value.ts"
 const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
-export function list_index<T>(xs: readonly T[], x: unknown): number {
+export function list_index<T>(xs: readonly T[], x: T): number {
   const i = xs.findIndex((y) => py_eq(y, x));
   if (i < 0) throw new ValueError(`${repr(x)} is not in list`);
   return i;
 }
 
-export function list_remove<T>(xs: T[], x: unknown): void {
+export function list_remove<T>(xs: T[], x: T): void {
   xs.splice(list_index(xs, x), 1);
 }
 
@@ -428,7 +428,7 @@ export class PropertyBase {
   get property_index(): number | null {
     const parent = this.parent_property;
     if (this.property_depth === 0 || parent == null) return null;
-    return list_index(parent.properties, this);
+    return list_index<PropertyBase>(parent.properties, this);
   }
 
   /**
@@ -581,7 +581,7 @@ export class PropertyBase {
         .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
         .map((chunk): [string, ListChunk] => [this.match_name, chunk]),
     );
-    list_remove(parent.properties, this);
+    list_remove<PropertyBase>(parent.properties, this);
     if (this._is_mask) _renumber_mask_auto_names(parent);
   }
 
@@ -602,7 +602,7 @@ export class PropertyBase {
       throw new IndexError(`Index ${new_index} out of range [0, ${num_props})`);
     }
 
-    const current_index = list_index(parent.properties, this);
+    const current_index = list_index<PropertyBase>(parent.properties, this);
     const child = parent.properties[current_index];
     if (current_index === new_index) return;
 
@@ -655,7 +655,7 @@ export class PropertyBase {
     const new_prop = this._parse_clone(cloned, parent);
 
     // Insert in model list after original
-    const model_idx = list_index(parent.properties, this);
+    const model_idx = list_index<PropertyBase>(parent.properties, this);
     parent.properties.splice(model_idx + 1, 0, new_prop);
 
     if (this._is_mask && new_prop instanceof _mask_property_group().MaskPropertyGroup) {

@@ -54,7 +54,7 @@ import {
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `is_int` keeps that so raw bool fields still count as ints in the checks below.
-export function is_int(v: unknown): v is number | boolean {
+export function is_int(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
 }
 
@@ -82,7 +82,7 @@ export const _KEY_ENUM = new Map<string, KeyEnum>([
   ["Audio Bit Depth", AudioBitDepth],
 ]);
 
-export function _is_enum_member(key: string, value: unknown): value is RuleValue {
+export function _is_enum_member(key: string, value: RuleValue | null): value is RuleValue {
   return getitem(_KEY_ENUM, key).has(value);
 }
 
@@ -592,7 +592,7 @@ export class OutputModule {
     return new SettingsView(this, OM_SETTINGS);
   }
 
-  set settings(value: Map<string, unknown> | SettingsView) {
+  set settings(value: Map<string, SettingValue> | SettingsView) {
     if (!(value instanceof Map || value instanceof SettingsView)) {
       throw new ValueError("Settings must be a dictionary of key-value pairs");
     }
@@ -673,7 +673,7 @@ export class OutputModule {
   _rules_context(): Map<string, RuleValue> {
     const context = new Map<string, RuleValue>();
     for (const key of ["Channels", "Audio Channels", "Audio Sample Rate"]) {
-      let value: unknown;
+      let value: number;
       try {
         value = getattr(this, getitem(OM_SETTINGS, key)[0]);
       } catch (e) {

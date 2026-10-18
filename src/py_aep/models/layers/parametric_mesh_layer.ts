@@ -243,7 +243,7 @@ export class ParametricMeshOptions {
   }
 
   __repr__(): string {
-    const result = new Map<string, unknown>();
+    const result = new Map<string, number | boolean>();
     // NOTE(port): descriptors_of walks the MRO but vars(cls) is the class's own dict; same result because no base class declares descriptors.
     for (const [name] of descriptors_of(this.constructor)) {
       result.set(name, getattr(this, name));
