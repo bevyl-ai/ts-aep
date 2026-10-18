@@ -27,7 +27,8 @@ import {
 import "../../src/py_aep/binary/_register.ts";
 import { Property } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
-import { get_first_layer, load_expected, parse_project } from "../conftest.ts";
+import { get_first_layer, parse_project } from "../conftest.ts";
+import { load_expected_value_at_time, type ExpectedFrame } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples").div("models").div("property");
 const VAT_DIR = SAMPLES_DIR.div("value_at_time");
@@ -42,14 +43,9 @@ const _FINDERS: Map<string, (ly: Layer) => Property> = new Map<string, (ly: Laye
   ["ADBE Rotate Z", (ly) => ly.transform.property("ADBE Rotate Z")],
 ]);
 
-interface _VatFrame {
-  time: number;
-  value: number | number[];
-}
-
 /** Load value_at_time JSON and return (matchName, frames). */
-function _load_vat(base_name: string): [string, _VatFrame[]] {
-  const data = load_expected(VAT_DIR, `${base_name}_value_at_time`);
+function _load_vat(base_name: string): [string, ExpectedFrame[]] {
+  const data = load_expected_value_at_time(VAT_DIR, `${base_name}_value_at_time`);
   const prop = data.comps[0].layers[0].properties[0];
   return [prop.matchName, prop.frames];
 }
@@ -67,7 +63,7 @@ function _get_prop(base_name: string): Property {
 }
 
 /** Compute maximum abs error across all frames. */
-function _max_error(prop: Property, frames: _VatFrame[]): number {
+function _max_error(prop: Property, frames: ExpectedFrame[]): number {
   let max_err = 0.0;
   for (const f of frames) {
     const got = prop.value_at_time(f.time);

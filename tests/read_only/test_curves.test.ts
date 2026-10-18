@@ -32,28 +32,11 @@ import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
+import { json_field, type ExpectedKeyframe } from "../helpers.ts";
 import { as_instance } from "../helpers.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "models" / "property"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
-
-/** The JSON export's shape for the records these tests walk. */
-interface JsonKeyframe {
-  time: number;
-}
-interface JsonProperty {
-  matchName: string;
-  isModified?: boolean;
-  properties: JsonProperty[];
-  keyframes: JsonKeyframe[];
-}
-interface JsonLayer {
-  name: string;
-  properties: JsonProperty[];
-}
-interface JsonComp {
-  layers: JsonLayer[];
-}
 
 /** Python `next(x for x in items if predicate(x))`. */
 function _next<T>(items: T[], predicate: (item: T) => boolean): T {
@@ -73,11 +56,11 @@ function _curves_property(layer_name: string): Property {
 }
 
 function _expected_is_modified(layer_name: string): boolean {
-  const comp: JsonComp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
+  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
   const layer = _next(comp.layers, (ly) => ly.name === layer_name);
   const parade = _next(layer.properties, (p) => p.matchName === "ADBE Effect Parade");
-  const effect = parade.properties[0];
-  const prop = _next(effect.properties, (p) => p.matchName === "ADBE CurvesCustom-0001");
+  const effect = json_field(parade, "properties")[0];
+  const prop = _next(json_field(effect, "properties"), (p) => p.matchName === "ADBE CurvesCustom-0001");
   return py_bool(prop.isModified);
 }
 
@@ -162,12 +145,13 @@ test("test_point_curves_reproduce_their_maps", () => {
   expect(py_eq(_rounded_spline_is_the_map(curves), ["rgb", "red"])).toBe(true);
 });
 
-function _keyed_json(): JsonKeyframe[] {
-  const comp: JsonComp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
+function _keyed_json(): ExpectedKeyframe[] {
+  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
   const layer = _next(comp.layers, (ly) => ly.name === "keyed");
   const parade = _next(layer.properties, (p) => p.matchName === "ADBE Effect Parade");
-  const prop = _next(parade.properties[0].properties, (p) => p.matchName === "ADBE CurvesCustom-0001");
-  return [...prop.keyframes];
+  const effect = json_field(parade, "properties")[0];
+  const prop = _next(json_field(effect, "properties"), (p) => p.matchName === "ADBE CurvesCustom-0001");
+  return [...json_field(prop, "keyframes")];
 }
 
 test("test_keyed_curves_decode_each_key", () => {

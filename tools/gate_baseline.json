@@ -40,8 +40,8 @@
       "casts": 0
     },
     "7 tests": {
-      "any": 22,
-      "unknown": 121,
+      "any": 0,
+      "unknown": 120,
       "casts": 6
     }
   }

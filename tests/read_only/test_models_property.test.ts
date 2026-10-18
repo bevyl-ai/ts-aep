@@ -26,7 +26,7 @@ import {
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp, get_comp_from_json_by_name, get_first_layer, get_layer, load_expected, parse_project } from "../conftest.ts";
-import { as_instance } from "../helpers.ts";
+import { as_instance, json_field, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
 import { Project, parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { KfPosition } from "../../src/py_aep/binary/ldat_chunks.ts";
@@ -57,27 +57,7 @@ function _find_property(layer: Layer, match_name: string): Property | null {
 /** Extract transform properties from the expected JSON structure. */
 // NOTE(port): load_expected returns JSON.parse output (plain objects, tests/helpers.ts), so
 // `.get(...)` is property access and `"k" in x` is unchanged; missing keys compare unequal as in Python.
-/** The ExtendScript export's shape for the records the helpers below read. */
-interface JsonTransformProperty {
-  matchName: string;
-  expressionEnabled?: boolean;
-  expression?: string;
-  value?: unknown;
-  numKeys?: number;
-}
-interface JsonPropertyGroup {
-  matchName: string;
-  properties: JsonTransformProperty[];
-}
-interface JsonComp {
-  name: string;
-  layers: Array<{ properties: JsonPropertyGroup[] }>;
-}
-interface JsonProject {
-  items: Array<JsonComp | { name: string }>;
-}
-
-function _get_json_transform_properties(expected: JsonProject, comp_name = ""): JsonTransformProperty[] {
+function _get_json_transform_properties(expected: ExpectedProject, comp_name = ""): ExpectedProperty[] {
   for (const item of expected["items"]) {
     if ("layers" in item) {
       if (py_bool(comp_name) && item["name"] !== comp_name) {
@@ -85,7 +65,7 @@ function _get_json_transform_properties(expected: JsonProject, comp_name = ""): 
       }
       for (const group of item["layers"][0]["properties"]) {
         if (group["matchName"] === "ADBE Transform Group") {
-          return group["properties"];
+          return json_field(group, "properties");
         }
       }
     }
@@ -2853,16 +2833,30 @@ describe("TestMaskLayerSpace", () => {
   });
 });
 
+/** A `<stem>_probe.json`: per mask, its static shape, or `{sample: shape}` per sampled time / key. */
+type RotoBezierProbe = Record<string, JsonMaskShape | Record<string, JsonMaskShape>>;
+
+// NOTE(port): Python reads the probe with `load_expected`; it is no project
+// export, so it is parsed here with its own shape (as `_MASK_LAYER_SPACE_PROBE` is).
+function _load_rotobezier_probe(stem: string): RotoBezierProbe {
+  return JSON.parse(SAMPLES_DIR.div(`${stem}_probe.json`).read_text("utf-8"));
+}
+
+/** Python `"vertices" in value`: a static mask's probe entry is the shape itself. */
+function _is_static_entry(value: RotoBezierProbe[string]): value is JsonMaskShape {
+  return "vertices" in value;
+}
+
 /**
  * (fixture stem, mask name, sampled time / key or None for static).
  */
 function _rotobezier_cases(): [string, string, string | null][] {
   const cases: [string, string, string | null][] = [];
   for (const stem of ["mask_rotobezier_shapes", "mask_rotobezier_tensions"]) {
-    const probe = load_expected(SAMPLES_DIR, `${stem}_probe`);
+    const probe = _load_rotobezier_probe(stem);
     for (const mask of sorted(Object.keys(probe))) {
       const value = probe[mask];
-      if ("vertices" in value) {
+      if (_is_static_entry(value)) {
         cases.push([stem, mask, null]);
       } else {
         cases.push(
@@ -2888,8 +2882,15 @@ describe("TestRotoBezierTangents", () => {
   test.each(_rotobezier_cases())(
     "test_tangents_match_ae[%#]",
     (stem: string, mask_name: string, sample: string | null) => {
-      const probe = load_expected(SAMPLES_DIR, `${stem}_probe`);
-      const expected: JsonMaskShape = sample == null ? probe[mask_name] : probe[mask_name][sample];
+      const entry = _load_rotobezier_probe(stem)[mask_name];
+      let expected: JsonMaskShape;
+      if (_is_static_entry(entry)) {
+        py_assert(sample == null, mask_name);
+        expected = entry;
+      } else {
+        py_assert(sample != null, mask_name);
+        expected = entry[sample];
+      }
       const comp = get_comp(parse_project(SAMPLES_DIR.div(`${stem}.aep`)), "ROTO");
       let mask: MaskPropertyGroup | null = null;
       outer: for (const layer of comp.layers) {

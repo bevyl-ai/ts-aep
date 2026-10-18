@@ -24,7 +24,7 @@ import {
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp, get_first_layer, get_layer, get_layer_from_json, get_layer_from_json_by_comp, load_expected, parse_project } from "../conftest.ts";
-import { as_instance } from "../helpers.ts";
+import { as_instance, json_field } from "../helpers.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { AutoOrientType, BlendingMode, FrameBlendingType, LayerQuality, LayerSamplingQuality, LightType, PropertyType, TrackMatteType } from "../../src/py_aep/enums/index.ts";
 import { AVLayer, CameraLayer, LightLayer, ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
@@ -549,7 +549,7 @@ describe("TestTrackMatte", () => {
       }
     }
     expect(matted_layer != null).toBe(true);
-    expect(expected_layer != null).toBe(true);
+    py_assert(expected_layer != null);
     expect(as_instance(matted_layer, AVLayer).track_matte_type).toBe(expected_layer["trackMatteType"]);
   });
 
@@ -570,7 +570,7 @@ describe("TestTrackMatte", () => {
       }
     }
     expect(matted_layer != null).toBe(true);
-    expect(expected_layer != null).toBe(true);
+    py_assert(expected_layer != null);
     expect(as_instance(matted_layer, AVLayer).track_matte_type).toBe(expected_layer["trackMatteType"]);
   });
 
@@ -585,7 +585,7 @@ describe("TestTrackMatte", () => {
         break;
       }
     }
-    expect(expected_layers != null).toBe(true);
+    py_assert(expected_layers != null);
     for (const [layer, exp] of zip(comp.layers, expected_layers)) {
       expect(as_instance(layer, AVLayer).has_track_matte).toBe(exp["hasTrackMatte"]);
     }
@@ -619,7 +619,7 @@ describe("TestTrackMatte", () => {
         break;
       }
     }
-    expect(expected_layers != null).toBe(true);
+    py_assert(expected_layers != null);
     for (const [layer, exp] of zip(comp.layers, expected_layers)) {
       expect(as_instance(layer, AVLayer).is_track_matte).toBe(exp["isTrackMatte"]);
     }
@@ -706,15 +706,13 @@ describe("TestAudio", () => {
     const expected = load_expected(SAMPLES_DIR, "audioEnabled");
     const layer = get_layer(parse_project(SAMPLES_DIR.div("audioEnabled.aep")), "audioEnabled_true");
     const layer_json = get_layer_from_json_by_comp(expected, "audioEnabled_true");
-    type JsonProp = { matchName: string; properties: JsonProp[]; value: number[] };
-    const layer_props: JsonProp[] = layer_json["properties"];
-    const transform_json = layer_props.find((p) => p.matchName === "ADBE Transform Group");
+    const transform_json = layer_json["properties"].find((p) => p.matchName === "ADBE Transform Group");
     if (transform_json === undefined) throw new StopIteration();
-    const anchor_json = transform_json.properties.find((p) => p.matchName === "ADBE Anchor Point");
+    const anchor_json = json_field(transform_json, "properties").find((p) => p.matchName === "ADBE Anchor Point");
     if (anchor_json === undefined) throw new StopIteration();
     const anchor = layer.property("ADBE Transform Group").property("ADBE Anchor Point");
-    expect(py_eq(anchor.value, anchor_json.value)).toBe(true);
-    expect(py_eq(anchor_json.value, [0.5, 0.5, 0])).toBe(true);
+    expect(py_eq(anchor.value, json_field(anchor_json, "value"))).toBe(true);
+    expect(py_eq(json_field(anchor_json, "value"), [0.5, 0.5, 0])).toBe(true);
   });
 });
 

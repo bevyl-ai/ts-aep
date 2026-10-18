@@ -546,7 +546,9 @@ describe("TestCompItemGuides", () => {
     const comp = get_comp(parse_project(SAMPLES_DIR.div("guides.aep")), "guides_horizontal");
     expect(len(comp.guides)).toBe(1);
     const guide = comp.guides[0];
-    const exp = comp_json["guides"][0];
+    const guides_json = comp_json["guides"];
+    py_assert(Array.isArray(guides_json), "export has no guides list");
+    const exp = guides_json[0];
     expect(guide.orientation_type).toBe(exp["orientationType"]);
     expect(guide.position).toBe(exp["position"]);
     expect(guide.position_type).toBe(exp["positionType"]);
@@ -556,8 +558,10 @@ describe("TestCompItemGuides", () => {
     const expected = load_expected(SAMPLES_DIR, "guides");
     const comp_json = get_comp_from_json_by_name(expected, "guides_both");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("guides.aep")), "guides_both");
-    expect(len(comp.guides)).toBe(len(comp_json["guides"]));
-    for (const [guide, exp] of zip(comp.guides, comp_json["guides"])) {
+    const guides_json = comp_json["guides"];
+    py_assert(Array.isArray(guides_json), "export has no guides list");
+    expect(len(comp.guides)).toBe(len(guides_json));
+    for (const [guide, exp] of zip(comp.guides, guides_json)) {
       expect(guide.orientation_type).toBe(exp["orientationType"]);
       expect(guide.position).toBe(exp["position"]);
       expect(guide.position_type).toBe(exp["positionType"]);

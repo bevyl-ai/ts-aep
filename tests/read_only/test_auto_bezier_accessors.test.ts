@@ -18,7 +18,7 @@ import { approx } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
-import { load_expected } from "../helpers.ts";
+import { load_expected, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 
@@ -33,31 +33,8 @@ function* _keyed(comp: CompItem): Generator<[string, Property]> {
   }
 }
 
-/** The fields of the exported JSON this test reads. */
-interface JsonEase {
-  speed: number;
-  influence: number;
-}
-interface JsonKeyframe {
-  spatialAutoBezier?: boolean;
-  temporalAutoBezier?: boolean;
-  inSpatialTangent: number[];
-  outSpatialTangent: number[];
-  inTemporalEase: JsonEase[];
-  outTemporalEase: JsonEase[];
-}
-interface JsonProperty {
-  matchName: string;
-  numKeys?: number;
-  properties?: JsonProperty[] | null;
-  keyframes?: JsonKeyframe[] | null;
-}
-interface JsonDocument {
-  items: { name: string; layers?: { name: string; properties?: JsonProperty[] | null }[] | null }[];
-}
-
-function* _json_properties(document: JsonDocument): Generator<[string, string, JsonProperty]> {
-  const walk = (prop: JsonProperty, out: JsonProperty[]): void => {
+function* _json_properties(document: ExpectedProject): Generator<[string, string, ExpectedProperty]> {
+  const walk = (prop: ExpectedProperty, out: ExpectedProperty[]): void => {
     if (py_bool(prop.numKeys ?? null)) {
       out.push(prop);
     }
@@ -67,8 +44,8 @@ function* _json_properties(document: JsonDocument): Generator<[string, string, J
   };
 
   for (const item of "items" in document ? document.items : []) {
-    for (const layer of py_or(item.layers ?? null, [])) {
-      const found: JsonProperty[] = [];
+    for (const layer of py_or("layers" in item ? item.layers : null, [])) {
+      const found: ExpectedProperty[] = [];
       for (const group of py_or(layer.properties ?? null, [])) {
         walk(group, found);
       }
