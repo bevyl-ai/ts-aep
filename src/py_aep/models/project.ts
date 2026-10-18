@@ -2162,7 +2162,7 @@ export class Project {
       // `tmp_path.open("xb")`: created exclusively before anything is written.
       const fd = host.fs.openSync(tmpPath.path, "wx");
       try {
-        // `getbuffer()`: the written bytes without copying the whole file once more.
+        // `view()`: the written bytes without copying the whole file once more.
         host.fs.writeSync(fd, buffer.view());
       } finally {
         host.fs.closeSync(fd);

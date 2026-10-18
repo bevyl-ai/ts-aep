@@ -73,7 +73,7 @@ export class ByteStream {
     const end = this.pos + data.length;
     this.reserve(end);
     // A native `set` costs more than a loop for the 4-byte tags and small fields most
-    // writes are. (`data` could only overlap `buf` as a `getbuffer()` view.)
+    // writes are. (`data` could only overlap `buf` as a `view()`.)
     if (data.length <= 16) for (let i = 0; i < data.length; i++) this.buf[this.pos + i] = data[i];
     else this.buf.set(data, this.pos);
     this.pos = end;
@@ -128,7 +128,7 @@ export class ByteStream {
     return this.buf.slice(0, this.len);
   }
 
-  /** `getbuffer()` - a view without copying. */
+  /** The written bytes as a view, without copying. */
   view(): Uint8Array {
     this.own();
     return this.buf.subarray(0, this.len);
