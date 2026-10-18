@@ -145,7 +145,7 @@ export const _load_config_cached = lru_cache(
       doc = parse(decode(new Path(config_path).read_bytes(), "utf-8"), {
         ..._OcioLoader.options,
       });
-    } catch (e: unknown) {
+    } catch (e) {
       // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
       if (!(e instanceof OSError || e instanceof YAMLError || (e instanceof Error && "code" in e && py_bool(e.code)))) {
         throw e;
@@ -162,7 +162,7 @@ export function _config_stamp(config_path: Path): [bigint, number] | null {
   let st: host.HostBigStats;
   try {
     st = host.fs.statSync(config_path.path, { bigint: true });
-  } catch (e: unknown) {
+  } catch (e) {
     // `except OSError`: node fs errors carry a `code`.
     if (!(e instanceof Error && "code" in e && py_bool(e.code))) throw e;
     return null;

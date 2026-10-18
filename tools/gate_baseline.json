@@ -16,7 +16,7 @@
     },
     "2 cos+color": {
       "any": 0,
-      "unknown": 3,
+      "unknown": 0,
       "casts": 0
     },
     "3 parsers+synthesis": {
