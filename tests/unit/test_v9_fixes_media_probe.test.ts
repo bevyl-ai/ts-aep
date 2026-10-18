@@ -10,7 +10,7 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, ValueError, b, bytes_, concat, getitem, pyAssert, pyEq, sorted, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, Path, ValueError, b, bytes_, concat, getOrThrow, assert, valueEquals, sorted, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -65,8 +65,8 @@ const _TRUNCATED: Map<string, Uint8Array> = new Map<string, Uint8Array>([
 test.each(sorted(Array.from(_TRUNCATED.keys())).map((n) => [n]))("test_truncated_media_raises_value_error[%#]", (name: string) => {
   const tmpPath = makeTmpPath();
   const path = tmpPath.div(name);
-  path.writeBytes(getitem(_TRUNCATED, name));
-  for (const data of [null, getitem(_TRUNCATED, name)]) {
+  path.writeBytes(getOrThrow(_TRUNCATED, name));
+  for (const data of [null, getOrThrow(_TRUNCATED, name)]) {
     raises(ValueError, () => probeMedia(path, data));
   }
 });
@@ -157,9 +157,9 @@ test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (maxP
   const parser = new CosParser(new BytesIO(data), maxPos);
   const [result] = _run(() => [parser.lex(), parser.parseValue()], 5.0);
   expect(result instanceof Error).toBe(false);
-  pyAssert(Array.isArray(result));
+  assert(Array.isArray(result));
   const stream = asInstance(result[1], Stream);
-  expect(pyEq(stream.data, body)).toBe(true);
+  expect(valueEquals(stream.data, body)).toBe(true);
   expect(TokenType.nameOf(parser.lookahead.type)).toBe("IndirectObjectEnd");
 });
 

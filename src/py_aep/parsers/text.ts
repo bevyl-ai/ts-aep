@@ -27,7 +27,7 @@
  * `data["1"]["3"]` (paragraph).
  */
 
-import { pyBool, warn } from "../../pyrt/index.ts";
+import { truthy, warn } from "../../pyrt/index.ts";
 import { cosGet } from "../cos/index.ts";
 import type { CosDict, CosNode } from "../cos/cos.ts";
 import { FontObject } from "../models/text/font_object.ts";
@@ -62,7 +62,7 @@ export const logger = {
  */
 export function parseFonts(cosData: CosDict): FontObject[] {
   const fontArray = cosGet(cosData, "0", "1", "0");
-  if (!pyBool(fontArray) || !Array.isArray(fontArray)) {
+  if (!truthy(fontArray) || !Array.isArray(fontArray)) {
     return [];
   }
 
@@ -132,7 +132,7 @@ export function parseTextDocuments(
   btdkBody: ListChunk,
 ): TextDocument[] {
   const docArray = cosGet(cosData, "1", "1");
-  if (!pyBool(docArray) || !Array.isArray(docArray)) {
+  if (!truthy(docArray) || !Array.isArray(docArray)) {
     return [];
   }
 

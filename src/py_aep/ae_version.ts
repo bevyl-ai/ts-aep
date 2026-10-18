@@ -3,7 +3,7 @@
  * layer each After Effects release writes.
  */
 
-import { AttributeError, getattr, getitem, hasattr, int, typeName } from "../pyrt/index.ts";
+import { AttributeError, getattr, getOrThrow, hasattr, int, typeName } from "../pyrt/index.ts";
 
 // The After Effects majors whose saves contain each version-gated part of a
 // new project, item or layer, as `(first, last)` (`last` None: still
@@ -55,7 +55,7 @@ export const _WRITTEN_BY = new Map<string, readonly [number, number | null]>([
  * `_WRITTEN_BY` key) for a newly created project, item or layer.
  */
 export function aeWrites(part: string, major: number): boolean {
-  const [first, last] = getitem(_WRITTEN_BY, part);
+  const [first, last] = getOrThrow(_WRITTEN_BY, part);
   return first <= major && (last == null || major <= last);
 }
 

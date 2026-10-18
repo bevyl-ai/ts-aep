@@ -65,18 +65,18 @@ import {
   BytesIO,
   Path,
   decode,
-  dictGet,
+  getOr,
   fspath,
   getattr,
   setattr,
-  getitem,
+  getOrThrow,
   int,
   max,
-  pyAssert,
-  pyBool,
-  pyCmp,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  compare,
+  valueEquals,
+  truthyOr,
   repr,
   rshift,
   round,
@@ -510,7 +510,7 @@ export class Project {
     );
     if (blob == null || blob.length !== 16) return;
     const item = TimeDisplayPrefItem.frombytes(blob);
-    pyAssert(item instanceof TimeDisplayPrefItem);
+    assert(item instanceof TimeDisplayPrefItem);
     for (const chunk of [nhed, nnhd]) {
       chunk.timeDisplayType = item.displayByte & 0x7f;
       chunk.feetFramesFilmType = (item.displayByte & 0x80) !== 0;
@@ -768,7 +768,7 @@ export class Project {
    * the Project panel. Read-only.
    */
   get rootFolder(): FolderItem {
-    return getitem(this._items, 0) as FolderItem;
+    return getOrThrow(this._items, 0) as FolderItem;
   }
 
   get _rootChunks(): Chunk[] {
@@ -930,10 +930,10 @@ export class Project {
     const cppl = findByListType(this._rootChunks, "CPPl");
     // The first profile whose id is not below the new one: the same
     // profile (reused) or the one the new profile goes before.
-    const at = cppl.chunks.findIndex((pprf) => pyCmp(iccProfileId(pprf.data), profileId) >= 0);
+    const at = cppl.chunks.findIndex((pprf) => compare(iccProfileId(pprf.data), profileId) >= 0);
     if (at === -1) {
       cppl.chunks.push(new Chunk({ chunkType: "pprf", data: icc }));
-    } else if (pyCmp(iccProfileId(cppl.chunks[at].data), profileId) > 0) {
+    } else if (compare(iccProfileId(cppl.chunks[at].data), profileId) > 0) {
       cppl.chunks.splice(at, 0, new Chunk({ chunkType: "pprf", data: icc }));
     }
     this._cpid.data = profileId;
@@ -1086,7 +1086,7 @@ export class Project {
    */
   get colorManagementSystem(): ColorManagementSystem {
     const settings = this._getCmsSettings();
-    return ColorManagementSystem.of(jsonInt(getitem(settings, "colorManagementSystem")));
+    return ColorManagementSystem.of(jsonInt(getOrThrow(settings, "colorManagementSystem")));
   }
 
   set colorManagementSystem(value: ColorManagementSystem | number) {
@@ -1099,7 +1099,7 @@ export class Project {
    */
   get lutInterpolationMethod(): LutInterpolationMethod {
     const settings = this._getCmsSettings();
-    return LutInterpolationMethod.of(jsonInt(getitem(settings, "lutInterpolationMethod")));
+    return LutInterpolationMethod.of(jsonInt(getOrThrow(settings, "lutInterpolationMethod")));
   }
 
   set lutInterpolationMethod(value: LutInterpolationMethod | number) {
@@ -1112,7 +1112,7 @@ export class Project {
    */
   get ocioConfigurationFile(): string {
     const settings = this._getCmsSettings();
-    return str(getitem(settings, "ocioConfigurationFile"));
+    return str(getOrThrow(settings, "ocioConfigurationFile"));
   }
 
   set ocioConfigurationFile(value: PathLike) {
@@ -1746,7 +1746,7 @@ export class Project {
     const canvasW = info.width;
     const canvasH = info.height;
     if (clipCounter == null) clipCounter = count(1);
-    const reservedC8 = getitem(PSD_LAYER_STYLES_C8, layerStyles);
+    const reservedC8 = getOrThrow(PSD_LAYER_STYLES_C8, layerStyles);
     const specs: (LayerSpec | LayerGroupSpec)[] = [];
     let index = 0;
     while (index < nodes.length) {
@@ -2201,9 +2201,9 @@ export class Project {
       const text = alas.value;
       const data = text ? jsonLoads(text) : new Map<string, JsonValue>();
       if (!(data instanceof Map)) throw new AttributeError(`'${typeName(data)}' object has no attribute 'get'`);
-      if (!pyEq(dictGet(data, "ascendcount_base"), PENDING_ASCENDCOUNT)) continue;
+      if (!valueEquals(getOr(data, "ascendcount_base"), PENDING_ASCENDCOUNT)) continue;
       const counts = relativePathCounts(projectFile, alasFullpath(data), {
-        targetIsFolder: pyBool(dictGet(data, "target_is_folder")),
+        targetIsFolder: truthy(getOr(data, "target_is_folder")),
       });
       data.set("ascendcount_base", counts[0]);
       data.set("ascendcount_target", counts[1]);
@@ -2509,7 +2509,7 @@ _STYLE_TDB4_CANON.set("ADBE Blend Interior", _STYLE_TDB4_TOGGLE);
 export function _stampStyleTdb4(leaf: Property, matchName: string, timebase: number, pointAspect: number): void {
   const tdb4 = leaf._tdb4;
   if (tdb4 == null) return;
-  const canon = pyOr(
+  const canon = truthyOr(
     _STYLE_TDB4_CANON.get(matchName),
     _STYLE_TDB4_CANON.get(matchName.slice(matchName.lastIndexOf("/") + 1)) ?? null,
   );
@@ -2583,10 +2583,10 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   // enabled OR the layer carries blend-options data (a Photoshop Fill
   // slider away from 100% enables the chain with zero styles - the
   // psd_fill_opacity fixture).
-  const styled = styles != null && pyBool(styles.enabled?.length > 0 ? styles.enabled : styles.blendOptions);
+  const styled = styles != null && truthy(styles.enabled?.length > 0 ? styles.enabled : styles.blendOptions);
   const containerFlags = styled ? 1 : 3;
   container._ensureMaterialized();
-  pyAssert(container._tdsb != null);
+  assert(container._tdsb != null);
   container._tdsb._enableFlags = containerFlags;
   // The synthesis pass stamped derived `enabled` overrides while every
   // group was still synthetic-disabled; refresh them to the written state
@@ -2595,14 +2595,14 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   for (const child of container.properties) {
     if (!(child instanceof PropertyGroup)) continue;
     child._ensureMaterialized();
-    pyAssert(child._tdsb != null);
+    assert(child._tdsb != null);
     if (child.matchName === "ADBE Blend Options Group") {
       child._tdsb._enableFlags = containerFlags;
       instanceDict(child).set("enabled", styled);
       for (const sub of child.properties) {
         if (sub instanceof PropertyGroup) {
           sub._ensureMaterialized();
-          pyAssert(sub._tdsb != null);
+          assert(sub._tdsb != null);
           // AE writes the Advanced Blending subgroup enabled on
           // EVERY import, plain skeletons included (pinned by the
           // psd_fill_opacity/psd_layer_styles/ai_comp fixtures).

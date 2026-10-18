@@ -7,10 +7,10 @@ import {
   NotImplementedError,
   Path,
   contains,
-  getitem,
+  getOrThrow,
   len,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
 } from "../../src/pyrt/index.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
 import { PsdLayer, readPsdLayers, type PsdNode } from "../../src/py_aep/resolvers/psd_layers.ts";
@@ -37,13 +37,13 @@ describe("TestReadGlobalLight", () => {
   test("test_document_resources", () => {
     // Resources 1037/1049 of the sample document (AE wrote 49/11 into
     // every layer's Blend Options in the editable fixtures).
-    expect(pyEq(readGlobalLight(STYLED), [49.0, 11.0])).toBe(true);
+    expect(valueEquals(readGlobalLight(STYLED), [49.0, 11.0])).toBe(true);
   });
 
   test("test_defaults_when_absent", () => {
     // choose_layer.psd carries no global-light resources; AE's Layer
     // Styles defaults apply.
-    expect(pyEq(readGlobalLight(ASSETS.div("choose_layer.psd")), [120.0, 30.0])).toBe(true);
+    expect(valueEquals(readGlobalLight(ASSETS.div("choose_layer.psd")), [120.0, 30.0])).toBe(true);
   });
 });
 
@@ -51,49 +51,49 @@ describe("TestParseLayerStyles", () => {
   test("test_values_match_editable_fixture", () => {
     // Spot-check the AE-unit conversion against values AE wrote into
     // psd_layer_styles_single.aep (fixture-decoded ground truth).
-    const leaf = asInstance(getitem(_leaves(SINGLE), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(SINGLE), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(SINGLE));
-    pyAssert(styles != null);
+    assert(styles != null);
     const values = styles.values;
-    expect(getitem(values, "dropShadow/mode2")).toBe(17.0); // softLight
-    expect(getitem(values, "innerShadow/mode2")).toBe(4.0); // darken
-    expect(getitem(values, "outerGlow/mode2")).toBe(24.0); // difference
-    expect(getitem(values, "innerGlow/mode2")).toBe(13.0); // linearDodge
-    expect(getitem(values, "frameFX/mode2")).toBe(10.0); // lighten
-    expect(getitem(values, "frameFX/style")).toBe(2.0); // InsF = inside
-    expect(getitem(values, "frameFX/size")).toBe(6.0);
-    expect(getitem(values, "frameFX/opacity")).toBe(91.0);
+    expect(getOrThrow(values, "dropShadow/mode2")).toBe(17.0); // softLight
+    expect(getOrThrow(values, "innerShadow/mode2")).toBe(4.0); // darken
+    expect(getOrThrow(values, "outerGlow/mode2")).toBe(24.0); // difference
+    expect(getOrThrow(values, "innerGlow/mode2")).toBe(13.0); // linearDodge
+    expect(getOrThrow(values, "frameFX/mode2")).toBe(10.0); // lighten
+    expect(getOrThrow(values, "frameFX/style")).toBe(2.0); // InsF = inside
+    expect(getOrThrow(values, "frameFX/size")).toBe(6.0);
+    expect(getOrThrow(values, "frameFX/opacity")).toBe(91.0);
     // The gradient-paint stroke imports its color verbatim (black).
-    expect(pyEq(getitem(values, "frameFX/color"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
-    expect(getitem(values, "dropShadow/opacity")).toBe(44.0);
-    expect(getitem(values, "dropShadow/localLightingAngle")).toBe(90.0);
-    expect(getitem(values, "outerGlow/AEColorChoice")).toBe(2.0); // gradient fill
-    expect(getitem(values, "innerGlow/innerGlowSource")).toBe(2.0); // SrcC
-    expect(getitem(values, "bevelEmboss/bevelStyle")).toBe(3.0); // Embs
-    expect(getitem(values, "bevelEmboss/highlightMode")).toBe(12.0); // colorDodge
+    expect(valueEquals(getOrThrow(values, "frameFX/color"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(getOrThrow(values, "dropShadow/opacity")).toBe(44.0);
+    expect(getOrThrow(values, "dropShadow/localLightingAngle")).toBe(90.0);
+    expect(getOrThrow(values, "outerGlow/AEColorChoice")).toBe(2.0); // gradient fill
+    expect(getOrThrow(values, "innerGlow/innerGlowSource")).toBe(2.0); // SrcC
+    expect(getOrThrow(values, "bevelEmboss/bevelStyle")).toBe(3.0); // Embs
+    expect(getOrThrow(values, "bevelEmboss/highlightMode")).toBe(12.0); // colorDodge
     // Blend options: global light + iOpa/brst/infx tagged blocks.
-    expect(getitem(values, "ADBE Global Angle2")).toBe(49.0);
-    expect(getitem(values, "ADBE Global Altitude2")).toBe(11.0);
-    expect(getitem(values, "ADBE Layer Fill Opacity2")).toBe(89.0);
-    expect(getitem(values, "ADBE G Channel Blend")).toBe(0.0);
-    expect(getitem(values, "ADBE R Channel Blend")).toBe(1.0);
-    expect(getitem(values, "ADBE Blend Interior")).toBe(1.0);
+    expect(getOrThrow(values, "ADBE Global Angle2")).toBe(49.0);
+    expect(getOrThrow(values, "ADBE Global Altitude2")).toBe(11.0);
+    expect(getOrThrow(values, "ADBE Layer Fill Opacity2")).toBe(89.0);
+    expect(getOrThrow(values, "ADBE G Channel Blend")).toBe(0.0);
+    expect(getOrThrow(values, "ADBE R Channel Blend")).toBe(1.0);
+    expect(getOrThrow(values, "ADBE Blend Interior")).toBe(1.0);
     expect(len(styles.enabled)).toBe(10);
-    expect(pyEq(styles.dropped, [])).toBe(true);
+    expect(valueEquals(styles.dropped, [])).toBe(true);
   });
 
   test("test_gradient_stops", () => {
-    const leaf = asInstance(getitem(_leaves(SINGLE), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(SINGLE), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(SINGLE));
-    pyAssert(styles != null);
-    const gradient = getitem(styles.values, "outerGlow/gradient");
-    pyAssert(gradient instanceof Gradient);
+    assert(styles != null);
+    const gradient = getOrThrow(styles.values, "outerGlow/gradient");
+    assert(gradient instanceof Gradient);
     expect(len(gradient.colorStops)).toBe(5);
     expect(len(gradient.alphaStops)).toBe(2);
     // Stop positions are Lctn/4096; colors Rd/255 (write path quantizes
     // to the f4 AE stores).
     const offsets = gradient.colorStops.map((stop) => stop.offset);
-    expect(pyEq(offsets, [0.0, 0.25, 0.5, 0.75, 1.0])).toBe(true);
+    expect(valueEquals(offsets, [0.0, 0.25, 0.5, 0.75, 1.0])).toBe(true);
     const first = gradient.colorStops[0].color;
     expect(Math.abs(first[0] - 0.9137255) < 1e-6).toBe(true);
   });
@@ -101,10 +101,10 @@ describe("TestParseLayerStyles", () => {
   test("test_multi_instance_styles_drop", () => {
     // The main PSD has TWO stroke instances per layer; AE drops the
     // whole style (even though one instance is a plain solid stroke).
-    const leaf = asInstance(getitem(_leaves(STYLED), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(STYLED), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(STYLED));
-    pyAssert(styles != null);
-    expect(pyEq(styles.dropped, ["frameFX"])).toBe(true);
+    assert(styles != null);
+    expect(valueEquals(styles.dropped, ["frameFX"])).toBe(true);
     expect(contains(styles.enabled, "frameFX")).toBe(false);
     expect(styles.values.has("frameFX/mode2")).toBe(false);
   });
@@ -112,16 +112,16 @@ describe("TestParseLayerStyles", () => {
   test("test_two_representable_instances_still_drop", () => {
     // The variant's top layer has two identical inner shadows: the
     // instance COUNT is the trigger, not unrepresentable content.
-    const leaf = asInstance(getitem(_leaves(VARIANT), "Layer 1 copy"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(VARIANT), "Layer 1 copy"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(VARIANT));
-    pyAssert(styles != null);
-    expect(pyEq(styles.dropped, ["innerShadow"])).toBe(true);
+    assert(styles != null);
+    expect(valueEquals(styles.dropped, ["innerShadow"])).toBe(true);
     // Its single gradient-paint stroke imports fine.
     expect(contains(styles.enabled, "frameFX")).toBe(true);
   });
 
   test("test_no_styles_returns_none", () => {
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
     expect(leaf.styleBlocks == null).toBe(true);
     expect(parseLayerStyles(leaf, [120.0, 30.0]) == null).toBe(true);
   });
@@ -130,22 +130,22 @@ describe("TestParseLayerStyles", () => {
     // AE imports a style whose gradient is a Noise gradient, dropping only
     // the (unrepresentable) gradient leaf. On 'Layer 1' the gradient fill
     // carries the noise gradient.
-    const leaf = asInstance(getitem(_leaves(psd), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(psd), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(psd));
-    pyAssert(styles != null);
+    assert(styles != null);
     expect(contains(styles.enabled, "gradientFill")).toBe(true);
     expect(styles.values.has("gradientFill/opacity")).toBe(true);
     expect(styles.values.has("gradientFill/gradient")).toBe(false);
-    expect(pyEq(styles.dropped, [])).toBe(true);
+    expect(valueEquals(styles.dropped, [])).toBe(true);
   });
 
   test("test_present_but_disabled_glows_still_import", () => {
     // AE keeps the single-instance glow/bevel/satin parameters even when
     // the style is fully unchecked (present=False); other styles with
     // present=False stay plain skeletons.
-    const leaf = asInstance(getitem(_leaves(NOISE), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(NOISE), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, readGlobalLight(NOISE));
-    pyAssert(styles != null);
+    assert(styles != null);
     // outerGlow is present=False here: imported, neither enabled nor
     // in `disabled` (its tdsb stays the absent-style 0x02).
     expect(styles.values.has("outerGlow/opacity")).toBe(true);
@@ -160,47 +160,47 @@ describe("TestParseLayerStyles", () => {
   test("test_present_true_disabled_shadow_imports", () => {
     // present=True + enab=False: parameters import and the prefix lands
     // in `disabled` (AE writes tdsb 0x00 - psd_fill_opacity fixture).
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow"), PsdLayer);
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
-    pyAssert(styles != null);
+    assert(styles != null);
     expect(contains(styles.disabled, "dropShadow")).toBe(true);
     expect(contains(styles.enabled, "dropShadow")).toBe(false);
-    expect(getitem(styles.values, "dropShadow/distance")).toBe(7.0);
-    expect(getitem(styles.values, "ADBE Layer Fill Opacity2")).toBe(60.0);
+    expect(getOrThrow(styles.values, "dropShadow/distance")).toBe(7.0);
+    expect(getOrThrow(styles.values, "ADBE Layer Fill Opacity2")).toBe(60.0);
     expect(styles.blendOptions).toBe(true);
   });
 
   test("test_fill_opacity_without_styles", () => {
     // A Fill slider away from 100% imports alone: no lfx2 block at all,
     // yet AE enables the blend-options chain and writes the leaf.
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill only"), PsdLayer);
-    pyAssert(leaf.styleBlocks != null);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill only"), PsdLayer);
+    assert(leaf.styleBlocks != null);
     expect(leaf.styleBlocks.effects == null).toBe(true);
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
-    pyAssert(styles != null);
+    assert(styles != null);
     expect(styles.blendOptions).toBe(true);
-    expect(pyEq(styles.enabled, [])).toBe(true);
-    expect(getitem(styles.values, "ADBE Layer Fill Opacity2")).toBe(40.0);
+    expect(valueEquals(styles.enabled, [])).toBe(true);
+    expect(getOrThrow(styles.values, "ADBE Layer Fill Opacity2")).toBe(40.0);
   });
 
   test("test_gradient_smoothness_maps_from_intr", () => {
     // Grdn `Intr` is the Smoothness slider; AE maps it onto the
     // gradientSmoothness leaf as Intr/4096*100.
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("psd_styles_smoothness.psd")), "Layer 1"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("psd_styles_smoothness.psd")), "Layer 1"), PsdLayer);
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
-    pyAssert(styles != null);
-    expect(getitem(styles.values, "gradientFill/gradientSmoothness")).toBe(50.0);
-    expect(getitem(styles.values, "outerGlow/gradientSmoothness")).toBe(25.0);
+    assert(styles != null);
+    expect(getOrThrow(styles.values, "gradientFill/gradientSmoothness")).toBe(50.0);
+    expect(getOrThrow(styles.values, "outerGlow/gradientSmoothness")).toBe(25.0);
   });
 
   test("test_legacy_4cc_blend_modes", () => {
     // Zero-length 4-char typeID enum spellings resolve like AE does
     // (spliced psd_blend_4cc fixture: Mltp=multiply, SftL=softLight).
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("psd_blend_4cc.psd")), "legacy modes"), PsdLayer);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("psd_blend_4cc.psd")), "legacy modes"), PsdLayer);
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
-    pyAssert(styles != null);
-    expect(getitem(styles.values, "dropShadow/mode2")).toBe(5.0);
-    expect(getitem(styles.values, "innerShadow/mode2")).toBe(17.0);
+    assert(styles != null);
+    expect(getOrThrow(styles.values, "dropShadow/mode2")).toBe(5.0);
+    expect(getOrThrow(styles.values, "innerShadow/mode2")).toBe(17.0);
   });
 
   test("test_4cc_alias_set_matches_ae", () => {
@@ -238,18 +238,18 @@ describe("TestParseLayerStyles", () => {
       "blendDivide",
     ];
     for (const [name, mode2] of resolved) {
-      const styles = parseLayerStyles(asInstance(getitem(leaves, name), PsdLayer), [120.0, 30.0]);
-      pyAssert(styles != null);
-      pyAssert(getitem(styles.values, "dropShadow/mode2") === mode2, name);
+      const styles = parseLayerStyles(asInstance(getOrThrow(leaves, name), PsdLayer), [120.0, 30.0]);
+      assert(styles != null);
+      assert(getOrThrow(styles.values, "dropShadow/mode2") === mode2, name);
     }
     for (const name of unresolved) {
       let styles: PsdLayerStyles | null | undefined;
       // NOTE(port): every warnings.warn in psd_styles.py uses the default UserWarning, so the message-only match is equivalent
       warns(() => {
-        styles = parseLayerStyles(asInstance(getitem(leaves, name), PsdLayer), [120.0, 30.0]);
+        styles = parseLayerStyles(asInstance(getOrThrow(leaves, name), PsdLayer), [120.0, 30.0]);
       }, "mode2");
-      pyAssert(styles != null);
-      pyAssert(!styles.values.has("dropShadow/mode2"), name);
+      assert(styles != null);
+      assert(!styles.values.has("dropShadow/mode2"), name);
     }
   });
 });
@@ -257,12 +257,12 @@ describe("TestParseLayerStyles", () => {
 describe("TestHasEnabledStyles", () => {
   test("test_styled_and_multi_instance_layers", () => {
     // Multi-instance styles rasterize in merge mode too, so they count.
-    expect(hasEnabledStyles(getitem(_leaves(STYLED), "Layer 1"))).toBe(true);
-    expect(hasEnabledStyles(getitem(_leaves(VARIANT), "Layer 1 copy"))).toBe(true);
+    expect(hasEnabledStyles(getOrThrow(_leaves(STYLED), "Layer 1"))).toBe(true);
+    expect(hasEnabledStyles(getOrThrow(_leaves(VARIANT), "Layer 1 copy"))).toBe(true);
   });
 
   test("test_style_less_layer", () => {
-    expect(hasEnabledStyles(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"))).toBe(false);
+    expect(hasEnabledStyles(getOrThrow(_leaves(ASSETS.div("choose_layer.psd")), "solo"))).toBe(false);
   });
 });
 
@@ -360,7 +360,7 @@ describe("TestMergedStylesBounds", () => {
   ])("test_style_pads_match_ae[%#]", (key: string, instance: Map<string, _Value>, pads: number[]) => {
     const [left, top, right, bottom] = pads;
     const box = _instanceBox(key, instance, [0, 0, 24, 25], 120.0, "Layer 1");
-    expect(pyEq(box, [-left, -top, 24 + right, 25 + bottom])).toBe(true);
+    expect(valueEquals(box, [-left, -top, 24 + right, 25 + bottom])).toBe(true);
   });
 
   test.each([
@@ -379,7 +379,7 @@ describe("TestMergedStylesBounds", () => {
     const instance = new Map<string, _Value>([..._DS, ["blur", 10.0], ["Dstn", 11.0], ["uglg", true], ["lagl", 0.0]]);
     const box = _instanceBox("DrSh", instance, [0, 0, 24, 25], 90.0, "Layer 1");
     // straight down, as the 90 degree global light
-    expect(pyEq(box, [-12, -1, 36, 48])).toBe(true);
+    expect(valueEquals(box, [-12, -1, 36, 48])).toBe(true);
   });
 
   test("test_stroke_emboss_is_refused", () => {
@@ -397,13 +397,13 @@ describe("TestMergedStylesBounds", () => {
     const angle = readGlobalLight(STYLED)[0];
     for (const name of ["Layer 1", "Layer 1 copy"]) {
       expect(
-        pyEq(mergedStylesBounds(asInstance(getitem(_leaves(STYLED), name), PsdLayer), angle), [-45, -45, 69, 70]),
+        valueEquals(mergedStylesBounds(asInstance(getOrThrow(_leaves(STYLED), name), PsdLayer), angle), [-45, -45, 69, 70]),
       ).toBe(true);
     }
   });
 
   test("test_style_less_layer_keeps_its_bounds", () => {
-    const leaf = asInstance(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
-    expect(pyEq(mergedStylesBounds(leaf, 120.0), leaf.bounds)).toBe(true);
+    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
+    expect(valueEquals(mergedStylesBounds(leaf, 120.0), leaf.bounds)).toBe(true);
   });
 });

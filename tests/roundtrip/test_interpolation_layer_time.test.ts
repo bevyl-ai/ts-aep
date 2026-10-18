@@ -24,7 +24,7 @@ import type { Application } from "../../src/py_aep/index.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { max, min, pyEq, range, sorted } from "../../src/pyrt/index.ts";
+import { max, min, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 function _newComp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
@@ -310,7 +310,7 @@ describe("TestNegativeStretchInterpolates", () => {
         { abs: 1e-4 },
       ),
     ).toBe(true);
-    expect(pyEq(opacity.keyframes.map((kf) => kf.value), [100.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(opacity.keyframes.map((kf) => kf.value), [100.0, 50.0, 0.0])).toBe(true);
   });
 
   test("test_interpolates_across_the_reversed_span", () => {
@@ -413,14 +413,14 @@ describe("TestRovingRedistributionUnderStretch", () => {
       position.keyframes[1].roving = true;
       position.keyframes[2].roving = true;
 
-      expect(pyEq(position.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
+      expect(valueEquals(position.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
       const low = min(anchors);
       const high = max(anchors);
       expect(
         position.keyframes.slice(1, 3).every((kf) => low <= kf.time && kf.time <= high),
       ).toBe(true);
       const layerTimes = position.keyframes.map((kf) => kf._layerTime);
-      expect(pyEq(layerTimes, sorted(layerTimes))).toBe(true);
+      expect(valueEquals(layerTimes, sorted(layerTimes))).toBe(true);
     },
   );
 

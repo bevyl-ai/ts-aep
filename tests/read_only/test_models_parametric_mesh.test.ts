@@ -10,7 +10,7 @@
 // evaluated at runtime. `Path(__file__).parent...` becomes `import.meta.dir`.
 
 import { describe, expect, test } from "bun:test";
-import { at, getitem, Path, pyAssert, len } from "../../src/pyrt/index.ts";
+import { at, getOrThrow, Path, assert, len } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -26,7 +26,7 @@ describe("TestParametricMeshValidation", () => {
   test("test_validates_against_extendscript", () => {
     /** Parsed output matches the ExtendScript export exactly. */
     const result = validateAep(MESH_AEP, MESH_JSON);
-    pyAssert(len(result) === 0, result.differences.slice(0, 40).join("\n"));
+    assert(len(result) === 0, result.differences.slice(0, 40).join("\n"));
   });
 });
 
@@ -36,12 +36,12 @@ describe("TestParametricMeshModel", () => {
     const comp = project.compositions[0];
     const byName = new Map(comp.layers.map((layer) => [layer.name, layer] as const));
 
-    const cube = getitem(byName, "Cube Mesh Layer 1");
-    pyAssert(cube instanceof ParametricMeshLayer);
+    const cube = getOrThrow(byName, "Cube Mesh Layer 1");
+    assert(cube instanceof ParametricMeshLayer);
     expect(cube.parametricMeshType === ParametricMeshType.CUBE).toBe(true);
     expect(cube.parametricMeshOptions instanceof CubeMeshOptions).toBe(true);
 
-    const cyl = asInstance(getitem(byName, "Cylinder Mesh Layer 1"), ParametricMeshLayer);
+    const cyl = asInstance(getOrThrow(byName, "Cylinder Mesh Layer 1"), ParametricMeshLayer);
     expect(cyl.parametricMeshType === ParametricMeshType.CYLINDER).toBe(true);
     expect(cyl.parametricMeshOptions instanceof CylinderMeshOptions).toBe(true);
   });

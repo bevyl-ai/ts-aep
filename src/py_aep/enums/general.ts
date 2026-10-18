@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { ValueError, getitem, int, intEnum, repr, type EnumValue } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, int, intEnum, repr, type EnumValue } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 
 /**
@@ -105,7 +105,7 @@ export const AlphaMode = intEnum("AlphaMode", {
   },
   /** Convert AlphaMode to binary value. */
   toBinary(self: number): number {
-    return getitem(_ALPHA_MODE_TO_BINARY, self);
+    return getOrThrow(_ALPHA_MODE_TO_BINARY, self);
   },
 });
 export type AlphaMode = EnumValue<typeof AlphaMode>;
@@ -135,7 +135,7 @@ export const BitsPerChannel = intEnum("BitsPerChannel", {
   },
   /** Convert BitsPerChannel to binary value. */
   toBinary(self: number): number {
-    return getitem(_BITS_PER_CHANNEL_TO_BINARY, self);
+    return getOrThrow(_BITS_PER_CHANNEL_TO_BINARY, self);
   },
 });
 export type BitsPerChannel = EnumValue<typeof BitsPerChannel>;
@@ -228,7 +228,7 @@ export const BlendingMode = intEnum("BlendingMode", {
    * `AVLayer.blendingMode`, not by this value.
    */
   toBinary(self: number): number {
-    return getitem(_BLENDING_MODE_TO_BINARY, self);
+    return getOrThrow(_BLENDING_MODE_TO_BINARY, self);
   },
 });
 export type BlendingMode = EnumValue<typeof BlendingMode>;
@@ -407,7 +407,7 @@ export const FieldSeparationType = intEnum("FieldSeparationType", {
   },
   /** Convert FieldSeparationType to binary value. */
   toBinary(self: number): number {
-    return getitem(_FIELD_SEP_TO_BINARY, self);
+    return getOrThrow(_FIELD_SEP_TO_BINARY, self);
   },
 });
 export type FieldSeparationType = EnumValue<typeof FieldSeparationType>;
@@ -436,7 +436,7 @@ export const FootageTimecodeDisplayStartType = intEnum("FootageTimecodeDisplaySt
   },
   /** Convert FootageTimecodeDisplayStartType to binary value. */
   toBinary(self: number): number {
-    return getitem(_FOOTAGE_TIMECODE_TO_BINARY, self);
+    return getOrThrow(_FOOTAGE_TIMECODE_TO_BINARY, self);
   },
 });
 export type FootageTimecodeDisplayStartType = EnumValue<typeof FootageTimecodeDisplayStartType>;
@@ -580,7 +580,7 @@ export const GuideOrientationType = intEnum("GuideOrientationType", {
   },
   /** Convert GuideOrientationType to binary value. */
   toBinary(self: number): number {
-    return getitem(_GUIDE_ORIENTATION_TO_BINARY, self);
+    return getOrThrow(_GUIDE_ORIENTATION_TO_BINARY, self);
   },
 });
 export type GuideOrientationType = EnumValue<typeof GuideOrientationType>;
@@ -787,7 +787,7 @@ export const MaskMotionBlur = intEnum("MaskMotionBlur", {
   },
   /** Convert MaskMotionBlur to binary value. */
   toBinary(self: number): number {
-    return getitem(_MASK_MOTION_BLUR_TO_BINARY, self);
+    return getOrThrow(_MASK_MOTION_BLUR_TO_BINARY, self);
   },
 });
 export type MaskMotionBlur = EnumValue<typeof MaskMotionBlur>;
@@ -875,7 +875,7 @@ export const PulldownPhase = intEnum("PulldownPhase", {
   },
   /** Convert PulldownPhase to binary value. */
   toBinary(self: number): number {
-    return getitem(_PULLDOWN_TO_BINARY, self);
+    return getOrThrow(_PULLDOWN_TO_BINARY, self);
   },
 });
 export type PulldownPhase = EnumValue<typeof PulldownPhase>;

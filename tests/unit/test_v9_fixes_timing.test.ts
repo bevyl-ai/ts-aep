@@ -14,7 +14,7 @@ import { SspcChunk } from "../../src/py_aep/binary/footage_chunks.ts";
 import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { RenderSettingsItem, RouuChunk } from "../../src/py_aep/binary/render_chunks.ts";
 import { _frameNumber } from "../../src/py_aep/models/items/composition.ts";
-import { Fraction, getitem, pyEq, pyBool, sorted, struct } from "../../src/pyrt/index.ts";
+import { Fraction, getOrThrow, valueEquals, truthy, sorted, struct } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -66,8 +66,8 @@ describe("TestTimebaseRule", () => {
   test.each(sorted(Array.from(_AE_TIMEBASES.keys())).map((rate) => [rate]))(
     "test_timebase_matches_after_effects[%#]",
     (rate: number) => {
-      const [timebase, unitsPerFrame] = getitem(_AE_TIMEBASES, rate);
-      expect(pyEq(frameGrid(rate), [timebase, unitsPerFrame])).toBe(true);
+      const [timebase, unitsPerFrame] = getOrThrow(_AE_TIMEBASES, rate);
+      expect(valueEquals(frameGrid(rate), [timebase, unitsPerFrame])).toBe(true);
       const cdta = new CdtaChunk();
       cdta.frameRate = rate;
       expect(cdta.internalTimebase).toBe(timebase);
@@ -140,20 +140,20 @@ describe("TestFixedPointRates", () => {
   test("test_cdta", () => {
     const cdta = new CdtaChunk();
     cdta.frameRate = 23.99999999;
-    expect(pyEq([cdta.frameRateInteger, cdta.frameRateFractional], [24, 0])).toBe(true);
+    expect(valueEquals([cdta.frameRateInteger, cdta.frameRateFractional], [24, 0])).toBe(true);
     expect(cdta.tobytes().length).toBe(new CdtaChunk().tobytes().length);
   });
 
   test("test_render_settings", () => {
     const item = new RenderSettingsItem();
     item.frameRate = 29.9999999;
-    expect(pyEq([item.frameRateInteger, item.frameRateFractional], [30, 0])).toBe(true);
+    expect(valueEquals([item.frameRateInteger, item.frameRateFractional], [30, 0])).toBe(true);
   });
 
   test("test_output_module", () => {
     const roou = new RouuChunk();
     roou.frameRate = 1.99999999;
-    expect(pyEq([roou.frameRateInteger, roou.frameRateFractional], [2, 0])).toBe(true);
+    expect(valueEquals([roou.frameRateInteger, roou.frameRateFractional], [2, 0])).toBe(true);
   });
 
   test("test_footage_rates", () => {
@@ -163,7 +163,7 @@ describe("TestFixedPointRates", () => {
     expect(sspc.nativeFrameRate).toBe(24.0);
     expect(sspc.conformFrameRate).toBe(30.0);
     expect(sspc.displayFrameRate).toBe(30.0);
-    expect(pyBool(sspc.tobytes())).toBe(true);
+    expect(truthy(sspc.tobytes())).toBe(true);
   });
 });
 
@@ -219,6 +219,6 @@ describe("TestStretchEncoding", () => {
   ])("test_float32_ratio[%#]", (percent: number, ratio: [number, number]) => {
     const ldta = new LdtaChunk();
     ldta.stretch = percent;
-    expect(pyEq([ldta.stretchDividend, ldta.stretchDivisor], ratio)).toBe(true);
+    expect(valueEquals([ldta.stretchDividend, ldta.stretchDivisor], ratio)).toBe(true);
   });
 });

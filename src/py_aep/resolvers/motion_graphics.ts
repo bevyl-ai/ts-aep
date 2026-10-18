@@ -42,7 +42,7 @@ import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { deferred, pyEq, int, jsonDumps } from "../../pyrt/index.ts";
+import { deferred, valueEquals, int, jsonDumps } from "../../pyrt/index.ts";
 
 const _composition = deferred<typeof import("../models/items/composition.ts")>("py_aep/models/items/composition");
 import { FootageItem } from "../models/items/footage.ts";
@@ -249,7 +249,7 @@ export function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]
   for (const ctrl of comp.motionGraphicsControllers) {
     if (ctrl.sourceLayerId !== layerId) continue;
     const stored = ctrl.sourcePropertyPath.map((ref) => [ref.matchName, ref.propIndex]);
-    if (pyEq(stored, wanted)) return true;
+    if (valueEquals(stored, wanted)) return true;
   }
   return false;
 }

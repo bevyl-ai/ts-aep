@@ -20,9 +20,9 @@ import {
   bytes_,
   bytesEq,
   floordiv,
-  getitem,
+  getOrThrow,
   int,
-  pyEq,
+  valueEquals,
   repr,
   sorted,
   zip,
@@ -188,7 +188,7 @@ export class CurvesChannel {
    * through theirs, else the same map (what a pencil curve renders).
    */
   _sameCurve(other: CurvesChannel): boolean {
-    if (this._usesPoints && other._usesPoints) return pyEq(this._points, other._points);
+    if (this._usesPoints && other._usesPoints) return valueEquals(this._points, other._points);
     return bytesEq(this._map, other._map);
   }
 
@@ -243,7 +243,7 @@ export class Curves {
    */
   _sameCurves(other: Curves): boolean {
     return Array.from(this._channels).every(([name, ch]) =>
-      ch._sameCurve(getitem(other._channels, name)),
+      ch._sameCurve(getOrThrow(other._channels, name)),
     );
   }
 
@@ -300,7 +300,7 @@ export class Curves {
       );
     }
     validateNumber(x);
-    const ch = getitem(this._channels, channel);
+    const ch = getOrThrow(this._channels, channel);
     let y: number;
     if (this.usesPoints) {
       y = ch._spline.__call__(x * 255.0) / 255.0;

@@ -9,7 +9,7 @@ import {
   getattr,
   objectGetattr,
   objectSetattr,
-  pyEq,
+  valueEquals,
   repr,
   sorted,
   str,
@@ -103,7 +103,7 @@ export class GradientColorStop {
     return (
       this.offset === other.offset &&
       this.midpoint === other.midpoint &&
-      pyEq(this.color, other.color)
+      valueEquals(this.color, other.color)
     );
   }
 
@@ -379,8 +379,8 @@ export class Gradient {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof Gradient)) return false;
     return (
-      pyEq(this.colorStops, other.colorStops) &&
-      pyEq(this.alphaStops, other.alphaStops) &&
+      valueEquals(this.colorStops, other.colorStops) &&
+      valueEquals(this.alphaStops, other.alphaStops) &&
       this.version === other.version
     );
   }

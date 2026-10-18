@@ -8,7 +8,7 @@
 
 import { expect, test } from "bun:test";
 
-import { Path, ValueError, b, bytes_, pyEq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, b, bytes_, valueEquals } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import { GUID_SEED, murmurhash3X64128 } from "../../src/py_aep/color/murmur3.ts";
 import { ocioColorSpaceForProfileId, ocioOutputProfileId } from "../../src/py_aep/color/ocio.ts";
@@ -19,7 +19,7 @@ const CONFIG = new Path(import.meta.dir)
 
 test("test_murmurhash3_empty_is_zero", () => {
   // Standard MurmurHash3_x64_128 of an empty input with seed 0 is all zeros.
-  expect(pyEq(murmurhash3X64128(b(""), 0), bytes_.repeat(b("\x00"), 16))).toBe(true);
+  expect(valueEquals(murmurhash3X64128(b(""), 0), bytes_.repeat(b("\x00"), 16))).toBe(true);
 });
 
 test("test_guid_seed", () => {

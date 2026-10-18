@@ -1,7 +1,7 @@
 /** Tests for the Curves effect's value (ADBE CurvesCustom-0001). */
 
 import { expect, test } from "bun:test";
-import { b, bytes_, dictGet, float, getitem, isclose, len, pyEq, range, struct, ValueError } from "../../src/pyrt/index.ts";
+import { b, bytes_, getOr, float, getOrThrow, isclose, len, valueEquals, range, struct, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 // Python's `import py_aep.binary.chunk` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
@@ -20,7 +20,7 @@ function _blob(
   const out = new Uint8Array(4 + 5 * 256 + 5 * 72);
   struct.packInto(">HH", out, 0, 1, mode);
   for (const [c, name] of CURVES_CHANNELS.entries()) {
-    const pts = dictGet(points, name, [[0, 0], [255, 255]]);
+    const pts = getOr(points, name, [[0, 0], [255, 255]]);
     out.set(Uint8Array.from(range(256)), 4 + 256 * c);
     const offset = 4 + 5 * 256 + 72 * c;
     for (const [i, [x, y]] of pts.entries()) {
@@ -45,10 +45,10 @@ test("test_decodes_points_in_channel_order", () => {
     _blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]), 1, true),
   );
   expect(curves.usesPoints).toBe(true);
-  expect(pyEq(getitem(curves.channels, "rgb").points, [[0, 0], [168, 93], [255, 246]])).toBe(true);
-  expect(pyEq(getitem(curves.channels, "red").points, [[0, 0], [255, 255]])).toBe(true);
-  expect(getitem(curves.channels, "red").isIdentity).toBe(true);
-  expect(getitem(curves.channels, "rgb").isIdentity).toBe(false);
+  expect(valueEquals(getOrThrow(curves.channels, "rgb").points, [[0, 0], [168, 93], [255, 246]])).toBe(true);
+  expect(valueEquals(getOrThrow(curves.channels, "red").points, [[0, 0], [255, 255]])).toBe(true);
+  expect(getOrThrow(curves.channels, "red").isIdentity).toBe(true);
+  expect(getOrThrow(curves.channels, "rgb").isIdentity).toBe(false);
   expect(curves.isIdentity).toBe(false);
 });
 
@@ -59,7 +59,7 @@ test("test_untouched_curves_are_identity", () => {
 test("test_natural_spline_goes_through_the_points", () => {
   const points: [number, number][] = [[0, 0], [41, 30], [129, 149], [191, 211], [255, 255]];
   const curves = _curves(_blob(new Map([["rgb", points]])));
-  for (const [x, y] of getitem(curves.channels, "rgb").points) {
+  for (const [x, y] of getOrThrow(curves.channels, "rgb").points) {
     expect(isclose(curves.evaluate("rgb", x / 255.0), y / 255.0, undefined, 1e-9)).toBe(true);
   }
 });
@@ -96,14 +96,14 @@ test("test_pencil_mode_reads_the_maps", () => {
 
 test("test_to_dict_emits_the_curves", () => {
   const data = toDict(_curves(_blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]))));
-  expect(getitem(data, "mode")).toBe(1);
-  expect(getitem(data, "version")).toBe(1);
-  expect(getitem(data, "isIdentity")).toBe(false);
-  const channels: Dict = getitem(data, "channels");
-  const rgb: Dict = getitem(channels, "rgb");
-  expect(pyEq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
-  expect(pyEq(getitem(rgb, "map"), [...range(256)])).toBe(true);
-  expect<number>(getitem(rgb, "selected")).toBe(-1);
+  expect(getOrThrow(data, "mode")).toBe(1);
+  expect(getOrThrow(data, "version")).toBe(1);
+  expect(getOrThrow(data, "isIdentity")).toBe(false);
+  const channels: Dict = getOrThrow(data, "channels");
+  const rgb: Dict = getOrThrow(channels, "rgb");
+  expect(valueEquals(getOrThrow(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
+  expect(valueEquals(getOrThrow(rgb, "map"), [...range(256)])).toBe(true);
+  expect<number>(getOrThrow(rgb, "selected")).toBe(-1);
 });
 
 test("test_junk_selected_point_reads_as_none", () => {
@@ -111,11 +111,11 @@ test("test_junk_selected_point_reads_as_none", () => {
   let curves = _curves(
     _blob(new Map([["rgb", [[0, 0], [128, 90], [255, 255]]]]), undefined, undefined, 0x9200ff),
   );
-  expect(getitem(curves.channels, "rgb").selected).toBe(-1);
+  expect(getOrThrow(curves.channels, "rgb").selected).toBe(-1);
   curves = _curves(
     _blob(new Map([["rgb", [[0, 0], [128, 90], [255, 255]]]]), undefined, undefined, 1),
   );
-  expect(getitem(curves.channels, "rgb").selected).toBe(1);
+  expect(getOrThrow(curves.channels, "rgb").selected).toBe(1);
 });
 
 test("test_pencil_identity_map_with_stale_points_is_identity", () => {
@@ -123,7 +123,7 @@ test("test_pencil_identity_map_with_stale_points_is_identity", () => {
   const curves = _curves(
     _blob(new Map([["rgb", [[0, 0], [128, 40], [255, 255]]]]), 0),
   );
-  expect(getitem(curves.channels, "rgb").isIdentity).toBe(true);
+  expect(getOrThrow(curves.channels, "rgb").isIdentity).toBe(true);
   expect(curves.isIdentity).toBe(true);
 });
 

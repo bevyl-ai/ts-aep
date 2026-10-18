@@ -7,12 +7,12 @@ import {
   contains,
   float,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   len,
   Path,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   setattr,
   sorted,
   tkey,
@@ -44,30 +44,30 @@ describe("TestRoundtripTargaFormatOptions", () => {
   test("test_modify_bits_per_pixel", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("targa", "base.aep"));
-    pyAssert(opts instanceof TargaFormatOptions);
+    assert(opts instanceof TargaFormatOptions);
     expect(opts.bitsPerPixel).toBe(32);
     opts.bitsPerPixel = 24;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof TargaFormatOptions);
+    assert(opts2 instanceof TargaFormatOptions);
     expect(opts2.bitsPerPixel).toBe(24);
   });
 
   test("test_modify_rle_compression", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("targa", "base.aep"));
-    pyAssert(opts instanceof TargaFormatOptions);
+    assert(opts instanceof TargaFormatOptions);
     expect(opts.rleCompression).toBe(false);
     opts.rleCompression = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof TargaFormatOptions);
+    assert(opts2 instanceof TargaFormatOptions);
     expect(opts2.rleCompression).toBe(true);
   });
 
   test("test_validate_bits_per_pixel", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("targa", "base.aep"));
-    pyAssert(opts instanceof TargaFormatOptions);
+    assert(opts instanceof TargaFormatOptions);
     raises(ValueError, () => {
       opts.bitsPerPixel = 16;
     });
@@ -79,24 +79,24 @@ describe("TestRoundtripTiffFormatOptions", () => {
   test("test_modify_lzw_compression", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("tiff", "base.aep"));
-    pyAssert(opts instanceof TiffFormatOptions);
+    assert(opts instanceof TiffFormatOptions);
     expect(opts.lzwCompression).toBe(false);
     opts.lzwCompression = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof TiffFormatOptions);
+    assert(opts2 instanceof TiffFormatOptions);
     expect(opts2.lzwCompression).toBe(true);
   });
 
   test("test_modify_ibm_pc_byte_order", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("tiff", "base.aep"));
-    pyAssert(opts instanceof TiffFormatOptions);
+    assert(opts instanceof TiffFormatOptions);
     expect(opts.ibmPcByteOrder).toBe(false);
     opts.ibmPcByteOrder = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof TiffFormatOptions);
+    assert(opts2 instanceof TiffFormatOptions);
     expect(opts2.ibmPcByteOrder).toBe(true);
   });
 });
@@ -106,40 +106,40 @@ describe("TestRoundtripJpegFormatOptions", () => {
   test("test_modify_quality", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("jpeg", "base.aep"));
-    pyAssert(opts instanceof JpegFormatOptions);
+    assert(opts instanceof JpegFormatOptions);
     opts.quality = 10;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof JpegFormatOptions);
+    assert(opts2 instanceof JpegFormatOptions);
     expect(opts2.quality).toBe(10);
   });
 
   test("test_modify_format_type", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("jpeg", "base.aep"));
-    pyAssert(opts instanceof JpegFormatOptions);
+    assert(opts instanceof JpegFormatOptions);
     opts.formatType = JpegFormatType.PROGRESSIVE;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof JpegFormatOptions);
+    assert(opts2 instanceof JpegFormatOptions);
     expect(opts2.formatType).toBe(JpegFormatType.PROGRESSIVE);
   });
 
   test("test_modify_scans", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("jpeg", "progressive_3.aep"));
-    pyAssert(opts instanceof JpegFormatOptions);
+    assert(opts instanceof JpegFormatOptions);
     expect(opts.scans).toBe(3);
     opts.scans = 5;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof JpegFormatOptions);
+    assert(opts2 instanceof JpegFormatOptions);
     expect(opts2.scans).toBe(5);
   });
 
   test("test_validate_quality_too_high", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("jpeg", "base.aep"));
-    pyAssert(opts instanceof JpegFormatOptions);
+    assert(opts instanceof JpegFormatOptions);
     raises(ValueError, () => {
       opts.quality = 11;
     });
@@ -147,7 +147,7 @@ describe("TestRoundtripJpegFormatOptions", () => {
 
   test("test_validate_scans_invalid", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("jpeg", "progressive_3.aep"));
-    pyAssert(opts instanceof JpegFormatOptions);
+    assert(opts instanceof JpegFormatOptions);
     raises(ValueError, () => {
       opts.scans = 2;
     });
@@ -159,51 +159,51 @@ describe("TestRoundtripCineonFormatOptions", () => {
   test("test_modify_ten_bit_black_point", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     opts.tenBitBlackPoint = 100;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof CineonFormatOptions);
+    assert(opts2 instanceof CineonFormatOptions);
     expect(opts2.tenBitBlackPoint).toBe(100);
   });
 
   test("test_modify_logarithmic_conversion", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     expect(opts.logarithmicConversion).toBe(false);
     opts.logarithmicConversion = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof CineonFormatOptions);
+    assert(opts2 instanceof CineonFormatOptions);
     expect(opts2.logarithmicConversion).toBe(true);
   });
 
   test("test_modify_file_format", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     opts.fileFormat = CineonFileFormat.FIDO_CINEON;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof CineonFormatOptions);
+    assert(opts2 instanceof CineonFormatOptions);
     expect(opts2.fileFormat).toBe(CineonFileFormat.FIDO_CINEON);
   });
 
   test("test_modify_bit_depth", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     opts.bitDepth = 8;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof CineonFormatOptions);
+    assert(opts2 instanceof CineonFormatOptions);
     expect(opts2.bitDepth).toBe(8);
   });
 
   test("test_validate_bit_depth_rejects_invalid", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     raises(ValueError, () => {
       opts.bitDepth = 9;
     });
@@ -211,7 +211,7 @@ describe("TestRoundtripCineonFormatOptions", () => {
 
   test("test_validate_ten_bit_black_point_rejects_negative", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     raises(ValueError, () => {
       opts.tenBitBlackPoint = -1;
     });
@@ -219,7 +219,7 @@ describe("TestRoundtripCineonFormatOptions", () => {
 
   test("test_validate_ten_bit_black_point_rejects_too_high", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     raises(ValueError, () => {
       opts.tenBitBlackPoint = 1024;
     });
@@ -229,7 +229,7 @@ describe("TestRoundtripCineonFormatOptions", () => {
   // crashed save() mid-write, leaving a partial .aep.
   test.each([-100, 0x10000, 10 ** 12])("test_validate_highlight_expansion_rejects_out_of_u2[%#]", (value) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     raises(ValueError, () => {
       opts.highlightExpansion = value;
     });
@@ -243,7 +243,7 @@ describe("TestRoundtripCineonFormatOptions", () => {
 
   test.each(FLOAT_NONFINITE_ROWS)("test_validate_float_fields_reject_nonfinite[%#]", (field, bad) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     raises(
       ValueError,
       () => {
@@ -256,11 +256,11 @@ describe("TestRoundtripCineonFormatOptions", () => {
   test("test_highlight_expansion_valid_roundtrips", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("cineon", "base.aep"));
-    pyAssert(opts instanceof CineonFormatOptions);
+    assert(opts instanceof CineonFormatOptions);
     opts.highlightExpansion = 42;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof CineonFormatOptions);
+    assert(opts2 instanceof CineonFormatOptions);
     expect(opts2.highlightExpansion).toBe(42);
   });
 });
@@ -270,47 +270,47 @@ describe("TestRoundtripOpenExrFormatOptions", () => {
   test("test_modify_compression", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("openexr", "base.aep"));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     opts.compression = OpenExrCompression.RLE;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof OpenExrFormatOptions);
+    assert(opts2 instanceof OpenExrFormatOptions);
     expect(opts2.compression).toBe(OpenExrCompression.RLE);
   });
 
   test("test_modify_luminance_chroma", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("openexr", "base.aep"));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     expect(opts.luminanceChroma).toBe(false);
     opts.luminanceChroma = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof OpenExrFormatOptions);
+    assert(opts2 instanceof OpenExrFormatOptions);
     expect(opts2.luminanceChroma).toBe(true);
   });
 
   test("test_modify_thirty_two_bit_float", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("openexr", "base.aep"));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     expect(opts.thirtyTwoBitFloat).toBe(false);
     opts.thirtyTwoBitFloat = true;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof OpenExrFormatOptions);
+    assert(opts2 instanceof OpenExrFormatOptions);
     expect(opts2.thirtyTwoBitFloat).toBe(true);
   });
 
   test("test_modify_dwa_compression_level", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("openexr", "compression_dwaa_45.0.aep"));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     expect(opts.dwaCompressionLevel).toBe(45.0);
     opts.dwaCompressionLevel = 100.0;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof OpenExrFormatOptions);
+    assert(opts2 instanceof OpenExrFormatOptions);
     expect(opts2.dwaCompressionLevel).toBe(100.0);
   });
 });
@@ -330,7 +330,7 @@ class TestMPEGProfile {
 
   static _elements(opts: XmlFormatOptions, key: string): ETElement[] {
     const root = opts._xmlRoot;
-    pyAssert(root != null);
+    assert(root != null);
     const out: ETElement[] = [];
     for (const elem of root.iter("ExporterParam")) {
       const ident = elem.find("ParamIdentifier");
@@ -347,7 +347,7 @@ class TestMPEGProfile {
    */
   static _child_tags(opts: XmlFormatOptions, key: string): string[] {
     const elements = this._elements(opts, key);
-    pyAssert(len(elements) === 1);
+    assert(len(elements) === 1);
     // `for child in element` iterates the element's children (the local ETElement keeps them in `.children`).
     const element = elements[0];
     return (element.children ?? [...element]).map((child) => child.tag);
@@ -362,13 +362,13 @@ describe("TestMPEGProfile", () => {
     ["base.aep", MPEGProfile.MAIN],
   ])("test_reads[%#]", (sample: string, expected: MPEGProfile) => {
     const [, opts] = _parseFresh(TestMPEGProfile.H264.div(sample));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.profile).toBe(expected);
   });
 
   test("test_absent_param_reads_as_baseline", () => {
     const [, opts] = _parseFresh(TestMPEGProfile.H264.div("h264_baseline.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(contains(opts.params, TestMPEGProfile.KEY)).toBe(false);
     expect(opts.profile).toBe(MPEGProfile.BASELINE);
   });
@@ -383,18 +383,18 @@ describe("TestMPEGProfile", () => {
     // authored separately and carries an extra ParamIsDisabled child.
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(TestMPEGProfile.H264.div("h264_high.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.profile).toBe(MPEGProfile.HIGH);
     opts.profile = MPEGProfile.BASELINE;
     project.save(tmpPath.div("out.aep"));
 
     const [, written] = _parseFresh(tmpPath.div("out.aep"));
     const [, ae] = _parseFresh(TestMPEGProfile.H264.div("h264_baseline.aep"));
-    pyAssert(written instanceof XmlFormatOptions);
-    pyAssert(ae instanceof XmlFormatOptions);
+    assert(written instanceof XmlFormatOptions);
+    assert(ae instanceof XmlFormatOptions);
     expect(written.profile).toBe(MPEGProfile.BASELINE);
     expect(
-      pyEq(
+      valueEquals(
         TestMPEGProfile._child_tags(written, TestMPEGProfile.KEY),
         TestMPEGProfile._child_tags(ae, TestMPEGProfile.KEY),
       ),
@@ -405,17 +405,17 @@ describe("TestMPEGProfile", () => {
   test("test_write_baseline_keeps_the_element_and_its_object_id", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(TestMPEGProfile.H264.div("base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
-    const before = getitem(TestMPEGProfile._elements(opts, TestMPEGProfile.KEY)[0].attrib, "ObjectID");
+    assert(opts instanceof XmlFormatOptions);
+    const before = getOrThrow(TestMPEGProfile._elements(opts, TestMPEGProfile.KEY)[0].attrib, "ObjectID");
     opts.profile = MPEGProfile.BASELINE;
     project.save(tmpPath.div("out.aep"));
     const [, written] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(written instanceof XmlFormatOptions);
+    assert(written instanceof XmlFormatOptions);
     const elements = TestMPEGProfile._elements(written, TestMPEGProfile.KEY);
     expect(len(elements)).toBe(1); // not deleted, not duplicated
     expect(elements[0].find("ParamValue") == null).toBe(true);
     // The PremiereData object graph references this id.
-    expect(getitem(elements[0].attrib, "ObjectID")).toBe(before);
+    expect(getOrThrow(elements[0].attrib, "ObjectID")).toBe(before);
   });
 
   test("test_baseline_then_set_restores_value_in_place", () => {
@@ -423,16 +423,16 @@ describe("TestMPEGProfile", () => {
     // its first child, where AE puts it), not append a second element.
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(TestMPEGProfile.H264.div("h264_baseline.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     opts.profile = MPEGProfile.MAIN;
     project.save(tmpPath.div("out.aep"));
     const [, written] = _parseFresh(tmpPath.div("out.aep"));
     const [, aeValued] = _parseFresh(TestMPEGProfile.H264.div("h264_high.aep"));
-    pyAssert(written instanceof XmlFormatOptions);
-    pyAssert(aeValued instanceof XmlFormatOptions);
+    assert(written instanceof XmlFormatOptions);
+    assert(aeValued instanceof XmlFormatOptions);
     expect(written.profile).toBe(MPEGProfile.MAIN);
     expect(
-      pyEq(
+      valueEquals(
         TestMPEGProfile._child_tags(written, TestMPEGProfile.KEY),
         TestMPEGProfile._child_tags(aeValued, TestMPEGProfile.KEY),
       ),
@@ -443,17 +443,17 @@ describe("TestMPEGProfile", () => {
   test.each([MPEGProfile.MAIN, MPEGProfile.HIGH, MPEGProfile.HIGH10])("test_roundtrip[%#]", (profile: MPEGProfile) => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(TestMPEGProfile.H264.div("h264_baseline.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     opts.profile = profile;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.profile).toBe(profile);
   });
 
   test("test_rejects_out_of_enum", () => {
     const [, opts] = _parseFresh(TestMPEGProfile.H264.div("base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     raises(ValueError, () => {
       opts.profile = 2; // unobserved; deliberately not an enum member
     });
@@ -467,18 +467,18 @@ describe("TestOpenExrHtj2k", () => {
     ["exr_htj2k-32.aep", OpenExrCompression.HTJ2K_32],
   ])("test_reads[%#]", (sample: string, expected: OpenExrCompression) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("openexr", sample));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     expect(opts.compression).toBe(expected);
   });
 
   test("test_roundtrip", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("openexr", "exr_htj2k-256.aep"));
-    pyAssert(opts instanceof OpenExrFormatOptions);
+    assert(opts instanceof OpenExrFormatOptions);
     opts.compression = OpenExrCompression.HTJ2K_32;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof OpenExrFormatOptions);
+    assert(opts2 instanceof OpenExrFormatOptions);
     expect(opts2.compression).toBe(OpenExrCompression.HTJ2K_32);
   });
 });
@@ -496,7 +496,7 @@ describe("TestDnxResolution", () => {
     ["DNxHR HQ 8-bit.aep", DnxResolution.DNXHR_HQ_8_BIT],
   ])("test_reads[%#]", (sample: string, expected: DnxResolution) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("dnx", sample));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.videoCodec).toBe(VideoCodec.DNXHR_DNXHD);
     expect(opts.resolution).toBe(expected);
   });
@@ -504,17 +504,17 @@ describe("TestDnxResolution", () => {
   test("test_roundtrip", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("dnx", "DNxHR HQ 8-bit.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     opts.resolution = DnxResolution.DNXHR_LB_8_BIT;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.resolution).toBe(DnxResolution.DNXHR_LB_8_BIT);
   });
 
   test("test_rejects_out_of_enum", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("dnx", "DNxHR HQ 8-bit.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     raises(ValueError, () => {
       opts.resolution = 9999;
     });
@@ -545,7 +545,7 @@ describe("TestFormatOptionsBoolValidation", () => {
 
   test.each(REJECT_ROWS)("test_rejects_non_bool[%#]", (sample: string, field: string, bad: unknown) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div(sample));
-    pyAssert(opts != null);
+    assert(opts != null);
     raises(TypeError, () => {
       setattr(opts, field, bad);
     });
@@ -553,7 +553,7 @@ describe("TestFormatOptionsBoolValidation", () => {
 
   test.each(TestFormatOptionsBoolValidation.BOOL_FIELDS)("test_accepts_bool[%#]", (sample: string, field: string) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div(sample));
-    pyAssert(opts != null);
+    assert(opts != null);
     setattr(opts, field, true);
     expect(getattr(opts, field)).toBe(true);
   });
@@ -564,30 +564,30 @@ describe("TestRoundtripPngFormatOptions", () => {
   test("test_modify_bit_depth", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     expect(opts.bitDepth).toBe(16);
     opts.bitDepth = 8;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.bitDepth).toBe(8);
   });
 
   test("test_modify_compression", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "compression_none.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     expect(opts.compression).toBe(PngCompression.NONE);
     opts.compression = PngCompression.INTERLACED;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.compression).toBe(PngCompression.INTERLACED);
   });
 
   test("test_width_read_only", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     raises(AttributeError, () => {
       opts.width = 3840;
     });
@@ -595,7 +595,7 @@ describe("TestRoundtripPngFormatOptions", () => {
 
   test("test_height_read_only", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     raises(AttributeError, () => {
       opts.height = 2160;
     });
@@ -603,7 +603,7 @@ describe("TestRoundtripPngFormatOptions", () => {
 
   test("test_bit_depth_rejects_invalid", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     raises(
       ValueError,
       () => {
@@ -617,7 +617,7 @@ describe("TestRoundtripPngFormatOptions", () => {
     // The only values AE writes (8 / 16 bits per channel; no 32-bit PNG).
     const tmpPath = makeTmpPath();
     const [, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     for (const depth of [8, 16]) {
       opts.bitDepth = depth;
       expect(opts.bitDepth).toBe(depth);
@@ -637,79 +637,79 @@ describe("TestRoundtripPngHdr10", () => {
   test("test_modify_include_hdr10_metadata", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     expect(opts.includeHdr10Metadata).toBe(true);
     opts.includeHdr10Metadata = false;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.includeHdr10Metadata).toBe(false);
   });
 
   test("test_modify_color_primaries", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     opts.colorPrimaries = Hdr10ColorPrimaries.REC709;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.colorPrimaries).toBe(Hdr10ColorPrimaries.REC709);
   });
 
   test("test_modify_luminance_min", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     opts.luminanceMin = 0.1;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.luminanceMin).toBe(0.1);
   });
 
   test("test_modify_luminance_max", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     opts.luminanceMax = 1000.0;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.luminanceMax).toBe(1000.0);
   });
 
   test("test_modify_content_light_max", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     opts.contentLightMax = 500.0;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.contentLightMax).toBe(500.0);
   });
 
   test("test_modify_content_light_average", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "include_hdr10_metadata_on.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     opts.contentLightAverage = 250.0;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.contentLightAverage).toBe(250.0);
   });
 
   test("test_clear_luminance_min", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("png", "luminance_min_0.aep"));
-    pyAssert(opts instanceof PngFormatOptions);
+    assert(opts instanceof PngFormatOptions);
     expect(opts.luminanceMin != null).toBe(true);
     opts.luminanceMin = null;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof PngFormatOptions);
+    assert(opts2 instanceof PngFormatOptions);
     expect(opts2.luminanceMin == null).toBe(true);
   });
 });
@@ -719,55 +719,55 @@ describe("TestRoundtripXmlFormatOptions", () => {
   test("test_modify_video_codec", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(AVI_DIR.div("base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.videoCodec).toBe(VideoCodec.NONE);
     opts.videoCodec = VideoCodec.DV_NTSC;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.videoCodec).toBe(VideoCodec.DV_NTSC);
   });
 
   test("test_modify_audio_codec", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.audioCodec).toBe(AudioCodec.AAC);
     opts.audioCodec = AudioCodec.AAC_PLUS_V1;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.audioCodec).toBe(AudioCodec.AAC_PLUS_V1);
   });
 
   test("test_modify_frame_rate", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.frameRate).toBe(24.0);
     opts.frameRate = 30.0;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.frameRate).toBe(30.0);
   });
 
   test("test_modify_mpeg_multiplexer", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.mpegMultiplexer).toBe(MPEGMultiplexer.MP4);
     opts.mpegMultiplexer = MPEGMultiplexer.THREEGPP;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.mpegMultiplexer).toBe(MPEGMultiplexer.THREEGPP);
   });
 
   test("test_modify_mpeg_audio_format", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.mpegAudioFormat).toBe(MPEGAudioFormat.AAC);
     // PCM is only offered without a container: switch the
     // multiplexer to None first (as AE's dialog requires).
@@ -775,25 +775,25 @@ describe("TestRoundtripXmlFormatOptions", () => {
     opts.mpegAudioFormat = MPEGAudioFormat.PCM;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.mpegAudioFormat).toBe(MPEGAudioFormat.PCM);
   });
 
   test("test_modify_mpeg_mux_stream_compatibility", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.mpegMuxStreamCompatibility).toBe(MPEGMuxStreamCompatibility.STD);
     opts.mpegMuxStreamCompatibility = MPEGMuxStreamCompatibility.IPOD;
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.mpegMuxStreamCompatibility).toBe(MPEGMuxStreamCompatibility.IPOD);
   });
 
   test("test_format_code_read_only", () => {
     const [, opts] = _parseFresh(AVI_DIR.div("base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     raises(AttributeError, () => {
       opts.formatCode = "H264";
     });
@@ -801,7 +801,7 @@ describe("TestRoundtripXmlFormatOptions", () => {
 
   test("test_set_none_is_noop", () => {
     const [, opts] = _parseFresh(AVI_DIR.div("base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     const original = opts.videoCodec;
     opts.videoCodec = null;
     expect<XmlFormatOptions["videoCodec"]>(opts.videoCodec).toBe(original);
@@ -809,7 +809,7 @@ describe("TestRoundtripXmlFormatOptions", () => {
 
   test("test_settings_view_format_code_read_only", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("h.264", "base.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     // `XmlFormatOptions` has no `settings` attribute, so the Python attribute load raises
     // AttributeError before the item assignment; TS property loads yield undefined, so use getattr.
     raises(AttributeError, () => {
@@ -830,41 +830,41 @@ describe("TestRoundtripXmlParamsDict", () => {
   test("test_update_persists", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.bitrate).toBe(320);
     opts.params.update(new Map([["BitRate", "128"]]));
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
-    expect<string>(getitem(opts2.params, "BitRate")).toBe("128");
+    assert(opts2 instanceof XmlFormatOptions);
+    expect<string>(getOrThrow(opts2.params, "BitRate")).toBe("128");
     expect(opts2.bitrate).toBe(128);
   });
 
   test("test_update_kwargs_persists", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     opts.params.update({ BitRate: "192" });
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
+    assert(opts2 instanceof XmlFormatOptions);
     expect(opts2.bitrate).toBe(192);
   });
 
   test("test_setdefault_persists_new_key", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.params.setdefault("ADBEUnusedParam", "7")).toBe("7");
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    pyAssert(opts2 instanceof XmlFormatOptions);
-    expect<string>(getitem(opts2.params, "ADBEUnusedParam")).toBe("7");
+    assert(opts2 instanceof XmlFormatOptions);
+    expect<string>(getOrThrow(opts2.params, "ADBEUnusedParam")).toBe("7");
   });
 
   test("test_setdefault_keeps_existing", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    pyAssert(opts instanceof XmlFormatOptions);
+    assert(opts instanceof XmlFormatOptions);
     expect(opts.params.setdefault("BitRate", "1")).toBe("320");
     expect(opts.bitrate).toBe(320);
   });
@@ -907,11 +907,11 @@ describe("TestPngOptionsFollowTheModule", () => {
         om.settings.set("Channels", channels);
         om.settings.set("Depth", depth);
       });
-      expect(pyEq(_pngOptionFields(om), expected)).toBe(true);
+      expect(valueEquals(_pngOptionFields(om), expected)).toBe(true);
       const out = tmpPath.div("png.aep");
       app.project.save(out);
       const reread = asInstance(parse(out).project.renderQueue, RenderQueue).items[0].outputModules[0];
-      expect(pyEq(_pngOptionFields(reread), expected)).toBe(true);
+      expect(valueEquals(_pngOptionFields(reread), expected)).toBe(true);
     },
   );
 
@@ -919,9 +919,9 @@ describe("TestPngOptionsFollowTheModule", () => {
     const app = parse(FORMAT_DIR.div("png", "base.aep")); // RGB + Alpha, Trillions+
     const om = asInstance(app.project.renderQueue, RenderQueue).items[0].outputModules[0];
     om.settings.set("Channels", OutputChannels.RGB); // pairs Depth to Trillions
-    expect(pyEq(_pngOptionFields(om), [false, 3, 16])).toBe(true);
+    expect(valueEquals(_pngOptionFields(om), [false, 3, 16])).toBe(true);
     om.settings.set("Depth", OutputColorDepth.MILLIONS_OF_COLORS);
-    expect(pyEq(_pngOptionFields(om), [false, 3, 8])).toBe(true);
+    expect(valueEquals(_pngOptionFields(om), [false, 3, 8])).toBe(true);
   });
 
   test("test_after_effects_samples_are_in_step", () => {
@@ -931,7 +931,7 @@ describe("TestPngOptionsFollowTheModule", () => {
     for (const path of sorted(FORMAT_DIR.div("png").glob("*.aep"), (p: Path) => p.toString())) {
       const om = asInstance(parse(path).project.renderQueue, RenderQueue).items[0].outputModules[0];
       const key = tkey(int(om.settings.get("Channels")), int(om.settings.get("Depth")));
-      pyAssert(pyEq(_pngOptionFields(om), getitem(lockstep, key)), path.name);
+      assert(valueEquals(_pngOptionFields(om), getOrThrow(lockstep, key)), path.name);
     }
   });
 });

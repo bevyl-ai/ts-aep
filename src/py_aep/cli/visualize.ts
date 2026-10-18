@@ -30,7 +30,7 @@ import {
   format,
   int,
   len,
-  pyBool,
+  truthy,
   repr,
   round,
   str,

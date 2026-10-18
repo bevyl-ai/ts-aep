@@ -10,9 +10,9 @@ import {
   concat,
   decode,
   descriptor,
-  dictGet,
+  getOr,
   encode,
-  getitem,
+  getOrThrow,
   int,
   isdigit,
   repr,
@@ -127,7 +127,7 @@ export class _ScalarParam {
 
   __get__(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
     if (obj == null) return this;
-    const raw = dictGet(obj.params, this._key, "");
+    const raw = getOr(obj.params, this._key, "");
     if (!raw) return null;
     try {
       return int(raw);
@@ -264,7 +264,7 @@ export class ParamsDict extends Map<string, string> {
 
   setdefault(key: string, default_: string = ""): string {
     if (!this.has(key)) this.set(key, default_);
-    return getitem(this, key);
+    return getOrThrow(this, key);
   }
 
   pop(key: string, ...default_: string[]): string {
@@ -272,7 +272,7 @@ export class ParamsDict extends Map<string, string> {
       if (default_.length > 0) return default_[0];
       throw new KeyError(repr(key));
     }
-    const value = getitem(this, key);
+    const value = getOrThrow(this, key);
     this.delete(key);
     return value;
   }
@@ -281,7 +281,7 @@ export class ParamsDict extends Map<string, string> {
     const keys = [...this.keys()];
     if (keys.length === 0) throw new KeyError(repr("popitem(): dictionary is empty"));
     const key = keys[keys.length - 1];
-    const value = getitem(this, key);
+    const value = getOrThrow(this, key);
     super.delete(key);
     if (this._owner != null) this._owner._onParamRemoved(key);
     return [key, value];
@@ -576,7 +576,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Returns `null` when the param is absent or non-numeric.
    */
   _enumParam(key: string, enumCls: EnumHelpers<number>): number | null {
-    const raw = dictGet(this.params, key, "");
+    const raw = getOr(this.params, key, "");
     if (!raw) return null;
     return _tryEnumOrInt(enumCls, raw);
   }
@@ -608,7 +608,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Read / Write.
    */
   get frameRate(): number | null {
-    const fpsStr = dictGet(this.params, "ADBEVideoFPS", "");
+    const fpsStr = getOr(this.params, "ADBEVideoFPS", "");
     if (!fpsStr) return null;
     try {
       const ticks = int(fpsStr);
@@ -679,7 +679,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * {@link MPEGProfile} enum.
    */
   get profile(): MPEGProfile | number {
-    const raw = dictGet(this.params, "ADBEVideoMPEGProfile", "");
+    const raw = getOr(this.params, "ADBEVideoMPEGProfile", "");
     if (!raw) return MPEGProfile.BASELINE;
     const result = _tryEnumOrInt(MPEGProfile, raw);
     // A non-numeric param is as good as absent.

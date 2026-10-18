@@ -14,8 +14,8 @@ import {
   dictPop,
   format,
   getattr,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { ChunkField } from "../descriptors.ts";
@@ -31,7 +31,7 @@ const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parse
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
 export function listRemove<T>(xs: T[], x: T): void {
-  const i = xs.findIndex((y) => pyEq(y, x));
+  const i = xs.findIndex((y) => valueEquals(y, x));
   if (i < 0) throw new ValueError("list.remove(x): x not in list");
   xs.splice(i, 1);
 }
@@ -235,8 +235,8 @@ export class Item {
    */
   addGuide(orientationType: number, position: number): number {
     this._ensureGuidesContainer();
-    pyAssert(this._lhd3 != null);
-    pyAssert(this._ldat != null);
+    assert(this._lhd3 != null);
+    assert(this._ldat != null);
     const guide = Guide._new(orientationType, position);
     this._guides.push(guide);
     this._ldat.items.push(guide._guideItem);
@@ -257,8 +257,8 @@ export class Item {
         `Guide index ${guideIndex} out of range [0, ${this._guides.length - 1}]`,
       );
     }
-    pyAssert(this._lhd3 != null);
-    pyAssert(this._ldat != null);
+    assert(this._lhd3 != null);
+    assert(this._ldat != null);
     this._ldat.items.splice(guideIndex, 1);
     this._guides.splice(guideIndex, 1);
     setLhd3Count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
@@ -290,7 +290,7 @@ export class Item {
       this._inner.chunks.push(this._ldat);
       this._itemList.chunks.push(this._gide);
     } else {
-      pyAssert(this._inner != null);
+      assert(this._inner != null);
       this._inner.chunks.push(this._ldat);
     }
   }
@@ -329,7 +329,7 @@ export class Item {
     _effect().rehomeEffectDefinitions(this._project, _effect()._effectInstances(removed));
 
     // Remove from model collections
-    pyAssert(this._parentFolder != null);
+    assert(this._parentFolder != null);
     listRemove(this._parentFolder.items, this);
     dictPop(this._project.items, this.id);
     this._project._clearActiveItem(this);
@@ -346,7 +346,7 @@ export class Item {
    */
   _removeFromParentChunks(): Chunk[] {
     const parent = this._parentFolder;
-    pyAssert(parent != null);
+    assert(parent != null);
     const container = parent._childrenContainer;
     const [start, end] = blockSlice(
       container,

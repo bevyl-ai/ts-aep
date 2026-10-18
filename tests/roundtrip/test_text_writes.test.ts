@@ -15,14 +15,14 @@ import "../../src/py_aep/binary/_register.ts";
 import { parseAppFresh } from "../helpers.ts";
 import {
   AttributeError,
-  dictGet,
+  getOr,
   deepcopy,
   getattr,
   len,
   Path,
-  pyAssert,
-  pyEq,
-  pyOr,
+  assert,
+  valueEquals,
+  truthyOr,
   range,
   repr,
   StopIteration,
@@ -83,7 +83,7 @@ function _docFor(app: Application, layerName: string): TextDocument {
   const layer = comp.textLayers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
   const text = layer.text;
-  pyAssert(text != null);
+  assert(text != null);
   return text.sourceText.value;
 }
 
@@ -107,7 +107,7 @@ function _cosPath(node: CosNode, ...keys: (string | number)[]): CosNode {
 
 function _maskedBytes(cosData: CosDict): Uint8Array {
   const clone = deepcopy(cosData);
-  for (const doc of cosIter(pyOr(cosGetOr(cosGetOr(clone, "1", new Map<string, CosNode>()), "1", []), []))) {
+  for (const doc of cosIter(truthyOr(cosGetOr(cosGetOr(clone, "1", new Map<string, CosNode>()), "1", []), []))) {
     const page = cosDict(doc, "get").get("1");
     if (page instanceof Map) cosPop(page, "2");
   }
@@ -122,8 +122,8 @@ function _assertAliasIntegrity(doc: TextDocument): void {
 
 function _assertByteParity(pyDoc: TextDocument, fixtureApp: Application, opName: string): void {
   const expected = _docFor(fixtureApp, opName);
-  pyAssert(
-    pyEq(_maskedBytes(pyDoc._cosData), _maskedBytes(expected._cosData)),
+  assert(
+    valueEquals(_maskedBytes(pyDoc._cosData), _maskedBytes(expected._cosData)),
     `${opName}: py-written btdk diverges from the AE fixture ` +
       `(outside the masked /PC cache)`,
   );
@@ -153,15 +153,15 @@ function _assertPerChar(pyDoc: TextDocument, probe: TextWritesProbe, opName: str
       const expected = expectedChars[i][esAttr];
       const actual = getattr(rng, PER_CHAR_MAP[esAttr]);
       if (expected === "<<undefined>>") {
-        pyAssert(actual == null, `${opName}[${i}].${esAttr}: ${repr(actual)}`);
+        assert(actual == null, `${opName}[${i}].${esAttr}: ${repr(actual)}`);
       } else if (Array.isArray(expected)) {
-        pyAssert(
+        assert(
           approx(actual, expected, { abs: 1e-5 }),
           `${opName}[${i}].${esAttr}: expected ${repr(expected)}, got ${repr(actual)}`,
         );
       } else {
-        pyAssert(
-          pyEq(actual, expected),
+        assert(
+          valueEquals(actual, expected),
           `${opName}[${i}].${esAttr}: expected ${repr(expected)}, got ${repr(actual)}`,
         );
       }
@@ -277,8 +277,8 @@ describe("TestColorFontLeadingWrites", () => {
     // The fixture embeds the version string AE resolved from the
     // host font; byte parity only holds where that font matches.
     const expected = _docFor(fixtureApp, "W_FONT");
-    const fixtureVersion = dictGet(cosDict(_cosPath(expected._cosData, "0", "1", "0", 0, "0", "0"), "get"), "5");
-    if (!pyEq(fontVersionString("Arial-BoldMT"), fixtureVersion)) {
+    const fixtureVersion = getOr(cosDict(_cosPath(expected._cosData, "0", "1", "0", 0, "0", "0"), "get"), "5");
+    if (!valueEquals(fontVersionString("Arial-BoldMT"), fixtureVersion)) {
       return skip("Arial-BoldMT not installed at the fixture's version");
     }
     const [_app, doc] = _baseDoc();
@@ -292,7 +292,7 @@ describe("TestColorFontLeadingWrites", () => {
     const [_app, doc] = _baseDoc();
     const before = doc._fonts.map((f) => f.postScriptName);
     doc.characterRange(3, 7).font = before[0];
-    expect(pyEq(doc._fonts.map((f) => f.postScriptName), before)).toBe(true);
+    expect(valueEquals(doc._fonts.map((f) => f.postScriptName), before)).toBe(true);
   });
 
   test("test_fill_color_write_and_clear", () => {
@@ -514,7 +514,7 @@ describe("TestPasteFrom", () => {
     const sourceStyle = cosDict(_cosPath(source._doc, "0", "6", "0", 0, "0", "0", "6"), "get");
     const keys = new Set<string>([...pastedStyle.keys(), ...sourceStyle.keys()]);
     const diffKeys = new Set(
-      [...keys].filter((k) => !pyEq(dictGet(pastedStyle, k), dictGet(sourceStyle, k))),
+      [...keys].filter((k) => !valueEquals(getOr(pastedStyle, k), getOr(sourceStyle, k))),
     );
     expect([...diffKeys].every((k) => k === "0")).toBe(true);
   });
@@ -559,7 +559,7 @@ describe("TestPasteLeadingEdgeKern", () => {
     // merges that value run with its equal neighbor; py emits length-1
     // runs - value-identical, so compare decoded values, not bytes.
 
-    expect(pyEq(_kernValues(doc).slice(0, 5), [null, 140, 140, 140, null])).toBe(true);
+    expect(valueEquals(_kernValues(doc).slice(0, 5), [null, 140, 140, 140, null])).toBe(true);
     const expected = probe3["ops"]["Y_PASTE_EDGE_MID"]["kernPerChar"].map((e: { value: ProbeJson }) => e["value"]);
     const actual = [...range(len(expected))].map((i) => [
       doc.characterRange(i, i + 1).kerning,
@@ -611,7 +611,7 @@ describe("TestSurrogateWrites", () => {
     // Per UTF-16 unit, like the ExtendScript probe (the emoji is 2 units).
     const expected = probe["ops"]["W_SURROGATE_STYLE"]["perChar"].map((c: { fontSize: ProbeJson }) => c["fontSize"]);
     const actual = [...range(len(expected))].map((i) => doc.characterRange(i, i + 1).fontSize);
-    expect(pyEq(actual, expected)).toBe(true);
+    expect(valueEquals(actual, expected)).toBe(true);
   });
 });
 
@@ -651,7 +651,7 @@ describe("TestDocumentWideWrites", () => {
     doc.characterRange(1, 4).leading = 50;
     doc.autoLeading = true;
     expect(cosLen(_cosPath(doc._doc, "0", "6", "0"))).toBe(1);
-    expect(pyEq(cosItem(doc._charStyle, "5"), 0.01)).toBe(true);
+    expect(valueEquals(cosItem(doc._charStyle, "5"), 0.01)).toBe(true);
   });
 });
 
@@ -665,7 +665,7 @@ describe("TestRoundTripAfterWrite", () => {
     const app2 = parseAppFresh(first);
     const second = tmpPath.div("second.aep");
     app2.project.save(second);
-    expect(pyEq(first.readBytes(), second.readBytes())).toBe(true);
+    expect(valueEquals(first.readBytes(), second.readBytes())).toBe(true);
   });
 
   test("test_document_getter_tracks_first_run_after_writes", () => {

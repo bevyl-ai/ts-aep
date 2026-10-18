@@ -26,8 +26,8 @@ import {
   floordiv,
   getattr,
   hasattr,
-  pyEq,
-  pyOr,
+  valueEquals,
+  truthyOr,
   repr,
   struct,
   type ClassAttributes,
@@ -319,7 +319,7 @@ export class Chunk extends AttrsBase {
 
   equals(other: unknown): boolean {
     // attrs-generated `__eq__`: eq=True fields, compared with Python equality.
-    return attrsEq(this, other, pyEq);
+    return attrsEq(this, other, valueEquals);
   }
 
   [INSPECT](): string {
@@ -616,7 +616,7 @@ export class ContainerChunk extends Chunk {
   _legacyBody(): Uint8Array {
     const cls = this.constructor;
     const utf8 = this.chunks.find((c) => c.chunkType === "Utf8") ?? null;
-    const value: string = pyOr(getattr(utf8, "value", null), "");
+    const value: string = truthyOr(getattr(utf8, "value", null), "");
     if (this.data?.length > 0 && value === cls._legacyValue(_legacyText(this.data))) {
       return this.data;
     }

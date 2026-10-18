@@ -7,7 +7,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { ValueError, enumerate, floatRepr, pyAssert, zip } from "../../src/pyrt/index.ts";
+import { ValueError, enumerate, floatRepr, assert, zip } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import { Mat4, _rotateX, _rotateY, _rotateZ, _translation, buildLocalMatrix, composeOrientation, decomposeTransform } from "../../src/py_aep/resolvers/transform.ts";
 
@@ -18,12 +18,12 @@ import { Mat4, _rotateX, _rotateY, _rotateZ, _translation, buildLocalMatrix, com
 /** Assert two values (scalar or nested list) are approximately equal. */
 function _approx(a: number | number[], b: number | number[], tol = 1e-6): void {
   if (Array.isArray(a) && Array.isArray(b)) {
-    pyAssert(a.length === b.length, `length mismatch: ${a.length} vs ${b.length}`);
+    assert(a.length === b.length, `length mismatch: ${a.length} vs ${b.length}`);
     for (const [i, [ai, bi]] of enumerate(zip(a, b))) {
-      pyAssert(approx(ai, bi, { abs: tol }), `index ${i}: ${floatRepr(ai)} != ${floatRepr(bi)}`);
+      assert(approx(ai, bi, { abs: tol }), `index ${i}: ${floatRepr(ai)} != ${floatRepr(bi)}`);
     }
   } else {
-    pyAssert(approx(a, b, { abs: tol }));
+    assert(approx(a, b, { abs: tol }));
   }
 }
 
@@ -31,7 +31,7 @@ function _approx(a: number | number[], b: number | number[], tol = 1e-6): void {
 function _matApprox(a: Mat4, b: Mat4, tol = 1e-6): void {
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
-      pyAssert(
+      assert(
         approx(a.row(r)[c], b.row(r)[c], { abs: tol }),
         `M[${r}][${c}]: ${floatRepr(a.row(r)[c])} != ${floatRepr(b.row(r)[c])}`,
       );

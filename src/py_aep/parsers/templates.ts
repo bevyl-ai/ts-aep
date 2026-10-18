@@ -18,7 +18,7 @@ import {
   decode,
   floordiv,
   int,
-  pyAssert,
+  assert,
   rstrip,
   split,
   strip,
@@ -134,7 +134,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
     const item = RenderSettingsItem.frombytes(
       concat(itemData, bytes_.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
     );
-    pyAssert(item instanceof RenderSettingsItem);
+    assert(item instanceof RenderSettingsItem);
     if (!item.cleanTemplateName) {
       continue;
     }
@@ -210,7 +210,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
     const offset = _HEADER_SIZE + idx * _OM_PREFS_ITEM_SIZE;
     const itemData = bytes_.slice(raw, offset, offset + _OM_PREFS_ITEM_SIZE);
     const item = OutputModuleSettingsItem.frombytes(itemData);
-    pyAssert(item instanceof OutputModuleSettingsItem);
+    assert(item instanceof OutputModuleSettingsItem);
     const name = names.get(idx) ?? "";
     if (!name || name.startsWith("_HIDDEN")) {
       continue;

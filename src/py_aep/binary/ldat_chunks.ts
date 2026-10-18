@@ -11,7 +11,7 @@ import {
   define,
   descriptor,
   intEnum,
-  pyAssert,
+  assert,
   struct,
   tkey,
   ValueError,
@@ -448,7 +448,7 @@ export class LdatItem extends AttrsBase {
       kfData = KfNoValue.frombytes(payload);
       trailing = payload.slice(48);
     } else if (itemType === LdatItemType.three_d_spatial || itemType === LdatItemType.two_d_spatial) {
-      pyAssert(numValue != null);
+      assert(numValue != null);
       kfData = KfPosition.frombytes(payload, { numValue });
       // prefix(8) + fixed_doubles(5*8) + arrays(3*num_value*8)
       const expected = 8 + 5 * 8 + 3 * numValue * 8;

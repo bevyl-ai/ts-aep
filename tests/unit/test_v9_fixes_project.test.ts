@@ -13,7 +13,7 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { projectBytes } from "../helpers.ts";
-import { b, bytes_, bytesEq, pyEq, sorted, ValueError } from "../../src/pyrt/index.ts";
+import { b, bytes_, bytesEq, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
@@ -64,7 +64,7 @@ describe("TestVersionValidation", () => {
       const app = py_aep.newProject(version);
       expect(app.version).toBe(version);
       const head = app._head;
-      expect(pyEq([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
+      expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
       app.version = "26.0x67";
       expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.newProject().project))).toBe(true);
     },
@@ -177,6 +177,6 @@ describe("TestSaveTempFile", () => {
     py_aep.newProject().project.save(tmpPath.div("out.aep"));
     expect(bytesEq(keep.readBytes(), b("user data"))).toBe(true);
     expect(parse(tmpPath.div("out.aep")).version).toBe("26.0x67");
-    expect(pyEq(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
+    expect(valueEquals(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
   });
 });

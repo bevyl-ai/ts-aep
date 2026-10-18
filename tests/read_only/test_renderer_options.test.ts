@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { AttributeError, KeyError, Path, len, pyAssert, pyEq, dict } from "../../src/pyrt/index.ts";
+import { AttributeError, KeyError, Path, len, assert, valueEquals, dict } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
@@ -72,9 +72,9 @@ describe("TestRendererOptionsReads", () => {
     const comp = parseAep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
     const opts = comp.rendererOptions;
 
-    expect(pyEq(dict(opts), new Map([["Quality", 25]]))).toBe(true);
-    expect(pyEq([...opts.keys()], ["Quality"])).toBe(true);
-    expect(pyEq(opts, new Map([["Quality", 25]]))).toBe(true);
+    expect(valueEquals(dict(opts), new Map([["Quality", 25]]))).toBe(true);
+    expect(valueEquals([...opts.keys()], ["Quality"])).toBe(true);
+    expect(valueEquals(opts, new Map([["Quality", 25]]))).toBe(true);
   });
 
   /** AE 26.3 cannot author this renderer, so we do not let anyone edit it. */
@@ -82,8 +82,8 @@ describe("TestRendererOptionsReads", () => {
     const comp = parseAep(COMPOSITION_DIR.div("renderer_ray_traced.aep")).project.compositions[0];
     const opts = comp.rendererOptions;
 
-    pyAssert(opts instanceof RayTracedRendererOptions);
-    expect(pyEq(dict(opts), new Map())).toBe(true);
+    assert(opts instanceof RayTracedRendererOptions);
+    expect(valueEquals(dict(opts), new Map())).toBe(true);
     raises(KeyError, () => {
       opts.set("Quality", 1);
     });

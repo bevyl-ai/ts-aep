@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError, at, b, bytes_, concat, dictGet, encode, floordiv, format, getattr, getitem, len, mod, Path, fspath, pyAssert, pyBool, pyEq, pyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError, at, b, bytes_, concat, getOr, encode, floordiv, format, getattr, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
@@ -64,7 +64,7 @@ function _layerFootage(project: Project, fileName: string): FootageItem[] {
     (item) =>
       item.mainSource instanceof FileSource &&
       nodepath.win32.basename(fspath(item.mainSource.file)) === fileName &&
-      pyBool(item.mainSource.layerName),
+      truthy(item.mainSource.layerName),
   );
 }
 
@@ -73,7 +73,7 @@ function _pinBytes(source: FileSource): Map<string, Uint8Array> {
   const out = new Map<string, Uint8Array>();
   for (const [index, c] of source._pin.chunks.entries()) {
     if (c.chunkType !== "pgui") {
-      out.set(`${index}:${pyOr(getattr(c, "listType", null), c.chunkType)}`, c.tobytes());
+      out.set(`${index}:${truthyOr(getattr(c, "listType", null), c.chunkType)}`, c.tobytes());
     }
   }
   return out;
@@ -249,7 +249,7 @@ test.each([
   const project = _project();
   _import(project, ASSETS.div(asset), options);
   const items = _layerFootage(project, asset);
-  expect(pyBool(items)).toBe(true);
+  expect(truthy(items)).toBe(true);
   const before = new Map(
     items.map((item) => [item.id, [item.name, _pinBytes(_fileSource(item))]] as const),
   );
@@ -257,15 +257,15 @@ test.each([
     _fileSource(item).reload();
   }
   for (const item of items) {
-    const [name, pin] = getitem(before, item.id);
-    expect(pyEq(item.name, name)).toBe(true);
-    expect(pyEq(_pinBytes(_fileSource(item)), pin)).toBe(true);
+    const [name, pin] = getOrThrow(before, item.id);
+    expect(valueEquals(item.name, name)).toBe(true);
+    expect(valueEquals(_pinBytes(_fileSource(item)), pin)).toBe(true);
   }
   const out = tmpPath.div("reloaded.aep");
   project.save(out);
   const reparsed = parseProjectFresh(out);
   for (const item of items) {
-    expect(pyEq(getitem(reparsed.items, item.id).name, getitem(before, item.id)[0])).toBe(true);
+    expect(valueEquals(getOrThrow(reparsed.items, item.id).name, getOrThrow(before, item.id)[0])).toBe(true);
   }
 });
 
@@ -288,8 +288,8 @@ test("test_sequence_reload_keeps_the_unreduced_duration", () => {
   const sspc = _fileSource(item)._sspc;
   const before = [sspc.durationDividend, sspc.durationDivisor];
   _fileSource(item).reload();
-  expect(pyEq([sspc.durationDividend, sspc.durationDivisor], before)).toBe(true);
-  expect(pyEq(before, [3, 30])).toBe(true);
+  expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], before)).toBe(true);
+  expect(valueEquals(before, [3, 30])).toBe(true);
 });
 
 // --- C4: conform rates AE cannot open ------------------------------------
@@ -303,7 +303,7 @@ test.each([["mov_23_976.mov"], ["dpx_seq.0001.dpx"]])("test_tiny_conform_rate_is
   raises(ValueError, () => {
     _fileSource(item).conformFrameRate = 0.0004;
   }, "0.0005");
-  expect(pyEq(projectBytes(project), before)).toBe(true);
+  expect(valueEquals(projectBytes(project), before)).toBe(true);
   _fileSource(item).conformFrameRate = 0.0005;
   expect(approx(_fileSource(item).conformFrameRate, 0.0005, { abs: 1e-5 })).toBe(true);
 });
@@ -329,7 +329,7 @@ test("test_footage_wider_than_32767_px_is_rejected_unmodified", () => {
     for (const how of [ImportAsType.FOOTAGE, ImportAsType.COMP]) {
       if (how === ImportAsType.COMP && path.suffix !== ".psd") continue;
       raises(ValueError, () => _import(project, path, { importAs: how }), "32767");
-      expect(pyEq(projectBytes(project), before)).toBe(true);
+      expect(valueEquals(projectBytes(project), before)).toBe(true);
     }
   }
   expect(_import(project, _png(tmpPath.div("ok.png"), 32767, 1)).width).toBe(32767);
@@ -347,7 +347,7 @@ test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidde
   ]);
   const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
   const enabled = new Map(comp.layers.map((layer) => [String(layer.name), layer.enabled] as const));
-  expect(pyEq(enabled, new Map([["hidden", false], ["visible", true]]))).toBe(true);
+  expect(valueEquals(enabled, new Map([["hidden", false], ["visible", true]]))).toBe(true);
 });
 
 test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidden_photoshop_group_imports_disabled[%#]", (how) => {
@@ -362,11 +362,11 @@ test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidde
   ]);
   const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
   const layers = new Map<string, Layer>(comp.layers.map((layer) => [String(layer.name), layer] as const));
-  expect(getitem(layers, "top visible").enabled).toBe(true);
-  const group = getitem(layers, "hidden group");
+  expect(getOrThrow(layers, "top visible").enabled).toBe(true);
+  const group = getOrThrow(layers, "hidden group");
   expect(group.enabled).toBe(false);
   expect(
-    pyEq(
+    valueEquals(
       asInstance(asInstance(group, AVLayer).source, CompItem).layers.map((inner) => inner.enabled),
       [true],
     ),
@@ -388,7 +388,7 @@ test("test_layer_ids_without_lyid_number_from_two", () => {
       (item) => [String(_fileSource(item).layerName), _fileSource(item)._sspc.layerId] as const,
     ),
   );
-  expect(pyEq(ids, new Map([["a", 2], ["b", 3]]))).toBe(true);
+  expect(valueEquals(ids, new Map([["a", 2], ["b", 3]]))).toBe(true);
 });
 
 test("test_photoshop_layer_count_above_255", () => {
@@ -426,7 +426,7 @@ test("test_background_layer_is_named_background", () => {
   const asset = ASSETS.div("depth", "psd_rgb8_bg_layer.psd");
   expect(listLayers(asset).at(-1)).toBe("Background");
   const comp = asInstance(_import(_project(), asset, { importAs: ImportAsType.COMP }), CompItem);
-  expect(pyEq(comp.layers.map((layer) => String(layer.name)), ["Layer 1", "Background"])).toBe(true);
+  expect(valueEquals(comp.layers.map((layer) => String(layer.name)), ["Layer 1", "Background"])).toBe(true);
 });
 
 // --- C9: empty content box at Layer Size -------------------------------
@@ -439,7 +439,7 @@ test.each([
   // grouped_layers_cropped / psd_clipping_mask_cropped); 0x0 before.
   const index = listLayers(ASSETS.div(asset)).indexOf(layerName);
   const item = _import(_project(), ASSETS.div(asset), { layerIndex: index, layerDimensions: "layer" });
-  expect(pyEq([item.width, item.height], size)).toBe(true);
+  expect(valueEquals([item.width, item.height], size)).toBe(true);
   expect(_fileSource(item)._sspc.fullFrame).toBe(false);
 });
 
@@ -449,9 +449,9 @@ test("test_replace_current_value_keeps_an_empty_cropped_layer", () => {
     importAs: ImportAsType.COMP_CROPPED_LAYERS,
   });
   const item = project.footages.find((f) => String(f.name) === "hue/sat adj/grouped_layers.psd");
-  pyAssert(item != null, "StopIteration");
+  assert(item != null, "StopIteration");
   item.replace(ASSETS.div("grouped_layers.psd"), CURRENT_VALUE);
-  expect(pyEq([item.width, item.height], [80, 60])).toBe(true);
+  expect(valueEquals([item.width, item.height], [80, 60])).toBe(true);
 });
 
 // --- C8: image sequences -----------------------------------------------
@@ -476,10 +476,10 @@ test.each([
   const folder = _frames(tmpPath.div("seq"), names);
   const project = _project();
   const item = _import(project, folder.div(names[pick]), { sequence: true });
-  expect(pyEq(item.name, expected)).toBe(true);
+  expect(valueEquals(item.name, expected)).toBe(true);
   const out = tmpPath.div("seq.aep");
   project.save(out);
-  expect(pyEq(getitem(parseProjectFresh(out).items, item.id).name, expected)).toBe(true);
+  expect(valueEquals(getOrThrow(parseProjectFresh(out).items, item.id).name, expected)).toBe(true);
 });
 
 test("test_huge_frame_range_with_a_fractional_rate_saves", () => {
@@ -591,21 +591,21 @@ test.each([
   // AE 2026 records the profile by name only and interprets the footage in
   // the working space (Adobe CMS project, AE's import of the same file).
   const clrs = _clrs(_fileSource(_import(_project(ADOBE_BASE), ASSETS.div(asset))));
-  expect(pyEq(getitem(clrs, "empd"), name)).toBe(true);
-  expect(getitem(clrs, "ipws")).toBe(1);
-  expect(pyEq(getitem(clrs, "epid"), getitem(clrs, "apid"))).toBe(true);
-  expect(pyEq(getitem(clrs, "apid"), _UNSET)).toBe(true);
-  expect(!pyBool(dictGet(clrs, "mcsp")) && !pyBool(dictGet(clrs, "ocsp"))).toBe(true);
+  expect(valueEquals(getOrThrow(clrs, "empd"), name)).toBe(true);
+  expect(getOrThrow(clrs, "ipws")).toBe(1);
+  expect(valueEquals(getOrThrow(clrs, "epid"), getOrThrow(clrs, "apid"))).toBe(true);
+  expect(valueEquals(getOrThrow(clrs, "apid"), _UNSET)).toBe(true);
+  expect(!truthy(getOr(clrs, "mcsp")) && !truthy(getOr(clrs, "ocsp"))).toBe(true);
 });
 
 test("test_dpx_and_cineon_carry_no_profile", () => {
   for (const asset of ["dpx_10bit_be.dpx", "cin.cin"]) {
     const clrs = _clrs(_fileSource(_import(_project(ADOBE_BASE), ASSETS.div(asset))));
-    expect(pyEq(getitem(clrs, "epid"), getitem(clrs, "apid"))).toBe(true);
-    expect(pyEq(getitem(clrs, "apid"), _UNSET)).toBe(true);
+    expect(valueEquals(getOrThrow(clrs, "epid"), getOrThrow(clrs, "apid"))).toBe(true);
+    expect(valueEquals(getOrThrow(clrs, "apid"), _UNSET)).toBe(true);
     expect(clrs.has("empd")).toBe(false);
-    expect(getitem(clrs, "ipws")).toBe(1);
-    expect(!pyBool(dictGet(clrs, "ocsp"))).toBe(true);
+    expect(getOrThrow(clrs, "ipws")).toBe(1);
+    expect(!truthy(getOr(clrs, "ocsp"))).toBe(true);
   }
 });
 
@@ -624,10 +624,10 @@ test.each([
   if (!_ICC_AVAILABLE) return skip("Adobe ICC profiles not installed");
   const clrs = _clrs(_fileSource(_import(_project(ADOBE_BASE), ASSETS.div(asset))));
   const other = slot === "epid" ? "apid" : "epid";
-  expect(pyEq(getitem(clrs, slot), iccProfileId(defaultIccLibrary().bytesFor(profile)))).toBe(true);
-  expect(pyEq(getitem(clrs, other), _UNSET)).toBe(true);
+  expect(valueEquals(getOrThrow(clrs, slot), iccProfileId(defaultIccLibrary().bytesFor(profile)))).toBe(true);
+  expect(valueEquals(getOrThrow(clrs, other), _UNSET)).toBe(true);
   expect(clrs.has("empd")).toBe(false);
-  expect(getitem(clrs, "ipws")).toBe(0);
+  expect(getOrThrow(clrs, "ipws")).toBe(0);
 });
 
 test.each([
@@ -643,8 +643,8 @@ test.each([
   const project = parseAep(fixture, { platform }).project;
   const ours = _fileSource(_import(project, ASSETS.div(asset)));
   const oursLinl = ours._linl;
-  const truthLinl = getitem(truth, asset)._linl;
-  pyAssert(oursLinl != null && truthLinl != null, "missing linl");
+  const truthLinl = getOrThrow(truth, asset)._linl;
+  assert(oursLinl != null && truthLinl != null, "missing linl");
   expect(oursLinl.value).toBe(truthLinl.value);
   expect(truthLinl.value).toBe(0);
 });
@@ -653,7 +653,7 @@ const _MAC_EPOCH = 2082844800;
 
 function _stamp(item: AVItem): Uint8Array {
   const idta = item._idta;
-  pyAssert(idta != null, "item has no idta");
+  assert(idta != null, "item has no idta");
   return idta.tobytes().slice(0x50, 0x54); // `item._idta.tobytes()[0x50:0x54]`
 }
 
@@ -679,24 +679,24 @@ test("test_idta_stamp_follows_the_file_in_use", () => {
   const other = _stampedCopy(png, tmpPath.div("other.png"), 1_610_003_000);
   const project = _project();
   const item = asInstance(_import(project, main), FootageItem);
-  expect(pyEq(_stamp(item), _mac(1_610_000_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_000_000))).toBe(true);
   item.setProxy(proxy);
-  expect(pyEq(_stamp(item), _mac(1_610_002_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_002_000))).toBe(true);
   item.useProxy = false;
-  expect(pyEq(_stamp(item), _mac(1_610_000_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_000_000))).toBe(true);
   item.useProxy = true;
-  expect(pyEq(_stamp(item), _mac(1_610_002_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_002_000))).toBe(true);
   item.setProxyToNone();
-  expect(pyEq(_stamp(item), _mac(1_610_000_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_000_000))).toBe(true);
   item.replace(other);
-  expect(pyEq(_stamp(item), _mac(1_610_003_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_003_000))).toBe(true);
   utimesSync(fspath(other), 1_700_000_000, 1_700_000_000);
   _fileSource(item).reload();
-  expect(pyEq(_stamp(item), _mac(1_700_000_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_700_000_000))).toBe(true);
   const out = tmpPath.div("out.aep");
   project.save(out);
   expect(
-    pyEq(_stamp(asInstance(getitem(parseProjectFresh(out).items, item.id), AVItem)), _mac(1_700_000_000)),
+    valueEquals(_stamp(asInstance(getOrThrow(parseProjectFresh(out).items, item.id), AVItem)), _mac(1_700_000_000)),
   ).toBe(true);
 });
 
@@ -714,12 +714,12 @@ test("test_idta_stamp_of_sequences_placeholders_and_comps", () => {
   utimesSync(fspath(folder), 1_610_006_000, 1_610_006_000);
   const project = _project();
   const item = asInstance(_import(project, folder.div("s_001.png"), { sequence: true }), FootageItem);
-  expect(pyEq(_stamp(item), _mac(1_610_006_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_006_000))).toBe(true);
   item.setProxyWithPlaceholder("PP", 10, 10, 25.0, 1.0);
   item.replaceWithPlaceholder("RP", 10, 10, 25.0, 1.0);
-  expect(pyEq(_stamp(item), _mac(1_610_006_000))).toBe(true);
+  expect(valueEquals(_stamp(item), _mac(1_610_006_000))).toBe(true);
   const comp = project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
   const before = _stamp(comp);
   comp.setProxy(folder.div("s_001.png"));
-  expect(pyEq(_stamp(comp), before)).toBe(true);
+  expect(valueEquals(_stamp(comp), before)).toBe(true);
 });

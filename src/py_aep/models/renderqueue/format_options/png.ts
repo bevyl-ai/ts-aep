@@ -3,11 +3,11 @@
 import {
   ValueError,
   descriptor,
-  dictGet,
+  getOr,
   int,
   jsonDumps,
   jsonLoads,
-  pyBool,
+  truthy,
   jsonFloat,
   jsonInt,
   type JsonValue,
@@ -102,7 +102,7 @@ export class PngFormatOptions extends FormatOptionsBase {
    * Options dialog. Only available for 16-bit output. Read / Write.
    */
   get includeHdr10Metadata(): boolean {
-    return pyBool(dictGet(this._hdr10Meta, "colorMetadataPresent", false));
+    return truthy(getOr(this._hdr10Meta, "colorMetadataPresent", false));
   }
 
   set includeHdr10Metadata(value: boolean) {

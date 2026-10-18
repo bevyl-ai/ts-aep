@@ -18,7 +18,7 @@ import { CameraLayer } from "../../src/py_aep/models/layers/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { getComp, parseProjectFresh } from "../helpers.ts";
-import { Path, pyAssert } from "../../src/pyrt/index.ts";
+import { Path, assert } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
@@ -26,7 +26,7 @@ const SAMPLE = SAMPLES_DIR.div("camera_default_position.aep");
 
 function _camera(project: Project): CameraLayer {
   const camera = getComp(project, "zoom_1000").layers[0];
-  pyAssert(camera instanceof CameraLayer);
+  assert(camera instanceof CameraLayer);
   return camera;
 }
 
@@ -70,7 +70,7 @@ describe("TestZoomChange", () => {
     _zoom(camera).value = 3000;
 
     const default_ = _position(camera).defaultValue;
-    pyAssert(default_ != null);
+    assert(default_ != null);
     expect(default_.every((v) => typeof v === "number")).toBe(true);
   });
 
@@ -102,7 +102,7 @@ describe("TestZoomChange", () => {
     const tmpPath = makeTmpPath();
     const position = _reopenedPosition(parseProjectFresh(SAMPLE), tmpPath);
 
-    pyAssert(position._tdsb != null);
+    assert(position._tdsb != null);
     expect(position._tdsb.synthetic).toBe(true);
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
     expect(position.isModified).toBe(false);
@@ -116,17 +116,17 @@ describe("TestZoomChange", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const camera = getComp(project, "zoom_keyed").layers[0];
-    pyAssert(camera instanceof CameraLayer);
+    assert(camera instanceof CameraLayer);
     camera.startTime = -1;
     expect(_position(camera).isModified).toBe(false);
 
     const out = tmpPath.div("out.aep");
     project.save(out);
     const reopened = getComp(parseAep(out).project, "zoom_keyed").layers[0];
-    pyAssert(reopened instanceof CameraLayer);
+    assert(reopened instanceof CameraLayer);
     const position = _position(reopened);
 
-    pyAssert(position._tdsb != null);
+    assert(position._tdsb != null);
     expect(position._tdsb.synthetic).toBe(true);
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
   });

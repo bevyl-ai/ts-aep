@@ -13,7 +13,7 @@
 
 import { test, expect } from "bun:test";
 
-import { Path, StopIteration, contains, getitem, pyBool, pyAssert } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, contains, getOrThrow, truthy, assert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance, jsonField, type ExpectedProperty } from "../helpers.ts";
@@ -39,7 +39,7 @@ function _effectProps(compName: string, layerName: string): Property[] {
   const comp = getComp(parseProject(SAMPLES_DIR.div(`${SAMPLE}.aep`)), compName);
   const layer = comp.layers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
-  pyAssert(layer.effects != null);
+  assert(layer.effects != null);
   return asInstance(layer.effects.property(0), PropertyGroup).properties.filter(
     (p): p is Property => p instanceof Property,
   );
@@ -66,13 +66,13 @@ test.each(_CASES)("test_points_and_popups_match_json[%#]", (compName: string, la
     ) {
       continue;
     }
-    const propJson = getitem(expected, prop.matchName);
+    const propJson = getOrThrow(expected, prop.matchName);
     // NOTE(port): Python's `, prop.name` is only a failure message; bun's expect has no message arg, pass/fail is identical.
     expect(approx(prop.value, propJson.value)).toBe(true);
     expect(prop.isModified).toBe(propJson.isModified);
     checked += 1;
   }
-  expect(pyBool(checked)).toBe(true);
+  expect(truthy(checked)).toBe(true);
 });
 
 test.each([
@@ -109,7 +109,7 @@ test.each<[string, number[]]>([
     const comp = getComp(parseProject(SAMPLES_DIR.div("effect_point_adjustment.aep")), "coverage");
     const layer = comp.layers.find((ly) => ly.name === layerName);
     if (layer === undefined) throw new StopIteration();
-    pyAssert(layer.effects != null);
+    assert(layer.effects != null);
     const transform = asInstance(layer.effects.property("ADBE Geometry2"), PropertyGroup);
     const points: [string, number[]][] = [
       ["ADBE Geometry2-0001", [30.0, 40.0]],

@@ -14,7 +14,7 @@
 // NOTE(port): importorskip only skips when uharfbuzz is absent; harfbuzzjs is a hard dependency, so the skip can never fire.
 
 import { expect, test } from "bun:test";
-import { Path, getitem, format, pyAssert, pyBool, pyEq, repr, zip } from "../../src/pyrt/index.ts";
+import { Path, getOrThrow, format, assert, truthy, valueEquals, repr, zip } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../helpers.ts";
@@ -72,7 +72,7 @@ function docsFixture(): Map<string, TextDocument> {
     _cache.docs = new Map(
       comp.textLayers.map((layer) => {
         const text = layer.text;
-        pyAssert(text != null);
+        assert(text != null);
         return [layer.name, text.sourceText.value] as const;
       }),
     );
@@ -92,7 +92,7 @@ test.skipIf(moduleSkip)("test_every_matrix_layer_composes_or_refuses", () => {
       continue;
     }
     const cached = _cachedLineData(doc);
-    pyAssert(cached != null, name);
+    assert(cached != null, name);
     const [cachedSpans, cachedBaselines] = cached;
     let composed;
     try {
@@ -102,7 +102,7 @@ test.skipIf(moduleSkip)("test_every_matrix_layer_composes_or_refuses", () => {
       mismatches.push(`${name}: refused: ${exc.message}`);
       continue;
     }
-    if (!pyEq(composed.spans, cachedSpans)) {
+    if (!valueEquals(composed.spans, cachedSpans)) {
       mismatches.push(
         `${name}: spans ${repr(composed.spans.slice(0, 3))}... != ${repr(cachedSpans.slice(0, 3))}...`,
       );
@@ -116,7 +116,7 @@ test.skipIf(moduleSkip)("test_every_matrix_layer_composes_or_refuses", () => {
     }
     composedCount += 1;
   }
-  pyAssert(!pyBool(mismatches), mismatches.join("\n"));
+  assert(!truthy(mismatches), mismatches.join("\n"));
   // The matrix must keep exercising the full in-envelope surface.
   expect(composedCount >= 37).toBe(true);
 });
@@ -127,7 +127,7 @@ test.skipIf(moduleSkip)("test_refusal_reasons_are_specific", () => {
     raises(
       CompositionUnsupported,
       () => {
-        composeLines(getitem(docs, name));
+        composeLines(getOrThrow(docs, name));
       },
       needle,
     );
@@ -138,9 +138,9 @@ test.skipIf(moduleSkip)("test_overflow_matches_probe", () => {
   const docs = docsFixture();
   // The height-sweep layers overflow (600px of text in small boxes).
   for (const name of ["M_H40", "M_H55", "M_H70", "M_H90", "M_H120"]) {
-    expect(composeLines(getitem(docs, name)).overflow).toBe(true);
+    expect(composeLines(getOrThrow(docs, name)).overflow).toBe(true);
   }
-  expect(composeLines(getitem(docs, "M_W300")).overflow).toBe(false);
+  expect(composeLines(getOrThrow(docs, "M_W300")).overflow).toBe(false);
 });
 
 test.skipIf(moduleSkip)("test_length_changing_case_map_is_refused", () => {

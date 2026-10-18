@@ -8,8 +8,8 @@ import {
   len,
   lshift,
   Path,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   split,
   StopIteration,
   str,
@@ -708,7 +708,7 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     // The ACEScct ICC exactly as AE embedded it, next to the cpid AE
     // wrote for it.
     const donor = parseAep(TestRoundtripWorkingSpaceProfileId.ACESCCT_DONOR).project;
-    pyAssert(donor._wsUtf8 != null);
+    assert(donor._wsUtf8 != null);
     const icc = parseEnvelope(donor._wsUtf8.value).data;
     expect(bytes_.hex(TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe("ae27d1e66d65c5a0a50fe0ec149a24fa");
     const iccDir = tmpPath.div("icc");
@@ -722,17 +722,17 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     project.save(out);
     const project2 = parseAep(out).project;
     expect(project2.workingSpace).toBe("ACEScct");
-    expect(pyEq(TestRoundtripWorkingSpaceProfileId._cpid(project2), TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe(true);
+    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project2), TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe(true);
   });
 
   test("test_ocio_working_space_writes_no_profile_id", () => {
     const config = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "config.ocio");
     const project = parseAep(SAMPLES_DIR.div("workingSpace_sRGB.aep")).project;
-    expect(pyEq(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(false);
+    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(false);
     project.colorManagementSystem = ColorManagementSystem.OCIO;
     project.ocioConfigurationFile = str(config);
     project.workingSpace = "ACEScg";
-    expect(pyEq(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(true);
   });
 });
 
@@ -794,8 +794,8 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     // AE 15.1's own template: the pool holds just the working space's
     // ICC, and `lnrp` sits between `cpid` and `dwga`.
     const donorIcc = _profilePool(parseAep(C.DONOR).project)[0].data;
-    expect(pyEq(_profilePool(project2).map((c) => c.data), [donorIcc])).toBe(true);
-    expect(pyEq(project2._cpid.data, C.SRGB_ID)).toBe(true);
+    expect(valueEquals(_profilePool(project2).map((c) => c.data), [donorIcc])).toBe(true);
+    expect(valueEquals(project2._cpid.data, C.SRGB_ID)).toBe(true);
     const types = project2._rifx.chunks.map((c) => c.chunkType);
     const i = types.indexOf("cpid");
     expect(types.slice(i, i + 3)).toEqual(["cpid", "lnrp", "dwga"]);
@@ -813,10 +813,10 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.workingSpace).toBe(C.SRGB);
-    expect(pyEq(project2._cpid.data, C.SRGB_ID)).toBe(true);
+    expect(valueEquals(project2._cpid.data, C.SRGB_ID)).toBe(true);
     // The replaced SDTV NTSC stays, after the lower sRGB id.
     const poolIds = _profilePool(project2).map((c) => iccProfileId(c.data));
-    expect(pyEq(poolIds, [C.SRGB_ID, C.NTSC_ID])).toBe(true);
+    expect(valueEquals(poolIds, [C.SRGB_ID, C.NTSC_ID])).toBe(true);
   });
 
   test("test_pooled_profile_is_reused", () => {
@@ -825,7 +825,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     project.iccProfileDirs = [C._icc_dir(tmpPath)];
     const before = projectBytes(project);
     project.workingSpace = project.workingSpace;
-    expect(pyEq(projectBytes(project), before)).toBe(true);
+    expect(valueEquals(projectBytes(project), before)).toBe(true);
 
     project.workingSpace = "SDTV NTSC";
     const out = tmpPath.div("ws.aep");
@@ -833,7 +833,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.workingSpace).toBe("SDTV NTSC");
-    expect(pyEq(project2._cpid.data, C.NTSC_ID)).toBe(true);
+    expect(valueEquals(project2._cpid.data, C.NTSC_ID)).toBe(true);
     expect(_profilePool(project2).length).toBe(2);
   });
 
@@ -848,8 +848,8 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.workingSpace).toBe("None");
-    expect(pyEq(project2._cpid.data, bytes_.repeat(b("\xff"), 16))).toBe(true);
-    expect(pyEq(_profilePool(project2).map((c) => c.data), pool)).toBe(true);
+    expect(valueEquals(project2._cpid.data, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(_profilePool(project2).map((c) => c.data), pool)).toBe(true);
   });
 
   test("test_unknown_profile_leaves_project_unchanged", () => {
@@ -860,7 +860,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     raises(ColorProfileNotFoundError, () => {
       project.workingSpace = "Not A Profile";
     });
-    expect(pyEq(projectBytes(project), before)).toBe(true);
+    expect(valueEquals(projectBytes(project), before)).toBe(true);
   });
 });
 
@@ -926,7 +926,7 @@ describe("TestIdempotency", () => {
     app.project.save(out);
     const roundtripBytes = out.readBytes();
 
-    expect(pyEq(originalBytes, roundtripBytes)).toBe(true);
+    expect(valueEquals(originalBytes, roundtripBytes)).toBe(true);
   });
 });
 

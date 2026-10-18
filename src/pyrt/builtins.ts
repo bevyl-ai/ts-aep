@@ -24,7 +24,7 @@ function _probeable(x: unknown): x is DunderProbe {
  * custom truthiness via `__bool__`) are false. JS treats `[]` and an empty
  * Uint8Array as true - never use bare `if (x)` on a container.
  */
-export function pyBool(x: unknown): boolean {
+export function truthy(x: unknown): boolean {
   if (x == null) return false;
   if (x instanceof PyFloat) return x.value !== 0;
   if (typeof x === "boolean") return x;
@@ -46,14 +46,14 @@ export function pyBool(x: unknown): boolean {
 export type Falsy = null | undefined | false | 0 | "" | 0n;
 
 /** `a or b` with Python truthiness (returns the operand, not a boolean). */
-export function pyOr<A, B>(a: A, b: B): Exclude<A, Falsy> | B;
-export function pyOr<A, B>(a: A, b: B): A | B {
-  return pyBool(a) ? a : b;
+export function truthyOr<A, B>(a: A, b: B): Exclude<A, Falsy> | B;
+export function truthyOr<A, B>(a: A, b: B): A | B {
+  return truthy(a) ? a : b;
 }
 
 /** `a and b` with Python truthiness. */
 export function pyAnd<A, B>(a: A, b: B): A | B {
-  return pyBool(a) ? b : a;
+  return truthy(a) ? b : a;
 }
 
 /** `len(x)` */
@@ -95,11 +95,11 @@ export function* enumerate<T>(xs: Iterable<T>, start = 0): Generator<[number, T]
 }
 
 /** Python ordering of numbers, strings, bools, and tuples/lists (lexicographic). */
-export function pyCmp(a: unknown, b: unknown): number {
+export function compare(a: unknown, b: unknown): number {
   if (Array.isArray(a) && Array.isArray(b)) {
     const n = Math.min(a.length, b.length);
     for (let i = 0; i < n; i++) {
-      const c = pyCmp(a[i], b[i]);
+      const c = compare(a[i], b[i]);
       if (c) return c;
     }
     return a.length - b.length;
@@ -108,9 +108,9 @@ export function pyCmp(a: unknown, b: unknown): number {
     // Python compares code points; JS `<` compares UTF-16 units.
     const ca = Array.from(a, ord);
     const cb = Array.from(b, ord);
-    return pyCmp(ca, cb);
+    return compare(ca, cb);
   }
-  if (a instanceof Uint8Array && b instanceof Uint8Array) return pyCmp(Array.from(a), Array.from(b));
+  if (a instanceof Uint8Array && b instanceof Uint8Array) return compare(Array.from(a), Array.from(b));
   if (a == null || b == null) throw new TypeError("'<' not supported between instances of 'NoneType'");
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -121,7 +121,7 @@ export function sorted<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, revers
   const k: (x: T) => K | T = key ?? ((x: T) => x);
   const decorated = arr.map((x, i) => [k(x), i, x] as const);
   decorated.sort((p, q) => {
-    const c = pyCmp(p[0], q[0]);
+    const c = compare(p[0], q[0]);
     return (reverse ? -c : c) || p[1] - q[1];
   });
   return decorated.map((d) => d[2]);
@@ -132,7 +132,7 @@ export function min<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: 
   let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
-    if (best === null || pyCmp(k, best.k) < 0) best = { x, k };
+    if (best === null || compare(k, best.k) < 0) best = { x, k };
   }
   if (best === null) {
     if (dflt.length) return dflt[0];
@@ -146,7 +146,7 @@ export function max<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: 
   let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
-    if (best === null || pyCmp(k, best.k) > 0) best = { x, k };
+    if (best === null || compare(k, best.k) > 0) best = { x, k };
   }
   if (best === null) {
     if (dflt.length) return dflt[0];
@@ -216,16 +216,16 @@ export function pySlice(xs: Sliceable, start?: number | null, end?: number | nul
 }
 
 /** `d[k]` on a Map with KeyError. */
-export function getitem<K, V>(d: Pick<ReadonlyMap<K, V>, "get">, k: K): V {
+export function getOrThrow<K, V>(d: Pick<ReadonlyMap<K, V>, "get">, k: K): V {
   const v = d.get(k);
   if (v === undefined) throw new KeyError(repr(k));
   return v;
 }
 
 /** `d.get(k, default)` on a Map (None, not undefined, when absent). */
-export function dictGet<K, V>(d: Map<K, V>, k: K): V | null;
-export function dictGet<K, V, D>(d: Map<K, V>, k: K, dflt: D): V | D;
-export function dictGet<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D | null {
+export function getOr<K, V>(d: Map<K, V>, k: K): V | null;
+export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D): V | D;
+export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D | null {
   const v = d.get(k);
   return v !== undefined ? v : dflt;
 }
@@ -294,13 +294,13 @@ export function hasattr(obj: unknown, name: string): boolean {
 export function contains(container: unknown, x: unknown): boolean {
   if (typeof container === "string") return container.includes(String(x));
   if (container instanceof Map || container instanceof Set) return container.has(x);
-  if (Array.isArray(container)) return container.some((y) => pyEq(y, x));
+  if (Array.isArray(container)) return container.some((y) => valueEquals(y, x));
   if (_probeable(container) && typeof container.has === "function") return container.has(x);
   throw new TypeError("argument of type is not iterable");
 }
 
 /** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `equals`). */
-export function pyEq(a: unknown, b: unknown): boolean {
+export function valueEquals(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a instanceof PyFloat) a = a.value;
   if (b instanceof PyFloat) b = b.value;
@@ -313,13 +313,13 @@ export function pyEq(a: unknown, b: unknown): boolean {
   }
   if (a == null || b == null) return false;
   if (a instanceof String || b instanceof String) return String(a) === String(b);
-  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => pyEq(x, b[i]));
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => valueEquals(x, b[i]));
   if (a instanceof Uint8Array && b instanceof Uint8Array) {
     return a.length === b.length && a.every((x, i) => x === b[i]);
   }
   if (a instanceof Map && b instanceof Map) {
     if (a.size !== b.size) return false;
-    for (const [k, v] of a) if (!b.has(k) || !pyEq(v, b.get(k))) return false;
+    for (const [k, v] of a) if (!b.has(k) || !valueEquals(v, b.get(k))) return false;
     return true;
   }
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => b.has(x));

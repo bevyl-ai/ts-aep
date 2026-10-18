@@ -12,7 +12,7 @@ import { describe, expect, test } from "bun:test";
 
 import { asInstance, parseProject, parseProjectFresh } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { Path, pyEq } from "../../src/pyrt/index.ts";
+import { Path, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is the directory of
@@ -43,6 +43,6 @@ describe("TestNegativeTimeSpanDecode", () => {
     parseProjectFresh(SAMPLE).save(out);
     parseProjectFresh(out).save(out2);
 
-    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
+    expect(valueEquals(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });

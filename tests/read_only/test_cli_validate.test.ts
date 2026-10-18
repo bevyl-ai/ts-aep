@@ -5,7 +5,7 @@ import { loadExpected, parseProject } from "../conftest.ts";
 import { type Dict, ValidationResult, compareLayer, compareProjectLevel, compareProperty, toDict, validateAep } from "../../src/py_aep/cli/validate.ts";
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { Path, contains, dictGet, getitem, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { Path, contains, getOr, getOrThrow, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
 
 /**
  * NOTE(port): Python `json.load` dicts are Maps in this port (rulebook §3); `load_expected` yields
@@ -43,12 +43,12 @@ describe("TestToDict", () => {
 
   test("test_list_to_dict", () => {
     const result = toDict([1, 2, 3]);
-    expect(pyEq(result, [1, 2, 3])).toBe(true);
+    expect(valueEquals(result, [1, 2, 3])).toBe(true);
   });
 
   test("test_dict_to_dict", () => {
     const result = toDict(new Map([["a", 1]]));
-    expect(pyEq(result, new Map([["a", 1]]))).toBe(true);
+    expect(valueEquals(result, new Map([["a", 1]]))).toBe(true);
   });
 
   test("test_plain_value", () => {
@@ -94,14 +94,14 @@ describe("TestCompareLayer", () => {
       loadExpected(SAMPLES_DIR.div("models", "layer"), "enabled_false"),
     );
     // Find matching comp and layers
-    for (const item of getitem(expected, "items")) {
-      if (contains(item, "layers") && len(getitem(item, "layers")) > 0) {
-        const expLayer = getitem<string, Dict[]>(item, "layers")[0];
+    for (const item of getOrThrow(expected, "items")) {
+      if (contains(item, "layers") && len(getOrThrow(item, "layers")) > 0) {
+        const expLayer = getOrThrow<string, Dict[]>(item, "layers")[0];
         // Get parsed comp layers
-        const parsedComps = dictGet(parsed, "_compositions", []);
-        if (pyBool(parsedComps)) {
-          const parsedLayers = dictGet<string, Dict[], Dict[]>(parsedComps[0], "layers", []);
-          if (pyBool(parsedLayers)) {
+        const parsedComps = getOr(parsed, "_compositions", []);
+        if (truthy(parsedComps)) {
+          const parsedLayers = getOr<string, Dict[], Dict[]>(parsedComps[0], "layers", []);
+          if (truthy(parsedLayers)) {
             const result = new ValidationResult();
             compareLayer(
               expLayer, parsedLayers[0], "Layer[0]", 30.0, 24.0, result,

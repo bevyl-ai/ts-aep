@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, floordiv, getitem, int, max, min, mod, radians, sorted, sum, tkey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sorted, sum, tkey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -1241,8 +1241,8 @@ export function _segmentSpline(
   const curve = _measuredCurve(
     keyframes[index]._storedValue as number[],
     keyframes[index + 1]._storedValue as number[],
-    getitem(tangents, index)[0],
-    getitem(tangents, index + 1)[1],
+    getOrThrow(tangents, index)[0],
+    getOrThrow(tangents, index + 1)[1],
     metric,
   );
   return _arcSpline(curve, metric.accuracy);
@@ -1270,8 +1270,8 @@ export function _segmentCurve(keyframes: Keyframe[], index: number): _Curve {
   return _spatialCurve(
     keyframes[index]._storedValue as number[],
     keyframes[index + 1]._storedValue as number[],
-    getitem(tangents, index)[0],
-    getitem(tangents, index + 1)[1],
+    getOrThrow(tangents, index)[0],
+    getOrThrow(tangents, index + 1)[1],
   );
 }
 

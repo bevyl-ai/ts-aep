@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { BytesIO, KeyError, ValueError, getitem, pyAssert, pyBool, pyEq, tkey } from "../../src/pyrt/index.ts";
+import { BytesIO, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, tkey } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
@@ -200,7 +200,7 @@ describe("TestPreferences", () => {
     const prefs = new py_aep.Preferences(prefsDir);
     // The key exists in the composition file only.
     expect(
-      pyBool(
+      truthy(
         prefs.getPrefAsBool(
           "Composition Pref Section",
           "Composition Settings - Constrain Proportions",
@@ -269,7 +269,7 @@ describe("TestPreferences", () => {
     const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     prefs.deletePref("Numbers Section", "Raw Byte");
-    expect(pyEq(target.readBytes(), before)).toBe(true);
+    expect(valueEquals(target.readBytes(), before)).toBe(true);
   });
 
   test("test_delete_pref_masks_file_value", () => {
@@ -363,7 +363,7 @@ describe("TestCreationWiring", () => {
     expect(app.project._solidsFolderName).toBe("Solides");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0]);
-    expect(pyEq(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
+    expect(valueEquals(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
   });
 
   test("test_solids_folder_name_stamped_in_saved_file", () => {
@@ -438,24 +438,24 @@ describe("TestCompositionPresets", () => {
     expect(presets.length).toBe(3);
     const [hd24, hd2997, hdv] = presets;
     expect(hd24.name.includes("1920x1080") && hd24.name.includes("24 fps")).toBe(true);
-    expect(pyEq([hd24.width, hd24.height], [1920, 1080])).toBe(true);
+    expect(valueEquals([hd24.width, hd24.height], [1920, 1080])).toBe(true);
     expect(approx(hd24.frameRate, 24.0)).toBe(true);
     expect(approx(hd24.pixelAspect, 1.0)).toBe(true);
     expect(approx(hd2997.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
-    expect(pyEq([hdv.width, hdv.height], [1440, 1080])).toBe(true);
+    expect(valueEquals([hdv.width, hdv.height], [1440, 1080])).toBe(true);
     expect(approx(hdv.frameRate, 25.0)).toBe(true);
     expect(approx(hdv.pixelAspect, 4 / 3)).toBe(true);
   });
 
   test("test_no_prefs_dir", () => {
-    expect(pyEq(new py_aep.Preferences().compositionPresets(), [])).toBe(true);
+    expect(valueEquals(new py_aep.Preferences().compositionPresets(), [])).toBe(true);
   });
 
   test("test_add_comp_from_preset", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
     const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "1440x1080", 5.0);
-    expect(pyEq([comp.width, comp.height], [1440, 1080])).toBe(true);
+    expect(valueEquals([comp.width, comp.height], [1440, 1080])).toBe(true);
     expect(approx(comp.pixelAspect, 4 / 3)).toBe(true);
     expect(approx(comp.frameRate, 25.0)).toBe(true);
     expect(approx(comp.duration, 5.0)).toBe(true);
@@ -513,8 +513,8 @@ describe("TestResizeToStrings", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
     // Fixture presets: HD 1920x1080 @ 24 and @ 29.97 - lowest wins.
     const resize = buildResizeToStrings(new py_aep.Preferences(prefsDir));
-    expect(getitem(resize, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
-    expect(getitem(resize, tkey(1440, 1080))).toBe("HDV  •  1440x1080 (1.33) • 25 fps");
+    expect(getOrThrow(resize, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
+    expect(getOrThrow(resize, tkey(1440, 1080))).toBe("HDV  •  1440x1080 (1.33) • 25 fps");
   });
 
   test("test_tie_break_prefers_later_preset", () => {
@@ -523,7 +523,7 @@ describe("TestResizeToStrings", () => {
     prefs.mkdir();
     prefs.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").writeText(_TIE_COMP_PREFS);
     const resize = buildResizeToStrings(new py_aep.Preferences(prefs));
-    expect(getitem(resize, tkey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
+    expect(getOrThrow(resize, tkey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
   });
 
   test("test_fallback_without_prefs", () => {
@@ -532,8 +532,8 @@ describe("TestResizeToStrings", () => {
 
   test("test_fallback_holds_ae_verified_collision_labels", () => {
     // AE 2026 getSetting("Resize to") ground truth for factory presets.
-    expect(getitem(_RESIZE_TO_STRINGS, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
-    expect(getitem(_RESIZE_TO_STRINGS, tkey(3840, 2160))).toBe("UHD (4K)  •  3840x2160 • 23.976 fps");
+    expect(getOrThrow(_RESIZE_TO_STRINGS, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
+    expect(getOrThrow(_RESIZE_TO_STRINGS, tkey(3840, 2160))).toBe("UHD (4K)  •  3840x2160 • 23.976 fps");
   });
 });
 
@@ -542,7 +542,7 @@ describe("TestOutputNameTemplatePresets", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
     const presets = new py_aep.Preferences(prefsDir).outputNameTemplatePresets();
     expect(
-      pyEq(
+      valueEquals(
         presets,
         new Map([
           ["Comp Name", "[compName].[fileExtension]"],
@@ -553,7 +553,7 @@ describe("TestOutputNameTemplatePresets", () => {
   });
 
   test("test_no_prefs_dir", () => {
-    expect(pyEq(new py_aep.Preferences().outputNameTemplatePresets(), new Map())).toBe(true);
+    expect(valueEquals(new py_aep.Preferences().outputNameTemplatePresets(), new Map())).toBe(true);
   });
 });
 
@@ -566,7 +566,7 @@ describe("TestNewProjectSettings", () => {
     for (const chunk of [project._nnhd, project._nhed]) {
       expect(chunk.timeDisplayType).toBe(1);
       expect(chunk.footageTimecodeDisplayStartType).toBe(0);
-      expect(pyBool(chunk.framesUseFeetFrames)).toBe(true);
+      expect(truthy(chunk.framesUseFeetFrames)).toBe(true);
       expect(chunk.timecodeDefaultBase).toBe(24);
       expect(chunk.framesCountType).toBe(1);
     }
@@ -733,7 +733,7 @@ function _textStyleDir(tmpPath: Path, sheet: string): Path {
 
 function _btdkBytes(layer: Layer): Uint8Array {
   const matches = recursiveFind(layer._layerList.chunks, undefined, "btdk");
-  pyAssert(matches.length === 1);
+  assert(matches.length === 1);
   const buf = new BytesIO();
   matches[0].write(buf);
   return buf.getvalue();
@@ -770,7 +770,7 @@ describe("TestTextStyleSheet", () => {
     const layerBytes = _btdkBytes(comp.addText("probe"));
     const buf = new BytesIO();
     new py_aep.TextDocument("probe")._btdkBody.write(buf);
-    expect(pyEq(layerBytes, buf.getvalue())).toBe(true);
+    expect(valueEquals(layerBytes, buf.getvalue())).toBe(true);
   });
 
   test("test_identity_fields_are_not_rewritten", () => {
@@ -788,7 +788,7 @@ describe("TestTextStyleSheet", () => {
     const compPrefs = appPrefs.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const appPlain = py_aep.newProject();
     const compPlain = appPlain.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
-    expect(pyEq(_btdkBytes(compPrefs.addText("probe")), _btdkBytes(compPlain.addText("probe")))).toBe(true);
+    expect(valueEquals(_btdkBytes(compPrefs.addText("probe")), _btdkBytes(compPlain.addText("probe")))).toBe(true);
   });
 
   test("test_factory_sheet_matches_ae_addtext", () => {
@@ -805,7 +805,7 @@ describe("TestTextStyleSheet", () => {
     expect(td.font).toBe("MyriadPro-Regular");
     expect(approx(td.fontSize, 36.0)).toBe(true);
     expect(approx(td.fillColor, [0.921569, 0.921569, 0.921569], { abs: 1e-5 })).toBe(true);
-    expect(!pyBool(td.applyStroke)).toBe(true);
+    expect(!truthy(td.applyStroke)).toBe(true);
   });
 
   test("test_box_text_honors_style_sheet", () => {

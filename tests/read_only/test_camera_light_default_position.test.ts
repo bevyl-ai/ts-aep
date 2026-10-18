@@ -30,7 +30,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { getitem, Path, pyAssert, range, StopIteration } from "../../src/pyrt/index.ts";
+import { getOrThrow, Path, assert, range, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { jsonField, type ExpectedProperty } from "../helpers.ts";
@@ -78,7 +78,7 @@ function _layer(sample: string, compName: string, layerName: string): Layer {
 
 function _position(layer: Layer, matchName = "ADBE Position"): Property {
   const prop = layer.transform.property(matchName);
-  pyAssert(prop instanceof Property);
+  assert(prop instanceof Property);
   return prop;
 }
 
@@ -98,11 +98,11 @@ function _assertMatchesJson(sample: string, compName: string, layerName: string)
   const expected = _expectedTransform(sample, compName, layerName);
   for (const matchName of _POSITION_MATCH_NAMES) {
     const prop = _position(layer, matchName);
-    const propJson = getitem(expected, matchName);
-    pyAssert(approx(prop.value, propJson["value"]), matchName);
-    pyAssert(prop.isModified === propJson["isModified"], matchName);
+    const propJson = getOrThrow(expected, matchName);
+    assert(approx(prop.value, propJson["value"]), matchName);
+    assert(prop.isModified === propJson["isModified"], matchName);
   }
-  const leaderJson = getitem(expected, "ADBE Position");
+  const leaderJson = getOrThrow(expected, "ADBE Position");
   expect(_position(layer).dimensionsSeparated).toBe(jsonField(leaderJson, "dimensionsSeparated"));
 }
 

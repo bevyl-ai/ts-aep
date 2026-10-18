@@ -48,7 +48,7 @@ export function errorCode(e: unknown): unknown {
 }
 
 /** Python's `assert cond, msg`. */
-export function pyAssert(cond: unknown, message = ""): asserts cond {
+export function assert(cond: unknown, message = ""): asserts cond {
   if (!cond) throw new AssertionError(message);
 }
 

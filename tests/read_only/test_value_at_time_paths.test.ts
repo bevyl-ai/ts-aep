@@ -21,13 +21,13 @@ import {
   enumerate,
   float,
   floatRepr,
-  getitem,
+  getOrThrow,
   len,
   min,
   mod,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   round,
   StopIteration,
@@ -49,7 +49,7 @@ const VAT_DIR = SAMPLES_DIR.div("value_at_time");
 // Path vertices are stored as float32, so a blend of two of them cannot be
 // closer than about 1e-5 of AE's double. An effect point follows AE's own
 // arc-length model and matches to the digits ExtendScript prints.
-// Python dict -> Map so a missing match name raises KeyError via getitem().
+// Python dict -> Map so a missing match name raises KeyError via getOrThrow().
 const _TOLERANCE = new Map<string, number>([
   ["ADBE Mask Shape", 1e-4],
   ["ADBE Vector Shape", 1e-4],
@@ -61,7 +61,7 @@ const _TOLERANCE = new Map<string, number>([
 /** The single property under `layer` with this match name. */
 function _find(layer: Layer, matchName: string): Property {
   const found = Array.from(layer._leafProperties()).filter((p) => p.matchName === matchName);
-  pyAssert(len(found) === 1, `${matchName}: expected 1 match, got ${len(found)}`);
+  assert(len(found) === 1, `${matchName}: expected 1 match, got ${len(found)}`);
   return found[0];
 }
 
@@ -84,7 +84,7 @@ function _flatten(value: Shape | ExpectedShape | number[] | number): number[] {
     return numbers;
   }
   if (Array.isArray(value)) return value.map((v) => float(v));
-  pyAssert(typeof value === "number");
+  assert(typeof value === "number");
   return [float(value)];
 }
 
@@ -110,14 +110,14 @@ function _assertSameRotation(
   const qExpected = eulerToQuaternion(expected);
   const dot = min([1.0, Math.abs(sum(zip(qActual, qExpected).map(([a, b]) => a * b)))]);
   const between = degrees(2.0 * Math.acos(dot));
-  pyAssert(
+  assert(
     between <= Math.max(tolerance, 1e-3),
     `${layerName} t=${floatRepr(time)}: ${repr(actual)} is ${floatRepr(between)} degrees from ${repr(expected)}`,
   );
   // Python `%` is floored (sign of the divisor), so mod(), not JS `%`.
   if (Math.abs(Math.abs(mod(expected[1], 360.0)) - 90.0) > 0.01) {
     for (const [index, [a, b]] of enumerate(zip(actual, expected))) {
-      pyAssert(
+      assert(
         Math.abs(a - b) <= tolerance,
         `${layerName} t=${floatRepr(time)} [${index}]: ${floatRepr(a)} != ${floatRepr(b)}`,
       );
@@ -156,17 +156,17 @@ function _expectedFrames(base: string, compName: string, layerName: string, matc
   const compData = data.comps.find((c) => c.name === compName);
   if (compData === undefined) throw new StopIteration();
   const layers = compData.layers.filter((ly) => ly.name === layerName);
-  pyAssert(
+  assert(
     len(layers) === 1,
     `${base}/${compName}: expected 1 layer named ${layerName}, got ${len(layers)}`,
   );
   const props = layers[0].properties.filter((p) => p.matchName === matchName);
-  pyAssert(
+  assert(
     len(props) === 1,
     `${base}/${compName}/${layerName}: expected 1 ${matchName}, got ${len(props)}`,
   );
   const frames = props[0].frames;
-  pyAssert(pyBool(frames), `${base}/${compName}/${layerName}/${matchName}: no frames exported`);
+  assert(truthy(frames), `${base}/${compName}/${layerName}/${matchName}: no frames exported`);
   return frames;
 }
 
@@ -175,18 +175,18 @@ test.each(_cases())("test_matches_extendscript[%#]", (base, compName, layerName,
   const project = parseProject(SAMPLES_DIR.div(`${base}.aep`));
   const comp = getComp(project, compName);
   const matches = comp.layers.filter((layer) => layer.name === layerName);
-  pyAssert(
+  assert(
     len(matches) === 1,
     `${compName}: expected 1 layer named ${layerName}, got ${len(matches)}`,
   );
   const prop = _find(matches[0], matchName);
-  const tolerance = getitem(_TOLERANCE, matchName);
+  const tolerance = getOrThrow(_TOLERANCE, matchName);
 
   for (const frame of frames) {
     const got = prop.valueAtTime(frame.time);
     const expected = _flatten(frame.value);
     const actual = _flatten(got);
-    pyAssert(
+    assert(
       len(actual) === len(expected),
       `${matchName} t=${floatRepr(frame.time)}: ` +
         `${len(actual)} values, expected ${len(expected)}`,
@@ -195,7 +195,7 @@ test.each(_cases())("test_matches_extendscript[%#]", (base, compName, layerName,
       _assertSameRotation(actual, expected, tolerance, layerName, frame.time);
     } else {
       for (const [index, [a, b]] of enumerate(zip(actual, expected))) {
-        pyAssert(
+        assert(
           Math.abs(a - b) <= tolerance,
           `${layerName}.${matchName} t=${floatRepr(frame.time)} [${index}]: ${floatRepr(a)} != ${floatRepr(b)}`,
         );
@@ -243,7 +243,7 @@ describe("TestValueSpaces", () => {
     // the comp instead of the layer reads 2x / 3x too large.
     const prop = _find(TestValueSpaces._probe_layer("probe_solid"), "ADBE Mask Shape");
     const first = prop.keyframes[0].value;
-    pyAssert(first instanceof Shape);
+    assert(first instanceof Shape);
     for (const [got, expected] of zip(first.vertices, [[20, 20], [120, 20], [120, 80], [20, 80]])) {
       expect(Math.abs(got[0] - expected[0]) < 1e-4).toBe(true);
       expect(Math.abs(got[1] - expected[1]) < 1e-4).toBe(true);
@@ -256,7 +256,7 @@ describe("TestValueSpaces", () => {
     const prop = _find(TestValueSpaces._probe_layer("probe_puppet"), "ADBE FreePin3 PosPin Position");
     expect(prop.unitsText).toBe("pixels");
     const value = prop.keyframes[0].value;
-    pyAssert(Array.isArray(value));
+    assert(Array.isArray(value));
     for (const [got, expected] of zip(value, [50.0, 25.0])) {
       expect(Math.abs(got - expected) < 1e-6).toBe(true);
     }
@@ -272,8 +272,8 @@ describe("TestValueSpaces", () => {
     const prop = _find(layer, "ADBE Orientation");
     const outEase = prop.keyframes[0].outTemporalEase[0];
     const inEase = prop.keyframes[1].inTemporalEase[0];
-    expect(pyEq([outEase.speed, outEase.influence], [0.0, 90.0])).toBe(true);
-    expect(pyEq([inEase.speed, inEase.influence], [0.0, 20.0])).toBe(true);
+    expect(valueEquals([outEase.speed, outEase.influence], [0.0, 90.0])).toBe(true);
+    expect(valueEquals([inEase.speed, inEase.influence], [0.0, 20.0])).toBe(true);
   });
 
   test("test_linear_orientation_ease_speed_is_one", () => {
@@ -305,7 +305,7 @@ describe("TestShapeInterpolationEdges", () => {
   ];
 
   test.each(subdivisionRows)("test_subdivision_is_breadth_first[%#]", (segments, target, expected) => {
-    expect(pyEq(_subdivisionCuts(segments, target), expected)).toBe(true);
+    expect(valueEquals(_subdivisionCuts(segments, target), expected)).toBe(true);
   });
 
   test("test_vertex_count_mismatch_resamples_the_shorter_path", () => {
@@ -317,7 +317,7 @@ describe("TestShapeInterpolationEdges", () => {
     // At progress 0 the blend IS the resampled left path: the same
     // outline, two extra vertices, and still straight.
     expect(
-      pyEq(blended.vertices, [
+      valueEquals(blended.vertices, [
         [0.0, 0.0],
         [5.0, 0.0],
         [10.0, 0.0],
@@ -325,8 +325,8 @@ describe("TestShapeInterpolationEdges", () => {
         [10.0, 10.0],
       ]),
     ).toBe(true);
-    expect(pyEq(blended.inTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
-    expect(pyEq(blended.outTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
+    expect(valueEquals(blended.inTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
+    expect(valueEquals(blended.outTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
   });
 
   test("test_resampling_a_curve_preserves_its_shape", () => {
@@ -342,9 +342,9 @@ describe("TestShapeInterpolationEdges", () => {
     const blended = interpolateShapes(left, right, 0.0);
     expect(blended != null).toBe(true);
     if (blended == null) throw new AssertionError("interpolate_shapes returned null");
-    expect(pyEq(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
-    expect(pyEq(blended.outTangents[0], [20.0, 0.0])).toBe(true);
-    expect(pyEq(blended.inTangents[2], [-20.0, 0.0])).toBe(true);
+    expect(valueEquals(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
+    expect(valueEquals(blended.outTangents[0], [20.0, 0.0])).toBe(true);
+    expect(valueEquals(blended.inTangents[2], [-20.0, 0.0])).toBe(true);
   });
 
   test("test_empty_shapes_hold_the_left_key", () => {
@@ -396,7 +396,7 @@ describe("TestOrientationSlerp", () => {
     // keyframe's own value at its own time, so this never reshapes a
     // stored angle.
     const got = slerpOrientation([45.0, 90.0, 30.0], [1.0, 2.0, 3.0], 0.0);
-    expect(pyEq(got.map((v) => round(v, 9)), [0.0, 90.0, 75.0])).toBe(true);
+    expect(valueEquals(got.map((v) => round(v, 9)), [0.0, 90.0, 75.0])).toBe(true);
     const original = eulerToQuaternion([45.0, 90.0, 30.0]);
     const recovered = eulerToQuaternion(got);
     expect(Math.abs(Math.abs(sum(zip(original, recovered).map(([a, b]) => a * b))) - 1.0) < 1e-12).toBe(true);

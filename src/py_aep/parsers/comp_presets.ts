@@ -14,7 +14,7 @@
 
 import { CompPresetItem } from "../binary/composition_chunks.ts";
 import { PrefsFile, decodePrefString, parseHexValue } from "./prefs.ts";
-import { getitem, pyAssert, sorted } from "../../pyrt/index.ts";
+import { getOrThrow, assert, sorted } from "../../pyrt/index.ts";
 
 export const _NAMES_SECTION = "Composition Preset Names Section v11";
 export const _PRESETS_SECTION = "Composition Presets Section v11";
@@ -60,10 +60,10 @@ export function parseCompPresets(prefsFile: PrefsFile): CompPreset[] {
     const rawName = names.get(key) ?? null;
     if (rawName == null) continue;
     const name = decodePrefString(rawName);
-    const data = parseHexValue(getitem(entries, key));
+    const data = parseHexValue(getOrThrow(entries, key));
     if (name === "-" || data.length !== _PRESET_SIZE) continue;
     const item = CompPresetItem.frombytes(data);
-    pyAssert(item instanceof CompPresetItem);
+    assert(item instanceof CompPresetItem);
     if (item.width === 0 || item.pixelAspectDivisor === 0) continue;
     presets.push(
       new CompPreset(

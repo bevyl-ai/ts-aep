@@ -14,7 +14,7 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 // NOTE(port): Python re-imports UNDEFINED_FRAME via models.sources.file; it is the same constant from binary/utils.ts
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
-import { AttributeError, ValueError, Path, b, bytes_, int, pyEq, repr } from "../../src/pyrt/index.ts";
+import { AttributeError, ValueError, Path, b, bytes_, int, valueEquals, repr } from "../../src/pyrt/index.ts";
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -163,7 +163,7 @@ describe("TestSequenceFrameBoundsDerivation", () => {
     const source = _sequenceWithStvc(["render.0101.exr", "render.0148.exr"]);
     source._sspc.startFrame = 7;
     source._sspc.endFrame = 9;
-    expect(pyEq([source._startFrame, source._endFrame], [7, 9])).toBe(true);
+    expect(valueEquals([source._startFrame, source._endFrame], [7, 9])).toBe(true);
   });
 
   test("test_undefined_without_stvc_stays_undefined", () => {
@@ -341,7 +341,7 @@ describe("TestMediaColorProfileRecord", () => {
     const blob = probeMedia(SAMPLES.parent.div("assets", "image_with_alpha.png")).iccProfile;
     expect(blob != null).toBe(true);
     if (blob == null) throw new Error("image_with_alpha.png has no ICC profile");
-    expect(pyEq(epid.data, iccProfileId(blob))).toBe(true);
+    expect(valueEquals(epid.data, iccProfileId(blob))).toBe(true);
   });
 
   test("test_quicktime_records_no_profile", () => {
@@ -353,7 +353,7 @@ describe("TestMediaColorProfileRecord", () => {
     const source = _import("mov_480.mov");
     const clrs = asInstance(source._clrs, ListChunk);
     expect(asInstance(findByType(clrs.chunks, "ipws"), IpwsChunk).value).toBe(0);
-    expect(pyEq(findByType(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(findByType(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(source.mediaColorSpace).toBe("Embedded");
   });
 
@@ -389,10 +389,10 @@ describe("TestMediaColorProfileRecord", () => {
     expect(blob != null).toBe(true);
     if (blob == null) throw new Error("8bits.tif has no ICC profile");
     const catalogued = defaultIccLibrary().bytesFor("sRGB IEC61966-2.1");
-    expect(pyEq(blob, catalogued)).toBe(false); // the file's copy differs...
-    expect(pyEq(iccProfileId(blob), iccProfileId(catalogued))).toBe(true); // ...but not in id
+    expect(valueEquals(blob, catalogued)).toBe(false); // the file's copy differs...
+    expect(valueEquals(iccProfileId(blob), iccProfileId(catalogued))).toBe(true); // ...but not in id
     const epid = findByType(asInstance(source._clrs, ListChunk).chunks, "epid");
-    expect(pyEq(epid.data, iccProfileId(catalogued))).toBe(true);
+    expect(valueEquals(epid.data, iccProfileId(catalogued))).toBe(true);
   });
 
   test.each([

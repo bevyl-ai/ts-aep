@@ -9,7 +9,7 @@
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.
 
-import { ValueError, getitem, round, int, decode, repr, format, intEnum } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, round, int, decode, repr, format, intEnum } from "../../pyrt/index.ts";
 import type { EnumValue } from "../../pyrt/index.ts";
 
 /**
@@ -182,7 +182,7 @@ export const OutputFormat = intEnum("OutputFormat", {
    * sequence. See {@link FormatKind}. 
    */
   kind(self: number): FormatKind {
-    return getitem(_OUTPUT_FORMAT_KINDS, self);
+    return getOrThrow(_OUTPUT_FORMAT_KINDS, self);
   },
 
   /**
@@ -203,7 +203,7 @@ export const OutputFormat = intEnum("OutputFormat", {
 
   /** Convert OutputFormat to a Roou 4-char format identifier. */
   toFormatId(self: number): string {
-    return getitem(_OUTPUT_FORMAT_TO_FORMAT_ID, self);
+    return getOrThrow(_OUTPUT_FORMAT_TO_FORMAT_ID, self);
   },
 });
 export type OutputFormat = EnumValue<typeof OutputFormat>;

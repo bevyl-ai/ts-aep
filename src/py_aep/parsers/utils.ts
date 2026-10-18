@@ -1,6 +1,6 @@
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { TdmnChunk } from "../binary/property_chunks.ts";
-import { pyBool, setdefault } from "../../pyrt/index.ts";
+import { truthy, setdefault } from "../../pyrt/index.ts";
 
 export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
 
@@ -16,7 +16,7 @@ export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
  */
 export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
   const runs: [string, Chunk[]][] = [];
-  if (pyBool(rootChunk)) {
+  if (truthy(rootChunk)) {
     let skipToNextTdmnFlag = true;
     for (const chunk of rootChunk.chunks) {
       if (chunk.chunkType === "tdmn" && chunk instanceof TdmnChunk) {

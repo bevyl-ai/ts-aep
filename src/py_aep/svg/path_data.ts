@@ -17,7 +17,7 @@ import {
   max,
   min,
   mod,
-  pyEq,
+  valueEquals,
   radians,
   repr,
   hypot,
@@ -195,7 +195,7 @@ export class _PathParser {
   _close(): void {
     if (this._segs?.length > 0) {
       // Add the closing straight segment back to the subpath start.
-      if (!pyEq([this.cx, this.cy], [this.sx, this.sy])) {
+      if (!valueEquals([this.cx, this.cy], [this.sx, this.sy])) {
         this._segs.push([this.cx, this.cy, this.cx, this.cy, this.sx, this.sy, this.sx, this.sy]);
       }
       this._subpaths.push(new RawSubpath(this._segs, true));

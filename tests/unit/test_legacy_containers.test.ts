@@ -29,8 +29,8 @@ import {
   decode,
   encode,
   len,
-  pyBool,
-  pyEq,
+  truthy,
+  valueEquals,
   range,
   struct,
 } from "../../src/pyrt/index.ts";
@@ -59,13 +59,13 @@ test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
     _chunk("tdmn", bytes_.ljust(b("ADBE Transform Group"), 40, 0)),
   );
   const chunks = _read(data);
-  expect(pyEq(chunks.map((c) => c.chunkType), ["tdsn", "tdmn"])).toBe(true);
+  expect(valueEquals(chunks.map((c) => c.chunkType), ["tdsn", "tdmn"])).toBe(true);
   const tdsn = asInstance(chunks[0], TdsnChunk);
   expect(tdsn instanceof TdsnChunk).toBe(true);
   // An empty legacy name is an unnamed property.
-  expect(pyEq(tdsn.utf8.value, TDSN_SENTINEL)).toBe(true);
+  expect(valueEquals(tdsn.utf8.value, TDSN_SENTINEL)).toBe(true);
   expect(tdsn.utf8.synthetic).toBe(true);
-  expect(pyEq(_write(chunks), data)).toBe(true);
+  expect(valueEquals(_write(chunks), data)).toBe(true);
 });
 
 test("test_a_legacy_fnam_reads_its_string", () => {
@@ -79,9 +79,9 @@ test("test_a_legacy_fnam_reads_its_string", () => {
   expect(fnam instanceof ContainerChunk).toBe(true);
   const utf8 = asInstance(fnam.chunks[0], Utf8Chunk);
   expect(utf8 instanceof Utf8Chunk).toBe(true);
-  expect(pyEq(utf8.value, "Color Control")).toBe(true);
+  expect(valueEquals(utf8.value, "Color Control")).toBe(true);
   // Written back byte for byte, stale bytes included.
-  expect(pyEq(_write([fnam]), data)).toBe(true);
+  expect(valueEquals(_write([fnam]), data)).toBe(true);
 });
 
 test("test_a_renamed_legacy_fnam_keeps_its_buffer", () => {
@@ -89,7 +89,7 @@ test("test_a_renamed_legacy_fnam_keeps_its_buffer", () => {
   const fnam = asInstance(_read(_chunk("fnam", body))[0], ContainerChunk);
   asInstance(fnam.chunks[0], Utf8Chunk).value = "Text Color";
   const written = _write([fnam]);
-  expect(pyEq(written, _chunk("fnam", bytes_.ljust(b("Text Color"), 48, 0)))).toBe(true);
+  expect(valueEquals(written, _chunk("fnam", bytes_.ljust(b("Text Color"), 48, 0)))).toBe(true);
 });
 
 test("test_a_modern_fnam_is_unchanged", () => {
@@ -97,10 +97,10 @@ test("test_a_modern_fnam_is_unchanged", () => {
   const data = _chunk("fnam", utf8);
   const fnam = asInstance(_read(data)[0], ContainerChunk);
   const child = asInstance(fnam.chunks[0], Utf8Chunk);
-  expect(pyEq(child.value, "Glow")).toBe(true);
+  expect(valueEquals(child.value, "Glow")).toBe(true);
   expect(child.synthetic).toBe(false);
-  expect(pyEq(fnam.data, b(""))).toBe(true);
-  expect(pyEq(_write([fnam]), data)).toBe(true);
+  expect(valueEquals(fnam.data, b(""))).toBe(true);
+  expect(valueEquals(_write([fnam]), data)).toBe(true);
 });
 
 test("test_nnhd_stands_in_from_nhed", () => {
@@ -111,7 +111,7 @@ test("test_nnhd_stands_in_from_nhed", () => {
   const nnhd = _nnhdFromNhed(nhed);
   expect(nnhd.synthetic).toBe(true);
   expect(
-    pyEq(
+    valueEquals(
       [nnhd.bitsPerChannel, nnhd.framesCountType, nnhd.timecodeDefaultBase],
       [1, 1, 25],
     ),
@@ -125,36 +125,36 @@ test("test_a_legacy_fnam_with_a_four_letter_name_reads_its_string", () => {
     const data = _chunk("fnam", bytes_.ljust(name, 48, 0));
     const fnam = asInstance(_read(data)[0], ContainerChunk);
     const utf8 = asInstance(fnam.chunks[0], Utf8Chunk);
-    expect(pyEq(utf8.value, decode(name))).toBe(true);
+    expect(valueEquals(utf8.value, decode(name))).toBe(true);
     expect(utf8.synthetic).toBe(true);
-    expect(pyEq(_write([fnam]), data)).toBe(true);
+    expect(valueEquals(_write([fnam]), data)).toBe(true);
   }
 });
 
 test("test_a_renamed_one_byte_tdsn_grows_to_its_name", () => {
   const tdsn = asInstance(_read(_chunk("tdsn", b("\x00")))[0], TdsnChunk);
   tdsn.utf8.value = "My Name";
-  expect(pyEq(_write([tdsn]), _chunk("tdsn", b("My Name\x00")))).toBe(true);
+  expect(valueEquals(_write([tdsn]), _chunk("tdsn", b("My Name\x00")))).toBe(true);
 });
 
 test("test_a_renamed_legacy_tdsn_keeps_whole_characters", () => {
   const tdsn = asInstance(_read(_chunk("tdsn", b("abc\x00")))[0], TdsnChunk);
   tdsn.utf8.value = "abcdefé";
   expect(
-    pyEq(_write([tdsn]), _chunk("tdsn", concat(encode("abcdefé"), b("\x00")))),
+    valueEquals(_write([tdsn]), _chunk("tdsn", concat(encode("abcdefé"), b("\x00")))),
   ).toBe(true);
 });
 
 test("test_a_legacy_tdsn_reset_to_unnamed_writes_the_empty_name", () => {
   const tdsn = asInstance(_read(_chunk("tdsn", b("Mask 1\x00")))[0], TdsnChunk);
   tdsn.utf8.value = TDSN_SENTINEL;
-  expect(pyEq(_write([tdsn]), _chunk("tdsn", b("\x00")))).toBe(true);
+  expect(valueEquals(_write([tdsn]), _chunk("tdsn", b("\x00")))).toBe(true);
 });
 
 test("test_a_renamed_legacy_pdnm_grows_to_its_items", () => {
   const pdnm = asInstance(_read(_chunk("pdnm", b("On|Off\x00")))[0], ContainerChunk);
   asInstance(pdnm.chunks[0], Utf8Chunk).value = "On|Off|Auto";
-  expect(pyEq(_write([pdnm]), _chunk("pdnm", b("On|Off|Auto\x00")))).toBe(true);
+  expect(valueEquals(_write([pdnm]), _chunk("pdnm", b("On|Off|Auto\x00")))).toBe(true);
 });
 
 test("test_a_legacy_fnam_too_long_for_its_buffer_raises", () => {
@@ -268,21 +268,21 @@ test("test_names_edited_in_an_older_project_read_back", () => {
     recursiveFind(back._rifx.chunks, chunkType),
   );
   expect(len(names) > 4).toBe(true);
-  expect(names.every((chunk) => pyBool(chunk.data))).toBe(true);
+  expect(names.every((chunk) => truthy(chunk.data))).toBe(true);
   const [layer] = back.compositions[0].layers;
   expect(
-    pyEq(
+    valueEquals(
       layer.property("ADBE Mask Parade").properties.map((p) => p.name),
       ["mask"],
     ),
   ).toBe(true);
   expect(
-    pyEq(
+    valueEquals(
       layer.property("ADBE Effect Parade").properties.map((p) => p.name),
       ["slider", "Checkbox Control"],
     ),
   ).toBe(true);
-  expect(pyEq(asInstance(back.renderQueue, RenderQueue).items[0].comment, "note")).toBe(true);
+  expect(valueEquals(asInstance(back.renderQueue, RenderQueue).items[0].comment, "note")).toBe(true);
 });
 
 test("test_an_older_project_cannot_be_relabelled", () => {
@@ -291,5 +291,5 @@ test("test_an_older_project_cannot_be_relabelled", () => {
   raises(ValueError, () => {
     app.version = "16.0x1";
   }, "older format");
-  expect(pyEq(app.version, "15.0x1")).toBe(true);
+  expect(valueEquals(app.version, "15.0x1")).toBe(true);
 });

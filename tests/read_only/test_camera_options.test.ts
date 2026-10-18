@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, len, pyAssert } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, len, assert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
@@ -33,7 +33,7 @@ describe("TestCameraOptionDefaults", () => {
   const _opt = (cam: CameraLayer, matchName: string): Property => {
     const prop = cam.property("ADBE Camera Options Group").property(matchName);
     expect(prop instanceof Property).toBe(true);
-    pyAssert(prop instanceof Property);
+    assert(prop instanceof Property);
     return prop;
   };
 

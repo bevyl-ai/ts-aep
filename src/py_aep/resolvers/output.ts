@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, PyException, floordiv, format, int, mod, numStr, pyOr, round } from "../../pyrt/index.ts";
+import { IndexError, PyException, floordiv, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -310,7 +310,7 @@ export function resolveOutputFilename(
     return "";
   }
 
-  const fps: number = pyOr(frameRate, 24.0);
+  const fps: number = truthyOr(frameRate, 24.0);
 
   // Precompute formatted frame rate string
   let frameRateStr: string | null = null;

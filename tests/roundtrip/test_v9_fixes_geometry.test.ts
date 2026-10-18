@@ -27,14 +27,14 @@ import {
   AttributeError,
   contains,
   getattr,
-  getitem,
+  getOrThrow,
   isclose,
   mod,
   NotImplementedError,
   Path,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   sorted,
   StopIteration,
@@ -433,23 +433,23 @@ function _assertTransform(child: Layer, comp: CompItem, truth: _TransformTruth):
     if (!(matchName in truth)) continue;
     const prop = child.transform.property(matchName);
     const expected = getattr(truth, matchName);
-    const got = pyBool(prop.keyframes) ? prop.valueAtTime(comp.time) : prop.value;
+    const got = truthy(prop.keyframes) ? prop.valueAtTime(comp.time) : prop.value;
     const exp = expected.v;
     const scalars: number[] = typeof got === "number" ? [got] : [...got];
     const wanted: number[] = typeof exp === "number" ? [exp] : [...exp];
     for (const [g, w] of zip(scalars, wanted)) {
       if (contains(matchName, "Orientation") || contains(matchName, "Rotate")) {
-        pyAssert(_angleClose(g, w, 1e-3), `${matchName} ${repr(got)} ${repr(exp)}`);
+        assert(_angleClose(g, w, 1e-3), `${matchName} ${repr(got)} ${repr(exp)}`);
       } else {
-        pyAssert(
+        assert(
           Math.abs(g - w) <= 1e-3 * Math.max(1.0, Math.abs(w)),
           `${matchName} ${repr(got)} ${repr(exp)}`,
         );
       }
     }
-    if (pyBool(expected.k)) {
+    if (truthy(expected.k)) {
       for (const [kf, [time, value]] of zip(prop.keyframes, expected.k)) {
-        pyAssert(Math.abs(kf.time - time) < 1e-4);
+        assert(Math.abs(kf.time - time) < 1e-4);
         expect(
           _close(
             Array.isArray(kf.value) ? kf.value : [kf.value],
@@ -466,8 +466,8 @@ describe("TestParent", () => {
   test.each([...sorted(_PARENT_OPS.keys())])("test_matches_ae[%#]", (childName: string) => {
     const project = parseProjectFresh(REPARENT);
     const [comp, child] = _layer(project, "PB", childName);
-    const parentName = getitem(_PARENT_OPS, childName);
-    const parent = pyBool(parentName)
+    const parentName = getOrThrow(_PARENT_OPS, childName);
+    const parent = truthy(parentName)
       ? _next(comp.layers, (ly) => ly.name === parentName)
       : null;
     child.parent = parent;
@@ -497,7 +497,7 @@ describe("TestParent", () => {
     child.parent = _next(comp.layers, (ly) => ly.name === "p_zero");
     expect(child.parent != null).toBe(true);
     expect(child.parent.name).toBe("p_zero");
-    expect(pyEq(child.transform.property("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(
+    expect(valueEquals(child.transform.property("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(
       true,
     );
   });
@@ -549,16 +549,16 @@ describe("TestPointConversions", () => {
       const row = truth[`t${index}`];
       for (const [point, expected] of zip(PTS, row.s2c)) {
         const got = layer.sourcePointToComp(point, time);
-        pyAssert(
+        assert(
           _close(got, expected, 1e-2 * Math.max(1.0, Math.max(...expected.map((v: number) => Math.abs(v)))) * 1e-1),
           `${time} ${repr(point)} ${repr(got)} ${repr(expected)}`,
         );
       }
       for (const [point, expected] of zip(CPTS, row.c2s)) {
-        if (!Array.isArray(expected) || pyEq(expected, [0, 0])) continue;
+        if (!Array.isArray(expected) || valueEquals(expected, [0, 0])) continue;
         const got = layer.compPointToSource(point, time);
         const tol = 1e-3 * Math.max(1.0, Math.max(...expected.map((v: number) => Math.abs(v))));
-        pyAssert(
+        assert(
           _close(got, expected, Math.max(tol, 1e-2)),
           `${time} ${repr(point)} ${repr(got)} ${repr(expected)}`,
         );
@@ -679,7 +679,7 @@ describe("TestSourceRect", () => {
     const project = parseProjectFresh(LAYER_DIR.div("three_d_model_layer.aep"));
     const layer = asInstance(project.compositions[0].layers[0], ThreeDModelLayer);
     // AE 2026 (the sample's ExtendScript export): anchor [0, 0, 0].
-    expect(pyEq(layer.transform.property("ADBE Anchor Point").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(layer.transform.property("ADBE Anchor Point").value, [0.0, 0.0, 0.0])).toBe(true);
     expect(_close(layer.sourcePointToComp([0.0, 0.0], 0.0), [960.0, 540.0], 1e-6)).toBe(true);
     raises(
       NotImplementedError,

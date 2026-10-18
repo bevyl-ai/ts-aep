@@ -6,7 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { b, bytes_, decode, define, descriptor, fields, getattr, len, pyAssert, pyBool, setattr, strip } from "../../pyrt/index.ts";
+import { b, bytes_, decode, define, descriptor, fields, getattr, len, assert, truthy, setattr, strip } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -181,7 +181,7 @@ export class RoptChunk extends Chunk {
     if (this !== RoptChunk) {
       // Variant subclass - use standard fmt_field parsing
       const result = super.read(fp, size, { chunkType });
-      pyAssert(result instanceof RoptChunk);
+      assert(result instanceof RoptChunk);
       return result;
     }
     if (size < 4) return new this({ chunkType, data: readBytes(fp, size) });
@@ -633,7 +633,7 @@ define(RenderSettingsItem, {
   _reserved29: bytesField(2, { repr: false }),
   logType: u2Field(),
   _reserved31: bytesField(2, { repr: false }),
-  skipExistingFiles: u2Field({ coerce: pyBool }),
+  skipExistingFiles: u2Field({ coerce: truthy }),
   _reserved33: bytesField(4, { repr: false }),
   // Defaults mirror AE's factory "Best Settings" render template, so a fresh
   // item is valid even when parse() had no ae_preferences_dir to read from.

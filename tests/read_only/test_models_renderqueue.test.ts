@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { Path, contains, enumerate, getitem, KeyError, len, pyEq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { Path, contains, enumerate, getOrThrow, KeyError, len, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getRqi, loadExpected, parseProject } from "../conftest.ts";
 import { ConvertToLinearLight, GetSettingsFormat } from "../../src/py_aep/enums/index.ts";
@@ -175,7 +175,7 @@ describe("TestRouuFrameRateAndDepth", () => {
     expect(approx(om._roou.frameRate, frameRate, { abs: 1e-4 })).toBe(true);
     expect(om._roou.depth).toBe(expOm["settings"]["Depth"]);
     expect(expOm["settings"]["Depth"]).toBe(24);
-    expect(getitem(om.getSettings(GetSettingsFormat.NUMBER), "Depth")).toBe(24);
+    expect(getOrThrow(om.getSettings(GetSettingsFormat.NUMBER), "Depth")).toBe(24);
   });
 });
 
@@ -330,7 +330,7 @@ describe("TestGetSettings", () => {
     const rqi = getRqi(project, "base");
     const defaultResult = rqi.getSettings();
     const stringResult = rqi.getSettings(GetSettingsFormat.STRING);
-    expect(pyEq(defaultResult, stringResult)).toBe(true);
+    expect(valueEquals(defaultResult, stringResult)).toBe(true);
   });
 
   test("test_rqi_get_setting_string", () => {

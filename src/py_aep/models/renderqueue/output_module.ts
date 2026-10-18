@@ -31,14 +31,14 @@ import {
   b,
   bytes_,
   descriptor,
-  dictGet,
+  getOr,
   getattr,
-  getitem,
+  getOrThrow,
   int,
-  pyAssert,
-  pyBool,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
   repr,
   round,
   rstrip,
@@ -82,7 +82,7 @@ export const _KEY_ENUM = new Map<string, KeyEnum>([
 ]);
 
 export function _isEnumMember(key: string, value: RuleValue | null): value is RuleValue {
-  return getitem(_KEY_ENUM, key).has(value);
+  return getOrThrow(_KEY_ENUM, key).has(value);
 }
 
 /**
@@ -126,7 +126,7 @@ export function _validateCrop(peerField: string, dimension: string): (value: num
     const parentRqi = obj._parentRqi;
     const compDim: number = getattr(parentRqi.comp, dimension);
     const resAttr = dimension === "width" ? "resolutionX" : "resolutionY";
-    const divisor = pyOr(getattr(parentRqi._ldat, resAttr), 1);
+    const divisor = truthyOr(getattr(parentRqi._ldat, resAttr), 1);
     const dim = Math.ceil(compDim / divisor);
     const remaining = dim - value - peer;
     if (remaining < 1) {
@@ -567,7 +567,7 @@ export class OutputModule {
     if (compId == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
       return this._parentRqi.comp;
     }
-    return getitem(this._project.items, compId) as CompItem;
+    return getOrThrow(this._project.items, compId) as CompItem;
   }
 
   set postRenderTargetComp(comp: CompItem) {
@@ -609,7 +609,7 @@ export class OutputModule {
         // real write to a read-only key still raises. An unknown key
         // short-circuits to `__setitem__`, which names the valid keys
         // (reading it here would raise a bare KeyError).
-        if (OM_SETTINGS.has(k) && pyEq(view.get(k), v)) {
+        if (OM_SETTINGS.has(k) && valueEquals(view.get(k), v)) {
           continue;
         }
         view.set(k, v);
@@ -674,7 +674,7 @@ export class OutputModule {
     for (const key of ["Channels", "Audio Channels", "Audio Sample Rate"]) {
       let value: number;
       try {
-        value = getattr(this, getitem(OM_SETTINGS, key)[0]);
+        value = getattr(this, getOrThrow(OM_SETTINGS, key)[0]);
       } catch (e) {
         // Enum transform without a from_binary fallback (e.g.
         // OutputChannels) raises on an out-of-enum stored byte.
@@ -765,7 +765,7 @@ export class OutputModule {
         continue;
       }
       const forced = [...allowed][0];
-      const [getter, setter] = getitem(this.constructor._CLAMP_ACCESSORS, key);
+      const [getter, setter] = getOrThrow(this.constructor._CLAMP_ACCESSORS, key);
       let current: RuleValue | null;
       try {
         current = getter(this);
@@ -813,7 +813,7 @@ export class OutputModule {
       }
       let value: RuleValue | null;
       try {
-        value = getitem(cls._STATE_GETTERS, key)(this);
+        value = getOrThrow(cls._STATE_GETTERS, key)(this);
       } catch (e) {
         if (!(e instanceof ValueError)) throw e;
         continue; // out-of-enum stored byte: unclean, skip
@@ -874,12 +874,12 @@ export class OutputModule {
     const [ldatBytes, roouBytes, roptBytes, hdr10Value, hadOptions] = snapshot;
     // In-place field copy keeps the item's identity in the ldat list.
     const restoredItem = OutputModuleSettingsItem.frombytes(ldatBytes);
-    pyAssert(restoredItem instanceof OutputModuleSettingsItem);
+    assert(restoredItem instanceof OutputModuleSettingsItem);
     this._omLdat.restoreFrom(restoredItem);
     const lomChunks = this._parentRqi._lom.chunks;
     const [start, end] = this._blockSpan(lomChunks);
     const newRoou = RouuChunk.frombytes(roouBytes, { chunkType: "Roou" });
-    pyAssert(newRoou instanceof RouuChunk);
+    assert(newRoou instanceof RouuChunk);
     lomChunks[start] = newRoou;
     this._roou = newRoou;
     if (roptBytes != null) {
@@ -1335,7 +1335,7 @@ export class OutputModule {
 
   /** Whether the alas path points to a folder. */
   get _isFolder(): boolean {
-    return pyBool(dictGet(this._alasData, "target_is_folder", false));
+    return truthy(getOr(this._alasData, "target_is_folder", false));
   }
 
   /** The four-character video codec identifier. */
@@ -1358,7 +1358,7 @@ export class OutputModule {
 
   /** The output folder path from the alas chunk. */
   get _folderPath(): string {
-    return str(dictGet(this._alasData, "fullpath", ""));
+    return str(getOr(this._alasData, "fullpath", ""));
   }
 
   /** The file name template from the Utf8 chunk. */
@@ -1521,7 +1521,7 @@ export class OutputModule {
    * @param format - The output format.
    */
   getSetting(key: string, format: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
-    return getitem(this.getSettings(format), key);
+    return getOrThrow(this.getSettings(format), key);
   }
 
   /**
@@ -1610,7 +1610,7 @@ export class OutputModule {
 
     if (template.formatInfo != null) {
       const newRoou = RouuChunk.frombytes(template.formatInfo, { chunkType: "Roou" });
-      pyAssert(newRoou instanceof RouuChunk);
+      assert(newRoou instanceof RouuChunk);
       lomChunks[roouIdx] = newRoou;
       this._roou = newRoou;
       this._finalizeRoou();

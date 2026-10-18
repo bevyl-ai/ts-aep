@@ -20,7 +20,7 @@ import {
   getattr,
   max,
   min,
-  pyEq,
+  valueEquals,
   pySlice,
   strip,
   zip,
@@ -223,7 +223,7 @@ export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[]
   if (closed) {
     const p0 = pts[pts.length - 1];
     const p3 = pts[0];
-    if (!pyEq(p0, p3)) {
+    if (!valueEquals(p0, p3)) {
       segs.push([p0[0], p0[1], p0[0], p0[1], p3[0], p3[1], p3[0], p3[1]]);
     }
   }

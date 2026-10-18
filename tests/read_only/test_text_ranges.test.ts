@@ -13,16 +13,16 @@ import {
   Path,
   ValueError,
   at,
-  dictGet,
+  getOr,
   fspath,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   len,
   lruCache,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   split,
   str,
@@ -132,13 +132,13 @@ function _compare(pyVal: unknown, expected: ProbeJson, attr: string): string | n
   if (attr === "fontObject") {
     const expectedName = typeof expected === "string" ? at(split(expected, ":", 1), 1) : null;
     const actualName = pyVal != null ? getattr(pyVal, "postScriptName") : null;
-    if (pyEq(actualName, expectedName)) return null;
+    if (valueEquals(actualName, expectedName)) return null;
     return `${attr}: expected ${repr(expectedName)}, got ${repr(actualName)}`;
   }
   if (attr === "text") {
-    pyAssert(typeof expected === "string");
+    assert(typeof expected === "string");
     expected = _expectedText(expected);
-    if (pyEq(pyVal, expected)) return null;
+    if (valueEquals(pyVal, expected)) return null;
     return `${attr}: expected ${repr(expected)}, got ${repr(pyVal)}`;
   }
   if (Array.isArray(expected)) {
@@ -151,7 +151,7 @@ function _compare(pyVal: unknown, expected: ProbeJson, attr: string): string | n
     return `${attr}: expected ${repr(expected)}, got ${repr(pyVal)}`;
   }
   // bools, ints, IntEnums (IntEnum == int holds for ExtendScript values)
-  if (pyEq(pyVal, expected)) return null;
+  if (valueEquals(pyVal, expected)) return null;
   return `${attr}: expected ${repr(expected)}, got ${repr(pyVal)}`;
 }
 
@@ -179,7 +179,7 @@ const docs = lruCache((): Map<string, TextDocument> => {
   return new Map(
     comp.textLayers.map((layer): [string, TextDocument] => {
       const text = layer.text;
-      pyAssert(text != null);
+      assert(text != null);
       return [layer.name, text.sourceText.value];
     }),
   );
@@ -200,20 +200,20 @@ const LAYER_NAMES = [
 describe("TestDocumentLevel", () => {
   test.each(LAYER_NAMES)("test_text[%#]", (name: string) => {
     const expected = probe().layers[name];
-    expect(getitem(docs(), name).text).toBe(_expectedText(expected.text));
+    expect(getOrThrow(docs(), name).text).toBe(_expectedText(expected.text));
   });
 
   test.each(LAYER_NAMES)("test_paragraph_count[%#]", (name: string) => {
     const expected = probe().layers[name].paragraphCount;
     if (expected.ok) {
-      expect(getitem(docs(), name).paragraphCount).toBe(expected.value);
+      expect(getOrThrow(docs(), name).paragraphCount).toBe(expected.value);
     }
   });
 
   test.each(LAYER_NAMES)("test_composed_line_count[%#]", (name: string) => {
     const expected = probe().layers[name].composedLineCount;
     if (expected.ok) {
-      expect(getitem(docs(), name).composedLineCount).toBe(expected.value);
+      expect(getOrThrow(docs(), name).composedLineCount).toBe(expected.value);
     }
   });
 
@@ -221,17 +221,17 @@ describe("TestDocumentLevel", () => {
     // ExtendScript exports kerning=0 on every TextDocument value object,
     // even with manual per-character kerning present; the real values
     // are only reachable through character_range(...).kerning.
-    expect(getitem(docs(), "RangesKernLead").kerning).toBe(0);
-    expect(getitem(docs(), "RangesKernLead").characterRange(1, 4).kerning).toBe(200);
+    expect(getOrThrow(docs(), "RangesKernLead").kerning).toBe(0);
+    expect(getOrThrow(docs(), "RangesKernLead").characterRange(1, 4).kerning).toBe(200);
   });
 });
 
 /** Paragraph / composed-line boundary and index-lookup parity. */
 describe("TestRangeBoundaries", () => {
   test.each(LAYER_NAMES)("test_paragraph_ranges[%#]", (name: string) => {
-    const doc = getitem(docs(), name);
+    const doc = getOrThrow(docs(), name);
     for (const entry of probe().layers[name].paragraphRanges) {
-      pyAssert(entry.ok, `${name}: ES probe failed: ${_dictRepr(entry)}`);
+      assert(entry.ok, `${name}: ES probe failed: ${_dictRepr(entry)}`);
       const exp = entry.value;
       const pr = doc.paragraphRange(exp.index);
       expect(str(pr)).toBe(exp.str);
@@ -243,9 +243,9 @@ describe("TestRangeBoundaries", () => {
   });
 
   test.each(LAYER_NAMES)("test_composed_line_ranges[%#]", (name: string) => {
-    const doc = getitem(docs(), name);
+    const doc = getOrThrow(docs(), name);
     for (const entry of probe().layers[name].composedLineRanges) {
-      pyAssert(entry.ok, `${name}: ES probe failed: ${_dictRepr(entry)}`);
+      assert(entry.ok, `${name}: ES probe failed: ${_dictRepr(entry)}`);
       const exp = entry.value;
       const clr = doc.composedLineRange(exp.index);
       expect(str(clr)).toBe(exp.str);
@@ -257,20 +257,20 @@ describe("TestRangeBoundaries", () => {
   });
 
   test.each(LAYER_NAMES)("test_character_indexes_at[%#]", (name: string) => {
-    const doc = getitem(docs(), name);
+    const doc = getOrThrow(docs(), name);
     const layerProbe = probe().layers[name];
     // NOTE(port): Object.entries orders integer-like keys ascending; the probe JSON keys are already in ascending order.
     for (const [idxS, entry] of Object.entries<ProbeResult<ProbeRecord>>(layerProbe.paragraphCharacterIndexesAt)) {
       if (entry.ok) {
         expect(
-          pyEq(_asDict(doc.paragraphCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
+          valueEquals(_asDict(doc.paragraphCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
         ).toBe(true);
       }
     }
     for (const [idxS, entry] of Object.entries<ProbeResult<ProbeRecord>>(layerProbe.composedLineCharacterIndexesAt)) {
       if (entry.ok) {
         expect(
-          pyEq(_asDict(doc.composedLineCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
+          valueEquals(_asDict(doc.composedLineCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
         ).toBe(true);
       }
     }
@@ -280,7 +280,7 @@ describe("TestRangeBoundaries", () => {
 /** Every probed attribute of every probed range, against ES values. */
 describe("TestCharacterRangeAttributes", () => {
   test.each(LAYER_NAMES)("test_attribute_parity[%#]", (name: string) => {
-    const doc = getitem(docs(), name);
+    const doc = getOrThrow(docs(), name);
     const mismatches: string[] = [];
     for (const [key, entry] of Object.entries<ProbeResult<ProbeRecord>>(probe().layers[name].charRanges)) {
       if (!entry.ok) {
@@ -290,13 +290,13 @@ describe("TestCharacterRangeAttributes", () => {
       }
       const rng = _rangeFromKey(doc, key);
       for (const [esAttr, expected] of Object.entries(entry.value)) {
-        const pyAttr = dictGet(ATTR_MAP, esAttr);
+        const pyAttr = getOr(ATTR_MAP, esAttr);
         if (pyAttr == null) continue;
         const mismatch = _compare(getattr(rng, pyAttr), expected, esAttr);
         if (mismatch != null) mismatches.push(`[${key}] ${mismatch}`);
       }
     }
-    pyAssert(!pyBool(mismatches), `${name}:\n` + mismatches.join("\n"));
+    assert(!truthy(mismatches), `${name}:\n` + mismatches.join("\n"));
   });
 });
 
@@ -316,7 +316,7 @@ describe("TestEdgeCases", () => {
   };
 
   test("test_point_edges", () => {
-    const doc = getitem(docs(), "RangesPoint");
+    const doc = getOrThrow(docs(), "RangesPoint");
     const edges = probe().layers.RangesPoint.edges;
     const length = len(doc.text);
 
@@ -354,7 +354,7 @@ describe("TestEdgeCases", () => {
   });
 
   test("test_empty_edges", () => {
-    const doc = getitem(docs(), "RangesEmpty");
+    const doc = getOrThrow(docs(), "RangesEmpty");
     const edges = probe().layers.RangesEmpty.edges;
     _assertEdge(doc, edges.char_0_def, () => doc.characterRange(0));
     const para = edges.para_0.value;
@@ -368,7 +368,7 @@ describe("TestEdgeCases", () => {
   });
 
   test("test_split_surrogate", () => {
-    const doc = getitem(docs(), "RangesEmoji");
+    const doc = getOrThrow(docs(), "RangesEmoji");
     const edges = probe().layers.RangesEmoji.edges;
     const split_ = edges.split_surrogate_range.value;
     const rng = doc.characterRange(2, 3);

@@ -22,7 +22,7 @@ import {
   decode,
   floordiv,
   IndexError,
-  pyEq,
+  valueEquals,
   pySlice,
   repr,
   rstrip,
@@ -106,7 +106,7 @@ export class PsdStyleBlocks {
   /** NamedTuple equality: tuple-wise comparison of the fields. */
   equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
-    return pyEq([...this], [...other]);
+    return valueEquals([...this], [...other]);
   }
 }
 
@@ -256,7 +256,7 @@ export class PsdLayer {
   /** NamedTuple equality: tuple-wise comparison of the fields. */
   equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
-    return pyEq([...this], [...other]);
+    return valueEquals([...this], [...other]);
   }
 }
 
@@ -322,7 +322,7 @@ export class PsdGroup {
   /** NamedTuple equality: tuple-wise comparison of the fields. */
   equals(other: Iterable<unknown> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function") return false;
-    return pyEq([...this], [...other]);
+    return valueEquals([...this], [...other]);
   }
 }
 

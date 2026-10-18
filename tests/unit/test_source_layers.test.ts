@@ -9,7 +9,7 @@ import { AiLayer } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { FlattenedPsdError } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { psdLeafLayers, resolveAiLayer, resolvePsdLayer } from "../../src/py_aep/resolvers/source_layers.ts";
-import { Path, pyEq, tkey, ValueError } from "../../src/pyrt/index.ts";
+import { Path, valueEquals, tkey, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
@@ -21,12 +21,12 @@ describe("TestListLayers", () => {
     // Verified against the AE 2026 dialog for choose_layer.psd: leaf
     // layers only (group `grp` is not listed), top-most first, the
     // nested `inner` shown without a group prefix.
-    expect(pyEq(listLayers(ASSETS.div("choose_layer.psd")), ["twin", "inner", "twin", "solo"])).toBe(true);
+    expect(valueEquals(listLayers(ASSETS.div("choose_layer.psd")), ["twin", "inner", "twin", "solo"])).toBe(true);
   });
 
   test("test_ai_order_is_top_first", () => {
     // Document (OCG) order is bottom-first; the dropdown reverses it.
-    expect(pyEq(listLayers(ASSETS.div("ai.ai")), ["Calque 2", "Calque 1"])).toBe(true);
+    expect(valueEquals(listLayers(ASSETS.div("ai.ai")), ["Calque 2", "Calque 1"])).toBe(true);
   });
 
   test("test_non_layered_format_raises", () => {
@@ -45,7 +45,7 @@ describe("TestResolvePsdLayer", () => {
     expect(leaf.name).toBe("solo");
     expect(leaf.recordIndex).toBe(0);
     expect(leaf.layerId).toBe(2);
-    expect(pyEq(leaf.bounds, [4, 6, 24, 20])).toBe(true);
+    expect(valueEquals(leaf.bounds, [4, 6, 24, 20])).toBe(true);
   });
 
   test("test_nested_leaf_resolves", () => {
@@ -71,7 +71,7 @@ describe("TestResolvePsdLayer", () => {
 
   test("test_leaves_are_document_order", () => {
     const leaves = psdLeafLayers(ASSETS.div("choose_layer.psd"));
-    expect(pyEq(leaves.map((leaf) => leaf.recordIndex), [0, 1, 3, 5])).toBe(true);
+    expect(valueEquals(leaves.map((leaf) => leaf.recordIndex), [0, 1, 3, 5])).toBe(true);
   });
 });
 
@@ -85,7 +85,7 @@ describe("TestPsd16BitLayers", () => {
   test.each([["psd_layer_styles.psd"], ["psd_layer_styles_variant.psd"]])("test_16bit_leaves_read_from_lr16[%#]", (name) => {
     const leaves = psdLeafLayers(ASSETS.div(name));
     expect(
-      pyEq(
+      valueEquals(
         leaves.map((leaf) => [leaf.name, leaf.layerId, leaf.recordIndex]),
         [
           ["Layer 1", 2, 0],
@@ -93,19 +93,19 @@ describe("TestPsd16BitLayers", () => {
         ],
       ),
     ).toBe(true);
-    expect(leaves.every((leaf) => pyEq(leaf.bounds, [0, 0, 24, 25]))).toBe(true);
+    expect(leaves.every((leaf) => valueEquals(leaf.bounds, [0, 0, 24, 25]))).toBe(true);
   });
 
   test("test_32bit_leaves_read_from_lr32", () => {
     // A 32-bit document keeps its records in the global Lr32 block.
     const leaves = psdLeafLayers(ASSETS.div("psd_noise_gradient_32bpc.psd"));
     expect(
-      pyEq(
+      valueEquals(
         new Set(leaves.map((leaf) => tkey(leaf.name, leaf.layerId))),
         new Set([tkey("Layer 1", 2), tkey("Layer 1 copy", 5)]),
       ),
     ).toBe(true);
-    expect(pyEq(new Set(leaves.map((leaf) => leaf.recordIndex)), new Set([0, 1]))).toBe(true);
+    expect(valueEquals(new Set(leaves.map((leaf) => leaf.recordIndex)), new Set([0, 1]))).toBe(true);
   });
 
   test("test_16bit_probe_layer_count", () => {
@@ -123,8 +123,8 @@ describe("TestResolveAiLayer", () => {
     const layers = [new AiLayer(35, "Calque 1", true), new AiLayer(36, "Calque 2", true)];
     // AiLayer is a NamedTuple (tuple equality); py_eq has no __eq__ on it, so compare as plain tuples.
     const asTuples = ([ls, i]: [AiLayer[], number]): [(number | string | boolean)[][], number] => [ls.map((l) => [...l]), i];
-    expect(pyEq(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 0)), asTuples([layers, 1]))).toBe(true);
-    expect(pyEq(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 1)), asTuples([layers, 0]))).toBe(true);
+    expect(valueEquals(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 0)), asTuples([layers, 1]))).toBe(true);
+    expect(valueEquals(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 1)), asTuples([layers, 0]))).toBe(true);
   });
 
   test("test_out_of_range_raises", () => {

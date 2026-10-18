@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, BytesIO, bytes_, getattr, Path, pyEq, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, BytesIO, bytes_, getattr, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -187,8 +187,8 @@ describe("TestNewLayerSkeleton", () => {
     const pos = asInstance([...cam.transform].find((p) => p.matchName === "ADBE Position"), Property);
     const anchor = asInstance([...cam.transform].find((p) => p.matchName === "ADBE Anchor Point"), Property);
     const zoom = round(comp.width / 0.72, 8);
-    expect(pyEq(pos.value, [0.0, 0.0, -zoom])).toBe(true);
-    expect(pyEq(anchor.value, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
+    expect(valueEquals(pos.value, [0.0, 0.0, -zoom])).toBe(true);
+    expect(valueEquals(anchor.value, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
   });
 });
 
@@ -227,7 +227,7 @@ describe("TestNewCompSkeleton", () => {
     expect(idta.itemId).toBe(compId);
     // viewer pseudo-layers rebased onto the comp's timebase
     const bases = new Set(recursiveFind(item.chunks, "tdb4").map((t) => t._timeBase));
-    expect(pyEq(bases, new Set([23976]))).toBe(true);
+    expect(valueEquals(bases, new Set([23976]))).toBe(true);
   });
 
   test("test_reparse_roundtrip", () => {
@@ -241,7 +241,7 @@ describe("TestNewCompSkeleton", () => {
     const comp2 = app2.project.compositions.find((c) => c.name === "RT");
     if (comp2 == null) throw new StopIteration();
     expect(approx(comp2.frameRate, 30.0)).toBe(true);
-    expect(pyEq(comp2.layers.map((lyr) => lyr.name), ["S"])).toBe(true);
+    expect(valueEquals(comp2.layers.map((lyr) => lyr.name), ["S"])).toBe(true);
   });
 });
 
@@ -264,6 +264,6 @@ describe("TestNewCompPrda", () => {
     const rifx = _savedRifx(app, tmpPath);
     const buf = new BytesIO();
     _findPrda(rifx, "PrdaComp").write(buf);
-    expect(pyEq(buf.getvalue(), PRDA_CLASSIC_DEFAULT)).toBe(true);
+    expect(valueEquals(buf.getvalue(), PRDA_CLASSIC_DEFAULT)).toBe(true);
   });
 });

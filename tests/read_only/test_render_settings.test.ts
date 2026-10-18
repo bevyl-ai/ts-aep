@@ -6,7 +6,7 @@
 // so the TS test imports `_register.ts` to do the same.
 
 import { describe, expect, test } from "bun:test";
-import { Path, getitem, int, pyBool, pyEq, zip } from "../../src/pyrt/index.ts";
+import { Path, getOrThrow, int, truthy, valueEquals, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { loadExpected, parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -26,7 +26,7 @@ describe("TestRenderSettings", () => {
 
     expect(rs != null).toBe(true);
     expect(rs.get("Quality")).toBe(2); // Best
-    expect(pyEq(rs.get("Resolution"), [1, 1])).toBe(true); // Full
+    expect(valueEquals(rs.get("Resolution"), [1, 1])).toBe(true); // Full
     expect(rs.get("Frame Rate")).toBe(0);
     expect(rs.get("3:2 Pulldown")).toBe(0); // Off
   });
@@ -52,7 +52,7 @@ describe("TestRenderSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("custom_resolution_half.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyEq(rs.get("Resolution"), [2, 2])).toBe(true); // Half
+    expect(valueEquals(rs.get("Resolution"), [2, 2])).toBe(true); // Half
   });
 
   test("test_resolution_third", () => {
@@ -60,7 +60,7 @@ describe("TestRenderSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("custom_resolution_third.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyEq(rs.get("Resolution"), [3, 3])).toBe(true); // Third
+    expect(valueEquals(rs.get("Resolution"), [3, 3])).toBe(true); // Third
   });
 
   test("test_resolution_quarter", () => {
@@ -68,7 +68,7 @@ describe("TestRenderSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("custom_resolution_quarter.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyEq(rs.get("Resolution"), [4, 4])).toBe(true); // Quarter
+    expect(valueEquals(rs.get("Resolution"), [4, 4])).toBe(true); // Quarter
   });
 
   test("test_resolution_custom", () => {
@@ -78,7 +78,7 @@ describe("TestRenderSettings", () => {
     );
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyEq(rs.get("Resolution"), [7, 3])).toBe(true); // Custom 7x3
+    expect(valueEquals(rs.get("Resolution"), [7, 3])).toBe(true); // Custom 7x3
   });
 
   test("test_color_depth_8bit", () => {
@@ -208,7 +208,7 @@ describe("TestRenderSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("use_this_frame_rate_24.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyBool(rs.get("Frame Rate"))).toBe(true);
+    expect(truthy(rs.get("Frame Rate"))).toBe(true);
     expect(rs.get("Use this frame rate")).toBe(24.0);
   });
 
@@ -217,7 +217,7 @@ describe("TestRenderSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("use_this_frame_rate_30.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
-    expect(pyBool(rs.get("Frame Rate"))).toBe(true);
+    expect(truthy(rs.get("Frame Rate"))).toBe(true);
     expect(rs.get("Use this frame rate")).toBe(30.0);
   });
 
@@ -389,7 +389,7 @@ describe("TestOutputModuleSettings", () => {
       const got = new Map(keys.map((k) => [k, int(settings.get(k))] as const));
       const wantMap = new Map(keys.map((k) => [k, want[k]] as const));
       // Python's assertion message was `rqi_json["outputModules"][0]`, shown on failure.
-      expect(pyEq(got, wantMap)).toBe(true);
+      expect(valueEquals(got, wantMap)).toBe(true);
     }
   });
 
@@ -576,7 +576,7 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(OM_SAMPLES_DIR.div("resize_hd_1920x1080_29.97_fps.aep"));
     const settings = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings;
 
-    expect(pyEq(settings.get("Resize to"), [1920, 1080])).toBe(true);
+    expect(valueEquals(settings.get("Resize to"), [1920, 1080])).toBe(true);
   });
 
   test("test_resize_to_dvcpro_hd", () => {
@@ -586,7 +586,7 @@ describe("TestOutputModuleSettings", () => {
     );
     const settings = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings;
 
-    expect(pyEq(settings.get("Resize to"), [960, 720])).toBe(true);
+    expect(valueEquals(settings.get("Resize to"), [960, 720])).toBe(true);
   });
 
   test("test_resize_to_custom", () => {
@@ -594,7 +594,7 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(OM_SAMPLES_DIR.div("resize_custom_960x540.aep"));
     const settings = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings;
 
-    expect(pyEq(settings.get("Resize to"), [960, 540])).toBe(true);
+    expect(valueEquals(settings.get("Resize to"), [960, 540])).toBe(true);
   });
 
   test("test_output_file_info_default", () => {
@@ -602,11 +602,11 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("output_to_comp_and_frame_range.aep"));
     const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
 
-    expect(getitem(info, "File Template")).toBe("[compName].[fileExtension]");
-    expect(getitem(info, "Subfolder Path")).toBe("");
-    expect(getitem(info, "Base Path")).not.toBe("");
-    expect(getitem(info, "Full Flat Path")).not.toBe("");
-    expect(getitem(info, "File Name")).toBe("[compName].[fileExtension]");
+    expect(getOrThrow(info, "File Template")).toBe("[compName].[fileExtension]");
+    expect(getOrThrow(info, "Subfolder Path")).toBe("");
+    expect(getOrThrow(info, "Base Path")).not.toBe("");
+    expect(getOrThrow(info, "Full Flat Path")).not.toBe("");
+    expect(getOrThrow(info, "File Name")).toBe("[compName].[fileExtension]");
   });
 
   test("test_output_file_info_comp_folder", () => {
@@ -614,10 +614,10 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("output_to_comp_folder_and_name.aep"));
     const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
 
-    expect((getitem(info, "Base Path") as string).includes("[compName]")).toBe(true);
-    expect(getitem(info, "File Template")).toBe("[compName].[fileExtension]");
-    expect(getitem(info, "File Name")).toBe("[compName].[fileExtension]");
-    expect(getitem(info, "Subfolder Path")).toBe("");
+    expect((getOrThrow(info, "Base Path") as string).includes("[compName]")).toBe(true);
+    expect(getOrThrow(info, "File Template")).toBe("[compName].[fileExtension]");
+    expect(getOrThrow(info, "File Name")).toBe("[compName].[fileExtension]");
+    expect(getOrThrow(info, "Subfolder Path")).toBe("");
   });
 
   test("test_output_file_info_custom_all_fields", () => {
@@ -625,15 +625,15 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("output_to_custom_all_fields.aep"));
     const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
 
-    const template = getitem(info, "File Template") as string;
+    const template = getOrThrow(info, "File Template") as string;
     expect(template.includes("[projectFolder]")).toBe(true);
     expect(template.includes("[projectName]")).toBe(true);
     expect(template.includes("[compName]")).toBe(true);
     expect(template.includes("[width]")).toBe(true);
     expect(template.includes("[height]")).toBe(true);
     expect(template.includes("[fileExtension]")).toBe(true);
-    expect(getitem(info, "Base Path")).not.toBe("");
-    expect((getitem(info, "Full Flat Path") as string).endsWith(".[fileExtension]")).toBe(true);
+    expect(getOrThrow(info, "Base Path")).not.toBe("");
+    expect((getOrThrow(info, "Full Flat Path") as string).endsWith(".[fileExtension]")).toBe(true);
   });
 
   test("test_output_file_info_project_and_comp", () => {
@@ -641,7 +641,7 @@ describe("TestOutputModuleSettings", () => {
     const project = parseProject(SAMPLES_DIR.div("output_to_project_and_comp_name.aep"));
     const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
 
-    expect(getitem(info, "File Template")).toBe("[projectName]_[compName].[fileExtension]");
+    expect(getOrThrow(info, "File Template")).toBe("[projectName]_[compName].[fileExtension]");
   });
 
   test("test_output_file_info_subfolder", () => {
@@ -650,11 +650,11 @@ describe("TestOutputModuleSettings", () => {
     const om = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     const info = om.settings.get("Output File Info");
 
-    expect(getitem(info, "Subfolder Path")).toBe("toto");
-    expect(getitem(info, "File Name")).toBe("Comp 1.[fileExtension]");
-    expect(getitem(info, "File Template")).toBe("toto\\Comp 1.[fileExtension]");
-    expect(getitem(info, "Base Path")).toBe("C:\\Users\\aurore.delaunay\\Downloads");
-    expect(getitem(info, "Full Flat Path")).toBe(
+    expect(getOrThrow(info, "Subfolder Path")).toBe("toto");
+    expect(getOrThrow(info, "File Name")).toBe("Comp 1.[fileExtension]");
+    expect(getOrThrow(info, "File Template")).toBe("toto\\Comp 1.[fileExtension]");
+    expect(getOrThrow(info, "Base Path")).toBe("C:\\Users\\aurore.delaunay\\Downloads");
+    expect(getOrThrow(info, "Full Flat Path")).toBe(
       "C:\\Users\\aurore.delaunay\\Downloads\\toto\\Comp 1.[fileExtension]",
     );
   });

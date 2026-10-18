@@ -7,10 +7,10 @@ import {
   NotImplementedError,
   at,
   Path,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   range,
-  getitem,
+  getOrThrow,
   setdefault,
   pySlice,
   isclose,
@@ -313,7 +313,7 @@ describe("TestRoundtripAVLayerFlags", () => {
     const out = tmpPath.div("env_2d.aep");
     project.save(out);
     const scale = getComp(parseAep(out).project, "crystal").layers[1].transform.property("ADBE Scale");
-    expect(pyEq(scale.value, [50.0, 60.0, 100.0])).toBe(true);
+    expect(valueEquals(scale.value, [50.0, 60.0, 100.0])).toBe(true);
     const raw = scale._readCdatRaw();
     expect(Array.isArray(raw) && approx(raw[2], 0.4)).toBe(true);
   });
@@ -1222,7 +1222,7 @@ describe("TestLayerRemove", () => {
     const child = comp.layers[0]; // ChildLayer
     const parent = comp.layers[1]; // ParentNull
     expect(child.parent).toBe(parent);
-    expect(pyEq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
     const parentPos = parent.transform.property("ADBE Position").value;
 
     parent.remove();
@@ -1261,7 +1261,7 @@ describe("TestParentSetter", () => {
     const comp = getComp(app.project, "parent");
     const child = comp.layers[0];
     child.parent = null;
-    expect(pyEq(child.transform.property("ADBE Scale").value, [100.0, 100.0, 100.0])).toBe(true);
+    expect(valueEquals(child.transform.property("ADBE Scale").value, [100.0, 100.0, 100.0])).toBe(true);
   });
 
   test("test_unparent_preserves_rotation", () => {
@@ -1280,7 +1280,7 @@ describe("TestParentSetter", () => {
     const child = comp.layers[0];
     const parent = comp.layers[1];
     child.parent = parent; // Same parent, no-op
-    expect(pyEq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_reparent_to_new_parent", () => {
@@ -1398,7 +1398,7 @@ describe("TestLayerMove", () => {
     const comp = getComp(app.project, "crystal");
     const idsBefore = comp.layers.map((ly) => ly.id);
     comp.layers[1].moveBefore(comp.layers[1]);
-    expect(pyEq(comp.layers.map((ly) => ly.id), idsBefore)).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.id), idsBefore)).toBe(true);
   });
 
   test("test_move_wrong_comp_raises", () => {
@@ -1421,12 +1421,12 @@ describe("TestLayerMove", () => {
     const namesBefore = comp.layers.map((ly) => ly.name);
     comp.layers[0].moveToEnd();
     const expected = [...namesBefore.slice(1), namesBefore[0]];
-    expect(pyEq(comp.layers.map((ly) => ly.name), expected)).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.name), expected)).toBe(true);
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "crystal");
-    expect(pyEq(comp2.layers.map((ly) => ly.name), expected)).toBe(true);
+    expect(valueEquals(comp2.layers.map((ly) => ly.name), expected)).toBe(true);
   });
 
   test("test_move_updates_index", () => {
@@ -1453,7 +1453,7 @@ describe("TestSetParentWithJump", () => {
     expect(child._parentId).toBe(0);
     expect(child.parent == null).toBe(true);
     // Local position should NOT change (no compensation)
-    expect(pyEq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_set_parent_assigns_id", () => {
@@ -1533,10 +1533,10 @@ describe("TestLayerDuplicate", () => {
     const dup = layer.duplicate();
     const origTdpi = _tdpiByParamSuffix(layer);
     const dupTdpi = _tdpiByParamSuffix(dup);
-    expect(pyEq(new Set(getitem(origTdpi, "-0000")), new Set([originalId]))).toBe(true);
-    expect(pyEq(getitem(origTdpi, "-0001"), [originalId])).toBe(true);
-    expect(pyEq(new Set(getitem(dupTdpi, "-0000")), new Set([dup.id]))).toBe(true);
-    expect(pyEq(getitem(dupTdpi, "-0001"), [originalId])).toBe(true);
+    expect(valueEquals(new Set(getOrThrow(origTdpi, "-0000")), new Set([originalId]))).toBe(true);
+    expect(valueEquals(getOrThrow(origTdpi, "-0001"), [originalId])).toBe(true);
+    expect(valueEquals(new Set(getOrThrow(dupTdpi, "-0000")), new Set([dup.id]))).toBe(true);
+    expect(valueEquals(getOrThrow(dupTdpi, "-0001"), [originalId])).toBe(true);
   });
 
   test("test_duplicate_owner_tdpi_roundtrip", () => {
@@ -1557,8 +1557,8 @@ describe("TestLayerDuplicate", () => {
     const dup2 = comp2.layers.find((lyr) => lyr.id === dupId);
     if (dup2 === undefined) throw new StopIteration();
     const dup2Tdpi = _tdpiByParamSuffix(dup2);
-    expect(pyEq(new Set(getitem(dup2Tdpi, "-0000")), new Set([dupId]))).toBe(true);
-    expect(pyEq(getitem(dup2Tdpi, "-0001"), [originalId])).toBe(true);
+    expect(valueEquals(new Set(getOrThrow(dup2Tdpi, "-0000")), new Set([dupId]))).toBe(true);
+    expect(valueEquals(getOrThrow(dup2Tdpi, "-0001"), [originalId])).toBe(true);
   });
 
   test("test_duplicate_preserves_name_from_source", () => {
@@ -1670,7 +1670,7 @@ describe("TestDuplicateComplexValueLayers", () => {
     if (dup.text == null) throw new Error("duplicate has no text group");
     const src = original.text.property("ADBE Text Document").value;
     const dupSrc = dup.text.property("ADBE Text Document").value;
-    expect(pyEq(dupSrc.text, src.text)).toBe(true);
+    expect(valueEquals(dupSrc.text, src.text)).toBe(true);
   });
 
   test("test_duplicate_masked_layer", () => {
@@ -1682,7 +1682,7 @@ describe("TestDuplicateComplexValueLayers", () => {
     if (dup.masks == null) throw new Error("duplicate has no masks group");
     const origShape = asInstance(original.masks.property(0), PropertyGroup).property("ADBE Mask Shape").value;
     const dupShape = asInstance(dup.masks.property(0), PropertyGroup).property("ADBE Mask Shape").value;
-    expect(pyEq(dupShape.vertices, origShape.vertices)).toBe(true);
+    expect(valueEquals(dupShape.vertices, origShape.vertices)).toBe(true);
   });
 
   test("test_duplicate_every_layer_kind", () => {
@@ -1914,7 +1914,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const comp = getComp(project, "outPoint_no_clamp_timeRemap");
     const layer = asInstance(comp.layers[0], AVLayer);
     const authored = layer.property("ADBE Time Remapping").keyframes.map((k) => [k.time, k.value]);
-    expect(pyEq(authored, [[0.0, 0.0], [5.0, 5.0]])).toBe(true);
+    expect(valueEquals(authored, [[0.0, 0.0], [5.0, 5.0]])).toBe(true);
 
     layer.timeRemapEnabled = false;
     layer.timeRemapEnabled = true;
@@ -1923,7 +1923,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     project.save(out);
     const comp2 = getComp(parseAep(out).project, "outPoint_no_clamp_timeRemap");
     const remap = comp2.layers[0].property("ADBE Time Remapping");
-    expect(pyEq(remap.keyframes.map((k) => [k.time, k.value]), authored)).toBe(true);
+    expect(valueEquals(remap.keyframes.map((k) => [k.time, k.value]), authored)).toBe(true);
   });
 
   test("test_ramp_is_linear", () => {
@@ -2000,7 +2000,7 @@ describe("TestTextSourceRectRefusals", () => {
 
   test("test_faux_bold_raises", () => {
     const layer = _hello(parseProjectFresh(SAMPLES_DIR.div("text_ink.aep")));
-    pyAssert(layer.text != null);
+    assert(layer.text != null);
     layer.text.property("ADBE Text Document").value.fauxBold = true;
     raises(NotImplementedError, () => {
       layer.sourceRectAtTime(0.0, false);
@@ -2009,7 +2009,7 @@ describe("TestTextSourceRectRefusals", () => {
 
   test("test_text_animator_raises", () => {
     const layer = _hello(parseProjectFresh(SAMPLES_DIR.div("text_ink.aep")));
-    pyAssert(layer.text != null);
+    assert(layer.text != null);
     layer.text.property("ADBE Text Animators").addProperty("ADBE Text Animator");
     raises(NotImplementedError, () => {
       layer.sourceRectAtTime(0.0, false);
@@ -2035,8 +2035,8 @@ describe("TestPointOfInterestDefault", () => {
     }
     comp.width += 64;
     const poi = light.transform.property("ADBE Anchor Point");
-    expect(pyEq(poi.value, [960.0, 540.0, 0.0])).toBe(true);
-    expect(pyEq(poi.defaultValue, [992.0, 540.0, 0.0])).toBe(true);
+    expect(valueEquals(poi.value, [960.0, 540.0, 0.0])).toBe(true);
+    expect(valueEquals(poi.defaultValue, [992.0, 540.0, 0.0])).toBe(true);
     expect(poi.isModified).toBe(true);
   });
 });
@@ -2110,11 +2110,11 @@ describe("TestAnchorFollowsSource", () => {
       [centre, false],
       [stored, true],
     ];
-    expect(pyEq(anchors(layers), expected)).toBe(true);
+    expect(valueEquals(anchors(layers), expected)).toBe(true);
     const out = tmpPath.div("changed.aep");
     project.save(out);
     const byId = new Map(getComp(parseProjectFresh(out), "AltSrc").layers.map((la): [number, Layer] => [la.id, la]));
-    expect(pyEq(anchors(layers.map((layer) => getitem(byId, layer.id))), expected)).toBe(true);
+    expect(valueEquals(anchors(layers.map((layer) => getOrThrow(byId, layer.id))), expected)).toBe(true);
   });
 });
 
@@ -2163,7 +2163,7 @@ describe("TestLazyPropertyTree", () => {
     for (const layer of _layers(project)) {
       void [layer.inPoint, layer.outPoint];
     }
-    expect(pyEq(projectBytes(project), SAMPLE.readBytes())).toBe(true);
+    expect(valueEquals(projectBytes(project), SAMPLE.readBytes())).toBe(true);
   });
 
   const mutations: [string, (comp: CompItem, layer: Layer) => void][] = [
@@ -2199,7 +2199,7 @@ describe("TestLazyPropertyTree", () => {
         project.save(out);
         saved.push(out.readBytes());
       }
-      expect(pyEq(saved[0], saved[1])).toBe(true);
+      expect(valueEquals(saved[0], saved[1])).toBe(true);
     },
   );
 
@@ -2292,7 +2292,7 @@ describe("TestLazyPropertyTree", () => {
     project.save(out);
     const position = getComp(parseProjectFresh(out), "TestComp").layers[0].transform.property("ADBE Position");
     expect(position._tdsb?.synthetic).toBe(false);
-    expect(pyEq(position.value, [50.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(position.value, [50.0, 50.0, 0.0])).toBe(true);
     expect(position.isModified).toBe(true);
   });
 

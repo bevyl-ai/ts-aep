@@ -30,7 +30,7 @@ import {
   at,
   format,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   repr,
   sorted,
@@ -214,7 +214,7 @@ export function _dumpChunk(path: Path, chunkPath: string): number {
       print(`Chunk path not found: ${chunkPath}`, { file: sys.stderr });
       print("\nAvailable leaf chunk paths:", { file: sys.stderr });
       for (const p of sorted(chunks.keys())) {
-        print(`  ${p} (${getitem(chunks, p).length}B)`, { file: sys.stderr });
+        print(`  ${p} (${getOrThrow(chunks, p).length}B)`, { file: sys.stderr });
       }
       return 1;
     }
@@ -223,13 +223,13 @@ export function _dumpChunk(path: Path, chunkPath: string): number {
     } else {
       print(`Ambiguous chunk path '${chunkPath}'. Matches:`, { file: sys.stderr });
       for (const m of matches) {
-        print(`  ${m} (${getitem(chunks, m).length}B)`, { file: sys.stderr });
+        print(`  ${m} (${getOrThrow(chunks, m).length}B)`, { file: sys.stderr });
       }
       return 1;
     }
   }
 
-  const data = getitem(chunks, chunkPath);
+  const data = getOrThrow(chunks, chunkPath);
   print(`\n[${chunkPath}] (${data.length} bytes)\n`);
   print(formatHexDump(data));
   return 0;

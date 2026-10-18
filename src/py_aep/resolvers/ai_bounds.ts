@@ -45,13 +45,13 @@ import {
   bytes_,
   bytesEq,
   decode,
-  dictGet,
+  getOr,
   float,
-  getitem,
+  getOrThrow,
   int,
   numStr,
-  pyOr,
-  pyEq,
+  truthyOr,
+  valueEquals,
   setdefault,
   split,
   str,
@@ -327,7 +327,7 @@ export class _Document {
     while (value instanceof IndirectReference) {
       const number = value.objectNumber;
       if (this._cache.has(number)) {
-        value = getitem(this._cache, number);
+        value = getOrThrow(this._cache, number);
         break;
       }
       const offset = this._offsets.get(number) ?? null;
@@ -348,7 +348,7 @@ export class _Document {
   get(mapping: CosNode, key: string, default_: CosNode = null): CosNode {
     const table = _asDict(this.resolve(mapping));
     if (table == null || !table.has(key)) return default_;
-    return this.resolve(getitem(table, key));
+    return this.resolve(getOrThrow(table, key));
   }
 
   /** The decoded body of a stream object. */
@@ -362,7 +362,7 @@ export class _Document {
     // `getattr(value, "data", None)`: of the COS kinds a `Stream` and an `IndirectObject` have one.
     const raw = value instanceof Stream || value instanceof IndirectObject ? value.data : null;
     if (raw instanceof Uint8Array) {
-      info = pyOr(value instanceof Stream ? value.dictionary : null, new Map());
+      info = truthyOr(value instanceof Stream ? value.dictionary : null, new Map());
       body = raw;
     } else if (value instanceof Map && reference instanceof IndirectReference) {
       info = value;
@@ -438,7 +438,7 @@ export class _Document {
     for (const number of this._offsets.keys()) numbers.push(number);
     for (const number of numbers) {
       const candidate = this.resolve(new IndirectReference(number, 0));
-      if (candidate instanceof Map && str(dictGet(candidate, "Type", "")) === "Catalog") {
+      if (candidate instanceof Map && str(getOr(candidate, "Type", "")) === "Catalog") {
         this._catalog = candidate;
         return candidate;
       }
@@ -456,7 +456,7 @@ export class _Document {
   *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
     const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
-    if (str(dictGet(table, "Type", "")) === "Page") {
+    if (str(getOr(table, "Type", "")) === "Page") {
       yield table;
       return;
     }
@@ -953,7 +953,7 @@ export class _Measurer {
       } else if (op === "gs" && operands.length > 0) {
         const ext = this._resource(resources, "ExtGState", operands[operands.length - 1]);
         if (ext instanceof Map && ext.has("LW")) {
-          gs.lineWidth = this._doc.number(getitem(ext, "LW"), gs.lineWidth);
+          gs.lineWidth = this._doc.number(getOrThrow(ext, "LW"), gs.lineWidth);
         }
       }
       // ---- path construction
@@ -978,7 +978,7 @@ export class _Measurer {
         segments.push(["c", current, [a[0], a[1]], end, end]);
         current = end;
       } else if (op === "h") {
-        if (current != null && start != null && !pyEq(current, start)) {
+        if (current != null && start != null && !valueEquals(current, start)) {
           segments.push(["l", current, start]);
         }
         current = start;
@@ -1286,7 +1286,7 @@ export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null
   const measurer = new _Measurer(doc);
   measurer.run(doc.pageContent(page), doc.get(page, "Resources"));
   return layers.map((layer) =>
-    measurer.boxes.has(layer.objectNumber) ? getitem(measurer.boxes, layer.objectNumber).box() : null,
+    measurer.boxes.has(layer.objectNumber) ? getOrThrow(measurer.boxes, layer.objectNumber).box() : null,
   );
 }
 

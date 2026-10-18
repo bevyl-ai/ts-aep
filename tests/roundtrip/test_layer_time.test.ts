@@ -20,7 +20,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
-import { AssertionError, ValueError, float, getattr, getitem, max, pyEq } from "../../src/pyrt/index.ts";
+import { AssertionError, ValueError, float, getattr, getOrThrow, max, valueEquals } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
@@ -104,7 +104,7 @@ describe("TestStretchedLayerTimebase", () => {
         bases.add(prop._tdb4._timeBase);
       }
     }
-    expect(pyEq(bases, new Set([want]))).toBe(true);
+    expect(valueEquals(bases, new Set([want]))).toBe(true);
   });
 });
 
@@ -128,12 +128,12 @@ describe("TestStretchRetimesKeyframes", () => {
 
   test("test_ticks_and_timebase_match_after_effects", () => {
     const [_app, layer, op] = _animated();
-    expect(pyEq(op.keyframes.map((kf) => kf._ldatItem.timeUnits), [24576, 122880])).toBe(true);
+    expect(valueEquals(op.keyframes.map((kf) => kf._ldatItem.timeUnits), [24576, 122880])).toBe(true);
 
     layer.stretch = 200.0;
 
     expect(op._tdb4._timeBase).toBe(49152);
-    expect(pyEq(op.keyframes.map((kf) => kf._ldatItem.timeUnits), [49152, 245760])).toBe(true);
+    expect(valueEquals(op.keyframes.map((kf) => kf._ldatItem.timeUnits), [49152, 245760])).toBe(true);
     expect(approx(op.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
   });
 
@@ -155,7 +155,7 @@ describe("TestStretchRetimesKeyframes", () => {
 
     const op2 = asInstance(asInstance(parseAppFresh(out).project.compositions[0].layers[0].property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
     expect(approx(op2.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
-    expect(pyEq(op2.keyframes.map((kf) => kf._ldatItem.timeUnits), [49152, 245760])).toBe(true);
+    expect(valueEquals(op2.keyframes.map((kf) => kf._ldatItem.timeUnits), [49152, 245760])).toBe(true);
   });
 });
 
@@ -195,7 +195,7 @@ describe("TestNegativeStretchOffset", () => {
     layer.stretch = stretch;
 
     const got = op.keyframes.map((kf) => kf.time);
-    expect(approx(got, getitem(AE, stretch), { abs: 1e-6 })).toBe(true);
+    expect(approx(got, getOrThrow(AE, stretch), { abs: 1e-6 })).toBe(true);
   });
 
   test("test_positive_stretch_has_no_offset", () => {

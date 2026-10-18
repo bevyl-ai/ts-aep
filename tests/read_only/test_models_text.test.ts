@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { len, Path, pyAssert, pyEq, StopIteration } from "../../src/pyrt/index.ts";
+import { len, Path, assert, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -29,7 +29,7 @@ function _getTextDocument(aepPath: Path, compName: string | null = null): [Proje
     comp = app.project.compositions[0];
   }
   const textLayer = comp.textLayers[0];
-  pyAssert(textLayer.text != null);
+  assert(textLayer.text != null);
   return [app.project, textLayer.text.sourceText.value];
 }
 
@@ -41,7 +41,7 @@ describe("TestBoxOverflow", () => {
     const comp = app.project.compositions[0];
     const layer = comp.textLayers.find((ly) => ly.name === layerName);
     if (layer === undefined) throw new StopIteration();
-    pyAssert(layer.text != null);
+    assert(layer.text != null);
     return layer.text.sourceText.value;
   }
 
@@ -80,7 +80,7 @@ describe("TestTextDocumentParsing", () => {
 
   test("test_fill_color", () => {
     const [_project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
-    pyAssert(doc.fillColor != null);
+    assert(doc.fillColor != null);
     expect(len(doc.fillColor)).toBe(3);
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); this check cannot distinguish an int-valued float from an int.
     expect(doc.fillColor.every((c) => typeof c === "number")).toBe(true);
@@ -89,7 +89,7 @@ describe("TestTextDocumentParsing", () => {
   test("test_stroke_color", () => {
     const [_project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
     expect(doc.strokeColor != null).toBe(true);
-    expect(pyEq(doc.strokeColor, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(doc.strokeColor, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_faux_bold", () => {
@@ -193,13 +193,13 @@ describe("TestFontObject", () => {
 
   test("test_post_script_name", () => {
     const [_project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
-    pyAssert(doc.fontObject != null);
+    assert(doc.fontObject != null);
     expect(doc.fontObject.postScriptName).toBe("TimesNewRomanPSMT");
   });
 
   test("test_version", () => {
     const [_project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
-    pyAssert(doc.fontObject != null);
+    assert(doc.fontObject != null);
     expect(doc.fontObject.version).toBe("Version 7.00");
   });
 });

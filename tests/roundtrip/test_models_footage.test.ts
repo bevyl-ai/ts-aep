@@ -1,7 +1,7 @@
 /** Tests for FootageItem model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { isclose, Path, pyAssert, pyEq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { isclose, Path, assert, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { AlphaMode, AVLayer, FieldSeparationType, FootageItem, LinearLightMode, PulldownPhase, SolidSource, parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
@@ -356,7 +356,7 @@ describe("TestPlaceholderConformFrameRate", () => {
     const reparsed = parseAep(out).project.footages.find((f) => f.id === item.id);
     if (reparsed == null) throw new StopIteration();
     const sspc = reparsed.mainSource._sspc;
-    expect(pyEq([sspc.nativeFrameRate, sspc.conformFrameRate], [25.0, 0.0])).toBe(true);
+    expect(valueEquals([sspc.nativeFrameRate, sspc.conformFrameRate], [25.0, 0.0])).toBe(true);
     expect(reparsed.mainSource.conformFrameRate).toBe(25.0);
     expect(reparsed.frameRate).toBe(25.0);
     expect(reparsed.duration).toBe(10.0);
@@ -559,7 +559,7 @@ describe("TestRoundtripMediaColorSpace", () => {
 
   const _firstSource = (project: Project) => {
     const item = getFirstFootage(project);
-    pyAssert(item != null);
+    assert(item != null);
     return item.mainSource;
   };
 
@@ -579,8 +579,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     const ocsp = source2._ocspUtf8();
     const ae = parseAep(SAMPLES_DIR.div("cms_acescg_colorspace.aep")).project;
     const aeOcsp = _firstSource(ae)._ocspUtf8();
-    pyAssert(ocsp != null && aeOcsp != null);
-    expect(pyEq(ocsp.value, aeOcsp.value)).toBe(true);
+    assert(ocsp != null && aeOcsp != null);
+    expect(valueEquals(ocsp.value, aeOcsp.value)).toBe(true);
   });
 
   test.skipIf(!_ACES12_AVAILABLE)("test_set_ocio_name_absent_from_config_raises", () => {
@@ -603,8 +603,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     expect(source2.mediaColorSpace).toBe("Working Color Space");
     // AE-fidelity (verified via aep-compare): the ocsp envelope is emptied.
     const ocsp = source2._ocspUtf8();
-    pyAssert(ocsp != null);
-    expect(pyEq(ocsp.value, "")).toBe(true);
+    assert(ocsp != null);
+    expect(valueEquals(ocsp.value, "")).toBe(true);
   });
 
   test("test_set_embedded_reverts_override", () => {
@@ -648,8 +648,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     const ocsp = source2._ocspUtf8();
     const ae = parseAep(SAMPLES_DIR.div("cms_matte_paint_role.aep")).project;
     const aeOcsp = _firstSource(ae)._ocspUtf8();
-    pyAssert(ocsp != null && aeOcsp != null);
-    expect(pyEq(ocsp.value, aeOcsp.value)).toBe(true);
+    assert(ocsp != null && aeOcsp != null);
+    expect(valueEquals(ocsp.value, aeOcsp.value)).toBe(true);
   });
 
   test.skipIf(!_ACES12_AVAILABLE)("test_qualified_name_round_trips", () => {
@@ -658,13 +658,13 @@ describe("TestRoundtripMediaColorSpace", () => {
     const project = parseAep(SAMPLES_DIR.div("cms_acescg_colorspace.aep")).project;
     const source = _firstSource(project);
     const before = source._ocspUtf8();
-    pyAssert(before != null);
+    assert(before != null);
     const original = before.value;
     expect(source.mediaColorSpace).toBe("ACES/ACES - ACEScg");
     source.mediaColorSpace = source.mediaColorSpace;
     const after = source._ocspUtf8();
-    pyAssert(after != null);
-    expect(pyEq(after.value, original)).toBe(true);
+    assert(after != null);
+    expect(valueEquals(after.value, original)).toBe(true);
   });
 
   test("test_unresolvable_config_raises", () => {
@@ -687,7 +687,7 @@ describe("TestRoundtripMediaColorSpace", () => {
     // apid is the catalogued ICC profile ID (matches AE ground truth).
     const apid = asInstance(source2._clrs, ListChunk).chunks.find((c) => c.chunkType === "apid");
     if (apid == null) throw new StopIteration();
-    expect(pyEq(apid.data, profileIdForName("Apple RGB"))).toBe(true);
+    expect(valueEquals(apid.data, profileIdForName("Apple RGB"))).toBe(true);
   });
 });
 
@@ -719,7 +719,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === solid.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.name, "Renamed Solid Item")).toBe(true);
+    expect(valueEquals(reparsed.name, "Renamed Solid Item")).toBe(true);
   });
 
   test("test_rename_solid_stores_name_in_opti_not_item_utf8", () => {
@@ -732,8 +732,8 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === solid.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.mainSource._opti.solidName, "Opti Backed")).toBe(true);
-    expect(pyEq(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
+    expect(valueEquals(reparsed.mainSource._opti.solidName, "Opti Backed")).toBe(true);
+    expect(valueEquals(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
   });
 
   test("test_rename_placeholder_persists", () => {
@@ -746,9 +746,9 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === placeholder.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.name, "Renamed Placeholder")).toBe(true);
-    expect(pyEq(reparsed.mainSource._opti.placeholderName, "Renamed Placeholder")).toBe(true);
-    expect(pyEq(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
+    expect(valueEquals(reparsed.name, "Renamed Placeholder")).toBe(true);
+    expect(valueEquals(reparsed.mainSource._opti.placeholderName, "Renamed Placeholder")).toBe(true);
+    expect(valueEquals(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
   });
 
   test("test_rename_file_footage_persists", () => {
@@ -761,8 +761,8 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === footage.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.name, "Renamed File Item")).toBe(true);
-    expect(pyEq(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "Renamed File Item")).toBe(true);
+    expect(valueEquals(reparsed.name, "Renamed File Item")).toBe(true);
+    expect(valueEquals(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "Renamed File Item")).toBe(true);
   });
 
   test("test_rename_solid_accepts_255_utf8_bytes", () => {
@@ -778,7 +778,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === solid.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.name, name)).toBe(true);
+    expect(valueEquals(reparsed.name, name)).toBe(true);
   });
 
   test("test_rename_solid_rejects_oversized_name", () => {
@@ -810,7 +810,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === footage.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.name, "dir/sub.mov")).toBe(true);
+    expect(valueEquals(reparsed.name, "dir/sub.mov")).toBe(true);
   });
 
   test("test_rename_placeholder_rejects_oversized_name", () => {

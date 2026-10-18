@@ -14,7 +14,7 @@ import {
   getattr,
   len,
   Path,
-  pyBool,
+  truthy,
   setattr,
   StopIteration,
   str,
@@ -46,7 +46,7 @@ function _firstMask(): MaskPropertyGroup {
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
       const masks = getattr(layer, "masks", null);
-      if (masks != null && pyBool(masks) && len(masks) > 0) {
+      if (masks != null && truthy(masks) && len(masks) > 0) {
         return asInstance(masks.property(0), MaskPropertyGroup);
       }
     }

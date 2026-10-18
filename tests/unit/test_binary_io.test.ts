@@ -12,13 +12,13 @@ import {
   bytes_,
   define,
   descriptor,
-  dictGet,
+  getOr,
   encode,
   field,
-  getitem,
-  pyAssert,
-  pyBool,
-  pyEq,
+  getOrThrow,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   struct,
 } from "../../src/pyrt/index.ts";
@@ -53,7 +53,7 @@ describe("TestBinUtils", () => {
     writeFmt(buf, "I H B", 42, 7, 3);
     buf.seek(0);
     const result = readFmt("I H B", buf);
-    expect(pyEq(result, [42, 7, 3])).toBe(true);
+    expect(valueEquals(result, [42, 7, 3])).toBe(true);
   });
 
   test("test_read_fmt_short_read", () => {
@@ -75,7 +75,7 @@ describe("TestBinUtils", () => {
 
   test("test_read_bytes_exact", () => {
     const buf = new BytesIO(b("hello world"));
-    expect(pyEq(readBytes(buf, 5), b("hello"))).toBe(true);
+    expect(valueEquals(readBytes(buf, 5), b("hello"))).toBe(true);
   });
 
   test("test_read_bytes_short_read", () => {
@@ -104,14 +104,14 @@ describe("TestBinUtils", () => {
     const buf = new BytesIO();
     const n = writePad(buf, 5);
     expect(n).toBe(1);
-    expect(pyEq(buf.getvalue(), b("\x00"))).toBe(true);
+    expect(valueEquals(buf.getvalue(), b("\x00"))).toBe(true);
   });
 
   test("test_write_pad_even", () => {
     const buf = new BytesIO();
     const n = writePad(buf, 4);
     expect(n).toBe(0);
-    expect(pyEq(buf.getvalue(), b(""))).toBe(true);
+    expect(valueEquals(buf.getvalue(), b(""))).toBe(true);
   });
 
   test("test_read_pad_odd", () => {
@@ -132,9 +132,9 @@ describe("TestBinUtils", () => {
     const bufLe = new BytesIO();
     // NOTE(port): write_fmt(buf_le, "H", 0x0102, endian="<") is struct.pack("<H", ...) (bin_utils.write_fmt body), so the bytes match Python.
     bufLe.write(struct.pack("<H", 0x0102));
-    expect(pyEq(bufBe.getvalue(), bufLe.getvalue())).toBe(false);
-    expect(pyEq(bufBe.getvalue(), b("\x01\x02"))).toBe(true);
-    expect(pyEq(bufLe.getvalue(), b("\x02\x01"))).toBe(true);
+    expect(valueEquals(bufBe.getvalue(), bufLe.getvalue())).toBe(false);
+    expect(valueEquals(bufBe.getvalue(), b("\x01\x02"))).toBe(true);
+    expect(valueEquals(bufLe.getvalue(), b("\x02\x01"))).toBe(true);
   });
 });
 
@@ -149,7 +149,7 @@ describe("TestChunk", () => {
     const chunk = Chunk.read(buf, original.length, { chunkType: "test" });
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), original)).toBe(true);
+    expect(valueEquals(out.getvalue(), original)).toBe(true);
   });
 
   test("test_chunk_type_preserved", () => {
@@ -157,12 +157,12 @@ describe("TestChunk", () => {
     expect(chunk.chunkType).toBe("abcd");
     const restored = Chunk.frombytes(chunk.tobytes(), { chunkType: "abcd" });
     expect(restored.chunkType).toBe("abcd");
-    expect(pyEq(restored.data, b("\xff"))).toBe(true);
+    expect(valueEquals(restored.data, b("\xff"))).toBe(true);
   });
 
   test("test_empty_body", () => {
     const chunk = new Chunk({ chunkType: "empt" });
-    expect(pyEq(chunk.tobytes(), b(""))).toBe(true);
+    expect(valueEquals(chunk.tobytes(), b(""))).toBe(true);
     const out = new BytesIO();
     expect(chunk.write(out)).toBe(0);
   });
@@ -191,9 +191,9 @@ describe("TestListChunk", () => {
     expect(restored.listType).toBe("test");
     expect(restored.chunks.length).toBe(2);
     expect(restored.chunks[0] instanceof Chunk).toBe(true);
-    expect(pyEq(restored.chunks[0].data, b("\x01\x02"))).toBe(true);
+    expect(valueEquals(restored.chunks[0].data, b("\x01\x02"))).toBe(true);
     // ch2 has odd body (1 byte), pad byte was written/read
-    expect(pyEq(restored.chunks[1].data, b("\x03"))).toBe(true);
+    expect(valueEquals(restored.chunks[1].data, b("\x03"))).toBe(true);
   });
 
   test("test_list_nested", () => {
@@ -216,7 +216,7 @@ describe("TestListChunk", () => {
     expect(innerR instanceof ListChunk).toBe(true);
     expect(innerR.listType).toBe("innr");
     expect(innerR.chunks.length).toBe(1);
-    expect(pyEq(innerR.chunks[0].data, b("\xaa\xbb"))).toBe(true);
+    expect(valueEquals(innerR.chunks[0].data, b("\xaa\xbb"))).toBe(true);
   });
 
   test("test_list_btdk_binary_data", () => {
@@ -231,8 +231,8 @@ describe("TestListChunk", () => {
     const ctx = new ReadContext();
     const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.listType).toBe("btdk");
-    expect(pyEq(restored.data, rawData)).toBe(true);
-    expect(pyEq(restored.chunks, [])).toBe(true);
+    expect(valueEquals(restored.data, rawData)).toBe(true);
+    expect(valueEquals(restored.chunks, [])).toBe(true);
   });
 
   test("test_list_empty_children", () => {
@@ -246,7 +246,7 @@ describe("TestListChunk", () => {
     const ctx = new ReadContext();
     const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.listType).toBe("empt");
-    expect(pyEq(restored.chunks, [])).toBe(true);
+    expect(valueEquals(restored.chunks, [])).toBe(true);
   });
 
   test("test_rifx_chunk_type", () => {
@@ -303,7 +303,7 @@ test.each(ROUNDTRIP_SAMPLES.map((s) => [s.replace(/\//g, "__"), s]))(
     writeAep(outFp, rifx, xmp);
     out.writeBytes(outFp.getvalue());
 
-    expect(pyEq(out.readBytes(), original)).toBe(true);
+    expect(valueEquals(out.readBytes(), original)).toBe(true);
   },
 );
 
@@ -330,7 +330,7 @@ describe("TestHeaderAndWriteChunk", () => {
     expect(total).toBe(12);
     expect(buf.getvalue().length).toBe(12);
     // Last byte should be pad
-    expect(pyEq(bytes_.slice(buf.getvalue(), -1), b("\x00"))).toBe(true);
+    expect(valueEquals(bytes_.slice(buf.getvalue(), -1), b("\x00"))).toBe(true);
   });
 
   test("test_write_chunk_pad_even", () => {
@@ -388,7 +388,7 @@ describe("TestRegistry", () => {
       register("zzzz")(ZzzzChunk);
 
       expect(CHUNK_TYPES.has("zzzz")).toBe(true);
-      expect(getitem(CHUNK_TYPES, "zzzz")).toBe(ZzzzChunk);
+      expect(getOrThrow(CHUNK_TYPES, "zzzz")).toBe(ZzzzChunk);
     } finally {
       CHUNK_TYPES.clear();
       for (const [k, v] of saved) CHUNK_TYPES.set(k, v);
@@ -396,7 +396,7 @@ describe("TestRegistry", () => {
   });
 
   test("test_unregistered_falls_to_chunk", () => {
-    const cls = dictGet(CHUNK_TYPES, "nonexistent", Chunk);
+    const cls = getOr(CHUNK_TYPES, "nonexistent", Chunk);
     expect(cls).toBe(Chunk);
   });
 
@@ -411,7 +411,7 @@ describe("TestRegistry", () => {
 
       buf.seek(0);
       const [ct, lb] = readHeader(buf);
-      const cls = dictGet(CHUNK_TYPES, ct, Chunk);
+      const cls = getOr(CHUNK_TYPES, ct, Chunk);
       expect(cls).toBe(DispChunk);
     } finally {
       CHUNK_TYPES.clear();
@@ -514,11 +514,11 @@ describe("TestFmtField", () => {
     expect(fmt).toBe("I");
     expect(dataFields.length).toBe(1);
     expect(dataFields[0].name).toBe("value");
-    expect(pyEq(encodings, new Map())).toBe(true);
-    expect(pyEq(endians, new Map())).toBe(true);
+    expect(valueEquals(encodings, new Map())).toBe(true);
+    expect(valueEquals(endians, new Map())).toBe(true);
     expect(itemsInfo == null).toBe(true);
     expect(optionalStart).toBe(1); // no optional fields
-    expect(pyEq(initNames, ["value"])).toBe(true);
+    expect(valueEquals(initNames, ["value"])).toBe(true);
     expect(simple).toBe(true); // no encodings/endians/optional/items
   });
 
@@ -538,8 +538,8 @@ describe("TestFmtField", () => {
     const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, , , simple] = info;
     expect(fmt).toBe("IHB");
     expect(dataFields.length).toBe(3);
-    expect(pyEq(encodings, new Map())).toBe(true);
-    expect(pyEq(endians, new Map())).toBe(true);
+    expect(valueEquals(encodings, new Map())).toBe(true);
+    expect(valueEquals(endians, new Map())).toBe(true);
     expect(itemsInfo == null).toBe(true);
     expect(optionalStart).toBe(3); // all required
     expect(simple).toBe(true); // no transforms, no items/optional
@@ -553,9 +553,9 @@ describe("TestFmtField", () => {
     const simple = info[8];
     // PrinChunk has match_name (field index 1) and display_name (index 2)
     expect(encodings.has(1)).toBe(true);
-    expect(getitem(encodings, 1)).toBe("ascii");
+    expect(getOrThrow(encodings, 1)).toBe("ascii");
     expect(encodings.has(2)).toBe(true);
-    expect(getitem(encodings, 2)).toBe("ascii");
+    expect(getOrThrow(encodings, 2)).toBe("ascii");
   });
 
   test("test_encoding_ascii_read_write_roundtrip", () => {
@@ -575,7 +575,7 @@ describe("TestFmtField", () => {
     // Round-trip
     const buf = new BytesIO();
     chunk.write(buf);
-    expect(pyEq(buf.getvalue(), raw)).toBe(true);
+    expect(valueEquals(buf.getvalue(), raw)).toBe(true);
   });
 
   test("test_encoding_windows1252_read_write_roundtrip", () => {
@@ -627,7 +627,7 @@ describe("TestFmtField", () => {
     // Round-trip
     const buf2 = new BytesIO();
     chunk2.write(buf2);
-    expect(pyEq(buf2.getvalue(), raw164)).toBe(true);
+    expect(valueEquals(buf2.getvalue(), raw164)).toBe(true);
   });
 
   test("test_ldta_matte_layer_id_setter", () => {
@@ -658,7 +658,7 @@ describe("TestFmtField", () => {
     // Round-trip preserves the field
     const buf2 = new BytesIO();
     chunk2.write(buf2);
-    expect(pyEq(buf2.getvalue(), raw164)).toBe(true);
+    expect(valueEquals(buf2.getvalue(), raw164)).toBe(true);
   });
 
   test("test_fmt_field_auto_bytes_default", () => {
@@ -670,10 +670,10 @@ describe("TestFmtField", () => {
     define(AutoChunk, { chunkType: field({ default: "test" }), pad: bytesField(4) });
 
     const c = new AutoChunk({});
-    expect(pyEq(c.pad, bytes_.zeros(4))).toBe(true);
+    expect(valueEquals(c.pad, bytes_.zeros(4))).toBe(true);
     const buf = new BytesIO();
     c.write(buf);
-    expect(pyEq(buf.getvalue(), bytes_.zeros(4))).toBe(true);
+    expect(valueEquals(buf.getvalue(), bytes_.zeros(4))).toBe(true);
   });
 
   test("test_fmt_field_explicit_bytes_default_preserved", () => {
@@ -688,7 +688,7 @@ describe("TestFmtField", () => {
     });
 
     const c = new ExplicitChunk({});
-    expect(pyEq(c.magic, b("FXTC"))).toBe(true);
+    expect(valueEquals(c.magic, b("FXTC"))).toBe(true);
   });
 
   test("test_fmt_field_non_bytes_default_unchanged", () => {
@@ -766,7 +766,7 @@ describe("TestTdsbChunk", () => {
     const buf = new BytesIO(raw);
     const chunk = asInstance(TdsbChunk.read(buf, 4, { chunkType: "tdsb" }), TdsbChunk);
     expect(chunk instanceof TdsbChunk).toBe(true);
-    expect(pyEq(chunk.rotoBezier, 0)).toBe(true);
+    expect(valueEquals(chunk.rotoBezier, 0)).toBe(true);
     expect(chunk.ratioUnlinked).toBe(false);
     // Separation is lock-byte bit 3; enable-byte bit 1 is the Timeline
     // hidden flag (AE sets it on an UNSEPARATED position that does not
@@ -776,7 +776,7 @@ describe("TestTdsbChunk", () => {
     expect(chunk.enabled).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_separated_bit", () => {
@@ -789,7 +789,7 @@ describe("TestTdsbChunk", () => {
     expect(chunk.hidden).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_with_trailing", () => {
@@ -797,12 +797,12 @@ describe("TestTdsbChunk", () => {
     const buf = new BytesIO(raw);
     const chunk = asInstance(TdsbChunk.read(buf, 6, { chunkType: "tdsb" }), TdsbChunk);
     expect(chunk instanceof TdsbChunk).toBe(true);
-    expect(pyEq(chunk.rotoBezier, 1)).toBe(true);
+    expect(valueEquals(chunk.rotoBezier, 1)).toBe(true);
     expect(chunk.enabled).toBe(true);
-    expect(pyEq(chunk._trailing, b("\xaa\xbb"))).toBe(true);
+    expect(valueEquals(chunk._trailing, b("\xaa\xbb"))).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_bitfield_write_through", () => {
@@ -866,12 +866,12 @@ describe("TestTdb4Chunk", () => {
     expect(chunk.integer).toBe(true);
     expect(chunk.color).toBe(true);
     expect(chunk.vector).toBe(false);
-    expect(pyEq(chunk.animated, 1)).toBe(true);
+    expect(valueEquals(chunk.animated, 1)).toBe(true);
     expect(chunk.expressionDisabled).toBe(true);
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_undersize_raises", () => {
@@ -889,28 +889,28 @@ describe("TestCdatChunk", () => {
     const raw = struct.pack(">3d", 1.0, 2.5, -3.0);
     const buf = new BytesIO(raw);
     const chunk = CdatChunk.read(buf, 24, { chunkType: "cdat", isLe: false });
-    expect(pyEq(chunk.values, [1.0, 2.5, -3.0])).toBe(true);
+    expect(valueEquals(chunk.values, [1.0, 2.5, -3.0])).toBe(true);
     expect(chunk.isLe).toBe(false);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_roundtrip_le", () => {
     const raw = struct.pack("<2d", 42.0, -1.5);
     const buf = new BytesIO(raw);
     const chunk = CdatChunk.read(buf, 16, { chunkType: "cdat", isLe: true });
-    expect(pyEq(chunk.values, [42.0, -1.5])).toBe(true);
+    expect(valueEquals(chunk.values, [42.0, -1.5])).toBe(true);
     expect(chunk.isLe).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_empty_body", () => {
     const buf = new BytesIO(b(""));
     const chunk = CdatChunk.read(buf, 0, { chunkType: "cdat" });
-    expect(pyEq(chunk.values, [])).toBe(true);
+    expect(valueEquals(chunk.values, [])).toBe(true);
     const out = new BytesIO();
     const written = chunk.write(out);
     expect(written).toBe(0);
@@ -926,12 +926,12 @@ describe("TestTdumChunk", () => {
     const raw = struct.pack(">2d", 0.0, 100.0);
     const buf = new BytesIO(raw);
     const chunk = TdumChunk.read(buf, 16, { chunkType: "tdum" });
-    expect(pyEq(chunk.values, [0.0, 100.0])).toBe(true);
+    expect(valueEquals(chunk.values, [0.0, 100.0])).toBe(true);
     expect(chunk.isColor).toBe(false);
     expect(chunk.isInteger).toBe(false);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_roundtrip_color", () => {
@@ -942,18 +942,18 @@ describe("TestTdumChunk", () => {
     expect(chunk.isColor).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 
   test("test_roundtrip_integer", () => {
     const raw = struct.pack(">I", 255);
     const buf = new BytesIO(raw);
     const chunk = TdumChunk.read(buf, 4, { chunkType: "tdum", isInteger: true });
-    expect(pyEq(chunk.values, [255.0])).toBe(true);
+    expect(valueEquals(chunk.values, [255.0])).toBe(true);
     expect(chunk.isInteger).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.getvalue(), raw)).toBe(true);
   });
 });
 
@@ -1116,7 +1116,7 @@ describe("TestRouuChunk", () => {
     const full = new RouuChunk({}).tobytes();
     const chunk = asInstance(RouuChunk.frombytes(full, { chunkType: "Roou" }), RouuChunk);
     expect(chunk._reserved72 != null).toBe(true);
-    expect(pyEq(chunk.tobytes(), full)).toBe(true);
+    expect(valueEquals(chunk.tobytes(), full)).toBe(true);
   });
 
   test("test_114_byte_body_roundtrips", () => {
@@ -1124,7 +1124,7 @@ describe("TestRouuChunk", () => {
     const chunk = asInstance(RouuChunk.frombytes(short, { chunkType: "Roou" }), RouuChunk);
     expect(chunk._reserved72 == null).toBe(true);
     expect(chunk.audioChannels).toBe(0); // last required field still parsed
-    expect(pyEq(chunk.tobytes(), short)).toBe(true);
+    expect(valueEquals(chunk.tobytes(), short)).toBe(true);
   });
 
   test("test_audio_format_is_three_big_endian_words", () => {
@@ -1132,14 +1132,14 @@ describe("TestRouuChunk", () => {
     // whole words: `ffff ffff 0000` while unset, `0002 0001 0001` for
     // 8-bit mono (audio_settings_matrix.aep, item E9_on_mono_8).
     const chunk = new RouuChunk({});
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("ffffffff0000"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("ffffffff0000"))).toBe(true);
     expect(chunk.audioEncoding).toBe(0xffff);
     expect(chunk.audioBitDepth).toBe(0xffff);
     expect(chunk.audioChannels).toBe(0);
     chunk.audioEncoding = 2;
     chunk.audioBitDepth = 1;
     chunk.audioChannels = 1;
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("000200010001"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("000200010001"))).toBe(true);
   });
 });
 
@@ -1150,12 +1150,12 @@ describe("TestLhd3ChunkWordWidths", () => {
     // size as one at 0x10 (upper halves 0 in every sample).
     const chunk = new Lhd3Chunk({ count: 70_000, itemSize: 0x10000 + 16 });
     const body = chunk.tobytes();
-    expect(pyEq(bytes_.slice(body, 0x08, 0x0c), bytes_.intToBytes(70_000, 4, "big"))).toBe(true);
-    expect(pyEq(bytes_.slice(body, 0x10, 0x14), bytes_.intToBytes(0x10000 + 16, 4, "big"))).toBe(true);
+    expect(valueEquals(bytes_.slice(body, 0x08, 0x0c), bytes_.intToBytes(70_000, 4, "big"))).toBe(true);
+    expect(valueEquals(bytes_.slice(body, 0x10, 0x14), bytes_.intToBytes(0x10000 + 16, 4, "big"))).toBe(true);
     const reread = asInstance(Lhd3Chunk.frombytes(body, { chunkType: "lhd3" }), Lhd3Chunk);
-    expect(pyEq([reread.count, reread.itemSize], [70_000, 0x10000 + 16])).toBe(true);
+    expect(valueEquals([reread.count, reread.itemSize], [70_000, 0x10000 + 16])).toBe(true);
     expect(
-      pyEq(
+      valueEquals(
         bytes_.slice(new Lhd3Chunk({ count: 3, itemSize: 16 }).tobytes(), null, 0x14),
         bytes_.fromhex("00d00bee00000000000000030000000100000010"),
       ),
@@ -1168,7 +1168,7 @@ describe("TestTextOptiChunk", () => {
     // A document with more than 255 layers keeps its count (AE 2026's
     // fixtures store 2 / 8 / 22 / 48 in the low byte, upper bytes 0).
     const data = buildAiLayerOptiData(612, 792, "Layer 300", 300);
-    expect(pyEq(bytes_.slice(data, 0x30, 0x34), bytes_.intToBytes(300, 4, "big"))).toBe(true);
+    expect(valueEquals(bytes_.slice(data, 0x30, 0x34), bytes_.intToBytes(300, 4, "big"))).toBe(true);
     const chunk = asInstance(TextOptiChunk.frombytes(data, { chunkType: "opti" }), TextOptiChunk);
     expect(chunk.textDocumentLayers).toBe(300);
   });
@@ -1180,9 +1180,9 @@ describe("TestSspcChunk", () => {
     // footage_depth.aep's png_g16.png.
     const chunk = new SspcChunk({});
     expect(chunk.depth).toBe(0);
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x3e, 0x45), bytes_.zeros(7))).toBe(true); // solids and placeholders
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x3e, 0x45), bytes_.zeros(7))).toBe(true); // solids and placeholders
     chunk.depth = -16;
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x3e, 0x40), b("\xff\xf0"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x3e, 0x40), b("\xff\xf0"))).toBe(true);
     const reread = asInstance(SspcChunk.frombytes(chunk.tobytes(), { chunkType: "sspc" }), SspcChunk);
     expect(reread.depth).toBe(-16);
   });
@@ -1211,9 +1211,9 @@ describe("TestSspcChunk", () => {
     // AE 2026 caches 14,729,427,240 for a 14.7 GB image sequence.
     const chunk = new SspcChunk({});
     chunk.dataSize = 14_729_427_240;
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0xcc, 0xd4), bytes_.intToBytes(14_729_427_240, 8, "big"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0xcc, 0xd4), bytes_.intToBytes(14_729_427_240, 8, "big"))).toBe(true);
     const reread = asInstance(SspcChunk.frombytes(chunk.tobytes(), { chunkType: "sspc" }), SspcChunk);
-    expect(pyEq(reread.dataSize, 14_729_427_240)).toBe(true); // u8 field unpacks as bigint
+    expect(valueEquals(reread.dataSize, 14_729_427_240)).toBe(true); // u8 field unpacks as bigint
   });
 });
 
@@ -1231,7 +1231,7 @@ describe("TestOptiChunk", () => {
       colorB: 0.0,
       solidName: "Red Solid",
     });
-    expect(pyEq([chunk.colorR, chunk.colorG, chunk.colorB], [1.0, 0.5, 0.0])).toBe(true);
+    expect(valueEquals([chunk.colorR, chunk.colorG, chunk.colorB], [1.0, 0.5, 0.0])).toBe(true);
 
     const buf = new BytesIO();
     chunk.write(buf);
@@ -1269,7 +1269,7 @@ describe("TestOptiChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data.slice())).toBe(true);
+    expect(valueEquals(out.getvalue(), data.slice())).toBe(true);
   });
 
   test("test_placeholder_roundtrip", () => {
@@ -1292,7 +1292,7 @@ describe("TestOptiChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_unknown_fallback", () => {
@@ -1300,7 +1300,7 @@ describe("TestOptiChunk", () => {
     const buf = new BytesIO(data);
     const chunk = OptiChunk.read(buf, data.length, { chunkType: "opti" });
     expect(chunk.constructor).toBe(OptiChunk);
-    expect(pyEq(chunk.data, data)).toBe(true);
+    expect(valueEquals(chunk.data, data)).toBe(true);
   });
 });
 
@@ -1365,7 +1365,7 @@ describe("TestRoptChunk", () => {
     const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunkType: "Ropt" });
     expect(chunk2 instanceof OpenExrRoptChunk).toBe(true);
     expect(chunk2.compression).toBe(3);
-    expect(pyEq(chunk2.thirtyTwoBitFloat, 1)).toBe(true);
+    expect(valueEquals(chunk2.thirtyTwoBitFloat, 1)).toBe(true);
     expect(chunk2.dwaCompressionLevel).toBe(45.0);
   });
 
@@ -1381,7 +1381,7 @@ describe("TestRoptChunk", () => {
     const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunkType: "Ropt" });
     expect(chunk2 instanceof TargaRoptChunk).toBe(true);
     expect(chunk2.bitsPerPixel).toBe(32);
-    expect(pyEq(chunk2.rleCompression, 1)).toBe(true);
+    expect(valueEquals(chunk2.rleCompression, 1)).toBe(true);
   });
 
   test("test_png_roundtrip", () => {
@@ -1407,7 +1407,7 @@ describe("TestRoptChunk", () => {
     const buf = new BytesIO(data);
     const chunk = RoptChunk.read(buf, data.length, { chunkType: "Ropt" });
     expect(chunk.constructor).toBe(RoptChunk);
-    expect(pyEq(chunk.data, data)).toBe(true);
+    expect(valueEquals(chunk.data, data)).toBe(true);
   });
 });
 
@@ -1439,14 +1439,14 @@ describe("TestPardChunk", () => {
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
     expect(chunk instanceof ColorPardChunk).toBe(true);
-    expect(pyEq(chunk.lastColor, [255, 0, 0, 255])).toBe(true);
-    expect(pyEq(chunk.defaultColor, [128, 128, 128, 255])).toBe(true);
+    expect(valueEquals(chunk.lastColor, [255, 0, 0, 255])).toBe(true);
+    expect(valueEquals(chunk.defaultColor, [128, 128, 128, 255])).toBe(true);
     expect(!("max_color" in chunk)).toBe(true);
     expect(chunk.name).toBe("Test");
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_scalar_roundtrip", () => {
@@ -1471,7 +1471,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_integer_roundtrip", () => {
@@ -1486,7 +1486,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_angle_roundtrip", () => {
@@ -1500,7 +1500,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_boolean_roundtrip", () => {
@@ -1514,7 +1514,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_enum_roundtrip", () => {
@@ -1532,7 +1532,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_enum_ae_edge_mode", () => {
@@ -1552,8 +1552,8 @@ describe("TestPardChunk", () => {
     const data = _buildPard(7, body);
     const chunk = asInstance(PardChunk.read(new BytesIO(data), data.length, { chunkType: "pard" }), EnumPardChunk);
     expect(chunk instanceof EnumPardChunk).toBe(true);
-    expect(pyEq([chunk.lastValue, chunk.nbOptions, chunk.default_], [1, 3, 3])).toBe(true);
-    expect(pyEq(chunk.tobytes(), data)).toBe(true);
+    expect(valueEquals([chunk.lastValue, chunk.nbOptions, chunk.default_], [1, 3, 3])).toBe(true);
+    expect(valueEquals(chunk.tobytes(), data)).toBe(true);
   });
 
   test("test_slider_roundtrip", () => {
@@ -1577,7 +1577,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_twod_roundtrip", () => {
@@ -1593,11 +1593,11 @@ describe("TestPardChunk", () => {
     expect(chunk instanceof TwoDPardChunk).toBe(true);
     expect(chunk.lastValueXRaw).toBe(0x4000);
     expect(chunk.lastValueYRaw).toBe(0x6666);
-    expect(pyEq(chunk.default_, [25.0, 40.0])).toBe(true);
+    expect(valueEquals(chunk.default_, [25.0, 40.0])).toBe(true);
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_threed_roundtrip", () => {
@@ -1612,11 +1612,11 @@ describe("TestPardChunk", () => {
     expect(chunk.lastValueXRaw).toBe(0.5);
     expect(chunk.lastValueYRaw).toBe(0.5);
     expect(chunk.lastValueZRaw).toBe(0.0);
-    expect(pyEq(chunk.default_, [50.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(chunk.default_, [50.0, 50.0, 0.0])).toBe(true);
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_raw_name_preserved", () => {
@@ -1637,7 +1637,7 @@ describe("TestPardChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_unknown_control_type_fallback", () => {
@@ -1645,7 +1645,7 @@ describe("TestPardChunk", () => {
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
     expect(chunk.constructor).toBe(PardChunk);
-    expect(pyEq(chunk.data, data)).toBe(true);
+    expect(valueEquals(chunk.data, data)).toBe(true);
   });
 
   test("test_generic_pard_roundtrip", () => {
@@ -1653,11 +1653,11 @@ describe("TestPardChunk", () => {
     for (const ct of [0, 9, 11, 12, 13, 14, 15]) {
       const body = Uint8Array.from({ length: 92 }, (_, i) => i); // non-trivial 92-byte body
       const data = _buildPard(ct, body);
-      pyAssert(data.length === 148, `type ${ct}: expected 148, got ${data.length}`);
+      assert(data.length === 148, `type ${ct}: expected 148, got ${data.length}`);
 
       const buf = new BytesIO(data);
       const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
-      pyAssert(
+      assert(
         chunk instanceof GenericPardChunk,
         `type ${ct}: expected GenericPardChunk, got ${chunk.constructor.name}`,
       );
@@ -1665,7 +1665,7 @@ describe("TestPardChunk", () => {
 
       const out = new BytesIO();
       chunk.write(out);
-      pyAssert(pyEq(out.getvalue(), data), `type ${ct}: round-trip mismatch`);
+      assert(valueEquals(out.getvalue(), data), `type ${ct}: round-trip mismatch`);
     }
   });
 
@@ -1687,7 +1687,7 @@ describe("TestNmhdChunk", () => {
     const data = bytes_.fromhex("0000000400000000000000240000001800000000");
     const chunk = asInstance(NmhdChunk.frombytes(data, { chunkType: "NmHd" }), NmhdChunk);
     expect(chunk.durationSeconds).toBe(1.5);
-    expect(pyEq(chunk.tobytes(), data)).toBe(true);
+    expect(valueEquals(chunk.tobytes(), data)).toBe(true);
   });
 
   test("test_zero_divisor_reads_as_600ths", () => {
@@ -1702,12 +1702,12 @@ describe("TestNmhdChunk", () => {
     const data = bytes_.fromhex("0000000400000000000000240000001800000000");
     const chunk = asInstance(NmhdChunk.frombytes(data, { chunkType: "NmHd" }), NmhdChunk);
     chunk.durationSeconds = 1.25;
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 8, 16), bytes_.fromhex("000002ee00000258"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 8, 16), bytes_.fromhex("000002ee00000258"))).toBe(true);
   });
 
   test("test_new_chunk_divisor", () => {
     // Every marker a script creates in AE 2026 stores divisor 600.
-    expect(pyEq(bytes_.slice(new NmhdChunk({}).tobytes(), 12, 16), bytes_.fromhex("00000258"))).toBe(true);
+    expect(valueEquals(bytes_.slice(new NmhdChunk({}).tobytes(), 12, 16), bytes_.fromhex("00000258"))).toBe(true);
   });
 });
 
@@ -1747,7 +1747,7 @@ describe("TestLhd3Chunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_item_type_dispatch", () => {
@@ -1768,7 +1768,7 @@ describe("TestLhd3Chunk", () => {
     for (const [raw, size, expected] of cases) {
       const data = _buildLhd3(1, size, raw);
       const chunk = asInstance(Lhd3Chunk.frombytes(data, { chunkType: "lhd3" }), Lhd3Chunk);
-      pyAssert(chunk.itemType === expected, `(${raw}, ${size})`);
+      assert(chunk.itemType === expected, `(${raw}, ${size})`);
     }
   });
 
@@ -1782,8 +1782,8 @@ describe("TestLhd3Chunk", () => {
     const trailing = b("\xab\xcd");
     const data = _buildLhd3(2, 64, 4, 1, 2, trailing);
     const chunk = asInstance(Lhd3Chunk.frombytes(data, { chunkType: "lhd3" }), Lhd3Chunk);
-    expect(pyEq(chunk._trailing, trailing)).toBe(true);
-    expect(pyEq(chunk.tobytes(), data)).toBe(true);
+    expect(valueEquals(chunk._trailing, trailing)).toBe(true);
+    expect(valueEquals(chunk.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1797,7 +1797,7 @@ describe("TestShapePoint", () => {
     const sp = ShapePoint.frombytes(data);
     expect(approx(sp.x, 1.5)).toBe(true);
     expect(approx(sp.y, -2.5)).toBe(true);
-    expect(pyEq(sp.tobytes(), data)).toBe(true);
+    expect(valueEquals(sp.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1808,7 +1808,7 @@ describe("TestGuideItem", () => {
     expect(gi.orientationType).toBe(1);
     expect(gi.positionType).toBe(0);
     expect(approx(gi.position, 123.456)).toBe(true);
-    expect(pyEq(gi.tobytes(), data)).toBe(true);
+    expect(valueEquals(gi.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1824,7 +1824,7 @@ describe("TestKfNoValue", () => {
     expect(approx(kf.inInfluence, 33.3)).toBe(true);
     expect(approx(kf.outSpeed, 4.0)).toBe(true);
     expect(approx(kf.outInfluence, 66.6)).toBe(true);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1843,7 +1843,7 @@ describe("TestKfColor", () => {
     expect(approx(kf.outSpeed, 2.0)).toBe(true);
     expect(approx(kf.outInfluence, 66.6)).toBe(true);
     expect(approx(kf.value, [0.5, 0.6, 0.7, 1.0])).toBe(true);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 
   test("test_channels_are_stored_argb", () => {
@@ -1853,7 +1853,7 @@ describe("TestKfColor", () => {
     vals = [...vals, ...Array.from({ length: 8 }, () => 0.0)];
     const data = struct.pack(">Qd" + "d".repeat(16), ...vals);
     const kf = KfColor.frombytes(data);
-    expect(pyEq([kf.a, kf.r, kf.g, kf.b], [255.0, 0.0, 0.0, 255.0])).toBe(true);
+    expect(valueEquals([kf.a, kf.r, kf.g, kf.b], [255.0, 0.0, 0.0, 255.0])).toBe(true);
   });
 });
 
@@ -1871,7 +1871,7 @@ describe("TestKfMultiDimensional", () => {
     expect(approx(kf.inInfluence, [33.3])).toBe(true);
     expect(approx(kf.outSpeed, [2.0])).toBe(true);
     expect(approx(kf.outInfluence, [66.6])).toBe(true);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 
   test("test_3d_roundtrip", () => {
@@ -1881,7 +1881,7 @@ describe("TestKfMultiDimensional", () => {
     const kf = KfMultiDimensional.frombytes(data, { numValue: 3 });
     expect(kf.value.length).toBe(3);
     expect(kf.inSpeed.length).toBe(3);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1900,14 +1900,14 @@ describe("TestKfPosition", () => {
     const data = bytes_.concat(prefix, struct.pack(">" + "d".repeat(11), ...doubles));
 
     const kf = KfPosition.frombytes(data, { numValue: 2 });
-    expect(pyBool(kf.spatialAutoBezier)).toBe(true);
-    expect(pyBool(kf.spatialContinuous)).toBe(true);
+    expect(truthy(kf.spatialAutoBezier)).toBe(true);
+    expect(truthy(kf.spatialContinuous)).toBe(true);
     expect(approx(kf.inSpeed, 1.0)).toBe(true);
     expect(approx(kf.inInfluence, 33.3)).toBe(true);
     expect(approx(kf.value, [10.0, 20.0])).toBe(true);
     expect(approx(kf.inSpatialTangents, [0.1, 0.2])).toBe(true);
     expect(approx(kf.outSpatialTangents, [-0.1, -0.2])).toBe(true);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 
   test("test_3d_roundtrip", () => {
@@ -1919,7 +1919,7 @@ describe("TestKfPosition", () => {
     expect(kf.value.length).toBe(3);
     expect(kf.inSpatialTangents.length).toBe(3);
     expect(kf.outSpatialTangents.length).toBe(3);
-    expect(pyEq(kf.tobytes(), data)).toBe(true);
+    expect(valueEquals(kf.tobytes(), data)).toBe(true);
   });
 });
 
@@ -1956,7 +1956,7 @@ describe("TestLdatItem", () => {
     expect(item.inInterpolationType).toBe(2);
     expect(item.outInterpolationType).toBe(1);
     expect(approx(asInstance(item.kfData, KfMultiDimensional).value, [50.0])).toBe(true);
-    expect(pyEq(item.tobytes(), data)).toBe(true);
+    expect(valueEquals(item.tobytes(), data)).toBe(true);
   });
 
   test("test_color_roundtrip", () => {
@@ -1967,7 +1967,7 @@ describe("TestLdatItem", () => {
 
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.color });
     expect(approx(asInstance(item.kfData, KfColor).value, [0.5, 0.6, 0.7, 1.0])).toBe(true);
-    expect(pyEq(item.tobytes(), data)).toBe(true);
+    expect(valueEquals(item.tobytes(), data)).toBe(true);
   });
 
   test("test_temporal_flags", () => {
@@ -1977,10 +1977,10 @@ describe("TestLdatItem", () => {
     const data = bytes_.concat(_buildItem(LdatItemType.no_value, 0, 2, 2, 0, flags), payload);
 
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
-    expect(pyBool(item.roving)).toBe(true);
-    expect(pyBool(item.temporalAutoBezier)).toBe(true);
-    expect(!pyBool(item.temporalContinuous)).toBe(true);
-    expect(pyEq(item.tobytes(), data)).toBe(true);
+    expect(truthy(item.roving)).toBe(true);
+    expect(truthy(item.temporalAutoBezier)).toBe(true);
+    expect(!truthy(item.temporalContinuous)).toBe(true);
+    expect(valueEquals(item.tobytes(), data)).toBe(true);
   });
 
   test("test_label_is_bits_6_to_10_of_key_flags", () => {
@@ -1996,7 +1996,7 @@ describe("TestLdatItem", () => {
       const data = bytes_.concat(struct.pack(">iBB", 0, 2, 2), raw, payload);
       const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
       expect(item.label).toBe(label);
-      expect(pyEq(item.tobytes(), data)).toBe(true);
+      expect(valueEquals(item.tobytes(), data)).toBe(true);
     }
   });
 
@@ -2007,22 +2007,22 @@ describe("TestLdatItem", () => {
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
 
     item.label = 16;
-    expect(pyEq(bytes_.slice(item.tobytes(), 6, 8), b("\x04\x3f"))).toBe(true);
+    expect(valueEquals(bytes_.slice(item.tobytes(), 6, 8), b("\x04\x3f"))).toBe(true);
     item.label = 5;
-    expect(pyEq(bytes_.slice(item.tobytes(), 6, 8), b("\x01\x7f"))).toBe(true);
-    expect(pyBool(item.roving)).toBe(true);
-    expect(pyBool(item.temporalAutoBezier)).toBe(true);
-    expect(pyBool(item.temporalContinuous)).toBe(true);
+    expect(valueEquals(bytes_.slice(item.tobytes(), 6, 8), b("\x01\x7f"))).toBe(true);
+    expect(truthy(item.roving)).toBe(true);
+    expect(truthy(item.temporalAutoBezier)).toBe(true);
+    expect(truthy(item.temporalContinuous)).toBe(true);
     item.label = 0;
-    expect(pyEq(item.tobytes(), data)).toBe(true);
+    expect(valueEquals(item.tobytes(), data)).toBe(true);
   });
 
   test("test_marker_raw_bytes", () => {
     const payload = b("\x01\x02\x03\x04\x05\x06\x07\x08");
     const data = bytes_.concat(_buildItem(LdatItemType.marker), payload);
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.marker });
-    expect(pyEq(item.kfData, payload)).toBe(true);
-    expect(pyEq(item.tobytes(), data)).toBe(true);
+    expect(valueEquals(item.kfData, payload)).toBe(true);
+    expect(valueEquals(item.tobytes(), data)).toBe(true);
   });
 });
 
@@ -2050,7 +2050,7 @@ describe("TestLdatChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), itemsData)).toBe(true);
+    expect(valueEquals(out.getvalue(), itemsData)).toBe(true);
   });
 
   test("test_guide_roundtrip", () => {
@@ -2069,7 +2069,7 @@ describe("TestLdatChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), itemsData)).toBe(true);
+    expect(valueEquals(out.getvalue(), itemsData)).toBe(true);
   });
 
   test("test_1d_keyframe_roundtrip", () => {
@@ -2098,7 +2098,7 @@ describe("TestLdatChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), itemData)).toBe(true);
+    expect(valueEquals(out.getvalue(), itemData)).toBe(true);
   });
 
   test("test_empty_fallback", () => {
@@ -2110,12 +2110,12 @@ describe("TestLdatChunk", () => {
       itemSize: 0,
       count: 0,
     });
-    expect(pyEq(chunk.items, [])).toBe(true);
-    expect(pyEq(chunk.data, data)).toBe(true);
+    expect(valueEquals(chunk.items, [])).toBe(true);
+    expect(valueEquals(chunk.data, data)).toBe(true);
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), data)).toBe(true);
+    expect(valueEquals(out.getvalue(), data)).toBe(true);
   });
 
   test("test_spatial_promotion", () => {
@@ -2140,7 +2140,7 @@ describe("TestLdatChunk", () => {
 
     const out = new BytesIO();
     chunk.write(out);
-    expect(pyEq(out.getvalue(), itemData)).toBe(true);
+    expect(valueEquals(out.getvalue(), itemData)).toBe(true);
   });
 });
 
@@ -2241,7 +2241,7 @@ describe("TestSyntheticFlag", () => {
 describe("TestPropertyChunkDefaults", () => {
   test("test_tdsb_enabled_by_default", () => {
     const tdsb = new TdsbChunk({});
-    expect(pyEq(tdsb.enabled, 1)).toBe(true);
+    expect(valueEquals(tdsb.enabled, 1)).toBe(true);
   });
 
   test("test_tdb4_dimensions_default_one", () => {
@@ -2251,28 +2251,28 @@ describe("TestPropertyChunkDefaults", () => {
 
   test("test_tdb4_static_default_true", () => {
     const tdb4 = new Tdb4Chunk({});
-    expect(pyEq(tdb4.static, 1)).toBe(true);
+    expect(valueEquals(tdb4.static, 1)).toBe(true);
   });
 
   test("test_tdb4_expression_disabled_default_false", () => {
     const tdb4 = new Tdb4Chunk({});
-    expect(pyEq(tdb4.expressionDisabled, 0)).toBe(true);
+    expect(valueEquals(tdb4.expressionDisabled, 0)).toBe(true);
   });
 
   test("test_tdb4_bare_constructor_roundtrips", () => {
     const tdb4 = new Tdb4Chunk({});
     const raw = tdb4.tobytes();
     const restored = asInstance(Tdb4Chunk.frombytes(raw, { chunkType: "tdb4" }), Tdb4Chunk);
-    expect(pyEq(restored.dimensions, tdb4.dimensions)).toBe(true);
-    expect(pyEq(restored.static, tdb4.static)).toBe(true);
-    expect(pyEq(restored.expressionDisabled, tdb4.expressionDisabled)).toBe(true);
+    expect(valueEquals(restored.dimensions, tdb4.dimensions)).toBe(true);
+    expect(valueEquals(restored.static, tdb4.static)).toBe(true);
+    expect(valueEquals(restored.expressionDisabled, tdb4.expressionDisabled)).toBe(true);
   });
 
   test("test_tdsb_bare_constructor_roundtrips", () => {
     const tdsb = new TdsbChunk({});
     const raw = tdsb.tobytes();
     const restored = asInstance(TdsbChunk.frombytes(raw, { chunkType: "tdsb" }), TdsbChunk);
-    expect(pyEq(restored.enabled, tdsb.enabled)).toBe(true);
+    expect(valueEquals(restored.enabled, tdsb.enabled)).toBe(true);
   });
 });
 

@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { getitem, int, intEnum, type EnumValue } from "../../pyrt/index.ts";
+import { getOrThrow, int, intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Auto kerning type option for text characters.
@@ -308,7 +308,7 @@ export const LineOrientation = intEnum(
     },
     /** Convert LineOrientation to COS value. */
     toBinary(self: number): number {
-      return getitem(_LINE_ORIENTATION_TO_BINARY, self);
+      return getOrThrow(_LINE_ORIENTATION_TO_BINARY, self);
     },
   },
 );

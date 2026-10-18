@@ -19,7 +19,7 @@ import {
   descriptor,
   floatRepr,
   format,
-  getitem,
+  getOrThrow,
   int,
   max,
   repr,
@@ -771,7 +771,7 @@ export class RenderQueueItem {
    * @param format_ - The output format.
    */
   getSetting(key: string, format_: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
-    return getitem(this.getSettings(format_), key);
+    return getOrThrow(this.getSettings(format_), key);
   }
 
   /**

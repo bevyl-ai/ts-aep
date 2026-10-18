@@ -1,6 +1,6 @@
 // Port of py_aep/models/layers/text_layer.py
 
-import { getitem } from "../../../pyrt/index.ts";
+import { getOrThrow } from "../../../pyrt/index.ts";
 import { ListChunk } from "../../binary/chunk.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { LayerType } from "../../enums/index.ts";
@@ -81,7 +81,7 @@ export class TextLayer extends AVLayer {
     });
     layer._ldta.layerType = LayerType.TEXT;
     // The base factory named the layer from the AV type it started with.
-    layer._matchName = getitem(
+    layer._matchName = getOrThrow(
       layer.constructor._LAYER_MATCH_NAMES,
       LayerType.TEXT,
     );

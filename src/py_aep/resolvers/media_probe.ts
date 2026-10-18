@@ -26,13 +26,13 @@ import {
   decode,
   float,
   floordiv,
-  getitem,
+  getOrThrow,
   int,
   max,
   min,
   mod,
-  pyBool,
-  pyEq,
+  truthy,
+  valueEquals,
   repr,
   round,
   rshift,
@@ -178,7 +178,7 @@ export class MediaInfo implements MediaInfoFields {
 
   /** Tuple equality: field-wise, in declaration order. */
   equals(other: unknown): boolean {
-    return other instanceof MediaInfo && pyEq([...this], [...other]);
+    return other instanceof MediaInfo && valueEquals([...this], [...other]);
   }
 
   /** NamedTuple unpacking: the fields in declaration order. */
@@ -549,7 +549,7 @@ export function _probeExr(fp: ProbeStream): MediaInfo {
     hasAlpha: hasAlpha,
     pixelAspect: first.pixelAspect ?? 1.0,
     frameRate: first.frameRate ?? 0.0,
-    depth: luminanceOnly ? getitem(_GRAY_DEPTHS, 32) : _colorDepth(hasAlpha, 32),
+    depth: luminanceOnly ? getOrThrow(_GRAY_DEPTHS, 32) : _colorDepth(hasAlpha, 32),
     compression: first.compression ?? 0,
     channelNames: channelNames,
   });
@@ -899,7 +899,7 @@ export function _probeJpeg(fp: ProbeStream): MediaInfo {
     }
     fp.seek(length - 2, SEEK_CUR);
   }
-  const iccBytes = bytes_.join(sorted([...iccChunks.keys()]).map((key) => getitem(iccChunks, key)));
+  const iccBytes = bytes_.join(sorted([...iccChunks.keys()]).map((key) => getOrThrow(iccChunks, key)));
   const iccProfile = iccBytes.length > 0 ? iccBytes : null;
   return new MediaInfo({
     width,
@@ -1836,7 +1836,7 @@ export function _probeMgjson(fp: ProbeStream): MediaInfo {
   for (const stream of _jsonIter(jsonGet(doc, "dataDynamicSamples", []))) {
     for (const sample of _jsonIter(jsonGet(stream, "samples", []))) {
       const t = jsonGet(sample, "time", null);
-      if (pyBool(t)) {
+      if (truthy(t)) {
         const parsed = _parseMgjsonTime(t);
         if (parsed !== null) times.push(parsed);
       }
@@ -1895,7 +1895,7 @@ export function _mp3FrameSize(header: number): number {
   if (version === 1 || layer !== 1 || bitrateI === 0 || bitrateI === 0xf || srI === 3) return 0;
   const bitrate = (version === 3 ? _MP3_BR_M1_L3 : _MP3_BR_M2_L3)[bitrateI] * 1000;
   const spf = version === 3 ? 1152 : 576;
-  return floordiv((spf / 8) * bitrate, getitem(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
+  return floordiv((spf / 8) * bitrate, getOrThrow(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
 }
 
 /**

@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
-import { Path, at, b, getitem, min, pyAssert, pyEq, sorted, zip } from "../../src/pyrt/index.ts";
+import { Path, at, b, getOrThrow, min, assert, valueEquals, sorted, zip } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { GradientPaint, type GradientStop, SolidPaint, SvgDocument, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
 import { parseColor } from "../../src/py_aep/svg/colors.ts";
@@ -22,17 +22,17 @@ function _approx(a: Iterable<number>, b: Iterable<number>, tol = 1e-6): boolean 
 describe("TestTransform", () => {
   test("test_translate", () => {
     const t = parseTransform("translate(10, 20)");
-    expect(pyEq(t.apply(1.0, 2.0), [11.0, 22.0])).toBe(true);
+    expect(valueEquals(t.apply(1.0, 2.0), [11.0, 22.0])).toBe(true);
   });
 
   test("test_scale_single_arg_uniform", () => {
     const t = parseTransform("scale(3)");
-    expect(pyEq(t.apply(2.0, 4.0), [6.0, 12.0])).toBe(true);
+    expect(valueEquals(t.apply(2.0, 4.0), [6.0, 12.0])).toBe(true);
   });
 
   test("test_matrix", () => {
     const t = parseTransform("matrix(1,0,0,1,530,-84)");
-    expect(pyEq(t.apply(480.5, 316.5), [1010.5, 232.5])).toBe(true);
+    expect(valueEquals(t.apply(480.5, 316.5), [1010.5, 232.5])).toBe(true);
   });
 
   test("test_rotate_90", () => {
@@ -49,7 +49,7 @@ describe("TestTransform", () => {
   test("test_compose_left_applies_last", () => {
     // translate then scale: scale applies first to the point.
     const t = parseTransform("translate(10,0) scale(2)");
-    expect(pyEq(t.apply(3.0, 0.0), [16.0, 0.0])).toBe(true);
+    expect(valueEquals(t.apply(3.0, 0.0), [16.0, 0.0])).toBe(true);
   });
 
   test("test_mean_scale", () => {
@@ -75,21 +75,21 @@ describe("TestPathData", () => {
   test("test_horizontal_vertical", () => {
     const subs = parsePath("M0,0 H10 V10");
     const [seg0, seg1] = subs[0].segments;
-    expect(pyEq([seg0[6], seg0[7]], [10.0, 0.0])).toBe(true);
-    expect(pyEq([seg1[6], seg1[7]], [10.0, 10.0])).toBe(true);
+    expect(valueEquals([seg0[6], seg0[7]], [10.0, 0.0])).toBe(true);
+    expect(valueEquals([seg1[6], seg1[7]], [10.0, 10.0])).toBe(true);
   });
 
   test("test_cubic", () => {
     const subs = parsePath("M0,0 C1,2 3,4 5,6");
     const seg = subs[0].segments[0];
-    expect(pyEq(seg, [0, 0, 1, 2, 3, 4, 5, 6])).toBe(true);
+    expect(valueEquals(seg, [0, 0, 1, 2, 3, 4, 5, 6])).toBe(true);
   });
 
   test("test_smooth_cubic_reflects_control", () => {
     const subs = parsePath("M0,0 C1,1 2,2 3,3 S5,5 6,6");
     const s2 = subs[0].segments[1];
     // Reflected control of (2,2) about (3,3) is (4,4).
-    expect(pyEq([s2[2], s2[3]], [4.0, 4.0])).toBe(true);
+    expect(valueEquals([s2[2], s2[3]], [4.0, 4.0])).toBe(true);
   });
 
   test("test_quadratic_elevated_to_cubic", () => {
@@ -102,8 +102,8 @@ describe("TestPathData", () => {
   test("test_relative_commands", () => {
     const subs = parsePath("m10,10 l5,0 l0,5");
     const [seg0, seg1] = subs[0].segments;
-    expect(pyEq([seg0[6], seg0[7]], [15.0, 10.0])).toBe(true);
-    expect(pyEq([seg1[6], seg1[7]], [15.0, 15.0])).toBe(true);
+    expect(valueEquals([seg0[6], seg0[7]], [15.0, 10.0])).toBe(true);
+    expect(valueEquals([seg1[6], seg1[7]], [15.0, 15.0])).toBe(true);
   });
 
   test("test_multiple_subpaths", () => {
@@ -130,15 +130,15 @@ describe("TestPathData", () => {
     const spaced = parsePath("M10,0 A10,10 0 1 1 0,10");
     const compact = parsePath("M10,0 A10,10 0 11 0,10");
     const fused = parsePath("M10,0 A10,10 0 110,10");
-    expect(pyEq(compact[0].segments, spaced[0].segments)).toBe(true);
-    expect(pyEq(fused[0].segments, spaced[0].segments)).toBe(true);
+    expect(valueEquals(compact[0].segments, spaced[0].segments)).toBe(true);
+    expect(valueEquals(fused[0].segments, spaced[0].segments)).toBe(true);
   });
 
   test("test_arc_compacted_zero_flags", () => {
     // "00" must split into two 0/0 flags, not the number 0.
     const spaced = parsePath("M10,0 A10,10 0 0 0 0,10");
     const compact = parsePath("M10,0 A10,10 0 00 0,10");
-    expect(pyEq(compact[0].segments, spaced[0].segments)).toBe(true);
+    expect(valueEquals(compact[0].segments, spaced[0].segments)).toBe(true);
   });
 });
 
@@ -151,8 +151,8 @@ describe("TestShapes", () => {
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
-    expect(pyEq(sp.vertices, [[0, 0], [4, 0], [4, 2], [0, 2]])).toBe(true);
-    expect(sp.outTangents.every((t) => pyEq(t, [0.0, 0.0]))).toBe(true);
+    expect(valueEquals(sp.vertices, [[0, 0], [4, 0], [4, 2], [0, 2]])).toBe(true);
+    expect(sp.outTangents.every((t) => valueEquals(t, [0.0, 0.0]))).toBe(true);
   });
 
   test("test_rect_rounded_has_bezier_corners", () => {
@@ -163,7 +163,7 @@ describe("TestShapes", () => {
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.vertices.length).toBe(8);
-    expect(sp.inTangents.some((t) => !pyEq(t, [0.0, 0.0]))).toBe(true);
+    expect(sp.inTangents.some((t) => !valueEquals(t, [0.0, 0.0]))).toBe(true);
   });
 
   test("test_ellipse_four_vertices", () => {
@@ -187,7 +187,7 @@ describe("TestShapes", () => {
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
-    expect(pyEq(sp.vertices, [[0, 0], [10, 0], [5, 8]])).toBe(true);
+    expect(valueEquals(sp.vertices, [[0, 0], [10, 0], [5, 8]])).toBe(true);
   });
 
   test("test_polyline_open", () => {
@@ -205,36 +205,36 @@ describe("TestShapes", () => {
     const raws = elementSubpaths("rect", new Map([["width", "2"], ["height", "2"]]));
     const sp = cubicsToSubpath(raws[0], parseTransform("translate(100,50)"));
     if (sp == null) throw new Error("no subpath");
-    expect(pyEq(sp.vertices[0], [100.0, 50.0])).toBe(true);
+    expect(valueEquals(sp.vertices[0], [100.0, 50.0])).toBe(true);
   });
 });
 
 describe("TestColors", () => {
   test("test_hex6", () => {
     const color = parseColor("#ffa619");
-    pyAssert(color != null);
+    assert(color != null);
     expect(_approx(color, [1.0, 166 / 255, 25 / 255, 1.0])).toBe(true);
   });
 
   test("test_hex3_expands", () => {
-    expect(pyEq(parseColor("#fff"), [1.0, 1.0, 1.0, 1.0])).toBe(true);
+    expect(valueEquals(parseColor("#fff"), [1.0, 1.0, 1.0, 1.0])).toBe(true);
   });
 
   test("test_rgb", () => {
-    expect(pyEq(parseColor("rgb(255,0,0)"), [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(valueEquals(parseColor("rgb(255,0,0)"), [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_rgba_alpha", () => {
-    expect(pyEq(parseColor("rgba(0,0,0,0.5)"), [0.0, 0.0, 0.0, 0.5])).toBe(true);
+    expect(valueEquals(parseColor("rgba(0,0,0,0.5)"), [0.0, 0.0, 0.0, 0.5])).toBe(true);
   });
 
   test("test_named", () => {
-    expect(pyEq(parseColor("red"), [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(valueEquals(parseColor("red"), [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_hsl_red", () => {
     const color = parseColor("hsl(0,100%,50%)");
-    pyAssert(color != null);
+    assert(color != null);
     expect(_approx(color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
@@ -244,7 +244,7 @@ describe("TestColors", () => {
 
   test("test_currentcolor", () => {
     expect(
-      pyEq(parseColor("currentColor", [0.1, 0.2, 0.3, 1.0]), [0.1, 0.2, 0.3, 1.0]),
+      valueEquals(parseColor("currentColor", [0.1, 0.2, 0.3, 1.0]), [0.1, 0.2, 0.3, 1.0]),
     ).toBe(true);
   });
 });
@@ -253,13 +253,13 @@ describe("TestStyle", () => {
   test("test_inheritance_of_fill", () => {
     const parent = resolveProperties(new Map(), "svg", new Map([["fill", "none"]]), []);
     const child = resolveProperties(parent, "path", new Map(), []);
-    expect(getitem(child, "fill")).toBe("none");
+    expect(getOrThrow(child, "fill")).toBe("none");
   });
 
   test("test_child_overrides_parent", () => {
     const parent = resolveProperties(new Map(), "g", new Map([["fill", "red"]]), []);
     const child = resolveProperties(parent, "path", new Map([["fill", "blue"]]), []);
-    expect(getitem(child, "fill")).toBe("blue");
+    expect(getOrThrow(child, "fill")).toBe("blue");
   });
 
   test("test_opacity_not_inherited", () => {
@@ -276,7 +276,7 @@ describe("TestStyle", () => {
       new Map([["class", "hi"], ["fill", "red"]]),
       rules,
     );
-    expect(getitem(style, "fill")).toBe("green");
+    expect(getOrThrow(style, "fill")).toBe("green");
   });
 
   test("test_inline_style_strongest", () => {
@@ -287,7 +287,7 @@ describe("TestStyle", () => {
       new Map([["style", "fill:purple"], ["fill", "red"]]),
       rules,
     );
-    expect(getitem(style, "fill")).toBe("purple");
+    expect(getOrThrow(style, "fill")).toBe("purple");
   });
 
   test("test_id_specificity_beats_class", () => {
@@ -298,14 +298,14 @@ describe("TestStyle", () => {
       new Map([["id", "a"], ["class", "c"]]),
       rules,
     );
-    expect(getitem(style, "fill")).toBe("orange");
+    expect(getOrThrow(style, "fill")).toBe("orange");
   });
 });
 
 describe("TestReadSvgSample", () => {
   test("test_canvas_from_viewbox", () => {
     const doc = readSvg(SAMPLE);
-    expect(pyEq([doc.width, doc.height], [1070.0, 456.0])).toBe(true);
+    expect(valueEquals([doc.width, doc.height], [1070.0, 456.0])).toBe(true);
   });
 
   test("test_drawable_count_matches_ae", () => {
@@ -346,10 +346,10 @@ describe("TestReadSvgSample", () => {
       'fill-opacity="0.5" stroke="#00f" stroke-width="1" ' +
       'stroke-opacity="25%"/></svg>';
     const drawable = readSvg(svg).drawables[0];
-    pyAssert(drawable.fill instanceof SolidPaint);
+    assert(drawable.fill instanceof SolidPaint);
     expect(approx(drawable.fill.color[3], 0.4)).toBe(true);
     if (drawable.stroke == null) throw new Error("drawable has no stroke");
-    pyAssert(drawable.stroke.paint instanceof SolidPaint);
+    assert(drawable.stroke.paint instanceof SolidPaint);
     expect(approx(drawable.stroke.paint.color[3], 0.25)).toBe(true);
     expect(drawable.opacity).toBe(1.0);
   });
@@ -373,14 +373,14 @@ describe("TestReadSvgSample", () => {
       "</linearGradient>" +
       '<rect width="4" height="4" fill="url(#g)" fill-opacity="0.5"/></svg>';
     const fill = readSvg(svg).drawables[0].fill;
-    pyAssert(fill instanceof GradientPaint);
+    assert(fill instanceof GradientPaint);
     expect(approx(fill.stops.map((s: GradientStop) => s.color[3]), [0.5, 0.25])).toBe(true);
   });
 
   test("test_first_drawable_geometry_absolute", () => {
     const doc = readSvg(SAMPLE);
     // Tail Shape 1, group matrix(1,0,0,1,530,-84), path M480.5,316.5.
-    expect(pyEq(doc.drawables[0].subpaths[0].vertices[0], [1010.5, 232.5])).toBe(true);
+    expect(valueEquals(doc.drawables[0].subpaths[0].vertices[0], [1010.5, 232.5])).toBe(true);
   });
 
   test("test_stroke_only_paths_have_no_fill", () => {
@@ -406,7 +406,7 @@ describe("TestReadSvgFeatures", () => {
         </svg>`;
     const doc = readSvg(svg);
     expect(doc.drawables.length).toBe(1);
-    expect(pyEq(doc.drawables[0].subpaths[0].vertices[0], [5.0, 5.0])).toBe(true);
+    expect(valueEquals(doc.drawables[0].subpaths[0].vertices[0], [5.0, 5.0])).toBe(true);
   });
 
   test("test_gradient_fill_resolved", () => {
@@ -422,7 +422,7 @@ describe("TestReadSvgFeatures", () => {
         </svg>`;
     const doc = readSvg(svg);
     const paint = doc.drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
+    assert(paint instanceof GradientPaint);
     expect(paint.kind).toBe("linear");
     expect(paint.stops.length).toBe(2);
     expect(_approx(paint.start, [0.0, 0.0])).toBe(true);
@@ -440,7 +440,7 @@ describe("TestReadSvgFeatures", () => {
           <rect width="100" height="100" fill="url(#g)"/>
         </svg>`;
     const paint = readSvg(svg).drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
+    assert(paint instanceof GradientPaint);
     expect(at(paint.stops, -1).offset).toBe(1.0);
   });
 
@@ -456,7 +456,7 @@ describe("TestReadSvgFeatures", () => {
           <circle cx="50" cy="50" r="40" fill="url(#g)"/>
         </svg>`;
     const paint = readSvg(svg).drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
+    assert(paint instanceof GradientPaint);
     expect(_approx(paint.start, [50.0, 50.0])).toBe(true);
     expect(_approx(paint.end, [90.0, 50.0])).toBe(true);
   });
@@ -476,7 +476,7 @@ describe("TestReadSvgFeatures", () => {
           <circle cx="50" cy="50" r="20" fill="url(#g)"/>
         </svg>`;
     const paint = readSvg(svg).drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
+    assert(paint instanceof GradientPaint);
     // Centre stays put and the x-radius (start/end) is unchanged...
     expect(_approx(paint.start, [50.0, 50.0])).toBe(true);
     expect(_approx(paint.end, [70.0, 50.0])).toBe(true);
@@ -497,7 +497,7 @@ describe("TestReadSvgFeatures", () => {
           <circle cx="50" cy="50" r="20" fill="url(#g)"/>
         </svg>`;
     const paint = readSvg(svg).drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
+    assert(paint instanceof GradientPaint);
     expect(_approx(paint.scale, [100.0, 100.0], 1e-4)).toBe(true);
     expect(approx(paint.rotation, 360.0)).toBe(true);
   });
@@ -512,8 +512,8 @@ describe("TestReadSvgFeatures", () => {
           <rect width="100" height="100" fill="url(#g)"/>
         </svg>`;
     const paint = readSvg(svg).drawables[0].fill;
-    pyAssert(paint instanceof GradientPaint);
-    expect(pyEq(paint.scale, [100.0, 100.0])).toBe(true);
+    assert(paint instanceof GradientPaint);
+    expect(valueEquals(paint.scale, [100.0, 100.0])).toBe(true);
     expect(paint.rotation === 0.0).toBe(true);
   });
 
@@ -545,8 +545,8 @@ describe("TestReadSvgFeatures", () => {
           </g>
         </svg>`;
     const doc = readSvg(svg);
-    expect(pyEq(doc.drawables[0].subpaths[0].vertices[0], [10.0, 10.0])).toBe(true);
-    expect(pyEq(doc.drawables[0].subpaths[0].vertices[2], [12.0, 12.0])).toBe(true);
+    expect(valueEquals(doc.drawables[0].subpaths[0].vertices[0], [10.0, 10.0])).toBe(true);
+    expect(valueEquals(doc.drawables[0].subpaths[0].vertices[2], [12.0, 12.0])).toBe(true);
   });
 
   test("test_non_svg_root_raises", () => {

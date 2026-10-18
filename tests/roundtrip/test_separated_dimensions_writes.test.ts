@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, enumerate, Path, pyAssert, pyBool, pyEq, range, sorted, ValueError, zip } from "../../src/pyrt/index.ts";
+import { at, enumerate, Path, assert, truthy, valueEquals, range, sorted, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
@@ -50,7 +50,7 @@ describe("TestSeparate", () => {
     const out = tmpPath.div("separated.aep");
     project.save(out);
 
-    expect(pyEq(_state(parseAep(out).project.compositions[0]), expected)).toBe(true);
+    expect(valueEquals(_state(parseAep(out).project.compositions[0]), expected)).toBe(true);
   });
 
   test("test_followers_take_the_leader_components", () => {
@@ -175,7 +175,7 @@ describe("TestGuards", () => {
     const followers = Array.from(range(3), (dim) => asInstance(position.getSeparationFollower(dim), Property));
     const xTimes = followers[0].keyframes.map((k) => k.time);
     const yTimes = followers[1].keyframes.map((k) => k.time);
-    expect(pyEq(xTimes, yTimes)).toBe(false);
+    expect(valueEquals(xTimes, yTimes)).toBe(false);
     const expectedTimes = sorted([...new Set([...xTimes, ...yTimes])]);
     const expected = expectedTimes.map((time) =>
       followers.map((follower) => follower.valueAtTime(time)),
@@ -224,7 +224,7 @@ describe("TestAnimatedSeparation", () => {
   function _authoredLeader(): Property {
     const project = parseProjectFresh(SAMPLES_DIR.div("effect_point_speed.aep"));
     const position = _position(project.compositions[0]);
-    while (pyBool(position.keyframes)) {
+    while (truthy(position.keyframes)) {
       position.removeKey(0);
     }
     for (const [time, value] of zip(TIMES, VALUES)) {
@@ -270,7 +270,7 @@ describe("TestAnimatedSeparation", () => {
 
     position.dimensionsSeparated = true;
 
-    expect(pyEq(position.keyframes, [])).toBe(true);
+    expect(valueEquals(position.keyframes, [])).toBe(true);
     for (const dimension of range(2)) {
       const follower = asInstance(position.getSeparationFollower(dimension), Property);
       expect(follower.keyframes.length).toBe(TIMES.length);
@@ -339,7 +339,7 @@ describe("TestLeaderIsNotWritable", () => {
     raises(ValueError, () => {
       _position(comp).value = [11.0, 22.0, 0.0];
     });
-    expect(pyEq(_state(comp), before)).toBe(true);
+    expect(valueEquals(_state(comp), before)).toBe(true);
   });
 
   test("test_unseparated_leader_is_still_writable", () => {
@@ -385,7 +385,7 @@ describe("TestSeparatedCompensation", () => {
     const parked = position._readCdatRaw();
 
     const followers = position._separationFollowers();
-    pyAssert(followers != null);
+    assert(followers != null);
     position._setSeparatedValue([11.0, 22.0, 0.0], followers);
 
     expect(approx(position.value, [11.0, 22.0, 0.0])).toBe(true);
@@ -403,7 +403,7 @@ describe("TestSeparatedCompensation", () => {
     expect(asInstance(position.getSeparationFollower(2), Property)._isLive()).toBe(false);
 
     const followers = position._separationFollowers();
-    pyAssert(followers != null);
+    assert(followers != null);
     position._setSeparatedValue([11.0, 22.0, 0.0], followers);
 
     expect(asInstance(position.getSeparationFollower(2), Property)._isLive()).toBe(false);

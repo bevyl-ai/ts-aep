@@ -21,7 +21,7 @@ import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
-import { getitem, Path, pyAssert, pyEq, sorted, StopIteration } from "../../src/pyrt/index.ts";
+import { getOrThrow, Path, assert, valueEquals, sorted, StopIteration } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / "samples"`: `import.meta.dir` is already
@@ -50,7 +50,7 @@ const _FILES = new Map<string, Path>([
 ]);
 
 function _shape(source: FootageSource): string[] {
-  pyAssert(source._clrs != null);
+  assert(source._clrs != null);
   return source._clrs.chunks.map((chunk) => chunk.chunkType);
 }
 
@@ -70,12 +70,12 @@ test.each(importRows)("test_import_writes_the_versions_color_records[%#]", (year
       (item) => [item.name, item.mainSource] as const,
     ),
   );
-  const project = py_aep.newProject(getitem(_VERSIONS, year), { platform: "windows" }).project;
-  const item = project.importFile(new ImportOptions(getitem(_FILES, label)));
+  const project = py_aep.newProject(getOrThrow(_VERSIONS, year), { platform: "windows" }).project;
+  const item = project.importFile(new ImportOptions(getOrThrow(_FILES, label)));
   const out = tmpPath.div("clrs.aep");
   project.save(out);
-  const ours = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource;
-  expect(pyEq(_shape(ours), _shape(getitem(ae, label)))).toBe(true);
+  const ours = asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource;
+  expect(valueEquals(_shape(ours), _shape(getOrThrow(ae, label)))).toBe(true);
 });
 
 test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_records[%#]", (year) => {
@@ -85,14 +85,14 @@ test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_re
     .footages.map((item) => item.mainSource)
     .find((source) => source instanceof SolidSource);
   if (ae === undefined) throw new StopIteration();
-  const project = py_aep.newProject(getitem(_VERSIONS, year), { platform: "windows" }).project;
+  const project = py_aep.newProject(getOrThrow(_VERSIONS, year), { platform: "windows" }).project;
   const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 25.0);
   const solid = comp.addSolid([1.0, 0.0, 0.0]).source;
   if (solid == null) throw new Error("solid layer has no source");
   const out = tmpPath.div("solid.aep");
   project.save(out);
-  const ours = asInstance(getitem(parseAep(out).project.items, solid.id), FootageItem).mainSource;
-  expect(pyEq(_shape(ours), _shape(ae))).toBe(true);
+  const ours = asInstance(getOrThrow(parseAep(out).project.items, solid.id), FootageItem).mainSource;
+  expect(valueEquals(_shape(ours), _shape(ae))).toBe(true);
 });
 
 test("test_parsed_records_are_kept", () => {
@@ -103,5 +103,5 @@ test("test_parsed_records_are_kept", () => {
   const project = parseAep(path).project;
   const out = tmpPath.div("same.aep");
   project.save(out);
-  expect(pyEq(out.readBytes(), path.readBytes())).toBe(true);
+  expect(valueEquals(out.readBytes(), path.readBytes())).toBe(true);
 });

@@ -11,7 +11,7 @@ import { validateBool, validateRgbColor } from "../validators.ts";
 // NOTE(port): property_group.ts reaches this module only through `deferred(...)` (the
 // port of Python's in-method import), so `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
-import { AttributeError, deferred, descriptor, mod, pyAssert, instanceDict } from "../../../pyrt/index.ts";
+import { AttributeError, deferred, descriptor, mod, assert, instanceDict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
@@ -210,7 +210,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     const _tdgp = new ListChunk({ listType: "tdgp", chunks: [_tdsb, tdsn, groupEnd] });
 
     const parentTdgp = parentProperty._tdgp;
-    pyAssert(parentTdgp != null);
+    assert(parentTdgp != null);
     _insertBeforeGroupEnd(parentTdgp, _tdmn);
     _insertBeforeGroupEnd(parentTdgp, _mkif);
     _insertBeforeGroupEnd(parentTdgp, _tdgp);
@@ -287,7 +287,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     const { rotoBezier = false } = kw;
     this._ensureMaterialized();
     this._ensureChildrenSynthesized();
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");

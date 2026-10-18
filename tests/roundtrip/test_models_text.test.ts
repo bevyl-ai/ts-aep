@@ -10,7 +10,7 @@ import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { cosAt, cosItem } from "../../src/py_aep/cos/kinds.ts";
 import { CosName } from "../../src/py_aep/cos/index.ts";
 import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, DigitSet, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
-import { contains, getattr, Path, pyAssert, pyEq, setattr, ValueError } from "../../src/pyrt/index.ts";
+import { contains, getattr, Path, assert, valueEquals, setattr, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
@@ -25,7 +25,7 @@ function _getTextDocument(aepPath: Path, compName: string | null = null): [Proje
     comp = app.project.compositions[0];
   }
   const textLayer = comp.textLayers[0];
-  pyAssert(textLayer.text != null);
+  assert(textLayer.text != null);
   return [app.project, textLayer.text.sourceText.value];
 }
 
@@ -75,7 +75,7 @@ describe("TestRoundtripFillColor", () => {
     project.save(out);
 
     const [_project2, doc2] = _getTextDocument(out, "type_text");
-    pyAssert(doc2.fillColor != null);
+    assert(doc2.fillColor != null);
     expect(doc2.fillColor[0]).toBe(1.0);
     expect(doc2.fillColor[1]).toBe(0.0);
     expect(doc2.fillColor[2]).toBe(0.0);
@@ -94,7 +94,7 @@ describe("TestRoundtripText", () => {
     project.save(out);
 
     const [_project2, doc2] = _getTextDocument(out, "type_text");
-    expect(pyEq(doc2.text, "Modified")).toBe(true);
+    expect(valueEquals(doc2.text, "Modified")).toBe(true);
   });
 });
 
@@ -155,7 +155,7 @@ describe("TestRoundtripWiredAttributes", () => {
     project.save(out);
 
     const [_project2, doc2] = _getTextDocument(out, "type_text");
-    expect(pyEq(getattr(doc2, attr), value)).toBe(true);
+    expect(valueEquals(getattr(doc2, attr), value)).toBe(true);
   });
 });
 
@@ -175,7 +175,7 @@ describe("TestBoxText", () => {
 
     const [_p2, doc2] = _getTextDocument(out, "type_text");
     expect(doc2.boxText).toBe(true);
-    expect(pyEq(doc2.boxTextSize, [320.0, 180.0])).toBe(true);
+    expect(valueEquals(doc2.boxTextSize, [320.0, 180.0])).toBe(true);
   });
 
   test("test_box_text_pos_requires_box", () => {
@@ -208,7 +208,7 @@ describe("TestBoxText", () => {
     project.save(out);
 
     const [_p2, doc2] = _getTextDocument(out, "type_text");
-    expect(pyEq(getattr(doc2, attr), value)).toBe(true);
+    expect(valueEquals(getattr(doc2, attr), value)).toBe(true);
   });
 });
 
@@ -235,7 +235,7 @@ describe("TestRegisterFont", () => {
     project.save(out);
 
     const [_project2, doc2] = _getTextDocument(out, "type_text");
-    expect(pyEq(doc2.font, "Arial-BoldMT")).toBe(true);
+    expect(valueEquals(doc2.font, "Arial-BoldMT")).toBe(true);
   });
 });
 

@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { pyEq } from "../../src/pyrt/index.ts";
+import { valueEquals } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { _DEFAULT_INFLUENCE, autoSpatialTangents, autoTemporalSpeeds } from "../../src/py_aep/resolvers/interpolation.ts";
 
@@ -61,8 +61,8 @@ describe("TestAutoSpatialTangents", () => {
 
   test("test_single_keyframe_has_no_tangents", () => {
     const [outTangent, inTangent] = autoSpatialTangents([[10.0, 20.0]], 0);
-    expect(pyEq(outTangent, [0.0, 0.0])).toBe(true);
-    expect(pyEq(inTangent, [0.0, 0.0])).toBe(true);
+    expect(valueEquals(outTangent, [0.0, 0.0])).toBe(true);
+    expect(valueEquals(inTangent, [0.0, 0.0])).toBe(true);
   });
 
   /**
@@ -145,16 +145,16 @@ describe("TestAutoTemporalSpeeds", () => {
 
   test("test_single_keyframe_has_no_speed", () => {
     const [inSpeeds, outSpeeds] = autoTemporalSpeeds([[42.0]], [1.0], 0);
-    expect(pyEq(inSpeeds, [0.0])).toBe(true);
-    expect(pyEq(outSpeeds, [0.0])).toBe(true);
+    expect(valueEquals(inSpeeds, [0.0])).toBe(true);
+    expect(valueEquals(outSpeeds, [0.0])).toBe(true);
   });
 
   test("test_zero_span_does_not_divide_by_zero", () => {
     const values = [[0.0], [10.0], [20.0]];
     const times = [1.0, 1.0, 1.0];
     const [inSpeeds, outSpeeds] = autoTemporalSpeeds(values, times, 1);
-    expect(pyEq(inSpeeds, [0.0])).toBe(true);
-    expect(pyEq(outSpeeds, [0.0])).toBe(true);
+    expect(valueEquals(inSpeeds, [0.0])).toBe(true);
+    expect(valueEquals(outSpeeds, [0.0])).toBe(true);
   });
 
   test("test_default_influence_is_one_sixth", () => {

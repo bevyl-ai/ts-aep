@@ -18,7 +18,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { b, getitem, Path, pyBool, pyEq, repr, sorted, StopIteration, str } from "../../src/pyrt/index.ts";
+import { b, getOrThrow, Path, truthy, valueEquals, repr, sorted, StopIteration, str } from "../../src/pyrt/index.ts";
 import { skip } from "../../src/pyrt/pytest.ts";
 import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -67,7 +67,7 @@ function _clrs(source: FootageSource | null): [string, Uint8Array][] {
   let marker = "";
   for (const chunk of clrs.chunks) {
     let data = chunk.tobytes();
-    if (chunk.chunkType === "Utf8" && ["mcsp", "Mcsp"].includes(marker) && pyBool(data)) {
+    if (chunk.chunkType === "Utf8" && ["mcsp", "Mcsp"].includes(marker) && truthy(data)) {
       data = b("<embedded>");
     }
     record.push([chunk.chunkType, data]);
@@ -82,7 +82,7 @@ const IMPORT_ROWS: [string, string][] = sorted([...CONFIGS.keys()]).flatMap((tag
 
 /** Parametrized over `tag` and `name` (cartesian product, as stacked pytest decorators). */
 test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, name) => {
-  const config = getitem(CONFIGS, tag);
+  const config = getOrThrow(CONFIGS, tag);
   if (resolveOcioConfig(config) == null) {
     return skip(`OCIO config ${repr(config)} is not installed`);
   }
@@ -93,12 +93,12 @@ test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, nam
   const project = newProject().project;
   project.colorManagementSystem = ColorManagementSystem.OCIO;
   project.ocioConfigurationFile = config;
-  const ours = asInstance(project.importFile(new ImportOptions(getitem(FILES, name))), FootageItem);
-  expect(pyEq(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
+  const ours = asInstance(project.importFile(new ImportOptions(getOrThrow(FILES, name))), FootageItem);
+  expect(valueEquals(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
 });
 
-const PNG = getitem(FILES, "image_with_alpha.png");
-const EXR = getitem(FILES, "rgb_full.exr");
+const PNG = getOrThrow(FILES, "image_with_alpha.png");
+const EXR = getOrThrow(FILES, "rgb_full.exr");
 
 /** Parametrized over `name`, `first`, `assigned` and `second`. */
 test.each([
@@ -124,7 +124,7 @@ test.each([
       asInstance(ours.mainSource, FileSource).mediaColorSpace = assigned;
     }
     ours.replace(second);
-    expect(pyEq(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
+    expect(valueEquals(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
   },
 );
 
@@ -141,5 +141,5 @@ test("test_proxy_takes_the_rules_pick", () => {
   project.ocioConfigurationFile = str(SERGB);
   const ours = project.importFile(new ImportOptions(PNG));
   ours.setProxy(EXR);
-  expect(pyEq(_clrs(ours.proxySource), _clrs(ae.proxySource))).toBe(true);
+  expect(valueEquals(_clrs(ours.proxySource), _clrs(ae.proxySource))).toBe(true);
 });

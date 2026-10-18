@@ -33,11 +33,11 @@ import {
   float,
   format,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   max,
-  pyBool,
-  pyEq,
+  truthy,
+  valueEquals,
   repr,
   sorted,
   str,
@@ -374,8 +374,8 @@ export function _compareChunkDicts(
   const differences: ChunkDifference[] = [];
   const suppressed: string[] = [];
   for (const path of commonPaths) {
-    const bytes1 = getitem(data1, path);
-    const bytes2 = getitem(data2, path);
+    const bytes1 = getOrThrow(data1, path);
+    const bytes2 = getOrThrow(data2, path);
     if (bytesEq(bytes1, bytes2)) continue;
     // Suppress float-precision-only differences (same coordinate, just
     // AE-vs-py_aep float rounding) unless an exact comparison was asked.
@@ -385,7 +385,7 @@ export function _compareChunkDicts(
       typed2 != null &&
       typed1.has(path) &&
       typed2.has(path) &&
-      _onlyFloatDiff(getitem(typed1, path), getitem(typed2, path))
+      _onlyFloatDiff(getOrThrow(typed1, path), getOrThrow(typed2, path))
     ) {
       suppressed.push(path);
       continue;
@@ -433,7 +433,7 @@ export function _compareStructureRecursive(c1: Chunk, c2: Chunk, path: string, d
   if (c1 instanceof ListChunk && c2 instanceof ListChunk) {
     const ch1 = c1.chunks.map((c) => chunkLabel(c));
     const ch2 = c2.chunks.map((c) => chunkLabel(c));
-    if (!pyEq(ch1, ch2)) {
+    if (!valueEquals(ch1, ch2)) {
       diffs.push(new StructuralDifference(current, ch1.length, ch2.length, ch1, ch2));
     }
     for (let i = 0; i < Math.min(c1.chunks.length, c2.chunks.length); i++) {

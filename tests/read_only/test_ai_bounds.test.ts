@@ -22,11 +22,11 @@
 import { describe, expect, test } from "bun:test";
 import {
   Path,
-  getitem,
+  getOrThrow,
   len,
   lruCache,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   round,
   warnings,
   zip,
@@ -99,24 +99,24 @@ describe("TestProbeFixture", () => {
 
   test("test_every_layer_is_measured", () => {
     const measured = _measured(PROBE_PDF);
-    expect(pyEq(new Set(measured.keys()), new Set(_aeLayerBoxes(PROBE_AEP).keys()))).toBe(true);
+    expect(valueEquals(new Set(measured.keys()), new Set(_aeLayerBoxes(PROBE_AEP).keys()))).toBe(true);
     expect(len(measured)).toBe(22);
   });
 
   test.each(_probeLayers())("test_box_matches_after_effects[%#]", (layer: string) => {
-    const [aeBox, _width, _height] = getitem(_aeLayerBoxes(PROBE_AEP), layer);
-    const box = getitem(_measured(PROBE_PDF), layer);
+    const [aeBox, _width, _height] = getOrThrow(_aeLayerBoxes(PROBE_AEP), layer);
+    const box = getOrThrow(_measured(PROBE_PDF), layer);
     const expected = box == null ? EMPTY_BOX : box;
     expect(approx(expected, aeBox, { abs: TOLERANCE })).toBe(true);
   });
 
   test.each(_probeLayers())("test_derived_footage_size_matches_after_effects[%#]", (layer: string) => {
-    const [_box, width, height] = getitem(_aeLayerBoxes(PROBE_AEP), layer);
-    expect(pyEq(footageSize(getitem(_measured(PROBE_PDF), layer)), [width, height])).toBe(true);
+    const [_box, width, height] = getOrThrow(_aeLayerBoxes(PROBE_AEP), layer);
+    expect(valueEquals(footageSize(getOrThrow(_measured(PROBE_PDF), layer)), [width, height])).toBe(true);
   });
 
   test("test_layer_with_no_artwork_measures_empty", () => {
-    expect(getitem(_measured(PROBE_PDF), "q_empty")).toBe(null);
+    expect(getOrThrow(_measured(PROBE_PDF), "q_empty")).toBe(null);
   });
 
   test("test_most_layers_are_byte_exact", () => {
@@ -126,10 +126,10 @@ describe("TestProbeFixture", () => {
     const measured = _measured(PROBE_PDF);
     let exact = 0;
     for (const [name, [aeBox, _w, _h]] of ae) {
-      const box = getitem(measured, name);
+      const box = getOrThrow(measured, name);
       const rawPy = (box == null ? EMPTY_BOX : box).map((v) => round(v * 65536));
       const rawAe = aeBox.map((v) => round(v * 65536));
-      exact += pyEq(rawPy, rawAe) ? 1 : 0;
+      exact += valueEquals(rawPy, rawAe) ? 1 : 0;
     }
     expect(exact >= 19).toBe(true);
   });
@@ -144,15 +144,15 @@ describe("TestIllustratorFootageFixture", () => {
     // the unpadded text and the maximum from the padded path, which is
     // what pins the expansion as per-contribution.
     const ae = _aeLayerBoxes(IMPORT_DIR.div("ai_choose_layer1_size.aep"));
-    const box = getitem(_measured(ASSETS.div("ai.ai")), "Calque 1");
-    expect(approx(box, getitem(ae, "Calque 1")[0], { abs: TOLERANCE })).toBe(true);
-    expect(pyEq(footageSize(box), [482, 437])).toBe(true);
+    const box = getOrThrow(_measured(ASSETS.div("ai.ai")), "Calque 1");
+    expect(approx(box, getOrThrow(ae, "Calque 1")[0], { abs: TOLERANCE })).toBe(true);
+    expect(valueEquals(footageSize(box), [482, 437])).toBe(true);
   });
 
   test("test_empty_layer_matches_the_footage_import", () => {
     const ae = _aeLayerBoxes(IMPORT_DIR.div("ai_choose_layer_size.aep"));
-    expect(approx(getitem(ae, "Calque 2")[0], EMPTY_BOX, { abs: TOLERANCE })).toBe(true);
-    expect(getitem(_measured(ASSETS.div("ai.ai")), "Calque 2")).toBe(null);
+    expect(approx(getOrThrow(ae, "Calque 2")[0], EMPTY_BOX, { abs: TOLERANCE })).toBe(true);
+    expect(getOrThrow(_measured(ASSETS.div("ai.ai")), "Calque 2")).toBe(null);
   });
 
   test("test_cropped_comp_and_footage_paths_agree", () => {
@@ -162,8 +162,8 @@ describe("TestIllustratorFootageFixture", () => {
     const footage = _aeLayerBoxes(IMPORT_DIR.div("ai_choose_layer.aep"));
     // Both are Document Size imports of the same file, so both store the
     // full-page box.
-    expect(approx(getitem(cropped, "Calque 1")[0], [0.0, 0.0, 612.0, 792.0])).toBe(true);
-    expect(approx(getitem(footage, "Calque 2")[0], [0.0, 0.0, 612.0, 792.0])).toBe(true);
+    expect(approx(getOrThrow(cropped, "Calque 1")[0], [0.0, 0.0, 612.0, 792.0])).toBe(true);
+    expect(approx(getOrThrow(footage, "Calque 2")[0], [0.0, 0.0, 612.0, 792.0])).toBe(true);
   });
 });
 
@@ -178,18 +178,18 @@ describe("TestStandard14Fixture", () => {
 
   test("test_every_layer_is_measured", () => {
     const measured = _measured(STD14_PDF);
-    expect(pyEq(new Set(measured.keys()), new Set(_aeLayerBoxes(STD14_AEP).keys()))).toBe(true);
+    expect(valueEquals(new Set(measured.keys()), new Set(_aeLayerBoxes(STD14_AEP).keys()))).toBe(true);
     expect(len(measured)).toBe(48);
   });
 
   test.each(_std14Layers())("test_box_matches_after_effects[%#]", (layer: string) => {
-    const [aeBox, _width, _height] = getitem(_aeLayerBoxes(STD14_AEP), layer);
-    expect(approx(getitem(_measured(STD14_PDF), layer), aeBox, { abs: TOLERANCE })).toBe(true);
+    const [aeBox, _width, _height] = getOrThrow(_aeLayerBoxes(STD14_AEP), layer);
+    expect(approx(getOrThrow(_measured(STD14_PDF), layer), aeBox, { abs: TOLERANCE })).toBe(true);
   });
 
   test.each(_std14Layers())("test_derived_footage_size_matches_after_effects[%#]", (layer: string) => {
-    const [_box, width, height] = getitem(_aeLayerBoxes(STD14_AEP), layer);
-    expect(pyEq(footageSize(getitem(_measured(STD14_PDF), layer)), [width, height])).toBe(true);
+    const [_box, width, height] = getOrThrow(_aeLayerBoxes(STD14_AEP), layer);
+    expect(valueEquals(footageSize(getOrThrow(_measured(STD14_PDF), layer)), [width, height])).toBe(true);
   });
 
   test("test_every_layer_is_byte_exact", () => {
@@ -199,11 +199,11 @@ describe("TestStandard14Fixture", () => {
     const ae = _aeLayerBoxes(STD14_AEP);
     const measured = _measured(STD14_PDF);
     for (const [name, [aeBox, _w, _h]] of ae) {
-      const box = getitem(measured, name);
-      pyAssert(box != null);
+      const box = getOrThrow(measured, name);
+      assert(box != null);
       const rawPy = box.map((v) => round(v * 65536));
       const rawAe = aeBox.map((v) => round(v * 65536));
-      pyAssert(pyEq(rawPy, rawAe), name);
+      assert(valueEquals(rawPy, rawAe), name);
     }
   });
 
@@ -217,9 +217,9 @@ describe("TestStandard14Fixture", () => {
       ["TimesNewRoman", "Times-Roman"],
     ]) {
       for (const prefix of ["A", "B", "C"]) {
-        const aliasBox = getitem(measured, `${prefix}_${alias}`);
-        const faceBox = getitem(measured, `${prefix}_${face}`);
-        pyAssert(aliasBox != null && faceBox != null);
+        const aliasBox = getOrThrow(measured, `${prefix}_${alias}`);
+        const faceBox = getOrThrow(measured, `${prefix}_${face}`);
+        assert(aliasBox != null && faceBox != null);
         expect(
           approx(
             [aliasBox[2] - aliasBox[0], aliasBox[3] - aliasBox[1]],

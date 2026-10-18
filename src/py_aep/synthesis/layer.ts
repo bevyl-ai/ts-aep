@@ -8,7 +8,7 @@
  * do not touch the binary layer.
  */
 
-import { pyEq } from "../../pyrt/index.ts";
+import { valueEquals } from "../../pyrt/index.ts";
 import type { Shape } from "../models/properties/shape.ts";
 import type { PsdLayerStyles } from "../resolvers/psd_styles.ts";
 
@@ -144,7 +144,7 @@ export class LayerSpec {
 
   /** NamedTuple equality: field-wise. */
   equals(other: object | null): boolean {
-    return other instanceof LayerSpec && pyEq([...this], [...other]);
+    return other instanceof LayerSpec && valueEquals([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<
@@ -234,7 +234,7 @@ export class LayerGroupSpec {
 
   /** NamedTuple equality: field-wise. */
   equals(other: object | null): boolean {
-    return other instanceof LayerGroupSpec && pyEq([...this], [...other]);
+    return other instanceof LayerGroupSpec && valueEquals([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<

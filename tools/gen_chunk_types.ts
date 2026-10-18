@@ -143,7 +143,7 @@ const objProp = (obj: ts.ObjectLiteralExpression, name: string): ts.Expression |
 /** Type a struct format stands for. `encoding` decodes `s`/`p`/`c` to string; `coerce` replaces the unpacked type. */
 function typeOfFmt(fmt: string, encoding: string | null, coerce: string | null, optional: boolean): string {
   let base: string;
-  if (coerce === "pyBool") base = "boolean";
+  if (coerce === "truthy") base = "boolean";
   else if (coerce) base = coerce;
   else {
     const m = /^(\d*)([a-zA-Z?])$/.exec(fmt);
@@ -202,7 +202,7 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
     enc = "ascii";
   } else if (helper === "boolField") {
     fmt = "B";
-    crc = crc ?? "pyBool";
+    crc = crc ?? "truthy";
   } else if (helper in HELPER_FMT) {
     const mapped = HELPER_FMT[helper];
     if (mapped == null) return null;
@@ -210,7 +210,7 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
   }
   else return null;
   // An enum coerce names the enum type (`coerce: SomeEnum` -> `SomeEnum`).
-  const refs = crc && crc !== "pyBool" ? [crc] : [];
+  const refs = crc && crc !== "truthy" ? [crc] : [];
   return { type: typeOfFmt(fmt, enc, crc, optional), refs };
 }
 

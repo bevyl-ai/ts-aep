@@ -13,7 +13,7 @@ import {
   ValueError,
   getattr,
   int,
-  pyEq,
+  valueEquals,
   repr,
   setattr,
   sorted,
@@ -224,7 +224,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
-      return pyEq(new Map(this.items()), new Map(mappingItems(other)));
+      return valueEquals(new Map(this.items()), new Map(mappingItems(other)));
     }
     // NOTE(port): Python returns NotImplemented; no builtin reflected __eq__ ever answers True for a non-mapping, so the final `==` is False.
     return false;

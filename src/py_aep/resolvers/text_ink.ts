@@ -38,8 +38,8 @@ import {
   NotImplementedError,
   at,
   max,
-  pyBool,
-  pyOr,
+  truthy,
+  truthyOr,
   repr,
   rstrip,
   split,
@@ -121,8 +121,8 @@ export function _refuse(reason: string): NotImplementedError {
 
 export function _checkStyles(doc: TextDocument): void {
   for (const [_start, _end, style] of runSpans(doc._doc, "6", "6")) {
-    if (pyBool(style.get("2") ?? null)) throw _refuse("faux bold");
-    if (pyBool(style.get("3") ?? null)) throw _refuse("faux italic");
+    if (truthy(style.get("2") ?? null)) throw _refuse("faux bold");
+    if (truthy(style.get("3") ?? null)) throw _refuse("faux italic");
     if (cosInt(cosGetOr(style, "12", 0)) !== 0) throw _refuse("small or all caps");
     if (cosFloat(cosGetOr(style, "6", 1.0)) !== 1.0 || cosFloat(cosGetOr(style, "7", 1.0)) !== 1.0) {
       throw _refuse("horizontal or vertical scale");
@@ -135,7 +135,7 @@ export function _checkStyles(doc: TextDocument): void {
  * defaults to 1, as `TextDocument.strokeWidth` reads it).
  */
 export function _strokeWidth(style: CosDict): number {
-  if (!pyBool(cosGetOr(style, "57", false))) return 0.0;
+  if (!truthy(cosGetOr(style, "57", false))) return 0.0;
   return cosFloat(cosGetOr(style, "63", 1.0));
 }
 
@@ -220,7 +220,7 @@ export function _justifiedOrigin(
  *   docstring), or when a font is not installed.
  */
 export function textInkRect(doc: TextDocument): { top: number; left: number; width: number; height: number } {
-  const raw = str(pyOr(cosGet(doc._doc, "0", "0"), ""));
+  const raw = str(truthyOr(cosGet(doc._doc, "0", "0"), ""));
   _checkStyles(doc);
   let styles: _CharStyle[];
   try {

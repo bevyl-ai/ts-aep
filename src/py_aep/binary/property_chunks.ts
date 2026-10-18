@@ -21,7 +21,7 @@ import {
   floordiv,
   int,
   objectSetattr,
-  pyAssert,
+  assert,
   struct,
   type IO,
 } from "../../pyrt/index.ts";
@@ -646,7 +646,7 @@ export class TdsnChunk extends ContainerChunk {
    */
   get utf8(): Utf8Chunk {
     const chunk = findByType(this.chunks, "Utf8");
-    pyAssert(chunk instanceof Utf8Chunk);
+    assert(chunk instanceof Utf8Chunk);
     return chunk;
   }
 }
@@ -739,7 +739,7 @@ export class CurvesArbpChunk extends Chunk {
       throw new ValueError(`a Curves aRbp is ${CURVES_ARBP_SIZE} bytes, not ${arbp.data.length}`);
     }
     const chunk = this.read(new BytesIO(arbp.data), arbp.data.length, { chunkType: "aRbp" });
-    pyAssert(chunk instanceof this);
+    assert(chunk instanceof this);
     return chunk;
   }
 }

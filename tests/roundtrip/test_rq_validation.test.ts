@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, ValueError, pyEq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, valueEquals } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -84,7 +84,7 @@ describe("TestResolutionBounds", () => {
   test("test_zero_is_current_settings", () => {
     const rqi = _rqi(parseProjectFresh(SAMPLE));
     rqi.settings.set("Resolution", [0, 0]);
-    expect(pyEq(rqi.settings.get("Resolution"), [0, 0])).toBe(true);
+    expect(valueEquals(rqi.settings.get("Resolution"), [0, 0])).toBe(true);
   });
 
   test("test_components_0_to_99", () => {

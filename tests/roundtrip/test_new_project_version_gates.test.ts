@@ -18,13 +18,13 @@ import {
   BytesIO,
   bytes_,
   getattr,
-  getitem,
+  getOrThrow,
   len,
   lruCache,
   Path,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   setdefault,
   sorted,
   StopIteration,
@@ -171,7 +171,7 @@ class _Structure {
       if (["LIST:Layr", "LIST:Ewst"].includes(tag) || _VIEW_SEPTET.includes(tag)) {
         continue;
       }
-      if (!pyBool(tags) || tags.at(-1) !== tag) {
+      if (!truthy(tags) || tags.at(-1) !== tag) {
         tags.push(tag);
       }
     }
@@ -251,15 +251,15 @@ describe("TestNewItemsMatchTheRelease", () => {
   test.each(ITEM_ROWS)("test_item_chunks[%#]", (year, itemType, kind) => {
     // iide / idpc (all items) and comr, CIF3 and the Default view layer
     // (comps) are absent from AE 15 files.
-    pyAssert(
-      setLe(getitem(written(year).items, itemType), getitem(_afterEffects(year).items, itemType)),
+    assert(
+      setLe(getOrThrow(written(year).items, itemType), getOrThrow(_afterEffects(year).items, itemType)),
       kind,
     );
   });
 
   test.each(YEAR_ROWS)("test_comp_view_data[%#]", (year) => {
     // The FEE list after a comp item holds ppSn, except in AE 15.
-    expect(pyEq(written(year).fee, _afterEffects(year).fee)).toBe(true);
+    expect(valueEquals(written(year).fee, _afterEffects(year).fee)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_view_layers[%#]", (year) => {
@@ -268,46 +268,46 @@ describe("TestNewItemsMatchTheRelease", () => {
     // leave 11 Material Options properties out of the Markers layer).
     const expected = _afterEffects(year).view_layers;
     const actual = written(year).view_layers;
-    expect(pyEq(new Set(actual.keys()), new Set(expected.keys()))).toBe(true);
+    expect(valueEquals(new Set(actual.keys()), new Set(expected.keys()))).toBe(true);
     for (const [key, signature] of actual) {
-      pyAssert(pyEq(signature, getitem(expected, key)), key);
+      assert(valueEquals(signature, getOrThrow(expected, key)), key);
     }
   });
 
   test.each(YEAR_ROWS)("test_view_layer_ldta_tail[%#]", (year) => {
     // Only AE 26 stamps 1 / 102.047... at 0x94 / 0x98 of the viewer
     // layers' records.
-    expect(pyEq(written(year).view_ldta_tails, _afterEffects(year).view_ldta_tails)).toBe(true);
+    expect(valueEquals(written(year).view_ldta_tails, _afterEffects(year).view_ldta_tails)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_markers_shadow_color[%#]", (year) => {
     // AE 24 writes the Markers layer's Shadow Color alpha as 0, AE 25+
     // as 255; earlier releases do not write the property.
-    expect(pyEq(written(year).shadow_colors, _afterEffects(year).shadow_colors)).toBe(true);
+    expect(valueEquals(written(year).shadow_colors, _afterEffects(year).shadow_colors)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_layer_chunks[%#]", (year) => {
     // AE 15 closes every layer with a LIST:OvdG.
-    pyAssert(setLe(written(year).layers, _afterEffects(year).layers));
+    assert(setLe(written(year).layers, _afterEffects(year).layers));
   });
 
   test.each(YEAR_ROWS)("test_layer_groups[%#]", (year) => {
     // AE 15 layers have no Layer Sets and no Source Options group.
     const expected = _afterEffects(year).groups;
     for (const [layerType, groups] of written(year).groups) {
-      pyAssert(setLe(groups, getitem(expected, layerType)), String(layerType));
+      assert(setLe(groups, getOrThrow(expected, layerType)), String(layerType));
     }
   });
 
   test.each(YEAR_ROWS)("test_source_alternate[%#]", (year) => {
     // AE 22 writes the Layer Source Alternate match name and its
     // blsv/blsi pair but no value (tdbs); AE 23+ write the value.
-    pyAssert(setLe(written(year).source_options, _afterEffects(year).source_options));
+    assert(setLe(written(year).source_options, _afterEffects(year).source_options));
   });
 
   test.each(YEAR_ROWS)("test_light_source_id[%#]", (year) => {
     // AE 15-22 store 0 as a light layer's source id, AE 23+ 0xFFFFFFFF.
-    expect(pyEq(written(year).light_source_ids, _afterEffects(year).light_source_ids)).toBe(true);
+    expect(valueEquals(written(year).light_source_ids, _afterEffects(year).light_source_ids)).toBe(true);
   });
 });
 
@@ -317,7 +317,7 @@ test.each(RELEASE_VERSIONS)("test_gated_project_round_trips[%#]", (version) => {
   const second = tmpPath.div("second.aep");
   _newProject(version).project.save(first);
   py_aep.parse(first).project.save(second);
-  expect(pyEq(first.readBytes(), second.readBytes())).toBe(true);
+  expect(valueEquals(first.readBytes(), second.readBytes())).toBe(true);
 });
 
 test("test_layer_comment_written_before_ovdg", () => {
@@ -345,5 +345,5 @@ test("test_layer_comment_written_before_ovdg", () => {
       saved.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
   }
-  expect(pyEq(saved, commented)).toBe(true);
+  expect(valueEquals(saved, commented)).toBe(true);
 });

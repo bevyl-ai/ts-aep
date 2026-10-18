@@ -8,7 +8,7 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { getFolder, getFolderFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
-import { Path, len, pyBool } from "../../src/pyrt/index.ts";
+import { Path, len, truthy } from "../../src/pyrt/index.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
@@ -78,7 +78,7 @@ describe("TestFolderLabel", () => {
 describe("TestFolderNesting", () => {
   test("test_parentFolder_nested", () => {
     const project = parseProject(SAMPLES_DIR.div("folder.aep"));
-    const nested = project.folders.filter((f) => pyBool(f.parentFolder));
+    const nested = project.folders.filter((f) => truthy(f.parentFolder));
     expect(len(nested)).toBeGreaterThanOrEqual(3);
   });
 

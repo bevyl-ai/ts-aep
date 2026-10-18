@@ -37,12 +37,12 @@ import {
   bytesEq,
   copysign,
   decode,
-  dictGet,
+  getOr,
   fspath,
-  getitem,
+  getOrThrow,
   int,
   jsonFloat,
-  pyBool,
+  truthy,
   radians,
   repr,
   round,
@@ -352,7 +352,7 @@ export function _number(value: _Value): number {
 }
 
 export function _bool01(value: _Value): number {
-  return pyBool(value) ? 1.0 : 0.0;
+  return truthy(value) ? 1.0 : 0.0;
 }
 
 /** Python int/float/bool operand for `/`: bool counts as 0/1, anything else raises. */
@@ -364,7 +364,7 @@ export function _arith(value: _Value): number {
 
 /** Python `obj[key]` for a descriptor value: only dicts (Maps) are subscriptable here. */
 export function _subscript(obj: _Value, key: string): _Value {
-  if (obj instanceof Map) return getitem(obj, key);
+  if (obj instanceof Map) return getOrThrow(obj, key);
   throw new TypeError(`${repr(obj)} is not subscriptable with ${repr(key)}`);
 }
 
@@ -381,9 +381,9 @@ export function _color(value: _Value): number[] {
     throw new UnsupportedStyleError(`unsupported color model ${_repr(value)}`);
   }
   return [
-    _arith(getitem(value, "Rd  ")) / 255.0,
-    _arith(getitem(value, "Grn ")) / 255.0,
-    _arith(getitem(value, "Bl  ")) / 255.0,
+    _arith(getOrThrow(value, "Rd  ")) / 255.0,
+    _arith(getOrThrow(value, "Grn ")) / 255.0,
+    _arith(getOrThrow(value, "Bl  ")) / 255.0,
     1.0,
   ];
 }
@@ -392,7 +392,7 @@ export function _point(value: _Value): number[] {
   if (!(value instanceof Map)) {
     throw new UnsupportedStyleError(`expected a point, got ${_repr(value)}`);
   }
-  return [_number(getitem(value, "Hrzn")), _number(getitem(value, "Vrtc"))];
+  return [_number(getOrThrow(value, "Hrzn")), _number(getOrThrow(value, "Vrtc"))];
 }
 
 export function _gradient(value: _Value): Gradient {
@@ -410,7 +410,7 @@ export function _gradient(value: _Value): Gradient {
   // would double every offset, and 0% would divide by zero). Smoothness
   // is left unmapped (AE's gradientSmoothness handling is unprobed).
   const colorStops: GradientColorStop[] = [];
-  for (const stop of _pyIter(getitem(value, "Clrs"))) {
+  for (const stop of _pyIter(getOrThrow(value, "Clrs"))) {
     const [red, green, blue] = _color(_subscript(stop, "Clr "));
     colorStops.push(
       new GradientColorStop(
@@ -420,7 +420,7 @@ export function _gradient(value: _Value): Gradient {
       ),
     );
   }
-  const alphaStops = _pyIter(getitem(value, "Trns")).map(
+  const alphaStops = _pyIter(getOrThrow(value, "Trns")).map(
     (stop) =>
       new GradientAlphaStop(
         _arith(_subscript(stop, "Lctn")) / 4096.0,
@@ -788,7 +788,7 @@ export function parseLayerStyles(
   const disabled: string[] = [];
   let importedAny = false;
   for (const [key, instances] of _styleInstances(descriptor)) {
-    const [prefix, params] = getitem(_STYLES, key);
+    const [prefix, params] = getOrThrow(_STYLES, key);
     const presentInstances = instances.filter((inst) => inst instanceof Map);
     if (presentInstances.length > 1) {
       // AE drops a multi-instance style entirely, even when every
@@ -798,11 +798,11 @@ export function parseLayerStyles(
     }
     if (presentInstances.length === 0) continue;
     const instance = presentInstances[0];
-    const isEnabled = pyBool(dictGet(instance, "enab", false));
+    const isEnabled = truthy(getOr(instance, "enab", false));
     // `present` distinguishes an unchecked-but-kept style (imported,
     // tdsb 0x00) from a removed one Photoshop left in the descriptor
     // (skeleton, 0x02). Old writers without the key follow `enab`.
-    const isPresent = pyBool(dictGet(instance, "present", isEnabled));
+    const isPresent = truthy(getOr(instance, "present", isEnabled));
     if (!isPresent && !_ALWAYS_WHEN_PRESENT.has(prefix)) continue;
     try {
       for (const [k, v] of _convertStyle(prefix, params, instance)) values.set(k, v);
@@ -851,7 +851,7 @@ export function* _enabledInstances(
   /** `(key, instance)` of every enabled style instance in a descriptor. */
   for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
-      if (instance instanceof Map && pyBool(dictGet(instance, "enab", false))) {
+      if (instance instanceof Map && truthy(getOr(instance, "enab", false))) {
         yield [key, instance];
       }
     }
@@ -911,9 +911,9 @@ export function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number
 }
 
 export function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
-  const style = dictGet(instance, "bvlS", "InrB");
+  const style = getOr(instance, "bvlS", "InrB");
   if (style === "InrB") return null;
-  const size = jsonFloat(dictGet(instance, "blur", 0));
+  const size = jsonFloat(getOr(instance, "blur", 0));
   let height: number;
   if (style === "OtrB") {
     height = size;
@@ -925,20 +925,20 @@ export function _bevelPads(instance: Map<string, _Value>, name: string): [number
         "known; import without merging its layer styles",
     );
   }
-  const smooth = dictGet(instance, "bvlT", "SfBL") === "SfBL";
+  const smooth = getOr(instance, "bvlT", "SfBL") === "SfBL";
   let reach: number;
   if (smooth) {
     reach = size > 0 ? Math.max(height, 2) + 1.5 : 2.0;
   } else {
     reach = height + 4;
   }
-  const softening = jsonFloat(dictGet(instance, "Sftn", 0));
+  const softening = jsonFloat(getOr(instance, "Sftn", 0));
   if (softening > 0) {
     reach += Math.max(softening, 2) - 0.5;
   }
   const shift = softening === 0 && (!smooth || size === 0) ? -1.0 : 0.0;
   const antiAliased =
-    pyBool(dictGet(instance, "useShape", false)) && pyBool(dictGet(instance, "AntA", false));
+    truthy(getOr(instance, "useShape", false)) && truthy(getOr(instance, "AntA", false));
   return _pads(reach, antiAliased, shift);
 }
 
@@ -957,22 +957,22 @@ export function _instanceBox(
   if (key === "DrSh" || key === "OrGl") {
     const precise = key === "OrGl" && (instance.get("GlwT") ?? null) === "PrBL";
     const reach = _blurReach(
-      jsonFloat(dictGet(instance, "blur", 0)),
-      jsonFloat(dictGet(instance, "Ckmt", 0)),
+      jsonFloat(getOr(instance, "blur", 0)),
+      jsonFloat(getOr(instance, "Ckmt", 0)),
       precise,
     );
-    [lead, trail] = _pads(reach, pyBool(dictGet(instance, "AntA", false)));
+    [lead, trail] = _pads(reach, truthy(getOr(instance, "AntA", false)));
     if (key === "DrSh") {
       const angle = radians(
-        pyBool(instance.get("uglg")) ? globalAngle : jsonFloat(dictGet(instance, "lagl", 0)),
+        truthy(instance.get("uglg")) ? globalAngle : jsonFloat(getOr(instance, "lagl", 0)),
       );
-      const distance = jsonFloat(dictGet(instance, "Dstn", 0));
+      const distance = jsonFloat(getOr(instance, "Dstn", 0));
       dx = _roundAway(-Math.cos(angle) * distance);
       dy = _roundAway(Math.sin(angle) * distance);
     }
   } else if (key === "FrFX") {
-    const size = jsonFloat(dictGet(instance, "Sz  ", 0));
-    const position = dictGet(instance, "Styl", "OutF");
+    const size = jsonFloat(getOr(instance, "Sz  ", 0));
+    const position = getOr(instance, "Styl", "OutF");
     if (position === "InsF") return null;
     const reach = position === "OutF" ? size : Math.ceil(size / 2);
     lead = trail = int(reach) + 2;

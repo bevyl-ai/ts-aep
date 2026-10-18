@@ -11,9 +11,9 @@ import {
   hasattr,
   max,
   min,
-  pyAssert,
-  pyBool,
-  pyOr,
+  assert,
+  truthy,
+  truthyOr,
   repr,
 } from "../../../pyrt/index.ts";
 import { requiresVersion } from "../../ae_version.ts";
@@ -370,7 +370,7 @@ export class AVLayer extends Layer {
    */
   get _matteLayerId(): number {
     // matte_layer_id is conditional (only in AE >= 23)
-    return pyOr("matteLayerId" in this._ldta ? this._ldta.matteLayerId : 0, 0);
+    return truthyOr("matteLayerId" in this._ldta ? this._ldta.matteLayerId : 0, 0);
   }
 
   /**
@@ -434,7 +434,7 @@ export class AVLayer extends Layer {
     if (!this._shouldClampTimes()) {
       return raw;
     }
-    pyAssert(this.source != null); // _should_clamp_times guards
+    assert(this.source != null); // _should_clamp_times guards
     const sourceDuration = this.source.duration;
     const maxOut = this.startTime + sourceDuration * this._stretchFactor;
     return min([raw, maxOut]);
@@ -877,7 +877,7 @@ export class AVLayer extends Layer {
   get timeRemapEnabled(): boolean {
     // From the chunks, not the property: reading a layer's times
     // (`inPoint`, `outPoint`) then leaves its property tree unbuilt.
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const chunks = getChunksByMatchName(this._tdgp).get("ADBE Time Remapping");
     if (chunks == null || chunks.length === 0) return false;
     const tdbs = findByListType(chunks, "tdbs");
@@ -910,7 +910,7 @@ export class AVLayer extends Layer {
       // Measured on AE 2026 for comp and footage sources, including a
       // layer offset in time; a single keyframe leaves the remap frozen.
       const source = this.source;
-      pyAssert(source != null); // can_set_time_remap_enabled guarantees it
+      assert(source != null); // can_set_time_remap_enabled guarantees it
       const duration = source.duration;
       prop._addKey(this.startTime, 0.0);
       prop._addKey(this.startTime + duration, duration);

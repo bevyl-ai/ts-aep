@@ -5,13 +5,13 @@ import {
   AssertionError,
   bytes_,
   bytesEq,
-  getitem,
+  getOrThrow,
   isdigit,
   len,
   Path,
-  pyBool,
-  pyEq,
-  pyOr,
+  truthy,
+  valueEquals,
+  truthyOr,
   getattr,
   sorted,
   split,
@@ -43,7 +43,7 @@ describe("TestNewEmpty", () => {
     expect(app.buildNumber).toBe(67);
     expect(proj.numItems).toBe(1); // only the root folder
     expect(proj.rootFolder.name).toBe("root");
-    expect(pyEq([...proj.items.keys()], [0])).toBe(true);
+    expect(valueEquals([...proj.items.keys()], [0])).toBe(true);
     expect(proj._head.nextItemId).toBe(1);
     expect(proj.revision).toBe(1);
   });
@@ -84,7 +84,7 @@ describe("TestNewEmpty", () => {
     // aep-validate walks every attribute (incl. xmp_packet) via to_dict;
     // it must not crash on a new()-based project with no XMP packet.
     const result = toDict(py_aep.newProject().project);
-    expect(getitem(result, "xmpPacket") == null).toBe(true);
+    expect(getOrThrow(result, "xmpPacket") == null).toBe(true);
   });
 
   test.each([
@@ -154,7 +154,7 @@ describe("TestNewVersion", () => {
     (version: string, present: Set<string>, absent: Set<string>) => {
       const chunks = py_aep.newProject(version).project._rifx.chunks;
       const types = new Set(
-        chunks.map((c) => pyOr(getattr(c, "listType", ""), c.chunkType)),
+        chunks.map((c) => truthyOr(getattr(c, "listType", ""), c.chunkType)),
       );
       expect([...present].every((t) => types.has(t))).toBe(true);
       expect([...absent].some((t) => types.has(t))).toBe(false);
@@ -186,7 +186,7 @@ describe("TestNewVersion", () => {
     // rules of its (format, minor) pair, so new(version) stamps the pair
     // After Effects writes for that release.
     const head = py_aep.newProject(version).project._head;
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], stamp)).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], stamp)).toBe(true);
   });
 
   test.each(["ae2018", "ae2023", "ae2024", "ae2025", "ae2026"])(
@@ -196,7 +196,7 @@ describe("TestNewVersion", () => {
       const head = py_aep.newProject(sample.version).project._head;
       const saved = sample.project._head;
       expect(
-        pyEq(
+        valueEquals(
           [head.fileFormatVersion, head._formatSubversion],
           [saved.fileFormatVersion, saved._formatSubversion],
         ),
@@ -234,7 +234,7 @@ describe("TestNewVersion", () => {
     if (newComp == null) throw new StopIteration();
     const records = recursiveFind(newComp._itemList.chunks, "ldta");
     expect(
-      pyEq(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize])),
+      valueEquals(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize])),
     ).toBe(true);
   });
 
@@ -283,9 +283,9 @@ describe("TestNewMutations", () => {
     const path = tmpPath.div("comp.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(pyEq(proj.compositions.map((c) => c.name), ["Comp 1"])).toBe(true);
+    expect(valueEquals(proj.compositions.map((c) => c.name), ["Comp 1"])).toBe(true);
     const comp = proj.compositions[0];
-    expect(pyEq([comp.width, comp.height], [1920, 1080])).toBe(true);
+    expect(valueEquals([comp.width, comp.height], [1920, 1080])).toBe(true);
   });
 
   test("test_add_folder", () => {
@@ -305,7 +305,7 @@ describe("TestNewMutations", () => {
     const path = tmpPath.div("ph.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(pyEq(proj.footages.map((f) => f.name), ["PH"])).toBe(true);
+    expect(valueEquals(proj.footages.map((f) => f.name), ["PH"])).toBe(true);
   });
 
   test("test_ae_preferences_dir_threaded", () => {
@@ -324,7 +324,7 @@ function _aePrefsDir(): Path | null {
     base.iterdir().filter((d) => d.isDir() && isdigit(d.name.slice(0, 1))),
     (d) => d.name,
   );
-  return pyBool(dirs) ? dirs[dirs.length - 1] : null;
+  return truthy(dirs) ? dirs[dirs.length - 1] : null;
 }
 
 describe("TestNewRenderQueue", () => {

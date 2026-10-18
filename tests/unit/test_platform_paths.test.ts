@@ -4,7 +4,7 @@
 
 import { expect, test } from "bun:test";
 
-import { pyEq } from "../../src/pyrt/index.ts";
+import { valueEquals } from "../../src/pyrt/index.ts";
 import { PENDING_ASCENDCOUNT, alasPlatform, buildAls2List } from "../../src/py_aep/binary/utils.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { asInstance } from "../helpers.ts";
@@ -88,7 +88,7 @@ test.each<[string, string, boolean, [number, number]]>([
   "test_counts[%#]",
   (project: string, target: string, isFolder: boolean, expected: [number, number]) => {
     expect(
-      pyEq(relativePathCounts(project, target, { targetIsFolder: isFolder }), expected),
+      valueEquals(relativePathCounts(project, target, { targetIsFolder: isFolder }), expected),
     ).toBe(true);
   },
 );
@@ -103,7 +103,7 @@ test.each([
   ["C:\\p\\a.aep", "relative\\b.png"],
 ])("test_no_relative_path[%#]", (project: string, target: string) => {
   expect(
-    pyEq(relativePathCounts(project, target, { targetIsFolder: false }), [0, 0]),
+    valueEquals(relativePathCounts(project, target, { targetIsFolder: false }), [0, 0]),
   ).toBe(true);
 });
 
@@ -121,7 +121,7 @@ test("test_counts_survive_the_platform_mapping", () => {
       platformPath(target, { windows: false }),
       { targetIsFolder: false },
     );
-    expect(pyEq(mapped, host)).toBe(true);
+    expect(valueEquals(mapped, host)).toBe(true);
   }
 });
 

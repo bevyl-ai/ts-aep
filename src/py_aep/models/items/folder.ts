@@ -10,7 +10,7 @@ import { FootageItem } from "./footage.ts";
 import { Item } from "./item.ts";
 import type { Project } from "../project.ts";
 import type { Viewer } from "../viewer/viewer.ts";
-import { ValueError, StopIteration, pyCmp, repr, sorted } from "../../../pyrt/index.ts";
+import { ValueError, StopIteration, compare, repr, sorted } from "../../../pyrt/index.ts";
 import { CompItem } from "./composition.ts";
 
 /**
@@ -383,7 +383,7 @@ export class FolderItem extends Item {
     }
     blocks.splice(blocks.indexOf(moved), 1);
     const key = item.name.toLowerCase();
-    let pos = blocks.findIndex((b) => pyCmp(b[0].name.toLowerCase(), key) > 0);
+    let pos = blocks.findIndex((b) => compare(b[0].name.toLowerCase(), key) > 0);
     if (pos === -1) {
       pos = blocks.length;
     }

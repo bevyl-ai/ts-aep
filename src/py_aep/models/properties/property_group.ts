@@ -7,16 +7,16 @@ import {
   at,
   bytes_,
   deferred,
-  dictGet,
+  getOr,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   max,
   objectGetattr,
   objectSetattr,
-  pyAssert,
+  assert,
   pyClassHooks,
-  pyOr,
+  truthyOr,
   repr,
   split,
   instanceDict,
@@ -119,7 +119,7 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
   const [display, blob] = entry;
   const raw = bytes_.fromhex(blob);
   const sspc = readChunks(new BytesIO(raw), raw.length)[0];
-  pyAssert(sspc instanceof ListChunk);
+  assert(sspc instanceof ListChunk);
   return [matchName, display, sspc];
 }
 
@@ -308,7 +308,7 @@ export function _reorderAndFill(
       });
       ordered.push(group);
     } else {
-      const [v, d] = dictGet<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(valueOverrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
+      const [v, d] = getOr<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(valueOverrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
       const prop = Property._new(spec, childDepth, {
         parentProperty: container,
         value: v,
@@ -578,7 +578,7 @@ export class PropertyGroup extends PropertyBase {
 
     // Flip synthetic flags on tdmn + group-owned chunks (not children).
     if (this._tdmn != null) this._tdmn.synthetic = false;
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const tdgp = this._tdgp;
     tdgp.synthetic = false;
     this._tdsb.synthetic = false;
@@ -962,7 +962,7 @@ export class PropertyGroup extends PropertyBase {
     const tagRaw = _vfTagFromStr(axisTag);
     const tdbs = slot._tdbs;
     tdb4ApplyVfAxisTemplate(slot._tdb4);
-    pyAssert(slot._cdat != null);
+    assert(slot._cdat != null);
     // AE writes [value, tag] plus eight zero-padding slots.
     slot._cdat.values = [axis.defaultValue, tagRaw, ...new Array(8).fill(0)];
     slot._value = null;
@@ -982,7 +982,7 @@ export class PropertyGroup extends PropertyBase {
     }
     // AE stores the axis display name in a vfdn sibling after the tdbs.
     const vfdn = VfdnChunk.new_(`Font Axis ${axis.name}`);
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const tdgp = this._tdgp;
     tdgp.chunks.splice(indexByIdentity(tdgp.chunks, tdbs) + 1, 0, vfdn);
     slot._vfdn = vfdn;
@@ -1090,7 +1090,7 @@ export class PropertyGroup extends PropertyBase {
 
   _addExpressionControl(matchName: string): PropertyGroup {
     /** Add a fresh expression-control effect to this Effect Parade. */
-    const skeleton = getitem(EXPRESSION_CONTROLS, matchName);
+    const skeleton = getOrThrow(EXPRESSION_CONTROLS, matchName);
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
 
@@ -1184,7 +1184,7 @@ export class PropertyGroup extends PropertyBase {
      */
     this._ensureMaterialized();
     const sspc = cloneChunkTree(defSspc);
-    pyAssert(sspc instanceof ListChunk);
+    assert(sspc instanceof ListChunk);
     rewriteOwnerTdpi(sspc, this._containingLayer.id);
     const comp = this._containingLayer.containingComp;
     rewriteTimeBase(sspc, comp._cdta.internalTimebase);
@@ -1226,7 +1226,7 @@ export class PropertyGroup extends PropertyBase {
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
-    pyAssert(parentTdgp != null);
+    assert(parentTdgp != null);
     _insertBeforeGroupEnd(parentTdgp, tdmn);
     if (engv != null) _insertBeforeGroupEnd(parentTdgp, engv);
     _insertBeforeGroupEnd(parentTdgp, sspc);
@@ -1259,7 +1259,7 @@ export class PropertyGroup extends PropertyBase {
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
-    pyAssert(parentTdgp != null);
+    assert(parentTdgp != null);
     _insertBeforeGroupEnd(parentTdgp, tdmn);
     _insertBeforeGroupEnd(parentTdgp, tdgp);
 
@@ -1312,7 +1312,7 @@ export class PropertyGroup extends PropertyBase {
      */
     const prop = this.properties.find((p) => p.matchName === matchName) ?? null;
     // resolve_addable returns only pool match names, so the member exists.
-    pyAssert(prop != null);
+    assert(prop != null);
     prop._ensureMaterialized();
     return prop;
   }
@@ -1344,7 +1344,7 @@ export class PropertyGroup extends PropertyBase {
      * carries an empty `ADBE Text Range Advanced` subgroup in binary.
      */
     this._ensureMaterialized();
-    const base = getitem(_TEXT_SELECTOR_NAMES, matchName);
+    const base = getOrThrow(_TEXT_SELECTOR_NAMES, matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
     const [tdmn, tdgp] = buildTextSelector(
       matchName,

@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { and, b, bytes_, bytesEq, decode, len, Path, pyBool, pyEq, StopIteration, struct } from "../../src/pyrt/index.ts";
+import { and, b, bytes_, bytesEq, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { ImportOptions, parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -45,7 +45,7 @@ function _leaves(data: Uint8Array, inList: Uint8Array = b("")): [string, number]
     }
   }
 
-  walk(0, len(data), !pyBool(inList));
+  walk(0, len(data), !truthy(inList));
   return out;
 }
 
@@ -54,7 +54,7 @@ function _readEveryLayer(project: Project): void {
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
       const stack: PropertyGroup[] = [layer];
-      while (pyBool(stack)) {
+      while (truthy(stack)) {
         const group = stack.pop();
         if (group === undefined) break;
         for (const child of group) {
@@ -73,13 +73,13 @@ describe("TestFixedStringTail", () => {
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     expect(String(chunk.sourceFormatType)).toBe("");
-    expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
+    expect(valueEquals(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
   test("test_assigned_code_with_nul_reads_back_as_reparsed", () => {
     const chunk = new SspcChunk({ sourceFormatType: "\x00vsc" });
     expect(String(chunk.sourceFormatType)).toBe("");
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
   });
 
   test("test_assigned_plain_string_drops_the_old_tail", () => {
@@ -87,7 +87,7 @@ describe("TestFixedStringTail", () => {
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     chunk.sourceFormatType = "png!";
-    expect(pyEq(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
+    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
   });
 
   test("test_solid_name_stale_tail_round_trips", () => {
@@ -98,7 +98,7 @@ describe("TestFixedStringTail", () => {
     data.set(stale, nameAt);
     const chunk = asInstance(OptiChunk.frombytes(new Uint8Array(data)), SoliOptiChunk);
     expect(String(chunk.solidName)).toBe("Black Solid 3");
-    expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
+    expect(valueEquals(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
   test("test_project_with_stale_tail_saves_byte_identical", () => {
@@ -115,7 +115,7 @@ describe("TestFixedStringTail", () => {
     }
     const second = tmpPath.div("second.aep");
     reparsed.project.save(second);
-    expect(pyEq(second.readBytes(), first.readBytes())).toBe(true);
+    expect(valueEquals(second.readBytes(), first.readBytes())).toBe(true);
   });
 });
 
@@ -126,7 +126,7 @@ describe("TestTdb4KeyFlagsByte", () => {
     const chunk = asInstance(Tdb4Chunk.frombytes(new Uint8Array(data)), Tdb4Chunk);
     expect(chunk._spatialMarker).toBe(0x07);
     expect(chunk._spatialMarker).toBeTruthy(); // still reads as a spatial stream
-    expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
+    expect(valueEquals(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
   test("test_reading_layers_keeps_the_byte", () => {
@@ -146,7 +146,7 @@ describe("TestTdb4KeyFlagsByte", () => {
     _readEveryLayer(app.project);
     const after = projectBytes(app.project);
     expect(createHash("sha1").update(after).digest("hex")).toBe(before);
-    expect(pyEq(after, new Uint8Array(data))).toBe(true);
+    expect(valueEquals(after, new Uint8Array(data))).toBe(true);
   });
 });
 

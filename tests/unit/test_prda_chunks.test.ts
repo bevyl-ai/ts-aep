@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { BytesIO, bytes_, pyEq } from "../../src/pyrt/index.ts";
+import { BytesIO, bytes_, valueEquals } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
@@ -56,7 +56,7 @@ describe("TestPrdaVariants", () => {
     });
     const buf = new BytesIO();
     chunk.write(buf);
-    expect(pyEq(buf.getvalue(), body)).toBe(true);
+    expect(valueEquals(buf.getvalue(), body)).toBe(true);
   });
 
   test("test_classic_shadow_map_resolution", () => {
@@ -110,7 +110,7 @@ describe("TestPrdaVariants", () => {
     /** A default-constructed variant equals AE's own default blob. */
     const buf = new BytesIO();
     new cls().write(buf);
-    expect(pyEq(buf.getvalue(), expected)).toBe(true);
+    expect(valueEquals(buf.getvalue(), expected)).toBe(true);
   });
 
   test.each<[Uint8Array, string]>([
@@ -129,6 +129,6 @@ describe("TestPrdaVariants", () => {
     expect(chunk.constructor).toBe(PrdaChunk);
     const buf = new BytesIO();
     chunk.write(buf);
-    expect(pyEq(buf.getvalue(), body)).toBe(true);
+    expect(valueEquals(buf.getvalue(), body)).toBe(true);
   });
 });

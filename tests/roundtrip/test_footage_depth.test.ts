@@ -1,7 +1,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { bytes_, fspath, getitem, lshift, Path, pyEq, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+import { bytes_, fspath, getOrThrow, lshift, Path, valueEquals, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProject } from "../helpers.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
@@ -86,9 +86,9 @@ function _depthBytes(source: FileSource): [Uint8Array, boolean] {
 test.each(sorted(_aeSources().keys()))("test_import_caches_after_effects_depth[%#]", (name) => {
   const project = _windowsProject();
   const item = asInstance(project.importFile(new ImportOptions(_asset(name))), FootageItem);
-  const ae = getitem(_aeSources(), name);
+  const ae = getOrThrow(_aeSources(), name);
   expect(asInstance(item.mainSource, FileSource)._sspc.depth).toBe(ae._sspc.depth);
-  expect(pyEq(_depthBytes(asInstance(item.mainSource, FileSource)), _depthBytes(ae))).toBe(true);
+  expect(valueEquals(_depthBytes(asInstance(item.mainSource, FileSource)), _depthBytes(ae))).toBe(true);
 });
 
 test.each(_COMP_FILES)("test_layered_comp_import_caches_after_effects_depth[%#]", (compFile) => {
@@ -109,12 +109,12 @@ test.each(_COMP_FILES)("test_layered_comp_import_caches_after_effects_depth[%#]"
     }
   }
   const ae = _aeLayerSources(fileName);
-  expect(pyEq(sorted(ours.keys()), sorted(ae.keys()))).toBe(true);
+  expect(valueEquals(sorted(ours.keys()), sorted(ae.keys()))).toBe(true);
   for (const [index, source] of ours.entries()) {
-    expect(pyEq(_depthBytes(source), _depthBytes(getitem(ae, index)))).toBe(true);
+    expect(valueEquals(_depthBytes(source), _depthBytes(getOrThrow(ae, index)))).toBe(true);
     // The layer's content box at its own channel count (colour channels,
     // plus one when it has transparency - not for a Background layer).
-    expect(pyEq(source._sspc.dataSize, getitem(ae, index)._sspc.dataSize)).toBe(true);
+    expect(valueEquals(source._sspc.dataSize, getOrThrow(ae, index)._sspc.dataSize)).toBe(true);
   }
 });
 
@@ -126,8 +126,8 @@ test("test_chosen_background_layer_is_opaque", () => {
   options.layerIndex = 1; // list_layers order is top first: the Background
   const item = asInstance(project.importFile(options), FootageItem);
   const source = asInstance(item.mainSource, FileSource);
-  expect(pyEq(_depthBytes(source), _depthBytes(getitem(ae, source._sspc.layerIndex)))).toBe(true);
-  expect(pyEq(source._sspc.dataSize, getitem(ae, source._sspc.layerIndex)._sspc.dataSize)).toBe(true);
+  expect(valueEquals(_depthBytes(source), _depthBytes(getOrThrow(ae, source._sspc.layerIndex)))).toBe(true);
+  expect(valueEquals(source._sspc.dataSize, getOrThrow(ae, source._sspc.layerIndex)._sspc.dataSize)).toBe(true);
   expect(source.hasAlpha).toBe(false);
 });
 
@@ -144,7 +144,7 @@ test("test_sequence_caches_the_frame_depth", () => {
   options.sequence = true;
   const item = asInstance(project.importFile(options), FootageItem);
   const mainSource = asInstance(item.mainSource, FileSource);
-  expect(pyEq(_depthBytes(mainSource), _depthBytes(asInstance(getitem(truth, item.name), FileSource)))).toBe(true);
+  expect(valueEquals(_depthBytes(mainSource), _depthBytes(asInstance(getOrThrow(truth, item.name), FileSource)))).toBe(true);
   expect(mainSource._sspc.depth).toBe(48);
 });
 
@@ -167,8 +167,8 @@ test.each(sorted(_aeSources().keys()))("test_import_sets_after_effects_media_fla
   // movie, audio and data files, neither for the other formats.
   const project = _windowsProject();
   const ours = asInstance(project.importFile(new ImportOptions(_asset(name))), FootageItem).mainSource._sspc.tobytes();
-  const ae = getitem(_aeSources(), name)._sspc.tobytes();
-  expect(pyEq([ours[0x70], ours[0x9f]], [ae[0x70], ae[0x9f]])).toBe(true);
+  const ae = getOrThrow(_aeSources(), name)._sspc.tobytes();
+  expect(valueEquals([ours[0x70], ours[0x9f]], [ae[0x70], ae[0x9f]])).toBe(true);
 });
 
 test("test_sequence_sets_only_the_first_media_flag", () => {
@@ -182,8 +182,8 @@ test("test_sequence_sets_only_the_first_media_flag", () => {
   const options = new ImportOptions(ASSETS.div("sequence_001.gif"));
   options.sequence = true;
   const ours = asInstance(project.importFile(options), FootageItem).mainSource._sspc.tobytes();
-  expect(pyEq([ours[0x70], ours[0x9f]], [0x08, 0x00])).toBe(true);
-  expect(pyEq([ours[0x70], ours[0x9f]], [ae._sspc.tobytes()[0x70], ae._sspc.tobytes()[0x9f]])).toBe(true);
+  expect(valueEquals([ours[0x70], ours[0x9f]], [0x08, 0x00])).toBe(true);
+  expect(valueEquals([ours[0x70], ours[0x9f]], [ae._sspc.tobytes()[0x70], ae._sspc.tobytes()[0x9f]])).toBe(true);
 });
 
 test.each(sorted(_aeSources().keys()))("test_import_caches_after_effects_data_size[%#]", (name) => {
@@ -192,7 +192,7 @@ test.each(sorted(_aeSources().keys()))("test_import_caches_after_effects_data_si
   // counting alpha only when the image has it: 2 for gray + alpha).
   const project = _windowsProject();
   const item = asInstance(project.importFile(new ImportOptions(_asset(name))), FootageItem);
-  expect(pyEq(item.mainSource._sspc.dataSize, getitem(_aeSources(), name)._sspc.dataSize)).toBe(true);
+  expect(valueEquals(item.mainSource._sspc.dataSize, getOrThrow(_aeSources(), name)._sspc.dataSize)).toBe(true);
 });
 
 test("test_data_size_above_32_bits_round_trips", () => {
@@ -202,8 +202,8 @@ test("test_data_size_above_32_bits_round_trips", () => {
   item.mainSource._sspc.dataSize = lshift(5, 30);
   const out = tmpPath.div("big.aep");
   project.save(out);
-  const reread = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem);
-  expect(pyEq(reread.mainSource._sspc.dataSize, lshift(5, 30))).toBe(true);
+  const reread = asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem);
+  expect(valueEquals(reread.mainSource._sspc.dataSize, lshift(5, 30))).toBe(true);
 });
 
 test("test_hq_field_separation_keeps_the_container_media_bit", () => {
@@ -216,7 +216,7 @@ test("test_hq_field_separation_keeps_the_container_media_bit", () => {
   item.mainSource.highQualityFieldSeparation = true;
   const out = tmpPath.div("hq.aep");
   project.save(out);
-  const reread = asInstance(asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
+  const reread = asInstance(asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
   expect(reread.highQualityFieldSeparation).toBe(true);
   expect(reread._sspc.tobytes()[0x9f]).toBe(0x09);
 });
@@ -226,9 +226,9 @@ test("test_movie_pixel_aspect_is_the_exact_pasp_ratio", () => {
   const project = _windowsProject();
   const item = asInstance(project.importFile(new ImportOptions(ASSETS.div("mov_alpha_small.mov"))), FootageItem);
   const sspc = item.mainSource._sspc;
-  const ae = getitem(_aeSources(), "mov_alpha_small.mov")._sspc;
-  expect(pyEq([sspc.pixelAspectDividend, sspc.pixelAspectDivisor], [4, 3])).toBe(true);
-  expect(pyEq([ae.pixelAspectDividend, ae.pixelAspectDivisor], [4, 3])).toBe(true);
+  const ae = getOrThrow(_aeSources(), "mov_alpha_small.mov")._sspc;
+  expect(valueEquals([sspc.pixelAspectDividend, sspc.pixelAspectDivisor], [4, 3])).toBe(true);
+  expect(valueEquals([ae.pixelAspectDividend, ae.pixelAspectDivisor], [4, 3])).toBe(true);
 });
 
 /**
@@ -255,8 +255,8 @@ test.each(_headerNames(..._HEADER_FORMATS))("test_import_writes_after_effects_op
   const item = asInstance(project.importFile(new ImportOptions(_asset(name))), FootageItem);
   const out = tmpPath.div("opti.aep");
   project.save(out);
-  const ours = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource;
-  expect(pyEq(ours._opti.tobytes(), getitem(_aeSources(), name)._opti.tobytes())).toBe(true);
+  const ours = asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource;
+  expect(valueEquals(ours._opti.tobytes(), getOrThrow(_aeSources(), name)._opti.tobytes())).toBe(true);
 });
 
 test.each(_headerNames("TEXT"))("test_document_footage_writes_after_effects_kind_bytes[%#]", (name) => {
@@ -268,9 +268,9 @@ test.each(_headerNames("TEXT"))("test_document_footage_writes_after_effects_kind
   const item = asInstance(project.importFile(new ImportOptions(_asset(name))), FootageItem);
   const out = tmpPath.div("kind.aep");
   project.save(out);
-  const ours = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource;
-  expect(pyEq(ours._sspc._reservedC8, getitem(_aeSources(), name)._sspc._reservedC8)).toBe(true);
-  expect(pyEq(ours._sspc._reservedC8, new Uint8Array([0x00, 0x02]))).toBe(true);
+  const ours = asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource;
+  expect(valueEquals(ours._sspc._reservedC8, getOrThrow(_aeSources(), name)._sspc._reservedC8)).toBe(true);
+  expect(valueEquals(ours._sspc._reservedC8, new Uint8Array([0x00, 0x02]))).toBe(true);
 });
 
 test.each([0, 1])("test_chosen_layer_records_the_document_channels_and_mode[%#]", (layerIndex) => {
@@ -288,10 +288,10 @@ test.each([0, 1])("test_chosen_layer_records_the_document_channels_and_mode[%#]"
   const item = asInstance(project.importFile(options), FootageItem);
   const out = tmpPath.div("layer.aep");
   project.save(out);
-  const source = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource;
+  const source = asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource;
   const ours = source._opti.tobytes();
-  expect(pyEq([ours[0x1e], ours[0x2a], ours[0x30], ours[0x5e]], [2, 1, 2, 2])).toBe(true);
-  expect(pyEq(ours, getitem(ae, source._sspc.layerIndex)._opti.tobytes())).toBe(true);
+  expect(valueEquals([ours[0x1e], ours[0x2a], ours[0x30], ours[0x5e]], [2, 1, 2, 2])).toBe(true);
+  expect(valueEquals(ours, getOrThrow(ae, source._sspc.layerIndex)._opti.tobytes())).toBe(true);
 });
 
 test.each([
@@ -309,9 +309,9 @@ test.each([
   options.layerIndex = layerIndex;
   const source = asInstance(project.importFile(options), FootageItem).mainSource;
   const ours = source._opti.tobytes();
-  const theirs = getitem(ae, source._sspc.layerIndex)._opti.tobytes();
-  expect(pyEq([ours[0x1e], ours[0x5e]], [3, channels])).toBe(true);
-  expect(pyEq([ours[0x1e], ours[0x5e]], [theirs[0x1e], theirs[0x5e]])).toBe(true);
+  const theirs = getOrThrow(ae, source._sspc.layerIndex)._opti.tobytes();
+  expect(valueEquals([ours[0x1e], ours[0x5e]], [3, channels])).toBe(true);
+  expect(valueEquals([ours[0x1e], ours[0x5e]], [theirs[0x1e], theirs[0x5e]])).toBe(true);
 });
 
 /**
@@ -342,17 +342,17 @@ test.each(sorted(_modeSources().keys()))("test_color_mode_import_matches_after_e
   const item = asInstance(project.importFile(new ImportOptions(ASSETS.div("depth", name))), FootageItem);
   const out = tmpPath.div("modes.aep");
   project.save(out);
-  const ours = asInstance(asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
-  const ae = getitem(_modeSources(), name);
-  expect(pyEq(ours._opti.tobytes(), ae._opti.tobytes())).toBe(true);
-  expect(pyEq(_depthBytes(ours), _depthBytes(ae))).toBe(true);
-  expect(pyEq(ours._sspc.dataSize, ae._sspc.dataSize)).toBe(true);
+  const ours = asInstance(asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
+  const ae = getOrThrow(_modeSources(), name);
+  expect(valueEquals(ours._opti.tobytes(), ae._opti.tobytes())).toBe(true);
+  expect(valueEquals(_depthBytes(ours), _depthBytes(ae))).toBe(true);
+  expect(valueEquals(ours._sspc.dataSize, ae._sspc.dataSize)).toBe(true);
 });
 
 test("test_audio_and_data_files_have_no_depth", () => {
   const sources = _aeSources();
   for (const name of ["wav.wav", "mp3.mp3", "csv.csv", "mp4_av1_with_audio.mp4"]) {
-    expect(getitem(sources, name)._sspc.depth).toBe(0);
-    expect(pyEq(bytes_.slice(getitem(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01]))).toBe(true);
+    expect(getOrThrow(sources, name)._sspc.depth).toBe(0);
+    expect(valueEquals(bytes_.slice(getOrThrow(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01]))).toBe(true);
   }
 });

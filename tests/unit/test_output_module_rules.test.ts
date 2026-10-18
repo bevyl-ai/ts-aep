@@ -19,13 +19,13 @@ import {
 import { AudioChannels, AudioCodec, FormatKind, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat } from "../../src/py_aep/enums/index.ts";
 import { _DEPTH_MINUS, _DEPTH_PLUS, OM_SETTINGS } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import {
-  dictGet,
-  getitem,
+  getOr,
+  getOrThrow,
   int,
-  pyAssert,
-  pyBool,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
   repr,
   sorted,
 } from "../../src/pyrt/index.ts";
@@ -80,7 +80,7 @@ test("test_constraint_keys_are_known_settings", () => {
   const valid = new Set([...OM_SETTINGS.keys(), ..._FO_CONSTRAINT_KEYS]);
   for (const constraints of _iterAllConstraintDicts()) {
     for (const key of constraints.keys()) {
-      pyAssert(valid.has(key), `unknown constraint key ${repr(key)}`);
+      assert(valid.has(key), `unknown constraint key ${repr(key)}`);
     }
   }
 });
@@ -89,7 +89,7 @@ test("test_condition_keys_are_buildable_context", () => {
   for (const entries of _CONDITIONAL_RULES.values()) {
     for (const [conditions, _] of entries) {
       for (const key of conditions.keys()) {
-        pyAssert(_CONDITION_KEYS.has(key), `unknown condition key ${repr(key)}`);
+        assert(_CONDITION_KEYS.has(key), `unknown condition key ${repr(key)}`);
       }
     }
   }
@@ -99,7 +99,7 @@ test("test_no_empty_allowed_sets", () => {
   // An empty set would make a setting unwritable for the format.
   for (const constraints of _iterAllConstraintDicts()) {
     for (const [key, values] of constraints) {
-      pyAssert(pyBool(values), `empty allowed set for ${repr(key)}`);
+      assert(truthy(values), `empty allowed set for ${repr(key)}`);
     }
   }
 });
@@ -111,7 +111,7 @@ function _depthClosureOk(channels: ReadonlySet<RuleValue>, depths: ReadonlySet<R
   if (channels.has(OutputChannels.RGBA)) {
     for (const depth of depths) {
       const base = int(depth);
-      if (_DEPTH_PLUS.has(base) && !depths.has(getitem(_DEPTH_PLUS, base))) {
+      if (_DEPTH_PLUS.has(base) && !depths.has(getOrThrow(_DEPTH_PLUS, base))) {
         return [false, `${base} has no +alpha pair in ${depthRepr(depths)}`];
       }
     }
@@ -119,7 +119,7 @@ function _depthClosureOk(channels: ReadonlySet<RuleValue>, depths: ReadonlySet<R
   if ([OutputChannels.RGB, OutputChannels.ALPHA].some((c) => channels.has(c))) {
     for (const depth of depths) {
       const plus = int(depth);
-      if (_DEPTH_MINUS.has(plus) && !depths.has(getitem(_DEPTH_MINUS, plus))) {
+      if (_DEPTH_MINUS.has(plus) && !depths.has(getOrThrow(_DEPTH_MINUS, plus))) {
         return [false, `${plus} has no base pair in ${depthRepr(depths)}`];
       }
     }
@@ -138,25 +138,25 @@ test.each(OutputFormat.members().map((fmt): [string, OutputFormat] => [OutputFor
      * depth reachable through the RGBA pairing maps (`_DEPTH_PLUS/_MINUS`)
      * from an allowed depth under allowed channels must itself be allowed.
      */
-    const fmtRules: Constraints = dictGet(_FORMAT_RULES, fmt, new Map<string, ReadonlySet<RuleValue>>());
+    const fmtRules: Constraints = getOr(_FORMAT_RULES, fmt, new Map<string, ReadonlySet<RuleValue>>());
     const branches: [Constraints, Map<string, RuleValue | RuleValue[]> | null][] = [[fmtRules, null]];
-    for (const [conditions, constraints] of dictGet(_CONDITIONAL_RULES, fmt, [])) {
+    for (const [conditions, constraints] of getOr(_CONDITIONAL_RULES, fmt, [])) {
       const merged: Constraints = new Map([...fmtRules, ...constraints]);
       branches.push([merged, conditions]);
     }
     for (const [branch, conditions] of branches) {
-      const depths = dictGet(branch, "Depth");
+      const depths = getOr(branch, "Depth");
       if (depths == null) continue;
-      let channels: ReadonlySet<RuleValue> = dictGet(branch, "Channels", _ALL_CHANNELS);
+      let channels: ReadonlySet<RuleValue> = getOr(branch, "Channels", _ALL_CHANNELS);
       // A branch conditioned on specific channels only ever applies
       // there (e.g. the generated parity rows): narrow accordingly.
-      const condChannels = dictGet(pyOr(conditions, new Map<string, RuleValue | RuleValue[]>()), "Channels");
+      const condChannels = getOr(truthyOr(conditions, new Map<string, RuleValue | RuleValue[]>()), "Channels");
       if (condChannels != null) {
         const condList = Array.isArray(condChannels) ? condChannels : [condChannels];
         channels = new Set([...channels].filter((c) => new Set(condList).has(c)));
       }
       const [ok, why] = _depthClosureOk(channels, depths);
-      pyAssert(ok, `${OutputFormat.nameOf(fmt)}: ${why}`);
+      assert(ok, `${OutputFormat.nameOf(fmt)}: ${why}`);
     }
   },
 );
@@ -166,7 +166,7 @@ test("test_forced_color_values_are_color_modes", () => {
   // OutputColorMode so the raw byte write is well-formed.
   for (const entries of _CONDITIONAL_RULES.values()) {
     for (const [_, constraints] of entries) {
-      for (const value of dictGet(constraints, "Color", [])) {
+      for (const value of getOr(constraints, "Color", [])) {
         expect(OutputColorMode.has(value)).toBe(true);
       }
     }
@@ -174,10 +174,10 @@ test("test_forced_color_values_are_color_modes", () => {
 });
 
 test("test_allowed_values_kind_and_format_merge", () => {
-  expect(pyEq(allowedValues(OutputFormat.MP3, "Video Output"), new Set([false]))).toBe(true);
-  expect(pyEq(allowedValues(OutputFormat.MP3, "Output Audio"), new Set([OutputAudio.ON]))).toBe(true);
+  expect(valueEquals(allowedValues(OutputFormat.MP3, "Video Output"), new Set([false]))).toBe(true);
+  expect(valueEquals(allowedValues(OutputFormat.MP3, "Output Audio"), new Set([OutputAudio.ON]))).toBe(true);
   expect(
-    pyEq(allowedValues(OutputFormat.TIFF_SEQUENCE, "Output Audio"), new Set([OutputAudio.OFF])),
+    valueEquals(allowedValues(OutputFormat.TIFF_SEQUENCE, "Output Audio"), new Set([OutputAudio.OFF])),
   ).toBe(true);
   // Movies leave both toggles free.
   expect(allowedValues(OutputFormat.AVI, "Video Output") == null).toBe(true);
@@ -196,13 +196,13 @@ test("test_allowed_values_conditional_replaces_format_row", () => {
     "Audio Sample Rate",
     new Map([["Audio Codec", AudioCodec.GSM_6_10]]),
   );
-  expect(pyEq(gsm, new Set([8000, 11025, 22050, 44100]))).toBe(true);
+  expect(valueEquals(gsm, new Set([8000, 11025, 22050, 44100]))).toBe(true);
   const channels = allowedValues(
     OutputFormat.WAV,
     "Audio Channels",
     new Map([["Audio Codec", AudioCodec.GSM_6_10]]),
   );
-  expect(pyEq(channels, new Set([AudioChannels.MONO]))).toBe(true);
+  expect(valueEquals(channels, new Set([AudioChannels.MONO]))).toBe(true);
 });
 
 test("test_allowed_values_missing_context_is_permissive", () => {

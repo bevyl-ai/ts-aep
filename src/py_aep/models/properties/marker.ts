@@ -1,4 +1,4 @@
-import { ValueError, descriptor, round, pyOr } from "../../../pyrt/index.ts";
+import { ValueError, descriptor, round, truthyOr } from "../../../pyrt/index.ts";
 import { Label } from "../../enums/index.ts";
 
 import { NmhdChunk } from "../../binary/misc_chunks.ts";
@@ -154,7 +154,7 @@ export class MarkerValue {
     obj._keyframe = _keyframe;
     obj._nmrd = _nmrd;
     obj._frameTime = frameTime;
-    obj._paramUtf8s = pyOr(_paramUtf8s, []);
+    obj._paramUtf8s = truthyOr(_paramUtf8s, []);
     return obj;
   }
 

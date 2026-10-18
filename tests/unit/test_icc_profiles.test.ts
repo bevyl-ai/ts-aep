@@ -8,13 +8,13 @@ import { describe, expect, test } from "bun:test";
 
 import { ColorProfileNotFoundError, IccProfileLibrary, defaultIccDirectories, iccProfileId } from "../../src/py_aep/color/icc.ts";
 import { _ICC_PROFILE_MAPPING, profileIdForName } from "../../src/py_aep/enums/mappings.ts";
-import { b, bytes_, pyEq, raises, range } from "../../src/pyrt/index.ts";
+import { b, bytes_, valueEquals, raises, range } from "../../src/pyrt/index.ts";
 
 /** Name -> 16-byte ID inversion of the catalogue. */
 describe("TestProfileIdForName", () => {
   test("test_known_name", () => {
     expect(
-      pyEq(
+      valueEquals(
         profileIdForName("sRGB IEC61966-2.1"),
         bytes_.fromhex("1d3fda2edb4a89ab60a23c5f7c7d81dd"),
       ),
@@ -28,7 +28,7 @@ describe("TestProfileIdForName", () => {
 
   test("test_inversion_is_total_and_consistent", () => {
     for (const [uidHex, name] of _ICC_PROFILE_MAPPING) {
-      expect(pyEq(profileIdForName(name), bytes_.fromhex(uidHex))).toBe(true);
+      expect(valueEquals(profileIdForName(name), bytes_.fromhex(uidHex))).toBe(true);
     }
   });
 });
@@ -42,7 +42,7 @@ describe("TestIccProfileId", () => {
     expected.set(bytes_.repeat(b("\x00"), 4), 64);
     expected.set(bytes_.repeat(b("\x00"), 16), 84);
     expect(
-      pyEq(
+      valueEquals(
         iccProfileId(data),
         new Uint8Array(createHash("md5").update(expected).digest()),
       ),
@@ -56,7 +56,7 @@ describe("TestIccProfileId", () => {
     const a = Uint8Array.from(range(256));
     const bb = Uint8Array.from(range(256));
     bb.set(b("\xde\xad\xbe\xef"), 64);
-    expect(pyEq(iccProfileId(a), iccProfileId(bb))).toBe(true);
+    expect(valueEquals(iccProfileId(a), iccProfileId(bb))).toBe(true);
   });
 });
 
@@ -72,7 +72,7 @@ describe("TestLibraryErrors", () => {
     // Even with no directories, a catalogued name resolves via the mapping.
     const lib = new IccProfileLibrary([]);
     expect(
-      pyEq(lib.hashFor("Apple RGB"), bytes_.fromhex("47ae2b5f4c143df9d07b5dc78036b5a8")),
+      valueEquals(lib.hashFor("Apple RGB"), bytes_.fromhex("47ae2b5f4c143df9d07b5dc78036b5a8")),
     ).toBe(true);
   });
 
@@ -92,8 +92,8 @@ describe.skipIf(!_DISCOVERABLE)("TestDiscovery", () => {
   test("test_discovered_bytes_hash_to_catalogued_id", () => {
     const lib = new IccProfileLibrary();
     const data = lib.bytesFor("sRGB IEC61966-2.1");
-    expect(pyEq(bytes_.slice(data, 36, 40), b("acsp"))).toBe(true);
-    expect(pyEq(iccProfileId(data), profileIdForName("sRGB IEC61966-2.1"))).toBe(true);
+    expect(valueEquals(bytes_.slice(data, 36, 40), b("acsp"))).toBe(true);
+    expect(valueEquals(iccProfileId(data), profileIdForName("sRGB IEC61966-2.1"))).toBe(true);
   });
 });
 

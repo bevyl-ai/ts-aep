@@ -2,7 +2,7 @@ import { findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/ut
 import { FileSource } from "../models/sources/file.ts";
 import { PlaceholderSource } from "../models/sources/placeholder.ts";
 import { SolidSource } from "../models/sources/solid.ts";
-import { getattr, hasattr, pyBool } from "../../pyrt/index.ts";
+import { getattr, hasattr, truthy } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
 
 /**

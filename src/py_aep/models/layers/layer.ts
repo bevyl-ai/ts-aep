@@ -34,10 +34,10 @@ import {
   setattr,
   mod,
   objectSetattr,
-  pyAssert,
-  pyBool,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
   repr,
   round,
   warn,
@@ -443,7 +443,7 @@ export class Layer extends PropertyGroup {
       containingComp,
     });
     layer._tdgp = rootTdgp;
-    layer._buildPropertyTree(pyOr(effectParamDefs, new Map()));
+    layer._buildPropertyTree(truthyOr(effectParamDefs, new Map()));
     return layer;
   }
 
@@ -493,7 +493,7 @@ export class Layer extends PropertyGroup {
    * the ones the file leaves out.
    */
   _buildPropertyTree(effectParamDefs: EffectParamDefs): void {
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const props = parseProperties(
       getMatchNameRuns(this._tdgp),
       1,
@@ -514,7 +514,7 @@ export class Layer extends PropertyGroup {
    */
   get essentialPropertyUuids(): string[] {
     if (this._essentialPropertyUuids == null) {
-      pyAssert(this._tdgp != null);
+      assert(this._tdgp != null);
       this._essentialPropertyUuids = _parseOvg2Uuids(this._tdgp.chunks);
     }
     return this._essentialPropertyUuids;
@@ -859,7 +859,7 @@ export class Layer extends PropertyGroup {
    */
   get transform(): MatchNameTypes["ADBE Transform Group"] {
     const group = this.property("ADBE Transform Group");
-    pyAssert(group instanceof PropertyGroup);
+    assert(group instanceof PropertyGroup);
     return group;
   }
 
@@ -930,7 +930,7 @@ export class Layer extends PropertyGroup {
    * chunks so that the tree stays unbuilt when none is.
    */
   _leavesOutLiveDefaults(): boolean {
-    pyAssert(this._tdgp != null);
+    assert(this._tdgp != null);
     const groups = getChunksByMatchName(this._tdgp);
     for (const [groupName, matchName] of this.constructor._LIVE_DEFAULTS) {
       const group = filterByListType(groups.get(groupName) ?? [], "tdgp");
@@ -1128,7 +1128,7 @@ export class Layer extends PropertyGroup {
       // may visually jump for those).
       const prop = transform.property(matchName);
       if (prop.keyframes?.length > 0) return;
-      if (!pyEq(prop.value, newValue)) prop.value = newValue;
+      if (!valueEquals(prop.value, newValue)) prop.value = newValue;
     };
 
     const remapSeparatedKeyframes = (leader: Property<number[]>, followers: Property<number>[]): void => {
@@ -1207,7 +1207,7 @@ export class Layer extends PropertyGroup {
         kf.value = remap.transformPoint(kfValue).slice(0, dims);
         for (const tangentAttr of ["inSpatialTangent", "outSpatialTangent"]) {
           const tangent = getattr(kf, tangentAttr);
-          if (pyBool(tangent)) {
+          if (truthy(tangent)) {
             setattr(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
           }
         }
@@ -1230,7 +1230,7 @@ export class Layer extends PropertyGroup {
         }
       } else {
         const remapped = parentRemap.transformPoint(anchor).slice(0, anchor.length);
-        if (!pyEq(remapped, anchor)) poi.value = remapped;
+        if (!valueEquals(remapped, anchor)) poi.value = remapped;
       }
       if (rigAimsAtPoi(this)) {
         // The look-at toward the remapped POI already turns the rig;
@@ -1288,7 +1288,7 @@ export class Layer extends PropertyGroup {
       return;
     }
     const rotated = composeOrientation(orientation, rotationDelta);
-    if (!pyEq(orientationProp.value, rotated)) orientationProp.value = rotated;
+    if (!valueEquals(orientationProp.value, rotated)) orientationProp.value = rotated;
   }
 
   /**
@@ -1627,7 +1627,7 @@ export class Layer extends PropertyGroup {
       // verbatim, so there is nothing to carry over.
       if (srcProp.keyframes?.length > 0 || dstProp.keyframes?.length > 0) continue;
       const value = srcProp.value;
-      if (value == null || pyEq(value, dstProp.value)) continue;
+      if (value == null || valueEquals(value, dstProp.value)) continue;
       dstProp.value = value;
     }
   }

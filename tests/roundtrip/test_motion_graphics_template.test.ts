@@ -11,11 +11,11 @@ import {
   Path,
   StopIteration,
   getattr,
-  getitem,
+  getOrThrow,
   len,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   sum,
 } from "../../src/pyrt/index.ts";
@@ -156,13 +156,13 @@ describe("TestAddProperty", () => {
     const comp = _primary(parseProjectFresh(BASE));
     const op = _opacity(comp);
     expect(op.addToMotionGraphicsTemplateAs(comp, "My Opacity")).toBe(true);
-    expect(pyEq(comp.motionGraphicsTemplateControllerNames, ["My Opacity"])).toBe(true);
+    expect(valueEquals(comp.motionGraphicsTemplateControllerNames, ["My Opacity"])).toBe(true);
     const ctrl = comp.motionGraphicsControllers[0];
     expect(ctrl.controllerType).toBe(2); // Slider
     expect(ctrl.sourceCompId).toBe(comp.id);
     expect(ctrl.sourceLayerId).toBe(comp.layers[0]._ldta.layerId);
     expect(
-      pyEq(
+      valueEquals(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
         ["ADBE Transform Group", "ADBE Opacity"],
       ),
@@ -171,11 +171,11 @@ describe("TestAddProperty", () => {
 
   test("test_add_bumps_every_cif_container", () => {
     const comp = _primary(parseProjectFresh(BASE));
-    expect(pyEq(new Set(_cctlCount(comp).values()), new Set([0]))).toBe(true);
+    expect(valueEquals(new Set(_cctlCount(comp).values()), new Set([0]))).toBe(true);
     _opacity(comp).addToMotionGraphicsTemplate(comp);
     // AE keeps the CIFO/CIF2/CIF3 copies in sync.
     expect(
-      pyEq(
+      valueEquals(
         _cctlCount(comp),
         new Map([
           ["CIFO", 1],
@@ -190,7 +190,7 @@ describe("TestAddProperty", () => {
     const comp = _primary(parseProjectFresh(BASE));
     const op = _opacity(comp);
     expect(op.addToMotionGraphicsTemplate(comp)).toBe(true);
-    expect(pyEq(comp.motionGraphicsTemplateControllerNames, [op.name])).toBe(true);
+    expect(valueEquals(comp.motionGraphicsTemplateControllerNames, [op.name])).toBe(true);
   });
 
   test("test_add_returns_false_when_already_added", () => {
@@ -209,13 +209,13 @@ describe("TestAddProperty", () => {
     const out = tmpPath.div("mgt.aep");
     project.save(out);
     const comp2 = _primary(parseAep(out).project);
-    expect(pyEq(comp2.motionGraphicsTemplateControllerNames, ["Fade"])).toBe(true);
+    expect(valueEquals(comp2.motionGraphicsTemplateControllerNames, ["Fade"])).toBe(true);
     const ctrl = comp2.motionGraphicsControllers[0];
     expect(ctrl.controllerType).toBe(2);
     expect(ctrl.sourceCompId).toBe(comp2.id);
     expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layerId);
     expect(
-      pyEq(
+      valueEquals(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
         ["ADBE Transform Group", "ADBE Opacity"],
       ),
@@ -231,7 +231,7 @@ describe("TestAddProperty", () => {
     project.save(out);
     const out2 = tmpPath.div("mgt2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
+    expect(valueEquals(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -242,7 +242,7 @@ class TestEffectParamPaths {
     for (const cctl of _cif3Cctls(comp)) {
       const cps2 = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CpS2"), ListChunk);
       const name = asInstance(next(cps2.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
-      if (!pyEq(name, ctrlName)) continue;
+      if (!valueEquals(name, ctrlName)) continue;
       const cprp = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
       return asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
     }
@@ -251,7 +251,7 @@ class TestEffectParamPaths {
 
   static _py_json(prop: Property): string {
     const resolved = _sourcePropertyPath(prop);
-    pyAssert(resolved != null);
+    assert(resolved != null);
     return _pathJson(resolved[0]);
   }
 }
@@ -279,7 +279,7 @@ describe("TestEffectParamPaths", () => {
 
   test("test_both_orders_in_one_stack_match_ae", () => {
     const project = parseProjectFresh(EG_DIR.div("group_controller.aep"));
-    const comp = next(project.compositions, (c) => pyBool(c.motionGraphicsControllers));
+    const comp = next(project.compositions, (c) => truthy(c.motionGraphicsControllers));
     const blur = _effectParam(comp, "ADBE Gaussian Blur 2", "ADBE Gaussian Blur 2-0001");
     const fill = _effectParam(comp, "ADBE Fill", "ADBE Fill-0002");
     expect(TestEffectParamPaths._py_json(blur)).toBe(
@@ -302,7 +302,7 @@ describe("TestEffectParamPaths", () => {
     const comp2 = getComp(parseAep(out).project, "primary");
     const ctrl = next(comp2.motionGraphicsControllers, (c) => c.name === "Fill Opacity");
     expect(
-      pyEq(
+      valueEquals(
         ctrl.sourcePropertyPath.map((r) => [r.matchName, r.propIndex]),
         [
           ["ADBE Effect Parade", null],
@@ -335,7 +335,7 @@ class TestIndexedGroupControllers {
   static FIXTURE = EG_DIR.div("indexed_group_controllers.aep");
 
   static _comp(project: Project): CompItem {
-    return next(project.compositions, (c) => pyBool(c.motionGraphicsControllers));
+    return next(project.compositions, (c) => truthy(c.motionGraphicsControllers));
   }
 }
 
@@ -354,13 +354,13 @@ describe("TestIndexedGroupControllers", () => {
     const comp = TestIndexedGroupControllers._comp(project);
     expect(len(comp.motionGraphicsControllers)).toBe(8);
     for (const ctrl of comp.motionGraphicsControllers) {
-      const layer = getitem(comp.layersById, ctrl.sourceLayerId);
+      const layer = getOrThrow(comp.layersById, ctrl.sourceLayerId);
       const resolved = _walkSourceProperty(asInstance(layer, AVLayer), ctrl.sourcePropertyPath);
-      pyAssert(resolved != null, ctrl.name);
+      assert(resolved != null, ctrl.name);
       const rebuilt = _sourcePropertyPath(asInstance(resolved, Property));
-      pyAssert(rebuilt != null, ctrl.name);
-      pyAssert(
-        pyEq(
+      assert(rebuilt != null, ctrl.name);
+      assert(
+        valueEquals(
           rebuilt[0].map((n) => [n.matchName, n.propIndex]),
           ctrl.sourcePropertyPath.map((r) => [r.matchName, r.propIndex]),
         ),
@@ -381,12 +381,12 @@ describe("TestIndexedGroupControllers", () => {
       ["Anim Opacity 1", "Anim Opacity 2"],
     ];
     for (const [aName, bName] of pairs) {
-      const aCtrl = getitem(byName, aName);
-      const bCtrl = getitem(byName, bName);
-      const layer = getitem(comp.layersById, aCtrl.sourceLayerId);
+      const aCtrl = getOrThrow(byName, aName);
+      const bCtrl = getOrThrow(byName, bName);
+      const layer = getOrThrow(comp.layersById, aCtrl.sourceLayerId);
       const a = _walkSourceProperty(asInstance(layer, AVLayer), aCtrl.sourcePropertyPath);
       const b = _walkSourceProperty(asInstance(layer, AVLayer), bCtrl.sourcePropertyPath);
-      pyAssert(a != null && b != null);
+      assert(a != null && b != null);
       expect(a.matchName).toBe(b.matchName);
       expect(a).not.toBe(b);
     }
@@ -398,9 +398,9 @@ describe("TestIndexedGroupControllers", () => {
     // mask atom's positional index and survive a save/reparse.
     const project = parseProjectFresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
-    const solid = next(comp.layers, (lyr) => pyBool(lyr.masks));
+    const solid = next(comp.layers, (lyr) => truthy(lyr.masks));
     const masks = solid.masks;
-    pyAssert(masks != null);
+    assert(masks != null);
     const expansion = asInstance(
       next(asInstance(masks.property(1), PropertyGroup).properties, (p) => p.matchName === "ADBE Mask Offset"),
       Property,
@@ -412,7 +412,7 @@ describe("TestIndexedGroupControllers", () => {
     const comp2 = TestIndexedGroupControllers._comp(parseAep(out).project);
     const ctrl = next(comp2.motionGraphicsControllers, (c) => c.name === "Mask2 Expansion");
     expect(
-      pyEq(
+      valueEquals(
         ctrl.sourcePropertyPath.map((r) => [r.matchName, r.propIndex]),
         [
           ["ADBE Mask Parade", null],
@@ -429,14 +429,14 @@ describe("TestIndexedGroupControllers", () => {
     // topic-group node - py must rebuild exactly that.
     const project = parseProjectFresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
-    const solid = next(comp.layers, (lyr) => pyBool(lyr.masks));
+    const solid = next(comp.layers, (lyr) => truthy(lyr.masks));
     const effects = asInstance(next(solid.properties, (p) => p.matchName === "ADBE Effect Parade"), PropertyGroup);
     const fx = asInstance(next(effects.properties, (p) => p.matchName === "ADBE Fractal Noise"), PropertyGroup);
     const prop = asInstance(next(fx.properties, (p) => p.matchName === "ADBE Fractal Noise-0010"), Property);
     const resolved = _sourcePropertyPath(prop);
-    pyAssert(resolved != null);
+    assert(resolved != null);
     expect(
-      pyEq(
+      valueEquals(
         resolved[0].map((n) => [n.matchName, n.propIndex]),
         [
           ["ADBE Effect Parade", null],
@@ -486,7 +486,7 @@ describe("TestAddLayerMediaReplacement", () => {
     expect(ctrl.sourceCompId).toBe(comp2.id);
     expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layerId);
     expect(
-      pyEq(
+      valueEquals(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
         ["ADBE Source Options Group", "ADBE Layer Source Alternate"],
       ),
@@ -494,11 +494,11 @@ describe("TestAddLayerMediaReplacement", () => {
     // The decoded source-media fields survive the round-trip.
     const cctl = _cif3Cctls(comp2)[0];
     const byType = new Map(cctl.chunks.map((c) => [c.chunkType, c] as const));
-    expect(asInstance(getitem(byType, "CSMw"), U4Chunk).value).toBe(640);
-    expect(asInstance(getitem(byType, "CSMh"), U4Chunk).value).toBe(346);
-    expect(asInstance(getitem(byType, "CSMs"), U4Chunk).value).toBe(0);
-    expect(asInstance(getitem(byType, "CSMe"), U4Chunk).value).toBe(720000);
-    expect(asInstance(getitem(byType, "CSMt"), U4Chunk).value).toBe(23976);
+    expect(asInstance(getOrThrow(byType, "CSMw"), U4Chunk).value).toBe(640);
+    expect(asInstance(getOrThrow(byType, "CSMh"), U4Chunk).value).toBe(346);
+    expect(asInstance(getOrThrow(byType, "CSMs"), U4Chunk).value).toBe(0);
+    expect(asInstance(getOrThrow(byType, "CSMe"), U4Chunk).value).toBe(720000);
+    expect(asInstance(getOrThrow(byType, "CSMt"), U4Chunk).value).toBe(23976);
   });
 
   test("test_builder_matches_fixture_bytes", () => {
@@ -527,7 +527,7 @@ describe("TestAddLayerMediaReplacement", () => {
       14,
       pathJson,
     );
-    expect(pyEq(_chunkBytes(built), _chunkBytes(fixtureCctl))).toBe(true);
-    expect(asInstance(getitem(byType, "CSMd"), U4Chunk).value).toBe(2);
+    expect(valueEquals(_chunkBytes(built), _chunkBytes(fixtureCctl))).toBe(true);
+    expect(asInstance(getOrThrow(byType, "CSMd"), U4Chunk).value).toBe(2);
   });
 });

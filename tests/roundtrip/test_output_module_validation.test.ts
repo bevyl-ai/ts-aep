@@ -14,7 +14,7 @@ import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
-import { Path, pyAssert, pyEq, ValueError } from "../../src/pyrt/index.ts";
+import { Path, assert, valueEquals, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
@@ -61,7 +61,7 @@ test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: str
     om.settings.set(key, value);
   });
   // NOTE(port): py_assert carries the same assert message as the Python original.
-  pyAssert(pyEq(om.getSettings(), before), "rejected write must not mutate");
+  assert(valueEquals(om.getSettings(), before), "rejected write must not mutate");
 });
 
 // NOTE: the samples store RGB channels, so only base (non-`+`) depths
@@ -100,7 +100,7 @@ test("test_quicktime_supports_alpha", () => {
   const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  expect(pyEq(om2.validateState(), [])).toBe(true);
+  expect(valueEquals(om2.validateState(), [])).toBe(true);
 });
 
 /** AE offers `+` depths only under RGB+Alpha (parity rows). */
@@ -182,8 +182,8 @@ test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
   om.settings.set("Use Region of Interest", true);
   om.settings.set("Resize", false);
   expect(om.settings.get("Video Output")).toBe(false);
-  expect(pyEq([om._roou.width, om._roou.height], [0, 0])).toBe(true);
-  expect(pyEq(om.validateState(), [])).toBe(true);
+  expect(valueEquals([om._roou.width, om._roou.height], [0, 0])).toBe(true);
+  expect(valueEquals(om.validateState(), [])).toBe(true);
   raises(ValueError, () => {
     om.settings.set("Resize to", [1280, 720]);
   });
@@ -203,5 +203,5 @@ test("test_garbage_channels_byte_stays_permissive", () => {
   om._omLdat.channels = 7; // not a valid OutputChannels member
   om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
   om.settings.set("Audio Channels", om.settings.get("Audio Channels")); // clamp path
-  expect(pyEq(om.validateState(), [])).toBe(true);
+  expect(valueEquals(om.validateState(), [])).toBe(true);
 });

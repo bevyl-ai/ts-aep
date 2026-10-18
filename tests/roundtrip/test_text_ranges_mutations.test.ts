@@ -16,8 +16,8 @@ import { resolvePostscript } from "../../src/py_aep/svg/fonts.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
   Path,
-  pyEq,
-  pyOr,
+  valueEquals,
+  truthyOr,
   sorted,
   StopIteration,
   ValueError,
@@ -51,8 +51,8 @@ function _requireComposer(doc: TextDocument): string | null {
   // NOTE(port): importorskip("uharfbuzz") never skips here: text_composition.ts loads harfbuzzjs unconditionally at module load.
   const fonts = doc._fonts.map((font) => font.postScriptName);
   const used = new Set<string>();
-  for (const run of cosIter(pyOr(cosGet(doc._doc, "0", "6", "0"), []))) {
-    const style = pyOr(cosGet(run, "0", "0", "6"), new Map());
+  for (const run of cosIter(truthyOr(cosGet(doc._doc, "0", "6", "0"), []))) {
+    const style = truthyOr(cosGet(run, "0", "0", "6"), new Map());
     const index = cosDict(style, "get").get("0") ?? null;
     if (is(pyInt, index) && 0 <= Number(index) && Number(index) < fonts.length) {
       used.add(fonts[Number(index)]);
@@ -84,7 +84,7 @@ describe("TestTextSetterRunRebuild", () => {
     expect(doc2.paragraphCount).toBe(2);
     expect(doc2.characterRange(0, -1).fontSize).toBe(72.0);
     expect(
-      pyEq(
+      valueEquals(
         [doc2.paragraphRange(1).characterStart, doc2.paragraphRange(1).characterEnd],
         [9, 13],
       ),
@@ -107,7 +107,7 @@ describe("TestTextSetterRunRebuild", () => {
     expect(doc.text).toBe("A\nB\n");
     expect(doc.paragraphCount).toBe(3);
     const pr = doc.paragraphRange(2);
-    expect(pyEq([pr.characterStart, pr.characterEnd], [4, 4])).toBe(true);
+    expect(valueEquals([pr.characterStart, pr.characterEnd], [4, 4])).toBe(true);
 
     const out = tmpPath.div("trailing.aep");
     app.project.save(out);
@@ -137,7 +137,7 @@ describe("TestRecomposition", () => {
     expect(doc.compositionStale).toBe(false);
     expect(doc.composedLineCount).toBe(1); // AE-verified
     const rng = doc.composedLineRange(0);
-    expect(pyEq([rng.characterStart, rng.characterEnd], [0, 4])).toBe(true);
+    expect(valueEquals([rng.characterStart, rng.characterEnd], [0, 4])).toBe(true);
     expect(doc.boxOverflow).toBe(false);
   });
 
@@ -157,7 +157,7 @@ describe("TestRecomposition", () => {
     expect(doc.compositionStale).toBe(false);
     expect(doc.composedLineCount).toBe(3);
     const rng = doc.composedLineRange(2);
-    expect(pyEq([rng.characterStart, rng.characterEnd], [8, 13])).toBe(true);
+    expect(valueEquals([rng.characterStart, rng.characterEnd], [8, 13])).toBe(true);
   });
 
   test("test_unresolvable_font_falls_back_to_stale", () => {
@@ -281,7 +281,7 @@ describe("TestStaleComposedLines", () => {
     // value object); line 0 clamps, deeper lines raise at creation.
     expect(doc.composedLineCount).toBe(6);
     const first = doc.composedLineRange(0);
-    expect(pyEq([first.characterStart, first.characterEnd], [0, 4])).toBe(true);
+    expect(valueEquals([first.characterStart, first.characterEnd], [0, 4])).toBe(true);
     expect(first.characterRange().text).toBe("tiny");
     raises(ValueError, () => doc.composedLineRange(1), "ComposedLine index range");
 

@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { StopIteration, getattr, hasattr, len, pyBool, range, str } from "../../src/pyrt/index.ts";
+import { StopIteration, getattr, hasattr, len, truthy, range, str } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
@@ -48,7 +48,7 @@ describe("TestThreeDLayerRefreshesTransform", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("keyframe_1D.aep"));
     const layer = asInstance(app.project.compositions[0].layers[0], py_aep.AVLayer);
     const rotateZ = asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Rotate Z");
-    expect(pyBool(layer.threeDLayer)).toBe(false);
+    expect(truthy(layer.threeDLayer)).toBe(false);
     expect(str(rotateZ.name)).toBe("Rotation");
 
     layer.threeDLayer = true;
@@ -171,26 +171,26 @@ describe("TestCameraAndLightSeparate", () => {
   ])("test_separation_persists[%#]", (sample: string, compName: string | null) => {
     const tmpPath: Path = makeTmpPath();
     const app = parseAppFresh(SAMPLES_DIR.div("models", sample));
-    const comp = pyBool(compName)
+    const comp = truthy(compName)
       ? next(app.project.compositions, (c) => c.name === compName)
       : app.project.compositions[0];
     const layer = comp.layers[0];
     const pos = asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Position");
     const before = [...pos.value];
-    expect(pyBool(pos.dimensionsSeparated)).toBe(false);
+    expect(truthy(pos.dimensionsSeparated)).toBe(false);
 
     pos.dimensionsSeparated = true;
 
-    expect(pyBool(pos.dimensionsSeparated)).toBe(true);
+    expect(truthy(pos.dimensionsSeparated)).toBe(true);
     const out = tmpPath.div("separated.aep");
     app.project.save(out);
 
     const app2 = parseAppFresh(out);
-    const comp2 = pyBool(compName)
+    const comp2 = truthy(compName)
       ? next(app2.project.compositions, (c) => c.name === compName)
       : app2.project.compositions[0];
     const pos2 = asInstance(comp2.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Position");
-    expect(pyBool(pos2.dimensionsSeparated)).toBe(true);
+    expect(truthy(pos2.dimensionsSeparated)).toBe(true);
     // The Z the camera/light is positioned at must survive.
     expect(approx(pos2.value, before)).toBe(true);
     expect(approx(asInstance(pos2.getSeparationFollower(2), py_aep.Property).value, before[2])).toBe(true);
@@ -229,7 +229,7 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getattr(p, "matchName", null) === "ADBE Position" && pyBool(asInstance(p, py_aep.Property).dimensionsSeparated))
+              if (getattr(p, "matchName", null) === "ADBE Position" && truthy(asInstance(p, py_aep.Property).dimensionsSeparated))
                 yield asInstance(p, py_aep.Property);
       })(),
     );

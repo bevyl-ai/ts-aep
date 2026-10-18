@@ -21,8 +21,8 @@ import {
   listMul,
   patternFindall,
   patternMatch,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   pyRe,
   pyfloat,
   reEscape,
@@ -45,7 +45,7 @@ function fromhex(s: string): number {
   if (s === "-inf") return -Infinity;
   if (s === "nan") return NaN;
   const m = /^(-?)0x([01])\.([0-9a-f]+)p([+-]\d+)$/.exec(s);
-  pyAssert(m != null);
+  assert(m != null);
   const mant = Number(BigInt("0x" + m[2] + m[3]));
   const e = Number(m[4]) - 4 * m[3].length;
   const v = e >= -1022 ? mant * 2 ** e : mant * 2 ** (e + 600) * 2 ** -600;
@@ -239,8 +239,8 @@ describe("builtins", () => {
     expect(listMul([0, 1], 2)).toEqual([0, 1, 0, 1]);
     expect(listMul([0], -1)).toEqual([]);
     const view = { keys: () => ["a", "b"], get: (k: string) => k.toUpperCase() };
-    expect(pyEq(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
-    expect(pyEq(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);
+    expect(valueEquals(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
+    expect(valueEquals(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);
   });
 });
 

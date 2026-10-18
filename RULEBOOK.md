@@ -56,7 +56,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - Third-party: `attrs` → `pyrt/attrs.ts`; `fontTools` → `fontkit` (+ hand logic),
   `uharfbuzz` → `harfbuzzjs`, `yaml` → `yaml` (npm). Where parity with the Python library is not
   certain, translate faithfully anyway and add `// TODO(port): <specific parity risk>`.
-- Stdlib: `struct` → `pyrt struct` (`pack_into` included); `io.BytesIO` / `io.StringIO` →
+- Stdlib: `struct` → `pyrt struct` (`packInto` included); `io.BytesIO` / `io.StringIO` →
   `pyrt BytesIO` / `StringIO`; `open(path, "rb")` → `pyrt open_rb`; `pathlib.Path` →
   `pyrt Path` (`p / "x"` → `p.div("x")`, `Path.home()`); `PurePosixPath` / `PureWindowsPath` →
   pyrt's (same `div`). **`src/` never touches the host directly**: no
@@ -71,15 +71,15 @@ translating** and use them; do not reimplement anything they provide. Never edit
   except helpers in `pyrt/num.ts` (`isclose`, `copysign`, `fsum`, `radians`, `degrees`) and
   `math.hypot` → pyrt `hypot` (CPython's rounding);
   `zlib` → `pyrt/zlib.ts` over fflate (`zlib.decompress`, `zlib.decompressobj().decompress(x,
-  max_length)`, `zlib.error`, `gzip_decompress`); `hashlib.md5(x).digest()` → `md5(x)`
+  max_length)`, `zlib.error`, `gzipDecompress`); `hashlib.md5(x).digest()` → `md5(x)`
   (`pyrt/md5.ts`); `base64.b64encode/b64decode` → `pyrt/base64.ts` (CPython's non-strict
-  decode, `binascii.Error`); `uuid.uuid4()` / `.bytes` → `uuid4()` / `uuid4_bytes()`
-  (`pyrt/uuid.ts`); a latin-1 string view of bytes → `bytes_.latin1_str` / `latin1_bytes`;
+  decode, `binascii.Error`); `uuid.uuid4()` / `.bytes` → `uuid4()` / `uuid4Bytes()`
+  (`pyrt/uuid.ts`); a latin-1 string view of bytes → `bytes_.latin1_str` / `latin1Bytes`;
   fonts → `fontkit.create(host.fs.readFileSync(p))` (never `fontkit.openSync`);
-  `json.loads` / `json.dumps` → pyrt `json_loads` / `json_dumps` (dicts are Maps, floats
-  `PyFloat`, big ints `bigint`; see §7); `re` → pyrt `py_re(pattern, flags)` (Python syntax and
-  Unicode `\d`/`\w`/`\s`), `re_search` / `re_match` / `re_fullmatch` / `re_escape`, and
-  `pattern_match` / `pattern_search` / `pattern_findall` for a compiled pattern's methods;
+  `json.loads` / `json.dumps` → pyrt `jsonLoads` / `jsonDumps` (dicts are Maps, floats
+  `PyFloat`, big ints `bigint`; see §7); `re` → pyrt `pyRe(pattern, flags)` (Python syntax and
+  Unicode `\d`/`\w`/`\s`), `reSearch` / `reMatch` / `reFullmatch` / `reEscape`, and
+  `patternMatch` / `patternSearch` / `patternFindall` for a compiled pattern's methods;
   `warnings.warn` → `pyrt warn`; `logging.getLogger(__name__)` → a module const
   `const logger = { debug() {}, info() {}, warning: (m: string) => warn(m) }` (keep call sites);
   `functools.lru_cache` → `pyrt lru_cache`; `copy.deepcopy`/`copy.copy` → `pyrt deepcopy`/`copy`;
@@ -117,17 +117,17 @@ translating** and use them; do not reimplement anything they provide. Never edit
 | tuple as dict key / set member | `tkey(a, b)` from pyrt (`Map<string, V>`) |
 | `b"\x00ab"` literal | `b("\x00ab")` from pyrt |
 | `bytes(n)` / `b"\x00" * n` | `new Uint8Array(n)` / `bytes_.repeat(b("\x00"), n)` |
-| bytes ops (`+`, `==`, `.find`, `.strip`, `.startswith`, slicing, `.join`, `.hex`, `int.from_bytes`) | `pyrt bytes_.*` helpers (`concat`, `bytes_eq`, `find`, `strip`, `startswith`, `slice`, `join`, `hex`, `int_from_bytes`) |
+| bytes ops (`+`, `==`, `.find`, `.strip`, `.startswith`, slicing, `.join`, `.hex`, `int.from_bytes`) | `pyrt bytes_.*` helpers (`concat`, `bytesEq`, `find`, `strip`, `startswith`, `slice`, `join`, `hex`, `intFromBytes`) |
 | `x.decode(enc, errors)` / `s.encode(enc, errors)` | `decode(x, enc, errors)` / `encode(s, enc, errors)` from pyrt — **never** `TextDecoder`/`TextEncoder` (they drop BOMs and replace lone surrogates; `surrogateescape` must round-trip) |
 
 ## 4. Semantics that differ (use pyrt every time)
 
 - **Truthiness**: `if x:` / `not x` / `x or y` / `x and y` / `bool(x)` where `x` may be a
-  container (list, tuple, str, bytes, dict, set, object with `__len__`) → `py_bool(x)`,
-  `!py_bool(x)`, `py_or(x, y)`, `py_and(x, y)`. Plain `if (x)` is fine only when `x` is
+  container (list, tuple, str, bytes, dict, set, object with `__len__`) → `truthy(x)`,
+  `!py_bool(x)`, `truthyOr(x, y)`, `pyAnd(x, y)`. Plain `if (x)` is fine only when `x` is
   certainly a number, boolean, or nullable object. An empty array / Uint8Array is truthy in JS.
 - **Equality**: `==` on numbers/strings/booleans/None → `===` (`== null` for None). On lists,
-  tuples, bytes, dicts, attrs instances or anything with `__eq__` → `py_eq(a, b)`. `!=` →
+  tuples, bytes, dicts, attrs instances or anything with `__eq__` → `valueEquals(a, b)`. `!=` →
   `!py_eq`. `is` → `===`.
 - **Membership**: `x in container` → `contains(container, x)`, or the direct `.has()` /
   `.includes()` when the container type is certain (string/array of primitives/Set/Map).
@@ -138,7 +138,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
   compensated summation) — never `reduce((a,b)=>a+b)`; `math.fsum` → `fsum`; `x ** y` → `x ** y`.
   `/` is true division in both.
 - **Integers wider than int32**: JS `& | ^ ~ << >>` operate on int32. For values that can exceed
-  2^31 (u4 fields, flags words, ids, hashes) use `and`, `or`, `and_not`, `lshift`, `rshift`
+  2^31 (u4 fields, flags words, ids, hashes) use `and`, `or`, `andNot`, `lshift`, `rshift`
   from pyrt or append `>>> 0` to an unsigned 32-bit result. `1 << n` with n ≥ 31 →
   `lshift(1, n)`. Values that can exceed 2^53 (u64 `Q`/`q` struct fields, murmur hashes,
   64-bit arithmetic) → `bigint` throughout that code path.
@@ -154,17 +154,17 @@ translating** and use them; do not reimplement anything they provide. Never edit
   `isspace`, `isupper`, `islower`; `s.startswith(("a","b"))` → `["a","b"].some(p => s.startsWith(p))`;
   `str * n` → `.repeat(n)`; `chr`/`ord` → `String.fromCodePoint` / `codePointAt(0)`.
 - **f-strings / `%` / `str()` / `repr()`**: interpolate with template literals. A float rendered
-  in output (`f"{x}"`, `str(x)`) → `float_repr(x)` / `num_str(x)`; a format spec (`f"{x:.3f}"`,
+  in output (`f"{x}"`, `str(x)`) → `floatRepr(x)` / `numStr(x)`; a format spec (`f"{x:.3f}"`,
   `"%g" % x`, `format(x, ".10g")`) → `format(x, ".3f")` from pyrt; `{x!r}` / `repr(x)` →
   `repr(x)` from pyrt. Exception messages must stay character-identical (tests match them with
   regexes).
 - **Ordering**: `sorted(xs, key=k, reverse=r)` → `sorted(xs, k, r)`; `min`/`max` with key or on
-  tuples/strings → pyrt `min`/`max`; `<` between tuples/lists → `py_cmp(a, b) < 0`.
+  tuples/strings → pyrt `min`/`max`; `<` between tuples/lists → `compare(a, b) < 0`.
   `xs.sort(key=k)` → `xs.splice(0, xs.length, ...sorted(xs, k))`.
 - **Indexing**: `xs[-1]` → `xs.at(-1)!` (or `at(xs, -1)` when an IndexError matters);
-  `xs[a:b]` → `xs.slice(a, b)` for non-negative bounds else `py_slice(xs, a, b)`;
-  `d[k]` on a Map where KeyError matters → `getitem(d, k)`; `d.get(k, default)` →
-  `dict_get(d, k, default)` (returns `null`, not `undefined`, when absent).
+  `xs[a:b]` → `xs.slice(a, b)` for non-negative bounds else `pySlice(xs, a, b)`;
+  `d[k]` on a Map where KeyError matters → `getOrThrow(d, k)`; `d.get(k, default)` →
+  `getOr(d, k, default)` (returns `null`, not `undefined`, when absent).
 - **Iteration**: `for i, x in enumerate(xs)` → `for (const [i, x] of xs.entries())` (or
   `enumerate(xs, start)`); `zip` → pyrt `zip`; `range` → classic `for` loops (or pyrt `range`);
   comprehensions → `map`/`filter`/loops preserving evaluation order; generators (`yield`) →
@@ -174,23 +174,23 @@ translating** and use them; do not reimplement anything they provide. Never edit
   `AttributeError`, `NotImplementedError`, `UnicodeDecodeError`, `StructError` for
   `struct.error`, …). `except (A, B) as e:` → `catch (e) { if (!(e instanceof A || e instanceof B)) throw e; … }`.
   Custom exception classes extend the pyrt class Python's extends. `raise X from e` →
-  `throw Object.assign(new X(...), { cause: e })`. `assert c, msg` → `py_assert(c, msg)`.
+  `throw Object.assign(new X(...), { cause: e })`. `assert c, msg` → `assert(c, msg)`.
   Bare `except Exception:` also catches JS `Error`s.
 - **`isinstance(x, int)`** → `typeof x === "number" && Number.isInteger(x)`; `float` →
   `typeof x === "number"` (an int-valued float is indistinguishable — add
   `// TODO(port): int/float distinction` where the Python branch depends on it). Exception:
   COS data carries Python floats boxed as pyrt `PyFloat` (the parser makes them; code that
   stores a Python float into a COS dict wraps it with `pyfloat(...)`), so there
-  `isinstance(x, (int, float))` → `is_real(x)`, `float(x)` / `py_eq` unwrap, and getters
+  `isinstance(x, (int, float))` → `isReal(x)`, `float(x)` / `valueEquals` unwrap, and getters
   hand users plain numbers (`float(x)` / `unbox(x)`);
   `str` → `typeof x === "string"`; `bytes` → `x instanceof Uint8Array`; `(list, tuple)` →
   `Array.isArray(x)`; `dict` → `x instanceof Map`; a class → `instanceof`; an enum → `E.has(x)`.
 - **`hasattr` / `getattr` / `setattr`** with a literal name → direct property access
   (`"name" in obj`, `obj.name`); with a computed name or a default → pyrt `hasattr`/`getattr`
   and `obj[name] = v`.
-- **More builtins**: `type(x).__name__` → `type_name(x)`; `[x] * n` → `list_mul([x], n)`;
-  `dict(m)` → `dict(m)`; `m.items()` on a Mapping → `mapping_items(m)`; `obj.__dict__` →
-  `instance_dict(obj)`; `a / b` that must raise `ZeroDivisionError` → `truediv(a, b)` (pass
+- **More builtins**: `type(x).__name__` → `typeName(x)`; `[x] * n` → `listMul([x], n)`;
+  `dict(m)` → `dict(m)`; `m.items()` on a Mapping → `mappingItems(m)`; `obj.__dict__` →
+  `instanceDict(obj)`; `a / b` that must raise `ZeroDivisionError` → `truediv(a, b)` (pass
   `"int"` for int operands); `int(s)` / `float(s)` already accept Unicode digits and `_`
   separators like CPython; `FileExistsError`, `SystemExit` are in pyrt `errors.ts`;
   `pytest.fail` / `pytest.importorskip` → pyrt `fail` / `importorskip`.
@@ -239,7 +239,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
   A hand-written `__init__` on an attrs subclass → `constructor(...) { super(NO_INIT); … }`.
 - `@dataclass` → class with a constructor taking the fields positionally in declaration order
   (keyword calls translated per §5), `frozen=True` → `readonly` fields; generated `__eq__` →
-  an `__eq__(other)` method comparing fields with `py_eq` only if Python code or tests compare
+  an `__eq__(other)` method comparing fields with `valueEquals` only if Python code or tests compare
   instances.
 - `NamedTuple` → class with the named `readonly` fields, a positional constructor, and
   `*[Symbol.iterator]()` yielding the fields in order (so `a, b = t` → `const [a, b] = t`);
@@ -254,12 +254,12 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - A missing-attribute fallback (Python's `__getattr__`) is `_missingAttribute(name)` and an
   assignment hook (`__setattr__`) is `_assignAttribute(name, value)`, wired with
   `pyClassHooks(Cls)`.
-  `object.__setattr__(self, k, v)` → `object_setattr(this, k, v)`;
-  `object.__getattribute__` → `object_getattr`.
+  `object.__setattr__(self, k, v)` → `objectSetattr(this, k, v)`;
+  `object.__getattribute__` → `objectGetattr`.
 - Other dunders: `__repr__` → `__repr__()` (also used by pyrt `repr`), `__str__` →
-  `__str__()` + `toString()`, `__eq__` → `__eq__(other)` (pyrt `py_eq` calls it),
+  `__str__()` + `toString()`, `__eq__` → `__eq__(other)` (pyrt `valueEquals` calls it),
   `__hash__` → drop (note if a class is used as a Map key by value), `__len__` → `__len__()`
-  (pyrt `len`/`py_bool` call it), `__iter__` → `[Symbol.iterator]()`, `__contains__` →
+  (pyrt `len`/`truthy` call it), `__iter__` → `[Symbol.iterator]()`, `__contains__` →
   `__contains__(x)`, `__getitem__` → `__getitem__(k)` and translate `obj[k]` call sites to
   `obj.__getitem__(k)`, `__bool__` → `__bool__()`, `__deepcopy__` → `__deepcopy__(memo)`.
 - **Enums**: `class E(IntEnum): A = 1` → `export const E = int_enum("E", { A: 1 }, { …methods })`
@@ -267,7 +267,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
   `E(v)` → `E.of(v)`; `member.name` → `E.name_of(member)`; `member.value` → `member`;
   `isinstance(x, E)` → `E.has(x)`; iteration → `E.members()`; `E["A"]` → `E.by_name("A")`;
   `_missing_`, `from_binary`, `to_binary` and other classmethods → `methods` (use `this` for
-  the enum). Non-int `Enum` → `py_enum`.
+  the enum). Non-int `Enum` → `pyEnum`.
 
 ## 7. Byte-exactness rules (non-negotiable)
 
@@ -275,10 +275,10 @@ translating** and use them; do not reimplement anything they provide. Never edit
   Python keeps (`_trailing`, `_NulTailStr.raw`, deferred raw bodies, legacy bodies, unknown
   chunks).
 - `_NulTailStr` (a `str` subclass carrying `.raw`) → `class _NulTailStr extends String { raw }`;
-  compare such values with `py_eq` / `String(x)`.
-- `json.dumps(obj, ...)` → pyrt `json_dumps(obj, { separators, ensure_ascii, sort_keys, indent,
+  compare such values with `valueEquals` / `String(x)`.
+- `json.dumps(obj, ...)` → pyrt `jsonDumps(obj, { separators, ensure_ascii, sort_keys, indent,
   default_ })`: Python's separators, escaping and float spelling. A float that must print as
-  `1.0` is a `PyFloat` (`json_loads` produces them).
+  `1.0` is a `PyFloat` (`jsonLoads` produces them).
 - Dict iteration order = insertion order (Map). Never iterate a plain object whose keys could be
   numeric strings.
 

@@ -18,9 +18,9 @@ import {
   AttributeError,
   len,
   Path,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   round,
   setattr,
   StopIteration,
@@ -61,7 +61,7 @@ function _reparseMask(app: py_aep.Application, tmpPath: Path): MaskPropertyGroup
 
 function _tensions(pathProp: Property<Shape>): number[][] {
   const container = pathProp._kfValueContainer;
-  pyAssert(container != null, "no keyframe value container");
+  assert(container != null, "no keyframe value container");
   const shaps = filterByListType(container.chunks, "shap");
   return shaps.map((s) =>
     findByType(s.chunks, "omtn").tensions.map((t) => round(t.value, 6)),
@@ -93,10 +93,10 @@ describe("TestRotoBezierTensions", () => {
     mask.rotoBezier = true;
     const reread = _reparseMask(app, tmpPath);
     const path = reread.property("ADBE Mask Shape");
-    expect(pyBool(reread.rotoBezier)).toBe(true);
-    expect(pyEq(_tensions(path), [[1.0, 1.0, 1.0]])).toBe(true);
-    expect(pyEq(_round(path.value.inTangents), ZERO3)).toBe(true);
-    expect(pyEq(_round(path.value.outTangents), ZERO3)).toBe(true);
+    expect(truthy(reread.rotoBezier)).toBe(true);
+    expect(valueEquals(_tensions(path), [[1.0, 1.0, 1.0]])).toBe(true);
+    expect(valueEquals(_round(path.value.inTangents), ZERO3)).toBe(true);
+    expect(valueEquals(_round(path.value.outTangents), ZERO3)).toBe(true);
   });
 
   test("test_enabling_curves_only_vertices_with_handles", () => {
@@ -109,12 +109,12 @@ describe("TestRotoBezierTensions", () => {
     mask.property("ADBE Mask Shape").value = new Shape(QUAD, handlesIn, handlesOut);
     mask.rotoBezier = true;
     const path = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
-    expect(pyEq(_tensions(path), [[1.0, 0.333333, 1.0, 1.0]])).toBe(true);
+    expect(valueEquals(_tensions(path), [[1.0, 0.333333, 1.0, 1.0]])).toBe(true);
     const drawnIn = [[0.0, 0.0], [-34.968, -31.083], [0.0, 0.0], [0.0, 0.0]];
     const drawnOut = [[0.0, 0.0], [21.432, 19.05], [0.0, 0.0], [0.0, 0.0]];
-    expect(pyEq(_round(path.value.inTangents), drawnIn)).toBe(true);
-    expect(pyEq(_round(path.value.outTangents), drawnOut)).toBe(true);
-    expect(pyEq(_round(path.value._storedTangents(-1)), drawnIn)).toBe(true);
+    expect(valueEquals(_round(path.value.inTangents), drawnIn)).toBe(true);
+    expect(valueEquals(_round(path.value.outTangents), drawnOut)).toBe(true);
+    expect(valueEquals(_round(path.value._storedTangents(-1)), drawnIn)).toBe(true);
   });
 
   test("test_value_set_on_a_roto_mask_has_tension_one", () => {
@@ -126,8 +126,8 @@ describe("TestRotoBezierTensions", () => {
     const handles = [[-5.0, 0.0], [-20.0, 5.0], [5.0, 5.0], [0.0, -5.0]];
     mask.property("ADBE Mask Shape").value = new Shape(QUAD, handles, handles);
     const path = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
-    expect(pyEq(_tensions(path), [[1.0, 1.0, 1.0, 1.0]])).toBe(true);
-    expect(pyEq(_round(path.value.inTangents), Array(4).fill([0.0, 0.0]))).toBe(true);
+    expect(valueEquals(_tensions(path), [[1.0, 1.0, 1.0, 1.0]])).toBe(true);
+    expect(valueEquals(_round(path.value.inTangents), Array(4).fill([0.0, 0.0]))).toBe(true);
   });
 
   test("test_keys_set_on_a_roto_mask_have_tension_one", () => {
@@ -139,7 +139,7 @@ describe("TestRotoBezierTensions", () => {
     const handles = [[-5.0, 0.0], [0.0, 5.0], [5.0, 0.0], [0.0, 0.0]];
     path.setValueAtTime(2.0, new Shape(QUAD, handles, handles));
     const reread = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
-    expect(pyEq(_tensions(reread), [Array(4).fill(1.0), Array(4).fill(1.0)])).toBe(true);
+    expect(valueEquals(_tensions(reread), [Array(4).fill(1.0), Array(4).fill(1.0)])).toBe(true);
   });
 
   test("test_enabling_on_a_keyed_path_treats_each_key", () => {
@@ -154,10 +154,10 @@ describe("TestRotoBezierTensions", () => {
     path.setValueAtTime(2.0, new Shape([[20, 10], [180, 30], [90, 95]], ins, outs));
     mask.rotoBezier = true;
     const reread = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
-    expect(pyEq(_tensions(reread), [Array(3).fill(1.0), Array(3).fill(0.333333)])).toBe(true);
+    expect(valueEquals(_tensions(reread), [Array(3).fill(1.0), Array(3).fill(0.333333)])).toBe(true);
     const k2 = reread.keyframes[1].value;
     expect(
-      pyEq(_round(k2.inTangents), [
+      valueEquals(_round(k2.inTangents), [
         [-29.756, 21.49],
         [-34.168, -41.49],
         [36.72, 4.59],
@@ -177,10 +177,10 @@ describe("TestRotoBezierTensions", () => {
     mask.rotoBezier = false;
     const reread = _reparseMask(app, tmpPath);
     const path = reread.property("ADBE Mask Shape");
-    expect(pyBool(reread.rotoBezier)).toBe(false);
-    expect(pyEq(_tensions(path), [[]])).toBe(true);
+    expect(truthy(reread.rotoBezier)).toBe(false);
+    expect(valueEquals(_tensions(path), [[]])).toBe(true);
     expect(
-      pyEq(_round(path.value.inTangents), [
+      valueEquals(_round(path.value.inTangents), [
         [-23.33, 32.662],
         [-34.968, -31.083],
         [28.602, 2.043],
@@ -237,14 +237,14 @@ describe("TestPathValueValidation", () => {
         // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
-      expect(pyEq(projectBytes(app.project), before)).toBe(true);
+      expect(valueEquals(projectBytes(app.project), before)).toBe(true);
       path.value = new Shape(TRIANGLE);
       const before2 = projectBytes(app.project);
       raises(TypeError, () => {
         // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
-      expect(pyEq(projectBytes(app.project), before2)).toBe(true);
+      expect(valueEquals(projectBytes(app.project), before2)).toBe(true);
       expect(path.value instanceof Shape).toBe(true);
     },
   );
@@ -273,7 +273,7 @@ describe("TestPathValueValidation", () => {
     const [app, , , mask] = _solidMask();
     const before = projectBytes(app.project);
     raisesAny([TypeError, ValueError], () => call(mask.property("ADBE Mask Shape")));
-    expect(pyEq(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
   });
 });
 
@@ -287,14 +287,14 @@ describe("TestFreshMaskNoOps", () => {
     path.value = path.value;
     path.value = new Shape([[0, 0], [0, 100], [200, 100], [200, 0]]);
     path.expressionEnabled = false;
-    expect(pyEq(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
   });
 
   test("test_a_different_value_writes_the_path", () => {
     const [app, , , mask] = _solidMask();
     const before = projectBytes(app.project);
     mask.property("ADBE Mask Shape").value = new Shape([[0, 0], [0, 100], [200, 100], [201, 0]]);
-    expect(pyEq(projectBytes(app.project), before)).toBe(false);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(false);
   });
 });
 
@@ -323,16 +323,16 @@ describe("TestShapeGeometry", () => {
   test("test_vertex_move_keeps_relative_tangents", () => {
     const shape = new Shape([[0, 0], [10, 0], [5, 5]], [[1, 1], [0, 0], [0, 0]]);
     shape.vertices = [[100, 100], [110, 100], [105, 105]];
-    expect(pyEq(shape.vertices, [[100, 100], [110, 100], [105, 105]])).toBe(true);
-    expect(pyEq(_round(shape.inTangents), [[1, 1], [0, 0], [0, 0]])).toBe(true);
+    expect(valueEquals(shape.vertices, [[100, 100], [110, 100], [105, 105]])).toBe(true);
+    expect(valueEquals(_round(shape.inTangents), [[1, 1], [0, 0], [0, 0]])).toBe(true);
   });
 
   test("test_flat_path_takes_new_coordinates", () => {
     const shape = new Shape([[0, 5], [10, 5], [20, 5]]);
     shape.vertices = [[0, 0], [10, 10], [20, 0]];
     shape.inTangents = [[1, 1], [1, 1], [1, 1]];
-    expect(pyEq(shape.vertices, [[0, 0], [10, 10], [20, 0]])).toBe(true);
-    expect(pyEq(_round(shape.inTangents), Array(3).fill([1, 1]))).toBe(true);
+    expect(valueEquals(shape.vertices, [[0, 0], [10, 10], [20, 0]])).toBe(true);
+    expect(valueEquals(_round(shape.inTangents), Array(3).fill([1, 1]))).toBe(true);
   });
 
   test("test_new_shape_then_vertices", () => {
@@ -340,8 +340,8 @@ describe("TestShapeGeometry", () => {
     const shape = new Shape();
     shape.vertices = [[0, 0], [10, 0], [5, 5]];
     shape.outTangents = [[1, 0], [0, 1], [0, 0]];
-    expect(pyEq(shape.vertices, [[0, 0], [10, 0], [5, 5]])).toBe(true);
-    expect(pyEq(_round(shape.outTangents), [[1, 0], [0, 1], [0, 0]])).toBe(true);
+    expect(valueEquals(shape.vertices, [[0, 0], [10, 0], [5, 5]])).toBe(true);
+    expect(valueEquals(_round(shape.outTangents), [[1, 0], [0, 1], [0, 0]])).toBe(true);
   });
 
   test("test_empty_vertices_rejected", () => {
@@ -356,7 +356,7 @@ describe("TestShapeGeometry", () => {
     raises(ValueError, () => {
       shape.inTangents = [[1, 1]];
     });
-    expect(pyEq(_round(shape.inTangents), ZERO3)).toBe(true);
+    expect(valueEquals(_round(shape.inTangents), ZERO3)).toBe(true);
   });
 
   test("test_parsed_path_keeps_its_vertex_count", () => {
@@ -367,7 +367,7 @@ describe("TestShapeGeometry", () => {
     raises(ValueError, () => {
       path.value.vertices = QUAD;
     });
-    expect(pyEq(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
   });
 });
 
@@ -389,13 +389,13 @@ describe("TestShapeCopies", () => {
     const [app, , b, maskA] = _twoLayers();
     const maskB = asInstance(b.masks, PropertyGroup).addProperty("ADBE Mask Atom");
     maskB.property("ADBE Mask Shape").value = maskA.property("ADBE Mask Shape").value;
-    expect(pyEq(_round(maskB.property("ADBE Mask Shape").value.vertices), TRIANGLE)).toBe(true);
+    expect(valueEquals(_round(maskB.property("ADBE Mask Shape").value.vertices), TRIANGLE)).toBe(true);
     const path = tmpPath.div("copy.aep");
     app.project.save(path);
     const comp = parse(path).project.compositions[0];
     const b2 = _next(comp.layers, (lyr) => String(lyr.name) === "B");
     expect(
-      pyEq(
+      valueEquals(
         _round(
           asInstance(asInstance(b2.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape").value
             .vertices,
@@ -412,7 +412,7 @@ describe("TestShapeCopies", () => {
       .addProperty("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
     path.value = maskA.property("ADBE Mask Shape").value;
-    expect(pyEq(_round(path.value.vertices), TRIANGLE)).toBe(true);
+    expect(valueEquals(_round(path.value.vertices), TRIANGLE)).toBe(true);
   });
 });
 
@@ -439,7 +439,7 @@ describe("TestFeatherPoints", () => {
     );
     const points = reread.property("ADBE Mask Shape").value.featherPoints;
     expect(
-      pyEq(
+      valueEquals(
         points.map((fp: FeatherPoint) => [fp.segLoc, fp.relSegLoc, fp.radius]),
         expected,
       ),
@@ -480,7 +480,7 @@ describe("TestGroupAttributeWrites", () => {
     raises(AttributeError, () => {
       setattr(group, attr, value);
     });
-    expect(pyEq(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
     if (attr === "position") {
       // Attribute access still reaches the child property.
       expect(String(asInstance(Reflect.get(group, "position"), Property).matchName)).toBe("ADBE Position");

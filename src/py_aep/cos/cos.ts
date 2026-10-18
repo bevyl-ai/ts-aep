@@ -16,9 +16,9 @@ import {
   unbox,
   IndexError,
   OverflowError,
-  pyAssert,
+  assert,
   pyEnum,
-  pyEq,
+  valueEquals,
   pyfloat,
   repr,
   str,
@@ -243,7 +243,7 @@ export class Token {
   }
 
   equals(other: Token): boolean {
-    return other instanceof Token && this.type === other.type && pyEq(this.value, other.value);
+    return other instanceof Token && this.type === other.type && valueEquals(this.value, other.value);
   }
 }
 
@@ -268,7 +268,7 @@ export class IndirectObject {
       other instanceof IndirectObject &&
       this.objectNumber === other.objectNumber &&
       this.generationNumber === other.generationNumber &&
-      pyEq(this.data, other.data)
+      valueEquals(this.data, other.data)
     );
   }
 }
@@ -366,7 +366,7 @@ export class Stream {
   }
 
   equals(other: Stream): boolean {
-    return other instanceof Stream && pyEq(this.dictionary, other.dictionary) && pyEq(this.data, other.data);
+    return other instanceof Stream && valueEquals(this.dictionary, other.dictionary) && valueEquals(this.data, other.data);
   }
 }
 
@@ -394,7 +394,7 @@ export class CosParser {
   parseValue(): CosNode {
     if (this.lookahead.type === TokenType.Identifier) {
       const name = this.lookahead.value;
-      pyAssert(typeof name === "string");
+      assert(typeof name === "string");
       const val = new CosName(name);
       this.lex();
       return val;
@@ -414,11 +414,11 @@ export class CosParser {
 
     if (this.lookahead.type === TokenType.Number) {
       const val = this.lookahead.value;
-      pyAssert(isReal(val));
+      assert(isReal(val));
       this.lex();
       if (this.lookahead.type === TokenType.Number) {
         const gen = this.lookahead.value;
-        pyAssert(isReal(gen));
+        assert(isReal(gen));
         const state = this.saveState();
         this.lex();
         if (this.lookahead.type === TokenType.IndirectObjectStart) {
@@ -445,7 +445,7 @@ export class CosParser {
       this.lex();
       if (this.lookahead.type === TokenType.Stream) {
         const data = this.lookahead.value;
-        pyAssert(data instanceof Uint8Array);
+        assert(data instanceof Uint8Array);
         this.lex();
         return new Stream(dictionary, data);
       }
@@ -483,7 +483,7 @@ export class CosParser {
 
       this.expect(TokenType.Identifier);
       const key = this.lookahead.value;
-      pyAssert(typeof key === "string");
+      assert(typeof key === "string");
       this.lex();
       const val = this.parseValue();
       value.set(key, val);
