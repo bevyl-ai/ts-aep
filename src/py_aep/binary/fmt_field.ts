@@ -365,7 +365,7 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
     if (nValues !== dataFields.length) {
       throw new ValueError(
         `${cls.name}: struct format yields ${nValues} values ` +
-          `but has ${dataFields.length} fmt_field fields`,
+          `but has ${dataFields.length} fmtField fields`,
       );
     }
   }
@@ -563,7 +563,7 @@ export class FmtItem extends AttrsBase {
   /** Construct an item from bytes using its `_struct_info` metadata. */
   static frombytes<T extends FmtItem>(this: (new (kw: InitKwargs) => T) & typeof FmtItem, data: Uint8Array): T {
     const info = _structInfo(this);
-    if (info == null) throw new TypeError_(`${this.name} has no fmt_field metadata`);
+    if (info == null) throw new TypeError_(`${this.name} has no fmtField metadata`);
     const [
       fmt,
       dataFields,
@@ -610,7 +610,7 @@ export class FmtItem extends AttrsBase {
   tobytes(): Uint8Array {
     const info = _structInfo(this.constructor);
     if (info == null) {
-      throw new TypeError_(`${this.constructor.name} has no fmt_field metadata`);
+      throw new TypeError_(`${this.constructor.name} has no fmtField metadata`);
     }
     const [
       fmt,

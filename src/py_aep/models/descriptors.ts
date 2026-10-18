@@ -331,7 +331,7 @@ export class ChunkField<
     const body = getattr(obj, this.chunkAttr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
-      throw new AttributeError(`chunk body ${repr(this.chunkAttr)} is None`);
+      throw new AttributeError(`chunk body ${repr(this.chunkAttr)} is null`);
     }
     const value = getattr(body, this.field);
     return (this.transform ? this.transform(value) : value);

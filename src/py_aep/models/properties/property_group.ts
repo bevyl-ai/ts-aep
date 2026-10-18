@@ -937,7 +937,7 @@ export class PropertyGroup extends PropertyBase {
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
         throw new ValueError(
-          `Could not locate an installed font for family ${repr(family)}; pass font_file explicitly.`,
+          `Could not locate an installed font for family ${repr(family)}; pass fontFile explicitly.`,
         );
       }
       fontFile = resolved[0].toString();

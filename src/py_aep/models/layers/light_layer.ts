@@ -164,7 +164,7 @@ export class LightLayer extends Layer {
     _requireEnvironmentLights(comp, "light_source");
 
     if (!(value instanceof Layer)) {
-      throw new ValueError("lightSource must be a Layer or None");
+      throw new ValueError("lightSource must be a Layer or null");
     }
     if (!(value instanceof AVLayer)) {
       throw new ValueError("Can't set a non-AV layer as a light source.");

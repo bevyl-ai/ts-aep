@@ -290,7 +290,7 @@ export class FolderItem extends Item {
     const presets = this._project._preferences.compositionPresets();
     if (!presets?.length) {
       throw new ValueError(
-        "no composition presets available; pass 'ae_preferences_dir' " +
+        "no composition presets available; pass 'aePreferencesDir' " +
           "to parse()/new() to read them from the AE preferences",
       );
     }

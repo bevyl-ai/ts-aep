@@ -96,7 +96,7 @@ export function _validateCollapseTransformation(value: boolean, obj: AVLayer): v
   validateBool(value);
   if (!obj.canSetCollapseTransformation) {
     throw new AttributeError(
-      "'collapseTransformation' is read-only when 'canSetCollapseTransformation' is False.",
+      "'collapseTransformation' is read-only when 'canSetCollapseTransformation' is false.",
     );
   }
 }
@@ -889,7 +889,7 @@ export class AVLayer extends Layer {
     validateBool(value);
     if (!this.canSetTimeRemapEnabled) {
       throw new AttributeError(
-        "'timeRemapEnabled' is read-only when 'canSetTimeRemapEnabled' is False.",
+        "'timeRemapEnabled' is read-only when 'canSetTimeRemapEnabled' is false.",
       );
     }
     const prop = this.property("ADBE Time Remapping");
@@ -1061,7 +1061,7 @@ export class AVLayer extends Layer {
     validateEnum(TrackMatteType)(trackMatteType);
     trackMatteType = TrackMatteType.of(trackMatteType);
     if (trackMatteLayer != null && !(trackMatteLayer instanceof AVLayer)) {
-      throw new ValueError("trackMatteLayer must be an AVLayer or None.");
+      throw new ValueError("trackMatteLayer must be an AVLayer or null.");
     }
     if (trackMatteLayer != null && trackMatteType === TrackMatteType.NO_TRACK_MATTE) {
       return;
@@ -1148,7 +1148,7 @@ export class AVLayer extends Layer {
    */
   replaceSource(newSource: AVItem, fixExpressions = false): void {
     if (fixExpressions) {
-      throw new NotImplementedError("fix_expressions is not yet supported.");
+      throw new NotImplementedError("fixExpressions is not yet supported.");
     }
 
     if (this.source == null) {
@@ -1162,7 +1162,7 @@ export class AVLayer extends Layer {
     }
 
     if (!(newSource instanceof AVItem)) {
-      throw new ValueError("new_source must be an AVItem.");
+      throw new ValueError("newSource must be an AVItem.");
     }
 
     const comp = this.containingComp;

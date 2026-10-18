@@ -218,7 +218,7 @@ export function _validateKeyValue(prop: Property, value: PropertyValue): void {
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).
   if (value == null && prop._parallelKind() == null && !prop._noValue) {
-    throw new TypeError_(`${repr(prop.matchName)} keyframe value cannot be None`);
+    throw new TypeError_(`${repr(prop.matchName)} keyframe value cannot be null`);
   }
   _validateValue(prop, value);
 }
@@ -2990,7 +2990,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   set alternateSource(source: AVItem) {
     if (!this.canSetAlternateSource || this._blsi == null) {
       throw new ValueError(
-        "This property does not support media replacement " + "(canSetAlternateSource is False).",
+        "This property does not support media replacement " + "(canSetAlternateSource is false).",
       );
     }
     if (!(source instanceof AVItem)) {
@@ -3004,7 +3004,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (!source.isMediaReplacementCompatible) {
       throw new ValueError(
         `Item ${repr(source.name)} (id=${source.id}) cannot be used as an ` +
-          "alternate source (isMediaReplacementCompatible is False).",
+          "alternate source (isMediaReplacementCompatible is false).",
       );
     }
     if (source instanceof FootageItem) {
@@ -4491,7 +4491,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   setValuesAtTimes(times: number[], newValues: (PropertyValue | string)[]): void;
   setValuesAtTimes(times: number[], newValues: _ValueType[]): void {
     if (times.length !== newValues.length) {
-      throw new ValueError("times and new_values must have the same length");
+      throw new ValueError("times and newValues must have the same length");
     }
     // Every entry is checked before the first is applied, so a bad one
     // rejects the whole call instead of leaving the earlier keys added.

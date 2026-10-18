@@ -121,7 +121,7 @@ export function layerIndexForStored(
     return names.length - 1 - storedIndex;
   }
   throw new ValueError(
-    `layer_index_for_stored supports layered .psd/.psb/.ai/.pdf ` +
+    `layerIndexForStored supports layered .psd/.psb/.ai/.pdf ` +
       `files, got ${repr(suffix)}`,
   );
 }

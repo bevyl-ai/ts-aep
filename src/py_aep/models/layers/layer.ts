@@ -972,7 +972,7 @@ export class Layer extends PropertyGroup {
   _validateParent(newParent: Layer | null): void {
     if (newParent == null) return;
     if (!(newParent instanceof Layer)) {
-      throw new ValueError("parent must be a Layer or None");
+      throw new ValueError("parent must be a Layer or null");
     }
     if (newParent.containingComp !== this.containingComp) {
       throw new ValueError("parent must be a layer in the same composition");

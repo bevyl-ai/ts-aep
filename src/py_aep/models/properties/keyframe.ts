@@ -647,7 +647,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       )
     ) {
       throw new ValueError(
-        "value must be a number, list of numbers, Gradient, MarkerValue, Shape, TextDocument, or None",
+        "value must be a number, list of numbers, Gradient, MarkerValue, Shape, TextDocument, or null",
       );
     }
     const prop = this._property;
@@ -1222,7 +1222,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // accepting the value would silently discard it.
       throw new ValueError(
         "a roving keyframe's time is derived from the spatial path; " +
-          "set roving to False before moving it",
+          "set roving to false before moving it",
       );
     }
     const prop = this._property;

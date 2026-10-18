@@ -146,7 +146,7 @@ export function _validateUseProxy(value: boolean, obj: AVItem): void {
   validateBool(value);
   if (obj.proxySource == null && value) {
     throw new AttributeError(
-      "Cannot set useProxy to True when there is no proxy source.",
+      "Cannot set useProxy to true when there is no proxy source.",
     );
   }
 }
