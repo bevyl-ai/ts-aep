@@ -56,7 +56,7 @@ export function parse(
   const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
   // `with open(file_path, "rb") as f:`
   const f = new BytesIO(new Path(filePath).readBytes());
-  const [rifx, xmp] = readAep(f, { defer_list_types: _DEFERRED_LIST_TYPES });
+  const [rifx, xmp] = readAep(f, { deferListTypes: _DEFERRED_LIST_TYPES });
   const project = parseProject(rifx, xmp, filePath, prefsPath);
   if (platform != null) {
     project._platform = platform;

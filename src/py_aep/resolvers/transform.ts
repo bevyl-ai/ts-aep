@@ -373,7 +373,7 @@ export function buildWorldMatrix(
   const comp = layer.containingComp;
   let spaceAspect = comp.pixelAspect;
   for (const lyr of chain.reverse()) {
-    if ((lyr !== layer || as_parent) && _RIG_TYPES.has(lyr._ldta.layer_type)) {
+    if ((lyr !== layer || as_parent) && _RIG_TYPES.has(lyr._ldta.layerType)) {
       if (flatten2d) {
         // Under a 2D layer a rig acts as a 2D layer anchored on the
         // comp centre, turned by Rotate Z alone (AE 2026: children
@@ -414,7 +414,7 @@ export function layerSourceAspect(layer: Layer): number {
  */
 export function positionSpaceAspect(parent: Layer | null, comp: CompItem): number {
   if (parent == null) return comp.pixelAspect;
-  if (_RIG_TYPES.has(parent._ldta.layer_type)) return 1.0;
+  if (_RIG_TYPES.has(parent._ldta.layerType)) return 1.0;
   return layerSourceAspect(parent);
 }
 
@@ -523,7 +523,7 @@ function _isAvLayer(layer: Layer): layer is AVLayer {
 }
 
 export function rigAimsAtPoi(layer: Layer): boolean {
-  const layerType = layer._ldta.layer_type;
+  const layerType = layer._ldta.layerType;
   if (!_RIG_TYPES.has(layerType)) return false;
   const aims =
     layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
@@ -589,7 +589,7 @@ export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: numbe
  */
 export function _autoRotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
   const mode = layer.autoOrient;
-  const threeD = !!layer._ldta.three_d_layer;
+  const threeD = !!layer._ldta.threeDLayer;
   if (mode === AutoOrientType.ALONG_PATH) {
     const prop = layer.transform.property("ADBE Position");
     if (prop.dimensionsSeparated) {

@@ -117,7 +117,7 @@ export class MaskPropertyGroup extends PropertyGroup {
    */
   get rotoBezier(): boolean {
     const tdsb = this._maskShapeTdsb;
-    return tdsb != null ? !!tdsb.roto_bezier : false;
+    return tdsb != null ? !!tdsb.rotoBezier : false;
   }
 
   set rotoBezier(value: boolean) {
@@ -131,7 +131,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       this._materializeMaskShape({ rotoBezier: true });
       return;
     }
-    if (!!this._maskShapeTdsb.roto_bezier === value) {
+    if (!!this._maskShapeTdsb.rotoBezier === value) {
       return;
     }
     const path = this.property("ADBE Mask Shape");
@@ -146,7 +146,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       const tensions = shapes.map((s) =>
         keyframeTensions([], s._storedTangents(-1), s._storedTangents(1)),
       );
-      this._maskShapeTdsb.roto_bezier = true;
+      this._maskShapeTdsb.rotoBezier = true;
       for (const [i, shape] of shapes.entries()) {
         shape._setTensions(tensions[i]);
         shape._writeGeometry(shape.vertices, shape.inTangents, shape.outTangents);
@@ -155,7 +155,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       // Switching it off (AE 2026) keeps the drawn tangents as the
       // handles and drops the tensions.
       const drawn = shapes.map((s) => [s.inTangents, s.outTangents] as const);
-      this._maskShapeTdsb.roto_bezier = false;
+      this._maskShapeTdsb.rotoBezier = false;
       for (const [i, shape] of shapes.entries()) {
         const [ins, outs] = drawn[i];
         shape._setTensions([]);
@@ -198,16 +198,16 @@ export class MaskPropertyGroup extends PropertyGroup {
     const _tdmn = new TdmnChunk({ value: "ADBE Mask Atom" });
     const _mkif = new MkifChunk({
       mode: 1, // binary PF_MaskMode for MaskMode.ADD
-      mask_id: mask_id,
-      color_r: color[0],
-      color_g: color[1],
-      color_b: color[2],
+      maskId: mask_id,
+      colorR: color[0],
+      colorG: color[1],
+      colorB: color[2],
     });
     const _tdsb = new TdsbChunk();
     const tdsn = TdsnChunk.new_(name);
     const nameUtf8 = tdsn.utf8;
     const groupEnd = new TdmnChunk({ value: "ADBE Group End" });
-    const _tdgp = new ListChunk({ list_type: "tdgp", chunks: [_tdsb, tdsn, groupEnd] });
+    const _tdgp = new ListChunk({ listType: "tdgp", chunks: [_tdsb, tdsn, groupEnd] });
 
     const parentTdgp = parentProperty._tdgp;
     pyAssert(parentTdgp != null);
@@ -300,11 +300,11 @@ export class MaskPropertyGroup extends PropertyGroup {
     // aspect on one created in the same session. RotoBezier tangents are
     // measured in this space, so 1.0 would bend them: keep the aspect.
     const pixelAspect = source != null ? source.pixelAspect : 1.0;
-    const [tdmn, oms] = buildDefaultMaskShape(comp._cdta.internal_timebase, {
+    const [tdmn, oms] = buildDefaultMaskShape(comp._cdta.internalTimebase, {
       // An audio-only layer has a 0x0 mask space (its default path is
       // four points at the origin) and no aspect to stamp.
       aspect: height !== 0 ? (width * pixelAspect) / height : 1.0,
-      roto_bezier,
+      rotoBezier: roto_bezier,
     });
 
     // Synthesis inserts a bare synthetic `tdmn + tdbs` placeholder for
@@ -314,7 +314,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     const chunks = this._tdgp.chunks;
     const foundAt = chunks.findIndex(
       (c) =>
-        c.chunk_type === "tdmn" &&
+        c.chunkType === "tdmn" &&
         "value" in c && c.value === "ADBE Mask Shape" &&
         c.synthetic,
     );
@@ -377,11 +377,11 @@ descriptor(MaskPropertyGroup, "locked", ChunkField.bool("_mkif", "locked"));
 descriptor(
   MaskPropertyGroup,
   "maskFeatherFalloff",
-  ChunkField.enum(MaskFeatherFalloff, "_mkif", "mask_feather_falloff"),
+  ChunkField.enum(MaskFeatherFalloff, "_mkif", "maskFeatherFalloff"),
 );
 descriptor(MaskPropertyGroup, "maskMode", ChunkField.enum(MaskMode, "_mkif", "mode"));
 descriptor(
   MaskPropertyGroup,
   "maskMotionBlur",
-  ChunkField.enum(MaskMotionBlur, "_mkif", "mask_motion_blur"),
+  ChunkField.enum(MaskMotionBlur, "_mkif", "maskMotionBlur"),
 );

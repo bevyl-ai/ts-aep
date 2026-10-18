@@ -49,7 +49,7 @@ function _positionFrom(project: Project): Property {
 
 /** Stored (sub-frame) keyframe times, which `frameTime` would round. */
 function _times(prop: Property): number[] {
-  return prop.keyframes.map((kf) => kf._ldatItem.time_units);
+  return prop.keyframes.map((kf) => kf._ldatItem.timeUnits);
 }
 
 describe("TestRoundtripRovingRetimesToAEValues", () => {
@@ -67,7 +67,7 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
     const prop = _position("keyframe_roving.aep");
     const expected = _times(prop);
     for (const index of [1, 2]) {
-      prop.keyframes[index]._ldatItem.time_units = 1234 * index;
+      prop.keyframes[index]._ldatItem.timeUnits = 1234 * index;
     }
     // Touching one member re-times the whole run it belongs to.
     prop.keyframes[1].roving = true;
@@ -239,7 +239,7 @@ describe("TestRoundtripRovingPersistence", () => {
     // test_rederived_from_clobbered_times, so the saved value is
     // provably the model's own answer and not just the untouched byte
     // AE originally wrote.
-    prop.keyframes[1]._ldatItem.time_units = 4321;
+    prop.keyframes[1]._ldatItem.timeUnits = 4321;
     prop.keyframes[1].roving = true;
     const inMemory = _times(prop);
 
@@ -261,7 +261,7 @@ describe("TestRoundtripRovingPersistence", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     pyAssert(prop != null);
-    const beforeTimes = prop.keyframes.map((kf) => kf._ldatItem.time_units);
+    const beforeTimes = prop.keyframes.map((kf) => kf._ldatItem.timeUnits);
 
     prop.keyframes[3]._ldatItem.roving = true;
 
@@ -272,7 +272,7 @@ describe("TestRoundtripRovingPersistence", () => {
     const reparsedProp = reparsed.compositions[0].layers[0].transform.property("ADBE Opacity");
     pyAssert(reparsedProp != null);
     expect(reparsedProp.keyframes[3].roving).toBe(true);
-    expect(pyEq(reparsedProp.keyframes.map((kf) => kf._ldatItem.time_units), beforeTimes)).toBe(true);
+    expect(pyEq(reparsedProp.keyframes.map((kf) => kf._ldatItem.timeUnits), beforeTimes)).toBe(true);
   });
 });
 
@@ -300,9 +300,9 @@ describe("TestOrientationInert", () => {
     }
     const keyframes = prop.keyframes;
     keyframes[1]._ldatItem.roving = true;
-    const before = keyframes.map((k) => k._ldatItem.time_units);
+    const before = keyframes.map((k) => k._ldatItem.timeUnits);
     prop._redistributeRovingKeyframes();
-    expect(pyEq(keyframes.map((k) => k._ldatItem.time_units), before)).toBe(true);
+    expect(pyEq(keyframes.map((k) => k._ldatItem.timeUnits), before)).toBe(true);
     expect(keyframes[1].roving).toBe(true);
   });
 });

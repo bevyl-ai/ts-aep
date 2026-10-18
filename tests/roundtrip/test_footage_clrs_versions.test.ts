@@ -51,7 +51,7 @@ const _FILES = new Map<string, Path>([
 
 function _shape(source: FootageSource): string[] {
   pyAssert(source._clrs != null);
-  return source._clrs.chunks.map((chunk) => chunk.chunk_type);
+  return source._clrs.chunks.map((chunk) => chunk.chunkType);
 }
 
 // Stacked `@pytest.mark.parametrize` decorators: the cartesian product of

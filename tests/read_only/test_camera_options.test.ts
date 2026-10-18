@@ -87,7 +87,7 @@ describe("TestCameraOptionDefaults", () => {
     // type.aep is authored by AE 25, which predates the two 2026
     // additions; min_major=26 gating must keep it at 13 options.
     const project = parseProject(TYPE_AEP);
-    expect(project._head.ae_version_major).toBe(25);
+    expect(project._head.aeVersionMajor).toBe(25);
     const cam = project.compositions
       .flatMap((c) => c.layers)
       .find((ly) => ly instanceof CameraLayer);
@@ -145,7 +145,7 @@ describe("TestCameraLightTransformMetadata", () => {
 
   test("test_two_node_camera_poi_expressionable", () => {
     const cam = _camera("CAM_TWO");
-    expect(cam._ldta.poi_auto_orient).toBe(true);
+    expect(cam._ldta.poiAutoOrient).toBe(true);
     const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
     expect(poi.canSetExpression).toBe(true);
@@ -153,7 +153,7 @@ describe("TestCameraLightTransformMetadata", () => {
 
   test("test_one_node_camera_poi_not_expressionable", () => {
     const cam = _camera("CAM_ONE");
-    expect(cam._ldta.poi_auto_orient).toBe(false);
+    expect(cam._ldta.poiAutoOrient).toBe(false);
     const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
     expect(poi.canSetExpression).toBe(false);

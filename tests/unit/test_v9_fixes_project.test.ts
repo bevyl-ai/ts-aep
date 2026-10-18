@@ -64,7 +64,7 @@ describe("TestVersionValidation", () => {
       const app = py_aep.new(version);
       expect(app.version).toBe(version);
       const head = app._head;
-      expect(pyEq([head.file_format_version, head._format_subversion], [97, 2])).toBe(true);
+      expect(pyEq([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
       app.version = "26.0x67";
       expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.new().project))).toBe(true);
     },

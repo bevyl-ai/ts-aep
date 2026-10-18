@@ -44,7 +44,7 @@ describe("TestNewEmpty", () => {
     expect(proj.numItems).toBe(1); // only the root folder
     expect(proj.rootFolder.name).toBe("root");
     expect(pyEq([...proj.items.keys()], [0])).toBe(true);
-    expect(proj._head.next_item_id).toBe(1);
+    expect(proj._head.nextItemId).toBe(1);
     expect(proj.revision).toBe(1);
   });
 
@@ -98,9 +98,9 @@ describe("TestNewEmpty", () => {
       const project = py_aep.new("26.0x67", { platform }).project;
       expect(project._platform).toBe(platform);
       expect(project.gpuAccelType).toBe(gpu);
-      expect(project._head.ae_version_os).toBe(osCode);
-      expect(project._nnhd._saving_platform).toBe(nnhdByte);
-      expect(bytes_.hex(bytes_.intToBytes(project._nnhd._system_code_page, 2, "big"))).toBe(
+      expect(project._head.aeVersionOs).toBe(osCode);
+      expect(project._nnhd._savingPlatform).toBe(nnhdByte);
+      expect(bytes_.hex(bytes_.intToBytes(project._nnhd._systemCodePage, 2, "big"))).toBe(
         codePage,
       );
     },
@@ -111,15 +111,15 @@ describe("TestNewEmpty", () => {
     const ours = py_aep.new(ae._head.version, { platform: "windows" }).project;
     expect(ours.gpuAccelType).toBe(ae.gpuAccelType);
     expect(ae.gpuAccelType).toBe(GpuAccelType.CUDA);
-    expect(ours._head.ae_version_os).toBe(ae._head.ae_version_os);
-    expect(ours._nnhd._saving_platform).toBe(ae._nnhd._saving_platform);
-    expect(ours._nnhd._system_code_page).toBe(ae._nnhd._system_code_page);
+    expect(ours._head.aeVersionOs).toBe(ae._head.aeVersionOs);
+    expect(ours._nnhd._savingPlatform).toBe(ae._nnhd._savingPlatform);
+    expect(ours._nnhd._systemCodePage).toBe(ae._nnhd._systemCodePage);
   });
 
   test("test_pre_26_windows_code_page", () => {
     // Windows AE up to 25 writes code page 1252 (every AE 15-25 sample).
     const project = py_aep.new("25.6x101", { platform: "windows" }).project;
-    expect(project._nnhd._system_code_page).toBe(1252);
+    expect(project._nnhd._systemCodePage).toBe(1252);
   });
 });
 
@@ -134,7 +134,7 @@ describe("TestNewVersion", () => {
     // svap's last byte tracks the AE build number.
     const app = py_aep.new("25.6x101");
     const svap = findByType(app.project._rifx.chunks, "svap");
-    expect(svap.build_number).toBe(101);
+    expect(svap.buildNumber).toBe(101);
   });
 
   test("test_invalid_version_rejected", () => {
@@ -154,7 +154,7 @@ describe("TestNewVersion", () => {
     (version: string, present: Set<string>, absent: Set<string>) => {
       const chunks = py_aep.new(version).project._rifx.chunks;
       const types = new Set(
-        chunks.map((c) => pyOr(getattr(c, "list_type", ""), c.chunk_type)),
+        chunks.map((c) => pyOr(getattr(c, "listType", ""), c.chunkType)),
       );
       expect([...present].every((t) => types.has(t))).toBe(true);
       expect([...absent].some((t) => types.has(t))).toBe(false);
@@ -186,7 +186,7 @@ describe("TestNewVersion", () => {
     // rules of its (format, minor) pair, so new(version) stamps the pair
     // After Effects writes for that release.
     const head = py_aep.new(version).project._head;
-    expect(pyEq([head.file_format_version, head._format_subversion], stamp)).toBe(true);
+    expect(pyEq([head.fileFormatVersion, head._formatSubversion], stamp)).toBe(true);
   });
 
   test.each(["ae2018", "ae2023", "ae2024", "ae2025", "ae2026"])(
@@ -197,8 +197,8 @@ describe("TestNewVersion", () => {
       const saved = sample.project._head;
       expect(
         pyEq(
-          [head.file_format_version, head._format_subversion],
-          [saved.file_format_version, saved._format_subversion],
+          [head.fileFormatVersion, head._formatSubversion],
+          [saved.fileFormatVersion, saved._formatSubversion],
         ),
       ).toBe(true);
     },
@@ -209,7 +209,7 @@ describe("TestNewVersion", () => {
     ["16.0x1", false],
   ])("test_mrid_from_ae_17[%#]", (version: string, hasMrid: boolean) => {
     const chunks = py_aep.new(version).project._rifx.chunks;
-    expect(chunks.some((c) => c.chunk_type === "mrid")).toBe(hasMrid);
+    expect(chunks.some((c) => c.chunkType === "mrid")).toBe(hasMrid);
   });
 
   test.each([

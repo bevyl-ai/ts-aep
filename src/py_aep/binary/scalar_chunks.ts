@@ -32,10 +32,10 @@ export class _StringChunkBase extends Chunk {
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): _StringChunkBase {
-    const { chunk_type = "" } = kwargs;
+    const { chunkType: chunk_type = "" } = kwargs;
     const cls = this;
     const raw = readBytes(fp, size);
-    return new cls({ chunk_type, value: decode(raw, cls._ENCODING) });
+    return new cls({ chunkType: chunk_type, value: decode(raw, cls._ENCODING) });
   }
 
   write(fp: IO): number {
@@ -175,10 +175,10 @@ register("Smax", "Smin", "adfr", "ppSn")(F8Chunk);
 export class Utf8Chunk extends _StringChunkBase {
   static _ENCODING = "UTF-8";
 
-  declare chunk_type: string;
+  declare chunkType: string;
 }
 define(Utf8Chunk, {
-  chunk_type: field({ default: "Utf8" }),
+  chunkType: field({ default: "Utf8" }),
 });
 register("alas", "pjef", "Utf8")(Utf8Chunk);
 

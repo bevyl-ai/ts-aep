@@ -83,7 +83,7 @@ export const _UNDEFINED_ID = 0xffffffff;
  * writes the undefined id.
  */
 export function _noSourceId(comp: CompItem): number {
-  const major = comp._project._head.ae_version_major;
+  const major = comp._project._head.aeVersionMajor;
   return aeWrites("light source id", major) ? _UNDEFINED_ID : 0;
 }
 
@@ -279,15 +279,15 @@ export class Layer extends PropertyGroup {
    * A later stretch change leaves the stored start alone.
    */
   get startTime(): number {
-    return this._ldta.start_time;
+    return this._ldta.startTime;
   }
 
   set startTime(value: number) {
     _validateStartTime(value, this);
     const timebase = this._layerTimebase();
     const ldta = this._ldta;
-    ldta.start_time_dividend = Math.floor(value * timebase + 0.5);
-    ldta.start_time_divisor = timebase;
+    ldta.startTimeDividend = Math.floor(value * timebase + 0.5);
+    ldta.startTimeDivisor = timebase;
   }
 
   /**
@@ -333,7 +333,7 @@ export class Layer extends PropertyGroup {
    */
   _layerTimebase(internalTimebase: number | null = null): number {
     if (internalTimebase == null) {
-      internalTimebase = this.containingComp._cdta.internal_timebase;
+      internalTimebase = this.containingComp._cdta.internalTimebase;
     }
     return layerTimebase(internalTimebase, this._stretchFactor);
   }
@@ -348,7 +348,7 @@ export class Layer extends PropertyGroup {
       if (prop._isLive()) prop._ensureTimeBase();
       for (const keyframe of prop.keyframes) {
         const item = keyframe._ldatItem;
-        item.time_units = rescaleTicks(item.time_units, old, new_);
+        item.timeUnits = rescaleTicks(item.timeUnits, old, new_);
       }
     }
   }
@@ -377,7 +377,7 @@ export class Layer extends PropertyGroup {
     } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
-    const layerTypeRaw = _ldta.layer_type;
+    const layerTypeRaw = _ldta.layerType;
     const layerType = LayerType.ofOrNull(layerTypeRaw);
     let matchName = layerType === null ? undefined : new.target._LAYER_MATCH_NAMES.get(layerType);
     if (matchName === undefined) {
@@ -424,13 +424,13 @@ export class Layer extends PropertyGroup {
     // and rejects layers whose root tdgp lacks it ("missing data in
     // file"). Synthesized children are inserted before this marker.
     tdgpChunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-    const rootTdgp = new ListChunk({ list_type: "tdgp", chunks: tdgpChunks });
-    const aeMajor = containing_comp._project._head.ae_version_major;
+    const rootTdgp = new ListChunk({ listType: "tdgp", chunks: tdgpChunks });
+    const aeMajor = containing_comp._project._head.aeVersionMajor;
     // The ldta matte-layer field (164- instead of 160-byte records).
-    ldta.matte_layer_id = aeWrites("matte layer id", aeMajor) ? 0 : null;
+    ldta.matteLayerId = aeWrites("matte layer id", aeMajor) ? 0 : null;
     const [gide, _lhd3, _inner] = buildGideList();
     const layerList = new ListChunk({
-      list_type: "Layr",
+      listType: "Layr",
       chunks: [ldta, nameUtf8, rootTdgp, gide],
     });
     if (aeWrites("layer OvdG", aeMajor)) layerList.chunks.push(buildOvdg());
@@ -531,7 +531,7 @@ export class Layer extends PropertyGroup {
   set name(value: string) {
     // PropertyBase.name.fset(self, value)
     super.name = value;
-    this._ldta.layer_name = value;
+    this._ldta.layerName = value;
     // AE sets _layer_flags_0 bit 0 only for a SOURCE-BACKED layer whose name
     // differs from the source item's name. It stays 0 for sourceless layers
     // (camera/light/text/shape) even when named, for an empty (source-
@@ -543,21 +543,21 @@ export class Layer extends PropertyGroup {
     // renamed back to the original default name (headless rename
     // experiment on parametric_meshes.aep), matching addParametricMesh's
     // explicit-name behavior.
-    const sourceId = this._ldta.source_id;
-    if (this._ldta.layer_type === LayerType.PARAMETRIC_MESH) {
-      this._ldta.name_set = true;
+    const sourceId = this._ldta.sourceId;
+    if (this._ldta.layerType === LayerType.PARAMETRIC_MESH) {
+      this._ldta.nameSet = true;
     } else if (!value || sourceId === 0) {
-      this._ldta.name_set = false;
+      this._ldta.nameSet = false;
     } else {
       const sourceItem = this.containingComp._project.items.get(sourceId);
-      this._ldta.name_set = (sourceItem?.name ?? null) !== value;
+      this._ldta.nameSet = (sourceItem?.name ?? null) !== value;
     }
   }
 
   /** A descriptive comment for the layer. Read / Write. */
   get comment(): string {
     // AE 2026 shows no comment for a `cmta` whose ldta flag is unset.
-    if (this._cmta == null || !this._ldta.has_comment) return "";
+    if (this._cmta == null || !this._ldta.hasComment) return "";
     return this._cmta.value;
   }
 
@@ -570,10 +570,10 @@ export class Layer extends PropertyGroup {
         chunks.splice(indexByIdentity(chunks, this._cmta), 1);
         this._cmta = null;
       }
-      this._ldta.has_comment = false;
+      this._ldta.hasComment = false;
       return;
     }
-    this._ldta.has_comment = true;
+    this._ldta.hasComment = true;
     if (this._cmta != null) {
       this._cmta.value = value;
     } else {
@@ -598,7 +598,7 @@ export class Layer extends PropertyGroup {
    * `"ParametricMeshLayer"`, or `"Layer"`. Read-only.
    */
   get layerType(): string {
-    return this.constructor._LAYER_TYPE_NAMES.get(LayerType.of(this._ldta.layer_type)) ?? "AVLayer";
+    return this.constructor._LAYER_TYPE_NAMES.get(LayerType.of(this._ldta.layerType)) ?? "AVLayer";
   }
 
   /**
@@ -695,7 +695,7 @@ export class Layer extends PropertyGroup {
    * -150 % layer starting at 1.3 s), as After Effects reports it.
    */
   get inPoint(): number {
-    return this._timeOrigin + this._ldta.in_point * this._stretchFactor;
+    return this._timeOrigin + this._ldta.inPoint * this._stretchFactor;
   }
 
   set inPoint(value: number) {
@@ -711,7 +711,7 @@ export class Layer extends PropertyGroup {
    * {@link inPoint}).
    */
   get outPoint(): number {
-    return this._timeOrigin + this._ldta.out_point * this._stretchFactor;
+    return this._timeOrigin + this._ldta.outPoint * this._stretchFactor;
   }
 
   set outPoint(value: number) {
@@ -1216,7 +1216,7 @@ export class Layer extends PropertyGroup {
       writeCompensation("ADBE Position", newPos);
     }
 
-    if (this._ldta.layer_type === LayerType.CAMERA || this._ldta.layer_type === LayerType.LIGHT) {
+    if (this._ldta.layerType === LayerType.CAMERA || this._ldta.layerType === LayerType.LIGHT) {
       // A camera or light keeps its point of interest in the Anchor
       // Point slot, in its parent's space: AE 2026 remaps it like
       // Position (a two-node camera's POI [900, 500, 0] under a null at
@@ -1352,12 +1352,12 @@ export class Layer extends PropertyGroup {
 
   /** Write a new in_point (comp time) to the binary chunk. */
   _setRawInPoint(value: number): void {
-    this._ldta.in_point = this._layerRelative(value);
+    this._ldta.inPoint = this._layerRelative(value);
   }
 
   /** Write a new out_point (comp time) to the binary chunk. */
   _setRawOutPoint(value: number): void {
-    this._ldta.out_point = this._layerRelative(value);
+    this._ldta.outPoint = this._layerRelative(value);
   }
 
   // ------------------------------------------------------------------
@@ -1388,8 +1388,8 @@ export class Layer extends PropertyGroup {
     for (const layer of comp.avLayers) {
       if (layer !== this) {
         const ldta = layer._ldta;
-        if ("matte_layer_id" in ldta && ldta.matte_layer_id === removedId) {
-          ldta.matte_layer_id = 0;
+        if ("matteLayerId" in ldta && ldta.matteLayerId === removedId) {
+          ldta.matteLayerId = 0;
         }
       }
     }
@@ -1486,11 +1486,11 @@ export class Layer extends PropertyGroup {
     // Patch layer ID
     const clonedLdta = findByType(clonedList.chunks, "ldta");
     // Layer IDs are unique project-wide, not per-comp.
-    clonedLdta.layer_id = intoComp._project._allocateId();
+    clonedLdta.layerId = intoComp._project._allocateId();
     // AE points every effect's hidden -0000 param tdpi at the owning
     // layer; retarget the clones at the fresh id (layer-reference
     // tdpi values keep pointing at the originally referenced layer).
-    rewriteOwnerTdpi(clonedList, clonedLdta.layer_id);
+    rewriteOwnerTdpi(clonedList, clonedLdta.layerId);
 
     // Determine chunk insertion point
     let modelIdx: number;
@@ -1504,11 +1504,11 @@ export class Layer extends PropertyGroup {
       // record has no matte field and must stay that size) and an
       // environment light's source only when they would point into
       // another comp.
-      clonedLdta.parent_id = 0;
+      clonedLdta.parentId = 0;
       if (!sameComp) {
-        if (clonedLdta.matte_layer_id != null) clonedLdta.matte_layer_id = 0;
-        if (clonedLdta.layer_type === LayerType.LIGHT) {
-          clonedLdta.source_id = _noSourceId(intoComp);
+        if (clonedLdta.matteLayerId != null) clonedLdta.matteLayerId = 0;
+        if (clonedLdta.layerType === LayerType.LIGHT) {
+          clonedLdta.sourceId = _noSourceId(intoComp);
         }
       }
       // A LAYER parameter (Set Matte, Layer Control, CC Sphere's light
@@ -1525,7 +1525,7 @@ export class Layer extends PropertyGroup {
       // comp's base.
       rewriteTimeBase(
         clonedList,
-        this._layerTimebase(intoComp._cdta.internal_timebase),
+        this._layerTimebase(intoComp._cdta.internalTimebase),
       );
       modelIdx = 0;
       if (intoComp.layers.length > 0) {
@@ -1730,12 +1730,12 @@ Layer.prototype._treeParamDefs = null;
 // Descriptors assigned in the class body (`enabled = ChunkField.bool(...)`)
 // are installed on the prototype after the class is defined.
 descriptor(Layer, "enabled", ChunkField.bool("_ldta", "enabled"));
-descriptor(Layer, "id", new ChunkField("_ldta", "layer_id", { readOnly: true }));
+descriptor(Layer, "id", new ChunkField("_ldta", "layerId", { readOnly: true }));
 descriptor(Layer, "label", ChunkField.enum(Label, "_ldta", "label"));
 descriptor(Layer, "locked", ChunkField.bool("_ldta", "locked"));
-descriptor(Layer, "nullLayer", new ChunkField("_ldta", "null_layer", { readOnly: true }));
-descriptor(Layer, "_parentId", new ChunkField("_ldta", "parent_id"));
+descriptor(Layer, "nullLayer", new ChunkField("_ldta", "nullLayer", { readOnly: true }));
+descriptor(Layer, "_parentId", new ChunkField("_ldta", "parentId"));
 descriptor(Layer, "shy", ChunkField.bool("_ldta", "shy"));
 descriptor(Layer, "solo", ChunkField.bool("_ldta", "solo"));
 descriptor(Layer, "_stretch", new ChunkField("_ldta", "stretch"));
-descriptor(Layer, "autoOrient", ChunkField.enum(AutoOrientType, "_ldta", "auto_orient"));
+descriptor(Layer, "autoOrient", ChunkField.enum(AutoOrientType, "_ldta", "autoOrient"));

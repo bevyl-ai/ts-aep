@@ -268,54 +268,54 @@ export type ChunkOf<K extends string> = K extends keyof ChunkTypes ? ChunkTypes[
 // which is what `find_by_type` returns and what models store.
 declare module "./composition_chunks.ts" {
   interface CdtaChunk {
-    resolution_factor_h: number;
-    resolution_factor_v: number;
-    _reserved_04: Uint8Array;
-    time_scale_integer: number;
-    time_scale_fractional: number;
-    internal_timebase: number;
-    _reserved_0c: Uint8Array;
-    standard_timebase: number;
-    time_dividend: number;
-    time_divisor: number;
-    work_area_start_dividend: number;
-    work_area_start_divisor: number;
-    work_area_end_dividend: number;
-    work_area_end_divisor: number;
-    duration_dividend: number;
-    duration_divisor: number;
-    bg_color_r: number;
-    bg_color_g: number;
-    bg_color_b: number;
-    _reserved_37: Uint8Array;
-    _comp_flags_0: number;
-    _comp_flags_1: number;
+    resolutionFactorH: number;
+    resolutionFactorV: number;
+    _reserved04: Uint8Array;
+    timeScaleInteger: number;
+    timeScaleFractional: number;
+    internalTimebase: number;
+    _reserved0c: Uint8Array;
+    standardTimebase: number;
+    timeDividend: number;
+    timeDivisor: number;
+    workAreaStartDividend: number;
+    workAreaStartDivisor: number;
+    workAreaEndDividend: number;
+    workAreaEndDivisor: number;
+    durationDividend: number;
+    durationDivisor: number;
+    bgColorR: number;
+    bgColorG: number;
+    bgColorB: number;
+    _reserved37: Uint8Array;
+    _compFlags0: number;
+    _compFlags1: number;
     width: number;
     height: number;
-    pixel_aspect_dividend: number;
-    pixel_aspect_divisor: number;
-    _reserved_98: Uint8Array;
-    frame_rate_integer: number;
-    frame_rate_fractional: number;
-    _reserved_a0: Uint8Array;
-    display_start_time_dividend: number;
-    display_start_time_divisor: number;
-    _reserved_ac: Uint8Array;
-    shutter_angle: number;
-    _reserved_b0: number;
-    shutter_phase: number;
-    _reserved_b8: number;
-    _reserved_bc: Uint8Array;
-    motion_blur_adaptive_sample_limit: number;
-    motion_blur_samples_per_frame: number;
+    pixelAspectDividend: number;
+    pixelAspectDivisor: number;
+    _reserved98: Uint8Array;
+    frameRateInteger: number;
+    frameRateFractional: number;
+    _reservedA0: Uint8Array;
+    displayStartTimeDividend: number;
+    displayStartTimeDivisor: number;
+    _reservedAc: Uint8Array;
+    shutterAngle: number;
+    _reservedB0: number;
+    shutterPhase: number;
+    _reservedB8: number;
+    _reservedBc: Uint8Array;
+    motionBlurAdaptiveSampleLimit: number;
+    motionBlurSamplesPerFrame: number;
   }
   interface CompPresetItem {
     width: number;
     height: number;
-    frame_rate_integer: number;
-    frame_rate_fractional: number;
-    pixel_aspect_dividend: number;
-    pixel_aspect_divisor: number;
+    frameRateInteger: number;
+    frameRateFractional: number;
+    pixelAspectDividend: number;
+    pixelAspectDivisor: number;
   }
   interface CsctChunk {
     value: number;
@@ -323,314 +323,314 @@ declare module "./composition_chunks.ts" {
 }
 declare module "./footage_chunks.ts" {
   interface OptiChunk {
-    asset_type: string;
-    asset_type_int: number;
+    assetType: string;
+    assetTypeInt: number;
     _pad: Uint8Array;
-    color_r: number;
-    color_g: number;
-    color_b: number;
-    solid_name: string;
+    colorR: number;
+    colorG: number;
+    colorB: number;
+    solidName: string;
     color: number[];
-    _total_length: number;
-    psd_vector_or_merged: boolean;
-    _pad_0b: Uint8Array;
-    psd_layer_index: number;
-    _pad_12: Uint8Array;
-    psd_channels: number;
-    _pad_1f: Uint8Array;
-    psd_canvas_height: number;
-    psd_canvas_width: number;
-    psd_bit_depth: number;
-    _pad_29: Uint8Array;
-    psd_color_mode: number;
-    _pad_2b: Uint8Array;
-    psd_layer_count: number;
-    _pad_32: Uint8Array;
-    psd_layer_top: number;
-    psd_layer_left: number;
-    psd_layer_bottom: number;
-    psd_layer_right: number;
-    psd_layer_channels: number;
-    _pad_5f: Uint8Array;
-    psd_layer_id: number;
-    psd_group_name: string;
-    _pad_0a: Uint8Array;
-    text_width: number;
-    _pad_1a: Uint8Array;
-    text_height: number;
-    _pad_1e: Uint8Array;
-    _pad_28: Uint8Array;
-    _pad_2c: Uint8Array;
-    text_document_layers: number;
-    _pad_34: Uint8Array;
-    text_element_count: number;
-    text_layer_visible: boolean;
-    _pad_3e: Uint8Array;
-    text_layer_name: string;
-    _pad_144: Uint8Array;
-    text_page_height: number;
-    _pad_24a: Uint8Array;
-    text_page_width: number;
-    _pad_24e: Uint8Array;
-    placeholder_name: string;
+    _totalLength: number;
+    psdVectorOrMerged: boolean;
+    _pad0b: Uint8Array;
+    psdLayerIndex: number;
+    _pad12: Uint8Array;
+    psdChannels: number;
+    _pad1f: Uint8Array;
+    psdCanvasHeight: number;
+    psdCanvasWidth: number;
+    psdBitDepth: number;
+    _pad29: Uint8Array;
+    psdColorMode: number;
+    _pad2b: Uint8Array;
+    psdLayerCount: number;
+    _pad32: Uint8Array;
+    psdLayerTop: number;
+    psdLayerLeft: number;
+    psdLayerBottom: number;
+    psdLayerRight: number;
+    psdLayerChannels: number;
+    _pad5f: Uint8Array;
+    psdLayerId: number;
+    psdGroupName: string;
+    _pad0a: Uint8Array;
+    textWidth: number;
+    _pad1a: Uint8Array;
+    textHeight: number;
+    _pad1e: Uint8Array;
+    _pad28: Uint8Array;
+    _pad2c: Uint8Array;
+    textDocumentLayers: number;
+    _pad34: Uint8Array;
+    textElementCount: number;
+    textLayerVisible: boolean;
+    _pad3e: Uint8Array;
+    textLayerName: string;
+    _pad144: Uint8Array;
+    textPageHeight: number;
+    _pad24a: Uint8Array;
+    textPageWidth: number;
+    _pad24e: Uint8Array;
+    placeholderName: string;
   }
   interface PlaceholderOptiChunk {
-    asset_type: string;
-    asset_type_int: number;
+    assetType: string;
+    assetTypeInt: number;
     _pad: Uint8Array;
-    placeholder_name: string;
+    placeholderName: string;
   }
   interface PsdOptiChunk {
-    asset_type: string;
-    asset_type_int: number;
-    _total_length: number;
-    psd_vector_or_merged: boolean;
-    _pad_0b: Uint8Array;
-    psd_layer_index: number;
-    _pad_12: Uint8Array;
-    psd_channels: number;
-    _pad_1f: Uint8Array;
-    psd_canvas_height: number;
-    psd_canvas_width: number;
-    psd_bit_depth: number;
-    _pad_29: Uint8Array;
-    psd_color_mode: number;
-    _pad_2b: Uint8Array;
-    psd_layer_count: number;
-    _pad_32: Uint8Array;
-    psd_layer_top: number;
-    psd_layer_left: number;
-    psd_layer_bottom: number;
-    psd_layer_right: number;
-    psd_layer_channels: number;
-    _pad_5f: Uint8Array;
-    psd_layer_id: number;
+    assetType: string;
+    assetTypeInt: number;
+    _totalLength: number;
+    psdVectorOrMerged: boolean;
+    _pad0b: Uint8Array;
+    psdLayerIndex: number;
+    _pad12: Uint8Array;
+    psdChannels: number;
+    _pad1f: Uint8Array;
+    psdCanvasHeight: number;
+    psdCanvasWidth: number;
+    psdBitDepth: number;
+    _pad29: Uint8Array;
+    psdColorMode: number;
+    _pad2b: Uint8Array;
+    psdLayerCount: number;
+    _pad32: Uint8Array;
+    psdLayerTop: number;
+    psdLayerLeft: number;
+    psdLayerBottom: number;
+    psdLayerRight: number;
+    psdLayerChannels: number;
+    _pad5f: Uint8Array;
+    psdLayerId: number;
   }
   interface SoliOptiChunk {
-    asset_type: string;
-    asset_type_int: number;
+    assetType: string;
+    assetTypeInt: number;
     _pad: Uint8Array;
-    color_r: number;
-    color_g: number;
-    color_b: number;
-    solid_name: string;
+    colorR: number;
+    colorG: number;
+    colorB: number;
+    solidName: string;
   }
   interface SspcChunk {
-    _reserved_00: Uint8Array;
-    source_format_type: string;
-    _reserved_1a: Uint8Array;
+    _reserved00: Uint8Array;
+    sourceFormatType: string;
+    _reserved1a: Uint8Array;
     width: number;
-    _reserved_22: Uint8Array;
+    _reserved22: Uint8Array;
     height: number;
-    duration_dividend: number;
-    duration_divisor: number;
-    _reserved_2e: Uint8Array;
-    _time_base: number;
-    _reserved_36: Uint8Array;
-    native_frame_rate_integer: number;
-    native_frame_rate_fractional: number;
+    durationDividend: number;
+    durationDivisor: number;
+    _reserved2e: Uint8Array;
+    _timeBase: number;
+    _reserved36: Uint8Array;
+    nativeFrameRateInteger: number;
+    nativeFrameRateFractional: number;
     depth: number;
-    _reserved_40: Uint8Array;
-    _reserved_42: Uint8Array;
-    _alpha_flags: number;
-    premul_color_r: number;
-    premul_color_g: number;
-    premul_color_b: number;
-    alpha_mode_raw: number;
-    _reserved_4a: Uint8Array;
-    from_file: boolean;
-    _reserved_50: Uint8Array;
-    field_separation_type_raw: number;
-    _reserved_54: Uint8Array;
-    field_order: number;
-    _reserved_58: Uint8Array;
-    _is_synthetic_a: number;
-    _reserved_6b: Uint8Array;
-    _is_synthetic_b: number;
-    _reserved_6e: Uint8Array;
-    _flags_70: number;
-    _reserved_71: Uint8Array;
-    _flags_73: number;
-    _source_stamp: Uint8Array;
-    _depth_flag: number;
+    _reserved40: Uint8Array;
+    _reserved42: Uint8Array;
+    _alphaFlags: number;
+    premulColorR: number;
+    premulColorG: number;
+    premulColorB: number;
+    alphaModeRaw: number;
+    _reserved4a: Uint8Array;
+    fromFile: boolean;
+    _reserved50: Uint8Array;
+    fieldSeparationTypeRaw: number;
+    _reserved54: Uint8Array;
+    fieldOrder: number;
+    _reserved58: Uint8Array;
+    _isSyntheticA: number;
+    _reserved6b: Uint8Array;
+    _isSyntheticB: number;
+    _reserved6e: Uint8Array;
+    _flags70: number;
+    _reserved71: Uint8Array;
+    _flags73: number;
+    _sourceStamp: Uint8Array;
+    _depthFlag: number;
     loop: number;
-    _reserved_82: Uint8Array;
-    _is_synthetic_c: number;
-    _reserved_87: Uint8Array;
-    pixel_aspect_dividend: number;
-    pixel_aspect_divisor: number;
-    _reserved_90: Uint8Array;
-    _remove_pulldown_value: number;
-    conform_frame_rate_integer: number;
-    conform_frame_rate_fractional: number;
-    display_frame_rate_integer: number;
-    display_frame_rate_fractional: number;
-    _reserved_9c: Uint8Array;
-    _flags_9f: number;
-    audio_sample_rate: number;
-    _reserved_a8: Uint8Array;
-    start_frame: number;
-    end_frame: number;
-    frame_padding: number;
-    _reserved_b8: Uint8Array;
-    frame_range_set: boolean;
-    _reserved_ba: Uint8Array;
-    layer_id: number;
-    layer_index: number;
-    _reserved_c4: Uint8Array;
-    full_frame: boolean;
-    _reserved_c8: Uint8Array;
-    _reserved_ca: Uint8Array;
-    data_size: number | bigint;
-    _reserved_d4: Uint8Array;
+    _reserved82: Uint8Array;
+    _isSyntheticC: number;
+    _reserved87: Uint8Array;
+    pixelAspectDividend: number;
+    pixelAspectDivisor: number;
+    _reserved90: Uint8Array;
+    _removePulldownValue: number;
+    conformFrameRateInteger: number;
+    conformFrameRateFractional: number;
+    displayFrameRateInteger: number;
+    displayFrameRateFractional: number;
+    _reserved9c: Uint8Array;
+    _flags9f: number;
+    audioSampleRate: number;
+    _reservedA8: Uint8Array;
+    startFrame: number;
+    endFrame: number;
+    framePadding: number;
+    _reservedB8: Uint8Array;
+    frameRangeSet: boolean;
+    _reservedBa: Uint8Array;
+    layerId: number;
+    layerIndex: number;
+    _reservedC4: Uint8Array;
+    fullFrame: boolean;
+    _reservedC8: Uint8Array;
+    _reservedCa: Uint8Array;
+    dataSize: number | bigint;
+    _reservedD4: Uint8Array;
   }
   interface TextOptiChunk {
-    asset_type: string;
-    asset_type_int: number;
-    _total_length: number;
-    _pad_0a: Uint8Array;
-    text_width: number;
-    _pad_1a: Uint8Array;
-    text_height: number;
-    _pad_1e: Uint8Array;
-    _pad_28: Uint8Array;
-    _pad_2c: Uint8Array;
-    text_document_layers: number;
-    _pad_34: Uint8Array;
-    text_element_count: number;
-    text_layer_visible: boolean;
-    _pad_3e: Uint8Array;
-    text_layer_name: string;
-    _pad_144: Uint8Array;
-    text_page_height: number;
-    _pad_24a: Uint8Array;
-    text_page_width: number;
-    _pad_24e: Uint8Array;
+    assetType: string;
+    assetTypeInt: number;
+    _totalLength: number;
+    _pad0a: Uint8Array;
+    textWidth: number;
+    _pad1a: Uint8Array;
+    textHeight: number;
+    _pad1e: Uint8Array;
+    _pad28: Uint8Array;
+    _pad2c: Uint8Array;
+    textDocumentLayers: number;
+    _pad34: Uint8Array;
+    textElementCount: number;
+    textLayerVisible: boolean;
+    _pad3e: Uint8Array;
+    textLayerName: string;
+    _pad144: Uint8Array;
+    textPageHeight: number;
+    _pad24a: Uint8Array;
+    textPageWidth: number;
+    _pad24e: Uint8Array;
   }
 }
 declare module "./item_chunks.ts" {
   interface HeadChunk {
-    _reserved_00a: Uint8Array;
-    file_format_version: number;
-    _reserved_00c: Uint8Array;
-    _format_subversion: number;
-    _version_word: number;
-    _reserved_08: Uint8Array;
-    next_item_id: number;
-    file_revision: number;
+    _reserved00a: Uint8Array;
+    fileFormatVersion: number;
+    _reserved00c: Uint8Array;
+    _formatSubversion: number;
+    _versionWord: number;
+    _reserved08: Uint8Array;
+    nextItemId: number;
+    fileRevision: number;
   }
   interface IdtaChunk {
-    item_type: number;
-    _reserved_02: Uint8Array;
-    item_id: number;
-    _flags_14: Uint8Array;
-    _proxy_flags: number;
-    _flags_17: number;
-    _reserved_18: Uint8Array;
-    _proxy_active: number;
-    _reserved_39: Uint8Array;
+    itemType: number;
+    _reserved02: Uint8Array;
+    itemId: number;
+    _flags14: Uint8Array;
+    _proxyFlags: number;
+    _flags17: number;
+    _reserved18: Uint8Array;
+    _proxyActive: number;
+    _reserved39: Uint8Array;
     label: number;
-    _reserved_3c: Uint8Array;
-    _modified_stamp: number;
+    _reserved3c: Uint8Array;
+    _modifiedStamp: number;
   }
   interface NhedChunk {
-    _reserved_00: Uint8Array;
-    _display_byte: number;
-    footage_timecode_display_start_type: number;
-    _reserved_0a: Uint8Array;
-    _feet_byte: number;
-    timecode_default_base: number;
-    _reserved_0d: Uint8Array;
-    frames_count_type: number;
-    bits_per_channel: number;
-    transparency_grid_thumbnails: boolean;
-    _reserved_11: Uint8Array;
+    _reserved00: Uint8Array;
+    _displayByte: number;
+    footageTimecodeDisplayStartType: number;
+    _reserved0a: Uint8Array;
+    _feetByte: number;
+    timecodeDefaultBase: number;
+    _reserved0d: Uint8Array;
+    framesCountType: number;
+    bitsPerChannel: number;
+    transparencyGridThumbnails: boolean;
+    _reserved11: Uint8Array;
   }
   interface NnhdChunk {
-    _reserved_00: Uint8Array;
-    _saving_platform: number;
-    _reserved_03: Uint8Array;
-    _display_byte: number;
-    footage_timecode_display_start_type: number;
-    _reserved_0a: number;
-    _feet_byte: number;
-    _reserved_0c: Uint8Array;
-    timecode_default_base: number;
-    _unknown_10: Uint8Array;
-    frames_count_type: number;
-    _reserved_15: Uint8Array;
-    bits_per_channel: number;
-    transparency_grid_thumbnails: boolean;
-    _system_code_page: number;
-    _unknown_1c: Uint8Array;
+    _reserved00: Uint8Array;
+    _savingPlatform: number;
+    _reserved03: Uint8Array;
+    _displayByte: number;
+    footageTimecodeDisplayStartType: number;
+    _reserved0a: number;
+    _feetByte: number;
+    _reserved0c: Uint8Array;
+    timecodeDefaultBase: number;
+    _unknown10: Uint8Array;
+    framesCountType: number;
+    _reserved15: Uint8Array;
+    bitsPerChannel: number;
+    transparencyGridThumbnails: boolean;
+    _systemCodePage: number;
+    _unknown1c: Uint8Array;
   }
   interface TimeDisplayPrefItem {
-    display_byte: number;
-    footage_timecode_display_start_type: number;
-    _reserved_02: number;
-    feet_byte: number;
-    timecode_default_base: number;
-    _reserved_08: number;
-    frames_count_type: number;
+    displayByte: number;
+    footageTimecodeDisplayStartType: number;
+    _reserved02: number;
+    feetByte: number;
+    timecodeDefaultBase: number;
+    _reserved08: number;
+    framesCountType: number;
   }
 }
 declare module "./layer_chunks.ts" {
   interface LdtaChunk {
-    layer_id: number;
+    layerId: number;
     quality: number;
-    _reserved_06: Uint8Array;
-    stretch_dividend: number;
-    start_time_dividend: number;
-    start_time_divisor: number;
-    in_point_dividend: number;
-    in_point_divisor: number;
-    out_point_dividend: number;
-    out_point_divisor: number;
-    _reserved_24: Uint8Array;
-    _layer_flags_0: number;
-    _layer_flags_1: number;
-    _layer_flags_2: number;
-    source_id: number;
-    _reserved_2c: Uint8Array;
-    _reserved_3b: number;
-    _reserved_3c: number;
+    _reserved06: Uint8Array;
+    stretchDividend: number;
+    startTimeDividend: number;
+    startTimeDivisor: number;
+    inPointDividend: number;
+    inPointDivisor: number;
+    outPointDividend: number;
+    outPointDivisor: number;
+    _reserved24: Uint8Array;
+    _layerFlags0: number;
+    _layerFlags1: number;
+    _layerFlags2: number;
+    sourceId: number;
+    _reserved2c: Uint8Array;
+    _reserved3b: number;
+    _reserved3c: number;
     label: number;
-    _reserved_3e: Uint8Array;
-    layer_name: string;
-    _reserved_60: Uint8Array;
-    blending_mode: number;
-    _reserved_64: Uint8Array;
-    _transfer_flags: number;
-    _reserved_68: Uint8Array;
-    track_matte_type: number;
-    stretch_divisor: number;
-    _reserved_70: number;
-    _reserved_78: number;
-    _reserved_80: Uint8Array;
-    layer_type: number;
-    parent_id: number;
-    _reserved_88: Uint8Array;
-    light_and_mesh_type: number;
-    _reserved_8c: number;
-    _reserved_90: number;
-    _reserved_94: number;
-    _reserved_98: number;
-    matte_layer_id: number | null;
+    _reserved3e: Uint8Array;
+    layerName: string;
+    _reserved60: Uint8Array;
+    blendingMode: number;
+    _reserved64: Uint8Array;
+    _transferFlags: number;
+    _reserved68: Uint8Array;
+    trackMatteType: number;
+    stretchDivisor: number;
+    _reserved70: number;
+    _reserved78: number;
+    _reserved80: Uint8Array;
+    layerType: number;
+    parentId: number;
+    _reserved88: Uint8Array;
+    lightAndMeshType: number;
+    _reserved8c: number;
+    _reserved90: number;
+    _reserved94: number;
+    _reserved98: number;
+    matteLayerId: number | null;
   }
 }
 declare module "./ldat_chunks.ts" {
   interface GuideItem {
-    orientation_type: number;
-    position_type: number;
+    orientationType: number;
+    positionType: number;
     position: number;
   }
   interface KfColor {
     _unknown1: number | bigint;
     _unknown2: number;
-    in_speed: number;
-    in_influence: number;
-    out_speed: number;
-    out_influence: number;
+    inSpeed: number;
+    inInfluence: number;
+    outSpeed: number;
+    outInfluence: number;
     a: number;
     r: number;
     g: number;
@@ -647,21 +647,21 @@ declare module "./ldat_chunks.ts" {
   interface KfNoValue {
     _unknown1: number | bigint;
     _unknown2: number;
-    in_speed: number;
-    in_influence: number;
-    out_speed: number;
-    out_influence: number;
+    inSpeed: number;
+    inInfluence: number;
+    outSpeed: number;
+    outInfluence: number;
   }
   interface Lhd3Chunk {
     _prefix: Uint8Array;
     count: number;
-    _count_b: number;
-    item_size: number;
+    _countB: number;
+    itemSize: number;
     _gap2: Uint8Array;
-    item_type_raw: number;
-    _counter_a: number;
-    _counter_b: number;
-    _trailing_pad: Uint8Array | null;
+    itemTypeRaw: number;
+    _counterA: number;
+    _counterB: number;
+    _trailingPad: Uint8Array | null;
   }
   interface ShapePoint {
     x: number;
@@ -671,51 +671,51 @@ declare module "./ldat_chunks.ts" {
 declare module "./misc_chunks.ts" {
   interface AdvancedPrdaChunk {
     _version: number;
-    _renderer_tag: number;
+    _rendererTag: number;
     quality: number;
-    _reserved_12: number;
-    _reserved_16: number;
+    _reserved12: number;
+    _reserved16: number;
     resolution: number;
     smoothness: number;
-    casting_box_size_x: number;
-    casting_box_size_y: number;
-    casting_box_size_z: number;
-    casting_box_center_x: number;
-    casting_box_center_y: number;
-    casting_box_center_z: number;
+    castingBoxSizeX: number;
+    castingBoxSizeY: number;
+    castingBoxSizeZ: number;
+    castingBoxCenterX: number;
+    castingBoxCenterY: number;
+    castingBoxCenterZ: number;
   }
   interface AnglePardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value_raw: number;
-    default_raw: number | null;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValueRaw: number;
+    defaultRaw: number | null;
   }
   interface BooleanPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value: number;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValue: number;
     default_: number;
   }
   interface Cinema4DPrdaChunk {
     _version: number;
-    _renderer_tag: number;
+    _rendererTag: number;
     quality: number;
-    _reserved_12: number;
-    _reserved_16: number;
+    _reserved12: number;
+    _reserved16: number;
   }
   interface ClassicPrdaChunk {
     _version: number;
-    _renderer_tag: number;
-    shadow_map_resolution: number;
+    _rendererTag: number;
+    shadowMapResolution: number;
   }
   interface ColorPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    _last_color: Uint8Array;
-    _default_color: Uint8Array;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    _lastColor: Uint8Array;
+    _defaultColor: Uint8Array;
   }
   interface DcuiChunk {
     value: boolean;
@@ -724,8 +724,8 @@ declare module "./misc_chunks.ts" {
     value: boolean;
   }
   interface DwgaChunk {
-    working_gamma_selector: number;
-    _reserved_01: Uint8Array;
+    workingGammaSelector: number;
+    _reserved01: Uint8Array;
   }
   interface EmbpChunk {
     value: boolean;
@@ -734,15 +734,15 @@ declare module "./misc_chunks.ts" {
     value: boolean;
   }
   interface EnumPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value: number;
-    nb_options: number;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValue: number;
+    nbOptions: number;
     default_: number;
   }
   interface EwotChunk {
-    num_entries: number;
+    numEntries: number;
     items: EwotItem[];
   }
   interface EwotItem {
@@ -750,67 +750,67 @@ declare module "./misc_chunks.ts" {
     _data: Uint8Array;
   }
   interface FeatherPointItem {
-    seg_loc: number;
-    interp_raw: number;
-    rel_seg_loc: number;
+    segLoc: number;
+    interpRaw: number;
+    relSegLoc: number;
     radius: number;
-    corner_angle: number;
+    cornerAngle: number;
     tension: number;
   }
   interface FipsChunk {
-    _pad_00: Uint8Array;
+    _pad00: Uint8Array;
     channels: number;
-    _pad_08: Uint8Array;
-    _grid_safe_flags: number;
-    _draft_flags: number;
-    _preview_flags: number;
-    _view_flags: number;
-    _display_flags: number;
-    _pad_10: Uint8Array;
-    _guide_flags: number;
-    _pad_18: Uint8Array;
-    roi_top: number;
-    roi_left: number;
-    roi_bottom: number;
-    roi_right: number;
-    _pad_30: Uint8Array;
-    zoom_type: number;
-    _pad_46: Uint8Array;
+    _pad08: Uint8Array;
+    _gridSafeFlags: number;
+    _draftFlags: number;
+    _previewFlags: number;
+    _viewFlags: number;
+    _displayFlags: number;
+    _pad10: Uint8Array;
+    _guideFlags: number;
+    _pad18: Uint8Array;
+    roiTop: number;
+    roiLeft: number;
+    roiBottom: number;
+    roiRight: number;
+    _pad30: Uint8Array;
+    zoomType: number;
+    _pad46: Uint8Array;
     zoom: number;
     exposure: number;
-    _pad_54: number;
-    _color_mgmt_flags: number;
-    _resolution_flags: number;
+    _pad54: number;
+    _colorMgmtFlags: number;
+    _resolutionFlags: number;
   }
   interface FtgiChunk {
-    start_offset: number;
-    frame_rate_num: number;
-    end_frame: number;
-    time_base: number;
+    startOffset: number;
+    frameRateNum: number;
+    endFrame: number;
+    timeBase: number;
   }
   interface Fth5Chunk {
     points: FeatherPointItem[];
   }
   interface GenericPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
     _body: Uint8Array;
   }
   interface HdrmChunk {
     value: boolean;
   }
   interface IntegerPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value: number;
-    _value_str: Uint8Array;
-    _value_desc: Uint8Array;
-    valid_min: number;
-    valid_max: number;
-    slider_min: number | null;
-    slider_max: number | null;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValue: number;
+    _valueStr: Uint8Array;
+    _valueDesc: Uint8Array;
+    validMin: number;
+    validMax: number;
+    sliderMin: number | null;
+    sliderMax: number | null;
     default_: number | null;
   }
   interface IpwsChunk {
@@ -825,24 +825,24 @@ declare module "./misc_chunks.ts" {
   interface MkifChunk {
     inverted: boolean;
     locked: boolean;
-    mask_motion_blur: number;
-    mask_feather_falloff: number;
-    _reserved_04: Uint8Array;
+    maskMotionBlur: number;
+    maskFeatherFalloff: number;
+    _reserved04: Uint8Array;
     mode: number;
-    mask_id: number;
-    _reserved_0c: Uint8Array;
-    color_r: number;
-    color_g: number;
-    color_b: number;
+    maskId: number;
+    _reserved0c: Uint8Array;
+    colorR: number;
+    colorG: number;
+    colorB: number;
   }
   interface NmhdChunk {
-    _reserved_00: Uint8Array;
-    _marker_flags: number;
-    num_params: number;
-    duration_value: number;
-    duration_scale: number;
+    _reserved00: Uint8Array;
+    _markerFlags: number;
+    numParams: number;
+    durationValue: number;
+    durationScale: number;
     label: number;
-    _reserved_11: Uint8Array;
+    _reserved11: Uint8Array;
   }
   interface OcspChunk {
     value: boolean;
@@ -851,163 +851,163 @@ declare module "./misc_chunks.ts" {
     tensions: TensionItem[];
   }
   interface OtlnChunk {
-    num_entries: number;
+    numEntries: number;
     items: OtlnItem[];
   }
   interface OtlnItem {
     _flags: number;
     _unnamed6: Uint8Array;
-    entry_type: number;
+    entryType: number;
   }
   interface PardChunk {
-    _pad_pre: Uint8Array;
-    _pad_post: Uint8Array;
+    _padPre: Uint8Array;
+    _padPost: Uint8Array;
     _body: Uint8Array;
-    _last_color: Uint8Array;
-    _default_color: Uint8Array;
-    last_color: number[];
-    default_color: number[];
-    last_value: number;
-    _value_str: Uint8Array;
-    _value_desc: Uint8Array;
-    valid_min: number;
-    valid_max: number;
-    last_value_raw: number;
-    valid_min_raw: number;
-    valid_max_raw: number;
-    slider_min_raw: number;
-    slider_max_raw: number;
-    default_raw: number | null;
-    last_value_x_raw: number;
-    last_value_y_raw: number;
-    _reserved_40: Uint8Array;
-    restrict_bounds: number;
-    default_x_raw: number;
-    default_y_raw: number;
-    last_value_x: number;
-    last_value_y: number;
-    nb_options: number;
+    _lastColor: Uint8Array;
+    _defaultColor: Uint8Array;
+    lastColor: number[];
+    defaultColor: number[];
+    lastValue: number;
+    _valueStr: Uint8Array;
+    _valueDesc: Uint8Array;
+    validMin: number;
+    validMax: number;
+    lastValueRaw: number;
+    validMinRaw: number;
+    validMaxRaw: number;
+    sliderMinRaw: number;
+    sliderMaxRaw: number;
+    defaultRaw: number | null;
+    lastValueXRaw: number;
+    lastValueYRaw: number;
+    _reserved40: Uint8Array;
+    restrictBounds: number;
+    defaultXRaw: number;
+    defaultYRaw: number;
+    lastValueX: number;
+    lastValueY: number;
+    nbOptions: number;
     phase: number;
     _precision: number | null;
-    display_flags: number | null;
-    displays_percent: boolean;
-    last_value_z_raw: number;
-    default_x: number;
-    default_y: number;
-    default_z: number;
-    last_value_z: number;
+    displayFlags: number | null;
+    displaysPercent: boolean;
+    lastValueZRaw: number;
+    defaultX: number;
+    defaultY: number;
+    defaultZ: number;
+    lastValueZ: number;
   }
   interface PguiChunk {
     guid: Uint8Array;
   }
   interface PrdaChunk {
     _version: number;
-    _renderer_tag: number;
-    shadow_map_resolution: number;
+    _rendererTag: number;
+    shadowMapResolution: number;
     quality: number;
-    _reserved_12: number;
-    _reserved_16: number;
+    _reserved12: number;
+    _reserved16: number;
     resolution: number;
     smoothness: number;
-    casting_box_size_x: number;
-    casting_box_size_y: number;
-    casting_box_size_z: number;
-    casting_box_center_x: number;
-    casting_box_center_y: number;
-    casting_box_center_z: number;
-    _unknown_08: number;
-    _unknown_12: number;
+    castingBoxSizeX: number;
+    castingBoxSizeY: number;
+    castingBoxSizeZ: number;
+    castingBoxCenterX: number;
+    castingBoxCenterY: number;
+    castingBoxCenterZ: number;
+    _unknown08: number;
+    _unknown12: number;
   }
   interface PrgbChunk {
     value: number;
   }
   interface PrinChunk {
-    _reserved_00: Uint8Array;
-    match_name: string;
-    display_name: string;
-    _reserved_68: Uint8Array;
-    _end_marker: Uint8Array;
+    _reserved00: Uint8Array;
+    matchName: string;
+    displayName: string;
+    _reserved68: Uint8Array;
+    _endMarker: Uint8Array;
   }
   interface RayTracedPrdaChunk {
     _version: number;
-    _renderer_tag: number;
-    _unknown_08: number;
-    _unknown_12: number;
+    _rendererTag: number;
+    _unknown08: number;
+    _unknown12: number;
   }
   interface ScalarPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value_raw: number;
-    _value_str: Uint8Array;
-    _value_desc: Uint8Array;
-    valid_min_raw: number;
-    valid_max_raw: number;
-    slider_min_raw: number;
-    slider_max_raw: number;
-    default_raw: number | null;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValueRaw: number;
+    _valueStr: Uint8Array;
+    _valueDesc: Uint8Array;
+    validMinRaw: number;
+    validMaxRaw: number;
+    sliderMinRaw: number;
+    sliderMaxRaw: number;
+    defaultRaw: number | null;
   }
   interface SfdtChunk {
     value: number;
   }
   interface ShphChunk {
-    _reserved_00: Uint8Array;
+    _reserved00: Uint8Array;
     _flags: number;
-    top_left_x: number;
-    top_left_y: number;
-    bottom_right_x: number;
-    bottom_right_y: number;
-    _reserved_14: Uint8Array;
+    topLeftX: number;
+    topLeftY: number;
+    bottomRightX: number;
+    bottomRightY: number;
+    _reserved14: Uint8Array;
   }
   interface SliderPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value: number;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValue: number;
     phase: number;
-    _value_desc: Uint8Array;
-    valid_min: number;
-    valid_max: number;
-    slider_min: number;
-    slider_max: number;
+    _valueDesc: Uint8Array;
+    validMin: number;
+    validMax: number;
+    sliderMin: number;
+    sliderMax: number;
     default_: number | null;
     _precision: number | null;
-    display_flags: number | null;
+    displayFlags: number | null;
   }
   interface StrtChunk {
-    _reserved_00: Uint8Array;
-    fps_byte: number;
-    _reserved_05: Uint8Array;
+    _reserved00: Uint8Array;
+    fpsByte: number;
+    _reserved05: Uint8Array;
   }
   interface TensionItem {
     value: number;
   }
   interface ThreeDPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value_x_raw: number;
-    last_value_y_raw: number;
-    last_value_z_raw: number;
-    default_x: number;
-    default_y: number;
-    default_z: number;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValueXRaw: number;
+    lastValueYRaw: number;
+    lastValueZRaw: number;
+    defaultX: number;
+    defaultY: number;
+    defaultZ: number;
   }
   interface TwoDPardChunk {
-    _pad_pre: Uint8Array;
-    _raw_name: Uint8Array;
-    _pad_post: Uint8Array;
-    last_value_x_raw: number;
-    last_value_y_raw: number;
-    _reserved_40: Uint8Array;
-    restrict_bounds: number;
-    default_x_raw: number;
-    default_y_raw: number;
+    _padPre: Uint8Array;
+    _rawName: Uint8Array;
+    _padPost: Uint8Array;
+    lastValueXRaw: number;
+    lastValueYRaw: number;
+    _reserved40: Uint8Array;
+    restrictBounds: number;
+    defaultXRaw: number;
+    defaultYRaw: number;
   }
 }
 declare module "./project_chunks.ts" {
   interface FdtaChunk {
-    _reserved_00: Uint8Array;
+    _reserved00: Uint8Array;
     _tail: Uint8Array;
   }
   interface RhedChunk {
@@ -1020,7 +1020,7 @@ declare module "./project_chunks.ts" {
   }
   interface SvapChunk {
     _prefix: Uint8Array;
-    build_number: number;
+    buildNumber: number;
   }
   interface WsnsChunk {
     value: number;
@@ -1034,7 +1034,7 @@ declare module "./property_chunks.ts" {
     records: CurvesRecordItem[];
   }
   interface CurvesRecordItem {
-    _point_slots: Uint8Array;
+    _pointSlots: Uint8Array;
     count: number;
     selected: number;
   }
@@ -1042,220 +1042,220 @@ declare module "./property_chunks.ts" {
     _magic: number;
     dimensions: number;
     _pad1: number;
-    _spatial_static_flags: number;
+    _spatialStaticFlags: number;
     _pad2a: number;
-    _value_hint_type: number;
-    _value_hint_flag: number;
-    _cvot_flags: number;
-    _time_base: number;
-    _arc_accuracy: number;
-    pixel_aspect: number;
-    _arc_multiplier_y: number;
-    _arc_multiplier_z: number;
-    _arc_multiplier_w: number;
+    _valueHintType: number;
+    _valueHintFlag: number;
+    _cvotFlags: number;
+    _timeBase: number;
+    _arcAccuracy: number;
+    pixelAspect: number;
+    _arcMultiplierY: number;
+    _arcMultiplierZ: number;
+    _arcMultiplierW: number;
     _pad4: number;
-    _no_value_flags: number;
+    _noValueFlags: number;
     _pad5: number;
-    _type_flags: number;
-    _property_category: number;
+    _typeFlags: number;
+    _propertyCategory: number;
     _pad6a: number;
     _pad6b: number;
     _pad6c: number;
     animated: boolean;
-    _pad_45: Uint8Array;
-    _reserved_48: number;
-    _reserved_4c: number;
-    _reserved_4d: number;
-    _pad_4e: number;
-    _spatial_marker: number | boolean;
-    _pad_50: number;
-    _reserved_54: number;
-    _reserved_5c: number;
-    _reserved_64: number;
-    _reserved_6c: number;
+    _pad45: Uint8Array;
+    _reserved48: number;
+    _reserved4c: number;
+    _reserved4d: number;
+    _pad4e: number;
+    _spatialMarker: number | boolean;
+    _pad50: number;
+    _reserved54: number;
+    _reserved5c: number;
+    _reserved64: number;
+    _reserved6c: number;
     _pad9a: number;
     _pad9b: number;
-    _expr_flags: number;
+    _exprFlags: number;
     _pad10: number;
   }
   interface TdsbChunk {
-    roto_bezier: boolean;
+    rotoBezier: boolean;
     _pad1: number;
-    _lock_flags: number;
-    _enable_flags: number;
+    _lockFlags: number;
+    _enableFlags: number;
   }
 }
 declare module "./render_chunks.ts" {
   interface ArsiChunk {
-    _reserved_00: Uint8Array;
-    queue_nonempty: number;
-    _reserved_04: Uint8Array;
-    active_slot_state: number;
-    _reserved_180: Uint8Array;
+    _reserved00: Uint8Array;
+    queueNonempty: number;
+    _reserved04: Uint8Array;
+    activeSlotState: number;
+    _reserved180: Uint8Array;
   }
   interface CineonRoptChunk {
     _pad: Uint8Array;
-    ten_bit_black_point: number;
-    ten_bit_white_point: number;
-    converted_black_point: number;
-    converted_white_point: number;
-    current_gamma: number;
-    highlight_expansion: number;
-    logarithmic_conversion: boolean;
-    file_format: number;
-    bit_depth: number;
-    _pad_end: Uint8Array;
+    tenBitBlackPoint: number;
+    tenBitWhitePoint: number;
+    convertedBlackPoint: number;
+    convertedWhitePoint: number;
+    currentGamma: number;
+    highlightExpansion: number;
+    logarithmicConversion: boolean;
+    fileFormat: number;
+    bitDepth: number;
+    _padEnd: Uint8Array;
   }
   interface JpegRoptChunk {
     _pad: Uint8Array;
     quality: number;
-    format_type: number;
+    formatType: number;
     scans: number;
   }
   interface OpenExrRoptChunk {
-    _pad_04: Uint8Array;
+    _pad04: Uint8Array;
     compression: number;
-    thirty_two_bit_float: boolean;
-    luminance_chroma: boolean;
-    _pad_11: Uint8Array;
-    dwa_compression_level: number;
-    _pad_end: Uint8Array;
+    thirtyTwoBitFloat: boolean;
+    luminanceChroma: boolean;
+    _pad11: Uint8Array;
+    dwaCompressionLevel: number;
+    _padEnd: Uint8Array;
   }
   interface OutputModuleSettingsItem {
-    _reserved_00: Uint8Array;
-    _flag_byte_07: number;
-    post_render_target_comp_id: number;
-    _reserved_08: Uint8Array;
-    _reserved_09: Uint8Array;
+    _reserved00: Uint8Array;
+    _flagByte07: number;
+    postRenderTargetCompId: number;
+    _reserved08: Uint8Array;
+    _reserved09: Uint8Array;
     channels: number;
-    _reserved_11: Uint8Array;
-    resize_quality: number;
-    _reserved_13: Uint8Array;
+    _reserved11: Uint8Array;
+    resizeQuality: number;
+    _reserved13: Uint8Array;
     resize: boolean;
-    _reserved_15: Uint8Array;
-    lock_aspect_ratio: boolean;
-    _reserved_17: Uint8Array;
-    _flag_byte_22: number;
-    crop_top: number;
-    crop_left: number;
-    crop_bottom: number;
-    crop_right: number;
-    _reserved_24: Uint8Array;
-    output_audio: number;
-    output_audio_auto: number;
-    _reserved_26: Uint8Array;
-    _include_project_link: number;
-    post_render_action: number;
-    post_render_use_comp: number;
-    _reserved_30: Uint8Array;
-    output_profile_id: Uint8Array;
-    _reserved_32: Uint8Array;
-    convert_to_linear_light: number;
-    _prev_byte_34: Uint8Array;
-    output_color_space_working: number;
-    preserve_rgb: boolean;
-    _reserved_5f: Uint8Array;
+    _reserved15: Uint8Array;
+    lockAspectRatio: boolean;
+    _reserved17: Uint8Array;
+    _flagByte22: number;
+    cropTop: number;
+    cropLeft: number;
+    cropBottom: number;
+    cropRight: number;
+    _reserved24: Uint8Array;
+    outputAudio: number;
+    outputAudioAuto: number;
+    _reserved26: Uint8Array;
+    _includeProjectLink: number;
+    postRenderAction: number;
+    postRenderUseComp: number;
+    _reserved30: Uint8Array;
+    outputProfileId: Uint8Array;
+    _reserved32: Uint8Array;
+    convertToLinearLight: number;
+    _prevByte34: Uint8Array;
+    outputColorSpaceWorking: number;
+    preserveRgb: boolean;
+    _reserved5f: Uint8Array;
   }
   interface PngRoptChunk {
     _pad: Uint8Array;
     width: number;
     height: number;
     _pad2: Uint8Array;
-    bit_depth: number;
+    bitDepth: number;
     compression: number;
     _flags: number;
-    _reserved_26: Uint8Array;
-    channel_count: number;
-    _pad_end: Uint8Array;
+    _reserved26: Uint8Array;
+    channelCount: number;
+    _padEnd: Uint8Array;
   }
   interface RenderSettingsItem {
-    _reserved_00: Uint8Array;
-    _flag_byte: number;
-    comp_id: number;
+    _reserved00: Uint8Array;
+    _flagByte: number;
+    compId: number;
     status: number;
-    _reserved_06: Uint8Array;
-    time_span_start_dividend: number;
-    time_span_start_divisor: number;
-    time_span_duration_dividend: number;
-    time_span_duration_divisor: number;
-    _reserved_11: Uint8Array;
-    frame_rate_integer: number;
-    frame_rate_fractional: number;
-    _reserved_14: Uint8Array;
-    field_render: number;
-    _reserved_16: Uint8Array;
+    _reserved06: Uint8Array;
+    timeSpanStartDividend: number;
+    timeSpanStartDivisor: number;
+    timeSpanDurationDividend: number;
+    timeSpanDurationDivisor: number;
+    _reserved11: Uint8Array;
+    frameRateInteger: number;
+    frameRateFractional: number;
+    _reserved14: Uint8Array;
+    fieldRender: number;
+    _reserved16: Uint8Array;
     pulldown: number;
     quality: number;
-    resolution_x: number;
-    resolution_y: number;
-    _reserved_21: Uint8Array;
+    resolutionX: number;
+    resolutionY: number;
+    _reserved21: Uint8Array;
     effects: number;
-    _reserved_23: Uint8Array;
-    proxy_use: number;
-    _reserved_25: Uint8Array;
-    motion_blur: number;
-    _reserved_27: Uint8Array;
-    frame_blending: number;
-    _reserved_29: Uint8Array;
-    log_type: number;
-    _reserved_31: Uint8Array;
-    skip_existing_files: boolean;
-    _reserved_33: Uint8Array;
-    template_name: string;
-    _reserved_35: Uint8Array;
-    settings_written: number;
-    _reserved_36: Uint8Array;
-    use_this_frame_rate: number;
-    _reserved_37: Uint8Array;
-    time_span_source: number;
-    _reserved_39: Uint8Array;
-    solo_switches: number;
-    _reserved_41: Uint8Array;
-    disk_cache: number;
-    _reserved_43: Uint8Array;
-    guide_layers: number;
-    _reserved_45: Uint8Array;
-    color_depth: number;
-    _reserved_47: Uint8Array;
-    start_time: number;
-    elapsed_seconds: number;
-    _reserved_end: Uint8Array;
-    item_id: number;
+    _reserved23: Uint8Array;
+    proxyUse: number;
+    _reserved25: Uint8Array;
+    motionBlur: number;
+    _reserved27: Uint8Array;
+    frameBlending: number;
+    _reserved29: Uint8Array;
+    logType: number;
+    _reserved31: Uint8Array;
+    skipExistingFiles: boolean;
+    _reserved33: Uint8Array;
+    templateName: string;
+    _reserved35: Uint8Array;
+    settingsWritten: number;
+    _reserved36: Uint8Array;
+    useThisFrameRate: number;
+    _reserved37: Uint8Array;
+    timeSpanSource: number;
+    _reserved39: Uint8Array;
+    soloSwitches: number;
+    _reserved41: Uint8Array;
+    diskCache: number;
+    _reserved43: Uint8Array;
+    guideLayers: number;
+    _reserved45: Uint8Array;
+    colorDepth: number;
+    _reserved47: Uint8Array;
+    startTime: number;
+    elapsedSeconds: number;
+    _reservedEnd: Uint8Array;
+    itemId: number;
     _remaining: Uint8Array;
   }
   interface RoptChunk {
     _pad: Uint8Array;
-    ten_bit_black_point: number;
-    ten_bit_white_point: number;
-    converted_black_point: number;
-    converted_white_point: number;
-    current_gamma: number;
-    highlight_expansion: number;
-    logarithmic_conversion: boolean;
-    file_format: number;
-    bit_depth: number;
-    _pad_end: Uint8Array;
+    tenBitBlackPoint: number;
+    tenBitWhitePoint: number;
+    convertedBlackPoint: number;
+    convertedWhitePoint: number;
+    currentGamma: number;
+    highlightExpansion: number;
+    logarithmicConversion: boolean;
+    fileFormat: number;
+    bitDepth: number;
+    _padEnd: Uint8Array;
     quality: number;
-    format_type: number;
+    formatType: number;
     scans: number;
-    _pad_04: Uint8Array;
+    _pad04: Uint8Array;
     compression: number;
-    thirty_two_bit_float: boolean;
-    luminance_chroma: boolean;
-    _pad_11: Uint8Array;
-    dwa_compression_level: number;
-    bits_per_pixel: number;
+    thirtyTwoBitFloat: boolean;
+    luminanceChroma: boolean;
+    _pad11: Uint8Array;
+    dwaCompressionLevel: number;
+    bitsPerPixel: number;
     _pad2: Uint8Array;
-    rle_compression: boolean;
-    chunk_size: number;
-    _pad_0a: Uint8Array;
-    ibm_pc_byte_order: boolean;
-    lzw_compression: boolean;
+    rleCompression: boolean;
+    chunkSize: number;
+    _pad0a: Uint8Array;
+    ibmPcByteOrder: boolean;
+    lzwCompression: boolean;
     width: number;
     height: number;
     _flags: number;
-    _reserved_26: Uint8Array;
-    channel_count: number;
+    _reserved26: Uint8Array;
+    channelCount: number;
   }
   interface RoutChunk {
     count: number;
@@ -1268,44 +1268,44 @@ declare module "./render_chunks.ts" {
   }
   interface RouuChunk {
     _magic: Uint8Array;
-    video_codec: string;
-    _reserved_08: Uint8Array;
-    starting_number: number;
-    _reserved_14: Uint8Array;
-    format_id: string;
-    _reserved_1e: Uint8Array;
+    videoCodec: string;
+    _reserved08: Uint8Array;
+    startingNumber: number;
+    _reserved14: Uint8Array;
+    formatId: string;
+    _reserved1e: Uint8Array;
     width: number;
     height: number;
-    _reserved_2a: Uint8Array;
-    applied_marker: number;
-    _reserved_3a: Uint8Array;
-    frame_rate_integer: number;
-    frame_rate_fractional: number;
+    _reserved2a: Uint8Array;
+    appliedMarker: number;
+    _reserved3a: Uint8Array;
+    frameRateInteger: number;
+    frameRateFractional: number;
     depth: number;
-    _reserved_48: Uint8Array;
-    color_premultiplied: number;
-    _reserved_4e: Uint8Array;
-    color_matted: number;
-    _reserved_52: Uint8Array;
-    audio_sample_rate: number;
-    audio_encoding: number;
-    audio_bit_depth: number;
-    audio_channels: number;
-    _reserved_72: Uint8Array | null;
+    _reserved48: Uint8Array;
+    colorPremultiplied: number;
+    _reserved4e: Uint8Array;
+    colorMatted: number;
+    _reserved52: Uint8Array;
+    audioSampleRate: number;
+    audioEncoding: number;
+    audioBitDepth: number;
+    audioChannels: number;
+    _reserved72: Uint8Array | null;
   }
   interface TargaRoptChunk {
     _pad: Uint8Array;
-    bits_per_pixel: number;
+    bitsPerPixel: number;
     _pad2: Uint8Array;
-    rle_compression: boolean;
-    _pad_end: Uint8Array;
+    rleCompression: boolean;
+    _padEnd: Uint8Array;
   }
   interface TiffRoptChunk {
-    _pad_04: Uint8Array;
-    chunk_size: number;
-    _pad_0a: Uint8Array;
-    ibm_pc_byte_order: boolean;
-    lzw_compression: boolean;
+    _pad04: Uint8Array;
+    chunkSize: number;
+    _pad0a: Uint8Array;
+    ibmPcByteOrder: boolean;
+    lzwCompression: boolean;
   }
 }
 declare module "./scalar_chunks.ts" {

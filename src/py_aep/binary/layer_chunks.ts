@@ -26,323 +26,323 @@ export const _LDTA_SOURCE_ID_END = 52;
  * `matte_layer_id` is present only in AE \>= 23.
  */
 export class LdtaChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
 
   // -- Identity / timing (bytes 0-35) ------------------------------------
-  declare layer_id: number;
+  declare layerId: number;
   declare quality: number;
-  declare _reserved_06: Uint8Array;
-  declare stretch_dividend: number;
-  declare start_time_dividend: number;
-  declare start_time_divisor: number;
-  declare in_point_dividend: number;
-  declare in_point_divisor: number;
-  declare out_point_dividend: number;
-  declare out_point_divisor: number;
+  declare _reserved06: Uint8Array;
+  declare stretchDividend: number;
+  declare startTimeDividend: number;
+  declare startTimeDivisor: number;
+  declare inPointDividend: number;
+  declare inPointDivisor: number;
+  declare outPointDividend: number;
+  declare outPointDivisor: number;
 
   // -- Flag bytes (bytes 36-39) ------------------------------------------
-  declare _reserved_24: Uint8Array;
+  declare _reserved24: Uint8Array;
   /** Byte 37: bits for sampling, env, char-toward-cam, 3d-per-char, etc. */
-  declare _layer_flags_0: number;
+  declare _layerFlags0: number;
 
   /** Byte 38: bits for null, cam-auto-orient, solo, 3d, adjustment, etc. */
-  declare _layer_flags_1: number;
+  declare _layerFlags1: number;
 
   /**
    * Byte 39: bits for collapse, shy, locked, frame-blend, motion-blur, etc.
    * Default 0x07 = enabled + audio_enabled + effects_active.
    */
-  declare _layer_flags_2: number;
+  declare _layerFlags2: number;
 
   // -- Source / label (bytes 40-63) --------------------------------------
-  declare source_id: number;
-  declare _reserved_2c: Uint8Array;
-  declare _reserved_3b: number;
-  declare _reserved_3c: number;
+  declare sourceId: number;
+  declare _reserved2c: Uint8Array;
+  declare _reserved3b: number;
+  declare _reserved3c: number;
   declare label: number;
-  declare _reserved_3e: Uint8Array;
+  declare _reserved3e: Uint8Array;
 
   // -- Layer name (bytes 64-95, 32-byte UTF-8 strz) ---------------
   /** 32-byte UTF-8 null-terminated string. */
-  declare layer_name: string;
+  declare layerName: string;
 
   // -- Post-name fields (bytes 96-159) -----------------------------------
-  declare _reserved_60: Uint8Array;
-  declare blending_mode: number;
-  declare _reserved_64: Uint8Array;
+  declare _reserved60: Uint8Array;
+  declare blendingMode: number;
+  declare _reserved64: Uint8Array;
   /**
    * Byte 103: transfer-mode flags. bit 0 = preserve underlying transparency,
    * bit 1 = dancing dissolve (Dissolve blend with an animated pattern; AE has no
    * separate transfer-mode value for it).
    */
-  declare _transfer_flags: number;
-  declare _reserved_68: Uint8Array;
-  declare track_matte_type: number;
-  declare stretch_divisor: number;
+  declare _transferFlags: number;
+  declare _reserved68: Uint8Array;
+  declare trackMatteType: number;
+  declare stretchDivisor: number;
   // Two doubles, 0.0 in every sample (AE 15-26).
-  declare _reserved_70: number;
-  declare _reserved_78: number;
-  declare _reserved_80: Uint8Array;
-  declare layer_type: number;
-  declare parent_id: number;
-  declare _reserved_88: Uint8Array;
-  declare light_and_mesh_type: number;
+  declare _reserved70: number;
+  declare _reserved78: number;
+  declare _reserved80: Uint8Array;
+  declare layerType: number;
+  declare parentId: number;
+  declare _reserved88: Uint8Array;
+  declare lightAndMeshType: number;
   // Three words (0 / 1, 0 / 0x01000000, 0 / 1 in the samples) and a double
   // (0.0, 36.0 or 102.047...), undecoded.
-  declare _reserved_8c: number;
-  declare _reserved_90: number;
-  declare _reserved_94: number;
-  declare _reserved_98: number;
+  declare _reserved8c: number;
+  declare _reserved90: number;
+  declare _reserved94: number;
+  declare _reserved98: number;
 
   // -- Optional field (bytes 160-163, AE >= 23) --------------------------
   /** Track matte layer ID. `null` = absent (AE \< 23), `0` = no matte. */
-  declare matte_layer_id: number | null;
+  declare matteLayerId: number | null;
 
   // -- BitField descriptors (not attrs fields) ---------------------------
   // byte 37: _layer_flags_0
-  declare sampling_quality: boolean;
-  declare environment_layer: boolean;
-  declare characters_toward_camera: boolean;
-  declare three_d_per_char: boolean;
-  declare frame_blending_mode: boolean;
-  declare guide_layer: boolean;
+  declare samplingQuality: boolean;
+  declare environmentLayer: boolean;
+  declare charactersTowardCamera: boolean;
+  declare threeDPerChar: boolean;
+  declare frameBlendingMode: boolean;
+  declare guideLayer: boolean;
   // bit 0: a source-backed layer's name was explicitly set (away from the
   // source item's name). Always 0 for sourceless layers (camera/light/text/
   // shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
   // model-level Layer.isNameSet for that).
-  declare name_set: boolean;
+  declare nameSet: boolean;
 
   // byte 38: _layer_flags_1
-  declare null_layer: boolean;
+  declare nullLayer: boolean;
   // bit 6: camera/light "orient towards point of interest" (the two-node
   // rig). AE stores the camera variant of CAMERA_OR_POINT_OF_INTEREST here,
   // NOT in bit 5 (probed AE 2026: a default two-node camera has 0x44, a
   // NO_AUTO_ORIENT camera 0x04).
-  declare poi_auto_orient: boolean;
-  declare camera_or_poi_auto_orient: boolean;
-  declare markers_locked: boolean;
+  declare poiAutoOrient: boolean;
+  declare cameraOrPoiAutoOrient: boolean;
+  declare markersLocked: boolean;
   declare solo: boolean;
-  declare three_d_layer: boolean;
-  declare adjustment_layer: boolean;
-  declare auto_orient_along_path: boolean;
+  declare threeDLayer: boolean;
+  declare adjustmentLayer: boolean;
+  declare autoOrientAlongPath: boolean;
 
   // byte 39: _layer_flags_2
-  declare collapse_transformation: boolean;
+  declare collapseTransformation: boolean;
   declare shy: boolean;
   declare locked: boolean;
-  declare frame_blending: boolean;
-  declare motion_blur_flag: boolean;
-  declare effects_active: boolean;
-  declare audio_enabled: boolean;
+  declare frameBlending: boolean;
+  declare motionBlurFlag: boolean;
+  declare effectsActive: boolean;
+  declare audioEnabled: boolean;
   declare enabled: boolean;
 
   // byte 60: set while the layer has a comment (`cmta`); AE 2026 ignores
   // a `cmta` without it and clears both when the comment is emptied.
-  declare has_comment: boolean;
+  declare hasComment: boolean;
 
   // byte 103: _transfer_flags
-  declare preserve_transparency: boolean;
-  declare dancing_dissolve: boolean;
+  declare preserveTransparency: boolean;
+  declare dancingDissolve: boolean;
 
   // -- Computed properties -----------------------------------------------
 
   /** Start time in seconds (dividend / divisor). */
-  get start_time(): number {
-    if (this.start_time_divisor === 0) throw new ZeroDivisionError("division by zero");
-    return this.start_time_dividend / this.start_time_divisor;
+  get startTime(): number {
+    if (this.startTimeDivisor === 0) throw new ZeroDivisionError("division by zero");
+    return this.startTimeDividend / this.startTimeDivisor;
   }
 
   /** In point in seconds (dividend / divisor). */
-  get in_point(): number {
-    if (this.in_point_divisor === 0) throw new ZeroDivisionError("division by zero");
-    return this.in_point_dividend / this.in_point_divisor;
+  get inPoint(): number {
+    if (this.inPointDivisor === 0) throw new ZeroDivisionError("division by zero");
+    return this.inPointDividend / this.inPointDivisor;
   }
 
-  set in_point(value: number) {
-    [this.in_point_dividend, this.in_point_divisor] = toDividendDivisor(value);
+  set inPoint(value: number) {
+    [this.inPointDividend, this.inPointDivisor] = toDividendDivisor(value);
   }
 
   /** Out point in seconds (dividend / divisor). */
-  get out_point(): number {
-    if (this.out_point_divisor === 0) throw new ZeroDivisionError("division by zero");
-    return this.out_point_dividend / this.out_point_divisor;
+  get outPoint(): number {
+    if (this.outPointDivisor === 0) throw new ZeroDivisionError("division by zero");
+    return this.outPointDividend / this.outPointDivisor;
   }
 
-  set out_point(value: number) {
-    [this.out_point_dividend, this.out_point_divisor] = toDividendDivisor(value);
+  set outPoint(value: number) {
+    [this.outPointDividend, this.outPointDivisor] = toDividendDivisor(value);
   }
 
   /** Stretch as percentage (100 = no stretch). */
   get stretch(): number {
-    if (this.stretch_divisor === 0) {
+    if (this.stretchDivisor === 0) {
       return 0.0;
     }
-    return (this.stretch_dividend * 100.0) / this.stretch_divisor;
+    return (this.stretchDividend * 100.0) / this.stretchDivisor;
   }
 
   set stretch(value: number) {
     if (value === 0) {
-      this.stretch_dividend = 0;
-      this.stretch_divisor = 0;
+      this.stretchDividend = 0;
+      this.stretchDivisor = 0;
     } else {
       // AE stores the factor as a float32, as an exact ratio: 133.33 %
       // is 11184531 / 8388608, not 13333 / 10000.
-      [this.stretch_dividend, this.stretch_divisor] = toFloat32Ratio(value / 100.0);
+      [this.stretchDividend, this.stretchDivisor] = toFloat32Ratio(value / 100.0);
     }
   }
 
   /** Auto-orient type (0=none, 1=path, 2=camera/poi, 3=chars_toward_camera). */
-  get auto_orient(): number {
-    if (this.auto_orient_along_path) {
+  get autoOrient(): number {
+    if (this.autoOrientAlongPath) {
       return 1;
     }
-    if (this.camera_or_poi_auto_orient && this.three_d_layer) {
+    if (this.cameraOrPoiAutoOrient && this.threeDLayer) {
       return 2;
     }
     // Camera/light layers store their two-node "orient towards point of
     // interest" in bit 6 instead.
-    if (this.poi_auto_orient && this.three_d_layer) {
+    if (this.poiAutoOrient && this.threeDLayer) {
       return 2;
     }
-    if (this.characters_toward_camera && this.three_d_per_char) {
+    if (this.charactersTowardCamera && this.threeDPerChar) {
       return 3;
     }
     return 0;
   }
 
-  set auto_orient(value: number) {
-    this.auto_orient_along_path = value === 1;
-    const isPoiRig = this.layer_type === LayerType.CAMERA || this.layer_type === LayerType.LIGHT;
-    this.camera_or_poi_auto_orient = value === 2 && !isPoiRig;
-    this.poi_auto_orient = value === 2 && isPoiRig;
-    this.characters_toward_camera = value === 3;
+  set autoOrient(value: number) {
+    this.autoOrientAlongPath = value === 1;
+    const isPoiRig = this.layerType === LayerType.CAMERA || this.layerType === LayerType.LIGHT;
+    this.cameraOrPoiAutoOrient = value === 2 && !isPoiRig;
+    this.poiAutoOrient = value === 2 && isPoiRig;
+    this.charactersTowardCamera = value === 3;
     // Per-character 3D is a precondition of chars_toward_camera (the
     // getter needs both bits), but it is an independent layer switch
     // otherwise - AE ships layers with it on and auto-orient off - so
     // selecting another mode must not clear it.
     if (value === 3) {
-      this.three_d_per_char = true;
+      this.threeDPerChar = true;
     }
   }
 
   /** Frame blending type (0=none, 1=frame_mix, 2=pixel_motion). */
-  get frame_blending_type(): number {
-    if (!this.frame_blending) {
+  get frameBlendingType(): number {
+    if (!this.frameBlending) {
       return 0;
     }
-    return this.frame_blending_mode ? 2 : 1;
+    return this.frameBlendingMode ? 2 : 1;
   }
 
-  set frame_blending_type(value: number) {
+  set frameBlendingType(value: number) {
     if (value === 0) {
-      this.frame_blending = false;
+      this.frameBlending = false;
     } else {
-      this.frame_blending = true;
-      this.frame_blending_mode = value === 2;
+      this.frameBlending = true;
+      this.frameBlendingMode = value === 2;
     }
   }
 }
 
 define(LdtaChunk, {
-  chunk_type: { default: "ldta" },
+  chunkType: { default: "ldta" },
 
   // -- Identity / timing (bytes 0-35) ------------------------------------
-  layer_id: u4Field(),
+  layerId: u4Field(),
   quality: u2Field(),
-  _reserved_06: bytesField(2, { repr: false }),
-  stretch_dividend: s4Field({ default: 1 }),
-  start_time_dividend: s4Field(),
-  start_time_divisor: u4Field({ default: 1 }),
-  in_point_dividend: s4Field(),
-  in_point_divisor: u4Field({ default: 1 }),
-  out_point_dividend: s4Field(),
-  out_point_divisor: u4Field({ default: 1 }),
+  _reserved06: bytesField(2, { repr: false }),
+  stretchDividend: s4Field({ default: 1 }),
+  startTimeDividend: s4Field(),
+  startTimeDivisor: u4Field({ default: 1 }),
+  inPointDividend: s4Field(),
+  inPointDivisor: u4Field({ default: 1 }),
+  outPointDividend: s4Field(),
+  outPointDivisor: u4Field({ default: 1 }),
 
   // -- Flag bytes (bytes 36-39) ------------------------------------------
-  _reserved_24: bytesField(1, { repr: false }),
-  _layer_flags_0: u1Field({ repr: false }),
-  _layer_flags_1: u1Field({ repr: false }),
-  _layer_flags_2: u1Field({ default: 0x07, repr: false }),
+  _reserved24: bytesField(1, { repr: false }),
+  _layerFlags0: u1Field({ repr: false }),
+  _layerFlags1: u1Field({ repr: false }),
+  _layerFlags2: u1Field({ default: 0x07, repr: false }),
 
   // -- Source / label (bytes 40-63) --------------------------------------
-  source_id: u4Field(),
-  _reserved_2c: bytesField(15, { repr: false }),
-  _reserved_3b: u1Field({ repr: false }),
-  _reserved_3c: u1Field({ repr: false }),
+  sourceId: u4Field(),
+  _reserved2c: bytesField(15, { repr: false }),
+  _reserved3b: u1Field({ repr: false }),
+  _reserved3c: u1Field({ repr: false }),
   label: u1Field(),
-  _reserved_3e: bytesField(2, { repr: false }),
+  _reserved3e: bytesField(2, { repr: false }),
 
   // -- Layer name (bytes 64-95, 32-byte UTF-8 strz) ---------------
-  layer_name: strField(32, { default: "", encoding: "utf-8" }),
+  layerName: strField(32, { default: "", encoding: "utf-8" }),
 
   // -- Post-name fields (bytes 96-159) -----------------------------------
-  _reserved_60: bytesField(3, { repr: false }),
-  blending_mode: u1Field(),
-  _reserved_64: bytesField(3, { repr: false }),
-  _transfer_flags: u1Field({ repr: false }),
-  _reserved_68: bytesField(3, { repr: false }),
-  track_matte_type: u1Field(),
-  stretch_divisor: u4Field({ default: 1 }),
-  _reserved_70: f8Field({ repr: false }),
-  _reserved_78: f8Field({ repr: false }),
-  _reserved_80: bytesField(3, { repr: false }),
-  layer_type: u1Field(),
-  parent_id: u4Field(),
-  _reserved_88: bytesField(3, { repr: false }),
-  light_and_mesh_type: u1Field(),
-  _reserved_8c: u4Field({ repr: false }),
-  _reserved_90: u4Field({ repr: false }),
-  _reserved_94: u4Field({ repr: false }),
-  _reserved_98: f8Field({ repr: false }),
+  _reserved60: bytesField(3, { repr: false }),
+  blendingMode: u1Field(),
+  _reserved64: bytesField(3, { repr: false }),
+  _transferFlags: u1Field({ repr: false }),
+  _reserved68: bytesField(3, { repr: false }),
+  trackMatteType: u1Field(),
+  stretchDivisor: u4Field({ default: 1 }),
+  _reserved70: f8Field({ repr: false }),
+  _reserved78: f8Field({ repr: false }),
+  _reserved80: bytesField(3, { repr: false }),
+  layerType: u1Field(),
+  parentId: u4Field(),
+  _reserved88: bytesField(3, { repr: false }),
+  lightAndMeshType: u1Field(),
+  _reserved8c: u4Field({ repr: false }),
+  _reserved90: u4Field({ repr: false }),
+  _reserved94: u4Field({ repr: false }),
+  _reserved98: f8Field({ repr: false }),
 
   // -- Optional field (bytes 160-163, AE >= 23) --------------------------
-  matte_layer_id: u4Field({ default: null, optional: true }),
+  matteLayerId: u4Field({ default: null, optional: true }),
 });
 
 // -- BitField descriptors (not attrs fields) -----------------------------
 // byte 37: _layer_flags_0
-descriptor(LdtaChunk, "sampling_quality", new BitField("_layer_flags_0", 6));
-descriptor(LdtaChunk, "environment_layer", new BitField("_layer_flags_0", 5));
-descriptor(LdtaChunk, "characters_toward_camera", new BitField("_layer_flags_0", 4));
-descriptor(LdtaChunk, "three_d_per_char", new BitField("_layer_flags_0", 3));
-descriptor(LdtaChunk, "frame_blending_mode", new BitField("_layer_flags_0", 2));
-descriptor(LdtaChunk, "guide_layer", new BitField("_layer_flags_0", 1));
+descriptor(LdtaChunk, "samplingQuality", new BitField("_layerFlags0", 6));
+descriptor(LdtaChunk, "environmentLayer", new BitField("_layerFlags0", 5));
+descriptor(LdtaChunk, "charactersTowardCamera", new BitField("_layerFlags0", 4));
+descriptor(LdtaChunk, "threeDPerChar", new BitField("_layerFlags0", 3));
+descriptor(LdtaChunk, "frameBlendingMode", new BitField("_layerFlags0", 2));
+descriptor(LdtaChunk, "guideLayer", new BitField("_layerFlags0", 1));
 // bit 0: a source-backed layer's name was explicitly set (away from the
 // source item's name). Always 0 for sourceless layers (camera/light/text/
 // shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
 // model-level Layer.isNameSet for that).
-descriptor(LdtaChunk, "name_set", new BitField("_layer_flags_0", 0));
+descriptor(LdtaChunk, "nameSet", new BitField("_layerFlags0", 0));
 
 // byte 38: _layer_flags_1
-descriptor(LdtaChunk, "null_layer", new BitField("_layer_flags_1", 7));
+descriptor(LdtaChunk, "nullLayer", new BitField("_layerFlags1", 7));
 // bit 6: camera/light "orient towards point of interest" (the two-node
 // rig). AE stores the camera variant of CAMERA_OR_POINT_OF_INTEREST here,
 // NOT in bit 5 (probed AE 2026: a default two-node camera has 0x44, a
 // NO_AUTO_ORIENT camera 0x04).
-descriptor(LdtaChunk, "poi_auto_orient", new BitField("_layer_flags_1", 6));
-descriptor(LdtaChunk, "camera_or_poi_auto_orient", new BitField("_layer_flags_1", 5));
-descriptor(LdtaChunk, "markers_locked", new BitField("_layer_flags_1", 4));
-descriptor(LdtaChunk, "solo", new BitField("_layer_flags_1", 3));
-descriptor(LdtaChunk, "three_d_layer", new BitField("_layer_flags_1", 2));
-descriptor(LdtaChunk, "adjustment_layer", new BitField("_layer_flags_1", 1));
-descriptor(LdtaChunk, "auto_orient_along_path", new BitField("_layer_flags_1", 0));
+descriptor(LdtaChunk, "poiAutoOrient", new BitField("_layerFlags1", 6));
+descriptor(LdtaChunk, "cameraOrPoiAutoOrient", new BitField("_layerFlags1", 5));
+descriptor(LdtaChunk, "markersLocked", new BitField("_layerFlags1", 4));
+descriptor(LdtaChunk, "solo", new BitField("_layerFlags1", 3));
+descriptor(LdtaChunk, "threeDLayer", new BitField("_layerFlags1", 2));
+descriptor(LdtaChunk, "adjustmentLayer", new BitField("_layerFlags1", 1));
+descriptor(LdtaChunk, "autoOrientAlongPath", new BitField("_layerFlags1", 0));
 
 // byte 39: _layer_flags_2
-descriptor(LdtaChunk, "collapse_transformation", new BitField("_layer_flags_2", 7));
-descriptor(LdtaChunk, "shy", new BitField("_layer_flags_2", 6));
-descriptor(LdtaChunk, "locked", new BitField("_layer_flags_2", 5));
-descriptor(LdtaChunk, "frame_blending", new BitField("_layer_flags_2", 4));
-descriptor(LdtaChunk, "motion_blur_flag", new BitField("_layer_flags_2", 3));
-descriptor(LdtaChunk, "effects_active", new BitField("_layer_flags_2", 2));
-descriptor(LdtaChunk, "audio_enabled", new BitField("_layer_flags_2", 1));
-descriptor(LdtaChunk, "enabled", new BitField("_layer_flags_2", 0));
+descriptor(LdtaChunk, "collapseTransformation", new BitField("_layerFlags2", 7));
+descriptor(LdtaChunk, "shy", new BitField("_layerFlags2", 6));
+descriptor(LdtaChunk, "locked", new BitField("_layerFlags2", 5));
+descriptor(LdtaChunk, "frameBlending", new BitField("_layerFlags2", 4));
+descriptor(LdtaChunk, "motionBlurFlag", new BitField("_layerFlags2", 3));
+descriptor(LdtaChunk, "effectsActive", new BitField("_layerFlags2", 2));
+descriptor(LdtaChunk, "audioEnabled", new BitField("_layerFlags2", 1));
+descriptor(LdtaChunk, "enabled", new BitField("_layerFlags2", 0));
 
 // byte 60: set while the layer has a comment (`cmta`); AE 2026 ignores
 // a `cmta` without it and clears both when the comment is emptied.
-descriptor(LdtaChunk, "has_comment", new BitField("_reserved_3c", 0));
+descriptor(LdtaChunk, "hasComment", new BitField("_reserved3c", 0));
 
 // byte 103: _transfer_flags
-descriptor(LdtaChunk, "preserve_transparency", new BitField("_transfer_flags", 0));
-descriptor(LdtaChunk, "dancing_dissolve", new BitField("_transfer_flags", 1));
+descriptor(LdtaChunk, "preserveTransparency", new BitField("_transferFlags", 0));
+descriptor(LdtaChunk, "dancingDissolve", new BitField("_transferFlags", 1));
 
 register("ldta")(LdtaChunk);

@@ -35,8 +35,8 @@ describe("TestPrdaVariants", () => {
   ])("test_dispatch_by_renderer[%#]", (body, matchName, expectedCls) => {
     /** Dispatch keys off the sibling prin chunk's match name. */
     const chunk = PrdaChunk.frombytes(body, {
-      chunk_type: "prda",
-      renderer_match_name: matchName,
+      chunkType: "prda",
+      rendererMatchName: matchName,
     });
     expect(chunk.constructor).toBe(expectedCls);
   });
@@ -51,8 +51,8 @@ describe("TestPrdaVariants", () => {
     [PRDA_ADVANCED_SET, "ADBE Calder"],
   ])("test_roundtrip_byte_exact[%#]", (body, matchName) => {
     const chunk = PrdaChunk.frombytes(body, {
-      chunk_type: "prda",
-      renderer_match_name: matchName,
+      chunkType: "prda",
+      rendererMatchName: matchName,
     });
     const buf = new BytesIO();
     chunk.write(buf);
@@ -62,19 +62,19 @@ describe("TestPrdaVariants", () => {
   test("test_classic_shadow_map_resolution", () => {
     const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_CLASSIC_SET, {
-        chunk_type: "prda",
-        renderer_match_name: "ADBE Escher",
+        chunkType: "prda",
+        rendererMatchName: "ADBE Escher",
       }),
       ClassicPrdaChunk,
     );
-    expect(chunk.shadow_map_resolution).toBe(3);
+    expect(chunk.shadowMapResolution).toBe(3);
   });
 
   test("test_cinema_quality", () => {
     const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_CINEMA_SET, {
-        chunk_type: "prda",
-        renderer_match_name: "ADBE Ernst",
+        chunkType: "prda",
+        rendererMatchName: "ADBE Ernst",
       }),
       Cinema4DPrdaChunk,
     );
@@ -85,20 +85,20 @@ describe("TestPrdaVariants", () => {
     /** Head is big-endian, the tail from offset 20 little-endian. */
     const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_ADVANCED_SET, {
-        chunk_type: "prda",
-        renderer_match_name: "ADBE Calder",
+        chunkType: "prda",
+        rendererMatchName: "ADBE Calder",
       }),
       AdvancedPrdaChunk,
     );
     expect(chunk.quality).toBe(61);
     expect(chunk.resolution).toBe(2);
     expect(chunk.smoothness).toBe(6);
-    expect(approx(chunk.casting_box_size_x, 0.3125)).toBe(true);
-    expect(approx(chunk.casting_box_size_y, 0.3125)).toBe(true);
-    expect(approx(chunk.casting_box_size_z, 0.3125)).toBe(true);
-    expect(approx(chunk.casting_box_center_x, -0.2916667)).toBe(true);
-    expect(approx(chunk.casting_box_center_y, 0.0555556)).toBe(true);
-    expect(approx(chunk.casting_box_center_z, -0.0520833)).toBe(true);
+    expect(approx(chunk.castingBoxSizeX, 0.3125)).toBe(true);
+    expect(approx(chunk.castingBoxSizeY, 0.3125)).toBe(true);
+    expect(approx(chunk.castingBoxSizeZ, 0.3125)).toBe(true);
+    expect(approx(chunk.castingBoxCenterX, -0.2916667)).toBe(true);
+    expect(approx(chunk.castingBoxCenterY, 0.0555556)).toBe(true);
+    expect(approx(chunk.castingBoxCenterZ, -0.0520833)).toBe(true);
   });
 
   test.each<[typeof PrdaChunk, Uint8Array]>([
@@ -123,8 +123,8 @@ describe("TestPrdaVariants", () => {
     [PRDA_CLASSIC_DEFAULT, ""],
   ])("test_unrecognised_prda_falls_back_to_raw[%#]", (body, matchName) => {
     const chunk = PrdaChunk.frombytes(body, {
-      chunk_type: "prda",
-      renderer_match_name: matchName,
+      chunkType: "prda",
+      rendererMatchName: matchName,
     });
     expect(chunk.constructor).toBe(PrdaChunk);
     const buf = new BytesIO();

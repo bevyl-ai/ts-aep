@@ -140,7 +140,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
   }
 
   const layer = prop._containingLayer;
-  const layerType = layer._ldta.layer_type;
+  const layerType = layer._ldta.layerType;
 
   // Parametric mesh layers have their own expression rules.
   if (layerType === LayerType.PARAMETRIC_MESH) {
@@ -161,7 +161,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     // leaves the POI inactive (probed AE 2026). poi_auto_orient is the
     // ldta bit set for the two-node rig.
     if (mn === "ADBE Anchor Point") {
-      return !!layer._ldta.poi_auto_orient;
+      return !!layer._ldta.poiAutoOrient;
     }
     return !_CAMERA_NO_EXPRESSION.has(mn);
   }
@@ -171,7 +171,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     return _canSetExpressionLight(layer, mn);
   }
 
-  const threeD = !!layer._ldta.three_d_layer;
+  const threeD = !!layer._ldta.threeDLayer;
   const renderer = layer.containingComp.renderer;
 
   if (
@@ -241,7 +241,7 @@ export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
   if (_LIGHT_NO_EXPRESSION.has(mn)) {
     return false;
   }
-  const lightType = layer._ldta.light_and_mesh_type;
+  const lightType = layer._ldta.lightAndMeshType;
   if (lightType === 3) {
     // AMBIENT
     return !_LIGHT_AMBIENT_NO_EXPRESSION.has(mn);
@@ -288,7 +288,7 @@ export function _canSetExpressionParametricMesh(
     if (_PARAMETRIC_MESH_CHECKBOX_STREAMS.has(mn)) {
       return true;
     }
-    return !!(groupType === layer._ldta.light_and_mesh_type);
+    return !!(groupType === layer._ldta.lightAndMeshType);
   }
   return null;
 }

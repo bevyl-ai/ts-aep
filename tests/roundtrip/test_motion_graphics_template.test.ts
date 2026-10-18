@@ -63,10 +63,10 @@ function _effectParam(comp: CompItem, effectMn: string, paramMn: string, layerIn
 
 function _cif3Cctls(comp: CompItem): ListChunk[] {
   const cif3 = asInstance(
-    next(comp._itemList.chunks, (c) => c instanceof ListChunk && c.list_type === "CIF3"),
+    next(comp._itemList.chunks, (c) => c instanceof ListChunk && c.listType === "CIF3"),
     ListChunk,
   );
-  return cif3.chunks.filter((c): c is ListChunk => c instanceof ListChunk && c.list_type === "CCtl");
+  return cif3.chunks.filter((c): c is ListChunk => c instanceof ListChunk && c.listType === "CCtl");
 }
 
 function _chunkBytes(chunk: ListChunk): Uint8Array {
@@ -79,10 +79,10 @@ function _chunkBytes(chunk: ListChunk): Uint8Array {
 function _cctlCount(comp: CompItem): Map<string, number> {
   const counts = new Map<string, number>();
   for (const cif of comp._itemList.chunks) {
-    if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.list_type)) {
+    if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.listType)) {
       counts.set(
-        cif.list_type,
-        sum(cif.chunks.map((c) => (c instanceof ListChunk && c.list_type === "CCtl" ? 1 : 0))),
+        cif.listType,
+        sum(cif.chunks.map((c) => (c instanceof ListChunk && c.listType === "CCtl" ? 1 : 0))),
       );
     }
   }
@@ -160,7 +160,7 @@ describe("TestAddProperty", () => {
     const ctrl = comp.motionGraphicsControllers[0];
     expect(ctrl.controllerType).toBe(2); // Slider
     expect(ctrl.sourceCompId).toBe(comp.id);
-    expect(ctrl.sourceLayerId).toBe(comp.layers[0]._ldta.layer_id);
+    expect(ctrl.sourceLayerId).toBe(comp.layers[0]._ldta.layerId);
     expect(
       pyEq(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
@@ -213,7 +213,7 @@ describe("TestAddProperty", () => {
     const ctrl = comp2.motionGraphicsControllers[0];
     expect(ctrl.controllerType).toBe(2);
     expect(ctrl.sourceCompId).toBe(comp2.id);
-    expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layer_id);
+    expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layerId);
     expect(
       pyEq(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
@@ -240,11 +240,11 @@ class TestEffectParamPaths {
   static _stored_json(comp: CompItem, ctrlName: string): string {
     // The CPrp JSON of the named controller, straight from the chunks.
     for (const cctl of _cif3Cctls(comp)) {
-      const cps2 = asInstance(next(cctl.chunks, (c) => getattr(c, "list_type", "") === "CpS2"), ListChunk);
-      const name = asInstance(next(cps2.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+      const cps2 = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CpS2"), ListChunk);
+      const name = asInstance(next(cps2.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
       if (!pyEq(name, ctrlName)) continue;
-      const cprp = asInstance(next(cctl.chunks, (c) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
-      return asInstance(next(cprp.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+      const cprp = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
+      return asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
     }
     throw new AssertionError_(`controller ${repr(ctrlName)} not found`);
   }
@@ -484,7 +484,7 @@ describe("TestAddLayerMediaReplacement", () => {
     expect(ctrl.controllerType).toBe(14);
     expect(ctrl.name).toBe(layer.name);
     expect(ctrl.sourceCompId).toBe(comp2.id);
-    expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layer_id);
+    expect(ctrl.sourceLayerId).toBe(comp2.layers[0]._ldta.layerId);
     expect(
       pyEq(
         ctrl.sourcePropertyPath.map((r) => r.matchName),
@@ -493,7 +493,7 @@ describe("TestAddLayerMediaReplacement", () => {
     ).toBe(true);
     // The decoded source-media fields survive the round-trip.
     const cctl = _cif3Cctls(comp2)[0];
-    const byType = new Map(cctl.chunks.map((c) => [c.chunk_type, c] as const));
+    const byType = new Map(cctl.chunks.map((c) => [c.chunkType, c] as const));
     expect(asInstance(getitem(byType, "CSMw"), U4Chunk).value).toBe(640);
     expect(asInstance(getitem(byType, "CSMh"), U4Chunk).value).toBe(346);
     expect(asInstance(getitem(byType, "CSMs"), U4Chunk).value).toBe(0);
@@ -507,12 +507,12 @@ describe("TestAddLayerMediaReplacement", () => {
     const project = parseProjectFresh(TestAddLayerMediaReplacement.MEDIA);
     const comp = getComp(project, "image_with_alpha");
     const fixtureCctl = _cif3Cctls(comp)[0];
-    const byType = new Map(fixtureCctl.chunks.map((c) => [c.chunk_type, c] as const));
-    const utf8s = fixtureCctl.chunks.filter((c) => c.chunk_type === "Utf8");
+    const byType = new Map(fixtureCctl.chunks.map((c) => [c.chunkType, c] as const));
+    const utf8s = fixtureCctl.chunks.filter((c) => c.chunkType === "Utf8");
     const uuidStr = asInstance(utf8s[0], Utf8Chunk).value;
     const thumbnail = asInstance(utf8s[3], Utf8Chunk).value;
-    const cprp = asInstance(next(fixtureCctl.chunks, (c) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
-    const pathJson = asInstance(next(cprp.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+    const cprp = asInstance(next(fixtureCctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
+    const pathJson = asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
 
     const [built, _name, _ctyp] = buildMediaCctl(
       "image_with_alpha.png",

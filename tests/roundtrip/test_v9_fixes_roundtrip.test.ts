@@ -72,13 +72,13 @@ describe("TestFixedStringTail", () => {
     const data = new Uint8Array(new SspcChunk().tobytes());
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
-    expect(String(chunk.source_format_type)).toBe("");
+    expect(String(chunk.sourceFormatType)).toBe("");
     expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
   test("test_assigned_code_with_nul_reads_back_as_reparsed", () => {
-    const chunk = new SspcChunk({ source_format_type: "\x00vsc" });
-    expect(String(chunk.source_format_type)).toBe("");
+    const chunk = new SspcChunk({ sourceFormatType: "\x00vsc" });
+    expect(String(chunk.sourceFormatType)).toBe("");
     expect(pyEq(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
   });
 
@@ -86,18 +86,18 @@ describe("TestFixedStringTail", () => {
     const data = new Uint8Array(new SspcChunk().tobytes());
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
-    chunk.source_format_type = "png!";
+    chunk.sourceFormatType = "png!";
     expect(pyEq(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
   });
 
   test("test_solid_name_stale_tail_round_trips", () => {
-    const data = new Uint8Array(new SoliOptiChunk({ solid_name: "Black Solid 3" }).tobytes());
+    const data = new Uint8Array(new SoliOptiChunk({ solidName: "Black Solid 3" }).tobytes());
     const nameAt = bytes_.index(data, b("Black Solid 3"));
     // AE keeps the end of a longer previous name after the terminator.
     const stale = b("Black Solid 3\x00 1\x00id 1");
     data.set(stale, nameAt);
     const chunk = asInstance(OptiChunk.frombytes(new Uint8Array(data)), SoliOptiChunk);
-    expect(String(chunk.solid_name)).toBe("Black Solid 3");
+    expect(String(chunk.solidName)).toBe("Black Solid 3");
     expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
@@ -124,8 +124,8 @@ describe("TestTdb4KeyFlagsByte", () => {
     const data = new Uint8Array(new Tdb4Chunk().tobytes());
     data[0x4F] = 0x07;
     const chunk = asInstance(Tdb4Chunk.frombytes(new Uint8Array(data)), Tdb4Chunk);
-    expect(chunk._spatial_marker).toBe(0x07);
-    expect(chunk._spatial_marker).toBeTruthy(); // still reads as a spatial stream
+    expect(chunk._spatialMarker).toBe(0x07);
+    expect(chunk._spatialMarker).toBeTruthy(); // still reads as a spatial stream
     expect(pyEq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
 
@@ -178,7 +178,7 @@ describe("TestDataFootageSourceCode", () => {
     expect(expectedCodes.every((c) => optis.has(c))).toBe(true);
     for (const item of parse(out).project.footages) {
       if (["csv.csv", "txt.txt"].includes(item.name)) {
-        expect(String(item.mainSource._sspc.source_format_type)).toBe("");
+        expect(String(item.mainSource._sspc.sourceFormatType)).toBe("");
       }
     }
   });

@@ -34,7 +34,7 @@ export function parseItem(
 
   const gide = findByListTypeOrNull(itemChunk.chunks, "Gide");
 
-  const itemType = idta.item_type;
+  const itemType = idta.itemType;
 
   let item: FolderItem | FootageItem | CompItem;
   if (itemType === ItemType.FOLDER) {

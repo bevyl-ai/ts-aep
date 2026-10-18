@@ -126,7 +126,7 @@ export function _validateCrop(peerField: string, dimension: string): (value: num
     const peer: number = getattr(obj, peerField);
     const parentRqi = obj._parentRqi;
     const compDim: number = getattr(parentRqi.comp, dimension);
-    const resAttr = dimension === "width" ? "resolution_x" : "resolution_y";
+    const resAttr = dimension === "width" ? "resolutionX" : "resolutionY";
     const divisor = pyOr(getattr(parentRqi._ldat, resAttr), 1);
     const dim = Math.ceil(compDim / divisor);
     const remaining = dim - value - peer;
@@ -354,7 +354,7 @@ export class OutputModule {
       [
         (om) => om._colorMode,
         (om, v) => {
-          om._roou.color_premultiplied = int(v);
+          om._roou.colorPremultiplied = int(v);
         },
       ],
     ],
@@ -372,7 +372,7 @@ export class OutputModule {
       [
         (om) => om._audioSampleRate,
         (om, v) => {
-          om._roou.audio_sample_rate = AudioSampleRate.toBinary(v as number);
+          om._roou.audioSampleRate = AudioSampleRate.toBinary(v as number);
         },
       ],
     ],
@@ -381,7 +381,7 @@ export class OutputModule {
       [
         (om) => om._audioChannels,
         (om, v) => {
-          om._writeAudioFormatRaw("audio_channels", int(v));
+          om._writeAudioFormatRaw("audioChannels", int(v));
         },
       ],
     ],
@@ -390,7 +390,7 @@ export class OutputModule {
       [
         (om) => om._audioBitDepth,
         (om, v) => {
-          om._writeAudioFormatRaw("audio_bit_depth", int(v));
+          om._writeAudioFormatRaw("audioBitDepth", int(v));
         },
       ],
     ],
@@ -564,7 +564,7 @@ export class OutputModule {
    * `SET_PROXY`. Read-only.
    */
   get postRenderTargetComp(): CompItem {
-    const compId = this._omLdat.post_render_target_comp_id || null;
+    const compId = this._omLdat.postRenderTargetCompId || null;
     if (compId == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
       return this._parentRqi.comp;
     }
@@ -578,7 +578,7 @@ export class OutputModule {
     if (!this._project.items.has(comp.id)) {
       throw new ValueError("postRenderTargetComp must be an item in the project");
     }
-    this._omLdat.post_render_target_comp_id = comp.id;
+    this._omLdat.postRenderTargetCompId = comp.id;
   }
 
   /**
@@ -640,20 +640,20 @@ export class OutputModule {
   /** Output audio setting (the On and Auto flags of the settings). */
   get _outputAudio(): OutputAudio {
     const ldat = this._omLdat;
-    return mapOutputAudio(ldat.output_audio !== 0, ldat.output_audio_auto !== 0);
+    return mapOutputAudio(ldat.outputAudio !== 0, ldat.outputAudioAuto !== 0);
   }
 
   set _outputAudio(value: OutputAudio) {
     _validateForFormat("Output Audio")(value, this);
     if (value === OutputAudio.OFF) {
       // AE keeps the Auto flag when audio is switched off.
-      this._omLdat.output_audio = 0;
+      this._omLdat.outputAudio = 0;
     } else if (value === OutputAudio.AUTO) {
-      this._omLdat.output_audio = 1;
-      this._omLdat.output_audio_auto = 1;
+      this._omLdat.outputAudio = 1;
+      this._omLdat.outputAudioAuto = 1;
     } else if (value === OutputAudio.ON) {
-      this._omLdat.output_audio = 1;
-      this._omLdat.output_audio_auto = 0;
+      this._omLdat.outputAudio = 1;
+      this._omLdat.outputAudioAuto = 0;
     } else {
       throw new ValueError(
         `Unsupported OutputAudio value: ${str(value)}. Expected ` + "OutputAudio.OFF, OutputAudio.AUTO, or OutputAudio.ON.",
@@ -857,7 +857,7 @@ export class OutputModule {
     }
     let roptBytes: Uint8Array | null = null;
     for (let i = start; i < end; i++) {
-      if (lomChunks[i].chunk_type === "Ropt") {
+      if (lomChunks[i].chunkType === "Ropt") {
         roptBytes = lomChunks[i].tobytes();
         break;
       }
@@ -876,17 +876,17 @@ export class OutputModule {
     // In-place field copy keeps the item's identity in the ldat list.
     const restoredItem = OutputModuleSettingsItem.frombytes(ldatBytes);
     pyAssert(restoredItem instanceof OutputModuleSettingsItem);
-    this._omLdat.restore_from(restoredItem);
+    this._omLdat.restoreFrom(restoredItem);
     const lomChunks = this._parentRqi._lom.chunks;
     const [start, end] = this._blockSpan(lomChunks);
-    const newRoou = RouuChunk.frombytes(roouBytes, { chunk_type: "Roou" });
+    const newRoou = RouuChunk.frombytes(roouBytes, { chunkType: "Roou" });
     pyAssert(newRoou instanceof RouuChunk);
     lomChunks[start] = newRoou;
     this._roou = newRoou;
     if (roptBytes != null) {
       for (let i = start; i < end; i++) {
-        if (lomChunks[i].chunk_type === "Ropt") {
-          lomChunks[i] = RoptChunk.frombytes(roptBytes, { chunk_type: "Ropt" });
+        if (lomChunks[i].chunkType === "Ropt") {
+          lomChunks[i] = RoptChunk.frombytes(roptBytes, { chunkType: "Ropt" });
           break;
         }
       }
@@ -1036,14 +1036,14 @@ export class OutputModule {
     const channels = this._omLdat.channels;
     const body = fo._body;
     if ([int(OutputChannels.RGB), int(OutputChannels.RGBA)].includes(channels)) {
-      body.has_alpha = channels === int(OutputChannels.RGBA);
-      body.channel_count = body.has_alpha ? 4 : 3;
+      body.hasAlpha = channels === int(OutputChannels.RGBA);
+      body.channelCount = body.hasAlpha ? 4 : 3;
     }
     const depth = this._roou.depth;
     if ([24, 32].includes(depth)) {
-      body.bit_depth = 8;
+      body.bitDepth = 8;
     } else if ([48, 64].includes(depth)) {
-      body.bit_depth = 16;
+      body.bitDepth = 16;
     }
   }
 
@@ -1064,24 +1064,24 @@ export class OutputModule {
    */
   _syncAudioFormat(): void {
     const roou = this._roou;
-    if (roou.audio_channels) {
-      if (roou.audio_sample_rate === -1.0) {
-        roou.audio_sample_rate = 48000.0;
+    if (roou.audioChannels) {
+      if (roou.audioSampleRate === -1.0) {
+        roou.audioSampleRate = 48000.0;
       }
-      if (!_AUDIO_ENCODINGS.has(roou.audio_bit_depth)) {
-        roou.audio_bit_depth = int(AudioBitDepth.SIXTEEN_BIT);
+      if (!_AUDIO_ENCODINGS.has(roou.audioBitDepth)) {
+        roou.audioBitDepth = int(AudioBitDepth.SIXTEEN_BIT);
       }
-      roou.audio_encoding = roou.audio_bit_depth === 4 ? 3 : 2;
+      roou.audioEncoding = roou.audioBitDepth === 4 ? 3 : 2;
     } else {
-      const encoding = _AUDIO_ENCODINGS.get(roou.audio_bit_depth);
+      const encoding = _AUDIO_ENCODINGS.get(roou.audioBitDepth);
       if (encoding !== undefined) {
-        roou.audio_encoding = encoding;
+        roou.audioEncoding = encoding;
       }
     }
   }
 
   /** Clamp writer for a `Rouu` audio-format field (no validation). */
-  _writeAudioFormatRaw(field: "audio_channels" | "audio_bit_depth", value: number): void {
+  _writeAudioFormatRaw(field: "audioChannels" | "audioBitDepth", value: number): void {
     this._roou[field] = value;
     this._syncAudioFormat();
   }
@@ -1093,8 +1093,8 @@ export class OutputModule {
    */
   get _effectiveDimensions(): [number, number] {
     const comp = this._parentRqi.comp;
-    const resX = this._parentRqi._ldat.resolution_x || 1;
-    const resY = this._parentRqi._ldat.resolution_y || 1;
+    const resX = this._parentRqi._ldat.resolutionX || 1;
+    const resY = this._parentRqi._ldat.resolutionY || 1;
 
     let w = Math.ceil(comp.width / resX);
     let h = Math.ceil(comp.height / resY);
@@ -1103,14 +1103,14 @@ export class OutputModule {
       [w, h] = [this._roou.width, this._roou.height];
     }
 
-    if (this._omLdat.use_region_of_interest && comp._viewer != null && comp._viewer.views?.length > 0) {
+    if (this._omLdat.useRegionOfInterest && comp._viewer != null && comp._viewer.views?.length > 0) {
       const viewer = comp._viewer;
       const opts = at(viewer.views, viewer.activeViewIndex).options;
       w = opts.roiRight - opts.roiLeft;
       h = opts.roiBottom - opts.roiTop;
     } else if (this._omLdat.crop) {
-      w -= this._omLdat.crop_left + this._omLdat.crop_right;
-      h -= this._omLdat.crop_top + this._omLdat.crop_bottom;
+      w -= this._omLdat.cropLeft + this._omLdat.cropRight;
+      h -= this._omLdat.cropTop + this._omLdat.cropBottom;
     }
 
     return [Math.max(w, 1), Math.max(h, 1)];
@@ -1119,7 +1119,7 @@ export class OutputModule {
   /** Effective frame rate: custom if enabled, else comp frame rate. */
   get _effectiveFrameRate(): number {
     const rqi = this._parentRqi;
-    if (rqi._ldat.use_this_frame_rate) {
+    if (rqi._ldat.useThisFrameRate) {
       return rqi._useThisFrameRate;
     }
     return rqi.comp.frameRate;
@@ -1152,7 +1152,7 @@ export class OutputModule {
    */
   _setFrameRate(): void {
     const skip = this._parentRqi.skipFrames;
-    this._roou.frame_rate = this._effectiveFrameRate / (skip + 1);
+    this._roou.frameRate = this._effectiveFrameRate / (skip + 1);
   }
 
   /**
@@ -1165,7 +1165,7 @@ export class OutputModule {
    * formats (audio-only formats keep width/height=0).
    */
   _finalizeRoou(): void {
-    this._roou.applied_marker = 1;
+    this._roou.appliedMarker = 1;
     this._setFrameRate();
     if (this._roou.width > 0) {
       // video format; audio keeps 0
@@ -1176,8 +1176,8 @@ export class OutputModule {
   /** Output color space derived from ICC profile and working space. */
   get _outputColorSpace(): string | null {
     return mapOutputColorSpace(
-      this._omLdat.output_profile_id,
-      this._omLdat.output_color_space_working !== 0,
+      this._omLdat.outputProfileId,
+      this._omLdat.outputColorSpaceWorking !== 0,
       this._project.workingSpace,
     );
   }
@@ -1201,10 +1201,10 @@ export class OutputModule {
   get outputColorSpace(): string {
     const project = this._project;
     const ldat = this._omLdat;
-    if (project.colorManagementSystem === ColorManagementSystem.OCIO && !ldat.output_color_space_working) {
+    if (project.colorManagementSystem === ColorManagementSystem.OCIO && !ldat.outputColorSpaceWorking) {
       const config = resolveOcioConfig(project.ocioConfigurationFile);
       if (config != null) {
-        const name = ocioColorSpaceForProfileId(config, new Uint8Array(ldat.output_profile_id));
+        const name = ocioColorSpaceForProfileId(config, new Uint8Array(ldat.outputProfileId));
         if (name != null) {
           return name;
         }
@@ -1217,23 +1217,23 @@ export class OutputModule {
     validateString(value);
     const ldat = this._omLdat;
     if (value === "Working Color Space") {
-      ldat.output_color_space_working = 1;
-      ldat.output_profile_id = bytes_.repeat(b("\xff"), 16);
+      ldat.outputColorSpaceWorking = 1;
+      ldat.outputProfileId = bytes_.repeat(b("\xff"), 16);
       return;
     }
     const project = this._project;
     if (project.colorManagementSystem === ColorManagementSystem.OCIO) {
       const config = requireOcioConfig(project.ocioConfigurationFile, `compute the output color space id for ${repr(value)}`);
-      ldat.output_color_space_working = 0;
-      ldat.output_profile_id = ocioOutputProfileId(config, value);
+      ldat.outputColorSpaceWorking = 0;
+      ldat.outputProfileId = ocioOutputProfileId(config, value);
       return;
     }
     const profileId = profileIdForName(value);
     if (profileId == null) {
       throw new NotImplementedError(`Output color space ${repr(value)} is not a known Adobe ICC profile.`);
     }
-    ldat.output_color_space_working = 0;
-    ldat.output_profile_id = profileId;
+    ldat.outputColorSpaceWorking = 0;
+    ldat.outputProfileId = profileId;
   }
 
   /** Output file info (read-only). */
@@ -1263,8 +1263,8 @@ export class OutputModule {
 
   /** Starting frame number. */
   get _startingNumber(): number {
-    if (!this._omLdat.use_comp_frame_number) {
-      return this._roou.starting_number;
+    if (!this._omLdat.useCompFrameNumber) {
+      return this._roou.startingNumber;
     }
     const rqi = this._parentRqi;
     const startSeconds = rqi.timeSpanStart;
@@ -1274,7 +1274,7 @@ export class OutputModule {
 
   set _startingNumber(value: number) {
     _validateNumber({ min: 0, max: 9999999, integer: true })(value);
-    this._roou.starting_number = value;
+    this._roou.startingNumber = value;
   }
 
   /** Resize dimensions as [width, height]. */
@@ -1341,12 +1341,12 @@ export class OutputModule {
 
   /** The four-character video codec identifier. */
   get _videoCodec(): string | null {
-    return this._roou.video_codec || null;
+    return this._roou.videoCodec || null;
   }
 
   /** Derive file extension from format_id, with Cineon special case. */
   get _resolveExtension(): string | null {
-    const formatId = this._roou.format_id;
+    const formatId = this._roou.formatId;
     if (formatId === "sDPX") {
       const fo = this._formatOptions;
       if (fo instanceof CineonFormatOptions) {
@@ -1426,7 +1426,7 @@ export class OutputModule {
    */
   _addOutputPathRecord(): Utf8Chunk {
     const lomChunks = this._parentRqi._lom.chunks;
-    const als2 = buildAls2List("", { target_is_folder: true });
+    const als2 = buildAls2List("", { targetIsFolder: true });
     let position: number;
     if (this._nameUtf8 != null) {
       position = indexByIdentity(lomChunks, this._nameUtf8);
@@ -1435,7 +1435,7 @@ export class OutputModule {
     }
     lomChunks.splice(position, 0, als2);
     const alas = (this._alasUtf8 = findByType(als2.chunks, "alas"));
-    this._omLdat.has_output_file = true;
+    this._omLdat.hasOutputFile = true;
     if (this._parentRqi.status === RQItemStatus.NEEDS_OUTPUT) {
       this._parentRqi.status = RQItemStatus.QUEUED;
     }
@@ -1580,7 +1580,7 @@ export class OutputModule {
     const start = indexByIdentity(lomChunks, this._roou);
     let end = lomChunks.length;
     for (let i = start + 1; i < lomChunks.length; i++) {
-      if (lomChunks[i].chunk_type === "Roou") {
+      if (lomChunks[i].chunkType === "Roou") {
         end = i;
         break;
       }
@@ -1602,7 +1602,7 @@ export class OutputModule {
    */
   _applyOutputTemplate(template: OutputModuleTemplate): void {
     const lomChunks = this._parentRqi._lom.chunks;
-    this._omLdat.copy_settings_from(template.settings);
+    this._omLdat.copySettingsFrom(template.settings);
 
     // The LOm list holds every output module of the RQ item back to back.
     // Locate this module's own block (its Roou up to the next Roou) by
@@ -1610,7 +1610,7 @@ export class OutputModule {
     const [roouIdx, blockEnd] = this._blockSpan(lomChunks);
 
     if (template.formatInfo != null) {
-      const newRoou = RouuChunk.frombytes(template.formatInfo, { chunk_type: "Roou" });
+      const newRoou = RouuChunk.frombytes(template.formatInfo, { chunkType: "Roou" });
       pyAssert(newRoou instanceof RouuChunk);
       lomChunks[roouIdx] = newRoou;
       this._roou = newRoou;
@@ -1622,10 +1622,10 @@ export class OutputModule {
     // this module's block so a sibling module's Ropt is never hit.
     const newRopt: Chunk =
       template.formatOptions != null
-        ? RoptChunk.frombytes(template.formatOptions, { chunk_type: "Ropt" })
+        ? RoptChunk.frombytes(template.formatOptions, { chunkType: "Ropt" })
         : new RoptChunk();
     for (let i = roouIdx; i < blockEnd; i++) {
-      if (lomChunks[i].chunk_type === "Ropt") {
+      if (lomChunks[i].chunkType === "Ropt") {
         lomChunks[i] = newRopt;
         break;
       }
@@ -1682,14 +1682,14 @@ export class OutputModule {
 
 // Field descriptors: each ChunkField assigned in the Python class body is installed on the
 // prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(OutputModule, "includeSourceXmp", ChunkField.bool("_omLdat", "include_source_xmp"));
+descriptor(OutputModule, "includeSourceXmp", ChunkField.bool("_omLdat", "includeSourceXmp"));
 
-descriptor(OutputModule, "postRenderAction", ChunkField.enum(PostRenderAction, "_omLdat", "post_render_action"));
+descriptor(OutputModule, "postRenderAction", ChunkField.enum(PostRenderAction, "_omLdat", "postRenderAction"));
 
 descriptor(
   OutputModule,
   "_audioBitDepth",
-  ChunkField.enum(AudioBitDepth, "_roou", "audio_bit_depth", {
+  ChunkField.enum(AudioBitDepth, "_roou", "audioBitDepth", {
     validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
     postSet: "_syncAudioFormat",
   }),
@@ -1698,7 +1698,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_audioChannels",
-  ChunkField.enum(AudioChannels, "_roou", "audio_channels", {
+  ChunkField.enum(AudioChannels, "_roou", "audioChannels", {
     validate: _validateForFormat("Audio Channels"),
     postSet: "_clampAudioDependents",
   }),
@@ -1707,7 +1707,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_audioSampleRate",
-  ChunkField.enum(AudioSampleRate, "_roou", "audio_sample_rate", {
+  ChunkField.enum(AudioSampleRate, "_roou", "audioSampleRate", {
     validate: _validateForFormat("Audio Sample Rate"),
   }),
 );
@@ -1724,19 +1724,19 @@ descriptor(
 descriptor(
   OutputModule,
   "_colorMode",
-  ChunkField.enum(OutputColorMode, "_roou", "color_premultiplied", {
+  ChunkField.enum(OutputColorMode, "_roou", "colorPremultiplied", {
     validate: _validateForFormat("Color"),
   }),
 );
 
-descriptor(OutputModule, "_convertToLinearLight", ChunkField.enum(ConvertToLinearLight, "_omLdat", "convert_to_linear_light"));
+descriptor(OutputModule, "_convertToLinearLight", ChunkField.enum(ConvertToLinearLight, "_omLdat", "convertToLinearLight"));
 
 descriptor(OutputModule, "_crop", ChunkField.bool("_omLdat", "crop", { postSet: "_updateOutputDimensions" }));
 
 descriptor(
   OutputModule,
   "_cropBottom",
-  new ChunkField("_omLdat", "crop_bottom", {
+  new ChunkField("_omLdat", "cropBottom", {
     validate: _validateCrop("_cropTop", "height"),
     postSet: "_updateOutputDimensions",
   }),
@@ -1745,7 +1745,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_cropLeft",
-  new ChunkField("_omLdat", "crop_left", {
+  new ChunkField("_omLdat", "cropLeft", {
     validate: _validateCrop("_cropRight", "width"),
     postSet: "_updateOutputDimensions",
   }),
@@ -1754,7 +1754,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_cropRight",
-  new ChunkField("_omLdat", "crop_right", {
+  new ChunkField("_omLdat", "cropRight", {
     validate: _validateCrop("_cropLeft", "width"),
     postSet: "_updateOutputDimensions",
   }),
@@ -1763,7 +1763,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_cropTop",
-  new ChunkField("_omLdat", "crop_top", {
+  new ChunkField("_omLdat", "cropTop", {
     validate: _validateCrop("_cropBottom", "height"),
     postSet: "_updateOutputDimensions",
   }),
@@ -1782,7 +1782,7 @@ descriptor(
 descriptor(
   OutputModule,
   "_format",
-  ChunkField.enum(OutputFormat, "_roou", "format_id", {
+  ChunkField.enum(OutputFormat, "_roou", "formatId", {
     allowOutOfEnumValues: true,
     reverse: (v: number) => OutputFormat.toFormatId(v),
     transform: (v: string | Uint8Array) => OutputFormat.fromFormatId(v),
@@ -1790,22 +1790,22 @@ descriptor(
   }),
 );
 
-descriptor(OutputModule, "_includeProjectLink", ChunkField.bool("_omLdat", "include_project_link"));
+descriptor(OutputModule, "_includeProjectLink", ChunkField.bool("_omLdat", "includeProjectLink"));
 
-descriptor(OutputModule, "_lockAspectRatio", ChunkField.bool("_omLdat", "lock_aspect_ratio"));
+descriptor(OutputModule, "_lockAspectRatio", ChunkField.bool("_omLdat", "lockAspectRatio"));
 
-descriptor(OutputModule, "_postRenderActionSetting", ChunkField.enum(PostRenderActionSetting, "_omLdat", "post_render_action"));
+descriptor(OutputModule, "_postRenderActionSetting", ChunkField.enum(PostRenderActionSetting, "_omLdat", "postRenderAction"));
 
-descriptor(OutputModule, "_preserveRgb", ChunkField.bool("_omLdat", "preserve_rgb"));
+descriptor(OutputModule, "_preserveRgb", ChunkField.bool("_omLdat", "preserveRgb"));
 
 descriptor(OutputModule, "_resize", ChunkField.bool("_omLdat", "resize", { postSet: "_updateOutputDimensions" }));
 
-descriptor(OutputModule, "_resizeQuality", ChunkField.enum(ResizeQuality, "_omLdat", "resize_quality"));
+descriptor(OutputModule, "_resizeQuality", ChunkField.enum(ResizeQuality, "_omLdat", "resizeQuality"));
 
-descriptor(OutputModule, "_useCompFrameNumber", ChunkField.bool("_omLdat", "use_comp_frame_number"));
+descriptor(OutputModule, "_useCompFrameNumber", ChunkField.bool("_omLdat", "useCompFrameNumber"));
 
 descriptor(
   OutputModule,
   "_useRegionOfInterest",
-  ChunkField.bool("_omLdat", "use_region_of_interest", { postSet: "_updateOutputDimensions" }),
+  ChunkField.bool("_omLdat", "useRegionOfInterest", { postSet: "_updateOutputDimensions" }),
 );

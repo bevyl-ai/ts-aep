@@ -131,7 +131,7 @@ test.each([
   ["\\\\server\\share\\b.png", 1],
 ])("test_alas_platform_follows_path_style[%#]", (path: string, code: number) => {
   expect(alasPlatform(path)).toBe(code);
-  const alas = buildAls2List(path, { target_is_folder: false }).chunks[0];
+  const alas = buildAls2List(path, { targetIsFolder: false }).chunks[0];
   const data = JSON.parse(asInstance(alas, Utf8Chunk).value);
   expect(data["platform"]).toBe(code);
   expect(data["ascendcount_base"]).toBe(PENDING_ASCENDCOUNT);

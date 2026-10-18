@@ -115,8 +115,8 @@ describe("TestSetAlternateSource", () => {
     expect(pyEq([wrapper.width, wrapper.height], [host.width, host.height])).toBe(true);
     expect(wrapper.duration).toBe(host.duration);
     // cdta cloned from the host comp (not add_comp's fresh skeleton).
-    expect(wrapper._cdta.shutter_phase).toBe(host._cdta.shutter_phase);
-    expect(wrapper._cdta.time_divisor).toBe(host._cdta.time_divisor);
+    expect(wrapper._cdta.shutterPhase).toBe(host._cdta.shutterPhase);
+    expect(wrapper._cdta.timeDivisor).toBe(host._cdta.timeDivisor);
     expect(wrapper.numLayers).toBe(1);
     expect(asInstance(wrapper.layers[0], AVLayer).source?.name).toBe("sequence_[001-003].gif");
   });

@@ -696,7 +696,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
 
 // Descriptors assigned in the class body above, installed on the prototype
 // in the Python class-body order (`__set_name__` runs inside `descriptor`).
-descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "format_code", { readOnly: true }));
+descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "formatCode", { readOnly: true }));
 descriptor(XmlFormatOptions, "videoCodec", new _EnumParam("ADBEVideoCodec", VideoCodec));
 descriptor(XmlFormatOptions, "audioCodec", new _EnumParam("ADBEAudioCodec", AudioCodec));
 descriptor(XmlFormatOptions, "mpegAudioFormat", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));

@@ -69,7 +69,7 @@ export function aeWrites(part: string, major: number): boolean {
 export function getAeVersionMajor(obj: any): number {
   // Layer -> CompItem -> Project -> HeadChunk
   if (hasattr(obj, "_containingComp")) {
-    return int(obj._containingComp._project._head.ae_version_major);
+    return int(obj._containingComp._project._head.aeVersionMajor);
   }
   // Property / PropertyGroup -> owning Layer (parent_property chain)
   if (hasattr(obj, "_containingLayer")) {
@@ -77,18 +77,18 @@ export function getAeVersionMajor(obj: any): number {
   }
   // Item / RenderQueueItem -> Project -> HeadChunk
   if (hasattr(obj, "_project")) {
-    return int(obj._project._head.ae_version_major);
+    return int(obj._project._head.aeVersionMajor);
   }
   // ViewOptions -> AVItem -> Project -> HeadChunk
   const item = getattr(obj, "_item", null);
   if (item != null) {
-    return int(item._project._head.ae_version_major);
+    return int(item._project._head.aeVersionMajor);
   }
   // Project / TextDocument -> HeadChunk (TextDocument's is wired lazily, so
   // may be None until the document is handed out via a Property)
   const head = getattr(obj, "_head", null);
   if (head != null) {
-    return int(head.ae_version_major);
+    return int(head.aeVersionMajor);
   }
   throw new TypeError_(`Cannot determine AE version from ${typeName(obj)}`);
 }

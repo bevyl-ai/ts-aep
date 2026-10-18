@@ -12,10 +12,10 @@ import type { CompItem } from "../items/composition.ts";
 export function _requireEnvironmentLights(comp: CompItem, what: string): void {
   /** Environment lights and their light source arrived in AE 24.3. */
   const head = comp._project._head;
-  if (pyCmp([head.ae_version_major, head.ae_version_minor], [24, 3]) < 0) {
+  if (pyCmp([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
     throw new AttributeError(
       `${what} requires AE 24.3+ file format (file is AE ` +
-        `${head.ae_version_major}.${head.ae_version_minor}).`,
+        `${head.aeVersionMajor}.${head.aeVersionMinor}).`,
     );
   }
 }
@@ -112,20 +112,20 @@ export class LightLayer extends Layer {
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
-      layer_id: layer_id,
-      source_id: _noSourceId(containing_comp),
+      layerId: layer_id,
+      sourceId: _noSourceId(containing_comp),
       label: labelIndex(
         containing_comp._project._preferences,
         "Light Label Index 2",
         6,
       ),
-      layer_type: LayerType.LIGHT,
-      light_and_mesh_type: light_type,
-      layer_flags_2: 0x01,
-      layer_name: layerName,
+      layerType: LayerType.LIGHT,
+      lightAndMeshType: light_type,
+      layerFlags2: 0x01,
+      layerName: layerName,
     });
-    ldta.out_point = duration;
-    ldta.three_d_layer = true;
+    ldta.outPoint = duration;
+    ldta.threeDLayer = true;
     return super._new<LightLayer>({
       ldta: ldta,
       name: name,
@@ -158,7 +158,7 @@ export class LightLayer extends Layer {
   set lightSource(value: Layer | null) {
     const comp = this.containingComp;
     if (value == null) {
-      this._ldta.source_id = _noSourceId(comp);
+      this._ldta.sourceId = _noSourceId(comp);
       return;
     }
     _requireEnvironmentLights(comp, "light_source");
@@ -192,7 +192,7 @@ export class LightLayer extends Layer {
 descriptor(
   LightLayer,
   "lightType",
-  ChunkField.enum(LightType, "_ldta", "light_and_mesh_type", {
+  ChunkField.enum(LightType, "_ldta", "lightAndMeshType", {
     validate: _validateLightType,
   }),
 );
@@ -200,7 +200,7 @@ descriptor(
 descriptor(
   LightLayer,
   "_lightSourceId",
-  new ChunkField("_ldta", "source_id", {
+  new ChunkField("_ldta", "sourceId", {
     transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
     reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),
   }),

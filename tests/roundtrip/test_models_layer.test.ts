@@ -50,11 +50,11 @@ function _tdpiByParamSuffix(layer: Layer): Map<string, number[]> {
   function walk(lst: ListChunk): void {
     const chunks = lst.chunks;
     for (const [i, c] of chunks.entries()) {
-      if (c.chunk_type === "tdmn" && i + 1 < chunks.length) {
+      if (c.chunkType === "tdmn" && i + 1 < chunks.length) {
         const body = chunks[i + 1];
         if (body instanceof ListChunk) {
           for (const inner of body.chunks) {
-            if (inner.chunk_type === "tdpi") {
+            if (inner.chunkType === "tdpi") {
               setdefault(result, pySlice(asInstance(c, TdmnChunk).value, -5, null), []).push(asInstance(inner, S4Chunk).value);
             }
           }
@@ -104,7 +104,7 @@ describe("TestLightSource", () => {
     const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 24.0);
     const light = comp.addLight("Light", [50, 50]);
     light.lightSource = null;
-    expect(light._ldta.source_id).toBe(0);
+    expect(light._ldta.sourceId).toBe(0);
   });
 
   test("test_light_source_rejects_3d_layer", () => {
@@ -1162,9 +1162,9 @@ describe("TestLayerRemove", () => {
     const app = parseAep(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = app.project.compositions[0];
     const matted = comp.layers[0]; // Gray Solid 2, matte_layer_id=15
-    expect(matted._ldta.matte_layer_id).toBe(15);
+    expect(matted._ldta.matteLayerId).toBe(15);
     comp.layers[1].remove(); // Remove matte source (id=15)
-    expect(matted._ldta.matte_layer_id).toBe(0);
+    expect(matted._ldta.matteLayerId).toBe(0);
   });
 
   test("test_remove_invalidates_cache", () => {
@@ -1389,7 +1389,7 @@ describe("TestLayerMove", () => {
     const comp = app.project.compositions[0];
     const matted = comp.layers[0]; // Gray Solid 2, matte_layer_id=15
     comp.layers[1].moveToBeginning(); // Move matte source
-    expect(matted._ldta.matte_layer_id).toBe(15);
+    expect(matted._ldta.matteLayerId).toBe(15);
   });
 
   test("test_move_same_position", () => {
@@ -1606,9 +1606,9 @@ describe("TestLayerDuplicate", () => {
     const app = parseAep(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = app.project.compositions[0];
     const matted = comp.layers[0]; // has matte_layer_id
-    expect(matted._ldta.matte_layer_id).not.toBe(0);
+    expect(matted._ldta.matteLayerId).not.toBe(0);
     const dup = matted.duplicate();
-    expect(dup._ldta.matte_layer_id).toBe(matted._ldta.matte_layer_id);
+    expect(dup._ldta.matteLayerId).toBe(matted._ldta.matteLayerId);
   });
 
   test("test_duplicate_unique_id", () => {
@@ -1803,12 +1803,12 @@ describe("TestLayerReservedBytes", () => {
     const camera = comp.addCamera();
     const light = comp.addLight();
     for (const layer of [av, shape]) {
-      expect(layer._ldta._reserved_3b).toBe(1);
-      expect(layer._ldta._reserved_3c).toBe(0);
+      expect(layer._ldta._reserved3b).toBe(1);
+      expect(layer._ldta._reserved3c).toBe(0);
     }
     for (const layer of [camera, light]) {
-      expect(layer._ldta._reserved_3b).toBe(0);
-      expect(layer._ldta._reserved_3c).toBe(0);
+      expect(layer._ldta._reserved3b).toBe(0);
+      expect(layer._ldta._reserved3c).toBe(0);
     }
   });
 });
@@ -2144,10 +2144,10 @@ describe("TestLazyPropertyTree", () => {
       expect(layer._treeParamDefs != null).toBe(true);
       // Times may decode the root tdgp (Time Remapping), not its groups.
       const root = asInstance(layer._tdgp, DeferredListChunk);
-      const groups = (root.is_parsed ? root.chunks : []).filter(
-        (c) => c instanceof ListChunk && c.list_type === "tdgp",
+      const groups = (root.isParsed ? root.chunks : []).filter(
+        (c) => c instanceof ListChunk && c.listType === "tdgp",
       );
-      expect(groups.every((g) => g instanceof DeferredListChunk && !g.is_parsed)).toBe(true);
+      expect(groups.every((g) => g instanceof DeferredListChunk && !g.isParsed)).toBe(true);
     }
   });
 

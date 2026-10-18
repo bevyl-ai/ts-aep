@@ -67,11 +67,11 @@ function _clrs(source: FootageSource | null): [string, Uint8Array][] {
   let marker = "";
   for (const chunk of clrs.chunks) {
     let data = chunk.tobytes();
-    if (chunk.chunk_type === "Utf8" && ["mcsp", "Mcsp"].includes(marker) && pyBool(data)) {
+    if (chunk.chunkType === "Utf8" && ["mcsp", "Mcsp"].includes(marker) && pyBool(data)) {
       data = b("<embedded>");
     }
-    record.push([chunk.chunk_type, data]);
-    marker = chunk.chunk_type;
+    record.push([chunk.chunkType, data]);
+    marker = chunk.chunkType;
   }
   return record;
 }

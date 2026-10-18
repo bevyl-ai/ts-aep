@@ -158,10 +158,10 @@ describe("TestValueAtTimeSpatial", () => {
   test("test_eased_roving_run_times", () => {
     /** The roving keys' derived times are the ticks AE stored. */
     const prop = _getProp("keyframe_roving_eased");
-    const stored = prop.keyframes.map((kf) => kf._ldatItem.time_units);
+    const stored = prop.keyframes.map((kf) => kf._ldatItem.timeUnits);
     expect(pyEq(stored, [0, 56852, 74884, 122880])).toBe(true);
     prop._redistributeRovingKeyframes();
-    expect(pyEq(prop.keyframes.map((kf) => kf._ldatItem.time_units), stored)).toBe(true);
+    expect(pyEq(prop.keyframes.map((kf) => kf._ldatItem.timeUnits), stored)).toBe(true);
   });
 });
 

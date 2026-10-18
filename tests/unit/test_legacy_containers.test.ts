@@ -59,7 +59,7 @@ test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
     _chunk("tdmn", bytes_.ljust(b("ADBE Transform Group"), 40, 0)),
   );
   const chunks = _read(data);
-  expect(pyEq(chunks.map((c) => c.chunk_type), ["tdsn", "tdmn"])).toBe(true);
+  expect(pyEq(chunks.map((c) => c.chunkType), ["tdsn", "tdmn"])).toBe(true);
   const tdsn = asInstance(chunks[0], TdsnChunk);
   expect(tdsn instanceof TdsnChunk).toBe(true);
   // An empty legacy name is an unnamed property.
@@ -105,14 +105,14 @@ test("test_a_modern_fnam_is_unchanged", () => {
 
 test("test_nnhd_stands_in_from_nhed", () => {
   const nhed = new NhedChunk({});
-  nhed.bits_per_channel = 1;
-  nhed.frames_count_type = 1;
-  nhed.timecode_default_base = 25;
+  nhed.bitsPerChannel = 1;
+  nhed.framesCountType = 1;
+  nhed.timecodeDefaultBase = 25;
   const nnhd = _nnhdFromNhed(nhed);
   expect(nnhd.synthetic).toBe(true);
   expect(
     pyEq(
-      [nnhd.bits_per_channel, nnhd.frames_count_type, nnhd.timecode_default_base],
+      [nnhd.bitsPerChannel, nnhd.framesCountType, nnhd.timecodeDefaultBase],
       [1, 1, 25],
     ),
   ).toBe(true);
@@ -174,7 +174,7 @@ function _asCc12Project(): py_aep.Project {
   project._nnhd = _nnhdFromNhed(project._nhed);
   project._dwga = new DwgaChunk({ synthetic: true });
   // @ts-expect-error SimpleNamespace stand-in for the head chunk
-  project._head = { ae_version_major: 12 };
+  project._head = { aeVersionMajor: 12 };
   return project;
 }
 
@@ -182,7 +182,7 @@ test("test_cc12_settings_synced_to_nhed_write_through", () => {
   const project = _asCc12Project();
   project.bitsPerChannel = BitsPerChannel.SIXTEEN;
   expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
-  expect(project._nhed.bits_per_channel).toBe(project._nnhd.bits_per_channel);
+  expect(project._nhed.bitsPerChannel).toBe(project._nnhd.bitsPerChannel);
   expect(project._nnhd.synthetic).toBe(true);
 });
 
@@ -196,7 +196,7 @@ test("test_cc12_working_gamma_has_nowhere_to_go_and_raises", () => {
 test("test_cc12_timecode_default_base_synced_to_nhed", () => {
   const project = _asCc12Project();
   project._timecodeDefaultBase = 60;
-  expect(project._nhed.timecode_default_base).toBe(60);
+  expect(project._nhed.timecodeDefaultBase).toBe(60);
 });
 
 test("test_cc12_timecode_default_base_above_u1_raises", () => {
@@ -204,7 +204,7 @@ test("test_cc12_timecode_default_base_above_u1_raises", () => {
   raises(ValueError, () => {
     project._timecodeDefaultBase = 300;
   });
-  expect(project._nhed.timecode_default_base).toBe(30);
+  expect(project._nhed.timecodeDefaultBase).toBe(30);
 });
 
 test("test_gpu_accel_type_software_without_gpug", () => {
@@ -217,11 +217,11 @@ test("test_gpu_accel_type_software_without_gpug", () => {
 });
 
 function _olderProjectBytes(nameChunks: Chunk[], fileFormatVersion: number): Uint8Array {
-  const head = new HeadChunk({ chunk_type: "head" });
-  head.file_format_version = fileFormatVersion;
+  const head = new HeadChunk({ chunkType: "head" });
+  head.fileFormatVersion = fileFormatVersion;
   const rifx = new ListChunk({
-    chunk_type: "RIFX",
-    list_type: "Egg!",
+    chunkType: "RIFX",
+    listType: "Egg!",
     chunks: [head, ...nameChunks],
   });
   const out = new BytesIO();
@@ -237,7 +237,7 @@ test("test_new_names_in_an_older_project_are_written_as_strings", () => {
     ["RCom", "note"],
   ].map(
     ([chunkType, value]) =>
-      new ContainerChunk({ chunk_type: chunkType, chunks: [new Utf8Chunk({ value })] }),
+      new ContainerChunk({ chunkType: chunkType, chunks: [new Utf8Chunk({ value })] }),
   );
   names.push(new TdsnChunk({ chunks: [new Utf8Chunk({ value: TDSN_SENTINEL })] }));
   const data = _olderProjectBytes(names, 91);
@@ -260,7 +260,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   solid.property("ADBE Effect Parade").addProperty("ADBE Slider Control").name = "slider";
   solid.property("ADBE Effect Parade").addProperty("ADBE Checkbox Control");
   asInstance(project.renderQueue, RenderQueue).add(comp).comment = "note";
-  project._head.file_format_version = 91;
+  project._head.fileFormatVersion = 91;
   const out = tmpPath.div("older.aep");
   project.save(out);
   const back = py_aep.parse(out).project;
@@ -287,7 +287,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
 
 test("test_an_older_project_cannot_be_relabelled", () => {
   const app = py_aep.new("15.0x1");
-  app._head.file_format_version = 91;
+  app._head.fileFormatVersion = 91;
   raises(ValueError, () => {
     app.version = "16.0x1";
   }, "older format");

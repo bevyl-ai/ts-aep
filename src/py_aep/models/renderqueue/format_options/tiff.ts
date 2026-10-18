@@ -39,6 +39,6 @@ export class TiffFormatOptions extends FormatOptionsBase {
   declare ibmPcByteOrder: boolean;
 }
 
-descriptor(TiffFormatOptions, "lzwCompression", ChunkField.bool("_body", "lzw_compression"));
+descriptor(TiffFormatOptions, "lzwCompression", ChunkField.bool("_body", "lzwCompression"));
 
-descriptor(TiffFormatOptions, "ibmPcByteOrder", ChunkField.bool("_body", "ibm_pc_byte_order"));
+descriptor(TiffFormatOptions, "ibmPcByteOrder", ChunkField.bool("_body", "ibmPcByteOrder"));

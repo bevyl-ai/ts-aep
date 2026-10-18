@@ -383,7 +383,7 @@ describe("TestSvgImportByteFidelity", () => {
     pyAssert(materials._tdgp != null);
     const tdsb = findByTypeOrNull(materials._tdgp.chunks, "tdsb");
     if (tdsb == null) throw new StopIteration();
-    expect(tdsb._enable_flags).toBe(3);
+    expect(tdsb._enableFlags).toBe(3);
   });
 
   test("test_compound_path_gets_merge_paths", () => {
@@ -437,14 +437,14 @@ describe("TestSvgImportByteFidelity", () => {
     expect(styles instanceof PropertyGroup).toBe(true);
     expect(styles.enabled).toBe(false);
     pyAssert(styles._tdsb != null && styles._tdsb.synthetic === false);
-    expect(styles._tdsb._enable_flags).toBe(3); // enabled+collapsed parent
+    expect(styles._tdsb._enableFlags).toBe(3); // enabled+collapsed parent
     for (const child of styles.properties) {
       pyAssert(child.enabled === false, child.matchName);
       pyAssert(child._tdsb != null);
       // Blending Options mirrors the parent (3); the 10 style toggles
       // are disabled (2 = bit 0 clear).
       const expected = child.matchName === "ADBE Blend Options Group" ? 3 : 2;
-      expect(child._tdsb._enable_flags).toBe(expected);
+      expect(child._tdsb._enableFlags).toBe(expected);
     }
   });
 
@@ -459,7 +459,7 @@ describe("TestSvgImportByteFidelity", () => {
     const cap = stroke.property("ADBE Vector Stroke Line Cap");
     cap.value = 2.0; // round - non-default, forces materialization
     expect(cap.canVaryOverTime).toBe(false);
-    const kinds = cap._tdbs.chunks.map((c) => c.chunk_type);
+    const kinds = cap._tdbs.chunks.map((c) => c.chunkType);
     expect(kinds.includes("tdum")).toBe(false);
     expect(kinds.includes("tduM")).toBe(false);
   });

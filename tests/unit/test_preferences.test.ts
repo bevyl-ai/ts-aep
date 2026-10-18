@@ -564,11 +564,11 @@ describe("TestNewProjectSettings", () => {
     const project = py_aep.new(undefined, { aePreferencesDir: prefsDir }).project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
     for (const chunk of [project._nnhd, project._nhed]) {
-      expect(chunk.time_display_type).toBe(1);
-      expect(chunk.footage_timecode_display_start_type).toBe(0);
-      expect(pyBool(chunk.frames_use_feet_frames)).toBe(true);
-      expect(chunk.timecode_default_base).toBe(24);
-      expect(chunk.frames_count_type).toBe(1);
+      expect(chunk.timeDisplayType).toBe(1);
+      expect(chunk.footageTimecodeDisplayStartType).toBe(0);
+      expect(pyBool(chunk.framesUseFeetFrames)).toBe(true);
+      expect(chunk.timecodeDefaultBase).toBe(24);
+      expect(chunk.framesCountType).toBe(1);
     }
   });
 
@@ -576,9 +576,9 @@ describe("TestNewProjectSettings", () => {
     const project = py_aep.new().project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.EIGHT);
     for (const chunk of [project._nnhd, project._nhed]) {
-      expect(chunk.time_display_type).toBe(0);
-      expect(chunk.timecode_default_base).toBe(30);
-      expect(chunk.frames_count_type).toBe(2);
+      expect(chunk.timeDisplayType).toBe(0);
+      expect(chunk.timecodeDefaultBase).toBe(30);
+      expect(chunk.framesCountType).toBe(2);
     }
   });
 });

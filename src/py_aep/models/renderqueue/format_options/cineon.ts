@@ -88,7 +88,7 @@ export class CineonFormatOptions extends FormatOptionsBase {
 descriptor(
   CineonFormatOptions,
   "tenBitBlackPoint",
-  new ChunkField("_body", "ten_bit_black_point", {
+  new ChunkField("_body", "tenBitBlackPoint", {
     validate: _validateNumber({ min: 0, max: 1023, integer: true }),
   }),
 );
@@ -96,7 +96,7 @@ descriptor(
 descriptor(
   CineonFormatOptions,
   "tenBitWhitePoint",
-  new ChunkField("_body", "ten_bit_white_point", {
+  new ChunkField("_body", "tenBitWhitePoint", {
     validate: _validateNumber({ min: 0, max: 1023, integer: true }),
   }),
 );
@@ -104,7 +104,7 @@ descriptor(
 descriptor(
   CineonFormatOptions,
   "convertedBlackPoint",
-  new ChunkField("_body", "converted_black_point", {
+  new ChunkField("_body", "convertedBlackPoint", {
     validate: _validateNumber(),
   }),
 );
@@ -112,7 +112,7 @@ descriptor(
 descriptor(
   CineonFormatOptions,
   "convertedWhitePoint",
-  new ChunkField("_body", "converted_white_point", {
+  new ChunkField("_body", "convertedWhitePoint", {
     validate: _validateNumber(),
   }),
 );
@@ -120,7 +120,7 @@ descriptor(
 descriptor(
   CineonFormatOptions,
   "currentGamma",
-  new ChunkField("_body", "current_gamma", {
+  new ChunkField("_body", "currentGamma", {
     validate: _validateNumber(),
   }),
 );
@@ -130,19 +130,19 @@ descriptor(
   "highlightExpansion",
   // Backed by a u2 field: an out-of-range value overflows `struct`
   // and crashes save() mid-write, leaving a partial .aep on disk.
-  new ChunkField("_body", "highlight_expansion", { validate: validateU2 }),
+  new ChunkField("_body", "highlightExpansion", { validate: validateU2 }),
 );
 
 descriptor(
   CineonFormatOptions,
   "logarithmicConversion",
-  ChunkField.bool("_body", "logarithmic_conversion"),
+  ChunkField.bool("_body", "logarithmicConversion"),
 );
 
 descriptor(
   CineonFormatOptions,
   "fileFormat",
-  ChunkField.enum(CineonFileFormat, "_body", "file_format", {
+  ChunkField.enum(CineonFileFormat, "_body", "fileFormat", {
     allowOutOfEnumValues: true,
   }),
 );
@@ -150,7 +150,7 @@ descriptor(
 descriptor(
   CineonFormatOptions,
   "bitDepth",
-  new ChunkField("_body", "bit_depth", {
+  new ChunkField("_body", "bitDepth", {
     validate: validateOneOf([8, 10, 12, 16]),
   }),
 );

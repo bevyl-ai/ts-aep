@@ -56,7 +56,7 @@ test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_rouu_depth_and_fra
   for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
     for (const om of rqi.outputModules) {
       expect(OutputColorDepth.has(om._roou.depth)).toBe(true);
-      expect(om._roou.frame_rate > 0).toBe(true);
+      expect(om._roou.frameRate > 0).toBe(true);
     }
   }
 });

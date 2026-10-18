@@ -2611,7 +2611,7 @@ describe("TestEffectPointSpeed", () => {
     expect(pyEq(prop._effectScale, [400.0, 300.0])).toBe(true);
     expect(prop._effectPointSpeedFactor).toBe(300.0);
     const middle = prop.keyframes[1];
-    expect(approx(asInstance(middle._ldatItem.kf_data, KfPosition).in_speed, 0.4)).toBe(true);
+    expect(approx(asInstance(middle._ldatItem.kfData, KfPosition).inSpeed, 0.4)).toBe(true);
     expect(approx(middle.inTemporalEase[0].speed, 120.0)).toBe(true);
     expect(approx(middle.outTemporalEase[0].speed, 260.0)).toBe(true);
   });

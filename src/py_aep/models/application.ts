@@ -22,9 +22,9 @@ export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] a
 /** A version whose file layout matches the project's. */
 export function _validateVersion(value: string, obj: Application): void {
   validateAeVersion(value);
-  const current = obj._head.ae_version_major;
+  const current = obj._head.aeVersionMajor;
   const target = int(split(str(value), ".", 1)[0]);
-  if (obj._head.file_format_version < LEGACY_NAME_FORMAT) {
+  if (obj._head.fileFormatVersion < LEGACY_NAME_FORMAT) {
     // Every release py_aep writes reads names as `Utf8` children, where
     // this project holds them as bare strings (and lacks root chunks
     // the newer format requires).
@@ -184,7 +184,7 @@ export class Application {
 descriptor(
   Application,
   "buildNumber",
-  new ChunkField("_head", "ae_build_number", {
+  new ChunkField("_head", "aeBuildNumber", {
     // An 8-bit field of the head chunk: a larger build would wrap.
     validate: validateU1,
   }),
@@ -195,8 +195,8 @@ descriptor(
   "version",
   new ChunkField("_head", "version", {
     validate: _validateVersion,
-    postSet: (obj: Application) => obj._head.sync_file_format_version(),
+    postSet: (obj: Application) => obj._head.syncFileFormatVersion(),
   }),
 );
 
-descriptor(Application, "isBeta", ChunkField.bool("_head", "ae_version_beta_flag"));
+descriptor(Application, "isBeta", ChunkField.bool("_head", "aeVersionBetaFlag"));

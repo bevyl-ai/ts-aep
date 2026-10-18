@@ -171,7 +171,7 @@ export class _OrientationKind extends ParallelKind {
     // Inside an otst the cdat doubles are little-endian and hold the
     // actual angles.
     if (Array.isArray(removedValue)) {
-      return new CdatChunk({ values: removedValue.slice(0, 3), is_le: true });
+      return new CdatChunk({ values: removedValue.slice(0, 3), isLe: true });
     }
     return new CdatChunk({ pad: _EMPTY_CDAT_PAD });
   }
@@ -192,7 +192,7 @@ export class _OrientationKind extends ParallelKind {
     prop._tdb4.dimensions = 1;
     // 0x6000 (24 fps) is the fallback when the containing comp is
     // unknown; _ensure_time_base overrides it with the comp's timebase.
-    prop._tdb4._time_base = 0x6000;
+    prop._tdb4._timeBase = 0x6000;
     prop._ensureTimeBase();
     this.applyModelMetadata(prop);
   }
@@ -236,7 +236,7 @@ export class _MarkerKind extends ParallelKind {
       value._cuePointNameUtf8,
       ...value._paramUtf8s,
     ];
-    return new ListChunk({ list_type: "Nmrd", chunks: source.map((c) => cloneChunkTree(c)) });
+    return new ListChunk({ listType: "Nmrd", chunks: source.map((c) => cloneChunkTree(c)) });
   }
 
   wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
@@ -252,15 +252,15 @@ export class _MarkerKind extends ParallelKind {
   onWrap(prop: Property): void {
     const t = prop._tdb4;
     t.dimensions = 1;
-    t._time_base = 0x6000;
-    t._type_flags = 0x08;
-    t._no_value_flags = 0x01;
-    t._property_category = 0;
-    t._spatial_static_flags = 0x01;
-    t._cvot_flags = 0x04;
-    t._value_hint_type = 1;
-    t._value_hint_flag = 0;
-    t._spatial_marker = false;
+    t._timeBase = 0x6000;
+    t._typeFlags = 0x08;
+    t._noValueFlags = 0x01;
+    t._propertyCategory = 0;
+    t._spatialStaticFlags = 0x01;
+    t._cvotFlags = 0x04;
+    t._valueHintType = 1;
+    t._valueHintFlag = 0;
+    t._spatialMarker = false;
   }
 }
 
@@ -328,15 +328,15 @@ export class _GradientKind extends ParallelKind {
   onWrap(prop: Property): void {
     const t = prop._tdb4;
     t.dimensions = 1;
-    t._time_base = 0x6000;
-    t._type_flags = 0x08;
-    t._no_value_flags = 0x01;
-    t._property_category = 0;
-    t._spatial_static_flags = 0x07;
-    t._cvot_flags = 0xff;
-    t._value_hint_type = 0xffff;
-    t._value_hint_flag = 0xff;
-    t._spatial_marker = true;
+    t._timeBase = 0x6000;
+    t._typeFlags = 0x08;
+    t._noValueFlags = 0x01;
+    t._propertyCategory = 0;
+    t._spatialStaticFlags = 0x07;
+    t._cvotFlags = 0xff;
+    t._valueHintType = 0xffff;
+    t._valueHintFlag = 0xff;
+    t._spatialMarker = true;
   }
 }
 

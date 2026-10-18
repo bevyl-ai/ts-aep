@@ -86,7 +86,7 @@ export class MarkerValue {
         this._paramUtf8s.push(new Utf8Chunk({ value: key }));
         this._paramUtf8s.push(new Utf8Chunk({ value: val }));
       }
-      this._nmhd.num_params = params.size;
+      this._nmhd.numParams = params.size;
     }
   }
 
@@ -181,7 +181,7 @@ export class MarkerValue {
       }
     }
     this._paramUtf8s = new_;
-    this._nmhd.num_params = value.size;
+    this._nmhd.numParams = value.size;
   }
 
   /** The time of the marker, in frames. */
@@ -236,7 +236,7 @@ export class MarkerValue {
 }
 
 /** The marker's duration, in seconds. Read / Write. */
-descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "duration_seconds", { validate: validateMarkerDuration }));
+descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "durationSeconds", { validate: validateMarkerDuration }));
 
 /**
  * The label color. Colors are represented by their number (0 for None, or 1
@@ -254,7 +254,7 @@ descriptor(MarkerValue, "navigation", ChunkField.bool("_nmhd", "navigation"));
  * also return `true` for protected region markers on nested composition
  * layers, but is otherwise not applicable to layer markers. Read / Write.
  */
-descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protected_region"));
+descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protectedRegion"));
 
 /**
  * A text comment for this marker. This comment appears in the Timeline panel

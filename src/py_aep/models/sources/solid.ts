@@ -91,29 +91,29 @@ export class SolidSource extends FootageSource {
     const sspc = new SspcChunk({
       width,
       height,
-      source_format_type: "Soli",
-      alpha_mode_raw: 3,
-      duration_dividend: 0,
+      sourceFormatType: "Soli",
+      alphaModeRaw: 3,
+      durationDividend: 0,
     });
-    sspc.pixel_aspect = pixelAspect;
+    sspc.pixelAspect = pixelAspect;
 
     const opti = new SoliOptiChunk({
-      color_r: color[0],
-      color_g: color[1],
-      color_b: color[2],
-      solid_name: name,
+      colorR: color[0],
+      colorG: color[1],
+      colorB: color[2],
+      solidName: name,
     });
 
     return new this({ _sspc: sspc, _opti: opti });
   }
 
   _resolveName(rawName: string): string {
-    return this._opti.solid_name;
+    return this._opti.solidName;
   }
 
   _storeName(value: string): void {
     validateOptiName(value);
-    this._opti.solid_name = value;
+    this._opti.solidName = value;
   }
 }
 

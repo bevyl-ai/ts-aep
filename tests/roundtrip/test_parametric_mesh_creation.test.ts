@@ -36,7 +36,7 @@ describe("TestAddParametricMesh", () => {
     const layer = comp.addParametricMesh(undefined, { meshType: meshType });
     expect(layer instanceof ParametricMeshLayer).toBe(true);
     expect(layer.parametricMeshType).toBe(meshType);
-    expect(layer._ldta.layer_type).toBe(LayerType.PARAMETRIC_MESH);
+    expect(layer._ldta.layerType).toBe(LayerType.PARAMETRIC_MESH);
     expect(layer.threeDLayer).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe("TestAddParametricMesh", () => {
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
     // AE leaves the ldta name bit clear for an auto-generated name.
-    expect(layer._ldta.name_set).toBe(false);
+    expect(layer._ldta.nameSet).toBe(false);
   });
 
   test("test_rename_sets_name_bit", () => {
@@ -81,9 +81,9 @@ describe("TestAddParametricMesh", () => {
 
     const fresh = _saveReparse(project, tmpPath);
     const freshLayers = fresh.compositions[0].layers;
-    expect(freshLayers[0]._ldta.name_set).toBe(true);
-    expect(freshLayers[1]._ldta.name_set).toBe(true);
-    expect(freshLayers[2]._ldta.name_set).toBe(false);
+    expect(freshLayers[0]._ldta.nameSet).toBe(true);
+    expect(freshLayers[1]._ldta.nameSet).toBe(true);
+    expect(freshLayers[2]._ldta.nameSet).toBe(false);
   });
 
   test("test_explicit_name_sets_name_bit", () => {
@@ -91,22 +91,22 @@ describe("TestAddParametricMesh", () => {
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh("My Cube", { meshType: ParametricMeshType.CUBE });
     expect(layer.name).toBe("My Cube");
-    expect(layer._ldta.name_set).toBe(true);
+    expect(layer._ldta.nameSet).toBe(true);
   });
 
   test("test_ldta_uses_comp_timebase", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
-    const timeBase = comp._cdta.internal_timebase;
-    expect(layer._ldta.out_point_divisor).toBe(timeBase);
-    expect(layer._ldta.in_point_divisor).toBe(timeBase);
+    const timeBase = comp._cdta.internalTimebase;
+    expect(layer._ldta.outPointDivisor).toBe(timeBase);
+    expect(layer._ldta.inPointDivisor).toBe(timeBase);
   });
 
   test("test_effects_active_cleared", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
-    expect(layer._ldta.effects_active).toBe(false);
+    expect(layer._ldta.effectsActive).toBe(false);
   });
 });

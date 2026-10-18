@@ -210,7 +210,7 @@ export function _maskIds(prop: Property): number[] | null {
   if (masks == null) return [];
   return masks.properties
     .filter((m) => m instanceof _maskPropertyGroup().MaskPropertyGroup)
-    .map((m) => m._mkif.mask_id);
+    .map((m) => m._mkif.maskId);
 }
 
 export function _validateKeyValue(prop: Property, value: PropertyValue): void {
@@ -522,46 +522,46 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const _tdb4 = new Tdb4Chunk({ synthetic, dimensions: spec.dimensions });
     if (spec.hasTimeBase) {
       const binaryNv = noValue || (spec.isSpatial && !spec.color);
-      _tdb4._time_base = 0x7800;
-      _tdb4._spatial_marker = spec.isSpatial;
-      _tdb4.no_value = binaryNv;
-      if (spec.spatialFlags != null) _tdb4._spatial_static_flags = spec.spatialFlags;
+      _tdb4._timeBase = 0x7800;
+      _tdb4._spatialMarker = spec.isSpatial;
+      _tdb4.noValue = binaryNv;
+      if (spec.spatialFlags != null) _tdb4._spatialStaticFlags = spec.spatialFlags;
       if (spec.integer) {
         _tdb4.integer = true;
-        _tdb4._cvot_flags = spec.cvot ?? 0x04;
-        _tdb4._property_category = 0x04;
-        _tdb4._value_hint_type = spec.valueHintType ?? 0xffff;
+        _tdb4._cvotFlags = spec.cvot ?? 0x04;
+        _tdb4._propertyCategory = 0x04;
+        _tdb4._valueHintType = spec.valueHintType ?? 0xffff;
       } else if (spec.color) {
         _tdb4.color = true;
-        _tdb4._cvot_flags = spec.cvot ?? 0xff;
-        _tdb4._property_category = 0x01;
-        _tdb4._value_hint_type = spec.valueHintType ?? 1;
-        _tdb4._value_hint_flag = 0xff;
+        _tdb4._cvotFlags = spec.cvot ?? 0xff;
+        _tdb4._propertyCategory = 0x01;
+        _tdb4._valueHintType = spec.valueHintType ?? 1;
+        _tdb4._valueHintFlag = 0xff;
       } else if (binaryNv) {
-        _tdb4._type_flags = spec.isSpatial ? 0x18 : 0x08;
-        _tdb4._cvot_flags = spec.cvot ?? 0x04;
-        _tdb4._value_hint_type = spec.valueHintType ?? 1;
+        _tdb4._typeFlags = spec.isSpatial ? 0x18 : 0x08;
+        _tdb4._cvotFlags = spec.cvot ?? 0x04;
+        _tdb4._valueHintType = spec.valueHintType ?? 1;
       } else {
         _tdb4.vector = true;
-        _tdb4._cvot_flags = spec.cvot ?? 0xff;
-        _tdb4._property_category = 0x09;
-        _tdb4._value_hint_type = spec.valueHintType ?? 1;
-        _tdb4._value_hint_flag = 0xff;
+        _tdb4._cvotFlags = spec.cvot ?? 0xff;
+        _tdb4._propertyCategory = 0x09;
+        _tdb4._valueHintType = spec.valueHintType ?? 1;
+        _tdb4._valueHintFlag = 0xff;
       }
     } else {
       if (spec.spatialFlags != null) {
-        _tdb4._spatial_static_flags = spec.spatialFlags;
+        _tdb4._spatialStaticFlags = spec.spatialFlags;
       } else {
-        _tdb4.is_spatial = spec.isSpatial;
+        _tdb4.isSpatial = spec.isSpatial;
       }
-      _tdb4.no_value = noValue;
+      _tdb4.noValue = noValue;
       _tdb4.color = spec.color;
       _tdb4.integer = spec.integer;
       _tdb4.vector = spec.dimensions > 1;
-      _tdb4.can_vary_over_time = canVary;
+      _tdb4.canVaryOverTime = canVary;
     }
 
-    if (spec.propertyCategory != null) _tdb4._property_category = spec.propertyCategory;
+    if (spec.propertyCategory != null) _tdb4._propertyCategory = spec.propertyCategory;
     if (spec.pad2a != null) _tdb4._pad2a = spec.pad2a;
 
     // AE writes the unnamed sentinel; the display name resolves
@@ -569,7 +569,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const tdsn = TdsnChunk.new_(TDSN_SENTINEL, { synthetic });
     const nameUtf8 = tdsn.utf8;
     const _tdbs = new ListChunk({
-      list_type: "tdbs",
+      listType: "tdbs",
       chunks: [_tdsb, tdsn, _tdb4],
       synthetic,
     });
@@ -1092,7 +1092,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (units === kf.timeUnits || (holders.get(units) ?? index) !== index) continue;
       holders.delete(kf.timeUnits);
       holders.set(units, index);
-      kf._ldatItem.time_units = units;
+      kf._ldatItem.timeUnits = units;
     }
   }
 
@@ -1160,12 +1160,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.propertyValueType !== PropertyValueType.MASK_INDEX) return;
     if (this._tdliChunk() != null) return;
     // No mask; a value write that follows stores its mask's id.
-    this._tdbs.chunks.push(new S4Chunk({ chunk_type: "tdli", value: 0 }));
+    this._tdbs.chunks.push(new S4Chunk({ chunkType: "tdli", value: 0 }));
   }
 
   _tdliChunk(): S4Chunk | null {
     for (const chunk of this._tdbs.chunks) {
-      if (chunk.chunk_type === "tdli" && chunk instanceof S4Chunk) return chunk;
+      if (chunk.chunkType === "tdli" && chunk instanceof S4Chunk) return chunk;
     }
     return null;
   }
@@ -1205,13 +1205,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (comp != null) {
       // The layer's own base, not the comp's: a stretched layer counts
       // its keyframe ticks against `internal_timebase * |stretch|`.
-      this._tdb4._time_base = int(this._layerTimebase || comp._cdta.internal_timebase);
-      if (this._tdb4._spatial_marker && !this._tdb4.color && !this._tdb4.no_value && this._effectScale == null) {
+      this._tdb4._timeBase = int(this._layerTimebase || comp._cdta.internalTimebase);
+      if (this._tdb4._spatialMarker && !this._tdb4.color && !this._tdb4.noValue && this._effectScale == null) {
         // AE writes the comp's pixel aspect into a layer's spatial
         // point tdb4s (not orientation / color). A point stored
         // normalized to its layer is measured otherwise, stamped
         // when keyed (`_stampNormalizedArcMetric`).
-        this._tdb4.pixel_aspect = comp._cdta.pixel_aspect;
+        this._tdb4.pixelAspect = comp._cdta.pixelAspect;
       }
     }
   }
@@ -1234,8 +1234,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const layer = this._containingLayer;
     const source = layer._sourceItem;
     const pixelAspect = source != null ? source.pixelAspect : layer.containingComp.pixelAspect;
-    this._tdb4.pixel_aspect = (scale[0] * pixelAspect) / scale[1];
-    this._tdb4._arc_accuracy = NORMALIZED_ARC_ACCURACY;
+    this._tdb4.pixelAspect = (scale[0] * pixelAspect) / scale[1];
+    this._tdb4._arcAccuracy = NORMALIZED_ARC_ACCURACY;
   }
 
   /**
@@ -1256,8 +1256,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // Layer Styles scalars: AE writes the UI slider hints (not the
       // real clamp) as the bound values (psd_layer_styles fixtures).
       const [low, high] = this._hintBounds;
-      this._tdbs.chunks.push(new TdumChunk({ chunk_type: "tdum", values: [low] }));
-      this._tdbs.chunks.push(new TdumChunk({ chunk_type: "tduM", values: [high] }));
+      this._tdbs.chunks.push(new TdumChunk({ chunkType: "tdum", values: [low] }));
+      this._tdbs.chunks.push(new TdumChunk({ chunkType: "tduM", values: [high] }));
       return;
     }
     // Synthetic EFFECT params: AE writes tdum/tduM for SCALAR /
@@ -1288,7 +1288,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
         return;
       }
     }
-    if (this._tdbs.chunks.some((c) => c.chunk_type === "tdum" || c.chunk_type === "tduM")) return;
+    if (this._tdbs.chunks.some((c) => c.chunkType === "tdum" || c.chunkType === "tduM")) return;
     // AE writes doubles whatever the tdb4 integer flag says (all 47652
     // integer-flagged bounds in the sample corpus are 8 bytes), holding an
     // effect param's UI slider range (24594 of the corpus's 24676 effect
@@ -1299,13 +1299,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const sliderHigh = effectBounded ? this._sliderMax : null;
     this._tdbs.chunks.push(
       new TdumChunk({
-        chunk_type: "tdum",
+        chunkType: "tdum",
         values: [sliderLow == null ? 0.0 : sliderLow],
       }),
     );
     this._tdbs.chunks.push(
       new TdumChunk({
-        chunk_type: "tduM",
+        chunkType: "tduM",
         values: [sliderHigh == null ? 0.0 : sliderHigh],
       }),
     );
@@ -1362,7 +1362,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return;
     }
     if (!this.constructor._NUMERIC_PVTS.has(this.propertyValueType)) return;
-    if (this._tdb4.no_value) {
+    if (this._tdb4.noValue) {
       // No-value properties (e.g. Layer Source Alternate) carry a
       // 4-zero-byte empty cdat; a padded double block makes AE fail
       // with "chunk in file too big".
@@ -1376,13 +1376,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.matchName === "ADBE Anchor Point" || this.matchName === "ADBE Position") {
       // AE writes static transform spatials with vector-style flags
       // (measured on addCamera / addLight output, AE 2026).
-      this._tdb4._spatial_static_flags = 0x0f;
-      this._tdb4._value_hint_type = 0xffff;
-      this._tdb4._value_hint_flag = 0xff;
-      this._tdb4._cvot_flags = 0xff;
-      this._tdb4._type_flags = 0x08;
-      this._tdb4._property_category = 0x09;
-      this._tdb4._spatial_marker = true;
+      this._tdb4._spatialStaticFlags = 0x0f;
+      this._tdb4._valueHintType = 0xffff;
+      this._tdb4._valueHintFlag = 0xff;
+      this._tdb4._cvotFlags = 0xff;
+      this._tdb4._typeFlags = 0x08;
+      this._tdb4._propertyCategory = 0x09;
+      this._tdb4._spatialMarker = true;
     } else if (
       [
         "ADBE Vector Position",
@@ -1396,41 +1396,41 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // Start/End points share one canon). Same vector-style flags as
       // a layer transform plus pad2a=3; without them AE silently
       // ignores the materialized value (reads 0,0).
-      this._tdb4._spatial_static_flags = 0x0f;
+      this._tdb4._spatialStaticFlags = 0x0f;
       this._tdb4._pad2a = 3;
-      this._tdb4._value_hint_type = 0xffff;
-      this._tdb4._value_hint_flag = 0xff;
-      this._tdb4._cvot_flags = 0xff;
-      this._tdb4._type_flags = 0x08;
-      this._tdb4._property_category = 0x09;
-      this._tdb4._spatial_marker = true;
-    } else if (this._color && !this._isInEffect() && this._tdb4._value_hint_type === 0) {
+      this._tdb4._valueHintType = 0xffff;
+      this._tdb4._valueHintFlag = 0xff;
+      this._tdb4._cvotFlags = 0xff;
+      this._tdb4._typeFlags = 0x08;
+      this._tdb4._propertyCategory = 0x09;
+      this._tdb4._spatialMarker = true;
+    } else if (this._color && !this._isInEffect() && this._tdb4._valueHintType === 0) {
       // Static color canon (measured on a script-modified vector
       // fill color, AE 2026); with the synthesis-default flags AE
       // silently ignores the materialized value.
-      this._tdb4._spatial_static_flags = 0x07;
-      this._tdb4._value_hint_type = 2;
-      this._tdb4._value_hint_flag = 0xff;
-      this._tdb4._cvot_flags = 0xff;
-      this._tdb4._type_flags = 0x01;
-      this._tdb4._property_category = 0x01;
-      this._tdb4._spatial_marker = true;
+      this._tdb4._spatialStaticFlags = 0x07;
+      this._tdb4._valueHintType = 2;
+      this._tdb4._valueHintFlag = 0xff;
+      this._tdb4._cvotFlags = 0xff;
+      this._tdb4._typeFlags = 0x01;
+      this._tdb4._propertyCategory = 0x01;
+      this._tdb4._spatialMarker = true;
     } else if (
       !this._color &&
       !this.isSpatial &&
       !this._tdb4.integer &&
       !this._isInEffect() &&
-      this._tdb4._value_hint_type === 0 &&
-      this._tdb4._property_category === 0
+      this._tdb4._valueHintType === 0 &&
+      this._tdb4._propertyCategory === 0
     ) {
       // Plain numeric properties synthesized without a time base
       // carry default flag bytes; AE writes them with the standard
       // vector canon (Scale, Rotate Z, Opacity, Z Position...).
-      this._tdb4._value_hint_type = 1;
-      this._tdb4._value_hint_flag = 0xff;
-      this._tdb4._cvot_flags = 0xff;
-      this._tdb4._type_flags |= 0x08;
-      this._tdb4._property_category = 0x09;
+      this._tdb4._valueHintType = 1;
+      this._tdb4._valueHintFlag = 0xff;
+      this._tdb4._cvotFlags = 0xff;
+      this._tdb4._typeFlags |= 0x08;
+      this._tdb4._propertyCategory = 0x09;
     }
     const dims = this._tdb4.dimensions;
     let value = this._value;
@@ -1501,8 +1501,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** Extract value from a tdum/tduM chunk body. */
   static _readTdum(body: TdumChunk): number | number[] {
-    if (body.is_color) return [...body.values];
-    if (body.is_integer) return int(body.values[0]);
+    if (body.isColor) return [...body.values];
+    if (body.isInteger) return int(body.values[0]);
     if (body.values.length === 1) return body.values[0];
     return [...body.values];
   }
@@ -1691,7 +1691,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     pyAssert(this._arbs != null);
     if (this._curves == null) {
       const arbp = this._arbs.chunks[0];
-      this._curves = Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
+      this._curves = Curves._fromBinary(CurvesArbpChunk.fromArbp(arbp));
     }
     return this._curves;
   }
@@ -1708,7 +1708,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return null;
     }
     const arbp = arbps[indexByIdentity(this.keyframes, keyframe)];
-    return Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
+    return Curves._fromBinary(CurvesArbpChunk.fromArbp(arbp));
   }
 
   /**
@@ -1729,9 +1729,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       chunks[indexByIdentity(chunks, inner)] = cdat;
       this._cdat = cdat;
       this.keyframes.length = 0;
-      tdb4ApplyStaticTemplate(this._tdb4, { in_interpolation: 0, out_interpolation: 0, spatial_flags: 0 });
+      tdb4ApplyStaticTemplate(this._tdb4, { inInterpolation: 0, outInterpolation: 0, spatialFlags: 0 });
     }
-    this._arbs.chunks.splice(0, this._arbs.chunks.length, new Chunk({ chunk_type: "aRbp", data: this._defaultArbp.data }));
+    this._arbs.chunks.splice(0, this._arbs.chunks.length, new Chunk({ chunkType: "aRbp", data: this._defaultArbp.data }));
     this._curves = null;
   }
 
@@ -2216,7 +2216,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (parade != null) {
       if (parade._tdgp != null) {
         const sspc = effect._backingListChunk(parade._tdgp);
-        if (sspc.list_type === "sspc") {
+        if (sspc.listType === "sspc") {
           const part = findByListTypeOrNull(sspc.chunks, "parT");
           if (part !== null) parts.push(part);
         }
@@ -2246,13 +2246,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     for (const part of this._dropdownParamDefs()) {
       let current: string | null = null;
       for (const chunk of part.chunks) {
-        if (chunk.chunk_type === "tdmn" && chunk instanceof TdmnChunk) {
+        if (chunk.chunkType === "tdmn" && chunk instanceof TdmnChunk) {
           current = chunk.value;
         } else if (current === this.matchName) {
           if (chunk instanceof EnumPardChunk) {
             // AE keeps the default choice unchanged.
-            chunk.nb_options = items.length;
-          } else if (chunk.chunk_type === "pdnm" && chunk instanceof ContainerChunk) {
+            chunk.nbOptions = items.length;
+          } else if (chunk.chunkType === "pdnm" && chunk instanceof ContainerChunk) {
             const utf8 = findByType(chunk.chunks, "Utf8");
             utf8.value = joined;
             written = true;
@@ -2306,7 +2306,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this._canVaryOverTime != null) return this._canVaryOverTime;
     // NO_VALUE properties always report canVaryOverTime=True in AE,
     // even though the binary byte says otherwise.
-    return !!(this._tdb4.can_vary_over_time || this._noValue);
+    return !!(this._tdb4.canVaryOverTime || this._noValue);
   }
 
   /**
@@ -2325,7 +2325,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // accepts the write, and reads back true with the position intact.
       //
       pyAssert(this._tdsb != null);
-      return !!this._tdsb.dimensions_separated;
+      return !!this._tdsb.dimensionsSeparated;
     }
     return false;
   }
@@ -2375,7 +2375,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   _setSeparatedFlags(separated: boolean): void {
     this._ensureMaterialized();
     pyAssert(this._tdsb != null);
-    this._tdsb.dimensions_separated = separated;
+    this._tdsb.dimensionsSeparated = separated;
     this._tdsb.hidden = separated;
     this._dimensionsSeparated = separated;
   }
@@ -2633,8 +2633,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this._tdb4 != null) {
       // AE marks an expression-bearing parameter in tdb4._pad10; the
       // inverse of _clear_expression so a created expression round-trips.
-      this._tdb4.has_expression = true;
-      this._tdb4._expr_flags = 0;
+      this._tdb4.hasExpression = true;
+      this._tdb4._exprFlags = 0;
     }
   }
 
@@ -2645,7 +2645,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   get expressionEnabled(): boolean {
     if (this._expressionEnabled != null) return this._expressionEnabled;
-    const disabled = "expression_disabled" in this._tdb4 ? this._tdb4.expression_disabled : true;
+    const disabled = "expressionDisabled" in this._tdb4 ? this._tdb4.expressionDisabled : true;
     return !disabled && !!this.expression;
   }
 
@@ -2674,7 +2674,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     this._ensureMaterialized();
     this._expressionEnabled = value;
-    this._tdb4.expression_disabled = !value;
+    this._tdb4.expressionDisabled = !value;
   }
 
   /** When `true`, an expression can be set for the named property. Read-only. */
@@ -2723,7 +2723,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const tdb4 = this._tdb4;
     let key: number[] | null;
     if (tdb4 != null) {
-      key = [tdb4.dimensions, tdb4._type_flags, tdb4._spatial_static_flags, tdb4._no_value_flags];
+      key = [tdb4.dimensions, tdb4._typeFlags, tdb4._spatialStaticFlags, tdb4._noValueFlags];
       const memo = this._typesMemo;
       if (memo != null && pyEq(memo[0], key)) {
         return memo[1];
@@ -2897,7 +2897,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       const leader = this.separationLeader;
       if (leader != null && !leader.dimensionsSeparated) {
         const layer = this._containingLayer;
-        const layerType = layer._ldta.layer_type;
+        const layerType = layer._ldta.layerType;
         if (layerType === LayerType.CAMERA || layerType === LayerType.LIGHT) return true;
       }
     }
@@ -2925,7 +2925,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this._arbs != null) {
       const curves = this._staticCurves();
       if (this._defaultArbp == null) return !curves.isIdentity;
-      const default_ = CurvesArbpChunk.from_arbp(this._defaultArbp);
+      const default_ = CurvesArbpChunk.fromArbp(this._defaultArbp);
       return !curves._sameCurves(Curves._fromBinary(default_));
     }
     if (_ALWAYS_MODIFIED.has(this.matchName)) return true;
@@ -3238,8 +3238,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const tdb4 = this._tdb4;
     const scale = this._effectScale;
     return new ArcMetric(
-      tdb4._arc_accuracy,
-      [tdb4.pixel_aspect, tdb4._arc_multiplier_y, tdb4._arc_multiplier_z, tdb4._arc_multiplier_w],
+      tdb4._arcAccuracy,
+      [tdb4.pixelAspect, tdb4._arcMultiplierY, tdb4._arcMultiplierZ, tdb4._arcMultiplierW],
       scale != null ? [...scale] : null,
       // `_effectPointSpeedFactor`, from the scale already in hand.
       scale != null && scale[1] !== 0 ? scale[1] : 1.0,
@@ -3332,7 +3332,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // `_materializeParallelContainer` can adopt an arbitrary
       // sibling LIST as the wrapper, so an unknown type falls through
       // to the match name rather than deciding the answer is None.
-      const kind = _WRAPPER_KINDS.get(wrapper.list_type) ?? null;
+      const kind = _WRAPPER_KINDS.get(wrapper.listType) ?? null;
       if (kind != null) return kind;
     }
     return _SYNTHESIZED_KINDS.get(this.matchName) ?? null;
@@ -3370,18 +3370,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this._parallelKind() != null) {
       t.static = false;
       t.animated = true;
-      t._spatial_marker = false;
+      t._spatialMarker = false;
       // AE clears the opaque interpolation residue it leaves in these
       // fields when a complex property went static (bytes 0x49-0x4E).
-      t._reserved_48 = and(t._reserved_48, 0xff000000);
-      t._reserved_4c = t._reserved_4d = t._pad_4e = 0;
+      t._reserved48 = and(t._reserved48, 0xff000000);
+      t._reserved4c = t._reserved4d = t._pad4e = 0;
       return;
     }
     // AE keeps a variable-font axis's value-hint flag, cvot flags
     // and time base unchanged across the static<->animated
     // transition (verified against the variable_font_axis_animated
     // AE 2026 fixture).
-    const preserved = this._isVfAxis ? [t._value_hint_flag, t._cvot_flags, t._time_base] : null;
+    const preserved = this._isVfAxis ? [t._valueHintFlag, t._cvotFlags, t._timeBase] : null;
     tdb4ApplyAnimatedTemplate(t, { color: !!this._color, spatial: this._hasMotionPath });
     // The template cannot know the comp's timebase or pixel aspect.
     // `_ensureMaterialized` stamps them, but only for a synthesized
@@ -3393,7 +3393,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // spatial point.
     tdb4ClearKeyframeRecord(t);
     if (preserved != null) {
-      [t._value_hint_flag, t._cvot_flags, t._time_base] = preserved;
+      [t._valueHintFlag, t._cvotFlags, t._timeBase] = preserved;
     }
   }
 
@@ -3880,11 +3880,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** Set the tdb4 to AE's static state after removing `last_key`. */
   _staticTdb4(lastKey: LdatItem): void {
-    const kfData = lastKey.kf_data;
+    const kfData = lastKey.kfData;
     tdb4ApplyStaticTemplate(this._tdb4, {
-      in_interpolation: lastKey.in_interpolation_type,
-      out_interpolation: lastKey.out_interpolation_type,
-      spatial_flags: kfData instanceof KfPosition ? kfData._spatial_flags : 0,
+      inInterpolation: lastKey.inInterpolationType,
+      outInterpolation: lastKey.outInterpolationType,
+      spatialFlags: kfData instanceof KfPosition ? kfData._spatialFlags : 0,
     });
   }
 
@@ -3909,7 +3909,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // AE pads the static value to 3 doubles per dimension when the
     // stream flags have bit 1 (spatial and colour streams), 5 otherwise
     // - the layout of every static numeric stream in the samples.
-    const perDim = this._tdb4._spatial_static_flags & 0x02 ? 3 : 5;
+    const perDim = this._tdb4._spatialStaticFlags & 0x02 ? 3 : 5;
     rawVals.push(...listMul([0.0], this._tdb4.dimensions * perDim - rawVals.length));
     const cdat = new CdatChunk({ values: rawVals });
     if (inner != null) {
@@ -3941,8 +3941,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // `_expr_flags` (bit 0 = disabled) and the `_pad10` high-byte
       // marker (`has_expression`) are AE's expression-present flags;
       // clear both so the tdb4 matches a plain static parameter.
-      this._tdb4._expr_flags = 0;
-      this._tdb4.has_expression = false;
+      this._tdb4._exprFlags = 0;
+      this._tdb4.hasExpression = false;
     }
   }
 
@@ -3972,7 +3972,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const src = shape._shph;
     let bbox: number[];
     if (src != null) {
-      bbox = [src.top_left_x, src.top_left_y, src.bottom_right_x, src.bottom_right_y];
+      bbox = [src.topLeftX, src.topLeftY, src.bottomRightX, src.bottomRightY];
     } else {
       bbox = [0.0, 0.0, 0.0, 0.0];
     }
@@ -4008,10 +4008,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       }
     }
     const shap = buildShap([bbox[0], bbox[1], bbox[2], bbox[3]], {
-      open_path: !shape.closed,
+      openPath: !shape.closed,
       points,
       tensions,
-      feather_points: isMaskPath ? shape.featherPoints.map((fp) => fp._fp) : null,
+      featherPoints: isMaskPath ? shape.featherPoints.map((fp) => fp._fp) : null,
     });
     if (src != null) {
       // Carry over the source header's unknown flag bits; build_shap
@@ -4185,7 +4185,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const parent = this.parentProperty;
     pyAssert(parent != null && parent._tdgp != null);
     const chunks = parent._tdgp.chunks;
-    const container = new ListChunk({ list_type: kind.containerType, chunks: [] });
+    const container = new ListChunk({ listType: kind.containerType, chunks: [] });
     let wrapper = this._wrapper;
     if (wrapper == null) {
       wrapper =
@@ -4196,7 +4196,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // the tdbs.
       wrapper.chunks.splice(indexByIdentity(wrapper.chunks, this._tdbs) + 1, 0, container);
     } else if (chunks.some((c) => c === this._tdbs)) {
-      wrapper = new ListChunk({ list_type: kind.wrapperType, chunks: [this._tdbs, container] });
+      wrapper = new ListChunk({ listType: kind.wrapperType, chunks: [this._tdbs, container] });
       chunks[indexByIdentity(chunks, this._tdbs)] = wrapper;
       // AE writes the unnamed sentinel into tdsn when it wraps the
       // property (synthesis seeds the auto-name; a pristine
@@ -4300,13 +4300,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (sides.includes(bezier)) {
       kf.inInterpolationType = bezier;
       kf.outInterpolationType = bezier;
-      kf._ldatItem.temporal_continuous = true;
-      const data = kf._ldatItem.kf_data as KfPosition;
+      kf._ldatItem.temporalContinuous = true;
+      const data = kf._ldatItem.kfData as KfPosition;
       const speed = sides.length === 2 ? 1.0 : 0.0;
-      data.in_speed = speed;
-      data.out_speed = speed;
-      data.in_influence = _DEFAULT_INFLUENCE / 100.0;
-      data.out_influence = _DEFAULT_INFLUENCE / 100.0;
+      data.inSpeed = speed;
+      data.outSpeed = speed;
+      data.inInfluence = _DEFAULT_INFLUENCE / 100.0;
+      data.outInfluence = _DEFAULT_INFLUENCE / 100.0;
       return;
     }
     kf.inInterpolationType = sides[0];
@@ -4548,7 +4548,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   get _layerTimebase(): number {
     const comp = this._owningComp();
     if (comp == null) return 0.0;
-    const base = comp._cdta.internal_timebase;
+    const base = comp._cdta.internalTimebase;
     if (base === 0) return 0.0;
     return layerTimebase(base, this._timeStretch);
   }
@@ -4908,7 +4908,7 @@ descriptor(Property, "_color", new ChunkField("_tdb4", "color"));
 
 descriptor(Property, "_integer", new ChunkField("_tdb4", "integer"));
 
-descriptor(Property, "_noValue", new ChunkField("_tdb4", "no_value"));
+descriptor(Property, "_noValue", new ChunkField("_tdb4", "noValue"));
 
 descriptor(Property, "_vector", new ChunkField("_tdb4", "vector"));
 
@@ -4918,7 +4918,7 @@ descriptor(Property, "_vector", new ChunkField("_tdb4", "vector"));
 descriptor(
   Property,
   "lockedRatio",
-  new ChunkField("_tdsb", "ratio_unlinked", { transform: (v) => !v, readOnly: true }),
+  new ChunkField("_tdsb", "ratioUnlinked", { transform: (v) => !v, readOnly: true }),
 );
 
-descriptor(Property, "_isSpatialRaw", new ChunkField("_tdb4", "is_spatial"));
+descriptor(Property, "_isSpatialRaw", new ChunkField("_tdb4", "isSpatial"));

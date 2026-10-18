@@ -21,24 +21,24 @@ import { and, andNot, getattr, lshift, or } from "../../pyrt/index.ts";
  * the owner's raw-byte field.
  */
 export class BitField<F extends string = string> {
-  byte_field: F;
+  byteField: F;
   mask: number;
 
   constructor(byteField: F, bit: number) {
-    this.byte_field = byteField;
+    this.byteField = byteField;
     this.mask = lshift(1, bit);
   }
 
   __get__(obj: Record<F, number>, objtype: Function | null = null): boolean {
-    return and(getattr(obj, this.byte_field), this.mask) !== 0;
+    return and(getattr(obj, this.byteField), this.mask) !== 0;
   }
 
   __set__(obj: Record<F, number>, value: boolean): void {
-    const raw = getattr(obj, this.byte_field);
+    const raw = getattr(obj, this.byteField);
     if (value) {
-      obj[this.byte_field] = or(raw, this.mask);
+      obj[this.byteField] = or(raw, this.mask);
     } else {
-      obj[this.byte_field] = andNot(raw, this.mask);
+      obj[this.byteField] = andNot(raw, this.mask);
     }
   }
 }

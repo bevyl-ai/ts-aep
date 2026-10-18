@@ -20,9 +20,9 @@ export function parseSource(
   const clrs = findByListTypeOrNull(pinChildChunks, "CLRS");
   const linl = clrs === null ? null : findByTypeOrNull(clrs.chunks, "linl");
 
-  const assetType = getattr(optiChunk, "asset_type", "");
+  const assetType = getattr(optiChunk, "assetType", "");
 
-  if (!pyBool(assetType) && hasattr(optiChunk, "placeholder_name")) {
+  if (!pyBool(assetType) && hasattr(optiChunk, "placeholderName")) {
     return new PlaceholderSource({
       _sspc: sspcChunk,
       _opti: optiChunk,

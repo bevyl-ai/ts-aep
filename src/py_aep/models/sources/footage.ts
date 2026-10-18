@@ -73,8 +73,8 @@ export const _MIN_CONFORM_FRAME_RATE = 0.0005;
  * 24 fps, 1200/2997 at 29.97 (measured on AE 2026).
  */
 export function _retimeSequence(sspc: SspcChunk, rate: number): void {
-  const frames = round(sspc.duration * sspc.native_frame_rate);
-  sspc.native_frame_rate = rate;
+  const frames = round(sspc.duration * sspc.nativeFrameRate);
+  sspc.nativeFrameRate = rate;
   _storeFramesOverRate(sspc, frames, round(rate, 3));
 }
 
@@ -85,8 +85,8 @@ export function _retimeSequence(sspc: SspcChunk, rate: number): void {
 export function _storeFramesOverRate(sspc: SspcChunk, frames: number, rate: number): void {
   const [rateNum, rateDen] = toDividendDivisor(rate);
   if (frames * rateDen <= 0xffffffff) {
-    sspc.duration_dividend = frames * rateDen;
-    sspc.duration_divisor = rateNum;
+    sspc.durationDividend = frames * rateDen;
+    sspc.durationDivisor = rateNum;
   } else {
     // Too many frames for the unreduced form in the u4 dividend (a huge
     // frame range at a fractional rate): store it reduced.
@@ -192,9 +192,9 @@ export class FootageSource {
   get conformFrameRate(): number {
     const sspc = this._sspc;
     if (this._rateIsAssumed) {
-      return sspc.conform_frame_rate || sspc.native_frame_rate;
+      return sspc.conformFrameRate || sspc.nativeFrameRate;
     }
-    return sspc.conform_frame_rate;
+    return sspc.conformFrameRate;
   }
 
   set conformFrameRate(value: number) {
@@ -211,17 +211,17 @@ export class FootageSource {
     }
     const sspc = this._sspc;
     if (!this._rateIsAssumed) {
-      sspc.conform_frame_rate = value;
+      sspc.conformFrameRate = value;
       return;
     }
     if (!value) return;
     // AE keeps an assumed rate in the native slot and the conform slot
     // at 0.
-    sspc.conform_frame_rate = 0.0;
+    sspc.conformFrameRate = 0.0;
     if (this._isSequence) {
       _retimeSequence(sspc, value);
     } else {
-      sspc.native_frame_rate = value;
+      sspc.nativeFrameRate = value;
     }
   }
 
@@ -267,8 +267,8 @@ export class FootageSource {
    */
   _onRemovePulldownSet(): void {
     if (
-      1 <= this._sspc.remove_pulldown &&
-      this._sspc.remove_pulldown <= 5 &&
+      1 <= this._sspc.removePulldown &&
+      this._sspc.removePulldown <= 5 &&
       this.fieldSeparationType === FieldSeparationType.OFF
     ) {
       this.fieldSeparationType = FieldSeparationType.UPPER_FIELD_FIRST;
@@ -292,13 +292,13 @@ export class FootageSource {
   }
 
   get _hasAudio(): boolean {
-    return this._sspc.audio_sample_rate > 0;
+    return this._sspc.audioSampleRate > 0;
   }
 
   /** Total duration in seconds (with conform and loop). */
   get _duration(): number {
     const sspc = this._sspc;
-    const conform = sspc.conform_frame_rate;
+    const conform = sspc.conformFrameRate;
     if (conform === 0) {
       return sspc.duration * sspc.loop;
     }
@@ -306,7 +306,7 @@ export class FootageSource {
     // is the frame count over that rate: exactly 48 / 24 = 2.0 s for a
     // 48-frame 23.976 movie. Rescaling the stored duration instead drifts
     // by the 16.16 error of the stored native rate (1.999998 s).
-    const frames = round(sspc.duration * sspc.native_frame_rate);
+    const frames = round(sspc.duration * sspc.nativeFrameRate);
     return (frames / conform) * sspc.loop;
   }
 
@@ -384,11 +384,11 @@ export class FootageSource {
   _carryInterpretationTo(new_: FootageSource): void {
     const oldSspc = this._sspc,
       newSspc = new_._sspc;
-    newSspc.field_separation_type = oldSspc.field_separation_type;
-    newSspc.high_quality_field_separation = oldSspc.high_quality_field_separation;
-    newSspc.remove_pulldown = oldSspc.remove_pulldown;
+    newSspc.fieldSeparationType = oldSspc.fieldSeparationType;
+    newSspc.highQualityFieldSeparation = oldSspc.highQualityFieldSeparation;
+    newSspc.removePulldown = oldSspc.removePulldown;
     newSspc.loop = oldSspc.loop;
-    newSspc.pixel_aspect = oldSspc.pixel_aspect;
+    newSspc.pixelAspect = oldSspc.pixelAspect;
 
     // A sequence of stills has no rate of its own, so AE keeps its
     // "assume this frame rate" as the native rate and leaves the conform
@@ -401,7 +401,7 @@ export class FootageSource {
     // and a new placeholder takes its rate from the call's arguments.
     let rate = this.conformFrameRate;
     if (new_._isSequence) {
-      rate = rate || this._sspc.native_frame_rate;
+      rate = rate || this._sspc.nativeFrameRate;
       if (rate && !new_._rateFromMedia) {
         // A sequence's stored duration is its frame count over its
         // rate, so it has to move with the rate; a movie keeps the
@@ -414,7 +414,7 @@ export class FootageSource {
       !new_._rateIsAssumed &&
       !new_.isStill
     ) {
-      newSspc.conform_frame_rate = rate;
+      newSspc.conformFrameRate = rate;
     }
 
     this._carryColorManagementTo(new_);
@@ -436,7 +436,7 @@ export class FootageSource {
     this._project = project;
     if (this._clrs == null) return;
     const head = project._head;
-    const version = [head.file_format_version, head._format_subversion];
+    const version = [head.fileFormatVersion, head._formatSubversion];
     const dropped = new Set(
       _CLRS_RECORDS_SINCE.filter(([, since]) => pyCmp(version, since) < 0).map(
         ([marker]) => marker,
@@ -446,7 +446,7 @@ export class FootageSource {
     const kept: Chunk[] = [];
     let index = 0;
     while (index < chunks.length) {
-      if (dropped.has(chunks[index].chunk_type)) {
+      if (dropped.has(chunks[index].chunkType)) {
         index += 2; // the marker and the Utf8 that follows it
         continue;
       }
@@ -521,7 +521,7 @@ export class FootageSource {
    */
   get preserveRgb(): boolean {
     if (this._clrs == null) return false;
-    return this._clrs.chunks.some((c) => c.chunk_type === "prgb");
+    return this._clrs.chunks.some((c) => c.chunkType === "prgb");
   }
 
   set preserveRgb(value: boolean) {
@@ -689,7 +689,7 @@ export class FootageSource {
 descriptor(
   FootageSource,
   "alphaMode",
-  ChunkField.enum(AlphaMode, "_sspc", "alpha_mode_raw", {
+  ChunkField.enum(AlphaMode, "_sspc", "alphaModeRaw", {
     validate: _validateHasAlpha,
     postSet: "_onAlphaModeSet",
   }),
@@ -697,22 +697,22 @@ descriptor(
 descriptor(
   FootageSource,
   "fieldSeparationType",
-  ChunkField.enum(FieldSeparationType, "_sspc", "field_separation_type"),
+  ChunkField.enum(FieldSeparationType, "_sspc", "fieldSeparationType"),
 );
 descriptor(
   FootageSource,
   "hasAlpha",
-  new ChunkField("_sspc", "has_alpha", { readOnly: true }),
+  new ChunkField("_sspc", "hasAlpha", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "highQualityFieldSeparation",
-  ChunkField.bool("_sspc", "high_quality_field_separation"),
+  ChunkField.bool("_sspc", "highQualityFieldSeparation"),
 );
 descriptor(
   FootageSource,
   "invertAlpha",
-  ChunkField.bool("_sspc", "invert_alpha"),
+  ChunkField.bool("_sspc", "invertAlpha"),
 );
 descriptor(
   FootageSource,
@@ -724,7 +724,7 @@ descriptor(
 descriptor(
   FootageSource,
   "premulColor",
-  new ChunkField("_sspc", "premul_color", { validate: validateRgbColor }),
+  new ChunkField("_sspc", "premulColor", { validate: validateRgbColor }),
 );
 descriptor(
   FootageSource,
@@ -736,19 +736,19 @@ descriptor(
 descriptor(
   FootageSource,
   "displayFrameRate",
-  new ChunkField("_sspc", "display_frame_rate", { readOnly: true }),
+  new ChunkField("_sspc", "displayFrameRate", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "removePulldown",
-  ChunkField.enum(PulldownPhase, "_sspc", "remove_pulldown", {
+  ChunkField.enum(PulldownPhase, "_sspc", "removePulldown", {
     postSet: "_onRemovePulldownSet",
   }),
 );
 descriptor(
   FootageSource,
   "nativeFrameRate",
-  new ChunkField("_sspc", "native_frame_rate", { readOnly: true }),
+  new ChunkField("_sspc", "nativeFrameRate", { readOnly: true }),
 );
 descriptor(
   FootageSource,
@@ -763,20 +763,20 @@ descriptor(
 descriptor(
   FootageSource,
   "_pixelAspect",
-  new ChunkField("_sspc", "pixel_aspect", { readOnly: true }),
+  new ChunkField("_sspc", "pixelAspect", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "_footageMissing",
-  new ChunkField("_sspc", "footage_missing_at_save", { readOnly: true }),
+  new ChunkField("_sspc", "footageMissingAtSave", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "_startFrame",
-  new ChunkField("_sspc", "start_frame", { readOnly: true }),
+  new ChunkField("_sspc", "startFrame", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "_endFrame",
-  new ChunkField("_sspc", "end_frame", { readOnly: true }),
+  new ChunkField("_sspc", "endFrame", { readOnly: true }),
 );

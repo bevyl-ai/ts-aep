@@ -92,19 +92,19 @@ test("test_output_module_preserves_noncanonical_true_byte", () => {
 
   const settings = OutputModuleSettingsItem.frombytes(new Uint8Array(raw));
 
-  expect(settings.include_project_link).toBe(true);
+  expect(settings.includeProjectLink).toBe(true);
   expect(pyEq(settings.tobytes(), raw)).toBe(true);
 });
 
 test("test_output_module_template_copy_preserves_include_project_link_byte", () => {
   const source = new OutputModuleSettingsItem();
-  source._include_project_link = 0x03;
+  source._includeProjectLink = 0x03;
   const target = new OutputModuleSettingsItem();
-  target._include_project_link = 0x00;
+  target._includeProjectLink = 0x00;
 
-  target.copy_settings_from(source);
+  target.copySettingsFrom(source);
 
-  expect(target._include_project_link).toBe(0x03);
+  expect(target._includeProjectLink).toBe(0x03);
 });
 
 describe("TestResolveOutputFilename", () => {
@@ -211,7 +211,7 @@ class TestRenderTemplatesDefaultIndex {
     // The prefs item is the 2246-byte AEP layout minus the last 64 bytes.
     let raw = bytes_.repeat(b("\x00"), 32);
     for (const name of names) {
-      raw = bytes_.concat(raw, bytes_.slice(new RenderSettingsItem({ template_name: name }).tobytes(), 0, 2182));
+      raw = bytes_.concat(raw, bytes_.slice(new RenderSettingsItem({ templateName: name }).tobytes(), 0, 2182));
     }
     prefsDir
       .div("Adobe After Effects 26.0 Prefs-indep-render.txt")
@@ -257,10 +257,10 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     // Empty-named entry at raw index 0; raw default index 2 ("Best").
     TestRenderTemplatesDefaultIndex._write_render_prefs(tmpPath, 2, ["", "Draft", "Best"]);
     const [templates, default_] = parseRenderTemplates(tmpPath);
-    expect(pyEq(templates.map((t) => t.clean_template_name), ["Draft", "Best"])).toBe(true);
+    expect(pyEq(templates.map((t) => t.cleanTemplateName), ["Draft", "Best"])).toBe(true);
     expect(default_).toBe(1);
     if (default_ == null) throw new Error("no default render template");
-    expect(templates[default_].clean_template_name).toBe("Best");
+    expect(templates[default_].cleanTemplateName).toBe("Best");
   });
 
   test("test_render_default_filtered_out_yields_none", () => {

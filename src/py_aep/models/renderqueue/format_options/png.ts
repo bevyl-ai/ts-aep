@@ -215,7 +215,7 @@ descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { readO
 descriptor(
   PngFormatOptions,
   "bitDepth",
-  new ChunkField("_body", "bit_depth", { validate: validateOneOf([8, 16]) }),
+  new ChunkField("_body", "bitDepth", { validate: validateOneOf([8, 16]) }),
 );
 descriptor(
   PngFormatOptions,

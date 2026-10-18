@@ -70,13 +70,13 @@ const RELEASE_VERSIONS = sorted(Object.values(RELEASES));
 
 function _tag(chunk: Chunk): string {
   if (chunk instanceof ListChunk) {
-    return `LIST:${chunk.list_type}`;
+    return `LIST:${chunk.listType}`;
   }
-  if (chunk.chunk_type === "tdmn") {
+  if (chunk.chunkType === "tdmn") {
     // `value` exists only on the tdmn chunk subclass.
     return `tdmn=${asInstance(chunk, TdmnChunk).value}`;
   }
-  return chunk.chunk_type;
+  return chunk.chunkType;
 }
 
 /** Nested chunk tags with byte sizes (match names for `tdmn`). */
@@ -88,16 +88,16 @@ function _signature(chunk: Chunk): string[] {
     }
     return lines;
   }
-  if (chunk.chunk_type === "tdmn") {
+  if (chunk.chunkType === "tdmn") {
     return [_tag(chunk)];
   }
-  return [`${chunk.chunk_type}(${len(chunk.tobytes())})`];
+  return [`${chunk.chunkType}(${len(chunk.tobytes())})`];
 }
 
 function* _walk(chunk: ListChunk): Generator<[ListChunk, number, Chunk]> {
   for (const [i, child] of chunk.chunks.entries()) {
     yield [chunk, i, child];
-    if (child instanceof ListChunk && child.list_type !== "btdk") {
+    if (child instanceof ListChunk && child.listType !== "btdk") {
       yield* _walk(child);
     }
   }
@@ -139,22 +139,22 @@ class _Structure {
       if (!(chunk instanceof ListChunk)) {
         continue;
       }
-      if (chunk.list_type === "Item") {
+      if (chunk.listType === "Item") {
         this._add_item(chunk);
-      } else if (chunk.list_type === "FEE ") {
+      } else if (chunk.listType === "FEE ") {
         this.fee.add(chunk.chunks.map((c) => _tag(c)).join(" "));
-      } else if (_VIEW_LISTS.includes(chunk.list_type)) {
+      } else if (_VIEW_LISTS.includes(chunk.listType)) {
         this._add_view_layer(chunk);
-      } else if (chunk.list_type === "Layr") {
+      } else if (chunk.listType === "Layr") {
         this._add_layer(chunk);
-      } else if (chunk.list_type === "tdgp" && i > 0) {
+      } else if (chunk.listType === "tdgp" && i > 0) {
         const previous = parent.chunks[i - 1];
         if (_tag(previous) === "tdmn=ADBE Source Options Group") {
           this.source_options.add(chunk.chunks.map((c) => _tag(c)).join(" "));
         }
-      } else if (chunk.list_type === "tdbs" && i > 0) {
+      } else if (chunk.listType === "tdbs" && i > 0) {
         if (_tag(parent.chunks[i - 1]) === "tdmn=ADBE Shadow Color") {
-          const cdat = chunk.chunks.find((c) => c.chunk_type === "cdat");
+          const cdat = chunk.chunks.find((c) => c.chunkType === "cdat");
           if (cdat === undefined) throw new StopIteration();
           this.shadow_colors.add(bytes_.hex(cdat.tobytes()));
         }
@@ -163,7 +163,7 @@ class _Structure {
   }
 
   _add_item(item: ListChunk): void {
-    const idta = item.chunks.find((c) => c.chunk_type === "idta");
+    const idta = item.chunks.find((c) => c.chunkType === "idta");
     if (idta === undefined) throw new StopIteration();
     const tags: string[] = [];
     for (const child of item.chunks) {
@@ -175,16 +175,16 @@ class _Structure {
         tags.push(tag);
       }
     }
-    const itemType = asInstance(idta, IdtaChunk).item_type;
+    const itemType = asInstance(idta, IdtaChunk).itemType;
     setdefault(this.items, itemType, new Set<string>()).add(tags.join(" "));
   }
 
   _add_view_layer(view: ListChunk): void {
     const ldta = view.chunks[0];
     const name = getattr(view.chunks[1], "value");
-    this.view_layers.set(tkey(view.list_type, name), _signature(view));
+    this.view_layers.set(tkey(view.listType, name), _signature(view));
     this.view_ldta_tails.add(
-      tkey(view.list_type, bytes_.hex(bytes_.slice(ldta.tobytes(), 147, 160))),
+      tkey(view.listType, bytes_.hex(bytes_.slice(ldta.tobytes(), 147, 160))),
     );
   }
 
@@ -192,7 +192,7 @@ class _Structure {
     const ldta = asInstance(layer.chunks[0], LdtaChunk);
     this.layers.add(
       layer.chunks
-        .filter((c) => c.chunk_type !== "cmta")
+        .filter((c) => c.chunkType !== "cmta")
         .map((c) => _tag(c))
         .join(" "),
     );
@@ -200,12 +200,12 @@ class _Structure {
     if (tdgp === undefined) throw new StopIteration();
     const groups = asInstance(tdgp, ListChunk).chunks
       // A new shape layer has no contents yet; AE's samples have some.
-      .filter((c) => c.chunk_type === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
+      .filter((c) => c.chunkType === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
       .map((c) => _tag(c));
-    setdefault(this.groups, ldta.layer_type, new Set<string>()).add(groups.join(" "));
-    if (ldta.layer_type === 1) {
+    setdefault(this.groups, ldta.layerType, new Set<string>()).add(groups.join(" "));
+    if (ldta.layerType === 1) {
       // light
-      this.light_source_ids.add(ldta.source_id);
+      this.light_source_ids.add(ldta.sourceId);
     }
   }
 }
@@ -328,8 +328,8 @@ test("test_layer_comment_written_before_ovdg", () => {
   for (const [_parent, _i, chunk] of _walk(sample)) {
     if (
       chunk instanceof ListChunk &&
-      chunk.list_type === "Layr" &&
-      chunk.chunks.some((c) => c.chunk_type === "cmta")
+      chunk.listType === "Layr" &&
+      chunk.chunks.some((c) => c.chunkType === "cmta")
     ) {
       commented.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
@@ -341,7 +341,7 @@ test("test_layer_comment_written_before_ovdg", () => {
   app.project.save(path);
   const saved = new Set<string>();
   for (const [_parent, _i, chunk] of _walk(_read(path))) {
-    if (chunk instanceof ListChunk && chunk.list_type === "Layr") {
+    if (chunk instanceof ListChunk && chunk.listType === "Layr") {
       saved.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
   }

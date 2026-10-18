@@ -137,7 +137,7 @@ describe("TestAddComp", () => {
     const comp = root.addComp("NewComp", 1920, 1080, 1.0, 10.0, 24.0);
     const container = root._childrenContainer;
     // First chunk is the fdta header; the new comp's Item follows it.
-    expect(container[0].chunk_type).toBe("fdta");
+    expect(container[0].chunkType).toBe("fdta");
     expect(container[1] === comp._itemList).toBe(true);
     expect(root.items[0] === comp).toBe(true);
   });

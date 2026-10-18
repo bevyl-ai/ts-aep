@@ -96,7 +96,7 @@ export function _inspectItem(path: Path, index: number): number {
 
   let fold: ListChunk | null = null;
   for (const c of rifx.chunks) {
-    if (c instanceof ListChunk && c.list_type === "Fold") {
+    if (c instanceof ListChunk && c.listType === "Fold") {
       fold = c;
       break;
     }
@@ -150,7 +150,7 @@ export function _itemSummary(path: Path): number {
 
   let fold: ListChunk | null = null;
   for (const c of rifx.chunks) {
-    if (c instanceof ListChunk && c.list_type === "Fold") {
+    if (c instanceof ListChunk && c.listType === "Fold") {
       fold = c;
       break;
     }

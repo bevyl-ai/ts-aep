@@ -224,7 +224,7 @@ describe("TestCopyToCompTransform", () => {
 
     const copy = source.layers[0].copyToComp(target);
 
-    const want = target._cdta.internal_timebase;
+    const want = target._cdta.internalTimebase;
     expect(source.layers[0].stretch).toBe(100.0);
     const bases = new Set(
       [..._walk(copy)]
@@ -233,9 +233,9 @@ describe("TestCopyToCompTransform", () => {
             prop instanceof Property &&
             getattr(prop, "_tdb4", null) != null &&
             !pyBool(prop._tdbs.synthetic) &&
-            pyBool(prop._tdb4._time_base),
+            pyBool(prop._tdb4._timeBase),
         )
-        .map((prop) => prop._tdb4._time_base),
+        .map((prop) => prop._tdb4._timeBase),
     );
     expect(pyEq(bases, new Set([want]))).toBe(true);
   });
@@ -254,7 +254,7 @@ describe("TestCopyToCompTransform", () => {
 
     const copy = source.layers[0].copyToComp(target);
 
-    const want = target._cdta.internal_timebase * 2;
+    const want = target._cdta.internalTimebase * 2;
     const bases = new Set(
       [..._walk(copy)]
         .filter(
@@ -262,9 +262,9 @@ describe("TestCopyToCompTransform", () => {
             prop instanceof Property &&
             getattr(prop, "_tdb4", null) != null &&
             !pyBool(prop._tdbs.synthetic) &&
-            pyBool(prop._tdb4._time_base),
+            pyBool(prop._tdb4._timeBase),
         )
-        .map((prop) => prop._tdb4._time_base),
+        .map((prop) => prop._tdb4._timeBase),
     );
     expect(pyEq(bases, new Set([want]))).toBe(true);
   });

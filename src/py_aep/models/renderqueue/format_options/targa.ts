@@ -51,6 +51,6 @@ export class TargaFormatOptions extends FormatOptionsBase {
 descriptor(
   TargaFormatOptions,
   "bitsPerPixel",
-  new ChunkField("_body", "bits_per_pixel", { validate: validateOneOf([24, 32]) }),
+  new ChunkField("_body", "bitsPerPixel", { validate: validateOneOf([24, 32]) }),
 );
-descriptor(TargaFormatOptions, "rleCompression", ChunkField.bool("_body", "rle_compression"));
+descriptor(TargaFormatOptions, "rleCompression", ChunkField.bool("_body", "rleCompression"));

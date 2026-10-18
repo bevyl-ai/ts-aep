@@ -38,7 +38,7 @@ function _findCompItem(rifx: ListChunk, compName: string): ListChunk {
     const ch = asInstance(found, ListChunk);
     const utf8 = findByType(ch.chunks, "Utf8");
     const idta = findByType(ch.chunks, "idta");
-    if (String(utf8.value) === compName && idta.item_type === 4) {
+    if (String(utf8.value) === compName && idta.itemType === 4) {
       return ch;
     }
   }
@@ -60,7 +60,7 @@ function _topLayer(rifx: ListChunk, compName: string): ListChunk {
 function _matchNameStream(tdgp: ListChunk): string[] {
   const out: string[] = [];
   for (const ch of tdgp.chunks) {
-    if (ch.chunk_type === "tdmn") {
+    if (ch.chunkType === "tdmn") {
       out.push(asInstance(ch, TdmnChunk).value);
     }
   }
@@ -89,7 +89,7 @@ describe("TestNewLayerSkeleton", () => {
     comp.addLight("Light");
     const rifx = _savedRifx(app, tmpPath);
     const item = _findCompItem(rifx, "type_null");
-    const bases = new Set(recursiveFind(item.chunks, "tdb4").map((t) => t._time_base));
+    const bases = new Set(recursiveFind(item.chunks, "tdb4").map((t) => t._timeBase));
     expect(bases.has(0)).toBe(false);
   });
 
@@ -101,11 +101,11 @@ describe("TestNewLayerSkeleton", () => {
     const layer = _topLayer(rifx, "type_null");
     const tdgp = findByListType(layer.chunks, "tdgp");
     const idx = tdgp.chunks.findIndex(
-      (c) => c.chunk_type === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Time Remapping",
+      (c) => c.chunkType === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Time Remapping",
     );
     if (idx < 0) throw new StopIteration();
     const tdbs = asInstance(at(tdgp.chunks, idx + 1), ListChunk);
-    const kinds = tdbs.chunks.map((c) => getattr(c, "list_type", c.chunk_type));
+    const kinds = tdbs.chunks.map((c) => getattr(c, "listType", c.chunkType));
     expect(kinds).toContain("cdat");
     expect(kinds).toContain("tdum");
     expect(kinds).toContain("tduM");
@@ -119,11 +119,11 @@ describe("TestNewLayerSkeleton", () => {
     const layer = _topLayer(rifx, "type_null");
     const tdgp = findByListType(layer.chunks, "tdgp");
     const idx = tdgp.chunks.findIndex(
-      (c) => c.chunk_type === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Layer Overrides",
+      (c) => c.chunkType === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Layer Overrides",
     );
     if (idx < 0) throw new StopIteration();
     const nxt = at(tdgp.chunks, idx + 1);
-    expect(getattr(nxt, "list_type", null)).toBe("OvG2");
+    expect(getattr(nxt, "listType", null)).toBe("OvG2");
   });
 
   test("test_source_alternate_blsv_blsi_and_empty_cdat", () => {
@@ -134,11 +134,11 @@ describe("TestNewLayerSkeleton", () => {
     const layer = _topLayer(rifx, "type_null");
     const root = findByListType(layer.chunks, "tdgp");
     const idx = root.chunks.findIndex(
-      (c) => c.chunk_type === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Source Options Group",
+      (c) => c.chunkType === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Source Options Group",
     );
     if (idx < 0) throw new StopIteration();
     const inner = asInstance(at(root.chunks, idx + 1), ListChunk);
-    const kinds = inner.chunks.map((c) => getattr(c, "list_type", c.chunk_type));
+    const kinds = inner.chunks.map((c) => getattr(c, "listType", c.chunkType));
     const j = kinds.indexOf("blsv");
     if (j < 0) throw new ValueError("'blsv' is not in list");
     expect<string>(at(kinds, j + 1)).toBe("blsi");
@@ -168,16 +168,16 @@ describe("TestNewLayerSkeleton", () => {
     const layer = _topLayer(rifx, "type_null");
     const root = findByListType(layer.chunks, "tdgp");
     const idx = root.chunks.findIndex(
-      (c) => c.chunk_type === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Transform Group",
+      (c) => c.chunkType === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Transform Group",
     );
     if (idx < 0) throw new StopIteration();
     const transform = asInstance(at(root.chunks, idx + 1), ListChunk);
     const j = transform.chunks.findIndex(
-      (c) => c.chunk_type === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Orientation",
+      (c) => c.chunkType === "tdmn" && String(asInstance(c, TdmnChunk).value) === "ADBE Orientation",
     );
     if (j < 0) throw new StopIteration();
     const wrapper = at(transform.chunks, j + 1);
-    expect(getattr(wrapper, "list_type", null)).toBe("otst");
+    expect(getattr(wrapper, "listType", null)).toBe("otst");
   });
 
   test("test_camera_position_and_poi", () => {
@@ -200,7 +200,7 @@ describe("TestNewCompSkeleton", () => {
     app.project.rootFolder.addComp("MinComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _savedRifx(app, tmpPath);
     const item = _findCompItem(rifx, "MinComp");
-    const kinds = item.chunks.map((c) => getattr(c, "list_type", c.chunk_type));
+    const kinds = item.chunks.map((c) => getattr(c, "listType", c.chunkType));
     for (const required of ["dats", "cdrp", "comr", "DLay", "SecL", "CIFO", "Gide"]) {
       // Python message: f"missing {required} in new comp item"
       expect(kinds).toContain(required);
@@ -219,14 +219,14 @@ describe("TestNewCompSkeleton", () => {
     const cdta = findByType(item.chunks, "cdta");
     expect(cdta.width).toBe(1920);
     expect(cdta.height).toBe(1080);
-    expect(cdta.pixel_aspect).toBe(2.0);
-    expect(cdta.internal_timebase).toBe(23976);
+    expect(cdta.pixelAspect).toBe(2.0);
+    expect(cdta.internalTimebase).toBe(23976);
     const iide = findByType(item.chunks, "iide");
     const idta = findByType(item.chunks, "idta");
     expect(iide.value).toBe(compId);
-    expect(idta.item_id).toBe(compId);
+    expect(idta.itemId).toBe(compId);
     // viewer pseudo-layers rebased onto the comp's timebase
-    const bases = new Set(recursiveFind(item.chunks, "tdb4").map((t) => t._time_base));
+    const bases = new Set(recursiveFind(item.chunks, "tdb4").map((t) => t._timeBase));
     expect(pyEq(bases, new Set([23976]))).toBe(true);
   });
 
@@ -254,7 +254,7 @@ describe("TestNewCompPrda", () => {
     const rifx = _savedRifx(app, tmpPath);
     const prda = _findPrda(rifx, "PrdaComp");
     expect(prda instanceof ClassicPrdaChunk).toBe(true);
-    expect(asInstance(prda, ClassicPrdaChunk).shadow_map_resolution).toBe(0);
+    expect(asInstance(prda, ClassicPrdaChunk).shadowMapResolution).toBe(0);
   });
 
   test("test_new_comp_prda_bytes_match_after_effects", () => {

@@ -874,7 +874,7 @@ describe("TestRoundtripXmlParamsDict", () => {
 /** The PNG options' alpha flag, channel count and bits per channel. */
 function _pngOptionFields(om: OutputModule): [boolean, number, number] {
   const body = asInstance(om.formatOptions, PngFormatOptions)._body;
-  return [body.has_alpha, body.channel_count, body.bit_depth];
+  return [body.hasAlpha, body.channelCount, body.bitDepth];
 }
 
 // The PNG options' alpha flag, channel count and bits per channel AE stores

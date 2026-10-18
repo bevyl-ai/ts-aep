@@ -719,9 +719,9 @@ describe("TestParallelAddKeyTypes", () => {
     expect(k0.outInterpolationType).toBe(getitem(_T, leftOut));
     expect(k2.inInterpolationType).toBe(getitem(_T, rightIn));
     if (continuous) {
-      const data = asInstance(new_._ldatItem.kf_data, KfNoValue);
-      expect(pyEq([data.in_speed, data.out_speed], [1.0, 1.0])).toBe(true);
-      expect(_eqApprox(data.in_influence, _approx(1 / 6))).toBe(true);
+      const data = asInstance(new_._ldatItem.kfData, KfNoValue);
+      expect(pyEq([data.inSpeed, data.outSpeed], [1.0, 1.0])).toBe(true);
+      expect(_eqApprox(data.inInfluence, _approx(1 / 6))).toBe(true);
     }
   });
 
@@ -932,10 +932,10 @@ describe("TestSynthesizedBoundChunks", () => {
     slider.value = 7;
     const bounds = new Map(
       slider._tdbs.chunks
-        .filter((c) => ["tdum", "tduM"].includes(c.chunk_type))
+        .filter((c) => ["tdum", "tduM"].includes(c.chunkType))
         .map((c): [string, [number[], boolean]] => {
           const tdum = asInstance(c, TdumChunk);
-          return [tdum.chunk_type, [tdum.values, tdum.is_integer]];
+          return [tdum.chunkType, [tdum.values, tdum.isInteger]];
         }),
     );
     expect(pyEq(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);

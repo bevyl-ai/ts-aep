@@ -85,17 +85,17 @@ export class KeyframeEase {
     const rawSpeed = this._speedFactor ? speed / this._speedFactor : speed;
     const rawInfluence = influence / 100;
     if (this._isArray()) {
-      getattr(this._kfData, `${this._direction}_speed`)[this._dimensionIndex] = rawSpeed;
-      getattr(this._kfData, `${this._direction}_influence`)[this._dimensionIndex] = rawInfluence;
+      getattr(this._kfData, `${this._direction}Speed`)[this._dimensionIndex] = rawSpeed;
+      getattr(this._kfData, `${this._direction}Influence`)[this._dimensionIndex] = rawInfluence;
     } else {
-      setattr(this._kfData, `${this._direction}_speed`, rawSpeed);
-      setattr(this._kfData, `${this._direction}_influence`, rawInfluence);
+      setattr(this._kfData, `${this._direction}Speed`, rawSpeed);
+      setattr(this._kfData, `${this._direction}Influence`, rawInfluence);
     }
   }
 
   /** Whether the backing kf_data stores speed/influence as arrays. */
   _isArray(): boolean {
-    return Array.isArray(getattr(this._kfData, `${this._direction}_speed`));
+    return Array.isArray(getattr(this._kfData, `${this._direction}Speed`));
   }
 
   /**
@@ -107,7 +107,7 @@ export class KeyframeEase {
     if (this._kfData == null) {
       return this._speed;
     }
-    const raw = getattr(this._kfData, `${this._direction}_speed`);
+    const raw = getattr(this._kfData, `${this._direction}Speed`);
     if (Array.isArray(raw)) {
       return float(raw[this._dimensionIndex]) * this._speedFactor;
     }
@@ -120,7 +120,7 @@ export class KeyframeEase {
       this._speed = value;
       return;
     }
-    const fieldName = `${this._direction}_speed`;
+    const fieldName = `${this._direction}Speed`;
     const binaryValue = this._speedFactor ? value / this._speedFactor : value;
     if (this._isArray()) {
       getattr(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;
@@ -138,7 +138,7 @@ export class KeyframeEase {
     if (this._kfData == null) {
       return this._influence;
     }
-    const raw = getattr(this._kfData, `${this._direction}_influence`);
+    const raw = getattr(this._kfData, `${this._direction}Influence`);
     if (Array.isArray(raw)) {
       return float(raw[this._dimensionIndex]) * 100;
     }
@@ -156,7 +156,7 @@ export class KeyframeEase {
       this._influence = value;
       return;
     }
-    const fieldName = `${this._direction}_influence`;
+    const fieldName = `${this._direction}Influence`;
     const binaryValue = value / 100;
     if (this._isArray()) {
       getattr(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;

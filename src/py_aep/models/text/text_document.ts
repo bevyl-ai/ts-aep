@@ -420,7 +420,7 @@ export class TextDocument {
     if (boxSize != null) validateBoxSize(boxSize);
     if (lineOrientation != null) validateEnum(LineOrientation)(lineOrientation);
     const cos = deepcopy(getCosTemplate());
-    const btdk = new ListChunk({ list_type: "btdk", data: serialize(cos) });
+    const btdk = new ListChunk({ listType: "btdk", data: serialize(cos) });
     const doc = cosAt(cosItem(cosItem(cos, "1"), "1"), 0);
     const charStyle = cosItem(cosItem(cosItem(cosAt(cosItem(cosItem(cosItem(doc, "0"), "6"), "0"), 0), "0"), "0"), "6");
     const paraStyle = cosItem(cosItem(cosItem(cosAt(cosItem(cosItem(cosItem(doc, "0"), "5"), "0"), 0), "0"), "0"), "5");

@@ -62,8 +62,8 @@ export class Guide {
     const orientation = GuideOrientationType.fromBinary(orientationType);
     validateF8(position);
     const item = new GuideItem({
-      orientation_type: GuideOrientationType.toBinary(orientation),
-      position_type: 0,
+      orientationType: GuideOrientationType.toBinary(orientation),
+      positionType: 0,
       position,
     });
     return new this(item);
@@ -84,7 +84,7 @@ descriptor(
   ChunkField.enum(
     GuideOrientationType,
     "_guideItem",
-    "orientation_type",
+    "orientationType",
   ),
 );
 
@@ -97,5 +97,5 @@ descriptor(
 descriptor(
   Guide,
   "positionType",
-  new ChunkField("_guideItem", "position_type"),
+  new ChunkField("_guideItem", "positionType"),
 );

@@ -99,8 +99,8 @@ describe("TestTimeScale3_125", () => {
   test.each([155, 11516])("test_frame_work_area_end_absolute[%#]", (compId) => {
     const project = projectFixture();
     const comp = _compById(project, compId);
-    const expectedFrame = comp._cdta.work_area_end_absolute * comp.frameRate;
-    expect(isclose(comp._cdta.frame_work_area_end_absolute, expectedFrame, 1e-9, 1)).toBe(true);
+    const expectedFrame = comp._cdta.workAreaEndAbsolute * comp.frameRate;
+    expect(isclose(comp._cdta.frameWorkAreaEndAbsolute, expectedFrame, 1e-9, 1)).toBe(true);
   });
 });
 
@@ -123,7 +123,7 @@ describe("TestSentinelOutPoint", () => {
     const project = projectFixture();
     const comp = _compById(project, COMP_ID);
     expect(
-      isclose(comp._cdta.work_area_end_absolute, comp.displayStartTime + comp.duration, 1e-9),
+      isclose(comp._cdta.workAreaEndAbsolute, comp.displayStartTime + comp.duration, 1e-9),
     ).toBe(true);
   });
 
@@ -131,7 +131,7 @@ describe("TestSentinelOutPoint", () => {
   test("test_frame_out_point", () => {
     const project = projectFixture();
     const comp = _compById(project, COMP_ID);
-    expect(int(comp._cdta.frame_work_area_end_absolute)).toBe(comp.frameDuration);
+    expect(int(comp._cdta.frameWorkAreaEndAbsolute)).toBe(comp.frameDuration);
   });
 
   /** This is a very short comp (0.75s = 18 frames at 24fps). */

@@ -270,20 +270,20 @@ export class AVLayer extends Layer {
     // Python slices code points, not UTF-16 units.
     const nameChars = Array.from(name);
     const ldta = new LdtaChunk({
-      layer_id,
+      layerId: layer_id,
       quality: 2,
-      source_id,
+      sourceId: source_id,
       label,
-      blending_mode: 2,
-      layer_type: LayerType.AV,
-      layer_name: nameChars.length > 31 ? nameChars.slice(0, 31).join("") : name,
+      blendingMode: 2,
+      layerType: LayerType.AV,
+      layerName: nameChars.length > 31 ? nameChars.slice(0, 31).join("") : name,
     });
-    ldta.out_point = duration;
-    ldta.null_layer = null_layer;
-    ldta.three_d_layer = three_d_layer;
+    ldta.outPoint = duration;
+    ldta.nullLayer = null_layer;
+    ldta.threeDLayer = three_d_layer;
     // AE writes _reserved_3b=1 (and _reserved_3c=0) for every AV layer
     // (verified across 237/238 AE-native AV layers); cameras/lights use 0/0.
-    ldta._reserved_3b = 1;
+    ldta._reserved3b = 1;
     return super._new<T>({
       ldta,
       name,
@@ -295,8 +295,8 @@ export class AVLayer extends Layer {
 
   /** The blending mode of the layer. Read / Write. */
   get blendingMode(): BlendingMode {
-    const mode = BlendingMode.fromBinary(this._ldta.blending_mode);
-    if (mode === BlendingMode.DISSOLVE && this._ldta.dancing_dissolve) {
+    const mode = BlendingMode.fromBinary(this._ldta.blendingMode);
+    if (mode === BlendingMode.DISSOLVE && this._ldta.dancingDissolve) {
       return BlendingMode.DANCING_DISSOLVE;
     }
     return mode;
@@ -308,11 +308,11 @@ export class AVLayer extends Layer {
     // Dancing Dissolve has no transfer-mode value of its own: AE stores it
     // as Dissolve plus the dancing-dissolve flag in the ldta transfer byte.
     if (value === BlendingMode.DANCING_DISSOLVE) {
-      this._ldta.blending_mode = BlendingMode.toBinary(BlendingMode.DISSOLVE);
-      this._ldta.dancing_dissolve = true;
+      this._ldta.blendingMode = BlendingMode.toBinary(BlendingMode.DISSOLVE);
+      this._ldta.dancingDissolve = true;
     } else {
-      this._ldta.blending_mode = BlendingMode.toBinary(value);
-      this._ldta.dancing_dissolve = false;
+      this._ldta.blendingMode = BlendingMode.toBinary(value);
+      this._ldta.dancingDissolve = false;
     }
   }
 
@@ -330,16 +330,16 @@ export class AVLayer extends Layer {
    * Read / Write.
    */
   get trackMatteType(): TrackMatteType {
-    return TrackMatteType.fromBinary(this._ldta.track_matte_type);
+    return TrackMatteType.fromBinary(this._ldta.trackMatteType);
   }
 
   set trackMatteType(value: TrackMatteType | number) {
     validateEnum(TrackMatteType)(value);
     value = TrackMatteType.of(value);
     const oldMatte = this.trackMatteLayer;
-    this._ldta.track_matte_type = TrackMatteType.toBinary(value);
-    if (value === TrackMatteType.NO_TRACK_MATTE && this._ldta.matte_layer_id != null) {
-      this._ldta.matte_layer_id = 0;
+    this._ldta.trackMatteType = TrackMatteType.toBinary(value);
+    if (value === TrackMatteType.NO_TRACK_MATTE && this._ldta.matteLayerId != null) {
+      this._ldta.matteLayerId = 0;
       if (oldMatte != null) {
         this._reEnableMatte(oldMatte);
       }
@@ -347,7 +347,7 @@ export class AVLayer extends Layer {
   }
 
   _onEnvironmentLayerSet(): void {
-    if (this._ldta.environment_layer && this._ldta.three_d_layer) {
+    if (this._ldta.environmentLayer && this._ldta.threeDLayer) {
       // Through the 3-D switch, which AE turns off here, with all a
       // toggle does.
       this.threeDLayer = false;
@@ -370,7 +370,7 @@ export class AVLayer extends Layer {
    */
   get _matteLayerId(): number {
     // matte_layer_id is conditional (only in AE >= 23)
-    return pyOr("matte_layer_id" in this._ldta ? this._ldta.matte_layer_id : 0, 0);
+    return pyOr("matteLayerId" in this._ldta ? this._ldta.matteLayerId : 0, 0);
   }
 
   /**
@@ -791,7 +791,7 @@ export class AVLayer extends Layer {
   ): { top: number; left: number; width: number; height: number } {
     validateNumber(time);
     validateBool(extents);
-    const layerType = this._ldta.layer_type;
+    const layerType = this._ldta.layerType;
     if (layerType === LayerType.THREE_D_MODEL) {
       throw new NotImplementedError(
         "sourceRectAtTime does not model 3D model layers: After Effects reports the bounds of the model geometry",
@@ -828,7 +828,7 @@ export class AVLayer extends Layer {
     if (pyBool(textPath.value)) {
       throw new NotImplementedError("sourceRectAtTime does not model text on a path");
     }
-    if (this._ldta.three_d_per_char) {
+    if (this._ldta.threeDPerChar) {
       throw new NotImplementedError("sourceRectAtTime does not model per-character 3D text");
     }
     const document = text.property("ADBE Text Document").valueAtTime(time);
@@ -1077,13 +1077,13 @@ export class AVLayer extends Layer {
       this._reEnableMatte(oldMatte);
     }
 
-    this._ldta.track_matte_type = TrackMatteType.toBinary(trackMatteType);
+    this._ldta.trackMatteType = TrackMatteType.toBinary(trackMatteType);
 
     if (trackMatteLayer != null) {
-      this._ldta.matte_layer_id = trackMatteLayer.id;
+      this._ldta.matteLayerId = trackMatteLayer.id;
       trackMatteLayer.enabled = false;
     } else {
-      this._ldta.matte_layer_id = 0;
+      this._ldta.matteLayerId = 0;
     }
   }
 
@@ -1099,7 +1099,7 @@ export class AVLayer extends Layer {
    */
   removeTrackMatte(): void {
     const oldMatte = this.trackMatteLayer;
-    this._ldta.matte_layer_id = 0;
+    this._ldta.matteLayerId = 0;
 
     if (oldMatte != null) {
       this._reEnableMatte(oldMatte);
@@ -1157,7 +1157,7 @@ export class AVLayer extends Layer {
 
     // 3D model layers cannot have their source
     // replaced - AE silently ignores the call but we raise.
-    if (this._ldta.layer_type === 5) {
+    if (this._ldta.layerType === 5) {
       throw new ValueError("replaceSource is not supported on 3D model layers");
     }
 
@@ -1188,7 +1188,7 @@ export class AVLayer extends Layer {
     newSource._usedIn.add(comp);
 
     if (this.nullLayer) {
-      this._ldta.null_layer = false;
+      this._ldta.nullLayer = false;
       // A null's Anchor Point default is the origin; with a source it is
       // the source's centre. Refresh the cached default so the model
       // reports what a re-parse of this file will.
@@ -1198,41 +1198,41 @@ export class AVLayer extends Layer {
 }
 
 // Class-body `ChunkField` assignments in Python, installed as descriptors.
-descriptor(AVLayer, "adjustmentLayer", ChunkField.bool("_ldta", "adjustment_layer"));
-descriptor(AVLayer, "audioEnabled", ChunkField.bool("_ldta", "audio_enabled"));
+descriptor(AVLayer, "adjustmentLayer", ChunkField.bool("_ldta", "adjustmentLayer"));
+descriptor(AVLayer, "audioEnabled", ChunkField.bool("_ldta", "audioEnabled"));
 descriptor(
   AVLayer,
   "collapseTransformation",
-  ChunkField.bool("_ldta", "collapse_transformation", { validate: _validateCollapseTransformation }),
+  ChunkField.bool("_ldta", "collapseTransformation", { validate: _validateCollapseTransformation }),
 );
-descriptor(AVLayer, "effectsActive", ChunkField.bool("_ldta", "effects_active"));
+descriptor(AVLayer, "effectsActive", ChunkField.bool("_ldta", "effectsActive"));
 descriptor(
   AVLayer,
   "environmentLayer",
-  ChunkField.bool("_ldta", "environment_layer", { postSet: "_onEnvironmentLayerSet" }),
+  ChunkField.bool("_ldta", "environmentLayer", { postSet: "_onEnvironmentLayerSet" }),
 );
-descriptor(AVLayer, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frame_blending_type"));
-descriptor(AVLayer, "guideLayer", ChunkField.bool("_ldta", "guide_layer"));
-descriptor(AVLayer, "motionBlur", ChunkField.bool("_ldta", "motion_blur_flag"));
-descriptor(AVLayer, "preserveTransparency", ChunkField.bool("_ldta", "preserve_transparency"));
+descriptor(AVLayer, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frameBlendingType"));
+descriptor(AVLayer, "guideLayer", ChunkField.bool("_ldta", "guideLayer"));
+descriptor(AVLayer, "motionBlur", ChunkField.bool("_ldta", "motionBlurFlag"));
+descriptor(AVLayer, "preserveTransparency", ChunkField.bool("_ldta", "preserveTransparency"));
 descriptor(AVLayer, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality"));
 descriptor(
   AVLayer,
   "samplingQuality",
-  ChunkField.enum(LayerSamplingQuality, "_ldta", "sampling_quality", { minVersion: 12 }),
+  ChunkField.enum(LayerSamplingQuality, "_ldta", "samplingQuality", { minVersion: 12 }),
 );
 descriptor(
   AVLayer,
   "threeDLayer",
-  ChunkField.bool("_ldta", "three_d_layer", {
+  ChunkField.bool("_ldta", "threeDLayer", {
     // Built at the dimensionality the file has, so the toggle sees the
     // dead 2-D Scale Z it normalizes.
     preSet: "_loadPropertyTree",
     postSet: "_onThreeDLayerSet",
   }),
 );
-descriptor(AVLayer, "threeDPerChar", ChunkField.bool("_ldta", "three_d_per_char"));
-descriptor(AVLayer, "_sourceId", new ChunkField("_ldta", "source_id"));
+descriptor(AVLayer, "threeDPerChar", ChunkField.bool("_ldta", "threeDPerChar"));
+descriptor(AVLayer, "_sourceId", new ChunkField("_ldta", "sourceId"));
 
 // `@requires_version(23)` on the two track-matte methods, applied bottom-up after the class.
 AVLayer.prototype.setTrackMatte = requiresVersion(23)(AVLayer.prototype.setTrackMatte);

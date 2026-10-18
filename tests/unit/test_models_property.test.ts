@@ -96,7 +96,7 @@ describe("TestTdsnWithoutUtf8", () => {
 
   test("test_property_group_falls_back_to_auto_name", () => {
     const tdgp = new ListChunk({
-      list_type: "tdgp",
+      listType: "tdgp",
       chunks: [new TdsnChunk({ chunks: [] })], // no Utf8 child
     });
     const group = parsePropertyGroup(

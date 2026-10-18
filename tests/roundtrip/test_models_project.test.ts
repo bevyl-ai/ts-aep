@@ -273,8 +273,8 @@ describe("TestRoundtripBitsPerChannel", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.bitsPerChannel).toBe(BitsPerChannel.THIRTY_TWO);
-    expect(project2._nhed.bits_per_channel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
-    expect(project2._nnhd.bits_per_channel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
+    expect(project2._nhed.bitsPerChannel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
+    expect(project2._nnhd.bitsPerChannel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
   });
 
   test("test_set_eight", () => {
@@ -306,7 +306,7 @@ describe("TestRoundtripFeetFramesFilmType", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.feetFramesFilmType).toBe(FeetFramesFilmType.MM16);
-    expect(project2._nhed.feet_frames_film_type).toBe(project2._nnhd.feet_frames_film_type);
+    expect(project2._nhed.feetFramesFilmType).toBe(project2._nnhd.feetFramesFilmType);
   });
 
   /** Set to MM16 then back to MM35 via chained roundtrip. */
@@ -379,7 +379,7 @@ describe("TestRoundtripFramesCountType", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.framesCountType).toBe(FramesCountType.FC_START_1);
-    expect(project2._nhed.frames_count_type).toBe(project2._nnhd.frames_count_type);
+    expect(project2._nhed.framesCountType).toBe(project2._nnhd.framesCountType);
   });
 
   test("test_set_start_0", () => {
@@ -411,7 +411,7 @@ describe("TestRoundtripDisplayStartFrame", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.displayStartFrame).toBe(1);
-    expect(project2._nhed.frames_count_type).toBe(project2._nnhd.frames_count_type);
+    expect(project2._nhed.framesCountType).toBe(project2._nnhd.framesCountType);
   });
 
   test("test_set_0", () => {
@@ -443,7 +443,7 @@ describe("TestRoundtripFramesUseFeetFrames", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.framesUseFeetFrames).toBe(true);
-    expect(project2._nhed.frames_use_feet_frames).toBe(project2._nnhd.frames_use_feet_frames);
+    expect(project2._nhed.framesUseFeetFrames).toBe(project2._nnhd.framesUseFeetFrames);
   });
 
   test("test_disable", () => {
@@ -458,7 +458,7 @@ describe("TestRoundtripFramesUseFeetFrames", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.framesUseFeetFrames).toBe(false);
-    expect(project2._nhed.frames_use_feet_frames).toBe(project2._nnhd.frames_use_feet_frames);
+    expect(project2._nhed.framesUseFeetFrames).toBe(project2._nnhd.framesUseFeetFrames);
   });
 });
 
@@ -476,7 +476,7 @@ describe("TestRoundtripTimeDisplayType", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.timeDisplayType).toBe(TimeDisplayType.FRAMES);
-    expect(project2._nhed.time_display_type).toBe(project2._nnhd.time_display_type);
+    expect(project2._nhed.timeDisplayType).toBe(project2._nnhd.timeDisplayType);
   });
 
   test("test_set_timecode", () => {
@@ -508,7 +508,7 @@ describe("TestRoundtripTransparencyGridThumbnails", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.transparencyGridThumbnails).toBe(true);
-    expect(project2._nhed.transparency_grid_thumbnails).toBe(project2._nnhd.transparency_grid_thumbnails);
+    expect(project2._nhed.transparencyGridThumbnails).toBe(project2._nnhd.transparencyGridThumbnails);
   });
 
   test("test_disable", () => {
@@ -696,7 +696,7 @@ class TestRoundtripWorkingSpaceProfileId {
   );
 
   static _cpid(project: Project): Uint8Array {
-    const cpid = project._rifx.chunks.find((c) => c.chunk_type === "cpid");
+    const cpid = project._rifx.chunks.find((c) => c.chunkType === "cpid");
     if (cpid == null) throw new StopIteration();
     return cpid.tobytes();
   }
@@ -796,7 +796,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const donorIcc = _profilePool(parseAep(C.DONOR).project)[0].data;
     expect(pyEq(_profilePool(project2).map((c) => c.data), [donorIcc])).toBe(true);
     expect(pyEq(project2._cpid.data, C.SRGB_ID)).toBe(true);
-    const types = project2._rifx.chunks.map((c) => c.chunk_type);
+    const types = project2._rifx.chunks.map((c) => c.chunkType);
     const i = types.indexOf("cpid");
     expect(types.slice(i, i + 3)).toEqual(["cpid", "lnrp", "dwga"]);
   });

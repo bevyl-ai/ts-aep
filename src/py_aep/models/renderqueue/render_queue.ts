@@ -90,16 +90,16 @@ export class RenderQueue {
     const rhed = new RhedChunk({});
     const rout = new RoutChunk({});
     const [settings, rsLhd3, rsLdat] = buildRqSettingsList();
-    const litm = new ListChunk({ list_type: "LItm" });
+    const litm = new ListChunk({ listType: "LItm" });
     const arsi = new ArsiChunk({});
     const lrdr = new ListChunk({
-      list_type: "LRdr",
+      listType: "LRdr",
       chunks: [
         rhed,
         rout,
         settings,
         litm,
-        new ListChunk({ list_type: "LSIf", chunks: [arsi] }),
+        new ListChunk({ listType: "LSIf", chunks: [arsi] }),
       ],
     });
     return new this({
@@ -187,8 +187,8 @@ export class RenderQueue {
     // render queue is non-empty; without this AE reports "missing data
     // in file" when opening the result. RenderQueueItem.remove clears the
     // non-empty flag again when the last item is removed.
-    this._arsi.queue_nonempty = 1;
-    this._arsi.active_slot_state = 0x73;
+    this._arsi.queueNonempty = 1;
+    this._arsi.activeSlotState = 0x73;
 
     // Register in model list
     this._items.push(rqi);

@@ -222,13 +222,13 @@ export function _floatsClose(a: number, b_: number): boolean {
  * (bounding-box f4), and `ldat` shape-point lists (f4 x/y).
  */
 export function _chunkFloats(chunk: Chunk): number[] | null {
-  const ct = getattr(chunk, "chunk_type", null);
+  const ct = getattr(chunk, "chunkType", null);
   if (ct === "cdat" && chunk instanceof CdatChunk) {
     const values = [...chunk.values];
     return values.length > 0 ? values : null;
   }
   if (ct === "shph" && chunk instanceof ShphChunk) {
-    return [chunk.top_left_x, chunk.top_left_y, chunk.bottom_right_x, chunk.bottom_right_y];
+    return [chunk.topLeftX, chunk.topLeftY, chunk.bottomRightX, chunk.bottomRightY];
   }
   if (ct === "ldat" && chunk instanceof LdatChunk) {
     const items = chunk.items;
@@ -242,11 +242,11 @@ export function _chunkFloats(chunk: Chunk): number[] | null {
 /** Return a copy of `chunk` with its coordinate floats replaced. */
 export function _withFloats(chunk: Chunk, floats: number[]): Chunk {
   const clone = deepcopy(chunk);
-  const ct = clone.chunk_type;
+  const ct = clone.chunkType;
   if (ct === "cdat" && clone instanceof CdatChunk) {
     clone.values = [...floats];
   } else if (ct === "shph" && clone instanceof ShphChunk) {
-    [clone.top_left_x, clone.top_left_y, clone.bottom_right_x, clone.bottom_right_y] = floats;
+    [clone.topLeftX, clone.topLeftY, clone.bottomRightX, clone.bottomRightY] = floats;
   } else if (ct === "ldat" && clone instanceof LdatChunk) {
     for (const [idx, item] of clone.items.entries()) {
       item.x = floats[2 * idx];
@@ -303,8 +303,8 @@ export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | Stri
  * change). Non-float bytes must still match exactly.
  */
 export function _onlyFloatDiff(c1: Chunk, c2: Chunk): boolean {
-  const ct = getattr(c1, "chunk_type", null);
-  if (ct !== getattr(c2, "chunk_type", null)) return false;
+  const ct = getattr(c1, "chunkType", null);
+  if (ct !== getattr(c2, "chunkType", null)) return false;
   if (ct === "Utf8" && c1 instanceof Utf8Chunk && c2 instanceof Utf8Chunk) {
     return _gradientXmlOnlyFloatDiff(c1.value, c2.value);
   }

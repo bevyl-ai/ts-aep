@@ -135,7 +135,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
       concat(itemData, bytes_.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
     );
     pyAssert(item instanceof RenderSettingsItem);
-    if (!item.clean_template_name) {
+    if (!item.cleanTemplateName) {
       continue;
     }
     // The prefs default index counts raw entries; remap it to the
