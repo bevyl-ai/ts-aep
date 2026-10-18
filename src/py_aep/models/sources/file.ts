@@ -43,7 +43,6 @@ import {
   setattr,
   getOrThrow,
   int,
-  truthy,
   truthyOr,
   repr,
   round,
@@ -813,7 +812,7 @@ export class FileSource extends FootageSource {
       }
     }
 
-    if (getattr(_opti, "assetType", "") === "8BPS") {
+    if ("assetType" in _opti && _opti.assetType === "8BPS") {
       const psdOpti = _opti;
       this._fileAttributes = new Map<string, number | string>([
         ["psd_layer_index", psdOpti.psdLayerIndex],
@@ -1627,7 +1626,7 @@ export class FileSource extends FootageSource {
     }
     _syncPremultiplied(sspc);
 
-    const idta = getattr(owner, "_idta", null);
+    const idta = owner?._idta;
     if (owner != null && idta != null) {
       idta._flags17 = this._idtaFlags17();
       // AE 2026 restamps the item with the reloaded file's mtime too.
@@ -1707,8 +1706,8 @@ export class FileSource extends FootageSource {
    * py_aep extension: ExtendScript exposes no layer-selection API.
    */
   get layerName(): string {
-    const psdLayer = getattr(this._opti, "psdGroupName", "");
-    if (!!psdLayer) return psdLayer;
+    const psdLayer = "psdGroupName" in this._opti ? this._opti.psdGroupName : "";
+    if (psdLayer) return psdLayer;
     // AI/EPS/PDF: a `TEXT` opti carries the layer name as a typed
     // `TextOptiChunk` field (0x44). The name alone marks the binding -
     // the 0x3D byte next to it is the layer's visibility, and AE writes

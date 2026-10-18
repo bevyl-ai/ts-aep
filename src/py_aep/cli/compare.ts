@@ -32,11 +32,9 @@ import {
   deepcopy,
   float,
   format,
-  getattr,
   getOrThrow,
   int,
   max,
-  truthy,
   valueEquals,
   repr,
   sorted,
@@ -222,7 +220,7 @@ export function _floatsClose(a: number, b_: number): boolean {
  * (bounding-box f4), and `ldat` shape-point lists (f4 x/y).
  */
 export function _chunkFloats(chunk: Chunk): number[] | null {
-  const ct = getattr(chunk, "chunkType", null);
+  const ct = chunk.chunkType;
   if (ct === "cdat" && chunk instanceof CdatChunk) {
     const values = [...chunk.values];
     return values.length > 0 ? values : null;
@@ -303,8 +301,8 @@ export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | Stri
  * change). Non-float bytes must still match exactly.
  */
 export function _onlyFloatDiff(c1: Chunk, c2: Chunk): boolean {
-  const ct = getattr(c1, "chunkType", null);
-  if (ct !== getattr(c2, "chunkType", null)) return false;
+  const ct = c1.chunkType;
+  if (ct !== c2.chunkType) return false;
   if (ct === "Utf8" && c1 instanceof Utf8Chunk && c2 instanceof Utf8Chunk) {
     return _gradientXmlOnlyFloatDiff(c1.value, c2.value);
   }

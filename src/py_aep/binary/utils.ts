@@ -8,7 +8,6 @@ import {
   b,
   jsonDumps,
   jsonLoads,
-  len,
   typeName,
   type JsonValue,
 } from "../../pyrt/index.ts";

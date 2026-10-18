@@ -2,7 +2,6 @@ import { findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/ut
 import { FileSource } from "../models/sources/file.ts";
 import { PlaceholderSource } from "../models/sources/placeholder.ts";
 import { SolidSource } from "../models/sources/solid.ts";
-import { getattr, hasattr, truthy } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
 
 /**
@@ -20,9 +19,9 @@ export function parseSource(
   const clrs = findByListTypeOrNull(pinChildChunks, "CLRS");
   const linl = clrs === null ? null : findByTypeOrNull(clrs.chunks, "linl");
 
-  const assetType = getattr(optiChunk, "assetType", "");
+  const assetType = "assetType" in optiChunk ? optiChunk.assetType : "";
 
-  if (!!!assetType && hasattr(optiChunk, "placeholderName")) {
+  if (!assetType && "placeholderName" in optiChunk) {
     return new PlaceholderSource({
       _sspc: sspcChunk,
       _opti: optiChunk,

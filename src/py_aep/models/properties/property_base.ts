@@ -4,11 +4,9 @@ import {
   IndexError,
   descriptor,
   deferred,
-  getattr,
   max,
   assert,
   valueEquals,
-  truthyOr,
   repr,
   split,
 } from "../../../pyrt/index.ts";
@@ -243,7 +241,7 @@ export class PropertyBase {
   _repositionCanonically(): void {
     const parent = this._parentProperty;
     if (parent == null) return;
-    const tdgp = getattr(parent, "_tdgp", null);
+    const tdgp = "_tdgp" in parent ? parent._tdgp : null;
     const tdmn = this._tdmn;
     const body = this._chunkBody();
     if (tdgp == null || tdmn == null || body == null) return;
@@ -531,7 +529,7 @@ export class PropertyBase {
    * `LIST:sspc`), this returns the sspc chunk.
    */
   _backingListChunk(parentTdgp: ListChunk): ListChunk {
-    const chunk: ListChunk | null = truthyOr(getattr(this, "_tdbs", null), getattr(this, "_tdgp", null));
+    const chunk: ListChunk | null = "_tdbs" in this ? (this._tdbs as ListChunk) : "_tdgp" in this ? (this._tdgp as ListChunk | null) : null;
     assert(chunk != null);
     // Identity check - attrs __eq__ is structural, so .index() / `in`
     // would give false positives for chunks with identical fields.

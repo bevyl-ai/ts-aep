@@ -7,7 +7,7 @@
  */
 
 import { INSPECT, describe } from "../../pyrt/index.ts";
-import { descriptor, repr } from "../../pyrt/index.ts";
+import { descriptor } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validateName } from "./validators.ts";
 import type { U4Chunk, Utf8Chunk } from "../binary/scalar_chunks.ts";

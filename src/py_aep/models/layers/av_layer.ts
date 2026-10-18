@@ -8,11 +8,9 @@ import {
   NotImplementedError,
   ValueError,
   floatRepr,
-  hasattr,
   max,
   min,
   assert,
-  truthy,
   truthyOr,
   repr,
 } from "../../../pyrt/index.ts";
@@ -57,7 +55,7 @@ export function _finite(point: number[]): number[] {
  * replacement would create a circular reference chain.
  */
 export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
-  if (!hasattr(newSource, "layers")) return false;
+  if (!("layers" in newSource)) return false;
   // Python tracks visited comps by id(); object identity in a Set is the same check.
   const visited = new Set<CompItem>();
   const stack: CompItem[] = [targetComp];
@@ -456,7 +454,7 @@ export class AVLayer extends Layer {
    */
   get source(): AVItem | null {
     // An unset `_source` is Python's AttributeError: resolve it on first read.
-    if (hasattr(this, "_source") && this._source !== undefined) {
+    if ("_source" in this && this._source !== undefined) {
       return this._source;
     }
     if (this._sourceId === 0) {

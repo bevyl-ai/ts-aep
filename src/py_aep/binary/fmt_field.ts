@@ -10,9 +10,7 @@
 import {
   AttrsBase,
   Factory,
-  b,
   bytes_,
-  concat,
   deferred,
   decode,
   encode,

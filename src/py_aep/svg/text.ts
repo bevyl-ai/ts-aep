@@ -12,7 +12,6 @@
  */
 
 // TODO(port): fontTools TTFont → fontkit 2.0.4: fontkit exposes glyphs by numeric id, not glyph name, so the glyph set is keyed by id (same 1:1 mapping); fonts whose glyph metrics/outlines fontkit parses differently from fontTools (e.g. malformed hmtx/glyf tables) may give different advances or outlines.
-import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { type CubicSeg, RawSubpath } from "./path_data.ts";

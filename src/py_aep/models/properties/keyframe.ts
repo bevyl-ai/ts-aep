@@ -1059,7 +1059,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   get spatialAutoBezier(): boolean {
     const kfData = this._ldatItem.kfData;
-    return getattr(kfData, "spatialAutoBezier", false);
+    return "spatialAutoBezier" in kfData ? kfData.spatialAutoBezier : false;
   }
 
   set spatialAutoBezier(value: boolean) {
@@ -1098,7 +1098,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   get spatialContinuous(): boolean {
     const kfData = this._ldatItem.kfData;
-    return getattr(kfData, "spatialContinuous", false);
+    return "spatialContinuous" in kfData ? kfData.spatialContinuous : false;
   }
 
   set spatialContinuous(value: boolean) {

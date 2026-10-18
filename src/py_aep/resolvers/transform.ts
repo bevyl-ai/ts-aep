@@ -26,7 +26,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, typeName, floatRepr, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;

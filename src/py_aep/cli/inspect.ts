@@ -29,7 +29,6 @@ import {
   ValueError,
   at,
   format,
-  getattr,
   getOrThrow,
   int,
   repr,
@@ -48,7 +47,7 @@ export function print(text: string, kw: { file?: typeof sys.stderr } = {}): void
 
 /** Return size or value detail for a leaf chunk. */
 export function _chunkDetail(chunk: Chunk): string {
-  const val = getattr(chunk, "value", null);
+  const val = "value" in chunk ? chunk.value : null;
   if (val != null) {
     let v = repr(val);
     // Python len() and slicing count code points, not UTF-16 units.

@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, bytes_, decode, encode, getattr, len, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
+import { define, field, b, bytes_, decode, encode, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -607,7 +607,7 @@ export class PardChunk extends Chunk {
    * `canVaryOverTime` ground truth across the sample corpus.
    */
   get paramFlags(): number {
-    const pad: Uint8Array = getattr(this, "_padPost", b(""));
+    const pad: Uint8Array = this._padPost ?? b("");
     if (pad.length > 3) return pad[3];
     const data = "data" in this ? this.data : b("");
     if (data.length > 51) return data[51];
@@ -623,7 +623,7 @@ export class PardChunk extends Chunk {
    * `canSetExpression = false` for every parameter with this bit set.
    */
   get expressionsDisabled(): boolean {
-    const pre: Uint8Array = getattr(this, "_padPre", b(""));
+    const pre: Uint8Array = this._padPre ?? b("");
     if (pre.length > 6) return (pre[6] & 0x02) !== 0;
     const data = "data" in this ? this.data : b("");
     if (data.length > 6) return (data[6] & 0x02) !== 0;

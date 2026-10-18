@@ -11,7 +11,6 @@ import {
   encode,
   floordiv,
   getOrThrow,
-  len,
   rstrip,
   struct,
   ValueError,
