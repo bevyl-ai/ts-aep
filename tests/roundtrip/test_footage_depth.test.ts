@@ -1,14 +1,14 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { bytes_, fspath, getitem, lshift, Path, py_eq, sorted, PureWindowsPath } from "../../src/pyrt/index.ts";
+import { bytes_, fspath, getitem, lshift, Path, py_eq, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse_project } from "../helpers.ts";
+import { as_instance, parse_project } from "../helpers.ts";
 import { ImportAsType, parse as parse_aep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
-import type { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 
 /**
  * Imported footage caches After Effects' input depth and alpha in `sspc`.
@@ -85,10 +85,10 @@ function _depth_bytes(source: FileSource): [Uint8Array, boolean] {
 
 test.each(sorted(_ae_sources().keys()))("test_import_caches_after_effects_depth[%#]", (name) => {
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(_asset(name))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(_asset(name))), FootageItem);
   const ae = getitem(_ae_sources(), name);
-  expect((item.main_source as FileSource)._sspc.depth).toBe(ae._sspc.depth);
-  expect(py_eq(_depth_bytes(item.main_source as FileSource), _depth_bytes(ae))).toBe(true);
+  expect(as_instance(item.main_source, FileSource)._sspc.depth).toBe(ae._sspc.depth);
+  expect(py_eq(_depth_bytes(as_instance(item.main_source, FileSource)), _depth_bytes(ae))).toBe(true);
 });
 
 test.each(_COMP_FILES)("test_layered_comp_import_caches_after_effects_depth[%#]", (comp_file) => {
@@ -124,8 +124,8 @@ test("test_chosen_background_layer_is_opaque", () => {
   const project = _windows_project();
   const options = new ImportOptions(ASSETS.div("depth", "psd_rgb8_bg_layer.psd"));
   options.layer_index = 1; // list_layers order is top first: the Background
-  const item = project.import_file(options) as FootageItem;
-  const source = item.main_source as FileSource;
+  const item = as_instance(project.import_file(options), FootageItem);
+  const source = as_instance(item.main_source, FileSource);
   expect(py_eq(_depth_bytes(source), _depth_bytes(getitem(ae, source._sspc.layer_index)))).toBe(true);
   expect(py_eq(source._sspc.data_size, getitem(ae, source._sspc.layer_index)._sspc.data_size)).toBe(true);
   expect(source.has_alpha).toBe(false);
@@ -134,17 +134,17 @@ test("test_chosen_background_layer_is_opaque", () => {
 test("test_sequence_caches_the_frame_depth", () => {
   // AE stores a sequence with its frames' depth (media_gap_formats.aep,
   // AE 2026 macOS: the 10-bit DPX sequence is 48 like its frames).
-  const truth = new Map<string, FileSource>(
+  const truth = new Map(
     parse_project(SAMPLES.div("models", "import", "media_gap_formats.aep")).footages.map(
-      (f) => [f.name, f.main_source as FileSource] as const,
+      (f) => [f.name, f.main_source] as const,
     ),
   );
   const project = _windows_project();
   const options = new ImportOptions(ASSETS.div("dpx_seq.0001.dpx"));
   options.sequence = true;
-  const item = project.import_file(options) as FootageItem;
-  const main_source = item.main_source as FileSource;
-  expect(py_eq(_depth_bytes(main_source), _depth_bytes(getitem(truth, item.name)))).toBe(true);
+  const item = as_instance(project.import_file(options), FootageItem);
+  const main_source = as_instance(item.main_source, FileSource);
+  expect(py_eq(_depth_bytes(main_source), _depth_bytes(as_instance(getitem(truth, item.name), FileSource)))).toBe(true);
   expect(main_source._sspc.depth).toBe(48);
 });
 
@@ -153,8 +153,8 @@ test("test_reload_refreshes_the_depth", () => {
   const media = tmp_path.div("frame.png");
   fs.copyFileSync(fspath(ASSETS.div("depth", "png_rgb8.png")), fspath(media));
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(media)) as FootageItem;
-  const main_source = item.main_source as FileSource;
+  const item = as_instance(project.import_file(new ImportOptions(media)), FootageItem);
+  const main_source = as_instance(item.main_source, FileSource);
   expect(main_source._sspc.depth).toBe(24);
   fs.copyFileSync(fspath(ASSETS.div("depth", "png_rgba16.png")), fspath(media));
   main_source.reload();
@@ -166,7 +166,7 @@ test.each(sorted(_ae_sources().keys()))("test_import_sets_after_effects_media_fl
   // Bit 3 of sspc 0x70 and 0x9F: AE sets both for JPEG, BMP/GIF, HEIC,
   // movie, audio and data files, neither for the other formats.
   const project = _windows_project();
-  const ours = (project.import_file(new ImportOptions(_asset(name))) as FootageItem).main_source._sspc.tobytes();
+  const ours = as_instance(project.import_file(new ImportOptions(_asset(name))), FootageItem).main_source._sspc.tobytes();
   const ae = getitem(_ae_sources(), name)._sspc.tobytes();
   expect(py_eq([ours[0x70], ours[0x9f]], [ae[0x70], ae[0x9f]])).toBe(true);
 });
@@ -175,11 +175,13 @@ test("test_sequence_sets_only_the_first_media_flag", () => {
   // AE 2026 (macOS) imports a GIF sequence with 0x70 bit 3 set and 0x9F
   // bit 3 clear (imio_sequence.aep).
   const truth = parse_project(SAMPLES.div("models", "import", "imio_sequence.aep"));
-  const ae = truth.footages.find((f) => (f.main_source as FileSource)._target_is_folder)!.main_source as FileSource;
+  const ae_item = truth.footages.find((f) => as_instance(f.main_source, FileSource)._target_is_folder);
+  if (ae_item == null) throw new StopIteration();
+  const ae = as_instance(ae_item.main_source, FileSource);
   const project = parse_aep(BASE, { platform: "macos" }).project;
   const options = new ImportOptions(ASSETS.div("sequence_001.gif"));
   options.sequence = true;
-  const ours = (project.import_file(options) as FootageItem).main_source._sspc.tobytes();
+  const ours = as_instance(project.import_file(options), FootageItem).main_source._sspc.tobytes();
   expect(py_eq([ours[0x70], ours[0x9f]], [0x08, 0x00])).toBe(true);
   expect(py_eq([ours[0x70], ours[0x9f]], [ae._sspc.tobytes()[0x70], ae._sspc.tobytes()[0x9f]])).toBe(true);
 });
@@ -189,18 +191,18 @@ test.each(sorted(_ae_sources().keys()))("test_import_caches_after_effects_data_s
   // stills and merged PSD footage (w * h * channels * bytes per channel,
   // counting alpha only when the image has it: 2 for gray + alpha).
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(_asset(name))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(_asset(name))), FootageItem);
   expect(py_eq(item.main_source._sspc.data_size, getitem(_ae_sources(), name)._sspc.data_size)).toBe(true);
 });
 
 test("test_data_size_above_32_bits_round_trips", () => {
   const tmp_path = make_tmp_path();
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(ASSETS.div("depth", "png_rgb8.png"))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("depth", "png_rgb8.png"))), FootageItem);
   item.main_source._sspc.data_size = lshift(5, 30);
   const out = tmp_path.div("big.aep");
   project.save(out);
-  const reread = getitem(parse_aep(out).project.items, item.id) as FootageItem;
+  const reread = as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem);
   expect(py_eq(reread.main_source._sspc.data_size, lshift(5, 30))).toBe(true);
 });
 
@@ -208,12 +210,13 @@ test("test_hq_field_separation_keeps_the_container_media_bit", () => {
   // AE sets bit 3 of sspc 0x9F on container media; the HQ flag is bit 0.
   const tmp_path = make_tmp_path();
   const project = parse_aep(FIXTURE).project;
-  const item = project.footages.find((f) => f.name === "mov_480.mov")!;
+  const item = project.footages.find((f) => f.name === "mov_480.mov");
+  if (item == null) throw new StopIteration();
   expect(item.main_source._sspc.tobytes()[0x9f]).toBe(0x08);
   item.main_source.high_quality_field_separation = true;
   const out = tmp_path.div("hq.aep");
   project.save(out);
-  const reread = (getitem(parse_aep(out).project.items, item.id) as FootageItem).main_source as FileSource;
+  const reread = as_instance(as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).main_source, FileSource);
   expect(reread.high_quality_field_separation).toBe(true);
   expect(reread._sspc.tobytes()[0x9f]).toBe(0x09);
 });
@@ -221,7 +224,7 @@ test("test_hq_field_separation_keeps_the_container_media_bit", () => {
 test("test_movie_pixel_aspect_is_the_exact_pasp_ratio", () => {
   // mov_alpha_small.mov declares pasp 4:3; AE stores the ratio 4/3.
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(ASSETS.div("mov_alpha_small.mov"))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("mov_alpha_small.mov"))), FootageItem);
   const sspc = item.main_source._sspc;
   const ae = getitem(_ae_sources(), "mov_alpha_small.mov")._sspc;
   expect(py_eq([sspc.pixel_aspect_dividend, sspc.pixel_aspect_divisor], [4, 3])).toBe(true);
@@ -249,10 +252,10 @@ test.each(_header_names(..._HEADER_FORMATS))("test_import_writes_after_effects_o
   // Illustrator/PDF document (an EPS keeps the bare body).
   const tmp_path = make_tmp_path();
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(_asset(name))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(_asset(name))), FootageItem);
   const out = tmp_path.div("opti.aep");
   project.save(out);
-  const ours = (getitem(parse_aep(out).project.items, item.id) as FootageItem).main_source;
+  const ours = as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).main_source;
   expect(py_eq(ours._opti.tobytes(), getitem(_ae_sources(), name)._opti.tobytes())).toBe(true);
 });
 
@@ -262,10 +265,10 @@ test.each(_header_names("TEXT"))("test_document_footage_writes_after_effects_kin
   // of an Illustrator composition import).
   const tmp_path = make_tmp_path();
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(_asset(name))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(_asset(name))), FootageItem);
   const out = tmp_path.div("kind.aep");
   project.save(out);
-  const ours = (getitem(parse_aep(out).project.items, item.id) as FootageItem).main_source;
+  const ours = as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).main_source;
   expect(py_eq(ours._sspc._reserved_c8, getitem(_ae_sources(), name)._sspc._reserved_c8)).toBe(true);
   expect(py_eq(ours._sspc._reserved_c8, new Uint8Array([0x00, 0x02]))).toBe(true);
 });
@@ -282,10 +285,10 @@ test.each([0, 1])("test_chosen_layer_records_the_document_channels_and_mode[%#]"
   const project = _windows_project();
   const options = new ImportOptions(ASSETS.div("depth", "psd_gray8_layered.psd"));
   options.layer_index = layer_index;
-  const item = project.import_file(options) as FootageItem;
+  const item = as_instance(project.import_file(options), FootageItem);
   const out = tmp_path.div("layer.aep");
   project.save(out);
-  const source = (getitem(parse_aep(out).project.items, item.id) as FootageItem).main_source;
+  const source = as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).main_source;
   const ours = source._opti.tobytes();
   expect(py_eq([ours[0x1e], ours[0x2a], ours[0x30], ours[0x5e]], [2, 1, 2, 2])).toBe(true);
   expect(py_eq(ours, getitem(ae, source._sspc.layer_index)._opti.tobytes())).toBe(true);
@@ -304,7 +307,7 @@ test.each([
   const project = _windows_project();
   const options = new ImportOptions(ASSETS.div("depth", file_name));
   options.layer_index = layer_index;
-  const source = (project.import_file(options) as FootageItem).main_source;
+  const source = as_instance(project.import_file(options), FootageItem).main_source;
   const ours = source._opti.tobytes();
   const theirs = getitem(ae, source._sspc.layer_index)._opti.tobytes();
   expect(py_eq([ours[0x1e], ours[0x5e]], [3, channels])).toBe(true);
@@ -336,10 +339,10 @@ test.each(sorted(_mode_sources().keys()))("test_color_mode_import_matches_after_
   // and data size, read back from disk.
   const tmp_path = make_tmp_path();
   const project = _windows_project();
-  const item = project.import_file(new ImportOptions(ASSETS.div("depth", name))) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("depth", name))), FootageItem);
   const out = tmp_path.div("modes.aep");
   project.save(out);
-  const ours = (getitem(parse_aep(out).project.items, item.id) as FootageItem).main_source as FileSource;
+  const ours = as_instance(as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).main_source, FileSource);
   const ae = getitem(_mode_sources(), name);
   expect(py_eq(ours._opti.tobytes(), ae._opti.tobytes())).toBe(true);
   expect(py_eq(_depth_bytes(ours), _depth_bytes(ae))).toBe(true);

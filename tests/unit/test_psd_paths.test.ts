@@ -11,9 +11,10 @@ import {
   py_eq,
   repr,
 } from "../../src/pyrt/index.ts";
-import { type PsdLayer, read_psd_layers } from "../../src/py_aep/resolvers/psd_layers.ts";
+import { PsdLayer, read_psd_layers } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { parse_vector_mask } from "../../src/py_aep/resolvers/psd_paths.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { as_instance } from "../helpers.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets"
 const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "assets");
@@ -21,7 +22,7 @@ const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "a
 function _vector_mask(psd: string, layer: string): Uint8Array {
   for (const node of read_psd_layers(ASSETS.div(psd))) {
     if (node.name === layer) {
-      const mask = (node as PsdLayer).vector_mask;
+      const mask = as_instance(node, PsdLayer).vector_mask;
       py_assert(mask != null);
       return mask;
     }

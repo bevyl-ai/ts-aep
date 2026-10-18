@@ -15,6 +15,7 @@ import {
   getattr,
   sorted,
   split,
+  StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
@@ -133,7 +134,7 @@ describe("TestNewVersion", () => {
     // svap's last byte tracks the AE build number.
     const app = py_aep.new("25.6x101");
     const svap = find_by_type(app.project._rifx.chunks, "svap");
-    expect((svap as any).build_number).toBe(101);
+    expect(svap.build_number).toBe(101);
   });
 
   test("test_invalid_version_rejected", () => {
@@ -229,7 +230,8 @@ describe("TestNewVersion", () => {
     const path = tmp_path.div("comp.aep");
     app.project.save(path);
     const reread = py_aep.parse(path).project;
-    const new_comp = reread.compositions.find((c) => c.name === "Depth")!;
+    const new_comp = reread.compositions.find((c) => c.name === "Depth");
+    if (new_comp == null) throw new StopIteration();
     const records = recursive_find(new_comp._item_list.chunks, "ldta");
     expect(
       py_eq(new Set(records.map((record) => len(record.tobytes()))), new Set([ldta_size])),
@@ -245,7 +247,9 @@ describe("TestNewVersion", () => {
     const path = tmp_path.div("copy.aep");
     app.project.save(path);
     const reread = py_aep.parse(path).project;
-    const copied = reread.compositions.find((c) => c.name === "Target")!.layers[0];
+    const target_comp = reread.compositions.find((c) => c.name === "Target");
+    if (target_comp == null) throw new StopIteration();
+    const copied = target_comp.layers[0];
     expect(len(copied._ldta.tobytes())).toBe(160);
   });
 });
@@ -320,7 +324,7 @@ function _ae_prefs_dir(): Path | null {
     base.iterdir().filter((d) => d.is_dir() && isdigit(d.name.slice(0, 1))),
     (d) => d.name,
   );
-  return py_bool(dirs) ? dirs.at(-1)! : null;
+  return py_bool(dirs) ? dirs[dirs.length - 1] : null;
 }
 
 describe("TestNewRenderQueue", () => {

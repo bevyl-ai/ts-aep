@@ -107,14 +107,14 @@ describe("TestCompareMarker", () => {
 
   test("test_matching_marker", () => {
     const result = new ValidationResult();
-    const expected_marker = new Map<string, any>([
+    const expected_marker = new Map<string, number | string>([
       ["time", 1.0],
       ["comment", "test"],
       ["chapter", ""],
       ["url", ""],
       ["duration", 0],
     ]);
-    const parsed_marker = new Map<string, any>([
+    const parsed_marker = new Map<string, number | string>([
       ["frame_time", 30],
       ["comment", "test"],
       ["chapter", ""],
@@ -129,8 +129,8 @@ describe("TestCompareMarker", () => {
 
   test("test_mismatching_marker_comment", () => {
     const result = new ValidationResult();
-    const expected_marker = new Map<string, any>([["comment", "expected"]]);
-    const parsed_marker = new Map<string, any>([["comment", "actual"]]);
+    const expected_marker = new Map<string, string>([["comment", "expected"]]);
+    const parsed_marker = new Map<string, string>([["comment", "actual"]]);
     compare_marker(expected_marker, parsed_marker, "Marker[0]", 30.0, result);
     expect(len(result)).toBeGreaterThanOrEqual(1);
   });

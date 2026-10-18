@@ -11,11 +11,13 @@ import { Path, contains, dict_get, getitem, len, py_bool, py_eq } from "../../sr
  * NOTE(port): Python `json.load` dicts are Maps in this port (rulebook §3); `load_expected` yields
  * plain objects, so convert recursively. Same data, same key order.
  */
-function _json_to_dicts(x: any): any {
-  if (Array.isArray(x)) return x.map(_json_to_dicts);
-  if (x !== null && typeof x === "object" && !(x instanceof Map)) {
-    return new Map(Object.entries(x).map(([k, v]) => [k, _json_to_dicts(v)]));
-  }
+function _json_to_dicts(x: object): Dict {
+  return new Map(Object.entries(x).map(([k, v]) => [k, _json_value_to_dicts(v)]));
+}
+
+function _json_value_to_dicts(x: unknown): unknown {
+  if (Array.isArray(x)) return x.map(_json_value_to_dicts);
+  if (x !== null && typeof x === "object" && !(x instanceof Map)) return _json_to_dicts(x);
   return x;
 }
 
@@ -92,7 +94,7 @@ describe("TestCompareLayer", () => {
       load_expected(SAMPLES_DIR.div("models", "layer"), "enabled_false"),
     );
     // Find matching comp and layers
-    for (const item of getitem(expected, "items") as any[]) {
+    for (const item of getitem(expected, "items")) {
       if (contains(item, "layers") && len(getitem(item, "layers")) > 0) {
         const exp_layer = getitem<string, Dict[]>(item, "layers")[0];
         // Get parsed comp layers
@@ -138,11 +140,11 @@ describe("TestComparePropertyMediaReplacement", () => {
   /** Tests for the media-replacement object comparisons in compare_property(). */
 
   test("test_matching_object_sources_no_diff", () => {
-    const expected = new Map<string, any>([
-      ["alternateSource", new Map<string, any>([["id", 30], ["name", "wrapper"]])],
+    const expected = new Map<string, Map<string, number | string>>([
+      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
       [
         "essentialPropertySource",
-        new Map<string, any>([
+        new Map<string, number | string>([
           ["sourceType", "AVLayer"],
           ["name", "src_layer"],
           ["index", 1],
@@ -150,9 +152,9 @@ describe("TestComparePropertyMediaReplacement", () => {
       ],
     ]);
     // Parsed index is 0-based; the AVItem/AVLayer serialize id/name/index.
-    const parsed = new Map<string, any>([
-      ["alternate_source", new Map<string, any>([["id", 30], ["name", "wrapper"]])],
-      ["essential_property_source", new Map<string, any>([["name", "src_layer"], ["index", 0]])],
+    const parsed = new Map<string, Map<string, number | string>>([
+      ["alternate_source", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
+      ["essential_property_source", new Map<string, number | string>([["name", "src_layer"], ["index", 0]])],
     ]);
     const result = new ValidationResult();
     compare_property(expected, parsed, "P", result);
@@ -160,22 +162,22 @@ describe("TestComparePropertyMediaReplacement", () => {
   });
 
   test("test_id_and_index_mismatches_flagged", () => {
-    const expected = new Map<string, any>([
-      ["alternateSource", new Map<string, any>([["id", 30], ["name", "wrapper"]])],
+    const expected = new Map<string, Map<string, number | string>>([
+      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
       [
         "essentialPropertySource",
-        new Map<string, any>([
+        new Map<string, number | string>([
           ["sourceType", "AVLayer"],
           ["name", "src_layer"],
           ["index", 1],
         ]),
       ],
     ]);
-    const parsed = new Map<string, any>([
+    const parsed = new Map<string, Map<string, number | string>>([
       // id mismatch
-      ["alternate_source", new Map<string, any>([["id", 99], ["name", "wrapper"]])],
+      ["alternate_source", new Map<string, number | string>([["id", 99], ["name", "wrapper"]])],
       // 5+1 != 1
-      ["essential_property_source", new Map<string, any>([["name", "src_layer"], ["index", 5]])],
+      ["essential_property_source", new Map<string, number | string>([["name", "src_layer"], ["index", 5]])],
     ]);
     const result = new ValidationResult();
     compare_property(expected, parsed, "P", result);
@@ -183,10 +185,10 @@ describe("TestComparePropertyMediaReplacement", () => {
   });
 
   test("test_property_source_matchname_compared", () => {
-    const expected = new Map<string, any>([
+    const expected = new Map<string, Map<string, number | string>>([
       [
         "essentialPropertySource",
-        new Map<string, any>([
+        new Map<string, number | string>([
           ["sourceType", "Property"],
           ["matchName", "ADBE Opacity"],
         ]),

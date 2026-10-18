@@ -5,11 +5,12 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { AlphaMode, LinearLightMode, parse as parse_aep } from "../../src/py_aep/index.ts";
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
+import { IpwsChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { UNDEFINED_FRAME, find_by_type } from "../../src/py_aep/binary/utils.ts";
 import { ColorProfileNotFoundError, default_icc_library, icc_profile_id } from "../../src/py_aep/color/icc.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
-import type { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 // NOTE(port): Python re-imports UNDEFINED_FRAME via models.sources.file; it is the same constant from binary/utils.ts
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { probe_media } from "../../src/py_aep/resolvers/media_probe.ts";
@@ -37,7 +38,7 @@ function _raises_read_only(fn: () => unknown): void {
   });
 }
 
-function _get_first_footage(aep_path: Path): any {
+function _get_first_footage(aep_path: Path): FootageItem {
   /** Parse an .aep and return the first footage item. */
   const project = parse_aep(aep_path).project;
   return project.footages[0];
@@ -49,6 +50,7 @@ describe("TestFootageReadOnly", () => {
   test("test_width_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("solid_sizes.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.width = 100;
     });
   });
@@ -56,6 +58,7 @@ describe("TestFootageReadOnly", () => {
   test("test_height_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("solid_sizes.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.height = 100;
     });
   });
@@ -63,6 +66,7 @@ describe("TestFootageReadOnly", () => {
   test("test_duration_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("placeholder.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.duration = 5.0;
     });
   });
@@ -70,6 +74,7 @@ describe("TestFootageReadOnly", () => {
   test("test_frame_rate_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("footage_misc.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.frame_rate = 30.0;
     });
   });
@@ -77,6 +82,7 @@ describe("TestFootageReadOnly", () => {
   test("test_frame_duration_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("placeholder.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.frame_duration = 100;
     });
   });
@@ -84,6 +90,7 @@ describe("TestFootageReadOnly", () => {
   test("test_footage_missing_is_read_only", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("footage_missing.aep"));
     _raises_read_only(() => {
+      // @ts-expect-error read-only property (type: ignore[misc])
       footage.footage_missing = false;
     });
   });
@@ -194,7 +201,7 @@ describe("TestAlphaModeWrites", () => {
     const item = project.import_file(
       new ImportOptions(SAMPLES.parent.div("assets", "image_with_alpha.png")),
     );
-    return (item as FootageItem).main_source as FileSource;
+    return as_instance(as_instance(item, FootageItem).main_source, FileSource);
   }
 
   test.each([
@@ -224,7 +231,7 @@ describe("TestAlphaModeWrites", () => {
   test("test_rejected_without_an_alpha_channel", () => {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
     const item = project.import_file(new ImportOptions(SAMPLES.parent.div("assets", "mov_480.mov")));
-    const source = (item as FootageItem).main_source;
+    const source = as_instance(item, FootageItem).main_source;
     expect(source.has_alpha).toBe(false);
     raises(
       ValueError,
@@ -251,7 +258,7 @@ describe("TestSourceModifiedStamp", () => {
     const path = SAMPLES.parent.div("assets", "new_exr.0002.exr");
     const item = project.import_file(new ImportOptions(path));
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect((item as FootageItem).main_source._sspc.source_modified).toBe(int(path.stat().mtimeMs / 1000));
+    expect(as_instance(item, FootageItem).main_source._sspc.source_modified).toBe(int(path.stat().mtimeMs / 1000));
   });
 
   test("test_sequence_carries_the_folder_mtime", () => {
@@ -261,7 +268,7 @@ describe("TestSourceModifiedStamp", () => {
     opts.sequence = true;
     const item = project.import_file(opts);
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect((item as FootageItem).main_source._sspc.source_modified).toBe(int(path.parent.stat().mtimeMs / 1000));
+    expect(as_instance(item, FootageItem).main_source._sspc.source_modified).toBe(int(path.parent.stat().mtimeMs / 1000));
   });
 
   test("test_unreadable_media_stays_unstamped", () => {
@@ -309,7 +316,7 @@ describe("TestMediaColorProfileRecord", () => {
   function _import(name: string): FileSource {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
     const item = project.import_file(new ImportOptions(SAMPLES.parent.div("assets", name)));
-    return (item as FootageItem).main_source as FileSource;
+    return as_instance(as_instance(item, FootageItem).main_source, FileSource);
   }
 
   test.each([
@@ -345,7 +352,7 @@ describe("TestMediaColorProfileRecord", () => {
      */
     const source = _import("mov_480.mov");
     const clrs = as_instance(source._clrs, ListChunk);
-    expect((find_by_type(clrs.chunks, "ipws") as any).value).toBe(0);
+    expect(as_instance(find_by_type(clrs.chunks, "ipws"), IpwsChunk).value).toBe(0);
     expect(py_eq(find_by_type(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(source.media_color_space).toBe("Embedded");
   });
@@ -410,7 +417,7 @@ describe("TestMediaColorProfileRecord", () => {
         opts.sequence = true;
       }
       const item = project.import_file(opts);
-      expect((item as FootageItem).main_source.interpret_as_linear_light).toBe(expected);
+      expect(as_instance(item, FootageItem).main_source.interpret_as_linear_light).toBe(expected);
     },
   );
 });
@@ -418,13 +425,13 @@ describe("TestMediaColorProfileRecord", () => {
 describe("TestWritableInterpretation", () => {
   /** `pixel_aspect` and `conform_frame_rate` write what AE writes. */
 
-  function _import(name: string, sequence = false): any {
+  function _import(name: string, sequence = false): FootageItem {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
     const opts = new ImportOptions(SAMPLES.parent.div("assets", name));
     if (sequence) {
       opts.sequence = true;
     }
-    return project.import_file(opts);
+    return as_instance(project.import_file(opts), FootageItem);
   }
 
   test("test_pixel_aspect_is_writable", () => {
