@@ -12,7 +12,6 @@ import {
   KeyError,
   Path,
   StopIteration,
-  TypeError_,
   ValueError,
   isclose,
   len,
@@ -992,7 +991,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** layer[1.5] raises TypeError. */
   test("test_getitem_type_error", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       layer.property(1.5);
     });
   });

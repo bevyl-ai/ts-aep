@@ -3,7 +3,6 @@
 import {
   AttributeError,
   ValueError,
-  TypeError_,
   deferred,
   mod,
   pyAssert,
@@ -205,7 +204,7 @@ export class Shape {
       featherPoints != null &&
       !(Array.isArray(featherPoints) && featherPoints.every((fp) => fp instanceof FeatherPoint))
     ) {
-      throw new TypeError_("featherPoints must be a list of FeatherPoint");
+      throw new TypeError("featherPoints must be a list of FeatherPoint");
     }
     this._shph = new ShphChunk();
     this._shph.open = !closed;

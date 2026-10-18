@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, float, getitem, max, Path, pyEq, range, round, StopIteration, zip, AssertionError_ } from "../../src/pyrt/index.ts";
+import { at, float, getitem, max, Path, pyEq, range, round, StopIteration, zip, AssertionError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { buildWorldMatrix, type Mat4 } from "../../src/py_aep/resolvers/transform.ts";
@@ -680,7 +680,7 @@ describe.skipIf(!TRANSFORM_FIXTURES.isDir())("TestUnparentAgainstAeFixtures", ()
         if (layer.name === "ChildSolid") return layer;
       }
     }
-    throw new AssertionError_("no ChildSolid in the fixture");
+    throw new AssertionError("no ChildSolid in the fixture");
   }
 
   function _snapshot(layer: Layer): Map<string, number | number[]> {

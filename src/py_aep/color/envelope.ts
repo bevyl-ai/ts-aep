@@ -23,7 +23,7 @@
  * order; reproducing it exactly is required for byte-identical output.
  */
 
-import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, str, typeName, TypeError_, type JsonValue } from "../../pyrt/index.ts";
+import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, str, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
 
 // baseProfileType values.
@@ -188,7 +188,7 @@ export class ColorProfile {
  * at the read instead of later.
  */
 function _envelopeString(value: JsonValue, field: string): string {
-  if (typeof value !== "string") throw new TypeError_(`${field} must be a str, not '${typeName(value)}'`);
+  if (typeof value !== "string") throw new TypeError(`${field} must be a str, not '${typeName(value)}'`);
   return value;
 }
 
@@ -203,7 +203,7 @@ export function parseEnvelope(envelopeJson: string): ColorProfile {
   const name = jsonGetitem(base, "colorProfileName");
   const profileType = jsonGetitem(outer, "baseProfileType");
   const data = jsonGetitem(base, "colorProfileData");
-  if (typeof profileType !== "number") throw new TypeError_(`baseProfileType must be an int, not '${typeName(profileType)}'`);
+  if (typeof profileType !== "number") throw new TypeError(`baseProfileType must be an int, not '${typeName(profileType)}'`);
   return new ColorProfile(_envelopeString(name, "colorProfileName"), profileType, b64decode(_envelopeString(data, "colorProfileData")));
 }
 

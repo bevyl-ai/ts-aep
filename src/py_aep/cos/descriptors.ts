@@ -16,7 +16,6 @@ import {
   AttributeError,
   IndexError,
   KeyError,
-  TypeError_,
   ValueError,
   pyBool,
   pyfloat,
@@ -44,7 +43,7 @@ export function _extract<T, D>(d: CosDict, key: string, transform: (x: CosNode) 
   } catch (e) {
     // Python catches (TypeError, ValueError, KeyError, IndexError); the
     // transforms raise those as pyrt exceptions (`kinds.ts`).
-    if (!(e instanceof TypeError_ || e instanceof ValueError || e instanceof KeyError || e instanceof IndexError)) {
+    if (!(e instanceof TypeError || e instanceof ValueError || e instanceof KeyError || e instanceof IndexError)) {
       throw e;
     }
     return default_;

@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   getattr,
   len,
   Path,
@@ -18,7 +18,6 @@ import {
   setattr,
   StopIteration,
   str,
-  TypeError_,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseAppFresh, parseProjectFresh } from "../helpers.ts";
@@ -52,7 +51,7 @@ function _firstMask(): MaskPropertyGroup {
       }
     }
   }
-  throw new AssertionError_("no mask found in sample");
+  throw new AssertionError("no mask found in sample");
 }
 
 // (id, factory returning a fresh mutable object, bool attribute name)
@@ -102,14 +101,14 @@ const _ROWS = _PARAMS.map((p, i): [string, () => object, string] => [_IDS[i], p[
 describe("TestStrictBool", () => {
   test.each(_ROWS)("test_rejects_non_bool_string[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       setattr(obj, attr, "no");
     });
   });
 
   test.each(_ROWS)("test_rejects_bare_int[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       setattr(obj, attr, 1);
     });
   });

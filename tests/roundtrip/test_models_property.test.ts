@@ -2,12 +2,11 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   AttributeError,
   IndexError,
   StopIteration,
   Path,
-  TypeError_,
   ValueError,
   and,
   b,
@@ -349,7 +348,7 @@ describe("TestValidateFeatherPoint", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
     const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       fp.featherPoints[0].segLoc = 1.5;
     }, "expected an integer");
   });
@@ -3253,7 +3252,7 @@ describe("TestRoundtripProxyBody", () => {
         return prop;
       }
     }
-    throw new AssertionError_(`Property ${matchName} not found in effect`);
+    throw new AssertionError(`Property ${matchName} not found in effect`);
   }
 
   test("test_synthesized_effect_property_is_attached", () => {
@@ -3397,7 +3396,7 @@ describe("TestValueValidation", () => {
     pyAssert(opacity != null);
     _deanimate(opacity);
     expect(opacity.dimensions).toBe(1);
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       opacity.value = [50.0, 60.0];
     }, "expected a number, got list");
   });
@@ -3410,7 +3409,7 @@ describe("TestValueValidation", () => {
     pyAssert(position != null);
     _deanimate(position);
     expect(position.dimensions).toBe(3);
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       position.value = 42.0;
     }, "expected a sequence of 3 elements");
   });
@@ -3681,7 +3680,7 @@ describe("TestIsInterpolationTypeValid", () => {
     raises(ValueError, () => {
       prop.isInterpolationTypeValid(9999);
     });
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error a string is not a KeyframeInterpolationType; the call must raise TypeError at runtime
       prop.isInterpolationTypeValid("hold");
     });
@@ -3752,7 +3751,7 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
     raises(ValueError, () => {
       setattr(kf, side, 9999);
     });
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       setattr(kf, side, "hold");
     });
   });
@@ -4582,7 +4581,7 @@ describe("TestTextPathWrite", () => {
       // `pytest.raises((TypeError, ValueError))`; the untyped values go
       // through the setter as Python's dynamic ones do.
       const e = raises(Error, () => Reflect.set(path, "value", bad));
-      pyAssert(e instanceof TypeError_ || e instanceof ValueError);
+      pyAssert(e instanceof TypeError || e instanceof ValueError);
     }
     path.value = 0;
     expect(path.value).toBe(0);

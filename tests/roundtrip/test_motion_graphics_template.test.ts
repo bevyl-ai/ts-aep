@@ -6,7 +6,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  AssertionError_,
+  AssertionError,
   BytesIO,
   Path,
   StopIteration,
@@ -246,7 +246,7 @@ class TestEffectParamPaths {
       const cprp = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
       return asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
     }
-    throw new AssertionError_(`controller ${repr(ctrlName)} not found`);
+    throw new AssertionError(`controller ${repr(ctrlName)} not found`);
   }
 
   static _py_json(prop: Property): string {

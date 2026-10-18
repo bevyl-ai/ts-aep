@@ -10,7 +10,6 @@ import {
   Path,
   type PathLike,
   KeyError,
-  TypeError_,
   ValueError,
   b,
   bytes_,
@@ -617,7 +616,7 @@ export class Preferences {
     _validatePrefType(prefType);
     // NOTE(port): matches Python: isinstance(value, (int, float)) admits bool, and so does this check.
     if (typeof value !== "number" && typeof value !== "boolean") {
-      throw new TypeError_(`expected a number, got ${typeName(value)}`);
+      throw new TypeError(`expected a number, got ${typeName(value)}`);
     }
     validateNumber(value); // rejects NaN/inf
     this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
@@ -668,7 +667,7 @@ export class Preferences {
     validateName(keyName);
     _validatePrefType(prefType);
     if (typeof value !== "string") {
-      throw new TypeError_(`expected a string, got ${typeName(value)}`);
+      throw new TypeError(`expected a string, got ${typeName(value)}`);
     }
     this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
   }

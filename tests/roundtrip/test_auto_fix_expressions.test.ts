@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_ } from "../../src/pyrt/index.ts";
+import { Path } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/index.ts";
@@ -90,7 +90,7 @@ describe("TestAutoFixExpressions", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     // @ts-expect-error deliberately passes a non-string to check runtime validation
-    raises(TypeError_, () => project.autoFixExpressions(5, "Real"));
+    raises(TypeError, () => project.autoFixExpressions(5, "Real"));
   });
 
   test("test_fix_survives_save_and_reparse", () => {

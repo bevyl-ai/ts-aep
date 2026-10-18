@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError_, at, b, bytes_, concat, dictGet, encode, floordiv, format, getattr, getitem, len, mod, Path, fspath, pyAssert, pyBool, pyEq, pyOr, range, sorted, struct, sum, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError, at, b, bytes_, concat, dictGet, encode, floordiv, format, getattr, getitem, len, mod, Path, fspath, pyAssert, pyBool, pyEq, pyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
@@ -499,7 +499,7 @@ test("test_huge_frame_range_with_a_fractional_rate_saves", () => {
 
 test("test_replace_with_sequence_validates_force_alphabetical", () => {
   const item = asInstance(_import(_project(), ASSETS.div("image_with_alpha.png")), FootageItem);
-  raises(TypeError_, () =>
+  raises(TypeError, () =>
     // @ts-expect-error deliberately passes a number force_alphabetical to check runtime validation
     item.replaceWithSequence(ASSETS.div("dpx_seq.0001.dpx"), 1),
   );
@@ -557,7 +557,7 @@ test.each([
 
 function _clrs(source: FileSource): Map<string, Uint8Array | string | number> {
   const clrs = source._clrs;
-  if (clrs == null) throw new AssertionError_("source has no LIST:CLRS");
+  if (clrs == null) throw new AssertionError("source has no LIST:CLRS");
   const chunks = clrs.chunks;
   const out = new Map<string, Uint8Array | string | number>();
   for (const [index, chunk] of chunks.entries()) {

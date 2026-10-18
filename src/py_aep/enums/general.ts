@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { TypeError_, ValueError, getitem, int, intEnum, repr, type EnumValue } from "../../pyrt/index.ts";
+import { ValueError, getitem, int, intEnum, repr, type EnumValue } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 
 /**
@@ -539,7 +539,7 @@ export const GpuAccelType = intEnum("GpuAccelType", {
     }
     // re.match raises TypeError on non-str input
     if (typeof value !== "string") {
-      throw new TypeError_("expected string or bytes-like object, got '" + (value == null ? "NoneType" : typeof value) + "'");
+      throw new TypeError("expected string or bytes-like object, got '" + (value == null ? "NoneType" : typeof value) + "'");
     }
     // Python's `$` also matches before one trailing "\n"
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\n?$/i.test(value)) {

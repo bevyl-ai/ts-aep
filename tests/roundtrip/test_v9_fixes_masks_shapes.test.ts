@@ -24,7 +24,6 @@ import {
   round,
   setattr,
   StopIteration,
-  TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -234,14 +233,14 @@ describe("TestPathValueValidation", () => {
       const [app, , , mask] = _solidMask();
       const path = mask.property("ADBE Mask Shape");
       const before = projectBytes(app.project);
-      raises(TypeError_, () => {
+      raises(TypeError, () => {
         // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
       expect(pyEq(projectBytes(app.project), before)).toBe(true);
       path.value = new Shape(TRIANGLE);
       const before2 = projectBytes(app.project);
-      raises(TypeError_, () => {
+      raises(TypeError, () => {
         // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
@@ -257,7 +256,7 @@ describe("TestPathValueValidation", () => {
     const path = group
       .addProperty("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
       path.value = [[1, 2], [3, 4]];
     });
@@ -273,7 +272,7 @@ describe("TestPathValueValidation", () => {
   ])("test_rejected_key_leaves_a_fresh_mask_untouched[%#]", (call: (p: Property<Shape>) => unknown) => {
     const [app, , , mask] = _solidMask();
     const before = projectBytes(app.project);
-    raisesAny([TypeError_, ValueError], () => call(mask.property("ADBE Mask Shape")));
+    raisesAny([TypeError, ValueError], () => call(mask.property("ADBE Mask Shape")));
     expect(pyEq(projectBytes(app.project), before)).toBe(true);
   });
 });
@@ -315,7 +314,7 @@ describe("TestShapeGeometry", () => {
 
   test("test_closed_must_be_a_bool", () => {
     raises(
-      TypeError_,
+      TypeError,
       // @ts-expect-error deliberately passes a non-bool closed to check runtime validation
       () => new Shape([[0, 0]], undefined, undefined, { closed: 1 }),
     );
@@ -449,7 +448,7 @@ describe("TestFeatherPoints", () => {
 
   test("test_feather_points_must_be_feather_points", () => {
     raises(
-      TypeError_,
+      TypeError,
       // @ts-expect-error deliberately passes a non-list feather_points to check runtime validation
       () => new Shape([[0, 0]], undefined, undefined, { featherPoints: "x" }),
     );

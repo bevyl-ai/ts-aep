@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import {
-  AssertionError_,
+  AssertionError,
   BytesIO,
   OSError,
   Path,
@@ -498,7 +498,7 @@ describe("TestFmtField", () => {
   test("test_struct_info_returns_format_for_u4", () => {
     const info = _structInfo(U4Chunk);
     expect(info != null).toBe(true);
-    if (info == null) throw new AssertionError_("U4Chunk has no struct info");
+    if (info == null) throw new AssertionError("U4Chunk has no struct info");
     const [
       fmt,
       dataFields,
@@ -534,7 +534,7 @@ describe("TestFmtField", () => {
 
     const info = _structInfo(BadChunk);
     expect(info != null).toBe(true);
-    if (info == null) throw new AssertionError_("BadChunk has no struct info");
+    if (info == null) throw new AssertionError("BadChunk has no struct info");
     const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, , , simple] = info;
     expect(fmt).toBe("IHB");
     expect(dataFields.length).toBe(3);
@@ -548,7 +548,7 @@ describe("TestFmtField", () => {
   test("test_struct_info_encoding_tracked", () => {
     const info = _structInfo(PrinChunk);
     expect(info != null).toBe(true);
-    if (info == null) throw new AssertionError_("PrinChunk has no struct info");
+    if (info == null) throw new AssertionError("PrinChunk has no struct info");
     const encodings = info[2];
     const simple = info[8];
     // PrinChunk has match_name (field index 1) and display_name (index 2)

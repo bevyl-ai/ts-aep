@@ -5,7 +5,6 @@ import { describe, expect, test } from "bun:test";
 import {
   AttributeError,
   RuntimeError,
-  TypeError_,
   ValueError,
   descriptor,
   float,
@@ -524,7 +523,7 @@ describe("TestChunkFieldBool", () => {
     const model = new _BoolModel(body);
     const token = _materializationAllowed.set(true);
     try {
-      raises(TypeError_, () => {
+      raises(TypeError, () => {
         // @ts-expect-error deliberately assigns a non-bool to check runtime validation
         model.flag = bad;
       }, "expected a bool");

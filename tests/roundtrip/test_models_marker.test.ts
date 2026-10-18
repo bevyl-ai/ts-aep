@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   at,
   bytes_,
   isclose,
@@ -12,7 +12,6 @@ import {
   pyBool,
   pyEq,
   StopIteration,
-  TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -138,7 +137,7 @@ describe("TestRoundtripMarkerDuration", () => {
     const comp = getComp(project, "label_3");
     const marker = new MarkerValue("w_new");
     marker.duration = 2.5;
-    if (comp.markerProperty === null) throw new AssertionError_("comp.marker_property is None");
+    if (comp.markerProperty === null) throw new AssertionError("comp.marker_property is None");
     comp.markerProperty.setValueAtTime(2.0, marker);
     const out = tmpPath.div("new_marker.aep");
     project.save(out);
@@ -170,7 +169,7 @@ describe("TestValidateMarkerFrameDuration", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = getFirstCompMarker(project, "duration_5");
     raises(
-      TypeError_,
+      TypeError,
       () => {
         marker.frameDuration = 1.5;
       },

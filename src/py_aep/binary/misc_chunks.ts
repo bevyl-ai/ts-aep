@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, bytes_, decode, encode, getattr, len, pyAssert, round, descriptor, TypeError_, ValueError } from "../../pyrt/index.ts";
+import { define, field, b, bytes_, decode, encode, getattr, len, pyAssert, round, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -667,7 +667,7 @@ export function _bytesFromInts(value: number[]): Uint8Array {
   const out = new Uint8Array(value.length);
   for (let i = 0; i < value.length; i++) {
     const v = value[i];
-    if (typeof v !== "number" || !Number.isInteger(v)) throw new TypeError_(`'${typeof v}' object cannot be interpreted as an integer`);
+    if (typeof v !== "number" || !Number.isInteger(v)) throw new TypeError(`'${typeof v}' object cannot be interpreted as an integer`);
     if (v < 0 || v > 255) throw new ValueError("bytes must be in range(0, 256)");
     out[i] = v;
   }

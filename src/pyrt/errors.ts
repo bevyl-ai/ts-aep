@@ -1,4 +1,5 @@
 // Python's builtin exception hierarchy, so `except X` maps to `instanceof X`.
+// Python's `TypeError` and `SyntaxError` are JS's own (built-in) errors.
 
 export class PyException extends Error {
   constructor(message = "") {
@@ -8,13 +9,12 @@ export class PyException extends Error {
 }
 
 export class ValueError extends PyException {}
-export class TypeError_ extends PyException {}
 export class KeyError extends PyException {}
 export class IndexError extends PyException {}
 export class AttributeError extends PyException {}
 export class NotImplementedError extends PyException {}
 export class RuntimeError extends PyException {}
-export class AssertionError_ extends PyException {}
+export class AssertionError extends PyException {}
 export class ZeroDivisionError extends PyException {}
 export class OverflowError extends PyException {}
 export class StopIteration extends PyException {}
@@ -28,8 +28,6 @@ export class UnicodeDecodeError extends UnicodeError {}
 export class UnicodeEncodeError extends UnicodeError {}
 /** `struct.error` */
 export class StructError extends PyException {}
-/** Python `SyntaxError` (raised by parsers such as the COS reader). */
-export class SyntaxError_ extends PyException {}
 
 /**
  * `SystemExit` (a `BaseException`, so not a `PyException`: translated
@@ -51,7 +49,7 @@ export function errorCode(e: unknown): unknown {
 
 /** Python's `assert cond, msg`. */
 export function pyAssert(cond: unknown, message = ""): asserts cond {
-  if (!cond) throw new AssertionError_(message);
+  if (!cond) throw new AssertionError(message);
 }
 
 export function warn(message: string): void {

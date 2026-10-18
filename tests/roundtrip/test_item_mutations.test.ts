@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, StopIteration, TypeError_, ValueError, contains, dictGet, getitem, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, ValueError, contains, dictGet, getitem, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -548,7 +548,7 @@ describe("TestParentFolderSetter", () => {
     if (fwi === undefined) throw new StopIteration();
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error deliberately assigns an item id instead of a FolderItem
       comp1.parentFolder = comp1.id;
     }, "must be a FolderItem");

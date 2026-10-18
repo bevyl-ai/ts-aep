@@ -31,7 +31,6 @@ import {
   KeyError,
   NotImplementedError,
   OSError,
-  TypeError_,
   ValueError,
   b,
   bytes_,
@@ -360,13 +359,13 @@ export function _bool01(value: _Value): number {
 export function _arith(value: _Value): number {
   if (typeof value === "number") return value;
   if (typeof value === "boolean") return value ? 1 : 0;
-  throw new TypeError_(`unsupported operand type for /: ${repr(value)}`);
+  throw new TypeError(`unsupported operand type for /: ${repr(value)}`);
 }
 
 /** Python `obj[key]` for a descriptor value: only dicts (Maps) are subscriptable here. */
 export function _subscript(obj: _Value, key: string): _Value {
   if (obj instanceof Map) return getitem(obj, key);
-  throw new TypeError_(`${repr(obj)} is not subscriptable with ${repr(key)}`);
+  throw new TypeError(`${repr(obj)} is not subscriptable with ${repr(key)}`);
 }
 
 /** Python `for x in value` over a parsed descriptor value. */
@@ -374,7 +373,7 @@ export function _pyIter(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
   if (value instanceof Map) return [...value.keys()];
   if (typeof value === "string") return Array.from(value);
-  throw new TypeError_(`${repr(value)} object is not iterable`);
+  throw new TypeError(`${repr(value)} object is not iterable`);
 }
 
 export function _color(value: _Value): number[] {
@@ -808,7 +807,7 @@ export function parseLayerStyles(
     try {
       for (const [k, v] of _convertStyle(prefix, params, instance)) values.set(k, v);
     } catch (exc) {
-      if (!(exc instanceof KeyError || exc instanceof TypeError_)) throw exc;
+      if (!(exc instanceof KeyError || exc instanceof TypeError)) throw exc;
       dropped.push(prefix);
       continue;
     }

@@ -4,7 +4,6 @@ import * as ET from "../../../../pyrt/etree.ts";
 import {
   KeyError,
   RuntimeError,
-  TypeError_,
   ValueError,
   b,
   bytes_,
@@ -468,7 +467,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     if (value == null) return;
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral float such as 2.0 is accepted where Python raises TypeError.
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
-      throw new TypeError_(`expected an int or IntEnum for ${repr(key)}, got ${typeName(value)}`);
+      throw new TypeError(`expected an int or IntEnum for ${repr(key)}, got ${typeName(value)}`);
     }
     // int() normalizes IntEnum members so str() yields the numeric form.
     const intValue = int(value);

@@ -2,10 +2,10 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
-import { AssertionError_, Path, RuntimeError, b } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, RuntimeError, b } from "../../src/pyrt/index.ts";
 import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import * as specialized_properties from "../../src/py_aep/parsers/specialized_properties.ts";
-import { SyntaxError_ } from "../../src/py_aep/cos/cos.ts";
+import {  } from "../../src/py_aep/cos/cos.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 
@@ -63,14 +63,14 @@ describe("TestParseTextDocument", () => {
     const fakeFindByListType = (chunks: unknown, listType: string) => {
       if (listType === "tdbs") return tdbsChunk;
       if (listType === "btdk") return btdkChunk;
-      throw new AssertionError_(`Unexpected list_type: ${listType}`);
+      throw new AssertionError(`Unexpected list_type: ${listType}`);
     };
 
     class BrokenCosParser {
       constructor(..._args: unknown[]) {}
 
       parse(): Record<string, unknown> {
-        throw new SyntaxError_("bad COS");
+        throw new SyntaxError("bad COS");
       }
     }
 
@@ -107,7 +107,7 @@ describe("TestParseTextDocument", () => {
     const fakeFindByListType = (chunks: unknown, listType: string) => {
       if (listType === "tdbs") return tdbsChunk;
       if (listType === "btdk") return btdkChunk;
-      throw new AssertionError_(`Unexpected list_type: ${listType}`);
+      throw new AssertionError(`Unexpected list_type: ${listType}`);
     };
 
     class ValidCosParser {

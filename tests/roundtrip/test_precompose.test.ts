@@ -9,7 +9,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import { describe, expect, test } from "bun:test";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
-import { Path, pyEq, StopIteration, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { Path, pyEq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, getComp } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -271,7 +271,7 @@ describe("TestPrecomposeValidation", () => {
   test("test_invalid_name_raises", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = getComp(app.project, "Comp 1");
-    raisesAny([TypeError_, ValueError], () =>
+    raisesAny([TypeError, ValueError], () =>
       // @ts-expect-error deliberately passes a non-string name to check runtime validation
       comp.precompose([0], 123),
     );

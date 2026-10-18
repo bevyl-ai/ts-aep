@@ -19,7 +19,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   at,
   b,
   BytesIO,
@@ -266,7 +266,7 @@ describe("TestDuplicateAgainstAE", () => {
       }
     }
     const pyIdta = pyDup._idta;
-    if (pyIdta == null) throw new AssertionError_("duplicate has no idta chunk");
+    if (pyIdta == null) throw new AssertionError("duplicate has no idta chunk");
     pyIdta.itemId = aeDup.id;
     for (const chunk of pyDup._itemList.chunks) {
       if (chunk.chunkType === "iide") {

@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 
-import { getattr, Path, pyAssert, setattr, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { getattr, Path, pyAssert, setattr, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -71,7 +71,7 @@ for (const [sample, attr, value] of WRITES) {
 
 test("test_scalar_write_rejects_non_int", () => {
   const project = parseProjectFresh(FORMAT_DIR.div("mp3", "base.aep"));
-  raises(TypeError_, () => {
+  raises(TypeError, () => {
     _fo(project).bitrate = "320";
   });
 });
@@ -79,7 +79,7 @@ test("test_scalar_write_rejects_non_int", () => {
 test("test_scalar_write_rejects_bool", () => {
   // bool is an int subclass; str(True) would corrupt the XML param.
   const project = parseProjectFresh(FORMAT_DIR.div("mp3", "base.aep"));
-  raises(TypeError_, () => {
+  raises(TypeError, () => {
     // @ts-expect-error bitrate takes an int; the setter rejects a bool at runtime
     _fo(project).bitrate = true;
   });

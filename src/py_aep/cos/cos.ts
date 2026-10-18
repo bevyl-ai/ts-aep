@@ -22,15 +22,11 @@ import {
   pyfloat,
   repr,
   str,
-  SyntaxError_,
-  TypeError_,
   UnicodeDecodeError,
   ValueError,
 } from "../../pyrt/index.ts";
 import type { EnumValue, IO, PyFloat } from "../../pyrt/index.ts";
 import { is, pyInt } from "./kinds.ts";
-
-export { SyntaxError_ };
 
 // io.SEEK_CUR
 export const SEEK_CUR = 1 as const;
@@ -150,7 +146,7 @@ export function cosGet(data: CosNode | undefined, ...keys: (string | number)[]):
       try {
         cur = at(cur, int(key));
       } catch (e) {
-        if (e instanceof IndexError || e instanceof ValueError || e instanceof TypeError_) return null;
+        if (e instanceof IndexError || e instanceof ValueError || e instanceof TypeError) return null;
         throw e;
       }
     } else {
@@ -464,7 +460,7 @@ export class CosParser {
       return val;
     }
 
-    throw new SyntaxError_(`Expected COS value, got ${str(this.lookahead)}`);
+    throw new SyntaxError(`Expected COS value, got ${str(this.lookahead)}`);
   }
 
   saveState(): [number | null, number, Token] {
@@ -509,7 +505,7 @@ export class CosParser {
 
   expect(tokenType: TokenType): void {
     if (this.lookahead.type !== tokenType) {
-      throw new SyntaxError_(`Expected ${enumStr(TokenType, tokenType)}, got ${str(this.lookahead)}`);
+      throw new SyntaxError(`Expected ${enumStr(TokenType, tokenType)}, got ${str(this.lookahead)}`);
     }
   }
 
@@ -596,7 +592,7 @@ export class CosParser {
   raiseLex(token: Uint8Array, exp: Uint8Array | null = null): never {
     let msg = `Unknown COS token ${reprBytes(token)}`;
     if (exp != null) msg += `, expected ${reprBytes(exp)}`;
-    throw new SyntaxError_(msg);
+    throw new SyntaxError(msg);
   }
 
   getChar(): number | null {
@@ -717,16 +713,16 @@ export class CosParser {
     } else if (kw === "xref") {
       return new Token(TokenType.Eof);
     } else {
-      throw new SyntaxError_(`Unknown keyword ${reprBytes(b(kw))}`);
+      throw new SyntaxError(`Unknown keyword ${reprBytes(b(kw))}`);
     }
   }
 
   lexStream(): Token {
     const char = this.getChar();
     if (char === CR) {
-      if (this.getChar() !== NEWLINE) throw new SyntaxError_("Invalid newline");
+      if (this.getChar() !== NEWLINE) throw new SyntaxError("Invalid newline");
     } else if (char !== NEWLINE) {
-      throw new SyntaxError_("Expected newline after `stream`");
+      throw new SyntaxError("Expected newline after `stream`");
     }
 
     // Read in blocks up to the first `endstream`: a byte at a time (with a
@@ -738,7 +734,7 @@ export class CosParser {
     while (true) {
       const size = this.maxPos == null ? 65536 : Math.min(65536, this.maxPos);
       const block = size > 0 ? this.file.read(size) : bytes_.EMPTY;
-      if (!block.length) throw new SyntaxError_("Unterminated stream");
+      if (!block.length) throw new SyntaxError("Unterminated stream");
       if (this.maxPos != null) this.maxPos -= block.length;
       const searchFrom = Math.max(0, streamLen - marker.length + 1);
       if (streamLen + block.length > stream.length) {
@@ -808,7 +804,7 @@ export class CosParser {
   lexStringChar(): number | null {
     const char = this.getChar();
     if (char == null) {
-      throw new SyntaxError_("Unterminated string");
+      throw new SyntaxError("Unterminated string");
     } else if (char === RPAREN) {
       return null;
     } else if (char === BACKSLASH) {
@@ -824,7 +820,7 @@ export class CosParser {
 
   lexStringEscape(): number {
     const char = this.getChar();
-    if (char == null) throw new SyntaxError_("Unterminated string");
+    if (char == null) throw new SyntaxError("Unterminated string");
 
     const escaped = STRING_ESCAPES.get(char);
     if (escaped != null) {
@@ -846,7 +842,7 @@ export class CosParser {
       return octal;
     }
 
-    throw new SyntaxError_("Invalid escape sequence");
+    throw new SyntaxError("Invalid escape sequence");
   }
 
   isOctal(char: number): boolean {
@@ -862,13 +858,13 @@ export class CosParser {
     while (true) {
       const char = this.getChar();
       if (char == null) {
-        throw new SyntaxError_("Unterminated hex string");
+        throw new SyntaxError("Unterminated hex string");
       } else if (this.isHex(char)) {
         hstr += String.fromCharCode(char);
       } else if (char === GT) {
         break;
       } else if (!isspaceB(char)) {
-        throw new SyntaxError_(`Invalid character in hex string: ${reprBytes(Uint8Array.of(char))}`);
+        throw new SyntaxError(`Invalid character in hex string: ${reprBytes(Uint8Array.of(char))}`);
       }
     }
 
@@ -895,7 +891,7 @@ export class CosParser {
         let hexstr = "";
         for (let k = 0; k < 2; k++) {
           char = this.getChar();
-          if (char == null || !this.isHex(char)) throw new SyntaxError_("Invalid identifier");
+          if (char == null || !this.isHex(char)) throw new SyntaxError("Invalid identifier");
           hexstr += String.fromCharCode(char);
         }
         ident += String.fromCodePoint(int(hexstr, 16));

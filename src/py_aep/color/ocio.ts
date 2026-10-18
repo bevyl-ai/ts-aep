@@ -23,7 +23,6 @@ import {
   lruCache,
   AttributeError,
   OSError,
-  TypeError_,
   ValueError,
   getitem,
   pyBool,
@@ -213,7 +212,7 @@ export function listConfigColorSpaces(configPath: Path): string[] {
   const inactive = new Set<OcioValue>();
   for (const n of pyIter(pyOr(doc.get("inactive_colorspaces"), []))) {
     if (Array.isArray(n) || n instanceof Map || n instanceof Set) {
-      throw new TypeError_(`unhashable type: '${typeName(n)}'`);
+      throw new TypeError(`unhashable type: '${typeName(n)}'`);
     }
     inactive.add(n);
   }
@@ -450,7 +449,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
   }
   if (typeof colorSpace !== "string") {
     // `"/" in color_space`: unreachable (a non-string name is a role key), but it is what Python would raise.
-    throw new TypeError_(`argument of type '${typeName(colorSpace)}' is not iterable`);
+    throw new TypeError(`argument of type '${typeName(colorSpace)}' is not iterable`);
   }
   if (colorSpace.includes("/")) {
     const i = colorSpace.lastIndexOf("/"); // `rsplit("/", 1)`

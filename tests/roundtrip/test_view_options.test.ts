@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, isclose, pyAssert } from "../../src/pyrt/index.ts";
+import { Path, ValueError, isclose, pyAssert } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { parseAppFresh } from "../helpers.ts";
 
@@ -491,7 +491,7 @@ describe("TestRoiValidation", () => {
   test("test_roi_rejects_float", () => {
     const opts = _getActiveViewOptions(SAMPLES_DIR.div("roi_base.aep"));
     raises(
-      TypeError_,
+      TypeError,
       () => {
         opts.roiTop = 50.5;
       },

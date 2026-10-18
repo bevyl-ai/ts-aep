@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AttributeError, AssertionError_, Path, pyAssert, pyEq, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
+import { AttributeError, AssertionError, Path, pyAssert, pyEq, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
@@ -100,7 +100,7 @@ function _findSynthesizedEffectProp(layer: Layer, effectIndex: number, matchName
       return prop;
     }
   }
-  throw new AssertionError_(`Property ${repr(matchName)} not found in effect`);
+  throw new AssertionError(`Property ${repr(matchName)} not found in effect`);
 }
 
 describe("TestByteIdentityRoundtrip", () => {

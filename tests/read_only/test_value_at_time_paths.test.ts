@@ -15,7 +15,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   Path,
   degrees,
   enumerate,
@@ -313,7 +313,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0], [-5.0, 5.0]]);
     const blended = interpolateShapes(left, right, 0.0);
     expect(blended != null).toBe(true);
-    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
+    if (blended == null) throw new AssertionError("interpolate_shapes returned null");
     // At progress 0 the blend IS the resampled left path: the same
     // outline, two extra vertices, and still straight.
     expect(
@@ -341,7 +341,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]], undefined, undefined, { closed: false });
     const blended = interpolateShapes(left, right, 0.0);
     expect(blended != null).toBe(true);
-    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
+    if (blended == null) throw new AssertionError("interpolate_shapes returned null");
     expect(pyEq(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
     expect(pyEq(blended.outTangents[0], [20.0, 0.0])).toBe(true);
     expect(pyEq(blended.inTangents[2], [-20.0, 0.0])).toBe(true);
@@ -356,7 +356,7 @@ describe("TestShapeInterpolationEdges", () => {
     const right = new Shape([[0.0, 0.0], [10.0, 0.0]], undefined, undefined, { closed: true });
     const blended = interpolateShapes(left, right, 0.5);
     expect(blended != null).toBe(true);
-    if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
+    if (blended == null) throw new AssertionError("interpolate_shapes returned null");
     expect(blended.closed).toBe(false);
   });
 });

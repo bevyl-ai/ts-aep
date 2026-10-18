@@ -16,7 +16,6 @@ import { cosAt, cosItem, cosIter, cosNum, cosSetitem } from "../../src/py_aep/co
 import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composedLineSpans, _mergeAdjacentRuns, _snapToPairs, _splitRunArray, u16Len, u16Slice } from "../../src/py_aep/models/text/ranges.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
-  TypeError_,
   ValueError,
   deepcopy,
   descriptorsOf,
@@ -119,7 +118,7 @@ describe("TestWriteEnginePrimitives", () => {
     } catch (e) {
       caught = e;
     }
-    expect(caught instanceof TypeError_ || caught instanceof ValueError).toBe(true);
+    expect(caught instanceof TypeError || caught instanceof ValueError).toBe(true);
   });
 
   test("test_kerning_write_skips_terminator", () => {

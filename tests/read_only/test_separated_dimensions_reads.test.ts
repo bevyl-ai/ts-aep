@@ -12,7 +12,7 @@
 
 import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { AssertionError_, Path, getitem, pyAssert, pyOr, range } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, getitem, pyAssert, pyOr, range } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, getLayerFromJson, loadExpected, parseProject, type ExpectedProperty } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -27,7 +27,7 @@ function _expectedTransform(sample: string): Map<string, ExpectedProperty> {
       return new Map(pyOr(group.properties, []).map((child) => [child.matchName, child]));
     }
   }
-  throw new AssertionError_(`no transform group in ${sample}.json`);
+  throw new AssertionError(`no transform group in ${sample}.json`);
 }
 
 test.each(["transform_unseparated", "transform_separated", "keyframe_separated_dimensions"])(

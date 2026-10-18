@@ -4,8 +4,8 @@ import { describe, expect, test } from "bun:test";
 
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import { BytesIO, b, bytes_, pyAssert, pyEq } from "../../src/pyrt/index.ts";
-// NOTE(port): SyntaxError_ is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
-import { CosParser, IndirectObject, IndirectReference, Stream, SyntaxError_, type CosNode } from "../../src/py_aep/cos/cos.ts";
+// NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
+import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
 
 describe("TestCosParserPrimitives", () => {
@@ -218,23 +218,23 @@ describe("TestCosParserErrors", () => {
   /** Tests for parser error handling. */
 
   test("test_unterminated_string", () => {
-    raises(SyntaxError_, () => _parse(b("(unterminated")));
+    raises(SyntaxError, () => _parse(b("(unterminated")));
   });
 
   test("test_unterminated_hex_string", () => {
-    raises(SyntaxError_, () => _parse(b("<48656C6C6F")));
+    raises(SyntaxError, () => _parse(b("<48656C6C6F")));
   });
 
   test("test_unknown_keyword", () => {
-    raises(SyntaxError_, () => _parse(b("badkeyword")));
+    raises(SyntaxError, () => _parse(b("badkeyword")));
   });
 
   test("test_unexpected_token", () => {
-    raises(SyntaxError_, () => _parse(b("<< 42 >>"))); // dict expects /identifier first
+    raises(SyntaxError, () => _parse(b("<< 42 >>"))); // dict expects /identifier first
   });
 
   test("test_invalid_escape_sequence", () => {
-    raises(SyntaxError_, () => _parse(b("(\\z)")));
+    raises(SyntaxError, () => _parse(b("(\\z)")));
   });
 });
 

@@ -2,13 +2,12 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   AttributeError,
   BytesIO,
   KeyError,
   NotImplementedError,
   Path,
-  TypeError_,
   ValueError,
   b,
   bytes_,
@@ -71,7 +70,7 @@ function asdict(inst: OutputModuleSettingsItem): Map<string, SettingValue> {
 /** `project.renderQueue`, failing the test when the project has none. */
 function renderQueueOf(project: Project): RenderQueue {
   const rq = project.renderQueue;
-  if (rq == null) throw new AssertionError_("project has no render queue");
+  if (rq == null) throw new AssertionError("project has no render queue");
   return rq;
 }
 
@@ -395,7 +394,7 @@ describe("TestSetSetting", () => {
   test("test_invalid_type_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       rqi.settings.set("Quality", [1, 2, 3]);
     }, "Expected");
   });
@@ -1756,7 +1755,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     const rqi = renderQueueOf(app.project).items[0];
     const [om0, om1] = rqi.outputModules;
     const om0FoBefore = om0.formatOptions;
-    if (om0FoBefore == null) throw new AssertionError_("output module 0 has no format_options");
+    if (om0FoBefore == null) throw new AssertionError("output module 0 has no format_options");
     const om0RoptBefore = om0FoBefore._body.tobytes();
     const om0FormatBefore = om0._roou.formatId;
 
@@ -1766,7 +1765,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     expect(om1._roou.formatId).toBe("TIF ");
     expect(om0._roou.formatId).toBe(om0FormatBefore);
     const om0FoAfter = om0.formatOptions;
-    if (om0FoAfter == null) throw new AssertionError_("output module 0 has no format_options");
+    if (om0FoAfter == null) throw new AssertionError("output module 0 has no format_options");
     expect(pyEq(om0FoAfter._body.tobytes(), om0RoptBefore)).toBe(true);
   });
 

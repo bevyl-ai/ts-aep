@@ -18,7 +18,6 @@ import { validateName, validateOneOf, validatePixelAspect, validatePositiveInt }
 import { AVItem } from "./av_item.ts";
 import {
   Path,
-  TypeError_,
   ValueError,
   pyAssert,
   repr,
@@ -246,7 +245,7 @@ export class FootageItem extends AVItem {
       return "placeholder";
     } else {
       // TODO(port): Python formats `type(src)` as `<class 'py_aep.<module>.<Name>'>`; JS has no module path, so only the bare class name is printed. Affects only this unreachable-in-practice error message.
-      throw new TypeError_(
+      throw new TypeError(
         `Unexpected source type for ${this.name}: ${mainSource?.constructor?.name}`,
       );
     }

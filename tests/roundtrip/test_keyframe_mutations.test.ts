@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   BytesIO,
   at,
   contains,
@@ -159,13 +159,13 @@ describe("TestKeyframeValuePersistence", () => {
     const app = _fresh("keyframe_LINEAR.aep");
     const pos = _prop(app, "ADBE Position");
     const posValue = pos.keyframes[0].value;
-    if (!Array.isArray(posValue)) throw new AssertionError_("ADBE Position keyframe value is not a list");
+    if (!Array.isArray(posValue)) throw new AssertionError("ADBE Position keyframe value is not a list");
     const v = [...posValue];
     v[0] += 7.0;
     pos.keyframes[0].value = v;
     const app2 = _roundtrip(app, tmpPath);
     const pos2Value = _prop(app2, "ADBE Position").keyframes[0].value;
-    if (!Array.isArray(pos2Value)) throw new AssertionError_("ADBE Position keyframe value is not a list");
+    if (!Array.isArray(pos2Value)) throw new AssertionError("ADBE Position keyframe value is not a list");
     expect(approx(pos2Value[0], v[0])).toBe(true);
   });
 });
@@ -219,7 +219,7 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const [prop, _, li] = _findStatic(app, "ADBE Rotate Z");
     expect(prop != null).toBe(true);
-    if (prop == null || li == null) throw new AssertionError_("no static ADBE Rotate Z property");
+    if (prop == null || li == null) throw new AssertionError("no static ADBE Rotate Z property");
     prop.addKey(0.0);
     prop.addKey(1.0);
     prop.keyframes[1].value = 25.0;
@@ -243,7 +243,7 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const [scale, _, li] = _findStatic(app, "ADBE Scale");
     expect(scale != null).toBe(true);
-    if (scale == null || li == null) throw new AssertionError_("no static ADBE Scale property");
+    if (scale == null || li == null) throw new AssertionError("no static ADBE Scale property");
     scale.setValueAtTime(0.0, [50.0, 50.0, 100.0]);
     scale.setValueAtTime(1.0, [120.0, 120.0, 100.0]);
     expect(scale._animated).toBe(true);

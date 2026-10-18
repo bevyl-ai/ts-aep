@@ -10,7 +10,6 @@ import { INSPECT } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   KeyError,
-  TypeError_,
   ValueError,
   getattr,
   int,
@@ -117,7 +116,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   delete(key: string): void {
-    throw new TypeError_("Cannot delete settings keys");
+    throw new TypeError("Cannot delete settings keys");
   }
 
   // -- iteration ---------------------------------------------------------
@@ -245,7 +244,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
     // coerce to OutputAudio.OFF (== 1). Reject rather than surprise.
-    throw new TypeError_(`Expected ${enumClass.__name__}, int, or str, got bool`);
+    throw new TypeError(`Expected ${enumClass.__name__}, int, or str, got bool`);
   }
   if (typeof value === "number" && Number.isInteger(value)) {
     const member = enumClass.ofOrNull(value);
@@ -275,7 +274,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
         `Valid labels: ${labels}`,
     );
   }
-  throw new TypeError_(
+  throw new TypeError(
     `Expected ${enumClass.__name__}, int, or str, got ${typeName(value)}`,
   );
 }
@@ -350,7 +349,7 @@ export function _toNumberValue(value: SettingValue): SettingValue {
 /** `tuple(value)` as a dict key; a scalar raises what Python's `tuple()` raises. */
 function _tupleKey(value: SettingValue): string {
   if (typeof value === "number" || typeof value === "boolean") {
-    throw new TypeError_(`'${typeName(value)}' object is not iterable`);
+    throw new TypeError(`'${typeName(value)}' object is not iterable`);
   }
   return tkey(...value);
 }

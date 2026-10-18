@@ -10,7 +10,7 @@ import { AlphaMode, FieldSeparationType } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
 import { getComp, getFirstFootage, getFootage, getFootageFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
-import { AssertionError_, Path, StopIteration, isclose, pyEq } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, StopIteration, isclose, pyEq } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
@@ -330,7 +330,7 @@ describe("TestFootageSettings", () => {
       parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
     );
     expect(footage != null).toBe(true);
-    if (footage == null) throw new AssertionError_("sample has no footage item");
+    if (footage == null) throw new AssertionError("sample has no footage item");
     expect(footage.mainSource.conformFrameRate).toBe(2.5);
   });
 
@@ -344,7 +344,7 @@ describe("TestFootageSettings", () => {
       parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
     );
     expect(footage != null).toBe(true);
-    if (footage == null) throw new AssertionError_("sample has no footage item");
+    if (footage == null) throw new AssertionError("sample has no footage item");
     expect(footage.duration).toBe(footageJson["duration"]);
     expect(footageJson["duration"]).toBe(19.2);
   });

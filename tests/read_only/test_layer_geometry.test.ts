@@ -20,7 +20,6 @@ import {
   NotImplementedError,
   Path,
   StopIteration,
-  TypeError_,
   ValueError,
   float,
   floatRepr,
@@ -136,7 +135,7 @@ function _layer(comp: CompItem, name: string): AVLayer {
 
 // `[*v]` on a transform value: a scalar is not iterable in Python either.
 function _vec(v: number | number[]): number[] {
-  if (typeof v === "number") throw new TypeError_("'float' object is not iterable");
+  if (typeof v === "number") throw new TypeError("'float' object is not iterable");
   return v;
 }
 
@@ -354,11 +353,11 @@ describe("TestSourceRectAtTime", () => {
   test("test_invalid_args_raise", () => {
     const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
-    raises(TypeError_, () =>
+    raises(TypeError, () =>
       // @ts-expect-error deliberately passes a list time to check runtime validation
       layer.sourceRectAtTime([0.0], false),
     );
-    raises(TypeError_, () =>
+    raises(TypeError, () =>
       // @ts-expect-error deliberately passes a string extents to check runtime validation
       layer.sourceRectAtTime(0.0, "yes"),
     );

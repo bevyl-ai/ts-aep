@@ -11,7 +11,7 @@ import { ValidationResult, _getFieldNames, _getPropertyNames, compareMarker, com
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { AssertionError_, Path, getitem, len, pyAssert, pyEq, range, repr, sorted, str, strip } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, getitem, len, pyAssert, pyEq, range, repr, sorted, str, strip } from "../../src/pyrt/index.ts";
 import { makeTmpPath, skip } from "../../src/pyrt/pytest.ts";
 
 /** Path(__file__).parent.parent.parent / "samples" */
@@ -151,7 +151,7 @@ describe("TestTraversalOrder", () => {
     const names = _getFieldNames(new KeyframeEase(0.0, 50.0));
     expect(names != null).toBe(true);
     expect(Array.isArray(names)).toBe(true);
-    if (names == null) throw new AssertionError_("KeyframeEase has no field names");
+    if (names == null) throw new AssertionError("KeyframeEase has no field names");
     expect(pyEq([...names], sorted(names))).toBe(true);
   });
 

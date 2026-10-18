@@ -24,7 +24,7 @@ import {
   type PathLike,
 } from "../../pyrt/index.ts";
 import { CosParser, IndirectObject, IndirectReference, decodePdfTextString } from "../cos/index.ts";
-import { SyntaxError_, type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
+import { type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
 import { is, pyStr } from "../cos/kinds.ts";
 
 /** Raised when a `.ai`/`.pdf` file's layers cannot be enumerated. */
@@ -71,7 +71,7 @@ export function latin1(data: Uint8Array): string {
 // TODO(port): Python's RecursionError (CPython limit 1000 frames) maps to V8's stack-overflow RangeError, which fires at an engine/stack-size dependent depth; PDF objects nested between the two limits parse in one runtime and are reported malformed (or not) in the other. No pyrt RecursionError exists and V8 gives no fixed depth to emulate.
 export function isMalformed(exc: unknown): boolean {
   return (
-    exc instanceof SyntaxError_ ||
+    exc instanceof SyntaxError ||
     (exc instanceof RangeError && /call stack/.test(exc.message))
   );
 }

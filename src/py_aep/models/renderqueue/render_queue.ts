@@ -3,7 +3,7 @@ import { LHD3_BLOCK_SINGLE, setLhd3Count, type LdatChunk, type Lhd3Chunk } from 
 import { buildRqSettingsList } from "../../binary/mutations.ts";
 import { RhedChunk } from "../../binary/project_chunks.ts";
 import { ArsiChunk, RoutChunk } from "../../binary/render_chunks.ts";
-import { TypeError_ } from "../../../pyrt/index.ts";
+import {  } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
 import { CompItem } from "../items/composition.ts";
 import { RenderQueueItem } from "./render_queue_item.ts";
@@ -155,7 +155,7 @@ export class RenderQueue {
    */
   add(comp: CompItem): RenderQueueItem {
     if (!(comp instanceof CompItem)) {
-      throw new TypeError_("comp must be a CompItem");
+      throw new TypeError("comp must be a CompItem");
     }
 
     // Create the new RQ item with all backing chunks

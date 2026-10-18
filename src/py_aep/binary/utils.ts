@@ -10,7 +10,6 @@ import {
   jsonLoads,
   len,
   typeName,
-  TypeError_,
   type JsonValue,
 } from "../../pyrt/index.ts";
 import { Chunk } from "./chunk.ts";
@@ -286,7 +285,7 @@ export function parseAlasData(parentChunks: Chunk[]): AlasData {
 export function alasFullpath(data: AlasData): string {
   const stored = data.get("fullpath");
   const fullpath = stored === undefined ? "" : stored;
-  if (typeof fullpath !== "string") throw new TypeError_(`alas fullpath must be a str, not '${typeName(fullpath)}'`);
+  if (typeof fullpath !== "string") throw new TypeError(`alas fullpath must be a str, not '${typeName(fullpath)}'`);
   return fullpath;
 }
 
@@ -295,7 +294,7 @@ export function alasTargetIsFolder(data: AlasData): boolean {
   const stored = data.get("target_is_folder");
   const targetIsFolder = stored === undefined ? false : stored;
   if (typeof targetIsFolder !== "boolean") {
-    throw new TypeError_(`alas targetIsFolder must be a bool, not '${typeName(targetIsFolder)}'`);
+    throw new TypeError(`alas targetIsFolder must be a bool, not '${typeName(targetIsFolder)}'`);
   }
   return targetIsFolder;
 }
