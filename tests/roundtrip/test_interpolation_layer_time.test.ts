@@ -24,8 +24,10 @@ import type { Application } from "../../src/py_aep/index.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { max, min, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { valueEquals } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { max, min, range, sorted } from "../support/python.ts";
+
 
 function _newComp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
   const app = py_aep.newProject();

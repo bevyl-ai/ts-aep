@@ -18,11 +18,12 @@ import {
 } from "../../src/pyrt/index.ts";
 import type { EnumValue } from "../../src/pyrt/index.ts";
 import { boxFloat } from "../../src/pyrt/num.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 import type { CosDict, CosNode } from "../../src/py_aep/cos/cos.ts";
 import { CosField } from "../../src/py_aep/cos/descriptors.ts";
 import { cosFloat } from "../../src/py_aep/cos/kinds.ts";
 import { ChunkField, _materializationAllowed, _suppressMaterialization } from "../../src/py_aep/models/descriptors.ts";
+import { raises } from "../support/pytest.ts";
 
 // ---------------------------------------------------------------------------
 // Helpers

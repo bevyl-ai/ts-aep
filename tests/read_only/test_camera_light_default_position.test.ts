@@ -29,13 +29,15 @@
 // become the cartesian rows built below.
 
 import { describe, expect, test } from "bun:test";
-import { approx } from "../../src/pyrt/pytest.ts";
-import { getOrThrow, Path, assert, range, StopIteration } from "../../src/pyrt/index.ts";
+
+import { getOrThrow, Path, assert, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { jsonField, type ExpectedProperty } from "../helpers.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { approx } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
 const VIEW_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "view");

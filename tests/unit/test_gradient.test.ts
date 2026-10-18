@@ -5,7 +5,8 @@ import { expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
 import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
-import { len, assert, valueEquals, pySlice, range, sorted } from "../../src/pyrt/index.ts";
+import { len, assert, valueEquals, pySlice } from "../../src/pyrt/index.ts";
+import { range, sorted } from "../support/python.ts";
 
 /** Minimal stand-in for Utf8Chunk in parser unit tests. */
 class _FakeUtf8 {

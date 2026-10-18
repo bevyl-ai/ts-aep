@@ -12,9 +12,11 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { GradientPaint, SolidPaint, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
 import { parseColor } from "../../src/py_aep/svg/colors.ts";
 import { IDENTITY, parseTransform } from "../../src/py_aep/svg/transform.ts";
-import { at, encode, max, min, assert, valueEquals, zip, type Path } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, encode, assert, valueEquals, zip, type Path } from "../../src/pyrt/index.ts";
+
 import { asInstance } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { max, min } from "../support/python.ts";
 
 const NS = 'xmlns="http://www.w3.org/2000/svg"';
 

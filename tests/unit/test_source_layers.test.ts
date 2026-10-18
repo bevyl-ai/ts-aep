@@ -10,7 +10,8 @@ import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { FlattenedPsdError } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { psdLeafLayers, resolveAiLayer, resolvePsdLayer } from "../../src/py_aep/resolvers/source_layers.ts";
 import { Path, valueEquals, compositeKey, ValueError } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { raises } from "../support/pytest.ts";
+
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
 const ASSETS = new Path(import.meta.dir).parent.parent.div("samples").div("assets");

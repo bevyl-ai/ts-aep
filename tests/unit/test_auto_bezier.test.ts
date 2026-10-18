@@ -11,8 +11,9 @@
 import { describe, expect, test } from "bun:test";
 
 import { valueEquals } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { _DEFAULT_INFLUENCE, autoSpatialTangents, autoTemporalSpeeds } from "../../src/py_aep/resolvers/interpolation.ts";
+import { approx } from "../support/pytest.ts";
 
 /** Tangent is +/- one sixth of the chord between the neighbours. */
 describe("TestAutoSpatialTangents", () => {

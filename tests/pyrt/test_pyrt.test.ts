@@ -1,42 +1,16 @@
 /** pyrt shims checked against CPython 3.12 results (tests/pyrt/cpython_fixtures.ts). */
 
 import { describe, expect, test } from "bun:test";
-import {
-  BytesIO,
-  JSONDecodeError,
-  PurePosixPath,
-  PureWindowsPath,
-  StringIO,
-  Bytes,
-  decode,
-  dict,
-  encode,
-  float,
-  floatRepr,
-  hypot,
-  int,
-  jsonDumps,
-  jsonGetitem,
-  jsonLoads,
-  patternFindall,
-  patternMatch,
-  assert,
-  valueEquals,
-  pyRe,
-  boxFloat,
-  reEscape,
-  repr,
-  struct,
-  truediv,
-  typeName,
-  ZeroDivisionError,
-} from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { BytesIO, JSONDecodeError, PurePosixPath, PureWindowsPath, Bytes, decode, encode, float, floatRepr, hypot, int, jsonDumps, jsonGetitem, jsonLoads, patternMatch, assert, valueEquals, pyRe, boxFloat, reEscape, repr, struct, truediv, typeName, ZeroDivisionError } from "../../src/pyrt/index.ts";
+
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import * as datetime from "../../src/pyrt/datetime.ts";
 import { Path } from "../../src/pyrt/pathlib.ts";
 import { fs, memfs, useHostFs, useMemoryFs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
+import { raises } from "../support/pytest.ts";
+import { dict, patternFindall } from "../support/python.ts";
+import { StringIO } from "../support/python.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
 function fromhex(s: string): number {

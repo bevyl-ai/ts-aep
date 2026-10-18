@@ -2,11 +2,12 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx, raises } from "../../src/pyrt/pytest.ts";
+
 import { BytesIO, b, Bytes, assert, valueEquals } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
 import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
+import { approx, raises } from "../support/pytest.ts";
 
 describe("TestCosParserPrimitives", () => {
   /** Tests for parsing individual COS value types. */

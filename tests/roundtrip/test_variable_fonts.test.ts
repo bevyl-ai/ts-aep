@@ -8,12 +8,13 @@
 
 import { describe, expect, test } from "bun:test";
 import { float, Path, assert, valueEquals, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import { resolveFontExact } from "../../src/py_aep/svg/fonts.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { asInstance, getComp } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 

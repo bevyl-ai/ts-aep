@@ -7,13 +7,14 @@
 // `_register.ts` to do the same.
 
 import { describe, expect, test } from "bun:test";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { Path, b, Bytes, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../../src/py_aep/binary/render_chunks.ts";
 import { OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
 import { parseOutputTemplates, parseRenderTemplates } from "../../src/py_aep/parsers/templates.ts";
 import { resolveOutputFilename } from "../../src/py_aep/resolvers/output.ts";
+import { makeTmpPath } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");

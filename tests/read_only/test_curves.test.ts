@@ -12,21 +12,8 @@
  */
 
 import { expect, test } from "bun:test";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
-import {
-  Path,
-  StopIteration,
-  ValueError,
-  bytesEqual,
-  getOrThrow,
-  len,
-  max,
-  min,
-  assert,
-  truthy,
-  valueEquals,
-  range,
-} from "../../src/pyrt/index.ts";
+
+import { Path, StopIteration, ValueError, bytesEqual, getOrThrow, len, assert, truthy, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -34,6 +21,8 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { jsonField, type ExpectedKeyframe } from "../helpers.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, raises } from "../support/pytest.ts";
+import { max, min, range } from "../support/python.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "models" / "property"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");

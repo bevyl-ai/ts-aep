@@ -1,21 +1,8 @@
 /** Tests for Project model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  b,
-  Bytes,
-  contains,
-  len,
-  lshift,
-  Path,
-  assert,
-  valueEquals,
-  split,
-  StopIteration,
-  str,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { b, Bytes, contains, len, Path, assert, valueEquals, StopIteration, str, ValueError } from "../../src/pyrt/index.ts";
+
 import { projectBytes } from "../helpers.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { type Project, parse as parseAep } from "../../src/py_aep/index.ts";
@@ -25,6 +12,8 @@ import { ColorProfileNotFoundError, iccProfileId } from "../../src/py_aep/color/
 import { BitsPerChannel, ColorManagementSystem, FeetFramesFilmType, FootageTimecodeDisplayStartType, FramesCountType, GpuAccelType, LutInterpolationMethod, TimeDisplayType } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { lshift, split } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "view");

@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { KeyError, Path, ValueError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { asInstance } from "../helpers.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/models/application.ts";
@@ -15,6 +15,7 @@ import {
 } from "../../src/py_aep/models/items/renderer_options/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { EnvironmentLightShadowResolution, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
 const COMPOSITION_DIR = SAMPLES_DIR.div("composition");

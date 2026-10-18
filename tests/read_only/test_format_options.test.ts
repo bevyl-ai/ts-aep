@@ -5,7 +5,7 @@
 // `x == pytest.approx(y)` becomes `expect(approx(x, y)).toBe(true)`.
 
 import { describe, expect, test } from "bun:test";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { Path, contains, getOr, getOrThrow, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
@@ -15,6 +15,7 @@ import { findByType } from "../../src/py_aep/binary/utils.ts";
 import { AudioCodec, CineonFileFormat, Hdr10ColorPrimaries, JpegFormatType, MPEGAudioFormat, MPEGMultiplexer, MPEGMuxStreamCompatibility, OpenExrCompression, PngCompression, VideoCodec } from "../../src/py_aep/enums/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
+import { approx } from "../support/pytest.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.

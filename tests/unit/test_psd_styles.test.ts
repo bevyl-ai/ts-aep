@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { raises, warns } from "../../src/pyrt/pytest.ts";
+
 import {
   NotImplementedError,
   Path,
@@ -17,6 +17,7 @@ import { PsdLayer, readPsdLayers, type PsdNode } from "../../src/py_aep/resolver
 import { asInstance } from "../helpers.ts";
 import { type _Value, type PsdLayerStyles, _instanceBox, hasEnabledStyles, mergedStylesBounds, parseLayerStyles, readGlobalLight } from "../../src/py_aep/resolvers/psd_styles.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { raises, warns } from "../support/pytest.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets"
 const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "assets");

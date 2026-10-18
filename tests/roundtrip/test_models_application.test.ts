@@ -5,8 +5,9 @@ import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 
 import { Path, valueEquals, ValueError } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLE = new Path(fileURLToPath(import.meta.url))
   .resolve()

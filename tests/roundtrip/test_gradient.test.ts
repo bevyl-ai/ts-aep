@@ -5,11 +5,13 @@ import { expect, test } from "bun:test";
 import { parse } from "../../src/py_aep/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
 import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { hasMember, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
+
+import { valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import type { Item } from "../../src/py_aep/models/items/item.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { hasMember } from "../support/python.ts";
 
 const SAMPLE = "samples/models/property/gradient.aep";
 const SAMPLE_XML = `<prop.map version="4">

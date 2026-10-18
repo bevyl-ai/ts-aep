@@ -1,14 +1,16 @@
 /** Tests for the Curves effect's value (ADBE CurvesCustom-0001). */
 
 import { expect, test } from "bun:test";
-import { b, Bytes, getOr, float, getOrThrow, isclose, len, valueEquals, range, struct, ValueError } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { b, Bytes, getOr, float, getOrThrow, isclose, len, valueEquals, struct, ValueError } from "../../src/pyrt/index.ts";
+
 // Python's `import py_aep.binary.chunk` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
 import { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { CurvesArbpChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { toDict, type Dict } from "../../src/py_aep/cli/validate.ts";
 import { CURVES_CHANNELS, Curves } from "../../src/py_aep/models/properties/curves.ts";
+import { raises } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 /** A Curves aRbp as After Effects writes it, the maps left identity. */
 function _blob(

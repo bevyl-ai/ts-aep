@@ -20,22 +20,14 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  Path,
-  getOrThrow,
-  len,
-  lruCache,
-  assert,
-  valueEquals,
-  round,
-  setWarningHandler,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+import { Path, getOrThrow, len, lruCache, assert, valueEquals, setWarningHandler, zip } from "../../src/pyrt/index.ts";
+
 import type { Box } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { aiLayerOptiBoxes, parseProject } from "../helpers.ts";
+import { approx } from "../support/pytest.ts";
+import { round } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in the Python source.
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");

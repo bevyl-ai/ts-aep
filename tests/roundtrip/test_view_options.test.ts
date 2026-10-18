@@ -12,13 +12,14 @@
 
 import { describe, expect, test } from "bun:test";
 import { Path, ValueError, isclose, assert } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { parseAppFresh } from "../helpers.ts";
 
 import "../../src/py_aep/binary/_register.ts";
 import { ChannelType, FastPreviewType, ViewerType, type ViewOptions } from "../../src/py_aep/index.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / ...` in the Python source.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "view");

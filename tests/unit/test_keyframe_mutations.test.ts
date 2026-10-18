@@ -8,10 +8,11 @@
 
 import { describe, expect, test } from "bun:test";
 import { len, Path, valueEquals, ValueError, zip } from "../../src/pyrt/index.ts";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
+
 // Python's `from py_aep.models.properties.shape import Shape` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
+import { approx, raises } from "../support/pytest.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 const SAMPLES_ROOT = new Path(import.meta.path).parent.parent.parent.div("samples");

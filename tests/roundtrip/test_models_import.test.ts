@@ -1,31 +1,8 @@
 import "../../src/py_aep/binary/_register.ts";
 import { realpathSync } from "node:fs";
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  b,
-  BytesIO,
-  Bytes,
-  concat,
-  encode,
-  enumerate,
-  getMember,
-  getOrThrow,
-  len,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  round,
-  sorted,
-  struct,
-  StopIteration,
-  ValueError,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, warns } from "../../src/pyrt/pytest.ts";
+import { AssertionError, b, BytesIO, Bytes, concat, encode, getMember, getOrThrow, len, Path, assert, truthy, valueEquals, truthyOr, repr, struct, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+
 import { AlphaMode, FieldSeparationType, ImportAsType, PulldownPhase, parse as parseAep } from "../../src/py_aep/index.ts";
 import { ListChunk, writeChunk, type Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { buildAiLayerOptiData, buildGenericOptiData, buildPsdFlattenedOptiData, buildPsdLayerOptiData, buildTextOptiData, PlaceholderOptiChunk, PsdOptiChunk, SoliOptiChunk, TextOptiChunk } from "../../src/py_aep/binary/footage_chunks.ts";
@@ -51,6 +28,8 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { approx, makeTmpPath, raises, warns } from "../support/pytest.ts";
+import { enumerate, round, sorted } from "../support/python.ts";
 
 /** Tests for media-file probing and file-source creation via import_file. */
 

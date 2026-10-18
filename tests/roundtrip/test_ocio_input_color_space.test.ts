@@ -18,8 +18,8 @@
  */
 
 import { expect, test } from "bun:test";
-import { b, getOrThrow, Path, truthy, valueEquals, repr, sorted, StopIteration, str } from "../../src/pyrt/index.ts";
-import { skip } from "../../src/pyrt/pytest.ts";
+import { b, getOrThrow, Path, truthy, valueEquals, repr, StopIteration, str } from "../../src/pyrt/index.ts";
+
 import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
@@ -30,6 +30,8 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
 import { asInstance } from "../helpers.ts";
+import { skip } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.dir, "..", "..", "samples");
 const IMPORT_DIR = SAMPLES.div("models", "import");

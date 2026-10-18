@@ -11,7 +11,8 @@
 import { expect, test } from "bun:test";
 import { asInstance, parseApp, SAMPLES_DIR } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { Path, valueEquals, sorted } from "../../src/pyrt/index.ts";
+import { Path, valueEquals } from "../../src/pyrt/index.ts";
+import { sorted } from "../support/python.ts";
 
 const _CORPUS_ROOTS = [
   SAMPLES_DIR.div("models", "format_options"),

@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 import { BytesIO, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, compositeKey } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
 import { psdCompLayerStyles, psdFootageDimensions, psdFootageLayerStyles } from "../../src/py_aep/models/preferences.ts";
@@ -16,6 +16,7 @@ import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { asInstance } from "../helpers.ts";
 import { _RESIZE_TO_STRINGS, buildResizeToStrings } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile } from "../../src/py_aep/parsers/prefs.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const MACHINE = PREFType.PREF_Type_MACHINE_SPECIFIC;
 const INDEP = PREFType.PREF_Type_MACHINE_INDEPENDENT;

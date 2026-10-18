@@ -8,7 +8,9 @@ import { describe, expect, test } from "bun:test";
 
 import { ColorProfileNotFoundError, IccProfileLibrary, defaultIccDirectories, iccProfileId } from "../../src/py_aep/color/icc.ts";
 import { _ICC_PROFILE_MAPPING, profileIdForName } from "../../src/py_aep/enums/mappings.ts";
-import { b, Bytes, valueEquals, raises, range } from "../../src/pyrt/index.ts";
+import { b, Bytes, valueEquals } from "../../src/pyrt/index.ts";
+import { raises } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 /** Name -> 16-byte ID inversion of the catalogue. */
 describe("TestProfileIdForName", () => {

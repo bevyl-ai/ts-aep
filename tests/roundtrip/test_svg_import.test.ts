@@ -1,8 +1,8 @@
 /** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
-import { at, bytesEqual, getMember, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, bytesEqual, getMember, assert, truthy, valueEquals, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { ShapeLayer } from "../../src/py_aep/models/layers/shape_layer.ts";
@@ -12,6 +12,8 @@ import { findByType, findByTypeOrNull } from "../../src/py_aep/binary/utils.ts";
 import { readSvg } from "../../src/py_aep/svg/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { round, sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const BASE = SAMPLES.div("models", "folder", "folder.aep");

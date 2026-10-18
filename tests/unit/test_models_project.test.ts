@@ -6,7 +6,8 @@ import "../../src/py_aep/binary/_register.ts";
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { b, FileExistsError, Path, valueEquals } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "view");

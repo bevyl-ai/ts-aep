@@ -14,32 +14,14 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  Path,
-  degrees,
-  enumerate,
-  float,
-  floatRepr,
-  getOrThrow,
-  len,
-  min,
-  mod,
-  assert,
-  truthy,
-  valueEquals,
-  repr,
-  round,
-  StopIteration,
-  sum,
-  zip,
-} from "../../src/pyrt/index.ts";
+import { AssertionError, Path, degrees, float, floatRepr, getOrThrow, len, mod, assert, truthy, valueEquals, repr, StopIteration, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, getComp, loadExpectedValueAtTime, parseProject, type ExpectedShape } from "../helpers.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import { _subdivisionCuts, eulerToQuaternion, interpolateShapes, slerpOrientation } from "../../src/py_aep/resolvers/interpolation.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
+import { enumerate, min, round, sum } from "../support/python.ts";
 
 // import.meta.dir is already the file's own directory (Python's
 // `Path(__file__).parent`), so two more `.parent`s reach the TS root.

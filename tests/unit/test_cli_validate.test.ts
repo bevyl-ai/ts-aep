@@ -11,8 +11,10 @@ import { ValidationResult, _getFieldNames, _getPropertyNames, compareMarker, com
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { AssertionError, Path, getOrThrow, len, assert, valueEquals, range, repr, sorted, str, strip } from "../../src/pyrt/index.ts";
-import { makeTmpPath, skip } from "../../src/pyrt/pytest.ts";
+import { AssertionError, Path, getOrThrow, len, assert, valueEquals, repr, str } from "../../src/pyrt/index.ts";
+import { makeTmpPath, skip } from "../support/pytest.ts";
+import { range, sorted, strip } from "../support/python.ts";
+
 
 /** Path(__file__).parent.parent.parent / "samples" */
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");

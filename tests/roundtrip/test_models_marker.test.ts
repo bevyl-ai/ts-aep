@@ -14,12 +14,13 @@ import {
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { MarkerValue, parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import { Label } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, parseProjectFresh } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "marker");
 

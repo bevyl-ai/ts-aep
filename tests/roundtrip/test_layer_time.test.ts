@@ -20,8 +20,10 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
-import { AssertionError, ValueError, float, getMember, getOrThrow, max, valueEquals } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AssertionError, ValueError, float, getMember, getOrThrow, valueEquals } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { max } from "../support/python.ts";
+
 
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
 

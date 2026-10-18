@@ -12,9 +12,10 @@
 
 import { describe, expect, test } from "bun:test";
 import { Path } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+
 import { parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/index.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this file's
 // directory (tests/roundtrip), so two `.parent` hops reach the package root.

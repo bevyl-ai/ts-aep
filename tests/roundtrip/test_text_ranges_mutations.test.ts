@@ -14,15 +14,10 @@ import { cosDict, cosIter, is, pyInt } from "../../src/py_aep/cos/kinds.ts";
 import { BoxVerticalAlignment } from "../../src/py_aep/enums/index.ts";
 import { resolvePostscript } from "../../src/py_aep/svg/fonts.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
-import {
-  Path,
-  valueEquals,
-  truthyOr,
-  sorted,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { Path, valueEquals, truthyOr, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
+
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");
 const SAMPLE = SAMPLES_DIR.div("text_ranges.aep");

@@ -2,8 +2,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
-import { Path, at, b, getOrThrow, min, assert, valueEquals, sorted, zip } from "../../src/pyrt/index.ts";
+
+import { Path, at, b, getOrThrow, assert, valueEquals, zip } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { GradientPaint, type GradientStop, SolidPaint, SvgDocument, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
 import { parseColor } from "../../src/py_aep/svg/colors.ts";
@@ -11,6 +11,8 @@ import { parsePath } from "../../src/py_aep/svg/path_data.ts";
 import { cubicsToSubpath, elementSubpaths } from "../../src/py_aep/svg/shapes.ts";
 import { parseCss, resolveProperties } from "../../src/py_aep/svg/style.ts";
 import { IDENTITY, parseTransform } from "../../src/py_aep/svg/transform.ts";
+import { approx, raises, skip } from "../support/pytest.ts";
+import { min, sorted } from "../support/python.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const SAMPLE = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "svg.svg");

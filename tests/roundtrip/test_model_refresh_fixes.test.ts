@@ -7,10 +7,12 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { StopIteration, getMember, hasMember, len, truthy, range, str } from "../../src/pyrt/index.ts";
+import { StopIteration, getMember, len, truthy, str } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
+import { approx, makeTmpPath } from "../support/pytest.ts";
+import { hasMember, range } from "../support/python.ts";
 
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");

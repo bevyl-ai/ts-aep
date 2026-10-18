@@ -9,7 +9,8 @@ import { parseApp } from "../conftest.ts";
 
 import type { Application } from "../../src/py_aep/index.ts";
 import { buildProjectNode, formatDot, formatJson, formatMermaid, formatText, type Node } from "../../src/py_aep/cli/visualize.ts";
-import { Path, len, StringIO } from "../../src/pyrt/index.ts";
+import { Path, len } from "../../src/pyrt/index.ts";
+import { StringIO } from "../support/python.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples"
 // (`import.meta.dir` is already the directory of this file, so two parents reach the package root.)

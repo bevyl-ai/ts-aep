@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+
 import {
   AssertionError,
   BytesIO,
@@ -40,6 +40,7 @@ import { _unflagMarkers, removeChunksByType, toggleFlagChunk } from "../../src/p
 
 // Pull in every chunk registration (Python's `register` side effects).
 import "../../src/py_aep/binary/_register.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples");
 

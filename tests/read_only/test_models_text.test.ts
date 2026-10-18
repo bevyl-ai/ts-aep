@@ -5,7 +5,7 @@
 // helper methods of `TestBoxOverflow` become closures inside it.
 
 import { describe, expect, test } from "bun:test";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { len, Path, assert, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -14,6 +14,7 @@ import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts
 import "../../src/py_aep/binary/_register.ts";
 import { getComp } from "../conftest.ts";
 import { AutoKernType, BaselineDirection, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
+import { approx } from "../support/pytest.ts";
 
 // Path(__file__).parent x3 is the TS root (this file lives in tests/read_only).
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");

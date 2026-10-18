@@ -5,18 +5,9 @@
 import { describe, expect, test } from "bun:test";
 import * as zlib from "node:zlib";
 
-import {
-  b,
-  Bytes,
-  concat,
-  int,
-  len,
-  valueEquals,
-  range,
-  struct,
-  zip,
-} from "../../src/pyrt/index.ts";
+import { b, Bytes, concat, int, len, valueEquals, struct, zip } from "../../src/pyrt/index.ts";
 import { _channelFlags } from "../../src/py_aep/resolvers/psd_layers.ts";
+import { range } from "../support/python.ts";
 
 function _delta(data: Uint8Array): Uint8Array {
   return Uint8Array.from(

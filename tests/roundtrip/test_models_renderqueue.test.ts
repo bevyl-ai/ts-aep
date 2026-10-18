@@ -1,35 +1,8 @@
 /** Tests for RenderQueue model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  AttributeError,
-  BytesIO,
-  KeyError,
-  NotImplementedError,
-  Path,
-  ValueError,
-  b,
-  Bytes,
-  concat,
-  contains,
-  dictPop,
-  fields,
-  fspath,
-  getMember,
-  getOrThrow,
-  int,
-  len,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  repr,
-  sorted,
-  StopIteration,
-  PureWindowsPath,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AssertionError, AttributeError, BytesIO, KeyError, NotImplementedError, Path, ValueError, b, Bytes, concat, contains, dictPop, fields, fspath, getMember, getOrThrow, int, len, assert, truthy, valueEquals, truthyOr, repr, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, readAep, writeAep } from "../../src/py_aep/binary/chunk.ts";
@@ -45,6 +18,8 @@ import type { RenderQueue } from "../../src/py_aep/models/renderqueue/render_que
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { TiffFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/tiff.ts";
 import { asInstance, getRqi } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const TEST_FILE = new Path(import.meta.path);
 const SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "renderqueue");

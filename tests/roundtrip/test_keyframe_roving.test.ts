@@ -14,21 +14,12 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProjectFresh } from "../helpers.ts";
-import {
-  at,
-  floordiv,
-  len,
-  mod,
-  Path,
-  assert,
-  valueEquals,
-  repr,
-  sorted,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, floordiv, len, mod, Path, assert, valueEquals, repr, ValueError } from "../../src/pyrt/index.ts";
+
 import { frameGrid } from "../../src/py_aep/binary/composition_chunks.ts";
 import type { Layer, Project, Property } from "../../src/py_aep/models/index.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 

@@ -18,26 +18,8 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  at,
-  b,
-  BytesIO,
-  Bytes,
-  contains,
-  getOr,
-  enumerate,
-  getOrThrow,
-  len,
-  max,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  StopIteration,
-  zip,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { AssertionError, at, b, BytesIO, Bytes, contains, getOr, getOrThrow, len, Path, assert, truthy, valueEquals, StopIteration, zip } from "../../src/pyrt/index.ts";
+
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -50,6 +32,8 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { enumerate, max } from "../support/python.ts";
 
 const SAMPLE = new Path(import.meta.path).parent.parent.parent.div(
   "samples",

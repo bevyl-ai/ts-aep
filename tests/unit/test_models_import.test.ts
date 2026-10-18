@@ -4,10 +4,11 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import { BytesIO, NotImplementedError, Path, ValueError, b, Bytes, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
-import { approx, raises } from "../../src/pyrt/pytest.ts";
+
 import { _FILE_FORMATS } from "../../src/py_aep/data/file_formats.ts";
 import { _PARSERS, _probeBmp, _probeDpxCineon, _probeGif, _probeHdr, _probeHeif, _probeMgjson, _probeMov, _probeMp3, _probeTiff, probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { buildAiDocumentOptiData, buildCrawOptiData, buildDpxOptiData, buildPsdLayerOptiData, buildPsdOptiData, buildRhdrOptiData, buildTextOptiData, buildTiffOptiData } from "../../src/py_aep/binary/footage_chunks.ts";
+import { approx, raises } from "../support/pytest.ts";
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
 const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");

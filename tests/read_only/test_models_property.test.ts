@@ -1,29 +1,8 @@
 /** Tests for Property model parsing with strengthened assertions. */
 
 import { describe, expect, test } from "bun:test";
-import { approx, skip, fail } from "../../src/pyrt/pytest.ts";
-import {
-  AssertionError,
-  IndexError,
-  Path,
-  StopIteration,
-  float,
-  getMember,
-  getOrThrow,
-  int,
-  len,
-  pyAnd,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  range,
-  repr,
-  getOrInsert,
-  sorted,
-  str,
-  zip,
-} from "../../src/pyrt/index.ts";
+
+import { AssertionError, IndexError, Path, StopIteration, float, getMember, getOrThrow, int, len, assert, truthy, valueEquals, truthyOr, repr, getOrInsert, str, zip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, getFirstLayer, getLayer, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance, jsonField, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
@@ -32,6 +11,8 @@ import { KeyframeInterpolationType, MaskFeatherFalloff, MaskMode, MaskMotionBlur
 import { KfPosition } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { AVLayer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import type { CompItem, Layer } from "../../src/py_aep/models/index.ts";
+import { approx, skip, fail } from "../support/pytest.ts";
+import { pyAnd, range, sorted } from "../support/python.ts";
 
 // `from __future__ import annotations` is dropped: no annotation here is
 // evaluated at runtime. `json.loads` becomes `JSON.parse` (plain objects).

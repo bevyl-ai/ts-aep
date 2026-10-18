@@ -7,8 +7,9 @@
 
 import { expect, test } from "bun:test";
 import { BytesIO, encode } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+
 import { _probeMgjson } from "../../src/py_aep/resolvers/media_probe.ts";
+import { raises } from "../support/pytest.ts";
 
 function mgjson(times: string[]): BytesIO {
   const doc = { dataDynamicSamples: [{ samples: times.map((time) => ({ time })) }] };

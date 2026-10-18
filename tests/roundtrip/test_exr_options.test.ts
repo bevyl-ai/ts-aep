@@ -16,13 +16,15 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { Bytes, getOrThrow, len, Path, valueEquals, sorted } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { Bytes, getOrThrow, len, Path, valueEquals } from "../../src/pyrt/index.ts";
+
 import { asInstance, parseProject } from "../helpers.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.dir, "..", "..", "samples");
 const ASSETS = SAMPLES.div("assets");

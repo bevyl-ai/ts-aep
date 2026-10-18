@@ -13,7 +13,7 @@
  * re-reads its own XML happily. These tests compare against AE's own bytes.
  */
 import { describe, expect, test } from "bun:test";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { Path, b, Bytes, len, valueEquals, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse, type Project } from "../../src/py_aep/index.ts";
@@ -21,6 +21,7 @@ import { asInstance } from "../helpers.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _LEN_BODY_OFFSET, _LEN_XML_OFFSET, _XML_TERMINATOR } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
+import { makeTmpPath } from "../support/pytest.ts";
 
 const FORMAT_DIR = new Path(import.meta.filename).parent.parent.parent.div("samples", "models", "format_options");
 

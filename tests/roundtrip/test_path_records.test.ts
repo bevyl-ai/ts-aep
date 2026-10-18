@@ -12,12 +12,13 @@ import {
   valueEquals,
   type JsonValue,
 } from "../../src/pyrt/index.ts";
-import { makeTmpPath, skip } from "../../src/pyrt/pytest.ts";
+
 import { FileSource, FootageItem, ImportOptions, parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { PENDING_ASCENDCOUNT, parseAlasData } from "../../src/py_aep/binary/utils.ts";
 import { platformPath } from "../../src/py_aep/resolvers/platform_paths.ts";
 import { getRqi, parseProjectFresh } from "../helpers.ts";
+import { makeTmpPath, skip } from "../support/pytest.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const ASSETS = SAMPLES.div("assets");

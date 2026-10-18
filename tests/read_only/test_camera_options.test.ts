@@ -10,11 +10,12 @@
 
 import { describe, expect, test } from "bun:test";
 import { Path, StopIteration, len, assert } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { CameraLayer, type Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { approx } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).div("..", "..", "samples", "models", "layer");
 const CAMERAS_AEP = SAMPLES_DIR.div("camera_rigs.aep");

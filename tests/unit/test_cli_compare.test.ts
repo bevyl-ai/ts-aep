@@ -13,7 +13,8 @@ import { ByteDifference, ChunkDifference, MultiFileDifference, _compareChunkDict
 import { CdatChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { ShphChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
-import { Path, b, valueEquals, range, split, strip } from "../../src/pyrt/index.ts";
+import { Path, b, valueEquals } from "../../src/pyrt/index.ts";
+import { range, split, strip } from "../support/python.ts";
 
 // SAMPLES_DIR = Path(__file__).parent.parent.parent / "samples"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");

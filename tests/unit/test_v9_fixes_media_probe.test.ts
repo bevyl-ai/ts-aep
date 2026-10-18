@@ -10,9 +10,11 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, sorted, struct } from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { BytesIO, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
+
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
 const ASSETS = new Path(import.meta.dir).parent.parent.div("samples").div("assets");

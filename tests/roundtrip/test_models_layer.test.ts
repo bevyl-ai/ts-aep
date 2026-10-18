@@ -1,24 +1,8 @@
 /** Tests for Layer model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AttributeError,
-  len,
-  NotImplementedError,
-  at,
-  Path,
-  assert,
-  valueEquals,
-  range,
-  getOrThrow,
-  getOrInsert,
-  pySlice,
-  isclose,
-  RuntimeError,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { AttributeError, len, NotImplementedError, at, Path, assert, valueEquals, getOrThrow, getOrInsert, pySlice, isclose, RuntimeError, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { AutoOrientType, BlendingMode, FrameBlendingType, KeyframeInterpolationType, Label, LayerQuality, LayerSamplingQuality, LightType, TrackMatteType } from "../../src/py_aep/enums/index.ts";
@@ -34,6 +18,8 @@ import "../../src/py_aep/binary/_register.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
 import { asInstance, getComp, getFirstLayer, getLayer, parseProjectFresh, projectBytes } from "../helpers.ts";
+import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
+import { range } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");

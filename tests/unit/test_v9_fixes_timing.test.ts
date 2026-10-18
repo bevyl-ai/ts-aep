@@ -14,9 +14,11 @@ import { SspcChunk } from "../../src/py_aep/binary/footage_chunks.ts";
 import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { RenderSettingsItem, RouuChunk } from "../../src/py_aep/binary/render_chunks.ts";
 import { _frameNumber } from "../../src/py_aep/models/items/composition.ts";
-import { Fraction, getOrThrow, valueEquals, truthy, sorted, struct } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+import { Fraction, getOrThrow, valueEquals, truthy, struct } from "../../src/pyrt/index.ts";
+
 import { asInstance } from "../helpers.ts";
+import { approx } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 // rate -> (internal timebase, timebase units per frame), AE 2026 addComp.
 const _AE_TIMEBASES = new Map<number, [number, number]>([

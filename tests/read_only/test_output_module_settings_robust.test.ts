@@ -11,7 +11,8 @@ import { asInstance, parseApp, SAMPLES_DIR } from "../helpers.ts";
 import { GetSettingsFormat, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
-import { Path, sorted } from "../../src/pyrt/index.ts";
+import { Path } from "../../src/pyrt/index.ts";
+import { sorted } from "../support/python.ts";
 
 const _CORPUS_ROOTS = [
   SAMPLES_DIR.div("models", "format_options"),

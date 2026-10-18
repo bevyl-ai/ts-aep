@@ -14,8 +14,8 @@
 // NOTE(port): importorskip only skips when uharfbuzz is absent; harfbuzzjs is a hard dependency, so the skip can never fire.
 
 import { expect, test } from "bun:test";
-import { Path, getOrThrow, format, assert, truthy, valueEquals, repr, zip } from "../../src/pyrt/index.ts";
-import { raises } from "../../src/pyrt/pytest.ts";
+import { Path, getOrThrow, assert, truthy, valueEquals, repr, zip } from "../../src/pyrt/index.ts";
+
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../helpers.ts";
 import type { CosNode } from "../../src/py_aep/cos/cos.ts";
@@ -23,6 +23,8 @@ import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts
 import { _cachedLineData } from "../../src/py_aep/models/text/ranges.ts";
 import { CompositionUnsupported, _CharStyle, _shapeStretch, composeLines } from "../../src/py_aep/resolvers/text_composition.ts";
 import { resolvePostscript } from "../../src/py_aep/svg/fonts.ts";
+import { raises } from "../support/pytest.ts";
+import { format } from "../support/python.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.

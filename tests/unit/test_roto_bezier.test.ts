@@ -5,9 +5,10 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { DEFAULT_TENSION, keyframeTensions, rotoBezierTangents } from "../../src/py_aep/resolvers/roto_bezier.ts";
+import { approx } from "../support/pytest.ts";
 
 function _flat(points: number[][]): number[] {
   return points.flatMap((point) => point);

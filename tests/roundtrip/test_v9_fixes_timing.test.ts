@@ -5,8 +5,8 @@ the same writes) unless a comment says otherwise.
 */
 
 import { describe, expect, test } from "bun:test";
-import { at, getMember, getOrThrow, len, Path, truthy, valueEquals, round, setMember, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, getMember, getOrThrow, len, Path, truthy, valueEquals, setMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { MarkerValue } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
@@ -18,6 +18,8 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import type { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import type { Keyframe } from "../../src/py_aep/models/properties/keyframe.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { round, sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 

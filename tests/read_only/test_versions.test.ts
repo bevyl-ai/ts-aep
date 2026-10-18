@@ -5,10 +5,11 @@
 // so the three `.parent` steps of the Python source become two here.
 
 import { describe, expect, test } from "bun:test";
-import { len, Path, skip } from "../../src/pyrt/index.ts";
+import { len, Path } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { Project } from "../../src/py_aep/index.ts";
+import { skip } from "../support/pytest.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 

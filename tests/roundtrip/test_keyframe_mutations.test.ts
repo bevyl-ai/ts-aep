@@ -7,25 +7,8 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  BytesIO,
-  at,
-  contains,
-  getMember,
-  getOrThrow,
-  hasMember,
-  len,
-  Path,
-  truthy,
-  valueEquals,
-  assert,
-  pySlice,
-  sorted,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AssertionError, BytesIO, at, contains, getMember, getOrThrow, len, Path, truthy, valueEquals, assert, pySlice, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
 import { writeAep } from "../../src/py_aep/binary/chunk.ts";
@@ -42,6 +25,8 @@ import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { KfMultiDimensional, KfPosition } from "../../src/py_aep/binary/ldat_chunks.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { hasMember, sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 const SAMPLES_ROOT = new Path(import.meta.path).parent.parent.parent.div("samples");

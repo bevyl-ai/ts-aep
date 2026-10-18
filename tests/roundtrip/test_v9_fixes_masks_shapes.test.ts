@@ -14,20 +14,11 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { FeatherPoint, Shape } from "../../src/py_aep/models/properties/shape.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import {
-  AttributeError,
-  len,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  round,
-  setMember,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AttributeError, len, Path, assert, truthy, valueEquals, setMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import { asInstance, projectBytes } from "../helpers.ts";
+import { makeTmpPath, raises } from "../support/pytest.ts";
+import { round } from "../support/python.ts";
 
 // Python `Path(__file__).parent.parent.parent / "samples"`.
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");

@@ -14,13 +14,14 @@
 import { test, expect } from "bun:test";
 
 import { Path, StopIteration, contains, getOrThrow, truthy, assert } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance, jsonField, type ExpectedProperty } from "../helpers.ts";
 
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { approx } from "../support/pytest.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "property");

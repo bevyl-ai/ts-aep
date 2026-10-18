@@ -145,68 +145,6 @@ export class BytesIO {
 export type IO = BytesIO;
 
 /**
- * `io.StringIO` (newline=None translation is not modelled: text is stored
- * as written). Positions count code points, as in Python.
- */
-export class StringIO {
-  private chars: string[];
-  private pos = 0;
-
-  constructor(initialValue = "") {
-    this.chars = Array.from(initialValue);
-  }
-
-  /** `write(s)`: overwrite/extend at the position; returns the code points written. */
-  write(s: string): number {
-    const cs = Array.from(s);
-    if (this.pos > this.chars.length) this.chars.push(...new Array(this.pos - this.chars.length).fill("\0"));
-    this.chars.splice(this.pos, cs.length, ...cs);
-    this.pos += cs.length;
-    return cs.length;
-  }
-
-  /** `read(size)`; `size` omitted or negative reads to the end. */
-  read(size?: number | null): string {
-    const end = size == null || size < 0 ? this.chars.length : Math.min(this.chars.length, this.pos + size);
-    const out = this.chars.slice(this.pos, end).join("");
-    this.pos = Math.max(this.pos, end);
-    return out;
-  }
-
-  /** `readline(size)`: through the next `\n`. */
-  readline(size?: number | null): string {
-    let end = this.chars.length;
-    if (size != null && size >= 0) end = Math.min(end, this.pos + size);
-    let i = this.pos;
-    while (i < end && this.chars[i] !== "\n") i++;
-    if (i < end) i++;
-    const out = this.chars.slice(this.pos, i).join("");
-    this.pos = Math.max(this.pos, i);
-    return out;
-  }
-
-  getvalue(): string {
-    return this.chars.join("");
-  }
-
-  tell(): number {
-    return this.pos;
-  }
-
-  seek(offset: number, whence: 0 | 1 | 2 = 0): number {
-    this.pos = whence === 0 ? offset : whence === 1 ? this.pos + offset : this.chars.length + offset;
-    return this.pos;
-  }
-
-  truncate(size?: number | null): number {
-    this.chars.length = Math.min(this.chars.length, size ?? this.pos);
-    return this.chars.length;
-  }
-
-  close(): void {}
-}
-
-/**
  * `open(path, "rb")`: a read-only binary file over `node:fs` with the
  * `BufferedReader` methods the port uses (read, readline, iteration, seek,
  * tell, close). Missing files raise `FileNotFoundError` with CPython's text;

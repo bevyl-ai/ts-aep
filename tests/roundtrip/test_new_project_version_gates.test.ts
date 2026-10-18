@@ -14,23 +14,8 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  BytesIO,
-  Bytes,
-  getMember,
-  getOrThrow,
-  len,
-  lruCache,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  getOrInsert,
-  sorted,
-  StopIteration,
-  compositeKey,
-} from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { BytesIO, Bytes, getMember, getOrThrow, len, lruCache, Path, assert, truthy, valueEquals, getOrInsert, StopIteration, compositeKey } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/index.ts";
 import { ListChunk, readAep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
@@ -39,6 +24,8 @@ import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { TdmnChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath } from "../support/pytest.ts";
+import { sorted } from "../support/python.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const VERSIONS = SAMPLES.div("versions");

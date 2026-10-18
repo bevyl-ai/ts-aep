@@ -8,7 +8,7 @@
 
 import { afterEach, expect, test } from "bun:test";
 
-import { approx, makeTmpPath, warns } from "../../src/pyrt/pytest.ts";
+
 import { KeyError, NotImplementedError, Path, assert, valueEquals } from "../../src/pyrt/index.ts";
 import * as reader_mod from "../../src/py_aep/svg/reader.ts";
 import { SolidPaint, readSvg, type Subpath, type SvgDocument } from "../../src/py_aep/svg/index.ts";
@@ -26,6 +26,7 @@ import { IDENTITY } from "../../src/py_aep/svg/transform.ts";
 import { FontBuilder, TTGlyphPen, saveTTC } from "../_fontbuilder.ts";
 import * as fonts_mod from "../../src/py_aep/svg/fonts.ts";
 import { asInstance } from "../helpers.ts";
+import { approx, makeTmpPath, warns } from "../support/pytest.ts";
 
 // `monkeypatch.setattr`: ESM bindings are read-only, so patched names route through
 // the setter hooks exported by svg/reader.ts and svg/fonts.ts; restored after each test.

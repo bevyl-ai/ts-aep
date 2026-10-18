@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { getMember, Path, StopIteration } from "../../src/pyrt/index.ts";
-import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
@@ -13,6 +13,7 @@ import type { Project } from "../../src/py_aep/models/project.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { getComp } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
+import { makeTmpPath } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "item");
 const COMP_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "composition");

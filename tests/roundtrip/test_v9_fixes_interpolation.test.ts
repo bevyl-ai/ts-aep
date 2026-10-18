@@ -9,8 +9,8 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, ValueError, float, getMember, getOrThrow, hasMember, assert, valueEquals, setMember } from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises, type ApproxOperand } from "../../src/pyrt/pytest.ts";
+import { Path, StopIteration, ValueError, float, getMember, getOrThrow, assert, valueEquals, setMember } from "../../src/pyrt/index.ts";
+
 import * as py_aep from "../../src/py_aep/index.ts";
 import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
 import type { PropertyValue } from "../../src/py_aep/models/properties/keyframe.ts";
@@ -19,6 +19,8 @@ import { KfNoValue } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { KeyframeInterpolationType as KIT } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, projectBytes } from "../helpers.ts";
+import { approx, makeTmpPath, raises, type ApproxOperand } from "../support/pytest.ts";
+import { hasMember } from "../support/python.ts";
 
 const TG = "ADBE Transform Group";
 const LIN = KIT.LINEAR;

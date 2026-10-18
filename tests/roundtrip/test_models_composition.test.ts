@@ -1,25 +1,8 @@
 /** Tests for CompItem model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import {
-  at,
-  AttributeError,
-  contains,
-  getMember,
-  getOrThrow,
-  hasMember,
-  IndexError,
-  isclose,
-  len,
-  Path,
-  assert,
-  truthy,
-  valueEquals,
-  round,
-  StopIteration,
-  ValueError,
-} from "../../src/pyrt/index.ts";
-import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { at, AttributeError, contains, getMember, getOrThrow, IndexError, isclose, len, Path, assert, truthy, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+
 import { AdvancedRendererOptions, AVItem, ClassicRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
 import { GuideOrientationType, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -27,6 +10,8 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { LdatChunk, Lhd3Chunk } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../support/pytest.ts";
+import { hasMember, round } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "composition");
 const LAYER_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
