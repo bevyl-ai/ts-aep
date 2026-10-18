@@ -13,9 +13,10 @@ import { listLayers } from "./resolvers/source_layers.ts";
 import { readAep } from "./binary/chunk.ts";
 import { parseApp } from "./parsers/application.ts";
 import { parseProject } from "./parsers/project.ts";
+import packageJson from "../../package.json" with { type: "json" };
 
-// NOTE(port): Python falls back to "0.0.0" when package metadata is absent; this port has no installed py_aep distribution (package.json is also 0.0.0), so the fallback is the Python value.
-export const version = "0.0.0";
+/** The installed package version (py-aep reads its own from package metadata). */
+export const version: string = packageJson.version;
 
 /**
  * Parse an After Effects (.aep) project file and return an {@link Application} instance.

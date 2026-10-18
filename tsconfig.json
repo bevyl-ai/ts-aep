@@ -9,6 +9,7 @@
     "noImplicitOverride": false,
     "useDefineForClassFields": false,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["bun"],
     "lib": ["ES2023"]
   },
