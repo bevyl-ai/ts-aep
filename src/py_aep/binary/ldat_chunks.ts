@@ -5,7 +5,6 @@
 import {
   AttrsBase,
   Factory,
-  b,
   Bytes,
   concat,
   define,
@@ -109,15 +108,15 @@ export class Lhd3Chunk extends Chunk {
 }
 define(Lhd3Chunk, {
   chunkType: { default: "lhd3" },
-  _prefix: bytesField(8, { default: b("\x00\xd0\x0b\xee\x00\x00\x00\x00"), repr: false }),
+  _prefix: bytesField(8, { default: Uint8Array.of(0x00, 0xd0, 0x0b, 0xee, 0x00, 0x00, 0x00, 0x00), repr: false }),
   count: u4Field(),
   _countB: u4Field({ default: 1, repr: false }),
   itemSize: u4Field(),
-  _gap2: bytesField(3, { default: b("\x00\x00\x00"), repr: false }),
+  _gap2: bytesField(3, { default: new Uint8Array(3), repr: false }),
   itemTypeRaw: u1Field(),
   _counterA: u4Field({ default: 1, repr: false }),
   _counterB: u4Field({ default: 2, repr: false }),
-  _trailingPad: bytesField(20, { default: Bytes.repeat(b("\x00"), 20), optional: true, repr: false }),
+  _trailingPad: bytesField(20, { default: Bytes.repeat(new Uint8Array(1), 20), optional: true, repr: false }),
 });
 register("lhd3")(Lhd3Chunk);
 
@@ -181,7 +180,7 @@ export class GdtaChunk extends Chunk {
 }
 define(GdtaChunk, {
   chunkType: { default: "gdta" },
-  data: { default: Bytes.repeat(b("\x00"), 8) },
+  data: { default: Bytes.repeat(new Uint8Array(1), 8) },
 });
 register("gdta")(GdtaChunk);
 
@@ -368,9 +367,9 @@ export class KfPosition extends AttrsBase {
   }
 }
 define(KfPosition, {
-  _pad1: { default: b("\x00\x00\x00") },
+  _pad1: { default: new Uint8Array(3) },
   _spatialFlags: { default: 0 },
-  _pad2: { default: b("\x00\x00\x00\x00") },
+  _pad2: { default: new Uint8Array(4) },
   _unknownHeader: { default: 0.0 },
   inSpeed: { default: 0.0 },
   inInfluence: { default: 0.0 },
@@ -461,7 +460,7 @@ export class LdatItem extends AttrsBase {
     } else {
       // marker, unknown - raw bytes
       kfData = payload;
-      trailing = b("");
+      trailing = new Uint8Array();
     }
 
     return new this({
@@ -502,8 +501,8 @@ define(LdatItem, {
   inInterpolationType: { default: 0 },
   outInterpolationType: { default: 0 },
   _keyFlags: { default: 0 },
-  kfData: { default: b("") },
-  _trailing: { default: b("") },
+  kfData: { default: new Uint8Array() },
+  _trailing: { default: new Uint8Array() },
 });
 
 // ---------------------------------------------------------------------------
@@ -552,7 +551,7 @@ export class LdatChunk extends Chunk {
       items.push(_readItem(itemData, itemType));
     }
     const remaining = size - count * itemSize;
-    const trailing = remaining > 0 ? readBytes(fp, remaining) : b("");
+    const trailing = remaining > 0 ? readBytes(fp, remaining) : new Uint8Array();
     const instance = new this({
       chunkType,
       items,

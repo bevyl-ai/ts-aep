@@ -27,8 +27,7 @@ import {
   BytesIO,
   Path,
   ValueError,
-  b,
-  bytesEq,
+  bytesEqual,
   deepcopy,
   float,
   getOrThrow,
@@ -310,7 +309,7 @@ export function _onlyFloatDiff(c1: Chunk, c2: Chunk): boolean {
   // tolerance) floats differed, everything else is byte-identical.
   const rebuilt: Uint8Array = _withFloats(c1, f2).tobytes();
   const original: Uint8Array = c2.tobytes();
-  return bytesEq(rebuilt, original);
+  return bytesEqual(rebuilt, original);
 }
 
 /**
@@ -325,7 +324,7 @@ export function _multiOnlyFloatDiff(allTyped: Map<string, Chunk>[], present: num
   for (const i of present.slice(1)) {
     const other = allTyped[i].get(path) ?? null;
     if (other == null) return false;
-    if (bytesEq(other.tobytes(), refBytes)) continue;
+    if (bytesEqual(other.tobytes(), refBytes)) continue;
     if (!_onlyFloatDiff(ref, other)) return false;
   }
   return true;
@@ -369,7 +368,7 @@ export function _compareChunkDicts(
   for (const path of commonPaths) {
     const bytes1 = getOrThrow(data1, path);
     const bytes2 = getOrThrow(data2, path);
-    if (bytesEq(bytes1, bytes2)) continue;
+    if (bytesEqual(bytes1, bytes2)) continue;
     // Suppress float-precision-only differences (same coordinate, just
     // AE-vs-py_aep float rounding) unless an exact comparison was asked.
     if (
@@ -494,7 +493,7 @@ export function compareMultiAepFiles(
       if (present.length < 2) continue;
     }
 
-    const dataList = Array.from({ length: files.length }, (_, i) => allData[i].get(path) ?? b(""));
+    const dataList = Array.from({ length: files.length }, (_, i) => allData[i].get(path) ?? new Uint8Array());
     const sizes = dataList.map((d) => d.length);
     const maxLen = max(sizes);
 
@@ -650,8 +649,8 @@ export function printResults(
 
         // Context display
         if (context > 0 && data1 != null && data2 != null) {
-          const d1 = data1.get(diff.path) ?? b("");
-          const d2 = data2.get(diff.path) ?? b("");
+          const d1 = data1.get(diff.path) ?? new Uint8Array();
+          const d2 = data2.get(diff.path) ?? new Uint8Array();
           if (d1?.length > 0) {
             print(_formatContextLine("File 1", d1, byteDiff.offset, context));
           }
@@ -745,7 +744,7 @@ export function printMultiResults(
         if (context > 0 && allData != null && allData.length > 0) {
           for (let i = 0, n = files.length; i < n; i++) {
             const label = i === 0 ? "ref" : `[${i}]`;
-            const data = allData[i].get(chunkDiff.path) ?? b("");
+            const data = allData[i].get(chunkDiff.path) ?? new Uint8Array();
             if (!data?.length) continue;
             print(_formatContextLine(label, data, diff.offset, context));
           }

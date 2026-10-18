@@ -18,9 +18,8 @@ import { _CAMERA_LIGHT_TRANSFORM_SKIP, _OMITTED_EMPTY_GROUPS } from "../../synth
 import {
   at,
   Fraction,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   descriptor,
   getOrThrow,
   assert,
@@ -30,8 +29,7 @@ import {
   ValueError,
   type ClassAttributes,
   AttributeError,
-  typeName,
-} from "../../../pyrt/index.ts";
+  typeName, ascii } from "../../../pyrt/index.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../essential_graphics.ts";
 import { AVLayer, _unregisterSourceUsage } from "../layers/av_layer.ts";
@@ -423,7 +421,7 @@ export function _rewriteEgIdentity(
         // duplicate and re-derives them from the source property
         // (probed in AE 2026 on a slider controller).
         if (["CVal", "CDef"].includes(chunk.chunkType) && chunk.data?.length > 0) {
-          chunk.data = Bytes.repeat(b("\x00"), chunk.data.length);
+          chunk.data = Bytes.repeat(new Uint8Array(1), chunk.data.length);
         }
       }
       const cprp = findByListTypeOrNull(cctl.chunks, "CPrp");
@@ -1248,7 +1246,7 @@ export class CompItem extends AVItem {
           const raw = lc._rawBody;
           if (
             raw.length >= _LDTA_SOURCE_ID_END &&
-            bytesEq(raw.slice(0, 4), b("ldta"))
+            bytesEqual(raw.slice(0, 4), ascii("ldta"))
           ) {
             const sid = Bytes.intFromBytes(
               raw.slice(_LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END),
@@ -2684,7 +2682,7 @@ export class CompItem extends AVItem {
 
     // Text-document tdbs carries an empty cdat with 4 trailing zero
     // bytes (matches what AE writes).
-    const cdat = new CdatChunk({ pad: b("\x00\x00\x00\x00") });
+    const cdat = new CdatChunk({ pad: new Uint8Array(4) });
     const tdb4 = new Tdb4Chunk({
       dimensions: 1,
       timeBase: this._cdta.internalTimebase,

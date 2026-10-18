@@ -10,7 +10,6 @@ import {
   Fraction,
   OSError,
   ValueError,
-  b,
   decode,
   divmod,
   encode,
@@ -196,7 +195,7 @@ export function isReadable(fp: IO, size = 1): boolean {
 }
 
 /** The pad byte; `write` copies it out. */
-const _PAD = b("\x00");
+const _PAD = new Uint8Array(1);
 
 /** Write a pad byte if `size` is odd. Returns bytes written (0 or 1). */
 export function writePad(fp: IO, size: number): number {

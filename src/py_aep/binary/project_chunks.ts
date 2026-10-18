@@ -8,7 +8,7 @@
  * them with no arguments. See `scripts/dev/dump_new_project.py`.
  */
 
-import { b, Bytes, define, encode, field } from "../../pyrt/index.ts";
+import { Bytes, define, encode, field, ascii } from "../../pyrt/index.ts";
 import { Chunk } from "./chunk.ts";
 import { bytesField, s2Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
@@ -31,7 +31,7 @@ export class SvapChunk extends Chunk {
 }
 define(SvapChunk, {
   chunkType: field({ default: "svap" }),
-  _prefix: bytesField(3, { default: b("\x0f\x10\x06"), repr: false }),
+  _prefix: bytesField(3, { default: Uint8Array.of(0x0f, 0x10, 0x06), repr: false }),
   buildNumber: u1Field({ default: 0x43 }),
 });
 register("svap")(SvapChunk);
@@ -53,7 +53,7 @@ export class CpidChunk extends Chunk {
 }
 define(CpidChunk, {
   chunkType: field({ default: "cpid" }),
-  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(Uint8Array.of(0xff), 16) }),
 });
 register("cpid")(CpidChunk);
 
@@ -75,7 +75,7 @@ export class FdtaChunk extends Chunk {
 define(FdtaChunk, {
   chunkType: field({ default: "fdta" }),
   _reserved00: bytesField(10, { repr: false }),
-  _tail: bytesField(4, { default: b("\x1f\x44\x84\x00"), repr: false }),
+  _tail: bytesField(4, { default: ascii("\x1f\x44\x84\x00"), repr: false }),
 });
 register("fdta")(FdtaChunk);
 

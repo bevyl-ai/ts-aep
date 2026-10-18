@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -1363,7 +1363,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // 4-zero-byte empty cdat; a padded double block makes AE fail
       // with "chunk in file too big".
       if (this._cdat == null) {
-        const cdat = new CdatChunk({ pad: b("\x00\x00\x00\x00") });
+        const cdat = new CdatChunk({ pad: new Uint8Array(4) });
         this._tdbs.chunks.splice(indexByIdentity(this._tdbs.chunks, this._tdb4) + 1, 0, cdat);
         this._cdat = cdat;
       }

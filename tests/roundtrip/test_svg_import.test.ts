@@ -1,7 +1,7 @@
 /** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
-import { at, bytesEq, getattr, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, bytesEqual, getattr, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -104,7 +104,7 @@ describe("TestSvgImportBasics", () => {
     app.project.save(out);
     const again = tmpPath.div("svg_cropped_2.aep");
     parse(out).project.save(again);
-    expect(bytesEq(out.readBytes(), again.readBytes())).toBe(true);
+    expect(bytesEqual(out.readBytes(), again.readBytes())).toBe(true);
   });
 });
 
@@ -138,7 +138,7 @@ describe("TestSvgImportGradients", () => {
     app.project.save(out);
     const again = tmpPath.div("butterfly_2.aep");
     parse(out).project.save(again);
-    expect(bytesEq(out.readBytes(), again.readBytes())).toBe(true);
+    expect(bytesEqual(out.readBytes(), again.readBytes())).toBe(true);
   });
 
   test("test_radial_gradient_transform_becomes_grad_scale", () => {

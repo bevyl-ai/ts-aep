@@ -17,7 +17,7 @@ import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   ValueError,
   at,
-  bytesEq,
+  bytesEqual,
   getOrThrow,
   valueEquals,
   literal,
@@ -185,7 +185,7 @@ export class CurvesChannel {
    */
   _sameCurve(other: CurvesChannel): boolean {
     if (this._usesPoints && other._usesPoints) return valueEquals(this._points, other._points);
-    return bytesEq(this._map, other._map);
+    return bytesEqual(this._map, other._map);
   }
 
   [INSPECT](): string {

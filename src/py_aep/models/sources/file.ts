@@ -33,8 +33,7 @@ import {
   OSError,
   ValueError,
   at,
-  b,
-  bytesEq,
+  bytesEqual,
   concat,
   getattr,
   setattr,
@@ -46,7 +45,7 @@ import {
   type PathLike,
   PurePosixPath,
   PureWindowsPath,
-  pyRe, compare } from "../../../pyrt/index.ts";
+  pyRe, compare, ascii } from "../../../pyrt/index.ts";
 
 /**
  * `NamedTuple._replace(**kw)` for the translated NamedTuples (`MediaInfo`,
@@ -143,7 +142,7 @@ export function _optiData(
     return buildTextOptiData(info.width, info.height);
   }
   if (fmt.opti === "exr") return buildExrOptiData(info.compression, info.channelNames);
-  if (fmt.opti === "empty" && !sequence) return b("");
+  if (fmt.opti === "empty" && !sequence) return new Uint8Array();
   return buildGenericOptiData(fmt.sourceFormat, { sequence });
 }
 
@@ -386,7 +385,7 @@ export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
 export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string | null {
   if (!_CATALOGUED_PROFILE_FORMATS.has(sourceFormat)) return null;
   if (info.iccProfile != null) {
-    if (bytesEq(info.iccProfile.slice(16, 20), b("RGB "))) return null;
+    if (bytesEqual(info.iccProfile.slice(16, 20), ascii("RGB "))) return null;
     return iccProfileDescription(info.iccProfile);
   }
   if (info.colorMode === 1 && info.bitDepth === 32) {
@@ -409,7 +408,7 @@ export function aiDocumentProfile(
 ): [Uint8Array | null, string | null] {
   const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
-  if (bytesEq(icc.slice(16, 20), b("RGB "))) return [icc, null];
+  if (bytesEqual(icc.slice(16, 20), ascii("RGB "))) return [icc, null];
   return [null, iccProfileDescription(icc)];
 }
 
@@ -457,7 +456,7 @@ export function _mediaProfileRecords(
     (_CATALOGUED_PROFILE_FORMATS.has(sourceFormat) || sourceFormat === "TEXT")
   ) {
     const catalogued = _cataloguedProfile(iccProfileDescription(blob) || "");
-    if (catalogued != null && bytesEq(iccProfileId(catalogued), iccProfileId(blob))) {
+    if (catalogued != null && bytesEqual(iccProfileId(catalogued), iccProfileId(blob))) {
       blob = catalogued;
     }
   }
@@ -508,9 +507,9 @@ export function _syncPremultiplied(sspc: SspcChunk): void {
 // paths - it only flows through `FootageItem.replace(CURRENT_VALUE)`
 // preserving an editable-comp per-layer binding verbatim.
 export const PSD_LAYER_STYLES_C8 = new Map<string, Uint8Array>([
-  ["ignore", b("\x00\x00")],
-  ["merge", b("\x00\x01")],
-  ["editable", b("\x00\x02")],
+  ["ignore", new Uint8Array(2)],
+  ["merge", Uint8Array.of(0x00, 0x01)],
+  ["editable", Uint8Array.of(0x00, 0x02)],
 ]);
 export const _C9_TO_LAYER_STYLES = new Map<number, string>(
   [...PSD_LAYER_STYLES_C8].map(([k, v]): [number, string] => [v[1], k]),
@@ -905,7 +904,7 @@ export class FileSource extends FootageSource {
       startFrame = 0,
       endFrame = 0,
       framePadding = 0,
-      optiData = b(""),
+      optiData = new Uint8Array(),
       embeddedProfileName = null,
       iccProfile = null,
       fullFrame = true,
@@ -933,7 +932,7 @@ export class FileSource extends FootageSource {
       // fixtures. Other sources override this (chosen PSD layer = 0x01,
       // chosen AI layer = 0x02, merged PSD = 0x03, a whole AI/EPS/PDF
       // file = 0x02; choose_layer_*.aep, footage_depth.aep).
-      reservedC8 = sourceFormat === "TEXT" ? b("\x00\x00") : b("\x00\x02");
+      reservedC8 = sourceFormat === "TEXT" ? new Uint8Array(2) : Uint8Array.of(0x00, 0x02);
     }
     const sspc = new SspcChunk({
       sourceFormatType: sourceFormat,
@@ -947,7 +946,7 @@ export class FileSource extends FootageSource {
       reservedC8,
       dataSize,
       depth,
-      reserved40: b("\x01\x01"), // every file source (AE 2026)
+      reserved40: Uint8Array.of(0x01, 0x01), // every file source (AE 2026)
     });
     _syncPremultiplied(sspc);
     if (mediaFlag) {
@@ -983,10 +982,10 @@ export class FileSource extends FootageSource {
       // 0x74.
       sspc.startFrame = UNDEFINED_FRAME;
       sspc.endFrame = UNDEFINED_FRAME;
-      sspc._reservedA8 = b("\x00\x00\x00\x01");
-      sspc._reservedB8 = b("\x00");
-      sspc._reservedBa = b("\x00\x00");
-      sspc._sourceStamp = concat(b("\x01"), sspc._sourceStamp.slice(1));
+      sspc._reservedA8 = Uint8Array.of(0x00, 0x00, 0x00, 0x01);
+      sspc._reservedB8 = new Uint8Array(1);
+      sspc._reservedBa = new Uint8Array(2);
+      sspc._sourceStamp = concat(Uint8Array.of(0x01), sspc._sourceStamp.slice(1));
     } else if (isSequence) {
       sspc.startFrame = startFrame;
       sspc.endFrame = endFrame;
@@ -996,10 +995,10 @@ export class FileSource extends FootageSource {
       // (Values reverse-engineered from AE 2026 sequence imports.)
       // Byte 0xB8 marks zero-padded frame numbers: 0 for p410.png
       // or s1.png ... s12.png, 1 for z_0410.png or frame_001.png.
-      sspc._reservedA8 = b("\x00\x00\x00\x02");
+      sspc._reservedA8 = Uint8Array.of(0x00, 0x00, 0x00, 0x02);
       const zeroPadded = String(startFrame).length < framePadding;
-      sspc._reservedB8 = zeroPadded ? b("\x01") : b("\x00");
-      sspc._reservedBa = b("\x01\x01");
+      sspc._reservedB8 = zeroPadded ? Uint8Array.of(0x01) : new Uint8Array(1);
+      sspc._reservedBa = Uint8Array.of(0x01, 0x01);
     }
     if (isSequence) {
       _storeFramesOverRate(sspc, round(duration * frameRate), frameRate);
@@ -1139,8 +1138,8 @@ export class FileSource extends FootageSource {
     // imported whole takes the file-footage 0x0002 (footage_depth.aep),
     // not the 0x0000 of an Illustrator composition's layers.
     const reservedC8 = (new Map<string, Uint8Array>([
-        ["psd", b("\x00\x03")],
-        ["text", b("\x00\x02")],
+        ["psd", Uint8Array.of(0x00, 0x03)],
+        ["text", Uint8Array.of(0x00, 0x02)],
       ])).get(fmt.opti) ?? null;
     const dataSize = _stillDataSize(fmt, info, path);
     return this._new(path, {
@@ -1289,7 +1288,7 @@ export class FileSource extends FootageSource {
         layerName: aiLayer.name,
         layerIndex: index,
         dataSize: data.length,
-        reservedC8: b("\x00\x02"),
+        reservedC8: Uint8Array.of(0x00, 0x02),
         windows,
       });
     }

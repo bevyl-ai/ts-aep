@@ -12,7 +12,6 @@
  */
 
 import {
-  b,
   Bytes,
   concat,
   decode,
@@ -130,7 +129,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
     const offset = _HEADER_SIZE + idx * _RS_PREFS_ITEM_SIZE;
     const itemData = raw.slice(offset, offset + _RS_PREFS_ITEM_SIZE);
     const item = RenderSettingsItem.frombytes(
-      concat(itemData, Bytes.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
+      concat(itemData, Bytes.repeat(new Uint8Array(1), _RS_ITEM_SIZE_DIFF)),
     );
     assert(item instanceof RenderSettingsItem);
     if (!item.cleanTemplateName) {

@@ -5,7 +5,6 @@ import {
   KeyError,
   RuntimeError,
   ValueError,
-  b,
   Bytes,
   concat,
   decode,
@@ -15,8 +14,7 @@ import {
   isdigit,
   literal,
   round,
-  typeName,
-} from "../../../../pyrt/index.ts";
+  typeName, ascii } from "../../../../pyrt/index.ts";
 import { CLAMP_DEPENDENTS } from "../../../data/output_module_rules.ts";
 import { AudioCodec, AudioInterleave, DnxResolution, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, VideoCodec } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
@@ -41,10 +39,10 @@ export const _LEN_BODY_OFFSET = 6;
 /** Offset of the u32 holding `len(xml region) - 2` (i.e. excluding the NULs). */
 export const _LEN_XML_OFFSET = 30;
 
-export const _XML_DECLARATION = b('<?xml version="1.0" encoding="UTF-8"?>\n');
-export const _XML_NULS = b("\x00\x00");
+export const _XML_DECLARATION = ascii('<?xml version="1.0" encoding="UTF-8"?>\n');
+export const _XML_NULS = new Uint8Array(2);
 /** Every AE-authored body ends `>\n\x00\x00`. */
-export const _XML_TERMINATOR = concat(b("\n"), _XML_NULS);
+export const _XML_TERMINATOR = concat(Uint8Array.of(0x0a), _XML_NULS);
 
 /**
  * An empty element with NO attributes; AE expands these (`<ParamName></ParamName>`)
@@ -345,7 +343,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._ownTree = null;
     this.params = new ParamsDict();
     this.params._owner = null;
-    const xmlStart = Bytes.indexOf(raw, b("<?xml"));
+    const xmlStart = Bytes.indexOf(raw, ascii("<?xml"));
     if (xmlStart >= 0) {
       this._xmlHeader = raw.slice(0, xmlStart);
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];

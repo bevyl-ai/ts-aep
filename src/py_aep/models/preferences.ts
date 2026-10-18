@@ -11,7 +11,6 @@ import {
   type PathLike,
   KeyError,
   ValueError,
-  b,
   Bytes,
   decode,
   float,
@@ -756,7 +755,7 @@ export class Preferences {
     for (const key of [...section.keys()].sort(compare)) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), b("\x00")).filter((p) => p?.length > 0);
+      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter((p) => p?.length > 0);
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

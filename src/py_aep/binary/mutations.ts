@@ -4,7 +4,6 @@ import { b64encode } from "../../pyrt/base64.ts";
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
 
 import {
-  b,
   Bytes,
   BytesIO,
   copy,
@@ -371,7 +370,7 @@ export function buildParallelLdatItem(
     flags = 1;
   } else if (itemType === LdatItemType.marker) {
     // marker, text (HOLD - no interpolation)
-    kfData = Bytes.repeat(b("\x00"), 8);
+    kfData = Bytes.repeat(new Uint8Array(1), 8);
     interp = 3;
     flags = 0;
   } else {
@@ -387,7 +386,7 @@ export function buildParallelLdatItem(
     outInterpolationType: interp,
     keyFlags: flags,
     kfData,
-    trailing: Bytes.repeat(b("\x00"), itemSize - bodyLen),
+    trailing: Bytes.repeat(new Uint8Array(1), itemSize - bodyLen),
   });
   if (itemType === LdatItemType.orientation && orientationValues != null) {
     setOrientationItemValues(item, orientationValues);
@@ -568,7 +567,7 @@ export function buildCheckboxCctl(
   layerId: number,
   pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
-  const byte = value ? b("\x01") : b("\x00");
+  const byte = value ? Uint8Array.of(0x01) : new Uint8Array(1);
   const valueChunks: Chunk[] = [
     new Chunk({ chunkType: "CVal", data: byte }),
     new Chunk({ chunkType: "CDef", data: byte }),
@@ -611,12 +610,12 @@ export function buildTextCctl(
   const valueChunks: Chunk[] = [
     new Utf8Chunk({ value: text }),
     new Utf8Chunk({ value: text }),
-    new Chunk({ chunkType: "CFEd", data: b("\x00") }),
-    new Chunk({ chunkType: "CSEd", data: b("\x00") }),
-    new Chunk({ chunkType: "CFEd", data: b("\x00") }),
+    new Chunk({ chunkType: "CFEd", data: new Uint8Array(1) }),
+    new Chunk({ chunkType: "CSEd", data: new Uint8Array(1) }),
+    new Chunk({ chunkType: "CFEd", data: new Uint8Array(1) }),
     new Utf8Chunk({ value: fontCapsJson }),
     new Utf8Chunk({ value: '{"compId":-1,"isEnabled":false,"layerId":-1}' }),
-    new Chunk({ chunkType: "CTov", data: b("\x07\x00\x00\x00") }),
+    new Chunk({ chunkType: "CTov", data: Uint8Array.of(0x07, 0x00, 0x00, 0x00) }),
   ];
   return _buildCctl(name, uuidStr, 6, valueChunks, compId, layerId, pathJson);
 }
@@ -655,8 +654,8 @@ export function buildMediaCctl(
     new U4Chunk({ chunkType: "CSMs", value: inUnits }),
     new U4Chunk({ chunkType: "CSMe", value: outUnits }),
     new U4Chunk({ chunkType: "CSMt", value: timebase }),
-    new Chunk({ chunkType: "CSMp", data: b("\x00\x00\x00\x00\x00\x00\x00\x01") }),
-    new Chunk({ chunkType: "CCEx", data: b("\x01") }),
+    new Chunk({ chunkType: "CSMp", data: Uint8Array.of(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01) }),
+    new Chunk({ chunkType: "CCEx", data: Uint8Array.of(0x01) }),
     new Utf8Chunk({ value: thumbnailName }),
     new U4Chunk({ chunkType: "CSMd", value: 2 }),
   ];
@@ -745,7 +744,7 @@ export function buildPinList(
     // AE stores the embedded profile twice: once behind a lowercase
     // `mcsp` marker and again behind the `Mcsp` flag below.
     mediaChunks = [
-      new Chunk({ chunkType: "mcsp", data: b("\x01") }),
+      new Chunk({ chunkType: "mcsp", data: Uint8Array.of(0x01) }),
       new Utf8Chunk({ value: embeddedEnvelope }),
     ];
   } else if (assignedProfile != null) {
@@ -854,7 +853,7 @@ export function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] 
       new TdsbChunk(),
       TdsnChunk.new_(TDSN_SENTINEL),
       tdb4,
-      new CdatChunk({ pad: b("\x00\x00\x00\x00") }),
+      new CdatChunk({ pad: new Uint8Array(4) }),
     ],
   });
   const shap = new ListChunk({

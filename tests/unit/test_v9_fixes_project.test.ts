@@ -13,7 +13,7 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { projectBytes } from "../helpers.ts";
-import { b, Bytes, bytesEq, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
+import { b, Bytes, bytesEqual, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
@@ -66,7 +66,7 @@ describe("TestVersionValidation", () => {
       const head = app._head;
       expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
       app.version = "26.0x67";
-      expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.newProject().project))).toBe(true);
+      expect(bytesEqual(projectBytes(app.project), projectBytes(py_aep.newProject().project))).toBe(true);
     },
   );
 
@@ -89,7 +89,7 @@ describe("TestVersionValidation", () => {
     raises(ValueError, () => {
       app.version = version;
     });
-    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
+    expect(bytesEqual(projectBytes(app.project), before)).toBe(true);
     expect(app.version).toBe("26.0x67");
   });
 
@@ -122,7 +122,7 @@ describe("TestVersionValidation", () => {
     raises(ValueError, () => {
       app.version = target;
     });
-    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
+    expect(bytesEqual(projectBytes(app.project), before)).toBe(true);
   });
 
   test.each([256, -1, "67"])("test_build_number_range[%#]", (build) => {
@@ -144,7 +144,7 @@ describe("TestWorkingSpaceNone", () => {
     const before = projectBytes(app.project);
     app.project.workingSpace = app.project.workingSpace;
     expect(app.project.workingSpace).toBe("None");
-    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
+    expect(bytesEqual(projectBytes(app.project), before)).toBe(true);
   });
 
   test("test_none_after_a_profile", () => {
@@ -159,8 +159,8 @@ describe("TestWorkingSpaceNone", () => {
     app.project._cpid.data = Bytes.repeat(b("\x01"), 16);
     app.project.workingSpace = "None";
     expect(app.project.workingSpace).toBe("None");
-    expect(bytesEq(app.project._cpid.data, cpid)).toBe(true);
-    expect(bytesEq(cpid, Bytes.repeat(b("\xff"), 16))).toBe(true);
+    expect(bytesEqual(app.project._cpid.data, cpid)).toBe(true);
+    expect(bytesEqual(cpid, Bytes.repeat(b("\xff"), 16))).toBe(true);
     expect(app.project._wsUtf8 != null && String(app.project._wsUtf8.value) === "{}").toBe(true);
     expect(utf8 == null).toBe(true);
     const path = tmpPath.div("ws.aep");
@@ -175,7 +175,7 @@ describe("TestSaveTempFile", () => {
     const keep = tmpPath.div("out.aep.tmp");
     keep.writeBytes(b("user data"));
     py_aep.newProject().project.save(tmpPath.div("out.aep"));
-    expect(bytesEq(keep.readBytes(), b("user data"))).toBe(true);
+    expect(bytesEqual(keep.readBytes(), b("user data"))).toBe(true);
     expect(parse(tmpPath.div("out.aep")).version).toBe("26.0x67");
     expect(valueEquals(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
   });

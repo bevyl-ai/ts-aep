@@ -28,7 +28,6 @@ import type { Project } from "../project.ts";
 import type { RenderQueueItem } from "./render_queue_item.ts";
 import {
   at,
-  b,
   Bytes,
   descriptor,
   getattr,
@@ -1212,7 +1211,7 @@ export class OutputModule {
     const ldat = this._omLdat;
     if (value === "Working Color Space") {
       ldat.outputColorSpaceWorking = 1;
-      ldat.outputProfileId = Bytes.repeat(b("\xff"), 16);
+      ldat.outputProfileId = Bytes.repeat(Uint8Array.of(0xff), 16);
       return;
     }
     const project = this._project;

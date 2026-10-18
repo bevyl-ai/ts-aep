@@ -42,7 +42,7 @@ import {
   b,
   BytesIO,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   fspath,
   getattr,
@@ -340,7 +340,7 @@ export function aiLayerOptiBoxes(project: Project): Map<string, [number[], numbe
     const opti = getattr(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
-    if (len(body) < 0x250 || !bytesEq(Bytes.slice(body, 0, 4), b("TEXT"))) continue;
+    if (len(body) < 0x250 || !bytesEqual(Bytes.slice(body, 0, 4), b("TEXT"))) continue;
     const box: number[] = struct.unpackFrom(">4i", body, 0x10).map((v: number) => v / 65536);
     const end = Bytes.indexOrThrow(body, new Uint8Array([0]), 0x44);
     const name = decode(Bytes.slice(body, 0x44, end), "utf-8");

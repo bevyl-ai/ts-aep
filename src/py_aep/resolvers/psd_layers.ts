@@ -15,9 +15,8 @@ import {
   BytesIO,
   Path,
   at,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   IndexError,
   valueEquals,
@@ -30,8 +29,7 @@ import {
   UnicodeDecodeError,
   ValueError,
   warn,
-  type PathLike,
-} from "../../pyrt/index.ts";
+  type PathLike, ascii } from "../../pyrt/index.ts";
 import { PSB_8BYTE_KEYS as _PSB_8BYTE_KEYS, psdLayerRecordCount, readBounded } from "./media_probe.ts";
 
 /** Raised when a `.psd`/`.psb` file's layers cannot be enumerated. */
@@ -348,11 +346,11 @@ export const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
     "thrs",
     "grdm",
     "selc",
-  ].map((k) => Bytes.toHex(b(k))),
+  ].map((k) => Bytes.toHex(ascii(k))),
 );
 
 // Fill-layer additional-info keys: solid color, gradient and pattern fills.
-export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(b(k))));
+export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(ascii(k))));
 
 // Maps every byte to 0 (zero) or 1 (non-zero), so rows of samples can be
 // combined with integer AND / OR.
@@ -508,7 +506,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
     // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a BytesIO here, so parsed results are identical (only peak memory differs).
     const fp = new BytesIO(new Path(file).readBytes());
     const header = fp.read(26);
-    if (!bytesEq(header.slice(0, 4), b("8BPS"))) {
+    if (!bytesEqual(header.slice(0, 4), ascii("8BPS"))) {
       throw new UnsupportedPsdLayersError(`${name}: not a valid PSD/PSB file.`);
     }
     const isPsb = struct.unpack(">H", header.slice(4, 6))[0] === 2;
@@ -696,7 +694,7 @@ export function _visibleBox(
     maskData != null && mr > ml && mb > mt ? _channelFlags(maskData, mr - ml, mb - mt, depth, isPsb) : [];
   const alphaRows: Uint8Array[] | null =
     alpha != null ? _channelFlags(alpha, width, rb - rt, depth, isPsb) : null;
-  const defaultRow = Bytes.repeat(b(mask.default_ ? "\x01" : "\x00"), width);
+  const defaultRow = Bytes.repeat(ascii(mask.default_ ? "\x01" : "\x00"), width);
   // Outside its rectangle the mask takes its default color, so with a black
   // default only the rectangle's rows can show.
   const [y0, y1] = mask.default_ ? [rt, rb] : [Math.max(rt, mt), Math.min(rb, mb)];
@@ -922,12 +920,12 @@ export function _parseLayerExtra(
   let lfxs: Uint8Array | null = null;
   let fillOpacity: number | null = null;
   let blendInterior: boolean | null = null;
-  let channelRestrictions: Uint8Array = b("");
+  let channelRestrictions: Uint8Array = new Uint8Array();
   let vmsk: Uint8Array | null = null;
   let vsms: Uint8Array | null = null;
   while (pos + 12 <= extra.length) {
     const signature = extra.slice(pos, pos + 4);
-    if (!bytesEq(signature, b("8BIM")) && !bytesEq(signature, b("8B64"))) break;
+    if (!bytesEqual(signature, ascii("8BIM")) && !bytesEqual(signature, ascii("8B64"))) break;
     const key = extra.slice(pos + 4, pos + 8);
     let blockLen: number;
     let blockStart: number;
@@ -939,36 +937,36 @@ export function _parseLayerExtra(
       blockStart = pos + 12;
     }
     const block = extra.slice(blockStart, blockStart + blockLen);
-    if (bytesEq(key, b("luni"))) {
+    if (bytesEqual(key, ascii("luni"))) {
       const charCount = struct.unpack(">I", block.slice(0, 4))[0];
       unicodeName = rstrip(decode(block.slice(4, 4 + charCount * 2), "utf-16-be"), "\x00");
-    } else if (bytesEq(key, b("lyid"))) {
+    } else if (bytesEqual(key, ascii("lyid"))) {
       layerId = struct.unpack(">I", block.slice(0, 4))[0];
-    } else if (bytesEq(key, b("lsct")) && blockLen >= 4) {
+    } else if (bytesEqual(key, ascii("lsct")) && blockLen >= 4) {
       sectionDivider = struct.unpack(">I", block.slice(0, 4))[0];
     } else if (_ADJUSTMENT_KEYS.has(Bytes.toHex(key))) {
       isAdjustment = true;
     } else if (_FILL_KEYS.has(Bytes.toHex(key))) {
       isFill = true;
-    } else if (bytesEq(key, b("lfx2"))) {
+    } else if (bytesEqual(key, ascii("lfx2"))) {
       lfx2 = block;
-    } else if (bytesEq(key, b("lmfx"))) {
+    } else if (bytesEqual(key, ascii("lmfx"))) {
       lmfx = block;
-    } else if (bytesEq(key, b("lfxs"))) {
+    } else if (bytesEqual(key, ascii("lfxs"))) {
       // Group headers store their styles under `lfxs` (same descriptor
       // layout as `lfx2`; probed Photoshop 2026, psd_group_styles.psd).
       lfxs = block;
-    } else if (bytesEq(key, b("vmsk"))) {
+    } else if (bytesEqual(key, ascii("vmsk"))) {
       vmsk = block;
-    } else if (bytesEq(key, b("vsms"))) {
+    } else if (bytesEqual(key, ascii("vsms"))) {
       // CS6+ variant of vmsk (written when the mask needs the newer
       // feature set); same path-record layout.
       vsms = block;
-    } else if (bytesEq(key, b("iOpa")) && blockLen >= 1) {
+    } else if (bytesEqual(key, ascii("iOpa")) && blockLen >= 1) {
       fillOpacity = at(block, 0);
-    } else if (bytesEq(key, b("infx")) && blockLen >= 1) {
+    } else if (bytesEqual(key, ascii("infx")) && blockLen >= 1) {
       blendInterior = at(block, 0) !== 0;
-    } else if (bytesEq(key, b("brst"))) {
+    } else if (bytesEqual(key, ascii("brst"))) {
       channelRestrictions = block;
     }
     pos = blockStart + blockLen + (blockLen % 2); // blocks padded to even

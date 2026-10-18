@@ -41,9 +41,8 @@ import {
   Path,
   type PathLike,
   ValueError,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   float,
   getOrThrow,
@@ -55,8 +54,7 @@ import {
   warn,
   round,
   isReal,
-  hypot,
-} from "../../pyrt/index.ts";
+  hypot, ascii } from "../../pyrt/index.ts";
 
 export type Box = [number, number, number, number];
 export type Matrix = number[];
@@ -106,32 +104,32 @@ export const _STROKING_TEXT_MODES: ReadonlySet<number> = new Set([1, 2, 5, 6]);
  */
 export const _ASCII_QUOTE_ENCODINGS: ReadonlySet<string> = new Set(["WinAnsiEncoding", "MacRomanEncoding"]);
 
-export const _DELIMITERS = b("()<>[]{}/%");
-export const _WHITESPACE = b(" \t\r\n\f\x00");
-export const _NUMBER_START = b("+-.0123456789");
-export const NUMBER_CHARS = b("+-.0123456789eE");
-export const CLOSERS = b("]>}{");
-export const SLASH = b("/");
-export const PERCENT = b("%");
-export const LPAREN = b("(");
-export const RPAREN = b(")");
-export const LT = b("<");
-export const GT = b(">");
-export const LBRACKET = b("[");
-export const RBRACKET = b("]");
-export const BACKSLASH = b("\\");
-export const NEWLINE = b("\n");
-export const CARRIAGE_RETURN = b("\r");
-export const CRLF = b("\r\n");
-export const DICT_END = b(">>");
+export const _DELIMITERS = ascii("()<>[]{}/%");
+export const _WHITESPACE = ascii(" \t\r\n\f\x00");
+export const _NUMBER_START = ascii("+-.0123456789");
+export const NUMBER_CHARS = ascii("+-.0123456789eE");
+export const CLOSERS = ascii("]>}{");
+export const SLASH = ascii("/");
+export const PERCENT = ascii("%");
+export const LPAREN = ascii("(");
+export const RPAREN = ascii(")");
+export const LT = ascii("<");
+export const GT = ascii(">");
+export const LBRACKET = ascii("[");
+export const RBRACKET = ascii("]");
+export const BACKSLASH = ascii("\\");
+export const NEWLINE = Uint8Array.of(0x0a);
+export const CARRIAGE_RETURN = Uint8Array.of(0x0d);
+export const CRLF = Uint8Array.of(0x0d, 0x0a);
+export const DICT_END = ascii(">>");
 
 /** Escape bytes after a backslash, keyed by the escape byte (`n`, `r`, `t`, `b`, `f`). */
 export const SIMPLE_ESCAPES = new Map<number, Uint8Array>([
-  [0x6e, b("\n")],
-  [0x72, b("\r")],
-  [0x74, b("\t")],
-  [0x62, b("\b")],
-  [0x66, b("\f")],
+  [0x6e, Uint8Array.of(0x0a)],
+  [0x72, Uint8Array.of(0x0d)],
+  [0x74, Uint8Array.of(0x09)],
+  [0x62, Uint8Array.of(0x08)],
+  [0x66, Uint8Array.of(0x0c)],
 ]);
 
 /** An image's own space, which its CTM maps onto the page. */
@@ -308,13 +306,13 @@ export class _Document {
    * objects the scanner happened to find.
    */
   _checkSupported(): void {
-    if (Bytes.includes(this._data, b("/ObjStm"))) {
+    if (Bytes.includes(this._data, ascii("/ObjStm"))) {
       throw this._reject(
         "the file uses compressed object streams (/ObjStm), which " +
           "py_aep cannot read; re-save it with PDF 1.4 compatibility",
       );
     }
-    if (Bytes.includes(this._data, b("/Encrypt"))) {
+    if (Bytes.includes(this._data, ascii("/Encrypt"))) {
       throw this._reject("the file is encrypted");
     }
   }
@@ -396,14 +394,14 @@ export class _Document {
   _rawStream(number: number, info: CosDict): Uint8Array | null {
     const offset = this._offsets.get(number) ?? null;
     if (offset == null) return null;
-    let start = Bytes.indexOf(this._data, b("stream"), offset);
+    let start = Bytes.indexOf(this._data, ascii("stream"), offset);
     if (start < 0) return null;
     start += "stream".length;
-    if (bytesEq(this._data.slice(start, start + 2), CRLF)) {
+    if (bytesEqual(this._data.slice(start, start + 2), CRLF)) {
       start += 2;
     } else if (
-      bytesEq(this._data.slice(start, start + 1), NEWLINE) ||
-      bytesEq(this._data.slice(start, start + 1), CARRIAGE_RETURN)
+      bytesEqual(this._data.slice(start, start + 1), NEWLINE) ||
+      bytesEqual(this._data.slice(start, start + 1), CARRIAGE_RETURN)
     ) {
       start += 1;
     }
@@ -411,7 +409,7 @@ export class _Document {
     if (isReal(length)) {
       return this._data.slice(start, start + Math.trunc(Number(length)));
     }
-    const end = Bytes.indexOf(this._data, b("endstream"), start);
+    const end = Bytes.indexOf(this._data, ascii("endstream"), start);
     return end > 0 ? this._data.slice(start, end) : null;
   }
 
@@ -498,13 +496,13 @@ export function* _tokenize(
       pos += 1;
       continue;
     }
-    if (bytesEq(char, PERCENT)) {
+    if (bytesEqual(char, PERCENT)) {
       let end = pos;
       while (end < size && !Bytes.includes(CRLF, data.subarray(end, end + 1))) end += 1;
       pos = end;
       continue;
     }
-    if (bytesEq(char, SLASH)) {
+    if (bytesEqual(char, SLASH)) {
       let end = pos + 1;
       while (end < size) {
         const nxt = data.subarray(end, end + 1);
@@ -515,14 +513,14 @@ export function* _tokenize(
       pos = end;
       continue;
     }
-    if (bytesEq(char, LPAREN)) {
+    if (bytesEqual(char, LPAREN)) {
       const [literal, next] = _readLiteralString(data, pos);
       pos = next;
       yield ["str", literal];
       continue;
     }
-    if (bytesEq(char, LT)) {
-      if (bytesEq(data.subarray(pos + 1, pos + 2), LT)) {
+    if (bytesEqual(char, LT)) {
+      if (bytesEqual(data.subarray(pos + 1, pos + 2), LT)) {
         const [mapping, next] = _readDict(data, pos);
         pos = next;
         yield ["dict", mapping];
@@ -535,7 +533,7 @@ export function* _tokenize(
       yield ["str", literal];
       continue;
     }
-    if (bytesEq(char, LBRACKET)) {
+    if (bytesEqual(char, LBRACKET)) {
       const [array, next] = _readArray(data, pos);
       pos = next;
       yield ["array", array];
@@ -589,7 +587,7 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
   const size = data.length;
   while (pos < size) {
     const char = data.subarray(pos, pos + 1);
-    if (bytesEq(char, BACKSLASH)) {
+    if (bytesEqual(char, BACKSLASH)) {
       const nxt = data.subarray(pos + 1, pos + 2);
       const simple = nxt.length === 1 ? SIMPLE_ESCAPES.get(nxt[0]) : undefined;
       if (simple !== undefined) {
@@ -607,12 +605,12 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
           throw new ValueError(`invalid literal for int() with base 8: b'${digits}'`);
         }
         out.push(Number.parseInt(digits, 8) & 0xff);
-      } else if (bytesEq(nxt, NEWLINE) || bytesEq(nxt, CARRIAGE_RETURN)) {
+      } else if (bytesEqual(nxt, NEWLINE) || bytesEqual(nxt, CARRIAGE_RETURN)) {
         // PDF 7.3.4.2: a reverse solidus before an end-of-line marker
         // is a line continuation - both bytes are dropped. Keeping the
         // newline would measure it as one more glyph.
         pos += 2;
-        if (bytesEq(nxt, CARRIAGE_RETURN) && bytesEq(data.subarray(pos, pos + 1), NEWLINE)) {
+        if (bytesEqual(nxt, CARRIAGE_RETURN) && bytesEqual(data.subarray(pos, pos + 1), NEWLINE)) {
           pos += 1;
         }
       } else {
@@ -621,9 +619,9 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
       }
       continue;
     }
-    if (bytesEq(char, LPAREN)) {
+    if (bytesEqual(char, LPAREN)) {
       depth += 1;
-    } else if (bytesEq(char, RPAREN)) {
+    } else if (bytesEqual(char, RPAREN)) {
       depth -= 1;
       if (depth === 0) return [Uint8Array.from(out), pos + 1];
     }
@@ -653,7 +651,7 @@ export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
   const out: CosNode[] = [];
   const size = data.length;
   while (pos < size) {
-    if (bytesEq(data.subarray(pos, pos + 1), RBRACKET)) return [out, pos + 1];
+    if (bytesEqual(data.subarray(pos, pos + 1), RBRACKET)) return [out, pos + 1];
     if (Bytes.includes(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
@@ -673,7 +671,7 @@ export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
   const size = data.length;
   let key: string | null = null;
   while (pos < size) {
-    if (bytesEq(data.subarray(pos, pos + 2), DICT_END)) return [out, pos + 2];
+    if (bytesEqual(data.subarray(pos, pos + 2), DICT_END)) return [out, pos + 2];
     if (Bytes.includes(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
@@ -696,7 +694,7 @@ export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
 export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
   const char = data.subarray(pos, pos + 1);
   const size = data.length;
-  if (bytesEq(char, SLASH)) {
+  if (bytesEqual(char, SLASH)) {
     let end = pos + 1;
     while (end < size) {
       const nxt = data.subarray(end, end + 1);
@@ -705,10 +703,10 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
     }
     return [decode(data.subarray(pos + 1, end), "latin-1"), end];
   }
-  if (bytesEq(char, LPAREN)) return _readLiteralString(data, pos);
-  if (bytesEq(char, LBRACKET)) return _readArray(data, pos);
-  if (bytesEq(char, LT)) {
-    if (bytesEq(data.subarray(pos + 1, pos + 2), LT)) return _readDict(data, pos);
+  if (bytesEqual(char, LPAREN)) return _readLiteralString(data, pos);
+  if (bytesEqual(char, LBRACKET)) return _readArray(data, pos);
+  if (bytesEqual(char, LT)) {
+    if (bytesEqual(data.subarray(pos + 1, pos + 2), LT)) return _readDict(data, pos);
     return _readHexString(data, pos);
   }
   if (Bytes.includes(_NUMBER_START, char)) {
@@ -1311,7 +1309,7 @@ export const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v\/\[\]()<>{}%]+)[ \t\n\r\f\v]
  */
 export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).readBytes();
-  if (!Bytes.startsWith(data, b("%PDF"))) return null;
+  if (!Bytes.startsWith(data, ascii("%PDF"))) return null;
   try {
     const doc = new _Document(data, new Path(file).name);
     const page = doc.pages()[0];
@@ -1321,7 +1319,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
       const space = doc.get(spaces, match[1]);
       if (Array.isArray(space) && space.length === 2 && String(space[0]) === "ICCBased") {
         const profile = doc.stream(space[1]);
-        if (profile.length >= 132 && bytesEq(profile.slice(36, 40), b("acsp"))) {
+        if (profile.length >= 132 && bytesEqual(profile.slice(36, 40), ascii("acsp"))) {
           return profile;
         }
       }

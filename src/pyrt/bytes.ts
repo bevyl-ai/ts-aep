@@ -5,7 +5,7 @@
 import { ValueError } from "./errors.ts";
 
 /** A bytes literal: `b("\x00vsc")` is Python `b"\x00vsc"` (each char a byte). */
-export function b(literal: string): Uint8Array {
+export function ascii(literal: string): Uint8Array {
   const out = new Uint8Array(literal.length);
   for (let i = 0; i < literal.length; i++) {
     const c = literal.charCodeAt(i);
@@ -115,7 +115,7 @@ export function endsWith(data: Uint8Array, suffix: Uint8Array): boolean {
   return true;
 }
 
-const WS = b(" \t\n\r\x0b\x0c");
+const WS = ascii(" \t\n\r\x0b\x0c");
 
 /** `data.strip(chars)` (whitespace when `chars` is omitted). */
 export function trim(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {

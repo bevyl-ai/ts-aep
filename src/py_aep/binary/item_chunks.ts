@@ -7,7 +7,6 @@
  */
 
 import {
-  b,
   Bytes,
   decode,
   define,
@@ -112,7 +111,7 @@ export class IdpcChunk extends Chunk {
 }
 define(IdpcChunk, {
   chunkType: field({ default: "idpc" }),
-  data: field({ default: Bytes.repeat(b("\x00"), 8) }),
+  data: field({ default: Bytes.repeat(new Uint8Array(1), 8) }),
 });
 register("idpc")(IdpcChunk);
 
@@ -279,7 +278,7 @@ define(HeadChunk, {
   _reserved00c: bytesField(1, { repr: false }),
   _formatSubversion: u1Field({ default: 0x02, repr: false }),
   _versionWord: u4Field({ default: (12 << 22) | (1 << 10) | (1 << 9), repr: false }),
-  _reserved08: bytesField(4, { default: b("\x80\x00\x00\x00"), repr: false }),
+  _reserved08: bytesField(4, { default: Uint8Array.of(0x80, 0x00, 0x00, 0x00), repr: false }),
   nextItemId: u4Field({ default: 1, repr: false }),
   fileRevision: u4Field({ default: 1 }),
 });
@@ -338,13 +337,13 @@ export class NhedChunk extends Chunk {
 define(NhedChunk, {
   chunkType: field({ default: "nhed" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(b("\x00"), 7), b("\x05")), repr: false }),
+  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 7), Uint8Array.of(0x05)), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
-  _reserved0a: bytesField(1, { default: b("\x01"), repr: false }),
+  _reserved0a: bytesField(1, { default: Uint8Array.of(0x01), repr: false }),
   _feetByte: u1Field({ repr: false }),
   timecodeDefaultBase: u1Field({ default: 30 }),
-  _reserved0d: bytesField(1, { default: b("\x10"), repr: false }),
+  _reserved0d: bytesField(1, { default: Uint8Array.of(0x10), repr: false }),
   framesCountType: u1Field({ default: 2 }),
   bitsPerChannel: u1Field(),
   transparencyGridThumbnails: boolField(),
@@ -424,14 +423,14 @@ define(NnhdChunk, {
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
   _reserved00: bytesField(2, { repr: false }),
   _savingPlatform: u1Field({ repr: false }),
-  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(b("\x00"), 4), b("\x05")), repr: false }),
+  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x05)), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: u1Field({ default: 1, repr: false }),
   _feetByte: u1Field({ repr: false }),
   _reserved0c: bytesField(2, { repr: false }),
   timecodeDefaultBase: u2Field({ default: 30 }),
-  _unknown10: bytesField(4, { default: b("\x00\x00\x00\x10"), repr: false }),
+  _unknown10: bytesField(4, { default: Uint8Array.of(0x00, 0x00, 0x00, 0x10), repr: false }),
   framesCountType: u1Field({ default: 2 }),
   _reserved15: bytesField(3, { repr: false }),
   bitsPerChannel: u1Field(),

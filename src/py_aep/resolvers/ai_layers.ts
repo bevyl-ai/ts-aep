@@ -17,11 +17,9 @@ import {
   Path,
   ValueError,
   getOrThrow,
-  b,
   Bytes,
-  bytesEq,
-  type PathLike,
-} from "../../pyrt/index.ts";
+  bytesEqual,
+  type PathLike, ascii } from "../../pyrt/index.ts";
 import { CosParser, IndirectObject, IndirectReference, decodePdfTextString } from "../cos/index.ts";
 import { type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
 import { is, pyStr } from "../cos/kinds.ts";
@@ -166,13 +164,13 @@ export function readAiLayerOcgs(
 ): AiLayer[] {
   const name = new Path(file).name;
   if (data == null) data = new Path(file).readBytes();
-  if (!Bytes.startsWith(data, b("%PDF"))) {
+  if (!Bytes.startsWith(data, ascii("%PDF"))) {
     throw new UnsupportedAiLayersError(
       `${name}: not a PDF-compatible file; layered import requires an ` +
         "Illustrator/PDF file saved with PDF compatibility.",
     );
   }
-  const marker = Bytes.indexOf(data, b("/OCProperties"));
+  const marker = Bytes.indexOf(data, ascii("/OCProperties"));
   if (marker < 0) {
     throw new UnsupportedAiLayersError(
       `${name}: no layers (the file has no PDF Optional Content Groups).`,
@@ -185,7 +183,7 @@ export function readAiLayerOcgs(
   // cannot be read, which callers handle as this module's own error.
   try {
     const parser = new CosParser(
-      new BytesIO(data.slice(marker + b("/OCProperties").length)),
+      new BytesIO(data.slice(marker + ascii("/OCProperties").length)),
     );
     parser.lex();
     const ocProperties = _resolve(parser.parseValue(), data, offsets);
@@ -283,13 +281,13 @@ export function inflateOrNull(body: string): Uint8Array | null {
  */
 export function _findAiIcc(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).readBytes();
-  if (!Bytes.startsWith(data, b("%PDF"))) return null;
+  if (!Bytes.startsWith(data, ascii("%PDF"))) return null;
   for (const match of latin1(data).matchAll(_STREAM_RE)) {
     const body = match[1];
     if (body.length > 8_000_000) continue;
     const profile = inflateOrNull(body);
     if (profile == null) continue;
-    if (profile.length >= 132 && bytesEq(profile.slice(36, 40), b("acsp"))) {
+    if (profile.length >= 132 && bytesEqual(profile.slice(36, 40), ascii("acsp"))) {
       return profile;
     }
   }

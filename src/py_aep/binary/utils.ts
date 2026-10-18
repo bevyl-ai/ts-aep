@@ -5,7 +5,6 @@ import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 import {
   AepError,
   ValueError,
-  b,
   jsonDumps,
   jsonLoads,
   typeName,
@@ -380,7 +379,7 @@ export function chunkTree(chunks: Chunk[], depth = -1, indent = 0): string {
   for (const chunk of chunks) {
     const lt = chunk instanceof ListChunk ? chunk.listType : null;
     const children = chunk instanceof ListChunk ? chunk.chunks : null;
-    const size = ("data" in chunk ? chunk.data : b("")).length;
+    const size = ("data" in chunk ? chunk.data : new Uint8Array()).length;
     if (lt != null) {
       const label = `LIST:${lt}`;
       lines.push(`${prefix}${label}`);
@@ -416,7 +415,7 @@ export function toggleFlagChunk(
 
   const existing = container.chunks.flatMap((c, i) => (c.chunkType === chunkType ? [i] : []));
   if (enable && existing.length === 0) {
-    const newChunk = new Chunk({ chunkType, data: b("\x01") });
+    const newChunk = new Chunk({ chunkType, data: Uint8Array.of(0x01) });
     const anchors = container.chunks.flatMap((c, i) =>
       afterTypes.includes(c.chunkType) ? [i] : [],
     );

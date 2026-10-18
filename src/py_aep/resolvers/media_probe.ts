@@ -19,9 +19,8 @@ import {
   NotImplementedError,
   StructError,
   ValueError,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   concat,
   decode,
   float,
@@ -42,7 +41,7 @@ import {
   jsonLoads,
   type JsonValue,
   openRb,
-  typeName, compare } from "../../pyrt/index.ts";
+  typeName, compare, ascii } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /** Read/seek surface shared by `BytesIO` and `_BoundedReader`. */
@@ -324,14 +323,14 @@ export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInf
 // PNG - IHDR (still image)
 // ---------------------------------------------------------------------------
 
-export const _PNG_SIGNATURE = b("\x89PNG\r\n\x1a\n");
+export const _PNG_SIGNATURE = ascii("\x89PNG\r\n\x1a\n");
 
 export function _probePng(fp: ProbeStream): MediaInfo {
   const sig = fp.read(8);
-  if (!bytesEq(sig, _PNG_SIGNATURE)) throw new ValueError("Not a valid PNG file (bad signature)");
+  if (!bytesEqual(sig, _PNG_SIGNATURE)) throw new ValueError("Not a valid PNG file (bad signature)");
   // First chunk must be IHDR: length(4) "IHDR"(4) width(4) height(4) bitdepth(1) colortype(1)
   fp.read(4); // IHDR length
-  if (!bytesEq(fp.read(4), b("IHDR"))) throw new ValueError("PNG missing IHDR chunk");
+  if (!bytesEqual(fp.read(4), ascii("IHDR"))) throw new ValueError("PNG missing IHDR chunk");
   const [width, height] = struct.unpack(">II", fp.read(8));
   const bitDepth = _byteAt(fp.read(1), 0);
   const colorType = _byteAt(fp.read(1), 0);
@@ -370,10 +369,10 @@ export function _pngColorChunks(fp: ProbeStream): [boolean, Uint8Array | null] {
     const header = fp.read(8);
     if (header.length < 8) break;
     const [length, chunkType] = struct.unpack(">I4s", header);
-    if (bytesEq(chunkType, b("IDAT")) || bytesEq(chunkType, b("IEND"))) break;
-    if (bytesEq(chunkType, b("tRNS"))) {
+    if (bytesEqual(chunkType, ascii("IDAT")) || bytesEqual(chunkType, ascii("IEND"))) break;
+    if (bytesEqual(chunkType, ascii("tRNS"))) {
       hasTrns = true;
-    } else if (bytesEq(chunkType, b("iCCP"))) {
+    } else if (bytesEqual(chunkType, ascii("iCCP"))) {
       iccProfile = _pngIccp(fp.read(length));
       fp.seek(4, SEEK_CUR); // CRC
       continue;
@@ -390,7 +389,7 @@ export function _pngColorChunks(fp: ProbeStream): [boolean, Uint8Array | null] {
  */
 export function _pngIccp(body: Uint8Array): Uint8Array | null {
   const split = Bytes.indexOf(body, 0); // body.find(b"\x00")
-  if (split < 0 || !bytesEq(body.slice(split + 1, split + 2), b("\x00"))) return null; // 0 = deflate
+  if (split < 0 || !bytesEqual(body.slice(split + 1, split + 2), new Uint8Array(1))) return null; // 0 = deflate
   try {
     return zlib.decompress(body.slice(split + 2));
   } catch (e) {
@@ -408,13 +407,13 @@ export function _pngIccp(body: Uint8Array): Uint8Array | null {
  * `RF64` and `BW64` carry the same WAVE payload as `RIFF` but move the 64-bit
  * sizes into a `ds64` chunk, which lets them exceed 4 GB. AE imports both.
  */
-export const _WAV_RIFF_IDS = [b("RIFF"), b("RF64"), b("BW64")];
+export const _WAV_RIFF_IDS = [ascii("RIFF"), ascii("RF64"), ascii("BW64")];
 
 export function _probeWav(fp: ProbeStream): MediaInfo {
   const riffId = fp.read(4);
-  if (!_WAV_RIFF_IDS.some((id) => bytesEq(riffId, id))) throw new ValueError("Not a valid WAV file (missing RIFF)");
+  if (!_WAV_RIFF_IDS.some((id) => bytesEqual(riffId, id))) throw new ValueError("Not a valid WAV file (missing RIFF)");
   fp.read(4); // RIFF chunk size (0xFFFFFFFF for RF64; the real one is in ds64)
-  if (!bytesEq(fp.read(4), b("WAVE"))) throw new ValueError("Not a valid WAV file (missing WAVE)");
+  if (!bytesEqual(fp.read(4), ascii("WAVE"))) throw new ValueError("Not a valid WAV file (missing WAVE)");
   fp.seek(0, SEEK_END);
   const fileSize = fp.tell();
   fp.seek(12);
@@ -426,15 +425,15 @@ export function _probeWav(fp: ProbeStream): MediaInfo {
     const header = fp.read(8);
     if (header.length < 8) break;
     const [chunkId, chunkSize] = struct.unpack("<4sI", header);
-    if (bytesEq(chunkId, b("fmt "))) {
+    if (bytesEqual(chunkId, ascii("fmt "))) {
       const fmt = fp.read(chunkSize);
       // audio_format(2) channels(2) sample_rate(4) byte_rate(4) ...
       [sampleRate, byteRate] = struct.unpack("<II", fmt.slice(4, 12));
-    } else if (bytesEq(chunkId, b("ds64"))) {
+    } else if (bytesEqual(chunkId, ascii("ds64"))) {
       // riffSize(8) dataSize(8) sampleCount(8) tableLength(4) ...
       const body = fp.read(chunkSize);
       if (body.length >= 16) ds64DataSize = Number(struct.unpack("<Q", body.slice(8, 16))[0]);
-    } else if (bytesEq(chunkId, b("data"))) {
+    } else if (bytesEqual(chunkId, ascii("data"))) {
       dataSize = ds64DataSize || chunkSize;
       // A writer streaming to a pipe cannot seek back to patch the size,
       // so it leaves 0xFFFFFFFF behind. Trust the bytes that are actually
@@ -470,17 +469,17 @@ export function _readExtended(b_: Uint8Array): number {
 }
 
 export function _probeAiff(fp: ProbeStream): MediaInfo {
-  if (!bytesEq(fp.read(4), b("FORM"))) throw new ValueError("Not a valid AIFF/AIFC file (missing FORM)");
+  if (!bytesEqual(fp.read(4), ascii("FORM"))) throw new ValueError("Not a valid AIFF/AIFC file (missing FORM)");
   fp.read(4); // FORM chunk size
   const formType = fp.read(4);
-  if (!(bytesEq(formType, b("AIFF")) || bytesEq(formType, b("AIFC")))) {
+  if (!(bytesEqual(formType, ascii("AIFF")) || bytesEqual(formType, ascii("AIFC")))) {
     throw new ValueError("Not a valid AIFF/AIFC file (bad form type)");
   }
   for (;;) {
     const header = fp.read(8);
     if (header.length < 8) break;
     const [chunkId, chunkSize] = struct.unpack(">4sI", header);
-    if (bytesEq(chunkId, b("COMM"))) {
+    if (bytesEqual(chunkId, ascii("COMM"))) {
       const body = fp.read(chunkSize);
       // numChannels(2) numSampleFrames(4) sampleSize(2) sampleRate(10)
       const numFrames = struct.unpack(">I", body.slice(2, 6))[0];
@@ -502,7 +501,7 @@ export function _probeAiff(fp: ProbeStream): MediaInfo {
 // EXR - header attributes (still image; sequences handled by the caller)
 // ---------------------------------------------------------------------------
 
-export const _EXR_MAGIC = b("\x76\x2f\x31\x01");
+export const _EXR_MAGIC = ascii("\x76\x2f\x31\x01");
 
 export function _readCstr(fp: ProbeStream): Uint8Array {
   const out: number[] = [];
@@ -517,7 +516,7 @@ export function _readCstr(fp: ProbeStream): Uint8Array {
 export const _EXR_MULTIPART = 0x1000;
 
 export function _probeExr(fp: ProbeStream): MediaInfo {
-  if (!bytesEq(fp.read(4), _EXR_MAGIC)) throw new ValueError("Not a valid EXR file (bad magic)");
+  if (!bytesEqual(fp.read(4), _EXR_MAGIC)) throw new ValueError("Not a valid EXR file (bad magic)");
   const multipart = (struct.unpack("<I", fp.read(4))[0] & _EXR_MULTIPART) !== 0;
   const parts: ExrHeader[] = [_readExrHeader(fp)];
   while (multipart) {
@@ -572,19 +571,19 @@ export function _readExrHeader(fp: ProbeStream): ExrHeader {
     const value = fp.read(size);
     // AE sizes EXR footage by the displayWindow (canvas), not the
     // dataWindow (actual pixel-data extent, which may be cropped/oversized).
-    if (bytesEq(name, b("displayWindow"))) {
+    if (bytesEqual(name, ascii("displayWindow"))) {
       const [xMin, yMin, xMax, yMax] = struct.unpack("<iiii", value);
       out.width = xMax - xMin + 1;
       out.height = yMax - yMin + 1;
-    } else if (bytesEq(name, b("channels"))) {
+    } else if (bytesEqual(name, ascii("channels"))) {
       out.channels = _exrChannelNames(value);
-    } else if (bytesEq(name, b("compression"))) {
+    } else if (bytesEqual(name, ascii("compression"))) {
       out.compression = _byteAt(value, 0);
-    } else if (bytesEq(name, b("name"))) {
-      out.name = decode(Bytes.trimEnd(value, b("\x00")), "utf-8", "replace");
-    } else if (bytesEq(name, b("pixelAspectRatio"))) {
+    } else if (bytesEqual(name, ascii("name"))) {
+      out.name = decode(Bytes.trimEnd(value, new Uint8Array(1)), "utf-8", "replace");
+    } else if (bytesEqual(name, ascii("pixelAspectRatio"))) {
       out.pixelAspect = struct.unpack("<f", value)[0];
-    } else if (bytesEq(name, b("framesPerSecond"))) {
+    } else if (bytesEqual(name, ascii("framesPerSecond"))) {
       const [num, den] = struct.unpack("<ii", value);
       out.frameRate = den ? num / den : 0.0;
     }
@@ -638,7 +637,7 @@ export const _TIFF_ICC_TAG = 0x8773;
 export const _TIFF_PHOTOSHOP_LAYERS_TAG = 0x935c;
 
 /** The signature tag 37724 opens with, ahead of PSD additional-info blocks. */
-export const _PHOTOSHOP_DATA_HEADER = b("Adobe Photoshop Document Data Block\x00");
+export const _PHOTOSHOP_DATA_HEADER = ascii("Adobe Photoshop Document Data Block\x00");
 
 /**
  * The Photoshop colour mode a TIFF reads as, per PhotometricInterpretation
@@ -666,7 +665,7 @@ export function _tiffPhotoshopLayerCount(fp: ProbeStream, en: "<" | ">", offset:
   if (length < _PHOTOSHOP_DATA_HEADER.length) return 0;
   const end = offset + length;
   fp.seek(offset);
-  if (!bytesEq(fp.read(_PHOTOSHOP_DATA_HEADER.length), _PHOTOSHOP_DATA_HEADER)) return 0;
+  if (!bytesEqual(fp.read(_PHOTOSHOP_DATA_HEADER.length), _PHOTOSHOP_DATA_HEADER)) return 0;
   while (fp.tell() + 12 <= end) {
     const head = fp.read(12);
     let signature = head.slice(0, 4);
@@ -675,9 +674,9 @@ export function _tiffPhotoshopLayerCount(fp: ProbeStream, en: "<" | ">", offset:
       signature = signature.reverse();
       key = key.reverse();
     }
-    if (!bytesEq(signature, b("8BIM"))) break;
+    if (!bytesEqual(signature, ascii("8BIM"))) break;
     const blockLen = struct.unpack(`${en}I`, head.slice(8, 12))[0];
-    if (_LAYER_RECORD_KEYS.some((k) => bytesEq(key, k))) {
+    if (_LAYER_RECORD_KEYS.some((k) => bytesEqual(key, k))) {
       const countRaw = fp.read(2);
       if (countRaw.length < 2) return 0;
       const count: number = struct.unpack(`${en}h`, countRaw)[0];
@@ -814,8 +813,8 @@ export function _probeBigtiff(fp: ProbeStream, en: "<" | ">"): MediaInfo {
 
 export function _probeTiff(fp: ProbeStream): MediaInfo {
   const bo = fp.read(2);
-  if (!(bytesEq(bo, b("II")) || bytesEq(bo, b("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${literal(bo)})`);
-  const en = bytesEq(bo, b("II")) ? "<" : ">";
+  if (!(bytesEqual(bo, ascii("II")) || bytesEqual(bo, ascii("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${literal(bo)})`);
+  const en = bytesEqual(bo, ascii("II")) ? "<" : ">";
   const version = struct.unpack(`${en}H`, fp.read(2))[0];
   if (version === 43) return _probeBigtiff(fp, en);
   if (version !== 42) throw new ValueError(`Not a valid TIFF file (bad magic ${version})`);
@@ -874,9 +873,9 @@ export function _probeJpeg(fp: ProbeStream): MediaInfo {
   for (;;) {
     const c = fp.read(1);
     if (c.length === 0) break;
-    if (!bytesEq(c, b("\xff"))) continue;
+    if (!bytesEqual(c, Uint8Array.of(0xff))) continue;
     let marker = fp.read(1);
-    while (bytesEq(marker, b("\xff"))) marker = fp.read(1); // skip fill bytes
+    while (bytesEqual(marker, Uint8Array.of(0xff))) marker = fp.read(1); // skip fill bytes
     const m = _byteAt(marker, 0);
     if (m === 0xda) break; // start of scan: no metadata past here
     // SOF0..SOF15 carry the frame size, except DHT(C4)/JPG(C8)/DAC(CC).
@@ -889,7 +888,7 @@ export function _probeJpeg(fp: ProbeStream): MediaInfo {
     if (m === 0xe2) {
       // APP2, where an ICC profile lives
       const body = fp.read(length - 2);
-      if (Bytes.startsWith(body, b("ICC_PROFILE\x00"))) iccChunks.set(_byteAt(body, 12), body.slice(14));
+      if (Bytes.startsWith(body, ascii("ICC_PROFILE\x00"))) iccChunks.set(_byteAt(body, 12), body.slice(14));
       continue;
     }
     fp.seek(length - 2, SEEK_CUR);
@@ -971,7 +970,7 @@ export function _gifFrameTiming(fp: ProbeStream): [number, number] {
     if (block.length === 0 || block[0] === 0x3b) return [frames, delay]; // trailer
     if (block[0] === 0x21) {
       // extension
-      if (bytesEq(fp.read(1), b("\xf9"))) {
+      if (bytesEqual(fp.read(1), Uint8Array.of(0xf9))) {
         // graphic control
         const size = fp.read(1);
         if (size.length === 0) return [frames, delay];
@@ -997,7 +996,7 @@ export function _gifFrameTiming(fp: ProbeStream): [number, number] {
 
 export function _probeGif(fp: ProbeStream): MediaInfo {
   const sig = fp.read(6);
-  if (!bytesEq(sig.slice(0, 3), b("GIF")) || !(bytesEq(sig.slice(3), b("87a")) || bytesEq(sig.slice(3), b("89a")))) {
+  if (!bytesEqual(sig.slice(0, 3), ascii("GIF")) || !(bytesEqual(sig.slice(3), ascii("87a")) || bytesEqual(sig.slice(3), ascii("89a")))) {
     throw new ValueError("Not a valid GIF file (bad signature)");
   }
   const [width, height] = struct.unpack("<HH", fp.read(4));
@@ -1035,20 +1034,20 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
  */
 export const PSB_8BYTE_KEYS: ReadonlySet<string> = new Set(
   [
-    b("LMsk"),
-    b("Lr16"),
-    b("Lr32"),
-    b("Layr"),
-    b("Mt16"),
-    b("Mt32"),
-    b("Mtrn"),
-    b("Alph"),
-    b("FMsk"),
-    b("lnk2"),
-    b("FEid"),
-    b("FXid"),
-    b("PxSD"),
-    b("cinf"),
+    ascii("LMsk"),
+    ascii("Lr16"),
+    ascii("Lr32"),
+    ascii("Layr"),
+    ascii("Mt16"),
+    ascii("Mt32"),
+    ascii("Mtrn"),
+    ascii("Alph"),
+    ascii("FMsk"),
+    ascii("lnk2"),
+    ascii("FEid"),
+    ascii("FXid"),
+    ascii("PxSD"),
+    ascii("cinf"),
   ].map((k) => Bytes.toHex(k)),
 );
 
@@ -1057,7 +1056,7 @@ export const PSB_8BYTE_KEYS: ReadonlySet<string> = new Set(
  * Layer Info block is empty: 16/32-bit documents use Lr16/Lr32, and some
  * writers use Layr.
  */
-export const _LAYER_RECORD_KEYS: readonly Uint8Array[] = [b("Lr16"), b("Lr32"), b("Layr")];
+export const _LAYER_RECORD_KEYS: readonly Uint8Array[] = [ascii("Lr16"), ascii("Lr32"), ascii("Layr")];
 
 /**
  * Walk a PSD/PSB stream to its layer records.
@@ -1098,12 +1097,12 @@ export function psdLayerRecordCount(fp: ProbeStream, isPsb: boolean): [number, n
   fp.seek(struct.unpack(">I", glmRaw)[0], SEEK_CUR);
   while (fp.tell() + 12 <= sectionEnd) {
     const sig = fp.read(4);
-    if (!(bytesEq(sig, b("8BIM")) || bytesEq(sig, b("8B64")))) break;
+    if (!(bytesEqual(sig, ascii("8BIM")) || bytesEqual(sig, ascii("8B64")))) break;
     const key = fp.read(4);
     let blockLen: number;
     if (isPsb && PSB_8BYTE_KEYS.has(Bytes.toHex(key))) blockLen = Number(struct.unpack(">Q", fp.read(8))[0]);
     else blockLen = struct.unpack(">I", fp.read(4))[0];
-    if (_LAYER_RECORD_KEYS.some((k) => bytesEq(key, k))) {
+    if (_LAYER_RECORD_KEYS.some((k) => bytesEqual(key, k))) {
       const countRaw = fp.read(2);
       if (countRaw.length < 2) return [0, 0];
       return [Math.abs(struct.unpack(">h", countRaw)[0]), blockLen - 2];
@@ -1149,7 +1148,7 @@ export function* iterImageResources(fp: ProbeStream): Generator<[number, Uint8Ar
   }
   let pos = 0;
   while (pos + 10 <= section.length) {
-    if (!bytesEq(section.slice(pos, pos + 4), b("8BIM"))) break;
+    if (!bytesEqual(section.slice(pos, pos + 4), ascii("8BIM"))) break;
     const resourceId = struct.unpack(">H", section.slice(pos + 4, pos + 6))[0];
     const nameLen = section[pos + 6];
     pos += 6 + ((nameLen + 2) & ~1);
@@ -1189,7 +1188,7 @@ export function _psdImageResources(fp: ProbeStream): [number, Uint8Array | null]
 }
 
 export function _probePsd(fp: ProbeStream): MediaInfo {
-  if (!bytesEq(fp.read(4), b("8BPS"))) throw new ValueError("Not a valid PSD/PSB file (bad signature)");
+  if (!bytesEqual(fp.read(4), ascii("8BPS"))) throw new ValueError("Not a valid PSD/PSB file (bad signature)");
   const version = struct.unpack(">H", fp.read(2))[0]; // 1=PSD, 2=PSB
   fp.read(6); // reserved
   const channels = struct.unpack(">H", fp.read(2))[0];
@@ -1347,7 +1346,7 @@ export function* _topLevelAtoms(fp: ProbeStream, wanted: Uint8Array): Generator<
       size = fileEnd - pos;
     }
     if (size < 8 || pos + size > fileEnd) return;
-    if (bytesEq(atype, wanted)) yield fp.read(pos + size - body);
+    if (bytesEqual(atype, wanted)) yield fp.read(pos + size - body);
     pos += size;
     fp.seek(pos);
   }
@@ -1355,7 +1354,7 @@ export function* _topLevelAtoms(fp: ProbeStream, wanted: Uint8Array): Generator<
 
 /** Return the body of the top-level `moov` atom, or `b""` if absent. */
 export function _readMoov(fp: ProbeStream): Uint8Array {
-  const r = _topLevelAtoms(fp, b("moov")).next();
+  const r = _topLevelAtoms(fp, ascii("moov")).next();
   return r.done ? new Uint8Array(0) : r.value;
 }
 
@@ -1419,20 +1418,20 @@ export const _TRUN_SAMPLE_FIELDS: readonly number[] = [0x000100, 0x000200, 0x000
 export function _fragmentTotals(fp: ProbeStream, trackId: number): [number, number] {
   let samples = 0;
   let ticks = 0;
-  for (const moof of _topLevelAtoms(fp, b("moof"))) {
+  for (const moof of _topLevelAtoms(fp, ascii("moof"))) {
     for (const [a1, b1, e1] of _atoms(moof, 0, moof.length)) {
-      if (!bytesEq(a1, b("traf"))) continue;
+      if (!bytesEqual(a1, ascii("traf"))) continue;
       let defaultDuration = 0;
       let trafTrack = -1;
       for (const [a2, b2, e2] of _atoms(moof, b1, e1)) {
-        if (bytesEq(a2, b("tfhd"))) {
+        if (bytesEqual(a2, ascii("tfhd"))) {
           const flags = _u(moof, b2 + 1, 3);
           trafTrack = _u(moof, b2 + 4, 4);
           let off = b2 + 8;
           if (flags & _TFHD_BASE_OFFSET) off += 8;
           if (flags & _TFHD_SAMPLE_DESC) off += 4;
           if (flags & _TFHD_DEFAULT_DURATION && off + 4 <= e2) defaultDuration = _u(moof, off, 4);
-        } else if (bytesEq(a2, b("trun")) && trafTrack === trackId) {
+        } else if (bytesEqual(a2, ascii("trun")) && trafTrack === trackId) {
           const flags = _u(moof, b2 + 1, 3);
           const count = _u(moof, b2 + 4, 4);
           samples += count;
@@ -1478,13 +1477,13 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
   let audioElstDur = 0.0;
 
   for (const [a2, b2, e2] of _atoms(data, 0, data.length)) {
-    if (bytesEq(a2, b("mvhd"))) {
+    if (bytesEqual(a2, ascii("mvhd"))) {
       const v = _byteAt(data, b2);
       const ts = _u(data, b2 + (v === 1 ? 20 : 12), 4);
       movieTs = ts;
       const dur = v === 1 ? _u(data, b2 + 24, 8) : _u(data, b2 + 16, 4);
       duration = ts ? dur / ts : 0.0;
-    } else if (bytesEq(a2, b("trak"))) {
+    } else if (bytesEqual(a2, ascii("trak"))) {
       let handler: Uint8Array = new Uint8Array(0);
       let tw = 0;
       let th = 0;
@@ -1498,15 +1497,15 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
       let elstSentinel = 0xffffffff;
       let entry = new _VideoSampleEntry();
       for (const [a3, b3, e3] of _atoms(data, b2, e2)) {
-        if (bytesEq(a3, b("tkhd"))) {
+        if (bytesEqual(a3, ascii("tkhd"))) {
           const v = _byteAt(data, b3);
           trackId = _u(data, b3 + (v === 1 ? 20 : 12), 4);
           tw = _u(data, e3 - 8, 4) >>> 16;
           th = _u(data, e3 - 4, 4) >>> 16;
           swapAxes = _tkhdAxesSwapped(data, e3);
-        } else if (bytesEq(a3, b("edts"))) {
+        } else if (bytesEqual(a3, ascii("edts"))) {
           for (const [ae, be, ee] of _atoms(data, b3, e3)) {
-            if (bytesEq(ae, b("elst")) && ee - be >= 16) {
+            if (bytesEqual(ae, ascii("elst")) && ee - be >= 16) {
               // Entries follow version/flags(4) + entry_count(4);
               // segment_duration is u32 (v0) or u64 (v1) in the
               // movie timescale; the all-ones value is an empty edit.
@@ -1515,21 +1514,21 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
               elstSentinel = 2 ** (ev === 1 ? 64 : 32) - 1;
             }
           }
-        } else if (bytesEq(a3, b("mdia"))) {
+        } else if (bytesEqual(a3, ascii("mdia"))) {
           for (const [a4, b4, e4] of _atoms(data, b3, e3)) {
-            if (bytesEq(a4, b("mdhd"))) {
+            if (bytesEqual(a4, ascii("mdhd"))) {
               const v = _byteAt(data, b4);
               mts = _u(data, b4 + (v === 1 ? 20 : 12), 4);
               mdur = v === 1 ? _u(data, b4 + 24, 8) : _u(data, b4 + 16, 4);
-            } else if (bytesEq(a4, b("hdlr"))) {
+            } else if (bytesEqual(a4, ascii("hdlr"))) {
               handler = data.slice(b4 + 8, b4 + 12);
-            } else if (bytesEq(a4, b("minf"))) {
+            } else if (bytesEqual(a4, ascii("minf"))) {
               for (const [a5, b5, e5] of _atoms(data, b4, e4)) {
-                if (!bytesEq(a5, b("stbl"))) continue;
+                if (!bytesEqual(a5, ascii("stbl"))) continue;
                 for (const [a6, b6, e6] of _atoms(data, b5, e5)) {
-                  if (bytesEq(a6, b("stsd"))) {
+                  if (bytesEqual(a6, ascii("stsd"))) {
                     entry = _parseStsd(data, b6, e6);
-                  } else if (bytesEq(a6, b("stts")) && e6 - b6 >= 16) {
+                  } else if (bytesEqual(a6, ascii("stts")) && e6 - b6 >= 16) {
                     [samples, ticks] = _sttsTotals(data, b6, e6);
                   }
                 }
@@ -1538,7 +1537,7 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
           }
         }
       }
-      if (bytesEq(handler, b("vide")) && !undecodable.has(Bytes.toHex(entry.codec))) {
+      if (bytesEqual(handler, ascii("vide")) && !undecodable.has(Bytes.toHex(entry.codec))) {
         // AE sizes footage by the stsd coded dimensions, not tkhd:
         // tkhd holds the *display* size (coded width x pixel aspect),
         // so trusting it counts an anamorphic file's aspect twice.
@@ -1564,7 +1563,7 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
         } else if (mts && mdur) {
           duration = mdur / mts;
         }
-      } else if (bytesEq(handler, b("soun"))) {
+      } else if (bytesEqual(handler, ascii("soun"))) {
         hasAudio = true;
         // An audio track's media timescale is its sample rate.
         audioSampleRate = mts;
@@ -1614,7 +1613,7 @@ export class _VideoSampleEntry {
 
 /** Apple ProRes sample-entry codes. AE decodes ProRes at 16 bits per channel (AE 2026 imports of its own ProRes 422 and 4444 renders). */
 export const _PRORES_CODECS: ReadonlySet<string> = new Set(
-  [b("apco"), b("apcs"), b("apcn"), b("apch"), b("ap4h"), b("ap4x")].map((k) => Bytes.toHex(k)),
+  [ascii("apco"), ascii("apcs"), ascii("apcn"), ascii("apch"), ascii("ap4h"), ascii("ap4x")].map((k) => Bytes.toHex(k)),
 );
 
 /** H.264 profiles whose sequence parameter set carries the bit depth. */
@@ -1630,7 +1629,7 @@ export function _avcBitDepth(data: Uint8Array, body: number, end: number): numbe
   if (body + 8 > end || !(_byteAt(data, body + 5) & 0x1f)) return 8;
   const spsEnd = Math.min(body + 8 + _u(data, body + 6, 2), end);
   // Drop the NAL header byte and the emulation-prevention bytes.
-  const rbsp = Bytes.replace(data.slice(body + 9, spsEnd), b("\x00\x00\x03"), b("\x00\x00"));
+  const rbsp = Bytes.replace(data.slice(body + 9, spsEnd), Uint8Array.of(0x00, 0x00, 0x03), new Uint8Array(2));
   if (rbsp.length < 4 || !_AVC_HIGH_PROFILES.has(rbsp[0])) return 8;
   const bits = Array.from(rbsp.slice(3, 16), (byte) => byte.toString(2).padStart(8, "0")).join("");
   let [, pos] = _expGolomb(bits, 0); // seq_parameter_set_id
@@ -1664,14 +1663,14 @@ export function _parseStsd(data: Uint8Array, body: number, end: number): _VideoS
   let bitsPerChannel = _PRORES_CODECS.has(Bytes.toHex(codec)) ? 16 : 8;
   // Extension atoms (pasp, avcC) live after the 86-byte base video entry.
   for (const [atype, b_, e] of _atoms(data, entry + 86, Math.min(entry + entrySize, end))) {
-    if (bytesEq(atype, b("pasp"))) {
+    if (bytesEqual(atype, ascii("pasp"))) {
       const hSpacing = _u(data, b_, 4);
       const vSpacing = _u(data, b_ + 4, 4);
       if (vSpacing) {
         // Unrounded: AE stores the exact ratio (4:3 -> 4/3).
         pixelAspect = hSpacing / vSpacing;
       }
-    } else if (bytesEq(atype, b("avcC")) && _avcBitDepth(data, b_, e) > 8) {
+    } else if (bytesEqual(atype, ascii("avcC")) && _avcBitDepth(data, b_, e) > 8) {
       bitsPerChannel = 16;
     }
   }
@@ -1686,7 +1685,7 @@ export function _parseStsd(data: Uint8Array, body: number, end: number): _VideoS
  * only once verified, since under-claiming a codec AE *can* decode breaks
  * the footage too (AE warns and renders nothing).
  */
-export const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set([b("vp09"), b("av01")].map((k) => Bytes.toHex(k)));
+export const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set([ascii("vp09"), ascii("av01")].map((k) => Bytes.toHex(k)));
 
 /**
  * Probe an `.mp4`.
@@ -1729,10 +1728,10 @@ export function _probeMp4(fp: ProbeStream): MediaInfo {
 // FBX - 3D scene (AE renders at fixed defaults; dims are not in the file)
 // ---------------------------------------------------------------------------
 
-export const _FBX_MAGIC = b("Kaydara FBX Binary  \x00\x1a\x00");
+export const _FBX_MAGIC = ascii("Kaydara FBX Binary  \x00\x1a\x00");
 
 export function _probeFbx(fp: ProbeStream): MediaInfo {
-  if (!bytesEq(fp.read(_FBX_MAGIC.length), _FBX_MAGIC)) throw new ValueError("Not a binary FBX file (bad magic)");
+  if (!bytesEqual(fp.read(_FBX_MAGIC.length), _FBX_MAGIC)) throw new ValueError("Not a binary FBX file (bad magic)");
   // AE imports an FBX as a 1920x1080, 30 fps, 30 s 3D scene regardless of the
   // scene's authored render settings, and re-reads the geometry on open.
   return new MediaInfo({
@@ -1868,7 +1867,7 @@ export const _MP3_BR_M2_L3 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128
  * that flag bit 4 announces.
  */
 export function _skipId3v2(raw: Uint8Array): number {
-  if (bytesEq(raw.slice(0, 3), b("ID3")) && raw.length >= 10) {
+  if (bytesEqual(raw.slice(0, 3), ascii("ID3")) && raw.length >= 10) {
     const s = raw.slice(6, 10);
     const size = ((s[0] & 0x7f) << 21) | ((s[1] & 0x7f) << 14) | ((s[2] & 0x7f) << 7) | (s[3] & 0x7f);
     return 10 + size + (raw[5] & 0x10 ? 10 : 0);
@@ -1954,13 +1953,13 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
   let duration = 0.0;
   const tagAt = 4 + side;
   const tag = raw.slice(tagAt, tagAt + 4);
-  if (bytesEq(tag, b("Xing")) || bytesEq(tag, b("Info"))) {
+  if (bytesEqual(tag, ascii("Xing")) || bytesEqual(tag, ascii("Info"))) {
     const flags = struct.unpackFrom(">I", raw, tagAt + 4)[0];
     if (flags & 0x1 && sr) {
       const frames = struct.unpackFrom(">I", raw, tagAt + 8)[0];
       duration = (frames * spf) / sr;
     }
-  } else if (bytesEq(raw.slice(36, 40), b("VBRI")) && sr && raw.length >= 54) {
+  } else if (bytesEqual(raw.slice(36, 40), ascii("VBRI")) && sr && raw.length >= 54) {
     // Fraunhofer's VBR tag sits at a fixed offset (frame start + 4 + 32)
     // rather than after the side info: tag(4) version(2) delay(2)
     // quality(2) bytes(4) frames(4). AE ignores it and falls back to a
@@ -2083,11 +2082,11 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
   const sig = fp.read(3);
   fp.read(5); // version (1 byte) + file length (LE u32)
   let body: Uint8Array;
-  if (bytesEq(sig, b("FWS"))) {
+  if (bytesEqual(sig, ascii("FWS"))) {
     body = fp.read(21);
-  } else if (bytesEq(sig, b("CWS"))) {
+  } else if (bytesEqual(sig, ascii("CWS"))) {
     body = zlib.decompress(fp.read()).slice(0, 21);
-  } else if (bytesEq(sig, b("ZWS"))) {
+  } else if (bytesEqual(sig, ascii("ZWS"))) {
     fp.read(4); // uncompressed length precedes the LZMA stream
     const stream = fp.read();
     // A SWF LZMA body is 5 props bytes then the raw stream, with no 8-byte
@@ -2193,7 +2192,7 @@ export function _mpegVideoEs(data: Uint8Array): [Uint8Array, boolean] {
   let pos = 0;
   const n = data.length;
   while (pos + 4 <= n) {
-    if (!bytesEq(data.slice(pos, pos + 3), b("\x00\x00\x01"))) {
+    if (!bytesEqual(data.slice(pos, pos + 3), Uint8Array.of(0x00, 0x00, 0x01))) {
       pos += 1;
       continue;
     }
@@ -2238,13 +2237,13 @@ export function _probeMpeg(fp: ProbeStream): MediaInfo {
   // of the final frames, so the frames have to be counted. This reads the
   // whole file, which is acceptable for the sizes py_aep handles.
   const [video, hasAudio] = _mpegVideoEs(fp.read());
-  const seq = Bytes.indexOf(video, b("\x00\x00\x01\xb3"));
+  const seq = Bytes.indexOf(video, Uint8Array.of(0x00, 0x00, 0x01, 0xb3));
   if (seq < 0) throw new ValueError("Not a valid MPEG file (no sequence header)");
   const val = Number(struct.unpackFrom(">I", video, seq + 4)[0]);
   const width = (val >>> 20) & 0xfff;
   const height = (val >>> 8) & 0xfff;
   const fps = _MPEG_FR.get(val & 0xf) ?? 0.0;
-  const frames = Bytes.count(video, b("\x00\x00\x01\x00"));
+  const frames = Bytes.count(video, Uint8Array.of(0x00, 0x00, 0x01, 0x00));
   const duration = fps ? frames / fps : 0.0;
   const pixelAspect = _MPEG_D1_PIXEL_ASPECT.get(compositeKey(width, height, (val >>> 4) & 0xf)) ?? 1.0;
   return new MediaInfo({
@@ -2278,7 +2277,7 @@ export function _latin1(data: Uint8Array): string {
 
 /** Radiance HDR (RGBE) - text header with a resolution line (still image). */
 export function _probeHdr(fp: ProbeStream): MediaInfo {
-  if (!Bytes.startsWith(fp.readline(), b("#?"))) {
+  if (!Bytes.startsWith(fp.readline(), ascii("#?"))) {
     throw new ValueError("Not a Radiance HDR file (missing '#?' identifier)");
   }
   for (;;) {
@@ -2294,8 +2293,8 @@ export function _probeHdr(fp: ProbeStream): MediaInfo {
   const dims = new Map<string, number>();
   dims.set(Bytes.toHex(parts[0].slice(-1)), Number.parseInt(decode(parts[1], "ascii"), 10));
   dims.set(Bytes.toHex(parts[2].slice(-1)), Number.parseInt(decode(parts[3], "ascii"), 10));
-  const X = Bytes.toHex(b("X"));
-  const Y = Bytes.toHex(b("Y"));
+  const X = Bytes.toHex(ascii("X"));
+  const Y = Bytes.toHex(ascii("Y"));
   if (!dims.has(X) || !dims.has(Y)) {
     throw new ValueError("Cannot parse HDR resolution line (missing X or Y axis)");
   }
@@ -2312,8 +2311,8 @@ export const _CIFF_IMAGE_INFO = 0x1810;
 export function _probeCrw(fp: ProbeStream): MediaInfo {
   const data = fp.read();
   const head = data.slice(0, 2);
-  const order = bytesEq(head, b("II")) ? "<" : bytesEq(head, b("MM")) ? ">" : null;
-  if (order == null || !bytesEq(data.slice(6, 14), b("HEAPCCDR"))) {
+  const order = bytesEqual(head, ascii("II")) ? "<" : bytesEqual(head, ascii("MM")) ? ">" : null;
+  if (order == null || !bytesEqual(data.slice(6, 14), ascii("HEAPCCDR"))) {
     throw new ValueError("Not a Canon CRW file (missing CIFF heap header)");
   }
   const [headerLength] = struct.unpack(`${order}I`, data.slice(2, 6));
@@ -2384,17 +2383,17 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
   let hires = false;
   for (const raw of _iterLines(fp)) {
     const line = Bytes.trim(raw);
-    if (Bytes.startsWith(line, b("%%HiResBoundingBox:"))) {
-      const nums = Bytes.split(Bytes.split(line, b(":"), 1)[1]);
+    if (Bytes.startsWith(line, ascii("%%HiResBoundingBox:"))) {
+      const nums = Bytes.split(Bytes.split(line, ascii(":"), 1)[1]);
       if (nums.length >= 4) {
         const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => float(decode(n, "ascii")));
         width = round(urx - llx);
         height = round(ury - lly);
         hires = true;
       }
-    } else if (!hires && Bytes.startsWith(line, b("%%BoundingBox:"))) {
-      const rest = Bytes.trim(Bytes.split(line, b(":"), 1)[1]);
-      if (!bytesEq(rest, b("(atend)"))) {
+    } else if (!hires && Bytes.startsWith(line, ascii("%%BoundingBox:"))) {
+      const rest = Bytes.trim(Bytes.split(line, ascii(":"), 1)[1]);
+      if (!bytesEqual(rest, ascii("(atend)"))) {
         const nums = Bytes.split(rest);
         if (nums.length >= 4) {
           const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => float(decode(n, "ascii")));
@@ -2402,7 +2401,7 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
           height = round(ury - lly);
         }
       }
-    } else if (Bytes.startsWith(line, b("%%EndComments"))) {
+    } else if (Bytes.startsWith(line, ascii("%%EndComments"))) {
       break;
     }
   }
@@ -2413,7 +2412,7 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
 export function _probeText(fp: ProbeStream): MediaInfo {
   const sig = fp.read(4);
   fp.seek(0);
-  if (bytesEq(sig, b("%PDF"))) return _probePdf(fp);
+  if (bytesEqual(sig, ascii("%PDF"))) return _probePdf(fp);
   return _probeEps(fp);
 }
 
@@ -2446,7 +2445,7 @@ export function* _asfObjects(body: Uint8Array, start: number, end: number): Gene
     const size = Number(struct.unpackFrom("<Q", body, pos + 16)[0]);
     if (size < 24 || pos + size > end) return;
     yield [guid, pos + 24, pos + size];
-    if (bytesEq(guid, _ASF_HEADER_EXTENSION)) yield* _asfObjects(body, pos + 46, pos + size);
+    if (bytesEqual(guid, _ASF_HEADER_EXTENSION)) yield* _asfObjects(body, pos + 46, pos + size);
     pos += size;
   }
 }
@@ -2492,7 +2491,7 @@ export function _asfMetadata(body: Uint8Array, start: number, end: number): Map<
 }
 
 export function _probeWmv(fp: ProbeStream): MediaInfo {
-  if (!bytesEq(fp.read(16), _ASF_HEADER)) throw new ValueError("Not a valid ASF/WMV file (bad header GUID)");
+  if (!bytesEqual(fp.read(16), _ASF_HEADER)) throw new ValueError("Not a valid ASF/WMV file (bad header GUID)");
   const headerSize = Number(struct.unpack("<Q", fp.read(8))[0]);
   fp.read(6); // object count (u32) + 2 reserved bytes
   const body = fp.read(Math.max(0, headerSize - 30));
@@ -2510,27 +2509,27 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
 
   for (const [guid, start, end] of _asfObjects(body, 0, body.length)) {
     const size = end - start;
-    if (bytesEq(guid, _ASF_FILE_PROPS) && size >= 64) {
+    if (bytesEqual(guid, _ASF_FILE_PROPS) && size >= 64) {
       playDuration = Number(struct.unpackFrom("<Q", body, start + 40)[0]) / 1e7;
       sendDuration = Number(struct.unpackFrom("<Q", body, start + 48)[0]) / 1e7;
       preroll = Number(struct.unpackFrom("<Q", body, start + 56)[0]) / 1e3;
-    } else if (bytesEq(guid, _ASF_STREAM_PROPS) && size >= 62) {
+    } else if (bytesEqual(guid, _ASF_STREAM_PROPS) && size >= 62) {
       const stream = struct.unpackFrom("<H", body, start + 48)[0] & 0x7f;
-      if (bytesEq(body.slice(start, start + 4), _ASF_VIDEO_PREFIX)) {
+      if (bytesEqual(body.slice(start, start + 4), _ASF_VIDEO_PREFIX)) {
         videoStream = stream;
         // Type-specific data at +54 begins with enc_width/height.
         width = struct.unpackFrom("<I", body, start + 54)[0];
         height = struct.unpackFrom("<I", body, start + 58)[0];
-      } else if (bytesEq(body.slice(start, start + 4), _ASF_AUDIO_PREFIX)) {
+      } else if (bytesEqual(body.slice(start, start + 4), _ASF_AUDIO_PREFIX)) {
         hasAudio = true;
         // Type-specific data at +54 is a WAVEFORMATEX; its
         // nSamplesPerSec follows wFormatTag(2) and nChannels(2).
         audioSampleRate = Number(struct.unpackFrom("<I", body, start + 58)[0]);
       }
-    } else if (bytesEq(guid, _ASF_EXT_STREAM_PROPS) && size >= 64) {
+    } else if (bytesEqual(guid, _ASF_EXT_STREAM_PROPS) && size >= 64) {
       const stream = struct.unpackFrom("<H", body, start + 48)[0];
       avgFrameTime.set(stream, Number(struct.unpackFrom("<Q", body, start + 52)[0]));
-    } else if (bytesEq(guid, _ASF_METADATA)) {
+    } else if (bytesEqual(guid, _ASF_METADATA)) {
       metadata = _asfMetadata(body, start, end);
     }
   }
@@ -2593,8 +2592,8 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
   const magic = header.slice(0, 4);
 
   // --- DPX (SMPTE 268M) ---
-  if (bytesEq(magic, b("SDPX")) || bytesEq(magic, b("XPDS"))) {
-    const endian = bytesEq(magic, b("SDPX")) ? ">" : "<";
+  if (bytesEqual(magic, ascii("SDPX")) || bytesEqual(magic, ascii("XPDS"))) {
+    const endian = bytesEqual(magic, ascii("SDPX")) ? ">" : "<";
     const nElem = struct.unpack(`${endian}H`, header.slice(770, 772))[0];
     const [width, height] = struct.unpack(`${endian}II`, header.slice(772, 780));
     let hasAlpha = false;
@@ -2617,8 +2616,8 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
   }
 
   // --- Cineon (SMPTE V4.5) ---
-  if (bytesEq(magic, b("\x80\x2a\x5f\xd7")) || bytesEq(magic, b("\xd7\x5f\x2a\x80"))) {
-    const endian = bytesEq(magic, b("\x80\x2a\x5f\xd7")) ? ">" : "<";
+  if (bytesEqual(magic, ascii("\x80\x2a\x5f\xd7")) || bytesEqual(magic, ascii("\xd7\x5f\x2a\x80"))) {
+    const endian = bytesEqual(magic, ascii("\x80\x2a\x5f\xd7")) ? ">" : "<";
     // Byte 192 = orientation (u1), byte 193 = number_of_elements (u1).
     const nElem = header[193];
     const hasAlpha = nElem > 3;
@@ -2649,7 +2648,7 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
 }
 
 /** HEIF brands `_probeHeif` accepts in `ftyp`, as `bytes_.hex` keys. */
-export const _HEIF_BRANDS: ReadonlySet<string> = new Set([b("heic"), b("heix"), b("mif1"), b("heif")].map((k) => Bytes.toHex(k)));
+export const _HEIF_BRANDS: ReadonlySet<string> = new Set([ascii("heic"), ascii("heix"), ascii("mif1"), ascii("heif")].map((k) => Bytes.toHex(k)));
 
 /**
  * Probe a HEIF/HEIC (ISO/IEC 23008-12) still image.
@@ -2666,7 +2665,7 @@ export function _probeHeif(fp: ProbeStream): MediaInfo {
   if (data.length < 12) throw new ValueError("Not a valid HEIF file (too short)");
 
   const ftypSize = _u(data, 0, 4);
-  if (!bytesEq(data.slice(4, 8), b("ftyp")) || ftypSize < 16 || ftypSize > data.length) {
+  if (!bytesEqual(data.slice(4, 8), ascii("ftyp")) || ftypSize < 16 || ftypSize > data.length) {
     throw new ValueError("Not a valid HEIF file (missing ftyp box)");
   }
   const major = data.slice(8, 12);
@@ -2682,25 +2681,25 @@ export function _probeHeif(fp: ProbeStream): MediaInfo {
   let bitDepth = 8;
   let hasAlpha = false;
   for (const [a1, b1, e1] of _atoms(data, 0, data.length)) {
-    if (!bytesEq(a1, b("meta"))) continue;
+    if (!bytesEqual(a1, ascii("meta"))) continue;
     // meta is a full box: version(1) + flags(3) precede its children.
     for (const [a2, b2, e2] of _atoms(data, b1 + 4, e1)) {
-      if (!bytesEq(a2, b("iprp"))) continue;
+      if (!bytesEqual(a2, ascii("iprp"))) continue;
       for (const [a3, b3, e3] of _atoms(data, b2, e2)) {
-        if (!bytesEq(a3, b("ipco"))) continue;
+        if (!bytesEqual(a3, ascii("ipco"))) continue;
         for (const [a4, b4, e4] of _atoms(data, b3, e3)) {
-          if (bytesEq(a4, b("ispe")) && width === 0) {
+          if (bytesEqual(a4, ascii("ispe")) && width === 0) {
             // ispe is a full box: version(4) + width(4) + height(4).
             width = _u(data, b4 + 4, 4);
             height = _u(data, b4 + 8, 4);
-          } else if (bytesEq(a4, b("pixi")) && bitDepth === 8) {
+          } else if (bytesEqual(a4, ascii("pixi")) && bitDepth === 8) {
             const nc = b4 + 5 <= e4 ? data[b4 + 4] : 0;
             if (nc && b4 + 5 + nc <= e4) bitDepth = data[b4 + 5];
-          } else if (bytesEq(a4, b("auxC"))) {
+          } else if (bytesEqual(a4, ascii("auxC"))) {
             // Null-terminated URN after version+flags; the alpha
             // plane's is urn:mpeg:hevc:2015:auxid:1.
-            const urn = Bytes.split(data.slice(b4 + 4, e4), b("\x00"), 1)[0];
-            if (Bytes.includes(urn, b("auxid"))) hasAlpha = true;
+            const urn = Bytes.split(data.slice(b4 + 4, e4), new Uint8Array(1), 1)[0];
+            if (Bytes.includes(urn, ascii("auxid"))) hasAlpha = true;
           }
         }
       }

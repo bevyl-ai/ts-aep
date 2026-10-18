@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
   Bytes,
-  bytesEq,
+  bytesEqual,
   getOrThrow,
   isdigit,
   len,
@@ -262,7 +262,7 @@ describe("TestNewRoundTrip", () => {
     const path = tmpPath.div("empty.aep");
     app.project.save(path);
     const reparsed = py_aep.parse(path);
-    expect(bytesEq(projectBytes(reparsed.project), original)).toBe(true);
+    expect(bytesEqual(projectBytes(reparsed.project), original)).toBe(true);
   });
 
   test("test_reparse_empty", () => {
