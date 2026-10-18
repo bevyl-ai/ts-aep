@@ -10,7 +10,6 @@ import {
   descriptorsOf,
   getattr,
   round,
-  str,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
@@ -248,7 +247,7 @@ export class ParametricMeshOptions {
       result.set(name, getattr(this, name));
     }
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float-valued option of 1.0 prints as "1" here where Python prints "1.0" (repr string only, never saved).
-    const formatted = [...result].map(([key, value]) => `${key}=${str(value)}`).join(", ");
+    const formatted = [...result].map(([key, value]) => `${key}=${String(value)}`).join(", ");
     return `<${Object.getPrototypeOf(this.constructor).name}(${formatted})>`;
   }
 }

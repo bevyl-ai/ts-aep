@@ -12,7 +12,6 @@ import {
   deferred,
   descriptor,
   dictPop,
-  format,
   assert,
   valueEquals,
   type ClassAttributes,
@@ -118,7 +117,7 @@ export class Item {
    * Read-only.
    */
   get dynamicLinkGuid(): string {
-    return `${format(this.id, "08x")}-0000-0000-0000-000000000000`;
+    return `${this.id.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`;
   }
 
   /** The item comment. Read / Write. */

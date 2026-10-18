@@ -27,8 +27,6 @@ import { BitsPerChannel, Label } from "../enums/index.ts";
 import {
   Path,
   RuntimeError,
-  format,
-  int,
   literal,
   round,
   str,
@@ -136,7 +134,7 @@ export function buildFolderNode(folder: FolderItem, project: Project, includePro
 export function buildCompNode(comp: CompItem, project: Project, includeProperties: boolean = true): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["size", `${comp.width}x${comp.height}`],
-    ["duration", `${format(comp.duration, ".2f")}s`],
+    ["duration", `${comp.duration.toFixed(2)}s`],
     ["frame_rate", boxFloat(comp.frameRate)],
     ["layers_count", comp.layers.length],
   ]);
@@ -161,7 +159,7 @@ export function buildFootageNode(footage: FootageItem): Node {
     ["asset_type", footage.assetType],
     ["size", `${footage.width}x${footage.height}`],
   ]);
-  if (footage.duration > 0) attrs.set("duration", `${format(footage.duration, ".2f")}s`);
+  if (footage.duration > 0) attrs.set("duration", `${footage.duration.toFixed(2)}s`);
   if (footage.file) attrs.set("file", new Path(footage.file).name);
 
   return {
@@ -409,7 +407,7 @@ export function formatDot(node: Node, output: TextIO, maxDepth: number | null = 
     const attrs = n.attrs;
     const attrsLines: string[] = [];
     for (const [k, v] of attrs) {
-      if (v != null) attrsLines.push(`${k}: ${escapeDot(str(v))}`);
+      if (v != null) attrsLines.push(`${k}: ${escapeDot(String(v))}`);
     }
 
     let label: string;
@@ -591,11 +589,8 @@ export function parseArgs(argv: string[]): Args {
       }
       args.format = value;
     } else if (long === "--depth") {
-      try {
-        args.depth = int(value);
-      } catch (e) {
-        fail(`argument --depth/-d: invalid int value: ${literal(value)}`);
-      }
+      if (!/^\s*[+-]?\d+\s*$/.test(value)) fail(`argument --depth/-d: invalid int value: ${literal(value)}`);
+      args.depth = Number(value);
     } else {
       args.output = value;
     }

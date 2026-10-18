@@ -31,13 +31,10 @@ import {
   bytesEq,
   deepcopy,
   float,
-  format,
   getOrThrow,
-  int,
   max,
   valueEquals,
   literal,
-  str,
   sum,
   SystemExit,
   jsonDumps, compare } from "../../pyrt/index.ts";
@@ -100,9 +97,9 @@ export class ByteDifference {
   formatDiff(): string {
     const bitInfo = this.bitPosition != null ? `, bit ${this.bitPosition}` : "";
     return (
-      `  Offset ${format(this.offset, "4d")} (0x${format(this.offset, "04X")}): ` +
-      `0x${format(this.byte1, "02X")} (${bin8(this.byte1)}) vs ` +
-      `0x${format(this.byte2, "02X")} (${bin8(this.byte2)})${bitInfo}`
+      `  Offset ${String(this.offset).padStart(4)} (0x${this.offset.toString(16).toUpperCase().padStart(4, "0")}): ` +
+      `0x${this.byte1.toString(16).toUpperCase().padStart(2, "0")} (${bin8(this.byte1)}) vs ` +
+      `0x${this.byte2.toString(16).toUpperCase().padStart(2, "0")} (${bin8(this.byte2)})${bitInfo}`
     );
   }
 }
@@ -548,9 +545,9 @@ export function _formatContextLine(label: string, data: Uint8Array, offset: numb
   const parts: string[] = [];
   for (let j = start; j < end; j++) {
     if (j === offset) {
-      parts.push(`[${format(data[j], "02X")}]`);
+      parts.push(`[${data[j].toString(16).toUpperCase().padStart(2, "0")}]`);
     } else {
-      parts.push(` ${format(data[j], "02X")} `);
+      parts.push(` ${data[j].toString(16).toUpperCase().padStart(2, "0")} `);
     }
   }
   return `    ${label}: ` + parts.join("");
@@ -596,7 +593,7 @@ export function printResults(
           const c1 = i < sd.children1.length ? sd.children1[i] : "<missing>";
           const c2 = i < sd.children2.length ? sd.children2[i] : "<missing>";
           const marker = c1 === c2 ? "  " : "!!";
-          print(`  ${marker} [${format(i, "2d")}] ${c1.padEnd(20)}  vs  ${c2}`);
+          print(`  ${marker} [${String(i).padStart(2)}] ${c1.padEnd(20)}  vs  ${c2}`);
         }
       }
     }
@@ -637,15 +634,15 @@ export function printResults(
       for (const byteDiff of diff.byteDiffs) {
         if (byteDiff.byte1 === MISSING_BYTE) {
           print(
-            `  Offset ${format(byteDiff.offset, "4d")} ` +
-              `(0x${format(byteDiff.offset, "04X")}): ` +
-              `<missing> vs 0x${format(byteDiff.byte2, "02X")}`,
+            `  Offset ${String(byteDiff.offset).padStart(4)} ` +
+              `(0x${byteDiff.offset.toString(16).toUpperCase().padStart(4, "0")}): ` +
+              `<missing> vs 0x${byteDiff.byte2.toString(16).toUpperCase().padStart(2, "0")}`,
           );
         } else if (byteDiff.byte2 === MISSING_BYTE) {
           print(
-            `  Offset ${format(byteDiff.offset, "4d")} ` +
-              `(0x${format(byteDiff.offset, "04X")}): ` +
-              `0x${format(byteDiff.byte1, "02X")} vs <missing>`,
+            `  Offset ${String(byteDiff.offset).padStart(4)} ` +
+              `(0x${byteDiff.offset.toString(16).toUpperCase().padStart(4, "0")}): ` +
+              `0x${byteDiff.byte1.toString(16).toUpperCase().padStart(2, "0")} vs <missing>`,
           );
         } else {
           print(byteDiff.formatDiff());
@@ -692,7 +689,7 @@ export function printMultiResults(
   print(`\n${"=".repeat(80)}`);
   print(`Comparing ${files.length} files:`);
   for (const [i, f] of files.entries()) {
-    const label = i === 0 ? "ref" : str(i);
+    const label = i === 0 ? "ref" : String(i);
     print(`  [${label}] ${f.name}`);
   }
   print(`${"=".repeat(80)}\n`);
@@ -708,7 +705,7 @@ export function printMultiResults(
     print(`Chunks not in all files (${missingChunks.length}):`);
     print(`${"─".repeat(40)}`);
     for (const [path, presentIn] of missingChunks) {
-      const labels = presentIn.map((i) => (i === 0 ? "ref" : str(i)));
+      const labels = presentIn.map((i) => (i === 0 ? "ref" : String(i)));
       print(`  ${path}  (in: ${labels.join(", ")})`);
     }
   }
@@ -724,7 +721,7 @@ export function printMultiResults(
 
       const uniqueSizes = new Set(chunkDiff.sizes);
       if (uniqueSizes.size > 1) {
-        const sizeParts = [...chunkDiff.sizes.entries()].map(([i, s]) => `${i === 0 ? "ref" : str(i)}=${s}`);
+        const sizeParts = [...chunkDiff.sizes.entries()].map(([i, s]) => `${i === 0 ? "ref" : String(i)}=${s}`);
         print(`  Size: ${sizeParts.join(", ")}`);
       }
 
@@ -735,12 +732,12 @@ export function printMultiResults(
           if (v === MISSING_BYTE) {
             valueParts.push("    --    ");
           } else {
-            valueParts.push(`0x${format(v, "02X")} (${bin8(v)})`);
+            valueParts.push(`0x${v.toString(16).toUpperCase().padStart(2, "0")} (${bin8(v)})`);
           }
         }
         print(
-          `  Offset ${format(diff.offset, "4d")} ` +
-            `(0x${format(diff.offset, "04X")}): ` +
+          `  Offset ${String(diff.offset).padStart(4)} ` +
+            `(0x${diff.offset.toString(16).toUpperCase().padStart(4, "0")}): ` +
             `${valueParts.join(" | ")}${bitInfo}`,
         );
 
@@ -786,12 +783,12 @@ export function toJsonOutput(
       size2: diff.size2,
       byte_differences: diff.byteDiffs.map((bd) => ({
         offset: bd.offset,
-        offset_hex: `0x${format(bd.offset, "04X")}`,
+        offset_hex: `0x${bd.offset.toString(16).toUpperCase().padStart(4, "0")}`,
         byte1: bd.byte1 !== MISSING_BYTE ? bd.byte1 : null,
-        byte1_hex: bd.byte1 !== MISSING_BYTE ? `0x${format(bd.byte1, "02X")}` : null,
+        byte1_hex: bd.byte1 !== MISSING_BYTE ? `0x${bd.byte1.toString(16).toUpperCase().padStart(2, "0")}` : null,
         byte1_binary: bd.byte1 !== MISSING_BYTE ? bin8(bd.byte1) : null,
         byte2: bd.byte2 !== MISSING_BYTE ? bd.byte2 : null,
-        byte2_hex: bd.byte2 !== MISSING_BYTE ? `0x${format(bd.byte2, "02X")}` : null,
+        byte2_hex: bd.byte2 !== MISSING_BYTE ? `0x${bd.byte2.toString(16).toUpperCase().padStart(2, "0")}` : null,
         byte2_binary: bd.byte2 !== MISSING_BYTE ? bin8(bd.byte2) : null,
         bit_position: bd.bitPosition,
       })),
@@ -972,12 +969,8 @@ export function parseArgs(argv: string[]): Args {
     if (opt === "--filter") {
       out.filter = value;
     } else {
-      try {
-        out.context = int(value);
-      } catch (e) {
-        if (!(e instanceof ValueError)) throw e;
-        parserError(`argument --context: invalid int value: ${literal(value)}`);
-      }
+      if (!/^\s*[+-]?\d+\s*$/.test(value)) parserError(`argument --context: invalid int value: ${literal(value)}`);
+      out.context = Number(value);
     }
   }
 

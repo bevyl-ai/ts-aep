@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -237,7 +237,7 @@ export function _vfTagToStr(raw: number): string | null {
   // The axis property's second dimension holds the tag packed big-endian
   // (e.g. 2003265652.0 = 0x77676874 = `wght`). Returns `None` for values
   // that do not decode to four printable ASCII characters.
-  const n = int(raw);
+  const n = Math.trunc(raw);
   if (n <= 0 || n > 0xffffffff) return null;
   const chars = [24, 16, 8, 0].map((shift) => and(rshift(n, shift), 0xff));
   if (chars.some((c) => c < 0x20 || c > 0x7e)) return null;
@@ -1201,7 +1201,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (comp != null) {
       // The layer's own base, not the comp's: a stretched layer counts
       // its keyframe ticks against `internal_timebase * |stretch|`.
-      this._tdb4._timeBase = int(this._layerTimebase || comp._cdta.internalTimebase);
+      this._tdb4._timeBase = Math.trunc(this._layerTimebase || comp._cdta.internalTimebase);
       if (this._tdb4._spatialMarker && !this._tdb4.color && !this._tdb4.noValue && this._effectScale == null) {
         // AE writes the comp's pixel aspect into a layer's spatial
         // point tdb4s (not orientation / color). A point stored
@@ -1498,7 +1498,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /** Extract value from a tdum/tduM chunk body. */
   static _readTdum(body: TdumChunk): number | number[] {
     if (body.isColor) return [...body.values];
-    if (body.isInteger) return int(body.values[0]);
+    if (body.isInteger) return Math.trunc(body.values[0]);
     if (body.values.length === 1) return body.values[0];
     return [...body.values];
   }
@@ -1963,7 +1963,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // The mask's id lives in the `tdli` chunk, not the cdat (which
       // stays all-zeros); _ensure_materialized has appended one.
       const ids = _maskIds(this);
-      const index = typeof value === "number" || typeof value === "boolean" ? int(value) : 0;
+      const index = typeof value === "number" || typeof value === "boolean" ? Math.trunc(value) : 0;
       const tdli = this._tdliChunk();
       if (tdli == null) throw new AttributeError("'NoneType' object has no attribute 'value'");
       tdli.value = index !== 0 && ids != null ? ids[index - 1] : index;
@@ -2142,7 +2142,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const value = this.value;
     if (typeof value !== "number" && typeof value !== "boolean") return null;
     // Dropdown values are 1-based indices into the menu strings.
-    const index = int(value) - 1;
+    const index = Math.trunc(value) - 1;
     if (0 <= index && index < params.length) return params[index];
     return null;
   }

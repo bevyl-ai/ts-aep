@@ -16,7 +16,6 @@ import {
   Bytes,
   concat,
   decode,
-  int,
   assert,
   rstrip,
   split,
@@ -153,7 +152,7 @@ export function _extractIntValue(lines: string[], key: string): number | null {
   for (const line of lines) {
     const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*"?(\d+)"?`, line);
     if (m) {
-      return int(m[1]);
+      return Number.parseInt(m[1], 10);
     }
   }
   return null;
@@ -279,7 +278,7 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
     const m = patternMatch(entryRe, stripped);
     if (m) {
       _flush();
-      currentIdx = int(m[1]);
+      currentIdx = Number.parseInt(m[1], 10);
       const value = strip(m[2]);
       currentValue = value.endsWith("\\") ? value.slice(0, -1) : value;
       continue;
@@ -300,7 +299,7 @@ export function _extractTemplateNames(lines: string[]): Map<number, string> {
   for (const line of lines) {
     const m = reMatch(String.raw`\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"`, line);
     if (m) {
-      const idx = int(m[1]);
+      const idx = Number.parseInt(m[1], 10);
       names.set(idx, m[2]);
     }
   }

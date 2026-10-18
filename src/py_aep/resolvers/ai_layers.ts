@@ -20,7 +20,6 @@ import {
   b,
   Bytes,
   bytesEq,
-  int,
   type PathLike,
 } from "../../pyrt/index.ts";
 import { CosParser, IndirectObject, IndirectReference, decodePdfTextString } from "../cos/index.ts";
@@ -91,7 +90,7 @@ export function _objectOffsets(data: Uint8Array): Map<number, number> {
     // `search(data, pos, endpos)` with `\Z` at `endpos`: match within the slice.
     const header = _OBJ_HEADER_RE.exec(text.slice(windowStart, end));
     if (header != null) {
-      offsets.set(int(header[1]), windowStart + header.index);
+      offsets.set(Number.parseInt(header[1], 10), windowStart + header.index);
     }
   }
   return offsets;

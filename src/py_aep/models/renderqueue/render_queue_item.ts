@@ -18,9 +18,7 @@ import {
   deepcopy,
   descriptor,
   floatRepr,
-  format,
   getOrThrow,
-  int,
   max,
   literal,
   round,
@@ -261,7 +259,7 @@ export class RenderQueueItem {
     // yet) and time span = work area (the source stores zero dividend/
     // divisor; the span is derived from the comp's work area).
     rsItem.status = RQItemStatus.toBinary(RQItemStatus.NEEDS_OUTPUT);
-    rsItem.timeSpanSource = int(TimeSpanSource.WORK_AREA_ONLY);
+    rsItem.timeSpanSource = Math.trunc(TimeSpanSource.WORK_AREA_ONLY);
     rsItem.timeSpanStartDivisor = 0;
     rsItem.timeSpanDurationDivisor = 0;
     rsItem.itemId = _nextItemId(parent);
@@ -617,7 +615,7 @@ export class RenderQueueItem {
       if (seconds < frameDuration - 1e-9) {
         throw new ValueError(
           `Duration must be at least one frame ` +
-            `(${format(frameDuration, ".6g")}s), got ${floatRepr(seconds)}`,
+            `(${String(Number(frameDuration.toPrecision(6)))}s), got ${floatRepr(seconds)}`,
         );
       }
       newStart = oldStart;
@@ -637,11 +635,11 @@ export class RenderQueueItem {
       if (newDuration < frameDuration - 1e-9) {
         throw new ValueError(
           `Start time ${floatRepr(seconds)} leaves a duration shorter than one ` +
-            `frame (${format(frameDuration, ".6g")}s), got ${floatRepr(newDuration)}`,
+            `frame (${String(Number(frameDuration.toPrecision(6)))}s), got ${floatRepr(newDuration)}`,
         );
       }
     }
-    this._ldat.timeSpanSource = int(TimeSpanSource.CUSTOM);
+    this._ldat.timeSpanSource = Math.trunc(TimeSpanSource.CUSTOM);
     this._ldat.timeSpanStart = newStart;
     this._ldat.timeSpanDuration = newDuration;
   }

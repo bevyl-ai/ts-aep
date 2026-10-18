@@ -7,7 +7,7 @@
  * bytes suitable for writing back into a btdk chunk's `binary_data`.
  */
 
-import { BytesIO, b, Bytes, concat, encode, format, BoxedFloat, typeName, unbox } from "../../pyrt/index.ts";
+import { BytesIO, b, Bytes, concat, encode, BoxedFloat, typeName, unbox } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
 // Literals written per token, built once (`BytesIO.write` copies them).
@@ -109,7 +109,7 @@ export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boole
  * the serialized blob byte-faithful.
  */
 export function _formatFloat(value: number): Uint8Array {
-  let text = format(value, ".10g");
+  let text = String(Number(value.toPrecision(10)));
   // no '.', exponent, 'nan'/'inf'
   if (![".", "e", "E", "n", "i"].some((c) => text.includes(c))) text += ".0";
   // AE omits the leading zero for |v| < 1 (".5", "-.5") but keeps "0.0".

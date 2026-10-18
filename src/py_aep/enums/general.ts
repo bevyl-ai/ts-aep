@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { ValueError, getOrThrow, int, defineEnum, literal, type EnumValue } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, defineEnum, literal, type EnumValue } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 
 /**
@@ -36,7 +36,7 @@ export const Label = defineEnum("Label", {
 }, {
   /** Convert binary value to Label. */
   fromBinary(value: number) {
-    return this.of(int(value));
+    return this.of(Math.trunc(value));
   },
 });
 export type Label = EnumValue<typeof Label>;
@@ -84,7 +84,7 @@ export const ParametricMeshType = defineEnum("ParametricMeshType", {
   },
   /** Convert ParametricMeshType to the ldta value (0-5). */
   toBinary(self: number): number {
-    return int(self) - 14612;
+    return Math.trunc(self) - 14612;
   },
 });
 export type ParametricMeshType = EnumValue<typeof ParametricMeshType>;
@@ -162,11 +162,11 @@ export const AutoOrientType = defineEnum("AutoOrientType", {
 }, {
   /** Convert binary value (0-3) to AutoOrientType. */
   fromBinary(value: number) {
-    return this.of(int(value) + 4212);
+    return this.of(Math.trunc(value) + 4212);
   },
   /** Convert AutoOrientType to binary value (0-3). */
   toBinary(self: number): number {
-    return int(self) - 4212;
+    return Math.trunc(self) - 4212;
   },
 });
 export type AutoOrientType = EnumValue<typeof AutoOrientType>;
@@ -311,7 +311,7 @@ export const ChannelType = defineEnum("ChannelType", {
   },
   /** Convert ChannelType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 7812;
+    return Math.trunc(self) - 7812;
   },
 });
 export type ChannelType = EnumValue<typeof ChannelType>;
@@ -357,7 +357,7 @@ export const FastPreviewType = defineEnum("FastPreviewType", {
   /** Convert binary value to FastPreviewType. */
   fromBinary(value: number) {
     try {
-      return this.of(int(value) + 8012);
+      return this.of(Math.trunc(value) + 8012);
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
       return this.FP_OFF;
@@ -365,7 +365,7 @@ export const FastPreviewType = defineEnum("FastPreviewType", {
   },
   /** Convert FastPreviewType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 8012;
+    return Math.trunc(self) - 8012;
   },
 });
 export type FastPreviewType = EnumValue<typeof FastPreviewType>;
@@ -386,7 +386,7 @@ export const FeetFramesFilmType = defineEnum("FeetFramesFilmType", {
   },
   /** Convert FeetFramesFilmType to binary value. */
   toBinary(self: number): number {
-    return 2413 - int(self);
+    return 2413 - Math.trunc(self);
   },
 });
 export type FeetFramesFilmType = EnumValue<typeof FeetFramesFilmType>;
@@ -461,11 +461,11 @@ export const FrameBlendingType = defineEnum("FrameBlendingType", {
 }, {
   /** Convert binary value (0-2) to FrameBlendingType. */
   fromBinary(value: number) {
-    return this.of(int(value) + 4012);
+    return this.of(Math.trunc(value) + 4012);
   },
   /** Convert FrameBlendingType to binary value (0-2). */
   toBinary(self: number): number {
-    return int(self) - 4012;
+    return Math.trunc(self) - 4012;
   },
 });
 export type FrameBlendingType = EnumValue<typeof FrameBlendingType>;
@@ -486,7 +486,7 @@ export const FramesCountType = defineEnum("FramesCountType", {
   },
   /** Convert FramesCountType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 2612;
+    return Math.trunc(self) - 2612;
   },
 });
 export type FramesCountType = EnumValue<typeof FramesCountType>;
@@ -641,7 +641,7 @@ export const LayerQuality = defineEnum("LayerQuality", {
   },
   /** Convert LayerQuality to binary value. */
   toBinary(self: number): number {
-    return int(self) - 4612;
+    return Math.trunc(self) - 4612;
   },
 });
 export type LayerQuality = EnumValue<typeof LayerQuality>;
@@ -661,7 +661,7 @@ export const LayerSamplingQuality = defineEnum("LayerSamplingQuality", {
   },
   /** Convert LayerSamplingQuality to binary value. */
   toBinary(self: number): number {
-    return int(self) - 4812;
+    return Math.trunc(self) - 4812;
   },
 });
 export type LayerSamplingQuality = EnumValue<typeof LayerSamplingQuality>;
@@ -684,7 +684,7 @@ export const LightType = defineEnum("LightType", {
   },
   /** Convert LightType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 4412;
+    return Math.trunc(self) - 4412;
   },
 });
 export type LightType = EnumValue<typeof LightType>;
@@ -708,7 +708,7 @@ export const LinearLightMode = defineEnum("LinearLightMode", {
   },
   /** Convert LinearLightMode to binary value. */
   toBinary(self: number): number {
-    return int(self);
+    return Math.trunc(self);
   },
 });
 export type LinearLightMode = EnumValue<typeof LinearLightMode>;
@@ -937,7 +937,7 @@ export const TimeDisplayType = defineEnum("TimeDisplayType", {
   },
   /** Convert TimeDisplayType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 2012;
+    return Math.trunc(self) - 2012;
   },
 });
 export type TimeDisplayType = EnumValue<typeof TimeDisplayType>;
@@ -1008,7 +1008,7 @@ export const TrackMatteType = defineEnum("TrackMatteType", {
   },
   /** Convert TrackMatteType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 5012;
+    return Math.trunc(self) - 5012;
   },
 });
 export type TrackMatteType = EnumValue<typeof TrackMatteType>;

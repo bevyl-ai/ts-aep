@@ -36,15 +36,12 @@ import {
   b,
   bytesEq,
   concat,
-  format,
   getattr,
   setattr,
   getOrThrow,
-  int,
   truthyOr,
   literal,
   round,
-  str,
   warn,
   type PathLike,
   PurePosixPath,
@@ -751,7 +748,7 @@ export class FileSource extends FootageSource {
   _derivedFrame(stored: number, index: number): number {
     if (stored !== UNDEFINED_FRAME || !this._fileNames?.length) return stored;
     const match = /(\d+)\D*$/.exec(at(this._fileNames, index));
-    return match != null ? int(match[1]) : stored;
+    return match != null ? Number.parseInt(match[1], 10) : stored;
   }
 
   constructor(kw: {
@@ -801,7 +798,7 @@ export class FileSource extends FootageSource {
         const extension = utf8BeforeOpti[utf8BeforeOpti.length - 1].value;
         if (prefix || extension) {
           const firstFrame =
-            `${prefix}${format(_sspc.startFrame, `0${_sspc.framePadding}d`)}` +
+            `${prefix}${String(_sspc.startFrame).padStart(_sspc.framePadding, "0")}` +
             `${extension}`;
           this._file = _joinSequenceFrame(this._file, firstFrame);
         }
@@ -975,7 +972,7 @@ export class FileSource extends FootageSource {
     // "re-read me" state AE itself writes for missing footage.
     const stampTarget = isSequence ? path.parent : path;
     try {
-      sspc.sourceModified = int(stampTarget.stat().mtimeMs / 1000);
+      sspc.sourceModified = Math.trunc(stampTarget.stat().mtimeMs / 1000);
     } catch (e) {
       if (!_isOsError(e)) throw e;
     }
@@ -1000,7 +997,7 @@ export class FileSource extends FootageSource {
       // Byte 0xB8 marks zero-padded frame numbers: 0 for p410.png
       // or s1.png ... s12.png, 1 for z_0410.png or frame_001.png.
       sspc._reservedA8 = b("\x00\x00\x00\x02");
-      const zeroPadded = str(startFrame).length < framePadding;
+      const zeroPadded = String(startFrame).length < framePadding;
       sspc._reservedB8 = zeroPadded ? b("\x01") : b("\x00");
       sspc._reservedBa = b("\x01\x01");
     }
@@ -1051,7 +1048,7 @@ export class FileSource extends FootageSource {
     const clrs = findByListType(pin.chunks, "CLRS");
     const linl = findByType(clrs.chunks, "linl");
     if (_LINEAR_LIGHT_OFF_FORMATS.has(sourceFormat) && width > 0 && !isSequence) {
-      linl.value = int(LinearLightMode.OFF);
+      linl.value = Math.trunc(LinearLightMode.OFF);
     }
 
     return new this({ _pin: pin, _sspc: sspc, _opti: opti, _linl: linl, _clrs: clrs });
@@ -1384,11 +1381,11 @@ export class FileSource extends FootageSource {
         const stem = sibling.stem;
         const sm = _FRAME_NUMBER_RE.exec(stem);
         if (sm != null && stem.slice(0, sm.index).toLowerCase() === prefixKey) {
-          frames.push([int(sm[1]), sibling.name, sm[1].length, stem.slice(0, sm.index)]);
+          frames.push([Number.parseInt(sm[1], 10), sibling.name, sm[1].length, stem.slice(0, sm.index)]);
         }
       }
       if (!frames?.length) {
-        frames = [[int(m[1]), file.name, m[1].length, prefix]];
+        frames = [[Number.parseInt(m[1], 10), file.name, m[1].length, prefix]];
       }
 
       if (hasRange) {
@@ -1608,7 +1605,7 @@ export class FileSource extends FootageSource {
       this._swapOpti(newOpti);
       // AE 2026 restamps the source with the file's current mtime on a
       // reload; a stale stamp makes it re-read the media at every open.
-      sspc.sourceModified = int(path.stat().mtimeMs / 1000);
+      sspc.sourceModified = Math.trunc(path.stat().mtimeMs / 1000);
       // Only AI/EPS/PDF carry a re-readable embedded profile. Other
       // formats keep the record they already have: AE writes `empd`
       // for PNG/MOV/MPEG too, and a reload that only re-reads the
@@ -1794,8 +1791,8 @@ export class FileSource extends FootageSource {
 
     const framePadding = this._sspc.framePadding;
     const frameRange =
-      `[${format(startFrame, `0${framePadding}d`)}` +
-      `-${format(endFrame, `0${framePadding}d`)}]`;
+      `[${String(startFrame).padStart(framePadding, "0")}` +
+      `-${String(endFrame).padStart(framePadding, "0")}]`;
     return `${prefix}${frameRange}${extension}`;
   }
 }

@@ -37,7 +37,6 @@ import {
   Path,
   encode,
   fspath,
-  int,
   isdigit,
   lstrip,
   max,
@@ -485,7 +484,7 @@ export class _Reader {
     const family = style.get("font-family") ?? "sans-serif";
     const weight = strip(style.get("font-weight") || "");
     const fontStyle = strip(style.get("font-style") || "");
-    const bold = ["bold", "bolder"].includes(weight) || (isdigit(weight) && int(weight) >= 600);
+    const bold = ["bold", "bolder"].includes(weight) || (isdigit(weight) && Number.parseInt(weight, 10) >= 600);
     const italic = ["italic", "oblique"].includes(fontStyle);
     const resolved = resolveFont(family, { bold, italic });
     if (resolved == null) return null;

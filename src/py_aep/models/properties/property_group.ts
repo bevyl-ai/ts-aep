@@ -10,7 +10,6 @@ import {
   getOr,
   getattr,
   getOrThrow,
-  int,
   max,
   objectGetattr,
   objectSetattr,
@@ -173,7 +172,7 @@ export function _nextMaskName(names: Iterable<string>): string {
     const match = _NUMBERED_MASK.exec(name);
     if (match == null) continue;
     const digits = match[1] ?? null;
-    const number = digits != null ? int(digits) : 1;
+    const number = digits != null ? Number.parseInt(digits, 10) : 1;
     if (number > highest) {
       highest = number;
       width = digits != null ? digits.length : 1;

@@ -11,7 +11,6 @@ import {
   Bytes,
   decode,
   float,
-  int,
   isReal,
   unbox,
   IndexError,
@@ -20,7 +19,6 @@ import {
   defineEnum,
   valueEquals,
   boxFloat,
-  str,
   UnicodeDecodeError,
   ValueError,
 } from "../../pyrt/index.ts";
@@ -127,10 +125,10 @@ export function cosGet(data: CosNode | undefined, ...keys: (string | number)[]):
   for (const key of keys) {
     if (cur == null) return null;
     if (cur instanceof Map) {
-      cur = cur.get(str(key)) ?? null;
+      cur = cur.get(String(key)) ?? null;
     } else if (Array.isArray(cur)) {
       try {
-        cur = at(cur, int(key));
+        cur = at(cur, Math.trunc(Number(key)));
       } catch (e) {
         if (e instanceof IndexError || e instanceof ValueError || e instanceof TypeError) return null;
         throw e;
@@ -446,7 +444,7 @@ export class CosParser {
       return val;
     }
 
-    throw new SyntaxError(`Expected COS value, got ${str(this.lookahead)}`);
+    throw new SyntaxError(`Expected COS value, got ${String(this.lookahead)}`);
   }
 
   saveState(): [number | null, number, Token] {
@@ -491,7 +489,7 @@ export class CosParser {
 
   expect(tokenType: TokenType): void {
     if (this.lookahead.type !== tokenType) {
-      throw new SyntaxError(`Expected ${enumStr(TokenType, tokenType)}, got ${str(this.lookahead)}`);
+      throw new SyntaxError(`Expected ${enumStr(TokenType, tokenType)}, got ${String(this.lookahead)}`);
     }
   }
 
@@ -638,17 +636,9 @@ export class CosParser {
     // the kinds and the serializer, so a literal beyond 2**53 (e.g. 9007199254740993) rounds
     // to the nearest double and re-serializes rounded.
     // Python's int() gets bytes, so its error message shows b'+' rather than '+'.
-    let value: number;
-    try {
-      value = int(head);
-    } catch (e) {
-      if (e instanceof ValueError) {
-        throw new ValueError(`invalid literal for int() with base 10: b'${head}'`);
-      }
-      throw e;
-    }
-    // `+ 0` turns int("-0") from -0 into 0 like Python.
-    return new Token(TokenType.Number, value + 0);
+    if (!/^[+-]?\d+$/.test(head)) throw new ValueError(`invalid COS integer: '${head}'`);
+    // `+ 0` turns "-0" from -0 into 0.
+    return new Token(TokenType.Number, Number(head) + 0);
   }
 
   lexNumFract(char: number | null, head: string): Token {
@@ -858,7 +848,7 @@ export class CosParser {
 
     const data = new Uint8Array(hstr.length / 2);
     for (let i = 0; i < hstr.length; i += 2) {
-      data[i / 2] = int(hstr.slice(i, i + 2), 16);
+      data[i / 2] = Number.parseInt(hstr.slice(i, i + 2), 16);
     }
     return new Token(TokenType.HexString, data);
   }
@@ -880,7 +870,7 @@ export class CosParser {
           if (char == null || !this.isHex(char)) throw new SyntaxError("Invalid identifier");
           hexstr += String.fromCharCode(char);
         }
-        ident += String.fromCodePoint(int(hexstr, 16));
+        ident += String.fromCodePoint(Number.parseInt(hexstr, 16));
       } else if (IDENTIFIER_DELIMITERS.has(char)) {
         this.unget();
         break;

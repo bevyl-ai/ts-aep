@@ -26,7 +26,6 @@ import {
   decode,
   float,
   getOrThrow,
-  int,
   max,
   min,
   mod,
@@ -1805,7 +1804,7 @@ export function _parseMgjsonTime(t: JsonValue): { us: number; aware: boolean } |
   const m = strp.exec(s);
   if (m) {
     const frac = m[7] === undefined ? "" : m[7].padEnd(6, "0");
-    const us = _naiveDatetimeUs(int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]), int(m[6]), int(frac || "0"));
+    const us = _naiveDatetimeUs(Number.parseInt(m[1], 10), Number.parseInt(m[2], 10), Number.parseInt(m[3], 10), Number.parseInt(m[4], 10), Number.parseInt(m[5], 10), Number.parseInt(m[6], 10), Number.parseInt(frac || "0", 10));
     if (us !== null) return { us, aware: false };
   }
   try {
@@ -2107,7 +2106,7 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
   const vals: number[] = [];
   let pos = 5;
   for (let i = 0; i < 4; i++) {
-    vals.push(int(bits.slice(pos, pos + nbits), 2));
+    vals.push(Number.parseInt(bits.slice(pos, pos + nbits), 2));
     pos += nbits;
   }
   const width = Math.floor((vals[1] - vals[0]) / 20);
@@ -2294,8 +2293,8 @@ export function _probeHdr(fp: ProbeStream): MediaInfo {
   const parts = Bytes.split(fp.readline());
   if (parts.length < 4) throw new ValueError("Cannot parse HDR resolution line");
   const dims = new Map<string, number>();
-  dims.set(Bytes.toHex(parts[0].slice(-1)), int(decode(parts[1], "ascii")));
-  dims.set(Bytes.toHex(parts[2].slice(-1)), int(decode(parts[3], "ascii")));
+  dims.set(Bytes.toHex(parts[0].slice(-1)), Number.parseInt(decode(parts[1], "ascii"), 10));
+  dims.set(Bytes.toHex(parts[2].slice(-1)), Number.parseInt(decode(parts[3], "ascii"), 10));
   const X = Bytes.toHex(b("X"));
   const Y = Bytes.toHex(b("Y"));
   if (!dims.has(X) || !dims.has(Y)) {

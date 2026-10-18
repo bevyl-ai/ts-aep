@@ -4,7 +4,7 @@ import { INSPECT, describe } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, getFileFormat, getImportAsTypes, type FileFormat } from "../data/file_formats.ts";
 import { ImportAsType } from "../enums/index.ts";
 import { validateBool, validateEnum, validateOneOf, validatePath, validatePositiveInt, validateU4 } from "./validators.ts";
-import { Path, ValueError, int, type PathLike, pyRe } from "../../pyrt/index.ts";
+import { Path, ValueError, type PathLike, pyRe } from "../../pyrt/index.ts";
 
 // Pattern to match trailing digits in a filename stem (e.g. "frame001").
 export const _NUMBERED_RE = pyRe(String.raw`(\d+)$`);
@@ -349,7 +349,7 @@ export class ImportOptions {
   isFileNameNumbered(): [boolean, number] {
     const stem = this._file.stem;
     const m = _NUMBERED_RE.exec(stem);
-    if (m != null) return [true, int(m[1])];
+    if (m != null) return [true, Number.parseInt(m[1], 10)];
     return [false, 0];
   }
 

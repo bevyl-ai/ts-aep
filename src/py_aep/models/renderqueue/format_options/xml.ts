@@ -12,11 +12,9 @@ import {
   descriptor,
   encode,
   getOrThrow,
-  int,
   isdigit,
   literal,
   round,
-  str,
   typeName,
 } from "../../../../pyrt/index.ts";
 import { CLAMP_DEPENDENTS } from "../../../data/output_module_rules.ts";
@@ -128,19 +126,14 @@ export class _ScalarParam {
     if (obj == null) return this;
     const raw = obj.params.get(this._key) ?? "";
     if (!raw) return null;
-    try {
-      return int(raw);
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return raw;
-    }
+    return /^\s*[+-]?\d+\s*$/.test(raw) ? Number(raw) : raw;
   }
 
   set(obj: XmlFormatOptions, value: number | null): void {
     if (value == null) return;
     validateInt(value);
     obj._checkParamRule(this._key, value);
-    obj._setParam(this._key, str(value));
+    obj._setParam(this._key, String(value));
     obj._clampAfterParam(this._key);
   }
 }
@@ -214,13 +207,8 @@ export function _extractParams(
 
 /** Try to parse an int, then map to an enum; fall back to int. */
 export function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): number | null {
-  let rawValue: number;
-  try {
-    rawValue = int(rawStr);
-  } catch (e) {
-    if (!(e instanceof ValueError)) throw e;
-    return null;
-  }
+  if (!/^\s*[+-]?\d+\s*$/.test(rawStr)) return null;
+  const rawValue = Number(rawStr);
   return enumCls.ofOrNull(rawValue) ?? rawValue;
 }
 
@@ -469,7 +457,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
       throw new TypeError(`expected an int or IntEnum for ${literal(key)}, got ${typeName(value)}`);
     }
     // int() normalizes IntEnum members so str() yields the numeric form.
-    const intValue = int(value);
+    const intValue = Math.trunc(value);
     if (enumCls != null && !enumCls.has(intValue)) {
       const members = enumCls
         .members()
@@ -482,7 +470,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     }
     const checked = enumCls != null ? enumCls.of(intValue) : intValue;
     this._checkParamRule(key, checked);
-    this._setParam(key, str(intValue));
+    this._setParam(key, String(intValue));
     // NOTE: Rouu.videoCodec is NOT synced here - it holds a constant
     // per-output-plugin handler tag ('DOVT' for QuickTime, 'CTXF' for
     // AVI/H.264), not the codec 4cc; every corpus sample confirms it
@@ -609,12 +597,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   get frameRate(): number | null {
     const fpsStr = this.params.get("ADBEVideoFPS") ?? "";
     if (!fpsStr) return null;
-    try {
-      const ticks = int(fpsStr);
-      if (ticks > 0) return _ADOBE_TICKS_PER_SECOND / ticks;
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-    }
+    if (/^\s*[+-]?\d+\s*$/.test(fpsStr) && Number(fpsStr) > 0) return _ADOBE_TICKS_PER_SECOND / Number(fpsStr);
     return null;
   }
 
@@ -692,7 +675,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
       this.params.pop("ADBEVideoMPEGProfile", "");
       return;
     }
-    this._setParam("ADBEVideoMPEGProfile", str(int(value)));
+    this._setParam("ADBEVideoMPEGProfile", String(Math.trunc(value)));
   }
 
   /**

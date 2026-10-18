@@ -16,7 +16,6 @@ import {
   descriptor,
   encode,
   field,
-  int,
   lshift,
   mod,
   objectSetattr,
@@ -251,7 +250,7 @@ export class HeadChunk extends Chunk {
     if (!m) {
       throw new ValueError(`Invalid version format: ${literal(value)}`);
     }
-    const [major, minor, build] = [int(m[1]), int(m[2]), int(m[3])];
+    const [major, minor, build] = [Number.parseInt(m[1], 10), Number.parseInt(m[2], 10), Number.parseInt(m[3], 10)];
     this.aeVersionMajorA = Math.floor(major / 8);
     this.aeVersionMajorB = major % 8;
     this.aeVersionMinor = minor;

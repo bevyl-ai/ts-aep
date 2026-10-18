@@ -35,7 +35,6 @@ import {
   NotImplementedError,
   ZeroDivisionError,
   floatRepr,
-  int,
   max,
   min,
   radians,
@@ -292,13 +291,13 @@ export function _ellipsePath(item: PropertyGroup, time: number): _Path {
 
 export function _polystarPath(item: PropertyGroup, time: number): _Path {
   let points = _value(item, "ADBE Vector Star Points", time);
-  if (points !== int(points)) {
+  if (points !== Math.trunc(points)) {
     throw new NotImplementedError(
       "sourceRectAtTime does not model a polystar with a fractional " +
         `number of points (${floatRepr(points)})`,
     );
   }
-  points = int(points);
+  points = Math.trunc(points);
   const star = _value(item, "ADBE Vector Star Type", time) === 1;
   const [x, y] = _value(item, "ADBE Vector Star Position", time);
   const outer = _value(item, "ADBE Vector Star Outer Radius", time);

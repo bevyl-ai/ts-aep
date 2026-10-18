@@ -23,7 +23,7 @@
  * order; reproducing it exactly is required for byte-identical output.
  */
 
-import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, str, typeName, type JsonValue } from "../../pyrt/index.ts";
+import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
 
 // baseProfileType values.
@@ -216,5 +216,5 @@ export function parseEnvelope(envelopeJson: string): ColorProfile {
  */
 export function envelopeProfileName(envelopeJson: string): string {
   const outer = jsonLoads(envelopeJson);
-  return str(jsonGet(jsonGet(outer, "baseColorProfile", new Map<string, JsonValue>()), "colorProfileName", "None"));
+  return String(jsonGet(jsonGet(outer, "baseColorProfile", new Map<string, JsonValue>()), "colorProfileName", "None"));
 }

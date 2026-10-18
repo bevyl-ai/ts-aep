@@ -3,7 +3,7 @@
  * layer each After Effects release writes.
  */
 
-import { AttributeError, getOrThrow, int, typeName } from "../pyrt/index.ts";
+import { AttributeError, getOrThrow, typeName } from "../pyrt/index.ts";
 
 // The After Effects majors whose saves contain each version-gated part of a
 // new project, item or layer, as `(first, last)` (`last` None: still
@@ -70,7 +70,7 @@ export function getAeVersionMajor(obj: any): number {
   if (obj == null || typeof obj !== "object") throw new TypeError(`Cannot determine AE version from ${typeName(obj)}`);
   // Layer -> CompItem -> Project -> HeadChunk
   if ("_containingComp" in obj) {
-    return int(obj._containingComp._project._head.aeVersionMajor);
+    return Math.trunc(Number(obj._containingComp._project._head.aeVersionMajor));
   }
   // Property / PropertyGroup -> owning Layer (parent_property chain)
   if ("_containingLayer" in obj) {
@@ -78,18 +78,18 @@ export function getAeVersionMajor(obj: any): number {
   }
   // Item / RenderQueueItem -> Project -> HeadChunk
   if ("_project" in obj) {
-    return int(obj._project._head.aeVersionMajor);
+    return Math.trunc(Number(obj._project._head.aeVersionMajor));
   }
   // ViewOptions -> AVItem -> Project -> HeadChunk
   const item = "_item" in obj ? obj._item : null;
   if (item != null) {
-    return int(item._project._head.aeVersionMajor);
+    return Math.trunc(Number(item._project._head.aeVersionMajor));
   }
   // Project / TextDocument -> HeadChunk (TextDocument's is wired lazily, so
   // may be None until the document is handed out via a Property)
   const head = "_head" in obj ? obj._head : null;
   if (head != null) {
-    return int(head.aeVersionMajor);
+    return Math.trunc(Number(head.aeVersionMajor));
   }
   throw new TypeError(`Cannot determine AE version from ${typeName(obj)}`);
 }

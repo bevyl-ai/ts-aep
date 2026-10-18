@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { int, defineEnum, type EnumValue } from "../../pyrt/index.ts";
+import { defineEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Format for getting render settings.
@@ -37,7 +37,7 @@ export const LogType = defineEnum("LogType", {
 
   /** Convert LogType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 3212;
+    return Math.trunc(self) - 3212;
   },
 });
 export type LogType = EnumValue<typeof LogType>;
@@ -64,7 +64,7 @@ export const RQItemStatus = defineEnum("RQItemStatus", {
 
   /** Convert RQItemStatus to binary value. */
   toBinary(self: number): number {
-    return int(self) - 3013;
+    return Math.trunc(self) - 3013;
   },
 });
 export type RQItemStatus = EnumValue<typeof RQItemStatus>;

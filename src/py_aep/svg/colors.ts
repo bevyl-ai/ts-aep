@@ -6,7 +6,7 @@
  * `transparent` and `currentColor`.
  */
 
-import { float, int, mod, rstrip, strip, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
+import { float, mod, rstrip, strip, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -220,10 +220,10 @@ export function _parseHex(h: string): Rgba | null {
   let b: number;
   let a: number;
   try {
-    r = int(cps.slice(0, 2).join(""), 16) / 255.0;
-    g = int(cps.slice(2, 4).join(""), 16) / 255.0;
-    b = int(cps.slice(4, 6).join(""), 16) / 255.0;
-    a = int(cps.slice(6, 8).join(""), 16) / 255.0;
+    r = Number.parseInt(cps.slice(0, 2).join(""), 16) / 255.0;
+    g = Number.parseInt(cps.slice(2, 4).join(""), 16) / 255.0;
+    b = Number.parseInt(cps.slice(4, 6).join(""), 16) / 255.0;
+    a = Number.parseInt(cps.slice(6, 8).join(""), 16) / 255.0;
   } catch (e) {
     if (!(e instanceof ValueError)) throw e;
     return null;

@@ -2,7 +2,7 @@
  * Property-related After Effects enumerations.
  */
 
-import { int, defineEnum, type EnumValue } from "../../pyrt/index.ts";
+import { defineEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * The type of effect control for a property.
@@ -80,7 +80,7 @@ export const KeyframeInterpolationType = defineEnum("KeyframeInterpolationType",
   },
   /** Convert KeyframeInterpolationType to binary value. */
   toBinary(self: number): number {
-    return int(self) - 6611;
+    return Math.trunc(self) - 6611;
   },
 });
 export type KeyframeInterpolationType = EnumValue<typeof KeyframeInterpolationType>;

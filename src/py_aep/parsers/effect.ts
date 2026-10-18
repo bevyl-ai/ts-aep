@@ -20,7 +20,6 @@ import type { Project } from "../models/project.ts";
 import {
   and,
   at,
-  int,
   split,
   strip,
   warn,
@@ -730,7 +729,7 @@ _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 /** Return integral floats as int, matching ExtendScript output. */
 // NOTE(port): Python returns int for integral floats, else the float; JS numbers carry the same value, and the int/float type is only observable via repr()/type().
 export function _intify(value: number): number {
-  return Number.isInteger(value) ? int(value) : value;
+  return Number.isInteger(value) ? Math.trunc(value) : value;
 }
 
 export function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {

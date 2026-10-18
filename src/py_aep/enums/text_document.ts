@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { getOrThrow, int, defineEnum, type EnumValue } from "../../pyrt/index.ts";
+import { getOrThrow, defineEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Auto kerning type option for text characters.
@@ -25,7 +25,7 @@ export const AutoKernType = defineEnum(
     },
     /** Convert AutoKernType to COS value (0-2). */
     toBinary(self: number): number {
-      return int(self) - 11412;
+      return Math.trunc(self) - 11412;
     },
   },
 );
@@ -57,7 +57,7 @@ export const BaselineDirection = defineEnum(
     },
     /** Convert BaselineDirection to COS value (1-3). */
     toBinary(self: number): number {
-      return int(self) - 11611;
+      return Math.trunc(self) - 11611;
     },
   },
 );
@@ -83,7 +83,7 @@ export const BoxAutoFitPolicy = defineEnum(
     },
     /** Convert BoxAutoFitPolicy to COS value (0-3). */
     toBinary(self: number): number {
-      return int(self) - 13412;
+      return Math.trunc(self) - 13412;
     },
   },
 );
@@ -114,7 +114,7 @@ export const BoxFirstBaselineAlignment = defineEnum(
     },
     /** Convert BoxFirstBaselineAlignment to COS value (0-8). */
     toBinary(self: number): number {
-      return int(self) - 13012;
+      return Math.trunc(self) - 13012;
     },
   },
 );
@@ -140,7 +140,7 @@ export const BoxVerticalAlignment = defineEnum(
     },
     /** Convert BoxVerticalAlignment to COS value (0-3). */
     toBinary(self: number): number {
-      return int(self) - 12812;
+      return Math.trunc(self) - 12812;
     },
   },
 );
@@ -178,7 +178,7 @@ export const DigitSet = defineEnum(
     },
     /** Convert DigitSet to COS value (0-4). */
     toBinary(self: number): number {
-      return int(self) - 12012;
+      return Math.trunc(self) - 12012;
     },
   },
 );
@@ -203,7 +203,7 @@ export const FontBaselineOption = defineEnum(
     },
     /** Convert FontBaselineOption to COS value (0-2). */
     toBinary(self: number): number {
-      return int(self) - 11212;
+      return Math.trunc(self) - 11212;
     },
   },
 );
@@ -229,7 +229,7 @@ export const FontCapsOption = defineEnum(
     },
     /** Convert FontCapsOption to COS value (0-3). */
     toBinary(self: number): number {
-      return int(self) - 11012;
+      return Math.trunc(self) - 11012;
     },
   },
 );
@@ -253,7 +253,7 @@ export const LeadingType = defineEnum(
     },
     /** Convert LeadingType to COS value (0-1). */
     toBinary(self: number): number {
-      return int(self) - 10812;
+      return Math.trunc(self) - 10812;
     },
   },
 );
@@ -278,7 +278,7 @@ export const LineJoinType = defineEnum(
     },
     /** Convert LineJoinType to COS value (0-2). */
     toBinary(self: number): number {
-      return int(self) - 11812;
+      return Math.trunc(self) - 11812;
     },
   },
 );
@@ -341,7 +341,7 @@ export const ParagraphDirection = defineEnum(
     },
     /** Convert ParagraphDirection to COS value (0-1). */
     toBinary(self: number): number {
-      return int(self) - 10212;
+      return Math.trunc(self) - 10212;
     },
   },
 );
@@ -376,7 +376,7 @@ export const ParagraphJustification = defineEnum(
     },
     /** Convert ParagraphJustification to COS value (0-6). */
     toBinary(self: number): number {
-      return int(self) - 7413;
+      return Math.trunc(self) - 7413;
     },
   },
 );
