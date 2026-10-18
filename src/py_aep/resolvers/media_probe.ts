@@ -25,7 +25,6 @@ import {
   concat,
   decode,
   float,
-  floordiv,
   getOrThrow,
   int,
   max,
@@ -1015,7 +1014,7 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
     // AE stretches it to roughly two seconds, giving every frame the same
     // floor(200 / frames) hundredths - measured at 3, 5, 7, 9 and 14
     // frames. (ffmpeg instead substitutes a flat 10 hundredths.)
-    delay = frames * Math.max(1, floordiv(200, frames));
+    delay = frames * Math.max(1, Math.floor(200 / frames));
   }
   const duration = delay / 100.0;
   return new MediaInfo({
@@ -1893,7 +1892,7 @@ export function _mp3FrameSize(header: number): number {
   if (version === 1 || layer !== 1 || bitrateI === 0 || bitrateI === 0xf || srI === 3) return 0;
   const bitrate = (version === 3 ? _MP3_BR_M1_L3 : _MP3_BR_M2_L3)[bitrateI] * 1000;
   const spf = version === 3 ? 1152 : 576;
-  return floordiv((spf / 8) * bitrate, getOrThrow(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
+  return Math.floor(((spf / 8) * bitrate) / getOrThrow(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
 }
 
 /**
@@ -1978,7 +1977,7 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
     // _find_mp3_frame already rejected the reserved bitrate/rate codes, so
     // the frame size here is always > 0.
     const frameSize = _mp3FrameSize(h);
-    duration = (floordiv(fileSize - audioStart, frameSize) * spf) / sr;
+    duration = (Math.floor((fileSize - audioStart) / frameSize) * spf) / sr;
   }
   return new MediaInfo({ duration, hasAudio: true, audioSampleRate: sr });
 }

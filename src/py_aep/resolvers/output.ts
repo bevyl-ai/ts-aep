@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, AepError, floordiv, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
+import { IndexError, AepError, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -195,7 +195,7 @@ export function gcd(a: number, b: number): number {
  */
 export function calculateAspectRatio(width: number, height: number): string {
   const gcd_ = gcd(width, height);
-  return `${floordiv(width, gcd_)}x${floordiv(height, gcd_)}`;
+  return `${Math.floor(width / gcd_)}x${Math.floor(height / gcd_)}`;
 }
 
 /**
@@ -210,7 +210,7 @@ export function calculateAspectRatio(width: number, height: number): string {
  */
 export function formatFrameNumber(frame: number, fps: number): string {
   const framesPerFoot = 16; // Standard 35mm film: 16 frames per foot
-  const feet = floordiv(frame, framesPerFoot);
+  const feet = Math.floor(frame / framesPerFoot);
   const remainingFrames = mod(frame, framesPerFoot);
   return `${format(feet, "04d")}+${format(remainingFrames, "02d")}`;
 }
@@ -235,7 +235,7 @@ export function formatTimecode(seconds: number, fps: number, isDuration = false)
   }
 
   const frames = mod(totalFrames, fpsInt);
-  const totalSeconds = floordiv(totalFrames, fpsInt);
+  const totalSeconds = Math.floor(totalFrames / fpsInt);
   const secs = mod(totalSeconds, 60);
   const totalMinutes = Math.floor(totalSeconds / 60);
   const mins = mod(totalMinutes, 60);

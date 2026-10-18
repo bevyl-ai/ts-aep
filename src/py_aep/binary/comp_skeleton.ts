@@ -20,7 +20,7 @@ import { ClassicPrdaChunk, PrinChunk } from "./misc_chunks.ts";
 import { buildGideList, buildItemIdChunks, buildOvdg, buildOvg2 } from "./mutations.ts";
 import { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk } from "./property_chunks.ts";
 import { S2Chunk, S4Chunk, U1Chunk, U4Chunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { b, Bytes, float, floordiv, literal, round, ValueError } from "../../pyrt/index.ts";
+import { b, Bytes, float, literal, round, ValueError } from "../../pyrt/index.ts";
 
 /** Build the `fvdv` ... `fifl` view-data septet AE writes after every
  * item's `LIST:Item` (and twice after each comp viewer layer). */
@@ -216,7 +216,7 @@ export function _buildCif(listType: string): ListChunk {
  */
 export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: number): number {
   const units = round(seconds * timebase);
-  return floordiv(units + Math.floor(unitsPerFrame / 2), unitsPerFrame) * unitsPerFrame;
+  return Math.floor((units + Math.floor(unitsPerFrame / 2)) / unitsPerFrame) * unitsPerFrame;
 }
 
 /** A comp duration in timebase units, snapped like `_frameUnits`.

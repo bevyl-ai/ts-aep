@@ -23,7 +23,6 @@ import {
   encode,
   field,
   fields,
-  floordiv,
   getattr,
   valueEquals,
   literal,
@@ -223,7 +222,7 @@ export class Chunk extends AttrsBase {
     if (itemsInfo != null) {
       const [itemsName, itemCls, itemSize] = itemsInfo;
       const itemsBytes = size - itemsStart;
-      const count = floordiv(itemsBytes, itemSize);
+      const count = Math.floor(itemsBytes / itemSize);
       const fmtCls = itemCls;
       const items: FmtItem[] = [];
       for (let n = 0; n < count; n++) {
