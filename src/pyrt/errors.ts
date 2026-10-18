@@ -53,9 +53,27 @@ export function assert(cond: unknown, message = ""): asserts cond {
   if (!cond) throw new AssertionError(message);
 }
 
-export function warn(message: string): void {
-  warnings.push(message);
+function emitWarning(message: string): void {
+  const proc = (globalThis as { process?: { emitWarning?: (message: string, type: string) => void } }).process;
+  if (typeof proc?.emitWarning === "function") proc.emitWarning(message, "AepWarning");
+  else console.warn(`AepWarning: ${message}`);
 }
 
-/** Captured `warnings.warn` messages, for `pytest.warns` translations. */
-export const warnings: string[] = [];
+let warningHandler: (message: string) => void = emitWarning;
+
+/**
+ * Route ts-aep's warnings (skipped content, fallbacks, deprecations) to `handler`,
+ * or back to the default with `null`: `process.emitWarning` where it exists,
+ * `console.warn` elsewhere. Pass `() => {}` to silence them. Returns the
+ * handler it replaces.
+ */
+export function setWarningHandler(handler: ((message: string) => void) | null): (message: string) => void {
+  const previous = warningHandler;
+  warningHandler = handler ?? emitWarning;
+  return previous;
+}
+
+/** Raise a warning through the warning handler (see `setWarningHandler`). */
+export function warn(message: string): void {
+  warningHandler(message);
+}

@@ -54,7 +54,7 @@ export const parseLayer = _suppressMaterialization().decorate(function parse_lay
 
   let layerCls = _LAYER_CLASSES.get(layerType);
   if (layerCls === undefined) {
-    // NOTE(port): Python passes stacklevel=2; pyrt warn() only records the message, which is all that is observable.
+    // NOTE(port): Python passes stacklevel=2; warn() carries the message only.
     warn(`Failed to create layer type ${layerType}, falling back to AVLayer`);
     layerCls = AVLayer;
   }

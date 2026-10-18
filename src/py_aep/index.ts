@@ -118,6 +118,7 @@ export { AdvancedRendererOptions, AlphaMode, Application, AudioBitDepth, AudioCh
 // Host file system controls (not part of py_aep's Python API): browsers and
 // Workers read and write through the in-memory fs; see README "Use".
 export { memfs, useMemoryFs, useHostFs, fsBackend } from "../pyrt/host.ts";
+export { setWarningHandler } from "../pyrt/errors.ts";
 export { AepError, AttributeError, FileExistsError, FileNotFoundError, IndexError, KeyError, LookupError, NotImplementedError, OSError, OverflowError, RuntimeError, StructError, UnicodeDecodeError, UnicodeEncodeError, UnicodeError, ValueError, ZeroDivisionError } from "../pyrt/errors.ts";
 
 // Last import: registers every `deferred()` target (pyrt/deferred.ts).

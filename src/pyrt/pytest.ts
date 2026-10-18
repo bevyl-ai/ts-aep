@@ -16,7 +16,7 @@
 
 import { fs, path as nodepath, tmpdir } from "./host.ts";
 import { valueEquals } from "./builtins.ts";
-import { warnings } from "./errors.ts";
+import { setWarningHandler } from "./errors.ts";
 import { Path } from "./pathlib.ts";
 
 export function raises<E extends Error>(cls: abstract new (...a: never[]) => E, fn: () => void, match?: string | RegExp): E {
@@ -33,9 +33,13 @@ export function raises<E extends Error>(cls: abstract new (...a: never[]) => E, 
 }
 
 export function warns(fn: () => void, match?: string | RegExp): string[] {
-  const start = warnings.length;
-  fn();
-  const caught = warnings.slice(start);
+  const caught: string[] = [];
+  const previous = setWarningHandler((m) => caught.push(m));
+  try {
+    fn();
+  } finally {
+    setWarningHandler(previous);
+  }
   if (!caught.length) throw new Error("DID NOT WARN");
   if (match !== undefined && !caught.some((m) => new RegExp(match).test(m))) {
     throw new Error(`No warning matched ${String(match)}: ${caught.join(" | ")}`);

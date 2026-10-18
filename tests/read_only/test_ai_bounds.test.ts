@@ -28,7 +28,7 @@ import {
   assert,
   valueEquals,
   round,
-  warnings,
+  setWarningHandler,
   zip,
 } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
@@ -70,15 +70,14 @@ const _measuredCached = lruCache((path_: string): Map<string, Box | null> => {
   const path = new Path(path_);
   const data = path.readBytes();
   // Python wraps both reads in `warnings.catch_warnings()` with `simplefilter("ignore", UserWarning)`.
-  // NOTE(port): pyrt warn() only records UserWarning-equivalents, so truncating the captured list equals simplefilter("ignore", UserWarning).
-  const mark = warnings.length;
+  const previous = setWarningHandler(() => {});
   let names: string[];
   let bounds: (Box | null)[];
   try {
     names = readAiLayers(path, data);
     bounds = readAiLayerBounds(path, data);
   } finally {
-    warnings.length = mark;
+    setWarningHandler(previous);
   }
   return new Map(zip(names, bounds));
 });
