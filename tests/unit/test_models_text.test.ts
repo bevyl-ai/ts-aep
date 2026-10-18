@@ -5,7 +5,6 @@ import { raises } from "../../src/pyrt/pytest.ts";
 import { AssertionError, Path, RuntimeError, b } from "../../src/pyrt/index.ts";
 import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import * as specialized_properties from "../../src/py_aep/parsers/specialized_properties.ts";
-import {  } from "../../src/py_aep/cos/cos.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 

@@ -2,7 +2,6 @@
 // Unicode database (JS regexes have no Bidi_Class or Canonical_Combining_Class
 // property, and the engine's Unicode version is not Python's).
 
-import {  } from "./errors.ts";
 import { BIDI_CLASSES, BIDI_LENGTHS, BIDI_VALUES, COMBINING_LENGTHS, COMBINING_VALUES } from "./unicodedata_tables.ts";
 
 interface Runs {

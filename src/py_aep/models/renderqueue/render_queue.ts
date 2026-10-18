@@ -3,7 +3,6 @@ import { LHD3_BLOCK_SINGLE, setLhd3Count, type LdatChunk, type Lhd3Chunk } from 
 import { buildRqSettingsList } from "../../binary/mutations.ts";
 import { RhedChunk } from "../../binary/project_chunks.ts";
 import { ArsiChunk, RoutChunk } from "../../binary/render_chunks.ts";
-import {  } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
 import { CompItem } from "../items/composition.ts";
 import { RenderQueueItem } from "./render_queue_item.ts";

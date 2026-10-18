@@ -6,12 +6,11 @@
 //   export class U1Chunk extends Chunk {
 //     declare value: number;            // `declare`: no JS initializer
 //   }
-//   define(U1Chunk, { value: u1_field() });
+//   define(U1Chunk, { value: u1Field() });
 //   register("efdc")(U1Chunk);          // decorators apply bottom-up
 //
-// Construction is keyword-only: `new U1Chunk({ chunk_type: "efdc", value: 1 })`.
+// Construction is keyword-only: `new U1Chunk({ chunkType: "efdc", value: 1 })`.
 
-import {  } from "./errors.ts";
 
 export type Factory<T = unknown> = { readonly factory: () => T };
 
