@@ -148,6 +148,8 @@ function repr200(x: string): string {
 
 const ASCII_WS = /^[ \t\n\v\f\r]+|[ \t\n\v\f\r]+$/g;
 const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
+const SHORT_DECIMAL_INT = /^[+-]?[0-9]{1,15}$/;
+const SIMPLE_DECIMAL_FLOAT = /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)$/;
 
 /**
  * `int(x)` / `int(text, base)`: floats truncate toward zero (raising like
@@ -161,6 +163,9 @@ export function int(x: number | string | boolean | bigint | PyFloat | String, ba
   if (typeof x === "bigint") return Number(x);
   if (typeof x === "string" || x instanceof String) {
     const orig = String(x);
+    // Fast path for plain ASCII decimal text short enough to be exact as a double; the
+    // general parse below walks a BigInt per digit. `+ 0` turns "-0" into 0.
+    if (base === 10 && SHORT_DECIMAL_INT.test(orig)) return Number(orig) + 0;
     if (base !== 0 && (base < 2 || base > 36)) throw new ValueError("int() base must be >= 2 and <= 36, or 0");
     const bad = (): never => {
       throw new ValueError(`invalid literal for int() with base ${base}: ${repr200(orig)}`);
@@ -212,6 +217,8 @@ export function float(x: string | number | boolean | PyFloat | String): number {
   if (typeof x === "number") return x;
   if (typeof x === "boolean") return x ? 1 : 0;
   const orig = String(x);
+  // Plain ASCII decimal text needs none of the normalization below.
+  if (SIMPLE_DECIMAL_FLOAT.test(orig)) return Number(orig);
   const bad = (): never => {
     throw new ValueError(`could not convert string to float: ${repr200(orig)}`);
   };
@@ -454,9 +461,32 @@ export function format(x: number | PyFloat, spec: string): string {
   return s.padStart(width);
 }
 
+/**
+ * The shortest round-trip digits of a non-negative finite double and its decimal
+ * exponent: `0.00125` is `["125", -3]`.
+ */
+function shortest_digits(a: number): [string, number] {
+  const s = a.toExponential();
+  const e = s.indexOf("e");
+  return [s.slice(0, e).replace(".", ""), Number(s.slice(e + 1))];
+}
+
+// The fast paths below skip the exact BigInt rounding when the shortest round-trip
+// digits already fit the requested precision and the result has at most 15 significant
+// digits: for a normal double the exact value is then within half an ulp (< 1.2e-16
+// relative) of those digits, far inside half a unit of the last requested digit, so
+// rounding the exact value gives them back. Subnormals have coarser ulps.
+const MIN_NORMAL = 2.2250738585072014e-308;
+
 /** Correctly rounded fixed-point text of a non-negative double (ties to even on the exact value). */
 function fixed(a: number, prec: number): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
+  const [d, e] = shortest_digits(a);
+  const pad = prec - (d.length - 1 - e);
+  if (pad >= 0 && e + 1 + prec <= 15 && (a === 0 || a >= MIN_NORMAL)) {
+    const digits = (d + "0".repeat(pad)).padStart(prec + 1, "0");
+    return prec ? `${digits.slice(0, -prec)}.${digits.slice(-prec)}` : digits;
+  }
   const [num, den] = float_as_ratio(a);
   const scaled = num * 10n ** BigInt(prec);
   let q = scaled / den;
@@ -469,6 +499,10 @@ function fixed(a: number, prec: number): string {
 /** Correctly rounded `%.{prec}e` digits: [mantissa digits, exponent]. */
 function sci_digits(a: number, prec: number): [string, number] {
   if (a === 0) return ["0".repeat(prec + 1), 0];
+  if (prec < 15 && a >= MIN_NORMAL) {
+    const [d, e] = shortest_digits(a);
+    if (d.length <= prec + 1) return [d.padEnd(prec + 1, "0"), e];
+  }
   const [num, den] = float_as_ratio(a);
   let exp = Math.floor(Math.log10(a));
   for (;;) {

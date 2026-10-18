@@ -205,6 +205,6 @@ export function write_pad(fp: IO, size: number): number {
 /** Consume a pad byte if `size` is odd. */
 export function read_pad(fp: IO, size: number): void {
   if (size % 2 !== 0) {
-    fp.read(1);
+    fp.read_byte();
   }
 }

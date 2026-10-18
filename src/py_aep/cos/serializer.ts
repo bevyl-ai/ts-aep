@@ -10,6 +10,15 @@
 import { BytesIO, b, bytes_, concat, encode, format, PyFloat, TypeError_, type_name, unbox } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
+// Literals written per token, built once (`BytesIO.write` copies them).
+const SPACE = b(" ");
+const TRUE = b("true");
+const FALSE = b("false");
+const NULL = b("null");
+const SLASH = b("/");
+const LPAREN = b("(");
+const RPAREN = b(")");
+
 /**
  * Serialize a parsed COS value tree back to binary.
  *
@@ -21,7 +30,7 @@ import { CosName, CosString, IndirectObject, IndirectReference, Stream, type Cos
 export function serialize(data: CosNode): Uint8Array {
   const buf = new BytesIO();
   // AE's btdk blob begins with a leading space before the first token.
-  buf.write(b(" "));
+  buf.write(SPACE);
   _write_value(buf, data, { top_level: true });
   return buf.getvalue();
 }
@@ -31,8 +40,9 @@ export function _space(buf: BytesIO): void {
   const pos = buf.tell();
   if (pos === 0) return;
   buf.seek(pos - 1);
-  const last = buf.read(1);
-  if (!bytes_.contains(b(" \t\n\r"), last)) buf.write(b(" "));
+  const last = buf.read_byte();
+  // b" \t\n\r"
+  if (!(last === 0x20 || last === 0x09 || last === 0x0a || last === 0x0d)) buf.write(SPACE);
 }
 
 /** Dispatch `value` to the appropriate serialization handler. */
@@ -55,7 +65,7 @@ export function _write_value(buf: BytesIO, value: CosNode, kw: { top_level?: boo
   } else if (typeof value === "boolean") {
     // Must come before int check since bool is a subclass of int
     _space(buf);
-    buf.write(value ? b("true") : b("false"));
+    buf.write(value ? TRUE : FALSE);
   } else if (typeof value === "number" && Number.isInteger(value) && !Object.is(value, -0)) {
     // A plain integral JS number is a Python int; a Python float reaches here boxed as `PyFloat`.
     _space(buf);
@@ -76,7 +86,7 @@ export function _write_value(buf: BytesIO, value: CosNode, kw: { top_level?: boo
     _write_hex_string(buf, value);
   } else if (value == null) {
     _space(buf);
-    buf.write(b("null"));
+    buf.write(NULL);
   } else if (value instanceof IndirectObject) {
     _space(buf);
     _write_indirect_object(buf, value);
@@ -143,9 +153,17 @@ export function _write_array_content(buf: BytesIO, lst: CosNode[]): void {
   }
 }
 
+// A name of printable ASCII without delimiters or `#` is written as is.
+const PRINTABLE_ASCII = /^[!-~]*$/;
+const IDENTIFIER_ESCAPED = /[()[\]<>{}/%#]/;
+
 /** Write a COS identifier (name object): `/foo`. */
 export function _write_identifier(buf: BytesIO, name: string): void {
-  buf.write(b("/"));
+  buf.write(SLASH);
+  if (PRINTABLE_ASCII.test(name) && !IDENTIFIER_ESCAPED.test(name)) {
+    buf.write(encode(name, "ascii"));
+    return;
+  }
   let escaped = "";
   for (const ch of name) {
     const code = ch.codePointAt(0) ?? 0;
@@ -173,9 +191,9 @@ export function _write_string(buf: BytesIO, s: string | CosString): void {
   } else {
     raw = encode(String(s), "utf-8");
   }
-  buf.write(b("("));
+  buf.write(LPAREN);
   buf.write(_escape_string(raw));
-  buf.write(b(")"));
+  buf.write(RPAREN);
 }
 
 /**
@@ -188,17 +206,13 @@ export function _write_string(buf: BytesIO, s: string | CosString): void {
  * serialized blob byte-faithful.
  */
 export function _escape_string(raw: Uint8Array): Uint8Array {
+  // `raw` is always freshly encoded, so with nothing to escape it is the result.
+  if (!raw.some((byte) => byte === 0x28 || byte === 0x29 || byte === 0x5c)) return raw;
   const out: number[] = [];
   for (const byte of raw) {
-    if (byte === b("(")[0]) {
-      out.push(...b("\\("));
-    } else if (byte === b(")")[0]) {
-      out.push(...b("\\)"));
-    } else if (byte === b("\\")[0]) {
-      out.push(...b("\\\\"));
-    } else {
-      out.push(byte);
-    }
+    // b"(" / b")" / b"\\" get a backslash.
+    if (byte === 0x28 || byte === 0x29 || byte === 0x5c) out.push(0x5c);
+    out.push(byte);
   }
   return Uint8Array.from(out);
 }

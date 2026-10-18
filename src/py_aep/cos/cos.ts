@@ -8,8 +8,6 @@ import {
   auto,
   b,
   bytes_,
-  bytes_eq,
-  concat,
   decode,
   float,
   int,
@@ -36,28 +34,51 @@ export { SyntaxError_ };
 // io.SEEK_CUR
 export const SEEK_CUR = 1 as const;
 
-// Python bytes.isspace(): ASCII whitespace only (space, \t, \n, \x0b, \x0c, \r).
-export const WS_BYTES = [0x20, 0x09, 0x0a, 0x0b, 0x0c, 0x0d];
-
-export function isspace_b(c: Uint8Array): boolean {
-  return c.length > 0 && c.every((x) => WS_BYTES.includes(x));
+// Python bytes.isspace() on one byte: ASCII whitespace only (space, \t, \n, \x0b, \x0c, \r).
+export function isspace_b(c: number): boolean {
+  return c === 0x20 || (c >= 0x09 && c <= 0x0d);
 }
 
-// Python bytes.isdigit(): ASCII digits only.
-export function isdigit_b(c: Uint8Array): boolean {
-  return c.length > 0 && c.every((x) => x >= 0x30 && x <= 0x39);
+// Python bytes.isdigit() on one byte: ASCII digits only.
+export function isdigit_b(c: number): boolean {
+  return c >= 0x30 && c <= 0x39;
 }
 
-// Python bytes.isalpha(): ASCII letters only.
-export function isalpha_b(c: Uint8Array): boolean {
-  return c.length > 0 && c.every((x) => (x >= 0x41 && x <= 0x5a) || (x >= 0x61 && x <= 0x7a));
+// Python bytes.isalpha() on one byte: ASCII letters only.
+export function isalpha_b(c: number): boolean {
+  return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
 }
 
-// Lexer accumulators are ASCII (digits, signs, hex digits, keywords), so a
-// latin1 string stands in for the Python bytes object while it is built.
-export function latin1(c: Uint8Array): string {
-  return String.fromCharCode(...c);
-}
+// Byte values the lexer compares against.
+const NEWLINE = 0x0a; // b"\n"
+const CR = 0x0d; // b"\r"
+const HASH = 0x23; // b"#"
+const PERCENT = 0x25; // b"%"
+const LPAREN = 0x28; // b"("
+const RPAREN = 0x29; // b")"
+const PLUS = 0x2b; // b"+"
+const MINUS = 0x2d; // b"-"
+const DOT = 0x2e; // b"."
+const SLASH = 0x2f; // b"/"
+const LT = 0x3c; // b"<"
+const GT = 0x3e; // b">"
+const LBRACKET = 0x5b; // b"["
+const BACKSLASH = 0x5c; // b"\\"
+const RBRACKET = 0x5d; // b"]"
+
+// `lex_identifier` stops before any of b"()[]<>{}/%".
+const IDENTIFIER_DELIMITERS: ReadonlySet<number> = new Set(Array.from("()[]<>{}/%", (c) => c.charCodeAt(0)));
+
+// `\x` string escapes with a fixed byte (octal escapes are handled separately).
+const STRING_ESCAPES: ReadonlyMap<number, number> = new Map([
+  [0x6e, NEWLINE], // \n
+  [0x72, CR], // \r
+  [0x62, 0x08], // \b
+  [0x66, 0x0c], // \f
+  [LPAREN, LPAREN],
+  [RPAREN, RPAREN],
+  [BACKSLASH, BACKSLASH],
+]);
 
 // Python's dataclass repr uses repr() on each field; dicts and lists need to
 // recurse so nested Maps print like Python dicts.
@@ -499,59 +520,59 @@ export class CosParser {
     this.lookahead = this.lex_token();
   }
 
+  // The lexer works on byte values (`b"x"[0]`) rather than one-byte `bytes`
+  // objects: a `read(1)` copy and a `bytes_eq` per character were most of
+  // the text-document parse time.
   lex_token(): Token {
-    let char: Uint8Array | null = null;
+    let char: number | null = null;
     while (true) {
       char = this.get_char();
       if (char == null) {
         return new Token(TokenType.Eof);
-      } else if (bytes_eq(char, b("%"))) {
+      } else if (char === PERCENT) {
         this.lex_comment();
       } else if (!isspace_b(char)) {
         break;
       }
     }
 
-    // At this point char is guaranteed to be bytes (not None)
-    py_assert(char != null);
-
     // <<
-    if (bytes_eq(char, b("<"))) {
+    if (char === LT) {
       const next_char = this.get_char();
-      if (bytes_eq(next_char, b("<"))) {
+      if (next_char === LT) {
         return new Token(TokenType.ObjectStart);
       } else if (next_char == null) {
         return this.raise_lex(b("<"));
       } else if (this.is_hex(next_char)) {
         return this.lex_hex_string(next_char);
       } else {
-        return this.raise_lex(concat(b("<"), next_char));
+        return this.raise_lex(Uint8Array.of(LT, next_char));
       }
     }
 
     // >>
-    if (bytes_eq(char, b(">"))) {
-      this.expect_char(b(">"), char);
+    if (char === GT) {
+      this.expect_char(GT, char);
       return new Token(TokenType.ObjectEnd);
     }
 
     // [
-    if (bytes_eq(char, b("["))) {
+    if (char === LBRACKET) {
       return new Token(TokenType.ArrayStart);
     }
 
     // ]
-    if (bytes_eq(char, b("]"))) {
+    if (char === RBRACKET) {
       return new Token(TokenType.ArrayEnd);
     }
 
     // /foo
-    if (bytes_eq(char, b("/"))) {
+    if (char === SLASH) {
       return this.lex_identifier();
     }
 
     // (foo)
-    if (bytes_eq(char, b("("))) {
+    if (char === LPAREN) {
       return this.lex_string();
     }
 
@@ -561,17 +582,17 @@ export class CosParser {
     }
 
     // Number
-    if (isdigit_b(char) || bytes_.contains(b(".+-"), char)) {
+    if (isdigit_b(char) || char === DOT || char === PLUS || char === MINUS) {
       return this.lex_number(char);
     }
 
-    return this.raise_lex(char);
+    return this.raise_lex(Uint8Array.of(char));
   }
 
-  expect_char(exp: Uint8Array, head: Uint8Array): void {
+  expect_char(exp: number, head: number): void {
     const char = this.get_char();
-    if (char == null || !bytes_eq(char, exp)) {
-      this.raise_lex(concat(head, char != null && char.length > 0 ? char : bytes_.EMPTY), concat(head, exp));
+    if (char !== exp) {
+      this.raise_lex(char == null ? Uint8Array.of(head) : Uint8Array.of(head, char), Uint8Array.of(head, exp));
     }
   }
 
@@ -581,7 +602,7 @@ export class CosParser {
     throw new SyntaxError_(msg);
   }
 
-  get_char(): Uint8Array | null {
+  get_char(): number | null {
     if (this.max_pos != null) {
       if (this.max_pos <= 0) return null;
       this.max_pos -= 1;
@@ -589,8 +610,8 @@ export class CosParser {
     // `read(1)` gives `b""` at the end of the data. Every lexer loop stops
     // on `None`, so passing `b""` on spun them forever on a truncated
     // document (an empty byte also matched `in b".+-"` as a number start).
-    const byte = this.file.read(1);
-    return byte.length > 0 ? byte : null;
+    const byte = this.file.read_byte();
+    return byte >= 0 ? byte : null;
   }
 
   unget(): void {
@@ -602,7 +623,7 @@ export class CosParser {
   lex_comment(): void {
     while (true) {
       const char = this.get_char();
-      if (bytes_eq(char, b("\n"))) {
+      if (char === NEWLINE) {
         break;
       } else if (char == null) {
         break;
@@ -610,24 +631,24 @@ export class CosParser {
     }
   }
 
-  lex_number(char: Uint8Array): Token {
-    if (bytes_eq(char, b("."))) {
-      return this.lex_num_fract(this.get_char(), latin1(char));
-    } else if (bytes_eq(char, b("+")) || bytes_eq(char, b("-"))) {
-      return this.lex_num_int(this.get_char(), latin1(char));
+  lex_number(char: number): Token {
+    if (char === DOT) {
+      return this.lex_num_fract(this.get_char(), ".");
+    } else if (char === PLUS || char === MINUS) {
+      return this.lex_num_int(this.get_char(), String.fromCharCode(char));
     } else {
       return this.lex_num_int(char, "");
     }
   }
 
-  lex_num_int(char: Uint8Array | null, head: string): Token {
+  lex_num_int(char: number | null, head: string): Token {
     while (true) {
       if (char == null) {
         break;
-      } else if (bytes_eq(char, b("."))) {
-        return this.lex_num_fract(this.get_char(), head + latin1(char));
+      } else if (char === DOT) {
+        return this.lex_num_fract(this.get_char(), head + ".");
       } else if (isdigit_b(char)) {
-        head += latin1(char);
+        head += String.fromCharCode(char);
         char = this.get_char();
       } else {
         this.unget();
@@ -649,12 +670,12 @@ export class CosParser {
     return new Token(TokenType.Number, value + 0);
   }
 
-  lex_num_fract(char: Uint8Array | null, head: string): Token {
+  lex_num_fract(char: number | null, head: string): Token {
     while (true) {
       if (char == null) {
         break;
       } else if (isdigit_b(char)) {
-        head += latin1(char);
+        head += String.fromCharCode(char);
         char = this.get_char();
       } else {
         this.unget();
@@ -665,15 +686,15 @@ export class CosParser {
     return new Token(TokenType.Number, pyfloat(float(head)));
   }
 
-  lex_keyword(char: Uint8Array): Token {
+  lex_keyword(char: number): Token {
     // Keywords are ASCII letters only (`isalpha_b`), so a latin1 string holds them exactly.
-    let kw = latin1(char);
+    let kw = String.fromCharCode(char);
     while (true) {
       const next_char = this.get_char();
       if (next_char == null) {
         break;
       } else if (isalpha_b(next_char)) {
-        kw += latin1(next_char);
+        kw += String.fromCharCode(next_char);
       } else {
         this.unget();
         break;
@@ -703,9 +724,9 @@ export class CosParser {
 
   lex_stream(): Token {
     const char = this.get_char();
-    if (bytes_eq(char, b("\r"))) {
-      if (!bytes_eq(this.get_char(), b("\n"))) throw new SyntaxError_("Invalid newline");
-    } else if (!bytes_eq(char, b("\n"))) {
+    if (char === CR) {
+      if (this.get_char() !== NEWLINE) throw new SyntaxError_("Invalid newline");
+    } else if (char !== NEWLINE) {
       throw new SyntaxError_("Expected newline after `stream`");
     }
 
@@ -745,7 +766,7 @@ export class CosParser {
     while (true) {
       const char = this.lex_string_char();
       if (char == null) break;
-      for (const c of char) acc.push(c);
+      acc.push(char);
     }
     let string: Uint8Array = Uint8Array.from(acc);
 
@@ -785,13 +806,13 @@ export class CosParser {
     );
   }
 
-  lex_string_char(): Uint8Array | null {
+  lex_string_char(): number | null {
     const char = this.get_char();
     if (char == null) {
       throw new SyntaxError_("Unterminated string");
-    } else if (bytes_eq(char, b(")"))) {
+    } else if (char === RPAREN) {
       return null;
-    } else if (bytes_eq(char, b("\\"))) {
+    } else if (char === BACKSLASH) {
       return this.lex_string_escape();
     } else {
       // AE's COS strings hold binary UTF-16 data, so a raw 0x0d / 0x0a
@@ -802,26 +823,15 @@ export class CosParser {
     }
   }
 
-  lex_string_escape(): Uint8Array {
+  lex_string_escape(): number {
     const char = this.get_char();
     if (char == null) throw new SyntaxError_("Unterminated string");
 
-    if (bytes_eq(char, b("n"))) {
-      return b("\n");
-    } else if (bytes_eq(char, b("r"))) {
-      return b("\r");
-    } else if (bytes_eq(char, b("b"))) {
-      return b("\b");
-    } else if (bytes_eq(char, b("f"))) {
-      return b("\f");
-    } else if (bytes_eq(char, b("("))) {
-      return b("(");
-    } else if (bytes_eq(char, b(")"))) {
-      return b(")");
-    } else if (bytes_eq(char, b("\\"))) {
-      return b("\\");
+    const escaped = STRING_ESCAPES.get(char);
+    if (escaped != null) {
+      return escaped;
     } else if (this.is_octal(char)) {
-      let octal = char[0] - 0x30; // ord(b"0")
+      let octal = char - 0x30; // ord(b"0")
       for (let k = 0; k < 2; k++) {
         const next_char = this.get_char();
         if (next_char == null) {
@@ -830,36 +840,36 @@ export class CosParser {
           this.unget();
           break;
         }
-        octal = octal * 8 + next_char[0] - 0x30;
+        octal = octal * 8 + next_char - 0x30;
       }
       // Python's `octal.to_bytes(1, "big")`: values past one byte overflow.
       if (octal > 255) throw new OverflowError("int too big to convert");
-      return Uint8Array.of(octal);
+      return octal;
     }
 
     throw new SyntaxError_("Invalid escape sequence");
   }
 
-  is_octal(char: Uint8Array): boolean {
-    return char[0] >= 0x30 && char[0] <= 0x37; // b"0" <= char <= b"7"
+  is_octal(char: number): boolean {
+    return char >= 0x30 && char <= 0x37; // b"0" <= char <= b"7"
   }
 
-  is_hex(char: Uint8Array): boolean {
-    return isdigit_b(char) || (char[0] >= 0x61 && char[0] <= 0x66) || (char[0] >= 0x41 && char[0] <= 0x46);
+  is_hex(char: number): boolean {
+    return isdigit_b(char) || (char >= 0x61 && char <= 0x66) || (char >= 0x41 && char <= 0x46);
   }
 
-  lex_hex_string(hstr_first: Uint8Array): Token {
-    let hstr = latin1(hstr_first);
+  lex_hex_string(hstr_first: number): Token {
+    let hstr = String.fromCharCode(hstr_first);
     while (true) {
       const char = this.get_char();
       if (char == null) {
         throw new SyntaxError_("Unterminated hex string");
       } else if (this.is_hex(char)) {
-        hstr += latin1(char);
-      } else if (bytes_eq(char, b(">"))) {
+        hstr += String.fromCharCode(char);
+      } else if (char === GT) {
         break;
       } else if (!isspace_b(char)) {
-        throw new SyntaxError_(`Invalid character in hex string: ${repr_bytes(char)}`);
+        throw new SyntaxError_(`Invalid character in hex string: ${repr_bytes(Uint8Array.of(char))}`);
       }
     }
 
@@ -874,28 +884,27 @@ export class CosParser {
 
   lex_identifier(): Token {
     let ident = "";
-    const special = b("()[]<>{}/%");
     while (true) {
       let char = this.get_char();
       if (char == null) {
         break;
-      } else if (char[0] < 0x21 || char[0] > 0x7e) {
+      } else if (char < 0x21 || char > 0x7e) {
         // char < b"!" or char > b"~"
         this.unget();
         break;
-      } else if (bytes_eq(char, b("#"))) {
+      } else if (char === HASH) {
         let hexstr = "";
         for (let k = 0; k < 2; k++) {
           char = this.get_char();
           if (char == null || !this.is_hex(char)) throw new SyntaxError_("Invalid identifier");
-          hexstr += latin1(char);
+          hexstr += String.fromCharCode(char);
         }
         ident += String.fromCodePoint(int(hexstr, 16));
-      } else if (bytes_.contains(special, char)) {
+      } else if (IDENTIFIER_DELIMITERS.has(char)) {
         this.unget();
         break;
       } else {
-        ident += String.fromCodePoint(char[0]);
+        ident += String.fromCodePoint(char);
       }
     }
 

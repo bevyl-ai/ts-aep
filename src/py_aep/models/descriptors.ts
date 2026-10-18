@@ -322,8 +322,12 @@ export class ChunkField<
     // Parse-time overrides (e.g. ExtendScript-compatible values that
     // differ from the binary) are stored in __dict__ and take priority
     // over the chunk body.
-    const overrides = instance_dict(obj);
-    if (overrides.has(this.public_name)) return overrides.get(this.public_name);
+    // Only an instance that already has a `__dict__` can hold one: a read
+    // does not create it (shaped for speed: every model field read lands here).
+    if (Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
+      const overrides = instance_dict(obj);
+      if (overrides.has(this.public_name)) return overrides.get(this.public_name);
+    }
     const body = getattr(obj, this.chunk_attr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
