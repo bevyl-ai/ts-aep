@@ -5,7 +5,7 @@
  * can be added to a specific indexed group.
  */
 
-import { pyEnum, type EnumValue } from "../../pyrt/index.ts";
+import { defineEnum, type EnumValue } from "../../pyrt/index.ts";
 import { EXPRESSION_CONTROLS } from "../data/effect_controls.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { TEXT_ANIMATOR_POOL } from "../data/text_animator_pool.ts";
@@ -18,7 +18,7 @@ import { PropertyType } from "../enums/index.ts";
  * the model can dispatch on it without re-deriving the category from the
  * resolved match name.
  */
-export const AddableKind = pyEnum("AddableKind", {
+export const AddableKind = defineEnum("AddableKind", {
   MASK: "mask",
   EXPRESSION_CONTROL: "expression_control",
   DROPDOWN: "dropdown",

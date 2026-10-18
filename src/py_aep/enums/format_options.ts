@@ -2,7 +2,7 @@
  * Format options enumerations for After Effects output modules.
  */
 
-import { intEnum } from "../../pyrt/index.ts";
+import { defineEnum } from "../../pyrt/index.ts";
 import type { EnumValue } from "../../pyrt/index.ts";
 
 /**
@@ -10,7 +10,7 @@ import type { EnumValue } from "../../pyrt/index.ts";
  *
  * Not available in ExtendScript.
  */
-export const CineonFileFormat = intEnum("CineonFileFormat", {
+export const CineonFileFormat = defineEnum("CineonFileFormat", {
   FIDO_CINEON: 0,
   DPX: 1,
 });
@@ -21,7 +21,7 @@ export type CineonFileFormat = EnumValue<typeof CineonFileFormat>;
  *
  * Not available in ExtendScript.
  */
-export const JpegFormatType = intEnum("JpegFormatType", {
+export const JpegFormatType = defineEnum("JpegFormatType", {
   BASELINE_STANDARD: 0,
   BASELINE_OPTIMIZED: 1,
   PROGRESSIVE: 2,
@@ -33,7 +33,7 @@ export type JpegFormatType = EnumValue<typeof JpegFormatType>;
  *
  * Not available in ExtendScript.
  */
-export const PngCompression = intEnum("PngCompression", {
+export const PngCompression = defineEnum("PngCompression", {
   NONE: 0,
   INTERLACED: 1,
 });
@@ -44,7 +44,7 @@ export type PngCompression = EnumValue<typeof PngCompression>;
  *
  * Not available in ExtendScript.
  */
-export const Hdr10ColorPrimaries = intEnum("Hdr10ColorPrimaries", {
+export const Hdr10ColorPrimaries = defineEnum("Hdr10ColorPrimaries", {
   REC709: 0,
   P3_D65: 1,
   REC2020: 2,
@@ -56,7 +56,7 @@ export type Hdr10ColorPrimaries = EnumValue<typeof Hdr10ColorPrimaries>;
  *
  * Not available in ExtendScript.
  */
-export const OpenExrCompression = intEnum("OpenExrCompression", {
+export const OpenExrCompression = defineEnum("OpenExrCompression", {
   NONE: 0,
   RLE: 1,
   ZIP: 2,
@@ -91,7 +91,7 @@ export type OpenExrCompression = EnumValue<typeof OpenExrCompression>;
  *
  * Not available in ExtendScript.
  */
-export const MPEGProfile = intEnum("MPEGProfile", {
+export const MPEGProfile = defineEnum("MPEGProfile", {
   BASELINE: -1,
   MAIN: 1,
   HIGH: 3,
@@ -113,7 +113,7 @@ export type MPEGProfile = EnumValue<typeof MPEGProfile>;
  *
  * Not available in ExtendScript.
  */
-export const DnxResolution = intEnum("DnxResolution", {
+export const DnxResolution = defineEnum("DnxResolution", {
   DNXHD_720P_HQX_10_BIT: 1001,
   DNXHD_720P_HQ_8_BIT: 1002,
   DNXHD_720P_SQ_8_BIT: 1003,
@@ -145,7 +145,7 @@ export type DnxResolution = EnumValue<typeof DnxResolution>;
  *
  * Not available in ExtendScript.
  */
-export const AudioCodec = intEnum("AudioCodec", {
+export const AudioCodec = defineEnum("AudioCodec", {
   /** Uncompressed / PCM audio. */
   UNCOMPRESSED: 1380013856,
 
@@ -183,7 +183,7 @@ export type AudioCodec = EnumValue<typeof AudioCodec>;
  *
  * Not available in ExtendScript.
  */
-export const VideoCodec = intEnum("VideoCodec", {
+export const VideoCodec = defineEnum("VideoCodec", {
   /** No codec / uncompressed DIB (FourCC `' BID'`). */
   NONE: 541215044,
 
@@ -288,7 +288,7 @@ export type VideoCodec = EnumValue<typeof VideoCodec>;
  *
  * Not available in ExtendScript.
  */
-export const AudioInterleave = intEnum("AudioInterleave", {
+export const AudioInterleave = defineEnum("AudioInterleave", {
   ONE_FRAME: 1,
   HALF_SECOND: 2,
   ONE_SECOND: 3,
@@ -305,7 +305,7 @@ export type AudioInterleave = EnumValue<typeof AudioInterleave>;
  *
  * Not available in ExtendScript.
  */
-export const MPEGAudioLayer = intEnum("MPEGAudioLayer", {
+export const MPEGAudioLayer = defineEnum("MPEGAudioLayer", {
   LAYER_I: 1,
   LAYER_II: 2,
 });
@@ -323,7 +323,7 @@ export type MPEGAudioLayer = EnumValue<typeof MPEGAudioLayer>;
  *
  * Not available in ExtendScript.
  */
-export const MPEGAudioFormat = intEnum("MPEGAudioFormat", {
+export const MPEGAudioFormat = defineEnum("MPEGAudioFormat", {
   /** AAC (Advanced Audio Coding) (FourCC `'AAC '`). */
   AAC: 1094796064,
 
@@ -343,7 +343,7 @@ export type MPEGAudioFormat = EnumValue<typeof MPEGAudioFormat>;
  *
  * Not available in ExtendScript.
  */
-export const MPEGMultiplexer = intEnum("MPEGMultiplexer", {
+export const MPEGMultiplexer = defineEnum("MPEGMultiplexer", {
   /** 3GPP container (FourCC `'3GPP'`). */
   THREEGPP: 860311632,
 
@@ -363,7 +363,7 @@ export type MPEGMultiplexer = EnumValue<typeof MPEGMultiplexer>;
  *
  * Not available in ExtendScript.
  */
-export const MPEGMuxStreamCompatibility = intEnum("MPEGMuxStreamCompatibility", {
+export const MPEGMuxStreamCompatibility = defineEnum("MPEGMuxStreamCompatibility", {
   /** iPod compatibility (FourCC `'IPOD'`). */
   IPOD: 1229999940,
 

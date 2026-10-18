@@ -38,7 +38,7 @@ export const IntEnum = {
 };
 
 // Python `member.label` property; the enum objects expose it as `E.label(member)`.
-/** An `intEnum` class that also defines a `label(member)` method. */
+/** An `defineEnum` class that also defines a `label(member)` method. */
 export type LabeledEnum = EnumHelpers<number> & { label(member: number): string };
 
 export function enumLabel(enumClass: LabeledEnum, member: number): string {

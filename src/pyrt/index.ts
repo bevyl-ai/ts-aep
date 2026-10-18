@@ -12,7 +12,7 @@ export { BytesIO, StringIO, FileReader, openRb, type IO } from "./bytesio.ts";
 export { Fraction } from "./fraction.ts";
 export { ContextVar } from "./contextvar.ts";
 export { define, field, fields, has as attrsHas, Factory, AttrsBase, NO_INIT, attrsInit, attrsEq, initName, type Attribute, type FieldSpec } from "./attrs.ts";
-export { pyEnum, intEnum, auto, type EnumValue } from "./enum.ts";
+export { defineEnum, auto, type EnumValue } from "./enum.ts";
 export { Path, PurePath, PurePosixPath, PureWindowsPath, fspath, type PathLike } from "./pathlib.ts";
 export { descriptor, getDescriptor, descriptorsOf, pyObject, pyClassHooks, objectSetattr, objectGetattr, instanceDict, hasInstanceDict, type ClassAttributes, type Descriptor } from "./dunder.ts";
 export * from "./pytest.ts";

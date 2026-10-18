@@ -10,7 +10,7 @@ import {
   float,
   getOrThrow,
   int,
-  intEnum,
+  defineEnum,
   objectSetattr,
   assert,
   truthy,
@@ -205,7 +205,7 @@ class _SyntheticModel {
 }
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));
 
-const _MyEnum = intEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
+const _MyEnum = defineEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
   // NOTE(port): _enum_class/getattr(enum, "fromBinary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
   from_binary(value: number) {
     return this.of(value);

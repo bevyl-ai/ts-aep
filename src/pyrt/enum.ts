@@ -52,7 +52,7 @@ export type EnumHelpers<V> = {
 
 export type EnumValue<E> = E extends EnumHelpers<infer V> ? V : never;
 
-export function pyEnum<const M extends Record<string, unknown>, X extends Record<string, unknown> = {}>(
+export function defineEnum<const M extends Record<string, unknown>, X extends Record<string, unknown> = {}>(
   name: string,
   members: M,
   methods?: X & ThisType<Resolved<M> & EnumHelpers<Resolved<M>[keyof M]> & X>,
@@ -110,6 +110,3 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
   }
   return Object.freeze(self) as Resolved<M> & EnumHelpers<Resolved<M>[keyof M]> & X;
 }
-
-/** `class X(IntEnum)` */
-export const intEnum = pyEnum;

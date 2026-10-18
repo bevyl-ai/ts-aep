@@ -6,7 +6,7 @@
  * its Render Options dialog shows.
  */
 
-import { intEnum, type EnumValue } from "../../pyrt/index.ts";
+import { defineEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Classic 3D shadow map resolution.
@@ -15,7 +15,7 @@ import { intEnum, type EnumValue } from "../../pyrt/index.ts";
  *
  * Not documented in the AE scripting reference.
  */
-export const ShadowMapResolution = intEnum(
+export const ShadowMapResolution = defineEnum(
   "ShadowMapResolution",
   {
     COMP_SIZE: 0,
@@ -56,7 +56,7 @@ export const _SHADOW_MAP_RESOLUTION_LABELS: Readonly<Record<ShadowMapResolution,
  *
  * Not documented in the AE scripting reference.
  */
-export const EnvironmentLightShadowResolution = intEnum(
+export const EnvironmentLightShadowResolution = defineEnum(
   "EnvironmentLightShadowResolution",
   {
     HALF: 0,

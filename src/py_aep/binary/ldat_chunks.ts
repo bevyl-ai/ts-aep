@@ -10,7 +10,7 @@ import {
   concat,
   define,
   descriptor,
-  intEnum,
+  defineEnum,
   assert,
   struct,
   tkey,
@@ -30,7 +30,7 @@ import { OutputModuleSettingsItem, RenderSettingsItem } from "./render_chunks.ts
 // ---------------------------------------------------------------------------
 
 /** Keyframe / list data item type, derived from lhd3 raw type + size. */
-export const LdatItemType = intEnum("LdatItemType", {
+export const LdatItemType = defineEnum("LdatItemType", {
   unknown: 0,
   color: 1,
   three_d_spatial: 2,

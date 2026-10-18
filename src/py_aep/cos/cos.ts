@@ -17,7 +17,7 @@ import {
   IndexError,
   OverflowError,
   assert,
-  pyEnum,
+  defineEnum,
   valueEquals,
   pyfloat,
   str,
@@ -100,7 +100,7 @@ export function reprBytes(x: Uint8Array): string {
   return `b${q}${s}${q}`;
 }
 
-/** The enum-helper surface `enumStr` needs (a pyrt `pyEnum`). */
+/** The enum-helper surface `enumStr` needs (a pyrt `defineEnum`). */
 interface NamedEnum {
   enumName: string;
   nameOf(v: number): string;
@@ -170,7 +170,7 @@ export function runSpans(doc: CosNode, docKey: string, styleKey: string | null):
   return spans;
 }
 
-export const TokenType = pyEnum("TokenType", {
+export const TokenType = defineEnum("TokenType", {
   Identifier: auto(), // /foo
   Number: auto(), // 123
   String: auto(), // (foo)
