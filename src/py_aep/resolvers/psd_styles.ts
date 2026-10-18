@@ -366,7 +366,7 @@ export function _pyIter(value: _Value): _Value[] {
 }
 
 export function _color(value: _Value): number[] {
-  if (!(value instanceof Map) || (value.get("_class") ?? null) !== "RGBC") {
+  if (!(value instanceof Map) || value.get("_class") !== "RGBC") {
     throw new UnsupportedStyleError(`unsupported color model ${literal(value)}`);
   }
   return [
@@ -385,10 +385,10 @@ export function _point(value: _Value): number[] {
 }
 
 export function _gradient(value: _Value): Gradient {
-  if (!(value instanceof Map) || (value.get("_class") ?? null) !== "Grdn") {
+  if (!(value instanceof Map) || value.get("_class") !== "Grdn") {
     throw new UnsupportedStyleError(`expected a gradient, got ${literal(value)}`);
   }
-  if ((value.get("GrdF") ?? null) !== "CstS") {
+  if (value.get("GrdF") !== "CstS") {
     // Noise gradients ("ClNs") have no AE representation.
     throw new UnsupportedStyleError(`unsupported gradient form ${literal(value.get("GrdF") ?? null)}`);
   }
@@ -656,7 +656,7 @@ export function _convertStyle(
     const intr = grad instanceof Map ? grad.get("Intr") ?? null : null;
     if (
       grad instanceof Map &&
-      (grad.get("GrdF") ?? null) === "CstS" &&
+      grad.get("GrdF") === "CstS" &&
       (typeof intr === "number" || typeof intr === "boolean")
     ) {
       values.set(`${prefix}/gradientSmoothness`, (Number(intr) / 4096.0) * 100.0);
@@ -787,7 +787,7 @@ export function parseLayerStyles(
     }
     if (presentInstances.length === 0) continue;
     const instance = presentInstances[0];
-    const isEnabled = truthy(getOr(instance, "enab", false));
+    const isEnabled = truthy(instance.get("enab"));
     // `present` distinguishes an unchecked-but-kept style (imported,
     // tdsb 0x00) from a removed one Photoshop left in the descriptor
     // (skeleton, 0x02). Old writers without the key follow `enab`.
@@ -840,7 +840,7 @@ export function* _enabledInstances(
 ): Generator<[string, Map<string, _Value>]> {
   for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
-      if (instance instanceof Map && truthy(getOr(instance, "enab", false))) {
+      if (instance instanceof Map && truthy(instance.get("enab"))) {
         yield [key, instance];
       }
     }
@@ -927,7 +927,7 @@ export function _bevelPads(instance: Map<string, _Value>, name: string): [number
   }
   const shift = softening === 0 && (!smooth || size === 0) ? -1.0 : 0.0;
   const antiAliased =
-    truthy(getOr(instance, "useShape", false)) && truthy(getOr(instance, "AntA", false));
+    truthy(instance.get("useShape")) && truthy(instance.get("AntA"));
   return _pads(reach, antiAliased, shift);
 }
 
@@ -944,13 +944,13 @@ export function _instanceBox(
   let lead = 0;
   let trail = 0;
   if (key === "DrSh" || key === "OrGl") {
-    const precise = key === "OrGl" && (instance.get("GlwT") ?? null) === "PrBL";
+    const precise = key === "OrGl" && instance.get("GlwT") === "PrBL";
     const reach = _blurReach(
       jsonFloat(getOr(instance, "blur", 0)),
       jsonFloat(getOr(instance, "Ckmt", 0)),
       precise,
     );
-    [lead, trail] = _pads(reach, truthy(getOr(instance, "AntA", false)));
+    [lead, trail] = _pads(reach, truthy(instance.get("AntA")));
     if (key === "DrSh") {
       const angle = radians(
         truthy(instance.get("uglg")) ? globalAngle : jsonFloat(getOr(instance, "lagl", 0)),

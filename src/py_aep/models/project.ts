@@ -65,7 +65,6 @@ import {
   BytesIO,
   Path,
   decode,
-  getOr,
   fspath,
   getattr,
   setattr,
@@ -2201,9 +2200,9 @@ export class Project {
       const text = alas.value;
       const data = text ? jsonLoads(text) : new Map<string, JsonValue>();
       if (!(data instanceof Map)) throw new AttributeError(`'${typeName(data)}' object has no attribute 'get'`);
-      if (!valueEquals(getOr(data, "ascendcount_base"), PENDING_ASCENDCOUNT)) continue;
+      if (!valueEquals(data.get("ascendcount_base") ?? null, PENDING_ASCENDCOUNT)) continue;
       const counts = relativePathCounts(projectFile, alasFullpath(data), {
-        targetIsFolder: truthy(getOr(data, "target_is_folder")),
+        targetIsFolder: truthy(data.get("target_is_folder")),
       });
       data.set("ascendcount_base", counts[0]);
       data.set("ascendcount_target", counts[1]);
