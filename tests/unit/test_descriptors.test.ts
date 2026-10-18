@@ -282,7 +282,7 @@ describe("TestChunkFieldDefault", () => {
 
   test("test_no_default_raises_attribute_error", () => {
     const model = new _DirectModel(null);
-    raises(AttributeError, () => model.name, "is None");
+    raises(AttributeError, () => model.name, "is null");
   });
 
   test("test_write_to_none_body_stores_in_dict", () => {

@@ -978,7 +978,7 @@ export class Project {
     if (value != null) {
       if (!isListOrTuple(value)) {
         throw new TypeError_(
-          "iccProfileDirs must be a list of directories or None, " +
+          "iccProfileDirs must be a list of directories or null, " +
             `got ${typeName(value)}`,
         );
       }
@@ -2058,7 +2058,7 @@ export class Project {
    */
   reduceProject(itemsToKeep: Item[]): number {
     if (!itemsToKeep.every((item) => item instanceof Item)) {
-      throw new ValueError("All items_to_keep must be Item instances");
+      throw new ValueError("All itemsToKeep must be Item instances");
     }
     const keepIds = new Set<number>([0]);
     const queue = [...itemsToKeep];
@@ -2219,9 +2219,9 @@ export class Project {
   _requirePrefsDir(label: string): Path {
     if (this._aePreferencesDir == null) {
       throw new ValueError(
-        "No 'ae_preferences_dir' provided to parse(); " +
+        "No 'aePreferencesDir' provided to parse(); " +
           `${label} templates are required for adding items ` +
-          "to the render queue. Pass ae_preferences_dir pointing to " +
+          "to the render queue. Pass aePreferencesDir pointing to " +
           "the AE preferences directory (e.g. " +
           "C:/Users/<user>/AppData/Roaming/Adobe/After Effects/26.0)",
       );

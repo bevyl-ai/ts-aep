@@ -462,7 +462,7 @@ export function recursiveFind(
   skipUnparsed = false,
 ): Chunk[] {
   if (chunkType == null && listType == null) {
-    throw new ValueError("At least one of chunk_type or list_type is required");
+    throw new ValueError("At least one of chunkType or listType is required");
   }
   const results: Chunk[] = [];
   for (const chunk of chunks) {

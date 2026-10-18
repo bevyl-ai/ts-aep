@@ -56,7 +56,7 @@ export function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boole
   if (instance != null && !instance.hasAlpha) {
     throw new ValueError(
       "cannot set alphaMode: the footage has no alpha channel " +
-        "(hasAlpha is False)",
+        "(hasAlpha is false)",
     );
   }
 }

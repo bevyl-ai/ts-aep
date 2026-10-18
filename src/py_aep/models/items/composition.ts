@@ -1897,7 +1897,7 @@ export class CompItem extends AVItem {
       }
       return at(this.layers, otherIdx + relIndex);
     }
-    throw new ValueError("Must specify one of name, index, or other_layer and rel_index");
+    throw new ValueError("Must specify one of name, index, or otherLayer and relIndex");
   }
 
   /** Cached layer type lists for O(1) access. */
@@ -2355,7 +2355,7 @@ export class CompItem extends AVItem {
      */
     validateString(name);
     if (!Array.isArray(layerIndices) || !layerIndices?.length) {
-      throw new ValueError("layer_indices must be a non-empty list.");
+      throw new ValueError("layerIndices must be a non-empty list.");
     }
     const checkIndex = _validateNumber({ integer: true, min: 0, max: this.layers.length - 1 });
     for (const idx of layerIndices) {
@@ -2364,7 +2364,7 @@ export class CompItem extends AVItem {
     const indices = sorted([...new Set(layerIndices)]);
     if (!moveAllAttributes) {
       if (indices.length !== 1) {
-        throw new ValueError("move_all_attributes=False requires exactly one layer index.");
+        throw new ValueError("moveAllAttributes=false requires exactly one layer index.");
       }
       const layer = this.layers[indices[0]];
       // 3D model layers cannot swap sources (replace_source raises);
@@ -2375,7 +2375,7 @@ export class CompItem extends AVItem {
         layer._ldta.layerType === LayerType.THREE_D_MODEL
       ) {
         throw new ValueError(
-          "move_all_attributes=False requires a layer with a " + "replaceable source.",
+          "moveAllAttributes=false requires a layer with a " + "replaceable source.",
         );
       }
       return this._precomposeLeaveAttributes(layer, name);

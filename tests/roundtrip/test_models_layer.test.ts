@@ -1051,7 +1051,7 @@ describe("TestReplaceSource", () => {
 
     raises(NotImplementedError, () => {
       layer.replaceSource(source, true);
-    }, "fix_expressions");
+    }, "fixExpressions");
   });
 
   test("test_not_in_project_raises", () => {
