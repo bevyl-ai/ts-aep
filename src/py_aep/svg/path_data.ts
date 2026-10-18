@@ -111,18 +111,18 @@ export function parsePath(d: string): RawSubpath[] {
 }
 
 export class _PathParser {
-  _tokens: string[];
-  _i: number;
+  private _tokens: string[];
+  private _i: number;
   cx: number;
   cy: number;
   sx: number;
   sy: number;
-  _prevCmd: string;
+  private _prevCmd: string;
   // Last cubic control point (for S) and quadratic control (for T).
-  _prevCubicCtrl: [number, number] | null;
-  _prevQuadCtrl: [number, number] | null;
-  _segs: CubicSeg[];
-  _subpaths: RawSubpath[];
+  private _prevCubicCtrl: [number, number] | null;
+  private _prevQuadCtrl: [number, number] | null;
+  private _segs: CubicSeg[];
+  private _subpaths: RawSubpath[];
 
   constructor(tokens: string[]) {
     this._tokens = tokens;
@@ -166,7 +166,7 @@ export class _PathParser {
     return this._subpaths;
   }
 
-  _readArgs(n: number): number[] {
+  private _readArgs(n: number): number[] {
     const args: number[] = [];
     for (let i = 0; i < n; i++) {
       if (this._i >= this._tokens.length || _COMMANDS.has(this._tokens[this._i])) {
@@ -178,14 +178,14 @@ export class _PathParser {
     return args;
   }
 
-  _flush(closed: boolean): void {
+  private _flush(closed: boolean): void {
     if (this._segs?.length > 0) {
       this._subpaths.push(new RawSubpath(this._segs, closed));
       this._segs = [];
     }
   }
 
-  _close(): void {
+  private _close(): void {
     if (this._segs?.length > 0) {
       // Add the closing straight segment back to the subpath start.
       if (!valueEquals([this.cx, this.cy], [this.sx, this.sy])) {
@@ -201,20 +201,20 @@ export class _PathParser {
     this._prevCmd = "Z";
   }
 
-  _lineTo(x: number, y: number): void {
+  private _lineTo(x: number, y: number): void {
     this._segs.push([this.cx, this.cy, this.cx, this.cy, x, y, x, y]);
     this.cx = x;
     this.cy = y;
   }
 
-  _cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
+  private _cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
     this._segs.push([this.cx, this.cy, x1, y1, x2, y2, x, y]);
     this._prevCubicCtrl = [x2, y2];
     this.cx = x;
     this.cy = y;
   }
 
-  _quadTo(qx: number, qy: number, x: number, y: number): void {
+  private _quadTo(qx: number, qy: number, x: number, y: number): void {
     // Elevate quadratic to cubic.
     const c1x = this.cx + (2.0 / 3.0) * (qx - this.cx);
     const c1y = this.cy + (2.0 / 3.0) * (qy - this.cy);
@@ -226,7 +226,7 @@ export class _PathParser {
     this.cy = y;
   }
 
-  _exec(cmd: string): void {
+  private _exec(cmd: string): void {
     // flat command dispatch
     const rel = islower(cmd);
     const up = cmd.toUpperCase();
@@ -283,7 +283,7 @@ export class _PathParser {
   }
 
   /** Convert an SVG elliptical arc to cubic segments (W3C algorithm). */
-  _arcTo(
+  private _arcTo(
     rx: number,
     ry: number,
     phiDeg: number,

@@ -140,7 +140,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    * `null` when there is none. Overrides are stored by `set` (and the
    * parser's fallback kwargs) from values of the field's own type.
    */
-  _override(obj: O): { value: T } | null {
+  private _override(obj: O): { value: T } | null {
     const idict: Map<string, InstanceValue> = instanceDict(obj);
     if (!idict.has(this.publicName)) return null;
     const value = idict.get(this.publicName) ?? null;

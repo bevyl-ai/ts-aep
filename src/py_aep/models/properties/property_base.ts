@@ -520,7 +520,7 @@ export class PropertyBase {
    * Only children of indexed groups (effects, masks, shape contents,
    * text animators) can be removed/moved/duplicated.
    */
-  _canMutate(): [PropertyGroup, ListChunk] {
+  private _canMutate(): [PropertyGroup, ListChunk] {
     const parent = this._parentProperty;
     if (parent == null) throw new ValueError("Cannot mutate a root property");
     if (parent.propertyType !== PropertyType.INDEXED_GROUP) {
@@ -562,7 +562,7 @@ export class PropertyBase {
    * `mkif` for masks), and the backing LIST chunk itself. The span
    * is suitable for slice deletion.
    */
-  _findChunkSpan(parentTdgp: ListChunk): [number, number] {
+  private _findChunkSpan(parentTdgp: ListChunk): [number, number] {
     const start = indexByIdentity(parentTdgp.chunks, this._tdmn);
     const backing = this._backingListChunk(parentTdgp);
     const end = indexByIdentity(parentTdgp.chunks, backing);
@@ -682,7 +682,7 @@ export class PropertyBase {
    *   auxiliary chunks (e.g. `mkif`) in between.
    * @param parent - The parent group of the clone.
    */
-  _parseClone(cloned: Chunk[], parent: PropertyGroup): Property | PropertyGroup {
+  private _parseClone(cloned: Chunk[], parent: PropertyGroup): Property | PropertyGroup {
     // Determine the composition context
     const layer = this._containingLayer;
     const comp = layer.containingComp;

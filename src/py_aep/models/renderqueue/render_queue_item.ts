@@ -544,7 +544,7 @@ export class RenderQueueItem {
   }
 
   /** Return (start, duration) in seconds based on time span source. */
-  _resolvedTimeSpan(): [number, number] {
+  private _resolvedTimeSpan(): [number, number] {
     const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
       return [0.0, this.comp.duration];
@@ -556,7 +556,7 @@ export class RenderQueueItem {
   }
 
   /** Return (start, duration) in frames based on time span source. */
-  _resolvedTimeSpanFrames(): [number, number] {
+  private _resolvedTimeSpanFrames(): [number, number] {
     const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
@@ -593,7 +593,7 @@ export class RenderQueueItem {
    *   ratio.
    * @throws {@link TypeError} If the value is not a number.
    */
-  _setTimeSpan(value: number, field: string, isFrames = false): void {
+  private _setTimeSpan(value: number, field: string, isFrames = false): void {
     const frameDuration = 1.0 / this.comp.frameRate;
     // A signed 32-bit dividend over a divisor of at least 1.
     _validateNumber({ min: 0.0, max: 2 ** 31 - 1 })(value);

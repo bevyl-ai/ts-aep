@@ -338,7 +338,7 @@ export class Layer extends PropertyGroup {
    * Hold every keyframe at the same LAYER time across a stretch change
    * (`rescaleTicks`).
    */
-  _retimeToLayerTimebase(old: number, new_: number): void {
+  private _retimeToLayerTimebase(old: number, new_: number): void {
     if (new_ === old || old <= 0) return;
     for (const prop of this._leafProperties()) {
       if (prop._isLive()) prop._ensureTimeBase();
@@ -916,7 +916,7 @@ export class Layer extends PropertyGroup {
    * no such group at all, not that the `.aep` merely omitted an empty
    * one (AE writes the Effect / Mask Parade only once it has content).
    */
-  _optionalGroup<K extends keyof MatchNameTypes>(matchName: K): (MatchNameTypes[K] & PropertyGroup) | null {
+  private _optionalGroup<K extends keyof MatchNameTypes>(matchName: K): (MatchNameTypes[K] & PropertyGroup) | null {
     const group = this._childOrNull(matchName);
     return group instanceof PropertyGroup ? group : null;
   }
@@ -965,7 +965,7 @@ export class Layer extends PropertyGroup {
    * another comp, the layer itself, or any of its own descendants
    * (which would create a parenting cycle).
    */
-  _validateParent(newParent: Layer | null): void {
+  private _validateParent(newParent: Layer | null): void {
     if (newParent == null) return;
     if (!(newParent instanceof Layer)) {
       throw new ValueError("parent must be a Layer or null");
@@ -1049,7 +1049,7 @@ export class Layer extends PropertyGroup {
    * live in square pixels, so the matrices are squared before they are
    * decomposed.
    */
-  _compensateReparent(
+  private _compensateReparent(
     newParent: Layer | null,
     childWorld: Mat4,
     oldParentWorld: Mat4,
@@ -1340,7 +1340,7 @@ export class Layer extends PropertyGroup {
    * (measured on AE 2026: 2.5 / 24576 s becomes 3 / 24576 s on a 24 fps
    * layer, 1 / 36864 s stays put at 150 %).
    */
-  _layerRelative(value: number): number {
+  private _layerRelative(value: number): number {
     const timebase = this._layerTimebase();
     const snapped = Math.floor(value * timebase + 0.5) / timebase;
     return (snapped - this._timeOrigin) / this._stretchFactor;
@@ -1449,7 +1449,7 @@ export class Layer extends PropertyGroup {
    * a {@link duplicate} (directly above, references kept) or a
    * {@link copyToComp} (on top, references cleared).
    */
-  _cloneInto(intoComp: CompItem, kw: { duplicate: boolean }): Layer {
+  private _cloneInto(intoComp: CompItem, kw: { duplicate: boolean }): Layer {
     const { duplicate } = kw;
 
     const sameComp = intoComp === this.containingComp;
@@ -1604,7 +1604,7 @@ export class Layer extends PropertyGroup {
    * 400x300 solid at position 400,300 copied into a 200x100 comp still
    * reads 400,300, with `ADBE Position` now a real cdat).
    */
-  _carryCompRelativeTransform(copy: Layer): void {
+  private _carryCompRelativeTransform(copy: Layer): void {
     const srcTransform = this.transform;
     const dstTransform = copy.transform;
     if (srcTransform == null || dstTransform == null) return;
@@ -1684,7 +1684,7 @@ export class Layer extends PropertyGroup {
    * `remove()`, so parent and track matte connections on other
    * layers are preserved.
    */
-  _moveTo(targetIndex: number): void {
+  private _moveTo(targetIndex: number): void {
     const comp = this.containingComp;
 
     // Extract and remove chunk block

@@ -358,15 +358,15 @@ export class XmlFormatOptions extends FormatOptionsBase {
     return this._materialize()?.[0] ?? null;
   }
 
-  get _valElements(): Map<string, ETElement> {
+  private get _valElements(): Map<string, ETElement> {
     return this._materialize()?.[1] ?? new Map();
   }
 
-  get _paramElements(): Map<string, ETElement> {
+  private get _paramElements(): Map<string, ETElement> {
     return this._materialize()?.[2] ?? new Map();
   }
 
-  _materialize(): [ETElement, Map<string, ETElement>, Map<string, ETElement>] | null {
+  private _materialize(): [ETElement, Map<string, ETElement>, Map<string, ETElement>] | null {
     if (this._ownTree == null && this._template != null) {
       const root = _copyTree(this._template);
       const [, valElements, paramElements] = _extractParams(root);
@@ -481,7 +481,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * case. (Detachment is a separate condition, caught by
    * `_checkAttached` on every write path.)
    */
-  _requireOm(): OutputModule {
+  private _requireOm(): OutputModule {
     const om = this._parentOm;
     if (om == null) {
       // Explicit raise (not assert) so the wiring bug stays loud

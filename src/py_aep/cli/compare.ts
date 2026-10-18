@@ -79,7 +79,7 @@ export class ByteDifference {
   }
 
   /** Calculate bit position if only one bit differs. */
-  _deriveFields(): void {
+  private _deriveFields(): void {
     const xor = this.byte1 ^ this.byte2;
     if (xor !== 0 && (xor & (xor - 1)) === 0) {
       // Check if only one bit is set
@@ -136,7 +136,7 @@ export class MultiFileDifference {
 
   /** Calculate bit position if exactly two distinct non-missing values
    * differ by one bit. */
-  _deriveFields(): void {
+  private _deriveFields(): void {
     const distinct = new Set(this.values.filter((v) => v !== MISSING_BYTE));
     if (distinct.size === 2) {
       const [a, b_] = [...distinct].sort(compare);

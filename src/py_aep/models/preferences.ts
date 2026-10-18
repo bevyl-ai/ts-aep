@@ -449,7 +449,7 @@ export class Preferences {
   }
 
   /** Lazily parse the preference file for `prefType` (None if absent). */
-  _file(prefType: PREFType): PrefsFile | null {
+  private _file(prefType: PREFType): PrefsFile | null {
     if (!this._files.has(prefType)) {
       const path = this._prefsDir != null ? findPrefsFile(this._prefsDir, prefType) : null;
       this._files.set(prefType, path ? PrefsFile.fromPath(path) : null);
@@ -457,7 +457,7 @@ export class Preferences {
     return getOrThrow(this._files, prefType);
   }
 
-  _raw(sectionName: string, keyName: string, prefType: PREFType): string | null {
+  private _raw(sectionName: string, keyName: string, prefType: PREFType): string | null {
     const prefsFile = this._file(prefType);
     if (prefsFile == null) return null;
     return prefsFile.getRaw(sectionName, keyName);
@@ -469,7 +469,7 @@ export class Preferences {
    * `value` is a typed value when `isOverride` is `true`,
    * otherwise the raw pref-file text (AE's mixed hex/ASCII encoding).
    */
-  _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
+  private _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
@@ -484,7 +484,7 @@ export class Preferences {
     return [true, raw, false];
   }
 
-  _missing(sectionName: string, keyName: string, prefType: PREFType): KeyError {
+  private _missing(sectionName: string, keyName: string, prefType: PREFType): KeyError {
     return new KeyError(
       `no preference ${literal(keyName)} in section ${literal(sectionName)} (${PREFType.nameOf(PREFType.of(prefType))})`,
     );

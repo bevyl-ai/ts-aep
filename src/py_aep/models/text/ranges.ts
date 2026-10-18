@@ -1263,7 +1263,7 @@ export class CharacterRange extends _TextRange {
    * caret index (the raw runs cover the terminator, so an EOF caret
    * still lands inside the final run).
    */
-  _overlapping(spans: [number, number, CosDict][]): CosDict[] {
+  private _overlapping(spans: [number, number, CosDict][]): CosDict[] {
     const [start, end] = this._bounds();
     if (start === end) {
       for (const [runStart, runEnd, payload] of spans) {
@@ -1278,7 +1278,7 @@ export class CharacterRange extends _TextRange {
     return out;
   }
 
-  _spansFor(kind: RangeKind): [number, number, CosDict][] {
+  private _spansFor(kind: RangeKind): [number, number, CosDict][] {
     if (kind === "char") return _charRunSpans(this._docRef);
     if (kind === "para") return _paraRunSpans(this._docRef);
     return _kernRunSpans(this._docRef);

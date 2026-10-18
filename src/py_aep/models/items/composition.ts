@@ -627,7 +627,7 @@ export class CompItem extends AVItem {
    * going from 24 to 25 fps: ticks 12 and -84 became 13 and -87, and a
    * 500 % layer's ticks did not move.
    */
-  _retimeToTimebase(old: number, new_: number): void {
+  private _retimeToTimebase(old: number, new_: number): void {
     const rescale = new_ !== old && old > 0;
     const frameRate = this._cdta.frameRate;
     for (const prop of this._walkProperties()) {
@@ -664,7 +664,7 @@ export class CompItem extends AVItem {
    * the comp (`_keepTimesInside`). Measured on AE 2026. Display start
    * and layer in / out / start times are not requantized.
    */
-  _requantizeCompTiming(): void {
+  private _requantizeCompTiming(): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     // The work area's end reads through its start and the duration, so
@@ -694,7 +694,7 @@ export class CompItem extends AVItem {
    * (0xFFFFFFFF). Expects the duration, the time and the work-area start
    * stored in units of the timebase.
    */
-  _keepTimesInside(): void {
+  private _keepTimesInside(): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     const endOfComp = Math.round(cdta.duration * timebase) + 0;
@@ -888,7 +888,7 @@ export class CompItem extends AVItem {
    * units, snapped to frames, and with an end at or past the end of the
    * composition (or `null`) stored as "runs to the end".
    */
-  _setWorkArea(start: number, end: number | null): void {
+  private _setWorkArea(start: number, end: number | null): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     cdta.workAreaStartDividend = _frameUnits(start, timebase, unitsPerFrame);
@@ -1276,7 +1276,7 @@ export class CompItem extends AVItem {
   }
 
   /** Parse deferred `LIST:Layr` chunks on first layer access. */
-  _ensureLayersLoaded(): void {
+  private _ensureLayersLoaded(): void {
     if (this._layersLoaded) {
       return;
     }
@@ -1339,7 +1339,7 @@ export class CompItem extends AVItem {
     }
   }
 
-  _buildTypeCache(): LayerTypeCache {
+  private _buildTypeCache(): LayerTypeCache {
     const av: AVLayer[] = [];
     const text: TextLayer[] = [];
     const shape: ShapeLayer[] = [];
@@ -1521,7 +1521,7 @@ export class CompItem extends AVItem {
    * in file order (every comp AE or py_aep writes has all three, except
    * AE 15's, which have no CIF3).
    */
-  _cifContainers(): ListChunk[] {
+  private _cifContainers(): ListChunk[] {
     return this._itemList.chunks.filter(
       (c): c is ListChunk =>
         c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.listType),
@@ -1533,7 +1533,7 @@ export class CompItem extends AVItem {
    *
    * Called once per CIF container so each holds its own chunk objects.
    */
-  _buildPropertyCctl(
+  private _buildPropertyCctl(
     plan: PropertyControllerPlan,
     prop: Property,
     name: string,
@@ -1599,7 +1599,7 @@ export class CompItem extends AVItem {
    * controller model - the parser's preferred container - or `null` when
    * the comp has no CIF containers (not produced by AE or py_aep).
    */
-  _appendController(
+  private _appendController(
     build: () => [ListChunk, Utf8Chunk, U4Chunk],
   ): [Utf8Chunk, U4Chunk] | null {
     const containers = this._cifContainers();
@@ -1620,7 +1620,7 @@ export class CompItem extends AVItem {
   }
 
   /** Append the model for a controller just written to the containers. */
-  _registerController(
+  private _registerController(
     bound: [Utf8Chunk, U4Chunk],
     uuidStr: string,
     nodes: PathNode[],
@@ -1893,7 +1893,7 @@ export class CompItem extends AVItem {
   }
 
   /** Cached layer type lists for O(1) access. */
-  get _typeCache(): LayerTypeCache {
+  private get _typeCache(): LayerTypeCache {
     return this._layerTypes != null ? this._layerTypes : this._buildTypeCache();
   }
 
@@ -2001,7 +2001,7 @@ export class CompItem extends AVItem {
    * shape, camera, light), from the "Pref_DEFAULT_SYNTHETIC_OUT_POINT"
    * preference; comp duration for the factory `0/0` value.
    */
-  _syntheticLayerDuration(): number {
+  private _syntheticLayerDuration(): number {
     const pref = defaultSyntheticOutPoint(this._project._preferences);
     return pref != null ? pref : this.duration;
   }
@@ -2011,7 +2011,7 @@ export class CompItem extends AVItem {
    * "Pref_DEFAULT_STILL_OUT_POINT" preference; comp duration for the
    * factory `0/0` value.
    */
-  _stillLayerDuration(): number {
+  private _stillLayerDuration(): number {
     const pref = defaultStillOutPoint(this._project._preferences);
     return pref != null ? pref : this.duration;
   }
@@ -2022,7 +2022,7 @@ export class CompItem extends AVItem {
    * Handles view block creation, chunk insertion, materialization,
    * and layer list bookkeeping.
    */
-  _insertLayer(layer: Layer): void {
+  private _insertLayer(layer: Layer): void {
     // AE anchors new layers at the comp's current time when the
     // "Create New Layers At Time Zero" preference is off: start = in
     // = time, out shifted by the same amount (probed in AE 2026 for
@@ -2385,7 +2385,7 @@ export class CompItem extends AVItem {
    * width/height overridden in the leave-attributes path), and the
    * item is stored at the alphabetical position AE uses.
    */
-  _createPrecompItem(name: string, width: number, height: number): CompItem {
+  private _createPrecompItem(name: string, width: number, height: number): CompItem {
     const folder = this.parentFolder;
     assert(folder != null);
     const newComp = folder.addComp(
@@ -2411,7 +2411,7 @@ export class CompItem extends AVItem {
    * swaps its source to the new comp (sized from the layer's source),
    * which holds one fresh layer referencing the original source.
    */
-  _precomposeLeaveAttributes(layer: AVLayer, name: string): CompItem {
+  private _precomposeLeaveAttributes(layer: AVLayer, name: string): CompItem {
     const source = layer.source;
     assert(source != null);
     const newComp = this._createPrecompItem(name, source.width, source.height);
@@ -2425,7 +2425,7 @@ export class CompItem extends AVItem {
    * The `move_all_attributes=True` path: verbatim chunk-block moves
    * with fresh layer ids.
    */
-  _precomposeMove(indices: number[], name: string): CompItem {
+  private _precomposeMove(indices: number[], name: string): CompItem {
     const project = this._project;
     const moved = indices.map((i) => this.layers[i]);
     const topIndex = indices[0];
@@ -2667,7 +2667,7 @@ export class CompItem extends AVItem {
    *   orientation.
    * @returns A `(LIST:btds, btgu, tdmn)` array to inject into the root tdgp.
    */
-  _buildTextBtds(
+  private _buildTextBtds(
     text: string,
     boxSize: number[] | null = null,
     lineOrientation: LineOrientation | null = null,
@@ -2703,7 +2703,7 @@ export class CompItem extends AVItem {
     return [btds, btgu, tdmn];
   }
 
-  _addTextLayer(
+  private _addTextLayer(
     text: string,
     box = false,
     boxSize: number[] | null = null,

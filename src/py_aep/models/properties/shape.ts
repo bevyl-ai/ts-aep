@@ -341,7 +341,7 @@ export class Shape {
    * The tangents AE draws the path with when its mask is RotoBezier
    * (`resolvers.rotoBezier`), or `null` for any other shape.
    */
-  _rotoTangents(): [number[][], number[][]] | null {
+  private _rotoTangents(): [number[][], number[][]] | null {
     const prop = this._maskPath;
     if (prop == null || !this._isRotoBezier()) return null;
     const layer = prop._containingLayer;
@@ -393,7 +393,7 @@ export class Shape {
   }
 
   /** Convert a normalized [0,1] shape point to absolute coordinates. */
-  _denormalizePoint(pt: ShapePoint): number[] {
+  private _denormalizePoint(pt: ShapePoint): number[] {
     const shph = this._shph;
     assert(shph != null);
     const x = shph.topLeftX * (1 - pt.x) + shph.bottomRightX * pt.x;
@@ -402,7 +402,7 @@ export class Shape {
   }
 
   /** Convert absolute coordinates back to normalized [0,1]. */
-  _normalizePoint(x: number, y: number): [number, number] {
+  private _normalizePoint(x: number, y: number): [number, number] {
     const shph = this._shph;
     assert(shph != null);
     const dx = shph.bottomRightX - shph.topLeftX;

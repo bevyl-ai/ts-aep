@@ -586,7 +586,7 @@ export class ContainerChunk extends Chunk {
    *
    * @throws {@link ValueError} If the new string does not fit a fixed buffer.
    */
-  _legacyBody(): Uint8Array {
+  private _legacyBody(): Uint8Array {
     const cls = this.constructor;
     const utf8 = this.chunks.find((c) => c.chunkType === "Utf8") ?? null;
     const value: string = (utf8 != null && "value" in utf8 ? (utf8.value as string) : "") || "";

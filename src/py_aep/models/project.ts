@@ -761,15 +761,15 @@ export class Project {
     return getOrThrow(this._items, 0) as FolderItem;
   }
 
-  get _rootChunks(): Chunk[] {
+  private get _rootChunks(): Chunk[] {
     return this._rifx.chunks;
   }
 
-  _syncNhedField(fieldName: string): void {
+  private _syncNhedField(fieldName: string): void {
     setMember(this._nhed, fieldName, getMember(this._nnhd, fieldName));
   }
 
-  _syncNhedTimecodeDefaultBase(): void {
+  private _syncNhedTimecodeDefaultBase(): void {
     // nhed matches nnhd in every sample, none above 255; what AE writes
     // in its u1 for a larger base is unmeasured, so it is left as is.
     if (this._nnhd.timecodeDefaultBase <= 0xff) {
@@ -910,7 +910,7 @@ export class Project {
    * nothing uses anymore, so a new profile is inserted in order and a
    * replaced one stays.
    */
-  _setCpplWorkingSpace(value: string): void {
+  private _setCpplWorkingSpace(value: string): void {
     if (value === "None") {
       this._cpid.data = Bytes.repeat(Uint8Array.of(0xff), 16);
       return;
@@ -944,7 +944,7 @@ export class Project {
    * `ocioColorProfileEnvelope` raises for a name the config does not
    * contain, so no separate membership check is needed.
    */
-  _ocioEnvelope(name: string): string {
+  private _ocioEnvelope(name: string): string {
     const config = requireOcioConfig(
       this.ocioConfigurationFile,
       `build the color-profile envelope for ${literal(name)}`,
@@ -1378,13 +1378,13 @@ export class Project {
    * the machine's sticky PSD-comp import preference. `null` (no preference,
    * or no preferences directory) keeps AE's `editable` dialog default.
    */
-  _resolveCompLayerStyles(options: ImportOptions): string | null {
+  private _resolveCompLayerStyles(options: ImportOptions): string | null {
     if (options.layerStyles != null) return options.layerStyles;
     return psdCompLayerStyles(this._preferences);
   }
 
   /** Import an SVG as a cropped comp (one shape layer of its art). */
-  _importSvgCropped(file: Path): CompItem {
+  private _importSvgCropped(file: Path): CompItem {
     const doc = readSvg(file);
     // AE truncates the canvas to whole pixels (2434.9 -> 2434).
     const width = Math.trunc(doc.width);
@@ -1425,7 +1425,7 @@ export class Project {
    * aspect - AE 2026 gives a 4:3 PSD a 4:3 comp - at AE's default
    * timing).
    */
-  _newLayeredComp(
+  private _newLayeredComp(
     parentFolder: FolderItem,
     name: string,
     width: number,
@@ -1464,7 +1464,7 @@ export class Project {
    * @param info - The probed media info for `file` (canvas size, alpha, ...).
    * @param embeddedProfileName - Optional ICC profile name for the sources.
    */
-  _importLayeredComp(
+  private _importLayeredComp(
     file: Path,
     sourceFormat: string,
     layerSpecs: (LayerSpec | LayerGroupSpec)[],
@@ -1496,7 +1496,7 @@ export class Project {
    * Leaf footage items and nested group comps both live in `folder`,
    * matching AE's flat `<stem> Layers` folder.
    */
-  _addLayeredSpecs(
+  private _addLayeredSpecs(
     comp: CompItem,
     folder: FolderItem,
     specs: (LayerSpec | LayerGroupSpec)[],
@@ -1591,7 +1591,7 @@ export class Project {
    * takes its "Layer Size" artwork box (`resolvers.ai_bounds`) and the
    * comp layer is placed where that box sits on the page.
    */
-  _importAiLayered(file: Path, kw: { cropped?: boolean } = {}): CompItem {
+  private _importAiLayered(file: Path, kw: { cropped?: boolean } = {}): CompItem {
     const { cropped = false } = kw;
     // Read once: the probe, the ICC scan and the layer scan all consume
     // the same bytes.
@@ -1654,7 +1654,7 @@ export class Project {
    * is a general color-management-on-import default py_aep does not yet apply
    * to any no-embedded-profile import, not an EPS-specific gap.
    */
-  _importEpsComp(file: Path): CompItem {
+  private _importEpsComp(file: Path): CompItem {
     const info = probeMedia(file);
     const spec = new LayerSpec(file.name, buildTextOptiData(info.width, info.height), info.width, info.height);
     return this._importLayeredComp(file, "TEXT", [spec], info, null);
@@ -1675,7 +1675,7 @@ export class Project {
    * folder holding one footage item that references the file, and a comp
    * with a single full-canvas layer named after the file.
    */
-  _importPsdLayered(file: Path, cropped = false, layerStyles: string | null = null): CompItem {
+  private _importPsdLayered(file: Path, cropped = false, layerStyles: string | null = null): CompItem {
     const info = probeMedia(file);
     let nodes: PsdNode[];
     try {
@@ -1723,7 +1723,7 @@ export class Project {
    * document-wide (AE names them `"<stem> (n)"`); `group_clipping=False`
    * disables run detection while building a run's own children.
    */
-  _psdLayerSpecs(
+  private _psdLayerSpecs(
     nodes: PsdNode[],
     file: Path,
     info: MediaInfo,
@@ -1881,7 +1881,7 @@ export class Project {
   }
 
   /** Yield `(layer, source_text)` for every text layer in the project. */
-  *_iterTextSourceProperties(): Generator<[Layer, Property<TextDocument>]> {
+  private *_iterTextSourceProperties(): Generator<[Layer, Property<TextDocument>]> {
     for (const comp of this.compositions) {
       for (const layer of comp.layers) {
         const group = layer.text;
@@ -2184,7 +2184,7 @@ export class Project {
    * skipped: no layer holds a path record. Returns each filled record
    * with its previous text.
    */
-  _fillRelativePathCounts(projectFile: string): [Utf8Chunk, string][] {
+  private _fillRelativePathCounts(projectFile: string): [Utf8Chunk, string][] {
     const filled: [Utf8Chunk, string][] = [];
     for (const chunk of recursiveFind(this._rifx.chunks, "alas", undefined, true)) {
       const alas = chunk;
@@ -2204,7 +2204,7 @@ export class Project {
   }
 
   /** Return the AE preferences directory or raise if none was given. */
-  _requirePrefsDir(label: string): Path {
+  private _requirePrefsDir(label: string): Path {
     if (this._aePreferencesDir == null) {
       throw new ValueError(
         "No 'aePreferencesDir' provided to parse(); " +
@@ -2297,7 +2297,7 @@ export class Project {
     return utf8?.value || "Solids";
   }
 
-  get _sfid(): U4LeChunk | null {
+  private get _sfid(): U4LeChunk | null {
     const sfnm = findByListTypeOrNull(this._rifx.chunks, "sfnm");
     return sfnm === null ? null : findByTypeOrNull(sfnm.chunks, "sfid");
   }
@@ -2337,7 +2337,7 @@ export class Project {
   };
 
   /** Return the color profile settings Map. */
-  _getCmsSettings(): Map<string, JsonValue> {
+  private _getCmsSettings(): Map<string, JsonValue> {
     const merged = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
     if (this._cmsUtf8 != null) {
       const cmsData = parseJson(this._cmsUtf8.value);

@@ -537,7 +537,7 @@ export class AVItem extends Item {
   }
 
   /** Set a proxy LIST:Pin chunk (add or replace). */
-  _setProxy(source: FileSource | SolidSource | PlaceholderSource): void {
+  private _setProxy(source: FileSource | SolidSource | PlaceholderSource): void {
     this._replacePin(
       this._proxyPinIndex,
       this.constructor._pinForSource(source),
