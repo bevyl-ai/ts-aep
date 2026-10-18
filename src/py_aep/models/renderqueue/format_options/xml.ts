@@ -740,24 +740,21 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Read / Write.
    */
   declare mpegMuxStreamCompatibility: MPEGMuxStreamCompatibility | number | null;
-}
 
-// Descriptors assigned in the class body above, installed on the prototype
-// in the Python class-body order (`__set_name__` runs inside `descriptor`).
-descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "formatCode", { readOnly: true }));
-descriptor(XmlFormatOptions, "videoCodec", new _EnumParam("ADBEVideoCodec", VideoCodec));
-descriptor(XmlFormatOptions, "audioCodec", new _EnumParam("ADBEAudioCodec", AudioCodec));
-descriptor(XmlFormatOptions, "mpegAudioFormat", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));
-descriptor(XmlFormatOptions, "mpegAudioLayer", new _EnumParam("ADBEMPEGAudioLayer", MPEGAudioLayer));
-descriptor(XmlFormatOptions, "audioInterleave", new _EnumParam("ADBEAudioInterleave", AudioInterleave));
-descriptor(XmlFormatOptions, "bitrate", new _ScalarParam("BitRate"));
-descriptor(XmlFormatOptions, "audioBitrate", new _ScalarParam("ADBEAudioBitrate"));
-descriptor(XmlFormatOptions, "level", new _ScalarParam("ADBEVideoMPEGProfileLevel"));
-descriptor(XmlFormatOptions, "resolution", new _EnumParam("ADBEVideoResolution", DnxResolution));
-descriptor(XmlFormatOptions, "dnxAlphaType", new _ScalarParam("ADBEDNxHDAlphaType"));
-descriptor(XmlFormatOptions, "mpegMultiplexer", new _EnumParam("ADBEMPEGMultiplexer", MPEGMultiplexer));
-descriptor(
-  XmlFormatOptions,
-  "mpegMuxStreamCompatibility",
-  new _EnumParam("ADBEMPEGMuxStreamCompatibility", MPEGMuxStreamCompatibility),
-);
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "formatCode", new ChunkField("_body", "formatCode", { readOnly: true }));
+    descriptor(this, "videoCodec", new _EnumParam("ADBEVideoCodec", VideoCodec));
+    descriptor(this, "audioCodec", new _EnumParam("ADBEAudioCodec", AudioCodec));
+    descriptor(this, "mpegAudioFormat", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));
+    descriptor(this, "mpegAudioLayer", new _EnumParam("ADBEMPEGAudioLayer", MPEGAudioLayer));
+    descriptor(this, "audioInterleave", new _EnumParam("ADBEAudioInterleave", AudioInterleave));
+    descriptor(this, "bitrate", new _ScalarParam("BitRate"));
+    descriptor(this, "audioBitrate", new _ScalarParam("ADBEAudioBitrate"));
+    descriptor(this, "level", new _ScalarParam("ADBEVideoMPEGProfileLevel"));
+    descriptor(this, "resolution", new _EnumParam("ADBEVideoResolution", DnxResolution));
+    descriptor(this, "dnxAlphaType", new _ScalarParam("ADBEDNxHDAlphaType"));
+    descriptor(this, "mpegMultiplexer", new _EnumParam("ADBEMPEGMultiplexer", MPEGMultiplexer));
+    descriptor(this, "mpegMuxStreamCompatibility", new _EnumParam("ADBEMPEGMuxStreamCompatibility", MPEGMuxStreamCompatibility));
+  }
+}

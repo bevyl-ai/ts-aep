@@ -357,17 +357,14 @@ export class Item {
     container.splice(start, end - start);
     return block;
   }
-}
 
-// Descriptors assigned in the class body (`label = ChunkField.enum(...)`) are
-// installed on the prototype after the class is defined.
-descriptor(
-  Item,
-  "label",
-  ChunkField.enum(Label, "_idta", "label", { default: Label.NONE }),
-);
-descriptor(Item, "id", new ChunkField("_idta", "itemId", { readOnly: true, default: 0 }));
-descriptor(Item, "name", new ChunkField("_nameUtf8", "value", { validate: validateName }));
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "label", ChunkField.enum(Label, "_idta", "label", { default: Label.NONE }));
+    descriptor(this, "id", new ChunkField("_idta", "itemId", { readOnly: true, default: 0 }));
+    descriptor(this, "name", new ChunkField("_nameUtf8", "value", { validate: validateName }));
+  }
+}
 
 // `@requires_version(16)` on add_guide, remove_guide and remove_all_guides:
 // Python applies these decorators while the class body runs; here they wrap

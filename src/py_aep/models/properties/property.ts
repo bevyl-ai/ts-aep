@@ -342,7 +342,6 @@ export class _PropertyValueList {
   }
 }
 
-
 /**
  * The `Property` object contains value, keyframe, and expression information
  * about a particular AE property of a layer. An AE property is a value,
@@ -4697,6 +4696,21 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return null;
     }
   }
+
+  static {
+    // ---- Chunk-backed field descriptors (ChunkField class attributes) ----
+    descriptor(this, "dimensions", new ChunkField("_tdb4", "dimensions", { default: 1, readOnly: true }));
+    descriptor(this, "_animated", new ChunkField("_tdb4", "animated"));
+    descriptor(this, "_color", new ChunkField("_tdb4", "color"));
+    descriptor(this, "_integer", new ChunkField("_tdb4", "integer"));
+    descriptor(this, "_noValue", new ChunkField("_tdb4", "noValue"));
+    descriptor(this, "_vector", new ChunkField("_tdb4", "vector"));
+    // When `True`, the property's X/Y ratio is locked (the constrain
+    // proportions switch of a Scale or Mask Feather; `True` on any property
+    // without one). Read-only.
+    descriptor(this, "lockedRatio", new ChunkField("_tdsb", "ratioUnlinked", { transform: (v) => !v, readOnly: true }));
+    descriptor(this, "_isSpatialRaw", new ChunkField("_tdb4", "isSpatial"));
+  }
 }
 
 /** Revert a separation follower to its dead, unserialized state. */
@@ -4780,7 +4794,6 @@ export class _EssentialOverrideProperty extends Property {
   set name(value: string) {
     Reflect.set(PropertyBase.prototype, "name", value, this);
   }
-
 
   get minValue(): number | number[] | null {
     const src = this._overrideSource();
@@ -4897,28 +4910,3 @@ export function _stripSequenceBasename(name: string): string {
   const stem = name.includes(".") ? name.slice(0, name.lastIndexOf(".")) : name;
   return stem.replace(/[ _]?\[\p{Nd}+-\p{Nd}+\](?=\n?$)/u, "");
 }
-
-// ---- Chunk-backed field descriptors (ChunkField class attributes) ----
-
-descriptor(Property, "dimensions", new ChunkField("_tdb4", "dimensions", { default: 1, readOnly: true }));
-
-descriptor(Property, "_animated", new ChunkField("_tdb4", "animated"));
-
-descriptor(Property, "_color", new ChunkField("_tdb4", "color"));
-
-descriptor(Property, "_integer", new ChunkField("_tdb4", "integer"));
-
-descriptor(Property, "_noValue", new ChunkField("_tdb4", "noValue"));
-
-descriptor(Property, "_vector", new ChunkField("_tdb4", "vector"));
-
-// When `True`, the property's X/Y ratio is locked (the constrain
-// proportions switch of a Scale or Mask Feather; `True` on any property
-// without one). Read-only.
-descriptor(
-  Property,
-  "lockedRatio",
-  new ChunkField("_tdsb", "ratioUnlinked", { transform: (v) => !v, readOnly: true }),
-);
-
-descriptor(Property, "_isSpatialRaw", new ChunkField("_tdb4", "isSpatial"));

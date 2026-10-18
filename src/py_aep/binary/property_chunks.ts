@@ -79,6 +79,13 @@ export class TdsbChunk extends Chunk {
    * it never changes what renders.
    */
   declare hidden: boolean;
+
+  static {
+    descriptor(this, "ratioUnlinked", new BitField("_lockFlags", 5));
+    descriptor(this, "dimensionsSeparated", new BitField("_lockFlags", 3));
+    descriptor(this, "enabled", new BitField("_enableFlags", 0));
+    descriptor(this, "hidden", new BitField("_enableFlags", 1));
+  }
 }
 define(TdsbChunk, {
   chunkType: field({ default: "tdsb" }),
@@ -87,10 +94,6 @@ define(TdsbChunk, {
   _lockFlags: u1Field({ repr: false }),
   _enableFlags: u1Field({ default: 1, repr: false }),
 });
-descriptor(TdsbChunk, "ratioUnlinked", new BitField("_lockFlags", 5));
-descriptor(TdsbChunk, "dimensionsSeparated", new BitField("_lockFlags", 3));
-descriptor(TdsbChunk, "enabled", new BitField("_enableFlags", 0));
-descriptor(TdsbChunk, "hidden", new BitField("_enableFlags", 1));
 register("tdsb")(TdsbChunk);
 
 // ---------------------------------------------------------------------------
@@ -224,6 +227,22 @@ export class Tdb4Chunk extends Chunk {
   get hasTimeBase(): boolean {
     return this._timeBase !== 0;
   }
+
+  static {
+    descriptor(this, "isSpatial", new BitField("_spatialStaticFlags", 3));
+    descriptor(this, "static", new BitField("_spatialStaticFlags", 0));
+    descriptor(this, "canVaryOverTime", new BitField("_cvotFlags", 1));
+    descriptor(this, "noValue", new BitField("_noValueFlags", 0));
+    descriptor(this, "vector", new BitField("_typeFlags", 3));
+    descriptor(this, "integer", new BitField("_typeFlags", 2));
+    descriptor(this, "color", new BitField("_typeFlags", 0));
+    descriptor(this, "expressionDisabled", new BitField("_exprFlags", 0));
+    // AE's expression-present marker: the high byte of `_pad10` (0x01000000),
+    // set whenever an expression Utf8 is present (independent of enabled/
+    // disabled). AE rejects a file with the marker set but no expression Utf8
+    // as "missing data in file".
+    descriptor(this, "hasExpression", new BitField("_pad10", 24));
+  }
 }
 define(Tdb4Chunk, {
   chunkType: field({ default: "tdb4" }),
@@ -266,19 +285,6 @@ define(Tdb4Chunk, {
   _exprFlags: u1Field({ repr: false }),
   _pad10: u4Field({ repr: false }),
 });
-descriptor(Tdb4Chunk, "isSpatial", new BitField("_spatialStaticFlags", 3));
-descriptor(Tdb4Chunk, "static", new BitField("_spatialStaticFlags", 0));
-descriptor(Tdb4Chunk, "canVaryOverTime", new BitField("_cvotFlags", 1));
-descriptor(Tdb4Chunk, "noValue", new BitField("_noValueFlags", 0));
-descriptor(Tdb4Chunk, "vector", new BitField("_typeFlags", 3));
-descriptor(Tdb4Chunk, "integer", new BitField("_typeFlags", 2));
-descriptor(Tdb4Chunk, "color", new BitField("_typeFlags", 0));
-descriptor(Tdb4Chunk, "expressionDisabled", new BitField("_exprFlags", 0));
-// AE's expression-present marker: the high byte of `_pad10` (0x01000000),
-// set whenever an expression Utf8 is present (independent of enabled/
-// disabled). AE rejects a file with the marker set but no expression Utf8
-// as "missing data in file".
-descriptor(Tdb4Chunk, "hasExpression", new BitField("_pad10", 24));
 register("tdb4")(Tdb4Chunk);
 
 // ---------------------------------------------------------------------------

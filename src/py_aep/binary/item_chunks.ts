@@ -83,6 +83,13 @@ export class IdtaChunk extends Chunk {
   set modifiedTime(value: number) {
     this._modifiedStamp = value ? value + MAC_EPOCH_OFFSET : 0;
   }
+
+  static {
+    // -- BitField descriptors (not attrs fields) ---------------------------
+    descriptor(this, "useProxy", new BitField("_proxyFlags", 0));
+    descriptor(this, "isSolid", new BitField("_flags17", 4));
+    descriptor(this, "isFootage", new BitField("_flags17", 5));
+  }
 }
 define(IdtaChunk, {
   chunkType: field({ default: "idta" }),
@@ -100,10 +107,6 @@ define(IdtaChunk, {
   _modifiedStamp: u4Field({ repr: false }),
 });
 register("idta")(IdtaChunk);
-// -- BitField descriptors (not attrs fields) ---------------------------
-descriptor(IdtaChunk, "useProxy", new BitField("_proxyFlags", 0));
-descriptor(IdtaChunk, "isSolid", new BitField("_flags17", 4));
-descriptor(IdtaChunk, "isFootage", new BitField("_flags17", 5));
 
 // ---------------------------------------------------------------------------
 // idpc - item project context (8 bytes)
@@ -333,6 +336,11 @@ export class NhedChunk extends Chunk {
   set displayStartFrame(value: number) {
     this.framesCountType = value;
   }
+
+  static {
+    descriptor(this, "feetFramesFilmType", new BitField("_displayByte", 7));
+    descriptor(this, "framesUseFeetFrames", new BitField("_feetByte", 0));
+  }
 }
 define(NhedChunk, {
   chunkType: field({ default: "nhed" }),
@@ -350,8 +358,6 @@ define(NhedChunk, {
   _reserved11: bytesField(15, { repr: false }),
 });
 register("nhed")(NhedChunk);
-descriptor(NhedChunk, "feetFramesFilmType", new BitField("_displayByte", 7));
-descriptor(NhedChunk, "framesUseFeetFrames", new BitField("_feetByte", 0));
 
 // ---------------------------------------------------------------------------
 // nnhd - project display settings (40 bytes)
@@ -413,6 +419,12 @@ export class NnhdChunk extends Chunk {
   set displayStartFrame(value: number) {
     this.framesCountType = value;
   }
+
+  static {
+    // -- Bit-level accessors (not attrs fields) ----------------------------
+    descriptor(this, "feetFramesFilmType", new BitField("_displayByte", 7));
+    descriptor(this, "framesUseFeetFrames", new BitField("_feetByte", 0));
+  }
 }
 define(NnhdChunk, {
   chunkType: field({ default: "nnhd" }),
@@ -435,9 +447,6 @@ define(NnhdChunk, {
   _unknown1c: bytesField(12, { repr: false }),
 });
 register("nnhd")(NnhdChunk);
-// -- Bit-level accessors (not attrs fields) ----------------------------
-descriptor(NnhdChunk, "feetFramesFilmType", new BitField("_displayByte", 7));
-descriptor(NnhdChunk, "framesUseFeetFrames", new BitField("_feetByte", 0));
 
 // ---------------------------------------------------------------------------
 // Project time-display preference blob (preferences only, not in .aep files)

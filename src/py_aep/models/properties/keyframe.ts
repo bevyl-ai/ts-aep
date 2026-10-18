@@ -1230,54 +1230,30 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     const stretch = prop != null ? prop._timeStretch : 1.0;
     this._setTimeUnits(round(((value - offset) / stretch) * this._timebase));
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "inInterpolationType", ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "inInterpolationType", {
+      validate: _validateInterpolationType,
+      postSet: "_onInterpolationTypeSet",
+    }));
+    descriptor(this, "label", ChunkField.enum(Label, "_ldatItem", "label"));
+    descriptor(this, "outInterpolationType", ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "outInterpolationType", {
+      validate: _validateInterpolationType,
+      postSet: "_onInterpolationTypeSet",
+    }));
+    descriptor(this, "roving", ChunkField.bool("_ldatItem", "roving", {
+      validate: _validateRoving,
+      postSet: "_retimeRovingRuns",
+    }));
+    descriptor(this, "temporalAutoBezier", ChunkField.bool("_ldatItem", "temporalAutoBezier", {
+      postSet: "_onTemporalAutoBezierSet",
+    }));
+    descriptor(this, "temporalContinuous", ChunkField.bool("_ldatItem", "temporalContinuous", {
+      postSet: "_onTemporalContinuousSet",
+    }));
+  }
 }
-
-// Keyframe class attributes that are descriptors (ChunkField) - installed on the prototype
-// after the class, as the Python class body does at class creation.
-descriptor(
-  Keyframe,
-  "inInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "inInterpolationType", {
-    validate: _validateInterpolationType,
-    postSet: "_onInterpolationTypeSet",
-  }),
-);
-
-descriptor(Keyframe, "label", ChunkField.enum(Label, "_ldatItem", "label"));
-
-descriptor(
-  Keyframe,
-  "outInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "outInterpolationType", {
-    validate: _validateInterpolationType,
-    postSet: "_onInterpolationTypeSet",
-  }),
-);
-
-descriptor(
-  Keyframe,
-  "roving",
-  ChunkField.bool("_ldatItem", "roving", {
-    validate: _validateRoving,
-    postSet: "_retimeRovingRuns",
-  }),
-);
-
-descriptor(
-  Keyframe,
-  "temporalAutoBezier",
-  ChunkField.bool("_ldatItem", "temporalAutoBezier", {
-    postSet: "_onTemporalAutoBezierSet",
-  }),
-);
-
-descriptor(
-  Keyframe,
-  "temporalContinuous",
-  ChunkField.bool("_ldatItem", "temporalContinuous", {
-    postSet: "_onTemporalContinuousSet",
-  }),
-);
 
 /** Compute the constant speed between two adjacent keyframes. */
 export function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {

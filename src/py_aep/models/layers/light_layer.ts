@@ -187,21 +187,14 @@ export class LightLayer extends Layer {
     }
     this._lightSourceId = value.id;
   }
+
+  static {
+    descriptor(this, "lightType", ChunkField.enum(LightType, "_ldta", "lightAndMeshType", {
+      validate: _validateLightType,
+    }));
+    descriptor(this, "_lightSourceId", new ChunkField("_ldta", "sourceId", {
+      transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
+      reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),
+    }));
+  }
 }
-
-descriptor(
-  LightLayer,
-  "lightType",
-  ChunkField.enum(LightType, "_ldta", "lightAndMeshType", {
-    validate: _validateLightType,
-  }),
-);
-
-descriptor(
-  LightLayer,
-  "_lightSourceId",
-  new ChunkField("_ldta", "sourceId", {
-    transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
-    reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),
-  }),
-);

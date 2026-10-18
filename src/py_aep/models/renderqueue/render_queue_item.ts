@@ -938,67 +938,33 @@ export class RenderQueueItem {
 
     return newItem;
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "elapsedSeconds", new ChunkField("_ldat", "elapsedSeconds", { readOnly: true }));
+    descriptor(this, "logType", ChunkField.enum(LogType, "_ldat", "logType"));
+    descriptor(this, "name", new ChunkField("_ldat", "templateName"));
+    descriptor(this, "queueItemNotify", ChunkField.bool("_ldat", "queueItemNotify", { minVersion: 22 }));
+    descriptor(this, "startTime", new ChunkField("_ldat", "startTime", {
+      transform: _startTimeFromBinary,
+      readOnly: true,
+    }));
+    descriptor(this, "status", ChunkField.enum(RQItemStatus, "_ldat", "status", { postSet: "_onStatusChanged" }));
+    descriptor(this, "_colorDepth", ChunkField.enum(ColorDepthSetting, "_ldat", "colorDepth"));
+    descriptor(this, "_diskCache", ChunkField.enum(DiskCacheSetting, "_ldat", "diskCache"));
+    descriptor(this, "_effects", ChunkField.enum(EffectsSetting, "_ldat", "effects"));
+    descriptor(this, "_fieldRender", ChunkField.enum(FieldRender, "_ldat", "fieldRender"));
+    descriptor(this, "_frameBlending", ChunkField.enum(FrameBlendingSetting, "_ldat", "frameBlending"));
+    descriptor(this, "_guideLayers", ChunkField.enum(GuideLayers, "_ldat", "guideLayers"));
+    descriptor(this, "_motionBlur", ChunkField.enum(MotionBlurSetting, "_ldat", "motionBlur"));
+    descriptor(this, "_proxyUse", ChunkField.enum(ProxyUseSetting, "_ldat", "proxyUse"));
+    descriptor(this, "_pulldown", ChunkField.enum(PulldownSetting, "_ldat", "pulldown"));
+    descriptor(this, "_quality", ChunkField.enum(RenderQuality, "_ldat", "quality"));
+    descriptor(this, "_skipExistingFiles", ChunkField.bool("_ldat", "skipExistingFiles"));
+    descriptor(this, "_soloSwitches", ChunkField.enum(SoloSwitchesSetting, "_ldat", "soloSwitches"));
+    descriptor(this, "_timeSpanSource", ChunkField.enum(TimeSpanSource, "_ldat", "timeSpanSource"));
+    descriptor(this, "_frameRateSetting", ChunkField.enum(FrameRateSetting, "_ldat", "useThisFrameRate", {
+      postSet: "_setOutputFrameRates",
+    }));
+  }
 }
-
-// Field descriptors: each ChunkField assigned in the Python class body is installed on the
-// prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(RenderQueueItem, "elapsedSeconds", new ChunkField("_ldat", "elapsedSeconds", { readOnly: true }));
-
-descriptor(RenderQueueItem, "logType", ChunkField.enum(LogType, "_ldat", "logType"));
-
-descriptor(RenderQueueItem, "name", new ChunkField("_ldat", "templateName"));
-
-descriptor(
-  RenderQueueItem,
-  "queueItemNotify",
-  ChunkField.bool("_ldat", "queueItemNotify", { minVersion: 22 }),
-);
-
-descriptor(
-  RenderQueueItem,
-  "startTime",
-  new ChunkField("_ldat", "startTime", {
-    transform: _startTimeFromBinary,
-    readOnly: true,
-  }),
-);
-
-descriptor(
-  RenderQueueItem,
-  "status",
-  ChunkField.enum(RQItemStatus, "_ldat", "status", { postSet: "_onStatusChanged" }),
-);
-
-descriptor(RenderQueueItem, "_colorDepth", ChunkField.enum(ColorDepthSetting, "_ldat", "colorDepth"));
-
-descriptor(RenderQueueItem, "_diskCache", ChunkField.enum(DiskCacheSetting, "_ldat", "diskCache"));
-
-descriptor(RenderQueueItem, "_effects", ChunkField.enum(EffectsSetting, "_ldat", "effects"));
-
-descriptor(RenderQueueItem, "_fieldRender", ChunkField.enum(FieldRender, "_ldat", "fieldRender"));
-
-descriptor(RenderQueueItem, "_frameBlending", ChunkField.enum(FrameBlendingSetting, "_ldat", "frameBlending"));
-
-descriptor(RenderQueueItem, "_guideLayers", ChunkField.enum(GuideLayers, "_ldat", "guideLayers"));
-
-descriptor(RenderQueueItem, "_motionBlur", ChunkField.enum(MotionBlurSetting, "_ldat", "motionBlur"));
-
-descriptor(RenderQueueItem, "_proxyUse", ChunkField.enum(ProxyUseSetting, "_ldat", "proxyUse"));
-
-descriptor(RenderQueueItem, "_pulldown", ChunkField.enum(PulldownSetting, "_ldat", "pulldown"));
-
-descriptor(RenderQueueItem, "_quality", ChunkField.enum(RenderQuality, "_ldat", "quality"));
-
-descriptor(RenderQueueItem, "_skipExistingFiles", ChunkField.bool("_ldat", "skipExistingFiles"));
-
-descriptor(RenderQueueItem, "_soloSwitches", ChunkField.enum(SoloSwitchesSetting, "_ldat", "soloSwitches"));
-
-descriptor(RenderQueueItem, "_timeSpanSource", ChunkField.enum(TimeSpanSource, "_ldat", "timeSpanSource"));
-
-descriptor(
-  RenderQueueItem,
-  "_frameRateSetting",
-  ChunkField.enum(FrameRateSetting, "_ldat", "useThisFrameRate", {
-    postSet: "_setOutputFrameRates",
-  }),
-);

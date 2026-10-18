@@ -327,6 +327,11 @@ export class ShphChunk extends Chunk {
   declare normalized: boolean;
   /** True when the path is open (not closed). */
   declare open: boolean;
+
+  static {
+    descriptor(this, "normalized", new BitField("_flags", 0));
+    descriptor(this, "open", new BitField("_flags", 3));
+  }
 }
 define(ShphChunk, {
   chunkType: field({ default: "shph" }),
@@ -338,8 +343,6 @@ define(ShphChunk, {
   bottomRightY: f4Field(),
   _reserved14: bytesField(4, { default: b("\x01\x00\x00\x00"), repr: false }),
 });
-descriptor(ShphChunk, "normalized", new BitField("_flags", 0));
-descriptor(ShphChunk, "open", new BitField("_flags", 3));
 register("shph")(ShphChunk);
 
 // ---------------------------------------------------------------------------
@@ -383,6 +386,12 @@ export class NmhdChunk extends Chunk {
     this.durationValue = round(value * 600);
     this.durationScale = 600;
   }
+
+  static {
+    // BitField descriptors
+    descriptor(this, "protectedRegion", new BitField("_markerFlags", 1));
+    descriptor(this, "navigation", new BitField("_markerFlags", 0));
+  }
 }
 define(NmhdChunk, {
   chunkType: field({ default: "NmHd" }),
@@ -394,9 +403,6 @@ define(NmhdChunk, {
   label: u1Field(),
   _reserved11: bytesField(3, { repr: false }),
 });
-// BitField descriptors
-descriptor(NmhdChunk, "protectedRegion", new BitField("_markerFlags", 1));
-descriptor(NmhdChunk, "navigation", new BitField("_markerFlags", 0));
 register("NmHd")(NmhdChunk);
 
 // ---------------------------------------------------------------------------
@@ -484,6 +490,26 @@ export class FipsChunk extends Chunk {
     this.fastPreviewFastDraft = value === 3;
     this.fastPreviewWireframe = value === 4;
   }
+
+  static {
+    descriptor(this, "proportionalGrid", new BitField("_gridSafeFlags", 1));
+    descriptor(this, "titleActionSafe", new BitField("_gridSafeFlags", 0));
+    descriptor(this, "draft3d", new BitField("_draftFlags", 2));
+    descriptor(this, "fastPreviewDraft", new BitField("_previewFlags", 4));
+    descriptor(this, "fastPreviewFastDraft", new BitField("_previewFlags", 2));
+    descriptor(this, "fastPreviewAdaptive", new BitField("_previewFlags", 0));
+    descriptor(this, "regionOfInterest", new BitField("_viewFlags", 7));
+    descriptor(this, "rulers", new BitField("_viewFlags", 6));
+    descriptor(this, "fastPreviewWireframe", new BitField("_viewFlags", 4));
+    descriptor(this, "checkerboards", new BitField("_displayFlags", 7));
+    descriptor(this, "maskAndShapePath", new BitField("_displayFlags", 4));
+    descriptor(this, "grid", new BitField("_guideFlags", 3));
+    descriptor(this, "guidesSnap", new BitField("_guideFlags", 2));
+    descriptor(this, "guidesLocked", new BitField("_guideFlags", 1));
+    descriptor(this, "guidesVisibility", new BitField("_guideFlags", 0));
+    descriptor(this, "useDisplayColorManagement", new BitField("_colorMgmtFlags", 0));
+    descriptor(this, "autoResolution", new BitField("_resolutionFlags", 0));
+  }
 }
 define(FipsChunk, {
   chunkType: field({ default: "fips" }),
@@ -511,23 +537,6 @@ define(FipsChunk, {
   _colorMgmtFlags: u1Field({ default: 1, repr: false }),
   _resolutionFlags: u1Field({ repr: false }),
 });
-descriptor(FipsChunk, "proportionalGrid", new BitField("_gridSafeFlags", 1));
-descriptor(FipsChunk, "titleActionSafe", new BitField("_gridSafeFlags", 0));
-descriptor(FipsChunk, "draft3d", new BitField("_draftFlags", 2));
-descriptor(FipsChunk, "fastPreviewDraft", new BitField("_previewFlags", 4));
-descriptor(FipsChunk, "fastPreviewFastDraft", new BitField("_previewFlags", 2));
-descriptor(FipsChunk, "fastPreviewAdaptive", new BitField("_previewFlags", 0));
-descriptor(FipsChunk, "regionOfInterest", new BitField("_viewFlags", 7));
-descriptor(FipsChunk, "rulers", new BitField("_viewFlags", 6));
-descriptor(FipsChunk, "fastPreviewWireframe", new BitField("_viewFlags", 4));
-descriptor(FipsChunk, "checkerboards", new BitField("_displayFlags", 7));
-descriptor(FipsChunk, "maskAndShapePath", new BitField("_displayFlags", 4));
-descriptor(FipsChunk, "grid", new BitField("_guideFlags", 3));
-descriptor(FipsChunk, "guidesSnap", new BitField("_guideFlags", 2));
-descriptor(FipsChunk, "guidesLocked", new BitField("_guideFlags", 1));
-descriptor(FipsChunk, "guidesVisibility", new BitField("_guideFlags", 0));
-descriptor(FipsChunk, "useDisplayColorManagement", new BitField("_colorMgmtFlags", 0));
-descriptor(FipsChunk, "autoResolution", new BitField("_resolutionFlags", 0));
 register("fips")(FipsChunk);
 
 // ---------------------------------------------------------------------------
@@ -1066,13 +1075,16 @@ export class EwotItem extends FmtItem {
   declare _data: Uint8Array;
   declare isChildProperty: boolean;
   declare selected: boolean;
+
+  static {
+    descriptor(this, "isChildProperty", new BitField("_flags", 7));
+    descriptor(this, "selected", new BitField("_flags", 6));
+  }
 }
 define(EwotItem, {
   _flags: u1Field(),
   _data: bytesField(3),
 });
-descriptor(EwotItem, "isChildProperty", new BitField("_flags", 7));
-descriptor(EwotItem, "selected", new BitField("_flags", 6));
 
 /**
  * Effect workspace outline entries.
@@ -1114,16 +1126,19 @@ export class OtlnItem extends FmtItem {
   get isLayerMarker(): boolean {
     return this.entryType === 68;
   }
+
+  static {
+    descriptor(this, "collapsed", new BitField("_flags", 7));
+    descriptor(this, "selected", new BitField("_flags", 6));
+    descriptor(this, "isProperty", new BitField("_flags", 5));
+    descriptor(this, "isSubEntry", new BitField("_flags", 3));
+  }
 }
 define(OtlnItem, {
   _flags: u1Field(),
   _unnamed6: bytesField(2),
   entryType: u1Field(),
 });
-descriptor(OtlnItem, "collapsed", new BitField("_flags", 7));
-descriptor(OtlnItem, "selected", new BitField("_flags", 6));
-descriptor(OtlnItem, "isProperty", new BitField("_flags", 5));
-descriptor(OtlnItem, "isSubEntry", new BitField("_flags", 3));
 
 /**
  * Comp panel outline entries.

@@ -19,12 +19,9 @@ export class ClassicRendererOptions extends RendererOptionsBase {
    * Read / Write.
    */
   declare shadowMapResolution: ShadowMapResolution;
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "shadowMapResolution", ChunkField.enum(ShadowMapResolution, "_body", "shadowMapResolution"));
+  }
 }
-
-// Descriptors assigned in the class body: `declare` above, installed here.
-
-descriptor(
-  ClassicRendererOptions,
-  "shadowMapResolution",
-  ChunkField.enum(ShadowMapResolution, "_body", "shadowMapResolution"),
-);

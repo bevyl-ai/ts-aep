@@ -208,17 +208,11 @@ export class PngFormatOptions extends FormatOptionsBase {
     }
     this._syncHdr10();
   }
-}
 
-descriptor(PngFormatOptions, "width", new ChunkField("_body", "width", { readOnly: true }));
-descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { readOnly: true }));
-descriptor(
-  PngFormatOptions,
-  "bitDepth",
-  new ChunkField("_body", "bitDepth", { validate: validateOneOf([8, 16]) }),
-);
-descriptor(
-  PngFormatOptions,
-  "compression",
-  ChunkField.enum(PngCompression, "_body", "compression", { allowOutOfEnumValues: true }),
-);
+  static {
+    descriptor(this, "width", new ChunkField("_body", "width", { readOnly: true }));
+    descriptor(this, "height", new ChunkField("_body", "height", { readOnly: true }));
+    descriptor(this, "bitDepth", new ChunkField("_body", "bitDepth", { validate: validateOneOf([8, 16]) }));
+    descriptor(this, "compression", ChunkField.enum(PngCompression, "_body", "compression", { allowOutOfEnumValues: true }));
+  }
+}

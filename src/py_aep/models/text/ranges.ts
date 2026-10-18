@@ -1649,6 +1649,54 @@ export class CharacterRange extends _TextRange {
   get composerEngine(): ComposerEngine | null {
     return this._docRef.composerEngine;
   }
+
+  static {
+    // ---------------------------------------------------------------------------
+    // Descriptor-backed CharacterRange fields (class-body RangeField assignments)
+    // ---------------------------------------------------------------------------
+    descriptor(this, "fontSize", RangeField.float("char", "1", { validate: validatePositiveNonzeroNumber }));
+    descriptor(this, "fauxBold", RangeField.bool("char", "2"));
+    descriptor(this, "fauxItalic", RangeField.bool("char", "3"));
+    descriptor(this, "horizontalScale", RangeField.float("char", "6", { validate: validateNumber }));
+    descriptor(this, "verticalScale", RangeField.float("char", "7", { validate: validateNumber }));
+    descriptor(this, "tracking", RangeField.int("char", "8", { validate: validateS4 }));
+    descriptor(this, "baselineShift", RangeField.float("char", "9", { validate: validateNumber }));
+    descriptor(this, "fontCapsOption", RangeField.enum(FontCapsOption, "char", "12"));
+    descriptor(this, "fontBaselineOption", RangeField.enum(FontBaselineOption, "char", "13"));
+    descriptor(this, "ligature", RangeField.bool("char", "18", { default: false }));
+    descriptor(this, "baselineDirection", RangeField.enum(BaselineDirection, "char", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
+    descriptor(this, "tsume", RangeField.float("char", "36", { default: 0.0, validate: validateNormalizedFloat }));
+    descriptor(this, "noBreak", RangeField.bool("char", "52", { default: false }));
+    descriptor(this, "applyFill", RangeField.bool("char", "56"));
+    descriptor(this, "applyStroke", RangeField.bool("char", "57", { default: false }));
+    descriptor(this, "strokeOverFill", RangeField.bool("char", "58", { default: true }));
+    descriptor(this, "lineJoinType", RangeField.enum(LineJoinType, "char", "62", { default: LineJoinType.LINE_JOIN_MITER }));
+    descriptor(this, "strokeWidth", RangeField.float("char", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
+    descriptor(this, "digitSet", RangeField.enum(DigitSet, "char", "70", { default: DigitSet.DEFAULT_DIGITS }));
+    descriptor(this, "justification", RangeField.enum(ParagraphJustification, "para", "0"));
+    descriptor(this, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "startIndent", RangeField.float("para", "2", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "leadingType", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+    descriptor(this, "autoHyphenate", RangeField.bool("para", "9"));
+    descriptor(this, "hangingRoman", RangeField.bool("para", "21", { default: false }));
+    descriptor(this, "everyLineComposer", RangeField.bool("para", "29", { default: false }));
+    descriptor(this, "direction", RangeField.enum(ParagraphDirection, "para", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
+    descriptor(this, "fillColor", new RangeField("char", "53", {
+      transform: _parseColor,
+      gate: "56",
+      reverse: _buildColorPaint,
+      validate: validateRgbColor,
+    }));
+    descriptor(this, "strokeColor", new RangeField("char", "54", {
+      transform: _parseColor,
+      gate: "57",
+      reverse: _buildColorPaint,
+      validate: validateRgbColor,
+    }));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1722,109 +1770,3 @@ export class ComposedLineRange extends _IndexRange {
     return [startChar, Math.min(spans[end - 1][1], visible)];
   }
 }
-
-// ---------------------------------------------------------------------------
-// Descriptor-backed CharacterRange fields (class-body RangeField assignments)
-// ---------------------------------------------------------------------------
-
-descriptor(CharacterRange, "fontSize", RangeField.float("char", "1", { validate: validatePositiveNonzeroNumber }));
-
-descriptor(CharacterRange, "fauxBold", RangeField.bool("char", "2"));
-
-descriptor(CharacterRange, "fauxItalic", RangeField.bool("char", "3"));
-
-descriptor(CharacterRange, "horizontalScale", RangeField.float("char", "6", { validate: validateNumber }));
-
-descriptor(CharacterRange, "verticalScale", RangeField.float("char", "7", { validate: validateNumber }));
-
-descriptor(CharacterRange, "tracking", RangeField.int("char", "8", { validate: validateS4 }));
-
-descriptor(CharacterRange, "baselineShift", RangeField.float("char", "9", { validate: validateNumber }));
-
-descriptor(CharacterRange, "fontCapsOption", RangeField.enum(FontCapsOption, "char", "12"));
-
-descriptor(CharacterRange, "fontBaselineOption", RangeField.enum(FontBaselineOption, "char", "13"));
-
-descriptor(CharacterRange, "ligature", RangeField.bool("char", "18", { default: false }));
-
-descriptor(
-  CharacterRange,
-  "baselineDirection",
-  RangeField.enum(BaselineDirection, "char", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }),
-);
-
-descriptor(
-  CharacterRange,
-  "tsume",
-  RangeField.float("char", "36", { default: 0.0, validate: validateNormalizedFloat }),
-);
-
-descriptor(CharacterRange, "noBreak", RangeField.bool("char", "52", { default: false }));
-
-descriptor(CharacterRange, "applyFill", RangeField.bool("char", "56"));
-
-descriptor(CharacterRange, "applyStroke", RangeField.bool("char", "57", { default: false }));
-
-descriptor(CharacterRange, "strokeOverFill", RangeField.bool("char", "58", { default: true }));
-
-descriptor(
-  CharacterRange,
-  "lineJoinType",
-  RangeField.enum(LineJoinType, "char", "62", { default: LineJoinType.LINE_JOIN_MITER }),
-);
-
-descriptor(
-  CharacterRange,
-  "strokeWidth",
-  RangeField.float("char", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }),
-);
-
-descriptor(CharacterRange, "digitSet", RangeField.enum(DigitSet, "char", "70", { default: DigitSet.DEFAULT_DIGITS }));
-
-descriptor(CharacterRange, "justification", RangeField.enum(ParagraphJustification, "para", "0"));
-
-descriptor(CharacterRange, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validateNumber }));
-
-descriptor(CharacterRange, "startIndent", RangeField.float("para", "2", { default: 0.0, validate: validateNumber }));
-
-descriptor(CharacterRange, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validateNumber }));
-
-descriptor(CharacterRange, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validateNumber }));
-
-descriptor(CharacterRange, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validateNumber }));
-
-descriptor(CharacterRange, "leadingType", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
-
-descriptor(CharacterRange, "autoHyphenate", RangeField.bool("para", "9"));
-
-descriptor(CharacterRange, "hangingRoman", RangeField.bool("para", "21", { default: false }));
-
-descriptor(CharacterRange, "everyLineComposer", RangeField.bool("para", "29", { default: false }));
-
-descriptor(
-  CharacterRange,
-  "direction",
-  RangeField.enum(ParagraphDirection, "para", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }),
-);
-
-descriptor(
-  CharacterRange,
-  "fillColor",
-  new RangeField("char", "53", {
-    transform: _parseColor,
-    gate: "56",
-    reverse: _buildColorPaint,
-    validate: validateRgbColor,
-  }),
-);
-
-descriptor(
-  CharacterRange,
-  "strokeColor",
-  new RangeField("char", "54", {
-    transform: _parseColor,
-    gate: "57",
-    reverse: _buildColorPaint,
-    validate: validateRgbColor,
-  }),
-);

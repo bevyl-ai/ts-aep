@@ -6,8 +6,10 @@
 //
 //   class Layer {
 //     declare enabled: boolean;
+//     static {
+//       descriptor(this, "enabled", new ChunkField(...));
+//     }
 //   }
-//   descriptor(Layer, "enabled", new ChunkField(...));
 //
 // Inside `_assignAttribute`, `object.__setattr__(self, name, value)` is
 // `objectSetattr(this, name, value)`.

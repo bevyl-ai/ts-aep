@@ -735,14 +735,12 @@ export class PropertyBase {
     result._parentProperty = parent;
     return result;
   }
-}
 
-// ---- Descriptor class attribute (installed after the class, as in Python) ----
-descriptor(
-  PropertyBase,
-  "enabled",
-  ChunkField.bool("_tdsb", "enabled", {
-    default: true,
-    validate: _validateEnabled,
-  }),
-);
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "enabled", ChunkField.bool("_tdsb", "enabled", {
+      default: true,
+      validate: _validateEnabled,
+    }));
+  }
+}

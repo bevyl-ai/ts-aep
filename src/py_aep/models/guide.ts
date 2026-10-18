@@ -76,26 +76,14 @@ export class Guide {
         : "vertical";
     return `Guide(${orient}, position=${floatRepr(this.position)})`;
   }
+
+  static {
+    descriptor(this, "orientationType", ChunkField.enum(
+      GuideOrientationType,
+      "_guideItem",
+      "orientationType",
+    ));
+    descriptor(this, "position", new ChunkField("_guideItem", "position", { validate: validateF8 }));
+    descriptor(this, "positionType", new ChunkField("_guideItem", "positionType"));
+  }
 }
-
-descriptor(
-  Guide,
-  "orientationType",
-  ChunkField.enum(
-    GuideOrientationType,
-    "_guideItem",
-    "orientationType",
-  ),
-);
-
-descriptor(
-  Guide,
-  "position",
-  new ChunkField("_guideItem", "position", { validate: validateF8 }),
-);
-
-descriptor(
-  Guide,
-  "positionType",
-  new ChunkField("_guideItem", "positionType"),
-);

@@ -46,11 +46,9 @@ export class TargaFormatOptions extends FormatOptionsBase {
 
   /** Whether RLE compression is enabled. Read / Write. */
   declare rleCompression: boolean;
-}
 
-descriptor(
-  TargaFormatOptions,
-  "bitsPerPixel",
-  new ChunkField("_body", "bitsPerPixel", { validate: validateOneOf([24, 32]) }),
-);
-descriptor(TargaFormatOptions, "rleCompression", ChunkField.bool("_body", "rleCompression"));
+  static {
+    descriptor(this, "bitsPerPixel", new ChunkField("_body", "bitsPerPixel", { validate: validateOneOf([24, 32]) }));
+    descriptor(this, "rleCompression", ChunkField.bool("_body", "rleCompression"));
+  }
+}

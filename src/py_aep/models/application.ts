@@ -179,24 +179,16 @@ export class Application {
   set buildName(value: string) {
     this.version = value;
   }
+
+  static {
+    descriptor(this, "buildNumber", new ChunkField("_head", "aeBuildNumber", {
+      // An 8-bit field of the head chunk: a larger build would wrap.
+      validate: validateU1,
+    }));
+    descriptor(this, "version", new ChunkField("_head", "version", {
+      validate: _validateVersion,
+      postSet: (obj: Application) => obj._head.syncFileFormatVersion(),
+    }));
+    descriptor(this, "isBeta", ChunkField.bool("_head", "aeVersionBetaFlag"));
+  }
 }
-
-descriptor(
-  Application,
-  "buildNumber",
-  new ChunkField("_head", "aeBuildNumber", {
-    // An 8-bit field of the head chunk: a larger build would wrap.
-    validate: validateU1,
-  }),
-);
-
-descriptor(
-  Application,
-  "version",
-  new ChunkField("_head", "version", {
-    validate: _validateVersion,
-    postSet: (obj: Application) => obj._head.syncFileFormatVersion(),
-  }),
-);
-
-descriptor(Application, "isBeta", ChunkField.bool("_head", "aeVersionBetaFlag"));

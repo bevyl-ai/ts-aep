@@ -1424,43 +1424,42 @@ export class TextDocument {
     this._btdkBody.data = serialize(this._cosData);
   }
 
+  static {
+    // -- Class-body descriptors (`x = DocumentWideCosField.float(...)`) ------------
+    // Each `declare` above has its descriptor installed on the prototype here, in
+    // source order (pyrt `descriptor`, which also runs `__set_name__`).
+    descriptor(this, "fontSize", DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }));
+    descriptor(this, "fauxBold", DocumentWideCosField.bool("_charStyle", "2", { default: null }));
+    descriptor(this, "fauxItalic", DocumentWideCosField.bool("_charStyle", "3", { default: null }));
+    descriptor(this, "tracking", DocumentWideCosField.int("_charStyle", "8", { default: null, validate: validateS4 }));
+    descriptor(this, "horizontalScale", DocumentWideCosField.float("_charStyle", "6", { default: null, validate: validateNumber }));
+    descriptor(this, "verticalScale", DocumentWideCosField.float("_charStyle", "7", { default: null, validate: validateNumber }));
+    descriptor(this, "baselineShift", DocumentWideCosField.float("_charStyle", "9", { default: null, validate: validateNumber }));
+    descriptor(this, "fontCapsOption", DocumentWideCosField.enum(FontCapsOption, "_charStyle", "12", { default: null }));
+    descriptor(this, "fontBaselineOption", DocumentWideCosField.enum(FontBaselineOption, "_charStyle", "13", { default: null }));
+    descriptor(this, "tsume", DocumentWideCosField.float("_charStyle", "36", { default: 0.0, validate: validateNormalizedFloat }));
+    descriptor(this, "applyFill", DocumentWideCosField.bool("_charStyle", "56", { default: null }));
+    descriptor(this, "applyStroke", DocumentWideCosField.bool("_charStyle", "57", { default: false }));
+    descriptor(this, "strokeOverFill", DocumentWideCosField.bool("_charStyle", "58", { default: true }));
+    descriptor(this, "strokeWidth", DocumentWideCosField.float("_charStyle", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
+    descriptor(this, "justification", DocumentWideCosField.enum(ParagraphJustification, "_paraStyle", "0", { default: null }));
+    descriptor(this, "firstLineIndent", DocumentWideCosField.float("_paraStyle", "1", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "startIndent", DocumentWideCosField.float("_paraStyle", "2", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "endIndent", DocumentWideCosField.float("_paraStyle", "3", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "spaceBefore", DocumentWideCosField.float("_paraStyle", "4", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "spaceAfter", DocumentWideCosField.float("_paraStyle", "5", { default: 0.0, validate: validateNumber }));
+    descriptor(this, "leadingType", DocumentWideCosField.enum(LeadingType, "_paraStyle", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+    descriptor(this, "autoHyphenate", DocumentWideCosField.bool("_paraStyle", "9", { default: null }));
+    descriptor(this, "hangingRoman", DocumentWideCosField.bool("_paraStyle", "21", { default: false }));
+    descriptor(this, "everyLineComposer", DocumentWideCosField.bool("_paraStyle", "29", { default: false }));
+    descriptor(this, "baselineDirection", DocumentWideCosField.enum(BaselineDirection, "_charStyle", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
+    descriptor(this, "ligature", DocumentWideCosField.bool("_charStyle", "18", { default: false }));
+    descriptor(this, "noBreak", DocumentWideCosField.bool("_charStyle", "52", { default: false }));
+    descriptor(this, "digitSet", DocumentWideCosField.enum(DigitSet, "_charStyle", "70", { default: DigitSet.DEFAULT_DIGITS }));
+    descriptor(this, "lineJoinType", DocumentWideCosField.enum(LineJoinType, "_charStyle", "62", { default: LineJoinType.LINE_JOIN_MITER }));
+    descriptor(this, "direction", DocumentWideCosField.enum(ParagraphDirection, "_paraStyle", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
+  }
 }
-
-// -- Class-body descriptors (`x = DocumentWideCosField.float(...)`) ------------
-// Each `declare` above has its descriptor installed on the prototype here, in
-// source order (pyrt `descriptor`, which also runs `__set_name__`).
-
-descriptor(TextDocument, "fontSize", DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }));
-descriptor(TextDocument, "fauxBold", DocumentWideCosField.bool("_charStyle", "2", { default: null }));
-descriptor(TextDocument, "fauxItalic", DocumentWideCosField.bool("_charStyle", "3", { default: null }));
-descriptor(TextDocument, "tracking", DocumentWideCosField.int("_charStyle", "8", { default: null, validate: validateS4 }));
-descriptor(TextDocument, "horizontalScale", DocumentWideCosField.float("_charStyle", "6", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "verticalScale", DocumentWideCosField.float("_charStyle", "7", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "baselineShift", DocumentWideCosField.float("_charStyle", "9", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "fontCapsOption", DocumentWideCosField.enum(FontCapsOption, "_charStyle", "12", { default: null }));
-descriptor(TextDocument, "fontBaselineOption", DocumentWideCosField.enum(FontBaselineOption, "_charStyle", "13", { default: null }));
-descriptor(TextDocument, "tsume", DocumentWideCosField.float("_charStyle", "36", { default: 0.0, validate: validateNormalizedFloat }));
-descriptor(TextDocument, "applyFill", DocumentWideCosField.bool("_charStyle", "56", { default: null }));
-descriptor(TextDocument, "applyStroke", DocumentWideCosField.bool("_charStyle", "57", { default: false }));
-descriptor(TextDocument, "strokeOverFill", DocumentWideCosField.bool("_charStyle", "58", { default: true }));
-descriptor(TextDocument, "strokeWidth", DocumentWideCosField.float("_charStyle", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
-
-descriptor(TextDocument, "justification", DocumentWideCosField.enum(ParagraphJustification, "_paraStyle", "0", { default: null }));
-descriptor(TextDocument, "firstLineIndent", DocumentWideCosField.float("_paraStyle", "1", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "startIndent", DocumentWideCosField.float("_paraStyle", "2", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "endIndent", DocumentWideCosField.float("_paraStyle", "3", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "spaceBefore", DocumentWideCosField.float("_paraStyle", "4", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "spaceAfter", DocumentWideCosField.float("_paraStyle", "5", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "leadingType", DocumentWideCosField.enum(LeadingType, "_paraStyle", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
-descriptor(TextDocument, "autoHyphenate", DocumentWideCosField.bool("_paraStyle", "9", { default: null }));
-descriptor(TextDocument, "hangingRoman", DocumentWideCosField.bool("_paraStyle", "21", { default: false }));
-descriptor(TextDocument, "everyLineComposer", DocumentWideCosField.bool("_paraStyle", "29", { default: false }));
-descriptor(TextDocument, "baselineDirection", DocumentWideCosField.enum(BaselineDirection, "_charStyle", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
-descriptor(TextDocument, "ligature", DocumentWideCosField.bool("_charStyle", "18", { default: false }));
-descriptor(TextDocument, "noBreak", DocumentWideCosField.bool("_charStyle", "52", { default: false }));
-descriptor(TextDocument, "digitSet", DocumentWideCosField.enum(DigitSet, "_charStyle", "70", { default: DigitSet.DEFAULT_DIGITS }));
-descriptor(TextDocument, "lineJoinType", DocumentWideCosField.enum(LineJoinType, "_charStyle", "62", { default: LineJoinType.LINE_JOIN_MITER }));
-descriptor(TextDocument, "direction", DocumentWideCosField.enum(ParagraphDirection, "_paraStyle", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
 
 // -- `@requires_version(24)` setter bodies --------------------------------
 // The Python decorator wraps each setter; the gate runs before the body. The

@@ -97,18 +97,16 @@ export class FeatherPoint {
   get type(): number {
     return this.radius < 0 ? 1 : 0;
   }
-}
 
-descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "segLoc", { validate: validatePositiveInt }));
-descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "relSegLoc", { validate: validateNormalizedFloat }));
-descriptor(FeatherPoint, "radius", new ChunkField("_fp", "radius"));
-descriptor(
-  FeatherPoint,
-  "interp",
-  new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }),
-);
-descriptor(FeatherPoint, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
-descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "cornerAngle"));
+  static {
+    descriptor(this, "segLoc", new ChunkField("_fp", "segLoc", { validate: validatePositiveInt }));
+    descriptor(this, "relSegLoc", new ChunkField("_fp", "relSegLoc", { validate: validateNormalizedFloat }));
+    descriptor(this, "radius", new ChunkField("_fp", "radius"));
+    descriptor(this, "interp", new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }));
+    descriptor(this, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
+    descriptor(this, "relCornerAngle", new ChunkField("_fp", "cornerAngle"));
+  }
+}
 
 /**
  * The Shape object encapsulates information describing a shape in a shape layer, or

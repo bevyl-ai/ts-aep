@@ -149,15 +149,9 @@ export class EssentialGraphicsController {
       ` uuid=${repr(this.uuid)})`
     );
   }
-}
 
-descriptor(
-  EssentialGraphicsController,
-  "name",
-  new ChunkField("_nameUtf8", "value", { validate: validateName }),
-);
-descriptor(
-  EssentialGraphicsController,
-  "controllerType",
-  new ChunkField("_ctyp", "value", { readOnly: true }),
-);
+  static {
+    descriptor(this, "name", new ChunkField("_nameUtf8", "value", { validate: validateName }));
+    descriptor(this, "controllerType", new ChunkField("_ctyp", "value", { readOnly: true }));
+  }
+}

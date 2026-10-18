@@ -363,25 +363,14 @@ export class MaskPropertyGroup extends PropertyGroup {
     const tdbs = findByListType(oms.chunks, "tdbs");
     this._maskShapeTdsb = findByType(tdbs.chunks, "tdsb");
   }
-}
 
-// Python class attributes built from ChunkField descriptors. `declare` above keeps
-// them out of the emitted class body; `descriptor` installs the accessors after it.
-descriptor(
-  MaskPropertyGroup,
-  "color",
-  new ChunkField("_mkif", "color", { validate: validateRgbColor }),
-);
-descriptor(MaskPropertyGroup, "inverted", ChunkField.bool("_mkif", "inverted"));
-descriptor(MaskPropertyGroup, "locked", ChunkField.bool("_mkif", "locked"));
-descriptor(
-  MaskPropertyGroup,
-  "maskFeatherFalloff",
-  ChunkField.enum(MaskFeatherFalloff, "_mkif", "maskFeatherFalloff"),
-);
-descriptor(MaskPropertyGroup, "maskMode", ChunkField.enum(MaskMode, "_mkif", "mode"));
-descriptor(
-  MaskPropertyGroup,
-  "maskMotionBlur",
-  ChunkField.enum(MaskMotionBlur, "_mkif", "maskMotionBlur"),
-);
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "color", new ChunkField("_mkif", "color", { validate: validateRgbColor }));
+    descriptor(this, "inverted", ChunkField.bool("_mkif", "inverted"));
+    descriptor(this, "locked", ChunkField.bool("_mkif", "locked"));
+    descriptor(this, "maskFeatherFalloff", ChunkField.enum(MaskFeatherFalloff, "_mkif", "maskFeatherFalloff"));
+    descriptor(this, "maskMode", ChunkField.enum(MaskMode, "_mkif", "mode"));
+    descriptor(this, "maskMotionBlur", ChunkField.enum(MaskMotionBlur, "_mkif", "maskMotionBlur"));
+  }
+}
