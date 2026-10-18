@@ -24,7 +24,7 @@
  *   (`psd_styles.merged_styles_bounds`).
  */
 
-import { and, max, min, OverflowError, struct, ValueError } from "../../pyrt/index.ts";
+import { max, min, OverflowError, struct, ValueError } from "../../pyrt/index.ts";
 import { parseVectorMask } from "./psd_paths.ts";
 import { mergedStylesBounds } from "./psd_styles.ts";
 import { cubicRange } from "./shape_bounds.ts";
@@ -84,7 +84,7 @@ export function _pathBox(layer: PsdLayer, canvasW: number, canvasH: number): _Bo
     return null;
   }
   const flags = struct.unpack(">I", block.slice(4, 8))[0];
-  if (and(flags, 0x05)) {
+  if (flags & 0x05) {
     // Inverted (bit 0) or disabled (bit 2): nothing is cut away.
     return null;
   }

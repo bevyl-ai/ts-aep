@@ -33,7 +33,6 @@ import {
   valueEquals,
   literal,
   round,
-  rshift,
   rstrip,
   strip,
   struct,
@@ -1502,8 +1501,8 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
         if (bytesEq(a3, b("tkhd"))) {
           const v = _byteAt(data, b3);
           trackId = _u(data, b3 + (v === 1 ? 20 : 12), 4);
-          tw = rshift(_u(data, e3 - 8, 4), 16);
-          th = rshift(_u(data, e3 - 4, 4), 16);
+          tw = _u(data, e3 - 8, 4) >>> 16;
+          th = _u(data, e3 - 4, 4) >>> 16;
           swapAxes = _tkhdAxesSwapped(data, e3);
         } else if (bytesEq(a3, b("edts"))) {
           for (const [ae, be, ee] of _atoms(data, b3, e3)) {

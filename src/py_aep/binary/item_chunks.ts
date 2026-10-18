@@ -7,8 +7,6 @@
  */
 
 import {
-  and,
-  andNot,
   b,
   Bytes,
   decode,
@@ -16,12 +14,9 @@ import {
   descriptor,
   encode,
   field,
-  lshift,
   mod,
   objectSetattr,
-  or,
   literal,
-  rshift,
   split,
   ValueError,
   pyRe,
@@ -182,57 +177,57 @@ export class HeadChunk extends Chunk {
   declare fileRevision: number;
 
   get aeVersionMajorA(): number {
-    return and(rshift(this._versionWord, 26), 0x1f);
+    return (this._versionWord >>> 26) & 0x1f;
   }
 
   set aeVersionMajorA(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x1f, 26)), lshift(and(value, 0x1f), 26));
+    this._versionWord = ((this._versionWord & ~(0x1f << 26)) | ((value & 0x1f) << 26)) >>> 0;
   }
 
   get aeVersionMajorB(): number {
-    return and(rshift(this._versionWord, 19), 0x07);
+    return (this._versionWord >>> 19) & 0x07;
   }
 
   set aeVersionMajorB(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x07, 19)), lshift(and(value, 0x07), 19));
+    this._versionWord = ((this._versionWord & ~(0x07 << 19)) | ((value & 0x07) << 19)) >>> 0;
   }
 
   get aeVersionMinor(): number {
-    return and(rshift(this._versionWord, 15), 0x0f);
+    return (this._versionWord >>> 15) & 0x0f;
   }
 
   set aeVersionMinor(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x0f, 15)), lshift(and(value, 0x0f), 15));
+    this._versionWord = ((this._versionWord & ~(0x0f << 15)) | ((value & 0x0f) << 15)) >>> 0;
   }
 
   /** Raw flag: False=beta, True=release. */
   get aeVersionBetaFlag(): boolean {
-    return and(rshift(this._versionWord, 9), 1) !== 0;
+    return ((this._versionWord >>> 9) & 1) !== 0;
   }
 
   set aeVersionBetaFlag(value: boolean | number) {
     if (value) {
-      this._versionWord = or(this._versionWord, 1 << 9);
+      this._versionWord = (this._versionWord | (1 << 9)) >>> 0;
     } else {
-      this._versionWord = andNot(this._versionWord, 1 << 9);
+      this._versionWord = (this._versionWord & ~(1 << 9)) >>> 0;
     }
   }
 
   get aeBuildNumber(): number {
-    return and(this._versionWord, 0xff);
+    return this._versionWord & 0xff;
   }
 
   set aeBuildNumber(value: number) {
-    this._versionWord = or(andNot(this._versionWord, 0xff), and(value, 0xff));
+    this._versionWord = ((this._versionWord & ~0xff) | (value & 0xff)) >>> 0;
   }
 
   /** OS code (bits 25-22); 12 for Windows in saved files. */
   get aeVersionOs(): number {
-    return and(rshift(this._versionWord, 22), 0x0f);
+    return (this._versionWord >>> 22) & 0x0f;
   }
 
   set aeVersionOs(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x0f, 22)), lshift(and(value, 0x0f), 22));
+    this._versionWord = ((this._versionWord & ~(0x0f << 22)) | ((value & 0x0f) << 22)) >>> 0;
   }
 
   /** Full major version (e.g. 25). */

@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -239,7 +239,7 @@ export function _vfTagToStr(raw: number): string | null {
   // that do not decode to four printable ASCII characters.
   const n = Math.trunc(raw);
   if (n <= 0 || n > 0xffffffff) return null;
-  const chars = [24, 16, 8, 0].map((shift) => and(rshift(n, shift), 0xff));
+  const chars = [24, 16, 8, 0].map((shift) => (n >>> shift) & 0xff);
   if (chars.some((c) => c < 0x20 || c > 0x7e)) return null;
   return chars.map((c) => String.fromCodePoint(c)).join("");
 }
@@ -247,7 +247,7 @@ export function _vfTagToStr(raw: number): string | null {
 export function _vfTagFromStr(tag: string): number {
   // Encode a 4-character axis tag to its packed 4CC number.
   let n = 0;
-  for (const c of tag) n = or(lshift(n, 8), ord(c));
+  for (const c of tag) n = ((n << 8) | ord(c)) >>> 0;
   return n;
 }
 
@@ -3369,7 +3369,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       t._spatialMarker = false;
       // AE clears the opaque interpolation residue it leaves in these
       // fields when a complex property went static (bytes 0x49-0x4E).
-      t._reserved48 = and(t._reserved48, 0xff000000);
+      t._reserved48 = (t._reserved48 & 0xff000000) >>> 0;
       t._reserved4c = t._reserved4d = t._pad4e = 0;
       return;
     }

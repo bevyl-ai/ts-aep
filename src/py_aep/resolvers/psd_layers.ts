@@ -14,7 +14,6 @@ import * as zlib from "../../pyrt/zlib.ts";
 import {
   BytesIO,
   Path,
-  and,
   at,
   b,
   Bytes,
@@ -827,7 +826,7 @@ export function _undoPrediction(row: Uint8Array, width: number, sample: number):
     let acc = 0;
     for (let i = 0; i < values.length; i++) {
       acc += values[i];
-      dv.setUint16(2 * i, and(acc, 0xffff), false);
+      dv.setUint16(2 * i, acc & 0xffff, false);
     }
     return out;
   }
@@ -835,7 +834,7 @@ export function _undoPrediction(row: Uint8Array, width: number, sample: number):
   let acc = 0;
   for (let i = 0; i < row.length; i++) {
     acc += row[i];
-    out[i] = and(acc, 0xff);
+    out[i] = acc & 0xff;
   }
   return out;
 }

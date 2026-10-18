@@ -76,7 +76,6 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  rshift,
   round,
   setdefault,
   strip,
@@ -2450,8 +2449,8 @@ export function _aiCroppedTransform(
   const [x0, y0, x1, y1] = box.map((v) => round(v * 65536));
   const anchor: [number, number] = [toF4((x1 - x0) / 131072), toF4((y1 - y0) / 131072)];
   const position: [number, number] = [
-    rshift(x0 + x1, 1) / 65536,
-    pageHeight - rshift(y0 + y1, 1) / 65536,
+    Math.floor((x0 + x1) / 2) / 65536,
+    pageHeight - Math.floor((y0 + y1) / 2) / 65536,
   ];
   return [anchor, position];
 }

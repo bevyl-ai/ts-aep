@@ -18,7 +18,6 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
 import {
-  and,
   at,
   split,
   strip,
@@ -822,7 +821,7 @@ export function _parseEffectParameterDef(
     propertyControlType: controlType,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
-    canVaryOverTime: !and(pardChunk.paramFlags, 0x02),
+    canVaryOverTime: !(pardChunk.paramFlags & 0x02),
     expressionsDisabled: pardChunk.expressionsDisabled,
   };
 
