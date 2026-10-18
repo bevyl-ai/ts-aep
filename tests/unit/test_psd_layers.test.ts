@@ -7,7 +7,7 @@ import * as zlib from "node:zlib";
 
 import {
   b,
-  bytes_,
+  Bytes,
   concat,
   int,
   len,
@@ -39,7 +39,7 @@ function _zipPredicted(rows: number[][], depth: number): Uint8Array {
       out = concat(out, struct.pack(`>${len(row)}H`, ...deltas));
     } else {
       const raw = struct.pack(`>${len(row)}f`, ...row);
-      const planes = bytes_.join(
+      const planes = Bytes.join(
         Array.from(range(4), (k) => raw.filter((_, i) => i % 4 === k)),
       );
       out = concat(out, _delta(planes));

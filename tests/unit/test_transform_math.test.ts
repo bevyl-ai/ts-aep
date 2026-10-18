@@ -56,16 +56,16 @@ describe("TestMatrixPrimitives", () => {
 
   test("test_multiply_identity", () => {
     const a = buildLocalMatrix([10, 20, 0], [0, 0, 0], [100, 100, 100], 45);
-    const result = Mat4.identity().__matmul__(a);
+    const result = Mat4.identity().multiply(a);
     _matApprox(result, a);
-    const result2 = a.__matmul__(Mat4.identity());
+    const result2 = a.multiply(Mat4.identity());
     _matApprox(result2, a);
   });
 
   test("test_translation_roundtrip", () => {
     const t = _translation(5, 10, 15);
     const tInv = t.inverse();
-    const result = t.__matmul__(tInv);
+    const result = t.multiply(tInv);
     _matApprox(result, Mat4.identity());
   });
 
@@ -81,7 +81,7 @@ describe("TestMatrixPrimitives", () => {
       rotateY: 25,
     });
     const inv = m.inverse();
-    const result = m.__matmul__(inv);
+    const result = m.multiply(inv);
     _matApprox(result, Mat4.identity(), 1e-5);
   });
 
@@ -293,7 +293,7 @@ describe("TestParentChild", () => {
     const parentM = buildLocalMatrix(parentPos, [0.0, 0.0, 0.0], scale, 0.0);
     const childM = buildLocalMatrix(childPos, childAnchor, scale, 0.0);
 
-    const world = parentM.__matmul__(childM);
+    const world = parentM.multiply(childM);
     const [dPos, dScale, dRz] = decomposeTransform(world, childAnchor);
     _approx(dPos, [73.0, 41.0, 0.0]);
     _approx(dScale, scale);
@@ -314,7 +314,7 @@ describe("TestParentChild", () => {
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parentM.__matmul__(childM);
+    const world = parentM.multiply(childM);
     const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     _approx(dPos, [0.0, 100.0, 0.0]);
     _approx(dRz, 90.0);
@@ -334,7 +334,7 @@ describe("TestParentChild", () => {
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parentM.__matmul__(childM);
+    const world = parentM.multiply(childM);
     const [dPos, dScale] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     _approx(dPos, [100.0, 100.0, 0.0]);
     _approx(dScale, [200.0, 200.0, 100.0]);
@@ -354,7 +354,7 @@ describe("TestParentChild", () => {
       [80.0, 80.0, 100.0],
       15.0,
     );
-    const world = parentM.__matmul__(childM);
+    const world = parentM.multiply(childM);
     const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     // Verify round-trip: rebuild from decomposed values matches world
     const m2 = buildLocalMatrix(dPos, [0.0, 0.0, 0.0], dScale, dRz);
@@ -376,7 +376,7 @@ describe("TestParentChild", () => {
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parentM.__matmul__(childM);
+    const world = parentM.multiply(childM);
     const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     // Rebuild from decomposed values
     const m2 = buildLocalMatrix(dPos, [0.0, 0.0, 0.0], dScale, dRz);
@@ -397,7 +397,7 @@ describe("TestParentChild", () => {
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const childLocal = parentM.inverse().__matmul__(childWorld);
+    const childLocal = parentM.inverse().multiply(childWorld);
     const [dPos, dScale, dRz] = decomposeTransform(childLocal, [0.0, 0.0, 0.0]);
     _approx(dPos, [0.0, 0.0, 0.0]);
     _approx(dScale, [100.0, 100.0, 100.0]);
@@ -500,12 +500,12 @@ describe("TestGimbalLock", () => {
     // rotation - solving the pole relation for X instead did not, at
     // Y = -90.
     const delta = _rotateY(parentY).inverse();
-    const original = _rotateX(0.0).__matmul__(_rotateY(0.0)).__matmul__(_rotateZ(gamma));
-    const composed = delta.__matmul__(original);
+    const original = _rotateX(0.0).multiply(_rotateY(0.0)).multiply(_rotateZ(gamma));
+    const composed = delta.multiply(original);
     const angles = composeOrientation([0.0, 0.0, gamma], delta);
     const rebuilt = _rotateX(angles[0])
-      .__matmul__(_rotateY(angles[1]))
-      .__matmul__(_rotateZ(angles[2]));
+      .multiply(_rotateY(angles[1]))
+      .multiply(_rotateZ(angles[2]));
     _matApprox(composed, rebuilt, 1e-9);
   });
 });

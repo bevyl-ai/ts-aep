@@ -19,7 +19,7 @@ import {
   floatRepr,
   int,
   max,
-  repr,
+  literal,
   sorted,
   split,
   str,
@@ -182,15 +182,15 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
     // Before the int branch: `bool` subclasses `int`, so `om.format =
     // True` would otherwise silently select the member whose value is 1.
     if (typeof value === "boolean") {
-      throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+      throw new TypeError(`expected a ${enumCls.enumName}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && Number.isInteger(value)) {
       if (enumCls.ofOrNull(value) === null) {
-        throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__} value`);
+        throw new ValueError(`${literal(value)} is not a valid ${enumCls.enumName} value`);
       }
       return;
     }
-    throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+    throw new TypeError(`expected a ${enumCls.enumName}, got ${typeName(value)}`);
   };
 
   _ENUM_VALIDATORS.set(enumCls, _validator);
@@ -209,7 +209,7 @@ export function validateOneOf<T>(allowed: Iterable<T>): Validator {
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!allowedSet.has(value instanceof String ? String(value) : value)) {
-      throw new ValueError(`must be one of [${formatted}], got ${repr(value)}`);
+      throw new ValueError(`must be one of [${formatted}], got ${literal(value)}`);
     }
   };
 }
@@ -420,7 +420,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
   if (match == null) {
     throw new ValueError(
       "version must match '{major}.{minor}x{build}' " +
-        `(e.g. '25.6x101'), got ${repr(value)}`,
+        `(e.g. '25.6x101'), got ${literal(value)}`,
     );
   }
   const [major, minor, build] = match.slice(1).map((part) => int(part));

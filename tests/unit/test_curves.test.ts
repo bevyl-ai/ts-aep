@@ -1,7 +1,7 @@
 /** Tests for the Curves effect's value (ADBE CurvesCustom-0001). */
 
 import { expect, test } from "bun:test";
-import { b, bytes_, getOr, float, getOrThrow, isclose, len, valueEquals, range, struct, ValueError } from "../../src/pyrt/index.ts";
+import { b, Bytes, getOr, float, getOrThrow, isclose, len, valueEquals, range, struct, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 // Python's `import py_aep.binary.chunk` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
@@ -146,6 +146,6 @@ test.each(evaluateRejectsRows)("test_evaluate_rejects_bad_input[%#]", (channel, 
 
 test("test_rejects_other_sizes", () => {
   raises(ValueError, () =>
-    CurvesArbpChunk.fromArbp(new Chunk({ chunkType: "aRbp", data: bytes_.repeat(b("\x00"), 16) })),
+    CurvesArbpChunk.fromArbp(new Chunk({ chunkType: "aRbp", data: Bytes.repeat(b("\x00"), 16) })),
   );
 });

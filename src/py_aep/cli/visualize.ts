@@ -29,7 +29,7 @@ import {
   RuntimeError,
   format,
   int,
-  repr,
+  literal,
   round,
   str,
   jsonDumps,
@@ -349,7 +349,7 @@ export function formatText(
     // Filter out None values
     const filtered = new Map<string, AttrValue>([...node.attrs].filter(([, v]) => v != null));
     if (filtered.size > 0) {
-      attrsStr = " " + repr(filtered);
+      attrsStr = " " + literal(filtered);
     }
   }
 
@@ -587,14 +587,14 @@ export function parseArgs(argv: string[]): Args {
   const apply = (long: string, value: string): void => {
     if (long === "--format") {
       if (!choices.includes(value)) {
-        fail(`argument --format/-f: invalid choice: ${repr(value)} (choose from ${choices.join(", ")})`);
+        fail(`argument --format/-f: invalid choice: ${literal(value)} (choose from ${choices.join(", ")})`);
       }
       args.format = value;
     } else if (long === "--depth") {
       try {
         args.depth = int(value);
       } catch (e) {
-        fail(`argument --depth/-d: invalid int value: ${repr(value)}`);
+        fail(`argument --depth/-d: invalid int value: ${literal(value)}`);
       }
     } else {
       args.output = value;
@@ -629,7 +629,7 @@ export function parseArgs(argv: string[]): Args {
         process.stdout.write(HELP);
         process.exit(0);
       } else if (flag === "--no-properties") {
-        if (inline != null) fail(`argument --no-properties: ignored explicit argument ${repr(inline)}`);
+        if (inline != null) fail(`argument --no-properties: ignored explicit argument ${literal(inline)}`);
         args.noProperties = true;
       } else if (flag === "--format") {
         apply("--format", takeValue("--format/-f", inline));

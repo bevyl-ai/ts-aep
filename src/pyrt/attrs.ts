@@ -6,17 +6,16 @@
 //   export class U1Chunk extends Chunk {
 //     declare value: number;            // `declare`: no JS initializer
 //   }
-//   define(U1Chunk, { value: u1_field() });
+//   define(U1Chunk, { value: u1Field() });
 //   register("efdc")(U1Chunk);          // decorators apply bottom-up
 //
-// Construction is keyword-only: `new U1Chunk({ chunk_type: "efdc", value: 1 })`.
+// Construction is keyword-only: `new U1Chunk({ chunkType: "efdc", value: 1 })`.
 
-import {  } from "./errors.ts";
 
-export type Factory<T = unknown> = { readonly __factory__: () => T };
+export type Factory<T = unknown> = { readonly factory: () => T };
 
 export function Factory<T>(fn: () => T): Factory<T> {
-  return { __factory__: fn };
+  return { factory: fn };
 }
 
 const NOTHING: unique symbol = Symbol("NOTHING");
@@ -132,11 +131,11 @@ export function has(cls: Function): boolean {
 export const NO_INIT: unique symbol = Symbol("NO_INIT");
 
 function isFactory(d: Attribute["default"]): d is Factory {
-  return !!d && typeof d === "object" && "__factory__" in d;
+  return !!d && typeof d === "object" && "factory" in d;
 }
 
 function defaultOf(a: Attribute): unknown {
-  return isFactory(a.default) ? a.default.__factory__() : a.default;
+  return isFactory(a.default) ? a.default.factory() : a.default;
 }
 
 /** A generated `__init__`: sets every field and returns how many keys of `kw` it consumed. */
@@ -155,7 +154,7 @@ function compileInit(cls: Function): Init | null {
   for (const a of fields(cls)) {
     const name = JSON.stringify(a.name);
     const alias = JSON.stringify(a.alias);
-    const i = defs.push(isFactory(a.default) ? a.default.__factory__ : a.default) - 1;
+    const i = defs.push(isFactory(a.default) ? a.default.factory : a.default) - 1;
     const dflt = isFactory(a.default) ? `defs[${i}]()` : `defs[${i}]`;
     const required = a.default === NOTHING;
     if (!a.init) {

@@ -60,7 +60,7 @@ import {
   ValueError,
   KeyError,
   NotImplementedError,
-  bytes_,
+  Bytes,
   b,
   BytesIO,
   Path,
@@ -77,7 +77,7 @@ import {
   compare,
   valueEquals,
   truthyOr,
-  repr,
+  literal,
   rshift,
   round,
   setdefault,
@@ -891,13 +891,13 @@ export class Project {
     let profileId: Uint8Array;
     if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
       envelope = this._ocioEnvelope(value);
-      profileId = bytes_.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(b("\xff"), 16);
     } else if (value === "None") {
       // No working space, which the getter reports as "None": AE 2026
       // saves `workingSpace = "None"` as an empty `{}` profile after
       // `PwCs` and an all-0xFF `cpid`, like a new project.
       envelope = "{}";
-      profileId = bytes_.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(b("\xff"), 16);
     } else {
       // bytes_for already raises ColorProfileNotFoundError for an
       // unknown Adobe profile name, so no separate name check is needed.
@@ -922,7 +922,7 @@ export class Project {
    */
   _setCpplWorkingSpace(value: string): void {
     if (value === "None") {
-      this._cpid.data = bytes_.repeat(b("\xff"), 16);
+      this._cpid.data = Bytes.repeat(b("\xff"), 16);
       return;
     }
     const icc = this._iccLib().bytesFor(value);
@@ -957,7 +957,7 @@ export class Project {
   _ocioEnvelope(name: string): string {
     const config = requireOcioConfig(
       this.ocioConfigurationFile,
-      `build the color-profile envelope for ${repr(name)}`,
+      `build the color-profile envelope for ${literal(name)}`,
     );
     return ocioColorProfileEnvelope(config, name);
   }
@@ -1031,7 +1031,7 @@ export class Project {
       if (!sep) {
         throw new ValueError(
           "displayColorSpace string must be 'display/view'; got " +
-            `${repr(value)}. Pass a (display, view) tuple to disambiguate.`,
+            `${literal(value)}. Pass a (display, view) tuple to disambiguate.`,
         );
       }
     } else if (Array.isArray(value) && value.length === 2) {
@@ -1321,7 +1321,7 @@ export class Project {
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
         return this._importPsdLayered(options.file, false, this._resolveCompLayerStyles(options));
       }
-      throw new ValueError(`importFile does not support COMP import for ${repr(suffix)}`);
+      throw new ValueError(`importFile does not support COMP import for ${literal(suffix)}`);
     }
     if (options.importAs === ImportAsType.PROJECT) {
       throw new ValueError(
@@ -1757,7 +1757,7 @@ export class Project {
           // Photoshop allows styles on a group; applying them to
           // the nested-comp layer is not supported yet.
           warn(
-            `${file.name}: styles on layer group ${repr(node.name)} ` +
+            `${file.name}: styles on layer group ${literal(node.name)} ` +
               "were ignored - importing group layer styles is " +
               "not supported",
           );
@@ -2628,7 +2628,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   if (styles == null) return;
   for (const prefix of styles.dropped) {
     warn(
-      `${sourceName}: layer ${repr(layer.name)} style ${repr(prefix)} was ` +
+      `${sourceName}: layer ${literal(layer.name)} style ${literal(prefix)} was ` +
         "imported as disabled - After Effects drops styles with " +
         "multiple instances or unrepresentable content, and py_aep " +
         "matches its output",

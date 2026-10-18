@@ -10,20 +10,3 @@ export { Property } from "./property.ts";
 export { PropertyBase } from "./property_base.ts";
 export { PropertyGroup } from "./property_group.ts";
 export { FeatherPoint, Shape } from "./shape.ts";
-
-export const __all__ = [
-  "Curves",
-  "CurvesChannel",
-  "FeatherPoint",
-  "GradientAlphaStop",
-  "Gradient",
-  "GradientColorStop",
-  "Keyframe",
-  "KeyframeEase",
-  "MarkerValue",
-  "MaskPropertyGroup",
-  "Property",
-  "PropertyBase",
-  "PropertyGroup",
-  "Shape",
-] as const;

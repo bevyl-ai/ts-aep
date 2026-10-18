@@ -34,7 +34,6 @@ import {
   ValueError,
   at,
   b,
-  bytes_,
   bytesEq,
   concat,
   floordiv,
@@ -44,7 +43,7 @@ import {
   getOrThrow,
   int,
   truthyOr,
-  repr,
+  literal,
   round,
   sorted,
   str,
@@ -393,7 +392,7 @@ export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
 export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string | null {
   if (!_CATALOGUED_PROFILE_FORMATS.has(sourceFormat)) return null;
   if (info.iccProfile != null) {
-    if (bytesEq(bytes_.slice(info.iccProfile, 16, 20), b("RGB "))) return null;
+    if (bytesEq(info.iccProfile.slice(16, 20), b("RGB "))) return null;
     return iccProfileDescription(info.iccProfile);
   }
   if (info.colorMode === 1 && info.bitDepth === 32) {
@@ -416,7 +415,7 @@ export function aiDocumentProfile(
 ): [Uint8Array | null, string | null] {
   const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
-  if (bytesEq(bytes_.slice(icc, 16, 20), b("RGB "))) return [icc, null];
+  if (bytesEq(icc.slice(16, 20), b("RGB "))) return [icc, null];
   return [null, iccProfileDescription(icc)];
 }
 
@@ -678,7 +677,7 @@ export class FileSource extends FootageSource {
     if (envelope == null) {
       // TODO(port): Python passes stacklevel=3 so the warning is attributed to the caller of the public API (warning filename/lineno); pyrt warn(message) has no stacklevel and JS has no Python frames, so only that attribution differs, not the message text.
       warn(
-        `OCIO configuration ${repr(project.ocioConfigurationFile)} not found ` +
+        `OCIO configuration ${literal(project.ocioConfigurationFile)} not found ` +
           `or without a default color space: ${new Path(this._file).name} keeps ` +
           "an Adobe color profile",
       );
@@ -993,7 +992,7 @@ export class FileSource extends FootageSource {
       sspc._reservedA8 = b("\x00\x00\x00\x01");
       sspc._reservedB8 = b("\x00");
       sspc._reservedBa = b("\x00\x00");
-      sspc._sourceStamp = concat(b("\x01"), bytes_.slice(sspc._sourceStamp, 1));
+      sspc._sourceStamp = concat(b("\x01"), sspc._sourceStamp.slice(1));
     } else if (isSequence) {
       sspc.startFrame = startFrame;
       sspc.endFrame = endFrame;
@@ -1300,7 +1299,7 @@ export class FileSource extends FootageSource {
         windows,
       });
     }
-    throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${repr(suffix)}`);
+    throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${literal(suffix)}`);
   }
 
   /**
@@ -1331,11 +1330,11 @@ export class FileSource extends FootageSource {
       // The "Import Options Default Sequence FPS" preference; outside
       // the conform-rate range it cannot time a sequence (0 divided
       // by zero below).
-      throw new ValueError(`invalid default sequence frame rate ${repr(defaultFrameRate)}`);
+      throw new ValueError(`invalid default sequence frame rate ${literal(defaultFrameRate)}`);
     }
     const m = _FRAME_NUMBER_RE.exec(file.stem);
     if (m == null && !forceAlphabetical) {
-      throw new ValueError(`Sequence import requires a numbered filename, got ${repr(file.name)}`);
+      throw new ValueError(`Sequence import requires a numbered filename, got ${literal(file.name)}`);
     }
 
     const hasRange = rangeStart > 0 || rangeEnd > 0;

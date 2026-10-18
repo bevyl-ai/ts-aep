@@ -8,7 +8,7 @@
  * them with no arguments. See `scripts/dev/dump_new_project.py`.
  */
 
-import { b, bytes_, define, encode, field } from "../../pyrt/index.ts";
+import { b, Bytes, define, encode, field } from "../../pyrt/index.ts";
 import { Chunk } from "./chunk.ts";
 import { bytesField, s2Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
@@ -53,7 +53,7 @@ export class CpidChunk extends Chunk {
 }
 define(CpidChunk, {
   chunkType: field({ default: "cpid" }),
-  data: field({ default: bytes_.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
 });
 register("cpid")(CpidChunk);
 

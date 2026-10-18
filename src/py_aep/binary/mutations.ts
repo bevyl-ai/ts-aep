@@ -5,7 +5,7 @@ import { uuid4Bytes } from "../../pyrt/uuid.ts";
 
 import {
   b,
-  bytes_,
+  Bytes,
   BytesIO,
   copy,
   encode,
@@ -372,7 +372,7 @@ export function buildParallelLdatItem(
     flags = 1;
   } else if (itemType === LdatItemType.marker) {
     // marker, text (HOLD - no interpolation)
-    kfData = bytes_.repeat(b("\x00"), 8);
+    kfData = Bytes.repeat(b("\x00"), 8);
     interp = 3;
     flags = 0;
   } else {
@@ -388,7 +388,7 @@ export function buildParallelLdatItem(
     outInterpolationType: interp,
     keyFlags: flags,
     kfData,
-    trailing: bytes_.repeat(b("\x00"), itemSize - bodyLen),
+    trailing: Bytes.repeat(b("\x00"), itemSize - bodyLen),
   });
   if (itemType === LdatItemType.orientation && orientationValues != null) {
     setOrientationItemValues(item, orientationValues);
@@ -921,7 +921,7 @@ export function buildDefaultMaskShape(
   kw: { aspect: number; rotoBezier?: boolean },
 ): [TdmnChunk, ListChunk] {
   const { aspect, rotoBezier = false } = kw;
-  const raw = bytes_.fromhex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
+  const raw = Bytes.fromHex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
   const oms = readChunks(new BytesIO(raw), raw.length)[0];
   assert(oms instanceof ListChunk);
   const tdbs = oms.chunks[0];
@@ -1178,8 +1178,8 @@ export function buildDropdownControl(kw: {
   // uuid4().bytes is 16 random bytes; base64 of those, padding stripped.
   const matchName =
     "Pseudo/@@" + rstrip(b64encode(uuid4Bytes()), "=");
-  const partBytes = bytes_.replace(
-    bytes_.fromhex(DROPDOWN_CONTROL.part),
+  const partBytes = Bytes.replace(
+    Bytes.fromHex(DROPDOWN_CONTROL.part),
     encode(DROPDOWN_CONTROL.placeholder, "ascii"),
     encode(matchName, "ascii"),
   );

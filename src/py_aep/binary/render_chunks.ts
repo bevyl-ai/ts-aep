@@ -6,7 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { b, bytes_, decode, define, descriptor, fields, getattr, assert, truthy, setattr, strip } from "../../pyrt/index.ts";
+import { b, Bytes, decode, define, descriptor, fields, getattr, assert, truthy, setattr, strip } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -134,7 +134,7 @@ define(RouuChunk, {
   _reserved4e: bytesField(3, { repr: false }),
   colorMatted: u1Field({ default: 1 }),
   _reserved52: bytesField(18, {
-    default: bytes_.concat(b("FIEL\x00\x01"), bytes_.repeat(b("\x00"), 12)),
+    default: Bytes.concat(b("FIEL\x00\x01"), Bytes.repeat(b("\x00"), 12)),
     repr: false,
   }),
   audioSampleRate: f8Field({ default: -1.0 }),
@@ -142,12 +142,12 @@ define(RouuChunk, {
   audioBitDepth: u2Field({ default: 0xffff }),
   audioChannels: u2Field(),
   _reserved72: bytesField(40, {
-    default: bytes_.concat(
-      bytes_.repeat(b("\x00"), 13),
+    default: Bytes.concat(
+      Bytes.repeat(b("\x00"), 13),
       b("\x01"),
-      bytes_.repeat(b("\x00"), 3),
+      Bytes.repeat(b("\x00"), 3),
       b("\x01"),
-      bytes_.repeat(b("\x00"), 22),
+      Bytes.repeat(b("\x00"), 22),
     ),
     optional: true,
     repr: false,
@@ -172,7 +172,7 @@ export class RoptChunk extends Chunk {
   /** Format code from the first 4 bytes of raw data (for fallback chunks). */
   get formatCode(): string {
     const data = "data" in this ? this.data : b("");
-    if (data.length >= 4) return decode(bytes_.slice(data, 0, 4), "ascii");
+    if (data.length >= 4) return decode(data.slice(0, 4), "ascii");
     return "";
   }
 
@@ -203,15 +203,15 @@ register("Ropt")(RoptChunk);
 // Pad defaults reproducing AE's real `Ropt` bytes per format (oEXR/png! from
 // AE preferences, others from sample projects). Long blocks are module-level
 // constants so the field declarations stay readable.
-export const _JPEG_PAD = bytes_.fromhex(
+export const _JPEG_PAD = Bytes.fromHex(
   "002e0000003a01000000000000000000001c00000000000000004a503634" +
     "000000000000000000000000000000000000",
 );
-export const _TARGA_PAD = bytes_.concat(
-  bytes_.fromhex("002e000000540400"),
-  bytes_.repeat(b("\x00"), 9),
+export const _TARGA_PAD = Bytes.concat(
+  Bytes.fromHex("002e000000540400"),
+  Bytes.repeat(b("\x00"), 9),
   b("\x36"),
-  bytes_.repeat(b("\x00"), 54),
+  Bytes.repeat(b("\x00"), 54),
   b("\x01"),
 );
 
@@ -238,7 +238,7 @@ export class CineonRoptChunk extends RoptChunk {
 
 define(CineonRoptChunk, {
   formatCode: asciiField(4, { default: "sDPX" }),
-  _pad: bytesField(10, { default: bytes_.fromhex("00030000003000000000"), repr: false }),
+  _pad: bytesField(10, { default: Bytes.fromHex("00030000003000000000"), repr: false }),
   tenBitBlackPoint: u2Field(),
   tenBitWhitePoint: u2Field({ default: 1023 }),
   convertedBlackPoint: f8Field({ default: 0.0 }),
@@ -290,7 +290,7 @@ export class OpenExrRoptChunk extends RoptChunk {
 
 define(OpenExrRoptChunk, {
   formatCode: asciiField(4, { default: "oEXR" }),
-  _pad04: bytesField(10, { default: bytes_.fromhex("00010000004e01000000"), repr: false }),
+  _pad04: bytesField(10, { default: Bytes.fromHex("00010000004e01000000"), repr: false }),
   compression: u1Field({ default: 2 }),
   thirtyTwoBitFloat: boolField(),
   luminanceChroma: boolField(),
@@ -344,7 +344,7 @@ define(TiffRoptChunk, {
   _pad04: bytesField(4, { default: Uint8Array.from([1, 9, 0, 0]), repr: false }),
   chunkSize: u2Field({ default: 602 }),
   _pad0a: bytesField(590, {
-    default: bytes_.concat(Uint8Array.from([0, 0, 1, 1]), bytes_.repeat(b("\x00"), 586)),
+    default: Bytes.concat(Uint8Array.from([0, 0, 1, 1]), Bytes.repeat(b("\x00"), 586)),
     repr: false,
   }),
   ibmPcByteOrder: boolField(),
@@ -382,7 +382,7 @@ export class PngRoptChunk extends RoptChunk {
 
 define(PngRoptChunk, {
   formatCode: asciiField(4, { default: "png!" }),
-  _pad: bytesField(14, { default: bytes_.fromhex("0001000001420100000000000001"), repr: false }),
+  _pad: bytesField(14, { default: Bytes.fromHex("0001000001420100000000000001"), repr: false }),
   width: u4Field({ default: 320 }),
   height: u4Field({ default: 240 }),
   _pad2: bytesField(2, { repr: false }),
@@ -645,7 +645,7 @@ define(RenderSettingsItem, {
   _reserved37: bytesField(2, { repr: false }),
   timeSpanSource: u2Field(),
   _reserved39: bytesField(14, {
-    default: bytes_.concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8)),
+    default: Bytes.concat(b("\xff\xff\xff\xff\x00\xb4"), Bytes.repeat(b("\x00"), 8)),
     repr: false,
   }),
   soloSwitches: u2Field({ default: 2 }), // SoloSwitchesSetting.CURRENT_SETTINGS
@@ -661,7 +661,7 @@ define(RenderSettingsItem, {
   _reservedEnd: bytesField(16, { repr: false }),
   itemId: u4Field({ default: 2 }),
   _remaining: bytesField(20, {
-    default: bytes_.concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)),
+    default: Bytes.concat(b("\x00\x00\x00\x0f"), Bytes.repeat(b("\x00"), 16)),
     repr: false,
   }),
 });
@@ -837,8 +837,8 @@ define(OutputModuleSettingsItem, {
   _includeProjectLink: u1Field({ repr: false }),
   postRenderAction: u4Field(),
   postRenderUseComp: u4Field(),
-  _reserved30: bytesField(16, { default: bytes_.repeat(b("\xff"), 16), repr: false }),
-  outputProfileId: bytesField(16, { default: bytes_.repeat(b("\xff"), 16) }),
+  _reserved30: bytesField(16, { default: Bytes.repeat(b("\xff"), 16), repr: false }),
+  outputProfileId: bytesField(16, { default: Bytes.repeat(b("\xff"), 16) }),
   _reserved32: bytesField(3, { repr: false }),
   convertToLinearLight: u1Field({ default: 2 }),
   _prevByte34: bytesField(1, { default: b("\x01"), repr: false }),

@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { and, b, bytes_, bytesEq, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
+import { and, b, Bytes, bytesEq, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { ImportOptions, parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -30,11 +30,11 @@ function _leaves(data: Uint8Array, inList: Uint8Array = b("")): [string, number]
 
   function walk(off: number, end: number, inside: boolean): void {
     while (off + 8 <= end) {
-      const ctype = decode(bytes_.slice(data, off, off + 4), "latin-1");
-      const [size] = struct.unpack(">I", bytes_.slice(data, off + 4, off + 8));
+      const ctype = decode(Bytes.slice(data, off, off + 4), "latin-1");
+      const [size] = struct.unpack(">I", Bytes.slice(data, off + 4, off + 8));
       const body = off + 8;
       if (["LIST", "RIFX"].includes(ctype)) {
-        const listType = bytes_.slice(data, body, body + 4);
+        const listType = Bytes.slice(data, body, body + 4);
         if (!bytesEq(listType, b("btdk"))) {
           walk(body + 4, body + size, inside || bytesEq(listType, inList));
         }
@@ -79,7 +79,7 @@ describe("TestFixedStringTail", () => {
   test("test_assigned_code_with_nul_reads_back_as_reparsed", () => {
     const chunk = new SspcChunk({ sourceFormatType: "\x00vsc" });
     expect(String(chunk.sourceFormatType)).toBe("");
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
   });
 
   test("test_assigned_plain_string_drops_the_old_tail", () => {
@@ -87,12 +87,12 @@ describe("TestFixedStringTail", () => {
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     chunk.sourceFormatType = "png!";
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
   });
 
   test("test_solid_name_stale_tail_round_trips", () => {
     const data = new Uint8Array(new SoliOptiChunk({ solidName: "Black Solid 3" }).tobytes());
-    const nameAt = bytes_.index(data, b("Black Solid 3"));
+    const nameAt = Bytes.indexOrThrow(data, b("Black Solid 3"));
     // AE keeps the end of a longer previous name after the terminator.
     const stale = b("Black Solid 3\x00 1\x00id 1");
     data.set(stale, nameAt);
@@ -166,14 +166,14 @@ describe("TestDataFootageSourceCode", () => {
     const codes = new Set(
       _leaves(data)
         .filter(([ctype]) => ctype === "sspc")
-        .map(([, body]) => bytes_.hex(bytes_.slice(data, body + 0x16, body + 0x1A))),
+        .map(([, body]) => Bytes.toHex(Bytes.slice(data, body + 0x16, body + 0x1A))),
     );
-    const expectedCodes = [b("\x00vsc"), b("\x00vst")].map((x) => bytes_.hex(x));
+    const expectedCodes = [b("\x00vsc"), b("\x00vst")].map((x) => Bytes.toHex(x));
     expect(expectedCodes.every((c) => codes.has(c))).toBe(true);
     const optis = new Set(
       _leaves(data)
         .filter(([ctype]) => ctype === "opti")
-        .map(([, body]) => bytes_.hex(bytes_.slice(data, body, body + 4))),
+        .map(([, body]) => Bytes.toHex(Bytes.slice(data, body, body + 4))),
     );
     expect(expectedCodes.every((c) => optis.has(c))).toBe(true);
     for (const item of parse(out).project.footages) {

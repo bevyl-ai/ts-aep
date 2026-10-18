@@ -23,7 +23,7 @@ import {
   at,
   b,
   BytesIO,
-  bytes_,
+  Bytes,
   contains,
   getOr,
   enumerate,
@@ -202,7 +202,7 @@ describe("TestDuplicateAgainstAE", () => {
       expect(ccid.value).toBe(dup.id);
       for (const chunk of cctl.chunks) {
         if (["CVal", "CDef"].includes(chunk.chunkType)) {
-          expect(valueEquals(chunk.data, bytes_.repeat(b("\x00"), len(chunk.data)))).toBe(true);
+          expect(valueEquals(chunk.data, Bytes.repeat(b("\x00"), len(chunk.data)))).toBe(true);
         }
       }
     }

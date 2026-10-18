@@ -9,7 +9,7 @@ import {
   OSError,
   Path,
   b,
-  bytes_,
+  Bytes,
   define,
   descriptor,
   getOr,
@@ -330,7 +330,7 @@ describe("TestHeaderAndWriteChunk", () => {
     expect(total).toBe(12);
     expect(buf.getvalue().length).toBe(12);
     // Last byte should be pad
-    expect(valueEquals(bytes_.slice(buf.getvalue(), -1), b("\x00"))).toBe(true);
+    expect(valueEquals(Bytes.slice(buf.getvalue(), -1), b("\x00"))).toBe(true);
   });
 
   test("test_write_chunk_pad_even", () => {
@@ -561,12 +561,12 @@ describe("TestFmtField", () => {
   test("test_encoding_ascii_read_write_roundtrip", () => {
     // PrinChunk reads/writes 48-byte ASCII null-terminated strings.
     // Build raw 104-byte prin body
-    const reserved00 = bytes_.zeros(4);
-    const matchName = bytes_.concat(b("ADBE Advanced 3d"), bytes_.zeros(32)); // 48 bytes
-    const displayName = bytes_.concat(b("Classic 3D"), bytes_.zeros(38)); // 48 bytes
-    const reserved68 = bytes_.zeros(3);
+    const reserved00 = Bytes.zeros(4);
+    const matchName = Bytes.concat(b("ADBE Advanced 3d"), Bytes.zeros(32)); // 48 bytes
+    const displayName = Bytes.concat(b("Classic 3D"), Bytes.zeros(38)); // 48 bytes
+    const reserved68 = Bytes.zeros(3);
     const endMarker = b("\x01");
-    const raw = bytes_.concat(reserved00, matchName, displayName, reserved68, endMarker);
+    const raw = Bytes.concat(reserved00, matchName, displayName, reserved68, endMarker);
 
     const chunk = asInstance(PrinChunk.read(new BytesIO(raw), raw.length, { chunkType: "prin" }), PrinChunk);
     expect(chunk.matchName).toBe("ADBE Advanced 3d");
@@ -620,7 +620,7 @@ describe("TestFmtField", () => {
     expect(raw160.length).toBe(160);
 
     // Append matte_layer_id = 42
-    const raw164 = bytes_.concat(raw160, struct.pack(">I", 42));
+    const raw164 = Bytes.concat(raw160, struct.pack(">I", 42));
     const chunk2 = asInstance(LdtaChunk.read(new BytesIO(raw164), 164, { chunkType: "ldta" }), LdtaChunk);
     expect(chunk2.matteLayerId).toBe(42);
 
@@ -650,7 +650,7 @@ describe("TestFmtField", () => {
     const chunk = new LdtaChunk({});
     const buf = new BytesIO();
     chunk.write(buf);
-    const raw164 = bytes_.concat(buf.getvalue(), struct.pack(">I", 0));
+    const raw164 = Bytes.concat(buf.getvalue(), struct.pack(">I", 0));
 
     const chunk2 = asInstance(LdtaChunk.read(new BytesIO(raw164), 164, { chunkType: "ldta" }), LdtaChunk);
     expect(chunk2.matteLayerId).toBe(0); // present, not None
@@ -670,10 +670,10 @@ describe("TestFmtField", () => {
     define(AutoChunk, { chunkType: field({ default: "test" }), pad: bytesField(4) });
 
     const c = new AutoChunk({});
-    expect(valueEquals(c.pad, bytes_.zeros(4))).toBe(true);
+    expect(valueEquals(c.pad, Bytes.zeros(4))).toBe(true);
     const buf = new BytesIO();
     c.write(buf);
-    expect(valueEquals(buf.getvalue(), bytes_.zeros(4))).toBe(true);
+    expect(valueEquals(buf.getvalue(), Bytes.zeros(4))).toBe(true);
   });
 
   test("test_fmt_field_explicit_bytes_default_preserved", () => {
@@ -834,9 +834,9 @@ describe("TestTdb4Chunk", () => {
       3, // dimensions
       0, // pad1
       0x09, // spatial(bit3)=1, static(bit0)=1
-      bytes_.zeros(5), // pad2
+      Bytes.zeros(5), // pad2
       0x02, // can_vary_over_time(bit1)=1
-      bytes_.zeros(4), // pad3
+      Bytes.zeros(4), // pad3
       0.0001,
       1.777778,
       1.0,
@@ -846,13 +846,13 @@ describe("TestTdb4Chunk", () => {
       0x00, // no_value=0
       0, // pad5
       0x05, // vector(bit3)=0, integer(bit2)=1, color(bit0)=1
-      bytes_.zeros(8), // pad6
+      Bytes.zeros(8), // pad6
       1, // animated
-      bytes_.zeros(15), // pad7
-      bytes_.zeros(32), // pad8
-      bytes_.zeros(3), // pad9
+      Bytes.zeros(15), // pad7
+      Bytes.zeros(32), // pad8
+      Bytes.zeros(3), // pad9
       0x01, // expression_disabled(bit0)=1
-      bytes_.zeros(4), // pad10
+      Bytes.zeros(4), // pad10
     );
     expect(raw.length).toBe(124);
 
@@ -875,7 +875,7 @@ describe("TestTdb4Chunk", () => {
   });
 
   test("test_undersize_raises", () => {
-    const buf = new BytesIO(bytes_.zeros(50));
+    const buf = new BytesIO(Bytes.zeros(50));
     raises(OSError, () => Tdb4Chunk.read(buf, 50, { chunkType: "tdb4" }), "body too short");
   });
 });
@@ -1120,7 +1120,7 @@ describe("TestRouuChunk", () => {
   });
 
   test("test_114_byte_body_roundtrips", () => {
-    const short = bytes_.slice(new RouuChunk({}).tobytes(), null, 114);
+    const short = Bytes.slice(new RouuChunk({}).tobytes(), null, 114);
     const chunk = asInstance(RouuChunk.frombytes(short, { chunkType: "Roou" }), RouuChunk);
     expect(chunk._reserved72 == null).toBe(true);
     expect(chunk.audioChannels).toBe(0); // last required field still parsed
@@ -1132,14 +1132,14 @@ describe("TestRouuChunk", () => {
     // whole words: `ffff ffff 0000` while unset, `0002 0001 0001` for
     // 8-bit mono (audio_settings_matrix.aep, item E9_on_mono_8).
     const chunk = new RouuChunk({});
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("ffffffff0000"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x6c, 0x72), Bytes.fromHex("ffffffff0000"))).toBe(true);
     expect(chunk.audioEncoding).toBe(0xffff);
     expect(chunk.audioBitDepth).toBe(0xffff);
     expect(chunk.audioChannels).toBe(0);
     chunk.audioEncoding = 2;
     chunk.audioBitDepth = 1;
     chunk.audioChannels = 1;
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x6c, 0x72), bytes_.fromhex("000200010001"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x6c, 0x72), Bytes.fromHex("000200010001"))).toBe(true);
   });
 });
 
@@ -1150,14 +1150,14 @@ describe("TestLhd3ChunkWordWidths", () => {
     // size as one at 0x10 (upper halves 0 in every sample).
     const chunk = new Lhd3Chunk({ count: 70_000, itemSize: 0x10000 + 16 });
     const body = chunk.tobytes();
-    expect(valueEquals(bytes_.slice(body, 0x08, 0x0c), bytes_.intToBytes(70_000, 4, "big"))).toBe(true);
-    expect(valueEquals(bytes_.slice(body, 0x10, 0x14), bytes_.intToBytes(0x10000 + 16, 4, "big"))).toBe(true);
+    expect(valueEquals(Bytes.slice(body, 0x08, 0x0c), Bytes.intToBytes(70_000, 4, "big"))).toBe(true);
+    expect(valueEquals(Bytes.slice(body, 0x10, 0x14), Bytes.intToBytes(0x10000 + 16, 4, "big"))).toBe(true);
     const reread = asInstance(Lhd3Chunk.frombytes(body, { chunkType: "lhd3" }), Lhd3Chunk);
     expect(valueEquals([reread.count, reread.itemSize], [70_000, 0x10000 + 16])).toBe(true);
     expect(
       valueEquals(
-        bytes_.slice(new Lhd3Chunk({ count: 3, itemSize: 16 }).tobytes(), null, 0x14),
-        bytes_.fromhex("00d00bee00000000000000030000000100000010"),
+        Bytes.slice(new Lhd3Chunk({ count: 3, itemSize: 16 }).tobytes(), null, 0x14),
+        Bytes.fromHex("00d00bee00000000000000030000000100000010"),
       ),
     ).toBe(true);
   });
@@ -1168,7 +1168,7 @@ describe("TestTextOptiChunk", () => {
     // A document with more than 255 layers keeps its count (AE 2026's
     // fixtures store 2 / 8 / 22 / 48 in the low byte, upper bytes 0).
     const data = buildAiLayerOptiData(612, 792, "Layer 300", 300);
-    expect(valueEquals(bytes_.slice(data, 0x30, 0x34), bytes_.intToBytes(300, 4, "big"))).toBe(true);
+    expect(valueEquals(Bytes.slice(data, 0x30, 0x34), Bytes.intToBytes(300, 4, "big"))).toBe(true);
     const chunk = asInstance(TextOptiChunk.frombytes(data, { chunkType: "opti" }), TextOptiChunk);
     expect(chunk.textDocumentLayers).toBe(300);
   });
@@ -1180,9 +1180,9 @@ describe("TestSspcChunk", () => {
     // footage_depth.aep's png_g16.png.
     const chunk = new SspcChunk({});
     expect(chunk.depth).toBe(0);
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x3e, 0x45), bytes_.zeros(7))).toBe(true); // solids and placeholders
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x3e, 0x45), Bytes.zeros(7))).toBe(true); // solids and placeholders
     chunk.depth = -16;
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0x3e, 0x40), b("\xff\xf0"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x3e, 0x40), b("\xff\xf0"))).toBe(true);
     const reread = asInstance(SspcChunk.frombytes(chunk.tobytes(), { chunkType: "sspc" }), SspcChunk);
     expect(reread.depth).toBe(-16);
   });
@@ -1211,7 +1211,7 @@ describe("TestSspcChunk", () => {
     // AE 2026 caches 14,729,427,240 for a 14.7 GB image sequence.
     const chunk = new SspcChunk({});
     chunk.dataSize = 14_729_427_240;
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 0xcc, 0xd4), bytes_.intToBytes(14_729_427_240, 8, "big"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0xcc, 0xd4), Bytes.intToBytes(14_729_427_240, 8, "big"))).toBe(true);
     const reread = asInstance(SspcChunk.frombytes(chunk.tobytes(), { chunkType: "sspc" }), SspcChunk);
     expect(valueEquals(reread.dataSize, 14_729_427_240)).toBe(true); // u8 field unpacks as bigint
   });
@@ -1277,9 +1277,9 @@ describe("TestOptiChunk", () => {
     const nameBytes = encode(name, "windows-1252");
     // Build data: 4-byte asset_type + 2-byte asset_type_int + 4-byte pad
     // + 256-byte NUL-padded name
-    const nameField = bytes_.concat(nameBytes, bytes_.zeros(256 - nameBytes.length));
-    const data = bytes_.concat(
-      bytes_.zeros(4),
+    const nameField = Bytes.concat(nameBytes, Bytes.zeros(256 - nameBytes.length));
+    const data = Bytes.concat(
+      Bytes.zeros(4),
       struct.pack(">H", 2),
       b("\x00\x00\x01\x0a"),
       nameField,
@@ -1296,7 +1296,7 @@ describe("TestOptiChunk", () => {
   });
 
   test("test_unknown_fallback", () => {
-    const data = bytes_.concat(b("UNKN"), bytes_.zeros(20));
+    const data = Bytes.concat(b("UNKN"), Bytes.zeros(20));
     const buf = new BytesIO(data);
     const chunk = OptiChunk.read(buf, data.length, { chunkType: "opti" });
     expect(chunk.constructor).toBe(OptiChunk);
@@ -1403,7 +1403,7 @@ describe("TestRoptChunk", () => {
   });
 
   test("test_unknown_fallback", () => {
-    const data = bytes_.concat(b("UNKN"), bytes_.zeros(20));
+    const data = Bytes.concat(b("UNKN"), Bytes.zeros(20));
     const buf = new BytesIO(data);
     const chunk = RoptChunk.read(buf, data.length, { chunkType: "Ropt" });
     expect(chunk.constructor).toBe(RoptChunk);
@@ -1417,23 +1417,23 @@ describe("TestRoptChunk", () => {
 
 describe("TestPardChunk", () => {
   function _buildPard(controlType: number, body: Uint8Array, name = "Test"): Uint8Array {
-    const padPre = bytes_.zeros(15);
+    const padPre = Bytes.zeros(15);
     const ct = struct.pack(">B", controlType);
     let rawName = encode(name, "windows-1252");
-    rawName = bytes_.concat(rawName, bytes_.zeros(32 - rawName.length));
-    const padPost = bytes_.zeros(8);
-    return bytes_.concat(padPre, ct, rawName, padPost, body);
+    rawName = Bytes.concat(rawName, Bytes.zeros(32 - rawName.length));
+    const padPost = Bytes.zeros(8);
+    return Bytes.concat(padPre, ct, rawName, padPost, body);
   }
 
   test("test_color_roundtrip", () => {
     // The SDK colour definition is value + default; AE leaves leftover
     // memory after them (here a pointer-like pattern seen in AE 2022
     // samples), which must round-trip but is not a field.
-    const body = bytes_.concat(
+    const body = Bytes.concat(
       struct.pack(">4B", 255, 0, 0, 255),
       struct.pack(">4B", 128, 128, 128, 255),
-      bytes_.zeros(64),
-      bytes_.fromhex("ffffffff0000000046696c6c0000000024f70a7e"),
+      Bytes.zeros(64),
+      Bytes.fromHex("ffffffff0000000046696c6c0000000024f70a7e"),
     );
     const data = _buildPard(5, body);
     const buf = new BytesIO(data);
@@ -1450,9 +1450,9 @@ describe("TestPardChunk", () => {
   });
 
   test("test_scalar_roundtrip", () => {
-    const body = bytes_.concat(
+    const body = Bytes.concat(
       struct.pack(">i", 50),
-      bytes_.zeros(64),
+      Bytes.zeros(64),
       struct.pack(">ii", 0, 100 * 65536),
       struct.pack(">ii", 0, 100 * 65536),
     );
@@ -1475,7 +1475,7 @@ describe("TestPardChunk", () => {
   });
 
   test("test_integer_roundtrip", () => {
-    const body = bytes_.concat(struct.pack(">i", 5), bytes_.zeros(64), struct.pack(">ii", 3, 999));
+    const body = Bytes.concat(struct.pack(">i", 5), Bytes.zeros(64), struct.pack(">ii", 3, 999));
     const data = _buildPard(1, body);
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
@@ -1504,7 +1504,7 @@ describe("TestPardChunk", () => {
   });
 
   test("test_boolean_roundtrip", () => {
-    const body = bytes_.concat(struct.pack(">I", 1), b("\x01"), bytes_.zeros(3));
+    const body = Bytes.concat(struct.pack(">I", 1), b("\x01"), Bytes.zeros(3));
     const data = _buildPard(4, body);
     const buf = new BytesIO(data);
     const chunk = asInstance(PardChunk.read(buf, data.length, { chunkType: "pard" }), BooleanPardChunk);
@@ -1520,8 +1520,8 @@ describe("TestPardChunk", () => {
   test("test_enum_roundtrip", () => {
     // SDK popup layout: s4 value, s2 choice count, s2 default (1-based),
     // then the choice-names pointer AE leaves as leftover bytes.
-    let body = bytes_.concat(struct.pack(">ihh", 2, 5, 4), bytes_.fromhex("e0af37a4d0e2d700"));
-    body = bytes_.concat(body, bytes_.zeros(92 - body.length));
+    let body = Bytes.concat(struct.pack(">ihh", 2, 5, 4), Bytes.fromHex("e0af37a4d0e2d700"));
+    body = Bytes.concat(body, Bytes.zeros(92 - body.length));
     const data = _buildPard(7, body);
     const buf = new BytesIO(data);
     const chunk = asInstance(PardChunk.read(buf, data.length, { chunkType: "pard" }), EnumPardChunk);
@@ -1540,7 +1540,7 @@ describe("TestPardChunk", () => {
     // `29.97_fps_time_scale_3.125.aep`): cached value 1, 3 choices,
     // default 3 - the value ExtendScript reports for the omitted
     // parameter.
-    let body = bytes_.fromhex(
+    let body = Bytes.fromHex(
       "00000001" + // value
         "0003" + // choice count
         "0003" + // default
@@ -1548,7 +1548,7 @@ describe("TestPardChunk", () => {
         "0000000040337cd1" +
         "00000000d0e2d700", // leftovers
     );
-    body = bytes_.concat(body, bytes_.zeros(92 - body.length));
+    body = Bytes.concat(body, Bytes.zeros(92 - body.length));
     const data = _buildPard(7, body);
     const chunk = asInstance(PardChunk.read(new BytesIO(data), data.length, { chunkType: "pard" }), EnumPardChunk);
     expect(chunk instanceof EnumPardChunk).toBe(true);
@@ -1557,11 +1557,11 @@ describe("TestPardChunk", () => {
   });
 
   test("test_slider_roundtrip", () => {
-    const body = bytes_.concat(
+    const body = Bytes.concat(
       struct.pack(">d", 50.0),
-      bytes_.zeros(40),
+      Bytes.zeros(40),
       struct.pack(">ff", 0.0, 1000.0),
-      bytes_.zeros(4),
+      Bytes.zeros(4),
       struct.pack(">f", 100.0),
     );
     const data = _buildPard(10, body);
@@ -1585,8 +1585,8 @@ describe("TestPardChunk", () => {
     // restrict_bounds, then the default x/y in percent of the layer
     // size. Bytes of Bezier Warp's "Tangent 1/Circle Point" in sample
     // `effects_canvary.aep`: value (0.25, 0.4), default (25 %, 40 %).
-    let body = bytes_.fromhex("0000400000006666000000000019000000280000");
-    body = bytes_.concat(body, bytes_.zeros(92 - body.length));
+    let body = Bytes.fromHex("0000400000006666000000000019000000280000");
+    body = Bytes.concat(body, Bytes.zeros(92 - body.length));
     const data = _buildPard(6, body);
     const buf = new BytesIO(data);
     const chunk = asInstance(PardChunk.read(buf, data.length, { chunkType: "pard" }), TwoDPardChunk);
@@ -1604,7 +1604,7 @@ describe("TestPardChunk", () => {
     // SDK 3D point layout: f8 value x/y/z then f8 default x/y/z in
     // percent of the layer size (sample `geometry_probe.aep`).
     let body = struct.pack(">6d", 0.5, 0.5, 0.0, 50.0, 50.0, 0.0);
-    body = bytes_.concat(body, bytes_.zeros(92 - body.length));
+    body = Bytes.concat(body, Bytes.zeros(92 - body.length));
     const data = _buildPard(18, body);
     const buf = new BytesIO(data);
     const chunk = asInstance(PardChunk.read(buf, data.length, { chunkType: "pard" }), ThreeDPardChunk);
@@ -1621,14 +1621,14 @@ describe("TestPardChunk", () => {
 
   test("test_raw_name_preserved", () => {
     // Garbage bytes after null terminator in name field are preserved.
-    const rawName = bytes_.concat(b("Opacity\x00olor"), bytes_.zeros(20));
+    const rawName = Bytes.concat(b("Opacity\x00olor"), Bytes.zeros(20));
     expect(rawName.length).toBe(32);
 
-    const padPre = bytes_.zeros(15);
+    const padPre = Bytes.zeros(15);
     const ct = struct.pack(">B", 3);
-    const padPost = bytes_.zeros(8);
+    const padPost = Bytes.zeros(8);
     const bodyAfter = struct.pack(">i", 90);
-    const data = bytes_.concat(padPre, ct, rawName, padPost, bodyAfter);
+    const data = Bytes.concat(padPre, ct, rawName, padPost, bodyAfter);
 
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
@@ -1641,7 +1641,7 @@ describe("TestPardChunk", () => {
   });
 
   test("test_unknown_control_type_fallback", () => {
-    const data = _buildPard(99, bytes_.zeros(10));
+    const data = _buildPard(99, Bytes.zeros(10));
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
     expect(chunk.constructor).toBe(PardChunk);
@@ -1671,7 +1671,7 @@ describe("TestPardChunk", () => {
 
   test("test_generic_pard_name_access", () => {
     // GenericPardChunk exposes the name from the raw header.
-    const body = bytes_.zeros(92);
+    const body = Bytes.zeros(92);
     const data = _buildPard(13, body, "Master");
     const buf = new BytesIO(data);
     const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
@@ -1684,7 +1684,7 @@ describe("TestPardChunk", () => {
 describe("TestNmhdChunk", () => {
   test("test_duration_divisor", () => {
     // AE 2026 opens a marker storing 36 over 24 with duration 1.5 s.
-    const data = bytes_.fromhex("0000000400000000000000240000001800000000");
+    const data = Bytes.fromHex("0000000400000000000000240000001800000000");
     const chunk = asInstance(NmhdChunk.frombytes(data, { chunkType: "NmHd" }), NmhdChunk);
     expect(chunk.durationSeconds).toBe(1.5);
     expect(valueEquals(chunk.tobytes(), data)).toBe(true);
@@ -1692,22 +1692,22 @@ describe("TestNmhdChunk", () => {
 
   test("test_zero_divisor_reads_as_600ths", () => {
     // AE 2026 opens a marker storing 1500 over 0 with duration 2.5 s.
-    const data = bytes_.fromhex("0000000000000000000005dc0000000000000000");
+    const data = Bytes.fromHex("0000000000000000000005dc0000000000000000");
     expect(asInstance(NmhdChunk.frombytes(data, { chunkType: "NmHd" }), NmhdChunk).durationSeconds).toBe(2.5);
   });
 
   test("test_set_duration_writes_600ths", () => {
     // AE 2026 rewrites a 36-over-24 marker whose duration a script sets
     // to 1.25 s as 750 over 600.
-    const data = bytes_.fromhex("0000000400000000000000240000001800000000");
+    const data = Bytes.fromHex("0000000400000000000000240000001800000000");
     const chunk = asInstance(NmhdChunk.frombytes(data, { chunkType: "NmHd" }), NmhdChunk);
     chunk.durationSeconds = 1.25;
-    expect(valueEquals(bytes_.slice(chunk.tobytes(), 8, 16), bytes_.fromhex("000002ee00000258"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 8, 16), Bytes.fromHex("000002ee00000258"))).toBe(true);
   });
 
   test("test_new_chunk_divisor", () => {
     // Every marker a script creates in AE 2026 stores divisor 600.
-    expect(valueEquals(bytes_.slice(new NmhdChunk({}).tobytes(), 12, 16), bytes_.fromhex("00000258"))).toBe(true);
+    expect(valueEquals(Bytes.slice(new NmhdChunk({}).tobytes(), 12, 16), Bytes.fromHex("00000258"))).toBe(true);
   });
 });
 
@@ -1722,14 +1722,14 @@ describe("TestLhd3Chunk", () => {
     itemTypeRaw: number,
     version = 1,
     nextId = 2,
-    trailing: Uint8Array = bytes_.zeros(20),
+    trailing: Uint8Array = Bytes.zeros(20),
   ): Uint8Array {
-    return bytes_.concat(
-      bytes_.zeros(10),
+    return Bytes.concat(
+      Bytes.zeros(10),
       struct.pack(">H", count),
-      bytes_.zeros(6),
+      Bytes.zeros(6),
       struct.pack(">H", itemSize),
-      bytes_.zeros(3),
+      Bytes.zeros(3),
       struct.pack(">B", itemTypeRaw),
       struct.pack(">II", version, nextId),
       trailing,
@@ -1893,11 +1893,11 @@ describe("TestKfPosition", () => {
   test("test_2d_roundtrip", () => {
     // 3B pad + 1B flags + 4B pad + (5 + 3*2) f8 = 8 + 88 = 96 bytes
     const flags = 0b00000011; // spatial_auto_bezier + spatial_continuous
-    const prefix = bytes_.concat(bytes_.zeros(3), struct.pack(">B", flags), bytes_.zeros(4));
+    const prefix = Bytes.concat(Bytes.zeros(3), struct.pack(">B", flags), Bytes.zeros(4));
     // 11 doubles: header, in_speed, in_inf, out_speed, out_inf,
     //   val[0], val[1], in_tang[0], in_tang[1], out_tang[0], out_tang[1]
     const doubles = [0.0, 1.0, 33.3, 2.0, 66.6, 10.0, 20.0, 0.1, 0.2, -0.1, -0.2];
-    const data = bytes_.concat(prefix, struct.pack(">" + "d".repeat(11), ...doubles));
+    const data = Bytes.concat(prefix, struct.pack(">" + "d".repeat(11), ...doubles));
 
     const kf = KfPosition.frombytes(data, { numValue: 2 });
     expect(truthy(kf.spatialAutoBezier)).toBe(true);
@@ -1911,10 +1911,10 @@ describe("TestKfPosition", () => {
   });
 
   test("test_3d_roundtrip", () => {
-    const prefix = bytes_.zeros(8);
+    const prefix = Bytes.zeros(8);
     // 5 + 3*3 = 14 doubles
     const doubles = Array.from({ length: 14 }, (_, x) => x);
-    const data = bytes_.concat(prefix, struct.pack(">" + "d".repeat(14), ...doubles));
+    const data = Bytes.concat(prefix, struct.pack(">" + "d".repeat(14), ...doubles));
     const kf = KfPosition.frombytes(data, { numValue: 3 });
     expect(kf.value.length).toBe(3);
     expect(kf.inSpatialTangents.length).toBe(3);
@@ -1937,7 +1937,7 @@ describe("TestLdatItem", () => {
     flags = 0,
     payload: Uint8Array = b(""),
   ): Uint8Array {
-    return bytes_.concat(
+    return Bytes.concat(
       struct.pack(">i", timeUnits),
       struct.pack(">BBBB", inInterp, outInterp, label, flags),
       payload,
@@ -1948,7 +1948,7 @@ describe("TestLdatItem", () => {
     // 5 doubles for 1D multidimensional
     const payload = struct.pack(">ddddd", 50.0, 1.0, 33.3, 2.0, 66.6);
     let data = _buildItem(LdatItemType.one_d, 30 * 256, 2, 1);
-    data = bytes_.concat(data, payload);
+    data = Bytes.concat(data, payload);
     // total = 8 header + 40 payload = 48
 
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.one_d });
@@ -1963,7 +1963,7 @@ describe("TestLdatItem", () => {
     // 144 bytes for KfColor (18 doubles)
     const doubles = [0, 0.0, 1.0, 33.3, 2.0, 66.6, 0.5, 0.6, 0.7, 1.0, ...Array.from({ length: 8 }, () => 0.0)];
     const payload = struct.pack(">Qd" + "d".repeat(16), ...doubles);
-    const data = bytes_.concat(_buildItem(LdatItemType.color), payload);
+    const data = Bytes.concat(_buildItem(LdatItemType.color), payload);
 
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.color });
     expect(approx(asInstance(item.kfData, KfColor).value, [0.5, 0.6, 0.7, 1.0])).toBe(true);
@@ -1974,7 +1974,7 @@ describe("TestLdatItem", () => {
     // roving=bit5 (0x20), temporal_auto_bezier=bit4 (0x10)
     const flags = 0x30;
     const payload = struct.pack(">Qddddd", 0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    const data = bytes_.concat(_buildItem(LdatItemType.no_value, 0, 2, 2, 0, flags), payload);
+    const data = Bytes.concat(_buildItem(LdatItemType.no_value, 0, 2, 2, 0, flags), payload);
 
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
     expect(truthy(item.roving)).toBe(true);
@@ -1993,7 +1993,7 @@ describe("TestLdatItem", () => {
       [b("\x01\x40"), 5],
       [b("\x04\x00"), 16],
     ] satisfies [Uint8Array, number][]) {
-      const data = bytes_.concat(struct.pack(">iBB", 0, 2, 2), raw, payload);
+      const data = Bytes.concat(struct.pack(">iBB", 0, 2, 2), raw, payload);
       const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
       expect(item.label).toBe(label);
       expect(valueEquals(item.tobytes(), data)).toBe(true);
@@ -2003,13 +2003,13 @@ describe("TestLdatItem", () => {
   test("test_label_write_keeps_the_other_flag_bits", () => {
     // bits 0-2 plus continuous / auto-bezier / roving (bits 3-5) set
     const payload = struct.pack(">Qddddd", 0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    const data = bytes_.concat(struct.pack(">iBB", 0, 2, 2), b("\x00\x3f"), payload);
+    const data = Bytes.concat(struct.pack(">iBB", 0, 2, 2), b("\x00\x3f"), payload);
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.no_value });
 
     item.label = 16;
-    expect(valueEquals(bytes_.slice(item.tobytes(), 6, 8), b("\x04\x3f"))).toBe(true);
+    expect(valueEquals(Bytes.slice(item.tobytes(), 6, 8), b("\x04\x3f"))).toBe(true);
     item.label = 5;
-    expect(valueEquals(bytes_.slice(item.tobytes(), 6, 8), b("\x01\x7f"))).toBe(true);
+    expect(valueEquals(Bytes.slice(item.tobytes(), 6, 8), b("\x01\x7f"))).toBe(true);
     expect(truthy(item.roving)).toBe(true);
     expect(truthy(item.temporalAutoBezier)).toBe(true);
     expect(truthy(item.temporalContinuous)).toBe(true);
@@ -2019,7 +2019,7 @@ describe("TestLdatItem", () => {
 
   test("test_marker_raw_bytes", () => {
     const payload = b("\x01\x02\x03\x04\x05\x06\x07\x08");
-    const data = bytes_.concat(_buildItem(LdatItemType.marker), payload);
+    const data = Bytes.concat(_buildItem(LdatItemType.marker), payload);
     const item = LdatItem.frombytes(data, { itemType: LdatItemType.marker });
     expect(valueEquals(item.kfData, payload)).toBe(true);
     expect(valueEquals(item.tobytes(), data)).toBe(true);
@@ -2034,7 +2034,7 @@ describe("TestLdatChunk", () => {
   test("test_shape_roundtrip", () => {
     let itemsData: Uint8Array = b("");
     for (let i = 0; i < 3; i++) {
-      itemsData = bytes_.concat(itemsData, struct.pack(">ff", i, i + 1));
+      itemsData = Bytes.concat(itemsData, struct.pack(">ff", i, i + 1));
     }
     const buf = new BytesIO(itemsData);
     const chunk = LdatChunk.read(buf, itemsData.length, {
@@ -2054,7 +2054,7 @@ describe("TestLdatChunk", () => {
   });
 
   test("test_guide_roundtrip", () => {
-    const itemsData = bytes_.concat(struct.pack(">IId", 1, 0, 50.0), struct.pack(">IId", 2, 0, 100.0));
+    const itemsData = Bytes.concat(struct.pack(">IId", 1, 0, 50.0), struct.pack(">IId", 2, 0, 100.0));
     const buf = new BytesIO(itemsData);
     const chunk = LdatChunk.read(buf, itemsData.length, {
       chunkType: "ldat",
@@ -2074,14 +2074,14 @@ describe("TestLdatChunk", () => {
 
   test("test_1d_keyframe_roundtrip", () => {
     // Build one item: 8B header + 40B payload = 48B
-    const header = bytes_.concat(
+    const header = Bytes.concat(
       b("\x00"),
       struct.pack(">h", 15),
       b("\x00"),
       struct.pack(">BBBB", 2, 2, 0, 0),
     );
     const payload = struct.pack(">ddddd", 100.0, 1.0, 33.3, 2.0, 66.6);
-    const itemData = bytes_.concat(header, payload);
+    const itemData = Bytes.concat(header, payload);
     expect(itemData.length).toBe(48);
 
     const buf = new BytesIO(itemData);
@@ -2120,11 +2120,11 @@ describe("TestLdatChunk", () => {
 
   test("test_spatial_promotion", () => {
     // Build one 3D spatial item: 8B header + 8B prefix + (5+3*3)*8 = 128B
-    const header = bytes_.concat(b("\x00"), struct.pack(">h", 0), b("\x00"), b("\x02\x02\x00\x00"));
+    const header = Bytes.concat(b("\x00"), struct.pack(">h", 0), b("\x00"), b("\x02\x02\x00\x00"));
     const prefix = b("\x00\x00\x00\x00\x00\x00\x00\x00");
     const doubles = Array.from({ length: 14 }, (_, x) => x);
-    const payload = bytes_.concat(prefix, struct.pack(">" + "d".repeat(14), ...doubles));
-    const itemData = bytes_.concat(header, payload);
+    const payload = Bytes.concat(prefix, struct.pack(">" + "d".repeat(14), ...doubles));
+    const itemData = Bytes.concat(header, payload);
     expect(itemData.length).toBe(128);
 
     const buf = new BytesIO(itemData);
@@ -2184,7 +2184,7 @@ describe("TestLdatContextResolver", () => {
 
   test("test_raw_sibling_fallback", () => {
     const ctx = new ReadContext();
-    const result = _resolveLdatContext([new Chunk({ chunkType: "lhd3", data: bytes_.zeros(24) })], ctx);
+    const result = _resolveLdatContext([new Chunk({ chunkType: "lhd3", data: Bytes.zeros(24) })], ctx);
     expect(result).toEqual({});
   });
 });
@@ -2213,8 +2213,8 @@ describe("TestSyntheticFlag", () => {
     const raw = buf.getvalue();
     // Body = list_type (4) + header+body of real child only
     // Real child: header (8) + body (1) + pad (1)
-    expect(bytes_.contains(raw, b("\x01"))).toBe(true);
-    expect(bytes_.contains(raw, b("\x02"))).toBe(false);
+    expect(Bytes.includes(raw, b("\x01"))).toBe(true);
+    expect(Bytes.includes(raw, b("\x02"))).toBe(false);
   });
 
   test("test_container_chunk_skips_synthetic_children", () => {
@@ -2224,8 +2224,8 @@ describe("TestSyntheticFlag", () => {
     const buf = new BytesIO();
     writeChunk(buf, cont);
     const raw = buf.getvalue();
-    expect(bytes_.contains(raw, b("\x03"))).toBe(true);
-    expect(bytes_.contains(raw, b("\x04"))).toBe(false);
+    expect(Bytes.includes(raw, b("\x03"))).toBe(true);
+    expect(Bytes.includes(raw, b("\x04"))).toBe(false);
   });
 
   test("test_synthetic_not_in_repr", () => {

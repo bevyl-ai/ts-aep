@@ -14,7 +14,7 @@ import {
   getattr,
   int,
   valueEquals,
-  repr,
+  literal,
   setattr,
   sorted,
   str,
@@ -86,7 +86,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   get<K extends string>(key: K): V[K] {
     const spec = this._specs.get(key) ?? null;
-    if (spec == null) throw new KeyError(repr(key));
+    if (spec == null) throw new KeyError(literal(key));
     const [attrName] = spec;
     return getattr(this._owner, attrName);
   }
@@ -97,7 +97,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) {
       const valid = sorted(this._specs.keys());
-      throw new KeyError(`Unknown setting ${repr(key)}. Valid keys: ${repr(valid)}`);
+      throw new KeyError(`Unknown setting ${literal(key)}. Valid keys: ${literal(valid)}`);
     }
     const [attrName, enumClass] = spec;
     if (enumClass != null) value = _coerceEnum(enumClass, value);
@@ -111,7 +111,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
         e.constructor === TypeError &&
         /readonly property|only a getter|read-only/i.test(e.message);
       if (!(e instanceof AttributeError) && !nativeReadonly) throw e;
-      throw new AttributeError(`Setting ${repr(key)} is read-only.`);
+      throw new AttributeError(`Setting ${literal(key)} is read-only.`);
     }
   }
 
@@ -244,7 +244,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
     // coerce to OutputAudio.OFF (== 1). Reject rather than surprise.
-    throw new TypeError(`Expected ${enumClass.__name__}, int, or str, got bool`);
+    throw new TypeError(`Expected ${enumClass.enumName}, int, or str, got bool`);
   }
   if (typeof value === "number" && Number.isInteger(value)) {
     const member = enumClass.ofOrNull(value);
@@ -254,7 +254,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
         .map((m) => `${enumClass.nameOf(m)} (${int(m)})`)
         .join(", ");
       throw new ValueError(
-        `Invalid int value ${repr(value)} for ${enumClass.__name__}. ` +
+        `Invalid int value ${literal(value)} for ${enumClass.enumName}. ` +
           `Valid members: ${members}`,
       );
     }
@@ -267,15 +267,15 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
     if (member !== undefined) return member;
     const labels = enumClass
       .members()
-      .map((m) => repr(enumLabel(enumClass, m)))
+      .map((m) => literal(enumLabel(enumClass, m)))
       .join(", ");
     throw new ValueError(
-      `Invalid string ${repr(value)} for ${enumClass.__name__}. ` +
+      `Invalid string ${literal(value)} for ${enumClass.enumName}. ` +
         `Valid labels: ${labels}`,
     );
   }
   throw new TypeError(
-    `Expected ${enumClass.__name__}, int, or str, got ${typeName(value)}`,
+    `Expected ${enumClass.enumName}, int, or str, got ${typeName(value)}`,
   );
 }
 

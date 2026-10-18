@@ -10,7 +10,7 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import { AttributeError, KeyError, PyFloat, at, float, int, repr, typeName } from "../../pyrt/index.ts";
+import { AttributeError, KeyError, PyFloat, at, float, int, literal, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
 /** A COS value kind: a guard that narrows a value to the kind's type. */
@@ -82,7 +82,7 @@ export function cosItem(x: CosNode, key: string): CosNode {
     throw new TypeError(`'${typeName(x)}' object is not subscriptable`);
   }
   const value = x.get(key);
-  if (value === undefined) throw new KeyError(repr(key));
+  if (value === undefined) throw new KeyError(literal(key));
   return value;
 }
 
@@ -117,7 +117,7 @@ export function cosAt(x: CosNode, i: number): CosNode {
   if (Array.isArray(x)) return at(x, i);
   if (typeof x === "string" || x instanceof String) return at(String(x), i);
   if (x instanceof Uint8Array) return at(x, i);
-  if (x instanceof Map) throw new KeyError(repr(i));
+  if (x instanceof Map) throw new KeyError(literal(i));
   throw new TypeError(`'${typeName(x)}' object is not subscriptable`);
 }
 
@@ -213,7 +213,7 @@ export function cosPopAt(x: CosNode, i: number): CosNode {
     x.splice(i < 0 ? x.length + i : i, 1);
     return item;
   }
-  if (x instanceof Map) throw new KeyError(repr(i));
+  if (x instanceof Map) throw new KeyError(literal(i));
   throw new AttributeError(`'${typeName(x)}' object has no attribute 'pop'`);
 }
 

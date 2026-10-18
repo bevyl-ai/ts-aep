@@ -193,7 +193,7 @@ describe("TestMaterializationLifecycle", () => {
 
 describe("TestParseTimeWriteGuard", () => {
   /**
-   * ChunkField.__set__ must block writes when materialization is suppressed,
+   * ChunkField.set must block writes when materialization is suppressed,
    * while __dict__ bypass must still work.
    */
 

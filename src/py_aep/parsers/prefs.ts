@@ -29,7 +29,7 @@
 
 import { PREFType } from "../enums/general.ts";
 import {
-  bytes_,
+  Bytes,
   decode,
   encode,
   float,
@@ -146,7 +146,7 @@ export function decodePrefNumber(raw: string): number {
   // TODO(port): Python's int is exact; get_pref_as_number's public return type is number, so an
   // unquoted hex value of 7+ significant bytes (or quoted integer text) beyond 2^53 rounds to the
   // nearest double. decode_pref_bool stays exact: no nonzero integer rounds to 0.
-  return bytes_.intFromBytes(data, "big");
+  return Bytes.intFromBytes(data, "big");
 }
 
 /** Decode a preference value as a boolean (`01`, `"1"`, `00`, `"0"`). */

@@ -11,7 +11,7 @@
 import {
   Path,
   ValueError,
-  repr,
+  literal,
   sorted,
   type PathLike,
 } from "../../pyrt/index.ts";
@@ -76,7 +76,7 @@ export function listLayers(file: PathLike): string[] {
     return [...readAiLayers(file)].reverse();
   }
   throw new ValueError(
-    `listLayers supports layered .psd/.psb/.ai/.pdf files, got ${repr(suffix)}`,
+    `listLayers supports layered .psd/.psb/.ai/.pdf files, got ${literal(suffix)}`,
   );
 }
 
@@ -107,7 +107,7 @@ export function layerIndexForStored(
     throw new ValueError(
       `${new Path(file).name}: no selectable layer has stored index ` +
         `${storedIndex} (leaf record indices: ` +
-        `${repr(leaves.map((leaf) => leaf.recordIndex))})`,
+        `${literal(leaves.map((leaf) => leaf.recordIndex))})`,
     );
   }
   if (AI_COMP_EXTENSIONS.has(suffix)) {
@@ -122,7 +122,7 @@ export function layerIndexForStored(
   }
   throw new ValueError(
     `layerIndexForStored supports layered .psd/.psb/.ai/.pdf ` +
-      `files, got ${repr(suffix)}`,
+      `files, got ${literal(suffix)}`,
   );
 }
 
@@ -133,7 +133,7 @@ export function _outOfRange(
 ): ValueError {
   return new ValueError(
     `${new Path(file).name}: layerIndex ${layerIndex} out of range; the ` +
-      `file has ${names.length} selectable layers (top first): ${repr(names)}`,
+      `file has ${names.length} selectable layers (top first): ${literal(names)}`,
   );
 }
 

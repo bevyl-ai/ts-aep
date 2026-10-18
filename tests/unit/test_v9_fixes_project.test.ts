@@ -13,7 +13,7 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { projectBytes } from "../helpers.ts";
-import { b, bytes_, bytesEq, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
+import { b, Bytes, bytesEq, valueEquals, sorted, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
@@ -156,11 +156,11 @@ describe("TestWorkingSpaceNone", () => {
       "PwCs",
       '{"baseColorProfile":{"colorProfileName":"X"}}',
     );
-    app.project._cpid.data = bytes_.repeat(b("\x01"), 16);
+    app.project._cpid.data = Bytes.repeat(b("\x01"), 16);
     app.project.workingSpace = "None";
     expect(app.project.workingSpace).toBe("None");
     expect(bytesEq(app.project._cpid.data, cpid)).toBe(true);
-    expect(bytesEq(cpid, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(bytesEq(cpid, Bytes.repeat(b("\xff"), 16))).toBe(true);
     expect(app.project._wsUtf8 != null && String(app.project._wsUtf8.value) === "{}").toBe(true);
     expect(utf8 == null).toBe(true);
     const path = tmpPath.div("ws.aep");

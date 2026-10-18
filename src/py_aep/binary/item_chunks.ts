@@ -10,7 +10,7 @@ import {
   and,
   andNot,
   b,
-  bytes_,
+  Bytes,
   decode,
   define,
   descriptor,
@@ -22,7 +22,7 @@ import {
   mod,
   objectSetattr,
   or,
-  repr,
+  literal,
   rshift,
   split,
   ValueError,
@@ -119,7 +119,7 @@ export class IdpcChunk extends Chunk {
 }
 define(IdpcChunk, {
   chunkType: field({ default: "idpc" }),
-  data: field({ default: bytes_.repeat(b("\x00"), 8) }),
+  data: field({ default: Bytes.repeat(b("\x00"), 8) }),
 });
 register("idpc")(IdpcChunk);
 
@@ -250,7 +250,7 @@ export class HeadChunk extends Chunk {
   set version(value: string) {
     const m = AE_VERSION_RE.exec(value);
     if (!m) {
-      throw new ValueError(`Invalid version format: ${repr(value)}`);
+      throw new ValueError(`Invalid version format: ${literal(value)}`);
     }
     const [major, minor, build] = [int(m[1]), int(m[2]), int(m[3])];
     this.aeVersionMajorA = floordiv(major, 8);
@@ -345,7 +345,7 @@ export class NhedChunk extends Chunk {
 define(NhedChunk, {
   chunkType: field({ default: "nhed" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved00: bytesField(8, { default: bytes_.concat(bytes_.repeat(b("\x00"), 7), b("\x05")), repr: false }),
+  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(b("\x00"), 7), b("\x05")), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: bytesField(1, { default: b("\x01"), repr: false }),
@@ -431,7 +431,7 @@ define(NnhdChunk, {
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
   _reserved00: bytesField(2, { repr: false }),
   _savingPlatform: u1Field({ repr: false }),
-  _reserved03: bytesField(5, { default: bytes_.concat(bytes_.repeat(b("\x00"), 4), b("\x05")), repr: false }),
+  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(b("\x00"), 4), b("\x05")), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: u1Field({ default: 1, repr: false }),

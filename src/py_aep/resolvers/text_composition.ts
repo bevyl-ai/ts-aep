@@ -47,7 +47,7 @@ import {
   truthy,
   valueEquals,
   truthyOr,
-  repr,
+  literal,
   rstrip,
   split,
   str,
@@ -243,7 +243,7 @@ export const _ascenderCache = new Map<string, number>();
 export function _resolveFace(psName: string): [Path, number] {
   const resolved = resolvePostscript(psName);
   if (resolved == null) {
-    throw new CompositionUnsupported(`font ${repr(psName)} is not installed`);
+    throw new CompositionUnsupported(`font ${literal(psName)} is not installed`);
   }
   return resolved;
 }
@@ -260,7 +260,7 @@ export function _hbFont(psName: string): [_HbFont, number] {
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
       throw Object.assign(
-        new CompositionUnsupported(`font file for ${repr(psName)} is unreadable: ${path.toString()}`),
+        new CompositionUnsupported(`font file for ${literal(psName)} is unreadable: ${path.toString()}`),
         { cause: exc },
       );
     }
@@ -290,7 +290,7 @@ export function _ascenderRatio(psName: string): number {
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
       throw Object.assign(
-        new CompositionUnsupported(`font file for ${repr(psName)} is unreadable: ${path.toString()}`),
+        new CompositionUnsupported(`font file for ${literal(psName)} is unreadable: ${path.toString()}`),
         { cause: exc },
       );
     }
@@ -483,7 +483,7 @@ export function _shapeGlyphs(text: string, style: _CharStyle): [_HbBuffer, numbe
   for (const info of buf.glyphInfos) {
     if (info.codepoint === 0) {
       throw new CompositionUnsupported(
-        `glyph missing from ${repr(style.font)} for a character in ${repr(text)}`,
+        `glyph missing from ${literal(style.font)} for a character in ${literal(text)}`,
       );
     }
   }

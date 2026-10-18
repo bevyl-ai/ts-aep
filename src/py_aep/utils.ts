@@ -23,7 +23,7 @@ export function deprecated(message: string) {
     }
     // functools.wraps(func): copy __name__ and set __wrapped__ (no __doc__/__qualname__ in JS).
     Object.defineProperty(wrapper, "name", { value: func.name, configurable: true });
-    wrapper.__wrapped__ = func;
+    wrapper.wrapped = func;
     return wrapper;
   };
 }

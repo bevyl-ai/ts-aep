@@ -17,7 +17,7 @@ import {
   ValueError,
   attrsEq,
   b,
-  bytes_,
+  Bytes,
   decode,
   define,
   encode,
@@ -26,7 +26,7 @@ import {
   floordiv,
   getattr,
   valueEquals,
-  repr,
+  literal,
   struct,
   type ClassAttributes,
   type IO,
@@ -620,15 +620,15 @@ export class ContainerChunk extends Chunk {
     const encoded = encode(cls._legacyString(value), "UTF-8", "surrogateescape");
     const size = this.data.length || (_LEGACY_FIXED_BUFFERS.get(this.chunkType) ?? null);
     if (!_LEGACY_FIXED_BUFFERS.has(this.chunkType) || size == null) {
-      return bytes_.concat(encoded, b("\x00"));
+      return Bytes.concat(encoded, b("\x00"));
     }
     if (encoded.length + 1 > size) {
       throw new ValueError(
-        `${repr(value)} does not fit this project's ${size}-byte ` +
+        `${literal(value)} does not fit this project's ${size}-byte ` +
           `${this.chunkType} (at most ${size - 1} UTF-8 bytes)`,
       );
     }
-    return bytes_.ljust(encoded, size, 0);
+    return Bytes.padEnd(encoded, size, 0);
   }
 }
 
@@ -663,7 +663,7 @@ export const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: 
 
 /** The NUL-terminated string at the start of a legacy body. */
 export function _legacyText(data: Uint8Array): string {
-  const nul = bytes_.find(data, b("\x00"));
+  const nul = Bytes.indexOf(data, b("\x00"));
   return decode(nul >= 0 ? data.slice(0, nul) : data, "UTF-8", "surrogateescape");
 }
 
@@ -946,7 +946,7 @@ export function readAep(
   const rawType = readBytes(fp, 4);
   const chunkType = decode(rawType, "ASCII");
   if (chunkType !== "RIFX") {
-    throw new ValueError(`Expected RIFX, got ${repr(chunkType)}`);
+    throw new ValueError(`Expected RIFX, got ${literal(chunkType)}`);
   }
   const [lenBody] = readFmt("I", fp);
   const rifx = ListChunk.read(fp, lenBody, {

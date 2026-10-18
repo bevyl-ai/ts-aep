@@ -34,18 +34,18 @@ export class _GradientField<T> {
   declare _slot: string;
   declare _name: string;
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this._slot = "_" + name;
     this._name = name;
   }
 
-  __get__(obj: object | null, objtype?: Function | null): T | this {
+  get(obj: object | null, objtype?: Function | null): T | this {
     if (obj == null) return this;
     const value: T = objectGetattr(obj, this._slot);
     return value;
   }
 
-  __set__(obj: object, value: T): void {
+  set(obj: object, value: T): void {
     const validator = this.constructor._VALIDATORS.get(this._name);
     if (validator != null) validator(value, null);
     objectSetattr(obj, this._slot, value);

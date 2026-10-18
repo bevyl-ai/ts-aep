@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError, at, b, bytes_, concat, getOr, encode, floordiv, format, getattr, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, format, getattr, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
@@ -98,16 +98,16 @@ function _psdRecord(
   record = concat(record, b("8BIMnorm"), Uint8Array.of(255, 0, hidden ? 0x02 : 0x00, 0));
   const rawName = encode(name, "latin-1", "replace").slice(0, 255);
   let pascal = concat(Uint8Array.of(len(rawName)), rawName);
-  pascal = concat(pascal, bytes_.repeat(b("\0"), mod(-len(pascal), 4)));
+  pascal = concat(pascal, Bytes.repeat(b("\0"), mod(-len(pascal), 4)));
   let unicodeName = concat(struct.pack(">I", len(Array.from(name))), encode(name, "utf-16-be"));
-  unicodeName = concat(unicodeName, bytes_.repeat(b("\0"), mod(-len(unicodeName), 4)));
+  unicodeName = concat(unicodeName, Bytes.repeat(b("\0"), mod(-len(unicodeName), 4)));
   let extra = concat(struct.pack(">II", 0, 0), pascal);
   extra = concat(extra, b("8BIMluni"), struct.pack(">I", len(unicodeName)), unicodeName);
   if (lyid != null) extra = concat(extra, b("8BIMlyid"), struct.pack(">II", 4, lyid));
   // 3 = group bounding divider, 1 = open group header
   if (lsct != null) extra = concat(extra, b("8BIMlsct"), struct.pack(">II", 4, lsct));
   record = concat(record, struct.pack(">I", len(extra)), extra);
-  const data = bytes_.join(channels.map(() => concat(struct.pack(">H", 0), bytes_.repeat(Uint8Array.of(200), size))));
+  const data = Bytes.join(channels.map(() => concat(struct.pack(">H", 0), Bytes.repeat(Uint8Array.of(200), size))));
   return [record, data];
 }
 
@@ -116,19 +116,19 @@ function _psd(path: Path, size: number, records: [Uint8Array, Uint8Array][]): Pa
   let layerInfo = struct.pack(">h", -len(records));
   layerInfo = concat(
     layerInfo,
-    bytes_.join(records.map(([r]) => r)),
-    bytes_.join(records.map(([, d]) => d)),
+    Bytes.join(records.map(([r]) => r)),
+    Bytes.join(records.map(([, d]) => d)),
   );
-  layerInfo = concat(layerInfo, bytes_.repeat(b("\0"), mod(len(layerInfo), 2)));
+  layerInfo = concat(layerInfo, Bytes.repeat(b("\0"), mod(len(layerInfo), 2)));
   const section = concat(struct.pack(">I", len(layerInfo)), layerInfo, struct.pack(">I", 0));
   const header = concat(
     b("8BPS"),
     struct.pack(">H", 1),
-    bytes_.repeat(b("\0"), 6),
+    Bytes.repeat(b("\0"), 6),
     struct.pack(">HIIHH", 3, size, size, 8, 3),
   );
   let body = concat(struct.pack(">II", 0, 0), struct.pack(">I", len(section)), section);
-  body = concat(body, struct.pack(">H", 0), bytes_.repeat(Uint8Array.of(128), size * size * 3));
+  body = concat(body, struct.pack(">H", 0), Bytes.repeat(Uint8Array.of(128), size * size * 3));
   path.writeBytes(concat(header, body));
   return path;
 }
@@ -138,7 +138,7 @@ function _tiff(path: Path, bits: number[], photometric: number, extra: number | 
   const width = 8;
   const height = 8;
   const row = floordiv(width * sum(bits) + 7, 8);
-  const pixels = bytes_.repeat(Uint8Array.of(0x40), row * height);
+  const pixels = Bytes.repeat(Uint8Array.of(0x40), row * height);
   let out = concat(b("II*\0\0\0\0\0"), pixels);
   if (mod(len(out), 2) !== 0) out = concat(out, b("\0"));
   const tags: [number, number, number, Uint8Array][] = [
@@ -151,9 +151,9 @@ function _tiff(path: Path, bits: number[], photometric: number, extra: number | 
     [278, 4, 1, struct.pack("<I", height)],
     [279, 4, 1, struct.pack("<I", len(pixels))],
   ];
-  const bps = bytes_.join(bits.map((b_) => struct.pack("<H", b_)));
+  const bps = Bytes.join(bits.map((b_) => struct.pack("<H", b_)));
   if (len(bps) <= 4) {
-    tags.push([258, 3, len(bits), bytes_.ljust(bps, 4, 0)]);
+    tags.push([258, 3, len(bits), Bytes.padEnd(bps, 4, 0)]);
   } else {
     tags.push([258, 3, len(bits), struct.pack("<I", len(out))]);
     out = concat(out, bps);
@@ -161,11 +161,11 @@ function _tiff(path: Path, bits: number[], photometric: number, extra: number | 
   if (extra != null) tags.push([338, 3, 1, struct.pack("<HH", extra, 0)]);
   if (photometric === 3) {
     const entries = 1 << bits[0];
-    const colorMap = bytes_.join(
+    const colorMap = Bytes.join(
       Array.from(range(entries), (i) => struct.pack("<H", floordiv(i * 65535, entries - 1))),
     );
     tags.push([320, 3, 3 * entries, struct.pack("<I", len(out))]);
-    out = concat(out, bytes_.repeat(colorMap, 3));
+    out = concat(out, Bytes.repeat(colorMap, 3));
   }
   tags.splice(0, tags.length, ...sorted(tags));
   const ifd = len(out);
@@ -194,8 +194,8 @@ function crc32(data: Uint8Array): number {
 }
 
 function _png(path: Path, width: number, height: number): Path {
-  const raw = bytes_.join(
-    Array.from(range(height), () => concat(b("\x00"), bytes_.repeat(b("\x00"), width))),
+  const raw = Bytes.join(
+    Array.from(range(height), () => concat(b("\x00"), Bytes.repeat(b("\x00"), width))),
   );
 
   const chunk = (kind: Uint8Array, data: Uint8Array): Uint8Array => {
@@ -547,8 +547,8 @@ test.each([
     const opti = source._opti.tobytes();
     expect(source._sspc.depth).toBe(depth);
     expect(opti[0x1E]).toBe(channels);
-    expect(bytes_.intFromBytes(opti.slice(0x28, 0x2A), "little")).toBe(8);
-    expect(bytes_.intFromBytes(opti.slice(0x30, 0x32), "little")).toBe(layers);
+    expect(Bytes.intFromBytes(opti.slice(0x28, 0x2A), "little")).toBe(8);
+    expect(Bytes.intFromBytes(opti.slice(0x30, 0x32), "little")).toBe(layers);
     expect(source._sspc.dataSize).toBe(dataSize);
   },
 );
@@ -574,7 +574,7 @@ function _clrs(source: FileSource): Map<string, Uint8Array | string | number> {
   return out;
 }
 
-const _UNSET = bytes_.repeat(b("\xff"), 16);
+const _UNSET = Bytes.repeat(b("\xff"), 16);
 
 test.each([
   ["depth/psd_cmyk8_flat.psd", "U.S. Web Coated (SWOP) v2"],
@@ -658,7 +658,7 @@ function _stamp(item: AVItem): Uint8Array {
 }
 
 function _mac(unixTime: number): Uint8Array {
-  return bytes_.intToBytes(unixTime + _MAC_EPOCH, 4, "big");
+  return Bytes.intToBytes(unixTime + _MAC_EPOCH, 4, "big");
 }
 
 function _stampedCopy(src: Path, dest: Path, mtime: number): Path {

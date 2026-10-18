@@ -8,9 +8,9 @@ import { INSPECT } from "./inspect.ts";
 export { INSPECT };
 export { describe, literal } from "./inspect.ts";
 
-/** The dunder methods the builtins below probe for. */
+/** The protocol methods the builtins below probe for. */
 type DunderProbe = {
-  __bool__?: () => boolean;
+  toBoolean?: () => boolean;
   has?: (x: unknown) => boolean;
   equals?: (other: unknown) => boolean;
 };
@@ -22,7 +22,7 @@ function _probeable(x: unknown): x is DunderProbe {
 
 /**
  * Python truthiness: empty containers (array, string, bytes, Map, Set,
- * custom truthiness via `__bool__`) are false. JS treats `[]` and an empty
+ * custom truthiness via `toBoolean`) are false. JS treats `[]` and an empty
  * Uint8Array as true - never use bare `if (x)` on a container.
  */
 export function truthy(x: unknown): boolean {
@@ -36,7 +36,7 @@ export function truthy(x: unknown): boolean {
   if (ArrayBuffer.isView(x)) return "length" in x && typeof x.length === "number" && x.length > 0;
   if (x instanceof Map || x instanceof Set) return x.size > 0;
   if (_probeable(x)) {
-    if (typeof x.__bool__ === "function") return x.__bool__();
+    if (typeof x.toBoolean === "function") return x.toBoolean();
     const n = _sizedLength(x);
     if (n !== null) return n > 0;
   }
@@ -534,7 +534,7 @@ export function deepcopy(x: unknown, memo = new Map<object, object>()): unknown 
     for (const v of x) out.add(deepcopy(v, memo));
     return out;
   }
-  if ("__deepcopy__" in x && typeof x.__deepcopy__ === "function") return x.__deepcopy__(memo);
+  if ("deepCopy" in x && typeof x.deepCopy === "function") return x.deepCopy(memo);
   const out =
     x instanceof String
       ? Reflect.construct(String, [x.valueOf()], x.constructor)

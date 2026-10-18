@@ -14,7 +14,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { Path, b, Bytes, len, valueEquals, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse, type Project } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
@@ -86,7 +86,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     const body = opts._body.data;
     expect(len(body)).toBe(before);
     expect(_headerLengths(body)[0]).toBe(len(body));
-    expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
+    expect(Bytes.endsWith(body, _XML_TERMINATOR)).toBe(true);
   });
 
   test.each(PER_FORMAT)("test_ae_body_is_self_consistent[%#]", (sample, formatCode) => {
@@ -99,7 +99,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     const [bodyLenField, xmlLenField] = _headerLengths(body);
     expect(bodyLenField).toBe(len(body));
     expect(xmlLenField).toBe(xmlLen - 2);
-    expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
+    expect(Bytes.endsWith(body, _XML_TERMINATOR)).toBe(true);
   });
 });
 
@@ -116,7 +116,7 @@ describe("TestWriteKeepsHeaderConsistent", () => {
     const [bodyLenField, xmlLenField] = _headerLengths(body);
     expect(bodyLenField).toBe(len(body));
     expect(xmlLenField).toBe(xmlLen - 2);
-    expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
+    expect(Bytes.endsWith(body, _XML_TERMINATOR)).toBe(true);
   });
 
   test("test_growing_write_updates_length", () => {
@@ -151,15 +151,15 @@ describe("TestSerializerMatchesAeStyle", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts._syncXml();
-    expect(bytes_.contains(opts._body.data, b('<?xml version="1.0" encoding="UTF-8"?>'))).toBe(true);
+    expect(Bytes.includes(opts._body.data, b('<?xml version="1.0" encoding="UTF-8"?>'))).toBe(true);
   });
 
   test("test_self_closing_tags_have_no_space", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts._syncXml();
-    expect(bytes_.contains(opts._body.data, b(" />"))).toBe(false);
-    expect(bytes_.contains(opts._body.data, b("/>"))).toBe(true);
+    expect(Bytes.includes(opts._body.data, b(" />"))).toBe(false);
+    expect(Bytes.includes(opts._body.data, b("/>"))).toBe(true);
   });
 
   test("test_attributeless_empty_elements_are_expanded", () => {
@@ -167,14 +167,14 @@ describe("TestSerializerMatchesAeStyle", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts._syncXml();
-    expect(bytes_.contains(opts._body.data, b("<ParamName></ParamName>"))).toBe(true);
-    expect(bytes_.contains(opts._body.data, b("<ParamName/>"))).toBe(false);
+    expect(Bytes.includes(opts._body.data, b("<ParamName></ParamName>"))).toBe(true);
+    expect(Bytes.includes(opts._body.data, b("<ParamName/>"))).toBe(false);
   });
 
   test("test_terminator_survives_a_write", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts.params.set("ADBEPyAepFidelityProbe", "1");
-    expect(bytes_.endswith(opts._body.data, b(">\n\x00\x00"))).toBe(true);
+    expect(Bytes.endsWith(opts._body.data, b(">\n\x00\x00"))).toBe(true);
   });
 });

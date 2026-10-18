@@ -20,7 +20,7 @@ import { ClassicPrdaChunk, PrinChunk } from "./misc_chunks.ts";
 import { buildGideList, buildItemIdChunks, buildOvdg, buildOvg2 } from "./mutations.ts";
 import { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk } from "./property_chunks.ts";
 import { S2Chunk, S4Chunk, U1Chunk, U4Chunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { b, bytes_, float, floordiv, repr, round, ValueError } from "../../pyrt/index.ts";
+import { b, Bytes, float, floordiv, literal, round, ValueError } from "../../pyrt/index.ts";
 
 /** Build the `fvdv` ... `fifl` view-data septet AE writes after every
  * item's `LIST:Item` (and twice after each comp viewer layer). */
@@ -92,7 +92,7 @@ export function _buildExtras(extras: SpecExtras): Chunk[] {
     if (kind === "OvG2") {
       out.push(buildOvg2());
     } else {
-      out.push(new Chunk({ chunkType: kind, data: bytes_.fromhex(payload) }));
+      out.push(new Chunk({ chunkType: kind, data: Bytes.fromHex(payload) }));
     }
   }
   return out;
@@ -130,7 +130,7 @@ export function _buildTdgp(
         }),
       );
     } else {
-      throw new ValueError(`unknown spec node kind ${repr(kind)}`);
+      throw new ValueError(`unknown spec node kind ${literal(kind)}`);
     }
   }
   chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
@@ -198,7 +198,7 @@ export function _buildCif(listType: string): ListChunk {
         ],
       }),
       new Chunk({ chunkType: "CPTm", data: b("\x00\x00\x00\x00\x00\x00\x00\x01") }),
-      new Chunk({ chunkType: "CROI", data: bytes_.repeat(b("\x00"), 8) }),
+      new Chunk({ chunkType: "CROI", data: Bytes.repeat(b("\x00"), 8) }),
       new S4Chunk({ chunkType: "CcCt" }),
     ],
   });
@@ -310,7 +310,7 @@ export function buildNewCompItem(kw: {
     nameUtf8,
     new ListChunk({
       listType: "dats",
-      chunks: [new Chunk({ chunkType: "numS", data: bytes_.repeat(b("\x00"), 4) })],
+      chunks: [new Chunk({ chunkType: "numS", data: Bytes.repeat(b("\x00"), 4) })],
     }),
     cdta,
     new U1Chunk({ chunkType: "cdrp" }),

@@ -7,7 +7,7 @@
  * bytes suitable for writing back into a btdk chunk's `binary_data`.
  */
 
-import { BytesIO, b, bytes_, concat, encode, format, PyFloat, typeName, unbox } from "../../pyrt/index.ts";
+import { BytesIO, b, Bytes, concat, encode, format, PyFloat, typeName, unbox } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
 // Literals written per token, built once (`BytesIO.write` copies them).
@@ -220,7 +220,7 @@ export function _escapeString(raw: Uint8Array): Uint8Array {
 /** Write a COS hex string: `<hexdata>`. */
 export function _writeHexString(buf: BytesIO, data: Uint8Array): void {
   buf.write(b("<"));
-  buf.write(encode(bytes_.hex(data), "ascii"));
+  buf.write(encode(Bytes.toHex(data), "ascii"));
   buf.write(b(">"));
 }
 

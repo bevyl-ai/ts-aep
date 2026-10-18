@@ -29,7 +29,7 @@ import type { RenderQueueItem } from "./render_queue_item.ts";
 import {
   at,
   b,
-  bytes_,
+  Bytes,
   descriptor,
   getOr,
   getattr,
@@ -39,7 +39,7 @@ import {
   truthy,
   valueEquals,
   truthyOr,
-  repr,
+  literal,
   round,
   rstrip,
   sorted,
@@ -112,8 +112,8 @@ export function _nameOrStr(key: string | null, v: RuleValue): string {
 // `n`; both are the same number here, so a member of the key's enum always reprs as a member.
 export function _valueRepr(key: string, v: RuleValue): string {
   const E = _KEY_ENUM.get(key);
-  if (E != null && E.has(v)) return `<${E.__name__}.${E.nameOf(v)}: ${v}>`;
-  return repr(v);
+  if (E != null && E.has(v)) return `<${E.enumName}.${E.nameOf(v)}: ${v}>`;
+  return literal(v);
 }
 
 /** Factory for crop validators that check range and final dimension. */
@@ -736,7 +736,7 @@ export class OutputModule {
       .map((v) => _labelOrName(key, v))
       .join(", ");
     throw new ValueError(
-      `${key} ${_valueRepr(key, value)} is not available for format ${repr(OutputFormat.label(fmt))}. ` + `Allowed: ${labels}`,
+      `${key} ${_valueRepr(key, value)} is not available for format ${literal(OutputFormat.label(fmt))}. ` + `Allowed: ${labels}`,
     );
   }
 
@@ -1217,19 +1217,19 @@ export class OutputModule {
     const ldat = this._omLdat;
     if (value === "Working Color Space") {
       ldat.outputColorSpaceWorking = 1;
-      ldat.outputProfileId = bytes_.repeat(b("\xff"), 16);
+      ldat.outputProfileId = Bytes.repeat(b("\xff"), 16);
       return;
     }
     const project = this._project;
     if (project.colorManagementSystem === ColorManagementSystem.OCIO) {
-      const config = requireOcioConfig(project.ocioConfigurationFile, `compute the output color space id for ${repr(value)}`);
+      const config = requireOcioConfig(project.ocioConfigurationFile, `compute the output color space id for ${literal(value)}`);
       ldat.outputColorSpaceWorking = 0;
       ldat.outputProfileId = ocioOutputProfileId(config, value);
       return;
     }
     const profileId = profileIdForName(value);
     if (profileId == null) {
-      throw new NotImplementedError(`Output color space ${repr(value)} is not a known Adobe ICC profile.`);
+      throw new NotImplementedError(`Output color space ${literal(value)} is not a known Adobe ICC profile.`);
     }
     ldat.outputColorSpaceWorking = 0;
     ldat.outputProfileId = profileId;
@@ -1511,7 +1511,7 @@ export class OutputModule {
     if (format === GetSettingsFormat.NUMBER) {
       return settingsToNumber(this.settings);
     }
-    throw new ValueError(`Unsupported format: ${repr(format)}`);
+    throw new ValueError(`Unsupported format: ${literal(format)}`);
   }
 
   /**
@@ -1564,7 +1564,7 @@ export class OutputModule {
       }
     }
     const names = templates.map((t) => t.name);
-    throw new ValueError(`Template ${repr(name)} not found. Available: ${repr(names)}`);
+    throw new ValueError(`Template ${literal(name)} not found. Available: ${literal(names)}`);
   }
 
   /**

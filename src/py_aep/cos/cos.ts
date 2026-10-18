@@ -8,7 +8,7 @@ import {
   at,
   auto,
   b,
-  bytes_,
+  Bytes,
   decode,
   float,
   int,
@@ -102,13 +102,13 @@ export function reprBytes(x: Uint8Array): string {
 
 /** The enum-helper surface `enumStr` needs (a pyrt `pyEnum`). */
 interface NamedEnum {
-  __name__: string;
+  enumName: string;
   nameOf(v: number): string;
 }
 
 // `str(member)` / `repr(member)` for an Enum member.
 export function enumStr(E: NamedEnum, v: number): string {
-  return `${E.__name__}.${E.nameOf(v)}`;
+  return `${E.enumName}.${E.nameOf(v)}`;
 }
 
 /**
@@ -719,7 +719,7 @@ export class CosParser {
     let streamLen = 0;
     while (true) {
       const size = this.maxPos == null ? 65536 : Math.min(65536, this.maxPos);
-      const block = size > 0 ? this.file.read(size) : bytes_.EMPTY;
+      const block = size > 0 ? this.file.read(size) : Bytes.EMPTY;
       if (!block.length) throw new SyntaxError("Unterminated stream");
       if (this.maxPos != null) this.maxPos -= block.length;
       const searchFrom = Math.max(0, streamLen - marker.length + 1);
@@ -730,7 +730,7 @@ export class CosParser {
       }
       stream.set(block, streamLen);
       streamLen += block.length;
-      const end = bytes_.find(stream.subarray(0, streamLen), marker, searchFrom);
+      const end = Bytes.indexOf(stream.subarray(0, streamLen), marker, searchFrom);
       if (end >= 0) {
         // Give back what was read past the marker.
         const extra = streamLen - end - marker.length;
@@ -756,16 +756,16 @@ export class CosParser {
     let noBom = false;
 
     // Check for BOM at the start of the string and remove it
-    if (bytes_.startswith(string, b("\xef\xbb\xbf"))) {
+    if (Bytes.startsWith(string, b("\xef\xbb\xbf"))) {
       // UTF-8 BOM - remove it (3 bytes)
-      string = bytes_.slice(string, 3);
-    } else if (bytes_.startswith(string, b("\xfe\xff"))) {
+      string = string.slice(3);
+    } else if (Bytes.startsWith(string, b("\xfe\xff"))) {
       // UTF-16 BE BOM - remove it (2 bytes)
-      string = bytes_.slice(string, 2);
+      string = string.slice(2);
       encoding = "utf-16-be";
-    } else if (bytes_.startswith(string, b("\xff\xfe"))) {
+    } else if (Bytes.startsWith(string, b("\xff\xfe"))) {
       // UTF-16 LE BOM - remove it (2 bytes)
-      string = bytes_.slice(string, 2);
+      string = string.slice(2);
       encoding = "utf-16-le";
     } else {
       noBom = true;

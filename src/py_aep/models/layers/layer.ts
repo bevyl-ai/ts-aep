@@ -38,7 +38,7 @@ import {
   truthy,
   valueEquals,
   truthyOr,
-  repr,
+  literal,
   round,
   warn,
   deferred,
@@ -118,7 +118,7 @@ export function _parentWorld(parent: Layer | null, time: number, childIs3d: bool
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
 export function _listIndex<T>(xs: T[], x: T): number {
   for (let i = 0; i < xs.length; i++) if (xs[i] === x) return i;
-  throw new ValueError(`${repr(x)} is not in list`);
+  throw new ValueError(`${literal(x)} is not in list`);
 }
 
 /** `list.remove(x)` with CPython's ValueError. */
@@ -1080,12 +1080,12 @@ export class Layer extends PropertyGroup {
     // (`buildLocalMatrix`); undo the two aspect scalings to decompose
     // the square-pixel `T(Sp pos) . R . S . T(-Sl anchor)`.
     const newLocal = aspectScale(newSpace)
-      .__matmul__(newParentInverse)
-      .__matmul__(childWorld)
-      .__matmul__(aspectScale(1.0 / ownAspect));
+      .multiply(newParentInverse)
+      .multiply(childWorld)
+      .multiply(aspectScale(1.0 / ownAspect));
     // Maps a point from the old parent's space into the new one; used by
     // both keyframed-Position branches below.
-    const parentRemap = newParentInverse.__matmul__(oldParentWorld);
+    const parentRemap = newParentInverse.multiply(oldParentWorld);
 
     const transform = this.transform;
 
@@ -1247,7 +1247,7 @@ export class Layer extends PropertyGroup {
     }
     const rotationDelta = rotationPart(squarePixels(newParentWorld, ...newAspects))
       .inverse()
-      .__matmul__(rotationPart(squarePixels(oldParentWorld, ...oldAspects)));
+      .multiply(rotationPart(squarePixels(oldParentWorld, ...oldAspects)));
     if (!is3d) {
       // A 2D layer has no Orientation to use, so AE puts the rotation
       // into Rotate Z (measured: a 2D child under a 30-degree parent

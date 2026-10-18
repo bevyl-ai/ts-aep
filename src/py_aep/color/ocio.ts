@@ -34,12 +34,12 @@ import {
   setdefault,
   sorted,
   int,
-  repr,
+  literal,
   encode,
   decode,
   b,
   concat,
-  bytes_,
+  Bytes,
   reSearch,
 } from "../../pyrt/index.ts";
 import { _compact, buildOcioEnvelope } from "./envelope.ts";
@@ -270,7 +270,7 @@ export function requireOcioConfig(config: string | null, purpose: string): Path 
   const resolved = config != null ? resolveOcioConfig(config) : null;
   if (resolved == null) {
     throw new ValueError(
-      `Cannot resolve the project's OCIO configuration (${repr(config)}), ` +
+      `Cannot resolve the project's OCIO configuration (${literal(config)}), ` +
         `which is needed to ${purpose}.`,
     );
   }
@@ -330,7 +330,7 @@ export function _colorSpaceGuid(profileName: string, profileData: string): Uint8
     concat(
       b("DVAColorSpace"),
       inner,
-      bytes_.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
+      Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
       b("\x00"),
     ),
   );
@@ -466,7 +466,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
       ];
     }
   }
-  throw new ValueError(`${repr(colorSpace)} is not a color space in the OCIO config`);
+  throw new ValueError(`${literal(colorSpace)} is not a color space in the OCIO config`);
 }
 
 /**

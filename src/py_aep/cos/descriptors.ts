@@ -3,7 +3,7 @@
  *
  * Each descriptor reads from / writes to a COS dict stored on the model
  * instance, so that accessing a model attribute lazily extracts the value
- * from the underlying COS data.  After every `__set__`, the model's
+ * from the underlying COS data.  After every `set`, the model's
  * `_propagateCos()` hook is called to re-serialize the COS dict back
  * to the btdk chunk's `binary_data`.
  *
@@ -19,7 +19,7 @@ import {
   ValueError,
   truthy,
   pyfloat,
-  repr,
+  literal,
   round,
   instanceDict,
 } from "../../pyrt/index.ts";
@@ -32,7 +32,7 @@ import { cosFloat, cosInt, cosNum } from "./kinds.ts";
 /**
  * Read `key` from a COS dict with the descriptors' fault-tolerant
  * fallback: a missing key, or a `transform` that raises, yields
- * `default`. Shared by `CosField.__get__` and the range models'
+ * `default`. Shared by `CosField.get` and the range models'
  * mixed-value resolution.
  */
 export function _extract<T, D>(d: CosDict, key: string, transform: (x: CosNode) => T, default_: D): T | D {
@@ -89,13 +89,13 @@ export type InstanceValue = string | number | boolean | object | null;
 /**
  * Descriptor that proxies a single key on a COS dict.
  *
- * The dict is retrieved from the model instance via `getattr(obj, dict_attr)`.  When the dict is `null` the descriptor returns
+ * The dict is retrieved from the model instance via `obj[dictAttr]`.  When the dict is `null` the descriptor returns
  * `default` (which defaults to `null`).
  *
  * Unlike `ChunkField`, this descriptor is scalar-only: `reverse`
  * always returns a single value written to one dict key.
  *
- * @param dict_attr - Name of the model attribute holding the COS sub-dict (e.g. `"_charStyle"`).
+ * @param dictAttr - Name of the model attribute holding the COS sub-dict (e.g. `"_charStyle"`).
  * @param key - String key into that dict (e.g. `"1"` for font_size).
  * @param transform - Callable applied when *getting* (COS value -\> user-facing value).
  * @param reverse - 1-arg callable applied when *setting* (user-facing -\> COS value). Always returns
@@ -132,13 +132,13 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     this.minVersion = minVersion;
   }
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this.publicName = name;
   }
 
   /**
    * The instance override for this field (Python `obj.__dict__[name]`):
-   * `null` when there is none. Overrides are stored by `__set__` (and the
+   * `null` when there is none. Overrides are stored by `set` (and the
    * parser's fallback kwargs) from values of the field's own type.
    */
   _override(obj: O): { value: T } | null {
@@ -148,7 +148,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     return this.accepts(value) ? { value } : null;
   }
 
-  __get__(obj: O | null, objtype?: Function): T | this {
+  get(obj: O | null, objtype?: Function): T | this {
     if (obj == null) return this;
     // Instance-dict overrides (set by parser or user when no dict)
     const override = this._override(obj);
@@ -164,11 +164,11 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    */
   _checkWritable(obj: O): void {
     if (this.readOnly) {
-      throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+      throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     }
     if (this.minVersion != null) {
       if (getAeVersionMajor(obj) < this.minVersion) {
-        throw new AttributeError(`${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`);
+        throw new AttributeError(`${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
   }
@@ -180,11 +180,11 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   _coerce(obj: O, value: NonNullable<T>): CosNode {
     if (this.validate != null) this.validate(value, obj);
     // Every writable field declares its reverse; only read-only ones omit it.
-    if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+    if (this.reverse == null) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     return this.reverse(value);
   }
 
-  __set__(obj: O, value: T | null): void {
+  set(obj: O, value: T | null): void {
     this._checkWritable(obj);
     // Clear any instance-dict override
     instanceDict(obj).delete(this.publicName);

@@ -26,7 +26,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, literal, sum, hypot } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -50,8 +50,8 @@ export class Mat4 {
     return this._rows[row];
   }
 
-  /** Python `self @ other` (matrix product, left-associative at every call site). */
-  __matmul__(other: Mat4): Mat4 {
+  /** Matrix product `this × other`. */
+  multiply(other: Mat4): Mat4 {
     const rows: number[][] = Array.from({ length: 4 }, () => [0.0, 0.0, 0.0, 0.0]);
     for (let i = 0; i < 4; i++) {
       const ai = this._rows[i];
@@ -62,10 +62,6 @@ export class Mat4 {
       }
     }
     return new Mat4(rows);
-  }
-
-  __imatmul__(other: Mat4): Mat4 {
-    return this.__matmul__(other);
   }
 
   /** Return a 4x4 identity matrix. */
@@ -292,35 +288,35 @@ export function buildLocalMatrix(
 
   // Start from right: T(-anchor)
   let m = _translation(-anchor[0], -anchor[1], anchor.length > 2 ? -anchor[2] : 0.0);
-  if (sourceAspect !== 1.0) m = _scale(sourceAspect, 1.0, 1.0).__matmul__(m);
+  if (sourceAspect !== 1.0) m = _scale(sourceAspect, 1.0, 1.0).multiply(m);
 
   // Scale
-  m = _scale(sx, sy, sz).__matmul__(m);
+  m = _scale(sx, sy, sz).multiply(m);
 
   // Per-axis rotations: Rz * Ry * Rx (applied right-to-left)
-  m = _rotateZ(rotationZ).__matmul__(m);
-  m = _rotateY(rotateY).__matmul__(m);
-  m = _rotateX(rotateX).__matmul__(m);
+  m = _rotateZ(rotationZ).multiply(m);
+  m = _rotateY(rotateY).multiply(m);
+  m = _rotateX(rotateX).multiply(m);
 
   // Orientation: Rz(oz) * Ry(oy) * Rx(ox)
   if (orientation != null) {
     const ox = orientation[0];
     const oy = orientation[1];
     const oz = orientation[2];
-    m = _rotateZ(oz).__matmul__(m);
-    m = _rotateY(oy).__matmul__(m);
-    m = _rotateX(ox).__matmul__(m);
+    m = _rotateZ(oz).multiply(m);
+    m = _rotateY(oy).multiply(m);
+    m = _rotateX(ox).multiply(m);
   }
 
-  if (autoRotation != null) m = autoRotation.__matmul__(m);
+  if (autoRotation != null) m = autoRotation.multiply(m);
 
-  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).__matmul__(m);
+  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).multiply(m);
 
   // Position
   const px = position[0];
   const py = position[1];
   const pz = position.length > 2 ? position[2] : 0.0;
-  m = _translation(px, py, pz).__matmul__(m);
+  m = _translation(px, py, pz).multiply(m);
 
   return m;
 }
@@ -380,18 +376,18 @@ export function buildWorldMatrix(
         // `T(pos.xy) . Rz . T(-w/2, -h/2)` exactly).
         const position = _propValue(lyr.transform, "ADBE Position", time);
         const rz = _propValue(lyr.transform, "ADBE Rotate Z", time);
-        m = m.__matmul__(
+        m = m.multiply(
           _translation(position[0], position[1], 0.0)
-            .__matmul__(_rotateZ(rz))
-            .__matmul__(_translation(-comp.width / 2.0, -comp.height / 2.0, 0.0)),
+            .multiply(_rotateZ(rz))
+            .multiply(_translation(-comp.width / 2.0, -comp.height / 2.0, 0.0)),
         );
       } else {
-        m = m.__matmul__(_rigMatrix(lyr, time, spaceAspect));
+        m = m.multiply(_rigMatrix(lyr, time, spaceAspect));
       }
       spaceAspect = 1.0;
     } else {
       const sourceAspect = layerSourceAspect(lyr);
-      m = m.__matmul__(
+      m = m.multiply(
         _layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect),
       );
       spaceAspect = sourceAspect;
@@ -427,7 +423,7 @@ export function aspectScale(aspect: number): Mat4 {
  * map square pixels to square pixels (so its rotation can be read).
  */
 export function squarePixels(matrix: Mat4, compAspect: number, spaceAspect: number): Mat4 {
-  return aspectScale(compAspect).__matmul__(matrix).__matmul__(aspectScale(1.0 / spaceAspect));
+  return aspectScale(compAspect).multiply(matrix).multiply(aspectScale(1.0 / spaceAspect));
 }
 
 /**
@@ -555,12 +551,12 @@ export function _rigRotation(layer: Layer, time: number | null, spaceAspect: num
   }
   const orientation: number[] = value("ADBE Orientation");
   return rotation
-    .__matmul__(_rotateX(orientation[0]))
-    .__matmul__(_rotateY(orientation[1]))
-    .__matmul__(_rotateZ(orientation[2]))
-    .__matmul__(_rotateX(value("ADBE Rotate X")))
-    .__matmul__(_rotateY(value("ADBE Rotate Y")))
-    .__matmul__(_rotateZ(value("ADBE Rotate Z")));
+    .multiply(_rotateX(orientation[0]))
+    .multiply(_rotateY(orientation[1]))
+    .multiply(_rotateZ(orientation[2]))
+    .multiply(_rotateX(value("ADBE Rotate X")))
+    .multiply(_rotateY(value("ADBE Rotate Y")))
+    .multiply(_rotateZ(value("ADBE Rotate Z")));
 }
 
 /**
@@ -570,8 +566,8 @@ export function _rigRotation(layer: Layer, time: number | null, spaceAspect: num
 export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
   const position = _propValue(layer.transform, "ADBE Position", time);
   let m = _rigRotation(layer, time, spaceAspect);
-  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).__matmul__(m);
-  return _translation(position[0], position[1], position[2]).__matmul__(m);
+  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).multiply(m);
+  return _translation(position[0], position[1], position[2]).multiply(m);
 }
 
 /**
@@ -593,7 +589,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
     const prop = layer.transform.property("ADBE Position");
     if (prop.dimensionsSeparated) {
       throw new NotImplementedError(
-        `layer ${repr(layer.name)} auto-orients along a path with separated ` +
+        `layer ${literal(layer.name)} auto-orients along a path with separated ` +
           "Position dimensions, which the transform math does not model",
       );
     }
@@ -608,7 +604,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
   if (mode === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST && threeD) {
     if (layer.parent != null) {
       throw new NotImplementedError(
-        `layer ${repr(layer.name)} is parented and turned towards the ` +
+        `layer ${literal(layer.name)} is parented and turned towards the ` +
           "camera, which the transform math does not model",
       );
     }
@@ -616,7 +612,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
   }
   if (mode === AutoOrientType.CHARACTERS_TOWARD_CAMERA) {
     throw new NotImplementedError(
-      `layer ${repr(layer.name)} turns its characters towards the camera, ` +
+      `layer ${literal(layer.name)} turns its characters towards the camera, ` +
         "which the transform math does not model",
     );
   }
@@ -710,9 +706,9 @@ export function rotationPart(matrix: Mat4): Mat4 {
  */
 export function composeOrientation(orientation: number[], delta: Mat4): number[] {
   const current = _rotateX(orientation[0])
-    .__matmul__(_rotateY(orientation[1]))
-    .__matmul__(_rotateZ(orientation[2]));
-  const combined = delta.__matmul__(current);
+    .multiply(_rotateY(orientation[1]))
+    .multiply(_rotateZ(orientation[2]));
+  const combined = delta.multiply(current);
   const angles = _eulerXyz(
     combined.row(0)[0],
     combined.row(0)[1],
@@ -743,8 +739,8 @@ export function stripOrientation(matrix: Mat4, orientation: number[]): Mat4 {
   const ox = orientation[0];
   const oy = orientation[1];
   const oz = orientation[2];
-  const inverse = _rotateZ(-oz).__matmul__(_rotateY(-oy)).__matmul__(_rotateX(-ox));
-  const rotated = inverse.__matmul__(matrix);
+  const inverse = _rotateZ(-oz).multiply(_rotateY(-oy)).multiply(_rotateX(-ox));
+  const rotated = inverse.multiply(matrix);
   const rows = [0, 1, 2, 3].map((r) => [...matrix.row(r)]);
   for (let r = 0; r < 3; r++) {
     rows[r][0] = rotated.row(r)[0];
@@ -781,7 +777,7 @@ export function decomposeTransform(
   // This gives Q = T(pos) * R * S, which is straightforward to
   // decompose.
   const tAnchor = _translation(ax, ay, az);
-  const q = matrix.__matmul__(tAnchor);
+  const q = matrix.multiply(tAnchor);
 
   // Position is in the last column.
   const pos = [q.row(0)[3], q.row(1)[3], q.row(2)[3]];

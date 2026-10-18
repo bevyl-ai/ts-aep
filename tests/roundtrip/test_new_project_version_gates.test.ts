@@ -16,7 +16,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   BytesIO,
-  bytes_,
+  Bytes,
   getattr,
   getOrThrow,
   len,
@@ -156,7 +156,7 @@ class _Structure {
         if (_tag(parent.chunks[i - 1]) === "tdmn=ADBE Shadow Color") {
           const cdat = chunk.chunks.find((c) => c.chunkType === "cdat");
           if (cdat === undefined) throw new StopIteration();
-          this.shadow_colors.add(bytes_.hex(cdat.tobytes()));
+          this.shadow_colors.add(Bytes.toHex(cdat.tobytes()));
         }
       }
     }
@@ -184,7 +184,7 @@ class _Structure {
     const name = getattr(view.chunks[1], "value");
     this.view_layers.set(tkey(view.listType, name), _signature(view));
     this.view_ldta_tails.add(
-      tkey(view.listType, bytes_.hex(bytes_.slice(ldta.tobytes(), 147, 160))),
+      tkey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),
     );
   }
 

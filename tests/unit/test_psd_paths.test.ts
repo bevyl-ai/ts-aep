@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
   Path,
-  bytes_,
+  Bytes,
   len,
   assert,
   valueEquals,
@@ -105,7 +105,7 @@ describe("TestParseVectorMask", () => {
 
   test("test_truncated_block_returns_decoded_prefix", () => {
     const block = _vectorMask("psd_vector_mask.psd", "vector masked");
-    const shapes = parseVectorMask(bytes_.slice(block, null, 8 + 26 * 4), 64, 64);
+    const shapes = parseVectorMask(Bytes.slice(block, null, 8 + 26 * 4), 64, 64);
     // Fill rule + initial fill + length record + one knot survive.
     expect(len(shapes)).toBe(1);
     expect(len(shapes[0].vertices)).toBe(1);

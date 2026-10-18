@@ -17,13 +17,12 @@ import { INSPECT, describe } from "../../../pyrt/index.ts";
 import {
   ValueError,
   at,
-  bytes_,
   bytesEq,
   floordiv,
   getOrThrow,
   int,
   valueEquals,
-  repr,
+  literal,
   sorted,
   zip,
 } from "../../../pyrt/index.ts";
@@ -97,7 +96,7 @@ export class _NaturalSpline {
   }
 
   // NOTE(port): Python `__call__`; no rulebook mapping, so callers use `.__call__(x)` explicitly.
-  __call__(x: number): number {
+  evaluate(x: number): number {
     const xs = this.xs;
     const ys = this.ys;
     const m = this.m;
@@ -218,7 +217,7 @@ export class Curves {
     obj._mode = chunk.mode;
     obj._channels = new Map();
     for (const [c, [name, record]] of zip(CURVES_CHANNELS, chunk.records).entries()) {
-      const lut = bytes_.slice(chunk.maps, 256 * c, 256 * (c + 1));
+      const lut = chunk.maps.slice(256 * c, 256 * (c + 1));
       let points = record.points;
       if (points.length < 2) {
         // Nothing usable: the channel's map is all there is.
@@ -294,14 +293,14 @@ export class Curves {
   evaluate(channel: string, x: number, clamp = true): number {
     if (!CURVES_CHANNELS.includes(channel)) {
       throw new ValueError(
-        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${repr(channel)}`,
+        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`,
       );
     }
     validateNumber(x);
     const ch = getOrThrow(this._channels, channel);
     let y: number;
     if (this.usesPoints) {
-      y = ch._spline.__call__(x * 255.0) / 255.0;
+      y = ch._spline.evaluate(x * 255.0) / 255.0;
     } else {
       const f = Math.min(Math.max(x, 0.0), 1.0) * 255.0;
       const i = Math.min(int(Math.floor(f)), 254);

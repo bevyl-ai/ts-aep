@@ -163,7 +163,7 @@ export class TextDocument {
 
   // Python instance `__dict__`: overrides for fields without COS backing.
   // `_override` reads it directly, so it must stay separate from accessors.
-  // Shared with CosField.__get__ via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
+  // Shared with CosField.get via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
   _overrides: Map<string, InstanceValue> = instanceDict(this);
 
   // COS backing, assigned by `__init__` / `_fromBinary`. The style dicts
@@ -1427,7 +1427,7 @@ export class TextDocument {
   static {
     // -- Class-body descriptors (`x = DocumentWideCosField.float(...)`) ------------
     // Each `declare` above has its descriptor installed on the prototype here, in
-    // source order (pyrt `descriptor`, which also runs `__set_name__`).
+    // source order (pyrt `descriptor`, which also runs `attach`).
     descriptor(this, "fontSize", DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }));
     descriptor(this, "fauxBold", DocumentWideCosField.bool("_charStyle", "2", { default: null }));
     descriptor(this, "fauxItalic", DocumentWideCosField.bool("_charStyle", "3", { default: null }));

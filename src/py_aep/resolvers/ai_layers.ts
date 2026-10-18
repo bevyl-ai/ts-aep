@@ -18,7 +18,7 @@ import {
   ValueError,
   getOrThrow,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   int,
   type PathLike,
@@ -65,7 +65,7 @@ export const _OBJ_HEADER_WINDOW = 64;
  * byte offsets of the Python `bytes` patterns (`rb"..."`).
  */
 export function latin1(data: Uint8Array): string {
-  return bytes_.latin1Str(data);
+  return Bytes.latin1Str(data);
 }
 
 // TODO(port): Python's RecursionError (CPython limit 1000 frames) maps to V8's stack-overflow RangeError, which fires at an engine/stack-size dependent depth; PDF objects nested between the two limits parse in one runtime and are reported malformed (or not) in the other. No pyrt RecursionError exists and V8 gives no fixed depth to emulate.
@@ -103,7 +103,7 @@ export function _objectOffsets(data: Uint8Array): Map<number, number> {
  * @throws {@link UnsupportedAiLayersError} If the object is malformed or truncated.
  */
 export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
-  const parser = new CosParser(new BytesIO(bytes_.slice(data, offset)));
+  const parser = new CosParser(new BytesIO(data.slice(offset)));
   try {
     parser.lex();
     const value = parser.parseValue();
@@ -167,13 +167,13 @@ export function readAiLayerOcgs(
 ): AiLayer[] {
   const name = new Path(file).name;
   if (data == null) data = new Path(file).readBytes();
-  if (!bytes_.startswith(data, b("%PDF"))) {
+  if (!Bytes.startsWith(data, b("%PDF"))) {
     throw new UnsupportedAiLayersError(
       `${name}: not a PDF-compatible file; layered import requires an ` +
         "Illustrator/PDF file saved with PDF compatibility.",
     );
   }
-  const marker = bytes_.find(data, b("/OCProperties"));
+  const marker = Bytes.indexOf(data, b("/OCProperties"));
   if (marker < 0) {
     throw new UnsupportedAiLayersError(
       `${name}: no layers (the file has no PDF Optional Content Groups).`,
@@ -186,7 +186,7 @@ export function readAiLayerOcgs(
   // cannot be read, which callers handle as this module's own error.
   try {
     const parser = new CosParser(
-      new BytesIO(bytes_.slice(data, marker + b("/OCProperties").length)),
+      new BytesIO(data.slice(marker + b("/OCProperties").length)),
     );
     parser.lex();
     const ocProperties = _resolve(parser.parseValue(), data, offsets);
@@ -269,7 +269,7 @@ export const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
 
 export function inflateOrNull(body: string): Uint8Array | null {
   try {
-    return zlib.decompress(bytes_.latin1Bytes(body));
+    return zlib.decompress(Bytes.latin1Bytes(body));
   } catch (e) {
     if (e instanceof zlib.error) return null;
     throw e;
@@ -284,13 +284,13 @@ export function inflateOrNull(body: string): Uint8Array | null {
  */
 export function _findAiIcc(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).readBytes();
-  if (!bytes_.startswith(data, b("%PDF"))) return null;
+  if (!Bytes.startsWith(data, b("%PDF"))) return null;
   for (const match of latin1(data).matchAll(_STREAM_RE)) {
     const body = match[1];
     if (body.length > 8_000_000) continue;
     const profile = inflateOrNull(body);
     if (profile == null) continue;
-    if (profile.length >= 132 && bytesEq(bytes_.slice(profile, 36, 40), b("acsp"))) {
+    if (profile.length >= 132 && bytesEq(profile.slice(36, 40), b("acsp"))) {
       return profile;
     }
   }

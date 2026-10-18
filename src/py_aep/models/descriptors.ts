@@ -13,7 +13,7 @@ import {
   ValueError,
   getattr,
   int,
-  repr,
+  literal,
   hasInstanceDict,
   instanceDict,
   typeName,
@@ -99,7 +99,7 @@ type ChunkFieldEnumKw<T, O, Raw> = Omit<ChunkFieldOptions<T, O>, "transform"> & 
 
 export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 
-// While a parser runs this is set to False so that `ChunkField.__set__`
+// While a parser runs this is set to False so that `ChunkField.set`
 // rejects writes: parsers must not mutate chunk data through descriptors
 // (round-trip idempotency). Parsers cache values via `__dict__` overrides
 // or the private `_cacheValue` helpers instead. Outside parsing the
@@ -146,7 +146,7 @@ export function _suppressMaterialization() {
  */
 // NOTE(port): int_enum === py_enum in pyrt, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
 export function isEnum(x: unknown): x is EnumHelpers<number> {
-  return x != null && typeof x === "object" && "__members__" in x && "has" in x && typeof x.has === "function";
+  return x != null && typeof x === "object" && "allMembers" in x && "has" in x && typeof x.has === "function";
 }
 
 /**
@@ -227,12 +227,12 @@ export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown
         .map((m) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${repr(value)} for ${repr(publicName)}. ` +
-          `Valid ${enumCls.__name__} values: ${members}`,
+        `Invalid value ${literal(value)} for ${literal(publicName)}. ` +
+          `Valid ${enumCls.enumName} values: ${members}`,
       );
     }
   } else {
-    throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__}`);
+    throw new ValueError(`${literal(value)} is not a valid ${enumCls.enumName}`);
   }
 }
 
@@ -306,16 +306,16 @@ export class ChunkField<
     this.preSet = preSet;
     this.postSet = postSet;
     this.minVersion = minVersion;
-    // Derived once so __set__ validates membership without
+    // Derived once so set validates membership without
     // re-inspecting the transform on every write.
     this._enumCls = _enumClass(transform);
   }
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this.publicName = name;
   }
 
-  __get__(obj: O | null, objtype?: Function | null): T | ChunkField<T, O> {
+  get(obj: O | null, objtype?: Function | null): T | ChunkField<T, O> {
     if (obj == null) return this;
     // Parse-time overrides (e.g. ExtendScript-compatible values that
     // differ from the binary) are stored in the instance dict and take
@@ -328,14 +328,14 @@ export class ChunkField<
     const body = getattr(obj, this.chunkAttr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
-      throw new AttributeError(`chunk body ${repr(this.chunkAttr)} is null`);
+      throw new AttributeError(`chunk body ${literal(this.chunkAttr)} is null`);
     }
     const value = getattr(body, this.field);
     return (this.transform ? this.transform(value) : value);
   }
 
-  __set__(obj: O & ChunkOwner, value: T): void {
-    if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+  set(obj: O & ChunkOwner, value: T): void {
+    if (this.readOnly) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     if (this.minVersion != null) {
       let major: number | null;
       try {
@@ -348,14 +348,14 @@ export class ChunkField<
       }
       if (major != null && major < this.minVersion) {
         throw new AttributeError(
-          `${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`,
+          `${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`,
         );
       }
     }
     if (!_materializationAllowed.get()) {
       throw new RuntimeError(
-        `Cannot write ${repr(this.publicName)} via descriptor during ` +
-          `parsing. Use instanceDict(obj).set(${repr(this.publicName)}, value) for ` +
+        `Cannot write ${literal(this.publicName)} via descriptor during ` +
+          `parsing. Use instanceDict(obj).set(${literal(this.publicName)}, value) for ` +
           `parse-time overrides.`,
       );
     }

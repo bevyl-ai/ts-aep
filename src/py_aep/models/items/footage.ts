@@ -20,7 +20,7 @@ import {
   Path,
   ValueError,
   assert,
-  repr,
+  literal,
   sorted,
   tkey,
   type PathLike,
@@ -554,7 +554,7 @@ export class FootageItem extends AVItem {
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !AI_COMP_EXTENSIONS.has(suffix)) {
       throw new ValueError(
         `layerIndex requires a layered .psd/.psb/.ai/.pdf ` +
-          `file, got ${repr(suffix)}`,
+          `file, got ${literal(suffix)}`,
       );
     }
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !(layerStyles instanceof _CurrentValue)) {

@@ -5,7 +5,7 @@ import {
   NotImplementedError,
   ValueError,
   at,
-  bytes_,
+  Bytes,
   deferred,
   getOr,
   getattr,
@@ -16,7 +16,7 @@ import {
   objectSetattr,
   assert,
   pyClassHooks,
-  repr,
+  literal,
   split,
   instanceDict,
   typeName,
@@ -95,7 +95,7 @@ export const _TEXT_SELECTOR_NAMES = new Map<string, string>([
 // its EfdG definition, and an AE 15 project's stored 1 on resave). Without
 // the atom AE loads the instance with the Legacy engine: Puppet Engine reads 1
 // and the Advanced-only parameters are hidden.
-export const _PUPPET_ENGINE_VERSION = bytes_.intToBytes(2, 4, "big");
+export const _PUPPET_ENGINE_VERSION = Bytes.intToBytes(2, 4, "big");
 
 /**
  * Resolve `name` against the baked built-in effect templates.
@@ -117,7 +117,7 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
     entry = found[1];
   }
   const [display, blob] = entry;
-  const raw = bytes_.fromhex(blob);
+  const raw = Bytes.fromHex(blob);
   const sspc = readChunks(new BytesIO(raw), raw.length)[0];
   assert(sspc instanceof ListChunk);
   return [matchName, display, sspc];
@@ -567,7 +567,7 @@ export class PropertyGroup extends PropertyBase {
   /**
    * Flip synthetic flags so backing chunks become visible to write_aep().
    *
-   * Called automatically by `ChunkField.__set__` on first end-user write
+   * Called automatically by `ChunkField.set` on first end-user write
    * to a synthesized group. After this method, the group is
    * indistinguishable from one that was parsed from binary.
    */
@@ -794,7 +794,7 @@ export class PropertyGroup extends PropertyBase {
     }
     if (typeof key === "string") {
       const prop = this._childOrNull(key);
-      if (prop === null) throw new KeyError(repr(key));
+      if (prop === null) throw new KeyError(literal(key));
       return prop;
     }
     throw new TypeError(`Property key must be int or str, not ${typeName(key)}`);
@@ -937,7 +937,7 @@ export class PropertyGroup extends PropertyBase {
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
         throw new ValueError(
-          `Could not locate an installed font for family ${repr(family)}; pass fontFile explicitly.`,
+          `Could not locate an installed font for family ${literal(family)}; pass fontFile explicitly.`,
         );
       }
       fontFile = resolved[0].toString();
@@ -947,7 +947,7 @@ export class PropertyGroup extends PropertyBase {
     const axis = axes.find((a) => a.tag === axisTag) ?? null;
     if (axis == null) {
       const available = axes.map((a) => a.tag).join(", ");
-      throw new ValueError(`The font has no ${repr(axisTag)} axis (available: ${available}).`);
+      throw new ValueError(`The font has no ${literal(axisTag)} axis (available: ${available}).`);
     }
 
     const slots = this.properties.filter(
@@ -1104,7 +1104,7 @@ export class PropertyGroup extends PropertyBase {
     const [tdmn, sspc] = buildExpressionControl(
       matchName,
       display,
-      bytes_.fromhex(skeleton.part),
+      Bytes.fromHex(skeleton.part),
       {
         tdsnName,
         timeBase: comp._cdta.internalTimebase,

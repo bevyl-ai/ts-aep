@@ -10,7 +10,7 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, ValueError, b, bytes_, concat, getOrThrow, assert, valueEquals, sorted, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, sorted, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -20,7 +20,7 @@ const ASSETS = new Path(import.meta.dir).parent.parent.div("samples").div("asset
 const _PSD_HEADER = concat(
   b("8BPS"),
   struct.pack(">H", 1),
-  bytes_.repeat(b("\x00"), 6),
+  Bytes.repeat(b("\x00"), 6),
   struct.pack(">HIIHH", 3, 8, 8, 8, 3),
 );
 
@@ -53,7 +53,7 @@ const _TRUNCATED: Map<string, Uint8Array> = new Map<string, Uint8Array>([
   ["psd_header_only.psd", _PSD_HEADER],
   ["png_trunc.png", ASSETS.div("image_with_alpha.png").readBytes().slice(0, 24)],
   ["tif_ifd_past_eof.tif", concat(b("II*\x00"), struct.pack("<I", 1000))],
-  ["bmp_short.bmp", concat(b("BM"), bytes_.repeat(b("\x00"), 10))],
+  ["bmp_short.bmp", concat(b("BM"), Bytes.repeat(b("\x00"), 10))],
   ["gif_short.gif", b("GIF89a\x01")],
   ["jpg_short.jpg", b("\xff\xd8\xff\xc0")],
   ["crw_short.crw", ASSETS.div("crw.crw").readBytes().slice(0, 16)],
@@ -152,7 +152,7 @@ test("test_cos_lexer_stops_at_end_of_data", () => {
 test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (maxPos: number | null) => {
   // A 0.5 MB embedded ICC profile took seconds to lex byte by byte, which
   // the import's colour-profile lookup now does for every .ai/.pdf.
-  const body = concat(bytes_.repeat(b("x"), 3_000_000), b("endstrea"), bytes_.repeat(b("y"), 1000));
+  const body = concat(Bytes.repeat(b("x"), 3_000_000), b("endstrea"), Bytes.repeat(b("y"), 1000));
   const data = concat(b("<</Length 1>>stream\n"), body, b("endstream\nendobj 7"));
   const parser = new CosParser(new BytesIO(data), maxPos);
   const [result] = _run(() => [parser.lex(), parser.parseValue()], 5.0);

@@ -10,7 +10,7 @@ import {
   ValueError,
   and,
   b,
-  bytes_,
+  Bytes,
   contains,
   copy,
   deepcopy,
@@ -435,7 +435,7 @@ describe("TestRoundtripKeyframeLabel", () => {
     const keyFlagBytes = (path: Path): Uint8Array[] => {
       const proj = parseAep(path).project;
       const prop = asInstance(_findProperty(getComp(proj, "TestComp").layers[0], "ADBE Opacity"), Property);
-      return prop.keyframes.map((kf) => bytes_.slice(kf._ldatItem.tobytes(), 6, 8));
+      return prop.keyframes.map((kf) => Bytes.slice(kf._ldatItem.tobytes(), 6, 8));
     };
 
     expect(valueEquals(keyFlagBytes(out), keyFlagBytes(SAMPLES_DIR.div("keyframe_labels.aep")))).toBe(true);
@@ -2099,7 +2099,7 @@ describe("TestAddEffect", () => {
       const [, sspc] = buildExpressionControl(
         "ADBE Slider Control",
         skeleton["name"],
-        bytes_.fromhex(skeleton["part"]),
+        Bytes.fromHex(skeleton["part"]),
         { tdsnName: "-_0_/-", timeBase: 24576, layerId: 1 },
       );
       const pgui = asInstance(_next(sspc.chunks, (c) => c.chunkType === "pgui"), PguiChunk);
@@ -2458,7 +2458,7 @@ describe("TestAddInstalledEffect", () => {
       .filter((c) => c.chunkType === "tdmn" || c.chunkType === "engv")
       .map((c) =>
         c.chunkType === "engv"
-          ? `engv ${bytes_.intFromBytes(c.data, "big")}`
+          ? `engv ${Bytes.intFromBytes(c.data, "big")}`
           : truthyOr(getattr(c, "value", null), c.chunkType),
       );
   }
@@ -3962,9 +3962,9 @@ describe("TestDeanimateMatchesAe", () => {
     project.save(out);
     const prop2 = _prop(parseAep(out).project, path);
     const [tdb4Hex, cdatHex] = getOrThrow(_AE_STATIC, tkey(...path));
-    expect(bytes_.hex(prop2._tdb4.tobytes())).toBe(tdb4Hex);
+    expect(Bytes.toHex(prop2._tdb4.tobytes())).toBe(tdb4Hex);
     assert(prop2._cdat != null);
-    expect(bytes_.hex(prop2._cdat.tobytes())).toBe(cdatHex);
+    expect(Bytes.toHex(prop2._cdat.tobytes())).toBe(cdatHex);
   });
 
   test("test_shape_props_keep_animated_flags", () => {
@@ -4006,13 +4006,13 @@ describe("TestDeanimateMatchesAe", () => {
       .property("ADBE Vector Fill Color");
     // AE 2026 de-animating the same streams: 0x05-0x0B, the category
     // and the record's interpolation bytes.
-    expect(bytes_.hex(bytes_.slice(pos2._tdb4.tobytes(), 0x04, 0x0c))).toBe("000f0003ffffffff");
+    expect(Bytes.toHex(Bytes.slice(pos2._tdb4.tobytes(), 0x04, 0x0c))).toBe("000f0003ffffffff");
     expect(pos2._tdb4.tobytes()[0x3c]).toBe(0x09);
-    expect(bytes_.hex(bytes_.slice(pos2._tdb4.tobytes(), 0x4c, 0x50))).toBe("01010001");
-    expect(bytes_.hex(bytes_.slice(fill2._tdb4.tobytes(), 0x04, 0x06))).toBe("0007");
-    expect(bytes_.hex(bytes_.slice(fill2._tdb4.tobytes(), 0x08, 0x0c))).toBe("0002ffff");
+    expect(Bytes.toHex(Bytes.slice(pos2._tdb4.tobytes(), 0x4c, 0x50))).toBe("01010001");
+    expect(Bytes.toHex(Bytes.slice(fill2._tdb4.tobytes(), 0x04, 0x06))).toBe("0007");
+    expect(Bytes.toHex(Bytes.slice(fill2._tdb4.tobytes(), 0x08, 0x0c))).toBe("0002ffff");
     expect(fill2._tdb4.tobytes()[0x3c]).toBe(0x01);
-    expect(bytes_.hex(bytes_.slice(fill2._tdb4.tobytes(), 0x4c, 0x50))).toBe("01010001");
+    expect(Bytes.toHex(Bytes.slice(fill2._tdb4.tobytes(), 0x4c, 0x50))).toBe("01010001");
     assert(pos2._cdat != null && fill2._cdat != null);
     expect(valueEquals(pos2._cdat.values, [30.0, 40.0, 0.0, 0.0, 0.0, 0.0])).toBe(true);
     expect(fill2._cdat.values.length).toBe(12);

@@ -13,7 +13,7 @@
  * by that seed.
  */
 
-import { bytes_, concat, floordiv } from "../../pyrt/index.ts";
+import { Bytes, concat, floordiv } from "../../pyrt/index.ts";
 
 export const _MASK = (1n << 64n) - 1n;
 export const _C1 = 0x87c37b91114253d5n;
@@ -126,7 +126,7 @@ export function murmurhash3X64128(data: Uint8Array, seed: number | bigint = 0): 
   h2 = _fmix64(h2);
   h1 = (h1 + h2) & _MASK;
   h2 = (h2 + h1) & _MASK;
-  return concat(bytes_.intToBytes(h1, 8, "little"), bytes_.intToBytes(h2, 8, "little"));
+  return concat(Bytes.intToBytes(h1, 8, "little"), Bytes.intToBytes(h2, 8, "little"));
 }
 
 /**

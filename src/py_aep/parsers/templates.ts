@@ -13,7 +13,7 @@
 
 import {
   b,
-  bytes_,
+  Bytes,
   concat,
   decode,
   floordiv,
@@ -130,9 +130,9 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
   let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {
     const offset = _HEADER_SIZE + idx * _RS_PREFS_ITEM_SIZE;
-    const itemData = bytes_.slice(raw, offset, offset + _RS_PREFS_ITEM_SIZE);
+    const itemData = raw.slice(offset, offset + _RS_PREFS_ITEM_SIZE);
     const item = RenderSettingsItem.frombytes(
-      concat(itemData, bytes_.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
+      concat(itemData, Bytes.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
     );
     assert(item instanceof RenderSettingsItem);
     if (!item.cleanTemplateName) {
@@ -208,7 +208,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
   let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {
     const offset = _HEADER_SIZE + idx * _OM_PREFS_ITEM_SIZE;
-    const itemData = bytes_.slice(raw, offset, offset + _OM_PREFS_ITEM_SIZE);
+    const itemData = raw.slice(offset, offset + _OM_PREFS_ITEM_SIZE);
     const item = OutputModuleSettingsItem.frombytes(itemData);
     assert(item instanceof OutputModuleSettingsItem);
     const name = names.get(idx) ?? "";

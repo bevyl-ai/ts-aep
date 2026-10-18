@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, repr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 
 const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -156,7 +156,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
   // it would otherwise take leaves the file untouched while the model
   // reports the stray value.
   if (prop._parallelKind() === SHAPE_KIND && !(value instanceof Shape)) {
-    throw new TypeError(`${repr(prop.matchName)} takes a Shape, got ${typeName(value)}`);
+    throw new TypeError(`${literal(prop.matchName)} takes a Shape, got ${typeName(value)}`);
   }
   if (prop.matchName === "ADBE Mask Shape") {
     const layer = prop._containingLayer;
@@ -217,7 +217,7 @@ export function _validateKeyValue(prop: Property, value: PropertyValue): void {
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).
   if (value == null && prop._parallelKind() == null && !prop._noValue) {
-    throw new TypeError(`${repr(prop.matchName)} keyframe value cannot be null`);
+    throw new TypeError(`${literal(prop.matchName)} keyframe value cannot be null`);
   }
   _validateValue(prop, value);
 }
@@ -1097,7 +1097,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Flip synthetic flags so backing chunks become visible to write_aep().
    *
-   * Called automatically by `ChunkField.__set__` on first end-user write
+   * Called automatically by `ChunkField.set` on first end-user write
    * to a synthesized property. After this method, the property is
    * indistinguishable from one that was parsed from binary.
    */
@@ -1762,7 +1762,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   _rejectCurvesWrite(): void {
     if (this._arbs != null) {
       throw new ValueError(
-        `${repr(this.matchName)} holds the Curves effect's curves, which ` +
+        `${literal(this.matchName)} holds the Curves effect's curves, which ` +
           "are read-only: py-aep does not write them back",
       );
     }
@@ -1828,7 +1828,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._rejectCurvesWrite();
     if (this._separationFollowers() != null) {
       throw new ValueError(
-        `cannot set the value of ${repr(this.matchName)} while its ` +
+        `cannot set the value of ${literal(this.matchName)} while its ` +
           "dimensions are separated; write its X / Y / Z followers " +
           "instead (getSeparationFollower)",
       );
@@ -2042,7 +2042,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // fill) has no wrapper/container yet; build it the same way
       // animating would, then seed the static value.
       if (!kind.canMaterializeWrapper) {
-        throw new ValueError(`static ${repr(this.matchName)} property has no value ` + "container to update");
+        throw new ValueError(`static ${literal(this.matchName)} property has no value ` + "container to update");
       }
       container = this._materializeParallelContainer(kind);
       // AE keeps an (empty) cdat in the static tdbs; a synthesized
@@ -2187,7 +2187,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
         throw new ValueError("menu items must not contain the '\\' or '|' characters.");
       }
       if (item !== "(-") {
-        if (seen.has(item)) throw new ValueError(`duplicate menu item ${repr(item)}.`);
+        if (seen.has(item)) throw new ValueError(`duplicate menu item ${literal(item)}.`);
         seen.add(item);
       }
     }
@@ -2334,7 +2334,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // AE silently ignores this on a non-leader; raising keeps a
       // caller's mistake visible instead of swallowing the write.
       throw new ValueError(
-        `dimensionsSeparated is only settable on the separation ` + `leader, not ${repr(this.matchName)}`,
+        `dimensionsSeparated is only settable on the separation ` + `leader, not ${literal(this.matchName)}`,
       );
     }
     if (value === this.dimensionsSeparated) {
@@ -2346,7 +2346,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
     const followers = Array.from({ length: 3 }, (_, dim) => this.getSeparationFollower(dim));
     if (!followers.every((follower) => follower != null)) {
-      throw new ValueError(`${repr(this.matchName)} has no separation followers to transfer to`);
+      throw new ValueError(`${literal(this.matchName)} has no separation followers to transfer to`);
     }
     const live = followers;
     const animated = this.keyframes?.length > 0 || live.some((follower) => follower.keyframes?.length > 0);
@@ -2596,7 +2596,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   set expression(value: string) {
     if (value && !this.canSetExpression) {
-      throw new AttributeError(`expression cannot be set on property ${repr(this.matchName)}`);
+      throw new AttributeError(`expression cannot be set on property ${literal(this.matchName)}`);
     }
     // A NUL ends the expression for AE 2026, which keeps only the text
     // before it, both when a script sets it and when it reads the file.
@@ -2655,7 +2655,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // hidden." Without the guard the write also materializes the
       // property, which for MARKER / NO_VALUE kinds emits chunks AE
       // rejects.
-      throw new ValueError(`property ${repr(this.matchName)} cannot take an expression`);
+      throw new ValueError(`property ${literal(this.matchName)} cannot take an expression`);
     }
     if (value && !this.expression) {
       // AE silently no-ops here, leaving expressionEnabled false. Doing
@@ -2663,7 +2663,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // that does not exist - a byte AE never writes, which the getter
       // then masks behind `bool(self.expression)`. Raising instead of
       // mirroring the no-op keeps the caller's mistake visible.
-      throw new ValueError(`property ${repr(this.matchName)} has no expression to enable`);
+      throw new ValueError(`property ${literal(this.matchName)} has no expression to enable`);
     }
     if (!value && !this.expression && this._unstoredMaskPath()) {
       // Nothing to disable: AE 2026 saves a fresh mask given
@@ -2709,7 +2709,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * The `__dict__` overrides of `_noValue` / `_color` / `_vector` /
    * `dimensions` are not in the key. They are set once at parse or
-   * synthesis time before any read, and `ChunkField.__set__` pops them
+   * synthesis time before any read, and `ChunkField.set` pops them
    * on a real write, so they cannot change under a live memo.
    *
    * Uncached this ran on every `propertyValueType` and
@@ -2995,13 +2995,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new TypeError(`alternate source must be an AVItem, not ${typeName(source)}`);
     }
     if (this._composition == null || !this._composition._project.items.has(source.id)) {
-      throw new ValueError(`Item ${repr(source.name)} (id=${source.id}) is not in the project.`);
+      throw new ValueError(`Item ${literal(source.name)} (id=${source.id}) is not in the project.`);
     }
     // Checked on the passed item, not the wrapper: wrapping an audio-only
     // footage in a comp would make the slot look compatible.
     if (!source.isMediaReplacementCompatible) {
       throw new ValueError(
-        `Item ${repr(source.name)} (id=${source.id}) cannot be used as an ` +
+        `Item ${literal(source.name)} (id=${source.id}) cannot be used as an ` +
           "alternate source (isMediaReplacementCompatible is false).",
       );
     }
@@ -3533,7 +3533,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   _addKey(time: number, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
     validateNumber(time);
     if (!this.canVaryOverTime) {
-      throw new ValueError(`property ${repr(this.matchName)} cannot vary over time`);
+      throw new ValueError(`property ${literal(this.matchName)} cannot vary over time`);
     }
     const kind = this._parallelKind();
     if (kind != null) return this._addParallelKey(time, kind, value);
@@ -3543,7 +3543,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // legitimately report no_value=True, so this only guards the numeric
     // path.)
     if (this._noValue) {
-      throw new ValueError(`property ${repr(this.matchName)} has no value to keyframe`);
+      throw new ValueError(`property ${literal(this.matchName)} has no value to keyframe`);
     }
     const frameRate = this._keyframeFrameRate();
 
@@ -4175,7 +4175,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       return container;
     }
     if (!kind.canMaterializeWrapper || kind.containerType == null) {
-      throw new NotImplementedError(`animating a static ${repr(this.matchName)} property is not yet supported`);
+      throw new NotImplementedError(`animating a static ${literal(this.matchName)} property is not yet supported`);
     }
     // Materialize while the bare tdbs is still the property's body in
     // the parent tdgp, so canonical repositioning can anchor it.
@@ -4202,7 +4202,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (this._nameUtf8 != null) this._nameUtf8.value = TDSN_SENTINEL;
       kind.onWrap(this);
     } else {
-      throw new NotImplementedError(`animating a static ${repr(this.matchName)} property is not yet supported`);
+      throw new NotImplementedError(`animating a static ${literal(this.matchName)} property is not yet supported`);
     }
     this._wrapper = wrapper;
     this._kfValueContainer = container;
@@ -4383,7 +4383,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // AE 2026 rejects this on a separated leader for the same reason
       // `setValue` is rejected: the followers hold the animation.
       throw new ValueError(
-        `cannot set a value on ${repr(this.matchName)} while its ` +
+        `cannot set a value on ${literal(this.matchName)} while its ` +
           "dimensions are separated; key its X / Y / Z followers " +
           "instead (getSeparationFollower)",
       );

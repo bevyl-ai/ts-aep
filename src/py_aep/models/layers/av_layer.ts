@@ -12,7 +12,7 @@ import {
   min,
   assert,
   truthyOr,
-  repr,
+  literal,
 } from "../../../pyrt/index.ts";
 import { requiresVersion } from "../../ae_version.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
@@ -1167,12 +1167,12 @@ export class AVLayer extends Layer {
     const comp = this.containingComp;
     const project = comp._project;
     if (!project.items.has(newSource.id)) {
-      throw new ValueError(`Item ${repr(newSource.name)} (id=${newSource.id}) is not in the project.`);
+      throw new ValueError(`Item ${literal(newSource.name)} (id=${newSource.id}) is not in the project.`);
     }
 
     if (_wouldCreateCycle(comp, newSource)) {
       throw new ValueError(
-        `Item ${repr(newSource.name)} (id=${newSource.id}) can't be used as a source because it would create a composition cycle.`,
+        `Item ${literal(newSource.name)} (id=${newSource.id}) can't be used as a source because it would create a composition cycle.`,
       );
     }
 

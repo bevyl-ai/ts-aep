@@ -32,7 +32,7 @@ def settable(obj, name):
             continue
         if isinstance(attr, property):
             return attr.fset is not None
-        return hasattr(type(attr), "__set__") and not inspect.isroutine(attr)
+        return hasattr(type(attr), "set") and not inspect.isroutine(attr)
     return False
 
 

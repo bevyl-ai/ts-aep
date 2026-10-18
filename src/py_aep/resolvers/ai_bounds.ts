@@ -42,7 +42,7 @@ import {
   type PathLike,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   decode,
   getOr,
@@ -177,7 +177,7 @@ export function joinBytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
     if (i > 0) out.push(sep);
     out.push(part);
   });
-  return bytes_.join(out);
+  return Bytes.join(out);
 }
 
 /** `bytes.isdigit()`: non-empty and every byte an ASCII digit. */
@@ -311,13 +311,13 @@ export class _Document {
    * objects the scanner happened to find.
    */
   _checkSupported(): void {
-    if (bytes_.contains(this._data, b("/ObjStm"))) {
+    if (Bytes.includes(this._data, b("/ObjStm"))) {
       throw this._reject(
         "the file uses compressed object streams (/ObjStm), which " +
           "py_aep cannot read; re-save it with PDF 1.4 compatibility",
       );
     }
-    if (bytes_.contains(this._data, b("/Encrypt"))) {
+    if (Bytes.includes(this._data, b("/Encrypt"))) {
       throw this._reject("the file is encrypted");
     }
   }
@@ -399,23 +399,23 @@ export class _Document {
   _rawStream(number: number, info: CosDict): Uint8Array | null {
     const offset = this._offsets.get(number) ?? null;
     if (offset == null) return null;
-    let start = bytes_.find(this._data, b("stream"), offset);
+    let start = Bytes.indexOf(this._data, b("stream"), offset);
     if (start < 0) return null;
     start += "stream".length;
-    if (bytesEq(bytes_.slice(this._data, start, start + 2), CRLF)) {
+    if (bytesEq(this._data.slice(start, start + 2), CRLF)) {
       start += 2;
     } else if (
-      bytesEq(bytes_.slice(this._data, start, start + 1), NEWLINE) ||
-      bytesEq(bytes_.slice(this._data, start, start + 1), CARRIAGE_RETURN)
+      bytesEq(this._data.slice(start, start + 1), NEWLINE) ||
+      bytesEq(this._data.slice(start, start + 1), CARRIAGE_RETURN)
     ) {
       start += 1;
     }
     const length = this.get(info, "Length");
     if (isReal(length)) {
-      return bytes_.slice(this._data, start, start + int(length));
+      return this._data.slice(start, start + int(length));
     }
-    const end = bytes_.find(this._data, b("endstream"), start);
-    return end > 0 ? bytes_.slice(this._data, start, end) : null;
+    const end = Bytes.indexOf(this._data, b("endstream"), start);
+    return end > 0 ? this._data.slice(start, end) : null;
   }
 
   reject(why: string): UnsupportedAiLayersError {
@@ -497,13 +497,13 @@ export function* _tokenize(
   const size = data.length;
   while (pos < size) {
     const char = data.subarray(pos, pos + 1);
-    if (bytes_.contains(_WHITESPACE, char)) {
+    if (Bytes.includes(_WHITESPACE, char)) {
       pos += 1;
       continue;
     }
     if (bytesEq(char, PERCENT)) {
       let end = pos;
-      while (end < size && !bytes_.contains(CRLF, data.subarray(end, end + 1))) end += 1;
+      while (end < size && !Bytes.includes(CRLF, data.subarray(end, end + 1))) end += 1;
       pos = end;
       continue;
     }
@@ -511,7 +511,7 @@ export function* _tokenize(
       let end = pos + 1;
       while (end < size) {
         const nxt = data.subarray(end, end + 1);
-        if (bytes_.contains(_WHITESPACE, nxt) || bytes_.contains(_DELIMITERS, nxt)) break;
+        if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
         end += 1;
       }
       yield ["name", decode(data.subarray(pos + 1, end), "latin-1")];
@@ -544,13 +544,13 @@ export function* _tokenize(
       yield ["array", array];
       continue;
     }
-    if (bytes_.contains(CLOSERS, char)) {
+    if (Bytes.includes(CLOSERS, char)) {
       pos += 1;
       continue;
     }
-    if (bytes_.contains(_NUMBER_START, char)) {
+    if (Bytes.includes(_NUMBER_START, char)) {
       let end = pos;
-      while (end < size && bytes_.contains(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
+      while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
       let value: number;
       try {
         value = float(decode(data.subarray(pos, end), "latin-1"));
@@ -565,7 +565,7 @@ export function* _tokenize(
     let end = pos;
     while (end < size) {
       const nxt = data.subarray(end, end + 1);
-      if (bytes_.contains(_WHITESPACE, nxt) || bytes_.contains(_DELIMITERS, nxt)) break;
+      if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
       end += 1;
     }
     if (end === pos) end += 1;
@@ -644,11 +644,11 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
  * operand does, or its glyph codes come out as their own hex digits.
  */
 export function _readHexString(data: Uint8Array, pos: number): [Uint8Array, number] | null {
-  const end = bytes_.find(data, GT, pos);
+  const end = Bytes.indexOf(data, GT, pos);
   if (end < 0) return null;
   let digits = decode(data.subarray(pos + 1, end), "latin-1").replace(/[^0-9A-Fa-f]/g, "");
   if (digits.length % 2) digits += "0";
-  return [bytes_.fromhex(digits), end + 1];
+  return [Bytes.fromHex(digits), end + 1];
 }
 
 export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
@@ -657,7 +657,7 @@ export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
   const size = data.length;
   while (pos < size) {
     if (bytesEq(data.subarray(pos, pos + 1), RBRACKET)) return [out, pos + 1];
-    if (bytes_.contains(_WHITESPACE, data.subarray(pos, pos + 1))) {
+    if (Bytes.includes(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
     }
@@ -677,7 +677,7 @@ export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
   let key: string | null = null;
   while (pos < size) {
     if (bytesEq(data.subarray(pos, pos + 2), DICT_END)) return [out, pos + 2];
-    if (bytes_.contains(_WHITESPACE, data.subarray(pos, pos + 1))) {
+    if (Bytes.includes(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
     }
@@ -703,7 +703,7 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
     let end = pos + 1;
     while (end < size) {
       const nxt = data.subarray(end, end + 1);
-      if (bytes_.contains(_WHITESPACE, nxt) || bytes_.contains(_DELIMITERS, nxt)) break;
+      if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
       end += 1;
     }
     return [decode(data.subarray(pos + 1, end), "latin-1"), end];
@@ -714,9 +714,9 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
     if (bytesEq(data.subarray(pos + 1, pos + 2), LT)) return _readDict(data, pos);
     return _readHexString(data, pos);
   }
-  if (bytes_.contains(_NUMBER_START, char)) {
+  if (Bytes.includes(_NUMBER_START, char)) {
     let end = pos;
-    while (end < size && bytes_.contains(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
+    while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
     try {
       return [float(decode(data.subarray(pos, end), "latin-1")), end];
     } catch (e) {
@@ -727,7 +727,7 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
   let end = pos;
   while (end < size) {
     const nxt = data.subarray(end, end + 1);
-    if (bytes_.contains(_WHITESPACE, nxt) || bytes_.contains(_DELIMITERS, nxt)) break;
+    if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
     end += 1;
   }
   if (end === pos) end += 1;
@@ -1185,7 +1185,7 @@ export class _Measurer {
       if (twoByte) {
         codes = [];
         for (let index = 0; index < item.length - 1; index += 2) {
-          codes.push(bytes_.intFromBytes(bytes_.slice(item, index, index + 2), "big"));
+          codes.push(Bytes.intFromBytes(item.slice(index, index + 2), "big"));
         }
       } else {
         codes = Array.from(item);
@@ -1314,7 +1314,7 @@ export const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v\/\[\]()<>{}%]+)[ \t\n\r\f\v]
  */
 export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).readBytes();
-  if (!bytes_.startswith(data, b("%PDF"))) return null;
+  if (!Bytes.startsWith(data, b("%PDF"))) return null;
   try {
     const doc = new _Document(data, new Path(file).name);
     const page = doc.pages()[0];
@@ -1324,7 +1324,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
       const space = doc.get(spaces, match[1]);
       if (Array.isArray(space) && space.length === 2 && str(space[0]) === "ICCBased") {
         const profile = doc.stream(space[1]);
-        if (profile.length >= 132 && bytesEq(bytes_.slice(profile, 36, 40), b("acsp"))) {
+        if (profile.length >= 132 && bytesEq(profile.slice(36, 40), b("acsp"))) {
           return profile;
         }
       }
@@ -1353,5 +1353,3 @@ export function footageSize(box: Box | null): [number, number] {
     Math.max(1, Math.ceil((y1 - y0) / 65536.0)),
   ];
 }
-
-export const __all__ = ["EMPTY_BOX", "footage_size", "read_ai_icc_profile", "read_ai_layer_bounds"] as const;

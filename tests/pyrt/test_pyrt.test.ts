@@ -7,7 +7,7 @@ import {
   PurePosixPath,
   PureWindowsPath,
   StringIO,
-  bytes_,
+  Bytes,
   decode,
   dict,
   encode,
@@ -124,11 +124,11 @@ describe("re", () => {
 
 describe("codecs", () => {
   test.each(CPY.u32.map((r) => [...r]))("decode(%s, %s, %s)", (hex, enc, err, out) => {
-    expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err)))).toBe(out);
+    expect(run(() => repr(decode(Bytes.fromHex(hex), enc, err)))).toBe(out);
   });
 
   test.each(CPY.u32_enc.map((r) => [...r]))("encode(%j, %s)", (text, enc, hex) => {
-    expect(bytes_.hex(encode(text, enc))).toBe(hex);
+    expect(Bytes.toHex(encode(text, enc))).toBe(hex);
   });
 
   // Code pages, from CPython 3.12 (tools/gen_codepages.ts checks every one- and two-byte sequence).
@@ -149,7 +149,7 @@ describe("codecs", () => {
     ["a1db", "cp874", "strict", "UnicodeDecodeError: 'charmap' codec can't decode byte 0xdb in position 1: character maps to <undefined>"],
     ["80", "ascii", "strict", "UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0: ordinal not in range(128)"],
   ])("decode(%s, %s, %s)", (hex, enc, err, out) => {
-    expect(run(() => repr(decode(bytes_.fromhex(hex), enc, err)))).toBe(out);
+    expect(run(() => repr(decode(Bytes.fromHex(hex), enc, err)))).toBe(out);
   });
 });
 
@@ -246,7 +246,7 @@ describe("builtins", () => {
 
 describe("bytes and io", () => {
   test.each(CPY.bsplit.map((r) => [...r]))("split(%s, None, %d)", (hex, maxsplit, parts) => {
-    expect(bytes_.split(bytes_.fromhex(hex), null, maxsplit).map((p) => bytes_.hex(p))).toEqual([...parts]);
+    expect(Bytes.split(Bytes.fromHex(hex), null, maxsplit).map((p) => Bytes.toHex(p))).toEqual([...parts]);
   });
 
   test("pack_into", () => {
@@ -259,9 +259,9 @@ describe("bytes and io", () => {
 
   test("readline", () => {
     const fp = new BytesIO(encode("ab\ncd", "utf-8"));
-    expect(bytes_.hex(fp.readline())).toBe("61620a");
-    expect(bytes_.hex(fp.readline(1))).toBe("63");
-    expect(bytes_.hex(fp.readline())).toBe("64");
+    expect(Bytes.toHex(fp.readline())).toBe("61620a");
+    expect(Bytes.toHex(fp.readline(1))).toBe("63");
+    expect(Bytes.toHex(fp.readline())).toBe("64");
     expect(fp.readline().length).toBe(0);
     const sio = new StringIO();
     sio.write("x\u{1f600}\ny");

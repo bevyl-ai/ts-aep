@@ -561,11 +561,11 @@ describe("TestChunkFieldTransform", () => {
     // _ScalarModel has reverse=int but no transform,
     // so we test with a model that does have transform.
     const cf = new ChunkField<boolean>("_body", "flag", { transform: truthy, reverse: int });
-    cf.__set_name__(model.constructor, "flag");
+    cf.attach(model.constructor, "flag");
     model._body = new _FakeBody({ flag: 0 });
-    expect(cf.__get__(model, model.constructor)).toBe(false);
+    expect(cf.get(model, model.constructor)).toBe(false);
     model._body = new _FakeBody({ flag: 1 });
-    expect(cf.__get__(model, model.constructor)).toBe(true);
+    expect(cf.get(model, model.constructor)).toBe(true);
   });
 });
 

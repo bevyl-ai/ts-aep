@@ -120,7 +120,7 @@ function _roundedSplineIsTheMap(curves: Curves): string[] {
     if (channel.isIdentity) continue;
     const spline = channel._spline;
     const levels = Array.from(range(256), (level) =>
-      Math.floor(min([max([spline.__call__(level), 0.0]), 255.0]) + 0.5),
+      Math.floor(min([max([spline.evaluate(level), 0.0]), 255.0]) + 0.5),
     );
     if (valueEquals(levels, channel.map)) matching.push(name);
   }

@@ -26,7 +26,7 @@ import {
   len,
   truthy,
   valueEquals,
-  repr,
+  literal,
   setdefault,
   sorted,
   str,
@@ -137,7 +137,7 @@ export function _getFieldNames(obj: object): readonly string[] | null {
   }
   // TODO(port): Python also collects `__annotations__` from the full MRO here. TS erases
   // type annotations at runtime, so a field that is only annotated (neither an attrs field
-  // nor a chunk_attr/dict_attr descriptor) on a plain class is not enumerated.
+  // nor a chunkAttr/dictAttr descriptor) on a plain class is not enumerated.
   // Collect annotations and chunk-backed descriptors from the full MRO.
   // This covers plain-class models and also dataclass subclasses that
   // add chunk descriptors in non-dataclass bases (e.g. Layer extends
@@ -145,8 +145,8 @@ export function _getFieldNames(obj: object): readonly string[] | null {
   for (const [name, attr] of descriptorsOf(cls)) {
     // ChunkField (binary-backed) and CosField (COS-dict-backed)
     // descriptors both expose a backing-store attribute name.
-    const isDescriptor = "chunkAttr" in attr || "dict_attr" in attr;
-    if (isDescriptor && typeof attr.__get__ === "function") names.add(name);
+    const isDescriptor = "chunkAttr" in attr || "dictAttr" in attr;
+    if (isDescriptor && typeof attr.get === "function") names.add(name);
   }
   if (names.size > 0) {
     const result = sorted(names);
@@ -381,7 +381,7 @@ export class ValidationResult {
 
   /** Add a difference. */
   addDiff(path: string, expected: ToDictValue, parsed: ToDictValue, category = "other"): void {
-    this.differences.push(`${path}: expected ${repr(expected)}, got ${repr(parsed)}`);
+    this.differences.push(`${path}: expected ${literal(expected)}, got ${literal(parsed)}`);
     this.categories.set(category, (this.categories.get(category) ?? 0) + 1);
   }
 
@@ -1954,7 +1954,7 @@ export function _parseArgs(argv: string[]): {
       }
       if (!_CATEGORY_CHOICES.includes(value)) {
         _parserError(
-          `argument -c/--category: invalid choice: ${repr(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
+          `argument -c/--category: invalid choice: ${literal(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
         );
       }
       category = value;

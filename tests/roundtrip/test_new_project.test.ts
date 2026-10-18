@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
-  bytes_,
+  Bytes,
   bytesEq,
   getOrThrow,
   isdigit,
@@ -100,7 +100,7 @@ describe("TestNewEmpty", () => {
       expect(project.gpuAccelType).toBe(gpu);
       expect(project._head.aeVersionOs).toBe(osCode);
       expect(project._nnhd._savingPlatform).toBe(nnhdByte);
-      expect(bytes_.hex(bytes_.intToBytes(project._nnhd._systemCodePage, 2, "big"))).toBe(
+      expect(Bytes.toHex(Bytes.intToBytes(project._nnhd._systemCodePage, 2, "big"))).toBe(
         codePage,
       );
     },

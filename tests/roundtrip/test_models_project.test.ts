@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   b,
-  bytes_,
+  Bytes,
   contains,
   len,
   lshift,
@@ -710,7 +710,7 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     const donor = parseAep(TestRoundtripWorkingSpaceProfileId.ACESCCT_DONOR).project;
     assert(donor._wsUtf8 != null);
     const icc = parseEnvelope(donor._wsUtf8.value).data;
-    expect(bytes_.hex(TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe("ae27d1e66d65c5a0a50fe0ec149a24fa");
+    expect(Bytes.toHex(TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe("ae27d1e66d65c5a0a50fe0ec149a24fa");
     const iccDir = tmpPath.div("icc");
     iccDir.mkdir();
     iccDir.div("ACEScct.icc").writeBytes(icc);
@@ -728,11 +728,11 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
   test("test_ocio_working_space_writes_no_profile_id", () => {
     const config = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "config.ocio");
     const project = parseAep(SAMPLES_DIR.div("workingSpace_sRGB.aep")).project;
-    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(false);
+    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), Bytes.repeat(b("\xff"), 16))).toBe(false);
     project.colorManagementSystem = ColorManagementSystem.OCIO;
     project.ocioConfigurationFile = str(config);
     project.workingSpace = "ACEScg";
-    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project), Bytes.repeat(b("\xff"), 16))).toBe(true);
   });
 });
 
@@ -753,8 +753,8 @@ class TestRoundtripPre22WorkingSpace {
   // An AE 15 pool: sRGB IEC61966-2.1 (the working space), then SDTV NTSC.
   static DONOR = VERSIONS_DIR.div("ae2018", "complete.aep");
   static SRGB = "sRGB IEC61966-2.1";
-  static SRGB_ID = bytes_.fromhex("1d3fda2edb4a89ab60a23c5f7c7d81dd");
-  static NTSC_ID = bytes_.fromhex("2734184f30e0dfca20be1a95a0a65519");
+  static SRGB_ID = Bytes.fromHex("1d3fda2edb4a89ab60a23c5f7c7d81dd");
+  static NTSC_ID = Bytes.fromHex("2734184f30e0dfca20be1a95a0a65519");
 
   static _icc_dir(tmpPath: Path): Path {
     // The ICCs exactly as AE stored them, so no installed profile is needed.
@@ -848,7 +848,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.workingSpace).toBe("None");
-    expect(valueEquals(project2._cpid.data, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(project2._cpid.data, Bytes.repeat(b("\xff"), 16))).toBe(true);
     expect(valueEquals(_profilePool(project2).map((c) => c.data), pool)).toBe(true);
   });
 
