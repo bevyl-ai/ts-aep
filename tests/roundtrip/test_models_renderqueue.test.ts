@@ -43,6 +43,7 @@ import { _parse_id_hex_section } from "../../src/py_aep/parsers/templates.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import type { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { TiffFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/tiff.ts";
 import { as_instance, get_rqi } from "../helpers.ts";
 
@@ -61,8 +62,8 @@ const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div(
 
 /** `attrs.asdict(inst)` - field name to value, in field order. */
 // NOTE(port): no pyrt attrs.asdict; OutputModuleSettingsItem fields are flat (ints, bools, bytes), so Python's recursive asdict equals this shallow copy.
-function asdict(inst: OutputModuleSettingsItem): Map<string, unknown> {
-  const out = new Map<string, unknown>();
+function asdict(inst: OutputModuleSettingsItem): Map<string, SettingValue> {
+  const out = new Map<string, SettingValue>();
   for (const a of fields(inst.constructor)) out.set(a.name, getattr(inst, a.name));
   return out;
 }
@@ -884,7 +885,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings = new Map<string, unknown>([
+    rqi.settings = new Map<string, SettingValue>([
       ["Quality", RenderQuality.WIREFRAME],
       ["Resolution", [4, 4]],
       ["Skip Existing Files", true],
@@ -908,7 +909,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     items[0].settings.__setitem__("Quality", RenderQuality.DRAFT);
     items[0].settings.__setitem__("Resolution", [2, 2]);
     const copied_settings = new Map(
-      [...items[0].settings].map((k: string): [string, unknown] => [k, items[0].settings.__getitem__(k)]),
+      [...items[0].settings].map((k: string): [string, SettingValue] => [k, items[0].settings.__getitem__(k)]),
     );
     expect(copied_settings.has("Use comp's frame rate")).toBe(true);
     dict_pop(copied_settings, "Use comp's frame rate");
@@ -2049,28 +2050,28 @@ const _AUTO = OutputAudio.AUTO;
 const _8 = AudioBitDepth.EIGHT_BIT;
 const _16 = AudioBitDepth.SIXTEEN_BIT;
 const _32 = AudioBitDepth.THIRTY_TWO_BIT;
-const _AUDIO_CHAINS = new Map<string, [string, Map<string, unknown>[]]>([
-  ["E0_on", ["U", [new Map<string, unknown>([["Output Audio", _ON]])]]],
-  ["E1_on_8", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
-  ["E2_on_16", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _16]])]]],
-  ["E3_on_32", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _32]])]]],
+const _AUDIO_CHAINS = new Map<string, [string, Map<string, SettingValue>[]]>([
+  ["E0_on", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
+  ["E1_on_8", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _8]])]]],
+  ["E2_on_16", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _16]])]]],
+  ["E3_on_32", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _32]])]]],
   [
     "E5_on_mono",
-    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]])]],
+    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]])]],
   ],
   [
     "E7_on_rate",
-    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Sample Rate", 44100]])]],
+    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Sample Rate", 44100]])]],
   ],
-  ["E8_auto", ["U", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
+  ["E8_auto", ["U", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   [
     "E9_on_mono_8",
     [
       "U",
       [
-        new Map<string, unknown>([["Output Audio", _ON]]),
-        new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]]),
-        new Map<string, unknown>([["Audio Bit Depth", _8]]),
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _8]]),
       ],
     ],
   ],
@@ -2079,9 +2080,9 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, unknown>[]]>([
     [
       "U",
       [
-        new Map<string, unknown>([["Output Audio", _ON]]),
-        new Map<string, unknown>([["Audio Bit Depth", _8]]),
-        new Map<string, unknown>([["Audio Sample Rate", 22050]]),
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _8]]),
+        new Map<string, SettingValue>([["Audio Sample Rate", 22050]]),
       ],
     ],
   ],
@@ -2090,7 +2091,7 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, unknown>[]]>([
     [
       "U",
       [
-        new Map<string, unknown>([
+        new Map<string, SettingValue>([
           ["Output Audio", _ON],
           ["Audio Bit Depth", _8],
           ["Audio Channels", AudioChannels.MONO],
@@ -2099,42 +2100,42 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, unknown>[]]>([
       ],
     ],
   ],
-  ["E12_off_8", ["U", [new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
-  ["F1_8", ["S", [new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
-  ["F2_32", ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]])]]],
+  ["E12_off_8", ["U", [new Map<string, SettingValue>([["Audio Bit Depth", _8]])]]],
+  ["F1_8", ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _8]])]]],
+  ["F2_32", ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]])]]],
   [
     "F3_32_16",
-    ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]]), new Map<string, unknown>([["Audio Bit Depth", _16]])]],
+    ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]]), new Map<string, SettingValue>([["Audio Bit Depth", _16]])]],
   ],
   [
     "F4_32_8",
-    ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]]), new Map<string, unknown>([["Audio Bit Depth", _8]])]],
+    ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]]), new Map<string, SettingValue>([["Audio Bit Depth", _8]])]],
   ],
-  ["F5_mono", ["S", [new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]])]]],
-  ["F6_rate", ["S", [new Map<string, unknown>([["Audio Sample Rate", 22050]])]]],
-  ["F7_off", ["S", [new Map<string, unknown>([["Output Audio", _OFF]])]]],
-  ["F8_auto", ["S", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
+  ["F5_mono", ["S", [new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]])]]],
+  ["F6_rate", ["S", [new Map<string, SettingValue>([["Audio Sample Rate", 22050]])]]],
+  ["F7_off", ["S", [new Map<string, SettingValue>([["Output Audio", _OFF]])]]],
+  ["F8_auto", ["S", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   [
     "F9_off_on",
-    ["S", [new Map<string, unknown>([["Output Audio", _OFF]]), new Map<string, unknown>([["Output Audio", _ON]])]],
+    ["S", [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])]],
   ],
-  ["G4_auto_on", ["A", [new Map<string, unknown>([["Output Audio", _ON]])]]],
+  ["G4_auto_on", ["A", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
   [
     "G5_auto_off_on",
-    ["A", [new Map<string, unknown>([["Output Audio", _OFF]]), new Map<string, unknown>([["Output Audio", _ON]])]],
+    ["A", [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])]],
   ],
-  ["G2_offauto_on", ["Z", [new Map<string, unknown>([["Output Audio", _ON]])]]],
-  ["G3_offauto_auto", ["Z", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
+  ["G2_offauto_on", ["Z", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
+  ["G3_offauto_auto", ["Z", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   // The starting states themselves, rebuilt from U.
   [
     "S",
-    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Channels", AudioChannels.STEREO]])]],
+    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]])]],
   ],
   [
     "A",
-    ["U", [new Map<string, unknown>([["Output Audio", _AUTO]]), new Map<string, unknown>([["Audio Channels", AudioChannels.STEREO]])]],
+    ["U", [new Map<string, SettingValue>([["Output Audio", _AUTO]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]])]],
   ],
-  ["Z", ["A", [new Map<string, unknown>([["Output Audio", _OFF]])]]],
+  ["Z", ["A", [new Map<string, SettingValue>([["Output Audio", _OFF]])]]],
 ]);
 
 function _om_by_file_stem(project: Project, stem: string): OutputModule {
@@ -2191,7 +2192,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
       om.settings.__setitem__("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
     }, "24-bit");
     raises(ValueError, () => {
-      om.settings = new Map<string, unknown>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
+      om.settings = new Map<string, SettingValue>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
     }, "24-bit");
     expect(py_eq(om._roou.tobytes(), before)).toBe(true);
   });

@@ -58,7 +58,7 @@ export function _next_item_id(rq: RenderQueue): number {
  */
 export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
-  __setitem__(key: string, value: unknown): void {
+  __setitem__(key: string, value: SettingValue | null): void {
     super.__setitem__(key, value);
     this._owner._ldat.settings_written = 1;
   }
@@ -538,7 +538,7 @@ export class RenderQueueItem {
     return new _RenderSettingsView(this, RENDER_SETTINGS);
   }
 
-  set settings(value: Map<string, unknown> | SettingsView) {
+  set settings(value: Map<string, SettingValue> | SettingsView) {
     if (!(value instanceof Map || value instanceof SettingsView)) {
       throw new ValueError("Settings must be a dictionary of key-value pairs");
     }

@@ -34,7 +34,7 @@ export type ChunkTransform<R = FieldValue> = (value: FieldValue) => R;
  */
 export type HookName<O> = object extends O
   ? string
-  : { [K in keyof O]-?: O[K] extends () => unknown ? K : never }[keyof O] & string;
+  : { [K in keyof O]-?: O[K] extends () => void ? K : never }[keyof O] & string;
 
 /** The name of an attribute of `O` (a chunk body); any name when the owner is not known. */
 export type AttrName<O> = object extends O ? string : string & keyof O;
@@ -146,7 +146,7 @@ export function _suppress_materialization() {
  * Python `isinstance(x, IntEnum)` for a py_enum object (pyrt/enum.ts).
  */
 // NOTE(port): int_enum === py_enum in pyrt, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
-export function is_enum(x: unknown): x is EnumHelpers<unknown> {
+export function is_enum(x: unknown): x is EnumHelpers<number> {
   return x != null && typeof x === "object" && "__members__" in x && "has" in x && typeof x.has === "function";
 }
 
@@ -156,7 +156,7 @@ export function is_enum(x: unknown): x is EnumHelpers<unknown> {
  * Detects a `from_binary` classmethod (via `__self__`) or a direct
  * enum class reference.
  */
-export function _enum_class<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<unknown> | null {
+export function _enum_class<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
   if (transform == null) return null;
   let enum_cls = getattr(transform, "__self__", null);
   if (enum_cls == null && is_enum(transform)) enum_cls = transform;
@@ -169,8 +169,8 @@ export function _enum_class<R>(transform: ChunkTransform<R> | null | undefined):
  * bound to the enum (its `__self__`); a py_enum method needs `this` bound
  * the same way, and `_enum_class` finds the enum through `__self__`.
  */
-export function bound_enum_method<V, R>(
-  enum_cls: EnumHelpers<unknown>,
+export function bound_enum_method<V, R extends number>(
+  enum_cls: EnumHelpers<number>,
   name: string,
   dflt: EnumHelpers<R> | ((value: V) => R),
 ): (value: V) => R {
@@ -217,7 +217,7 @@ export function enum_or_raw<V, R>(convert: (value: V) => R): (value: V) => R | V
  * Raw ints must appear in the enum's value map; any other type must
  * already be an instance of the enum.
  */
-export function _validate_enum_member(enum_cls: EnumHelpers<unknown>, value: unknown, public_name: string): void {
+export function _validate_enum_member(enum_cls: EnumHelpers<number>, value: unknown, public_name: string): void {
   if (enum_cls.has(value)) return;
   // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integer-valued float such as 2.0 takes the int branch and gets the "Invalid value" message instead of "is not a valid".
   // A Python bool is an int that hashes like 0/1, so it is checked as its int value.
@@ -273,7 +273,7 @@ export class ChunkField<
   declare pre_set: string | null;
   declare post_set: ((obj: O) => void) | string | null;
   declare min_version: number | null;
-  declare _enum_cls: EnumHelpers<unknown> | null;
+  declare _enum_cls: EnumHelpers<number> | null;
   declare public_name: string;
 
   /**
@@ -443,7 +443,7 @@ export class ChunkField<
    *   declared field type (`declare depth: OutputColorDepth | number`).
    */
   static enum<
-    E extends EnumHelpers<number | string>,
+    E extends EnumHelpers<number>,
     Raw = never,
     O extends object = object,
     A extends AttrName<O> = AttrName<O>,
@@ -455,7 +455,7 @@ export class ChunkField<
     kw: ChunkFieldEnumKw<EnumValue<E> | Raw, O, RawField<O, A, F>> & { allow_out_of_enum_values: true },
   ): ChunkField<EnumValue<E> | Raw, O>;
   static enum<
-    E extends EnumHelpers<number | string>,
+    E extends EnumHelpers<number>,
     O extends object = object,
     A extends AttrName<O> = AttrName<O>,
     F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>,
@@ -465,7 +465,7 @@ export class ChunkField<
     field: string & F,
     kw?: ChunkFieldEnumKw<EnumValue<E>, O, RawField<O, A, F>> & { allow_out_of_enum_values?: false },
   ): ChunkField<EnumValue<E>, O>;
-  static enum<V extends number | string, R extends V>(
+  static enum<V extends number, R extends V>(
     enum_cls: EnumHelpers<V>,
     chunk_attr: string,
     field: string,

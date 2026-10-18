@@ -135,7 +135,7 @@ export function _get_dimensions(prop: Property): number {
 export const _validate_scalar = _validate_number({ min: _get_min, max: _get_max });
 export const _validate_list = validate_sequence({ length: _get_dimensions, min: _get_min, max: _get_max });
 
-export function _same_path(a: Shape, b: unknown): boolean {
+export function _same_path(a: Shape, b: PropertyValue): boolean {
   // Whether two path values draw the same featherless path (vertices,
   // stored handles and closed flag; a path with feather points never
   // matches).
@@ -150,7 +150,7 @@ export function _same_path(a: Shape, b: unknown): boolean {
   );
 }
 
-export function _validate_value(prop: Property, value: unknown): void {
+export function _validate_value(prop: Property, value: PropertyValue): void {
   // Validate type, length and bounds of a property value.
   // A mask or shape-layer path only holds a Shape: AE 2026 refuses any other
   // value ("Array is not of the correct type"), and the numeric write path
@@ -213,7 +213,7 @@ export function _mask_ids(prop: Property): number[] | null {
     .map((m) => m._mkif.mask_id);
 }
 
-export function _validate_key_value(prop: Property, value: unknown): void {
+export function _validate_key_value(prop: Property, value: PropertyValue): void {
   // Validate a keyframe value: `_validate_value`, after refusing `None` for
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).

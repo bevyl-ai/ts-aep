@@ -591,7 +591,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 
     const as_vector = (keyframe: Keyframe): number[] | null => {
       const value = keyframe.value;
-      const is_num = (x: unknown): boolean => typeof x === "number" || typeof x === "boolean";
+      const is_num = (x: number): boolean => typeof x === "number" || typeof x === "boolean";
       if (typeof value === "number" || typeof value === "boolean") return [value];
       if (Array.isArray(value) && value.every(is_num)) {
         return value;

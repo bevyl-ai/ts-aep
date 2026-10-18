@@ -26,7 +26,7 @@
     },
     "4 models": {
       "any": 1,
-      "unknown": 75,
+      "unknown": 40,
       "casts": 26
     },
     "5 resolvers+svg": {
@@ -41,7 +41,7 @@
     },
     "7 tests": {
       "any": 0,
-      "unknown": 120,
+      "unknown": 72,
       "casts": 6
     }
   }

@@ -32,7 +32,7 @@ import type { Preferences } from "../preferences.ts";
 // (`int(member)` is the member itself); STRING output gets the label from the
 // spec's enum class in `settings_to_string` instead.
 export const IntEnum = {
-  has(_value: unknown): _value is number {
+  has(_value: SettingValue): _value is number {
     return false;
   },
 };
@@ -93,7 +93,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   // -- writes ------------------------------------------------------------
 
-  __setitem__(key: string, value: unknown): void {
+  __setitem__(key: string, value: SettingValue | null): void {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) {
       const valid = sorted(this._specs.keys());
@@ -149,7 +149,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   get(key: string): SettingValue | null;
   get<D>(key: string, default_: D): SettingValue | D;
-  get(key: string, default_: unknown = null): unknown {
+  get<D>(key: string, default_: D | null = null): SettingValue | D | null {
     try {
       return this.__getitem__(key);
     } catch (e) {
@@ -159,8 +159,8 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   update(
-    other: Map<string, unknown> | SettingsView<SettingValues> | Iterable<[string, unknown]> = [],
-    kwargs: Record<string, unknown> = {},
+    other: Map<string, SettingValue> | SettingsView<SettingValues> | Iterable<[string, SettingValue]> = [],
+    kwargs: Record<string, SettingValue> = {},
   ): void {
     if (other instanceof Map || other instanceof SettingsView) {
       for (const [k, v] of other instanceof Map ? [...other.entries()] : other.items()) this.__setitem__(k, v);
@@ -171,8 +171,8 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   setdefault(key: string): SettingValue | null;
-  setdefault<D>(key: string, default_: D): SettingValue | D;
-  setdefault(key: string, default_: unknown = null): unknown {
+  setdefault<D extends SettingValue>(key: string, default_: D): SettingValue | D;
+  setdefault<D extends SettingValue>(key: string, default_: D | null = null): SettingValue | D | null {
     try {
       return this.__getitem__(key);
     } catch (e) {
@@ -184,7 +184,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   pop(key: string): SettingValue;
   pop<D>(key: string, default_: D): SettingValue | D;
-  pop(key: string, ...default_: [unknown?]): unknown {
+  pop<D>(key: string, ...default_: [D?]): SettingValue | D | undefined {
     let value: SettingValue;
     try {
       value = this.__getitem__(key);
@@ -239,7 +239,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
  *     - An int matching an enum member's value
  *     - A string matching an enum member's label
  */
-export function _coerce_enum(enum_class: LabeledEnum, value: unknown): number {
+export function _coerce_enum(enum_class: LabeledEnum, value: SettingValue | null): number {
   if (enum_class.has(value)) return value;
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
