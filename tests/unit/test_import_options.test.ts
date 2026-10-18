@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { raises } from "../../src/pyrt/pytest.ts";
-import { Path, ValueError, int, valueEquals, repr } from "../../src/pyrt/index.ts";
+import { Path, ValueError, int, repr } from "../../src/pyrt/index.ts";
 import { ImportAsType } from "../../src/py_aep/enums/index.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/index.ts";
 import { COMP_CONVERSION_EXTENSIONS, getFileFormat } from "../../src/py_aep/data/file_formats.ts";

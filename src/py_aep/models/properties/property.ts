@@ -3898,7 +3898,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       typeof value === "number" || typeof value === "boolean" || Array.isArray(value) ? this._unresolveValue(value) : null;
     let rawVals: number[];
     if (typeof raw === "number" || typeof raw === "boolean") {
-      rawVals = [float(raw)];
+      rawVals = [raw];
     } else if (Array.isArray(raw)) {
       rawVals = raw;
     } else {

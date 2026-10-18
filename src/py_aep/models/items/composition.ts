@@ -23,7 +23,6 @@ import {
   bytesEq,
   deferred,
   descriptor,
-  float,
   getOrThrow,
   int,
   assert,
@@ -1559,7 +1558,7 @@ export class CompItem extends AVItem {
       // Python's `float()` refuses a list bound (a color or multi-dimensional range).
       const floatBound = (v: number | number[]): number => {
         if (Array.isArray(v)) throw new TypeError("float() argument must be a string or a real number, not 'list'");
-        return float(v);
+        return v;
       };
       return buildSliderCctl(
         name,
