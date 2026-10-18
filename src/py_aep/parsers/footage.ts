@@ -1,4 +1,3 @@
-import { at } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
@@ -35,7 +34,7 @@ export function parseFootage(
 ): FootageItem {
   const pinChunks = filterByListType(childChunks, "Pin ");
 
-  const mainSource = parseSource(at(pinChunks, 0));
+  const mainSource = parseSource(pinChunks[0]);
   const proxySource: FileSource | SolidSource | PlaceholderSource | null =
     pinChunks.length > 1 ? parseSource(pinChunks[1]) : null;
 

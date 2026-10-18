@@ -14,7 +14,6 @@ import * as zlib from "../../pyrt/zlib.ts";
 import {
   BytesIO,
   Path,
-  at,
   Bytes,
   bytesEqual,
   decode,
@@ -539,11 +538,11 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       }
       channelLists.push(channels);
       off += 8; // blend mode signature (4) + key (4)
-      const clipped = at(data, off + 1) !== 0; // opacity, CLIPPING, flags, filler
+      const clipped = data.at(off + 1)! !== 0; // opacity, CLIPPING, flags, filler
       // Flags bit 1 marks a layer hidden in Photoshop; AE 2026 imports
       // it with the comp layer's video switch off (synthetic
       // hidden_layer.psd, COMP and COMP_CROPPED_LAYERS).
-      const visible = !(at(data, off + 2) & 0x02);
+      const visible = !(data.at(off + 2)! & 0x02);
       off += 4;
       const extraLen = struct.unpack(">I", data.slice(off, off + 4))[0];
       off += 4;
@@ -646,7 +645,7 @@ export function _userMask(mask: Uint8Array, fileName: string, layerName: string)
   const flags = mask[17];
   let pos = 18;
   if (flags & 0x10) {
-    const parameters = at(mask, pos);
+    const parameters = mask.at(pos)!;
     pos += 1;
     if (parameters & 0x03) {
       // NOTE(port): message and category match warnings.warn; stacklevel=3 only picks the reported source location, which has no JS equivalent.
@@ -904,7 +903,7 @@ export function _parseLayerExtra(
   pos += 4 + maskLen;
   pos += 4 + struct.unpack(">I", extra.slice(pos, pos + 4))[0];
   // Legacy Pascal name, padded so (1 + length) is a multiple of 4.
-  const pascalLen = at(extra, pos);
+  const pascalLen = extra.at(pos)!;
   const pascal = decode(extra.slice(pos + 1, pos + 1 + pascalLen), "latin-1");
   pos += 1 + pascalLen;
   pos += (4 - ((1 + pascalLen) % 4)) % 4;
@@ -962,9 +961,9 @@ export function _parseLayerExtra(
       // feature set); same path-record layout.
       vsms = block;
     } else if (bytesEqual(key, ascii("iOpa")) && blockLen >= 1) {
-      fillOpacity = at(block, 0);
+      fillOpacity = block[0];
     } else if (bytesEqual(key, ascii("infx")) && blockLen >= 1) {
-      blendInterior = at(block, 0) !== 0;
+      blendInterior = block[0] !== 0;
     } else if (bytesEqual(key, ascii("brst"))) {
       channelRestrictions = block;
     }

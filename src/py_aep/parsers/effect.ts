@@ -18,7 +18,6 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
 import {
-  at,
   warn,
   decode,
   encode,
@@ -489,7 +488,7 @@ export function* _effectInstances(chunks: Chunk[]): Generator<[string, ListChunk
       yield* _effectInstances(chunk.chunks);
     } else if (listType === "Layr") {
       const root = filterByListType(chunk.chunks, "tdgp");
-      const parade = getChunksByMatchName(at(root, 0)).get("ADBE Effect Parade");
+      const parade = getChunksByMatchName(root[0]).get("ADBE Effect Parade");
       const effects = filterByListType(parade ?? [], "tdgp");
       if (effects.length === 0) continue;
       for (const [name, run] of getChunksByMatchName(effects[0])) {

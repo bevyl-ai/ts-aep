@@ -39,7 +39,6 @@ import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import type { Path } from "../../pyrt/index.ts";
 import {
-  at,
   KeyError,
   islower,
   max,
@@ -283,7 +282,7 @@ export function _ascenderRatio(psName: string): number {
       // fontkit. fontkit's create returns a FontCollection for .ttc files, so the
       // face is picked with `.fonts[face_index]`.
       const opened = dep("fontkit").create(host.fs.readFileSync(path.toString()));
-      font = opened.fonts ? at(opened.fonts, faceIndex) : opened;
+      font = opened.fonts ? opened.fonts.at(faceIndex)! : opened;
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
       throw Object.assign(
@@ -658,7 +657,7 @@ export function composeLines(doc: TextDocument): ComposedLines {
   const baselines: number[] = [];
   let y = 0.0;
   for (const [lineNo, [start, end]] of spans.entries()) {
-    const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [at(styles, -1)]);
+    const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [styles.at(-1)!]);
     if (lineNo === 0) {
       y += max(
         lineStyles.map(

@@ -32,7 +32,6 @@ import {
   NotImplementedError,
   OSError,
   ValueError,
-  at,
   bytesEqual,
   concat,
   getattr,
@@ -746,7 +745,7 @@ export class FileSource extends FootageSource {
 
   _derivedFrame(stored: number, index: number): number {
     if (stored !== UNDEFINED_FRAME || !this._fileNames?.length) return stored;
-    const match = /(\d+)\D*$/.exec(at(this._fileNames, index));
+    const match = /(\d+)\D*$/.exec(this._fileNames.at(index)!);
     return match != null ? Number.parseInt(match[1], 10) : stored;
   }
 
@@ -1249,7 +1248,7 @@ export class FileSource extends FootageSource {
       const info = probeMedia(path, data);
       const fmt = getFileFormat(suffix);
       const [aiLayers, index] = resolveAiLayer(path, layerIndex, data);
-      const aiLayer = at(aiLayers, index);
+      const aiLayer = aiLayers.at(index)!;
       const [icc, profileName] = aiDocumentProfile(path, data);
       let artworkBounds: Box | null = null;
       let width = info.width;
@@ -1258,7 +1257,7 @@ export class FileSource extends FootageSource {
         // The artwork box is the whole binding for a Layer Size
         // import: After Effects derives the footage pixel size from
         // it and does not recompute it on open.
-        const bounds = at(readAiLayerBounds(path, data), index);
+        const bounds = readAiLayerBounds(path, data).at(index)!;
         artworkBounds = bounds == null ? EMPTY_BOX : bounds;
         [width, height] = footageSize(bounds);
       }
@@ -1363,7 +1362,7 @@ export class FileSource extends FootageSource {
             (name) =>
               _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile(),
           )].sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
-      firstFrame = at(fileNames, 0);
+      firstFrame = fileNames[0];
       startFrame = endFrame = UNDEFINED_FRAME;
       padding = 0;
     } else {
@@ -1659,7 +1658,7 @@ export class FileSource extends FootageSource {
         if (name == null) {
           chunks.splice(index, 2);
         } else {
-          (at(chunks, index + 1) as Utf8Chunk).value = name;
+          (chunks.at(index + 1)! as Utf8Chunk).value = name;
         }
         return;
       }

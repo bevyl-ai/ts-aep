@@ -5,7 +5,7 @@ import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { _suppressMaterialization } from "../models/descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
-import { at, jsonGet, jsonGetitem, jsonLoads, typeName } from "../../pyrt/index.ts";
+import { jsonGet, jsonGetitem, jsonLoads, typeName } from "../../pyrt/index.ts";
 
 // AE stores 0xFFFFFFFF in a CPrp path node's `index` to mean "match by name".
 export const _BY_NAME_INDEX = 0xffffffff;
@@ -40,7 +40,7 @@ export function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
  */
 export function _parseController(cctlChunk: ListChunk): EssentialGraphicsController {
   const cps2 = findByListType(cctlChunk.chunks, "CpS2");
-  const nameUtf8 = at(filterByType(cps2.chunks, "Utf8"), 0);
+  const nameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
 
   const ctyp = findByType(cctlChunk.chunks, "CTyp");
 
@@ -112,7 +112,7 @@ export const parseEssentialGraphics = _suppressMaterialization().decorate(
 
     // Template name from the first LIST:CpS2
     const cps2 = findByListType(cifChunks, "CpS2");
-    const templateNameUtf8 = at(filterByType(cps2.chunks, "Utf8"), 0);
+    const templateNameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
 
     const cctlChunks = filterByListType(cifChunks, "CCtl");
     const controllers = cctlChunks.map((cctl) => _parseController(cctl));

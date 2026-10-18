@@ -14,7 +14,6 @@ import {
   struct,
   compositeKey,
   ValueError,
-  at,
 } from "../../pyrt/index.ts";
 import type { EnumValue, IO } from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
@@ -322,7 +321,7 @@ export class KfPosition extends AttrsBase {
   static frombytes(data: Uint8Array, kw: { numValue: number }): KfPosition {
     const { numValue } = kw;
     const pad1 = data.slice(0, 3);
-    const flags = at(data, 3);
+    const flags = data[3];
     const pad2 = data.slice(4, 8);
     // 5 fixed doubles + 3*num_value array doubles
     const totalDoubles = 5 + 3 * numValue;

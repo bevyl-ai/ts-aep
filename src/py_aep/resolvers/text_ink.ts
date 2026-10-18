@@ -36,7 +36,6 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   NotImplementedError,
-  at,
   max,
   truthy,
   truthyOr,
@@ -73,7 +72,7 @@ export function _openFace(path: string, faceIndex: number): fontkit.Font {
   // NOTE(port): fontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
   // fontkit exposes collection faces through `.fonts`; a plain font is its own face.
   const opened = dep("fontkit").create(host.fs.readFileSync(path));
-  return opened.fonts ? at(opened.fonts, faceIndex) : opened;
+  return opened.fonts ? opened.fonts.at(faceIndex)! : opened;
 }
 
 /** `(font, is_cff, outline bounds by glyph id)` for a PostScript name, cached; the bounds fill in as glyphs are measured. */
@@ -267,7 +266,7 @@ export function _pointTextInk(
   let baseline = 0.0;
   for (const [index, paragraph] of paragraphs.entries()) {
     let lineStyles = styles.slice(offset, offset + paragraph.length + 1);
-    if (lineStyles.length === 0) lineStyles = [at(styles, -1)];
+    if (lineStyles.length === 0) lineStyles = [styles.at(-1)!];
     if (index > 0) {
       baseline += max(lineStyles.map((s) => s.leading));
     }

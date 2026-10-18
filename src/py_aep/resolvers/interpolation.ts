@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, getOrThrow, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, getOrThrow, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -474,7 +474,7 @@ export function _measured(values: number[], metric: ArcMetric): number[] {
     if (divisors != null && d < divisors.length && divisors[d] !== 0) {
       value = value / divisors[d];
     }
-    result.push(at(metric.multipliers, d) * value);
+    result.push(metric.multipliers.at(d)! * value);
   }
   return result;
 }
