@@ -924,7 +924,7 @@ export class PropertyGroup extends PropertyBase {
       // variable font's family (FontObject.familyPrefix semantics).
       // Python `layer.text.sourceText.value`: only a text layer has the group.
       const text = this._containingLayer.text;
-      if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
+      if (text == null) throw new AttributeError("cannot read 'sourceText' of null");
       const textDoc = text.property("ADBE Text Document").value;
       const psName: string = textDoc.font || "";
       const family = psName.split("-")[0];

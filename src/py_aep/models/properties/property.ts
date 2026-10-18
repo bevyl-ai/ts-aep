@@ -1965,7 +1965,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       const ids = _maskIds(this);
       const index = typeof value === "number" || typeof value === "boolean" ? Math.trunc(value) : 0;
       const tdli = this._tdliChunk();
-      if (tdli == null) throw new AttributeError("'NoneType' object has no attribute 'value'");
+      if (tdli == null) throw new AttributeError("cannot read 'value' of null");
       tdli.value = index !== 0 && ids != null ? ids[index - 1] : index;
       return;
     }

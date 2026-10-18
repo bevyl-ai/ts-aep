@@ -2628,7 +2628,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   const timebase = layer.containingComp._cdta.internalTimebase;
   const source = layer.source;
   // Python `cast("AVItem", layer.source)`: an imported layer always has one.
-  if (source == null) throw new AttributeError("'NoneType' object has no attribute 'width'");
+  if (source == null) throw new AttributeError("cannot read 'width' of null");
   const pointAspect = (source.width * source.pixelAspect) / source.height;
   const leaves = _styleLeafMap(container);
   for (const [matchName, value] of styles.values) {

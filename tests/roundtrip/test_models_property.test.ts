@@ -3398,7 +3398,7 @@ describe("TestValueValidation", () => {
     expect(opacity.dimensions).toBe(1);
     raises(TypeError, () => {
       opacity.value = [50.0, 60.0];
-    }, "expected a number, got list");
+    }, "expected a number, got Array");
   });
 
   test("test_scalar_on_multidim_raises", () => {

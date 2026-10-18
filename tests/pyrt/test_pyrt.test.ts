@@ -79,7 +79,7 @@ describe("json", () => {
     const d = jsonLoads('{"2": 1.0, "1": 12345678901234567890, "x": -0}');
     if (!(d instanceof Map)) throw new Error("expected a JSON object");
     expect([...d.keys()]).toEqual(["2", "1", "x"]);
-    expect(typeName(d.get("2"))).toBe("float");
+    expect(typeName(d.get("2"))).toBe("number");
     expect(d.get("1")).toBe(12345678901234567890n);
     expect(Object.is(d.get("x"), 0)).toBe(true);
     expect(jsonGetitem(jsonLoads(encode('{"a": 1}', "utf-32")), "a")).toBe(1);
@@ -230,7 +230,7 @@ describe("builtins", () => {
 
   test("typeName", () => {
     expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
-      "int", "float", "float", "int", "str", "bytes", "list", "dict", "set", "NoneType", "bool", "BytesIO",
+      "number", "number", "number", "bigint", "string", "Uint8Array", "Array", "Map", "Set", "null", "boolean", "BytesIO",
     ]);
   });
 

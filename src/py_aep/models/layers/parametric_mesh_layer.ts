@@ -18,17 +18,6 @@ import type { CompItem } from "../items/composition.ts";
 import { Property } from "../properties/property.ts";
 import { PropertyGroup } from "../properties/property_group.ts";
 
-/**
- * `type(None)` is NoneType, which is never `null` itself. Keeps the
- * `type(old) is not cls` check below true when an option is unset and no
- * class maps to the mesh type.
- */
-export const NoneType = Symbol("NoneType");
-
-export function _typeOf(x: { constructor: Function } | null | undefined): Function | symbol {
-  return x == null ? NoneType : x.constructor;
-}
-
 /** Keyword arguments of `ParametricMeshLayer._new`. */
 type ParametricMeshLayerNewKw = {
   name: string;
@@ -124,7 +113,7 @@ export class ParametricMeshLayer extends AVLayer {
     // properties for that name.
     const optionsCls = OPTION_TYPES.get(this._ldta.lightAndMeshType) ?? null;
     const oldOptions = Object.hasOwn(this, "parametricMeshOptions") ? this.parametricMeshOptions : null;
-    if (_typeOf(oldOptions) !== optionsCls) {
+    if (oldOptions == null || oldOptions.constructor !== optionsCls) {
       Reflect.deleteProperty(this, "parametricMeshOptions");
       if (optionsCls != null) {
         this.parametricMeshOptions = new optionsCls(this);
@@ -133,7 +122,7 @@ export class ParametricMeshLayer extends AVLayer {
 
     const bevelCls = BEVEL_OPTION_TYPES.get(this._ldta.lightAndMeshType) ?? null;
     const oldBevel = Object.hasOwn(this, "parametricBevelOptions") ? this.parametricBevelOptions : null;
-    if (_typeOf(oldBevel) !== bevelCls) {
+    if (oldBevel == null || oldBevel.constructor !== bevelCls) {
       Reflect.deleteProperty(this, "parametricBevelOptions");
       if (bevelCls != null) {
         this.parametricBevelOptions = new bevelCls(this);
