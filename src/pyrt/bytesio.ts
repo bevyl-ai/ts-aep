@@ -27,10 +27,16 @@ export class BytesIO {
     }
   }
 
-  /** `fp.read(n)`; `n` omitted or negative reads to the end. */
+  /**
+   * `fp.read(n)`; `n` omitted or negative reads to the end. Over the caller's
+   * (immutable) bytes the result is a view, not a copy: nothing writes into
+   * it, and this stream copies before its first own write. Shaped for speed:
+   * parsing reads every chunk body this way.
+   */
   read(n?: number): Uint8Array {
     const end = n == null || n < 0 ? this.len : Math.min(this.len, this.pos + n);
-    const out = this.buf.slice(Math.min(this.pos, end), end);
+    const start = Math.min(this.pos, end);
+    const out = this.shared ? this.buf.subarray(start, end) : this.buf.slice(start, end);
     this.pos = Math.max(this.pos, end);
     return out;
   }

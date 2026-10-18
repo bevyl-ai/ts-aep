@@ -6,7 +6,7 @@
   "loose_types": {
     "0 pyrt": {
       "any": 4,
-      "unknown": 112,
+      "unknown": 111,
       "casts": 7
     },
     "1 binary+enums+data": {

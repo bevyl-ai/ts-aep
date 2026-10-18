@@ -402,8 +402,6 @@ export class Layer extends PropertyGroup {
     this._essential_property_uuids = null;
 
     this._containing_comp = containing_comp;
-    // PropertyGroup's constructor already returns the py_object proxy that
-    // dispatches to this class's __setattr__; wrapping again would recurse.
   }
 
   /** Build a layer from a fresh ldta chunk (`Layer._new`). */
