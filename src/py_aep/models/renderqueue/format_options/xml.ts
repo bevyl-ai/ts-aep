@@ -165,21 +165,25 @@ export class _ScalarParam {
  * @returns Tuple of (params dict, value-elements dict, param-elements dict).
  */
 /**
- * `ET.fromstring(text)`, as a private copy of a tree parsed once per distinct
- * text: output modules mostly share a handful of templates. A malformed text
- * raises every time, as `fromstring` does; callers own and mutate their copy.
+ * `ET.fromstring(text)` and its params, parsed once per distinct text: output
+ * modules mostly share a handful of templates. The cached tree is never
+ * mutated; a module copies it on its first XML edit. A malformed text raises
+ * every time, as `fromstring` does.
  */
-function _parseXml(text: string): ETElement {
-  let tree = _XML_TREES.get(text);
-  if (tree === undefined) {
-    tree = ET.fromstring(text);
-    if (_XML_TREES.size >= 64) _XML_TREES.delete(_XML_TREES.keys().next().value!);
-    _XML_TREES.set(text, tree);
+function _parseTemplate(text: string): _XmlTemplate {
+  let template = _XML_TEMPLATES.get(text);
+  if (template === undefined) {
+    const tree = ET.fromstring(text);
+    template = { tree, params: _extractParams(tree)[0] };
+    if (_XML_TEMPLATES.size >= 64) _XML_TEMPLATES.delete(_XML_TEMPLATES.keys().next().value!);
+    _XML_TEMPLATES.set(text, template);
   }
-  return _copyTree(tree);
+  return template;
 }
 
-const _XML_TREES = new Map<string, ETElement>();
+type _XmlTemplate = { readonly tree: ETElement; readonly params: ReadonlyMap<string, string> };
+
+const _XML_TEMPLATES = new Map<string, _XmlTemplate>();
 
 function _copyTree(e: ETElement): ETElement {
   const copy = new ET.Element(e.tag);
@@ -339,10 +343,10 @@ export class XmlFormatOptions extends FormatOptionsBase {
    */
   declare params: ParamsDict;
   declare _body: RoptChunk;
-  declare _xmlRoot: ETElement | null;
   declare _xmlHeader: Uint8Array | null;
-  declare _valElements: Map<string, ETElement>;
-  declare _paramElements: Map<string, ETElement>;
+  /** The shared, never-mutated template tree, until the first XML edit copies it. */
+  declare _template: ETElement | null;
+  declare _ownTree: [ETElement, Map<string, ETElement>, Map<string, ETElement>] | null;
 
   constructor(kw: { _body: RoptChunk }) {
     super();
@@ -350,23 +354,42 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._body = _body;
 
     const raw = _body.data;
-    this._xmlRoot = null;
     this._xmlHeader = null;
-    this._valElements = new Map();
-    this._paramElements = new Map();
+    this._template = null;
+    this._ownTree = null;
     this.params = new ParamsDict();
     this.params._owner = null;
     const xmlStart = bytes_.find(raw, b("<?xml"));
     if (xmlStart >= 0) {
       this._xmlHeader = raw.slice(0, xmlStart);
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
-      this._xmlRoot = _parseXml(xmlText);
-      const [data, valElements, paramElements] = _extractParams(this._xmlRoot);
-      this._valElements = valElements;
-      this._paramElements = paramElements;
-      this.params.update(data);
+      const template = _parseTemplate(xmlText);
+      this._template = template.tree;
+      this.params.update(template.params);
     }
     this.params._owner = this;
+  }
+
+  /** This module's own XML tree (copied from the template on first use), or `null` without XML. */
+  get _xmlRoot(): ETElement | null {
+    return this._materialize()?.[0] ?? null;
+  }
+
+  get _valElements(): Map<string, ETElement> {
+    return this._materialize()?.[1] ?? new Map();
+  }
+
+  get _paramElements(): Map<string, ETElement> {
+    return this._materialize()?.[2] ?? new Map();
+  }
+
+  _materialize(): [ETElement, Map<string, ETElement>, Map<string, ETElement>] | null {
+    if (this._ownTree == null && this._template != null) {
+      const root = _copyTree(this._template);
+      const [, valElements, paramElements] = _extractParams(root);
+      this._ownTree = [root, valElements, paramElements];
+    }
+    return this._ownTree;
   }
 
   /**
