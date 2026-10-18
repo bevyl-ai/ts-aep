@@ -29,6 +29,7 @@ import {
   py_or,
   repr,
   struct,
+  type ClassAttributes,
   type IO,
 } from "../../pyrt/index.ts";
 import { _struct_for, read_bytes, read_fmt, read_pad, write_bytes, write_pad } from "./bin_utils.ts";
@@ -525,6 +526,7 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
  * `_read_legacy`).
  */
 export class ContainerChunk extends Chunk {
+  declare ["constructor"]: ClassAttributes<typeof ContainerChunk>;
   declare chunks: Chunk[];
 
   static _nests = true;
@@ -610,7 +612,7 @@ export class ContainerChunk extends Chunk {
    * @throws {@link ValueError} If the new string does not fit a fixed buffer.
    */
   _legacy_body(): Uint8Array {
-    const cls = this.constructor as typeof ContainerChunk;
+    const cls = this.constructor;
     const utf8 = this.chunks.find((c) => c.chunk_type === "Utf8") ?? null;
     const value: string = py_or(getattr(utf8, "value", null), "");
     if (this.data?.length > 0 && value === cls._legacy_value(_legacy_text(this.data))) {
@@ -950,7 +952,7 @@ export function read_aep(
 
 /** Write an AEP file: RIFX root chunk + trailing XMP packet. */
 export function write_aep(fp: IO, rifx: ListChunk, xmp: string): number {
-  const head = rifx.chunks.find((c) => c.chunk_type === "head") as HeadChunk | undefined;
+  const head = rifx.chunks.find((c): c is HeadChunk => c.chunk_type === "head");
   if (head == null) throw new StopIteration();
   const token = _legacy_names.set(head.file_format_version < LEGACY_NAME_FORMAT);
   let written: number;

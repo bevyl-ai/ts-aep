@@ -253,7 +253,7 @@ export function to_dict(obj: ToDictValue): ToDictValue {
  * `result` before recursing also means a reference cycle yields the shared dict
  * instead of recursing forever.
  */
-export function _to_dict(obj: any, memo: Map<object, [object, ToDictValue]>): ToDictValue {
+export function _to_dict(obj: ToDictValue, memo: Map<object, [object, ToDictValue]>): ToDictValue {
   // Fast path for primitive types (majority of recursive calls).
   // Enum members are plain values in the TS port (pyrt enum.ts), so the
   // `isinstance(obj, Enum)` branch returns `obj.value` through this path.
@@ -266,8 +266,7 @@ export function _to_dict(obj: any, memo: Map<object, [object, ToDictValue]>): To
     obj instanceof Uint8Array ||
     ArrayBuffer.isView(obj) ||
     obj instanceof Set ||
-    typeof obj === "function" ||
-    typeof obj === "symbol"
+    typeof obj !== "object"
   ) {
     return obj;
   }
@@ -287,7 +286,7 @@ export function _to_dict(obj: any, memo: Map<object, [object, ToDictValue]>): To
       if (SKIP_FIELDS.has(name)) continue;
       let value: ToDictValue;
       try {
-        value = obj[name];
+        value = Reflect.get(obj, name);
       } catch (e) {
         // missing chunk or field
         if (!(e instanceof AttributeError || e instanceof KeyError)) throw e;
@@ -302,7 +301,7 @@ export function _to_dict(obj: any, memo: Map<object, [object, ToDictValue]>): To
       if (result.has(name)) continue;
       let value: ToDictValue;
       try {
-        value = obj[name];
+        value = Reflect.get(obj, name);
       } catch (e) {
         // missing chunk or field
         if (!(e instanceof AttributeError || e instanceof KeyError)) throw e;

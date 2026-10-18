@@ -28,10 +28,15 @@ export function list_type_of(chunk: Chunk | null | undefined): string | null {
   return chunk instanceof ListChunk ? chunk.list_type : null;
 }
 
+/** `c.chunk_type == chunk_type`: `c` was read as the class registered for that type. */
+export function is_chunk_type<K extends string>(c: Chunk, chunk_type: K): c is ChunkOf<K> {
+  return c.chunk_type === chunk_type;
+}
+
 /** Return first chunk matching `chunk_type`, or null if there is none. */
 export function find_by_type_or_null<K extends string>(chunks: Chunk[], chunk_type: K): ChunkOf<K> | null {
   for (const c of chunks) {
-    if (c.chunk_type === chunk_type) return c as ChunkOf<K>;
+    if (is_chunk_type(c, chunk_type)) return c;
   }
   return null;
 }
@@ -68,7 +73,7 @@ export function find_by_list_type(chunks: Chunk[], list_type: string): ListChunk
 
 /** Return all chunks matching `chunk_type`. */
 export function filter_by_type<K extends string>(chunks: Chunk[], chunk_type: K): ChunkOf<K>[] {
-  return chunks.filter((c): c is ChunkOf<K> => c.chunk_type === chunk_type);
+  return chunks.filter((c) => is_chunk_type(c, chunk_type));
 }
 
 /** Return all ListChunks with matching `list_type`. */
@@ -162,8 +167,9 @@ export function find_chunks_before<K extends string>(
   const anchor = _find_anchor_index(chunks, before_type);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor - 1; i >= 0; i--) {
-    if (chunks[i].chunk_type === chunk_type) {
-      result.unshift(chunks[i] as ChunkOf<K>);
+    const c = chunks[i];
+    if (is_chunk_type(c, chunk_type)) {
+      result.unshift(c);
     } else {
       break;
     }
@@ -190,8 +196,9 @@ export function find_chunks_after<K extends string>(
   const anchor = _find_anchor_index(chunks, after_type);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor + 1; i < chunks.length; i++) {
-    if (chunks[i].chunk_type === chunk_type) {
-      result.push(chunks[i] as ChunkOf<K>);
+    const c = chunks[i];
+    if (is_chunk_type(c, chunk_type)) {
+      result.push(c);
     } else {
       break;
     }

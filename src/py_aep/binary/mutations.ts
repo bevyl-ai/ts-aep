@@ -30,7 +30,7 @@ import type { FeatherPointItem } from "./misc_chunks.ts";
 import { TDSN_SENTINEL, CdatChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk } from "./property_chunks.ts";
 import { RoutItem } from "./render_chunks.ts";
 import { F8Chunk, S4Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { filter_by_type, recursive_find } from "./utils.ts";
+import { filter_by_type, is_chunk_type, recursive_find } from "./utils.ts";
 
 // Keyframe ldat items always use raw type 4; the effective LdatItemType is
 // disambiguated by item_size (and spatial context on re-read).
@@ -119,8 +119,8 @@ export function rewrite_owner_tdpi(chunk: Chunk, layer_id: number): void {
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      c.chunk_type === "tdmn" &&
-      (c as TdmnChunk).value.endsWith("-0000") &&
+      is_chunk_type(c, "tdmn") &&
+      c.value.endsWith("-0000") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk
     ) {
@@ -145,10 +145,10 @@ export function collect_layer_ref_tdpi_ids(chunk: Chunk, out: Set<number> | null
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      c.chunk_type === "tdmn" &&
+      is_chunk_type(c, "tdmn") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk &&
-      !(c as TdmnChunk).value.endsWith("-0000")
+      !c.value.endsWith("-0000")
     ) {
       for (const tdpi of filter_by_type(next.chunks, "tdpi")) {
         if (tdpi.value) {
@@ -181,11 +181,11 @@ export function remap_layer_ref_tdpi(chunk: Chunk, id_map: Map<number, number>):
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      c.chunk_type === "tdmn" &&
+      is_chunk_type(c, "tdmn") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk
     ) {
-      if ((c as TdmnChunk).value.endsWith("-0000")) continue;
+      if (c.value.endsWith("-0000")) continue;
       for (const tdpi of filter_by_type(next.chunks, "tdpi")) {
         if (tdpi.value) {
           tdpi.value = id_map.get(tdpi.value) ?? 0;

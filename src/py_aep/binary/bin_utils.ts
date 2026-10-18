@@ -140,10 +140,15 @@ export function read_fmt(fmt: string, fp: IO, endian = ">"): struct.Unpacked<str
 // Python's keyword-only `endian` follows `*args`; in TS it is a trailing plain
 // `{ endian }` options object (struct values are never plain objects).
 export type WriteFmtOptions = { endian?: string };
-export function write_fmt(fp: IO, fmt: string, ...args: (struct.PackValue | WriteFmtOptions)[]): number {
-  const last = args[args.length - 1];
-  const opts: WriteFmtOptions = last !== null && typeof last === "object" && Object.getPrototypeOf(last) === Object.prototype ? (args.pop() as WriteFmtOptions) : {};
-  return fp.pack(_struct_for(fmt, opts.endian), args as struct.PackValue[]);
+function _is_write_fmt_options(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
+  return v != null && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype;
+}
+export function write_fmt(fp: IO, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
+  const items: (struct.PackValue | WriteFmtOptions)[] = args;
+  const last = items[items.length - 1];
+  const opts = _is_write_fmt_options(last) ? last : {};
+  const values = items.filter((v): v is struct.PackValue => !_is_write_fmt_options(v));
+  return fp.pack(_struct_for(fmt, opts.endian), values);
 }
 
 /** The largest finite IEEE-754 single (float32). */
