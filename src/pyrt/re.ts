@@ -43,7 +43,7 @@ const JS_SYNTAX = new Set([..."^$\\.*+?()[]{}|/"]);
 const cache = new Map<string, RegExp>();
 
 /**
- * The JS RegExp for Python pattern `pattern` with `re` `flags`. `js_flags`
+ * The JS RegExp for Python pattern `pattern` with `re` `flags`. `jsFlags`
  * adds JS-only flags (`"g"`, `"y"` for `re.match`-style anchoring at
  * `lastIndex`). Results are cached; a `g`/`y` RegExp is stateful, so those
  * are returned fresh.
@@ -324,7 +324,7 @@ function translate(p: string, flags: number): [string, number] {
   return [out.join(""), flags];
 }
 
-// Compiled-pattern methods over a RegExp (from `py_re` or a literal).
+// Compiled-pattern methods over a RegExp (from `pyRe` or a literal).
 
 const sticky = new WeakMap<RegExp, RegExp>();
 const global = new WeakMap<RegExp, RegExp>();

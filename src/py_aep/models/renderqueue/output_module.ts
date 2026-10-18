@@ -3,7 +3,7 @@
 import { AudioBitDepth, AudioChannels, AudioCodec, AudioSampleRate, CineonFileFormat, ColorManagementSystem, ConvertToLinearLight, GetSettingsFormat, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, PostRenderAction, PostRenderActionSetting, ResizeQuality, RQItemStatus, VideoCodec } from "../../enums/index.ts";
 // NOTE(port): AudioCodec, VideoCodec, MPEGAudioFormat, MPEGAudioLayer and MPEGMultiplexer are
 // not imported by the Python module. They are imported here because `_rulesContext` and
-// `validate_state` check `isinstance(value, IntEnum)` on values read from the XML format options,
+// `validateState` check `isinstance(value, IntEnum)` on values read from the XML format options,
 // and an enum-class membership test is the only way to tell a decoded member from a raw fallback.
 import { mapOutputAudio, mapOutputColorSpace, profileIdForName } from "../../enums/mappings.ts";
 import { ocioColorSpaceForProfileId, ocioOutputProfileId, requireOcioConfig, resolveOcioConfig } from "../../color/ocio.ts";
@@ -53,7 +53,7 @@ import {
 } from "../../../pyrt/index.ts";
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
-// `is_int` keeps that so raw bool fields still count as ints in the checks below.
+// `isInt` keeps that so raw bool fields still count as ints in the checks below.
 export function isInt(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
 }
@@ -102,7 +102,7 @@ export function _labelOrName(key: string | null, v: RuleValue): string {
   return str(v);
 }
 
-/** Python `getattr(v, "name", None) or str(v)` (see `_label_or_name`). */
+/** Python `getattr(v, "name", None) or str(v)` (see `_labelOrName`). */
 export function _nameOrStr(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.nameOf(v);
@@ -407,7 +407,7 @@ export class OutputModule {
 
   /**
    * Current-value getters for whole-state validation. Enum-backed OM
-   * reads can raise on out-of-enum stored bytes; `validate_state`
+   * reads can raise on out-of-enum stored bytes; `validateState`
    * treats that (and raw fallbacks) as "unclean context -\> skip". 
    */
   static _STATE_GETTERS = new Map<string, (om: OutputModule) => RuleValue | null>([
@@ -560,7 +560,7 @@ export class OutputModule {
 
   /**
    * The {@link CompItem} to use for post-render actions that require a comp.
-   * Only used when `post_render_action` is `IMPORT_AND_REPLACE` or
+   * Only used when `postRenderAction` is `IMPORT_AND_REPLACE` or
    * `SET_PROXY`. Read-only.
    */
   get postRenderTargetComp(): CompItem {
@@ -784,7 +784,7 @@ export class OutputModule {
    * Check every rule-covered setting against the current context.
    *
    * Returns a list of `(key, value, allowed)` violations (empty when
-   * the state is consistent). Used by `batch_edit` on exit and by the
+   * the state is consistent). Used by `batchEdit` on exit and by the
    * corpus self-validation test; also useful to lint a parsed file.
    *
    * Stale-by-design values are skipped: settings of a disabled
@@ -1159,7 +1159,7 @@ export class OutputModule {
    * Apply the runtime touches AE adds to a freshly built/applied Rouu.
    *
    * After Effects writes these on top of the stored format header: the
-   * `applied_marker` byte, the output frame rate once the item is
+   * `appliedMarker` byte, the output frame rate once the item is
    * prepared for output (AE 2026 then stores the comp rate of a 60 or
    * 12.5 fps comp), and the comp-resolved output dimensions for video
    * formats (audio-only formats keep width/height=0).

@@ -100,7 +100,7 @@ export class LayerSpec {
 
   /**
    * A PSD layer's own pixel depth (`sspc` byte 0x3E); `null` with
-   * `has_alpha`.
+   * `hasAlpha`.
    */
   readonly depth: number | null;
 
@@ -200,7 +200,7 @@ export class LayerGroupSpec {
   readonly compName: string | null;
 
   /**
-   * Baked parent-layer display name with `name_set` kept OFF (a
+   * Baked parent-layer display name with `nameSet` kept OFF (a
    * clipping run bakes the base layer's name); `null` leaves the name
    * empty so it inherits the nested comp's name (groups).
    */

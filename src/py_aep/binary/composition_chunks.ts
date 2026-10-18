@@ -1,7 +1,7 @@
 /**
  * Composition chunk type: cdta (204 bytes).
  *
- * Uses `fmt_field()` for all fixed-layout fields, `BitField` descriptors
+ * Uses `fmtField()` for all fixed-layout fields, `BitField` descriptors
  * for two flag bytes and sentinel-aware helpers for work-area end
  * interpretation.
  */
@@ -21,7 +21,7 @@ export const _TIMEBASE_LIMIT = 40000;
 export const _MAX_TIMEBASE = 115200;
 
 /**
- * `work_area_end_dividend` of a work area that runs to the end of the
+ * `workAreaEndDividend` of a work area that runs to the end of the
  * composition.
  */
 export const WORK_AREA_TO_END = 0xffffffff;
@@ -82,7 +82,7 @@ export function frameGrid(fps: number): [number, number] {
 
 /**
  * Keyframe ticks per second of a layer's own time, in a composition
- * of `internal_timebase` for a layer stretch factor `stretch` (the
+ * of `internalTimebase` for a layer stretch factor `stretch` (the
  * percentage / 100, sign ignored).
  *
  * Up to 100 % the layer uses the composition timebase. Past it, After
@@ -239,7 +239,7 @@ export class CdtaChunk extends Chunk {
 
   /**
    * Recalculate internal_timebase and time_scale (units per frame /
-   * 256) for a new frame rate (see `frame_grid`).
+   * 256) for a new frame rate (see `frameGrid`).
    */
   _updateTimebase(fps: number): void {
     const [internalTimebase, unitsPerFrame] = frameGrid(fps);
@@ -334,7 +334,7 @@ export class CdtaChunk extends Chunk {
     return this.workAreaEndDividend / this.workAreaEndDivisor - this.workAreaStart;
   }
 
-  /** Work area duration in frames, rounded like `frame_duration`. */
+  /** Work area duration in frames, rounded like `frameDuration`. */
   get workAreaDurationFrame(): number {
     return round(this.workAreaDuration * this.frameRate);
   }

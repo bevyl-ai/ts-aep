@@ -103,7 +103,7 @@ export function _optiData(
    * - TIFF and PSD record the image as AE reads it: channel count, bit
    *   depth, colour mode and layer count.
    * - EXR (still or sequence): the 9750-byte `oEXR` header AE writes
-   *   (`build_exr_opti_data`). AE opens an EXR with an empty or generic opti,
+   *   (`buildExrOptiData`). AE opens an EXR with an empty or generic opti,
    *   but renders a data window that differs from the display window
    *   misplaced, and crashed rendering one larger than the display window.
    * - FBX singles: empty opti is fine (AE re-reads the located file).
@@ -226,7 +226,7 @@ export function psdLayerFootage(
    * The content box, `opti`, cached data size, alpha and depth AE
    * records for `layer`'s footage - the same on a layered import and on a
    * single-layer import or replace (`resolvers.psd_bounds.psd_layer_box`,
-   * `build_psd_layer_opti_data`, AE 2026 fixtures).
+   * `buildPsdLayerOptiData`, AE 2026 fixtures).
    *
    * @param info - The probed document.
    * @param layer - The Photoshop layer.
@@ -712,22 +712,22 @@ export class FileSource extends FootageSource {
    *
    * For PSD (Photoshop) sources, the following keys are available:
    *
-   * - `psd_layer_index` (`int`): Zero-based index of this layer within
+   * - `psdLayerIndex` (`int`): Zero-based index of this layer within
    *   the PSD file. `0xFFFFFFFF` means merged/flattened.
-   * - `psd_group_name` (`str`): PSD group/folder that contains this
+   * - `psdGroupName` (`str`): PSD group/folder that contains this
    *   layer (e.g. `"PAINT 02"`).
-   * - `psd_layer_count` (`int`): Total number of layers in the source
+   * - `psdLayerCount` (`int`): Total number of layers in the source
    *   PSD.
-   * - `psd_canvas_width` (`int`): Full PSD canvas width in pixels.
-   * - `psd_canvas_height` (`int`): Full PSD canvas height in pixels.
-   * - `psd_bit_depth` (`int`): Bit depth per channel (8, 16, 32).
-   * - `psd_channels` (`int`): Number of color channels (3 for RGB,
+   * - `psdCanvasWidth` (`int`): Full PSD canvas width in pixels.
+   * - `psdCanvasHeight` (`int`): Full PSD canvas height in pixels.
+   * - `psdBitDepth` (`int`): Bit depth per channel (8, 16, 32).
+   * - `psdChannels` (`int`): Number of color channels (3 for RGB,
    *   4 for RGBA/CMYK).
-   * - `psd_layer_top` (`int`): Layer bounding-box top (pixels, can be
+   * - `psdLayerTop` (`int`): Layer bounding-box top (pixels, can be
    *   negative if the layer extends above the canvas).
-   * - `psd_layer_left` (`int`): Layer bounding-box left.
-   * - `psd_layer_bottom` (`int`): Layer bounding-box bottom.
-   * - `psd_layer_right` (`int`): Layer bounding-box right.
+   * - `psdLayerLeft` (`int`): Layer bounding-box left.
+   * - `psdLayerBottom` (`int`): Layer bounding-box bottom.
+   * - `psdLayerRight` (`int`): Layer bounding-box right.
    *
    * Read-only.
    */
@@ -857,7 +857,7 @@ export class FileSource extends FootageSource {
      *   {@link MediaInfo | MediaInfo.depth}).
      * @param media_flag - Mark the footage the way AE marks its media formats
      *   (`FileFormat.media_flag`): `sspc` 0x70 bit 3, and 0x9F bit 3 for a single file.
-     * @param alpha_premultiplied - When `has_alpha`, select PREMULTIPLIED rather than the STRAIGHT
+     * @param alpha_premultiplied - When `hasAlpha`, select PREMULTIPLIED rather than the STRAIGHT
      *   default.
      * @param audio_sample_rate - Audio sample rate in Hz (0 = no audio).
      * @param sequence_prefix - Filename text before the frame number. When not `null`, the source
@@ -865,18 +865,18 @@ export class FileSource extends FootageSource {
      * @param sequence_ext - Filename extension including the dot (sequence only).
      * @param sequence_files - The frame file names of an alphabetical sequence, in order. When not
      *   `null`, the source is an image sequence listed by name rather than numbered, and
-     *   `sequencePrefix`, `sequenceExt`, `start_frame`, `end_frame` and `frame_padding` are not
+     *   `sequencePrefix`, `sequenceExt`, `startFrame`, `endFrame` and `framePadding` are not
      *   used.
      * @param start_frame - First frame number (sequence only).
      * @param end_frame - Last frame number (sequence only).
      * @param frame_padding - Zero-padded digit width of the frame number (sequence only).
      * @param opti_data - Raw `opti` asset-info bytes. Empty is accepted by AE for single still
-     *   images; sequences and audio need the generic header (see `build_generic_opti_data`).
+     *   images; sequences and audio need the generic header (see `buildGenericOptiData`).
      * @param embedded_profile_name - Name of the source's embedded color profile, recorded in
      *   `LIST:CLRS` (matching AE). `null` for sources with no embedded profile.
      * @param icc_profile - The ICC profile the media file embeds (see
      *   {@link MediaInfo | MediaInfo.icc_profile}). `null` selects the
-     *   profile AE assigns to media that carries none - see `_media_profile_records`.
+     *   profile AE assigns to media that carries none - see `_mediaProfileRecords`.
      * @param full_frame - When `true` (default, every standard import), the footage spans its full
      *   source frame. Set `false` for a layer cropped to its content box (`COMP_CROPPED_LAYERS`, or
      *   a chosen layer imported at Layer Size).
@@ -891,7 +891,7 @@ export class FileSource extends FootageSource {
      * @param reserved_c8 - Override for the `sspc` 0xC8 kind bytes. `null` applies the whole-file
      *   rule (see below); layer-bound and merged-PSD sources pass AE's observed per-context value.
      * @param color_mode - The Photoshop colour mode the image reads as (see
-     *   `_media_profile_records`); 3 (RGB) by default.
+     *   `_mediaProfileRecords`); 3 (RGB) by default.
      * @throws {@link ValueError} If `width` or `height` is outside 0-32767 px.
      */
     const {
@@ -1195,7 +1195,7 @@ export class FileSource extends FootageSource {
      *   `"merge"` (default), `"ignore"`, or `"editable"` (reachable only via replace's
      *   CURRENT_VALUE pass-through). Callers validate; ignored for AI/PDF.
      * @param windows - Store the path in the style of AE on Windows rather than macOS (see `_new`).
-     * @throws {@link ValueError} If the file is not a layered format, or `layer_index` is out of
+     * @throws {@link ValueError} If the file is not a layered format, or `layerIndex` is out of
      *   range.
      * @throws {@link NotImplementedError} For a merged PSD layer whose styles' rasterized bounds
      *   are not known (see `resolvers.psd_styles.merged_styles_bounds`).
@@ -1313,7 +1313,7 @@ export class FileSource extends FootageSource {
      *
      * With a frame range set, frames are filtered to numbers in
      * `[range_start, range_end]` (inclusive) and the stored
-     * `start_frame`/`end_frame` bounds are the RANGE bounds even when
+     * `startFrame`/`endFrame` bounds are the RANGE bounds even when
      * files are missing inside or beyond it - AE treats absent frames as
      * implied placeholders and encodes nothing else (verified against
      * AE 2026 range-import fixtures, including interior gaps).

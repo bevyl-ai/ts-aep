@@ -126,12 +126,12 @@ descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "cornerAngle"))
  * `vertex`. For example, a tangent of [-1,-1] is located above and to the left of the
  * `vertex` and has a 45 degree slope, regardless of the actual location of the
  * `vertex`. The longer a handle is, the greater its influence; for example, an
- * incoming shape segment stays closer to the vector for an `in_tangent` of [-2,-2]
- * than it does for an `in_tangent` of [-1,-1], even though both of these come toward
+ * incoming shape segment stays closer to the vector for an `inTangent` of [-2,-2]
+ * than it does for an `inTangent` of [-1,-1], even though both of these come toward
  * the `vertex` from the same direction.
  *
- * If a shape is not closed, the `in_tangent` for the first `vertex` and the
- * `out_tangent` for the final `vertex` are ignored. If the shape is closed, these two
+ * If a shape is not closed, the `inTangent` for the first `vertex` and the
+ * `outTangent` for the final `vertex` are ignored. If the shape is closed, these two
  * vectors specify the direction handles of the final connecting segment out of the
  * final `vertex` and back into the first `vertex`.
  *
@@ -188,7 +188,7 @@ export class Shape {
    *   `vertices`. Defaults to `[0, 0]` (straight line out) for every vertex.
    * @param kw - Keyword arguments:
    * - `closed`: When `true`, the first and last vertices are connected.
-   * - `feather_points`: Variable-width mask feather points.
+   * - `featherPoints`: Variable-width mask feather points.
    * @throws {@link ValueError} If the tangent arrays do not match the vertices, or a coordinate (or
    *   a vertex plus its tangent) is not a finite float32: paths are stored as single-precision
    *   floats.

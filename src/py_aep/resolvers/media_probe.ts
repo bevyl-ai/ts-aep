@@ -213,7 +213,7 @@ export const _GRAY_DEPTHS: Map<number, number> = new Map([
   [32, -32],
 ]);
 
-/** AE's depth for RGB pixels, or RGBA when `has_alpha` (24 / 48 / 96 and 32 / 64 / 128 at 8 / 16 / 32 bits per channel). */
+/** AE's depth for RGB pixels, or RGBA when `hasAlpha` (24 / 48 / 96 and 32 / 64 / 128 at 8 / 16 / 32 bits per channel). */
 export function _colorDepth(hasAlpha: boolean, bitsPerChannel: number): number {
   return (hasAlpha ? 4 : 3) * bitsPerChannel;
 }
@@ -556,7 +556,7 @@ export function _probeExr(fp: ProbeStream): MediaInfo {
   });
 }
 
-/** The attributes `_probe_exr` uses from one EXR part header; each is absent when the header lacks it. */
+/** The attributes `_probeExr` uses from one EXR part header; each is absent when the header lacks it. */
 export interface ExrHeader {
   width?: number;
   height?: number;
@@ -567,7 +567,7 @@ export interface ExrHeader {
   frameRate?: number;
 }
 
-/** The attributes `_probe_exr` uses from one EXR part header. */
+/** The attributes `_probeExr` uses from one EXR part header. */
 export function _readExrHeader(fp: ProbeStream): ExrHeader {
   const out: ExrHeader = {};
   for (;;) {
@@ -696,7 +696,7 @@ export function _tiffPhotoshopLayerCount(fp: ProbeStream, en: "<" | ">", offset:
 
 /**
  * `MediaInfo` of a classic TIFF or a BigTIFF, from its first IFD's tags;
- * the values stored by offset (`bits_offset`, and the `(offset, length)`
+ * the values stored by offset (`bitsOffset`, and the `(offset, length)`
  * spans of the ICC profile and the Photoshop layer data) are read here.
  *
  * AE 2026 gives a TIFF alpha for a sample beyond its colour channels, or for
@@ -704,8 +704,8 @@ export function _tiffPhotoshopLayerCount(fp: ProbeStream, en: "<" | ">", offset:
  * Without alpha a grayscale TIFF stays gray (bilevel: depth 0) and a palette
  * stays indexed; CMYK and YCbCr read as RGB. `pixelChannels` counts the
  * colour channels plus one for an extra sample marked as alpha
- * (`extra_alpha`: ExtraSamples 1 or 2, not 0 = unspecified) or for
- * Photoshop layer data. `photoshop_layers` is the layer count of that data
+ * (`extraAlpha`: ExtraSamples 1 or 2, not 0 = unspecified) or for
+ * Photoshop layer data. `photoshopLayers` is the layer count of that data
  * (tag 37724), `null` when the file has none; without it AE counts an
  * image with an alpha sample as one layer.
  */
@@ -1075,7 +1075,7 @@ export const _LAYER_RECORD_KEYS: readonly Uint8Array[] = [b("Lr16"), b("Lr32"), 
  * additional-info block instead; the walk continues there.
  *
  *
- * Shared by `_probe_psd` and `resolvers.psd_layers.read_psd_layers` so the
+ * Shared by `_probePsd` and `resolvers.psd_layers.read_psd_layers` so the
  * two agree on which files count as flattened.
  *
  * @returns `(record_count, remaining)` - the layer record count (`0` for a flattened document: an
@@ -2575,7 +2575,7 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   });
 }
 
-/** `_colorDepth` for a file of `bit_depth` bits per channel: AE decodes anything deeper than 8 bits at 16 (AE 2026: 10- and 12-bit DPX are 48). */
+/** `_colorDepth` for a file of `bitDepth` bits per channel: AE decodes anything deeper than 8 bits at 16 (AE 2026: 10- and 12-bit DPX are 48). */
 export function _deepColorDepth(hasAlpha: boolean, bitDepth: number): number {
   return _colorDepth(hasAlpha, bitDepth <= 8 ? 8 : 16);
 }
@@ -2654,7 +2654,7 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
   throw new ValueError("Not a valid DPX/Cineon file (bad magic number)");
 }
 
-/** HEIF brands `_probe_heif` accepts in `ftyp`, as `bytes_.hex` keys. */
+/** HEIF brands `_probeHeif` accepts in `ftyp`, as `bytes_.hex` keys. */
 export const _HEIF_BRANDS: ReadonlySet<string> = new Set([b("heic"), b("heix"), b("mif1"), b("heif")].map((k) => bytes_.hex(k)));
 
 /**

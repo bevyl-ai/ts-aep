@@ -11,8 +11,8 @@
  * proprietary. They are discovered from the user's installation (present whenever
  * After Effects is). See the `color-management-write-rev-eng` notes.
  *
- * The ID algorithm (`icc_profile_id`) and `desc` extraction
- * (`icc_profile_description`) are the ISO 15076-1 routines also used by
+ * The ID algorithm (`iccProfileId`) and `desc` extraction
+ * (`iccProfileDescription`) are the ISO 15076-1 routines also used by
  * `scripts/dev/generate_color_space_mapping.py`, which imports them from here.
  */
 
@@ -37,7 +37,7 @@ import { profileIdForName } from "../enums/mappings.ts";
  *
  * The MD5 of the profile with the profile-flags (44-47), rendering-intent
  * (64-67) and profile-ID (84-99) fields zeroed. This is the value After
- * Effects stores in footage `apid` and output `output_profile_id`.
+ * Effects stores in footage `apid` and output `outputProfileId`.
  *
  * @param data - Raw ICC profile bytes.
  * @returns The 16-byte digest.
@@ -254,7 +254,7 @@ export let _defaultLibrary: IccProfileLibrary | null = null;
 /**
  * Return a shared `IccProfileLibrary` over the standard Adobe Color dirs.
  *
- * Used where no per-project `icc_profile_dirs` override is available (e.g.
+ * Used where no per-project `iccProfileDirs` override is available (e.g.
  * footage sources). Scanned once and cached for the process.
  */
 export function defaultIccLibrary(): IccProfileLibrary {

@@ -77,7 +77,7 @@ export class CineonFormatOptions extends FormatOptionsBase {
   /**
    * The bit depth per channel (8, 10, 12, or 16). Read / Write.
    *
-   * Only meaningful when `file_format` is `CineonFileFormat.DPX`. For
+   * Only meaningful when `fileFormat` is `CineonFileFormat.DPX`. For
    * FIDO/Cineon 4.5 the output is always 10-bit and AE hides the Bit
    * Depth dropdown; the stored byte is inert and keeps whatever the last
    * DPX selection was (AE-observed), so reads may return a stale value.

@@ -137,7 +137,7 @@ export function extractLeafChunks(filePath: Path): Map<string, Uint8Array> {
 }
 
 /**
- * Like `extract_leaf_chunks`, but also return the decoded leaf chunks.
+ * Like `extractLeafChunks`, but also return the decoded leaf chunks.
  *
  * @returns A tuple `(raw_bytes_by_path, typed_chunk_by_path)`. The typed chunks let callers compare
  *   numeric fields (e.g. float coordinates) with tolerance instead of byte-exactly.

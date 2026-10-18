@@ -208,8 +208,8 @@ export class AVItem extends Item {
   /**
    * When `true`, a proxy is used for the item. Read / Write.
    *
-   * It is set to `true` by all the `set_proxy` methods, and to `false` by
-   * the `set_proxy_to_none()` method.
+   * It is set to `true` by all the `setProxy` methods, and to `false` by
+   * the `setProxyToNone()` method.
    */
   declare useProxy: boolean;
 
@@ -271,8 +271,8 @@ export class AVItem extends Item {
    * The {@link FootageSource} being used as a proxy. Read-only.
    *
    * To change it, call any of the `AVItem` methods that change the proxy
-   * source: `set_proxy()`, `set_proxy_with_sequence()`,
-   * `set_proxy_with_solid()`, or `set_proxy_with_placeholder()`.
+   * source: `setProxy()`, `setProxyWithSequence()`,
+   * `setProxyWithSolid()`, or `setProxyWithPlaceholder()`.
    */
   get proxySource(): FileSource | SolidSource | PlaceholderSource | null {
     return this._proxySource;
@@ -446,7 +446,7 @@ export class AVItem extends Item {
    * Sets a file as the proxy of this AVItem.
    *
    * Loads the specified file into a new `FileSource` object, sets this as the value
-   * of the `proxySource` attribute, and sets `use_proxy` to true.
+   * of the `proxySource` attribute, and sets `useProxy` to true.
    *
    * It does not preserve the interpretation parameters, instead using the user
    * preferences.
@@ -470,7 +470,7 @@ export class AVItem extends Item {
    * Sets a sequence of files as the proxy of this `AVItem`, with the option of
    * forcing alphabetical order. Loads the specified file sequence into a new
    * `FileSource` object, sets this as the value of the `proxySource` attribute, and
-   * sets `use_proxy` to true.
+   * sets `useProxy` to true.
    *
    * It does not preserve the interpretation parameters, instead using the user
    * preferences.

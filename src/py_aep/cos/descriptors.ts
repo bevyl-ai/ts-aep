@@ -4,7 +4,7 @@
  * Each descriptor reads from / writes to a COS dict stored on the model
  * instance, so that accessing a model attribute lazily extracts the value
  * from the underlying COS data.  After every `__set__`, the model's
- * `_propagate_cos()` hook is called to re-serialize the COS dict back
+ * `_propagateCos()` hook is called to re-serialize the COS dict back
  * to the btdk chunk's `binary_data`.
  *
  * This module mirrors the role of

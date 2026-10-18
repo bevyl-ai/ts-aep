@@ -494,7 +494,7 @@ export function formatMermaid(node: Node, output: TextIO, maxDepth: number | nul
   output.write("```\n");
 }
 
-/** A {@link Node} as {@link formatJson} emits it: children past `max_depth` collapse to a summary string. */
+/** A {@link Node} as {@link formatJson} emits it: children past `maxDepth` collapse to a summary string. */
 type JsonNode = Omit<Node, "children"> & { children: JsonNode[] | string };
 
 /** Output as JSON. */

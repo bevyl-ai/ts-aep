@@ -432,7 +432,7 @@ const ops: Record<string, (next: () => Token, token: Token) => Select> = {
 
 const _cache = new Map<string, Select[]>();
 
-// A path that selects children by one literal tag (`xpath_tokenizer` yields one tag token).
+// A path that selects children by one literal tag (`xpathTokenizer` yields one tag token).
 const PLAIN_TAG = /^[A-Za-z_][\w.-]*$/;
 
 export function* iterfind(elem: Element, path: string, namespaces: NsMap = null): Generator<Element> {

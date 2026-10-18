@@ -23,7 +23,7 @@ const NOTHING: unique symbol = Symbol("NOTHING");
 
 /**
  * `attrs` field metadata, read back by key. Each module that stores
- * metadata declares its keys by augmenting this interface (`fmt_field`'s
+ * metadata declares its keys by augmenting this interface (`fmtField`'s
  * struct format, encoding, item class, ...).
  */
 export interface Metadata {}
@@ -177,7 +177,7 @@ function compileInit(cls: Function): Init | null {
 
 /**
  * The generated `__init__`. Keyword names are only counted here; when the
- * count shows an unexpected one (or codegen is blocked), `attrs_init_slow`
+ * count shows an unexpected one (or codegen is blocked), `attrsInitSlow`
  * runs to raise attrs' error.
  */
 export function attrsInit(self: object, cls: Function, kw: Kw): void {

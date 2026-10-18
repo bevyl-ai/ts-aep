@@ -2,7 +2,7 @@
  * Declarative field-format binding for chunk I/O.
  *
  * Each field declares its struct format via `fmt_field("B")`.
- * `_struct_info()` introspects attrs metadata to derive the combined
+ * `_structInfo()` introspects attrs metadata to derive the combined
  * format string and field list.  Generic `Chunk.read()` / `write()`
  * use this to handle all fixed-layout chunks with zero per-class I/O code.
  */
@@ -33,7 +33,7 @@ import { _structFor } from "./bin_utils.ts";
 const _chunk = deferred<typeof import("./chunk.ts")>("py_aep/binary/chunk");
 
 /**
- * The value of one `fmt_field`: what `struct` unpacks for its format (a
+ * The value of one `fmtField`: what `struct` unpacks for its format (a
  * number, a bigint for `q`/`Q`, a `Uint8Array` for `s`), the text an
  * `encoding` decodes it to, a `coerce` result (`bool`), or null for an
  * absent optional field. Which one depends on the format, known per field
@@ -41,11 +41,11 @@ const _chunk = deferred<typeof import("./chunk.ts")>("py_aep/binary/chunk");
  */
 export type FieldValue = struct.PackValue | string | _NulTailStr | null;
 
-/** `coerce=` callable of a `fmt_field` (e.g. `bool`, applied after unpack). */
+/** `coerce=` callable of a `fmtField` (e.g. `bool`, applied after unpack). */
 export type Coerce = (value: FieldValue) => FieldValue;
 
 declare module "../../pyrt/attrs.ts" {
-  /** The keys `fmt_field` and `items_field` store. */
+  /** The keys `fmtField` and `itemsField` store. */
   interface Metadata {
     readonly fmt?: string;
     readonly encoding?: string;
@@ -58,10 +58,10 @@ declare module "../../pyrt/attrs.ts" {
   }
 }
 
-/** A `fmt_field`: its metadata carries the struct format. */
+/** A `fmtField`: its metadata carries the struct format. */
 export type FmtAttribute = Attribute & { readonly metadata: { readonly fmt: string } };
 
-/** An `items_field`, which always stores the item class and size. */
+/** An `itemsField`, which always stores the item class and size. */
 type ItemsAttribute = Attribute & { readonly metadata: { readonly itemCls: typeof FmtItem; readonly itemSize: number } };
 
 function _isFmtField(f: Attribute): f is FmtAttribute {
@@ -72,10 +72,10 @@ function _isItemsField(f: Attribute): f is ItemsAttribute {
   return !!f.metadata["items"];
 }
 
-/** Decoded field values (and `chunk_type`) keyed by init-parameter name. */
+/** Decoded field values (and `chunkType`) keyed by init-parameter name. */
 export type FieldKwargs = Record<string, FieldValue>;
 
-/** Keyword arguments for a chunk/item constructor: its field values plus an `items_field` list. */
+/** Keyword arguments for a chunk/item constructor: its field values plus an `itemsField` list. */
 export type InitKwargs = Record<string, FieldValue | FmtItem[]>;
 
 export type _StructInfo = [
@@ -142,7 +142,7 @@ export function _fixedStrConverter(encoding: string, size: number): FixedStrConv
   return convert;
 }
 
-/** `fmt_field` options for a field holding a `V`. */
+/** `fmtField` options for a field holding a `V`. */
 export type FmtFieldOptions<V extends FieldValue = FieldValue> = {
   default?: V;
   repr?: boolean;
@@ -211,8 +211,8 @@ export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
  * Declare a list-of-items field that fills the remaining body bytes.
  *
  * The item count is inferred at read time: `count = remaining // item_size`.
- * Item classes must use `fmt_field()` for their fields (with `endian`
- * and `encoding` as needed) so that `_struct_info()` can auto-serialize
+ * Item classes must use `fmtField()` for their fields (with `endian`
+ * and `encoding` as needed) so that `_structInfo()` can auto-serialize
  * them.
  *
  * @param itemCls - Class used to deserialize each item.
@@ -300,19 +300,19 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
    * Derive struct layout metadata for a chunk class.
    *
    * Returns a 10-element array `[fmt, data_fields, encodings, optional_start, endians, items_info, coerces, init_names, simple, expected_size]` or `null` for raw-bytes chunks that have neither
-   * `fmt_field` nor `items_field` fields.
+   * `fmtField` nor `itemsField` fields.
    *
    * - `encodings`: field-index -\> encoding name.
-   * - `optional_start`: index of first optional field.
+   * - `optionalStart`: index of first optional field.
    * - `endians`: field-index -\> endian override (`"<"` or `">"`);
    *   non-empty triggers per-field I/O in `Chunk.read()` / `Chunk.write()`.
-   * - `items_info`: `(init_param_name, item_cls, item_size)` or `null`.
+   * - `itemsInfo`: `(init_param_name, item_cls, item_size)` or `null`.
    * - `coerces`: field-index -\> type callable (e.g. `bool`).
    * - `simple`: `true` when the chunk has no string encodings, endian
-   *   overrides, optional fields, or items, so `_decode_fields` can be
+   *   overrides, optional fields, or items, so `_decodeFields` can be
    *   replaced with `dict(zip(init_names, values))` plus inline coerce
    *   and trailing-bytes handling.
-   * - `expected_size`: pre-computed `struct.calcsize('>' + fmt)`.
+   * - `expectedSize`: pre-computed `struct.calcsize('>' + fmt)`.
    */
   const baseNames: ReadonlySet<string> =
     cls === _chunk().Chunk || _chunk().Chunk.isPrototypeOf(cls)
@@ -396,7 +396,7 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
 
 const _STRUCT_INFO = new Map<Function, _StructInfo | null>();
 
-/** `_struct_info_uncached`, cached per class (Python: `functools.lru_cache`). */
+/** `_structInfoUncached`, cached per class (Python: `functools.lru_cache`). */
 export function _structInfo(cls: Function): _StructInfo | null {
   let info = _STRUCT_INFO.get(cls);
   if (info === undefined) {
@@ -417,11 +417,11 @@ export function _initName(name: string): string {
 }
 
 type DecodeKw = (values: readonly FieldValue[]) => FieldKwargs;
-/** Keyed by a `_struct_info` entry's `init_names`, which fixes its encodings and coerces. */
+/** Keyed by a `_structInfo` entry's `initNames`, which fixes its encodings and coerces. */
 const _DECODERS = new WeakMap<readonly string[], DecodeKw | null>();
 
 /**
- * `_decode_fields` for one class as straight-line code returning an object
+ * `_decodeFields` for one class as straight-line code returning an object
  * literal, so each class's kwargs keep a single shape. Null where
  * `new Function` is refused (Workers, strict CSP) or names repeat.
  */
@@ -456,7 +456,7 @@ type EncodeFields = (self: object) => struct.PackValue[];
 const _ENCODERS = new Map<_StructInfo, EncodeFields | null>();
 
 /**
- * Every data field of `self` through `getattr` and `_encode_value`, as
+ * Every data field of `self` through `getattr` and `_encodeValue`, as
  * straight-line code per class (big-endian fields only). Null where
  * `new Function` is refused (Workers, strict CSP).
  */
@@ -492,7 +492,7 @@ export function _fieldEncoder(info: _StructInfo): EncodeFields | null {
  * Decode raw struct values into init options.
  *
  * Applies encoding (bytes \> str) and coerce (e.g. int \> bool) transforms
- * declared via `fmt_field()`. Shared by `Chunk.read()` and
+ * declared via `fmtField()`. Shared by `Chunk.read()` and
  * `FmtItem.frombytes()`.
  *
  * `values` is `struct`'s untyped result for the runtime format: an encoded
@@ -558,9 +558,9 @@ export function _encodeValue(
   return value;
 }
 
-/** Base for item types whose fields are declared with `fmt_field`. */
+/** Base for item types whose fields are declared with `fmtField`. */
 export class FmtItem extends AttrsBase {
-  /** Construct an item from bytes using its `_struct_info` metadata. */
+  /** Construct an item from bytes using its `_structInfo` metadata. */
   static frombytes<T extends FmtItem>(this: (new (kw: InitKwargs) => T) & typeof FmtItem, data: Uint8Array): T {
     const info = _structInfo(this);
     if (info == null) throw new TypeError_(`${this.name} has no fmtField metadata`);
@@ -606,7 +606,7 @@ export class FmtItem extends AttrsBase {
     return new this(kw);
   }
 
-  /** Serialize an item to bytes using its `_struct_info` metadata. */
+  /** Serialize an item to bytes using its `_structInfo` metadata. */
   tobytes(): Uint8Array {
     const info = _structInfo(this.constructor);
     if (info == null) {

@@ -6,7 +6,7 @@
  * layers come from the file's Layer and Mask Information section, stored bottom
  * layer first. A group spans a hidden bounding divider (`lsct` 3) at its bottom
  * and an open/closed folder header (`lsct` 1/2, carrying the group name) at its
- * top. `read_psd_layers` returns the reconstructed tree of leaf layers and groups.
+ * top. `readPsdLayers` returns the reconstructed tree of leaf layers and groups.
  */
 
 import * as zlib from "../../pyrt/zlib.ts";
@@ -886,7 +886,7 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
 }
 
 /**
- * Extract `(name, layer_id, section_divider, is_adjustment, style_blocks, vector_mask, is_fill, mask_data)`; `layer_id` is `null` without an `lyid`
+ * Extract `(name, layer_id, section_divider, is_adjustment, style_blocks, vector_mask, is_fill, mask_data)`; `layerId` is `null` without an `lyid`
  * block.
  *
  * `sectionDivider` is the `lsct` value: 0 (or absent) for a normal layer,
@@ -895,7 +895,7 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
  * present. `styleBlocks` carries the raw layer-style tagged blocks, `null`
  * when the record has no effects descriptor. `vectorMask` is the raw
  * `vmsk`/`vsms` block body, `null` when the layer has no vector mask.
- * `isFill` is `true` when a fill-layer key is present. `mask_data` is the
+ * `isFill` is `true` when a fill-layer key is present. `maskData` is the
  * layer mask data sub-block body (empty when the layer has no mask).
  */
 export function _parseLayerExtra(

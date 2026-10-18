@@ -99,10 +99,10 @@ export function _volumeParts(path: PurePath): number {
  * (not measured).
  *
  * @param projectFile - Absolute path of the saved `.aep` file, in the same style as `target` (see
- *   `platform_path`).
+ *   `platformPath`).
  * @param target - The record's absolute `fullpath`.
  * @param kw - Keyword arguments:
- * - `target_is_folder`: The record's `target_is_folder`.
+ * - `targetIsFolder`: The record's `targetIsFolder`.
  */
 export function relativePathCounts(
   projectFile: string,

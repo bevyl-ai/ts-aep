@@ -33,7 +33,7 @@ export function isChunkType<K extends string>(c: Chunk, chunkType: K): c is Chun
   return c.chunkType === chunkType;
 }
 
-/** Return first chunk matching `chunk_type`, or null if there is none. */
+/** Return first chunk matching `chunkType`, or null if there is none. */
 export function findByTypeOrNull<K extends string>(chunks: Chunk[], chunkType: K): ChunkOf<K> | null {
   for (const c of chunks) {
     if (isChunkType(c, chunkType)) return c;
@@ -42,7 +42,7 @@ export function findByTypeOrNull<K extends string>(chunks: Chunk[], chunkType: K
 }
 
 /**
- * Return first chunk matching `chunk_type`.
+ * Return first chunk matching `chunkType`.
  *
  * @throws {@link ChunkNotFoundError} If no matching chunk is found.
  */
@@ -52,7 +52,7 @@ export function findByType<K extends string>(chunks: Chunk[], chunkType: K): Chu
   return c;
 }
 
-/** Return first ListChunk with matching `list_type`, or null if there is none. */
+/** Return first ListChunk with matching `listType`, or null if there is none. */
 export function findByListTypeOrNull(chunks: Chunk[], listType: string): ListChunk | null {
   for (const c of chunks) {
     if (c instanceof ListChunk && c.listType === listType) return c;
@@ -61,7 +61,7 @@ export function findByListTypeOrNull(chunks: Chunk[], listType: string): ListChu
 }
 
 /**
- * Return first ListChunk with matching `list_type`.
+ * Return first ListChunk with matching `listType`.
  *
  * @throws {@link ChunkNotFoundError} If no matching LIST chunk is found.
  */
@@ -71,12 +71,12 @@ export function findByListType(chunks: Chunk[], listType: string): ListChunk {
   return c;
 }
 
-/** Return all chunks matching `chunk_type`. */
+/** Return all chunks matching `chunkType`. */
 export function filterByType<K extends string>(chunks: Chunk[], chunkType: K): ChunkOf<K>[] {
   return chunks.filter((c) => isChunkType(c, chunkType));
 }
 
-/** Return all ListChunks with matching `list_type`. */
+/** Return all ListChunks with matching `listType`. */
 export function filterByListType(chunks: Chunk[], listType: string): ListChunk[] {
   return chunks.filter(
     (c): c is ListChunk => c instanceof ListChunk && c.listType === listType,
@@ -101,13 +101,13 @@ export function indexByIdentity<_T>(chunks: readonly _T[], target: object | null
 /**
  * Return `(start, end)` indices of a contiguous block starting at `target`.
  *
- * Scans forward from `target` until a `ListChunk` whose `list_type` is
- * in `boundary_list_types`, or the end of the list.  Uses identity
+ * Scans forward from `target` until a `ListChunk` whose `listType` is
+ * in `boundaryListTypes`, or the end of the list.  Uses identity
  * comparison (`is`) to locate `target`.
  *
  * @param chunks - The chunk list to search.
  * @param target - The chunk that starts the block (matched by identity).
- * @param boundaryListTypes - `list_type` values that mark the beginning of the next block.
+ * @param boundaryListTypes - `listType` values that mark the beginning of the next block.
  * @throws {@link ValueError} If `target` is not found in `chunks`.
  */
 export function blockSlice(
@@ -126,9 +126,9 @@ export function blockSlice(
 }
 
 /**
- * Return the index of the first chunk matching `anchor_type`.
+ * Return the index of the first chunk matching `anchorType`.
  *
- * `anchor_type` can be a plain chunk type (e.g. `"opti"`) or a LIST type
+ * `anchorType` can be a plain chunk type (e.g. `"opti"`) or a LIST type
  * prefixed with `"LIST:"` (e.g. `"LIST:Als2"`).
  *
  * @throws {@link ChunkNotFoundError} If no matching chunk is found.
@@ -149,15 +149,15 @@ export function _findAnchorIndex(chunks: Chunk[], anchorType: string): number {
 }
 
 /**
- * Return consecutive chunks of `chunk_type` immediately before `before_type`.
+ * Return consecutive chunks of `chunkType` immediately before `beforeType`.
  *
- * Scans `chunks` for the first occurrence of `before_type`, then collects the
- * uninterrupted run of `chunk_type` chunks that directly precede it.
+ * Scans `chunks` for the first occurrence of `beforeType`, then collects the
+ * uninterrupted run of `chunkType` chunks that directly precede it.
  *
- * `before_type` can be a plain chunk type (e.g. `"opti"`) or a LIST type
+ * `beforeType` can be a plain chunk type (e.g. `"opti"`) or a LIST type
  * prefixed with `"LIST:"` (e.g. `"LIST:Als2"`).
  *
- * @throws {@link ChunkNotFoundError} If no chunk with `before_type` is found.
+ * @throws {@link ChunkNotFoundError} If no chunk with `beforeType` is found.
  */
 export function findChunksBefore<K extends string>(
   chunks: Chunk[],
@@ -178,15 +178,15 @@ export function findChunksBefore<K extends string>(
 }
 
 /**
- * Return consecutive chunks of `chunk_type` immediately after `after_type`.
+ * Return consecutive chunks of `chunkType` immediately after `afterType`.
  *
- * Scans `chunks` for the first occurrence of `after_type`, then collects the
- * uninterrupted run of `chunk_type` chunks that directly follow it.
+ * Scans `chunks` for the first occurrence of `afterType`, then collects the
+ * uninterrupted run of `chunkType` chunks that directly follow it.
  *
- * `after_type` can be a plain chunk type (e.g. `"opti"`) or a LIST type
+ * `afterType` can be a plain chunk type (e.g. `"opti"`) or a LIST type
  * prefixed with `"LIST:"` (e.g. `"LIST:Als2"`).
  *
- * @throws {@link ChunkNotFoundError} If no chunk with `after_type` is found.
+ * @throws {@link ChunkNotFoundError} If no chunk with `afterType` is found.
  */
 export function findChunksAfter<K extends string>(
   chunks: Chunk[],
@@ -207,7 +207,7 @@ export function findChunksAfter<K extends string>(
 }
 
 /**
- * Split `chunks` into groups bounded by `start_type` ... `end_type` (inclusive).
+ * Split `chunks` into groups bounded by `startType` ... `endType` (inclusive).
  *
  * Chunks that fall outside any group are ignored.
  */
@@ -233,9 +233,9 @@ export function groupChunks(
 }
 
 /**
- * Split `chunks` into groups starting at each occurrence of `chunk_type`.
+ * Split `chunks` into groups starting at each occurrence of `chunkType`.
  *
- * Every time a chunk with `chunk_type` is encountered a new group begins.
+ * Every time a chunk with `chunkType` is encountered a new group begins.
  * Chunks that appear before the first occurrence are discarded.
  */
 export function splitOnType(chunks: Chunk[], chunkType: string): Chunk[][] {
@@ -256,7 +256,7 @@ export function splitOnType(chunks: Chunk[], chunkType: string): Chunk[][] {
 /**
  * Parsed `alas` JSON record. After Effects writes `ascendcount_base`,
  * `ascendcount_target`, `fullpath`, `platform`, `server_name`,
- * `server_volume_name` and `target_is_folder`; a record is re-dumped whole,
+ * `server_volume_name` and `targetIsFolder`; a record is re-dumped whole,
  * so keys py_aep does not read survive an edit.
  */
 export type AlasData = Map<string, JsonValue>;
@@ -327,14 +327,14 @@ export function dumpAlas(data: AlasData): string {
 /**
  * Build a `LIST:Als2 -> alas` chunk holding a footage source path.
  *
- * Inverse of `parse_alas_data`. AE locates the file via the absolute
+ * Inverse of `parseAlasData`. AE locates the file via the absolute
  * `fullpath`, falling back to the relative-path counts
  * (`ascendcount_*`), which are left `PENDING_ASCENDCOUNT` for
  * `Project.save` to compute.
  *
  * @param fullpath - Absolute path to the file, or the containing folder for an image sequence.
  * @param kw - Options:
- * - `target_is_folder`: `true` when `fullpath` is a sequence folder.
+ * - `targetIsFolder`: `true` when `fullpath` is a sequence folder.
  */
 export function buildAls2List(
   fullpath: string,
@@ -404,9 +404,9 @@ export function chunkTree(chunks: Chunk[], depth = -1, indent = 0): string {
  *
  * Some flag chunks are positional: After Effects reads them in a fixed
  * slot and rejects the file ("missing data") when they appear elsewhere.
- * Pass `after_types` to insert the new chunk immediately after the last
+ * Pass `afterTypes` to insert the new chunk immediately after the last
  * chunk of one of those types (e.g. `("cpid",)` for `lnrb`); when none of
- * them is present, or `after_types` is empty, the chunk is appended.
+ * them is present, or `afterTypes` is empty, the chunk is appended.
  */
 export function toggleFlagChunk(
   container: ListChunk,
@@ -437,8 +437,8 @@ export function toggleFlagChunk(
 /**
  * Recursively search the chunk tree for matching chunks.
  *
- * At least one of `chunk_type` or `list_type` must be given.
- * `skip_unparsed` leaves the children of a `DeferredListChunk` never read
+ * At least one of `chunkType` or `listType` must be given.
+ * `skipUnparsed` leaves the children of a `DeferredListChunk` never read
  * unsearched (searching parses it and costs the save its raw-bytes write).
  *
  * @returns All matching chunks across the entire tree, in DFS order.

@@ -81,7 +81,7 @@ export function listLayers(file: PathLike): string[] {
 }
 
 /**
- * Map a stored binary layer index to its `list_layers` position in `file`.
+ * Map a stored binary layer index to its `listLayers` position in `file`.
  *
  * The stored index is the `sspc` layer index field of a single-layer
  * binding: the PSD layer record index (which counts group divider
@@ -138,10 +138,10 @@ export function _outOfRange(
 }
 
 /**
- * Return the PSD leaf layer at `layer_index` in `list_layers` order
+ * Return the PSD leaf layer at `layerIndex` in `listLayers` order
  * (top layer first).
  *
- * @throws {@link ValueError} If `layer_index` is out of range.
+ * @throws {@link ValueError} If `layerIndex` is out of range.
  * @throws {@link UnsupportedPsdLayersError} If the file's layers cannot be read.
  */
 export function resolvePsdLayer(
@@ -160,15 +160,15 @@ export function resolvePsdLayer(
 }
 
 /**
- * Resolve an AI/PDF layer chosen by `list_layers` position.
+ * Resolve an AI/PDF layer chosen by `listLayers` position.
  *
  * @param file - Path to a `.ai` or `.pdf` file.
- * @param layerIndex - The layer's index in `list_layers` order (top first).
+ * @param layerIndex - The layer's index in `listLayers` order (top first).
  * @param data - The file's bytes, if the caller already read them.
  * @returns A `(layers, document_index)` tuple: the file's layers in document order (bottom layer
  *   first) and the chosen layer's position in them, which is the index the binary stores. The whole
  *   list comes back because the binding also records how many layers the document has.
- * @throws {@link ValueError} If `layer_index` is out of range.
+ * @throws {@link ValueError} If `layerIndex` is out of range.
  * @throws {@link UnsupportedAiLayersError} If the file's layers cannot be read.
  */
 export function resolveAiLayer(

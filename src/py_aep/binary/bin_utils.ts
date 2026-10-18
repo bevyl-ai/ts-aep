@@ -2,7 +2,7 @@
  * Low-level binary I/O primitives for AEP chunk parsing.
  *
  * All functions default to big-endian because AEP files are always RIFX.
- * The `endian` parameter on `read_fmt` / `write_fmt` exists for typed chunks
+ * The `endian` parameter on `readFmt` / `writeFmt` exists for typed chunks
  * that have little-endian fields.
  */
 
@@ -87,7 +87,7 @@ export function toFixed1616(value: number): [number, number] {
   return divmod(round(value * 65536), 65536);
 }
 
-/** Return a cached `struct.Struct` for `full_fmt`. */
+/** Return a cached `struct.Struct` for `fullFmt`. */
 export function _getStruct(fullFmt: string): struct.Struct {
   let s = _STRUCT_CACHE.get(fullFmt);
   if (s == null) {
@@ -179,11 +179,11 @@ export function writeBytes(fp: IO, data: Uint8Array): number {
 }
 
 /**
- * Encode `value` to UTF-8, truncated to at most `max_bytes` bytes.
+ * Encode `value` to UTF-8, truncated to at most `maxBytes` bytes.
  *
  * Slicing UTF-8 bytes can split a multibyte character; decoding the slice
  * with `errors="ignore"` drops any trailing partial sequence, so the result
- * is always valid UTF-8 and never exceeds `max_bytes`. Used for fixed-width
+ * is always valid UTF-8 and never exceeds `maxBytes`. Used for fixed-width
  * AEP name fields.
  */
 export function truncateUtf8(value: string, maxBytes: number): Uint8Array {

@@ -120,7 +120,7 @@ export function parseTransform(value: string): Affine {
 
 /**
  * One transform function, its name and argument count already checked
- * by `parse_transform`.
+ * by `parseTransform`.
  */
 // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
 export function _singleTransform(name: string, n: number[]): Affine {

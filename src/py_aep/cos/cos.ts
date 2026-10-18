@@ -114,7 +114,7 @@ export function reprBytes(x: Uint8Array): string {
   return `b${q}${s}${q}`;
 }
 
-/** The enum-helper surface `enum_str` needs (a pyrt `py_enum`). */
+/** The enum-helper surface `enumStr` needs (a pyrt `pyEnum`). */
 interface NamedEnum {
   __name__: string;
   nameOf(v: number): string;
@@ -164,7 +164,7 @@ export function cosGet(data: CosNode | undefined, ...keys: (string | number)[]):
  * Decode a text document's COS run array into `(start, end, payload)`.
  *
  * Run arrays (`doc["0"]["5"/"6"/"8"]["0"]`) store `{"0": payload, "1": count}` entries whose counts are UTF-16 units over the raw
- * text. `style_key` picks the style sub-dict for paragraph ("5") and
+ * text. `styleKey` picks the style sub-dict for paragraph ("5") and
  * character ("6") runs; kerning runs ("8") use their payload directly.
  * Runs with a missing or negative count are skipped. Shared by the
  * range models (models/text/ranges.py) and the composed-line resolver
@@ -317,7 +317,7 @@ export class CosString extends String {
    * The literal's own bytes, kept only when no byte-order mark said how
    * to read them and the lexer fell back to UTF-8. A PDF *text* string
    * with no BOM is PDFDocEncoding instead (PDF 32000-1 7.9.2.2), which
-   * only the consumer knows to apply - see `decode_pdf_text_string`.
+   * only the consumer knows to apply - see `decodePdfTextString`.
    * `null` whenever a BOM settled the encoding.
    */
   declare cosRaw: Uint8Array | null;
@@ -518,7 +518,7 @@ export class CosParser {
   }
 
   // The lexer works on byte values (`b"x"[0]`) rather than one-byte `bytes`
-  // objects: a `read(1)` copy and a `bytes_eq` per character were most of
+  // objects: a `read(1)` copy and a `bytesEq` per character were most of
   // the text-document parse time.
   lexToken(): Token {
     let char: number | null = null;
@@ -686,7 +686,7 @@ export class CosParser {
   }
 
   lexKeyword(char: number): Token {
-    // Keywords are ASCII letters only (`isalpha_b`), so a latin1 string holds them exactly.
+    // Keywords are ASCII letters only (`isalphaB`), so a latin1 string holds them exactly.
     let kw = String.fromCharCode(char);
     while (true) {
       const nextChar = this.getChar();

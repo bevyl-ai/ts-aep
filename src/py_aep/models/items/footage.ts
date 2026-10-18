@@ -108,7 +108,7 @@ export class FootageItem extends AVItem {
    * source file that could not be found when the project was last saved.
    *
    * In this case, the path of the missing source file is in the
-   * `missing_footage_path` attribute of the footage item's source-file object.
+   * `missingFootagePath` attribute of the footage item's source-file object.
    * See {@link FootageItem.mainSource} and
    * {@link FileSource.missingFootagePath | FileSource.missingFootagePath}.
    * Read-only.
@@ -463,29 +463,29 @@ export class FootageItem extends AVItem {
    *
    * In addition to loading the file, the method creates a new `FileSource` object
    * for the file and sets `mainSource` to that object. In the new source object, it
-   * sets the name, width, height, `frame_duration`, and duration attributes (see
+   * sets the name, width, height, `frameDuration`, and duration attributes (see
    * `AVItem` object) based on the contents of the file.
    *
    * The method preserves interpretation parameters from the previous `mainSource`
    * object.
    *
-   * py_aep extension: `layer_index` binds the new source to a single
-   * layer of a layered file, by `list_layers` position (see
+   * py_aep extension: `layerIndex` binds the new source to a single
+   * layer of a layered file, by `listLayers` position (see
    * `ImportOptions.layerIndex`). `null` (the default) always replaces
    * with the merged/whole document, even when the current source references a
-   * single layer - consistent with `import_file`, where `layer_index=None`
+   * single layer - consistent with `importFile`, where `layer_index=None`
    * imports merged. Pass `CURRENT_VALUE` to rebind at the current source's
    * stored layer index (the `sspc` layer index: PSD record index / AI document
    * index) in the new file.
    *
-   * `layer_dimensions` chooses the footage dimensions when a layer is
+   * `layerDimensions` chooses the footage dimensions when a layer is
    * selected (see `ImportOptions.layerDimensions`): `"document"` (the
    * full canvas) or `"layer"` (the layer's content box). `CURRENT_VALUE`
    * (the default) preserves the current single-layer binding's choice.
    * For an AI/PDF target the content box is the artwork box measured from
    * the page content stream (see
    * {@link py_aep.resolvers.ai_bounds.read_ai_layer_bounds | read_ai_layer_bounds}).
-   * `layer_dimensions` is ignored when `layer_index` is `null` (a merged
+   * `layerDimensions` is ignored when `layerIndex` is `null` (a merged
    * document is always document-sized).
    *
    * `layerStyles` chooses how a PSD layer's styles are treated (see
@@ -495,8 +495,8 @@ export class FootageItem extends AVItem {
    * the `"editable"` marker of an editable-comp per-layer footage item,
    * which is not accepted as an explicit argument (AE's footage dialog
    * offers merge/ignore only) - and falls back to `"merge"` when the
-   * current source has no PSD layer binding. Like `layer_dimensions`, it
-   * is ignored when `layer_index` is `null`.
+   * current source has no PSD layer binding. Like `layerDimensions`, it
+   * is ignored when `layerIndex` is `null`.
    *
    * **Note:** 
    * Unlike ExtendScript, if the specified file has an unlabeled alpha channel,
@@ -504,7 +504,7 @@ export class FootageItem extends AVItem {
    *
    * file: Path to the new source file.
    * layer_index: Layer of the new file to reference, as its 0-based
-   * `list_layers` position, or `CURRENT_VALUE` (layered files
+   * `listLayers` position, or `CURRENT_VALUE` (layered files
    * only); `null` replaces with the merged/whole document.
    * layer_dimensions: `"document"`, `"layer"`, or `CURRENT_VALUE` to
    * keep the current binding's choice (the default).
@@ -513,10 +513,10 @@ export class FootageItem extends AVItem {
    *
    * ValueError: If the extension is not a supported footage format,
    * if the file has no track After Effects can decode (e.g. an
-   * AV1-only `.mp4`), if `layer_index` is passed for a
+   * AV1-only `.mp4`), if `layerIndex` is passed for a
    * non-layered file, if
-   * `layer_index` is out of range for the new file, if
-   * `layer_dimensions` is not `"document"`/`"layer"`/`CURRENT_VALUE`,
+   * `layerIndex` is out of range for the new file, if
+   * `layerDimensions` is not `"document"`/`"layer"`/`CURRENT_VALUE`,
    * if `layerStyles` is not `"merge"`/`"ignore"`/`CURRENT_VALUE`
    * or is passed explicitly for an AI/PDF target, or if
    * `CURRENT_VALUE` is passed while the current source does
@@ -610,7 +610,7 @@ export class FootageItem extends AVItem {
    *
    * In addition to loading the file, the method creates a new `FileSource` object
    * for the file and sets `mainSource` to that object. In the new source object, it
-   * sets the name, width, height, `frame_duration`, and duration attributes (see
+   * sets the name, width, height, `frameDuration`, and duration attributes (see
    * `AVItem` object) based on the contents of the file.
    *
    * The method preserves interpretation parameters from the previous `mainSource`

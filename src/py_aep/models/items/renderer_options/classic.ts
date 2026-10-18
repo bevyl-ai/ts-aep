@@ -23,10 +23,6 @@ export class ClassicRendererOptions extends RendererOptionsBase {
 
 // Descriptors assigned in the class body: `declare` above, installed here.
 
-/**
- * Resolution of the shadow map, as set in the Classic 3D Options dialog.
- * Read / Write.
- */
 descriptor(
   ClassicRendererOptions,
   "shadowMapResolution",

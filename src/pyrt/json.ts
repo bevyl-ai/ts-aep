@@ -80,7 +80,7 @@ const ESC: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f
  * NOTE: bytes decode strictly; CPython's `surrogatepass` (encoded surrogates) is not modelled.
  */
 /**
- * A value `json_loads` produces with its default hooks: objects are `Map`s
+ * A value `jsonLoads` produces with its default hooks: objects are `Map`s
  * (insertion-ordered, like a Python dict), fractional and exponent numbers
  * are boxed `PyFloat`s, integers past 2**53 are `bigint`s.
  */

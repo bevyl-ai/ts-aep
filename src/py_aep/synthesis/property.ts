@@ -89,7 +89,7 @@ export class PropSpec {
      */
     readonly hintBounds: [number, number] | null = null,
     /**
-     * Override for the `tdb4` `_property_category` byte; `null` keeps the
+     * Override for the `tdb4` `_propertyCategory` byte; `null` keeps the
      * kind-branch default (integer 0x04, color 0x01, vector 0x09). Layer
      * Styles angles use 0x06.
      */
@@ -198,7 +198,7 @@ export class GroupSpec {
 // value type, so `_spec()` derives it from this table instead of every spec
 // repeating it. (ExtendScript reports color properties as spatial.) Value types
 // absent here - NO_VALUE, CUSTOM_VALUE, MARKER, TEXT_DOCUMENT - have no single
-// kind, so those specs pass `dimensions`/`is_spatial`/`color` explicitly.
+// kind, so those specs pass `dimensions`/`isSpatial`/`color` explicitly.
 export const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number, [number, boolean, boolean]>([
   [PropertyValueType.ThreeD_SPATIAL, [3, true, false]],
   [PropertyValueType.ThreeD, [3, false, false]],
@@ -210,7 +210,7 @@ export const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number
 ]);
 
 /**
- * Build a `PropSpec`, deriving `dimensions`/`is_spatial`/`color` from
+ * Build a `PropSpec`, deriving `dimensions`/`isSpatial`/`color` from
  * `pvt` via `_PVT_KIND` unless given explicitly.
  */
 export function _spec(

@@ -49,14 +49,42 @@ export class MarkerValue {
   declare _frameTime: number;
   declare _paramUtf8s: Utf8Chunk[];
 
+  /** The marker's duration, in seconds. Read / Write. */
   declare duration: number;
+  /**
+   * The label color. Colors are represented by their number (0 for None, or 1
+   * to 16 for one of the preset colors in the Labels preferences).
+   * Read / Write.
+   */
   declare label: Label;
+  /** Whether the marker is a navigation marker. Read / Write. */
   declare navigation: boolean;
+  /**
+   * State of the Protected Region option in the Composition Marker dialog box.
+   * When `true`, the composition marker behaves as a protected region. Will
+   * also return `true` for protected region markers on nested composition
+   * layers, but is otherwise not applicable to layer markers. Read / Write.
+   */
   declare protectedRegion: boolean;
+  /**
+   * A text comment for this marker. This comment appears in the Timeline panel
+   * next to the layer marker. Read / Write.
+   */
   declare comment: string;
+  /**
+   * A text chapter link for this marker. Chapter links initiate a jump to a
+   * chapter in a QuickTime movie or in other formats that support chapter
+   * marks. Read / Write.
+   */
   declare chapter: string;
+  /** A URL for this marker. This URL is an automatic link to a Web page. Read / Write. */
   declare url: string;
+  /**
+   * A text frame target for this marker. Together with the URL value, this
+   * targets a specific frame within a Web page. Read / Write.
+   */
   declare frameTarget: string;
+  /** The Flash Video cue point name, as shown in the Marker dialog box. Read / Write. */
   declare cuePointName: string;
 
   constructor(
@@ -235,48 +263,20 @@ export class MarkerValue {
   }
 }
 
-/** The marker's duration, in seconds. Read / Write. */
 descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "durationSeconds", { validate: validateMarkerDuration }));
 
-/**
- * The label color. Colors are represented by their number (0 for None, or 1
- * to 16 for one of the preset colors in the Labels preferences).
- * Read / Write.
- */
 descriptor(MarkerValue, "label", ChunkField.enum(Label, "_nmhd", "label"));
 
-/** Whether the marker is a navigation marker. Read / Write. */
 descriptor(MarkerValue, "navigation", ChunkField.bool("_nmhd", "navigation"));
 
-/**
- * State of the Protected Region option in the Composition Marker dialog box.
- * When `true`, the composition marker behaves as a protected region. Will
- * also return `true` for protected region markers on nested composition
- * layers, but is otherwise not applicable to layer markers. Read / Write.
- */
 descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protectedRegion"));
 
-/**
- * A text comment for this marker. This comment appears in the Timeline panel
- * next to the layer marker. Read / Write.
- */
 descriptor(MarkerValue, "comment", new ChunkField("_commentUtf8", "value"));
 
-/**
- * A text chapter link for this marker. Chapter links initiate a jump to a
- * chapter in a QuickTime movie or in other formats that support chapter
- * marks. Read / Write.
- */
 descriptor(MarkerValue, "chapter", new ChunkField("_chapterUtf8", "value"));
 
-/** A URL for this marker. This URL is an automatic link to a Web page. Read / Write. */
 descriptor(MarkerValue, "url", new ChunkField("_urlUtf8", "value"));
 
-/**
- * A text frame target for this marker. Together with the URL value, this
- * targets a specific frame within a Web page. Read / Write.
- */
 descriptor(MarkerValue, "frameTarget", new ChunkField("_frameTargetUtf8", "value"));
 
-/** The Flash Video cue point name, as shown in the Marker dialog box. Read / Write. */
 descriptor(MarkerValue, "cuePointName", new ChunkField("_cuePointNameUtf8", "value"));

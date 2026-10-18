@@ -68,7 +68,7 @@ import type { TextDocument } from "../models/text/text_document.ts";
 // awaited once at module load and wrapped in a uharfbuzz-shaped binding
 // (`hb.Blob.from_file_path`, `hb.Face`, `hb.Font`, `hb.Buffer`, `hb.shape`).
 // NOTE(port): harfbuzzjs indexes clusters in UTF-16 units; uharfbuzz in code
-// points. Composition refuses astral text first (`_check_envelope`), so the
+// points. Composition refuses astral text first (`_checkEnvelope`), so the
 // two agree on every text that is shaped.
 // Off Node/Bun the wasm is fetched from `hb.wasm` next to the bundle. Where
 // it cannot load (not served there; Cloudflare Workers, which refuse to
@@ -496,9 +496,9 @@ export function _shapeStretch(text: string, style: _CharStyle): number[] {
   return _glyphAdvances(text, style, buf, scale);
 }
 
-/** Per-character advances of a stretch shaped by `_shape_glyphs`. */
+/** Per-character advances of a stretch shaped by `_shapeGlyphs`. */
 export function _glyphAdvances(text: string, style: _CharStyle, buf: _HbBuffer, scale: number): number[] {
-  // Text here is BMP-only (`_check_envelope` refuses astral characters
+  // Text here is BMP-only (`_checkEnvelope` refuses astral characters
   // first), so UTF-16 indexing matches Python's code-point indexing.
   const perCluster: number[] = new Array<number>(text.length).fill(0.0);
   for (const [info, pos] of zip<[_HbBuffer["glyphInfos"], _HbBuffer["glyphPositions"]]>(buf.glyphInfos, buf.glyphPositions)) {

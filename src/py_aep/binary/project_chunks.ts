@@ -3,7 +3,7 @@
  *
  * These chunks appear once at the top of the `RIFX` of every `.aep` and
  * are otherwise opaque to py_aep. They are modelled here with best-guess
- * `fmt_field`s and fresh-project defaults (captured from an AE 2026 empty
+ * `fmtField`s and fresh-project defaults (captured from an AE 2026 empty
  * project) so `Project._new()` can build a valid skeleton by instantiating
  * them with no arguments. See `scripts/dev/dump_new_project.py`.
  */

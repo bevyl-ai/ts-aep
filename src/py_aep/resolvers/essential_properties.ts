@@ -46,7 +46,7 @@ export function resolveEssentialPropertyControllers(layer: AVLayer): EssentialGr
  * controlled property, via the controller's `CCId`/`CLId`.
  *
  * Returns `null` when the controller stores no source comp/layer, the comp
- * is missing, or no layer matches the stored `layer_id`.
+ * is missing, or no layer matches the stored `layerId`.
  */
 export function _resolveControllerSourceLayer(project: Project, controller: EssentialGraphicsController): AVLayer | null {
   if (controller.sourceCompId == null || controller.sourceLayerId == null) return null;
@@ -93,12 +93,12 @@ export function _resolveIndexedChild(group: PropertyGroup, ref: SourcePropertyRe
 }
 
 /**
- * Walk a controller's source-property `path` from `source_layer` to the
+ * Walk a controller's source-property `path` from `sourceLayer` to the
  * exposed leaf.
  *
  * A node with `prop_index=None` (AE's by-name marker, `0xFFFFFFFF`)
  * resolves by match name. An indexed node resolves through
- * `_resolve_indexed_child`, which disambiguates duplicate match names
+ * `_resolveIndexedChild`, which disambiguates duplicate match names
  * (e.g. the same effect applied twice); when the index cannot be
  * interpreted it falls back to the first match-name hit, the pre-index
  * behavior. Returns `null` if any node fails to resolve (missing child,

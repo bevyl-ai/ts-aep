@@ -43,7 +43,7 @@ export function warns(fn: () => void, match?: string | RegExp): string[] {
   return caught;
 }
 
-/** Numbers, (nested) sequences of them, or anything `py_eq` compares. */
+/** Numbers, (nested) sequences of them, or anything `pyEq` compares. */
 export type ApproxOperand = number | ArrayLike<ApproxOperand> | object | string | boolean | null | undefined;
 
 /** `actual == pytest.approx(expected, rel=1e-6, abs=1e-12)` over numbers or (nested) sequences. */

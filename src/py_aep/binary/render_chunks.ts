@@ -1,9 +1,9 @@
 /**
  * Render queue chunk types: Roou, Ropt, Rout.
  *
- * RouuChunk exposes output module settings fields as `fmt_field()`.
+ * RouuChunk exposes output module settings fields as `fmtField()`.
  * RoptChunk uses variant subclass dispatch by format_code.
- * RoutChunk uses `items_field()` for repeating render-flag entries.
+ * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
 import { b, bytes_, decode, define, descriptor, fields, getattr, len, pyAssert, pyBool, setattr, strip } from "../../pyrt/index.ts";
@@ -162,7 +162,7 @@ register("Roou")(RouuChunk);
 /**
  * Format-specific render options (polymorphic).
  *
- * Layout depends on `format_code` (first 4 bytes). The base class
+ * Layout depends on `formatCode` (first 4 bytes). The base class
  * dispatches to variant subclasses; unknown format codes fall back
  * to raw bytes.
  */
@@ -222,7 +222,7 @@ export const _TARGA_PAD = bytes_.concat(
  * `CineonRoptChunk()` is a valid format-options chunk.
  */
 export class CineonRoptChunk extends RoptChunk {
-  // `format_code` is a field here (define() installs a converter accessor that shadows the base getter).
+  // `formatCode` is a field here (define() installs a converter accessor that shadows the base getter).
   declare _pad: Uint8Array;
   declare tenBitBlackPoint: number;
   declare tenBitWhitePoint: number;
@@ -383,13 +383,13 @@ define(PngRoptChunk, {
   _pad2: bytesField(2, { repr: false }),
   bitDepth: u2Field({ default: 16 }),
   compression: u4Field(),
-  /** Bit 2 = `has_alpha`; bit 1 is always set. */
+  /** Bit 2 = `hasAlpha`; bit 1 is always set. */
   _flags: u4Field({ default: 6, repr: false }),
   _reserved26: bytesField(8, { repr: false }),
   channelCount: u4Field({ default: 4 }),
   _padEnd: bytesField(272, { repr: false }),
 });
-/** Python `BitField` descriptors are class attributes with no annotation, so attrs skips them. */
+// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
 descriptor(PngRoptChunk, "hasAlpha", new BitField("_flags", 2));
 
 export const _ROPT_VARIANTS: Map<string, typeof RoptChunk> = new Map<string, typeof RoptChunk>([
@@ -444,7 +444,10 @@ export class RenderSettingsItem extends FmtItem {
   declare _reserved00: Uint8Array;
   declare _flagByte: number;
   declare queueItemNotify: boolean;
-  /** BitField over `_flag_byte` bit 0. */
+  /**
+   * The item's Render box (bit 0 of `_flagByte`): set from Queued on (Queued,
+   * stopped, done), clear while it needs an output or is unqueued.
+   */
   declare renderChecked: boolean;
   declare compId: number;
   /** RQItemStatus.QUEUED (-1 = WILL_CONTINUE) */
@@ -650,12 +653,8 @@ define(RenderSettingsItem, {
     repr: false,
   }),
 });
-/** Python `BitField` descriptors are class attributes with no annotation, so attrs skips them. */
+// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
 descriptor(RenderSettingsItem, "queueItemNotify", new BitField("_flagByte", 2));
-/**
- * The item's Render box: set from Queued on (Queued, stopped, done),
- * clear while it needs an output or is unqueued.
- */
 descriptor(RenderSettingsItem, "renderChecked", new BitField("_flagByte", 0));
 
 // ---------------------------------------------------------------------------
@@ -763,8 +762,8 @@ export class OutputModuleSettingsItem extends FmtItem {
    * Copy template-relevant settings from another item.
    *
    * Only the fields that AE's "Apply Template" dialog sets are
-   * copied; identity fields like `post_render_target_comp_id` and
-   * `post_render_use_comp` are preserved.
+   * copied; identity fields like `postRenderTargetCompId` and
+   * `postRenderUseComp` are preserved.
    */
   copySettingsFrom(source: OutputModuleSettingsItem): void {
     for (const field of this.constructor._TEMPLATE_FIELDS) {
@@ -828,12 +827,8 @@ define(OutputModuleSettingsItem, {
   preserveRgb: boolField(),
   _reserved5f: bytesField(33, { repr: false }),
 });
-/** Python `BitField` descriptors are class attributes with no annotation, so attrs skips them. */
+// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
 descriptor(OutputModuleSettingsItem, "includeSourceXmp", new BitField("_flagByte07", 6));
-/**
- * Set on every AE-saved module that has an output path record; AE
- * 2026 ignores the record of a module without it.
- */
 descriptor(OutputModuleSettingsItem, "hasOutputFile", new BitField("_flagByte07", 5));
 descriptor(OutputModuleSettingsItem, "useRegionOfInterest", new BitField("_flagByte07", 4));
 descriptor(OutputModuleSettingsItem, "useCompFrameNumber", new BitField("_flagByte07", 3));

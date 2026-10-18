@@ -117,7 +117,7 @@ export function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec
  * Resolve value and default_value for a synthesized effect property.
  *
  * Returns pre-rescale values - point defaults stay in percent of the
- * layer size; `_normalize_synthetic_point` stores them as fractions.
+ * layer size; `_normalizeSyntheticPoint` stores them as fractions.
  *
  * @param matchName - The property's match name.
  * @param paramDef - The parameter definition from parT parsing.
@@ -155,7 +155,7 @@ export function _resolveEffectValue(
   // Any other control: AE leaves a parameter at its default out of the
   // effect's tdgp, so an omitted one is at the default its pard declares,
   // then the override table's, then the pard `default` field. The cached
-  // `last_value` is not the value: it is the value of whichever instance
+  // `lastValue` is not the value: it is the value of whichever instance
   // wrote the definition (another one when the definition is borrowed),
   // or stale - S_BlurDirectional's Bias caches 0 where ExtendScript
   // reports 0.5. It only stands in for a pard that declares no default.
@@ -171,7 +171,7 @@ export function _resolveEffectValue(
  *
  * Sets last_value, min/max bounds, nb_options, and
  * property_parameters from the parameter definition.  Shared by
- * `_synthesize_effect_property` and `_merge_param_def`.
+ * `_synthesizeEffectProperty` and `_mergeParamDef`.
  *
  * @param prop - The property to update in place.
  * @param paramDef - The parameter definition.
@@ -239,7 +239,7 @@ export function _bindPointDefault(prop: Property, raw: PropertyValue): void {
 
 /**
  * Keep a synthesized point as the fraction AE stores, read through the
- * layer's current size, with the default `_bind_point_default` gives.
+ * layer's current size, with the default `_bindPointDefault` gives.
  */
 export function _normalizeSyntheticPoint(prop: Property): void {
   const raw = prop._value;
@@ -395,9 +395,9 @@ export function _synthesizeEffectProperty(
 /**
  * Parse effect properties and merge with parameter definitions.
  *
- * Walks `param_defs` in canonical order, merging parsed binary
+ * Walks `paramDefs` in canonical order, merging parsed binary
  * properties or synthesizing missing ones in a single pass.  Tail
- * children not in `param_defs` (e.g. Compositing Options) are appended
+ * children not in `paramDefs` (e.g. Compositing Options) are appended
  * in their original parsed order.
  *
  * @param tdgpChunk - The tdgp chunk containing property data.
@@ -513,7 +513,7 @@ export function _heldDefinitions(sspc: ListChunk): ListChunk | null {
 }
 
 /**
- * The parameter definitions of effect `match_name` from the instance in
+ * The parameter definitions of effect `matchName` from the instance in
  * the project that holds them.
  *
  * AE writes an effect's `parT` in its first instance in file order only and
@@ -534,7 +534,7 @@ export function _projectParamDefs(composition: CompItem, matchName: string): Map
 /**
  * Hand the definitions held by `removed` effect instances to the first
  * remaining instance of each effect, where AE keeps them (see
- * `_project_param_defs`); AE 15 and AE 2026 write them there on their own
+ * `_projectParamDefs`); AE 15 and AE 2026 write them there on their own
  * save. AE rewrites the instance-specific bytes of each `pard` (UI flags
  * such as disabled, last values) when it saves; a moved `parT` keeps the
  * removed instance's, which AE 15 opens with the same parameters.

@@ -11,7 +11,7 @@ import { RenderQueueItem } from "./render_queue_item.ts";
 /**
  * Clear the `synthetic` flag on a chunk and its container subtree.
  *
- * `parse_render_queue` leaves a synthesized render-queue scaffold (a missing
+ * `parseRenderQueue` leaves a synthesized render-queue scaffold (a missing
  * `LRdr`, settings `LIST:list`, or empty-queue `ldat`) marked `synthetic` so
  * `writeAep` skips it and an untouched queue-less file round-trips
  * byte-identically. The first `add()` calls this to materialize the whole
@@ -80,9 +80,9 @@ export class RenderQueue {
   /**
    * Build an empty render queue with its backing `LIST:LRdr` tree.
    *
-   * Mirrors the empty-queue scaffold AE writes and `parse_render_queue`
+   * Mirrors the empty-queue scaffold AE writes and `parseRenderQueue`
    * synthetic ldat) + empty `LItm` + `LSIf[ARsi]`. The settings ldat is
-   * synthetic so it is skipped by `write_aep()` until the first `add()`.
+   * synthetic so it is skipped by `writeAep()` until the first `add()`.
    *
    * @returns An iterator yielding `Rhed` + empty `Rout` + a settings `LIST:list` (lhd3 plus a
    */

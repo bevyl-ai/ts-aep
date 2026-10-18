@@ -226,7 +226,7 @@ export class Item {
   /**
    * Adds a new guide to the item.
    *
-   * Any `orientation_type` value other than 0 (horizontal) or 1 (vertical)
+   * Any `orientationType` value other than 0 (horizontal) or 1 (vertical)
    * defaults to horizontal.
    *
    * @param orientationType - 0 for horizontal, 1 for vertical.
@@ -249,7 +249,7 @@ export class Item {
    * Removes an existing guide by index.
    *
    * @param guideIndex - The 0-based index of the guide to remove.
-   * @throws {@link IndexError} If `guide_index` is out of range.
+   * @throws {@link IndexError} If `guideIndex` is out of range.
    */
   removeGuide(guideIndex: number): void {
     if (this._guides.length === 0) throw new IndexError("No guides to remove");
@@ -269,7 +269,7 @@ export class Item {
   /**
    * Remove all guides from the item.
    *
-   * Equivalent to calling `remove_guide` for each guide. A no-op
+   * Equivalent to calling `removeGuide` for each guide. A no-op
    * when the item has no guides.
    */
   removeAllGuides(): void {

@@ -65,7 +65,7 @@ function fma(x: number, y: number, z: number): number {
   return roundExact(sum, e);
 }
 
-/** Error-free `x * y` (`dl_mul`): `[hi, lo]` with `hi + lo == x * y`. */
+/** Error-free `x * y` (`dlMul`): `[hi, lo]` with `hi + lo == x * y`. */
 function dlMul(x: number, y: number): [number, number] {
   const z = x * y;
   // Dekker's product equals fma(x, y, -z) whenever no partial product underflows.
@@ -86,7 +86,7 @@ function dlMul(x: number, y: number): [number, number] {
 
 const DBL_MIN = 2.2250738585072014e-308;
 
-/** CPython 3.12 `vector_norm` (Modules/mathmodule.c) over |coordinates|. */
+/** CPython 3.12 `vectorNorm` (Modules/mathmodule.c) over |coordinates|. */
 function vectorNorm(vec: number[], max: number, foundNan: boolean): number {
   if (max === Infinity) return max;
   if (foundNan) return NaN;

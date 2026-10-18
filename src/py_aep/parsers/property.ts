@@ -122,7 +122,7 @@ export function _propertyParser(
  * dispatches to the appropriate parser based on its list type.
  *
  * @param matchNameRuns - Sub-property chunks grouped into ordered match-name runs (from
- *   `get_match_name_runs`).
+ *   `getMatchNameRuns`).
  * @param childDepth - The property depth for parsed child properties.
  * @param effectParamDefs - Project-level effect parameter definitions.
  * @param composition - The parent composition.
@@ -247,7 +247,7 @@ export function _dispatchTdbs(ctx: _ParseContext): (Property | PropertyGroup)[] 
   );
   // A media-replacement slot (`ADBE Layer Source Alternate`) carries blsv/blsi
   // beside its tdbs in the group run; attach them so the Property can decode
-  // `can_set_alternate_source` / `alternate_source`. Gated on the match name
+  // `canSetAlternateSource` / `alternateSource`. Gated on the match name
   // so the scans do not run for every leaf on the hot parse path.
   if (ctx.matchName === "ADBE Layer Source Alternate") {
     const blsi = filterByType(ctx.chunks, "blsi");

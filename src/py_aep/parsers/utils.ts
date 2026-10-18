@@ -12,7 +12,7 @@ export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
  * effect duplicated right after the original). A match name that
  * re-occurs after a different one starts a new run, so file order is
  * preserved for same-type properties separated by others (unlike
- * `get_chunks_by_match_name`, which merges them).
+ * `getChunksByMatchName`, which merges them).
  */
 export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
   const runs: [string, Chunk[]][] = [];
@@ -43,7 +43,7 @@ export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
  *
  * Re-occurrences of a match name merge into one entry, losing the
  * relative order of same-type properties separated by others; use
- * `get_match_name_runs` when property order matters.
+ * `getMatchNameRuns` when property order matters.
  */
 export function getChunksByMatchName(rootChunk: ListChunk): Map<string, Chunk[]> {
   const chunksByMatchName = new Map<string, Chunk[]>();

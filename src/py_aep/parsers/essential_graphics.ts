@@ -60,7 +60,7 @@ export function _parseController(cctlChunk: ListChunk): EssentialGraphicsControl
       sourcePropertyPath = _parseSourcePropertyPath(pathUtf8[0].value);
     }
     // CCId / CLId identify the source comp + layer that own the
-    // controlled property (the layer is matched by its `layer_id`).
+    // controlled property (the layer is matched by its `layerId`).
     const ccid = filterByType(cprp.chunks, "CCId");
     if (ccid?.length > 0) {
       sourceCompId = ccid[0].value;

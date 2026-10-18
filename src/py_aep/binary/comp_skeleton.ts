@@ -206,7 +206,7 @@ export function _buildCif(listType: string): ListChunk {
 
 /**
  * A comp time in timebase units, snapped to the nearest whole frame of
- * the comp's frame grid (`frame_grid`).
+ * the comp's frame grid (`frameGrid`).
  *
  * AE rounds half a frame up (52.5 frames -\> 53, where `round` gives 52),
  * measured on AE 2026 for `addComp`, the `duration` setter and a frame-rate
@@ -219,7 +219,7 @@ export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: nu
   return floordiv(units + floordiv(unitsPerFrame, 2), unitsPerFrame) * unitsPerFrame;
 }
 
-/** A comp duration in timebase units, snapped like `_frame_units`.
+/** A comp duration in timebase units, snapped like `_frameUnits`.
  *
  * Under half a frame, AE stores a zero-length composition; py_aep keeps one
  * frame instead.
@@ -257,8 +257,8 @@ export function _buildCdta(
 /** Build the complete `LIST:Item` chunk tree AE 2026 writes for
  * `app.project.items.addComp()`.
  *
- * `ae_major` is the project's After Effects major version: the parts that
- * release does not write are left out (see `ae_writes`). `label` is the
+ * `aeMajor` is the project's After Effects major version: the parts that
+ * release does not write are left out (see `aeWrites`). `label` is the
  * "Comp Label Index 2" label preference (AE factory value 15). Returns
  * `(item_list, idta, name_utf8, gide)`.
  */

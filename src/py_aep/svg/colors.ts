@@ -1,7 +1,7 @@
 /**
  * CSS/SVG color parsing to 0.0-1.0 RGBA.
  *
- * `parse_color` accepts `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`,
+ * `parseColor` accepts `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`,
  * `rgba()`, `hsl()`, `hsla()`, the SVG named colors, plus `none`,
  * `transparent` and `currentColor`.
  */

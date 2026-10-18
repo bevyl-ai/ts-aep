@@ -87,7 +87,7 @@ export function descriptorsOf(cls: Function): Map<string, Descriptor> {
   return out;
 }
 
-// `py_object` proxy -> the instance it wraps.
+// `pyObject` proxy -> the instance it wraps.
 const PROXY_TARGETS = new WeakMap<object, object>();
 
 function _hasGetattr(x: object): x is { __getattr__(name: string): unknown } {
@@ -129,11 +129,11 @@ export function pyObject<T extends object>(self: T): T {
 
 /**
  * `__getattr__` / `__setattr__` for every instance of `cls` and its
- * subclasses, without wrapping each instance in a `py_object` proxy: one
+ * subclasses, without wrapping each instance in a `pyObject` proxy: one
  * proxy is spliced into the prototype chain between `cls.prototype` and its
  * base's. A read of an own field or of a member of `cls` or a subclass
  * stops before it; base-class members and misses reach it, and a miss goes
- * to `__getattr__`. Shaped for speed: a `py_object` proxy traps every read
+ * to `__getattr__`. Shaped for speed: a `pyObject` proxy traps every read
  * and write, and most traffic on these objects is own fields and their own
  * class's members.
  *
@@ -153,7 +153,7 @@ export function pyClassHooks(cls: Function, kw: { setattrPassesPrivate?: boolean
     get(target, key, receiver) {
       if (typeof key === "symbol" || key in target) return Reflect.get(target, key, receiver);
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
-      // Special methods are looked up on the type, never through `__getattr__` (see `py_object`).
+      // Special methods are looked up on the type, never through `__getattr__` (see `pyObject`).
       if (_isSpecial(key)) return undefined;
       if (_hasGetattr(receiver)) return receiver.__getattr__(key);
       return undefined;
@@ -173,10 +173,10 @@ export function pyClassHooks(cls: Function, kw: { setattrPassesPrivate?: boolean
 }
 
 const inSetattr = new WeakSet<object>();
-// The object `object_setattr` is writing to (a `py_class_hooks` instance), if any.
+// The object `objectSetattr` is writing to (a `pyClassHooks` instance), if any.
 let setattrTarget: object | null = null;
 
-/** The object a `py_object` proxy wraps (`self` itself when it is not one). */
+/** The object a `pyObject` proxy wraps (`self` itself when it is not one). */
 function targetOf(self: object): object {
   return PROXY_TARGETS.get(self) ?? self;
 }
@@ -185,7 +185,7 @@ function targetOf(self: object): object {
 export function objectSetattr(self: object, name: string, value: unknown): void {
   const target = targetOf(self);
   if (target === self) {
-    // Not a `py_object` proxy: only a `py_class_hooks` proxy can see this write.
+    // Not a `pyObject` proxy: only a `pyClassHooks` proxy can see this write.
     const outer = setattrTarget;
     setattrTarget = self;
     try {

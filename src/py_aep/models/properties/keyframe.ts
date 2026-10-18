@@ -63,9 +63,9 @@ export function _validateInterpolationType(value: KeyframeInterpolationType, key
 }
 
 /**
- * Keyframe units per second of a composition running at `frame_rate`.
+ * Keyframe units per second of a composition running at `frameRate`.
  *
- * AE's own frame grid for the rate (see `frame_grid`), not
+ * AE's own frame grid for the rate (see `frameGrid`), not
  * `frame_rate * 256 * time_scale`: the 16.16 rate and time scale stored
  * in the file are a hair off for a decimal rate (12.3456 fps gave
  * 24691, where AE counts 24692 units per second).
@@ -171,15 +171,15 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `true` if the keyframe has temporal auto-Bezier interpolation. Temporal
    * auto-Bezier interpolation affects this keyframe only if the keyframe
    * interpolation type is `KeyframeInterpolationType.BEZIER` for both
-   * `in_interpolation_type` and `out_interpolation_type`. Read / Write.
+   * `inInterpolationType` and `outInterpolationType`. Read / Write.
    */
   declare temporalAutoBezier: boolean;
 
   /**
    * `true` if the keyframe has temporal continuity. Temporal continuity affects
    * this keyframe only if the keyframe interpolation type is
-   * `KeyframeInterpolationType.BEZIER` for both `in_interpolation_type` and
-   * `out_interpolation_type`. Read / Write.
+   * `KeyframeInterpolationType.BEZIER` for both `inInterpolationType` and
+   * `outInterpolationType`. Read / Write.
    *
    * As in After Effects, setting it to `true` turns
    * {@link Keyframe.temporalAutoBezier | temporal_auto_bezier} off, a temporal
@@ -279,7 +279,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // AE keeps the derived ease when the flag is cleared.
       return;
     }
-    // The raw byte, deliberately not the `temporal_continuous` setter:
+    // The raw byte, deliberately not the `temporalContinuous` setter:
     // its hook ties the out speed to the in speed, and the derived ease
     // written below is per-side.
     this._ldatItem.temporalContinuous = true;
@@ -311,7 +311,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * right one to copy: under LINEAR the getter reports the segment
    * slope instead, and AE reports 10 here, not the slope.
    *
-   * Note the spatial equivalent is NOT symmetric: `spatial_continuous`
+   * Note the spatial equivalent is NOT symmetric: `spatialContinuous`
    * genuinely leaves the tangents alone.
    */
   _onTemporalContinuousSet(): void {
@@ -738,7 +738,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   /**
    * Persist a raw numeric value into the backing kf_data chunk.
    *
-   * Serialization reads from `kf_data`, not the in-memory `_value`
+   * Serialization reads from `kfData`, not the in-memory `_value`
    * shadow, so numeric / color / spatial keyframe values must be
    * written through here to round-trip.
    *
@@ -1023,7 +1023,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // the unit chord slope rather than a rate. Measured on AE
       // 2026 across three Orientation segments of different
       // rotation and duration, and on a mask path: always 1.
-      // Reporting only - `_single_progress` forces the LINEAR
+      // Reporting only - `_singleProgress` forces the LINEAR
       // control points and never reads the speed back.
       const linearSpeed = kind.linearEaseSpeed;
       return rawEase.map(() => new KeyframeEase(linearSpeed, _DEFAULT_INFLUENCE));
@@ -1115,7 +1115,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Keyframe units per second, in the owning LAYER's own time.
    *
    * A layer stretched past 100 % counts its ticks against a stretched
-   * base (`layer_timebase`: about `cdta.internal_timebase * |stretch| / 100`, at most 115200), so the comp's own base only applies up to
+   * base (`layerTimebase`: about `cdta.internal_timebase * |stretch| / 100`, at most 115200), so the comp's own base only applies up to
    * 100 %. Falls back to the cached comp rates when the keyframe has no
    * property yet (construction).
    */

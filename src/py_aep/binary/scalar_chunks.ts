@@ -4,7 +4,7 @@
  * Each class wraps a single value (int, float, or str) and is registered
  * for one or more chunk_type strings via the multi-key `@register` decorator.
  *
- * Integer and float chunks use `fmt_field()` to declare their binary format
+ * Integer and float chunks use `fmtField()` to declare their binary format
  * inline - the generic `Chunk.read()` / `write()` handles I/O.
  * String chunks keep a custom `read()` / `write()` (they use encoding, not struct).
  */

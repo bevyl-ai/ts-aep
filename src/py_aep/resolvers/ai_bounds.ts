@@ -85,7 +85,7 @@ export const _IDENTITY: Matrix = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 /** Advance assumed for a glyph with no width from any source. */
 export const _DEFAULT_WIDTH = 500.0;
 
-/** `_font_metrics` for text shown with no `Tf`, i.e. with no font at all. */
+/** `_fontMetrics` for text shown with no `Tf`, i.e. with no font at all. */
 export const _NO_FONT_METRICS: Metrics = [new Map(), _DEFAULT_WIDTH, -250.0, 750.0, false];
 
 /**
@@ -1344,7 +1344,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
  * is ceilinged - an extent that lands a float hair above an integer must not
  * gain a pixel. A layer with no artwork floors at 1x1.
  *
- * @param box - An entry of `read_ai_layer_bounds`, or `null` for an empty layer.
+ * @param box - An entry of `readAiLayerBounds`, or `null` for an empty layer.
  */
 export function footageSize(box: Box | null): [number, number] {
   const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => round(v * 65536));

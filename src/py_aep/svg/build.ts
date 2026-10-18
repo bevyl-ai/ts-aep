@@ -2,7 +2,7 @@
  * Build a shape layer's Contents from parsed SVG drawables.
  *
  * Translates {@link SvgDrawable | SvgDrawable}s into After Effects
- * shape groups through the public `add_property` API - one `ADBE Vector Group` per drawable, in reverse document order (AE Contents index 0
+ * shape groups through the public `addProperty` API - one `ADBE Vector Group` per drawable, in reverse document order (AE Contents index 0
  * renders on top, matching SVG's last-painted-on-top), each holding the
  * path(s), stroke, and fill. Solid paints become Fill/Stroke; gradient
  * paints become Gradient Fill/Stroke (G-Fill/G-Stroke) with the start/end
@@ -34,7 +34,7 @@ export function _leaf<K extends _LeafName>(group: PropertyGroup, matchName: K): 
   return group.property(matchName);
 }
 
-/** Narrow an `add_property` / child result to `PropertyGroup`. */
+/** Narrow an `addProperty` / child result to `PropertyGroup`. */
 export function _grp(prop: PropertyGroup): PropertyGroup {
   return prop;
 }
@@ -134,7 +134,7 @@ export function _opacityPct(alpha: number): number | null {
 /**
  * Gradient Fill/Stroke Opacity percentage for a 0-1 group opacity.
  *
- * Unlike a solid paint (`_opacity_pct`), a gradient fill/stroke stores the
+ * Unlike a solid paint (`_opacityPct`), a gradient fill/stroke stores the
  * group/element opacity as the RAW percentage, NOT 8-bit-quantized: AE 2026
  * writes `0.5 -> 50.0` and `0.3 -> 30.0` (vs `50.196` / `30.196` for solids,
  * which route opacity through the 8-bit colour alpha). The gradient's own

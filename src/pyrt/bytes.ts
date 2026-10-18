@@ -250,7 +250,7 @@ export function latin1Str(data: Uint8Array): string {
   return out;
 }
 
-/** Inverse of `latin1_str`; code units above 0xFF keep their low byte. */
+/** Inverse of `latin1Str`; code units above 0xFF keep their low byte. */
 export function latin1Bytes(text: string): Uint8Array {
   const out = new Uint8Array(text.length);
   for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;

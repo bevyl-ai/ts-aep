@@ -149,7 +149,7 @@ export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project
 }
 
 export function _fontPostScriptName(font: FontObject | string): string {
-  /** The PostScript name of a `replace_font` argument. */
+  /** The PostScript name of a `replaceFont` argument. */
   if (typeof font === "string") {
     validateFontName(font);
     return font;
@@ -529,7 +529,7 @@ export class Project {
    * Constructs the minimal root chunk skeleton AE accepts - the large
    * workspace blobs AE regenerates on open (`LSIf/AFsi`, `PTRE/ftwd`)
    * are omitted - stamps `version` into the head chunk, and wires the
-   * model the same way `parse_project` does. `aePreferencesDir` is
+   * model the same way `parseProject` does. `aePreferencesDir` is
    * stored for render-queue template lookup. `platform` (default: the
    * running operating system) selects the header stamps AE writes on
    * that platform. See {@link Application} and `py_aep.new`.
@@ -708,7 +708,7 @@ export class Project {
   /**
    * Populate `AVItem._used_in` sets on first access.
    *
-   * Deferred until the first `used_in` read or mutation that
+   * Deferred until the first `usedIn` read or mutation that
    * needs the back-references for correctness (e.g. cycle detection).
    */
   _ensureUsedInLinked(): void {
@@ -794,10 +794,10 @@ export class Project {
      * Keep the stand-ins for root chunks older projects lack synthetic.
      *
      * An AE CC 12.0 project has no nnhd, dwga or gpuG; the parser stands in
-     * synthetic ones (see `parse_project`), which `ChunkField` writes land
+     * synthetic ones (see `parseProject`), which `ChunkField` writes land
      * on. They stay out of the file: an nnhd setting persists through the
      * nhed it syncs to, and the settings with no older counterpart
-     * (`working_gamma`, `gpu_accel_type`) are gated by `minVersion`
+     * (`workingGamma`, `gpuAccelType`) are gated by `minVersion`
      * instead of being dropped on save.
      */
   }
@@ -953,7 +953,7 @@ export class Project {
   /**
    * Build the OCIO color-profile envelope AE writes for `name`.
    *
-   * `ocio_color_profile_envelope` raises for a name the config does not
+   * `ocioColorProfileEnvelope` raises for a name the config does not
    * contain, so no separate membership check is needed.
    */
   _ocioEnvelope(name: string): string {
@@ -1004,7 +1004,7 @@ export class Project {
    * only in OCIO mode (the chunk stores an OCIO display + view by name). In
    * Adobe CMS mode the display uses the operating system's monitor profile,
    * which is not stored in the project (the `pdvc` chunk is an empty `{}`,
-   * unlike `PwCs`/`working_space` which embeds the full ICC), so assigning
+   * unlike `PwCs`/`workingSpace` which embeds the full ICC), so assigning
    * raises {@link NotImplementedError}.
    *
    * **Note:** Not exposed in ExtendScript
@@ -1239,7 +1239,7 @@ export class Project {
    *   single layer instead of the merged/whole document; see also `ImportOptions.layerDimensions`
    *   and `py_aep.list_layers`.
    * @returns The newly created {@link FootageItem} or {@link CompItem}.
-   * @throws {@link ValueError} If `import_as` is unsupported for the file, if the file extension is
+   * @throws {@link ValueError} If `importAs` is unsupported for the file, if the file extension is
    *   not a supported format, if `sequence` is set for a format AE does not import as a sequence
    *   (movies, audio, HEIC, FBX, data files), or if the file has no track After Effects can decode
    *   (e.g. an AV1-only `.mp4`, which AE itself refuses to import).
@@ -1529,9 +1529,9 @@ export class Project {
         this._addLayeredSpecs(nested, folder, spec.children, file, sourceFormat, info, embeddedProfileName);
         // AE imports a PSD group as a collapsed precomp and leaves the
         // layer name empty (it inherits the nested comp's name), so
-        // `name_set` stays off - matching avoids both deltas. A
+        // `nameSet` stays off - matching avoids both deltas. A
         // clipping-run precomp instead bakes the base layer's name
-        // (still with `name_set` off) and stays uncollapsed.
+        // (still with `nameSet` off) and stays uncollapsed.
         const groupLayer = comp.add(nested);
         if (spec.collapsed) groupLayer.collapseTransformation = true;
         if (!spec.enabled) groupLayer.enabled = false;
@@ -1654,7 +1654,7 @@ export class Project {
    * Import an EPS as a single-layer composition.
    *
    * EPS is single-stream PostScript with no Optional Content Groups (the
-   * layer mechanism `read_ai_layers` relies on for `.ai`/`.pdf`), so AE
+   * layer mechanism `readAiLayers` relies on for `.ai`/`.pdf`), so AE
    * rasterizes it to one full-canvas layer. Verified against AE 2026:
    * importing `eps.eps` yields a 1-layer comp whose footage carries the
    * bare `TEXT` opti (no per-layer name/index/bbox - those stay zero,
@@ -1731,7 +1731,7 @@ export class Project {
    * Convert a PSD layer tree into import specs (recursively).
    *
    * `info` is the probed document (canvas, bit depth, layer count,
-   * channels). `clip_counter` numbers the clipping-run precomps
+   * channels). `clipCounter` numbers the clipping-run precomps
    * document-wide (AE names them `"<stem> (n)"`); `group_clipping=False`
    * disables run detection while building a run's own children.
    */
@@ -1918,7 +1918,7 @@ export class Project {
    *
    * **Note:** `layerTime` is in LAYER time, not composition time - After
    * Effects names it `layerTimeD` because `Source Text`'s
-   * `value_at_time` expects layer time, unlike other properties.
+   * `valueAtTime` expects layer time, unlike other properties.
    */
   get usedFonts(): { font: FontObject; usedAt: { layerId: number; layerTime: number }[] }[] {
     const records = new Map<
@@ -1952,10 +1952,10 @@ export class Project {
   }
 
   /**
-   * Replace all usages of `from_font` with `to_font`.
+   * Replace all usages of `fromFont` with `toFont`.
    *
    * A complete and precise replacement, even on text documents with
-   * mixed styling: the character ranges `from_font` was applied to are
+   * mixed styling: the character ranges `fromFont` was applied to are
    * preserved, and every source-text keyframe of every text layer is
    * covered. This operation is not undoable.
    *
@@ -1965,7 +1965,7 @@ export class Project {
    * @param fromFont - Font to be replaced.
    * @param toFont - Font to replace it with.
    * @param noFontLocking - Accepted for ExtendScript parity and ignored. After Effects uses it to
-   *   suppress the fallback font it picks when `to_font` lacks glyphs for the text; that fallback
+   *   suppress the fallback font it picks when `toFont` lacks glyphs for the text; that fallback
    *   is a runtime font-engine decision py_aep does not make, so py_aep always performs the direct
    *   replacement (i.e. it behaves as if this were `true`).
    * @returns `true` if at least one layer was changed.
@@ -2189,7 +2189,7 @@ export class Project {
 
   /**
    * Fill in the relative-path counts of the `alas` path records
-   * py_aep wrote, for a project saved at `project_file`.
+   * py_aep wrote, for a project saved at `projectFile`.
    *
    * Records parsed from the file keep the counts After Effects wrote, so
    * parse then save stays byte-identical. Layer lists still deferred are
@@ -2545,7 +2545,7 @@ export function _getEffectNames(rootChunks: Chunk[]): string[] {
 // stamped after the value write because the static-state tdb4 templates run
 // there. The enum/angle/scalar classification is derived from the synthesis
 // canon tables so the two mechanisms cannot drift; "gradient" is
-// scalar-stamped here although `_style_leaf_canon` leaves the spec
+// scalar-stamped here although `_styleLeafCanon` leaves the spec
 // uncanonized, the 2D point rows come from the psd_styles_offset_phase
 // fixture, and the blend-options leaves are keyed by full match name.
 /** `[hint, hint_flag, cvot, type_flags, category, pad2a, vector, spatial]`. */

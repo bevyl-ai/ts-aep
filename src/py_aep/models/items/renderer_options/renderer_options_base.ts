@@ -45,7 +45,7 @@ export class RendererOptionsBase extends SettingsView {
   }
 
   __setattr__(name: string, value: unknown): void {
-    // A fresh wrapper is built on every `renderer_options` access, so a
+    // A fresh wrapper is built on every `rendererOptions` access, so a
     // write to a name with no backing descriptor would vanish with the
     // wrapper. Reject it instead of silently dropping it.
     // NOTE(port): `name in prototype` is `hasattr(type(self), name)`; pyrt `hasattr` would run descriptor getters on the prototype.

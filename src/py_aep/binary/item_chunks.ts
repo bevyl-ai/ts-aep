@@ -1,7 +1,7 @@
 /**
  * Item and project-level chunk types: idta, head, nhed, nnhd.
  *
- * All three use `fmt_field()` for fixed-layout I/O.
+ * All three use `fmtField()` for fixed-layout I/O.
  * HeadChunk packs version info into a 32-bit bitfield word with \@property
  * accessors. NnhdChunk uses `BitField` for scattered flag bits.
  */
@@ -60,7 +60,7 @@ export class IdtaChunk extends Chunk {
   /** Label color index. */
   declare label: number;
   declare _reserved3c: Uint8Array;
-  /** Bytes 0x50-0x53: big-endian Mac-epoch seconds (see `modified_time`). */
+  /** Bytes 0x50-0x53: big-endian Mac-epoch seconds (see `modifiedTime`). */
   declare _modifiedStamp: number;
 
   // -- BitField descriptors (not attrs fields) ---------------------------
@@ -257,7 +257,7 @@ export class HeadChunk extends Chunk {
   }
 
   /**
-   * Stamp `file_format_version` (the open-compatibility gate) and its
+   * Stamp `fileFormatVersion` (the open-compatibility gate) and its
    * minor for the current major version, as After Effects saves for that
    * release (`FORMAT_VERSIONS`). AE opens a file whose format version is
    * at most its own and reads it with the rules of the (format, minor)

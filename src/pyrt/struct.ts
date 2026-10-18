@@ -287,7 +287,7 @@ function packOne(out: Uint8Array, p: number, ch: string, v: PackValue, le: boole
 
 type Packer = (out: Uint8Array, p: number, v: PackValue[]) => void;
 
-/** Straight-line `packTo` for `codes`: integers inline, other codes through `pack_one` in order. */
+/** Straight-line `packTo` for `codes`: integers inline, other codes through `packOne` in order. */
 function compilePack(codes: Code[], le: boolean): Packer | null {
   const body = ["let n;"];
   let k = 0;

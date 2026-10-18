@@ -613,7 +613,7 @@ export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _V
 // only: the two glows, Bevel/Emboss, Satin). AE imports their parameters
 // whenever the key exists, even with `present=False` (psd_noise_gradient
 // fixtures). Every other style imports its parameters iff the instance has
-// `present=True` - see `parse_layer_styles`.
+// `present=True` - see `parseLayerStyles`.
 export const _ALWAYS_WHEN_PRESENT: ReadonlySet<string> = new Set([
   "outerGlow",
   "innerGlow",
@@ -754,8 +754,8 @@ export function parseLayerStyles(
   /**
    * Resolve a layer's styles to AE Layer Styles values.
    *
-   * @param leaf - A `PsdLayer` from `read_psd_layers` (carries the raw blocks).
-   * @param global_light - The document global light from `read_global_light`.
+   * @param leaf - A `PsdLayer` from `readPsdLayers` (carries the raw blocks).
+   * @param global_light - The document global light from `readGlobalLight`.
    * @returns The resolved styles, or `null` when the layer has no style-related blocks at all or
    *   its descriptor cannot be decoded (the layer then keeps the plain disabled skeleton; a warning
    *   is emitted so the style loss is visible).
@@ -831,7 +831,7 @@ export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
    *
    * Used to warn about a group's styles, which a layered import does not
    * apply (a layer's merged styles size its footage through
-   * `merged_styles_bounds`). An undecodable descriptor counts as styled
+   * `mergedStylesBounds`). An undecodable descriptor counts as styled
    * (the conservative answer).
    */
   const blocks = node.styleBlocks;
@@ -992,9 +992,9 @@ export function mergedStylesBounds(node: PsdLayer, globalAngle: number): _Box {
   /**
    * The layer's content box once its enabled styles are merged into it.
    *
-   * @param node - A `PsdLayer` from `read_psd_layers`, its `bounds` the content the styles grow
+   * @param node - A `PsdLayer` from `readPsdLayers`, its `bounds` the content the styles grow
    *   from (`psd_bounds.psd_layer_box` passes the masked content: AE grows merged styles from it).
-   * @param global_angle - The document's global light angle (`read_global_light`).
+   * @param global_angle - The document's global light angle (`readGlobalLight`).
    * @returns `(left, top, right, bottom)` in canvas pixels; `node.bounds` when the layer has no
    *   enabled style.
    * @throws {@link NotImplementedError} If the layer has a Stroke Emboss bevel, whose merged bounds

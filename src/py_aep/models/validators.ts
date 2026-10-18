@@ -38,9 +38,9 @@ export type Validator = (value: unknown, instance?: unknown) => void;
 export type InstanceValidator<O> = (value: unknown, instance: O) => void;
 /** A bound: a number, or computed from the model instance being validated. */
 export type NumBound<O> = number | ((instance: O) => number | null) | null;
-/** Keyword arguments of `_validate_number`; a callable bound reads the model instance `O`. */
+/** Keyword arguments of `_validateNumber`; a callable bound reads the model instance `O`. */
 export type NumberKw<O> = { min?: NumBound<O>; max?: NumBound<O>; integer?: boolean; exclusiveMin?: boolean };
-/** Keyword arguments of `validate_sequence`. */
+/** Keyword arguments of `validateSequence`. */
 export type SequenceKw<O> = NumberKw<O> & { length?: NumBound<O> };
 type StaticNumberKw = { min?: number | null; max?: number | null; integer?: boolean; exclusiveMin?: boolean };
 type StaticSequenceKw = StaticNumberKw & { length?: number | null };
@@ -137,7 +137,7 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
       throw new ValueError(`expected ${n} elements, got ${items.length}`);
     }
     for (const [i, v] of items.entries()) {
-      // Elements are numeric whatever the bounds are. `_validate_number`
+      // Elements are numeric whatever the bounds are. `_validateNumber`
       // skips its own type check once both bounds resolve to None, an
       // exemption for unbounded SCALAR fields carrying complex values
       // (Gradient, Shape, ...) - never for a member of a fixed-length
@@ -165,11 +165,11 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
 export const _ENUM_VALIDATORS = new Map<EnumHelpers<number>, Validator>();
 
 /**
- * Return a validator that checks value is a member of `enum_cls`.
+ * Return a validator that checks value is a member of `enumCls`.
  *
  * Accepts both enum instances and their int equivalents. An int that is
  * not a valid member value raises `ValueError`; any other wrong type
- * raises `TypeError`. The returned validator is memoized per `enum_cls`.
+ * raises `TypeError`. The returned validator is memoized per `enumCls`.
  *
  * @param enumCls - The enum class the value must be a member of.
  */
@@ -326,7 +326,7 @@ export const validateS4 = _validateNumber({ min: -(2 ** 31), max: 2 ** 31 - 1 })
 // Any finite double: a signed f8 field with no domain restriction of its own
 // (e.g. a guide position, which may sit outside the composition). Bounding it
 // by the field width rather than leaving it unbounded keeps the type check -
-// a bare `validate_number` deliberately lets non-numerics through for complex
+// a bare `validateNumber` deliberately lets non-numerics through for complex
 // property values.
 export const validateF8 = _validateNumber({ min: -Number.MAX_VALUE, max: Number.MAX_VALUE });
 
@@ -430,7 +430,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
   if (build > 0xff) throw new ValueError(`version build must be <= 255, got ${build}`);
 }
 
-/** Validate a version string (see `validate_ae_version`) whose major is a
+/** Validate a version string (see `validateAeVersion`) whose major is a
  * release py_aep has a file-format stamp for (`FORMAT_VERSIONS`: AE 15-18
  * and 22-26, there was no AE 19-21), or a newer one.
  */

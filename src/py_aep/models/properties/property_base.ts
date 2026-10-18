@@ -351,7 +351,7 @@ export class PropertyBase {
     return this._parentProperty;
   }
 
-  /** The automatic (display) name derived from `match_name`. */
+  /** The automatic (display) name derived from `matchName`. */
   get autoName(): string {
     if (this._autoName != null) return this._autoName;
     return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
@@ -592,7 +592,7 @@ export class PropertyBase {
    *
    * @param newIndex - The target 0-based position.
    * @throws {@link ValueError} If this property is not in an indexed group.
-   * @throws {@link IndexError} If `new_index` is out of range.
+   * @throws {@link IndexError} If `newIndex` is out of range.
    */
   moveTo(newIndex: number): void {
     const [parent, parentTdgp] = this._canMutate();

@@ -20,9 +20,9 @@ export class _CurrentValue {
  * Sentinel for `FootageItem.replace`: keep the current source's choice for the
  * argument it is passed to.
  *
- * For `layer_index`, binds the new file at the layer whose stored binary index
+ * For `layerIndex`, binds the new file at the layer whose stored binary index
  * (the `sspc` layer index: PSD record index / AI document index) matches the
- * current source's. For `layer_dimensions`, preserves the current single-layer
+ * current source's. For `layerDimensions`, preserves the current single-layer
  * binding's Document/Layer Size choice.
  *
  * Not valid for `ImportOptions.layerIndex` - an import has no current binding.
@@ -76,7 +76,7 @@ export class ImportOptions {
   /**
    * The single layer to import from a layered file (`.psd`/`.psb`/
    * `.ai`/`.pdf`), as its 0-based position in the list returned by
-   * `list_layers` (top layer first - the order of the "Choose Layer"
+   * `listLayers` (top layer first - the order of the "Choose Layer"
    * dropdown of AE's import dialog). `null` (the default) imports the
    * file like AE's "Merged Layers" / whole-document option. Only valid
    * with `ImportAsType.FOOTAGE`. Read / Write.
@@ -87,7 +87,7 @@ export class ImportOptions {
    * disambiguates duplicates by dropdown position.
    *
    * @throws {@link ValueError} On import, if the index is out of range for the file's selectable
-   *   layers (see `list_layers`).
+   *   layers (see `listLayers`).
    */
   get layerIndex(): number | null {
     return this._layerIndex;
@@ -105,7 +105,7 @@ export class ImportOptions {
   }
 
   /**
-   * Footage dimensions for a `layer_index` import: `"document"` (the
+   * Footage dimensions for a `layerIndex` import: `"document"` (the
    * full canvas) or `"layer"` (the layer's content box), matching the
    * "Footage Dimensions" option of AE's import dialog. `null` (the
    * default) follows the machine's sticky "Footage Dimensions" preference
@@ -250,7 +250,7 @@ export class ImportOptions {
    *
    * @throws {@link ValueError} If set while `forceAlphabetical` is `true` (After Effects: "You
    *   cannot set sequence range start for an alphabetical sequence"), or if the value does not fit
-   *   the `sspc` `start_frame` field (a `u4`: 0..4294967295).
+   *   the `sspc` `startFrame` field (a `u4`: 0..4294967295).
    */
   get rangeStart(): number {
     return this._rangeStart;
@@ -272,12 +272,12 @@ export class ImportOptions {
    * A `rangeEnd` beyond the last existing frame keeps the range:
    * After Effects treats the missing tail frames as implied (rendered
    * as placeholder bars), and py_aep writes the same
-   * `start_frame`/`end_frame` bounds. The resulting footage duration is
+   * `startFrame`/`endFrame` bounds. The resulting footage duration is
    * not clamped to After Effects' 3-hour ceiling - AE 2026 opens a
    * longer ranged sequence without complaint.
    *
    * @throws {@link ValueError} If set while `forceAlphabetical` is `true`, or if the value does
-   *   not fit the `sspc` `end_frame` field (a `u4`: 0..4294967295).
+   *   not fit the `sspc` `endFrame` field (a `u4`: 0..4294967295).
    */
   get rangeEnd(): number {
     return this._rangeEnd;
@@ -295,7 +295,7 @@ export class ImportOptions {
    * Check whether the file can be imported as the given type.
    *
    * Gates on what py_aep can actually import: the per-extension
-   * capability table (`get_import_as_types`) reflects After Effects,
+   * capability table (`getImportAsTypes`) reflects After Effects,
    * while a file whose format py_aep does not implement (absent from
    * `data.file_formats`, or marked unsupported) returns `false` for
    * every type. `ImportAsType.PROJECT` is never importable (py_aep does
@@ -332,7 +332,7 @@ export class ImportOptions {
       !AI_COMP_EXTENSIONS.has(suffix)
     ) {
       // AE offers a cropped import for `.eps`/`.exr` too, but
-      // `import_file` implements it for SVG, Illustrator/PDF and
+      // `importFile` implements it for SVG, Illustrator/PDF and
       // Photoshop only.
       return false;
     }

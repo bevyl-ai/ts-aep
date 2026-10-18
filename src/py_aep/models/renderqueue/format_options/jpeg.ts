@@ -47,7 +47,7 @@ export class JpegFormatOptions extends FormatOptionsBase {
 
   /**
    * Number of progressive scans (3, 4, or 5). Only relevant when
-   * `format_type` is `JpegFormatType.PROGRESSIVE`. Read / Write.
+   * `formatType` is `JpegFormatType.PROGRESSIVE`. Read / Write.
    */
   declare scans: number;
 }

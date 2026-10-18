@@ -21,19 +21,19 @@ export class FileFormat {
    * `opti` asset-info strategy, verified against AE 2026:
    *
    * - `"empty"`: AE re-reads the located file (FBX); an empty `opti` works.
-   * - `"exr"`: AE needs the `oEXR` header (see `build_exr_opti_data`) to
+   * - `"exr"`: AE needs the `oEXR` header (see `buildExrOptiData`) to
    *   place an EXR's data window.
    * - `"generic"`: AE's generic media importer needs the 58-byte `opti` header
    *   (PNG, JPEG, TGA, MOV, WAV, HEIC). AE opens a PNG still with an empty
    *   `opti` but crashes as soon as it renders it.
    * - `"tiff"`: AE needs the 602-byte TIFF-specific header (see
-   *   `build_tiff_opti_data`).
+   *   `buildTiffOptiData`).
    * - `"psd"`: the 602-byte Photoshop header AE writes for the merged
-   *   document (see `build_psd_opti_data`).
+   *   document (see `buildPsdOptiData`).
    * - `"text"`: the 596-byte Illustrator/PDF/EPS header (see
-   *   `build_ai_document_opti_data` and `build_text_opti_data`).
+   *   `buildAiDocumentOptiData` and `buildTextOptiData`).
    * - `"dpx"`: AE needs the 48-byte DPX/Cineon format-options header (see
-   *   `build_dpx_opti_data`).
+   *   `buildDpxOptiData`).
    * - `"unsupported"`: AE requires a format-specific `opti` not yet
    *   reverse-engineered; import is refused rather than crashing AE.
    */
@@ -48,7 +48,7 @@ export class FileFormat {
 
   /**
    * `true` for the formats whose footage AE 2026's import marks in `sspc`
-   * (`SspcChunk.media_format`, and `media_file` for a single file): JPEG,
+   * (`SspcChunk.media_format`, and `mediaFile` for a single file): JPEG,
    * BMP/GIF, HEIC, movies, audio and data files.
    */
   readonly mediaFlag: boolean;
@@ -250,7 +250,7 @@ export const _IMPORT_AS_TYPES: Map<string, ReadonlySet<ImportAsType>> = new Map<
 
 // Extensions imported by converting the file directly into a composition
 // (no FileSource/footage item), so they are absent from `_FILE_FORMATS` yet
-// are still importable. `can_import_as` gates these on `_IMPORT_AS_TYPES`
+// are still importable. `canImportAs` gates these on `_IMPORT_AS_TYPES`
 // alone (no media-format lookup).
 export const COMP_CONVERSION_EXTENSIONS: ReadonlySet<string> = new Set<string>([".svg"]);
 

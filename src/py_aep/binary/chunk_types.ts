@@ -13,7 +13,7 @@ import type { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, 
 import type { ArsiChunk, RoptChunk, RoutChunk, RouuChunk } from "./render_chunks.ts";
 import type { AsciiChunk, F8Chunk, S2Chunk, S4Chunk, U1Chunk, U2Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 
-/** Registered chunk class by `chunk_type`. */
+/** Registered chunk class by `chunkType`. */
 export interface ChunkTypes {
   ARsi: ArsiChunk;
   CCId: U4Chunk;
@@ -134,7 +134,7 @@ export interface ChunkTypes {
   wsns: WsnsChunk;
 }
 
-/** Registered chunk class (the constructor) by `chunk_type`: what `CHUNK_TYPES.get` returns. */
+/** Registered chunk class (the constructor) by `chunkType`: what `CHUNK_TYPES.get` returns. */
 export interface ChunkClasses {
   ARsi: typeof ArsiChunk;
   CCId: typeof U4Chunk;
@@ -261,11 +261,11 @@ export type ChunkOf<K extends string> = K extends keyof ChunkTypes ? ChunkTypes[
 // Struct fields of each chunk/item class (`define(Cls, { f: u4_field(), ... })`).
 // Integers are `number`, `q`/`Q` are `number | bigint` (the unpack is a bigint, the
 // writers store a number), raw `s` is `Uint8Array`, an encoding makes `string`,
-// `bool_field` and `coerce: py_bool` are `boolean`, an enum coerce (or a `declare`
-// of an enum over an integer) is that enum, `items_field` is the item class.
+// `boolField` and `coerce: py_bool` are `boolean`, an enum coerce (or a `declare`
+// of an enum over an integer) is that enum, `itemsField` is the item class.
 // Optional fields include `null`. A field shared by every variant of a
 // registered base (`RoptChunk`, `OptiChunk`) is declared on the base too,
-// which is what `find_by_type` returns and what models store.
+// which is what `findByType` returns and what models store.
 declare module "./composition_chunks.ts" {
   interface CdtaChunk {
     resolutionFactorH: number;

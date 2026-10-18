@@ -8,7 +8,7 @@
 //   py_aep.parse("/in.aep").project.save("/out.aep");
 //   const out = memfs.read("/out.aep");
 //
-// `use_memory_fs()` forces the in-memory backend where `node:fs` exists too
+// `useMemoryFs()` forces the in-memory backend where `node:fs` exists too
 // (Workers with `nodejs_compat`, tests).
 
 export interface HostStats {
@@ -451,7 +451,7 @@ export function scandir(p: string): HostDirent[] {
 
 /**
  * Move bytes in and out of the in-memory file system (the backend in
- * browsers and Workers; see `use_memory_fs`).
+ * browsers and Workers; see `useMemoryFs`).
  */
 export const memfs = {
   write(p: string, data: Uint8Array | ArrayBuffer): void {

@@ -112,7 +112,7 @@ export class _EnumParam {
  *
  * Reads return `null` when the parameter is absent and fall back to
  * the raw string when it is non-numeric (the binary is trusted, like
- * `_try_enum_or_int` for enums). Writes require an `int`.
+ * `_tryEnumOrInt` for enums). Writes require an `int`.
  */
 export class _ScalarParam {
   declare _key: string;
@@ -642,7 +642,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   /**
    * The MPEG-1 audio layer as an {@link MPEGAudioLayer} value extracted
    * from the `ADBEMPEGAudioLayer` parameter, or `null` when the
-   * parameter is absent. Only meaningful when `mpeg_audio_format` is
+   * parameter is absent. Only meaningful when `mpegAudioFormat` is
    * `MPEGAudioFormat.MPEG`. Read / Write.
    */
   declare mpegAudioLayer: MPEGAudioLayer | number | null;
@@ -707,7 +707,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   /**
    * The DNxHR/DNxHD resolution preset as a {@link DnxResolution} value
    * extracted from the `ADBEVideoResolution` parameter, or `null` when
-   * the parameter is absent. Only meaningful when `video_codec` is
+   * the parameter is absent. Only meaningful when `videoCodec` is
    * `VideoCodec.DNXHR_DNXHD`; the param survives codec changes (stale
    * under other codecs). Falls back to a plain `int` when the value is
    * not in the {@link DnxResolution} enum. Read / Write.
@@ -717,7 +717,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   /**
    * The DNxHR/DNxHD `Alpha` choice from the `ADBEDNxHDAlphaType`
    * parameter: `1` = Compressed, `null` (param absent) = None. Only
-   * meaningful when `video_codec` is `VideoCodec.DNXHR_DNXHD`.
+   * meaningful when `videoCodec` is `VideoCodec.DNXHR_DNXHD`.
    * (`ADBEVideoAlphaType` is unrelated - it reads `true` on every
    * sampled module.) Read / Write.
    */
