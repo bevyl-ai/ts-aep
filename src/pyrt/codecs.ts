@@ -3,8 +3,25 @@
 // Python str is code points, a JS string UTF-16 units. A lone surrogate is
 // representable in both, which is what lets `surrogateescape` round-trip.
 
-import { UnicodeDecodeError, UnicodeEncodeError, LookupError, TypeError_ } from "./errors.ts";
-import { CP1252, MAC_ROMAN } from "./codepages.ts";
+import { UnicodeDecodeError, UnicodeEncodeError, LookupError, NotImplementedError, TypeError_ } from "./errors.ts";
+import {
+  type CjkCodepage,
+  CP874,
+  CP932,
+  CP936,
+  CP949,
+  CP950,
+  CP1250,
+  CP1251,
+  CP1252,
+  CP1253,
+  CP1254,
+  CP1255,
+  CP1256,
+  CP1257,
+  CP1258,
+  MAC_ROMAN,
+} from "./codepages.ts";
 
 export type Errors = "strict" | "surrogateescape" | "ignore" | "replace";
 
@@ -40,18 +57,45 @@ function norm_uncached(encoding: string): string {
   if (e === "utf-32-le" || e === "utf-32le") return "utf-32-le";
   if (e === "utf-32-be" || e === "utf-32be") return "utf-32-be";
   if (e === "mac-roman" || e === "macroman" || e === "mac") return "mac-roman";
-  if (e === "cp1252" || e === "windows-1252") return "cp1252";
+  const windows = /^(?:windows-)?(125[0-8])$/.exec(e);
+  if (windows) return `cp${windows[1]}`;
+  if (e === "932" || e === "ms932" || e === "mskanji" || e === "ms-kanji") return "cp932";
+  if (e === "gbk" || e === "936" || e === "ms936") return "cp936";
+  if (e === "949" || e === "ms949" || e === "uhc") return "cp949";
+  if (e === "950" || e === "ms950") return "cp950";
   return e;
 }
 
-function bad_byte(out: string[], byte: number, errors: Errors, enc: string, pos: number): void {
+/** The charmap code pages: CPython's codec tables for the high half. */
+const SINGLE_BYTE: ReadonlyMap<string, readonly number[]> = new Map([
+  ["mac-roman", MAC_ROMAN],
+  ["cp874", CP874],
+  ["cp1250", CP1250],
+  ["cp1251", CP1251],
+  ["cp1252", CP1252],
+  ["cp1253", CP1253],
+  ["cp1254", CP1254],
+  ["cp1255", CP1255],
+  ["cp1256", CP1256],
+  ["cp1257", CP1257],
+  ["cp1258", CP1258],
+]);
+
+const CJK: ReadonlyMap<string, CjkCodepage> = new Map([
+  ["cp932", CP932],
+  ["cp936", CP936],
+  ["cp949", CP949],
+  ["cp950", CP950],
+]);
+
+function bad_byte(out: string[], byte: number, errors: Errors, enc: string, pos: number, reason = "invalid start byte"): void {
   if (errors === "surrogateescape") {
     out.push(String.fromCharCode(0xdc00 + byte));
   } else if (errors === "replace") {
     out.push("�");
   } else if (errors !== "ignore") {
     throw new UnicodeDecodeError(
-      `'${enc}' codec can't decode byte 0x${byte.toString(16).padStart(2, "0")} in position ${pos}: invalid start byte`,
+      `'${enc}' codec can't decode byte 0x${byte.toString(16).padStart(2, "0")} in position ${pos}: ${reason}`,
     );
   }
 }
@@ -207,8 +251,81 @@ function decode_single_byte(data: Uint8Array, errors: Errors, limit: number, enc
     const b = data[i];
     if (b < limit) out.push(String.fromCharCode(b));
     else if (table && table[b - 0x80] >= 0) out.push(String.fromCharCode(table[b - 0x80]));
-    else bad_byte(out, b, errors, enc, i);
+    else bad_byte(out, b, errors, enc, i, table ? "character maps to <undefined>" : "ordinal not in range(128)");
   }
+  return out.join("");
+}
+
+const CJK_DECODERS = new Map<string, TextDecoder | null>();
+
+function cjk_decoder(label: string): TextDecoder | null {
+  const cached = CJK_DECODERS.get(label);
+  if (cached !== undefined) return cached;
+  let decoder: TextDecoder | null = null;
+  try {
+    // bun-types narrows the label to three encodings; the WHATWG ones are all valid.
+    decoder = Reflect.construct(TextDecoder, [label, { fatal: true }]);
+  } catch {
+    // a host without the legacy encodings (RangeError): no such codec
+  }
+  CJK_DECODERS.set(label, decoder);
+  return decoder;
+}
+
+/**
+ * CPython's multibyte decode: the code page's validity map splits the input
+ * into characters and errors (a bad lead byte is one error and decoding
+ * resumes at the next byte); runs of valid characters go through the WHATWG
+ * decoder, which decodes them as CPython does except for the listed overrides.
+ */
+function decode_cjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encoding: string): string {
+  const decoder = cjk_decoder(codec.label);
+  if (decoder === null) throw new LookupError(`unknown encoding: ${encoding}`);
+  const out: string[] = [];
+  let run = 0;
+  const flush = (end: number): void => {
+    if (end > run) out.push(decoder.decode(data.subarray(run, end)));
+  };
+  let i = 0;
+  while (i < data.length) {
+    const b = data[i];
+    if (b < 0x80) {
+      i += 1;
+      continue;
+    }
+    const lead = codec.leads[b - 0x80];
+    if (lead < 0) {
+      const cp = codec.singles.get(b);
+      if (cp !== undefined) {
+        flush(i);
+        out.push(String.fromCharCode(cp));
+        run = i + 1;
+      }
+      i += 1;
+      continue;
+    }
+    if (i + 1 < data.length) {
+      const t = data[i + 1];
+      const trails = codec.trails[lead];
+      let valid = false;
+      for (let k = 0; k < trails.length && !valid; k += 2) valid = t >= trails[k] && t <= trails[k + 1];
+      if (valid) {
+        const cp = codec.pairs.get((b << 8) | t);
+        if (cp !== undefined) {
+          flush(i);
+          out.push(String.fromCharCode(cp));
+          run = i + 2;
+        }
+        i += 2;
+        continue;
+      }
+    }
+    flush(i);
+    bad_byte(out, b, errors, codec.name, i, `${i + 1 < data.length ? "illegal" : "incomplete"} multibyte sequence`);
+    i += 1;
+    run = i;
+  }
+  flush(data.length);
   return out.join("");
 }
 
@@ -350,10 +467,6 @@ export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "s
       return decode_single_byte(data, errors, 0x80, "ascii");
     case "latin-1":
       return decode_single_byte(data, errors, 0x100, "latin-1");
-    case "mac-roman":
-      return decode_single_byte(data, errors, 0x80, "charmap", MAC_ROMAN);
-    case "cp1252":
-      return decode_single_byte(data, errors, 0x80, "charmap", CP1252);
     case "utf-16-le":
       return decode_utf16(data, errors, true);
     case "utf-16-be":
@@ -373,8 +486,14 @@ export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "s
       if (data[0] === 0 && data[1] === 0 && data[2] === 0xfe && data[3] === 0xff) return decode_utf32(data.subarray(4), errors, false, 4);
       return decode_utf32(data, errors, true);
     }
-    default:
+    default: {
+      const n = norm(encoding);
+      const table = SINGLE_BYTE.get(n);
+      if (table) return decode_single_byte(data, errors, 0x80, "charmap", table);
+      const cjk = CJK.get(n);
+      if (cjk) return decode_cjk(data, errors, cjk, encoding);
       throw new LookupError(`unknown encoding: ${encoding}`);
+    }
   }
 }
 
@@ -387,10 +506,6 @@ export function encode(text: string, encoding = "utf-8", errors: Errors = "stric
       return encode_single_byte(text, errors, 0x80, "ascii");
     case "latin-1":
       return encode_single_byte(text, errors, 0x100, "latin-1");
-    case "mac-roman":
-      return encode_single_byte(text, errors, 0x80, "charmap", MAC_ROMAN);
-    case "cp1252":
-      return encode_single_byte(text, errors, 0x80, "charmap", CP1252);
     case "utf-16-le":
       return encode_utf16(text, true);
     case "utf-16-be":
@@ -413,7 +528,12 @@ export function encode(text: string, encoding = "utf-8", errors: Errors = "stric
       out.set(body, 4);
       return out;
     }
-    default:
+    default: {
+      const n = norm(encoding);
+      const table = SINGLE_BYTE.get(n);
+      if (table) return encode_single_byte(text, errors, 0x80, "charmap", table);
+      if (CJK.has(n)) throw new NotImplementedError(`encoding to ${encoding} is not supported`);
       throw new LookupError(`unknown encoding: ${encoding}`);
+    }
   }
 }

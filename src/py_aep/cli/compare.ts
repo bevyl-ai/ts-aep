@@ -840,11 +840,10 @@ export function _report_suppressed(suppressed: number, exact: boolean): void {
   }
 }
 
-// TODO(port): argparse has no TS equivalent. parse_args below hand-implements only this CLI's
-// option set (prefix matching, `--opt=value`, `--`, exit-2 errors, "unrecognized arguments");
-// HELP/USAGE are hand-written literals, so help wrapping differs from argparse only if the
-// option set or terminal width (COLUMNS) changes, and argparse edge cases (e.g. `-c4` short
-// clustering, `type=int` error text for odd inputs) outside those paths are not generated.
+// TODO(port): no argparse shim; parse_args hand-implements this CLI's options (prefix matching,
+// `--opt=value`, `--`, nargs="+" runs, exit-2 errors). HELP/USAGE are argparse's layout for its
+// default 80-column (non-tty) width; argparse wraps to COLUMNS or the terminal width instead.
+// An unrecognized option errors at once where argparse first reports missing positionals.
 export const PROG = "aep-compare";
 export const OPTIONS = ["--help", "--json", "--filter", "--context", "--exact"];
 
@@ -857,16 +856,16 @@ export const HELP = `${USAGE}
 Compare After Effects project files (.aep)
 
 positional arguments:
-  files                 Two or more AEP files to compare
+  files            Two or more AEP files to compare
 
 options:
-  -h, --help            show this help message and exit
-  --json                Output results in JSON format
-  --filter FILTER       Filter results to only show chunks matching this
-                        pattern (case-insensitive)
-  --context N           Show N surrounding bytes around each difference
-  --exact               Byte-exact comparison; do not tolerate float-precision
-                        differences in cdat/shph/ldat coordinate fields
+  -h, --help       show this help message and exit
+  --json           Output results in JSON format
+  --filter FILTER  Filter results to only show chunks matching this pattern
+                   (case-insensitive)
+  --context N      Show N surrounding bytes around each difference
+  --exact          Byte-exact comparison; do not tolerate float-precision
+                   differences in cdat/shph/ldat coordinate fields
 
 Examples:
     ${PROG} file1.aep file2.aep
@@ -896,12 +895,12 @@ export function is_negative_number(arg: string): boolean {
 }
 
 /** Long-option prefix matching as argparse does by default (allow_abbrev). */
-export function resolve_option(name: string): string | null {
+export function resolve_option(name: string, arg: string = name): string | null {
   if (name === "-h") return "--help";
   if (!name.startsWith("--")) return null;
   if (OPTIONS.includes(name)) return name;
   const hits = OPTIONS.filter((o) => o.startsWith(name));
-  if (hits.length > 1) parser_error(`ambiguous option: ${name} could match ${hits.join(", ")}`);
+  if (hits.length > 1) parser_error(`ambiguous option: ${arg} could match ${hits.join(", ")}`);
   return hits.length === 1 ? hits[0] : null;
 }
 
@@ -944,7 +943,7 @@ export function parse_args(argv: string[]): Args {
       name = arg.slice(0, arg.indexOf("="));
       value = arg.slice(arg.indexOf("=") + 1);
     }
-    const opt = resolve_option(name);
+    const opt = resolve_option(name, arg);
     if (opt === null) {
       extras.push(arg);
       i++;

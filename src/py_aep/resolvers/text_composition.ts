@@ -34,6 +34,7 @@
  */
 
 import * as host from "../../pyrt/host.ts";
+import * as unicodedata from "../../pyrt/unicodedata.ts";
 import * as fontkit from "fontkit";
 import type { Path } from "../../pyrt/index.ts";
 import {
@@ -199,17 +200,6 @@ export const _AUTO_LEADING_FACTOR = 1.2;
 export const _FAUX_BOLD_ADVANCE = 0.027;
 export const _SMALL_CAPS_SCALE = 0.7;
 
-// TODO(port): unicodedata.bidirectional / unicodedata.combining have no shim
-// (JS regex has no Bidi_Class or Canonical_Combining_Class property).
-// These approximate them with script and general-category properties: R/AL/AN
-// ~ the RTL scripts, and a nonzero canonical combining class ~ the M* marks.
-// Exact parity needs the Bidi_Class and canonical-combining-class
-// tables. The script approximation also flags some non-letter Arabic-block
-// characters that Bidi_Class marks as ON/CS/NSM, so it can refuse text
-// Python accepts.
-export const _RTL_BIDI_SCRIPT =
-  /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}\p{Script=Adlam}]/u;
-
 // The font index is process-lifetime, so an indexed file can vanish
 // (CoreSync eviction, uninstall) before its first shaping; those opens
 // must refuse, not leak OS/HarfBuzz errors into innocuous reads.
@@ -217,14 +207,6 @@ export const _FONT_OPEN_ERRORS: (abstract new (...args: never[]) => object)[] = 
 const _harfbuzz_error = hb.HarfBuzzError;
 if (_harfbuzz_error != null) {
   _FONT_OPEN_ERRORS.push(_harfbuzz_error);
-}
-
-export function _bidirectional_is_rtl(char: string): boolean {
-  return _RTL_BIDI_SCRIPT.test(char);
-}
-
-export function _is_combining(char: string): boolean {
-  return /\p{M}/u.test(char);
 }
 
 /**
@@ -405,10 +387,10 @@ export function _check_envelope(doc: TextDocument, raw: string): void {
     if (code > 0xffff) {
       throw new CompositionUnsupported("non-BMP characters");
     }
-    if (char !== "\r" && _bidirectional_is_rtl(char)) {
+    if (char !== "\r" && ["R", "AL", "AN"].includes(unicodedata.bidirectional(char))) {
       throw new CompositionUnsupported("right-to-left text");
     }
-    if (_is_combining(char)) {
+    if (unicodedata.combining(char) !== 0) {
       throw new CompositionUnsupported("combining marks");
     }
   }

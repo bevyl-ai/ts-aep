@@ -1043,7 +1043,11 @@ export function join_all(parts: Uint8Array[]): Uint8Array {
  * at most `max_length` bytes. Z_SYNC_FLUSH keeps a truncated stream from
  * throwing, as Python's partial decompress does.
  */
-// TODO(port): Python's decompressobj stops inflating at max_length; node:zlib inflateSync has no partial-output cap (maxOutputLength throws instead), so a stream that expands far beyond max_length is fully inflated before being truncated. Output bytes are identical; only memory/time on hostile streams differs (the caller bounds only the declared rectangle, not the stream).
+// TODO(port): CPython's decompressobj stops inflating once max_length bytes are out, so a fault
+// later in the stream goes unseen and the first max_length bytes come back. pyrt's zlib (fflate)
+// cannot stop inside a push and misreads codes split across pushes, so it inflates the whole
+// stream: such a fault raises zlib.error here, and a stream that expands far beyond max_length
+// costs its full size. Exact parity needs an inflater that stops where zlib's does.
 export function inflate_bounded(body: Uint8Array, max_length: number): Uint8Array {
   return zlib.decompressobj().decompress(body, max_length);
 }
