@@ -88,13 +88,13 @@ describe("TestParseLayerStyles", () => {
     py_assert(styles != null);
     const gradient = getitem(styles.values, "outerGlow/gradient");
     py_assert(gradient instanceof Gradient);
-    expect(len(gradient.color_stops)).toBe(5);
-    expect(len(gradient.alpha_stops)).toBe(2);
+    expect(len(gradient.colorStops)).toBe(5);
+    expect(len(gradient.alphaStops)).toBe(2);
     // Stop positions are Lctn/4096; colors Rd/255 (write path quantizes
     // to the f4 AE stores).
-    const offsets = gradient.color_stops.map((stop) => stop.offset);
+    const offsets = gradient.colorStops.map((stop) => stop.offset);
     expect(py_eq(offsets, [0.0, 0.25, 0.5, 0.75, 1.0])).toBe(true);
-    const first = gradient.color_stops[0].color;
+    const first = gradient.colorStops[0].color;
     expect(Math.abs(first[0] - 0.9137255) < 1e-6).toBe(true);
   });
 

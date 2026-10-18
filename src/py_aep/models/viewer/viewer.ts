@@ -12,7 +12,7 @@ import type { View } from "./view.ts";
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const viewer = app.active_viewer;
+ * const viewer = app.activeViewer;
  * console.log(viewer.type);
  * ```
  *
@@ -54,13 +54,13 @@ export class Viewer {
    *
    * **Note:** The active locked view index is not persisted in the binary
    * format. It defaults to 0 (first view). Set it manually or call
-   * `View.set_active()` to change which view is active.
+   * `View.setActive()` to change which view is active.
    */
-  get active_view_index(): number {
+  get activeViewIndex(): number {
     return this._active_view_index;
   }
 
-  set active_view_index(value: number) {
+  set activeViewIndex(value: number) {
     // With no views the index is moot; clamp the upper bound to 0 so the
     // bound stays valid (an empty views list would otherwise give max=-1,
     // rejecting every value including 0).

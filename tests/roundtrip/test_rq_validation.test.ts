@@ -25,7 +25,7 @@ const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "output_module", "file.aep");
 
 function _rqi(project: Project): RenderQueueItem {
-  return as_instance(project.render_queue, RenderQueue).items[0];
+  return as_instance(project.renderQueue, RenderQueue).items[0];
 }
 
 describe("TestStrictBools", () => {
@@ -45,7 +45,7 @@ describe("TestStrictBools", () => {
 
   test("test_om_bool_settings_reject_non_bool", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     for (const key of [
       "Crop",
       "Resize",
@@ -70,12 +70,12 @@ describe("TestStrictBools", () => {
 describe("TestSkipFramesBounds", () => {
   test("test_ae_range_0_to_99", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    rqi.skip_frames = 0;
+    rqi.skipFrames = 0;
     raises(ValueError, () => {
-      rqi.skip_frames = 100;
+      rqi.skipFrames = 100;
     });
     raises(ValueError, () => {
-      rqi.skip_frames = -1;
+      rqi.skipFrames = -1;
     });
   });
 });
@@ -104,41 +104,41 @@ describe("TestTimeSpanSemantics", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
     const rqi = _rqi(project);
-    const end = rqi.time_span_start + rqi.time_span_duration;
+    const end = rqi.timeSpanStart + rqi.timeSpanDuration;
     const new_start = end / 2;
-    rqi.time_span_start = new_start;
-    expect(approx(rqi.time_span_start, new_start)).toBe(true);
-    expect(approx(rqi.time_span_start + rqi.time_span_duration, end)).toBe(true);
+    rqi.timeSpanStart = new_start;
+    expect(approx(rqi.timeSpanStart, new_start)).toBe(true);
+    expect(approx(rqi.timeSpanStart + rqi.timeSpanDuration, end)).toBe(true);
 
     const out = tmp_path.div("span.aep");
     project.save(out);
     const rqi2 = _rqi(parse_project_fresh(out));
-    expect(approx(rqi2.time_span_start, new_start)).toBe(true);
-    expect(approx(rqi2.time_span_start + rqi2.time_span_duration, end)).toBe(true);
+    expect(approx(rqi2.timeSpanStart, new_start)).toBe(true);
+    expect(approx(rqi2.timeSpanStart + rqi2.timeSpanDuration, end)).toBe(true);
   });
 
   test("test_duration_keeps_start", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    rqi.time_span_start = 0.5;
-    const start = rqi.time_span_start;
-    rqi.time_span_duration = 1.0;
-    expect(approx(rqi.time_span_start, start)).toBe(true);
-    expect(approx(rqi.time_span_duration, 1.0)).toBe(true);
+    rqi.timeSpanStart = 0.5;
+    const start = rqi.timeSpanStart;
+    rqi.timeSpanDuration = 1.0;
+    expect(approx(rqi.timeSpanStart, start)).toBe(true);
+    expect(approx(rqi.timeSpanDuration, 1.0)).toBe(true);
   });
 
   test("test_degenerate_spans_rejected", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    const end = rqi.time_span_start + rqi.time_span_duration;
+    const end = rqi.timeSpanStart + rqi.timeSpanDuration;
     raises(ValueError, () => {
-      rqi.time_span_start = -5;
+      rqi.timeSpanStart = -5;
     });
     raises(ValueError, () => {
-      rqi.time_span_start = end + 1; // would leave a negative duration
+      rqi.timeSpanStart = end + 1; // would leave a negative duration
     });
-    const one_frame = 1.0 / rqi.comp.frame_rate;
+    const one_frame = 1.0 / rqi.comp.frameRate;
     raises(ValueError, () => {
-      rqi.time_span_duration = one_frame / 2; // below AE's one-frame bound
+      rqi.timeSpanDuration = one_frame / 2; // below AE's one-frame bound
     });
-    rqi.time_span_duration = one_frame; // exactly one frame is legal
+    rqi.timeSpanDuration = one_frame; // exactly one frame is legal
   });
 });

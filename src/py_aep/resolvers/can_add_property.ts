@@ -1,5 +1,5 @@
 /**
- * Resolver for `PropertyGroup.can_add_property`.
+ * Resolver for `PropertyGroup.canAddProperty`.
  *
  * Determines whether a property with a given match name or display name
  * can be added to a specific indexed group.

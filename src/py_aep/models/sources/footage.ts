@@ -52,8 +52,8 @@ export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [numb
  * writing a mode over it would claim an alpha channel the media does not
  * have. AE greys the whole alpha section out for such footage.
  */
-export function _validate_has_alpha(value: AlphaMode, instance: { has_alpha?: boolean } | null = null): void {
-  if (instance != null && !instance.has_alpha) {
+export function _validate_has_alpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
+  if (instance != null && !instance.hasAlpha) {
     throw new ValueError(
       "cannot set alpha_mode: the footage has no alpha channel " +
         "(has_alpha is False)",
@@ -117,13 +117,13 @@ export class FootageSource {
    * If `has_alpha` is `false`, this attribute has no relevant meaning.
    * Read / Write.
    */
-  declare alpha_mode: AlphaMode;
+  declare alphaMode: AlphaMode;
 
   /**
    * How the fields are to be separated in non-still footage.
    * Read / Write.
    */
-  declare field_separation_type: FieldSeparationType;
+  declare fieldSeparationType: FieldSeparationType;
 
   /**
    * When `true`, the footage has an alpha component. In this case, the
@@ -131,13 +131,13 @@ export class FootageSource {
    * values. When `false`, those attributes have no relevant meaning for the
    * footage. Read-only.
    */
-  declare has_alpha: boolean;
+  declare hasAlpha: boolean;
 
   /**
    * When `true`, After Effects uses special algorithms to determine how to
    * perform high-quality field separation. Read / Write.
    */
-  declare high_quality_field_separation: boolean;
+  declare highQualityFieldSeparation: boolean;
 
   /**
    * When `true`, an alpha channel in a footage clip or proxy should be
@@ -146,7 +146,7 @@ export class FootageSource {
    * {@link AlphaMode | AlphaMode.IGNORE}, this attribute is
    * ignored. Read / Write.
    */
-  declare invert_alpha: boolean;
+  declare invertAlpha: boolean;
 
   /**
    * The number of times that the footage is to be played consecutively
@@ -160,7 +160,7 @@ export class FootageSource {
    * {@link AlphaMode | AlphaMode.PREMULTIPLIED}.
    * Read / Write.
    */
-  declare premul_color: number[];
+  declare premulColor: number[];
 
   /**
    * The Interpret As Linear Light setting from the Interpret Footage \>
@@ -168,7 +168,7 @@ export class FootageSource {
    *
    * **Note:** Not exposed in ExtendScript.
    */
-  declare interpret_as_linear_light: LinearLightMode;
+  declare interpretAsLinearLight: LinearLightMode;
 
   /**
    * A frame rate to use instead of the `native_frame_rate` value. If
@@ -189,7 +189,7 @@ export class FootageSource {
    * @throws {@link ValueError} If the rate is outside 0-999 or between 0 and 0.0005 (After Effects
    *   cannot open a project holding such a rate).
    */
-  get conform_frame_rate(): number {
+  get conformFrameRate(): number {
     const sspc = this._sspc;
     if (this._rate_is_assumed) {
       return sspc.conform_frame_rate || sspc.native_frame_rate;
@@ -197,7 +197,7 @@ export class FootageSource {
     return sspc.conform_frame_rate;
   }
 
-  set conform_frame_rate(value: number) {
+  set conformFrameRate(value: number) {
     validate_conform_frame_rate(value);
     if (0 < value && value < _MIN_CONFORM_FRAME_RATE) {
       // AE 2026 takes the rate to the nearest thousandth: below 0.0005
@@ -230,14 +230,14 @@ export class FootageSource {
    * If `remove_pulldown` is active, the rate is multiplied by 0.8.
    * Read-only.
    */
-  declare display_frame_rate: number;
+  declare displayFrameRate: number;
 
   /**
    * Controls which pulldown phase to remove from the source footage.
    * {@link PulldownPhase | PulldownPhase.OFF} by default.
    * Read / Write.
    */
-  declare remove_pulldown: PulldownPhase;
+  declare removePulldown: PulldownPhase;
 
   /**
    * Co-set the `sspc` premultiplied flag bit with the alpha mode.
@@ -249,7 +249,7 @@ export class FootageSource {
    * straight alpha when the file is opened - if the bit is clear.
    */
   _on_alpha_mode_set(): void {
-    const mode = this.alpha_mode;
+    const mode = this.alphaMode;
     if (mode !== AlphaMode.IGNORE) {
       this._sspc.premultiplied = mode === AlphaMode.PREMULTIPLIED;
     }
@@ -269,14 +269,14 @@ export class FootageSource {
     if (
       1 <= this._sspc.remove_pulldown &&
       this._sspc.remove_pulldown <= 5 &&
-      this.field_separation_type === FieldSeparationType.OFF
+      this.fieldSeparationType === FieldSeparationType.OFF
     ) {
-      this.field_separation_type = FieldSeparationType.UPPER_FIELD_FIRST;
+      this.fieldSeparationType = FieldSeparationType.UPPER_FIELD_FIRST;
     }
   }
 
   /** The native frame rate of the footage. Read-only. */
-  declare native_frame_rate: number;
+  declare nativeFrameRate: number;
 
   declare _width: number;
   declare _height: number;
@@ -313,7 +313,7 @@ export class FootageSource {
   get _frame_duration(): number {
     // Rounded, not truncated: a 48-frame 23.976 movie lasts 48 frames,
     // though its 16.16 stored rate puts the product at 47.99995.
-    return round(this._duration * this.display_frame_rate);
+    return round(this._duration * this.displayFrameRate);
   }
 
   declare _sspc: SspcChunk;
@@ -399,7 +399,7 @@ export class FootageSource {
     // the old source plays at, so an unconformed movie hands on its own
     // rate; a still or an audio file has none (its native slot is 0),
     // and a new placeholder takes its rate from the call's arguments.
-    let rate = this.conform_frame_rate;
+    let rate = this.conformFrameRate;
     if (new_._is_sequence) {
       rate = rate || this._sspc.native_frame_rate;
       if (rate && !new_._rate_from_media) {
@@ -412,7 +412,7 @@ export class FootageSource {
       rate &&
       !this._rate_is_assumed &&
       !new_._rate_is_assumed &&
-      !new_.is_still
+      !new_.isStill
     ) {
       new_sspc.conform_frame_rate = rate;
     }
@@ -476,7 +476,7 @@ export class FootageSource {
       const new_chunk = find_by_type(new_clrs.chunks, chunk_type);
       new_chunk.value = old_chunk.value;
     }
-    toggle_flag_chunk(new_clrs, "prgb", this.preserve_rgb);
+    toggle_flag_chunk(new_clrs, "prgb", this.preserveRgb);
 
     const old_apid = find_by_type(old_clrs.chunks, "apid");
     if (bytes_eq(old_apid.data, _UNASSIGNED_PROFILE)) {
@@ -519,12 +519,12 @@ export class FootageSource {
    *
    * **Note:** Not exposed in ExtendScript.
    */
-  get preserve_rgb(): boolean {
+  get preserveRgb(): boolean {
     if (this._clrs == null) return false;
     return this._clrs.chunks.some((c) => c.chunk_type === "prgb");
   }
 
-  set preserve_rgb(value: boolean) {
+  set preserveRgb(value: boolean) {
     validate_bool(value);
     if (this._clrs == null) {
       throw new AttributeError(
@@ -540,7 +540,7 @@ export class FootageSource {
    *
    * Returns `"Embedded"`, `"Working Color Space"`, the name of an assigned
    * OCIO color space, or the name of an Adobe ICC profile (e.g.
-   * `"Apple RGB"`). As with {@link Project.working_space | working_space},
+   * `"Apple RGB"`). As with {@link Project.workingSpace | working_space},
    * an assigned OCIO space reads back as AE's stored `colorProfileName`:
    * `"<family>/<name>"` for a direct color-space pick (e.g.
    * `"ACES/ACES - ACEScg"`), or the target name for a role/alias pick.
@@ -565,7 +565,7 @@ export class FootageSource {
    *
    * **Note:** Not exposed in ExtendScript.
    */
-  get media_color_space(): string {
+  get mediaColorSpace(): string {
     if (this._clrs == null) return "Embedded";
     const ipws_chunk = find_by_type(this._clrs.chunks, "ipws");
     if (ipws_chunk.value) return "Working Color Space";
@@ -580,7 +580,7 @@ export class FootageSource {
     return map_media_color_space(false, apid_chunk.data);
   }
 
-  set media_color_space(value: string) {
+  set mediaColorSpace(value: string) {
     validate_string(value);
     if (this._clrs == null) {
       throw new AttributeError(
@@ -627,7 +627,7 @@ export class FootageSource {
   _ocio_envelope(name: string): string {
     const project = this._project;
     const config = require_ocio_config(
-      project != null ? project.ocio_configuration_file : null,
+      project != null ? project.ocioConfigurationFile : null,
       `build the color-profile envelope for ${repr(name)}`,
     );
     return ocio_color_profile_envelope(config, name);
@@ -679,7 +679,7 @@ export class FootageSource {
    * Whether the footage is still; When `false`, it has a
    * time-based component. Read-only.
    */
-  get is_still(): boolean {
+  get isStill(): boolean {
     return this._sspc.duration === 0;
   }
 }
@@ -688,7 +688,7 @@ export class FootageSource {
 // assigning to them mutates the underlying binary data.
 descriptor(
   FootageSource,
-  "alpha_mode",
+  "alphaMode",
   ChunkField.enum(AlphaMode, "_sspc", "alpha_mode_raw", {
     validate: _validate_has_alpha,
     post_set: "_on_alpha_mode_set",
@@ -696,22 +696,22 @@ descriptor(
 );
 descriptor(
   FootageSource,
-  "field_separation_type",
+  "fieldSeparationType",
   ChunkField.enum(FieldSeparationType, "_sspc", "field_separation_type"),
 );
 descriptor(
   FootageSource,
-  "has_alpha",
+  "hasAlpha",
   new ChunkField("_sspc", "has_alpha", { read_only: true }),
 );
 descriptor(
   FootageSource,
-  "high_quality_field_separation",
+  "highQualityFieldSeparation",
   ChunkField.bool("_sspc", "high_quality_field_separation"),
 );
 descriptor(
   FootageSource,
-  "invert_alpha",
+  "invertAlpha",
   ChunkField.bool("_sspc", "invert_alpha"),
 );
 descriptor(
@@ -723,31 +723,31 @@ descriptor(
 );
 descriptor(
   FootageSource,
-  "premul_color",
+  "premulColor",
   new ChunkField("_sspc", "premul_color", { validate: validate_rgb_color }),
 );
 descriptor(
   FootageSource,
-  "interpret_as_linear_light",
+  "interpretAsLinearLight",
   ChunkField.enum(LinearLightMode, "_linl", "value", {
     default: LinearLightMode.OFF,
   }),
 );
 descriptor(
   FootageSource,
-  "display_frame_rate",
+  "displayFrameRate",
   new ChunkField("_sspc", "display_frame_rate", { read_only: true }),
 );
 descriptor(
   FootageSource,
-  "remove_pulldown",
+  "removePulldown",
   ChunkField.enum(PulldownPhase, "_sspc", "remove_pulldown", {
     post_set: "_on_remove_pulldown_set",
   }),
 );
 descriptor(
   FootageSource,
-  "native_frame_rate",
+  "nativeFrameRate",
   new ChunkField("_sspc", "native_frame_rate", { read_only: true }),
 );
 descriptor(

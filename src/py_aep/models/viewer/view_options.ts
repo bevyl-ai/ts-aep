@@ -12,7 +12,7 @@ import type { AVItem } from "../items/av_item.ts";
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const options = app.active_viewer.views[0].options;
+ * const options = app.activeViewer.views[0].options;
  * console.log(options.zoom);
  * ```
  *
@@ -47,48 +47,48 @@ export class ViewOptions {
   declare grid: boolean;
 
   /** When `true`, indicates guides are locked in the view. Read / Write. */
-  declare guides_locked: boolean;
+  declare guidesLocked: boolean;
 
   /**
    * When `true`, indicates layers snap to guides when dragged in the view.
    * Read / Write.
    */
-  declare guides_snap: boolean;
+  declare guidesSnap: boolean;
 
   /**
    * When `true`, indicates guides are visible in the view. Read / Write.
    */
-  declare guides_visibility: boolean;
+  declare guidesVisibility: boolean;
 
   /**
    * When `true`, indicates mask and shape paths are visible in the view.
    * Read / Write.
    */
-  declare mask_and_shape_path: boolean;
+  declare maskAndShapePath: boolean;
 
   /**
    * When `true`, indicates the proportional grid overlay is visible in the
    * view. Read / Write.
    */
-  declare proportional_grid: boolean;
+  declare proportionalGrid: boolean;
 
   /**
    * When `true`, the region of interest (ROI) selection is active in the view.
    * Read / Write.
    */
-  declare region_of_interest: boolean;
+  declare regionOfInterest: boolean;
 
   /** Top coordinate of the region of interest in pixels. Read / Write. */
-  declare roi_top: number;
+  declare roiTop: number;
 
   /** Left coordinate of the region of interest in pixels. Read / Write. */
-  declare roi_left: number;
+  declare roiLeft: number;
 
   /** Bottom coordinate of the region of interest in pixels. Read / Write. */
-  declare roi_bottom: number;
+  declare roiBottom: number;
 
   /** Right coordinate of the region of interest in pixels. Read / Write. */
-  declare roi_right: number;
+  declare roiRight: number;
 
   /** When `true`, indicates rulers are shown in the view. Read / Write. */
   declare rulers: boolean;
@@ -97,13 +97,13 @@ export class ViewOptions {
    * When `true`, indicates title/action safe margin guides are visible in the
    * view. Read / Write.
    */
-  declare title_action_safe: boolean;
+  declare titleActionSafe: boolean;
 
   /**
    * When `true`, indicates display color management is enabled for the view.
    * Read / Write.
    */
-  declare use_display_color_management: boolean;
+  declare useDisplayColorManagement: boolean;
 
   /**
    * The current zoom value for the view, as a normalized percentage between 1%
@@ -112,7 +112,7 @@ export class ViewOptions {
   declare zoom: number;
 
   /** The state of the Fast Previews menu. Read / Write. */
-  declare fast_preview: FastPreviewType;
+  declare fastPreview: FastPreviewType;
 
   declare _fips: FipsChunk;
   declare _item: AVItem | null;
@@ -140,29 +140,29 @@ descriptor(
 
 descriptor(ViewOptions, "grid", ChunkField.bool("_fips", "grid"));
 
-descriptor(ViewOptions, "guides_locked", ChunkField.bool("_fips", "guides_locked", { min_version: 16 }));
+descriptor(ViewOptions, "guidesLocked", ChunkField.bool("_fips", "guides_locked", { min_version: 16 }));
 
-descriptor(ViewOptions, "guides_snap", ChunkField.bool("_fips", "guides_snap", { min_version: 16 }));
+descriptor(ViewOptions, "guidesSnap", ChunkField.bool("_fips", "guides_snap", { min_version: 16 }));
 
 descriptor(
   ViewOptions,
-  "guides_visibility",
+  "guidesVisibility",
   ChunkField.bool("_fips", "guides_visibility", { min_version: 16 }),
 );
 
-descriptor(ViewOptions, "mask_and_shape_path", ChunkField.bool("_fips", "mask_and_shape_path"));
+descriptor(ViewOptions, "maskAndShapePath", ChunkField.bool("_fips", "mask_and_shape_path"));
 
-descriptor(ViewOptions, "proportional_grid", ChunkField.bool("_fips", "proportional_grid"));
+descriptor(ViewOptions, "proportionalGrid", ChunkField.bool("_fips", "proportional_grid"));
 
-descriptor(ViewOptions, "region_of_interest", ChunkField.bool("_fips", "region_of_interest"));
+descriptor(ViewOptions, "regionOfInterest", ChunkField.bool("_fips", "region_of_interest"));
 
 descriptor(
   ViewOptions,
-  "roi_top",
+  "roiTop",
   new ChunkField("_fips", "roi_top", {
     validate: _validate_number({
       min: 0,
-      max: (self: ViewOptions) => self.roi_bottom - 1,
+      max: (self: ViewOptions) => self.roiBottom - 1,
       integer: true,
     }),
   }),
@@ -170,11 +170,11 @@ descriptor(
 
 descriptor(
   ViewOptions,
-  "roi_left",
+  "roiLeft",
   new ChunkField("_fips", "roi_left", {
     validate: _validate_number({
       min: 0,
-      max: (self: ViewOptions) => self.roi_right - 1,
+      max: (self: ViewOptions) => self.roiRight - 1,
       integer: true,
     }),
   }),
@@ -182,10 +182,10 @@ descriptor(
 
 descriptor(
   ViewOptions,
-  "roi_bottom",
+  "roiBottom",
   new ChunkField("_fips", "roi_bottom", {
     validate: _validate_number({
-      min: (self: ViewOptions) => self.roi_top + 1,
+      min: (self: ViewOptions) => self.roiTop + 1,
       max: (self: ViewOptions) => (self._item ? self._item.height : null),
       integer: true,
     }),
@@ -194,10 +194,10 @@ descriptor(
 
 descriptor(
   ViewOptions,
-  "roi_right",
+  "roiRight",
   new ChunkField("_fips", "roi_right", {
     validate: _validate_number({
-      min: (self: ViewOptions) => self.roi_left + 1,
+      min: (self: ViewOptions) => self.roiLeft + 1,
       max: (self: ViewOptions) => (self._item ? self._item.width : null),
       integer: true,
     }),
@@ -206,11 +206,11 @@ descriptor(
 
 descriptor(ViewOptions, "rulers", ChunkField.bool("_fips", "rulers", { min_version: 16 }));
 
-descriptor(ViewOptions, "title_action_safe", ChunkField.bool("_fips", "title_action_safe"));
+descriptor(ViewOptions, "titleActionSafe", ChunkField.bool("_fips", "title_action_safe"));
 
 descriptor(
   ViewOptions,
-  "use_display_color_management",
+  "useDisplayColorManagement",
   ChunkField.bool("_fips", "use_display_color_management"),
 );
 
@@ -224,6 +224,6 @@ descriptor(
 
 descriptor(
   ViewOptions,
-  "fast_preview",
+  "fastPreview",
   ChunkField.enum(FastPreviewType, "_fips", "fast_preview_type", { min_version: 12 }),
 );

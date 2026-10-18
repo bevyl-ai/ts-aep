@@ -29,8 +29,8 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
     ["Quality", ["quality", null]],
     ["Resolution", ["resolution", EnvironmentLightShadowResolution]],
     ["Smoothness", ["smoothness", null]],
-    ["Casting Box Size", ["casting_box_size", null]],
-    ["Casting Box Center", ["casting_box_center", null]],
+    ["Casting Box Size", ["castingBoxSize", null]],
+    ["Casting Box Center", ["castingBoxCenter", null]],
   ]);
 
   /** Renderer quality, `1` to `125`. Read / Write. */
@@ -47,11 +47,11 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
    * report the X axis.
    * Read / Write.
    */
-  get casting_box_size(): number {
+  get castingBoxSize(): number {
     return this._body.casting_box_size_x * this._comp.width;
   }
 
-  set casting_box_size(value: number) {
+  set castingBoxSize(value: number) {
     validate_casting_box_size(value);
     const fraction = value / this._comp.width;
     this._body.casting_box_size_x = fraction;
@@ -63,7 +63,7 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
    * in the Options dialog. X and Y are offsets from the composition
    * centre; Z is measured from zero. Read / Write.
    */
-  get casting_box_center(): number[] {
+  get castingBoxCenter(): number[] {
     const width = this._comp.width;
     const height = this._comp.height;
     return [
@@ -73,7 +73,7 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
     ];
   }
 
-  set casting_box_center(value: number[]) {
+  set castingBoxCenter(value: number[]) {
     validate_casting_box_center(value);
     const width = this._comp.width;
     const height = this._comp.height;

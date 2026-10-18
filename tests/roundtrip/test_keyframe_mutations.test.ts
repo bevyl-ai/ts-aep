@@ -62,7 +62,7 @@ function _roundtrip(app: Application, tmp_path: Path): Application {
 function _prop(app: Application, match_name: string, kw: { comp?: number; layer?: number } = {}): Property {
   const { comp = 0, layer = 0 } = kw;
   const lay = app.project.compositions[comp].layers[layer];
-  const found = [...lay.transform].find((p) => p.match_name === match_name);
+  const found = [...lay.transform].find((p) => p.matchName === match_name);
   if (found === undefined) throw new StopIteration();
   return as_instance(found, Property);
 }
@@ -77,7 +77,7 @@ function _find_static(app: Application, match_name: string): [Property | null, n
   for (const [ci, comp] of app.project.compositions.entries()) {
     for (const [li, lay] of comp.layers.entries()) {
       for (const p of lay.transform) {
-        if (p.match_name !== match_name) continue;
+        if (p.matchName !== match_name) continue;
         const prop = as_instance(p, Property);
         if (!py_bool(prop.keyframes)) return [prop, ci, li];
       }
@@ -88,7 +88,7 @@ function _find_static(app: Application, match_name: string): [Property | null, n
 
 function _walk(group: PropertyGroup, match_name: string, out: Property[]): void {
   for (const p of getattr(group, "properties", [])) {
-    if (p.match_name === match_name) out.push(as_instance(p, Property));
+    if (p.matchName === match_name) out.push(as_instance(p, Property));
     if (hasattr(p, "properties")) _walk(as_instance(p, PropertyGroup), match_name, out);
   }
 }
@@ -176,7 +176,7 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
-    const idx = op.add_key(0.5);
+    const idx = op.addKey(0.5);
     expect(op.keyframes.length).toBe(n0 + 1);
     expect(0 <= idx && idx <= n0).toBe(true);
     const app2 = _roundtrip(app, tmp_path);
@@ -193,14 +193,14 @@ describe("TestAddKey", () => {
     const before = op.value;
 
     raises(ValueError, () => {
-      op.add_key(1e9);
+      op.addKey(1e9);
     }, "32-bit keyframe time field");
 
     expect(py_bool(op.keyframes)).toBe(false);
     expect(py_eq(op.value, before)).toBe(true);
 
     // ... and the property still animates normally afterwards.
-    op.add_key(1.0);
+    op.addKey(1.0);
     expect(op.keyframes.length).toBe(1);
   });
 
@@ -209,7 +209,7 @@ describe("TestAddKey", () => {
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
     const existing_time = op.keyframes[0].time;
-    const idx = op.add_key(existing_time);
+    const idx = op.addKey(existing_time);
     expect(idx).toBe(0);
     expect(op.keyframes.length).toBe(n0);
   });
@@ -220,13 +220,13 @@ describe("TestAddKey", () => {
     const [prop, _, li] = _find_static(app, "ADBE Rotate Z");
     expect(prop != null).toBe(true);
     if (prop == null || li == null) throw new AssertionError_("no static ADBE Rotate Z property");
-    prop.add_key(0.0);
-    prop.add_key(1.0);
+    prop.addKey(0.0);
+    prop.addKey(1.0);
     prop.keyframes[1].value = 25.0;
     expect(prop._animated).toBe(true);
     expect(prop.keyframes.length).toBe(2);
     const app2 = _roundtrip(app, tmp_path);
-    const prop2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.match_name === "ADBE Rotate Z"), Property);
+    const prop2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Rotate Z"), Property);
     expect(prop2.keyframes.length).toBe(2);
     expect(approx(prop2.keyframes[1].value, 25.0)).toBe(true);
   });
@@ -244,23 +244,23 @@ describe("TestAddKey", () => {
     const [scale, _, li] = _find_static(app, "ADBE Scale");
     expect(scale != null).toBe(true);
     if (scale == null || li == null) throw new AssertionError_("no static ADBE Scale property");
-    scale.set_value_at_time(0.0, [50.0, 50.0, 100.0]);
-    scale.set_value_at_time(1.0, [120.0, 120.0, 100.0]);
+    scale.setValueAtTime(0.0, [50.0, 50.0, 100.0]);
+    scale.setValueAtTime(1.0, [120.0, 120.0, 100.0]);
     expect(scale._animated).toBe(true);
     // tdum/tduM bound chunks were added on materialization.
     const kinds = scale._tdbs.chunks.map((c) => getattr(c, "chunk_type", null));
     expect(kinds.includes("tdum") && kinds.includes("tduM")).toBe(true);
     const app2 = _roundtrip(app, tmp_path);
-    const scale2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.match_name === "ADBE Scale"), Property);
+    const scale2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
     expect(scale2.keyframes.length).toBe(2);
   });
 
   test("test_keys_stay_time_sorted", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    op.add_key(0.5);
-    op.add_key(0.1);
-    const times = op.keyframes.map((kf) => kf.frame_time);
+    op.addKey(0.5);
+    op.addKey(0.1);
+    const times = op.keyframes.map((kf) => kf.frameTime);
     expect(py_eq(times, sorted(times))).toBe(true);
   });
 
@@ -272,7 +272,7 @@ describe("TestAddKey", () => {
     // `op.__dict__["_no_value"] = True` - instance attribute write.
     op._no_value = true;
     raises(ValueError, () => {
-      op.add_key(0.5);
+      op.addKey(0.5);
     });
   });
 });
@@ -283,7 +283,7 @@ describe("TestRemoveKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
-    op.remove_key(1);
+    op.removeKey(1);
     expect(op.keyframes.length).toBe(n0 - 1);
     const app2 = _roundtrip(app, tmp_path);
     expect(_prop(app2, "ADBE Opacity").keyframes.length).toBe(n0 - 1);
@@ -295,7 +295,7 @@ describe("TestRemoveKey", () => {
     const op = _prop(app, "ADBE Opacity");
     const last_val = op.keyframes[0].value;
     while (py_bool(op.keyframes)) {
-      op.remove_key(0);
+      op.removeKey(0);
     }
     expect(op._animated).toBe(false);
     const app2 = _roundtrip(app, tmp_path);
@@ -308,7 +308,7 @@ describe("TestRemoveKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     raises(ValueError, () => {
-      op.remove_key(99);
+      op.removeKey(99);
     });
   });
 });
@@ -326,14 +326,14 @@ describe("TestMoveKeyframe", () => {
     const first = op.keyframes[0];
     first.time = at(op.keyframes, -1).time + 1.0;
     expect(op.keyframes.at(-1)).toBe(first);
-    const times = op.keyframes.map((kf) => kf.frame_time);
+    const times = op.keyframes.map((kf) => kf.frameTime);
     expect(py_eq(times, sorted(times))).toBe(true);
     // prev/next chain follows the new order.
     expect(first._next == null).toBe(true);
     expect(at(op.keyframes, -2)._next).toBe(first);
     const app2 = _roundtrip(app, tmp_path);
     const op2 = _prop(app2, "ADBE Opacity");
-    const times2 = op2.keyframes.map((kf) => kf.frame_time);
+    const times2 = op2.keyframes.map((kf) => kf.frameTime);
     expect(py_eq(times2, sorted(times2))).toBe(true);
     // The moved keyframe's value traveled with it through the save.
     expect(approx(at(op2.keyframes, -1).value, 10.0)).toBe(true);
@@ -344,25 +344,25 @@ describe("TestMoveKeyframe", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const kf = op.keyframes[0];
-    kf.frame_time = op.keyframes[1].frame_time - 1;
+    kf.frameTime = op.keyframes[1].frameTime - 1;
     expect(op.keyframes[0]).toBe(kf);
-    const times = op.keyframes.map((k) => k.frame_time);
+    const times = op.keyframes.map((k) => k.frameTime);
     expect(py_eq(times, sorted(times))).toBe(true);
   });
 
   test("test_move_onto_existing_keyframe_raises", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    const original = op.keyframes[0].frame_time;
+    const original = op.keyframes[0].frameTime;
     raises(
       ValueError,
       () => {
-        op.keyframes[0].frame_time = op.keyframes[1].frame_time;
+        op.keyframes[0].frameTime = op.keyframes[1].frameTime;
       },
       "already exists",
     );
     // The failed move left the keyframe untouched.
-    expect(op.keyframes[0].frame_time).toBe(original);
+    expect(op.keyframes[0].frameTime).toBe(original);
   });
 
   test("test_move_marker_key_moves_container_value", () => {
@@ -377,7 +377,7 @@ describe("TestMoveKeyframe", () => {
     mp.keyframes[0].time = at(mp.keyframes, -1).time + 1.0;
     const app2 = _roundtrip(app, tmp_path);
     const mp2 = get_comp(app2.project, "layer_multiple_markers").layers[0].property("ADBE Marker");
-    const times2 = mp2.keyframes.map((kf) => kf.frame_time);
+    const times2 = mp2.keyframes.map((kf) => kf.frameTime);
     expect(py_eq(times2, sorted(times2))).toBe(true);
     expect(at(mp2.keyframes, -1).value.comment).toBe("moved");
     expect(py_slice(mp2.keyframes, null, -1).every((kf) => kf.value.comment !== "moved")).toBe(true);
@@ -400,7 +400,7 @@ describe("TestRemoveAllKeys", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const first_val = op.keyframes[0].value;
-    op.remove_all_keys();
+    op.removeAllKeys();
     expect(py_eq(op.keyframes, [])).toBe(true);
     const app2 = _roundtrip(app, tmp_path);
     const op2 = _prop(app2, "ADBE Opacity");
@@ -411,8 +411,8 @@ describe("TestRemoveAllKeys", () => {
   test("test_noop_when_no_keyframes", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    op.remove_all_keys();
-    op.remove_all_keys();
+    op.removeAllKeys();
+    op.removeAllKeys();
     expect(py_eq(op.keyframes, [])).toBe(true);
   });
 
@@ -424,7 +424,7 @@ describe("TestRemoveAllKeys", () => {
     ).toBe(true);
     for (const comp of app.project.compositions) {
       for (const lay of comp.layers) {
-        lay.remove_all_keys();
+        lay.removeAllKeys();
         expect(py_eq(_keyframed_props(lay), [])).toBe(true);
       }
     }
@@ -444,7 +444,7 @@ describe("TestSetValueAtTime", () => {
     const n0 = pos.keyframes.length;
     const t0 = pos.keyframes[0].time;
     const target = [11.0, 22.0, 0.0].slice(0, len(pos.keyframes[0].value));
-    pos.set_value_at_time(t0, target);
+    pos.setValueAtTime(t0, target);
     expect(pos.keyframes.length).toBe(n0);
     expect(approx(pos.keyframes[0].value, target)).toBe(true);
   });
@@ -456,7 +456,7 @@ describe("TestSetValueAtTime", () => {
     const n0 = pos.keyframes.length;
     const t = pos.keyframes[0].time + 0.25;
     const target = [99.0, 88.0, 0.0].slice(0, len(pos.keyframes[0].value));
-    pos.set_value_at_time(t, target);
+    pos.setValueAtTime(t, target);
     expect(pos.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmp_path);
     expect(_prop(app2, "ADBE Position").keyframes.length).toBe(n0 + 1);
@@ -465,17 +465,17 @@ describe("TestSetValueAtTime", () => {
   test("test_set_values_at_times", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    op.set_values_at_times([0.0, 2.0], [10.0, 90.0]);
+    op.setValuesAtTimes([0.0, 2.0], [10.0, 90.0]);
     // The value set at each requested time is observable via value_at_time.
-    expect(approx(op.value_at_time(0.0), 10.0)).toBe(true);
-    expect(approx(op.value_at_time(2.0), 90.0)).toBe(true);
+    expect(approx(op.valueAtTime(0.0), 10.0)).toBe(true);
+    expect(approx(op.valueAtTime(2.0), 90.0)).toBe(true);
   });
 
   test("test_set_values_at_times_length_mismatch", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     raises(ValueError, () => {
-      op.set_values_at_times([0.0, 1.0], [10.0]);
+      op.setValuesAtTimes([0.0, 1.0], [10.0]);
     });
   });
 });
@@ -487,12 +487,12 @@ describe("TestComplexTypeKeyframes", () => {
     const app = parse_aep(SAMPLES_ROOT.div("models", "layer", "orientation_with_keyframes.aep"));
     const o = _prop(app, "ADBE Orientation");
     const n0 = o.keyframes.length;
-    o.set_value_at_time(at(o.keyframes, -1).time + 0.3, [12.0, 34.0, 56.0]);
+    o.setValueAtTime(at(o.keyframes, -1).time + 0.3, [12.0, 34.0, 56.0]);
     expect(o.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmp_path);
     const o2 = _prop(app2, "ADBE Orientation");
     expect(contains(o2.keyframes.map((k) => k.value), [12.0, 34.0, 56.0])).toBe(true);
-    o2.remove_key(0);
+    o2.removeKey(0);
     expect(o2.keyframes.length).toBe(n0);
   });
 
@@ -502,8 +502,8 @@ describe("TestComplexTypeKeyframes", () => {
     const comp = get_comp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
     const n0 = mp.keyframes.length;
-    mp.set_value_at_time(at(mp.keyframes, -1).time + 1.0, new MarkerValue("X"));
-    mp.set_value_at_time(at(mp.keyframes, -1).time + 2.0, "str comment");
+    mp.setValueAtTime(at(mp.keyframes, -1).time + 1.0, new MarkerValue("X"));
+    mp.setValueAtTime(at(mp.keyframes, -1).time + 2.0, "str comment");
     const app2 = _roundtrip(app, tmp_path);
     const comp2 = get_comp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
@@ -538,7 +538,7 @@ describe("TestComplexTypeKeyframes", () => {
     const ms = get_ms(app);
     py_assert(ms != null);
     const n0 = ms.keyframes.length;
-    ms.set_value_at_time(
+    ms.setValueAtTime(
       at(ms.keyframes, -1).time + 0.5,
       new Shape([
         [10.0, 10.0],
@@ -552,7 +552,7 @@ describe("TestComplexTypeKeyframes", () => {
     const ms2 = get_ms(app2);
     py_assert(ms2 != null);
     expect(ms2.keyframes.length).toBe(n0 + 1);
-    ms2.remove_key(0);
+    ms2.removeKey(0);
     expect(ms2.keyframes.length).toBe(n0);
   });
 
@@ -582,7 +582,7 @@ describe("TestComplexTypeKeyframes", () => {
     const g = get_grad(app);
     py_assert(g != null);
     const n0 = g.keyframes.length;
-    g.add_key(g.keyframes[0].time + 0.1);
+    g.addKey(g.keyframes[0].time + 0.1);
     expect(g.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmp_path);
     const g2 = get_grad(app2);
@@ -616,7 +616,7 @@ describe("TestComplexTypeKeyframes", () => {
     const t = get_text(app);
     py_assert(t != null);
     const n0 = t.keyframes.length;
-    t.set_value_at_time(at(t.keyframes, -1).time + 0.5, "NewLine");
+    t.setValueAtTime(at(t.keyframes, -1).time + 0.5, "NewLine");
     expect(t.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmp_path);
     const t2 = get_text(app2);
@@ -624,7 +624,7 @@ describe("TestComplexTypeKeyframes", () => {
     const texts = t2.keyframes.map((k) => k.value.text);
     expect(contains(texts, "NewLine")).toBe(true);
     expect(t2.keyframes.length).toBe(n0 + 1);
-    t2.remove_key(0);
+    t2.removeKey(0);
     expect(t2.keyframes.length).toBe(n0);
   });
 
@@ -651,8 +651,8 @@ describe("TestComplexTypeKeyframes", () => {
     }
     py_assert(ms != null);
     const t = at(ms.keyframes, -1).time + 0.5;
-    ms.add_key(t);
-    const idx = ms.nearest_key_index(t);
+    ms.addKey(t);
+    const idx = ms.nearestKeyIndex(t);
     const new_shph = ms.keyframes[idx].value._shph;
     const others = ms.keyframes.filter((_k, j) => j !== idx).map((k) => k.value._shph);
     expect(others.every((o) => new_shph !== o)).toBe(true);
@@ -666,13 +666,13 @@ describe("TestComplexTypeKeyframes", () => {
     const comp = get_comp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
     while (py_bool(mp.keyframes)) {
-      mp.remove_key(0);
+      mp.removeKey(0);
     }
     const app2 = _roundtrip(app, tmp_path);
     const comp2 = get_comp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
     expect(py_eq(mp2.keyframes, [])).toBe(true);
-    mp2.set_value_at_time(1.0, new MarkerValue("back"));
+    mp2.setValueAtTime(1.0, new MarkerValue("back"));
     const app3 = _roundtrip(app2, tmp_path);
     const comp3 = app3.project.compositions.find((c) => c.name === "layer_multiple_markers");
     if (comp3 === undefined) throw new StopIteration();
@@ -708,7 +708,7 @@ describe("TestComplexTypeKeyframes", () => {
     // The last keyframe removed provides the static value.
     const last_text = at(t.keyframes, -1).value.text;
     while (py_bool(t.keyframes)) {
-      t.remove_key(0);
+      t.removeKey(0);
     }
     expect(t.value.text).toBe(last_text);
     const app2 = _roundtrip(app, tmp_path);
@@ -746,7 +746,7 @@ describe("TestComplexTypeKeyframes", () => {
     // The last keyframe removed provides the static value.
     const last_vertices = at(ms.keyframes, -1).value.vertices;
     while (py_bool(ms.keyframes)) {
-      ms.remove_key(0);
+      ms.removeKey(0);
     }
     const app2 = _roundtrip(app, tmp_path);
     const ms2 = get_ms(app2);
@@ -781,7 +781,7 @@ describe("TestComplexTypeKeyframes", () => {
     const g = get_grad(app);
     py_assert(g != null);
     while (py_bool(g.keyframes)) {
-      g.remove_key(0);
+      g.removeKey(0);
     }
     const app2 = _roundtrip(app, tmp_path);
     const g2 = get_grad(app2);
@@ -797,7 +797,7 @@ describe("TestComplexTypeKeyframes", () => {
     let last_value: PropertyValue = null;
     while (py_bool(o.keyframes)) {
       last_value = o.keyframes[0].value;
-      o.remove_key(0);
+      o.removeKey(0);
     }
     expect(approx(o.value, last_value)).toBe(true);
     const app2 = _roundtrip(app, tmp_path);
@@ -831,7 +831,7 @@ describe("TestComplexTypeKeyframes", () => {
     py_assert(t != null);
     expect(py_eq(t.keyframes, [])).toBe(true);
     const original = t.value.text;
-    const idx = t.add_key(1.0);
+    const idx = t.addKey(1.0);
     expect(idx).toBe(0);
     expect(t.keyframes.length).toBe(1);
     expect(t.keyframes[0].value.text).toBe(original);
@@ -841,7 +841,7 @@ describe("TestComplexTypeKeyframes", () => {
     expect(t2.keyframes.length).toBe(1);
     expect(approx(t2.keyframes[0].time, 1.0)).toBe(true);
     expect(t2.keyframes[0].value.text).toBe(original);
-    t2.set_value_at_time(2.0, "Second");
+    t2.setValueAtTime(2.0, "Second");
     const app3 = _roundtrip(app2, tmp_path);
     const t3 = get_text(app3);
     py_assert(t3 != null);
@@ -873,7 +873,7 @@ describe("TestComplexTypeKeyframes", () => {
     py_assert(ms != null);
     expect(py_eq(ms.keyframes, [])).toBe(true);
     const vertices = ms.value.vertices;
-    ms.add_key(1.0);
+    ms.addKey(1.0);
     expect(ms.keyframes.length).toBe(1);
     const app2 = _roundtrip(app, tmp_path);
     const ms2 = get_ms(app2);
@@ -908,7 +908,7 @@ describe("TestComplexTypeKeyframes", () => {
     py_assert(g != null);
     expect(py_eq(g.keyframes, [])).toBe(true);
     expect(g.value != null).toBe(true);
-    g.add_key(0.5);
+    g.addKey(0.5);
     expect(g.keyframes.length).toBe(1);
     const app2 = _roundtrip(app, tmp_path);
     const g2 = get_grad(app2);
@@ -922,7 +922,7 @@ describe("TestComplexTypeKeyframes", () => {
     const app = parse_aep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
     const o = _prop(app, "ADBE Orientation");
     expect(py_eq(o.keyframes, [])).toBe(true);
-    o.set_value_at_time(1.0, [10.0, 20.0, 30.0]);
+    o.setValueAtTime(1.0, [10.0, 20.0, 30.0]);
     expect(o.keyframes.length).toBe(1);
     const app2 = _roundtrip(app, tmp_path);
     const o2 = _prop(app2, "ADBE Orientation");
@@ -938,12 +938,12 @@ describe("TestComplexTypeKeyframes", () => {
     const mp = app.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp.keyframes, [])).toBe(true);
     expect(mp._kf_value_container == null).toBe(true);
-    mp.set_value_at_time(1.0, new MarkerValue("first"));
+    mp.setValueAtTime(1.0, new MarkerValue("first"));
     const app2 = _roundtrip(app, tmp_path);
     const mp2 = app2.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp2.keyframes.map((k) => k.value.comment), ["first"])).toBe(true);
     expect(approx(mp2.keyframes[0].time, 1.0)).toBe(true);
-    mp2.remove_key(0);
+    mp2.removeKey(0);
     const app3 = _roundtrip(app2, tmp_path);
     const mp3 = app3.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp3.keyframes, [])).toBe(true);
@@ -959,7 +959,7 @@ describe("TestComplexTypeKeyframes", () => {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           if (layer.name !== "CameraLayer") continue;
-          const found = [...layer.transform].find((p) => p.match_name === "ADBE Orientation");
+          const found = [...layer.transform].find((p) => p.matchName === "ADBE Orientation");
           if (found === undefined) throw new StopIteration();
           return as_instance(found, Property);
         }
@@ -971,13 +971,13 @@ describe("TestComplexTypeKeyframes", () => {
     py_assert(o != null);
     expect(py_eq(o.keyframes, [])).toBe(true);
     expect(o._kf_value_container == null).toBe(true);
-    o.set_value_at_time(1.0, [10.0, 20.0, 30.0]);
+    o.setValueAtTime(1.0, [10.0, 20.0, 30.0]);
     const app2 = _roundtrip(app, tmp_path);
     const o2 = get_orient(app2);
     py_assert(o2 != null);
     expect(o2.keyframes.length).toBe(1);
     expect(approx(o2.keyframes[0].value, [10.0, 20.0, 30.0])).toBe(true);
-    o2.remove_key(0);
+    o2.removeKey(0);
     const app3 = _roundtrip(app2, tmp_path);
     const o3 = get_orient(app3);
     py_assert(o3 != null);
@@ -1012,7 +1012,7 @@ describe("TestComplexTypeKeyframes", () => {
     py_assert(g != null);
     expect(py_eq(g.keyframes, [])).toBe(true);
     expect(g._kf_value_container == null).toBe(true);
-    g.add_key(0.5);
+    g.addKey(0.5);
     expect(g.keyframes.length).toBe(1);
     const app2 = _roundtrip(app, tmp_path);
     const g2 = get_grad(app2);
@@ -1038,12 +1038,12 @@ describe("TestParallelValueAliasing", () => {
     const comp = get_comp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
     while (py_bool(mp.keyframes)) {
-      mp.remove_key(0);
+      mp.removeKey(0);
     }
 
     const shared = new MarkerValue("shared");
-    mp.set_value_at_time(0.0, shared);
-    mp.set_value_at_time(1.0, shared);
+    mp.setValueAtTime(0.0, shared);
+    mp.setValueAtTime(1.0, shared);
     const k0 = mp.keyframes[0];
     const k1 = mp.keyframes[1];
     expect(k0.value !== k1.value).toBe(true);
@@ -1089,17 +1089,17 @@ describe("TestParallelValueAliasing", () => {
     const kf1 = g.keyframes[1];
     const kf0_xml_before = kf0.value._utf8.value;
 
-    g.set_value_at_time(kf1.time, kf0.value);
+    g.setValueAtTime(kf1.time, kf0.value);
     expect(kf1.value !== kf0.value).toBe(true);
-    kf1.value.add_color_stop(0.5, 0.5, [1.0, 0.0, 0.0]);
+    kf1.value.addColorStop(0.5, 0.5, [1.0, 0.0, 0.0]);
     expect(kf0.value._utf8.value).toBe(kf0_xml_before);
 
     const app2 = _roundtrip(app, tmp_path);
     const g2 = _grad_kf_prop(app2);
     py_assert(g2 != null);
-    expect(g2.keyframes[0].value.color_stops.length).toBe(kf0.value.color_stops.length);
-    expect(g2.keyframes[1].value.color_stops.length).toBe(kf1.value.color_stops.length);
-    expect(g2.keyframes[0].value.color_stops.length !== g2.keyframes[1].value.color_stops.length).toBe(true);
+    expect(g2.keyframes[0].value.colorStops.length).toBe(kf0.value.colorStops.length);
+    expect(g2.keyframes[1].value.colorStops.length).toBe(kf1.value.colorStops.length);
+    expect(g2.keyframes[0].value.colorStops.length !== g2.keyframes[1].value.colorStops.length).toBe(true);
   });
 
   test("test_orientation_keyframe_value_persists", () => {
@@ -1126,14 +1126,14 @@ describe("TestParallelValueAliasing", () => {
     const g = _grad_static_prop(app);
     py_assert(g != null);
     const new_grad = new Gradient();
-    new_grad.add_color_stop(0.5, 0.5, [1.0, 0.0, 0.0]);
-    const n_stops = new_grad.color_stops.length;
+    new_grad.addColorStop(0.5, 0.5, [1.0, 0.0, 0.0]);
+    const n_stops = new_grad.colorStops.length;
     g.value = new_grad;
 
     const app2 = _roundtrip(app, tmp_path);
     const g2 = _grad_static_prop(app2);
     py_assert(g2 != null);
-    expect(g2.value.color_stops.length).toBe(n_stops);
+    expect(g2.value.colorStops.length).toBe(n_stops);
   });
 
   test("test_static_text_value_reassign_raises", () => {
@@ -1178,7 +1178,7 @@ describe("TestSpatialFlagGuards", () => {
     raises(
       ValueError,
       () => {
-        kf.spatial_auto_bezier = false;
+        kf.spatialAutoBezier = false;
       },
       "spatial keyframes",
     );
@@ -1190,7 +1190,7 @@ describe("TestSpatialFlagGuards", () => {
     raises(
       ValueError,
       () => {
-        kf.spatial_continuous = false;
+        kf.spatialContinuous = false;
       },
       "spatial keyframes",
     );
@@ -1213,11 +1213,11 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
-    expect(comp.frame_rate).toBe(25.0);
+    expect(comp.frameRate).toBe(25.0);
     const prop = comp.layers[0].transform.property("ADBE Opacity");
-    prop.add_key(1.5);
+    prop.addKey(1.5);
 
-    const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
+    const keyframe = prop.keyframes.find((k) => k.timeUnits === 38400);
     if (keyframe === undefined) throw new StopIteration();
     expect(approx(keyframe.time, 1.5)).toBe(true);
 
@@ -1225,7 +1225,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
     const prop2 = comp2.layers[0].transform.property("ADBE Opacity");
-    const keyframe2 = prop2.keyframes.find((k) => k.time_units === 38400);
+    const keyframe2 = prop2.keyframes.find((k) => k.timeUnits === 38400);
     if (keyframe2 === undefined) throw new StopIteration();
     expect(approx(keyframe2.time, 1.5)).toBe(true);
   });
@@ -1234,13 +1234,13 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
   test("test_rewriting_its_own_time_does_not_move_a_keyframe", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
-    prop.add_key(1.5);
-    const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
+    prop.addKey(1.5);
+    const keyframe = prop.keyframes.find((k) => k.timeUnits === 38400);
     if (keyframe === undefined) throw new StopIteration();
 
     keyframe.time = keyframe.time;
 
-    expect(keyframe.time_units).toBe(38400);
+    expect(keyframe.timeUnits).toBe(38400);
   });
 
   /**
@@ -1252,22 +1252,22 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     // Both round to frame 37 at 25 fps (37.025 and 37.375) while
     // occupying different timebase units.
-    prop.add_key(1.481);
-    prop.add_key(1.495);
+    prop.addKey(1.481);
+    prop.addKey(1.495);
 
-    const units = sorted(prop.keyframes.map((k) => k.time_units));
+    const units = sorted(prop.keyframes.map((k) => k.timeUnits));
     expect(new Set(units).size).toBe(units.length);
-    const inside = prop.keyframes.filter((k) => k.frame_time === 37);
+    const inside = prop.keyframes.filter((k) => k.frameTime === 37);
     expect(inside.length).toBe(2);
   });
 
   test("test_frame_time_still_rounds", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
-    prop.add_key(1.5);
-    const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
+    prop.addKey(1.5);
+    const keyframe = prop.keyframes.find((k) => k.timeUnits === 38400);
     if (keyframe === undefined) throw new StopIteration();
-    expect(keyframe.frame_time).toBe(38);
+    expect(keyframe.frameTime).toBe(38);
     expect(approx(keyframe.time, 1.5)).toBe(true);
   });
 
@@ -1280,9 +1280,9 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
     const layer = comp.layers[0];
-    layer.start_time = 0.29166666666666663; // 7/24 s, off the 25 fps grid
+    layer.startTime = 0.29166666666666663; // 7/24 s, off the 25 fps grid
     const prop = layer.transform.property("ADBE Opacity");
-    prop.add_key(2.0);
+    prop.addKey(2.0);
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
@@ -1312,25 +1312,25 @@ describe("TestRoundtripRoving", () => {
   function _bowed_path(bow: number): Property<number[]> {
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
-    expect(comp.frame_rate).toBe(25.0);
+    expect(comp.frameRate).toBe(25.0);
     const prop = comp.layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
-      prop.remove_key(0);
+      prop.removeKey(0);
     }
     for (const [time, value] of [
       [0.0, 0.0],
       [1.0, 100.0],
       [4.0, 600.0],
     ] as const) {
-      prop.add_key(time);
+      prop.addKey(time);
       at(prop.keyframes, -1).value = [value, 200.0, 0.0];
     }
     for (const keyframe of prop.keyframes) {
-      keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      keyframe.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
-    prop.keyframes[0].out_spatial_tangent = [0.0, bow, 0.0];
-    prop.keyframes[1].in_spatial_tangent = [0.0, bow, 0.0];
+    prop.keyframes[0].outSpatialTangent = [0.0, bow, 0.0];
+    prop.keyframes[1].inSpatialTangent = [0.0, bow, 0.0];
     return prop;
   }
 
@@ -1344,7 +1344,7 @@ describe("TestRoundtripRoving", () => {
 
     prop.keyframes[1].roving = true;
 
-    expect(prop.keyframes[1].time_units).toBe(56845);
+    expect(prop.keyframes[1].timeUnits).toBe(56845);
     expect(approx(prop.keyframes[1].time, 2.2205078125)).toBe(true);
   });
 
@@ -1355,7 +1355,7 @@ describe("TestRoundtripRoving", () => {
   test("test_flattening_the_path_moves_the_roving_key", () => {
     const prop = _bowed_path(40.0);
     prop.keyframes[1].roving = true;
-    expect(prop.keyframes[1].time_units).toBe(20974);
+    expect(prop.keyframes[1].timeUnits).toBe(20974);
     expect(approx(prop.keyframes[1].time, 0.819296875)).toBe(true);
   });
 
@@ -1365,24 +1365,24 @@ describe("TestRoundtripRoving", () => {
     const comp = project.compositions[0];
     const prop = comp.layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
-      prop.remove_key(0);
+      prop.removeKey(0);
     }
     for (const [time, value] of [
       [0.0, 0.0],
       [1.0, 100.0],
       [4.0, 600.0],
     ] as const) {
-      prop.add_key(time);
+      prop.addKey(time);
       at(prop.keyframes, -1).value = [value, 200.0, 0.0];
     }
     prop.keyframes[1].roving = true;
-    const moved = prop.keyframes[1].time_units;
+    const moved = prop.keyframes[1].timeUnits;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Position");
     expect(prop2.keyframes[1].roving).toBe(true);
-    expect(prop2.keyframes[1].time_units).toBe(moved);
+    expect(prop2.keyframes[1].timeUnits).toBe(moved);
   });
 
   /**
@@ -1392,19 +1392,19 @@ describe("TestRoundtripRoving", () => {
   test("test_unroving_keeps_the_redistributed_time", () => {
     const prop = _bowed_path(400.0);
     prop.keyframes[1].roving = true;
-    const moved = prop.keyframes[1].time_units;
+    const moved = prop.keyframes[1].timeUnits;
 
     prop.keyframes[1].roving = false;
 
     expect(prop.keyframes[1].roving).toBe(false);
-    expect(prop.keyframes[1].time_units).toBe(moved);
+    expect(prop.keyframes[1].timeUnits).toBe(moved);
   });
 
   /** AE raises here: "This property does not have a spatial PropertyValueType". */
   test("test_non_spatial_property_is_rejected", () => {
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
-    expect(py_bool(prop.is_spatial)).toBe(false);
+    expect(py_bool(prop.isSpatial)).toBe(false);
     raises(
       ValueError,
       () => {
@@ -1446,19 +1446,19 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const project = parse_project_fresh(SAMPLES.div("effect_point_speed.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
-      prop.remove_key(0);
+      prop.removeKey(0);
     }
     for (const [time, x] of [
       [0.0, 0.0],
       [1.0, 100.0],
       [4.0, 600.0],
     ] as const) {
-      prop.add_key(time);
+      prop.addKey(time);
       at(prop.keyframes, -1).value = [x, 0.0, 0.0];
     }
     for (const keyframe of prop.keyframes) {
-      keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      keyframe.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
     return prop;
   }
@@ -1466,11 +1466,11 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test("test_spatial_auto_bezier_writes_the_derived_tangents", () => {
     const prop = _uneven_position();
     const keyframe = prop.keyframes[1];
-    keyframe.in_spatial_tangent = [-40.0, -10.0, 0.0];
-    keyframe.out_spatial_tangent = [70.0, 25.0, 0.0];
+    keyframe.inSpatialTangent = [-40.0, -10.0, 0.0];
+    keyframe.outSpatialTangent = [70.0, 25.0, 0.0];
     const stored = as_instance(keyframe._ldat_item.kf_data, KfPosition);
 
-    keyframe.spatial_auto_bezier = true;
+    keyframe.spatialAutoBezier = true;
 
     expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
     expect(approx([...stored.in_spatial_tangents], [-100.0, 0.0, 0.0])).toBe(true);
@@ -1479,19 +1479,19 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test("test_spatial_auto_bezier_forces_continuity", () => {
     const prop = _uneven_position();
     const keyframe = prop.keyframes[1];
-    keyframe.spatial_continuous = false;
+    keyframe.spatialContinuous = false;
 
-    keyframe.spatial_auto_bezier = true;
+    keyframe.spatialAutoBezier = true;
 
-    expect(keyframe.spatial_continuous).toBe(true);
+    expect(keyframe.spatialContinuous).toBe(true);
   });
 
   /** AE does not restore what was there before. */
   test("test_clearing_spatial_auto_bezier_keeps_the_derived_tangents", () => {
     const prop = _uneven_position();
     const keyframe = prop.keyframes[1];
-    keyframe.spatial_auto_bezier = true;
-    keyframe.spatial_auto_bezier = false;
+    keyframe.spatialAutoBezier = true;
+    keyframe.spatialAutoBezier = false;
     const stored = as_instance(keyframe._ldat_item.kf_data, KfPosition);
     expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
   });
@@ -1505,7 +1505,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
     while (py_bool(prop.keyframes)) {
-      prop.remove_key(0);
+      prop.removeKey(0);
     }
     const scale_values: [number, number[]][] = [
       [0.0, [100.0, 100.0, 100.0]],
@@ -1513,22 +1513,22 @@ describe("TestRoundtripAutoBezierWrites", () => {
       [2.0, [400.0, 150.0, 100.0]],
     ];
     for (const [time, value] of scale_values) {
-      prop.add_key(time);
+      prop.addKey(time);
       at(prop.keyframes, -1).value = value;
     }
     for (const keyframe of prop.keyframes) {
-      keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      keyframe.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
 
-    prop.keyframes[1].temporal_auto_bezier = true;
+    prop.keyframes[1].temporalAutoBezier = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Scale");
-    const speeds = prop2.keyframes[1].in_temporal_ease.map((ease) => ease.speed);
+    const speeds = prop2.keyframes[1].inTemporalEase.map((ease) => ease.speed);
     expect(approx(speeds, [150.0, 25.0, 0.0])).toBe(true);
-    const influences = prop2.keyframes[1].in_temporal_ease.map((ease) => ease.influence);
+    const influences = prop2.keyframes[1].inTemporalEase.map((ease) => ease.influence);
     expect(approx(influences, Array(3).fill(100.0 / 6.0))).toBe(true);
   });
 
@@ -1550,33 +1550,33 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
     const transform = project.compositions[0].layers[0].transform;
     const scale = transform.property("ADBE Scale");
-    scale.remove_all_keys();
+    scale.removeAllKeys();
     for (const [index, time] of times.entries()) {
-      scale.set_value_at_time(time, [curves[0][index], curves[1][index], 100.0]);
+      scale.setValueAtTime(time, [curves[0][index], curves[1][index], 100.0]);
     }
 
     const references: Property<number>[] = [];
     for (const curve of curves) {
       const reference = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
       const rotation = reference.compositions[0].layers[0].transform.property("ADBE Rotate Z");
-      rotation.remove_all_keys();
+      rotation.removeAllKeys();
       for (const [index, time] of times.entries()) {
-        rotation.set_value_at_time(time, curve[index]);
+        rotation.setValueAtTime(time, curve[index]);
       }
       references.push(rotation);
     }
 
     for (const prop of [scale, ...references]) {
       for (const keyframe of prop.keyframes) {
-        keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-        keyframe.out_interpolation_type = KeyframeInterpolationType.BEZIER;
-        keyframe.temporal_auto_bezier = true;
+        keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
+        keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
+        keyframe.temporalAutoBezier = true;
       }
     }
 
     for (const sample of [1.25, 1.5, 1.75]) {
-      const composed = scale.value_at_time(sample);
-      const expected = references.map((reference) => reference.value_at_time(sample));
+      const composed = scale.valueAtTime(sample);
+      const expected = references.map((reference) => reference.valueAtTime(sample));
       expect(approx(composed.slice(0, 2), expected)).toBe(true);
     }
   });
@@ -1584,15 +1584,15 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test("test_temporal_auto_bezier_forces_continuity_and_bezier", () => {
     const prop = _uneven_position();
     const keyframe = prop.keyframes[1];
-    keyframe.in_interpolation_type = KeyframeInterpolationType.LINEAR;
-    keyframe.out_interpolation_type = KeyframeInterpolationType.LINEAR;
-    keyframe.temporal_continuous = false;
+    keyframe.inInterpolationType = KeyframeInterpolationType.LINEAR;
+    keyframe.outInterpolationType = KeyframeInterpolationType.LINEAR;
+    keyframe.temporalContinuous = false;
 
-    keyframe.temporal_auto_bezier = true;
+    keyframe.temporalAutoBezier = true;
 
-    expect(keyframe.temporal_continuous).toBe(true);
-    expect<KeyframeInterpolationType>(keyframe.in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect<KeyframeInterpolationType>(keyframe.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
+    expect(keyframe.temporalContinuous).toBe(true);
+    expect<KeyframeInterpolationType>(keyframe.inInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect<KeyframeInterpolationType>(keyframe.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
   });
 
   /**
@@ -1604,18 +1604,18 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const prop = as_instance(
       project.compositions[0].layers
         .flatMap((layer) => layer.transform.properties)
-        .find((g) => py_bool(as_instance(g, Property).keyframes) && g.match_name === "ADBE Opacity"),
+        .find((g) => py_bool(as_instance(g, Property).keyframes) && g.matchName === "ADBE Opacity"),
       Property,
     );
     const keyframe = prop.keyframes[0];
-    const in_speed = keyframe.in_temporal_ease[0].speed;
-    const out_influence = keyframe.out_temporal_ease[0].influence;
-    expect(keyframe.out_temporal_ease[0].speed !== in_speed).toBe(true);
+    const in_speed = keyframe.inTemporalEase[0].speed;
+    const out_influence = keyframe.outTemporalEase[0].influence;
+    expect(keyframe.outTemporalEase[0].speed !== in_speed).toBe(true);
 
-    keyframe.temporal_continuous = true;
+    keyframe.temporalContinuous = true;
 
-    expect(approx(keyframe.out_temporal_ease[0].speed, in_speed)).toBe(true);
-    expect(approx(keyframe.out_temporal_ease[0].influence, out_influence)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].speed, in_speed)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].influence, out_influence)).toBe(true);
   });
 
   /**
@@ -1628,20 +1628,20 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test("test_temporal_continuous_forces_bezier_and_uses_the_stored_speed", () => {
     const prop = _uneven_position();
     const keyframe = prop.keyframes[1];
-    keyframe.in_temporal_ease = [new KeyframeEase(10.0, 75.0)];
-    keyframe.out_temporal_ease = [new KeyframeEase(90.0, 25.0)];
-    keyframe.in_interpolation_type = KeyframeInterpolationType.LINEAR;
+    keyframe.inTemporalEase = [new KeyframeEase(10.0, 75.0)];
+    keyframe.outTemporalEase = [new KeyframeEase(90.0, 25.0)];
+    keyframe.inInterpolationType = KeyframeInterpolationType.LINEAR;
     // The LINEAR side reports the segment slope, not the stored 10.
-    expect(approx(keyframe.in_temporal_ease[0].speed, 100.0)).toBe(true);
+    expect(approx(keyframe.inTemporalEase[0].speed, 100.0)).toBe(true);
 
-    keyframe.temporal_continuous = true;
+    keyframe.temporalContinuous = true;
 
-    expect<KeyframeInterpolationType>(keyframe.in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect(keyframe.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect(approx(keyframe.in_temporal_ease[0].speed, 10.0)).toBe(true);
-    expect(approx(keyframe.in_temporal_ease[0].influence, 75.0)).toBe(true);
-    expect(approx(keyframe.out_temporal_ease[0].speed, 10.0)).toBe(true);
-    expect(approx(keyframe.out_temporal_ease[0].influence, 25.0)).toBe(true);
+    expect<KeyframeInterpolationType>(keyframe.inInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect(keyframe.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect(approx(keyframe.inTemporalEase[0].speed, 10.0)).toBe(true);
+    expect(approx(keyframe.inTemporalEase[0].influence, 75.0)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].speed, 10.0)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].influence, 25.0)).toBe(true);
   });
 
   /**
@@ -1672,15 +1672,15 @@ describe("TestRoundtripAutoBezierWrites", () => {
       const before = [[...stored.in_influence], [...stored.out_influence]];
       expect(approx(before[1], [0.9])).toBe(true);
 
-      keyframe.in_interpolation_type = interpolation;
-      keyframe.out_interpolation_type = interpolation;
+      keyframe.inInterpolationType = interpolation;
+      keyframe.outInterpolationType = interpolation;
 
       expect(approx([...stored.in_influence], before[0])).toBe(true);
       expect(approx([...stored.out_influence], before[1])).toBe(true);
 
-      keyframe.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      keyframe.out_interpolation_type = KeyframeInterpolationType.BEZIER;
-      expect(approx(keyframe.out_temporal_ease[0].influence, 90.0)).toBe(true);
+      keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
+      expect(approx(keyframe.outTemporalEase[0].influence, 90.0)).toBe(true);
 
       const out = tmp_path.div("modified.aep");
       project.save(out);

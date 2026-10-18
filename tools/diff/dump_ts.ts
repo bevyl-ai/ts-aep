@@ -44,6 +44,20 @@ function py_order(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+// The TS API is camelCase; py-aep's is snake_case. Three names don't invert by rule.
+const PY_EXCEPTIONS: Record<string, string> = { is3d: "is_3d", inE1d: "in_e_1d", outE1d: "out_e_1d" };
+const TS_EXCEPTIONS = Object.fromEntries(Object.entries(PY_EXCEPTIONS).map(([t, p]) => [p, t]));
+
+/** py-aep's name for a TS member (`frameRate` -> `frame_rate`). */
+export function py_name(ts: string): string {
+  return PY_EXCEPTIONS[ts] ?? ts.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
+}
+
+/** The TS member for a py-aep name (`frame_rate` -> `frameRate`). */
+export function ts_name(py: string): string {
+  return TS_EXCEPTIONS[py] ?? py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
+}
+
 function is_container(obj: any): boolean {
   return typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number");
 }
@@ -111,11 +125,11 @@ export class Dumper {
       try {
         v = value[name];
       } catch (e) {
-        this.emit(`${path}.${name}`, { $err: err_name(e) });
+        this.emit(`${path}.${py_name(name)}`, { $err: err_name(e) });
         continue;
       }
       if (typeof v === "function" && !/^[A-Z]/.test(v.name ?? "")) continue;
-      this.walk(`${path}.${name}`, v, depth + 1);
+      this.walk(`${path}.${py_name(name)}`, v, depth + 1);
     }
     if (is_container(value)) {
       let items: any[];

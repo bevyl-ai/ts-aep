@@ -35,15 +35,15 @@ export class CompPreset {
   name: string;
   width: number;
   height: number;
-  pixel_aspect: number;
-  frame_rate: number;
+  pixelAspect: number;
+  frameRate: number;
 
   constructor(name: string, width: number, height: number, pixel_aspect: number, frame_rate: number) {
     this.name = name;
     this.width = width;
     this.height = height;
-    this.pixel_aspect = pixel_aspect;
-    this.frame_rate = frame_rate;
+    this.pixelAspect = pixel_aspect;
+    this.frameRate = frame_rate;
   }
 }
 

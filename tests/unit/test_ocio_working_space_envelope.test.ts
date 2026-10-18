@@ -50,7 +50,7 @@ describe("TestByteExactAgainstAE", () => {
 
 describe("TestQualifiedNameRoundTrips", () => {
   test("test_family_qualified_name_is_accepted", () => {
-    // `Project.working_space` reads back the qualified name, so assigning
+    // `Project.workingSpace` reads back the qualified name, so assigning
     // it straight back must not raise.
     expect(ocio_color_profile_envelope(CONFIG, "ACES/ACEScg yo")).toBe(DIRECT_ACESCG);
   });

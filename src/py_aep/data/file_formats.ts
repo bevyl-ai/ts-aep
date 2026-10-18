@@ -176,7 +176,7 @@ export const _FILE_FORMATS: Map<string, FileFormat> = new Map<string, FileFormat
 // AE refuses .avi (codec), .flv/.ps (invalid type) on import. .ma imports
 // only as a cropped comp (not footage) - a separate comp-conversion feature.
 
-// Which `ImportAsType` values `ImportOptions.can_import_as()` accepts per
+// Which `ImportAsType` values `ImportOptions.canImportAs()` accepts per
 // extension. Values for the asset extensions present in `samples/assets/` were
 // measured empirically in AE 2026 via `scripts/jsx/can_import_as_matrix.jsx`
 // (the matrix lives at `scripts/jsx/can_import_as_matrix.json`). Note the

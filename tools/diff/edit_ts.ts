@@ -5,6 +5,7 @@
 
 import * as fs from "node:fs";
 import * as py_aep from "../../src/py_aep/index.ts";
+import { ts_name } from "./dump_ts.ts";
 
 function err_name(e: any): string {
   const n: string = e?.constructor?.name ?? "Error";
@@ -20,10 +21,10 @@ function resolve(app: any, path: string): [any, string] {
   const steps = [...path.slice(3).matchAll(/\.(\w+)|\[(\d+)\]/g)];
   let obj = app;
   for (const m of steps.slice(0, -1)) {
-    if (m[1] !== undefined) obj = obj[m[1]];
+    if (m[1] !== undefined) obj = obj[ts_name(m[1])];
     else obj = Array.isArray(obj) ? obj[Number(m[2])] : [...obj][Number(m[2])];
   }
-  return [obj, steps.at(-1)![1]];
+  return [obj, ts_name(steps.at(-1)![1])];
 }
 
 const [out, ...samples] = process.argv.slice(2);

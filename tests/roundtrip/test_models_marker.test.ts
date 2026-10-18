@@ -75,13 +75,13 @@ describe("TestRoundtripMarkerDuration", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "duration_5");
-    const original_fd = marker.frame_duration;
+    const original_fd = marker.frameDuration;
 
-    marker.frame_duration = original_fd + 10;
+    marker.frameDuration = original_fd + 10;
     const out = tmp_path.div("modified_frame_duration.aep");
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "duration_5");
-    expect(marker2.frame_duration).toBe(original_fd + 10);
+    expect(marker2.frameDuration).toBe(original_fd + 10);
   });
 
   test("test_modify_duration", () => {
@@ -101,27 +101,27 @@ describe("TestRoundtripMarkerDuration", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "duration_5");
     expect(marker.duration).toBe(5.0);
-    expect(marker.frame_duration).toBe(120);
+    expect(marker.frameDuration).toBe(120);
   });
 
   test("test_set_frame_duration", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "duration_5");
-    marker.frame_duration = 36;
+    marker.frameDuration = 36;
     expect(marker.duration).toBe(1.5);
     const out = tmp_path.div("frame_duration.aep");
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "duration_5");
     expect(marker2.duration).toBe(1.5);
-    expect(marker2.frame_duration).toBe(36);
+    expect(marker2.frameDuration).toBe(36);
   });
 
   test("test_unbound_marker_has_no_frame_duration", () => {
     raises(
       ValueError,
       () => {
-        void new MarkerValue("x").frame_duration;
+        void new MarkerValue("x").frameDuration;
       },
       "frame rate",
     );
@@ -138,8 +138,8 @@ describe("TestRoundtripMarkerDuration", () => {
     const comp = get_comp(project, "label_3");
     const marker = new MarkerValue("w_new");
     marker.duration = 2.5;
-    if (comp.marker_property === null) throw new AssertionError_("comp.marker_property is None");
-    comp.marker_property.set_value_at_time(2.0, marker);
+    if (comp.markerProperty === null) throw new AssertionError_("comp.marker_property is None");
+    comp.markerProperty.setValueAtTime(2.0, marker);
     const out = tmp_path.div("new_marker.aep");
     project.save(out);
     const comp2 = get_comp(parse_project_fresh(out), "label_3");
@@ -153,14 +153,14 @@ describe("TestRoundtripMarkerDuration", () => {
 });
 
 describe("TestValidateMarkerFrameDuration", () => {
-  /** Validation tests for MarkerValue.frame_duration. */
+  /** Validation tests for MarkerValue.frameDuration. */
   test("test_frame_duration_rejects_negative", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "duration_5");
     raises(
       ValueError,
       () => {
-        marker.frame_duration = -1;
+        marker.frameDuration = -1;
       },
       "must be >= 0",
     );
@@ -172,7 +172,7 @@ describe("TestValidateMarkerFrameDuration", () => {
     raises(
       TypeError_,
       () => {
-        marker.frame_duration = 1.5;
+        marker.frameDuration = 1.5;
       },
       "expected an integer",
     );
@@ -208,23 +208,23 @@ describe("TestRoundtripMarkerNavigation", () => {
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "comment");
     expect(marker2.navigation).toBe(!original);
-    expect(marker2.event_cue_point).toBe(original);
+    expect(marker2.eventCuePoint).toBe(original);
   });
 });
 
 describe("TestRoundtripMarkerProtectedRegion", () => {
-  /** Roundtrip tests for MarkerValue.protected_region. */
+  /** Roundtrip tests for MarkerValue.protectedRegion. */
   test("test_modify_protected_region", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "protectedRegion_true");
-    expect(marker.protected_region).toBe(true);
+    expect(marker.protectedRegion).toBe(true);
 
-    marker.protected_region = false;
+    marker.protectedRegion = false;
     const out = tmp_path.div("modified_protected_region.aep");
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "protectedRegion_true");
-    expect(marker2.protected_region).toBe(false);
+    expect(marker2.protectedRegion).toBe(false);
   });
 });
 
@@ -261,34 +261,34 @@ describe("TestRoundtripMarkerUrl", () => {
 });
 
 describe("TestRoundtripMarkerFrameTarget", () => {
-  /** Roundtrip tests for MarkerValue.frame_target. */
+  /** Roundtrip tests for MarkerValue.frameTarget. */
   test("test_modify_frame_target", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "frameTarget");
-    expect(marker.frame_target).not.toBe("");
+    expect(marker.frameTarget).not.toBe("");
 
-    marker.frame_target = "_blank";
+    marker.frameTarget = "_blank";
     const out = tmp_path.div("modified_frame_target.aep");
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "frameTarget");
-    expect(marker2.frame_target).toBe("_blank");
+    expect(marker2.frameTarget).toBe("_blank");
   });
 });
 
 describe("TestRoundtripMarkerCuePointName", () => {
-  /** Roundtrip tests for MarkerValue.cue_point_name. */
+  /** Roundtrip tests for MarkerValue.cuePointName. */
   test("test_modify_cue_point_name", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const marker = get_first_comp_marker(project, "cuePointName");
-    expect(marker.cue_point_name).not.toBe("");
+    expect(marker.cuePointName).not.toBe("");
 
-    marker.cue_point_name = "modified_cue";
+    marker.cuePointName = "modified_cue";
     const out = tmp_path.div("modified_cue_point_name.aep");
     project.save(out);
     const marker2 = get_first_comp_marker(parse_project_fresh(out), "cuePointName");
-    expect(marker2.cue_point_name).toBe("modified_cue");
+    expect(marker2.cuePointName).toBe("modified_cue");
   });
 });
 
@@ -319,7 +319,7 @@ describe("TestMarkerParams", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = get_comp(project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
-    mp.set_value_at_time(
+    mp.setValueAtTime(
       at(mp.keyframes, -1).time + 1.0,
       new MarkerValue("with params", undefined, undefined, undefined, undefined, new Map([["k1", "v1"], ["k2", "v2"]])),
     );
@@ -371,7 +371,7 @@ describe("TestMarkerParams", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = get_comp(project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
-    mp.set_value_at_time(at(mp.keyframes, -1).time + 1.0, new MarkerValue("late"));
+    mp.setValueAtTime(at(mp.keyframes, -1).time + 1.0, new MarkerValue("late"));
     const bound_kf = mp.keyframes.find((k) => k.value.comment === "late");
     if (bound_kf === undefined) throw new StopIteration();
     const bound = bound_kf.value;
@@ -394,7 +394,7 @@ describe("TestMarkerParams", () => {
     const marker = new MarkerValue("unbound");
     marker.params = new Map([["p", "q"]]);
     expect(py_eq(marker.params, new Map([["p", "q"]]))).toBe(true);
-    mp.set_value_at_time(at(mp.keyframes, -1).time + 1.0, marker);
+    mp.setValueAtTime(at(mp.keyframes, -1).time + 1.0, marker);
     const out = tmp_path.div("marker_params_unbound.aep");
     project.save(out);
     const comp2 = get_comp(parse_project_fresh(out), "layer_multiple_markers");
@@ -427,14 +427,14 @@ describe("TestMarkerLazyParseRoundtrip", () => {
 });
 
 describe("TestRemoveAllMarkers", () => {
-  /** CompItem.remove_all_markers and Layer.remove_all_markers. */
+  /** CompItem.removeAllMarkers and Layer.removeAllMarkers. */
   test("test_comp_remove_all_markers", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("comp_marker.aep"));
     const comp = get_comp(project, "comment");
     expect(py_bool(comp.markers)).toBe(true);
 
-    comp.remove_all_markers();
+    comp.removeAllMarkers();
     expect(py_eq(comp.markers, [])).toBe(true);
     const out = tmp_path.div("no_comp_markers.aep");
     project.save(out);
@@ -449,7 +449,7 @@ describe("TestRemoveAllMarkers", () => {
     const layer = comp.layers[0];
     expect(py_bool(layer.markers)).toBe(true);
 
-    layer.remove_all_markers();
+    layer.removeAllMarkers();
     expect(py_eq(layer.markers, [])).toBe(true);
     const out = tmp_path.div("no_layer_markers.aep");
     project.save(out);
@@ -463,10 +463,10 @@ describe("TestRemoveAllMarkers", () => {
     const layer = comp.layers[0];
     // The comp itself has no markers; layers keep an empty marker
     // property after draining. Both cases must be no-ops.
-    comp.remove_all_markers();
+    comp.removeAllMarkers();
     expect(py_eq(comp.markers, [])).toBe(true);
-    layer.remove_all_markers();
-    layer.remove_all_markers();
+    layer.removeAllMarkers();
+    layer.removeAllMarkers();
     expect(py_eq(layer.markers, [])).toBe(true);
   });
 });

@@ -80,11 +80,11 @@ const get_fixture3_app = cached(() => parse_app_fresh(FIXTURE3));
 
 function _doc_for(app: Application, layer_name: string): TextDocument {
   const comp = app.project.compositions[0];
-  const layer = comp.text_layers.find((ly) => ly.name === layer_name);
+  const layer = comp.textLayers.find((ly) => ly.name === layer_name);
   if (layer === undefined) throw new StopIteration();
   const text = layer.text;
   py_assert(text != null);
-  return text.source_text.value;
+  return text.sourceText.value;
 }
 
 /**
@@ -130,17 +130,17 @@ function _assert_byte_parity(py_doc: TextDocument, fixture_app: Application, op_
 }
 
 const PER_CHAR_MAP: Record<string, string> = {
-  fontSize: "font_size",
-  applyFill: "apply_fill",
-  applyStroke: "apply_stroke",
+  fontSize: "fontSize",
+  applyFill: "applyFill",
+  applyStroke: "applyStroke",
   justification: "justification",
-  autoLeading: "auto_leading",
-  fillColor: "fill_color",
-  strokeColor: "stroke_color",
+  autoLeading: "autoLeading",
+  fillColor: "fillColor",
+  strokeColor: "strokeColor",
   leading: "leading",
   font: "font",
   kerning: "kerning",
-  autoKernType: "auto_kern_type",
+  autoKernType: "autoKernType",
 };
 
 function _assert_per_char(py_doc: TextDocument, probe: TextWritesProbe, op_name: string, attrs: string[]): void {
@@ -148,7 +148,7 @@ function _assert_per_char(py_doc: TextDocument, probe: TextWritesProbe, op_name:
   const n = len(py_doc.text);
   expect(n).toBe(expected_chars.length);
   for (const i of range(n)) {
-    const rng = py_doc.character_range(i, i + 1);
+    const rng = py_doc.characterRange(i, i + 1);
     for (const es_attr of attrs) {
       const expected = expected_chars[i][es_attr];
       const actual = getattr(rng, PER_CHAR_MAP[es_attr]);
@@ -174,7 +174,7 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(3, 7).font_size = 72;
+    doc.characterRange(3, 7).fontSize = 72;
     _assert_alias_integrity(doc);
     _assert_byte_parity(doc, fixture_app, "W_SPLIT");
     _assert_per_char(doc, probe, "W_SPLIT", ["fontSize"]);
@@ -184,8 +184,8 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(0, 5).font_size = 72;
-    doc.character_range(5, 10).font_size = 72;
+    doc.characterRange(0, 5).fontSize = 72;
+    doc.characterRange(5, 10).fontSize = 72;
     _assert_alias_integrity(doc);
     // AE coalesced this into a single run covering the terminator.
     expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
@@ -197,7 +197,7 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(2, 8).font_size = 36;
+    doc.characterRange(2, 8).fontSize = 36;
     _assert_alias_integrity(doc);
     expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture_app, "W_NOOP");
@@ -207,8 +207,8 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(0, 5).font_size = 72;
-    doc.character_range(3, 8).font_size = 72;
+    doc.characterRange(0, 5).fontSize = 72;
+    doc.characterRange(3, 8).fontSize = 72;
     _assert_alias_integrity(doc);
     _assert_byte_parity(doc, fixture_app, "W_PARTIAL_EQ");
     _assert_per_char(doc, probe, "W_PARTIAL_EQ", ["fontSize"]);
@@ -218,7 +218,7 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(2, 6).apply_fill = false;
+    doc.characterRange(2, 6).applyFill = false;
     _assert_alias_integrity(doc);
     _assert_byte_parity(doc, fixture_app, "W_FILL_UNAPPLY");
     _assert_per_char(doc, probe, "W_FILL_UNAPPLY", ["applyFill"]);
@@ -228,21 +228,21 @@ describe("TestScalarWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(3, 3).font_size = 90;
+    doc.characterRange(3, 3).fontSize = 90;
     _assert_byte_parity(doc, fixture_app, "W_ZERO_STYLE");
   });
 
   test("test_validation", () => {
     const [_app, doc] = _base_doc();
     raises(ValueError, () => {
-      doc.character_range(0, 5).font_size = 0;
+      doc.characterRange(0, 5).fontSize = 0;
     });
     // Python raises AttributeError on assignment to a getter-only property;
     // strict-mode JS throws TypeError instead, so map it back.
     raises(AttributeError, () => {
       try {
         // @ts-expect-error font_object is read-only; the test checks the runtime refusal
-        doc.character_range(0, 5).font_object = null;
+        doc.characterRange(0, 5).fontObject = null;
       } catch (e) {
         if (e instanceof TypeError) throw new AttributeError(e.message);
         throw e;
@@ -256,7 +256,7 @@ describe("TestColorFontLeadingWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(2, 6).stroke_color = [0, 1, 0];
+    doc.characterRange(2, 6).strokeColor = [0, 1, 0];
     _assert_byte_parity(doc, fixture_app, "W_STROKE_GATE");
     // AE leaves applyStroke off, so the gated read stays undefined.
     _assert_per_char(doc, probe, "W_STROKE_GATE", ["strokeColor", "applyStroke"]);
@@ -266,7 +266,7 @@ describe("TestColorFontLeadingWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(1, 4).leading = 50;
+    doc.characterRange(1, 4).leading = 50;
     _assert_byte_parity(doc, fixture_app, "W_LEAD");
     _assert_per_char(doc, probe, "W_LEAD", ["leading", "autoLeading"]);
   });
@@ -282,29 +282,29 @@ describe("TestColorFontLeadingWrites", () => {
       return skip("Arial-BoldMT not installed at the fixture's version");
     }
     const [_app, doc] = _base_doc();
-    doc.character_range(3, 7).font = "Arial-BoldMT";
-    expect(doc._fonts.map((f) => f.post_script_name)[0]).toBe("Arial-BoldMT");
+    doc.characterRange(3, 7).font = "Arial-BoldMT";
+    expect(doc._fonts.map((f) => f.postScriptName)[0]).toBe("Arial-BoldMT");
     _assert_byte_parity(doc, fixture_app, "W_FONT");
     _assert_per_char(doc, probe, "W_FONT", ["font"]);
   });
 
   test("test_existing_font_reuses_index", () => {
     const [_app, doc] = _base_doc();
-    const before = doc._fonts.map((f) => f.post_script_name);
-    doc.character_range(3, 7).font = before[0];
-    expect(py_eq(doc._fonts.map((f) => f.post_script_name), before)).toBe(true);
+    const before = doc._fonts.map((f) => f.postScriptName);
+    doc.characterRange(3, 7).font = before[0];
+    expect(py_eq(doc._fonts.map((f) => f.postScriptName), before)).toBe(true);
   });
 
   test("test_fill_color_write_and_clear", () => {
     const [_app, doc] = _base_doc();
-    doc.character_range(2, 6).fill_color = [1, 0, 0];
-    expect(approx(doc.character_range(2, 6).fill_color, [1.0, 0.0, 0.0])).toBe(true);
-    const other_fill = doc.character_range(0, 2).fill_color;
+    doc.characterRange(2, 6).fillColor = [1, 0, 0];
+    expect(approx(doc.characterRange(2, 6).fillColor, [1.0, 0.0, 0.0])).toBe(true);
+    const other_fill = doc.characterRange(0, 2).fillColor;
     // `None != approx(...)` is True in Python; pyrt approx cannot take null.
     expect(other_fill != null && approx(other_fill, [1.0, 0.0, 0.0])).toBe(false);
-    doc.character_range(2, 6).fill_color = null;
+    doc.characterRange(2, 6).fillColor = null;
     // Cleared paint: the gated read has applyFill runs but no color.
-    expect(doc.character_range(2, 6).fill_color == null).toBe(true);
+    expect(doc.characterRange(2, 6).fillColor == null).toBe(true);
   });
 });
 
@@ -313,7 +313,7 @@ describe("TestKerningWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc("AVAWAYAVAW");
-    doc.character_range(2, 5).kerning = 150;
+    doc.characterRange(2, 5).kerning = 150;
     _assert_byte_parity(doc, fixture_app, "W_KERN_MID");
     _assert_per_char(doc, probe, "W_KERN_MID", ["kerning", "autoKernType"]);
   });
@@ -322,7 +322,7 @@ describe("TestKerningWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc("AVAWAYAVAW");
-    doc.character_range(0, 2).kerning = 150;
+    doc.characterRange(0, 2).kerning = 150;
     expect(_cos_path(doc._doc, "0", "7")).toBe(150);
     expect(doc.kerning).toBe(150);
     _assert_byte_parity(doc, fixture_app, "W_KERN_START");
@@ -340,8 +340,8 @@ describe("TestKerningWrites", () => {
     const probe2 = get_probe2();
 
     const [_app, doc] = _base_doc("AVAWAYAV");
-    doc.character_range(1, 4).kerning = 200;
-    doc.character_range(0, -1).auto_kern_type = AutoKernType.METRIC_KERN;
+    doc.characterRange(1, 4).kerning = 200;
+    doc.characterRange(0, -1).autoKernType = AutoKernType.METRIC_KERN;
     expect(cos_contains(_cos_path(doc._doc, "0"), "8")).toBe(false);
     _assert_byte_parity(doc, fixture2_app, "X_AKT_SET");
     _assert_per_char(doc, probe2, "X_AKT_SET", ["kerning", "autoKernType"]);
@@ -351,8 +351,8 @@ describe("TestKerningWrites", () => {
     const fixture2_app = get_fixture2_app();
     const probe2 = get_probe2();
     const [_app, doc] = _base_doc("abcdefgh");
-    doc.character_range(1, 4).leading = 50;
-    doc.character_range(0, -1).auto_leading = true;
+    doc.characterRange(1, 4).leading = 50;
+    doc.characterRange(0, -1).autoLeading = true;
     // AE merges back to a single run with the leading sentinel.
     expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture2_app, "X_AL_SET");
@@ -365,7 +365,7 @@ describe("TestParagraphWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc("Left one\nRight two");
-    doc.character_range(2, 5).justification = ParagraphJustification.RIGHT_JUSTIFY;
+    doc.characterRange(2, 5).justification = ParagraphJustification.RIGHT_JUSTIFY;
     _assert_byte_parity(doc, fixture_app, "W_PARA_PARTIAL");
     _assert_per_char(doc, probe, "W_PARA_PARTIAL", ["justification"]);
   });
@@ -374,8 +374,8 @@ describe("TestParagraphWrites", () => {
 describe("TestTextReplacement", () => {
   const _styled_base = (): [Application, TextDocument] => {
     const [app, doc] = _base_doc();
-    doc.character_range(0, 5).fill_color = [1, 0, 0];
-    doc.character_range(0, 5).font_size = 72;
+    doc.characterRange(0, 5).fillColor = [1, 0, 0];
+    doc.characterRange(0, 5).fontSize = 72;
     return [app, doc];
   };
 
@@ -383,7 +383,7 @@ describe("TestTextReplacement", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _styled_base();
-    const rng = doc.character_range(3, 7);
+    const rng = doc.characterRange(3, 7);
     rng.text = "XY";
     // The range keeps its creation indices against the new text.
     expect(rng.text).toBe("XYhi");
@@ -395,7 +395,7 @@ describe("TestTextReplacement", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _styled_base();
-    const rng = doc.character_range(3, 5);
+    const rng = doc.characterRange(3, 5);
     rng.text = "LONGERBIT";
     expect(rng.text).toBe("LO");
     _assert_byte_parity(doc, fixture_app, "W_TEXT_LONGER");
@@ -406,8 +406,8 @@ describe("TestTextReplacement", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _styled_base();
-    doc.character_range(3, 5).text = "A\nB";
-    expect(doc.paragraph_count).toBe(2);
+    doc.characterRange(3, 5).text = "A\nB";
+    expect(doc.paragraphCount).toBe(2);
     _assert_byte_parity(doc, fixture_app, "W_TEXT_ADDPARA");
   });
 
@@ -415,7 +415,7 @@ describe("TestTextReplacement", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _styled_base();
-    const rng = doc.character_range(4, 4);
+    const rng = doc.characterRange(4, 4);
     rng.text = "ins";
     expect(rng.text).toBe("");
     expect(doc.text).toBe("abcdinsefghij");
@@ -427,8 +427,8 @@ describe("TestTextReplacement", () => {
     const fixture2_app = get_fixture2_app();
     const probe2 = get_probe2();
     const [_app, doc] = _base_doc();
-    doc.character_range(0, 4).font_size = 72;
-    doc.character_range(6, 10).text = "ZZ";
+    doc.characterRange(0, 4).fontSize = 72;
+    doc.characterRange(6, 10).text = "ZZ";
     expect(doc.text).toBe("abcdefZZ");
     _assert_byte_parity(doc, fixture2_app, "X_TEXT_END");
     _assert_per_char(doc, probe2, "X_TEXT_END", ["fontSize"]);
@@ -438,8 +438,8 @@ describe("TestTextReplacement", () => {
     const fixture2_app = get_fixture2_app();
     const probe2 = get_probe2();
     const [_app, doc] = _base_doc("AVAWAYAV");
-    doc.character_range(1, 4).kerning = 200;
-    doc.character_range(2, 5).text = "xy";
+    doc.characterRange(1, 4).kerning = 200;
+    doc.characterRange(2, 5).text = "xy";
     expect(doc.text).toBe("AVxyYAV");
     _assert_byte_parity(doc, fixture2_app, "X_TEXT_KERN");
     _assert_per_char(doc, probe2, "X_TEXT_KERN", ["kerning", "autoKernType"]);
@@ -451,10 +451,10 @@ describe("TestPasteFrom", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    const src = doc.character_range(0, 3);
-    src.fill_color = [1, 0, 0];
-    src.font_size = 72;
-    doc.character_range(6, 9).paste_from(doc.character_range(0, 3));
+    const src = doc.characterRange(0, 3);
+    src.fillColor = [1, 0, 0];
+    src.fontSize = 72;
+    doc.characterRange(6, 9).pasteFrom(doc.characterRange(0, 3));
     _assert_byte_parity(doc, fixture_app, "W_PASTE_SAME");
     _assert_per_char(doc, probe, "W_PASTE_SAME", ["fontSize", "fillColor"]);
   });
@@ -465,10 +465,10 @@ describe("TestPasteFrom", () => {
     const [app, doc] = _base_doc();
     const src_doc = _doc_for(app, "W_SPLIT");
     src_doc.text = "QQQQ";
-    const src_all = src_doc.character_range(0, -1);
+    const src_all = src_doc.characterRange(0, -1);
     src_all.font = "Arial-BoldMT";
-    src_all.font_size = 90;
-    doc.character_range(2, 6).paste_from(src_doc.character_range(0, 4));
+    src_all.fontSize = 90;
+    doc.characterRange(2, 6).pasteFrom(src_doc.characterRange(0, 4));
     expect(doc.text).toBe("abQQQQghij");
     _assert_per_char(doc, probe, "W_PASTE_XDOC", ["fontSize", "font"]);
   });
@@ -479,13 +479,13 @@ describe("TestPasteFrom", () => {
     const [app, doc] = _base_doc();
     const src_doc = _doc_for(app, "W_SPLIT");
     src_doc.text = "QQQQ";
-    const src_all = src_doc.character_range(0, -1);
+    const src_all = src_doc.characterRange(0, -1);
     src_all.font = "Arial-BoldMT";
-    src_all.font_size = 90;
-    const target = doc.character_range(2, 9);
-    target.paste_from(src_doc.character_range(0, 2));
+    src_all.fontSize = 90;
+    const target = doc.characterRange(2, 9);
+    target.pasteFrom(src_doc.characterRange(0, 2));
     expect(doc.text).toBe("abQQj");
-    expect(target.is_range_valid).toBe(false);
+    expect(target.isRangeValid).toBe(false);
     raises(ValueError, () => {
       const _ = target.text;
     });
@@ -497,8 +497,8 @@ describe("TestPasteFrom", () => {
     const [app, doc] = _base_doc("abcdefgh");
     const src_doc = _doc_for(app, "W_SPLIT");
     src_doc.text = "AVAV";
-    src_doc.character_range(1, 3).kerning = 150;
-    doc.character_range(2, 6).paste_from(src_doc.character_range(0, 4));
+    src_doc.characterRange(1, 3).kerning = 150;
+    doc.characterRange(2, 6).pasteFrom(src_doc.characterRange(0, 4));
     expect(doc.text).toBe("abAVAVgh");
     _assert_byte_parity(doc, fixture2_app, "X_PASTE_KERN");
     _assert_per_char(doc, probe2, "X_PASTE_KERN", ["kerning", "autoKernType"]);
@@ -524,7 +524,7 @@ describe("TestPasteLeadingEdgeKern", () => {
   const _edge_source = (app: Application) => {
     const src_doc = _doc_for(app, "W_SPLIT");
     src_doc.text = "AVAV";
-    src_doc.character_range(0, 2).kerning = 140;
+    src_doc.characterRange(0, 2).kerning = 140;
     return src_doc;
   };
 
@@ -532,14 +532,14 @@ describe("TestPasteLeadingEdgeKern", () => {
     const fixture3_app = get_fixture3_app();
     const probe3 = get_probe3();
     const [app, doc] = _base_doc("abcdef");
-    doc.character_range(0, 3).paste_from(_edge_source(app).character_range(0, 3));
+    doc.characterRange(0, 3).pasteFrom(_edge_source(app).characterRange(0, 3));
     expect(_cos_path(doc._doc, "0", "7")).toBe(140);
     expect(doc.kerning).toBe(140);
     _assert_byte_parity(doc, fixture3_app, "Y_PASTE_EDGE0");
     const expected = probe3["ops"]["Y_PASTE_EDGE0"]["kernPerChar"].map((e: { value: ProbeJson }) => e["value"]);
     const actual = [...range(len(expected))].map((i) => [
-      doc.character_range(i, i + 1).kerning,
-      doc.character_range(i, i + 1).auto_kern_type,
+      doc.characterRange(i, i + 1).kerning,
+      doc.characterRange(i, i + 1).autoKernType,
     ]);
     for (const [got, exp] of zip(actual, expected)) {
       expect(got[0] ?? "<<undefined>>").toBe(exp[0]);
@@ -551,7 +551,7 @@ describe("TestPasteLeadingEdgeKern", () => {
     const fixture3_app = get_fixture3_app();
     const probe3 = get_probe3();
     const [app, doc] = _base_doc("abcdef");
-    doc.character_range(2, 5).paste_from(_edge_source(app).character_range(0, 3));
+    doc.characterRange(2, 5).pasteFrom(_edge_source(app).characterRange(0, 3));
     expect(cos_contains(_cos_path(doc._doc, "0"), "7")).toBe(false);
     // The edge value lands on the pair before the paste (char 1) with
     // NO auto-kern flag change - ES reads it as undefined through the
@@ -562,8 +562,8 @@ describe("TestPasteLeadingEdgeKern", () => {
     expect(py_eq(_kern_values(doc).slice(0, 5), [null, 140, 140, 140, null])).toBe(true);
     const expected = probe3["ops"]["Y_PASTE_EDGE_MID"]["kernPerChar"].map((e: { value: ProbeJson }) => e["value"]);
     const actual = [...range(len(expected))].map((i) => [
-      doc.character_range(i, i + 1).kerning,
-      doc.character_range(i, i + 1).auto_kern_type,
+      doc.characterRange(i, i + 1).kerning,
+      doc.characterRange(i, i + 1).autoKernType,
     ]);
     for (const [got, exp] of zip(actual, expected)) {
       expect(got[0] ?? "<<undefined>>").toBe(exp[0]);
@@ -580,14 +580,14 @@ describe("TestDocumentLevelReads", () => {
     const probe3 = get_probe3();
     const doc = _doc_for(fixture3_app, "Y_DOCREADS");
     const expected = probe3["ops"]["Y_DOCREADS"]["docLevel"];
-    expect(doc.font_size).toBe(expected["fontSize"]);
-    expect(approx(doc.fill_color, expected["fillColor"], { abs: 1e-5 })).toBe(true);
+    expect(doc.fontSize).toBe(expected["fontSize"]);
+    expect(approx(doc.fillColor, expected["fillColor"], { abs: 1e-5 })).toBe(true);
     expect(doc.font).toBe(expected["font"]);
-    expect(doc.faux_bold).toBe(expected["fauxBold"]);
-    expect(doc.apply_stroke).toBe(expected["applyStroke"]);
+    expect(doc.fauxBold).toBe(expected["fauxBold"]);
+    expect(doc.applyStroke).toBe(expected["applyStroke"]);
     expect(doc.tracking).toBe(expected["tracking"]);
     expect(doc.kerning).toBe(expected["kerning"]);
-    expect(doc.auto_leading).toBe(expected["autoLeading"]);
+    expect(doc.autoLeading).toBe(expected["autoLeading"]);
     expect(approx(doc.leading, expected["leading"], { abs: 1e-4 })).toBe(true);
   });
 
@@ -597,7 +597,7 @@ describe("TestDocumentLevelReads", () => {
     const doc = _doc_for(fixture3_app, "Y_DOCREAD_LEAD");
     const expected = probe3["ops"]["Y_DOCREAD_LEAD"];
     expect(approx(doc.leading, expected["leading"]["value"], { abs: 1e-4 })).toBe(true);
-    expect(doc.auto_leading).toBe(expected["autoLeading"]["value"]);
+    expect(doc.autoLeading).toBe(expected["autoLeading"]["value"]);
   });
 });
 
@@ -607,10 +607,10 @@ describe("TestSurrogateWrites", () => {
     // the font array at composition, which py cannot reproduce.
     const probe = get_probe();
     const [_app, doc] = _base_doc("ab\u{1F600}cd");
-    doc.character_range(2, 3).font_size = 72;
+    doc.characterRange(2, 3).fontSize = 72;
     // Per UTF-16 unit, like the ExtendScript probe (the emoji is 2 units).
     const expected = probe["ops"]["W_SURROGATE_STYLE"]["perChar"].map((c: { fontSize: ProbeJson }) => c["fontSize"]);
-    const actual = [...range(len(expected))].map((i) => doc.character_range(i, i + 1).font_size);
+    const actual = [...range(len(expected))].map((i) => doc.characterRange(i, i + 1).fontSize);
     expect(py_eq(actual, expected)).toBe(true);
   });
 });
@@ -620,8 +620,8 @@ describe("TestDocumentWideWrites", () => {
     const fixture_app = get_fixture_app();
     const probe = get_probe();
     const [_app, doc] = _base_doc();
-    doc.character_range(0, 5).font_size = 72;
-    doc.font_size = 50;
+    doc.characterRange(0, 5).fontSize = 72;
+    doc.fontSize = 50;
     expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture_app, "W_DOCLEVEL");
     _assert_per_char(doc, probe, "W_DOCLEVEL", ["fontSize"]);
@@ -631,8 +631,8 @@ describe("TestDocumentWideWrites", () => {
     const fixture2_app = get_fixture2_app();
     const probe2 = get_probe2();
     const [_app, doc] = _base_doc("abcdefgh");
-    doc.character_range(0, 4).font_size = 72;
-    doc.fill_color = [0, 0, 1];
+    doc.characterRange(0, 4).fontSize = 72;
+    doc.fillColor = [0, 0, 1];
     _assert_byte_parity(doc, fixture2_app, "X_DOC_FILL");
     _assert_per_char(doc, probe2, "X_DOC_FILL", ["fillColor", "fontSize"]);
   });
@@ -648,8 +648,8 @@ describe("TestDocumentWideWrites", () => {
 
   test("test_auto_leading_resets_sentinel_document_wide", () => {
     const [_app, doc] = _base_doc();
-    doc.character_range(1, 4).leading = 50;
-    doc.auto_leading = true;
+    doc.characterRange(1, 4).leading = 50;
+    doc.autoLeading = true;
     expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     expect(py_eq(cos_item(doc._char_style, "5"), 0.01)).toBe(true);
   });
@@ -659,7 +659,7 @@ describe("TestRoundTripAfterWrite", () => {
   test("test_mutated_save_is_idempotent", () => {
     const tmp_path = make_tmp_path();
     const [app, doc] = _base_doc();
-    doc.character_range(3, 7).font_size = 72;
+    doc.characterRange(3, 7).fontSize = 72;
     const first = tmp_path.div("first.aep");
     app.project.save(first);
     const app2 = parse_app_fresh(first);
@@ -672,9 +672,9 @@ describe("TestRoundTripAfterWrite", () => {
     // After splits and merges, document-level getters (which alias the
     // first run's style dict) must keep reading char 0's actual style.
     const [_app, doc] = _base_doc();
-    doc.character_range(3, 7).font_size = 72;
-    expect(doc.font_size).toBe(36.0);
-    doc.character_range(0, 3).font_size = 72;
-    expect(doc.font_size).toBe(72.0);
+    doc.characterRange(3, 7).fontSize = 72;
+    expect(doc.fontSize).toBe(36.0);
+    doc.characterRange(0, 3).fontSize = 72;
+    expect(doc.fontSize).toBe(72.0);
   });
 });

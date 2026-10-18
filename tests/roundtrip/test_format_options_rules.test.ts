@@ -36,7 +36,7 @@ import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_opt
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "format_options");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 // -- back-reference wiring ---------------------------------------------------
@@ -52,10 +52,10 @@ test.each(_CORPUS.map((p) => [_rel_id(p), p]))(
   "test_parent_om_backref_is_wired[%s]",
   (_id: string, aep_path: Path) => {
     const app = parse_app(aep_path);
-    for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
-      for (const om of rqi.output_modules) {
-        if (om.format_options != null) {
-          expect(om.format_options._parent_om).toBe(om);
+    for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+      for (const om of rqi.outputModules) {
+        if (om.formatOptions != null) {
+          expect(om.formatOptions._parent_om).toBe(om);
         }
       }
     }
@@ -70,13 +70,13 @@ test("test_parent_om_backref_survives_apply_template", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(FORMAT_DIR.div("targa", "base.aep"));
   const om = _om(project);
-  const fo_before = om.format_options;
-  const rqi = as_instance(project.render_queue, RenderQueue).items[0];
+  const fo_before = om.formatOptions;
+  const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
   om._format_options = parse_format_options(rqi._lom.chunks);
   py_assert(om._format_options != null);
   om._format_options._parent_om = om; // what _apply_output_template does
-  expect(om.format_options).not.toBe(fo_before);
-  expect(om.format_options?._parent_om).toBe(om);
+  expect(om.formatOptions).not.toBe(fo_before);
+  expect(om.formatOptions?._parent_om).toBe(om);
 });
 
 // -- detachment on rebind ----------------------------------------------------
@@ -84,16 +84,16 @@ test("test_parent_om_backref_survives_apply_template", () => {
 /** Force a batch_edit rollback, returning the now-replaced wrapper. */
 function _stale_options(project: Project): [OutputModule, FormatOptionsBase] {
   const om = _om(project);
-  const fo = om.format_options;
+  const fo = om.formatOptions;
   raises(
     RuntimeError,
     () =>
-      om.batch_edit(() => {
+      om.batchEdit(() => {
         throw new RuntimeError("force rollback");
       }),
     "force rollback",
   );
-  expect(om.format_options).not.toBe(fo);
+  expect(om.formatOptions).not.toBe(fo);
   return [om, as_instance(fo, FormatOptionsBase)];
 }
 
@@ -101,7 +101,7 @@ test("test_rollback_detaches_outgoing_options", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("targa", "base.aep"));
   const [om, fo] = _stale_options(project);
   expect(fo._detached).toBe(true);
-  expect(om.format_options?._detached).toBe(false);
+  expect(om.formatOptions?._detached).toBe(false);
 });
 
 test("test_stale_options_reject_field_write", () => {
@@ -129,14 +129,14 @@ test("test_stale_xml_options_reject_typed_and_raw_writes", () => {
   raises(
     RuntimeError,
     () => {
-      fo.audio_codec = AudioCodec.AAC;
+      fo.audioCodec = AudioCodec.AAC;
     },
     "detached",
   );
   raises(
     RuntimeError,
     () => {
-      fo.frame_rate = 30.0;
+      fo.frameRate = 30.0;
     },
     "detached",
   );
@@ -161,8 +161,8 @@ test("test_live_options_still_writable_after_rollback", () => {
   // The guard must not leak onto the replacement wrapper.
   const project = parse_project_fresh(FORMAT_DIR.div("openexr", "exr_rgba.aep"));
   const [om] = _stale_options(project);
-  as_instance(om.format_options, OpenExrFormatOptions).compression = 3;
-  expect(as_instance(om.format_options, OpenExrFormatOptions).compression).toBe(3);
+  as_instance(om.formatOptions, OpenExrFormatOptions).compression = 3;
+  expect(as_instance(om.formatOptions, OpenExrFormatOptions).compression).toBe(3);
 });
 
 // -- member sets --------------------------------------------------------------
@@ -170,21 +170,21 @@ test("test_live_options_still_writable_after_rollback", () => {
 test("test_wav_rejects_non_wav_codec", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   raises(ValueError, () => {
-    as_instance(_om(project).format_options, XmlFormatOptions).audio_codec = AudioCodec.AAC;
+    as_instance(_om(project).formatOptions, XmlFormatOptions).audioCodec = AudioCodec.AAC;
   });
 });
 
 test("test_avi_rejects_quicktime_codec", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("avi", "base.aep"));
   raises(ValueError, () => {
-    as_instance(_om(project).format_options, XmlFormatOptions).video_codec = VideoCodec.APPLE_PRORES_422;
+    as_instance(_om(project).formatOptions, XmlFormatOptions).videoCodec = VideoCodec.APPLE_PRORES_422;
   });
 });
 
 test("test_mp3_rejects_unknown_bitrate", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   raises(ValueError, () => {
-    as_instance(_om(project).format_options, XmlFormatOptions).bitrate = 999;
+    as_instance(_om(project).formatOptions, XmlFormatOptions).bitrate = 999;
   });
 });
 
@@ -193,17 +193,17 @@ test("test_mp3_rejects_unknown_bitrate", () => {
 test("test_pcm_rejected_under_mp4_multiplexer", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("h.264", "base.aep"));
   raises(ValueError, () => {
-    as_instance(_om(project).format_options, XmlFormatOptions).mpeg_audio_format = MPEGAudioFormat.PCM;
+    as_instance(_om(project).formatOptions, XmlFormatOptions).mpegAudioFormat = MPEGAudioFormat.PCM;
   });
 });
 
 test("test_aac_bitrate_matrix_narrows_by_codec", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("h.264", "base.aep"));
-  const fo = as_instance(_om(project).format_options, XmlFormatOptions);
-  fo.audio_bitrate = 512; // AAC @ 48 kHz stereo allows it
-  fo.audio_codec = AudioCodec.AAC_PLUS_V1;
+  const fo = as_instance(_om(project).formatOptions, XmlFormatOptions);
+  fo.audioBitrate = 512; // AAC @ 48 kHz stereo allows it
+  fo.audioCodec = AudioCodec.AAC_PLUS_V1;
   raises(ValueError, () => {
-    fo.audio_bitrate = 512; // AAC+ v1 tops out at 96
+    fo.audioBitrate = 512; // AAC+ v1 tops out at 96
   });
 });
 
@@ -214,11 +214,11 @@ test("test_gsm_codec_clamps_mono", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
   expect(om.settings.get("Audio Channels")).toBe(AudioChannels.STEREO);
-  as_instance(om.format_options, XmlFormatOptions).audio_codec = AudioCodec.GSM_6_10;
+  as_instance(om.formatOptions, XmlFormatOptions).audioCodec = AudioCodec.GSM_6_10;
   expect(om.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(as_instance(om2.format_options, XmlFormatOptions).audio_codec).toBe(AudioCodec.GSM_6_10);
+  expect(as_instance(om2.formatOptions, XmlFormatOptions).audioCodec).toBe(AudioCodec.GSM_6_10);
   expect(om2.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
 });
 
@@ -226,11 +226,11 @@ test("test_mp3_bitrate_clamps_rate", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
-  as_instance(om.format_options, XmlFormatOptions).bitrate = 320;
+  as_instance(om.formatOptions, XmlFormatOptions).bitrate = 320;
   expect(int(om.settings.get("Audio Sample Rate"))).toBe(48000);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(as_instance(om2.format_options, XmlFormatOptions).bitrate).toBe(320);
+  expect(as_instance(om2.formatOptions, XmlFormatOptions).bitrate).toBe(320);
   expect(int(om2.settings.get("Audio Sample Rate"))).toBe(48000);
 });
 
@@ -238,24 +238,24 @@ test("test_v210_codec_clamps_depth", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(FORMAT_DIR.div("avi", "base.aep"));
   const om = _om(project);
-  as_instance(om.format_options, XmlFormatOptions).video_codec = VideoCodec.V210;
+  as_instance(om.formatOptions, XmlFormatOptions).videoCodec = VideoCodec.V210;
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
-  // Rouu.video_codec stays the constant AVI plugin tag: AE never
+  // Rouu.videoCodec stays the constant AVI plugin tag: AE never
   // varies it with the selected codec (corpus-verified).
   expect(om._roou.video_codec).toBe("CTXF");
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(as_instance(om2.format_options, XmlFormatOptions).video_codec).toBe(VideoCodec.V210);
+  expect(as_instance(om2.formatOptions, XmlFormatOptions).videoCodec).toBe(VideoCodec.V210);
   expect(om2._roou.video_codec).toBe("CTXF");
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
 });
 
 test("test_3gpp_multiplexer_clamps_audio_format", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("h.264", "audio_format_mpeg.aep"));
-  const fo = as_instance(_om(project).format_options, XmlFormatOptions);
-  expect(fo.mpeg_audio_format).toBe(MPEGAudioFormat.MPEG);
-  fo.mpeg_multiplexer = MPEGMultiplexer.THREEGPP;
-  expect(fo.mpeg_audio_format).toBe(MPEGAudioFormat.AAC);
+  const fo = as_instance(_om(project).formatOptions, XmlFormatOptions);
+  expect(fo.mpegAudioFormat).toBe(MPEGAudioFormat.MPEG);
+  fo.mpegMultiplexer = MPEGMultiplexer.THREEGPP;
+  expect(fo.mpegAudioFormat).toBe(MPEGAudioFormat.AAC);
 });
 
 test("test_targa_bits_not_coupled_to_channels", () => {
@@ -268,19 +268,19 @@ test("test_targa_bits_not_coupled_to_channels", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("targa", "24_bits_per_pixel.aep"));
   const om = _om(project);
   om.settings.set("Channels", OutputChannels.RGBA);
-  expect(as_instance(om.format_options, TargaFormatOptions).bits_per_pixel).toBe(24); // untouched, like AE
+  expect(as_instance(om.formatOptions, TargaFormatOptions).bitsPerPixel).toBe(24); // untouched, like AE
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  as_instance(om.format_options, TargaFormatOptions).bits_per_pixel = 32; // both values stay writable
+  as_instance(om.formatOptions, TargaFormatOptions).bitsPerPixel = 32; // both values stay writable
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(as_instance(om2.format_options, TargaFormatOptions).bits_per_pixel).toBe(32);
+  expect(as_instance(om2.formatOptions, TargaFormatOptions).bitsPerPixel).toBe(32);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_raw_params_escape_hatch_bypasses_rules", () => {
   // Documented: the params dict is the low-level escape hatch.
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
-  const fo = as_instance(_om(project).format_options, XmlFormatOptions);
+  const fo = as_instance(_om(project).formatOptions, XmlFormatOptions);
   fo.params.set("BitRate", "999");
   expect(fo.bitrate).toBe(999);
 });

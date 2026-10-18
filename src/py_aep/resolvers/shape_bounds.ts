@@ -1,5 +1,5 @@
 /**
- * Content bounds of a shape layer, for `AVLayer.source_rect_at_time`.
+ * Content bounds of a shape layer, for `AVLayer.sourceRectAtTime`.
  *
  * Rules measured on After Effects 2026 (`sourceRectAtTime` on shape layers
  * built by script, covering every shape type, stroke join and cap, group
@@ -27,7 +27,7 @@
  *   `NotImplementedError`.
  *
  * Expressions are not evaluated: values are read before any expression, as
- * `Property.value_at_time` reads them.
+ * `Property.valueAtTime` reads them.
  */
 
 import { Affine, IDENTITY } from "../svg/transform.ts";
@@ -160,7 +160,7 @@ export function _value<K extends _VectorProp>(
   time: number,
 ): MatchNameTypes[K] extends Property<infer V> ? V : never;
 export function _value(group: PropertyGroup, match_name: _VectorProp, time: number) {
-  return group.property(match_name).value_at_time(time);
+  return group.property(match_name).valueAtTime(time);
 }
 
 // ---------------------------------------------------------------------------
@@ -334,7 +334,7 @@ export function _polystar_path(item: PropertyGroup, time: number): _Path {
 }
 
 export function _bezier_path(item: PropertyGroup, time: number): _Path {
-  const shape = item.property("ADBE Vector Shape").value_at_time(
+  const shape = item.property("ADBE Vector Shape").valueAtTime(
     time,
   );
   const vertices: _Point[] = shape.vertices.map((v): _Point => [v[0], v[1]]);
@@ -343,8 +343,8 @@ export function _bezier_path(item: PropertyGroup, time: number): _Path {
   }
   return _closed_path(
     vertices,
-    shape.in_tangents.map((t): _Point => [t[0], t[1]]),
-    shape.out_tangents.map((t): _Point => [t[0], t[1]]),
+    shape.inTangents.map((t): _Point => [t[0], t[1]]),
+    shape.outTangents.map((t): _Point => [t[0], t[1]]),
     shape.closed,
   );
 }
@@ -427,7 +427,7 @@ export function _walk(
     if (!item.enabled) {
       continue;
     }
-    const match_name = item.match_name;
+    const match_name = item.matchName;
     // Every match name dispatched below names a group (see MatchNameTypes).
     const group = item instanceof _property_group().PropertyGroup ? item : null;
     const path_builder = _PATH_BUILDERS.get(match_name);

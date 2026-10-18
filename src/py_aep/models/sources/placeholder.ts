@@ -16,8 +16,8 @@ import type { U1Chunk } from "../../binary/scalar_chunks.ts";
  *
  * const app = parse("project.aep");
  * const footage = app.project.footages[0];
- * if (footage.main_source instanceof PlaceholderSource) {
- *   console.log(footage.main_source.native_frame_rate);
+ * if (footage.mainSource instanceof PlaceholderSource) {
+ *   console.log(footage.mainSource.nativeFrameRate);
  * }
  * ```
  *

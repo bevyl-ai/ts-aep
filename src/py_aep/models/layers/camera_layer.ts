@@ -22,7 +22,7 @@ import type {EffectParamDefs} from "../descriptors.ts";
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const camera = comp.camera_layers[0];
+ * const camera = comp.cameraLayers[0];
  * console.log(camera.name);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/cameralayer/
@@ -36,7 +36,7 @@ export class CameraLayer extends Layer {
 
   /** Always `true`: a camera / light layer only exists in 3D space.
    * Read-only. */
-  get is_3d(): boolean {
+  get is3d(): boolean {
     return true;
   }
 
@@ -57,19 +57,19 @@ export class CameraLayer extends Layer {
    * stretched away from the comp's time 0).
    */
   _default_position(): number[] {
-    const comp = this.containing_comp;
+    const comp = this.containingComp;
     const options = this.property("ADBE Camera Options Group");
     const zoom = options.property("ADBE Camera Zoom");
     // The layer's time 0 is the comp time it starts at.
-    const z = zoom.value_at_time(this.start_time);
+    const z = zoom.valueAtTime(this.startTime);
     return [comp.width / 2.0, comp.height / 2.0, -z];
   }
 
   /** AE's default Zoom and Focus Distance: the comp's 50mm-lens zoom. */
   _default_zoom(): number {
-    const comp = this.containing_comp;
+    const comp = this.containingComp;
     // AE rounds the zoom to 8 decimals before storing it.
-    return round(default_camera_zoom(comp.width, comp.pixel_aspect), 8);
+    return round(default_camera_zoom(comp.width, comp.pixelAspect), 8);
   }
 
   // Python `# type: ignore[override]`: keyword shape differs from Layer._new's.

@@ -47,7 +47,7 @@ import type { Layer } from "../models/layers/layer.ts";
  * `enabled` state eagerly derived to preserve existing behavior.
  */
 export function synthesize_children(group: PropertyGroup, ae_major: number): void {
-  if (group.match_name === "ADBE Layer Styles") {
+  if (group.matchName === "ADBE Layer Styles") {
     _derive_layer_styles_enabled(group, ae_major, { synthesize_subgroups: false });
   }
   group._deferred_ae_major = ae_major;
@@ -94,8 +94,8 @@ export function _synthesize_missing_top_level_groups(layer: Layer, ae_major: num
   // Post-processing: Layer Sets elided flag and depth fixup.
   const canonical_mns = new Set<string>(specs.map((s) => s.match_name));
   for (const child of layer.properties) {
-    if (child.match_name === "ADBE Layer Sets") child._elided = true;
-    if (child instanceof PropertyGroup && canonical_mns.has(child.match_name)) {
+    if (child.matchName === "ADBE Layer Sets") child._elided = true;
+    if (child instanceof PropertyGroup && canonical_mns.has(child.matchName)) {
       child._property_depth = 1;
     }
   }
@@ -113,7 +113,7 @@ export function _synthesize_missing_top_level_groups(layer: Layer, ae_major: num
  * only stores properties relevant to the current layer state.  This function:
  *
  * 1. Sets `default_value` on every transform property already parsed from
- *    the binary so that `Property.is_modified` works correctly.
+ *    the binary so that `Property.isModified` works correctly.
  * 2. Creates `Property` objects for any of the twelve canonical properties
  *    that are absent from the binary.
  * 3. Re-orders `transform.properties` to match the canonical ExtendScript
@@ -133,8 +133,8 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
 
   // Anchor Point is relative to the layer itself (source dimensions),
   // while Position is relative to the containing composition.
-  const comp_w = layer.containing_comp.width;
-  const comp_h = layer.containing_comp.height;
+  const comp_w = layer.containingComp.width;
+  const comp_h = layer.containingComp.height;
   let anchor_w: number;
   let anchor_h: number;
   let source_backed = false;
@@ -144,7 +144,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       layer instanceof ShapeLayer ||
       layer instanceof ParametricMeshLayer ||
       layer instanceof ThreeDModelLayer ||
-      layer.null_layer
+      layer.nullLayer
     ) {
       // Source-less AVLayers: anchor defaults to origin. So does a 3D
       // model layer, whose anchor is in model space (AE 2026 reports
@@ -179,7 +179,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   const existing = new Map<string, Property>();
   for (const prop of transform.properties) {
     if (prop instanceof Property) {
-      existing.set(prop.match_name, prop);
+      existing.set(prop.matchName, prop);
       // A 2-component Scale padded to 3 used to be handled here. AE
       // never writes one: probed on AE 2026, Scale reads back 3
       // components and ThreeD on a 2D layer as much as a 3D one, and
@@ -188,9 +188,9 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       // from its own tdb4, so the padding never ran. (Half of it
       // could not have worked anyway: `property_value_type` is a
       // plain property, so the `__dict__` write was discarded.)
-      if (prop.default_value != null) continue; // already set (e.g. by effect param defs)
-      let default_: number | number[] | null = _TRANSFORM_FIXED_DEFAULTS.get(prop.match_name) ?? null;
-      if (default_ == null) default_ = spatial_defaults.get(prop.match_name) ?? null;
+      if (prop.defaultValue != null) continue; // already set (e.g. by effect param defs)
+      let default_: number | number[] | null = _TRANSFORM_FIXED_DEFAULTS.get(prop.matchName) ?? null;
+      if (default_ == null) default_ = spatial_defaults.get(prop.matchName) ?? null;
       if (default_ != null) {
         // When the parser stores a vector property as a scalar
         // (e.g. Orientation parsed as 0.0 instead of [0,0,0]),
@@ -198,7 +198,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
         if (Array.isArray(default_) && !Array.isArray(prop.value)) {
           default_ = default_?.length > 0 ? default_[0] : 0.0;
         }
-        prop.default_value = default_;
+        prop.defaultValue = default_;
       }
     }
   }
@@ -232,9 +232,9 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
 
   // A null's Opacity defaults to 0: left out, it reads 0, while a written
   // 100 reads 100 (AE 2026, a file py writes too).
-  if (layer instanceof AVLayer && layer.null_layer) {
+  if (layer instanceof AVLayer && layer.nullLayer) {
     const opacity = transform.property("ADBE Opacity");
-    opacity.default_value = 0.0;
+    opacity.defaultValue = 0.0;
     if (!opacity._is_live()) {
       opacity._value = 0.0;
     }
@@ -369,7 +369,7 @@ export function apply_dimensionality_naming(layer: Layer, kw: { reset_scale_z?: 
   if (transform == null) return;
   const rotate_z = transform.property("ADBE Rotate Z");
   const scale_prop = transform.property("ADBE Scale");
-  if (layer.is_3d) {
+  if (layer.is3d) {
     // _reorder_and_fill set _auto_name="Rotation" from the spec;
     // undo it so the sentinel _name_utf8 falls through to
     // MATCH_NAME_TO_AUTO_NAME -> "Z Rotation".
@@ -433,7 +433,7 @@ export function synthesize_layer_properties(layer: Layer): void {
   // --- Synthesize children & apply min/max (single recursive pass) --------
   for (const group of layer.properties) {
     if (group instanceof PropertyGroup) {
-      if (group.match_name === "ADBE Transform Group") {
+      if (group.matchName === "ADBE Transform Group") {
         continue; // handled by _set_transform_defaults below
       }
       synthesize_children(group, ae_major);
@@ -441,7 +441,7 @@ export function synthesize_layer_properties(layer: Layer): void {
       _apply_bounds(group);
       // Time Remap max defaults to 0 when no _tduM chunk provides the
       // actual source duration.
-      if (group.match_name === "ADBE Time Remapping" && group._tduM == null) {
+      if (group.matchName === "ADBE Time Remapping" && group._tduM == null) {
         group._max_value_fallback = 0;
       }
     }

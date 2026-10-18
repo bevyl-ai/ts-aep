@@ -77,7 +77,7 @@ describe("TestCompareProjectLevel", () => {
   test("test_mismatching_field", () => {
     const result = new ValidationResult();
     const expected = new Map([["bitsPerChannel", 16]]);
-    const parsed = new Map([["bits_per_channel", 8]]);
+    const parsed = new Map([["bitsPerChannel", 8]]);
     compare_project_level(expected, parsed, result);
     expect(len(result)).toBe(1);
   });
@@ -153,8 +153,8 @@ describe("TestComparePropertyMediaReplacement", () => {
     ]);
     // Parsed index is 0-based; the AVItem/AVLayer serialize id/name/index.
     const parsed = new Map<string, Map<string, number | string>>([
-      ["alternate_source", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
-      ["essential_property_source", new Map<string, number | string>([["name", "src_layer"], ["index", 0]])],
+      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
+      ["essentialPropertySource", new Map<string, number | string>([["name", "src_layer"], ["index", 0]])],
     ]);
     const result = new ValidationResult();
     compare_property(expected, parsed, "P", result);
@@ -175,9 +175,9 @@ describe("TestComparePropertyMediaReplacement", () => {
     ]);
     const parsed = new Map<string, Map<string, number | string>>([
       // id mismatch
-      ["alternate_source", new Map<string, number | string>([["id", 99], ["name", "wrapper"]])],
+      ["alternateSource", new Map<string, number | string>([["id", 99], ["name", "wrapper"]])],
       // 5+1 != 1
-      ["essential_property_source", new Map<string, number | string>([["name", "src_layer"], ["index", 5]])],
+      ["essentialPropertySource", new Map<string, number | string>([["name", "src_layer"], ["index", 5]])],
     ]);
     const result = new ValidationResult();
     compare_property(expected, parsed, "P", result);
@@ -197,7 +197,7 @@ describe("TestComparePropertyMediaReplacement", () => {
     const result = new ValidationResult();
     compare_property(
       expected,
-      new Map([["essential_property_source", new Map([["match_name", "ADBE Fill"]])]]),
+      new Map([["essentialPropertySource", new Map([["matchName", "ADBE Fill"]])]]),
       "P",
       result,
     );

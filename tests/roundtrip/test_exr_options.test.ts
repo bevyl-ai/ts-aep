@@ -37,7 +37,7 @@ function _ae_optis(): Map<string, Uint8Array> {
   for (const fixture of FIXTURES) {
     for (const item of parse_project(fixture).footages) {
       if (item.name.endsWith(".exr") || item.name === "seq_inside") {
-        optis.set(item.name, item.main_source._opti.tobytes());
+        optis.set(item.name, item.mainSource._opti.tobytes());
       }
     }
   }
@@ -54,7 +54,7 @@ function _import(name: string): Uint8Array {
     const path = ASSETS.div("exr", name);
     options = new ImportOptions(path.exists() ? path : ASSETS.div(name));
   }
-  return as_instance(project.import_file(options), FootageItem).main_source._opti.tobytes();
+  return as_instance(project.importFile(options), FootageItem).mainSource._opti.tobytes();
 }
 
 const _NAMES = sorted(_ae_optis().keys());
@@ -79,10 +79,10 @@ test("test_alpha_is_premultiplied_with_its_flag", () => {
    */
   const ae_item = parse_project(FIXTURES[0]).footages.find((item) => item.name === "rgba_full.exr");
   if (ae_item === undefined) throw new Error("StopIteration");
-  const ae = ae_item.main_source._sspc;
+  const ae = ae_item.mainSource._sspc;
   const project = parse_aep(BASE, { platform: "windows" }).project;
-  const ours = as_instance(project.import_file(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))), FootageItem);
-  const sspc = ours.main_source._sspc;
+  const ours = as_instance(project.importFile(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))), FootageItem);
+  const sspc = ours.mainSource._sspc;
   expect(py_eq([sspc.alpha_mode_raw, sspc._alpha_flags], [ae.alpha_mode_raw, ae._alpha_flags])).toBe(true);
   expect(py_eq([ae.alpha_mode_raw, ae._alpha_flags], [1, 1])).toBe(true);
 });
@@ -92,12 +92,12 @@ test("test_reload_refreshes_the_exr_header", () => {
   const media = tmp_path.div("frame.exr");
   fs.copyFileSync(ASSETS.div("exr", "rgb_inside.exr").toString(), media.toString());
   const project = parse_aep(BASE, { platform: "windows" }).project;
-  const item = as_instance(project.import_file(new ImportOptions(media)), FootageItem);
+  const item = as_instance(project.importFile(new ImportOptions(media)), FootageItem);
   fs.copyFileSync(ASSETS.div("exr", "layered.exr").toString(), media.toString());
-  as_instance(item.main_source, FileSource).reload();
+  as_instance(item.mainSource, FileSource).reload();
   expect(
     py_eq(
-      bytes_.slice(item.main_source._opti.tobytes(), 0, 0x30),
+      bytes_.slice(item.mainSource._opti.tobytes(), 0, 0x30),
       bytes_.slice(getitem(_ae_optis(), "layered.exr"), 0, 0x30),
     ),
   ).toBe(true);

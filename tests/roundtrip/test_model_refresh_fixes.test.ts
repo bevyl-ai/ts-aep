@@ -48,10 +48,10 @@ describe("TestThreeDLayerRefreshesTransform", () => {
     const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_1D.aep"));
     const layer = as_instance(app.project.compositions[0].layers[0], py_aep.AVLayer);
     const rotate_z = as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Rotate Z");
-    expect(py_bool(layer.three_d_layer)).toBe(false);
+    expect(py_bool(layer.threeDLayer)).toBe(false);
     expect(str(rotate_z.name)).toBe("Rotation");
 
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
 
     expect(str(rotate_z.name)).toBe("Z Rotation");
   });
@@ -61,8 +61,8 @@ describe("TestThreeDLayerRefreshesTransform", () => {
     const layer = as_instance(app.project.compositions[0].layers[0], py_aep.AVLayer);
     const rotate_z = as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Rotate Z");
 
-    layer.three_d_layer = true;
-    layer.three_d_layer = false;
+    layer.threeDLayer = true;
+    layer.threeDLayer = false;
 
     expect(str(rotate_z.name)).toBe("Rotation");
   });
@@ -74,7 +74,7 @@ describe("TestThreeDLayerRefreshesTransform", () => {
     const tmp_path: Path = make_tmp_path();
     const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_1D.aep"));
     const layer = as_instance(app.project.compositions[0].layers[0], py_aep.AVLayer);
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
     const in_memory = str(as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Rotate Z").name);
 
     const out = tmp_path.div("three_d.aep");
@@ -99,37 +99,37 @@ describe("TestScaleZFollowsTheThreeDSwitch", () => {
 
   const _layer = () => {
     const app = py_aep.new();
-    const comp = app.project.root_folder.add_comp("Z", 320, 240, 1.0, 10.0, 24.0);
-    const layer = comp.add_solid([1, 0, 0], "ScaleZ", 320, 240, 1.0);
+    const comp = app.project.rootFolder.addComp("Z", 320, 240, 1.0, 10.0, 24.0);
+    const layer = comp.addSolid([1, 0, 0], "ScaleZ", 320, 240, 1.0);
     return [app, layer, as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Scale")] as const;
   };
 
   test("test_three_d_shows_the_z", () => {
     const [_app, layer, scale] = _layer();
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
     scale.value = [60.0, 70.0, 40.0];
     expect(approx(scale.value, [60.0, 70.0, 40.0])).toBe(true);
   });
 
   test("test_leaving_three_d_discards_the_z", () => {
     const [_app, layer, scale] = _layer();
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
     scale.value = [60.0, 70.0, 40.0];
 
-    layer.three_d_layer = false;
+    layer.threeDLayer = false;
     expect(approx(scale.value, [60.0, 70.0, 100.0])).toBe(true);
 
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
     expect(approx(scale.value, [60.0, 70.0, 100.0])).toBe(true);
   });
 
   test("test_the_discard_reaches_the_file", () => {
     const tmp_path: Path = make_tmp_path();
     const [app, layer, scale] = _layer();
-    layer.three_d_layer = true;
+    layer.threeDLayer = true;
     scale.value = [60.0, 70.0, 40.0];
-    layer.three_d_layer = false;
-    layer.three_d_layer = true;
+    layer.threeDLayer = false;
+    layer.threeDLayer = true;
 
     const out = tmp_path.div("scale_z.aep");
     app.project.save(out);
@@ -147,11 +147,11 @@ describe("TestScaleZFollowsTheThreeDSwitch", () => {
    */
   test("test_keyframed_scale_is_left_alone", () => {
     const [_app, layer, scale] = _layer();
-    layer.three_d_layer = true;
-    scale.set_value_at_time(0.0, [10.0, 20.0, 30.0]);
-    scale.set_value_at_time(1.0, [40.0, 50.0, 60.0]);
+    layer.threeDLayer = true;
+    scale.setValueAtTime(0.0, [10.0, 20.0, 30.0]);
+    scale.setValueAtTime(1.0, [40.0, 50.0, 60.0]);
 
-    layer.three_d_layer = false;
+    layer.threeDLayer = false;
 
     expect(len(scale.keyframes)).toBe(2);
   });
@@ -177,11 +177,11 @@ describe("TestCameraAndLightSeparate", () => {
     const layer = comp.layers[0];
     const pos = as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Position");
     const before = [...pos.value];
-    expect(py_bool(pos.dimensions_separated)).toBe(false);
+    expect(py_bool(pos.dimensionsSeparated)).toBe(false);
 
-    pos.dimensions_separated = true;
+    pos.dimensionsSeparated = true;
 
-    expect(py_bool(pos.dimensions_separated)).toBe(true);
+    expect(py_bool(pos.dimensionsSeparated)).toBe(true);
     const out = tmp_path.div("separated.aep");
     app.project.save(out);
 
@@ -190,10 +190,10 @@ describe("TestCameraAndLightSeparate", () => {
       ? next(app2.project.compositions, (c) => c.name === comp_name)
       : app2.project.compositions[0];
     const pos2 = as_instance(comp2.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Position");
-    expect(py_bool(pos2.dimensions_separated)).toBe(true);
+    expect(py_bool(pos2.dimensionsSeparated)).toBe(true);
     // The Z the camera/light is positioned at must survive.
     expect(approx(pos2.value, before)).toBe(true);
-    expect(approx(as_instance(pos2.get_separation_follower(2), py_aep.Property).value, before[2])).toBe(true);
+    expect(approx(as_instance(pos2.getSeparationFollower(2), py_aep.Property).value, before[2])).toBe(true);
   });
 
   /**
@@ -209,7 +209,7 @@ describe("TestCameraAndLightSeparate", () => {
     const pos = as_instance(comp.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Position");
 
     expect(as_instance(pos._tdsb, TdsbChunk).hidden).toBe(true);
-    expect(pos.dimensions_separated).toBe(false);
+    expect(pos.dimensionsSeparated).toBe(false);
   });
 });
 
@@ -229,15 +229,15 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getattr(p, "match_name", null) === "ADBE Position" && py_bool(as_instance(p, py_aep.Property).dimensions_separated))
+              if (getattr(p, "matchName", null) === "ADBE Position" && py_bool(as_instance(p, py_aep.Property).dimensionsSeparated))
                 yield as_instance(p, py_aep.Property);
       })(),
     );
     const leader_before = [...pos.value];
 
-    pos.dimensions_separated = false;
+    pos.dimensionsSeparated = false;
 
-    const in_memory = Array.from(range(3), (d) => as_instance(pos.get_separation_follower(d), py_aep.Property).value);
+    const in_memory = Array.from(range(3), (d) => as_instance(pos.getSeparationFollower(d), py_aep.Property).value);
     expect(approx(in_memory, [0.0, 0.0, 0.0])).toBe(true);
     expect(approx(pos.value, leader_before)).toBe(true);
 
@@ -249,10 +249,10 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app2.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getattr(p, "match_name", null) === "ADBE Position") yield as_instance(p, py_aep.Property);
+              if (getattr(p, "matchName", null) === "ADBE Position") yield as_instance(p, py_aep.Property);
       })(),
     );
-    const on_disk = Array.from(range(3), (d) => as_instance(pos2.get_separation_follower(d), py_aep.Property).value);
+    const on_disk = Array.from(range(3), (d) => as_instance(pos2.getSeparationFollower(d), py_aep.Property).value);
     expect(approx(in_memory, on_disk)).toBe(true);
   });
 });
@@ -269,7 +269,7 @@ describe("TestPrecomposedEffectPoint", () => {
     const app = parse_app_fresh(PROPERTY_DIR.div("effects.aep"));
     const comp = next(app.project.compositions, (c) => c.name === "effect_2dPoint");
     const point = as_instance(
-      next(_walk(comp.layers[0]), (p) => getattr(p, "match_name", null) === "ADBE Lens Flare-0001"),
+      next(_walk(comp.layers[0]), (p) => getattr(p, "matchName", null) === "ADBE Lens Flare-0001"),
       py_aep.Property,
     );
     const before = [...point.value];
@@ -277,7 +277,7 @@ describe("TestPrecomposedEffectPoint", () => {
     const new_comp = comp.precompose([0], "PreFX");
 
     const moved = as_instance(
-      next(_walk(new_comp.layers[0]), (p) => getattr(p, "match_name", null) === "ADBE Lens Flare-0001"),
+      next(_walk(new_comp.layers[0]), (p) => getattr(p, "matchName", null) === "ADBE Lens Flare-0001"),
       py_aep.Property,
     );
     expect(approx(moved.value, before)).toBe(true);
@@ -310,19 +310,19 @@ describe("TestEaseSpeedsAreNotLayerTime", () => {
 
   test.each([100.0, 200.0, 50.0])("test_speed_is_stretch_invariant[%#]", (stretch: number) => {
     const app = py_aep.new();
-    const comp = app.project.root_folder.add_comp("C", 320, 240, 1.0, 40.0, 24.0);
-    const layer = comp.add_solid([1, 1, 1], "L", 320, 240, 1.0);
+    const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
+    const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     layer.stretch = stretch;
     const op = as_instance(as_instance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
-    op.set_value_at_time(1.0, 0.0);
-    op.set_value_at_time(5.0, 100.0);
+    op.setValueAtTime(1.0, 0.0);
+    op.setValueAtTime(5.0, 100.0);
     for (const kf of op.keyframes) {
-      kf.in_interpolation_type = py_aep.KeyframeInterpolationType.BEZIER;
-      kf.out_interpolation_type = py_aep.KeyframeInterpolationType.BEZIER;
+      kf.inInterpolationType = py_aep.KeyframeInterpolationType.BEZIER;
+      kf.outInterpolationType = py_aep.KeyframeInterpolationType.BEZIER;
     }
-    op.keyframes[0].out_temporal_ease = [new py_aep.KeyframeEase(30.0, 40.0)];
+    op.keyframes[0].outTemporalEase = [new py_aep.KeyframeEase(30.0, 40.0)];
 
-    expect(approx(op.keyframes[0].out_temporal_ease[0].speed, 30.0)).toBe(true);
-    expect(approx(op.keyframes[0].out_temporal_ease[0].influence, 40.0)).toBe(true);
+    expect(approx(op.keyframes[0].outTemporalEase[0].speed, 30.0)).toBe(true);
+    expect(approx(op.keyframes[0].outTemporalEase[0].influence, 40.0)).toBe(true);
   });
 });

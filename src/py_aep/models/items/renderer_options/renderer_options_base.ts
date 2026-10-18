@@ -16,8 +16,8 @@ import type { Chunk } from "../../../binary/chunk.ts";
  * ```ts
  * import type { CompItem } from "@bevyl-ai/ts-aep";
  * declare const comp: CompItem;
- * comp.renderer_options.__setitem__("Quality", 61);   // mapping
- * comp.renderer_options.__setattr__("quality", 61);   // typed, validated
+ * comp.rendererOptions.__setitem__("Quality", 61);   // mapping
+ * comp.rendererOptions.__setattr__("quality", 61);   // typed, validated
  * ```
  *
  * The {@link CompItem} is held because Advanced 3D stores its Casting Box

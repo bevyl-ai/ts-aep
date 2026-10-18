@@ -54,7 +54,7 @@ export function _validate_interpolation_type(value: KeyframeInterpolationType, k
   if (prop == null) return;
   // Raises for an out-of-enum value before the descriptor's own
   // membership check gets a chance to.
-  if (!prop.is_interpolation_type_valid(value)) {
+  if (!prop.isInterpolationTypeValid(value)) {
     throw new ValueError(
       `${KeyframeInterpolationType.name_of(value)} is not a valid ` +
         `interpolation type for ${repr(prop.name)}.`,
@@ -100,7 +100,7 @@ export function _validate_roving(value: boolean, keyframe: Keyframe): void {
   if (prop == null) return;
   if (!prop._has_motion_path) {
     throw new ValueError(
-      `roving can only be set on a spatial property, not ${repr(prop.match_name)}`,
+      `roving can only be set on a spatial property, not ${repr(prop.matchName)}`,
     );
   }
   if (keyframe._prev == null || keyframe._next == null) {
@@ -133,9 +133,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * The "in" interpolation type for the keyframe. Read / Write.
    *
    * Raises `ValueError` if the type is not valid for the owning property
-   * (see {@link Property.is_interpolation_type_valid | is_interpolation_type_valid}).
+   * (see {@link Property.isInterpolationTypeValid | is_interpolation_type_valid}).
    */
-  declare in_interpolation_type: KeyframeInterpolationType;
+  declare inInterpolationType: KeyframeInterpolationType;
 
   /**
    * The label color. Colors are represented by their number (0 for None, or 1
@@ -148,9 +148,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * The "out" interpolation type for the keyframe. Read / Write.
    *
    * Raises `ValueError` if the type is not valid for the owning property
-   * (see {@link Property.is_interpolation_type_valid | is_interpolation_type_valid}).
+   * (see {@link Property.isInterpolationTypeValid | is_interpolation_type_valid}).
    */
-  declare out_interpolation_type: KeyframeInterpolationType;
+  declare outInterpolationType: KeyframeInterpolationType;
 
   /**
    * `true` if the keyframe is roving. The first and last keyframe in
@@ -173,7 +173,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * interpolation type is `KeyframeInterpolationType.BEZIER` for both
    * `in_interpolation_type` and `out_interpolation_type`. Read / Write.
    */
-  declare temporal_auto_bezier: boolean;
+  declare temporalAutoBezier: boolean;
 
   /**
    * `true` if the keyframe has temporal continuity. Temporal continuity affects
@@ -182,11 +182,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `out_interpolation_type`. Read / Write.
    *
    * As in After Effects, setting it to `true` turns
-   * {@link Keyframe.temporal_auto_bezier | temporal_auto_bezier} off, a temporal
+   * {@link Keyframe.temporalAutoBezier | temporal_auto_bezier} off, a temporal
    * auto-Bezier keyframe stays continuous, and setting neither interpolation
    * type to `KeyframeInterpolationType.BEZIER` turns it off.
    */
-  declare temporal_continuous: boolean;
+  declare temporalContinuous: boolean;
 
   declare _ldat_item: LdatItem;
   declare _frame_rate: number;
@@ -240,9 +240,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   _settle_temporal_continuous(): void {
     const bezier = KeyframeInterpolationType.BEZIER;
-    if (this.in_interpolation_type !== bezier && this.out_interpolation_type !== bezier) {
+    if (this.inInterpolationType !== bezier && this.outInterpolationType !== bezier) {
       this._ldat_item.temporal_continuous = false;
-    } else if (this.temporal_auto_bezier) {
+    } else if (this.temporalAutoBezier) {
       this._ldat_item.temporal_continuous = true;
     }
   }
@@ -257,11 +257,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 
   /** Set both interpolation types to BEZIER, skipping no-op writes. */
   _force_bezier_both_sides(): void {
-    if (this.in_interpolation_type !== KeyframeInterpolationType.BEZIER) {
-      this.in_interpolation_type = KeyframeInterpolationType.BEZIER;
+    if (this.inInterpolationType !== KeyframeInterpolationType.BEZIER) {
+      this.inInterpolationType = KeyframeInterpolationType.BEZIER;
     }
-    if (this.out_interpolation_type !== KeyframeInterpolationType.BEZIER) {
-      this.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+    if (this.outInterpolationType !== KeyframeInterpolationType.BEZIER) {
+      this.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
   }
 
@@ -275,7 +275,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * pair with it.
    */
   _on_temporal_auto_bezier_set(): void {
-    if (!this.temporal_auto_bezier) {
+    if (!this.temporalAutoBezier) {
       // AE keeps the derived ease when the flag is cleared.
       return;
     }
@@ -315,7 +315,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * genuinely leaves the tangents alone.
    */
   _on_temporal_continuous_set(): void {
-    if (!this.temporal_continuous) {
+    if (!this.temporalContinuous) {
       // An auto-bezier key stays continuous (AE 2026 turns it back on).
       this._settle_temporal_continuous();
       return;
@@ -431,10 +431,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    *   array contains 3 floating-point values.
    * - If the property value type is neither of these types, returns `null`.
    */
-  get in_spatial_tangent(): number[] | null {
+  get inSpatialTangent(): number[] | null {
     const kf_data = this._ldat_item.kf_data;
     if (!("in_spatial_tangents" in kf_data)) return null;
-    if (this.spatial_auto_bezier) {
+    if (this.spatialAutoBezier) {
       const derived = this._auto_spatial_tangents();
       if (derived != null) {
         return this._rescale_tangent(derived[1], { invert: false });
@@ -443,9 +443,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     return this._rescale_tangent([...kf_data.in_spatial_tangents], { invert: false });
   }
 
-  set in_spatial_tangent(value: number[] | null) {
-    if (value == null || this.in_spatial_tangent == null) return;
-    validate_sequence({ length: this.in_spatial_tangent.length })(value);
+  set inSpatialTangent(value: number[] | null) {
+    if (value == null || this.inSpatialTangent == null) return;
+    validate_sequence({ length: this.inSpatialTangent.length })(value);
     const kf_data = this._ldat_item.kf_data;
     this._leave_spatial_auto_bezier();
     if ("in_spatial_tangents" in kf_data) {
@@ -465,10 +465,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    *   array contains 3 floating-point values.
    * - If the property value type is neither of these types, returns `null`.
    */
-  get out_spatial_tangent(): number[] | null {
+  get outSpatialTangent(): number[] | null {
     const kf_data = this._ldat_item.kf_data;
     if (!("out_spatial_tangents" in kf_data)) return null;
-    if (this.spatial_auto_bezier) {
+    if (this.spatialAutoBezier) {
       const derived = this._auto_spatial_tangents();
       if (derived != null) {
         return this._rescale_tangent(derived[0], { invert: false });
@@ -477,9 +477,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     return this._rescale_tangent([...kf_data.out_spatial_tangents], { invert: false });
   }
 
-  set out_spatial_tangent(value: number[] | null) {
-    if (value == null || this.out_spatial_tangent == null) return;
-    validate_sequence({ length: this.out_spatial_tangent.length })(value);
+  set outSpatialTangent(value: number[] | null) {
+    if (value == null || this.outSpatialTangent == null) return;
+    validate_sequence({ length: this.outSpatialTangent.length })(value);
     const kf_data = this._ldat_item.kf_data;
     this._leave_spatial_auto_bezier();
     if (value != null && "out_spatial_tangents" in kf_data) {
@@ -554,7 +554,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // no motion path to measure: AE reports an auto-bezier side at the
       // unit chord slope, like a LINEAR side, and plays it that way
       // (measured on AE 2026 on a mask path and an Orientation key).
-      const unit = kind.linear_ease_speed;
+      const unit = kind.linearEaseSpeed;
       const index = prop._keyframe_index(this);
       if (unit == null || index == null) return null;
       const last = prop.keyframes.length - 1;
@@ -776,13 +776,13 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    *   contains 3 objects.
    * - For any other value type, the array contains 1 object.
    */
-  get in_temporal_ease(): KeyframeEase[] {
+  get inTemporalEase(): KeyframeEase[] {
     this._ensure_ease();
     py_assert(this._in_temporal_ease != null);
     return this._resolve_ease(this._in_temporal_ease, "in");
   }
 
-  set in_temporal_ease(value: KeyframeEase[]) {
+  set inTemporalEase(value: KeyframeEase[]) {
     this._apply_ease(value, "in");
     this._on_ease_written("in");
   }
@@ -797,13 +797,13 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    *   contains 3 objects.
    * - For any other value type, the array contains 1 object.
    */
-  get out_temporal_ease(): KeyframeEase[] {
+  get outTemporalEase(): KeyframeEase[] {
     this._ensure_ease();
     py_assert(this._out_temporal_ease != null);
     return this._resolve_ease(this._out_temporal_ease, "out");
   }
 
-  set out_temporal_ease(value: KeyframeEase[]) {
+  set outTemporalEase(value: KeyframeEase[]) {
     this._apply_ease(value, "out");
     this._on_ease_written("out");
   }
@@ -821,10 +821,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   _on_ease_written(direction: "in" | "out"): void {
     this._ldat_item.temporal_auto_bezier = false;
     const bezier = KeyframeInterpolationType.BEZIER;
-    const name = `${direction}_interpolation_type` as const;
+    const name = `${direction}InterpolationType` as const;
     if (getattr(this, name) !== bezier) {
       const prop = this._property;
-      if (prop == null || prop.is_interpolation_type_valid(bezier)) {
+      if (prop == null || prop.isInterpolationTypeValid(bezier)) {
         this[name] = bezier;
       }
     }
@@ -904,12 +904,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     let other_interp: KeyframeInterpolationType;
     let neighbour: Keyframe | null;
     if (direction === "in") {
-      interp = this.in_interpolation_type;
-      other_interp = this.out_interpolation_type;
+      interp = this.inInterpolationType;
+      other_interp = this.outInterpolationType;
       neighbour = this._prev;
     } else {
-      interp = this.out_interpolation_type;
-      other_interp = this.in_interpolation_type;
+      interp = this.outInterpolationType;
+      other_interp = this.inInterpolationType;
       neighbour = this._next;
     }
 
@@ -934,7 +934,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     }
     const facing_hold =
       anchor != null &&
-      (direction === "in" ? anchor.out_interpolation_type : anchor.in_interpolation_type) ===
+      (direction === "in" ? anchor.outInterpolationType : anchor.inInterpolationType) ===
         KeyframeInterpolationType.HOLD;
 
     // Auto-bezier wins over the stored bytes on a BEZIER side. AE
@@ -943,7 +943,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // LINEAR, this side takes that side's speed - 0 at an end (measured
     // on AE 2026: the last key B/L reports in-speed 0, an interior B/L
     // key the LINEAR segment's slope rather than the through-slope).
-    if (this.temporal_auto_bezier) {
+    if (this.temporalAutoBezier) {
       let chosen: number[] | null = null;
       if (other_interp === KeyframeInterpolationType.LINEAR) {
         const other_direction = direction === "in" ? "out" : "in";
@@ -1005,19 +1005,19 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     let adjacent: Keyframe = other;
     let adjacent_interp: KeyframeInterpolationType;
     if (direction === "out") {
-      adjacent_interp = other.in_interpolation_type;
+      adjacent_interp = other.inInterpolationType;
     } else {
       while (adjacent._is_roving_run_key && adjacent._prev != null) {
         adjacent = adjacent._prev;
       }
-      adjacent_interp = adjacent.out_interpolation_type;
+      adjacent_interp = adjacent.outInterpolationType;
     }
     if (adjacent_interp === KeyframeInterpolationType.HOLD && !adjacent._is_roving_run_key) {
       return raw_ease.map(() => new KeyframeEase(0.0, _DEFAULT_INFLUENCE));
     }
     const prop = this._property;
     const kind = prop != null ? prop._parallel_kind() : null;
-    if (kind != null && kind.linear_ease_speed != null) {
+    if (kind != null && kind.linearEaseSpeed != null) {
       // A path and an Orientation have no scalar magnitude for a
       // speed to measure, so AE reports a LINEAR side's speed as
       // the unit chord slope rather than a rate. Measured on AE
@@ -1025,7 +1025,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // rotation and duration, and on a mask path: always 1.
       // Reporting only - `_single_progress` forces the LINEAR
       // control points and never reads the speed back.
-      const linear_speed = kind.linear_ease_speed;
+      const linear_speed = kind.linearEaseSpeed;
       return raw_ease.map(() => new KeyframeEase(linear_speed, _DEFAULT_INFLUENCE));
     }
     const [left, right] = direction === "out" ? [this, other] : [other, this];
@@ -1053,16 +1053,16 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 
   /**
    * `true` if the keyframe has spatial auto-Bezier interpolation. This type
-   * of interpolation affects this keyframe only if {@link spatial_continuous} is
+   * of interpolation affects this keyframe only if {@link spatialContinuous} is
    * also `true`. If the property value type is neither `TwoD_SPATIAL` nor
    * `ThreeD_SPATIAL`, the value is `false`.
    */
-  get spatial_auto_bezier(): boolean {
+  get spatialAutoBezier(): boolean {
     const kf_data = this._ldat_item.kf_data;
     return getattr(kf_data, "spatial_auto_bezier", false);
   }
 
-  set spatial_auto_bezier(value: boolean) {
+  set spatialAutoBezier(value: boolean) {
     // Only spatial kf_data carries this flag. Non-spatial kinds (e.g.
     // Orientation, whose kf_data is a valueless KfNoValue) have no slot
     // for it; the getter tolerantly reads False there, but a write must not
@@ -1096,12 +1096,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * type is neither `TwoD_SPATIAL` nor `ThreeD_SPATIAL`, the value is
    * `false`.
    */
-  get spatial_continuous(): boolean {
+  get spatialContinuous(): boolean {
     const kf_data = this._ldat_item.kf_data;
     return getattr(kf_data, "spatial_continuous", false);
   }
 
-  set spatial_continuous(value: boolean) {
+  set spatialContinuous(value: boolean) {
     // See spatial_auto_bezier: non-spatial kf_data has no such slot.
     validate_bool(value);
     const kf_data = this._ldat_item.kf_data;
@@ -1148,7 +1148,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * An integer count of composition timebase units, relative to the
    * owning layer's start. Read-only; assign to {@link time} instead.
    */
-  get time_units(): number {
+  get timeUnits(): number {
     return this._ldat_item.time_units;
   }
 
@@ -1173,11 +1173,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * frame grid freely, so this is lossy for those - read {@link time} when
    * precision matters.
    */
-  get frame_time(): number {
+  get frameTime(): number {
     return round(this.time * this._frame_rate);
   }
 
-  set frame_time(value: number) {
+  set frameTime(value: number) {
     validate_int(value);
     this.time = value / this._frame_rate;
   }
@@ -1236,7 +1236,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 // after the class, as the Python class body does at class creation.
 descriptor(
   Keyframe,
-  "in_interpolation_type",
+  "inInterpolationType",
   ChunkField.enum(KeyframeInterpolationType, "_ldat_item", "in_interpolation_type", {
     validate: _validate_interpolation_type,
     post_set: "_on_interpolation_type_set",
@@ -1247,7 +1247,7 @@ descriptor(Keyframe, "label", ChunkField.enum(Label, "_ldat_item", "label"));
 
 descriptor(
   Keyframe,
-  "out_interpolation_type",
+  "outInterpolationType",
   ChunkField.enum(KeyframeInterpolationType, "_ldat_item", "out_interpolation_type", {
     validate: _validate_interpolation_type,
     post_set: "_on_interpolation_type_set",
@@ -1265,7 +1265,7 @@ descriptor(
 
 descriptor(
   Keyframe,
-  "temporal_auto_bezier",
+  "temporalAutoBezier",
   ChunkField.bool("_ldat_item", "temporal_auto_bezier", {
     post_set: "_on_temporal_auto_bezier_set",
   }),
@@ -1273,7 +1273,7 @@ descriptor(
 
 descriptor(
   Keyframe,
-  "temporal_continuous",
+  "temporalContinuous",
   ChunkField.bool("_ldat_item", "temporal_continuous", {
     post_set: "_on_temporal_continuous_set",
   }),

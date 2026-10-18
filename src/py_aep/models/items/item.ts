@@ -119,7 +119,7 @@ export class Item {
    * dynamic link, in form of `00000000-0000-0000-0000-000000000000`.
    * Read-only.
    */
-  get dynamic_link_guid(): string {
+  get dynamicLinkGuid(): string {
     return `${format(this.id, "08x")}-0000-0000-0000-000000000000`;
   }
 
@@ -164,11 +164,11 @@ export class Item {
    *   of its own descendants.
    * @throws {@link TypeError} If the value is not a {@link FolderItem}.
    */
-  get parent_folder(): FolderItem | null {
+  get parentFolder(): FolderItem | null {
     return this._parent_folder;
   }
 
-  set parent_folder(value: FolderItem | null) {
+  set parentFolder(value: FolderItem | null) {
     const old_parent = this._parent_folder;
     if (old_parent == null) throw new ValueError("Cannot move the root folder");
     if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parent_folder must be a FolderItem");
@@ -211,7 +211,7 @@ export class Item {
    * that they are different depending on the application's UI language.
    * Read-only.
    */
-  get type_name(): string {
+  get typeName(): string {
     return this._type_name;
   }
 
@@ -234,7 +234,7 @@ export class Item {
    *   anywhere on the ruler, inside the composition bounds or outside them.
    * @returns The index of the new guide.
    */
-  add_guide(orientation_type: number, position: number): number {
+  addGuide(orientation_type: number, position: number): number {
     this._ensure_guides_container();
     py_assert(this._lhd3 != null);
     py_assert(this._ldat != null);
@@ -251,7 +251,7 @@ export class Item {
    * @param guide_index - The 0-based index of the guide to remove.
    * @throws {@link IndexError} If `guide_index` is out of range.
    */
-  remove_guide(guide_index: number): void {
+  removeGuide(guide_index: number): void {
     if (this._guides.length === 0) throw new IndexError("No guides to remove");
     if (!(0 <= guide_index && guide_index < this._guides.length)) {
       throw new IndexError(
@@ -272,9 +272,9 @@ export class Item {
    * Equivalent to calling `remove_guide` for each guide. A no-op
    * when the item has no guides.
    */
-  remove_all_guides(): void {
+  removeAllGuides(): void {
     while (this._guides.length > 0) {
-      this.remove_guide(this._guides.length - 1);
+      this.removeGuide(this._guides.length - 1);
     }
   }
 
@@ -373,6 +373,6 @@ descriptor(Item, "name", new ChunkField("_name_utf8", "value", { validate: valid
 // `@requires_version(16)` on add_guide, remove_guide and remove_all_guides:
 // Python applies these decorators while the class body runs; here they wrap
 // the finished class.
-Item.prototype.add_guide = requires_version(16)(Item.prototype.add_guide);
-Item.prototype.remove_guide = requires_version(16)(Item.prototype.remove_guide);
-Item.prototype.remove_all_guides = requires_version(16)(Item.prototype.remove_all_guides);
+Item.prototype.addGuide = requires_version(16)(Item.prototype.addGuide);
+Item.prototype.removeGuide = requires_version(16)(Item.prototype.removeGuide);
+Item.prototype.removeAllGuides = requires_version(16)(Item.prototype.removeAllGuides);

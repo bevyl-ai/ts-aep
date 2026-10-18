@@ -14,8 +14,8 @@ import { _validate_number, validate_f8 } from "../validators.ts";
  * const comp = app.project.compositions[0];
  * const position = comp.layers[0].transform.property("ADBE Position");
  * const keyframe = position.keyframes[0];
- * console.log(keyframe.out_temporal_ease[0].speed);
- * console.log(keyframe.out_temporal_ease[0].influence);
+ * console.log(keyframe.outTemporalEase[0].speed);
+ * console.log(keyframe.outTemporalEase[0].influence);
  * ```
  *
  * @see https://ae-scripting.docsforadobe.dev/other/keyframeease/

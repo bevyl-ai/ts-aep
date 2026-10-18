@@ -3,7 +3,7 @@
  *
  * Only units that cannot be derived from the binary are listed here. Effect
  * parameters carry a `pard` chunk whose bytes give units directly, so they are
- * computed instead (see `Property.units_text` and `parsers.effect._extract_slider`):
+ * computed instead (see `Property.unitsText` and `parsers.effect._extract_slider`):
  *
  * - degrees: ANGLE control type
  * - pixels: 2D/3D spatial value type

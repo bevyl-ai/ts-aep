@@ -18,33 +18,33 @@ describe("TestImportFileErrors", () => {
   test("test_non_footage_import_type_raises", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("image_with_alpha.png"));
-    opts.import_as = ImportAsType.PROJECT;
-    raises(ValueError, () => project.import_file(opts), "PROJECT import");
+    opts.importAs = ImportAsType.PROJECT;
+    raises(ValueError, () => project.importFile(opts), "PROJECT import");
   });
 
   test("test_comp_import_unsupported_format_raises", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("image_with_alpha.png"));
-    opts.import_as = ImportAsType.COMP;
-    raises(ValueError, () => project.import_file(opts), "COMP import");
+    opts.importAs = ImportAsType.COMP;
+    raises(ValueError, () => project.importFile(opts), "COMP import");
   });
 
   test("test_eps_cropped_layers_not_implemented", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("eps.eps"));
-    opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-    raises(ValueError, () => project.import_file(opts), "COMP_CROPPED_LAYERS");
+    opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+    raises(ValueError, () => project.importFile(opts), "COMP_CROPPED_LAYERS");
   });
 
   test("test_unsupported_format_raises", () => {
     const project = parse_aep(BASE).project;
-    raises(ValueError, () => project.import_file(new ImportOptions(ASSETS.div("config.ocio"))), "Unsupported");
+    raises(ValueError, () => project.importFile(new ImportOptions(ASSETS.div("config.ocio"))), "Unsupported");
   });
 
   test("test_deferred_format_rejected_early_with_value_error", () => {
     // .c4d import is deferred; import must fail with a clear ValueError
     // naming the extension, not NotImplementedError mid-probe.
     const project = parse_aep(BASE).project;
-    raises(ValueError, () => project.import_file(new ImportOptions(ASSETS.div("c4d.c4d"))), "\\.c4d");
+    raises(ValueError, () => project.importFile(new ImportOptions(ASSETS.div("c4d.c4d"))), "\\.c4d");
   });
 });

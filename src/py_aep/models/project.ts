@@ -154,7 +154,7 @@ export function _font_post_script_name(font: FontObject | string): string {
     validate_font_name(font);
     return font;
   }
-  const name = font?.post_script_name ?? null;
+  const name = font?.postScriptName ?? null;
   if (typeof name !== "string" || !name) {
     throw new TypeError_("expected a FontObject or a PostScript name string");
   }
@@ -252,20 +252,20 @@ export class Project {
    * The color depth of the current project, either 8, 16, or 32 bits.
    * Read / Write.
    */
-  declare bits_per_channel: BitsPerChannel;
+  declare bitsPerChannel: BitsPerChannel;
 
   /**
    * The film type for feet+frames timecode display, either MM16 (16mm) or
    * MM35 (35mm). Read / Write.
    */
-  declare feet_frames_film_type: FeetFramesFilmType;
+  declare feetFramesFilmType: FeetFramesFilmType;
 
   /**
    * The Footage Start Time setting in the Project Settings dialog box,
    * which is enabled when Timecode is selected as the time display style.
    * Read / Write.
    */
-  declare footage_timecode_display_start_type: FootageTimecodeDisplayStartType;
+  declare footageTimecodeDisplayStartType: FootageTimecodeDisplayStartType;
 
   /**
    * The Default Base value in the Time Display Style section of
@@ -277,31 +277,31 @@ export class Project {
    * The Frame Count menu setting in the Project Settings dialog box.
    * Read / Write.
    */
-  declare frames_count_type: FramesCountType;
+  declare framesCountType: FramesCountType;
 
   /**
    * The start frame number for the project display (0 or 1). An alternate
    * way of setting the Frame Count menu setting. Read / Write.
    */
-  declare display_start_frame: number;
+  declare displayStartFrame: number;
 
   /**
    * When `true`, the Frames field in the UI is displayed as
    * feet+frames. Read / Write.
    */
-  declare frames_use_feet_frames: boolean;
+  declare framesUseFeetFrames: boolean;
 
   /**
    * The time display style, corresponding to the Time Display Style
    * section in the Project Settings dialog box. Read / Write.
    */
-  declare time_display_type: TimeDisplayType;
+  declare timeDisplayType: TimeDisplayType;
 
   /**
    * When `true`, thumbnail views use the transparency checkerboard
    * pattern. Read / Write.
    */
-  declare transparency_grid_thumbnails: boolean;
+  declare transparencyGridThumbnails: boolean;
 
   /**
    * The current revision of the project. Every user action increases the
@@ -315,7 +315,7 @@ export class Project {
    * When True, After Effects compensates for scene-referred profiles when
    * rendering.
    */
-  declare compensate_for_scene_referred_profiles: boolean;
+  declare compensateForSceneReferredProfiles: boolean;
 
   /**
    * The project audio sample rate in Hz.
@@ -324,13 +324,13 @@ export class Project {
    *
    * **Note:** Not exposed in ExtendScript
    */
-  declare audio_sample_rate: number;
+  declare audioSampleRate: number;
 
   /**
    * The gamma value used for the working color space, either 2.2 or 2.4.
    * Read / Write.
    */
-  declare working_gamma: number;
+  declare workingGamma: number;
 
   /**
    * The GPU acceleration type for the project. A renderer id py_aep does
@@ -338,7 +338,7 @@ export class Project {
    * AE CC 12.0 project reads SOFTWARE, as AE reports it.
    * Read / Write.
    */
-  declare gpu_accel_type: GpuAccelType | string;
+  declare gpuAccelType: GpuAccelType | string;
 
   // ChunkField needs a chunk_attr that resolves to an object holding the
   // target field.  _xmp lives directly on Project, so we alias _aep = self
@@ -349,7 +349,7 @@ export class Project {
    * project has no XMP packet (e.g. projects created via `py_aep.new()`).
    * Read / Write.
    */
-  declare xmp_packet: Element | null;
+  declare xmpPacket: Element | null;
 
   // Chunk body references for descriptors
   declare _nhed: NhedChunk;
@@ -497,7 +497,7 @@ export class Project {
     nhed: NhedChunk,
     nnhd: NnhdChunk,
   ): void {
-    const depth = preferences.get_pref_as_number("Project Pref Section", "Project Settings Depth", undefined, {
+    const depth = preferences.getPrefAsNumber("Project Pref Section", "Project Settings Depth", undefined, {
       default: 0,
     });
     if ([1, 2].includes(depth)) {
@@ -583,7 +583,7 @@ export class Project {
     // AE stamps the "New Project Solids Folder" preference into the
     // root sfnm chunk at File > New; the stored name is used from
     // then on (see _solids_folder_name).
-    const solids_name = preferences.get_pref_as_string(
+    const solids_name = preferences.getPrefAsString(
       "Template Project",
       "New Project Solids Folder",
       PREFType.PREF_Type_MACHINE_INDEPENDENT,
@@ -735,7 +735,7 @@ export class Project {
   }
 
   /** The Render Queue of the project. Read-only. */
-  get render_queue(): RenderQueue | null {
+  get renderQueue(): RenderQueue | null {
     return this._render_queue;
   }
 
@@ -744,7 +744,7 @@ export class Project {
    * `null` if no item is currently selected or if multiple items are
    * selected. Read-only.
    */
-  get active_item(): Item | null {
+  get activeItem(): Item | null {
     return this._active_item;
   }
 
@@ -769,7 +769,7 @@ export class Project {
    * in the Project panel, but not items contained inside other folders in
    * the Project panel. Read-only.
    */
-  get root_folder(): FolderItem {
+  get rootFolder(): FolderItem {
     return getitem(this._items, 0) as FolderItem;
   }
 
@@ -806,11 +806,11 @@ export class Project {
    * When True, linear blending is used for the project. When False,
    * the standard blending mode is used. Read / Write.
    */
-  get linear_blending(): boolean {
+  get linearBlending(): boolean {
     return this._root_chunks.some((c) => c.chunk_type === "lnrb");
   }
 
-  set linear_blending(value: boolean) {
+  set linearBlending(value: boolean) {
     validate_bool(value);
     // AE keeps `lnrb` in a fixed slot right after `cpid` (before `lnrp` /
     // `dwga`); appending it at the tail makes AE report "missing data".
@@ -821,11 +821,11 @@ export class Project {
    * When True, the working color space is linearized for blending
    * operations. Read / Write.
    */
-  get linearize_working_space(): boolean {
+  get linearizeWorkingSpace(): boolean {
     return this._root_chunks.some((c) => c.chunk_type === "lnrp");
   }
 
-  set linearize_working_space(value: boolean) {
+  set linearizeWorkingSpace(value: boolean) {
     _set_linearize_working_space.call(this, value);
   }
 
@@ -833,17 +833,17 @@ export class Project {
    * The Expressions Engine setting in the Project Settings dialog box
    * ("extendscript" or "javascript-1.0"). Read / Write.
    */
-  get expression_engine(): string {
+  get expressionEngine(): string {
     if (this._exen_utf8 != null) return this._exen_utf8.value;
     return "extendscript";
   }
 
-  set expression_engine(value: string) {
+  set expressionEngine(value: string) {
     _set_expression_engine.call(this, value);
   }
 
   /** The names of all effects used in the project. Read-only. */
-  get effect_names(): string[] {
+  get effectNames(): string[] {
     return _get_effect_names(this._root_chunks);
   }
 
@@ -852,14 +852,14 @@ export class Project {
    * "ACEScg", "None"). Read / Write.
    *
    * In OCIO mode, assigning any color space, role, alias, or
-   * `display/view` pair of {@link ocio_configuration_file} rewrites the
+   * `display/view` pair of {@link ocioConfigurationFile} rewrites the
    * embedded profile JSON (AE identifies it by name, no ICC data). The
    * config must be resolvable, because the envelope AE writes depends on
    * which of those kinds the name is; `ValueError` is raised if it cannot
    * be located or the name is not in it.
    *
    * In Adobe CMS mode, the matching ICC profile is discovered on disk (see
-   * {@link icc_profile_dirs}) and embedded; `ColorProfileNotFoundError` is
+   * {@link iccProfileDirs}) and embedded; `ColorProfileNotFoundError` is
    * raised if it is not installed. Assigning `"None"` removes the working
    * space.
    *
@@ -867,7 +867,7 @@ export class Project {
    * project's list of ICC profiles; as in After Effects, a profile that is
    * no longer the working space stays in that list.
    */
-  get working_space(): string {
+  get workingSpace(): string {
     if (this._ws_utf8 != null) return envelope_profile_name(this._ws_utf8.value);
     if (!this._root_chunks.some((c) => c.chunk_type === "pcms")) {
       // Before AE 22 the working space is the `LIST:CPPl` profile
@@ -883,7 +883,7 @@ export class Project {
     return "None";
   }
 
-  set working_space(value: string) {
+  set workingSpace(value: string) {
     validate_string(value);
     if (!this._root_chunks.some((c) => c.chunk_type === "pcms")) {
       this._set_cppl_working_space(value);
@@ -891,7 +891,7 @@ export class Project {
     }
     let envelope: string;
     let profile_id: Uint8Array;
-    if (this.color_management_system === ColorManagementSystem.OCIO) {
+    if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
       envelope = this._ocio_envelope(value);
       profile_id = bytes_.repeat(b("\xff"), 16);
     } else if (value === "None") {
@@ -958,7 +958,7 @@ export class Project {
    */
   _ocio_envelope(name: string): string {
     const config = require_ocio_config(
-      this.ocio_configuration_file,
+      this.ocioConfigurationFile,
       `build the color-profile envelope for ${repr(name)}`,
     );
     return ocio_color_profile_envelope(config, name);
@@ -970,11 +970,11 @@ export class Project {
    * Adobe Color directories. Assign an array of folders containing `.icc`/
    * `.icm` files to override (e.g. for a non-default install or CI).
    */
-  get icc_profile_dirs(): Path[] | null {
+  get iccProfileDirs(): Path[] | null {
     return this._icc_profile_dirs;
   }
 
-  set icc_profile_dirs(value: PathLike[] | null) {
+  set iccProfileDirs(value: PathLike[] | null) {
     if (value != null) {
       if (!is_list_or_tuple(value)) {
         throw new TypeError_(
@@ -1009,13 +1009,13 @@ export class Project {
    *
    * **Note:** Not exposed in ExtendScript
    */
-  get display_color_space(): string {
+  get displayColorSpace(): string {
     if (this._dcs_utf8 != null) return envelope_profile_name(this._dcs_utf8.value);
     return "None";
   }
 
-  set display_color_space(value: [string, string] | string) {
-    if (this.color_management_system !== ColorManagementSystem.OCIO) {
+  set displayColorSpace(value: [string, string] | string) {
+    if (this.colorManagementSystem !== ColorManagementSystem.OCIO) {
       throw new NotImplementedError(
         "display_color_space is only settable in OCIO mode. In Adobe " +
           "CMS the display uses the operating system's monitor profile, " +
@@ -1086,12 +1086,12 @@ export class Project {
    * The color management system used by the project (Adobe or OCIO).
    * Available in CC 2024 and later. Read / Write.
    */
-  get color_management_system(): ColorManagementSystem {
+  get colorManagementSystem(): ColorManagementSystem {
     const settings = this._get_cms_settings();
     return ColorManagementSystem.of(json_int(getitem(settings, "colorManagementSystem")));
   }
 
-  set color_management_system(value: ColorManagementSystem | number) {
+  set colorManagementSystem(value: ColorManagementSystem | number) {
     _set_color_management_system.call(this, value);
   }
 
@@ -1099,12 +1099,12 @@ export class Project {
    * The LUT interpolation method for the project (Trilinear or
    * Tetrahedral). Read / Write.
    */
-  get lut_interpolation_method(): LutInterpolationMethod {
+  get lutInterpolationMethod(): LutInterpolationMethod {
     const settings = this._get_cms_settings();
     return LutInterpolationMethod.of(json_int(getitem(settings, "lutInterpolationMethod")));
   }
 
-  set lut_interpolation_method(value: LutInterpolationMethod | number) {
+  set lutInterpolationMethod(value: LutInterpolationMethod | number) {
     _set_lut_interpolation_method.call(this, value);
   }
 
@@ -1112,31 +1112,31 @@ export class Project {
    * The OCIO configuration file for the project. Only relevant when
    * color_management_system is OCIO. Read / Write.
    */
-  get ocio_configuration_file(): string {
+  get ocioConfigurationFile(): string {
     const settings = this._get_cms_settings();
     return str(getitem(settings, "ocioConfigurationFile"));
   }
 
-  set ocio_configuration_file(value: PathLike) {
+  set ocioConfigurationFile(value: PathLike) {
     _set_ocio_configuration_file.call(this, value);
   }
 
   /**
    * Return the color-space names assignable in the current CMS mode.
    *
-   * These are the names valid for {@link working_space} (and, in Adobe mode,
+   * These are the names valid for {@link workingSpace} (and, in Adobe mode,
    * [media_color_space][
-   * py_aep.models.sources.footage.FootageSource.media_color_space] and the
+   * py_aep.models.sources.footage.FootageSource.mediaColorSpace] and the
    * output color space).
    *
    * - Adobe CMS: the catalogued Adobe ICC profile names.
-   * - OCIO: the active color spaces of {@link ocio_configuration_file} (a `.ocio`
+   * - OCIO: the active color spaces of {@link ocioConfigurationFile} (a `.ocio`
    *   path or a built-in name like `"ACES 1.2"`). Returns `[]` if the config
    *   cannot be located or read.
    */
-  list_color_profiles(): string[] {
-    if (this.color_management_system === ColorManagementSystem.OCIO) {
-      const config_path = resolve_ocio_config(this.ocio_configuration_file);
+  listColorProfiles(): string[] {
+    if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
+      const config_path = resolve_ocio_config(this.ocioConfigurationFile);
       if (config_path == null) return [];
       return list_config_color_spaces(config_path);
     }
@@ -1144,7 +1144,7 @@ export class Project {
   }
 
   /** The name of the project, derived from the file name. */
-  get project_name(): string {
+  get projectName(): string {
     return new Path(this.file).name;
   }
 
@@ -1153,14 +1153,14 @@ export class Project {
    *
    * **Note:** Equivalent to `len(project.items)`
    */
-  get num_items(): number {
+  get numItems(): number {
     return this.items.size;
   }
 
   /** Get a layer by its unique ID. */
-  layer_by_id(layer_id: number): Layer {
+  layerById(layer_id: number): Layer {
     for (const comp of this.compositions) {
-      const layer = comp.layers_by_id.get(layer_id);
+      const layer = comp.layersById.get(layer_id);
       if (layer !== undefined) return layer;
     }
     throw new KeyError(`Layer with ID ${layer_id} not found`);
@@ -1192,7 +1192,7 @@ export class Project {
    * @param duration - Duration in seconds (\> 0, \<= 10800).
    * @returns The newly created {@link FootageItem}.
    */
-  import_placeholder(
+  importPlaceholder(
     name: string | null,
     width: number,
     height: number,
@@ -1206,14 +1206,14 @@ export class Project {
     }
 
     const source = PlaceholderSource._new(name, width, height, frame_rate, duration);
-    const item = FootageItem._new(source, { project: this, parent_folder: this.root_folder });
+    const item = FootageItem._new(source, { project: this, parent_folder: this.rootFolder });
 
     // Insert into root folder's chunk tree and register
-    const container = this.root_folder._children_container;
+    const container = this.rootFolder._children_container;
     container.push(item._item_list);
     container.push(...item._view_data);
     this.items.set(item.id, item);
-    this.root_folder.items.push(item);
+    this.rootFolder.items.push(item);
     return item;
   }
 
@@ -1234,9 +1234,9 @@ export class Project {
    *
    * @param options - The import settings. `ImportAsType.FOOTAGE`, `COMP` (layered
    *   `.ai`/`.pdf`/`.psd`/`.psb`), and `COMP_CROPPED_LAYERS` (the same files, and SVG) are
-   *   supported. With `ImportOptions.layer_index` set (py_aep extension mirroring the "Choose
+   *   supported. With `ImportOptions.layerIndex` set (py_aep extension mirroring the "Choose
    *   Layer" option of AE's import dialog), a FOOTAGE import of a layered file references that
-   *   single layer instead of the merged/whole document; see also `ImportOptions.layer_dimensions`
+   *   single layer instead of the merged/whole document; see also `ImportOptions.layerDimensions`
    *   and `py_aep.list_layers`.
    * @returns The newly created {@link FootageItem} or {@link CompItem}.
    * @throws {@link ValueError} If `import_as` is unsupported for the file, if the file extension is
@@ -1254,13 +1254,13 @@ export class Project {
    * @throws {@link UnsupportedPsdLayersError} If a `.psd`/`.psb` COMP import is requested but the
    *   file is not a valid Photoshop document.
    */
-  import_file(options: ImportOptions): FootageItem | CompItem {
+  importFile(options: ImportOptions): FootageItem | CompItem {
     if (!(options instanceof ImportOptions)) {
       throw new ValueError(`Expected ImportOptions, got ${type_name(options)}`);
     }
 
-    if (options.layer_index != null) {
-      if (options.import_as !== ImportAsType.FOOTAGE) {
+    if (options.layerIndex != null) {
+      if (options.importAs !== ImportAsType.FOOTAGE) {
         throw new ValueError(
           "layer_index applies to ImportAsType.FOOTAGE only; COMP " + "imports include every layer",
         );
@@ -1268,37 +1268,37 @@ export class Project {
       if (options.sequence) {
         throw new ValueError("layer_index cannot be combined with sequence");
       }
-    } else if (options.layer_dimensions != null) {
+    } else if (options.layerDimensions != null) {
       throw new ValueError("layer_dimensions requires layer_index");
     }
 
     const suffix = options.file.suffix.toLowerCase();
-    if (options.layer_styles != null) {
+    if (options.layerStyles != null) {
       if (!PSD_COMP_EXTENSIONS.has(suffix)) {
         throw new ValueError("layer_styles applies to Photoshop (.psd/.psb) imports only");
       }
-      if (options.import_as === ImportAsType.FOOTAGE) {
-        if (options.layer_index == null) {
+      if (options.importAs === ImportAsType.FOOTAGE) {
+        if (options.layerIndex == null) {
           throw new ValueError(
             "layer_styles requires layer_index for a FOOTAGE " +
               'import: a "Merged Layers" whole-document import ' +
               "always flattens the styles into the composite",
           );
         }
-        if (options.layer_styles === "editable") {
+        if (options.layerStyles === "editable") {
           throw new ValueError(
             "editable layer styles require a COMP import; a " +
               'FOOTAGE import offers "merge" or "ignore"',
           );
         }
-      } else if (options.layer_styles === "ignore") {
+      } else if (options.layerStyles === "ignore") {
         throw new ValueError(
           'a COMP import offers "editable" or "merge" layer ' +
             "styles (AE's dialog has no Ignore option there)",
         );
       }
     }
-    if (options.import_as === ImportAsType.COMP_CROPPED_LAYERS) {
+    if (options.importAs === ImportAsType.COMP_CROPPED_LAYERS) {
       if (suffix === ".svg") {
         return this._import_svg_cropped(options.file);
       }
@@ -1313,7 +1313,7 @@ export class Project {
           `.ai/.pdf/.psd/.psb; ${suffix} cropped import is not implemented yet`,
       );
     }
-    if (options.import_as === ImportAsType.COMP) {
+    if (options.importAs === ImportAsType.COMP) {
       if (AI_COMP_EXTENSIONS.has(suffix)) {
         return this._import_ai_layered(options.file);
       }
@@ -1325,22 +1325,22 @@ export class Project {
       }
       throw new ValueError(`import_file does not support COMP import for ${repr(suffix)}`);
     }
-    if (options.import_as === ImportAsType.PROJECT) {
+    if (options.importAs === ImportAsType.PROJECT) {
       throw new ValueError(
         "import_file does not support PROJECT import (importing an " + ".aep/.aet, or an AE project embedded in a .mov/.m4a)",
       );
     }
-    if (options.import_as !== ImportAsType.FOOTAGE) {
+    if (options.importAs !== ImportAsType.FOOTAGE) {
       throw new ValueError(
         "import_file supports ImportAsType.FOOTAGE, COMP (layered " +
           ".ai/.pdf/.psd/.psb), and COMP_CROPPED_LAYERS (SVG, " +
           ".ai/.pdf/.psd/.psb), " +
-          `got ${ImportAsType.name_of(options.import_as)}`,
+          `got ${ImportAsType.name_of(options.importAs)}`,
       );
     }
 
     let source: FileSource;
-    if (options.layer_index != null) {
+    if (options.layerIndex != null) {
       // Fill unset PSD layer-import choices from the machine's sticky
       // import-dialog preferences, as AE's own importFile does.
       //
@@ -1354,13 +1354,13 @@ export class Project {
       // here would diverge from importFile rather than mirror it. An
       // AI/PDF layer import therefore keeps None, its "document"
       // downstream default.
-      let dimensions = options.layer_dimensions;
-      let styles = options.layer_styles;
+      let dimensions = options.layerDimensions;
+      let styles = options.layerStyles;
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
         if (styles == null) styles = psd_footage_layer_styles(this._preferences);
         if (dimensions == null) dimensions = psd_footage_dimensions(this._preferences);
       }
-      source = FileSource._from_layer(options.file, options.layer_index, {
+      source = FileSource._from_layer(options.file, options.layerIndex, {
         dimensions,
         layer_styles: styles,
         windows: this._windows,
@@ -1368,20 +1368,20 @@ export class Project {
     } else {
       source = FileSource._from_file(options.file, {
         sequence: options.sequence,
-        force_alphabetical: options.force_alphabetical,
+        force_alphabetical: options.forceAlphabetical,
         windows: this._windows,
         default_sequence_fps: default_sequence_fps(this._preferences),
-        range_start: options.sequence ? options.range_start : 0,
-        range_end: options.sequence ? options.range_end : 0,
+        range_start: options.sequence ? options.rangeStart : 0,
+        range_end: options.sequence ? options.rangeEnd : 0,
       });
     }
 
-    const item = FootageItem._new(source, { project: this, parent_folder: this.root_folder });
-    const container = this.root_folder._children_container;
+    const item = FootageItem._new(source, { project: this, parent_folder: this.rootFolder });
+    const container = this.rootFolder._children_container;
     container.push(item._item_list);
     container.push(...item._view_data);
     this.items.set(item.id, item);
-    this.root_folder.items.push(item);
+    this.rootFolder.items.push(item);
     return item;
   }
 
@@ -1391,7 +1391,7 @@ export class Project {
    * or no preferences directory) keeps AE's `editable` dialog default.
    */
   _resolve_comp_layer_styles(options: ImportOptions): string | null {
-    if (options.layer_styles != null) return options.layer_styles;
+    if (options.layerStyles != null) return options.layerStyles;
     return psd_comp_layer_styles(this._preferences);
   }
 
@@ -1413,10 +1413,10 @@ export class Project {
     }
     // AE creates a 1-frame, 30 fps comp named after the file.
     // (add_comp front-inserts the comp to match AE's import ordering.)
-    const comp = this.root_folder._add_comp(file.name, width, height, 1.0, 1.0 / 30.0, 30.0, {
+    const comp = this.rootFolder._add_comp(file.name, width, height, 1.0, 1.0 / 30.0, 30.0, {
       min_dimension: 1,
     });
-    const layer = comp.add_shape();
+    const layer = comp.addShape();
     layer.name = file.name;
     // Vertices are baked in absolute viewBox coordinates, so an identity
     // layer transform (anchor and position at the origin) maps shape
@@ -1445,7 +1445,7 @@ export class Project {
     pixel_aspect: number,
   ): CompItem {
     const frames = round(_LAYERED_COMP_DURATION_SECONDS * _LAYERED_COMP_FRAME_RATE);
-    const comp = parent_folder.add_comp(
+    const comp = parent_folder.addComp(
       name,
       width,
       height,
@@ -1456,7 +1456,7 @@ export class Project {
     // AE gives a layered-import comp shutter phase -90 (unlike a
     // script-created comp, which AE leaves at 0 - as add_comp's skeleton
     // does); so set it only here, on the import path.
-    comp.shutter_phase = -90;
+    comp.shutterPhase = -90;
     return comp;
   }
 
@@ -1485,8 +1485,8 @@ export class Project {
   ): CompItem {
     // Before anything is added: every layer's footage spans the canvas.
     check_footage_size(file.name, info.width, info.height);
-    const folder = this.root_folder.add_folder(`${file.stem} Layers`);
-    const comp = this._new_layered_comp(this.root_folder, file.stem, info.width, info.height, info.pixel_aspect);
+    const folder = this.rootFolder.addFolder(`${file.stem} Layers`);
+    const comp = this._new_layered_comp(this.rootFolder, file.stem, info.width, info.height, info.pixel_aspect);
     this._add_layered_specs(comp, folder, layer_specs, file, source_format, info, embedded_profile_name);
     // AE stores the `<stem> Layers` folder's Sfdr in the Project-panel
     // alphabetical order, not the document order the items are built in
@@ -1495,7 +1495,7 @@ export class Project {
     // AE places the `<stem> Layers` folder immediately after the comp (before
     // the project's pre-existing items); add_folder appended it, so move it
     // into position to match AE's Fold ordering.
-    const container = this.root_folder._children_container;
+    const container = this.rootFolder._children_container;
     container.splice(index_by_identity(container, folder._item_list), 1);
     const comp_idx = index_by_identity(container, comp._item_list);
     container.splice(comp_idx + 1 + comp._view_data.length, 0, folder._item_list);
@@ -1533,7 +1533,7 @@ export class Project {
         // clipping-run precomp instead bakes the base layer's name
         // (still with `name_set` off) and stays uncollapsed.
         const group_layer = comp.add(nested);
-        if (spec.collapsed) group_layer.collapse_transformation = true;
+        if (spec.collapsed) group_layer.collapseTransformation = true;
         if (!spec.enabled) group_layer.enabled = false;
         if (spec.layer_name != null) {
           group_layer.name = spec.layer_name;
@@ -1581,14 +1581,14 @@ export class Project {
         transform.property("ADBE Anchor Point").value = [anchor_x, anchor_y, 0.0];
         transform.property("ADBE Position").value = [position_x, position_y, 0.0];
       }
-      if (spec.is_adjustment) layer.adjustment_layer = true;
-      if (spec.preserve_transparency) layer.preserve_transparency = true;
+      if (spec.is_adjustment) layer.adjustmentLayer = true;
+      if (spec.preserve_transparency) layer.preserveTransparency = true;
       if (spec.masks?.length > 0) {
         // A PSD vector-mask/shape-layer path: AE creates one mask
         // per subpath (psd_vector_mask* fixtures).
         const parade = layer.property("ADBE Mask Parade");
         for (const shape of spec.masks) {
-          const mask = parade.add_property("ADBE Mask Atom");
+          const mask = parade.addProperty("ADBE Mask Atom");
           mask.property("ADBE Mask Shape").value = shape;
         }
       }
@@ -1680,7 +1680,7 @@ export class Project {
    * content box (`COMP_CROPPED_LAYERS`); otherwise the full canvas is kept
    * (`COMP`). `layer_styles` is the dialog's Layer Options choice
    * (`"editable"`, the default, or `"merge"`; see
-   * `ImportOptions.layer_styles`).
+   * `ImportOptions.layerStyles`).
    *
    * A flattened file (no layer records) is imported as a one-layer
    * composition of the merged still, matching AE 2026: a `<stem> Layers`
@@ -1837,15 +1837,15 @@ export class Project {
           (shape) =>
             new Shape(
               shape.vertices.map(([x, y]) => [x - b_left, y - b_top]),
-              shape.in_tangents,
-              shape.out_tangents,
+              shape.inTangents,
+              shape.outTangents,
               { closed: shape.closed },
             ),
         );
         specs.push(
           new LayerSpec(
             node.name,
-            footage.opti_data,
+            footage.optiData,
             crop_w,
             crop_h,
             transform,
@@ -1855,13 +1855,13 @@ export class Project {
             node.record_index,
             // Empty layers have no pixels: data_size stays 0 (from
             // the real bounds), even though the layer is full-canvas.
-            footage.data_size,
+            footage.dataSize,
             reserved_c8,
             styles,
             masks,
             !group_clipping && node.clipped,
             node.visible,
-            footage.has_alpha,
+            footage.hasAlpha,
             footage.depth,
           ),
         );
@@ -1869,7 +1869,7 @@ export class Project {
         specs.push(
           new LayerSpec(
             node.name,
-            footage.opti_data,
+            footage.optiData,
             canvas_w,
             canvas_h,
             undefined,
@@ -1877,13 +1877,13 @@ export class Project {
             node.is_adjustment,
             node.layer_id,
             node.record_index,
-            footage.data_size,
+            footage.dataSize,
             reserved_c8,
             styles,
             masks,
             !group_clipping && node.clipped,
             node.visible,
-            footage.has_alpha,
+            footage.hasAlpha,
             footage.depth,
           ),
         );
@@ -1920,7 +1920,7 @@ export class Project {
    * Effects names it `layerTimeD` because `Source Text`'s
    * `value_at_time` expects layer time, unlike other properties.
    */
-  get used_fonts(): { font: FontObject; used_at: { layer_id: number; layer_time: number }[] }[] {
+  get usedFonts(): { font: FontObject; used_at: { layer_id: number; layer_time: number }[] }[] {
     const records = new Map<
       string,
       { name: string; font: FontObject; used_at: { layer_id: number; layer_time: number }[] }
@@ -1929,7 +1929,7 @@ export class Project {
       let entries: [TextDocument, number][];
       if (source_text.keyframes?.length > 0) {
         entries = source_text.keyframes.map(
-          (kf) => [kf.value, kf.time - layer.start_time],
+          (kf) => [kf.value, kf.time - layer.startTime],
         );
       } else {
         entries = [[source_text.value, 0.0]];
@@ -1937,11 +1937,11 @@ export class Project {
       for (const [doc, layer_time] of entries) {
         if (doc == null) continue;
         for (const font of doc._used_font_objects()) {
-          const vector = font.design_vector;
-          const key = tkey(font.post_script_name, font.version, vector != null ? [...vector] : null);
+          const vector = font.designVector;
+          const key = tkey(font.postScriptName, font.version, vector != null ? [...vector] : null);
           let record = records.get(key);
           if (record == null) {
-            record = { name: font.post_script_name, font, used_at: [] };
+            record = { name: font.postScriptName, font, used_at: [] };
             records.set(key, record);
           }
           record.used_at.push({ layer_id: layer.id, layer_time });
@@ -1960,7 +1960,7 @@ export class Project {
    * covered. This operation is not undoable.
    *
    * Each font may be given as a {@link FontObject} (e.g. from
-   * {@link Project.used_fonts | used_fonts}) or as a PostScript name.
+   * {@link Project.usedFonts | used_fonts}) or as a PostScript name.
    *
    * @param from_font - Font to be replaced.
    * @param to_font - Font to replace it with.
@@ -1970,7 +1970,7 @@ export class Project {
    *   replacement (i.e. it behaves as if this were `true`).
    * @returns `true` if at least one layer was changed.
    */
-  replace_font(from_font: FontObject | string, to_font: FontObject | string, no_font_locking = false): boolean {
+  replaceFont(from_font: FontObject | string, to_font: FontObject | string, no_font_locking = false): boolean {
     validate_bool(no_font_locking);
     const from_name = _font_post_script_name(from_font);
     const to_name = _font_post_script_name(to_font);
@@ -2005,7 +2005,7 @@ export class Project {
    * @param old_text - The text to replace.
    * @param new_text - The new text.
    */
-  auto_fix_expressions(old_text: string, new_text: string): void {
+  autoFixExpressions(old_text: string, new_text: string): void {
     validate_string(old_text);
     validate_string(new_text);
     if (!old_text) return;
@@ -2018,7 +2018,7 @@ export class Project {
       for (const layer of comp.layers) {
         for (const prop of layer._leaf_properties()) {
           const expression = prop.expression;
-          if (!expression || !prop.expression_enabled) continue;
+          if (!expression || !prop.expressionEnabled) continue;
           // Python `str.replace` replaces every occurrence and takes no
           // replacement escapes, so split/join is the literal equivalent.
           const fixed = expression.split(old_double).join(new_double).split(old_single).join(new_single);
@@ -2035,10 +2035,10 @@ export class Project {
    *
    * @returns The total number of footage items removed.
    */
-  remove_unused_footage(): number {
+  removeUnusedFootage(): number {
     let removed = 0;
     for (const footage of this.footages) {
-      if (!footage.used_in?.length) {
+      if (!footage.usedIn?.length) {
         footage.remove();
         removed += 1;
       }
@@ -2056,7 +2056,7 @@ export class Project {
    * @param items_to_keep - The items to keep in the project.
    * @returns The total number of items removed.
    */
-  reduce_project(items_to_keep: Item[]): number {
+  reduceProject(items_to_keep: Item[]): number {
     if (!items_to_keep.every((item) => item instanceof Item)) {
       throw new ValueError("All items_to_keep must be Item instances");
     }
@@ -2065,10 +2065,10 @@ export class Project {
     for (let item = queue.pop(); item !== undefined; item = queue.pop()) {
       if (keep_ids.has(item.id)) continue;
       keep_ids.add(item.id);
-      let parent = item.parent_folder;
+      let parent = item.parentFolder;
       while (parent != null && !keep_ids.has(parent.id)) {
         keep_ids.add(parent.id);
-        parent = parent.parent_folder;
+        parent = parent.parentFolder;
       }
       if (item instanceof CompItem) {
         for (const source_id of item._source_ids_for_linking()) {
@@ -2097,7 +2097,7 @@ export class Project {
    *
    * @returns The total number of footage items removed.
    */
-  consolidate_footage(): number {
+  consolidateFootage(): number {
     const groups = new Map<string, FootageItem[]>();
     for (const footage of this.footages) {
       const key = footage._consolidation_key();
@@ -2109,8 +2109,8 @@ export class Project {
       if (duplicates.length < 2) continue;
       const kept = duplicates[0];
       for (const dup of duplicates.slice(1)) {
-        for (const comp of dup.used_in) {
-          for (const layer of comp.av_layers) {
+        for (const comp of dup.usedIn) {
+          for (const layer of comp.avLayers) {
             if (layer._source_id === dup.id) {
               layer._source_id = kept.id;
               // Refresh the layer's cached source so a prior
@@ -2334,10 +2334,10 @@ export class Project {
     const folder = recorded ? this.items.get(recorded) ?? null : null;
     if (folder instanceof FolderItem) return folder;
     const name = this._solids_folder_name;
-    for (const existing of this.root_folder.folders) {
+    for (const existing of this.rootFolder.folders) {
       if (existing.name === name) return existing;
     }
-    const created = this.root_folder.add_folder(name);
+    const created = this.rootFolder.addFolder(name);
     if (sfid != null) sfid.value = created.id;
     return created;
   }
@@ -2379,7 +2379,7 @@ export class Project {
 // Descriptors assigned in the class body: `declare` above, installed here.
 descriptor(
   Project,
-  "bits_per_channel",
+  "bitsPerChannel",
   ChunkField.enum(BitsPerChannel, "_nnhd", "bits_per_channel", {
     post_set: (obj: Project) => obj._sync_nhed_field("bits_per_channel"),
   }),
@@ -2387,7 +2387,7 @@ descriptor(
 
 descriptor(
   Project,
-  "feet_frames_film_type",
+  "feetFramesFilmType",
   ChunkField.enum(FeetFramesFilmType, "_nnhd", "feet_frames_film_type", {
     post_set: (obj: Project) => obj._sync_nhed_field("_display_byte"),
   }),
@@ -2395,7 +2395,7 @@ descriptor(
 
 descriptor(
   Project,
-  "footage_timecode_display_start_type",
+  "footageTimecodeDisplayStartType",
   ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footage_timecode_display_start_type", {
     post_set: (obj: Project) => obj._sync_nhed_field("footage_timecode_display_start_type"),
   }),
@@ -2418,7 +2418,7 @@ descriptor(
 
 descriptor(
   Project,
-  "frames_count_type",
+  "framesCountType",
   ChunkField.enum(FramesCountType, "_nnhd", "frames_count_type", {
     post_set: (obj: Project) => obj._sync_nhed_field("frames_count_type"),
   }),
@@ -2426,7 +2426,7 @@ descriptor(
 
 descriptor(
   Project,
-  "display_start_frame",
+  "displayStartFrame",
   new ChunkField("_nnhd", "display_start_frame", {
     validate: validate_one_of([0, 1]),
     post_set: (obj: Project) => obj._sync_nhed_field("frames_count_type"),
@@ -2435,7 +2435,7 @@ descriptor(
 
 descriptor(
   Project,
-  "frames_use_feet_frames",
+  "framesUseFeetFrames",
   ChunkField.bool("_nnhd", "frames_use_feet_frames", {
     post_set: (obj: Project) => obj._sync_nhed_field("_feet_byte"),
   }),
@@ -2443,7 +2443,7 @@ descriptor(
 
 descriptor(
   Project,
-  "time_display_type",
+  "timeDisplayType",
   ChunkField.enum(TimeDisplayType, "_nnhd", "time_display_type", {
     post_set: (obj: Project) => obj._sync_nhed_field("_display_byte"),
   }),
@@ -2451,7 +2451,7 @@ descriptor(
 
 descriptor(
   Project,
-  "transparency_grid_thumbnails",
+  "transparencyGridThumbnails",
   ChunkField.bool("_nnhd", "transparency_grid_thumbnails", {
     post_set: (obj: Project) => obj._sync_nhed_field("transparency_grid_thumbnails"),
   }),
@@ -2461,7 +2461,7 @@ descriptor(Project, "revision", new ChunkField("_head", "file_revision", { valid
 
 descriptor(
   Project,
-  "compensate_for_scene_referred_profiles",
+  "compensateForSceneReferredProfiles",
   ChunkField.bool("_acer", "value", {
     transform: (v: number) => v !== 0,
     reverse: (v: boolean) => int(v),
@@ -2471,7 +2471,7 @@ descriptor(
 
 descriptor(
   Project,
-  "audio_sample_rate",
+  "audioSampleRate",
   new ChunkField("_adfr", "value", {
     validate: validate_one_of([22050, 32000, 44100, 48000, 96000]),
   }),
@@ -2479,7 +2479,7 @@ descriptor(
 
 descriptor(
   Project,
-  "working_gamma",
+  "workingGamma",
   new ChunkField("_dwga", "working_gamma", {
     validate: validate_one_of([2.2, 2.4]),
     // A CC 12.0 project has no dwga to keep it in.
@@ -2489,7 +2489,7 @@ descriptor(
 
 descriptor(
   Project,
-  "gpu_accel_type",
+  "gpuAccelType",
   ChunkField.enum(GpuAccelType, "_gpug_utf8", "value", {
     allow_out_of_enum_values: true,
     validate: _validate_gpu_accel_type,
@@ -2500,7 +2500,7 @@ descriptor(
 // The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
 descriptor(
   Project,
-  "xmp_packet",
+  "xmpPacket",
   new ChunkField("_aep", "_xmp", {
     transform: (s) => (py_bool(s) && strip(s) ? ET_fromstring(s) : null),
     reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
@@ -2628,8 +2628,8 @@ export function _style_leaf_map(group: PropertyGroup): Map<string, Property> {
       for (const [name, leaf] of _style_leaf_map(child)) {
         setdefault(leaves, name, leaf);
       }
-    } else if (!leaves.has(child.match_name)) {
-      leaves.set(child.match_name, child);
+    } else if (!leaves.has(child.matchName)) {
+      leaves.set(child.matchName, child);
     }
   }
   return leaves;
@@ -2667,7 +2667,7 @@ export function _serialize_import_layer_styles(layer: AVLayer, styles: PsdLayerS
     if (!(child instanceof PropertyGroup)) continue;
     child._ensure_materialized();
     py_assert(child._tdsb != null);
-    if (child.match_name === "ADBE Blend Options Group") {
+    if (child.matchName === "ADBE Blend Options Group") {
       child._tdsb._enable_flags = container_flags;
       instance_dict(child).set("enabled", styled);
       for (const sub of child.properties) {
@@ -2681,7 +2681,7 @@ export function _serialize_import_layer_styles(layer: AVLayer, styles: PsdLayerS
         }
       }
     } else {
-      const prefix = child.match_name.split("/")[0];
+      const prefix = child.matchName.split("/")[0];
       let flags: number;
       if (styles != null && styles.enabled.includes(prefix)) {
         flags = 1;
@@ -2706,11 +2706,11 @@ export function _serialize_import_layer_styles(layer: AVLayer, styles: PsdLayerS
     );
   }
   if (!styles.values?.size) return;
-  const timebase = layer.containing_comp._cdta.internal_timebase;
+  const timebase = layer.containingComp._cdta.internal_timebase;
   const source = layer.source;
   // Python `cast("AVItem", layer.source)`: an imported layer always has one.
   if (source == null) throw new AttributeError("'NoneType' object has no attribute 'width'");
-  const point_aspect = (source.width * source.pixel_aspect) / source.height;
+  const point_aspect = (source.width * source.pixelAspect) / source.height;
   const leaves = _style_leaf_map(container);
   for (const [match_name, value] of styles.values) {
     if (_values_equal(value, _STYLE_SPEC_DEFAULTS.get(match_name) ?? null)) continue;

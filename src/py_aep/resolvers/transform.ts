@@ -370,8 +370,8 @@ export function build_world_matrix(
   // Compose from root (last in chain) down to the layer itself. Each
   // Position lives in its parent's pixels (the comp's for the root).
   let m = Mat4.identity();
-  const comp = layer.containing_comp;
-  let space_aspect = comp.pixel_aspect;
+  const comp = layer.containingComp;
+  let space_aspect = comp.pixelAspect;
   for (const lyr of chain.reverse()) {
     if ((lyr !== layer || as_parent) && _RIG_TYPES.has(lyr._ldta.layer_type)) {
       if (flatten_2d) {
@@ -404,7 +404,7 @@ export function build_world_matrix(
 /** Pixel aspect of a layer's own pixels: its source's, else square. */
 export function layer_source_aspect(layer: Layer): number {
   const source = layer._source_item;
-  const aspect = source != null && "pixel_aspect" in source ? source.pixel_aspect : null;
+  const aspect = source != null && "pixelAspect" in source ? source.pixelAspect : null;
   return aspect != null && aspect !== 0 ? aspect : 1.0;
 }
 
@@ -413,7 +413,7 @@ export function layer_source_aspect(layer: Layer): number {
  * the comp's at the root, square under a camera or light.
  */
 export function position_space_aspect(parent: Layer | null, comp: CompItem): number {
-  if (parent == null) return comp.pixel_aspect;
+  if (parent == null) return comp.pixelAspect;
   if (_RIG_TYPES.has(parent._ldta.layer_type)) return 1.0;
   return layer_source_aspect(parent);
 }
@@ -443,7 +443,7 @@ export function _prop_value<K extends _PropertyName>(
 export function _prop_value(group: PropertyGroup, match_name: _PropertyName, time: number | null) {
   const prop = group.property(match_name);
   if (time == null) return prop.value;
-  return prop.value_at_time(time);
+  return prop.valueAtTime(time);
 }
 
 /**
@@ -503,7 +503,7 @@ export function _layer_local_matrix(
   });
 }
 
-// Layer types (`ldta.layer_type`) a child parents to as a rig: light, camera.
+// Layer types (`ldta.layerType`) a child parents to as a rig: light, camera.
 export const _RIG_TYPES: ReadonlySet<number> = new Set<number>([LayerType.LIGHT, LayerType.CAMERA]);
 export const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPOT, LightType.PARALLEL]);
 
@@ -514,7 +514,7 @@ export const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPO
  */
 /** A light layer: the only layer kind with a `light_type`. */
 function _is_light(layer: Layer): layer is LightLayer {
-  return "light_type" in layer;
+  return "lightType" in layer;
 }
 
 /** An AV layer: the only layer kind that resolves its comp's active camera. */
@@ -526,8 +526,8 @@ export function rig_aims_at_poi(layer: Layer): boolean {
   const layer_type = layer._ldta.layer_type;
   if (!_RIG_TYPES.has(layer_type)) return false;
   const aims =
-    layer_type === LayerType.CAMERA || (_is_light(layer) && _AIMED_LIGHTS.has(layer.light_type));
-  return aims && layer.auto_orient === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
+    layer_type === LayerType.CAMERA || (_is_light(layer) && _AIMED_LIGHTS.has(layer.lightType));
+  return aims && layer.autoOrient === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
 }
 
 /**
@@ -588,11 +588,11 @@ export function _rig_matrix(layer: Layer, time: number | null, space_aspect: num
  *   layer turned towards the camera, and characters turned towards the camera.
  */
 export function _auto_rotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
-  const mode = layer.auto_orient;
+  const mode = layer.autoOrient;
   const three_d = !!layer._ldta.three_d_layer;
   if (mode === AutoOrientType.ALONG_PATH) {
     const prop = layer.transform.property("ADBE Position");
-    if (prop.dimensions_separated) {
+    if (prop.dimensionsSeparated) {
       throw new NotImplementedError(
         `layer ${repr(layer.name)} auto-orients along a path with separated ` +
           "Position dimensions, which the transform math does not model",
@@ -629,7 +629,7 @@ export function _auto_rotation(layer: Layer, time: number, position: number[]): 
  * the front-most enabled camera layer, else the comp's default camera.
  */
 export function _camera_position(layer: Layer, time: number): number[] {
-  const comp = layer.containing_comp;
+  const comp = layer.containingComp;
   // Python `cast("AVLayer", layer)._active_camera_at(time)`.
   if (!_is_av_layer(layer)) {
     throw new AttributeError(`'${type_name(layer)}' object has no attribute '_active_camera_at'`);
@@ -639,7 +639,7 @@ export function _camera_position(layer: Layer, time: number): number[] {
     const world = build_world_matrix(camera, time, undefined, { as_parent: true });
     return world.transform_point([0.0, 0.0, 0.0]);
   }
-  const zoom = default_camera_zoom(comp.width, comp.pixel_aspect);
+  const zoom = default_camera_zoom(comp.width, comp.pixelAspect);
   return [comp.width / 2.0, comp.height / 2.0, -zoom];
 }
 

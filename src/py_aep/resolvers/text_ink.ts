@@ -1,5 +1,5 @@
 /**
- * Ink bounds of a text layer, for `AVLayer.source_rect_at_time`.
+ * Ink bounds of a text layer, for `AVLayer.sourceRectAtTime`.
  *
  * After Effects measures a text layer's content as the tight box around its
  * glyphs' outlines. Rules measured on After Effects 2026 (point and box text
@@ -131,7 +131,7 @@ export function _check_styles(doc: TextDocument): void {
 
 /**
  * The stroke a character's run draws, 0 when it has none (the width
- * defaults to 1, as `TextDocument.stroke_width` reads it).
+ * defaults to 1, as `TextDocument.strokeWidth` reads it).
  */
 export function _stroke_width(style: CosDict): number {
   if (!py_bool(cos_get_or(style, "57", false))) return 0.0;
@@ -237,7 +237,7 @@ export function text_ink_rect(doc: TextDocument): { top: number; left: number; w
   const paragraph_styles = run_spans(doc._doc, "5", "5").map(([_s, _e, style]) => style);
   const box = new BoxAccumulator();
   try {
-    if (doc.box_text_size != null) {
+    if (doc.boxTextSize != null) {
       _box_text_ink(doc, raw, styles, strokes, paragraph_styles, box);
     } else {
       _point_text_ink(raw, styles, strokes, paragraph_styles, box);
@@ -313,13 +313,13 @@ export function _box_text_ink(
   box: BoxAccumulator,
 ): void {
   const composed = tc.compose_lines(doc);
-  const position = doc.box_text_pos;
+  const position = doc.boxTextPos;
   if (position == null) {
     throw _refuse("a text box without a position");
   }
   const left = cos_float(position[0]);
   const top = cos_float(position[1]);
-  const inset = doc.box_inset_spacing;
+  const inset = doc.boxInsetSpacing;
   // Map each character to its paragraph for the justification and indents.
   const paragraph_of: number[] = [];
   for (const [index, [start, end]] of run_spans(doc._doc, "5", "5").entries()) {

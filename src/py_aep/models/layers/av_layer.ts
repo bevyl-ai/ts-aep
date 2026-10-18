@@ -65,7 +65,7 @@ export function _would_create_cycle(target_comp: CompItem, new_source: AVItem): 
     if (comp === new_source) return true;
     if (visited.has(comp)) continue;
     visited.add(comp);
-    for (const ancestor of comp.used_in) {
+    for (const ancestor of comp.usedIn) {
       stack.push(ancestor);
     }
   }
@@ -86,7 +86,7 @@ export function _unregister_source_usage(
    *   being removed or swapped out).
    */
   const { exclude = null } = kw;
-  for (const layer of comp.av_layers) {
+  for (const layer of comp.avLayers) {
     if (layer !== exclude && layer._source_id === source.id) return;
   }
   source._used_in.delete(comp);
@@ -94,7 +94,7 @@ export function _unregister_source_usage(
 
 export function _validate_collapse_transformation(value: boolean, obj: AVLayer): void {
   validate_bool(value);
-  if (!obj.can_set_collapse_transformation) {
+  if (!obj.canSetCollapseTransformation) {
     throw new AttributeError(
       "'collapse_transformation' is read-only when 'can_set_collapse_transformation' is False.",
     );
@@ -136,7 +136,7 @@ type AVLayerNewKw = {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const layer = comp.file_layers[0];
+ * const layer = comp.fileLayers[0];
  * console.log(layer.source);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/
@@ -144,76 +144,76 @@ type AVLayerNewKw = {
 export class AVLayer extends Layer {
   // NOTE(port): accessor stubs typed for TS only; descriptor(AVLayer, ...) below redefines both on the prototype, so these bodies never run.
   /** When `true`, the layer is an adjustment layer. Read / Write. */
-  get adjustment_layer(): boolean {
+  get adjustmentLayer(): boolean {
     return false;
   }
 
-  set adjustment_layer(_value: boolean) {}
+  set adjustmentLayer(_value: boolean) {}
 
   /**
    * `true` if this is an environment layer in a Ray-traced 3D
    * composition. Read / Write.
    *
-   * Setting this to `true` turns {@link three_d_layer} off, as After Effects
+   * Setting this to `true` turns {@link threeDLayer} off, as After Effects
    * 2026 does: contrary to the Scripting Guide, it does not make the layer
    * 3D. A 2D layer stays as it is.
    */
-  get environment_layer(): boolean {
+  get environmentLayer(): boolean {
     return false;
   }
 
-  set environment_layer(_value: boolean) {}
+  set environmentLayer(_value: boolean) {}
 
   /**
    * When `true`, the layer's audio is enabled. This value corresponds
    * to the audio toggle switch in the Timeline panel. Read / Write.
    */
-  declare audio_enabled: boolean;
+  declare audioEnabled: boolean;
 
   /**
    * `true` if collapse transformation is on for this layer.
    * Read / Write.
    */
-  declare collapse_transformation: boolean;
+  declare collapseTransformation: boolean;
 
   /**
    * `true` if the layer's effects are active, as indicated by the
    * \<f\> icon next to it in the user interface. Read / Write.
    */
-  declare effects_active: boolean;
+  declare effectsActive: boolean;
 
   /** The type of frame blending for the layer. Read / Write. */
-  declare frame_blending_type: FrameBlendingType;
+  declare frameBlendingType: FrameBlendingType;
 
   /** `true` if the layer is a guide layer. Read / Write. */
-  declare guide_layer: boolean;
+  declare guideLayer: boolean;
 
   /** `true` if motion blur is enabled for the layer. Read / Write. */
-  declare motion_blur: boolean;
+  declare motionBlur: boolean;
 
   /**
    * `true` if preserve transparency is enabled for the layer.
    * Read / Write.
    */
-  declare preserve_transparency: boolean;
+  declare preserveTransparency: boolean;
 
   /** The layer's draft quality setting. Read / Write. */
   declare quality: LayerQuality;
 
   /** The layer's sampling method. Read / Write. */
-  declare sampling_quality: LayerSamplingQuality;
+  declare samplingQuality: LayerSamplingQuality;
 
   /**
    * `true` if this layer is a 3D layer. Read / Write.
    *
-   * Setting it leaves {@link environment_layer} as it is (After Effects 2026).
+   * Setting it leaves {@link environmentLayer} as it is (After Effects 2026).
    */
-  declare three_d_layer: boolean;
+  declare threeDLayer: boolean;
 
   /** Whether the layer transforms in three dimensions - its 3D switch.
    * Read-only. */
-  get is_3d(): boolean {
-    return this.three_d_layer;
+  get is3d(): boolean {
+    return this.threeDLayer;
   }
 
   /** The layer's pixel dimensions, or `null` when either is zero. */
@@ -244,7 +244,7 @@ export class AVLayer extends Layer {
    * allowing its characters to be animated off the plane of the text
    * layer. Applies only to text layers. Read / Write.
    */
-  declare three_d_per_char: boolean;
+  declare threeDPerChar: boolean;
 
   /** The ID of the source item for this layer. 0 for a text layer. Read-only. */
   declare _source_id: number;
@@ -294,7 +294,7 @@ export class AVLayer extends Layer {
   }
 
   /** The blending mode of the layer. Read / Write. */
-  get blending_mode(): BlendingMode {
+  get blendingMode(): BlendingMode {
     const mode = BlendingMode.from_binary(this._ldta.blending_mode);
     if (mode === BlendingMode.DISSOLVE && this._ldta.dancing_dissolve) {
       return BlendingMode.DANCING_DISSOLVE;
@@ -302,7 +302,7 @@ export class AVLayer extends Layer {
     return mode;
   }
 
-  set blending_mode(value: BlendingMode) {
+  set blendingMode(value: BlendingMode) {
     validate_enum(BlendingMode)(value);
     value = BlendingMode.of(value);
     // Dancing Dissolve has no transfer-mode value of its own: AE stores it
@@ -324,19 +324,19 @@ export class AVLayer extends Layer {
    *
    * **Note:** This functionality was updated in After Effects 23.0.
    *
-   * **Warning:** This is a legacy API. Consider using {@link set_track_matte} and
-   * {@link remove_track_matte} instead.
+   * **Warning:** This is a legacy API. Consider using {@link setTrackMatte} and
+   * {@link removeTrackMatte} instead.
    *
    * Read / Write.
    */
-  get track_matte_type(): TrackMatteType {
+  get trackMatteType(): TrackMatteType {
     return TrackMatteType.from_binary(this._ldta.track_matte_type);
   }
 
-  set track_matte_type(value: TrackMatteType | number) {
+  set trackMatteType(value: TrackMatteType | number) {
     validate_enum(TrackMatteType)(value);
     value = TrackMatteType.of(value);
-    const old_matte = this.track_matte_layer;
+    const old_matte = this.trackMatteLayer;
     this._ldta.track_matte_type = TrackMatteType.to_binary(value);
     if (value === TrackMatteType.NO_TRACK_MATTE && this._ldta.matte_layer_id != null) {
       this._ldta.matte_layer_id = 0;
@@ -350,7 +350,7 @@ export class AVLayer extends Layer {
     if (this._ldta.environment_layer && this._ldta.three_d_layer) {
       // Through the 3-D switch, which AE turns off here, with all a
       // toggle does.
-      this.three_d_layer = false;
+      this.threeDLayer = false;
     }
   }
 
@@ -384,10 +384,10 @@ export class AVLayer extends Layer {
     if (source == null) {
       return false;
     }
-    if (source instanceof FootageItem && source.main_source.is_still) {
+    if (source instanceof FootageItem && source.mainSource.isStill) {
       return false;
     }
-    if (this.time_remap_enabled) {
+    if (this.timeRemapEnabled) {
       return false;
     }
     if (source.duration <= 0) {
@@ -408,15 +408,15 @@ export class AVLayer extends Layer {
    * `|stretch| / 100 / 3000` s before the start time (1.2995 s for a
    * -150 % layer starting at 1.3 s), as After Effects reports it.
    */
-  get in_point(): number {
-    const raw = super.in_point;
+  get inPoint(): number {
+    const raw = super.inPoint;
     if (!this._should_clamp_times()) {
       return raw;
     }
-    return max([raw, this.start_time]);
+    return max([raw, this.startTime]);
   }
 
-  set in_point(value: number) {
+  set inPoint(value: number) {
     validate_number(value);
     this._set_raw_in_point(value);
   }
@@ -427,27 +427,27 @@ export class AVLayer extends Layer {
    * non-still footage layers without time remapping. Read / Write.
    *
    * On a time-reversed layer the out point is the earlier end (see
-   * {@link in_point}).
+   * {@link inPoint}).
    */
-  get out_point(): number {
-    const raw = super.out_point;
+  get outPoint(): number {
+    const raw = super.outPoint;
     if (!this._should_clamp_times()) {
       return raw;
     }
     py_assert(this.source != null); // _should_clamp_times guards
     const source_duration = this.source.duration;
-    const max_out = this.start_time + source_duration * this._stretch_factor;
+    const max_out = this.startTime + source_duration * this._stretch_factor;
     return min([raw, max_out]);
   }
 
-  set out_point(value: number) {
+  set outPoint(value: number) {
     validate_number(value);
     this._set_raw_out_point(value);
   }
 
   /** `true` if frame blending is enabled for this layer. Read-only. */
-  get frame_blending(): boolean {
-    return this.frame_blending_type !== FrameBlendingType.NO_FRAME_BLEND;
+  get frameBlending(): boolean {
+    return this.frameBlendingType !== FrameBlendingType.NO_FRAME_BLEND;
   }
 
   /**
@@ -462,7 +462,7 @@ export class AVLayer extends Layer {
       this._source = null;
       return null;
     } else {
-      const result = this.containing_comp._project.items.get(this._source_id) ?? null;
+      const result = this.containingComp._project.items.get(this._source_id) ?? null;
       if (result != null) {
         this._source = result as AVItem;
         return this._source;
@@ -485,7 +485,7 @@ export class AVLayer extends Layer {
    * layer, a source comp with no controllers, or a layer with no
    * overrides. Read-only.
    */
-  get essential_property_controllers(): EssentialGraphicsController[] {
+  get essentialPropertyControllers(): EssentialGraphicsController[] {
     return resolve_essential_property_controllers(this);
   }
 
@@ -500,7 +500,7 @@ export class AVLayer extends Layer {
    *
    * @param comp - The composition whose Essential Graphics panel to test.
    */
-  can_add_to_motion_graphics_template(comp: CompItem): boolean {
+  canAddToMotionGraphicsTemplate(comp: CompItem): boolean {
     return can_add_layer(this, comp);
   }
 
@@ -513,7 +513,7 @@ export class AVLayer extends Layer {
    *
    * @param comp - The composition to add the layer to.
    */
-  add_to_motion_graphics_template(comp: CompItem): boolean {
+  addToMotionGraphicsTemplate(comp: CompItem): boolean {
     return comp._add_layer_controller(this, null);
   }
 
@@ -527,7 +527,7 @@ export class AVLayer extends Layer {
    * @param comp - The composition to add the layer to.
    * @param name - The controller name to show in the Essential Graphics panel.
    */
-  add_to_motion_graphics_template_as(comp: CompItem, name: string): boolean {
+  addToMotionGraphicsTemplateAs(comp: CompItem, name: string): boolean {
     validate_name(name);
     return comp._add_layer_controller(this, name);
   }
@@ -537,34 +537,34 @@ export class AVLayer extends Layer {
    * when its {@link source} has video, or when the layer has no external source
    * (text and shape layers always render video). Read-only.
    */
-  get has_video(): boolean {
+  get hasVideo(): boolean {
     const source = this.source;
     if (source == null) {
       return true;
     }
-    return !!source.has_video;
+    return !!source.hasVideo;
   }
 
   /** `true` if the layer has an audio component. Read-only. */
-  get has_audio(): boolean {
+  get hasAudio(): boolean {
     const source = this.source;
     if (source == null) {
       return false;
     }
-    return !!source.has_audio;
+    return !!source.hasAudio;
   }
 
   /**
    * `true` if the layer's audio is active at the current time.
    *
-   * For this to be `true`, {@link audio_enabled} must be `true`,
-   * {@link has_audio} must be `true`, no other layer with audio may be
+   * For this to be `true`, {@link audioEnabled} must be `true`,
+   * {@link hasAudio} must be `true`, no other layer with audio may be
    * soloing unless this layer is also soloed, and the current
-   * {@link time} must be between {@link in_point} and {@link out_point}.
+   * {@link time} must be between {@link inPoint} and {@link outPoint}.
    * Read-only.
    */
-  get audio_active(): boolean {
-    return this.audio_active_at_time(this.time);
+  get audioActive(): boolean {
+    return this.audioActiveAtTime(this.time);
   }
 
   /**
@@ -572,35 +572,35 @@ export class AVLayer extends Layer {
    *
    * For this method to return `true`, four conditions must be met:
    *
-   * 1. {@link has_audio} must be `true`.
-   * 2. {@link audio_enabled} must be `true`.
+   * 1. {@link hasAudio} must be `true`.
+   * 2. {@link audioEnabled} must be `true`.
    * 3. No other layer with audio in the
-   *    {@link Layer.containing_comp | containing_comp} may be soloed unless
+   *    {@link Layer.containingComp | containing_comp} may be soloed unless
    *    this layer is also {@link Layer.solo | soloed}.
-   * 4. *time* must fall between {@link in_point} (inclusive) and
-   *    {@link out_point} (exclusive).
+   * 4. *time* must fall between {@link inPoint} (inclusive) and
+   *    {@link outPoint} (exclusive).
    *
    * @param time - The time in seconds.
    */
-  audio_active_at_time(time: number): boolean {
+  audioActiveAtTime(time: number): boolean {
     validate_number(time);
 
-    if (!this.has_audio) {
+    if (!this.hasAudio) {
       return false;
     }
 
-    if (!this.audio_enabled) {
+    if (!this.audioEnabled) {
       return false;
     }
 
-    const any_solo = this.containing_comp.solo_layers.some(
-      (layer) => layer instanceof AVLayer && layer.has_audio,
+    const any_solo = this.containingComp.soloLayers.some(
+      (layer) => layer instanceof AVLayer && layer.hasAudio,
     );
     if (any_solo && !this.solo) {
       return false;
     }
 
-    if (time < this.in_point || time >= this.out_point) {
+    if (time < this.inPoint || time >= this.outPoint) {
       return false;
     }
 
@@ -649,13 +649,13 @@ export class AVLayer extends Layer {
    *   transform math does not model (see `resolvers.transform.build_world_matrix`).
    * @throws {@link ValueError} If the result overflows a float.
    */
-  source_point_to_comp(point: number[], time: number | null = null): number[] {
+  sourcePointToComp(point: number[], time: number | null = null): number[] {
     validate_vector2(point);
     const eval_time = this._geometry_time(time);
-    const comp = this.containing_comp;
+    const comp = this.containingComp;
     const world = this._world_matrix(eval_time);
     const world_point = world.transform_point([point[0], point[1], 0.0]);
-    return _finite(project_to_comp(world_point, comp.width, comp.height, comp.pixel_aspect));
+    return _finite(project_to_comp(world_point, comp.width, comp.height, comp.pixelAspect));
   }
 
   /**
@@ -663,7 +663,7 @@ export class AVLayer extends Layer {
    * layer is placed as AE places it, its 3D ancestors flattened.
    */
   _world_matrix(time: number): Mat4 {
-    return build_world_matrix(this, time, !this.three_d_layer, { auto_orient: true });
+    return build_world_matrix(this, time, !this.threeDLayer, { auto_orient: true });
   }
 
   /**
@@ -680,7 +680,7 @@ export class AVLayer extends Layer {
    * `sourcePointToComp()`, this direction IS camera-dependent
    * (verified against AE 2026). The camera is placed by its own parent
    * chain. Transform values are read before expressions, as in
-   * {@link source_point_to_comp}.
+   * {@link sourcePointToComp}.
    *
    * @param point - A position array of `[x, y]` composition coordinates.
    * @param time - Composition time in seconds (py_aep extension; defaults to the comp's current
@@ -694,18 +694,18 @@ export class AVLayer extends Layer {
    *   from a real result. Also when the layer plane is degenerate (an X or Y scale of 0) or the
    *   result overflows a float.
    */
-  comp_point_to_source(point: number[], time: number | null = null): number[] {
+  compPointToSource(point: number[], time: number | null = null): number[] {
     validate_vector2(point);
     const eval_time = this._geometry_time(time);
-    const comp = this.containing_comp;
+    const comp = this.containingComp;
     const world = this._world_matrix(eval_time);
-    const camera = this.three_d_layer ? this._active_camera_at(eval_time) : null;
+    const camera = this.threeDLayer ? this._active_camera_at(eval_time) : null;
     const [origin, direction] = camera_ray(
       camera,
       [point[0], point[1]],
       comp.width,
       comp.height,
-      comp.pixel_aspect,
+      comp.pixelAspect,
       eval_time,
     );
     return _finite(intersect_layer_plane(world, origin, direction));
@@ -713,8 +713,8 @@ export class AVLayer extends Layer {
 
   /** The front-most enabled camera layer active at `time`, or `null`. */
   _active_camera_at(time: number): Layer | null {
-    for (const camera of this.containing_comp.camera_layers) {
-      if (camera.enabled && camera.in_point <= time && time < camera.out_point) {
+    for (const camera of this.containingComp.cameraLayers) {
+      if (camera.enabled && camera.inPoint <= time && time < camera.outPoint) {
         return camera;
       }
     }
@@ -742,7 +742,7 @@ export class AVLayer extends Layer {
    *   `y_rotation`, `z_rotation`, `scale`), assignable to the matching transform properties.
    * @throws {@link ValueError} If the points are coincident or collinear.
    */
-  calculate_transform_from_points(
+  calculateTransformFromPoints(
     point_top_left: number[],
     point_top_right: number[],
     point_bottom_left: number[],
@@ -785,7 +785,7 @@ export class AVLayer extends Layer {
    *   animators, text on a path, faux styles, a font that is not installed, ...), or a 3D model
    *   layer (whose box is the model's bounds).
    */
-  source_rect_at_time(
+  sourceRectAtTime(
     time: number,
     extents: boolean,
   ): { top: number; left: number; width: number; height: number } {
@@ -798,7 +798,7 @@ export class AVLayer extends Layer {
       );
     }
     // Property values are evaluated at composition time.
-    const comp_time = this.start_time + (time * this.stretch) / 100.0;
+    const comp_time = this.startTime + (time * this.stretch) / 100.0;
     if (layer_type === LayerType.TEXT) {
       return this._text_ink_rect(comp_time);
     }
@@ -831,18 +831,18 @@ export class AVLayer extends Layer {
     if (this._ldta.three_d_per_char) {
       throw new NotImplementedError("source_rect_at_time does not model per-character 3D text");
     }
-    const document = text.property("ADBE Text Document").value_at_time(time);
+    const document = text.property("ADBE Text Document").valueAtTime(time);
     return text_ink_rect(document);
   }
 
   /**
    * `true` if it is possible to set the
-   * {@link AVLayer.collapse_transformation | collapse_transformation} value.
+   * {@link AVLayer.collapseTransformation | collapse_transformation} value.
    *
    * Returns `true` for pre-composition layers and solid layers.
    * Read-only.
    */
-  get can_set_collapse_transformation(): boolean {
+  get canSetCollapseTransformation(): boolean {
     const source = this.source;
     if (source == null) {
       return false;
@@ -851,7 +851,7 @@ export class AVLayer extends Layer {
       return true;
     }
     if (source instanceof FootageItem) {
-      const ms = source.main_source;
+      const ms = source.mainSource;
       if (ms instanceof SolidSource) {
         return true;
       }
@@ -866,7 +866,7 @@ export class AVLayer extends Layer {
    * non-zero duration (i.e. it is not a still image or text layer).
    * Read-only.
    */
-  get can_set_time_remap_enabled(): boolean {
+  get canSetTimeRemapEnabled(): boolean {
     if (this.source == null) {
       return false;
     }
@@ -874,7 +874,7 @@ export class AVLayer extends Layer {
   }
 
   /** `true` if time remapping is enabled for this layer. Read / Write. */
-  get time_remap_enabled(): boolean {
+  get timeRemapEnabled(): boolean {
     // From the chunks, not the property: reading a layer's times
     // (`in_point`, `out_point`) then leaves its property tree unbuilt.
     py_assert(this._tdgp != null);
@@ -885,9 +885,9 @@ export class AVLayer extends Layer {
     return tdb4.animated;
   }
 
-  set time_remap_enabled(value: boolean) {
+  set timeRemapEnabled(value: boolean) {
     validate_bool(value);
-    if (!this.can_set_time_remap_enabled) {
+    if (!this.canSetTimeRemapEnabled) {
       throw new AttributeError(
         "'time_remap_enabled' is read-only when 'can_set_time_remap_enabled' is False.",
       );
@@ -912,11 +912,11 @@ export class AVLayer extends Layer {
       const source = this.source;
       py_assert(source != null); // can_set_time_remap_enabled guarantees it
       const duration = source.duration;
-      prop._add_key(this.start_time, 0.0);
-      prop._add_key(this.start_time + duration, duration);
+      prop._add_key(this.startTime, 0.0);
+      prop._add_key(this.startTime + duration, duration);
     } else if (!value && currently_enabled) {
       while (prop.keyframes?.length > 0) {
-        prop.remove_key(0);
+        prop.removeKey(0);
       }
     }
   }
@@ -932,7 +932,7 @@ export class AVLayer extends Layer {
     if (this.source != null) {
       return this.source.width;
     }
-    return this.containing_comp.width;
+    return this.containingComp.width;
   }
 
   /**
@@ -946,32 +946,32 @@ export class AVLayer extends Layer {
     if (this.source != null) {
       return this.source.height;
     }
-    return this.containing_comp.height;
+    return this.containingComp.height;
   }
 
   /**
    * `true` if this layer has track matte. When true, this layer's `track_matte_type`
    * value controls how the matte is applied. Read-only.
    */
-  get has_track_matte(): boolean {
-    return this.track_matte_type !== TrackMatteType.NO_TRACK_MATTE;
+  get hasTrackMatte(): boolean {
+    return this.trackMatteType !== TrackMatteType.NO_TRACK_MATTE;
   }
 
   /** `true` if this layer is being used as a track matte. Read-only. */
-  get is_track_matte(): boolean {
+  get isTrackMatte(): boolean {
     // AE 23+: explicit ID-based references
-    if (this.containing_comp.av_layers.some((layer) => layer._matte_layer_id === this.id)) {
+    if (this.containingComp.avLayers.some((layer) => layer._matte_layer_id === this.id)) {
       return true;
     }
     // Pre-2023 positional fallback: layer below has has_track_matte
-    const layers = this.containing_comp.layers;
+    const layers = this.containingComp.layers;
     const idx = this.index;
     if (idx + 1 < layers.length) {
       const below = layers[idx + 1];
       if (
         below instanceof AVLayer &&
         below._matte_layer_id === 0 &&
-        below.has_track_matte
+        below.hasTrackMatte
       ) {
         return true;
       }
@@ -983,20 +983,20 @@ export class AVLayer extends Layer {
    * The track matte layer for this layer. Returns `null` if this layer has no
    * track matte layer. Read-only.
    */
-  get track_matte_layer(): AVLayer | null {
+  get trackMatteLayer(): AVLayer | null {
     // AE 23+: explicit ID-based lookup
     if (this._matte_layer_id !== 0) {
-      const layer = this.containing_comp.layers_by_id.get(this._matte_layer_id) ?? null;
+      const layer = this.containingComp.layersById.get(this._matte_layer_id) ?? null;
       if (layer instanceof AVLayer) {
         return layer;
       }
       return null;
     }
     // Pre-2023 positional fallback: matte is the layer directly above
-    if (this.has_track_matte) {
+    if (this.hasTrackMatte) {
       const idx = this.index;
       if (idx > 0) {
-        const layers = this.containing_comp.layers;
+        const layers = this.containingComp.layers;
         const above = layers[idx - 1];
         if (above instanceof AVLayer) {
           return above;
@@ -1007,7 +1007,7 @@ export class AVLayer extends Layer {
   }
 
   /** Fall back to source name, then empty string. */
-  get auto_name(): string {
+  get autoName(): string {
     if (this.source != null) {
       return this.source.name;
     }
@@ -1021,8 +1021,8 @@ export class AVLayer extends Layer {
    * False if the layer has an expressly set name, or if the layer does not
    * have a source. Read-only.
    */
-  get is_name_from_source(): boolean {
-    return this.source != null && !this.is_name_set;
+  get isNameFromSource(): boolean {
+    return this.source != null && !this.isNameSet;
   }
 
   // ------------------------------------------------------------------
@@ -1031,7 +1031,7 @@ export class AVLayer extends Layer {
 
   /** Re-enable `matte` if no other layer in the comp uses it. */
   _re_enable_matte(matte: AVLayer): void {
-    for (const layer of this.containing_comp.av_layers) {
+    for (const layer of this.containingComp.avLayers) {
       if (layer !== this && layer._matte_layer_id === matte.id) {
         return;
       }
@@ -1054,7 +1054,7 @@ export class AVLayer extends Layer {
    * @throws {@link AttributeError} If the file predates AE 23.0.
    * @throws {@link ValueError} If `track_matte_layer` belongs to a different composition.
    */
-  set_track_matte(
+  setTrackMatte(
     track_matte_layer: AVLayer | null,
     track_matte_type: TrackMatteType | number,
   ): void {
@@ -1067,12 +1067,12 @@ export class AVLayer extends Layer {
       return;
     }
 
-    if (track_matte_layer != null && track_matte_layer.containing_comp !== this.containing_comp) {
+    if (track_matte_layer != null && track_matte_layer.containingComp !== this.containingComp) {
       throw new ValueError("track_matte_layer must belong to the same composition.");
     }
 
     // Re-enable old matte if it is being replaced
-    const old_matte = this.track_matte_layer;
+    const old_matte = this.trackMatteLayer;
     if (old_matte != null && old_matte !== track_matte_layer) {
       this._re_enable_matte(old_matte);
     }
@@ -1090,15 +1090,15 @@ export class AVLayer extends Layer {
   /**
    * Remove the track matte layer reference.
    *
-   * The {@link track_matte_type} value is preserved. To also reset
+   * The {@link trackMatteType} value is preserved. To also reset
    * it, assign `TrackMatteType.NO_TRACK_MATTE` separately.
    *
    * **Note:** Requires AE 23.0+ file format.
    *
    * @throws {@link AttributeError} If the file predates AE 23.0.
    */
-  remove_track_matte(): void {
-    const old_matte = this.track_matte_layer;
+  removeTrackMatte(): void {
+    const old_matte = this.trackMatteLayer;
     this._ldta.matte_layer_id = 0;
 
     if (old_matte != null) {
@@ -1124,7 +1124,7 @@ export class AVLayer extends Layer {
     _core().follow_source_anchor(transform.property("ADBE Anchor Point"));
 
     const opacity = transform.property("ADBE Opacity");
-    opacity.default_value = 100.0;
+    opacity.defaultValue = 100.0;
     if (!opacity._is_live()) {
       opacity._cache_value(100.0);
     }
@@ -1146,7 +1146,7 @@ export class AVLayer extends Layer {
    *   `new_source` is not in the project, if `new_source` would create a composition cycle, or if
    *   the layer is a 3D model layer.
    */
-  replace_source(new_source: AVItem, fix_expressions = false): void {
+  replaceSource(new_source: AVItem, fix_expressions = false): void {
     if (fix_expressions) {
       throw new NotImplementedError("fix_expressions is not yet supported.");
     }
@@ -1165,7 +1165,7 @@ export class AVLayer extends Layer {
       throw new ValueError("new_source must be an AVItem.");
     }
 
-    const comp = this.containing_comp;
+    const comp = this.containingComp;
     const project = comp._project;
     if (!project.items.has(new_source.id)) {
       throw new ValueError(`Item ${repr(new_source.name)} (id=${new_source.id}) is not in the project.`);
@@ -1187,7 +1187,7 @@ export class AVLayer extends Layer {
 
     new_source._used_in.add(comp);
 
-    if (this.null_layer) {
+    if (this.nullLayer) {
       this._ldta.null_layer = false;
       // A null's Anchor Point default is the origin; with a source it is
       // the source's centre. Refresh the cached default so the model
@@ -1198,32 +1198,32 @@ export class AVLayer extends Layer {
 }
 
 // Class-body `ChunkField` assignments in Python, installed as descriptors.
-descriptor(AVLayer, "adjustment_layer", ChunkField.bool("_ldta", "adjustment_layer"));
-descriptor(AVLayer, "audio_enabled", ChunkField.bool("_ldta", "audio_enabled"));
+descriptor(AVLayer, "adjustmentLayer", ChunkField.bool("_ldta", "adjustment_layer"));
+descriptor(AVLayer, "audioEnabled", ChunkField.bool("_ldta", "audio_enabled"));
 descriptor(
   AVLayer,
-  "collapse_transformation",
+  "collapseTransformation",
   ChunkField.bool("_ldta", "collapse_transformation", { validate: _validate_collapse_transformation }),
 );
-descriptor(AVLayer, "effects_active", ChunkField.bool("_ldta", "effects_active"));
+descriptor(AVLayer, "effectsActive", ChunkField.bool("_ldta", "effects_active"));
 descriptor(
   AVLayer,
-  "environment_layer",
+  "environmentLayer",
   ChunkField.bool("_ldta", "environment_layer", { post_set: "_on_environment_layer_set" }),
 );
-descriptor(AVLayer, "frame_blending_type", ChunkField.enum(FrameBlendingType, "_ldta", "frame_blending_type"));
-descriptor(AVLayer, "guide_layer", ChunkField.bool("_ldta", "guide_layer"));
-descriptor(AVLayer, "motion_blur", ChunkField.bool("_ldta", "motion_blur_flag"));
-descriptor(AVLayer, "preserve_transparency", ChunkField.bool("_ldta", "preserve_transparency"));
+descriptor(AVLayer, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frame_blending_type"));
+descriptor(AVLayer, "guideLayer", ChunkField.bool("_ldta", "guide_layer"));
+descriptor(AVLayer, "motionBlur", ChunkField.bool("_ldta", "motion_blur_flag"));
+descriptor(AVLayer, "preserveTransparency", ChunkField.bool("_ldta", "preserve_transparency"));
 descriptor(AVLayer, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality"));
 descriptor(
   AVLayer,
-  "sampling_quality",
+  "samplingQuality",
   ChunkField.enum(LayerSamplingQuality, "_ldta", "sampling_quality", { min_version: 12 }),
 );
 descriptor(
   AVLayer,
-  "three_d_layer",
+  "threeDLayer",
   ChunkField.bool("_ldta", "three_d_layer", {
     // Built at the dimensionality the file has, so the toggle sees the
     // dead 2-D Scale Z it normalizes.
@@ -1231,9 +1231,9 @@ descriptor(
     post_set: "_on_three_d_layer_set",
   }),
 );
-descriptor(AVLayer, "three_d_per_char", ChunkField.bool("_ldta", "three_d_per_char"));
+descriptor(AVLayer, "threeDPerChar", ChunkField.bool("_ldta", "three_d_per_char"));
 descriptor(AVLayer, "_source_id", new ChunkField("_ldta", "source_id"));
 
 // `@requires_version(23)` on the two track-matte methods, applied bottom-up after the class.
-AVLayer.prototype.set_track_matte = requires_version(23)(AVLayer.prototype.set_track_matte);
-AVLayer.prototype.remove_track_matte = requires_version(23)(AVLayer.prototype.remove_track_matte);
+AVLayer.prototype.setTrackMatte = requires_version(23)(AVLayer.prototype.setTrackMatte);
+AVLayer.prototype.removeTrackMatte = requires_version(23)(AVLayer.prototype.removeTrackMatte);

@@ -225,7 +225,7 @@ export const BlendingMode = int_enum("BlendingMode", {
    *
    * Dancing Dissolve shares Dissolve's transfer value (3); the two are
    * distinguished by a flag bit in the layer's `ldta`, set by
-   * `AVLayer.blending_mode`, not by this value.
+   * `AVLayer.blendingMode`, not by this value.
    */
   to_binary(self: number): number {
     return getitem(_BLENDING_MODE_TO_BINARY, self);
@@ -283,7 +283,7 @@ export const _BLENDING_MODE_TO_BINARY: Map<number, number> = new Map<number, num
 );
 // Dancing Dissolve has no transfer-mode value of its own - it is Dissolve plus
 // a flag bit in the layer's ldta. Map it to Dissolve's value so to_binary()
-// never fails; AVLayer.blending_mode sets the distinguishing flag separately.
+// never fails; AVLayer.blendingMode sets the distinguishing flag separately.
 _BLENDING_MODE_TO_BINARY.set(BlendingMode.DANCING_DISSOLVE, 3);
 
 

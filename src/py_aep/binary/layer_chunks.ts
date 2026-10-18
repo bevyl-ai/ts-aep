@@ -109,7 +109,7 @@ export class LdtaChunk extends Chunk {
   // bit 0: a source-backed layer's name was explicitly set (away from the
   // source item's name). Always 0 for sourceless layers (camera/light/text/
   // shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
-  // model-level Layer.is_name_set for that).
+  // model-level Layer.isNameSet for that).
   declare name_set: boolean;
 
   // byte 38: _layer_flags_1
@@ -310,7 +310,7 @@ descriptor(LdtaChunk, "guide_layer", new BitField("_layer_flags_0", 1));
 // bit 0: a source-backed layer's name was explicitly set (away from the
 // source item's name). Always 0 for sourceless layers (camera/light/text/
 // shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
-// model-level Layer.is_name_set for that).
+// model-level Layer.isNameSet for that).
 descriptor(LdtaChunk, "name_set", new BitField("_layer_flags_0", 0));
 
 // byte 38: _layer_flags_1

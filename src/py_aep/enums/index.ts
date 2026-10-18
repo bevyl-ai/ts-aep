@@ -8,19 +8,19 @@
  *   and mask enums.
  * - {@link py_aep.enums.property | property}: Property system enums
  *   (control type, value type, keyframe interpolation).
- * - {@link py_aep.enums.renderer_options | renderer_options}: 3D renderer option enums
+ * - {@link py_aep.enums.rendererOptions | renderer_options}: 3D renderer option enums
  *   (shadow map resolution, environment light shadow resolution).
  * - {@link py_aep.enums.render_settings | render_settings}: Render settings enums
  *   (quality, field render, motion blur, effects, etc.).
- * - {@link py_aep.enums.render_queue | render_queue}: Render queue item enums
+ * - {@link py_aep.enums.renderQueue | render_queue}: Render queue item enums
  *   (status, log type, settings format).
  * - {@link py_aep.enums.output_module | output_module}: Output module enums
  *   (channels, depth, color mode, format, audio settings, post-render action).
- * - {@link py_aep.enums.format_options | format_options}: Format-specific option
+ * - {@link py_aep.enums.formatOptions | format_options}: Format-specific option
  *   enums (Cineon, JPEG, PNG, OpenEXR, audio/video codecs).
  * - {@link py_aep.enums.text_document | text_document}: Text document enums
  *   (justification, baseline, kerning, font caps, etc.).
- * - {@link py_aep.enums.font_object | font_object}: Font object enums
+ * - {@link py_aep.enums.fontObject | font_object}: Font object enums
  *   (technology, type, script).
  */
 

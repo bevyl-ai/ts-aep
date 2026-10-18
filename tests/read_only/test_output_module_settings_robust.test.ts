@@ -30,19 +30,19 @@ const _IDS = _CORPUS.map((p) => p.path.slice(SAMPLES_DIR.path.length + 1));
 
 test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_settings_and_format_options_reads_never_raise[%s]", (_id: string, aep_path: Path) => {
   const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
-    for (const om of rqi.output_modules) {
-      om.get_settings(GetSettingsFormat.STRING);
-      om.get_settings(GetSettingsFormat.NUMBER);
-      const fo = om.format_options;
+  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+    for (const om of rqi.outputModules) {
+      om.getSettings(GetSettingsFormat.STRING);
+      om.getSettings(GetSettingsFormat.NUMBER);
+      const fo = om.formatOptions;
       if (fo instanceof CineonFormatOptions) {
-        void fo.file_format;
+        void fo.fileFormat;
       } else if (fo instanceof JpegFormatOptions) {
-        void fo.format_type;
+        void fo.formatType;
       } else if (fo instanceof OpenExrFormatOptions) {
-        void [fo.compression, fo.dwa_compression_level];
+        void [fo.compression, fo.dwaCompressionLevel];
       } else if (fo instanceof PngFormatOptions) {
-        void [fo.compression, fo.color_primaries];
+        void [fo.compression, fo.colorPrimaries];
       }
     }
   }
@@ -53,8 +53,8 @@ test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_rouu_depth_and_fra
   // frame rate, including the 29.97 fps modules whose rate fraction sits
   // right before the depth.
   const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
-    for (const om of rqi.output_modules) {
+  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+    for (const om of rqi.outputModules) {
       expect(OutputColorDepth.has(om._roou.depth)).toBe(true);
       expect(om._roou.frame_rate > 0).toBe(true);
     }

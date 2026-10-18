@@ -5,7 +5,7 @@
  * (channels, exposure, zoom, fast preview, toggle flags, etc.) from the
  * `fips` chunks in the binary AEP format.
  *
- * The viewer panel data is accessed via `project.active_viewer`, which
+ * The viewer panel data is accessed via `project.activeViewer`, which
  * represents the focused Composition/Layer/Footage panel. Each panel has
  * one or more `View` objects containing `ViewOptions`.
  */
@@ -35,18 +35,18 @@ describe("TestViewOptionsWithoutItem", () => {
 
     opts.rulers = true;
     expect(opts.rulers).toBe(true);
-    opts.guides_locked = true;
-    expect(opts.guides_locked).toBe(true);
-    opts.guides_snap = true;
-    expect(opts.guides_snap).toBe(true);
-    opts.guides_visibility = true;
-    expect(opts.guides_visibility).toBe(true);
+    opts.guidesLocked = true;
+    expect(opts.guidesLocked).toBe(true);
+    opts.guidesSnap = true;
+    expect(opts.guidesSnap).toBe(true);
+    opts.guidesVisibility = true;
+    expect(opts.guidesVisibility).toBe(true);
   });
 
   test("test_gated_enum_field_with_item_none", () => {
     const opts = new ViewOptions({ _fips: new FipsChunk(), _item: null });
 
-    opts.fast_preview = FastPreviewType.FP_WIREFRAME;
-    expect(opts.fast_preview).toBe(FastPreviewType.FP_WIREFRAME);
+    opts.fastPreview = FastPreviewType.FP_WIREFRAME;
+    expect(opts.fastPreview).toBe(FastPreviewType.FP_WIREFRAME);
   });
 });

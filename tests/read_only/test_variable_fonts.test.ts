@@ -31,33 +31,33 @@ function _animator_props(layer: Layer): PropertyGroup {
 function _font_object(layer: Layer): FontObject | null {
   const text = layer.text;
   py_assert(text != null);
-  return text.source_text.value.font_object;
+  return text.sourceText.value.fontObject;
 }
 
 describe("TestFontObjectVariable", () => {
   test("test_design_vector_default_instance", () => {
     const font = _font_object(_vf_layer("variable_font_static.aep"));
     py_assert(font != null);
-    expect(py_eq(font.design_vector, [400.0, 100.0])).toBe(true);
-    expect(font.has_design_axes).toBe(true);
-    expect(font.family_prefix).toBe("Bahnschrift");
+    expect(py_eq(font.designVector, [400.0, 100.0])).toBe(true);
+    expect(font.hasDesignAxes).toBe(true);
+    expect(font.familyPrefix).toBe("Bahnschrift");
   });
 
   test("test_design_vector_named_instance", () => {
     const font = _font_object(_vf_layer("variable_font_instance.aep"));
     py_assert(font != null);
-    expect(font.post_script_name).toBe("Bahnschrift-BoldSemiCondensed");
-    expect(py_eq(font.design_vector, [700.0, 87.5])).toBe(true);
-    expect(font.family_prefix).toBe("Bahnschrift");
+    expect(font.postScriptName).toBe("Bahnschrift-BoldSemiCondensed");
+    expect(py_eq(font.designVector, [700.0, 87.5])).toBe(true);
+    expect(font.familyPrefix).toBe("Bahnschrift");
   });
 
   test("test_non_variable_font", () => {
     const project = parse_project(SAMPLES_DIR.div("threeDPerChar_on.aep"));
     const font = _font_object(project.compositions[0].layers[0]);
     py_assert(font != null);
-    expect(font.design_vector).toBe(null);
-    expect(font.has_design_axes).toBe(false);
-    expect(font.family_prefix).toBe(null);
+    expect(font.designVector).toBe(null);
+    expect(font.hasDesignAxes).toBe(false);
+    expect(font.familyPrefix).toBe(null);
   });
 });
 
@@ -66,34 +66,34 @@ describe("TestVariableFontAxisProperty", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_static.aep"));
     const axis = as_instance(props.property("ADBE Text VF Axis 1"), Property);
     expect(axis.value).toBe(700.0);
-    expect(axis.axis_tag).toBe("wght");
+    expect(axis.axisTag).toBe("wght");
     expect(axis.name).toBe("Font Axis Weight");
-    expect(axis.min_value).toBe(300.0);
-    expect(axis.max_value).toBe(700.0);
+    expect(axis.minValue).toBe(300.0);
+    expect(axis.maxValue).toBe(700.0);
   });
 
   test("test_animated_axis_scalar_keyframes", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_animated.aep"));
     const wght = as_instance(props.property("ADBE Text VF Axis 1"), Property);
     expect(py_eq(wght.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
-    expect(wght.axis_tag).toBe("wght");
+    expect(wght.axisTag).toBe("wght");
     const wdth = as_instance(props.property("ADBE Text VF Axis 2"), Property);
     expect(wdth.value).toBe(80.0);
-    expect(wdth.axis_tag).toBe("wdth");
+    expect(wdth.axisTag).toBe("wdth");
     expect(wdth.name).toBe("Font Axis Width");
   });
 
   test("test_unused_slot", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_animated.aep"));
     const slot = as_instance(props.property("ADBE Text VF Axis 3"), Property);
-    expect(slot.axis_tag).toBe(null);
+    expect(slot.axisTag).toBe(null);
     expect(slot.name).toBe("");
   });
 
   test("test_axis_tag_none_for_regular_property", () => {
     const layer = _vf_layer("variable_font_axis_static.aep");
     const opacity = layer.transform.property("ADBE Opacity");
-    expect(opacity.axis_tag).toBe(null);
+    expect(opacity.axisTag).toBe(null);
   });
 });
 
@@ -128,6 +128,6 @@ describe("TestValueText", () => {
   test("test_value_text_none_without_dropdown_parameters", () => {
     const layer = _vf_layer("variable_font_axis_static.aep");
     const opacity = layer.transform.property("ADBE Opacity");
-    expect(opacity.value_text).toBe(null);
+    expect(opacity.valueText).toBe(null);
   });
 });

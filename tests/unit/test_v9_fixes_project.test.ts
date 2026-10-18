@@ -129,9 +129,9 @@ describe("TestVersionValidation", () => {
     const app = py_aep.new();
     _raises_any([TypeError_, ValueError], () => {
       // @ts-expect-error deliberately assigns a string build number to check runtime validation
-      app.build_number = build;
+      app.buildNumber = build;
     });
-    expect(app.build_number).toBe(67);
+    expect(app.buildNumber).toBe(67);
   });
 });
 
@@ -142,8 +142,8 @@ describe("TestWorkingSpaceNone", () => {
     // is all 0xFF, as in a new project.
     const app = py_aep.new();
     const before = project_bytes(app.project);
-    app.project.working_space = app.project.working_space;
-    expect(app.project.working_space).toBe("None");
+    app.project.workingSpace = app.project.workingSpace;
+    expect(app.project.workingSpace).toBe("None");
     expect(bytes_eq(project_bytes(app.project), before)).toBe(true);
   });
 
@@ -157,15 +157,15 @@ describe("TestWorkingSpaceNone", () => {
       '{"baseColorProfile":{"colorProfileName":"X"}}',
     );
     app.project._cpid.data = bytes_.repeat(b("\x01"), 16);
-    app.project.working_space = "None";
-    expect(app.project.working_space).toBe("None");
+    app.project.workingSpace = "None";
+    expect(app.project.workingSpace).toBe("None");
     expect(bytes_eq(app.project._cpid.data, cpid)).toBe(true);
     expect(bytes_eq(cpid, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(app.project._ws_utf8 != null && String(app.project._ws_utf8.value) === "{}").toBe(true);
     expect(utf8 == null).toBe(true);
     const path = tmp_path.div("ws.aep");
     app.project.save(path);
-    expect(parse(path).project.working_space).toBe("None");
+    expect(parse(path).project.workingSpace).toBe("None");
   });
 });
 

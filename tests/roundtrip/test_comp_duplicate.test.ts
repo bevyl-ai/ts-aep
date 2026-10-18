@@ -109,7 +109,7 @@ function _graph(comp: CompItem): Map<string, unknown> {
         ["parent", ld.parent_id ? dict_get(pos, ld.parent_id) : null],
         ["matte", matte ? dict_get(pos, matte) : null],
         ["source", ld.source_id],
-        ["override_uuids", [...layer.essential_property_uuids]],
+        ["override_uuids", [...layer.essentialPropertyUuids]],
       ]),
     );
   }
@@ -117,12 +117,12 @@ function _graph(comp: CompItem): Map<string, unknown> {
     const v = c.value;
     return dict_get(pos, v, ["ext", v]);
   });
-  const eg = comp.motion_graphics_controllers.map(
+  const eg = comp.motionGraphicsControllers.map(
     (ctrl) =>
       new Map<string, unknown>([
         ["name", ctrl.name],
-        ["comp_is_self", ctrl.source_comp_id === comp.id],
-        ["layer_pos", dict_get(pos, ctrl.source_layer_id || -1)],
+        ["comp_is_self", ctrl.sourceCompId === comp.id],
+        ["layer_pos", dict_get(pos, ctrl.sourceLayerId || -1)],
       ]),
   );
   return new Map<string, unknown>([
@@ -174,7 +174,7 @@ describe("TestDuplicateAgainstAE", () => {
     const dup = src.duplicate();
     // AE numbering: "DupSrc 2" is taken by AE's own duplicate.
     expect(dup.name).toBe("DupSrc 3");
-    const folder_items = as_instance(src.parent_folder, FolderItem).items;
+    const folder_items = as_instance(src.parentFolder, FolderItem).items;
     expect(folder_items.indexOf(dup)).toBe(folder_items.indexOf(src) + 1);
     expect(getitem(project.items, dup.id)).toBe(dup);
   });
@@ -183,9 +183,9 @@ describe("TestDuplicateAgainstAE", () => {
     const project = parse_project_fresh(SAMPLE);
     const src = _comp(project, "DupSrc");
     const dup = src.duplicate();
-    const src_uuids = new Set(src.motion_graphics_controllers.map((c) => c.uuid));
-    const dup_ctrls = dup.motion_graphics_controllers;
-    expect(len(dup_ctrls)).toBe(len(src.motion_graphics_controllers));
+    const src_uuids = new Set(src.motionGraphicsControllers.map((c) => c.uuid));
+    const dup_ctrls = dup.motionGraphicsControllers;
+    expect(len(dup_ctrls)).toBe(len(src.motionGraphicsControllers));
     const shared = [...new Set(dup_ctrls.map((c) => c.uuid))].filter((u) => src_uuids.has(u));
     expect(py_bool(shared)).toBe(false);
     // The three CIF containers must carry the SAME fresh uuid per
@@ -218,8 +218,8 @@ describe("TestDuplicateAgainstAE", () => {
     // SOURCE comp's controllers and must stay verbatim.
     expect(
       py_eq(
-        dup.layers.map((la) => la.essential_property_uuids),
-        src.layers.map((la) => la.essential_property_uuids),
+        dup.layers.map((la) => la.essentialPropertyUuids),
+        src.layers.map((la) => la.essentialPropertyUuids),
       ),
     ).toBe(true);
     // used_in gains the duplicate on every shared source.
@@ -332,14 +332,14 @@ describe("TestDuplicateAgainstAE", () => {
     const b_ = next(dup.layers, (la) => la.name === "B");
     expect(b_.parent).toBe(a);
     expect(a._ldta.matte_layer_id).toBe(b_.id);
-    expect(py_bool(a.transform.property("ADBE Opacity").expression_enabled)).toBe(true);
+    expect(py_bool(a.transform.property("ADBE Opacity").expressionEnabled)).toBe(true);
     const inner_layer = next(dup.layers, (la) => la.name === "Inner");
     const overrides = as_instance(
-      next(inner_layer.properties, (p) => p.match_name === "ADBE Layer Overrides"),
+      next(inner_layer.properties, (p) => p.matchName === "ADBE Layer Overrides"),
       PropertyGroup,
     );
     expect(py_eq(overrides.properties.map((p) => as_instance(p, Property).value), [42.0])).toBe(true);
-    expect(py_eq(dup.motion_graphics_controllers.map((c) => c.source_comp_id), [dup.id])).toBe(true);
+    expect(py_eq(dup.motionGraphicsControllers.map((c) => c.sourceCompId), [dup.id])).toBe(true);
     const ids = _all_ids(project2);
     expect(len(ids)).toBe(len(new Set(ids)));
     expect(project2._head.next_item_id > max(ids)).toBe(true);
@@ -353,15 +353,15 @@ describe("TestDuplicateEdgeCases", () => {
     // comp) - shared with the original, never remapped.
     const project = parse_project_fresh(EG_SAMPLE);
     const host = _comp(project, "image_with_alpha 2");
-    const original = next(host.layers, (la) => py_bool(la.essential_property_uuids));
+    const original = next(host.layers, (la) => py_bool(la.essentialPropertyUuids));
     const orig_alt = as_instance(
       at(
-        as_instance(next(original.properties, (p) => p.match_name === "ADBE Layer Overrides"), PropertyGroup).properties,
+        as_instance(next(original.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties,
         0,
       ),
       Property,
     );
-    py_assert(orig_alt.alternate_source != null);
+    py_assert(orig_alt.alternateSource != null);
 
     const dup = host.duplicate();
     const out = tmp_path.div("dup.aep");
@@ -369,15 +369,15 @@ describe("TestDuplicateEdgeCases", () => {
 
     const project2 = parse_project_fresh(out);
     const dup2 = _comp(project2, dup.name);
-    const layer = next(dup2.layers, (la) => py_bool(la.essential_property_uuids));
-    expect(py_eq(layer.essential_property_uuids, original.essential_property_uuids)).toBe(true);
+    const layer = next(dup2.layers, (la) => py_bool(la.essentialPropertyUuids));
+    expect(py_eq(layer.essentialPropertyUuids, original.essentialPropertyUuids)).toBe(true);
     const alt = as_instance(
-      at(as_instance(next(layer.properties, (p) => p.match_name === "ADBE Layer Overrides"), PropertyGroup).properties, 0),
+      at(as_instance(next(layer.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties, 0),
       Property,
     );
-    expect(alt.can_set_alternate_source).toBe(true);
-    py_assert(alt.alternate_source != null);
-    expect(alt.alternate_source.id).toBe(orig_alt.alternate_source.id);
+    expect(alt.canSetAlternateSource).toBe(true);
+    py_assert(alt.alternateSource != null);
+    expect(alt.alternateSource.id).toBe(orig_alt.alternateSource.id);
   });
 
   test("test_pre_ae23_no_matte_field", () => {
@@ -386,7 +386,7 @@ describe("TestDuplicateEdgeCases", () => {
     const project = parse_project_fresh(AE2018_SAMPLE);
     const src = next(project.compositions, (c) => py_bool(c.layers));
     const dup = src.duplicate();
-    expect(dup.num_layers).toBe(src.num_layers);
+    expect(dup.numLayers).toBe(src.numLayers);
     expect(_ldta_in_order(dup).every((ld) => ld.matte_layer_id == null)).toBe(true);
     const ids = _all_ids(project);
     expect(len(ids)).toBe(len(new Set(ids)));

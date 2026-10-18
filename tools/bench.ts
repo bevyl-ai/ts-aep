@@ -51,8 +51,8 @@ function read_all(app: py_aep.Application): number {
         for (const kf of prop.keyframes) {
           void kf.time;
           void kf.value;
-          for (const ease of kf.in_temporal_ease) void (ease.speed + ease.influence);
-          for (const ease of kf.out_temporal_ease) void (ease.speed + ease.influence);
+          for (const ease of kf.inTemporalEase) void (ease.speed + ease.influence);
+          for (const ease of kf.outTemporalEase) void (ease.speed + ease.influence);
           n++;
         }
       }

@@ -52,32 +52,32 @@ export type Dict = Map<string, any>;
 //   post_render_target_comp (OutputModule > CompItem).
 // The non-circular ID fields (source_id, parent_id) are still serialized.
 export const SKIP_FIELDS: ReadonlySet<string> = new Set([
-  "containing_comp",
-  "parent_folder",
-  "parent_property",
+  "containingComp",
+  "parentFolder",
+  "parentProperty",
   "parent",
   "comp",
-  "post_render_target_comp",
+  "postRenderTargetComp",
   // Internal marker property (Property with keyframes); compared
   // separately via _compare_markers.
-  "marker_property",
-  // Cross-reference: LightLayer.light_source > Layer
-  "light_source",
+  "markerProperty",
+  // Cross-reference: LightLayer.lightSource > Layer
+  "lightSource",
 ]);
 
 // @property attributes that return complex/duplicate data and should not be
 // included in to_dict() serialization.
 export const SKIP_PROPERTIES: ReadonlySet<string> = new Set([
-  "active_camera",
-  "composition_layers",
-  "footage_layers",
+  "activeCamera",
+  "compositionLayers",
+  "footageLayers",
   "selected_layers",
   // Circular: AVLayer.source > Item > layers > AVLayer...
   "source",
-  // Circular: AVLayer.track_matte_layer > AVLayer
-  "track_matte_layer",
-  // Circular: AVItem.used_in > list[CompItem] > layers > source > AVItem...
-  "used_in",
+  // Circular: AVLayer.trackMatteLayer > AVLayer
+  "trackMatteLayer",
+  // Circular: AVItem.usedIn > list[CompItem] > layers > source > AVItem...
+  "usedIn",
   // Duplicate/circular: Project re-serializes items already in `items` field
   "compositions",
   "folders",
@@ -88,8 +88,8 @@ export const SKIP_PROPERTIES: ReadonlySet<string> = new Set([
   "effects",
   "masks",
   "text",
-  // Duplicate: Property.separation_leader > Property
-  "separation_leader",
+  // Duplicate: Property.separationLeader > Property
+  "separationLeader",
   // Layer.marker @property: duplicates ADBE Marker in properties tree.
   "marker",
 ]);
@@ -145,7 +145,7 @@ export function _get_field_names(obj: object): readonly string[] | null {
   for (const [name, attr] of descriptors_of(cls)) {
     // ChunkField (binary-backed) and CosField (COS-dict-backed)
     // descriptors both expose a backing-store attribute name.
-    const is_descriptor = "chunk_attr" in attr || "dict_attr" in attr;
+    const is_descriptor = "chunkAttr" in attr || "dict_attr" in attr;
     if (is_descriptor && typeof attr.__get__ === "function") names.add(name);
   }
   if (names.size > 0) {
@@ -453,9 +453,9 @@ export function _compare_guides(expected_guides: Dict[], parsed_guides: Dict[], 
     result.add_diff(`${path}.numGuides`, expected_guides.length, parsed_guides.length, "composition");
   }
   const guide_mappings = {
-    orientationType: "orientation_type",
+    orientationType: "orientationType",
     position: "position",
-    positionType: "position_type",
+    positionType: "positionType",
   };
   for (const [i, [exp_guide, parsed_guide]] of zip(expected_guides, parsed_guides).entries()) {
     _compare_fields(exp_guide, parsed_guide, guide_mappings, `${path}.guides[${i}]`, "composition", result, "Guide");
@@ -465,21 +465,21 @@ export function _compare_guides(expected_guides: Dict[], parsed_guides: Dict[], 
 export function _compare_proxy_source(expected_item: Dict, parsed_item: Dict, path: string, result: ValidationResult): void {
   /** Compare proxySource on an AVItem (comp or footage). */
   const exp_proxy = expected_item.get("proxySource") ?? null;
-  const parsed_proxy = parsed_item.get("proxy_source") ?? null;
+  const parsed_proxy = parsed_item.get("proxySource") ?? null;
   if (py_bool(exp_proxy) && py_bool(parsed_proxy)) {
     const proxy_path = `${path}.proxySource`;
     const source_mappings = {
-      alphaMode: "alpha_mode",
-      displayFrameRate: "display_frame_rate",
-      fieldSeparationType: "field_separation_type",
-      hasAlpha: "has_alpha",
-      highQualityFieldSeparation: "high_quality_field_separation",
-      invertAlpha: "invert_alpha",
-      isStill: "is_still",
+      alphaMode: "alphaMode",
+      displayFrameRate: "displayFrameRate",
+      fieldSeparationType: "fieldSeparationType",
+      hasAlpha: "hasAlpha",
+      highQualityFieldSeparation: "highQualityFieldSeparation",
+      invertAlpha: "invertAlpha",
+      isStill: "isStill",
       loop: "loop",
-      nativeFrameRate: "native_frame_rate",
-      premulColor: "premul_color",
-      removePulldown: "remove_pulldown",
+      nativeFrameRate: "nativeFrameRate",
+      premulColor: "premulColor",
+      removePulldown: "removePulldown",
       color: "color",
     };
     _compare_fields(exp_proxy, parsed_proxy, source_mappings, proxy_path, "footage", result, "FootageSource");
@@ -506,7 +506,7 @@ export function _compare_children_by_match_name(
   // can fall back to positional matching within each match_name group.
   const parsed_by_match_name = new Map<string, Dict[]>();
   for (const p of parsed_props) {
-    const mn = dict_get(p, "match_name", "");
+    const mn = dict_get(p, "matchName", "");
     if (py_bool(mn)) setdefault(parsed_by_match_name, mn, []).push(p);
   }
 
@@ -546,20 +546,20 @@ export function _compare_children_by_match_name(
 /** Compare project-level properties. */
 export function compare_project_level(expected: Dict, parsed: Dict, result: ValidationResult): void {
   const mappings = {
-    bitsPerChannel: "bits_per_channel",
-    transparencyGridThumbnails: "transparency_grid_thumbnails",
-    displayStartFrame: "display_start_frame",
-    framesCountType: "frames_count_type",
-    feetFramesFilmType: "feet_frames_film_type",
-    framesUseFeetFrames: "frames_use_feet_frames",
-    timeDisplayType: "time_display_type",
-    footageTimecodeDisplayStartType: "footage_timecode_display_start_type",
-    expressionEngine: "expression_engine",
-    linearBlending: "linear_blending",
-    workingSpace: "working_space",
-    linearizeWorkingSpace: "linearize_working_space",
-    workingGamma: "working_gamma",
-    gpuAccelType: "gpu_accel_type",
+    bitsPerChannel: "bitsPerChannel",
+    transparencyGridThumbnails: "transparencyGridThumbnails",
+    displayStartFrame: "displayStartFrame",
+    framesCountType: "framesCountType",
+    feetFramesFilmType: "feetFramesFilmType",
+    framesUseFeetFrames: "framesUseFeetFrames",
+    timeDisplayType: "timeDisplayType",
+    footageTimecodeDisplayStartType: "footageTimecodeDisplayStartType",
+    expressionEngine: "expressionEngine",
+    linearBlending: "linearBlending",
+    workingSpace: "workingSpace",
+    linearizeWorkingSpace: "linearizeWorkingSpace",
+    workingGamma: "workingGamma",
+    gpuAccelType: "gpuAccelType",
   };
 
   _compare_fields(expected, parsed, mappings, "Project", "project", result, "Project");
@@ -575,8 +575,8 @@ export function compare_marker(
   /** Compare marker properties. */
   // Calculate time from frame_time if available
   let parsed_time: number | null = null;
-  if (parsed_marker.get("frame_time") != null) {
-    parsed_time = truediv(getitem(parsed_marker, "frame_time"), frame_rate);
+  if (parsed_marker.get("frameTime") != null) {
+    parsed_time = truediv(getitem(parsed_marker, "frameTime"), frame_rate);
   }
 
   // Compare time
@@ -596,10 +596,10 @@ export function compare_marker(
     url: "url",
     duration: "duration",
     label: "label",
-    cuePointName: "cue_point_name",
-    frameTarget: "frame_target",
-    protectedRegion: "protected_region",
-    eventCuePoint: "event_cue_point",
+    cuePointName: "cuePointName",
+    frameTarget: "frameTarget",
+    protectedRegion: "protectedRegion",
+    eventCuePoint: "eventCuePoint",
   };
 
   _compare_fields(expected_marker, parsed_marker, marker_mappings, path, "markers", result, "Marker");
@@ -620,50 +620,50 @@ export function compare_layer(
     time: "time",
     comment: "comment",
     enabled: "enabled",
-    canSetEnabled: "can_set_enabled",
-    hasVideo: "has_video",
-    hasAudio: "has_audio",
-    canSetCollapseTransformation: "can_set_collapse_transformation",
-    canSetTimeRemapEnabled: "can_set_time_remap_enabled",
-    inPoint: "in_point",
-    outPoint: "out_point",
-    startTime: "start_time",
+    canSetEnabled: "canSetEnabled",
+    hasVideo: "hasVideo",
+    hasAudio: "hasAudio",
+    canSetCollapseTransformation: "canSetCollapseTransformation",
+    canSetTimeRemapEnabled: "canSetTimeRemapEnabled",
+    inPoint: "inPoint",
+    outPoint: "outPoint",
+    startTime: "startTime",
     stretch: "stretch",
     label: "label",
     locked: "locked",
-    nullLayer: "null_layer",
+    nullLayer: "nullLayer",
     shy: "shy",
     solo: "solo",
-    isNameSet: "is_name_set",
-    autoOrient: "auto_orient",
-    matchName: "match_name",
-    layerType: "layer_type",
-    hasTrackMatte: "has_track_matte",
-    isTrackMatte: "is_track_matte",
-    isNameFromSource: "is_name_from_source",
+    isNameSet: "isNameSet",
+    autoOrient: "autoOrient",
+    matchName: "matchName",
+    layerType: "layerType",
+    hasTrackMatte: "hasTrackMatte",
+    isTrackMatte: "isTrackMatte",
+    isNameFromSource: "isNameFromSource",
     // AVLayer specific
-    adjustmentLayer: "adjustment_layer",
-    audioActive: "audio_active",
-    audioEnabled: "audio_enabled",
-    blendingMode: "blending_mode",
-    collapseTransformation: "collapse_transformation",
-    effectsActive: "effects_active",
-    environmentLayer: "environment_layer",
-    frameBlending: "frame_blending",
-    frameBlendingType: "frame_blending_type",
-    guideLayer: "guide_layer",
+    adjustmentLayer: "adjustmentLayer",
+    audioActive: "audioActive",
+    audioEnabled: "audioEnabled",
+    blendingMode: "blendingMode",
+    collapseTransformation: "collapseTransformation",
+    effectsActive: "effectsActive",
+    environmentLayer: "environmentLayer",
+    frameBlending: "frameBlending",
+    frameBlendingType: "frameBlendingType",
+    guideLayer: "guideLayer",
     height: "height",
     width: "width",
-    motionBlur: "motion_blur",
-    preserveTransparency: "preserve_transparency",
+    motionBlur: "motionBlur",
+    preserveTransparency: "preserveTransparency",
     quality: "quality",
-    samplingQuality: "sampling_quality",
-    threeDLayer: "three_d_layer",
-    timeRemapEnabled: "time_remap_enabled",
-    trackMatteType: "track_matte_type",
+    samplingQuality: "samplingQuality",
+    threeDLayer: "threeDLayer",
+    timeRemapEnabled: "timeRemapEnabled",
+    trackMatteType: "trackMatteType",
     sourceId: "_source_id",
-    lightType: "light_type",
-    threeDPerChar: "three_d_per_char",
+    lightType: "lightType",
+    threeDPerChar: "threeDPerChar",
   };
 
   _compare_fields(expected_layer, parsed_layer, layer_mappings, path, "layers", result, "Layer");
@@ -720,49 +720,49 @@ export function compare_property(
    */
   const property_mappings = {
     name: "name",
-    matchName: "match_name",
+    matchName: "matchName",
     enabled: "enabled",
-    canSetEnabled: "can_set_enabled",
-    canSetExpression: "can_set_expression",
-    canVaryOverTime: "can_vary_over_time",
+    canSetEnabled: "canSetEnabled",
+    canSetExpression: "canSetExpression",
+    canVaryOverTime: "canVaryOverTime",
     expression: "expression",
-    expressionEnabled: "expression_enabled",
-    propertyValueType: "property_value_type",
-    propertyDepth: "property_depth",
-    dimensionsSeparated: "dimensions_separated",
-    isSpatial: "is_spatial",
+    expressionEnabled: "expressionEnabled",
+    propertyValueType: "propertyValueType",
+    propertyDepth: "propertyDepth",
+    dimensionsSeparated: "dimensionsSeparated",
+    isSpatial: "isSpatial",
     elided: "elided",
-    isEffect: "is_effect",
-    isMask: "is_mask",
-    isModified: "is_modified",
-    isSeparationLeader: "is_separation_leader",
-    isSeparationFollower: "is_separation_follower",
-    unitsText: "units_text",
-    separationDimension: "separation_dimension",
-    canSetAlternateSource: "can_set_alternate_source",
+    isEffect: "isEffect",
+    isMask: "isMask",
+    isModified: "isModified",
+    isSeparationLeader: "isSeparationLeader",
+    isSeparationFollower: "isSeparationFollower",
+    unitsText: "unitsText",
+    separationDimension: "separationDimension",
+    canSetAlternateSource: "canSetAlternateSource",
   };
 
   _compare_fields(expected_prop, parsed_prop, property_mappings, path, "properties", result, "Property");
 
   // Track manually-compared fields
-  result.track_field("Property", "property_index", expected_prop.has("propertyIndex"));
+  result.track_field("Property", "propertyIndex", expected_prop.has("propertyIndex"));
   result.track_field("Property", "value", expected_prop.has("value"));
   result.track_field("Property", "keyframes", expected_prop.has("numKeys"));
   result.track_field(
     "Property",
-    "min_value",
+    "minValue",
     expected_prop.has("hasMin") && py_bool(expected_prop.get("hasMin")),
   );
   result.track_field(
     "Property",
-    "max_value",
+    "maxValue",
     expected_prop.has("hasMax") && py_bool(expected_prop.get("hasMax")),
   );
 
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
   if (expected_prop.has("propertyIndex")) {
     const exp_pi = getitem(expected_prop, "propertyIndex");
-    const parsed_pi = parsed_prop.get("property_index") ?? null;
+    const parsed_pi = parsed_prop.get("propertyIndex") ?? null;
     if (parsed_pi != null && exp_pi !== parsed_pi + 1) {
       result.add_diff(`${path}.propertyIndex`, exp_pi, parsed_pi + 1, "properties");
     }
@@ -804,14 +804,14 @@ export function compare_property(
   // the bound present).
   if (expected_prop.has("hasMin")) {
     const exp_has_min = py_bool(getitem(expected_prop, "hasMin"));
-    const parsed_has_min = py_bool(parsed_prop.get("has_min"));
+    const parsed_has_min = py_bool(parsed_prop.get("hasMin"));
     if (exp_has_min !== parsed_has_min) {
       result.add_diff(`${path}.hasMin`, exp_has_min, parsed_has_min, "properties");
     }
   }
   if (expected_prop.has("hasMax")) {
     const exp_has_max = py_bool(getitem(expected_prop, "hasMax"));
-    const parsed_has_max = py_bool(parsed_prop.get("has_max"));
+    const parsed_has_max = py_bool(parsed_prop.get("hasMax"));
     if (exp_has_max !== parsed_has_max) {
       result.add_diff(`${path}.hasMax`, exp_has_max, parsed_has_max, "properties");
     }
@@ -821,20 +821,20 @@ export function compare_property(
   // The presence check above already flags an under-reported bound; gating
   // the value comparison on the parsed side too avoids a redundant second
   // diff (.minValue: 0 vs None) for the same root cause.
-  if (py_bool(expected_prop.get("hasMin")) && py_bool(parsed_prop.get("has_min"))) {
+  if (py_bool(expected_prop.get("hasMin")) && py_bool(parsed_prop.get("hasMin"))) {
     if (expected_prop.has("minValue")) {
       const exp_min = getitem(expected_prop, "minValue");
-      const parsed_min = parsed_prop.get("min_value") ?? null;
+      const parsed_min = parsed_prop.get("minValue") ?? null;
       if (!compare_values(exp_min, parsed_min)) {
         result.add_diff(`${path}.minValue`, exp_min, parsed_min, "properties");
       }
     }
   }
 
-  if (py_bool(expected_prop.get("hasMax")) && py_bool(parsed_prop.get("has_max"))) {
+  if (py_bool(expected_prop.get("hasMax")) && py_bool(parsed_prop.get("hasMax"))) {
     if (expected_prop.has("maxValue")) {
       const exp_max = getitem(expected_prop, "maxValue");
-      const parsed_max = parsed_prop.get("max_value") ?? null;
+      const parsed_max = parsed_prop.get("maxValue") ?? null;
       if (!compare_values(exp_max, parsed_max)) {
         result.add_diff(`${path}.maxValue`, exp_max, parsed_max, "properties");
       }
@@ -860,10 +860,10 @@ export function compare_property(
   // Compare alternateSource (Media Replacement wrapper reference). to_dict
   // serializes the AVItem fully, so id/name are available; compare on id (the
   // binary blsi item id, the strongest invariant) then name.
-  result.track_field("Property", "alternate_source", expected_prop.has("alternateSource"));
+  result.track_field("Property", "alternateSource", expected_prop.has("alternateSource"));
   if (expected_prop.has("alternateSource")) {
     const exp_alt = getitem(expected_prop, "alternateSource");
-    const parsed_alt = parsed_prop.get("alternate_source") ?? null;
+    const parsed_alt = parsed_prop.get("alternateSource") ?? null;
     if (exp_alt == null) {
       if (parsed_alt != null) {
         const pid = parsed_alt instanceof Map ? parsed_alt.get("id") ?? null : parsed_alt;
@@ -893,10 +893,10 @@ export function compare_property(
   // 1-based, parsed is 0-based; the containing-comp name is not serialized by
   // to_dict - circular-ref guard - so comp is not compared). A Property source
   // is compared on matchName.
-  result.track_field("Property", "essential_property_source", expected_prop.has("essentialPropertySource"));
+  result.track_field("Property", "essentialPropertySource", expected_prop.has("essentialPropertySource"));
   if (expected_prop.has("essentialPropertySource")) {
     const exp_eps = getitem(expected_prop, "essentialPropertySource");
-    const parsed_eps = parsed_prop.get("essential_property_source") ?? null;
+    const parsed_eps = parsed_prop.get("essentialPropertySource") ?? null;
     if (exp_eps == null) {
       if (parsed_eps != null) {
         const pname = parsed_eps instanceof Map ? parsed_eps.get("name") ?? null : parsed_eps;
@@ -919,11 +919,11 @@ export function compare_property(
         result.add_diff(`${path}.essentialPropertySource.index`, exp_idx, parsed_idx + 1, "properties");
       }
     } else if (dict_get(exp_eps, "sourceType") === "Property") {
-      if (!py_eq(dict_get(exp_eps, "matchName"), parsed_eps.get("match_name") ?? null)) {
+      if (!py_eq(dict_get(exp_eps, "matchName"), parsed_eps.get("matchName") ?? null)) {
         result.add_diff(
           `${path}.essentialPropertySource.matchName`,
           dict_get(exp_eps, "matchName"),
-          parsed_eps.get("match_name") ?? null,
+          parsed_eps.get("matchName") ?? null,
           "properties",
         );
       }
@@ -948,23 +948,23 @@ export function compare_shape_value(
   const shape_mappings: Record<string, string> = {
     closed: "closed",
     vertices: "vertices",
-    inTangents: "in_tangents",
-    outTangents: "out_tangents",
+    inTangents: "inTangents",
+    outTangents: "outTangents",
   };
   _compare_fields(expected_shape, parsed_shape, shape_mappings, path, "shape", result, "Shape");
 
   // Compare feather data: ExtendScript exposes parallel arrays,
   // py_aep stores a list of FeatherPoint objects.
   const feather_field_map: Record<string, string> = {
-    featherSegLocs: "seg_loc",
-    featherRelSegLocs: "rel_seg_loc",
+    featherSegLocs: "segLoc",
+    featherRelSegLocs: "relSegLoc",
     featherRadii: "radius",
     featherTypes: "type",
     featherInterps: "interp",
     featherTensions: "tension",
-    featherRelCornerAngles: "rel_corner_angle",
+    featherRelCornerAngles: "relCornerAngle",
   };
-  const parsed_fps: Dict[] = dict_get(parsed_shape, "feather_points", []);
+  const parsed_fps: Dict[] = dict_get(parsed_shape, "featherPoints", []);
   for (const [exp_key, fp_attr] of Object.entries(feather_field_map)) {
     result.defined_fields.add(`Shape.${fp_attr}`);
     if (expected_shape.has(exp_key)) {
@@ -995,8 +995,8 @@ export function compare_keyframe(
    */
   // Track manually-compared fields
   result.track_field("Keyframe", "value", expected_kf.has("value"));
-  result.track_field("Keyframe", "in_temporal_ease", expected_kf.has("inTemporalEase"));
-  result.track_field("Keyframe", "out_temporal_ease", expected_kf.has("outTemporalEase"));
+  result.track_field("Keyframe", "inTemporalEase", expected_kf.has("inTemporalEase"));
+  result.track_field("Keyframe", "outTemporalEase", expected_kf.has("outTemporalEase"));
 
   // Compare value. The exporter writes None for a key value ExtendScript
   // cannot read (a Curves key's, which aborts the script).
@@ -1027,24 +1027,24 @@ export function compare_keyframe(
   // Compare interpolation types and boolean flags
   const kf_mappings = {
     time: "time",
-    inInterpolationType: "in_interpolation_type",
-    outInterpolationType: "out_interpolation_type",
-    temporalAutoBezier: "temporal_auto_bezier",
-    temporalContinuous: "temporal_continuous",
-    spatialAutoBezier: "spatial_auto_bezier",
-    spatialContinuous: "spatial_continuous",
+    inInterpolationType: "inInterpolationType",
+    outInterpolationType: "outInterpolationType",
+    temporalAutoBezier: "temporalAutoBezier",
+    temporalContinuous: "temporalContinuous",
+    spatialAutoBezier: "spatialAutoBezier",
+    spatialContinuous: "spatialContinuous",
     roving: "roving",
     label: "label",
-    inSpatialTangent: "in_spatial_tangent",
-    outSpatialTangent: "out_spatial_tangent",
+    inSpatialTangent: "inSpatialTangent",
+    outSpatialTangent: "outSpatialTangent",
   };
 
   _compare_fields(expected_kf, parsed_kf, kf_mappings, path, "keyframes", result, "Keyframe");
 
   // Compare temporal ease
   for (const [ease_key, parsed_key] of [
-    ["inTemporalEase", "in_temporal_ease"],
-    ["outTemporalEase", "out_temporal_ease"],
+    ["inTemporalEase", "inTemporalEase"],
+    ["outTemporalEase", "outTemporalEase"],
   ]) {
     if (expected_kf.has(ease_key)) {
       const exp_ease = expected_kf.get(ease_key);
@@ -1098,62 +1098,62 @@ export function compare_text_document(
   const text_mappings = {
     text: "text",
     font: "font",
-    fontSize: "font_size",
-    fauxBold: "faux_bold",
-    fauxItalic: "faux_italic",
-    autoKernType: "auto_kern_type",
+    fontSize: "fontSize",
+    fauxBold: "fauxBold",
+    fauxItalic: "fauxItalic",
+    autoKernType: "autoKernType",
     kerning: "kerning",
     tracking: "tracking",
     leading: "leading",
-    leadingType: "leading_type",
-    autoLeading: "auto_leading",
-    baselineShift: "baseline_shift",
-    horizontalScale: "horizontal_scale",
-    verticalScale: "vertical_scale",
+    leadingType: "leadingType",
+    autoLeading: "autoLeading",
+    baselineShift: "baselineShift",
+    horizontalScale: "horizontalScale",
+    verticalScale: "verticalScale",
     tsume: "tsume",
-    allCaps: "all_caps",
-    smallCaps: "small_caps",
+    allCaps: "allCaps",
+    smallCaps: "smallCaps",
     superscript: "superscript",
     subscript: "subscript",
-    fontBaselineOption: "font_baseline_option",
-    fontCapsOption: "font_caps_option",
-    baselineDirection: "baseline_direction",
+    fontBaselineOption: "fontBaselineOption",
+    fontCapsOption: "fontCapsOption",
+    baselineDirection: "baselineDirection",
     ligature: "ligature",
-    noBreak: "no_break",
-    digitSet: "digit_set",
-    lineJoinType: "line_join_type",
-    fillColor: "fill_color",
-    applyFill: "apply_fill",
-    strokeColor: "stroke_color",
-    applyStroke: "apply_stroke",
-    strokeWidth: "stroke_width",
-    strokeOverFill: "stroke_over_fill",
+    noBreak: "noBreak",
+    digitSet: "digitSet",
+    lineJoinType: "lineJoinType",
+    fillColor: "fillColor",
+    applyFill: "applyFill",
+    strokeColor: "strokeColor",
+    applyStroke: "applyStroke",
+    strokeWidth: "strokeWidth",
+    strokeOverFill: "strokeOverFill",
     justification: "justification",
     direction: "direction",
-    firstLineIndent: "first_line_indent",
-    startIndent: "start_indent",
-    endIndent: "end_indent",
-    spaceBefore: "space_before",
-    spaceAfter: "space_after",
-    everyLineComposer: "every_line_composer",
-    hangingRoman: "hanging_roman",
-    autoHyphenate: "auto_hyphenate",
-    composerEngine: "composer_engine",
-    paragraphCount: "paragraph_count",
-    boxText: "box_text",
-    pointText: "point_text",
-    boxTextSize: "box_text_size",
-    boxTextPos: "box_text_pos",
-    boxVerticalAlignment: "box_vertical_alignment",
-    boxAutoFitPolicy: "box_auto_fit_policy",
-    boxFirstBaselineAlignment: "box_first_baseline_alignment",
-    boxFirstBaselineAlignmentMinimum: "box_first_baseline_alignment_minimum",
-    boxInsetSpacing: "box_inset_spacing",
-    boxOverflow: "box_overflow",
-    lineOrientation: "line_orientation",
-    composedLineCount: "composed_line_count",
-    paragraphRanges: "paragraph_ranges",
-    composedLineRanges: "composed_line_ranges",
+    firstLineIndent: "firstLineIndent",
+    startIndent: "startIndent",
+    endIndent: "endIndent",
+    spaceBefore: "spaceBefore",
+    spaceAfter: "spaceAfter",
+    everyLineComposer: "everyLineComposer",
+    hangingRoman: "hangingRoman",
+    autoHyphenate: "autoHyphenate",
+    composerEngine: "composerEngine",
+    paragraphCount: "paragraphCount",
+    boxText: "boxText",
+    pointText: "pointText",
+    boxTextSize: "boxTextSize",
+    boxTextPos: "boxTextPos",
+    boxVerticalAlignment: "boxVerticalAlignment",
+    boxAutoFitPolicy: "boxAutoFitPolicy",
+    boxFirstBaselineAlignment: "boxFirstBaselineAlignment",
+    boxFirstBaselineAlignmentMinimum: "boxFirstBaselineAlignmentMinimum",
+    boxInsetSpacing: "boxInsetSpacing",
+    boxOverflow: "boxOverflow",
+    lineOrientation: "lineOrientation",
+    composedLineCount: "composedLineCount",
+    paragraphRanges: "paragraphRanges",
+    composedLineRanges: "composedLineRanges",
   };
 
   _compare_fields(expected_doc, parsed_doc, text_mappings, path, "textdocument", result, "TextDocument");
@@ -1177,30 +1177,30 @@ export function compare_property_group(
    */
   const group_mappings = {
     name: "name",
-    matchName: "match_name",
+    matchName: "matchName",
     enabled: "enabled",
-    canSetEnabled: "can_set_enabled",
+    canSetEnabled: "canSetEnabled",
     elided: "elided",
-    isEffect: "is_effect",
-    isMask: "is_mask",
-    isModified: "is_modified",
-    propertyDepth: "property_depth",
+    isEffect: "isEffect",
+    isMask: "isMask",
+    isModified: "isModified",
+    propertyDepth: "propertyDepth",
     color: "color",
-    maskFeatherFalloff: "mask_feather_falloff",
-    maskMode: "mask_mode",
-    maskMotionBlur: "mask_motion_blur",
+    maskFeatherFalloff: "maskFeatherFalloff",
+    maskMode: "maskMode",
+    maskMotionBlur: "maskMotionBlur",
     inverted: "inverted",
     locked: "locked",
-    rotoBezier: "roto_bezier",
+    rotoBezier: "rotoBezier",
   };
 
   _compare_fields(expected_group, parsed_group, group_mappings, path, "properties", result, "PropertyGroup");
 
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
-  result.track_field("PropertyGroup", "property_index", expected_group.has("propertyIndex"));
+  result.track_field("PropertyGroup", "propertyIndex", expected_group.has("propertyIndex"));
   if (expected_group.has("propertyIndex")) {
     const exp_pi = getitem(expected_group, "propertyIndex");
-    const parsed_pi = parsed_group.get("property_index") ?? null;
+    const parsed_pi = parsed_group.get("propertyIndex") ?? null;
     if (parsed_pi != null && exp_pi !== parsed_pi + 1) {
       result.add_diff(`${path}.propertyIndex`, exp_pi, parsed_pi + 1, "properties");
     }
@@ -1229,33 +1229,33 @@ export function compare_comp_item(
     label: "label",
     time: "time",
     duration: "duration",
-    frameRate: "frame_rate",
+    frameRate: "frameRate",
     width: "width",
     height: "height",
-    displayStartTime: "display_start_time",
-    displayStartFrame: "display_start_frame",
-    dropFrame: "drop_frame",
-    bgColor: "bg_color",
-    pixelAspect: "pixel_aspect",
-    shutterPhase: "shutter_phase",
-    shutterAngle: "shutter_angle",
-    motionBlur: "motion_blur",
-    motionBlurAdaptiveSampleLimit: "motion_blur_adaptive_sample_limit",
-    motionBlurSamplesPerFrame: "motion_blur_samples_per_frame",
-    workAreaStart: "work_area_start",
-    workAreaDuration: "work_area_duration",
-    preserveNestedResolution: "preserve_nested_resolution",
-    preserveNestedFrameRate: "preserve_nested_frame_rate",
-    frameBlending: "frame_blending",
-    hideShyLayers: "hide_shy_layers",
-    resolutionFactor: "resolution_factor",
+    displayStartTime: "displayStartTime",
+    displayStartFrame: "displayStartFrame",
+    dropFrame: "dropFrame",
+    bgColor: "bgColor",
+    pixelAspect: "pixelAspect",
+    shutterPhase: "shutterPhase",
+    shutterAngle: "shutterAngle",
+    motionBlur: "motionBlur",
+    motionBlurAdaptiveSampleLimit: "motionBlurAdaptiveSampleLimit",
+    motionBlurSamplesPerFrame: "motionBlurSamplesPerFrame",
+    workAreaStart: "workAreaStart",
+    workAreaDuration: "workAreaDuration",
+    preserveNestedResolution: "preserveNestedResolution",
+    preserveNestedFrameRate: "preserveNestedFrameRate",
+    frameBlending: "frameBlending",
+    hideShyLayers: "hideShyLayers",
+    resolutionFactor: "resolutionFactor",
     draft3d: "draft3d",
-    hasVideo: "has_video",
-    isMediaReplacementCompatible: "is_media_replacement_compatible",
+    hasVideo: "hasVideo",
+    isMediaReplacementCompatible: "isMediaReplacementCompatible",
     renderer: "renderer",
-    motionGraphicsTemplateName: "motion_graphics_template_name",
-    motionGraphicsTemplateControllerCount: "motion_graphics_template_controller_count",
-    motionGraphicsTemplateControllerNames: "motion_graphics_template_controller_names",
+    motionGraphicsTemplateName: "motionGraphicsTemplateName",
+    motionGraphicsTemplateControllerCount: "motionGraphicsTemplateControllerCount",
+    motionGraphicsTemplateControllerNames: "motionGraphicsTemplateControllerNames",
   };
 
   _compare_fields(expected_item, parsed_comp, comp_mappings, path, "composition", result, "CompItem");
@@ -1305,7 +1305,7 @@ export function compare_folder_hierarchy(
 
   const parsed_folders = new Map<number, Dict>();
   for (const [item_id, item] of parsed_items) {
-    if (dict_get(item, "type_name") === "Folder") {
+    if (dict_get(item, "typeName") === "Folder") {
       parsed_folders.set(item_id, item);
     }
   }
@@ -1348,48 +1348,48 @@ export function compare_footage_item(
     label: "label",
     time: "time",
     duration: "duration",
-    frameRate: "frame_rate",
+    frameRate: "frameRate",
     width: "width",
     height: "height",
-    pixelAspect: "pixel_aspect",
-    footageMissing: "footage_missing",
-    hasVideo: "has_video",
-    isMediaReplacementCompatible: "is_media_replacement_compatible",
+    pixelAspect: "pixelAspect",
+    footageMissing: "footageMissing",
+    hasVideo: "hasVideo",
+    isMediaReplacementCompatible: "isMediaReplacementCompatible",
   };
 
   _compare_fields(expected_item, parsed_item, footage_mappings, path, "footage", result, "FootageItem");
 
   // Compare mainSource (FootageSource fields)
   const exp_source = expected_item.get("mainSource") ?? null;
-  const parsed_source = parsed_item.get("main_source") ?? null;
+  const parsed_source = parsed_item.get("mainSource") ?? null;
   if (py_bool(exp_source) && py_bool(parsed_source)) {
     const source_path = `${path}.mainSource`;
 
     const source_mappings = {
-      alphaMode: "alpha_mode",
-      displayFrameRate: "display_frame_rate",
-      fieldSeparationType: "field_separation_type",
-      hasAlpha: "has_alpha",
-      highQualityFieldSeparation: "high_quality_field_separation",
-      invertAlpha: "invert_alpha",
-      isStill: "is_still",
+      alphaMode: "alphaMode",
+      displayFrameRate: "displayFrameRate",
+      fieldSeparationType: "fieldSeparationType",
+      hasAlpha: "hasAlpha",
+      highQualityFieldSeparation: "highQualityFieldSeparation",
+      invertAlpha: "invertAlpha",
+      isStill: "isStill",
       loop: "loop",
-      nativeFrameRate: "native_frame_rate",
-      premulColor: "premul_color",
-      removePulldown: "remove_pulldown",
+      nativeFrameRate: "nativeFrameRate",
+      premulColor: "premulColor",
+      removePulldown: "removePulldown",
       color: "color",
     };
 
     _compare_fields(exp_source, parsed_source, source_mappings, source_path, "footage", result, "FootageSource");
 
     // AE returns native_frame_rate when conformFrameRate is 0
-    result.track_field("FootageSource", "conform_frame_rate", exp_source.has("conformFrameRate"));
+    result.track_field("FootageSource", "conformFrameRate", exp_source.has("conformFrameRate"));
     const exp_cfr = dict_get<string, ToDictValue>(exp_source, "conformFrameRate");
-    const parsed_cfr = dict_get<string, ToDictValue, number>(parsed_source, "conform_frame_rate", 0);
+    const parsed_cfr = dict_get<string, ToDictValue, number>(parsed_source, "conformFrameRate", 0);
     if (exp_cfr != null) {
       if (!compare_values(exp_cfr, parsed_cfr)) {
         // When parsed conform is 0, AE may report native_frame_rate
-        const native = dict_get<string, ToDictValue, number>(parsed_source, "native_frame_rate", 0);
+        const native = dict_get<string, ToDictValue, number>(parsed_source, "nativeFrameRate", 0);
         if (parsed_cfr === 0 && compare_values(exp_cfr, native)) {
           // AE reported native rate as conform rate
         } else {
@@ -1400,7 +1400,7 @@ export function compare_footage_item(
 
     // Track manually-compared fields
     result.track_field("FootageSource", "file", exp_source.has("filePath"));
-    result.track_field("FootageSource", "missing_footage_path", exp_source.has("missingFootagePath"));
+    result.track_field("FootageSource", "missingFootagePath", exp_source.has("missingFootagePath"));
     // FileSource-specific fields
     if (exp_source.has("filePath")) {
       const exp_file = getitem<string, string | null>(exp_source, "filePath");
@@ -1420,7 +1420,7 @@ export function compare_footage_item(
 
     if (exp_source.has("missingFootagePath")) {
       const exp_missing = getitem<string, ToDictValue>(exp_source, "missingFootagePath");
-      const parsed_missing = dict_get<string, ToDictValue, string>(parsed_source, "missing_footage_path", "");
+      const parsed_missing = dict_get<string, ToDictValue, string>(parsed_source, "missingFootagePath", "");
       if (py_bool(exp_missing) && !py_eq(exp_missing, parsed_missing)) {
         result.add_diff(`${source_path}.missingFootagePath`, exp_missing, parsed_missing, "footage");
       }
@@ -1555,14 +1555,14 @@ export function compare_render_queue(
     const rqi_mappings = {
       status: "status",
       render: "render",
-      skipFrames: "skip_frames",
-      logType: "log_type",
-      elapsedSeconds: "elapsed_seconds",
+      skipFrames: "skipFrames",
+      logType: "logType",
+      elapsedSeconds: "elapsedSeconds",
       comment: "comment",
-      compName: "comp_name",
-      queueItemNotify: "queue_item_notify",
-      timeSpanStart: "time_span_start",
-      timeSpanDuration: "time_span_duration",
+      compName: "compName",
+      queueItemNotify: "queueItemNotify",
+      timeSpanStart: "timeSpanStart",
+      timeSpanDuration: "timeSpanDuration",
     };
     _compare_fields(exp_item, parsed_item, rqi_mappings, path, "renderqueue", result, "RenderQueueItem");
 
@@ -1573,7 +1573,7 @@ export function compare_render_queue(
 
     // Compare output modules
     const exp_oms: Dict[] = dict_get(exp_item, "outputModules", []);
-    const parsed_oms: Dict[] = dict_get(parsed_item, "output_modules", []);
+    const parsed_oms: Dict[] = dict_get(parsed_item, "outputModules", []);
 
     if (exp_oms.length !== parsed_oms.length) {
       result.add_diff(`${path}.numOutputModules`, exp_oms.length, parsed_oms.length, "renderqueue");
@@ -1591,8 +1591,8 @@ export function compare_render_queue(
       // Compare output module-level fields
       const om_mappings = {
         name: "name",
-        includeSourceXMP: "include_source_xmp",
-        postRenderAction: "post_render_action",
+        includeSourceXMP: "includeSourceXmp",
+        postRenderAction: "postRenderAction",
       };
       _compare_fields(exp_om, parsed_om, om_mappings, om_path, "renderqueue", result, "OutputModule");
 
@@ -1658,11 +1658,11 @@ export function compare_viewer(
       channels: "channels",
       checkerboards: "checkerboards",
       exposure: "exposure",
-      fastPreview: "fast_preview",
+      fastPreview: "fastPreview",
       zoom: "zoom",
-      guidesVisibility: "guides_visibility",
-      guidesSnap: "guides_snap",
-      guidesLocked: "guides_locked",
+      guidesVisibility: "guidesVisibility",
+      guidesSnap: "guidesSnap",
+      guidesLocked: "guidesLocked",
       rulers: "rulers",
     };
     _compare_fields(exp_opts, parsed_opts, opts_mappings, opts_path, "viewer", result, "ViewOptions");
@@ -1744,7 +1744,7 @@ export function validate_aep(
   const parsed_items_dict: Map<number, Dict> = dict_get(parsed, "items", new Map());
   const parsed_footage_by_id = new Map<number, Dict>();
   for (const [item_id, item] of parsed_items_dict) {
-    if (dict_get(item, "type_name") === "Footage") parsed_footage_by_id.set(item_id, item);
+    if (dict_get(item, "typeName") === "Footage") parsed_footage_by_id.set(item_id, item);
   }
 
   for (const exp_fi of expected_footage) {
@@ -1774,13 +1774,13 @@ export function validate_aep(
   // Compare render queue
   if (verbose) console.log("\n=== Comparing Render Queue ===");
   const expected_rq = dict_get(expected, "renderQueue", new Map());
-  compare_render_queue(expected_rq, dict_get(parsed, "render_queue", new Map()), result, verbose);
+  compare_render_queue(expected_rq, dict_get(parsed, "renderQueue", new Map()), result, verbose);
 
   // Compare active viewer
   const expected_viewer = expected.get("activeViewer") ?? null;
-  if (expected_viewer != null && app.active_viewer != null) {
+  if (expected_viewer != null && app.activeViewer != null) {
     if (verbose) console.log("\n=== Comparing Viewer ===");
-    const parsed_viewer = to_dict(app.active_viewer);
+    const parsed_viewer = to_dict(app.activeViewer);
     compare_viewer(expected_viewer, parsed_viewer, result);
     if (verbose) console.log("  Done");
   } else if (expected_viewer != null && verbose) {

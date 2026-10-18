@@ -78,7 +78,7 @@ describe("TestFolderLabel", () => {
 describe("TestFolderNesting", () => {
   test("test_parentFolder_nested", () => {
     const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const nested = project.folders.filter((f) => py_bool(f.parent_folder));
+    const nested = project.folders.filter((f) => py_bool(f.parentFolder));
     expect(len(nested)).toBeGreaterThanOrEqual(3);
   });
 

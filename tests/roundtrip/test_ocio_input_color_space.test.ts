@@ -91,10 +91,10 @@ test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, nam
     (item) => item.name === name,
   );
   const project = new_().project;
-  project.color_management_system = ColorManagementSystem.OCIO;
-  project.ocio_configuration_file = config;
-  const ours = as_instance(project.import_file(new ImportOptions(getitem(FILES, name))), FootageItem);
-  expect(py_eq(_clrs(ours.main_source), _clrs(ae.main_source))).toBe(true);
+  project.colorManagementSystem = ColorManagementSystem.OCIO;
+  project.ocioConfigurationFile = config;
+  const ours = as_instance(project.importFile(new ImportOptions(getitem(FILES, name))), FootageItem);
+  expect(py_eq(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
 });
 
 const PNG = getitem(FILES, "image_with_alpha.png");
@@ -117,14 +117,14 @@ test.each([
       (item) => item.name === name,
     );
     const project = new_().project;
-    project.color_management_system = ColorManagementSystem.OCIO;
-    project.ocio_configuration_file = str(SERGB);
-    const ours = as_instance(project.import_file(new ImportOptions(first)), FootageItem);
+    project.colorManagementSystem = ColorManagementSystem.OCIO;
+    project.ocioConfigurationFile = str(SERGB);
+    const ours = as_instance(project.importFile(new ImportOptions(first)), FootageItem);
     if (assigned != null) {
-      as_instance(ours.main_source, FileSource).media_color_space = assigned;
+      as_instance(ours.mainSource, FileSource).mediaColorSpace = assigned;
     }
     ours.replace(second);
-    expect(py_eq(_clrs(ours.main_source), _clrs(ae.main_source))).toBe(true);
+    expect(py_eq(_clrs(ours.mainSource), _clrs(ae.mainSource))).toBe(true);
   },
 );
 
@@ -137,9 +137,9 @@ test("test_proxy_takes_the_rules_pick", () => {
     (item) => item.name === "ae_png_proxy_exr",
   );
   const project = new_().project;
-  project.color_management_system = ColorManagementSystem.OCIO;
-  project.ocio_configuration_file = str(SERGB);
-  const ours = project.import_file(new ImportOptions(PNG));
-  ours.set_proxy(EXR);
-  expect(py_eq(_clrs(ours.proxy_source), _clrs(ae.proxy_source))).toBe(true);
+  project.colorManagementSystem = ColorManagementSystem.OCIO;
+  project.ocioConfigurationFile = str(SERGB);
+  const ours = project.importFile(new ImportOptions(PNG));
+  ours.setProxy(EXR);
+  expect(py_eq(_clrs(ours.proxySource), _clrs(ae.proxySource))).toBe(true);
 });

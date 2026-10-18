@@ -191,7 +191,7 @@ export function _validate_for_format(
 // Reading/writing through the module keeps _CLAMP_ACCESSORS free of
 // isinstance lambdas; every writer is a raw write (validation bypass).
 
-export function _xml_options_of<K extends "audio_bitrate" | "audio_codec" | "bitrate" | "mpeg_audio_format" | "mpeg_multiplexer" | "video_codec">(
+export function _xml_options_of<K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec">(
   om: OutputModule,
   attr: K,
 ): XmlFormatOptions[K] | null {
@@ -225,7 +225,7 @@ export type OutputModuleSettingValues = SettingValues & {
   "Depth": OutputModule["_depth"];
   "Format": OutputModule["_format"];
   "Include Project Link": OutputModule["_include_project_link"];
-  "Include Source XMP Metadata": OutputModule["include_source_xmp"];
+  "Include Source XMP Metadata": OutputModule["includeSourceXmp"];
   "Lock Aspect Ratio": OutputModule["_lock_aspect_ratio"];
   "Output Audio": OutputModule["_output_audio"];
   "Output File Info": OutputModule["_output_file_info"];
@@ -259,7 +259,7 @@ export const OM_SETTINGS: SettingsSpec = new Map([
   ["Depth", ["_depth", OutputColorDepth]],
   ["Format", ["_format", OutputFormat]],
   ["Include Project Link", ["_include_project_link", null]],
-  ["Include Source XMP Metadata", ["include_source_xmp", null]],
+  ["Include Source XMP Metadata", ["includeSourceXmp", null]],
   ["Lock Aspect Ratio", ["_lock_aspect_ratio", null]],
   ["Output Audio", ["_output_audio", OutputAudio]],
   ["Output File Info", ["_output_file_info", null]],
@@ -284,7 +284,7 @@ export const OM_SETTINGS: SettingsSpec = new Map([
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
+ * const om = app.project.renderQueue.items[0].outputModules[0];
  * console.log(om.file);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/outputmodule/
@@ -295,13 +295,13 @@ export class OutputModule {
    * When `true`, writes all source footage XMP metadata to the output file.
    * Read / Write.
    */
-  declare include_source_xmp: boolean;
+  declare includeSourceXmp: boolean;
 
   /**
    * An action to perform when rendering is complete.
    * Read / Write.
    */
-  declare post_render_action: PostRenderAction;
+  declare postRenderAction: PostRenderAction;
 
   declare _audio_bit_depth: AudioBitDepth;
   declare _audio_channels: AudioChannels;
@@ -397,7 +397,7 @@ export class OutputModule {
     [
       "Audio Format",
       [
-        (om) => _xml_options_of(om, "mpeg_audio_format"),
+        (om) => _xml_options_of(om, "mpegAudioFormat"),
         (om, v) => {
           _set_xml_param_raw(om, "ADBEMPEGAudioFormat", int(v));
         },
@@ -419,12 +419,12 @@ export class OutputModule {
     ["Audio Sample Rate", (om) => om._audio_sample_rate],
     ["Audio Channels", (om) => om._audio_channels],
     ["Audio Bit Depth", (om) => om._audio_bit_depth],
-    ["Audio Codec", (om) => _xml_options_of(om, "audio_codec")],
-    ["Video Codec", (om) => _xml_options_of(om, "video_codec")],
-    ["Audio Format", (om) => _xml_options_of(om, "mpeg_audio_format")],
-    ["Multiplexer", (om) => _xml_options_of(om, "mpeg_multiplexer")],
+    ["Audio Codec", (om) => _xml_options_of(om, "audioCodec")],
+    ["Video Codec", (om) => _xml_options_of(om, "videoCodec")],
+    ["Audio Format", (om) => _xml_options_of(om, "mpegAudioFormat")],
+    ["Multiplexer", (om) => _xml_options_of(om, "mpegMultiplexer")],
     ["BitRate", (om) => _xml_options_of(om, "bitrate")],
-    ["Audio Bitrate", (om) => _xml_options_of(om, "audio_bitrate")],
+    ["Audio Bitrate", (om) => _xml_options_of(om, "audioBitrate")],
   ]);
 
   /** Keys whose stored value is a plain int/bool by design (everything
@@ -535,7 +535,7 @@ export class OutputModule {
    *
    * Read-only.
    */
-  get format_options(): CineonFormatOptions | JpegFormatOptions | OpenExrFormatOptions | PngFormatOptions | TargaFormatOptions | TiffFormatOptions | XmlFormatOptions | null {
+  get formatOptions(): CineonFormatOptions | JpegFormatOptions | OpenExrFormatOptions | PngFormatOptions | TargaFormatOptions | TiffFormatOptions | XmlFormatOptions | null {
     return this._format_options;
   }
 
@@ -563,15 +563,15 @@ export class OutputModule {
    * Only used when `post_render_action` is `IMPORT_AND_REPLACE` or
    * `SET_PROXY`. Read-only.
    */
-  get post_render_target_comp(): CompItem {
+  get postRenderTargetComp(): CompItem {
     const comp_id = this._om_ldat.post_render_target_comp_id || null;
-    if (comp_id == null || this.post_render_action === PostRenderAction.NONE || this.post_render_action === PostRenderAction.IMPORT) {
+    if (comp_id == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
       return this._parent_rqi.comp;
     }
     return getitem(this._project.items, comp_id) as CompItem;
   }
 
-  set post_render_target_comp(comp: CompItem) {
+  set postRenderTargetComp(comp: CompItem) {
     if (!(comp instanceof CompItem)) {
       throw new ValueError("post_render_target_comp must be a CompItem");
     }
@@ -586,7 +586,7 @@ export class OutputModule {
    * ExtendScript-compatible keys. Includes `"Video Output"`,
    * `"Audio Bit Depth"`, `"Preserve RGB"`, `"Convert to Linear Light"`,
    * etc. Matches the format from
-   * `OutputModule.get_settings(GetSettingsFormat.NUMBER)`.
+   * `OutputModule.getSettings(GetSettingsFormat.NUMBER)`.
    */
   get settings(): SettingsView<OutputModuleSettingValues> {
     return new SettingsView(this, OM_SETTINGS);
@@ -602,7 +602,7 @@ export class OutputModule {
     // whole dict back - an earlier key's `post_set` clamp may already
     // have moved its dependents, leaving neither the old state nor the
     // requested one.
-    this.batch_edit(() => {
+    this.batchEdit(() => {
       for (const [k, v] of value instanceof Map ? [...value] : value.items()) {
         // A full `settings` dict includes read-only keys (e.g.
         // "Format", "Channels"); skip any key whose value is
@@ -689,11 +689,11 @@ export class OutputModule {
     const fo = this._format_options;
     if (fo instanceof XmlFormatOptions) {
       const pairs: [string, RuleValue | null][] = [
-        ["Audio Codec", fo.audio_codec],
-        ["Video Codec", fo.video_codec],
-        ["Audio Format", fo.mpeg_audio_format],
-        ["Audio Layer", fo.mpeg_audio_layer],
-        ["Multiplexer", fo.mpeg_multiplexer],
+        ["Audio Codec", fo.audioCodec],
+        ["Video Codec", fo.videoCodec],
+        ["Audio Format", fo.mpegAudioFormat],
+        ["Audio Layer", fo.mpegAudioLayer],
+        ["Multiplexer", fo.mpegMultiplexer],
       ];
       for (const [key, value] of pairs) {
         if (_is_enum_member(key, value)) {
@@ -704,8 +704,8 @@ export class OutputModule {
         context.set("BitRate", fo.bitrate);
       }
     } else if (fo instanceof CineonFormatOptions) {
-      if (_is_enum_member("File Format", fo.file_format)) {
-        context.set("File Format", fo.file_format);
+      if (_is_enum_member("File Format", fo.fileFormat)) {
+        context.set("File Format", fo.fileFormat);
       }
     }
     return context;
@@ -791,7 +791,7 @@ export class OutputModule {
    * audio/video stream, absent format-option params, and raw
    * fallbacks from out-of-enum stored bytes (the binary is trusted).
    */
-  validate_state(): [string, RuleValue, ReadonlySet<RuleValue>][] {
+  validateState(): [string, RuleValue, ReadonlySet<RuleValue>][] {
     const cls = this.constructor;
     const violations: [string, RuleValue, ReadonlySet<RuleValue>][] = [];
     const fmt = this._format;
@@ -935,8 +935,8 @@ export class OutputModule {
    * ```ts
    * import { parse, AudioChannels } from "@bevyl-ai/ts-aep";
    *
-   * const om = parse("project.aep").project.render_queue.items[0].output_modules[0];
-   * om.batch_edit(() => {
+   * const om = parse("project.aep").project.renderQueue.items[0].outputModules[0];
+   * om.batchEdit(() => {
    *   om.settings.__setitem__("Audio Channels", AudioChannels.MONO);
    *   om.settings.__setitem__("Audio Sample Rate", 22050);
    * });
@@ -944,7 +944,7 @@ export class OutputModule {
    */
   // NOTE(port): Python's `@contextmanager` + `with` has no TS equivalent; the block is passed
   // as `body`, which runs inside the same transaction as the `with` body would.
-  batch_edit(body: (om: OutputModule) => void): OutputModule {
+  batchEdit(body: (om: OutputModule) => void): OutputModule {
     if (this._batch_depth) {
       this._batch_depth += 1;
       try {
@@ -977,7 +977,7 @@ export class OutputModule {
       this._apply_singleton_clamps(["Color"]);
     }
     this._sync_png_options();
-    const violations = this.validate_state();
+    const violations = this.validateState();
     if (violations.length) {
       this._restore_state(snapshot);
 
@@ -1105,9 +1105,9 @@ export class OutputModule {
 
     if (this._om_ldat.use_region_of_interest && comp._viewer != null && comp._viewer.views?.length > 0) {
       const viewer = comp._viewer;
-      const opts = at(viewer.views, viewer.active_view_index).options;
-      w = opts.roi_right - opts.roi_left;
-      h = opts.roi_bottom - opts.roi_top;
+      const opts = at(viewer.views, viewer.activeViewIndex).options;
+      w = opts.roiRight - opts.roiLeft;
+      h = opts.roiBottom - opts.roiTop;
     } else if (this._om_ldat.crop) {
       w -= this._om_ldat.crop_left + this._om_ldat.crop_right;
       h -= this._om_ldat.crop_top + this._om_ldat.crop_bottom;
@@ -1122,7 +1122,7 @@ export class OutputModule {
     if (rqi._ldat.use_this_frame_rate) {
       return rqi._use_this_frame_rate;
     }
-    return rqi.comp.frame_rate;
+    return rqi.comp.frameRate;
   }
 
   /**
@@ -1151,7 +1151,7 @@ export class OutputModule {
    * (the item's skip frames + 1).
    */
   _set_frame_rate(): void {
-    const skip = this._parent_rqi.skip_frames;
+    const skip = this._parent_rqi.skipFrames;
     this._roou.frame_rate = this._effective_frame_rate / (skip + 1);
   }
 
@@ -1178,7 +1178,7 @@ export class OutputModule {
     return map_output_color_space(
       this._om_ldat.output_profile_id,
       this._om_ldat.output_color_space_working !== 0,
-      this._project.working_space,
+      this._project.workingSpace,
     );
   }
 
@@ -1198,11 +1198,11 @@ export class OutputModule {
    *
    * **Note:** Not exposed in ExtendScript.
    */
-  get output_color_space(): string {
+  get outputColorSpace(): string {
     const project = this._project;
     const ldat = this._om_ldat;
-    if (project.color_management_system === ColorManagementSystem.OCIO && !ldat.output_color_space_working) {
-      const config = resolve_ocio_config(project.ocio_configuration_file);
+    if (project.colorManagementSystem === ColorManagementSystem.OCIO && !ldat.output_color_space_working) {
+      const config = resolve_ocio_config(project.ocioConfigurationFile);
       if (config != null) {
         const name = ocio_color_space_for_profile_id(config, new Uint8Array(ldat.output_profile_id));
         if (name != null) {
@@ -1213,7 +1213,7 @@ export class OutputModule {
     return this._output_color_space || "";
   }
 
-  set output_color_space(value: string) {
+  set outputColorSpace(value: string) {
     validate_string(value);
     const ldat = this._om_ldat;
     if (value === "Working Color Space") {
@@ -1222,8 +1222,8 @@ export class OutputModule {
       return;
     }
     const project = this._project;
-    if (project.color_management_system === ColorManagementSystem.OCIO) {
-      const config = require_ocio_config(project.ocio_configuration_file, `compute the output color space id for ${repr(value)}`);
+    if (project.colorManagementSystem === ColorManagementSystem.OCIO) {
+      const config = require_ocio_config(project.ocioConfigurationFile, `compute the output color space id for ${repr(value)}`);
       ldat.output_color_space_working = 0;
       ldat.output_profile_id = ocio_output_profile_id(config, value);
       return;
@@ -1238,7 +1238,7 @@ export class OutputModule {
 
   /** Output file info (read-only). */
   get _output_file_info(): Map<string, string> {
-    const file_template = this.file_template;
+    const file_template = this.fileTemplate;
     const folder_path = this._folder_path;
     const file_name_template = this._file_name_template;
     let subfolder_path: string;
@@ -1267,8 +1267,8 @@ export class OutputModule {
       return this._roou.starting_number;
     }
     const rqi = this._parent_rqi;
-    const start_seconds = rqi.time_span_start;
-    const frame_rate = rqi.comp.frame_rate;
+    const start_seconds = rqi.timeSpanStart;
+    const frame_rate = rqi.comp.frameRate;
     return int(round(start_seconds * frame_rate));
   }
 
@@ -1350,7 +1350,7 @@ export class OutputModule {
     if (format_id === "sDPX") {
       const fo = this._format_options;
       if (fo instanceof CineonFormatOptions) {
-        return fo.file_format === CineonFileFormat.DPX ? "dpx" : "cin";
+        return fo.fileFormat === CineonFileFormat.DPX ? "dpx" : "cin";
       }
       return "dpx";
     }
@@ -1377,11 +1377,11 @@ export class OutputModule {
    * py_aep extension: a folder path set here is stored in the style of
    * the project's platform (see {@link py_aep.parse | parse}).
    */
-  get file_template(): string {
+  get fileTemplate(): string {
     return this.constructor._build_file_template(this._folder_path, this._file_name_template, this._is_folder);
   }
 
-  set file_template(value: string) {
+  set fileTemplate(value: string) {
     validate_string(value);
     let alas = this._alas_utf8;
     if (alas == null) {
@@ -1471,7 +1471,7 @@ export class OutputModule {
     const project_name = project.file ? new Path(project.file).stem : "Untitled Project";
 
     return resolve_output_filename(
-      this.file_template,
+      this.fileTemplate,
       project_name,
       comp.name,
       this.parent.name,
@@ -1486,7 +1486,7 @@ export class OutputModule {
       time_span.end_time,
       time_span.duration_time,
       om_channels,
-      int(project.bits_per_channel),
+      int(project.bitsPerChannel),
       om_depth,
       compressor,
       rq_settings.get("Field Render"),
@@ -1496,7 +1496,7 @@ export class OutputModule {
   }
 
   set file(value: string) {
-    this.file_template = value;
+    this.fileTemplate = value;
   }
 
   /**
@@ -1505,7 +1505,7 @@ export class OutputModule {
    * @param format - The output format. `GetSettingsFormat.NUMBER` returns numeric values (enums
    *   unwrapped to ints). `GetSettingsFormat.STRING` returns all values as strings
    */
-  get_settings(format: GetSettingsFormat = GetSettingsFormat.STRING): Map<string, SettingValue> {
+  getSettings(format: GetSettingsFormat = GetSettingsFormat.STRING): Map<string, SettingValue> {
     if (format === GetSettingsFormat.STRING) {
       return settings_to_string(this.settings, build_resize_to_strings(this._project._preferences));
     }
@@ -1521,8 +1521,8 @@ export class OutputModule {
    * @param key - The setting key (e.g. `"Video Output"`, `"Audio Bit Depth"`).
    * @param format - The output format.
    */
-  get_setting(key: string, format: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
-    return getitem(this.get_settings(format), key);
+  getSetting(key: string, format: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
+    return getitem(this.getSettings(format), key);
   }
 
   /**
@@ -1549,14 +1549,14 @@ export class OutputModule {
    *
    * The `format_options` object is rebuilt for the new format:
    * references held to the previous one are stale afterwards -
-   * re-fetch `om.format_options`.
+   * re-fetch `om.formatOptions`.
    *
    * Requires `ae_preferences_dir` to have been passed to `parse()`.
    *
    * @param name - Template name (e.g. `"Lossless"`, `"H.264 - Match Render Settings - 15 Mbps"`).
    * @throws {@link ValueError} If the template name is not found.
    */
-  apply_template(name: string): void {
+  applyTemplate(name: string): void {
     const templates = this._project._get_output_templates();
     for (const template of templates) {
       if (template.name === name) {
@@ -1682,9 +1682,9 @@ export class OutputModule {
 
 // Field descriptors: each ChunkField assigned in the Python class body is installed on the
 // prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(OutputModule, "include_source_xmp", ChunkField.bool("_om_ldat", "include_source_xmp"));
+descriptor(OutputModule, "includeSourceXmp", ChunkField.bool("_om_ldat", "include_source_xmp"));
 
-descriptor(OutputModule, "post_render_action", ChunkField.enum(PostRenderAction, "_om_ldat", "post_render_action"));
+descriptor(OutputModule, "postRenderAction", ChunkField.enum(PostRenderAction, "_om_ldat", "post_render_action"));
 
 descriptor(
   OutputModule,

@@ -51,7 +51,7 @@ describe("TestParseVectorMask", () => {
     ).toBe(true);
     expect(
       py_eq(
-        shape.in_tangents,
+        shape.inTangents,
         Array.from({ length: 4 }, () => [0.0, 0.0]),
       ),
     ).toBe(true);
@@ -75,7 +75,7 @@ describe("TestParseVectorMask", () => {
       ]),
     ).toBe(true);
     expect(
-      py_eq(shape.in_tangents, [
+      py_eq(shape.inTangents, [
         [12.0, 0.0],
         [0.0, 12.0],
         [-12.0, 0.0],
@@ -83,7 +83,7 @@ describe("TestParseVectorMask", () => {
       ]),
     ).toBe(true);
     expect(
-      py_eq(shape.out_tangents, [
+      py_eq(shape.outTangents, [
         [-12.0, 0.0],
         [0.0, -12.0],
         [12.0, 0.0],

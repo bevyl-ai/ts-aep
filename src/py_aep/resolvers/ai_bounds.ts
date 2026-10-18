@@ -2,7 +2,7 @@
  * Measure the per-layer artwork bounds of an Illustrator/PDF file.
  *
  * After Effects offers "Layer Size" footage dimensions for a `.ai`/`.pdf` layer
- * import (`ImportOptions.layer_dimensions`), sizing the footage to the layer's
+ * import (`ImportOptions.layerDimensions`), sizing the footage to the layer's
  * artwork instead of the document. It records the artwork box in the footage
  * `opti` and derives the pixel dimensions from it, and it does not recompute
  * either on open, so py_aep has to reproduce the box.

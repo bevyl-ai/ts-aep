@@ -74,7 +74,7 @@ describe("TestRoundtripItemName", () => {
 });
 
 describe("TestProxySource", () => {
-  /** Tests for AVItem.use_proxy and AVItem.proxy_source. */
+  /** Tests for AVItem.useProxy and AVItem.proxySource. */
 
   /** `@pytest.fixture()`: a fresh project per test (function scope). */
   function proxy_project(): Project {
@@ -91,50 +91,50 @@ describe("TestProxySource", () => {
   test("test_footage_use_proxy_false", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_disabled", FootageItem);
-    expect(item.use_proxy).toBe(false);
+    expect(item.useProxy).toBe(false);
   });
 
   test("test_footage_use_proxy_true", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_enabled", FootageItem);
-    expect(item.use_proxy).toBe(true);
+    expect(item.useProxy).toBe(true);
   });
 
   test("test_footage_proxy_source_exists", () => {
     const proxy_project_ = proxy_project();
     for (const name of ["proxy_disabled", "proxy_enabled"]) {
       const item = _find(proxy_project_, name, FootageItem);
-      expect(item.proxy_source != null).toBe(true);
-      expect(item.proxy_source instanceof FileSource).toBe(true);
+      expect(item.proxySource != null).toBe(true);
+      expect(item.proxySource instanceof FileSource).toBe(true);
     }
   });
 
   test("test_footage_no_proxy_source", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "no_proxy", FootageItem);
-    expect(item.use_proxy).toBe(false);
-    expect(item.proxy_source == null).toBe(true);
+    expect(item.useProxy).toBe(false);
+    expect(item.proxySource == null).toBe(true);
   });
 
   test("test_comp_use_proxy_true", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_enabled", CompItem);
-    expect(item.use_proxy).toBe(true);
+    expect(item.useProxy).toBe(true);
   });
 
   test("test_comp_proxy_source_exists", () => {
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_disabled", CompItem);
-    expect(item.proxy_source != null).toBe(true);
-    expect(item.proxy_source instanceof FileSource).toBe(true);
+    expect(item.proxySource != null).toBe(true);
+    expect(item.proxySource instanceof FileSource).toBe(true);
   });
 
   test("test_comp_no_proxy_source", () => {
     const proxy_project_ = proxy_project();
     for (const name of ["layers", "no_proxy"]) {
       const item = _find(proxy_project_, name, CompItem);
-      expect(item.use_proxy).toBe(false);
-      expect(item.proxy_source == null).toBe(true);
+      expect(item.useProxy).toBe(false);
+      expect(item.proxySource == null).toBe(true);
     }
   });
 
@@ -142,13 +142,13 @@ describe("TestProxySource", () => {
     const tmp_path = make_tmp_path();
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_enabled", FootageItem);
-    item.use_proxy = false;
+    item.useProxy = false;
     const out = tmp_path.div("proxy_modified.aep");
     proxy_project_.save(out);
 
     const project2 = parse_aep(out).project;
     const item2 = _find(project2, "proxy_enabled", FootageItem);
-    expect(item2.use_proxy).toBe(false);
+    expect(item2.useProxy).toBe(false);
   });
 
   test("test_proxy_assigned_byte_matches_ae", () => {
@@ -175,11 +175,11 @@ describe("TestProxySource", () => {
     // AE 2026: `useProxy = false` on an item with a proxy keeps 0x38 = 1.
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_enabled", FootageItem);
-    item.use_proxy = false;
+    item.useProxy = false;
     const out = tmp_path.div("proxy_disabled.aep");
     proxy_project_.save(out);
     const item2 = _find(parse_aep(out).project, "proxy_enabled", FootageItem);
-    expect(item2.use_proxy).toBe(false);
+    expect(item2.useProxy).toBe(false);
     expect(as_instance(item2._idta, IdtaChunk).tobytes()[0x38]).toBe(1);
   });
 
@@ -187,8 +187,8 @@ describe("TestProxySource", () => {
     // AE 2026: `setProxy(file)` then `useProxy = false` stores 0x38 = 1.
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "no_proxy", CompItem);
-    item.set_proxy(SAMPLES_DIR.parent.parent.div("assets", "image_with_alpha.png"));
-    item.use_proxy = false;
+    item.setProxy(SAMPLES_DIR.parent.parent.div("assets", "image_with_alpha.png"));
+    item.useProxy = false;
     expect(as_instance(item._idta, IdtaChunk).tobytes()[0x38]).toBe(1);
   });
 
@@ -196,7 +196,7 @@ describe("TestProxySource", () => {
     // AE 2026: `setProxyToNone()` stores 0x38 = 0.
     const proxy_project_ = proxy_project();
     const item = _find(proxy_project_, "proxy_disabled", FootageItem);
-    item.set_proxy_to_none();
+    item.setProxyToNone();
     expect(as_instance(item._idta, IdtaChunk).tobytes()[0x38]).toBe(0);
   });
 });

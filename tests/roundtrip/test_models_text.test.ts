@@ -24,61 +24,61 @@ function _get_text_document(aep_path: Path, comp_name: string | null = null): [P
   } else {
     comp = app.project.compositions[0];
   }
-  const text_layer = comp.text_layers[0];
+  const text_layer = comp.textLayers[0];
   py_assert(text_layer.text != null);
-  return [app.project, text_layer.text.source_text.value];
+  return [app.project, text_layer.text.sourceText.value];
 }
 
 describe("TestRoundtripFontSize", () => {
-  /** Roundtrip tests for TextDocument.font_size. */
+  /** Roundtrip tests for TextDocument.fontSize. */
 
   test("test_modify_font_size", () => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.font_size).toBe(36.0);
+    expect(doc.fontSize).toBe(36.0);
 
-    doc.font_size = 72.0;
+    doc.fontSize = 72.0;
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
     const [_project2, doc2] = _get_text_document(out, "type_text");
-    expect(doc2.font_size).toBe(72.0);
+    expect(doc2.fontSize).toBe(72.0);
   });
 });
 
 describe("TestRoundtripFauxBold", () => {
-  /** Roundtrip tests for TextDocument.faux_bold. */
+  /** Roundtrip tests for TextDocument.fauxBold. */
 
   test("test_enable_faux_bold", () => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.faux_bold).toBe(false);
+    expect(doc.fauxBold).toBe(false);
 
-    doc.faux_bold = true;
+    doc.fauxBold = true;
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
     const [_project2, doc2] = _get_text_document(out, "type_text");
-    expect(doc2.faux_bold).toBe(true);
+    expect(doc2.fauxBold).toBe(true);
   });
 });
 
 describe("TestRoundtripFillColor", () => {
-  /** Roundtrip tests for TextDocument.fill_color. */
+  /** Roundtrip tests for TextDocument.fillColor. */
 
   test("test_modify_fill_color", () => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
 
-    doc.fill_color = [1.0, 0.0, 0.0];
+    doc.fillColor = [1.0, 0.0, 0.0];
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
     const [_project2, doc2] = _get_text_document(out, "type_text");
-    py_assert(doc2.fill_color != null);
-    expect(doc2.fill_color[0]).toBe(1.0);
-    expect(doc2.fill_color[1]).toBe(0.0);
-    expect(doc2.fill_color[2]).toBe(0.0);
+    py_assert(doc2.fillColor != null);
+    expect(doc2.fillColor[0]).toBe(1.0);
+    expect(doc2.fillColor[1]).toBe(0.0);
+    expect(doc2.fillColor[2]).toBe(0.0);
   });
 });
 
@@ -136,17 +136,17 @@ describe("TestRoundtripWiredAttributes", () => {
 
   test.each([
     ["tsume", 0.5],
-    ["auto_leading", false],
+    ["autoLeading", false],
     ["leading", 60.0],
-    ["auto_kern_type", AutoKernType.OPTICAL_KERN],
-    ["baseline_direction", BaselineDirection.BASELINE_VERTICAL_ROTATED],
+    ["autoKernType", AutoKernType.OPTICAL_KERN],
+    ["baselineDirection", BaselineDirection.BASELINE_VERTICAL_ROTATED],
     ["ligature", true],
-    ["no_break", true],
-    ["digit_set", DigitSet.ARABIC_DIGITS],
-    ["line_join_type", LineJoinType.LINE_JOIN_ROUND],
+    ["noBreak", true],
+    ["digitSet", DigitSet.ARABIC_DIGITS],
+    ["lineJoinType", LineJoinType.LINE_JOIN_ROUND],
     ["direction", ParagraphDirection.DIRECTION_RIGHT_TO_LEFT],
-    ["every_line_composer", true],
-    ["line_orientation", LineOrientation.VERTICAL_RIGHT_TO_LEFT],
+    ["everyLineComposer", true],
+    ["lineOrientation", LineOrientation.VERTICAL_RIGHT_TO_LEFT],
   ])("test_roundtrip[%#]", (attr: string, value: unknown) => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
@@ -165,17 +165,17 @@ describe("TestBoxText", () => {
   test("test_convert_point_to_box", () => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.point_text).toBe(true);
-    expect(doc.box_text_size == null).toBe(true);
+    expect(doc.pointText).toBe(true);
+    expect(doc.boxTextSize == null).toBe(true);
 
-    doc.box_text_size = [320.0, 180.0];
-    expect(doc.box_text).toBe(true);
+    doc.boxTextSize = [320.0, 180.0];
+    expect(doc.boxText).toBe(true);
     const out = tmp_path.div("box.aep");
     project.save(out);
 
     const [_p2, doc2] = _get_text_document(out, "type_text");
-    expect(doc2.box_text).toBe(true);
-    expect(py_eq(doc2.box_text_size, [320.0, 180.0])).toBe(true);
+    expect(doc2.boxText).toBe(true);
+    expect(py_eq(doc2.boxTextSize, [320.0, 180.0])).toBe(true);
   });
 
   test("test_box_text_pos_requires_box", () => {
@@ -183,26 +183,26 @@ describe("TestBoxText", () => {
     raises(
       ValueError,
       () => {
-        doc.box_text_pos = [10.0, 20.0];
+        doc.boxTextPos = [10.0, 20.0];
       },
       "box text",
     );
   });
 
   test.each([
-    ["box_text_size", [240.0, 120.0]],
-    ["box_text_pos", [15.0, 25.0]],
-    ["box_inset_spacing", 4.0],
-    ["box_vertical_alignment", BoxVerticalAlignment.CENTER],
-    ["box_vertical_alignment", BoxVerticalAlignment.JUSTIFY],
-    ["box_auto_fit_policy", BoxAutoFitPolicy.HEIGHT_BASELINE],
-    ["box_first_baseline_alignment", BoxFirstBaselineAlignment.CAP_HEIGHT],
-    ["box_first_baseline_alignment", BoxFirstBaselineAlignment.MINIMUM_VALUE_ROMAN],
-    ["box_first_baseline_alignment_minimum", 7.0],
+    ["boxTextSize", [240.0, 120.0]],
+    ["boxTextPos", [15.0, 25.0]],
+    ["boxInsetSpacing", 4.0],
+    ["boxVerticalAlignment", BoxVerticalAlignment.CENTER],
+    ["boxVerticalAlignment", BoxVerticalAlignment.JUSTIFY],
+    ["boxAutoFitPolicy", BoxAutoFitPolicy.HEIGHT_BASELINE],
+    ["boxFirstBaselineAlignment", BoxFirstBaselineAlignment.CAP_HEIGHT],
+    ["boxFirstBaselineAlignment", BoxFirstBaselineAlignment.MINIMUM_VALUE_ROMAN],
+    ["boxFirstBaselineAlignmentMinimum", 7.0],
   ])("test_box_attr_roundtrip[%#]", (attr: string, value: unknown) => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    doc.box_text_size = [300.0, 150.0]; // convert to box first
+    doc.boxTextSize = [300.0, 150.0]; // convert to box first
     setattr(doc, attr, value);
     const out = tmp_path.div("box.aep");
     project.save(out);
@@ -250,27 +250,27 @@ describe("TestColorAndLeadingNone", () => {
   test("test_fill_color_none_pops_cos_key", () => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.fill_color != null).toBe(true);
+    expect(doc.fillColor != null).toBe(true);
 
-    doc.fill_color = null;
+    doc.fillColor = null;
     expect(doc._char_style != null).toBe(true);
     expect(contains(doc._char_style, "53")).toBe(false);
-    expect(doc.fill_color == null).toBe(true);
+    expect(doc.fillColor == null).toBe(true);
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const [_project2, doc2] = _get_text_document(out, "type_text");
-    expect(doc2.fill_color == null).toBe(true);
+    expect(doc2.fillColor == null).toBe(true);
   });
 
   test("test_stroke_color_none_pops_cos_key", () => {
     const [_project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.stroke_color != null).toBe(true);
+    expect(doc.strokeColor != null).toBe(true);
 
-    doc.stroke_color = null;
+    doc.strokeColor = null;
     expect(doc._char_style != null).toBe(true);
     expect(contains(doc._char_style, "54")).toBe(false);
-    expect(doc.stroke_color == null).toBe(true);
+    expect(doc.strokeColor == null).toBe(true);
   });
 
   test("test_leading_none_does_not_raise", () => {

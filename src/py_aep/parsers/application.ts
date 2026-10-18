@@ -34,7 +34,7 @@ export const parse_app = _suppress_materialization()(function parse_app(
   const head_chunk = find_by_type(root_chunks, "head");
 
   // Collect viewer panels from the folder tree (parsed during parse_folder)
-  const viewers = _collect_viewers(project.root_folder);
+  const viewers = _collect_viewers(project.rootFolder);
   // `next((v for v in viewers if v.active), None)`
   let active_viewer: Viewer | null = null;
   for (const v of viewers) {

@@ -98,24 +98,24 @@ describe("TestWriteEnginePrimitives", () => {
 
   test("test_range_write_on_synthetic_doc", () => {
     const doc = make_doc("abcdefghij\r");
-    new CharacterRange(doc, 3, 7).font_size = 72;
+    new CharacterRange(doc, 3, 7).fontSize = 72;
     const lengths = cos_iter(cos_item(cos_item(cos_item(doc._doc, "0"), "6"), "0")).map((r) => cos_item(r, "1"));
     expect(py_eq(lengths, [3, 4, 4])).toBe(true);
-    expect(new CharacterRange(doc, 3, 7).font_size).toBe(72.0);
+    expect(new CharacterRange(doc, 3, 7).fontSize).toBe(72.0);
     // key absent -> default
-    expect(new CharacterRange(doc, 0, 3).font_size).toBeNull();
+    expect(new CharacterRange(doc, 0, 3).fontSize).toBeNull();
   });
 
   test("test_range_write_validation", () => {
     const doc = make_doc("abcdefghij\r");
     raises(ValueError, () => {
-      new CharacterRange(doc, 0, 5).font_size = 0;
+      new CharacterRange(doc, 0, 5).fontSize = 0;
     });
     // NOTE(port): pytest.raises((TypeError, ValueError)) tuple form checked inline; same accepted exception set.
     let caught: unknown;
     try {
       // @ts-expect-error 5 is not an AutoKernType; the setter must reject it
-      new CharacterRange(doc, 0, 5).auto_kern_type = 5;
+      new CharacterRange(doc, 0, 5).autoKernType = 5;
     } catch (e) {
       caught = e;
     }
@@ -162,7 +162,7 @@ function make_doc(
   // Docs carrying a line cache act as box text (point text derives its
   // composed lines from the paragraphs and never reads the cache).
   // @ts-expect-error duck-typed document (Python SimpleNamespace), not a TextDocument
-  return { _doc: doc, _fonts: [], box_text: line_cache != null };
+  return { _doc: doc, _fonts: [], boxText: line_cache != null };
 }
 
 function line(...segment_counts: number[]): CosDict {
@@ -241,7 +241,7 @@ describe("TestComposedLineSpans", () => {
 
   test("test_box_without_cache", () => {
     const doc = make_doc("abcd\r");
-    setattr(doc, "box_text", true);
+    setattr(doc, "boxText", true);
     expect(_composed_line_spans(doc)).toBeNull();
   });
 
@@ -265,7 +265,7 @@ describe("TestComposedLineSpans", () => {
     ];
     const doc = make_doc("ab\r", null, null, cache);
     const first = new ComposedLineRange(doc, 0, 1);
-    expect(py_eq([first.character_start, first.character_end], [0, 2])).toBe(true);
+    expect(py_eq([first.characterStart, first.characterEnd], [0, 2])).toBe(true);
     raises(ValueError, () => new ComposedLineRange(doc, 1, 2), "ComposedLine index range");
   });
 });
@@ -274,18 +274,18 @@ describe("TestCharacterRangeMath", () => {
   test("test_dynamic_minus_one_end", () => {
     const doc = make_doc("hello\r");
     const rng = new CharacterRange(doc, 0, -1);
-    expect(rng.character_end).toBe(5);
+    expect(rng.characterEnd).toBe(5);
     cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
-    expect(rng.character_end).toBe(2);
+    expect(rng.characterEnd).toBe(2);
   });
 
   test("test_shrink_invalidates_fixed_end", () => {
     const doc = make_doc("hello\r");
     const rng = new CharacterRange(doc, 0, 5);
-    expect(rng.is_range_valid).toBe(true);
+    expect(rng.isRangeValid).toBe(true);
     cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
-    expect(rng.is_range_valid).toBe(false);
-    raises(ValueError, () => rng.character_start, CHARACTER_RANGE_OOB.slice(0, 20));
+    expect(rng.isRangeValid).toBe(false);
+    raises(ValueError, () => rng.characterStart, CHARACTER_RANGE_OOB.slice(0, 20));
   });
 
   test("test_creation_bounds", () => {
@@ -309,7 +309,7 @@ describe("TestCharacterRangeMath", () => {
     ]);
     const rng = new CharacterRange(doc, 0, 6);
     // Stored True vs absent (default None) -> mixed -> None
-    expect(rng.faux_bold).toBeNull();
+    expect(rng.fauxBold).toBeNull();
   });
 
   test("test_gated_color_resolution", () => {
@@ -326,9 +326,9 @@ describe("TestCharacterRangeMath", () => {
       [4, new Map<string, CosNode>([["57", true], ["54", red]])],
     ]);
     // Only the applyStroke run participates: uniform red, not mixed.
-    expect(py_eq(new CharacterRange(doc, 0, 6).stroke_color, [1.0, 0.0, 0.0])).toBe(true);
+    expect(py_eq(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
     // A range over non-stroked runs only reads None.
-    expect(new CharacterRange(doc, 0, 3).stroke_color).toBeNull();
+    expect(new CharacterRange(doc, 0, 3).strokeColor).toBeNull();
   });
 
   test("test_zero_span_uses_containing_run", () => {
@@ -336,22 +336,22 @@ describe("TestCharacterRangeMath", () => {
       [3, new Map<string, CosNode>([["1", 72.0]])],
       [4, new Map<string, CosNode>([["1", 36.0]])],
     ]);
-    expect(new CharacterRange(doc, 2, 2).font_size).toBe(72.0);
+    expect(new CharacterRange(doc, 2, 2).fontSize).toBe(72.0);
     // A caret on a run boundary belongs to the following run.
-    expect(new CharacterRange(doc, 3, 3).font_size).toBe(36.0);
+    expect(new CharacterRange(doc, 3, 3).fontSize).toBe(36.0);
     // EOF caret lands in the final run (which covers the terminator).
-    expect(new CharacterRange(doc, 6, 6).font_size).toBe(36.0);
+    expect(new CharacterRange(doc, 6, 6).fontSize).toBe(36.0);
   });
 });
 
 describe("TestUnassociatedDocuments", () => {
   test("test_template_document_refuses_ranges", () => {
     const doc = new TextDocument("hello");
-    expect(doc.composed_line_count).toBeNull();
-    raises(ValueError, () => doc.character_range(0), "not associated with a layer");
-    raises(ValueError, () => doc.paragraph_range(0), "not associated with a layer");
-    raises(ValueError, () => doc.composed_line_range(0), "not associated with a layer");
-    raises(ValueError, () => doc.paragraph_character_indexes_at(0), "not associated with a layer");
+    expect(doc.composedLineCount).toBeNull();
+    raises(ValueError, () => doc.characterRange(0), "not associated with a layer");
+    raises(ValueError, () => doc.paragraphRange(0), "not associated with a layer");
+    raises(ValueError, () => doc.composedLineRange(0), "not associated with a layer");
+    raises(ValueError, () => doc.paragraphCharacterIndexesAt(0), "not associated with a layer");
   });
 });
 
@@ -376,13 +376,13 @@ describe("TestSpecConsistency", () => {
         );
       }
       const expected_dict_attr = dict_get(KIND_TO_DICT_ATTR, field.kind);
-      if (cos_field.dict_attr !== expected_dict_attr) {
+      if (cos_field.dictAttr !== expected_dict_attr) {
         mismatches.push(
           `${name}: RangeField kind ${repr(field.kind)} vs CosField dict ` +
-            `${repr(cos_field.dict_attr)}`,
+            `${repr(cos_field.dictAttr)}`,
         );
       }
-      if (!field.read_only && field.validate !== cos_field.validate) {
+      if (!field.readOnly && field.validate !== cos_field.validate) {
         mismatches.push(
           `${name}: RangeField validate ${repr(field.validate)} != ` +
             `CosField validate ${repr(cos_field.validate)}`,

@@ -21,15 +21,15 @@ const TABLE: Record<string, Record<string, string>> = CHILD_MATCH_NAMES;
 function misses(layer: Layer): [string, string, string][] {
   const out: [string, string, string][] = [];
   const walk = (group: PropertyGroup): void => {
-    for (const [attr, match_name] of Object.entries(TABLE[group.match_name] ?? {})) {
+    for (const [attr, match_name] of Object.entries(TABLE[group.matchName] ?? {})) {
       let found: string;
       try {
         const child: unknown = Reflect.get(group, attr);
-        found = child instanceof Property || child instanceof PropertyGroup ? child.match_name : String(child);
+        found = child instanceof Property || child instanceof PropertyGroup ? child.matchName : String(child);
       } catch (e) {
         found = e instanceof Error ? e.constructor.name : String(e);
       }
-      if (found !== match_name) out.push([group.match_name, attr, found]);
+      if (found !== match_name) out.push([group.matchName, attr, found]);
     }
     for (const child of group.properties) if (child instanceof PropertyGroup) walk(child);
   };
@@ -57,21 +57,21 @@ describe("child attributes", () => {
     const project = parse_project_fresh("samples/models/composition/renderer_classic_3d.aep");
     const comp = project.compositions[0];
     const created: Layer[] = [
-      comp.add_null(),
-      comp.add_shape(),
-      comp.add_camera(),
-      comp.add_light(),
-      comp.add_text("hello"),
-      comp.add_box_text([200, 100], "box"),
+      comp.addNull(),
+      comp.addShape(),
+      comp.addCamera(),
+      comp.addLight(),
+      comp.addText("hello"),
+      comp.addBoxText([200, 100], "box"),
     ];
     for (const layer of created) expect(misses(layer)).toEqual([]);
   });
 
   test("typed reads", () => {
     const comp = parse_project_fresh("samples/models/composition/renderer_classic_3d.aep").compositions[0];
-    const text = comp.add_text("typed").text;
-    expect(text?.source_text.value.text).toBe("typed");
-    const position: number[] = comp.add_null().transform.position.value;
+    const text = comp.addText("typed").text;
+    expect(text?.sourceText.value.text).toBe("typed");
+    const position: number[] = comp.addNull().transform.position.value;
     expect(position.length).toBeGreaterThan(1);
   });
 });

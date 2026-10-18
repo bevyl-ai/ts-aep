@@ -66,10 +66,10 @@ test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, l
     ) {
       continue;
     }
-    const prop_json = getitem(expected, prop.match_name);
+    const prop_json = getitem(expected, prop.matchName);
     // NOTE(port): Python's `, prop.name` is only a failure message; bun's expect has no message arg, pass/fail is identical.
     expect(approx(prop.value, prop_json.value)).toBe(true);
-    expect(prop.is_modified).toBe(prop_json.isModified);
+    expect(prop.isModified).toBe(prop_json.isModified);
     checked += 1;
   }
   expect(py_bool(checked)).toBe(true);
@@ -87,9 +87,9 @@ test.each([
 ])(
   "test_point_default_is_a_percentage_of_the_layer[%#]",
   (comp_name: string, layer_name: string, match_name: string, default_: number[]) => {
-    const prop = _effect_props(comp_name, layer_name).find((p) => p.match_name === match_name);
+    const prop = _effect_props(comp_name, layer_name).find((p) => p.matchName === match_name);
     if (prop === undefined) throw new StopIteration();
-    expect(approx(prop.default_value, default_, { abs: 1e-9 })).toBe(true);
+    expect(approx(prop.defaultValue, default_, { abs: 1e-9 })).toBe(true);
   },
 );
 
@@ -118,7 +118,7 @@ test.each<[string, number[]]>([
     for (const [match_name, value] of points) {
       const prop = as_instance(transform.property(match_name), Property);
       expect(approx(prop.value, value)).toBe(true);
-      expect(approx(prop.default_value, center)).toBe(true);
+      expect(approx(prop.defaultValue, center)).toBe(true);
     }
   },
 );

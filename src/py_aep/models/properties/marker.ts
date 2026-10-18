@@ -52,12 +52,12 @@ export class MarkerValue {
   declare duration: number;
   declare label: Label;
   declare navigation: boolean;
-  declare protected_region: boolean;
+  declare protectedRegion: boolean;
   declare comment: string;
   declare chapter: string;
   declare url: string;
-  declare frame_target: string;
-  declare cue_point_name: string;
+  declare frameTarget: string;
+  declare cuePointName: string;
 
   constructor(
     comment: string = "",
@@ -185,17 +185,17 @@ export class MarkerValue {
   }
 
   /** The time of the marker, in frames. */
-  get frame_time(): number {
+  get frameTime(): number {
     if (this._keyframe != null) {
-      return this._keyframe.frame_time;
+      return this._keyframe.frameTime;
     }
     return this._frame_time;
   }
 
-  set frame_time(value: number) {
+  set frameTime(value: number) {
     validate_int(value);
     if (this._keyframe != null) {
-      this._keyframe.frame_time = value;
+      this._keyframe.frameTime = value;
     } else {
       this._frame_time = value;
     }
@@ -207,11 +207,11 @@ export class MarkerValue {
    * @throws {@link ValueError} If the marker is not set on a marker property yet, so it has no
    *   composition frame rate.
    */
-  get frame_duration(): number {
+  get frameDuration(): number {
     return round(this.duration * this._frame_rate());
   }
 
-  set frame_duration(value: number) {
+  set frameDuration(value: number) {
     validate_u4(value);
     this.duration = value / this._frame_rate();
   }
@@ -230,7 +230,7 @@ export class MarkerValue {
    * When `true`, the FlashVideo cue point is for an event; otherwise, it is
    * for navigation.
    */
-  get event_cue_point(): boolean {
+  get eventCuePoint(): boolean {
     return !this.navigation;
   }
 }
@@ -254,7 +254,7 @@ descriptor(MarkerValue, "navigation", ChunkField.bool("_nmhd", "navigation"));
  * also return `true` for protected region markers on nested composition
  * layers, but is otherwise not applicable to layer markers. Read / Write.
  */
-descriptor(MarkerValue, "protected_region", ChunkField.bool("_nmhd", "protected_region"));
+descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protected_region"));
 
 /**
  * A text comment for this marker. This comment appears in the Timeline panel
@@ -276,7 +276,7 @@ descriptor(MarkerValue, "url", new ChunkField("_url_utf8", "value"));
  * A text frame target for this marker. Together with the URL value, this
  * targets a specific frame within a Web page. Read / Write.
  */
-descriptor(MarkerValue, "frame_target", new ChunkField("_frame_target_utf8", "value"));
+descriptor(MarkerValue, "frameTarget", new ChunkField("_frame_target_utf8", "value"));
 
 /** The Flash Video cue point name, as shown in the Marker dialog box. Read / Write. */
-descriptor(MarkerValue, "cue_point_name", new ChunkField("_cue_point_name_utf8", "value"));
+descriptor(MarkerValue, "cuePointName", new ChunkField("_cue_point_name_utf8", "value"));

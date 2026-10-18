@@ -40,9 +40,9 @@ type Hdr10Meta = Map<string, JsonValue>;
  * import { PngFormatOptions, parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof PngFormatOptions) {
- *   console.log(om.format_options.compression);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof PngFormatOptions) {
+ *   console.log(om.formatOptions.compression);
  * }
  * ```
  */
@@ -79,7 +79,7 @@ export class PngFormatOptions extends FormatOptionsBase {
    * output module's `Depth` setting. After Effects renders the module's
    * `Depth` (AE 2026), so change that rather than this field. Read / Write.
    */
-  declare bit_depth: number;
+  declare bitDepth: number;
 
   /**
    * The PNG compression / interlace mode. Corresponds to the
@@ -101,11 +101,11 @@ export class PngFormatOptions extends FormatOptionsBase {
    * Corresponds to the `Include HDR10 Metadata` checkbox in the PNG
    * Options dialog. Only available for 16-bit output. Read / Write.
    */
-  get include_hdr10_metadata(): boolean {
+  get includeHdr10Metadata(): boolean {
     return py_bool(dict_get(this._hdr10_meta, "colorMetadataPresent", false));
   }
 
-  set include_hdr10_metadata(value: boolean) {
+  set includeHdr10Metadata(value: boolean) {
     this._hdr10_meta.set("colorMetadataPresent", !!value);
     this._sync_hdr10();
   }
@@ -117,13 +117,13 @@ export class PngFormatOptions extends FormatOptionsBase {
    * out-of-enum stored value reads back as a raw `int` (the binary
    * is trusted). Read / Write.
    */
-  get color_primaries(): Hdr10ColorPrimaries | JsonValue {
+  get colorPrimaries(): Hdr10ColorPrimaries | JsonValue {
     const raw = this._hdr10_meta.get("displayPrimaries") ?? null;
     if (raw == null) return Hdr10ColorPrimaries.P3_D65;
     return enum_or_raw((v: JsonValue) => Hdr10ColorPrimaries.of(json_int(v)))(raw);
   }
 
-  set color_primaries(value: Hdr10ColorPrimaries) {
+  set colorPrimaries(value: Hdr10ColorPrimaries) {
     validate_enum(Hdr10ColorPrimaries)(value);
     this._hdr10_meta.set("displayPrimaries", int(value));
     this._sync_hdr10();
@@ -134,12 +134,12 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `null` if not explicitly set. Corresponds to the
    * `Luminance Minimum` field in the PNG Options dialog. Read / Write.
    */
-  get luminance_min(): number | null {
+  get luminanceMin(): number | null {
     const raw = this._hdr10_meta.get("minLuminance") ?? null;
     return raw != null ? json_float(raw) : null;
   }
 
-  set luminance_min(value: number | null) {
+  set luminanceMin(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("minLuminance");
     } else {
@@ -154,12 +154,12 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `null` if not explicitly set. Corresponds to the
    * `Luminance Maximum` field in the PNG Options dialog. Read / Write.
    */
-  get luminance_max(): number | null {
+  get luminanceMax(): number | null {
     const raw = this._hdr10_meta.get("maxLuminance") ?? null;
     return raw != null ? json_float(raw) : null;
   }
 
-  set luminance_max(value: number | null) {
+  set luminanceMax(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxLuminance");
     } else {
@@ -174,12 +174,12 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `null` if not explicitly set. Corresponds to the
    * `Content Light Maximum` field in the PNG Options dialog. Read / Write.
    */
-  get content_light_max(): number | null {
+  get contentLightMax(): number | null {
     const raw = this._hdr10_meta.get("maxContentLightLevel") ?? null;
     return raw != null ? json_float(raw) : null;
   }
 
-  set content_light_max(value: number | null) {
+  set contentLightMax(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxContentLightLevel");
     } else {
@@ -194,12 +194,12 @@ export class PngFormatOptions extends FormatOptionsBase {
    * or `null` if not explicitly set. Corresponds to the
    * `Content Light Average` field in the PNG Options dialog. Read / Write.
    */
-  get content_light_average(): number | null {
+  get contentLightAverage(): number | null {
     const raw = this._hdr10_meta.get("maxFrameAverageLightLevel") ?? null;
     return raw != null ? json_float(raw) : null;
   }
 
-  set content_light_average(value: number | null) {
+  set contentLightAverage(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxFrameAverageLightLevel");
     } else {
@@ -214,7 +214,7 @@ descriptor(PngFormatOptions, "width", new ChunkField("_body", "width", { read_on
 descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { read_only: true }));
 descriptor(
   PngFormatOptions,
-  "bit_depth",
+  "bitDepth",
   new ChunkField("_body", "bit_depth", { validate: validate_one_of([8, 16]) }),
 );
 descriptor(

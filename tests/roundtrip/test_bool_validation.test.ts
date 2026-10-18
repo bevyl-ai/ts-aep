@@ -36,10 +36,10 @@ const VIEW = SAMPLES.div("models", "view", "grid_on.aep");
 function _file_source(): FootageSource {
   const project = parse_project_fresh(FOOTAGE);
   const footage = project.footages.find(
-    (f) => getattr(f, "main_source", null)?.constructor?.name === "FileSource",
+    (f) => getattr(f, "mainSource", null)?.constructor?.name === "FileSource",
   );
   if (footage === undefined) throw new StopIteration();
-  return footage.main_source;
+  return footage.mainSource;
 }
 
 function _first_mask(): MaskPropertyGroup {
@@ -60,12 +60,12 @@ const CASES: [string, () => object, string][] = [
   [
     "comp.motion_blur",
     () => parse_project_fresh(LAYER).compositions[0],
-    "motion_blur",
+    "motionBlur",
   ],
   [
     "comp.frame_blending",
     () => parse_project_fresh(LAYER).compositions[0],
-    "frame_blending",
+    "frameBlending",
   ],
   [
     "layer.enabled",
@@ -81,16 +81,16 @@ const CASES: [string, () => object, string][] = [
   [
     "project.frames_use_feet_frames",
     () => parse_project_fresh(LAYER),
-    "frames_use_feet_frames",
+    "framesUseFeetFrames",
   ],
-  ["footage.invert_alpha", _file_source, "invert_alpha"],
+  ["footage.invert_alpha", _file_source, "invertAlpha"],
   ["mask.inverted", _first_mask, "inverted"],
-  ["view.grid", () => as_instance(parse_app_fresh(VIEW).active_viewer, Viewer).views[0].options, "grid"],
+  ["view.grid", () => as_instance(parse_app_fresh(VIEW).activeViewer, Viewer).views[0].options, "grid"],
   ["import.sequence", () => new ImportOptions(str(LAYER)), "sequence"],
   [
     "import.force_alphabetical",
     () => new ImportOptions(str(LAYER)),
-    "force_alphabetical",
+    "forceAlphabetical",
   ],
 ];
 
@@ -130,14 +130,14 @@ describe("TestBoolPersists", () => {
     const project = parse_project_fresh(LAYER);
     const comp = project.compositions[0];
     const layer = comp.layers[0];
-    comp.motion_blur = true;
+    comp.motionBlur = true;
     layer.solo = true;
     const out = tmp_path.div("bools.aep");
     project.save(out);
 
     const project2 = parse_project_fresh(out);
     const comp2 = project2.compositions[0];
-    expect(comp2.motion_blur).toBe(true);
+    expect(comp2.motionBlur).toBe(true);
     expect(comp2.layers[0].solo).toBe(true);
   });
 });

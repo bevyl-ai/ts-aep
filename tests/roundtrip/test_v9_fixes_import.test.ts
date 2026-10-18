@@ -43,7 +43,7 @@ function _project(base: Path = BASE): Project {
 }
 
 type ImportOptionValues = Partial<
-  Pick<ImportOptions, "import_as" | "sequence" | "force_alphabetical" | "layer_index" | "layer_dimensions" | "layer_styles" | "range_start" | "range_end">
+  Pick<ImportOptions, "importAs" | "sequence" | "forceAlphabetical" | "layerIndex" | "layerDimensions" | "layerStyles" | "rangeStart" | "rangeEnd">
 >;
 
 function _import(project: Project, path: Path, options: ImportOptionValues = {}): FootageItem | CompItem {
@@ -51,20 +51,20 @@ function _import(project: Project, path: Path, options: ImportOptionValues = {})
   // setattr(opts, key, value) for each option: Object.assign runs the setters.
   Object.assign(opts, options);
   // NOTE(port): warnings.simplefilter("ignore") only silences output; pyrt warn records without echoing, so import_file behaves the same
-  return project.import_file(opts);
+  return project.importFile(opts);
 }
 
 // The FileSource behind an imported footage item.
 function _file_source(item: AVItem): FileSource {
-  return as_instance(as_instance(item, FootageItem).main_source, FileSource);
+  return as_instance(as_instance(item, FootageItem).mainSource, FileSource);
 }
 
 function _layer_footage(project: Project, file_name: string): FootageItem[] {
   return project.footages.filter(
     (item) =>
-      item.main_source instanceof FileSource &&
-      nodepath.win32.basename(fspath(item.main_source.file)) === file_name &&
-      py_bool(item.main_source.layer_name),
+      item.mainSource instanceof FileSource &&
+      nodepath.win32.basename(fspath(item.mainSource.file)) === file_name &&
+      py_bool(item.mainSource.layerName),
   );
 }
 
@@ -235,12 +235,12 @@ test.each([
 // --- C1 / C12: reload --------------------------------------------------
 
 test.each([
-  ["layer_bounds.psd", { import_as: ImportAsType.COMP_CROPPED_LAYERS }],
-  ["layer_bounds.psd", { import_as: ImportAsType.COMP }],
-  ["psd_layer_styles.psd", { layer_index: 0, layer_styles: "ignore" }],
-  ["layer_bounds.psd", { layer_index: 0, layer_dimensions: "layer" }],
-  ["ai.ai", { import_as: ImportAsType.COMP }],
-  ["ai.ai", { layer_index: 0, layer_dimensions: "layer" }],
+  ["layer_bounds.psd", { importAs: ImportAsType.COMP_CROPPED_LAYERS }],
+  ["layer_bounds.psd", { importAs: ImportAsType.COMP }],
+  ["psd_layer_styles.psd", { layerIndex: 0, layerStyles: "ignore" }],
+  ["layer_bounds.psd", { layerIndex: 0, layerDimensions: "layer" }],
+  ["ai.ai", { importAs: ImportAsType.COMP }],
+  ["ai.ai", { layerIndex: 0, layerDimensions: "layer" }],
 ])("test_reload_keeps_the_layer_binding[%#]", (asset: string, options: ImportOptionValues) => {
   const tmp_path = make_tmp_path();
   // AE 2026 reloads a layer-bound source as that same layer (a cropped
@@ -301,11 +301,11 @@ test.each([["mov_23_976.mov"], ["dpx_seq.0001.dpx"]])("test_tiny_conform_rate_is
   const item = _import(project, ASSETS.div(asset), { sequence: asset.endsWith(".dpx") });
   const before = project_bytes(project);
   raises(ValueError, () => {
-    _file_source(item).conform_frame_rate = 0.0004;
+    _file_source(item).conformFrameRate = 0.0004;
   }, "0.0005");
   expect(py_eq(project_bytes(project), before)).toBe(true);
-  _file_source(item).conform_frame_rate = 0.0005;
-  expect(approx(_file_source(item).conform_frame_rate, 0.0005, { abs: 1e-5 })).toBe(true);
+  _file_source(item).conformFrameRate = 0.0005;
+  expect(approx(_file_source(item).conformFrameRate, 0.0005, { abs: 1e-5 })).toBe(true);
 });
 
 // --- C6: footage size ------------------------------------------------------
@@ -328,7 +328,7 @@ test("test_footage_wider_than_32767_px_is_rejected_unmodified", () => {
     }
     for (const how of [ImportAsType.FOOTAGE, ImportAsType.COMP]) {
       if (how === ImportAsType.COMP && path.suffix !== ".psd") continue;
-      raises(ValueError, () => _import(project, path, { import_as: how }), "32767");
+      raises(ValueError, () => _import(project, path, { importAs: how }), "32767");
       expect(py_eq(project_bytes(project), before)).toBe(true);
     }
   }
@@ -345,7 +345,7 @@ test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidde
     _psd_record("visible", [0, 0, 8, 8], { lyid: 2 }),
     _psd_record("hidden", [4, 4, 12, 12], { hidden: true, lyid: 3 }),
   ]);
-  const comp = as_instance(_import(_project(), path, { import_as: how }), CompItem);
+  const comp = as_instance(_import(_project(), path, { importAs: how }), CompItem);
   const enabled = new Map(comp.layers.map((layer) => [String(layer.name), layer.enabled] as const));
   expect(py_eq(enabled, new Map([["hidden", false], ["visible", true]]))).toBe(true);
 });
@@ -360,7 +360,7 @@ test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidde
     _psd_record("hidden group", [0, 0, 0, 0], { hidden: true, lsct: 1, lyid: 12 }),
     _psd_record("top visible", [8, 8, 16, 16], { lyid: 13 }),
   ]);
-  const comp = as_instance(_import(_project(), path, { import_as: how }), CompItem);
+  const comp = as_instance(_import(_project(), path, { importAs: how }), CompItem);
   const layers = new Map<string, Layer>(comp.layers.map((layer) => [String(layer.name), layer] as const));
   expect(getitem(layers, "top visible").enabled).toBe(true);
   const group = getitem(layers, "hidden group");
@@ -382,10 +382,10 @@ test("test_layer_ids_without_lyid_number_from_two", () => {
     _psd_record("b", [8, 8, 16, 16]),
   ]);
   const project = _project();
-  _import(project, path, { import_as: ImportAsType.COMP });
+  _import(project, path, { importAs: ImportAsType.COMP });
   const ids = new Map(
     _layer_footage(project, path.name).map(
-      (item) => [String(_file_source(item).layer_name), _file_source(item)._sspc.layer_id] as const,
+      (item) => [String(_file_source(item).layerName), _file_source(item)._sspc.layer_id] as const,
     ),
   );
   expect(py_eq(ids, new Map([["a", 2], ["b", 3]]))).toBe(true);
@@ -405,7 +405,7 @@ test("test_photoshop_layer_count_above_255", () => {
   const project = _project();
   const merged = _import(project, path);
   expect(_file_source(merged)._opti.psd_layer_count).toBe(300);
-  const layer = _import(project, path, { layer_index: 0 });
+  const layer = _import(project, path, { layerIndex: 0 });
   expect(_file_source(layer)._opti.psd_layer_count).toBe(300);
 });
 
@@ -414,7 +414,7 @@ test("test_long_photoshop_layer_name_is_cut_to_255_bytes", () => {
   // AE 2026 keeps the longest UTF-8 prefix of 255 bytes for the comp layer.
   const name = "été 日本 " + "x".repeat(300);
   const path = _psd(tmp_path.div("long.psd"), 16, [_psd_record(name, [0, 0, 8, 8], { lyid: 2 })]);
-  const comp = as_instance(_import(_project(), path, { import_as: ImportAsType.COMP }), CompItem);
+  const comp = as_instance(_import(_project(), path, { importAs: ImportAsType.COMP }), CompItem);
   const layer_name = String(comp.layers[0].name);
   expect(len(encode(layer_name, "utf-8"))).toBe(255);
   expect(name.startsWith(String(layer_name))).toBe(true);
@@ -425,7 +425,7 @@ test("test_background_layer_is_named_background", () => {
   // file stores (a French Photoshop's "Arrière-plan"; footage_depth.aep).
   const asset = ASSETS.div("depth", "psd_rgb8_bg_layer.psd");
   expect(list_layers(asset).at(-1)).toBe("Background");
-  const comp = as_instance(_import(_project(), asset, { import_as: ImportAsType.COMP }), CompItem);
+  const comp = as_instance(_import(_project(), asset, { importAs: ImportAsType.COMP }), CompItem);
   expect(py_eq(comp.layers.map((layer) => String(layer.name)), ["Layer 1", "Background"])).toBe(true);
 });
 
@@ -438,7 +438,7 @@ test.each([
   // As in AE's cropped-comp import of the same layer (fixtures
   // grouped_layers_cropped / psd_clipping_mask_cropped); 0x0 before.
   const index = list_layers(ASSETS.div(asset)).indexOf(layer_name);
-  const item = _import(_project(), ASSETS.div(asset), { layer_index: index, layer_dimensions: "layer" });
+  const item = _import(_project(), ASSETS.div(asset), { layerIndex: index, layerDimensions: "layer" });
   expect(py_eq([item.width, item.height], size)).toBe(true);
   expect(_file_source(item)._sspc.full_frame).toBe(false);
 });
@@ -446,7 +446,7 @@ test.each([
 test("test_replace_current_value_keeps_an_empty_cropped_layer", () => {
   const project = _project();
   _import(project, ASSETS.div("grouped_layers.psd"), {
-    import_as: ImportAsType.COMP_CROPPED_LAYERS,
+    importAs: ImportAsType.COMP_CROPPED_LAYERS,
   });
   const item = project.footages.find((f) => String(f.name) === "hue/sat adj/grouped_layers.psd");
   py_assert(item != null, "StopIteration");
@@ -488,10 +488,10 @@ test("test_huge_frame_range_with_a_fractional_rate_saves", () => {
   const project = _project();
   const item = _import(project, ASSETS.div("dpx_seq.0001.dpx"), {
     sequence: true,
-    range_start: 1,
-    range_end: 2 ** 32 - 1,
+    rangeStart: 1,
+    rangeEnd: 2 ** 32 - 1,
   });
-  _file_source(item).conform_frame_rate = 29.97;
+  _file_source(item).conformFrameRate = 29.97;
   project.save(tmp_path.div("range.aep"));
   const expected = (2 ** 32 - 1) / 29.97;
   expect(approx(item.duration, expected, { rel: 1e-6 })).toBe(true);
@@ -501,7 +501,7 @@ test("test_replace_with_sequence_validates_force_alphabetical", () => {
   const item = as_instance(_import(_project(), ASSETS.div("image_with_alpha.png")), FootageItem);
   raises(TypeError_, () =>
     // @ts-expect-error deliberately passes a number force_alphabetical to check runtime validation
-    item.replace_with_sequence(ASSETS.div("dpx_seq.0001.dpx"), 1),
+    item.replaceWithSequence(ASSETS.div("dpx_seq.0001.dpx"), 1),
   );
 });
 
@@ -638,7 +638,7 @@ test.each([
   // AE 2026 imports HEIC with Interpret As Linear Light off on both
   // platforms (these fixtures, and a scripted import on Windows).
   const truth = new Map(
-    parse_aep(fixture).project.footages.map((f) => [String(f.name), as_instance(f.main_source, FileSource)] as const),
+    parse_aep(fixture).project.footages.map((f) => [String(f.name), as_instance(f.mainSource, FileSource)] as const),
   );
   const project = parse_aep(fixture, { platform }).project;
   const ours = _file_source(_import(project, ASSETS.div(asset)));
@@ -680,13 +680,13 @@ test("test_idta_stamp_follows_the_file_in_use", () => {
   const project = _project();
   const item = as_instance(_import(project, main), FootageItem);
   expect(py_eq(_stamp(item), _mac(1_610_000_000))).toBe(true);
-  item.set_proxy(proxy);
+  item.setProxy(proxy);
   expect(py_eq(_stamp(item), _mac(1_610_002_000))).toBe(true);
-  item.use_proxy = false;
+  item.useProxy = false;
   expect(py_eq(_stamp(item), _mac(1_610_000_000))).toBe(true);
-  item.use_proxy = true;
+  item.useProxy = true;
   expect(py_eq(_stamp(item), _mac(1_610_002_000))).toBe(true);
-  item.set_proxy_to_none();
+  item.setProxyToNone();
   expect(py_eq(_stamp(item), _mac(1_610_000_000))).toBe(true);
   item.replace(other);
   expect(py_eq(_stamp(item), _mac(1_610_003_000))).toBe(true);
@@ -715,11 +715,11 @@ test("test_idta_stamp_of_sequences_placeholders_and_comps", () => {
   const project = _project();
   const item = as_instance(_import(project, folder.div("s_001.png"), { sequence: true }), FootageItem);
   expect(py_eq(_stamp(item), _mac(1_610_006_000))).toBe(true);
-  item.set_proxy_with_placeholder("PP", 10, 10, 25.0, 1.0);
-  item.replace_with_placeholder("RP", 10, 10, 25.0, 1.0);
+  item.setProxyWithPlaceholder("PP", 10, 10, 25.0, 1.0);
+  item.replaceWithPlaceholder("RP", 10, 10, 25.0, 1.0);
   expect(py_eq(_stamp(item), _mac(1_610_006_000))).toBe(true);
-  const comp = project.root_folder.add_comp("C", 100, 100, 1.0, 1.0, 25.0);
+  const comp = project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
   const before = _stamp(comp);
-  comp.set_proxy(folder.div("s_001.png"));
+  comp.setProxy(folder.div("s_001.png"));
   expect(py_eq(_stamp(comp), before)).toBe(true);
 });

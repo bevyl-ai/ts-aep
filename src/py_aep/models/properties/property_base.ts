@@ -72,7 +72,7 @@ export const _TEXT_ANIMATOR_TOGGLEABLE: ReadonlySet<string> = new Set<string>([
 
 export function _validate_enabled(value: boolean, obj: PropertyBase): void {
   validate_bool(value);
-  if (!obj.can_set_enabled) {
+  if (!obj.canSetEnabled) {
     throw new AttributeError("'enabled' is read-only when 'can_set_enabled' is False.");
   }
 }
@@ -106,7 +106,7 @@ export function _renumber_mask_auto_names(parent: PropertyGroup): void {
 export function _clear_mask_references(mask: MaskPropertyGroup): void {
   const mask_id = mask._mkif.mask_id;
   for (const prop of mask._containing_layer._leaf_properties()) {
-    if (prop.property_value_type !== PropertyValueType.MASK_INDEX) continue;
+    if (prop.propertyValueType !== PropertyValueType.MASK_INDEX) continue;
     const tdli = prop._tdli_chunk();
     if (tdli == null || tdli.value !== mask_id) continue;
     tdli.value = 0;
@@ -296,7 +296,7 @@ export class PropertyBase {
    * in scripts. Every property has a unique match-name identifier.
    * Read-only.
    */
-  get match_name(): string {
+  get matchName(): string {
     return this._match_name;
   }
 
@@ -305,7 +305,7 @@ export class PropertyBase {
    * and the containing layer. The value is 0 for a layer.
    * Read-only.
    */
-  get property_depth(): number {
+  get propertyDepth(): number {
     return this._property_depth;
   }
 
@@ -322,7 +322,7 @@ export class PropertyBase {
    * When `true`, this property is an effect {@link PropertyGroup}.
    * Read-only.
    */
-  get is_effect(): boolean {
+  get isEffect(): boolean {
     return this._is_effect;
   }
 
@@ -330,7 +330,7 @@ export class PropertyBase {
    * When `true`, this property is a mask {@link PropertyGroup}.
    * Read-only.
    */
-  get is_mask(): boolean {
+  get isMask(): boolean {
     return this._is_mask;
   }
 
@@ -339,7 +339,7 @@ export class PropertyBase {
    * `PropertyType.NAMED_GROUP`, or `PropertyType.INDEXED_GROUP`.
    * Read-only.
    */
-  get property_type(): PropertyType {
+  get propertyType(): PropertyType {
     return this._property_type;
   }
 
@@ -347,14 +347,14 @@ export class PropertyBase {
    * The parent {@link PropertyGroup} of this property, or `null` for
    * top-level layer property groups. Read-only.
    */
-  get parent_property(): PropertyGroup | null {
+  get parentProperty(): PropertyGroup | null {
     return this._parent_property;
   }
 
   /** The automatic (display) name derived from `match_name`. */
-  get auto_name(): string {
+  get autoName(): string {
     if (this._auto_name != null) return this._auto_name;
-    return MATCH_NAME_TO_AUTO_NAME.get(this.match_name) ?? this.match_name;
+    return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
   }
 
   /**
@@ -372,7 +372,7 @@ export class PropertyBase {
       const text: string = split(this._name_utf8.value, "\0")[0];
       if (text && text !== TDSN_SENTINEL) return text;
     }
-    return this.auto_name;
+    return this.autoName;
   }
 
   set name(value: string) {
@@ -381,14 +381,14 @@ export class PropertyBase {
     // property name - `Layer.name` extends this setter and is always
     // writable.
     const parent = this._parent_property;
-    if (!("_ldta" in this) && (parent == null || parent.property_type !== PropertyType.INDEXED_GROUP)) {
+    if (!("_ldta" in this) && (parent == null || parent.propertyType !== PropertyType.INDEXED_GROUP)) {
       // Materializing a synthetic property just to hold a name AE
       // would not accept writes a truncated LIST:tdbs (no cdat, no
       // tdum/tduM) for MARKER and NO_VALUE properties, which makes
       // AE reject the whole project as damaged.
-      const where = parent == null ? "a root property" : repr(parent.match_name);
+      const where = parent == null ? "a root property" : repr(parent.matchName);
       throw new ValueError(
-        `Cannot set the name of ${repr(this.match_name)}: its parent ` +
+        `Cannot set the name of ${repr(this.matchName)}: its parent ` +
           `(${where}) is not an indexed group. Only masks, effects, ` +
           `text animators and shape groups can be renamed.`,
       );
@@ -401,7 +401,7 @@ export class PropertyBase {
   }
 
   /** `true` if the name has been explicitly set by the user. Read-only. */
-  get is_name_set(): boolean {
+  get isNameSet(): boolean {
     if (this._name != null) return true;
     if (this._name_utf8 != null) {
       const text: string = split(this._name_utf8.value, "\0")[0];
@@ -421,13 +421,13 @@ export class PropertyBase {
    * Returns `null` for layers (property depth 0).
    *
    * **Warning:** Unlike ExtendScript (1-based), this uses Python's 0-based
-   * convention so that `group.properties[prop.property_index]`
+   * convention so that `group.properties[prop.propertyIndex]`
    * works directly.
    * Read-only.
    */
-  get property_index(): number | null {
-    const parent = this.parent_property;
-    if (this.property_depth === 0 || parent == null) return null;
+  get propertyIndex(): number | null {
+    const parent = this.parentProperty;
+    if (this.propertyDepth === 0 || parent == null) return null;
     return list_index<PropertyBase>(parent.properties, this);
   }
 
@@ -438,10 +438,10 @@ export class PropertyBase {
    * vector groups, text path options, and the Layer Styles group
    * and its individual styles. Read-only.
    */
-  get can_set_enabled(): boolean {
-    if (this.property_depth === 0) return true;
-    if (this.is_effect) return true;
-    const mn = this.match_name;
+  get canSetEnabled(): boolean {
+    if (this.propertyDepth === 0) return true;
+    if (this.isEffect) return true;
+    const mn = this.matchName;
     if (mn === "ADBE Text Path Options") return true;
     // A text animator and each text selector can be toggled.
     if (_TEXT_ANIMATOR_TOGGLEABLE.has(mn)) return true;
@@ -463,7 +463,7 @@ export class PropertyBase {
         "ADBE Vector Materials Group",
       ].includes(mn)
     ) {
-      return this.property_type === PropertyType.NAMED_GROUP || this.property_type === PropertyType.INDEXED_GROUP;
+      return this.propertyType === PropertyType.NAMED_GROUP || this.propertyType === PropertyType.INDEXED_GROUP;
     }
     return false;
   }
@@ -475,21 +475,21 @@ export class PropertyBase {
    * a ValueError if the property is not attached to a layer.
    */
   get _containing_layer(): Layer {
-    let node: PropertyBase | null = this.parent_property;
+    let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
       if ("_ldta" in node && node instanceof _layer().Layer) return node;
-      node = node.parent_property;
+      node = node.parentProperty;
     }
     throw new ValueError("Property is not attached to a layer");
   }
 
   /** Check if this property is inside an effect PropertyGroup. */
   _is_in_effect(): boolean {
-    let node: PropertyBase | null = this.parent_property;
+    let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
-      if (node.is_effect) return true;
+      if (node.isEffect) return true;
       if ("_ldta" in node) break;
-      node = node.parent_property;
+      node = node.parentProperty;
     }
     return false;
   }
@@ -503,7 +503,7 @@ export class PropertyBase {
    * or if it is an indexed group with children (adding items to an
    * indexed group like Effects or Masks is itself a modification).
    */
-  get is_modified(): boolean {
+  get isModified(): boolean {
     return false;
   }
 
@@ -516,8 +516,8 @@ export class PropertyBase {
   _can_mutate(): [PropertyGroup, ListChunk] {
     const parent = this._parent_property;
     if (parent == null) throw new ValueError("Cannot mutate a root property");
-    if (parent.property_type !== PropertyType.INDEXED_GROUP) {
-      throw new ValueError(`Cannot mutate property in non-indexed group '${parent.match_name}'`);
+    if (parent.propertyType !== PropertyType.INDEXED_GROUP) {
+      throw new ValueError(`Cannot mutate property in non-indexed group '${parent.matchName}'`);
     }
     // Indexed groups always have a backing tdgp.
     return [parent, parent._tdgp as ListChunk];
@@ -576,10 +576,10 @@ export class PropertyBase {
     const [start, end] = this._find_chunk_span(parent_tdgp);
     const removed = parent_tdgp.chunks.splice(start, end - start);
     _effect().rehome_effect_definitions(
-      this._containing_layer.containing_comp._project,
+      this._containing_layer.containingComp._project,
       removed
         .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
-        .map((chunk): [string, ListChunk] => [this.match_name, chunk]),
+        .map((chunk): [string, ListChunk] => [this.matchName, chunk]),
     );
     list_remove<PropertyBase>(parent.properties, this);
     if (this._is_mask) _renumber_mask_auto_names(parent);
@@ -594,7 +594,7 @@ export class PropertyBase {
    * @throws {@link ValueError} If this property is not in an indexed group.
    * @throws {@link IndexError} If `new_index` is out of range.
    */
-  move_to(new_index: number): void {
+  moveTo(new_index: number): void {
     const [parent, parent_tdgp] = this._can_mutate();
 
     const num_props = parent.properties.length;
@@ -678,7 +678,7 @@ export class PropertyBase {
   _parse_clone(cloned: Chunk[], parent: PropertyGroup): Property | PropertyGroup {
     // Determine the composition context
     const layer = this._containing_layer;
-    const comp = layer.containing_comp;
+    const comp = layer.containingComp;
 
     // Get effect param defs from the project
     let effect_param_defs: EffectParamDefs = new Map();

@@ -18,9 +18,9 @@ import type { RoptChunk } from "../../../binary/render_chunks.ts";
  * import { JpegFormatOptions, parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof JpegFormatOptions) {
- *   console.log(om.format_options.quality);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof JpegFormatOptions) {
+ *   console.log(om.formatOptions.quality);
  * }
  * ```
  */
@@ -43,7 +43,7 @@ export class JpegFormatOptions extends FormatOptionsBase {
    * or Progressive. An out-of-enum stored value reads back as a raw
    * `int` (the binary is trusted). Read / Write.
    */
-  declare format_type: JpegFormatType | number;
+  declare formatType: JpegFormatType | number;
 
   /**
    * Number of progressive scans (3, 4, or 5). Only relevant when
@@ -62,7 +62,7 @@ descriptor(
 
 descriptor(
   JpegFormatOptions,
-  "format_type",
+  "formatType",
   ChunkField.enum(JpegFormatType, "_body", "format_type", {
     allow_out_of_enum_values: true,
   }),

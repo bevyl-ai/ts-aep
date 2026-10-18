@@ -81,9 +81,9 @@ export type RenderSettingValues = SettingValues & {
   "Resolution": RenderQueueItem["_resolution"];
   "Skip Existing Files": RenderQueueItem["_skip_existing_files"];
   "Solo Switches": RenderQueueItem["_solo_switches"];
-  "Time Span Duration": RenderQueueItem["time_span_duration"];
-  "Time Span End": RenderQueueItem["time_span_end"];
-  "Time Span Start": RenderQueueItem["time_span_start"];
+  "Time Span Duration": RenderQueueItem["timeSpanDuration"];
+  "Time Span End": RenderQueueItem["timeSpanEnd"];
+  "Time Span Start": RenderQueueItem["timeSpanStart"];
   "Time Span": RenderQueueItem["_time_span_source"];
   "Use comp's frame rate": RenderQueueItem["_comp_frame_rate"];
   "Use this frame rate": RenderQueueItem["_use_this_frame_rate"];
@@ -108,9 +108,9 @@ export const RENDER_SETTINGS: SettingsSpec = new Map([
   ["Resolution", ["_resolution", null]],
   ["Skip Existing Files", ["_skip_existing_files", null]],
   ["Solo Switches", ["_solo_switches", SoloSwitchesSetting]],
-  ["Time Span Duration", ["time_span_duration", null]],
-  ["Time Span End", ["time_span_end", null]],
-  ["Time Span Start", ["time_span_start", null]],
+  ["Time Span Duration", ["timeSpanDuration", null]],
+  ["Time Span End", ["timeSpanEnd", null]],
+  ["Time Span Start", ["timeSpanStart", null]],
   ["Time Span", ["_time_span_source", TimeSpanSource]],
   ["Use comp's frame rate", ["_comp_frame_rate", null]],
   ["Use this frame rate", ["_use_this_frame_rate", null]],
@@ -125,7 +125,7 @@ export const RENDER_SETTINGS: SettingsSpec = new Map([
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const rq_item = app.project.render_queue.items[0];
+ * const rq_item = app.project.renderQueue.items[0];
  * console.log(rq_item.status);
  * for (const output_module of rq_item) {
  *   // ...
@@ -141,13 +141,13 @@ export class RenderQueueItem {
    * The number of seconds that have elapsed in rendering this item.
    * Read-only.
    */
-  declare elapsed_seconds: number;
+  declare elapsedSeconds: number;
 
   /**
    * A log type for this item, indicating which events should be logged
    * while this item is being rendered. Read / Write.
    */
-  declare log_type: LogType;
+  declare logType: LogType;
 
   /**
    * The name of the render settings template used for this item.
@@ -159,13 +159,13 @@ export class RenderQueueItem {
    * When `true`, a user notification is enabled for this render queue
    * item, signaling the user upon render completion. Read / Write.
    */
-  declare queue_item_notify: boolean;
+  declare queueItemNotify: boolean;
 
   /**
    * The date and time when rendering of this item started, or `null` if
    * the item has not started rendering. Read-only.
    */
-  declare start_time: Date | null;
+  declare startTime: Date | null;
 
   /** The current render status of the item. Read / Write. */
   declare status: RQItemStatus;
@@ -332,7 +332,7 @@ export class RenderQueueItem {
    * Iterates a snapshot so modules can be removed while looping.
    */
   [Symbol.iterator](): Iterator<OutputModule> {
-    return [...this.output_modules][Symbol.iterator]();
+    return [...this.outputModules][Symbol.iterator]();
   }
 
   [INSPECT](): string {
@@ -341,7 +341,7 @@ export class RenderQueueItem {
     const status_repr = RQItemStatus.has(status)
       ? `<RQItemStatus.${RQItemStatus.name_of(status)}: ${status}>`
       : repr(status);
-    return `RenderQueueItem(name=${repr(this.name)}, status=${status_repr}, comp_name=${repr(this.comp_name)})`;
+    return `RenderQueueItem(name=${repr(this.name)}, status=${status_repr}, comp_name=${repr(this.compName)})`;
   }
 
   /** The composition that will be rendered by this render-queue item. Read-only. */
@@ -350,7 +350,7 @@ export class RenderQueueItem {
   }
 
   /** The list of Output Modules for the item. Read-only. */
-  get output_modules(): OutputModule[] {
+  get outputModules(): OutputModule[] {
     return this._output_modules;
   }
 
@@ -449,11 +449,11 @@ export class RenderQueueItem {
    * (the render frame rate divided by skip + 1), as AE does once an
    * item is prepared for output.
    */
-  get skip_frames(): number {
+  get skipFrames(): number {
     return this._skip_frames;
   }
 
-  set skip_frames(value: number) {
+  set skipFrames(value: number) {
     _validate_number({ min: 0, max: 99, integer: true })(value);
     this._skip_frames = value;
     this._set_output_frame_rates();
@@ -461,7 +461,7 @@ export class RenderQueueItem {
 
   /** Store the output frame rate of every output module. */
   _set_output_frame_rates(): void {
-    for (const om of this.output_modules) {
+    for (const om of this.outputModules) {
       om._set_frame_rate();
     }
   }
@@ -469,10 +469,10 @@ export class RenderQueueItem {
   /**
    * Return the number of output modules for this render queue item. Read-only.
    *
-   * **Note:** Equivalent to `len(item.output_modules)`
+   * **Note:** Equivalent to `len(item.outputModules)`
    */
-  get num_output_modules(): number {
-    return this.output_modules.length;
+  get numOutputModules(): number {
+    return this.outputModules.length;
   }
 
   /** Resolution as [x, y] divisors. */
@@ -499,7 +499,7 @@ export class RenderQueueItem {
     }
     this._ldat.resolution_x = value[0];
     this._ldat.resolution_y = value[1];
-    for (const om of this.output_modules) {
+    for (const om of this.outputModules) {
       om._update_output_dimensions();
     }
   }
@@ -517,7 +517,7 @@ export class RenderQueueItem {
 
   /** The composition's frame rate (read-only). */
   get _comp_frame_rate(): number {
-    return this.comp.frame_rate;
+    return this.comp.frameRate;
   }
 
   /**
@@ -529,7 +529,7 @@ export class RenderQueueItem {
    *
    * ```ts
    * import { parse, RenderQuality } from "@bevyl-ai/ts-aep";
-   * const rqi = parse("project.aep").project.render_queue.items[0];
+   * const rqi = parse("project.aep").project.renderQueue.items[0];
    * rqi.settings.__setitem__("Quality", RenderQuality.BEST);
    * ```
    *
@@ -558,7 +558,7 @@ export class RenderQueueItem {
       return [0.0, this.comp.duration];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
-      return [this.comp.work_area_start, this.comp.work_area_duration];
+      return [this.comp.workAreaStart, this.comp.workAreaDuration];
     }
     return [this._ldat.time_span_start, this._ldat.time_span_duration];
   }
@@ -566,14 +566,14 @@ export class RenderQueueItem {
   /** Return (start, duration) in frames based on time span source. */
   _resolved_time_span_frames(): [number, number] {
     const source = TimeSpanSource.from_binary(this._ldat.time_span_source);
-    const fr = this.comp.frame_rate;
+    const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
       return [0, round(this.comp.duration * fr)];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
       return [
-        round(this.comp.work_area_start * fr),
-        round(this.comp.work_area_duration * fr),
+        round(this.comp.workAreaStart * fr),
+        round(this.comp.workAreaDuration * fr),
       ];
     }
     const [start_sec, dur_sec] = this._resolved_time_span();
@@ -602,10 +602,10 @@ export class RenderQueueItem {
    * @throws {@link TypeError} If the value is not a number.
    */
   _set_time_span(value: number, field: string, is_frames = false): void {
-    const frame_duration = 1.0 / this.comp.frame_rate;
+    const frame_duration = 1.0 / this.comp.frameRate;
     // A signed 32-bit dividend over a divisor of at least 1.
     _validate_number({ min: 0.0, max: 2 ** 31 - 1 })(value);
-    const seconds = is_frames ? value / this.comp.frame_rate : value;
+    const seconds = is_frames ? value / this.comp.frameRate : value;
     // Both fields resolve the span BEFORE switching the source to
     // CUSTOM: a WORK_AREA_ONLY / LENGTH_OF_COMP item takes its span
     // from the comp, so CUSTOM has to carry the resolved values over
@@ -653,11 +653,11 @@ export class RenderQueueItem {
    * Setting this keeps the span END fixed - the duration is
    * recomputed - and switches the time span source to CUSTOM.
    */
-  get time_span_start(): number {
+  get timeSpanStart(): number {
     return this._resolved_time_span()[0];
   }
 
-  set time_span_start(value: number) {
+  set timeSpanStart(value: number) {
     this._set_time_span(value, "start");
   }
 
@@ -668,11 +668,11 @@ export class RenderQueueItem {
    *
    * Setting this switches the time span source to CUSTOM.
    */
-  get time_span_duration(): number {
+  get timeSpanDuration(): number {
     return this._resolved_time_span()[1];
   }
 
-  set time_span_duration(value: number) {
+  set timeSpanDuration(value: number) {
     this._set_time_span(value, "duration");
   }
 
@@ -683,11 +683,11 @@ export class RenderQueueItem {
    * Setting this keeps the span END fixed - the duration is
    * recomputed - and switches the time span source to CUSTOM.
    */
-  get time_span_start_frame(): number {
+  get timeSpanStartFrame(): number {
     return this._resolved_time_span_frames()[0];
   }
 
-  set time_span_start_frame(value: number) {
+  set timeSpanStartFrame(value: number) {
     this._set_time_span(value, "start", true);
   }
 
@@ -698,11 +698,11 @@ export class RenderQueueItem {
    *
    * Setting this switches the time span source to CUSTOM.
    */
-  get time_span_duration_frames(): number {
+  get timeSpanDurationFrames(): number {
     return this._resolved_time_span_frames()[1];
   }
 
-  set time_span_duration_frames(value: number) {
+  set timeSpanDurationFrames(value: number) {
     this._set_time_span(value, "duration", true);
   }
 
@@ -713,14 +713,14 @@ export class RenderQueueItem {
    * Setting this adjusts the duration, keeping the start unchanged,
    * and switches the time span source to CUSTOM.
    */
-  get time_span_end(): number {
+  get timeSpanEnd(): number {
     const [ts_start, ts_duration] = this._resolved_time_span();
     return ts_start + ts_duration;
   }
 
-  set time_span_end(value: number) {
+  set timeSpanEnd(value: number) {
     validate_positive_number(value);
-    this.time_span_duration = value - this.time_span_start;
+    this.timeSpanDuration = value - this.timeSpanStart;
   }
 
   /**
@@ -730,17 +730,17 @@ export class RenderQueueItem {
    * Setting this adjusts the duration in frames, keeping the start
    * unchanged, and switches the time span source to CUSTOM.
    */
-  get time_span_end_frame(): number {
-    return this.time_span_start_frame + this.time_span_duration_frames;
+  get timeSpanEndFrame(): number {
+    return this.timeSpanStartFrame + this.timeSpanDurationFrames;
   }
 
-  set time_span_end_frame(value: number) {
+  set timeSpanEndFrame(value: number) {
     validate_positive_int(value);
-    this.time_span_duration_frames = value - this.time_span_start_frame;
+    this.timeSpanDurationFrames = value - this.timeSpanStartFrame;
   }
 
   /** The name of the composition being rendered. */
-  get comp_name(): string {
+  get compName(): string {
     return this.comp.name;
   }
 
@@ -750,7 +750,7 @@ export class RenderQueueItem {
    * @param format_ - The output format. `GetSettingsFormat.NUMBER` returns numeric values (enums
    *   unwrapped to ints). `GetSettingsFormat.STRING` returns all values as strings
    */
-  get_settings(format_: GetSettingsFormat = GetSettingsFormat.STRING): Map<string, SettingValue> {
+  getSettings(format_: GetSettingsFormat = GetSettingsFormat.STRING): Map<string, SettingValue> {
     if (format_ === GetSettingsFormat.STRING) {
       return settings_to_string(this.settings);
     }
@@ -770,8 +770,8 @@ export class RenderQueueItem {
    * @param key - The setting key (e.g. `"Quality"`, `"Frame Rate"`).
    * @param format_ - The output format.
    */
-  get_setting(key: string, format_: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
-    return getitem(this.get_settings(format_), key);
+  getSetting(key: string, format_: GetSettingsFormat = GetSettingsFormat.STRING): SettingValue {
+    return getitem(this.getSettings(format_), key);
   }
 
   /**
@@ -799,7 +799,7 @@ export class RenderQueueItem {
    * @param name - Template name (e.g. `"Best Settings"`, `"Draft Settings"`).
    * @throws {@link ValueError} If the template name is not found.
    */
-  apply_template(name: string): void {
+  applyTemplate(name: string): void {
     const rs_items = this._project._get_render_templates();
     for (const t of rs_items) {
       if (t.clean_template_name === name) {
@@ -942,21 +942,21 @@ export class RenderQueueItem {
 
 // Field descriptors: each ChunkField assigned in the Python class body is installed on the
 // prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(RenderQueueItem, "elapsed_seconds", new ChunkField("_ldat", "elapsed_seconds", { read_only: true }));
+descriptor(RenderQueueItem, "elapsedSeconds", new ChunkField("_ldat", "elapsed_seconds", { read_only: true }));
 
-descriptor(RenderQueueItem, "log_type", ChunkField.enum(LogType, "_ldat", "log_type"));
+descriptor(RenderQueueItem, "logType", ChunkField.enum(LogType, "_ldat", "log_type"));
 
 descriptor(RenderQueueItem, "name", new ChunkField("_ldat", "template_name"));
 
 descriptor(
   RenderQueueItem,
-  "queue_item_notify",
+  "queueItemNotify",
   ChunkField.bool("_ldat", "queue_item_notify", { min_version: 22 }),
 );
 
 descriptor(
   RenderQueueItem,
-  "start_time",
+  "startTime",
   new ChunkField("_ldat", "start_time", {
     transform: _start_time_from_binary,
     read_only: true,

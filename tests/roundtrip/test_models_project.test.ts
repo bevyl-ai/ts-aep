@@ -32,247 +32,247 @@ const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("sample
 const LAYER_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "composition");
 
-/** Roundtrip tests for Project.linear_blending. */
+/** Roundtrip tests for Project.linearBlending. */
 describe("TestRoundtripLinearBlending", () => {
   test("test_enable_linear_blending", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearBlending_false.aep")).project;
-    expect(project.linear_blending).toBe(false);
+    expect(project.linearBlending).toBe(false);
 
-    project.linear_blending = true;
+    project.linearBlending = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linear_blending).toBe(true);
+    expect(project2.linearBlending).toBe(true);
   });
 
   test("test_disable_linear_blending", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearBlending_true.aep")).project;
-    expect(project.linear_blending).toBe(true);
+    expect(project.linearBlending).toBe(true);
 
-    project.linear_blending = false;
+    project.linearBlending = false;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linear_blending).toBe(false);
+    expect(project2.linearBlending).toBe(false);
   });
 
   test("test_set_same_value_is_noop", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearBlending_true.aep")).project;
-    expect(project.linear_blending).toBe(true);
+    expect(project.linearBlending).toBe(true);
 
-    project.linear_blending = true; // no change
+    project.linearBlending = true; // no change
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linear_blending).toBe(true);
+    expect(project2.linearBlending).toBe(true);
   });
 });
 
-/** Roundtrip tests for Project.linearize_working_space. */
+/** Roundtrip tests for Project.linearizeWorkingSpace. */
 describe("TestRoundtripLinearizeWorkingSpace", () => {
   test("test_enable_linearize_working_space", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearizeWorkingSpace_false.aep")).project;
-    expect(project.linearize_working_space).toBe(false);
+    expect(project.linearizeWorkingSpace).toBe(false);
 
-    project.linearize_working_space = true;
+    project.linearizeWorkingSpace = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linearize_working_space).toBe(true);
+    expect(project2.linearizeWorkingSpace).toBe(true);
   });
 
   test("test_disable_linearize_working_space", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearizeWorkingSpace_true.aep")).project;
-    expect(project.linearize_working_space).toBe(true);
+    expect(project.linearizeWorkingSpace).toBe(true);
 
-    project.linearize_working_space = false;
+    project.linearizeWorkingSpace = false;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linearize_working_space).toBe(false);
+    expect(project2.linearizeWorkingSpace).toBe(false);
   });
 
   test("test_set_same_value_is_noop", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearizeWorkingSpace_false.aep")).project;
-    expect(project.linearize_working_space).toBe(false);
+    expect(project.linearizeWorkingSpace).toBe(false);
 
-    project.linearize_working_space = false; // no change
+    project.linearizeWorkingSpace = false; // no change
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.linearize_working_space).toBe(false);
+    expect(project2.linearizeWorkingSpace).toBe(false);
   });
 });
 
-/** Roundtrip tests for Project.expression_engine. */
+/** Roundtrip tests for Project.expressionEngine. */
 describe("TestRoundtripExpressionEngine", () => {
   test("test_set_extendscript", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("expressionEngine_javascript.aep")).project;
-    expect(project.expression_engine).toBe("javascript-1.0");
+    expect(project.expressionEngine).toBe("javascript-1.0");
 
-    project.expression_engine = "extendscript";
+    project.expressionEngine = "extendscript";
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.expression_engine).toBe("extendscript");
+    expect(project2.expressionEngine).toBe("extendscript");
   });
 
   test("test_set_javascript", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearBlending_false.aep")).project;
-    expect(project.expression_engine).toBe("extendscript");
+    expect(project.expressionEngine).toBe("extendscript");
 
-    project.expression_engine = "javascript-1.0";
+    project.expressionEngine = "javascript-1.0";
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.expression_engine).toBe("javascript-1.0");
+    expect(project2.expressionEngine).toBe("javascript-1.0");
   });
 
   test("test_set_same_value_is_noop", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("expressionEngine_javascript.aep")).project;
-    expect(project.expression_engine).toBe("javascript-1.0");
+    expect(project.expressionEngine).toBe("javascript-1.0");
 
-    project.expression_engine = "javascript-1.0";
+    project.expressionEngine = "javascript-1.0";
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.expression_engine).toBe("javascript-1.0");
+    expect(project2.expressionEngine).toBe("javascript-1.0");
   });
 });
 
-/** Roundtrip tests for Project.color_management_system. */
+/** Roundtrip tests for Project.colorManagementSystem. */
 describe("TestRoundtripColorManagementSystem", () => {
   test("test_set_ocio", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("colorManagementSystem_adobe.aep")).project;
-    expect(project.color_management_system).toBe(ColorManagementSystem.ADOBE);
+    expect(project.colorManagementSystem).toBe(ColorManagementSystem.ADOBE);
 
-    project.color_management_system = ColorManagementSystem.OCIO;
+    project.colorManagementSystem = ColorManagementSystem.OCIO;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.color_management_system).toBe(ColorManagementSystem.OCIO);
+    expect(project2.colorManagementSystem).toBe(ColorManagementSystem.OCIO);
   });
 
   test("test_set_adobe", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("colorManagementSystem_ocio.aep")).project;
-    expect(project.color_management_system).toBe(ColorManagementSystem.OCIO);
+    expect(project.colorManagementSystem).toBe(ColorManagementSystem.OCIO);
 
-    project.color_management_system = ColorManagementSystem.ADOBE;
+    project.colorManagementSystem = ColorManagementSystem.ADOBE;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.color_management_system).toBe(ColorManagementSystem.ADOBE);
+    expect(project2.colorManagementSystem).toBe(ColorManagementSystem.ADOBE);
   });
 });
 
-/** Roundtrip tests for Project.lut_interpolation_method. */
+/** Roundtrip tests for Project.lutInterpolationMethod. */
 describe("TestRoundtripLutInterpolationMethod", () => {
   test("test_set_tetrahedral", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("lutInterpolationMethod_trilinear.aep")).project;
-    expect(project.lut_interpolation_method).toBe(LutInterpolationMethod.TRILINEAR);
+    expect(project.lutInterpolationMethod).toBe(LutInterpolationMethod.TRILINEAR);
 
-    project.lut_interpolation_method = LutInterpolationMethod.TETRAHEDRAL;
+    project.lutInterpolationMethod = LutInterpolationMethod.TETRAHEDRAL;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.lut_interpolation_method).toBe(LutInterpolationMethod.TETRAHEDRAL);
+    expect(project2.lutInterpolationMethod).toBe(LutInterpolationMethod.TETRAHEDRAL);
   });
 
   test("test_set_trilinear", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("lutInterpolationMethod_tetrahedral.aep")).project;
-    expect(project.lut_interpolation_method).toBe(LutInterpolationMethod.TETRAHEDRAL);
+    expect(project.lutInterpolationMethod).toBe(LutInterpolationMethod.TETRAHEDRAL);
 
-    project.lut_interpolation_method = LutInterpolationMethod.TRILINEAR;
+    project.lutInterpolationMethod = LutInterpolationMethod.TRILINEAR;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.lut_interpolation_method).toBe(LutInterpolationMethod.TRILINEAR);
+    expect(project2.lutInterpolationMethod).toBe(LutInterpolationMethod.TRILINEAR);
   });
 });
 
-/** Roundtrip tests for Project.ocio_configuration_file. */
+/** Roundtrip tests for Project.ocioConfigurationFile. */
 describe("TestRoundtripOcioConfigurationFile", () => {
   test("test_set_ocio_config", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("colorManagementSystem_ocio.aep")).project;
 
-    project.ocio_configuration_file = "new_config.ocio";
+    project.ocioConfigurationFile = "new_config.ocio";
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.ocio_configuration_file).toBe("new_config.ocio");
+    expect(project2.ocioConfigurationFile).toBe("new_config.ocio");
   });
 });
 
-/** Roundtrip tests for Project.bits_per_channel. */
+/** Roundtrip tests for Project.bitsPerChannel. */
 describe("TestRoundtripBitsPerChannel", () => {
   test("test_set_sixteen", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("bitsPerChannel_8.aep")).project;
-    expect(project.bits_per_channel).toBe(BitsPerChannel.EIGHT);
+    expect(project.bitsPerChannel).toBe(BitsPerChannel.EIGHT);
 
-    project.bits_per_channel = BitsPerChannel.SIXTEEN;
+    project.bitsPerChannel = BitsPerChannel.SIXTEEN;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.bits_per_channel).toBe(BitsPerChannel.SIXTEEN);
+    expect(project2.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
   });
 
   test("test_set_thirty_two", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("bitsPerChannel_8.aep")).project;
-    expect(project.bits_per_channel).toBe(BitsPerChannel.EIGHT);
+    expect(project.bitsPerChannel).toBe(BitsPerChannel.EIGHT);
 
-    project.bits_per_channel = BitsPerChannel.THIRTY_TWO;
+    project.bitsPerChannel = BitsPerChannel.THIRTY_TWO;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.bits_per_channel).toBe(BitsPerChannel.THIRTY_TWO);
+    expect(project2.bitsPerChannel).toBe(BitsPerChannel.THIRTY_TWO);
     expect(project2._nhed.bits_per_channel).toBe(BitsPerChannel.to_binary(BitsPerChannel.THIRTY_TWO));
     expect(project2._nnhd.bits_per_channel).toBe(BitsPerChannel.to_binary(BitsPerChannel.THIRTY_TWO));
   });
@@ -280,32 +280,32 @@ describe("TestRoundtripBitsPerChannel", () => {
   test("test_set_eight", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("bitsPerChannel_32.aep")).project;
-    expect(project.bits_per_channel).toBe(BitsPerChannel.THIRTY_TWO);
+    expect(project.bitsPerChannel).toBe(BitsPerChannel.THIRTY_TWO);
 
-    project.bits_per_channel = BitsPerChannel.EIGHT;
+    project.bitsPerChannel = BitsPerChannel.EIGHT;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.bits_per_channel).toBe(BitsPerChannel.EIGHT);
+    expect(project2.bitsPerChannel).toBe(BitsPerChannel.EIGHT);
   });
 });
 
-/** Roundtrip tests for Project.feet_frames_film_type. */
+/** Roundtrip tests for Project.feetFramesFilmType. */
 describe("TestRoundtripFeetFramesFilmType", () => {
   test("test_set_mm16", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("feetFramesFilmType_MM35.aep")).project;
-    expect(project.feet_frames_film_type).toBe(FeetFramesFilmType.MM35);
+    expect(project.feetFramesFilmType).toBe(FeetFramesFilmType.MM35);
 
-    project.feet_frames_film_type = FeetFramesFilmType.MM16;
+    project.feetFramesFilmType = FeetFramesFilmType.MM16;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.feet_frames_film_type).toBe(FeetFramesFilmType.MM16);
+    expect(project2.feetFramesFilmType).toBe(FeetFramesFilmType.MM16);
     expect(project2._nhed.feet_frames_film_type).toBe(project2._nnhd.feet_frames_film_type);
   });
 
@@ -313,340 +313,340 @@ describe("TestRoundtripFeetFramesFilmType", () => {
   test("test_set_mm35", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("feetFramesFilmType_MM35.aep")).project;
-    project.feet_frames_film_type = FeetFramesFilmType.MM16;
+    project.feetFramesFilmType = FeetFramesFilmType.MM16;
     const mid = tmp_path.div("mid.aep");
     project.save(mid);
 
     const project2 = parse_aep(mid).project;
-    project2.feet_frames_film_type = FeetFramesFilmType.MM35;
+    project2.feetFramesFilmType = FeetFramesFilmType.MM35;
     const out = tmp_path.div("modified.aep");
     project2.save(out);
     const project3 = parse_aep(out).project;
 
-    expect(project3.feet_frames_film_type).toBe(FeetFramesFilmType.MM35);
+    expect(project3.feetFramesFilmType).toBe(FeetFramesFilmType.MM35);
   });
 });
 
-/** Roundtrip tests for Project.footage_timecode_display_start_type. */
+/** Roundtrip tests for Project.footageTimecodeDisplayStartType. */
 describe("TestRoundtripFootageTimecodeDisplayStartType", () => {
   test("test_set_start_0", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("footageTimecodeDisplayStartType_source.aep")).project;
-    expect(project.footage_timecode_display_start_type).toBe(
+    expect(project.footageTimecodeDisplayStartType).toBe(
       FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA,
     );
 
-    project.footage_timecode_display_start_type = FootageTimecodeDisplayStartType.FTCS_START_0;
+    project.footageTimecodeDisplayStartType = FootageTimecodeDisplayStartType.FTCS_START_0;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.footage_timecode_display_start_type).toBe(FootageTimecodeDisplayStartType.FTCS_START_0);
+    expect(project2.footageTimecodeDisplayStartType).toBe(FootageTimecodeDisplayStartType.FTCS_START_0);
   });
 
   /** Set to START_0 then back to USE_SOURCE_MEDIA via chained roundtrip. */
   test("test_set_use_source_media", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("footageTimecodeDisplayStartType_source.aep")).project;
-    project.footage_timecode_display_start_type = FootageTimecodeDisplayStartType.FTCS_START_0;
+    project.footageTimecodeDisplayStartType = FootageTimecodeDisplayStartType.FTCS_START_0;
     const mid = tmp_path.div("mid.aep");
     project.save(mid);
 
     const project2 = parse_aep(mid).project;
-    project2.footage_timecode_display_start_type = FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA;
+    project2.footageTimecodeDisplayStartType = FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA;
     const out = tmp_path.div("modified.aep");
     project2.save(out);
     const project3 = parse_aep(out).project;
 
-    expect(project3.footage_timecode_display_start_type).toBe(
+    expect(project3.footageTimecodeDisplayStartType).toBe(
       FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA,
     );
   });
 });
 
-/** Roundtrip tests for Project.frames_count_type. */
+/** Roundtrip tests for Project.framesCountType. */
 describe("TestRoundtripFramesCountType", () => {
   test("test_set_start_1", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("framesCountType_start0.aep")).project;
-    expect(project.frames_count_type).toBe(FramesCountType.FC_START_0);
+    expect(project.framesCountType).toBe(FramesCountType.FC_START_0);
 
-    project.frames_count_type = FramesCountType.FC_START_1;
+    project.framesCountType = FramesCountType.FC_START_1;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.frames_count_type).toBe(FramesCountType.FC_START_1);
+    expect(project2.framesCountType).toBe(FramesCountType.FC_START_1);
     expect(project2._nhed.frames_count_type).toBe(project2._nnhd.frames_count_type);
   });
 
   test("test_set_start_0", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("displayStartFrame_1.aep")).project;
-    expect(project.frames_count_type).toBe(FramesCountType.FC_START_1);
+    expect(project.framesCountType).toBe(FramesCountType.FC_START_1);
 
-    project.frames_count_type = FramesCountType.FC_START_0;
+    project.framesCountType = FramesCountType.FC_START_0;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.frames_count_type).toBe(FramesCountType.FC_START_0);
+    expect(project2.framesCountType).toBe(FramesCountType.FC_START_0);
   });
 });
 
-/** Roundtrip tests for Project.display_start_frame. */
+/** Roundtrip tests for Project.displayStartFrame. */
 describe("TestRoundtripDisplayStartFrame", () => {
   test("test_set_1", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("framesCountType_start0.aep")).project;
-    expect(project.display_start_frame).toBe(0);
+    expect(project.displayStartFrame).toBe(0);
 
-    project.display_start_frame = 1;
+    project.displayStartFrame = 1;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.display_start_frame).toBe(1);
+    expect(project2.displayStartFrame).toBe(1);
     expect(project2._nhed.frames_count_type).toBe(project2._nnhd.frames_count_type);
   });
 
   test("test_set_0", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("displayStartFrame_1.aep")).project;
-    expect(project.display_start_frame).toBe(1);
+    expect(project.displayStartFrame).toBe(1);
 
-    project.display_start_frame = 0;
+    project.displayStartFrame = 0;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.display_start_frame).toBe(0);
+    expect(project2.displayStartFrame).toBe(0);
   });
 });
 
-/** Roundtrip tests for Project.frames_use_feet_frames. */
+/** Roundtrip tests for Project.framesUseFeetFrames. */
 describe("TestRoundtripFramesUseFeetFrames", () => {
   test("test_enable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("framesUseFeetFrames_false.aep")).project;
-    expect(project.frames_use_feet_frames).toBe(false);
+    expect(project.framesUseFeetFrames).toBe(false);
 
-    project.frames_use_feet_frames = true;
+    project.framesUseFeetFrames = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.frames_use_feet_frames).toBe(true);
+    expect(project2.framesUseFeetFrames).toBe(true);
     expect(project2._nhed.frames_use_feet_frames).toBe(project2._nnhd.frames_use_feet_frames);
   });
 
   test("test_disable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("framesUseFeetFrames_true.aep")).project;
-    expect(project.frames_use_feet_frames).toBe(true);
+    expect(project.framesUseFeetFrames).toBe(true);
 
-    project.frames_use_feet_frames = false;
+    project.framesUseFeetFrames = false;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.frames_use_feet_frames).toBe(false);
+    expect(project2.framesUseFeetFrames).toBe(false);
     expect(project2._nhed.frames_use_feet_frames).toBe(project2._nnhd.frames_use_feet_frames);
   });
 });
 
-/** Roundtrip tests for Project.time_display_type. */
+/** Roundtrip tests for Project.timeDisplayType. */
 describe("TestRoundtripTimeDisplayType", () => {
   test("test_set_frames", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("timeDisplayType_timecode.aep")).project;
-    expect(project.time_display_type).toBe(TimeDisplayType.TIMECODE);
+    expect(project.timeDisplayType).toBe(TimeDisplayType.TIMECODE);
 
-    project.time_display_type = TimeDisplayType.FRAMES;
+    project.timeDisplayType = TimeDisplayType.FRAMES;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.time_display_type).toBe(TimeDisplayType.FRAMES);
+    expect(project2.timeDisplayType).toBe(TimeDisplayType.FRAMES);
     expect(project2._nhed.time_display_type).toBe(project2._nnhd.time_display_type);
   });
 
   test("test_set_timecode", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("timeDisplayType_frames.aep")).project;
-    expect(project.time_display_type).toBe(TimeDisplayType.FRAMES);
+    expect(project.timeDisplayType).toBe(TimeDisplayType.FRAMES);
 
-    project.time_display_type = TimeDisplayType.TIMECODE;
+    project.timeDisplayType = TimeDisplayType.TIMECODE;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.time_display_type).toBe(TimeDisplayType.TIMECODE);
+    expect(project2.timeDisplayType).toBe(TimeDisplayType.TIMECODE);
   });
 });
 
-/** Roundtrip tests for Project.transparency_grid_thumbnails. */
+/** Roundtrip tests for Project.transparencyGridThumbnails. */
 describe("TestRoundtripTransparencyGridThumbnails", () => {
   test("test_enable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("transparencyGridThumbnails_false.aep")).project;
-    expect(project.transparency_grid_thumbnails).toBe(false);
+    expect(project.transparencyGridThumbnails).toBe(false);
 
-    project.transparency_grid_thumbnails = true;
+    project.transparencyGridThumbnails = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.transparency_grid_thumbnails).toBe(true);
+    expect(project2.transparencyGridThumbnails).toBe(true);
     expect(project2._nhed.transparency_grid_thumbnails).toBe(project2._nnhd.transparency_grid_thumbnails);
   });
 
   test("test_disable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("transparencyGridThumbnails_true.aep")).project;
-    expect(project.transparency_grid_thumbnails).toBe(true);
+    expect(project.transparencyGridThumbnails).toBe(true);
 
-    project.transparency_grid_thumbnails = false;
+    project.transparencyGridThumbnails = false;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.transparency_grid_thumbnails).toBe(false);
+    expect(project2.transparencyGridThumbnails).toBe(false);
   });
 });
 
-/** Roundtrip tests for Project.compensate_for_scene_referred_profiles. */
+/** Roundtrip tests for Project.compensateForSceneReferredProfiles. */
 describe("TestRoundtripCompensateForSceneReferredProfiles", () => {
   test("test_enable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("compensateForSceneReferredProfiles_false.aep")).project;
-    expect(project.compensate_for_scene_referred_profiles).toBe(false);
+    expect(project.compensateForSceneReferredProfiles).toBe(false);
 
-    project.compensate_for_scene_referred_profiles = true;
+    project.compensateForSceneReferredProfiles = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.compensate_for_scene_referred_profiles).toBe(true);
+    expect(project2.compensateForSceneReferredProfiles).toBe(true);
   });
 
   test("test_disable", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("compensateForSceneReferredProfiles_true.aep")).project;
-    expect(project.compensate_for_scene_referred_profiles).toBe(true);
+    expect(project.compensateForSceneReferredProfiles).toBe(true);
 
-    project.compensate_for_scene_referred_profiles = false;
+    project.compensateForSceneReferredProfiles = false;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.compensate_for_scene_referred_profiles).toBe(false);
+    expect(project2.compensateForSceneReferredProfiles).toBe(false);
   });
 });
 
-/** Roundtrip tests for Project.audio_sample_rate. */
+/** Roundtrip tests for Project.audioSampleRate. */
 describe("TestRoundtripAudioSampleRate", () => {
   test("test_set_96000", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("Audio_sample_rate_22050.aep")).project;
-    expect(project.audio_sample_rate).toBe(22050.0);
+    expect(project.audioSampleRate).toBe(22050.0);
 
-    project.audio_sample_rate = 96000.0;
+    project.audioSampleRate = 96000.0;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.audio_sample_rate).toBe(96000.0);
+    expect(project2.audioSampleRate).toBe(96000.0);
   });
 
   test("test_set_22050", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("Audio_sample_rate_96000.aep")).project;
-    expect(project.audio_sample_rate).toBe(96000.0);
+    expect(project.audioSampleRate).toBe(96000.0);
 
-    project.audio_sample_rate = 22050.0;
+    project.audioSampleRate = 22050.0;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.audio_sample_rate).toBe(22050.0);
+    expect(project2.audioSampleRate).toBe(22050.0);
   });
 });
 
-/** Roundtrip tests for Project.working_gamma. */
+/** Roundtrip tests for Project.workingGamma. */
 describe("TestRoundtripWorkingGamma", () => {
   test("test_set_2_2", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("workingGamma_2.4.aep")).project;
-    expect(project.working_gamma).toBe(2.4);
+    expect(project.workingGamma).toBe(2.4);
 
-    project.working_gamma = 2.2;
+    project.workingGamma = 2.2;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.working_gamma).toBe(2.2);
+    expect(project2.workingGamma).toBe(2.2);
   });
 
   test("test_set_2_4", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("workingGamma_2.2.aep")).project;
-    expect(project.working_gamma).toBe(2.2);
+    expect(project.workingGamma).toBe(2.2);
 
-    project.working_gamma = 2.4;
+    project.workingGamma = 2.4;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.working_gamma).toBe(2.4);
+    expect(project2.workingGamma).toBe(2.4);
   });
 });
 
-/** Roundtrip tests for Project.gpu_accel_type. */
+/** Roundtrip tests for Project.gpuAccelType. */
 describe("TestRoundtripGpuAccelType", () => {
   test("test_set_software", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("gpuAccelType_mercury_gpu_acceleration_CUDA.aep")).project;
-    expect(project.gpu_accel_type).toBe(GpuAccelType.CUDA);
+    expect(project.gpuAccelType).toBe(GpuAccelType.CUDA);
 
-    project.gpu_accel_type = GpuAccelType.SOFTWARE;
+    project.gpuAccelType = GpuAccelType.SOFTWARE;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+    expect(project2.gpuAccelType).toBe(GpuAccelType.SOFTWARE);
   });
 
   test("test_set_cuda", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("gpuAccelType_mercury_software_only.aep")).project;
-    expect(project.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+    expect(project.gpuAccelType).toBe(GpuAccelType.SOFTWARE);
 
-    project.gpu_accel_type = GpuAccelType.CUDA;
+    project.gpuAccelType = GpuAccelType.CUDA;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.gpu_accel_type).toBe(GpuAccelType.CUDA);
+    expect(project2.gpuAccelType).toBe(GpuAccelType.CUDA);
   });
 
   /**
@@ -657,13 +657,13 @@ describe("TestRoundtripGpuAccelType", () => {
     const tmp_path = make_tmp_path();
     const uuid = "01234567-89ab-cdef-0123-456789abcdef";
     const project = parse_aep(SAMPLES_DIR.div("gpuAccelType_mercury_software_only.aep")).project;
-    project.gpu_accel_type = uuid;
-    expect(project.gpu_accel_type).toBe(uuid);
+    project.gpuAccelType = uuid;
+    expect(project.gpuAccelType).toBe(uuid);
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
-    expect(project2.gpu_accel_type).toBe(uuid);
-    project2.gpu_accel_type = project2.gpu_accel_type;
+    expect(project2.gpuAccelType).toBe(uuid);
+    project2.gpuAccelType = project2.gpuAccelType;
   });
 
   test("test_rejects_malformed_uuid", () => {
@@ -671,11 +671,11 @@ describe("TestRoundtripGpuAccelType", () => {
     raises(
       ValueError,
       () => {
-        project.gpu_accel_type = "not-a-uuid";
+        project.gpuAccelType = "not-a-uuid";
       },
       "UUID",
     );
-    expect(project.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+    expect(project.gpuAccelType).toBe(GpuAccelType.SOFTWARE);
   });
 });
 
@@ -716,12 +716,12 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     icc_dir.div("ACEScct.icc").write_bytes(icc);
 
     const project = parse_aep(SAMPLES_DIR.div("workingSpace_sRGB.aep")).project;
-    project.icc_profile_dirs = [icc_dir];
-    project.working_space = "ACEScct";
+    project.iccProfileDirs = [icc_dir];
+    project.workingSpace = "ACEScct";
     const out = tmp_path.div("ws.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
-    expect(project2.working_space).toBe("ACEScct");
+    expect(project2.workingSpace).toBe("ACEScct");
     expect(py_eq(TestRoundtripWorkingSpaceProfileId._cpid(project2), TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe(true);
   });
 
@@ -729,9 +729,9 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     const config = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "config.ocio");
     const project = parse_aep(SAMPLES_DIR.div("workingSpace_sRGB.aep")).project;
     expect(py_eq(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(false);
-    project.color_management_system = ColorManagementSystem.OCIO;
-    project.ocio_configuration_file = str(config);
-    project.working_space = "ACEScg";
+    project.colorManagementSystem = ColorManagementSystem.OCIO;
+    project.ocioConfigurationFile = str(config);
+    project.workingSpace = "ACEScg";
     expect(py_eq(TestRoundtripWorkingSpaceProfileId._cpid(project), bytes_.repeat(b("\xff"), 16))).toBe(true);
   });
 });
@@ -773,12 +773,12 @@ describe("TestRoundtripPre22WorkingSpace", () => {
   test("test_new_15_project_settings_round_trip", () => {
     const tmp_path = make_tmp_path();
     const project = py_aep.new("15.1x69").project;
-    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
-    project.bits_per_channel = BitsPerChannel.THIRTY_TWO;
-    project.time_display_type = TimeDisplayType.FRAMES;
-    project.gpu_accel_type = GpuAccelType.SOFTWARE;
-    project.linearize_working_space = true;
-    project.working_space = C.SRGB;
+    project.iccProfileDirs = [C._icc_dir(tmp_path)];
+    project.bitsPerChannel = BitsPerChannel.THIRTY_TWO;
+    project.timeDisplayType = TimeDisplayType.FRAMES;
+    project.gpuAccelType = GpuAccelType.SOFTWARE;
+    project.linearizeWorkingSpace = true;
+    project.workingSpace = C.SRGB;
 
     const out = tmp_path.div("new15.aep");
     project.save(out);
@@ -786,11 +786,11 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const project2 = app2.project;
 
     expect(app2.version).toBe("15.1x69");
-    expect(project2.working_space).toBe(C.SRGB);
-    expect(project2.linearize_working_space).toBe(true);
-    expect(project2.bits_per_channel).toBe(BitsPerChannel.THIRTY_TWO);
-    expect(project2.time_display_type).toBe(TimeDisplayType.FRAMES);
-    expect(project2.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+    expect(project2.workingSpace).toBe(C.SRGB);
+    expect(project2.linearizeWorkingSpace).toBe(true);
+    expect(project2.bitsPerChannel).toBe(BitsPerChannel.THIRTY_TWO);
+    expect(project2.timeDisplayType).toBe(TimeDisplayType.FRAMES);
+    expect(project2.gpuAccelType).toBe(GpuAccelType.SOFTWARE);
     // AE 15.1's own template: the pool holds just the working space's
     // ICC, and `lnrp` sits between `cpid` and `dwga`.
     const donor_icc = _profile_pool(parse_aep(C.DONOR).project)[0].data;
@@ -804,15 +804,15 @@ describe("TestRoundtripPre22WorkingSpace", () => {
   test("test_new_profile_is_inserted_in_id_order", () => {
     const tmp_path = make_tmp_path();
     const project = py_aep.new("15.1x69").project;
-    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
-    project.working_space = "SDTV NTSC";
-    project.working_space = C.SRGB;
+    project.iccProfileDirs = [C._icc_dir(tmp_path)];
+    project.workingSpace = "SDTV NTSC";
+    project.workingSpace = C.SRGB;
 
     const out = tmp_path.div("ws.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.working_space).toBe(C.SRGB);
+    expect(project2.workingSpace).toBe(C.SRGB);
     expect(py_eq(project2._cpid.data, C.SRGB_ID)).toBe(true);
     // The replaced SDTV NTSC stays, after the lower sRGB id.
     const pool_ids = _profile_pool(project2).map((c) => icc_profile_id(c.data));
@@ -822,17 +822,17 @@ describe("TestRoundtripPre22WorkingSpace", () => {
   test("test_pooled_profile_is_reused", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(C.DONOR).project;
-    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    project.iccProfileDirs = [C._icc_dir(tmp_path)];
     const before = project_bytes(project);
-    project.working_space = project.working_space;
+    project.workingSpace = project.workingSpace;
     expect(py_eq(project_bytes(project), before)).toBe(true);
 
-    project.working_space = "SDTV NTSC";
+    project.workingSpace = "SDTV NTSC";
     const out = tmp_path.div("ws.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.working_space).toBe("SDTV NTSC");
+    expect(project2.workingSpace).toBe("SDTV NTSC");
     expect(py_eq(project2._cpid.data, C.NTSC_ID)).toBe(true);
     expect(_profile_pool(project2).length).toBe(2);
   });
@@ -841,13 +841,13 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(C.DONOR).project;
     const pool = _profile_pool(project).map((c) => c.data);
-    project.working_space = "None";
+    project.workingSpace = "None";
 
     const out = tmp_path.div("ws.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.working_space).toBe("None");
+    expect(project2.workingSpace).toBe("None");
     expect(py_eq(project2._cpid.data, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(py_eq(_profile_pool(project2).map((c) => c.data), pool)).toBe(true);
   });
@@ -855,10 +855,10 @@ describe("TestRoundtripPre22WorkingSpace", () => {
   test("test_unknown_profile_leaves_project_unchanged", () => {
     const tmp_path = make_tmp_path();
     const project = py_aep.new("15.1x69").project;
-    project.icc_profile_dirs = [C._icc_dir(tmp_path)];
+    project.iccProfileDirs = [C._icc_dir(tmp_path)];
     const before = project_bytes(project);
     raises(ColorProfileNotFoundError, () => {
-      project.working_space = "Not A Profile";
+      project.workingSpace = "Not A Profile";
     });
     expect(py_eq(project_bytes(project), before)).toBe(true);
   });
@@ -892,23 +892,23 @@ describe("TestRoundtripRevision", () => {
     });
   });
 
-  // Roundtrip tests for Project.xmp_packet.
+  // Roundtrip tests for Project.xmpPacket.
 
   test("test_set_xmp_packet", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("linearBlending_false.aep")).project;
 
     // NOTE(port): models/project.ts parses xmp_packet via pyrt etree (ET_fromstring), whose Element has the same get/set API.
-    const xmp_packet = project.xmp_packet;
+    const xmp_packet = project.xmpPacket;
     if (xmp_packet == null) throw new Error("project has no XMP packet");
     xmp_packet.set("py_aep_test_marker", "1");
-    project.xmp_packet = xmp_packet;
+    project.xmpPacket = xmp_packet;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    const xmp_packet2 = project2.xmp_packet;
+    const xmp_packet2 = project2.xmpPacket;
     if (xmp_packet2 == null) throw new Error("saved project has no XMP packet");
     expect(xmp_packet2.get("py_aep_test_marker")).toBe("1");
   });
@@ -930,7 +930,7 @@ describe("TestIdempotency", () => {
   });
 });
 
-/** Project.list_color_profiles() in OCIO mode with a resolvable config. */
+/** Project.listColorProfiles() in OCIO mode with a resolvable config. */
 class TestListColorProfilesOcio {
   static CONFIG = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "config.ocio");
 }
@@ -938,8 +938,8 @@ class TestListColorProfilesOcio {
 describe("TestListColorProfilesOcio", () => {
   test("test_resolvable_config_lists_colorspaces", () => {
     const project = parse_aep(SAMPLES_DIR.div("colorManagementSystem_ocio.aep")).project;
-    project.ocio_configuration_file = str(TestListColorProfilesOcio.CONFIG);
-    const profiles = project.list_color_profiles();
+    project.ocioConfigurationFile = str(TestListColorProfilesOcio.CONFIG);
+    const profiles = project.listColorProfiles();
     expect(len(profiles)).toBe(22); // == PyOpenColorIO
     expect(contains(profiles, "ACEScg")).toBe(true);
   });
@@ -953,13 +953,13 @@ describe("TestListColorProfilesOcio", () => {
     // getter is AE-faithful (ExtendScript's workingSpace echoes the same
     // qualified string). That asymmetry is AE's, not py_aep's.
     const project = parse_aep(SAMPLES_DIR.div("colorManagementSystem_ocio.aep")).project;
-    project.ocio_configuration_file = str(TestListColorProfilesOcio.CONFIG);
-    for (const name of project.list_color_profiles()) {
-      project.working_space = name;
-      const stored = project.working_space;
+    project.ocioConfigurationFile = str(TestListColorProfilesOcio.CONFIG);
+    for (const name of project.listColorProfiles()) {
+      project.workingSpace = name;
+      const stored = project.workingSpace;
       expect(split(stored, "/").at(-1)).toBe(name);
-      project.working_space = stored;
-      expect(project.working_space).toBe(stored);
+      project.workingSpace = stored;
+      expect(project.workingSpace).toBe(stored);
     }
   });
 });
@@ -985,22 +985,22 @@ describe("TestColorProfileSlotBinding", () => {
   test("test_display_space_roundtrips_with_working_space_unset", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(TestColorProfileSlotBinding.UNSET_WS).project;
-    expect(project.working_space).toBe("None");
-    expect(project.display_color_space).toBe("None");
+    expect(project.workingSpace).toBe("None");
+    expect(project.displayColorSpace).toBe("None");
 
-    project.display_color_space = ["ACES", "sRGB"];
+    project.displayColorSpace = ["ACES", "sRGB"];
 
     const out = tmp_path.div("display.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
 
-    expect(project2.display_color_space).toBe("ACES/sRGB");
+    expect(project2.displayColorSpace).toBe("ACES/sRGB");
   });
 
   test("test_display_space_write_does_not_leak_into_working_space", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(TestColorProfileSlotBinding.UNSET_WS).project;
-    project.display_color_space = ["ACES", "sRGB"];
+    project.displayColorSpace = ["ACES", "sRGB"];
 
     const out = tmp_path.div("display.aep");
     project.save(out);
@@ -1008,16 +1008,16 @@ describe("TestColorProfileSlotBinding", () => {
 
     // Writing only the DISPLAY space must not give the project a working
     // space it never had.
-    expect(project2.working_space).toBe("None");
+    expect(project2.workingSpace).toBe("None");
   });
 
   test("test_both_slots_roundtrip_together", () => {
     const tmp_path = make_tmp_path();
     const config = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "config.ocio");
     const project = parse_aep(TestColorProfileSlotBinding.UNSET_WS).project;
-    project.ocio_configuration_file = str(config);
-    project.working_space = "ACEScg";
-    project.display_color_space = ["ACES", "sRGB"];
+    project.ocioConfigurationFile = str(config);
+    project.workingSpace = "ACEScg";
+    project.displayColorSpace = ["ACES", "sRGB"];
 
     const out = tmp_path.div("both.aep");
     project.save(out);
@@ -1026,7 +1026,7 @@ describe("TestColorProfileSlotBinding", () => {
     // A direct colorspace pick reads back qualified as "<family>/<name>"
     // (AE's stored colorProfileName) - see
     // TestListColorProfilesOcio::test_listed_names_are_assignable_as_working_space.
-    expect(project2.working_space).toBe("ACES/ACEScg");
-    expect(project2.display_color_space).toBe("ACES/sRGB");
+    expect(project2.workingSpace).toBe("ACES/ACEScg");
+    expect(project2.displayColorSpace).toBe("ACES/sRGB");
   });
 });

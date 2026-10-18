@@ -364,16 +364,16 @@ export function _check_envelope(doc: TextDocument, raw: string): void {
   // Box-frame inputs the composer does not model: the matrix fixture
   // never swept them, so non-default values must refuse rather than
   // silently compose with top-aligned, ascender-based geometry.
-  if (doc.box_vertical_alignment !== BoxVerticalAlignment.TOP) {
+  if (doc.boxVerticalAlignment !== BoxVerticalAlignment.TOP) {
     throw new CompositionUnsupported("box vertical alignment");
   }
-  if (doc.box_auto_fit_policy !== BoxAutoFitPolicy.NONE) {
+  if (doc.boxAutoFitPolicy !== BoxAutoFitPolicy.NONE) {
     throw new CompositionUnsupported("box auto-fit policy");
   }
-  if (doc.box_first_baseline_alignment !== BoxFirstBaselineAlignment.ASCENT) {
+  if (doc.boxFirstBaselineAlignment !== BoxFirstBaselineAlignment.ASCENT) {
     throw new CompositionUnsupported("box first-baseline alignment");
   }
-  if (doc.box_first_baseline_alignment_minimum !== 0.0) {
+  if (doc.boxFirstBaselineAlignmentMinimum !== 0.0) {
     throw new CompositionUnsupported("box first-baseline minimum");
   }
   for (const char of Array.from(raw)) {
@@ -444,7 +444,7 @@ export function _check_envelope(doc: TextDocument, raw: string): void {
 }
 
 export function _char_styles(doc: TextDocument, raw: string): _CharStyle[] {
-  const fonts = doc._fonts.map((f) => f.post_script_name);
+  const fonts = doc._fonts.map((f) => f.postScriptName);
   const out: _CharStyle[] = [];
   for (const [start, end, style] of run_spans(doc._doc, "6", "6")) {
     const font_idx = read(char_style, style, "0");
@@ -614,13 +614,13 @@ export function _break_paragraph(
  */
 export function compose_lines(doc: TextDocument): ComposedLines {
   const raw = str(py_or(cos_get(doc._doc, "0", "0"), ""));
-  const box_size = doc.box_text_size;
+  const box_size = doc.boxTextSize;
   if (box_size == null) {
     throw new CompositionUnsupported("not a box-text document");
   }
   _check_envelope(doc, raw);
   const styles = _char_styles(doc, raw);
-  const inset = doc.box_inset_spacing;
+  const inset = doc.boxInsetSpacing;
   const width = box_size[0];
   const height = box_size[1];
 

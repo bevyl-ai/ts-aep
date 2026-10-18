@@ -18,9 +18,9 @@ import type { OpenExrRoptChunk } from "../../../binary/render_chunks.ts";
  * import { OpenExrFormatOptions, parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof OpenExrFormatOptions) {
- *   console.log(om.format_options.compression);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof OpenExrFormatOptions) {
+ *   console.log(om.formatOptions.compression);
  * }
  * ```
  */
@@ -39,14 +39,14 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
    * `Luminance/Chroma` checkbox in the OpenEXR Options dialog.
    * Not applicable when compression is DWAA or DWAB. Read / Write.
    */
-  declare luminance_chroma: boolean;
+  declare luminanceChroma: boolean;
 
   /**
    * Whether 32-bit float output is used instead of the default 16-bit
    * half float. Corresponds to the `32-bit float (not recommended)`
    * checkbox in the OpenEXR Options dialog. Read / Write.
    */
-  declare thirty_two_bit_float: boolean;
+  declare thirtyTwoBitFloat: boolean;
 
   constructor(kw: { _body: OpenExrRoptChunk }) {
     super();
@@ -60,14 +60,14 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
    * Stored as a little-endian `f4` in the Ropt body. Defaults to
    * `45.0`. Read / Write.
    */
-  get dwa_compression_level(): number | null {
+  get dwaCompressionLevel(): number | null {
     if (this.compression === OpenExrCompression.DWAA || this.compression === OpenExrCompression.DWAB) {
       return this._body.dwa_compression_level;
     }
     return null;
   }
 
-  set dwa_compression_level(value: number) {
+  set dwaCompressionLevel(value: number) {
     validate_positive_number(value);
     this._body.dwa_compression_level = value;
   }
@@ -79,6 +79,6 @@ descriptor(
   ChunkField.enum(OpenExrCompression, "_body", "compression", { allow_out_of_enum_values: true }),
 );
 
-descriptor(OpenExrFormatOptions, "luminance_chroma", ChunkField.bool("_body", "luminance_chroma"));
+descriptor(OpenExrFormatOptions, "luminanceChroma", ChunkField.bool("_body", "luminance_chroma"));
 
-descriptor(OpenExrFormatOptions, "thirty_two_bit_float", ChunkField.bool("_body", "thirty_two_bit_float"));
+descriptor(OpenExrFormatOptions, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirty_two_bit_float"));

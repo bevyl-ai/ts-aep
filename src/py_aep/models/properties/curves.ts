@@ -177,7 +177,7 @@ export class CurvesChannel {
    * Drawn with the pencil, the map is the curve and the points are
    * stale, so only the map counts.
    */
-  get is_identity(): boolean {
+  get isIdentity(): boolean {
     const map_is_identity = this._map.every((v, i) => v === i);
     if (!this._uses_points) return map_is_identity;
     return map_is_identity && this._points.every(([x, y]) => x === y);
@@ -231,7 +231,7 @@ export class Curves {
       }
       obj._channels.set(
         name,
-        new CurvesChannel(name, points, lut, record.selected, obj.uses_points),
+        new CurvesChannel(name, points, lut, record.selected, obj.usesPoints),
       );
     }
     return obj;
@@ -265,7 +265,7 @@ export class Curves {
    * Whether the curves go through their points; if not, they were
    * drawn with the pencil and their maps are what renders.
    */
-  get uses_points(): boolean {
+  get usesPoints(): boolean {
     return this._mode !== 0;
   }
 
@@ -280,8 +280,8 @@ export class Curves {
    * Whether every curve leaves every level unchanged, as an untouched
    * Curves does.
    */
-  get is_identity(): boolean {
-    return Array.from(this._channels.values()).every((ch) => ch.is_identity);
+  get isIdentity(): boolean {
+    return Array.from(this._channels.values()).every((ch) => ch.isIdentity);
   }
 
   /**
@@ -302,7 +302,7 @@ export class Curves {
     validate_number(x);
     const ch = getitem(this._channels, channel);
     let y: number;
-    if (this.uses_points) {
+    if (this.usesPoints) {
       y = ch._spline.__call__(x * 255.0) / 255.0;
     } else {
       const f = Math.min(Math.max(x, 0.0), 1.0) * 255.0;
@@ -316,7 +316,7 @@ export class Curves {
 
   [INSPECT](): string {
     const edited = Array.from(this._channels)
-      .filter(([, c]) => !c.is_identity)
+      .filter(([, c]) => !c.isIdentity)
       .map(([n]) => n);
     return `Curves(mode=${this._mode}, edited=${repr(edited)})`;
   }

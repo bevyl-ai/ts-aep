@@ -1,5 +1,5 @@
 /**
- * Resolver for `Property.can_set_expression`.
+ * Resolver for `Property.canSetExpression`.
  *
  * After Effects allows an expression on a stream the Timeline shows, whose
  * value is not empty, that can vary over time, and - for an effect
@@ -67,38 +67,38 @@ export const _MITER_JOIN = 1;
  * @returns Whether an expression can be set on this property.
  */
 export function resolve_can_set_expression(prop: Property): boolean {
-  const mn = prop.match_name;
+  const mn = prop.matchName;
 
   // Separation moves expressibility from the leader to its followers.
   // Measured on AE 2026: unseparated, the leader takes an expression and no
   // follower does; separated, the leader refuses one and X / Y accept, with
   // Z joining them only on a 3D layer.
-  if (prop.is_separation_follower) {
-    const leader = prop.separation_leader;
-    if (leader == null || !leader.dimensions_separated) {
+  if (prop.isSeparationFollower) {
+    const leader = prop.separationLeader;
+    if (leader == null || !leader.dimensionsSeparated) {
       return false;
     }
-    if (prop.separation_dimension === 2) {
-      return prop._containing_layer.is_3d;
+    if (prop.separationDimension === 2) {
+      return prop._containing_layer.is3d;
     }
     return true;
   }
-  if (prop.is_separation_leader && prop.dimensions_separated) {
+  if (prop.isSeparationLeader && prop.dimensionsSeparated) {
     return false;
   }
 
   // An UNAPPLIED text-animator pool property cannot have an expression;
   // once applied (materialized in binary) it can, like any property.
-  const parent = prop.parent_property;
+  const parent = prop.parentProperty;
   if (
     parent != null &&
-    parent.match_name === "ADBE Text Animator Properties" &&
+    parent.matchName === "ADBE Text Animator Properties" &&
     !prop._is_live()
   ) {
     return false;
   }
 
-  const pvt = prop.property_value_type;
+  const pvt = prop.propertyValueType;
   if (_PVT_ALWAYS_TRUE.has(pvt)) {
     return true;
   }
@@ -110,10 +110,10 @@ export function resolve_can_set_expression(prop: Property): boolean {
       // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
       throw new AttributeError(`'${layer.constructor.name}' has no property 'time_remap_enabled'`);
     }
-    return layer.time_remap_enabled;
+    return layer.timeRemapEnabled;
   }
 
-  if (!prop.can_vary_over_time) {
+  if (!prop.canVaryOverTime) {
     return false;
   }
 
@@ -132,7 +132,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
     if (prop._expressions_disabled) {
       return false;
     }
-    return !_NON_EXPRESSION_PARAM_TYPES.has(prop.property_control_type);
+    return !_NON_EXPRESSION_PARAM_TYPES.has(prop.propertyControlType);
   }
 
   if (pvt === PropertyValueType.LAYER_INDEX || pvt === PropertyValueType.CUSTOM_VALUE) {
@@ -172,13 +172,13 @@ export function resolve_can_set_expression(prop: Property): boolean {
   }
 
   const three_d = !!layer._ldta.three_d_layer;
-  const renderer = layer.containing_comp.renderer;
+  const renderer = layer.containingComp.renderer;
 
   if (
     layer_type === LayerType.THREE_D_MODEL &&
     _MODEL_LAYER_HIDDEN_MATERIALS.has(mn) &&
     parent != null &&
-    parent.match_name === "ADBE Material Options Group"
+    parent.matchName === "ADBE Material Options Group"
   ) {
     return false;
   }
@@ -203,7 +203,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
   if (
     mn === "ADBE Shadow Color" &&
     parent != null &&
-    parent.match_name === "ADBE Compositing Options Group"
+    parent.matchName === "ADBE Compositing Options Group"
   ) {
     return true;
   }
@@ -216,7 +216,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
   const classic_3d = three_d && renderer === _CLASSIC_3D;
   if (_CANSETEXPR_2D_ONLY.has(mn)) {
     return (
-      layer.null_layer ||
+      layer.nullLayer ||
       layer_type === LayerType.THREE_D_MODEL ||
       layer_type === LayerType.PARAMETRIC_MESH ||
       !classic_3d
@@ -281,8 +281,8 @@ export function _can_set_expression_parametric_mesh(
   if (_PARAMETRIC_MESH_NO_EXPRESSION.has(mn)) {
     return false;
   }
-  const parent = prop.parent_property;
-  const group_mn = parent != null ? parent.match_name : "";
+  const parent = prop.parentProperty;
+  const group_mn = parent != null ? parent.matchName : "";
   const group_type = _PARAMETRIC_MESH_GROUP_TYPE.get(group_mn) ?? null;
   if (group_type != null) {
     if (_PARAMETRIC_MESH_CHECKBOX_STREAMS.has(mn)) {

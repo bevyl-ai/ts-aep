@@ -1,5 +1,5 @@
 /**
- * Tests for Project.auto_fix_expressions.
+ * Tests for Project.autoFixExpressions.
  *
  * AE 2026 semantics (2026-07-14 probe run): quoted references in both quote
  * styles are replaced across enabled expressions - including inside comments
@@ -31,7 +31,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
-    project.auto_fix_expressions("Ghost", "Real");
+    project.autoFixExpressions("Ghost", "Real");
     expect(prop.expression).toBe('thisComp.layer("Real").transform.opacity');
   });
 
@@ -40,7 +40,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = "thisComp.layer('Ghost').transform.opacity / 2";
-    project.auto_fix_expressions("Ghost", "Real");
+    project.autoFixExpressions("Ghost", "Real");
     expect(prop.expression).toBe("thisComp.layer('Real').transform.opacity / 2");
   });
 
@@ -49,10 +49,10 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
-    prop.expression_enabled = false;
-    project.auto_fix_expressions("Ghost", "Real");
+    prop.expressionEnabled = false;
+    project.autoFixExpressions("Ghost", "Real");
     expect(prop.expression).toBe('thisComp.layer("Ghost").transform.opacity');
-    expect(prop.expression_enabled).toBe(false);
+    expect(prop.expressionEnabled).toBe(false);
   });
 
   test("test_unquoted_text_untouched", () => {
@@ -62,7 +62,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = "// Ghost mentioned in comment only\n50";
-    project.auto_fix_expressions("Ghost", "Real");
+    project.autoFixExpressions("Ghost", "Real");
     expect(prop.expression).toBe("// Ghost mentioned in comment only\n50");
   });
 
@@ -73,7 +73,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = '// see "Ghost" for details\nthisComp.layer("Ghost").transform.opacity';
-    project.auto_fix_expressions("Ghost", "Real");
+    project.autoFixExpressions("Ghost", "Real");
     expect(prop.expression).toBe('// see "Real" for details\nthisComp.layer("Real").transform.opacity');
   });
 
@@ -82,7 +82,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
-    project.auto_fix_expressions("", "Real");
+    project.autoFixExpressions("", "Real");
     expect(prop.expression).toBe('thisComp.layer("Ghost").transform.opacity');
   });
 
@@ -90,7 +90,7 @@ describe("TestAutoFixExpressions", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
     // @ts-expect-error deliberately passes a non-string to check runtime validation
-    raises(TypeError_, () => project.auto_fix_expressions(5, "Real"));
+    raises(TypeError_, () => project.autoFixExpressions(5, "Real"));
   });
 
   test("test_fix_survives_save_and_reparse", () => {
@@ -98,7 +98,7 @@ describe("TestAutoFixExpressions", () => {
     const project = parse_project_fresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
-    project.auto_fix_expressions("Ghost", "Real");
+    project.autoFixExpressions("Ghost", "Real");
     const out = tmp_path.div("fixed.aep");
     project.save(out);
     const reparsed = parse_project_fresh(out);

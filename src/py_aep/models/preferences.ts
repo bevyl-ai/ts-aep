@@ -49,7 +49,7 @@ export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
  *   is absent.
  */
 export function label_index(preferences: Preferences, key: string, default_: number): number {
-  const value = preferences.get_pref_as_number(
+  const value = preferences.getPrefAsNumber(
     _LABEL_INDICES_SECTION,
     key,
     PREFType.PREF_Type_MACHINE_INDEPENDENT,
@@ -65,7 +65,7 @@ export function label_index(preferences: Preferences, key: string, default_: num
  * no native rate). AE's factory value is 30.
  */
 export function default_sequence_fps(preferences: Preferences): number {
-  const value = preferences.get_pref_as_number(
+  const value = preferences.getPrefAsNumber(
     "Import Options Preference Section",
     "Import Options Default Sequence FPS",
     PREFType.PREF_Type_MACHINE_INDEPENDENT,
@@ -100,10 +100,10 @@ export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, stri
  * `null` when the preference is unset (or holds an unknown index).
  */
 export function _choose_layer_pref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
-  if (!preferences.have_pref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
+  if (!preferences.havePref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
     return null;
   }
-  const idx = int(preferences.get_pref_as_number(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC));
+  const idx = int(preferences.getPrefAsNumber(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC));
   return mapping.get(idx) ?? null;
 }
 
@@ -200,12 +200,12 @@ export function _sheet_readers(
   section: string,
 ): [(key: string, fallback: number) => number, (key: string, fallback: boolean) => boolean] {
   function number(key: string, fallback: number): number {
-    const value = preferences.get_pref_as_number(section, key, _TXT, { default: fallback });
+    const value = preferences.getPrefAsNumber(section, key, _TXT, { default: fallback });
     return value;
   }
 
   function flag(key: string, fallback: boolean): boolean {
-    return preferences.get_pref_as_bool(section, key, _TXT, { default: fallback });
+    return preferences.getPrefAsBool(section, key, _TXT, { default: fallback });
   }
 
   return [number, flag];
@@ -215,7 +215,7 @@ export function _sheet_readers(
  * AE's Character-panel defaults - the `["Text Style Sheet"]` section of
  * the machine-specific text preferences.
  *
- * This is the style `TextDocument.reset_char_style()` restores and the
+ * This is the style `TextDocument.resetCharStyle()` restores and the
  * style `addText` gives a new layer. Keys map to `TextDocument`
  * attributes. Missing preferences fall back to AE's factory values.
  */
@@ -233,7 +233,7 @@ export function default_character_style(preferences: Preferences) {
     number("Stroke Blue", factory.stroke_color[2]),
   ];
   return {
-    font: preferences.get_pref_as_string(_TEXT_STYLE_SECTION, "Font PostScript Name", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+    font: preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Font PostScript Name", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
       default: factory.font,
     }),
     font_size: number("Size", factory.font_size),
@@ -252,7 +252,7 @@ export function default_character_style(preferences: Preferences) {
     baseline_shift: number("Baseline Shift", factory.baseline_shift),
     auto_leading: flag("Auto Leading", factory.auto_leading),
     auto_kern_type: _AUTO_KERN_BY_PREF.get(strip(
-        preferences.get_pref_as_string(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+        preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
           default: "Metric Auto Kerning",
         }),
       )) ?? factory.auto_kern_type,
@@ -263,14 +263,14 @@ export function default_character_style(preferences: Preferences) {
  * AE's Paragraph-panel defaults - the `["Text Paragraph Sheet"]`
  * section of the machine-specific text preferences.
  *
- * This is the style `TextDocument.reset_paragraph_style()` restores.
+ * This is the style `TextDocument.resetParagraphStyle()` restores.
  * Note that hyphenation has no entry in this sheet, which is why After
  * Effects leaves `auto_hyphenate` untouched on a reset.
  */
 export function default_paragraph_style(preferences: Preferences) {
   const [number, flag] = _sheet_readers(preferences, _PARA_SHEET_SECTION);
   const factory = _FACTORY_PARA_STYLE;
-  const raw_justification = preferences.get_pref_as_string(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+  const raw_justification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
     default: "Left",
   });
   const justification = _JUSTIFICATION_BY_PREF.get(strip(split(raw_justification, "|")[0])) ?? factory.justification;
@@ -294,7 +294,7 @@ export function default_paragraph_style(preferences: Preferences) {
  * `75/25` gives new layers a 3-second span.
  */
 export function _default_out_point(preferences: Preferences, key: string): number | null {
-  const raw = preferences.get_pref_as_string("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
+  const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });
   const parts = split(raw, "/");
@@ -331,8 +331,8 @@ export function _default_out_point(preferences: Preferences, key: string): numbe
  */
 export function apply_text_style_prefs(document: TextDocument, preferences: Preferences): void {
   function number(key: string): number | null {
-    if (!preferences.have_pref(_TEXT_STYLE_SECTION, key, _TXT)) return null;
-    return preferences.get_pref_as_number(_TEXT_STYLE_SECTION, key, _TXT);
+    if (!preferences.havePref(_TEXT_STYLE_SECTION, key, _TXT)) return null;
+    return preferences.getPrefAsNumber(_TEXT_STYLE_SECTION, key, _TXT);
   }
 
   function differs(current: number | null, new_: number): boolean {
@@ -342,23 +342,23 @@ export function apply_text_style_prefs(document: TextDocument, preferences: Pref
     return Math.abs((current != null ? current : 0.0) - new_) > 1e-6;
   }
 
-  const font = preferences.have_pref(_TEXT_STYLE_SECTION, "Font PostScript Name", _TXT)
-    ? preferences.get_pref_as_string(_TEXT_STYLE_SECTION, "Font PostScript Name", _TXT)
+  const font = preferences.havePref(_TEXT_STYLE_SECTION, "Font PostScript Name", _TXT)
+    ? preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Font PostScript Name", _TXT)
     : null;
   if (font && document.font !== font) {
     document.font = font;
   }
 
   const size = number("Size");
-  if (size != null && size > 0 && differs(document.font_size, size)) {
-    document.font_size = size;
+  if (size != null && size > 0 && differs(document.fontSize, size)) {
+    document.fontSize = size;
   }
 
   const fill = [number("Fill Red"), number("Fill Green"), number("Fill Blue")];
   if (fill.every((n) => n !== null)) {
-    const current_fill = py_or(document.fill_color, [0.0, 0.0, 0.0]);
+    const current_fill = py_or(document.fillColor, [0.0, 0.0, 0.0]);
     if (zip(current_fill, fill).some(([c, n]) => differs(c, n))) {
-      document.fill_color = [...fill];
+      document.fillColor = [...fill];
     }
   }
 
@@ -369,35 +369,35 @@ export function apply_text_style_prefs(document: TextDocument, preferences: Pref
   }
 
   const baseline_shift = number("Baseline Shift");
-  if (baseline_shift != null && differs(document.baseline_shift, baseline_shift)) {
-    document.baseline_shift = baseline_shift;
+  if (baseline_shift != null && differs(document.baselineShift, baseline_shift)) {
+    document.baselineShift = baseline_shift;
   }
 
-  if (preferences.have_pref(_TEXT_STYLE_SECTION, "Render Fill", _TXT)) {
-    const apply_fill = preferences.get_pref_as_bool(_TEXT_STYLE_SECTION, "Render Fill", _TXT);
-    if (!!document.apply_fill !== apply_fill) {
-      document.apply_fill = apply_fill;
+  if (preferences.havePref(_TEXT_STYLE_SECTION, "Render Fill", _TXT)) {
+    const apply_fill = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Fill", _TXT);
+    if (!!document.applyFill !== apply_fill) {
+      document.applyFill = apply_fill;
     }
   }
 
-  if (preferences.have_pref(_TEXT_STYLE_SECTION, "Render Stroke", _TXT)) {
-    const apply_stroke = preferences.get_pref_as_bool(_TEXT_STYLE_SECTION, "Render Stroke", _TXT);
-    if (!!document.apply_stroke !== apply_stroke) {
-      document.apply_stroke = apply_stroke;
+  if (preferences.havePref(_TEXT_STYLE_SECTION, "Render Stroke", _TXT)) {
+    const apply_stroke = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Stroke", _TXT);
+    if (!!document.applyStroke !== apply_stroke) {
+      document.applyStroke = apply_stroke;
     }
     // Stroke width/color were probed only with the stroke rendered;
     // leave them untouched when the sheet keeps the stroke off so the
     // factory sheet stays byte-identical to the baked template.
     if (apply_stroke) {
       const stroke_width = number("Stroke Width");
-      if (stroke_width != null && differs(document.stroke_width, stroke_width)) {
-        document.stroke_width = stroke_width;
+      if (stroke_width != null && differs(document.strokeWidth, stroke_width)) {
+        document.strokeWidth = stroke_width;
       }
       const stroke = [number("Stroke Red"), number("Stroke Green"), number("Stroke Blue")];
       if (stroke.every((n) => n !== null)) {
-        const current = py_or(document.stroke_color, [0.0, 0.0, 0.0]);
+        const current = py_or(document.strokeColor, [0.0, 0.0, 0.0]);
         if (zip(current, stroke).some(([c, n]) => differs(c, n))) {
-          document.stroke_color = [...stroke];
+          document.strokeColor = [...stroke];
         }
       }
     }
@@ -438,7 +438,7 @@ export function default_synthetic_out_point(preferences: Preferences): number | 
  *   files, and there is no `save_to_disk()`. Overrides last for the
  *   lifetime of this object and never modify the files.
  * - `getPrefAsLong` / `getPrefAsFloat` are merged into a single
- *   {@link get_pref_as_number} (Python does not need the distinction).
+ *   {@link getPrefAsNumber} (Python does not need the distinction).
  * - Getters accept an optional `default` returned when the key is
  *   absent instead of raising `KeyError`.
  *
@@ -448,7 +448,7 @@ export function default_synthetic_out_point(preferences: Preferences): number | 
  * import { parse, PREFType } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep", { ae_preferences_dir: "..." });
- * const fps = app.preferences.get_pref_as_number(
+ * const fps = app.preferences.getPrefAsNumber(
  *   "Import Options Preference Section",
  *   "Import Options Default Sequence FPS",
  *   PREFType.PREF_Type_MACHINE_INDEPENDENT,
@@ -521,7 +521,7 @@ export class Preferences {
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
-  get_pref_as_number(
+  getPrefAsNumber(
     section_name: string,
     key_name: string,
     pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -548,7 +548,7 @@ export class Preferences {
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
-  get_pref_as_bool(
+  getPrefAsBool(
     section_name: string,
     key_name: string,
     pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -575,7 +575,7 @@ export class Preferences {
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
-  get_pref_as_string(
+  getPrefAsString(
     section_name: string,
     key_name: string,
     pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -606,7 +606,7 @@ export class Preferences {
    * @param value - The new numeric value.
    * @param pref_type - The preference file the preference belongs to.
    */
-  set_pref_as_number(
+  setPrefAsNumber(
     section_name: string,
     key_name: string,
     value: number,
@@ -634,7 +634,7 @@ export class Preferences {
    * @param value - The new boolean value.
    * @param pref_type - The preference file the preference belongs to.
    */
-  set_pref_as_bool(
+  setPrefAsBool(
     section_name: string,
     key_name: string,
     value: boolean,
@@ -658,7 +658,7 @@ export class Preferences {
    * @param value - The new string value.
    * @param pref_type - The preference file the preference belongs to.
    */
-  set_pref_as_string(
+  setPrefAsString(
     section_name: string,
     key_name: string,
     value: string,
@@ -680,7 +680,7 @@ export class Preferences {
    * @param key_name - The key name of the preference.
    * @param pref_type - The preference file the preference is read from.
    */
-  have_pref(
+  havePref(
     section_name: string,
     key_name: string,
     pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -693,14 +693,14 @@ export class Preferences {
    * Delete the given preference from this object's view.
    *
    * The file value (if any) is masked, not removed from disk:
-   * {@link have_pref} returns `false` and getters fall back to their
+   * {@link havePref} returns `false` and getters fall back to their
    * `default` afterwards.
    *
    * @param section_name - The name of a preferences section.
    * @param key_name - The key name of the preference.
    * @param pref_type - The preference file the preference belongs to.
    */
-  delete_pref(
+  deletePref(
     section_name: string,
     key_name: string,
     pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -738,7 +738,7 @@ export class Preferences {
    * `set_pref_as_*` overrides are not consulted. Empty when no
    * preferences directory was provided.
    */
-  composition_presets(): CompPreset[] {
+  compositionPresets(): CompPreset[] {
     const prefs_file = this._file(PREFType.PREF_Type_MACHINE_INDEPENDENT_COMPOSITION);
     if (prefs_file == null) return [];
     return parse_comp_presets(prefs_file);
@@ -753,7 +753,7 @@ export class Preferences {
    * `[compName].[fileExtension]`); `set_pref_as_*` overrides are not
    * consulted. Empty when no preferences directory was provided.
    */
-  output_name_template_presets(): Map<string, string> {
+  outputNameTemplatePresets(): Map<string, string> {
     const prefs_file = this._file(PREFType.PREF_Type_MACHINE_SPECIFIC);
     if (prefs_file == null) return new Map();
     const section = prefs_file.section("Output File Name Template Presets Section v6");

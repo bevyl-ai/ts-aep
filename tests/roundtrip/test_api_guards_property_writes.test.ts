@@ -65,7 +65,7 @@ describe("TestPropertyNameGuard", () => {
 
   test("test_marker_property_rename_rejected", () => {
     const app = parse_aep(PT);
-    const marker = _first_leaf(app, (p) => p.match_name === "ADBE Marker");
+    const marker = _first_leaf(app, (p) => p.matchName === "ADBE Marker");
     raises(ValueError, () => {
       marker.name = "my markers";
     }, "indexed group");
@@ -73,7 +73,7 @@ describe("TestPropertyNameGuard", () => {
 
   test("test_layer_style_no_value_rename_rejected", () => {
     const app = parse_aep(PT);
-    const gradient = _first_leaf(app, (p) => p.match_name.endsWith("outerGlow/gradient"));
+    const gradient = _first_leaf(app, (p) => p.matchName.endsWith("outerGlow/gradient"));
     raises(ValueError, () => {
       gradient.name = "grad";
     }, "indexed group");
@@ -89,7 +89,7 @@ describe("TestPropertyNameGuard", () => {
 
   test("test_transform_leaf_rename_rejected", () => {
     const app = parse_aep(PT);
-    const prop = _first_leaf(app, (p) => p.match_name === "ADBE Opacity");
+    const prop = _first_leaf(app, (p) => p.matchName === "ADBE Opacity");
     raises(ValueError, () => {
       prop.name = "Alpha";
     }, "indexed group");
@@ -163,7 +163,7 @@ describe("TestPropertyNameGuard", () => {
 describe("TestDimensionsReadOnly", () => {
   test("test_dimensions_rejects_write", () => {
     const app = parse_aep(SAMPLES_DIR.div("property", "property_2D_position.aep"));
-    const pos = _first_leaf(app, (p) => p.match_name === "ADBE Position");
+    const pos = _first_leaf(app, (p) => p.matchName === "ADBE Position");
     const before = pos.dimensions;
     raises(AttributeError, () => {
       pos.dimensions = 5;
@@ -185,9 +185,9 @@ describe("TestExpressionEnabledGuard", () => {
 
   test("test_rejected_when_expressions_impossible", () => {
     const app = parse_aep(PT);
-    const target = _first_leaf(app, (p) => !p.can_set_expression);
+    const target = _first_leaf(app, (p) => !p.canSetExpression);
     raises(ValueError, () => {
-      target.expression_enabled = true;
+      target.expressionEnabled = true;
     }, "cannot take an expression");
   });
 
@@ -196,15 +196,15 @@ describe("TestExpressionEnabledGuard", () => {
     const app = parse_aep(SAMPLES_DIR.div("property", "all_animated.aep"));
     const comp = app.project.compositions[0];
     // NOTE(port): next(gen) → Array.find; on a miss Python raises StopIteration, TS fails at the next line - the test errors either way
-    const rot = as_instance(Array.from(comp.av_layers[0].transform).find((p) => p.match_name === "ADBE Rotate Z"), Property);
-    expect(rot.can_set_expression).toBe(true);
+    const rot = as_instance(Array.from(comp.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    expect(rot.canSetExpression).toBe(true);
     rot.expression = "time * 2";
-    rot.expression_enabled = true;
+    rot.expressionEnabled = true;
     const out = tmp_path.div("expr_enabled.aep");
     app.project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const rot2 = as_instance(Array.from(comp2.av_layers[0].transform).find((p) => p.match_name === "ADBE Rotate Z"), Property);
-    expect(rot2.expression_enabled).toBe(true);
+    const rot2 = as_instance(Array.from(comp2.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    expect(rot2.expressionEnabled).toBe(true);
   });
 
   /** Turning it off is legal whatever the property. */
@@ -213,7 +213,7 @@ describe("TestExpressionEnabledGuard", () => {
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
         for (const prop of layer.transform) {
-          as_instance(prop, Property).expression_enabled = false;
+          as_instance(prop, Property).expressionEnabled = false;
         }
       }
     }
@@ -240,15 +240,15 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const app = parse_aep(BEZ);
     const prop = _animated(app);
     const keyframe = prop.keyframes[1];
-    const count = len(keyframe.in_temporal_ease);
-    keyframe.in_temporal_ease = Array.from(range(count), () => new KeyframeEase(0.0, 66.0));
-    keyframe.out_temporal_ease = Array.from(range(count), () => new KeyframeEase(0.0, 12.0));
+    const count = len(keyframe.inTemporalEase);
+    keyframe.inTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 66.0));
+    keyframe.outTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 12.0));
 
     const out = tmp_path.div("ease_middle.aep");
     app.project.save(out);
     const reparsed = _animated(parse_aep(out)).keyframes[1];
-    expect(approx(reparsed.in_temporal_ease[0].influence, 66.0)).toBe(true);
-    expect(approx(reparsed.out_temporal_ease[0].influence, 12.0)).toBe(true);
+    expect(approx(reparsed.inTemporalEase[0].influence, 66.0)).toBe(true);
+    expect(approx(reparsed.outTemporalEase[0].influence, 12.0)).toBe(true);
   });
 
   /** The getter returns computed copies here; the write must not. */
@@ -257,15 +257,15 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const app = parse_aep(BEZ);
     const prop = _animated(app);
     const first = prop.keyframes[0];
-    first.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-    first.out_interpolation_type = KeyframeInterpolationType.BEZIER;
-    const count = len(first.out_temporal_ease);
-    first.out_temporal_ease = Array.from(range(count), () => new KeyframeEase(0.0, 44.0));
+    first.inInterpolationType = KeyframeInterpolationType.BEZIER;
+    first.outInterpolationType = KeyframeInterpolationType.BEZIER;
+    const count = len(first.outTemporalEase);
+    first.outTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 44.0));
 
     const out = tmp_path.div("ease_boundary.aep");
     app.project.save(out);
     const reparsed = _animated(parse_aep(out)).keyframes[0];
-    expect(approx(reparsed.out_temporal_ease[0].influence, 44.0)).toBe(true);
+    expect(approx(reparsed.outTemporalEase[0].influence, 44.0)).toBe(true);
   });
 
   test("test_speed_round_trips", () => {
@@ -273,20 +273,20 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const app = parse_aep(BEZ);
     const prop = _animated(app);
     const keyframe = prop.keyframes[1];
-    const count = len(keyframe.in_temporal_ease);
-    keyframe.in_temporal_ease = Array.from(range(count), () => new KeyframeEase(25.0, 50.0));
+    const count = len(keyframe.inTemporalEase);
+    keyframe.inTemporalEase = Array.from(range(count), () => new KeyframeEase(25.0, 50.0));
 
     const out = tmp_path.div("ease_speed.aep");
     app.project.save(out);
     const reparsed = _animated(parse_aep(out)).keyframes[1];
-    expect(approx(reparsed.in_temporal_ease[0].speed, 25.0)).toBe(true);
+    expect(approx(reparsed.inTemporalEase[0].speed, 25.0)).toBe(true);
   });
 
   test("test_wrong_length_rejected", () => {
     const app = parse_aep(BEZ);
     const keyframe = _animated(app).keyframes[1];
     raises(ValueError, () => {
-      keyframe.in_temporal_ease = new Array(99).fill(new KeyframeEase(0.0, 5.0));
+      keyframe.inTemporalEase = new Array(99).fill(new KeyframeEase(0.0, 5.0));
     }, "expects");
   });
 
@@ -295,7 +295,7 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const keyframe = _animated(app).keyframes[1];
     raises(ValueError, () => {
       // @ts-expect-error deliberately wrong-typed element (Python `# type: ignore[list-item]`)
-      keyframe.in_temporal_ease = [0.5];
+      keyframe.inTemporalEase = [0.5];
     }, "KeyframeEase");
   });
 });
@@ -315,8 +315,8 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
     let checked = 0;
     for (const comp of app.project.compositions) {
       for (const prop of _leaves(app, (p) => true)) {
-        if (prop.can_add_to_motion_graphics_template(comp)) {
-          prop.add_to_motion_graphics_template(comp);
+        if (prop.canAddToMotionGraphicsTemplate(comp)) {
+          prop.addToMotionGraphicsTemplate(comp);
           checked += 1;
         }
       }
@@ -326,12 +326,12 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
 
   test("test_value_less_slider_is_not_addable", () => {
     const app = parse_aep(EG);
-    const targets = _leaves(app, (p) => p.match_name === "ADBE Layer Source Alternate");
+    const targets = _leaves(app, (p) => p.matchName === "ADBE Layer Source Alternate");
     expect(py_bool(targets)).toBe(true);
     const comp = app.project.compositions[0];
     for (const prop of targets) {
       expect(prop.value == null).toBe(true);
-      expect(!prop.can_add_to_motion_graphics_template(comp)).toBe(true);
+      expect(!prop.canAddToMotionGraphicsTemplate(comp)).toBe(true);
     }
   });
 });

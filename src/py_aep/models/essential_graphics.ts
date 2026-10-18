@@ -33,17 +33,17 @@ function _is_iterable(x: unknown): x is Iterable<unknown> {
  * (Named `prop_index`, not `index`, to avoid shadowing `tuple.index`.)
  */
 export class SourcePropertyRef {
-  readonly match_name: string;
-  readonly prop_index: number | null;
+  readonly matchName: string;
+  readonly propIndex: number | null;
 
   constructor(match_name: string, prop_index: number | null) {
-    this.match_name = match_name;
-    this.prop_index = prop_index;
+    this.matchName = match_name;
+    this.propIndex = prop_index;
   }
 
   /** NamedTuple `_replace(**kw)`: a copy with the given fields changed. */
   _replace(kw: { match_name?: string; prop_index?: number | null } = {}): SourcePropertyRef {
-    const f = { match_name: this.match_name, prop_index: this.prop_index, ...kw };
+    const f = { match_name: this.matchName, prop_index: this.propIndex, ...kw };
     return new SourcePropertyRef(f.match_name, f.prop_index);
   }
 
@@ -51,7 +51,7 @@ export class SourcePropertyRef {
   equals(other: unknown): boolean {
     if (other == null || typeof other === "string" || !_is_iterable(other)) return false;
     const o = [...other];
-    return o.length === 2 && o[0] === this.match_name && o[1] === this.prop_index;
+    return o.length === 2 && o[0] === this.matchName && o[1] === this.propIndex;
   }
 
   get length(): number {
@@ -59,8 +59,8 @@ export class SourcePropertyRef {
   }
 
   *[Symbol.iterator]() {
-    yield this.match_name;
-    yield this.prop_index;
+    yield this.matchName;
+    yield this.propIndex;
   }
 }
 
@@ -82,7 +82,7 @@ export class EssentialGraphicsController {
    * 6=Text, 8=Comment, 9=MultiDimensional, 10=Group, 13=Dropdown,
    * 14=Media Replacement.
    */
-  declare controller_type: number;
+  declare controllerType: number;
 
   declare _name_utf8: Utf8Chunk;
   declare _ctyp: U4Chunk;
@@ -92,17 +92,17 @@ export class EssentialGraphicsController {
    * controller exposes, as `SourcePropertyRef` nodes. Empty when the
    * path is not stored. Read-only.
    */
-  declare source_property_path: SourcePropertyRef[];
+  declare sourcePropertyPath: SourcePropertyRef[];
   /**
    * The item id of the source composition that owns the controlled
    * property (the `CCId` chunk), or `null` when not stored. Read-only.
    */
-  declare source_comp_id: number | null;
+  declare sourceCompId: number | null;
   /**
    * The `layer_id` of the source layer that owns the controlled
    * property (the `CLId` chunk), or `null` when not stored. Read-only.
    */
-  declare source_layer_id: number | null;
+  declare sourceLayerId: number | null;
 
   constructor(kw: {
     _name_utf8: Utf8Chunk;
@@ -124,18 +124,18 @@ export class EssentialGraphicsController {
     this._ctyp = _ctyp;
     this.uuid = uuid;
     /** The unique identifier for this controller. */
-    this.source_property_path = source_property_path;
+    this.sourcePropertyPath = source_property_path;
     /**
      * The path (root to leaf) to the source-composition property this
      * controller exposes, as `SourcePropertyRef` nodes. Empty when the
      * path is not stored. Read-only.
      */
-    this.source_comp_id = source_comp_id;
+    this.sourceCompId = source_comp_id;
     /**
      * The item id of the source composition that owns the controlled
      * property (the `CCId` chunk), or `null` when not stored. Read-only.
      */
-    this.source_layer_id = source_layer_id;
+    this.sourceLayerId = source_layer_id;
     /**
      * The `layer_id` of the source layer that owns the controlled
      * property (the `CLId` chunk), or `null` when not stored. Read-only.
@@ -145,7 +145,7 @@ export class EssentialGraphicsController {
   [INSPECT](): string {
     return (
       `EssentialGraphicsController(name=${repr(this.name)},` +
-      ` type=${this.controller_type},` +
+      ` type=${this.controllerType},` +
       ` uuid=${repr(this.uuid)})`
     );
   }
@@ -158,6 +158,6 @@ descriptor(
 );
 descriptor(
   EssentialGraphicsController,
-  "controller_type",
+  "controllerType",
   new ChunkField("_ctyp", "value", { read_only: true }),
 );

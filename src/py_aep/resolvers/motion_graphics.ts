@@ -6,7 +6,7 @@
  * and `resolvers/essential_properties.py`. This module is the write side: it
  * classifies a property into an Essential Graphics controller type, builds the
  * root-to-leaf source-property path, and decides whether a property or layer can
- * be exposed - shared by `Property`/`AVLayer.add_to_motion_graphics_template`.
+ * be exposed - shared by `Property`/`AVLayer.addToMotionGraphicsTemplate`.
  *
  * Path shape (the CPrp JSON): each node is `{"index", "matchName"}`. AE resolves
  * named groups by name (index `0xFFFFFFFF`) and indexed-group children by index.
@@ -63,10 +63,10 @@ export const CONTROLLER_TEXT = 6;
 
 /** The `Layer` that owns `prop`, or `null` if not layer-owned. */
 export function _owning_layer(prop: Property): Layer | null {
-  let group: PropertyGroup | null = prop.parent_property;
+  let group: PropertyGroup | null = prop.parentProperty;
   while (group != null) {
     if (group instanceof _layer().Layer) return group;
-    group = group.parent_property;
+    group = group.parentProperty;
   }
   return null;
 }
@@ -103,7 +103,7 @@ export class PathNode {
  * every `* Control-0001` -\> 1).
  */
 export function _effect_param_index(layer: Layer, effect_mn: string, param_mn: string): number | null {
-  const defs = layer.containing_comp._project._effect_param_defs.get(effect_mn) ?? null;
+  const defs = layer.containingComp._project._effect_param_defs.get(effect_mn) ?? null;
   if (defs == null || defs.size === 0) return null;
   const keys = [...defs.keys()];
   if (!keys.includes(param_mn)) return null;
@@ -118,21 +118,21 @@ export function _effect_param_index(layer: Layer, effect_mn: string, param_mn: s
  * instances are fine - the index disambiguates them.
  */
 export function _effect_param_path(prop: Property): [PathNode[], Layer] | null {
-  const effect: PropertyGroup | null = prop.parent_property;
-  if (effect == null || !effect.is_effect) return null;
-  const parade: PropertyGroup | null = effect.parent_property;
-  if (parade == null || parade.match_name !== "ADBE Effect Parade") return null;
-  const layer: PropertyGroup | null = parade.parent_property;
+  const effect: PropertyGroup | null = prop.parentProperty;
+  if (effect == null || !effect.isEffect) return null;
+  const parade: PropertyGroup | null = effect.parentProperty;
+  if (parade == null || parade.matchName !== "ADBE Effect Parade") return null;
+  const layer: PropertyGroup | null = parade.parentProperty;
   if (!(layer instanceof _layer().Layer)) return null;
   const effect_index = parade.properties.findIndex((e) => e === effect);
   if (effect_index === -1) return null;
-  const leaf_index = _effect_param_index(layer, effect.match_name, prop.match_name);
+  const leaf_index = _effect_param_index(layer, effect.matchName, prop.matchName);
   if (leaf_index == null) return null;
   return [
     [
       new PathNode("ADBE Effect Parade", null),
-      new PathNode(effect.match_name, effect_index),
-      new PathNode(prop.match_name, leaf_index),
+      new PathNode(effect.matchName, effect_index),
+      new PathNode(prop.matchName, leaf_index),
     ],
     layer,
   ];
@@ -165,32 +165,32 @@ export function _source_property_path(prop: Property): [PathNode[], Layer] | nul
 
   const chain: PathNode[] = [];
   let node: Property | PropertyGroup = prop;
-  let parent: PropertyGroup | null = prop.parent_property;
+  let parent: PropertyGroup | null = prop.parentProperty;
   while (parent != null && !(parent instanceof _layer().Layer)) {
-    if (parent.is_effect || parent.match_name === "ADBE Effect Parade") {
+    if (parent.isEffect || parent.matchName === "ADBE Effect Parade") {
       // Effect subtrees are handled by _effect_param_path only; a
       // positional index here would miss the hidden header pard.
       return null;
     }
-    if (parent.property_type === PropertyType.INDEXED_GROUP) {
+    if (parent.propertyType === PropertyType.INDEXED_GROUP) {
       const idx = parent.properties.findIndex((c) => c === node);
       if (idx === -1) return null;
-      chain.push(new PathNode(node.match_name, idx));
+      chain.push(new PathNode(node.matchName, idx));
     } else {
-      if (parent.properties.filter((c) => c.match_name === node.match_name).length !== 1) {
+      if (parent.properties.filter((c) => c.matchName === node.matchName).length !== 1) {
         return null;
       }
-      chain.push(new PathNode(node.match_name, null));
+      chain.push(new PathNode(node.matchName, null));
     }
     node = parent;
-    parent = parent.parent_property;
+    parent = parent.parentProperty;
   }
   if (!(parent instanceof _layer().Layer)) return null;
   // The layer's top-level group resolves by name too.
-  if (parent.properties.filter((c) => c.match_name === node.match_name).length !== 1) {
+  if (parent.properties.filter((c) => c.matchName === node.matchName).length !== 1) {
     return null;
   }
-  chain.push(new PathNode(node.match_name, null));
+  chain.push(new PathNode(node.matchName, null));
   return [chain.reverse(), parent];
 }
 
@@ -218,15 +218,15 @@ export function _path_json(nodes: PathNode[]): string {
  * plain numeric slider (both are 1-D value types).
  */
 export function classify_property(prop: Property): number | null {
-  if (prop.match_name === _TEXT_DOCUMENT) return CONTROLLER_TEXT;
-  if (prop.property_value_type === PropertyValueType.COLOR) return CONTROLLER_COLOR;
-  if (prop.property_control_type === PropertyControlType.BOOLEAN) return CONTROLLER_CHECKBOX;
-  if (prop.property_control_type === PropertyControlType.ENUM) {
+  if (prop.matchName === _TEXT_DOCUMENT) return CONTROLLER_TEXT;
+  if (prop.propertyValueType === PropertyValueType.COLOR) return CONTROLLER_COLOR;
+  if (prop.propertyControlType === PropertyControlType.BOOLEAN) return CONTROLLER_CHECKBOX;
+  if (prop.propertyControlType === PropertyControlType.ENUM) {
     // Dropdown params are 1-D but AE exposes them as a type-13 Dropdown
     // controller (menu entries included), which py_aep does not build.
     return null;
   }
-  if (prop.property_value_type === PropertyValueType.OneD) {
+  if (prop.propertyValueType === PropertyValueType.OneD) {
     // A slider controller is seeded from the property's current value,
     // so a value-less 1-D property (e.g. `ADBE Layer Source Alternate`)
     // cannot back one - reporting it addable made
@@ -246,9 +246,9 @@ export function classify_property(prop: Property): number | null {
  */
 export function _already_added(comp: CompItem, layer_id: number, nodes: PathNode[]): boolean {
   const wanted = nodes.map((node) => [node.match_name, node.prop_index]);
-  for (const ctrl of comp.motion_graphics_controllers) {
-    if (ctrl.source_layer_id !== layer_id) continue;
-    const stored = ctrl.source_property_path.map((ref) => [ref.match_name, ref.prop_index]);
+  for (const ctrl of comp.motionGraphicsControllers) {
+    if (ctrl.sourceLayerId !== layer_id) continue;
+    const stored = ctrl.sourcePropertyPath.map((ref) => [ref.matchName, ref.propIndex]);
     if (py_eq(stored, wanted)) return true;
   }
   return false;
@@ -289,7 +289,7 @@ export function property_controller_plan(prop: Property, comp: CompItem): Proper
   const resolved = _source_property_path(prop);
   if (resolved == null) return null;
   const [nodes, layer] = resolved;
-  if (layer.containing_comp !== comp) return null;
+  if (layer.containingComp !== comp) return null;
   if (_already_added(comp, layer._ldta.layer_id, nodes)) return null;
   return new PropertyControllerPlan(controller_type, nodes, _path_json(nodes), layer);
 }
@@ -309,7 +309,7 @@ export function font_caps_json(prop: Property): string {
   let size: number = 0;
   if (value instanceof TextDocument) {
     font = value.font || "";
-    const fs = value.font_size;
+    const fs = value.fontSize;
     if (fs != null) size = Number.isInteger(fs) ? int(fs) : fs;
   }
   return json_dumps(
@@ -351,11 +351,11 @@ export function media_controller_path(): [PathNode[], string] {
  * live in `comp`, and must not already be exposed.
  */
 export function can_add_layer(layer: AVLayer, comp: CompItem): boolean {
-  if (layer.containing_comp !== comp) return false;
-  if (!layer.has_video || layer.adjustment_layer || layer.null_layer) return false;
+  if (layer.containingComp !== comp) return false;
+  if (!layer.hasVideo || layer.adjustmentLayer || layer.nullLayer) return false;
   const source: AVItem | null = layer.source;
   if (source instanceof FootageItem) {
-    if (source.main_source instanceof SolidSource) return false;
+    if (source.mainSource instanceof SolidSource) return false;
   } else if (!(source instanceof _composition().CompItem)) {
     return false;
   }

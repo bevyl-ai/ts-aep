@@ -69,8 +69,8 @@ describe("TestPrecomposeMove", () => {
     expect(new_comp.width).toBe(comp.width);
     expect(new_comp.height).toBe(comp.height);
     expect(new_comp.duration).toBe(comp.duration);
-    expect(new_comp.frame_rate).toBe(comp.frame_rate);
-    expect(py_eq(new_comp.bg_color, comp.bg_color)).toBe(true);
+    expect(new_comp.frameRate).toBe(comp.frameRate);
+    expect(py_eq(new_comp.bgColor, comp.bgColor)).toBe(true);
   });
 
   test("test_replacement_at_topmost_moved_index", () => {
@@ -91,7 +91,7 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = get_comp(app.project, "Comp 1");
     comp.precompose([0], "PC alpha");
-    const names = app.project.root_folder.items.map((item) => item.name);
+    const names = app.project.rootFolder.items.map((item) => item.name);
     // AE stores folder children in display order; the new comp lands
     // between 'Comp 1' and 'Solids'.
     expect(py_eq(names, ["Comp 1", "PC alpha", "Solids"])).toBe(true);
@@ -221,12 +221,12 @@ describe("TestPrecomposeLeaveAttributes", () => {
   test("test_new_comp_sized_from_source", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = get_comp(app.project, "Comp 1");
-    const solid = comp.add_solid([1.0, 0.0, 0.0], "SmallRed", 400, 300);
+    const solid = comp.addSolid([1.0, 0.0, 0.0], "SmallRed", 400, 300);
     const new_comp = comp.precompose([0], "PC small", false);
     expect(py_eq([new_comp.width, new_comp.height], [400, 300])).toBe(true);
     // Duration / frame rate stay inherited from the parent comp.
     expect(new_comp.duration).toBe(comp.duration);
-    expect(new_comp.frame_rate).toBe(comp.frame_rate);
+    expect(new_comp.frameRate).toBe(comp.frameRate);
     expect(solid.source).toBe(new_comp);
   });
 

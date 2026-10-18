@@ -336,7 +336,7 @@ function _json_truthy(d: object): boolean {
 export function ai_layer_opti_boxes(project: Project): Map<string, [number[], number, number]> {
   const out = new Map<string, [number[], number, number]>();
   for (const item of project.items.values()) {
-    const source = getattr(item, "main_source", null);
+    const source = getattr(item, "mainSource", null);
     const opti = getattr(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
@@ -504,8 +504,8 @@ export function get_folder(project: Project, name: string): FolderItem {
 
 /** Get a render queue item by its composition name. */
 export function get_rqi(project: Project, comp_name: string): RenderQueueItem {
-  if (project.render_queue === null) throw new AssertionError_("project.render_queue is None");
-  for (const rqi of project.render_queue.items) {
+  if (project.renderQueue === null) throw new AssertionError_("project.render_queue is None");
+  for (const rqi of project.renderQueue.items) {
     if (rqi.comp.name === comp_name) return rqi;
   }
   throw new ValueError(`RQI for comp '${comp_name}' not found`);

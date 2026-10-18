@@ -3,7 +3,7 @@
  * composition's Essential Graphics controllers.
  *
  * The override\<-\>controller link is a shared UUID: a precomp layer's
- * `LIST:OvG2` carries one UUID per override (`Layer.essential_property_uuids`),
+ * `LIST:OvG2` carries one UUID per override (`Layer.essentialPropertyUuids`),
  * each equal to an `EssentialGraphicsController.uuid` on the source composition.
  */
 
@@ -30,14 +30,14 @@ export const _MEDIA_REPLACEMENT_CONTROLLER_TYPE = 14;
  * a text layer or a footage layer), when the source composition has no
  * controllers, or when the layer has no overrides. A UUID with no matching
  * controller (e.g. a controller removed after the override was created) is
- * skipped; the raw UUIDs remain on `Layer.essential_property_uuids`.
+ * skipped; the raw UUIDs remain on `Layer.essentialPropertyUuids`.
  */
 export function resolve_essential_property_controllers(layer: AVLayer): EssentialGraphicsController[] {
-  const uuids = layer.essential_property_uuids;
+  const uuids = layer.essentialPropertyUuids;
   if (!uuids?.length) return [];
   const source = layer.source;
   if (!(source instanceof _composition().CompItem)) return [];
-  const by_uuid = new Map(source.motion_graphics_controllers.map((c) => [c.uuid, c] as const));
+  const by_uuid = new Map(source.motionGraphicsControllers.map((c) => [c.uuid, c] as const));
   return uuids.map((uuid) => by_uuid.get(uuid)).filter((c) => c !== undefined);
 }
 
@@ -49,10 +49,10 @@ export function resolve_essential_property_controllers(layer: AVLayer): Essentia
  * is missing, or no layer matches the stored `layer_id`.
  */
 export function _resolve_controller_source_layer(project: Project, controller: EssentialGraphicsController): AVLayer | null {
-  if (controller.source_comp_id == null || controller.source_layer_id == null) return null;
-  const comp = project.items.get(controller.source_comp_id) ?? null;
+  if (controller.sourceCompId == null || controller.sourceLayerId == null) return null;
+  const comp = project.items.get(controller.sourceCompId) ?? null;
   if (!(comp instanceof _composition().CompItem)) return null;
-  const layer = comp.layers_by_id.get(controller.source_layer_id) ?? null;
+  const layer = comp.layersById.get(controller.sourceLayerId) ?? null;
   return layer instanceof _av_layer().AVLayer ? layer : null;
 }
 
@@ -70,23 +70,23 @@ export function _resolve_controller_source_layer(project: Project, controller: E
  * back to by-name resolution.
  */
 export function _resolve_indexed_child(group: PropertyGroup, ref: SourcePropertyRef, project: Project): Property | PropertyGroup | null {
-  if (ref.prop_index == null) return null;
-  if (group.is_effect) {
-    const defs = project._effect_param_defs.get(group.match_name);
+  if (ref.propIndex == null) return null;
+  if (group.isEffect) {
+    const defs = project._effect_param_defs.get(group.matchName);
     if (defs != null && defs.size > 0) {
       const keys = [...defs.keys()];
-      const pos = ref.prop_index - 1;
-      if (0 <= pos && pos < keys.length && keys[pos] === ref.match_name) {
-        return group._child_or_null(ref.match_name);
+      const pos = ref.propIndex - 1;
+      if (0 <= pos && pos < keys.length && keys[pos] === ref.matchName) {
+        return group._child_or_null(ref.matchName);
       }
     }
     return null;
   }
-  if (group.property_type === PropertyType.INDEXED_GROUP) {
+  if (group.propertyType === PropertyType.INDEXED_GROUP) {
     const children = group.properties;
-    if (0 <= ref.prop_index && ref.prop_index < children.length) {
-      const child = children[ref.prop_index];
-      if (child.match_name === ref.match_name) return child;
+    if (0 <= ref.propIndex && ref.propIndex < children.length) {
+      const child = children[ref.propIndex];
+      if (child.matchName === ref.matchName) return child;
     }
   }
   return null;
@@ -105,14 +105,14 @@ export function _resolve_indexed_child(group: PropertyGroup, ref: SourceProperty
  * or the path descends past a leaf).
  */
 export function _walk_source_property(source_layer: AVLayer, path: SourcePropertyRef[]): Property | PropertyGroup | null {
-  const project = source_layer.containing_comp._project;
+  const project = source_layer.containingComp._project;
   let cur: Property | PropertyGroup = source_layer;
   for (const ref of path) {
     if (!(cur instanceof _property_group().PropertyGroup)) return null;
     let child: Property | PropertyGroup | null = null;
-    if (ref.prop_index != null) child = _resolve_indexed_child(cur, ref, project);
+    if (ref.propIndex != null) child = _resolve_indexed_child(cur, ref, project);
     if (child == null) {
-      child = cur._child_or_null(ref.match_name);
+      child = cur._child_or_null(ref.matchName);
       if (child === null) return null;
     }
     cur = child;
@@ -155,7 +155,7 @@ export function _preorder_index(root: PropertyGroup, target: Property): number |
  */
 export function resolve_essential_property_controller(prop: Property): EssentialGraphicsController | null {
   let root: PropertyGroup | Property | null = prop._parent_property;
-  while (root != null && root.match_name !== "ADBE Layer Overrides") {
+  while (root != null && root.matchName !== "ADBE Layer Overrides") {
     root = root._parent_property;
   }
   if (root == null) return null;
@@ -163,11 +163,11 @@ export function resolve_essential_property_controller(prop: Property): Essential
   if (!(layer instanceof _av_layer().AVLayer)) return null;
   const idx = _preorder_index(root, prop);
   if (idx == null) return null;
-  const uuids = layer.essential_property_uuids;
+  const uuids = layer.essentialPropertyUuids;
   if (idx >= uuids.length) return null;
   const source = layer.source;
   if (!(source instanceof _composition().CompItem)) return null;
-  return source.motion_graphics_controllers.find((c) => c.uuid === uuids[idx]) ?? null;
+  return source.motionGraphicsControllers.find((c) => c.uuid === uuids[idx]) ?? null;
 }
 
 /**
@@ -189,9 +189,9 @@ export function resolve_essential_property_source(prop: Property): Property | Pr
   if (controller == null || prop._composition == null) return null;
   const source_layer = _resolve_controller_source_layer(prop._composition._project, controller);
   if (source_layer == null) return null;
-  if (controller.controller_type === _MEDIA_REPLACEMENT_CONTROLLER_TYPE) return source_layer;
+  if (controller.controllerType === _MEDIA_REPLACEMENT_CONTROLLER_TYPE) return source_layer;
   // Property-source controller: the exposed leaf is the tail of the
   // controlled-property path, resolved by match name from the source layer.
-  if (!controller.source_property_path?.length) return null;
-  return _walk_source_property(source_layer, controller.source_property_path);
+  if (!controller.sourcePropertyPath?.length) return null;
+  return _walk_source_property(source_layer, controller.sourcePropertyPath);
 }

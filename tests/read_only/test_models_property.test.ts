@@ -47,7 +47,7 @@ const CANVARY_DIR = new Path(import.meta.path).parent.parent.parent.div("samples
 /** Find a property in the layer's transform by match_name. */
 function _find_property(layer: Layer, match_name: string): Property | null {
   for (const prop of layer.transform) {
-    if (prop.match_name === match_name) {
+    if (prop.matchName === match_name) {
       return as_instance(prop, Property);
     }
   }
@@ -106,7 +106,7 @@ function _get_mask_shape(layer: Layer): Property<Shape> {
   if (layer.masks === null) throw new AssertionError_("layer.masks is None");
   const mask = as_instance(layer.masks.properties[0], MaskPropertyGroup);
   for (const prop of mask.properties) {
-    if (prop.match_name === "ADBE Mask Shape") {
+    if (prop.matchName === "ADBE Mask Shape") {
       return as_instance(prop, Property);
     }
   }
@@ -121,7 +121,7 @@ describe("TestExpressions", () => {
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
-    expect(position.expression_enabled).toBe(true);
+    expect(position.expressionEnabled).toBe(true);
     expect(position.expression).toBe("wiggle(2, 50)");
     // Verify against JSON
     for (const prop of _get_json_transform_properties(expected, "expression_enabled")) {
@@ -139,7 +139,7 @@ describe("TestExpressions", () => {
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
-    expect(opacity.expression_enabled).toBe(false);
+    expect(opacity.expressionEnabled).toBe(false);
     expect(opacity.expression).toBe("50");
     // Value should be the static value, not the expression result
     for (const prop of _get_json_transform_properties(expected, "expression_disabled")) {
@@ -158,7 +158,7 @@ describe("TestExpressions", () => {
     const rotation = _find_property(layer, "ADBE Rotate Z");
     expect(rotation).not.toBeNull();
     if (rotation === null) throw new AssertionError_("rotation is None");
-    expect(rotation.expression_enabled).toBe(true);
+    expect(rotation.expressionEnabled).toBe(true);
     expect(rotation.expression).toBe("time * 36");
     // Verify against JSON
     for (const prop of _get_json_transform_properties(expected, "expression_time")) {
@@ -201,7 +201,7 @@ describe("TestKeyframes", () => {
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
     for (const kf of position.keyframes) {
-      expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+      expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     }
     expect(py_eq(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
     expect(py_eq(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
@@ -219,7 +219,7 @@ describe("TestKeyframes", () => {
     expect(position._animated).toBe(true);
     expect(len(position.keyframes)).toBe(2);
     for (const kf of position.keyframes) {
-      expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
+      expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
     }
     expect(py_eq(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
     expect(py_eq(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
@@ -234,7 +234,7 @@ describe("TestKeyframes", () => {
     expect(opacity._animated).toBe(true);
     expect(len(opacity.keyframes)).toBe(3);
     // Keyframe 2 (index 1) is HOLD
-    expect(opacity.keyframes[1].out_interpolation_type).toBe(KeyframeInterpolationType.HOLD);
+    expect(opacity.keyframes[1].outInterpolationType).toBe(KeyframeInterpolationType.HOLD);
     expect(opacity.keyframes[0].value).toBe(100.0);
     expect(opacity.keyframes[1].value).toBe(0.0);
     expect(opacity.keyframes[2].value).toBe(100.0);
@@ -249,7 +249,7 @@ describe("TestPropertyStructure", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     // All transform properties should be at depth 2
     for (const prop of layer.transform.properties) {
-      py_assert(prop.property_depth === 2, `${prop.match_name} has depth ${prop.property_depth}, expected 2`);
+      py_assert(prop.propertyDepth === 2, `${prop.matchName} has depth ${prop.propertyDepth}, expected 2`);
     }
   });
 
@@ -260,9 +260,9 @@ describe("TestPropertyStructure", () => {
     if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(len(layer.effects.properties) > 0).toBe(true);
     const effect = as_instance(layer.effects.properties[0], PropertyGroup);
-    expect(effect.property_depth).toBe(2);
+    expect(effect.propertyDepth).toBe(2);
     for (const prop of effect.properties) {
-      py_assert(prop.property_depth === 3, `${prop.match_name} has depth ${prop.property_depth}, expected 3`);
+      py_assert(prop.propertyDepth === 3, `${prop.matchName} has depth ${prop.propertyDepth}, expected 3`);
     }
   });
 
@@ -272,7 +272,7 @@ describe("TestPropertyStructure", () => {
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
-    expect(opacity.is_time_varying).toBe(true);
+    expect(opacity.isTimeVarying).toBe(true);
   });
 
   /** Position with enabled expression has is_time_varying == True. */
@@ -281,7 +281,7 @@ describe("TestPropertyStructure", () => {
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
-    expect(position.is_time_varying).toBe(true);
+    expect(position.isTimeVarying).toBe(true);
   });
 
   /** A non-animated property with no actual expression has is_time_varying == False. */
@@ -292,7 +292,7 @@ describe("TestPropertyStructure", () => {
     expect(rotate_x).not.toBeNull();
     if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(py_bool(rotate_x._animated)).toBe(false);
-    expect(rotate_x.is_time_varying).toBe(false);
+    expect(rotate_x.isTimeVarying).toBe(false);
   });
 });
 
@@ -390,7 +390,7 @@ describe("TestPropertyDimensions", () => {
     expect(scale).not.toBeNull();
     if (scale === null) throw new AssertionError_("scale is None");
     expect(scale.dimensions).toBe(3);
-    expect(scale.property_value_type).toBe(PropertyValueType.ThreeD);
+    expect(scale.propertyValueType).toBe(PropertyValueType.ThreeD);
     for (const keyframe of scale.keyframes) {
       expect(Array.isArray(keyframe.value)).toBe(true);
       expect(len(keyframe.value)).toBe(3);
@@ -424,7 +424,7 @@ describe("TestOrientation", () => {
     if (orientation === null) throw new AssertionError_("orientation is None");
     expect(py_eq(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
-    expect(orientation.is_spatial).toBe(true);
+    expect(orientation.isSpatial).toBe(true);
   });
 
   /** Orientation with only Y component set to 279. */
@@ -454,8 +454,8 @@ describe("TestOrientation", () => {
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.name).toBe("Orientation");
-    expect(orientation.match_name).toBe("ADBE Orientation");
-    expect(orientation.is_spatial).toBe(true);
+    expect(orientation.matchName).toBe("ADBE Orientation");
+    expect(orientation.isSpatial).toBe(true);
     expect(orientation._vector).toBe(true);
     expect(py_bool(orientation._animated)).toBe(false);
   });
@@ -478,8 +478,8 @@ describe("TestOrientation", () => {
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
-    expect(orientation.keyframes[0].frame_time).toBe(0);
-    expect(orientation.keyframes[1].frame_time).toBe(240);
+    expect(orientation.keyframes[0].frameTime).toBe(0);
+    expect(orientation.keyframes[1].frameTime).toBe(240);
   });
 
   /** Animated orientation retains correct property metadata. */
@@ -489,7 +489,7 @@ describe("TestOrientation", () => {
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
     expect(orientation.dimensions).toBe(3);
-    expect(orientation.is_spatial).toBe(true);
+    expect(orientation.isSpatial).toBe(true);
     expect(orientation._vector).toBe(true);
     expect(py_eq(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
   });
@@ -533,8 +533,8 @@ describe("TestEffectProperties", () => {
     if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     expect(len(layer.effects.properties)).toBe(2);
     for (const effect of layer.effects) {
-      expect(effect.match_name).toBe("ADBE Gaussian Blur 2");
-      expect(effect.is_effect).toBe(true);
+      expect(effect.matchName).toBe("ADBE Gaussian Blur 2");
+      expect(effect.isEffect).toBe(true);
     }
     // Second effect should have a user-defined name
     expect(layer.effects.properties[0].name).toBe("Gaussian Blur");
@@ -553,7 +553,7 @@ describe("TestEffectProperties", () => {
     const effect_0 = as_instance(layer.effects.properties[0], PropertyGroup);
     let blurriness_0: Property | null = null;
     for (const prop of effect_0.properties) {
-      if (prop.match_name === "ADBE Gaussian Blur 2-0001") {
+      if (prop.matchName === "ADBE Gaussian Blur 2-0001") {
         blurriness_0 = as_instance(prop, Property);
         break;
       }
@@ -565,7 +565,7 @@ describe("TestEffectProperties", () => {
     const effect_1 = as_instance(layer.effects.properties[1], PropertyGroup);
     let blurriness_1: Property | null = null;
     for (const prop of effect_1.properties) {
-      if (prop.match_name === "ADBE Gaussian Blur 2-0001") {
+      if (prop.matchName === "ADBE Gaussian Blur 2-0001") {
         blurriness_1 = as_instance(prop, Property);
         break;
       }
@@ -595,7 +595,7 @@ describe("TestEffectProperties", () => {
           if (effect.name === "S_BlurDirectional") {
             for (const prop of effect.properties) {
               if (prop.name === "Matte from Layer") {
-                expect(as_instance(prop, Property).property_value_type).toBe(PropertyValueType.LAYER_INDEX);
+                expect(as_instance(prop, Property).propertyValueType).toBe(PropertyValueType.LAYER_INDEX);
                 expect(as_instance(prop, Property).value).toBe(0);
                 return;
               }
@@ -625,13 +625,13 @@ describe("TestEffectProperties", () => {
         }
         for (const item of layer.effects) {
           const effect = as_instance(item, PropertyGroup);
-          if (effect.match_name !== "S_BlurDirectional") {
+          if (effect.matchName !== "S_BlurDirectional") {
             continue;
           }
           for (const match_name of ["S_BlurDirectional-0063", "S_BlurDirectional-0068"]) {
             const prop = as_instance(effect.property(match_name), Property);
             expect(py_eq(prop.value, getitem(json_values, match_name))).toBe(true);
-            expect(prop.is_modified).toBe(false);
+            expect(prop.isModified).toBe(false);
             checked += 1;
           }
         }
@@ -661,7 +661,7 @@ describe("TestEffectProperties", () => {
       Property,
     );
     expect(py_eq(prop.value, [80.0, 50.0])).toBe(true);
-    expect(prop.is_modified).toBe(false);
+    expect(prop.isModified).toBe(false);
   });
 
   /**
@@ -682,7 +682,7 @@ describe("TestEffectProperties", () => {
           if (effect.name === "S_BlurDirectional") {
             for (const prop of effect.properties) {
               if (prop.name === "Matte from Path") {
-                expect(as_instance(prop, Property).property_value_type).toBe(PropertyValueType.MASK_INDEX);
+                expect(as_instance(prop, Property).propertyValueType).toBe(PropertyValueType.MASK_INDEX);
                 expect(as_instance(prop, Property).value).toBe(1);
                 return;
               }
@@ -714,15 +714,15 @@ describe("TestEffectProperties", () => {
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
         for (const effect of py_or(layer.effects, [])) {
-          if (effect.match_name !== "S_BlurDirectional") {
+          if (effect.matchName !== "S_BlurDirectional") {
             continue;
           }
           const prop = as_instance(effect, PropertyGroup).property(match_name);
           expect(prop instanceof Property).toBe(true);
           if (!(prop instanceof Property)) throw new AssertionError_("prop is not a Property");
           expect(prop.value).toBe(expected);
-          expect(prop.default_value).toBe(expected);
-          expect(prop.is_modified).toBe(false);
+          expect(prop.defaultValue).toBe(expected);
+          expect(prop.isModified).toBe(false);
           return;
         }
       }
@@ -739,11 +739,11 @@ describe("TestMasks", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_true");
     expect(layer.masks).not.toBeNull();
     if (layer.masks === null) throw new AssertionError_("layer.masks is None");
-    expect(layer.masks.is_mask).toBe(false);
-    expect(layer.masks.match_name).toBe("ADBE Mask Parade");
-    expect(layer.masks.property_type).toBe(PropertyType.INDEXED_GROUP);
+    expect(layer.masks.isMask).toBe(false);
+    expect(layer.masks.matchName).toBe("ADBE Mask Parade");
+    expect(layer.masks.propertyType).toBe(PropertyType.INDEXED_GROUP);
     expect(len(layer.masks.properties)).toBe(1);
-    expect(layer.masks.properties[0].is_mask).toBe(true);
+    expect(layer.masks.properties[0].isMask).toBe(true);
   });
 
   /** Layer with two masks: Mask Parade has is_mask=False, atoms have is_mask=True. */
@@ -751,10 +751,10 @@ describe("TestMasks", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("mask.aep")), "is_mask_multiple");
     expect(layer.masks).not.toBeNull();
     if (layer.masks === null) throw new AssertionError_("layer.masks is None");
-    expect(layer.masks.is_mask).toBe(false);
+    expect(layer.masks.isMask).toBe(false);
     expect(len(layer.masks.properties)).toBe(2);
     for (const mask of layer.masks.properties) {
-      expect(mask.is_mask).toBe(true);
+      expect(mask.isMask).toBe(true);
     }
   });
 
@@ -795,7 +795,7 @@ describe("TestMasks", () => {
     expect(layer.masks).not.toBeNull();
     if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     for (const mask of layer.masks.properties) {
-      expect(mask.parent_property).toBe(layer.masks);
+      expect(mask.parentProperty).toBe(layer.masks);
     }
   });
 
@@ -835,7 +835,7 @@ describe("TestMasks", () => {
     if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = as_instance(layer.masks.properties[0], MaskPropertyGroup);
     expect(mask instanceof MaskPropertyGroup).toBe(true);
-    expect(mask.mask_mode).toBe(MaskMode.ADD);
+    expect(mask.maskMode).toBe(MaskMode.ADD);
   });
 
   /** All mask atoms in a multi-mask layer are MaskPropertyGroup. */
@@ -856,7 +856,7 @@ describe("TestMasks", () => {
     const mask = as_instance(layer.masks.properties[0], MaskPropertyGroup);
     expect(mask instanceof MaskPropertyGroup).toBe(true);
     for (const child of mask.properties) {
-      expect(child.parent_property).toBe(mask);
+      expect(child.parentProperty).toBe(mask);
     }
   });
 });
@@ -909,13 +909,13 @@ describe("TestMaskAttributes", () => {
   /** Feather falloff Smooth is the default. */
   test("test_feather_falloff_smooth", () => {
     const mask = TestMaskAttributes._get_mask("mask_feather_falloff_smooth.aep");
-    expect(mask.mask_feather_falloff).toBe(MaskFeatherFalloff.FFO_SMOOTH);
+    expect(mask.maskFeatherFalloff).toBe(MaskFeatherFalloff.FFO_SMOOTH);
   });
 
   /** Feather falloff Linear. */
   test("test_feather_falloff_linear", () => {
     const mask = TestMaskAttributes._get_mask("mask_feather_falloff_linear.aep");
-    expect(mask.mask_feather_falloff).toBe(MaskFeatherFalloff.FFO_LINEAR);
+    expect(mask.maskFeatherFalloff).toBe(MaskFeatherFalloff.FFO_LINEAR);
   });
 
   // --- maskMotionBlur ---
@@ -923,19 +923,19 @@ describe("TestMaskAttributes", () => {
   /** Motion blur Same as Layer is the default. */
   test("test_motion_blur_same_as_layer", () => {
     const mask = TestMaskAttributes._get_mask("mask_motion_blur_same_as_layer.aep");
-    expect(mask.mask_motion_blur).toBe(MaskMotionBlur.SAME_AS_LAYER);
+    expect(mask.maskMotionBlur).toBe(MaskMotionBlur.SAME_AS_LAYER);
   });
 
   /** Motion blur On. */
   test("test_motion_blur_on", () => {
     const mask = TestMaskAttributes._get_mask("mask_motion_blur_on.aep");
-    expect(mask.mask_motion_blur).toBe(MaskMotionBlur.ON);
+    expect(mask.maskMotionBlur).toBe(MaskMotionBlur.ON);
   });
 
   /** Motion blur Off. */
   test("test_motion_blur_off", () => {
     const mask = TestMaskAttributes._get_mask("mask_motion_blur_off.aep");
-    expect(mask.mask_motion_blur).toBe(MaskMotionBlur.OFF);
+    expect(mask.maskMotionBlur).toBe(MaskMotionBlur.OFF);
   });
 
   // --- rotoBezier ---
@@ -943,55 +943,55 @@ describe("TestMaskAttributes", () => {
   /** Default mask has rotoBezier=False. */
   test("test_roto_bezier_default_false", () => {
     const mask = TestMaskAttributes._get_mask("mask_add.aep");
-    expect(mask.roto_bezier).toBe(false);
+    expect(mask.rotoBezier).toBe(false);
   });
 
   /** Mask with RotoBezier enabled. */
   test("test_roto_bezier_on", () => {
     const mask = TestMaskAttributes._get_mask("mask_rotobezier_on.aep");
-    expect(mask.roto_bezier).toBe(true);
+    expect(mask.rotoBezier).toBe(true);
   });
 
   // --- mask_mode (all modes via from_binary) ---
 
   test("test_mask_mode_none", () => {
     const mask = TestMaskAttributes._get_mask("mask_none.aep");
-    expect(mask.mask_mode).toBe(MaskMode.NONE);
+    expect(mask.maskMode).toBe(MaskMode.NONE);
   });
 
   test("test_mask_mode_add", () => {
     const mask = TestMaskAttributes._get_mask("mask_add.aep");
-    expect(mask.mask_mode).toBe(MaskMode.ADD);
+    expect(mask.maskMode).toBe(MaskMode.ADD);
   });
 
   test("test_mask_mode_subtract", () => {
     const mask = TestMaskAttributes._get_mask("mask_subtract.aep");
-    expect(mask.mask_mode).toBe(MaskMode.SUBTRACT);
+    expect(mask.maskMode).toBe(MaskMode.SUBTRACT);
   });
 
   test("test_mask_mode_intersect", () => {
     const mask = TestMaskAttributes._get_mask("mask_intersect.aep");
-    expect(mask.mask_mode).toBe(MaskMode.INTERSECT);
+    expect(mask.maskMode).toBe(MaskMode.INTERSECT);
   });
 
   test("test_mask_mode_darken", () => {
     const mask = TestMaskAttributes._get_mask("mask_darken.aep");
-    expect(mask.mask_mode).toBe(MaskMode.DARKEN);
+    expect(mask.maskMode).toBe(MaskMode.DARKEN);
   });
 
   test("test_mask_mode_lighten", () => {
     const mask = TestMaskAttributes._get_mask("mask_lighten.aep");
-    expect(mask.mask_mode).toBe(MaskMode.LIGHTEN);
+    expect(mask.maskMode).toBe(MaskMode.LIGHTEN);
   });
 
   test("test_mask_mode_difference", () => {
     const mask = TestMaskAttributes._get_mask("mask_difference.aep");
-    expect(mask.mask_mode).toBe(MaskMode.DIFFERENCE);
+    expect(mask.maskMode).toBe(MaskMode.DIFFERENCE);
   });
 });
 
 describe("TestIsModified", () => {
-  /** Tests for PropertyBase.is_modified computed property. */
+  /** Tests for PropertyBase.isModified computed property. */
 
   /** Transform properties at their default values have is_modified=False. */
   test("test_transform_defaults_at_default_values", () => {
@@ -1006,8 +1006,8 @@ describe("TestIsModified", () => {
       const prop = _find_property(layer, match_name);
       if (prop != null) {
         py_assert(
-          prop.is_modified === false,
-          `${match_name}: expected is_modified=False, value=${repr(prop.value)}, default=${repr(prop.default_value)}`,
+          prop.isModified === false,
+          `${match_name}: expected is_modified=False, value=${repr(prop.value)}, default=${repr(prop.defaultValue)}`,
         );
       }
     }
@@ -1020,14 +1020,14 @@ describe("TestIsModified", () => {
     const pos_y = _find_property(layer, "ADBE Position_1");
     if (pos_x != null) {
       py_assert(
-        pos_x.is_modified === true,
-        `X Position value=${str(pos_x.value)}, default=${str(pos_x.default_value)}`,
+        pos_x.isModified === true,
+        `X Position value=${str(pos_x.value)}, default=${str(pos_x.defaultValue)}`,
       );
     }
     if (pos_y != null) {
       py_assert(
-        pos_y.is_modified === true,
-        `Y Position value=${str(pos_y.value)}, default=${str(pos_y.default_value)}`,
+        pos_y.isModified === true,
+        `Y Position value=${str(pos_y.value)}, default=${str(pos_y.defaultValue)}`,
       );
     }
   });
@@ -1037,7 +1037,7 @@ describe("TestIsModified", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("is_modified_false.aep")));
     expect(layer.transform).not.toBeNull();
     // X/Y Position are moved > at least one child is modified
-    expect(layer.transform.is_modified).toBe(true);
+    expect(layer.transform.isModified).toBe(true);
   });
 
   /** Effect Parade (indexed group) with effects has is_modified=True. */
@@ -1045,9 +1045,9 @@ describe("TestIsModified", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("is_modified_false.aep")));
     expect(layer.effects).not.toBeNull();
     if (layer.effects === null) throw new AssertionError_("layer.effects is None");
-    expect(layer.effects.property_type).toBe(PropertyType.INDEXED_GROUP);
+    expect(layer.effects.propertyType).toBe(PropertyType.INDEXED_GROUP);
     expect(len(layer.effects.properties) > 0).toBe(true);
-    expect(layer.effects.is_modified).toBe(true);
+    expect(layer.effects.isModified).toBe(true);
   });
 
   /** An animated property (with keyframes) has is_modified=True. */
@@ -1057,7 +1057,7 @@ describe("TestIsModified", () => {
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
     expect(opacity._animated).toBe(true);
-    expect(opacity.is_modified).toBe(true);
+    expect(opacity.isModified).toBe(true);
   });
 
   /** Property with enabled expression has is_modified=True. */
@@ -1066,8 +1066,8 @@ describe("TestIsModified", () => {
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
-    expect(position.expression_enabled).toBe(true);
-    expect(position.is_modified).toBe(true);
+    expect(position.expressionEnabled).toBe(true);
+    expect(position.isModified).toBe(true);
   });
 
   /** Property with disabled expression is still modified (expression text present). */
@@ -1076,21 +1076,21 @@ describe("TestIsModified", () => {
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
-    expect(opacity.expression_enabled).toBe(false);
+    expect(opacity.expressionEnabled).toBe(false);
     // AE considers a property modified whenever an expression exists,
     // regardless of whether the expression is enabled.
     expect(opacity.expression).not.toBeNull();
-    expect(opacity.is_modified).toBe(true);
+    expect(opacity.isModified).toBe(true);
   });
 
   /** Scale [100,100,100] at default is is_modified=False. */
   test("test_scale_at_default_not_modified", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     const scale = _find_property(layer, "ADBE Scale");
-    if (scale != null && scale.default_value != null) {
+    if (scale != null && scale.defaultValue != null) {
       py_assert(
-        scale.is_modified === false,
-        `Scale value=${str(scale.value)}, default=${str(scale.default_value)}`,
+        scale.isModified === false,
+        `Scale value=${str(scale.value)}, default=${str(scale.defaultValue)}`,
       );
     }
   });
@@ -1103,11 +1103,11 @@ describe("TestIsModified", () => {
     for (const item of layer.effects) {
       const effect = as_instance(item, PropertyGroup);
       for (const prop of effect.properties) {
-        if (prop instanceof Property && prop.default_value != null) {
+        if (prop instanceof Property && prop.defaultValue != null) {
           // In this sample all effect params are at defaults
           py_assert(
-            prop.is_modified === false,
-            `${prop.match_name}: value=${repr(prop.value)}, default=${repr(prop.default_value)}`,
+            prop.isModified === false,
+            `${prop.matchName}: value=${repr(prop.value)}, default=${repr(prop.defaultValue)}`,
           );
         }
       }
@@ -1123,7 +1123,7 @@ describe("TestIsModified", () => {
     const effect = as_instance(layer.effects.properties[0], PropertyGroup);
     let blurriness: Property | null = null;
     for (const prop of effect.properties) {
-      if (prop.match_name === "ADBE Gaussian Blur 2-0001") {
+      if (prop.matchName === "ADBE Gaussian Blur 2-0001") {
         blurriness = as_instance(prop, Property);
         break;
       }
@@ -1132,8 +1132,8 @@ describe("TestIsModified", () => {
     if (blurriness === null) throw new AssertionError_("blurriness is None");
     expect(blurriness.value).toBe(20.0);
     // Blurriness default from pard chunk is 0.0
-    if (blurriness.default_value != null) {
-      expect(blurriness.is_modified).toBe(true);
+    if (blurriness.defaultValue != null) {
+      expect(blurriness.isModified).toBe(true);
     }
   });
 
@@ -1142,9 +1142,9 @@ describe("TestIsModified", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     // Check a property that might not have a default
     for (const prop of layer.transform.properties) {
-      if (prop instanceof Property && prop.default_value == null) {
-        if (!prop._animated && !py_bool(py_and(prop.expression, prop.expression_enabled))) {
-          py_assert(prop.is_modified === false, `${prop.match_name} with no default should be False`);
+      if (prop instanceof Property && prop.defaultValue == null) {
+        if (!prop._animated && !py_bool(py_and(prop.expression, prop.expressionEnabled))) {
+          py_assert(prop.isModified === false, `${prop.matchName} with no default should be False`);
         }
       }
     }
@@ -1166,9 +1166,9 @@ describe("TestSeparation", () => {
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
     if (pos === null) throw new AssertionError_("pos is None");
-    expect(pos.is_separation_leader).toBe(true);
-    expect(pos.is_separation_follower).toBe(false);
-    expect(pos.separation_dimension).toBeNull();
+    expect(pos.isSeparationLeader).toBe(true);
+    expect(pos.isSeparationFollower).toBe(false);
+    expect(pos.separationDimension).toBeNull();
   });
 
   /** Position_0/1/2 are always separation followers. */
@@ -1181,33 +1181,33 @@ describe("TestSeparation", () => {
     ] as const) {
       const prop = _find_property(layer, `ADBE Position${suffix}`);
       py_assert(prop != null, `ADBE Position${suffix} not found`);
-      expect(prop.is_separation_follower).toBe(true);
-      expect(prop.is_separation_leader).toBe(false);
-      expect(prop.separation_dimension).toBe(dim);
+      expect(prop.isSeparationFollower).toBe(true);
+      expect(prop.isSeparationLeader).toBe(false);
+      expect(prop.separationDimension).toBe(dim);
     }
   });
 
-  /** Position.get_separation_follower(dim) returns the follower. */
+  /** Position.getSeparationFollower(dim) returns the follower. */
   test("test_get_separation_follower", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_separated.aep")));
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
     if (pos === null) throw new AssertionError_("pos is None");
     for (const dim of range(3)) {
-      const follower = pos.get_separation_follower(dim);
+      const follower = pos.getSeparationFollower(dim);
       py_assert(follower != null, `follower dim ${dim} is None`);
-      expect(follower.match_name).toBe(`ADBE Position_${dim}`);
+      expect(follower.matchName).toBe(`ADBE Position_${dim}`);
     }
   });
 
-  /** Follower.separation_leader returns the Position property. */
+  /** Follower.separationLeader returns the Position property. */
   test("test_separation_leader_back_reference", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("transform_separated.aep")));
     const pos = _find_property(layer, "ADBE Position");
     const x_pos = _find_property(layer, "ADBE Position_0");
     expect(x_pos).not.toBeNull();
     if (x_pos === null) throw new AssertionError_("x_pos is None");
-    expect(x_pos.separation_leader).toBe(pos);
+    expect(x_pos.separationLeader).toBe(pos);
   });
 
   /** Leader/follower roles hold even when never separated. */
@@ -1216,14 +1216,14 @@ describe("TestSeparation", () => {
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
     if (pos === null) throw new AssertionError_("pos is None");
-    expect(pos.is_separation_leader).toBe(true);
-    expect(pos.dimensions_separated).toBe(false);
+    expect(pos.isSeparationLeader).toBe(true);
+    expect(pos.dimensionsSeparated).toBe(false);
 
     const x_pos = _find_property(layer, "ADBE Position_0");
     expect(x_pos).not.toBeNull();
     if (x_pos === null) throw new AssertionError_("x_pos is None");
-    expect(x_pos.is_separation_follower).toBe(true);
-    expect(x_pos.separation_dimension).toBe(0);
+    expect(x_pos.isSeparationFollower).toBe(true);
+    expect(x_pos.separationDimension).toBe(0);
   });
 
   /** Opacity has neither leader nor follower role. */
@@ -1232,11 +1232,11 @@ describe("TestSeparation", () => {
     const opa = _find_property(layer, "ADBE Opacity");
     expect(opa).not.toBeNull();
     if (opa === null) throw new AssertionError_("opa is None");
-    expect(opa.is_separation_leader).toBe(false);
-    expect(opa.is_separation_follower).toBe(false);
-    expect(opa.separation_dimension).toBeNull();
-    expect(opa.separation_leader).toBeNull();
-    expect(opa.get_separation_follower(0)).toBeNull();
+    expect(opa.isSeparationLeader).toBe(false);
+    expect(opa.isSeparationFollower).toBe(false);
+    expect(opa.separationDimension).toBeNull();
+    expect(opa.separationLeader).toBeNull();
+    expect(opa.getSeparationFollower(0)).toBeNull();
   });
 
   /** Leader/follower roles hold after un-separating. */
@@ -1245,14 +1245,14 @@ describe("TestSeparation", () => {
     const pos = _find_property(layer, "ADBE Position");
     expect(pos).not.toBeNull();
     if (pos === null) throw new AssertionError_("pos is None");
-    expect(pos.is_separation_leader).toBe(true);
-    expect(pos.dimensions_separated).toBe(false);
+    expect(pos.isSeparationLeader).toBe(true);
+    expect(pos.dimensionsSeparated).toBe(false);
 
     const y_pos = _find_property(layer, "ADBE Position_1");
     expect(y_pos).not.toBeNull();
     if (y_pos === null) throw new AssertionError_("y_pos is None");
-    expect(y_pos.is_separation_follower).toBe(true);
-    expect(y_pos.separation_dimension).toBe(1);
+    expect(y_pos.isSeparationFollower).toBe(true);
+    expect(y_pos.separationDimension).toBe(1);
   });
 });
 
@@ -1292,7 +1292,7 @@ describe("TestTransformSynthesis", () => {
   /** Properties appear in the canonical ExtendScript order. */
   test("test_canonical_order", () => {
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("is_modified_false.aep")));
-    const match_names = layer.transform.properties.map((p) => p.match_name);
+    const match_names = layer.transform.properties.map((p) => p.matchName);
     expect(py_eq(match_names, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
   });
 
@@ -1302,8 +1302,8 @@ describe("TestTransformSynthesis", () => {
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
-    expect(orientation.default_value).not.toBeNull();
-    expect(orientation.is_modified).toBe(false);
+    expect(orientation.defaultValue).not.toBeNull();
+    expect(orientation.isModified).toBe(false);
   });
 
   /** X Rotation always present with correct defaults. */
@@ -1313,8 +1313,8 @@ describe("TestTransformSynthesis", () => {
     expect(rotate_x).not.toBeNull();
     if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(rotate_x.dimensions).toBe(1);
-    expect(rotate_x.default_value).not.toBeNull();
-    expect(rotate_x.is_modified).toBe(false);
+    expect(rotate_x.defaultValue).not.toBeNull();
+    expect(rotate_x.isModified).toBe(false);
   });
 
   /** Non-animated transform properties at default have is_modified=False. */
@@ -1324,7 +1324,7 @@ describe("TestTransformSynthesis", () => {
     // be at that default (the sample only animates Opacity).
     for (const prop of layer.transform.properties) {
       if (prop instanceof Property && !prop._animated) {
-        py_assert(prop.default_value != null, `${prop.match_name} should have a default_value`);
+        py_assert(prop.defaultValue != null, `${prop.matchName} should have a default_value`);
       }
     }
 
@@ -1332,13 +1332,13 @@ describe("TestTransformSynthesis", () => {
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
-    expect(orientation.is_modified).toBe(false);
+    expect(orientation.isModified).toBe(false);
 
     const rotate_x = _find_property(layer, "ADBE Rotate X");
     expect(rotate_x).not.toBeNull();
     if (rotate_x === null) throw new AssertionError_("rotate_x is None");
     expect(rotate_x.value).toBe(0.0);
-    expect(rotate_x.is_modified).toBe(false);
+    expect(rotate_x.isModified).toBe(false);
   });
 
   /** Synthesized properties have animated=False. */
@@ -1358,7 +1358,7 @@ describe("TestTransformSynthesis", () => {
   test("test_synthesized_parent_property", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     for (const prop of layer.transform.properties) {
-      py_assert(prop.parent_property === layer.transform, `${prop.match_name} parent should be transform group`);
+      py_assert(prop.parentProperty === layer.transform, `${prop.matchName} parent should be transform group`);
     }
   });
 
@@ -1370,8 +1370,8 @@ describe("TestTransformSynthesis", () => {
     if (envir === null) throw new AssertionError_("envir is None");
     expect(envir.name).toBe("Appears in Reflections");
     expect(envir.value).toBe(1.0);
-    expect(envir.default_value).toBe(1.0);
-    expect(envir.is_modified).toBe(false);
+    expect(envir.defaultValue).toBe(1.0);
+    expect(envir.isModified).toBe(false);
   });
 
   /** Another sample (property_rotation) also gets 12 transform props. */
@@ -1379,14 +1379,14 @@ describe("TestTransformSynthesis", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     expect(layer.transform).not.toBeNull();
     expect(len(layer.transform.properties)).toBe(12);
-    const match_names = layer.transform.properties.map((p) => p.match_name);
+    const match_names = layer.transform.properties.map((p) => p.matchName);
     expect(py_eq(match_names, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
   });
 });
 
 describe("TestUnitsText", () => {
   /**
-   * Tests for Property.units_text.
+   * Tests for Property.unitsText.
    *
    * The `units_text` attribute is determined by the property's `match_name`
    * and returns one of `"pixels"`, `"degrees"`, `"percent"`,
@@ -1401,12 +1401,12 @@ describe("TestUnitsText", () => {
     const anchor = _find_property(layer, "ADBE Anchor Point");
     expect(anchor).not.toBeNull();
     if (anchor === null) throw new AssertionError_("anchor is None");
-    expect(anchor.units_text).toBe("pixels");
+    expect(anchor.unitsText).toBe("pixels");
 
     const position = _find_property(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
-    expect(position.units_text).toBe("pixels");
+    expect(position.unitsText).toBe("pixels");
   });
 
   /** Scale and Opacity report 'percent'. */
@@ -1415,12 +1415,12 @@ describe("TestUnitsText", () => {
     const scale = _find_property(layer, "ADBE Scale");
     expect(scale).not.toBeNull();
     if (scale === null) throw new AssertionError_("scale is None");
-    expect(scale.units_text).toBe("percent");
+    expect(scale.unitsText).toBe("percent");
 
     const opacity = _find_property(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
-    expect(opacity.units_text).toBe("percent");
+    expect(opacity.unitsText).toBe("percent");
   });
 
   /** Rotation and Orientation report 'degrees'. */
@@ -1429,12 +1429,12 @@ describe("TestUnitsText", () => {
     const rotate_z = _find_property(layer, "ADBE Rotate Z");
     expect(rotate_z).not.toBeNull();
     if (rotate_z === null) throw new AssertionError_("rotate_z is None");
-    expect(rotate_z.units_text).toBe("degrees");
+    expect(rotate_z.unitsText).toBe("degrees");
 
     const orientation = _find_property(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError_("orientation is None");
-    expect(orientation.units_text).toBe("degrees");
+    expect(orientation.unitsText).toBe("degrees");
   });
 
   /** Appears in Reflections has empty units_text. */
@@ -1443,7 +1443,7 @@ describe("TestUnitsText", () => {
     const envir = _find_property(layer, "ADBE Envir Appear in Reflect");
     expect(envir).not.toBeNull();
     if (envir === null) throw new AssertionError_("envir is None");
-    expect(envir.units_text).toBe("");
+    expect(envir.unitsText).toBe("");
   });
 
   // -- Separated position followers ----------------------------------------
@@ -1454,7 +1454,7 @@ describe("TestUnitsText", () => {
     for (const mn of ["ADBE Position_0", "ADBE Position_1"]) {
       const prop = _find_property(layer, mn);
       py_assert(prop != null, `${mn} missing`);
-      py_assert(prop.units_text === "pixels", `${mn} wrong units`);
+      py_assert(prop.unitsText === "pixels", `${mn} wrong units`);
     }
   });
 
@@ -1468,8 +1468,8 @@ describe("TestUnitsText", () => {
     const mask = as_instance(layer.masks.properties[0], MaskPropertyGroup);
     // Mask children: [0]=MaskPath, [1]=Feather, [2]=Opacity, [3]=Expansion
     const feather = as_instance(mask.properties[1], Property);
-    expect(feather.match_name).toBe("ADBE Mask Feather");
-    expect(feather.units_text).toBe("pixels");
+    expect(feather.matchName).toBe("ADBE Mask Feather");
+    expect(feather.unitsText).toBe("pixels");
   });
 
   /** Mask Opacity reports 'percent'. */
@@ -1479,8 +1479,8 @@ describe("TestUnitsText", () => {
     if (layer.masks === null) throw new AssertionError_("layer.masks is None");
     const mask = as_instance(layer.masks.properties[0], MaskPropertyGroup);
     const opacity = as_instance(mask.properties[2], Property);
-    expect(opacity.match_name).toBe("ADBE Mask Opacity");
-    expect(opacity.units_text).toBe("percent");
+    expect(opacity.matchName).toBe("ADBE Mask Opacity");
+    expect(opacity.unitsText).toBe("percent");
   });
 
   // -- Effect properties ---------------------------------------------------
@@ -1494,7 +1494,7 @@ describe("TestUnitsText", () => {
     // Compositing Options group is the last child of an effect
     let comp_opts: PropertyGroup | null = null;
     for (const child of effect.properties) {
-      if (child.match_name === "ADBE Effect Built In Params") {
+      if (child.matchName === "ADBE Effect Built In Params") {
         comp_opts = as_instance(child, PropertyGroup);
         break;
       }
@@ -1503,14 +1503,14 @@ describe("TestUnitsText", () => {
     if (comp_opts === null) throw new AssertionError_("comp_opts is None");
     let opacity: Property | null = null;
     for (const child of comp_opts.properties) {
-      if (child.match_name === "ADBE Effect Mask Opacity") {
+      if (child.matchName === "ADBE Effect Mask Opacity") {
         opacity = as_instance(child, Property);
         break;
       }
     }
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
-    expect(opacity.units_text).toBe("percent");
+    expect(opacity.unitsText).toBe("percent");
   });
 
   /** Every effect has Compositing Options with its expected children. */
@@ -1524,7 +1524,7 @@ describe("TestUnitsText", () => {
       const comp_opts = effect.property("ADBE Effect Built In Params");
       py_assert(comp_opts != null, `Effect ${repr(effect.name)} missing Compositing Options`);
       expect(comp_opts.name).toBe("Compositing Options");
-      const child_mns = as_instance(comp_opts, PropertyGroup).properties.map((c) => c.match_name);
+      const child_mns = as_instance(comp_opts, PropertyGroup).properties.map((c) => c.matchName);
       expect(child_mns.includes("ADBE Effect Mask Parade")).toBe(true);
       expect(child_mns.includes("ADBE Effect Mask Opacity")).toBe(true);
       expect(child_mns.includes("ADBE Force CPU GPU")).toBe(true);
@@ -1539,14 +1539,14 @@ describe("TestUnitsText", () => {
     const effect = as_instance(layer.effects.properties[0], PropertyGroup);
     let blurriness: Property | null = null;
     for (const child of effect.properties) {
-      if (child.match_name === "ADBE Gaussian Blur 2-0001") {
+      if (child.matchName === "ADBE Gaussian Blur 2-0001") {
         blurriness = as_instance(child, Property);
         break;
       }
     }
     expect(blurriness).not.toBeNull();
     if (blurriness === null) throw new AssertionError_("blurriness is None");
-    expect(blurriness.units_text).toBe("");
+    expect(blurriness.unitsText).toBe("");
   });
 
   // -- Unknown match name --------------------------------------------------
@@ -1557,7 +1557,7 @@ describe("TestUnitsText", () => {
     const envir = _find_property(layer, "ADBE Envir Appear in Reflect");
     expect(envir).not.toBeNull();
     if (envir === null) throw new AssertionError_("envir is None");
-    expect(envir.units_text).toBe("");
+    expect(envir.unitsText).toBe("");
   });
 });
 
@@ -1571,8 +1571,8 @@ describe("TestKeyframeInterpolationTypes", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
-      expect(kf.in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
-      expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+      expect(kf.inInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
+      expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     }
   });
 
@@ -1583,8 +1583,8 @@ describe("TestKeyframeInterpolationTypes", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
-      expect(kf.in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-      expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
+      expect(kf.inInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+      expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
     }
   });
 
@@ -1596,17 +1596,17 @@ describe("TestKeyframeInterpolationTypes", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     expect(len(opacity.keyframes)).toBe(4);
     // KF[0]: LINEAR in/out
-    expect(opacity.keyframes[0].in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
-    expect(opacity.keyframes[0].out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+    expect(opacity.keyframes[0].inInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
+    expect(opacity.keyframes[0].outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     // KF[1]: BEZIER in, HOLD out
-    expect(opacity.keyframes[1].in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect(opacity.keyframes[1].out_interpolation_type).toBe(KeyframeInterpolationType.HOLD);
+    expect(opacity.keyframes[1].inInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect(opacity.keyframes[1].outInterpolationType).toBe(KeyframeInterpolationType.HOLD);
     // KF[2]: HOLD in, LINEAR out
-    expect(opacity.keyframes[2].in_interpolation_type).toBe(KeyframeInterpolationType.HOLD);
-    expect(opacity.keyframes[2].out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+    expect(opacity.keyframes[2].inInterpolationType).toBe(KeyframeInterpolationType.HOLD);
+    expect(opacity.keyframes[2].outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     // KF[3]: LINEAR in/out
-    expect(opacity.keyframes[3].in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
-    expect(opacity.keyframes[3].out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+    expect(opacity.keyframes[3].inInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
+    expect(opacity.keyframes[3].outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
   });
 });
 
@@ -1620,8 +1620,8 @@ describe("TestTemporalEase", () => {
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
     for (const kf of opacity.keyframes) {
-      expect(len(kf.in_temporal_ease)).toBe(1);
-      expect(len(kf.out_temporal_ease)).toBe(1);
+      expect(len(kf.inTemporalEase)).toBe(1);
+      expect(len(kf.outTemporalEase)).toBe(1);
     }
   });
 
@@ -1633,8 +1633,8 @@ describe("TestTemporalEase", () => {
     if (scale === null) throw new AssertionError_("scale is None");
     expect(len(scale.keyframes) >= 2).toBe(true);
     for (const kf of scale.keyframes) {
-      expect(len(kf.in_temporal_ease)).toBe(3);
-      expect(len(kf.out_temporal_ease)).toBe(3);
+      expect(len(kf.inTemporalEase)).toBe(3);
+      expect(len(kf.outTemporalEase)).toBe(3);
     }
   });
 
@@ -1645,11 +1645,11 @@ describe("TestTemporalEase", () => {
     expect(scale).not.toBeNull();
     if (scale === null) throw new AssertionError_("scale is None");
     // KF0 out_ease all 75%
-    for (const ease of scale.keyframes[0].out_temporal_ease) {
+    for (const ease of scale.keyframes[0].outTemporalEase) {
       expect(Math.abs(ease.influence - 75.0) < 0.01).toBe(true);
     }
     // KF1 in_ease all 75%
-    for (const ease of scale.keyframes[1].in_temporal_ease) {
+    for (const ease of scale.keyframes[1].inTemporalEase) {
       expect(Math.abs(ease.influence - 75.0) < 0.01).toBe(true);
     }
   });
@@ -1661,8 +1661,8 @@ describe("TestTemporalEase", () => {
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
     // KF0 out speed = 20 (%/sec), KF1 in speed = 15 (%/sec)
-    expect(Math.abs(opacity.keyframes[0].out_temporal_ease[0].speed - 20.0) < 0.1).toBe(true);
-    expect(Math.abs(opacity.keyframes[1].in_temporal_ease[0].speed - 15.0) < 0.1).toBe(true);
+    expect(Math.abs(opacity.keyframes[0].outTemporalEase[0].speed - 20.0) < 0.1).toBe(true);
+    expect(Math.abs(opacity.keyframes[1].inTemporalEase[0].speed - 15.0) < 0.1).toBe(true);
   });
 
   /** Asymmetric ease has different in/out influence values. */
@@ -1676,8 +1676,8 @@ describe("TestTemporalEase", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     // Should have at least 2 keyframes with different in/out
     const kf0 = opacity.keyframes[0];
-    expect(len(kf0.in_temporal_ease)).toBe(1);
-    expect(len(kf0.out_temporal_ease)).toBe(1);
+    expect(len(kf0.inTemporalEase)).toBe(1);
+    expect(len(kf0.outTemporalEase)).toBe(1);
   });
 
   /** Spatial properties (Position) always have 1 ease element. */
@@ -1687,8 +1687,8 @@ describe("TestTemporalEase", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
-      expect(len(kf.in_temporal_ease)).toBe(1);
-      expect(len(kf.out_temporal_ease)).toBe(1);
+      expect(len(kf.inTemporalEase)).toBe(1);
+      expect(len(kf.outTemporalEase)).toBe(1);
     }
   });
 
@@ -1700,8 +1700,8 @@ describe("TestTemporalEase", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     expect(len(opacity.keyframes)).toBe(10);
     for (const kf of opacity.keyframes) {
-      expect(len(kf.in_temporal_ease)).toBe(1);
-      expect(len(kf.out_temporal_ease)).toBe(1);
+      expect(len(kf.inTemporalEase)).toBe(1);
+      expect(len(kf.outTemporalEase)).toBe(1);
     }
   });
 });
@@ -1716,10 +1716,10 @@ describe("TestSpatialTangents", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
-      expect(kf.in_spatial_tangent).not.toBeNull();
-      expect(kf.out_spatial_tangent).not.toBeNull();
-      expect(len(kf.in_spatial_tangent)).toBe(3); // x, y, z
-      expect(len(kf.out_spatial_tangent)).toBe(3);
+      expect(kf.inSpatialTangent).not.toBeNull();
+      expect(kf.outSpatialTangent).not.toBeNull();
+      expect(len(kf.inSpatialTangent)).toBe(3); // x, y, z
+      expect(len(kf.outSpatialTangent)).toBe(3);
     }
   });
 
@@ -1730,11 +1730,11 @@ describe("TestSpatialTangents", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     const kf0 = position.keyframes[0];
-    expect(kf0.out_spatial_tangent).not.toBeNull();
-    if (kf0.out_spatial_tangent === null) throw new AssertionError_("kf0.out_spatial_tangent is None");
-    expect(Math.abs(kf0.out_spatial_tangent[0] - 60.0) < 0.01).toBe(true);
-    expect(Math.abs(kf0.out_spatial_tangent[1] - -80.0) < 0.01).toBe(true);
-    expect(Math.abs(kf0.out_spatial_tangent[2] - 0.0) < 0.01).toBe(true);
+    expect(kf0.outSpatialTangent).not.toBeNull();
+    if (kf0.outSpatialTangent === null) throw new AssertionError_("kf0.out_spatial_tangent is None");
+    expect(Math.abs(kf0.outSpatialTangent[0] - 60.0) < 0.01).toBe(true);
+    expect(Math.abs(kf0.outSpatialTangent[1] - -80.0) < 0.01).toBe(true);
+    expect(Math.abs(kf0.outSpatialTangent[2] - 0.0) < 0.01).toBe(true);
   });
 
   /** Non-spatial properties (Opacity) have None tangents. */
@@ -1744,8 +1744,8 @@ describe("TestSpatialTangents", () => {
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError_("opacity is None");
     for (const kf of opacity.keyframes) {
-      expect(kf.in_spatial_tangent).toBeNull();
-      expect(kf.out_spatial_tangent).toBeNull();
+      expect(kf.inSpatialTangent).toBeNull();
+      expect(kf.outSpatialTangent).toBeNull();
     }
   });
 
@@ -1756,10 +1756,10 @@ describe("TestSpatialTangents", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     for (const kf of position.keyframes) {
-      expect(kf.in_spatial_tangent).not.toBeNull();
-      expect(kf.out_spatial_tangent).not.toBeNull();
-      expect(len(kf.in_spatial_tangent)).toBe(3);
-      expect(len(kf.out_spatial_tangent)).toBe(3);
+      expect(kf.inSpatialTangent).not.toBeNull();
+      expect(kf.outSpatialTangent).not.toBeNull();
+      expect(len(kf.inSpatialTangent)).toBe(3);
+      expect(len(kf.outSpatialTangent)).toBe(3);
     }
   });
 
@@ -1770,10 +1770,10 @@ describe("TestSpatialTangents", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     const kf1 = position.keyframes[1];
-    expect(kf1.in_spatial_tangent).not.toBeNull();
-    if (kf1.in_spatial_tangent === null) throw new AssertionError_("kf1.in_spatial_tangent is None");
-    expect(Math.abs(kf1.in_spatial_tangent[0] - -40.0) < 0.01).toBe(true);
-    expect(Math.abs(kf1.in_spatial_tangent[1] - -60.0) < 0.01).toBe(true);
+    expect(kf1.inSpatialTangent).not.toBeNull();
+    if (kf1.inSpatialTangent === null) throw new AssertionError_("kf1.in_spatial_tangent is None");
+    expect(Math.abs(kf1.inSpatialTangent[0] - -40.0) < 0.01).toBe(true);
+    expect(Math.abs(kf1.inSpatialTangent[1] - -60.0) < 0.01).toBe(true);
   });
 });
 
@@ -1798,8 +1798,8 @@ describe("TestLinearHoldEase", () => {
     const kf0 = position.keyframes[0];
     // [0,50,0] > [100,50,0] over 5 seconds (120 frames @ 24fps)
     // distance = 100, speed = 100/5 = 20
-    expect(Math.abs(kf0.out_temporal_ease[0].speed - 20.0) < 0.01).toBe(true);
-    expect(Math.abs(kf0.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf0.outTemporalEase[0].speed - 20.0) < 0.01).toBe(true);
+    expect(Math.abs(kf0.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** LINEAR position: KF1 in speed = distance / time. */
@@ -1809,8 +1809,8 @@ describe("TestLinearHoldEase", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     const kf1 = position.keyframes[1];
-    expect(Math.abs(kf1.in_temporal_ease[0].speed - 20.0) < 0.01).toBe(true);
-    expect(Math.abs(kf1.in_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf1.inTemporalEase[0].speed - 20.0) < 0.01).toBe(true);
+    expect(Math.abs(kf1.inTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** First keyframe in a LINEAR property has in speed = 0. */
@@ -1820,8 +1820,8 @@ describe("TestLinearHoldEase", () => {
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
     const kf0 = position.keyframes[0];
-    expect(Math.abs(kf0.in_temporal_ease[0].speed) < 0.001).toBe(true);
-    expect(Math.abs(kf0.in_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf0.inTemporalEase[0].speed) < 0.001).toBe(true);
+    expect(Math.abs(kf0.inTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** Last keyframe in a LINEAR property has out speed = 0. */
@@ -1832,9 +1832,9 @@ describe("TestLinearHoldEase", () => {
     if (position === null) throw new AssertionError_("position is None");
     const kf_last = position.keyframes.at(-1);
     if (kf_last === undefined) throw new IndexError("list index out of range");
-    expect(Math.abs(kf_last.out_temporal_ease[0].speed) < 0.001).toBe(true);
+    expect(Math.abs(kf_last.outTemporalEase[0].speed) < 0.001).toBe(true);
     expect(
-      Math.abs(kf_last.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001,
+      Math.abs(kf_last.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001,
     ).toBe(true);
   });
 
@@ -1847,8 +1847,8 @@ describe("TestLinearHoldEase", () => {
     // KF[0] (100%) > KF[1] (0%) over 3 sec (72 frames @ 24fps)
     // speed = (0 - 100) / 3 = -33.333
     const kf0 = opacity.keyframes[0];
-    expect(Math.abs(kf0.out_temporal_ease[0].speed - -100.0 / 3.0) < 0.01).toBe(true);
-    expect(Math.abs(kf0.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf0.outTemporalEase[0].speed - -100.0 / 3.0) < 0.01).toBe(true);
+    expect(Math.abs(kf0.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** HOLD out keyframe has speed = 0 and influence = 100/6. */
@@ -1859,8 +1859,8 @@ describe("TestLinearHoldEase", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[1]: BEZIER in, HOLD out
     const kf1 = opacity.keyframes[1];
-    expect(Math.abs(kf1.out_temporal_ease[0].speed) < 0.001).toBe(true);
-    expect(Math.abs(kf1.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf1.outTemporalEase[0].speed) < 0.001).toBe(true);
+    expect(Math.abs(kf1.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** HOLD in keyframe has speed = 0 and influence = 100/6. */
@@ -1871,8 +1871,8 @@ describe("TestLinearHoldEase", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[2]: HOLD in, LINEAR out
     const kf2 = opacity.keyframes[2];
-    expect(Math.abs(kf2.in_temporal_ease[0].speed) < 0.001).toBe(true);
-    expect(Math.abs(kf2.in_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf2.inTemporalEase[0].speed) < 0.001).toBe(true);
+    expect(Math.abs(kf2.inTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** LINEAR out after HOLD in computes speed from adjacent keyframes. */
@@ -1884,8 +1884,8 @@ describe("TestLinearHoldEase", () => {
     // KF[2] (100%) > KF[3] (50%) over 3 sec (72 frames @ 24fps)
     // speed = (50 - 100) / 3 = -16.667
     const kf2 = opacity.keyframes[2];
-    expect(Math.abs(kf2.out_temporal_ease[0].speed - -50.0 / 3.0) < 0.01).toBe(true);
-    expect(Math.abs(kf2.out_temporal_ease[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
+    expect(Math.abs(kf2.outTemporalEase[0].speed - -50.0 / 3.0) < 0.01).toBe(true);
+    expect(Math.abs(kf2.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** BEZIER keyframes retain their stored binary ease values. */
@@ -1896,8 +1896,8 @@ describe("TestLinearHoldEase", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     // KF[1]: BEZIER in - binary stores (speed=0, influence=0)
     const kf1 = opacity.keyframes[1];
-    expect(Math.abs(kf1.in_temporal_ease[0].speed) < 0.001).toBe(true);
-    expect(Math.abs(kf1.in_temporal_ease[0].influence) < 0.001).toBe(true);
+    expect(Math.abs(kf1.inTemporalEase[0].speed) < 0.001).toBe(true);
+    expect(Math.abs(kf1.inTemporalEase[0].influence) < 0.001).toBe(true);
   });
 });
 
@@ -1924,7 +1924,7 @@ describe("TestShapeValue", () => {
   test("test_closed_square_tangents_zero", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("shape_basic.aep")), "shape_closed_square");
     const shape = _get_mask_shape(layer).value;
-    for (const t of [...shape.in_tangents, ...shape.out_tangents]) {
+    for (const t of [...shape.inTangents, ...shape.outTangents]) {
       expect(py_eq(t, [0, 0])).toBe(true);
     }
   });
@@ -1933,7 +1933,7 @@ describe("TestShapeValue", () => {
   test("test_closed_square_no_feather", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("shape_basic.aep")), "shape_closed_square");
     const shape = _get_mask_shape(layer).value;
-    expect(py_eq(shape.feather_points, [])).toBe(true);
+    expect(py_eq(shape.featherPoints, [])).toBe(true);
   });
 
   /** Closed oval mask has non-zero tangents. */
@@ -1943,7 +1943,7 @@ describe("TestShapeValue", () => {
     expect(shape.closed).toBe(true);
     expect(len(shape.vertices)).toBe(4);
     // Tangents should be non-zero (bezier curves)
-    for (const t of [...shape.in_tangents, ...shape.out_tangents]) {
+    for (const t of [...shape.inTangents, ...shape.outTangents]) {
       expect(!py_eq(t, [0, 0])).toBe(true);
     }
   });
@@ -1960,35 +1960,35 @@ describe("TestShapeValue", () => {
   test("test_feather_points", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("shape_feather.aep")), "shape_feather_points");
     const shape = _get_mask_shape(layer).value;
-    expect(len(shape.feather_points)).toBe(2);
-    const [fp0, fp1] = shape.feather_points;
-    expect(fp0.seg_loc).toBe(1);
-    expect(fp0.rel_seg_loc).toBe(0.15);
+    expect(len(shape.featherPoints)).toBe(2);
+    const [fp0, fp1] = shape.featherPoints;
+    expect(fp0.segLoc).toBe(1);
+    expect(fp0.relSegLoc).toBe(0.15);
     expect(fp0.radius).toBe(30.0);
     expect(fp0.type).toBe(0);
     expect(fp0.interp).toBe(0);
     expect(fp0.tension).toBe(0.0);
-    expect(fp0.rel_corner_angle).toBe(0.0);
-    expect(fp1.seg_loc).toBe(2);
-    expect(fp1.rel_seg_loc).toBe(0.5);
+    expect(fp0.relCornerAngle).toBe(0.0);
+    expect(fp1.segLoc).toBe(2);
+    expect(fp1.relSegLoc).toBe(0.5);
     expect(fp1.radius).toBe(100.0);
     expect(fp1.type).toBe(0);
     expect(fp1.interp).toBe(0);
     expect(fp1.tension).toBe(0.0);
-    expect(fp1.rel_corner_angle).toBe(0.0);
+    expect(fp1.relCornerAngle).toBe(0.0);
   });
 
   /** Feather with inner/outer types and hold/non-hold interpolation. */
   test("test_feather_inner_hold", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("shape_feather.aep")), "shape_feather_inner_hold");
     const shape = _get_mask_shape(layer).value;
-    expect(len(shape.feather_points)).toBe(4);
-    expect(py_eq(shape.feather_points.map((fp) => fp.seg_loc), [0, 1, 2, 3])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.radius), [50.0, -30.0, 80.0, -20.0])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.type), [0, 1, 0, 1])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.interp), [0, 0, 1, 1])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.tension), [0.0, 0.5, 1.0, 0.25])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.rel_corner_angle), [0.0, 0.0, 0.0, 0.0])).toBe(true);
+    expect(len(shape.featherPoints)).toBe(4);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.segLoc), [0, 1, 2, 3])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.radius), [50.0, -30.0, 80.0, -20.0])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.type), [0, 1, 0, 1])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.interp), [0, 0, 1, 1])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.tension), [0.0, 0.5, 1.0, 0.25])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.relCornerAngle), [0.0, 0.0, 0.0, 0.0])).toBe(true);
   });
 
   /** Animated mask shape has 2 keyframes with different vertices. */
@@ -2021,8 +2021,8 @@ describe("TestShapeValue", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("shape_misc.aep")), "shape_many_points");
     const shape = _get_mask_shape(layer).value;
     expect(len(shape.vertices)).toBe(300);
-    expect(py_eq(shape.feather_points.map((fp) => fp.seg_loc), [0, 128, 255, 256, 270, 299])).toBe(true);
-    expect(py_eq(shape.feather_points.map((fp) => fp.radius), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.segLoc), [0, 128, 255, 256, 270, 299])).toBe(true);
+    expect(py_eq(shape.featherPoints.map((fp) => fp.radius), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0])).toBe(true);
   });
 });
 
@@ -2052,7 +2052,7 @@ describe("TestTextAnimatorPool", () => {
     const props = TestTextAnimatorPool._props(parse_aep(TestTextAnimatorPool.AEP));
     const children = props.properties;
     expect(len(children)).toBe(103);
-    const by_mn = new Map(children.map((c) => [c.match_name, c] as const));
+    const by_mn = new Map(children.map((c) => [c.matchName, c] as const));
     expect(getitem(by_mn, "ADBE Text Position 3D").name).toBe("Position");
     expect(getitem(by_mn, "ADBE Text Rotation").name).toBe("Rotation");
     expect(getitem(by_mn, "ADBE 3DText Front RGB").name).toBe("Front Color");
@@ -2062,24 +2062,24 @@ describe("TestTextAnimatorPool", () => {
 
   test("test_pool_values_and_units", () => {
     const props = TestTextAnimatorPool._props(parse_aep(TestTextAnimatorPool.AEP));
-    const by_mn = new Map(props.properties.map((c) => [c.match_name, c] as const));
+    const by_mn = new Map(props.properties.map((c) => [c.matchName, c] as const));
     const opacity = as_instance(getitem(by_mn, "ADBE Text Opacity"), Property);
     expect(opacity instanceof Property).toBe(true);
     expect(opacity.value).toBe(100);
-    expect(opacity.min_value).toBe(0);
-    expect(opacity.max_value).toBe(100);
-    expect(opacity.units_text).toBe("percent");
+    expect(opacity.minValue).toBe(0);
+    expect(opacity.maxValue).toBe(100);
+    expect(opacity.unitsText).toBe("percent");
     const scale = as_instance(getitem(by_mn, "ADBE Text Scale 3D"), Property);
     expect(scale instanceof Property).toBe(true);
     expect(py_eq(scale.value, [100.0, 100.0, 100.0])).toBe(true);
-    expect(scale.units_text).toBe("percent");
+    expect(scale.unitsText).toBe("percent");
   });
 
   test("test_pool_properties_not_expressionable", () => {
     const props = TestTextAnimatorPool._props(parse_aep(TestTextAnimatorPool.AEP));
     for (const c of props.properties) {
       expect(c instanceof Property).toBe(true);
-      expect(as_instance(c, Property).can_set_expression).toBe(false);
+      expect(as_instance(c, Property).canSetExpression).toBe(false);
     }
   });
 
@@ -2101,17 +2101,17 @@ describe("TestEffectMetadata", () => {
     const effect = as_instance(layer.effects.properties[0], PropertyGroup);
     let blur_dims: Property | null = null;
     for (const prop of effect.properties) {
-      if (prop.match_name === "ADBE Gaussian Blur 2-0002") {
+      if (prop.matchName === "ADBE Gaussian Blur 2-0002") {
         blur_dims = as_instance(prop, Property);
         break;
       }
     }
     expect(blur_dims).not.toBeNull();
     if (blur_dims === null) throw new AssertionError_("blur_dims is None");
-    expect(blur_dims.nb_options).toBe(3);
-    expect(blur_dims.property_parameters).not.toBeNull();
-    if (blur_dims.property_parameters === null) throw new AssertionError_("blur_dims.property_parameters is None");
-    expect(len(blur_dims.property_parameters)).toBe(3);
+    expect(blur_dims.nbOptions).toBe(3);
+    expect(blur_dims.propertyParameters).not.toBeNull();
+    if (blur_dims.propertyParameters === null) throw new AssertionError_("blur_dims.property_parameters is None");
+    expect(len(blur_dims.propertyParameters)).toBe(3);
   });
 
   /** Synthesized default properties have is_modified == False. */
@@ -2124,14 +2124,14 @@ describe("TestEffectMetadata", () => {
     // Repeat Edge Pixels is a boolean at its default - should not be modified
     let repeat_edge: Property | null = null;
     for (const prop of effect.properties) {
-      if (prop.match_name === "ADBE Gaussian Blur 2-0003") {
+      if (prop.matchName === "ADBE Gaussian Blur 2-0003") {
         repeat_edge = as_instance(prop, Property);
         break;
       }
     }
     expect(repeat_edge).not.toBeNull();
     if (repeat_edge === null) throw new AssertionError_("repeat_edge is None");
-    expect(repeat_edge.is_modified).toBe(false);
+    expect(repeat_edge.isModified).toBe(false);
   });
 
   /** Synthesized 2D point values are scaled to composition dimensions. */
@@ -2145,14 +2145,14 @@ describe("TestEffectMetadata", () => {
     const effect = as_instance(layer.effects.properties[0], PropertyGroup);
     let flare_center: Property | null = null;
     for (const prop of effect.properties) {
-      if (prop.match_name === "ADBE Lens Flare-0001") {
+      if (prop.matchName === "ADBE Lens Flare-0001") {
         flare_center = as_instance(prop, Property);
         break;
       }
     }
     expect(flare_center).not.toBeNull();
     if (flare_center === null) throw new AssertionError_("flare_center is None");
-    expect(flare_center.property_value_type).toBe(PropertyValueType.TwoD_SPATIAL);
+    expect(flare_center.propertyValueType).toBe(PropertyValueType.TwoD_SPATIAL);
     // Value should be in pixel coordinates, not parT's 0-512 range
     expect(Array.isArray(flare_center.value)).toBe(true);
     expect(len(flare_center.value)).toBe(2);
@@ -2176,13 +2176,13 @@ describe("TestEffectMetadata", () => {
       layer.property("ADBE Effect Parade").property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ"),
       PropertyGroup,
     );
-    expect(as_instance(control.property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ-0001"), Property).is_dropdown_effect).toBe(
+    expect(as_instance(control.property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ-0001"), Property).isDropdownEffect).toBe(
       true,
     );
 
     layer = get_first_layer(parse_project(SAMPLES_DIR.div("2_gaussian.aep")));
     const blur = as_instance(layer.property("ADBE Effect Parade").property("ADBE Gaussian Blur 2"), PropertyGroup);
-    expect(as_instance(blur.property("ADBE Gaussian Blur 2-0002"), Property).is_dropdown_effect).toBe(false);
+    expect(as_instance(blur.property("ADBE Gaussian Blur 2-0002"), Property).isDropdownEffect).toBe(false);
   });
 
   /**
@@ -2195,14 +2195,14 @@ describe("TestEffectMetadata", () => {
     if (layer === undefined) throw new StopIteration();
     const fill = as_instance(layer.property("ADBE Effect Parade").property("ADBE Fill"), PropertyGroup);
     const all_masks = as_instance(fill.property("ADBE Fill-0007"), Property);
-    expect(all_masks.can_vary_over_time).toBe(false);
-    expect(py_eq([all_masks.has_min, all_masks.min_value, all_masks.max_value], [true, 0, 1])).toBe(true);
+    expect(all_masks.canVaryOverTime).toBe(false);
+    expect(py_eq([all_masks.hasMin, all_masks.minValue, all_masks.maxValue], [true, 0, 1])).toBe(true);
     layer = get_layer(parse_project(SAMPLES_DIR.div("effects.aep")), "effect_puppet");
     const puppet = as_instance(layer.property("ADBE Effect Parade").property("ADBE FreePin3"), PropertyGroup);
     const on_transparent = as_instance(puppet.property("ADBE FreePin3 On Transparent"), Property);
-    expect(py_eq([on_transparent.has_min, on_transparent.has_max], [false, false])).toBe(true);
+    expect(py_eq([on_transparent.hasMin, on_transparent.hasMax], [false, false])).toBe(true);
     const auto_rotate = as_instance(puppet.property("ADBE FreePin3 Auto Rotate Pins"), Property);
-    expect(py_eq([auto_rotate.has_min, auto_rotate.has_max], [true, true])).toBe(true);
+    expect(py_eq([auto_rotate.hasMin, auto_rotate.hasMax], [true, true])).toBe(true);
   });
 });
 
@@ -2220,7 +2220,7 @@ describe("TestTextPathOptions", () => {
       .property("ADBE Text Properties")
       .property("ADBE Text Path Options")
       .property("ADBE Text Path");
-    expect(path.property_value_type).toBe(PropertyValueType.MASK_INDEX);
+    expect(path.propertyValueType).toBe(PropertyValueType.MASK_INDEX);
     expect(path.value).toBe(0);
   });
 });
@@ -2231,7 +2231,7 @@ class TestMaterialOptionsByVersion {
     const comp = get_comp(parse_project(VERSIONS_DIR.div(version, "complete.aep")), "DropFrame_Comp");
     const layer = comp.layers.find((ly) => ly.name === "DF_Solid");
     if (layer === undefined) throw new StopIteration();
-    py_assert(as_instance(layer, AVLayer).three_d_layer === false);
+    py_assert(as_instance(layer, AVLayer).threeDLayer === false);
     return layer.property("ADBE Material Options Group");
   }
 }
@@ -2244,7 +2244,7 @@ describe("TestMaterialOptionsByVersion", () => {
   ])("test_2d_layer_options_take_expressions_until_ae_23[%#]", (version, expected) => {
     const materials = TestMaterialOptionsByVersion._materials(version);
     for (const mn of ["ADBE Light Transmission", "ADBE Diffuse Coefficient"]) {
-      expect(as_instance(materials.property(mn), Property).can_set_expression).toBe(expected);
+      expect(as_instance(materials.property(mn), Property).canSetExpression).toBe(expected);
     }
   });
 
@@ -2252,13 +2252,13 @@ describe("TestMaterialOptionsByVersion", () => {
     ["ae2023", false],
     ["ae2024", true],
   ])("test_shadow_color_from_ae_24[%#]", (version, expected) => {
-    const names = TestMaterialOptionsByVersion._materials(version).properties.map((p) => p.match_name);
+    const names = TestMaterialOptionsByVersion._materials(version).properties.map((p) => p.matchName);
     expect(names.includes("ADBE Shadow Color")).toBe(expected);
   });
 });
 
 class TestCanSetExpression {
-  /** Tests for Property.can_set_expression. */
+  /** Tests for Property.canSetExpression. */
 
   static _get_main_comp_layer(index: number): Layer {
     const project = parse_project(VERSIONS_DIR.div("ae2025", "complete.aep"));
@@ -2274,7 +2274,7 @@ describe("TestCanSetExpression", () => {
     for (const mn of ["ADBE Position", "ADBE Scale", "ADBE Opacity", "ADBE Rotate Z"]) {
       const prop = _find_property(layer, mn);
       py_assert(prop != null, `${mn} not found`);
-      py_assert(prop.can_set_expression === true, mn);
+      py_assert(prop.canSetExpression === true, mn);
     }
   });
 
@@ -2284,7 +2284,7 @@ describe("TestCanSetExpression", () => {
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y"]) {
       const prop = _find_property(layer, mn);
       py_assert(prop != null, `${mn} not found`);
-      py_assert(prop.can_set_expression === false, mn);
+      py_assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2294,7 +2294,7 @@ describe("TestCanSetExpression", () => {
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y"]) {
       const prop = _find_property(layer, mn);
       py_assert(prop != null, `${mn} not found`);
-      py_assert(prop.can_set_expression === true, mn);
+      py_assert(prop.canSetExpression === true, mn);
     }
   });
 
@@ -2304,7 +2304,7 @@ describe("TestCanSetExpression", () => {
     for (const mn of ["ADBE Position_0", "ADBE Position_1"]) {
       const prop = _find_property(layer, mn);
       py_assert(prop != null, `${mn} not found`);
-      py_assert(prop.can_set_expression === false, mn);
+      py_assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2320,9 +2320,9 @@ describe("TestCanSetExpression", () => {
     if (opacity === null) throw new AssertionError_("opacity is None");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError_("position is None");
-    expect(scale.can_set_expression).toBe(false);
-    expect(opacity.can_set_expression).toBe(false);
-    expect(position.can_set_expression).toBe(true);
+    expect(scale.canSetExpression).toBe(false);
+    expect(opacity.canSetExpression).toBe(false);
+    expect(position.canSetExpression).toBe(true);
   });
 
   /** All light layers cannot set expressions on Scale/Opacity. */
@@ -2333,7 +2333,7 @@ describe("TestCanSetExpression", () => {
       for (const mn of ["ADBE Scale", "ADBE Opacity"]) {
         const prop = _find_property(layer, mn);
         py_assert(prop != null, `layer[${idx}] ${mn} not found`);
-        py_assert(prop.can_set_expression === false, `layer[${idx}] ${mn}`);
+        py_assert(prop.canSetExpression === false, `layer[${idx}] ${mn}`);
       }
     }
   });
@@ -2348,7 +2348,7 @@ describe("TestCanSetExpression", () => {
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Z"]) {
       const prop = _find_property(light, mn);
       py_assert(prop != null, `${mn} not found`);
-      py_assert(prop.can_set_expression === false, mn);
+      py_assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2357,11 +2357,11 @@ describe("TestCanSetExpression", () => {
     const project = parse_project(LAYER_SAMPLES_DIR.div("light_source_default.aep"));
     const light = get_comp(project, "crystal").layers[0];
     const transform = light.property("ADBE Transform Group");
-    expect(transform.property("ADBE Rotate X").can_set_expression).toBe(true);
-    expect(transform.property("ADBE Position").can_set_expression).toBe(false);
+    expect(transform.property("ADBE Rotate X").canSetExpression).toBe(true);
+    expect(transform.property("ADBE Position").canSetExpression).toBe(false);
     const options = light.property("ADBE Light Options Group");
     for (const mn of ["ADBE Light Color", "ADBE Light Falloff Type", "ADBE Light Shadow Diffusion"]) {
-      expect(as_instance(options.property(mn), Property).can_set_expression).toBe(false);
+      expect(as_instance(options.property(mn), Property).canSetExpression).toBe(false);
     }
   });
 
@@ -2374,12 +2374,12 @@ describe("TestCanSetExpression", () => {
     const model = get_comp(project, "crystal").layers[2];
     const materials = model.property("ADBE Material Options Group");
     for (const mn of ["ADBE Light Transmission", "ADBE Metal Coefficient", "ADBE Shadow Color"]) {
-      expect(as_instance(materials.property(mn), Property).can_set_expression).toBe(false);
+      expect(as_instance(materials.property(mn), Property).canSetExpression).toBe(false);
     }
     const plane = model.property("ADBE Plane Options Group");
-    expect(as_instance(plane.property("ADBE Plane Curvature"), Property).can_set_expression).toBe(true);
+    expect(as_instance(plane.property("ADBE Plane Curvature"), Property).canSetExpression).toBe(true);
     const compositing = as_instance(model.property("ADBE Compositing Options Group"), PropertyGroup);
-    expect(as_instance(compositing.property("ADBE Shadow Color"), Property).can_set_expression).toBe(true);
+    expect(as_instance(compositing.property("ADBE Shadow Color"), Property).canSetExpression).toBe(true);
   });
 
   /**
@@ -2389,11 +2389,11 @@ describe("TestCanSetExpression", () => {
   test("test_effect_params_follow_their_type", () => {
     const effects = TestCanSetExpression._get_main_comp_layer(1).property("ADBE Effect Parade");
     const drop_shadow = as_instance(effects.property("ADBE Drop Shadow"), PropertyGroup);
-    expect(as_instance(drop_shadow.property("Distance"), Property).can_set_expression).toBe(true);
-    expect(as_instance(drop_shadow.property("Softness"), Property).can_set_expression).toBe(true);
+    expect(as_instance(drop_shadow.property("Distance"), Property).canSetExpression).toBe(true);
+    expect(as_instance(drop_shadow.property("Softness"), Property).canSetExpression).toBe(true);
     const fill = as_instance(effects.property("ADBE Fill"), PropertyGroup);
-    expect(as_instance(fill.property("Color"), Property).can_set_expression).toBe(true);
-    expect(as_instance(fill.property("Fill Mask"), Property).can_set_expression).toBe(false);
+    expect(as_instance(fill.property("Color"), Property).canSetExpression).toBe(true);
+    expect(as_instance(fill.property("Fill Mask"), Property).canSetExpression).toBe(false);
   });
 
   /** AE shows a stroke's Miter Limit only while it joins by miter. */
@@ -2402,27 +2402,27 @@ describe("TestCanSetExpression", () => {
     const stroke = layer.property("ADBE Root Vectors Group").property("ADBE Vector Graphic - G-Stroke");
     expect(stroke.property("ADBE Vector Stroke Line Join").value).toBe(2); // round
     const miter = stroke.property("ADBE Vector Stroke Miter Limit");
-    expect(miter.can_set_expression).toBe(false);
+    expect(miter.canSetExpression).toBe(false);
   });
 });
 
 describe("TestCanVaryOverTime", () => {
-  /** Tests for Property.can_vary_over_time. */
+  /** Tests for Property.canVaryOverTime. */
 
   /** The Puppet Engine popup is fixed; its sibling toggles vary. */
   test("test_puppet_engine_cannot_vary", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("effects.aep")), "effect_puppet");
     const puppet = as_instance(layer.property("ADBE Effect Parade").property("ADBE FreePin3"), PropertyGroup);
     const engine = as_instance(puppet.property("ADBE FreePin3 Puppet Engine"), Property);
-    expect(engine.can_vary_over_time).toBe(false);
-    expect(engine.can_set_expression).toBe(false);
+    expect(engine.canVaryOverTime).toBe(false);
+    expect(engine.canSetExpression).toBe(false);
     const auto_rotate = as_instance(puppet.property("ADBE FreePin3 Auto Rotate Pins"), Property);
-    expect(auto_rotate.can_vary_over_time).toBe(true);
+    expect(auto_rotate.canVaryOverTime).toBe(true);
   });
 });
 
 describe("TestCanAddProperty", () => {
-  /** Tests for PropertyGroup.can_add_property(). */
+  /** Tests for PropertyGroup.canAddProperty(). */
 
   /** Transform group is a NAMED_GROUP, not INDEXED_GROUP. */
   test("test_non_indexed_group_returns_false", () => {
@@ -2430,8 +2430,8 @@ describe("TestCanAddProperty", () => {
     const comp = get_comp(project, "type_null");
     const layer = comp.layers[0];
     const transform = layer.transform;
-    expect(transform.property_type).toBe(PropertyType.NAMED_GROUP);
-    expect(transform.can_add_property("anything")).toBe(false);
+    expect(transform.propertyType).toBe(PropertyType.NAMED_GROUP);
+    expect(transform.canAddProperty("anything")).toBe(false);
   });
 
   test("test_empty_name_returns_false", () => {
@@ -2440,7 +2440,7 @@ describe("TestCanAddProperty", () => {
     const layer = comp.layers[0];
     const effect_parade = layer.effects;
     if (effect_parade === null) throw new AssertionError_("layer.effects is None");
-    expect(effect_parade.can_add_property("")).toBe(false);
+    expect(effect_parade.canAddProperty("")).toBe(false);
   });
 
   /**
@@ -2453,13 +2453,13 @@ describe("TestCanAddProperty", () => {
     const layer = comp.layers[0];
     const effect_parade = layer.effects;
     if (effect_parade === null) throw new AssertionError_("layer.effects is None");
-    expect(effect_parade.match_name).toBe("ADBE Effect Parade");
-    expect(effect_parade.property_type).toBe(PropertyType.INDEXED_GROUP);
-    expect(effect_parade.can_add_property("ADBE Slider Control")).toBe(true);
-    expect(effect_parade.can_add_property("Slider Control")).toBe(true);
-    expect(effect_parade.can_add_property("ADBE Dropdown Control")).toBe(true);
-    expect(effect_parade.can_add_property("ADBE Gaussian Blur 2")).toBe(false);
-    expect(effect_parade.can_add_property("Some Custom Effect")).toBe(false);
+    expect(effect_parade.matchName).toBe("ADBE Effect Parade");
+    expect(effect_parade.propertyType).toBe(PropertyType.INDEXED_GROUP);
+    expect(effect_parade.canAddProperty("ADBE Slider Control")).toBe(true);
+    expect(effect_parade.canAddProperty("Slider Control")).toBe(true);
+    expect(effect_parade.canAddProperty("ADBE Dropdown Control")).toBe(true);
+    expect(effect_parade.canAddProperty("ADBE Gaussian Blur 2")).toBe(false);
+    expect(effect_parade.canAddProperty("Some Custom Effect")).toBe(false);
   });
 
   test("test_mask_parade_accepts_mask_atom", () => {
@@ -2470,8 +2470,8 @@ describe("TestCanAddProperty", () => {
     if (mask_parade == null) {
       return skip("No mask parade found");
     }
-    expect(mask_parade.match_name).toBe("ADBE Mask Parade");
-    expect(mask_parade.can_add_property("ADBE Mask Atom")).toBe(true);
+    expect(mask_parade.matchName).toBe("ADBE Mask Parade");
+    expect(mask_parade.canAddProperty("ADBE Mask Atom")).toBe(true);
   });
 
   test("test_mask_parade_rejects_other_names", () => {
@@ -2482,8 +2482,8 @@ describe("TestCanAddProperty", () => {
     if (mask_parade == null) {
       return skip("No mask parade found");
     }
-    expect(mask_parade.can_add_property("ADBE Position")).toBe(false);
-    expect(mask_parade.can_add_property("ADBE Effect Parade")).toBe(false);
+    expect(mask_parade.canAddProperty("ADBE Position")).toBe(false);
+    expect(mask_parade.canAddProperty("ADBE Effect Parade")).toBe(false);
   });
 
   /** Root Vectors Group should accept valid shape match names. */
@@ -2493,7 +2493,7 @@ describe("TestCanAddProperty", () => {
     const layer = comp.layers[0];
     let contents: PropertyGroup | null = null;
     for (const prop of layer.properties) {
-      if (prop.match_name === "ADBE Root Vectors Group") {
+      if (prop.matchName === "ADBE Root Vectors Group") {
         contents = as_instance(prop, PropertyGroup);
         break;
       }
@@ -2501,11 +2501,11 @@ describe("TestCanAddProperty", () => {
     if (contents == null) {
       return skip("No Root Vectors Group found");
     }
-    expect(contents.can_add_property("ADBE Vector Shape - Rect")).toBe(true);
-    expect(contents.can_add_property("ADBE Vector Shape - Ellipse")).toBe(true);
-    expect(contents.can_add_property("ADBE Vector Graphic - Fill")).toBe(true);
-    expect(contents.can_add_property("ADBE Vector Group")).toBe(true);
-    expect(contents.can_add_property("ADBE Vector Filter - Trim")).toBe(true);
+    expect(contents.canAddProperty("ADBE Vector Shape - Rect")).toBe(true);
+    expect(contents.canAddProperty("ADBE Vector Shape - Ellipse")).toBe(true);
+    expect(contents.canAddProperty("ADBE Vector Graphic - Fill")).toBe(true);
+    expect(contents.canAddProperty("ADBE Vector Group")).toBe(true);
+    expect(contents.canAddProperty("ADBE Vector Filter - Trim")).toBe(true);
   });
 
   test("test_shape_group_rejects_invalid_names", () => {
@@ -2514,7 +2514,7 @@ describe("TestCanAddProperty", () => {
     const layer = comp.layers[0];
     let contents: PropertyGroup | null = null;
     for (const prop of layer.properties) {
-      if (prop.match_name === "ADBE Root Vectors Group") {
+      if (prop.matchName === "ADBE Root Vectors Group") {
         contents = as_instance(prop, PropertyGroup);
         break;
       }
@@ -2522,8 +2522,8 @@ describe("TestCanAddProperty", () => {
     if (contents == null) {
       return skip("No Root Vectors Group found");
     }
-    expect(contents.can_add_property("ADBE Position")).toBe(false);
-    expect(contents.can_add_property("ADBE Mask Atom")).toBe(false);
+    expect(contents.canAddProperty("ADBE Position")).toBe(false);
+    expect(contents.canAddProperty("ADBE Mask Atom")).toBe(false);
   });
 });
 
@@ -2598,8 +2598,8 @@ describe("TestEffectPointSpeed", () => {
     const expected = TestEffectPointSpeed._expected_keyframes();
     expect(len(prop.keyframes)).toBe(len(expected));
     for (const [keyframe, want] of zip(prop.keyframes, expected)) {
-      expect(approx(keyframe.in_temporal_ease[0].speed, want["inTemporalEase"][0]["speed"])).toBe(true);
-      expect(approx(keyframe.out_temporal_ease[0].speed, want["outTemporalEase"][0]["speed"])).toBe(true);
+      expect(approx(keyframe.inTemporalEase[0].speed, want["inTemporalEase"][0]["speed"])).toBe(true);
+      expect(approx(keyframe.outTemporalEase[0].speed, want["outTemporalEase"][0]["speed"])).toBe(true);
     }
   });
 
@@ -2612,8 +2612,8 @@ describe("TestEffectPointSpeed", () => {
     expect(prop._effect_point_speed_factor).toBe(300.0);
     const middle = prop.keyframes[1];
     expect(approx(as_instance(middle._ldat_item.kf_data, KfPosition).in_speed, 0.4)).toBe(true);
-    expect(approx(middle.in_temporal_ease[0].speed, 120.0)).toBe(true);
-    expect(approx(middle.out_temporal_ease[0].speed, 260.0)).toBe(true);
+    expect(approx(middle.inTemporalEase[0].speed, 120.0)).toBe(true);
+    expect(approx(middle.outTemporalEase[0].speed, 260.0)).toBe(true);
   });
 
   test("test_reading_effect_scale_does_not_touch_ease", () => {
@@ -2656,8 +2656,8 @@ describe("TestEffectPointSpeed", () => {
     Object.defineProperty(proto, "_effect_point_speed_factor", { get: counting, configurable: true });
     try {
       for (const keyframe of prop.keyframes) {
-        keyframe.in_temporal_ease;
-        keyframe.out_temporal_ease;
+        keyframe.inTemporalEase;
+        keyframe.outTemporalEase;
       }
     } finally {
       Object.defineProperty(proto, "_effect_point_speed_factor", original);
@@ -2668,8 +2668,8 @@ describe("TestEffectPointSpeed", () => {
 
   test("test_speeds_are_stable_across_repeated_reads", () => {
     const prop = TestEffectPointSpeed._ramp_start(parse_project(TestEffectPointSpeed.SAMPLE));
-    const first = prop.keyframes.map((kf) => kf.out_temporal_ease[0].speed);
-    const second = prop.keyframes.map((kf) => kf.out_temporal_ease[0].speed);
+    const first = prop.keyframes.map((kf) => kf.outTemporalEase[0].speed);
+    const second = prop.keyframes.map((kf) => kf.outTemporalEase[0].speed);
     expect(py_eq(first, second)).toBe(true);
   });
 
@@ -2688,12 +2688,12 @@ describe("TestEffectPointSpeed", () => {
             stack.push(...child.properties);
           } else if (
             child instanceof Property &&
-            child.match_name === "ADBE Geometry2-0001" &&
+            child.matchName === "ADBE Geometry2-0001" &&
             py_bool(child.keyframes)
           ) {
             expect(py_eq(child._effect_scale, [2356.0, 1002.0])).toBe(true);
-            expect(approx(child.keyframes[0].out_temporal_ease[0].speed, 29.151890878813)).toBe(true);
-            expect(approx(child.keyframes[1].in_temporal_ease[0].speed, 29.151890878813)).toBe(true);
+            expect(approx(child.keyframes[0].outTemporalEase[0].speed, 29.151890878813)).toBe(true);
+            expect(approx(child.keyframes[1].inTemporalEase[0].speed, 29.151890878813)).toBe(true);
             return;
           }
         }
@@ -2815,16 +2815,16 @@ describe("TestMaskLayerSpace", () => {
     // The fixture's fresh masks really are path-less.
     expect(mask._mask_shape_tdsb == null).toBe(mask_name === "Mask 1");
     const mask_path = mask.property("ADBE Mask Shape");
-    expect(mask_path.property_value_type).toBe(PropertyValueType.SHAPE);
-    expect(mask_path.can_set_expression).toBe(expected["canSetExpression"]);
-    expect(mask_path.can_vary_over_time).toBe(expected["canVaryOverTime"]);
-    expect(mask_path.is_modified).toBe(expected["isModified"]);
+    expect(mask_path.propertyValueType).toBe(PropertyValueType.SHAPE);
+    expect(mask_path.canSetExpression).toBe(expected["canSetExpression"]);
+    expect(mask_path.canVaryOverTime).toBe(expected["canVaryOverTime"]);
+    expect(mask_path.isModified).toBe(expected["isModified"]);
     const shape = mask_path.value;
     expect(shape.closed).toBe(expected["closed"]);
     for (const [attr, name] of [
       ["vertices", "vertices"],
-      ["in_tangents", "inTangents"],
-      ["out_tangents", "outTangents"],
+      ["inTangents", "inTangents"],
+      ["outTangents", "outTangents"],
     ] as const) {
       const got = getattr(shape, attr).flatMap((point) => [...point]);
       const want = expected[name].flatMap((point) => [...point]);
@@ -2872,7 +2872,7 @@ describe("TestRotoBezierTangents", () => {
   /**
    * A RotoBezier mask reports the tangents After Effects derives from its
    * vertices and per-vertex tensions, not its stored handles
-   * (`resolvers.roto_bezier`). Ground truth: AE 2026 reading each fixture in
+   * (`resolvers.rotoBezier`). Ground truth: AE 2026 reading each fixture in
    * a fresh session (`<stem>_probe.json`). `mask_rotobezier_shapes` holds
    * AE-scripted masks (tension 1, zero tangents, except one converted from
    * handles at 1/3); `mask_rotobezier_tensions` is the same file with the
@@ -2903,7 +2903,7 @@ describe("TestRotoBezierTangents", () => {
         }
       }
       if (mask === null) throw new StopIteration();
-      expect(mask.roto_bezier).toBe(true);
+      expect(mask.rotoBezier).toBe(true);
       const mask_path = mask.property("ADBE Mask Shape");
       let shape: Shape;
       if (sample == null) {
@@ -2911,13 +2911,13 @@ describe("TestRotoBezierTangents", () => {
       } else if (sample.startsWith("key")) {
         shape = mask_path.keyframes[int(sample.slice(3)) - 1].value;
       } else {
-        shape = mask_path.value_at_time(float(sample));
+        shape = mask_path.valueAtTime(float(sample));
       }
       expect(shape.closed).toBe(expected["closed"]);
       for (const [attr, name] of [
         ["vertices", "vertices"],
-        ["in_tangents", "inTangents"],
-        ["out_tangents", "outTangents"],
+        ["inTangents", "inTangents"],
+        ["outTangents", "outTangents"],
       ] as const) {
         const got = getattr(shape, attr).flatMap((point) => [...point]);
         const want = expected[name].flatMap((point) => [...point]);
@@ -2931,8 +2931,8 @@ describe("TestRotoBezierTangents", () => {
     // the full-layer rectangle as a unit square (mask_rotobezier_on.json).
     const layer = get_first_layer(parse_project(SAMPLES_DIR.div("mask_rotobezier_on.aep")));
     const shape = _get_mask_shape(layer).value;
-    expect(approx(shape.in_tangents[0], [452.5483, -254.5584], { abs: 1e-3 })).toBe(true);
-    expect(approx(shape.out_tangents[3], [-452.5483, -254.5584], { abs: 1e-3 })).toBe(true);
+    expect(approx(shape.inTangents[0], [452.5483, -254.5584], { abs: 1e-3 })).toBe(true);
+    expect(approx(shape.outTangents[3], [-452.5483, -254.5584], { abs: 1e-3 })).toBe(true);
   });
 });
 

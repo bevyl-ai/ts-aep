@@ -68,7 +68,7 @@ describe("TestTimeScale3_125", () => {
     const expected = expected_fixture();
     const comp = _comp_by_id(project, comp_id);
     const exp = _expected_comp(expected, comp_id);
-    expect(isclose(comp.frame_rate, exp["frameRate"], 1e-6)).toBe(true);
+    expect(isclose(comp.frameRate, exp["frameRate"], 1e-6)).toBe(true);
   });
 
   test.each([155, 11516])("test_duration[%#]", (comp_id) => {
@@ -84,7 +84,7 @@ describe("TestTimeScale3_125", () => {
     const expected = expected_fixture();
     const comp = _comp_by_id(project, comp_id);
     const exp = _expected_comp(expected, comp_id);
-    expect(isclose(comp.work_area_duration, exp["workAreaDuration"], 1e-6)).toBe(true);
+    expect(isclose(comp.workAreaDuration, exp["workAreaDuration"], 1e-6)).toBe(true);
   });
 
   test.each([155, 11516])("test_work_area_start[%#]", (comp_id) => {
@@ -93,13 +93,13 @@ describe("TestTimeScale3_125", () => {
     const comp = _comp_by_id(project, comp_id);
     const exp = _expected_comp(expected, comp_id);
     // abs_tol=1e-9 with the default rel_tol=1e-9 (Python's math.isclose defaults).
-    expect(isclose(comp.work_area_start, exp["workAreaStart"], 1e-9, 1e-9)).toBe(true);
+    expect(isclose(comp.workAreaStart, exp["workAreaStart"], 1e-9, 1e-9)).toBe(true);
   });
 
   test.each([155, 11516])("test_frame_work_area_end_absolute[%#]", (comp_id) => {
     const project = project_fixture();
     const comp = _comp_by_id(project, comp_id);
-    const expected_frame = comp._cdta.work_area_end_absolute * comp.frame_rate;
+    const expected_frame = comp._cdta.work_area_end_absolute * comp.frameRate;
     expect(isclose(comp._cdta.frame_work_area_end_absolute, expected_frame, 1e-9, 1)).toBe(true);
   });
 });
@@ -114,8 +114,8 @@ describe("TestSentinelOutPoint", () => {
     const expected = expected_fixture();
     const comp = _comp_by_id(project, COMP_ID);
     const exp = _expected_comp(expected, COMP_ID);
-    expect(isclose(comp.work_area_duration, exp["workAreaDuration"], 1e-6)).toBe(true);
-    expect(isclose(comp.work_area_duration, comp.duration, 1e-9)).toBe(true);
+    expect(isclose(comp.workAreaDuration, exp["workAreaDuration"], 1e-6)).toBe(true);
+    expect(isclose(comp.workAreaDuration, comp.duration, 1e-9)).toBe(true);
   });
 
   /** Sentinel out_point should resolve to display_start_time + duration. */
@@ -123,7 +123,7 @@ describe("TestSentinelOutPoint", () => {
     const project = project_fixture();
     const comp = _comp_by_id(project, COMP_ID);
     expect(
-      isclose(comp._cdta.work_area_end_absolute, comp.display_start_time + comp.duration, 1e-9),
+      isclose(comp._cdta.work_area_end_absolute, comp.displayStartTime + comp.duration, 1e-9),
     ).toBe(true);
   });
 
@@ -131,7 +131,7 @@ describe("TestSentinelOutPoint", () => {
   test("test_frame_out_point", () => {
     const project = project_fixture();
     const comp = _comp_by_id(project, COMP_ID);
-    expect(int(comp._cdta.frame_work_area_end_absolute)).toBe(comp.frame_duration);
+    expect(int(comp._cdta.frame_work_area_end_absolute)).toBe(comp.frameDuration);
   });
 
   /** This is a very short comp (0.75s = 18 frames at 24fps). */
@@ -141,7 +141,7 @@ describe("TestSentinelOutPoint", () => {
     const comp = _comp_by_id(project, COMP_ID);
     const exp = _expected_comp(expected, COMP_ID);
     expect(isclose(comp.duration, exp["duration"], 1e-6)).toBe(true);
-    expect(comp.frame_duration).toBe(18);
+    expect(comp.frameDuration).toBe(18);
   });
 });
 
@@ -150,7 +150,7 @@ describe("TestNonZeroDisplayStartTime", () => {
   test.each([12173, 2767])("test_display_start_frame[%#]", (comp_id) => {
     const project = project_fixture();
     const comp = _comp_by_id(project, comp_id);
-    expect(comp.display_start_frame).toBe(1);
+    expect(comp.displayStartFrame).toBe(1);
   });
 
   test.each([12173, 2767])("test_display_start_time[%#]", (comp_id) => {
@@ -158,7 +158,7 @@ describe("TestNonZeroDisplayStartTime", () => {
     const expected = expected_fixture();
     const comp = _comp_by_id(project, comp_id);
     const exp = _expected_comp(expected, comp_id);
-    expect(isclose(comp.display_start_time, exp["displayStartTime"], 1e-6)).toBe(true);
+    expect(isclose(comp.displayStartTime, exp["displayStartTime"], 1e-6)).toBe(true);
   });
 
   /** Comp 2767 has a non-trivial work-area that starts mid-timeline. */
@@ -167,7 +167,7 @@ describe("TestNonZeroDisplayStartTime", () => {
     const expected = expected_fixture();
     const comp = _comp_by_id(project, 2767);
     const exp = _expected_comp(expected, 2767);
-    expect(isclose(comp.work_area_start, exp["workAreaStart"], 1e-4)).toBe(true);
-    expect(isclose(comp.work_area_duration, exp["workAreaDuration"], 1e-4)).toBe(true);
+    expect(isclose(comp.workAreaStart, exp["workAreaStart"], 1e-4)).toBe(true);
+    expect(isclose(comp.workAreaDuration, exp["workAreaDuration"], 1e-4)).toBe(true);
   });
 });

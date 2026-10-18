@@ -641,7 +641,7 @@ export function _conditions_match(conditions: Map<string, RuleValue | RuleValue[
 /**
  * Every setting key that has (or can have) a rule under `fmt`.
  *
- * Drives whole-state validation (`OutputModule.validate_state`): keys
+ * Drives whole-state validation (`OutputModule.validateState`): keys
  * outside this set are unconstrained for the format and never checked.
  */
 export function constrained_keys(fmt: OutputFormat): ReadonlySet<string> {

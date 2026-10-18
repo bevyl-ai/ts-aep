@@ -291,9 +291,9 @@ export class ParamsDict extends Map<string, string> {
  * import { XmlFormatOptions, parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof XmlFormatOptions) {
- *   console.log(om.format_options.video_codec);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof XmlFormatOptions) {
+ *   console.log(om.formatOptions.videoCodec);
  * }
  * ```
  */
@@ -348,7 +348,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * (e.g. `".AVI"`, `"H264"`, `"Mp3 "`, `"MooV"`, `"wao_"`).
    * Read-only.
    */
-  declare format_code: string;
+  declare formatCode: string;
 
   // -- write helpers -----------------------------------------------------
 
@@ -436,7 +436,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     const checked = enum_cls != null ? enum_cls.of(int_value) : int_value;
     this._check_param_rule(key, checked);
     this._set_param(key, str(int_value));
-    // NOTE: Rouu.video_codec is NOT synced here - it holds a constant
+    // NOTE: Rouu.videoCodec is NOT synced here - it holds a constant
     // per-output-plugin handler tag ('DOVT' for QuickTime, 'CTXF' for
     // AVI/H.264), not the codec 4cc; every corpus sample confirms it
     // never varies with the selected codec.
@@ -540,7 +540,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * not in the {@link VideoCodec} enum.
    * Read / Write.
    */
-  declare video_codec: VideoCodec | number | null;
+  declare videoCodec: VideoCodec | number | null;
 
   /**
    * The audio codec as an {@link AudioCodec} integer value extracted from
@@ -549,7 +549,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * {@link AudioCodec} enum.
    * Read / Write.
    */
-  declare audio_codec: AudioCodec | number | null;
+  declare audioCodec: AudioCodec | number | null;
 
   /**
    * The output frame rate in frames per second, derived from the
@@ -559,7 +559,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * `null` for audio-only formats (MP3, WAV).
    * Read / Write.
    */
-  get frame_rate(): number | null {
+  get frameRate(): number | null {
     const fps_str = dict_get(this.params, "ADBEVideoFPS", "");
     if (!fps_str) return null;
     try {
@@ -571,7 +571,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     return null;
   }
 
-  set frame_rate(value: number | null) {
+  set frameRate(value: number | null) {
     if (value == null) return;
     _validate_number({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
     const ticks = round(_ADOBE_TICKS_PER_SECOND / value);
@@ -588,7 +588,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * in the {@link MPEGAudioFormat} enum.
    * Read / Write.
    */
-  declare mpeg_audio_format: MPEGAudioFormat | number | null;
+  declare mpegAudioFormat: MPEGAudioFormat | number | null;
 
   /**
    * The MPEG-1 audio layer as an {@link MPEGAudioLayer} value extracted
@@ -596,7 +596,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * parameter is absent. Only meaningful when `mpeg_audio_format` is
    * `MPEGAudioFormat.MPEG`. Read / Write.
    */
-  declare mpeg_audio_layer: MPEGAudioLayer | number | null;
+  declare mpegAudioLayer: MPEGAudioLayer | number | null;
 
   /**
    * The AVI audio interleave interval as an {@link AudioInterleave} value
@@ -604,7 +604,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * `null` choice stores no parameter, so reads return `null` for it.
    * Read / Write.
    */
-  declare audio_interleave: AudioInterleave | number | null;
+  declare audioInterleave: AudioInterleave | number | null;
 
   /**
    * The MP3 audio bitrate in kbps, from the `BitRate` parameter
@@ -616,7 +616,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * The H.264 audio bitrate in kbps, from the `ADBEAudioBitrate`
    * parameter, or `null` when absent. Read / Write.
    */
-  declare audio_bitrate: number | string | null;
+  declare audioBitrate: number | string | null;
 
   /**
    * The H.264 encoding profile as an {@link MPEGProfile} value from the
@@ -672,7 +672,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * (`ADBEVideoAlphaType` is unrelated - it reads `true` on every
    * sampled module.) Read / Write.
    */
-  declare dnx_alpha_type: number | string | null;
+  declare dnxAlphaType: number | string | null;
 
   /**
    * The MPEG multiplexer as an {@link MPEGMultiplexer} FourCC integer
@@ -681,7 +681,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * when the value is not in the {@link MPEGMultiplexer} enum.
    * Read / Write.
    */
-  declare mpeg_multiplexer: MPEGMultiplexer | number | null;
+  declare mpegMultiplexer: MPEGMultiplexer | number | null;
 
   /**
    * The MPEG mux stream compatibility as an
@@ -691,25 +691,25 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * is not in the {@link MPEGMuxStreamCompatibility} enum.
    * Read / Write.
    */
-  declare mpeg_mux_stream_compatibility: MPEGMuxStreamCompatibility | number | null;
+  declare mpegMuxStreamCompatibility: MPEGMuxStreamCompatibility | number | null;
 }
 
 // Descriptors assigned in the class body above, installed on the prototype
 // in the Python class-body order (`__set_name__` runs inside `descriptor`).
-descriptor(XmlFormatOptions, "format_code", new ChunkField("_body", "format_code", { read_only: true }));
-descriptor(XmlFormatOptions, "video_codec", new _EnumParam("ADBEVideoCodec", VideoCodec));
-descriptor(XmlFormatOptions, "audio_codec", new _EnumParam("ADBEAudioCodec", AudioCodec));
-descriptor(XmlFormatOptions, "mpeg_audio_format", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));
-descriptor(XmlFormatOptions, "mpeg_audio_layer", new _EnumParam("ADBEMPEGAudioLayer", MPEGAudioLayer));
-descriptor(XmlFormatOptions, "audio_interleave", new _EnumParam("ADBEAudioInterleave", AudioInterleave));
+descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "format_code", { read_only: true }));
+descriptor(XmlFormatOptions, "videoCodec", new _EnumParam("ADBEVideoCodec", VideoCodec));
+descriptor(XmlFormatOptions, "audioCodec", new _EnumParam("ADBEAudioCodec", AudioCodec));
+descriptor(XmlFormatOptions, "mpegAudioFormat", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));
+descriptor(XmlFormatOptions, "mpegAudioLayer", new _EnumParam("ADBEMPEGAudioLayer", MPEGAudioLayer));
+descriptor(XmlFormatOptions, "audioInterleave", new _EnumParam("ADBEAudioInterleave", AudioInterleave));
 descriptor(XmlFormatOptions, "bitrate", new _ScalarParam("BitRate"));
-descriptor(XmlFormatOptions, "audio_bitrate", new _ScalarParam("ADBEAudioBitrate"));
+descriptor(XmlFormatOptions, "audioBitrate", new _ScalarParam("ADBEAudioBitrate"));
 descriptor(XmlFormatOptions, "level", new _ScalarParam("ADBEVideoMPEGProfileLevel"));
 descriptor(XmlFormatOptions, "resolution", new _EnumParam("ADBEVideoResolution", DnxResolution));
-descriptor(XmlFormatOptions, "dnx_alpha_type", new _ScalarParam("ADBEDNxHDAlphaType"));
-descriptor(XmlFormatOptions, "mpeg_multiplexer", new _EnumParam("ADBEMPEGMultiplexer", MPEGMultiplexer));
+descriptor(XmlFormatOptions, "dnxAlphaType", new _ScalarParam("ADBEDNxHDAlphaType"));
+descriptor(XmlFormatOptions, "mpegMultiplexer", new _EnumParam("ADBEMPEGMultiplexer", MPEGMultiplexer));
 descriptor(
   XmlFormatOptions,
-  "mpeg_mux_stream_compatibility",
+  "mpegMuxStreamCompatibility",
   new _EnumParam("ADBEMPEGMuxStreamCompatibility", MPEGMuxStreamCompatibility),
 );

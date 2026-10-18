@@ -25,7 +25,7 @@ const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "model
 const AVI_NONE_SAMPLE = FORMAT_DIR.div("avi", "video_codec_none.aep");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 const REJECTS: [string, string, SettingValue][] = [
@@ -100,7 +100,7 @@ test("test_avi_none_codec_allows_rgba", () => {
 test("test_mp3_bitrate_change_revalidates_rate", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
-  as_instance(om.format_options, XmlFormatOptions).bitrate = 320;
+  as_instance(om.formatOptions, XmlFormatOptions).bitrate = 320;
   raises(ValueError, () => {
     om.settings.set("Audio Sample Rate", 44100);
   });
@@ -145,14 +145,14 @@ test("test_modern_ae_depth_low_byte_decodes", () => {
     const project = parse_project_fresh(FORMAT_DIR.div(subdir, `${name}.aep`));
     const om = _om(project);
     expect([name, om.settings.get("Depth")]).toEqual([name, expected]);
-    expect([name, om.validate_state()]).toEqual([name, []]);
+    expect([name, om.validateState()]).toEqual([name, []]);
   }
 });
 
 test("test_dnx_alpha_type_decodes", () => {
   const qt = FORMAT_DIR.div("quicktime");
   const compressed = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_Compressed.aep"));
-  expect(as_instance(_om(compressed).format_options, XmlFormatOptions).dnx_alpha_type).toBe(1);
+  expect(as_instance(_om(compressed).formatOptions, XmlFormatOptions).dnxAlphaType).toBe(1);
   const none = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_None.aep"));
-  expect(as_instance(_om(none).format_options, XmlFormatOptions).dnx_alpha_type == null).toBe(true);
+  expect(as_instance(_om(none).formatOptions, XmlFormatOptions).dnxAlphaType == null).toBe(true);
 });

@@ -5,7 +5,7 @@
  * (channels, exposure, zoom, fast preview, toggle flags, etc.) from the
  * `fips` chunks in the binary AEP format.
  *
- * The viewer panel data is accessed via `project.active_viewer`, which
+ * The viewer panel data is accessed via `project.activeViewer`, which
  * represents the focused Composition/Layer/Footage panel. Each panel has
  * one or more `View` objects containing `ViewOptions`.
  */
@@ -25,10 +25,10 @@ const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples
 /** Parse a project and return the ViewOptions of the active viewer's first view. */
 function _get_active_view_options(aep_path: Path): ViewOptions {
   const app = parse_app(aep_path);
-  py_assert(app.active_viewer != null);
-  expect(app.active_viewer.type === ViewerType.VIEWER_COMPOSITION).toBe(true);
-  expect(app.active_viewer.views.length >= 1).toBe(true);
-  return app.active_viewer.views[0].options;
+  py_assert(app.activeViewer != null);
+  expect(app.activeViewer.type === ViewerType.VIEWER_COMPOSITION).toBe(true);
+  expect(app.activeViewer.views.length >= 1).toBe(true);
+  return app.activeViewer.views[0].options;
 }
 
 /** Tests for ViewOptions.channels attribute. */
@@ -76,18 +76,18 @@ describe("TestViewOptionsExposure", () => {
   });
 });
 
-/** Tests for ViewOptions.fast_preview attribute. */
+/** Tests for ViewOptions.fastPreview attribute. */
 describe("TestViewOptionsFastPreview", () => {
   test("test_fast_preview_off", () => {
     /** Test fast preview off. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("fast_preview_off.aep"));
-    expect(opts.fast_preview).toBe(FastPreviewType.FP_OFF);
+    expect(opts.fastPreview).toBe(FastPreviewType.FP_OFF);
   });
 
   test("test_fast_preview_wireframe", () => {
     /** Test wireframe fast preview mode. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("fast_preview_wireframe.aep"));
-    expect(opts.fast_preview).toBe(FastPreviewType.FP_WIREFRAME);
+    expect(opts.fastPreview).toBe(FastPreviewType.FP_WIREFRAME);
   });
 });
 
@@ -106,48 +106,48 @@ describe("TestViewOptionsGrid", () => {
   });
 });
 
-/** Tests for ViewOptions.guides_visibility attribute. */
+/** Tests for ViewOptions.guidesVisibility attribute. */
 describe("TestViewOptionsGuidesVisibility", () => {
   test("test_guides_on", () => {
     /** Test guides visible. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("guides_on.aep"));
-    expect(opts.guides_visibility).toBe(true);
+    expect(opts.guidesVisibility).toBe(true);
   });
 
   test("test_guides_off", () => {
     /** Test guides hidden. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("guides_off.aep"));
-    expect(opts.guides_visibility).toBe(false);
+    expect(opts.guidesVisibility).toBe(false);
   });
 });
 
-/** Tests for ViewOptions.mask_and_shape_path attribute. */
+/** Tests for ViewOptions.maskAndShapePath attribute. */
 describe("TestViewOptionsMaskAndShapePath", () => {
   test("test_mask_and_shape_path_on", () => {
     /** Test mask and shape path visibility enabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("mask_and_shape_path_on.aep"));
-    expect(opts.mask_and_shape_path).toBe(true);
+    expect(opts.maskAndShapePath).toBe(true);
   });
 
   test("test_mask_and_shape_path_off", () => {
     /** Test mask and shape path visibility disabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("mask_and_shape_path_off.aep"));
-    expect(opts.mask_and_shape_path).toBe(false);
+    expect(opts.maskAndShapePath).toBe(false);
   });
 });
 
-/** Tests for ViewOptions.proportional_grid attribute. */
+/** Tests for ViewOptions.proportionalGrid attribute. */
 describe("TestViewOptionsProportionalGrid", () => {
   test("test_proportional_grid_on", () => {
     /** Test proportional grid enabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("proportional_grid_on.aep"));
-    expect(opts.proportional_grid).toBe(true);
+    expect(opts.proportionalGrid).toBe(true);
   });
 
   test("test_proportional_grid_off", () => {
     /** Test proportional grid disabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("proportional_grid_off.aep"));
-    expect(opts.proportional_grid).toBe(false);
+    expect(opts.proportionalGrid).toBe(false);
   });
 });
 
@@ -166,27 +166,27 @@ describe("TestViewOptionsRulers", () => {
   });
 });
 
-/** Tests for ViewOptions.title_action_safe attribute. */
+/** Tests for ViewOptions.titleActionSafe attribute. */
 describe("TestViewOptionsTitleActionSafe", () => {
   test("test_title_action_safe_on", () => {
     /** Test title/action safe guides displayed. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("title_action_safe_on.aep"));
-    expect(opts.title_action_safe).toBe(true);
+    expect(opts.titleActionSafe).toBe(true);
   });
 
   test("test_title_action_safe_off", () => {
     /** Test title/action safe guides hidden. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("title_action_safe_off.aep"));
-    expect(opts.title_action_safe).toBe(false);
+    expect(opts.titleActionSafe).toBe(false);
   });
 });
 
-/** Tests for ViewOptions.use_display_color_management attribute. */
+/** Tests for ViewOptions.useDisplayColorManagement attribute. */
 describe("TestViewOptionsUseDisplayColorManagement", () => {
   test("test_display_color_management_on", () => {
     /** Test display color management enabled (default). */
     const opts = _get_active_view_options(SAMPLES_DIR.div("channels_rgb.aep"));
-    expect(opts.use_display_color_management).toBe(true);
+    expect(opts.useDisplayColorManagement).toBe(true);
   });
 
   test("test_display_color_management_off", () => {
@@ -194,7 +194,7 @@ describe("TestViewOptionsUseDisplayColorManagement", () => {
     const opts = _get_active_view_options(
       SAMPLES_DIR.div("channels_use_display_color_management_off.aep"),
     );
-    expect(opts.use_display_color_management).toBe(false);
+    expect(opts.useDisplayColorManagement).toBe(false);
   });
 });
 
@@ -217,62 +217,62 @@ describe("TestViewOptionsZoom", () => {
 describe("TestViewOptionsRoi", () => {
   test("test_roi_base", () => {
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_base.aep"));
-    expect(opts.roi_top).toBe(111);
-    expect(opts.roi_left).toBe(123);
-    expect(opts.roi_bottom).toBe(339);
-    expect(opts.roi_right).toBe(366);
+    expect(opts.roiTop).toBe(111);
+    expect(opts.roiLeft).toBe(123);
+    expect(opts.roiBottom).toBe(339);
+    expect(opts.roiRight).toBe(366);
   });
 
   test("test_roi_right_extended", () => {
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_right.aep"));
-    expect(opts.roi_top).toBe(111);
-    expect(opts.roi_left).toBe(123);
-    expect(opts.roi_bottom).toBe(339);
-    expect(opts.roi_right).toBe(438);
+    expect(opts.roiTop).toBe(111);
+    expect(opts.roiLeft).toBe(123);
+    expect(opts.roiBottom).toBe(339);
+    expect(opts.roiRight).toBe(438);
   });
 
   test("test_roi_left_extended", () => {
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_left.aep"));
-    expect(opts.roi_top).toBe(111);
-    expect(opts.roi_left).toBe(60);
-    expect(opts.roi_bottom).toBe(339);
-    expect(opts.roi_right).toBe(366);
+    expect(opts.roiTop).toBe(111);
+    expect(opts.roiLeft).toBe(60);
+    expect(opts.roiBottom).toBe(339);
+    expect(opts.roiRight).toBe(366);
   });
 
   test("test_roi_down_extended", () => {
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_down.aep"));
-    expect(opts.roi_top).toBe(111);
-    expect(opts.roi_left).toBe(123);
-    expect(opts.roi_bottom).toBe(393);
-    expect(opts.roi_right).toBe(366);
+    expect(opts.roiTop).toBe(111);
+    expect(opts.roiLeft).toBe(123);
+    expect(opts.roiBottom).toBe(393);
+    expect(opts.roiRight).toBe(366);
   });
 
   test("test_roi_full", () => {
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_full.aep"));
-    expect(opts.roi_top).toBe(9);
-    expect(opts.roi_left).toBe(6);
-    expect(opts.roi_bottom).toBe(498);
-    expect(opts.roi_right).toBe(495);
+    expect(opts.roiTop).toBe(9);
+    expect(opts.roiLeft).toBe(6);
+    expect(opts.roiBottom).toBe(498);
+    expect(opts.roiRight).toBe(495);
   });
 
   test("test_roi_on_zeroed", () => {
     /** ROI enabled but coordinates are all zero. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_on.aep"));
-    expect(opts.region_of_interest).toBe(true);
-    expect(opts.roi_top).toBe(0);
-    expect(opts.roi_left).toBe(0);
-    expect(opts.roi_bottom).toBe(0);
-    expect(opts.roi_right).toBe(0);
+    expect(opts.regionOfInterest).toBe(true);
+    expect(opts.roiTop).toBe(0);
+    expect(opts.roiLeft).toBe(0);
+    expect(opts.roiBottom).toBe(0);
+    expect(opts.roiRight).toBe(0);
   });
 
   test("test_roi_off_zeroed", () => {
     /** ROI disabled, coordinates are all zero. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("roi_off.aep"));
-    expect(opts.region_of_interest).toBe(false);
-    expect(opts.roi_top).toBe(0);
-    expect(opts.roi_left).toBe(0);
-    expect(opts.roi_bottom).toBe(0);
-    expect(opts.roi_right).toBe(0);
+    expect(opts.regionOfInterest).toBe(false);
+    expect(opts.roiTop).toBe(0);
+    expect(opts.roiLeft).toBe(0);
+    expect(opts.roiBottom).toBe(0);
+    expect(opts.roiRight).toBe(0);
   });
 });
 
@@ -281,13 +281,13 @@ describe("TestViewOptionsGuidesSnap", () => {
   test("test_snap_to_guides_on", () => {
     /** Test snap to guides enabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("snap_to_guides_on.aep"));
-    expect(opts.guides_snap).toBe(true);
+    expect(opts.guidesSnap).toBe(true);
   });
 
   test("test_snap_to_guides_off", () => {
     /** Test snap to guides disabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("snap_to_guides_off.aep"));
-    expect(opts.guides_snap).toBe(false);
+    expect(opts.guidesSnap).toBe(false);
   });
 });
 
@@ -296,12 +296,12 @@ describe("TestViewOptionsGuidesLocked", () => {
   test("test_lock_guides_on", () => {
     /** Test lock guides enabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("lock_guides_on.aep"));
-    expect(opts.guides_locked).toBe(true);
+    expect(opts.guidesLocked).toBe(true);
   });
 
   test("test_lock_guides_off", () => {
     /** Test lock guides disabled. */
     const opts = _get_active_view_options(SAMPLES_DIR.div("lock_guides_off.aep"));
-    expect(opts.guides_locked).toBe(false);
+    expect(opts.guidesLocked).toBe(false);
   });
 });

@@ -40,7 +40,7 @@ describe("TestRenderQueueBasic", () => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
     expect(expected["renderQueue"]["numItems"]).toBe(expected_count);
-    expect(len(as_instance(project.render_queue, RenderQueue).items)).toBe(expected_count);
+    expect(len(as_instance(project.renderQueue, RenderQueue).items)).toBe(expected_count);
   });
 });
 
@@ -50,9 +50,9 @@ describe("TestOutputModule", () => {
   test("test_outputModule_file", () => {
     load_expected(OM_SAMPLES_DIR, "file");
     const project = parse_project(OM_SAMPLES_DIR.div("file.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
-    expect(len(rqi.output_modules) >= 1).toBe(true);
-    const om = rqi.output_modules[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
+    expect(len(rqi.outputModules) >= 1).toBe(true);
+    const om = rqi.outputModules[0];
     expect(om instanceof OutputModule).toBe(true);
     expect(om.file != null).toBe(true);
   });
@@ -60,9 +60,9 @@ describe("TestOutputModule", () => {
   test("test_outputModule_template", () => {
     load_expected(OM_SAMPLES_DIR, "template");
     const project = parse_project(OM_SAMPLES_DIR.div("template.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
-    expect(len(rqi.output_modules) >= 1).toBe(true);
-    const om = rqi.output_modules[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
+    expect(len(rqi.outputModules) >= 1).toBe(true);
+    const om = rqi.outputModules[0];
     expect(om.name != null).toBe(true);
   });
 
@@ -72,52 +72,52 @@ describe("TestOutputModule", () => {
      * correctly (Utf8 chunks identified by position relative to Als2).
      */
     const project = parse_project(BUGS_DIR.div("outputmodule_path.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
-    const om = rqi.output_modules[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
+    const om = rqi.outputModules[0];
     expect(om.name).toBe("H.264 - Match Render Settings - 15 Mbps");
-    expect(contains(String(om.file_template), "[compName]")).toBe(true);
+    expect(contains(String(om.fileTemplate), "[compName]")).toBe(true);
     expect(contains(String(om.file), "[compName]")).toBe(false);
   });
 
   test("test_numOutputModules_2", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "numOutputModules_2");
     const project = parse_project(OM_SAMPLES_DIR.div("numOutputModules_2.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
     const exp_oms = expected["renderQueue"]["items"][0]["outputModules"];
-    expect(len(rqi.output_modules)).toBe(len(exp_oms));
+    expect(len(rqi.outputModules)).toBe(len(exp_oms));
     expect(len(exp_oms)).toBe(2);
   });
 
   test("test_include_source_xmp_on", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("om_misc.aep"));
     const rqi = get_rqi(project, "include_source_xmp_data_on");
-    const om = rqi.output_modules[0];
-    expect(om.include_source_xmp).toBe(true);
+    const om = rqi.outputModules[0];
+    expect(om.includeSourceXmp).toBe(true);
   });
 
   test("test_include_source_xmp_off", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("include_source_xmp_data_off.aep"));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.include_source_xmp).toBe(false);
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+    expect(om.includeSourceXmp).toBe(false);
   });
 
   test("test_crop_checked", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("om_crop.aep"));
     const rqi = get_rqi(project, "crop_checked");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     expect(om.settings.get("Crop")).toBe(true);
   });
 
   test("test_crop_unchecked", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("crop_unchecked.aep"));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     expect(om.settings.get("Crop")).toBe(false);
   });
 
   test("test_crop_bottom_10", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "crop_bottom_10");
     const project = parse_project(OM_SAMPLES_DIR.div("crop_bottom_10.aep"));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.get("Crop")).toBe(true);
     expect(om.settings.get("Crop Bottom")).toBe(exp_om["settings"]["Crop Bottom"]);
@@ -128,7 +128,7 @@ describe("TestOutputModule", () => {
   test("test_crop_top_10", () => {
     const expected = load_expected(OM_SAMPLES_DIR, "crop_top_10");
     const project = parse_project(OM_SAMPLES_DIR.div("crop_top_10.aep"));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.get("Crop")).toBe(true);
     expect(om.settings.get("Crop Top")).toBe(exp_om["settings"]["Crop Top"]);
@@ -142,7 +142,7 @@ describe("TestOutputModule", () => {
     ["convert_to_linear_light_on_for_32_bpc", ConvertToLinearLight.ON_FOR_32_BPC],
   ])("test_convert_to_linear_light[%#]", (sample_name: string, expected_value: ConvertToLinearLight) => {
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     expect(om.settings.get("Convert to Linear Light")).toBe(expected_value);
   });
 
@@ -152,7 +152,7 @@ describe("TestOutputModule", () => {
   ])("test_preserve_rgb[%#]", (sample_name: string, expected_value: boolean) => {
     // The two AE samples differ in one byte of the settings record, 0x5E.
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     expect(om.settings.get("Preserve RGB")).toBe(expected_value);
   });
 });
@@ -170,12 +170,12 @@ describe("TestRouuFrameRateAndDepth", () => {
   ])("test_frame_rate_and_depth[%#]", (sample_name: string, item_index: number, frame_rate: number) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[item_index].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[item_index].outputModules[0];
     const exp_om = expected["renderQueue"]["items"][item_index]["outputModules"][0];
     expect(approx(om._roou.frame_rate, frame_rate, { abs: 1e-4 })).toBe(true);
     expect(om._roou.depth).toBe(exp_om["settings"]["Depth"]);
     expect(exp_om["settings"]["Depth"]).toBe(24);
-    expect(getitem(om.get_settings(GetSettingsFormat.NUMBER), "Depth")).toBe(24);
+    expect(getitem(om.getSettings(GetSettingsFormat.NUMBER), "Depth")).toBe(24);
   });
 });
 
@@ -192,16 +192,16 @@ describe("TestCompLinking", () => {
       }
       throw new StopIteration();
     })();
-    expect(rqi.comp_name).toBe(exp_rqi["compName"]);
+    expect(rqi.compName).toBe(exp_rqi["compName"]);
   });
 
   test("test_2_rqitems_comp_linking", () => {
     const expected = load_expected(SAMPLES_DIR, "2_rqitems");
     const project = parse_project(SAMPLES_DIR.div("2_rqitems.aep"));
-    expect(len(as_instance(project.render_queue, RenderQueue).items)).toBe(2);
-    for (const [i, rqi] of enumerate(as_instance(project.render_queue, RenderQueue).items)) {
+    expect(len(as_instance(project.renderQueue, RenderQueue).items)).toBe(2);
+    for (const [i, rqi] of enumerate(as_instance(project.renderQueue, RenderQueue).items)) {
       const exp_name = expected["renderQueue"]["items"][i]["compName"];
-      expect(rqi.comp_name).toBe(exp_name);
+      expect(rqi.compName).toBe(exp_name);
     }
   });
 });
@@ -212,7 +212,7 @@ describe("TestRenderQueueItemAttributes", () => {
   test("test_render_unchecked", () => {
     const expected = load_expected(SAMPLES_DIR, "render_unchecked");
     const project = parse_project(SAMPLES_DIR.div("render_unchecked.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
     const exp_rqi = expected["renderQueue"]["items"][0];
     expect(rqi.render).toBe(false);
     expect(exp_rqi["render"]).toBe(false);
@@ -220,7 +220,7 @@ describe("TestRenderQueueItemAttributes", () => {
 
   test("test_comment", () => {
     const project = parse_project(SAMPLES_DIR.div("comment_aaaaa.aep"));
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
     expect(rqi.comment).toBe("aaaaa");
   });
 });
@@ -239,7 +239,7 @@ describe("TestSkipFrames", () => {
 
   test.each([0, 1, 2, 3])("test_skip_frames[%#]", (n: number) => {
     const project = parse_project(SAMPLES_DIR.div("skip_frames.aep"));
-    expect(get_rqi(project, `skip_frames_${n}`).skip_frames).toBe(0);
+    expect(get_rqi(project, `skip_frames_${n}`).skipFrames).toBe(0);
   });
 });
 
@@ -253,7 +253,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_starting_number[%#]", (sample_name: string, expected_value: number) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.get("Starting #")).toBe(exp_om["settings"]["Starting #"]);
     expect(om.settings.get("Starting #")).toBe(expected_value);
@@ -265,7 +265,7 @@ describe("TestOutputModuleSettings", () => {
   ])("test_use_comp_frame_number[%#]", (sample_name: string, expected_value: boolean) => {
     const expected = load_expected(SAMPLES_DIR, sample_name);
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
     expect(om.settings.get("Use Comp Frame Number")).toBe(expected_value);
     expect(exp_om["settings"]["Use Comp Frame Number"]).toBe(expected_value);
@@ -273,7 +273,7 @@ describe("TestOutputModuleSettings", () => {
 });
 
 describe("TestOutputColorSpace", () => {
-  /** Tests for OutputModule.output_color_space parsing. */
+  /** Tests for OutputModule.outputColorSpace parsing. */
 
   test.each([
     ["srgb", "sRGB IEC61966-2.1"],
@@ -291,26 +291,26 @@ describe("TestOutputColorSpace", () => {
     ["arriflex_daylight", "ARRIFLEX D-20 Daylight Log (by Adobe)"],
   ])("test_output_color_space[%#]", (sample_name: string, expected_value: string) => {
     const project = parse_project(OCS_SAMPLES_DIR.div(`${sample_name}.aep`));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.output_color_space).toBe(expected_value);
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+    expect(om.outputColorSpace).toBe(expected_value);
   });
 
   test("test_output_color_space_working", () => {
     /** Working Color Space should resolve to the project's working space. */
     const project = parse_project(OCS_SAMPLES_DIR.div("working_color_space.aep"));
-    const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.output_color_space).toBe(project.working_space);
+    const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+    expect(om.outputColorSpace).toBe(project.workingSpace);
   });
 });
 
 describe("TestGetSettings", () => {
-  /** Tests for RenderQueueItem.get_settings/get_setting and OutputModule.get_settings/get_setting. */
+  /** Tests for RenderQueueItem.getSettings/get_setting and OutputModule.getSettings/get_setting. */
 
   test("test_rqi_get_settings_string", () => {
     /** get_settings(STRING) returns all string values. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const result = rqi.get_settings(GetSettingsFormat.STRING);
+    const result = rqi.getSettings(GetSettingsFormat.STRING);
     expect(result instanceof Map).toBe(true);
     expect([...result.values()].every((v) => typeof v === "string")).toBe(true);
   });
@@ -319,7 +319,7 @@ describe("TestGetSettings", () => {
     /** get_settings(NUMBER) returns numeric values. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const result = rqi.get_settings(GetSettingsFormat.NUMBER);
+    const result = rqi.getSettings(GetSettingsFormat.NUMBER);
     expect(result instanceof Map).toBe(true);
     expect(len(result) > 0).toBe(true);
   });
@@ -328,8 +328,8 @@ describe("TestGetSettings", () => {
     /** get_settings() defaults to STRING format. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const default_result = rqi.get_settings();
-    const string_result = rqi.get_settings(GetSettingsFormat.STRING);
+    const default_result = rqi.getSettings();
+    const string_result = rqi.getSettings(GetSettingsFormat.STRING);
     expect(py_eq(default_result, string_result)).toBe(true);
   });
 
@@ -337,7 +337,7 @@ describe("TestGetSettings", () => {
     /** get_setting returns a single string value. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const result = rqi.get_setting("Quality");
+    const result = rqi.getSetting("Quality");
     expect(typeof result === "string").toBe(true);
   });
 
@@ -345,7 +345,7 @@ describe("TestGetSettings", () => {
     /** get_setting with NUMBER format returns the numeric value. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const result = rqi.get_setting("Quality", GetSettingsFormat.NUMBER);
+    const result = rqi.getSetting("Quality", GetSettingsFormat.NUMBER);
     expect(typeof result === "number" || typeof result === "boolean").toBe(true); // bool is an int in Python
   });
 
@@ -354,7 +354,7 @@ describe("TestGetSettings", () => {
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
     raises(KeyError, () => {
-      rqi.get_setting("NonExistentKey12345");
+      rqi.getSetting("NonExistentKey12345");
     });
   });
 
@@ -364,7 +364,7 @@ describe("TestGetSettings", () => {
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
       // @ts-expect-error intentionally invalid format
-      rqi.get_settings(9999);
+      rqi.getSettings(9999);
     });
   });
 
@@ -372,8 +372,8 @@ describe("TestGetSettings", () => {
     /** get_settings(STRING) returns string values (except nested dicts). */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    const result = om.get_settings(GetSettingsFormat.STRING);
+    const om = rqi.outputModules[0];
+    const result = om.getSettings(GetSettingsFormat.STRING);
     expect(result instanceof Map).toBe(true);
     // All values are strings except 'Output File Info' which is a dict
     for (const [key, val] of result.entries()) {
@@ -384,51 +384,51 @@ describe("TestGetSettings", () => {
   });
 
   test("test_om_get_settings_number", () => {
-    /** OutputModule.get_settings(NUMBER) returns numeric values. */
+    /** OutputModule.getSettings(NUMBER) returns numeric values. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    const result = om.get_settings(GetSettingsFormat.NUMBER);
+    const om = rqi.outputModules[0];
+    const result = om.getSettings(GetSettingsFormat.NUMBER);
     expect(result instanceof Map).toBe(true);
     expect(len(result) > 0).toBe(true);
   });
 
   test("test_om_get_setting_string", () => {
-    /** OutputModule.get_setting returns a single string value. */
+    /** OutputModule.getSetting returns a single string value. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    const result = om.get_setting("Channels");
+    const om = rqi.outputModules[0];
+    const result = om.getSetting("Channels");
     expect(typeof result === "string").toBe(true);
   });
 
   test("test_om_get_setting_number", () => {
-    /** OutputModule.get_setting with NUMBER format. */
+    /** OutputModule.getSetting with NUMBER format. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    const result = om.get_setting("Channels", GetSettingsFormat.NUMBER);
+    const om = rqi.outputModules[0];
+    const result = om.getSetting("Channels", GetSettingsFormat.NUMBER);
     expect(typeof result === "number" || typeof result === "boolean").toBe(true); // bool is an int in Python
   });
 
   test("test_om_get_setting_invalid_key", () => {
-    /** OutputModule.get_setting with unknown key raises KeyError. */
+    /** OutputModule.getSetting with unknown key raises KeyError. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     raises(KeyError, () => {
-      om.get_setting("NonExistentKey12345");
+      om.getSetting("NonExistentKey12345");
     });
   });
 
   test("test_om_get_settings_invalid_format", () => {
-    /** OutputModule.get_settings with invalid format raises ValueError. */
+    /** OutputModule.getSettings with invalid format raises ValueError. */
     const project = parse_project(SAMPLES_DIR.div("render_settings.aep"));
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     raises(ValueError, () => {
       // @ts-expect-error intentionally invalid format
-      om.get_settings(9999);
+      om.getSettings(9999);
     });
   });
 });

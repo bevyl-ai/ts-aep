@@ -107,8 +107,8 @@ describe("TestRoundtripRovingFollowsBoundingEase", () => {
     const span = at(_times(prop), -1);
     expect(py_eq(_times(prop).slice(1, 3), [floordiv(span, 3), floordiv(span * 2, 3)])).toBe(true);
 
-    prop.keyframes[0].out_temporal_ease[0].influence = 100.0 / 3.0;
-    at(prop.keyframes, -1).in_temporal_ease[0].influence = 100.0 / 3.0;
+    prop.keyframes[0].outTemporalEase[0].influence = 100.0 / 3.0;
+    at(prop.keyframes, -1).inTemporalEase[0].influence = 100.0 / 3.0;
     prop.keyframes[1].roving = true;
 
     const eased = _times(prop);
@@ -143,17 +143,17 @@ describe("TestRoundtripRovingTriggers", () => {
     const prop = _position("keyframe_roving.aep");
     const before = _times(prop);
     // Stretching the span the run sits in spreads the run over it.
-    prop.keyframes[3].frame_time = 300;
+    prop.keyframes[3].frameTime = 300;
     const after = _times(prop);
     expect(after[1] > before[1]).toBe(true);
     expect(after[2] > before[2]).toBe(true);
     expect(after[0]).toBe(before[0]);
-    expect(prop.keyframes[3].frame_time).toBe(300);
+    expect(prop.keyframes[3].frameTime).toBe(300);
   });
 
   test("test_roved_times_are_not_whole_frames", () => {
     const prop = _position("keyframe_roving.aep");
-    prop.keyframes[3].frame_time = 199;
+    prop.keyframes[3].frameTime = 199;
     const units_per_frame = frame_grid(prop.keyframes[0]._frame_rate)[1];
     // A whole-frame-only implementation could not produce a remainder.
     py_assert(
@@ -179,7 +179,7 @@ describe("TestRoundtripRovingTriggers", () => {
     const before = _times(prop);
     // Adding a curve to the first segment changes the arc length,
     // which shifts where the roving keyframes land.
-    prop.keyframes[0].out_spatial_tangent = [100.0, 0.0, 0.0];
+    prop.keyframes[0].outSpatialTangent = [100.0, 0.0, 0.0];
     const after = _times(prop);
     expect(!py_eq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
     expect(after[0]).toBe(before[0]);
@@ -202,7 +202,7 @@ describe("TestRoundtripRovingNonSpatial", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_bezier_ease_scale.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
     py_assert(prop != null);
-    expect(prop.is_spatial).toBe(false);
+    expect(prop.isSpatial).toBe(false);
     raises(ValueError, () => {
       prop.keyframes[1].roving = true;
     }, "spatial");
@@ -212,7 +212,7 @@ describe("TestRoundtripRovingNonSpatial", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     py_assert(prop != null);
-    expect(prop.is_spatial).toBe(false);
+    expect(prop.isSpatial).toBe(false);
     raises(ValueError, () => {
       prop.keyframes[3].roving = true;
     }, "spatial");
@@ -223,8 +223,8 @@ describe("TestRoundtripRovingPersistence", () => {
   /**
    * A re-timed roved keyframe survives `Project.save()` -> re-parse.
    *
-   * `_redistribute_roving_keyframes` writes straight to `_ldat_item.time_units`
-   * (`Keyframe.frame_time` would quantise a sub-frame roved tick to a whole
+   * `_redistribute_roving_keyframes` writes straight to `_ldat_item.timeUnits`
+   * (`Keyframe.frameTime` would quantise a sub-frame roved tick to a whole
    * frame, per its own docstring), so this is the check that the raw value
    * actually round-trips through the binary writer, not just through the
    * in-memory model - `test_roved_times_are_not_whole_frames` above only
@@ -296,7 +296,7 @@ describe("TestOrientationInert", () => {
     }
     py_assert(prop != null);
     for (const [time, z] of [[0.0, 0.0], [0.5, 10.0], [1.0, 40.0]]) {
-      prop.set_value_at_time(time, [0.0, 0.0, z]);
+      prop.setValueAtTime(time, [0.0, 0.0, z]);
     }
     const keyframes = prop.keyframes;
     keyframes[1]._ldat_item.roving = true;
@@ -328,7 +328,7 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
     const prop = _position("keyframe_roving.aep");
     const before = _times(prop);
     raises(ValueError, () => {
-      prop.keyframes[1].frame_time = 6;
+      prop.keyframes[1].frameTime = 6;
     }, "derived from the spatial path");
     expect(py_eq(_times(prop), before)).toBe(true);
   });
@@ -366,7 +366,7 @@ describe("TestRoundtripRovingEarlyOut", () => {
     const before = _times(prop);
 
     prop.keyframes[0].value = [-400.0, 150.0, 0.0];
-    prop.keyframes[2].out_spatial_tangent = [80.0, 0.0, 0.0];
+    prop.keyframes[2].outSpatialTangent = [80.0, 0.0, 0.0];
 
     expect(py_eq(_times(prop), before)).toBe(true);
   });

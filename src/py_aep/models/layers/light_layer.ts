@@ -22,7 +22,7 @@ export function _require_environment_lights(comp: CompItem, what: string): void 
 
 export function _validate_light_type(value: number, obj: LightLayer): void {
   if (value === LightType.ENVIRONMENT) {
-    _require_environment_lights(obj.containing_comp, "LightType.ENVIRONMENT");
+    _require_environment_lights(obj.containingComp, "LightType.ENVIRONMENT");
   }
 }
 
@@ -34,8 +34,8 @@ export function _validate_light_type(value: number, obj: LightLayer): void {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const light = comp.light_layers[0];
- * console.log(light.light_type);
+ * const light = comp.lightLayers[0];
+ * console.log(light.lightType);
  * ```
  *
  * Info:
@@ -59,7 +59,7 @@ export class LightLayer extends Layer {
 
   /** Always `true`: a camera / light layer only exists in 3D space.
    * Read-only. */
-  get is_3d(): boolean {
+  get is3d(): boolean {
     return true;
   }
 
@@ -68,8 +68,8 @@ export class LightLayer extends Layer {
    * camera's. Measured on AE 2026 for every light type, at 1920x1080,
    * 1440x1620, 2880x810, 810x1440 and a 2:1 pixel aspect. */
   _default_position(): number[] {
-    const comp = this.containing_comp;
-    const zoom = default_camera_zoom(comp.width, comp.pixel_aspect);
+    const comp = this.containingComp;
+    const zoom = default_camera_zoom(comp.width, comp.pixelAspect);
     return [
       comp.width / 2.0 + 0.03 * zoom,
       comp.height / 2.0 - 0.03 * zoom,
@@ -78,7 +78,7 @@ export class LightLayer extends Layer {
   }
 
   /** The type of light. Read / Write. */
-  declare light_type: LightType;
+  declare lightType: LightType;
 
   /** The ID of the layer used as a light source. `0` if none. */
   declare _light_source_id: number;
@@ -148,15 +148,15 @@ export class LightLayer extends Layer {
    * **Warning:** 
    * Added in After Effects 24.3.
    */
-  get light_source(): Layer | null {
+  get lightSource(): Layer | null {
     if (this._light_source_id === 0) {
       return null;
     }
-    return this.containing_comp.layers_by_id.get(this._light_source_id) ?? null;
+    return this.containingComp.layersById.get(this._light_source_id) ?? null;
   }
 
-  set light_source(value: Layer | null) {
-    const comp = this.containing_comp;
+  set lightSource(value: Layer | null) {
+    const comp = this.containingComp;
     if (value == null) {
       this._ldta.source_id = _no_source_id(comp);
       return;
@@ -169,17 +169,17 @@ export class LightLayer extends Layer {
     if (!(value instanceof AVLayer)) {
       throw new ValueError("Can't set a non-AV layer as a light source.");
     }
-    if (value.containing_comp !== comp) {
+    if (value.containingComp !== comp) {
       throw new ValueError("light_source must be a layer in the same composition");
     }
-    if (this.light_type === LightType.SPOT || this.light_type === LightType.POINT) {
+    if (this.lightType === LightType.SPOT || this.lightType === LightType.POINT) {
       // AE 2026 refuses these two ("Invalid light source specified")
       // and stores a source on a parallel light.
       throw new ValueError(
         "Invalid light source specified for a spot or point light.",
       );
     }
-    if (value.three_d_layer || value.null_layer || value.adjustment_layer) {
+    if (value.threeDLayer || value.nullLayer || value.adjustmentLayer) {
       throw new ValueError(
         "Invalid light source specified: 3D, null and adjustment layers " +
           "cannot be used as a light source.",
@@ -191,7 +191,7 @@ export class LightLayer extends Layer {
 
 descriptor(
   LightLayer,
-  "light_type",
+  "lightType",
   ChunkField.enum(LightType, "_ldta", "light_and_mesh_type", {
     validate: _validate_light_type,
   }),

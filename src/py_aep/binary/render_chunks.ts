@@ -775,7 +775,7 @@ export class OutputModuleSettingsItem extends FmtItem {
   /**
    * Copy EVERY field from `source`, keeping this item's identity.
    *
-   * Used by `OutputModule.batch_edit` rollback: this item is
+   * Used by `OutputModule.batchEdit` rollback: this item is
    * referenced from the ldat items list, so restoring in place
    * avoids re-wiring references.
    */

@@ -7,7 +7,7 @@
 import * as fs from "node:fs";
 import { createHash } from "node:crypto";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { Dumper, err_name } from "./dump_ts.ts";
+import { Dumper, err_name, ts_name } from "./dump_ts.ts";
 import { AttributeError } from "../../src/pyrt/index.ts";
 
 const WRITES: [string, string, any][] = [
@@ -30,14 +30,14 @@ const WRITES: [string, string, any][] = [
 /** `obj.name` with Python's AttributeError on `None` (the TS twin would raise a JS TypeError). */
 function attr_of(obj: any, name: string): any {
   if (obj == null) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
-  return obj[name].bind(obj);
+  return obj[ts_name(name)].bind(obj);
 }
 
 function text_documents(app: any): [string, any][] {
   const out: [string, any][] = [];
   app.project.compositions.forEach((comp: any, ci: number) => {
-    comp.text_layers.forEach((layer: any, li: number) => {
-      const st = layer.text.source_text;
+    comp.textLayers.forEach((layer: any, li: number) => {
+      const st = layer.text.sourceText;
       const kfs = st.keyframes;
       if (kfs.length) kfs.forEach((kf: any, ki: number) => out.push([`c${ci}.l${li}.k${ki}`, kf]));
       else out.push([`c${ci}.l${li}`, st]);

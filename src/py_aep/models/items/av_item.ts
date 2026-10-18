@@ -144,7 +144,7 @@ export class _IdHashSet<T extends { id: number }> {
 
 export function _validate_use_proxy(value: boolean, obj: AVItem): void {
   validate_bool(value);
-  if (obj.proxy_source == null && value) {
+  if (obj.proxySource == null && value) {
     throw new AttributeError(
       "Cannot set use_proxy to True when there is no proxy source.",
     );
@@ -179,10 +179,10 @@ export function _sync_proxy_active(obj: AVItem): void {
 // Annotation-only attributes of AVItem.duration/frame_duration/frame_rate (interface merge so subclasses may override them with accessors).
 export interface AVItem {
   duration: number;
-  frame_duration: number;
-  frame_rate: number;
+  frameDuration: number;
+  frameRate: number;
   height: number;
-  pixel_aspect: number;
+  pixelAspect: number;
   width: number;
 }
 export class AVItem extends Item {
@@ -211,7 +211,7 @@ export class AVItem extends Item {
    * It is set to `true` by all the `set_proxy` methods, and to `false` by
    * the `set_proxy_to_none()` method.
    */
-  declare use_proxy: boolean;
+  declare useProxy: boolean;
 
   constructor(kw: {
     _idta: IdtaChunk;
@@ -247,8 +247,8 @@ export class AVItem extends Item {
   /** Remove this AV item, its referencing layers, and viewer. */
   remove(): void {
     const item_id = this.id;
-    for (const comp of this.used_in) {
-      for (const layer of [...comp.av_layers]) {
+    for (const comp of this.usedIn) {
+      for (const layer of [...comp.avLayers]) {
         if (layer._source_id === item_id) {
           layer.remove();
         }
@@ -274,7 +274,7 @@ export class AVItem extends Item {
    * source: `set_proxy()`, `set_proxy_with_sequence()`,
    * `set_proxy_with_solid()`, or `set_proxy_with_placeholder()`.
    */
-  get proxy_source(): FileSource | SolidSource | PlaceholderSource | null {
+  get proxySource(): FileSource | SolidSource | PlaceholderSource | null {
     return this._proxy_source;
   }
 
@@ -285,7 +285,7 @@ export class AVItem extends Item {
    * In a {@link FootageItem | FootageItem},
    * the value is linked to the `main_source` or `proxy_source` object.
    */
-  get has_audio(): boolean {
+  get hasAudio(): boolean {
     return false;
   }
 
@@ -298,7 +298,7 @@ export class AVItem extends Item {
    * the value depends on the footage source (e.g. audio-only files
    * return `false`).
    */
-  get has_video(): boolean {
+  get hasVideo(): boolean {
     return this.width > 0 && this.height > 0;
   }
 
@@ -311,21 +311,21 @@ export class AVItem extends Item {
    * {@link FootageItem | FootageItem} reports the
    * state of its `main_source` (see the `FootageItem` override).
    */
-  get footage_missing(): boolean {
+  get footageMissing(): boolean {
     return false;
   }
 
   /**
    * `true` if the item can be used as an alternate source when setting
-   * {@link Property.alternate_source | Property.alternate_source}.
+   * {@link Property.alternateSource | Property.alternateSource}.
    * Read-only.
    *
    * A {@link CompItem} or a {@link FootageItem | FootageItem}
    * with a video component can be used as an alternate source; see the
    * `FootageItem` override for footage restrictions.
    */
-  get is_media_replacement_compatible(): boolean {
-    return this.has_video;
+  get isMediaReplacementCompatible(): boolean {
+    return this.hasVideo;
   }
 
   /**
@@ -342,12 +342,12 @@ export class AVItem extends Item {
    * The current time of the item when it is being previewed directly
    * from the Project panel. This value is a number of frames.
    */
-  get frame_time(): number {
+  get frameTime(): number {
     return 0;
   }
 
   /** All the compositions that use this AVItem. */
-  get used_in(): CompItem[] {
+  get usedIn(): CompItem[] {
     this._project._ensure_used_in_linked();
     return [...this._used_in];
   }
@@ -373,7 +373,7 @@ export class AVItem extends Item {
   _sync_modified_time(): void {}
 
   /** Remove the proxy source from this item. */
-  set_proxy_to_none(): void {
+  setProxyToNone(): void {
     if (this._proxy_source) {
       const proxy_pin = this._pin_chunks[this._proxy_pin_index];
       this._item_list.chunks.splice(
@@ -383,7 +383,7 @@ export class AVItem extends Item {
       this._pin_chunks.splice(this._proxy_pin_index, 1);
       this._proxy_source = null;
     }
-    this.use_proxy = false;
+    this.useProxy = false;
   }
 
   /**
@@ -396,7 +396,7 @@ export class AVItem extends Item {
    * @param frame_rate - Frame rate in fps (1.0-99.0).
    * @param duration - Duration in seconds (\> 0, \<= 10800).
    */
-  set_proxy_with_placeholder(
+  setProxyWithPlaceholder(
     name: string | null,
     width: number,
     height: number,
@@ -423,7 +423,7 @@ export class AVItem extends Item {
    * @param height - Height in pixels (1-30000).
    * @param pixel_aspect - Pixel aspect ratio (0.01-100.0).
    */
-  set_proxy_with_solid(
+  setProxyWithSolid(
     color: number[],
     name: string | null,
     width: number,
@@ -462,7 +462,7 @@ export class AVItem extends Item {
    * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
    *   not implemented for this format.
    */
-  set_proxy(file: PathLike): void {
+  setProxy(file: PathLike): void {
     this._set_proxy(FileSource._from_file(file, { windows: this._project._windows }));
   }
 
@@ -481,13 +481,13 @@ export class AVItem extends Item {
    * @param file - Path to a representative frame; sibling frames in the same folder are gathered
    *   into the sequence.
    * @param force_alphabetical - Take every file of the same type in the folder, in alphabetical
-   *   order, rather than the numbered frames (see `ImportOptions.force_alphabetical`).
+   *   order, rather than the numbered frames (see `ImportOptions.forceAlphabetical`).
    * @throws {@link ValueError} If the extension is not a supported footage format, or one After
    *   Effects does not import as a sequence (movies, audio, HEIC, FBX, data files).
    * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
    *   not implemented for this format.
    */
-  set_proxy_with_sequence(
+  setProxyWithSequence(
     file: PathLike,
     force_alphabetical: boolean = false,
   ): void {
@@ -545,13 +545,13 @@ export class AVItem extends Item {
     );
     this._proxy_source = source;
     source._join_project(this._project);
-    this.use_proxy = true;
+    this.useProxy = true;
   }
 }
 
 descriptor(
   AVItem,
-  "use_proxy",
+  "useProxy",
   ChunkField.bool("_idta", "use_proxy", {
     validate: _validate_use_proxy,
     post_set: _sync_proxy_active,

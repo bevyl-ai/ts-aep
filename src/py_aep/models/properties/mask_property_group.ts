@@ -81,16 +81,16 @@ export class MaskPropertyGroup extends PropertyGroup {
    * The feather falloff mode for the mask. Applies to all feather
    * values for the mask. Read / Write.
    */
-  declare mask_feather_falloff: MaskFeatherFalloff;
+  declare maskFeatherFalloff: MaskFeatherFalloff;
 
   /**
    * The blending mode for the mask. Controls how the mask interacts with
    * other masks and with the layer below. Read / Write.
    */
-  declare mask_mode: MaskMode;
+  declare maskMode: MaskMode;
 
   /** How motion blur is applied to this mask. Read / Write. */
-  declare mask_motion_blur: MaskMotionBlur;
+  declare maskMotionBlur: MaskMotionBlur;
 
   declare _mkif: MkifChunk;
   declare _mask_shape_tdsb: TdsbChunk | null;
@@ -106,7 +106,7 @@ export class MaskPropertyGroup extends PropertyGroup {
    *
    * While it is on, the Mask Path's {@link Shape} reports the tangents AE
    * derives from the vertices and their stored tensions
-   * (`resolvers.roto_bezier`), not the stored direction handles.
+   * (`resolvers.rotoBezier`), not the stored direction handles.
    *
    * As in After Effects, switching it on keeps every vertex without
    * direction handles a corner (tension 1) and smooths the others
@@ -115,12 +115,12 @@ export class MaskPropertyGroup extends PropertyGroup {
    * segments (tension 1 at every vertex) unless it is a value read from
    * a RotoBezier mask, which keeps its own tensions.
    */
-  get roto_bezier(): boolean {
+  get rotoBezier(): boolean {
     const tdsb = this._mask_shape_tdsb;
     return tdsb != null ? !!tdsb.roto_bezier : false;
   }
 
-  set roto_bezier(value: boolean) {
+  set rotoBezier(value: boolean) {
     validate_bool(value);
     if (this._mask_shape_tdsb == null) {
       if (!value) {
@@ -149,12 +149,12 @@ export class MaskPropertyGroup extends PropertyGroup {
       this._mask_shape_tdsb.roto_bezier = true;
       for (const [i, shape] of shapes.entries()) {
         shape._set_tensions(tensions[i]);
-        shape._write_geometry(shape.vertices, shape.in_tangents, shape.out_tangents);
+        shape._write_geometry(shape.vertices, shape.inTangents, shape.outTangents);
       }
     } else {
       // Switching it off (AE 2026) keeps the drawn tangents as the
       // handles and drops the tensions.
-      const drawn = shapes.map((s) => [s.in_tangents, s.out_tangents] as const);
+      const drawn = shapes.map((s) => [s.inTangents, s.outTangents] as const);
       this._mask_shape_tdsb.roto_bezier = false;
       for (const [i, shape] of shapes.entries()) {
         const [ins, outs] = drawn[i];
@@ -289,7 +289,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     this._ensure_children_synthesized();
     py_assert(this._tdgp != null);
     const layer = this._containing_layer;
-    const comp = layer.containing_comp;
+    const comp = layer.containingComp;
     if (!(layer instanceof _av_layer().AVLayer)) throw new AttributeError("_mask_scale");
     const [width, height] = layer._mask_scale;
     const source = layer.source;
@@ -299,7 +299,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     // the first write (path, key, expression, RotoBezier), yet the
     // aspect on one created in the same session. RotoBezier tangents are
     // measured in this space, so 1.0 would bend them: keep the aspect.
-    const pixel_aspect = source != null ? source.pixel_aspect : 1.0;
+    const pixel_aspect = source != null ? source.pixelAspect : 1.0;
     const [tdmn, oms] = build_default_mask_shape(comp._cdta.internal_timebase, {
       // An audio-only layer has a 0x0 mask space (its default path is
       // four points at the origin) and no aspect to stamp.
@@ -329,7 +329,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     // parser, so its value and tdsb reflect the materialized path.
     const parsed = _property().parse_properties(
       [["ADBE Mask Shape", [tdmn, oms]]],
-      this.property_depth + 1,
+      this.propertyDepth + 1,
       new Map(),
       comp,
       layer,
@@ -342,7 +342,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     // A plain swap would orphan that handle - its backing placeholder
     // chunks were deleted above, so later writes through it would never
     // reach the saved file.
-    const existing = this._properties.find((c) => c.match_name === "ADBE Mask Shape") ?? null;
+    const existing = this._properties.find((c) => c.matchName === "ADBE Mask Shape") ?? null;
     if (existing != null) {
       // `existing.__dict__ = mask_path.__dict__`: replace, not merge - a key
       // the parsed property leaves to its class default must not keep the
@@ -376,12 +376,12 @@ descriptor(MaskPropertyGroup, "inverted", ChunkField.bool("_mkif", "inverted"));
 descriptor(MaskPropertyGroup, "locked", ChunkField.bool("_mkif", "locked"));
 descriptor(
   MaskPropertyGroup,
-  "mask_feather_falloff",
+  "maskFeatherFalloff",
   ChunkField.enum(MaskFeatherFalloff, "_mkif", "mask_feather_falloff"),
 );
-descriptor(MaskPropertyGroup, "mask_mode", ChunkField.enum(MaskMode, "_mkif", "mode"));
+descriptor(MaskPropertyGroup, "maskMode", ChunkField.enum(MaskMode, "_mkif", "mode"));
 descriptor(
   MaskPropertyGroup,
-  "mask_motion_blur",
+  "maskMotionBlur",
   ChunkField.enum(MaskMotionBlur, "_mkif", "mask_motion_blur"),
 );
