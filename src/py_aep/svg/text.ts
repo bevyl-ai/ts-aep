@@ -12,7 +12,8 @@
  */
 
 // TODO(port): fontTools TTFont → fontkit 2.0.4: fontkit exposes glyphs by numeric id, not glyph name, so the glyph set is keyed by id (same 1:1 mapping); fonts whose glyph metrics/outlines fontkit parses differently from fontTools (e.g. malformed hmtx/glyf tables) may give different advances or outlines.
-import * as fontkit from "fontkit";
+import type * as fontkit from "fontkit";
+import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { type CubicSeg, RawSubpath } from "./path_data.ts";
 import { cubicsToSubpath } from "./shapes.ts";
@@ -102,7 +103,7 @@ export function _loadFont(path: Path, fontNumber = 0): FontkitFont {
   let font: FontkitFont | null = _fontCache.get(key) ?? null;
   if (font == null) {
     // NOTE(port): lazy=True only defers table parsing (no result difference); a .ttc resolves its face through `.fonts`.
-    const opened = fontkit.create(host.fs.readFileSync(fspath(path)));
+    const opened = dep("fontkit").create(host.fs.readFileSync(fspath(path)));
     font = opened.fonts ? opened.fonts[fontNumber] : opened;
     _fontCache.set(key, font);
   }

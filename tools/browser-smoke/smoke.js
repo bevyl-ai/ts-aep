@@ -1,7 +1,7 @@
 // Shared by index.html (browser) and run.ts (hostless run under Bun):
 // load each sample into memfs, parse, save, and compare the bytes.
 export async function smoke(py_aep, fetch_bytes, samples, log) {
-  py_aep.use_memory_fs();
+  py_aep.useMemoryFs();
   let identical = 0;
   const problems = [];
   for (const [i, name] of samples.entries()) {
@@ -20,5 +20,5 @@ export async function smoke(py_aep, fetch_bytes, samples, log) {
       log(`${i + 1}/${samples.length} FAIL ${name}: ${e?.message}`);
     }
   }
-  return { backend: py_aep.fs_backend(), total: samples.length, identical, problems };
+  return { backend: py_aep.fsBackend(), total: samples.length, identical, problems };
 }

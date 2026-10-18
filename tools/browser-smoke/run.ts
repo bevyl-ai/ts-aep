@@ -2,7 +2,7 @@
 // the bundle loads, so pyrt/host picks the in-memory fs, POSIX paths and the
 // "browser" platform, as in a page or a Worker without nodejs_compat.
 //
-// usage: bun build src/py_aep/index.ts --target=browser --outdir=dist/browser
+// usage: bun build src/py_aep/browser.ts --target=browser --outdir=dist/browser
 //        bun tools/browser-smoke/run.ts [N]   # N evenly spaced samples (default 40, 0 = all)
 
 import * as fs from "node:fs";
@@ -18,11 +18,11 @@ const saved = globalThis.process;
 (globalThis as any).process = undefined;
 let pyAep: any;
 try {
-  pyAep = await import(path.join(root, "dist/browser/index.js"));
+  pyAep = await import(path.join(root, "dist/browser/browser.js"));
 } finally {
   (globalThis as any).process = saved;
 }
-if (pyAep.fs_backend() !== "memory") throw new Error("bundle did not pick the memory fs");
+if (pyAep.fsBackend() !== "memory") throw new Error("bundle did not pick the memory fs");
 
 const read = async (name: string) => new Uint8Array(fs.readFileSync(path.join(root, name)));
 const result = await smoke(pyAep, read, samples, () => {});

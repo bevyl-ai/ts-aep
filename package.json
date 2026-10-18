@@ -24,14 +24,17 @@
   "exports": {
     ".": {
       "types": "./dist/types/py_aep/index.d.ts",
+      "browser": "./dist/browser.js",
+      "workerd": "./dist/browser.js",
+      "worker": "./dist/browser.js",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist/index.js",
-    "dist/index.js.map",
+    "dist/*.js",
+    "dist/*.js.map",
     "dist/types",
     "README.md",
     "LICENSE"

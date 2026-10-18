@@ -35,7 +35,8 @@
 
 import * as host from "../../pyrt/host.ts";
 import * as unicodedata from "../../pyrt/unicodedata.ts";
-import * as fontkit from "fontkit";
+import type * as fontkit from "fontkit";
+import { dep } from "../../pyrt/deps.ts";
 import type { Path } from "../../pyrt/index.ts";
 import {
   at,
@@ -284,7 +285,7 @@ export function _ascenderRatio(psName: string): number {
       // NOTE(port): fontTools TTFont(path, fontNumber=face_index, lazy=True) ->
       // fontkit. fontkit's create returns a FontCollection for .ttc files, so the
       // face is picked with `.fonts[face_index]`.
-      const opened = fontkit.create(host.fs.readFileSync(path.toString()));
+      const opened = dep("fontkit").create(host.fs.readFileSync(path.toString()));
       font = opened.fonts ? at(opened.fonts, faceIndex) : opened;
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
