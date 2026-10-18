@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -4000,7 +4000,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (isMaskPath && mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup) {
       if (mask.rotoBezier) {
         const own = shape._ownTensions();
-        const count = floordiv(points.length, 3);
+        const count = Math.floor(points.length / 3);
         tensions = own.length === count ? own : Array.from({ length: count }, () => 1.0);
       }
     }

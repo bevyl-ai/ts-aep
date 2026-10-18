@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, getOrThrow, int, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -630,7 +630,7 @@ export function _fitError(
   u: number[],
 ): [number, number] {
   let worst = 0.0;
-  let split = floordiv(first + last + 1, 2);
+  let split = Math.floor((first + last + 1) / 2);
   for (let i = first + 1; i < last; i++) {
     const q = _fitPoint(curve, u[i - first]);
     const dx = q[0] - points[i][0];

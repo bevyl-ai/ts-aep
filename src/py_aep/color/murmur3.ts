@@ -13,7 +13,7 @@
  * by that seed.
  */
 
-import { Bytes, concat, floordiv } from "../../pyrt/index.ts";
+import { Bytes, concat } from "../../pyrt/index.ts";
 
 export const _MASK = (1n << 64n) - 1n;
 export const _C1 = 0x87c37b91114253d5n;
@@ -47,7 +47,7 @@ export function murmurhash3X64128(data: Uint8Array, seed: number | bigint = 0): 
   let h1 = BigInt(seed) & _MASK;
   let h2 = BigInt(seed) & _MASK;
   const length = data.length;
-  const nblocks = floordiv(length, 16);
+  const nblocks = Math.floor(length / 16);
   // `int.from_bytes(..., "little")` on each 8-byte half, kept as an unsigned bigint.
   // `intFromBytes` returns a number, which is lossy above 2**53.
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);

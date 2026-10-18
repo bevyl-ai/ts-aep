@@ -18,7 +18,6 @@ import {
   ValueError,
   at,
   bytesEq,
-  floordiv,
   getOrThrow,
   int,
   valueEquals,
@@ -85,7 +84,7 @@ export class _NaturalSpline {
     let lo = 0;
     let hi = xs.length - 2;
     while (lo < hi) {
-      const mid = floordiv(lo + hi + 1, 2);
+      const mid = Math.floor((lo + hi + 1) / 2);
       if (xs[mid] <= x) {
         lo = mid;
       } else {
