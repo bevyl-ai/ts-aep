@@ -16,7 +16,7 @@ import {
   dictPop,
   fields,
   fspath,
-  getattr,
+  getMember,
   getOrThrow,
   int,
   len,
@@ -63,7 +63,7 @@ const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div(
 // NOTE(port): no pyrt attrs.asdict; OutputModuleSettingsItem fields are flat (ints, bools, bytes), so Python's recursive asdict equals this shallow copy.
 function asdict(inst: OutputModuleSettingsItem): Map<string, SettingValue> {
   const out = new Map<string, SettingValue>();
-  for (const a of fields(inst.constructor)) out.set(a.name, getattr(inst, a.name));
+  for (const a of fields(inst.constructor)) out.set(a.name, getMember(inst, a.name));
   return out;
 }
 
@@ -1424,7 +1424,7 @@ describe("TestRQAddWithoutPreferences", () => {
     // hdrm, Utf8x3. The Ropt is the 602-byte TIFF format options.
     const app = parseAep(SAMPLES_DIR.div("custom.aep"));
     const rqi = renderQueueOf(app.project).add(app.project.compositions[0]);
-    const lomTypes = rqi._lom.chunks.map((c) => truthyOr(getattr(c, "listType", null), c.chunkType));
+    const lomTypes = rqi._lom.chunks.map((c) => truthyOr(getMember(c, "listType", null), c.chunkType));
     expect(contains(lomTypes, "Als2")).toBe(false);
     expect(valueEquals(lomTypes, ["Roou", "Ropt", "hdrm", "Utf8", "Utf8", "Utf8"])).toBe(true);
     const ropt = rqi._lom.chunks.find((c) => c.chunkType === "Ropt");

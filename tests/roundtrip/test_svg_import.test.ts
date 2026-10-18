@@ -1,7 +1,7 @@
 /** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
-import { at, bytesEqual, getattr, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, bytesEqual, getMember, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -430,7 +430,7 @@ describe("TestSvgImportByteFidelity", () => {
     app.project.save(out);
 
     const reparsed = parse(out);
-    const item = [...reparsed.project.items.values()].find((item) => truthy(getattr(item, "layers", null)));
+    const item = [...reparsed.project.items.values()].find((item) => truthy(getMember(item, "layers", null)));
     if (item == null) throw new StopIteration();
     const layer = asInstance(item, CompItem).layers[0];
     const styles = layer.property("ADBE Layer Styles");

@@ -30,7 +30,7 @@ import {
   at,
   Bytes,
   descriptor,
-  getattr,
+  getMember,
   getOrThrow,
   assert,
   truthy,
@@ -114,11 +114,11 @@ export function _validateCrop(peerField: string, dimension: string): (value: num
 
   return (value: number, obj: OutputModule): void => {
     rangeCheck(value, obj);
-    const peer: number = getattr(obj, peerField);
+    const peer: number = getMember(obj, peerField);
     const parentRqi = obj._parentRqi;
-    const compDim: number = getattr(parentRqi.comp, dimension);
+    const compDim: number = getMember(parentRqi.comp, dimension);
     const resAttr = dimension === "width" ? "resolutionX" : "resolutionY";
-    const divisor = truthyOr(getattr(parentRqi._ldat, resAttr), 1);
+    const divisor = truthyOr(getMember(parentRqi._ldat, resAttr), 1);
     const dim = Math.ceil(compDim / divisor);
     const remaining = dim - value - peer;
     if (remaining < 1) {
@@ -188,7 +188,7 @@ export function _xmlOptionsOf<K extends "audioBitrate" | "audioCodec" | "bitrate
 ): XmlFormatOptions[K] | null {
   const fo = om._formatOptions;
   if (fo instanceof XmlFormatOptions) {
-    return getattr(fo, attr);
+    return getMember(fo, attr);
   }
   return null;
 }
@@ -666,7 +666,7 @@ export class OutputModule {
     for (const key of ["Channels", "Audio Channels", "Audio Sample Rate"]) {
       let value: number;
       try {
-        value = getattr(this, getOrThrow(OM_SETTINGS, key)[0]);
+        value = getMember(this, getOrThrow(OM_SETTINGS, key)[0]);
       } catch (e) {
         // Enum transform without a from_binary fallback (e.g.
         // OutputChannels) raises on an out-of-enum stored byte.

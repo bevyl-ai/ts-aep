@@ -5,7 +5,7 @@ the same writes) unless a comment says otherwise.
 */
 
 import { describe, expect, test } from "bun:test";
-import { at, getattr, getOrThrow, len, Path, truthy, valueEquals, round, setattr, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, getMember, getOrThrow, len, Path, truthy, valueEquals, round, setMember, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { MarkerValue } from "../../src/py_aep/index.ts";
@@ -264,7 +264,7 @@ describe("TestTimeSpanWrites", () => {
     }
     const rqi = asInstance(project.renderQueue, RenderQueue).add(comp);
     for (const [field, value] of steps) {
-      setattr(rqi, field === "start" ? "timeSpanStart" : "timeSpanDuration", value);
+      setMember(rqi, field === "start" ? "timeSpanStart" : "timeSpanDuration", value);
     }
     expect(rqi.settings.get("Time Span")).toBe(TimeSpanSource.CUSTOM);
     expect(approx([rqi.timeSpanStart, rqi.timeSpanDuration], expected)).toBe(true);
@@ -834,8 +834,8 @@ describe("TestReversedInOutPoints", () => {
     const [_project, comp] = _newComp(24.0, 30.0);
     const layer = comp.addSolid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 30.0);
     layer.stretch = stretch;
-    setattr(layer, which + "Point", value);
-    expect(approx(getattr(layer, which + "Point"), expected, { abs: 1e-12 })).toBe(true);
+    setMember(layer, which + "Point", value);
+    expect(approx(getMember(layer, which + "Point"), expected, { abs: 1e-12 })).toBe(true);
   });
 
   test("test_ae_sample_matches_extendscript", () => {

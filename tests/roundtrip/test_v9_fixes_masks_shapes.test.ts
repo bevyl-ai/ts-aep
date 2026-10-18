@@ -22,7 +22,7 @@ import {
   truthy,
   valueEquals,
   round,
-  setattr,
+  setMember,
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
@@ -478,7 +478,7 @@ describe("TestGroupAttributeWrites", () => {
     const group = solid.property(groupName);
     const before = projectBytes(app.project);
     raises(AttributeError, () => {
-      setattr(group, attr, value);
+      setMember(group, attr, value);
     });
     expect(valueEquals(projectBytes(app.project), before)).toBe(true);
     if (attr === "position") {

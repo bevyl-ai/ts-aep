@@ -6,14 +6,14 @@ import {
   AttributeError,
   contains,
   float,
-  getattr,
+  getMember,
   getOrThrow,
   int,
   len,
   Path,
   assert,
   valueEquals,
-  setattr,
+  setMember,
   sorted,
   compositeKey,
   ValueError,
@@ -247,7 +247,7 @@ describe("TestRoundtripCineonFormatOptions", () => {
     raises(
       ValueError,
       () => {
-        setattr(opts, field, bad);
+        setMember(opts, field, bad);
       },
       "finite",
     );
@@ -547,15 +547,15 @@ describe("TestFormatOptionsBoolValidation", () => {
     const [, opts] = _parseFresh(FORMAT_DIR.div(sample));
     assert(opts != null);
     raises(TypeError, () => {
-      setattr(opts, field, bad);
+      setMember(opts, field, bad);
     });
   });
 
   test.each(TestFormatOptionsBoolValidation.BOOL_FIELDS)("test_accepts_bool[%#]", (sample: string, field: string) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div(sample));
     assert(opts != null);
-    setattr(opts, field, true);
-    expect(getattr(opts, field)).toBe(true);
+    setMember(opts, field, true);
+    expect(getMember(opts, field)).toBe(true);
   });
 });
 
@@ -813,7 +813,7 @@ describe("TestRoundtripXmlFormatOptions", () => {
     // `XmlFormatOptions` has no `settings` attribute, so the Python attribute load raises
     // AttributeError before the item assignment; TS property loads yield undefined, so use getattr.
     raises(AttributeError, () => {
-      getattr(opts, "settings").set("Format Code", "MooV");
+      getMember(opts, "settings").set("Format Code", "MooV");
     });
   });
 });

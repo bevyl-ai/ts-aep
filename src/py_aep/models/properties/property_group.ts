@@ -7,7 +7,7 @@ import {
   at,
   Bytes,
   getOr,
-  getattr,
+  getMember,
   getOrThrow,
   objectGetattr,
   objectSetattr,
@@ -966,7 +966,7 @@ export class PropertyGroup extends PropertyBase {
       ["_tdum", "tdum", axis.minValue],
       ["_tduM", "tduM", axis.maxValue],
     ] as const) {
-      const existing = getattr(slot, attr);
+      const existing = getMember(slot, attr);
       if (existing == null) {
         const created = new TdumChunk({ chunkType, values: [bound] });
         tdbs.chunks.push(created);

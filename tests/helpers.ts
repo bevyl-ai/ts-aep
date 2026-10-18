@@ -45,7 +45,7 @@ import {
   bytesEqual,
   decode,
   fspath,
-  getattr,
+  getMember,
   KeyError,
   len,
   lruCache,
@@ -336,8 +336,8 @@ function _jsonTruthy(d: object): boolean {
 export function aiLayerOptiBoxes(project: Project): Map<string, [number[], number, number]> {
   const out = new Map<string, [number[], number, number]>();
   for (const item of project.items.values()) {
-    const source = getattr(item, "mainSource", null);
-    const opti = getattr(source, "_opti", null);
+    const source = getMember(item, "mainSource", null);
+    const opti = getMember(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
     if (len(body) < 0x250 || !bytesEqual(Bytes.slice(body, 0, 4), b("TEXT"))) continue;

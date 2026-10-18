@@ -263,24 +263,24 @@ export function compositeKey(...parts: unknown[]): string {
  * that property's type (or the default's, when one is given); any other name
  * reads as `any`.
  */
-export function getattr<O, N extends string & keyof NonNullable<O>>(obj: O, name: N): Required<NonNullable<O>>[N];
-export function getattr<O, N extends string & keyof NonNullable<O>, D>(obj: O, name: N, dflt: D): Required<NonNullable<O>>[N] | D;
-export function getattr(obj: unknown, name: string, ...dflt: [unknown?]): any;
-export function getattr(obj: unknown, name: string, ...dflt: [unknown?]): unknown {
+export function getMember<O, N extends string & keyof NonNullable<O>>(obj: O, name: N): Required<NonNullable<O>>[N];
+export function getMember<O, N extends string & keyof NonNullable<O>, D>(obj: O, name: N, dflt: D): Required<NonNullable<O>>[N] | D;
+export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): any;
+export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): unknown {
   if (obj != null && name in Object(obj)) return Reflect.get(Object(obj), name, obj);
   if (dflt.length) return dflt[0];
   throw new AttributeError(`'${obj?.constructor?.name}' object has no attribute '${name}'`);
 }
 
 /** `setattr(obj, name, value)`; a getter-only accessor raises AttributeError like a Python property without a setter. */
-export function setattr(obj: object, name: string, value: unknown): void {
+export function setMember(obj: object, name: string, value: unknown): void {
   if (!Reflect.set(obj, name, value)) {
     throw new AttributeError(`property '${name}' of '${obj.constructor?.name}' object has no setter`);
   }
 }
 
 /** `hasattr(obj, name)` */
-export function hasattr(obj: unknown, name: string): boolean {
+export function hasMember(obj: unknown, name: string): boolean {
   if (obj == null || !(name in Object(obj))) return false;
   try {
     void Reflect.get(Object(obj), name, obj);

@@ -1,7 +1,7 @@
 /** Tests for Item model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { getattr, Path, StopIteration } from "../../src/pyrt/index.ts";
+import { getMember, Path, StopIteration } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -83,7 +83,7 @@ describe("TestProxySource", () => {
 
   function _find<T>(project: Project, name: string, cls: abstract new (...args: never[]) => T): T {
     for (const i of project.items.values()) {
-      if (getattr(i, "name", "") === name && i instanceof cls) return i;
+      if (getMember(i, "name", "") === name && i instanceof cls) return i;
     }
     throw new StopIteration();
   }

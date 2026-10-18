@@ -8,7 +8,7 @@ import {
   Path,
   StopIteration,
   float,
-  getattr,
+  getMember,
   getOrThrow,
   int,
   len,
@@ -2826,7 +2826,7 @@ describe("TestMaskLayerSpace", () => {
       ["inTangents", "inTangents"],
       ["outTangents", "outTangents"],
     ] as const) {
-      const got = getattr(shape, attr).flatMap((point) => [...point]);
+      const got = getMember(shape, attr).flatMap((point) => [...point]);
       const want = expected[name].flatMap((point) => [...point]);
       assert(approx(got, want, { abs: 1e-4 }), attr);
     }
@@ -2919,7 +2919,7 @@ describe("TestRotoBezierTangents", () => {
         ["inTangents", "inTangents"],
         ["outTangents", "outTangents"],
       ] as const) {
-        const got = getattr(shape, attr).flatMap((point) => [...point]);
+        const got = getMember(shape, attr).flatMap((point) => [...point]);
         const want = expected[name].flatMap((point) => [...point]);
         assert(approx(got, want, { abs: 1e-3 }), attr);
       }

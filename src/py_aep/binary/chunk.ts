@@ -22,7 +22,7 @@ import {
   encode,
   field,
   fields,
-  getattr,
+  getMember,
   valueEquals,
   literal,
   struct,
@@ -260,7 +260,7 @@ export class Chunk extends AttrsBase {
     if (optionalStart < dataFields.length) {
       lastIdx = optionalStart;
       for (let i = dataFields.length - 1; i >= optionalStart; i--) {
-        if (getattr(this, dataFields[i].name) != null) {
+        if (getMember(this, dataFields[i].name) != null) {
           lastIdx = i + 1;
           break;
         }
@@ -274,7 +274,7 @@ export class Chunk extends AttrsBase {
       for (let i = 0; i < lastIdx; i++) {
         const f = dataFields[i];
         const fe = endians.get(i) ?? ">";
-        let value = getattr(this, f.name);
+        let value = getMember(this, f.name);
         value = _encodeValue(value, i, encodings, coerces, fe, f.metadata["fmt"]);
         written += fp.pack(_structFor(f.metadata["fmt"], fe), [value]);
       }
@@ -283,7 +283,7 @@ export class Chunk extends AttrsBase {
       const values: struct.PackValue[] = encodeFields !== null ? encodeFields(this) : [];
       for (let i = values.length; i < lastIdx; i++) {
         const f = dataFields[i];
-        let value = getattr(this, f.name);
+        let value = getMember(this, f.name);
         value = _encodeValue(value, i, encodings, coerces, ">", f.metadata["fmt"]);
         values.push(value);
       }
@@ -292,7 +292,7 @@ export class Chunk extends AttrsBase {
 
     if (itemsInfo != null) {
       const itemsName = itemsInfo[0];
-      for (const item of getattr(this, itemsName)) {
+      for (const item of getMember(this, itemsName)) {
         written += writeBytes(fp, item.tobytes());
       }
     }

@@ -24,7 +24,7 @@ import {
   valueEquals,
   truthyOr,
   repr,
-  setattr,
+  setMember,
   str,
   sum,
 } from "../../src/pyrt/index.ts";
@@ -240,7 +240,7 @@ describe("TestComposedLineSpans", () => {
 
   test("test_box_without_cache", () => {
     const doc = makeDoc("abcd\r");
-    setattr(doc, "boxText", true);
+    setMember(doc, "boxText", true);
     expect(_composedLineSpans(doc)).toBeNull();
   });
 

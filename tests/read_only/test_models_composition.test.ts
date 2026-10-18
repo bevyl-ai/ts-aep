@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
-  getattr,
+  getMember,
   getOrThrow,
   isclose,
   len,
@@ -938,7 +938,7 @@ describe("TestEssentialGraphics", () => {
     expect(leaf.isModified).toBe(false); // equals source, once in the same units
     expect(leaf.unitsText).toBe("pixels");
     const src = leaf.essentialPropertySource;
-    expect(src != null && valueEquals(getattr(src, "value"), [500.0, 500.0])).toBe(true);
+    expect(src != null && valueEquals(getMember(src, "value"), [500.0, 500.0])).toBe(true);
   });
 
   test("test_essential_property_override_name_from_controller", () => {

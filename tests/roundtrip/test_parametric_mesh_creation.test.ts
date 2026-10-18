@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { getattr, getOrThrow, Path, setattr } from "../../src/pyrt/index.ts";
+import { getMember, getOrThrow, Path, setMember } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { LayerType, ParametricMeshType } from "../../src/py_aep/enums/index.ts";
@@ -46,7 +46,7 @@ describe("TestAddParametricMesh", () => {
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh(`M ${ParametricMeshType.nameOf(meshType)}`, { meshType: meshType });
     const field = getOrThrow(_FIRST_FIELD, meshType);
-    setattr(layer.parametricMeshOptions, field, 321.0);
+    setMember(layer.parametricMeshOptions, field, 321.0);
 
     const fresh = _saveReparse(project, tmpPath);
     const freshLayer = asInstance(
@@ -54,7 +54,7 @@ describe("TestAddParametricMesh", () => {
       ParametricMeshLayer,
     );
     expect(freshLayer.parametricMeshType).toBe(meshType);
-    expect(approx(getattr(freshLayer.parametricMeshOptions, field), 321.0)).toBe(true);
+    expect(approx(getMember(freshLayer.parametricMeshOptions, field), 321.0)).toBe(true);
   });
 
   test("test_auto_name_clears_name_set", () => {

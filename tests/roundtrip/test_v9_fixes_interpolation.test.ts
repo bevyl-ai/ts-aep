@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, ValueError, float, getattr, getOrThrow, hasattr, assert, valueEquals, setattr } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, ValueError, float, getMember, getOrThrow, hasMember, assert, valueEquals, setMember } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, type ApproxOperand } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
@@ -30,7 +30,7 @@ const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 function _leaves(group: PropertyGroup): Property[] {
   const out: Property[] = [];
   for (const prop of group.properties) {
-    out.push(...(hasattr(prop, "properties") ? _leaves(asInstance(prop, PropertyGroup)) : [asInstance(prop, Property)]));
+    out.push(...(hasMember(prop, "properties") ? _leaves(asInstance(prop, PropertyGroup)) : [asInstance(prop, Property)]));
   }
   return out;
 }
@@ -145,7 +145,7 @@ describe("TestFootageAnchorPointZ", () => {
     const layer = _solid(comp, 400, 300, true);
     const anchor = layer.property(TG).property("ADBE Anchor Point");
     anchor.value = [100, 50, 80];
-    expect(_eqApprox(getattr(anchor._cdat, "values").slice(0, 3), _approx([0.25, 50 / 300, 80 / 300]))).toBe(true);
+    expect(_eqApprox(getMember(anchor._cdat, "values").slice(0, 3), _approx([0.25, 50 / 300, 80 / 300]))).toBe(true);
     expect(_eqApprox(anchor.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Anchor Point");
     expect(_eqApprox(again.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
@@ -663,7 +663,7 @@ describe("TestMaskPathAddKey", () => {
     path.addKey(0.7);
     const want = [[7.0, 3.5], [117.5, 0.0], [107.0, 114.0]];
     expect(_eqApprox(_verts(path.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
-    const again = asInstance(getattr(_reparse(app, tmpPath).masks, "properties")[0], PropertyGroup).property("ADBE Mask Shape");
+    const again = asInstance(getMember(_reparse(app, tmpPath).masks, "properties")[0], PropertyGroup).property("ADBE Mask Shape");
     expect(_eqApprox(_verts(again.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
   });
 });
@@ -940,7 +940,7 @@ describe("TestSynthesizedBoundChunks", () => {
     );
     expect(valueEquals(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
     const again = asInstance(
-      asInstance(getattr(_reparse(app, tmpPath).effects, "properties")[0], PropertyGroup).properties[0],
+      asInstance(getMember(_reparse(app, tmpPath).effects, "properties")[0], PropertyGroup).properties[0],
       Property,
     );
     expect(valueEquals([again.minValue, again.maxValue], [-1000000, 1000000])).toBe(true);
@@ -1019,7 +1019,7 @@ describe("TestTemporalContinuityFlags", () => {
   test.each(typeRows)("test_types_after_continuous[%#]", (inType, outType, continuous) => {
     for (const first of ["temporalContinuous", "temporalAutoBezier"]) {
       const kf = _rot();
-      setattr(kf, first, true);
+      setMember(kf, first, true);
       _types(kf, inType, outType);
       expect(kf.temporalContinuous).toBe(continuous);
       expect(kf.temporalAutoBezier).toBe(first === "temporalAutoBezier");

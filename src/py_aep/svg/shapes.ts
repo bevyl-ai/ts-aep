@@ -16,7 +16,7 @@ import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
 import {
-  getattr,
+  getMember,
   valueEquals,
   pySlice,
   zip,
@@ -55,7 +55,7 @@ export function _f(
   default_: number = 0.0,
 ): number {
   if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
-  const ref = getattr(ctx, _PERCENT_AXIS[key]);
+  const ref = getMember(ctx, _PERCENT_AXIS[key]);
   return parseLength(attrs.get(key) ?? null, default_, ref, ctx.fontSize);
 }
 

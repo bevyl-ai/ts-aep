@@ -17,7 +17,7 @@ import { describe, expect, test } from "bun:test";
 import {
   BytesIO,
   Bytes,
-  getattr,
+  getMember,
   getOrThrow,
   len,
   lruCache,
@@ -181,7 +181,7 @@ class _Structure {
 
   _add_view_layer(view: ListChunk): void {
     const ldta = view.chunks[0];
-    const name = getattr(view.chunks[1], "value");
+    const name = getMember(view.chunks[1], "value");
     this.view_layers.set(compositeKey(view.listType, name), _signature(view));
     this.view_ldta_tails.add(
       compositeKey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),

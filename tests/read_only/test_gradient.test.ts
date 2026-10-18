@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { Path, StopIteration, hasattr, len, valueEquals } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, hasMember, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -214,7 +214,7 @@ const DEFAULT_AE_GRADIENT_XML =
 function gradientCompFixture(): CompItem {
   const app = parse(SAMPLE);
   for (const v of app.project.items.values()) {
-    if (hasattr(v, "layers")) return asInstance(v, CompItem);
+    if (hasMember(v, "layers")) return asInstance(v, CompItem);
   }
   throw new StopIteration();
 }

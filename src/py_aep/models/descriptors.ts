@@ -11,7 +11,7 @@ import {
   ContextVar,
   RuntimeError,
   ValueError,
-  getattr,
+  getMember,
   int,
   literal,
   hasInstanceDict,
@@ -172,7 +172,7 @@ export function boundEnumMethod<V, R extends number>(
   name: string,
   dflt: EnumHelpers<R> | ((value: V) => R),
 ): (value: V) => R {
-  const m = getattr(enumCls, name, dflt);
+  const m = getMember(enumCls, name, dflt);
   // Python's default is the enum class itself, which is callable (`E(v)`); a
   // py_enum object is not, so use `E.of` and keep `enumClass` for `_enumClass`.
   if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { enumClass: dflt }) : dflt;
@@ -325,12 +325,12 @@ export class ChunkField<
       const overrides = instanceDict(obj);
       if (overrides.has(this.publicName)) return overrides.get(this.publicName);
     }
-    const body = getattr(obj, this.chunkAttr);
+    const body = getMember(obj, this.chunkAttr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
       throw new AttributeError(`chunk body ${literal(this.chunkAttr)} is null`);
     }
-    const value = getattr(body, this.field);
+    const value = getMember(body, this.field);
     return (this.transform ? this.transform(value) : value);
   }
 
@@ -367,9 +367,9 @@ export class ChunkField<
     // value the chunk-backed path rejects.
     if (this.validate) this.validate(value, obj);
     if (this._enumCls != null) _validateEnumMember(this._enumCls, value, this.publicName);
-    if (this.preSet != null) getattr(obj, this.preSet).call(obj);
+    if (this.preSet != null) getMember(obj, this.preSet).call(obj);
     instanceDict(obj).delete(this.publicName);
-    let body = getattr(obj, this.chunkAttr);
+    let body = getMember(obj, this.chunkAttr);
     if (body == null) {
       instanceDict(obj).set(this.publicName, value);
       return;
@@ -380,13 +380,13 @@ export class ChunkField<
         throw new AttributeError(`'${typeName(owner)}' object has no attribute '_ensure_materialized'`);
       }
       owner._ensureMaterialized();
-      body = getattr(obj, this.chunkAttr);
+      body = getMember(obj, this.chunkAttr);
     }
     if (this.reverse != null) body[this.field] = this.reverse(value);
     else body[this.field] = value;
     if (this.postSet != null) {
       if (typeof this.postSet === "string") {
-        getattr(obj, this.postSet).call(obj);
+        getMember(obj, this.postSet).call(obj);
       } else {
         const post = this.postSet;
         post(obj);

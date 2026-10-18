@@ -26,7 +26,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AttributeError,
   contains,
-  getattr,
+  getMember,
   getOrThrow,
   isclose,
   mod,
@@ -96,7 +96,7 @@ function _close(a: number | number[], b: number | number[], tol: number): boolea
 
 /** `layer.effects.properties[0].properties[0].value` */
 function _firstEffectValue(layer: Layer) {
-  const effect = asInstance(getattr(layer.effects, "properties")[0], PropertyGroup);
+  const effect = asInstance(getMember(layer.effects, "properties")[0], PropertyGroup);
   return asInstance(effect.properties[0], Property).value;
 }
 
@@ -144,7 +144,7 @@ describe("TestComment", () => {
     expect(layer._cmta == null).toBe(true);
     expect(!layer._ldta.hasComment).toBe(true);
     expect(
-      layer._layerList.chunks.every((c) => getattr(c, "chunkType", "") !== "cmta"),
+      layer._layerList.chunks.every((c) => getMember(c, "chunkType", "") !== "cmta"),
     ).toBe(true);
   });
 
@@ -181,7 +181,7 @@ describe("TestCopyToComp", () => {
         expect(
           _close(keys, truth.T["ADBE Position"].k.map((k: [number, number | number[]]) => k[0]), 1e-4),
         ).toBe(true);
-        const markers = getattr(copy.marker, "keyframes").map((kf) => kf.time);
+        const markers = getMember(copy.marker, "keyframes").map((kf) => kf.time);
         expect(_close(markers, truth.mk, 1e-4)).toBe(true);
         if ("tr" in truth) {
           const remap = copy.property("ADBE Time Remapping").keyframes.map((kf) => kf.time);
@@ -249,7 +249,7 @@ describe("TestCopyToComp", () => {
       const [comp, src] = _layer(project, "PC_SRC", "matte_user");
       const copy = asInstance(src.copyToComp(comp), AVLayer);
       expect(copy.trackMatteLayer != null).toBe(true);
-      expect(getattr(copy.trackMatteLayer, "name")).toBe("txt");
+      expect(getMember(copy.trackMatteLayer, "name")).toBe("txt");
     }
   });
 
@@ -284,7 +284,7 @@ describe("TestCopyToComp", () => {
     expect(copy._ldta.sourceId).toBe(0xffffffff);
     {
       const [comp, light] = _layer(parseProjectFresh(REPARENT), "PC_SRC", "env_light");
-      expect(getattr(asInstance(light.copyToComp(comp), LightLayer).lightSource, "name")).toBe("env_src");
+      expect(getMember(asInstance(light.copyToComp(comp), LightLayer).lightSource, "name")).toBe("env_src");
     }
   });
 });
@@ -345,7 +345,7 @@ describe("TestLightSource", () => {
     for (const name of ["txt", "shp", "kf_pos"]) {
       expect(REPARENT_TRUTH.light[name].env).toBe(name);
       env.lightSource = _next(comp.layers, (ly) => ly.name === name);
-      expect(getattr(env.lightSource, "name")).toBe(name);
+      expect(getMember(env.lightSource, "name")).toBe(name);
     }
   });
 
@@ -432,7 +432,7 @@ function _assertTransform(child: Layer, comp: CompItem, truth: _TransformTruth):
   for (const matchName of _COMPARED) {
     if (!(matchName in truth)) continue;
     const prop = child.transform.property(matchName);
-    const expected = getattr(truth, matchName);
+    const expected = getMember(truth, matchName);
     const got = truthy(prop.keyframes) ? prop.valueAtTime(comp.time) : prop.value;
     const exp = expected.v;
     const scalars: number[] = typeof got === "number" ? [got] : [...got];

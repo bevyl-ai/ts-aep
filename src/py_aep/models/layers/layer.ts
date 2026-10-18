@@ -30,8 +30,8 @@ import {
   KeyError,
   ValueError,
   descriptor,
-  getattr,
-  setattr,
+  getMember,
+  setMember,
   objectSetattr,
   assert,
   truthy,
@@ -458,7 +458,7 @@ export class Layer extends PropertyGroup {
     if (this._treeParamDefs != null && (name === "_properties" || !name.startsWith("_"))) {
       this._loadPropertyTree();
       // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
-      return getattr(this, name);
+      return getMember(this, name);
     }
     return super._missingAttribute(name);
   }
@@ -1202,9 +1202,9 @@ export class Layer extends PropertyGroup {
         const dims = kfValue.length;
         kf.value = remap.transformPoint(kfValue).slice(0, dims);
         for (const tangentAttr of ["inSpatialTangent", "outSpatialTangent"]) {
-          const tangent = getattr(kf, tangentAttr);
+          const tangent = getMember(kf, tangentAttr);
           if (truthy(tangent)) {
-            setattr(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
+            setMember(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
           }
         }
       }

@@ -9,7 +9,7 @@ import {
   concat,
   encode,
   enumerate,
-  getattr,
+  getMember,
   getOrThrow,
   len,
   Path,
@@ -68,9 +68,9 @@ function _next<T>(xs: Iterable<T>, pred: (x: T) => boolean): T {
 
 function _aeLayerOpti(project: Project, layerName: string): Uint8Array | null {
   for (const item of project.items.values()) {
-    const source = getattr(item, "mainSource", null);
+    const source = getMember(item, "mainSource", null);
     if (source instanceof FileSource) {
-      if (getattr(source._opti, "textLayerName", null) === layerName) {
+      if (getMember(source._opti, "textLayerName", null) === layerName) {
         return source._opti.tobytes();
       }
     }
@@ -101,8 +101,8 @@ function _embeddedProfile(source: FileSource): string | null {
 /** Extract AE's per-layer 8BPS opti for `group_name` from a parsed fixture. */
 function _aePsdLayerOpti(project: Project, groupName: string): Uint8Array | null {
   for (const item of project.items.values()) {
-    const source = getattr(item, "mainSource", null);
-    if (source instanceof FileSource && getattr(source._opti, "assetType", "") === "8BPS") {
+    const source = getMember(item, "mainSource", null);
+    if (source instanceof FileSource && getMember(source._opti, "assetType", "") === "8BPS") {
       if (asInstance(source._opti, PsdOptiChunk).psdGroupName === groupName) {
         const buffer = new BytesIO();
         source._opti.write(buffer);
@@ -131,7 +131,7 @@ function _psdFootage(project: Project): Map<string, FootageItem> {
   for (const item of project.items.values()) {
     if (item instanceof FootageItem && item.mainSource instanceof FileSource) {
       const opti = item.mainSource._opti;
-      if (getattr(opti, "assetType", "") === "8BPS") {
+      if (getMember(opti, "assetType", "") === "8BPS") {
         out.set(asInstance(opti, PsdOptiChunk).psdGroupName, item);
       }
     }
@@ -148,11 +148,11 @@ function _croppedOpts(file: Path): ImportOptions {
 /** The chunk types inside a footage item's `LIST:Gide` (and its list). */
 function _gideTree(item: FootageItem): string[][] {
   const gide = asInstance(
-    _next(item._itemList.chunks, (c) => getattr(c, "listType", null) === "Gide"),
+    _next(item._itemList.chunks, (c) => getMember(c, "listType", null) === "Gide"),
     ListChunk,
   );
   return gide.chunks.map((child) => {
-    const grandchildren: Chunk[] = getattr(child, "chunks", []);
+    const grandchildren: Chunk[] = getMember(child, "chunks", []);
     return truthyOr(
       grandchildren.map((c) => c.chunkType),
       [child.chunkType],
@@ -435,7 +435,7 @@ describe("TestImportFileSingle", () => {
     const reparsed = parseAep(out).project;
 
     const files = Array.from(reparsed.items.values()).filter(
-      (it) => getattr(it, "mainSource", null) instanceof FileSource,
+      (it) => getMember(it, "mainSource", null) instanceof FileSource,
     );
     expect(files.some((it) => it.name === "image_with_alpha.png")).toBe(true);
   });
@@ -569,7 +569,7 @@ describe("TestImportFileSequence", () => {
     project.save(out);
     const reparsed = parseAep(out).project;
     const names = Array.from(reparsed.items.values())
-      .filter((it) => getattr(it, "mainSource", null) instanceof FileSource)
+      .filter((it) => getMember(it, "mainSource", null) instanceof FileSource)
       .map((it) => it.name);
     expect(names.includes("new_exr.[0002-0003].exr")).toBe(true);
   });
@@ -1475,11 +1475,11 @@ describe("TestImportAiComp", () => {
     const ae = new Map<string, Uint8Array>();
     const sources: FileSource[] = [];
     for (const it of fixture.items.values()) {
-      const source = getattr(it, "mainSource", null);
+      const source = getMember(it, "mainSource", null);
       if (source instanceof FileSource) sources.push(source);
     }
     for (const s of sources) {
-      if (getattr(s._opti, "assetType", "") === "TEXT") {
+      if (getMember(s._opti, "assetType", "") === "TEXT") {
         ae.set(asInstance(s._opti, TextOptiChunk).textLayerName, s._opti.tobytes());
       }
     }
@@ -2021,8 +2021,8 @@ describe("TestImportPsdComp", () => {
 /** Serialized opti of the single merged 8BPS footage in a flattened import. */
 function _flattenedFootageOpti(project: Project): Uint8Array {
   for (const item of project.items.values()) {
-    const source = getattr(item, "mainSource", null);
-    if (source instanceof FileSource && getattr(source._opti, "assetType", "") === "8BPS") {
+    const source = getMember(item, "mainSource", null);
+    if (source instanceof FileSource && getMember(source._opti, "assetType", "") === "8BPS") {
       return _optiBytes(source);
     }
   }

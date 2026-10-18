@@ -34,8 +34,8 @@ import {
   ValueError,
   bytesEqual,
   concat,
-  getattr,
-  setattr,
+  getMember,
+  setMember,
   getOrThrow,
   truthyOr,
   literal,
@@ -1638,7 +1638,7 @@ export class FileSource extends FootageSource {
     const sspc = this._sspc;
     const freshSspc = fresh._sspc;
     for (const name of ["width", "height", "depth", "alphaModeRaw", ...fields]) {
-      setattr(sspc, name, getattr(freshSspc, name));
+      setMember(sspc, name, getMember(freshSspc, name));
     }
     sspc.dataSize = freshSspc.dataSize;
     sspc._sourceStamp = freshSspc._sourceStamp;

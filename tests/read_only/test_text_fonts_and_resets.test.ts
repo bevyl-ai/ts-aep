@@ -18,7 +18,7 @@ import {
   AssertionError,
   getOr,
   float,
-  getattr,
+  getMember,
   len,
   Path,
   assert,
@@ -280,7 +280,7 @@ describe("TestResetStyles", () => {
     const doc = _doc(parseProjectFresh(RESET_AEP), "RESET2", "rc_char");
     doc.resetCharStyle();
     for (const [aeKey, pyKey] of TestResetStyles.CHAR_MAP.entries()) {
-      const got = getattr(doc, pyKey);
+      const got = getMember(doc, pyKey);
       const want = expected[aeKey];
       if (typeof want === "boolean" || typeof want === "string") {
         assert(valueEquals(got, want), pyKey);
@@ -302,7 +302,7 @@ describe("TestResetStyles", () => {
     const doc = _doc(parseProjectFresh(RESET_AEP), "RESET2", "rp_para");
     doc.resetParagraphStyle();
     for (const [aeKey, pyKey] of TestResetStyles.PARA_MAP.entries()) {
-      const got = getattr(doc, pyKey);
+      const got = getMember(doc, pyKey);
       const want = expected[aeKey];
       if (typeof want === "boolean") {
         assert(valueEquals(got, want), pyKey);
@@ -336,7 +336,7 @@ describe("TestResetStyles", () => {
         ValueError,
         () => {
           const d = new TextDocument("hi");
-          getattr(d, method).call(d);
+          getMember(d, method).call(d);
         },
         "not associated with a layer",
       );

@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { StopIteration, getattr, hasattr, len, truthy, range, str } from "../../src/pyrt/index.ts";
+import { StopIteration, getMember, hasMember, len, truthy, range, str } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
@@ -32,7 +32,7 @@ function* _walk(group: py_aep.PropertyGroup, depth = 0): Generator<py_aep.Proper
   }
   for (const child of group) {
     yield child;
-    if (!hasattr(child, "keyframes")) {
+    if (!hasMember(child, "keyframes")) {
       yield* _walk(asInstance(child, py_aep.PropertyGroup), depth + 1);
     }
   }
@@ -229,7 +229,7 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getattr(p, "matchName", null) === "ADBE Position" && truthy(asInstance(p, py_aep.Property).dimensionsSeparated))
+              if (getMember(p, "matchName", null) === "ADBE Position" && truthy(asInstance(p, py_aep.Property).dimensionsSeparated))
                 yield asInstance(p, py_aep.Property);
       })(),
     );
@@ -249,7 +249,7 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app2.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getattr(p, "matchName", null) === "ADBE Position") yield asInstance(p, py_aep.Property);
+              if (getMember(p, "matchName", null) === "ADBE Position") yield asInstance(p, py_aep.Property);
       })(),
     );
     const onDisk = Array.from(range(3), (d) => asInstance(pos2.getSeparationFollower(d), py_aep.Property).value);
@@ -269,7 +269,7 @@ describe("TestPrecomposedEffectPoint", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("effects.aep"));
     const comp = next(app.project.compositions, (c) => c.name === "effect_2dPoint");
     const point = asInstance(
-      next(_walk(comp.layers[0]), (p) => getattr(p, "matchName", null) === "ADBE Lens Flare-0001"),
+      next(_walk(comp.layers[0]), (p) => getMember(p, "matchName", null) === "ADBE Lens Flare-0001"),
       py_aep.Property,
     );
     const before = [...point.value];
@@ -277,7 +277,7 @@ describe("TestPrecomposedEffectPoint", () => {
     const newComp = comp.precompose([0], "PreFX");
 
     const moved = asInstance(
-      next(_walk(newComp.layers[0]), (p) => getattr(p, "matchName", null) === "ADBE Lens Flare-0001"),
+      next(_walk(newComp.layers[0]), (p) => getMember(p, "matchName", null) === "ADBE Lens Flare-0001"),
       py_aep.Property,
     );
     expect(approx(moved.value, before)).toBe(true);

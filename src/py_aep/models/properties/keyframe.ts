@@ -15,7 +15,7 @@ import type { Property } from "./property.ts";
 import {
   ValueError,
   descriptor,
-  getattr,
+  getMember,
   assert,
   literal,
   zip,
@@ -819,7 +819,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     this._ldatItem.temporalAutoBezier = false;
     const bezier = KeyframeInterpolationType.BEZIER;
     const name = `${direction}InterpolationType` as const;
-    if (getattr(this, name) !== bezier) {
+    if (getMember(this, name) !== bezier) {
       const prop = this._property;
       if (prop == null || prop.isInterpolationTypeValid(bezier)) {
         this[name] = bezier;

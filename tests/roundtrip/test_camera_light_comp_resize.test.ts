@@ -20,7 +20,7 @@ import type { Project } from "../../src/py_aep/models/project.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { Path, assert, setattr } from "../../src/pyrt/index.ts";
+import { Path, assert, setMember } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in Python is the
@@ -105,7 +105,7 @@ describe("TestLightCompResize", () => {
   test.each(rows)("test_writes_position[%#]", (attr, value) => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(LIGHT_SAMPLE);
-    setattr(getComp(project, "1920x1080"), attr, value);
+    setMember(getComp(project, "1920x1080"), attr, value);
 
     const light = _reopened(project, tmpPath, "1920x1080", "Point");
 

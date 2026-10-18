@@ -6,7 +6,7 @@ import { parse } from "../../src/py_aep/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
 import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { hasattr, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
+import { hasMember, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import type { Item } from "../../src/py_aep/models/items/item.ts";
 import { asInstance } from "../helpers.ts";
@@ -223,7 +223,7 @@ function gradientCompFixture(): CompItem {
 /** `next(v for v in items if hasattr(v, "layers"))`. */
 function nextWithLayers(values: Iterable<Item>): CompItem {
   for (const v of values) {
-    if (hasattr(v, "layers")) return asInstance(v, CompItem);
+    if (hasMember(v, "layers")) return asInstance(v, CompItem);
   }
   throw new StopIteration();
 }

@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, BytesIO, Bytes, getattr, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, BytesIO, Bytes, getMember, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -105,7 +105,7 @@ describe("TestNewLayerSkeleton", () => {
     );
     if (idx < 0) throw new StopIteration();
     const tdbs = asInstance(at(tdgp.chunks, idx + 1), ListChunk);
-    const kinds = tdbs.chunks.map((c) => getattr(c, "listType", c.chunkType));
+    const kinds = tdbs.chunks.map((c) => getMember(c, "listType", c.chunkType));
     expect(kinds).toContain("cdat");
     expect(kinds).toContain("tdum");
     expect(kinds).toContain("tduM");
@@ -123,7 +123,7 @@ describe("TestNewLayerSkeleton", () => {
     );
     if (idx < 0) throw new StopIteration();
     const nxt = at(tdgp.chunks, idx + 1);
-    expect(getattr(nxt, "listType", null)).toBe("OvG2");
+    expect(getMember(nxt, "listType", null)).toBe("OvG2");
   });
 
   test("test_source_alternate_blsv_blsi_and_empty_cdat", () => {
@@ -138,7 +138,7 @@ describe("TestNewLayerSkeleton", () => {
     );
     if (idx < 0) throw new StopIteration();
     const inner = asInstance(at(root.chunks, idx + 1), ListChunk);
-    const kinds = inner.chunks.map((c) => getattr(c, "listType", c.chunkType));
+    const kinds = inner.chunks.map((c) => getMember(c, "listType", c.chunkType));
     const j = kinds.indexOf("blsv");
     if (j < 0) throw new ValueError("'blsv' is not in list");
     expect<string>(at(kinds, j + 1)).toBe("blsi");
@@ -177,7 +177,7 @@ describe("TestNewLayerSkeleton", () => {
     );
     if (j < 0) throw new StopIteration();
     const wrapper = at(transform.chunks, j + 1);
-    expect(getattr(wrapper, "listType", null)).toBe("otst");
+    expect(getMember(wrapper, "listType", null)).toBe("otst");
   });
 
   test("test_camera_position_and_poi", () => {
@@ -200,7 +200,7 @@ describe("TestNewCompSkeleton", () => {
     app.project.rootFolder.addComp("MinComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _savedRifx(app, tmpPath);
     const item = _findCompItem(rifx, "MinComp");
-    const kinds = item.chunks.map((c) => getattr(c, "listType", c.chunkType));
+    const kinds = item.chunks.map((c) => getMember(c, "listType", c.chunkType));
     for (const required of ["dats", "cdrp", "comr", "DLay", "SecL", "CIFO", "Gide"]) {
       // Python message: f"missing {required} in new comp item"
       expect(kinds).toContain(required);

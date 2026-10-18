@@ -65,8 +65,8 @@ import {
   Path,
   decode,
   fspath,
-  getattr,
-  setattr,
+  getMember,
+  setMember,
   getOrThrow,
   assert,
   truthy,
@@ -766,7 +766,7 @@ export class Project {
   }
 
   _syncNhedField(fieldName: string): void {
-    setattr(this._nhed, fieldName, getattr(this._nnhd, fieldName));
+    setMember(this._nhed, fieldName, getMember(this._nnhd, fieldName));
   }
 
   _syncNhedTimecodeDefaultBase(): void {

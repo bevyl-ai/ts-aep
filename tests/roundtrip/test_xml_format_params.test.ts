@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 
-import { getattr, Path, assert, setattr, ValueError } from "../../src/pyrt/index.ts";
+import { getMember, Path, assert, setMember, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -46,7 +46,7 @@ const DECODES: [string, string, unknown][] = [
 for (const [sample, attr, expected] of DECODES) {
   test(`test_decode[${sample}-${attr}]`, () => {
     const project = parseProjectFresh(FORMAT_DIR.div(`${sample}.aep`));
-    expect(getattr(_fo(project), attr)).toBe(expected);
+    expect(getMember(_fo(project), attr)).toBe(expected);
   });
 }
 
@@ -61,11 +61,11 @@ for (const [sample, attr, value] of WRITES) {
   test(`test_write_survives_roundtrip[${sample}-${attr}]`, () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(FORMAT_DIR.div(`${sample}.aep`));
-    setattr(_fo(project), attr, value);
-    expect(getattr(_fo(project), attr)).toBe(value);
+    setMember(_fo(project), attr, value);
+    expect(getMember(_fo(project), attr)).toBe(value);
     project.save(tmpPath.div("out.aep"));
     const reparsed = parseProjectFresh(tmpPath.div("out.aep"));
-    expect(getattr(_fo(reparsed), attr)).toBe(value);
+    expect(getMember(_fo(reparsed), attr)).toBe(value);
   });
 }
 

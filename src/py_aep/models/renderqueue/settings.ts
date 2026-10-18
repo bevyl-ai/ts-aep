@@ -11,10 +11,10 @@ import {
   AttributeError,
   KeyError,
   ValueError,
-  getattr,
+  getMember,
   valueEquals,
   literal,
-  setattr,
+  setMember,
   compositeKey,
   mappingItems,
   typeName,
@@ -85,7 +85,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) throw new KeyError(literal(key));
     const [attrName] = spec;
-    return getattr(this._owner, attrName);
+    return getMember(this._owner, attrName);
   }
 
   // -- writes ------------------------------------------------------------
@@ -99,7 +99,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const [attrName, enumClass] = spec;
     if (enumClass != null) value = _coerceEnum(enumClass, value);
     try {
-      setattr(this._owner, attrName, value);
+      setMember(this._owner, attrName, value);
     } catch (e) {
       // A getter-only JS accessor throws a native TypeError in strict mode;
       // Python's property without a setter raises AttributeError.

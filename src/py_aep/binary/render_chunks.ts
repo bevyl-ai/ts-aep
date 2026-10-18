@@ -6,7 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { Bytes, decode, define, descriptor, fields, getattr, assert, truthy, setattr, ascii } from "../../pyrt/index.ts";
+import { Bytes, decode, define, descriptor, fields, getMember, assert, truthy, setMember, ascii } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -555,7 +555,7 @@ export class RenderSettingsItem extends FmtItem {
    */
   copySettingsFrom(source: RenderSettingsItem): void {
     for (const field of this.constructor._TEMPLATE_FIELDS) {
-      setattr(this, field, getattr(source, field));
+      setMember(this, field, getMember(source, field));
     }
   }
 
@@ -776,7 +776,7 @@ export class OutputModuleSettingsItem extends FmtItem {
    */
   copySettingsFrom(source: OutputModuleSettingsItem): void {
     for (const field of this.constructor._TEMPLATE_FIELDS) {
-      setattr(this, field, getattr(source, field));
+      setMember(this, field, getMember(source, field));
     }
   }
 
@@ -789,7 +789,7 @@ export class OutputModuleSettingsItem extends FmtItem {
    */
   restoreFrom(source: OutputModuleSettingsItem): void {
     for (const field of fields(OutputModuleSettingsItem)) {
-      setattr(this, field.name, getattr(source, field.name));
+      setMember(this, field.name, getMember(source, field.name));
     }
   }
 

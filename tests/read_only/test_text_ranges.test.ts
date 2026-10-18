@@ -15,7 +15,7 @@ import {
   at,
   getOr,
   fspath,
-  getattr,
+  getMember,
   getOrThrow,
   int,
   len,
@@ -131,7 +131,7 @@ function _compare(pyVal: unknown, expected: ProbeJson, attr: string): string | n
   }
   if (attr === "fontObject") {
     const expectedName = typeof expected === "string" ? at(split(expected, ":", 1), 1) : null;
-    const actualName = pyVal != null ? getattr(pyVal, "postScriptName") : null;
+    const actualName = pyVal != null ? getMember(pyVal, "postScriptName") : null;
     if (valueEquals(actualName, expectedName)) return null;
     return `${attr}: expected ${repr(expectedName)}, got ${repr(actualName)}`;
   }
@@ -292,7 +292,7 @@ describe("TestCharacterRangeAttributes", () => {
       for (const [esAttr, expected] of Object.entries(entry.value)) {
         const pyAttr = getOr(ATTR_MAP, esAttr);
         if (pyAttr == null) continue;
-        const mismatch = _compare(getattr(rng, pyAttr), expected, esAttr);
+        const mismatch = _compare(getMember(rng, pyAttr), expected, esAttr);
         if (mismatch != null) mismatches.push(`[${key}] ${mismatch}`);
       }
     }

@@ -1,4 +1,4 @@
-import { getattr, setattr } from "../../../pyrt/index.ts";
+import { getMember, setMember } from "../../../pyrt/index.ts";
 import { _validateNumber, validateF8 } from "../validators.ts";
 
 /**
@@ -85,17 +85,17 @@ export class KeyframeEase {
     const rawSpeed = this._speedFactor ? speed / this._speedFactor : speed;
     const rawInfluence = influence / 100;
     if (this._isArray()) {
-      getattr(this._kfData, `${this._direction}Speed`)[this._dimensionIndex] = rawSpeed;
-      getattr(this._kfData, `${this._direction}Influence`)[this._dimensionIndex] = rawInfluence;
+      getMember(this._kfData, `${this._direction}Speed`)[this._dimensionIndex] = rawSpeed;
+      getMember(this._kfData, `${this._direction}Influence`)[this._dimensionIndex] = rawInfluence;
     } else {
-      setattr(this._kfData, `${this._direction}Speed`, rawSpeed);
-      setattr(this._kfData, `${this._direction}Influence`, rawInfluence);
+      setMember(this._kfData, `${this._direction}Speed`, rawSpeed);
+      setMember(this._kfData, `${this._direction}Influence`, rawInfluence);
     }
   }
 
   /** Whether the backing kf_data stores speed/influence as arrays. */
   _isArray(): boolean {
-    return Array.isArray(getattr(this._kfData, `${this._direction}Speed`));
+    return Array.isArray(getMember(this._kfData, `${this._direction}Speed`));
   }
 
   /**
@@ -107,7 +107,7 @@ export class KeyframeEase {
     if (this._kfData == null) {
       return this._speed;
     }
-    const raw = getattr(this._kfData, `${this._direction}Speed`);
+    const raw = getMember(this._kfData, `${this._direction}Speed`);
     if (Array.isArray(raw)) {
       return Number(raw[this._dimensionIndex]) * this._speedFactor;
     }
@@ -123,9 +123,9 @@ export class KeyframeEase {
     const fieldName = `${this._direction}Speed`;
     const binaryValue = this._speedFactor ? value / this._speedFactor : value;
     if (this._isArray()) {
-      getattr(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;
+      getMember(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;
     } else {
-      setattr(this._kfData, fieldName, binaryValue);
+      setMember(this._kfData, fieldName, binaryValue);
     }
   }
 
@@ -138,7 +138,7 @@ export class KeyframeEase {
     if (this._kfData == null) {
       return this._influence;
     }
-    const raw = getattr(this._kfData, `${this._direction}Influence`);
+    const raw = getMember(this._kfData, `${this._direction}Influence`);
     if (Array.isArray(raw)) {
       return Number(raw[this._dimensionIndex]) * 100;
     }
@@ -159,9 +159,9 @@ export class KeyframeEase {
     const fieldName = `${this._direction}Influence`;
     const binaryValue = value / 100;
     if (this._isArray()) {
-      getattr(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;
+      getMember(this._kfData, fieldName)[this._dimensionIndex] = binaryValue;
     } else {
-      setattr(this._kfData, fieldName, binaryValue);
+      setMember(this._kfData, fieldName, binaryValue);
     }
   }
 }
