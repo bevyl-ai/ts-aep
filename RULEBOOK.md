@@ -245,14 +245,15 @@ translating** and use them; do not reimplement anything they provide. Never edit
   `*[Symbol.iterator]()` yielding the fields in order (so `a, b = t` → `const [a, b] = t`);
   `t[0]` → the named field. `_replace(x=…)` → a `_replace(kw)` method if used.
 - `__slots__` → drop.
-- Descriptors (`ChunkField`, `BitField`, any class with `__get__`/`__set__`): translate the
-  descriptor class itself 1:1 (`__get__(obj, owner)`, `__set__(obj, value)`,
-  `__set_name__(owner, name)` as methods); a descriptor assigned in a class body
-  (`enabled = ChunkField(...)`) → `declare enabled: T;` in the class and
-  `descriptor(Cls, "enabled", new ChunkField(...))` after it (pyrt `dunder.ts`).
-  `__get__(None, owner)` (class-level access) → `get_descriptor(Cls, "name")`.
-- `__getattr__` / `__setattr__` → keep them as methods named `__getattr__(name)` /
-  `__setattr__(name, value)` and end the constructor with `return py_object(this);`.
+- Descriptors (`ChunkField`, `BitField`, any class with `__get__`/`__set__`): the
+  descriptor class keeps the protocol methods (`__get__(obj, owner)`, `__set__(obj, value)`,
+  `__set_name__(owner, name)`); a field it serves is `declare enabled: T;` in the model
+  class, bound in a `static {}` block at the end of that class with
+  `descriptor(this, "enabled", new ChunkField(...))` (pyrt `dunder.ts`), which infers the
+  field's types from the class. Class-level access → `getDescriptor(Cls, "name")`.
+- A missing-attribute fallback (Python's `__getattr__`) is `_missingAttribute(name)` and an
+  assignment hook (`__setattr__`) is `_assignAttribute(name, value)`, wired with
+  `pyClassHooks(Cls)`.
   `object.__setattr__(self, k, v)` → `object_setattr(this, k, v)`;
   `object.__getattribute__` → `object_getattr`.
 - Other dunders: `__repr__` → `__repr__()` (also used by pyrt `repr`), `__str__` →
