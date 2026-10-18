@@ -84,7 +84,7 @@ import {
   sorted,
   str,
   strip,
-  tkey,
+  compositeKey,
   warn,
   bytesEq,
   descriptor,
@@ -1936,7 +1936,7 @@ export class Project {
         if (doc == null) continue;
         for (const font of doc._usedFontObjects()) {
           const vector = font.designVector;
-          const key = tkey(font.postScriptName, font.version, vector != null ? [...vector] : null);
+          const key = compositeKey(font.postScriptName, font.version, vector != null ? [...vector] : null);
           let record = records.get(key);
           if (record == null) {
             record = { name: font.postScriptName, font, usedAt: [] };

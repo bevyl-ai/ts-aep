@@ -13,7 +13,7 @@
 // `pytest.approx` is the pyrt `approx` (pytest.ts), not an index re-export.
 
 import { expect, test } from "bun:test";
-import { getOr, Path, assert, truthy, truthyOr, tkey, zip } from "../../src/pyrt/index.ts";
+import { getOr, Path, assert, truthy, truthyOr, compositeKey, zip } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -68,13 +68,13 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
     const parsed = new Map<string, Property>();
     for (const comp of app.project.compositions) {
       for (const [layerName, prop] of _keyed(comp)) {
-        parsed.set(tkey(comp.name, layerName, prop.matchName), prop);
+        parsed.set(compositeKey(comp.name, layerName, prop.matchName), prop);
       }
     }
 
     let compared = 0;
     for (const [compName, layerName, jsonProp] of _jsonProperties(expected)) {
-      const key = tkey(compName, layerName, jsonProp.matchName);
+      const key = compositeKey(compName, layerName, jsonProp.matchName);
       const prop = getOr(parsed, key);
       if (prop == null) continue;
       const keys = truthyOr(jsonProp.keyframes ?? null, []);

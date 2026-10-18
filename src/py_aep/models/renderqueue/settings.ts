@@ -18,7 +18,7 @@ import {
   setattr,
   sorted,
   str,
-  tkey,
+  compositeKey,
   mappingItems,
   typeName,
 } from "../../../pyrt/index.ts";
@@ -282,11 +282,11 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
 export const _RESOLUTION_STRINGS: Map<string, string> = new Map<string, string>([
   // [0, 0] is the "use the comp's own resolution" sentinel (probed AE
   // 2026: getSettings(STRING) reads back "Current Settings").
-  [tkey(0, 0), "Current Settings"],
-  [tkey(1, 1), "Full"],
-  [tkey(2, 2), "Half"],
-  [tkey(3, 3), "Third"],
-  [tkey(4, 4), "Quarter"],
+  [compositeKey(0, 0), "Current Settings"],
+  [compositeKey(1, 1), "Full"],
+  [compositeKey(2, 2), "Half"],
+  [compositeKey(3, 3), "Third"],
+  [compositeKey(4, 4), "Quarter"],
 ]);
 
 // AE's "Resize to" dropdown labels a target resolution with a New
@@ -299,20 +299,20 @@ export const _RESOLUTION_STRINGS: Map<string, string> = new Map<string, string>(
 // preset fallback used when it is not, and holds AE's actual strings for
 // a default install.
 export const _RESIZE_TO_STRINGS: Map<string, string> = new Map<string, string>([
-  [tkey(3656, 2664), "Cineon Full  •  3656x2664 • 24 fps"],
-  [tkey(1828, 1332), "Cineon Half  •  1828x1332 • 24 fps"],
-  [tkey(1280, 1080), "DVCPRO HD  •  1280x1080 (1.5) • 29.97 fps"],
-  [tkey(1440, 1080), "DVCPRO HD  •  1440x1080 (1.33) • 25 fps"],
-  [tkey(960, 720), "DVCPRO HD  •  960x720 (1.33) • 23.976 fps"],
-  [tkey(2048, 1556), "Film (2K)  •  2048x1556 • 24 fps"],
-  [tkey(4096, 3112), "Film (4K)  •  4096x3112 • 24 fps"],
-  [tkey(1920, 1080), "HD  •  1920x1080 • 24 fps"],
-  [tkey(1280, 720), "HDV/HDTV  •  1280x720 • 25 fps"],
-  [tkey(720, 1280), "Social Media Portrait  •  720x1280 • 30 fps"],
-  [tkey(1080, 1920), "Social Media Portrait HD  •  1080x1920 • 30 fps"],
-  [tkey(1080, 1080), "Social Media Square  •  1080x1080 • 30 fps"],
-  [tkey(3840, 2160), "UHD (4K)  •  3840x2160 • 23.976 fps"],
-  [tkey(7680, 4320), "UHD (8K)  •  7680x4320 • 23.976 fps"],
+  [compositeKey(3656, 2664), "Cineon Full  •  3656x2664 • 24 fps"],
+  [compositeKey(1828, 1332), "Cineon Half  •  1828x1332 • 24 fps"],
+  [compositeKey(1280, 1080), "DVCPRO HD  •  1280x1080 (1.5) • 29.97 fps"],
+  [compositeKey(1440, 1080), "DVCPRO HD  •  1440x1080 (1.33) • 25 fps"],
+  [compositeKey(960, 720), "DVCPRO HD  •  960x720 (1.33) • 23.976 fps"],
+  [compositeKey(2048, 1556), "Film (2K)  •  2048x1556 • 24 fps"],
+  [compositeKey(4096, 3112), "Film (4K)  •  4096x3112 • 24 fps"],
+  [compositeKey(1920, 1080), "HD  •  1920x1080 • 24 fps"],
+  [compositeKey(1280, 720), "HDV/HDTV  •  1280x720 • 25 fps"],
+  [compositeKey(720, 1280), "Social Media Portrait  •  720x1280 • 30 fps"],
+  [compositeKey(1080, 1920), "Social Media Portrait HD  •  1080x1920 • 30 fps"],
+  [compositeKey(1080, 1080), "Social Media Square  •  1080x1080 • 30 fps"],
+  [compositeKey(3840, 2160), "UHD (4K)  •  3840x2160 • 23.976 fps"],
+  [compositeKey(7680, 4320), "UHD (8K)  •  7680x4320 • 23.976 fps"],
 ]);
 
 /**
@@ -328,7 +328,7 @@ export function buildResizeToStrings(preferences: Preferences): Map<string, stri
   if (!presets?.length) return _RESIZE_TO_STRINGS;
   const best = new Map<string, CompPreset>();
   for (const preset of presets) {
-    const key = tkey(preset.width, preset.height);
+    const key = compositeKey(preset.width, preset.height);
     const current = best.get(key);
     if (current == null || preset.frameRate <= current.frameRate) best.set(key, preset);
   }
@@ -351,7 +351,7 @@ function _tupleKey(value: SettingValue): string {
   if (typeof value === "number" || typeof value === "boolean") {
     throw new TypeError(`'${typeName(value)}' object is not iterable`);
   }
-  return tkey(...value);
+  return compositeKey(...value);
 }
 
 /**

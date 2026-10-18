@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { BytesIO, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, tkey } from "../../src/pyrt/index.ts";
+import { BytesIO, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, compositeKey } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
@@ -513,8 +513,8 @@ describe("TestResizeToStrings", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
     // Fixture presets: HD 1920x1080 @ 24 and @ 29.97 - lowest wins.
     const resize = buildResizeToStrings(new py_aep.Preferences(prefsDir));
-    expect(getOrThrow(resize, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
-    expect(getOrThrow(resize, tkey(1440, 1080))).toBe("HDV  •  1440x1080 (1.33) • 25 fps");
+    expect(getOrThrow(resize, compositeKey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
+    expect(getOrThrow(resize, compositeKey(1440, 1080))).toBe("HDV  •  1440x1080 (1.33) • 25 fps");
   });
 
   test("test_tie_break_prefers_later_preset", () => {
@@ -523,7 +523,7 @@ describe("TestResizeToStrings", () => {
     prefs.mkdir();
     prefs.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").writeText(_TIE_COMP_PREFS);
     const resize = buildResizeToStrings(new py_aep.Preferences(prefs));
-    expect(getOrThrow(resize, tkey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
+    expect(getOrThrow(resize, compositeKey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
   });
 
   test("test_fallback_without_prefs", () => {
@@ -532,8 +532,8 @@ describe("TestResizeToStrings", () => {
 
   test("test_fallback_holds_ae_verified_collision_labels", () => {
     // AE 2026 getSetting("Resize to") ground truth for factory presets.
-    expect(getOrThrow(_RESIZE_TO_STRINGS, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
-    expect(getOrThrow(_RESIZE_TO_STRINGS, tkey(3840, 2160))).toBe("UHD (4K)  •  3840x2160 • 23.976 fps");
+    expect(getOrThrow(_RESIZE_TO_STRINGS, compositeKey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
+    expect(getOrThrow(_RESIZE_TO_STRINGS, compositeKey(3840, 2160))).toBe("UHD (4K)  •  3840x2160 • 23.976 fps");
   });
 });
 

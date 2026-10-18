@@ -23,7 +23,7 @@ import {
   split,
   str,
   strip,
-  tkey,
+  compositeKey,
   zip,
   typeName,
   truthyOr,
@@ -492,8 +492,8 @@ export class Preferences {
     validateName(keyName);
     _validatePrefType(prefType);
     const key = [PREFType.of(prefType), sectionName, keyName] as const;
-    if (this._overrides.has(tkey(...key))) {
-      const value = getOrThrow(this._overrides, tkey(...key));
+    if (this._overrides.has(compositeKey(...key))) {
+      const value = getOrThrow(this._overrides, compositeKey(...key));
       if (value === _DELETED) return [false, null, false];
       return [true, value, true];
     }
@@ -619,7 +619,7 @@ export class Preferences {
       throw new TypeError(`expected a number, got ${typeName(value)}`);
     }
     validateNumber(value); // rejects NaN/inf
-    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
+    this._overrides.set(compositeKey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
@@ -643,7 +643,7 @@ export class Preferences {
     validateName(keyName);
     _validatePrefType(prefType);
     validateBool(value);
-    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
+    this._overrides.set(compositeKey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
@@ -669,7 +669,7 @@ export class Preferences {
     if (typeof value !== "string") {
       throw new TypeError(`expected a string, got ${typeName(value)}`);
     }
-    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
+    this._overrides.set(compositeKey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
@@ -707,7 +707,7 @@ export class Preferences {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
-    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), _DELETED);
+    this._overrides.set(compositeKey(PREFType.of(prefType), sectionName, keyName), _DELETED);
   }
 
   /**

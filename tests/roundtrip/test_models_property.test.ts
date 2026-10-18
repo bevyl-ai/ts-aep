@@ -24,7 +24,7 @@ import {
   repr,
   setattr,
   setdefault,
-  tkey,
+  compositeKey,
   zip,
 } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
@@ -1586,7 +1586,7 @@ describe("TestAddProperty", () => {
     for (let _ = 0; _ < 3; _++) {
       const mask = parade.addProperty("ADBE Mask Atom");
       assert(mask instanceof MaskPropertyGroup);
-      colors.add(tkey(...mask.color));
+      colors.add(compositeKey(...mask.color));
     }
     expect(colors.size).toBe(3);
   });
@@ -3855,7 +3855,7 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
 /** Shared `_AE_STATIC` bytes: AE 2026 output after removing the last key, keyed by property path. */
 const _AE_STATIC = new Map<string, [string, string]>([
   [
-    tkey("ADBE Transform Group", "ADBE Position"),
+    compositeKey("ADBE Transform Group", "ADBE Position"),
     [
       [
         "db990003000f0003ffffffff000060003f1a36e2eb1c432d3ff0000000000000",
@@ -3871,7 +3871,7 @@ const _AE_STATIC = new Map<string, [string, string]>([
     ],
   ],
   [
-    tkey("ADBE Transform Group", "ADBE Scale"),
+    compositeKey("ADBE Transform Group", "ADBE Scale"),
     [
       [
         "db990003000100000001ffff000060003f1a36e2eb1c432d3ff0000000000000",
@@ -3888,7 +3888,7 @@ const _AE_STATIC = new Map<string, [string, string]>([
     ],
   ],
   [
-    tkey("ADBE Transform Group", "ADBE Opacity"),
+    compositeKey("ADBE Transform Group", "ADBE Opacity"),
     [
       [
         "db990001000100000001ffff000060003f1a36e2eb1c432d3ff0000000000000",
@@ -3903,7 +3903,7 @@ const _AE_STATIC = new Map<string, [string, string]>([
     ],
   ],
   [
-    tkey("ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"),
+    compositeKey("ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"),
     [
       [
         "db990004000700010002ffff000060003f1a36e2eb1c432d3ff0000000000000",
@@ -3961,7 +3961,7 @@ describe("TestDeanimateMatchesAe", () => {
     const out = tmpPath.div("deanimated.aep");
     project.save(out);
     const prop2 = _prop(parseAep(out).project, path);
-    const [tdb4Hex, cdatHex] = getOrThrow(_AE_STATIC, tkey(...path));
+    const [tdb4Hex, cdatHex] = getOrThrow(_AE_STATIC, compositeKey(...path));
     expect(Bytes.toHex(prop2._tdb4.tobytes())).toBe(tdb4Hex);
     assert(prop2._cdat != null);
     expect(Bytes.toHex(prop2._cdat.tobytes())).toBe(cdatHex);

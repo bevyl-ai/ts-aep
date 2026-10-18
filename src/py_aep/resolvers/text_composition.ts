@@ -52,7 +52,7 @@ import {
   split,
   str,
   sum,
-  tkey,
+  compositeKey,
   ValueError,
   zip,
 } from "../../pyrt/index.ts";
@@ -250,7 +250,7 @@ export function _resolveFace(psName: string): [Path, number] {
 
 export function _hbFont(psName: string): [_HbFont, number] {
   const [path, faceIndex] = _resolveFace(psName);
-  const key = tkey(path.toString(), faceIndex);
+  const key = compositeKey(path.toString(), faceIndex);
   let cached = _hbCache.get(key);
   if (cached === undefined) {
     let face: _HbFace;
@@ -277,7 +277,7 @@ export function _hbFont(psName: string): [_HbFont, number] {
  */
 export function _ascenderRatio(psName: string): number {
   const [path, faceIndex] = _resolveFace(psName);
-  const key = tkey(path.toString(), faceIndex);
+  const key = compositeKey(path.toString(), faceIndex);
   let ratio = _ascenderCache.get(key);
   if (ratio === undefined) {
     let font: fontkit.Font;
@@ -343,7 +343,7 @@ export class _CharStyle {
   }
 
   stretchKey(): string {
-    return tkey(this.font, this.size, this.tracking, this.hscale, this.fauxbold, this.caps);
+    return compositeKey(this.font, this.size, this.tracking, this.hscale, this.fauxbold, this.caps);
   }
 }
 

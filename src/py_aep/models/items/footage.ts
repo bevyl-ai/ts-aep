@@ -22,7 +22,7 @@ import {
   assert,
   literal,
   sorted,
-  tkey,
+  compositeKey,
   type PathLike,
 } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
@@ -275,7 +275,7 @@ export class FootageItem extends AVItem {
       return null;
     }
     const attrs = source.fileAttributes;
-    return tkey(
+    return compositeKey(
       source.file,
       [...source.fileNames],
       source.alphaMode,
