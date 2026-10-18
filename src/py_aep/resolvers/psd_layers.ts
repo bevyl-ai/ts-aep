@@ -20,7 +20,6 @@ import {
   Bytes,
   bytesEq,
   decode,
-  floordiv,
   IndexError,
   valueEquals,
   pySlice,
@@ -719,8 +718,8 @@ export function _visibleBox(
     }
     if (visible === 0n) continue;
     // Column of the most / least significant set byte.
-    const first = width - 1 - floordiv(bitLength(visible) - 1, 8);
-    const last = width - 1 - floordiv(bitLength(visible & -visible) - 1, 8);
+    const first = width - 1 - Math.floor((bitLength(visible) - 1) / 8);
+    const last = width - 1 - Math.floor((bitLength(visible & -visible) - 1) / 8);
     minX = minX == null ? first : Math.min(minX, first);
     maxX = maxX == null ? last : Math.max(maxX, last);
     if (minY == null) minY = y;
@@ -747,7 +746,7 @@ export function _channelFlags(
   isPsb: boolean,
 ): Uint8Array[] {
   const compression = struct.unpack(">H", chunk.slice(0, 2))[0];
-  const sample = Math.max(floordiv(depth, 8), 1);
+  const sample = Math.max(Math.floor(depth / 8), 1);
   const rowLen = width * sample;
   if (width > _MAX_EXTENT || height > _MAX_EXTENT || rowLen * height > _MAX_INFLATION * chunk.length) {
     throw new UnsupportedPsdLayersError(`channel data (${chunk.length} bytes) too short for ${width}x${height}`);

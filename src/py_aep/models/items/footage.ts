@@ -21,10 +21,8 @@ import {
   ValueError,
   assert,
   literal,
-  sorted,
   compositeKey,
-  type PathLike,
-} from "../../../pyrt/index.ts";
+  type PathLike, compare } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 
@@ -289,7 +287,7 @@ export class FootageItem extends AVItem {
       source.isStill,
       source.nativeFrameRate,
       source.mediaColorSpace,
-      attrs?.size > 0 ? sorted(Array.from(attrs.entries())) : [],
+      attrs?.size > 0 ? [...Array.from(attrs.entries())].sort(compare) : [],
     );
   }
 

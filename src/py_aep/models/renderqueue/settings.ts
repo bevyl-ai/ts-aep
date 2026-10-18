@@ -6,7 +6,7 @@
  * model attribute (either a ChunkField descriptor or a `@property`).
  */
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
+import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   KeyError,
@@ -16,7 +16,6 @@ import {
   valueEquals,
   literal,
   setattr,
-  sorted,
   str,
   compositeKey,
   mappingItems,
@@ -96,7 +95,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   set(key: string, value: SettingValue | null): void {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) {
-      const valid = sorted(this._specs.keys());
+      const valid = [...this._specs.keys()].sort(compare);
       throw new KeyError(`Unknown setting ${literal(key)}. Valid keys: ${literal(valid)}`);
     }
     const [attrName, enumClass] = spec;

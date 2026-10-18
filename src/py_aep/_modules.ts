@@ -2,26 +2,18 @@
 // Registers every module a pyrt `deferred("<key>")` call loads.
 
 import { register } from "../pyrt/deferred.ts";
-import * as m0 from "./models/items/folder.ts";
-import * as m1 from "./models/layers/av_layer.ts";
-import * as m2 from "./models/layers/layer.ts";
-import * as m3 from "./models/properties/mask_property_group.ts";
-import * as m4 from "./models/properties/property_group.ts";
-import * as m5 from "./parsers/effect.ts";
-import * as m6 from "./parsers/layer.ts";
-import * as m7 from "./parsers/marker.ts";
-import * as m8 from "./parsers/property.ts";
-import * as m9 from "./parsers/specialized_properties.ts";
-import * as m10 from "./synthesis/core.ts";
+import * as m0 from "./models/properties/mask_property_group.ts";
+import * as m1 from "./parsers/effect.ts";
+import * as m2 from "./parsers/layer.ts";
+import * as m3 from "./parsers/marker.ts";
+import * as m4 from "./parsers/property.ts";
+import * as m5 from "./parsers/specialized_properties.ts";
+import * as m6 from "./synthesis/core.ts";
 
-register("py_aep/models/items/folder", m0);
-register("py_aep/models/layers/av_layer", m1);
-register("py_aep/models/layers/layer", m2);
-register("py_aep/models/properties/mask_property_group", m3);
-register("py_aep/models/properties/property_group", m4);
-register("py_aep/parsers/effect", m5);
-register("py_aep/parsers/layer", m6);
-register("py_aep/parsers/marker", m7);
-register("py_aep/parsers/property", m8);
-register("py_aep/parsers/specialized_properties", m9);
-register("py_aep/synthesis/core", m10);
+register("py_aep/models/properties/mask_property_group", m0);
+register("py_aep/parsers/effect", m1);
+register("py_aep/parsers/layer", m2);
+register("py_aep/parsers/marker", m3);
+register("py_aep/parsers/property", m4);
+register("py_aep/parsers/specialized_properties", m5);
+register("py_aep/synthesis/core", m6);

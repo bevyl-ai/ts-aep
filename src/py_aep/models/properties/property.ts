@@ -35,14 +35,13 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
 import * as _propertyGroup from "./property_group.ts";
 import * as _folder from "../items/folder.ts";
 import * as _avLayer from "../layers/av_layer.ts";
-const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 
 export const logger = {
   debug(_m: string) {},
@@ -207,7 +206,7 @@ export function _maskIds(prop: Property): number[] | null {
   }
   if (masks == null) return [];
   return masks.properties
-    .filter((m) => m instanceof _maskPropertyGroup().MaskPropertyGroup)
+    .filter((m) => m._isMaskGroup())
     .map((m) => m._mkif.maskId);
 }
 
@@ -1105,7 +1104,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (!this._tdsb.synthetic) return;
 
     const parent = this.parentProperty;
-    if (this.matchName === "ADBE Mask Shape" && parent != null && parent._isMask && parent instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    if (this.matchName === "ADBE Mask Shape" && parent != null && parent._isMask && parent._isMaskGroup()) {
       // A path-less mask stores no path. Whatever first writes its
       // Mask Path (a value, a key, an expression) makes AE write the
       // default full-frame rectangle it stands for; a bare placeholder
@@ -3997,7 +3996,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     let tensions: number[] | null = null;
     const mask = this._parentProperty;
-    if (isMaskPath && mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    if (isMaskPath && mask != null && mask._isMask && mask._isMaskGroup()) {
       if (mask.rotoBezier) {
         const own = shape._ownTensions();
         const count = Math.floor(points.length / 3);

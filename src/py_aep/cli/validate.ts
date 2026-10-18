@@ -19,7 +19,6 @@ import {
   attrsHas,
   decode,
   descriptorsOf,
-  getOr,
   fields,
   getOrThrow,
   isclose,
@@ -28,15 +27,13 @@ import {
   valueEquals,
   literal,
   setdefault,
-  sorted,
   str,
   zip,
   isReal,
   jsonLoads,
   truediv,
   PureWindowsPath,
-  type BoxedFloat,
-} from "../../pyrt/index.ts";
+  type BoxedFloat, compare } from "../../pyrt/index.ts";
 
 /** A Python `dict`. Both the JSON side and the to_dict side are Maps (rulebook §3).
  * Keys are field names (strings) — maps keyed by item ids (numbers) are typed
@@ -149,7 +146,7 @@ export function _getFieldNames(obj: object): readonly string[] | null {
     if (isDescriptor && typeof attr.get === "function") names.add(name);
   }
   if (names.size > 0) {
-    const result = sorted(names);
+    const result = [...names].sort(compare);
     _fieldNamesCache.set(cls, result);
     return result;
   }
@@ -159,7 +156,7 @@ export function _getFieldNames(obj: object): readonly string[] | null {
   for (const name of _propertyAccessors(cls)) {
     if (!name.startsWith("_") && !descriptors.has(name)) names.add(name);
   }
-  const result2: readonly string[] | null = names.size > 0 ? sorted(names) : null;
+  const result2: readonly string[] | null = names.size > 0 ? [...names].sort(compare) : null;
   _fieldNamesCache.set(cls, result2);
   return result2;
 }
@@ -183,7 +180,7 @@ export function _getPropertyNames(cls: Function): readonly string[] {
     if (descriptors.has(name)) continue;
     names.add(name);
   }
-  const result = sorted(names);
+  const result = [...names].sort(compare);
   _propertyNamesCache.set(cls, result);
   return result;
 }
@@ -506,7 +503,7 @@ export function _compareChildrenByMatchName(
   // can fall back to positional matching within each match_name group.
   const parsedByMatchName = new Map<string, Dict[]>();
   for (const p of parsedProps) {
-    const mn = getOr(p, "matchName", "");
+    const mn = p.has("matchName") ? p.get("matchName") : "";
     if (truthy(mn)) setdefault(parsedByMatchName, mn, []).push(p);
   }
 
@@ -514,8 +511,8 @@ export function _compareChildrenByMatchName(
   const matchNameIdx = new Map<string, number>();
 
   for (const [i, expProp] of expectedProps.entries()) {
-    const expMatchName = getOr(expProp, "matchName", "");
-    const expName = getOr(expProp, "name", `[${i}]`);
+    const expMatchName = expProp.has("matchName") ? expProp.get("matchName") : "";
+    const expName = expProp.has("name") ? expProp.get("name") : `[${i}]`;
     const childPath = `${path}.${expName}`;
 
     const candidates = parsedByMatchName.get(expMatchName);
@@ -682,7 +679,7 @@ export function compareLayer(
   // Compare lightSource (Layer reference -> compare by layer index)
   if (expectedLayer.has("lightSource")) {
     const expLs = getOrThrow(expectedLayer, "lightSource");
-    const parsedLsId = getOr(parsedLayer, "_lightSourceId", 0);
+    const parsedLsId = parsedLayer.has("_lightSourceId") ? parsedLayer.get("_lightSourceId") : 0;
     if (expLs == null) {
       if (parsedLsId !== 0) {
         result.addDiff(`${path}.lightSource`, null, parsedLsId, "layers");
@@ -697,8 +694,8 @@ export function compareLayer(
 
   // Compare all property groups via the properties list.
   _compareChildrenByMatchName(
-    getOr(expectedLayer, "properties", []),
-    getOr(parsedLayer, "properties", []),
+    expectedLayer.has("properties") ? expectedLayer.get("properties") : [],
+    parsedLayer.has("properties") ? parsedLayer.get("properties") : [],
     path,
     result,
   );
@@ -784,7 +781,7 @@ export function compareProperty(
   // Compare numKeys vs len(keyframes)
   if (expectedProp.has("numKeys")) {
     const expNumKeys = getOrThrow(expectedProp, "numKeys");
-    const parsedKeyframes = getOr(parsedProp, "keyframes", []);
+    const parsedKeyframes = parsedProp.has("keyframes") ? parsedProp.get("keyframes") : [];
     const parsedNumKeys = truthy(parsedKeyframes) ? len(parsedKeyframes) : 0;
     if (expNumKeys !== parsedNumKeys) {
       result.addDiff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
@@ -792,8 +789,8 @@ export function compareProperty(
   }
 
   // Compare individual keyframes
-  const expKeyframes = getOr(expectedProp, "keyframes", []);
-  const parsedKeyframes = getOr(parsedProp, "keyframes", []);
+  const expKeyframes = expectedProp.has("keyframes") ? expectedProp.get("keyframes") : [];
+  const parsedKeyframes = parsedProp.has("keyframes") ? parsedProp.get("keyframes") : [];
   for (const [ki, [expKf, parsedKf]] of zip(expKeyframes, parsedKeyframes).entries()) {
     compareKeyframe(expKf, parsedKf, `${path}.keyframes[${ki}]`, result);
   }
@@ -964,7 +961,7 @@ export function compareShapeValue(
     featherTensions: "tension",
     featherRelCornerAngles: "relCornerAngle",
   };
-  const parsedFps: Dict[] = getOr(parsedShape, "featherPoints", []);
+  const parsedFps: Dict[] = parsedShape.has("featherPoints") ? parsedShape.get("featherPoints") : [];
   for (const [expKey, fpAttr] of Object.entries(featherFieldMap)) {
     result.definedFields.add(`Shape.${fpAttr}`);
     if (expectedShape.has(expKey)) {
@@ -1048,7 +1045,7 @@ export function compareKeyframe(
   ]) {
     if (expectedKf.has(easeKey)) {
       const expEase = expectedKf.get(easeKey);
-      const parsedEase = getOr(parsedKf, parsedKey, []);
+      const parsedEase = parsedKf.has(parsedKey) ? parsedKf.get(parsedKey) : [];
       if (len(expEase) !== len(parsedEase)) {
         result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
       }
@@ -1208,8 +1205,8 @@ export function comparePropertyGroup(
 
   // Compare child properties
   _compareChildrenByMatchName(
-    getOr(expectedGroup, "properties", []),
-    getOr(parsedGroup, "properties", []),
+    expectedGroup.has("properties") ? expectedGroup.get("properties") : [],
+    parsedGroup.has("properties") ? parsedGroup.get("properties") : [],
     path,
     result,
   );
@@ -1261,30 +1258,30 @@ export function compareCompItem(
   _compareFields(expectedItem, parsedComp, compMappings, path, "composition", result, "CompItem");
 
   // Compare layer counts
-  const expLayers = getOr(expectedItem, "layers", []);
-  const parsedLayers = getOr(parsedComp, "layers", []);
+  const expLayers = expectedItem.has("layers") ? expectedItem.get("layers") : [];
+  const parsedLayers = parsedComp.has("layers") ? parsedComp.get("layers") : [];
   if (expLayers.length !== parsedLayers.length) {
     result.addDiff(`${path}.numLayers`, expLayers.length, parsedLayers.length, "composition");
   }
 
   // Compare each layer
-  const compDuration = getOr(expectedItem, "duration", 60.0);
-  const frameRate = getOr(expectedItem, "frameRate", 24.0);
+  const compDuration = expectedItem.has("duration") ? expectedItem.get("duration") : 60.0;
+  const frameRate = expectedItem.has("frameRate") ? expectedItem.get("frameRate") : 24.0;
   for (const [i, [expLayer, parsedLayer]] of zip(expLayers, parsedLayers).entries()) {
     compareLayer(expLayer, parsedLayer, `${path}.layers[${i}]`, compDuration, frameRate, result);
   }
 
   // Compare markers
   _compareMarkers(
-    getOr(expectedItem, "markers", []),
-    getOr(parsedComp, "markers", []),
+    expectedItem.has("markers") ? expectedItem.get("markers") : [],
+    parsedComp.has("markers") ? parsedComp.get("markers") : [],
     path,
-    getOr(expectedItem, "frameRate", 24.0),
+    expectedItem.has("frameRate") ? expectedItem.get("frameRate") : 24.0,
     result,
   );
 
   // Compare guides
-  _compareGuides(getOr(expectedItem, "guides", []), getOr(parsedComp, "guides", []), path, result);
+  _compareGuides(expectedItem.has("guides") ? expectedItem.get("guides") : [], parsedComp.has("guides") ? parsedComp.get("guides") : [], path, result);
 
   // Compare proxySource
   _compareProxySource(expectedItem, parsedComp, path, result);
@@ -1385,11 +1382,11 @@ export function compareFootageItem(
     // AE returns native_frame_rate when conformFrameRate is 0
     result.trackField("FootageSource", "conformFrameRate", expSource.has("conformFrameRate"));
     const expCfr = expSource.get("conformFrameRate") ?? null;
-    const parsedCfr = getOr<string, ToDictValue, number>(parsedSource, "conformFrameRate", 0);
+    const parsedCfr = parsedSource.has("conformFrameRate") ? parsedSource.get("conformFrameRate") : 0;
     if (expCfr != null) {
       if (!compareValues(expCfr, parsedCfr)) {
         // When parsed conform is 0, AE may report native_frame_rate
-        const native = getOr<string, ToDictValue, number>(parsedSource, "nativeFrameRate", 0);
+        const native = parsedSource.has("nativeFrameRate") ? parsedSource.get("nativeFrameRate") : 0;
         if (parsedCfr === 0 && compareValues(expCfr, native)) {
           // AE reported native rate as conform rate
         } else {
@@ -1404,7 +1401,7 @@ export function compareFootageItem(
     // FileSource-specific fields
     if (expSource.has("filePath")) {
       const expFile = getOrThrow<string, string | null>(expSource, "filePath");
-      const parsedFile = getOr<string, string | null, string>(parsedSource, "file", "");
+      const parsedFile = parsedSource.has("file") ? parsedSource.get("file") : "";
       // Compare only the filename portion. PureWindowsPath splits on
       // both / and \ on every host OS (AE stores Windows-style paths,
       // and a parsed sequence frame path mixes the two); plain Path
@@ -1420,7 +1417,7 @@ export function compareFootageItem(
 
     if (expSource.has("missingFootagePath")) {
       const expMissing = getOrThrow<string, ToDictValue>(expSource, "missingFootagePath");
-      const parsedMissing = getOr<string, ToDictValue, string>(parsedSource, "missingFootagePath", "");
+      const parsedMissing = parsedSource.has("missingFootagePath") ? parsedSource.get("missingFootagePath") : "";
       if (truthy(expMissing) && !valueEquals(expMissing, parsedMissing)) {
         result.addDiff(`${sourcePath}.missingFootagePath`, expMissing, parsedMissing, "footage");
       }
@@ -1529,8 +1526,8 @@ export function compareRenderQueue(
   result: ValidationResult,
   verbose = false,
 ): void {
-  const expectedItems: Dict[] = getOr(expectedRq, "items", []);
-  const parsedItems: Dict[] = getOr(parsedRq, "items", []);
+  const expectedItems: Dict[] = expectedRq.has("items") ? expectedRq.get("items") : [];
+  const parsedItems: Dict[] = parsedRq.has("items") ? parsedRq.get("items") : [];
 
   if (expectedItems.length !== parsedItems.length) {
     result.addDiff("RenderQueue.numItems", expectedItems.length, parsedItems.length, "renderqueue");
@@ -1572,8 +1569,8 @@ export function compareRenderQueue(
     }
 
     // Compare output modules
-    const expOms: Dict[] = getOr(expItem, "outputModules", []);
-    const parsedOms: Dict[] = getOr(parsedItem, "outputModules", []);
+    const expOms: Dict[] = expItem.has("outputModules") ? expItem.get("outputModules") : [];
+    const parsedOms: Dict[] = parsedItem.has("outputModules") ? parsedItem.get("outputModules") : [];
 
     if (expOms.length !== parsedOms.length) {
       result.addDiff(`${path}.numOutputModules`, expOms.length, parsedOms.length, "renderqueue");
@@ -1600,7 +1597,7 @@ export function compareRenderQueue(
       result.trackField("OutputModule", "file", expOm.has("file"));
       if (expOm.has("file")) {
         const expFile = getOrThrow(expOm, "file");
-        const parsedFile = getOr(parsedOm, "file", "");
+        const parsedFile = parsedOm.has("file") ? parsedOm.get("file") : "";
         if (expFile && truthy(parsedFile)) {
           // See the footage-source note: PureWindowsPath keeps
           // basename extraction host-OS-independent.
@@ -1642,8 +1639,8 @@ export function compareViewer(
   };
   _compareFields(expectedViewer, parsedViewer, viewerMappings, "Viewer", "viewer", result, "Viewer");
 
-  const expViews: Dict[] = getOr(expectedViewer, "views", []);
-  const parsedViews: Dict[] = getOr(parsedViewer, "views", []);
+  const expViews: Dict[] = expectedViewer.has("views") ? expectedViewer.get("views") : [];
+  const parsedViews: Dict[] = parsedViewer.has("views") ? parsedViewer.get("views") : [];
   if (expViews.length !== parsedViews.length) {
     result.addDiff("Viewer.views.length", expViews.length, parsedViews.length, "viewer");
   }
@@ -1651,8 +1648,8 @@ export function compareViewer(
   for (const [i, [expView, parsedView]] of zip(expViews, parsedViews).entries()) {
     const path = `Viewer.views[${i}]`;
 
-    const expOpts = getOr(expView, "options", new Map());
-    const parsedOpts = getOr(parsedView, "options", new Map());
+    const expOpts = expView.has("options") ? expView.get("options") : (new Map());
+    const parsedOpts = parsedView.has("options") ? parsedView.get("options") : (new Map());
     const optsPath = `${path}.options`;
     const optsMappings: Record<string, string> = {
       channels: "channels",
@@ -1703,7 +1700,7 @@ export function validateAep(
   compareProjectLevel(expected, parsed, result);
 
   // Get expected items
-  const expectedItems: Dict[] = getOr(expected, "items", []);
+  const expectedItems: Dict[] = expected.has("items") ? expected.get("items") : [];
   const comps = expectedItems.filter((i: Dict) => i.get("itemType") === "CompItem");
 
   // Compare compositions
@@ -1736,12 +1733,12 @@ export function validateAep(
 
   // Compare folder hierarchy
   if (verbose) console.log("\n=== Comparing Folder Hierarchy ===");
-  compareFolderHierarchy(expectedItems, getOr(parsed, "items", new Map()), result);
+  compareFolderHierarchy(expectedItems, parsed.has("items") ? parsed.get("items") : (new Map()), result);
 
   // Compare footage items
   if (verbose) console.log("\n=== Comparing Footage Items ===");
   const expectedFootage = expectedItems.filter((i: Dict) => i.get("itemType") === "FootageItem");
-  const parsedItemsDict: Map<number, Dict> = getOr(parsed, "items", new Map());
+  const parsedItemsDict: Map<number, Dict> = parsed.has("items") ? parsed.get("items") : (new Map());
   const parsedFootageById = new Map<number, Dict>();
   for (const [itemId, item] of parsedItemsDict) {
     if (item.get("typeName") === "Footage") parsedFootageById.set(itemId, item);
@@ -1773,8 +1770,8 @@ export function validateAep(
 
   // Compare render queue
   if (verbose) console.log("\n=== Comparing Render Queue ===");
-  const expectedRq = getOr(expected, "renderQueue", new Map());
-  compareRenderQueue(expectedRq, getOr(parsed, "renderQueue", new Map()), result, verbose);
+  const expectedRq = expected.has("renderQueue") ? expected.get("renderQueue") : (new Map());
+  compareRenderQueue(expectedRq, parsed.has("renderQueue") ? parsed.get("renderQueue") : (new Map()), result, verbose);
 
   // Compare active viewer
   const expectedViewer = expected.get("activeViewer") ?? null;
@@ -1818,7 +1815,7 @@ export function printResults(
   }
 
   console.log("\nDifferences by category:");
-  for (const [cat, count] of sorted(result.categories.entries())) {
+  for (const [cat, count] of [...result.categories.entries()].sort(compare)) {
     console.log(`  ${cat}: ${count}`);
   }
 
@@ -1836,8 +1833,8 @@ export function printResults(
 
 /** Print field coverage report. */
 export function printCoverage(result: ValidationResult): void {
-  const compared = sorted(result.comparedFields);
-  const notCompared = sorted([...result.definedFields].filter((x) => !result.comparedFields.has(x)));
+  const compared = [...result.comparedFields].sort(compare);
+  const notCompared = [...[...result.definedFields].filter((x) => !result.comparedFields.has(x))].sort(compare);
 
   console.log(`\n${"=".repeat(60)}`);
   console.log("FIELD COVERAGE REPORT");

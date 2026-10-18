@@ -363,6 +363,10 @@ export class MaskPropertyGroup extends PropertyGroup {
     this._maskShapeTdsb = findByType(tdbs.chunks, "tdsb");
   }
 
+  _isMaskGroup(): this is MaskPropertyGroup {
+    return true;
+  }
+
   static {
     // Descriptors for the `declare`d fields above.
     descriptor(this, "color", new ChunkField("_mkif", "color", { validate: validateRgbColor }));

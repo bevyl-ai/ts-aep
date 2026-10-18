@@ -16,7 +16,6 @@ import {
   descriptor,
   encode,
   field,
-  floordiv,
   int,
   lshift,
   mod,
@@ -253,7 +252,7 @@ export class HeadChunk extends Chunk {
       throw new ValueError(`Invalid version format: ${literal(value)}`);
     }
     const [major, minor, build] = [int(m[1]), int(m[2]), int(m[3])];
-    this.aeVersionMajorA = floordiv(major, 8);
+    this.aeVersionMajorA = Math.floor(major / 8);
     this.aeVersionMajorB = major % 8;
     this.aeVersionMinor = minor;
     this.aeBuildNumber = build;

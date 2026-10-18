@@ -36,7 +36,6 @@ import {
   b,
   bytesEq,
   concat,
-  floordiv,
   format,
   getattr,
   setattr,
@@ -45,14 +44,12 @@ import {
   truthyOr,
   literal,
   round,
-  sorted,
   str,
   warn,
   type PathLike,
   PurePosixPath,
   PureWindowsPath,
-  pyRe,
-} from "../../../pyrt/index.ts";
+  pyRe, compare } from "../../../pyrt/index.ts";
 
 /**
  * `NamedTuple._replace(**kw)` for the translated NamedTuples (`MediaInfo`,
@@ -281,7 +278,7 @@ export function _platformMediaInfo(
   const { windows } = kw;
   if (windows && fmt.sourceFormat === "AIDE" && info.hasAlpha) {
     // The same channels without the alpha one (32 -> 24 on Windows).
-    return _replace(info, { hasAlpha: false, depth: floordiv(info.depth, 4) * 3 });
+    return _replace(info, { hasAlpha: false, depth: Math.floor(info.depth / 4) * 3 });
   }
   return info;
 }
@@ -1363,16 +1360,13 @@ export class FileSource extends FootageSource {
       const suffix = file.suffix.toLowerCase();
       // scandir's entries know their type, and the cheap name test runs
       // first: no stat per file of a large frame folder.
-      fileNames = sorted(
-        host
+      fileNames = [...host
           .scandir(file.parent.path)
           .map((ent) => ent.name)
           .filter(
             (name) =>
               _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile(),
-          ),
-        (name: string) => name.toLowerCase(),
-      );
+          )].sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
       firstFrame = at(fileNames, 0);
       startFrame = endFrame = UNDEFINED_FRAME;
       padding = 0;
@@ -1406,7 +1400,7 @@ export class FileSource extends FootageSource {
         }
       }
 
-      frames.splice(0, frames.length, ...sorted(frames));
+      frames.splice(0, frames.length, ...[...frames].sort(compare));
       // The padding is the first frame's digit count, whichever frame
       // was picked: AE 2026 names s1.png ... s12.png `s[1-12].png`
       // even from s12.png. The sequence is named after the first

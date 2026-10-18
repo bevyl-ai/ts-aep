@@ -7,7 +7,7 @@
  * inline `style` attribute.
  */
 
-import { contains, sorted, split, strip } from "../../pyrt/index.ts";
+import { contains, split, strip, compare } from "../../pyrt/index.ts";
 
 // Presentation properties py_aep tracks (the paintable subset plus the text
 // properties needed to outline `<text>`/`<tspan>`).
@@ -211,7 +211,7 @@ export function resolveProperties(
   const matched = cssRules.filter((r) =>
     selectorMatches(r.selector, tag, elemId, classes),
   );
-  const ordered = sorted(matched, (r: CssRule) => [r.specificity, r.order]);
+  const ordered = [...matched].sort((a, b) => compare([a.specificity, a.order], [b.specificity, b.order]));
   for (const rule of ordered) {
     for (const [k, v] of rule.declarations) style.set(k, v);
   }

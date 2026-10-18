@@ -80,7 +80,6 @@ import {
   rshift,
   round,
   setdefault,
-  sorted,
   str,
   strip,
   compositeKey,
@@ -1945,7 +1944,7 @@ export class Project {
         }
       }
     }
-    return sorted([...records.values()], (r) => r.name).map((r) => ({ font: r.font, usedAt: r.usedAt }));
+    return [...records.values()].sort((a, b) => compare(a.name, b.name)).map((r) => ({ font: r.font, usedAt: r.usedAt }));
   }
 
   /**

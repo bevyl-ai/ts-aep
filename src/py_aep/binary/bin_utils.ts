@@ -15,7 +15,6 @@ import {
   divmod,
   encode,
   floatRepr,
-  floordiv,
   int,
   round,
   struct,
@@ -56,7 +55,7 @@ export function toDividendDivisor(value: number): [number, number] {
   }
   // |dividend| ~= |value| * denominator, so capping the denominator at
   // INT32_MAX // (|value| + 2) keeps the dividend strictly inside int32.
-  const maxDenominator = Math.max(1, floordiv(_INT32_MAX, int(Math.abs(value)) + 2));
+  const maxDenominator = Math.max(1, Math.floor(_INT32_MAX / (int(Math.abs(value)) + 2)));
   const frac = new Fraction(value).limitDenominator(Math.min(1_000_000, maxDenominator));
   return [frac.numerator, frac.denominator];
 }

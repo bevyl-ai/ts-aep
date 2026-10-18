@@ -10,7 +10,7 @@ import { FootageItem } from "./footage.ts";
 import { Item } from "./item.ts";
 import type { Project } from "../project.ts";
 import type { Viewer } from "../viewer/viewer.ts";
-import { ValueError, StopIteration, compare, literal, sorted } from "../../../pyrt/index.ts";
+import { ValueError, StopIteration, compare, literal } from "../../../pyrt/index.ts";
 import { CompItem } from "./composition.ts";
 
 /**
@@ -330,14 +330,14 @@ export class FolderItem extends Item {
    */
   _sortChildrenByName(): void {
     const [header, blocks] = this._childChunkBlocks();
-    blocks.splice(0, blocks.length, ...sorted(blocks, (b) => b[0].name.toLowerCase()));
+    blocks.splice(0, blocks.length, ...[...blocks].sort((a, b) => compare(a[0].name.toLowerCase(), b[0].name.toLowerCase())));
     this._childrenContainer.splice(
       0,
       this._childrenContainer.length,
       ...header,
       ...blocks.flatMap(([, chunks]) => chunks),
     );
-    this.items.splice(0, this.items.length, ...sorted(this.items, (item) => item.name.toLowerCase()));
+    this.items.splice(0, this.items.length, ...[...this.items].sort((a, b) => compare(a.name.toLowerCase(), b.name.toLowerCase())));
   }
 
   /**
@@ -395,5 +395,9 @@ export class FolderItem extends Item {
       ...blocks.flatMap(([, chunks]) => chunks),
     );
     this.items.splice(0, this.items.length, ...blocks.map((b) => b[0]));
+  }
+
+  _isFolder(): this is FolderItem {
+    return true;
   }
 }

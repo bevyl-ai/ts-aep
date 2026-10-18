@@ -1,6 +1,6 @@
 /** Gradient color data model for gradient fill/stroke properties. */
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
+import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
@@ -8,7 +8,6 @@ import {
   objectGetattr,
   objectSetattr,
   valueEquals,
-  sorted,
   str,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -399,7 +398,7 @@ export function _stopsLines(kind: string, stops: number[][]): string[] {
   // LEXICOGRAPHIC key order (Stop-0, Stop-1, Stop-10, ..., Stop-15,
   // Stop-2, ...), not numeric order. Match that so gradients with >9
   // stops are byte-identical (identical for <=10 stops).
-  for (const i of sorted(Array.from({ length: stops.length }, (_, i) => i), (n: number) => str(n))) {
+  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) => compare(str(a), str(b)))) {
     const values = stops[i];
     lines.push(
       "<prop.pair>",

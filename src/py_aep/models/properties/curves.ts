@@ -13,7 +13,7 @@
  * float32 evaluation lands on the other side of the tie).
  */
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
+import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   ValueError,
   at,
@@ -22,7 +22,6 @@ import {
   int,
   valueEquals,
   literal,
-  sorted,
   zip,
 } from "../../../pyrt/index.ts";
 import { validateNumber } from "../validators.ts";
@@ -47,7 +46,7 @@ export class _NaturalSpline {
   constructor(points: Array<[number, number]>) {
     const byX = new Map<number, number>();
     for (const [x, y] of points) byX.set(x, y);
-    const pts = sorted(byX.entries());
+    const pts = [...byX.entries()].sort(compare);
     this.xs = pts.map((p) => p[0]);
     this.ys = pts.map((p) => p[1]);
     const n = pts.length;

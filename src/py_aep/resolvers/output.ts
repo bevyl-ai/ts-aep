@@ -237,9 +237,9 @@ export function formatTimecode(seconds: number, fps: number, isDuration = false)
   const frames = mod(totalFrames, fpsInt);
   const totalSeconds = floordiv(totalFrames, fpsInt);
   const secs = mod(totalSeconds, 60);
-  const totalMinutes = floordiv(totalSeconds, 60);
+  const totalMinutes = Math.floor(totalSeconds / 60);
   const mins = mod(totalMinutes, 60);
-  const hours = floordiv(totalMinutes, 60);
+  const hours = Math.floor(totalMinutes / 60);
 
   return `${hours}-${format(mins, "02d")}-${format(secs, "02d")}-${format(frames, "02d")}`;
 }

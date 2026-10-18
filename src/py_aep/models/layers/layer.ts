@@ -1722,6 +1722,15 @@ export class Layer extends PropertyGroup {
     comp._invalidateLayerCache();
   }
 
+  _isLayer(): this is Layer {
+    return true;
+  }
+
+  /** Whether this is an AV layer (`AVLayer` answers true). */
+  _isAVLayer(): this is AVLayer {
+    return false;
+  }
+
   static {
     // Descriptors for the `declare`d fields above.
     descriptor(this, "enabled", ChunkField.bool("_ldta", "enabled"));

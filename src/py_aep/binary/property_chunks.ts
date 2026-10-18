@@ -18,7 +18,6 @@ import {
   descriptor,
   encode,
   field,
-  floordiv,
   int,
   objectSetattr,
   assert,
@@ -428,7 +427,7 @@ export class CdatChunk extends Chunk {
     kw: ChunkReadKwargs = {},
   ): CdatChunk {
     const { chunkType = "", isLe = false } = kw;
-    const count = floordiv(size, 8);
+    const count = Math.floor(size / 8);
     if (count === 0) {
       const pad = size > 0 ? readBytes(fp, size) : b("");
       return new this({ chunkType, isLe, pad });
@@ -503,7 +502,7 @@ export class TdumChunk extends Chunk {
     } else {
       // Read as a u4, a double's high word turned 100.0 into 1079574528.
       isInteger = false;
-      const count = floordiv(size, 8);
+      const count = Math.floor(size / 8);
       vals = struct.unpack(`>${count}d`, raw.slice(0, count * 8));
       trailing = raw.slice(count * 8);
     }
@@ -554,7 +553,7 @@ export class OtdaChunk extends Chunk {
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
-    const n = floordiv(size, 8);
+    const n = Math.floor(size / 8);
     const vals = struct.unpack(`>${n}d`, raw.slice(0, n * 8));
     const trailing = raw.slice(n * 8);
     const instance = new this({ chunkType, values: vals });
