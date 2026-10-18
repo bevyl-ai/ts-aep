@@ -3,7 +3,6 @@ import {
   ValueError,
   IndexError,
   descriptor,
-  deferred,
   max,
   assert,
   valueEquals,
@@ -26,9 +25,8 @@ import type { Property } from "./property.ts";
 import type { PropertyGroup } from "./property_group.ts";
 import * as _propertyGroup from "./property_group.ts";
 import * as _propertyValue from "../../parsers/property_value.ts";
+import { late } from "../late.ts";
 
-const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
-const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
 export function listIndex<T>(xs: readonly T[], x: T): number {
@@ -586,7 +584,7 @@ export class PropertyBase {
     if (this._isMask && this._isMaskGroup()) _clearMaskReferences(this);
     const [start, end] = this._findChunkSpan(parentTdgp);
     const removed = parentTdgp.chunks.splice(start, end - start);
-    _effect().rehomeEffectDefinitions(
+    late.rehomeEffectDefinitions(
       this._containingLayer.containingComp._project,
       removed
         .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.listType === "sspc")
@@ -703,7 +701,7 @@ export class PropertyBase {
     let result: Property | PropertyGroup;
     if (this._isMask) {
       const mkif = findByType(cloned, "mkif");
-      result = _property()._parseMaskAtom(
+      result = late._parseMaskAtom(
         listChunk,
         mkif,
         this._propertyDepth,
@@ -715,7 +713,7 @@ export class PropertyBase {
     } else if (listChunk.listType === "tdbs") {
       result = _propertyValue.parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
     } else if (listChunk.listType === "sspc") {
-      result = _effect().parseEffect(
+      result = late.parseEffect(
         listChunk,
         this._matchName,
         this._propertyDepth,
@@ -725,7 +723,7 @@ export class PropertyBase {
         layer,
       );
     } else if (listChunk.listType === "tdgp") {
-      result = _property().parsePropertyGroup(
+      result = late.parsePropertyGroup(
         listChunk,
         this._matchName,
         this._propertyDepth,

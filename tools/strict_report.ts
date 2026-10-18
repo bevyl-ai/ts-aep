@@ -11,7 +11,7 @@ export const LAYERS: [string, RegExp][] = [
   ["3 parsers+synthesis", /^src\/py_aep\/(parsers|synthesis)\//],
   ["4 models", /^src\/py_aep\/models\//],
   ["5 resolvers+svg", /^src\/py_aep\/(resolvers|svg)\//],
-  ["6 cli+entry", /^src\/py_aep\/(cli\/|index\.ts|_modules\.ts)/],
+  ["6 cli+entry", /^src\/py_aep\/(cli\/|index\.ts)/],
   ["7 tests", /^tests\//],
 ];
 const layerOf = (f: string) => LAYERS.find(([, re]) => re.test(f))?.[0] ?? "other";

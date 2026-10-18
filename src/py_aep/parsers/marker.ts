@@ -15,6 +15,7 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Keyframe } from "../models/properties/keyframe.ts";
 import { parseProperty } from "./property_value.ts";
 import { at } from "../../pyrt/index.ts";
+import { late } from "../models/late.ts";
 
 /**
  * Parse markers from an MRST chunk.
@@ -91,3 +92,5 @@ export function parseMarker(
     _nmrd: nmrdChunk,
   });
 }
+
+Object.assign(late, { parseMarker });

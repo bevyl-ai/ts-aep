@@ -1,4 +1,4 @@
-import { deferred, descriptor } from "../../../pyrt/index.ts";
+import { descriptor } from "../../../pyrt/index.ts";
 // Port of py_aep/models/layers/av_layer.py
 
 import { BlendingMode, FrameBlendingType, LayerQuality, LayerSamplingQuality, LayerType, TrackMatteType } from "../../enums/index.ts";
@@ -34,7 +34,7 @@ import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { SolidSource } from "../sources/solid.ts";
 import * as _composition from "../items/composition.ts";
-const _core = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
+import { late } from "../late.ts";
 
 /**
  * `point`, or `ValueError` when a coordinate overflowed to inf / nan
@@ -358,7 +358,7 @@ export class AVLayer extends Layer {
     // AE renames "Rotation" <-> "Z Rotation" the moment the 3-D switch is
     // toggled, and normalizes a 2-D layer's dead Scale Z to 100 in the
     // chunk on either side of it - so the setter always writes through.
-    _core().applyDimensionalityNaming(this, { resetScaleZ: true });
+    late.applyDimensionalityNaming(this, { resetScaleZ: true });
   }
 
   /**
@@ -1120,7 +1120,7 @@ export class AVLayer extends Layer {
     if (transform == null) {
       return;
     }
-    _core().followSourceAnchor(transform.property("ADBE Anchor Point"));
+    late.followSourceAnchor(transform.property("ADBE Anchor Point"));
 
     const opacity = transform.property("ADBE Opacity");
     opacity.defaultValue = 100.0;

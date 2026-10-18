@@ -8,8 +8,8 @@ import { MaskFeatherFalloff, MaskMode, MaskMotionBlur } from "../../enums/index.
 import { keyframeTensions } from "../../resolvers/roto_bezier.ts";
 import { ChunkField } from "../descriptors.ts";
 import { validateBool, validateRgbColor } from "../validators.ts";
-// NOTE(port): property_group.ts reaches this module only through `deferred(...)` (the
-// port of Python's in-method import), so `extends PropertyGroup` evaluates after it.
+// property_group.ts reaches this module only through `late` (models/late.ts), so
+// `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
 import { AttributeError, descriptor, mod, assert, instanceDict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
@@ -18,6 +18,7 @@ import type { Shape } from "./shape.ts";
 import * as _property from "../../parsers/property.ts";
 import * as _propertyModel from "./property.ts";
 import * as _avLayer from "../layers/av_layer.ts";
+import { late } from "../late.ts";
 
 // Mask outline colors cycled by creation index for new masks. AE picks
 // from the label colors via an app-global counter that persists across
@@ -377,3 +378,5 @@ export class MaskPropertyGroup extends PropertyGroup {
     descriptor(this, "maskMotionBlur", ChunkField.enum(MaskMotionBlur, "_mkif", "maskMotionBlur"));
   }
 }
+
+Object.assign(late, { MaskPropertyGroup });

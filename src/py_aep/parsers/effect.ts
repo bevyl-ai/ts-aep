@@ -29,6 +29,7 @@ import {
   UnicodeDecodeError,
 } from "../../pyrt/index.ts";
 import * as _property from "./property.ts";
+import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
 // warning path is wired to pyrt `warn`.
@@ -943,3 +944,5 @@ export function matchEffectDefinition(
   }
   return null;
 }
+
+Object.assign(late, { parseEffect, matchEffectDefinition, rehomeEffectDefinitions, _effectInstances });

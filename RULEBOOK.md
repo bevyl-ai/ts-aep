@@ -35,13 +35,10 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - Import names exactly as Python does. Assume every imported name exists in the target TS module
   under the identical name (other agents translate those files in parallel to the same rules).
 - Deferred imports inside functions (`from .x import Y` indented inside a def — Python's cycle
-  breaker) → **not** a top-level import: declare at module level
-  `const _x = deferred<typeof import("./x.ts")>("py_aep/a/x");` (pyrt; the key is the target's
-  path relative to `src`, without `.ts`) and use `_x().Y` at the original use sites; add
-  `import type { Y } from "./x.ts";` if `Y` is also used as a type. Then run
-  `bun tools/gen_deferred_modules.ts`, which regenerates the hub `src/py_aep/_modules.ts` that
-  statically imports and registers every deferred target (`py_aep/index.ts` imports it last;
-  `--check` fails on a stale hub or a wrong key). A top-level import would let a subclass module
+  breaker) → a top-level import when `x` does not import this module back. When it does (a model
+  calling the parser or synthesis code that builds its subclasses), `x` adds `Y` to `late`
+  (`src/py_aep/models/late.ts`: a typed entry, plus `Object.assign(late, { Y })` at the end of
+  `x`) and the caller uses `late.Y`. A top-level import there would let a subclass module
   (`class M extends Base`) evaluate before `Base` exists (TDZ). `if TYPE_CHECKING:` imports →
   `import type`. Python's end-of-module
   "import for registration side effects" lines in `binary/chunk.py` become the separate module

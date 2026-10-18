@@ -13,7 +13,7 @@
  * output pairs (`aep-compare` ground-truth workflow).
  */
 
-import { b, deferred, NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
+import { b, NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
 import { type Chunk, ListChunk } from "../../binary/chunk.ts";
 import { LdatItemType, type LdatItem } from "../../binary/ldat_chunks.ts";
 import { buildParallelLdatItem, cloneChunkTree, setOrientationItemValues } from "../../binary/mutations.ts";
@@ -26,9 +26,8 @@ import { Shape } from "./shape.ts";
 import type { Keyframe, PropertyValue } from "./keyframe.ts";
 import type { Property } from "./property.ts";
 
-const _marker = deferred<typeof import("../../parsers/marker.ts")>("py_aep/parsers/marker");
-const _specializedProperties = deferred<typeof import("../../parsers/specialized_properties.ts")>("py_aep/parsers/specialized_properties");
 import { parseGradientXml } from "../../parsers/gradient.ts";
+import { late } from "../late.ts";
 
 export const _EMPTY_CDAT_PAD = b("\x00\x00\x00\x00");
 
@@ -240,7 +239,7 @@ export class _MarkerKind extends ParallelKind {
   }
 
   wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
-    return _marker().parseMarker(valueChunk);
+    return late.parseMarker(valueChunk);
   }
 
   bindKeyframe(value: PropertyValue, kf: Keyframe): void {
@@ -293,7 +292,7 @@ export class _ShapeKind extends ParallelKind {
   }
 
   wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
-    return _specializedProperties()._parseShapeShap(
+    return late._parseShapeShap(
       valueChunk,
       prop._containingLayer,
       prop.matchName === "ADBE Mask Shape" ? prop : null,
