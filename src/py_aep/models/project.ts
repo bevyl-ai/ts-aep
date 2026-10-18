@@ -136,9 +136,9 @@ export function isListOrTuple(x: unknown): x is unknown[] {
 
 export const _validateExpressionEngine = validateOneOf(["extendscript", "javascript-1.0"]);
 
+/** Accept a `GpuAccelType` or a renderer UUID string (what the getter
+ * returns for an id it does not recognise). */
 export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project): void {
-  /** Accept a `GpuAccelType` or a renderer UUID string (what the getter
-   * returns for an id it does not recognise). */
   if (typeof value === "string") {
     GpuAccelType.toBinary(value);
   } else {
@@ -146,8 +146,8 @@ export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project
   }
 }
 
+/** The PostScript name of a `replaceFont` argument. */
 export function _fontPostScriptName(font: FontObject | string): string {
-  /** The PostScript name of a `replaceFont` argument. */
   if (typeof font === "string") {
     validateFontName(font);
     return font;
@@ -467,14 +467,14 @@ export class Project {
   // via color_management_system / lut_interpolation_method / etc.
   static _NEW_PROJECT_CMS_JSON: string = '{"lutInterpolationMethod":1}';
 
+  /**
+   * `LIST:EfdG` effect definitions, walked once and cached.
+   *
+   * EfdG is read-only after parse (adding an installed effect clones
+   * its sspc template into the layer rather than editing EfdG), so the
+   * walk is computed lazily on first lookup and reused across adds.
+   */
   _effectDefinitions(): [string, string, ListChunk][] {
-    /**
-     * `LIST:EfdG` effect definitions, walked once and cached.
-     *
-     * EfdG is read-only after parse (adding an installed effect clones
-     * its sspc template into the layer rather than editing EfdG), so the
-     * walk is computed lazily on first lookup and reused across adds.
-     */
     if (this._effectDefinitionsCache == null) {
       this._effectDefinitionsCache = effectDefinitionEntries(this._rifx.chunks);
     }
@@ -787,17 +787,17 @@ export class Project {
     }
   }
 
+  /**
+   * Keep the stand-ins for root chunks older projects lack synthetic.
+   *
+   * An AE CC 12.0 project has no nnhd, dwga or gpuG; the parser stands in
+   * synthetic ones (see `parseProject`), which `ChunkField` writes land
+   * on. They stay out of the file: an nnhd setting persists through the
+   * nhed it syncs to, and the settings with no older counterpart
+   * (`workingGamma`, `gpuAccelType`) are gated by `minVersion`
+   * instead of being dropped on save.
+   */
   _ensureMaterialized(): void {
-    /**
-     * Keep the stand-ins for root chunks older projects lack synthetic.
-     *
-     * An AE CC 12.0 project has no nnhd, dwga or gpuG; the parser stands in
-     * synthetic ones (see `parseProject`), which `ChunkField` writes land
-     * on. They stay out of the file: an nnhd setting persists through the
-     * nhed it syncs to, and the settings with no older counterpart
-     * (`workingGamma`, `gpuAccelType`) are gated by `minVersion`
-     * instead of being dropped on save.
-     */
   }
 
   /**
@@ -1890,8 +1890,8 @@ export class Project {
     return specs;
   }
 
+  /** Yield `(layer, source_text)` for every text layer in the project. */
   *_iterTextSourceProperties(): Generator<[Layer, Property<TextDocument>]> {
-    /** Yield `(layer, source_text)` for every text layer in the project. */
     for (const comp of this.compositions) {
       for (const layer of comp.layers) {
         const group = layer.text;

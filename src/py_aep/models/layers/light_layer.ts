@@ -9,8 +9,8 @@ import { _UNDEFINED_ID, Layer, _noSourceId, type LiveDefaultGroup, type LiveDefa
 import { AttributeError, ValueError, descriptor, compare } from "../../../pyrt/index.ts";
 import type { CompItem } from "../items/composition.ts";
 
+/** Environment lights and their light source arrived in AE 24.3. */
 export function _requireEnvironmentLights(comp: CompItem, what: string): void {
-  /** Environment lights and their light source arrived in AE 24.3. */
   const head = comp._project._head;
   if (compare([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
     throw new AttributeError(

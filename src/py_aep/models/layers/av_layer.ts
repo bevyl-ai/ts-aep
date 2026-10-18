@@ -38,25 +38,25 @@ import { SolidSource } from "../sources/solid.ts";
 const _composition = deferred<typeof import("../items/composition.ts")>("py_aep/models/items/composition");
 const _core = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
 
+/**
+ * `point`, or `ValueError` when a coordinate overflowed to inf / nan
+ * (an input near the float limit).
+ */
 export function _finite(point: number[]): number[] {
-  /**
-   * `point`, or `ValueError` when a coordinate overflowed to inf / nan
-   * (an input near the float limit).
-   */
   if (!point.every((v) => Number.isFinite(v))) {
     throw new ValueError(`the converted point overflows: [${point.map((v) => floatRepr(v)).join(", ")}]`);
   }
   return point;
 }
 
+/**
+ * Check if using `newSource` as a layer source would create a cycle.
+ *
+ * Walks UP from `targetComp` via `_usedIn` back-references and returns
+ * `true` if `newSource` is found among the ancestors, meaning the
+ * replacement would create a circular reference chain.
+ */
 export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
-  /**
-   * Check if using `newSource` as a layer source would create a cycle.
-   *
-   * Walks UP from `targetComp` via `_usedIn` back-references and returns
-   * `true` if `newSource` is found among the ancestors, meaning the
-   * replacement would create a circular reference chain.
-   */
   if (!hasattr(newSource, "layers")) return false;
   // Python tracks visited comps by id(); object identity in a Set is the same check.
   const visited = new Set<CompItem>();
@@ -72,19 +72,20 @@ export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): bool
   return false;
 }
 
+/**
+ * Remove `comp` from `source._used_in` if no other layer still references it.
+ *
+ * @param source - The source item to potentially unregister.
+ * @param comp - The composition to remove from `source._used_in`.
+ * @param kw - Options:
+ * - `exclude`: A layer to skip when scanning for other users (the caller itself, which is
+ *     being removed or swapped out).
+ */
 export function _unregisterSourceUsage(
   source: AVItem,
   comp: CompItem,
   kw: { exclude?: Layer | null } = {},
 ): void {
-  /**
-   * Remove `comp` from `source._used_in` if no other layer still references it.
-   *
-   * @param source - The source item to potentially unregister.
-   * @param comp - The composition to remove from `source._used_in`.
-   * @param exclude - A layer to skip when scanning for other users (the caller itself, which is
-   *   being removed or swapped out).
-   */
   const { exclude = null } = kw;
   for (const layer of comp.avLayers) {
     if (layer !== exclude && layer._sourceId === source.id) return;

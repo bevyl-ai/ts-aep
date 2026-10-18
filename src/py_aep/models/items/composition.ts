@@ -109,18 +109,18 @@ export const _NTSC_TIMEBASE = 23976;
 // timebase the same measurement is exact with no tolerance.
 export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
 
+/**
+ * The composition's frame grid: `(timebase, units per frame)` from its
+ * frame rate (`frameGrid`), as AE derives it on open. The stored 16.16
+ * rate only approximates the grid's rate (29.970001220703125 for 23976 /
+ * 800), so comp times snap to the grid, never to the 16.16 value.
+ */
 export function _grid(cdta: CdtaChunk): [number, number] {
-  /**
-   * The composition's frame grid: `(timebase, units per frame)` from its
-   * frame rate (`frameGrid`), as AE derives it on open. The stored 16.16
-   * rate only approximates the grid's rate (29.970001220703125 for 23976 /
-   * 800), so comp times snap to the grid, never to the 16.16 value.
-   */
   return frameGrid(cdta.frameRate);
 }
 
+/** Frames per second of the composition's frame grid. */
 export function _gridRate(cdta: CdtaChunk): number {
-  /** Frames per second of the composition's frame grid. */
   const [timebase, unitsPerFrame] = _grid(cdta);
   return timebase / unitsPerFrame;
 }
@@ -155,18 +155,18 @@ export function _ratioScaledGe(n: number, d: number, k: number, rhs: number): bo
   return BigInt(n) * BigInt(k) >= BigInt(rhs) * BigInt(d);
 }
 
+/**
+ * The frame a stored comp time falls on, as After Effects reports
+ * `displayStartFrame` / `frameTime`.
+ *
+ * AE counts the time in exact timebase units and rounds the frame count
+ * away from zero (measured on AE 2026 over 2900 display starts at 24, 25,
+ * 30, 12.5 and 7.3 fps: 1/24 s stored as float32 0.0416666679 is frame 2,
+ * -0.51 s at 24 fps frame -13), with `_NTSC_FRAME_TOLERANCE` on the NTSC
+ * timebase. Counting in whole units keeps 246 frames at 29.97 fps on 246,
+ * where the 16.16 rate reads 246.00001.
+ */
 export function _frameNumber(cdta: CdtaChunk, dividend: number, divisor: number): number {
-  /**
-   * The frame a stored comp time falls on, as After Effects reports
-   * `displayStartFrame` / `frameTime`.
-   *
-   * AE counts the time in exact timebase units and rounds the frame count
-   * away from zero (measured on AE 2026 over 2900 display starts at 24, 25,
-   * 30, 12.5 and 7.3 fps: 1/24 s stored as float32 0.0416666679 is frame 2,
-   * -0.51 s at 24 fps frame -13), with `_NTSC_FRAME_TOLERANCE` on the NTSC
-   * timebase. Counting in whole units keeps 246 frames at 29.97 fps on 246,
-   * where the 16.16 rate reads 246.00001.
-   */
   const [timebase, unitsPerFrame] = _grid(cdta);
   // NOTE(port): Python's `Fraction(dividend, divisor) * timebase / units_per_frame`,
   // kept exact as a bigint numerator / denominator.
@@ -598,14 +598,14 @@ export class CompItem extends AVItem {
     this._requantizeCompTiming();
   }
 
+  /**
+   * Every `Property` under this comp's layers, plus its markers.
+   *
+   * Deliberately does not descend into a precomp layer's source item:
+   * changing this composition's frame rate leaves nested compositions
+   * alone (measured on AE 2026).
+   */
   *_walkProperties(): Generator<Property> {
-    /**
-     * Every `Property` under this comp's layers, plus its markers.
-     *
-     * Deliberately does not descend into a precomp layer's source item:
-     * changing this composition's frame rate leaves nested compositions
-     * alone (measured on AE 2026).
-     */
     for (const layer of this.layers) {
       yield* layer._leafProperties();
     }
@@ -615,27 +615,27 @@ export class CompItem extends AVItem {
     }
   }
 
+  /**
+   * Rescale keyframe times and restamp per-property timebases.
+   *
+   * `seconds = time_units / internal_timebase`, so holding a keyframe at
+   * the same time in seconds means scaling its stored unit count by
+   * `new / old`. That ratio is 1 whenever only `timeScale` moved - the
+   * whole NTSC family, and 30 \<-\> 60 - but the frame rate cached on each
+   * `Keyframe` still has to be refreshed, because `frameTime` is derived
+   * from it.
+   *
+   * Every property's `tdb4` also carries the comp's timebase, and AE
+   * rejects a file whose copy is wrong ("zero denominator converting
+   * ratio denominators").
+   *
+   * A stretched layer's ticks count against its own timebase
+   * (`layerTimebase`), so they scale by that ratio instead: 1 for a
+   * layer at the 115200 cap. A tie rounds up. Both measured on AE 2026
+   * going from 24 to 25 fps: ticks 12 and -84 became 13 and -87, and a
+   * 500 % layer's ticks did not move.
+   */
   _retimeToTimebase(old: number, new_: number): void {
-    /**
-     * Rescale keyframe times and restamp per-property timebases.
-     *
-     * `seconds = time_units / internal_timebase`, so holding a keyframe at
-     * the same time in seconds means scaling its stored unit count by
-     * `new / old`. That ratio is 1 whenever only `timeScale` moved - the
-     * whole NTSC family, and 30 \<-\> 60 - but the frame rate cached on each
-     * `Keyframe` still has to be refreshed, because `frameTime` is derived
-     * from it.
-     *
-     * Every property's `tdb4` also carries the comp's timebase, and AE
-     * rejects a file whose copy is wrong ("zero denominator converting
-     * ratio denominators").
-     *
-     * A stretched layer's ticks count against its own timebase
-     * (`layerTimebase`), so they scale by that ratio instead: 1 for a
-     * layer at the 115200 cap. A tie rounds up. Both measured on AE 2026
-     * going from 24 to 25 fps: ticks 12 and -84 became 13 and -87, and a
-     * 500 % layer's ticks did not move.
-     */
     const rescale = new_ !== old && old > 0;
     const frameRate = this._cdta.frameRate;
     for (const prop of this._walkProperties()) {
@@ -659,20 +659,20 @@ export class CompItem extends AVItem {
     }
   }
 
+  /**
+   * Snap comp duration, work area and current time onto the new
+   * frame grid.
+   *
+   * AE rounds to the nearest frame, half a frame up: a 253-frame 24 fps
+   * comp becomes 264 frames at 25 fps, a 12-frame one 13 frames. Each
+   * time is stored in whole units of the new timebase. The work area's
+   * start and end snap independently and its duration follows from them
+   * (61 frames from frame 12 at 24 fps become 63 at 25 fps, not the 64
+   * its duration alone would round to), then everything is kept inside
+   * the comp (`_keepTimesInside`). Measured on AE 2026. Display start
+   * and layer in / out / start times are not requantized.
+   */
   _requantizeCompTiming(): void {
-    /**
-     * Snap comp duration, work area and current time onto the new
-     * frame grid.
-     *
-     * AE rounds to the nearest frame, half a frame up: a 253-frame 24 fps
-     * comp becomes 264 frames at 25 fps, a 12-frame one 13 frames. Each
-     * time is stored in whole units of the new timebase. The work area's
-     * start and end snap independently and its duration follows from them
-     * (61 frames from frame 12 at 24 fps become 63 at 25 fps, not the 64
-     * its duration alone would round to), then everything is kept inside
-     * the comp (`_keepTimesInside`). Measured on AE 2026. Display start
-     * and layer in / out / start times are not requantized.
-     */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     // The work area's end reads through its start and the duration, so
@@ -692,17 +692,17 @@ export class CompItem extends AVItem {
     this._keepTimesInside();
   }
 
+  /**
+   * Pull the current time and the work area back inside the comp.
+   *
+   * Measured on AE 2026 after a duration or frame-rate change: a current
+   * time or a work-area start at or past the end moves to the last frame
+   * (a 5 s start in a comp cut to 4 s becomes 3.9583 s, one frame long),
+   * and a work-area end at or past the end becomes "runs to the end"
+   * (0xFFFFFFFF). Expects the duration, the time and the work-area start
+   * stored in units of the timebase.
+   */
   _keepTimesInside(): void {
-    /**
-     * Pull the current time and the work area back inside the comp.
-     *
-     * Measured on AE 2026 after a duration or frame-rate change: a current
-     * time or a work-area start at or past the end moves to the last frame
-     * (a 5 s start in a comp cut to 4 s becomes 3.9583 s, one frame long),
-     * and a work-area end at or past the end becomes "runs to the end"
-     * (0xFFFFFFFF). Expects the duration, the time and the work-area start
-     * stored in units of the timebase.
-     */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     const endOfComp = round(cdta.duration * timebase);
@@ -806,12 +806,12 @@ export class CompItem extends AVItem {
     this._restoreTimesInTimebase();
   }
 
+  /**
+   * AE re-stores the work area start and the current time in whole
+   * timebase units whenever the display start changes (AE 2026: a new
+   * comp's `0/600` start becomes `0/24576` at 24 fps).
+   */
   _restoreTimesInTimebase(): void {
-    /**
-     * AE re-stores the work area start and the current time in whole
-     * timebase units whenever the display start changes (AE 2026: a new
-     * comp's `0/600` start becomes `0/24576` at 24 fps).
-     */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     cdta.workAreaStartDividend = _frameUnits(cdta.workAreaStart, timebase, unitsPerFrame);
@@ -891,12 +891,12 @@ export class CompItem extends AVItem {
     this.workAreaDuration = value / _gridRate(this._cdta);
   }
 
+  /**
+   * Store the work area the way AE's setters do: in whole timebase
+   * units, snapped to frames, and with an end at or past the end of the
+   * composition (or `null`) stored as "runs to the end".
+   */
   _setWorkArea(start: number, end: number | null): void {
-    /**
-     * Store the work area the way AE's setters do: in whole timebase
-     * units, snapped to frames, and with an end at or past the end of the
-     * composition (or `null`) stored as "runs to the end".
-     */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
     cdta.workAreaStartDividend = _frameUnits(start, timebase, unitsPerFrame);
@@ -958,6 +958,21 @@ export class CompItem extends AVItem {
    */
   declare dropFrame: boolean;
 
+  /**
+   * Create a new empty composition.
+   *
+   * @param name - The name of the new composition.
+   * @param width - The width in pixels.
+   * @param height - The height in pixels.
+   * @param pixelAspect - The pixel aspect ratio (1.0 for square pixels).
+   * @param duration - The duration in seconds.
+   * @param frameRate - The frame rate in frames per second.
+   * @param kw - Options:
+   * - `project`: The project that owns this composition.
+   * - `parentFolder`: The folder that will contain this composition.
+   * - `minDimension`: The smallest width / height accepted: 4, as `addComp`, except for an
+   *     import that AE builds smaller (an SVG canvas can be 1 px a side).
+   */
   static _new(
     name: string,
     width: number,
@@ -967,20 +982,6 @@ export class CompItem extends AVItem {
     frameRate: number,
     kw: { project: Project; parentFolder: FolderItem; minDimension?: number },
   ): CompItem {
-    /**
-     * Create a new empty composition.
-     *
-     * @param name - The name of the new composition.
-     * @param width - The width in pixels.
-     * @param height - The height in pixels.
-     * @param pixel_aspect - The pixel aspect ratio (1.0 for square pixels).
-     * @param duration - The duration in seconds.
-     * @param frame_rate - The frame rate in frames per second.
-     * @param project - The project that owns this composition.
-     * @param parent_folder - The folder that will contain this composition.
-     * @param min_dimension - The smallest width / height accepted: 4, as `addComp`, except for an
-     *   import that AE builds smaller (an SVG canvas can be 1 px a side).
-     */
     const { project, parentFolder, minDimension = 4 } = kw;
     validateString(name);
     const validateSize = _validateNumber({ min: minDimension, max: 30000, integer: true });
@@ -1108,17 +1109,17 @@ export class CompItem extends AVItem {
     this._viewData = [];
   }
 
+  /**
+   * Return an iterator over the composition's layers.
+   *
+   * Iterates a snapshot so layers can be removed while looping.
+   */
   [Symbol.iterator](): Iterator<Layer> {
-    /**
-     * Return an iterator over the composition's layers.
-     *
-     * Iterates a snapshot so layers can be removed while looping.
-     */
     return [...this.layers][Symbol.iterator]();
   }
 
+  /** Remove this composition, including any render-queue items targeting it. */
   remove(): void {
-    /** Remove this composition, including any render-queue items targeting it. */
     const rq = this._project.renderQueue;
     assert(rq != null);
     const compId = this.id;
@@ -1138,22 +1139,22 @@ export class CompItem extends AVItem {
     super.remove();
   }
 
+  /**
+   * Creates and returns a duplicate of this composition, which
+   * contains the same layers as the original.
+   *
+   * The duplicate is placed directly after the original in its folder and named with
+   * the next numeric suffix (`Comp` \> `Comp 2`). Every layer id - including the
+   * viewer pseudo-layers - is freshly allocated, with parent, track
+   * matte and effect layer-references remapped to the new siblings.
+   * Essential Graphics controllers get fresh uuids with their comp and
+   * layer references retargeted at the duplicate. Layer sources
+   * (footage, precomps) and layer-side Essential Property override
+   * uuids stay shared with the original.
+   *
+   * @returns The newly created {@link CompItem}.
+   */
   duplicate(): CompItem {
-    /**
-     * Creates and returns a duplicate of this composition, which
-     * contains the same layers as the original.
-     *
-     * The duplicate is placed directly after the original in its folder and named with
-     * the next numeric suffix (`Comp` \> `Comp 2`). Every layer id - including the
-     * viewer pseudo-layers - is freshly allocated, with parent, track
-     * matte and effect layer-references remapped to the new siblings.
-     * Essential Graphics controllers get fresh uuids with their comp and
-     * layer references retargeted at the duplicate. Layer sources
-     * (footage, precomps) and layer-side Essential Property override
-     * uuids stay shared with the original.
-     *
-     * @returns The newly created {@link CompItem}.
-     */
     const project = this._project;
     const parent = this._parentFolder;
     assert(parent != null);
@@ -1242,8 +1243,8 @@ export class CompItem extends AVItem {
     return newComp;
   }
 
+  /** Return source IDs for `_usedIn` linking without forcing layer parse. */
   _sourceIdsForLinking(): Set<number> {
-    /** Return source IDs for `_usedIn` linking without forcing layer parse. */
     const deferred = this._deferredLayers;
     if (deferred != null) {
       const sourceIds: Set<number> = new Set();
@@ -1282,8 +1283,8 @@ export class CompItem extends AVItem {
     return out;
   }
 
+  /** Parse deferred `LIST:Layr` chunks on first layer access. */
   _ensureLayersLoaded(): void {
-    /** Parse deferred `LIST:Layr` chunks on first layer access. */
     if (this._layersLoaded) {
       return;
     }
@@ -1329,8 +1330,8 @@ export class CompItem extends AVItem {
     }
   }
 
+  /** Parse markers and Essential Graphics on first access. */
   _ensureCompParsed(): void {
-    /** Parse markers and Essential Graphics on first access. */
     if (this._deferredChildChunks == null) {
       return;
     }
@@ -1388,26 +1389,26 @@ export class CompItem extends AVItem {
     return cache;
   }
 
+  /** Reset layer caches after structural mutations. */
   _invalidateLayerCache(): void {
-    /** Reset layer caches after structural mutations. */
     this._layerTypes = null;
     this._layersById = null;
     this._layerIndexById = null;
   }
 
+  /**
+   * Return `(start, end)` indices of a layer's chunk block in
+   * `_item_list.chunks`.
+   *
+   * The block runs from the layer's `LIST:Layr` to the next boundary
+   * chunk (another `LIST:Layr`, a view block, or a footer chunk).
+   */
   _layerBlockSlice(layer: Layer): [number, number] {
-    /**
-     * Return `(start, end)` indices of a layer's chunk block in
-     * `_item_list.chunks`.
-     *
-     * The block runs from the layer's `LIST:Layr` to the next boundary
-     * chunk (another `LIST:Layr`, a view block, or a footer chunk).
-     */
     return blockSlice(this._itemList.chunks, layer._layerList, _LAYER_BOUNDARY_TYPES);
   }
 
+  /** Find the insertion point for the first layer in the chunk list. */
   _findFirstLayerPosition(): number {
-    /** Find the insertion point for the first layer in the chunk list. */
     for (const [i, chunk] of this._itemList.chunks.entries()) {
       if (
         chunk instanceof ListChunk &&
@@ -1523,29 +1524,29 @@ export class CompItem extends AVItem {
     return this.motionGraphicsControllers.map((ctrl) => ctrl.name);
   }
 
+  /**
+   * The `CIFO`/`CIF2`/`CIF3` Essential Graphics containers of this comp,
+   * in file order (every comp AE or py_aep writes has all three, except
+   * AE 15's, which have no CIF3).
+   */
   _cifContainers(): ListChunk[] {
-    /**
-     * The `CIFO`/`CIF2`/`CIF3` Essential Graphics containers of this comp,
-     * in file order (every comp AE or py_aep writes has all three, except
-     * AE 15's, which have no CIF3).
-     */
     return this._itemList.chunks.filter(
       (c): c is ListChunk =>
         c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.listType),
     );
   }
 
+  /**
+   * Assemble one `LIST:CCtl` for `prop` per the resolved `plan`.
+   *
+   * Called once per CIF container so each holds its own chunk objects.
+   */
   _buildPropertyCctl(
     plan: PropertyControllerPlan,
     prop: Property,
     name: string,
     uuidStr: string,
   ): [ListChunk, Utf8Chunk, U4Chunk] {
-    /**
-     * Assemble one `LIST:CCtl` for `prop` per the resolved `plan`.
-     *
-     * Called once per CIF container so each holds its own chunk objects.
-     */
     const compId = this.id;
     const layerId = plan.layer._ldta.layerId;
     if (plan.controllerType === CONTROLLER_SLIDER) {
@@ -1598,17 +1599,17 @@ export class CompItem extends AVItem {
     );
   }
 
+  /**
+   * Append one freshly built `LIST:CCtl` per CIF container and bump
+   * each `CcCt` count (AE keeps the `CIFO`/`CIF2`/`CIF3` copies in sync).
+   *
+   * Returns the CIF3 copy's editable chunks `(name_utf8, ctyp)` for the
+   * controller model - the parser's preferred container - or `null` when
+   * the comp has no CIF containers (not produced by AE or py_aep).
+   */
   _appendController(
     build: () => [ListChunk, Utf8Chunk, U4Chunk],
   ): [Utf8Chunk, U4Chunk] | null {
-    /**
-     * Append one freshly built `LIST:CCtl` per CIF container and bump
-     * each `CcCt` count (AE keeps the `CIFO`/`CIF2`/`CIF3` copies in sync).
-     *
-     * Returns the CIF3 copy's editable chunks `(name_utf8, ctyp)` for the
-     * controller model - the parser's preferred container - or `null` when
-     * the comp has no CIF containers (not produced by AE or py_aep).
-     */
     const containers = this._cifContainers();
     if (!containers?.length) {
       return null;
@@ -1626,13 +1627,13 @@ export class CompItem extends AVItem {
     return model;
   }
 
+  /** Append the model for a controller just written to the containers. */
   _registerController(
     bound: [Utf8Chunk, U4Chunk],
     uuidStr: string,
     nodes: PathNode[],
     layer: Layer,
   ): void {
-    /** Append the model for a controller just written to the containers. */
     const [nameUtf8, ctyp] = bound;
     this._egControllers.push(
       new EssentialGraphicsController({
@@ -1648,13 +1649,13 @@ export class CompItem extends AVItem {
     );
   }
 
+  /**
+   * Add `prop` to this comp's Essential Graphics panel.
+   *
+   * Returns `false` (adding nothing) when `prop` cannot be exposed - see
+   * `resolvers.motion_graphics`.
+   */
   _addPropertyController(prop: Property, name: string | null): boolean {
-    /**
-     * Add `prop` to this comp's Essential Graphics panel.
-     *
-     * Returns `false` (adding nothing) when `prop` cannot be exposed - see
-     * `resolvers.motion_graphics`.
-     */
     this._ensureCompParsed();
     const plan = propertyControllerPlan(prop, this);
     if (plan == null) {
@@ -1673,14 +1674,14 @@ export class CompItem extends AVItem {
     return true;
   }
 
+  /**
+   * Add `layer` to this comp's Essential Graphics panel as a Media
+   * Replacement (type 14) controller.
+   *
+   * Returns `false` (adding nothing) when the layer is not eligible -
+   * see `resolvers.motion_graphics.can_add_layer`.
+   */
   _addLayerController(layer: AVLayer, name: string | null): boolean {
-    /**
-     * Add `layer` to this comp's Essential Graphics panel as a Media
-     * Replacement (type 14) controller.
-     *
-     * Returns `false` (adding nothing) when the layer is not eligible -
-     * see `resolvers.motion_graphics.can_add_layer`.
-     */
     this._ensureCompParsed();
     if (!canAddLayer(layer, this)) {
       return false;
@@ -1833,12 +1834,12 @@ export class CompItem extends AVItem {
     return this.markerProperty.keyframes.map((kf) => kf.value);
   }
 
+  /**
+   * Remove all markers from this composition.
+   *
+   * A no-op when the composition has no markers.
+   */
   removeAllMarkers(): void {
-    /**
-     * Remove all markers from this composition.
-     *
-     * A no-op when the composition has no markers.
-     */
     if (this.markerProperty != null) {
       this.markerProperty.removeAllKeys();
     }
@@ -1865,21 +1866,21 @@ export class CompItem extends AVItem {
     return null;
   }
 
+  /**
+   * Get a Layer object by name, index, or relative to another layer.
+   *
+   * @param name - The name of the layer to return.
+   * @param index - The index position of the layer to return.
+   * @param otherLayer - A Layer object to use as a reference for the relative index position of
+   *   the layer to return.
+   * @param relIndex - The index position of the layer relative to the other_layer to return.
+   */
   layer(
     name: string | null = null,
     index: number | null = null,
     otherLayer: Layer | null = null,
     relIndex: number | null = null,
   ): Layer {
-    /**
-     * Get a Layer object by name, index, or relative to another layer.
-     *
-     * @param name - The name of the layer to return.
-     * @param index - The index position of the layer to return.
-     * @param other_layer - A Layer object to use as a reference for the relative index position of
-     *   the layer to return.
-     * @param rel_index - The index position of the layer relative to the other_layer to return.
-     */
     if (name) {
       for (const layer of this.layers) {
         if (layer.name === name) {
@@ -2003,33 +2004,33 @@ export class CompItem extends AVItem {
 
   // -- Layer creation --------------------------------------------------------
 
+  /**
+   * Default span of a new sourceless layer (solid, null, text,
+   * shape, camera, light), from the "Pref_DEFAULT_SYNTHETIC_OUT_POINT"
+   * preference; comp duration for the factory `0/0` value.
+   */
   _syntheticLayerDuration(): number {
-    /**
-     * Default span of a new sourceless layer (solid, null, text,
-     * shape, camera, light), from the "Pref_DEFAULT_SYNTHETIC_OUT_POINT"
-     * preference; comp duration for the factory `0/0` value.
-     */
     const pref = defaultSyntheticOutPoint(this._project._preferences);
     return pref != null ? pref : this.duration;
   }
 
+  /**
+   * Default span of a new still-footage layer, from the
+   * "Pref_DEFAULT_STILL_OUT_POINT" preference; comp duration for the
+   * factory `0/0` value.
+   */
   _stillLayerDuration(): number {
-    /**
-     * Default span of a new still-footage layer, from the
-     * "Pref_DEFAULT_STILL_OUT_POINT" preference; comp duration for the
-     * factory `0/0` value.
-     */
     const pref = defaultStillOutPoint(this._project._preferences);
     return pref != null ? pref : this.duration;
   }
 
+  /**
+   * Insert a fully-constructed layer at the top of the layer stack.
+   *
+   * Handles view block creation, chunk insertion, materialization,
+   * and layer list bookkeeping.
+   */
   _insertLayer(layer: Layer): void {
-    /**
-     * Insert a fully-constructed layer at the top of the layer stack.
-     *
-     * Handles view block creation, chunk insertion, materialization,
-     * and layer list bookkeeping.
-     */
     // AE anchors new layers at the comp's current time when the
     // "Create New Layers At Time Zero" preference is off: start = in
     // = time, out shifted by the same amount (probed in AE 2026 for
@@ -2065,20 +2066,20 @@ export class CompItem extends AVItem {
     this._invalidateLayerCache();
   }
 
+  /**
+   * Create a new null layer at the top of the layer stack.
+   *
+   * A null layer has no visual content and is commonly used as a parent
+   * for other layers. Its source is a small transparent solid created
+   * automatically.
+   *
+   * @param duration - Layer duration in seconds. Defaults to the synthetic-layer default span
+   *   (the "Pref_DEFAULT_SYNTHETIC_OUT_POINT" preference; composition duration by default). AE's
+   *   `addNull` ignores this argument (probed in AE 2026); py_aep honors it, since it sets the
+   *   layer out-point directly and the result is a valid AE file.
+   * @returns The newly created {@link AVLayer}.
+   */
   addNull(duration: number | null = null): AVLayer {
-    /**
-     * Create a new null layer at the top of the layer stack.
-     *
-     * A null layer has no visual content and is commonly used as a parent
-     * for other layers. Its source is a small transparent solid created
-     * automatically.
-     *
-     * @param duration - Layer duration in seconds. Defaults to the synthetic-layer default span
-     *   (the "Pref_DEFAULT_SYNTHETIC_OUT_POINT" preference; composition duration by default). AE's
-     *   `addNull` ignores this argument (probed in AE 2026); py_aep honors it, since it sets the
-     *   layer out-point directly and the result is a valid AE file.
-     * @returns The newly created {@link AVLayer}.
-     */
     if (duration != null) {
       validateDuration(duration);
     }
@@ -2117,12 +2118,12 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Create a new empty shape layer at the top of the layer stack.
+   *
+   * @returns The newly created {@link ShapeLayer}.
+   */
   addShape(): ShapeLayer {
-    /**
-     * Create a new empty shape layer at the top of the layer stack.
-     *
-     * @returns The newly created {@link ShapeLayer}.
-     */
     const existing = new Set(this.layers.map((lyr) => lyr.name));
     const name = autoName(ShapeLayer._autoName, existing);
 
@@ -2137,14 +2138,14 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Create a new camera layer at the top of the layer stack.
+   *
+   * @param name - Layer name. Auto-generated if `null`.
+   * @param centerPoint - The `[x, y]` center point. Defaults to `[width/2, height/2]`.
+   * @returns The newly created {@link CameraLayer}.
+   */
   addCamera(name: string | null = null, centerPoint: number[] | null = null): CameraLayer {
-    /**
-     * Create a new camera layer at the top of the layer stack.
-     *
-     * @param name - Layer name. Auto-generated if `null`.
-     * @param center_point - The `[x, y]` center point. Defaults to `[width/2, height/2]`.
-     * @returns The newly created {@link CameraLayer}.
-     */
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
       name = autoName(CameraLayer._autoName, existing);
@@ -2186,14 +2187,14 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Create a new light layer at the top of the layer stack.
+   *
+   * @param name - Layer name. Auto-generated if `null`.
+   * @param centerPoint - The `[x, y]` center point. Defaults to `[width/2, height/2]`.
+   * @returns The newly created {@link LightLayer}.
+   */
   addLight(name: string | null = null, centerPoint: number[] | null = null): LightLayer {
-    /**
-     * Create a new light layer at the top of the layer stack.
-     *
-     * @param name - Layer name. Auto-generated if `null`.
-     * @param center_point - The `[x, y]` center point. Defaults to `[width/2, height/2]`.
-     * @returns The newly created {@link LightLayer}.
-     */
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
       name = autoName(LightLayer._autoName, existing);
@@ -2229,17 +2230,18 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Create a new parametric mesh layer at the top of the layer stack.
+   *
+   * @param name - Layer name. Auto-generated if `null`.
+   * @param kw - Options:
+   * - `meshType`: The type of parametric mesh (required, keyword-only).
+   * @returns The newly created {@link ParametricMeshLayer}.
+   */
   addParametricMesh(
     name: string | null = null,
     kw: { meshType: ParametricMeshType },
   ): ParametricMeshLayer {
-    /**
-     * Create a new parametric mesh layer at the top of the layer stack.
-     *
-     * @param name - Layer name. Auto-generated if `null`.
-     * @param mesh_type - The type of parametric mesh (required, keyword-only).
-     * @returns The newly created {@link ParametricMeshLayer}.
-     */
     const { meshType } = kw;
     const explicitName = name != null;
     if (name == null) {
@@ -2267,17 +2269,17 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Add an existing footage or composition item as a new layer.
+   *
+   * @param item - The {@link AVItem} (footage or composition) to add.
+   * @param duration - Layer duration in seconds, for still footage. By default (probed in AE
+   *   2026) timed footage and nested comps span their source duration, and stills span the
+   *   still-layer default (the "Pref_DEFAULT_STILL_OUT_POINT" preference; composition duration by
+   *   default).
+   * @returns The newly created {@link AVLayer}.
+   */
   add(item: AVItem, duration: number | null = null): AVLayer {
-    /**
-     * Add an existing footage or composition item as a new layer.
-     *
-     * @param item - The {@link AVItem} (footage or composition) to add.
-     * @param duration - Layer duration in seconds, for still footage. By default (probed in AE
-     *   2026) timed footage and nested comps span their source duration, and stills span the
-     *   still-layer default (the "Pref_DEFAULT_STILL_OUT_POINT" preference; composition duration by
-     *   default).
-     * @returns The newly created {@link AVLayer}.
-     */
     if (!(item instanceof AVItem)) {
       throw new ValueError("item must be an AVItem (FootageItem or CompItem).");
     }
@@ -2314,44 +2316,44 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Create a new {@link CompItem} and move the specified layers into it.
+   *
+   * The moved layers are replaced in this composition by a single new
+   * layer whose source is the new composition, placed at the topmost
+   * moved layer's index. The new composition inherits this composition's
+   * settings and is stored at the alphabetical position in this
+   * composition's folder.
+   *
+   * Parent and track-matte links follow AE's rules: links inside the
+   * moved set are kept; a stayer referencing a moved layer retargets
+   * to the replacement layer; a moved layer whose parent stays is
+   * unparented; a moved layer whose track matte stays gets a copy of
+   * the matte layer inside the new composition (the original stays
+   * untouched).
+   *
+   * When `moveAllAttributes` is `false` (allowed for a single
+   * source-backed layer only), the selected layer stays in this
+   * composition with all its attributes and its source is swapped to
+   * the new composition, which is sized from the layer's source and
+   * contains one fresh layer referencing that source.
+   *
+   * **Warning:** References to moved `Layer` objects become stale (the layers
+   * are re-created inside the new composition), mirroring
+   * ExtendScript's reference invalidation.
+   *
+   * @param layerIndices - 0-based indices of the layers to precompose (ExtendScript uses 1-based
+   *   indices).
+   * @param name - The name of the new composition.
+   * @param moveAllAttributes - `true` (default) to move all attributes into the new
+   *   composition; `false` to leave them on the retained layer ("Leave all attributes" in the
+   *   Pre-compose dialog).
+   * @returns The newly created {@link CompItem}.
+   * @throws {@link ValueError} If `layerIndices` is empty or contains an out-of-range index, or
+   *   if `moveAllAttributes` is `false` with more than one index or with a layer that has no
+   *   source.
+   */
   precompose(layerIndices: number[], name: string, moveAllAttributes = true): CompItem {
-    /**
-     * Create a new {@link CompItem} and move the specified layers into it.
-     *
-     * The moved layers are replaced in this composition by a single new
-     * layer whose source is the new composition, placed at the topmost
-     * moved layer's index. The new composition inherits this composition's
-     * settings and is stored at the alphabetical position in this
-     * composition's folder.
-     *
-     * Parent and track-matte links follow AE's rules: links inside the
-     * moved set are kept; a stayer referencing a moved layer retargets
-     * to the replacement layer; a moved layer whose parent stays is
-     * unparented; a moved layer whose track matte stays gets a copy of
-     * the matte layer inside the new composition (the original stays
-     * untouched).
-     *
-     * When `moveAllAttributes` is `false` (allowed for a single
-     * source-backed layer only), the selected layer stays in this
-     * composition with all its attributes and its source is swapped to
-     * the new composition, which is sized from the layer's source and
-     * contains one fresh layer referencing that source.
-     *
-     * **Warning:** References to moved `Layer` objects become stale (the layers
-     * are re-created inside the new composition), mirroring
-     * ExtendScript's reference invalidation.
-     *
-     * @param layer_indices - 0-based indices of the layers to precompose (ExtendScript uses 1-based
-     *   indices).
-     * @param name - The name of the new composition.
-     * @param move_all_attributes - `true` (default) to move all attributes into the new
-     *   composition; `false` to leave them on the retained layer ("Leave all attributes" in the
-     *   Pre-compose dialog).
-     * @returns The newly created {@link CompItem}.
-     * @throws {@link ValueError} If `layerIndices` is empty or contains an out-of-range index, or
-     *   if `moveAllAttributes` is `false` with more than one index or with a layer that has no
-     *   source.
-     */
     validateString(name);
     if (!Array.isArray(layerIndices) || !layerIndices?.length) {
       throw new ValueError("layerIndices must be a non-empty list.");
@@ -2382,16 +2384,16 @@ export class CompItem extends AVItem {
     return this._precomposeMove(indices, name);
   }
 
+  /**
+   * Create the precompose target composition.
+   *
+   * Built via `addComp` for the skeleton, then this composition's
+   * settings are inherited by byte-copying its cdta (AE writes the
+   * new comp's cdta byte-identical to the parent's, with only
+   * width/height overridden in the leave-attributes path), and the
+   * item is stored at the alphabetical position AE uses.
+   */
   _createPrecompItem(name: string, width: number, height: number): CompItem {
-    /**
-     * Create the precompose target composition.
-     *
-     * Built via `addComp` for the skeleton, then this composition's
-     * settings are inherited by byte-copying its cdta (AE writes the
-     * new comp's cdta byte-identical to the parent's, with only
-     * width/height overridden in the leave-attributes path), and the
-     * item is stored at the alphabetical position AE uses.
-     */
     const folder = this.parentFolder;
     assert(folder != null);
     const newComp = folder.addComp(
@@ -2412,12 +2414,12 @@ export class CompItem extends AVItem {
     return newComp;
   }
 
+  /**
+   * The `move_all_attributes=False` path: the retained layer only
+   * swaps its source to the new comp (sized from the layer's source),
+   * which holds one fresh layer referencing the original source.
+   */
   _precomposeLeaveAttributes(layer: AVLayer, name: string): CompItem {
-    /**
-     * The `move_all_attributes=False` path: the retained layer only
-     * swaps its source to the new comp (sized from the layer's source),
-     * which holds one fresh layer referencing the original source.
-     */
     const source = layer.source;
     assert(source != null);
     const newComp = this._createPrecompItem(name, source.width, source.height);
@@ -2427,11 +2429,11 @@ export class CompItem extends AVItem {
     return newComp;
   }
 
+  /**
+   * The `move_all_attributes=True` path: verbatim chunk-block moves
+   * with fresh layer ids.
+   */
   _precomposeMove(indices: number[], name: string): CompItem {
-    /**
-     * The `move_all_attributes=True` path: verbatim chunk-block moves
-     * with fresh layer ids.
-     */
     const project = this._project;
     const moved = indices.map((i) => this.layers[i]);
     const topIndex = indices[0];
@@ -2592,6 +2594,21 @@ export class CompItem extends AVItem {
     return newComp;
   }
 
+  /**
+   * Create a new solid layer at the top of the layer stack.
+   *
+   * @param color - Solid color as `[R, G, B]` in 0.0--1.0 range.
+   * @param name - The solid and layer name. Pass `null` to auto-generate a name from the color
+   *   (e.g. `Red Solid 1`).
+   * @param width - Solid width in pixels. Defaults to comp width.
+   * @param height - Solid height in pixels. Defaults to comp height.
+   * @param pixelAspect - Pixel aspect ratio (default 1.0).
+   * @param duration - Layer duration in seconds. Defaults to the synthetic-layer default span
+   *   (the "Pref_DEFAULT_SYNTHETIC_OUT_POINT" preference; composition duration by default). AE's
+   *   `addSolid` ignores this argument (probed in AE 2026); py_aep honors it, since it sets the
+   *   layer out-point directly and the result is a valid AE file.
+   * @returns The newly created {@link AVLayer}.
+   */
   addSolid(
     color: number[],
     name: string | null = null,
@@ -2600,21 +2617,6 @@ export class CompItem extends AVItem {
     pixelAspect = 1.0,
     duration: number | null = null,
   ): AVLayer {
-    /**
-     * Create a new solid layer at the top of the layer stack.
-     *
-     * @param color - Solid color as `[R, G, B]` in 0.0--1.0 range.
-     * @param name - The solid and layer name. Pass `null` to auto-generate a name from the color
-     *   (e.g. `Red Solid 1`).
-     * @param width - Solid width in pixels. Defaults to comp width.
-     * @param height - Solid height in pixels. Defaults to comp height.
-     * @param pixel_aspect - Pixel aspect ratio (default 1.0).
-     * @param duration - Layer duration in seconds. Defaults to the synthetic-layer default span
-     *   (the "Pref_DEFAULT_SYNTHETIC_OUT_POINT" preference; composition duration by default). AE's
-     *   `addSolid` ignores this argument (probed in AE 2026); py_aep honors it, since it sets the
-     *   layer out-point directly and the result is a valid AE file.
-     * @returns The newly created {@link AVLayer}.
-     */
     // Validate before the auto-name subscripts the color, so malformed
     // input raises ValueError instead of TypeError/IndexError.
     validateRgbColor(color);
@@ -2664,20 +2666,20 @@ export class CompItem extends AVItem {
     return layer;
   }
 
+  /**
+   * Build the binary btds/btdk structure for a text layer.
+   *
+   * @param text - The text content.
+   * @param boxSize - `[width, height]` for box text; `null` for point text.
+   * @param lineOrientation - Text {@link LineOrientation}; `null` for the default horizontal
+   *   orientation.
+   * @returns A `(LIST:btds, btgu, tdmn)` array to inject into the root tdgp.
+   */
   _buildTextBtds(
     text: string,
     boxSize: number[] | null = null,
     lineOrientation: LineOrientation | null = null,
   ): [ListChunk, ListChunk, TdmnChunk] {
-    /**
-     * Build the binary btds/btdk structure for a text layer.
-     *
-     * @param text - The text content.
-     * @param box_size - `[width, height]` for box text; `null` for point text.
-     * @param line_orientation - Text {@link LineOrientation}; `null` for the default horizontal
-     *   orientation.
-     * @returns A `(LIST:btds, btgu, tdmn)` array to inject into the root tdgp.
-     */
     const td = new TextDocument(text, boxSize, lineOrientation);
     // AE applies the character-level "Text Style Sheet" preferences to
     // every new text layer (probed in AE 2026; the paragraph sheet is

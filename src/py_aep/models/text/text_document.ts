@@ -176,30 +176,30 @@ export class TextDocument {
   declare _cosData: CosDict;
   declare _btdkBody: ListChunk;
 
+  /**
+   * Mark a frame-level write (box meta, orientation) on ALL
+   * documents sharing this layer's frame.
+   *
+   * Runs before the mutation lands so each sibling still calibrates
+   * against its own clean cache + text.
+   */
   _markFrameLayoutDirty(): void {
-    /**
-     * Mark a frame-level write (box meta, orientation) on ALL
-     * documents sharing this layer's frame.
-     *
-     * Runs before the mutation lands so each sibling still calibrates
-     * against its own clean cache + text.
-     */
     const siblings = this._siblings;
     for (const doc of siblings != null && siblings.length > 0 ? siblings : [this]) {
       doc._markLayoutDirty();
     }
   }
 
+  /**
+   * Record a layout-affecting write, calibrating the composer first.
+   *
+   * The write engine calls this BEFORE serializing any mutation that
+   * can change line composition, so the first call still sees the
+   * clean cache + text: composing them and comparing spans AND
+   * baselines against what AE persisted proves (or refutes) the
+   * composer + installed fonts for this document.
+   */
   _markLayoutDirty(): void {
-    /**
-     * Record a layout-affecting write, calibrating the composer first.
-     *
-     * The write engine calls this BEFORE serializing any mutation that
-     * can change line composition, so the first call still sees the
-     * clean cache + text: composing them and comparing spans AND
-     * baselines against what AE persisted proves (or refutes) the
-     * composer + installed fonts for this document.
-     */
     // Every layout write invalidates the memoized composition.
     this._overrides.delete("_composed_cache");
     if (this._layoutDirty) return;
@@ -443,6 +443,7 @@ export class TextDocument {
     if (lineOrientation != null) this.lineOrientation = lineOrientation;
   }
 
+  /** Wrap parsed COS data as a `TextDocument`. */
   static _fromBinary(kw: {
     _charStyle?: CosDict | null;
     _paraStyle?: CosDict | null;
@@ -459,7 +460,6 @@ export class TextDocument {
     paragraphCount?: number | null;
     [key: string]: InstanceValue | undefined;
   }): TextDocument {
-    /** Wrap parsed COS data as a `TextDocument`. */
     const {
       _charStyle = null,
       _paraStyle = null,
@@ -502,13 +502,13 @@ export class TextDocument {
     return obj;
   }
 
+  /**
+   * Instance override stored when a field has no COS backing.
+   *
+   * Set by `_fromBinary` fallback kwargs and by setters when the
+   * backing style dict is `null`. Returns `null` when absent.
+   */
   _override(name: string): InstanceValue {
-    /**
-     * Instance override stored when a field has no COS backing.
-     *
-     * Set by `_fromBinary` fallback kwargs and by setters when the
-     * backing style dict is `null`. Returns `null` when absent.
-     */
     return this._overrides.get(name) ?? null;
   }
 
@@ -518,8 +518,8 @@ export class TextDocument {
     return value != null && accepts(value) ? value : null;
   }
 
+  /** Store an instance override for a field without COS backing. */
   _setOverride(name: string, value: InstanceValue): void {
-    /** Store an instance override for a field without COS backing. */
     this._overrides.set(name, value);
   }
 
@@ -555,18 +555,18 @@ export class TextDocument {
     this._propagateCos();
   }
 
+  /**
+   * Collapse the style runs for newly assigned text.
+   *
+   * AE resets styling on text assignment (probed via the
+   * `RangesTextReset` fixture): the character runs collapse to a
+   * single run carrying the first run's style over the whole text,
+   * the paragraph runs become one clone of the first paragraph's
+   * run per new paragraph, and manual-kerning runs are dropped.
+   *
+   * @param raw - The new stored text, including the terminator `\r`.
+   */
   _rebuildRunsForText(raw: string): void {
-    /**
-     * Collapse the style runs for newly assigned text.
-     *
-     * AE resets styling on text assignment (probed via the
-     * `RangesTextReset` fixture): the character runs collapse to a
-     * single run carrying the first run's style over the whole text,
-     * the paragraph runs become one clone of the first paragraph's
-     * run per new paragraph, and manual-kerning runs are dropped.
-     *
-     * @param raw - The new stored text, including the terminator `\r`.
-     */
     const inner = cosGetOr(this._doc, "0", new Map());
     const charRuns = cosGet(inner, "6", "0");
     if (Array.isArray(charRuns) && charRuns.length > 0) {
@@ -593,17 +593,17 @@ export class TextDocument {
     cosPop(inner, "7");
   }
 
+  /**
+   * Keep `doc["1"]["1"]` (per-paragraph composed-line counts)
+   * structurally consistent with the paragraphs.
+   *
+   * AE stores this cache-family array exactly when a document has
+   * more than one paragraph (probed across all text fixtures) and
+   * omits it otherwise. Counts of 1 are correct for point text
+   * (paragraphs never wrap); for box text AE recomputes the real
+   * counts when it next opens the file, like the `/PC` cache.
+   */
   _rebuildLineCountRuns(parts: string[]): void {
-    /**
-     * Keep `doc["1"]["1"]` (per-paragraph composed-line counts)
-     * structurally consistent with the paragraphs.
-     *
-     * AE stores this cache-family array exactly when a document has
-     * more than one paragraph (probed across all text fixtures) and
-     * omits it otherwise. Counts of 1 are correct for point text
-     * (paragraphs never wrap); for box text AE recomputes the real
-     * counts when it next opens the file, like the `/PC` cache.
-     */
     const state = cosDict(this._doc, "get").get("1");
     if (!(state instanceof Map)) return;
     if (parts.length <= 1) {
@@ -668,35 +668,35 @@ export class TextDocument {
     this._propagateCos();
   }
 
+  /** Return the index of a font in `_fonts`, or `null` if absent. */
   _fontIndex(postScriptName: string): number | null {
-    /** Return the index of a font in `_fonts`, or `null` if absent. */
     for (const [idx, fo] of this._fonts.entries()) {
       if (fo.postScriptName === postScriptName) return idx;
     }
     return null;
   }
 
+  /**
+   * Prepend a new font to the COS font array and `_fonts`.
+   *
+   * AE inserts new fonts at index 0 and reindexes every existing
+   * font reference (probed via the `W_FONT` / `W_PASTE_XDOC` write
+   * fixtures). Returns the new font's index (always 0).
+   */
   _registerFont(postScriptName: string): number {
-    /**
-     * Prepend a new font to the COS font array and `_fonts`.
-     *
-     * AE inserts new fonts at index 0 and reindexes every existing
-     * font reference (probed via the `W_FONT` / `W_PASTE_XDOC` write
-     * fixtures). Returns the new font's index (always 0).
-     */
     return _registerFontAt(this, postScriptName);
   }
 
+  /**
+   * The distinct fonts this document's character runs reference, in
+   * first-appearance order.
+   *
+   * The document's `_fonts` table can hold entries no run points at
+   * (AE keeps them after an edit), so the runs - not the table - are
+   * authoritative for "used". An empty text layer still references a
+   * font through its terminator run, which is what AE reports.
+   */
   _usedFontObjects(): FontObject[] {
-    /**
-     * The distinct fonts this document's character runs reference, in
-     * first-appearance order.
-     *
-     * The document's `_fonts` table can hold entries no run points at
-     * (AE keeps them after an edit), so the runs - not the table - are
-     * authoritative for "used". An empty text layer still references a
-     * font through its terminator run, which is what AE reports.
-     */
     const used: FontObject[] = [];
     const seen = new Set<number>();
     for (const [, , style] of _charRunSpans(this)) {
@@ -882,21 +882,21 @@ export class TextDocument {
     this._propagateCos();
   }
 
+  /** Return the COS box-frame dict, or `null` if absent. */
   _boxFrame(): CosDict | null {
-    /** Return the COS box-frame dict, or `null` if absent. */
     const frame = cosGet(this._cosData, "0", "8", "0", 0, "0");
     return frame instanceof Map ? frame : null;
   }
 
+  /**
+   * Return the box-frame dict, creating the COS path if needed.
+   *
+   * Marks the layout dirty first (on every sibling document - the
+   * frame is layer-shared): every caller is a frame-meta setter
+   * whose write can change line composition, and the mark (with
+   * its calibration) must run before the mutation lands.
+   */
   _ensureFrame(): CosNode {
-    /**
-     * Return the box-frame dict, creating the COS path if needed.
-     *
-     * Marks the layout dirty first (on every sibling document - the
-     * frame is layer-shared): every caller is a frame-meta setter
-     * whose write can change line composition, and the mark (with
-     * its calibration) must run before the mutation lands.
-     */
     this._markFrameLayoutDirty();
     const eight = cosSetdefault(cosSetdefault(this._cosData, "0", new Map()), "8", new Map());
     const slot = cosSetdefault(eight, "0", [new Map()]);
@@ -904,8 +904,8 @@ export class TextDocument {
     return cosSetdefault(cosAt(slot, 0), "0", new Map());
   }
 
+  /** Return the box's 16-vertex outline coordinates, or `null`. */
   _boxOutline(): CosNode[] | null {
-    /** Return the box's 16-vertex outline coordinates, or `null`. */
     const frame = this._boxFrame();
     const coords = frame != null ? cosGet(frame, "1", "0") : null;
     if (Array.isArray(coords) && coords.length >= 14) return coords;
@@ -1276,43 +1276,43 @@ export class TextDocument {
     this.everyLineComposer = style.every_line_composer;
   }
 
+  /**
+   * The project's AE preferences, or an empty set (AE factory
+   * defaults) for a document parsed without a preferences directory.
+   */
   _effectivePreferences(): Preferences {
-    /**
-     * The project's AE preferences, or an empty set (AE factory
-     * defaults) for a document parsed without a preferences directory.
-     */
     if (this._preferences == null) return new Preferences();
     return this._preferences;
   }
 
   // -- Text ranges (AE 24.3+ ExtendScript API) -----------------------------
 
+  /**
+   * Raise unless this document was parsed from a layer's data.
+   *
+   * AE refuses every range API on a `new TextDocument()` never
+   * fetched from a layer ("Unable to set value as it is not
+   * associated with a layer."); template-constructed documents
+   * behave identically here.
+   */
   _requireAssociation(): void {
-    /**
-     * Raise unless this document was parsed from a layer's data.
-     *
-     * AE refuses every range API on a `new TextDocument()` never
-     * fetched from a layer ("Unable to set value as it is not
-     * associated with a layer."); template-constructed documents
-     * behave identically here.
-     */
     if (!this._associated) throw new ValueError(NOT_ASSOCIATED);
   }
 
+  /**
+   * A {@link CharacterRange} over part of this document.
+   *
+   * @param characterStart - First character index (UTF-16 units,
+   *   `0 <= character_start <= text length`).
+   * @param signedCharacterEnd - Index past the last character. `-1` resolves dynamically to the
+   *   text length; when omitted, defaults to `character_start + 1`.
+   * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
+   *   creation time).
+   */
   characterRange(
     characterStart: number,
     signedCharacterEnd: number | null = null,
   ): CharacterRange {
-    /**
-     * A {@link CharacterRange} over part of this document.
-     *
-     * @param character_start - First character index (UTF-16 units,
-     *   `0 <= character_start <= text length`).
-     * @param signed_character_end - Index past the last character. `-1` resolves dynamically to the
-     *   text length; when omitted, defaults to `character_start + 1`.
-     * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
-     *   creation time).
-     */
     this._requireAssociation();
     validatePositiveInt(characterStart, this);
     if (signedCharacterEnd == null) {
@@ -1323,20 +1323,20 @@ export class TextDocument {
     return new CharacterRange(this, characterStart, signedCharacterEnd);
   }
 
+  /**
+   * A {@link ParagraphRange} over part of this document.
+   *
+   * @param paragraphIndexStart - First paragraph index
+   *   (`0 <= paragraph_index_start < paragraph count`).
+   * @param signedParagraphIndexEnd - Index past the last paragraph. `-1` resolves dynamically
+   *   to the paragraph count; when omitted, defaults to `paragraph_index_start + 1`.
+   * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
+   *   creation time).
+   */
   paragraphRange(
     paragraphIndexStart: number,
     signedParagraphIndexEnd: number | null = null,
   ): ParagraphRange {
-    /**
-     * A {@link ParagraphRange} over part of this document.
-     *
-     * @param paragraph_index_start - First paragraph index
-     *   (`0 <= paragraph_index_start < paragraph count`).
-     * @param signed_paragraph_index_end - Index past the last paragraph. `-1` resolves dynamically
-     *   to the paragraph count; when omitted, defaults to `paragraph_index_start + 1`.
-     * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
-     *   creation time).
-     */
     this._requireAssociation();
     validatePositiveInt(paragraphIndexStart, this);
     if (signedParagraphIndexEnd == null) {
@@ -1347,24 +1347,24 @@ export class TextDocument {
     return new ParagraphRange(this, paragraphIndexStart, signedParagraphIndexEnd);
   }
 
+  /**
+   * A {@link ComposedLineRange} over part of this document.
+   *
+   * Composed lines come from the layout cache AE persisted at save
+   * time, or from the calibrated composed-line resolver after
+   * py-side edits; see {@link ComposedLineRange} for the semantics.
+   *
+   * @param composedLineIndexStart - First composed-line index
+   *   (`0 <= composed_line_index_start < composed line count`).
+   * @param signedComposedLineIndexEnd - Index past the last line. `-1` resolves dynamically
+   *   to the line count; when omitted, defaults to `composed_line_index_start + 1`.
+   * @throws {@link ValueError} When the indices are outside the cached composed lines (AE raises
+   *   at creation time).
+   */
   composedLineRange(
     composedLineIndexStart: number,
     signedComposedLineIndexEnd: number | null = null,
   ): ComposedLineRange {
-    /**
-     * A {@link ComposedLineRange} over part of this document.
-     *
-     * Composed lines come from the layout cache AE persisted at save
-     * time, or from the calibrated composed-line resolver after
-     * py-side edits; see {@link ComposedLineRange} for the semantics.
-     *
-     * @param composed_line_index_start - First composed-line index
-     *   (`0 <= composed_line_index_start < composed line count`).
-     * @param signed_composed_line_index_end - Index past the last line. `-1` resolves dynamically
-     *   to the line count; when omitted, defaults to `composed_line_index_start + 1`.
-     * @throws {@link ValueError} When the indices are outside the cached composed lines (AE raises
-     *   at creation time).
-     */
     this._requireAssociation();
     validatePositiveInt(composedLineIndexStart, this);
     if (signedComposedLineIndexEnd == null) {
@@ -1375,14 +1375,14 @@ export class TextDocument {
     return new ComposedLineRange(this, composedLineIndexStart, signedComposedLineIndexEnd);
   }
 
+  /**
+   * The character bounds of the paragraph containing an index.
+   *
+   * @param characterIndex - A character index (UTF-16 units) within the text.
+   * @returns `{"start": int, "end": int}` for the containing paragraph.
+   * @throws {@link ValueError} When `characterIndex` is outside the text.
+   */
   paragraphCharacterIndexesAt(characterIndex: number): { start: number; end: number } {
-    /**
-     * The character bounds of the paragraph containing an index.
-     *
-     * @param character_index - A character index (UTF-16 units) within the text.
-     * @returns `{"start": int, "end": int}` for the containing paragraph.
-     * @throws {@link ValueError} When `characterIndex` is outside the text.
-     */
     this._requireAssociation();
     validatePositiveInt(characterIndex, this);
     const visible = _visibleLength(this);
@@ -1394,15 +1394,15 @@ export class TextDocument {
     throw new ValueError(CHARACTER_RANGE_OOB);
   }
 
+  /**
+   * The character bounds of the composed line containing an index.
+   *
+   * @param characterIndex - A character index (UTF-16 units) within the text.
+   * @returns `{"start": int, "end": int}` for the containing composed line.
+   * @throws {@link ValueError} When `characterIndex` is outside the text or the document has no
+   *   composed-line cache.
+   */
   composedLineCharacterIndexesAt(characterIndex: number): { start: number; end: number } {
-    /**
-     * The character bounds of the composed line containing an index.
-     *
-     * @param character_index - A character index (UTF-16 units) within the text.
-     * @returns `{"start": int, "end": int}` for the containing composed line.
-     * @throws {@link ValueError} When `characterIndex` is outside the text or the document has no
-     *   composed-line cache.
-     */
     this._requireAssociation();
     validatePositiveInt(characterIndex, this);
     const visible = _visibleLength(this);
@@ -1419,8 +1419,8 @@ export class TextDocument {
 
   // -- COS write-back ----------------------------------------------------
 
+  /** Serialize COS data back to the btdk chunk's binary_data. */
   _propagateCos(): void {
-    /** Serialize COS data back to the btdk chunk's binary_data. */
     this._btdkBody.data = serialize(this._cosData);
   }
 
@@ -1465,8 +1465,8 @@ export class TextDocument {
 // The Python decorator wraps each setter; the gate runs before the body. The
 // setters above forward to these wrappers.
 
-export const _boxInsetSpacingSet = requiresVersion(24)(function box_inset_spacing(this: TextDocument, value: number): void {
-  /** Setter body for `boxInsetSpacing`. */
+export const _boxInsetSpacingSet = requiresVersion(24)(/** Setter body for `boxInsetSpacing`. */
+function box_inset_spacing(this: TextDocument, value: number): void {
   validatePositiveNumber(value);
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "9", pyfloat(value));
@@ -1474,27 +1474,27 @@ export const _boxInsetSpacingSet = requiresVersion(24)(function box_inset_spacin
   this._propagateCos();
 });
 
-export const _boxVerticalAlignmentSet = requiresVersion(24)(function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
-  /** Setter body for `boxVerticalAlignment`. */
+export const _boxVerticalAlignmentSet = requiresVersion(24)(/** Setter body for `boxVerticalAlignment`. */
+function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "13", BoxVerticalAlignment.toBinary(value));
   _numericSort(cosDict(meta, "items"));
   this._propagateCos();
 });
 
-export const _boxAutoFitPolicySet = requiresVersion(24)(function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
-  /** Setter body for `boxAutoFitPolicy`. */
+export const _boxAutoFitPolicySet = requiresVersion(24)(/** Setter body for `boxAutoFitPolicy`. */
+function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "14", BoxAutoFitPolicy.toBinary(value));
   _numericSort(cosDict(meta, "items"));
   this._propagateCos();
 });
 
-export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_first_baseline_alignment(
+export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(/** Setter body for `boxFirstBaselineAlignment`. */
+function box_first_baseline_alignment(
   this: TextDocument,
   value: BoxFirstBaselineAlignment,
 ): void {
-  /** Setter body for `boxFirstBaselineAlignment`. */
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
@@ -1504,8 +1504,8 @@ export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_fi
   this._propagateCos();
 });
 
-export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
-  /** Setter body for `boxFirstBaselineAlignmentMinimum`. */
+export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(/** Setter body for `boxFirstBaselineAlignmentMinimum`. */
+function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));

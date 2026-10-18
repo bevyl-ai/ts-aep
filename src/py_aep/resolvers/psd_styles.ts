@@ -210,8 +210,8 @@ export function _parseItem(reader: _Reader, osType: string): _Value {
   throw new ValueError(`unhandled descriptor OSType ${repr(osType)}`);
 }
 
+/** Parse an `lmfx`/`lfx2` block body: version u4s (ending 16) + root Objc. */
 export function _parseEffectsDescriptor(body: Uint8Array): Map<string, _Value> {
-  /** Parse an `lmfx`/`lfx2` block body: version u4s (ending 16) + root Objc. */
   const reader = new _Reader(body);
   let found = false;
   for (let i = 0; i < 4; i++) {
@@ -590,13 +590,13 @@ export const _MULTI_KEYS = new Map<string, string>(
   [..._STYLES].map(([key, [prefix]]): [string, string] => [`${prefix}Multi`, key]),
 );
 
+/**
+ * Collect style instances per descriptor style key.
+ *
+ * Single-instance styles appear as a plain object under the style key,
+ * multi-instance ones as an array under the `<style>Multi` key.
+ */
 export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _Value[]> {
-  /**
-   * Collect style instances per descriptor style key.
-   *
-   * Single-instance styles appear as a plain object under the style key,
-   * multi-instance ones as an array under the `<style>Multi` key.
-   */
   const instances = new Map<string, _Value[]>();
   for (const [key, value] of descriptor) {
     if (_STYLES.has(key)) {
@@ -680,13 +680,13 @@ export function _convertStyle(
 // Blend options
 // ---------------------------------------------------------------------------
 
+/**
+ * The document's global light `(angle, altitude)` in degrees.
+ *
+ * Read from image resources 1037/1049; AE's Layer Styles defaults
+ * (120, 30) apply when a resource is absent or the section is malformed.
+ */
 export function readGlobalLight(file: PathLike): [number, number] {
-  /**
-   * The document's global light `(angle, altitude)` in degrees.
-   *
-   * Read from image resources 1037/1049; AE's Layer Styles defaults
-   * (120, 30) apply when a resource is absent or the section is malformed.
-   */
   let angle = 120.0,
     altitude = 30.0;
   const fp = new BytesIO(
@@ -746,19 +746,19 @@ export function _blendOptionsValues(
 // Public API
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolve a layer's styles to AE Layer Styles values.
+ *
+ * @param leaf - A `PsdLayer` from `readPsdLayers` (carries the raw blocks).
+ * @param globalLight - The document global light from `readGlobalLight`.
+ * @returns The resolved styles, or `null` when the layer has no style-related blocks at all or
+ *   its descriptor cannot be decoded (the layer then keeps the plain disabled skeleton; a warning
+ *   is emitted so the style loss is visible).
+ */
 export function parseLayerStyles(
   leaf: PsdLayer,
   globalLight: [number, number],
 ): PsdLayerStyles | null {
-  /**
-   * Resolve a layer's styles to AE Layer Styles values.
-   *
-   * @param leaf - A `PsdLayer` from `readPsdLayers` (carries the raw blocks).
-   * @param global_light - The document global light from `readGlobalLight`.
-   * @returns The resolved styles, or `null` when the layer has no style-related blocks at all or
-   *   its descriptor cannot be decoded (the layer then keeps the plain disabled skeleton; a warning
-   *   is emitted so the style loss is visible).
-   */
   const blocks = leaf.styleBlocks;
   if (blocks == null) return null;
   // Photoshop writes an `infx` block (value 0) on every ordinary layer;
@@ -824,15 +824,15 @@ export function parseLayerStyles(
   return new PsdLayerStyles(values, enabled, dropped, disabled, blendData);
 }
 
+/**
+ * Whether any style instance is enabled on the layer or group.
+ *
+ * Used to warn about a group's styles, which a layered import does not
+ * apply (a layer's merged styles size its footage through
+ * `mergedStylesBounds`). An undecodable descriptor counts as styled
+ * (the conservative answer).
+ */
 export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
-  /**
-   * Whether any style instance is enabled on the layer or group.
-   *
-   * Used to warn about a group's styles, which a layered import does not
-   * apply (a layer's merged styles size its footage through
-   * `mergedStylesBounds`). An undecodable descriptor counts as styled
-   * (the conservative answer).
-   */
   const blocks = node.styleBlocks;
   if (blocks == null || blocks.effects == null) return false;
   let descriptor: Map<string, _Value>;
@@ -845,10 +845,10 @@ export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
   return !_enabledInstances(descriptor).next().done;
 }
 
+/** `(key, instance)` of every enabled style instance in a descriptor. */
 export function* _enabledInstances(
   descriptor: Map<string, _Value>,
 ): Generator<[string, Map<string, _Value>]> {
-  /** `(key, instance)` of every enabled style instance in a descriptor. */
   for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
       if (instance instanceof Map && truthy(getOr(instance, "enab", false))) {
@@ -987,18 +987,18 @@ export function _instanceBox(
   return [left + dx - lead, top + dy - lead, right + dx + trail, bottom + dy + trail];
 }
 
+/**
+ * The layer's content box once its enabled styles are merged into it.
+ *
+ * @param node - A `PsdLayer` from `readPsdLayers`, its `bounds` the content the styles grow
+ *   from (`psd_bounds.psd_layer_box` passes the masked content: AE grows merged styles from it).
+ * @param globalAngle - The document's global light angle (`readGlobalLight`).
+ * @returns `(left, top, right, bottom)` in canvas pixels; `node.bounds` when the layer has no
+ *   enabled style.
+ * @throws {@link NotImplementedError} If the layer has a Stroke Emboss bevel, whose merged bounds
+ *   are not known, or its styles cannot be decoded.
+ */
 export function mergedStylesBounds(node: PsdLayer, globalAngle: number): _Box {
-  /**
-   * The layer's content box once its enabled styles are merged into it.
-   *
-   * @param node - A `PsdLayer` from `readPsdLayers`, its `bounds` the content the styles grow
-   *   from (`psd_bounds.psd_layer_box` passes the masked content: AE grows merged styles from it).
-   * @param global_angle - The document's global light angle (`readGlobalLight`).
-   * @returns `(left, top, right, bottom)` in canvas pixels; `node.bounds` when the layer has no
-   *   enabled style.
-   * @throws {@link NotImplementedError} If the layer has a Stroke Emboss bevel, whose merged bounds
-   *   are not known, or its styles cannot be decoded.
-   */
   const bounds = node.bounds;
   const blocks = node.styleBlocks;
   if (blocks == null || blocks.effects == null) return bounds;

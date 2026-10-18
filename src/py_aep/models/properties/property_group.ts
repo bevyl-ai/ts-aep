@@ -97,15 +97,15 @@ export const _TEXT_SELECTOR_NAMES = new Map<string, string>([
 // and the Advanced-only parameters are hidden.
 export const _PUPPET_ENGINE_VERSION = bytes_.intToBytes(2, 4, "big");
 
+/**
+ * Resolve `name` against the baked built-in effect templates.
+ *
+ * Matches the effect match name first, then the display name, the same
+ * order `matchEffectDefinition` uses for the project's own EfdG. The
+ * stored blob is deserialized fresh on every call, so the caller owns
+ * the returned chunks and the table stays pristine.
+ */
 export function _bakedEffectDef(name: string): [string, string, ListChunk] | null {
-  /**
-   * Resolve `name` against the baked built-in effect templates.
-   *
-   * Matches the effect match name first, then the display name, the same
-   * order `matchEffectDefinition` uses for the project's own EfdG. The
-   * stored blob is deserialized fresh on every call, so the caller owns
-   * the returned chunks and the table stays pristine.
-   */
   let matchName: string;
   let entry = BUILTIN_EFFECTS.get(name) ?? null;
   if (entry != null) {
@@ -123,12 +123,12 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
   return [matchName, display, sspc];
 }
 
+/**
+ * Insert *chunk* before the 'ADBE Group End' tdmn in *tdgp*.
+ *
+ * Falls back to appending if no group end marker exists.
+ */
 export function _insertBeforeGroupEnd(tdgp: ListChunk, chunk: Chunk): void {
-  /**
-   * Insert *chunk* before the 'ADBE Group End' tdmn in *tdgp*.
-   *
-   * Falls back to appending if no group end marker exists.
-   */
   for (let i = tdgp.chunks.length - 1; i >= 0; i--) {
     const c = tdgp.chunks[i];
     if (c.chunkType === "tdmn" && "value" in c && c.value === "ADBE Group End") {
@@ -139,13 +139,13 @@ export function _insertBeforeGroupEnd(tdgp: ListChunk, chunk: Chunk): void {
   tdgp.chunks.push(chunk);
 }
 
+/** The instance `tdgp` (param container) inside an effect sspc. */
 export function _effectTdgp(sspc: ListChunk): ListChunk | null {
-  /** The instance `tdgp` (param container) inside an effect sspc. */
   return findByListTypeOrNull(sspc.chunks, "tdgp");
 }
 
+/** Replace the instance display name (tdsn) in a cloned effect sspc. */
 export function _setEffectInstanceName(sspc: ListChunk, name: string): void {
-  /** Replace the instance display name (tdsn) in a cloned effect sspc. */
   const tdgp = _effectTdgp(sspc);
   if (tdgp == null) return;
   for (const [i, inner] of tdgp.chunks.entries()) {
@@ -161,12 +161,12 @@ export function _setEffectInstanceName(sspc: ListChunk, name: string): void {
 // sets and any other spacing).
 export const _NUMBERED_MASK = /^Mask(?: ([0-9]{1,6}))?$/;
 
+/**
+ * The name AE 2026 gives a new mask beside masks named `names`: one past
+ * the highest number, keeping the zero padding of the first name holding
+ * it ("Mask 007" -\> "Mask 008"; "Mask 0" counts as unnumbered).
+ */
 export function _nextMaskName(names: Iterable<string>): string {
-  /**
-   * The name AE 2026 gives a new mask beside masks named `names`: one past
-   * the highest number, keeping the zero padding of the first name holding
-   * it ("Mask 007" -\> "Mask 008"; "Mask 0" counts as unnumbered).
-   */
   let highest = 0;
   let width = 1;
   for (const name of names) {
@@ -182,18 +182,18 @@ export function _nextMaskName(names: Iterable<string>): string {
   return `Mask ${String(highest + 1).padStart(width, "0")}`;
 }
 
+/**
+ * Reset every value leaf of a freshly cloned effect to its default.
+ *
+ * AE's EfdG definition mirrors the project's first applied instance -
+ * including edited values, keyframes, and expressions - but
+ * `addProperty` must produce a static, default-valued instance. Each
+ * leaf is de-animated (keyframes removed) and stripped of any
+ * expression, then leaves whose value still differs from the `pard`
+ * default are reset. Leaves with no known default keep their value but
+ * are still de-animated / de-expressioned.
+ */
 export function _resetToDefaultValues(group: PropertyGroup): void {
-  /**
-   * Reset every value leaf of a freshly cloned effect to its default.
-   *
-   * AE's EfdG definition mirrors the project's first applied instance -
-   * including edited values, keyframes, and expressions - but
-   * `addProperty` must produce a static, default-valued instance. Each
-   * leaf is de-animated (keyframes removed) and stripped of any
-   * expression, then leaves whose value still differs from the `pard`
-   * default are reset. Leaves with no known default keep their value but
-   * are still de-animated / de-expressioned.
-   */
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
       _resetToDefaultValues(child);
@@ -222,6 +222,25 @@ export function _resetToDefaultValues(group: PropertyGroup): void {
   }
 }
 
+/**
+ * Reorder `container.properties` according to `specs`, synthesizing missing entries.
+ *
+ * Existing children whose match name appears in `specs` are preserved in
+ * canonical order. Missing children are created via `Property.synthesized`
+ * (for `PropSpec`) or as empty `PropertyGroup` instances (for `GroupSpec`).
+ *
+ * @param container - Object whose `.properties` list is reordered/filled. Also set as
+ *   `parentProperty` on synthesized children.
+ * @param specs - Full canonical spec list (NOT pre-filtered by `skip`).
+ * @param childDepth - `propertyDepth` for synthesized children.
+ * @param kw - Options:
+ * - `skip`: Match names to skip synthesis for. Checked only when the match name is **not**
+ *     already in the container - existing children are always preserved in canonical position.
+ * - `valueOverrides`: `{match_name: (value, default_value)}` for overriding synthesized
+ *     property values. When `null`, uses `spec.value` / `spec.defaultValue`.
+ * - `tailMode`: What non-spec children to append after the canonical entries: `"groups"`
+ *     (only `PropertyGroup`), `"all"` (everything), or `"none"` (nothing).
+ */
 export function _reorderAndFill(
   container: PropertyGroup,
   specs: ReadonlyArray<PropSpec | GroupSpec>,
@@ -233,24 +252,6 @@ export function _reorderAndFill(
     aeMajor: number;
   },
 ): void {
-  /**
-   * Reorder `container.properties` according to `specs`, synthesizing missing entries.
-   *
-   * Existing children whose match name appears in `specs` are preserved in
-   * canonical order. Missing children are created via `Property.synthesized`
-   * (for `PropSpec`) or as empty `PropertyGroup` instances (for `GroupSpec`).
-   *
-   * @param container - Object whose `.properties` list is reordered/filled. Also set as
-   *   `parentProperty` on synthesized children.
-   * @param specs - Full canonical spec list (NOT pre-filtered by `skip`).
-   * @param child_depth - `propertyDepth` for synthesized children.
-   * @param skip - Match names to skip synthesis for. Checked only when the match name is **not**
-   *   already in the container - existing children are always preserved in canonical position.
-   * @param value_overrides - `{match_name: (value, default_value)}` for overriding synthesized
-   *   property values. When `null`, uses `spec.value` / `spec.defaultValue`.
-   * @param tail_mode - What non-spec children to append after the canonical entries: `"groups"`
-   *   (only `PropertyGroup`), `"all"` (everything), or `"none"` (nothing).
-   */
   const { skip = new Set<string>(), valueOverrides = null, tailMode = "groups", aeMajor } = kw;
 
   const existing = new Map<string, Property | PropertyGroup>();
@@ -332,8 +333,8 @@ export function _reorderAndFill(
   for (const child of ordered) child._parentProperty = container;
 }
 
+/** Apply min/max override from `_PROPERTY_MIN_MAX` if one exists. */
 export function _applyBounds(prop: Property): void {
-  /** Apply min/max override from `_PROPERTY_MIN_MAX` if one exists. */
   const bounds = _PROPERTY_MIN_MAX.get(prop.matchName);
   if (bounds != null) {
     prop._minValueFallback = bounds[0];
@@ -341,18 +342,18 @@ export function _applyBounds(prop: Property): void {
   }
 }
 
+/**
+ * Derive the collapsed `enabled` state for Layer Styles.
+ *
+ * ExtendScript reports the Layer Styles group as disabled when no
+ * individual style is enabled, and Blend Options mirrors the parent.
+ * Synthesized (not in binary) style groups default to disabled.
+ */
 export function _deriveLayerStylesEnabled(
   group: PropertyGroup,
   aeMajor: number,
   kw: { synthesizeSubgroups: boolean },
 ): void {
-  /**
-   * Derive the collapsed `enabled` state for Layer Styles.
-   *
-   * ExtendScript reports the Layer Styles group as disabled when no
-   * individual style is enabled, and Blend Options mirrors the parent.
-   * Synthesized (not in binary) style groups default to disabled.
-   */
   const { synthesizeSubgroups } = kw;
   let anyStyleEnabled = false;
   let blendOptions: PropertyGroup | null = null;
@@ -607,21 +608,21 @@ export class PropertyGroup extends PropertyBase {
     return this._tdgp;
   }
 
+  /** Run deferred child synthesis exactly once, on first access. */
   _ensureChildrenSynthesized(): void {
-    /** Run deferred child synthesis exactly once, on first access. */
     const aeMajor = this._deferredAeMajor;
     if (aeMajor == null) return;
     this._deferredAeMajor = null;
     this._runDeferredSynthesis(aeMajor);
   }
 
+  /**
+   * Perform full child synthesis for this group.
+   *
+   * Looks up child specs for the group's match name, reorders/fills
+   * children, and defers synthesis on child groups recursively.
+   */
   _runDeferredSynthesis(aeMajor: number): void {
-    /**
-     * Perform full child synthesis for this group.
-     *
-     * Looks up child specs for the group's match name, reorders/fills
-     * children, and defers synthesis on child groups recursively.
-     */
     const specs = _GROUP_CHILD_SPECS.get(this.matchName) ?? null;
     if (specs != null) {
       _reorderAndFill(this, specs, this.propertyDepth + 1, {
@@ -643,15 +644,15 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
+  /**
+   * Comp-dependent default values for synthesized children.
+   *
+   * Camera Zoom and Focus Distance default to AE's 50mm-lens zoom
+   * (`comp width * pixel aspect / 0.72`), a value the static spec table
+   * cannot express. Returns `null` for groups with no comp-dependent
+   * defaults.
+   */
   _synthesisValueOverrides(): Map<string, [number | number[], number | number[]]> | null {
-    /**
-     * Comp-dependent default values for synthesized children.
-     *
-     * Camera Zoom and Focus Distance default to AE's 50mm-lens zoom
-     * (`comp width * pixel aspect / 0.72`), a value the static spec table
-     * cannot express. Returns `null` for groups with no comp-dependent
-     * defaults.
-     */
     if (this.matchName !== "ADBE Camera Options Group") return null;
     let zoom: number;
     try {
@@ -674,24 +675,24 @@ export class PropertyGroup extends PropertyBase {
     return this._properties;
   }
 
+  /**
+   * Return an iterator over the properties in this group.
+   *
+   * Iterates a snapshot so children can be removed while looping -
+   * `PropertyBase.remove()` mutates `properties` in place, so the live
+   * list would skip every other child (issue #230).
+   */
   [Symbol.iterator](): Iterator<Property | PropertyGroup> {
-    /**
-     * Return an iterator over the properties in this group.
-     *
-     * Iterates a snapshot so children can be removed while looping -
-     * `PropertyBase.remove()` mutates `properties` in place, so the live
-     * list would skip every other child (issue #230).
-     */
     return [...this.properties][Symbol.iterator]();
   }
 
+  /** Return the number of child properties in this group. */
   get length(): number {
-    /** Return the number of child properties in this group. */
     return this.properties.length;
   }
 
+  /** Every leaf `Property` under this group, depth-first. */
   *_leafProperties(): Generator<Property> {
-    /** Every leaf `Property` under this group, depth-first. */
     for (const child of this) {
       if (child instanceof PropertyGroup) {
         yield* child._leafProperties();
@@ -701,24 +702,24 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
+  /**
+   * Look up a child property by attribute access.
+   *
+   * Matches the attribute name against the camelCase display names
+   * of child properties ("Anchor Point" is `anchorPoint`).  This allows natural syntax such as:
+   *
+   * ```ts
+   * import { parse } from "@bevyl-ai/ts-aep";
+   * const layer = parse("project.aep").project.compositions[0].layers[0];
+   * layer.transform.position.value;
+   * layer.transform.opacity.value;
+   * ```
+   *
+   * **Note:** Only invoked when normal attribute lookup has already
+   * failed, so class attributes and `@property` descriptors
+   * always take priority.
+   */
   _missingAttribute(name: string): Property | PropertyGroup {
-    /**
-     * Look up a child property by attribute access.
-     *
-     * Matches the attribute name against the camelCase display names
-     * of child properties ("Anchor Point" is `anchorPoint`).  This allows natural syntax such as:
-     *
-     * ```ts
-     * import { parse } from "@bevyl-ai/ts-aep";
-     * const layer = parse("project.aep").project.compositions[0].layers[0];
-     * layer.transform.position.value;
-     * layer.transform.opacity.value;
-     * ```
-     *
-     * **Note:** Only invoked when normal attribute lookup has already
-     * failed, so class attributes and `@property` descriptors
-     * always take priority.
-     */
     // A child property is never named with a leading underscore, so a
     // private name here is always a miss on an internal attribute
     // (`_ldta`, `_chunk`, ...). Answering it without the child scan
@@ -768,26 +769,26 @@ export class PropertyGroup extends PropertyBase {
 
   property<K extends keyof MatchNameTypes>(key: K): MatchNameTypes[K];
   property(key: number | string): Property | PropertyGroup;
+  /**
+   * Look up a child property by index or name.
+   *
+   * This is the canonical access method; `_missingAttribute` (
+   * attribute access) delegates here.
+   *
+   * @example
+   * ```ts
+   * import { parse } from "@bevyl-ai/ts-aep";
+   * const layer = parse("project.aep").project.compositions[0].layers[0];
+   * layer.property("ADBE Transform Group").property("ADBE Position");
+   * layer.property("ADBE Mask Parade").property(0);
+   * layer.property(0);
+   * ```
+   * @param key - A `number` index or a `string` display name / match name.
+   * @throws {@link KeyError} If the string key does not match any child.
+   * @throws {@link IndexError} If the integer index is out of range.
+   * @throws {@link TypeError} If `key` is neither a `number` nor a `string`.
+   */
   property(key: number | string): Property | PropertyGroup {
-    /**
-     * Look up a child property by index or name.
-     *
-     * This is the canonical access method; `_missingAttribute` (
-     * attribute access) delegates here.
-     *
-     * @example
-     * ```ts
-     * import { parse } from "@bevyl-ai/ts-aep";
-     * const layer = parse("project.aep").project.compositions[0].layers[0];
-     * layer.property("ADBE Transform Group").property("ADBE Position");
-     * layer.property("ADBE Mask Parade").property(0);
-     * layer.property(0);
-     * ```
-     * @param key - A `number` index or a `string` display name / match name.
-     * @throws {@link KeyError} If the string key does not match any child.
-     * @throws {@link IndexError} If the integer index is out of range.
-     * @throws {@link TypeError} If `key` is neither a `number` nor a `string`.
-     */
     if (typeof key === "number" && Number.isInteger(key)) {
       return at(this.properties, key);
     }
@@ -855,33 +856,33 @@ export class PropertyGroup extends PropertyBase {
     return this.properties.length;
   }
 
+  /**
+   * Remove every keyframe from all properties in this group,
+   * recursively.
+   *
+   * Calling this on a {@link Layer} clears the keyframes of every
+   * property on the layer, including its marker keyframes. Each
+   * animated property reverts to a static value; see
+   * `Property.removeAllKeys`.
+   */
   removeAllKeys(): void {
-    /**
-     * Remove every keyframe from all properties in this group,
-     * recursively.
-     *
-     * Calling this on a {@link Layer} clears the keyframes of every
-     * property on the layer, including its marker keyframes. Each
-     * animated property reverts to a static value; see
-     * `Property.removeAllKeys`.
-     */
     for (const child of this.properties) {
       child.removeAllKeys();
     }
   }
 
+  /**
+   * Check whether a property with the given name can be added.
+   *
+   * Returns `true` if this group is an indexed group and `name` is
+   * a valid match name or display name for the group type. For the
+   * Effect Parade, the expression controls py_aep can create plus
+   * any effect already defined in the project (`LIST:EfdG`) are
+   * accepted.
+   *
+   * @param name - A match name or display name to check.
+   */
   canAddProperty(name: string): boolean {
-    /**
-     * Check whether a property with the given name can be added.
-     *
-     * Returns `true` if this group is an indexed group and `name` is
-     * a valid match name or display name for the group type. For the
-     * Effect Parade, the expression controls py_aep can create plus
-     * any effect already defined in the project (`LIST:EfdG`) are
-     * accepted.
-     *
-     * @param name - A match name or display name to check.
-     */
     if (_canAddProperty(this.matchName, this.propertyType, name)) return true;
     return this._installedEffectDef(name) != null;
   }
@@ -1037,34 +1038,34 @@ export class PropertyGroup extends PropertyBase {
     throw new NotImplementedError(`no addProperty builder for '${resolved}'`);
   }
 
+  /**
+   * `'{base} {n}'` with `n >= start`, skipping any number already
+   * used by a sibling so a new instance never duplicates an existing
+   * name. AE numbers same-type instances per container, but a count+1
+   * scheme collides once an instance is removed or the existing names
+   * are non-contiguous (e.g. `['Stroke 1', 'Stroke 3']`).
+   */
   _freeNumberedName(base: string, start: number): string {
-    /**
-     * `'{base} {n}'` with `n >= start`, skipping any number already
-     * used by a sibling so a new instance never duplicates an existing
-     * name. AE numbers same-type instances per container, but a count+1
-     * scheme collides once an instance is removed or the existing names
-     * are non-contiguous (e.g. `['Stroke 1', 'Stroke 3']`).
-     */
     const existing = new Set(this.properties.map((p) => p.name));
     let n = start;
     while (existing.has(`${base} ${n}`)) n += 1;
     return `${base} ${n}`;
   }
 
+  /**
+   * The tdsn name for a new effect instance: the first instance uses
+   * the unnamed sentinel (so it shows the effect's own name); later ones
+   * get a baked `"{display} N"`. `sameType` is the count of existing
+   * instances (counted per match name, or per pseudo-effect namespace
+   * for the Dropdown Control).
+   */
   _effectInstanceName(display: string, sameType: number): string {
-    /**
-     * The tdsn name for a new effect instance: the first instance uses
-     * the unnamed sentinel (so it shows the effect's own name); later ones
-     * get a baked `"{display} N"`. `sameType` is the count of existing
-     * instances (counted per match name, or per pseudo-effect namespace
-     * for the Dropdown Control).
-     */
     if (sameType === 0) return TDSN_SENTINEL;
     return this._freeNumberedName(display, sameType + 1);
   }
 
+  /** Add a new default mask atom to this Masks parade group. */
   _addMaskAtom(): MaskPropertyGroup {
-    /** Add a new default mask atom to this Masks parade group. */
     this._ensureMaterialized();
     // AE assigns a monotonic per-layer mask id (highest existing + 1),
     // not a positional count: len+1 collides after a mid-parade mask is
@@ -1088,8 +1089,8 @@ export class PropertyGroup extends PropertyBase {
     return mask;
   }
 
+  /** Add a fresh expression-control effect to this Effect Parade. */
   _addExpressionControl(matchName: string): PropertyGroup {
-    /** Add a fresh expression-control effect to this Effect Parade. */
     const skeleton = getOrThrow(EXPRESSION_CONTROLS, matchName);
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
@@ -1114,14 +1115,14 @@ export class PropertyGroup extends PropertyBase {
     return this._attachEffect(tdmn, sspc, matchName);
   }
 
+  /**
+   * Add a fresh Dropdown Menu Control to this Effect Parade.
+   *
+   * The Dropdown Menu Control is a pseudo-effect with a per-instance
+   * generated match name, so AE's "Name N" numbering counts existing
+   * dropdowns by the `Pseudo/` namespace rather than by match name.
+   */
   _addDropdownControl(): PropertyGroup {
-    /**
-     * Add a fresh Dropdown Menu Control to this Effect Parade.
-     *
-     * The Dropdown Menu Control is a pseudo-effect with a per-instance
-     * generated match name, so AE's "Name N" numbering counts existing
-     * dropdowns by the `Pseudo/` namespace rather than by match name.
-     */
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
 
@@ -1139,19 +1140,19 @@ export class PropertyGroup extends PropertyBase {
     return this._attachEffect(tdmn, sspc, tdmn.value);
   }
 
+  /**
+   * Resolve `name` to an effect template.
+   *
+   * Only the Effect Parade can host installed effects. The project's
+   * own `LIST:EfdG` wins: its definition was written by whichever AE
+   * release saved the project, so cloning it keeps the instance
+   * consistent with the rest of the file. A built-in absent from the
+   * project falls back to the baked table, which is what lets an
+   * effect be added to a project that has never used it.
+   *
+   * Returns `(match_name, display_name, def_sspc)`, else `null`.
+   */
   _installedEffectDef(name: string): [string, string, ListChunk] | null {
-    /**
-     * Resolve `name` to an effect template.
-     *
-     * Only the Effect Parade can host installed effects. The project's
-     * own `LIST:EfdG` wins: its definition was written by whichever AE
-     * release saved the project, so cloning it keeps the instance
-     * consistent with the rest of the file. A built-in absent from the
-     * project falls back to the baked table, which is what lets an
-     * effect be added to a project that has never used it.
-     *
-     * Returns `(match_name, display_name, def_sspc)`, else `null`.
-     */
     if (this.matchName !== "ADBE Effect Parade") return null;
     const project = this._containingLayer.containingComp._project;
     const found = _effect().matchEffectDefinition(project._effectDefinitions(), name);
@@ -1159,29 +1160,29 @@ export class PropertyGroup extends PropertyBase {
     return _bakedEffectDef(name);
   }
 
+  /**
+   * Add an effect already defined in the project by cloning its
+   * `LIST:EfdG` definition.
+   *
+   * The stored definition is a complete sspc template, so cloning it
+   * and retargeting the hidden `-0000` internal param to this layer
+   * yields a valid applied effect. AE's EfdG entry mirrors the first
+   * applied instance (including edited values and keyframes), so the
+   * value parameters are de-animated and reset to their `pard`
+   * defaults to match `addProperty`'s static, default-valued
+   * semantics.
+   *
+   * The definition also mirrors that instance's `tdb4` timebases, so
+   * the clone is restamped with this composition's: an effect first
+   * applied in a 24 fps comp otherwise carries 24576 into a 60 fps
+   * one, and the parameter's keyframe times are then read against the
+   * wrong base.
+   */
   _addInstalledEffect(
     matchName: string,
     display: string,
     defSspc: ListChunk,
   ): PropertyGroup {
-    /**
-     * Add an effect already defined in the project by cloning its
-     * `LIST:EfdG` definition.
-     *
-     * The stored definition is a complete sspc template, so cloning it
-     * and retargeting the hidden `-0000` internal param to this layer
-     * yields a valid applied effect. AE's EfdG entry mirrors the first
-     * applied instance (including edited values and keyframes), so the
-     * value parameters are de-animated and reset to their `pard`
-     * defaults to match `addProperty`'s static, default-valued
-     * semantics.
-     *
-     * The definition also mirrors that instance's `tdb4` timebases, so
-     * the clone is restamped with this composition's: an effect first
-     * applied in a 24 fps comp otherwise carries 24576 into a 60 fps
-     * one, and the parameter's keyframe times are then read against the
-     * wrong base.
-     */
     this._ensureMaterialized();
     const sspc = cloneChunkTree(defSspc);
     assert(sspc instanceof ListChunk);
@@ -1209,20 +1210,20 @@ export class PropertyGroup extends PropertyBase {
     return effect;
   }
 
+  /**
+   * Insert a built effect's chunks, parse, wire the model, append.
+   *
+   * `parseEffect` is the canonical chunks-\>model path for effects
+   * (param-def merging, child synthesis); `duplicate()` uses it too.
+   * `engv` is the engine-version atom AE stores between an effect's
+   * `tdmn` and its `sspc` (Puppet only).
+   */
   _attachEffect(
     tdmn: TdmnChunk,
     sspc: ListChunk,
     matchName: string,
     engv: Chunk | null = null,
   ): PropertyGroup {
-    /**
-     * Insert a built effect's chunks, parse, wire the model, append.
-     *
-     * `parseEffect` is the canonical chunks-\>model path for effects
-     * (param-def merging, child synthesis); `duplicate()` uses it too.
-     * `engv` is the engine-version atom AE stores between an effect's
-     * `tdmn` and its `sspc` (Puppet only).
-     */
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
@@ -1247,15 +1248,15 @@ export class PropertyGroup extends PropertyBase {
     return effect;
   }
 
+  /**
+   * Insert a built group's chunks, parse, wire the model, append.
+   *
+   * `parsePropertyGroup` is the canonical chunks-\>model path for
+   * added groups (mandatory subgroups, the Path element's om-s,
+   * deferred child synthesis); the shape, selector and animator
+   * builders share it, as `_attachEffect` does for effects.
+   */
   _attachGroup(tdmn: TdmnChunk, tdgp: ListChunk, matchName: string): PropertyGroup {
-    /**
-     * Insert a built group's chunks, parse, wire the model, append.
-     *
-     * `parsePropertyGroup` is the canonical chunks-\>model path for
-     * added groups (mandatory subgroups, the Path element's om-s,
-     * deferred child synthesis); the shape, selector and animator
-     * builders share it, as `_attachEffect` does for effects.
-     */
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
@@ -1278,8 +1279,8 @@ export class PropertyGroup extends PropertyBase {
     return group;
   }
 
+  /** Add a fresh shape element to this contents group. */
   _addVectorElement(matchName: string): PropertyGroup {
-    /** Add a fresh shape element to this contents group. */
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
 
@@ -1299,17 +1300,17 @@ export class PropertyGroup extends PropertyBase {
     return this._attachGroup(tdmn, tdgp, matchName);
   }
 
+  /**
+   * Apply an animator property from the fixed pool (the
+   * named-group exception).
+   *
+   * The `ADBE Text Animator Properties` group exposes a fixed pool
+   * of synthesized members; unlike indexed groups, "adding" one
+   * materializes the existing member in place (it keeps its pool
+   * position) rather than appending a new child. Idempotent: adding
+   * an already-applied property is a no-op, as in AE.
+   */
   _addAnimatorProperty(matchName: string): Property | PropertyGroup {
-    /**
-     * Apply an animator property from the fixed pool (the
-     * named-group exception).
-     *
-     * The `ADBE Text Animator Properties` group exposes a fixed pool
-     * of synthesized members; unlike indexed groups, "adding" one
-     * materializes the existing member in place (it keeps its pool
-     * position) rather than appending a new child. Idempotent: adding
-     * an already-applied property is a no-op, as in AE.
-     */
     const prop = this.properties.find((p) => p.matchName === matchName) ?? null;
     // resolve_addable returns only pool match names, so the member exists.
     assert(prop != null);
@@ -1317,14 +1318,14 @@ export class PropertyGroup extends PropertyBase {
     return prop;
   }
 
+  /**
+   * Add a fresh animator to this Text Animators group.
+   *
+   * A new animator is a minimal `[Animator N, Properties (empty)]`
+   * container; its (empty) Selectors group and the 103-property
+   * Properties pool are synthesized on parse.
+   */
   _addTextAnimator(): PropertyGroup {
-    /**
-     * Add a fresh animator to this Text Animators group.
-     *
-     * A new animator is a minimal `[Animator N, Properties (empty)]`
-     * container; its (empty) Selectors group and the 103-property
-     * Properties pool are synthesized on parse.
-     */
     this._ensureMaterialized();
     const sameType = this.properties.filter(
       (p) => p.matchName === "ADBE Text Animator",
@@ -1335,14 +1336,14 @@ export class PropertyGroup extends PropertyBase {
     return this._attachGroup(tdmn, tdgp, "ADBE Text Animator");
   }
 
+  /**
+   * Add a fresh selector to this text animator's Selectors group.
+   *
+   * Like shape elements, a selector is a minimal named group whose
+   * value children are synthesized; the Range Selector additionally
+   * carries an empty `ADBE Text Range Advanced` subgroup in binary.
+   */
   _addTextSelector(matchName: string): PropertyGroup {
-    /**
-     * Add a fresh selector to this text animator's Selectors group.
-     *
-     * Like shape elements, a selector is a minimal named group whose
-     * value children are synthesized; the Range Selector additionally
-     * carries an empty `ADBE Text Range Advanced` subgroup in binary.
-     */
     this._ensureMaterialized();
     const base = getOrThrow(_TEXT_SELECTOR_NAMES, matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;

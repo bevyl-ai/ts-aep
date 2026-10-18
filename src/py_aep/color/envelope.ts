@@ -42,14 +42,14 @@ export const OCIO_TYPE_DISPLAY = 1;
 /** A single color space (`colorSpace1` only). */
 export const OCIO_TYPE_COLORSPACE = 2;
 
+/**
+ * Serialize `obj` exactly as AE does: compact, no whitespace.
+ *
+ * `ensure_ascii=False` so a non-ASCII profile/color-space name is emitted as
+ * raw UTF-8 (matching AE's `Utf8` chunk) rather than `\uXXXX` escapes, which
+ * would break the byte-identical round-trip.
+ */
 export function _compact(obj: object): string {
-  /**
-   * Serialize `obj` exactly as AE does: compact, no whitespace.
-   *
-   * `ensure_ascii=False` so a non-ASCII profile/color-space name is emitted as
-   * raw UTF-8 (matching AE's `Utf8` chunk) rather than `\uXXXX` escapes, which
-   * would break the byte-identical round-trip.
-   */
   return jsonDumps(obj, { separators: [",", ":"], ensureAscii: false });
 }
 
@@ -57,13 +57,13 @@ export function _b64(text: string): string {
   return b64encode(encode(text, "utf-8"));
 }
 
+/**
+ * Wrap pre-encoded `colorProfileData` in the outer envelope.
+ *
+ * Key order matches AE verbatim: `baseColorProfile` (`colorProfileData` then
+ * `colorProfileName`), then `baseProfileType`.
+ */
 export function _envelope(colorProfileDataB64: string, name: string, profileType: number): string {
-  /**
-   * Wrap pre-encoded `colorProfileData` in the outer envelope.
-   *
-   * Key order matches AE verbatim: `baseColorProfile` (`colorProfileData` then
-   * `colorProfileName`), then `baseProfileType`.
-   */
   return _compact({
     baseColorProfile: {
       colorProfileData: colorProfileDataB64,

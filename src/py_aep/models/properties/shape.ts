@@ -24,13 +24,13 @@ import type { Property } from "./property.ts";
 const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
 const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 
+/** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
 export function _interpTransform(raw: number): number {
-  /** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
   return raw === 2 ? 1 : 0;
 }
 
+/** Map ExtendScript interpolation (0/1) back to binary (0/2). */
 export function _interpReverse(value: number): number {
-  /** Map ExtendScript interpolation (0/1) back to binary (0/2). */
   return value === 1 ? 2 : 0;
 }
 
@@ -227,16 +227,16 @@ export class Shape {
     this._writeGeometry(verts, inT, outT);
   }
 
+  /**
+   * Store `vertices` (absolute) and their relative tangents.
+   *
+   * The points are stored normalized to a bounding box spanning every
+   * control point, so the box is recomputed from the whole new geometry:
+   * a box kept from an earlier geometry cannot hold a coordinate along
+   * an axis it has no extent in (a flat or single-point path would keep
+   * its old values). Everything is validated before anything is written.
+   */
   _writeGeometry(vertices: number[][], inTangents: number[][], outTangents: number[][]): void {
-    /**
-     * Store `vertices` (absolute) and their relative tangents.
-     *
-     * The points are stored normalized to a bounding box spanning every
-     * control point, so the box is recomputed from the whole new geometry:
-     * a box kept from an earlier geometry cannot hold a coordinate along
-     * an axis it has no extent in (a flat or single-point path would keep
-     * its old values). Everything is validated before anything is written.
-     */
     for (const coords of [vertices, inTangents, outTangents]) {
       if (!Array.isArray(coords)) {
         throw new ValueError("vertices and tangents must be lists of [x, y] pairs");
@@ -299,6 +299,12 @@ export class Shape {
     }
   }
 
+  /**
+   * Wrap parsed shape chunks as a `Shape` view.
+   *
+   * `_maskPath` is the owning Mask Path: its mask's RotoBezier switch
+   * decides which tangents the shape reports.
+   */
   static _fromBinary(kw: {
     _shph: ShphChunk;
     _points: ShapePoint[];
@@ -308,12 +314,6 @@ export class Shape {
     _maskPath?: Property | null;
     featherPoints?: FeatherPoint[] | null;
   }): Shape {
-    /**
-     * Wrap parsed shape chunks as a `Shape` view.
-     *
-     * `_maskPath` is the owning Mask Path: its mask's RotoBezier switch
-     * decides which tangents the shape reports.
-     */
     const {
       _shph,
       _points,
@@ -336,19 +336,19 @@ export class Shape {
     return obj;
   }
 
+  /** Whether this is the path of a mask whose RotoBezier switch is on. */
   _isRotoBezier(): boolean {
-    /** Whether this is the path of a mask whose RotoBezier switch is on. */
     const prop = this._maskPath;
     if (prop == null || prop._tdb4 == null) return false;
     const mask = prop._parentProperty;
     return mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup && mask.rotoBezier;
   }
 
+  /**
+   * The tangents AE draws the path with when its mask is RotoBezier
+   * (`resolvers.rotoBezier`), or `null` for any other shape.
+   */
   _rotoTangents(): [number[][], number[][]] | null {
-    /**
-     * The tangents AE draws the path with when its mask is RotoBezier
-     * (`resolvers.rotoBezier`), or `null` for any other shape.
-     */
     const prop = this._maskPath;
     if (prop == null || !this._isRotoBezier()) return null;
     const layer = prop._containingLayer;
@@ -371,14 +371,14 @@ export class Shape {
     );
   }
 
+  /** The tensions stored with this shape value (the `omtn` chunk). */
   _ownTensions(): number[] {
-    /** The tensions stored with this shape value (the `omtn` chunk). */
     if (this._omtn == null) return [];
     return this._omtn.tensions.map((item) => item.value);
   }
 
+  /** Store per-vertex RotoBezier tensions in this value's `omtn`. */
   _setTensions(tensions: number[]): void {
-    /** Store per-vertex RotoBezier tensions in this value's `omtn`. */
     if (this._omtn != null) {
       this._omtn.tensions = tensions.map((t) => new TensionItem({ value: t }));
     }
@@ -399,8 +399,8 @@ export class Shape {
     return this._layer._maskScale;
   }
 
+  /** Convert a normalized [0,1] shape point to absolute coordinates. */
   _denormalizePoint(pt: ShapePoint): number[] {
-    /** Convert a normalized [0,1] shape point to absolute coordinates. */
     const shph = this._shph;
     assert(shph != null);
     const x = shph.topLeftX * (1 - pt.x) + shph.bottomRightX * pt.x;
@@ -408,8 +408,8 @@ export class Shape {
     return [x, y];
   }
 
+  /** Convert absolute coordinates back to normalized [0,1]. */
   _normalizePoint(x: number, y: number): [number, number] {
-    /** Convert absolute coordinates back to normalized [0,1]. */
     const shph = this._shph;
     assert(shph != null);
     const dx = shph.bottomRightX - shph.topLeftX;
@@ -489,12 +489,12 @@ export class Shape {
     this._writeGeometry(this.vertices, [...value], this._storedTangents(1));
   }
 
+  /**
+   * The stored handles (which a RotoBezier mask ignores): the
+   * incoming ones for `offset` -1, the outgoing ones for +1 (each handle
+   * point sits beside its vertex in `_points`).
+   */
   _storedTangents(offset: number): number[][] {
-    /**
-     * The stored handles (which a RotoBezier mask ignores): the
-     * incoming ones for `offset` -1, the outgoing ones for +1 (each handle
-     * point sits beside its vertex in `_points`).
-     */
     if (this._points == null || this._shph == null) return [];
     let result: number[][] = [];
     for (let i = 0; i < this._points.length; i += 3) {
