@@ -38,6 +38,11 @@
       "any": 2,
       "unknown": 0,
       "casts": 0
+    },
+    "7 tests": {
+      "any": 22,
+      "unknown": 121,
+      "casts": 6
     }
   }
 }
