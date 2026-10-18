@@ -9,13 +9,12 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, len } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, len, py_assert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse_project } from "../conftest.ts";
-import { CameraLayer } from "../../src/py_aep/models/layers/index.ts";
+import { CameraLayer, type Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).div("..", "..", "samples", "models", "layer");
 const CAMERAS_AEP = SAMPLES_DIR.div("camera_rigs.aep");
@@ -23,17 +22,18 @@ const TYPE_AEP = SAMPLES_DIR.div("type.aep");
 
 function _camera(comp_name: string): CameraLayer {
   const project = parse_project(CAMERAS_AEP);
-  const comp = project.compositions.find((c) => c.name === comp_name)!;
-  const cam = comp.layers.find((ly) => ly instanceof CameraLayer)!;
+  const comp = project.compositions.find((c) => c.name === comp_name);
+  if (comp === undefined) throw new StopIteration();
+  const cam = comp.layers.find((ly) => ly instanceof CameraLayer);
+  if (cam === undefined) throw new StopIteration();
   return cam;
 }
 
 describe("TestCameraOptionDefaults", () => {
   const _opt = (cam: CameraLayer, match_name: string): Property => {
-    const prop = (cam.__getitem__("ADBE Camera Options Group") as PropertyGroup).__getitem__(
-      match_name,
-    ) as Property;
+    const prop = cam.__getitem__("ADBE Camera Options Group").__getitem__(match_name);
     expect(prop instanceof Property).toBe(true);
+    py_assert(prop instanceof Property);
     return prop;
   };
 
@@ -59,7 +59,7 @@ describe("TestCameraOptionDefaults", () => {
 
   test("test_ae26_has_fifteen_options", () => {
     const cam = _camera("CAM_ONE");
-    const options = (cam.__getitem__("ADBE Camera Options Group") as PropertyGroup).properties;
+    const options = cam.__getitem__("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(15);
     const names = options.map((p) => p.match_name);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(true);
@@ -90,8 +90,9 @@ describe("TestCameraOptionDefaults", () => {
     expect(project._head.ae_version_major).toBe(25);
     const cam = project.compositions
       .flatMap((c) => c.layers)
-      .find((ly) => ly instanceof CameraLayer)!;
-    const options = (cam.__getitem__("ADBE Camera Options Group") as PropertyGroup).properties;
+      .find((ly) => ly instanceof CameraLayer);
+    if (cam === undefined) throw new StopIteration();
+    const options = cam.__getitem__("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(13);
     const names = options.map((p) => p.match_name);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(false);
@@ -114,7 +115,7 @@ describe("TestCameraOptionDefaults", () => {
 describe("TestCameraLightTransformMetadata", () => {
   const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");
 
-  const _z_follower = (layer: any): Property => {
+  const _z_follower = (layer: Layer): Property => {
     const prop = layer.transform.__getitem__("ADBE Position_2");
     expect(prop instanceof Property).toBe(true);
     // These probes assume the leader is NOT dimension-separated.
@@ -135,8 +136,10 @@ describe("TestCameraLightTransformMetadata", () => {
   test("test_regular_layer_z_follower_not_modified", () => {
     // Non-regression: a normal 3D layer keeps Z follower isModified False.
     const project = parse_project(GEOMETRY_AEP);
-    const comp = project.compositions.find((c) => c.name === "PROBE_MAIN")!;
-    const solid = comp.layers.find((ly) => ly.name === "solid_3d")!;
+    const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
+    if (comp === undefined) throw new StopIteration();
+    const solid = comp.layers.find((ly) => ly.name === "solid_3d");
+    if (solid === undefined) throw new StopIteration();
     expect(_z_follower(solid).is_modified).toBe(false);
   });
 

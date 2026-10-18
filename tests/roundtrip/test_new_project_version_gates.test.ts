@@ -17,6 +17,7 @@ import { describe, expect, test } from "bun:test";
 import {
   BytesIO,
   bytes_,
+  getattr,
   getitem,
   len,
   lru_cache,
@@ -26,14 +27,18 @@ import {
   py_eq,
   setdefault,
   sorted,
+  StopIteration,
   tkey,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/index.ts";
 import { ListChunk, read_aep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
-import type { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
+import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
+import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
+import { TdmnChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const VERSIONS = SAMPLES.div("versions");
@@ -69,7 +74,7 @@ function _tag(chunk: Chunk): string {
   }
   if (chunk.chunk_type === "tdmn") {
     // `value` exists only on the tdmn chunk subclass.
-    return `tdmn=${(chunk as any).value}`;
+    return `tdmn=${as_instance(chunk, TdmnChunk).value}`;
   }
   return chunk.chunk_type;
 }
@@ -99,7 +104,7 @@ function* _walk(chunk: ListChunk): Generator<[ListChunk, number, Chunk]> {
 }
 
 /** Python `a <= b` on sets: every member of `a` is in `b`. */
-function set_le(a: Set<any>, b: Set<any>): boolean {
+function set_le<T>(a: Set<T>, b: Set<T>): boolean {
   return [...a].every((x) => b.has(x));
 }
 
@@ -149,7 +154,8 @@ class _Structure {
         }
       } else if (chunk.list_type === "tdbs" && i > 0) {
         if (_tag(parent.chunks[i - 1]) === "tdmn=ADBE Shadow Color") {
-          const cdat = chunk.chunks.find((c) => c.chunk_type === "cdat")!;
+          const cdat = chunk.chunks.find((c) => c.chunk_type === "cdat");
+          if (cdat === undefined) throw new StopIteration();
           this.shadow_colors.add(bytes_.hex(cdat.tobytes()));
         }
       }
@@ -157,7 +163,8 @@ class _Structure {
   }
 
   _add_item(item: ListChunk): void {
-    const idta = item.chunks.find((c) => c.chunk_type === "idta")!;
+    const idta = item.chunks.find((c) => c.chunk_type === "idta");
+    if (idta === undefined) throw new StopIteration();
     const tags: string[] = [];
     for (const child of item.chunks) {
       const tag = _tag(child);
@@ -168,13 +175,13 @@ class _Structure {
         tags.push(tag);
       }
     }
-    const item_type = (idta as any).item_type;
+    const item_type = as_instance(idta, IdtaChunk).item_type;
     setdefault(this.items, item_type, new Set<string>()).add(tags.join(" "));
   }
 
   _add_view_layer(view: ListChunk): void {
     const ldta = view.chunks[0];
-    const name = (view.chunks[1] as any).value;
+    const name = getattr(view.chunks[1], "value");
     this.view_layers.set(tkey(view.list_type, name), _signature(view));
     this.view_ldta_tails.add(
       tkey(view.list_type, bytes_.hex(bytes_.slice(ldta.tobytes(), 147, 160))),
@@ -182,15 +189,16 @@ class _Structure {
   }
 
   _add_layer(layer: ListChunk): void {
-    const ldta = layer.chunks[0] as LdtaChunk;
+    const ldta = as_instance(layer.chunks[0], LdtaChunk);
     this.layers.add(
       layer.chunks
         .filter((c) => c.chunk_type !== "cmta")
         .map((c) => _tag(c))
         .join(" "),
     );
-    const tdgp = layer.chunks.find((c) => _tag(c) === "LIST:tdgp")!;
-    const groups = (tdgp as ListChunk).chunks
+    const tdgp = layer.chunks.find((c) => _tag(c) === "LIST:tdgp");
+    if (tdgp === undefined) throw new StopIteration();
+    const groups = as_instance(tdgp, ListChunk).chunks
       // A new shape layer has no contents yet; AE's samples have some.
       .filter((c) => c.chunk_type === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
       .map((c) => _tag(c));

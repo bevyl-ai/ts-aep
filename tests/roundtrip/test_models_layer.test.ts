@@ -5,7 +5,9 @@ import {
   AttributeError,
   len,
   NotImplementedError,
+  at,
   Path,
+  py_assert,
   py_eq,
   range,
   getitem,
@@ -26,6 +28,8 @@ import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_l
 import { AVItem, CompItem, FootageItem } from "../../src/py_aep/models/items/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { DeferredListChunk, ListChunk } from "../../src/py_aep/binary/chunk.ts";
+import { TdmnChunk } from "../../src/py_aep/binary/property_chunks.ts";
+import { S4Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
@@ -51,7 +55,7 @@ function _tdpi_by_param_suffix(layer: Layer): Map<string, number[]> {
         if (body instanceof ListChunk) {
           for (const inner of body.chunks) {
             if (inner.chunk_type === "tdpi") {
-              setdefault(result, py_slice((c as any).value, -5, null), []).push((inner as any).value);
+              setdefault(result, py_slice(as_instance(c, TdmnChunk).value, -5, null), []).push(as_instance(inner, S4Chunk).value);
             }
           }
         }
@@ -163,8 +167,8 @@ describe("TestRoundtripLightType", () => {
     const layer = get_layer(project, "lightType_AMBIENT");
     expect(layer instanceof LightLayer).toBe(true);
     raises(ValueError, () => {
-      // type: ignore[assignment] in Python: the value is deliberately invalid.
-      (layer as any).light_type = 9999;
+      // @ts-expect-error type: ignore[assignment] in Python: the value is deliberately invalid.
+      as_instance(layer, LightLayer).light_type = 9999;
     }, "Invalid value");
   });
 });
@@ -1062,7 +1066,8 @@ describe("TestReplaceSource", () => {
     }
 
     raises(ValueError, () => {
-      layer.replace_source(new _FakeItem() as any);
+      // @ts-expect-error a non-AVItem source is deliberately passed to the runtime check
+      layer.replace_source(new _FakeItem());
     }, "must be an AVItem");
   });
 
@@ -1165,10 +1170,10 @@ describe("TestLayerRemove", () => {
   test("test_remove_invalidates_cache", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
-    const last_id = comp.layers.at(-1)!.id;
+    const last_id = at(comp.layers, -1).id;
     void comp.layers_by_id; // Build cache
     expect(comp.layers_by_id.has(last_id)).toBe(true);
-    comp.layers.at(-1)!.remove();
+    at(comp.layers, -1).remove();
     expect(comp.layers_by_id.has(last_id)).toBe(false);
   });
 
@@ -1186,8 +1191,8 @@ describe("TestLayerRemove", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
-    const removed_id = comp.layers.at(-1)!.id;
-    comp.layers.at(-1)!.remove();
+    const removed_id = at(comp.layers, -1).id;
+    at(comp.layers, -1).remove();
     app.project.save(tmp_path.div("out.aep"));
 
     const app2 = parse_aep(tmp_path.div("out.aep"));
@@ -1331,13 +1336,13 @@ describe("TestLayerMove", () => {
     const first_id = first.id;
     first.move_to_end();
     expect(comp.layers.at(-1)).toBe(first);
-    expect(comp.layers.at(-1)!.id).toBe(first_id);
+    expect(at(comp.layers, -1).id).toBe(first_id);
   });
 
   test("test_move_to_beginning", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
-    const last = comp.layers.at(-1)!;
+    const last = at(comp.layers, -1);
     const last_id = last.id;
     last.move_to_beginning();
     expect(comp.layers[0]).toBe(last);
@@ -1675,8 +1680,8 @@ describe("TestDuplicateComplexValueLayers", () => {
     const dup = original.duplicate();
     if (original.masks == null) throw new Error("original has no masks group");
     if (dup.masks == null) throw new Error("duplicate has no masks group");
-    const orig_shape = (original.masks.__getitem__(0) as any).property("ADBE Mask Shape").value;
-    const dup_shape = (dup.masks.__getitem__(0) as any).property("ADBE Mask Shape").value;
+    const orig_shape = as_instance(original.masks.__getitem__(0), PropertyGroup).property("ADBE Mask Shape").value;
+    const dup_shape = as_instance(dup.masks.__getitem__(0), PropertyGroup).property("ADBE Mask Shape").value;
     expect(py_eq(dup_shape.vertices, orig_shape.vertices)).toBe(true);
   });
 
@@ -1816,12 +1821,12 @@ describe("TestGeometryAutoOrientGuard", () => {
    */
 
   // @staticmethod in Python: a plain helper scoped to this describe block.
-  function _probe_layer(project: Project, name: string): any {
+  function _probe_layer(project: Project, name: string): AVLayer {
     const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
     if (comp === undefined) throw new StopIteration();
     const layer = comp.layers.find((ly) => ly.name === name);
     if (layer === undefined) throw new StopIteration();
-    return layer;
+    return as_instance(layer, AVLayer);
   }
 
   test("test_along_path_with_separated_position_raises", () => {
@@ -1864,13 +1869,13 @@ describe("TestForwardRayOnly", () => {
    */
 
   // @staticmethod in Python: a plain helper scoped to this describe block.
-  function _probe_3d_layer(): any {
+  function _probe_3d_layer(): AVLayer {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
     if (comp === undefined) throw new StopIteration();
     const layer = comp.layers.find((ly) => ly.name === "solid_3d");
     if (layer === undefined) throw new StopIteration();
-    return layer;
+    return as_instance(layer, AVLayer);
   }
 
   test("test_layer_in_front_resolves", () => {
@@ -1985,16 +1990,17 @@ describe("TestTextSourceRectRefusals", () => {
    */
 
   // @staticmethod in Python: a plain helper scoped to this describe block.
-  function _hello(project: Project): any {
+  function _hello(project: Project): TextLayer {
     const comp = project.compositions.find((c) => c.name === "TEXT_INK");
     if (comp === undefined) throw new StopIteration();
     const layer = comp.layers.find((ly) => ly.name === "Hello_36");
     if (layer === undefined) throw new StopIteration();
-    return layer;
+    return as_instance(layer, TextLayer);
   }
 
   test("test_faux_bold_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
+    py_assert(layer.text != null);
     layer.text.__getitem__("ADBE Text Document").value.faux_bold = true;
     raises(NotImplementedError, () => {
       layer.source_rect_at_time(0.0, false);
@@ -2003,6 +2009,7 @@ describe("TestTextSourceRectRefusals", () => {
 
   test("test_text_animator_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
+    py_assert(layer.text != null);
     layer.text.__getitem__("ADBE Text Animators").add_property("ADBE Text Animator");
     raises(NotImplementedError, () => {
       layer.source_rect_at_time(0.0, false);

@@ -17,8 +17,8 @@
  */
 
 // Python's `from ..binary.chunk import ...` runs py_aep/__init__ first, which
-// registers every chunk type. Standalone CLI runs need the same registration.
-import "../binary/_register.ts";
+// loads every module. Standalone CLI runs need the same.
+import "../index.ts";
 import { ListChunk, read_aep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { filter_by_list_type } from "../binary/utils.ts";

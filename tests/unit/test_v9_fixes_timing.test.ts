@@ -16,6 +16,7 @@ import { RenderSettingsItem, RouuChunk } from "../../src/py_aep/binary/render_ch
 import { _frame_number } from "../../src/py_aep/models/items/composition.ts";
 import { Fraction, getitem, py_eq, py_bool, sorted, struct } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
+import { as_instance } from "../helpers.ts";
 
 // rate -> (internal timebase, timebase units per frame), AE 2026 addComp.
 const _AE_TIMEBASES = new Map<number, [number, number]>([
@@ -172,7 +173,7 @@ describe("TestSignedWorkAreaStart", () => {
     const cdta = new CdtaChunk();
     cdta.work_area_start_dividend = -1024;
     cdta.work_area_start_divisor = 24576;
-    const again = CdtaChunk.frombytes(cdta.tobytes()) as CdtaChunk;
+    const again = as_instance(CdtaChunk.frombytes(cdta.tobytes()), CdtaChunk);
     expect(again instanceof CdtaChunk).toBe(true);
     expect(approx(again.work_area_start, -1 / 24)).toBe(true);
   });

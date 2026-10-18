@@ -12,6 +12,7 @@ import { psd_comp_layer_styles, psd_footage_dimensions, psd_footage_layer_styles
 import { recursive_find } from "../../src/py_aep/binary/utils.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
+import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { as_instance } from "../helpers.ts";
 import { _RESIZE_TO_STRINGS, build_resize_to_strings } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { PrefsFile, decode_pref_bool, decode_pref_number, decode_pref_string, find_prefs_file } from "../../src/py_aep/parsers/prefs.ts";
@@ -294,11 +295,14 @@ describe("TestPreferences", () => {
     const prefs_dir = prefs_dir_fixture(make_tmp_path());
     const prefs = new py_aep.Preferences(prefs_dir);
     raises(ValueError, () => prefs.get_pref_as_number("", "Quoted Int"));
-    raises(ValueError, () => prefs.get_pref_as_number("Numbers Section", "Quoted Int", 1234 as any));
-    // The wrong-typed values are deliberate; TypeScript cannot express them.
-    raises(TypeError_, () => prefs.set_pref_as_bool("A", "B", 1 as any));
-    raises(TypeError_, () => prefs.set_pref_as_string("A", "B", 5 as any));
-    raises(TypeError_, () => prefs.set_pref_as_number("A", "B", "5" as any));
+    // @ts-expect-error deliberately passes a number that is not a PREFType to check runtime validation
+    raises(ValueError, () => prefs.get_pref_as_number("Numbers Section", "Quoted Int", 1234));
+    // @ts-expect-error deliberately passes a non-bool to check runtime validation
+    raises(TypeError_, () => prefs.set_pref_as_bool("A", "B", 1));
+    // @ts-expect-error deliberately passes a non-string to check runtime validation
+    raises(TypeError_, () => prefs.set_pref_as_string("A", "B", 5));
+    // @ts-expect-error deliberately passes a non-number to check runtime validation
+    raises(TypeError_, () => prefs.set_pref_as_number("A", "B", "5"));
   });
 });
 
@@ -727,7 +731,7 @@ function _text_style_dir(tmp_path: Path, sheet: string): Path {
   return prefs;
 }
 
-function _btdk_bytes(layer: any): Uint8Array {
+function _btdk_bytes(layer: Layer): Uint8Array {
   const matches = recursive_find(layer._layer_list.chunks, undefined, "btdk");
   py_assert(matches.length === 1);
   const buf = new BytesIO();

@@ -42,28 +42,7 @@ jobs:
       - name: Packed tarball works in Node and Bun
         run: tools/pack_smoke.sh
 
-  # The py-aep differential is opt-in: put `[ci diff]` in the head commit
-  # message, or run the workflow by hand.
-  wants-differential:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.check.outputs.run }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - id: check
-        run: |
-          if [ "${{ github.event_name }}" = workflow_dispatch ] || git log -1 --format=%B | grep -qF '[ci diff]'; then
-            echo run=true >> "$GITHUB_OUTPUT"
-          else
-            echo run=false >> "$GITHUB_OUTPUT"
-          fi
-
   differential:
-    needs: wants-differential
-    if: needs.wants-differential.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

@@ -7,7 +7,7 @@
 
 import { describe, test, expect } from "bun:test";
 import { parse_aep_chunks } from "../../src/py_aep/cli/compare.ts";
-import { Path, py_assert } from "../../src/pyrt/index.ts";
+import { at, Path, py_assert } from "../../src/pyrt/index.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -22,7 +22,7 @@ describe("TestLeafOnlyChunks", () => {
 
     for (const path of chunks.keys()) {
       // The final segment (after last /) should not be a LIST
-      const final_segment = path.split("/").at(-1)!;
+      const final_segment = at(path.split("/"), -1);
       const base = final_segment.split("[")[0];
       // LIST chunks should only appear as path prefixes, never as
       // the leaf chunk itself (their raw data duplicates children).

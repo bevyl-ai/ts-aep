@@ -13,6 +13,7 @@ import {
   getitem,
   len,
   Path,
+  py_assert,
   py_bool,
   py_eq,
   py_or,
@@ -20,13 +21,14 @@ import {
   round,
   sorted,
   struct,
+  StopIteration,
   ValueError,
   zip,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises, warns } from "../../src/pyrt/pytest.ts";
 import { AlphaMode, FieldSeparationType, ImportAsType, PulldownPhase, parse as parse_aep } from "../../src/py_aep/index.ts";
-import { write_chunk } from "../../src/py_aep/binary/chunk.ts";
-import { build_ai_layer_opti_data, build_generic_opti_data, build_psd_flattened_opti_data, build_psd_layer_opti_data, build_text_opti_data } from "../../src/py_aep/binary/footage_chunks.ts";
+import { ListChunk, write_chunk, type Chunk } from "../../src/py_aep/binary/chunk.ts";
+import { build_ai_layer_opti_data, build_generic_opti_data, build_psd_flattened_opti_data, build_psd_layer_opti_data, build_text_opti_data, PlaceholderOptiChunk, PsdOptiChunk, SoliOptiChunk, TextOptiChunk } from "../../src/py_aep/binary/footage_chunks.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
@@ -41,8 +43,13 @@ import { get_file_format, platform_source_format } from "../../src/py_aep/data/f
 import { Label } from "../../src/py_aep/enums/index.ts";
 import { ai_layer_opti_boxes, as_instance, parse_project_fresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
+import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
+import { TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 
 /** Tests for media-file probing and file-source creation via import_file. */
@@ -51,7 +58,15 @@ const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
 const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
 const IMPORT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "import");
 
-function _ae_layer_opti(project: any, layer_name: string): Uint8Array | null {
+/** Python's `next(x for x in xs if pred(x))`: the first match, else StopIteration. */
+function _next<T, S extends T>(xs: Iterable<T>, pred: (x: T) => x is S): S;
+function _next<T>(xs: Iterable<T>, pred: (x: T) => boolean): T;
+function _next<T>(xs: Iterable<T>, pred: (x: T) => boolean): T {
+  for (const x of xs) if (pred(x)) return x;
+  throw new StopIteration();
+}
+
+function _ae_layer_opti(project: Project, layer_name: string): Uint8Array | null {
   for (const item of project.items.values()) {
     const source = getattr(item, "main_source", null);
     if (source instanceof FileSource) {
@@ -61,6 +76,11 @@ function _ae_layer_opti(project: any, layer_name: string): Uint8Array | null {
     }
   }
   return null;
+}
+
+/** The footage item a footage layer shows (`layer.source`). */
+function _footage_source(layer: Layer): FootageItem {
+  return as_instance(as_instance(layer, AVLayer).source, FootageItem);
 }
 
 function _comp_opts(file: Path): ImportOptions {
@@ -73,17 +93,17 @@ function _comp_opts(file: Path): ImportOptions {
 function _embedded_profile(source: FileSource): string | null {
   if (source._clrs == null) throw new Error("source has no CLRS chunk");
   const chunks = source._clrs.chunks;
-  const types = chunks.map((c: any) => c.chunk_type);
+  const types = chunks.map((c) => c.chunk_type);
   if (!types.includes("empd")) return null;
-  return (chunks[types.indexOf("empd") + 1] as any).value;
+  return as_instance(chunks[types.indexOf("empd") + 1], Utf8Chunk).value;
 }
 
 /** Extract AE's per-layer 8BPS opti for `group_name` from a parsed fixture. */
-function _ae_psd_layer_opti(project: any, group_name: string): Uint8Array | null {
+function _ae_psd_layer_opti(project: Project, group_name: string): Uint8Array | null {
   for (const item of project.items.values()) {
     const source = getattr(item, "main_source", null);
     if (source instanceof FileSource && getattr(source._opti, "asset_type", "") === "8BPS") {
-      if ((source._opti as any).psd_group_name === group_name) {
+      if (as_instance(source._opti, PsdOptiChunk).psd_group_name === group_name) {
         const buffer = new BytesIO();
         source._opti.write(buffer);
         return buffer.getvalue();
@@ -106,13 +126,13 @@ function _sspc_bytes(source: FileSource): Uint8Array {
 }
 
 /** Map layer group-name -> the per-layer 8BPS footage item. */
-function _psd_footage(project: any): Map<string, FootageItem> {
+function _psd_footage(project: Project): Map<string, FootageItem> {
   const out = new Map<string, FootageItem>();
   for (const item of project.items.values()) {
     if (item instanceof FootageItem && item.main_source instanceof FileSource) {
       const opti = item.main_source._opti;
       if (getattr(opti, "asset_type", "") === "8BPS") {
-        out.set((opti as any).psd_group_name, item);
+        out.set(as_instance(opti, PsdOptiChunk).psd_group_name, item);
       }
     }
   }
@@ -127,13 +147,17 @@ function _cropped_opts(file: Path): ImportOptions {
 
 /** The chunk types inside a footage item's `LIST:Gide` (and its list). */
 function _gide_tree(item: FootageItem): string[][] {
-  const gide = item._item_list.chunks.find((c: any) => getattr(c, "list_type", null) === "Gide")!;
-  return (gide as any).chunks.map((child: any) =>
-    py_or(
-      getattr(child, "chunks", []).map((c: any) => c.chunk_type),
-      [child.chunk_type],
-    ),
+  const gide = as_instance(
+    _next(item._item_list.chunks, (c) => getattr(c, "list_type", null) === "Gide"),
+    ListChunk,
   );
+  return gide.chunks.map((child) => {
+    const grandchildren: Chunk[] = getattr(child, "chunks", []);
+    return py_or(
+      grandchildren.map((c) => c.chunk_type),
+      [child.chunk_type],
+    );
+  });
 }
 
 test("test_new_footage_guides_container_matches_after_effects", () => {
@@ -142,14 +166,15 @@ test("test_new_footage_guides_container_matches_after_effects", () => {
    * as in After Effects' own import (`ocio_replace_sergb.aep`).
    */
   const tmp_path = make_tmp_path();
-  const ae = parse_aep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages.find(
-    (item: any) => item.name === "ae_png_unchanged",
-  )!;
+  const ae = _next(
+    parse_aep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
+    (item) => item.name === "ae_png_unchanged",
+  );
   const project = parse_aep(BASE).project;
   project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
   const out = tmp_path.div("imported.aep");
   project.save(out);
-  const ours = parse_aep(out).project.footages.find((item: any) => item.name === "image_with_alpha.png")!;
+  const ours = _next(parse_aep(out).project.footages, (item) => item.name === "image_with_alpha.png");
   expect(py_eq(_gide_tree(ours), _gide_tree(ae))).toBe(true);
   expect(py_eq(_gide_tree(ae), [["gdta"], ["lhd3"]])).toBe(true);
 });
@@ -193,15 +218,15 @@ describe("TestImportFileSingle", () => {
   test("test_import_png", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("image_with_alpha.png"));
-    const item = project.import_file(opts);
+    const item = as_instance(project.import_file(opts), FootageItem);
 
-    expect((item as any).main_source instanceof FileSource).toBe(true);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe("image_with_alpha.png");
     expect(py_eq([item.width, item.height], [640, 346])).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
-    expect((item as any).main_source.has_alpha).toBe(true);
-    expect((item as any).main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
-    expect((item as any).main_source.file).toBe(String(ASSETS.div("image_with_alpha.png")));
+    expect(item.main_source.is_still).toBe(true);
+    expect(item.main_source.has_alpha).toBe(true);
+    expect(item.main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
+    expect(item.main_source.file).toBe(String(ASSETS.div("image_with_alpha.png")));
   });
 
   test("test_import_png_writes_generic_opti", () => {
@@ -213,19 +238,20 @@ describe("TestImportFileSingle", () => {
     project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
     const out = tmp_path.div("png.aep");
     project.save(out);
-    const item = Array.from(parse_project_fresh(out).items.values()).find(
-      (i: any) => i.name === "image_with_alpha.png",
-    )!;
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect(py_eq((item as any).main_source._opti.tobytes(), build_generic_opti_data("png!", { sequence: false }))).toBe(true);
+    const item = as_instance(
+      _next(parse_project_fresh(out).items.values(), (i) => i.name === "image_with_alpha.png"),
+      FootageItem,
+    );
+    py_assert(item.main_source instanceof FileSource);
+    expect(py_eq(item.main_source._opti.tobytes(), build_generic_opti_data("png!", { sequence: false }))).toBe(true);
   });
 
   test("test_import_wav", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("wav.wav")));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("wav.wav"))), FootageItem);
     expect(item.has_audio).toBe(true);
     expect(item.has_video).toBe(false);
-    expect((item as any).main_source.is_still).toBe(false);
+    expect(item.main_source.is_still).toBe(false);
     expect(approx(item.duration, 5.9431746, { abs: 1e-3 })).toBe(true);
   });
 
@@ -239,8 +265,8 @@ describe("TestImportFileSingle", () => {
 
   test("test_import_m4v", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("m4v.m4v")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("m4v.m4v"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe("m4v.m4v");
     expect(py_eq([item.width, item.height], [640, 360])).toBe(true);
     expect(item.has_video).toBe(true);
@@ -250,15 +276,15 @@ describe("TestImportFileSingle", () => {
 
   test("test_import_mp4", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("mp4_5s-360p.mp4")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("mp4_5s-360p.mp4"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe("mp4_5s-360p.mp4");
     expect(py_eq([item.width, item.height], [640, 360])).toBe(true);
     expect(item.has_video).toBe(true);
     expect(item.has_audio).toBe(true);
     expect(approx(item.frame_rate, 30.0, { abs: 1e-3 })).toBe(true);
     // AE 2026 routes .mp4 through its Media Core importer, not QuickTime.
-    expect((item as any).main_source._sspc.source_format_type).toBe("XCEX");
+    expect(item.main_source._sspc.source_format_type).toBe("XCEX");
   });
 
   test("test_import_mp4_undecodable_codec", () => {
@@ -287,57 +313,57 @@ describe("TestImportFileSingle", () => {
 
   test("test_import_aiff", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("click.aiff")));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("click.aiff"))), FootageItem);
     expect(item.has_audio).toBe(true);
     expect(item.has_video).toBe(false);
-    expect((item as any).main_source.is_still).toBe(false);
+    expect(item.main_source.is_still).toBe(false);
     expect(approx(item.duration, 0.1274376, { abs: 1e-5 })).toBe(true);
   });
 
   test("test_import_dpx", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("dpx_8bit_rgb.dpx")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
-    expect((item as any).main_source._sspc.source_format_type).toBe("sDPX");
-    expect((item as any).main_source._opti.data.length).toBe(48);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("dpx_8bit_rgb.dpx"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(item.main_source.is_still).toBe(true);
+    expect(item.main_source._sspc.source_format_type).toBe("sDPX");
+    expect(item.main_source._opti.data.length).toBe(48);
   });
 
   test("test_import_cin", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("cin.cin")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
-    expect((item as any).main_source._sspc.source_format_type).toBe("sDPX");
-    expect((item as any).main_source._opti.data.length).toBe(48);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("cin.cin"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(item.main_source.is_still).toBe(true);
+    expect(item.main_source._sspc.source_format_type).toBe("sDPX");
+    expect(item.main_source._opti.data.length).toBe(48);
   });
 
   test("test_import_heic", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("heic.heic")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
-    expect((item as any).main_source._sspc.source_format_type).toBe("AIDE");
-    expect((item as any).main_source._opti.data.length).toBe(58);
-    expect((item as any).main_source.has_alpha).toBe(false);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("heic.heic"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(item.main_source.is_still).toBe(true);
+    expect(item.main_source._sspc.source_format_type).toBe("AIDE");
+    expect(item.main_source._opti.data.length).toBe(58);
+    expect(item.main_source.has_alpha).toBe(false);
   });
 
   test("test_import_heic_alpha", () => {
     const project = parse_aep(BASE, { platform: "macos" }).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("heic_alpha.heic")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
-    expect((item as any).main_source._sspc.source_format_type).toBe("AIDE");
-    expect((item as any).main_source.has_alpha).toBe(true);
-    expect((item as any).main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("heic_alpha.heic"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(item.main_source.is_still).toBe(true);
+    expect(item.main_source._sspc.source_format_type).toBe("AIDE");
+    expect(item.main_source.has_alpha).toBe(true);
+    expect(item.main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
   });
 
   test("test_import_heic_alpha_windows", () => {
     // AE on Windows stores a HEIC without alpha (windows_stills.aep).
     const project = parse_aep(BASE, { platform: "windows" }).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("heic_alpha.heic")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect((item as any).main_source.has_alpha).toBe(false);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("heic_alpha.heic"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(item.main_source.has_alpha).toBe(false);
   });
 
   test("test_roundtrip_m4v_aiff", () => {
@@ -355,37 +381,37 @@ describe("TestImportFileSingle", () => {
 
   test("test_import_exr_premultiplied", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("old_exr.00004.exr")));
-    expect((item as any).main_source.has_alpha).toBe(true);
-    expect((item as any).main_source.alpha_mode).toBe(AlphaMode.PREMULTIPLIED);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("old_exr.00004.exr"))), FootageItem);
+    expect(item.main_source.has_alpha).toBe(true);
+    expect(item.main_source.alpha_mode).toBe(AlphaMode.PREMULTIPLIED);
   });
 
   test("test_import_tiff", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("8bits.tif")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("8bits.tif"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe("8bits.tif");
     expect(py_eq([item.width, item.height], [25, 26])).toBe(true);
     // TIFF carries the 602-byte format-specific opti header.
-    expect((item as any).main_source._opti.data.length).toBe(602);
+    expect(item.main_source._opti.data.length).toBe(602);
   });
 
   test.each(["8bits.psd", "8bits.psb"])("test_import_psd[%#]", (name: string) => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div(name)));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div(name))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe(name);
     expect(py_eq([item.width, item.height], [25, 26])).toBe(true);
-    expect((item as any).main_source.is_still).toBe(true);
+    expect(item.main_source.is_still).toBe(true);
     // AE composites a merged PSD to RGBA -> STRAIGHT alpha.
-    expect((item as any).main_source.has_alpha).toBe(true);
-    expect((item as any).main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
+    expect(item.main_source.has_alpha).toBe(true);
+    expect(item.main_source.alpha_mode).toBe(AlphaMode.STRAIGHT);
     // The merged-layer opti is exposed via file_attributes.
-    const attrs = (item as any).main_source.file_attributes;
-    expect<number>(getitem(attrs, "psd_layer_index")).toBe(0xffffffff);
-    expect<number>(getitem(attrs, "psd_bit_depth")).toBe(8);
-    expect<number>(getitem(attrs, "psd_channels")).toBe(4);
-    expect<number>(getitem(attrs, "psd_layer_count")).toBe(2);
+    const attrs = item.main_source.file_attributes;
+    expect(getitem(attrs, "psd_layer_index")).toBe(0xffffffff);
+    expect(getitem(attrs, "psd_bit_depth")).toBe(8);
+    expect(getitem(attrs, "psd_channels")).toBe(4);
+    expect(getitem(attrs, "psd_layer_count")).toBe(2);
     expect(py_eq([getitem(attrs, "psd_canvas_width"), getitem(attrs, "psd_canvas_height")], [25, 26])).toBe(true);
   });
 
@@ -409,9 +435,9 @@ describe("TestImportFileSingle", () => {
     const reparsed = parse_aep(out).project;
 
     const files = Array.from(reparsed.items.values()).filter(
-      (it: any) => getattr(it, "main_source", null) instanceof FileSource,
+      (it) => getattr(it, "main_source", null) instanceof FileSource,
     );
-    expect(files.some((it: any) => it.name === "image_with_alpha.png")).toBe(true);
+    expect(files.some((it) => it.name === "image_with_alpha.png")).toBe(true);
   });
 
   test("test_roundtrip_is_idempotent", () => {
@@ -435,10 +461,10 @@ describe("TestImportFileSequence", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("new_exr.0002.exr"));
     opts.sequence = true;
-    const item = project.import_file(opts);
+    const item = as_instance(project.import_file(opts), FootageItem);
 
     expect(item.name).toBe("new_exr.[0002-0003].exr");
-    expect((item as any).main_source.is_still).toBe(false);
+    expect(item.main_source.is_still).toBe(false);
     expect(approx(item.frame_rate, 30.0)).toBe(true);
     // two frames at 30 fps
     expect(approx(item.duration, 2 / 30, { abs: 1e-4 })).toBe(true);
@@ -448,20 +474,20 @@ describe("TestImportFileSequence", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
-    const item = project.import_file(opts);
+    const item = as_instance(project.import_file(opts), FootageItem);
     expect(item.name).toBe("sequence_[001-003].gif");
-    expect((item as any).main_source.is_still).toBe(false);
+    expect(item.main_source.is_still).toBe(false);
   });
 
   test("test_import_dpx_sequence", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("dpx_seq.0001.dpx"));
     opts.sequence = true;
-    const item = project.import_file(opts);
+    const item = as_instance(project.import_file(opts), FootageItem);
     expect(item.name).toBe("dpx_seq.[0001-0003].dpx");
-    expect((item as any).main_source.is_still).toBe(false);
-    expect((item as any).main_source._sspc.source_format_type).toBe("sDPX");
-    expect((item as any).main_source._opti.data.length).toBe(48);
+    expect(item.main_source.is_still).toBe(false);
+    expect(item.main_source._sspc.source_format_type).toBe("sDPX");
+    expect(as_instance(item.main_source, FileSource)._opti.data.length).toBe(48);
   });
 
   test("test_item_labels_by_kind", () => {
@@ -543,8 +569,8 @@ describe("TestImportFileSequence", () => {
     project.save(out);
     const reparsed = parse_aep(out).project;
     const names = Array.from(reparsed.items.values())
-      .filter((it: any) => getattr(it, "main_source", null) instanceof FileSource)
-      .map((it: any) => it.name);
+      .filter((it) => getattr(it, "main_source", null) instanceof FileSource)
+      .map((it) => it.name);
     expect(names.includes("new_exr.[0002-0003].exr")).toBe(true);
   });
 
@@ -555,8 +581,8 @@ describe("TestImportFileSequence", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("new_exr.0002.exr"));
     opts.sequence = true;
-    const item = project.import_file(opts);
-    const sspc = (item as any).main_source._sspc;
+    const item = as_instance(project.import_file(opts), FootageItem);
+    const sspc = item.main_source._sspc;
     expect(sspc.full_frame).toBe(true);
     expect(py_eq(sspc._reserved_c8, b("\x00\x02"))).toBe(true);
     expect(sspc.from_file).toBe(true);
@@ -569,7 +595,7 @@ describe("TestReplaceAndProxy", () => {
   const _png_footage = (): [Project, FootageItem] => {
     const project = parse_aep(BASE).project;
     const item = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
-    return [project, item as FootageItem];
+    return [project, as_instance(item, FootageItem)];
   };
 
   test("test_replace_with_file", () => {
@@ -668,7 +694,7 @@ describe("TestReplaceAndProxy", () => {
     item.replace_with_solid([0.0, 1.0, 0.0], "Solid D", 50, 50);
     expect(item.name).toBe("Solid D");
     expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
-    expect((item.main_source._opti as any).solid_name).toBe("Solid D");
+    expect(as_instance(item.main_source._opti, SoliOptiChunk).solid_name).toBe("Solid D");
   });
 
   test("test_replace_with_placeholder_overrides_user_assigned_name", () => {
@@ -677,7 +703,7 @@ describe("TestReplaceAndProxy", () => {
     item.replace_with_placeholder("PH C", 120, 120, 25.0, 5.0);
     expect(item.name).toBe("PH C");
     expect(as_instance(item._name_utf8, Utf8Chunk).value).toBe("");
-    expect((item.main_source._opti as any).placeholder_name).toBe("PH C");
+    expect(as_instance(item.main_source._opti, PlaceholderOptiChunk).placeholder_name).toBe("PH C");
   });
 
   test("test_replace_naming_survives_roundtrip", () => {
@@ -687,16 +713,16 @@ describe("TestReplaceAndProxy", () => {
     item.replace(ASSETS.div("mov_480.mov"));
     const out = tmp_path.div("r.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
+    const reparsed = _next(parse_aep(out).project.footages, (f) => f.id === item.id);
     expect(reparsed.name).toBe("Custom Name");
   });
 
   test("test_set_proxy_with_file", () => {
     const [, item] = _png_footage();
     item.set_proxy(ASSETS.div("new_exr.0002.exr"));
-    expect(item.proxy_source instanceof FileSource).toBe(true);
+    py_assert(item.proxy_source instanceof FileSource);
     expect(item.use_proxy).toBe(true);
-    expect((item.proxy_source as any).file).toBe(String(ASSETS.div("new_exr.0002.exr")));
+    expect(item.proxy_source.file).toBe(String(ASSETS.div("new_exr.0002.exr")));
   });
 
   test("test_set_proxy_with_sequence", () => {
@@ -720,10 +746,10 @@ describe("TestReplaceAndProxy", () => {
   test("test_replace_with_psd", () => {
     const [, item] = _png_footage();
     item.replace(ASSETS.div("8bits.psd"));
-    expect(item.main_source instanceof FileSource).toBe(true);
+    py_assert(item.main_source instanceof FileSource);
     expect(item.name).toBe("8bits.psd");
     expect(py_eq([item.width, item.height], [25, 26])).toBe(true);
-    expect<number>(getitem((item.main_source as any).file_attributes, "psd_layer_index")).toBe(0xffffffff);
+    expect(getitem(item.main_source.file_attributes, "psd_layer_index")).toBe(0xffffffff);
   });
 });
 
@@ -746,36 +772,38 @@ describe("TestRelativePaths", () => {
     const tmp_path = make_tmp_path();
     monkeypatch_chdir(ASSETS);
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(new Path("image_with_alpha.png")));
+    const item = as_instance(project.import_file(new ImportOptions(new Path("image_with_alpha.png"))), FootageItem);
     const expected = _absolute(ASSETS.div("image_with_alpha.png"));
-    expect((item as any).main_source.file).toBe(expected);
+    expect(as_instance(item.main_source, FileSource).file).toBe(expected);
     const out = tmp_path.div("relative.aep");
     project.save(out);
-    const reparsed = Array.from(parse_aep(out).project.items.values()).find(
-      (it: any) => it instanceof FootageItem && it.name === "image_with_alpha.png",
-    )!;
-    expect((reparsed as any).main_source.file).toBe(expected);
+    const reparsed = as_instance(
+      _next(parse_aep(out).project.items.values(), (it) => it instanceof FootageItem && it.name === "image_with_alpha.png"),
+      FootageItem,
+    );
+    expect(as_instance(reparsed.main_source, FileSource).file).toBe(expected);
   });
 
   test("test_dot_dot_is_normalized", () => {
     monkeypatch_chdir(ASSETS);
     const project = parse_aep(BASE).project;
-    const item = project.import_file(
-      new ImportOptions(new Path("..").div("assets", "image_with_alpha.png")),
+    const item = as_instance(
+      project.import_file(new ImportOptions(new Path("..").div("assets", "image_with_alpha.png"))),
+      FootageItem,
     );
-    expect((item as any).main_source.file).toBe(_absolute(ASSETS.div("image_with_alpha.png")));
+    expect(as_instance(item.main_source, FileSource).file).toBe(_absolute(ASSETS.div("image_with_alpha.png")));
   });
 
   test("test_replace_and_proxy_store_absolute_paths", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png"))), FootageItem);
     monkeypatch_chdir(ASSETS);
-    (item as any).replace(new Path("wav.wav"));
-    expect((item as any).main_source.file).toBe(_absolute(ASSETS.div("wav.wav")));
-    (item as any).replace_with_sequence(new Path("new_exr.0002.exr"));
-    expect((item as any).main_source.file).toBe(_absolute(ASSETS.div("new_exr.0002.exr")));
+    item.replace(new Path("wav.wav"));
+    expect(as_instance(item.main_source, FileSource).file).toBe(_absolute(ASSETS.div("wav.wav")));
+    item.replace_with_sequence(new Path("new_exr.0002.exr"));
+    expect(as_instance(item.main_source, FileSource).file).toBe(_absolute(ASSETS.div("new_exr.0002.exr")));
     item.set_proxy(new Path("image_with_alpha.png"));
-    expect((item.proxy_source as any).file).toBe(_absolute(ASSETS.div("image_with_alpha.png")));
+    expect(as_instance(item.proxy_source, FileSource).file).toBe(_absolute(ASSETS.div("image_with_alpha.png")));
   });
 
   test("test_layered_comp_import_stores_absolute_paths", () => {
@@ -785,16 +813,12 @@ describe("TestRelativePaths", () => {
     opts.import_as = ImportAsType.COMP;
     project.import_file(opts);
     const expected = _absolute(ASSETS.div("choose_layer.psd"));
-    const files = new Set(
-      Array.from(project.items.values())
-        .filter(
-          (it: any) =>
-            it instanceof FootageItem &&
-            it.main_source instanceof FileSource &&
-            it.main_source.file.endsWith("choose_layer.psd"),
-        )
-        .map((it: any) => it.main_source.file),
-    );
+    const files = new Set<string>();
+    for (const it of project.items.values()) {
+      if (it instanceof FootageItem && it.main_source instanceof FileSource && it.main_source.file.endsWith("choose_layer.psd")) {
+        files.add(it.main_source.file);
+      }
+    }
     expect(py_eq(files, new Set([expected]))).toBe(true);
   });
 });
@@ -809,8 +833,8 @@ describe("TestRelativePaths", () => {
 describe("TestReplaceKeepsInterpretation", () => {
   const _interpreted_movie = () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("mov_480.mov")));
-    const source = (item as any).main_source;
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("mov_480.mov"))), FootageItem);
+    const source = item.main_source;
     source.conform_frame_rate = 25.0;
     source.field_separation_type = FieldSeparationType.UPPER_FIELD_FIRST;
     source.high_quality_field_separation = true;
@@ -822,8 +846,8 @@ describe("TestReplaceKeepsInterpretation", () => {
 
   test("test_replace_keeps_interpretation", () => {
     const [, item] = _interpreted_movie();
-    (item as any).replace(ASSETS.div("mov_23_976.mov"));
-    const source = (item as any).main_source;
+    item.replace(ASSETS.div("mov_23_976.mov"));
+    const source = item.main_source;
     expect(source.conform_frame_rate).toBe(25.0);
     expect(source.field_separation_type).toBe(FieldSeparationType.UPPER_FIELD_FIRST);
     expect(source.high_quality_field_separation).toBe(true);
@@ -834,13 +858,13 @@ describe("TestReplaceKeepsInterpretation", () => {
 
   test("test_replace_takes_alpha_from_the_new_file", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
-    (item as any).main_source.alpha_mode = AlphaMode.PREMULTIPLIED;
-    (item as any).main_source.invert_alpha = true;
-    (item as any).replace(ASSETS.div("mov_480.mov"));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png"))), FootageItem);
+    item.main_source.alpha_mode = AlphaMode.PREMULTIPLIED;
+    item.main_source.invert_alpha = true;
+    item.replace(ASSETS.div("mov_480.mov"));
     // The movie has no alpha channel, so neither has the item.
-    expect((item as any).main_source.has_alpha).toBe(false);
-    expect((item as any).main_source.invert_alpha).toBe(false);
+    expect(item.main_source.has_alpha).toBe(false);
+    expect(item.main_source.invert_alpha).toBe(false);
   });
 
   /**
@@ -853,44 +877,44 @@ describe("TestReplaceKeepsInterpretation", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div("new_exr.0002.exr"));
     opts.sequence = true;
-    const item = project.import_file(opts);
-    (item as any).main_source.conform_frame_rate = 25.0;
+    const item = as_instance(project.import_file(opts), FootageItem);
+    item.main_source.conform_frame_rate = 25.0;
     return [project, item] as const;
   };
 
   test("test_replace_with_sequence_keeps_the_assumed_frame_rate", () => {
     /** The reported bug: a sequence's rate reset to the preference. */
     const [, item] = _sequence_assumed_25();
-    (item as any).replace_with_sequence(ASSETS.div("sequence_001.gif"));
+    item.replace_with_sequence(ASSETS.div("sequence_001.gif"));
     // A sequence has no rate of its own: AE keeps the assumed one as the
     // native rate, and the stored duration follows it.
-    expect((item as any).main_source.native_frame_rate).toBe(25.0);
+    expect(item.main_source.native_frame_rate).toBe(25.0);
     expect(item.frame_rate).toBe(25.0);
-    expect(approx((item as any).main_source._sspc.duration, 3 / 25)).toBe(true);
+    expect(approx(item.main_source._sspc.duration, 3 / 25)).toBe(true);
   });
 
   test("test_sequence_rate_does_not_carry_to_a_movie", () => {
     /** An assumed rate is not a conform - a movie keeps its own rate. */
     const [, item] = _sequence_assumed_25();
-    (item as any).replace(ASSETS.div("mov_480.mov"));
-    expect((item as any).main_source.conform_frame_rate).toBe(0.0);
+    item.replace(ASSETS.div("mov_480.mov"));
+    expect(item.main_source.conform_frame_rate).toBe(0.0);
     expect(item.frame_rate).toBe(30.0);
   });
 
   test("test_replace_with_solid_keeps_nothing", () => {
     const [, item] = _interpreted_movie();
-    (item as any).replace_with_solid([1.0, 0.0, 0.0], "Solid", 40, 40);
-    expect((item as any).main_source.loop).toBe(1);
-    expect((item as any).main_source.field_separation_type).toBe(FieldSeparationType.OFF);
+    item.replace_with_solid([1.0, 0.0, 0.0], "Solid", 40, 40);
+    expect(item.main_source.loop).toBe(1);
+    expect(item.main_source.field_separation_type).toBe(FieldSeparationType.OFF);
   });
 
   test("test_interpretation_survives_a_roundtrip", () => {
     const tmp_path = make_tmp_path();
     const [project, item] = _interpreted_movie();
-    (item as any).replace(ASSETS.div("mov_23_976.mov"));
+    item.replace(ASSETS.div("mov_23_976.mov"));
     const out = tmp_path.div("interpretation.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
+    const reparsed = _next(parse_aep(out).project.footages, (f) => f.id === item.id);
     const source = reparsed.main_source;
     expect(source.conform_frame_rate).toBe(25.0);
     expect(source.remove_pulldown).toBe(PulldownPhase.WSSWW);
@@ -928,7 +952,7 @@ describe("TestReplaceKeepsInterpretation", () => {
     item.replace_with_sequence(_twelve_frame_sequence(tmp_path.div("seq")), true);
     const out = tmp_path.div("placeholder.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
+    const reparsed = _next(parse_aep(out).project.footages, (f) => f.id === item.id);
     const sspc = reparsed.main_source._sspc;
     expect(approx(reparsed.frame_rate, rate, { abs: 1e-4 })).toBe(true);
     expect(sspc.conform_frame_rate).toBe(0.0);
@@ -963,7 +987,7 @@ describe("TestReplaceKeepsInterpretation", () => {
     item.replace_with_sequence(_twelve_frame_sequence(tmp_path.div("seq")), true);
     const out = tmp_path.div("movie.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
+    const reparsed = _next(parse_aep(out).project.footages, (f) => f.id === item.id);
     const sspc = reparsed.main_source._sspc;
     expect(approx(reparsed.frame_rate, rate, { abs: 1e-4 })).toBe(true);
     expect(sspc.conform_frame_rate).toBe(0.0);
@@ -979,11 +1003,11 @@ describe("TestReplaceKeepsInterpretation", () => {
   ])("test_no_rate_to_carry_to_a_sequence[%#]", (steps: string[]) => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div(steps[0])));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div(steps[0]))), FootageItem);
     for (const name of steps.slice(1)) {
-      (item as any).replace(ASSETS.div(name));
+      item.replace(ASSETS.div(name));
     }
-    (item as any).replace_with_sequence(_twelve_frame_sequence(tmp_path.div("seq")), true);
+    item.replace_with_sequence(_twelve_frame_sequence(tmp_path.div("seq")), true);
     expect(item.frame_rate).toBe(30.0);
     expect(item.duration).toBe(0.4);
   });
@@ -1005,7 +1029,7 @@ describe("TestReplaceKeepsInterpretation", () => {
     item.proxy_source.conform_frame_rate = 0.0;
     const out = tmp_path.div("proxy.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f: any) => f.id === item.id)!;
+    const reparsed = _next(parse_aep(out).project.footages, (f) => f.id === item.id);
     const proxy = reparsed.proxy_source;
     if (proxy == null) throw new Error("reparsed item has no proxy source");
     const sspc = proxy._sspc;
@@ -1033,10 +1057,10 @@ describe("TestReplaceKeepsInterpretation", () => {
     // AE 2026: a movie conformed to 25 fps, replaced with a 30 fps
     // placeholder, plays at the placeholder's 30 fps.
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("mov_480.mov")));
-    (item as any).main_source.conform_frame_rate = 25.0;
-    (item as any).replace_with_placeholder("PH", 100, 100, 30.0, 5.0);
-    const sspc = (item as any).main_source._sspc;
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("mov_480.mov"))), FootageItem);
+    item.main_source.conform_frame_rate = 25.0;
+    item.replace_with_placeholder("PH", 100, 100, 30.0, 5.0);
+    const sspc = item.main_source._sspc;
     expect(py_eq([sspc.native_frame_rate, sspc.conform_frame_rate], [30.0, 0.0])).toBe(true);
     expect(item.frame_rate).toBe(30.0);
     expect(item.duration).toBe(5.0);
@@ -1079,9 +1103,9 @@ describe("TestImportGapFormats", () => {
     "test_import_source_format_and_dims[%#]",
     (filename: string, source_format: string, width: number, height: number) => {
       const project = parse_aep(BASE).project;
-      const item = project.import_file(new ImportOptions(ASSETS.div(filename)));
-      expect((item as any).main_source instanceof FileSource).toBe(true);
-      expect(py_eq((item as any).main_source._sspc.source_format_type, source_format)).toBe(true);
+      const item = as_instance(project.import_file(new ImportOptions(ASSETS.div(filename))), FootageItem);
+      py_assert(item.main_source instanceof FileSource);
+      expect(py_eq(item.main_source._sspc.source_format_type, source_format)).toBe(true);
       expect(py_eq([item.width, item.height], [width, height])).toBe(true);
     },
   );
@@ -1090,19 +1114,19 @@ describe("TestImportGapFormats", () => {
     // AAC pre-roll makes the raw mdhd duration ~46ms too long; the elst
     // edit-list correction yields AE's 13.839s.
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("m4a.m4a")));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("m4a.m4a"))), FootageItem);
     expect(approx(item.duration, 13.839, { abs: 0.01 })).toBe(true);
-    expect((item as any).main_source._sspc.audio_sample_rate).toBe(44100.0);
+    expect(item.main_source._sspc.audio_sample_rate).toBe(44100.0);
   });
 
   test("test_aac_duration_and_audio", () => {
     // ADTS frame-scan duration; AE 2026 decodes to 105.790s (the ~0.02s
     // delta is decoder priming, which AE re-derives from the file on open).
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("aac.aac")));
-    expect((item as any).main_source._sspc.source_format_type).toBe("MPEG");
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("aac.aac"))), FootageItem);
+    expect(item.main_source._sspc.source_format_type).toBe("MPEG");
     expect(approx(item.duration, 105.79, { abs: 0.05 })).toBe(true);
-    expect((item as any).main_source._sspc.audio_sample_rate).toBe(44100.0);
+    expect(item.main_source._sspc.audio_sample_rate).toBe(44100.0);
     expect(item.has_audio).toBe(true);
     expect(py_eq([item.width, item.height], [0, 0])).toBe(true);
   });
@@ -1115,15 +1139,15 @@ describe("TestImportGapFormats", () => {
 
   test("test_swf_has_alpha_and_frame_rate", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("swf.swf")));
-    expect((item as any).main_source.has_alpha).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("swf.swf"))), FootageItem);
+    expect(item.main_source.has_alpha).toBe(true);
     expect(approx(item.frame_rate, 29.96, { abs: 0.05 })).toBe(true);
   });
 
   test("test_text_format_has_alpha", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("ai.ai")));
-    expect((item as any).main_source.has_alpha).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("ai.ai"))), FootageItem);
+    expect(item.main_source.has_alpha).toBe(true);
   });
 
   test("test_fbx_sets_premultiplied_alpha_flag", () => {
@@ -1131,8 +1155,8 @@ describe("TestImportGapFormats", () => {
     // even though alpha_mode_raw stays 0 (straight). Verified against an
     // AE-resaved crystal.fbx.
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("crystal.fbx")));
-    const sspc = (item as any).main_source._sspc;
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("crystal.fbx"))), FootageItem);
+    const sspc = item.main_source._sspc;
     expect(sspc.premultiplied).toBe(true);
     expect(sspc.alpha_mode_raw).toBe(0);
   });
@@ -1165,18 +1189,18 @@ describe("TestImportGapFormats", () => {
   test("test_heic_matches_ae_fixture", () => {
     const fixture_dir = new Path(import.meta.dir, "..", "..", "samples", "models", "format_options", "heic");
     const truth_project = parse_aep(fixture_dir.div("base.aep")).project;
-    const truth_items = new Map<string, any>(truth_project.footages.map((f: any): [string, any] => [f.name, f]));
+    const truth_items = new Map(truth_project.footages.map((f) => [f.name, f] as const));
 
     // The fixture was saved by AE on macOS.
     const project = parse_aep(BASE, { platform: "macos" }).project;
     for (const filename of ["heic.heic", "heic_alpha.heic"]) {
-      const item = project.import_file(new ImportOptions(ASSETS.div(filename)));
+      const item = as_instance(project.import_file(new ImportOptions(ASSETS.div(filename))), FootageItem);
       const truth = getitem(truth_items, item.name);
       expect(py_eq([item.width, item.height], [truth.width, truth.height])).toBe(true);
-      expect((item as any).main_source._sspc.source_format_type).toBe(truth.main_source._sspc.source_format_type);
-      expect((item as any).main_source._opti.data.length).toBe(truth.main_source._opti.data.length);
-      expect((item as any).main_source.has_alpha).toBe(truth.main_source.has_alpha);
-      expect((item as any).main_source._sspc.alpha_mode_raw).toBe(truth.main_source._sspc.alpha_mode_raw);
+      expect(item.main_source._sspc.source_format_type).toBe(truth.main_source._sspc.source_format_type);
+      expect(item.main_source._opti.data.length).toBe(truth.main_source._opti.data.length);
+      expect(item.main_source.has_alpha).toBe(truth.main_source.has_alpha);
+      expect(item.main_source._sspc.alpha_mode_raw).toBe(truth.main_source._sspc.alpha_mode_raw);
     }
   });
 
@@ -1197,7 +1221,7 @@ describe("TestImportGapFormats", () => {
   test("test_generic_still_imports_match_ae_fixtures", () => {
     // AE 2026 macOS tags BMP/GIF stills and sequences IMIO
     // (imio_stills.aep, imio_sequence.aep).
-    const truth_items = new Map<string, any>();
+    const truth_items = new Map<string, FootageItem>();
     for (const fixture of ["imio_stills.aep", "imio_sequence.aep"]) {
       for (const f of parse_aep(IMPORT_DIR.div(fixture)).project.footages) {
         truth_items.set(f.name, f);
@@ -1205,16 +1229,17 @@ describe("TestImportGapFormats", () => {
     }
 
     const project = parse_aep(BASE, { platform: "macos" }).project;
-    for (const [filename, seq] of [
+    const cases: [string, boolean][] = [
       ["bmp.bmp", false],
       ["sequence_001.gif", false],
       ["sequence_001.gif", true],
-    ] as [string, boolean][]) {
+    ];
+    for (const [filename, seq] of cases) {
       const opts = new ImportOptions(ASSETS.div(filename));
       opts.sequence = seq;
-      const item = project.import_file(opts);
+      const item = as_instance(project.import_file(opts), FootageItem);
       const truth = getitem(truth_items, item.name);
-      const ours = (item as any).main_source;
+      const ours = item.main_source;
       const ae = truth.main_source;
       expect(ours._sspc.source_format_type === ae._sspc.source_format_type && ae._sspc.source_format_type === "IMIO").toBe(true);
       expect(py_eq([item.width, item.height], [truth.width, truth.height])).toBe(true);
@@ -1236,13 +1261,13 @@ describe("TestImportGapFormats", () => {
   test("test_windows_stills_match_ae_fixture", () => {
     // windows_stills.aep: AE 2026 on Windows imports BMP/GIF stills with
     // its STIL importer, and HEIC without alpha (macOS keeps it).
-    const truth_items = new Map<string, any>(
-      parse_aep(IMPORT_DIR.div("windows_stills.aep")).project.footages.map((f: any): [string, any] => [f.name, f]),
+    const truth_items = new Map(
+      parse_aep(IMPORT_DIR.div("windows_stills.aep")).project.footages.map((f) => [f.name, f] as const),
     );
     const project = parse_aep(BASE, { platform: "windows" }).project;
     for (const filename of ["bmp.bmp", "sequence_001.gif", "heic_alpha.heic"]) {
-      const item = project.import_file(new ImportOptions(ASSETS.div(filename)));
-      const ours = (item as any).main_source;
+      const item = as_instance(project.import_file(new ImportOptions(ASSETS.div(filename))), FootageItem);
+      const ours = item.main_source;
       const ae = getitem(truth_items, item.name).main_source;
       expect(ours._sspc.source_format_type).toBe(ae._sspc.source_format_type);
       expect(py_eq(ours._opti.data.slice(0, 4), ae._opti.data.slice(0, 4))).toBe(true);
@@ -1267,10 +1292,10 @@ describe("TestImportGapFormats", () => {
 
   test("test_media_gap_formats_matches_ae_fixture", () => {
     const truth_project = parse_aep(IMPORT_DIR.div("media_gap_formats.aep")).project;
-    const truth_items = new Map<string, any>(truth_project.footages.map((f: any): [string, any] => [f.name, f]));
+    const truth_items = new Map(truth_project.footages.map((f) => [f.name, f] as const));
 
     const project = parse_aep(BASE).project;
-    for (const [filename, seq] of [
+    const cases: [string, boolean][] = [
       ["aif.aif", false],
       ["cin.cin", false],
       ["dpx_8bit_rgb.dpx", false],
@@ -1279,21 +1304,22 @@ describe("TestImportGapFormats", () => {
       ["dpx_12bit_be.dpx", false],
       ["dpx_16bit_rgba_be.dpx", false],
       ["dpx_seq.0001.dpx", true],
-    ] as [string, boolean][]) {
+    ];
+    for (const [filename, seq] of cases) {
       const opts = new ImportOptions(ASSETS.div(filename));
       opts.sequence = seq;
-      const item = project.import_file(opts);
+      const item = as_instance(project.import_file(opts), FootageItem);
       const truth = getitem(truth_items, item.name);
       expect(py_eq([item.width, item.height], [truth.width, truth.height])).toBe(true);
       expect(Math.abs(item.duration - truth.duration) < 1e-5).toBe(true);
       expect(Math.abs(item.frame_rate - truth.frame_rate) < 1e-5).toBe(true);
-      expect((item as any).main_source._sspc.source_format_type).toBe(truth.main_source._sspc.source_format_type);
-      expect((item as any).main_source._opti.data.length).toBe(truth.main_source._opti.data.length);
-      if ((item as any).main_source._sspc.source_format_type === "sDPX") {
-        expect(py_eq((item as any).main_source._opti.data, truth.main_source._opti.data)).toBe(true);
+      expect(item.main_source._sspc.source_format_type).toBe(truth.main_source._sspc.source_format_type);
+      expect(item.main_source._opti.data.length).toBe(truth.main_source._opti.data.length);
+      if (item.main_source._sspc.source_format_type === "sDPX") {
+        expect(py_eq(item.main_source._opti.data, truth.main_source._opti.data)).toBe(true);
       }
-      expect((item as any).main_source.has_alpha).toBe(truth.main_source.has_alpha);
-      expect(as_instance(item._idta, IdtaChunk).label).toBe(truth._idta.label);
+      expect(item.main_source.has_alpha).toBe(truth.main_source.has_alpha);
+      expect(as_instance(item._idta, IdtaChunk).label).toBe(as_instance(truth._idta, IdtaChunk).label);
     }
   });
 });
@@ -1314,30 +1340,31 @@ describe("TestImportAiComp", () => {
 
   test("test_import_structure", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("ai.ai")));
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("ai.ai"))), CompItem);
     expect(comp.name).toBe("ai");
     expect(py_eq([comp.width, comp.height], [612, 792])).toBe(true);
     // Footage layers (not shape layers), stacked in reverse document order.
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["Calque 2", "Calque 1"])).toBe(true);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["Calque 2", "Calque 1"])).toBe(true);
     const folders = Array.from(project.items.values()).filter(
-      (it: any) => it instanceof FolderItem && it.name === "ai Layers",
+      (it) => it instanceof FolderItem && it.name === "ai Layers",
     );
     expect(folders.length).toBe(1);
-    const footage = (folders[0] as any).items;
+    const footage = as_instance(folders[0], FolderItem).items;
     expect(footage.length).toBe(2);
     for (const item of footage) {
-      expect(item.main_source instanceof FileSource).toBe(true);
-      expect(item.main_source.file.endsWith("ai.ai")).toBe(true);
+      const source = as_instance(item, FootageItem).main_source;
+      py_assert(source instanceof FileSource);
+      expect(source.file.endsWith("ai.ai")).toBe(true);
     }
   });
 
   test("test_per_layer_opti_matches_ae", () => {
     const fixture = parse_aep(IMPORT_DIR.div("ai_comp.aep")).project;
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("ai.ai")));
-    for (const layer of (comp as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("ai.ai"))), CompItem);
+    for (const layer of comp.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
       const mine = source._opti.tobytes();
       expect(py_eq(mine, build_ai_layer_opti_data(612, 792, layer.name, 2))).toBe(true);
       expect(py_eq(mine, _ae_layer_opti(fixture, layer.name))).toBe(true);
@@ -1351,10 +1378,10 @@ describe("TestImportAiComp", () => {
     // was hardcoded 0x02 for all formats - a divergence invisible to the
     // opti-only check above (verified against ai_comp.aep: 0xC9 = 0x00).
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("ai.ai")));
-    for (const layer of (comp as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("ai.ai"))), CompItem);
+    for (const layer of comp.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
       expect(source._sspc.source_format_type).toBe("TEXT");
       expect(py_eq(_sspc_bytes(source).slice(0xc4, 0xca), b("\x00\x00\x00\x01\x00\x00"))).toBe(true);
     }
@@ -1375,13 +1402,14 @@ describe("TestImportAiComp", () => {
     // Comp shutter phase and per-layer ldta flags match AE's import (the
     // only remaining delta is `label`, which is preference-driven).
     const fixture = parse_aep(IMPORT_DIR.div("ai_comp.aep")).project;
-    const ae_comp = Array.from(fixture.items.values()).find(
-      (it: any) => it instanceof CompItem && it.name === "ai",
-    )!;
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("ai.ai")));
-    expect((comp as any).shutter_phase).toBe(-90);
-    expect((ae_comp as any).shutter_phase).toBe(-90);
-    for (const [layer, ae_layer] of zip((comp as any).layers as any[], (ae_comp as any).layers as any[])) {
+    const ae_comp = as_instance(
+      _next(fixture.items.values(), (it) => it instanceof CompItem && it.name === "ai"),
+      CompItem,
+    );
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("ai.ai"))), CompItem);
+    expect(comp.shutter_phase).toBe(-90);
+    expect(ae_comp.shutter_phase).toBe(-90);
+    for (const [layer, ae_layer] of zip(comp.layers, ae_comp.layers)) {
       expect(layer._ldta._reserved_3b).toBe(1);
       expect(ae_layer._ldta._reserved_3b).toBe(1);
       expect(layer._ldta._reserved_3c).toBe(0);
@@ -1400,16 +1428,16 @@ describe("TestImportAiComp", () => {
   });
 
   test("test_comp_footage_records_embedded_profile", () => {
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("ai.ai")));
-    for (const layer of (comp as any).layers) {
-      const profile = _embedded_profile(layer.source.main_source);
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("ai.ai"))), CompItem);
+    for (const layer of comp.layers) {
+      const profile = _embedded_profile(as_instance(_footage_source(layer).main_source, FileSource));
       expect(profile).toBe("Coated FOGRA39 (ISO 12647-2:2004)");
     }
   });
 
   test("test_footage_import_records_embedded_profile", () => {
-    const item = parse_aep(BASE).project.import_file(new ImportOptions(ASSETS.div("ai.ai")));
-    expect(_embedded_profile((item as any).main_source)).toBe("Coated FOGRA39 (ISO 12647-2:2004)");
+    const item = as_instance(parse_aep(BASE).project.import_file(new ImportOptions(ASSETS.div("ai.ai"))), FootageItem);
+    expect(_embedded_profile(as_instance(item.main_source, FileSource))).toBe("Coated FOGRA39 (ISO 12647-2:2004)");
   });
 
   test("test_complex_multiartboard_comp", () => {
@@ -1418,11 +1446,11 @@ describe("TestImportAiComp", () => {
     // flat footage layer per Illustrator layer. Nested sublayers are
     // flattened into their parent's layer (no nested comps), and the extra
     // artboard does not create extra comps (AE 2026-verified).
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("complex.ai")));
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("complex.ai"))), CompItem);
     expect(py_eq([comp.width, comp.height], [400, 300])).toBe(true);
     expect(
       py_eq(
-        (comp as any).layers.map((layer: any) => layer.name),
+        comp.layers.map((layer) => layer.name),
         [
           "Empty Layer",
           "Artboard 2 Layer",
@@ -1435,8 +1463,8 @@ describe("TestImportAiComp", () => {
         ],
       ),
     ).toBe(true);
-    for (const layer of (comp as any).layers) {
-      expect(layer.source.main_source instanceof FileSource).toBe(true);
+    for (const layer of comp.layers) {
+      expect(_footage_source(layer).main_source instanceof FileSource).toBe(true);
     }
   });
 
@@ -1445,17 +1473,19 @@ describe("TestImportAiComp", () => {
     // (exercises byte 0x33, the document's layer count).
     const fixture = parse_aep(IMPORT_DIR.div("complex_comp.aep")).project;
     const ae = new Map<string, Uint8Array>();
-    const sources = Array.from(fixture.items.values())
-      .filter((it: any) => getattr(it, "main_source", null) instanceof FileSource)
-      .map((it: any) => it.main_source);
+    const sources: FileSource[] = [];
+    for (const it of fixture.items.values()) {
+      const source = getattr(it, "main_source", null);
+      if (source instanceof FileSource) sources.push(source);
+    }
     for (const s of sources) {
       if (getattr(s._opti, "asset_type", "") === "TEXT") {
-        ae.set(s._opti.text_layer_name, s._opti.tobytes());
+        ae.set(as_instance(s._opti, TextOptiChunk).text_layer_name, s._opti.tobytes());
       }
     }
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("complex.ai")));
-    for (const layer of (comp as any).layers) {
-      const mine = layer.source.main_source._opti.tobytes();
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("complex.ai"))), CompItem);
+    for (const layer of comp.layers) {
+      const mine = _footage_source(layer).main_source._opti.tobytes();
       expect(py_eq(mine, getitem(ae, layer.name))).toBe(true);
     }
   });
@@ -1508,23 +1538,28 @@ function _three_layer_pdf(path: Path, order: number[]): void {
  * `/Order` permutations that are neither `/OCGs` nor its reverse).
  */
 describe("TestImportAiLayerOrder", () => {
-  test.each([
+  const rows: [number[], string[], Map<string, number>][] = [
     [[1, 2, 0], ["B", "C", "A"], new Map([["B", 2], ["C", 1], ["A", 0]])],
     [[2, 0, 1], ["C", "A", "B"], new Map([["C", 2], ["A", 1], ["B", 0]])],
-  ].flatMap((row) => [[...row, ImportAsType.COMP], [...row, ImportAsType.COMP_CROPPED_LAYERS]]))(
+  ];
+  test.each(
+    rows.flatMap((row): [number[], string[], Map<string, number>, ImportAsType][] => [
+      [...row, ImportAsType.COMP],
+      [...row, ImportAsType.COMP_CROPPED_LAYERS],
+    ]),
+  )(
     "test_order_decides_stacking_and_layer_index[%#]",
-    (...args: any[]) => {
-      const [order, stack, indices, import_as] = args as [number[], string[], Map<string, number>, ImportAsType];
+    (order, stack, indices, import_as) => {
       const tmp_path = make_tmp_path();
       const path = tmp_path.div("order.pdf");
       _three_layer_pdf(path, order);
       const options = new ImportOptions(path);
       options.import_as = import_as;
-      const comp = parse_aep(BASE).project.import_file(options);
-      expect(py_eq((comp as any).layers.map((layer: any) => layer.name), stack)).toBe(true);
+      const comp = as_instance(parse_aep(BASE).project.import_file(options), CompItem);
+      expect(py_eq(comp.layers.map((layer) => layer.name), stack)).toBe(true);
       expect(
         py_eq(
-          new Map((comp as any).layers.map((layer: any): [string, any] => [layer.name, layer.source.main_source._sspc.layer_index])),
+          new Map(comp.layers.map((layer) => [layer.name, _footage_source(layer).main_source._sspc.layer_index] as const)),
           indices,
         ),
       ).toBe(true);
@@ -1534,7 +1569,7 @@ describe("TestImportAiLayerOrder", () => {
 
 // NOTE(port): pytest.approx over a dict (ApproxMapping) requires equal key sets and compares values with ApproxScalar,
 // which falls back to exact `==` for tuple values, so exact value comparison matches.
-function approx_map(actual: Map<any, any>, expected: Map<any, any>): boolean {
+function approx_map<K, V>(actual: Map<K, V>, expected: Map<K, V>): boolean {
   return actual.size === expected.size && [...expected].every(([k, v]) => actual.has(k) && py_eq(actual.get(k), v));
 }
 
@@ -1615,11 +1650,11 @@ describe("TestImportAiCroppedComp", () => {
   const _import = (path: Path): CompItem => {
     const options = new ImportOptions(path);
     options.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-    return parse_aep(BASE).project.import_file(options) as CompItem;
+    return as_instance(parse_aep(BASE).project.import_file(options), CompItem);
   };
 
-  const _measure = (comp: CompItem): Map<string, any> => {
-    const out = new Map<string, any>();
+  const _measure = (comp: CompItem): Map<string, [number[], number[], number[]]> => {
+    const out = new Map<string, [number[], number[], number[]]>();
     for (const layer of comp.layers) {
       const anchor = layer.transform.__getitem__("ADBE Anchor Point").value;
       const position = layer.transform.__getitem__("ADBE Position").value;
@@ -1632,7 +1667,7 @@ describe("TestImportAiCroppedComp", () => {
     return out;
   };
 
-  test.each([
+  test.each<[[number, number, number, number], number, number[], number[]]>([
     [
       [0, 0, 1, 1],
       792,
@@ -1667,16 +1702,17 @@ describe("TestImportAiCroppedComp", () => {
     // AE's own stored opti box (16.16 edges) and the anchor / position
     // it gave the layer (read from AE's saved project, full precision).
     "test_placement_rule_on_after_effects_boxes[%#]",
-    (raw_box: number[], page_height: number, anchor: number[], position: number[]) => {
-      const box = raw_box.map((v) => v / 65536);
-      expect(py_eq(_ai_cropped_transform(box as [number, number, number, number], page_height), [anchor, position])).toBe(true);
+    (raw_box, page_height, anchor, position) => {
+      const [x0, y0, x1, y1] = raw_box;
+      const box: [number, number, number, number] = [x0 / 65536, y0 / 65536, x1 / 65536, y1 / 65536];
+      expect(py_eq(_ai_cropped_transform(box, page_height), [anchor, position])).toBe(true);
     },
   );
 
   test.each([
     ["ai.ai", AE_AI],
     ["ai_bounds_probe.pdf", AE_PROBE],
-  ])("test_layers_match_after_effects[%#]", (asset: string, expected: Map<string, any>) => {
+  ])("test_layers_match_after_effects[%#]", (asset: string, expected: Map<string, [number[], number[], number[]]>) => {
     const options = new ImportOptions(ASSETS.div(asset));
     expect(options.can_import_as(ImportAsType.COMP_CROPPED_LAYERS)).toBe(true);
     const got = _measure(_import(ASSETS.div(asset)));
@@ -1700,13 +1736,18 @@ describe("TestImportAiCroppedComp", () => {
     const comp = _import(ASSETS.div("ai.ai"));
     const out = tmp_path.div("ai_cropped.aep");
     comp._project.save(out);
-    const reparsed = Array.from(parse_aep(out).project.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === "ai",
-    )!;
-    expect(approx_map(_measure(reparsed as CompItem), _measure(comp))).toBe(true);
+    const reparsed = as_instance(
+      _next(parse_aep(out).project.items.values(), (item) => item instanceof CompItem && item.name === "ai"),
+      CompItem,
+    );
+    expect(approx_map(_measure(reparsed), _measure(comp))).toBe(true);
     expect(
       py_eq(
-        new Map((reparsed as any).layers.map((layer: any): [string, any] => [layer.name, layer.source.main_source.layer_name])),
+        new Map(
+          reparsed.layers.map(
+            (layer) => [layer.name, as_instance(_footage_source(layer).main_source, FileSource).layer_name] as const,
+          ),
+        ),
         new Map([
           ["Calque 2", "Calque 2"],
           ["Calque 1", "Calque 1"],
@@ -1730,10 +1771,11 @@ describe("TestImportAiHiddenLayerComp", () => {
   test("test_ae_gives_the_hidden_layer_its_video_switch_off", () => {
     // The ground truth this class is measured against.
     const fixture = parse_aep(IMPORT_DIR.div(FIXTURE)).project;
-    const comp = Array.from(fixture.items.values()).find(
-      (it: any) => it instanceof CompItem && it.name === "ai_hidden_layer",
-    )!;
-    expect(py_eq((comp as any).layers.map((layer: any): [string, any] => [layer.name, layer.enabled]), [
+    const comp = as_instance(
+      _next(fixture.items.values(), (it) => it instanceof CompItem && it.name === "ai_hidden_layer"),
+      CompItem,
+    );
+    expect(py_eq(comp.layers.map((layer) => [layer.name, layer.enabled]), [
       ["Top", true],
       ["Hidden", false],
       ["Bottom", true],
@@ -1742,8 +1784,8 @@ describe("TestImportAiHiddenLayerComp", () => {
 
   test("test_import_matches_that", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(ASSET)));
-    expect(py_eq((comp as any).layers.map((layer: any): [string, any] => [layer.name, layer.enabled]), [
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(ASSET))), CompItem);
+    expect(py_eq(comp.layers.map((layer) => [layer.name, layer.enabled]), [
       ["Top", true],
       ["Hidden", false],
       ["Bottom", true],
@@ -1753,10 +1795,10 @@ describe("TestImportAiHiddenLayerComp", () => {
   test("test_per_layer_opti_matches_ae", () => {
     const fixture = parse_aep(IMPORT_DIR.div(FIXTURE)).project;
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(ASSET)));
-    for (const layer of (comp as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(ASSET))), CompItem);
+    for (const layer of comp.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
       const mine = source._opti.tobytes();
       expect(py_eq(mine, _ae_layer_opti(fixture, layer.name))).toBe(true);
       expect(
@@ -1772,10 +1814,10 @@ describe("TestImportAiHiddenLayerComp", () => {
     // `Hidden/<file>`, and a CURRENT_VALUE replace rejected it as
     // whole-document footage.
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(ASSET)));
-    const item = (comp as any).layers.find((layer: any) => layer.name === "Hidden")!.source;
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(ASSET))), CompItem);
+    const item = _footage_source(_next(comp.layers, (layer) => layer.name === "Hidden"));
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
+    py_assert(source instanceof FileSource);
     expect(source._opti.tobytes()[0x3d]).toBe(0);
     expect(source.layer_name).toBe("Hidden");
     expect(item.name).toBe("Hidden/ai_hidden_layer.ai");
@@ -1783,13 +1825,13 @@ describe("TestImportAiHiddenLayerComp", () => {
 
   test("test_replacing_a_hidden_binding_keeps_the_layer", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(ASSET)));
-    const item = (comp as any).layers.find((layer: any) => layer.name === "Hidden")!.source;
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(ASSET))), CompItem);
+    const item = _footage_source(_next(comp.layers, (layer) => layer.name === "Hidden"));
 
     item.replace(ASSETS.div(ASSET), CURRENT_VALUE, CURRENT_VALUE);
 
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
+    py_assert(source instanceof FileSource);
     expect(source.layer_name).toBe("Hidden");
     expect(source._sspc.layer_index).toBe(1);
     expect(source._opti.tobytes()[0x3d]).toBe(0);
@@ -1819,18 +1861,19 @@ describe("TestImportEpsComp", () => {
   test("test_import_structure", () => {
     const project = parse_aep(BASE).project;
     const comp = project.import_file(_comp_opts(ASSETS.div("eps.eps")));
-    expect(comp instanceof CompItem).toBe(true);
+    py_assert(comp instanceof CompItem);
     expect(comp.name).toBe("eps");
     expect(py_eq([comp.width, comp.height], [1921, 2881])).toBe(true);
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["eps.eps"])).toBe(true);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["eps.eps"])).toBe(true);
     const folders = Array.from(project.items.values()).filter(
-      (it: any) => it instanceof FolderItem && it.name === "eps Layers",
+      (it) => it instanceof FolderItem && it.name === "eps Layers",
     );
     expect(folders.length).toBe(1);
-    const footage = (folders[0] as any).items;
+    const footage = as_instance(folders[0], FolderItem).items;
     expect(footage.length).toBe(1);
-    expect(footage[0].main_source instanceof FileSource).toBe(true);
-    expect(footage[0].main_source.file.endsWith("eps.eps")).toBe(true);
+    const source = as_instance(footage[0], FootageItem).main_source;
+    py_assert(source instanceof FileSource);
+    expect(source.file.endsWith("eps.eps")).toBe(true);
   });
 
   test("test_opti_is_bare_text", () => {
@@ -1838,9 +1881,9 @@ describe("TestImportEpsComp", () => {
     // per-layer name/index/bbox an AI layer carries stay zero. Byte-matched
     // against AE 2026's eps.eps comp import.
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("eps.eps")));
-    const source = (comp as any).layers[0].source.main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("eps.eps"))), CompItem);
+    const source = _footage_source(comp.layers[0]).main_source;
+    py_assert(source instanceof FileSource);
     expect(source._sspc.source_format_type).toBe("TEXT");
     expect(py_eq(source._opti.tobytes(), build_text_opti_data(1921, 2881))).toBe(true);
   });
@@ -1848,8 +1891,8 @@ describe("TestImportEpsComp", () => {
   test("test_layer_name_not_set", () => {
     // The single layer is named after the source item, so AE leaves the
     // ldta name_set bit off (verified against AE's import).
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("eps.eps")));
-    expect((comp as any).layers[0]._ldta.name_set).toBe(false);
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("eps.eps"))), CompItem);
+    expect(comp.layers[0]._ldta.name_set).toBe(false);
   });
 
   test("test_roundtrip_byte_identical", () => {
@@ -1873,7 +1916,7 @@ describe("TestImportEpsComp", () => {
 describe("TestImportPsdComp", () => {
   test.each(["8bits.psd", "8bits.psb"])("test_read_psd_layers_document_order[%#]", (name: string) => {
     const layers = read_psd_layers(ASSETS.div(name));
-    expect(py_eq(layers.map((layer: any): [string, any] => [layer.name, layer.layer_id]), [
+    expect(py_eq(layers.map((layer) => [layer.name, layer.layer_id]), [
       ["black", 3],
       ["white with mask", 4],
     ])).toBe(true);
@@ -1887,20 +1930,21 @@ describe("TestImportPsdComp", () => {
 
   test.each(["8bits.psd", "8bits.psb"])("test_import_structure[%#]", (name: string) => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(name)));
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(name))), CompItem);
     expect(comp.name).toBe("8bits");
     expect(py_eq([comp.width, comp.height], [25, 26])).toBe(true);
     // Footage layers, stacked top layer first (reverse document order).
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["white with mask", "black"])).toBe(true);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["white with mask", "black"])).toBe(true);
     const folders = Array.from(project.items.values()).filter(
-      (it: any) => it instanceof FolderItem && it.name === "8bits Layers",
+      (it) => it instanceof FolderItem && it.name === "8bits Layers",
     );
     expect(folders.length).toBe(1);
-    const footage = (folders[0] as any).items;
+    const footage = as_instance(folders[0], FolderItem).items;
     expect(footage.length).toBe(2);
     for (const item of footage) {
-      expect(item.main_source instanceof FileSource).toBe(true);
-      expect(item.main_source.file.endsWith(name)).toBe(true);
+      const source = as_instance(item, FootageItem).main_source;
+      py_assert(source instanceof FileSource);
+      expect(source.file.endsWith(name)).toBe(true);
     }
   });
 
@@ -1912,11 +1956,11 @@ describe("TestImportPsdComp", () => {
     const layers = read_psd_layers(ASSETS.div(name));
     const fixture_project = parse_aep(IMPORT_DIR.div(fixture)).project;
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div(name)));
-    const index_by_name = new Map<string, number>(layers.map((layer: any, i: number) => [layer.name, i]));
-    for (const comp_layer of (comp as any).layers) {
-      const source = comp_layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div(name))), CompItem);
+    const index_by_name = new Map<string, number>(layers.map((layer, i) => [layer.name, i]));
+    for (const comp_layer of comp.layers) {
+      const source = _footage_source(comp_layer).main_source;
+      py_assert(source instanceof FileSource);
       const buffer = new BytesIO();
       source._opti.write(buffer);
       const mine = buffer.getvalue();
@@ -1932,7 +1976,7 @@ describe("TestImportPsdComp", () => {
             getitem(index_by_name, comp_layer.name),
             psd_layer.layer_id,
             comp_layer.name,
-            (psd_layer as any).bounds,
+            as_instance(psd_layer, PsdLayer).bounds,
           ),
         ),
       ).toBe(true);
@@ -1956,13 +2000,14 @@ describe("TestImportPsdComp", () => {
     // Comp shutter phase and per-layer ldta flags match AE's import (these
     // come from the shared AVLayer/add_comp path the .ai import also uses).
     const fixture = parse_aep(IMPORT_DIR.div("psd_comp.aep")).project;
-    const ae_comp = Array.from(fixture.items.values()).find(
-      (it: any) => it instanceof CompItem && it.name === "8bits",
-    )!;
-    const comp = parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("8bits.psd")));
-    expect((comp as any).shutter_phase).toBe(-90);
-    expect((ae_comp as any).shutter_phase).toBe(-90);
-    for (const [layer, ae_layer] of zip((comp as any).layers as any[], (ae_comp as any).layers as any[])) {
+    const ae_comp = as_instance(
+      _next(fixture.items.values(), (it) => it instanceof CompItem && it.name === "8bits"),
+      CompItem,
+    );
+    const comp = as_instance(parse_aep(BASE).project.import_file(_comp_opts(ASSETS.div("8bits.psd"))), CompItem);
+    expect(comp.shutter_phase).toBe(-90);
+    expect(ae_comp.shutter_phase).toBe(-90);
+    for (const [layer, ae_layer] of zip(comp.layers, ae_comp.layers)) {
       expect(layer._ldta._reserved_3b).toBe(1);
       expect(ae_layer._ldta._reserved_3b).toBe(1);
       expect(layer._ldta._reserved_3c).toBe(0);
@@ -1974,7 +2019,7 @@ describe("TestImportPsdComp", () => {
 });
 
 /** Serialized opti of the single merged 8BPS footage in a flattened import. */
-function _flattened_footage_opti(project: any): Uint8Array {
+function _flattened_footage_opti(project: Project): Uint8Array {
   for (const item of project.items.values()) {
     const source = getattr(item, "main_source", null);
     if (source instanceof FileSource && getattr(source._opti, "asset_type", "") === "8BPS") {
@@ -2006,36 +2051,37 @@ describe("TestImportPsdFlattened", () => {
 
   test("test_import_structure", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("flattened_rgb.psd")));
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("flattened_rgb.psd"))), CompItem);
     expect(comp.name).toBe("flattened_rgb");
     expect(py_eq([comp.width, comp.height], [25, 26])).toBe(true);
-    expect((comp as any).shutter_phase).toBe(-90);
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["flattened_rgb.psd"])).toBe(true);
+    expect(comp.shutter_phase).toBe(-90);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["flattened_rgb.psd"])).toBe(true);
     const folders = Array.from(project.items.values()).filter(
-      (it: any) => it instanceof FolderItem && it.name === "flattened_rgb Layers",
+      (it) => it instanceof FolderItem && it.name === "flattened_rgb Layers",
     );
     expect(folders.length).toBe(1);
-    const footage = (folders[0] as any).items;
+    const footage = as_instance(folders[0], FolderItem).items;
     expect(footage.length).toBe(1);
-    expect(footage[0].main_source instanceof FileSource).toBe(true);
-    expect(footage[0].main_source.file.endsWith("flattened_rgb.psd")).toBe(true);
+    const source = as_instance(footage[0], FootageItem).main_source;
+    py_assert(source instanceof FileSource);
+    expect(source.file.endsWith("flattened_rgb.psd")).toBe(true);
   });
 
   test("test_cropped_import_also_one_layer", () => {
     // A flattened file has a single full-canvas layer, so COMP_CROPPED_LAYERS
     // yields the same one-layer comp as COMP (AE 2026 verified).
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_cropped_opts(ASSETS.div("flattened_rgb.psd")));
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["flattened_rgb.psd"])).toBe(true);
+    const comp = as_instance(project.import_file(_cropped_opts(ASSETS.div("flattened_rgb.psd"))), CompItem);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["flattened_rgb.psd"])).toBe(true);
     expect(py_eq([comp.width, comp.height], [25, 26])).toBe(true);
   });
 
   test("test_opti_matches_ae", () => {
     const info = probe_media(ASSETS.div("flattened_rgb.psd"));
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("flattened_rgb.psd")));
-    const source = (comp as any).layers[0].source.main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("flattened_rgb.psd"))), CompItem);
+    const source = _footage_source(comp.layers[0]).main_source;
+    py_assert(source instanceof FileSource);
     const mine = _opti_bytes(source);
     expect(
       py_eq(mine, build_psd_flattened_opti_data(info.width, info.height, info.bit_depth, info.pixel_channels)),
@@ -2068,7 +2114,7 @@ describe("TestImportPsdCropped", () => {
   test("test_read_layer_bounds", () => {
     const layers = read_psd_layers(ASSETS.div("layer_bounds.psd"));
     expect(
-      py_eq(layers.map((layer: any): [string, any, any] => [layer.name, layer.layer_id, layer.bounds]), [
+      py_eq(layers.map((layer) => [layer.name, layer.layer_id, as_instance(layer, PsdLayer).bounds]), [
         ["red box", 2, [4, 6, 24, 20]],
         ["green box", 3, [30, 10, 55, 34]],
         ["blue dot", 4, [12, 24, 22, 36]],
@@ -2078,10 +2124,10 @@ describe("TestImportPsdCropped", () => {
 
   test("test_cropped_structure", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd")));
+    const comp = as_instance(project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd"))), CompItem);
     expect(comp.name).toBe("layer_bounds");
     expect(py_eq([comp.width, comp.height], [60, 40])).toBe(true);
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), ["blue dot", "green box", "red box"])).toBe(true);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ["blue dot", "green box", "red box"])).toBe(true);
     const footage = _psd_footage(project);
     // Each footage item is cropped to its layer's content box.
     expect(py_eq([getitem(footage, "red box").width, getitem(footage, "red box").height], [20, 14])).toBe(true);
@@ -2093,17 +2139,18 @@ describe("TestImportPsdCropped", () => {
     // Per-layer opti, footage dims, and layer anchor/position match AE.
     const fixture = parse_aep(IMPORT_DIR.div("layer_bounds_cropped.aep")).project;
     const ae_footage = _psd_footage(fixture);
-    const ae_comp = Array.from(fixture.items.values()).find(
-      (it: any) => it instanceof CompItem && it.name === "layer_bounds",
-    )!;
-    const ae_xform = new Map<string, any>((ae_comp as any).layers.map((layer: any): [string, any] => [layer.name, layer.transform]));
+    const ae_comp = as_instance(
+      _next(fixture.items.values(), (it) => it instanceof CompItem && it.name === "layer_bounds"),
+      CompItem,
+    );
+    const ae_xform = new Map(ae_comp.layers.map((layer) => [layer.name, layer.transform] as const));
 
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd")));
-    for (const layer of (comp as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
-      expect(py_eq(_opti_bytes(source), _opti_bytes((getitem(ae_footage, layer.name).main_source as FileSource)))).toBe(true);
+    const comp = as_instance(project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd"))), CompItem);
+    for (const layer of comp.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
+      expect(py_eq(_opti_bytes(source), _opti_bytes(as_instance(getitem(ae_footage, layer.name).main_source, FileSource)))).toBe(true);
       expect(
         py_eq(
           [source._sspc.width, source._sspc.height],
@@ -2113,7 +2160,7 @@ describe("TestImportPsdCropped", () => {
           ],
         ),
       ).toBe(true);
-      for (const prop of ["ADBE Anchor Point", "ADBE Position"]) {
+      for (const prop of ["ADBE Anchor Point", "ADBE Position"] as const) {
         expect(
           py_eq(layer.transform.__getitem__(prop).value, getitem(ae_xform, layer.name).__getitem__(prop).value),
         ).toBe(true);
@@ -2138,12 +2185,12 @@ describe("TestImportPsdCropped", () => {
     const fixture = parse_aep(IMPORT_DIR.div("layer_bounds_comp.aep")).project;
     const ae_footage = _psd_footage(fixture);
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("layer_bounds.psd")));
-    for (const layer of (comp as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("layer_bounds.psd"))), CompItem);
+    for (const layer of comp.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
       expect(py_eq([source._sspc.width, source._sspc.height], [60, 40])).toBe(true);
-      expect(py_eq(_opti_bytes(source), _opti_bytes((getitem(ae_footage, layer.name).main_source as FileSource)))).toBe(true);
+      expect(py_eq(_opti_bytes(source), _opti_bytes(as_instance(getitem(ae_footage, layer.name).main_source, FileSource)))).toBe(true);
     }
   });
 
@@ -2151,14 +2198,14 @@ describe("TestImportPsdCropped", () => {
     // AE tags file footage with a reserved template at 0xC4:0xCA; byte 0xC7
     // is 1 for full-frame footage and 0 for a cropped layer region.
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png")));
-    expect((item as any).main_source instanceof FileSource).toBe(true);
-    expect(py_eq(_sspc_bytes((item as any).main_source).slice(0xc4, 0xca), b("\x00\x00\x00\x01\x00\x02"))).toBe(true);
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png"))), FootageItem);
+    py_assert(item.main_source instanceof FileSource);
+    expect(py_eq(_sspc_bytes(item.main_source).slice(0xc4, 0xca), b("\x00\x00\x00\x01\x00\x02"))).toBe(true);
 
-    const cropped = parse_aep(BASE).project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd")));
-    for (const layer of (cropped as any).layers) {
-      const source = layer.source.main_source;
-      expect(source instanceof FileSource).toBe(true);
+    const cropped = as_instance(parse_aep(BASE).project.import_file(_cropped_opts(ASSETS.div("layer_bounds.psd"))), CompItem);
+    for (const layer of cropped.layers) {
+      const source = _footage_source(layer).main_source;
+      py_assert(source instanceof FileSource);
       expect(py_eq(_sspc_bytes(source).slice(0xc4, 0xca), b("\x00\x00\x00\x00\x00\x02"))).toBe(true);
     }
   });
@@ -2175,14 +2222,14 @@ describe("TestImportPsdGroups", () => {
     const nodes = read_psd_layers(ASSETS.div("grouped_layers.psd"));
     // Top level, bottom first: plain, masked, text, smart, adjustment, then
     // the "MyGroup" group on top.
-    expect(py_eq(nodes.map((n: any) => n.name), ["plain raster", "masked raster", "my text", "smart obj", "hue/sat adj", "MyGroup"])).toBe(true);
+    expect(py_eq(nodes.map((n) => n.name), ["plain raster", "masked raster", "my text", "smart obj", "hue/sat adj", "MyGroup"])).toBe(true);
     const group = nodes[nodes.length - 1];
-    expect(group instanceof PsdGroup).toBe(true);
-    expect(py_eq((group as any).children.map((child: any) => child.name), ["in group A", "in group B"])).toBe(true);
+    py_assert(group instanceof PsdGroup);
+    expect(py_eq(group.children.map((child) => child.name), ["in group A", "in group B"])).toBe(true);
     // Adjustment detection.
-    const adj = nodes.find((n: any) => n.name === "hue/sat adj")!;
-    expect(adj instanceof PsdLayer).toBe(true);
-    expect((adj as any).is_adjustment).toBe(true);
+    const adj = _next(nodes, (n) => n.name === "hue/sat adj");
+    py_assert(adj instanceof PsdLayer);
+    expect(adj.is_adjustment).toBe(true);
   });
 
   test("test_build_layer_tree_nested", () => {
@@ -2201,24 +2248,24 @@ describe("TestImportPsdGroups", () => {
       rec("top", 0, 7),
     ];
     const tree = _build_layer_tree(records);
-    expect(py_eq(tree.map((n: any) => n.name), ["bg", "Outer", "top"])).toBe(true);
+    expect(py_eq(tree.map((n) => n.name), ["bg", "Outer", "top"])).toBe(true);
     const outer = tree[1];
-    expect(outer instanceof PsdGroup).toBe(true);
-    expect(py_eq((outer as any).children.map((n: any) => n.name), ["Inner", "y"])).toBe(true);
-    const inner = (outer as any).children[0];
-    expect(inner instanceof PsdGroup).toBe(true);
-    expect(py_eq(inner.children.map((n: any) => n.name), ["x"])).toBe(true);
+    py_assert(outer instanceof PsdGroup);
+    expect(py_eq(outer.children.map((n) => n.name), ["Inner", "y"])).toBe(true);
+    const inner = outer.children[0];
+    py_assert(inner instanceof PsdGroup);
+    expect(py_eq(inner.children.map((n) => n.name), ["x"])).toBe(true);
   });
 
   test("test_group_becomes_nested_comp", () => {
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("grouped_layers.psd")));
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("grouped_layers.psd"))), CompItem);
     expect(comp.name).toBe("grouped_layers");
     // MyGroup is a nested-comp layer; the adjustment layer is flagged.
-    const info = new Map<string, any>((comp as any).layers.map((layer: any): [string, any] => [layer.name, layer]));
-    const my_group = getitem(info, "MyGroup");
-    expect(my_group.source instanceof CompItem).toBe(true);
-    expect(py_eq(my_group.source.layers.map((layer: any) => layer.name), ["in group B", "in group A"])).toBe(true);
+    const info = new Map(comp.layers.map((layer) => [layer.name, layer] as const));
+    const my_group = as_instance(getitem(info, "MyGroup"), AVLayer);
+    py_assert(my_group.source instanceof CompItem);
+    expect(py_eq(my_group.source.layers.map((layer) => layer.name), ["in group B", "in group A"])).toBe(true);
     expect(getitem(info, "hue/sat adj").adjustment_layer).toBe(true);
     expect(getitem(info, "plain raster").adjustment_layer).toBe(false);
   });
@@ -2226,22 +2273,23 @@ describe("TestImportPsdGroups", () => {
   test("test_group_matches_ae", () => {
     // Main + nested comp layer structure and per-leaf opti match AE.
     const fixture = parse_aep(IMPORT_DIR.div("grouped_layers_comp.aep")).project;
-    const ae_main = Array.from(fixture.items.values()).find(
-      (it: any) => it instanceof CompItem && it.name === "grouped_layers",
-    )!;
+    const ae_main = as_instance(
+      _next(fixture.items.values(), (it) => it instanceof CompItem && it.name === "grouped_layers"),
+      CompItem,
+    );
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_comp_opts(ASSETS.div("grouped_layers.psd")));
-    expect(py_eq((comp as any).layers.map((layer: any) => layer.name), (ae_main as any).layers.map((layer: any) => layer.name))).toBe(true);
-    for (const [layer, ae_layer] of zip((comp as any).layers as any[], (ae_main as any).layers as any[])) {
+    const comp = as_instance(project.import_file(_comp_opts(ASSETS.div("grouped_layers.psd"))), CompItem);
+    expect(py_eq(comp.layers.map((layer) => layer.name), ae_main.layers.map((layer) => layer.name))).toBe(true);
+    for (const [layer, ae_layer] of zip(comp.layers, ae_main.layers)) {
       expect(layer.adjustment_layer).toBe(ae_layer.adjustment_layer);
       // AE collapses the group precomp and leaves its layer name unset.
-      expect(layer.collapse_transformation).toBe(ae_layer.collapse_transformation);
+      expect(as_instance(layer, AVLayer).collapse_transformation).toBe(as_instance(ae_layer, AVLayer).collapse_transformation);
       expect(layer._ldta.name_set).toBe(ae_layer._ldta.name_set);
     }
     const ae_footage = _psd_footage(fixture);
     const mine_footage = _psd_footage(project);
     for (const [name, source] of mine_footage) {
-      expect(py_eq(_opti_bytes(source.main_source as FileSource), _opti_bytes((getitem(ae_footage, name).main_source as FileSource)))).toBe(true);
+      expect(py_eq(_opti_bytes(as_instance(source.main_source, FileSource)), _opti_bytes(as_instance(getitem(ae_footage, name).main_source, FileSource)))).toBe(true);
     }
   });
 
@@ -2259,8 +2307,8 @@ describe("TestImportPsdGroups", () => {
   test("test_grouped_cropped_import", () => {
     // COMP_CROPPED_LAYERS on a grouped PSD: still builds the nested comp.
     const project = parse_aep(BASE).project;
-    const comp = project.import_file(_cropped_opts(ASSETS.div("grouped_layers.psd")));
-    const my_group = (comp as any).layers.find((layer: any) => layer.name === "MyGroup")!;
+    const comp = as_instance(project.import_file(_cropped_opts(ASSETS.div("grouped_layers.psd"))), CompItem);
+    const my_group = as_instance(_next(comp.layers, (layer) => layer.name === "MyGroup"), AVLayer);
     expect(my_group.source instanceof CompItem).toBe(true);
   });
 
@@ -2272,16 +2320,14 @@ describe("TestImportPsdGroups", () => {
     const ae_project = parse_aep(IMPORT_DIR.div("grouped_layers_cropped.aep")).project;
     const project = parse_aep(BASE).project;
     project.import_file(_cropped_opts(ASSETS.div("grouped_layers.psd")));
-    const ae_foot = new Map<string, any>(
-      Array.from(ae_project.items.values())
-        .filter((i: any) => i instanceof FootageItem && i.main_source instanceof FileSource)
-        .map((i: any): [string, any] => [i.name, i.main_source]),
-    );
-    const py_foot = new Map<string, any>(
-      Array.from(project.items.values())
-        .filter((i: any) => i instanceof FootageItem && i.main_source instanceof FileSource)
-        .map((i: any): [string, any] => [i.name, i.main_source]),
-    );
+    const ae_foot = new Map<string, FileSource>();
+    for (const i of ae_project.items.values()) {
+      if (i instanceof FootageItem && i.main_source instanceof FileSource) ae_foot.set(i.name, i.main_source);
+    }
+    const py_foot = new Map<string, FileSource>();
+    for (const i of project.items.values()) {
+      if (i instanceof FootageItem && i.main_source instanceof FileSource) py_foot.set(i.name, i.main_source);
+    }
     expect(py_eq(new Set(ae_foot.keys()), new Set(py_foot.keys()))).toBe(true);
     for (const [name, ae_src] of ae_foot) {
       const py_src = getitem(py_foot, name);
@@ -2290,7 +2336,7 @@ describe("TestImportPsdGroups", () => {
     }
     const adj = getitem(py_foot, "hue/sat adj/grouped_layers.psd");
     expect(py_eq([adj._width, adj._height], [80, 60])).toBe(true);
-    expect(adj._opti.psd_layer_channels).toBe(0);
+    expect(as_instance(adj._opti, PsdOptiChunk).psd_layer_channels).toBe(0);
   });
 });
 
@@ -2301,11 +2347,12 @@ describe("TestImportPsdGroups", () => {
  * (whose stored Sfdr order matches the alphabetical sort, not the item ids).
  */
 describe("TestLayeredImportFolderOrder", () => {
-  const _folder_order = (project: any): string[] => {
-    const folder = Array.from(project.items.values()).find(
-      (it: any) => it instanceof FolderItem && it.name.endsWith(" Layers"),
-    ) as any;
-    return folder.items.map((it: any) => it.name);
+  const _folder_order = (project: Project): string[] => {
+    const folder = as_instance(
+      _next(project.items.values(), (it) => it instanceof FolderItem && it.name.endsWith(" Layers")),
+      FolderItem,
+    );
+    return folder.items.map((it) => it.name);
   };
 
   test("test_grouped_layers_matches_ae", () => {
@@ -2366,13 +2413,13 @@ function _layer_opts(file: Path, layer: number | null = null, dims: string | nul
 }
 
 /** (item name, sspc bytes, opti bytes, post-sspc Pin Utf8) of the single file footage item. */
-function _footage_parts(project: any): [string, Uint8Array, Uint8Array, string] {
+function _footage_parts(project: Project): [string, Uint8Array, Uint8Array, string] {
   for (const item of project.items.values()) {
     if (item instanceof FootageItem && item.main_source instanceof FileSource) {
       const src = item.main_source;
       const pin = src._pin.chunks;
-      const sspc_i = pin.findIndex((c: any) => c.chunk_type === "sspc");
-      return [item.name, _sspc_bytes(src), src._opti.tobytes(), (pin[sspc_i + 1] as any).value];
+      const sspc_i = pin.findIndex((c) => c.chunk_type === "sspc");
+      return [item.name, _sspc_bytes(src), src._opti.tobytes(), as_instance(pin[sspc_i + 1], Utf8Chunk).value];
     }
   }
   throw new AssertionError_("no file footage item in project");
@@ -2433,14 +2480,14 @@ describe("TestChooseLayerImport", () => {
   test("test_source_layer_name_property", () => {
     const project = parse_aep(BASE).project;
     const item = project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), 3));
-    expect(item instanceof FootageItem).toBe(true);
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    py_assert(item instanceof FootageItem);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     expect(source.layer_name).toBe("solo");
     const merged = project.import_file(_layer_opts(ASSETS.div("choose_layer.psd")));
-    expect(merged instanceof FootageItem).toBe(true);
-    const merged_source = (merged as any).main_source;
-    expect(merged_source instanceof FileSource).toBe(true);
+    py_assert(merged instanceof FootageItem);
+    const merged_source = merged.main_source;
+    py_assert(merged_source instanceof FileSource);
     expect(merged_source.layer_name).toBe("");
   });
 
@@ -2450,11 +2497,11 @@ describe("TestChooseLayerImport", () => {
     const project = parse_aep(BASE).project;
     const top = project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), 0));
     const bottom = project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), 2));
-    expect(top instanceof FootageItem && bottom instanceof FootageItem).toBe(true);
-    const top_source = (top as any).main_source;
-    const bottom_source = (bottom as any).main_source;
-    expect(top_source instanceof FileSource).toBe(true);
-    expect(bottom_source instanceof FileSource).toBe(true);
+    py_assert(top instanceof FootageItem && bottom instanceof FootageItem);
+    const top_source = top.main_source;
+    const bottom_source = bottom.main_source;
+    py_assert(top_source instanceof FileSource);
+    py_assert(bottom_source instanceof FileSource);
     expect(top_source.layer_name).toBe("twin");
     expect(bottom_source.layer_name).toBe("twin");
     expect(top_source._sspc.layer_id).toBe(4);
@@ -2525,9 +2572,9 @@ describe("TestChooseLayerImport", () => {
     // compare against AE's own bytes rather than against our own maths.
     const [ae_name, ae_sspc, ae_opti] = _footage_parts(parse_aep(IMPORT_DIR.div("ai_choose_layer1_size.aep")).project);
     const project = parse_aep(BASE).project;
-    const item = project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1, "layer"));
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1, "layer")), FootageItem);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     const my_opti = source._opti.tobytes();
     // The box lands within a couple of 1/65536 quanta of AE's; the
     // derived footage dimensions and the Layer Size marker are exact.
@@ -2545,9 +2592,9 @@ describe("TestChooseLayerImport", () => {
   test("test_ai_layer_size_empty_layer_floors_at_one_pixel", () => {
     const project = parse_aep(BASE).project;
     // Calque 2 has no artwork on the page.
-    const item = project.import_file(_layer_opts(ASSETS.div("ai.ai"), 0, "layer"));
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(_layer_opts(ASSETS.div("ai.ai"), 0, "layer")), FootageItem);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     const box = struct.unpack(">4i", source._opti.tobytes().slice(0x10, 0x20));
     expect(py_eq(box, [0, 0, 1, 1])).toBe(true);
     expect(py_eq([item.width, item.height], [1, 1])).toBe(true);
@@ -2564,17 +2611,18 @@ describe("TestChooseLayerImport", () => {
     const [_name, _sspc, opti, _utf8] = _footage_parts(parse_project_fresh(out));
     const box = struct.unpack(">4i", opti.slice(0x10, 0x20)).map((v: number) => v / 65536);
     expect(approx(box, [112.748, 239.5073, 593.931, 675.999], { abs: 1e-3 })).toBe(true);
-    const item = Array.from(parse_project_fresh(out).items.values()).find(
-      (i: any) => i instanceof FootageItem && i.main_source instanceof FileSource,
-    )!;
-    expect(py_eq([(item as any).width, (item as any).height], [482, 437])).toBe(true);
+    const item = as_instance(
+      _next(parse_project_fresh(out).items.values(), (i) => i instanceof FootageItem && i.main_source instanceof FileSource),
+      FootageItem,
+    );
+    expect(py_eq([item.width, item.height], [482, 437])).toBe(true);
   });
 
   test("test_ai_layer_size_document_default_keeps_the_full_page", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1));
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1)), FootageItem);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     const box = struct.unpack(">4i", source._opti.tobytes().slice(0x10, 0x20)).map((v: number) => v / 65536);
     expect(approx(box, [0.0, 0.0, 612.0, 792.0])).toBe(true);
     expect(py_eq([item.width, item.height], [612, 792])).toBe(true);
@@ -2585,10 +2633,10 @@ describe("TestChooseLayerImport", () => {
     // CURRENT_VALUE used to downgrade an AI target to Document Size
     // because Layer Size was unrepresentable; it now round-trips.
     const project = parse_aep(BASE).project;
-    const item = project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1, "layer"));
-    (item as any).replace(ASSETS.div("ai.ai"), CURRENT_VALUE, CURRENT_VALUE);
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(_layer_opts(ASSETS.div("ai.ai"), 1, "layer")), FootageItem);
+    item.replace(ASSETS.div("ai.ai"), CURRENT_VALUE, CURRENT_VALUE);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     expect(source._sspc.full_frame).toBe(false);
     expect(py_eq([item.width, item.height], [482, 437])).toBe(true);
   });
@@ -2602,9 +2650,9 @@ describe("TestChooseLayerImport", () => {
     const names = read_ai_layers(probe);
     for (const [index, name] of enumerate([...names].reverse())) {
       const project = parse_aep(BASE).project;
-      const item = project.import_file(_layer_opts(probe, index, "layer"));
-      const source = (item as any).main_source;
-      expect(source instanceof FileSource).toBe(true);
+      const item = as_instance(project.import_file(_layer_opts(probe, index, "layer")), FootageItem);
+      const source = item.main_source;
+      py_assert(source instanceof FileSource);
       const box = struct.unpack(">4i", source._opti.tobytes().slice(0x10, 0x20)).map((v: number) => v / 65536);
       const [expected_box, width, height] = getitem(ae, name);
       expect(approx(box, expected_box, { abs: 3 / 65536 })).toBe(true);
@@ -2640,9 +2688,10 @@ describe("TestChooseLayerImport", () => {
       // Calque 2 is empty: AE stores a 1/65536-epsilon box and floors
       // the footage at 1x1.
       const [_name, sspc, ae_opti, _utf8] = _footage_parts(parse_aep(IMPORT_DIR.div(fixture)).project);
-      const box = struct.unpack(">4i", ae_opti.slice(0x10, 0x20)).map((v: number) => v / 65536);
+      const [x0, y0, x1, y1] = struct.unpack(">4i", ae_opti.slice(0x10, 0x20));
+      const box: [number, number, number, number] = [x0 / 65536, y0 / 65536, x1 / 65536, y1 / 65536];
       expect(approx(box, expected_box, { abs: 1e-4 })).toBe(true);
-      expect(py_eq(ae_opti, build_ai_layer_opti_data(612, 792, layer, 2, box as [number, number, number, number]))).toBe(true);
+      expect(py_eq(ae_opti, build_ai_layer_opti_data(612, 792, layer, 2, box))).toBe(true);
       // sspc holds the derived integer dims and the Layer Size markers.
       expect(struct.unpack(">H", sspc.slice(0x20, 0x22))[0]).toBe(expected_size[0]);
       expect(struct.unpack(">H", sspc.slice(0x24, 0x26))[0]).toBe(expected_size[1]);
@@ -2688,7 +2737,7 @@ describe("TestChooseLayerReplace", () => {
     const project = parse_aep(BASE).project;
     const item = project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), layer, dims));
     expect(item instanceof FootageItem).toBe(true);
-    return [project, item as FootageItem];
+    return [project, as_instance(item, FootageItem)];
   };
 
   test("test_replace_explicit_index_rebinds", () => {
@@ -2717,8 +2766,8 @@ describe("TestChooseLayerReplace", () => {
     // accepted divergence); the 0xD0 cache size matches (the file's size).
     _assert_sspc_matches(ae[1], sspc);
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
-    expect((source as any).layer_name).toBe("");
+    py_assert(source instanceof FileSource);
+    expect(source.layer_name).toBe("");
     expect(source._sspc.layer_id).toBe(0xffffffff);
     expect(source._sspc.layer_index).toBe(0xffffffff);
   });
@@ -2817,8 +2866,8 @@ describe("TestChooseLayerReplace", () => {
     item.replace(ASSETS.div("choose_layer_v2.psd"), 0);
     expect(item.name).toBe("extra/choose_layer_v2.psd");
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
-    expect((source as any).layer_name).toBe("extra");
+    py_assert(source instanceof FileSource);
+    expect(source.layer_name).toBe("extra");
   });
 
   test("test_replace_preserves_layer_size", () => {
@@ -2873,14 +2922,14 @@ describe("TestCompImportLayerBinding", () => {
     ["flattened_rgb_comp.aep", "flattened_rgb.psd"],
     ["ai_comp.aep", "ai.ai"],
   ])("test_per_layer_binding_matches_ae[%#]", (fixture: string, asset: string) => {
-    const by_name = (project: any): Map<string, [Uint8Array, string]> => {
+    const by_name = (project: Project): Map<string, [Uint8Array, string]> => {
       const out = new Map<string, [Uint8Array, string]>();
       for (const item of project.items.values()) {
         if (item instanceof FootageItem && item.main_source instanceof FileSource) {
           const src = item.main_source;
           const pin = src._pin.chunks;
-          const sspc_i = pin.findIndex((c: any) => c.chunk_type === "sspc");
-          out.set(item.name, [_sspc_bytes(src), (pin[sspc_i + 1] as any).value]);
+          const sspc_i = pin.findIndex((c) => c.chunk_type === "sspc");
+          out.set(item.name, [_sspc_bytes(src), as_instance(pin[sspc_i + 1], Utf8Chunk).value]);
         }
       }
       return out;
@@ -2926,8 +2975,8 @@ describe("TestImportFileSequenceRange", () => {
     opts.range_start = start;
     opts.range_end = end;
     const item = project.import_file(opts);
-    expect(item instanceof FootageItem).toBe(true);
-    return item as FootageItem;
+    py_assert(item instanceof FootageItem);
+    return item;
   };
 
   test("test_clip_range", () => {
@@ -3029,12 +3078,13 @@ describe("TestImportFileSequenceRange", () => {
     const out = tmp_path.div("ranged.aep");
     project.save(out);
     const reparsed = parse_aep(out).project;
-    const item = Array.from(reparsed.items.values()).find(
-      (it: any) => it.name === "range_[0003-0008].png",
-    )!;
-    const sspc = (item as any).main_source._sspc;
+    const item = as_instance(
+      _next(reparsed.items.values(), (it) => it.name === "range_[0003-0008].png"),
+      FootageItem,
+    );
+    const sspc = item.main_source._sspc;
     expect(py_eq([sspc.start_frame, sspc.end_frame], [3, 8])).toBe(true);
-    expect(approx((item as any).duration, 0.2, { abs: 1e-4 })).toBe(true);
+    expect(approx(item.duration, 0.2, { abs: 1e-4 })).toBe(true);
   });
 });
 
@@ -3045,11 +3095,11 @@ describe("TestImportFileSequenceRange", () => {
  * identity and name unchanged).
  */
 describe("TestFileSourceReload", () => {
-  const _import_png = (tmp_path: Path): [Project, any, Path] => {
+  const _import_png = (tmp_path: Path): [Project, FootageItem, Path] => {
     const target = tmp_path.div("reload_src.png");
     target.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(target));
+    const item = as_instance(project.import_file(new ImportOptions(target)), FootageItem);
     return [project, item, target];
   };
 
@@ -3059,7 +3109,7 @@ describe("TestFileSourceReload", () => {
     expect(py_eq([item.width, item.height], [25, 26])).toBe(true);
     const new_content = ASSETS.div("image_with_alpha.png").read_bytes();
     target.write_bytes(new_content);
-    item.main_source.reload();
+    as_instance(item.main_source, FileSource).reload();
     // The AE fixture values for the same file swap.
     expect(py_eq([item.width, item.height], [640, 346])).toBe(true);
     expect(item.main_source._sspc.data_size).toBe(new_content.length);
@@ -3070,7 +3120,10 @@ describe("TestFileSourceReload", () => {
     // AE 2026 on Windows keeps a BMP's STIL code in the reloaded opti;
     // re-deriving it from the extension wrote the macOS IMIO.
     const project = parse_aep(BASE, { platform: "windows" }).project;
-    const source = (project.import_file(new ImportOptions(ASSETS.div("bmp.bmp"))) as any).main_source;
+    const source = as_instance(
+      as_instance(project.import_file(new ImportOptions(ASSETS.div("bmp.bmp"))), FootageItem).main_source,
+      FileSource,
+    );
     expect(source._sspc.source_format_type).toBe("STIL");
     source.reload();
     expect(py_eq(source._opti.tobytes().slice(0, 4), b("STIL"))).toBe(true);
@@ -3080,11 +3133,11 @@ describe("TestFileSourceReload", () => {
     const tmp_path = make_tmp_path();
     const [project, item, target] = _import_png(tmp_path);
     target.write_bytes(ASSETS.div("image_with_alpha.png").read_bytes());
-    item.main_source.reload();
+    as_instance(item.main_source, FileSource).reload();
     const out = tmp_path.div("reloaded.aep");
     project.save(out);
     const reparsed = parse_aep(out).project;
-    const item2 = reparsed.footages.find((i: any) => i.name === "reload_src.png")!;
+    const item2 = _next(reparsed.footages, (i) => i.name === "reload_src.png");
     expect(py_eq([item2.width, item2.height], [640, 346])).toBe(true);
   });
 
@@ -3096,7 +3149,7 @@ describe("TestFileSourceReload", () => {
     const proxy = tmp_path.div("proxy.png");
     proxy.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
     item.set_proxy(proxy);
-    expect(item.proxy_source instanceof FileSource).toBe(true);
+    py_assert(item.proxy_source instanceof FileSource);
     expect(py_eq([item.proxy_source._width, item.proxy_source._height], [25, 26])).toBe(true);
 
     // Swap the proxy file on disk for one with different dimensions.
@@ -3109,7 +3162,7 @@ describe("TestFileSourceReload", () => {
     const out = tmp_path.div("proxy_reloaded.aep");
     project.save(out);
     const reparsed = parse_aep(out).project;
-    const item2 = reparsed.footages.find((i: any) => i.name === "reload_src.png")!;
+    const item2 = _next(reparsed.footages, (i) => i.name === "reload_src.png");
     expect(item2.proxy_source instanceof FileSource).toBe(true);
     expect(py_eq([as_instance(item2.proxy_source, FileSource)._width, as_instance(item2.proxy_source, FileSource)._height], [640, 346])).toBe(true);
   });
@@ -3123,14 +3176,14 @@ describe("TestFileSourceReload", () => {
     proxy.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
     item.set_proxy(proxy);
     const main_dims = [item.main_source._width, item.main_source._height];
-    const flags_before = item._idta._flags_17;
+    const flags_before = as_instance(item._idta, IdtaChunk)._flags_17;
 
     proxy.write_bytes(ASSETS.div("image_with_alpha.png").read_bytes());
-    expect(item.proxy_source instanceof FileSource).toBe(true);
+    py_assert(item.proxy_source instanceof FileSource);
     item.proxy_source.reload();
 
     expect(py_eq([item.main_source._width, item.main_source._height], main_dims)).toBe(true);
-    expect(item._idta._flags_17).toBe(flags_before);
+    expect(as_instance(item._idta, IdtaChunk)._flags_17).toBe(flags_before);
   });
 
   test("test_reload_missing_file_raises", () => {
@@ -3138,7 +3191,7 @@ describe("TestFileSourceReload", () => {
     const [, item, target] = _import_png(tmp_path);
     target.unlink();
     raises(ValueError, () => {
-      item.main_source.reload();
+      as_instance(item.main_source, FileSource).reload();
     });
   });
 
@@ -3154,7 +3207,7 @@ describe("TestFileSourceReload", () => {
     raises(
       ValueError,
       () => {
-        item.main_source.reload();
+        as_instance(item.main_source, FileSource).reload();
       },
       "not a file",
     );
@@ -3184,14 +3237,14 @@ describe("TestFileSourceReload", () => {
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(tmp_path.div("seq_0001.png"));
     opts.sequence = true;
-    const item = project.import_file(opts);
-    const sspc = (item as any).main_source._sspc;
+    const item = as_instance(project.import_file(opts), FootageItem);
+    const sspc = item.main_source._sspc;
     expect(py_eq([sspc.start_frame, sspc.end_frame], [1, 3])).toBe(true);
 
     for (let n = 4; n < 7; n++) {
       tmp_path.div(`seq_${String(n).padStart(4, "0")}.png`).write_bytes(data);
     }
-    (item as any).main_source.reload();
+    as_instance(item.main_source, FileSource).reload();
     expect(py_eq([sspc.start_frame, sspc.end_frame], [1, 6])).toBe(true);
     expect(approx(item.duration, 6 / 30, { abs: 1e-4 })).toBe(true);
   });
@@ -3206,21 +3259,23 @@ const VARIANT_PSD = ASSETS.div("psd_layer_styles_variant.psd");
 const SINGLE_PSD = ASSETS.div("psd_layer_styles_8bits_single.psd");
 
 /** Serialize a chunk subtree exactly as write_aep would (skip synthetic). */
-function _serialize_tree(chunk: any): Uint8Array {
+function _serialize_tree(chunk: Chunk | null): Uint8Array {
+  py_assert(chunk != null);
   const buffer = new BytesIO();
   write_chunk(buffer, chunk);
   return buffer.getvalue();
 }
 
-function _styles_tdgp(project: any, comp_name: string, layer_name: string): any {
-  const comp = Array.from(project.items.values()).find(
-    (item: any) => item instanceof CompItem && item.name === comp_name,
-  ) as any;
+function _styles_tdgp(project: Project, comp_name: string, layer_name: string): ListChunk | null {
+  const comp = as_instance(
+    _next(project.items.values(), (item) => item instanceof CompItem && item.name === comp_name),
+    CompItem,
+  );
   const layer = comp.layer(layer_name);
   return layer.property("ADBE Layer Styles")._tdgp;
 }
 
-function _styles_import(psd: Path, import_as: ImportAsType, layer_styles: string | null = null): [any, any] {
+function _styles_import(psd: Path, import_as: ImportAsType, layer_styles: string | null = null): [Project, FootageItem | CompItem] {
   const project = parse_aep(BASE).project;
   const opts = new ImportOptions(psd);
   opts.import_as = import_as;
@@ -3228,12 +3283,12 @@ function _styles_import(psd: Path, import_as: ImportAsType, layer_styles: string
   return [project, project.import_file(opts)];
 }
 
-function _psd_footage_source(project: any, name: string): FileSource {
+function _psd_footage_source(project: Project, name: string): FileSource {
   for (const item of project.items.values()) {
     if (item instanceof FootageItem && item.name === name) {
       const source = item.main_source;
-      expect(source instanceof FileSource).toBe(true);
-      return source as FileSource;
+      py_assert(source instanceof FileSource);
+      return source;
     }
   }
   throw new AssertionError_(`footage ${repr(name)} not found`);
@@ -3320,7 +3375,7 @@ describe("TestLayerStylesEditableImport", () => {
       // group comp) targets that comp on both sides; otherwise the py side
       // is the freshly imported main comp.
       let py_comp = comp.name;
-      if (fixture_comp != null && Array.from(project.items.values()).some((item: any) => item.name === fixture_comp)) {
+      if (fixture_comp != null && Array.from(project.items.values()).some((item) => item.name === fixture_comp)) {
         py_comp = fixture_comp;
       }
       const ae_comp = fixture_comp != null ? fixture_comp : comp.name;
@@ -3344,13 +3399,16 @@ describe("TestLayerStylesEditableImport", () => {
     const ae_tree = _serialize_tree(_styles_tdgp(ae_project, comp.name, "Layer 1"));
     const re_tree = _serialize_tree(_styles_tdgp(reparsed, comp.name, "Layer 1"));
     expect(py_eq(re_tree, ae_tree)).toBe(true);
-    const layer = (Array.from(reparsed.items.values())
-      .find((item: any) => item instanceof CompItem && item.name === comp.name)! as any)
-      .layer("Layer 1");
+    const layer = as_instance(
+      _next(reparsed.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    ).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");
     expect(styles.enabled).toBe(true);
     expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(true);
-    expect(styles.__getitem__("dropShadow/enabled").__getitem__("dropShadow/mode2").value).toBe(17.0);
+    expect(
+      as_instance(as_instance(styles.__getitem__("dropShadow/enabled"), PropertyGroup).__getitem__("dropShadow/mode2"), Property).value,
+    ).toBe(17.0);
   });
 
   test("test_new_enable_states_survive_disk_roundtrip", () => {
@@ -3368,14 +3426,18 @@ describe("TestLayerStylesEditableImport", () => {
       const re_tree = _serialize_tree(_styles_tdgp(reparsed, comp.name, layer_name));
       expect(py_eq(re_tree, ae_tree)).toBe(true);
     }
-    const comp_item = Array.from(reparsed.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === comp.name,
-    ) as any;
+    const comp_item = as_instance(
+      _next(reparsed.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    );
     const styles = comp_item.layer("fill plus disabled shadow").property("ADBE Layer Styles");
     expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(false);
-    expect(styles.__getitem__("dropShadow/enabled")._tdsb._enable_flags).toBe(0);
-    const adv = styles.__getitem__("ADBE Blend Options Group").__getitem__("ADBE Adv Blend Group");
-    expect(adv.__getitem__("ADBE Layer Fill Opacity2").value).toBe(60.0);
+    expect(as_instance(styles.__getitem__("dropShadow/enabled")._tdsb, TdsbChunk)._enable_flags).toBe(0);
+    const adv = as_instance(
+      as_instance(styles.__getitem__("ADBE Blend Options Group"), PropertyGroup).__getitem__("ADBE Adv Blend Group"),
+      PropertyGroup,
+    );
+    expect(as_instance(adv.__getitem__("ADBE Layer Fill Opacity2"), Property).value).toBe(60.0);
   });
 
   test("test_per_layer_footage_matches_ae", () => {
@@ -3397,12 +3459,12 @@ describe("TestLayerStylesEditableImport", () => {
   });
 
   test("test_multi_instance_styles_warn_and_disable", () => {
-    let project: any;
-    let comp: any;
+    let project: Project | null = null;
+    let comp: FootageItem | CompItem | null = null;
     warns(() => {
       [project, comp] = _styles_import(STYLED_PSD, ImportAsType.COMP);
     }, "frameFX");
-    const layer = comp.layer("Layer 1");
+    const layer = as_instance(comp, CompItem).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");
     expect(styles.__getitem__("frameFX/enabled").enabled).toBe(false);
     expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(true);
@@ -3415,13 +3477,13 @@ describe("TestLayerStylesModes", () => {
     const source = _psd_footage_source(project, "Layer 1/psd_layer_styles_8bits_single.psd");
     expect(py_eq(source._sspc._reserved_c8, b("\x00\x01"))).toBe(true);
     expect(source.layer_styles).toBe("merge");
-    const layer = comp.layer("Layer 1");
+    const layer = as_instance(comp, CompItem).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");
     expect(styles.enabled).toBe(false);
     expect(
       styles.properties
-        .filter((child: any) => child.match_name.endsWith("/enabled"))
-        .every((child: any) => !child.enabled),
+        .filter((child) => child.match_name.endsWith("/enabled"))
+        .every((child) => !child.enabled),
     ).toBe(true);
   });
 
@@ -3435,20 +3497,26 @@ describe("TestLayerStylesModes", () => {
       // AE stores it in the opti (with the matching data_size) and, cropped,
       // sizes and places the layer from it (24x25 layer -> 114x115).
       const ae_project = parse_aep(IMPORT_DIR.div("psd_layer_styles.aep")).project;
-      const ae_comp = Array.from(ae_project.items.values()).find(
-        (item: any) => item instanceof CompItem && item.name === fixture_comp,
-      ) as any;
+      const ae_comp = as_instance(
+        _next(ae_project.items.values(), (item) => item instanceof CompItem && item.name === fixture_comp),
+        CompItem,
+      );
       const [, comp] = _styles_import(STYLED_PSD, import_as, "merge");
-      expect(comp instanceof CompItem).toBe(true);
+      py_assert(comp instanceof CompItem);
       for (const name of ["Layer 1", "Layer 1 copy"]) {
         const ae_layer = ae_comp.layer(name);
         const py_layer = comp.layer(name);
-        const ae_source = ae_layer.source.main_source;
-        const py_source = py_layer.source.main_source;
+        const ae_source = as_instance(_footage_source(ae_layer).main_source, FileSource);
+        const py_source = as_instance(_footage_source(py_layer).main_source, FileSource);
         _assert_sspc_matches(_sspc_bytes(ae_source), _sspc_bytes(py_source));
         expect(py_eq(py_source._opti.tobytes(), ae_source._opti.tobytes())).toBe(true);
-        expect(py_eq([py_layer.source.width, py_layer.source.height], [ae_layer.source.width, ae_layer.source.height])).toBe(true);
-        for (const match_name of ["ADBE Anchor Point", "ADBE Position"]) {
+        expect(
+          py_eq(
+            [_footage_source(py_layer).width, _footage_source(py_layer).height],
+            [_footage_source(ae_layer).width, _footage_source(ae_layer).height],
+          ),
+        ).toBe(true);
+        for (const match_name of ["ADBE Anchor Point", "ADBE Position"] as const) {
           expect(
             py_eq(py_layer.transform.property(match_name).value, ae_layer.transform.property(match_name).value),
           ).toBe(true); // (name, match_name)
@@ -3464,17 +3532,18 @@ describe("TestLayerStylesModes", () => {
 
   test("test_footage_ignore_matches_ae_fixture_item", () => {
     const ae_project = parse_aep(IMPORT_DIR.div("psd_layer_styles.aep")).project;
-    const ae_item = Array.from(ae_project.items.values()).find(
-      (item: any) => item instanceof FootageItem && item.name === "FOOTAGE Layer 1 Ignore layer styles",
-    ) as any;
+    const ae_item = as_instance(
+      _next(ae_project.items.values(), (item) => item instanceof FootageItem && item.name === "FOOTAGE Layer 1 Ignore layer styles"),
+      FootageItem,
+    );
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(STYLED_PSD);
     opts.layer_index = 1; // "Layer 1" (bottom) in top-first dropdown order
     opts.layer_styles = "ignore";
-    const item = project.import_file(opts);
-    const ae_source = ae_item.main_source;
-    const py_source = (item as any).main_source;
-    expect(py_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(opts), FootageItem);
+    const ae_source = as_instance(ae_item.main_source, FileSource);
+    const py_source = item.main_source;
+    py_assert(py_source instanceof FileSource);
     _assert_sspc_matches(_sspc_bytes(ae_source), _sspc_bytes(py_source));
     expect(py_eq(py_source._opti.tobytes(), ae_source._opti.tobytes())).toBe(true);
     expect(py_source.layer_styles).toBe("ignore");
@@ -3482,16 +3551,20 @@ describe("TestLayerStylesModes", () => {
 
   test("test_footage_merge_matches_ae_fixture_item", () => {
     const ae_project = parse_aep(IMPORT_DIR.div("psd_layer_styles.aep")).project;
-    const ae_item = Array.from(ae_project.items.values()).find(
-      (item: any) => item instanceof FootageItem && item.name === "FOOTAGE Layer 1 Merge layer styles into footage",
-    ) as any;
+    const ae_item = as_instance(
+      _next(
+        ae_project.items.values(),
+        (item) => item instanceof FootageItem && item.name === "FOOTAGE Layer 1 Merge layer styles into footage",
+      ),
+      FootageItem,
+    );
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(STYLED_PSD);
     opts.layer_index = 1;
-    const item = project.import_file(opts); // merge is the FOOTAGE default
-    const ae_source = ae_item.main_source;
-    const py_source = (item as any).main_source;
-    expect(py_source instanceof FileSource).toBe(true);
+    const item = as_instance(project.import_file(opts), FootageItem); // merge is the FOOTAGE default
+    const ae_source = as_instance(ae_item.main_source, FileSource);
+    const py_source = item.main_source;
+    py_assert(py_source instanceof FileSource);
     _assert_sspc_matches(_sspc_bytes(ae_source), _sspc_bytes(py_source));
     expect(py_eq(py_source._opti.tobytes(), ae_source._opti.tobytes())).toBe(true);
     expect(py_source.layer_styles).toBe("merge");
@@ -3502,12 +3575,12 @@ describe("TestLayerStylesModes", () => {
     const opts = new ImportOptions(STYLED_PSD);
     opts.layer_index = 1;
     opts.layer_dimensions = "layer";
-    const item = project.import_file(opts);
+    const item = as_instance(project.import_file(opts), FootageItem);
     // The cropped-layer footage AE writes for the same layer (fixture).
     expect(py_eq([item.width, item.height], [114, 115])).toBe(true);
-    const opti = (item as any).main_source._opti;
+    const opti = as_instance(item.main_source._opti, PsdOptiChunk);
     expect(py_eq([opti.psd_layer_left, opti.psd_layer_top, opti.psd_layer_right, opti.psd_layer_bottom], [-45, -45, 69, 70])).toBe(true);
-    expect((item as any).main_source._sspc.data_size).toBe(114 * 115 * 4 * 2);
+    expect(item.main_source._sspc.data_size).toBe(114 * 115 * 4 * 2);
   });
 
   test("test_layer_size_ignore_on_styled_layer_works", () => {
@@ -3577,29 +3650,29 @@ describe("TestLayerStylesReplace", () => {
     opts.layer_index = 1;
     opts.layer_styles = "ignore";
     const item = project.import_file(opts);
-    expect(item instanceof FootageItem).toBe(true);
-    return item as FootageItem;
+    py_assert(item instanceof FootageItem);
+    return item;
   };
 
   test("test_current_value_preserves_recorded_choice", () => {
     const item = _ignore_item();
     item.replace(VARIANT_PSD, CURRENT_VALUE);
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
-    expect((source as any).layer_styles).toBe("ignore");
+    py_assert(source instanceof FileSource);
+    expect(source.layer_styles).toBe("ignore");
   });
 
   test("test_current_value_preserves_editable_byte", () => {
     // Per-layer footage of an editable comp records mode 0x02; replace
     // keeps the byte verbatim (editable state lives on comp layers).
     const [project] = _styles_import(SINGLE_PSD, ImportAsType.COMP);
-    const item = Array.from(project.items.values()).find(
-      (it: any) => it instanceof FootageItem && it.name === "Layer 1/psd_layer_styles_8bits_single.psd",
-    ) as any;
-    if (item == null) throw new AssertionError_("per-layer footage not found");
+    const item = as_instance(
+      _next(project.items.values(), (it) => it instanceof FootageItem && it.name === "Layer 1/psd_layer_styles_8bits_single.psd"),
+      FootageItem,
+    );
     item.replace(VARIANT_PSD, CURRENT_VALUE);
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
+    py_assert(source instanceof FileSource);
     expect(source.layer_styles).toBe("editable");
     expect(py_eq(source._sspc._reserved_c8, b("\x00\x02"))).toBe(true);
   });
@@ -3608,8 +3681,8 @@ describe("TestLayerStylesReplace", () => {
     const item = _ignore_item();
     item.replace(STYLED_PSD, CURRENT_VALUE, CURRENT_VALUE, "merge");
     const source = item.main_source;
-    expect(source instanceof FileSource).toBe(true);
-    expect((source as any).layer_styles).toBe("merge");
+    py_assert(source instanceof FileSource);
+    expect(source.layer_styles).toBe("merge");
     raises(ValueError, () => {
       item.replace(STYLED_PSD, CURRENT_VALUE, CURRENT_VALUE, "editable");
     });
@@ -3625,10 +3698,10 @@ describe("TestLayerStylesReplace", () => {
   test("test_merged_current_falls_back_to_merge", () => {
     const project = parse_aep(BASE).project;
     const item = project.import_file(new ImportOptions(STYLED_PSD));
-    expect(item instanceof FootageItem).toBe(true);
-    (item as any).replace(STYLED_PSD, 1);
-    const source = (item as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    py_assert(item instanceof FootageItem);
+    item.replace(STYLED_PSD, 1);
+    const source = item.main_source;
+    py_assert(source instanceof FileSource);
     expect(source.layer_styles).toBe("merge");
   });
 });
@@ -3643,13 +3716,14 @@ describe("TestLayerStylesReplace", () => {
  * fingerprint, and the outline color follows AE's non-reproducible
  * global mask-color cycle (see MaskPropertyGroup._MASK_COLOR_CYCLE).
  */
-function _mask_parade_bytes(project: any, comp_name: string, layer_name: string): Uint8Array {
-  const comp = Array.from(project.items.values()).find(
-    (item: any) => item instanceof CompItem && item.name === comp_name,
-  ) as any;
+function _mask_parade_bytes(project: Project, comp_name: string, layer_name: string): Uint8Array {
+  const comp = as_instance(
+    _next(project.items.values(), (item) => item instanceof CompItem && item.name === comp_name),
+    CompItem,
+  );
   const parade = comp.layer(layer_name).property("ADBE Mask Parade");
   for (const mask of parade.properties) {
-    const mkif = mask._mkif;
+    const mkif = as_instance(mask, MaskPropertyGroup)._mkif;
     if (mkif != null && !mkif.synthetic) {
       mkif._reserved_0c = new Uint8Array(33);
       mkif.color_r = mkif.color_g = mkif.color_b = 0;
@@ -3667,18 +3741,18 @@ const _PSD_MASK_CASES: [string, string, string][] = [
 ];
 
 /** A comp layer's size, anchor, position and mask vertices. */
-function _layer_geometry(layer: any): any[] {
+function _layer_geometry(layer: Layer): [number, number, number[], number[], number[][][]] {
   const transform = layer.transform;
   const parade = layer.masks;
   return [
-    layer.width,
-    layer.height,
-    transform.property("ADBE Anchor Point").value.slice(0, 2).map((v: number) => round(v, 3)),
-    transform.property("ADBE Position").value.slice(0, 2).map((v: number) => round(v, 3)),
-    (py_bool(parade) ? parade.properties : []).map((mask: any) =>
-      mask
+    as_instance(layer, AVLayer).width,
+    as_instance(layer, AVLayer).height,
+    transform.property("ADBE Anchor Point").value.slice(0, 2).map((v) => round(v, 3)),
+    transform.property("ADBE Position").value.slice(0, 2).map((v) => round(v, 3)),
+    (parade != null && py_bool(parade) ? parade.properties : []).map((mask) =>
+      as_instance(mask, PropertyGroup)
         .property("ADBE Mask Shape")
-        .value.vertices.map((vertex: number[]) => vertex.map((c: number) => round(c, 3))),
+        .value.vertices.map((vertex) => vertex.map((c) => round(c, 3))),
     ),
   ];
 }
@@ -3694,8 +3768,8 @@ function _layer_geometry(layer: any): any[] {
  */
 describe("TestPsdMaskContentBoxes", () => {
   // Class-scoped fixture: parsed once, shared by every case.
-  let _fixtures: Map<string, any> | null = null;
-  const fixtures = (): Map<string, any> => {
+  let _fixtures: Map<string, Project> | null = null;
+  const fixtures = (): Map<string, Project> => {
     if (_fixtures == null) {
       _fixtures = new Map(["editable", "merge"].map((mode) => [mode, parse_aep(IMPORT_DIR.div(`psd_mask_crops_${mode}.aep`)).project]));
     }
@@ -3703,20 +3777,21 @@ describe("TestPsdMaskContentBoxes", () => {
   };
 
   test.each(_PSD_MASK_CASES)("test_matches_ae[%#]", (mode: string, stem: string, how: string) => {
-    const ae_comp = Array.from(getitem(fixtures(), mode).items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === `${stem}|${how}`,
-    ) as any;
+    const ae_comp = as_instance(
+      _next(getitem(fixtures(), mode).items.values(), (item) => item instanceof CompItem && item.name === `${stem}|${how}`),
+      CompItem,
+    );
     const project = parse_aep(BASE).project;
     const opts = new ImportOptions(ASSETS.div(`${stem}.psd`));
     opts.import_as = how === "cropped" ? ImportAsType.COMP_CROPPED_LAYERS : ImportAsType.COMP;
     opts.layer_styles = mode;
-    const comp = project.import_file(opts);
-    const layers = new Map<string, any>((comp as any).layers.map((layer: any): [string, any] => [layer.name, layer]));
-    expect(py_eq(new Set(layers.keys()), new Set(ae_comp.layers.map((layer: any) => layer.name)))).toBe(true);
+    const comp = as_instance(project.import_file(opts), CompItem);
+    const layers = new Map(comp.layers.map((layer) => [layer.name, layer] as const));
+    expect(py_eq(new Set(layers.keys()), new Set(ae_comp.layers.map((layer) => layer.name)))).toBe(true);
     for (const ae_layer of ae_comp.layers) {
       const layer = getitem(layers, ae_layer.name);
-      const ae_source = ae_layer.source.main_source;
-      const source = layer.source.main_source;
+      const ae_source = as_instance(_footage_source(ae_layer).main_source, FileSource);
+      const source = as_instance(_footage_source(layer).main_source, FileSource);
       expect(py_eq(source._opti.tobytes(), ae_source._opti.tobytes())).toBe(true);
       _assert_sspc_matches(_sspc_bytes(ae_source), _sspc_bytes(source));
       expect(py_eq(_layer_geometry(layer), _layer_geometry(ae_layer))).toBe(true);
@@ -3740,12 +3815,14 @@ describe("TestVectorMaskImport", () => {
   ])("test_mask_parade_matches_ae[%#]", (name: string, layer_name: string, mask_count: number) => {
     const ae_project = parse_aep(IMPORT_DIR.div(`${name}.aep`)).project;
     const [project, comp] = _styles_import(ASSETS.div(`${name}.psd`), ImportAsType.COMP);
-    const py_parade = (Array.from(project.items.values())
-      .find((item: any) => item instanceof CompItem && item.name === comp.name)! as any)
+    const py_parade = as_instance(
+      _next(project.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    )
       .layer(layer_name)
       .property("ADBE Mask Parade");
     expect(py_parade.properties.length).toBe(mask_count);
-    expect(py_parade.properties.every((m: any) => m.roto_bezier === false)).toBe(true);
+    expect(py_parade.properties.every((m) => as_instance(m, MaskPropertyGroup).roto_bezier === false)).toBe(true);
     const ae_tree = _mask_parade_bytes(ae_project, name, layer_name);
     const py_tree = _mask_parade_bytes(project, comp.name, layer_name);
     expect(py_eq(py_tree, ae_tree)).toBe(true);
@@ -3758,11 +3835,12 @@ describe("TestVectorMaskImport", () => {
     // origin ((20,12)-(52,44) minus origin (4,4), AE 2026 fixture).
     const ae_project = parse_aep(IMPORT_DIR.div("psd_vector_mask_cropped.aep")).project;
     const [project, comp] = _styles_import(ASSETS.div("psd_vector_mask.psd"), ImportAsType.COMP_CROPPED_LAYERS);
-    const py_comp = Array.from(project.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === comp.name,
-    ) as any;
+    const py_comp = as_instance(
+      _next(project.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    );
     const parade = py_comp.layer("vector masked").property("ADBE Mask Parade");
-    const shape = parade.properties[0].property("ADBE Mask Shape").value;
+    const shape = as_instance(parade.properties[0], PropertyGroup).property("ADBE Mask Shape").value;
     expect(py_eq(shape.vertices, [[16.0, 8.0], [48.0, 8.0], [48.0, 40.0], [16.0, 40.0]])).toBe(true);
     const ae_tree = _mask_parade_bytes(ae_project, "psd_vector_mask", "vector masked");
     const py_tree = _mask_parade_bytes(project, comp.name, "vector masked");
@@ -3779,14 +3857,18 @@ describe("TestVectorMaskImport", () => {
     const out = tmp_path.div("cropped_mask.aep");
     project.save(out);
     const reparsed = parse_project_fresh(out);
-    const layer = (Array.from(reparsed.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === comp.name,
-    ) as any).layer("vector masked");
+    const layer = as_instance(
+      as_instance(
+        _next(reparsed.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+        CompItem,
+      ).layer("vector masked"),
+      AVLayer,
+    );
     expect(py_eq([layer.width, layer.height], [56, 56])).toBe(true);
-    const shape = layer.property("ADBE Mask Parade").properties[0].property("ADBE Mask Shape").value;
+    const shape = as_instance(layer.property("ADBE Mask Parade").properties[0], PropertyGroup).property("ADBE Mask Shape").value;
     // f4 shph precision loss on the round-trip; the scale basis is what
     // matters (layer 56, not comp 64 which would give ~18.3/9.1).
-    const flat = shape.vertices.flatMap((vertex: number[]) => vertex);
+    const flat = shape.vertices.flatMap((vertex) => vertex);
     expect(approx(flat, [16.0, 8.0, 48.0, 8.0, 48.0, 40.0, 16.0, 40.0], { abs: 1e-3 })).toBe(true);
   });
 
@@ -3803,20 +3885,21 @@ describe("TestVectorMaskImport", () => {
     const out = tmp_path.div("clipping.aep");
     project.save(out);
     const reparsed = parse_project_fresh(out);
-    const main = Array.from(reparsed.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === comp.name,
-    ) as any;
-    const base_layer = main.layer("base");
-    expect(base_layer.source instanceof CompItem).toBe(true);
+    const main = as_instance(
+      _next(reparsed.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    );
+    const base_layer = as_instance(main.layer("base"), AVLayer);
+    py_assert(base_layer.source instanceof CompItem);
     expect(base_layer.source.name).toBe(`${comp.name} (1)`);
     expect(base_layer._ldta.name_set).toBe(false);
     expect(base_layer.label).toBe(15);
     expect(base_layer.collapse_transformation).toBe(false);
     const nested = base_layer.source;
-    expect(py_eq(nested.layers.map((layer: any) => layer.name), ["clipped", "base"])).toBe(true);
-    expect(nested.layer("clipped").preserve_transparency).toBe(true);
-    expect(nested.layer("base").preserve_transparency).toBe(false);
-    expect(nested.parent_folder.name).toBe(`${comp.name} Layers`);
+    expect(py_eq(nested.layers.map((layer) => layer.name), ["clipped", "base"])).toBe(true);
+    expect(as_instance(nested.layer("clipped"), AVLayer).preserve_transparency).toBe(true);
+    expect(as_instance(nested.layer("base"), AVLayer).preserve_transparency).toBe(false);
+    expect(as_instance(nested.parent_folder, FolderItem).name).toBe(`${comp.name} Layers`);
   });
 
   test("test_cropped_clipping_matches_ae", () => {
@@ -3827,16 +3910,14 @@ describe("TestVectorMaskImport", () => {
     const ae_project = parse_aep(IMPORT_DIR.div("psd_clipping_mask_cropped.aep")).project;
     const project = parse_aep(BASE).project;
     project.import_file(_cropped_opts(ASSETS.div("psd_clipping_mask.psd")));
-    const ae_foot = new Map<string, any>(
-      Array.from(ae_project.items.values())
-        .filter((i: any) => i instanceof FootageItem && i.main_source instanceof FileSource)
-        .map((i: any): [string, any] => [i.name, i.main_source]),
-    );
-    const py_foot = new Map<string, any>(
-      Array.from(project.items.values())
-        .filter((i: any) => i instanceof FootageItem && i.main_source instanceof FileSource)
-        .map((i: any): [string, any] => [i.name, i.main_source]),
-    );
+    const ae_foot = new Map<string, FileSource>();
+    for (const i of ae_project.items.values()) {
+      if (i instanceof FootageItem && i.main_source instanceof FileSource) ae_foot.set(i.name, i.main_source);
+    }
+    const py_foot = new Map<string, FileSource>();
+    for (const i of project.items.values()) {
+      if (i instanceof FootageItem && i.main_source instanceof FileSource) py_foot.set(i.name, i.main_source);
+    }
     expect(py_eq(new Set(ae_foot.keys()), new Set(py_foot.keys()))).toBe(true);
     for (const [name, ae_src] of ae_foot) {
       const py_src = getitem(py_foot, name);
@@ -3848,7 +3929,7 @@ describe("TestVectorMaskImport", () => {
     const empty = getitem(py_foot, "Layer 1/psd_clipping_mask.psd");
     expect(py_eq([empty._width, empty._height], [64, 64])).toBe(true);
     expect(empty._sspc.data_size).toBe(0);
-    expect(empty._opti.psd_layer_channels).toBe(4);
+    expect(as_instance(empty._opti, PsdOptiChunk).psd_layer_channels).toBe(4);
   });
 
   test("test_layers_without_vector_masks_get_none", () => {
@@ -3856,9 +3937,10 @@ describe("TestVectorMaskImport", () => {
     // the disk round-trip also re-reads the created mask chunks.
     const tmp_path = make_tmp_path();
     const [project, comp] = _styles_import(ASSETS.div("psd_raster_mask.psd"), ImportAsType.COMP);
-    const comp_item = Array.from(project.items.values()).find(
-      (item: any) => item instanceof CompItem && item.name === comp.name,
-    ) as any;
+    const comp_item = as_instance(
+      _next(project.items.values(), (item) => item instanceof CompItem && item.name === comp.name),
+      CompItem,
+    );
     const parade = comp_item.layer("masked").property("ADBE Mask Parade");
     expect(parade.properties.length).toBe(0);
 
@@ -3886,8 +3968,8 @@ describe("TestImportChoicePrefsWiring", () => {
     const project = parse_aep(BASE).project;
     // PSD Footage Layer Styles Option: 1 = ignore.
     project._preferences.set_pref_as_number(_SECTION, "PSD Footage Layer Styles Option", 1);
-    const source = (project.import_file(_layer_opts(STYLED_PSD, 1)) as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const source = as_instance(project.import_file(_layer_opts(STYLED_PSD, 1)), FootageItem).main_source;
+    py_assert(source instanceof FileSource);
     expect(source.layer_styles).toBe("ignore");
   });
 
@@ -3900,8 +3982,8 @@ describe("TestImportChoicePrefsWiring", () => {
     );
     const opts = _layer_opts(STYLED_PSD, 1);
     opts.layer_styles = "merge";
-    const source = (project.import_file(opts) as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const source = as_instance(project.import_file(opts), FootageItem).main_source;
+    py_assert(source instanceof FileSource);
     expect(source.layer_styles).toBe("merge");
   });
 
@@ -3909,8 +3991,8 @@ describe("TestImportChoicePrefsWiring", () => {
     const project = parse_aep(BASE).project;
     // PSD Dimensions Popup: 0 = layer (style-less solo layer, no expansion).
     project._preferences.set_pref_as_number(_SECTION, "PSD Dimensions Popup", 0);
-    const source = (project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), 3)) as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const source = as_instance(project.import_file(_layer_opts(ASSETS.div("choose_layer.psd"), 3)), FootageItem).main_source;
+    py_assert(source instanceof FileSource);
     expect(source._sspc.full_frame).toBe(false);
   });
 
@@ -3937,8 +4019,8 @@ describe("TestImportChoicePrefsWiring", () => {
       "PSD Dimensions Popup",
       0, // layer
     );
-    const source = (project.import_file(_layer_opts(ASSETS.div("ai.ai"), 0)) as any).main_source;
-    expect(source instanceof FileSource).toBe(true);
+    const source = as_instance(project.import_file(_layer_opts(ASSETS.div("ai.ai"), 0)), FootageItem).main_source;
+    py_assert(source instanceof FileSource);
     expect(source._sspc.full_frame).toBe(true);
   });
 });
@@ -3949,9 +4031,7 @@ test.each([ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS])(
     // psd_layer_styles.psd is 4:3; AE 2026 gives the import comp that aspect
     // (footage_depth.aep "comp:psd_layer_styles.psd"; the render matrix shows
     // the same for COMP_CROPPED_LAYERS).
-    const truth = Array.from(parse_aep(IMPORT_DIR.div("footage_depth.aep")).project.compositions).find(
-      (c: any) => c.name === "comp:psd_layer_styles.psd",
-    ) as any;
+    const truth = _next(parse_aep(IMPORT_DIR.div("footage_depth.aep")).project.compositions, (c) => c.name === "comp:psd_layer_styles.psd");
     const project = parse_aep(BASE).project;
     const options = new ImportOptions(ASSETS.div("psd_layer_styles.psd"));
     options.import_as = import_as;
@@ -4004,11 +4084,11 @@ describe("TestSequenceRefusedFormats", () => {
 
   test.each(["mov_480.mov", "wav.wav", "json.json"])("test_replace_and_proxy_with_sequence_raise[%#]", (name: string) => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("tga_24.tga")));
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("tga_24.tga"))), FootageItem);
     raises(
       ValueError,
       () => {
-        (item as any).replace_with_sequence(ASSETS.div(name));
+        item.replace_with_sequence(ASSETS.div(name));
       },
       "sequence",
     );
@@ -4019,7 +4099,7 @@ describe("TestSequenceRefusedFormats", () => {
       },
       "sequence",
     );
-    expect(String((item as any).main_source.file).endsWith("tga_24.tga")).toBe(true);
+    expect(String(as_instance(item.main_source, FileSource).file).endsWith("tga_24.tga")).toBe(true);
     expect(item.proxy_source == null).toBe(true);
   });
 });

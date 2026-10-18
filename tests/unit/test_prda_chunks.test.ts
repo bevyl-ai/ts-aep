@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 import { BytesIO, bytes_, py_eq } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { as_instance } from "../helpers.ts";
 import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, PrdaChunk, RayTracedPrdaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 
 const PRDA_CLASSIC_DEFAULT = bytes_.fromhex("000000010000000000000000");
@@ -26,7 +27,7 @@ const PRDA_ADVANCED_SET = bytes_.fromhex(
 const PRDA_CINEMA_SET = bytes_.fromhex("00000001000000010000002c0000000100000000");
 
 describe("TestPrdaVariants", () => {
-  test.each<[Uint8Array, string, new (...a: any[]) => any]>([
+  test.each<[Uint8Array, string, typeof PrdaChunk]>([
     [PRDA_CLASSIC_DEFAULT, "ADBE Escher", ClassicPrdaChunk],
     [PRDA_RAYTRACED, "ADBE Picasso", RayTracedPrdaChunk],
     [PRDA_CINEMA_DEFAULT, "ADBE Ernst", Cinema4DPrdaChunk],
@@ -59,27 +60,36 @@ describe("TestPrdaVariants", () => {
   });
 
   test("test_classic_shadow_map_resolution", () => {
-    const chunk = PrdaChunk.frombytes(PRDA_CLASSIC_SET, {
-      chunk_type: "prda",
-      renderer_match_name: "ADBE Escher",
-    }) as any;
+    const chunk = as_instance(
+      PrdaChunk.frombytes(PRDA_CLASSIC_SET, {
+        chunk_type: "prda",
+        renderer_match_name: "ADBE Escher",
+      }),
+      ClassicPrdaChunk,
+    );
     expect(chunk.shadow_map_resolution).toBe(3);
   });
 
   test("test_cinema_quality", () => {
-    const chunk = PrdaChunk.frombytes(PRDA_CINEMA_SET, {
-      chunk_type: "prda",
-      renderer_match_name: "ADBE Ernst",
-    }) as any;
+    const chunk = as_instance(
+      PrdaChunk.frombytes(PRDA_CINEMA_SET, {
+        chunk_type: "prda",
+        renderer_match_name: "ADBE Ernst",
+      }),
+      Cinema4DPrdaChunk,
+    );
     expect(chunk.quality).toBe(44);
   });
 
   test("test_advanced_fields_mixed_endian", () => {
     /** Head is big-endian, the tail from offset 20 little-endian. */
-    const chunk = PrdaChunk.frombytes(PRDA_ADVANCED_SET, {
-      chunk_type: "prda",
-      renderer_match_name: "ADBE Calder",
-    }) as any;
+    const chunk = as_instance(
+      PrdaChunk.frombytes(PRDA_ADVANCED_SET, {
+        chunk_type: "prda",
+        renderer_match_name: "ADBE Calder",
+      }),
+      AdvancedPrdaChunk,
+    );
     expect(chunk.quality).toBe(61);
     expect(chunk.resolution).toBe(2);
     expect(chunk.smoothness).toBe(6);
@@ -91,7 +101,7 @@ describe("TestPrdaVariants", () => {
     expect(approx(chunk.casting_box_center_z, -0.0520833)).toBe(true);
   });
 
-  test.each<[new (...a: any[]) => any, Uint8Array]>([
+  test.each<[typeof PrdaChunk, Uint8Array]>([
     [ClassicPrdaChunk, PRDA_CLASSIC_DEFAULT],
     [RayTracedPrdaChunk, PRDA_RAYTRACED],
     [Cinema4DPrdaChunk, PRDA_CINEMA_DEFAULT],

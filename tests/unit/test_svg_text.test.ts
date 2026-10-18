@@ -9,23 +9,41 @@
 import { afterEach, expect, test } from "bun:test";
 
 import { approx, make_tmp_path, warns } from "../../src/pyrt/pytest.ts";
-import { NotImplementedError, Path, py_assert, py_eq } from "../../src/pyrt/index.ts";
+import { KeyError, NotImplementedError, Path, py_assert, py_eq } from "../../src/pyrt/index.ts";
 import * as reader_mod from "../../src/py_aep/svg/reader.ts";
-import { read_svg } from "../../src/py_aep/svg/index.ts";
+import { SolidPaint, read_svg, type Subpath, type SvgDocument } from "../../src/py_aep/svg/index.ts";
 import { parse_path } from "../../src/py_aep/svg/path_data.ts";
-import { TextRun, _glyphs, outline_runs, outline_text_path } from "../../src/py_aep/svg/text.ts";
+import {
+  TextRun,
+  _glyphs,
+  outline_runs,
+  outline_text_path,
+  type FontkitCmap,
+  type FontkitFont,
+  type FontkitGlyph,
+} from "../../src/py_aep/svg/text.ts";
 import { IDENTITY } from "../../src/py_aep/svg/transform.ts";
 import { FontBuilder, TTGlyphPen, saveTTC } from "../_fontbuilder.ts";
 import * as fonts_mod from "../../src/py_aep/svg/fonts.ts";
+import { as_instance } from "../helpers.ts";
 
 // `monkeypatch.setattr`: ESM bindings are read-only, so patched names route through
 // the setter hooks exported by svg/reader.ts and svg/fonts.ts; restored after each test.
-const monkeypatch_setattr = (obj: unknown, name: string, value: any): void => {
+type _ResolveFont = Parameters<typeof reader_mod._set_resolve_font>[0];
+type _FontDirs = Parameters<typeof fonts_mod._set_font_dirs>[0];
+type _Index = Parameters<typeof fonts_mod._set_index>[0];
+function monkeypatch_setattr(obj: unknown, name: "resolve_font", value: _ResolveFont): void;
+function monkeypatch_setattr(obj: unknown, name: "_font_dirs", value: _FontDirs): void;
+function monkeypatch_setattr(obj: unknown, name: "_index", value: _Index): void;
+function monkeypatch_setattr(
+  obj: unknown,
+  ...[name, value]: ["resolve_font", _ResolveFont] | ["_font_dirs", _FontDirs] | ["_index", _Index]
+): void {
   if (obj === reader_mod && name === "resolve_font") reader_mod._set_resolve_font(value);
   else if (obj === fonts_mod && name === "_font_dirs") fonts_mod._set_font_dirs(value);
   else if (obj === fonts_mod && name === "_index") fonts_mod._set_index(value);
   else throw new NotImplementedError(`monkeypatch.setattr ${name}`);
-};
+}
 afterEach(() => {
   reader_mod._set_resolve_font(null);
   fonts_mod._set_font_dirs(null);
@@ -82,13 +100,13 @@ function fixture_test_font(): Path {
   return _test_font_cache;
 }
 
-function _xrange(sp: any): [number, number] {
-  const xs = sp.vertices.map((v: any) => v[0]);
+function _xrange(sp: Subpath): [number, number] {
+  const xs = sp.vertices.map((v) => v[0]);
   return [Math.min(...xs), Math.max(...xs)];
 }
 
-function _yrange(sp: any): [number, number] {
-  const ys = sp.vertices.map((v: any) => v[1]);
+function _yrange(sp: Subpath): [number, number] {
+  const ys = sp.vertices.map((v) => v[1]);
   return [Math.min(...ys), Math.max(...ys)];
 }
 
@@ -129,7 +147,7 @@ test("test_anchor_middle_centers", () => {
 
 test("test_reader_outlines_text", () => {
   const test_font = fixture_test_font();
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="#ff0000">AB</text></svg>';
@@ -138,28 +156,28 @@ test("test_reader_outlines_text", () => {
   const d = doc.drawables[0];
   expect(d.subpaths.length).toBe(2);
   expect(d.fill != null).toBe(true);
-  expect(py_eq(Array.from((d.fill as any).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(py_eq(Array.from(as_instance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_tspan_per_run_fill", () => {
   const test_font = fixture_test_font();
   // Parent text and a <tspan> with its own fill become two drawables.
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="#000000">A' +
     '<tspan fill="#ff0000">B</tspan></text></svg>';
   const doc = read_svg(svg);
   expect(doc.drawables.length).toBe(2);
-  expect(py_eq(Array.from((doc.drawables[0].fill as any).color.slice(0, 3)), [0.0, 0.0, 0.0])).toBe(true);
-  expect(py_eq(Array.from((doc.drawables[1].fill as any).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(py_eq(Array.from(as_instance(doc.drawables[0].fill, SolidPaint).color.slice(0, 3)), [0.0, 0.0, 0.0])).toBe(true);
+  expect(py_eq(Array.from(as_instance(doc.drawables[1].fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_tspan_inherits_font_size", () => {
   const test_font = fixture_test_font();
   // The <tspan> has no font-size; it must inherit 100 from the parent <text>
   // (advance 60), so 'B' lands at x 70..110 just like the single-run case.
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="0" y="100" font-size="100">A<tspan>B</tspan></text></svg>';
@@ -170,7 +188,7 @@ test("test_reader_tspan_inherits_font_size", () => {
 });
 
 test("test_reader_text_skipped_without_font", () => {
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => null);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => null);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
     '<text x="0" y="50">hi</text></svg>';
@@ -193,7 +211,7 @@ test("test_letter_spacing", () => {
 test("test_reader_text_stroke", () => {
   const test_font = fixture_test_font();
   // A stroked, unfilled <text> yields a stroked drawable with no fill.
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="none" ' +
@@ -203,7 +221,7 @@ test("test_reader_text_stroke", () => {
   const d = doc.drawables[0];
   expect(d.fill == null).toBe(true);
   py_assert(d.stroke != null);
-  expect(py_eq(Array.from((d.stroke.paint as any).color.slice(0, 3)), [0.0, 1.0, 0.0])).toBe(true);
+  expect(py_eq(Array.from(as_instance(d.stroke.paint, SolidPaint).color.slice(0, 3)), [0.0, 1.0, 0.0])).toBe(true);
   expect(d.stroke.width).toBe(4.0);
 });
 
@@ -230,7 +248,7 @@ test("test_textpath_offpath_glyphs_dropped", () => {
 
 test("test_reader_textpath", () => {
   const test_font = fixture_test_font();
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" ' +
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 200">' +
@@ -241,14 +259,14 @@ test("test_reader_textpath", () => {
   expect(doc.drawables.length).toBe(1);
   const d = doc.drawables[0];
   expect(d.subpaths.length).toBe(2);
-  expect(py_eq(Array.from((d.fill as any).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(py_eq(Array.from(as_instance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_textpath_applies_path_transform", () => {
   const test_font = fixture_test_font();
   // The referenced path's OWN transform must apply: translate(0,100) puts the
   // baseline at y=100, so 'A' spans y 30..100 (x is unchanged by the y-shift).
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" ' +
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 200">' +
@@ -267,10 +285,11 @@ test("test_reader_image_skipped_with_warning", () => {
     '<svg xmlns="http://www.w3.org/2000/svg" ' +
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">' +
     '<image x="0" y="0" width="50" height="50" xlink:href="foo.png"/></svg>';
-  let doc: any;
+  let doc: SvgDocument | undefined;
   warns(() => {
     doc = read_svg(svg);
   }, "image");
+  py_assert(doc != null);
   expect(py_eq(doc.drawables, [])).toBe(true);
 });
 
@@ -281,10 +300,11 @@ test("test_reader_image_does_not_block_vectors", () => {
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">' +
     '<rect x="0" y="0" width="10" height="10" fill="#ff0000"/>' +
     '<image x="0" y="0" width="50" height="50" xlink:href="foo.png"/></svg>';
-  let doc: any;
+  let doc: SvgDocument | undefined;
   warns(() => {
     doc = read_svg(svg);
   });
+  py_assert(doc != null);
   expect(doc.drawables.length).toBe(1);
 });
 
@@ -292,13 +312,20 @@ test("test_reader_image_does_not_block_vectors", () => {
  * Duck-typed TTFont whose getBestCmap() is null (a symbol font, e.g.
  * Windows Wingdings/Webdings/Symbol/Marlett, which has no Unicode cmap).
  */
-class _NoCmapFont {
+class _NoCmapFont implements FontkitFont {
   // fontkit-shaped twins of the Python duck type: the TS `_glyphs` reads
-  // `font._cmapProcessor` (null = no Unicode cmap), `font.unitsPerEm` and
-  // `glyph_set.numGlyphs` instead of getBestCmap()/getGlyphSet()/font["head"].
-  _cmapProcessor: null = null;
+  // `font._cmapProcessor` (throws like fontkit = no Unicode cmap), `font.unitsPerEm`
+  // and `glyph_set.numGlyphs` instead of getBestCmap()/getGlyphSet()/font["head"].
   unitsPerEm = 1000;
   numGlyphs = 0;
+
+  get _cmapProcessor(): FontkitCmap {
+    throw new Error("Could not find a supported cmap table");
+  }
+
+  getGlyph(id: number): FontkitGlyph {
+    throw new KeyError(String(id));
+  }
 
   getBestCmap(): null {
     return null;
@@ -308,7 +335,7 @@ class _NoCmapFont {
     return new Map();
   }
 
-  __getitem__(key: string): any {
+  __getitem__(key: string): { unitsPerEm: number } {
     return { unitsPerEm: 1000 };
   }
 }
@@ -317,7 +344,7 @@ test("test_glyphs_handles_font_without_unicode_cmap", () => {
   // Regression: getBestCmap() returns None for symbol fonts; _glyphs used to
   // crash with AttributeError, taking down the whole read_svg(). It must now
   // map every char to no glyph so the run is simply dropped.
-  const [names, advances, upm, _] = _glyphs(new _NoCmapFont() as unknown as Parameters<typeof _glyphs>[0], "AB");
+  const [names, advances, upm, _] = _glyphs(new _NoCmapFont(), "AB");
   expect(py_eq(names, [null, null])).toBe(true);
   expect(py_eq(advances, [0.0, 0.0])).toBe(true);
 });
@@ -327,12 +354,12 @@ test("test_reader_collapses_indentation_whitespace", () => {
   // Regression: a pretty-printed <text> with leading/trailing indentation
   // used to render those spaces as glyph advances, shifting the text right.
   // SVG collapses internal whitespace and trims the run's edges.
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">';
 
   const min_x = (svg: string): number =>
     Math.min(
-      ...read_svg(svg).drawables[0].subpaths.flatMap((sp: any) => sp.vertices.map((v: any) => v[0])),
+      ...read_svg(svg).drawables[0].subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])),
     );
 
   const flush = head + '<text x="0" y="100" font-size="100">AB</text></svg>';
@@ -360,7 +387,7 @@ test("test_reader_per_tspan_text_anchor", () => {
   const test_font = fixture_test_font();
   // A <tspan> that resets x and sets its own text-anchor establishes its own
   // chunk with that anchor; the parent run keeps the default start anchor.
-  monkeypatch_setattr(reader_mod, "resolve_font", (...a: any[]) => [test_font, 0]);
+  monkeypatch_setattr(reader_mod, "resolve_font", (...a) => [test_font, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">' +
     '<text x="0" y="100" font-size="100">A' +

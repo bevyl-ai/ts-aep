@@ -229,7 +229,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam", [100, 200]);
-    const pos = cam.transform.__getitem__("ADBE Position") as Property;
+    const pos = cam.transform.__getitem__("ADBE Position");
     expect(approx(pos.value[2], -138.8887, { rel: 1e-3 })).toBe(true);
   });
 
@@ -237,7 +237,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam", [100, 200]);
-    const anchor = cam.transform.__getitem__("ADBE Anchor Point") as Property;
+    const anchor = cam.transform.__getitem__("ADBE Anchor Point");
     expect(approx(anchor.value[0], 100.0)).toBe(true);
     expect(approx(anchor.value[1], 200.0)).toBe(true);
   });
@@ -246,7 +246,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam");
-    const anchor = cam.transform.__getitem__("ADBE Anchor Point") as Property;
+    const anchor = cam.transform.__getitem__("ADBE Anchor Point");
     expect(approx(anchor.value[0], comp.width / 2)).toBe(true);
     expect(approx(anchor.value[1], comp.height / 2)).toBe(true);
   });
@@ -258,7 +258,7 @@ describe("TestAddCamera", () => {
     const comp = app.project.compositions[0];
     comp.pixel_aspect = 2.0;
     const cam = comp.add_camera("Cam");
-    const pos = cam.transform.__getitem__("ADBE Position") as Property;
+    const pos = cam.transform.__getitem__("ADBE Position");
     expect(approx(pos.value[2], -comp.width * 2.0 / 0.72)).toBe(true);
   });
 
@@ -306,7 +306,7 @@ describe("TestAddLight", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const light = comp.add_light("L", [300, 400]);
-    const pos = light.transform.__getitem__("ADBE Position") as Property;
+    const pos = light.transform.__getitem__("ADBE Position");
     expect(approx(pos.value[2], -69.4444, { rel: 1e-3 })).toBe(true);
   });
 
@@ -317,7 +317,7 @@ describe("TestAddLight", () => {
     const comp = app.project.compositions[0];
     comp.pixel_aspect = 2.0;
     const light = comp.add_light("L");
-    const pos = light.transform.__getitem__("ADBE Position") as Property;
+    const pos = light.transform.__getitem__("ADBE Position");
     expect(approx(pos.value[2], -comp.width * 2.0 / 0.72 / 2)).toBe(true);
   });
 
@@ -380,8 +380,9 @@ describe("TestAddSolid", () => {
     const comp = app.project.compositions[0];
     const layer = comp.add_solid([1.0, 0.5, 0.0], "OrangeSolid");
 
-    expect((layer.source as any).main_source instanceof SolidSource).toBe(true);
-    const color = (layer.source as any).main_source.color;
+    const source = as_instance(layer.source, FootageItem);
+    expect(source.main_source instanceof SolidSource).toBe(true);
+    const color = as_instance(source.main_source, SolidSource).color;
     expect(approx(color[0], 1.0)).toBe(true);
     expect(approx(color[1], 0.5)).toBe(true);
     expect(approx(color[2], 0.0)).toBe(true);
@@ -400,7 +401,8 @@ describe("TestAddSolid", () => {
     const comp = app.project.compositions[0];
     raises(ValueError, () => comp.add_solid([0.2, 0.3]));
     raises(ValueError, () => comp.add_solid([2.0, 0.0, 0.0]));
-    raises(TypeError_, () => comp.add_solid(0.5 as any));
+    // @ts-expect-error a non-list color is rejected at runtime
+    raises(TypeError_, () => comp.add_solid(0.5));
   });
 
   test("test_solid_in_solids_folder", () => {
@@ -410,7 +412,7 @@ describe("TestAddSolid", () => {
     const solids_folder =
       app.project.root_folder.items.find((item) => item.name === "Solids") ?? null;
     expect(solids_folder != null).toBe(true);
-    expect(contains((solids_folder as any).items, layer.source)).toBe(true);
+    expect(contains(as_instance(solids_folder, FolderItem).items, layer.source)).toBe(true);
   });
 
   /**
@@ -488,7 +490,8 @@ describe("TestAddItem", () => {
   test("test_add_invalid_item_raises", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
-    raises(ValueError, () => comp.add(app.project.root_folder as any));
+    // @ts-expect-error a folder is not an AVItem (type: ignore[arg-type])
+    raises(ValueError, () => comp.add(app.project.root_folder));
   });
 
   test("test_roundtrip", () => {

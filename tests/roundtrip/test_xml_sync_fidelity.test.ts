@@ -16,7 +16,7 @@ import { describe, expect, test } from "bun:test";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { Path, b, bytes_, len, py_eq, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse } from "../../src/py_aep/index.ts";
+import { parse, type Project } from "../../src/py_aep/index.ts";
 import { as_instance } from "../helpers.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
@@ -37,9 +37,9 @@ const PER_FORMAT: [Path, string][] = [
   [FORMAT_DIR.div("wav", "base.aep"), "wao_"], // id=wav
 ];
 
-function _options(path: Path): [any, any] {
+function _options(path: Path): [Project, XmlFormatOptions] {
   const project = parse(path).project;
-  const opts = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options;
+  const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
   return [project, opts];
 }
 
@@ -64,17 +64,17 @@ const _ATTR_ORDER_PRESERVED = true;
 describe("TestNoOpSyncIsIdentity", () => {
   // @pytest.mark.skipif(not _ATTR_ORDER_PRESERVED, reason="py3.7 ET.tostring sorts attributes; bytes differ, semantics do not")
   // NOTE(port): bun's test.skip takes no reason; the reason is the comment above, and the gate is never taken on 3.12.
-  ((_ATTR_ORDER_PRESERVED ? test : test.skip) as typeof test).each(PER_FORMAT)(
-    "test_no_op_sync_is_byte_identical[%#]",
-    (sample, format_code) => {
+  // bun types `test.skipIf` without `.each`, so the parametrized rows are spelled out with the same names.
+  for (const [index, [sample, format_code]] of PER_FORMAT.entries()) {
+    test.skipIf(!_ATTR_ORDER_PRESERVED)(`test_no_op_sync_is_byte_identical[${index}]`, () => {
       const [, opts] = _options(sample);
       expect(opts instanceof XmlFormatOptions).toBe(true);
       expect(opts.format_code).toBe(format_code);
       const before = opts._body.data;
       opts._sync_xml(); // no semantic change whatsoever
       expect(py_eq(opts._body.data, before)).toBe(true);
-    },
-  );
+    });
+  }
 
   test.each(PER_FORMAT)("test_no_op_sync_preserves_length_on_every_python[%#]", (sample, format_code) => {
     // The part AE honours holds even on 3.7, where attribute reordering

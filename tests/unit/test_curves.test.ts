@@ -7,7 +7,7 @@ import { raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { CurvesArbpChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { to_dict } from "../../src/py_aep/cli/validate.ts";
+import { to_dict, type Dict } from "../../src/py_aep/cli/validate.ts";
 import { CURVES_CHANNELS, Curves } from "../../src/py_aep/models/properties/curves.ts";
 
 /** A Curves aRbp as After Effects writes it, the maps left identity. */
@@ -99,7 +99,8 @@ test("test_to_dict_emits_the_curves", () => {
   expect(getitem(data, "mode")).toBe(1);
   expect(getitem(data, "version")).toBe(1);
   expect(getitem(data, "is_identity")).toBe(false);
-  const rgb = getitem(getitem(data, "channels") as any, "rgb") as any;
+  const channels: Dict = getitem(data, "channels");
+  const rgb: Dict = getitem(channels, "rgb");
   expect(py_eq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
   expect(py_eq(getitem(rgb, "map"), [...range(256)])).toBe(true);
   expect<number>(getitem(rgb, "selected")).toBe(-1);

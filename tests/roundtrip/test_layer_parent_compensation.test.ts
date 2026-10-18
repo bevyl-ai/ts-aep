@@ -8,10 +8,11 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { float, max, Path, py_eq, range, round, zip, AssertionError_ } from "../../src/pyrt/index.ts";
+import { at, float, getitem, max, Path, py_eq, range, round, StopIteration, zip, AssertionError_ } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
-import { build_world_matrix } from "../../src/py_aep/resolvers/transform.ts";
+import { parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
+import { build_world_matrix, type Mat4 } from "../../src/py_aep/resolvers/transform.ts";
+import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -19,7 +20,7 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 const LAYER_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
 const PROPERTY_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 
-function _world_delta(before: any, after: any): number {
+function _world_delta(before: Mat4, after: Mat4): number {
   const deltas: number[] = [];
   for (const row of range(4)) {
     for (const col of range(4)) {
@@ -120,7 +121,8 @@ describe("TestParentSeparatedPosition", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
     // add_null() inserts at index 0, so select the child by name.
-    const reloaded = parse_aep(out).project.compositions[0].layers.find((layer) => layer.name === child.name)!;
+    const reloaded = parse_aep(out).project.compositions[0].layers.find((layer) => layer.name === child.name);
+    if (reloaded == null) throw new StopIteration();
     expect(approx(reloaded.transform.__getitem__("ADBE Position_0").value, -150.0)).toBe(true);
     expect(approx(reloaded.transform.__getitem__("ADBE Position_1").value, 120.0)).toBe(true);
   });
@@ -189,7 +191,7 @@ describe("TestParentCompensationConvention", () => {
    * (150, 160, 0) on a 100x100 solid, parent null at (300, 40, 0).
    */
 
-  function _setup(orientation: number[], rotations: number[]): any {
+  function _setup(orientation: number[], rotations: number[]): [AVLayer, AVLayer] {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
@@ -215,7 +217,7 @@ describe("TestParentCompensationConvention", () => {
 
     expect(approx(child.transform.__getitem__("ADBE Position").value, [-70.416, 170.863, 52.416], { abs: 0.001 })).toBe(true);
     expect(approx(child.transform.__getitem__("ADBE Orientation").value, [329.248, 323.066, 337.96], { abs: 0.001 })).toBe(true);
-    for (const name of ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"]) {
+    for (const name of ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"] as const) {
       expect(approx(child.transform.__getitem__(name).value, 0.0)).toBe(true);
     }
   });
@@ -245,9 +247,9 @@ describe("TestParentCompensationConvention", () => {
     const [child, parent] = _setup([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
     const rotation = child.transform.__getitem__("ADBE Rotate Z");
     rotation.add_key(0.0);
-    rotation.keyframes.at(-1)!.value = 15.0;
+    at(rotation.keyframes, -1).value = 15.0;
     rotation.add_key(2.0);
-    rotation.keyframes.at(-1)!.value = 75.0;
+    at(rotation.keyframes, -1).value = 75.0;
     const before = build_world_matrix(child);
 
     child.parent = parent;
@@ -262,9 +264,9 @@ describe("TestParentCompensationConvention", () => {
     const [child, parent] = _setup([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
     const orientation = child.transform.__getitem__("ADBE Orientation");
     orientation.add_key(0.0);
-    orientation.keyframes.at(-1)!.value = [0.0, 30.0, 0.0];
+    at(orientation.keyframes, -1).value = [0.0, 30.0, 0.0];
     orientation.add_key(2.0);
-    orientation.keyframes.at(-1)!.value = [0.0, 120.0, 0.0];
+    at(orientation.keyframes, -1).value = [0.0, 120.0, 0.0];
 
     child.parent = parent;
 
@@ -334,7 +336,7 @@ describe("TestParentScaledParentEdgeCases", () => {
    * are AE 2026 measurements.
    */
 
-  function _pair(child_rotation = 0.0): any {
+  function _pair(child_rotation = 0.0): [AVLayer, AVLayer] {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
@@ -445,9 +447,9 @@ describe("TestParentKeyframedChild", () => {
     child.transform.__getitem__("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const rotation = child.transform.__getitem__("ADBE Rotate Z");
     rotation.add_key(0.0);
-    rotation.keyframes.at(-1)!.value = 15.0;
+    at(rotation.keyframes, -1).value = 15.0;
     rotation.add_key(2.0);
-    rotation.keyframes.at(-1)!.value = 75.0;
+    at(rotation.keyframes, -1).value = 75.0;
     const parent = comp.add_null();
     parent.transform.__getitem__("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.__getitem__("ADBE Rotate Z").value = 30.0;
@@ -473,20 +475,20 @@ describe("TestParentKeyframedChild", () => {
     child.transform.__getitem__("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const scale = child.transform.__getitem__("ADBE Scale");
     scale.add_key(0.0);
-    scale.keyframes.at(-1)!.value = [100.0, 100.0, 100.0];
+    at(scale.keyframes, -1).value = [100.0, 100.0, 100.0];
     scale.add_key(2.0);
-    scale.keyframes.at(-1)!.value = [250.0, 60.0, 100.0];
+    at(scale.keyframes, -1).value = [250.0, 60.0, 100.0];
     const parent = comp.add_null();
     parent.three_d_layer = true;
     parent.transform.__getitem__("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.__getitem__("ADBE Rotate Z").value = 30.0;
-    const before = new Map<number, any>();
+    const before = new Map<number, Mat4>();
     for (const t of [0.0, 2.0]) before.set(t, build_world_matrix(child, t));
 
     child.parent = parent;
 
     for (const time of [0.0, 2.0]) {
-      expect(_world_delta(before.get(time), build_world_matrix(child, time))).toBeLessThan(1e-9);
+      expect(_world_delta(getitem(before, time), build_world_matrix(child, time))).toBeLessThan(1e-9);
     }
     expect(py_eq([...scale.keyframes].map((k) => k.value), [[100.0, 100.0, 100.0], [250.0, 60.0, 100.0]])).toBe(true);
   });
@@ -509,9 +511,9 @@ describe("TestParentKeyframedChild", () => {
     parent.three_d_layer = true;
     const position = parent.transform.__getitem__("ADBE Position");
     position.add_key(0.0);
-    position.keyframes.at(-1)!.value = [300.0, 40.0, 0.0];
+    at(position.keyframes, -1).value = [300.0, 40.0, 0.0];
     position.add_key(2.0);
-    position.keyframes.at(-1)!.value = [700.0, 300.0, 0.0];
+    at(position.keyframes, -1).value = [700.0, 300.0, 0.0];
     const before = build_world_matrix(child, 0.0);
 
     child.parent = parent;
@@ -532,7 +534,7 @@ describe("TestParentScaledParentKeyframes", () => {
    * out at one time and 62 px at another.
    */
 
-  function _setup(parent_scale: number[]): any {
+  function _setup(parent_scale: number[]): [AVLayer, AVLayer, Property<number[]>] {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
@@ -542,9 +544,9 @@ describe("TestParentScaledParentKeyframes", () => {
     child.transform.__getitem__("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const scale = child.transform.__getitem__("ADBE Scale");
     scale.add_key(0.0);
-    scale.keyframes.at(-1)!.value = [100.0, 100.0, 100.0];
+    at(scale.keyframes, -1).value = [100.0, 100.0, 100.0];
     scale.add_key(2.0);
-    scale.keyframes.at(-1)!.value = [250.0, 60.0, 100.0];
+    at(scale.keyframes, -1).value = [250.0, 60.0, 100.0];
     const parent = comp.add_null();
     parent.three_d_layer = true;
     parent.transform.__getitem__("ADBE Position").value = [300.0, 40.0, 0.0];
@@ -554,14 +556,14 @@ describe("TestParentScaledParentKeyframes", () => {
 
   test("test_uniform_scale_doubles_every_key", () => {
     const [child, parent, scale] = _setup([50.0, 50.0, 50.0]);
-    const before = new Map<number, any>();
+    const before = new Map<number, Mat4>();
     for (const t of [0.0, 2.0]) before.set(t, build_world_matrix(child, t));
 
     child.parent = parent;
 
     expect(py_eq([...scale.keyframes].map((k) => k.value), [[200.0, 200.0, 200.0], [500.0, 120.0, 200.0]])).toBe(true);
     for (const time of [0.0, 2.0]) {
-      expect(_world_delta(before.get(time), build_world_matrix(child, time))).toBeLessThan(1e-9);
+      expect(_world_delta(getitem(before, time), build_world_matrix(child, time))).toBeLessThan(1e-9);
     }
   });
 
@@ -583,9 +585,9 @@ describe("TestParentScaledParentKeyframes", () => {
     child.transform.__getitem__("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const position = child.transform.__getitem__("ADBE Position");
     position.add_key(0.0);
-    position.keyframes.at(-1)!.value = [150.0, 160.0, 0.0];
+    at(position.keyframes, -1).value = [150.0, 160.0, 0.0];
     position.add_key(2.0);
-    position.keyframes.at(-1)!.value = [400.0, 500.0, 0.0];
+    at(position.keyframes, -1).value = [400.0, 500.0, 0.0];
     const parent = comp.add_null();
     parent.three_d_layer = true;
     parent.transform.__getitem__("ADBE Position").value = [300.0, 40.0, 0.0];
@@ -670,9 +672,9 @@ describe.skipIf(!TRANSFORM_FIXTURES.is_dir())("TestUnparentAgainstAeFixtures", (
     "ADBE Rotate X",
     "ADBE Rotate Y",
     "ADBE Rotate Z",
-  ];
+  ] as const;
 
-  function _child(project: any): any {
+  function _child(project: Project): Layer {
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
         if (layer.name === "ChildSolid") return layer;
@@ -681,8 +683,8 @@ describe.skipIf(!TRANSFORM_FIXTURES.is_dir())("TestUnparentAgainstAeFixtures", (
     throw new AssertionError_("no ChildSolid in the fixture");
   }
 
-  function _snapshot(layer: any): Map<string, any> {
-    const out = new Map<string, any>();
+  function _snapshot(layer: Layer): Map<string, number | number[]> {
+    const out = new Map<string, number | number[]>();
     for (const name of FIELDS) {
       const value = layer.transform.__getitem__(name).value;
       out.set(

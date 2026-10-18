@@ -13,7 +13,7 @@ import {
   type JsonValue,
 } from "../../src/pyrt/index.ts";
 import { make_tmp_path, skip } from "../../src/pyrt/pytest.ts";
-import { FileSource, FootageItem, ImportOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { FileSource, FootageItem, ImportOptions, parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { PENDING_ASCENDCOUNT, parse_alas_data } from "../../src/py_aep/binary/utils.ts";
 import { platform_path } from "../../src/py_aep/resolvers/platform_paths.ts";
@@ -38,7 +38,7 @@ function _counts(source: FileSource): [JsonValue, JsonValue] {
 }
 
 /** File sources by kind: `"file"` or `"sequence"`. */
-function _sources(project: any): Map<string, FileSource> {
+function _sources(project: Project): Map<string, FileSource> {
   const out = new Map<string, FileSource>();
   for (const item of project.footages) {
     if (item instanceof FootageItem && item.main_source instanceof FileSource) {
@@ -49,7 +49,7 @@ function _sources(project: any): Map<string, FileSource> {
   return out;
 }
 
-function _project_with_media(tmp_path: Path, platform: string | null = null): any {
+function _project_with_media(tmp_path: Path, platform: string | null = null): Project {
   const media = tmp_path.div("media");
   media.div("seq").mkdir({ parents: true });
   copy2(ASSETS.div("image_with_alpha.png"), media.div("img.png"));

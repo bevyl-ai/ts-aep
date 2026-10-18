@@ -22,15 +22,29 @@ import {
   Path,
   py_assert,
   py_eq,
+  py_or,
   range,
   repr,
+  StopIteration,
   ValueError,
   zip,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
 import { serialize } from "../../src/py_aep/cos/index.ts";
 // noqa: F401 (documents the data source)
-import { CosParser } from "../../src/py_aep/cos/cos.ts";
+import { CosParser, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
+import {
+  cos_at,
+  cos_contains,
+  cos_dict,
+  cos_get_or,
+  cos_item,
+  cos_iter,
+  cos_len,
+  cos_pop,
+} from "../../src/py_aep/cos/kinds.ts";
+import type { Application } from "../../src/py_aep/models/application.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { AutoKernType, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
 import { _kern_values } from "../../src/py_aep/models/text/ranges.ts";
 import { font_version_string } from "../../src/py_aep/svg/fonts.ts";
@@ -42,6 +56,9 @@ const FIXTURE2 = SAMPLES_DIR.div("text_writes2.aep");
 const PROBE2 = SAMPLES_DIR.div("text_writes2_probe.json");
 const FIXTURE3 = SAMPLES_DIR.div("text_writes3.aep");
 const PROBE3 = SAMPLES_DIR.div("text_writes3_probe.json");
+
+type ProbeJson = null | boolean | number | string | ProbeJson[] | { [key: string]: ProbeJson };
+type TextWritesProbe = { ops: { [op_name: string]: { perChar: { [es_attr: string]: ProbeJson }[] } } };
 
 /** Module-scoped fixture: computed on first use, then cached for the file. */
 function cached<T>(load: () => T): () => T {
@@ -61,10 +78,13 @@ const get_fixture2_app = cached(() => parse_app_fresh(FIXTURE2));
 const get_probe3 = cached(() => JSON.parse(PROBE3.read_text("utf-8")));
 const get_fixture3_app = cached(() => parse_app_fresh(FIXTURE3));
 
-function _doc_for(app: any, layer_name: string): any {
+function _doc_for(app: Application, layer_name: string): TextDocument {
   const comp = app.project.compositions[0];
-  const layer = comp.text_layers.find((ly: any) => ly.name === layer_name);
-  return layer.text.source_text.value;
+  const layer = comp.text_layers.find((ly) => ly.name === layer_name);
+  if (layer === undefined) throw new StopIteration();
+  const text = layer.text;
+  py_assert(text != null);
+  return text.source_text.value;
 }
 
 /**
@@ -74,29 +94,33 @@ function _doc_for(app: any, layer_name: string): any {
  * different base text goes through the py text setter, which collapses
  * runs exactly like AE's `addText` produces them.
  */
-function _base_doc(base_text: string | null = null): [any, any] {
+function _base_doc(base_text: string | null = null): [Application, TextDocument] {
   const app = parse_app_fresh(FIXTURE);
   const doc = _doc_for(app, "W_NOOP");
   if (base_text != null) doc.text = base_text;
   return [app, doc];
 }
 
-function _masked_bytes(cos_data: any): Uint8Array {
+function _cos_path(node: CosNode, ...keys: (string | number)[]): CosNode {
+  return keys.reduce<CosNode>((cur, key) => (typeof key === "number" ? cos_at(cur, key) : cos_item(cur, key)), node);
+}
+
+function _masked_bytes(cos_data: CosDict): Uint8Array {
   const clone = deepcopy(cos_data);
-  const docs: any[] = clone.get("1")?.get("1") ?? [];
-  for (const doc of docs) {
-    if (doc.get("1") instanceof Map) doc.get("1").delete("2");
+  for (const doc of cos_iter(py_or(cos_get_or(cos_get_or(clone, "1", new Map<string, CosNode>()), "1", []), []))) {
+    const page = cos_dict(doc, "get").get("1");
+    if (page instanceof Map) cos_pop(page, "2");
   }
   return serialize(clone);
 }
 
 /** The F1 invariant: `_char_style` must be the live first-run style. */
-function _assert_alias_integrity(doc: any): void {
-  const first = doc._doc.get("0").get("6").get("0")[0].get("0").get("0").get("6");
-  expect(doc._char_style).toBe(first);
+function _assert_alias_integrity(doc: TextDocument): void {
+  const first = _cos_path(doc._doc, "0", "6", "0", 0, "0", "0", "6");
+  expect<CosNode>(doc._char_style).toBe(first);
 }
 
-function _assert_byte_parity(py_doc: any, fixture_app: any, op_name: string): void {
+function _assert_byte_parity(py_doc: TextDocument, fixture_app: Application, op_name: string): void {
   const expected = _doc_for(fixture_app, op_name);
   py_assert(
     py_eq(_masked_bytes(py_doc._cos_data), _masked_bytes(expected._cos_data)),
@@ -119,7 +143,7 @@ const PER_CHAR_MAP: Record<string, string> = {
   autoKernType: "auto_kern_type",
 };
 
-function _assert_per_char(py_doc: any, probe: any, op_name: string, attrs: string[]): void {
+function _assert_per_char(py_doc: TextDocument, probe: TextWritesProbe, op_name: string, attrs: string[]): void {
   const expected_chars = probe["ops"][op_name]["perChar"];
   const n = len(py_doc.text);
   expect(n).toBe(expected_chars.length);
@@ -164,7 +188,7 @@ describe("TestScalarWrites", () => {
     doc.character_range(5, 10).font_size = 72;
     _assert_alias_integrity(doc);
     // AE coalesced this into a single run covering the terminator.
-    expect(len(doc._doc.get("0").get("6").get("0"))).toBe(1);
+    expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture_app, "W_MERGE_SAME");
     _assert_per_char(doc, probe, "W_MERGE_SAME", ["fontSize"]);
   });
@@ -175,7 +199,7 @@ describe("TestScalarWrites", () => {
     const [_app, doc] = _base_doc();
     doc.character_range(2, 8).font_size = 36;
     _assert_alias_integrity(doc);
-    expect(len(doc._doc.get("0").get("6").get("0"))).toBe(1);
+    expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture_app, "W_NOOP");
   });
 
@@ -217,6 +241,7 @@ describe("TestScalarWrites", () => {
     // strict-mode JS throws TypeError instead, so map it back.
     raises(AttributeError, () => {
       try {
+        // @ts-expect-error font_object is read-only; the test checks the runtime refusal
         doc.character_range(0, 5).font_object = null;
       } catch (e) {
         if (e instanceof TypeError) throw new AttributeError(e.message);
@@ -252,25 +277,22 @@ describe("TestColorFontLeadingWrites", () => {
     // The fixture embeds the version string AE resolved from the
     // host font; byte parity only holds where that font matches.
     const expected = _doc_for(fixture_app, "W_FONT");
-    const fixture_version = dict_get(
-      expected._cos_data.get("0").get("1").get("0")[0].get("0").get("0"),
-      "5",
-    );
+    const fixture_version = dict_get(cos_dict(_cos_path(expected._cos_data, "0", "1", "0", 0, "0", "0"), "get"), "5");
     if (!py_eq(font_version_string("Arial-BoldMT"), fixture_version)) {
       return skip("Arial-BoldMT not installed at the fixture's version");
     }
     const [_app, doc] = _base_doc();
     doc.character_range(3, 7).font = "Arial-BoldMT";
-    expect(doc._fonts.map((f: any) => f.post_script_name)[0]).toBe("Arial-BoldMT");
+    expect(doc._fonts.map((f) => f.post_script_name)[0]).toBe("Arial-BoldMT");
     _assert_byte_parity(doc, fixture_app, "W_FONT");
     _assert_per_char(doc, probe, "W_FONT", ["font"]);
   });
 
   test("test_existing_font_reuses_index", () => {
     const [_app, doc] = _base_doc();
-    const before = doc._fonts.map((f: any) => f.post_script_name);
+    const before = doc._fonts.map((f) => f.post_script_name);
     doc.character_range(3, 7).font = before[0];
-    expect(py_eq(doc._fonts.map((f: any) => f.post_script_name), before)).toBe(true);
+    expect(py_eq(doc._fonts.map((f) => f.post_script_name), before)).toBe(true);
   });
 
   test("test_fill_color_write_and_clear", () => {
@@ -301,7 +323,7 @@ describe("TestKerningWrites", () => {
     const probe = get_probe();
     const [_app, doc] = _base_doc("AVAWAYAVAW");
     doc.character_range(0, 2).kerning = 150;
-    expect(doc._doc.get("0").get("7")).toBe(150);
+    expect(_cos_path(doc._doc, "0", "7")).toBe(150);
     expect(doc.kerning).toBe(150);
     _assert_byte_parity(doc, fixture_app, "W_KERN_START");
     _assert_per_char(doc, probe, "W_KERN_START", ["kerning", "autoKernType"]);
@@ -320,7 +342,7 @@ describe("TestKerningWrites", () => {
     const [_app, doc] = _base_doc("AVAWAYAV");
     doc.character_range(1, 4).kerning = 200;
     doc.character_range(0, -1).auto_kern_type = AutoKernType.METRIC_KERN;
-    expect(doc._doc.get("0").has("8")).toBe(false);
+    expect(cos_contains(_cos_path(doc._doc, "0"), "8")).toBe(false);
     _assert_byte_parity(doc, fixture2_app, "X_AKT_SET");
     _assert_per_char(doc, probe2, "X_AKT_SET", ["kerning", "autoKernType"]);
   });
@@ -332,7 +354,7 @@ describe("TestKerningWrites", () => {
     doc.character_range(1, 4).leading = 50;
     doc.character_range(0, -1).auto_leading = true;
     // AE merges back to a single run with the leading sentinel.
-    expect(len(doc._doc.get("0").get("6").get("0"))).toBe(1);
+    expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture2_app, "X_AL_SET");
     _assert_per_char(doc, probe2, "X_AL_SET", ["leading", "autoLeading"]);
   });
@@ -350,7 +372,7 @@ describe("TestParagraphWrites", () => {
 });
 
 describe("TestTextReplacement", () => {
-  const _styled_base = (): [any, any] => {
+  const _styled_base = (): [Application, TextDocument] => {
     const [app, doc] = _base_doc();
     doc.character_range(0, 5).fill_color = [1, 0, 0];
     doc.character_range(0, 5).font_size = 72;
@@ -488,8 +510,8 @@ describe("TestPasteFrom", () => {
     // carries is the font reference (key "0").
     const pasted = _doc_for(fixture_app, "W_PASTE_XDOC");
     const source = _doc_for(fixture_app, "PasteSrc");
-    const pasted_style = pasted._doc.get("0").get("6").get("0")[1].get("0").get("0").get("6");
-    const source_style = source._doc.get("0").get("6").get("0")[0].get("0").get("0").get("6");
+    const pasted_style = cos_dict(_cos_path(pasted._doc, "0", "6", "0", 1, "0", "0", "6"), "get");
+    const source_style = cos_dict(_cos_path(source._doc, "0", "6", "0", 0, "0", "0", "6"), "get");
     const keys = new Set<string>([...pasted_style.keys(), ...source_style.keys()]);
     const diff_keys = new Set(
       [...keys].filter((k) => !py_eq(dict_get(pasted_style, k), dict_get(source_style, k))),
@@ -499,7 +521,7 @@ describe("TestPasteFrom", () => {
 });
 
 describe("TestPasteLeadingEdgeKern", () => {
-  const _edge_source = (app: any): any => {
+  const _edge_source = (app: Application) => {
     const src_doc = _doc_for(app, "W_SPLIT");
     src_doc.text = "AVAV";
     src_doc.character_range(0, 2).kerning = 140;
@@ -511,10 +533,10 @@ describe("TestPasteLeadingEdgeKern", () => {
     const probe3 = get_probe3();
     const [app, doc] = _base_doc("abcdef");
     doc.character_range(0, 3).paste_from(_edge_source(app).character_range(0, 3));
-    expect(doc._doc.get("0").get("7")).toBe(140);
+    expect(_cos_path(doc._doc, "0", "7")).toBe(140);
     expect(doc.kerning).toBe(140);
     _assert_byte_parity(doc, fixture3_app, "Y_PASTE_EDGE0");
-    const expected = probe3["ops"]["Y_PASTE_EDGE0"]["kernPerChar"].map((e: any) => e["value"]);
+    const expected = probe3["ops"]["Y_PASTE_EDGE0"]["kernPerChar"].map((e: { value: ProbeJson }) => e["value"]);
     const actual = [...range(len(expected))].map((i) => [
       doc.character_range(i, i + 1).kerning,
       doc.character_range(i, i + 1).auto_kern_type,
@@ -530,7 +552,7 @@ describe("TestPasteLeadingEdgeKern", () => {
     const probe3 = get_probe3();
     const [app, doc] = _base_doc("abcdef");
     doc.character_range(2, 5).paste_from(_edge_source(app).character_range(0, 3));
-    expect(doc._doc.get("0").has("7")).toBe(false);
+    expect(cos_contains(_cos_path(doc._doc, "0"), "7")).toBe(false);
     // The edge value lands on the pair before the paste (char 1) with
     // NO auto-kern flag change - ES reads it as undefined through the
     // flag, but the binary carries it (probed Y_PASTE_EDGE_MID). AE
@@ -538,7 +560,7 @@ describe("TestPasteLeadingEdgeKern", () => {
     // runs - value-identical, so compare decoded values, not bytes.
 
     expect(py_eq(_kern_values(doc).slice(0, 5), [null, 140, 140, 140, null])).toBe(true);
-    const expected = probe3["ops"]["Y_PASTE_EDGE_MID"]["kernPerChar"].map((e: any) => e["value"]);
+    const expected = probe3["ops"]["Y_PASTE_EDGE_MID"]["kernPerChar"].map((e: { value: ProbeJson }) => e["value"]);
     const actual = [...range(len(expected))].map((i) => [
       doc.character_range(i, i + 1).kerning,
       doc.character_range(i, i + 1).auto_kern_type,
@@ -587,7 +609,7 @@ describe("TestSurrogateWrites", () => {
     const [_app, doc] = _base_doc("ab\u{1F600}cd");
     doc.character_range(2, 3).font_size = 72;
     // Per UTF-16 unit, like the ExtendScript probe (the emoji is 2 units).
-    const expected = probe["ops"]["W_SURROGATE_STYLE"]["perChar"].map((c: any) => c["fontSize"]);
+    const expected = probe["ops"]["W_SURROGATE_STYLE"]["perChar"].map((c: { fontSize: ProbeJson }) => c["fontSize"]);
     const actual = [...range(len(expected))].map((i) => doc.character_range(i, i + 1).font_size);
     expect(py_eq(actual, expected)).toBe(true);
   });
@@ -600,7 +622,7 @@ describe("TestDocumentWideWrites", () => {
     const [_app, doc] = _base_doc();
     doc.character_range(0, 5).font_size = 72;
     doc.font_size = 50;
-    expect(len(doc._doc.get("0").get("6").get("0"))).toBe(1);
+    expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
     _assert_byte_parity(doc, fixture_app, "W_DOCLEVEL");
     _assert_per_char(doc, probe, "W_DOCLEVEL", ["fontSize"]);
   });
@@ -628,8 +650,8 @@ describe("TestDocumentWideWrites", () => {
     const [_app, doc] = _base_doc();
     doc.character_range(1, 4).leading = 50;
     doc.auto_leading = true;
-    expect(len(doc._doc.get("0").get("6").get("0"))).toBe(1);
-    expect(py_eq(doc._char_style.get("5"), 0.01)).toBe(true);
+    expect(cos_len(_cos_path(doc._doc, "0", "6", "0"))).toBe(1);
+    expect(py_eq(cos_item(doc._char_style, "5"), 0.01)).toBe(true);
   });
 });
 

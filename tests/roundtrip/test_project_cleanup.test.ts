@@ -7,11 +7,12 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getitem, len, Path, py_bool, py_eq } from "../../src/pyrt/index.ts";
+import { getitem, len, Path, py_bool, py_eq, StopIteration } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import "../../src/py_aep/binary/_register.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
 const FOOTAGE_MISC = SAMPLES_DIR.div("footage", "footage_misc.aep");
@@ -147,8 +148,8 @@ describe("TestConsolidateFootage", () => {
   test("test_merges_identical_sources", () => {
     const project = parse_aep(FOOTAGE_MISC).project;
     // footages 5 and 6 reference the same file and differ only by loop.
-    const first = getitem(project.items, 5) as FootageItem;
-    const second = getitem(project.items, 6) as FootageItem;
+    const first = as_instance(getitem(project.items, 5), FootageItem);
+    const second = as_instance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.main_source.loop = second.main_source.loop;
@@ -163,8 +164,8 @@ describe("TestConsolidateFootage", () => {
 
   test("test_retargets_layers", () => {
     const project = parse_aep(FOOTAGE_MISC).project;
-    const first = getitem(project.items, 5) as FootageItem;
-    const second = getitem(project.items, 6) as FootageItem;
+    const first = as_instance(getitem(project.items, 5), FootageItem);
+    const second = as_instance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.main_source.loop = second.main_source.loop;
@@ -182,8 +183,8 @@ describe("TestConsolidateFootage", () => {
 
   test("test_retargets_cached_layer_source", () => {
     const project = parse_aep(FOOTAGE_MISC).project;
-    const first = getitem(project.items, 5) as FootageItem;
-    const second = getitem(project.items, 6) as FootageItem;
+    const first = as_instance(getitem(project.items, 5), FootageItem);
+    const second = as_instance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.main_source.loop = second.main_source.loop;
@@ -191,8 +192,8 @@ describe("TestConsolidateFootage", () => {
     const comp = project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.add(first);
     comp.add(second);
-    // next(...) with no default: the layer must exist, so `!` is the faithful translation.
-    const dup_layer = comp.av_layers.find((ly) => ly._source_id === second.id)!;
+    const dup_layer = comp.av_layers.find((ly) => ly._source_id === second.id);
+    if (dup_layer === undefined) throw new StopIteration();
     // Populate the layer's source cache before consolidating.
     expect(dup_layer.source === second).toBe(true);
 
@@ -212,8 +213,8 @@ describe("TestConsolidateFootage", () => {
   test("test_roundtrip", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(FOOTAGE_MISC).project;
-    const first = getitem(project.items, 5) as FootageItem;
-    const second = getitem(project.items, 6) as FootageItem;
+    const first = as_instance(getitem(project.items, 5), FootageItem);
+    const second = as_instance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.main_source.loop = second.main_source.loop;

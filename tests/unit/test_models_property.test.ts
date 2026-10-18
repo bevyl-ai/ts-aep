@@ -79,7 +79,7 @@ describe("TestResolveEffectValue", () => {
       PropertyControlType.SCALAR,
       [7.0, 7.0],
     ],
-  ])("test_resolve_effect_value[%#]", (param_def: Partial<ParamDef>, control_type: PropertyControlType, expected: any) => {
+  ])("test_resolve_effect_value[%#]", (param_def: Partial<ParamDef>, control_type: PropertyControlType, expected: unknown) => {
     const result = _resolve_effect_value("TEST-0001", param_def, control_type);
     expect(py_eq(result, expected)).toBe(true);
   });
@@ -104,7 +104,8 @@ describe("TestTdsnWithoutUtf8", () => {
       "ADBE Transform Group",
       1,
       new Map(),
-      null as any,
+      // @ts-expect-error Python passes `cast(Any, None)`: this parse never reads the composition
+      null,
       new TdmnChunk({ value: "ADBE Transform Group" }),
     );
     expect(group._name_utf8 == null).toBe(true);

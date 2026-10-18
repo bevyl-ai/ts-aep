@@ -17,33 +17,32 @@ import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import { CameraLayer } from "../../src/py_aep/models/layers/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { get_comp, parse_project_fresh } from "../helpers.ts";
-import { Path } from "../../src/pyrt/index.ts";
+import { Path, py_assert } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
 const SAMPLE = SAMPLES_DIR.div("camera_default_position.aep");
 
 function _camera(project: Project): CameraLayer {
-  const camera = get_comp(project, "zoom_1000").layers[0] as CameraLayer;
-  expect(camera instanceof CameraLayer).toBe(true);
+  const camera = get_comp(project, "zoom_1000").layers[0];
+  py_assert(camera instanceof CameraLayer);
   return camera;
 }
 
-function _position(camera: CameraLayer): Property {
+function _position(camera: CameraLayer): Property<number[]> {
   const prop = camera.transform.__getitem__("ADBE Position");
   expect(prop instanceof Property).toBe(true);
-  return prop as Property;
+  return prop;
 }
 
-function _zoom(camera: CameraLayer): Property {
-  const prop = (camera.__getitem__("ADBE Camera Options Group") as PropertyGroup).__getitem__("ADBE Camera Zoom");
+function _zoom(camera: CameraLayer): Property<number> {
+  const prop = camera.__getitem__("ADBE Camera Options Group").__getitem__("ADBE Camera Zoom");
   expect(prop instanceof Property).toBe(true);
-  return prop as Property;
+  return prop;
 }
 
-function _reopened_position(project: Project, tmp_path: Path): Property {
+function _reopened_position(project: Project, tmp_path: Path): Property<number[]> {
   const out = tmp_path.div("out.aep");
   project.save(out);
   return _position(_camera(parse_aep(out).project));
@@ -71,7 +70,8 @@ describe("TestZoomChange", () => {
     _zoom(camera).value = 3000;
 
     const default_ = _position(camera).default_value;
-    expect(default_.every((v: any) => typeof v === "number")).toBe(true);
+    py_assert(default_ != null);
+    expect(default_.every((v) => typeof v === "number")).toBe(true);
   });
 
   test("test_static_zoom_change_writes_position", () => {
@@ -102,8 +102,8 @@ describe("TestZoomChange", () => {
     const tmp_path = make_tmp_path();
     const position = _reopened_position(parse_project_fresh(SAMPLE), tmp_path);
 
-    expect(position._tdsb != null).toBe(true);
-    expect(position._tdsb!.synthetic).toBe(true);
+    py_assert(position._tdsb != null);
+    expect(position._tdsb.synthetic).toBe(true);
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
     expect(position.is_modified).toBe(false);
   });
@@ -115,19 +115,19 @@ describe("TestZoomChange", () => {
     // its first key.
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
-    const camera = get_comp(project, "zoom_keyed").layers[0] as CameraLayer;
-    expect(camera instanceof CameraLayer).toBe(true);
+    const camera = get_comp(project, "zoom_keyed").layers[0];
+    py_assert(camera instanceof CameraLayer);
     camera.start_time = -1;
     expect(_position(camera).is_modified).toBe(false);
 
     const out = tmp_path.div("out.aep");
     project.save(out);
-    const reopened = get_comp(parse_aep(out).project, "zoom_keyed").layers[0] as CameraLayer;
-    expect(reopened instanceof CameraLayer).toBe(true);
+    const reopened = get_comp(parse_aep(out).project, "zoom_keyed").layers[0];
+    py_assert(reopened instanceof CameraLayer);
     const position = _position(reopened);
 
-    expect(position._tdsb != null).toBe(true);
-    expect(position._tdsb!.synthetic).toBe(true);
+    py_assert(position._tdsb != null);
+    expect(position._tdsb.synthetic).toBe(true);
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
   });
 });

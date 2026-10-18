@@ -18,7 +18,7 @@ const PATCH_MODULES: Record<string, string> = {
   CosParser: "../../src/py_aep/cos/index.ts",
   parse_btdk_cos: "../../src/py_aep/parsers/text.ts",
 };
-const REAL_MODULES = new Map<string, any>();
+const REAL_MODULES = new Map<string, Record<string, unknown>>();
 for (const path of Object.values(PATCH_MODULES)) {
   REAL_MODULES.set(path, { ...(await import(path)) });
 }
@@ -50,79 +50,80 @@ describe("TestParseTextDocument", () => {
 
   test("test_ignores_malformed_cos_payload", () => {
     /** Malformed COS data should keep the property but skip the value. */
-    const prop: any = {
+    const prop: { keyframes: never[]; value: null; _property_value_type: PropertyValueType | null } = {
       keyframes: [],
       value: null,
       _property_value_type: null,
     };
-    const tdbs_chunk: any = { chunks: [] };
-    const btdk_chunk: any = { data: b("bad") };
-    const root_chunk: any = { chunks: [] };
+    const tdbs_chunk = { chunks: [] };
+    const btdk_chunk = { data: b("bad") };
+    const root_chunk = { chunks: [] };
 
     // NOTE(port): Python fake is keyword-only because the caller passes chunks=/list_type= by keyword; RULEBOOK maps positional-or-keyword params to positional, so the TS call and fake are positional.
-    const fake_find_by_list_type = (chunks: any, list_type: string): any => {
+    const fake_find_by_list_type = (chunks: unknown, list_type: string) => {
       if (list_type === "tdbs") return tdbs_chunk;
       if (list_type === "btdk") return btdk_chunk;
       throw new AssertionError_(`Unexpected list_type: ${list_type}`);
     };
 
     class BrokenCosParser {
-      constructor(..._args: any[]) {}
+      constructor(..._args: unknown[]) {}
 
-      parse(): Record<string, any> {
+      parse(): Record<string, unknown> {
         throw new SyntaxError_("bad COS");
       }
     }
 
     monkeypatch.setattr(specialized_properties, "find_by_list_type", fake_find_by_list_type);
-    monkeypatch.setattr(specialized_properties, "parse_property", (..._kwargs: any[]) => prop);
+    monkeypatch.setattr(specialized_properties, "parse_property", (..._kwargs: unknown[]) => prop);
     monkeypatch.setattr(specialized_properties, "CosParser", BrokenCosParser);
 
     const result = specialized_properties.parse_text_document(
+      // @ts-expect-error SimpleNamespace stand-in for a ListChunk
       root_chunk,
       "ADBE Text Document",
       0,
-      {} as any,
-      {} as any,
+      {},
+      {},
     );
 
-    expect(result).toBe(prop);
+    expect<unknown>(result).toBe(prop);
     expect(prop._property_value_type).toBe(PropertyValueType.TEXT_DOCUMENT);
     expect(prop.value == null).toBe(true);
   });
 
   test("test_raises_unexpected_cos_errors", () => {
     /** Unexpected bugs in COS conversion should still surface. */
-    const prop: any = {
+    const prop: { keyframes: never[]; value: null; _property_value_type: PropertyValueType | null } = {
       keyframes: [],
       value: null,
       _property_value_type: null,
     };
-    const tdbs_chunk: any = { chunks: [] };
-    const btdk_chunk: any = { data: b("ok") };
-    const root_chunk: any = { chunks: [] };
+    const tdbs_chunk = { chunks: [] };
+    const btdk_chunk = { data: b("ok") };
+    const root_chunk = { chunks: [] };
 
     // NOTE(port): Python fake is keyword-only because the caller passes chunks=/list_type= by keyword; RULEBOOK maps positional-or-keyword params to positional, so the TS call and fake are positional.
-    const fake_find_by_list_type = (chunks: any, list_type: string): any => {
+    const fake_find_by_list_type = (chunks: unknown, list_type: string) => {
       if (list_type === "tdbs") return tdbs_chunk;
       if (list_type === "btdk") return btdk_chunk;
       throw new AssertionError_(`Unexpected list_type: ${list_type}`);
     };
 
     class ValidCosParser {
-      constructor(..._args: any[]) {}
+      constructor(..._args: unknown[]) {}
 
-      parse(): Map<string, any> {
-        return new Map<string, any>();
+      parse(): Map<string, unknown> {
+        return new Map<string, unknown>();
       }
     }
 
-    const raise_runtime_error = (..._args: any[]): any => {
+    const raise_runtime_error = (..._args: unknown[]): unknown => {
       throw new RuntimeError("boom");
     };
 
     monkeypatch.setattr(specialized_properties, "find_by_list_type", fake_find_by_list_type);
-    monkeypatch.setattr(specialized_properties, "parse_property", (..._kwargs: any[]) => prop);
+    monkeypatch.setattr(specialized_properties, "parse_property", (..._kwargs: unknown[]) => prop);
     monkeypatch.setattr(specialized_properties, "CosParser", ValidCosParser);
     monkeypatch.setattr(specialized_properties, "parse_btdk_cos", raise_runtime_error);
 
@@ -130,11 +131,12 @@ describe("TestParseTextDocument", () => {
       RuntimeError,
       () =>
         specialized_properties.parse_text_document(
+          // @ts-expect-error SimpleNamespace stand-in for a ListChunk
           root_chunk,
           "ADBE Text Document",
           0,
-          {} as any,
-          {} as any,
+          {},
+          {},
         ),
       "boom",
     );

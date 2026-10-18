@@ -6,12 +6,13 @@
 
 import { expect, test } from "bun:test";
 import { CosParser } from "../../src/py_aep/cos/index.ts";
-import { TokenType } from "../../src/py_aep/cos/cos.ts";
+import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, read_ai_layers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probe_media } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, read_psd_layers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, SyntaxError_, ValueError, b, bytes_, concat, py_eq, sorted, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, Path, SyntaxError_, ValueError, b, bytes_, concat, getitem, py_assert, py_eq, sorted, struct } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { as_instance } from "../helpers.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
 const ASSETS = new Path(import.meta.dir).parent.parent.div("samples").div("assets");
@@ -64,8 +65,8 @@ const _TRUNCATED: Map<string, Uint8Array> = new Map<string, Uint8Array>([
 test.each(sorted(Array.from(_TRUNCATED.keys())).map((n) => [n]))("test_truncated_media_raises_value_error[%#]", (name: string) => {
   const tmp_path = make_tmp_path();
   const path = tmp_path.div(name);
-  path.write_bytes(_TRUNCATED.get(name)!);
-  for (const data of [null, _TRUNCATED.get(name)!]) {
+  path.write_bytes(getitem(_TRUNCATED, name));
+  for (const data of [null, getitem(_TRUNCATED, name)]) {
     raises(ValueError, () => probe_media(path, data));
   }
 });
@@ -156,7 +157,8 @@ test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (max_
   const parser = new CosParser(new BytesIO(data), max_pos);
   const [result] = _run(() => [parser.lex(), parser.parse_value()], 5.0);
   expect(result instanceof Error).toBe(false);
-  const stream = (result as any)[1];
+  py_assert(Array.isArray(result));
+  const stream = as_instance(result[1], Stream);
   expect(py_eq(stream.data, body)).toBe(true);
   expect(TokenType.name_of(parser.lookahead.type)).toBe("IndirectObjectEnd");
 });

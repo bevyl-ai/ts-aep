@@ -6,7 +6,10 @@ import { parse } from "../../src/py_aep/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
 import { parse_gradient_xml } from "../../src/py_aep/parsers/gradient.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { hasattr, py_eq } from "../../src/pyrt/index.ts";
+import { hasattr, py_eq, StopIteration } from "../../src/pyrt/index.ts";
+import { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import type { Item } from "../../src/py_aep/models/items/item.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLE = "samples/models/property/gradient.aep";
 const SAMPLE_XML = `<prop.map version="4">
@@ -212,17 +215,17 @@ const DEFAULT_AE_GRADIENT_XML =
  * takes a local `gradient_comp` holding this fixture's return value.
  * Tests call it at the top instead of receiving it as a parameter.
  */
-function gradient_comp_fixture(): any {
+function gradient_comp_fixture(): CompItem {
   const app = parse(SAMPLE);
   return next_with_layers(app.project.items.values());
 }
 
-/** `next(v for v in items if hasattr(v, "layers"))`; StopIteration becomes a thrown Error. */
-function next_with_layers(values: Iterable<any>): any {
+/** `next(v for v in items if hasattr(v, "layers"))`. */
+function next_with_layers(values: Iterable<Item>): CompItem {
   for (const v of values) {
-    if (hasattr(v, "layers")) return v;
+    if (hasattr(v, "layers")) return as_instance(v, CompItem);
   }
-  throw new Error("StopIteration");
+  throw new StopIteration();
 }
 
 test("test_gradient_value_write_through", () => {

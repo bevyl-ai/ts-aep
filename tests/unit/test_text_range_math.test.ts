@@ -11,7 +11,8 @@ import { raises } from "../../src/pyrt/pytest.ts";
 // Importing `py_aep.cos` in Python runs `py_aep/__init__`, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
 import { CosField, CosName } from "../../src/py_aep/cos/index.ts";
-import { CosString } from "../../src/py_aep/cos/cos.ts";
+import { CosString, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
+import { cos_at, cos_item, cos_iter, cos_num, cos_setitem } from "../../src/py_aep/cos/kinds.ts";
 import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composed_line_spans, _merge_adjacent_runs, _snap_to_pairs, _split_run_array, u16_len, u16_slice } from "../../src/py_aep/models/text/ranges.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
@@ -24,50 +25,52 @@ import {
   py_eq,
   py_or,
   repr,
+  setattr,
   str,
   sum,
 } from "../../src/pyrt/index.ts";
+import { as_instance } from "../helpers.ts";
 
 const EMOJI = "\u{1f600}";
 
 describe("TestWriteEnginePrimitives", () => {
   test("test_split_keeps_original_as_left_fragment", () => {
-    const style = new Map<string, any>([["1", 36.0]]);
-    const runs = [
-      new Map<string, any>([
-        ["0", new Map<string, any>([["0", new Map<string, any>([["6", style]])]])],
+    const style = new Map<string, CosNode>([["1", 36.0]]);
+    const runs: CosNode[] = [
+      new Map<string, CosNode>([
+        ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", style]])]])],
         ["1", 10],
       ]),
     ];
     const original = runs[0];
     _split_run_array(runs, new Set([3, 7]));
-    expect(py_eq(runs.map((r) => r.get("1")), [3, 4, 3])).toBe(true);
+    expect(py_eq(runs.map((r) => cos_item(r, "1")), [3, 4, 3])).toBe(true);
     // Run 0 keeps its object (and its style dict) as the left piece.
     expect(runs[0]).toBe(original);
-    expect(runs[0].get("0").get("0").get("6")).toBe(style);
+    expect(cos_item(cos_item(cos_item(runs[0], "0"), "0"), "6")).toBe(style);
     // Fragments are independent copies.
-    runs[1].get("0").get("0").get("6").set("1", 72.0);
-    expect(runs[0].get("0").get("0").get("6").get("1")).toBe(36.0);
+    cos_setitem(cos_item(cos_item(cos_item(runs[1], "0"), "0"), "6"), "1", 72.0);
+    expect(cos_item(cos_item(cos_item(cos_item(runs[0], "0"), "0"), "6"), "1")).toBe(36.0);
   });
 
   test("test_merge_keeps_first_object", () => {
-    const a = new Map<string, any>([
-      ["0", new Map<string, any>([["0", new Map<string, any>([["6", new Map<string, any>([["1", 72.0]])]])]])],
+    const a = new Map<string, CosNode>([
+      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]])],
       ["1", 3],
     ]);
-    const b = new Map<string, any>([
-      ["0", new Map<string, any>([["0", new Map<string, any>([["6", new Map<string, any>([["1", 72.0]])]])]])],
+    const b = new Map<string, CosNode>([
+      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]])],
       ["1", 4],
     ]);
-    const c = new Map<string, any>([
-      ["0", new Map<string, any>([["0", new Map<string, any>([["6", new Map<string, any>([["1", 36.0]])]])]])],
+    const c = new Map<string, CosNode>([
+      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 36.0]])]])]])],
       ["1", 4],
     ]);
-    const runs = [a, b, c];
+    const runs: CosNode[] = [a, b, c];
     _merge_adjacent_runs(runs);
     expect(py_eq(runs, [a, c])).toBe(true);
     expect(runs[0]).toBe(a);
-    expect(runs[0].get("1")).toBe(7);
+    expect(cos_item(runs[0], "1")).toBe(7);
   });
 
   test("test_snap_to_pairs", () => {
@@ -84,19 +87,19 @@ describe("TestWriteEnginePrimitives", () => {
   test("test_deepcopy_preserves_cos_scalars", () => {
     // The split engine deepcopies full style dicts; the serializer's
     // byte output depends on these flags surviving the copy.
-    const nested = new Map<string, any>([
+    const nested = new Map<string, CosNode>([
       ["99", new CosName("X")],
       ["0", [new CosString("s", { utf16: false })]],
     ]);
     const clone = deepcopy(nested);
-    expect(clone.get("0")[0].cos_utf16).toBe(false);
-    expect(str(clone.get("99"))).toBe("X");
+    expect(as_instance(cos_at(cos_item(clone, "0"), 0), CosString).cos_utf16).toBe(false);
+    expect(str(cos_item(clone, "99"))).toBe("X");
   });
 
   test("test_range_write_on_synthetic_doc", () => {
     const doc = make_doc("abcdefghij\r");
     new CharacterRange(doc, 3, 7).font_size = 72;
-    const lengths = doc._doc.get("0").get("6").get("0").map((r: any) => r.get("1"));
+    const lengths = cos_iter(cos_item(cos_item(cos_item(doc._doc, "0"), "6"), "0")).map((r) => cos_item(r, "1"));
     expect(py_eq(lengths, [3, 4, 4])).toBe(true);
     expect(new CharacterRange(doc, 3, 7).font_size).toBe(72.0);
     // key absent -> default
@@ -111,7 +114,8 @@ describe("TestWriteEnginePrimitives", () => {
     // NOTE(port): pytest.raises((TypeError, ValueError)) tuple form checked inline; same accepted exception set.
     let caught: unknown;
     try {
-      (new CharacterRange(doc, 0, 5) as any).auto_kern_type = 5;
+      // @ts-expect-error 5 is not an AutoKernType; the setter must reject it
+      new CharacterRange(doc, 0, 5).auto_kern_type = 5;
     } catch (e) {
       caught = e;
     }
@@ -123,27 +127,27 @@ describe("TestWriteEnginePrimitives", () => {
     // visible length must leave the final unit in an empty run.
     const doc = make_doc("AVAW\r");
     new CharacterRange(doc, 2, 4).kerning = 100;
-    const runs = doc._doc.get("0").get("8").get("0");
-    expect(py_eq(runs.at(-1), new Map<string, any>([["0", new Map<string, any>()], ["1", 1]]))).toBe(true);
-    expect(sum(runs.map((r: any) => r.get("1")))).toBe(5);
+    const runs = cos_item(cos_item(cos_item(doc._doc, "0"), "8"), "0");
+    expect(py_eq(cos_at(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
+    expect(sum(cos_iter(runs).map((r) => cos_num(cos_item(r, "1"))))).toBe(5);
   });
 });
 
 /** Build a duck-typed document from `(length, style)` run pairs. */
 function make_doc(
   raw: string,
-  char_runs: any = null,
-  para_runs: any = null,
-  line_cache: any = null,
-): any {
-  const run_array = (runs: any[], style_key: string): Map<string, any> =>
-    new Map<string, any>([
+  char_runs: [number, CosDict][] | null = null,
+  para_runs: [number, CosDict][] | null = null,
+  line_cache: CosNode[] | null = null,
+): TextDocument {
+  const run_array = (runs: [number, CosDict][], style_key: string): CosDict =>
+    new Map<string, CosNode>([
       [
         "0",
         runs.map(
-          ([length, style]: [number, Map<string, any>]) =>
-            new Map<string, any>([
-              ["0", new Map<string, any>([["0", new Map<string, any>([[style_key, style]])]])],
+          ([length, style]) =>
+            new Map<string, CosNode>([
+              ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([[style_key, style]])]])],
               ["1", length],
             ]),
         ),
@@ -151,26 +155,27 @@ function make_doc(
     ]);
 
   const total = u16_len(raw);
-  const doc = new Map<string, any>([["0", new Map<string, any>([["0", raw]])]]);
-  doc.get("0").set("6", run_array(py_or(char_runs, [[total, new Map<string, any>()]]), "6"));
-  doc.get("0").set("5", run_array(py_or(para_runs, [[total, new Map<string, any>()]]), "5"));
-  if (line_cache != null) doc.set("1", new Map<string, any>([["2", line_cache]]));
+  const doc = new Map<string, CosNode>([["0", new Map<string, CosNode>([["0", raw]])]]);
+  cos_setitem(cos_item(doc, "0"), "6", run_array(py_or(char_runs, [[total, new Map<string, CosNode>()]]), "6"));
+  cos_setitem(cos_item(doc, "0"), "5", run_array(py_or(para_runs, [[total, new Map<string, CosNode>()]]), "5"));
+  if (line_cache != null) doc.set("1", new Map<string, CosNode>([["2", line_cache]]));
   // Docs carrying a line cache act as box text (point text derives its
   // composed lines from the paragraphs and never reads the cache).
+  // @ts-expect-error duck-typed document (Python SimpleNamespace), not a TextDocument
   return { _doc: doc, _fonts: [], box_text: line_cache != null };
 }
 
-function line(...segment_counts: number[]): Map<string, any> {
+function line(...segment_counts: number[]): CosDict {
   /** A synthetic `/L` record with one `/S` per count. */
-  return new Map<string, any>([
+  return new Map<string, CosNode>([
     ["99", new CosName("L")],
     [
       "6",
       segment_counts.map(
         (count) =>
-          new Map<string, any>([
+          new Map<string, CosNode>([
             ["99", new CosName("S")],
-            ["15", new Map<string, any>([["0", count]])],
+            ["15", new Map<string, CosNode>([["0", count]])],
           ]),
       ),
     ],
@@ -208,9 +213,9 @@ describe("TestComposedLineSpans", () => {
   test("test_multi_segment_lines", () => {
     // A line split into several /S segments (e.g. bidi) must sum them.
     const cache = [
-      new Map<string, any>([
+      new Map<string, CosNode>([
         ["99", new CosName("PC")],
-        ["6", [new Map<string, any>([["99", new CosName("F")], ["6", [line(3, 2), line(4)]]])]],
+        ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(3, 2), line(4)]]])]],
       ]),
     ];
     const doc = make_doc("abcdefgh\r", null, null, cache);
@@ -219,13 +224,13 @@ describe("TestComposedLineSpans", () => {
 
   test("test_multiple_frames", () => {
     const cache = [
-      new Map<string, any>([
+      new Map<string, CosNode>([
         ["99", new CosName("PC")],
         [
           "6",
           [
-            new Map<string, any>([["99", new CosName("F")], ["6", [line(4)]]]),
-            new Map<string, any>([["99", new CosName("F")], ["6", [line(5)]]]),
+            new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(4)]]]),
+            new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(5)]]]),
           ],
         ],
       ]),
@@ -236,7 +241,7 @@ describe("TestComposedLineSpans", () => {
 
   test("test_box_without_cache", () => {
     const doc = make_doc("abcd\r");
-    doc.box_text = true;
+    setattr(doc, "box_text", true);
     expect(_composed_line_spans(doc)).toBeNull();
   });
 
@@ -244,8 +249,8 @@ describe("TestComposedLineSpans", () => {
     // Point text never wraps; its composed lines derive from the
     // paragraph runs and stay fresh without any cache.
     const doc = make_doc("ab\rcd\r", null, [
-      [3, new Map<string, any>()],
-      [3, new Map<string, any>()],
+      [3, new Map<string, CosNode>()],
+      [3, new Map<string, CosNode>()],
     ]);
     expect(py_eq(_composed_line_spans(doc), [[0, 3], [3, 6]])).toBe(true);
   });
@@ -253,9 +258,9 @@ describe("TestComposedLineSpans", () => {
   test("test_stale_cache_clamps_and_raises", () => {
     // Cache describes 9 chars, text shrank to "ab\r" (visible 2).
     const cache = [
-      new Map<string, any>([
+      new Map<string, CosNode>([
         ["99", new CosName("PC")],
-        ["6", [new Map<string, any>([["99", new CosName("F")], ["6", [line(5), line(4)]]])]],
+        ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(5), line(4)]]])]],
       ]),
     ];
     const doc = make_doc("ab\r", null, null, cache);
@@ -270,7 +275,7 @@ describe("TestCharacterRangeMath", () => {
     const doc = make_doc("hello\r");
     const rng = new CharacterRange(doc, 0, -1);
     expect(rng.character_end).toBe(5);
-    doc._doc.get("0").set("0", "hi\r");
+    cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
     expect(rng.character_end).toBe(2);
   });
 
@@ -278,7 +283,7 @@ describe("TestCharacterRangeMath", () => {
     const doc = make_doc("hello\r");
     const rng = new CharacterRange(doc, 0, 5);
     expect(rng.is_range_valid).toBe(true);
-    doc._doc.get("0").set("0", "hi\r");
+    cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
     expect(rng.is_range_valid).toBe(false);
     raises(ValueError, () => rng.character_start, CHARACTER_RANGE_OOB.slice(0, 20));
   });
@@ -299,8 +304,8 @@ describe("TestCharacterRangeMath", () => {
   test("test_sparse_runs_mix_with_default", () => {
     // Defensive path: a run lacking the key contributes the default.
     const doc = make_doc("abcdef\r", [
-      [3, new Map<string, any>([["2", true]])],
-      [4, new Map<string, any>()],
+      [3, new Map<string, CosNode>([["2", true]])],
+      [4, new Map<string, CosNode>()],
     ]);
     const rng = new CharacterRange(doc, 0, 6);
     // Stored True vs absent (default None) -> mixed -> None
@@ -308,17 +313,17 @@ describe("TestCharacterRangeMath", () => {
   });
 
   test("test_gated_color_resolution", () => {
-    const red = new Map<string, any>([
+    const red = new Map<string, CosNode>([
       ["99", new CosName("SimplePaint")],
-      ["0", new Map<string, any>([["0", 1], ["1", [1.0, 1.0, 0.0, 0.0]]])],
+      ["0", new Map<string, CosNode>([["0", 1], ["1", [1.0, 1.0, 0.0, 0.0]]])],
     ]);
-    const black = new Map<string, any>([
+    const black = new Map<string, CosNode>([
       ["99", new CosName("SimplePaint")],
-      ["0", new Map<string, any>([["0", 1], ["1", [1.0, 0.0, 0.0, 0.0]]])],
+      ["0", new Map<string, CosNode>([["0", 1], ["1", [1.0, 0.0, 0.0, 0.0]]])],
     ]);
     const doc = make_doc("abcdef\r", [
-      [3, new Map<string, any>([["57", false], ["54", black]])],
-      [4, new Map<string, any>([["57", true], ["54", red]])],
+      [3, new Map<string, CosNode>([["57", false], ["54", black]])],
+      [4, new Map<string, CosNode>([["57", true], ["54", red]])],
     ]);
     // Only the applyStroke run participates: uniform red, not mixed.
     expect(py_eq(new CharacterRange(doc, 0, 6).stroke_color, [1.0, 0.0, 0.0])).toBe(true);
@@ -328,8 +333,8 @@ describe("TestCharacterRangeMath", () => {
 
   test("test_zero_span_uses_containing_run", () => {
     const doc = make_doc("abcdef\r", [
-      [3, new Map<string, any>([["1", 72.0]])],
-      [4, new Map<string, any>([["1", 36.0]])],
+      [3, new Map<string, CosNode>([["1", 72.0]])],
+      [4, new Map<string, CosNode>([["1", 36.0]])],
     ]);
     expect(new CharacterRange(doc, 2, 2).font_size).toBe(72.0);
     // A caret on a run boundary belongs to the following run.

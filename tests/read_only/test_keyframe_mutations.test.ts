@@ -14,7 +14,8 @@ import { len, Path, StopIteration, str } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
-import type { Property } from "../../src/py_aep/models/properties/property.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { as_instance } from "../helpers.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
@@ -34,7 +35,7 @@ function _prop(
   const lay = app.project.compositions[comp].layers[layer];
   // `next(gen)` without a default raises StopIteration when nothing matches.
   for (const p of lay.transform) {
-    if (p.match_name === match_name) return p as Property;
+    if (p.match_name === match_name) return as_instance(p, Property);
   }
   throw new StopIteration();
 }

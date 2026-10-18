@@ -26,6 +26,10 @@ import { find_by_list_type } from "../../src/py_aep/binary/utils.ts";
 import { resolve_ocio_config } from "../../src/py_aep/color/ocio.ts";
 import { ColorManagementSystem } from "../../src/py_aep/enums/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import { FileSource } from "../../src/py_aep/models/sources/file.ts";
+import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES = new Path(import.meta.dir, "..", "..", "samples");
 const IMPORT_DIR = SAMPLES.div("models", "import");
@@ -57,8 +61,8 @@ function next_<T>(items: Iterable<T>, pred: (item: T) => boolean): T {
  * sRGB copy installed on this machine for a TIFF, which can differ from
  * After Effects' copy in the advisory rendering-intent byte.
  */
-function _clrs(source: any): [string, Uint8Array][] {
-  const clrs = find_by_list_type(source._pin.chunks, "CLRS");
+function _clrs(source: FootageSource | null): [string, Uint8Array][] {
+  const clrs = find_by_list_type(as_instance(source, FileSource)._pin.chunks, "CLRS");
   const record: [string, Uint8Array][] = [];
   let marker = "";
   for (const chunk of clrs.chunks) {
@@ -84,12 +88,12 @@ test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, nam
   }
   const ae = next_(
     parse_aep(IMPORT_DIR.div(`ocio_input_${tag}.aep`)).project.footages,
-    (item: any) => item.name === name,
+    (item) => item.name === name,
   );
   const project = new_().project;
   project.color_management_system = ColorManagementSystem.OCIO;
   project.ocio_configuration_file = config;
-  const ours = project.import_file(new ImportOptions(getitem(FILES, name))) as any;
+  const ours = as_instance(project.import_file(new ImportOptions(getitem(FILES, name))), FootageItem);
   expect(py_eq(_clrs(ours.main_source), _clrs(ae.main_source))).toBe(true);
 });
 
@@ -102,7 +106,7 @@ test.each([
   ["py_dflt", PNG, null, EXR],
   ["ae_png_to_exr", PNG, null, EXR],
   ["ae_exr_to_png", EXR, null, PNG],
-] as [string, Path, string | null, Path][])(
+] satisfies [string, Path, string | null, Path][])(
   "test_replace_keeps_the_ocio_input_space[%#]",
   (name, first, assigned, second) => {
     if (resolve_ocio_config(str(SERGB)) == null) {
@@ -110,14 +114,14 @@ test.each([
     }
     const ae = next_(
       parse_aep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
-      (item: any) => item.name === name,
+      (item) => item.name === name,
     );
     const project = new_().project;
     project.color_management_system = ColorManagementSystem.OCIO;
     project.ocio_configuration_file = str(SERGB);
-    const ours = project.import_file(new ImportOptions(first)) as any;
+    const ours = as_instance(project.import_file(new ImportOptions(first)), FootageItem);
     if (assigned != null) {
-      ours.main_source.media_color_space = assigned;
+      as_instance(ours.main_source, FileSource).media_color_space = assigned;
     }
     ours.replace(second);
     expect(py_eq(_clrs(ours.main_source), _clrs(ae.main_source))).toBe(true);
@@ -130,7 +134,7 @@ test("test_proxy_takes_the_rules_pick", () => {
   }
   const ae = next_(
     parse_aep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
-    (item: any) => item.name === "ae_png_proxy_exr",
+    (item) => item.name === "ae_png_proxy_exr",
   );
   const project = new_().project;
   project.color_management_system = ColorManagementSystem.OCIO;

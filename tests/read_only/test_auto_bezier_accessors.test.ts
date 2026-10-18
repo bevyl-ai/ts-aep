@@ -17,12 +17,13 @@ import { dict_get, Path, py_assert, py_bool, py_or, tkey, zip } from "../../src/
 import { approx } from "../../src/pyrt/pytest.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
+import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { load_expected } from "../helpers.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 
 /** Every keyframed property in `comp`, paired with its layer's name. */
-function* _keyed(comp: any): Generator<[string, Property]> {
+function* _keyed(comp: CompItem): Generator<[string, Property]> {
   for (const layer of comp.layers) {
     for (const prop of layer._leaf_properties()) {
       if (py_bool(prop.keyframes)) {
@@ -32,8 +33,31 @@ function* _keyed(comp: any): Generator<[string, Property]> {
   }
 }
 
-function* _json_properties(document: any): Generator<[string, string, any]> {
-  const walk = (prop: any, out: any[]): void => {
+/** The fields of the exported JSON this test reads. */
+interface JsonEase {
+  speed: number;
+  influence: number;
+}
+interface JsonKeyframe {
+  spatialAutoBezier?: boolean;
+  temporalAutoBezier?: boolean;
+  inSpatialTangent: number[];
+  outSpatialTangent: number[];
+  inTemporalEase: JsonEase[];
+  outTemporalEase: JsonEase[];
+}
+interface JsonProperty {
+  matchName: string;
+  numKeys?: number;
+  properties?: JsonProperty[] | null;
+  keyframes?: JsonKeyframe[] | null;
+}
+interface JsonDocument {
+  items: { name: string; layers?: { name: string; properties?: JsonProperty[] | null }[] | null }[];
+}
+
+function* _json_properties(document: JsonDocument): Generator<[string, string, JsonProperty]> {
+  const walk = (prop: JsonProperty, out: JsonProperty[]): void => {
     if (py_bool(prop.numKeys ?? null)) {
       out.push(prop);
     }
@@ -44,7 +68,7 @@ function* _json_properties(document: any): Generator<[string, string, any]> {
 
   for (const item of "items" in document ? document.items : []) {
     for (const layer of py_or(item.layers ?? null, [])) {
-      const found: any[] = [];
+      const found: JsonProperty[] = [];
       for (const group of py_or(layer.properties ?? null, [])) {
         walk(group, found);
       }
@@ -76,7 +100,7 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
       const key = tkey(comp_name, layer_name, json_prop.matchName);
       const prop = dict_get(parsed, key);
       if (prop == null) continue;
-      const keys: any[] = py_or(json_prop.keyframes ?? null, []) as any[];
+      const keys = py_or(json_prop.keyframes ?? null, []);
       if (keys.length !== prop.keyframes.length) continue;
       for (const [json_key, keyframe] of zip(keys, prop.keyframes)) {
         if (py_bool(json_key.spatialAutoBezier ?? null)) {
@@ -86,11 +110,11 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
         }
         if (py_bool(json_key.temporalAutoBezier ?? null)) {
           compared += 1;
-          for (const [ease, json_ease] of zip(keyframe.in_temporal_ease, json_key.inTemporalEase) as [any, any][]) {
+          for (const [ease, json_ease] of zip(keyframe.in_temporal_ease, json_key.inTemporalEase)) {
             expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
             expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
           }
-          for (const [ease, json_ease] of zip(keyframe.out_temporal_ease, json_key.outTemporalEase) as [any, any][]) {
+          for (const [ease, json_ease] of zip(keyframe.out_temporal_ease, json_key.outTemporalEase)) {
             expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
             expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
           }

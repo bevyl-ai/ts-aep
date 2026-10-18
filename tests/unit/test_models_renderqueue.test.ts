@@ -30,45 +30,67 @@ const OCS_SAMPLES_DIR = new Path(
 );
 
 /**
- * The keyword names of `resolve_output_filename` after `file_template`, in Python
- * signature order. The Python tests pass these as `**kwargs`; TS takes them
+ * The keyword arguments of `resolve_output_filename` after `file_template`, in
+ * Python signature order. The Python tests pass these as `**kwargs`; TS takes them
  * positionally, so each one is placed at its signature slot. A missing key is
  * `undefined`, which triggers the TS default exactly like omitting the argument.
  */
-const RESOLVE_OUTPUT_FILENAME_PARAMS = [
-  "project_name",
-  "comp_name",
-  "render_settings_name",
-  "output_module_name",
-  "width",
-  "height",
-  "frame_rate",
-  "start_frame",
-  "end_frame",
-  "duration_frames",
-  "start_time",
-  "end_time",
-  "duration_time",
-  "channels",
-  "project_color_depth",
-  "output_color_depth",
-  "compressor",
-  "field_render",
-  "pulldown_phase",
-  "file_extension",
-];
+type ResolveOutputFilenameParams = Parameters<typeof resolve_output_filename>;
+interface ResolveOutputFilenameKwargs {
+  project_name?: ResolveOutputFilenameParams[1];
+  comp_name?: ResolveOutputFilenameParams[2];
+  render_settings_name?: ResolveOutputFilenameParams[3];
+  output_module_name?: ResolveOutputFilenameParams[4];
+  width?: ResolveOutputFilenameParams[5];
+  height?: ResolveOutputFilenameParams[6];
+  frame_rate?: ResolveOutputFilenameParams[7];
+  start_frame?: ResolveOutputFilenameParams[8];
+  end_frame?: ResolveOutputFilenameParams[9];
+  duration_frames?: ResolveOutputFilenameParams[10];
+  start_time?: ResolveOutputFilenameParams[11];
+  end_time?: ResolveOutputFilenameParams[12];
+  duration_time?: ResolveOutputFilenameParams[13];
+  channels?: ResolveOutputFilenameParams[14];
+  project_color_depth?: ResolveOutputFilenameParams[15];
+  output_color_depth?: ResolveOutputFilenameParams[16];
+  compressor?: ResolveOutputFilenameParams[17];
+  field_render?: ResolveOutputFilenameParams[18];
+  pulldown_phase?: ResolveOutputFilenameParams[19];
+  file_extension?: ResolveOutputFilenameParams[20];
+}
 
 /** `resolve_output_filename(template, **kwargs)` */
-function resolve_output_filename_kw(file_template: string, kwargs: Record<string, any>): string {
-  const args: any[] = RESOLVE_OUTPUT_FILENAME_PARAMS.map((k) => kwargs[k]);
-  return (resolve_output_filename as any)(file_template, ...args);
+function resolve_output_filename_kw(file_template: string, kwargs: ResolveOutputFilenameKwargs): string {
+  return resolve_output_filename(
+    file_template,
+    kwargs.project_name,
+    kwargs.comp_name,
+    kwargs.render_settings_name,
+    kwargs.output_module_name,
+    kwargs.width,
+    kwargs.height,
+    kwargs.frame_rate,
+    kwargs.start_frame,
+    kwargs.end_frame,
+    kwargs.duration_frames,
+    kwargs.start_time,
+    kwargs.end_time,
+    kwargs.duration_time,
+    kwargs.channels,
+    kwargs.project_color_depth,
+    kwargs.output_color_depth,
+    kwargs.compressor,
+    kwargs.field_render,
+    kwargs.pulldown_phase,
+    kwargs.file_extension,
+  );
 }
 
 test("test_output_module_preserves_noncanonical_true_byte", () => {
   const raw = new Uint8Array(new OutputModuleSettingsItem().tobytes());
   raw[47] = 0x03;
 
-  const settings = OutputModuleSettingsItem.frombytes(new Uint8Array(raw)) as OutputModuleSettingsItem;
+  const settings = OutputModuleSettingsItem.frombytes(new Uint8Array(raw));
 
   expect(settings.include_project_link).toBe(true);
   expect(py_eq(settings.tobytes(), raw)).toBe(true);
@@ -107,7 +129,7 @@ describe("TestResolveOutputFilename", () => {
     ["[frameRate]", { frame_rate: 29.97 }, "29.97"],
     ["[compressor]", { compressor: "H.264" }, "H.264"],
     ["[COMPNAME]", { comp_name: "MyComp" }, "MyComp"],
-  ])("test_single_token[%#]", (template: string, kwargs: Record<string, any>, expected: string) => {
+  ])("test_single_token[%#]", (template: string, kwargs: ResolveOutputFilenameKwargs, expected: string) => {
     expect(resolve_output_filename_kw(template, kwargs)).toBe(expected);
   });
 
@@ -166,7 +188,7 @@ describe("TestResolveOutputFilename", () => {
     ["[startTimecode]", { start_time: 0.0, frame_rate: 24.0 }, "0-00-00-00"],
     ["[endTimecode]", { end_time: 10.0, frame_rate: 24.0 }, "0-00-10-00"],
     ["[durationTimecode]", { duration_time: 5.0, frame_rate: 24.0 }, "0-00-05-00"],
-  ])("test_timecode[%#]", (template: string, kwargs: Record<string, any>, expected: string) => {
+  ])("test_timecode[%#]", (template: string, kwargs: ResolveOutputFilenameKwargs, expected: string) => {
     expect(resolve_output_filename_kw(template, kwargs)).toBe(expected);
   });
 

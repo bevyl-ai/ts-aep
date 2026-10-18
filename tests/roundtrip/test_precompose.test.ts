@@ -9,7 +9,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import { describe, expect, test } from "bun:test";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
-import { Path, py_eq, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { Path, py_eq, StopIteration, TypeError_, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { as_instance, get_comp } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -22,14 +22,20 @@ function _fresh(rel: string) {
 }
 
 // NOTE(port): local equivalent of pytest.raises((TypeError, ValueError)); any listed class passes, others propagate, as in Python.
-function raises_any(classes: (abstract new (...a: any[]) => Error)[], fn: () => unknown): Error {
+function raises_any(classes: (abstract new (...a: never[]) => Error)[], fn: () => unknown): Error {
   try {
     fn();
   } catch (e) {
-    if (classes.some((c) => e instanceof c)) return e as Error;
+    for (const c of classes) if (e instanceof c) return e;
     throw e;
   }
   throw new Error(`DID NOT RAISE ${classes.map((c) => c.name).join(", ")}`);
+}
+
+// NOTE(port): local stand-in for Python `next(genexpr)`; first match or StopIteration, as in CPython.
+function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
+  for (const x of items) if (pred(x)) return x;
+  throw new StopIteration();
 }
 
 describe("TestPrecomposeMove", () => {
@@ -42,7 +48,7 @@ describe("TestPrecomposeMove", () => {
     const new_comp = comp.precompose([0, 1], "Pre-comp 1");
 
     expect(new_comp.name).toBe("Pre-comp 1");
-    expect(py_eq(new_comp.layers.map((ly: any) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(py_eq(new_comp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
     expect(comp.layers.length).toBe(1);
     const repl = as_instance(comp.layers[0], AVLayer);
     expect(repl.source).toBe(new_comp);
@@ -52,7 +58,7 @@ describe("TestPrecomposeMove", () => {
     const app2 = parse_aep(String(out));
     const comp2 = get_comp(app2.project, "Comp 1");
     const nc2 = get_comp(app2.project, "Pre-comp 1");
-    expect(py_eq(nc2.layers.map((ly: any) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(py_eq(nc2.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
     expect(as_instance(comp2.layers[0], AVLayer).source).toBe(nc2);
   });
 
@@ -71,21 +77,21 @@ describe("TestPrecomposeMove", () => {
     const tmp_path = make_tmp_path();
     const app = _fresh("property/all_animated.aep");
     const comp = get_comp(app.project, "type_camera");
-    expect(py_eq(comp.layers.map((ly: any) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
+    expect(py_eq(comp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
     comp.precompose([1, 2], "PC mid");
-    expect(py_eq(comp.layers.map((ly: any) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
+    expect(py_eq(comp.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
 
     const out = tmp_path.div("mid.aep");
     app.project.save(out);
     const comp2 = get_comp(parse_aep(String(out)).project, "type_camera");
-    expect(py_eq(comp2.layers.map((ly: any) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
+    expect(py_eq(comp2.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
   });
 
   test("test_new_comp_stored_alphabetically", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = get_comp(app.project, "Comp 1");
     comp.precompose([0], "PC alpha");
-    const names = app.project.root_folder.items.map((item: any) => item.name);
+    const names = app.project.root_folder.items.map((item) => item.name);
     // AE stores folder children in display order; the new comp lands
     // between 'Comp 1' and 'Solids'.
     expect(py_eq(names, ["Comp 1", "PC alpha", "Solids"])).toBe(true);
@@ -95,7 +101,7 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = get_comp(app.project, "Comp 1");
     const new_comp = comp.precompose([1, 0, 1], "PC dup");
-    expect(py_eq(new_comp.layers.map((ly: any) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(py_eq(new_comp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
   });
 
   test("test_parent_link_inside_set_remapped", () => {
@@ -103,14 +109,14 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/layer_misc.aep");
     const comp = get_comp(app.project, "parent");
     const new_comp = comp.precompose([0, 1], "PC par");
-    const child = new_comp.layers.find((ly: any) => ly.name === "ChildLayer")!;
-    const null_ = new_comp.layers.find((ly: any) => ly.name === "ParentNull")!;
+    const child = _next(new_comp.layers, (ly) => ly.name === "ChildLayer");
+    const null_ = _next(new_comp.layers, (ly) => ly.name === "ParentNull");
     expect(child._ldta.parent_id).toBe(null_.id);
 
     const out = tmp_path.div("par.aep");
     app.project.save(out);
     const nc2 = get_comp(parse_aep(String(out)).project, "PC par");
-    const child2 = nc2.layers.find((ly: any) => ly.name === "ChildLayer")!;
+    const child2 = _next(nc2.layers, (ly) => ly.name === "ChildLayer");
     expect(child2.parent != null).toBe(true);
     if (child2.parent == null) throw new Error("ChildLayer lost its parent");
     expect(child2.parent.name).toBe("ParentNull");
@@ -127,8 +133,8 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/layer_misc.aep");
     const comp = get_comp(app.project, "parent");
     comp.precompose([1], "PC repl");
-    const child = comp.layers.find((ly: any) => ly.name === "ChildLayer")!;
-    const repl = comp.layers.find((ly: any) => ly.name === "PC repl")!;
+    const child = _next(comp.layers, (ly) => ly.name === "ChildLayer");
+    const repl = _next(comp.layers, (ly) => ly.name === "PC repl");
     expect(child._ldta.parent_id).toBe(repl.id);
   });
 
@@ -136,8 +142,8 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/track_matte_yes.aep");
     const comp = get_comp(app.project, "Comp 1");
     const new_comp = comp.precompose([0, 1], "PC matte");
-    const user = new_comp.layers.find((ly: any) => ly.name === "Gray Solid 2")!;
-    const matte = new_comp.layers.find((ly: any) => ly.name === "Gray Solid 1")!;
+    const user = _next(new_comp.layers, (ly) => ly.name === "Gray Solid 2");
+    const matte = _next(new_comp.layers, (ly) => ly.name === "Gray Solid 1");
     expect(user._ldta.matte_layer_id).toBe(matte.id);
   });
 
@@ -148,10 +154,10 @@ describe("TestPrecomposeMove", () => {
     const new_comp = comp.precompose([0], "PC copy");
     // AE copies the unmoved matte layer below its user; the original
     // stays untouched in the parent comp.
-    expect(py_eq(new_comp.layers.map((ly: any) => ly.name), ["Gray Solid 2", "Gray Solid 1"])).toBe(true);
+    expect(py_eq(new_comp.layers.map((ly) => ly.name), ["Gray Solid 2", "Gray Solid 1"])).toBe(true);
     const [user, copy] = new_comp.layers;
     expect(user._ldta.matte_layer_id).toBe(copy.id);
-    expect(py_eq(comp.layers.map((ly: any) => ly.name), ["PC copy", "Gray Solid 1"])).toBe(true);
+    expect(py_eq(comp.layers.map((ly) => ly.name), ["PC copy", "Gray Solid 1"])).toBe(true);
 
     const out = tmp_path.div("mattecopy.aep");
     app.project.save(out);
@@ -164,8 +170,8 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/track_matte_yes.aep");
     const comp = get_comp(app.project, "Comp 1");
     comp.precompose([1], "PC target");
-    const user = comp.layers.find((ly: any) => ly.name === "Gray Solid 2")!;
-    const repl = comp.layers.find((ly: any) => ly.name === "PC target")!;
+    const user = _next(comp.layers, (ly) => ly.name === "Gray Solid 2");
+    const repl = _next(comp.layers, (ly) => ly.name === "PC target");
     expect(user._ldta.matte_layer_id).toBe(repl.id);
     // The replacement keeps serving as matte, so it inherits the
     // moved matte layer's video-off state.
@@ -177,8 +183,8 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("property/all_animated.aep");
     const comp = get_comp(app.project, "type_camera");
     const new_comp = comp.precompose([0, 1, 2, 3], "PC all");
-    expect(py_eq(new_comp.layers.map((ly: any) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
-    expect(py_eq(comp.layers.map((ly: any) => ly.name), ["PC all"])).toBe(true);
+    expect(py_eq(new_comp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
+    expect(py_eq(comp.layers.map((ly) => ly.name), ["PC all"])).toBe(true);
 
     const out = tmp_path.div("allkinds.aep");
     app.project.save(out);
@@ -201,7 +207,7 @@ describe("TestPrecomposeLeaveAttributes", () => {
     // The retained layer object survives with its source swapped.
     expect(comp.layers[1]).toBe(retained);
     expect(retained.source).toBe(new_comp);
-    expect(py_eq(new_comp.layers.map((ly: any) => ly.source), [original_source])).toBe(true);
+    expect(py_eq(new_comp.layers.map((ly) => as_instance(ly, AVLayer).source), [original_source])).toBe(true);
 
     const out = tmp_path.div("leave.aep");
     app.project.save(out);
@@ -265,6 +271,9 @@ describe("TestPrecomposeValidation", () => {
   test("test_invalid_name_raises", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = get_comp(app.project, "Comp 1");
-    raises_any([TypeError_, ValueError], () => comp.precompose([0], 123 as any));
+    raises_any([TypeError_, ValueError], () =>
+      // @ts-expect-error deliberately passes a non-string name to check runtime validation
+      comp.precompose([0], 123),
+    );
   });
 });

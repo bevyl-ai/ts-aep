@@ -10,16 +10,15 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { ImportOptions, parse as parse_aep, type FootageItem, type Project } from "../../src/py_aep/index.ts";
+import { FileSource, FootageItem, ImportOptions, parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
+import { as_instance } from "../helpers.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { UNDEFINED_FRAME, find_by_list_type } from "../../src/py_aep/binary/utils.ts";
-import { Path, ValueError, b, py_eq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, b, py_assert, py_eq } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
 const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
-
-type Seq = Omit<FootageItem, "main_source" | "proxy_source"> & { main_source: any; proxy_source: any };
 
 /** A folder named `shots` holding a copy of one still per name. */
 function _folder(tmp_path: Path, ...names: string[]): Path {
@@ -32,21 +31,21 @@ function _folder(tmp_path: Path, ...names: string[]): Path {
   return folder;
 }
 
-function _import(file: Path, kw: { alphabetical: boolean }): [Project, Seq] {
+function _import(file: Path, kw: { alphabetical: boolean }): [Project, FootageItem] {
   const { alphabetical } = kw;
   const project = parse_aep(BASE).project;
   const opts = new ImportOptions(file);
   opts.sequence = true;
   opts.force_alphabetical = alphabetical;
-  return [project, project.import_file(opts) as Seq];
+  return [project, as_instance(project.import_file(opts), FootageItem)];
 }
 
-function _reparsed(project: Project, item: Seq, tmp_path: Path): Seq {
+function _reparsed(project: Project, item: FootageItem, tmp_path: Path): FootageItem {
   const out = tmp_path.div("sequence.aep");
   project.save(out);
   const found = parse_aep(out).project.footages.find((f) => f.id === item.id);
   if (found === undefined) throw new Error("StopIteration");
-  return found as Seq;
+  return found;
 }
 
 class TestAlphabeticalSequence {
@@ -78,9 +77,9 @@ describe("TestAlphabeticalSequence", () => {
   test.each(["a_001.png", "b.png", "D.PNG"])("test_takes_every_file_of_the_type[%#]", (picked) => {
     const tmp_path = make_tmp_path();
     const [, item] = _import(TestAlphabeticalSequence._mixed(tmp_path).div(picked), { alphabetical: true });
-    expect(py_eq(item.main_source.file_names, TestAlphabeticalSequence.ORDER)).toBe(true);
+    expect(py_eq(as_instance(item.main_source, FileSource).file_names, TestAlphabeticalSequence.ORDER)).toBe(true);
     // The first file in order, whichever one was picked.
-    expect(new Path(item.main_source.file).name).toBe("a_001.png");
+    expect(new Path(as_instance(item.main_source, FileSource).file).name).toBe("a_001.png");
     expect(item.name).toBe("shots");
     expect(item.duration).toBe(7 / 30);
   });
@@ -89,7 +88,7 @@ describe("TestAlphabeticalSequence", () => {
     const tmp_path = make_tmp_path();
     const [project, item] = _import(TestAlphabeticalSequence._mixed(tmp_path).div("a_001.png"), { alphabetical: true });
     const reparsed = _reparsed(project, item, tmp_path);
-    const source = reparsed.main_source;
+    const source = as_instance(reparsed.main_source, FileSource);
     const sspc = source._sspc;
     expect(
       py_eq([sspc.start_frame, sspc.end_frame, sspc.frame_padding], [UNDEFINED_FRAME, UNDEFINED_FRAME, 0]),
@@ -103,9 +102,10 @@ describe("TestAlphabeticalSequence", () => {
     expect(sspc._source_stamp[0]).toBe(1);
     expect(py_eq([sspc.duration_dividend, sspc.duration_divisor], [7, 30])).toBe(true);
     const stvc = find_by_list_type(source._pin.chunks, "StVc");
-    expect(stvc.chunks[0] instanceof U4LeChunk).toBe(true);
-    expect(stvc.chunks[0].chunk_type).toBe("StVS");
-    expect((stvc.chunks[0] as U4LeChunk).value).toBe(7);
+    const stvs = stvc.chunks[0];
+    py_assert(stvs instanceof U4LeChunk);
+    expect(stvs.chunk_type).toBe("StVS");
+    expect(stvs.value).toBe(7);
     expect(py_eq(source.file_names, TestAlphabeticalSequence.ORDER)).toBe(true);
     expect(reparsed.name).toBe("shots");
   });
@@ -141,12 +141,12 @@ describe("TestAlphabeticalSequence", () => {
     const folder = TestAlphabeticalSequence._mixed(tmp_path);
     const [, item] = _import(folder.div("a_001.png"), { alphabetical: true });
     folder.div("zz.png").write_bytes(folder.div("b.png").read_bytes());
-    item.main_source.reload();
-    const source = item.main_source;
+    as_instance(item.main_source, FileSource).reload();
+    const source = as_instance(item.main_source, FileSource);
     expect(py_eq(source.file_names, [...TestAlphabeticalSequence.ORDER, "zz.png"])).toBe(true);
     expect(item.duration).toBe(8 / 30);
     const stvc = find_by_list_type(source._pin.chunks, "StVc");
-    expect((stvc.chunks[0] as U4LeChunk).value).toBe(8);
+    expect(as_instance(stvc.chunks[0], U4LeChunk).value).toBe(8);
   });
 });
 
@@ -195,7 +195,7 @@ describe("TestSequencePadding", () => {
       const [project, item] = _import(_folder(tmp_path, ...names).div(picked), { alphabetical: false });
       const reparsed = _reparsed(project, item, tmp_path);
       expect(reparsed.name).toBe(name);
-      expect(new Path(reparsed.main_source.file).name).toBe(first);
+      expect(new Path(as_instance(reparsed.main_source, FileSource).file).name).toBe(first);
       expect(reparsed.main_source._sspc.frame_padding).toBe(padding);
       expect(py_eq(reparsed.main_source._sspc._reserved_b8, zero_padded)).toBe(true);
     },
@@ -250,16 +250,16 @@ describe("TestAnimatedGifSequence", () => {
   test.each(["placeholder", "sequence", "conformed movie"])("test_a_replace_keeps_its_rate[%#]", (old) => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(BASE).project;
-    let item: any;
+    let item: FootageItem;
     if (old === "placeholder") {
       item = project.import_placeholder("PH", 640, 480, 24.0, 10.0);
     } else if (old === "sequence") {
       const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
       opts.sequence = true;
-      item = project.import_file(opts);
+      item = as_instance(project.import_file(opts), FootageItem);
       item.main_source.conform_frame_rate = 25.0;
     } else {
-      item = project.import_file(new ImportOptions(ASSETS.div("mov_480.mov")));
+      item = as_instance(project.import_file(new ImportOptions(ASSETS.div("mov_480.mov"))), FootageItem);
       item.main_source.conform_frame_rate = 25.0;
     }
     item.replace_with_sequence(TestAnimatedGifSequence._gifs(tmp_path), false);
@@ -285,7 +285,7 @@ describe("TestCachedDataSize", () => {
 
   test("test_file", () => {
     const project = parse_aep(BASE).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png"))) as Seq;
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("image_with_alpha.png"))), FootageItem);
     // Node's fs.Stats exposes the byte count as `size` (Python `st_size`).
     const size = ASSETS.div("image_with_alpha.png").stat().size;
     expect(item.main_source._sspc.data_size).toBe(size);
@@ -325,13 +325,13 @@ describe("TestPlatform", () => {
     const project = parse_aep(BASE, { platform }).project;
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
-    const item = project.import_file(opts) as Seq;
+    const item = as_instance(project.import_file(opts), FootageItem);
     expect(item.main_source._sspc.source_format_type).toBe(code);
     // Every path that builds a sequence follows the project's platform.
     item.replace_with_sequence(ASSETS.div("sequence_001.gif"));
     expect(item.main_source._sspc.source_format_type).toBe(code);
     item.set_proxy_with_sequence(ASSETS.div("sequence_001.gif"));
-    expect(item.proxy_source._sspc.source_format_type).toBe(code);
+    expect(item.proxy_source?._sspc.source_format_type).toBe(code);
   });
 
   test.each([
@@ -341,10 +341,10 @@ describe("TestPlatform", () => {
     // Stills take the platform's importer code too, and Windows AE
     // stores HEIC without alpha (windows_stills.aep), on every path.
     const project = parse_aep(BASE, { platform }).project;
-    const item = project.import_file(new ImportOptions(ASSETS.div("bmp.bmp"))) as Seq;
+    const item = as_instance(project.import_file(new ImportOptions(ASSETS.div("bmp.bmp"))), FootageItem);
     expect(item.main_source._sspc.source_format_type).toBe(code);
     item.set_proxy(ASSETS.div("gif.gif"));
-    expect(item.proxy_source._sspc.source_format_type).toBe(code);
+    expect(item.proxy_source?._sspc.source_format_type).toBe(code);
     item.replace(ASSETS.div("gif.gif"));
     expect(item.main_source._sspc.source_format_type).toBe(code);
     item.replace(ASSETS.div("heic_alpha.heic"));
@@ -355,6 +355,6 @@ describe("TestPlatform", () => {
     const project = py_aep.new(undefined, { platform: "macos" }).project;
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
-    expect((project.import_file(opts) as Seq).main_source._sspc.source_format_type).toBe("IMIO");
+    expect(as_instance(project.import_file(opts), FootageItem).main_source._sspc.source_format_type).toBe("IMIO");
   });
 });

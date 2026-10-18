@@ -12,6 +12,7 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { PlaceholderSource } from "../../src/py_aep/models/sources/placeholder.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
+import { as_instance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 
@@ -242,7 +243,7 @@ describe("TestAddComp", () => {
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
 
-    const comp2 = getitem(app2.project.items, comp_id) as CompItem;
+    const comp2 = as_instance(getitem(app2.project.items, comp_id), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.width).toBe(3840);
     expect(comp2.height).toBe(2160);
@@ -268,7 +269,7 @@ describe("TestAddComp", () => {
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
 
-    const comp2 = getitem(app2.project.items, comp_id) as CompItem;
+    const comp2 = as_instance(getitem(app2.project.items, comp_id), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.name).toBe("Scratch");
     expect(comp2.width).toBe(1280);
@@ -548,7 +549,8 @@ describe("TestParentFolderSetter", () => {
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
     raises(TypeError_, () => {
-      comp1.parent_folder = comp1.id as any;
+      // @ts-expect-error deliberately assigns an item id instead of a FolderItem
+      comp1.parent_folder = comp1.id;
     }, "must be a FolderItem");
   });
 
@@ -661,7 +663,7 @@ describe("TestImportPlaceholder", () => {
     const app2 = parse_aep(tmp_path.div("out.aep"));
 
     expect(app2.project.items.has(item_id)).toBe(true);
-    const item2 = getitem(app2.project.items, item_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, item_id), FootageItem);
     expect(item2.name).toBe("RTPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -690,7 +692,7 @@ describe("TestReplaceWithPlaceholder", () => {
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = getitem(app2.project.items, footage_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
     expect(item2.name).toBe("RtPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -714,7 +716,7 @@ describe("TestReplaceWithSolid", () => {
     const app = parse_aep(SAMPLES_DIR.div("footage", "placeholder.aep"));
     const footage = app.project.footages[0];
     footage.replace_with_solid([0.5, 0.25, 0.75], "ColorSolid", 1920, 1080, 1.0);
-    const color = (footage.main_source as SolidSource).color;
+    const color = as_instance(footage.main_source, SolidSource).color;
     expect(Math.abs(color[0] - 0.5) < 0.01).toBe(true);
     expect(Math.abs(color[1] - 0.25) < 0.01).toBe(true);
     expect(Math.abs(color[2] - 0.75) < 0.01).toBe(true);
@@ -735,7 +737,7 @@ describe("TestReplaceWithSolid", () => {
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = getitem(app2.project.items, footage_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
     expect(item2.name).toBe("GreenSolid");
     expect(item2.width).toBe(960);
     expect(item2.height).toBe(540);
@@ -773,7 +775,7 @@ describe("TestSetProxyToNone", () => {
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = getitem(app2.project.items, footage_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
     expect(item2.proxy_source == null).toBe(true);
   });
 });
@@ -796,7 +798,7 @@ describe("TestSetProxyWithPlaceholder", () => {
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = getitem(app2.project.items, footage_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
     expect(item2.proxy_source != null).toBe(true);
   });
 
@@ -827,7 +829,7 @@ describe("TestSetProxyWithSolid", () => {
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = getitem(app2.project.items, footage_id) as FootageItem;
+    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
     expect(item2.proxy_source != null).toBe(true);
   });
 

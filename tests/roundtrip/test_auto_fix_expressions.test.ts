@@ -14,13 +14,14 @@ import { describe, expect, test } from "bun:test";
 import { Path, TypeError_ } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { parse_project_fresh } from "../helpers.ts";
+import type { Project } from "../../src/py_aep/index.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is this file's
 // directory (tests/roundtrip), so two `.parent` hops reach the package root.
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "property");
 const SAMPLE = SAMPLES_DIR.div("is_modified_false.aep");
 
-function _opacity(project: any) {
+function _opacity(project: Project) {
   return project.compositions[0].layers[0].transform.__getitem__("ADBE Opacity");
 }
 
@@ -88,7 +89,8 @@ describe("TestAutoFixExpressions", () => {
   test("test_non_string_raises", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
-    raises(TypeError_, () => project.auto_fix_expressions(5 as any, "Real")); // type: ignore[arg-type]
+    // @ts-expect-error deliberately passes a non-string to check runtime validation
+    raises(TypeError_, () => project.auto_fix_expressions(5, "Real"));
   });
 
   test("test_fix_survives_save_and_reparse", () => {

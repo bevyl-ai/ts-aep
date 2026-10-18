@@ -13,8 +13,9 @@ import {
   py_eq,
 } from "../../src/pyrt/index.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
-import { read_psd_layers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { _instance_box, has_enabled_styles, merged_styles_bounds, parse_layer_styles, read_global_light } from "../../src/py_aep/resolvers/psd_styles.ts";
+import { PsdLayer, read_psd_layers, type PsdNode } from "../../src/py_aep/resolvers/psd_layers.ts";
+import { as_instance } from "../helpers.ts";
+import { type _Value, type PsdLayerStyles, _instance_box, has_enabled_styles, merged_styles_bounds, parse_layer_styles, read_global_light } from "../../src/py_aep/resolvers/psd_styles.ts";
 import "../../src/py_aep/binary/_register.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets"
@@ -26,8 +27,8 @@ const SINGLE = ASSETS.div("psd_layer_styles_8bits_single.psd");
 const NOISE = ASSETS.div("psd_noise_gradient.psd");
 const NOISE_32 = ASSETS.div("psd_noise_gradient_32bpc.psd");
 
-function _leaves(psd: Path): Map<string, any> {
-  const out = new Map<string, any>();
+function _leaves(psd: Path): Map<string, PsdNode> {
+  const out = new Map<string, PsdNode>();
   for (const leaf of read_psd_layers(psd)) out.set(leaf.name, leaf);
   return out;
 }
@@ -50,7 +51,7 @@ describe("TestParseLayerStyles", () => {
   test("test_values_match_editable_fixture", () => {
     // Spot-check the AE-unit conversion against values AE wrote into
     // psd_layer_styles_single.aep (fixture-decoded ground truth).
-    const leaf = getitem(_leaves(SINGLE), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(SINGLE), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(SINGLE));
     py_assert(styles != null);
     const values = styles.values;
@@ -82,16 +83,16 @@ describe("TestParseLayerStyles", () => {
   });
 
   test("test_gradient_stops", () => {
-    const leaf = getitem(_leaves(SINGLE), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(SINGLE), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(SINGLE));
     py_assert(styles != null);
-    const gradient = getitem(styles.values, "outerGlow/gradient") as Gradient;
-    expect(gradient instanceof Gradient).toBe(true);
+    const gradient = getitem(styles.values, "outerGlow/gradient");
+    py_assert(gradient instanceof Gradient);
     expect(len(gradient.color_stops)).toBe(5);
     expect(len(gradient.alpha_stops)).toBe(2);
     // Stop positions are Lctn/4096; colors Rd/255 (write path quantizes
     // to the f4 AE stores).
-    const offsets = gradient.color_stops.map((stop: any) => stop.offset);
+    const offsets = gradient.color_stops.map((stop) => stop.offset);
     expect(py_eq(offsets, [0.0, 0.25, 0.5, 0.75, 1.0])).toBe(true);
     const first = gradient.color_stops[0].color;
     expect(Math.abs(first[0] - 0.9137255) < 1e-6).toBe(true);
@@ -100,7 +101,7 @@ describe("TestParseLayerStyles", () => {
   test("test_multi_instance_styles_drop", () => {
     // The main PSD has TWO stroke instances per layer; AE drops the
     // whole style (even though one instance is a plain solid stroke).
-    const leaf = getitem(_leaves(STYLED), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(STYLED), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(STYLED));
     py_assert(styles != null);
     expect(py_eq(styles.dropped, ["frameFX"])).toBe(true);
@@ -111,7 +112,7 @@ describe("TestParseLayerStyles", () => {
   test("test_two_representable_instances_still_drop", () => {
     // The variant's top layer has two identical inner shadows: the
     // instance COUNT is the trigger, not unrepresentable content.
-    const leaf = getitem(_leaves(VARIANT), "Layer 1 copy");
+    const leaf = as_instance(getitem(_leaves(VARIANT), "Layer 1 copy"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(VARIANT));
     py_assert(styles != null);
     expect(py_eq(styles.dropped, ["innerShadow"])).toBe(true);
@@ -120,7 +121,7 @@ describe("TestParseLayerStyles", () => {
   });
 
   test("test_no_styles_returns_none", () => {
-    const leaf = getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo");
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
     expect(leaf.style_blocks == null).toBe(true);
     expect(parse_layer_styles(leaf, [120.0, 30.0]) == null).toBe(true);
   });
@@ -129,7 +130,7 @@ describe("TestParseLayerStyles", () => {
     // AE imports a style whose gradient is a Noise gradient, dropping only
     // the (unrepresentable) gradient leaf. On 'Layer 1' the gradient fill
     // carries the noise gradient.
-    const leaf = getitem(_leaves(psd), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(psd), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(psd));
     py_assert(styles != null);
     expect(contains(styles.enabled, "gradientFill")).toBe(true);
@@ -142,7 +143,7 @@ describe("TestParseLayerStyles", () => {
     // AE keeps the single-instance glow/bevel/satin parameters even when
     // the style is fully unchecked (present=False); other styles with
     // present=False stay plain skeletons.
-    const leaf = getitem(_leaves(NOISE), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(NOISE), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, read_global_light(NOISE));
     py_assert(styles != null);
     // outerGlow is present=False here: imported, neither enabled nor
@@ -159,7 +160,7 @@ describe("TestParseLayerStyles", () => {
   test("test_present_true_disabled_shadow_imports", () => {
     // present=True + enab=False: parameters import and the prefix lands
     // in `disabled` (AE writes tdsb 0x00 - psd_fill_opacity fixture).
-    const leaf = getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow");
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow"), PsdLayer);
     const styles = parse_layer_styles(leaf, [120.0, 30.0]);
     py_assert(styles != null);
     expect(contains(styles.disabled, "dropShadow")).toBe(true);
@@ -172,8 +173,8 @@ describe("TestParseLayerStyles", () => {
   test("test_fill_opacity_without_styles", () => {
     // A Fill slider away from 100% imports alone: no lfx2 block at all,
     // yet AE enables the blend-options chain and writes the leaf.
-    const leaf = getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill only");
-    expect(leaf.style_blocks != null).toBe(true);
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill only"), PsdLayer);
+    py_assert(leaf.style_blocks != null);
     expect(leaf.style_blocks.effects == null).toBe(true);
     const styles = parse_layer_styles(leaf, [120.0, 30.0]);
     py_assert(styles != null);
@@ -185,7 +186,7 @@ describe("TestParseLayerStyles", () => {
   test("test_gradient_smoothness_maps_from_intr", () => {
     // Grdn `Intr` is the Smoothness slider; AE maps it onto the
     // gradientSmoothness leaf as Intr/4096*100.
-    const leaf = getitem(_leaves(ASSETS.div("psd_styles_smoothness.psd")), "Layer 1");
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("psd_styles_smoothness.psd")), "Layer 1"), PsdLayer);
     const styles = parse_layer_styles(leaf, [120.0, 30.0]);
     py_assert(styles != null);
     expect(getitem(styles.values, "gradientFill/gradientSmoothness")).toBe(50.0);
@@ -195,7 +196,7 @@ describe("TestParseLayerStyles", () => {
   test("test_legacy_4cc_blend_modes", () => {
     // Zero-length 4-char typeID enum spellings resolve like AE does
     // (spliced psd_blend_4cc fixture: Mltp=multiply, SftL=softLight).
-    const leaf = getitem(_leaves(ASSETS.div("psd_blend_4cc.psd")), "legacy modes");
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("psd_blend_4cc.psd")), "legacy modes"), PsdLayer);
     const styles = parse_layer_styles(leaf, [120.0, 30.0]);
     py_assert(styles != null);
     expect(getitem(styles.values, "dropShadow/mode2")).toBe(5.0);
@@ -237,15 +238,15 @@ describe("TestParseLayerStyles", () => {
       "blendDivide",
     ];
     for (const [name, mode2] of resolved) {
-      const styles = parse_layer_styles(getitem(leaves, name), [120.0, 30.0]);
+      const styles = parse_layer_styles(as_instance(getitem(leaves, name), PsdLayer), [120.0, 30.0]);
       py_assert(styles != null);
       py_assert(getitem(styles.values, "dropShadow/mode2") === mode2, name);
     }
     for (const name of unresolved) {
-      let styles: any;
+      let styles: PsdLayerStyles | null | undefined;
       // NOTE(port): every warnings.warn in psd_styles.py uses the default UserWarning, so the message-only match is equivalent
       warns(() => {
-        styles = parse_layer_styles(getitem(leaves, name), [120.0, 30.0]);
+        styles = parse_layer_styles(as_instance(getitem(leaves, name), PsdLayer), [120.0, 30.0]);
       }, "mode2");
       py_assert(styles != null);
       py_assert(!styles.values.has("dropShadow/mode2"), name);
@@ -268,7 +269,7 @@ describe("TestHasEnabledStyles", () => {
 // Pads (left, top, right, bottom) After Effects 2026 gave a 24x25 layer carrying
 // one merged style, measured by importing byte-patched copies of
 // psd_layer_styles.psd as COMP_CROPPED_LAYERS.
-const _DS = new Map<string, any>([
+const _DS = new Map<string, _Value>([
   ["enab", true],
   ["Dstn", 0.0],
   ["Ckmt", 5.0],
@@ -276,13 +277,13 @@ const _DS = new Map<string, any>([
   ["lagl", 90.0],
   ["AntA", true],
 ]);
-const _OG = new Map<string, any>([
+const _OG = new Map<string, _Value>([
   ["enab", true],
   ["Ckmt", 0.0],
   ["GlwT", "SfBL"],
   ["AntA", true],
 ]);
-const _BV = new Map<string, any>([
+const _BV = new Map<string, _Value>([
   ["enab", true],
   ["Sftn", 0.0],
   ["useShape", true],
@@ -291,30 +292,30 @@ const _BV = new Map<string, any>([
 
 describe("TestMergedStylesBounds", () => {
   test.each([
-    ["DrSh", new Map<string, any>([..._DS, ["blur", 10.0]]), [12, 12, 12, 12]],
-    ["DrSh", new Map<string, any>([..._DS, ["blur", 0.0]]), [5, 5, 4, 4]],
-    ["DrSh", new Map<string, any>([..._DS, ["blur", 1.0], ["Ckmt", 50.0]]), [8, 8, 7, 7]],
+    ["DrSh", new Map<string, _Value>([..._DS, ["blur", 10.0]]), [12, 12, 12, 12]],
+    ["DrSh", new Map<string, _Value>([..._DS, ["blur", 0.0]]), [5, 5, 4, 4]],
+    ["DrSh", new Map<string, _Value>([..._DS, ["blur", 1.0], ["Ckmt", 50.0]]), [8, 8, 7, 7]],
     [
       "DrSh",
-      new Map<string, any>([..._DS, ["blur", 10.0], ["Ckmt", 0.0], ["AntA", false]]),
+      new Map<string, _Value>([..._DS, ["blur", 10.0], ["Ckmt", 0.0], ["AntA", false]]),
       [9, 9, 10, 10],
     ],
     // Distance 11 along a 30 degree light: offsets (-9.53, 5.5) round
     // half away from zero to (-10, 6).
     [
       "DrSh",
-      new Map<string, any>([..._DS, ["blur", 35.0], ["Dstn", 11.0], ["lagl", 30.0]]),
+      new Map<string, _Value>([..._DS, ["blur", 35.0], ["Dstn", 11.0], ["lagl", 30.0]]),
       [47, 31, 27, 43],
     ],
     [
       "OrGl",
-      new Map<string, any>([..._OG, ["blur", 7.0], ["Ckmt", 8.0], ["GlwT", "PrBL"]]),
+      new Map<string, _Value>([..._OG, ["blur", 7.0], ["Ckmt", 8.0], ["GlwT", "PrBL"]]),
       [12, 12, 11, 11],
     ],
-    ["OrGl", new Map<string, any>([..._OG, ["blur", 43.0], ["Ckmt", 50.0]]), [45, 45, 45, 45]],
+    ["OrGl", new Map<string, _Value>([..._OG, ["blur", 43.0], ["Ckmt", 50.0]]), [45, 45, 45, 45]],
     [
       "FrFX",
-      new Map<string, any>([
+      new Map<string, _Value>([
         ["enab", true],
         ["Styl", "CtrF"],
         ["Sz  ", 5.0],
@@ -323,7 +324,7 @@ describe("TestMergedStylesBounds", () => {
     ],
     [
       "FrFX",
-      new Map<string, any>([
+      new Map<string, _Value>([
         ["enab", true],
         ["Styl", "OutF"],
         ["Sz  ", 12.0],
@@ -332,22 +333,22 @@ describe("TestMergedStylesBounds", () => {
     ],
     [
       "ebbl",
-      new Map<string, any>([..._BV, ["bvlS", "Embs"], ["bvlT", "PrBL"], ["blur", 27.0]]),
+      new Map<string, _Value>([..._BV, ["bvlS", "Embs"], ["bvlT", "PrBL"], ["blur", 27.0]]),
       [19, 19, 17, 17],
     ],
     [
       "ebbl",
-      new Map<string, any>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 0.0]]),
+      new Map<string, _Value>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 0.0]]),
       [3, 3, 1, 1],
     ],
     [
       "ebbl",
-      new Map<string, any>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
+      new Map<string, _Value>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
       [15, 15, 15, 15],
     ],
     [
       "ebbl",
-      new Map<string, any>([
+      new Map<string, _Value>([
         ..._BV,
         ["bvlS", "Embs"],
         ["bvlT", "SfBL"],
@@ -356,33 +357,33 @@ describe("TestMergedStylesBounds", () => {
       ]),
       [6, 6, 6, 6],
     ],
-  ])("test_style_pads_match_ae[%#]", (key: string, instance: Map<string, any>, pads: number[]) => {
+  ])("test_style_pads_match_ae[%#]", (key: string, instance: Map<string, _Value>, pads: number[]) => {
     const [left, top, right, bottom] = pads;
     const box = _instance_box(key, instance, [0, 0, 24, 25], 120.0, "Layer 1");
     expect(py_eq(box, [-left, -top, 24 + right, 25 + bottom])).toBe(true);
   });
 
   test.each([
-    ["FrFX", new Map<string, any>([["enab", true], ["Styl", "InsF"], ["Sz  ", 6.0]])],
+    ["FrFX", new Map<string, _Value>([["enab", true], ["Styl", "InsF"], ["Sz  ", 6.0]])],
     [
       "ebbl",
-      new Map<string, any>([..._BV, ["bvlS", "InrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
+      new Map<string, _Value>([..._BV, ["bvlS", "InrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
     ],
-    ["IrSh", new Map<string, any>([["enab", true], ["blur", 21.0], ["Dstn", 10.0]])],
-    ["ChFX", new Map<string, any>([["enab", true], ["blur", 101.0], ["Dstn", 69.0]])],
-  ])("test_styles_inside_the_layer_do_not_grow_it[%#]", (key: string, instance: Map<string, any>) => {
+    ["IrSh", new Map<string, _Value>([["enab", true], ["blur", 21.0], ["Dstn", 10.0]])],
+    ["ChFX", new Map<string, _Value>([["enab", true], ["blur", 101.0], ["Dstn", 69.0]])],
+  ])("test_styles_inside_the_layer_do_not_grow_it[%#]", (key: string, instance: Map<string, _Value>) => {
     expect(_instance_box(key, instance, [0, 0, 24, 25], 120.0, "Layer 1") == null).toBe(true);
   });
 
   test("test_global_light_moves_the_shadow", () => {
-    const instance = new Map<string, any>([..._DS, ["blur", 10.0], ["Dstn", 11.0], ["uglg", true], ["lagl", 0.0]]);
+    const instance = new Map<string, _Value>([..._DS, ["blur", 10.0], ["Dstn", 11.0], ["uglg", true], ["lagl", 0.0]]);
     const box = _instance_box("DrSh", instance, [0, 0, 24, 25], 90.0, "Layer 1");
     // straight down, as the 90 degree global light
     expect(py_eq(box, [-12, -1, 36, 48])).toBe(true);
   });
 
   test("test_stroke_emboss_is_refused", () => {
-    const instance = new Map<string, any>([..._BV, ["bvlS", "strokeEmboss"], ["bvlT", "SfBL"], ["blur", 9.0]]);
+    const instance = new Map<string, _Value>([..._BV, ["bvlS", "strokeEmboss"], ["bvlT", "SfBL"], ["blur", 9.0]]);
     raises(
       NotImplementedError,
       () => _instance_box("ebbl", instance, [0, 0, 24, 25], 120.0, "Layer 1"),
@@ -396,13 +397,13 @@ describe("TestMergedStylesBounds", () => {
     const angle = read_global_light(STYLED)[0];
     for (const name of ["Layer 1", "Layer 1 copy"]) {
       expect(
-        py_eq(merged_styles_bounds(getitem(_leaves(STYLED), name), angle), [-45, -45, 69, 70]),
+        py_eq(merged_styles_bounds(as_instance(getitem(_leaves(STYLED), name), PsdLayer), angle), [-45, -45, 69, 70]),
       ).toBe(true);
     }
   });
 
   test("test_style_less_layer_keeps_its_bounds", () => {
-    const leaf = getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo");
+    const leaf = as_instance(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
     expect(py_eq(merged_styles_bounds(leaf, 120.0), leaf.bounds)).toBe(true);
   });
 });

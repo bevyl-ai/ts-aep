@@ -18,11 +18,11 @@ import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
 // Python `pytest.raises((A, B))` tuple form (isinstance any-match, rethrow otherwise).
-function _raises_any(classes: Array<abstract new (...a: any[]) => Error>, fn: () => unknown): Error {
+function _raises_any(classes: Array<abstract new (...a: never[]) => Error>, fn: () => unknown): Error {
   try {
     fn();
   } catch (e) {
-    if (classes.some((c) => e instanceof c)) return e as Error;
+    for (const c of classes) if (e instanceof c) return e;
     throw e;
   }
   throw new Error("DID NOT RAISE");
@@ -76,8 +76,11 @@ describe("TestVersionValidation", () => {
     raises(ValueError, () => py_aep.new(version));
   });
 
-  test.each([26, null, "26.0", " 26.0x67"])("test_malformed_rejected[%#]", (version: any) => {
-    _raises_any([TypeError_, ValueError], () => py_aep.new(version));
+  test.each([26, null, "26.0", " 26.0x67"])("test_malformed_rejected[%#]", (version) => {
+    _raises_any([TypeError_, ValueError], () =>
+      // @ts-expect-error deliberately passes non-string versions to check runtime validation
+      py_aep.new(version),
+    );
   });
 
   test.each(["21.0x1", "26.16x3", "300.0x1"])("test_setter_rejects_without_mutation[%#]", (version: string) => {
@@ -122,10 +125,11 @@ describe("TestVersionValidation", () => {
     expect(bytes_eq(project_bytes(app.project), before)).toBe(true);
   });
 
-  test.each([256, -1, "67"])("test_build_number_range[%#]", (build: any) => {
+  test.each([256, -1, "67"])("test_build_number_range[%#]", (build) => {
     const app = py_aep.new();
     _raises_any([TypeError_, ValueError], () => {
-      app.build_number = build as any;
+      // @ts-expect-error deliberately assigns a string build number to check runtime validation
+      app.build_number = build;
     });
     expect(app.build_number).toBe(67);
   });

@@ -20,7 +20,9 @@ import {
 import type { EnumValue } from "../../src/pyrt/index.ts";
 import { pyfloat } from "../../src/pyrt/num.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
+import type { CosDict, CosNode } from "../../src/py_aep/cos/cos.ts";
 import { CosField } from "../../src/py_aep/cos/descriptors.ts";
+import { cos_float } from "../../src/py_aep/cos/kinds.ts";
 import { ChunkField, _materialization_allowed, _suppress_materialization } from "../../src/py_aep/models/descriptors.ts";
 
 // ---------------------------------------------------------------------------
@@ -29,10 +31,10 @@ import { ChunkField, _materialization_allowed, _suppress_materialization } from 
 
 /** Minimal stub for a chunk body that tracks setattr calls. */
 class _FakeBody {
-  [key: string]: any;
+  [key: string]: unknown;
   declare synthetic: boolean;
 
-  constructor(kw: { synthetic?: boolean; [key: string]: any } = {}) {
+  constructor(kw: { synthetic?: boolean; [key: string]: unknown } = {}) {
     const { synthetic = false, ...kwargs } = kw;
     object_setattr(this, "synthetic", synthetic);
     for (const [k, v] of Object.entries(kwargs)) {
@@ -152,7 +154,7 @@ class _ValidateModel {
   declare _body: _FakeBody | null;
   declare count: number;
 
-  static _check_positive(value: number, obj: any): void {
+  static _check_positive(value: number, obj: object): void {
     if (value < 0) {
       throw new ValueError("must be positive");
     }
@@ -199,7 +201,7 @@ class _SyntheticModel {
   _ensure_materialized(): void {
     this.materialized = true;
     py_assert(this._body != null);
-    object_setattr(this._body!, "synthetic", false);
+    object_setattr(this._body, "synthetic", false);
   }
 }
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));
@@ -491,9 +493,9 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
   });
 
   test("test_caller_validate_is_not_overridden", () => {
-    const calls: any[] = [];
+    const calls: unknown[] = [];
 
-    function _record(value: any, obj: any): void {
+    function _record(value: unknown, obj: unknown): void {
       calls.push(value);
     }
 
@@ -523,7 +525,8 @@ describe("TestChunkFieldBool", () => {
     const token = _materialization_allowed.set(true);
     try {
       raises(TypeError_, () => {
-        model.flag = bad as any;
+        // @ts-expect-error deliberately assigns a non-bool to check runtime validation
+        model.flag = bad;
       }, "expected a bool");
     } finally {
       _materialization_allowed.reset(token);
@@ -545,7 +548,7 @@ describe("TestChunkFieldBool", () => {
   });
 
   test("test_caller_validate_is_not_overridden", () => {
-    function _custom(value: any, obj: any): void {}
+    function _custom(value: unknown, obj: unknown): void {}
 
     const cf = ChunkField.bool("_body", "flag", { validate: _custom });
     expect(cf.validate).toBe(_custom);
@@ -573,11 +576,11 @@ describe("TestChunkFieldTransform", () => {
 
 /** Model using CosField with scalar reverse. */
 class _CosModel {
-  declare _style: Map<string, any> | null;
-  declare font_size: number;
+  declare _style: CosDict | null;
+  declare font_size: number | null;
   declare _propagate_called: boolean;
 
-  constructor(style: Map<string, any> | null) {
+  constructor(style: CosDict | null) {
     this._style = style;
     this._propagate_called = false;
   }
@@ -586,27 +589,26 @@ class _CosModel {
     this._propagate_called = true;
   }
 }
-descriptor(_CosModel, "font_size", new CosField<number, "_style", any>("_style", "1", { transform: float as any, reverse: float, accepts: (v: unknown): v is number => typeof v === "number", default: null as any }));
+descriptor(_CosModel, "font_size", new CosField<number | null, "_style", _CosModel>("_style", "1", { transform: cos_float, reverse: float, accepts: (v: unknown): v is number => typeof v === "number", default: null }));
 
 describe("TestCosFieldScalarReverse", () => {
   test("test_scalar_reverse_writes_to_dict", () => {
-    const style = new Map<string, any>([["1", 12]]);
+    const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
     model.font_size = 24.0;
     expect(getitem(style, "1")).toBe(24.0);
   });
 
   test("test_propagate_cos_called", () => {
-    const style = new Map<string, any>([["1", 12]]);
+    const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
     model.font_size = 18.0;
     expect(model._propagate_called).toBe(true);
   });
 
   test("test_none_value_removes_key", () => {
-    const style = new Map<string, any>([["1", 12]]);
+    const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
-    // @ts-expect-error runtime null handling outside the declared number type (Python: type: ignore[assignment])
     model.font_size = null;
     expect(style.has("1")).toBe(false);
   });

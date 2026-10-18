@@ -15,6 +15,7 @@ import { expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import {
   Path,
+  StopIteration,
   ValueError,
   bytes_eq,
   getitem,
@@ -29,25 +30,54 @@ import {
 import "../../src/py_aep/binary/_register.ts";
 import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
+import { as_instance } from "../helpers.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "models" / "property"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 
+/** The JSON export's shape for the records these tests walk. */
+interface JsonKeyframe {
+  time: number;
+}
+interface JsonProperty {
+  matchName: string;
+  isModified?: boolean;
+  properties: JsonProperty[];
+  keyframes: JsonKeyframe[];
+}
+interface JsonLayer {
+  name: string;
+  properties: JsonProperty[];
+}
+interface JsonComp {
+  layers: JsonLayer[];
+}
+
+/** Python `next(x for x in items if predicate(x))`. */
+function _next<T>(items: T[], predicate: (item: T) => boolean): T {
+  for (const item of items) {
+    if (predicate(item)) return item;
+  }
+  throw new StopIteration();
+}
+
 function _curves_property(layer_name: string): Property {
   const project = parse_project(SAMPLES_DIR.div("curves.aep"));
-  const layer = project.compositions[0].layers.find((ly: any) => ly.name === layer_name)!;
-  const prop = (layer.__getitem__("ADBE Effect Parade") as any).__getitem__(0).__getitem__("ADBE CurvesCustom-0001");
+  const layer = _next(project.compositions[0].layers, (ly) => ly.name === layer_name);
+  const effect = as_instance(layer.__getitem__("ADBE Effect Parade").__getitem__(0), PropertyGroup);
+  const prop = effect.__getitem__("ADBE CurvesCustom-0001");
   py_assert(prop instanceof Property);
   return prop;
 }
 
 function _expected_is_modified(layer_name: string): boolean {
-  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
-  const layer = comp.layers.find((ly: any) => ly.name === layer_name);
-  const parade = layer.properties.find((p: any) => p.matchName === "ADBE Effect Parade");
+  const comp: JsonComp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
+  const layer = _next(comp.layers, (ly) => ly.name === layer_name);
+  const parade = _next(layer.properties, (p) => p.matchName === "ADBE Effect Parade");
   const effect = parade.properties[0];
-  const prop = effect.properties.find((p: any) => p.matchName === "ADBE CurvesCustom-0001");
+  const prop = _next(effect.properties, (p) => p.matchName === "ADBE CurvesCustom-0001");
   return py_bool(prop.isModified);
 }
 
@@ -132,11 +162,11 @@ test("test_point_curves_reproduce_their_maps", () => {
   expect(py_eq(_rounded_spline_is_the_map(curves), ["rgb", "red"])).toBe(true);
 });
 
-function _keyed_json(): any[] {
-  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
-  const layer = comp.layers.find((ly: any) => ly.name === "keyed");
-  const parade = layer.properties.find((p: any) => p.matchName === "ADBE Effect Parade");
-  const prop = parade.properties[0].properties.find((p: any) => p.matchName === "ADBE CurvesCustom-0001");
+function _keyed_json(): JsonKeyframe[] {
+  const comp: JsonComp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, "curves"), "Comp 1");
+  const layer = _next(comp.layers, (ly) => ly.name === "keyed");
+  const parade = _next(layer.properties, (p) => p.matchName === "ADBE Effect Parade");
+  const prop = _next(parade.properties[0].properties, (p) => p.matchName === "ADBE CurvesCustom-0001");
   return [...prop.keyframes];
 }
 
@@ -144,9 +174,9 @@ test("test_keyed_curves_decode_each_key", () => {
   const prop = _curves_property("keyed");
   const keys_json = _keyed_json();
   expect(approx(prop.keyframes.map((kf) => kf.time), keys_json.map((k) => k.time))).toBe(true);
-  const middles: any[] = [];
+  const middles: Array<[number, number]> = [];
   for (const kf of prop.keyframes) {
-    const curves = kf.value as Curves;
+    const curves = as_instance(kf.value, Curves);
     expect(curves instanceof Curves).toBe(true);
     expect(py_eq(_rounded_spline_is_the_map(curves), ["rgb"])).toBe(true);
     middles.push(getitem(curves.channels, "rgb").points[1]);
@@ -156,16 +186,16 @@ test("test_keyed_curves_decode_each_key", () => {
 
 test("test_keyed_curves_at_a_time", () => {
   const prop = _curves_property("keyed");
-  const unpacked = prop.keyframes.map((kf) => kf.value as Curves);
+  const unpacked = prop.keyframes.map((kf) => kf.value);
   if (len(unpacked) !== 3) throw new ValueError("not exactly 3 values to unpack");
   const [first, second, last] = unpacked;
-  expect(first instanceof Curves).toBe(true);
-  expect(second instanceof Curves).toBe(true);
-  expect(last instanceof Curves).toBe(true);
+  py_assert(first instanceof Curves);
+  py_assert(second instanceof Curves);
+  py_assert(last instanceof Curves);
 
-  const points = (time: number): any => {
-    const value = prop.value_at_time(time) as Curves | null;
-    return value == null ? null : getitem(value.channels, "rgb").points;
+  const points = (time: number): Array<[number, number]> | null => {
+    const value = prop.value_at_time(time);
+    return value == null ? null : getitem(as_instance(value, Curves).channels, "rgb").points;
   };
 
   expect(py_eq(points(0.0), getitem(first.channels, "rgb").points)).toBe(true);

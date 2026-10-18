@@ -16,10 +16,12 @@ export class TTGlyphPen {
     this.cur = [pt];
   }
   lineTo(pt: Pt): void {
-    this.cur!.push(pt);
+    if (this.cur == null) throw new Error("lineTo without a current contour");
+    this.cur.push(pt);
   }
   closePath(): void {
-    this.contours.push(this.cur!);
+    if (this.cur == null) throw new Error("closePath without a current contour");
+    this.contours.push(this.cur);
     this.cur = null;
   }
   glyph(): TTGlyph {
@@ -50,7 +52,7 @@ class W {
   u32(v: number) { this.u16(Math.floor(v / 65536) & 0xffff).u16(v & 0xffff); return this; }
   i32(v: number) { return this.u32(v >>> 0); }
   tag(t: string) { for (const c of t) this.u8(c.charCodeAt(0)); return this; }
-  raw(b: ArrayLike<number>) { for (let i = 0; i < b.length; i++) this.u8(b[i]!); return this; }
+  raw(b: ArrayLike<number>) { for (let i = 0; i < b.length; i++) this.u8(b[i]); return this; }
   done() { return Uint8Array.from(this.bytes); }
 }
 
@@ -132,12 +134,12 @@ export class FontBuilder {
 
     const hhea = new W()
       .u32(0x00010000).i16(this.ascent).i16(this.descent).i16(0)
-      .u16(Math.max(...this.glyphOrder.map((g) => this.hmtx[g]![0])))
+      .u16(Math.max(...this.glyphOrder.map((g) => this.hmtx[g][0])))
       .i16(0).i16(0).i16(xMax).i16(1).i16(0).i16(0)
       .i16(0).i16(0).i16(0).i16(0).i16(0).u16(n);
 
     const hmtx = new W();
-    for (const g of this.glyphOrder) hmtx.u16(this.hmtx[g]![0]).i16(this.hmtx[g]![1]);
+    for (const g of this.glyphOrder) hmtx.u16(this.hmtx[g][0]).i16(this.hmtx[g][1]);
 
     const maxp = new W()
       .u32(0x00010000).u16(n).u16(maxPts).u16(maxCont).u16(0).u16(0)
@@ -159,7 +161,9 @@ export class FontBuilder {
     const cps = [...this.cmap.keys()].sort((a, b) => a - b);
     const segs: [number, number, number][] = [];
     for (const cp of cps) {
-      const gid = this.glyphOrder.indexOf(this.cmap.get(cp)!);
+      const glyph_name = this.cmap.get(cp);
+      if (glyph_name == null) throw new Error(`no glyph mapped to ${cp}`);
+      const gid = this.glyphOrder.indexOf(glyph_name);
       const last = segs[segs.length - 1];
       if (last && last[1] + 1 === cp && (gid - cp) % 65536 === last[2]) last[1] = cp;
       else segs.push([cp, cp, (gid - cp) & 0xffff]);
@@ -190,8 +194,8 @@ export class FontBuilder {
     const nameW = new W().u16(0).u16(recs.length).u16(6 + recs.length * 12);
     let so = 0;
     recs.forEach(([id], i) => {
-      nameW.u16(3).u16(1).u16(0x409).u16(id).u16(strs[i]!.length).u16(so);
-      so += strs[i]!.length;
+      nameW.u16(3).u16(1).u16(0x409).u16(id).u16(strs[i].length).u16(so);
+      so += strs[i].length;
     });
     for (const s of strs) nameW.raw(s);
 

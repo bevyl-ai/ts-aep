@@ -18,10 +18,10 @@ import * as fs from "node:fs";
 import { expect, test } from "bun:test";
 import { bytes_, getitem, len, Path, py_eq, sorted } from "../../src/pyrt/index.ts";
 import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse_project } from "../helpers.ts";
+import { as_instance, parse_project } from "../helpers.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
-import type { FootageItem } from "../../src/py_aep/models/items/footage.ts";
-import type { FileSource } from "../../src/py_aep/models/sources/file.ts";
+import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
+import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 
 const SAMPLES = new Path(import.meta.dir, "..", "..", "samples");
@@ -54,7 +54,7 @@ function _import(name: string): Uint8Array {
     const path = ASSETS.div("exr", name);
     options = new ImportOptions(path.exists() ? path : ASSETS.div(name));
   }
-  return (project.import_file(options) as FootageItem).main_source._opti.tobytes();
+  return as_instance(project.import_file(options), FootageItem).main_source._opti.tobytes();
 }
 
 const _NAMES = sorted(_ae_optis().keys());
@@ -81,7 +81,7 @@ test("test_alpha_is_premultiplied_with_its_flag", () => {
   if (ae_item === undefined) throw new Error("StopIteration");
   const ae = ae_item.main_source._sspc;
   const project = parse_aep(BASE, { platform: "windows" }).project;
-  const ours = project.import_file(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))) as FootageItem;
+  const ours = as_instance(project.import_file(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))), FootageItem);
   const sspc = ours.main_source._sspc;
   expect(py_eq([sspc.alpha_mode_raw, sspc._alpha_flags], [ae.alpha_mode_raw, ae._alpha_flags])).toBe(true);
   expect(py_eq([ae.alpha_mode_raw, ae._alpha_flags], [1, 1])).toBe(true);
@@ -92,9 +92,9 @@ test("test_reload_refreshes_the_exr_header", () => {
   const media = tmp_path.div("frame.exr");
   fs.copyFileSync(ASSETS.div("exr", "rgb_inside.exr").toString(), media.toString());
   const project = parse_aep(BASE, { platform: "windows" }).project;
-  const item = project.import_file(new ImportOptions(media)) as FootageItem;
+  const item = as_instance(project.import_file(new ImportOptions(media)), FootageItem);
   fs.copyFileSync(ASSETS.div("exr", "layered.exr").toString(), media.toString());
-  (item.main_source as FileSource).reload();
+  as_instance(item.main_source, FileSource).reload();
   expect(
     py_eq(
       bytes_.slice(item.main_source._opti.tobytes(), 0, 0x30),

@@ -35,6 +35,7 @@ import { CineonRoptChunk, JpegRoptChunk, OpenExrRoptChunk, PngRoptChunk, RoptChu
 import { OptiChunk, PlaceholderOptiChunk, PsdOptiChunk, SoliOptiChunk, SspcChunk, TextOptiChunk, build_ai_layer_opti_data } from "../../src/py_aep/binary/footage_chunks.ts";
 import { GuideItem, KfColor, KfMultiDimensional, KfNoValue, KfPosition, LdatChunk, LdatItem, LdatItemType, Lhd3Chunk, ShapePoint } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { ChunkNotFoundError, find_by_type } from "../../src/py_aep/binary/utils.ts";
+import { as_instance } from "../helpers.ts";
 import { _unflag_markers, remove_chunks_by_type, toggle_flag_chunk } from "../../src/py_aep/binary/mutations.ts";
 
 // Pull in every chunk registration (Python's `register` side effects).
@@ -186,7 +187,7 @@ describe("TestListChunk", () => {
     const [ct, lb] = read_header(buf2);
     expect(ct).toBe("LIST");
     const ctx = new ReadContext();
-    const restored = ListChunk.read(buf2, lb, { ctx }) as InstanceType<typeof ListChunk>;
+    const restored = ListChunk.read(buf2, lb, { ctx });
     expect(restored.list_type).toBe("test");
     expect(restored.chunks.length).toBe(2);
     expect(restored.chunks[0] instanceof Chunk).toBe(true);
@@ -208,10 +209,10 @@ describe("TestListChunk", () => {
     buf.seek(0);
     const [ct, lb] = read_header(buf);
     const ctx = new ReadContext();
-    const restored = ListChunk.read(buf, lb, { ctx }) as InstanceType<typeof ListChunk>;
+    const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.list_type).toBe("outr");
     expect(restored.chunks.length).toBe(1);
-    const inner_r = restored.chunks[0] as ListChunk;
+    const inner_r = as_instance(restored.chunks[0], ListChunk);
     expect(inner_r instanceof ListChunk).toBe(true);
     expect(inner_r.list_type).toBe("innr");
     expect(inner_r.chunks.length).toBe(1);
@@ -228,7 +229,7 @@ describe("TestListChunk", () => {
     buf.seek(0);
     const [ct, lb] = read_header(buf);
     const ctx = new ReadContext();
-    const restored = ListChunk.read(buf, lb, { ctx }) as InstanceType<typeof ListChunk>;
+    const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.list_type).toBe("btdk");
     expect(py_eq(restored.data, raw_data)).toBe(true);
     expect(py_eq(restored.chunks, [])).toBe(true);
@@ -243,7 +244,7 @@ describe("TestListChunk", () => {
     buf.seek(0);
     const [ct, lb] = read_header(buf);
     const ctx = new ReadContext();
-    const restored = ListChunk.read(buf, lb, { ctx }) as InstanceType<typeof ListChunk>;
+    const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.list_type).toBe("empt");
     expect(py_eq(restored.chunks, [])).toBe(true);
   });
@@ -567,7 +568,7 @@ describe("TestFmtField", () => {
     const end_marker = b("\x01");
     const raw = bytes_.concat(reserved_00, match_name, display_name, reserved_68, end_marker);
 
-    const chunk = PrinChunk.read(new BytesIO(raw), raw.length, { chunk_type: "prin" }) as InstanceType<typeof PrinChunk>;
+    const chunk = as_instance(PrinChunk.read(new BytesIO(raw), raw.length, { chunk_type: "prin" }), PrinChunk);
     expect(chunk.match_name).toBe("ADBE Advanced 3d");
     expect(chunk.display_name).toBe("Classic 3D");
 
@@ -590,7 +591,7 @@ describe("TestFmtField", () => {
 
     // Read back
     buf.seek(0);
-    const chunk2 = LdtaChunk.read(buf, 160, { chunk_type: "ldta" }) as InstanceType<typeof LdtaChunk>;
+    const chunk2 = as_instance(LdtaChunk.read(buf, 160, { chunk_type: "ldta" }), LdtaChunk);
     expect(chunk2.layer_name).toBe(name);
   });
 
@@ -603,7 +604,7 @@ describe("TestFmtField", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = PrinChunk.read(buf, 104, { chunk_type: "prin" }) as InstanceType<typeof PrinChunk>;
+    const chunk2 = as_instance(PrinChunk.read(buf, 104, { chunk_type: "prin" }), PrinChunk);
     expect(chunk2.match_name).toBe("A".repeat(48));
   });
 
@@ -620,7 +621,7 @@ describe("TestFmtField", () => {
 
     // Append matte_layer_id = 42
     const raw_164 = bytes_.concat(raw_160, struct.pack(">I", 42));
-    const chunk2 = LdtaChunk.read(new BytesIO(raw_164), 164, { chunk_type: "ldta" }) as InstanceType<typeof LdtaChunk>;
+    const chunk2 = as_instance(LdtaChunk.read(new BytesIO(raw_164), 164, { chunk_type: "ldta" }), LdtaChunk);
     expect(chunk2.matte_layer_id).toBe(42);
 
     // Round-trip
@@ -651,7 +652,7 @@ describe("TestFmtField", () => {
     chunk.write(buf);
     const raw_164 = bytes_.concat(buf.getvalue(), struct.pack(">I", 0));
 
-    const chunk2 = LdtaChunk.read(new BytesIO(raw_164), 164, { chunk_type: "ldta" }) as InstanceType<typeof LdtaChunk>;
+    const chunk2 = as_instance(LdtaChunk.read(new BytesIO(raw_164), 164, { chunk_type: "ldta" }), LdtaChunk);
     expect(chunk2.matte_layer_id).toBe(0); // present, not None
 
     // Round-trip preserves the field
@@ -763,7 +764,7 @@ describe("TestTdsbChunk", () => {
   test("test_roundtrip", () => {
     const raw = b("\x00\x00\x10\x03");
     const buf = new BytesIO(raw);
-    const chunk = TdsbChunk.read(buf, 4, { chunk_type: "tdsb" }) as InstanceType<typeof TdsbChunk>;
+    const chunk = as_instance(TdsbChunk.read(buf, 4, { chunk_type: "tdsb" }), TdsbChunk);
     expect(chunk instanceof TdsbChunk).toBe(true);
     expect(py_eq(chunk.roto_bezier, 0)).toBe(true);
     expect(chunk.ratio_unlinked).toBe(false);
@@ -781,7 +782,7 @@ describe("TestTdsbChunk", () => {
   test("test_separated_bit", () => {
     // What AE writes for a separated position: lock 0x08, enable 0x03.
     const raw = b("\x00\x00\x08\x03");
-    const chunk = TdsbChunk.read(new BytesIO(raw), 4, { chunk_type: "tdsb" }) as InstanceType<typeof TdsbChunk>;
+    const chunk = as_instance(TdsbChunk.read(new BytesIO(raw), 4, { chunk_type: "tdsb" }), TdsbChunk);
     expect(chunk instanceof TdsbChunk).toBe(true);
     expect(chunk.dimensions_separated).toBe(true);
     expect(chunk.ratio_unlinked).toBe(false);
@@ -794,7 +795,7 @@ describe("TestTdsbChunk", () => {
   test("test_with_trailing", () => {
     const raw = b("\x01\x00\x00\x01\xaa\xbb");
     const buf = new BytesIO(raw);
-    const chunk = TdsbChunk.read(buf, 6, { chunk_type: "tdsb" }) as InstanceType<typeof TdsbChunk>;
+    const chunk = as_instance(TdsbChunk.read(buf, 6, { chunk_type: "tdsb" }), TdsbChunk);
     expect(chunk instanceof TdsbChunk).toBe(true);
     expect(py_eq(chunk.roto_bezier, 1)).toBe(true);
     expect(chunk.enabled).toBe(true);
@@ -856,7 +857,7 @@ describe("TestTdb4Chunk", () => {
     expect(raw.length).toBe(124);
 
     const buf = new BytesIO(raw);
-    const chunk = Tdb4Chunk.read(buf, 124, { chunk_type: "tdb4" }) as InstanceType<typeof Tdb4Chunk>;
+    const chunk = as_instance(Tdb4Chunk.read(buf, 124, { chunk_type: "tdb4" }), Tdb4Chunk);
     expect(chunk instanceof Tdb4Chunk).toBe(true);
     expect(chunk.dimensions).toBe(3);
     expect(chunk.is_spatial).toBe(true);
@@ -976,7 +977,7 @@ describe("TestFipsChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = FipsChunk.read(buf, buf.getbuffer().length, { chunk_type: "fips" }) as InstanceType<typeof FipsChunk>;
+    const chunk2 = as_instance(FipsChunk.read(buf, buf.getbuffer().length, { chunk_type: "fips" }), FipsChunk);
     expect(chunk2.channels).toBe(1);
     expect(chunk2.zoom_type).toBe(1);
     expect(chunk2.zoom).toBe(0.5);
@@ -1001,7 +1002,7 @@ describe("TestFipsChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = FipsChunk.read(buf, buf.getbuffer().length, { chunk_type: "fips" }) as InstanceType<typeof FipsChunk>;
+    const chunk2 = as_instance(FipsChunk.read(buf, buf.getbuffer().length, { chunk_type: "fips" }), FipsChunk);
     expect(chunk2.checkerboards).toBe(true);
     expect(chunk2.rulers).toBe(true);
     expect(chunk2.region_of_interest).toBe(true);
@@ -1048,7 +1049,7 @@ describe("TestFth5Chunk", () => {
     chunk.write(buf);
     expect(buf.tell()).toBe(64); // 2 * 32 bytes
     buf.seek(0);
-    const chunk2 = Fth5Chunk.read(buf, 64, { chunk_type: "fth5" }) as InstanceType<typeof Fth5Chunk>;
+    const chunk2 = as_instance(Fth5Chunk.read(buf, 64, { chunk_type: "fth5" }), Fth5Chunk);
     expect(chunk2.points.length).toBe(2);
     expect(chunk2.points[0].seg_loc).toBe(1);
     expect(chunk2.points[0].interp_raw).toBe(0);
@@ -1086,7 +1087,7 @@ describe("TestRoutChunk", () => {
     chunk.write(buf);
     expect(buf.tell()).toBe(12); // 4 count + 2 * 4
     buf.seek(0);
-    const chunk2 = RoutChunk.read(buf, 12, { chunk_type: "Rout" }) as InstanceType<typeof RoutChunk>;
+    const chunk2 = as_instance(RoutChunk.read(buf, 12, { chunk_type: "Rout" }), RoutChunk);
     expect(chunk2.items.length).toBe(2);
     expect(chunk2.items[0].render).toBe(true);
     expect(chunk2.items[1].render).toBe(false);
@@ -1113,14 +1114,14 @@ describe("TestRouuChunk", () => {
 
   test("test_154_byte_body_roundtrips", () => {
     const full = new RouuChunk({}).tobytes();
-    const chunk = RouuChunk.frombytes(full, { chunk_type: "Roou" }) as InstanceType<typeof RouuChunk>;
+    const chunk = as_instance(RouuChunk.frombytes(full, { chunk_type: "Roou" }), RouuChunk);
     expect(chunk._reserved_72 != null).toBe(true);
     expect(py_eq(chunk.tobytes(), full)).toBe(true);
   });
 
   test("test_114_byte_body_roundtrips", () => {
     const short = bytes_.slice(new RouuChunk({}).tobytes(), null, 114);
-    const chunk = RouuChunk.frombytes(short, { chunk_type: "Roou" }) as InstanceType<typeof RouuChunk>;
+    const chunk = as_instance(RouuChunk.frombytes(short, { chunk_type: "Roou" }), RouuChunk);
     expect(chunk._reserved_72 == null).toBe(true);
     expect(chunk.audio_channels).toBe(0); // last required field still parsed
     expect(py_eq(chunk.tobytes(), short)).toBe(true);
@@ -1151,7 +1152,7 @@ describe("TestLhd3ChunkWordWidths", () => {
     const body = chunk.tobytes();
     expect(py_eq(bytes_.slice(body, 0x08, 0x0c), bytes_.int_to_bytes(70_000, 4, "big"))).toBe(true);
     expect(py_eq(bytes_.slice(body, 0x10, 0x14), bytes_.int_to_bytes(0x10000 + 16, 4, "big"))).toBe(true);
-    const reread = Lhd3Chunk.frombytes(body, { chunk_type: "lhd3" }) as InstanceType<typeof Lhd3Chunk>;
+    const reread = as_instance(Lhd3Chunk.frombytes(body, { chunk_type: "lhd3" }), Lhd3Chunk);
     expect(py_eq([reread.count, reread.item_size], [70_000, 0x10000 + 16])).toBe(true);
     expect(
       py_eq(
@@ -1168,7 +1169,7 @@ describe("TestTextOptiChunk", () => {
     // fixtures store 2 / 8 / 22 / 48 in the low byte, upper bytes 0).
     const data = build_ai_layer_opti_data(612, 792, "Layer 300", 300);
     expect(py_eq(bytes_.slice(data, 0x30, 0x34), bytes_.int_to_bytes(300, 4, "big"))).toBe(true);
-    const chunk = TextOptiChunk.frombytes(data, { chunk_type: "opti" }) as InstanceType<typeof TextOptiChunk>;
+    const chunk = as_instance(TextOptiChunk.frombytes(data, { chunk_type: "opti" }), TextOptiChunk);
     expect(chunk.text_document_layers).toBe(300);
   });
 });
@@ -1182,7 +1183,7 @@ describe("TestSspcChunk", () => {
     expect(py_eq(bytes_.slice(chunk.tobytes(), 0x3e, 0x45), bytes_.zeros(7))).toBe(true); // solids and placeholders
     chunk.depth = -16;
     expect(py_eq(bytes_.slice(chunk.tobytes(), 0x3e, 0x40), b("\xff\xf0"))).toBe(true);
-    const reread = SspcChunk.frombytes(chunk.tobytes(), { chunk_type: "sspc" }) as InstanceType<typeof SspcChunk>;
+    const reread = as_instance(SspcChunk.frombytes(chunk.tobytes(), { chunk_type: "sspc" }), SspcChunk);
     expect(reread.depth).toBe(-16);
   });
 
@@ -1193,7 +1194,7 @@ describe("TestSspcChunk", () => {
     const body = new Uint8Array(new SspcChunk({}).tobytes());
     body[0x9f] = 0x08;
     body[0x73] = 0x10;
-    const chunk = SspcChunk.frombytes(body.slice(), { chunk_type: "sspc" }) as InstanceType<typeof SspcChunk>;
+    const chunk = as_instance(SspcChunk.frombytes(body.slice(), { chunk_type: "sspc" }), SspcChunk);
     expect(chunk.high_quality_field_separation).toBe(false);
     expect(chunk.footage_missing_at_save).toBe(false);
     chunk.high_quality_field_separation = true;
@@ -1211,7 +1212,7 @@ describe("TestSspcChunk", () => {
     const chunk = new SspcChunk({});
     chunk.data_size = 14_729_427_240;
     expect(py_eq(bytes_.slice(chunk.tobytes(), 0xcc, 0xd4), bytes_.int_to_bytes(14_729_427_240, 8, "big"))).toBe(true);
-    const reread = SspcChunk.frombytes(chunk.tobytes(), { chunk_type: "sspc" }) as InstanceType<typeof SspcChunk>;
+    const reread = as_instance(SspcChunk.frombytes(chunk.tobytes(), { chunk_type: "sspc" }), SspcChunk);
     expect(py_eq(reread.data_size, 14_729_427_240)).toBe(true); // u8 field unpacks as bigint
   });
 });
@@ -1236,7 +1237,7 @@ describe("TestOptiChunk", () => {
     chunk.write(buf);
     buf.seek(0);
     const size = buf.getbuffer().length;
-    const chunk2 = OptiChunk.read(buf, size, { chunk_type: "opti" }) as any;
+    const chunk2 = OptiChunk.read(buf, size, { chunk_type: "opti" });
     expect(chunk2 instanceof SoliOptiChunk).toBe(true);
     expect(chunk2.asset_type).toBe("Soli");
     expect(chunk2.color_r).toBe(1.0);
@@ -1258,7 +1259,7 @@ describe("TestOptiChunk", () => {
     struct.pack_into("<iiii", data, 78, 10, 20, 610, 820);
 
     const buf = new BytesIO(data.slice());
-    const chunk = OptiChunk.read(buf, 344, { chunk_type: "opti" }) as any;
+    const chunk = OptiChunk.read(buf, 344, { chunk_type: "opti" });
     expect(chunk instanceof PsdOptiChunk).toBe(true);
     expect(chunk.psd_layer_index).toBe(3);
     expect(chunk.psd_canvas_height).toBe(600);
@@ -1285,7 +1286,7 @@ describe("TestOptiChunk", () => {
     );
 
     const buf = new BytesIO(data);
-    const chunk = OptiChunk.read(buf, data.length, { chunk_type: "opti" }) as any;
+    const chunk = OptiChunk.read(buf, data.length, { chunk_type: "opti" });
     expect(chunk instanceof PlaceholderOptiChunk).toBe(true);
     expect(chunk.placeholder_name).toBe("MyPlaceholder");
 
@@ -1297,7 +1298,7 @@ describe("TestOptiChunk", () => {
   test("test_unknown_fallback", () => {
     const data = bytes_.concat(b("UNKN"), bytes_.zeros(20));
     const buf = new BytesIO(data);
-    const chunk = OptiChunk.read(buf, data.length, { chunk_type: "opti" }) as any;
+    const chunk = OptiChunk.read(buf, data.length, { chunk_type: "opti" });
     expect(chunk.constructor).toBe(OptiChunk);
     expect(py_eq(chunk.data, data)).toBe(true);
   });
@@ -1325,7 +1326,7 @@ describe("TestRoptChunk", () => {
     chunk.write(buf);
     buf.seek(0);
     const size = buf.getbuffer().length;
-    const chunk2 = RoptChunk.read(buf, size, { chunk_type: "Ropt" }) as any;
+    const chunk2 = RoptChunk.read(buf, size, { chunk_type: "Ropt" });
     expect(chunk2 instanceof CineonRoptChunk).toBe(true);
     expect(chunk2.ten_bit_black_point).toBe(95);
     expect(chunk2.ten_bit_white_point).toBe(685);
@@ -1343,7 +1344,7 @@ describe("TestRoptChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" }) as any;
+    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" });
     expect(chunk2 instanceof JpegRoptChunk).toBe(true);
     expect(chunk2.quality).toBe(80);
     expect(chunk2.format_type).toBe(1);
@@ -1361,7 +1362,7 @@ describe("TestRoptChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" }) as any;
+    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" });
     expect(chunk2 instanceof OpenExrRoptChunk).toBe(true);
     expect(chunk2.compression).toBe(3);
     expect(py_eq(chunk2.thirty_two_bit_float, 1)).toBe(true);
@@ -1377,7 +1378,7 @@ describe("TestRoptChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" }) as any;
+    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" });
     expect(chunk2 instanceof TargaRoptChunk).toBe(true);
     expect(chunk2.bits_per_pixel).toBe(32);
     expect(py_eq(chunk2.rle_compression, 1)).toBe(true);
@@ -1394,7 +1395,7 @@ describe("TestRoptChunk", () => {
     const buf = new BytesIO();
     chunk.write(buf);
     buf.seek(0);
-    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" }) as any;
+    const chunk2 = RoptChunk.read(buf, buf.getbuffer().length, { chunk_type: "Ropt" });
     expect(chunk2 instanceof PngRoptChunk).toBe(true);
     expect(chunk2.width).toBe(1920);
     expect(chunk2.height).toBe(1080);
@@ -1404,7 +1405,7 @@ describe("TestRoptChunk", () => {
   test("test_unknown_fallback", () => {
     const data = bytes_.concat(b("UNKN"), bytes_.zeros(20));
     const buf = new BytesIO(data);
-    const chunk = RoptChunk.read(buf, data.length, { chunk_type: "Ropt" }) as any;
+    const chunk = RoptChunk.read(buf, data.length, { chunk_type: "Ropt" });
     expect(chunk.constructor).toBe(RoptChunk);
     expect(py_eq(chunk.data, data)).toBe(true);
   });
@@ -1436,7 +1437,7 @@ describe("TestPardChunk", () => {
     );
     const data = _build_pard(5, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof ColorPardChunk).toBe(true);
     expect(py_eq(chunk.last_color, [255, 0, 0, 255])).toBe(true);
     expect(py_eq(chunk.default_color, [128, 128, 128, 255])).toBe(true);
@@ -1457,7 +1458,7 @@ describe("TestPardChunk", () => {
     );
     const data = _build_pard(2, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof ScalarPardChunk).toBe(true);
     expect(chunk.last_value_raw).toBe(50);
     expect(chunk.last_value).toBe(50 / 65536);
@@ -1477,7 +1478,7 @@ describe("TestPardChunk", () => {
     const body = bytes_.concat(struct.pack(">i", 5), bytes_.zeros(64), struct.pack(">ii", 3, 999));
     const data = _build_pard(1, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof IntegerPardChunk).toBe(true);
     expect(chunk.last_value).toBe(5);
     expect(chunk.valid_min).toBe(3);
@@ -1492,7 +1493,7 @@ describe("TestPardChunk", () => {
     const body = struct.pack(">i", 180);
     const data = _build_pard(3, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof AnglePardChunk).toBe(true);
     expect(chunk.last_value_raw).toBe(180);
     expect(chunk.last_value).toBe(180 / 65536);
@@ -1506,7 +1507,7 @@ describe("TestPardChunk", () => {
     const body = bytes_.concat(struct.pack(">I", 1), b("\x01"), bytes_.zeros(3));
     const data = _build_pard(4, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(buf, data.length, { chunk_type: "pard" }), BooleanPardChunk);
     expect(chunk instanceof BooleanPardChunk).toBe(true);
     expect(chunk.last_value).toBe(1);
     expect(chunk.default_).toBe(1);
@@ -1523,7 +1524,7 @@ describe("TestPardChunk", () => {
     body = bytes_.concat(body, bytes_.zeros(92 - body.length));
     const data = _build_pard(7, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(buf, data.length, { chunk_type: "pard" }), EnumPardChunk);
     expect(chunk instanceof EnumPardChunk).toBe(true);
     expect(chunk.last_value).toBe(2);
     expect(chunk.nb_options).toBe(5);
@@ -1549,7 +1550,7 @@ describe("TestPardChunk", () => {
     );
     body = bytes_.concat(body, bytes_.zeros(92 - body.length));
     const data = _build_pard(7, body);
-    const chunk = PardChunk.read(new BytesIO(data), data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(new BytesIO(data), data.length, { chunk_type: "pard" }), EnumPardChunk);
     expect(chunk instanceof EnumPardChunk).toBe(true);
     expect(py_eq([chunk.last_value, chunk.nb_options, chunk.default_], [1, 3, 3])).toBe(true);
     expect(py_eq(chunk.tobytes(), data)).toBe(true);
@@ -1565,7 +1566,7 @@ describe("TestPardChunk", () => {
     );
     const data = _build_pard(10, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(buf, data.length, { chunk_type: "pard" }), SliderPardChunk);
     expect(chunk instanceof SliderPardChunk).toBe(true);
     expect(chunk.last_value).toBe(50.0);
     expect(chunk.phase).toBe(0.0);
@@ -1588,7 +1589,7 @@ describe("TestPardChunk", () => {
     body = bytes_.concat(body, bytes_.zeros(92 - body.length));
     const data = _build_pard(6, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(buf, data.length, { chunk_type: "pard" }), TwoDPardChunk);
     expect(chunk instanceof TwoDPardChunk).toBe(true);
     expect(chunk.last_value_x_raw).toBe(0x4000);
     expect(chunk.last_value_y_raw).toBe(0x6666);
@@ -1606,7 +1607,7 @@ describe("TestPardChunk", () => {
     body = bytes_.concat(body, bytes_.zeros(92 - body.length));
     const data = _build_pard(18, body);
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = as_instance(PardChunk.read(buf, data.length, { chunk_type: "pard" }), ThreeDPardChunk);
     expect(chunk instanceof ThreeDPardChunk).toBe(true);
     expect(chunk.last_value_x_raw).toBe(0.5);
     expect(chunk.last_value_y_raw).toBe(0.5);
@@ -1630,7 +1631,7 @@ describe("TestPardChunk", () => {
     const data = bytes_.concat(pad_pre, ct, raw_name, pad_post, body_after);
 
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof AnglePardChunk).toBe(true);
     expect(chunk.name).toBe("Opacity");
 
@@ -1642,7 +1643,7 @@ describe("TestPardChunk", () => {
   test("test_unknown_control_type_fallback", () => {
     const data = _build_pard(99, bytes_.zeros(10));
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk.constructor).toBe(PardChunk);
     expect(py_eq(chunk.data, data)).toBe(true);
   });
@@ -1655,7 +1656,7 @@ describe("TestPardChunk", () => {
       py_assert(data.length === 148, `type ${ct}: expected 148, got ${data.length}`);
 
       const buf = new BytesIO(data);
-      const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+      const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
       py_assert(
         chunk instanceof GenericPardChunk,
         `type ${ct}: expected GenericPardChunk, got ${chunk.constructor.name}`,
@@ -1673,7 +1674,7 @@ describe("TestPardChunk", () => {
     const body = bytes_.zeros(92);
     const data = _build_pard(13, body, "Master");
     const buf = new BytesIO(data);
-    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" }) as any;
+    const chunk = PardChunk.read(buf, data.length, { chunk_type: "pard" });
     expect(chunk instanceof GenericPardChunk).toBe(true);
     expect(chunk.name).toBe("Master");
   });
@@ -1684,7 +1685,7 @@ describe("TestNmhdChunk", () => {
   test("test_duration_divisor", () => {
     // AE 2026 opens a marker storing 36 over 24 with duration 1.5 s.
     const data = bytes_.fromhex("0000000400000000000000240000001800000000");
-    const chunk = NmhdChunk.frombytes(data, { chunk_type: "NmHd" }) as InstanceType<typeof NmhdChunk>;
+    const chunk = as_instance(NmhdChunk.frombytes(data, { chunk_type: "NmHd" }), NmhdChunk);
     expect(chunk.duration_seconds).toBe(1.5);
     expect(py_eq(chunk.tobytes(), data)).toBe(true);
   });
@@ -1692,14 +1693,14 @@ describe("TestNmhdChunk", () => {
   test("test_zero_divisor_reads_as_600ths", () => {
     // AE 2026 opens a marker storing 1500 over 0 with duration 2.5 s.
     const data = bytes_.fromhex("0000000000000000000005dc0000000000000000");
-    expect((NmhdChunk.frombytes(data, { chunk_type: "NmHd" }) as NmhdChunk).duration_seconds).toBe(2.5);
+    expect(as_instance(NmhdChunk.frombytes(data, { chunk_type: "NmHd" }), NmhdChunk).duration_seconds).toBe(2.5);
   });
 
   test("test_set_duration_writes_600ths", () => {
     // AE 2026 rewrites a 36-over-24 marker whose duration a script sets
     // to 1.25 s as 750 over 600.
     const data = bytes_.fromhex("0000000400000000000000240000001800000000");
-    const chunk = NmhdChunk.frombytes(data, { chunk_type: "NmHd" }) as InstanceType<typeof NmhdChunk>;
+    const chunk = as_instance(NmhdChunk.frombytes(data, { chunk_type: "NmHd" }), NmhdChunk);
     chunk.duration_seconds = 1.25;
     expect(py_eq(bytes_.slice(chunk.tobytes(), 8, 16), bytes_.fromhex("000002ee00000258"))).toBe(true);
   });
@@ -1738,7 +1739,7 @@ describe("TestLhd3Chunk", () => {
   test("test_roundtrip_basic", () => {
     const data = _build_lhd3(5, 48, 4);
     const buf = new BytesIO(data);
-    const chunk = Lhd3Chunk.read(buf, data.length, { chunk_type: "lhd3" }) as InstanceType<typeof Lhd3Chunk>;
+    const chunk = as_instance(Lhd3Chunk.read(buf, data.length, { chunk_type: "lhd3" }), Lhd3Chunk);
     expect(chunk.count).toBe(5);
     expect(chunk.item_size).toBe(48);
     expect(chunk.item_type_raw).toBe(4);
@@ -1766,21 +1767,21 @@ describe("TestLhd3Chunk", () => {
     ];
     for (const [raw, size, expected] of cases) {
       const data = _build_lhd3(1, size, raw);
-      const chunk = Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }) as InstanceType<typeof Lhd3Chunk>;
+      const chunk = as_instance(Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }), Lhd3Chunk);
       py_assert(chunk.item_type === expected, `(${raw}, ${size})`);
     }
   });
 
   test("test_unknown_fallback", () => {
     const data = _build_lhd3(1, 999, 99);
-    const chunk = Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }) as InstanceType<typeof Lhd3Chunk>;
+    const chunk = as_instance(Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }), Lhd3Chunk);
     expect(chunk.item_type).toBe(LdatItemType.unknown);
   });
 
   test("test_with_trailing", () => {
     const trailing = b("\xab\xcd");
     const data = _build_lhd3(2, 64, 4, 1, 2, trailing);
-    const chunk = Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }) as InstanceType<typeof Lhd3Chunk>;
+    const chunk = as_instance(Lhd3Chunk.frombytes(data, { chunk_type: "lhd3" }), Lhd3Chunk);
     expect(py_eq(chunk._trailing, trailing)).toBe(true);
     expect(py_eq(chunk.tobytes(), data)).toBe(true);
   });
@@ -1793,7 +1794,7 @@ describe("TestLhd3Chunk", () => {
 describe("TestShapePoint", () => {
   test("test_roundtrip", () => {
     const data = struct.pack(">ff", 1.5, -2.5);
-    const sp = ShapePoint.frombytes(data) as ShapePoint;
+    const sp = ShapePoint.frombytes(data);
     expect(approx(sp.x, 1.5)).toBe(true);
     expect(approx(sp.y, -2.5)).toBe(true);
     expect(py_eq(sp.tobytes(), data)).toBe(true);
@@ -1803,7 +1804,7 @@ describe("TestShapePoint", () => {
 describe("TestGuideItem", () => {
   test("test_roundtrip", () => {
     const data = struct.pack(">IId", 1, 0, 123.456);
-    const gi = GuideItem.frombytes(data) as GuideItem;
+    const gi = GuideItem.frombytes(data);
     expect(gi.orientation_type).toBe(1);
     expect(gi.position_type).toBe(0);
     expect(approx(gi.position, 123.456)).toBe(true);
@@ -1818,7 +1819,7 @@ describe("TestGuideItem", () => {
 describe("TestKfNoValue", () => {
   test("test_roundtrip", () => {
     const data = struct.pack(">Qddddd", 42, 1.0, 2.0, 33.3, 4.0, 66.6);
-    const kf = KfNoValue.frombytes(data) as KfNoValue;
+    const kf = KfNoValue.frombytes(data);
     expect(approx(kf.in_speed, 2.0)).toBe(true);
     expect(approx(kf.in_influence, 33.3)).toBe(true);
     expect(approx(kf.out_speed, 4.0)).toBe(true);
@@ -1836,7 +1837,7 @@ describe("TestKfColor", () => {
     let vals: number[] = [0, 0.0, 1.0, 33.3, 2.0, 66.6, 0.5, 0.6, 0.7, 1.0];
     vals = [...vals, ...Array.from({ length: 8 }, () => 0.0)];
     const data = struct.pack(">Qd" + "d".repeat(16), ...vals);
-    const kf = KfColor.frombytes(data) as KfColor;
+    const kf = KfColor.frombytes(data);
     expect(approx(kf.in_speed, 1.0)).toBe(true);
     expect(approx(kf.in_influence, 33.3)).toBe(true);
     expect(approx(kf.out_speed, 2.0)).toBe(true);
@@ -1851,7 +1852,7 @@ describe("TestKfColor", () => {
     let vals: number[] = [0, 0.0, 0.0, 16.0, 0.0, 16.0, 255.0, 0.0, 0.0, 255.0];
     vals = [...vals, ...Array.from({ length: 8 }, () => 0.0)];
     const data = struct.pack(">Qd" + "d".repeat(16), ...vals);
-    const kf = KfColor.frombytes(data) as KfColor;
+    const kf = KfColor.frombytes(data);
     expect(py_eq([kf.a, kf.r, kf.g, kf.b], [255.0, 0.0, 0.0, 255.0])).toBe(true);
   });
 });
@@ -1954,7 +1955,7 @@ describe("TestLdatItem", () => {
     expect(item.time_units).toBe(30 * 256);
     expect(item.in_interpolation_type).toBe(2);
     expect(item.out_interpolation_type).toBe(1);
-    expect(approx((item.kf_data as KfMultiDimensional).value, [50.0])).toBe(true);
+    expect(approx(as_instance(item.kf_data, KfMultiDimensional).value, [50.0])).toBe(true);
     expect(py_eq(item.tobytes(), data)).toBe(true);
   });
 
@@ -1965,7 +1966,7 @@ describe("TestLdatItem", () => {
     const data = bytes_.concat(_build_item(LdatItemType.color), payload);
 
     const item = LdatItem.frombytes(data, { item_type: LdatItemType.color });
-    expect(approx((item.kf_data as KfColor).value, [0.5, 0.6, 0.7, 1.0])).toBe(true);
+    expect(approx(as_instance(item.kf_data, KfColor).value, [0.5, 0.6, 0.7, 1.0])).toBe(true);
     expect(py_eq(item.tobytes(), data)).toBe(true);
   });
 
@@ -1991,7 +1992,7 @@ describe("TestLdatItem", () => {
       [b("\x00\x40"), 1],
       [b("\x01\x40"), 5],
       [b("\x04\x00"), 16],
-    ] as [Uint8Array, number][]) {
+    ] satisfies [Uint8Array, number][]) {
       const data = bytes_.concat(struct.pack(">iBB", 0, 2, 2), raw, payload);
       const item = LdatItem.frombytes(data, { item_type: LdatItemType.no_value });
       expect(item.label).toBe(label);
@@ -2261,7 +2262,7 @@ describe("TestPropertyChunkDefaults", () => {
   test("test_tdb4_bare_constructor_roundtrips", () => {
     const tdb4 = new Tdb4Chunk({});
     const raw = tdb4.tobytes();
-    const restored = Tdb4Chunk.frombytes(raw, { chunk_type: "tdb4" }) as InstanceType<typeof Tdb4Chunk>;
+    const restored = as_instance(Tdb4Chunk.frombytes(raw, { chunk_type: "tdb4" }), Tdb4Chunk);
     expect(py_eq(restored.dimensions, tdb4.dimensions)).toBe(true);
     expect(py_eq(restored.static, tdb4.static)).toBe(true);
     expect(py_eq(restored.expression_disabled, tdb4.expression_disabled)).toBe(true);
@@ -2270,7 +2271,7 @@ describe("TestPropertyChunkDefaults", () => {
   test("test_tdsb_bare_constructor_roundtrips", () => {
     const tdsb = new TdsbChunk({});
     const raw = tdsb.tobytes();
-    const restored = TdsbChunk.frombytes(raw, { chunk_type: "tdsb" }) as InstanceType<typeof TdsbChunk>;
+    const restored = as_instance(TdsbChunk.frombytes(raw, { chunk_type: "tdsb" }), TdsbChunk);
     expect(py_eq(restored.enabled, tdsb.enabled)).toBe(true);
   });
 });

@@ -5,7 +5,9 @@ import { approx } from "../../src/pyrt/pytest.ts";
 import { Path, StopIteration, hasattr, len, py_eq } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
+import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
+import { as_instance } from "../helpers.ts";
 
 // Python's SAMPLE is cwd-relative ("samples/..."); resolved from this file so
 // the test does not depend on where bun is started.
@@ -209,10 +211,10 @@ const DEFAULT_AE_GRADIENT_XML =
   "</prop.map>\n";
 
 /** `@pytest.fixture()` gradient_comp: each test calls this in place of taking the fixture as a parameter. */
-function gradient_comp_fixture(): any {
+function gradient_comp_fixture(): CompItem {
   const app = parse(SAMPLE);
   for (const v of app.project.items.values()) {
-    if (hasattr(v, "layers")) return v;
+    if (hasattr(v, "layers")) return as_instance(v, CompItem);
   }
   throw new StopIteration();
 }
@@ -271,7 +273,7 @@ test("test_g_fill_synthesized_properties", () => {
     "ADBE Vector Grad Colors",
     "ADBE Vector Fill Opacity",
   ];
-  const actual = gfill.properties.map((p: any) => p.match_name);
+  const actual = gfill.properties.map((p) => p.match_name);
   expect(py_eq(actual, expected_match_names)).toBe(true);
 });
 
@@ -302,7 +304,7 @@ test("test_g_stroke_synthesized_properties", () => {
     "ADBE Vector Stroke Taper",
     "ADBE Vector Stroke Wave",
   ];
-  const actual = gstroke.properties.map((p: any) => p.match_name);
+  const actual = gstroke.properties.map((p) => p.match_name);
   expect(py_eq(actual, expected_match_names)).toBe(true);
 });
 

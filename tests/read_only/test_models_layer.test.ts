@@ -537,7 +537,7 @@ describe("TestTrackMatte", () => {
     const project = parse_project(SAMPLES_DIR.div("trackMatteType.aep"));
     const comp = get_comp(project, "trackMatteType_ALPHA");
     const matted_layer = comp.layers.find((layer) => as_instance(layer, AVLayer).track_matte_type === TrackMatteType.ALPHA) ?? null;
-    let expected_layer: any = null;
+    let expected_layer = null;
     for (const item of expected["items"]) {
       if (item["name"] === "trackMatteType_ALPHA" && "layers" in item) {
         for (const lj of item["layers"]) {
@@ -558,7 +558,7 @@ describe("TestTrackMatte", () => {
     const project = parse_project(SAMPLES_DIR.div("trackMatteType.aep"));
     const comp = get_comp(project, "trackMatteType_LUMA");
     const matted_layer = comp.layers.find((layer) => as_instance(layer, AVLayer).track_matte_type === TrackMatteType.LUMA) ?? null;
-    let expected_layer: any = null;
+    let expected_layer = null;
     for (const item of expected["items"]) {
       if (item["name"] === "trackMatteType_LUMA" && "layers" in item) {
         for (const lj of item["layers"]) {
@@ -578,7 +578,7 @@ describe("TestTrackMatte", () => {
     const expected = load_expected(SAMPLES_DIR, "track_matte_yes");
     const project = parse_project(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = project.compositions[0];
-    let expected_layers: any = null;
+    let expected_layers = null;
     for (const item of expected["items"]) {
       if ("layers" in item) {
         expected_layers = item["layers"];
@@ -595,7 +595,7 @@ describe("TestTrackMatte", () => {
     const expected = load_expected(SAMPLES_DIR, "track_matte_no");
     const project = parse_project(SAMPLES_DIR.div("track_matte_no.aep"));
     const comp = project.compositions[0];
-    let expected_layers: any = null;
+    let expected_layers = null;
     for (const item of expected["items"]) {
       if ("layers" in item) {
         expected_layers = item["layers"];
@@ -612,7 +612,7 @@ describe("TestTrackMatte", () => {
     const expected = load_expected(SAMPLES_DIR, "track_matte_yes");
     const project = parse_project(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = project.compositions[0];
-    let expected_layers: any = null;
+    let expected_layers = null;
     for (const item of expected["items"]) {
       if ("layers" in item) {
         expected_layers = item["layers"];
@@ -932,7 +932,8 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** Layer.transform returns the same PropertyGroup as in properties list. */
   test("test_transform_is_same_object_in_properties", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const transform_from_list = layer.properties.find((p) => p.match_name === "ADBE Transform Group")!;
+    const transform_from_list = layer.properties.find((p) => p.match_name === "ADBE Transform Group");
+    if (transform_from_list == null) throw new StopIteration();
     expect(layer.transform === transform_from_list).toBe(true);
   });
 
@@ -969,7 +970,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** layer['ADBE Transform Group']['ADBE Position'] chains correctly. */
   test("test_getitem_chained", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const transform = layer.__getitem__("ADBE Transform Group") as PropertyGroup;
+    const transform = layer.__getitem__("ADBE Transform Group");
     const position = transform.__getitem__("ADBE Position");
     expect(position.match_name).toBe("ADBE Position");
   });
@@ -1244,7 +1245,8 @@ describe("TestTopLevelSpecialCases", () => {
   /** Marker is a Property (leaf), not a PropertyGroup. */
   test("test_marker_is_leaf_property", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
-    const marker = layer.properties.find((p) => p.match_name === "ADBE Marker")!;
+    const marker = layer.properties.find((p) => p.match_name === "ADBE Marker");
+    if (marker == null) throw new StopIteration();
     expect(marker instanceof Property).toBe(true);
     expect(marker instanceof PropertyGroup).toBe(false);
   });
@@ -1252,7 +1254,8 @@ describe("TestTopLevelSpecialCases", () => {
   /** Synthesized Marker has dimensions=0 and empty units_text. */
   test("test_marker_metadata", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
-    const marker = layer.properties.find((p) => p.match_name === "ADBE Marker")!;
+    const marker = layer.properties.find((p) => p.match_name === "ADBE Marker");
+    if (marker == null) throw new StopIteration();
     expect(marker instanceof Property).toBe(true);
     expect(as_instance(marker, Property).dimensions).toBe(0);
     expect(as_instance(marker, Property).units_text).toBe("");
@@ -1261,7 +1264,8 @@ describe("TestTopLevelSpecialCases", () => {
   /** Layer Sets group has elided=True. */
   test("test_layer_sets_elided", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
-    const layer_sets = layer.properties.find((p) => p.match_name === "ADBE Layer Sets")!;
+    const layer_sets = layer.properties.find((p) => p.match_name === "ADBE Layer Sets");
+    if (layer_sets == null) throw new StopIteration();
     expect(layer_sets instanceof PropertyGroup).toBe(true);
     expect(layer_sets.elided).toBe(true);
   });
@@ -1319,14 +1323,17 @@ describe("TestLayerStylesEnabled", () => {
   /** Layer Styles group reports enabled=False when no style is on. */
   test("test_layer_styles_disabled_when_no_style_enabled", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("type.aep")), "type_shape");
-    const layer_styles = layer.properties.find((p) => p.match_name === "ADBE Layer Styles")! as PropertyGroup;
+    const layer_styles_child = layer.properties.find((p) => p.match_name === "ADBE Layer Styles");
+    if (layer_styles_child == null) throw new StopIteration();
+    const layer_styles = as_instance(layer_styles_child, PropertyGroup);
     expect(layer_styles instanceof PropertyGroup).toBe(true);
     expect(layer_styles._deferred_ae_major != null).toBe(true);
     expect(layer_styles.enabled).toBe(false);
     expect(layer_styles._deferred_ae_major != null).toBe(true);
 
     // Blend Options mirrors the parent
-    const blend_options = layer_styles.properties.find((p) => p.match_name === "ADBE Blend Options Group")!;
+    const blend_options = layer_styles.properties.find((p) => p.match_name === "ADBE Blend Options Group");
+    if (blend_options == null) throw new StopIteration();
     expect(layer_styles._deferred_ae_major == null).toBe(true);
     expect(blend_options instanceof PropertyGroup).toBe(true);
     expect(blend_options.enabled).toBe(false);
@@ -1345,7 +1352,9 @@ describe("TestLayerStylesEnabled", () => {
    */
   test("test_can_set_enabled_no_styles", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("type.aep")), "type_shape");
-    const layer_styles = layer.properties.find((p) => p.match_name === "ADBE Layer Styles")! as PropertyGroup;
+    const layer_styles_child = layer.properties.find((p) => p.match_name === "ADBE Layer Styles");
+    if (layer_styles_child == null) throw new StopIteration();
+    const layer_styles = as_instance(layer_styles_child, PropertyGroup);
     expect(layer_styles instanceof PropertyGroup).toBe(true);
     expect(layer_styles.can_set_enabled).toBe(false);
     for (const child of layer_styles.properties) {
@@ -1365,7 +1374,7 @@ describe("TestLayerStylesEnabled", () => {
       "selection_dropshadow_enabled_opacity.aep",
     );
     const layer = parse_aep(path).project.compositions[0].layers[0];
-    const layer_styles = layer.__getitem__("ADBE Layer Styles") as PropertyGroup;
+    const layer_styles = layer.__getitem__("ADBE Layer Styles");
     expect(layer_styles instanceof PropertyGroup).toBe(true);
     expect(layer_styles.can_set_enabled).toBe(true);
     for (const child of layer_styles.properties) {
