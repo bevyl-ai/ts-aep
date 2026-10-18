@@ -38,13 +38,13 @@ export class RendererOptionsBase extends SettingsView {
     this._body = body;
     this._comp = comp;
     // Python's owner is the (possibly proxied) instance itself, so writes via
-    // the mapping side go through `__setattr__` as well.
+    // the mapping side go through `_assignAttribute` as well.
     const self = pyObject(this);
     objectSetattr(self, "_owner", self);
     return self;
   }
 
-  __setattr__(name: string, value: unknown): void {
+  _assignAttribute(name: string, value: unknown): void {
     // A fresh wrapper is built on every `rendererOptions` access, so a
     // write to a name with no backing descriptor would vanish with the
     // wrapper. Reject it instead of silently dropping it.

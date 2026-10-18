@@ -565,7 +565,7 @@ export class PardChunk extends Chunk {
   /** Control type discriminator at byte 15 of the raw data. */
   get propertyControlType(): number {
     const data = "data" in this ? this.data : b("");
-    if (len(data) > 15) return data[15];
+    if (data.length > 15) return data[15];
     return 0;
   }
 
@@ -601,7 +601,7 @@ export class PardChunk extends Chunk {
     const pad: Uint8Array = getattr(this, "_padPost", b(""));
     if (pad.length > 3) return pad[3];
     const data = "data" in this ? this.data : b("");
-    if (len(data) > 51) return data[51];
+    if (data.length > 51) return data[51];
     return 0;
   }
 
@@ -617,7 +617,7 @@ export class PardChunk extends Chunk {
     const pre: Uint8Array = getattr(this, "_padPre", b(""));
     if (pre.length > 6) return (pre[6] & 0x02) !== 0;
     const data = "data" in this ? this.data : b("");
-    if (len(data) > 6) return (data[6] & 0x02) !== 0;
+    if (data.length > 6) return (data[6] & 0x02) !== 0;
     return false;
   }
 

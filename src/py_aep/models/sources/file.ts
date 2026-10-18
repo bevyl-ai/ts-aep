@@ -1705,7 +1705,7 @@ export class FileSource extends FootageSource {
    */
   get layerName(): string {
     const psdLayer = getattr(this._opti, "psdGroupName", "");
-    if (pyBool(psdLayer)) return str(psdLayer);
+    if (!!psdLayer) return psdLayer;
     // AI/EPS/PDF: a `TEXT` opti carries the layer name as a typed
     // `TextOptiChunk` field (0x44). The name alone marks the binding -
     // the 0x3D byte next to it is the layer's visibility, and AE writes

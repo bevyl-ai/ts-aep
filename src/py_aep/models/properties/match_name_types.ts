@@ -154,7 +154,7 @@ export interface MatchNameTypes {
 
 /**
  * A built-in group `M` with its attribute-named children typed (Python
- * `group.child_name`, resolved through `__getattr__`); see `CHILD_MATCH_NAMES`.
+ * `group.childName`, resolved through `_missingAttribute`); see `CHILD_MATCH_NAMES`.
  */
 export type ChildGroup<M extends keyof ChildMatchNames, G extends PropertyGroup = PropertyGroup> = G & {
   readonly [A in keyof ChildMatchNames[M]]: MatchNameTypes[ChildMatchNames[M][A] & keyof MatchNameTypes];
@@ -165,7 +165,7 @@ type ChildMatchName = { [M in keyof ChildMatchNames]: ChildMatchNames[M][keyof C
 type AllChildrenTyped<T extends never> = T;
 export type _ChildMatchNamesCovered = AllChildrenTyped<Exclude<ChildMatchName, keyof MatchNameTypes>>;
 
-/** No table name shadows a group member: attribute access only reaches `__getattr__` when the class has no such member. */
+/** No table name shadows a group member: attribute access only reaches `_missingAttribute` when the class has no such member. */
 type ShadowedChildName = {
   [M in keyof ChildMatchNames]: Extract<keyof ChildMatchNames[M], keyof (M extends "ADBE Mask Atom" ? MaskPropertyGroup : PropertyGroup)>;
 }[keyof ChildMatchNames];

@@ -825,7 +825,7 @@ export class AVLayer extends Layer {
     if (!(textPath instanceof Property)) {
       throw new AttributeError(`'${typeName(textPath)}' object has no attribute 'value'`);
     }
-    if (pyBool(textPath.value)) {
+    if (textPath.value !== 0) {
       throw new NotImplementedError("sourceRectAtTime does not model text on a path");
     }
     if (this._ldta.threeDPerChar) {

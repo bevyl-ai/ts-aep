@@ -502,14 +502,14 @@ export function formatJson(node: Node, output: TextIO, maxDepth: number | null =
   function filterDepth(n: Node, depth: number = 0): JsonNode {
     if (maxDepth != null && depth >= maxDepth) {
       const result: JsonNode = { ...n };
-      if (pyBool(n.children)) {
-        result.children = `[${len(n.children)} children omitted]`;
+      if (n.children.length > 0) {
+        result.children = `[${n.children.length} children omitted]`;
       }
       return result;
     }
 
     const result: JsonNode = { ...n };
-    if (pyBool(n.children)) {
+    if (n.children.length > 0) {
       result.children = n.children.map((c) => filterDepth(c, depth + 1));
     }
     return result;

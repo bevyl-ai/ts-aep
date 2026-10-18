@@ -361,9 +361,9 @@ export class Layer extends PropertyGroup {
     return this === other;
   }
 
-  __setattr__(name: string, value: unknown): void {
+  _assignAttribute(name: string, value: unknown): void {
     // Layers set public instance attributes of their own, which
-    // `PropertyGroup.__setattr__` would refuse.
+    // `PropertyGroup._assignAttribute` would refuse.
     objectSetattr(this, name, value);
   }
 
@@ -452,19 +452,19 @@ export class Layer extends PropertyGroup {
   // layers then only decodes their `ldta`, and a reader of layer
   // attributes alone (times, names, sources) never pays for the
   // properties. Until then `_properties` is absent from the instance, so
-  // its first read lands in `__getattr__`; after that it is a plain
+  // its first read lands in `_missingAttribute`; after that it is a plain
   // attribute, with nothing to check on each access.
   // NOTE(port): a Python class attribute, installed on the prototype below the class.
   declare _treeParamDefs: EffectParamDefs | null;
 
-  __getattr__(name: string): Property | PropertyGroup {
+  _missingAttribute(name: string): Property | PropertyGroup {
     // A public name may be a child looked up by attribute: build first.
     if (this._treeParamDefs != null && (name === "_properties" || !name.startsWith("_"))) {
       this._loadPropertyTree();
       // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
       return getattr(this, name);
     }
-    return super.__getattr__(name);
+    return super._missingAttribute(name);
   }
 
   /** Build the property tree of a parsed layer, if not built yet. */
@@ -1724,7 +1724,7 @@ export class Layer extends PropertyGroup {
 }
 
 // `_tree_param_defs: ... = None` in the class body: on the prototype, so
-// `__getattr__` finds it before the instance sets its own.
+// `_missingAttribute` finds it before the instance sets its own.
 Layer.prototype._treeParamDefs = null;
 
 // Descriptors assigned in the class body (`enabled = ChunkField.bool(...)`)
