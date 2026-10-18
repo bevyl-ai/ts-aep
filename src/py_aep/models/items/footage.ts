@@ -554,12 +554,12 @@ export class FootageItem extends AVItem {
     const suffix = new Path(file).suffix.toLowerCase();
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !AI_COMP_EXTENSIONS.has(suffix)) {
       throw new ValueError(
-        `layer_index requires a layered .psd/.psb/.ai/.pdf ` +
+        `layerIndex requires a layered .psd/.psb/.ai/.pdf ` +
           `file, got ${repr(suffix)}`,
       );
     }
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !(layer_styles instanceof _CurrentValue)) {
-      throw new ValueError("layer_styles applies to Photoshop (.psd/.psb) targets only");
+      throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) targets only");
     }
     if (layer_index instanceof _CurrentValue) {
       const current = this._main_source;

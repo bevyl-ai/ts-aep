@@ -85,7 +85,7 @@ export function build_project_node(app: Application, include_properties: boolean
 
   // Add render queue if it has items
   if (project.renderQueue == null) {
-    throw new RuntimeError("Project render_queue should not be None");
+    throw new RuntimeError("Project renderQueue should not be None");
   }
   if (project.renderQueue.items?.length > 0) {
     children.push(build_render_queue_node(project));
@@ -259,7 +259,7 @@ export function build_property_node(prop: Property): Node {
 /** Build a render queue node with its items. */
 export function build_render_queue_node(project: Project): Node {
   if (project.renderQueue == null) {
-    throw new RuntimeError("Project render_queue should not be None");
+    throw new RuntimeError("Project renderQueue should not be None");
   }
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["items", project.renderQueue.items.length]]);
 

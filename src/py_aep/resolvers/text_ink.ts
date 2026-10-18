@@ -115,7 +115,7 @@ export function _pen_bounds(font: fontkit.Font, gid: number): [number, number, n
 }
 
 export function _refuse(reason: string): NotImplementedError {
-  return new NotImplementedError(`source_rect_at_time does not model text with ${reason}`);
+  return new NotImplementedError(`sourceRectAtTime does not model text with ${reason}`);
 }
 
 export function _check_styles(doc: TextDocument): void {

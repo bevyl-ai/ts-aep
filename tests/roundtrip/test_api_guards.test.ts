@@ -156,7 +156,7 @@ describe("TestSetAlternateSource", () => {
     // AE gates both sides: "The Property object and the input parameters
     // for the AVItem that is being called needs to be Media Replacement
     // compatible for the action to go through." A solid is in the project
-    // but is_media_replacement_compatible is False.
+    // but isMediaReplacementCompatible is False.
     const app = parse_aep(EG);
     const [, alt] = _override_leaf(app);
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
@@ -170,7 +170,7 @@ describe("TestSetAlternateSource", () => {
       () => {
         alt.alternateSource = solid;
       },
-      "is_media_replacement_compatible",
+      "isMediaReplacementCompatible",
     );
   });
 

@@ -979,7 +979,7 @@ export class TextDocument {
     validate_vector2(value);
     const coords = this._box_outline();
     if (coords == null) {
-      throw new ValueError("box_text_pos requires box text; set box_text_size first");
+      throw new ValueError("boxTextPos requires box text; set boxTextSize first");
     }
     const width = Math.abs(cos_num(coords[12]) - cos_num(coords[0]));
     const height = Math.abs(cos_num(coords[13]) - cos_num(coords[1]));

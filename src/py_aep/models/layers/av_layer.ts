@@ -96,7 +96,7 @@ export function _validate_collapse_transformation(value: boolean, obj: AVLayer):
   validate_bool(value);
   if (!obj.canSetCollapseTransformation) {
     throw new AttributeError(
-      "'collapse_transformation' is read-only when 'can_set_collapse_transformation' is False.",
+      "'collapseTransformation' is read-only when 'canSetCollapseTransformation' is False.",
     );
   }
 }
@@ -794,7 +794,7 @@ export class AVLayer extends Layer {
     const layer_type = this._ldta.layer_type;
     if (layer_type === LayerType.THREE_D_MODEL) {
       throw new NotImplementedError(
-        "source_rect_at_time does not model 3D model layers: After Effects reports the bounds of the model geometry",
+        "sourceRectAtTime does not model 3D model layers: After Effects reports the bounds of the model geometry",
       );
     }
     // Property values are evaluated at composition time.
@@ -818,7 +818,7 @@ export class AVLayer extends Layer {
     const text = this.property("ADBE Text Properties");
     const animators = text.property("ADBE Text Animators");
     if (animators.properties?.length > 0) {
-      throw new NotImplementedError("source_rect_at_time does not model text animators");
+      throw new NotImplementedError("sourceRectAtTime does not model text animators");
     }
     const path_options = text.property("ADBE Text Path Options");
     const text_path = path_options.property("ADBE Text Path");
@@ -826,10 +826,10 @@ export class AVLayer extends Layer {
       throw new AttributeError(`'${type_name(text_path)}' object has no attribute 'value'`);
     }
     if (py_bool(text_path.value)) {
-      throw new NotImplementedError("source_rect_at_time does not model text on a path");
+      throw new NotImplementedError("sourceRectAtTime does not model text on a path");
     }
     if (this._ldta.three_d_per_char) {
-      throw new NotImplementedError("source_rect_at_time does not model per-character 3D text");
+      throw new NotImplementedError("sourceRectAtTime does not model per-character 3D text");
     }
     const document = text.property("ADBE Text Document").valueAtTime(time);
     return text_ink_rect(document);
@@ -889,7 +889,7 @@ export class AVLayer extends Layer {
     validate_bool(value);
     if (!this.canSetTimeRemapEnabled) {
       throw new AttributeError(
-        "'time_remap_enabled' is read-only when 'can_set_time_remap_enabled' is False.",
+        "'timeRemapEnabled' is read-only when 'canSetTimeRemapEnabled' is False.",
       );
     }
     const prop = this.property("ADBE Time Remapping");
@@ -1061,14 +1061,14 @@ export class AVLayer extends Layer {
     validate_enum(TrackMatteType)(track_matte_type);
     track_matte_type = TrackMatteType.of(track_matte_type);
     if (track_matte_layer != null && !(track_matte_layer instanceof AVLayer)) {
-      throw new ValueError("track_matte_layer must be an AVLayer or None.");
+      throw new ValueError("trackMatteLayer must be an AVLayer or None.");
     }
     if (track_matte_layer != null && track_matte_type === TrackMatteType.NO_TRACK_MATTE) {
       return;
     }
 
     if (track_matte_layer != null && track_matte_layer.containingComp !== this.containingComp) {
-      throw new ValueError("track_matte_layer must belong to the same composition.");
+      throw new ValueError("trackMatteLayer must belong to the same composition.");
     }
 
     // Re-enable old matte if it is being replaced
@@ -1158,7 +1158,7 @@ export class AVLayer extends Layer {
     // 3D model layers cannot have their source
     // replaced - AE silently ignores the call but we raise.
     if (this._ldta.layer_type === 5) {
-      throw new ValueError("replace_source is not supported on 3D model layers");
+      throw new ValueError("replaceSource is not supported on 3D model layers");
     }
 
     if (!(new_source instanceof AVItem)) {

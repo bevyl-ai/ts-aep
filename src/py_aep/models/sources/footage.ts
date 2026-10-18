@@ -55,8 +55,8 @@ export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [numb
 export function _validate_has_alpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
   if (instance != null && !instance.hasAlpha) {
     throw new ValueError(
-      "cannot set alpha_mode: the footage has no alpha channel " +
-        "(has_alpha is False)",
+      "cannot set alphaMode: the footage has no alpha channel " +
+        "(hasAlpha is False)",
     );
   }
 }
@@ -205,7 +205,7 @@ export class FootageSource {
       // denominator in ratio multiply"); 0.0005 opens, as a 3000 s
       // 3-frame sequence.
       throw new ValueError(
-        "conform_frame_rate must be 0 or at least " +
+        "conformFrameRate must be 0 or at least " +
           `${float_repr(_MIN_CONFORM_FRAME_RATE)}, got ${float_repr(value)}`,
       );
     }
@@ -528,7 +528,7 @@ export class FootageSource {
     validate_bool(value);
     if (this._clrs == null) {
       throw new AttributeError(
-        "Cannot set preserve_rgb: no CLRS container. Update the value in After Effects then re-parse the project to modify this footage source.",
+        "Cannot set preserveRgb: no CLRS container. Update the value in After Effects then re-parse the project to modify this footage source.",
       );
     }
     toggle_flag_chunk(this._clrs, "prgb", value);
@@ -584,7 +584,7 @@ export class FootageSource {
     validate_string(value);
     if (this._clrs == null) {
       throw new AttributeError(
-        "Cannot set media_color_space: no CLRS container. Update the " +
+        "Cannot set mediaColorSpace: no CLRS container. Update the " +
           "value in After Effects then re-parse the project to modify " +
           "this footage source.",
       );
@@ -669,7 +669,7 @@ export class FootageSource {
     const utf8 = this._ocsp_utf8();
     if (utf8 == null) {
       throw new AttributeError(
-        "Cannot set media_color_space: no 'ocsp' color chunk in CLRS.",
+        "Cannot set mediaColorSpace: no 'ocsp' color chunk in CLRS.",
       );
     }
     utf8.value = envelope;

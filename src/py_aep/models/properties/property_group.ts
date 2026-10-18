@@ -916,11 +916,11 @@ export class PropertyGroup extends PropertyBase {
   addVariableFontAxis(axis_tag: string, font_file: string | null = null): Property {
     validate_string(axis_tag);
     if (Array.from(axis_tag).length !== 4) {
-      throw new ValueError("axis_tag must be a 4-character tag (e.g. 'wght').");
+      throw new ValueError("axisTag must be a 4-character tag (e.g. 'wght').");
     }
     if (this.matchName !== "ADBE Text Animator Properties") {
       throw new ValueError(
-        "add_variable_font_axis() can only be called on the " +
+        "addVariableFontAxis() can only be called on the " +
           "'ADBE Text Animator Properties' group of a text animator.",
       );
     }
@@ -930,7 +930,7 @@ export class PropertyGroup extends PropertyBase {
       // variable font's family (FontObject.familyPrefix semantics).
       // Python `layer.text.sourceText.value`: only a text layer has the group.
       const text = this._containing_layer.text;
-      if (text == null) throw new AttributeError("'NoneType' object has no attribute 'source_text'");
+      if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
       const text_doc = text.property("ADBE Text Document").value;
       const ps_name: string = py_or(text_doc.font, "");
       const family = split(ps_name, "-", 1)[0];
@@ -1035,7 +1035,7 @@ export class PropertyGroup extends PropertyBase {
     // Exhaustiveness guard: resolve_addable returns one of the seven
     // AddableKind members, each handled above. Reached only if a new
     // kind is added without a dispatch arm.
-    throw new NotImplementedError(`no add_property builder for '${resolved}'`);
+    throw new NotImplementedError(`no addProperty builder for '${resolved}'`);
   }
 
   _free_numbered_name(base: string, start: number): string {

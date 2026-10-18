@@ -1311,7 +1311,7 @@ export class CharacterRange extends _TextRange {
    */
   pasteFrom(source_range: CharacterRange): void {
     if (!(source_range instanceof CharacterRange)) {
-      throw new TypeError_("paste_from expects a CharacterRange");
+      throw new TypeError_("pasteFrom expects a CharacterRange");
     }
     const doc = this._doc_ref;
     const src_doc = source_range._doc_ref;

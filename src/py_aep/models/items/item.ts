@@ -171,7 +171,7 @@ export class Item {
   set parentFolder(value: FolderItem | null) {
     const old_parent = this._parent_folder;
     if (old_parent == null) throw new ValueError("Cannot move the root folder");
-    if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parent_folder must be a FolderItem");
+    if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parentFolder must be a FolderItem");
     if (value === old_parent) return;
     // A folder cannot become its own descendant. Walking up from the
     // target also covers value is self and value under the root.

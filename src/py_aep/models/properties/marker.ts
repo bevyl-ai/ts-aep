@@ -219,7 +219,7 @@ export class MarkerValue {
   _frame_rate(): number {
     if (this._keyframe == null) {
       throw new ValueError(
-        "frame_duration needs the composition frame rate: set the " +
+        "frameDuration needs the composition frame rate: set the " +
           "MarkerValue on a marker property first",
       );
     }

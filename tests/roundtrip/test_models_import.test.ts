@@ -2515,7 +2515,7 @@ describe("TestChooseLayerImport", () => {
       () => {
         project.importFile(_layer_opts(ASSETS.div("choose_layer.psd"), 4));
       },
-      "layer_index 4 out of range",
+      "layerIndex 4 out of range",
     );
   });
 
@@ -2551,7 +2551,7 @@ describe("TestChooseLayerImport", () => {
       () => {
         parse_aep(BASE).project.importFile(opts);
       },
-      "requires layer_index",
+      "requires layerIndex",
     );
   });
 
@@ -2845,7 +2845,7 @@ describe("TestChooseLayerReplace", () => {
       () => {
         item.replace(ASSETS.div("choose_layer_v2.psd"), 3);
       },
-      "layer_index 3 out of range",
+      "layerIndex 3 out of range",
     );
   });
 
@@ -3611,7 +3611,7 @@ describe("TestLayerStylesValidation", () => {
 
   test.each([
     [ImportAsType.FOOTAGE, 1, "editable", "COMP import"],
-    [ImportAsType.FOOTAGE, null, "merge", "requires layer_index"],
+    [ImportAsType.FOOTAGE, null, "merge", "requires layerIndex"],
     [ImportAsType.COMP, null, "ignore", "no Ignore option"],
   ])("test_import_context_rules[%#]", (import_as: ImportAsType, layer_index: number | null, layer_styles: string, match: string) => {
     const project = parse_aep(BASE).project;

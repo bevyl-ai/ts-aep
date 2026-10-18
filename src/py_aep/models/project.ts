@@ -978,7 +978,7 @@ export class Project {
     if (value != null) {
       if (!is_list_or_tuple(value)) {
         throw new TypeError_(
-          "icc_profile_dirs must be a list of directories or None, " +
+          "iccProfileDirs must be a list of directories or None, " +
             `got ${type_name(value)}`,
         );
       }
@@ -1017,7 +1017,7 @@ export class Project {
   set displayColorSpace(value: [string, string] | string) {
     if (this.colorManagementSystem !== ColorManagementSystem.OCIO) {
       throw new NotImplementedError(
-        "display_color_space is only settable in OCIO mode. In Adobe " +
+        "displayColorSpace is only settable in OCIO mode. In Adobe " +
           "CMS the display uses the operating system's monitor profile, " +
           "which is not stored in the project.",
       );
@@ -1032,7 +1032,7 @@ export class Project {
       view = idx >= 0 ? value.slice(idx + 1) : value;
       if (!sep) {
         throw new ValueError(
-          "display_color_space string must be 'display/view'; got " +
+          "displayColorSpace string must be 'display/view'; got " +
             `${repr(value)}. Pass a (display, view) tuple to disambiguate.`,
         );
       }
@@ -1040,7 +1040,7 @@ export class Project {
       [display, view] = value;
     } else {
       throw new TypeError_(
-        "display_color_space expects a 'display/view' string or a " +
+        "displayColorSpace expects a 'display/view' string or a " +
           `(display, view) tuple, got ${type_name(value)}`,
       );
     }
@@ -1262,25 +1262,25 @@ export class Project {
     if (options.layerIndex != null) {
       if (options.importAs !== ImportAsType.FOOTAGE) {
         throw new ValueError(
-          "layer_index applies to ImportAsType.FOOTAGE only; COMP " + "imports include every layer",
+          "layerIndex applies to ImportAsType.FOOTAGE only; COMP " + "imports include every layer",
         );
       }
       if (options.sequence) {
-        throw new ValueError("layer_index cannot be combined with sequence");
+        throw new ValueError("layerIndex cannot be combined with sequence");
       }
     } else if (options.layerDimensions != null) {
-      throw new ValueError("layer_dimensions requires layer_index");
+      throw new ValueError("layerDimensions requires layerIndex");
     }
 
     const suffix = options.file.suffix.toLowerCase();
     if (options.layerStyles != null) {
       if (!PSD_COMP_EXTENSIONS.has(suffix)) {
-        throw new ValueError("layer_styles applies to Photoshop (.psd/.psb) imports only");
+        throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) imports only");
       }
       if (options.importAs === ImportAsType.FOOTAGE) {
         if (options.layerIndex == null) {
           throw new ValueError(
-            "layer_styles requires layer_index for a FOOTAGE " +
+            "layerStyles requires layerIndex for a FOOTAGE " +
               'import: a "Merged Layers" whole-document import ' +
               "always flattens the styles into the composite",
           );
@@ -1309,7 +1309,7 @@ export class Project {
         return this._import_ai_layered(options.file, { cropped: true });
       }
       throw new ValueError(
-        "import_file supports COMP_CROPPED_LAYERS for SVG and layered " +
+        "importFile supports COMP_CROPPED_LAYERS for SVG and layered " +
           `.ai/.pdf/.psd/.psb; ${suffix} cropped import is not implemented yet`,
       );
     }
@@ -1323,16 +1323,16 @@ export class Project {
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
         return this._import_psd_layered(options.file, false, this._resolve_comp_layer_styles(options));
       }
-      throw new ValueError(`import_file does not support COMP import for ${repr(suffix)}`);
+      throw new ValueError(`importFile does not support COMP import for ${repr(suffix)}`);
     }
     if (options.importAs === ImportAsType.PROJECT) {
       throw new ValueError(
-        "import_file does not support PROJECT import (importing an " + ".aep/.aet, or an AE project embedded in a .mov/.m4a)",
+        "importFile does not support PROJECT import (importing an " + ".aep/.aet, or an AE project embedded in a .mov/.m4a)",
       );
     }
     if (options.importAs !== ImportAsType.FOOTAGE) {
       throw new ValueError(
-        "import_file supports ImportAsType.FOOTAGE, COMP (layered " +
+        "importFile supports ImportAsType.FOOTAGE, COMP (layered " +
           ".ai/.pdf/.psd/.psb), and COMP_CROPPED_LAYERS (SVG, " +
           ".ai/.pdf/.psd/.psb), " +
           `got ${ImportAsType.name_of(options.importAs)}`,

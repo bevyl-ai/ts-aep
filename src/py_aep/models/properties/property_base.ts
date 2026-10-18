@@ -73,7 +73,7 @@ export const _TEXT_ANIMATOR_TOGGLEABLE: ReadonlySet<string> = new Set<string>([
 export function _validate_enabled(value: boolean, obj: PropertyBase): void {
   validate_bool(value);
   if (!obj.canSetEnabled) {
-    throw new AttributeError("'enabled' is read-only when 'can_set_enabled' is False.");
+    throw new AttributeError("'enabled' is read-only when 'canSetEnabled' is False.");
   }
 }
 

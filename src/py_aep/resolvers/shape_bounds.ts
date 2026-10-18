@@ -296,7 +296,7 @@ export function _polystar_path(item: PropertyGroup, time: number): _Path {
   let points = _value(item, "ADBE Vector Star Points", time);
   if (points !== int(points)) {
     throw new NotImplementedError(
-      "source_rect_at_time does not model a polystar with a fractional " +
+      "sourceRectAtTime does not model a polystar with a fractional " +
         `number of points (${float_repr(points)})`,
     );
   }
@@ -481,7 +481,7 @@ export function _walk(
       }
     } else if (match_name.startsWith("ADBE Vector Filter") && !_BOX_NEUTRAL_FILTERS.has(match_name)) {
       throw new NotImplementedError(
-        `source_rect_at_time does not model the ${repr(item.name)} path operation`,
+        `sourceRectAtTime does not model the ${repr(item.name)} path operation`,
       );
     }
   }

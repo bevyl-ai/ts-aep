@@ -1298,7 +1298,7 @@ export class FileSource extends FootageSource {
         windows,
       });
     }
-    throw new ValueError(`layer_index requires a layered .psd/.psb/.ai/.pdf file, got ${repr(suffix)}`);
+    throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${repr(suffix)}`);
   }
 
   static _build_sequence(

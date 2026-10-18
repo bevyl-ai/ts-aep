@@ -205,7 +205,7 @@ export class Shape {
       feather_points != null &&
       !(Array.isArray(feather_points) && feather_points.every((fp) => fp instanceof FeatherPoint))
     ) {
-      throw new TypeError_("feather_points must be a list of FeatherPoint");
+      throw new TypeError_("featherPoints must be a list of FeatherPoint");
     }
     this._shph = new ShphChunk();
     this._shph.open = !closed;
@@ -250,7 +250,7 @@ export class Shape {
     }
     const count = vertices.length;
     if (in_tangents.length !== count || out_tangents.length !== count) {
-      throw new ValueError("in_tangents and out_tangents must match the number of vertices");
+      throw new ValueError("inTangents and outTangents must match the number of vertices");
     }
     py_assert(this._shph != null && this._points != null);
     if (3 * count !== this._points.length && !this._detached) {
@@ -487,7 +487,7 @@ export class Shape {
   set inTangents(value: number[][]) {
     if (this._points == null || this._shph == null) return;
     if (!Array.isArray(value)) {
-      throw new ValueError("in_tangents must be a list of [x,y] pairs");
+      throw new ValueError("inTangents must be a list of [x,y] pairs");
     }
     this._write_geometry(this.vertices, [...value], this._stored_tangents(1));
   }
@@ -532,7 +532,7 @@ export class Shape {
   set outTangents(value: number[][]) {
     if (this._points == null || this._shph == null) return;
     if (!Array.isArray(value)) {
-      throw new ValueError("out_tangents must be a list of [x,y] pairs");
+      throw new ValueError("outTangents must be a list of [x,y] pairs");
     }
     this._write_geometry(this.vertices, this._stored_tangents(-1), [...value]);
   }
