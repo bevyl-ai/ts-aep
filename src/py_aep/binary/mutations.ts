@@ -382,7 +382,7 @@ export function buildParallelLdatItem(
       `unsupported parallel item type <LdatItemType.${LdatItemType.nameOf(itemType)}: ${itemType}>`,
     );
   }
-  const bodyLen = 8 + (kfData instanceof Uint8Array ? kfData.length : len(kfData.tobytes()));
+  const bodyLen = 8 + (kfData instanceof Uint8Array ? kfData.length : kfData.tobytes().length);
   const item = new LdatItem({
     timeUnits: 0,
     inInterpolationType: interp,

@@ -43,7 +43,7 @@ export class FormatOptionsBase {
     }
   }
 
-  __setattr__(name: string, value: unknown): void {
+  _assignAttribute(name: string, value: unknown): void {
     // Public fields only: `__init__` assigns `_body` (and friends), and
     // the detach itself writes `_detached`, both before/while there is
     // anything to guard.

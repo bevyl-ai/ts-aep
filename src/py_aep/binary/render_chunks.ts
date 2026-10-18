@@ -172,7 +172,7 @@ export class RoptChunk extends Chunk {
   /** Format code from the first 4 bytes of raw data (for fallback chunks). */
   get formatCode(): string {
     const data = "data" in this ? this.data : b("");
-    if (len(data) >= 4) return decode(bytes_.slice(data, 0, 4), "ascii");
+    if (data.length >= 4) return decode(bytes_.slice(data, 0, 4), "ascii");
     return "";
   }
 

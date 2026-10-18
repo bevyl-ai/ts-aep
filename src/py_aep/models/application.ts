@@ -23,7 +23,7 @@ export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] a
 export function _validateVersion(value: string, obj: Application): void {
   validateAeVersion(value);
   const current = obj._head.aeVersionMajor;
-  const target = int(split(str(value), ".", 1)[0]);
+  const target = int(split(value, ".", 1)[0]);
   if (obj._head.fileFormatVersion < LEGACY_NAME_FORMAT) {
     // Every release py_aep writes reads names as `Utf8` children, where
     // this project holds them as bare strings (and lacks root chunks

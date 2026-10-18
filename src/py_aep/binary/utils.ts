@@ -382,7 +382,7 @@ export function chunkTree(chunks: Chunk[], depth = -1, indent = 0): string {
   for (const chunk of chunks) {
     const lt = chunk instanceof ListChunk ? chunk.listType : null;
     const children = chunk instanceof ListChunk ? chunk.chunks : null;
-    const size = len("data" in chunk ? chunk.data : b(""));
+    const size = ("data" in chunk ? chunk.data : b("")).length;
     if (lt != null) {
       const label = `LIST:${lt}`;
       lines.push(`${prefix}${label}`);

@@ -410,7 +410,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   _onParamChanged(key: string, strValue: string): void {
     // Every `params` mutation funnels through here by design, so this is
     // where a detached wrapper's raw-dict writes are caught - `params`
-    // is a `__setitem__` surface, which `__setattr__` cannot see.
+    // is a `__setitem__` surface, which `_assignAttribute` cannot see.
     this._checkAttached();
     if (this._xmlRoot == null) return;
     const valElem = this._valElements.get(key);

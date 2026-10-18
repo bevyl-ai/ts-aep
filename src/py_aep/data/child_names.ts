@@ -1,7 +1,7 @@
 /**
  * Children of the built-in property groups reachable by attribute name.
  *
- * `PropertyGroup.__getattr__` (Python's `group.child_name`) finds a child by
+ * `PropertyGroup._missingAttribute` (Python's `group.childName`) finds a child by
  * its display name in snake_case. For these groups the names below resolve to
  * the same child (by match name) on every instance, in every layer kind and
  * After Effects version the sample corpus covers, so the types can promise

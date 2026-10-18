@@ -232,7 +232,7 @@ export function _chunkFloats(chunk: Chunk): number[] | null {
   }
   if (ct === "ldat" && chunk instanceof LdatChunk) {
     const items = chunk.items;
-    if (pyBool(items) && items.every((i: { x: number; y: number }) => "x" in i && "y" in i)) {
+    if ((items.length > 0) && items.every((i: { x: number; y: number }) => "x" in i && "y" in i)) {
       return items.flatMap((i: { x: number; y: number }) => [i.x, i.y]);
     }
   }

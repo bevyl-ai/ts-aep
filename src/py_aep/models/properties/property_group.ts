@@ -702,7 +702,7 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
-  __getattr__(name: string): Property | PropertyGroup {
+  _missingAttribute(name: string): Property | PropertyGroup {
     /**
      * Look up a child property by attribute access.
      *
@@ -744,12 +744,12 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
-  __setattr__(name: string, value: unknown): void {
+  _assignAttribute(name: string, value: unknown): void {
     // A name the class does not define would only become a Python
     // attribute: nothing reaches the file, and it would shadow the child
     // that attribute access resolves (`transform.position = [...]` leaves
     // Position untouched and makes `transform.position` the list). Layers
-    // opt out (`Layer.__setattr__`) to keep their own public instance
+    // opt out (`Layer._assignAttribute`) to keep their own public instance
     // attributes.
     if (
       !name.startsWith("_") &&
@@ -773,7 +773,7 @@ export class PropertyGroup extends PropertyBase {
     /**
      * Look up a child property by index or name.
      *
-     * This is the canonical access method; `__getattr__` (snake_case
+     * This is the canonical access method; `_missingAttribute` (
      * attribute access) delegates here.
      *
      * @example
@@ -932,7 +932,7 @@ export class PropertyGroup extends PropertyBase {
       const text = this._containingLayer.text;
       if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
       const textDoc = text.property("ADBE Text Document").value;
-      const psName: string = pyOr(textDoc.font, "");
+      const psName: string = textDoc.font || "";
       const family = split(psName, "-", 1)[0];
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
@@ -1356,8 +1356,8 @@ export class PropertyGroup extends PropertyBase {
   }
 }
 
-// `__getattr__` (child lookup by attribute name) and `__setattr__` without a proxy
-// around each group. Exact here: `__setattr__` (this one and `Layer`'s) passes every
+// `_missingAttribute` (child lookup by attribute name) and `_assignAttribute` without a proxy
+// around each group. Exact here: `_assignAttribute` (this one and `Layer`'s) passes every
 // existing attribute through and only refuses new public names.
 pyClassHooks(PropertyGroup, { setattrPassesPrivate: true });
 

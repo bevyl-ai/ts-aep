@@ -997,17 +997,17 @@ describe("TestLayerPropertyGroupInheritance", () => {
     });
   });
 
-  /** layer.transform.position resolves via __getattr__. */
+  /** layer.transform.position resolves via _missingAttribute. */
   test("test_getattr_single_word", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const position = layer.transform.__getattr__("position");
+    const position = layer.transform._missingAttribute("position");
     expect(position.matchName).toBe("ADBE Position");
   });
 
   /** layer.transform.anchorPoint resolves 'Anchor Point'. */
   test("test_getattr_multi_word", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const anchor = layer.transform.__getattr__("anchorPoint");
+    const anchor = layer.transform._missingAttribute("anchorPoint");
     expect(anchor.matchName).toBe("ADBE Anchor Point");
   });
 
@@ -1015,11 +1015,11 @@ describe("TestLayerPropertyGroupInheritance", () => {
   test("test_getattr_attribute_error", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     raises(AttributeError, () => {
-      layer.transform.__getattr__("nonexistent");
+      layer.transform._missingAttribute("nonexistent");
     });
   });
 
-  /** Class attributes take priority over __getattr__. */
+  /** Class attributes take priority over _missingAttribute. */
   test("test_getattr_does_not_shadow_fields", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     // 'name' is a class attribute, should NOT look in children

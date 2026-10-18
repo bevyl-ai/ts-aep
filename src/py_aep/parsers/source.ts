@@ -22,7 +22,7 @@ export function parseSource(
 
   const assetType = getattr(optiChunk, "assetType", "");
 
-  if (!pyBool(assetType) && hasattr(optiChunk, "placeholderName")) {
+  if (!!!assetType && hasattr(optiChunk, "placeholderName")) {
     return new PlaceholderSource({
       _sspc: sspcChunk,
       _opti: optiChunk,
