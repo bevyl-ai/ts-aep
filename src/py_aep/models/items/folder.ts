@@ -396,4 +396,8 @@ export class FolderItem extends Item {
     );
     this.items.splice(0, this.items.length, ...blocks.map((b) => b[0]));
   }
+
+  _isFolder(): this is FolderItem {
+    return true;
+  }
 }

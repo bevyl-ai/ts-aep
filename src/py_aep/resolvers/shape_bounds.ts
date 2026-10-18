@@ -34,7 +34,6 @@ import { Affine, IDENTITY } from "../svg/transform.ts";
 import {
   NotImplementedError,
   ZeroDivisionError,
-  deferred,
   floatRepr,
   int,
   max,
@@ -46,7 +45,6 @@ import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
 
-const _propertyGroup = deferred<typeof import("../models/properties/property_group.ts")>("py_aep/models/properties/property_group");
 
 declare module "../models/properties/match_name_types.ts" {
   interface MatchNameTypes {
@@ -429,7 +427,7 @@ export function _walk(
     }
     const matchName = item.matchName;
     // Every match name dispatched below names a group (see MatchNameTypes).
-    const group = item instanceof _propertyGroup().PropertyGroup ? item : null;
+    const group = item._isGroup() ? item : null;
     const pathBuilder = _PATH_BUILDERS.get(matchName);
     if (matchName === "ADBE Vector Group" && group != null) {
       const local = _groupMatrix(

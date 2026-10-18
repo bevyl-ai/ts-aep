@@ -1071,7 +1071,7 @@ export class PropertyGroup extends PropertyBase {
     // not a positional count: len+1 collides after a mid-parade mask is
     // removed, or on a parsed layer whose mask ids are non-contiguous.
     const existing = this.properties.filter(
-      (m): m is MaskPropertyGroup => m instanceof _maskPropertyGroup().MaskPropertyGroup,
+      (m): m is MaskPropertyGroup => m._isMaskGroup(),
     );
     const nextId = max(
       existing.map((m) => m._mkif.maskId),
@@ -1353,6 +1353,10 @@ export class PropertyGroup extends PropertyBase {
       { hasAdvanced: matchName === "ADBE Text Selector" },
     );
     return this._attachGroup(tdmn, tdgp, matchName);
+  }
+
+  _isGroup(): this is PropertyGroup {
+    return true;
   }
 }
 

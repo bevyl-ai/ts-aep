@@ -27,8 +27,6 @@ import type { PropertyGroup } from "./property_group.ts";
 import * as _propertyGroup from "./property_group.ts";
 import * as _propertyValue from "../../parsers/property_value.ts";
 
-const _layer = deferred<typeof import("../layers/layer.ts")>("py_aep/models/layers/layer");
-const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
 const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
@@ -129,7 +127,7 @@ export function _assignDuplicateMaskIdentity(
 ): void {
   const siblings = parent._properties
     .filter((m) => m._isMask && m !== newMask)
-    .filter((m) => m instanceof _maskPropertyGroup().MaskPropertyGroup);
+    .filter((m) => m._isMaskGroup());
   const newId = max(siblings.map((m) => m._mkif.maskId), null, 0) + 1;
   newMask._mkif.maskId = newId;
   // Python `$` also matches before a trailing newline; the lookahead mirrors that.
@@ -466,6 +464,21 @@ export class PropertyBase {
     return false;
   }
 
+  /** Whether this is a group (`PropertyGroup` answers true). */
+  _isGroup(): this is PropertyGroup {
+    return false;
+  }
+
+  /** Whether this is a layer (`Layer` answers true). */
+  _isLayer(): this is Layer {
+    return false;
+  }
+
+  /** Whether this is a mask (`MaskPropertyGroup` answers true). */
+  _isMaskGroup(): this is MaskPropertyGroup {
+    return false;
+  }
+
   /**
    * Walk up the parent_property chain to find the containing layer.
    *
@@ -475,7 +488,7 @@ export class PropertyBase {
   get _containingLayer(): Layer {
     let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
-      if ("_ldta" in node && node instanceof _layer().Layer) return node;
+      if ("_ldta" in node && node._isLayer()) return node;
       node = node.parentProperty;
     }
     throw new ValueError("Property is not attached to a layer");
@@ -570,7 +583,7 @@ export class PropertyBase {
    */
   remove(): void {
     const [parent, parentTdgp] = this._canMutate();
-    if (this._isMask && this instanceof _maskPropertyGroup().MaskPropertyGroup) _clearMaskReferences(this);
+    if (this._isMask && this._isMaskGroup()) _clearMaskReferences(this);
     const [start, end] = this._findChunkSpan(parentTdgp);
     const removed = parentTdgp.chunks.splice(start, end - start);
     _effect().rehomeEffectDefinitions(
@@ -656,7 +669,7 @@ export class PropertyBase {
     const modelIdx = listIndex<PropertyBase>(parent.properties, this);
     parent.properties.splice(modelIdx + 1, 0, newProp);
 
-    if (this._isMask && newProp instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    if (this._isMask && newProp._isMaskGroup()) {
       _assignDuplicateMaskIdentity(this, newProp, parent);
       _renumberMaskAutoNames(parent);
     }

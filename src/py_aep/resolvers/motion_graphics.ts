@@ -42,12 +42,11 @@ import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { deferred, valueEquals, int, jsonDumps } from "../../pyrt/index.ts";
+import { valueEquals, int, jsonDumps } from "../../pyrt/index.ts";
 import { FootageItem } from "../models/items/footage.ts";
 import { SolidSource } from "../models/sources/solid.ts";
 import { TextDocument } from "../models/text/text_document.ts";
 import * as _composition from "../models/items/composition.ts";
-const _layer = deferred<typeof import("../models/layers/layer.ts")>("py_aep/models/layers/layer");
 
 // AE stores this in a CPrp path node's index to mean "match by name".
 export const _BY_NAME_INDEX = 0xffffffff;
@@ -64,7 +63,7 @@ export const CONTROLLER_TEXT = 6;
 export function _owningLayer(prop: Property): Layer | null {
   let group: PropertyGroup | null = prop.parentProperty;
   while (group != null) {
-    if (group instanceof _layer().Layer) return group;
+    if (group._isLayer()) return group;
     group = group.parentProperty;
   }
   return null;
@@ -122,7 +121,7 @@ export function _effectParamPath(prop: Property): [PathNode[], Layer] | null {
   const parade: PropertyGroup | null = effect.parentProperty;
   if (parade == null || parade.matchName !== "ADBE Effect Parade") return null;
   const layer: PropertyGroup | null = parade.parentProperty;
-  if (!(layer instanceof _layer().Layer)) return null;
+  if (layer == null || !layer._isLayer()) return null;
   const effectIndex = parade.properties.findIndex((e) => e === effect);
   if (effectIndex === -1) return null;
   const leafIndex = _effectParamIndex(layer, effect.matchName, prop.matchName);
@@ -165,7 +164,7 @@ export function _sourcePropertyPath(prop: Property): [PathNode[], Layer] | null 
   const chain: PathNode[] = [];
   let node: Property | PropertyGroup = prop;
   let parent: PropertyGroup | null = prop.parentProperty;
-  while (parent != null && !(parent instanceof _layer().Layer)) {
+  while (parent != null && !parent._isLayer()) {
     if (parent.isEffect || parent.matchName === "ADBE Effect Parade") {
       // Effect subtrees are handled by _effect_param_path only; a
       // positional index here would miss the hidden header pard.
@@ -184,7 +183,7 @@ export function _sourcePropertyPath(prop: Property): [PathNode[], Layer] | null 
     node = parent;
     parent = parent.parentProperty;
   }
-  if (!(parent instanceof _layer().Layer)) return null;
+  if (parent == null || !parent._isLayer()) return null;
   // The layer's top-level group resolves by name too.
   if (parent.properties.filter((c) => c.matchName === node.matchName).length !== 1) {
     return null;

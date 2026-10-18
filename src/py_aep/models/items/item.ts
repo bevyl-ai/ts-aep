@@ -24,7 +24,6 @@ import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 import type { Viewer } from "../viewer/viewer.ts";
 
-const _folder = deferred<typeof import("./folder.ts")>("py_aep/models/items/folder");
 // NOTE(port): a module-level import in Python; parsers/effect imports the item subclasses, which extend Item.
 const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
@@ -170,7 +169,7 @@ export class Item {
   set parentFolder(value: FolderItem | null) {
     const oldParent = this._parentFolder;
     if (oldParent == null) throw new ValueError("Cannot move the root folder");
-    if (!(value instanceof _folder().FolderItem)) throw new TypeError("parentFolder must be a FolderItem");
+    if (!(value instanceof Item && value._isFolder())) throw new TypeError("parentFolder must be a FolderItem");
     if (value === oldParent) return;
     // A folder cannot become its own descendant. Walking up from the
     // target also covers value is self and value under the root.
@@ -356,6 +355,11 @@ export class Item {
     const block = container.slice(start, end);
     container.splice(start, end - start);
     return block;
+  }
+
+  /** Whether this is a folder (`FolderItem` answers true). */
+  _isFolder(): this is FolderItem {
+    return false;
   }
 
   static {

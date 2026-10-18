@@ -1195,6 +1195,10 @@ export class AVLayer extends Layer {
     }
   }
 
+  _isAVLayer(): this is AVLayer {
+    return true;
+  }
+
   static {
     // Class-body `ChunkField` assignments in Python, installed as descriptors.
     descriptor(this, "adjustmentLayer", ChunkField.bool("_ldta", "adjustmentLayer"));

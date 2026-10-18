@@ -3,7 +3,6 @@
 import {
   AttributeError,
   ValueError,
-  deferred,
   mod,
   assert,
   min,
@@ -20,8 +19,6 @@ import { validateBool, validateF4Point, validateNormalizedFloat, validatePositiv
 import type { Layer } from "../layers/layer.ts";
 import type { Property } from "./property.ts";
 
-const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
-const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 
 /** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
 export function _interpTransform(raw: number): number {
@@ -340,7 +337,7 @@ export class Shape {
     const prop = this._maskPath;
     if (prop == null || prop._tdb4 == null) return false;
     const mask = prop._parentProperty;
-    return mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup && mask.rotoBezier;
+    return mask != null && mask._isMask && mask._isMaskGroup() && mask.rotoBezier;
   }
 
   /**
@@ -351,7 +348,7 @@ export class Shape {
     const prop = this._maskPath;
     if (prop == null || !this._isRotoBezier()) return null;
     const layer = prop._containingLayer;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    if (!layer._isAVLayer()) throw new AttributeError("_maskScale");
     const [width, height] = layer._maskScale;
     const vertices = this.vertices;
     let tensions = this._tensions;
@@ -394,7 +391,7 @@ export class Shape {
    */
   get _compSize(): [number, number] | null {
     if (this._layer == null) return null;
-    if (!(this._layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    if (!this._layer._isAVLayer()) throw new AttributeError("_maskScale");
     return this._layer._maskScale;
   }
 
