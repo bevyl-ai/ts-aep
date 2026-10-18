@@ -5,24 +5,27 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp } from "../helpers.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Project, type TextDocument } from "../../src/py_aep/index.ts";
+import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import { cos_at, cos_item } from "../../src/py_aep/cos/kinds.ts";
 import { CosName } from "../../src/py_aep/cos/index.ts";
 import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, DigitSet, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
-import { contains, getattr, getitem, Path, py_eq, ValueError } from "../../src/pyrt/index.ts";
+import { contains, getattr, Path, py_assert, py_eq, setattr, ValueError } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 
 /** Parse and return the first text document from an .aep file. */
-function _get_text_document(aep_path: Path, comp_name: string | null = null): [any, any] {
+function _get_text_document(aep_path: Path, comp_name: string | null = null): [Project, TextDocument] {
   const app = parse_aep(aep_path);
-  let comp: any;
+  let comp: CompItem;
   if (comp_name) {
     comp = get_comp(app.project, comp_name);
   } else {
     comp = app.project.compositions[0];
   }
   const text_layer = comp.text_layers[0];
+  py_assert(text_layer.text != null);
   return [app.project, text_layer.text.source_text.value];
 }
 
@@ -72,7 +75,7 @@ describe("TestRoundtripFillColor", () => {
     project.save(out);
 
     const [_project2, doc2] = _get_text_document(out, "type_text");
-    expect(doc2.fill_color != null).toBe(true);
+    py_assert(doc2.fill_color != null);
     expect(doc2.fill_color[0]).toBe(1.0);
     expect(doc2.fill_color[1]).toBe(0.0);
     expect(doc2.fill_color[2]).toBe(0.0);
@@ -144,10 +147,10 @@ describe("TestRoundtripWiredAttributes", () => {
     ["direction", ParagraphDirection.DIRECTION_RIGHT_TO_LEFT],
     ["every_line_composer", true],
     ["line_orientation", LineOrientation.VERTICAL_RIGHT_TO_LEFT],
-  ])("test_roundtrip[%#]", (attr: string, value: any) => {
+  ])("test_roundtrip[%#]", (attr: string, value: unknown) => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    (doc as any)[attr] = value;
+    setattr(doc, attr, value);
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
@@ -196,11 +199,11 @@ describe("TestBoxText", () => {
     ["box_first_baseline_alignment", BoxFirstBaselineAlignment.CAP_HEIGHT],
     ["box_first_baseline_alignment", BoxFirstBaselineAlignment.MINIMUM_VALUE_ROMAN],
     ["box_first_baseline_alignment_minimum", 7.0],
-  ])("test_box_attr_roundtrip[%#]", (attr: string, value: any) => {
+  ])("test_box_attr_roundtrip[%#]", (attr: string, value: unknown) => {
     const tmp_path = make_tmp_path();
     const [project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
     doc.box_text_size = [300.0, 150.0]; // convert to box first
-    (doc as any)[attr] = value;
+    setattr(doc, attr, value);
     const out = tmp_path.div("box.aep");
     project.save(out);
 
@@ -220,9 +223,8 @@ describe("TestRegisterFont", () => {
   test("test_new_font_tag_is_cos_name", () => {
     const [_project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
     doc.font = "Arial-BoldMT"; // not in the template -> _register_font
-    const g: (o: any, k: any) => any = getitem;
-    const new_entry = g(g(g(doc._cos_data, "0"), "1"), "0").at(-1);
-    expect(g(g(new_entry, "0"), "99") instanceof CosName).toBe(true);
+    const new_entry = cos_at(cos_item(cos_item(cos_item(doc._cos_data, "0"), "1"), "0"), -1);
+    expect(cos_item(cos_item(new_entry, "0"), "99") instanceof CosName).toBe(true);
   });
 
   test("test_new_font_roundtrips", () => {

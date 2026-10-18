@@ -16,13 +16,16 @@
 import { describe, expect, test } from "bun:test";
 import { Path, TypeError_, ValueError, py_eq } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import type { RenderQueueItem } from "../../src/py_aep/models/renderqueue/render_queue_item.ts";
 
 const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "output_module", "file.aep");
 
-function _rqi(project: any): any {
-  return project.render_queue.items[0];
+function _rqi(project: Project): RenderQueueItem {
+  return as_instance(project.render_queue, RenderQueue).items[0];
 }
 
 describe("TestStrictBools", () => {
@@ -33,6 +36,7 @@ describe("TestStrictBools", () => {
       rqi.settings.__setitem__("Skip Existing Files", "no");
     });
     raises(TypeError_, () => {
+      // @ts-expect-error render is boolean; a non-bool write must raise TypeError at runtime
       rqi.render = 1;
     });
     rqi.settings.__setitem__("Skip Existing Files", true);

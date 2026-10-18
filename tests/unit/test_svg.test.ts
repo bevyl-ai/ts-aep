@@ -3,7 +3,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
-import { Path, b, getitem, min, py_eq, sorted, zip } from "../../src/pyrt/index.ts";
+import { Path, at, b, getitem, min, py_assert, py_eq, sorted, zip } from "../../src/pyrt/index.ts";
+import { as_instance } from "../helpers.ts";
 import { GradientPaint, type GradientStop, SolidPaint, SvgDocument, UnsupportedSVGError, read_svg } from "../../src/py_aep/svg/index.ts";
 import { parse_color } from "../../src/py_aep/svg/colors.ts";
 import { parse_path } from "../../src/py_aep/svg/path_data.ts";
@@ -14,8 +15,8 @@ import { IDENTITY, parse_transform } from "../../src/py_aep/svg/transform.ts";
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const SAMPLE = new Path(import.meta.path).parent.parent.parent.div("samples", "assets", "svg.svg");
 
-function _approx(a: any, b: any, tol = 1e-6): boolean {
-  return zip(a, b).every(([x, y]: any) => Math.abs(x - y) <= tol);
+function _approx(a: Iterable<number>, b: Iterable<number>, tol = 1e-6): boolean {
+  return zip([...a], [...b]).every(([x, y]) => Math.abs(x - y) <= tol);
 }
 
 describe("TestTransform", () => {
@@ -115,7 +116,7 @@ describe("TestPathData", () => {
   test("test_arc_quarter_circle", () => {
     // Quarter circle radius 10 from (10,0) to (0,10).
     const subs = parse_path("M10,0 A10,10 0 0 1 0,10");
-    const seg = subs[0].segments.at(-1)!;
+    const seg = at(subs[0].segments, -1);
     expect(_approx([seg[6], seg[7]], [0.0, 10.0], 1e-6)).toBe(true);
   });
 
@@ -210,7 +211,9 @@ describe("TestShapes", () => {
 
 describe("TestColors", () => {
   test("test_hex6", () => {
-    expect(_approx(parse_color("#ffa619"), [1.0, 166 / 255, 25 / 255, 1.0])).toBe(true);
+    const color = parse_color("#ffa619");
+    py_assert(color != null);
+    expect(_approx(color, [1.0, 166 / 255, 25 / 255, 1.0])).toBe(true);
   });
 
   test("test_hex3_expands", () => {
@@ -230,7 +233,9 @@ describe("TestColors", () => {
   });
 
   test("test_hsl_red", () => {
-    expect(_approx(parse_color("hsl(0,100%,50%)"), [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    const color = parse_color("hsl(0,100%,50%)");
+    py_assert(color != null);
+    expect(_approx(color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_none_is_none", () => {
@@ -341,11 +346,11 @@ describe("TestReadSvgSample", () => {
       'fill-opacity="0.5" stroke="#00f" stroke-width="1" ' +
       'stroke-opacity="25%"/></svg>';
     const drawable = read_svg(svg).drawables[0];
-    expect(drawable.fill instanceof SolidPaint).toBe(true);
-    expect(approx((drawable.fill as any).color[3], 0.4)).toBe(true);
+    py_assert(drawable.fill instanceof SolidPaint);
+    expect(approx(drawable.fill.color[3], 0.4)).toBe(true);
     if (drawable.stroke == null) throw new Error("drawable has no stroke");
-    expect(drawable.stroke.paint instanceof SolidPaint).toBe(true);
-    expect(approx((drawable.stroke.paint as any).color[3], 0.25)).toBe(true);
+    py_assert(drawable.stroke.paint instanceof SolidPaint);
+    expect(approx(drawable.stroke.paint.color[3], 0.25)).toBe(true);
     expect(drawable.opacity).toBe(1.0);
   });
 
@@ -356,7 +361,7 @@ describe("TestReadSvgSample", () => {
       '<g fill-opacity="0.5"><rect width="4" height="4" fill="#f00"/></g>' +
       "</svg>";
     const drawable = read_svg(svg).drawables[0];
-    expect(approx((drawable.fill as any).color[3], 0.5)).toBe(true);
+    expect(approx(as_instance(drawable.fill, SolidPaint).color[3], 0.5)).toBe(true);
     expect(drawable.opacity).toBe(1.0);
   });
 
@@ -367,8 +372,8 @@ describe("TestReadSvgSample", () => {
       '<stop offset="1" stop-color="#00f" stop-opacity="0.5"/>' +
       "</linearGradient>" +
       '<rect width="4" height="4" fill="url(#g)" fill-opacity="0.5"/></svg>';
-    const fill = read_svg(svg).drawables[0].fill as any;
-    expect(fill instanceof GradientPaint).toBe(true);
+    const fill = read_svg(svg).drawables[0].fill;
+    py_assert(fill instanceof GradientPaint);
     expect(approx(fill.stops.map((s: GradientStop) => s.color[3]), [0.5, 0.25])).toBe(true);
   });
 
@@ -416,8 +421,8 @@ describe("TestReadSvgFeatures", () => {
           <rect width="100" height="100" fill="url(#g)"/>
         </svg>`;
     const doc = read_svg(svg);
-    const paint = doc.drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
+    const paint = doc.drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
     expect(paint.kind).toBe("linear");
     expect(paint.stops.length).toBe(2);
     expect(_approx(paint.start, [0.0, 0.0])).toBe(true);
@@ -434,9 +439,9 @@ describe("TestReadSvgFeatures", () => {
           </linearGradient></defs>
           <rect width="100" height="100" fill="url(#g)"/>
         </svg>`;
-    const paint = read_svg(svg).drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
-    expect(paint.stops.at(-1)!.offset).toBe(1.0);
+    const paint = read_svg(svg).drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
+    expect(at(paint.stops, -1).offset).toBe(1.0);
   });
 
   test("test_gradient_coord_with_unit_suffix", () => {
@@ -450,8 +455,8 @@ describe("TestReadSvgFeatures", () => {
           </radialGradient></defs>
           <circle cx="50" cy="50" r="40" fill="url(#g)"/>
         </svg>`;
-    const paint = read_svg(svg).drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
+    const paint = read_svg(svg).drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
     expect(_approx(paint.start, [50.0, 50.0])).toBe(true);
     expect(_approx(paint.end, [90.0, 50.0])).toBe(true);
   });
@@ -470,8 +475,8 @@ describe("TestReadSvgFeatures", () => {
           </radialGradient></defs>
           <circle cx="50" cy="50" r="20" fill="url(#g)"/>
         </svg>`;
-    const paint = read_svg(svg).drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
+    const paint = read_svg(svg).drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
     // Centre stays put and the x-radius (start/end) is unchanged...
     expect(_approx(paint.start, [50.0, 50.0])).toBe(true);
     expect(_approx(paint.end, [70.0, 50.0])).toBe(true);
@@ -491,8 +496,8 @@ describe("TestReadSvgFeatures", () => {
           </radialGradient></defs>
           <circle cx="50" cy="50" r="20" fill="url(#g)"/>
         </svg>`;
-    const paint = read_svg(svg).drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
+    const paint = read_svg(svg).drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
     expect(_approx(paint.scale, [100.0, 100.0], 1e-4)).toBe(true);
     expect(approx(paint.rotation, 360.0)).toBe(true);
   });
@@ -506,8 +511,8 @@ describe("TestReadSvgFeatures", () => {
           </linearGradient></defs>
           <rect width="100" height="100" fill="url(#g)"/>
         </svg>`;
-    const paint = read_svg(svg).drawables[0].fill as any;
-    expect(paint instanceof GradientPaint).toBe(true);
+    const paint = read_svg(svg).drawables[0].fill;
+    py_assert(paint instanceof GradientPaint);
     expect(py_eq(paint.scale, [100.0, 100.0])).toBe(true);
     expect(paint.rotation === 0.0).toBe(true);
   });
@@ -564,7 +569,7 @@ class TestTextWhitespace {
     // runs produce no drawables and there is nothing to assert.
     if (doc.drawables.length < 2) return null;
     return min(
-      doc.drawables.at(-1)!.subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])),
+      at(doc.drawables, -1).subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])),
     );
   }
 }

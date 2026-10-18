@@ -9,7 +9,7 @@
 import { expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { ContainerChunk, ListChunk, read_chunks, write_aep, write_chunk } from "../../src/py_aep/binary/chunk.ts";
+import { type Chunk, ContainerChunk, ListChunk, read_chunks, write_aep, write_chunk } from "../../src/py_aep/binary/chunk.ts";
 import { HeadChunk, NhedChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { DwgaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { TDSN_SENTINEL, TdsnChunk } from "../../src/py_aep/binary/property_chunks.ts";
@@ -41,11 +41,11 @@ function _chunk(chunk_type: string, body: Uint8Array): Uint8Array {
   return concat(encode(chunk_type, "ASCII"), struct.pack(">I", len(body)), body, pad);
 }
 
-function _read(data: Uint8Array): any[] {
+function _read(data: Uint8Array): Chunk[] {
   return read_chunks(new BytesIO(data), len(data));
 }
 
-function _write(chunks: any[]): Uint8Array {
+function _write(chunks: Chunk[]): Uint8Array {
   const out = new BytesIO();
   for (const chunk of chunks) {
     write_chunk(out, chunk);
@@ -60,7 +60,7 @@ test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
   );
   const chunks = _read(data);
   expect(py_eq(chunks.map((c) => c.chunk_type), ["tdsn", "tdmn"])).toBe(true);
-  const tdsn = chunks[0];
+  const tdsn = as_instance(chunks[0], TdsnChunk);
   expect(tdsn instanceof TdsnChunk).toBe(true);
   // An empty legacy name is an unnamed property.
   expect(py_eq(tdsn.utf8.value, TDSN_SENTINEL)).toBe(true);
@@ -75,9 +75,9 @@ test("test_a_legacy_fnam_reads_its_string", () => {
     48,
   );
   const data = _chunk("fnam", body);
-  const [fnam] = _read(data);
+  const fnam = as_instance(_read(data)[0], ContainerChunk);
   expect(fnam instanceof ContainerChunk).toBe(true);
-  const [utf8] = fnam.chunks;
+  const utf8 = as_instance(fnam.chunks[0], Utf8Chunk);
   expect(utf8 instanceof Utf8Chunk).toBe(true);
   expect(py_eq(utf8.value, "Color Control")).toBe(true);
   // Written back byte for byte, stale bytes included.
@@ -86,8 +86,8 @@ test("test_a_legacy_fnam_reads_its_string", () => {
 
 test("test_a_renamed_legacy_fnam_keeps_its_buffer", () => {
   const body = bytes_.ljust(b("Color Control"), 48, 0);
-  const [fnam] = _read(_chunk("fnam", body));
-  fnam.chunks[0].value = "Text Color";
+  const fnam = as_instance(_read(_chunk("fnam", body))[0], ContainerChunk);
+  as_instance(fnam.chunks[0], Utf8Chunk).value = "Text Color";
   const written = _write([fnam]);
   expect(py_eq(written, _chunk("fnam", bytes_.ljust(b("Text Color"), 48, 0)))).toBe(true);
 });
@@ -95,8 +95,8 @@ test("test_a_renamed_legacy_fnam_keeps_its_buffer", () => {
 test("test_a_modern_fnam_is_unchanged", () => {
   const utf8 = _chunk("Utf8", b("Glow"));
   const data = _chunk("fnam", utf8);
-  const [fnam] = _read(data);
-  const [child] = fnam.chunks;
+  const fnam = as_instance(_read(data)[0], ContainerChunk);
+  const child = as_instance(fnam.chunks[0], Utf8Chunk);
   expect(py_eq(child.value, "Glow")).toBe(true);
   expect(child.synthetic).toBe(false);
   expect(py_eq(fnam.data, b(""))).toBe(true);
@@ -123,8 +123,8 @@ test("test_a_legacy_fnam_with_a_four_letter_name_reads_its_string", () => {
   // NUL headers after it are not chunks.
   for (const name of [b("Fill"), b("Glow"), b("Tint"), b("Blur")]) {
     const data = _chunk("fnam", bytes_.ljust(name, 48, 0));
-    const [fnam] = _read(data);
-    const [utf8] = fnam.chunks;
+    const fnam = as_instance(_read(data)[0], ContainerChunk);
+    const utf8 = as_instance(fnam.chunks[0], Utf8Chunk);
     expect(py_eq(utf8.value, decode(name))).toBe(true);
     expect(utf8.synthetic).toBe(true);
     expect(py_eq(_write([fnam]), data)).toBe(true);
@@ -132,13 +132,13 @@ test("test_a_legacy_fnam_with_a_four_letter_name_reads_its_string", () => {
 });
 
 test("test_a_renamed_one_byte_tdsn_grows_to_its_name", () => {
-  const [tdsn] = _read(_chunk("tdsn", b("\x00")));
+  const tdsn = as_instance(_read(_chunk("tdsn", b("\x00")))[0], TdsnChunk);
   tdsn.utf8.value = "My Name";
   expect(py_eq(_write([tdsn]), _chunk("tdsn", b("My Name\x00")))).toBe(true);
 });
 
 test("test_a_renamed_legacy_tdsn_keeps_whole_characters", () => {
-  const [tdsn] = _read(_chunk("tdsn", b("abc\x00")));
+  const tdsn = as_instance(_read(_chunk("tdsn", b("abc\x00")))[0], TdsnChunk);
   tdsn.utf8.value = "abcdefé";
   expect(
     py_eq(_write([tdsn]), _chunk("tdsn", concat(encode("abcdefé"), b("\x00")))),
@@ -146,20 +146,20 @@ test("test_a_renamed_legacy_tdsn_keeps_whole_characters", () => {
 });
 
 test("test_a_legacy_tdsn_reset_to_unnamed_writes_the_empty_name", () => {
-  const [tdsn] = _read(_chunk("tdsn", b("Mask 1\x00")));
+  const tdsn = as_instance(_read(_chunk("tdsn", b("Mask 1\x00")))[0], TdsnChunk);
   tdsn.utf8.value = TDSN_SENTINEL;
   expect(py_eq(_write([tdsn]), _chunk("tdsn", b("\x00")))).toBe(true);
 });
 
 test("test_a_renamed_legacy_pdnm_grows_to_its_items", () => {
-  const [pdnm] = _read(_chunk("pdnm", b("On|Off\x00")));
-  pdnm.chunks[0].value = "On|Off|Auto";
+  const pdnm = as_instance(_read(_chunk("pdnm", b("On|Off\x00")))[0], ContainerChunk);
+  as_instance(pdnm.chunks[0], Utf8Chunk).value = "On|Off|Auto";
   expect(py_eq(_write([pdnm]), _chunk("pdnm", b("On|Off|Auto\x00")))).toBe(true);
 });
 
 test("test_a_legacy_fnam_too_long_for_its_buffer_raises", () => {
-  const [fnam] = _read(_chunk("fnam", bytes_.ljust(b("Glow"), 48, 0)));
-  fnam.chunks[0].value = "x".repeat(48);
+  const fnam = as_instance(_read(_chunk("fnam", bytes_.ljust(b("Glow"), 48, 0)))[0], ContainerChunk);
+  as_instance(fnam.chunks[0], Utf8Chunk).value = "x".repeat(48);
   raises(ValueError, () => {
     _write([fnam]);
   }, "48-byte fnam");
@@ -173,7 +173,8 @@ function _as_cc12_project(): py_aep.Project {
   const project = py_aep.new("15.0x1").project;
   project._nnhd = _nnhd_from_nhed(project._nhed);
   project._dwga = new DwgaChunk({ synthetic: true });
-  project._head = { ae_version_major: 12 } as any; // SimpleNamespace stand-in
+  // @ts-expect-error SimpleNamespace stand-in for the head chunk
+  project._head = { ae_version_major: 12 };
   return project;
 }
 
@@ -215,7 +216,7 @@ test("test_gpu_accel_type_software_without_gpug", () => {
   expect(project.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
 });
 
-function _older_project_bytes(name_chunks: any[], file_format_version: number): Uint8Array {
+function _older_project_bytes(name_chunks: Chunk[], file_format_version: number): Uint8Array {
   const head = new HeadChunk({ chunk_type: "head" });
   head.file_format_version = file_format_version;
   const rifx = new ListChunk({
@@ -230,7 +231,7 @@ function _older_project_bytes(name_chunks: any[], file_format_version: number): 
 
 test("test_new_names_in_an_older_project_are_written_as_strings", () => {
   // AE reads a `Utf8` child of a format 91 file as the name "Utf8".
-  const names: any[] = [
+  const names: Chunk[] = [
     ["fnam", "Glow"],
     ["pdnm", "On|Off"],
     ["RCom", "note"],
@@ -255,9 +256,9 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   const project = py_aep.new("15.0x1").project;
   const comp = project.root_folder.add_comp("comp", 100, 100, 1.0, 1.0, 24.0);
   const solid = comp.add_solid([1, 0, 0], "solid", 100, 100, 1.0);
-  (solid.__getitem__("ADBE Mask Parade") as any).add_property("ADBE Mask Atom").name = "mask";
-  (solid.__getitem__("ADBE Effect Parade") as any).add_property("ADBE Slider Control").name = "slider";
-  (solid.__getitem__("ADBE Effect Parade") as any).add_property("ADBE Checkbox Control");
+  solid.__getitem__("ADBE Mask Parade").add_property("ADBE Mask Atom").name = "mask";
+  solid.__getitem__("ADBE Effect Parade").add_property("ADBE Slider Control").name = "slider";
+  solid.__getitem__("ADBE Effect Parade").add_property("ADBE Checkbox Control");
   as_instance(project.render_queue, RenderQueue).add(comp).comment = "note";
   project._head.file_format_version = 91;
   const out = tmp_path.div("older.aep");
@@ -271,13 +272,13 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   const [layer] = back.compositions[0].layers;
   expect(
     py_eq(
-      (layer.__getitem__("ADBE Mask Parade") as any).properties.map((p: any) => p.name),
+      layer.__getitem__("ADBE Mask Parade").properties.map((p) => p.name),
       ["mask"],
     ),
   ).toBe(true);
   expect(
     py_eq(
-      (layer.__getitem__("ADBE Effect Parade") as any).properties.map((p: any) => p.name),
+      layer.__getitem__("ADBE Effect Parade").properties.map((p) => p.name),
       ["slider", "Checkbox Control"],
     ),
   ).toBe(true);

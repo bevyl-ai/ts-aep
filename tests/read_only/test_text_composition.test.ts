@@ -18,6 +18,8 @@ import { Path, getitem, format, py_assert, py_bool, py_eq, repr, zip } from "../
 import { raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse_project } from "../helpers.ts";
+import type { CosNode } from "../../src/py_aep/cos/cos.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { _cached_line_data } from "../../src/py_aep/models/text/ranges.ts";
 import { CompositionUnsupported, _CharStyle, _shape_stretch, compose_lines } from "../../src/py_aep/resolvers/text_composition.ts";
 import { resolve_postscript } from "../../src/py_aep/svg/fonts.ts";
@@ -60,14 +62,20 @@ const REFUSED = new Map<string, string>([
 ]);
 
 // Module-scoped fixtures: parsed once and cached for every test in this file.
-const _cache: { docs?: Map<string, any> } = {};
+const _cache: { docs?: Map<string, TextDocument> } = {};
 
 /** `@pytest.fixture(scope="module") def docs()`: layer name -> source text. */
-function docs_fixture(): Map<string, any> {
+function docs_fixture(): Map<string, TextDocument> {
   if (_cache.docs === undefined) {
-    const project = parse_project(FIXTURE) as any;
+    const project = parse_project(FIXTURE);
     const comp = project.compositions[0];
-    _cache.docs = new Map(comp.text_layers.map((layer: any) => [layer.name, layer.text.source_text.value]));
+    _cache.docs = new Map(
+      comp.text_layers.map((layer) => {
+        const text = layer.text;
+        py_assert(text != null);
+        return [layer.name, text.source_text.value] as const;
+      }),
+    );
   }
   return _cache.docs;
 }
@@ -91,7 +99,7 @@ test.skipIf(module_skip)("test_every_matrix_layer_composes_or_refuses", () => {
       composed = compose_lines(doc);
     } catch (exc) {
       if (!(exc instanceof CompositionUnsupported)) throw exc;
-      mismatches.push(`${name}: refused: ${(exc as Error).message}`);
+      mismatches.push(`${name}: refused: ${exc.message}`);
       continue;
     }
     if (!py_eq(composed.spans, cached_spans)) {
@@ -100,7 +108,7 @@ test.skipIf(module_skip)("test_every_matrix_layer_composes_or_refuses", () => {
       );
       continue;
     }
-    for (const [computed, expected] of zip(composed.baselines, cached_baselines) as [number, number | null][]) {
+    for (const [computed, expected] of zip(composed.baselines, cached_baselines)) {
       if (expected != null && Math.abs(computed - expected) > 0.05) {
         mismatches.push(`${name}: baseline ${format(computed, ".4f")} != ${format(expected, ".4f")}`);
         break;
@@ -139,7 +147,7 @@ test.skipIf(module_skip)("test_length_changing_case_map_is_refused", () => {
   // 'straße'.upper() == 'STRASSE': clusters no longer map 1:1 onto the
   // source characters, so both caps modes must refuse, not crash.
   for (const caps of [1, 2]) {
-    const style = new _CharStyle("ArialMT", new Map<string, any>([["1", 36.0], ["12", caps]]));
+    const style = new _CharStyle("ArialMT", new Map<string, CosNode>([["1", 36.0], ["12", caps]]));
     raises(
       CompositionUnsupported,
       () => {

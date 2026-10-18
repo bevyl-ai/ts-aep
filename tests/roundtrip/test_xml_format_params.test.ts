@@ -6,9 +6,11 @@
 
 import { expect, test } from "bun:test";
 
-import { getattr, Path, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { getattr, Path, py_assert, setattr, TypeError_, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
 
 import { AudioInterleave, MPEGAudioFormat, MPEGAudioLayer } from "../../src/py_aep/enums/index.ts";
 
@@ -16,11 +18,12 @@ import { AudioInterleave, MPEGAudioFormat, MPEGAudioLayer } from "../../src/py_a
 // directory (tests/roundtrip), so two `.parent` reach the package root.
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "format_options");
 
-function _fo(project: any): any {
-  return project.render_queue.items[0].output_modules[0].format_options;
+function _fo(project: Project): XmlFormatOptions {
+  py_assert(project.render_queue != null);
+  return as_instance(project.render_queue.items[0].output_modules[0].format_options, XmlFormatOptions);
 }
 
-const DECODES: [string, string, any][] = [
+const DECODES: [string, string, unknown][] = [
   ["mp3/base", "bitrate", 128],
   ["mp3/base", "audio_interleave", null], // MP3 stores no interleave
   ["avi/audio_interleave_1_frame", "audio_interleave", AudioInterleave.ONE_FRAME],
@@ -47,7 +50,7 @@ for (const [sample, attr, expected] of DECODES) {
   });
 }
 
-const WRITES: [string, string, any][] = [
+const WRITES: [string, string, unknown][] = [
   ["mp3/base", "bitrate", 320],
   ["avi/base", "audio_interleave", AudioInterleave.ONE_SECOND],
   ["h.264/base", "audio_bitrate", 192],
@@ -58,7 +61,7 @@ for (const [sample, attr, value] of WRITES) {
   test(`test_write_survives_roundtrip[${sample}-${attr}]`, () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
-    (_fo(project) as any)[attr] = value;
+    setattr(_fo(project), attr, value);
     expect(getattr(_fo(project), attr)).toBe(value);
     project.save(tmp_path.div("out.aep"));
     const reparsed = parse_project_fresh(tmp_path.div("out.aep"));
@@ -69,7 +72,7 @@ for (const [sample, attr, value] of WRITES) {
 test("test_scalar_write_rejects_non_int", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   raises(TypeError_, () => {
-    (_fo(project) as any).bitrate = "320";
+    _fo(project).bitrate = "320";
   });
 });
 
@@ -77,13 +80,14 @@ test("test_scalar_write_rejects_bool", () => {
   // bool is an int subclass; str(True) would corrupt the XML param.
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   raises(TypeError_, () => {
-    (_fo(project) as any).bitrate = true;
+    // @ts-expect-error bitrate takes an int; the setter rejects a bool at runtime
+    _fo(project).bitrate = true;
   });
 });
 
 test("test_enum_param_write_rejects_bad_member", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("avi", "base.aep"));
   raises(ValueError, () => {
-    (_fo(project) as any).audio_interleave = 99;
+    _fo(project).audio_interleave = 99;
   });
 });

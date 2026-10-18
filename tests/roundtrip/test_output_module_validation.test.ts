@@ -10,17 +10,20 @@ import { expect, test } from "bun:test";
 
 import { as_instance, parse_project_fresh } from "../helpers.ts";
 import { OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode } from "../../src/py_aep/enums/index.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { Path, py_assert, py_eq, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
-function _om(project: any): any {
-  return project.render_queue.items[0].output_modules[0];
+function _om(project: Project): OutputModule {
+  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 }
 
-const REJECTS: [string, string, any][] = [
+const REJECTS: [string, string, SettingValue][] = [
   // (sample, key, value) - corruption-preventing rows first: turning
   // video on for an audio format writes comp dimensions into the Rouu.
   ["format_mp3", "Video Output", true],
@@ -50,7 +53,7 @@ const REJECTS: [string, string, any][] = [
 // `pytest.mark.parametrize(..., ids=[...])`: bun's `%#` row index stands in
 // for the Python ids (`f"{s}-{k}-{v}"`).
 // NOTE(port): ids only name the test row; the parametrized rows and assertions are identical to Python.
-test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: string, value: any) => {
+test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: string, value: SettingValue) => {
   const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);
   const before = om.get_settings();
@@ -64,7 +67,7 @@ test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: str
 // NOTE: the samples store RGB channels, so only base (non-`+`) depths
 // are writable - the channels<->depth parity rows mirror AE's dialog,
 // which offers `+` depths only under RGB+Alpha.
-const ACCEPTS: [string, string, any][] = [
+const ACCEPTS: [string, string, SettingValue][] = [
   ["format_tiff_sequence", "Depth", OutputColorDepth.FLOATING_POINT],
   ["format_sgi_sequence", "Depth", OutputColorDepth.TRILLIONS_OF_COLORS],
   ["format_iff_sequence", "Depth", OutputColorDepth.TRILLIONS_OF_COLORS],
@@ -114,7 +117,7 @@ test("test_plus_depth_requires_rgba_channels", () => {
   });
 });
 
-test.each(ACCEPTS)("test_allowed_write_survives_roundtrip[%#]", (sample: string, key: string, value: any) => {
+test.each(ACCEPTS)("test_allowed_write_survives_roundtrip[%#]", (sample: string, key: string, value: SettingValue) => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);

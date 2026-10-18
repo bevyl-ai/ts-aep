@@ -1,7 +1,7 @@
 /** Tests for FootageItem model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { isclose, Path, py_assert, py_eq, ValueError } from "../../src/pyrt/index.ts";
+import { isclose, Path, py_assert, py_eq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { AlphaMode, AVLayer, FieldSeparationType, FootageItem, LinearLightMode, PulldownPhase, SolidSource, parse as parse_aep } from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
@@ -134,7 +134,8 @@ describe("TestRoundtripAlphaMode", () => {
       "alphaMode_STRAIGHT",
     ).main_source;
     raises(ValueError, () => {
-      (source as any).alpha_mode = 999; // deliberately invalid: Python's type-ignored assignment
+      // @ts-expect-error deliberately invalid: Python's type-ignored assignment
+      source.alpha_mode = 999;
     }, "Invalid value.*alpha_mode");
   });
 });
@@ -181,7 +182,8 @@ describe("TestRoundtripFieldSeparationType", () => {
       "fieldSeparationType_UPPER",
     ).main_source;
     raises(ValueError, () => {
-      (source as any).field_separation_type = "invalid"; // deliberately invalid: Python's type-ignored assignment
+      // @ts-expect-error deliberately invalid: Python's type-ignored assignment
+      source.field_separation_type = "invalid";
     }, "is not a valid FieldSeparationType");
   });
 });
@@ -351,7 +353,8 @@ describe("TestPlaceholderConformFrameRate", () => {
     item.main_source.conform_frame_rate = 25.0;
     const out = tmp_path.div("placeholder.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === item.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === item.id);
+    if (reparsed == null) throw new StopIteration();
     const sspc = reparsed.main_source._sspc;
     expect(py_eq([sspc.native_frame_rate, sspc.conform_frame_rate], [25.0, 0.0])).toBe(true);
     expect(reparsed.main_source.conform_frame_rate).toBe(25.0);
@@ -380,30 +383,30 @@ describe("TestRemovePulldown", () => {
   /** Roundtrip tests for FootageSource.remove_pulldown. */
 
   test("test_read_off", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.remove_pulldown).toBe(PulldownPhase.OFF);
   });
 
   test("test_read_wssww", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.remove_pulldown).toBe(PulldownPhase.WSSWW);
   });
 
   test("test_read_sswww", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_sswww.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.remove_pulldown).toBe(PulldownPhase.SSWWW);
   });
 
   test("test_read_wwwsw_24p", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wwwsw.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.remove_pulldown).toBe(PulldownPhase.WWWSW_24P_ADVANCE);
   });
 
@@ -421,9 +424,9 @@ describe("TestRemovePulldown", () => {
   });
 
   test("test_modify_pulldown_updates_display_frame_rate", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.display_frame_rate).toBe(2.5);
     source.remove_pulldown = PulldownPhase.WSSWW;
     expect(source.display_frame_rate).toBe(2.0);
@@ -434,30 +437,30 @@ describe("TestInterpretAsLinearLight", () => {
   /** Tests for FootageSource.interpret_as_linear_light. */
 
   test("test_off", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.interpret_as_linear_light).toBe(LinearLightMode.OFF);
   });
 
   test("test_on", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("interpret_as_linear_light_on.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.interpret_as_linear_light).toBe(LinearLightMode.ON);
   });
 
   test("test_on_for_32_bpc", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("interpret_as_linear_light_on_for_32_bpc.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.interpret_as_linear_light).toBe(LinearLightMode.ON_FOR_32BPC);
   });
 
   test("test_is_writable", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     source.interpret_as_linear_light = LinearLightMode.ON;
     expect(source.interpret_as_linear_light).toBe(LinearLightMode.ON);
   });
@@ -465,13 +468,13 @@ describe("TestInterpretAsLinearLight", () => {
   test("test_modify_roundtrip", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("interpret_as_linear_light_off.aep")).project;
-    const source = get_first_footage(project)!.main_source;
+    const source = as_instance(get_first_footage(project), FootageItem).main_source;
     expect(source.interpret_as_linear_light).toBe(LinearLightMode.OFF);
 
     source.interpret_as_linear_light = LinearLightMode.ON;
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const source2 = get_first_footage(parse_aep(out).project)!.main_source;
+    const source2 = as_instance(get_first_footage(parse_aep(out).project), FootageItem).main_source;
     expect(source2.interpret_as_linear_light).toBe(LinearLightMode.ON);
   });
 });
@@ -480,23 +483,23 @@ describe("TestPreserveRgb", () => {
   /** Tests for FootageSource.preserve_rgb. */
 
   test("test_on", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("preserve_rgb_on.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.preserve_rgb).toBe(true);
   });
 
   test("test_off", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("preserve_rgb_off.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     expect(source.preserve_rgb).toBe(false);
   });
 
   test("test_is_writable", () => {
-    const source = get_first_footage(
+    const source = as_instance(get_first_footage(
       parse_project_fresh(SAMPLES_DIR.div("preserve_rgb_on.aep")),
-    )!.main_source;
+    ), FootageItem).main_source;
     source.preserve_rgb = false;
     expect(source.preserve_rgb).toBe(false);
   });
@@ -576,8 +579,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     const ocsp = source2._ocsp_utf8();
     const ae = parse_aep(SAMPLES_DIR.div("cms_acescg_colorspace.aep")).project;
     const ae_ocsp = _first_source(ae)._ocsp_utf8();
-    expect(ocsp != null && ae_ocsp != null).toBe(true);
-    expect(py_eq(ocsp!.value, ae_ocsp!.value)).toBe(true);
+    py_assert(ocsp != null && ae_ocsp != null);
+    expect(py_eq(ocsp.value, ae_ocsp.value)).toBe(true);
   });
 
   test.skipIf(!_ACES12_AVAILABLE)("test_set_ocio_name_absent_from_config_raises", () => {
@@ -600,8 +603,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     expect(source2.media_color_space).toBe("Working Color Space");
     // AE-fidelity (verified via aep-compare): the ocsp envelope is emptied.
     const ocsp = source2._ocsp_utf8();
-    expect(ocsp != null).toBe(true);
-    expect(py_eq(ocsp!.value, "")).toBe(true);
+    py_assert(ocsp != null);
+    expect(py_eq(ocsp.value, "")).toBe(true);
   });
 
   test("test_set_embedded_reverts_override", () => {
@@ -645,8 +648,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     const ocsp = source2._ocsp_utf8();
     const ae = parse_aep(SAMPLES_DIR.div("cms_matte_paint_role.aep")).project;
     const ae_ocsp = _first_source(ae)._ocsp_utf8();
-    expect(ocsp != null && ae_ocsp != null).toBe(true);
-    expect(py_eq(ocsp!.value, ae_ocsp!.value)).toBe(true);
+    py_assert(ocsp != null && ae_ocsp != null);
+    expect(py_eq(ocsp.value, ae_ocsp.value)).toBe(true);
   });
 
   test.skipIf(!_ACES12_AVAILABLE)("test_qualified_name_round_trips", () => {
@@ -655,13 +658,13 @@ describe("TestRoundtripMediaColorSpace", () => {
     const project = parse_aep(SAMPLES_DIR.div("cms_acescg_colorspace.aep")).project;
     const source = _first_source(project);
     const before = source._ocsp_utf8();
-    expect(before != null).toBe(true);
-    const original = before!.value;
+    py_assert(before != null);
+    const original = before.value;
     expect(source.media_color_space).toBe("ACES/ACES - ACEScg");
     source.media_color_space = source.media_color_space;
     const after = source._ocsp_utf8();
-    expect(after != null).toBe(true);
-    expect(py_eq(after!.value, original)).toBe(true);
+    py_assert(after != null);
+    expect(py_eq(after.value, original)).toBe(true);
   });
 
   test("test_unresolvable_config_raises", () => {
@@ -682,7 +685,8 @@ describe("TestRoundtripMediaColorSpace", () => {
     const source2 = _first_source(parse_aep(out).project);
     expect(source2.media_color_space).toBe("Apple RGB");
     // apid is the catalogued ICC profile ID (matches AE ground truth).
-    const apid = as_instance(source2._clrs, ListChunk).chunks.find((c) => c.chunk_type === "apid")!;
+    const apid = as_instance(source2._clrs, ListChunk).chunks.find((c) => c.chunk_type === "apid");
+    if (apid == null) throw new StopIteration();
     expect(py_eq(apid.data, profile_id_for_name("Apple RGB"))).toBe(true);
   });
 });
@@ -699,8 +703,11 @@ describe("TestRoundtripFootageItemName", () => {
    * rename is silently dropped on save.
    */
 
-  const _first_solid = (project: Project): FootageItem =>
-    project.footages.find((f) => f.main_source instanceof SolidSource)!;
+  const _first_solid = (project: Project): FootageItem => {
+    const solid = project.footages.find((f) => f.main_source instanceof SolidSource);
+    if (solid == null) throw new StopIteration();
+    return solid;
+  };
 
   test("test_rename_solid_persists", () => {
     const tmp_path = make_tmp_path();
@@ -710,7 +717,8 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id);
+    if (reparsed == null) throw new StopIteration();
     expect(py_eq(reparsed.name, "Renamed Solid Item")).toBe(true);
   });
 
@@ -722,8 +730,9 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id)!;
-    expect(py_eq((reparsed.main_source._opti as any).solid_name, "Opti Backed")).toBe(true);
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id);
+    if (reparsed == null) throw new StopIteration();
+    expect(py_eq(reparsed.main_source._opti.solid_name, "Opti Backed")).toBe(true);
     expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "")).toBe(true);
   });
 
@@ -735,9 +744,10 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === placeholder.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === placeholder.id);
+    if (reparsed == null) throw new StopIteration();
     expect(py_eq(reparsed.name, "Renamed Placeholder")).toBe(true);
-    expect(py_eq((reparsed.main_source._opti as any).placeholder_name, "Renamed Placeholder")).toBe(true);
+    expect(py_eq(reparsed.main_source._opti.placeholder_name, "Renamed Placeholder")).toBe(true);
     expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "")).toBe(true);
   });
 
@@ -749,7 +759,8 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === footage.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === footage.id);
+    if (reparsed == null) throw new StopIteration();
     expect(py_eq(reparsed.name, "Renamed File Item")).toBe(true);
     expect(py_eq(as_instance(reparsed._name_utf8, Utf8Chunk).value, "Renamed File Item")).toBe(true);
   });
@@ -765,7 +776,8 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === solid.id);
+    if (reparsed == null) throw new StopIteration();
     expect(py_eq(reparsed.name, name)).toBe(true);
   });
 
@@ -796,7 +808,8 @@ describe("TestRoundtripFootageItemName", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project.footages.find((f) => f.id === footage.id)!;
+    const reparsed = parse_aep(out).project.footages.find((f) => f.id === footage.id);
+    if (reparsed == null) throw new StopIteration();
     expect(py_eq(reparsed.name, "dir/sub.mov")).toBe(true);
   });
 

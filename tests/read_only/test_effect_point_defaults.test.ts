@@ -14,7 +14,7 @@
 import { test, expect } from "bun:test";
 
 import { Path, StopIteration, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
-import { approx } from "../../src/pyrt/pytest.ts";
+import { approx, type ApproxOperand } from "../../src/pyrt/pytest.ts";
 import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
 import { as_instance } from "../helpers.ts";
 
@@ -37,18 +37,32 @@ const _CASES: [string, string][] = [
 
 function _effect_props(comp_name: string, layer_name: string): Property[] {
   const comp = get_comp(parse_project(SAMPLES_DIR.div(`${SAMPLE}.aep`)), comp_name);
-  // Python `next(...)` raises StopIteration when no layer matches; `find` yields undefined instead.
-  const layer = comp.layers.find((ly: any) => ly.name === layer_name)!;
+  const layer = comp.layers.find((ly) => ly.name === layer_name);
+  if (layer === undefined) throw new StopIteration();
   py_assert(layer.effects != null);
-  return (layer.effects.__getitem__(0) as any).properties.filter((p: any) => p instanceof Property);
+  return as_instance(layer.effects.__getitem__(0), PropertyGroup).properties.filter(
+    (p): p is Property => p instanceof Property,
+  );
 }
 
-function _expected_props(comp_name: string, layer_name: string): Map<string, any> {
-  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, SAMPLE), comp_name);
-  // Python `next(...)` raises StopIteration when nothing matches; fail loudly instead of TypeError on undefined.
-  const layer = comp.layers.find((ly: any) => ly.name === layer_name)!;
-  const parade = layer.properties.find((p: any) => p.matchName === "ADBE Effect Parade")!;
-  return new Map(parade.properties[0].properties.map((p: any) => [p.matchName, p]));
+/** The JSON fields of an exported property this test reads. */
+interface JsonProperty {
+  matchName: string;
+  value: ApproxOperand;
+  isModified: boolean;
+  properties: JsonProperty[];
+}
+
+function _expected_props(comp_name: string, layer_name: string): Map<string, JsonProperty> {
+  const comp: { layers: { name: string; properties: JsonProperty[] }[] } = get_comp_from_json_by_name(
+    load_expected(SAMPLES_DIR, SAMPLE),
+    comp_name,
+  );
+  const layer = comp.layers.find((ly) => ly.name === layer_name);
+  if (layer === undefined) throw new StopIteration();
+  const parade = layer.properties.find((p) => p.matchName === "ADBE Effect Parade");
+  if (parade === undefined) throw new StopIteration();
+  return new Map(parade.properties[0].properties.map((p) => [p.matchName, p]));
 }
 
 test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, layer_name: string) => {
@@ -84,7 +98,8 @@ test.each([
 ])(
   "test_point_default_is_a_percentage_of_the_layer[%#]",
   (comp_name: string, layer_name: string, match_name: string, default_: number[]) => {
-    const prop = _effect_props(comp_name, layer_name).find((p) => p.match_name === match_name)!;
+    const prop = _effect_props(comp_name, layer_name).find((p) => p.match_name === match_name);
+    if (prop === undefined) throw new StopIteration();
     expect(approx(prop.default_value, default_, { abs: 1e-9 })).toBe(true);
   },
 );

@@ -17,7 +17,8 @@ import "../../src/py_aep/binary/_register.ts";
 import { OptiChunk, SoliOptiChunk, SspcChunk } from "../../src/py_aep/binary/footage_chunks.ts";
 import { Tdb4Chunk } from "../../src/py_aep/binary/property_chunks.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
-import { project_bytes } from "../helpers.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
+import { as_instance, project_bytes } from "../helpers.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const ASSETS = SAMPLES.div("assets");
@@ -52,9 +53,10 @@ function _leaves(data: Uint8Array, in_list: Uint8Array = b("")): [string, number
 function _read_every_layer(project: Project): void {
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
-      const stack: any[] = [layer];
+      const stack: PropertyGroup[] = [layer];
       while (py_bool(stack)) {
         const group = stack.pop();
+        if (group === undefined) break;
         for (const child of group) {
           if (!("keyframes" in child)) {
             stack.push(child);
@@ -69,7 +71,7 @@ describe("TestFixedStringTail", () => {
   test("test_sspc_source_code_after_nul_round_trips", () => {
     const data = new Uint8Array(new SspcChunk().tobytes());
     data.set(b("\x00vsc"), 0x16);
-    const chunk = SspcChunk.frombytes(new Uint8Array(data)) as SspcChunk;
+    const chunk = as_instance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     expect(String(chunk.source_format_type)).toBe("");
     expect(py_eq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
@@ -83,7 +85,7 @@ describe("TestFixedStringTail", () => {
   test("test_assigned_plain_string_drops_the_old_tail", () => {
     const data = new Uint8Array(new SspcChunk().tobytes());
     data.set(b("\x00vsc"), 0x16);
-    const chunk = SspcChunk.frombytes(new Uint8Array(data)) as SspcChunk;
+    const chunk = as_instance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     chunk.source_format_type = "png!";
     expect(py_eq(bytes_.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
   });
@@ -94,8 +96,7 @@ describe("TestFixedStringTail", () => {
     // AE keeps the end of a longer previous name after the terminator.
     const stale = b("Black Solid 3\x00 1\x00id 1");
     data.set(stale, name_at);
-    const chunk = OptiChunk.frombytes(new Uint8Array(data)) as SoliOptiChunk;
-    expect(chunk instanceof SoliOptiChunk).toBe(true);
+    const chunk = as_instance(OptiChunk.frombytes(new Uint8Array(data)), SoliOptiChunk);
     expect(String(chunk.solid_name)).toBe("Black Solid 3");
     expect(py_eq(chunk.tobytes(), new Uint8Array(data))).toBe(true);
   });
@@ -122,7 +123,7 @@ describe("TestTdb4KeyFlagsByte", () => {
   test("test_byte_0x4f_kept_whole", () => {
     const data = new Uint8Array(new Tdb4Chunk().tobytes());
     data[0x4F] = 0x07;
-    const chunk = Tdb4Chunk.frombytes(new Uint8Array(data)) as Tdb4Chunk;
+    const chunk = as_instance(Tdb4Chunk.frombytes(new Uint8Array(data)), Tdb4Chunk);
     expect(chunk._spatial_marker).toBe(0x07);
     expect(chunk._spatial_marker).toBeTruthy(); // still reads as a spatial stream
     expect(py_eq(chunk.tobytes(), new Uint8Array(data))).toBe(true);

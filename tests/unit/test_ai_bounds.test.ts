@@ -39,8 +39,8 @@ type Approx = { expected: Box | null; opts: { abs: number } };
  */
 function build_pdf(...args: Array<string | PdfKw>): Uint8Array {
   const last = args.at(-1);
-  const kw: PdfKw = typeof last === "object" ? (args.pop() as PdfKw) : {};
-  const layers = args as string[];
+  const kw: PdfKw = typeof last === "object" ? last : {};
+  const layers = args.filter((arg) => typeof arg === "string");
   const { extra_objects = "", resources = "" } = kw;
 
   const count = len(layers);

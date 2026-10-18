@@ -122,9 +122,9 @@ describe("TestResolveAiLayer", () => {
     // is bottom-first.
     const layers = [new AiLayer(35, "Calque 1", true), new AiLayer(36, "Calque 2", true)];
     // AiLayer is a NamedTuple (tuple equality); py_eq has no __eq__ on it, so compare as plain tuples.
-    const as_tuples = ([ls, i]: [any[], number]): [any[][], number] => [ls.map((l) => [...l]), i];
-    expect(py_eq(as_tuples(resolve_ai_layer(ASSETS.div("ai.ai"), 0) as any), as_tuples([layers, 1]))).toBe(true);
-    expect(py_eq(as_tuples(resolve_ai_layer(ASSETS.div("ai.ai"), 1) as any), as_tuples([layers, 0]))).toBe(true);
+    const as_tuples = ([ls, i]: [AiLayer[], number]): [(number | string | boolean)[][], number] => [ls.map((l) => [...l]), i];
+    expect(py_eq(as_tuples(resolve_ai_layer(ASSETS.div("ai.ai"), 0)), as_tuples([layers, 1]))).toBe(true);
+    expect(py_eq(as_tuples(resolve_ai_layer(ASSETS.div("ai.ai"), 1)), as_tuples([layers, 0]))).toBe(true);
   });
 
   test("test_out_of_range_raises", () => {

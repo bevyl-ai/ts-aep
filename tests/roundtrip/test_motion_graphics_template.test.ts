@@ -23,10 +23,11 @@ import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
+import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, write_chunk } from "../../src/py_aep/binary/chunk.ts";
-import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { U4Chunk, Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { PropertyValueType } from "../../src/py_aep/enums/index.ts";
@@ -44,44 +45,44 @@ function next<T>(xs: Iterable<T>, pred: (x: T) => boolean): T {
   throw new StopIteration("");
 }
 
-function _primary(project: any): any {
+function _primary(project: Project): CompItem {
   // base.aep: comp 'primary' (id 1) holds one solid layer (layer_id 15).
   return get_comp(project, "primary");
 }
 
-function _opacity(comp: any): any {
+function _opacity(comp: CompItem): Property {
   const layer = comp.layers[0];
-  return next(layer.transform, (p: any) => p.match_name === "ADBE Opacity");
+  return as_instance(next(layer.transform, (p) => p.match_name === "ADBE Opacity"), Property);
 }
 
-function _effect_param(comp: any, effect_mn: string, param_mn: string, layer_index = 0): any {
-  const effects = next(comp.layers[layer_index].properties, (p: any) => p.match_name === "ADBE Effect Parade");
-  const effect = next(effects.properties, (p: any) => p.match_name === effect_mn);
-  return next(effect.properties, (p: any) => p.match_name === param_mn);
+function _effect_param(comp: CompItem, effect_mn: string, param_mn: string, layer_index = 0): Property {
+  const effects = as_instance(next(comp.layers[layer_index].properties, (p) => p.match_name === "ADBE Effect Parade"), PropertyGroup);
+  const effect = as_instance(next(effects.properties, (p) => p.match_name === effect_mn), PropertyGroup);
+  return as_instance(next(effect.properties, (p) => p.match_name === param_mn), Property);
 }
 
-function _cif3_cctls(comp: any): ListChunk[] {
-  const cif3 = next(
-    comp._item_list.chunks,
-    (c: any) => c instanceof ListChunk && c.list_type === "CIF3",
+function _cif3_cctls(comp: CompItem): ListChunk[] {
+  const cif3 = as_instance(
+    next(comp._item_list.chunks, (c) => c instanceof ListChunk && c.list_type === "CIF3"),
+    ListChunk,
   );
-  return cif3.chunks.filter((c: any) => c instanceof ListChunk && c.list_type === "CCtl");
+  return cif3.chunks.filter((c): c is ListChunk => c instanceof ListChunk && c.list_type === "CCtl");
 }
 
-function _chunk_bytes(chunk: any): Uint8Array {
+function _chunk_bytes(chunk: ListChunk): Uint8Array {
   const buf = new BytesIO();
   write_chunk(buf, chunk);
   return buf.getvalue();
 }
 
 /** Number of CCtl children per CIF container of a comp. */
-function _cctl_count(comp: any): Map<string, number> {
+function _cctl_count(comp: CompItem): Map<string, number> {
   const counts = new Map<string, number>();
   for (const cif of comp._item_list.chunks) {
     if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.list_type)) {
       counts.set(
         cif.list_type,
-        sum(cif.chunks.map((c: any) => (c instanceof ListChunk && c.list_type === "CCtl" ? 1 : 0))),
+        sum(cif.chunks.map((c) => (c instanceof ListChunk && c.list_type === "CCtl" ? 1 : 0))),
       );
     }
   }
@@ -97,7 +98,7 @@ describe("TestCanAddProperty", () => {
   test("test_position_cannot_be_added", () => {
     // Position is a 2D/3D point, not a supported controller type.
     const comp = _primary(parse_project_fresh(BASE));
-    const pos = next(comp.layers[0].transform, (p: any) => p.match_name === "ADBE Position");
+    const pos = as_instance(next(comp.layers[0].transform, (p) => p.match_name === "ADBE Position"), Property);
     expect(pos.can_add_to_motion_graphics_template(comp)).toBe(false);
   });
 
@@ -122,8 +123,8 @@ describe("TestCanAddProperty", () => {
     // (AE 2026 headless run), so the path is unambiguous and addable.
     const project = parse_project_fresh(EG_DIR.parent.div("property", "mask_add.aep"));
     const comp = project.compositions[0];
-    const mask = as_instance(comp.layers[0].masks, PropertyGroup).__getitem__(0);
-    const mask_opacity = next((mask as any).properties, (p: any) => p.match_name === "ADBE Mask Opacity");
+    const mask = as_instance(as_instance(comp.layers[0].masks, PropertyGroup).__getitem__(0), PropertyGroup);
+    const mask_opacity = as_instance(next(mask.properties, (p) => p.match_name === "ADBE Mask Opacity"), Property);
     expect(mask_opacity.property_value_type).toBe(PropertyValueType.OneD);
     expect(mask_opacity.can_add_to_motion_graphics_template(comp)).toBe(true);
   });
@@ -143,8 +144,8 @@ describe("TestCanAddProperty", () => {
     // controller (menu entries included), which py_aep does not build.
     const project = parse_project_fresh(EG_DIR.div("dropdown_controller.aep"));
     const comp = get_comp(project, "primary");
-    const effects = as_instance(next(comp.layers[0].properties, (p: any) => p.match_name === "ADBE Effect Parade"), PropertyGroup);
-    const pseudo = as_instance(next(effects.properties, (p: any) => p.match_name.startsWith("Pseudo/")), PropertyGroup);
+    const effects = as_instance(next(comp.layers[0].properties, (p) => p.match_name === "ADBE Effect Parade"), PropertyGroup);
+    const pseudo = as_instance(next(effects.properties, (p) => p.match_name.startsWith("Pseudo/")), PropertyGroup);
     const menu = as_instance(pseudo.properties[0], Property);
     expect(menu.can_add_to_motion_graphics_template(comp)).toBe(false);
   });
@@ -162,7 +163,7 @@ describe("TestAddProperty", () => {
     expect(ctrl.source_layer_id).toBe(comp.layers[0]._ldta.layer_id);
     expect(
       py_eq(
-        ctrl.source_property_path.map((r: any) => r.match_name),
+        ctrl.source_property_path.map((r) => r.match_name),
         ["ADBE Transform Group", "ADBE Opacity"],
       ),
     ).toBe(true);
@@ -215,7 +216,7 @@ describe("TestAddProperty", () => {
     expect(ctrl.source_layer_id).toBe(comp2.layers[0]._ldta.layer_id);
     expect(
       py_eq(
-        ctrl.source_property_path.map((r: any) => r.match_name),
+        ctrl.source_property_path.map((r) => r.match_name),
         ["ADBE Transform Group", "ADBE Opacity"],
       ),
     ).toBe(true);
@@ -236,19 +237,19 @@ describe("TestAddProperty", () => {
 
 /** The CPrp index model, pinned against AE's own stored path JSONs. */
 class TestEffectParamPaths {
-  static _stored_json(comp: any, ctrl_name: string): string {
+  static _stored_json(comp: CompItem, ctrl_name: string): string {
     // The CPrp JSON of the named controller, straight from the chunks.
     for (const cctl of _cif3_cctls(comp)) {
-      const cps2 = as_instance(next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CpS2"), ListChunk);
-      const name = as_instance(next(cps2.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+      const cps2 = as_instance(next(cctl.chunks, (c) => getattr(c, "list_type", "") === "CpS2"), ListChunk);
+      const name = as_instance(next(cps2.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
       if (!py_eq(name, ctrl_name)) continue;
-      const cprp = as_instance(next(cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
-      return as_instance(next(cprp.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+      const cprp = as_instance(next(cctl.chunks, (c) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
+      return as_instance(next(cprp.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
     }
     throw new AssertionError_(`controller ${repr(ctrl_name)} not found`);
   }
 
-  static _py_json(prop: any): string {
+  static _py_json(prop: Property): string {
     const resolved = _source_property_path(prop);
     py_assert(resolved != null);
     return _path_json(resolved[0]);
@@ -278,7 +279,7 @@ describe("TestEffectParamPaths", () => {
 
   test("test_both_orders_in_one_stack_match_ae", () => {
     const project = parse_project_fresh(EG_DIR.div("group_controller.aep"));
-    const comp = next(project.compositions, (c: any) => py_bool(c.motion_graphics_controllers));
+    const comp = next(project.compositions, (c) => py_bool(c.motion_graphics_controllers));
     const blur = _effect_param(comp, "ADBE Gaussian Blur 2", "ADBE Gaussian Blur 2-0001");
     const fill = _effect_param(comp, "ADBE Fill", "ADBE Fill-0002");
     expect(TestEffectParamPaths._py_json(blur)).toBe(
@@ -299,10 +300,10 @@ describe("TestEffectParamPaths", () => {
     const out = tmp_path.div("effect.aep");
     project.save(out);
     const comp2 = get_comp(parse_aep(out).project, "primary");
-    const ctrl = next(comp2.motion_graphics_controllers, (c: any) => c.name === "Fill Opacity");
+    const ctrl = next(comp2.motion_graphics_controllers, (c) => c.name === "Fill Opacity");
     expect(
       py_eq(
-        ctrl.source_property_path.map((r: any) => [r.match_name, r.prop_index]),
+        ctrl.source_property_path.map((r) => [r.match_name, r.prop_index]),
         [
           ["ADBE Effect Parade", null],
           ["ADBE Fill", 0],
@@ -318,8 +319,8 @@ describe("TestIndexAwareResolution", () => {
     const project = parse_project_fresh(EG_DIR.div("multiple_controllers.aep"));
     const comp = get_comp(project, "primary");
     const layer = comp.layers[0];
-    const ctrl = next(comp.motion_graphics_controllers, (c: any) => c.name === "Background Color");
-    const resolved = _walk_source_property(layer as any, ctrl.source_property_path);
+    const ctrl = next(comp.motion_graphics_controllers, (c) => c.name === "Background Color");
+    const resolved = _walk_source_property(as_instance(layer, AVLayer), ctrl.source_property_path);
     const expected = _effect_param(comp, "ADBE Fill", "ADBE Fill-0002");
     expect(resolved).toBe(expected);
   });
@@ -333,8 +334,8 @@ describe("TestIndexAwareResolution", () => {
 class TestIndexedGroupControllers {
   static FIXTURE = EG_DIR.div("indexed_group_controllers.aep");
 
-  static _comp(project: any): any {
-    return next(project.compositions, (c: any) => py_bool(c.motion_graphics_controllers));
+  static _comp(project: Project): CompItem {
+    return next(project.compositions, (c) => py_bool(c.motion_graphics_controllers));
   }
 }
 
@@ -354,14 +355,14 @@ describe("TestIndexedGroupControllers", () => {
     expect(len(comp.motion_graphics_controllers)).toBe(8);
     for (const ctrl of comp.motion_graphics_controllers) {
       const layer = getitem(comp.layers_by_id, ctrl.source_layer_id);
-      const resolved = _walk_source_property(layer as any, ctrl.source_property_path);
+      const resolved = _walk_source_property(as_instance(layer, AVLayer), ctrl.source_property_path);
       py_assert(resolved != null, ctrl.name);
-      const rebuilt = _source_property_path(resolved as any);
+      const rebuilt = _source_property_path(as_instance(resolved, Property));
       py_assert(rebuilt != null, ctrl.name);
       py_assert(
         py_eq(
-          rebuilt[0].map((n: any) => [n.match_name, n.prop_index]),
-          ctrl.source_property_path.map((r: any) => [r.match_name, r.prop_index]),
+          rebuilt[0].map((n) => [n.match_name, n.prop_index]),
+          ctrl.source_property_path.map((r) => [r.match_name, r.prop_index]),
         ),
         ctrl.name,
       );
@@ -373,7 +374,7 @@ describe("TestIndexedGroupControllers", () => {
     // siblings. Mask 1/2 opacities, shape fill 1/2, animator 1/2.
     const project = parse_project_fresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
-    const by_name = new Map<string, any>(comp.motion_graphics_controllers.map((c: any): [string, any] => [c.name, c]));
+    const by_name = new Map(comp.motion_graphics_controllers.map((c) => [c.name, c] as const));
     const pairs: [string, string][] = [
       ["Mask1 Opacity", "Mask2 Opacity"],
       ["Fill Color 1", "Fill Color 2"],
@@ -383,8 +384,8 @@ describe("TestIndexedGroupControllers", () => {
       const a_ctrl = getitem(by_name, a_name);
       const b_ctrl = getitem(by_name, b_name);
       const layer = getitem(comp.layers_by_id, a_ctrl.source_layer_id);
-      const a = _walk_source_property(layer as any, a_ctrl.source_property_path);
-      const b = _walk_source_property(layer as any, b_ctrl.source_property_path);
+      const a = _walk_source_property(as_instance(layer, AVLayer), a_ctrl.source_property_path);
+      const b = _walk_source_property(as_instance(layer, AVLayer), b_ctrl.source_property_path);
       py_assert(a != null && b != null);
       expect(a.match_name).toBe(b.match_name);
       expect(a).not.toBe(b);
@@ -397,17 +398,22 @@ describe("TestIndexedGroupControllers", () => {
     // mask atom's positional index and survive a save/reparse.
     const project = parse_project_fresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
-    const solid = next(comp.layers, (lyr: any) => py_bool(lyr.masks));
-    const expansion = next(solid.masks.__getitem__(1).properties, (p: any) => p.match_name === "ADBE Mask Offset");
+    const solid = next(comp.layers, (lyr) => py_bool(lyr.masks));
+    const masks = solid.masks;
+    py_assert(masks != null);
+    const expansion = as_instance(
+      next(as_instance(masks.__getitem__(1), PropertyGroup).properties, (p) => p.match_name === "ADBE Mask Offset"),
+      Property,
+    );
     expect(expansion.can_add_to_motion_graphics_template(comp)).toBe(true);
     expect(expansion.add_to_motion_graphics_template_as(comp, "Mask2 Expansion")).toBe(true);
     const out = tmp_path.div("indexed.aep");
     project.save(out);
     const comp2 = TestIndexedGroupControllers._comp(parse_aep(out).project);
-    const ctrl = next(comp2.motion_graphics_controllers, (c: any) => c.name === "Mask2 Expansion");
+    const ctrl = next(comp2.motion_graphics_controllers, (c) => c.name === "Mask2 Expansion");
     expect(
       py_eq(
-        ctrl.source_property_path.map((r: any) => [r.match_name, r.prop_index]),
+        ctrl.source_property_path.map((r) => [r.match_name, r.prop_index]),
         [
           ["ADBE Mask Parade", null],
           ["ADBE Mask Atom", 1],
@@ -423,15 +429,15 @@ describe("TestIndexedGroupControllers", () => {
     // topic-group node - py must rebuild exactly that.
     const project = parse_project_fresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
-    const solid = next(comp.layers, (lyr: any) => py_bool(lyr.masks));
-    const effects = next(solid.properties, (p: any) => p.match_name === "ADBE Effect Parade");
-    const fx = next(effects.properties, (p: any) => p.match_name === "ADBE Fractal Noise");
-    const prop = next(fx.properties, (p: any) => p.match_name === "ADBE Fractal Noise-0010");
+    const solid = next(comp.layers, (lyr) => py_bool(lyr.masks));
+    const effects = as_instance(next(solid.properties, (p) => p.match_name === "ADBE Effect Parade"), PropertyGroup);
+    const fx = as_instance(next(effects.properties, (p) => p.match_name === "ADBE Fractal Noise"), PropertyGroup);
+    const prop = as_instance(next(fx.properties, (p) => p.match_name === "ADBE Fractal Noise-0010"), Property);
     const resolved = _source_property_path(prop);
     py_assert(resolved != null);
     expect(
       py_eq(
-        resolved[0].map((n: any) => [n.match_name, n.prop_index]),
+        resolved[0].map((n) => [n.match_name, n.prop_index]),
         [
           ["ADBE Effect Parade", null],
           ["ADBE Fractal Noise", 0],
@@ -453,7 +459,7 @@ describe("TestAddLayerMediaReplacement", () => {
     // base.aep's only 'primary' layer is a solid: not a Media Replacement
     // layer, so it is not addable.
     const comp = _primary(parse_project_fresh(BASE));
-    const layer = comp.layers[0];
+    const layer = as_instance(comp.layers[0], AVLayer);
     expect(layer.can_add_to_motion_graphics_template(comp)).toBe(false);
   });
 
@@ -481,18 +487,18 @@ describe("TestAddLayerMediaReplacement", () => {
     expect(ctrl.source_layer_id).toBe(comp2.layers[0]._ldta.layer_id);
     expect(
       py_eq(
-        ctrl.source_property_path.map((r: any) => r.match_name),
+        ctrl.source_property_path.map((r) => r.match_name),
         ["ADBE Source Options Group", "ADBE Layer Source Alternate"],
       ),
     ).toBe(true);
     // The decoded source-media fields survive the round-trip.
     const cctl = _cif3_cctls(comp2)[0];
-    const by_type = new Map<string, any>(cctl.chunks.map((c: any): [string, any] => [c.chunk_type, c]));
-    expect(getitem(by_type, "CSMw").value).toBe(640);
-    expect(getitem(by_type, "CSMh").value).toBe(346);
-    expect(getitem(by_type, "CSMs").value).toBe(0);
-    expect(getitem(by_type, "CSMe").value).toBe(720000);
-    expect(getitem(by_type, "CSMt").value).toBe(23976);
+    const by_type = new Map(cctl.chunks.map((c) => [c.chunk_type, c] as const));
+    expect(as_instance(getitem(by_type, "CSMw"), U4Chunk).value).toBe(640);
+    expect(as_instance(getitem(by_type, "CSMh"), U4Chunk).value).toBe(346);
+    expect(as_instance(getitem(by_type, "CSMs"), U4Chunk).value).toBe(0);
+    expect(as_instance(getitem(by_type, "CSMe"), U4Chunk).value).toBe(720000);
+    expect(as_instance(getitem(by_type, "CSMt"), U4Chunk).value).toBe(23976);
   });
 
   test("test_builder_matches_fixture_bytes", () => {
@@ -501,12 +507,12 @@ describe("TestAddLayerMediaReplacement", () => {
     const project = parse_project_fresh(TestAddLayerMediaReplacement.MEDIA);
     const comp = get_comp(project, "image_with_alpha");
     const fixture_cctl = _cif3_cctls(comp)[0];
-    const by_type = new Map<string, any>(fixture_cctl.chunks.map((c: any): [string, any] => [c.chunk_type, c]));
-    const utf8s = fixture_cctl.chunks.filter((c: any) => c.chunk_type === "Utf8");
-    const uuid_str = (utf8s[0] as any).value;
-    const thumbnail = (utf8s[3] as any).value;
-    const cprp = as_instance(next(fixture_cctl.chunks, (c: any) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
-    const path_json = as_instance(next(cprp.chunks, (c: any) => c.chunk_type === "Utf8"), Utf8Chunk).value;
+    const by_type = new Map(fixture_cctl.chunks.map((c) => [c.chunk_type, c] as const));
+    const utf8s = fixture_cctl.chunks.filter((c) => c.chunk_type === "Utf8");
+    const uuid_str = as_instance(utf8s[0], Utf8Chunk).value;
+    const thumbnail = as_instance(utf8s[3], Utf8Chunk).value;
+    const cprp = as_instance(next(fixture_cctl.chunks, (c) => getattr(c, "list_type", "") === "CPrp"), ListChunk);
+    const path_json = as_instance(next(cprp.chunks, (c) => c.chunk_type === "Utf8"), Utf8Chunk).value;
 
     const [built, _name, _ctyp] = build_media_cctl(
       "image_with_alpha.png",
@@ -522,6 +528,6 @@ describe("TestAddLayerMediaReplacement", () => {
       path_json,
     );
     expect(py_eq(_chunk_bytes(built), _chunk_bytes(fixture_cctl))).toBe(true);
-    expect(getitem(by_type, "CSMd").value).toBe(2);
+    expect(as_instance(getitem(by_type, "CSMd"), U4Chunk).value).toBe(2);
   });
 });

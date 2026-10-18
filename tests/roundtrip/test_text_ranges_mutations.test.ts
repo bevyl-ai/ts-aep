@@ -8,15 +8,18 @@
 
 import { describe, expect, test } from "bun:test";
 import { parse_app_fresh } from "../helpers.ts";
+import type { Application } from "../../src/py_aep/index.ts";
 import { cos_get } from "../../src/py_aep/cos/index.ts";
+import { cos_dict, cos_iter, is, py_int } from "../../src/py_aep/cos/kinds.ts";
 import { BoxVerticalAlignment } from "../../src/py_aep/enums/index.ts";
 import { resolve_postscript } from "../../src/py_aep/svg/fonts.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
-  dict_get,
   Path,
   py_eq,
   py_or,
   sorted,
+  StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
@@ -25,10 +28,12 @@ const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples
 const SAMPLE = SAMPLES_DIR.div("text_ranges.aep");
 
 /** `_fresh_doc(name, app=None)` -> `(app, layer.text.source_text.value)`. */
-function _fresh_doc(name: string, app: any = null): [any, any] {
+function _fresh_doc(name: string, app: Application | null = null): [Application, TextDocument] {
   app = app == null ? parse_app_fresh(SAMPLE) : app;
   const comp = app.project.compositions[0];
-  const layer = comp.text_layers.find((ly: any) => ly.name === name)!;
+  const layer = comp.text_layers.find((ly) => ly.name === name);
+  if (layer === undefined) throw new StopIteration();
+  if (layer.text == null) throw new Error("text layer has no text group");
   return [app, layer.text.source_text.value];
 }
 
@@ -42,15 +47,15 @@ function _fresh_doc(name: string, app: any = null): [any, any] {
  * Returns the skip reason, or null when the composer may run. The shim's
  * `skip` is throw-free, so callers do `if (reason != null) return skip(reason);`.
  */
-function _require_composer(doc: any): string | null {
+function _require_composer(doc: TextDocument): string | null {
   // NOTE(port): importorskip("uharfbuzz") never skips here: text_composition.ts loads harfbuzzjs unconditionally at module load.
-  const fonts = doc._fonts.map((font: any) => font.post_script_name);
+  const fonts = doc._fonts.map((font) => font.post_script_name);
   const used = new Set<string>();
-  for (const run of py_or(cos_get(doc._doc, "0", "6", "0"), []) as any[]) {
-    const style: any = py_or(cos_get(run, "0", "0", "6"), new Map());
-    const index = dict_get(style, "0");
-    if (typeof index === "number" && Number.isInteger(index) && 0 <= index && index < fonts.length) {
-      used.add(fonts[index]);
+  for (const run of cos_iter(py_or(cos_get(doc._doc, "0", "6", "0"), []))) {
+    const style = py_or(cos_get(run, "0", "0", "6"), new Map());
+    const index = cos_dict(style, "get").get("0") ?? null;
+    if (is(py_int, index) && 0 <= Number(index) && Number(index) < fonts.length) {
+      used.add(fonts[Number(index)]);
     }
   }
   const missing = sorted([...used].filter((name) => resolve_postscript(name) == null));
@@ -226,7 +231,8 @@ describe("TestRecomposition", () => {
   test("test_frame_write_marks_sibling_keyframe_docs", () => {
     const app = parse_app_fresh(SAMPLE);
     const comp = app.project.compositions[0];
-    const layer = comp.text_layers.find((ly: any) => ly.name === "RangesBox")!;
+    const layer = comp.text_layers.find((ly) => ly.name === "RangesBox");
+    if (layer === undefined) throw new StopIteration();
     if (layer.text == null) throw new Error("text layer has no text group");
     const prop = layer.text.__getitem__("ADBE Text Document");
     prop.add_key(0.0);

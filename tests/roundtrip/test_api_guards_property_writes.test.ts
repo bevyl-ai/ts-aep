@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/property.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
@@ -17,22 +17,24 @@ import {
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 import { as_instance } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
+import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 
 // `Path(__file__)` → `import.meta.dir` (Bun); three `.parent` hops → `tests/roundtrip/../../`.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 
 /** Every leaf property in `app` satisfying `predicate`. */
-function _leaves(app: any, predicate: (p: any) => boolean): any[] {
-  const found: any[] = [];
+function _leaves(app: Application, predicate: (p: Property) => boolean): Property[] {
+  const found: Property[] = [];
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
-      const stack: any[] = [layer];
+      const stack: PropertyGroup[] = [layer];
       while (py_bool(stack)) {
         const group = stack.pop();
+        py_assert(group != null);
         for (const child of group) {
           if ("keyframes" in child) {
             if (predicate(child)) found.push(child);
-          } else if (typeof child[Symbol.iterator] === "function") {
+          } else if (Symbol.iterator in child) {
             // hasattr(child, "__iter__") → Symbol.iterator probe (dunder rule §6)
             stack.push(child);
           }
@@ -43,7 +45,7 @@ function _leaves(app: any, predicate: (p: any) => boolean): any[] {
   return found;
 }
 
-function _first_leaf(app: any, predicate: (p: any) => boolean): any {
+function _first_leaf(app: Application, predicate: (p: Property) => boolean): Property {
   const hits = _leaves(app, predicate);
   py_assert(py_bool(hits), "no property matched");
   return hits[0];
@@ -108,16 +110,16 @@ describe("TestPropertyNameGuard", () => {
     expect(py_bool(renamed)).toBe(true);
     const out = tmp_path.div("mask_rename.aep");
     app.project.save(out);
-    const names = parse_aep(out).project.compositions.flatMap((comp: any) =>
-      comp.layers.flatMap((layer: any) => [...py_or(layer.masks, [])].map((mask: any) => mask.name)),
+    const names = parse_aep(out).project.compositions.flatMap((comp) =>
+      comp.layers.flatMap((layer) => [...py_or(layer.masks, [])].map((mask) => mask.name)),
     );
-    expect(py_bool(names) && names.every((name: string) => name === "Kept Mask")).toBe(true);
+    expect(py_bool(names) && names.every((name) => name === "Kept Mask")).toBe(true);
   });
 
   test("test_effect_rename_still_round_trips", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("property", "effects.aep"));
-    let effect: any = null;
+    let effect: Property | PropertyGroup | null = null;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
         for (const candidate of py_or(layer.effects, [])) {
@@ -128,13 +130,13 @@ describe("TestPropertyNameGuard", () => {
       }
       if (effect != null) break;
     }
-    expect(effect != null).toBe(true);
+    py_assert(effect != null);
     effect.name = "Renamed Effect";
     const out = tmp_path.div("effect_rename.aep");
     app.project.save(out);
-    const names = parse_aep(out).project.compositions.flatMap((comp: any) =>
-      comp.layers.flatMap((layer: any) => [...py_or(layer.effects, [])]),
-    ).map((fx: any) => fx.name);
+    const names = parse_aep(out).project.compositions.flatMap((comp) =>
+      comp.layers.flatMap((layer) => [...py_or(layer.effects, [])]),
+    ).map((fx) => fx.name);
     expect(names.includes("Renamed Effect")).toBe(true);
   });
 
@@ -229,7 +231,7 @@ describe("TestExpressionEnabledGuard", () => {
 describe("TestTemporalEaseSetterWritesThrough", () => {
   const BEZ = SAMPLES_DIR.div("property", "keyframe_bezier_multi_ease_1D.aep");
 
-  function _animated(app: any): any {
+  function _animated(app: Application): Property {
     return _first_leaf(app, (p) => py_bool(p.keyframes));
   }
 
@@ -292,8 +294,8 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const app = parse_aep(BEZ);
     const keyframe = _animated(app).keyframes[1];
     raises(ValueError, () => {
-      // Python `# type: ignore[list-item]`: a deliberately wrong-typed element.
-      keyframe.in_temporal_ease = [0.5] as any;
+      // @ts-expect-error deliberately wrong-typed element (Python `# type: ignore[list-item]`)
+      keyframe.in_temporal_ease = [0.5];
     }, "KeyframeEase");
   });
 });

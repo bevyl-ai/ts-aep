@@ -81,9 +81,9 @@ describe("TestProxySource", () => {
     return parse_aep(SAMPLES_DIR.div("proxy.aep")).project;
   }
 
-  function _find(project: Project, name: string, cls: new (...a: any[]) => any): CompItem | FootageItem {
+  function _find<T>(project: Project, name: string, cls: abstract new (...args: never[]) => T): T {
     for (const i of project.items.values()) {
-      if (getattr(i, "name", "") === name && i instanceof cls) return i as CompItem | FootageItem;
+      if (getattr(i, "name", "") === name && i instanceof cls) return i;
     }
     throw new StopIteration();
   }
@@ -164,7 +164,7 @@ describe("TestProxySource", () => {
         ["no_proxy", 0],
       ];
       for (const [name, assigned] of rows) {
-        const item = _find(proxy_project_, name, cls);
+        const item = _find<FootageItem | CompItem>(proxy_project_, name, cls);
         expect([name, cls.name, as_instance(item._idta, IdtaChunk).tobytes()[0x38]]).toEqual([name, cls.name, assigned]);
       }
     }

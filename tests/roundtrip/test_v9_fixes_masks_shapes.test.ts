@@ -12,13 +12,18 @@ import "../../src/py_aep/binary/_register.ts";
 import { filter_by_list_type, find_by_type } from "../../src/py_aep/binary/utils.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { FeatherPoint, Shape } from "../../src/py_aep/models/properties/shape.ts";
+import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
 import {
   AttributeError,
   len,
   Path,
+  py_assert,
   py_bool,
   py_eq,
   round,
+  setattr,
+  StopIteration,
   TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
@@ -33,23 +38,32 @@ const ZERO3 = Array(3).fill([0.0, 0.0]);
 const TRIANGLE = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0]];
 const QUAD = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0], [20.0, 80.0]];
 
-function _solid_mask(width = 200, height = 100): any[] {
+function _solid_mask(width = 200, height = 100) {
   const app = py_aep.new();
   const comp = app.project.root_folder.add_comp("C", 400, 300, 1.0, 5.0, 24.0);
   const solid = comp.add_solid([1.0, 0.0, 0.0], "S", width, height, 1.0);
   const mask = as_instance(solid.masks, PropertyGroup).add_property("ADBE Mask Atom");
-  return [app, comp, solid, mask];
+  return [app, comp, solid, mask] as const;
 }
 
-function _reparse_mask(app: py_aep.Application, tmp_path: Path): any {
+// NOTE(port): local stand-in for Python `next(genexpr)`; first match or StopIteration, as in CPython.
+function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
+  for (const x of items) if (pred(x)) return x;
+  throw new StopIteration();
+}
+
+function _reparse_mask(app: py_aep.Application, tmp_path: Path): MaskPropertyGroup {
   const path = tmp_path.div("out.aep");
   app.project.save(path);
-  const comp = parse(path).project.compositions.find((c) => String(c.name) === "C")!;
-  return as_instance(comp.layers.find((lyr) => String(lyr.name) === "S")!.masks, PropertyGroup).properties[0];
+  const comp = _next(parse(path).project.compositions, (c) => String(c.name) === "C");
+  const masks = _next(comp.layers, (lyr) => String(lyr.name) === "S").masks;
+  return as_instance(as_instance(masks, PropertyGroup).properties[0], MaskPropertyGroup);
 }
 
-function _tensions(path_prop: any): number[][] {
-  const shaps = filter_by_list_type(path_prop._kf_value_container.chunks, "shap");
+function _tensions(path_prop: Property<Shape>): number[][] {
+  const container = path_prop._kf_value_container;
+  py_assert(container != null, "no keyframe value container");
+  const shaps = filter_by_list_type(container.chunks, "shap");
   return shaps.map((s) =>
     find_by_type(s.chunks, "omtn").tensions.map((t) => round(t.value, 6)),
   );
@@ -60,11 +74,11 @@ function _round(points: number[][], digits = 3): number[][] {
 }
 
 // NOTE(port): local helper equals `pytest.raises((A, B))` for a tuple; the pyrt `raises` takes a single class.
-function raises_any(classes: (abstract new (...a: any[]) => Error)[], fn: () => unknown): Error {
+function raises_any(classes: (abstract new (...a: never[]) => Error)[], fn: () => unknown): Error {
   try {
     fn();
   } catch (e) {
-    if (classes.some((c) => e instanceof c)) return e as Error;
+    for (const c of classes) if (e instanceof c) return e;
     throw e;
   }
   throw new Error(`DID NOT RAISE ${classes.map((c) => c.name).join(", ")}`);
@@ -205,28 +219,30 @@ describe("TestMaskNaming", () => {
     const [, , solid, mask] = _solid_mask();
     mask.name = existing[0];
     for (const name of existing.slice(1)) {
-      solid.masks.add_property("ADBE Mask Atom").name = name;
+      as_instance(solid.masks, PropertyGroup).add_property("ADBE Mask Atom").name = name;
     }
-    expect(String(solid.masks.add_property("ADBE Mask Atom").name)).toBe(expected);
+    expect(String(as_instance(solid.masks, PropertyGroup).add_property("ADBE Mask Atom").name)).toBe(expected);
   });
 });
 
 describe("TestPathValueValidation", () => {
   test.each([[[[1, 2], [3, 4]]], [null], [5], [[1, 2]]])(
     "test_non_shape_rejected_without_mutation[%#]",
-    (value: any) => {
+    (value) => {
       // AE 2026 refuses `setValue([[0,0],[1,1]])` on a mask path ("Array is
       // not of the correct type").
       const [app, , , mask] = _solid_mask();
       const path = mask.property("ADBE Mask Shape");
       const before = project_bytes(app.project);
       raises(TypeError_, () => {
+        // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
       expect(py_eq(project_bytes(app.project), before)).toBe(true);
       path.value = new Shape(TRIANGLE);
       const before2 = project_bytes(app.project);
       raises(TypeError_, () => {
+        // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
         path.value = value;
       });
       expect(py_eq(project_bytes(app.project), before2)).toBe(true);
@@ -237,21 +253,24 @@ describe("TestPathValueValidation", () => {
   test("test_shape_layer_path_rejects_non_shape", () => {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 400, 300, 1.0, 5.0, 24.0);
-    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group") as any;
+    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group");
     const path = group
       .add_property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
     raises(TypeError_, () => {
+      // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
       path.value = [[1, 2], [3, 4]];
     });
   });
 
   test.each([
-    [(p: any) => p.add_key(1e9)],
-    [(p: any) => p.add_key("1")],
-    [(p: any) => p.set_value_at_time(1e9, new Shape(TRIANGLE))],
-    [(p: any) => p.set_value_at_time(1.0, [[0, 0], [1, 1]])],
-  ])("test_rejected_key_leaves_a_fresh_mask_untouched[%#]", (call: (p: any) => unknown) => {
+    [(p: Property<Shape>) => p.add_key(1e9)],
+    // @ts-expect-error deliberately passes a string time to check runtime validation
+    [(p: Property<Shape>) => p.add_key("1")],
+    [(p: Property<Shape>) => p.set_value_at_time(1e9, new Shape(TRIANGLE))],
+    // @ts-expect-error deliberately passes a non-Shape value to check runtime validation
+    [(p: Property<Shape>) => p.set_value_at_time(1.0, [[0, 0], [1, 1]])],
+  ])("test_rejected_key_leaves_a_fresh_mask_untouched[%#]", (call: (p: Property<Shape>) => unknown) => {
     const [app, , , mask] = _solid_mask();
     const before = project_bytes(app.project);
     raises_any([TypeError_, ValueError], () => call(mask.property("ADBE Mask Shape")));
@@ -290,12 +309,16 @@ describe("TestShapeGeometry", () => {
       },
     ],
     [{ vertices: [[0.0, 0.0]], out_tangents: [[Infinity, 0.0]] }],
-  ])("test_beyond_float32_is_rejected[%#]", (kwargs: any) => {
+  ])("test_beyond_float32_is_rejected[%#]", (kwargs: { vertices: number[][]; in_tangents?: number[][]; out_tangents?: number[][] }) => {
     raises(ValueError, () => new Shape(kwargs.vertices, kwargs.in_tangents, kwargs.out_tangents));
   });
 
   test("test_closed_must_be_a_bool", () => {
-    raises(TypeError_, () => new Shape([[0, 0]], undefined, undefined, { closed: 1 as any }));
+    raises(
+      TypeError_,
+      // @ts-expect-error deliberately passes a non-bool closed to check runtime validation
+      () => new Shape([[0, 0]], undefined, undefined, { closed: 1 }),
+    );
   });
 
   test("test_vertex_move_keeps_relative_tangents", () => {
@@ -350,14 +373,14 @@ describe("TestShapeGeometry", () => {
 });
 
 describe("TestShapeCopies", () => {
-  const _two_layers = (): any[] => {
+  const _two_layers = () => {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 800, 600, 1.0, 5.0, 24.0);
     const a = comp.add_solid([1.0, 0.0, 0.0], "A", 200, 100, 1.0);
     const b = comp.add_solid([0.0, 1.0, 0.0], "B", 400, 400, 1.0);
-    const mask_a = as_instance(a.masks, PropertyGroup).add_property("ADBE Mask Atom") as any;
+    const mask_a = as_instance(a.masks, PropertyGroup).add_property("ADBE Mask Atom");
     mask_a.property("ADBE Mask Shape").value = new Shape(TRIANGLE);
-    return [app, comp, b, mask_a];
+    return [app, comp, b, mask_a] as const;
   };
 
   test("test_mask_copied_to_a_bigger_layer_keeps_its_pixels", () => {
@@ -365,16 +388,19 @@ describe("TestShapeCopies", () => {
     // AE 2026: B.maskPath.setValue(A.maskPath.value) -> the same pixel
     // vertices on the 400x400 layer as on the 200x100 one.
     const [app, , b, mask_a] = _two_layers();
-    const mask_b = b.masks.add_property("ADBE Mask Atom");
+    const mask_b = as_instance(b.masks, PropertyGroup).add_property("ADBE Mask Atom");
     mask_b.property("ADBE Mask Shape").value = mask_a.property("ADBE Mask Shape").value;
     expect(py_eq(_round(mask_b.property("ADBE Mask Shape").value.vertices), TRIANGLE)).toBe(true);
     const path = tmp_path.div("copy.aep");
     app.project.save(path);
     const comp = parse(path).project.compositions[0];
-    const b2 = comp.layers.find((lyr) => String(lyr.name) === "B")!;
+    const b2 = _next(comp.layers, (lyr) => String(lyr.name) === "B");
     expect(
       py_eq(
-        _round((as_instance(b2.masks, PropertyGroup).properties[0] as any).property("ADBE Mask Shape").value.vertices),
+        _round(
+          as_instance(as_instance(b2.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape").value
+            .vertices,
+        ),
         TRIANGLE,
       ),
     ).toBe(true);
@@ -382,7 +408,7 @@ describe("TestShapeCopies", () => {
 
   test("test_mask_copied_to_a_shape_path_keeps_its_pixels", () => {
     const [, comp, , mask_a] = _two_layers();
-    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group") as any;
+    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group");
     const path = group
       .add_property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
@@ -395,9 +421,10 @@ describe("TestFeatherPoints", () => {
   test("test_new_shape_keeps_feather_points", () => {
     const tmp_path = make_tmp_path();
     const app = parse(FEATHER);
-    const path = (as_instance(app.project.compositions[0].layers[0].masks, PropertyGroup).properties[0] as any).property(
-      "ADBE Mask Shape",
-    );
+    const path = as_instance(
+      as_instance(app.project.compositions[0].layers[0].masks, PropertyGroup).properties[0],
+      MaskPropertyGroup,
+    ).property("ADBE Mask Shape");
     const value = path.value;
     const expected = value.feather_points.map((fp: FeatherPoint) => [fp.seg_loc, fp.rel_seg_loc, fp.radius]);
     expect(len(expected)).toBe(4);
@@ -407,7 +434,10 @@ describe("TestFeatherPoints", () => {
     });
     const out = tmp_path.div("feather.aep");
     app.project.save(out);
-    const reread = as_instance(parse(out).project.compositions[0].layers[0].masks, PropertyGroup).properties[0] as any;
+    const reread = as_instance(
+      as_instance(parse(out).project.compositions[0].layers[0].masks, PropertyGroup).properties[0],
+      MaskPropertyGroup,
+    );
     const points = reread.property("ADBE Mask Shape").value.feather_points;
     expect(
       py_eq(
@@ -418,7 +448,11 @@ describe("TestFeatherPoints", () => {
   });
 
   test("test_feather_points_must_be_feather_points", () => {
-    raises(TypeError_, () => new Shape([[0, 0]], undefined, undefined, { feather_points: "x" as any }));
+    raises(
+      TypeError_,
+      // @ts-expect-error deliberately passes a non-list feather_points to check runtime validation
+      () => new Shape([[0, 0]], undefined, undefined, { feather_points: "x" }),
+    );
   });
 });
 
@@ -440,17 +474,17 @@ describe("TestGroupAttributeWrites", () => {
     ["ADBE Transform Group", "roto_bezier", true],
     ["ADBE Transform Group", "position", [1.0, 2.0]],
     ["ADBE Effect Parade", "value", 42],
-  ])("test_unknown_attribute_rejected[%#]", (group_name: string, attr: string, value: any) => {
+  ])("test_unknown_attribute_rejected[%#]", (group_name: string, attr: string, value: unknown) => {
     const [app, , solid] = _solid_mask();
     const group = solid.__getitem__(group_name);
     const before = project_bytes(app.project);
     raises(AttributeError, () => {
-      group[attr] = value;
+      setattr(group, attr, value);
     });
     expect(py_eq(project_bytes(app.project), before)).toBe(true);
     if (attr === "position") {
       // Attribute access still reaches the child property.
-      expect(String(group.position.match_name)).toBe("ADBE Position");
+      expect(String(as_instance(Reflect.get(group, "position"), Property).match_name)).toBe("ADBE Position");
     }
   });
 });

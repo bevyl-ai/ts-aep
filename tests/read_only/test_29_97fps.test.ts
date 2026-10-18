@@ -29,18 +29,34 @@ const BUGS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "bugs");
 const AEP_PATH = BUGS_DIR.div("29.97_fps_time_scale_3.125.aep");
 
 // Module-scoped fixtures: parsed once and cached for every test in this file.
-const _cache: { project?: Project; expected?: any } = {};
+/** The fields this file reads from an expected item's JSON. */
+interface ExpectedItem {
+  id: number;
+  typeName: string;
+  frameRate: number;
+  duration: number;
+  workAreaDuration: number;
+  workAreaStart: number;
+  displayStartTime: number;
+}
+
+interface ExpectedProject {
+  items: ExpectedItem[];
+}
+
+const _cache: { project?: Project; expected?: ExpectedProject } = {};
 
 /** Parse the 29.97fps sample once for all tests in this module. */
 function project_fixture(): Project {
-  if (_cache.project === undefined) _cache.project = parse_project(AEP_PATH) as Project;
+  if (_cache.project === undefined) _cache.project = parse_project(AEP_PATH);
   return _cache.project;
 }
 
 /** Load the expected JSON. */
-function expected_fixture(): any {
-  if (_cache.expected === undefined) _cache.expected = load_expected(BUGS_DIR, "29.97_fps_time_scale_3.125");
-  return _cache.expected;
+function expected_fixture(): ExpectedProject {
+  const expected: ExpectedProject = _cache.expected ?? load_expected(BUGS_DIR, "29.97_fps_time_scale_3.125");
+  _cache.expected = expected;
+  return expected;
 }
 
 /** Return the composition with the given id. */
@@ -52,7 +68,7 @@ function _comp_by_id(project: Project, comp_id: number): CompItem {
 }
 
 /** Return the expected JSON block for the given item id. */
-function _expected_comp(expected: any, comp_id: number): any {
+function _expected_comp(expected: ExpectedProject, comp_id: number): ExpectedItem {
   for (const item of expected["items"]) {
     if (item.id === comp_id && item.typeName === "Composition") return item;
   }

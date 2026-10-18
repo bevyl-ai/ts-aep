@@ -6,8 +6,11 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { len, Path, py_eq } from "../../src/pyrt/index.ts";
+import { len, Path, py_assert, py_eq, StopIteration } from "../../src/pyrt/index.ts";
 import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp } from "../conftest.ts";
 import { AutoKernType, BaselineDirection, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
@@ -17,25 +20,28 @@ const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples
 const TEXT_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");
 
 /** Parse and return the first text document from an .aep file. */
-function _get_text_document(aep_path: Path, comp_name: string | null = null): [any, any] {
-  const app: any = parse_aep(aep_path);
-  let comp: any;
+function _get_text_document(aep_path: Path, comp_name: string | null = null): [Project, TextDocument] {
+  const app = parse_aep(aep_path);
+  let comp: CompItem;
   if (comp_name) {
     comp = get_comp(app.project, comp_name);
   } else {
     comp = app.project.compositions[0];
   }
   const text_layer = comp.text_layers[0];
+  py_assert(text_layer.text != null);
   return [app.project, text_layer.text.source_text.value];
 }
 
 describe("TestBoxOverflow", () => {
   /** box_overflow derived from the persisted layout cache. */
 
-  function _doc(layer_name: string): any {
-    const app: any = parse_aep(TEXT_SAMPLES_DIR.div("box_overflow.aep"));
+  function _doc(layer_name: string): TextDocument {
+    const app = parse_aep(TEXT_SAMPLES_DIR.div("box_overflow.aep"));
     const comp = app.project.compositions[0];
-    const layer = comp.text_layers.find((ly: any) => ly.name === layer_name)!;
+    const layer = comp.text_layers.find((ly) => ly.name === layer_name);
+    if (layer === undefined) throw new StopIteration();
+    py_assert(layer.text != null);
     return layer.text.source_text.value;
   }
 
@@ -74,10 +80,10 @@ describe("TestTextDocumentParsing", () => {
 
   test("test_fill_color", () => {
     const [_project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.fill_color != null).toBe(true);
+    py_assert(doc.fill_color != null);
     expect(len(doc.fill_color)).toBe(3);
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); this check cannot distinguish an int-valued float from an int.
-    expect(doc.fill_color.every((c: any) => typeof c === "number")).toBe(true);
+    expect(doc.fill_color.every((c) => typeof c === "number")).toBe(true);
   });
 
   test("test_stroke_color", () => {
@@ -187,13 +193,13 @@ describe("TestFontObject", () => {
 
   test("test_post_script_name", () => {
     const [_project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.font_object != null).toBe(true);
+    py_assert(doc.font_object != null);
     expect(doc.font_object.post_script_name).toBe("TimesNewRomanPSMT");
   });
 
   test("test_version", () => {
     const [_project, doc] = _get_text_document(SAMPLES_DIR.div("type.aep"), "type_text");
-    expect(doc.font_object != null).toBe(true);
+    py_assert(doc.font_object != null);
     expect(doc.font_object.version).toBe("Version 7.00");
   });
 });

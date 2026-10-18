@@ -42,11 +42,12 @@ import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
-import type { S4Chunk, Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { U4Chunk, U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { filter_by_list_type, filter_by_type, find_by_list_type, recursive_find } from "../../src/py_aep/binary/utils.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
-import type { Property } from "../../src/py_aep/models/properties/property.ts";
+import { Property } from "../../src/py_aep/models/properties/property.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import { as_instance, parse_project_fresh } from "../helpers.ts";
 
@@ -83,7 +84,7 @@ function _comp(project: Project, name: string): CompItem {
 }
 
 function _ldta_in_order(comp: CompItem): LdtaChunk[] {
-  return recursive_find(comp._item_list.chunks, "ldta").map((c) => c as LdtaChunk);
+  return recursive_find(comp._item_list.chunks, "ldta");
 }
 
 function _all_ids(project: Project): number[] {
@@ -94,16 +95,16 @@ function _all_ids(project: Project): number[] {
 }
 
 /** Reference graph with layer ids as free variables (ldta positions). */
-function _graph(comp: CompItem): Map<string, any> {
+function _graph(comp: CompItem): Map<string, unknown> {
   const pos = new Map<number, number>(
-    _ldta_in_order(comp).map((ld, i) => [ld.layer_id, i] as [number, number]),
+    _ldta_in_order(comp).map((ld, i): [number, number] => [ld.layer_id, i]),
   );
-  const layers: Map<string, any>[] = [];
+  const layers: Map<string, unknown>[] = [];
   for (const layer of comp.layers) {
     const ld = layer._ldta;
     const matte = ld.matte_layer_id;
     layers.push(
-      new Map<string, any>([
+      new Map<string, unknown>([
         ["name", layer.name],
         ["parent", ld.parent_id ? dict_get(pos, ld.parent_id) : null],
         ["matte", matte ? dict_get(pos, matte) : null],
@@ -113,18 +114,18 @@ function _graph(comp: CompItem): Map<string, any> {
     );
   }
   const tdpi = recursive_find(comp._item_list.chunks, "tdpi").map((c) => {
-    const v = (c as S4Chunk).value;
+    const v = c.value;
     return dict_get(pos, v, ["ext", v]);
   });
   const eg = comp.motion_graphics_controllers.map(
     (ctrl) =>
-      new Map<string, any>([
+      new Map<string, unknown>([
         ["name", ctrl.name],
         ["comp_is_self", ctrl.source_comp_id === comp.id],
         ["layer_pos", dict_get(pos, ctrl.source_layer_id || -1)],
       ]),
   );
-  return new Map<string, any>([
+  return new Map<string, unknown>([
     ["layers", layers],
     ["tdpi", tdpi],
     ["eg", eg],
@@ -190,15 +191,15 @@ describe("TestDuplicateAgainstAE", () => {
     // The three CIF containers must carry the SAME fresh uuid per
     // controller (AE keeps them in sync; matched by old uuid).
     const uuids_per_container = _cctls(dup).map(
-      (c) => (at(filter_by_type(c.chunks, "Utf8"), 0) as Utf8Chunk).value,
+      (c) => at(filter_by_type(c.chunks, "Utf8"), 0).value,
     );
     expect(len(new Set(uuids_per_container))).toBe(len(dup_ctrls));
     // CCId retargeted at the duplicate; CVal/CDef zeroed like AE (the
     // cached controller value is re-derived by AE at runtime).
     for (const cctl of _cctls(dup)) {
       const cprp = find_by_list_type(cctl.chunks, "CPrp");
-      const ccid = next(cprp.chunks, (c) => c.chunk_type === "CCId");
-      expect((ccid as any).value).toBe(dup.id);
+      const ccid = next(filter_by_type(cprp.chunks, "CCId"));
+      expect(ccid.value).toBe(dup.id);
       for (const chunk of cctl.chunks) {
         if (["CVal", "CDef"].includes(chunk.chunk_type)) {
           expect(py_eq(chunk.data, bytes_.repeat(b("\x00"), len(chunk.data)))).toBe(true);
@@ -245,7 +246,7 @@ describe("TestDuplicateAgainstAE", () => {
     // Both duplicates are clones of the same original, so ldta chunk
     // order is the exact pairing between their id spaces.
     const id_map = new Map<number, number>(
-      zip(py_ldta, ae_ldta).map(([p, a]) => [p.layer_id, a.layer_id] as [number, number]),
+      zip(py_ldta, ae_ldta).map(([p, a]): [number, number] => [p.layer_id, a.layer_id]),
     );
     id_map.set(py_dup.id, ae_dup.id);
 
@@ -259,8 +260,7 @@ describe("TestDuplicateAgainstAE", () => {
         ld.matte_layer_id = getitem(id_map, matte);
       }
     }
-    for (const c of recursive_find(py_dup._item_list.chunks, "tdpi")) {
-      const tdpi = c as S4Chunk;
+    for (const tdpi of recursive_find(py_dup._item_list.chunks, "tdpi")) {
       if (id_map.has(tdpi.value)) {
         tdpi.value = getitem(id_map, tdpi.value);
       }
@@ -270,19 +270,19 @@ describe("TestDuplicateAgainstAE", () => {
     py_idta.item_id = ae_dup.id;
     for (const chunk of py_dup._item_list.chunks) {
       if (chunk.chunk_type === "iide") {
-        (chunk as any).value = ae_dup.id;
+        as_instance(chunk, U4LeChunk).value = ae_dup.id;
       }
     }
     for (const [py_c, ae_c] of zip(_cctls(py_dup), _cctls(ae_dup))) {
       const py_u = filter_by_type(py_c.chunks, "Utf8");
       const ae_u = filter_by_type(ae_c.chunks, "Utf8");
-      (at(py_u, 0) as Utf8Chunk).value = (at(ae_u, 0) as Utf8Chunk).value;
+      at(py_u, 0).value = at(ae_u, 0).value;
       // CCId/CLId map through the same id pairing - a semantic remap,
       // not a copy from AE.
       const cprp = find_by_list_type(py_c.chunks, "CPrp");
       for (const chunk of cprp.chunks) {
         if (["CCId", "CLId"].includes(chunk.chunk_type)) {
-          const ref = chunk as any;
+          const ref = as_instance(chunk, U4Chunk);
           if (id_map.has(ref.value)) {
             ref.value = getitem(id_map, ref.value);
           }
@@ -296,10 +296,10 @@ describe("TestDuplicateAgainstAE", () => {
     // Documented family 2: AE zeroes the stale viewer-pseudo-layer
     // expression-flags byte; AE's own resave zeroes it everywhere.
     const ae_flags = recursive_find(ae_dup._item_list.chunks, "tdb4").map(
-      (t) => (t as any)._expr_flags,
+      (t) => t._expr_flags,
     )[Symbol.iterator]();
     for (const t of recursive_find(py_dup._item_list.chunks, "tdb4")) {
-      (t as any)._expr_flags = next(ae_flags);
+      t._expr_flags = next(ae_flags);
     }
     // Documented family 3: AE strips layer-level parT effect param
     // defs (redundant with EfdG); py keeps them - they are the only
@@ -308,7 +308,7 @@ describe("TestDuplicateAgainstAE", () => {
     const ae_part = recursive_find(ae_dup._item_list.chunks, null, "parT");
     expect(len(py_part)).toBe(len(ae_part));
     for (const [py_p, ae_p] of zip(py_part, ae_part)) {
-      (py_p as ListChunk).chunks = [...(ae_p as ListChunk).chunks];
+      as_instance(py_p, ListChunk).chunks = [...as_instance(ae_p, ListChunk).chunks];
     }
 
     const ae_children = ae_dup._item_list.chunks;
@@ -334,11 +334,11 @@ describe("TestDuplicateAgainstAE", () => {
     expect(a._ldta.matte_layer_id).toBe(b_.id);
     expect(py_bool(a.transform.property("ADBE Opacity").expression_enabled)).toBe(true);
     const inner_layer = next(dup.layers, (la) => la.name === "Inner");
-    const overrides: any = next(
-      inner_layer.properties,
-      (p) => p.match_name === "ADBE Layer Overrides",
+    const overrides = as_instance(
+      next(inner_layer.properties, (p) => p.match_name === "ADBE Layer Overrides"),
+      PropertyGroup,
     );
-    expect(py_eq(overrides.properties.map((p: Property) => p.value), [42.0])).toBe(true);
+    expect(py_eq(overrides.properties.map((p) => as_instance(p, Property).value), [42.0])).toBe(true);
     expect(py_eq(dup.motion_graphics_controllers.map((c) => c.source_comp_id), [dup.id])).toBe(true);
     const ids = _all_ids(project2);
     expect(len(ids)).toBe(len(new Set(ids)));
@@ -354,11 +354,14 @@ describe("TestDuplicateEdgeCases", () => {
     const project = parse_project_fresh(EG_SAMPLE);
     const host = _comp(project, "image_with_alpha 2");
     const original = next(host.layers, (la) => py_bool(la.essential_property_uuids));
-    const orig_alt: any = at(
-      (next(original.properties, (p) => p.match_name === "ADBE Layer Overrides") as any).properties,
-      0,
+    const orig_alt = as_instance(
+      at(
+        as_instance(next(original.properties, (p) => p.match_name === "ADBE Layer Overrides"), PropertyGroup).properties,
+        0,
+      ),
+      Property,
     );
-    expect(orig_alt.alternate_source != null).toBe(true);
+    py_assert(orig_alt.alternate_source != null);
 
     const dup = host.duplicate();
     const out = tmp_path.div("dup.aep");
@@ -368,12 +371,12 @@ describe("TestDuplicateEdgeCases", () => {
     const dup2 = _comp(project2, dup.name);
     const layer = next(dup2.layers, (la) => py_bool(la.essential_property_uuids));
     expect(py_eq(layer.essential_property_uuids, original.essential_property_uuids)).toBe(true);
-    const alt: any = at(
-      (next(layer.properties, (p) => p.match_name === "ADBE Layer Overrides") as any).properties,
-      0,
+    const alt = as_instance(
+      at(as_instance(next(layer.properties, (p) => p.match_name === "ADBE Layer Overrides"), PropertyGroup).properties, 0),
+      Property,
     );
     expect(alt.can_set_alternate_source).toBe(true);
-    expect(alt.alternate_source != null).toBe(true);
+    py_assert(alt.alternate_source != null);
     expect(alt.alternate_source.id).toBe(orig_alt.alternate_source.id);
   });
 

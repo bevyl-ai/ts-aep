@@ -7,7 +7,7 @@
 // and `member.name` is `E.name_of(member)`.
 
 import { describe, expect, test } from "bun:test";
-import { contains, format, len, Path, py_bool, py_eq, split } from "../../src/pyrt/index.ts";
+import { contains, format, len, Path, py_bool, py_eq, split, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { load_expected, parse_project } from "../conftest.ts";
 import { ColorManagementSystem, GpuAccelType, LutInterpolationMethod } from "../../src/py_aep/enums/index.ts";
@@ -330,7 +330,9 @@ describe("TestDynamicLinkGUID", () => {
 
   test("test_guid_shape", () => {
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_8.aep"));
-    const guid = project.items.values().next().value!.dynamic_link_guid;
+    const first = project.items.values().next();
+    if (first.done) throw new StopIteration();
+    const guid = first.value.dynamic_link_guid;
     const groups = split(guid, "-");
     expect(py_eq(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
     expect(guid).toBe(guid.toLowerCase());

@@ -10,11 +10,13 @@ import { AlphaMode, FieldSeparationType } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { find_by_list_type } from "../../src/py_aep/binary/utils.ts";
 import { get_comp, get_first_footage, get_footage, get_footage_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { AssertionError_, Path, isclose, py_eq } from "../../src/pyrt/index.ts";
+import { AssertionError_, Path, StopIteration, isclose, py_eq } from "../../src/pyrt/index.ts";
 import { as_instance } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
+import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
+import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
@@ -497,16 +499,15 @@ describe("TestOverrideMediaColorSpace", () => {
 describe("TestHasAudio", () => {
   test("test_footage_with_audio", () => {
     const project = parse_project(SAMPLES_DIR.div("no_audio.aep"));
-    // Python `next(...)` without a default raises StopIteration when nothing
-    // matches; `.find(...)!` yields undefined instead, which then fails at
-    // the `.has_audio` access, so the test still fails on a missing item.
-    const footage = project.footages.find((f) => f.name === "mov_23_976.mov")!;
+    const footage = project.footages.find((f) => f.name === "mov_23_976.mov");
+    if (footage === undefined) throw new StopIteration();
     expect(footage.has_audio).toBe(true);
   });
 
   test("test_footage_without_audio", () => {
     const project = parse_project(SAMPLES_DIR.div("no_audio.aep"));
-    const footage = project.footages.find((f) => f.name === "mov_23_976_no_audio.mov")!;
+    const footage = project.footages.find((f) => f.name === "mov_23_976_no_audio.mov");
+    if (footage === undefined) throw new StopIteration();
     expect(footage.has_audio).toBe(false);
   });
 });
@@ -531,9 +532,10 @@ describe("TestImageSequenceSource", () => {
       "mainSource"
     ];
     // Exact string match against AE's fsName, separators included.
-    expect((footage.main_source as any).file).toBe(exp_source["filePath"]);
+    const main_source = as_instance(footage.main_source, FileSource);
+    expect(main_source.file).toBe(exp_source["filePath"]);
     // This sample is Windows-authored: no stray forward slash on any host.
-    expect((footage.main_source as any).file.includes("/")).toBe(false);
+    expect(main_source.file.includes("/")).toBe(false);
   });
 });
 
@@ -553,20 +555,20 @@ describe("TestAlphabeticalSequence", () => {
     expect(footage_json["name"]).toBe("assets");
     expect(footage.duration).toBe(footage_json["duration"]);
     expect(footage.frame_rate).toBe(footage_json["frameRate"]);
-    expect((footage.main_source as any).file).toBe(footage_json["mainSource"]["filePath"]);
+    expect(as_instance(footage.main_source, FileSource).file).toBe(footage_json["mainSource"]["filePath"]);
   });
 
   test("test_lists_its_files", () => {
-    const source = get_footage(parse_project(SAMPLE), "assets").main_source;
+    const source = as_instance(get_footage(parse_project(SAMPLE), "assets").main_source, FileSource);
     expect(
-      py_eq((source as any).file_names, [
+      py_eq(source.file_names, [
         "new_exr.0002.exr",
         "new_exr.0003.exr",
         "old_exr.00004.exr",
       ]),
     ).toBe(true);
     // The StVc list's little-endian file count.
-    const stvc = find_by_list_type((source as any)._pin.chunks, "StVc");
-    expect((stvc.chunks[0] as any).value).toBe(3);
+    const stvc = find_by_list_type(source._pin.chunks, "StVc");
+    expect(as_instance(stvc.chunks[0], U4LeChunk).value).toBe(3);
   });
 });

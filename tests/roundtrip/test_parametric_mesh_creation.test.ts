@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import { getattr, getitem, Path, setattr } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
 import { LayerType, ParametricMeshType } from "../../src/py_aep/enums/index.ts";
 import { ParametricMeshLayer } from "../../src/py_aep/models/layers/parametric_mesh_layer.ts";
 import { as_instance, parse_project_fresh } from "../helpers.ts";
@@ -23,7 +23,7 @@ const _FIRST_FIELD: Map<number, string> = new Map<number, string>([
   [ParametricMeshType.CYLINDER, "radius"],
 ]);
 
-function _save_reparse(project: any, tmp_path: Path) {
+function _save_reparse(project: Project, tmp_path: Path) {
   const out = tmp_path.div("mesh.aep");
   project.save(out);
   return parse_project_fresh(out);

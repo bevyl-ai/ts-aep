@@ -8,7 +8,14 @@
  */
 
 import { expect, test } from "bun:test";
-import { _CONDITIONAL_RULES, _FORMAT_RULES, _KIND_RULES, allowed_values } from "../../src/py_aep/data/output_module_rules.ts";
+import {
+  _CONDITIONAL_RULES,
+  _FORMAT_RULES,
+  _KIND_RULES,
+  allowed_values,
+  type Constraints,
+  type RuleValue,
+} from "../../src/py_aep/data/output_module_rules.ts";
 import { AudioChannels, AudioCodec, FormatKind, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat } from "../../src/py_aep/enums/index.ts";
 import { _DEPTH_MINUS, _DEPTH_PLUS, OM_SETTINGS } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import {
@@ -48,7 +55,7 @@ const _FO_CONSTRAINT_KEYS = new Set([
 
 const _ALL_CHANNELS = new Set(OutputChannels.members());
 
-function* _iter_all_constraint_dicts(): Generator<Map<string, any>> {
+function* _iter_all_constraint_dicts(): Generator<Constraints> {
   for (const rules of _KIND_RULES.values()) {
     yield rules;
   }
@@ -98,9 +105,9 @@ test("test_no_empty_allowed_sets", () => {
 });
 
 /** Check the channels<->depth pairing closure for one rule branch. */
-function _depth_closure_ok(channels: ReadonlySet<any>, depths: ReadonlySet<any>): [boolean, string] {
-  const depth_repr = (ds: Iterable<any>) =>
-    `[${[...sorted(ds)].map((d: any) => `<OutputColorDepth.${OutputColorDepth.name_of(d)}: ${d}>`).join(", ")}]`;
+function _depth_closure_ok(channels: ReadonlySet<RuleValue>, depths: ReadonlySet<RuleValue>): [boolean, string] {
+  const depth_repr = (ds: Iterable<RuleValue>) =>
+    `[${[...sorted(ds)].map((d) => `<OutputColorDepth.${OutputColorDepth.name_of(OutputColorDepth.of(d))}: ${d}>`).join(", ")}]`;
   if (channels.has(OutputChannels.RGBA)) {
     for (const depth of depths) {
       const base = int(depth);
@@ -121,9 +128,9 @@ function _depth_closure_ok(channels: ReadonlySet<any>, depths: ReadonlySet<any>)
 }
 
 // ids=lambda f: f.name
-test.each(OutputFormat.members().map((fmt) => [OutputFormat.name_of(fmt), fmt] as [string, number]))(
+test.each(OutputFormat.members().map((fmt): [string, OutputFormat] => [OutputFormat.name_of(fmt), fmt]))(
   "test_depth_pairing_closed_under_channel_sync[%s]",
-  (_id: string, fmt: number) => {
+  (_id: string, fmt: OutputFormat) => {
     /**
      * `_sync_after_channels` can never write an out-of-table depth.
      *
@@ -131,27 +138,25 @@ test.each(OutputFormat.members().map((fmt) => [OutputFormat.name_of(fmt), fmt] a
      * depth reachable through the RGBA pairing maps (`_DEPTH_PLUS/_MINUS`)
      * from an allowed depth under allowed channels must itself be allowed.
      */
-    const fmt_rules: Map<string, any> = dict_get(_FORMAT_RULES, fmt, new Map<string, any>()) as any;
-    const branches: [Map<string, any>, Map<string, any> | null][] = [[fmt_rules, null]];
+    const fmt_rules: Constraints = dict_get(_FORMAT_RULES, fmt, new Map<string, ReadonlySet<RuleValue>>());
+    const branches: [Constraints, Map<string, RuleValue | RuleValue[]> | null][] = [[fmt_rules, null]];
     for (const [conditions, constraints] of dict_get(_CONDITIONAL_RULES, fmt, [])) {
-      const merged = new Map<string, any>([...fmt_rules, ...(constraints as Map<string, any>)]);
+      const merged: Constraints = new Map([...fmt_rules, ...constraints]);
       branches.push([merged, conditions]);
     }
     for (const [branch, conditions] of branches) {
       const depths = dict_get(branch, "Depth");
       if (depths == null) continue;
-      let channels = dict_get(branch, "Channels", _ALL_CHANNELS);
+      let channels: ReadonlySet<RuleValue> = dict_get(branch, "Channels", _ALL_CHANNELS);
       // A branch conditioned on specific channels only ever applies
       // there (e.g. the generated parity rows): narrow accordingly.
-      let cond_channels = dict_get(py_or(conditions, new Map()), "Channels");
+      const cond_channels = dict_get(py_or(conditions, new Map<string, RuleValue | RuleValue[]>()), "Channels");
       if (cond_channels != null) {
-        if (!Array.isArray(cond_channels)) {
-          cond_channels = [cond_channels];
-        }
-        channels = new Set([...channels].filter((c) => new Set(cond_channels).has(c)));
+        const cond_list = Array.isArray(cond_channels) ? cond_channels : [cond_channels];
+        channels = new Set([...channels].filter((c) => new Set(cond_list).has(c)));
       }
       const [ok, why] = _depth_closure_ok(channels, depths);
-      py_assert(ok, `${OutputFormat.name_of(fmt as any)}: ${why}`);
+      py_assert(ok, `${OutputFormat.name_of(fmt)}: ${why}`);
     }
   },
 );

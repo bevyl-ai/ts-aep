@@ -8,11 +8,13 @@
 import { describe, expect, test } from "bun:test";
 import { ImportAsType, ImportOptions, new as new_ } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
+import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { GradientPaint, SolidPaint, UnsupportedSVGError, read_svg } from "../../src/py_aep/svg/index.ts";
 import { parse_color } from "../../src/py_aep/svg/colors.ts";
 import { IDENTITY, parse_transform } from "../../src/py_aep/svg/transform.ts";
-import { encode, max, min, py_eq, zip, type Path } from "../../src/pyrt/index.ts";
+import { at, encode, max, min, py_assert, py_eq, zip, type Path } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { as_instance } from "../helpers.ts";
 
 const NS = 'xmlns="http://www.w3.org/2000/svg"';
 
@@ -39,8 +41,7 @@ function _import(tmp_path: Path, markup: string): CompItem {
   const opts = new ImportOptions(svg);
   opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
   const comp = app.project.import_file(opts);
-  expect(comp instanceof CompItem).toBe(true);
-  return comp as CompItem;
+  return as_instance(comp, CompItem);
 }
 
 function _approx(a: number[], b: number[], tol = 1e-9): boolean {
@@ -58,9 +59,8 @@ describe("TestMiterLimit", () => {
           `stroke-miterlimit='${value}'/>`,
       ),
     );
-    const contents: any = comp.layers[0].property("ADBE Root Vectors Group");
-    const stroke = contents
-      .__getitem__(0)
+    const contents = comp.layers[0].property("ADBE Root Vectors Group");
+    const stroke = as_instance(contents.__getitem__(0), PropertyGroup)
       .__getitem__("ADBE Vectors Group")
       .__getitem__("ADBE Vector Graphic - Stroke");
     expect(stroke.__getitem__("ADBE Vector Stroke Miter Limit").value).toBe(1.0);
@@ -71,9 +71,8 @@ describe("TestBoundingBoxGradients", () => {
   const _RECT = "<rect x='20' y='10' width='80' height='40' fill='url(#g)'/>";
 
   const _paint = (gradient: string): GradientPaint => {
-    const paint = read_svg(_svg(`<defs>${gradient}</defs>${_RECT}`)).drawables[0].fill as GradientPaint;
-    expect(paint instanceof GradientPaint).toBe(true);
-    return paint;
+    const paint = read_svg(_svg(`<defs>${gradient}</defs>${_RECT}`)).drawables[0].fill;
+    return as_instance(paint, GradientPaint);
   };
 
   test("test_plain_number_radius_is_a_box_fraction", () => {
@@ -155,7 +154,7 @@ describe("TestMalformedInput", () => {
       _svg("<path d='M10 10 A 1e-200 1e-200 0 0 1 80 40' stroke='red'/>"),
     );
     expect(_approx(vs[0], [10.0, 10.0])).toBe(true);
-    expect(_approx(vs.at(-1)!, [80.0, 40.0], 1e-9)).toBe(true);
+    expect(_approx(at(vs, -1), [80.0, 40.0], 1e-9)).toBe(true);
   });
 
   test.each([
@@ -200,8 +199,8 @@ describe("TestLengths", () => {
     const stroke = read_svg(
       _svg("<rect width='10' height='10' stroke='red' stroke-width='5%'/>"),
     ).drawables[0].stroke;
-    expect(stroke != null).toBe(true);
-    expect(approx(stroke!.width, 0.05 * Math.sqrt((200 ** 2 + 100 ** 2) / 2))).toBe(true);
+    py_assert(stroke != null);
+    expect(approx(stroke.width, 0.05 * Math.sqrt((200 ** 2 + 100 ** 2) / 2))).toBe(true);
   });
 
   test.each([
@@ -239,8 +238,7 @@ describe("TestCascadeAndViewports", () => {
           "<rect style='fill:blue' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(fill instanceof SolidPaint).toBe(true);
-    expect(py_eq((fill as SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(py_eq(as_instance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_inline_important_beats_important_rule", () => {
@@ -250,8 +248,7 @@ describe("TestCascadeAndViewports", () => {
           "<rect style='fill:blue !important' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(fill instanceof SolidPaint).toBe(true);
-    expect(py_eq((fill as SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
+    expect(py_eq(as_instance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
   });
 
   test("test_nested_svg_maps_its_viewbox", () => {
@@ -314,8 +311,7 @@ describe("TestRadialRotation", () => {
           "<rect x='40' width='120' height='100' fill='url(#g)'/>",
       ),
     ).drawables[0].fill;
-    expect(paint instanceof GradientPaint).toBe(true);
-    expect(approx((paint as GradientPaint).rotation, expected)).toBe(true);
+    expect(approx(as_instance(paint, GradientPaint).rotation, expected)).toBe(true);
   });
 });
 

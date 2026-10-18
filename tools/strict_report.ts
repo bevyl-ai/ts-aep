@@ -12,6 +12,7 @@ export const LAYERS: [string, RegExp][] = [
   ["4 models", /^src\/py_aep\/models\//],
   ["5 resolvers+svg", /^src\/py_aep\/(resolvers|svg)\//],
   ["6 cli+entry", /^src\/py_aep\/(cli\/|index\.ts|_modules\.ts)/],
+  ["7 tests", /^tests\//],
 ];
 const layer_of = (f: string) => LAYERS.find(([, re]) => re.test(f))?.[0] ?? "other";
 
@@ -22,7 +23,7 @@ const files_of = new Map<string, string[]>();
 const bump = (l: string) => rows.get(l) ?? (rows.set(l, { strict: 0, any: 0, unknown: 0, casts: 0, files: 0 }), rows.get(l)!);
 for (const sf of program.getSourceFiles()) {
   const rel = path.relative(ROOT, sf.fileName);
-  if (!rel.startsWith("src/")) continue;
+  if (!rel.startsWith("src/") && !rel.startsWith("tests/")) continue;
   const l = layer_of(rel);
   const r = bump(l);
   r.files++;
