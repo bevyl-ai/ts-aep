@@ -5,7 +5,7 @@ import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { _suppressMaterialization } from "../models/descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
-import { at, int, jsonGet, jsonGetitem, jsonLoads, sorted, typeName, TypeError_ } from "../../pyrt/index.ts";
+import { at, int, jsonGet, jsonGetitem, jsonLoads, sorted, typeName } from "../../pyrt/index.ts";
 
 // AE stores 0xFFFFFFFF in a CPrp path node's `index` to mean "match by name".
 export const _BY_NAME_INDEX = 0xffffffff;
@@ -19,14 +19,14 @@ export const _BY_NAME_INDEX = 0xffffffff;
  */
 export function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
   const nodes = jsonLoads(raw);
-  if (!(nodes instanceof Map)) throw new TypeError_(`'${typeName(nodes)}' object is not a path node map`);
+  if (!(nodes instanceof Map)) throw new TypeError(`'${typeName(nodes)}' object is not a path node map`);
   const path: SourcePropertyRef[] = [];
   for (const key of sorted(nodes.keys(), (k) => int(k))) {
     const node = jsonGetitem(nodes, key);
     const index = jsonGet(node, "index", null);
     const matchName = jsonGet(node, "matchName", "");
     if (typeof matchName !== "string" || (index !== null && typeof index !== "number")) {
-      throw new TypeError_(`malformed CPrp path node ${key}`);
+      throw new TypeError(`malformed CPrp path node ${key}`);
     }
     path.push(new SourcePropertyRef(matchName, index === _BY_NAME_INDEX ? null : index));
   }

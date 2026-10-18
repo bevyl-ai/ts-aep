@@ -1,7 +1,7 @@
 /** Tests for CompItem layer creation methods. */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, contains, len, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, contains, len, pyAssert, pyEq } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import { LineOrientation } from "../../src/py_aep/enums/index.ts";
@@ -402,7 +402,7 @@ describe("TestAddSolid", () => {
     raises(ValueError, () => comp.addSolid([0.2, 0.3]));
     raises(ValueError, () => comp.addSolid([2.0, 0.0, 0.0]));
     // @ts-expect-error a non-list color is rejected at runtime
-    raises(TypeError_, () => comp.addSolid(0.5));
+    raises(TypeError, () => comp.addSolid(0.5));
   });
 
   test("test_solid_in_solids_folder", () => {

@@ -6,7 +6,7 @@
 // float), an integer beyond 2**53 is a `bigint`. NaN / Infinity / -Infinity
 // are accepted, as Python does.
 
-import { AttributeError, KeyError, ValueError, TypeError_ } from "./errors.ts";
+import { AttributeError, KeyError, ValueError } from "./errors.ts";
 import { float, floatRepr, int, PyFloat, pyfloat } from "./num.ts";
 import { pyCmp, repr, typeName } from "./builtins.ts";
 import { decode } from "./codecs.ts";
@@ -93,9 +93,9 @@ export function jsonGetitem(x: JsonValue, key: string): JsonValue {
     if (value === undefined) throw new KeyError(repr(key));
     return value;
   }
-  if (Array.isArray(x)) throw new TypeError_("list indices must be integers or slices, not str");
-  if (typeof x === "string") throw new TypeError_("string indices must be integers, not 'str'");
-  throw new TypeError_(`'${typeName(x)}' object is not subscriptable`);
+  if (Array.isArray(x)) throw new TypeError("list indices must be integers or slices, not str");
+  if (typeof x === "string") throw new TypeError("string indices must be integers, not 'str'");
+  throw new TypeError(`'${typeName(x)}' object is not subscriptable`);
 }
 
 /** Python `x.get(key, default)` on a decoded JSON value: `AttributeError` when `x` is no object. */
@@ -108,7 +108,7 @@ export function jsonGet<D>(x: JsonValue, key: string, default_: D): JsonValue | 
 /** Python `int(x)` on a decoded JSON value: `TypeError` for null, lists and objects. */
 export function jsonInt(x: JsonValue): number {
   if (x === null || Array.isArray(x) || x instanceof Map) {
-    throw new TypeError_(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
+    throw new TypeError(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
   }
   return int(x);
 }
@@ -116,7 +116,7 @@ export function jsonInt(x: JsonValue): number {
 /** Python `float(x)` on a decoded JSON value: `TypeError` for null, lists and objects. */
 export function jsonFloat(x: JsonValue): number {
   if (x === null || Array.isArray(x) || x instanceof Map) {
-    throw new TypeError_(`float() argument must be a string or a real number, not '${typeName(x)}'`);
+    throw new TypeError(`float() argument must be a string or a real number, not '${typeName(x)}'`);
   }
   return float(typeof x === "bigint" ? Number(x) : x);
 }
@@ -358,7 +358,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     if (k === false) return "false";
     if (k == null) return "null";
     if (skipkeys) return null;
-    throw new TypeError_(`keys must be str, int, float, bool or None, not ${typeName(k)}`);
+    throw new TypeError(`keys must be str, int, float, bool or None, not ${typeName(k)}`);
   };
 
   const encode = (o: unknown, level: number): string => {
@@ -367,7 +367,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     const isList = Array.isArray(o);
     const isDict = o instanceof Map || isPlainObject(o);
     if (!isList && !isDict) {
-      if (default_ === null) throw new TypeError_(`Object of type ${typeName(o)} is not JSON serializable`);
+      if (default_ === null) throw new TypeError(`Object of type ${typeName(o)} is not JSON serializable`);
       if (markers.has(o)) throw new ValueError("Circular reference detected");
       markers.add(o);
       const r = encode(default_(o), level);

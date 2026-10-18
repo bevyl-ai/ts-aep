@@ -58,7 +58,6 @@ import type { OutputModuleTemplate } from "../parsers/templates.ts";
 
 import {
   ValueError,
-  TypeError_,
   KeyError,
   NotImplementedError,
   bytes_,
@@ -156,7 +155,7 @@ export function _fontPostScriptName(font: FontObject | string): string {
   }
   const name = font?.postScriptName ?? null;
   if (typeof name !== "string" || !name) {
-    throw new TypeError_("expected a FontObject or a PostScript name string");
+    throw new TypeError("expected a FontObject or a PostScript name string");
   }
   return name;
 }
@@ -977,7 +976,7 @@ export class Project {
   set iccProfileDirs(value: PathLike[] | null) {
     if (value != null) {
       if (!isListOrTuple(value)) {
-        throw new TypeError_(
+        throw new TypeError(
           "iccProfileDirs must be a list of directories or null, " +
             `got ${typeName(value)}`,
         );
@@ -1039,7 +1038,7 @@ export class Project {
     } else if (Array.isArray(value) && value.length === 2) {
       [display, view] = value;
     } else {
-      throw new TypeError_(
+      throw new TypeError(
         "displayColorSpace expects a 'display/view' string or a " +
           `(display, view) tuple, got ${typeName(value)}`,
       );
@@ -2353,7 +2352,7 @@ export class Project {
     const merged = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
     if (this._cmsUtf8 != null) {
       const cmsData = jsonLoads(this._cmsUtf8.value);
-      if (!(cmsData instanceof Map)) throw new TypeError_(`'${typeName(cmsData)}' object is not a mapping`);
+      if (!(cmsData instanceof Map)) throw new TypeError(`'${typeName(cmsData)}' object is not a mapping`);
       for (const [k, v] of cmsData) merged.set(k, v);
     }
     return merged;
@@ -2363,7 +2362,7 @@ export class Project {
   _updateCmsSetting(key: string, value: number | string): void {
     if (this._cmsUtf8 != null) {
       const data = jsonLoads(this._cmsUtf8.value);
-      if (!(data instanceof Map)) throw new TypeError_(`'${typeName(data)}' object does not support item assignment`);
+      if (!(data instanceof Map)) throw new TypeError(`'${typeName(data)}' object does not support item assignment`);
       data.set(key, value);
       this._cmsUtf8.value = jsonDumps(data);
     } else {

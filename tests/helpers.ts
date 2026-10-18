@@ -38,7 +38,7 @@ import type { FootageItem } from "../src/py_aep/models/items/footage.ts";
 import type { Layer } from "../src/py_aep/models/layers/layer.ts";
 import type { RenderQueueItem } from "../src/py_aep/models/renderqueue/render_queue_item.ts";
 import {
-  AssertionError_,
+  AssertionError,
   b,
   BytesIO,
   bytes_,
@@ -440,7 +440,7 @@ export function getSampleFiles(samplesDir: Path): string[] {
  */
 export function asInstance<T>(value: unknown, cls: abstract new (...args: never[]) => T): T {
   if (!(value instanceof cls)) {
-    throw new AssertionError_(`expected a ${cls.name}, got ${value === null ? "null" : typeof value === "object" ? value.constructor.name : typeof value}`);
+    throw new AssertionError(`expected a ${cls.name}, got ${value === null ? "null" : typeof value === "object" ? value.constructor.name : typeof value}`);
   }
   return value;
 }
@@ -451,7 +451,7 @@ export function getFirstLayer(project: Project): Layer {
   for (const comp of project.compositions) {
     if (len(comp.layers) >= 1) return comp.layers[0];
   }
-  throw new AssertionError_("No composition with layers found");
+  throw new AssertionError("No composition with layers found");
 }
 
 /** Get the first footage item. */
@@ -504,7 +504,7 @@ export function getFolder(project: Project, name: string): FolderItem {
 
 /** Get a render queue item by its composition name. */
 export function getRqi(project: Project, compName: string): RenderQueueItem {
-  if (project.renderQueue === null) throw new AssertionError_("project.render_queue is None");
+  if (project.renderQueue === null) throw new AssertionError("project.render_queue is None");
   for (const rqi of project.renderQueue.items) {
     if (rqi.comp.name === compName) return rqi;
   }

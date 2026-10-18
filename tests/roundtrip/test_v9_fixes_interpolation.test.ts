@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, TypeError_, ValueError, float, getattr, getitem, hasattr, pyAssert, pyEq, setattr } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, ValueError, float, getattr, getitem, hasattr, pyAssert, pyEq, setattr } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, type ApproxOperand } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
@@ -955,7 +955,7 @@ describe("TestValidation", () => {
     const [app, comp] = _comp();
     const slider = _effect(_solid(comp), "ADBE Slider Control");
     const before = projectBytes(app.project);
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       slider.setValueAtTime(1.0, null);
     });
     expect(pyEq(slider.keyframes, []) && pyEq(projectBytes(app.project), before)).toBe(true);
@@ -964,7 +964,7 @@ describe("TestValidation", () => {
   test("test_non_numeric_time", () => {
     const [_app, comp] = _comp();
     const rot = _solid(comp).property(TG).property("ADBE Rotate Z");
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error a string time checks the runtime type validation
       rot.valueAtTime("abc");
     });
@@ -983,7 +983,7 @@ describe("TestValidation", () => {
 
   test("test_ease_speed_none", () => {
     const ease = new KeyframeEase(1, 50);
-    raisesAny([TypeError_, ValueError], () => {
+    raisesAny([TypeError, ValueError], () => {
       // @ts-expect-error a None speed checks the runtime type validation
       ease.speed = null;
     });

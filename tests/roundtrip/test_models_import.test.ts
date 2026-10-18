@@ -2,7 +2,7 @@ import "../../src/py_aep/binary/_register.ts";
 import { realpathSync } from "node:fs";
 import { afterEach, describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   b,
   BytesIO,
   bytes_,
@@ -2026,7 +2026,7 @@ function _flattenedFootageOpti(project: Project): Uint8Array {
       return _optiBytes(source);
     }
   }
-  throw new AssertionError_("no 8BPS footage found");
+  throw new AssertionError("no 8BPS footage found");
 }
 
 /**
@@ -2422,7 +2422,7 @@ function _footageParts(project: Project): [string, Uint8Array, Uint8Array, strin
       return [item.name, _sspcBytes(src), src._opti.tobytes(), asInstance(pin[sspcI + 1], Utf8Chunk).value];
     }
   }
-  throw new AssertionError_("no file footage item in project");
+  throw new AssertionError("no file footage item in project");
 }
 
 function _assertSspcMatches(ae: Uint8Array, mine: Uint8Array, extraNoise: Set<number> = new Set()): void {
@@ -3291,7 +3291,7 @@ function _psdFootageSource(project: Project, name: string): FileSource {
       return source;
     }
   }
-  throw new AssertionError_(`footage ${repr(name)} not found`);
+  throw new AssertionError(`footage ${repr(name)} not found`);
 }
 
 

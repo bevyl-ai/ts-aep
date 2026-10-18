@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, pyEq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, pyEq } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -32,10 +32,10 @@ describe("TestStrictBools", () => {
   test("test_rqi_bool_settings_reject_non_bool", () => {
     const rqi = _rqi(parseProjectFresh(SAMPLE));
     // NOTE(port): Python `settings[k] = v` is SettingsView.__setitem__ (item assignment on a __setitem__ class).
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       rqi.settings.set("Skip Existing Files", "no");
     });
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error render is boolean; a non-bool write must raise TypeError at runtime
       rqi.render = 1;
     });
@@ -58,7 +58,7 @@ describe("TestStrictBools", () => {
       "Video Output",
     ]) {
       // NOTE(port): Python `settings[k] = v` is SettingsView.__setitem__.
-      raises(TypeError_, () => {
+      raises(TypeError, () => {
         om.settings.set(key, "no");
       });
     }

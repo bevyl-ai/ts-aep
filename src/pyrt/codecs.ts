@@ -3,7 +3,7 @@
 // Python str is code points, a JS string UTF-16 units. A lone surrogate is
 // representable in both, which is what lets `surrogateescape` round-trip.
 
-import { UnicodeDecodeError, UnicodeEncodeError, LookupError, NotImplementedError, TypeError_ } from "./errors.ts";
+import { UnicodeDecodeError, UnicodeEncodeError, LookupError, NotImplementedError } from "./errors.ts";
 import {
   type CjkCodepage,
   CP874,
@@ -29,7 +29,7 @@ export type Errors = "strict" | "surrogateescape" | "ignore" | "replace";
 export function ord(c: string): number {
   const cp = c.codePointAt(0);
   if (cp === undefined || c.length !== (cp > 0xffff ? 2 : 1)) {
-    throw new TypeError_(`ord() expected a character, but string of length ${[...c].length} found`);
+    throw new TypeError(`ord() expected a character, but string of length ${[...c].length} found`);
   }
   return cp;
 }

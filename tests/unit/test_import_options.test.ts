@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { raises } from "../../src/pyrt/pytest.ts";
-import { Path, TypeError_, ValueError, int, pyEq, repr } from "../../src/pyrt/index.ts";
+import { Path, ValueError, int, pyEq, repr } from "../../src/pyrt/index.ts";
 import { ImportAsType } from "../../src/py_aep/enums/index.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/index.ts";
 import { COMP_CONVERSION_EXTENSIONS, getFileFormat } from "../../src/py_aep/data/file_formats.ts";
@@ -226,7 +226,7 @@ describe("TestImportOptionsLayerSelection", () => {
 
   test("test_layer_index_rejects_non_int", () => {
     const opts = new ImportOptions(new Path("a.psd"));
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error a layer name is not an index; the setter must reject it at runtime
       opts.layerIndex = "Layer 1";
     });
@@ -289,7 +289,7 @@ describe("TestImportOptionsRange", () => {
     raises(ValueError, () => {
       opts.rangeStart = -1;
     });
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error a str is not an int; the setter must reject it at runtime
       opts.rangeEnd = "5";
     });

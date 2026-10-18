@@ -13,7 +13,7 @@ import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { projectBytes } from "../helpers.ts";
-import { b, bytes_, bytesEq, pyEq, sorted, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { b, bytes_, bytesEq, pyEq, sorted, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
@@ -77,7 +77,7 @@ describe("TestVersionValidation", () => {
   });
 
   test.each([26, null, "26.0", " 26.0x67"])("test_malformed_rejected[%#]", (version) => {
-    _raisesAny([TypeError_, ValueError], () =>
+    _raisesAny([TypeError, ValueError], () =>
       // @ts-expect-error deliberately passes non-string versions to check runtime validation
       py_aep.newProject(version),
     );
@@ -127,7 +127,7 @@ describe("TestVersionValidation", () => {
 
   test.each([256, -1, "67"])("test_build_number_range[%#]", (build) => {
     const app = py_aep.newProject();
-    _raisesAny([TypeError_, ValueError], () => {
+    _raisesAny([TypeError, ValueError], () => {
       // @ts-expect-error deliberately assigns a string build number to check runtime validation
       app.buildNumber = build;
     });

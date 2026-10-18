@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   bytes_,
   bytesEq,
   getitem,
@@ -58,7 +58,7 @@ describe("TestNewEmpty", () => {
   test("test_empty_render_queue", () => {
     const rq = py_aep.newProject().project.renderQueue;
     expect(rq != null).toBe(true);
-    if (rq == null) throw new AssertionError_("new project has no render queue");
+    if (rq == null) throw new AssertionError("new project has no render queue");
     expect(len(rq.items)).toBe(0);
   });
 

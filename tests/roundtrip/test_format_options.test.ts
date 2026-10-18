@@ -16,7 +16,6 @@ import {
   setattr,
   sorted,
   tkey,
-  TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -547,7 +546,7 @@ describe("TestFormatOptionsBoolValidation", () => {
   test.each(REJECT_ROWS)("test_rejects_non_bool[%#]", (sample: string, field: string, bad: unknown) => {
     const [, opts] = _parseFresh(FORMAT_DIR.div(sample));
     pyAssert(opts != null);
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       setattr(opts, field, bad);
     });
   });

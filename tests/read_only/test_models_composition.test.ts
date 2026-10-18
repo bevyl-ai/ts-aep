@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 import {
-  AssertionError_,
+  AssertionError,
   getattr,
   getitem,
   isclose,
@@ -844,7 +844,7 @@ describe("TestEssentialGraphics", () => {
     const blur = getitem(byName, "Gaussian Blur Blurriness");
     const srcLayer = _resolveControllerSourceLayer(project, blur);
     expect(srcLayer != null).toBe(true);
-    if (srcLayer == null) throw new AssertionError_("blur controller has no source layer");
+    if (srcLayer == null) throw new AssertionError("blur controller has no source layer");
     const leafNode = _walkSourceProperty(srcLayer, blur.sourcePropertyPath);
     expect(leafNode != null).toBe(true);
     const leaf = asInstance(leafNode, Property);
@@ -858,7 +858,7 @@ describe("TestEssentialGraphics", () => {
     // the effect's source value ([1,0,0,1]), distinct from any override.
     const fill = getitem(byName, "Fill Color");
     const fillSrcLayer = _resolveControllerSourceLayer(project, fill);
-    if (fillSrcLayer == null) throw new AssertionError_("fill controller has no source layer");
+    if (fillSrcLayer == null) throw new AssertionError("fill controller has no source layer");
     const fillLeafNode = _walkSourceProperty(fillSrcLayer, fill.sourcePropertyPath);
     expect(fillLeafNode != null).toBe(true);
     const fillLeaf = asInstance(fillLeafNode, Property);

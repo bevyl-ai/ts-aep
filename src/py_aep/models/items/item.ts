@@ -8,7 +8,6 @@ import { blockSlice, findByListType, findByType, findByTypeOrNull, indexByIdenti
 import { Label } from "../../enums/index.ts";
 import {
   IndexError,
-  TypeError_,
   ValueError,
   deferred,
   descriptor,
@@ -171,7 +170,7 @@ export class Item {
   set parentFolder(value: FolderItem | null) {
     const oldParent = this._parentFolder;
     if (oldParent == null) throw new ValueError("Cannot move the root folder");
-    if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parentFolder must be a FolderItem");
+    if (!(value instanceof _folder().FolderItem)) throw new TypeError("parentFolder must be a FolderItem");
     if (value === oldParent) return;
     // A folder cannot become its own descendant. Walking up from the
     // target also covers value is self and value under the root.

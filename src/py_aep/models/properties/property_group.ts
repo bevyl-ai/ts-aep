@@ -3,7 +3,6 @@ import {
   BytesIO,
   KeyError,
   NotImplementedError,
-  TypeError_,
   ValueError,
   at,
   bytes_,
@@ -797,7 +796,7 @@ export class PropertyGroup extends PropertyBase {
       if (prop === null) throw new KeyError(repr(key));
       return prop;
     }
-    throw new TypeError_(`Property key must be int or str, not ${typeName(key)}`);
+    throw new TypeError(`Property key must be int or str, not ${typeName(key)}`);
   }
 
   /** The child whose display name, match name or snake_case name is `name`, or `null`. */

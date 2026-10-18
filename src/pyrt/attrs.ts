@@ -11,7 +11,7 @@
 //
 // Construction is keyword-only: `new U1Chunk({ chunk_type: "efdc", value: 1 })`.
 
-import { TypeError_ } from "./errors.ts";
+import {  } from "./errors.ts";
 
 export type Factory<T = unknown> = { readonly __factory__: () => T };
 
@@ -115,7 +115,7 @@ export function fields(cls: Function): readonly Attribute[] {
     const f = FIELDS.get(c);
     if (f) return f;
   }
-  throw new TypeError_(`${cls.name} is not an attrs-decorated class.`);
+  throw new TypeError(`${cls.name} is not an attrs-decorated class.`);
 }
 
 /** `attrs.has(cls)` */
@@ -167,7 +167,7 @@ function compileInit(cls: Function): Init | null {
     body.push(`self[${name}] = v;`);
   }
   body.push("return m;");
-  const missing = (alias: string) => new TypeError_(`${cls.name}.__init__() missing 1 required argument: '${alias}'`);
+  const missing = (alias: string) => new TypeError(`${cls.name}.__init__() missing 1 required argument: '${alias}'`);
   try {
     return new Function("defs", "missing", `return (self, kw) => {\n${body.join("\n")}\n};`)(defs, missing);
   } catch {
@@ -210,13 +210,13 @@ function attrsInitSlow(self: object, cls: Function, kw: Kw): void {
       v = defaultOf(a);
       if (Object.prototype.hasOwnProperty.call(kw, a.alias)) seen.add(a.alias);
       if (v === NOTHING) {
-        throw new TypeError_(`${cls.name}.__init__() missing 1 required argument: '${a.alias}'`);
+        throw new TypeError(`${cls.name}.__init__() missing 1 required argument: '${a.alias}'`);
       }
     }
     assign(self, a.name, v);
   }
   for (const k of Object.keys(kw)) {
-    if (!seen.has(k)) throw new TypeError_(`${cls.name}.__init__() got an unexpected keyword argument '${k}'`);
+    if (!seen.has(k)) throw new TypeError(`${cls.name}.__init__() got an unexpected keyword argument '${k}'`);
   }
 }
 

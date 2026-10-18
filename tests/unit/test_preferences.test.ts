@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { BytesIO, KeyError, TypeError_, ValueError, getitem, pyAssert, pyBool, pyEq, tkey } from "../../src/pyrt/index.ts";
+import { BytesIO, KeyError, ValueError, getitem, pyAssert, pyBool, pyEq, tkey } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
@@ -298,11 +298,11 @@ describe("TestPreferences", () => {
     // @ts-expect-error deliberately passes a number that is not a PREFType to check runtime validation
     raises(ValueError, () => prefs.getPrefAsNumber("Numbers Section", "Quoted Int", 1234));
     // @ts-expect-error deliberately passes a non-bool to check runtime validation
-    raises(TypeError_, () => prefs.setPrefAsBool("A", "B", 1));
+    raises(TypeError, () => prefs.setPrefAsBool("A", "B", 1));
     // @ts-expect-error deliberately passes a non-string to check runtime validation
-    raises(TypeError_, () => prefs.setPrefAsString("A", "B", 5));
+    raises(TypeError, () => prefs.setPrefAsString("A", "B", 5));
     // @ts-expect-error deliberately passes a non-number to check runtime validation
-    raises(TypeError_, () => prefs.setPrefAsNumber("A", "B", "5"));
+    raises(TypeError, () => prefs.setPrefAsNumber("A", "B", "5"));
   });
 });
 

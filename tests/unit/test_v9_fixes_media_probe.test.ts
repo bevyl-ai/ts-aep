@@ -10,7 +10,7 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, SyntaxError_, ValueError, b, bytes_, concat, getitem, pyAssert, pyEq, sorted, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, Path, ValueError, b, bytes_, concat, getitem, pyAssert, pyEq, sorted, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -146,7 +146,7 @@ test("test_cos_lexer_stops_at_end_of_data", () => {
   // a character and looped forever on a truncated name.
   const parser = new CosParser(new BytesIO(b("<</Order 8 0 R/")));
   const [result] = _run(() => [parser.lex(), parser.parseValue()]);
-  expect(Array.isArray(result) || result instanceof SyntaxError_).toBe(true);
+  expect(Array.isArray(result) || result instanceof SyntaxError).toBe(true);
 });
 
 test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (maxPos: number | null) => {

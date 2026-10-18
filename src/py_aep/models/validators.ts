@@ -14,7 +14,6 @@ import { FLOAT32_MAX } from "../binary/bin_utils.ts";
 import { AE_VERSION_RE, FORMAT_VERSIONS } from "../binary/item_chunks.ts";
 import {
   Path,
-  TypeError_,
   ValueError,
   encode,
   floatRepr,
@@ -66,7 +65,7 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
 
   return function _validator(value: unknown, instance: O | null = null): void {
     if (Array.isArray(value)) {
-      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
+      throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (integer && (!(typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
       // `bool` subclasses `int`, so an isinstance check alone lets
@@ -76,7 +75,7 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
       // Not `type(value) is not int`: that would also reject IntEnum
       // members and numpy integers.
       // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float such as 2.0 is accepted here where Python rejects it.
-      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
+      throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && !Number.isFinite(value)) {
       // NaN/inf would pass any `value < min or value > max` check (those
@@ -94,7 +93,7 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
     }
     // NOTE(port): Python `isinstance(value, (int, float))` also admits bool; mirrored here.
     if (!(typeof value === "number" || typeof value === "boolean")) {
-      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
+      throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     // A bool compares as its int value, as in Python.
     const num = Number(value);
@@ -130,7 +129,7 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
   return function _validator(value: unknown, instance: O | null = null): void {
     const n = typeof length === "function" ? length(instance) : length;
     if (!Array.isArray(value)) {
-      throw new TypeError_(`expected a sequence${n != null ? ` of ${n} elements` : ""}`);
+      throw new TypeError(`expected a sequence${n != null ? ` of ${n} elements` : ""}`);
     }
     const items = [...value];
     if (n != null && items.length !== n) {
@@ -143,12 +142,12 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
       // (Gradient, Shape, ...) - never for a member of a fixed-length
       // numeric sequence, which would otherwise accept a string here.
       if (!(typeof v === "number" || typeof v === "boolean")) {
-        throw new TypeError_(`element [${i}] expected ${typeLabel}, got ${typeName(v)}`);
+        throw new TypeError(`element [${i}] expected ${typeLabel}, got ${typeName(v)}`);
       }
       try {
         _elementValidator(v, instance);
       } catch (exc) {
-        if (!(exc instanceof TypeError_ || exc instanceof ValueError)) throw exc;
+        if (!(exc instanceof TypeError || exc instanceof ValueError)) throw exc;
         // `raise type(exc)(...) from None`: same exception class, no chained cause.
         throw new (exc.constructor as new (message: string) => Error)(`element [${i}] ${exc.message}`);
       }
@@ -183,7 +182,7 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
     // Before the int branch: `bool` subclasses `int`, so `om.format =
     // True` would otherwise silently select the member whose value is 1.
     if (typeof value === "boolean") {
-      throw new TypeError_(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+      throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && Number.isInteger(value)) {
       if (enumCls.ofOrNull(value) === null) {
@@ -191,7 +190,7 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
       }
       return;
     }
-    throw new TypeError_(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+    throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
   };
 
   _ENUM_VALIDATORS.set(enumCls, _validator);
@@ -237,7 +236,7 @@ export function _validateStr(
   return function _validator(value: unknown, instance: unknown = null): void {
     // `_NulTailStr` (a `str` subclass) arrives as a String object.
     if (!(typeof value === "string" || value instanceof String)) {
-      throw new TypeError_(`expected a string, got ${typeName(value)}`);
+      throw new TypeError(`expected a string, got ${typeName(value)}`);
     }
     const text = String(value);
     if (!allowEmpty && !text) throw new ValueError("must not be empty");
@@ -273,7 +272,7 @@ export function _validatePath(
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!(typeof value === "string" || value instanceof String || value instanceof Path)) {
-      throw new TypeError_(`expected a file system path, got ${typeName(value)}`);
+      throw new TypeError(`expected a file system path, got ${typeName(value)}`);
     }
     const path = new Path(String(value));
     if (mustExist === true) {
@@ -289,7 +288,7 @@ export function _validatePath(
 /** Validate that a value is a `bool` (rejects 0/1 integers). */
 export function validateBool(value: unknown, instance: unknown = null): void {
   if (typeof value !== "boolean") {
-    throw new TypeError_(`expected a bool, got ${typeName(value)}`);
+    throw new TypeError(`expected a bool, got ${typeName(value)}`);
   }
 }
 
@@ -415,7 +414,7 @@ export const validateF4Point = validateSequence({ length: 2, min: -FLOAT32_MAX, 
  */
 export function validateAeVersion(value: unknown, instance: unknown = null): void {
   if (!(typeof value === "string" || value instanceof String)) {
-    throw new TypeError_(`expected a version string, got ${typeName(value)}`);
+    throw new TypeError(`expected a version string, got ${typeName(value)}`);
   }
   const match = AE_VERSION_RE.exec(String(value));
   if (match == null) {

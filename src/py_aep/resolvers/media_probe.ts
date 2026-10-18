@@ -18,7 +18,6 @@ import {
   IndexError,
   NotImplementedError,
   StructError,
-  TypeError_,
   ValueError,
   b,
   bytes_,
@@ -1828,7 +1827,7 @@ export function _jsonIter(x: JsonValue): JsonValue[] {
   if (Array.isArray(x)) return x;
   if (typeof x === "string") return Array.from(x);
   if (x instanceof Map) return [...x.keys()];
-  throw new TypeError_(`'${typeName(x)}' object is not iterable`);
+  throw new TypeError(`'${typeName(x)}' object is not iterable`);
 }
 
 export function _probeMgjson(fp: ProbeStream): MediaInfo {
@@ -1846,7 +1845,7 @@ export function _probeMgjson(fp: ProbeStream): MediaInfo {
   if (!times.length) return new MediaInfo({ frameRate: 30.0 });
   // Ordering a naive and an aware datetime raises, as max()/min() do.
   if (times.some((x) => x.aware !== times[0].aware)) {
-    throw new TypeError_("can't compare offset-naive and offset-aware datetimes");
+    throw new TypeError("can't compare offset-naive and offset-aware datetimes");
   }
   const us = times.map((x) => x.us);
   const span = (max(us) - min(us)) / 1e6;

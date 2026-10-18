@@ -17,7 +17,6 @@ import {
   pyEq,
   round,
   StopIteration,
-  TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -323,7 +322,7 @@ describe("TestRoundtripSize", () => {
   test("test_width_validation_rejects_non_int", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.width = 1920.5;
     }, "expected an integer");
   });
@@ -427,7 +426,7 @@ describe("TestRoundtripShutter", () => {
       "shutterAngle_180",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.shutterAngle = 180.5;
     }, "expected an integer");
   });
@@ -470,7 +469,7 @@ describe("TestRoundtripShutter", () => {
       "shutterPhase_minus90",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.shutterPhase = -90.5;
     }, "expected an integer");
   });
@@ -708,7 +707,7 @@ describe("TestRoundtripDuration", () => {
       "duration_60",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.frameDuration = 300.5;
     }, "expected an integer");
   });
@@ -942,7 +941,7 @@ describe("TestRoundtripMotionBlurSamples", () => {
       "motionBlurSamplesPerFrame_32",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.motionBlurSamplesPerFrame = 16.5;
     }, "expected an integer");
   });
@@ -985,7 +984,7 @@ describe("TestRoundtripMotionBlurSamples", () => {
       "motionBlurAdaptiveSampleLimit_256",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       comp.motionBlurAdaptiveSampleLimit = 128.5;
     }, "expected an integer");
   });
@@ -1199,7 +1198,7 @@ describe("TestValidateGuidePosition", () => {
       "guides_horizontal",
     );
     // type: ignore[assignment] in Python; the TS setter receives the string as-is.
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error deliberately assigns a string to a numeric setter
       comp.guides[0].position = "nope";
     });

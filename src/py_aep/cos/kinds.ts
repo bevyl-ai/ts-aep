@@ -10,7 +10,7 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import { AttributeError, KeyError, PyFloat, TypeError_, at, float, int, repr, typeName } from "../../pyrt/index.ts";
+import { AttributeError, KeyError, PyFloat, at, float, int, repr, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
 /** A COS value kind: a guard that narrows a value to the kind's type. */
@@ -44,14 +44,14 @@ function bytesText(x: Uint8Array): string {
 export function cosFloat(x: CosNode): number {
   if (is(pyNumber, x) || is(pyStr, x)) return float(x);
   if (x instanceof Uint8Array) return float(bytesText(x));
-  throw new TypeError_(`float() argument must be a string or a real number, not '${typeName(x)}'`);
+  throw new TypeError(`float() argument must be a string or a real number, not '${typeName(x)}'`);
 }
 
 /** Python `int(x)` on a COS value: `TypeError` for every kind `int()` refuses. */
 export function cosInt(x: CosNode): number {
   if (is(pyNumber, x) || is(pyStr, x)) return int(x);
   if (x instanceof Uint8Array) return int(bytesText(x));
-  throw new TypeError_(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
+  throw new TypeError(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
 }
 
 /**
@@ -60,7 +60,7 @@ export function cosInt(x: CosNode): number {
  */
 export function cosNum(x: CosNode): number {
   if (is(pyNumber, x)) return float(x);
-  throw new TypeError_(`unsupported operand type(s) for numeric operation: '${typeName(x)}'`);
+  throw new TypeError(`unsupported operand type(s) for numeric operation: '${typeName(x)}'`);
 }
 
 /**
@@ -78,8 +78,8 @@ export function cosDict(x: CosNode, method: string): CosDict {
  */
 export function cosItem(x: CosNode, key: string): CosNode {
   if (!(x instanceof Map)) {
-    if (Array.isArray(x)) throw new TypeError_("list indices must be integers or slices, not str");
-    throw new TypeError_(`'${typeName(x)}' object is not subscriptable`);
+    if (Array.isArray(x)) throw new TypeError("list indices must be integers or slices, not str");
+    throw new TypeError(`'${typeName(x)}' object is not subscriptable`);
   }
   const value = x.get(key);
   if (value === undefined) throw new KeyError(repr(key));
@@ -97,7 +97,7 @@ export function cosSetdefault(d: CosNode, key: string, value: CosNode): CosNode 
 
 /** Python `x[key] = value` on a COS value: `TypeError` when `x` is not a dict. */
 export function cosSetitem(x: CosNode, key: string, value: CosNode): void {
-  if (!(x instanceof Map)) throw new TypeError_(`'${typeName(x)}' object does not support item assignment`);
+  if (!(x instanceof Map)) throw new TypeError(`'${typeName(x)}' object does not support item assignment`);
   x.set(key, value);
 }
 
@@ -118,7 +118,7 @@ export function cosAt(x: CosNode, i: number): CosNode {
   if (typeof x === "string" || x instanceof String) return at(String(x), i);
   if (x instanceof Uint8Array) return at(x, i);
   if (x instanceof Map) throw new KeyError(repr(i));
-  throw new TypeError_(`'${typeName(x)}' object is not subscriptable`);
+  throw new TypeError(`'${typeName(x)}' object is not subscriptable`);
 }
 
 /** Python `iter(x)` over a COS value: list items, dict keys, string characters or bytes; `TypeError` otherwise. */
@@ -127,7 +127,7 @@ export function cosIter(x: CosNode): CosNode[] {
   if (x instanceof Map) return [...x.keys()];
   if (typeof x === "string" || x instanceof String) return Array.from(String(x));
   if (x instanceof Uint8Array) return Array.from(x);
-  throw new TypeError_(`'${typeName(x)}' object is not iterable`);
+  throw new TypeError(`'${typeName(x)}' object is not iterable`);
 }
 
 /** Python `x.append(item)` on a COS value: `AttributeError` when `x` is not a list. */
@@ -169,7 +169,7 @@ export function cosIn(x: CosNode | undefined, ints: ReadonlySet<number>): boolea
   if (x === undefined || x == null) return false;
   if (is(pyNumber, x)) return ints.has(float(x));
   if (typeof x === "string" || x instanceof String || x instanceof Uint8Array) return false;
-  throw new TypeError_(`unhashable type: '${typeName(x)}'`);
+  throw new TypeError(`unhashable type: '${typeName(x)}'`);
 }
 
 /** A Python int or float held in COS data: a JS number, or a boxed `PyFloat` for an integral float. */
@@ -184,7 +184,7 @@ function isFloat(x: PyNum): boolean {
 export function pyNum(x: CosNode): PyNum {
   if (typeof x === "boolean") return x ? 1 : 0;
   if (typeof x === "number" || x instanceof PyFloat) return x;
-  throw new TypeError_(`unsupported operand type(s) for +: 'int' and '${typeName(x)}'`);
+  throw new TypeError(`unsupported operand type(s) for +: 'int' and '${typeName(x)}'`);
 }
 
 /** Python `a + b` / `a - b` on numbers: a float (kept boxed) when either side is one. */
@@ -203,7 +203,7 @@ export function cosLen(x: CosNode): number {
   if (Array.isArray(x) || x instanceof Uint8Array) return x.length;
   if (typeof x === "string" || x instanceof String) return String(x).length;
   if (x instanceof Map) return x.size;
-  throw new TypeError_(`object of type '${typeName(x)}' has no len()`);
+  throw new TypeError(`object of type '${typeName(x)}' has no len()`);
 }
 
 /** Python `x.pop(i)` with an int index: a list item (`IndexError` past the end); a dict has no int keys (`KeyError`); else `AttributeError`. */
@@ -222,6 +222,6 @@ export function cosContains(x: CosNode, item: string): boolean {
   if (x instanceof Map) return x.has(item);
   if (Array.isArray(x)) return x.some((v) => v === item || (v instanceof String && String(v) === item));
   if (typeof x === "string" || x instanceof String) return String(x).includes(item);
-  if (x instanceof Uint8Array) throw new TypeError_("a bytes-like object is required, not 'str'");
-  throw new TypeError_(`argument of type '${typeName(x)}' is not iterable`);
+  if (x instanceof Uint8Array) throw new TypeError("a bytes-like object is required, not 'str'");
+  throw new TypeError(`argument of type '${typeName(x)}' is not iterable`);
 }

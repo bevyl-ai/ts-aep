@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  AssertionError_,
+  AssertionError,
   Path,
   bytes_,
   len,
@@ -27,7 +27,7 @@ function _vectorMask(psd: string, layer: string): Uint8Array {
       return mask;
     }
   }
-  throw new AssertionError_(`layer ${repr(layer)} not found`);
+  throw new AssertionError(`layer ${repr(layer)} not found`);
 }
 
 describe("TestParseVectorMask", () => {

@@ -3,7 +3,7 @@
  * layer each After Effects release writes.
  */
 
-import { AttributeError, TypeError_, getattr, getitem, hasattr, int, typeName } from "../pyrt/index.ts";
+import { AttributeError, getattr, getitem, hasattr, int, typeName } from "../pyrt/index.ts";
 
 // The After Effects majors whose saves contain each version-gated part of a
 // new project, item or layer, as `(first, last)` (`last` None: still
@@ -90,7 +90,7 @@ export function getAeVersionMajor(obj: any): number {
   if (head != null) {
     return int(head.aeVersionMajor);
   }
-  throw new TypeError_(`Cannot determine AE version from ${typeName(obj)}`);
+  throw new TypeError(`Cannot determine AE version from ${typeName(obj)}`);
 }
 
 /**

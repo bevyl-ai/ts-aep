@@ -6,7 +6,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { BytesIO, TypeError_, encode } from "../../src/pyrt/index.ts";
+import { BytesIO, encode } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import { _probeMgjson } from "../../src/py_aep/resolvers/media_probe.ts";
 
@@ -27,5 +27,5 @@ test.each<[string[], number]>([
 });
 
 test("test_mgjson_naive_and_aware_times", () => {
-  raises(TypeError_, () => _probeMgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])), "can't compare offset-naive and offset-aware datetimes");
+  raises(TypeError, () => _probeMgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])), "can't compare offset-naive and offset-aware datetimes");
 });

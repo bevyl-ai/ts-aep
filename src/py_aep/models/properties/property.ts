@@ -36,7 +36,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getitem, isclose, pyEq, sorted, warn, int, round, floordiv, TypeError_, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, pyAssert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, pyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getitem, isclose, pyEq, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, pyAssert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, pyOr } from "../../../pyrt/index.ts";
 
 const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -157,7 +157,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
   // it would otherwise take leaves the file untouched while the model
   // reports the stray value.
   if (prop._parallelKind() === SHAPE_KIND && !(value instanceof Shape)) {
-    throw new TypeError_(`${repr(prop.matchName)} takes a Shape, got ${typeName(value)}`);
+    throw new TypeError(`${repr(prop.matchName)} takes a Shape, got ${typeName(value)}`);
   }
   if (prop.matchName === "ADBE Mask Shape") {
     const layer = prop._containingLayer;
@@ -218,7 +218,7 @@ export function _validateKeyValue(prop: Property, value: PropertyValue): void {
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).
   if (value == null && prop._parallelKind() == null && !prop._noValue) {
-    throw new TypeError_(`${repr(prop.matchName)} keyframe value cannot be null`);
+    throw new TypeError(`${repr(prop.matchName)} keyframe value cannot be null`);
   }
   _validateValue(prop, value);
 }
@@ -329,7 +329,7 @@ export class _PropertyValueList {
         // A copy: for a keyed property this is the first key's own value,
         // which the setter then refuses to replace.
         const stored = owner._storedStaticValue();
-        if (!Array.isArray(stored)) throw new TypeError_(`'${typeName(stored)}' object is not iterable`);
+        if (!Array.isArray(stored)) throw new TypeError(`'${typeName(stored)}' object is not iterable`);
         const new_ = [...stored];
         if (index >= new_.length) throw new IndexError("list assignment index out of range");
         new_[index] = item;
@@ -2994,7 +2994,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       );
     }
     if (!(source instanceof AVItem)) {
-      throw new TypeError_(`alternate source must be an AVItem, not ${typeName(source)}`);
+      throw new TypeError(`alternate source must be an AVItem, not ${typeName(source)}`);
     }
     if (this._composition == null || !this._composition._project.items.has(source.id)) {
       throw new ValueError(`Item ${repr(source.name)} (id=${source.id}) is not in the project.`);
@@ -3116,7 +3116,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new NotImplementedError("Expression evaluation is not supported by the parser.");
     }
     if (typeof time !== "number") {
-      throw new TypeError_(`time must be a number, got ${typeName(time)}`);
+      throw new TypeError(`time must be a number, got ${typeName(time)}`);
     }
     if (Number.isNaN(time)) {
       // AE 2026: "Unable to call valueAtTime because of parameter 1.

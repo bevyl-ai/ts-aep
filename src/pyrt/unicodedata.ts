@@ -2,7 +2,7 @@
 // Unicode database (JS regexes have no Bidi_Class or Canonical_Combining_Class
 // property, and the engine's Unicode version is not Python's).
 
-import { TypeError_ } from "./errors.ts";
+import {  } from "./errors.ts";
 import { BIDI_CLASSES, BIDI_LENGTHS, BIDI_VALUES, COMBINING_LENGTHS, COMBINING_VALUES } from "./unicodedata_tables.ts";
 
 interface Runs {
@@ -31,7 +31,7 @@ let COMBINING: Runs | null = null;
 function lookup(table: Runs, chr: string, fn: string): number {
   const cp = chr.codePointAt(0);
   if (cp === undefined || chr.length !== (cp > 0xffff ? 2 : 1)) {
-    throw new TypeError_(`${fn}() argument must be a unicode character, not str`);
+    throw new TypeError(`${fn}() argument must be a unicode character, not str`);
   }
   let lo = 0;
   let hi = table.starts.length - 1;

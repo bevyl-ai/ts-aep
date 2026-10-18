@@ -6,7 +6,7 @@ import { ChunkNotFoundError, filterByListType, filterByType, findByListType, fin
 import { CosParser } from "../cos/index.ts";
 import { decodeBtdk } from "../cos/schema.ts";
 // Python's builtin `SyntaxError` as raised by `CosParser`.
-import { type CosNode, SyntaxError_ } from "../cos/cos.ts";
+import { type CosNode } from "../cos/cos.ts";
 import { PropertyValueType } from "../enums/index.ts";
 import { ORIENTATION_KIND } from "../models/properties/parallel.ts";
 import { FeatherPoint, Shape } from "../models/properties/shape.ts";
@@ -240,7 +240,7 @@ export function parseTextDocument(
       !(
         e instanceof ChunkNotFoundError ||
         e instanceof OverflowError ||
-        e instanceof SyntaxError_ ||
+        e instanceof SyntaxError ||
         e instanceof ValueError
       )
     ) {

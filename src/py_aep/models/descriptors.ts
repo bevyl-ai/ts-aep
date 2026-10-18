@@ -10,7 +10,6 @@ import {
   AttributeError,
   ContextVar,
   RuntimeError,
-  TypeError_,
   ValueError,
   getattr,
   int,
@@ -203,7 +202,7 @@ export function enumOrRaw<V, R>(convert: (value: V) => R): (value: V) => R | V {
     try {
       return convert(value);
     } catch (e) {
-      if (!(e instanceof ValueError || e instanceof TypeError_)) throw e;
+      if (!(e instanceof ValueError || e instanceof TypeError)) throw e;
       // TypeError: a `convert` that coerces first (e.g. `int(v)` over
       // decoded JSON) raises it, not ValueError, for a non-scalar.
       return value;
@@ -344,7 +343,7 @@ export class ChunkField<
       try {
         major = getAeVersionMajor(obj);
       } catch (e) {
-        if (!(e instanceof TypeError_)) throw e;
+        if (!(e instanceof TypeError)) throw e;
         // Version undeterminable (e.g. a ViewOptions whose viewer
         // has no AVItem); skip the gate and allow the write.
         major = null;

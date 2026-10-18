@@ -13,7 +13,7 @@
  * output pairs (`aep-compare` ground-truth workflow).
  */
 
-import { b, deferred, NotImplementedError, TypeError_, instanceDict } from "../../../pyrt/index.ts";
+import { b, deferred, NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
 import { type Chunk, ListChunk } from "../../binary/chunk.ts";
 import { LdatItemType, type LdatItem } from "../../binary/ldat_chunks.ts";
 import { buildParallelLdatItem, cloneChunkTree, setOrientationItemValues } from "../../binary/mutations.ts";
@@ -219,7 +219,7 @@ export class _MarkerKind extends ParallelKind {
 
   buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     if (!(value instanceof MarkerValue)) {
-      throw new TypeError_("marker value must be a MarkerValue or str comment");
+      throw new TypeError("marker value must be a MarkerValue or str comment");
     }
     // Clone every embedded chunk: a caller may reuse one MarkerValue for
     // several keyframes, and the model's chunks may already be bound to
@@ -287,7 +287,7 @@ export class _ShapeKind extends ParallelKind {
 
   buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     if (!(value instanceof Shape)) {
-      throw new TypeError_("shape value must be a Shape");
+      throw new TypeError("shape value must be a Shape");
     }
     return prop._buildShapChunk(value);
   }
@@ -315,7 +315,7 @@ export class _GradientKind extends ParallelKind {
       return new Gradient()._utf8;
     }
     if (!(value instanceof Gradient)) {
-      throw new TypeError_("gradient value must be a Gradient");
+      throw new TypeError("gradient value must be a Gradient");
     }
     // Clone the serialized XML so keyframes do not share a chunk.
     return new Utf8Chunk({ value: value._utf8.value });

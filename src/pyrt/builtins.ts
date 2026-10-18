@@ -1,6 +1,6 @@
 // Python builtins whose JS spelling differs in behavior, not just syntax.
 
-import { AttributeError, IndexError, KeyError, TypeError_, ValueError } from "./errors.ts";
+import { AttributeError, IndexError, KeyError, ValueError } from "./errors.ts";
 import { floatRepr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
 import { INSPECT } from "./inspect.ts";
@@ -188,7 +188,7 @@ export function pyIter(x: unknown): unknown[] {
   if (x instanceof Set) return [...x];
   if (typeof x === "string" || x instanceof String) return Array.from(String(x));
   if (x instanceof Uint8Array) return Array.from(x);
-  throw new TypeError_(`'${typeName(x)}' object is not iterable`);
+  throw new TypeError(`'${typeName(x)}' object is not iterable`);
 }
 
 type Sliceable = { slice(s: number, e: number): Sliceable; length: number; readonly [i: number]: unknown };
@@ -421,7 +421,7 @@ export function mappingItems<K, V>(m: Mapping<K, V>): [K, V][] {
   if ("keys" in m && typeof m.keys === "function" && typeof m.get === "function") {
     return [...m.keys()].map((k): [K, V] => [k, m.get(k)]);
   }
-  throw new TypeError_(`'${typeName(m)}' object is not a mapping`);
+  throw new TypeError(`'${typeName(m)}' object is not a mapping`);
 }
 
 /**

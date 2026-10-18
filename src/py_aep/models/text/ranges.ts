@@ -31,7 +31,6 @@ import { INSPECT } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   NotImplementedError,
-  TypeError_,
   ValueError,
   deepcopy,
   float,
@@ -1358,7 +1357,7 @@ export class CharacterRange extends _TextRange {
    */
   pasteFrom(sourceRange: CharacterRange): void {
     if (!(sourceRange instanceof CharacterRange)) {
-      throw new TypeError_("pasteFrom expects a CharacterRange");
+      throw new TypeError("pasteFrom expects a CharacterRange");
     }
     const doc = this._docRef;
     const srcDoc = sourceRange._docRef;

@@ -18,9 +18,9 @@
 
 import { latin1Bytes, latin1Str } from "./bytes.ts";
 import { decode, ord } from "./codecs.ts";
-import { IndexError, KeyError, SyntaxError_, ValueError } from "./errors.ts";
+import { IndexError, KeyError, ValueError } from "./errors.ts";
 
-export class ParseError extends SyntaxError_ {
+export class ParseError extends SyntaxError {
   code = 0;
   position: [number, number] = [1, 0];
 }
@@ -226,7 +226,7 @@ function xpathTokenizer(pattern: string, namespaces: NsMap): Token[] {
         const prefix = tag.slice(0, i);
         const uri = tag.slice(i + 1);
         const ns = namespaces ? nsGet(namespaces, prefix) : undefined;
-        if (ns === undefined) throw new SyntaxError_(`prefix '${prefix}' not found in prefix map`);
+        if (ns === undefined) throw new SyntaxError(`prefix '${prefix}' not found in prefix map`);
         out.push([ttype, `{${ns}}${uri}`]);
       } else if (defaultNamespace && !parsingAttribute) {
         out.push([ttype, `{${defaultNamespace}}${tag}`]);
@@ -300,7 +300,7 @@ function prepareDescendant(next: () => Token): Select {
   let tag: string;
   if (token[0] === "*") tag = "*";
   else if (!token[0]) tag = token[1];
-  else throw new SyntaxError_("invalid descendant");
+  else throw new SyntaxError("invalid descendant");
   if (tag === "*" || tag === "{*}*") {
     return function* (_c, result) {
       for (const elem of result) for (const e of elem.iter()) if (e !== elem) yield e;
@@ -396,13 +396,13 @@ function preparePredicate(next: () => Token): Select {
     let index: number;
     if (signature === "-") {
       index = parseInt(predicate[0], 10) - 1;
-      if (index < 0) throw new SyntaxError_("XPath position >= 1 expected");
+      if (index < 0) throw new SyntaxError("XPath position >= 1 expected");
     } else {
-      if (predicate[0] !== "last") throw new SyntaxError_("unsupported function");
+      if (predicate[0] !== "last") throw new SyntaxError("unsupported function");
       if (signature === "-()-") {
-        if (!INT_RE.test(predicate[2])) throw new SyntaxError_("unsupported expression");
+        if (!INT_RE.test(predicate[2])) throw new SyntaxError("unsupported expression");
         index = parseInt(predicate[2], 10) - 1;
-        if (index > -2) throw new SyntaxError_("XPath offset from last() must be negative");
+        if (index > -2) throw new SyntaxError("XPath offset from last() must be negative");
       } else {
         index = -1;
       }
@@ -418,7 +418,7 @@ function preparePredicate(next: () => Token): Select {
       }
     };
   }
-  throw new SyntaxError_("invalid predicate");
+  throw new SyntaxError("invalid predicate");
 }
 
 const ops: Record<string, (next: () => Token, token: Token) => Select> = {
@@ -446,7 +446,7 @@ export function* iterfind(elem: Element, path: string, namespaces: NsMap = null)
   const cacheKey = path + "\u0000" + nsKey;
   let selector = _cache.get(cacheKey);
   if (selector === undefined) {
-    if (path.slice(0, 1) === "/") throw new SyntaxError_("cannot use absolute path on element");
+    if (path.slice(0, 1) === "/") throw new SyntaxError("cannot use absolute path on element");
     const stream = new TokenStream(xpathTokenizer(path, namespaces));
     const next = () => stream.next();
     let token: Token;
@@ -463,7 +463,7 @@ export function* iterfind(elem: Element, path: string, namespaces: NsMap = null)
       try {
         selector.push(op(next, token));
       } catch (e) {
-        if (e instanceof StopIter) throw new SyntaxError_("invalid path");
+        if (e instanceof StopIter) throw new SyntaxError("invalid path");
         throw e;
       }
       try {

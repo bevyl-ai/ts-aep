@@ -7,7 +7,7 @@
  * bytes suitable for writing back into a btdk chunk's `binary_data`.
  */
 
-import { BytesIO, b, bytes_, concat, encode, format, PyFloat, TypeError_, typeName, unbox } from "../../pyrt/index.ts";
+import { BytesIO, b, bytes_, concat, encode, format, PyFloat, typeName, unbox } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
 // Literals written per token, built once (`BytesIO.write` copies them).
@@ -97,7 +97,7 @@ export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boole
     _space(buf);
     _writeStream(buf, value);
   } else {
-    throw new TypeError_(`Cannot serialize COS value of type ${typeName(value)}`);
+    throw new TypeError(`Cannot serialize COS value of type ${typeName(value)}`);
   }
 }
 

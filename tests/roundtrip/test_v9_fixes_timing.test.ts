@@ -5,7 +5,7 @@ the same writes) unless a comment says otherwise.
 */
 
 import { describe, expect, test } from "bun:test";
-import { at, getattr, getitem, len, Path, pyBool, pyEq, round, setattr, sorted, StopIteration, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { at, getattr, getitem, len, Path, pyBool, pyEq, round, setattr, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { MarkerValue } from "../../src/py_aep/index.ts";
@@ -241,7 +241,7 @@ describe("TestTimeSpanWrites", () => {
   test("test_string_rejected", () => {
     const [project, comp] = _newComp();
     const rqi = asInstance(project.renderQueue, RenderQueue).add(comp);
-    raises(TypeError_, () => {
+    raises(TypeError, () => {
       // @ts-expect-error deliberately mistyped: the setter must reject a str
       rqi.timeSpanStart = "1";
     });

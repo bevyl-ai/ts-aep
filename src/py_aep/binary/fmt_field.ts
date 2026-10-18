@@ -23,7 +23,6 @@ import {
   lstrip,
   pyBool,
   struct,
-  TypeError_,
   ValueError,
   type Attribute,
   type FieldSpec,
@@ -563,7 +562,7 @@ export class FmtItem extends AttrsBase {
   /** Construct an item from bytes using its `_structInfo` metadata. */
   static frombytes<T extends FmtItem>(this: (new (kw: InitKwargs) => T) & typeof FmtItem, data: Uint8Array): T {
     const info = _structInfo(this);
-    if (info == null) throw new TypeError_(`${this.name} has no fmtField metadata`);
+    if (info == null) throw new TypeError(`${this.name} has no fmtField metadata`);
     const [
       fmt,
       dataFields,
@@ -610,7 +609,7 @@ export class FmtItem extends AttrsBase {
   tobytes(): Uint8Array {
     const info = _structInfo(this.constructor);
     if (info == null) {
-      throw new TypeError_(`${this.constructor.name} has no fmtField metadata`);
+      throw new TypeError(`${this.constructor.name} has no fmtField metadata`);
     }
     const [
       fmt,
