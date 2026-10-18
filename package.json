@@ -53,8 +53,7 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "knip": "knip",
-    "knip:fix": "knip --fix --fix-type exports --fix-type types",
-    "prepare": "lefthook install"
+    "knip:fix": "knip --fix --fix-type exports --fix-type types"
   },
   "dependencies": {
     "fflate": "0.8.2",
