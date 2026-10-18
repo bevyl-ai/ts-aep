@@ -1,17 +1,17 @@
 /**
- * zod schemas for the text-document COS tree (the `btdk` blob).
+ * Kinds and layouts for the text-document COS tree (the `btdk` blob).
  *
  * Two layers, both run by the library:
  *
  * - {@link decodeBtdk} is the single entry point from a parsed
- *   {@link CosNode}: it checks the whole blob against {@link cosNode}
+ *   {@link CosNode}: it checks the whole blob with `isCosNode`
  *   (every value a COS kind, every dictionary string-keyed) and only then
  *   hands the tree to the text models as a {@link CosDict}. Nothing deeper is checked
  *   there, because py_aep never validates COS: a value of the wrong kind
  *   fails (or is tolerated) at the point of use, so the decode must not
  *   reject what Python would read later or never.
  * - The layouts below name the kind of every key py_aep reads with an
- *   `isinstance` check; {@link read} runs the key's schema on the value
+ *   `isinstance` check; {@link read} runs the key's kind on the value
  *   at the moment it is read and returns it typed, or `undefined` when it
  *   is absent or of another kind (which is what the `isinstance` check
  *   decides in Python). Keys read through a Python builtin instead go
@@ -24,35 +24,11 @@
  * the typed path.
  */
 
-import * as z from "zod/mini";
 import { PyFloat } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
-import { pyInt, pyNumber } from "./kinds.ts";
+import { pyBoolKind, pyInt, pyNumber, type Kind } from "./kinds.ts";
 
-/** Any COS value, checked recursively (dictionaries and arrays included). */
-export const cosNode: z.ZodMiniType<CosNode> = z.lazy(() =>
-  z.union([
-    z.null(),
-    z.boolean(),
-    z.number(),
-    z.instanceof(PyFloat),
-    z.string(),
-    z.instanceof(CosString),
-    z.instanceof(Uint8Array),
-    z.instanceof(CosName),
-    z.instanceof(IndirectObject),
-    z.instanceof(IndirectReference),
-    z.instanceof(Stream),
-    z.array(cosNode),
-    z.map(z.string(), cosNode),
-  ]),
-);
-
-/**
- * {@link cosNode}'s check written out by hand: running the zod union over
- * every value of a text document cost more than parsing the document.
- * zod's `z.number()` refuses `NaN` and infinities, hence `Number.isFinite`.
- */
+/** Every value a COS kind and every dictionary string-keyed; numbers are finite. */
 function isCosNode(x: CosNode): boolean {
   if (x === null || typeof x === "boolean" || typeof x === "string") return true;
   if (typeof x === "number") return Number.isFinite(x);
@@ -74,7 +50,7 @@ function isCosNode(x: CosNode): boolean {
   );
 }
 
-/** Whether `tree` is a COS dictionary whose every value is a COS value (see {@link cosNode}). */
+/** Whether `tree` is a COS dictionary whose every value is a COS value. */
 function isCosDict(tree: CosNode): tree is CosDict {
   return tree instanceof Map && isCosNode(tree);
 }
@@ -91,29 +67,23 @@ export function decodeBtdk(tree: CosNode): CosDict | null {
 // -- Layouts --------------------------------------------------------------------
 
 /** The kind of each key of one COS dictionary layout. */
-export type Layout = { readonly [key: string]: z.ZodMiniType<CosNode> };
+export type Layout = { readonly [key: string]: Kind<CosNode> };
 
-/**
- * `d[key]` typed by the layout: the value when present and of the
- * layout's kind for `key` (the schema runs on the current value), else
- * `undefined`.
- */
-export function read<L extends Layout, K extends keyof L & string>(layout: L, d: CosDict, key: K): z.output<L[K]> | undefined {
-  if (!d.has(key)) return undefined;
-  const result = layout[key].safeParse(d.get(key));
-  return result.success ? result.data : undefined;
+/** `d[key]` when it is of the kind the layout gives `key`, else `undefined` (absent or another kind). */
+export function read<K extends string, T extends CosNode>(layout: { readonly [P in K]: Kind<T> }, d: CosDict, key: K): T | undefined {
+  const value = d.get(key);
+  return layout[key](value) ? value : undefined;
 }
 
-/** A COS name (`/SimplePaint`), the class tag under key `"99"`. */
-export const cosName = z.instanceof(CosName);
+export const cosName: Kind<CosName> = (x): x is CosName => x instanceof CosName;
 
 /** A character style (run payload, document default and preset style). */
 export const charStyle = {
   "0": pyInt, // font index into the font table
   "1": pyNumber, // font size
-  "2": z.boolean(), // faux bold
-  "3": z.boolean(), // faux italic
-  "4": z.boolean(), // auto leading
+  "2": pyBoolKind, // faux bold
+  "3": pyBoolKind, // faux italic
+  "4": pyBoolKind, // auto leading
   "5": pyNumber, // leading
   "6": pyNumber, // horizontal scale
   "7": pyNumber, // vertical scale
@@ -122,13 +92,13 @@ export const charStyle = {
   "11": pyInt, // auto kern type
   "12": pyInt, // font caps option
   "13": pyInt, // font baseline option
-  "18": z.boolean(), // ligature
+  "18": pyBoolKind, // ligature
   "35": pyInt, // baseline direction
   "36": pyNumber, // tsume
-  "52": z.boolean(), // no break
-  "56": z.boolean(), // apply fill
-  "57": z.boolean(), // apply stroke
-  "58": z.boolean(), // stroke over fill
+  "52": pyBoolKind, // no break
+  "56": pyBoolKind, // apply fill
+  "57": pyBoolKind, // apply stroke
+  "58": pyBoolKind, // stroke over fill
   "62": pyInt, // line join type
   "63": pyNumber, // stroke width
   "70": pyInt, // digit set

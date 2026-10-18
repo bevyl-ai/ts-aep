@@ -1,5 +1,5 @@
 /**
- * COS value kinds as zod schemas, and Python's operations over COS values.
+ * COS value kinds as type guards, and Python's operations over COS values.
  *
  * py_aep reads the text-document COS tree with plain Python: an
  * `isinstance` check where it cares about a value's kind, and otherwise a
@@ -10,22 +10,29 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import * as z from "zod/mini";
 import { AttributeError, KeyError, PyFloat, TypeError_, at, float, int, repr, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
+/** A COS value kind: a guard that narrows a value to the kind's type. */
+export type Kind<T extends CosNode> = (x: CosNode | undefined) => x is T;
+
 /** `isinstance(x, int)`: a boolean, or an integral JS number other than `-0` (a COS integer). */
-export const pyInt = z.union([z.boolean(), z.number().check(z.refine((n) => Number.isInteger(n) && !Object.is(n, -0)))]);
+export const pyInt: Kind<boolean | number> = (x): x is boolean | number =>
+  typeof x === "boolean" || (typeof x === "number" && Number.isInteger(x) && !Object.is(x, -0));
 
 /** `isinstance(x, (int, float))`: a boolean, a JS number, or a boxed `PyFloat` (a COS real). */
-export const pyNumber = z.union([z.boolean(), z.number(), z.instanceof(PyFloat)]);
+export const pyNumber: Kind<boolean | number | PyFloat> = (x): x is boolean | number | PyFloat =>
+  typeof x === "boolean" || typeof x === "number" || x instanceof PyFloat;
 
-/** `isinstance(x, str)`: a plain string or a `CosString` (lazy: `cos.ts` imports this module). */
-export const pyStr = z.union([z.string(), z.lazy(() => z.instanceof(CosString))]);
+/** `isinstance(x, str)`: a plain string or a `CosString`. */
+export const pyStr: Kind<string | CosString> = (x): x is string | CosString => typeof x === "string" || x instanceof CosString;
+
+/** `isinstance(x, bool)`. */
+export const pyBoolKind: Kind<boolean> = (x): x is boolean => typeof x === "boolean";
 
 /** Whether `x` is of `kind`; narrows `x` to the kind's type. */
-export function is<T extends CosNode>(kind: z.ZodMiniType<T>, x: CosNode | undefined): x is T {
-  return kind.safeParse(x).success;
+export function is<T extends CosNode>(kind: Kind<T>, x: CosNode | undefined): x is T {
+  return kind(x);
 }
 
 /** The ASCII bytes of a COS byte string as text, for `int(b"..")` / `float(b"..")`. */

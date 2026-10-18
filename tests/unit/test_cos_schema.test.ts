@@ -1,5 +1,5 @@
 /**
- * The zod schemas of the text-document COS tree (`src/py_aep/cos/schema.ts`)
+ * The kinds and layouts of the text-document COS tree (`src/py_aep/cos/schema.ts`)
  * against real data: every `btdk` blob in the upstream samples, the
  * point-text template, and trees py_aep itself wrote.
  *
