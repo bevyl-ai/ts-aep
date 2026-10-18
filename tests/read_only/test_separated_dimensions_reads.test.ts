@@ -37,7 +37,7 @@ test.each(["transform_unseparated", "transform_separated", "keyframe_separated_d
     const layer = parse_project(SAMPLES_DIR.div(`${sample}.aep`)).compositions[0].layers[0];
 
     for (const match_name of ["ADBE Position", "ADBE Position_0", "ADBE Position_1", "ADBE Position_2"]) {
-      const prop = as_instance(layer.transform.__getitem__(match_name), Property);
+      const prop = as_instance(layer.transform.property(match_name), Property);
       const wanted = getitem(expected, match_name);
       py_assert(approx(prop.value, wanted.value), match_name);
       py_assert(prop.can_set_expression === wanted.canSetExpression, match_name);
@@ -51,7 +51,7 @@ test("test_separated_leader_composes_from_its_followers", () => {
    * comp); AE reports the followers' composite, [0, 200, 0].
    */
   const comp = parse_project(SAMPLES_DIR.div("keyframe_separated_dimensions.aep")).compositions[0];
-  const position = comp.layers[0].transform.__getitem__("ADBE Position");
+  const position = comp.layers[0].transform.property("ADBE Position");
   expect(position.dimensions_separated).toBe(true);
 
   const stored = position._read_cdat_raw();
@@ -61,21 +61,21 @@ test("test_separated_leader_composes_from_its_followers", () => {
 
 test("test_expressibility_moves_to_the_followers_when_separated", () => {
   const layer = parse_project(SAMPLES_DIR.div("transform_separated.aep")).compositions[0].layers[0];
-  const position = layer.transform.__getitem__("ADBE Position");
+  const position = layer.transform.property("ADBE Position");
   expect(position.dimensions_separated).toBe(true);
 
   expect(position.can_set_expression).toBe(false);
-  expect(layer.transform.__getitem__("ADBE Position_0").can_set_expression).toBe(true);
-  expect(layer.transform.__getitem__("ADBE Position_1").can_set_expression).toBe(true);
+  expect(layer.transform.property("ADBE Position_0").can_set_expression).toBe(true);
+  expect(layer.transform.property("ADBE Position_1").can_set_expression).toBe(true);
   // Z stays unexpressionable on a 2D layer.
-  expect(layer.transform.__getitem__("ADBE Position_2").can_set_expression).toBe(false);
+  expect(layer.transform.property("ADBE Position_2").can_set_expression).toBe(false);
 });
 
 test("test_unseparated_keeps_expressibility_on_the_leader", () => {
   const layer = parse_project(SAMPLES_DIR.div("transform_unseparated.aep")).compositions[0].layers[0];
-  expect(layer.transform.__getitem__("ADBE Position").can_set_expression).toBe(true);
+  expect(layer.transform.property("ADBE Position").can_set_expression).toBe(true);
   for (const dimension of range(3)) {
-    const follower = as_instance(layer.transform.__getitem__(`ADBE Position_${dimension}`), Property);
+    const follower = as_instance(layer.transform.property(`ADBE Position_${dimension}`), Property);
     expect(follower.can_set_expression).toBe(false);
   }
 });

@@ -45,7 +45,7 @@ export class Mat4 {
     this._rows = rows;
   }
 
-  __getitem__(row: number): number[] {
+  row(row: number): number[] {
     return this._rows[row];
   }
 
@@ -112,7 +112,7 @@ export class Mat4 {
     // Flatten for easier indexing.
     const s: number[] = [];
     for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) s.push(this.__getitem__(r)[c]);
+      for (let c = 0; c < 4; c++) s.push(this.row(r)[c]);
     }
 
     // 2x2 sub-determinants (Laplace expansion)
@@ -186,17 +186,17 @@ export class Mat4 {
 
 export function _translation(x: number, y: number, z: number): Mat4 {
   const m = Mat4.identity();
-  m.__getitem__(0)[3] = x;
-  m.__getitem__(1)[3] = y;
-  m.__getitem__(2)[3] = z;
+  m.row(0)[3] = x;
+  m.row(1)[3] = y;
+  m.row(2)[3] = z;
   return m;
 }
 
 export function _scale(sx: number, sy: number, sz: number): Mat4 {
   const m = Mat4.identity();
-  m.__getitem__(0)[0] = sx;
-  m.__getitem__(1)[1] = sy;
-  m.__getitem__(2)[2] = sz;
+  m.row(0)[0] = sx;
+  m.row(1)[1] = sy;
+  m.row(2)[2] = sz;
   return m;
 }
 
@@ -206,10 +206,10 @@ export function _rotate_x(deg: number): Mat4 {
   const c = Math.cos(r);
   const s = Math.sin(r);
   const m = Mat4.identity();
-  m.__getitem__(1)[1] = c;
-  m.__getitem__(1)[2] = -s;
-  m.__getitem__(2)[1] = s;
-  m.__getitem__(2)[2] = c;
+  m.row(1)[1] = c;
+  m.row(1)[2] = -s;
+  m.row(2)[1] = s;
+  m.row(2)[2] = c;
   return m;
 }
 
@@ -218,10 +218,10 @@ export function _rotate_y(deg: number): Mat4 {
   const c = Math.cos(r);
   const s = Math.sin(r);
   const m = Mat4.identity();
-  m.__getitem__(0)[0] = c;
-  m.__getitem__(0)[2] = s;
-  m.__getitem__(2)[0] = -s;
-  m.__getitem__(2)[2] = c;
+  m.row(0)[0] = c;
+  m.row(0)[2] = s;
+  m.row(2)[0] = -s;
+  m.row(2)[2] = c;
   return m;
 }
 
@@ -230,10 +230,10 @@ export function _rotate_z(deg: number): Mat4 {
   const c = Math.cos(r);
   const s = Math.sin(r);
   const m = Mat4.identity();
-  m.__getitem__(0)[0] = c;
-  m.__getitem__(0)[1] = -s;
-  m.__getitem__(1)[0] = s;
-  m.__getitem__(1)[1] = c;
+  m.row(0)[0] = c;
+  m.row(0)[1] = -s;
+  m.row(1)[0] = s;
+  m.row(1)[1] = c;
   return m;
 }
 
@@ -656,12 +656,12 @@ export function _vec3_norm(v: number[]): number {
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
 export function _mat3_det(m: Mat4): number {
   return (
-    m.__getitem__(0)[0] *
-      (m.__getitem__(1)[1] * m.__getitem__(2)[2] - m.__getitem__(1)[2] * m.__getitem__(2)[1]) -
-    m.__getitem__(0)[1] *
-      (m.__getitem__(1)[0] * m.__getitem__(2)[2] - m.__getitem__(1)[2] * m.__getitem__(2)[0]) +
-    m.__getitem__(0)[2] *
-      (m.__getitem__(1)[0] * m.__getitem__(2)[1] - m.__getitem__(1)[1] * m.__getitem__(2)[0])
+    m.row(0)[0] *
+      (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
+    m.row(0)[1] *
+      (m.row(1)[0] * m.row(2)[2] - m.row(1)[2] * m.row(2)[0]) +
+    m.row(0)[2] *
+      (m.row(1)[0] * m.row(2)[1] - m.row(1)[1] * m.row(2)[0])
   );
 }
 
@@ -684,7 +684,7 @@ export function rotation_part(matrix: Mat4): Mat4 {
   const rows: number[][] = Array.from({ length: 4 }, () => [0.0, 0.0, 0.0, 0.0]);
   rows[3][3] = 1.0;
   for (let column = 0; column < 3; column++) {
-    const axis = [0, 1, 2].map((row) => matrix.__getitem__(row)[column]);
+    const axis = [0, 1, 2].map((row) => matrix.row(row)[column]);
     const norm = _vec3_norm(axis);
     const length = norm !== 0 ? norm : 1.0;
     for (let row = 0; row < 3; row++) rows[row][column] = axis[row] / length;
@@ -714,13 +714,13 @@ export function compose_orientation(orientation: number[], delta: Mat4): number[
     .__matmul__(_rotate_z(orientation[2]));
   const combined = delta.__matmul__(current);
   const angles = _euler_xyz(
-    combined.__getitem__(0)[0],
-    combined.__getitem__(0)[1],
-    combined.__getitem__(0)[2],
-    combined.__getitem__(1)[0],
-    combined.__getitem__(1)[1],
-    combined.__getitem__(1)[2],
-    combined.__getitem__(2)[2],
+    combined.row(0)[0],
+    combined.row(0)[1],
+    combined.row(0)[2],
+    combined.row(1)[0],
+    combined.row(1)[1],
+    combined.row(1)[2],
+    combined.row(2)[2],
   );
   return angles.map((angle) => mod(angle, 360.0));
 }
@@ -745,11 +745,11 @@ export function strip_orientation(matrix: Mat4, orientation: number[]): Mat4 {
   const oz = orientation[2];
   const inverse = _rotate_z(-oz).__matmul__(_rotate_y(-oy)).__matmul__(_rotate_x(-ox));
   const rotated = inverse.__matmul__(matrix);
-  const rows = [0, 1, 2, 3].map((r) => [...matrix.__getitem__(r)]);
+  const rows = [0, 1, 2, 3].map((r) => [...matrix.row(r)]);
   for (let r = 0; r < 3; r++) {
-    rows[r][0] = rotated.__getitem__(r)[0];
-    rows[r][1] = rotated.__getitem__(r)[1];
-    rows[r][2] = rotated.__getitem__(r)[2];
+    rows[r][0] = rotated.row(r)[0];
+    rows[r][1] = rotated.row(r)[1];
+    rows[r][2] = rotated.row(r)[2];
   }
   return new Mat4(rows);
 }
@@ -784,12 +784,12 @@ export function decompose_transform(
   const q = matrix.__matmul__(t_anchor);
 
   // Position is in the last column.
-  const pos = [q.__getitem__(0)[3], q.__getitem__(1)[3], q.__getitem__(2)[3]];
+  const pos = [q.row(0)[3], q.row(1)[3], q.row(2)[3]];
 
   // Extract 3x3 upper-left (contains R * S).
-  const col0 = [q.__getitem__(0)[0], q.__getitem__(1)[0], q.__getitem__(2)[0]];
-  const col1 = [q.__getitem__(0)[1], q.__getitem__(1)[1], q.__getitem__(2)[1]];
-  const col2 = [q.__getitem__(0)[2], q.__getitem__(1)[2], q.__getitem__(2)[2]];
+  const col0 = [q.row(0)[0], q.row(1)[0], q.row(2)[0]];
+  const col1 = [q.row(0)[1], q.row(1)[1], q.row(2)[1]];
+  const col2 = [q.row(0)[2], q.row(1)[2], q.row(2)[2]];
 
   let sx = _vec3_norm(col0);
   let sy = _vec3_norm(col1);
@@ -1029,9 +1029,9 @@ export function _look_at_rotation(eye: number[], target: number[]): Mat4 {
   const y_axis = _vec3_cross(forward, x_axis);
   const m = Mat4.identity();
   for (let row = 0; row < 3; row++) {
-    m.__getitem__(row)[0] = x_axis[row];
-    m.__getitem__(row)[1] = y_axis[row];
-    m.__getitem__(row)[2] = forward[row];
+    m.row(row)[0] = x_axis[row];
+    m.row(row)[1] = y_axis[row];
+    m.row(row)[2] = forward[row];
   }
   return m;
 }
@@ -1110,9 +1110,9 @@ export function camera_ray(
  *   (an X or Y scale of 0).
  */
 export function intersect_layer_plane(world: Mat4, origin: number[], direction: number[]): number[] {
-  const axis_u = [0, 1, 2].map((r) => world.__getitem__(r)[0]);
-  const axis_v = [0, 1, 2].map((r) => world.__getitem__(r)[1]);
-  const rhs = [0, 1, 2].map((r) => origin[r] - world.__getitem__(r)[3]);
+  const axis_u = [0, 1, 2].map((r) => world.row(r)[0]);
+  const axis_v = [0, 1, 2].map((r) => world.row(r)[1]);
+  const rhs = [0, 1, 2].map((r) => origin[r] - world.row(r)[3]);
   const neg_d = [0, 1, 2].map((r) => -direction[r]);
   const normal = _vec3_cross(axis_u, axis_v);
   const normal_len = _vec3_norm(normal);

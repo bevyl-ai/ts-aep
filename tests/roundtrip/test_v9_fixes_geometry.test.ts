@@ -177,14 +177,14 @@ describe("TestCopyToComp", () => {
         const dst = _next(project.compositions, (c) => c.name === dst_name);
         const copy = src.copy_to_comp(dst);
         const truth = _copy_truth(src_name, dst_name);
-        const keys = copy.transform.__getitem__("ADBE Position").keyframes.map((kf) => kf.time);
+        const keys = copy.transform.property("ADBE Position").keyframes.map((kf) => kf.time);
         expect(
           _close(keys, truth.T["ADBE Position"].k.map((k: [number, number | number[]]) => k[0]), 1e-4),
         ).toBe(true);
         const markers = getattr(copy.marker, "keyframes").map((kf) => kf.time);
         expect(_close(markers, truth.mk, 1e-4)).toBe(true);
         if ("tr" in truth) {
-          const remap = copy.__getitem__("ADBE Time Remapping").keyframes.map((kf) => kf.time);
+          const remap = copy.property("ADBE Time Remapping").keyframes.map((kf) => kf.time);
           expect(_close(remap, truth.tr.map((k: [number, number | number[]]) => k[0]), 1e-4)).toBe(true);
         }
       }
@@ -202,7 +202,7 @@ describe("TestCopyToComp", () => {
     const [__, copy] = _layer(parse_aep(out).project, "PC_D24", "kf_pos");
     expect(
       _close(
-        copy.transform.__getitem__("ADBE Position").keyframes.map((kf) => kf.time),
+        copy.transform.property("ADBE Position").keyframes.map((kf) => kf.time),
         [0, 1, 2.48],
         1e-4,
       ),
@@ -229,9 +229,9 @@ describe("TestCopyToComp", () => {
       const dst = _next(project.compositions, (c) => c.name === dst_name);
       const copy = src.copy_to_comp(dst);
       expect(copy.parent == null).toBe(true);
-      expect(_close(copy.transform.__getitem__("ADBE Position").value, [960, 590, 0], 1e-6)).toBe(true);
+      expect(_close(copy.transform.property("ADBE Position").value, [960, 590, 0], 1e-6)).toBe(true);
       // Into the 2:1 comp too: AE keeps the values (Scale 100).
-      expect(_close(copy.transform.__getitem__("ADBE Scale").value, [100, 100, 100], 1e-6)).toBe(true);
+      expect(_close(copy.transform.property("ADBE Scale").value, [100, 100, 100], 1e-6)).toBe(true);
     }
   });
 
@@ -431,7 +431,7 @@ const _MORE_PARENT_OPS: [string, string, string][] = [
 function _assert_transform(child: Layer, comp: CompItem, truth: _TransformTruth): void {
   for (const match_name of _COMPARED) {
     if (!(match_name in truth)) continue;
-    const prop = child.transform.__getitem__(match_name);
+    const prop = child.transform.property(match_name);
     const expected = getattr(truth, match_name);
     const got = py_bool(prop.keyframes) ? prop.value_at_time(comp.time) : prop.value;
     const exp = expected.v;
@@ -497,7 +497,7 @@ describe("TestParent", () => {
     child.parent = _next(comp.layers, (ly) => ly.name === "p_zero");
     expect(child.parent != null).toBe(true);
     expect(child.parent.name).toBe("p_zero");
-    expect(py_eq(child.transform.__getitem__("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(
+    expect(py_eq(child.transform.property("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(
       true,
     );
   });
@@ -611,7 +611,7 @@ describe("TestPointConversions", () => {
     const camera = comp.camera_layers[0];
     // AE 2026 (the sample's ExtendScript export): [960, 53.5, -2424.24242418]
     expect(
-      _close(camera.transform.__getitem__("ADBE Position").value, [960.0, 53.5, -2424.24242418], 1e-5),
+      _close(camera.transform.property("ADBE Position").value, [960.0, 53.5, -2424.24242418], 1e-5),
     ).toBe(true);
     const layer = as_instance(comp.layers.find((ly) => ly.name === "Dark Gray Solid 1"), AVLayer);
     // The camera sits on the default comp camera: c2s is the identity.
@@ -623,18 +623,18 @@ describe("TestMatrixLaws", () => {
   test("test_tiny_uniform_scale_inverts", () => {
     const m = Mat4.identity();
     for (let axis = 0; axis < 3; axis++) {
-      m.__getitem__(axis)[axis] = 3e-4;
+      m.row(axis)[axis] = 3e-4;
     }
     const inv = m.inverse();
-    expect(isclose(inv.__getitem__(0)[0], 1 / 3e-4)).toBe(true);
+    expect(isclose(inv.row(0)[0], 1 / 3e-4)).toBe(true);
   });
 
   test("test_plane_intersection_ignores_z_scale", () => {
     /** Law: a layer's Z scale does not move its z=0 plane. */
     const m = Mat4.identity();
-    m.__getitem__(2)[2] = 0.0;
-    m.__getitem__(0)[3] = 10.0;
-    m.__getitem__(1)[3] = 20.0;
+    m.row(2)[2] = 0.0;
+    m.row(0)[3] = 10.0;
+    m.row(1)[3] = 20.0;
     expect(
       _close(intersect_layer_plane(m, [5.0, 6.0, -100.0], [0.0, 0.0, 1.0]), [-5.0, -14.0], 1e-12),
     ).toBe(true);
@@ -679,7 +679,7 @@ describe("TestSourceRect", () => {
     const project = parse_project_fresh(LAYER_DIR.div("three_d_model_layer.aep"));
     const layer = as_instance(project.compositions[0].layers[0], ThreeDModelLayer);
     // AE 2026 (the sample's ExtendScript export): anchor [0, 0, 0].
-    expect(py_eq(layer.transform.__getitem__("ADBE Anchor Point").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(py_eq(layer.transform.property("ADBE Anchor Point").value, [0.0, 0.0, 0.0])).toBe(true);
     expect(_close(layer.source_point_to_comp([0.0, 0.0], 0.0), [960.0, 540.0], 1e-6)).toBe(true);
     raises(
       NotImplementedError,

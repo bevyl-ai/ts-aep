@@ -371,12 +371,12 @@ describe("TestMoveKeyframe", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
     const comp = get_comp(app.project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     expect(mp.keyframes.length >= 2).toBe(true);
     mp.keyframes[0].value = new MarkerValue("moved");
     mp.keyframes[0].time = at(mp.keyframes, -1).time + 1.0;
     const app2 = _roundtrip(app, tmp_path);
-    const mp2 = get_comp(app2.project, "layer_multiple_markers").layers[0].__getitem__("ADBE Marker");
+    const mp2 = get_comp(app2.project, "layer_multiple_markers").layers[0].property("ADBE Marker");
     const times2 = mp2.keyframes.map((kf) => kf.frame_time);
     expect(py_eq(times2, sorted(times2))).toBe(true);
     expect(at(mp2.keyframes, -1).value.comment).toBe("moved");
@@ -500,13 +500,13 @@ describe("TestComplexTypeKeyframes", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
     const comp = get_comp(app.project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     const n0 = mp.keyframes.length;
     mp.set_value_at_time(at(mp.keyframes, -1).time + 1.0, new MarkerValue("X"));
     mp.set_value_at_time(at(mp.keyframes, -1).time + 2.0, "str comment");
     const app2 = _roundtrip(app, tmp_path);
     const comp2 = get_comp(app2.project, "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     const comments = mp2.keyframes.map((k) => k.value.comment);
     expect(comments.includes("X") && comments.includes("str comment")).toBe(true);
     expect(mp2.keyframes.length).toBe(n0 + 2);
@@ -521,7 +521,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
           try {
-            mp = layer.__getitem__("ADBE Mask Parade");
+            mp = layer.property("ADBE Mask Parade");
           } catch (e) {
             continue;
           }
@@ -565,7 +565,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
           try {
-            root = layer.__getitem__("ADBE Root Vectors Group");
+            root = layer.property("ADBE Root Vectors Group");
           } catch (e) {
             continue;
           }
@@ -599,7 +599,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
           try {
-            tp = layer.__getitem__("ADBE Text Properties");
+            tp = layer.property("ADBE Text Properties");
           } catch (e) {
             continue;
           }
@@ -638,7 +638,7 @@ describe("TestComplexTypeKeyframes", () => {
       for (const layer of comp.layers) {
         let mp: PropertyGroup;
         try {
-          mp = layer.__getitem__("ADBE Mask Parade");
+          mp = layer.property("ADBE Mask Parade");
         } catch (e) {
           continue;
         }
@@ -664,19 +664,19 @@ describe("TestComplexTypeKeyframes", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
     const comp = get_comp(app.project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     while (py_bool(mp.keyframes)) {
       mp.remove_key(0);
     }
     const app2 = _roundtrip(app, tmp_path);
     const comp2 = get_comp(app2.project, "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     expect(py_eq(mp2.keyframes, [])).toBe(true);
     mp2.set_value_at_time(1.0, new MarkerValue("back"));
     const app3 = _roundtrip(app2, tmp_path);
     const comp3 = app3.project.compositions.find((c) => c.name === "layer_multiple_markers");
     if (comp3 === undefined) throw new StopIteration();
-    const mp3 = comp3.layers[0].__getitem__("ADBE Marker");
+    const mp3 = comp3.layers[0].property("ADBE Marker");
     expect(py_eq(mp3.keyframes.map((k) => k.value.comment), ["back"])).toBe(true);
   });
 
@@ -689,7 +689,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
           try {
-            tp = layer.__getitem__("ADBE Text Properties");
+            tp = layer.property("ADBE Text Properties");
           } catch (e) {
             continue;
           }
@@ -727,7 +727,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
           try {
-            mp = layer.__getitem__("ADBE Mask Parade");
+            mp = layer.property("ADBE Mask Parade");
           } catch (e) {
             continue;
           }
@@ -764,7 +764,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
           try {
-            root = layer.__getitem__("ADBE Root Vectors Group");
+            root = layer.property("ADBE Root Vectors Group");
           } catch (e) {
             continue;
           }
@@ -815,7 +815,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
           try {
-            tp = layer.__getitem__("ADBE Text Properties");
+            tp = layer.property("ADBE Text Properties");
           } catch (e) {
             continue;
           }
@@ -857,7 +857,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
           try {
-            mp = layer.__getitem__("ADBE Mask Parade");
+            mp = layer.property("ADBE Mask Parade");
           } catch (e) {
             continue;
           }
@@ -892,7 +892,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
           try {
-            root = layer.__getitem__("ADBE Root Vectors Group");
+            root = layer.property("ADBE Root Vectors Group");
           } catch (e) {
             continue;
           }
@@ -935,17 +935,17 @@ describe("TestComplexTypeKeyframes", () => {
     // marker materializes it.
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
-    const mp = app.project.compositions[0].layers[0].__getitem__("ADBE Marker");
+    const mp = app.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp.keyframes, [])).toBe(true);
     expect(mp._kf_value_container == null).toBe(true);
     mp.set_value_at_time(1.0, new MarkerValue("first"));
     const app2 = _roundtrip(app, tmp_path);
-    const mp2 = app2.project.compositions[0].layers[0].__getitem__("ADBE Marker");
+    const mp2 = app2.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp2.keyframes.map((k) => k.value.comment), ["first"])).toBe(true);
     expect(approx(mp2.keyframes[0].time, 1.0)).toBe(true);
     mp2.remove_key(0);
     const app3 = _roundtrip(app2, tmp_path);
-    const mp3 = app3.project.compositions[0].layers[0].__getitem__("ADBE Marker");
+    const mp3 = app3.project.compositions[0].layers[0].property("ADBE Marker");
     expect(py_eq(mp3.keyframes, [])).toBe(true);
   });
 
@@ -996,7 +996,7 @@ describe("TestComplexTypeKeyframes", () => {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
           try {
-            root = layer.__getitem__("ADBE Root Vectors Group");
+            root = layer.property("ADBE Root Vectors Group");
           } catch (e) {
             continue;
           }
@@ -1036,7 +1036,7 @@ describe("TestParallelValueAliasing", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
     const comp = get_comp(app.project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     while (py_bool(mp.keyframes)) {
       mp.remove_key(0);
     }
@@ -1062,7 +1062,7 @@ describe("TestParallelValueAliasing", () => {
 
     const app2 = _roundtrip(app, tmp_path);
     const comp2 = get_comp(app2.project, "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     const by_comment = new Map(mp2.keyframes.map((k) => [k.value.comment, k.value] as const));
     expect(py_eq(getitem(by_comment, "first_only").params, new Map())).toBe(true);
     expect(getitem(by_comment, "first_only")._nmhd.num_params).toBe(0);
@@ -1214,7 +1214,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
     expect(comp.frame_rate).toBe(25.0);
-    const prop = comp.layers[0].transform.__getitem__("ADBE Opacity");
+    const prop = comp.layers[0].transform.property("ADBE Opacity");
     prop.add_key(1.5);
 
     const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
@@ -1224,7 +1224,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const prop2 = comp2.layers[0].transform.__getitem__("ADBE Opacity");
+    const prop2 = comp2.layers[0].transform.property("ADBE Opacity");
     const keyframe2 = prop2.keyframes.find((k) => k.time_units === 38400);
     if (keyframe2 === undefined) throw new StopIteration();
     expect(approx(keyframe2.time, 1.5)).toBe(true);
@@ -1233,7 +1233,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
   /** `kf.time = kf.time` used to snap an off-grid keyframe to the nearest frame. */
   test("test_rewriting_its_own_time_does_not_move_a_keyframe", () => {
     const project = parse_project_fresh(SAMPLE);
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Opacity");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     prop.add_key(1.5);
     const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
     if (keyframe === undefined) throw new StopIteration();
@@ -1249,7 +1249,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
    */
   test("test_two_keyframes_can_share_a_frame", () => {
     const project = parse_project_fresh(SAMPLE);
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Opacity");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     // Both round to frame 37 at 25 fps (37.025 and 37.375) while
     // occupying different timebase units.
     prop.add_key(1.481);
@@ -1263,7 +1263,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
 
   test("test_frame_time_still_rounds", () => {
     const project = parse_project_fresh(SAMPLE);
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Opacity");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     prop.add_key(1.5);
     const keyframe = prop.keyframes.find((k) => k.time_units === 38400);
     if (keyframe === undefined) throw new StopIteration();
@@ -1281,13 +1281,13 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     const comp = project.compositions[0];
     const layer = comp.layers[0];
     layer.start_time = 0.29166666666666663; // 7/24 s, off the 25 fps grid
-    const prop = layer.transform.__getitem__("ADBE Opacity");
+    const prop = layer.transform.property("ADBE Opacity");
     prop.add_key(2.0);
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const comp2 = parse_aep(out).project.compositions[0];
-    const prop2 = comp2.layers[0].transform.__getitem__("ADBE Opacity");
+    const prop2 = comp2.layers[0].transform.property("ADBE Opacity");
     // Times are an integer count of timebase units, so a request that
     // falls between units lands on the nearest one - AE requantizes
     // identically (it stored 0.99998697916667 for a 1.0 s request on a
@@ -1313,7 +1313,7 @@ describe("TestRoundtripRoving", () => {
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
     expect(comp.frame_rate).toBe(25.0);
-    const prop = comp.layers[0].transform.__getitem__("ADBE Position");
+    const prop = comp.layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
       prop.remove_key(0);
     }
@@ -1363,7 +1363,7 @@ describe("TestRoundtripRoving", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
     const comp = project.compositions[0];
-    const prop = comp.layers[0].transform.__getitem__("ADBE Position");
+    const prop = comp.layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
       prop.remove_key(0);
     }
@@ -1380,7 +1380,7 @@ describe("TestRoundtripRoving", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.__getitem__("ADBE Position");
+    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Position");
     expect(prop2.keyframes[1].roving).toBe(true);
     expect(prop2.keyframes[1].time_units).toBe(moved);
   });
@@ -1403,7 +1403,7 @@ describe("TestRoundtripRoving", () => {
   /** AE raises here: "This property does not have a spatial PropertyValueType". */
   test("test_non_spatial_property_is_rejected", () => {
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Scale");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
     expect(py_bool(prop.is_spatial)).toBe(false);
     raises(
       ValueError,
@@ -1444,7 +1444,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
    */
   function _uneven_position(): Property<number[]> {
     const project = parse_project_fresh(SAMPLES.div("effect_point_speed.aep"));
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Position");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Position");
     while (py_bool(prop.keyframes)) {
       prop.remove_key(0);
     }
@@ -1503,7 +1503,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test("test_temporal_auto_bezier_is_per_dimension", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
-    const prop = project.compositions[0].layers[0].transform.__getitem__("ADBE Scale");
+    const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
     while (py_bool(prop.keyframes)) {
       prop.remove_key(0);
     }
@@ -1525,7 +1525,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.__getitem__("ADBE Scale");
+    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Scale");
     const speeds = prop2.keyframes[1].in_temporal_ease.map((ease) => ease.speed);
     expect(approx(speeds, [150.0, 25.0, 0.0])).toBe(true);
     const influences = prop2.keyframes[1].in_temporal_ease.map((ease) => ease.influence);
@@ -1549,7 +1549,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
 
     const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
     const transform = project.compositions[0].layers[0].transform;
-    const scale = transform.__getitem__("ADBE Scale");
+    const scale = transform.property("ADBE Scale");
     scale.remove_all_keys();
     for (const [index, time] of times.entries()) {
       scale.set_value_at_time(time, [curves[0][index], curves[1][index], 100.0]);
@@ -1558,7 +1558,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const references: Property<number>[] = [];
     for (const curve of curves) {
       const reference = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
-      const rotation = reference.compositions[0].layers[0].transform.__getitem__("ADBE Rotate Z");
+      const rotation = reference.compositions[0].layers[0].transform.property("ADBE Rotate Z");
       rotation.remove_all_keys();
       for (const [index, time] of times.entries()) {
         rotation.set_value_at_time(time, curve[index]);

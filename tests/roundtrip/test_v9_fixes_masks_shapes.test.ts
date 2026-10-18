@@ -253,7 +253,7 @@ describe("TestPathValueValidation", () => {
   test("test_shape_layer_path_rejects_non_shape", () => {
     const app = py_aep.new();
     const comp = app.project.root_folder.add_comp("C", 400, 300, 1.0, 5.0, 24.0);
-    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group");
+    const group = comp.add_shape().property("ADBE Root Vectors Group");
     const path = group
       .add_property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
@@ -408,7 +408,7 @@ describe("TestShapeCopies", () => {
 
   test("test_mask_copied_to_a_shape_path_keeps_its_pixels", () => {
     const [, comp, , mask_a] = _two_layers();
-    const group = comp.add_shape().__getitem__("ADBE Root Vectors Group");
+    const group = comp.add_shape().property("ADBE Root Vectors Group");
     const path = group
       .add_property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape");
@@ -461,8 +461,8 @@ describe("TestExpressionNul", () => {
     // AE 2026 keeps only the text before a NUL ("50\0 + 1" reads "50").
     const [, , solid] = _solid_mask();
     const opacity = solid
-      .__getitem__("ADBE Transform Group")
-      .__getitem__("ADBE Opacity");
+      .property("ADBE Transform Group")
+      .property("ADBE Opacity");
     raises(ValueError, () => {
       opacity.expression = "50\x00 + 1";
     });
@@ -476,7 +476,7 @@ describe("TestGroupAttributeWrites", () => {
     ["ADBE Effect Parade", "value", 42],
   ])("test_unknown_attribute_rejected[%#]", (group_name: string, attr: string, value: unknown) => {
     const [app, , solid] = _solid_mask();
-    const group = solid.__getitem__(group_name);
+    const group = solid.property(group_name);
     const before = project_bytes(app.project);
     raises(AttributeError, () => {
       setattr(group, attr, value);

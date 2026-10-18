@@ -1222,13 +1222,13 @@ describe("TestLayerRemove", () => {
     const child = comp.layers[0]; // ChildLayer
     const parent = comp.layers[1]; // ParentNull
     expect(child.parent).toBe(parent);
-    expect(py_eq(child.transform.__getitem__("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
-    const parent_pos = parent.transform.__getitem__("ADBE Position").value;
+    expect(py_eq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    const parent_pos = parent.transform.property("ADBE Position").value;
 
     parent.remove();
 
     // Child position should now be the parent's former position
-    const pos = child.transform.__getitem__("ADBE Position").value;
+    const pos = child.transform.property("ADBE Position").value;
     expect(Math.abs(pos[0] - parent_pos[0]) < 0.01).toBe(true);
     expect(Math.abs(pos[1] - parent_pos[1]) < 0.01).toBe(true);
     expect(Math.abs(pos[2] - parent_pos[2]) < 0.01).toBe(true);
@@ -1246,10 +1246,10 @@ describe("TestParentSetter", () => {
     const parent = comp.layers[1]; // ParentNull
     expect(child.parent).toBe(parent);
 
-    const parent_pos = parent.transform.__getitem__("ADBE Position").value;
+    const parent_pos = parent.transform.property("ADBE Position").value;
     child.parent = null;
 
-    const pos = child.transform.__getitem__("ADBE Position").value;
+    const pos = child.transform.property("ADBE Position").value;
     expect(Math.abs(pos[0] - parent_pos[0]) < 0.01).toBe(true);
     expect(Math.abs(pos[1] - parent_pos[1]) < 0.01).toBe(true);
     expect(Math.abs(pos[2] - parent_pos[2]) < 0.01).toBe(true);
@@ -1261,7 +1261,7 @@ describe("TestParentSetter", () => {
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0];
     child.parent = null;
-    expect(py_eq(child.transform.__getitem__("ADBE Scale").value, [100.0, 100.0, 100.0])).toBe(true);
+    expect(py_eq(child.transform.property("ADBE Scale").value, [100.0, 100.0, 100.0])).toBe(true);
   });
 
   test("test_unparent_preserves_rotation", () => {
@@ -1270,7 +1270,7 @@ describe("TestParentSetter", () => {
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0];
     child.parent = null;
-    expect(Math.abs(child.transform.__getitem__("ADBE Rotate Z").value) < 0.01).toBe(true);
+    expect(Math.abs(child.transform.property("ADBE Rotate Z").value) < 0.01).toBe(true);
   });
 
   test("test_same_parent_noop", () => {
@@ -1280,7 +1280,7 @@ describe("TestParentSetter", () => {
     const child = comp.layers[0];
     const parent = comp.layers[1];
     child.parent = parent; // Same parent, no-op
-    expect(py_eq(child.transform.__getitem__("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(py_eq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_reparent_to_new_parent", () => {
@@ -1298,7 +1298,7 @@ describe("TestParentSetter", () => {
 
     // Re-parent back: child local should become [0,0,0] again
     child.parent = parent;
-    const pos_local = child.transform.__getitem__("ADBE Position").value;
+    const pos_local = child.transform.property("ADBE Position").value;
     expect(Math.abs(pos_local[0]) < 0.01).toBe(true);
     expect(Math.abs(pos_local[1]) < 0.01).toBe(true);
     expect(Math.abs(pos_local[2]) < 0.01).toBe(true);
@@ -1311,7 +1311,7 @@ describe("TestParentSetter", () => {
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0];
     const parent = comp.layers[1];
-    const parent_pos = parent.transform.__getitem__("ADBE Position").value.slice();
+    const parent_pos = parent.transform.property("ADBE Position").value.slice();
 
     child.parent = null;
     app.project.save(tmp_path.div("out.aep"));
@@ -1320,7 +1320,7 @@ describe("TestParentSetter", () => {
     const comp2 = get_comp(app2.project, "parent");
     const child2 = comp2.layers[0];
     expect(child2._parent_id).toBe(0);
-    const pos = child2.transform.__getitem__("ADBE Position").value;
+    const pos = child2.transform.property("ADBE Position").value;
     expect(Math.abs(pos[0] - parent_pos[0]) < 0.01).toBe(true);
     expect(Math.abs(pos[1] - parent_pos[1]) < 0.01).toBe(true);
   });
@@ -1453,7 +1453,7 @@ describe("TestSetParentWithJump", () => {
     expect(child._parent_id).toBe(0);
     expect(child.parent == null).toBe(true);
     // Local position should NOT change (no compensation)
-    expect(py_eq(child.transform.__getitem__("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(py_eq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_set_parent_assigns_id", () => {
@@ -1680,8 +1680,8 @@ describe("TestDuplicateComplexValueLayers", () => {
     const dup = original.duplicate();
     if (original.masks == null) throw new Error("original has no masks group");
     if (dup.masks == null) throw new Error("duplicate has no masks group");
-    const orig_shape = as_instance(original.masks.__getitem__(0), PropertyGroup).property("ADBE Mask Shape").value;
-    const dup_shape = as_instance(dup.masks.__getitem__(0), PropertyGroup).property("ADBE Mask Shape").value;
+    const orig_shape = as_instance(original.masks.property(0), PropertyGroup).property("ADBE Mask Shape").value;
+    const dup_shape = as_instance(dup.masks.property(0), PropertyGroup).property("ADBE Mask Shape").value;
     expect(py_eq(dup_shape.vertices, orig_shape.vertices)).toBe(true);
   });
 
@@ -1832,7 +1832,7 @@ describe("TestGeometryAutoOrientGuard", () => {
   test("test_along_path_with_separated_position_raises", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const layer = _probe_layer(project, "solid_keyed");
-    layer.transform.__getitem__("ADBE Position").dimensions_separated = true;
+    layer.transform.property("ADBE Position").dimensions_separated = true;
     layer.auto_orient = AutoOrientType.ALONG_PATH;
     raises(NotImplementedError, () => {
       layer.source_point_to_comp([0.0, 0.0]);
@@ -1886,7 +1886,7 @@ describe("TestForwardRayOnly", () => {
   test("test_layer_behind_camera_raises", () => {
     const layer = _probe_3d_layer();
     // Default comp camera sits at z = -zoom; push the layer behind it.
-    layer.transform.__getitem__("ADBE Position").value = [960.0, 540.0, -20000.0];
+    layer.transform.property("ADBE Position").value = [960.0, 540.0, -20000.0];
     raises(ValueError, () => {
       layer.comp_point_to_source([100.0, 100.0]);
     }, "not in front of the camera");
@@ -1913,7 +1913,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("outPoint_no_clamp.aep"));
     const comp = get_comp(project, "outPoint_no_clamp_timeRemap");
     const layer = as_instance(comp.layers[0], AVLayer);
-    const authored = layer.__getitem__("ADBE Time Remapping").keyframes.map((k) => [k.time, k.value]);
+    const authored = layer.property("ADBE Time Remapping").keyframes.map((k) => [k.time, k.value]);
     expect(py_eq(authored, [[0.0, 0.0], [5.0, 5.0]])).toBe(true);
 
     layer.time_remap_enabled = false;
@@ -1922,7 +1922,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const comp2 = get_comp(parse_aep(out).project, "outPoint_no_clamp_timeRemap");
-    const remap = comp2.layers[0].__getitem__("ADBE Time Remapping");
+    const remap = comp2.layers[0].property("ADBE Time Remapping");
     expect(py_eq(remap.keyframes.map((k) => [k.time, k.value]), authored)).toBe(true);
   });
 
@@ -1936,7 +1936,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const comp2 = get_comp(parse_aep(out).project, "outPoint_no_clamp_timeRemap");
-    for (const keyframe of comp2.layers[0].__getitem__("ADBE Time Remapping").keyframes) {
+    for (const keyframe of comp2.layers[0].property("ADBE Time Remapping").keyframes) {
       expect(keyframe.in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
       expect(keyframe.out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
     }
@@ -1955,7 +1955,7 @@ describe("TestRoundtripTimeRemapRamp", () => {
     layer.time_remap_enabled = true;
 
     const source = as_instance(layer.source, AVItem);
-    const times = layer.__getitem__("ADBE Time Remapping").keyframes.map((k) => k.time);
+    const times = layer.property("ADBE Time Remapping").keyframes.map((k) => k.time);
     expect(approx(times, [2.0, 2.0 + source.duration])).toBe(true);
   });
 });
@@ -1975,10 +1975,10 @@ describe("TestParentToCameraRig", () => {
     if (child === undefined) throw new StopIteration();
     const camera = child.parent;
     child.parent = null;
-    child.transform.__getitem__("ADBE Position").value = [960.0, 540.0, 0.0];
-    child.transform.__getitem__("ADBE Orientation").value = [0.0, 0.0, 0.0];
+    child.transform.property("ADBE Position").value = [960.0, 540.0, 0.0];
+    child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.parent = camera;
-    const orientation = child.transform.__getitem__("ADBE Orientation").value;
+    const orientation = child.transform.property("ADBE Orientation").value;
     expect(approx(orientation, [16.8075, 334.9831, 0.0], { abs: 1e-3 })).toBe(true);
   });
 });
@@ -2001,7 +2001,7 @@ describe("TestTextSourceRectRefusals", () => {
   test("test_faux_bold_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
     py_assert(layer.text != null);
-    layer.text.__getitem__("ADBE Text Document").value.faux_bold = true;
+    layer.text.property("ADBE Text Document").value.faux_bold = true;
     raises(NotImplementedError, () => {
       layer.source_rect_at_time(0.0, false);
     }, "faux bold");
@@ -2010,7 +2010,7 @@ describe("TestTextSourceRectRefusals", () => {
   test("test_text_animator_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
     py_assert(layer.text != null);
-    layer.text.__getitem__("ADBE Text Animators").add_property("ADBE Text Animator");
+    layer.text.property("ADBE Text Animators").add_property("ADBE Text Animator");
     raises(NotImplementedError, () => {
       layer.source_rect_at_time(0.0, false);
     }, "animators");

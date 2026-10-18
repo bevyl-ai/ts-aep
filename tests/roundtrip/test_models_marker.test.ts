@@ -318,7 +318,7 @@ describe("TestMarkerParams", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = get_comp(project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     mp.set_value_at_time(
       at(mp.keyframes, -1).time + 1.0,
       new MarkerValue("with params", undefined, undefined, undefined, undefined, new Map([["k1", "v1"], ["k2", "v2"]])),
@@ -326,7 +326,7 @@ describe("TestMarkerParams", () => {
     const out = tmp_path.div("marker_params.aep");
     project.save(out);
     const comp2 = get_comp(parse_project_fresh(out), "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "with params");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
@@ -370,7 +370,7 @@ describe("TestMarkerParams", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = get_comp(project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     mp.set_value_at_time(at(mp.keyframes, -1).time + 1.0, new MarkerValue("late"));
     const bound_kf = mp.keyframes.find((k) => k.value.comment === "late");
     if (bound_kf === undefined) throw new StopIteration();
@@ -379,7 +379,7 @@ describe("TestMarkerParams", () => {
     const out = tmp_path.div("marker_params_late.aep");
     project.save(out);
     const comp2 = get_comp(parse_project_fresh(out), "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "late");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
@@ -390,7 +390,7 @@ describe("TestMarkerParams", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = get_comp(project, "layer_multiple_markers");
-    const mp = comp.layers[0].__getitem__("ADBE Marker");
+    const mp = comp.layers[0].property("ADBE Marker");
     const marker = new MarkerValue("unbound");
     marker.params = new Map([["p", "q"]]);
     expect(py_eq(marker.params, new Map([["p", "q"]]))).toBe(true);
@@ -398,7 +398,7 @@ describe("TestMarkerParams", () => {
     const out = tmp_path.div("marker_params_unbound.aep");
     project.save(out);
     const comp2 = get_comp(parse_project_fresh(out), "layer_multiple_markers");
-    const mp2 = comp2.layers[0].__getitem__("ADBE Marker");
+    const mp2 = comp2.layers[0].property("ADBE Marker");
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "unbound");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;

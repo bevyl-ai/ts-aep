@@ -77,7 +77,7 @@ function _layer(sample: string, comp_name: string, layer_name: string): Layer {
 }
 
 function _position(layer: Layer, match_name = "ADBE Position"): Property {
-  const prop = layer.transform.__getitem__(match_name);
+  const prop = layer.transform.property(match_name);
   py_assert(prop instanceof Property);
   return prop;
 }

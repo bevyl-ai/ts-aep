@@ -213,14 +213,12 @@ export class ParamsDict extends Map<string, string> {
    */
   _owner: XmlFormatOptions | null = null;
 
-  /** Python `__setitem__` */
   set(key: string, value: string): this {
     super.set(key, value);
     if (this._owner != null) this._owner._on_param_changed(key, value);
     return this;
   }
 
-  /** Python `__delitem__` */
   delete(key: string): boolean {
     if (!super.has(key)) throw new KeyError(repr(key));
     super.delete(key);

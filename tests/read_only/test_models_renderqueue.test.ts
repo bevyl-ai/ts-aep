@@ -105,13 +105,13 @@ describe("TestOutputModule", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("om_crop.aep"));
     const rqi = get_rqi(project, "crop_checked");
     const om = rqi.output_modules[0];
-    expect(om.settings.__getitem__("Crop")).toBe(true);
+    expect(om.settings.get("Crop")).toBe(true);
   });
 
   test("test_crop_unchecked", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("crop_unchecked.aep"));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.settings.__getitem__("Crop")).toBe(false);
+    expect(om.settings.get("Crop")).toBe(false);
   });
 
   test("test_crop_bottom_10", () => {
@@ -119,10 +119,10 @@ describe("TestOutputModule", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("crop_bottom_10.aep"));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
-    expect(om.settings.__getitem__("Crop")).toBe(true);
-    expect(om.settings.__getitem__("Crop Bottom")).toBe(exp_om["settings"]["Crop Bottom"]);
+    expect(om.settings.get("Crop")).toBe(true);
+    expect(om.settings.get("Crop Bottom")).toBe(exp_om["settings"]["Crop Bottom"]);
     expect(exp_om["settings"]["Crop Bottom"]).toBe(10);
-    expect(om.settings.__getitem__("Crop Top")).toBe(0);
+    expect(om.settings.get("Crop Top")).toBe(0);
   });
 
   test("test_crop_top_10", () => {
@@ -130,10 +130,10 @@ describe("TestOutputModule", () => {
     const project = parse_project(OM_SAMPLES_DIR.div("crop_top_10.aep"));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
-    expect(om.settings.__getitem__("Crop")).toBe(true);
-    expect(om.settings.__getitem__("Crop Top")).toBe(exp_om["settings"]["Crop Top"]);
+    expect(om.settings.get("Crop")).toBe(true);
+    expect(om.settings.get("Crop Top")).toBe(exp_om["settings"]["Crop Top"]);
     expect(exp_om["settings"]["Crop Top"]).toBe(10);
-    expect(om.settings.__getitem__("Crop Bottom")).toBe(0);
+    expect(om.settings.get("Crop Bottom")).toBe(0);
   });
 
   test.each([
@@ -143,7 +143,7 @@ describe("TestOutputModule", () => {
   ])("test_convert_to_linear_light[%#]", (sample_name: string, expected_value: ConvertToLinearLight) => {
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.settings.__getitem__("Convert to Linear Light")).toBe(expected_value);
+    expect(om.settings.get("Convert to Linear Light")).toBe(expected_value);
   });
 
   test.each([
@@ -153,7 +153,7 @@ describe("TestOutputModule", () => {
     // The two AE samples differ in one byte of the settings record, 0x5E.
     const project = parse_project(OM_SAMPLES_DIR.div(`${sample_name}.aep`));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-    expect(om.settings.__getitem__("Preserve RGB")).toBe(expected_value);
+    expect(om.settings.get("Preserve RGB")).toBe(expected_value);
   });
 });
 
@@ -255,8 +255,8 @@ describe("TestOutputModuleSettings", () => {
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
-    expect(om.settings.__getitem__("Starting #")).toBe(exp_om["settings"]["Starting #"]);
-    expect(om.settings.__getitem__("Starting #")).toBe(expected_value);
+    expect(om.settings.get("Starting #")).toBe(exp_om["settings"]["Starting #"]);
+    expect(om.settings.get("Starting #")).toBe(expected_value);
   });
 
   test.each([
@@ -267,7 +267,7 @@ describe("TestOutputModuleSettings", () => {
     const project = parse_project(SAMPLES_DIR.div(`${sample_name}.aep`));
     const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
     const exp_om = expected["renderQueue"]["items"][0]["outputModules"][0];
-    expect(om.settings.__getitem__("Use Comp Frame Number")).toBe(expected_value);
+    expect(om.settings.get("Use Comp Frame Number")).toBe(expected_value);
     expect(exp_om["settings"]["Use Comp Frame Number"]).toBe(expected_value);
   });
 });

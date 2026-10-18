@@ -334,10 +334,6 @@ class _NoCmapFont implements FontkitFont {
   getGlyphSet(): Map<string, unknown> {
     return new Map();
   }
-
-  __getitem__(key: string): { unitsPerEm: number } {
-    return { unitsPerEm: 1000 };
-  }
 }
 
 test("test_glyphs_handles_font_without_unicode_cmap", () => {

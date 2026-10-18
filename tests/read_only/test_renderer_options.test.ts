@@ -46,7 +46,7 @@ describe("TestRendererOptionsReads", () => {
     const opts = as_instance(comp.renderer_options, ClassicRendererOptions);
 
     expect(opts.shadow_map_resolution).toBe(ShadowMapResolution.COMP_SIZE);
-    expect(opts.__getitem__("Shadow Map Resolution")).toBe(ShadowMapResolution.COMP_SIZE);
+    expect(opts.get("Shadow Map Resolution")).toBe(ShadowMapResolution.COMP_SIZE);
   });
 
   test("test_advanced_defaults", () => {
@@ -85,7 +85,7 @@ describe("TestRendererOptionsReads", () => {
     py_assert(opts instanceof RayTracedRendererOptions);
     expect(py_eq(dict(opts), new Map())).toBe(true);
     raises(KeyError, () => {
-      opts.__setitem__("Quality", 1);
+      opts.set("Quality", 1);
     });
     raises(AttributeError, () => {
       // @ts-expect-error a ray-traced renderer has no quality; the write must raise at runtime

@@ -60,10 +60,10 @@ describe("TestMiterLimit", () => {
       ),
     );
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
-    const stroke = as_instance(contents.__getitem__(0), PropertyGroup)
-      .__getitem__("ADBE Vectors Group")
-      .__getitem__("ADBE Vector Graphic - Stroke");
-    expect(stroke.__getitem__("ADBE Vector Stroke Miter Limit").value).toBe(1.0);
+    const stroke = as_instance(contents.property(0), PropertyGroup)
+      .property("ADBE Vectors Group")
+      .property("ADBE Vector Graphic - Stroke");
+    expect(stroke.property("ADBE Vector Stroke Miter Limit").value).toBe(1.0);
   });
 });
 

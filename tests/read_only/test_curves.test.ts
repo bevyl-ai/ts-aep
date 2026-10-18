@@ -49,8 +49,8 @@ function _next<T>(items: T[], predicate: (item: T) => boolean): T {
 function _curves_property(layer_name: string): Property {
   const project = parse_project(SAMPLES_DIR.div("curves.aep"));
   const layer = _next(project.compositions[0].layers, (ly) => ly.name === layer_name);
-  const effect = as_instance(layer.__getitem__("ADBE Effect Parade").__getitem__(0), PropertyGroup);
-  const prop = effect.__getitem__("ADBE CurvesCustom-0001");
+  const effect = as_instance(layer.property("ADBE Effect Parade").property(0), PropertyGroup);
+  const prop = effect.property("ADBE CurvesCustom-0001");
   py_assert(prop instanceof Property);
   return prop;
 }

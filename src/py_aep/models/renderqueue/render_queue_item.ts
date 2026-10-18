@@ -58,8 +58,8 @@ export function _next_item_id(rq: RenderQueue): number {
  */
 export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
-  __setitem__(key: string, value: SettingValue | null): void {
-    super.__setitem__(key, value);
+  set(key: string, value: SettingValue | null): void {
+    super.set(key, value);
     this._owner._ldat.settings_written = 1;
   }
 }
@@ -546,7 +546,7 @@ export class RenderQueueItem {
     // SettingsView exposes Python's Mapping `items()` as an array of pairs; a dict is a Map.
     const entries = value instanceof Map ? value.entries() : value.items();
     for (const [k, v] of entries) {
-      view.__setitem__(k, v);
+      view.set(k, v);
     }
   }
 

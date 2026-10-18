@@ -229,7 +229,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam", [100, 200]);
-    const pos = cam.transform.__getitem__("ADBE Position");
+    const pos = cam.transform.property("ADBE Position");
     expect(approx(pos.value[2], -138.8887, { rel: 1e-3 })).toBe(true);
   });
 
@@ -237,7 +237,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam", [100, 200]);
-    const anchor = cam.transform.__getitem__("ADBE Anchor Point");
+    const anchor = cam.transform.property("ADBE Anchor Point");
     expect(approx(anchor.value[0], 100.0)).toBe(true);
     expect(approx(anchor.value[1], 200.0)).toBe(true);
   });
@@ -246,7 +246,7 @@ describe("TestAddCamera", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const cam = comp.add_camera("Cam");
-    const anchor = cam.transform.__getitem__("ADBE Anchor Point");
+    const anchor = cam.transform.property("ADBE Anchor Point");
     expect(approx(anchor.value[0], comp.width / 2)).toBe(true);
     expect(approx(anchor.value[1], comp.height / 2)).toBe(true);
   });
@@ -258,7 +258,7 @@ describe("TestAddCamera", () => {
     const comp = app.project.compositions[0];
     comp.pixel_aspect = 2.0;
     const cam = comp.add_camera("Cam");
-    const pos = cam.transform.__getitem__("ADBE Position");
+    const pos = cam.transform.property("ADBE Position");
     expect(approx(pos.value[2], -comp.width * 2.0 / 0.72)).toBe(true);
   });
 
@@ -306,7 +306,7 @@ describe("TestAddLight", () => {
     const app = parse_aep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const light = comp.add_light("L", [300, 400]);
-    const pos = light.transform.__getitem__("ADBE Position");
+    const pos = light.transform.property("ADBE Position");
     expect(approx(pos.value[2], -69.4444, { rel: 1e-3 })).toBe(true);
   });
 
@@ -317,7 +317,7 @@ describe("TestAddLight", () => {
     const comp = app.project.compositions[0];
     comp.pixel_aspect = 2.0;
     const light = comp.add_light("L");
-    const pos = light.transform.__getitem__("ADBE Position");
+    const pos = light.transform.property("ADBE Position");
     expect(approx(pos.value[2], -comp.width * 2.0 / 0.72 / 2)).toBe(true);
   });
 

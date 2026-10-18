@@ -58,7 +58,7 @@ test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: str
   const om = _om(project);
   const before = om.get_settings();
   raises(ValueError, () => {
-    om.settings.__setitem__(key, value);
+    om.settings.set(key, value);
   });
   // NOTE(port): py_assert carries the same assert message as the Python original.
   py_assert(py_eq(om.get_settings(), before), "rejected write must not mutate");
@@ -94,12 +94,12 @@ test("test_quicktime_supports_alpha", () => {
       .div("apple_prores_4444.aep"),
   );
   const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  om.settings.set("Channels", OutputChannels.RGBA);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(om2.settings.__getitem__("Channels")).toBe(OutputChannels.RGBA);
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   expect(py_eq(om2.validate_state(), [])).toBe(true);
 });
 
@@ -108,12 +108,12 @@ test("test_plus_depth_requires_rgba_channels", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_photoshop_sequence.aep"));
   const om = _om(project);
   raises(ValueError, () => {
-    om.settings.__setitem__("Depth", OutputColorDepth.FLOATING_POINT_PLUS); // RGB module
+    om.settings.set("Depth", OutputColorDepth.FLOATING_POINT_PLUS); // RGB module
   });
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
-  om.settings.__setitem__("Depth", OutputColorDepth.FLOATING_POINT_PLUS);
+  om.settings.set("Channels", OutputChannels.RGBA);
+  om.settings.set("Depth", OutputColorDepth.FLOATING_POINT_PLUS);
   raises(ValueError, () => {
-    om.settings.__setitem__("Depth", OutputColorDepth.FLOATING_POINT); // base under RGBA
+    om.settings.set("Depth", OutputColorDepth.FLOATING_POINT); // base under RGBA
   });
 });
 
@@ -121,11 +121,11 @@ test.each(ACCEPTS)("test_allowed_write_survives_roundtrip[%#]", (sample: string,
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);
-  om.settings.__setitem__(key, value);
-  expect(om.settings.__getitem__(key)).toBe(value);
+  om.settings.set(key, value);
+  expect(om.settings.get(key)).toBe(value);
   project.save(tmp_path.div("out.aep"));
   const reparsed = parse_project_fresh(tmp_path.div("out.aep"));
-  expect(_om(reparsed).settings.__getitem__(key)).toBe(value);
+  expect(_om(reparsed).settings.get(key)).toBe(value);
 });
 
 /** Switching PNG to RGB+Alpha forces Straight and the +alpha depth. */
@@ -133,37 +133,37 @@ test("test_png_rgba_clamps_color_straight", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Color", OutputColorMode.PREMULTIPLIED); // inert while RGB
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
-  expect(om.settings.__getitem__("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  om.settings.set("Color", OutputColorMode.PREMULTIPLIED); // inert while RGB
+  om.settings.set("Channels", OutputChannels.RGBA);
+  expect(om.settings.get("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(om2.settings.__getitem__("Channels")).toBe(OutputChannels.RGBA);
-  expect(om2.settings.__getitem__("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
+  expect(om2.settings.get("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_exr_rgba_clamps_color_premultiplied", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(RQ_DIR.div("format_openexr_sequence.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Color", OutputColorMode.STRAIGHT_UNMATTED); // inert while RGB
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
-  expect(om.settings.__getitem__("Color")).toBe(OutputColorMode.PREMULTIPLIED);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
+  om.settings.set("Color", OutputColorMode.STRAIGHT_UNMATTED); // inert while RGB
+  om.settings.set("Channels", OutputChannels.RGBA);
+  expect(om.settings.get("Color")).toBe(OutputColorMode.PREMULTIPLIED);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(om2.settings.__getitem__("Color")).toBe(OutputColorMode.PREMULTIPLIED);
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
+  expect(om2.settings.get("Color")).toBe(OutputColorMode.PREMULTIPLIED);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
 });
 
 test("test_rgba_color_write_rejected_after_clamp", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
+  om.settings.set("Channels", OutputChannels.RGBA);
   raises(ValueError, () => {
-    om.settings.__setitem__("Color", OutputColorMode.PREMULTIPLIED);
+    om.settings.set("Color", OutputColorMode.PREMULTIPLIED);
   });
 });
 
@@ -177,15 +177,15 @@ test("test_rgba_color_write_rejected_after_clamp", () => {
 test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_mp3.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Crop", true);
-  om.settings.__setitem__("Crop Left", 10);
-  om.settings.__setitem__("Use Region of Interest", true);
-  om.settings.__setitem__("Resize", false);
-  expect(om.settings.__getitem__("Video Output")).toBe(false);
+  om.settings.set("Crop", true);
+  om.settings.set("Crop Left", 10);
+  om.settings.set("Use Region of Interest", true);
+  om.settings.set("Resize", false);
+  expect(om.settings.get("Video Output")).toBe(false);
   expect(py_eq([om._roou.width, om._roou.height], [0, 0])).toBe(true);
   expect(py_eq(om.validate_state(), [])).toBe(true);
   raises(ValueError, () => {
-    om.settings.__setitem__("Resize to", [1280, 720]);
+    om.settings.set("Resize to", [1280, 720]);
   });
 });
 
@@ -201,7 +201,7 @@ test("test_garbage_channels_byte_stays_permissive", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
   om._om_ldat.channels = 7; // not a valid OutputChannels member
-  om.settings.__setitem__("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
-  om.settings.__setitem__("Audio Channels", om.settings.__getitem__("Audio Channels")); // clamp path
+  om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
+  om.settings.set("Audio Channels", om.settings.get("Audio Channels")); // clamp path
   expect(py_eq(om.validate_state(), [])).toBe(true);
 });

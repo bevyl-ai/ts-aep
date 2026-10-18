@@ -81,7 +81,7 @@ describe("TestPropertyNameGuard", () => {
 
   test("test_transform_group_rename_rejected", () => {
     const app = parse_aep(PT);
-    const group = app.project.compositions[0].layers[0].__getitem__("ADBE Transform Group");
+    const group = app.project.compositions[0].layers[0].property("ADBE Transform Group");
     raises(ValueError, () => {
       group.name = "Xform";
     }, "indexed group");

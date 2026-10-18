@@ -123,7 +123,7 @@ describe("TestCanAddProperty", () => {
     // (AE 2026 headless run), so the path is unambiguous and addable.
     const project = parse_project_fresh(EG_DIR.parent.div("property", "mask_add.aep"));
     const comp = project.compositions[0];
-    const mask = as_instance(as_instance(comp.layers[0].masks, PropertyGroup).__getitem__(0), PropertyGroup);
+    const mask = as_instance(as_instance(comp.layers[0].masks, PropertyGroup).property(0), PropertyGroup);
     const mask_opacity = as_instance(next(mask.properties, (p) => p.match_name === "ADBE Mask Opacity"), Property);
     expect(mask_opacity.property_value_type).toBe(PropertyValueType.OneD);
     expect(mask_opacity.can_add_to_motion_graphics_template(comp)).toBe(true);
@@ -402,7 +402,7 @@ describe("TestIndexedGroupControllers", () => {
     const masks = solid.masks;
     py_assert(masks != null);
     const expansion = as_instance(
-      next(as_instance(masks.__getitem__(1), PropertyGroup).properties, (p) => p.match_name === "ADBE Mask Offset"),
+      next(as_instance(masks.property(1), PropertyGroup).properties, (p) => p.match_name === "ADBE Mask Offset"),
       Property,
     );
     expect(expansion.can_add_to_motion_graphics_template(comp)).toBe(true);

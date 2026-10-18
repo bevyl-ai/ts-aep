@@ -52,11 +52,11 @@ export class Element {
     return this._children;
   }
 
-  __len__(): number {
+  get length(): number {
     return this._children.length;
   }
 
-  __getitem__(i: number): Element {
+  at(i: number): Element {
     const n = this._children.length;
     const j = i < 0 ? i + n : i;
     if (j < 0 || j >= n) throw new IndexError("child index out of range");
@@ -568,7 +568,7 @@ function _serialize_xml(
       }
       for (const [k, v] of items) write(` ${qnames.get(k)}="${_escape_attrib(v)}"`);
     }
-    if (text || elem.__len__() || !short_empty_elements) {
+    if (text || elem.length || !short_empty_elements) {
       write(">");
       if (text) write(_escape_cdata(text));
       for (const e of elem) _serialize_xml(write, e, qnames, null, short_empty_elements);

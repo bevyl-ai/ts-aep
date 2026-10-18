@@ -31,7 +31,7 @@ function _camera(comp_name: string): CameraLayer {
 
 describe("TestCameraOptionDefaults", () => {
   const _opt = (cam: CameraLayer, match_name: string): Property => {
-    const prop = cam.__getitem__("ADBE Camera Options Group").__getitem__(match_name);
+    const prop = cam.property("ADBE Camera Options Group").property(match_name);
     expect(prop instanceof Property).toBe(true);
     py_assert(prop instanceof Property);
     return prop;
@@ -59,7 +59,7 @@ describe("TestCameraOptionDefaults", () => {
 
   test("test_ae26_has_fifteen_options", () => {
     const cam = _camera("CAM_ONE");
-    const options = cam.__getitem__("ADBE Camera Options Group").properties;
+    const options = cam.property("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(15);
     const names = options.map((p) => p.match_name);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(true);
@@ -92,7 +92,7 @@ describe("TestCameraOptionDefaults", () => {
       .flatMap((c) => c.layers)
       .find((ly) => ly instanceof CameraLayer);
     if (cam === undefined) throw new StopIteration();
-    const options = cam.__getitem__("ADBE Camera Options Group").properties;
+    const options = cam.property("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(13);
     const names = options.map((p) => p.match_name);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(false);
@@ -116,10 +116,10 @@ describe("TestCameraLightTransformMetadata", () => {
   const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");
 
   const _z_follower = (layer: Layer): Property => {
-    const prop = layer.transform.__getitem__("ADBE Position_2");
+    const prop = layer.transform.property("ADBE Position_2");
     expect(prop instanceof Property).toBe(true);
     // These probes assume the leader is NOT dimension-separated.
-    const leader = layer.transform.__getitem__("ADBE Position");
+    const leader = layer.transform.property("ADBE Position");
     expect(leader instanceof Property).toBe(true);
     expect(leader.dimensions_separated).toBe(false);
     return prop;
@@ -146,7 +146,7 @@ describe("TestCameraLightTransformMetadata", () => {
   test("test_two_node_camera_poi_expressionable", () => {
     const cam = _camera("CAM_TWO");
     expect(cam._ldta.poi_auto_orient).toBe(true);
-    const poi = cam.transform.__getitem__("ADBE Anchor Point");
+    const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
     expect(poi.can_set_expression).toBe(true);
   });
@@ -154,7 +154,7 @@ describe("TestCameraLightTransformMetadata", () => {
   test("test_one_node_camera_poi_not_expressionable", () => {
     const cam = _camera("CAM_ONE");
     expect(cam._ldta.poi_auto_orient).toBe(false);
-    const poi = cam.transform.__getitem__("ADBE Anchor Point");
+    const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
     expect(poi.can_set_expression).toBe(false);
   });

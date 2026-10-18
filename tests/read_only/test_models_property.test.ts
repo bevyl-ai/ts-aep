@@ -629,7 +629,7 @@ describe("TestEffectProperties", () => {
             continue;
           }
           for (const match_name of ["S_BlurDirectional-0063", "S_BlurDirectional-0068"]) {
-            const prop = as_instance(effect.__getitem__(match_name), Property);
+            const prop = as_instance(effect.property(match_name), Property);
             expect(py_eq(prop.value, getitem(json_values, match_name))).toBe(true);
             expect(prop.is_modified).toBe(false);
             checked += 1;
@@ -657,7 +657,7 @@ describe("TestEffectProperties", () => {
     expect(layer.effects).not.toBeNull();
     if (layer.effects === null) throw new AssertionError_("layer.effects is None");
     const prop = as_instance(
-      as_instance(layer.effects.__getitem__("ADBE Path Text"), PropertyGroup).__getitem__("ADBE Path Text-0020"),
+      as_instance(layer.effects.property("ADBE Path Text"), PropertyGroup).property("ADBE Path Text-0020"),
       Property,
     );
     expect(py_eq(prop.value, [80.0, 50.0])).toBe(true);
@@ -717,7 +717,7 @@ describe("TestEffectProperties", () => {
           if (effect.match_name !== "S_BlurDirectional") {
             continue;
           }
-          const prop = as_instance(effect, PropertyGroup).__getitem__(match_name);
+          const prop = as_instance(effect, PropertyGroup).property(match_name);
           expect(prop instanceof Property).toBe(true);
           if (!(prop instanceof Property)) throw new AssertionError_("prop is not a Property");
           expect(prop.value).toBe(expected);
@@ -2038,10 +2038,10 @@ class TestTextAnimatorPool {
     const layer = comp.layers.find((lyr) => lyr.name === "Animate Me");
     if (layer === undefined) throw new StopIteration();
     const animator = as_instance(
-      layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators").properties[0],
+      layer.property("ADBE Text Properties").property("ADBE Text Animators").properties[0],
       PropertyGroup,
     );
-    const props = animator.__getitem__("ADBE Text Animator Properties");
+    const props = animator.property("ADBE Text Animator Properties");
     expect(props instanceof PropertyGroup).toBe(true);
     return props;
   }
@@ -2552,7 +2552,7 @@ class TestEffectPointSpeed {
 
   static _ramp_start(project: Project): Property {
     const comp = get_comp(project, "EffectPoint");
-    const effect = as_instance(as_instance(comp.layers[0].effects, PropertyGroup).__getitem__(0), PropertyGroup);
+    const effect = as_instance(as_instance(comp.layers[0].effects, PropertyGroup).property(0), PropertyGroup);
     const prop = effect.property(TestEffectPointSpeed.MATCH_NAME);
     py_assert(prop instanceof Property);
     return prop;

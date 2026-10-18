@@ -31,13 +31,13 @@ function _camera(project: Project): CameraLayer {
 }
 
 function _position(camera: CameraLayer): Property<number[]> {
-  const prop = camera.transform.__getitem__("ADBE Position");
+  const prop = camera.transform.property("ADBE Position");
   expect(prop instanceof Property).toBe(true);
   return prop;
 }
 
 function _zoom(camera: CameraLayer): Property<number> {
-  const prop = camera.__getitem__("ADBE Camera Options Group").__getitem__("ADBE Camera Zoom");
+  const prop = camera.property("ADBE Camera Options Group").property("ADBE Camera Zoom");
   expect(prop instanceof Property).toBe(true);
   return prop;
 }
@@ -59,7 +59,7 @@ describe("TestZoomChange", () => {
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
     expect(approx(position.default_value, [720.0, 405.0, -3000.0])).toBe(true);
     expect(position.is_modified).toBe(true);
-    const z_follower = camera.transform.__getitem__("ADBE Position_2");
+    const z_follower = camera.transform.property("ADBE Position_2");
     expect(z_follower instanceof Property).toBe(true);
     expect(approx(z_follower.default_value, -3000.0)).toBe(true);
   });

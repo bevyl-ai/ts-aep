@@ -84,9 +84,9 @@ describe("TestSvgImportBasics", () => {
     const [_app, comp] = _import("svg");
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     const group = as_instance(contents.properties[0], PropertyGroup);
-    const inner = group.__getitem__("ADBE Vectors Group");
-    const path = inner.__getitem__("ADBE Vector Shape - Group").__getitem__("ADBE Vector Shape").value;
-    const pos_prop = group.__getitem__("ADBE Vector Transform Group").properties.find(
+    const inner = group.property("ADBE Vectors Group");
+    const path = inner.property("ADBE Vector Shape - Group").property("ADBE Vector Shape").value;
+    const pos_prop = group.property("ADBE Vector Transform Group").properties.find(
       (p) => p.match_name === "ADBE Vector Position",
     );
     if (pos_prop == null) throw new StopIteration();
@@ -116,14 +116,14 @@ describe("TestSvgImportGradients", () => {
     let gfills = 0;
     for (const group of contents.properties) {
       if (group.match_name !== "ADBE Vector Group") continue;
-      const inner = as_instance(group, PropertyGroup).__getitem__("ADBE Vectors Group");
+      const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
         if (child.match_name === "ADBE Vector Graphic - G-Fill") {
           gfills += 1;
           const gfill = as_instance(child, PropertyGroup);
-          const grad = gfill.__getitem__("ADBE Vector Grad Colors").value;
+          const grad = gfill.property("ADBE Vector Grad Colors").value;
           expect(grad.color_stops.length).toBeGreaterThanOrEqual(2);
-          expect([1.0, 2.0].includes(as_instance(gfill.__getitem__("ADBE Vector Grad Type"), Property).value)).toBe(true);
+          expect([1.0, 2.0].includes(as_instance(gfill.property("ADBE Vector Grad Type"), Property).value)).toBe(true);
         }
       }
     }
@@ -158,14 +158,14 @@ describe("TestSvgImportGradients", () => {
     const scales_y: number[] = [];
     for (const group of contents.properties) {
       if (group.match_name !== "ADBE Vector Group") continue;
-      const inner = as_instance(group, PropertyGroup).__getitem__("ADBE Vectors Group");
+      const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
         if (child.match_name !== "ADBE Vector Graphic - G-Fill") continue;
         const gfill = as_instance(child, PropertyGroup);
-        if (as_instance(gfill.__getitem__("ADBE Vector Grad Type"), Property).value !== 2.0) continue; // radial only
+        if (as_instance(gfill.property("ADBE Vector Grad Type"), Property).value !== 2.0) continue; // radial only
         // Every radial gradient carries AE's 360-degree baseline.
-        expect(approx(as_instance(gfill.__getitem__("ADBE Vector Grad Rotation"), Property).value, 360.0)).toBe(true);
-        scales_y.push(as_instance(gfill.__getitem__("ADBE Vector Grad Scale"), Property).value[1]);
+        expect(approx(as_instance(gfill.property("ADBE Vector Grad Rotation"), Property).value, 360.0)).toBe(true);
+        scales_y.push(as_instance(gfill.property("ADBE Vector Grad Scale"), Property).value[1]);
       }
     }
     // Five radial gradients: four stretched wings (200/200/300/400) plus
@@ -199,12 +199,12 @@ describe("TestSvgImportAeConventions", () => {
     const group = unpack_one(
       _import_text(tmp_path, '<path d="M10,50 C10,10 90,10 90,50 Z" fill="#f00"/>'),
     );
-    const pos = group.__getitem__("ADBE Vector Transform Group").__getitem__("ADBE Vector Position").value;
+    const pos = group.property("ADBE Vector Transform Group").property("ADBE Vector Position").value;
     expect(approx(pos, [50.0, 30.0])).toBe(true);
     const shape = group
-      .__getitem__("ADBE Vectors Group")
-      .__getitem__("ADBE Vector Shape - Group")
-      .__getitem__("ADBE Vector Shape").value;
+      .property("ADBE Vectors Group")
+      .property("ADBE Vector Shape - Group")
+      .property("ADBE Vector Shape").value;
     expect(py_eq(shape.vertices, [[-40.0, 20.0], [40.0, 20.0]])).toBe(true);
   });
 
@@ -215,7 +215,7 @@ describe("TestSvgImportAeConventions", () => {
     const group = unpack_one(
       _import_text(tmp_path, '<line x1="20" y1="30" x2="150" y2="170" stroke="#000"/>'),
     );
-    const kinds = group.__getitem__("ADBE Vectors Group").properties.map((c) => c.match_name);
+    const kinds = group.property("ADBE Vectors Group").properties.map((c) => c.match_name);
     expect(py_eq(kinds, ["ADBE Vector Shape - Group", "ADBE Vector Graphic - Stroke"])).toBe(true);
   });
 
@@ -234,8 +234,8 @@ describe("TestSvgImportAeConventions", () => {
           '</linearGradient><rect x="20" y="20" width="160" height="100" fill="url(#L)"/>',
       ),
     );
-    const fill = group.__getitem__("ADBE Vectors Group").__getitem__("ADBE Vector Graphic - G-Fill");
-    const grad = fill.__getitem__("ADBE Vector Grad Colors").value;
+    const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
+    const grad = fill.property("ADBE Vector Grad Colors").value;
     expect(py_eq(grad.color_stops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
     expect(
       py_eq(
@@ -262,11 +262,11 @@ describe("TestSvgImportAeConventions", () => {
           'stroke-opacity="0.25" opacity="0.5"/>',
       ),
     );
-    const inner = group.__getitem__("ADBE Vectors Group");
-    const fill = inner.__getitem__("ADBE Vector Graphic - Fill");
-    const stroke = inner.__getitem__("ADBE Vector Graphic - Stroke");
-    expect(approx(fill.__getitem__("ADBE Vector Fill Opacity").value, (64 / 255) * 100, { abs: 1e-5 })).toBe(true);
-    expect(approx(stroke.__getitem__("ADBE Vector Stroke Opacity").value, (32 / 255) * 100, { abs: 1e-5 })).toBe(true);
+    const inner = group.property("ADBE Vectors Group");
+    const fill = inner.property("ADBE Vector Graphic - Fill");
+    const stroke = inner.property("ADBE Vector Graphic - Stroke");
+    expect(approx(fill.property("ADBE Vector Fill Opacity").value, (64 / 255) * 100, { abs: 1e-5 })).toBe(true);
+    expect(approx(stroke.property("ADBE Vector Stroke Opacity").value, (32 / 255) * 100, { abs: 1e-5 })).toBe(true);
   });
 
   test("test_hard_alpha_edge_keeps_both_stops", () => {
@@ -285,8 +285,8 @@ describe("TestSvgImportAeConventions", () => {
           '</linearGradient><rect x="20" y="20" width="160" height="100" fill="url(#L)"/>',
       ),
     );
-    const fill = group.__getitem__("ADBE Vectors Group").__getitem__("ADBE Vector Graphic - G-Fill");
-    const grad = fill.__getitem__("ADBE Vector Grad Colors").value;
+    const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
+    const grad = fill.property("ADBE Vector Grad Colors").value;
     expect(
       py_eq(
         grad.alpha_stops.map((s) => [s.offset, round(s.alpha, 4)]),
@@ -336,16 +336,16 @@ describe("TestSvgImportByteFidelity", () => {
     const stroke_ops: number[] = [];
     for (const group of contents.properties) {
       if (group.match_name !== "ADBE Vector Group") continue;
-      const inner = as_instance(group, PropertyGroup).__getitem__("ADBE Vectors Group");
+      const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
         if (child.match_name === "ADBE Vector Graphic - G-Fill") {
           const gfill = as_instance(child, PropertyGroup);
-          fill_ops.push(gfill.__getitem__("ADBE Vector Fill Opacity").value);
+          fill_ops.push(gfill.property("ADBE Vector Fill Opacity").value);
           // opacity lives in the leaf, not the gradient alpha stops
-          const grad = gfill.__getitem__("ADBE Vector Grad Colors").value;
+          const grad = gfill.property("ADBE Vector Grad Colors").value;
           expect(grad.alpha_stops.every((s) => s.alpha === 1.0)).toBe(true);
         } else if (child.match_name === "ADBE Vector Graphic - G-Stroke") {
-          stroke_ops.push(as_instance(child, PropertyGroup).__getitem__("ADBE Vector Stroke Opacity").value);
+          stroke_ops.push(as_instance(child, PropertyGroup).property("ADBE Vector Stroke Opacity").value);
         }
       }
     }
@@ -365,7 +365,7 @@ describe("TestSvgImportByteFidelity", () => {
     const app = parse(BASE);
     const comp = app.project.root_folder.add_comp("T", 1070, 456, 1.0, 1.0, 30.0);
     const layer = comp.add_shape();
-    const anchor = layer.transform.__getitem__("ADBE Anchor Point");
+    const anchor = layer.transform.property("ADBE Anchor Point");
     anchor.value = [535.0, 228.0, 0.0];
     const cdat = find_by_type(anchor._tdbs.chunks, "cdat");
     expect(py_eq(Array.from(cdat.values).slice(0, 3), [535.0, 228.0, 0.0])).toBe(true);
@@ -377,9 +377,9 @@ describe("TestSvgImportByteFidelity", () => {
     const app = parse(BASE);
     const comp = app.project.root_folder.add_comp("T", 100, 100, 1.0, 1.0, 30.0);
     const layer = comp.add_shape();
-    const contents = layer.__getitem__("ADBE Root Vectors Group");
+    const contents = layer.property("ADBE Root Vectors Group");
     const group = contents.add_property("ADBE Vector Group");
-    const materials = group.__getitem__("ADBE Vector Materials Group");
+    const materials = group.property("ADBE Vector Materials Group");
     py_assert(materials._tdgp != null);
     const tdsb = find_by_type_or_null(materials._tdgp.chunks, "tdsb");
     if (tdsb == null) throw new StopIteration();
@@ -399,13 +399,13 @@ describe("TestSvgImportByteFidelity", () => {
     let single = 0;
     for (const group of contents.properties) {
       if (group.match_name !== "ADBE Vector Group") continue;
-      const inner = as_instance(group, PropertyGroup).__getitem__("ADBE Vectors Group");
+      const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       const nshapes = inner.properties.filter((c) => c.match_name === "ADBE Vector Shape - Group").length;
       const merges = inner.properties.filter((c) => c.match_name === "ADBE Vector Filter - Merge");
       if (nshapes > 1) {
         multi += 1;
         py_assert(merges.length === 1, `${group.name}: nshapes=${nshapes}`);
-        expect(as_instance(as_instance(merges[0], PropertyGroup).__getitem__("ADBE Vector Merge Type"), Property).value).toBe(1.0);
+        expect(as_instance(as_instance(merges[0], PropertyGroup).property("ADBE Vector Merge Type"), Property).value).toBe(1.0);
       } else {
         single += 1;
         py_assert(!py_bool(merges), `${group.name} (single subpath) has a Merge`);
@@ -433,7 +433,7 @@ describe("TestSvgImportByteFidelity", () => {
     const item = [...reparsed.project.items.values()].find((item) => py_bool(getattr(item, "layers", null)));
     if (item == null) throw new StopIteration();
     const layer = as_instance(item, CompItem).layers[0];
-    const styles = layer.__getitem__("ADBE Layer Styles");
+    const styles = layer.property("ADBE Layer Styles");
     expect(styles instanceof PropertyGroup).toBe(true);
     expect(styles.enabled).toBe(false);
     py_assert(styles._tdsb != null && styles._tdsb.synthetic === false);
@@ -454,9 +454,9 @@ describe("TestSvgImportByteFidelity", () => {
     const app = parse(BASE);
     const comp = app.project.root_folder.add_comp("T", 100, 100, 1.0, 1.0, 30.0);
     const layer = comp.add_shape();
-    const contents = layer.__getitem__("ADBE Root Vectors Group");
+    const contents = layer.property("ADBE Root Vectors Group");
     const stroke = contents.add_property("ADBE Vector Graphic - Stroke");
-    const cap = stroke.__getitem__("ADBE Vector Stroke Line Cap");
+    const cap = stroke.property("ADBE Vector Stroke Line Cap");
     cap.value = 2.0; // round - non-default, forces materialization
     expect(cap.can_vary_over_time).toBe(false);
     const kinds = cap._tdbs.chunks.map((c) => c.chunk_type);
@@ -477,12 +477,12 @@ describe("TestSvgImportByteFidelity", () => {
     const strokes: number[] = [];
     for (const group of contents.properties) {
       if (group.match_name !== "ADBE Vector Group") continue;
-      const inner = as_instance(group, PropertyGroup).__getitem__("ADBE Vectors Group");
+      const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
         if (child.match_name === "ADBE Vector Graphic - Fill") {
-          fills.push(as_instance(child, PropertyGroup).__getitem__("ADBE Vector Fill Opacity").value);
+          fills.push(as_instance(child, PropertyGroup).property("ADBE Vector Fill Opacity").value);
         } else if (child.match_name === "ADBE Vector Graphic - Stroke") {
-          strokes.push(as_instance(child, PropertyGroup).__getitem__("ADBE Vector Stroke Opacity").value);
+          strokes.push(as_instance(child, PropertyGroup).property("ADBE Vector Stroke Opacity").value);
         }
       }
     }

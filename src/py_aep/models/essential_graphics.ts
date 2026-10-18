@@ -53,7 +53,7 @@ export class SourcePropertyRef {
     return o.length === 2 && o[0] === this.match_name && o[1] === this.prop_index;
   }
 
-  __len__(): number {
+  get length(): number {
     return 2;
   }
 

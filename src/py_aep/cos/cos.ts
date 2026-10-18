@@ -341,12 +341,8 @@ export class CosName {
     this.value = value;
   }
 
-  __str__(): string {
-    return this.value;
-  }
-
   toString(): string {
-    return this.__str__();
+    return this.value;
   }
 
   __repr__(): string {

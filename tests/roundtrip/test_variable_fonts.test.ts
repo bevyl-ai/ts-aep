@@ -25,9 +25,9 @@ const needs_bahnschrift = _BAHNSCHRIFT == null;
 function _fresh_vf(): [Application, PropertyGroup] {
   const app = parse_aep(String(SAMPLES.div("variable_font_static.aep")));
   const layer = get_comp(app.project, "vf").layers[0];
-  const animators = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators");
+  const animators = layer.property("ADBE Text Properties").property("ADBE Text Animators");
   const animator = animators.add_property("ADBE Text Animator");
-  return [app, animator.__getitem__("ADBE Text Animator Properties")];
+  return [app, animator.property("ADBE Text Animator Properties")];
 }
 
 describe("TestAddVariableFontAxis", () => {
@@ -47,11 +47,11 @@ describe("TestAddVariableFontAxis", () => {
     app.project.save(out);
     const app2 = parse_aep(String(out));
     const props2 = as_instance(
-      get_comp(app2.project, "vf").layers[0].__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators")
+      get_comp(app2.project, "vf").layers[0].property("ADBE Text Properties").property("ADBE Text Animators")
         .properties[0],
       PropertyGroup,
-    ).__getitem__("ADBE Text Animator Properties");
-    const axis2 = as_instance(props2.__getitem__("ADBE Text VF Axis 1"), Property);
+    ).property("ADBE Text Animator Properties");
+    const axis2 = as_instance(props2.property("ADBE Text VF Axis 1"), Property);
     expect(axis2.axis_tag).toBe("wght");
     expect(axis2.name).toBe("Font Axis Weight");
     expect(axis2.value).toBe(700.0);
@@ -71,14 +71,14 @@ describe("TestAddVariableFontAxis", () => {
     app.project.save(out);
     const app2 = parse_aep(String(out));
     const props2 = as_instance(
-      get_comp(app2.project, "vf").layers[0].__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators")
+      get_comp(app2.project, "vf").layers[0].property("ADBE Text Properties").property("ADBE Text Animators")
         .properties[0],
       PropertyGroup,
-    ).__getitem__("ADBE Text Animator Properties");
-    const wght2 = as_instance(props2.__getitem__("ADBE Text VF Axis 1"), Property);
+    ).property("ADBE Text Animator Properties");
+    const wght2 = as_instance(props2.property("ADBE Text VF Axis 1"), Property);
     expect(py_eq(wght2.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
     expect(wght2.axis_tag).toBe("wght");
-    const wdth2 = as_instance(props2.__getitem__("ADBE Text VF Axis 2"), Property);
+    const wdth2 = as_instance(props2.property("ADBE Text VF Axis 2"), Property);
     expect(wdth2.value).toBe(80.0);
     expect(wdth2.axis_tag).toBe("wdth");
   });
@@ -97,11 +97,11 @@ describe("TestAddVariableFontAxis", () => {
     app.project.save(out);
     const app2 = parse_aep(String(out));
     const props2 = as_instance(
-      get_comp(app2.project, "vf").layers[0].__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators")
+      get_comp(app2.project, "vf").layers[0].property("ADBE Text Properties").property("ADBE Text Animators")
         .properties[0],
       PropertyGroup,
-    ).__getitem__("ADBE Text Animator Properties");
-    const wght2 = as_instance(props2.__getitem__("ADBE Text VF Axis 1"), Property);
+    ).property("ADBE Text Animator Properties");
+    const wght2 = as_instance(props2.property("ADBE Text VF Axis 1"), Property);
     expect(py_eq(wght2.keyframes, [])).toBe(true);
     expect(wght2.axis_tag).toBe("wght");
     expect(wght2.value).toBe(300.0);
@@ -145,11 +145,11 @@ describe("TestAddVariableFontAxis", () => {
     app.project.save(out);
     const app2 = parse_aep(String(out));
     const props2 = as_instance(
-      get_comp(app2.project, "vf").layers[0].__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators")
+      get_comp(app2.project, "vf").layers[0].property("ADBE Text Properties").property("ADBE Text Animators")
         .properties[0],
       PropertyGroup,
-    ).__getitem__("ADBE Text Animator Properties");
-    const axis2 = as_instance(props2.__getitem__("ADBE Text VF Axis 1"), Property);
+    ).property("ADBE Text Animator Properties");
+    const axis2 = as_instance(props2.property("ADBE Text VF Axis 1"), Property);
     expect(axis2.value).toBe(90.0);
     expect(axis2.axis_tag).toBe("wdth");
   });

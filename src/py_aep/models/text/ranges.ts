@@ -1114,12 +1114,8 @@ export class _TextRange {
     return true;
   }
 
-  __str__(): string {
-    return `${this.constructor.name}(${this._start},${this._signed_end})`;
-  }
-
   toString(): string {
-    return this.__str__();
+    return `${this.constructor.name}(${this._start},${this._signed_end})`;
   }
 
   __repr__(): string {

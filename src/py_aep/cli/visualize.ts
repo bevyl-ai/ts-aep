@@ -183,17 +183,17 @@ export function build_layer_node(layer: Layer, project: Project, include_propert
   if (!layer.enabled) attrs.set("enabled", false);
   if (layer.null_layer) attrs.set("null", true);
   const parent = layer.parent;
-  if (parent != null && py_bool(parent)) attrs.set("parent", parent.name);
+  if (parent != null && parent.length > 0) attrs.set("parent", parent.name);
   if (layer.markers?.length > 0) attrs.set("markers", layer.markers.length);
 
   const children: Node[] = [];
   if (include_properties) {
     // Transform properties
-    if (py_bool(layer.transform)) children.push(build_property_group_node(layer.transform));
+    if (layer.transform.length > 0) children.push(build_property_group_node(layer.transform));
 
     // Effects
     const effects = layer.effects;
-    if (effects != null && py_bool(effects)) children.push(build_property_group_node(effects));
+    if (effects != null && effects.length > 0) children.push(build_property_group_node(effects));
 
     // Text properties
     if (layer.text instanceof PropertyGroup) children.push(build_property_group_node(layer.text));

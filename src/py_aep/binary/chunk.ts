@@ -389,7 +389,7 @@ export class ListChunk extends Chunk {
     return this.chunks[Symbol.iterator]();
   }
 
-  __len__(): number {
+  get length(): number {
     return this.chunks.length;
   }
 
@@ -583,7 +583,7 @@ export class ContainerChunk extends Chunk {
     return this.chunks[Symbol.iterator]();
   }
 
-  __len__(): number {
+  get length(): number {
     return this.chunks.length;
   }
 

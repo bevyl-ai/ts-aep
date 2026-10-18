@@ -238,7 +238,7 @@ describe("builtins", () => {
   test("list_mul and dict", () => {
     expect(list_mul([0, 1], 2)).toEqual([0, 1, 0, 1]);
     expect(list_mul([0], -1)).toEqual([]);
-    const view = { keys: () => ["a", "b"], __getitem__: (k: string) => k.toUpperCase() };
+    const view = { keys: () => ["a", "b"], get: (k: string) => k.toUpperCase() };
     expect(py_eq(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
     expect(py_eq(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);
   });

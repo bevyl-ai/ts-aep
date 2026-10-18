@@ -358,10 +358,6 @@ export class PurePath {
     return this._tail.join(f.sep) || ".";
   }
 
-  __str__(): string {
-    return this.toString();
-  }
-
   __eq__(other: unknown): boolean {
     if (!(other instanceof PurePath) || other._flavour !== this._flavour) return false;
     const a = String(this);

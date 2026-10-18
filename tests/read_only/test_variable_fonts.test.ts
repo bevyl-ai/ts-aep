@@ -23,8 +23,8 @@ function _vf_layer(name: string): Layer {
 }
 
 function _animator_props(layer: Layer): PropertyGroup {
-  const animators = layer.__getitem__("ADBE Text Properties").__getitem__("ADBE Text Animators");
-  return as_instance(animators.properties[0], PropertyGroup).__getitem__("ADBE Text Animator Properties");
+  const animators = layer.property("ADBE Text Properties").property("ADBE Text Animators");
+  return as_instance(animators.properties[0], PropertyGroup).property("ADBE Text Animator Properties");
 }
 
 /** The font of a text layer's Source Text. */
@@ -64,7 +64,7 @@ describe("TestFontObjectVariable", () => {
 describe("TestVariableFontAxisProperty", () => {
   test("test_static_axis", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_static.aep"));
-    const axis = as_instance(props.__getitem__("ADBE Text VF Axis 1"), Property);
+    const axis = as_instance(props.property("ADBE Text VF Axis 1"), Property);
     expect(axis.value).toBe(700.0);
     expect(axis.axis_tag).toBe("wght");
     expect(axis.name).toBe("Font Axis Weight");
@@ -74,10 +74,10 @@ describe("TestVariableFontAxisProperty", () => {
 
   test("test_animated_axis_scalar_keyframes", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_animated.aep"));
-    const wght = as_instance(props.__getitem__("ADBE Text VF Axis 1"), Property);
+    const wght = as_instance(props.property("ADBE Text VF Axis 1"), Property);
     expect(py_eq(wght.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
     expect(wght.axis_tag).toBe("wght");
-    const wdth = as_instance(props.__getitem__("ADBE Text VF Axis 2"), Property);
+    const wdth = as_instance(props.property("ADBE Text VF Axis 2"), Property);
     expect(wdth.value).toBe(80.0);
     expect(wdth.axis_tag).toBe("wdth");
     expect(wdth.name).toBe("Font Axis Width");
@@ -85,7 +85,7 @@ describe("TestVariableFontAxisProperty", () => {
 
   test("test_unused_slot", () => {
     const props = _animator_props(_vf_layer("variable_font_axis_animated.aep"));
-    const slot = as_instance(props.__getitem__("ADBE Text VF Axis 3"), Property);
+    const slot = as_instance(props.property("ADBE Text VF Axis 3"), Property);
     expect(slot.axis_tag).toBe(null);
     expect(slot.name).toBe("");
   });
@@ -102,9 +102,9 @@ describe("TestVariableFontSpacing", () => {
     const layer = _vf_layer("variable_font_spacing.aep");
     const prop = as_instance(
       layer
-        .__getitem__("ADBE Text Properties")
-        .__getitem__("ADBE Text More Options")
-        .__getitem__("ADBE Text Variable Font Spacing"),
+        .property("ADBE Text Properties")
+        .property("ADBE Text More Options")
+        .property("ADBE Text Variable Font Spacing"),
       Property,
     );
     expect(prop.name).toBe("Variable Font Spacing");
@@ -115,9 +115,9 @@ describe("TestVariableFontSpacing", () => {
     const layer = _vf_layer("variable_font_axis_static.aep");
     const prop = as_instance(
       layer
-        .__getitem__("ADBE Text Properties")
-        .__getitem__("ADBE Text More Options")
-        .__getitem__("ADBE Text Variable Font Spacing"),
+        .property("ADBE Text Properties")
+        .property("ADBE Text More Options")
+        .property("ADBE Text Variable Font Spacing"),
       Property,
     );
     expect(VariableFontSpacing.of(prop.value)).toBe(VariableFontSpacing.ADAPTIVE);

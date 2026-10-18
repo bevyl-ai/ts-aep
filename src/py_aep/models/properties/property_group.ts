@@ -686,7 +686,7 @@ export class PropertyGroup extends PropertyBase {
     return [...this.properties][Symbol.iterator]();
   }
 
-  __len__(): number {
+  get length(): number {
     /** Return the number of child properties in this group. */
     return this.properties.length;
   }
@@ -768,22 +768,22 @@ export class PropertyGroup extends PropertyBase {
     object_setattr(this, name, value);
   }
 
-  __getitem__<K extends keyof MatchNameTypes>(key: K): MatchNameTypes[K];
-  __getitem__(key: number | string): Property | PropertyGroup;
-  __getitem__(key: number | string): Property | PropertyGroup {
+  property<K extends keyof MatchNameTypes>(key: K): MatchNameTypes[K];
+  property(key: number | string): Property | PropertyGroup;
+  property(key: number | string): Property | PropertyGroup {
     /**
      * Look up a child property by index or name.
      *
-     * This is the canonical access method. Both `property()` and
-     * `__getattr__` (snake_case attribute access) delegate here.
+     * This is the canonical access method; `__getattr__` (snake_case
+     * attribute access) delegates here.
      *
      * @example
      * ```ts
      * import { parse } from "@bevyl-ai/ts-aep";
      * const layer = parse("project.aep").project.compositions[0].layers[0];
-     * layer.__getitem__("ADBE Transform Group").__getitem__("ADBE Position");
-     * layer.__getitem__("ADBE Mask Parade").__getitem__(0);
-     * layer.__getitem__(0);
+     * layer.property("ADBE Transform Group").property("ADBE Position");
+     * layer.property("ADBE Mask Parade").property(0);
+     * layer.property(0);
      * ```
      * @param key - A `number` index or a `string` display name / match name.
      * @throws {@link KeyError} If the string key does not match any child.
@@ -1354,19 +1354,6 @@ export class PropertyGroup extends PropertyBase {
       { has_advanced: match_name === "ADBE Text Selector" },
     );
     return this._attach_group(tdmn, tdgp, match_name);
-  }
-
-  property<K extends keyof MatchNameTypes>(key: K): MatchNameTypes[K];
-  property(key: number | string): Property | PropertyGroup;
-  property(key: number | string): Property | PropertyGroup {
-    /**
-     * Look up a child property by index or name.
-     *
-     * @param key - A `number` index or a `string` display name / match name.
-     */
-    // NOTE This property needs to be defined last to avoid ghosting the
-    // @property decorator
-    return this.__getitem__(key);
   }
 }
 

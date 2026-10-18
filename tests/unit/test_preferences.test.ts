@@ -751,7 +751,7 @@ describe("TestTextStyleSheet", () => {
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.add_text("probe").text;
     if (text == null) throw new Error("text layer has no text group");
-    const td = text.__getitem__("ADBE Text Document").value;
+    const td = text.property("ADBE Text Document").value;
     expect(td.font).toBe("ArialMT");
     expect(approx(td.font_size, 48.0)).toBe(true);
     expect(approx(td.fill_color, [0.25, 0.5, 0.75])).toBe(true);
@@ -801,7 +801,7 @@ describe("TestTextStyleSheet", () => {
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.add_text("probe").text;
     if (text == null) throw new Error("text layer has no text group");
-    const td = text.__getitem__("ADBE Text Document").value;
+    const td = text.property("ADBE Text Document").value;
     expect(td.font).toBe("MyriadPro-Regular");
     expect(approx(td.font_size, 36.0)).toBe(true);
     expect(approx(td.fill_color, [0.921569, 0.921569, 0.921569], { abs: 1e-5 })).toBe(true);
@@ -815,7 +815,7 @@ describe("TestTextStyleSheet", () => {
     const comp = app.project.root_folder.add_comp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.add_box_text([80.0, 40.0], "boxed").text;
     if (text == null) throw new Error("text layer has no text group");
-    const td = text.__getitem__("ADBE Text Document").value;
+    const td = text.property("ADBE Text Document").value;
     expect(td.font).toBe("ArialMT");
     expect(approx(td.font_size, 48.0)).toBe(true);
   });

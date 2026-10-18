@@ -814,7 +814,7 @@ describe("TestRoundtripXmlFormatOptions", () => {
     // `XmlFormatOptions` has no `settings` attribute, so the Python attribute load raises
     // AttributeError before the item assignment; TS property loads yield undefined, so use getattr.
     raises(AttributeError, () => {
-      getattr(opts, "settings").__setitem__("Format Code", "MooV");
+      getattr(opts, "settings").set("Format Code", "MooV");
     });
   });
 });
@@ -905,8 +905,8 @@ describe("TestPngOptionsFollowTheModule", () => {
       const app = parse(FORMAT_DIR.div("png", sample));
       const om = as_instance(app.project.render_queue, RenderQueue).items[0].output_modules[0];
       om.batch_edit(() => {
-        om.settings.__setitem__("Channels", channels);
-        om.settings.__setitem__("Depth", depth);
+        om.settings.set("Channels", channels);
+        om.settings.set("Depth", depth);
       });
       expect(py_eq(_png_option_fields(om), expected)).toBe(true);
       const out = tmp_path.div("png.aep");
@@ -919,9 +919,9 @@ describe("TestPngOptionsFollowTheModule", () => {
   test("test_single_writes_update_the_png_options", () => {
     const app = parse(FORMAT_DIR.div("png", "base.aep")); // RGB + Alpha, Trillions+
     const om = as_instance(app.project.render_queue, RenderQueue).items[0].output_modules[0];
-    om.settings.__setitem__("Channels", OutputChannels.RGB); // pairs Depth to Trillions
+    om.settings.set("Channels", OutputChannels.RGB); // pairs Depth to Trillions
     expect(py_eq(_png_option_fields(om), [false, 3, 16])).toBe(true);
-    om.settings.__setitem__("Depth", OutputColorDepth.MILLIONS_OF_COLORS);
+    om.settings.set("Depth", OutputColorDepth.MILLIONS_OF_COLORS);
     expect(py_eq(_png_option_fields(om), [false, 3, 8])).toBe(true);
   });
 
@@ -931,7 +931,7 @@ describe("TestPngOptionsFollowTheModule", () => {
     );
     for (const path of sorted(FORMAT_DIR.div("png").glob("*.aep"), (p: Path) => p.toString())) {
       const om = as_instance(parse(path).project.render_queue, RenderQueue).items[0].output_modules[0];
-      const key = tkey(int(om.settings.__getitem__("Channels")), int(om.settings.__getitem__("Depth")));
+      const key = tkey(int(om.settings.get("Channels")), int(om.settings.get("Depth")));
       py_assert(py_eq(_png_option_fields(om), getitem(lockstep, key)), path.name);
     }
   });

@@ -399,7 +399,7 @@ export function resolve_output_filename(
  */
 export function resolve_time_span(
   comp: CompItem,
-  rq_settings: Pick<SettingsView<RenderSettingValues>, "__getitem__">,
+  rq_settings: Pick<SettingsView<RenderSettingValues>, "get">,
   effective_frame_rate: number,
 ): {
   start_frame: number;
@@ -409,7 +409,7 @@ export function resolve_time_span(
   end_time: number;
   duration_time: number;
 } {
-  const time_span_mode = rq_settings.__getitem__("Time Span");
+  const time_span_mode = rq_settings.get("Time Span");
 
   let time_span_start: number;
   let duration_time: number;
@@ -423,9 +423,9 @@ export function resolve_time_span(
     duration_frames = round(comp.duration * effective_frame_rate);
     first_rendered_frame = int(comp.display_start_time * effective_frame_rate);
   } else {
-    time_span_start = rq_settings.__getitem__("Time Span Start");
-    duration_time = rq_settings.__getitem__("Time Span Duration");
-    time_span_end = rq_settings.__getitem__("Time Span End");
+    time_span_start = rq_settings.get("Time Span Start");
+    duration_time = rq_settings.get("Time Span Duration");
+    time_span_end = rq_settings.get("Time Span End");
     duration_frames = round(duration_time * effective_frame_rate);
     first_rendered_frame =
       int(comp.display_start_time * effective_frame_rate) +

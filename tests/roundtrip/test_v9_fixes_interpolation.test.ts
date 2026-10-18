@@ -143,11 +143,11 @@ describe("TestFootageAnchorPointZ", () => {
     // [100 / 400, 50 / 300, 80 / 300].
     const [app, comp] = _comp();
     const layer = _solid(comp, 400, 300, true);
-    const anchor = layer.__getitem__(TG).__getitem__("ADBE Anchor Point");
+    const anchor = layer.property(TG).property("ADBE Anchor Point");
     anchor.value = [100, 50, 80];
     expect(_eq_approx(getattr(anchor._cdat, "values").slice(0, 3), _approx([0.25, 50 / 300, 80 / 300]))).toBe(true);
     expect(_eq_approx(anchor.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Anchor Point");
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Anchor Point");
     expect(_eq_approx(again.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
   });
 });
@@ -159,7 +159,7 @@ describe("TestTemporalAutoBezierParallelKinds", () => {
     // AE 2026: keys report speed 1; the in-between shapes below.
     const [_app, comp] = _comp();
     const layer = _solid(comp, 3000, 200);
-    const path = as_instance(layer.masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(layer.masks, PropertyGroup).add_property("ADBE Mask Atom").property("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -177,7 +177,7 @@ describe("TestTemporalAutoBezierParallelKinds", () => {
   test("test_orientation_auto_bezier", () => {
     const [_app, comp] = _comp();
     const layer = _solid(comp, 400, 300, true);
-    const orient = _keys(layer.__getitem__(TG).__getitem__("ADBE Orientation"), [
+    const orient = _keys(layer.property(TG).property("ADBE Orientation"), [
       [0, [0, 0, 0]],
       [1, [40, 30, 20]],
       [2, [90, 10, 300]],
@@ -248,7 +248,7 @@ describe("TestInHoldSegments", () => {
     const [_app, comp] = _comp();
     const null_ = comp.add_null();
     null_.three_d_layer = true;
-    const orient = _keys(null_.__getitem__(TG).__getitem__("ADBE Orientation"), [
+    const orient = _keys(null_.property(TG).property("ADBE Orientation"), [
       [0, [0, 0, 0]],
       [1, [40, 30, 20]],
       [2, [90, 10, 300]],
@@ -259,7 +259,7 @@ describe("TestInHoldSegments", () => {
 
   test("test_mask_path", () => {
     const [_app, comp] = _comp();
-    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").property("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -316,7 +316,7 @@ describe("TestRangeClamp", () => {
 
   test("test_opacity", () => {
     const [_app, comp] = _comp();
-    const op = _keys(_solid(comp, 640, 360).__getitem__(TG).__getitem__("ADBE Opacity"), [
+    const op = _keys(_solid(comp, 640, 360).property(TG).property("ADBE Opacity"), [
       [0, 10],
       [2, 90],
     ]);
@@ -328,13 +328,13 @@ describe("TestRangeClamp", () => {
   test("test_mask_feather_and_expansion", () => {
     const [_app, comp] = _comp();
     const mask = as_instance(_solid(comp, 3000, 200).masks, PropertyGroup).add_property("ADBE Mask Atom");
-    const feather = _keys(mask.__getitem__("ADBE Mask Feather"), [
+    const feather = _keys(mask.property("ADBE Mask Feather"), [
       [0, [10, 10]],
       [2, [50, 60]],
     ]);
     _ease(feather.keyframes[0], [[0, 30], [0, 30]], [[-300, 60], [200, 60]]);
     expect(_eq_approx(feather.value_at_time(0.25), _approx([0.0, 55.58876065072549]))).toBe(true);
-    const expansion = _keys(mask.__getitem__("ADBE Mask Offset"), [
+    const expansion = _keys(mask.property("ADBE Mask Offset"), [
       [0, 10],
       [2, 20],
     ]);
@@ -348,7 +348,7 @@ describe("TestRejectedWritesDoNotMutate", () => {
 
   test("test_nan_value", () => {
     const [app, comp] = _comp();
-    const rot = _solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z");
+    const rot = _solid(comp).property(TG).property("ADBE Rotate Z");
     rot.value = 45.0;
     const before = project_bytes(app.project);
     raises(ValueError, () => {
@@ -362,7 +362,7 @@ describe("TestRejectedWritesDoNotMutate", () => {
     const tmp_path = make_tmp_path();
     // AE 2026 stores the clamped 100 and re-eases both neighbours.
     const [app, comp] = _comp();
-    const op = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Opacity"), [
+    const op = _keys(_solid(comp).property(TG).property("ADBE Opacity"), [
       [0, 10],
       [2, 90],
     ]);
@@ -374,7 +374,7 @@ describe("TestRejectedWritesDoNotMutate", () => {
     expect(_eq_approx(_speeds(new_.in_temporal_ease), _approx([[179.0396178959919, 31.451892294166527]]))).toBe(true);
     expect(_eq_approx(_speeds(new_.out_temporal_ease), _approx([[179.03961789599282, 61.1377297149683]]))).toBe(true);
     expect(_eq_approx(_speeds(op.keyframes[0].out_temporal_ease), _approx([[300.0, 35.131134850035764]]))).toBe(true);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Opacity");
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Opacity");
     expect(py_eq(again.keyframes.map((k) => k.value), [10.0, 100.0, 90.0])).toBe(true);
   });
 });
@@ -384,7 +384,7 @@ describe("TestEaseAndTangentWrites", () => {
 
   test("test_ease_on_linear_key_turns_it_bezier", () => {
     const [_app, comp] = _comp();
-    const op = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Opacity"), [
+    const op = _keys(_solid(comp).property(TG).property("ADBE Opacity"), [
       [0, 10],
       [2, 90],
     ]);
@@ -398,7 +398,7 @@ describe("TestEaseAndTangentWrites", () => {
 
   test("test_ease_clears_temporal_auto_bezier", () => {
     const [_app, comp] = _comp();
-    const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
+    const rot = _keys(_solid(comp).property(TG).property("ADBE Rotate Z"), [
       [0, 0],
       [1, 100],
       [2, 0],
@@ -413,7 +413,7 @@ describe("TestEaseAndTangentWrites", () => {
 
   test("test_tangent_clears_spatial_auto_bezier", () => {
     const [_app, comp] = _comp();
-    const pos = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(_solid(comp).property(TG).property("ADBE Position"), [
       [0, [100, 100, 0]],
       [1, [300, 200, 0]],
       [2, [600, 100, 0]],
@@ -435,7 +435,7 @@ describe("TestLinearSpatialSpeed", () => {
 
   test("test_curved_segment", () => {
     const [_app, comp] = _comp();
-    const pos = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(_solid(comp).property(TG).property("ADBE Position"), [
       [0, [100, 100, 0]],
       [2, [500, 100, 0]],
     ]);
@@ -447,7 +447,7 @@ describe("TestLinearSpatialSpeed", () => {
 
   test("test_zero_chord_segment", () => {
     const [_app, comp] = _comp();
-    const pos = _keys(comp.add_null().__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(comp.add_null().property(TG).property("ADBE Position"), [
       [0, [100, 100, 0]],
       [1, [100, 100, 0]],
       [2, [300, 100, 0]],
@@ -465,7 +465,7 @@ describe("TestBezierSideFacingHold", () => {
 
   test("test_speeds", () => {
     const [_app, comp] = _comp();
-    const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
+    const rot = _keys(_solid(comp).property(TG).property("ADBE Rotate Z"), [
       [0, 0],
       [1, 100],
       [2, 300],
@@ -488,7 +488,7 @@ const ROVING_KEYS: [number, number[]][] = [
 ];
 
 function _roving_run(comp: CompItem) {
-  const pos = _keys(comp.add_null().__getitem__(TG).__getitem__("ADBE Position"), ROVING_KEYS);
+  const pos = _keys(comp.add_null().property(TG).property("ADBE Position"), ROVING_KEYS);
   pos.keyframes[1].roving = true;
   pos.keyframes[2].roving = true;
   return pos;
@@ -527,7 +527,7 @@ describe("TestRovingRunRetimedByAnchorEase", () => {
     const want = [1.9925759092425759, 2.6412245578912246];
     expect(_eq_approx(pos.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
     const comp_again = _reparse_comp(app, tmp_path);
-    const again = comp_again.layers[0].__getitem__(TG).__getitem__("ADBE Position");
+    const again = comp_again.layers[0].property(TG).property("ADBE Position");
     expect(_eq_approx(again.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
   });
 
@@ -548,7 +548,7 @@ describe("TestTwoDimensionalLayerZ", () => {
 
   test("test_value_at_time", () => {
     const [_app, comp] = _comp();
-    const pos = _keys(comp.add_null().__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(comp.add_null().property(TG).property("ADBE Position"), [
       [0, [100, 100, 40]],
       [2, [500, 300, -30]],
     ]);
@@ -563,7 +563,7 @@ describe("TestTwoDimensionalLayerZ", () => {
     const [app, comp] = _comp();
     const null_ = comp.add_null();
     null_.name = "L";
-    const pos = _keys(null_.__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(null_.property(TG).property("ADBE Position"), [
       [0, [100, 100, 40]],
       [2, [500, 300, -30]],
     ]);
@@ -582,18 +582,18 @@ describe("TestTwoDimensionalLayerZ", () => {
       ),
     ).toBe(true);
     expect(_eq_approx(_stored_z(pos.keyframes[1]), _approx(5.0005441476708805))).toBe(true);
-    const anchor = null_.__getitem__(TG).__getitem__("ADBE Anchor Point");
+    const anchor = null_.property(TG).property("ADBE Anchor Point");
     anchor.value = [30, 20, 15];
     expect(py_eq(anchor.value, [30.0, 20.0, 0.0])).toBe(true);
-    const again = _reparse(app, tmp_path).__getitem__(TG);
-    expect(py_eq(again.__getitem__("ADBE Anchor Point")._stored_static_value(), [30, 20, 15])).toBe(true);
-    const stored = again.__getitem__("ADBE Position").keyframes.map((k) => _stored_z(k));
+    const again = _reparse(app, tmp_path).property(TG);
+    expect(py_eq(again.property("ADBE Anchor Point")._stored_static_value(), [30, 20, 15])).toBe(true);
+    const stored = again.property("ADBE Position").keyframes.map((k) => _stored_z(k));
     expect(_eq_approx(stored, _approx([40.0, 5.0005441476708805, -30.0]))).toBe(true);
   });
 
   test("test_three_d_layer_keeps_z", () => {
     const [_app, comp] = _comp();
-    const pos = _solid(comp, undefined, undefined, true).__getitem__(TG).__getitem__("ADBE Position");
+    const pos = _solid(comp, undefined, undefined, true).property(TG).property("ADBE Position");
     pos.value = [100, 120, 40];
     expect(py_eq(pos.value, [100.0, 120.0, 40.0])).toBe(true);
   });
@@ -655,7 +655,7 @@ describe("TestMaskPathAddKey", () => {
   test("test_in_between_shape", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp(640, 480, 1.5, 25.0);
-    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").property("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [2, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -663,7 +663,7 @@ describe("TestMaskPathAddKey", () => {
     path.add_key(0.7);
     const want = [[7.0, 3.5], [117.5, 0.0], [107.0, 114.0]];
     expect(_eq_approx(_verts(path.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
-    const again = as_instance(getattr(_reparse(app, tmp_path).masks, "properties")[0], PropertyGroup).__getitem__("ADBE Mask Shape");
+    const again = as_instance(getattr(_reparse(app, tmp_path).masks, "properties")[0], PropertyGroup).property("ADBE Mask Shape");
     expect(_eq_approx(_verts(again.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
   });
 });
@@ -684,7 +684,7 @@ describe("TestParallelAddKeyTypes", () => {
 
   const _path = (keys: [number, Shape][]) => {
     const [_app, comp] = _comp();
-    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").property("ADBE Mask Shape");
     return _keys(path, keys);
   };
 
@@ -749,7 +749,7 @@ describe("TestParallelAddKeyTypes", () => {
   test("test_orientation", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp();
-    const orient = _keys(_solid(comp, 400, 300, true).__getitem__(TG).__getitem__("ADBE Orientation"), [
+    const orient = _keys(_solid(comp, 400, 300, true).property(TG).property("ADBE Orientation"), [
       [0, [0, 0, 0]],
       [2, [40, 30, 20]],
     ]);
@@ -760,7 +760,7 @@ describe("TestParallelAddKeyTypes", () => {
     expect(py_eq([new_.in_interpolation_type, new_.temporal_continuous], [BEZ, true])).toBe(true);
     expect(_eq_approx(_speeds(new_.in_temporal_ease), _approx([1.0, 100 / 6]))).toBe(true);
     expect(_eq_approx(_speeds(orient.keyframes[0].out_temporal_ease), _approx([0.0, 70.0]))).toBe(true);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Orientation").keyframes[1];
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Orientation").keyframes[1];
     expect(py_eq([again.out_interpolation_type, again.temporal_continuous], [BEZ, true])).toBe(true);
   });
 });
@@ -793,7 +793,7 @@ describe("TestQueryTimeQuantization", () => {
     const [_app, comp] = _comp();
     const layer = _solid(comp);
     layer.stretch = stretch;
-    const op = _keys(layer.__getitem__(TG).__getitem__("ADBE Opacity"), [
+    const op = _keys(layer.property(TG).property("ADBE Opacity"), [
       [0, 0],
       [4, 100],
     ]);
@@ -809,7 +809,7 @@ describe("TestRemoveKeyNextToRovingRun", () => {
 
   test("test_times", () => {
     const [_app, comp] = _comp(640, 480, 1.0, 25.0);
-    const pos = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(_solid(comp).property(TG).property("ADBE Position"), [
       [0, [100, 100, 0]],
       [1, [300, 150, 0]],
       [2, [350, 400, 0]],
@@ -846,7 +846,7 @@ describe("TestSetValueAtTimeIntoLinearSegment", () => {
   test("test_virgin_ease", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp(1000, 800, 10 / 11, 29.97);
-    const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
+    const rot = _keys(_solid(comp).property(TG).property("ADBE Rotate Z"), [
       [0, 0],
       [2, 100],
     ]);
@@ -856,7 +856,7 @@ describe("TestSetValueAtTimeIntoLinearSegment", () => {
     expect(py_eq(_speeds(kf.in_temporal_ease), [0.0, 0.0])).toBe(true);
     expect(py_eq(_speeds(kf.out_temporal_ease), [0.0, 0.0])).toBe(true);
     expect(_eq_approx(rot.keyframes[0].out_temporal_ease[0].speed, _approx(87.49908763880924, 1e-6))).toBe(true);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Rotate Z");
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Rotate Z");
     expect(py_eq(_speeds(again.keyframes[1].in_temporal_ease), [0.0, 0.0])).toBe(true);
   });
 });
@@ -867,7 +867,7 @@ describe("TestOrientationOvershoot", () => {
 
   test("test_value", () => {
     const [_app, comp] = _comp();
-    const orient = _keys(_solid(comp, 400, 300, true).__getitem__(TG).__getitem__("ADBE Orientation"), [
+    const orient = _keys(_solid(comp, 400, 300, true).property(TG).property("ADBE Orientation"), [
       [0, [0, 0, 0]],
       [2, [40, 30, 20]],
     ]);
@@ -885,9 +885,9 @@ describe("TestDecimalFrameRateKeyTicks", () => {
   test("test_key_at_one_second", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp(400, 300, 1.0, 12.3456);
-    const op = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Opacity"), [[1.0, 50]]);
+    const op = _keys(_solid(comp).property(TG).property("ADBE Opacity"), [[1.0, 50]]);
     expect(op.keyframes[0].time_units).toBe(24692);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Opacity");
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Opacity");
     expect(again.keyframes[0].time_units).toBe(24692);
     expect(_eq_approx(again.keyframes[0].time, _approx(1.0))).toBe(true);
   });
@@ -963,7 +963,7 @@ describe("TestValidation", () => {
 
   test("test_non_numeric_time", () => {
     const [_app, comp] = _comp();
-    const rot = _solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z");
+    const rot = _solid(comp).property(TG).property("ADBE Rotate Z");
     raises(TypeError_, () => {
       // @ts-expect-error a string time checks the runtime type validation
       rot.value_at_time("abc");
@@ -972,7 +972,7 @@ describe("TestValidation", () => {
 
   test("test_huge_coordinate_evaluates", () => {
     const [_app, comp] = _comp();
-    const pos = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Position"), [
+    const pos = _keys(_solid(comp).property(TG).property("ADBE Position"), [
       [0, [0, 0, 0]],
       [1, [1e200, 0, 0]],
     ]);
@@ -997,7 +997,7 @@ describe("TestTemporalContinuityFlags", () => {
 
   const _rot = () => {
     const [_app, comp] = _comp();
-    const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
+    const rot = _keys(_solid(comp).property(TG).property("ADBE Rotate Z"), [
       [0, 0],
       [1, 100],
       [2, 0],
@@ -1051,7 +1051,7 @@ describe("TestTemporalContinuityFlags", () => {
   test("test_flags_survive_save", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp();
-    const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
+    const rot = _keys(_solid(comp).property(TG).property("ADBE Rotate Z"), [
       [0, 0],
       [1, 100],
       [2, 0],
@@ -1059,7 +1059,7 @@ describe("TestTemporalContinuityFlags", () => {
     const kf = rot.keyframes[1];
     kf.temporal_auto_bezier = true;
     _types(kf, LIN, BEZ);
-    const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Rotate Z").keyframes[1];
+    const again = _reparse(app, tmp_path).property(TG).property("ADBE Rotate Z").keyframes[1];
     expect(py_eq([again.temporal_auto_bezier, again.temporal_continuous], [true, true])).toBe(true);
   });
 });

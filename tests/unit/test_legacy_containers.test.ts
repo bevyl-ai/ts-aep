@@ -256,9 +256,9 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   const project = py_aep.new("15.0x1").project;
   const comp = project.root_folder.add_comp("comp", 100, 100, 1.0, 1.0, 24.0);
   const solid = comp.add_solid([1, 0, 0], "solid", 100, 100, 1.0);
-  solid.__getitem__("ADBE Mask Parade").add_property("ADBE Mask Atom").name = "mask";
-  solid.__getitem__("ADBE Effect Parade").add_property("ADBE Slider Control").name = "slider";
-  solid.__getitem__("ADBE Effect Parade").add_property("ADBE Checkbox Control");
+  solid.property("ADBE Mask Parade").add_property("ADBE Mask Atom").name = "mask";
+  solid.property("ADBE Effect Parade").add_property("ADBE Slider Control").name = "slider";
+  solid.property("ADBE Effect Parade").add_property("ADBE Checkbox Control");
   as_instance(project.render_queue, RenderQueue).add(comp).comment = "note";
   project._head.file_format_version = 91;
   const out = tmp_path.div("older.aep");
@@ -272,13 +272,13 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   const [layer] = back.compositions[0].layers;
   expect(
     py_eq(
-      layer.__getitem__("ADBE Mask Parade").properties.map((p) => p.name),
+      layer.property("ADBE Mask Parade").properties.map((p) => p.name),
       ["mask"],
     ),
   ).toBe(true);
   expect(
     py_eq(
-      layer.__getitem__("ADBE Effect Parade").properties.map((p) => p.name),
+      layer.property("ADBE Effect Parade").properties.map((p) => p.name),
       ["slider", "Checkbox Control"],
     ),
   ).toBe(true);
