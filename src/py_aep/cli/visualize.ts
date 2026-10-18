@@ -41,6 +41,7 @@ import type { Project } from "../models/project.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { OutputModule } from "../models/renderqueue/output_module.ts";
 import type { RenderQueueItem } from "../models/renderqueue/render_queue_item.ts";
+import { intOption, parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 /** `TextIO` as used by the formatters: anything with `write(str)`. */
 export type TextIO = { write(s: string): void };
@@ -346,7 +347,7 @@ export function formatText(
     // Filter out None values
     const filtered = new Map<string, AttrValue>([...node.attrs].filter(([, v]) => v != null));
     if (filtered.size > 0) {
-      attrsStr = " " + literal(filtered);
+      attrsStr = ` {${[...filtered].map(([k, v]) => `${k}: ${literal(v)}`).join(", ")}}`;
     }
   }
 
@@ -560,104 +561,33 @@ export type Args = {
   output: string | null;
 };
 
-/** The long options, in argparse's registration order (which orders an ambiguity error's matches). */
-export const LONG_OPTIONS = ["--help", "--format", "--depth", "--no-properties", "--output"];
+const FORMATS = ["text", "dot", "mermaid", "json"];
 
-/**
- * argparse's `parseArgs` for exactly the options this CLI declares: long and
- * short forms, unambiguous long-option prefixes, `--opt=value`, `-fVALUE`, `--`.
- *
- * TODO(port): no argparse shim. HELP/USAGE are argparse's layout for its default 80-column
- * (non-tty) width (argparse wraps to COLUMNS or the terminal width), and an unrecognized option
- * or extra positional errors at once where argparse first reports a missing aep_file.
- */
+const VISUALIZE: Command = {
+  prog: PROG,
+  usage: USAGE,
+  help: HELP,
+  options: {
+    format: { type: "string", short: "f" },
+    depth: { type: "string", short: "d" },
+    "no-properties": { type: "boolean" },
+    output: { type: "string", short: "o" },
+  },
+};
+
 export function parseArgs(argv: string[]): Args {
-  const fail = (msg: string): never => {
-    process.stderr.write(`${USAGE}${PROG}: error: ${msg}\n`);
-    process.exit(2);
+  const { values, positionals } = parseCommandLine(VISUALIZE, argv);
+  if (positionals.length === 0) usageError(VISUALIZE, "the following arguments are required: aep_file");
+  if (positionals.length > 1) usageError(VISUALIZE, `unrecognized arguments: ${positionals.slice(1).join(" ")}`);
+  const format = typeof values.format === "string" ? values.format : "text";
+  if (!FORMATS.includes(format)) usageError(VISUALIZE, `argument --format/-f: invalid choice: '${format}' (choose from ${FORMATS.join(", ")})`);
+  return {
+    aepFile: positionals[0],
+    format,
+    depth: typeof values.depth === "string" ? intOption(VISUALIZE, "depth", values.depth) : null,
+    noProperties: values["no-properties"] === true,
+    output: typeof values.output === "string" ? values.output : null,
   };
-
-  const choices = ["text", "dot", "mermaid", "json"];
-  const args: Args = { aepFile: "", format: "text", depth: null, noProperties: false, output: null };
-  const positionals: string[] = [];
-
-  const apply = (long: string, value: string): void => {
-    if (long === "--format") {
-      if (!choices.includes(value)) {
-        fail(`argument --format/-f: invalid choice: ${literal(value)} (choose from ${choices.join(", ")})`);
-      }
-      args.format = value;
-    } else if (long === "--depth") {
-      if (!/^\s*[+-]?\d+\s*$/.test(value)) fail(`argument --depth/-d: invalid int value: ${literal(value)}`);
-      args.depth = Number(value);
-    } else {
-      args.output = value;
-    }
-  };
-
-  let i = 0;
-  let onlyPositional = false;
-  const takeValue = (label: string, inline: string | null): string => {
-    if (inline != null) return inline;
-    // argparse never takes an option-like string as the value.
-    const next = argv[i];
-    if (next === undefined || (next.startsWith("-") && next !== "-" && !/^-\d+$|^-\d*\.\d+$/.test(next))) {
-      return fail(`argument ${label}: expected one argument`);
-    }
-    i += 1;
-    return next;
-  };
-
-  while (i < argv.length) {
-    const a = argv[i++];
-    if (!onlyPositional && a === "--") {
-      onlyPositional = true;
-    } else if (!onlyPositional && a.startsWith("--")) {
-      const eq = a.indexOf("=");
-      const prefix = eq >= 0 ? a.slice(0, eq) : a;
-      const inline = eq >= 0 ? a.slice(eq + 1) : null;
-      const hits = LONG_OPTIONS.includes(prefix) ? [prefix] : LONG_OPTIONS.filter((o) => o.startsWith(prefix));
-      if (hits.length > 1) fail(`ambiguous option: ${a} could match ${hits.join(", ")}`);
-      const flag = hits.length === 1 ? hits[0] : prefix;
-      if (flag === "--help") {
-        process.stdout.write(HELP);
-        process.exit(0);
-      } else if (flag === "--no-properties") {
-        if (inline != null) fail(`argument --no-properties: ignored explicit argument ${literal(inline)}`);
-        args.noProperties = true;
-      } else if (flag === "--format") {
-        apply("--format", takeValue("--format/-f", inline));
-      } else if (flag === "--depth") {
-        apply("--depth", takeValue("--depth/-d", inline));
-      } else if (flag === "--output") {
-        apply("--output", takeValue("--output/-o", inline));
-      } else {
-        fail(`unrecognized arguments: ${a}`);
-      }
-    } else if (!onlyPositional && a.length > 1 && a.startsWith("-") && !/^-\d/.test(a)) {
-      const flag = a.slice(0, 2);
-      const rest = a.slice(2);
-      if (flag === "-h") {
-        process.stdout.write(HELP);
-        process.exit(0);
-      } else if (flag === "-f") {
-        apply("--format", takeValue("--format/-f", rest.length ? rest : null));
-      } else if (flag === "-d") {
-        apply("--depth", takeValue("--depth/-d", rest.length ? rest : null));
-      } else if (flag === "-o") {
-        apply("--output", takeValue("--output/-o", rest.length ? rest : null));
-      } else {
-        fail(`unrecognized arguments: ${a}`);
-      }
-    } else {
-      positionals.push(a);
-    }
-  }
-
-  if (positionals.length === 0) fail("the following arguments are required: aep_file");
-  if (positionals.length > 1) fail(`unrecognized arguments: ${positionals.slice(1).join(" ")}`);
-  args.aepFile = positionals[0];
-  return args;
 }
 
 /** CLI entry point for aep-visualize command. */
@@ -706,6 +636,4 @@ export function main(): number {
 }
 
 // Python's `if __name__ == "__main__": sys.exit(main())`.
-if (import.meta.main) {
-  process.exitCode = main();
-}
+if (import.meta.main) runMain(main);

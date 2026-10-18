@@ -33,6 +33,7 @@ import {
   truediv,
   PureWindowsPath,
   type BoxedFloat, compare } from "../../pyrt/index.ts";
+import { parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 /** A Python `dict`. Both the JSON side and the to_dict side are Maps (rulebook §3).
  * Keys are field names (strings) — maps keyed by item ids (numbers) are typed
@@ -1862,15 +1863,11 @@ export const _CATEGORY_CHOICES: readonly string[] = [
 ];
 
 export const _USAGE =
-  "usage: validate.py [-h] [-v]\n" +
+  "usage: aep-validate [-h] [-v]\n" +
   `                   [-c {${_CATEGORY_CHOICES.join(",")}}]\n` +
   "                   [--coverage]\n" +
   "                   aep_file json_file";
 
-// TODO(port): no argparse shim. _USAGE/_HELP are argparse's layout for its default 80-column
-// (non-tty) width (argparse wraps to COLUMNS or the terminal width) and for prog "validate.py"
-// (argparse uses basename(sys.argv[0]), e.g. "aep-validate"); combined short flags (`-vc layers`)
-// are rejected as unrecognized; long-option prefixes (`--verb`) are handled.
 export const _HELP = `${_USAGE}
 
 Validate parsed AEP values against expected JSON from ExtendScript export.
@@ -1887,14 +1884,18 @@ options:
   --coverage            Print field coverage report (compared vs not-compared
                         fields)`;
 
-/** `parser.error(message)`: usage and message to stderr, then exit status 2. */
-export function _parserError(message: string): never {
-  console.error(_USAGE);
-  console.error(`validate.py: error: ${message}`);
-  process.exit(2);
-}
+const VALIDATE: Command = {
+  prog: "aep-validate",
+  usage: _USAGE,
+  help: _HELP,
+  options: {
+    verbose: { type: "boolean", short: "v" },
+    category: { type: "string", short: "c" },
+    coverage: { type: "boolean" },
+  },
+};
 
-/** `parser.parse_args(args)` for the flags this tool declares. */
+/** The command line this tool declares. */
 export function _parseArgs(argv: string[]): {
   aepFile: Path;
   jsonFile: Path;
@@ -1902,76 +1903,19 @@ export function _parseArgs(argv: string[]): {
   category: string | null;
   coverage: boolean;
 } {
-  const positionals: string[] = [];
-  let verbose = false;
-  let category: string | null = null;
-  let coverage = false;
-  const longOptions = ["--help", "--verbose", "--category", "--coverage"];
-  for (let i = 0; i < argv.length; i++) {
-    let a = argv[i];
-    if (a.startsWith("--") && a.length > 2) {
-      // argparse accepts any unambiguous prefix of a long option.
-      const eq = a.indexOf("=");
-      const name = eq === -1 ? a : a.slice(0, eq);
-      if (!longOptions.includes(name)) {
-        const hits = longOptions.filter((o) => o.startsWith(name));
-        if (hits.length === 1) a = hits[0] + (eq === -1 ? "" : a.slice(eq));
-        else if (hits.length > 1) {
-          _parserError(`ambiguous option: ${a} could match ${hits.join(", ")}`);
-        }
-      }
-    }
-    if (a === "--") {
-      positionals.push(...argv.slice(i + 1));
-      break;
-    }
-    if (a === "-h" || a === "--help") {
-      console.log(_HELP);
-      process.exit(0);
-    }
-    if (a === "-v" || a === "--verbose") {
-      verbose = true;
-    } else if (a === "--coverage") {
-      coverage = true;
-    } else if (a === "-c" || a === "--category" || a.startsWith("--category=") || (a.startsWith("-c") && !a.startsWith("--") && a.length > 2)) {
-      let value: string;
-      if (a.startsWith("--category=")) {
-        value = a.slice("--category=".length);
-      } else if (a.startsWith("-c") && !a.startsWith("--") && a.length > 2) {
-        value = a.slice(2);
-      } else {
-        // argparse never takes an option-like string as the value.
-        const next = argv[i + 1];
-        if (next === undefined || (next.startsWith("-") && next !== "-" && !/^-\d+$|^-\d*\.\d+$/.test(next))) {
-          _parserError("argument -c/--category: expected one argument");
-        }
-        value = next;
-        i += 1;
-      }
-      if (!_CATEGORY_CHOICES.includes(value)) {
-        _parserError(
-          `argument -c/--category: invalid choice: ${literal(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
-        );
-      }
-      category = value;
-    } else if (a.startsWith("-") && a !== "-") {
-      _parserError(`unrecognized arguments: ${a}`);
-    } else {
-      positionals.push(a);
-    }
-  }
-  if (positionals.length < 2) {
-    _parserError(`the following arguments are required: ${["aepFile", "jsonFile"].slice(positionals.length).join(", ")}`);
-  }
-  if (positionals.length > 2) {
-    _parserError(`unrecognized arguments: ${positionals.slice(2).join(" ")}`);
+  const { values, positionals } = parseCommandLine(VALIDATE, argv);
+  if (positionals.length < 2) usageError(VALIDATE, `the following arguments are required: ${["aep_file", "json_file"].slice(positionals.length).join(", ")}`);
+  if (positionals.length > 2) usageError(VALIDATE, `unrecognized arguments: ${positionals.slice(2).join(" ")}`);
+  const category = typeof values.category === "string" ? values.category : null;
+  if (category != null && !_CATEGORY_CHOICES.includes(category)) {
+    usageError(VALIDATE, `argument -c/--category: invalid choice: '${category}' (choose from ${_CATEGORY_CHOICES.join(", ")})`);
   }
   return {
     aepFile: new Path(positionals[0]),
     jsonFile: new Path(positionals[1]),
-    verbose,
+    verbose: values.verbose === true,
     category,
-    coverage,
+    coverage: values.coverage === true,
   };
 }
 
@@ -2002,4 +1946,4 @@ export function main(args: string[] | null = null): number {
 }
 
 // `if __name__ == "__main__": sys.exit(main())`
-if (import.meta.main) process.exit(main());
+if (import.meta.main) runMain(main);
