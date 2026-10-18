@@ -14,9 +14,9 @@
 import { test, expect } from "bun:test";
 
 import { Path, StopIteration, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
-import { approx, type ApproxOperand } from "../../src/pyrt/pytest.ts";
+import { approx } from "../../src/pyrt/pytest.ts";
 import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { as_instance } from "../helpers.ts";
+import { as_instance, json_field, type ExpectedProperty } from "../helpers.ts";
 
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -45,24 +45,13 @@ function _effect_props(comp_name: string, layer_name: string): Property[] {
   );
 }
 
-/** The JSON fields of an exported property this test reads. */
-interface JsonProperty {
-  matchName: string;
-  value: ApproxOperand;
-  isModified: boolean;
-  properties: JsonProperty[];
-}
-
-function _expected_props(comp_name: string, layer_name: string): Map<string, JsonProperty> {
-  const comp: { layers: { name: string; properties: JsonProperty[] }[] } = get_comp_from_json_by_name(
-    load_expected(SAMPLES_DIR, SAMPLE),
-    comp_name,
-  );
+function _expected_props(comp_name: string, layer_name: string): Map<string, ExpectedProperty> {
+  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, SAMPLE), comp_name);
   const layer = comp.layers.find((ly) => ly.name === layer_name);
   if (layer === undefined) throw new StopIteration();
   const parade = layer.properties.find((p) => p.matchName === "ADBE Effect Parade");
   if (parade === undefined) throw new StopIteration();
-  return new Map(parade.properties[0].properties.map((p) => [p.matchName, p]));
+  return new Map(json_field(json_field(parade, "properties")[0], "properties").map((p) => [p.matchName, p]));
 }
 
 test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, layer_name: string) => {

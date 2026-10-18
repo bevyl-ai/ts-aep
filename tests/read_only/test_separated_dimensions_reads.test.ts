@@ -14,28 +14,14 @@ import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
 import { AssertionError_, Path, getitem, py_assert, py_or, range } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance, get_layer_from_json, load_expected, parse_project } from "../helpers.ts";
+import { as_instance, get_layer_from_json, load_expected, parse_project, type ExpectedProperty } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "property");
 
-/** The JSON export's shape for a transform child property. */
-interface JsonTransformChild {
-  matchName: string;
-  value: number | number[];
-  canSetExpression: boolean;
-}
-interface JsonGroup {
-  matchName?: string;
-  properties?: JsonTransformChild[];
-}
-interface JsonLayer {
-  properties?: JsonGroup[];
-}
-
 /** `{matchName: property dict}` for the first layer's transform group. */
-function _expected_transform(sample: string): Map<string, JsonTransformChild> {
-  const layer: JsonLayer = get_layer_from_json(load_expected(SAMPLES_DIR, sample));
+function _expected_transform(sample: string): Map<string, ExpectedProperty> {
+  const layer = get_layer_from_json(load_expected(SAMPLES_DIR, sample));
   for (const group of py_or(layer.properties, [])) {
     if (group.matchName === "ADBE Transform Group") {
       return new Map(py_or(group.properties, []).map((child) => [child.matchName, child]));

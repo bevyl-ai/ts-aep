@@ -29,10 +29,11 @@
 // become the cartesian rows built below.
 
 import { describe, expect, test } from "bun:test";
-import { approx, type ApproxOperand } from "../../src/pyrt/pytest.ts";
+import { approx } from "../../src/pyrt/pytest.ts";
 import { getitem, Path, py_assert, range, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
+import { json_field, type ExpectedProperty } from "../helpers.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 
@@ -82,26 +83,14 @@ function _position(layer: Layer, match_name = "ADBE Position"): Property {
 }
 
 /** `{match name: property record}` for the layer's ADBE Transform Group in the ExtendScript JSON. */
-/** The fields of an exported property record this test reads. */
-interface JsonProperty {
-  matchName: string;
-  value: ApproxOperand;
-  isModified: boolean;
-  dimensionsSeparated: boolean;
-  properties: JsonProperty[];
-}
-
-function _expected_transform(sample: string, comp_name: string, layer_name: string): Map<string, JsonProperty> {
+function _expected_transform(sample: string, comp_name: string, layer_name: string): Map<string, ExpectedProperty> {
   const expected = load_expected(SAMPLES_DIR, sample);
-  const comp_json: { layers: { name: string; properties: JsonProperty[] }[] } = get_comp_from_json_by_name(
-    expected,
-    comp_name,
-  );
+  const comp_json = get_comp_from_json_by_name(expected, comp_name);
   const layer_json = comp_json["layers"].find((ly) => ly["name"] === layer_name);
   if (layer_json === undefined) throw new StopIteration();
   const group = layer_json["properties"].find((p) => p["matchName"] === "ADBE Transform Group");
   if (group === undefined) throw new StopIteration();
-  return new Map(group["properties"].map((p) => [p["matchName"], p]));
+  return new Map(json_field(group, "properties").map((p) => [p["matchName"], p]));
 }
 
 function _assert_matches_json(sample: string, comp_name: string, layer_name: string): void {
@@ -114,7 +103,7 @@ function _assert_matches_json(sample: string, comp_name: string, layer_name: str
     py_assert(prop.is_modified === prop_json["isModified"], match_name);
   }
   const leader_json = getitem(expected, "ADBE Position");
-  expect(_position(layer).dimensions_separated).toBe(leader_json["dimensionsSeparated"]);
+  expect(_position(layer).dimensions_separated).toBe(json_field(leader_json, "dimensionsSeparated"));
 }
 
 describe("TestCameraDefaultPosition", () => {

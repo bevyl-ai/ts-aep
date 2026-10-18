@@ -17,6 +17,21 @@
 import { parse as _parse_aep, type Application, type Project } from "../src/py_aep/index.ts";
 import "../src/py_aep/binary/_register.ts";
 import { write_aep } from "../src/py_aep/binary/chunk.ts";
+import type {
+  AlphaMode,
+  AutoOrientType,
+  BitsPerChannel,
+  BlendingMode,
+  FieldSeparationType,
+  FrameBlendingType,
+  GpuAccelType,
+  GuideOrientationType,
+  Label,
+  LayerQuality,
+  LayerSamplingQuality,
+  LightType,
+  TrackMatteType,
+} from "../src/py_aep/enums/index.ts";
 import type { CompItem } from "../src/py_aep/models/items/composition.ts";
 import type { FolderItem } from "../src/py_aep/models/items/folder.ts";
 import type { FootageItem } from "../src/py_aep/models/items/footage.ts";
@@ -31,6 +46,7 @@ import {
   decode,
   fspath,
   getattr,
+  KeyError,
   len,
   lru_cache,
   Path,
@@ -47,19 +63,266 @@ import {
 export const SAMPLES_DIR = new Path(import.meta.dir).parent.div("samples");
 
 /**
- * JSON record field read with `dict.get(key, default)`.
- *
- * NOTE(port): `load_expected` returns JSON records as plain objects (the
- * convention the already-ported read-only tests use), so `dict.get` is a
- * direct property read here rather than a Map lookup; same result as Python.
+ * A value as `JSON.parse` decodes it from an expected-JSON fixture: objects
+ * are plain records (the convention the ported read-only tests use).
  */
-function _jget(d: any, k: string, dflt: any = null): any {
+export type ExpectedValue = null | boolean | number | string | ExpectedValue[] | { [key: string]: ExpectedValue };
+
+/** The empty `dict` a Python lookup helper returns on a miss; reading any key of it raises `KeyError`. */
+export type EmptyJson = Record<string, never>;
+
+/** A Shape value (`ADBE Mask Shape`, `ADBE Vector Shape`) in the ExtendScript export. */
+export interface ExpectedShape {
+  closed: boolean;
+  vertices: number[][];
+  inTangents: number[][];
+  outTangents: number[][];
+}
+
+/** A marker in the ExtendScript export: a comp marker, or a layer marker keyframe's value. */
+export interface ExpectedMarker {
+  time: number;
+  label: Label;
+  duration: number;
+  comment: string;
+  chapter: string;
+  url: string;
+  frameTarget: string;
+  cuePointName: string;
+  eventCuePoint: boolean;
+  protectedRegion: boolean;
+}
+
+/** One temporal ease entry of a keyframe. */
+export interface ExpectedEase {
+  speed: number;
+  influence: number;
+}
+
+/** A keyframe of an exported property. */
+export interface ExpectedKeyframe {
+  time: number;
+  value: null | number | number[] | number[][] | ExpectedShape | ExpectedMarker;
+  inTemporalEase: ExpectedEase[];
+  outTemporalEase: ExpectedEase[];
+  /** Spatial properties only. */
+  inSpatialTangent?: number[];
+  outSpatialTangent?: number[];
+  spatialAutoBezier?: boolean;
+  temporalAutoBezier: boolean;
+  temporalContinuous: boolean;
+}
+
+/**
+ * A property or property group in the ExtendScript export. Groups carry
+ * `properties`; leaf properties carry `value` and (when animated) `keyframes`.
+ */
+export interface ExpectedProperty {
+  name: string;
+  matchName: string;
+  propertyType: string;
+  isModified: boolean;
+  properties?: ExpectedProperty[];
+  value?: ExpectedValue;
+  keyframes?: ExpectedKeyframe[];
+  numKeys?: number;
+  dimensionsSeparated?: boolean;
+  canSetExpression?: boolean;
+  expression?: string;
+  expressionEnabled?: boolean;
+}
+
+/** A layer in the ExtendScript export. */
+export interface ExpectedLayer {
+  name: string;
+  comment: string;
+  label: Label;
+  enabled: boolean;
+  locked: boolean;
+  shy: boolean;
+  solo: boolean;
+  nullLayer: boolean;
+  autoOrient: AutoOrientType;
+  startTime: number;
+  inPoint: number;
+  outPoint: number;
+  stretch: number;
+  properties: ExpectedProperty[];
+  /** Read by the parenting test; the export writes `parentIndex` / `parentName` instead. */
+  parent?: number;
+  hasTrackMatte: boolean;
+  isTrackMatte: boolean;
+  /** Light layers only; the tests read it from light-layer fixtures. */
+  lightType: LightType;
+  // AVLayer fields. Camera and light layers omit them; the tests read them
+  // from AV-layer fixtures only, where Python's `layer["..."]` would succeed.
+  threeDLayer: boolean;
+  adjustmentLayer: boolean;
+  guideLayer: boolean;
+  collapseTransformation: boolean;
+  preserveTransparency: boolean;
+  motionBlur: boolean;
+  effectsActive: boolean;
+  audioEnabled: boolean;
+  timeRemapEnabled: boolean;
+  blendingMode: BlendingMode;
+  frameBlendingType: FrameBlendingType;
+  quality: LayerQuality;
+  samplingQuality: LayerSamplingQuality;
+  trackMatteType: TrackMatteType;
+}
+
+/** Fields every exported project item has. */
+interface ExpectedItemBase {
+  id: number;
+  name: string;
+  comment: string;
+  label: Label;
+}
+
+/** A comp guide in the ExtendScript export. */
+export interface ExpectedGuide {
+  orientationType: GuideOrientationType;
+  positionType: number;
+  position: number;
+}
+
+/** A composition in the ExtendScript export. */
+export interface ExpectedComp extends ExpectedItemBase {
+  typeName: "Composition";
+  width: number;
+  height: number;
+  duration: number;
+  frameRate: number;
+  pixelAspect: number;
+  time: number;
+  bgColor: number[];
+  displayStartFrame: number;
+  displayStartTime: number;
+  dropFrame: boolean;
+  frameBlending: boolean;
+  hideShyLayers: boolean;
+  motionBlur: boolean;
+  motionBlurAdaptiveSampleLimit: number;
+  motionBlurSamplesPerFrame: number;
+  preserveNestedFrameRate: boolean;
+  preserveNestedResolution: boolean;
+  resolutionFactor: number[];
+  shutterAngle: number;
+  shutterPhase: number;
+  workAreaStart: number;
+  workAreaDuration: number;
+  /** Exports from AE versions without comp guides write `{"_undefined": true}`. */
+  guides: ExpectedGuide[] | { _undefined: true };
+  layers: ExpectedLayer[];
+  markers: ExpectedMarker[];
+}
+
+/** A footage item in the ExtendScript export. */
+export interface ExpectedFootage extends ExpectedItemBase {
+  typeName: "Footage";
+  width: number;
+  height: number;
+  duration: number;
+  frameRate: number;
+  mainSource: ExpectedFootageSource;
+}
+
+/** A footage item's `mainSource` in the ExtendScript export. */
+export interface ExpectedFootageSource {
+  alphaMode: AlphaMode;
+  invertAlpha: boolean;
+  premulColor: number[];
+  isStill: boolean;
+  loop: number;
+  conformFrameRate: number;
+  fieldSeparationType: FieldSeparationType;
+  highQualityFieldSeparation: boolean;
+  /** File sources only; the tests read it from file-footage fixtures. */
+  filePath: string;
+}
+
+/** A folder in the ExtendScript export. */
+export interface ExpectedFolder extends ExpectedItemBase {
+  typeName: "Folder";
+  numItems: number;
+}
+
+/** A project item in the ExtendScript export, told apart by `typeName`. */
+export type ExpectedItem = ExpectedComp | ExpectedFootage | ExpectedFolder;
+
+/** An output module of a render queue item in the ExtendScript export. */
+export interface ExpectedOutputModule {
+  name: string;
+  file: string;
+  settings: ExpectedOutputModuleSettings;
+}
+
+/** An output module's `getSettings()` record in the ExtendScript export. */
+export interface ExpectedOutputModuleSettings {
+  "Crop Top": number;
+  "Crop Bottom": number;
+  Depth: number;
+  "Starting #": number;
+  "Use Comp Frame Number": boolean;
+  [key: string]: ExpectedValue;
+}
+
+/** A render queue item in the ExtendScript export. */
+export interface ExpectedRenderQueueItem {
+  compName: string;
+  render: boolean;
+  settings: Record<string, ExpectedValue>;
+  outputModules: ExpectedOutputModule[];
+}
+
+/** An ExtendScript project export: the `<sample>.json` next to each `.aep`. */
+export interface ExpectedProject {
+  bitsPerChannel: BitsPerChannel;
+  displayStartFrame: number;
+  expressionEngine: string;
+  gpuAccelType: GpuAccelType;
+  workingSpace: string;
+  items: ExpectedItem[];
+  renderQueue: { numItems: number; items: ExpectedRenderQueueItem[] };
+}
+
+/** One sampled frame of an exported `_value_at_time` property. */
+export interface ExpectedFrame {
+  time: number;
+  value: number | number[] | ExpectedShape;
+}
+
+/** An exported `<sample>_value_at_time.json`: each property sampled frame by frame. */
+export interface ExpectedValueAtTime {
+  source: string;
+  comps: {
+    name: string;
+    layers: {
+      name: string;
+      properties: { matchName: string; frames: ExpectedFrame[] }[];
+    }[];
+  }[];
+}
+
+/** JSON record field read with `dict.get(key, default)`. */
+function _jget<T extends object, K extends keyof T, D>(d: T, k: K, dflt: D): T[K] | D {
   return k in d ? d[k] : dflt;
 }
 
+/**
+ * Python `record[key]` for a field the export writes on only some records
+ * (a group's `properties`, a leaf's `value`): `KeyError` when it is absent.
+ */
+export function json_field<T extends object, K extends keyof T & string>(record: T, key: K): T[K] & ({} | null) {
+  const value = record[key];
+  if (value === undefined) throw new KeyError(repr(key));
+  return value;
+}
+
 /** Python truthiness for a JSON record (a plain object): true when it has keys. */
-function _json_truthy(d: any): boolean {
-  return d != null && Object.keys(d).length > 0;
+function _json_truthy(d: object): boolean {
+  return Object.keys(d).length > 0;
 }
 
 /**
@@ -133,15 +396,34 @@ export function project_bytes(project: Project): Uint8Array {
   return buf.getvalue();
 }
 
+function _expected_text(samples_dir: string, sample_name: string): string {
+  return decode(new Path(samples_dir).div(`${sample_name}.json`).read_bytes(), "utf-8");
+}
+
 // Python `Path` hashes by value; `lru_cache` here keys by identity, so key on the path string.
-const _load_expected_cached = lru_cache((samples_dir: string, sample_name: string): any => {
-  const json_path = new Path(samples_dir).div(`${sample_name}.json`);
-  return JSON.parse(decode(json_path.read_bytes(), "utf-8"));
-});
+const _load_expected_cached = lru_cache(
+  (samples_dir: string, sample_name: string): ExpectedProject => JSON.parse(_expected_text(samples_dir, sample_name)),
+);
 
 /** Load the expected JSON for a sample. */
-export function load_expected(samples_dir: Path, sample_name: string): any {
+export function load_expected(samples_dir: Path, sample_name: string): ExpectedProject {
   return _load_expected_cached(String(samples_dir), sample_name);
+}
+
+const _load_expected_value_at_time_cached = lru_cache(
+  (samples_dir: string, sample_name: string): ExpectedValueAtTime =>
+    JSON.parse(_expected_text(samples_dir, sample_name)),
+);
+
+/**
+ * Load an expected `_value_at_time` JSON for a sample.
+ *
+ * NOTE(port): Python reads these with `load_expected` too; they are a
+ * different document (`comps` of sampled frames, not a project export), so
+ * the port gives them their own typed loader.
+ */
+export function load_expected_value_at_time(samples_dir: Path, sample_name: string): ExpectedValueAtTime {
+  return _load_expected_value_at_time_cached(String(samples_dir), sample_name);
 }
 
 /** Get all .aep stems in a samples directory. */
@@ -232,7 +514,7 @@ export function get_rqi(project: Project, comp_name: string): RenderQueueItem {
 // ---- First-item JSON helpers (for non-consolidated single-comp samples) ----
 
 /** Extract first composition from expected JSON. */
-export function get_comp_from_json(expected: any): any {
+export function get_comp_from_json(expected: ExpectedProject): ExpectedComp | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Composition") return item;
   }
@@ -240,7 +522,7 @@ export function get_comp_from_json(expected: any): any {
 }
 
 /** Extract first layer from expected JSON. */
-export function get_layer_from_json(expected: any): any {
+export function get_layer_from_json(expected: ExpectedProject): ExpectedLayer | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if ("layers" in item && len(item.layers) > 0) return item.layers[0];
   }
@@ -250,7 +532,7 @@ export function get_layer_from_json(expected: any): any {
 // ---- Name-based JSON lookup helpers ----
 
 /** Get a specific composition from JSON by name. */
-export function get_comp_from_json_by_name(expected: any, name: string): any {
+export function get_comp_from_json_by_name(expected: ExpectedProject, name: string): ExpectedComp | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Composition" && item.name === name) return item;
   }
@@ -258,7 +540,7 @@ export function get_comp_from_json_by_name(expected: any, name: string): any {
 }
 
 /** Get first layer from a named composition in JSON. */
-export function get_layer_from_json_by_comp(expected: any, comp_name: string): any {
+export function get_layer_from_json_by_comp(expected: ExpectedProject, comp_name: string): ExpectedLayer | EmptyJson {
   const comp = get_comp_from_json_by_name(expected, comp_name);
   if (_json_truthy(comp) && "layers" in comp && py_bool(comp.layers)) {
     return comp.layers[0];
@@ -267,7 +549,7 @@ export function get_layer_from_json_by_comp(expected: any, comp_name: string): a
 }
 
 /** Get a specific footage item from JSON by name. */
-export function get_footage_from_json_by_name(expected: any, name: string): any {
+export function get_footage_from_json_by_name(expected: ExpectedProject, name: string): ExpectedFootage | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Footage" && item.name === name) return item;
   }
@@ -275,7 +557,7 @@ export function get_footage_from_json_by_name(expected: any, name: string): any 
 }
 
 /** Get a specific folder from JSON by name. */
-export function get_folder_from_json_by_name(expected: any, name: string): any {
+export function get_folder_from_json_by_name(expected: ExpectedProject, name: string): ExpectedFolder | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Folder" && item.name === name) return item;
   }
@@ -283,7 +565,7 @@ export function get_folder_from_json_by_name(expected: any, name: string): any {
 }
 
 /** Get first composition marker from a named composition in JSON. */
-export function get_comp_marker_from_json_by_name(expected: any, comp_name: string): any {
+export function get_comp_marker_from_json_by_name(expected: ExpectedProject, comp_name: string): ExpectedMarker | EmptyJson {
   const comp = get_comp_from_json_by_name(expected, comp_name);
   const markers = _jget(comp, "markers", []);
   if (Array.isArray(markers) && py_bool(markers)) return markers[0];
@@ -291,14 +573,18 @@ export function get_comp_marker_from_json_by_name(expected: any, comp_name: stri
 }
 
 /** Get first layer marker value from a named composition in JSON. */
-export function get_layer_marker_from_json_by_comp(expected: any, comp_name: string): any {
+export function get_layer_marker_from_json_by_comp(expected: ExpectedProject, comp_name: string): ExpectedMarker | EmptyJson {
   const comp = get_comp_from_json_by_name(expected, comp_name);
   if (_json_truthy(comp) && "layers" in comp) {
     for (const layer of comp.layers) {
       for (const prop of _jget(layer, "properties", [])) {
         if (prop.matchName === "ADBE Marker") {
-          const kfs = _jget(prop, "keyframes", []);
-          if (py_bool(kfs)) return _jget(kfs[0], "value", {});
+          const kfs = prop.keyframes ?? [];
+          // An `ADBE Marker` keyframe's value is always a marker record.
+          if (py_bool(kfs)) {
+            const value = kfs[0].value;
+            if (typeof value === "object" && value !== null && "cuePointName" in value) return value;
+          }
         }
       }
     }

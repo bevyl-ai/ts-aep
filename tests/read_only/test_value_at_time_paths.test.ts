@@ -35,7 +35,7 @@ import {
   zip,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance, get_comp, load_expected, parse_project } from "../helpers.ts";
+import { as_instance, get_comp, load_expected_value_at_time, parse_project, type ExpectedShape } from "../helpers.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import { _subdivision_cuts, euler_to_quaternion, interpolate_shapes, slerp_orientation } from "../../src/py_aep/resolvers/interpolation.ts";
@@ -65,11 +65,8 @@ function _find(layer: Layer, match_name: string): Property {
   return found[0];
 }
 
-/** A path value as the JSON export writes it (Python `dict`). */
-type _ExportedShape = { vertices: number[][]; inTangents: number[][]; outTangents: number[][] };
-
 /** Every number in a value, in a stable order. */
-function _flatten(value: Shape | _ExportedShape | number[] | number): number[] {
+function _flatten(value: Shape | ExpectedShape | number[] | number): number[] {
   if (value instanceof Shape) {
     const numbers: number[] = [];
     for (const points of [value.vertices, value.in_tangents, value.out_tangents]) {
@@ -136,7 +133,7 @@ function _cases(): [string, string, string, string][] {
     "property_path_orientation_ease",
     "property_vat_edge_cases",
   ]) {
-    const data = load_expected(VAT_DIR, `${base}_value_at_time`);
+    const data = load_expected_value_at_time(VAT_DIR, `${base}_value_at_time`);
     for (const comp of data.comps) {
       for (const layer of comp.layers) {
         for (const prop of layer.properties) {
@@ -155,15 +152,15 @@ function _cases(): [string, string, string, string][] {
  * silently passes the case instead of reporting the missing fixture.
  */
 function _expected_frames(base: string, comp_name: string, layer_name: string, match_name: string) {
-  const data = load_expected(VAT_DIR, `${base}_value_at_time`);
-  const comp_data = data.comps.find((c: { name: string }) => c.name === comp_name);
+  const data = load_expected_value_at_time(VAT_DIR, `${base}_value_at_time`);
+  const comp_data = data.comps.find((c) => c.name === comp_name);
   if (comp_data === undefined) throw new StopIteration();
-  const layers = comp_data.layers.filter((ly: { name: string }) => ly.name === layer_name);
+  const layers = comp_data.layers.filter((ly) => ly.name === layer_name);
   py_assert(
     len(layers) === 1,
     `${base}/${comp_name}: expected 1 layer named ${layer_name}, got ${len(layers)}`,
   );
-  const props = layers[0].properties.filter((p: { matchName: string }) => p.matchName === match_name);
+  const props = layers[0].properties.filter((p) => p.matchName === match_name);
   py_assert(
     len(props) === 1,
     `${base}/${comp_name}/${layer_name}: expected 1 ${match_name}, got ${len(props)}`,
