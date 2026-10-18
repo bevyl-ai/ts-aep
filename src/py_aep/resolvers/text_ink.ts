@@ -31,7 +31,8 @@
 // `_check_envelope` refuses astral characters before any of this runs, so the
 // two agree on every text that reaches these helpers.
 
-import * as fontkit from "fontkit";
+import type * as fontkit from "fontkit";
+import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   NotImplementedError,
@@ -74,7 +75,7 @@ export function _isOsError(exc: Error | null): boolean {
 export function _openFace(path: string, faceIndex: number): fontkit.Font {
   // NOTE(port): fontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
   // fontkit exposes collection faces through `.fonts`; a plain font is its own face.
-  const opened = fontkit.create(host.fs.readFileSync(path));
+  const opened = dep("fontkit").create(host.fs.readFileSync(path));
   return opened.fonts ? at(opened.fonts, faceIndex) : opened;
 }
 

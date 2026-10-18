@@ -1,7 +1,7 @@
 // Runs worker.ts in workerd (via miniflare) over N evenly spaced samples and
 // checks each save is byte-identical. miniflare is not a dependency:
 //
-//   bun build src/py_aep/index.ts --target=browser --outdir=dist/browser
+//   bun build src/py_aep/browser.ts --target=browser --outdir=dist/browser
 //   bun build tools/browser-smoke/worker.ts --target=browser --outfile=dist/worker.js
 //   bun add --no-save miniflare && bun tools/browser-smoke/workers-run.ts [N]
 

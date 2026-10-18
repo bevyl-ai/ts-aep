@@ -8,7 +8,8 @@
  * Fonts are not bundled.
  */
 
-import * as fontkit from "fontkit";
+import type * as fontkit from "fontkit";
+import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   Path,
@@ -204,7 +205,7 @@ export let _psIndex: Map<string, [Path, number, string | null]> | null = null;
 export function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
   let fonts: fontkit.Font[];
   try {
-    const opened = fontkit.create(
+    const opened = dep("fontkit").create(
       host.fs.readFileSync(path.toString()),
     );
     if (path.suffix.toLowerCase() === ".ttc") {

@@ -16,7 +16,7 @@
 // pyrt `lru_cache`, plain types and pyrt `Path`.
 
 import * as host from "../../pyrt/host.ts";
-import { parse, YAMLError, isMap, isSeq, isScalar } from "yaml";
+import { dep } from "../../pyrt/deps.ts";
 import type { Document, Node, DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from "yaml";
 import {
   Path,
@@ -121,7 +121,7 @@ export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new S
  * values as this constructor. `loader` is the yaml `Document`.
  */
 export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioValue | null {
-  if (isMap(node) || isSeq(node) || isScalar(node)) {
+  if (dep("yaml").isMap(node) || dep("yaml").isSeq(node) || dep("yaml").isScalar(node)) {
     return node.toJS(loader, { mapAsMap: true });
   }
   return null;
@@ -142,12 +142,12 @@ export const _loadConfigCached = lruCache(
   (configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
     let doc: OcioValue;
     try {
-      doc = parse(decode(new Path(configPath).readBytes(), "utf-8"), {
+      doc = dep("yaml").parse(decode(new Path(configPath).readBytes(), "utf-8"), {
         ..._OcioLoader.options,
       });
     } catch (e) {
       // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
-      if (!(e instanceof OSError || e instanceof YAMLError || (e instanceof Error && "code" in e && pyBool(e.code)))) {
+      if (!(e instanceof OSError || e instanceof dep("yaml").YAMLError || (e instanceof Error && "code" in e && pyBool(e.code)))) {
         throw e;
       }
       return null;

@@ -53,6 +53,9 @@ app.project.save("copy.aep");
 ## Use
 
 The library runs unchanged in Node 22.3+, Bun, browsers and Cloudflare Workers.
+Node and Bun load fontkit and yaml (text metrics, OCIO configs) on first use;
+bundlers and Workers resolve the `browser` / `workerd` export, which imports them
+up front.
 `parse(path)` and `project.save(path)` take paths. All
 host access goes through `src/pyrt/host.ts`: Node and Bun use their own
 `node:fs`, `node:path` and `node:os` (via `process.getBuiltinModule`); hosts

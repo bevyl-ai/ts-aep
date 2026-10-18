@@ -1,13 +1,17 @@
-// Build the published package: dist/index.js (one ESM bundle, dependencies
-// external) + dist/types (declarations from tsc, `.ts` specifiers -> `.js`).
+// Build the published package: dist/index.js (Node, Bun) and dist/browser.js
+// (bundled hosts, which import fontkit/yaml up front), sharing one chunk, with
+// dependencies external, + dist/types (declarations from tsc, `.ts` specifiers -> `.js`).
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 fs.rmSync("dist", { recursive: true, force: true });
 
+// `splitting` is missing from this bun-types release; spread, it skips the excess-property check.
+const splitting = { splitting: true };
 const out = await Bun.build({
-  entrypoints: ["src/py_aep/index.ts"],
+  entrypoints: ["src/py_aep/index.ts", "src/py_aep/browser.ts"],
   outdir: "dist",
+  ...splitting,
   format: "esm",
   target: "browser",
   packages: "external",

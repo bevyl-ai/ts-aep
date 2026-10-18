@@ -3,7 +3,7 @@
 <title>ts-aep browser smoke</title>
 <!--
   Build the bundle, serve the repo root, open this page:
-    bun build src/py_aep/index.ts --target=browser --outdir=dist/browser
+    bun build src/py_aep/browser.ts --target=browser --outdir=dist/browser
     python3 -m http.server 8000      # from the repo root
     http://localhost:8000/tools/browser-smoke/index.html?samples=samples/bugs/outputmodule_path.aep,...
   The page fetches each sample into memfs, parses, saves, and checks the
@@ -11,7 +11,7 @@
 -->
 <pre id="out">running…</pre>
 <script type="module">
-  import * as py_aep from "../../dist/browser/index.js";
+  import * as py_aep from "../../dist/browser/browser.js";
   import { smoke } from "./smoke.js";
 
   const out = document.getElementById("out");
