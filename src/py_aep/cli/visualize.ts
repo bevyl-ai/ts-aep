@@ -33,8 +33,8 @@ import {
   round,
   str,
   jsonDumps,
-  pyfloat,
-  type PyFloat,
+  boxFloat,
+  type BoxedFloat,
 } from "../../pyrt/index.ts";
 
 import type { Application } from "../models/application.ts";
@@ -49,7 +49,7 @@ import type { RenderQueueItem } from "../models/renderqueue/render_queue_item.ts
 export type TextIO = { write(s: string): void };
 
 /** A node attribute value: scalars, floats or small arrays; `null` entries are skipped when printing. */
-export type AttrValue = string | number | boolean | null | PyFloat | readonly number[];
+export type AttrValue = string | number | boolean | null | BoxedFloat | readonly number[];
 
 /** A node of the uniform tree the formatters consume (a `Map` of attributes plus children). */
 export type Node = {
@@ -137,7 +137,7 @@ export function buildCompNode(comp: CompItem, project: Project, includePropertie
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["size", `${comp.width}x${comp.height}`],
     ["duration", `${format(comp.duration, ".2f")}s`],
-    ["frame_rate", pyfloat(comp.frameRate)],
+    ["frame_rate", boxFloat(comp.frameRate)],
     ["layers_count", comp.layers.length],
   ]);
   if (comp.markers?.length > 0) attrs.set("markers", comp.markers.length);

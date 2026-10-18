@@ -35,7 +35,7 @@ import {
   jsonLoads,
   truediv,
   PureWindowsPath,
-  type PyFloat,
+  type BoxedFloat,
 } from "../../pyrt/index.ts";
 
 /** A Python `dict`. Both the JSON side and the to_dict side are Maps (rulebook §3).
@@ -194,7 +194,7 @@ export const _PRIMITIVE_TYPES: readonly string[] = ["number", "bigint", "string"
  * A value `toDict` walks or returns, or the ExtendScript JSON value it is
  * compared with: a primitive, a list or Map of such values (a model object
  * becomes a `Dict` of its fields), or another object, which `toDict`
- * returns unchanged (bytes, sets, callables, `PyFloat`, `String` objects).
+ * returns unchanged (bytes, sets, callables, `BoxedFloat`, `String` objects).
  */
 export type ToDictValue =
   | null
@@ -209,7 +209,7 @@ export type ToDictValue =
   | object;
 
 /**
- * What `toDict` makes of a `T`: primitives, bytes, sets, callables, `PyFloat`
+ * What `toDict` makes of a `T`: primitives, bytes, sets, callables, `BoxedFloat`
  * and `String` objects unchanged, a list element-wise, and any other object (a
  * model object, a Map) a `Dict`. Which objects have fields is only known at
  * runtime; one without any comes back unchanged.
@@ -223,7 +223,7 @@ export type ToDict<T> = T extends
   | string
   | symbol
   | String
-  | PyFloat
+  | BoxedFloat
   | ArrayBufferView
   | ReadonlySet<ToDictValue>
   | Function

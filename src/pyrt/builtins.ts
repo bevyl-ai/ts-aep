@@ -1,7 +1,7 @@
 // Python builtins whose JS spelling differs in behavior, not just syntax.
 
 import { AttributeError, IndexError, KeyError, ValueError } from "./errors.ts";
-import { floatRepr, PyFloat } from "./num.ts";
+import { floatRepr, BoxedFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
 import { INSPECT } from "./inspect.ts";
 
@@ -27,7 +27,7 @@ function _probeable(x: unknown): x is DunderProbe {
  */
 export function truthy(x: unknown): boolean {
   if (x == null) return false;
-  if (x instanceof PyFloat) return x.value !== 0;
+  if (x instanceof BoxedFloat) return x.value !== 0;
   if (typeof x === "boolean") return x;
   if (typeof x === "number") return x !== 0;
   if (typeof x === "bigint") return x !== 0n;
@@ -303,8 +303,8 @@ export function contains(container: unknown, x: unknown): boolean {
 /** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `equals`). */
 export function valueEquals(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (a instanceof PyFloat) a = a.value;
-  if (b instanceof PyFloat) b = b.value;
+  if (a instanceof BoxedFloat) a = a.value;
+  if (b instanceof BoxedFloat) b = b.value;
   if (a === b) return true;
   if (typeof a === "number" && typeof b === "number") return a === b;
   if (typeof a === "number" && typeof b === "boolean") return a === (b ? 1 : 0);
@@ -336,7 +336,7 @@ export function repr(x: unknown): string {
   if (x == null) return "None";
   if (typeof x === "boolean") return x ? "True" : "False";
   if (typeof x === "number") return Number.isInteger(x) ? String(x) : floatRepr(x);
-  if (x instanceof PyFloat) return floatRepr(x.value);
+  if (x instanceof BoxedFloat) return floatRepr(x.value);
   if (typeof x === "bigint") return x.toString();
   if (typeof x === "string" || x instanceof String) {
     const s = String(x);
@@ -379,13 +379,13 @@ export function repr(x: unknown): string {
 
 /**
  * `type(x).__name__`. JS cannot tell a tuple from a list (both "list") or an
- * int-valued float from an int unless it is a boxed `PyFloat`; class
+ * int-valued float from an int unless it is a boxed `BoxedFloat`; class
  * instances report their constructor name, which equals the Python class name.
  */
 export function typeName(x: unknown): string {
   if (x == null) return "NoneType";
   if (typeof x === "boolean") return "bool";
-  if (x instanceof PyFloat) return "float";
+  if (x instanceof BoxedFloat) return "float";
   if (typeof x === "number") return Number.isInteger(x) ? "int" : "float";
   if (typeof x === "bigint") return "int";
   if (typeof x === "string") return "str";

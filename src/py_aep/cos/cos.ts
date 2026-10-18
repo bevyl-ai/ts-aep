@@ -19,12 +19,12 @@ import {
   assert,
   defineEnum,
   valueEquals,
-  pyfloat,
+  boxFloat,
   str,
   UnicodeDecodeError,
   ValueError,
 } from "../../pyrt/index.ts";
-import type { EnumValue, IO, PyFloat } from "../../pyrt/index.ts";
+import type { EnumValue, IO, BoxedFloat } from "../../pyrt/index.ts";
 import { is, pyInt } from "./kinds.ts";
 
 // io.SEEK_CUR
@@ -190,7 +190,7 @@ export const TokenType = defineEnum("TokenType", {
 export type TokenType = EnumValue<typeof TokenType>;
 
 /**
- * Any parsed COS value: a number (`PyFloat` when the literal had a
+ * Any parsed COS value: a number (`BoxedFloat` when the literal had a
  * decimal point), boolean, null, string (`CosString` as parsed, a plain
  * `string` once written by py_aep; `Uint8Array` for a hex string or
  * undecodable bytes), name, array, dictionary, or an indirect-object
@@ -200,7 +200,7 @@ export type CosNode =
   | null
   | boolean
   | number
-  | PyFloat
+  | BoxedFloat
   | string
   | CosString
   | Uint8Array
@@ -664,7 +664,7 @@ export class CosParser {
       }
     }
     // Boxed so an integral float ("2.0") stays a float through copies and re-serialization.
-    return new Token(TokenType.Number, pyfloat(float(head)));
+    return new Token(TokenType.Number, boxFloat(float(head)));
   }
 
   lexKeyword(char: number): Token {

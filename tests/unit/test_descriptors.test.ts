@@ -17,7 +17,7 @@ import {
   instanceDict,
 } from "../../src/pyrt/index.ts";
 import type { EnumValue } from "../../src/pyrt/index.ts";
-import { pyfloat } from "../../src/pyrt/num.ts";
+import { boxFloat } from "../../src/pyrt/num.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import type { CosDict, CosNode } from "../../src/py_aep/cos/cos.ts";
 import { CosField } from "../../src/py_aep/cos/descriptors.ts";
@@ -517,7 +517,7 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
 describe("TestChunkFieldBool", () => {
   /** `ChunkField.bool` bakes in `validate_bool`. */
 
-  test.each([["no"], [2], [1], [0], [null], [[]], [pyfloat(1)]])("test_rejects_non_bool[%#]", (bad) => {
+  test.each([["no"], [2], [1], [0], [null], [[]], [boxFloat(1)]])("test_rejects_non_bool[%#]", (bad) => {
     const body = new _FakeBody({ flag: false });
     new _FakeParent(body);
     const model = new _BoolModel(body);

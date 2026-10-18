@@ -24,7 +24,7 @@ import {
   assert,
   valueEquals,
   pyRe,
-  pyfloat,
+  boxFloat,
   reEscape,
   repr,
   struct,
@@ -100,7 +100,7 @@ describe("num", () => {
     expect(truediv(1, 4)).toBe(0.25);
     expect(raises(ZeroDivisionError, () => truediv(1, 0)).message).toBe("float division by zero");
     expect(raises(ZeroDivisionError, () => truediv(1, 0, "int")).message).toBe("division by zero");
-    expect(raises(ZeroDivisionError, () => truediv(pyfloat(1), 0, "int")).message).toBe("float division by zero");
+    expect(raises(ZeroDivisionError, () => truediv(boxFloat(1), 0, "int")).message).toBe("float division by zero");
   });
 });
 
@@ -230,7 +230,7 @@ describe("builtins", () => {
   });
 
   test("typeName", () => {
-    expect([1, 1.5, pyfloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
+    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
       "int", "float", "float", "int", "str", "bytes", "list", "dict", "set", "NoneType", "bool", "BytesIO",
     ]);
   });

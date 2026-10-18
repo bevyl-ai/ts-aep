@@ -2,12 +2,12 @@
 //
 // Decoded values keep Python's types: an object is a `Map` (source
 // key order, a repeated key keeps its first position and its last value), a
-// number with a fraction or exponent is a boxed `PyFloat` (so `1.0` stays a
+// number with a fraction or exponent is a boxed `BoxedFloat` (so `1.0` stays a
 // float), an integer beyond 2**53 is a `bigint`. NaN / Infinity / -Infinity
 // are accepted, as Python does.
 
 import { AttributeError, KeyError, ValueError } from "./errors.ts";
-import { float, floatRepr, int, PyFloat, pyfloat } from "./num.ts";
+import { float, floatRepr, int, BoxedFloat, boxFloat } from "./num.ts";
 import { compare, repr, typeName } from "./builtins.ts";
 import { decode } from "./codecs.ts";
 
@@ -37,7 +37,7 @@ function countNl(s: string, end: number): number {
 }
 
 export type LoadsOptions = {
-  /** `parseFloat`: called with the number's text; default boxes it as `PyFloat`. */
+  /** `parseFloat`: called with the number's text; default boxes it as `BoxedFloat`. */
   parseFloat?: (text: string) => JsonValue;
   /** `parseInt`: called with the number's text; default `number`, or `bigint` past 2**53. */
   parseInt?: (text: string) => JsonValue;
@@ -53,7 +53,7 @@ function defaultInt(text: string): number | bigint {
   return Number.isSafeInteger(n) ? n : BigInt(text);
 }
 
-const defaultFloat = (text: string): PyFloat => pyfloat(Number(text));
+const defaultFloat = (text: string): BoxedFloat => boxFloat(Number(text));
 const CONSTANTS: Record<string, number> = { NaN, Infinity, "-Infinity": -Infinity };
 
 /** `json.detect_encoding(b)` */
@@ -82,9 +82,9 @@ const ESC: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f
 /**
  * A value `jsonLoads` produces with its default hooks: objects are `Map`s
  * (insertion-ordered, like a Python dict), fractional and exponent numbers
- * are boxed `PyFloat`s, integers past 2**53 are `bigint`s.
+ * are boxed `BoxedFloat`s, integers past 2**53 are `bigint`s.
  */
-export type JsonValue = null | boolean | number | bigint | PyFloat | string | JsonValue[] | Map<string, JsonValue>;
+export type JsonValue = null | boolean | number | bigint | BoxedFloat | string | JsonValue[] | Map<string, JsonValue>;
 
 /** Python `x[key]` on a decoded JSON value: `KeyError` when absent, `TypeError` when `x` is no object. */
 export function jsonGetitem(x: JsonValue, key: string): JsonValue {
@@ -318,7 +318,7 @@ function intRepr(x: number): string {
 /**
  * `json.dumps(obj, ...)`. Python types map as elsewhere in pyrt: a `Map` or a
  * plain object is a JSON object, an array a JSON array, an integral `number` or a
- * `bigint` an int, a non-integral `number` or a `PyFloat` a float.
+ * `bigint` an int, a non-integral `number` or a `BoxedFloat` a float.
  */
 export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
   const { ensureAscii = true, allowNan = true, sortKeys = false, skipkeys = false } = opts;
@@ -343,7 +343,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     if (o === true) return "true";
     if (o === false) return "false";
     if (typeof o === "string" || o instanceof String) return enc(String(o));
-    if (o instanceof PyFloat) return floatstr(o.value);
+    if (o instanceof BoxedFloat) return floatstr(o.value);
     if (typeof o === "number") return Number.isInteger(o) ? intRepr(o) : floatstr(o);
     if (typeof o === "bigint") return o.toString();
     return undefined;
@@ -351,7 +351,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
 
   const keyStr = (k: unknown): string | null => {
     if (typeof k === "string" || k instanceof String) return String(k);
-    if (k instanceof PyFloat) return floatstr(k.value);
+    if (k instanceof BoxedFloat) return floatstr(k.value);
     if (typeof k === "number") return Number.isInteger(k) ? intRepr(k) : floatstr(k);
     if (typeof k === "bigint") return k.toString();
     if (k === true) return "true";

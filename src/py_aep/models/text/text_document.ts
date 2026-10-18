@@ -15,8 +15,8 @@ import {
   str,
   ValueError,
   zip,
-  pyfloat,
-  PyFloat,
+  boxFloat,
+  BoxedFloat,
   instanceDict,
 } from "../../../pyrt/index.ts";
 import { ListChunk } from "../../binary/chunk.ts";
@@ -46,10 +46,10 @@ export const _EMPTY_LINE_LOC = 3.4028234663852886e38;
  * Coordinates trace the rectangle corners (each corner duplicated, AE's
  * bezier vertex layout), anchored at the top-left `(left, top)`.
  */
-export function _boxCoords(left: number, top: number, width: number, height: number): PyFloat[] {
+export function _boxCoords(left: number, top: number, width: number, height: number): BoxedFloat[] {
   const right = left + width;
   const bottom = top + height;
-  const coords: PyFloat[] = [];
+  const coords: BoxedFloat[] = [];
   for (const [x, y] of [
     [left, top],
     [left, top],
@@ -68,7 +68,7 @@ export function _boxCoords(left: number, top: number, width: number, height: num
     [left, top],
     [left, top],
   ]) {
-    coords.push(pyfloat(x), pyfloat(y));
+    coords.push(boxFloat(x), boxFloat(y));
   }
   return coords;
 }
@@ -93,10 +93,10 @@ export function _numericSort(d: CosDict): void {
  */
 export function _applyBoxConversion(meta: CosNode): void {
   cosSetitem(meta, "0", 1);
-  cosSetitem(meta, "6", [pyfloat(-2.0), pyfloat(-2.0)]);
+  cosSetitem(meta, "6", [boxFloat(-2.0), boxFloat(-2.0)]);
   const eleven = cosSetdefault(meta, "11", new Map());
   cosSetitem(eleven, "4", -2);
-  cosSetitem(eleven, "18", pyfloat(-2.0));
+  cosSetitem(eleven, "18", boxFloat(-2.0));
   _numericSort(cosDict(meta, "items"));
 }
 
@@ -352,7 +352,7 @@ export class TextDocument {
     const total = u16Len(_rawText(this));
     _applyCharKey(this, 0, total, "4", value);
     if (value) {
-      _applyCharKey(this, 0, total, "5", pyfloat(0.01));
+      _applyCharKey(this, 0, total, "5", boxFloat(0.01));
     }
     this._propagateCos();
   }
@@ -793,7 +793,7 @@ export class TextDocument {
     if (this._charStyle != null && value != null) {
       // Setting an explicit leading turns auto-leading off, matching AE.
       const total = u16Len(_rawText(this));
-      _applyCharKey(this, 0, total, "5", pyfloat(value));
+      _applyCharKey(this, 0, total, "5", boxFloat(value));
       _applyCharKey(this, 0, total, "4", false);
       this._propagateCos();
     } else {
@@ -1469,7 +1469,7 @@ export const _boxInsetSpacingSet = requiresVersion(24)(/** Setter body for `boxI
 function box_inset_spacing(this: TextDocument, value: number): void {
   validatePositiveNumber(value);
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  cosSetitem(meta, "9", pyfloat(value));
+  cosSetitem(meta, "9", boxFloat(value));
   _numericSort(cosDict(meta, "items"));
   this._propagateCos();
 });
@@ -1499,7 +1499,7 @@ function box_first_baseline_alignment(
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
   // AE always stores the minimum alongside the alignment.
-  cosSetdefault(sub, "1", pyfloat(0.0));
+  cosSetdefault(sub, "1", boxFloat(0.0));
   _numericSort(cosDict(meta, "items"));
   this._propagateCos();
 });
@@ -1509,7 +1509,7 @@ function box_first_baseline_alignment_minimum(this: TextDocument, value: number)
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));
-  cosSetitem(sub, "1", pyfloat(value));
+  cosSetitem(sub, "1", boxFloat(value));
   _numericSort(cosDict(meta, "items"));
   this._propagateCos();
 });
