@@ -11,7 +11,6 @@ import {
   truthy,
   valueEquals,
   rstrip,
-  sorted,
   str,
   ValueError,
   zip,
@@ -80,7 +79,7 @@ export function _boxCoords(left: number, top: number, width: number, height: num
  * matching that order keeps serialized output byte-identical.
  */
 export function _numericSort(d: CosDict): void {
-  const items = sorted([...d.entries()], (kv) => int(kv[0]));
+  const items = [...d.entries()].sort((a, b) => int(a[0]) - int(b[0]));
   d.clear();
   for (const [k, v] of items) d.set(k, v);
 }

@@ -1,4 +1,4 @@
-import { at, getOrThrow, sorted } from "../../pyrt/index.ts";
+import { at, getOrThrow } from "../../pyrt/index.ts";
 import { ContainerChunk, ListChunk } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { LdatChunk } from "../binary/ldat_chunks.ts";
@@ -92,13 +92,8 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
     const _canon = new Map<string, number>(
       LRDR_CHILD_ORDER.map((t, i): [string, number] => [t, i]),
     );
-    lrdrChildChunks.splice(
-      0,
-      lrdrChildChunks.length,
-      ...sorted(lrdrChildChunks, (c) =>
-        _canon.get((c instanceof ListChunk && c.listType) || c.chunkType) ?? _canon.size,
-      ),
-    );
+    const rank = (c: Chunk): number => _canon.get((c instanceof ListChunk && c.listType) || c.chunkType) ?? _canon.size;
+    lrdrChildChunks.sort((a, b) => rank(a) - rank(b));
   }
 
   let settingsLdat: LdatChunk;

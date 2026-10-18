@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sorted, sum, compositeKey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -1613,7 +1613,7 @@ export function _subdivisionCuts(segmentCount: number, targetCount: number): num
     if (start > 0.0) cuts[index].push(start);
   }
   for (const perSegment of cuts) {
-    perSegment.splice(0, perSegment.length, ...sorted(perSegment));
+    perSegment.sort((a, b) => a - b);
   }
   return cuts;
 }

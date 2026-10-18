@@ -899,7 +899,7 @@ export function _probeJpeg(fp: ProbeStream): MediaInfo {
     }
     fp.seek(length - 2, SEEK_CUR);
   }
-  const iccBytes = Bytes.join(sorted([...iccChunks.keys()]).map((key) => getOrThrow(iccChunks, key)));
+  const iccBytes = Bytes.join([...iccChunks.keys()].sort((a, b) => a - b).map((key) => getOrThrow(iccChunks, key)));
   const iccProfile = iccBytes.length > 0 ? iccBytes : null;
   return new MediaInfo({
     width,

@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -2508,7 +2508,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const keysAt: Map<number, Keyframe<number>>[] = followers.map(
       (follower) => new Map(follower.keyframes.map((kf) => [kf.time, kf] as const)),
     );
-    const times = sorted([...new Set(keysAt.flatMap((perDimension) => [...perDimension.keys()]))]);
+    const times = [...new Set(keysAt.flatMap((perDimension) => [...perDimension.keys()]))].sort((a, b) => a - b);
     const [incoming, outgoing] = this.constructor._segmentSpans(times);
     const dimensions = followers.length;
     const composed = times.map(() => Array.from({ length: dimensions }, () => 0.0));

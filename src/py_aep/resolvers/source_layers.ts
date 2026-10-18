@@ -12,7 +12,6 @@ import {
   Path,
   ValueError,
   literal,
-  sorted,
   type PathLike,
 } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../data/file_formats.ts";
@@ -49,7 +48,7 @@ export function psdLeafLayers(
   leaves.splice(
     0,
     leaves.length,
-    ...sorted(leaves, (leaf) => leaf.recordIndex),
+    ...leaves.toSorted((a, b) => a.recordIndex - b.recordIndex),
   );
   return leaves;
 }

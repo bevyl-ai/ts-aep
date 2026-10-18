@@ -28,7 +28,6 @@ import {
   truthy,
   literal,
   round,
-  sorted,
   ValueError,
   type ClassAttributes,
   AttributeError,
@@ -2359,7 +2358,7 @@ export class CompItem extends AVItem {
     for (const idx of layerIndices) {
       checkIndex(idx);
     }
-    const indices = sorted([...new Set(layerIndices)]);
+    const indices = [...new Set(layerIndices)].sort((a, b) => a - b);
     if (!moveAllAttributes) {
       if (indices.length !== 1) {
         throw new ValueError("moveAllAttributes=false requires exactly one layer index.");
@@ -2478,7 +2477,7 @@ export class CompItem extends AVItem {
       const block = blocks[i];
       finalBlocks.push(block);
       const referenced: number[] = [ly._ldta.matteLayerId || 0];
-      referenced.push(...sorted([...collectLayerRefTdpiIds(ly._layerList)]));
+      referenced.push(...[...collectLayerRefTdpiIds(ly._layerList)].sort((a, b) => a - b));
       for (const matteId of referenced) {
         if (!matteId || idMap.has(matteId) || matteMap.has(matteId)) {
           continue;
