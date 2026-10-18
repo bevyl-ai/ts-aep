@@ -113,7 +113,7 @@ export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
 export function _grid(cdta: CdtaChunk): [number, number] {
   /**
    * The composition's frame grid: `(timebase, units per frame)` from its
-   * frame rate (`frame_grid`), as AE derives it on open. The stored 16.16
+   * frame rate (`frameGrid`), as AE derives it on open. The stored 16.16
    * rate only approximates the grid's rate (29.970001220703125 for 23976 /
    * 800), so comp times snap to the grid, never to the 16.16 value.
    */
@@ -269,7 +269,7 @@ export function _materializeLayer(layer: Layer): void {
   }
 
   // AE writes the `ADBE Layer Source Alternate` leaf (with its blsv/blsi
-  // skeleton) inside Source Options for every new layer. `_materialize_tree`
+  // skeleton) inside Source Options for every new layer. `_materializeTree`
   // iterates raw `_properties` and so never triggers that group's deferred
   // child synthesis, so materialize the leaf explicitly here.
   for (const top of layer.properties) {
@@ -574,7 +574,7 @@ export class CompItem extends AVItem {
    * Writing also rewrites the composition's internal timebase, and with
    * it every keyframe time in the composition. After Effects keeps
    * keyframe times fixed in *seconds* across a frame-rate change and
-   * stores them as an integer count of `internal_timebase` units, so the
+   * stores them as an integer count of `internalTimebase` units, so the
    * stored counts are rescaled to match. Composition duration, work area
    * and current time are requantized onto the new frame grid; layer
    * timing and nested compositions are left untouched.
@@ -622,7 +622,7 @@ export class CompItem extends AVItem {
      *
      * `seconds = time_units / internal_timebase`, so holding a keyframe at
      * the same time in seconds means scaling its stored unit count by
-     * `new / old`. That ratio is 1 whenever only `time_scale` moved - the
+     * `new / old`. That ratio is 1 whenever only `timeScale` moved - the
      * whole NTSC family, and 30 \<-\> 60 - but the frame rate cached on each
      * `Keyframe` still has to be refreshed, because `frameTime` is derived
      * from it.
@@ -632,7 +632,7 @@ export class CompItem extends AVItem {
      * ratio denominators").
      *
      * A stretched layer's ticks count against its own timebase
-     * (`layer_timebase`), so they scale by that ratio instead: 1 for a
+     * (`layerTimebase`), so they scale by that ratio instead: 1 for a
      * layer at the 115200 cap. A tie rounds up. Both measured on AE 2026
      * going from 24 to 25 fps: ticks 12 and -84 became 13 and -87, and a
      * 500 % layer's ticks did not move.
@@ -1518,7 +1518,7 @@ export class CompItem extends AVItem {
    * The names of all controllers in the Essential Graphics panel.
    * Read-only. Excludes the runtime-only Group "drop zone" controller AE
    * synthesizes but does not store (see
-   * `motion_graphics_template_controller_count`).
+   * `motionGraphicsTemplateControllerCount`).
    */
   get motionGraphicsTemplateControllerNames(): string[] {
     return this.motionGraphicsControllers.map((ctrl) => ctrl.name);
@@ -1733,7 +1733,7 @@ export class CompItem extends AVItem {
    *
    * Changing the renderer replaces the stored options with the new
    * renderer's defaults. Previous options are not preserved.
-   * Read `renderer_options` again after changing the renderer.
+   * Read `rendererOptions` again after changing the renderer.
    */
   get renderer(): string {
     const binaryName = this._prin.matchName;
@@ -2332,7 +2332,7 @@ export class CompItem extends AVItem {
      * the matte layer inside the new composition (the original stays
      * untouched).
      *
-     * When `move_all_attributes` is `false` (allowed for a single
+     * When `moveAllAttributes` is `false` (allowed for a single
      * source-backed layer only), the selected layer stays in this
      * composition with all its attributes and its source is swapped to
      * the new composition, which is sized from the layer's source and
@@ -2349,8 +2349,8 @@ export class CompItem extends AVItem {
      *   composition; `false` to leave them on the retained layer ("Leave all attributes" in the
      *   Pre-compose dialog).
      * @returns The newly created {@link CompItem}.
-     * @throws {@link ValueError} If `layer_indices` is empty or contains an out-of-range index, or
-     *   if `move_all_attributes` is `false` with more than one index or with a layer that has no
+     * @throws {@link ValueError} If `layerIndices` is empty or contains an out-of-range index, or
+     *   if `moveAllAttributes` is `false` with more than one index or with a layer that has no
      *   source.
      */
     validateString(name);
@@ -2387,7 +2387,7 @@ export class CompItem extends AVItem {
     /**
      * Create the precompose target composition.
      *
-     * Built via `add_comp` for the skeleton, then this composition's
+     * Built via `addComp` for the skeleton, then this composition's
      * settings are inherited by byte-copying its cdta (AE writes the
      * new comp's cdta byte-identical to the parent's, with only
      * width/height overridden in the leave-attributes path), and the
@@ -2802,46 +2802,34 @@ export class CompItem extends AVItem {
   }
 }
 
-// ChunkField descriptors (`bg_color = ChunkField[...](...)` in the class body).
+// The ChunkField descriptors of the fields declared above.
 
-/** The background color of the composition. The three array values specify
- * the red, green, and blue components of the color. Read / Write. */
 descriptor(
   CompItem,
   "bgColor",
   new ChunkField("_cdta", "bgColor", { validate: validateRgbColor }),
 );
 
-/** When `true`, Draft 3D mode is enabled for the composition. Read / Write. */
 descriptor(CompItem, "draft3d", ChunkField.bool("_cdta", "draft3d"));
 
-/** When `true`, frame blending is enabled for this Composition. Read / Write. */
 descriptor(CompItem, "frameBlending", ChunkField.bool("_cdta", "frameBlending"));
 
-/** When `true`, only layers with `shy` set to `false` are shown in the
- * Timeline panel. Read / Write. */
 descriptor(CompItem, "hideShyLayers", ChunkField.bool("_cdta", "hideShyLayers"));
 
-/** When `true`, motion blur is enabled for the composition. Read / Write. */
 descriptor(CompItem, "motionBlur", ChunkField.bool("_cdta", "motionBlur"));
 
-/** When `true`, the frame rate of nested compositions is preserved in
- * the current composition. Read / Write. */
 descriptor(
   CompItem,
   "preserveNestedFrameRate",
   ChunkField.bool("_cdta", "preserveNestedFrameRate"),
 );
 
-/** When `true`, the resolution of nested compositions is preserved in
- * the current composition. Read / Write. */
 descriptor(
   CompItem,
   "preserveNestedResolution",
   ChunkField.bool("_cdta", "preserveNestedResolution"),
 );
 
-/** The width of the item in pixels. Read / Write. */
 descriptor(
   CompItem,
   "width",
@@ -2851,7 +2839,6 @@ descriptor(
   }),
 );
 
-/** The height of the item in pixels. Read / Write. */
 descriptor(
   CompItem,
   "height",
@@ -2861,7 +2848,6 @@ descriptor(
   }),
 );
 
-/** The shutter angle setting for the composition. Read / Write. */
 descriptor(
   CompItem,
   "shutterAngle",
@@ -2870,7 +2856,6 @@ descriptor(
   }),
 );
 
-/** The shutter phase setting for the composition. Read / Write. */
 descriptor(
   CompItem,
   "shutterPhase",
@@ -2879,8 +2864,6 @@ descriptor(
   }),
 );
 
-/** The x and y downsample resolution factors for rendering the
- * composition. The default is [1, 1]. Read / Write. */
 descriptor(
   CompItem,
   "resolutionFactor",
@@ -2889,10 +2872,6 @@ descriptor(
   }),
 );
 
-/**
- * The maximum number of motion blur samples of 2D layer motion. Must be
- * \>= `samples_per_frame`. Read / Write. 
- */
 descriptor(
   CompItem,
   "motionBlurAdaptiveSampleLimit",
@@ -2905,8 +2884,6 @@ descriptor(
   }),
 );
 
-/** The minimum number of motion blur samples per frame for Classic 3D
- * layers, shape layers, and certain effects. Read / Write. */
 descriptor(
   CompItem,
   "motionBlurSamplesPerFrame",
@@ -2915,7 +2892,6 @@ descriptor(
   }),
 );
 
-/** The pixel aspect ratio of the item (1.0 is square). Read / Write. */
 descriptor(
   CompItem,
   "pixelAspect",
@@ -2926,14 +2902,12 @@ descriptor(
   }),
 );
 
-/** The time scale, used as a divisor for keyframe time values. Read-only. */
 descriptor(
   CompItem,
   "timeScale",
   new ChunkField("_cdta", "timeScale", { readOnly: true }),
 );
 
-/** The time set as the beginning of the composition, in seconds. Read / Write. */
 descriptor(
   CompItem,
   "displayStartTime",
@@ -2944,8 +2918,6 @@ descriptor(
   }),
 );
 
-/** When `true`, timecode is displayed in drop-frame format. Only
- * applicable when `frameRate` is 29.97 or 59.94. Read / Write. */
 descriptor(
   CompItem,
   "dropFrame",
@@ -2956,7 +2928,7 @@ descriptor(
   }),
 );
 
-// `@requires_version(15)` on the `motion_graphics_template_name` setter, and
+// `@requires_version(15)` on the `motionGraphicsTemplateName` setter, and
 // `@requires_version(24)` on the vertical text methods. Python applies these
 // decorators while the class body runs; here they wrap the finished class.
 {

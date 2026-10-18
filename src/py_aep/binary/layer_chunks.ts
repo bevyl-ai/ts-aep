@@ -1,7 +1,7 @@
 /**
  * Layer chunk type: ldta (160-164 bytes).
  *
- * The optional `matte_layer_id` (AE \>= 23) uses `fmt_field(..., optional=True)`
+ * The optional `matteLayerId` (AE \>= 23) uses `fmt_field(..., optional=True)`
  * so it reads as `null` from older files and is omitted on write when absent.
  */
 
@@ -22,8 +22,8 @@ export const _LDTA_SOURCE_ID_END = 52;
  * Layer descriptor chunk (160-164 bytes).
  *
  * Contains layer identity, timing, flags, and type info. The 32-byte
- * `layer_name` is a UTF-8 null-terminated string. The optional
- * `matte_layer_id` is present only in AE \>= 23.
+ * `layerName` is a UTF-8 null-terminated string. The optional
+ * `matteLayerId` is present only in AE \>= 23.
  */
 export class LdtaChunk extends Chunk {
   declare chunkType: string;

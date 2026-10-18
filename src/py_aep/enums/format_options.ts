@@ -104,7 +104,7 @@ export type MPEGProfile = EnumValue<typeof MPEGProfile>;
  *
  * The `Resolution` dropdown of the DNxHR/DNxHD codec options, stored in
  * the `ADBEVideoResolution` XML parameter. Only meaningful when the
- * module's `video_codec` is `VideoCodec.DNXHR_DNXHD`; the parameter
+ * module's `videoCodec` is `VideoCodec.DNXHR_DNXHD`; the parameter
  * survives a codec change, so it can read back stale under another codec.
  *
  * Member names follow the dropdown labels. Ids are a contiguous

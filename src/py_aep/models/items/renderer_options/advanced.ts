@@ -86,21 +86,18 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
 
 // Descriptors assigned in the class body: `declare` above, installed here.
 
-/** Renderer quality, `1` to `125`. Read / Write. */
 descriptor(
   AdvancedRendererOptions,
   "quality",
   new ChunkField("_body", "quality", { validate: validateAdvancedQuality }),
 );
 
-/** Environment light shadow resolution. Read / Write. */
 descriptor(
   AdvancedRendererOptions,
   "resolution",
   ChunkField.enum(EnvironmentLightShadowResolution, "_body", "resolution"),
 );
 
-/** Environment light shadow smoothness, `1` to `20`. Read / Write. */
 descriptor(
   AdvancedRendererOptions,
   "smoothness",

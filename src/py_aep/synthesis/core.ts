@@ -11,12 +11,12 @@
  *   (Material Options, Geometry Options, Layer Styles, Mask atoms, etc.).
  * * Set `minValue` / `maxValue` on properties with known bounds.
  *
- * The single public entry point is `synthesize_layer_properties`, called
+ * The single public entry point is `synthesizeLayerProperties`, called
  * once per layer when its property tree is built
  * (`Layer._build_property_tree`).
  *
  * **Note:** Effect parameter synthesis remains a separate dynamic step inside
- * `parse_effect()`, because it relies on binary parT/pard data rather
+ * `parseEffect()`, because it relies on binary parT/pard data rather
  * than static spec tables.
  */
 
@@ -153,7 +153,7 @@ export function _setTransformDefaults(layer: Layer, aeMajor: number): void {
       anchorH = 0;
     } else {
       // The centre of the source, at its current size: set by
-      // `follow_source_anchor` below.
+      // `followSourceAnchor` below.
       anchorW = anchorH = 0;
       sourceBacked = true;
     }
@@ -351,7 +351,7 @@ export function _flattenScaleZ(scaleProp: Property): void {
  * "Z Rotation" on a 3-D one, and always reports Scale Z as 100 for a 2-D
  * layer whatever the binary holds. Camera and Light layers are always 3-D.
  *
- * Called from synthesis and again whenever `three_d_layer` is written -
+ * Called from synthesis and again whenever `threeDLayer` is written -
  * AE 2026 renames in both directions the moment the switch is toggled.
  *
  * `resetScaleZ` additionally writes the 100 into the chunk. A 2-D layer's

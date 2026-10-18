@@ -41,7 +41,7 @@ import type { LdatItemType } from "./ldat_chunks.ts";
 
 const _PREFIX_STRUCTS = new WeakMap<readonly FmtAttribute[], struct.Struct[]>();
 
-/** Big-endian struct for the first `n` of `data_fields`. */
+/** Big-endian struct for the first `n` of `dataFields`. */
 function _prefixStruct(dataFields: readonly FmtAttribute[], n: number): struct.Struct {
   let byN = _PREFIX_STRUCTS.get(dataFields);
   if (byN === undefined) _PREFIX_STRUCTS.set(dataFields, (byN = []));
@@ -107,7 +107,7 @@ export class Chunk extends AttrsBase {
   declare synthetic: boolean;
   declare _trailing: Uint8Array;
 
-  /** Whether `read` takes the nesting context `read_chunks` passes. */
+  /** Whether `read` takes the nesting context `readChunks` passes. */
   static _nests = false;
 
   static read(fp: IO, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
@@ -338,7 +338,7 @@ define(Chunk, {
 
 /** LIST or RIFX container chunk.
  *
- * Children are stored in `chunks`. The `list_type` is the 4-byte subtype
+ * Children are stored in `chunks`. The `listType` is the 4-byte subtype
  * (e.g. "Fold", "Layr", "Egg!"). For btdk lists, raw binary data is stored
  * in inherited `data` instead of parsed children.
  *
@@ -525,7 +525,7 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
  * Older projects (AE CC 12.0) write the string itself as the body,
  * NUL-terminated, instead of a Utf8 child: such a body keeps its bytes
  * in `data` and stands its string in as a synthetic Utf8 child (see
- * `_read_legacy`).
+ * `_readLegacy`).
  */
 export class ContainerChunk extends Chunk {
   declare ["constructor"]: ClassAttributes<typeof ContainerChunk>;
@@ -576,7 +576,7 @@ export class ContainerChunk extends Chunk {
 
   /**
    * The legacy body's string standing for a `Utf8` value (the inverse
-   * of `_legacy_value`).
+   * of `_legacyValue`).
    */
   static _legacyString(value: string): string {
     return value;
@@ -603,7 +603,7 @@ export class ContainerChunk extends Chunk {
   }
 
   /**
-   * The legacy body (see `_read_legacy`) of the `Utf8` child's value: a
+   * The legacy body (see `_readLegacy`) of the `Utf8` child's value: a
    * parsed body as it was read unless the value changed, a new one when
    * a container py_aep built is written into an older project.
    *
@@ -660,7 +660,7 @@ export const LEGACY_NAME_FORMAT = 92;
 
 export const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: false });
 /**
- * Set by `write_aep` while writing a project older than `LEGACY_NAME_FORMAT`,
+ * Set by `writeAep` while writing a project older than `LEGACY_NAME_FORMAT`,
  * so name containers py_aep built are written as bare strings too.
  */
 
@@ -735,7 +735,7 @@ export type ResolvedContext = {
   rendererMatchName?: string;
 };
 
-/** The keywords `read_chunks` passes to every `cls.read`. */
+/** The keywords `readChunks` passes to every `cls.read`. */
 export type ChunkReadKwargs = {
   chunkType?: string;
   ctx?: ReadContext | null;
@@ -827,7 +827,7 @@ const _HEADER_CODES = new struct.Struct(">II");
 /** Decoded chunk types by code; only codes that decode as ASCII get in. */
 const _TYPE_NAMES = new Map<number, string>();
 
-/** Encoded chunk types; `write_bytes` copies them out, never in. */
+/** Encoded chunk types; `writeBytes` copies them out, never in. */
 const _TYPE_BYTES = new Map<string, Uint8Array>();
 
 /** A chunk or LIST type's ASCII bytes, encoded once per type (read-only: `write` copies them). */
@@ -837,7 +837,7 @@ function _typeBytes(type: string): Uint8Array {
   return bytes;
 }
 const _LEN_BODY = new struct.Struct(">I");
-/** `write_chunk`'s backpatch value; `pack` reads it before returning. */
+/** `writeChunk`'s backpatch value; `pack` reads it before returning. */
 const _LEN_VALUE: struct.PackValue[] = [0];
 
 /** Read the 8-byte chunk header: (chunk_type, len_body). */

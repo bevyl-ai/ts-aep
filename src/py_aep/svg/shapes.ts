@@ -1,9 +1,9 @@
 /**
  * Convert SVG shape elements to cubic subpaths and to AE Shape form.
  *
- * `element_subpaths` turns a basic shape (`rect`, `circle`, `ellipse`,
+ * `elementSubpaths` turns a basic shape (`rect`, `circle`, `ellipse`,
  * `line`, `polyline`, `polygon`) or a `path` into untransformed cubic
- * {@link RawSubpath | RawSubpath}s. `cubics_to_subpath`
+ * {@link RawSubpath | RawSubpath}s. `cubicsToSubpath`
  * applies the accumulated transform and extracts After Effects vertices +
  * in/out tangents.
  */

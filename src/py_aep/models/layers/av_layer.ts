@@ -51,10 +51,10 @@ export function _finite(point: number[]): number[] {
 
 export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
   /**
-   * Check if using `new_source` as a layer source would create a cycle.
+   * Check if using `newSource` as a layer source would create a cycle.
    *
-   * Walks UP from `target_comp` via `_usedIn` back-references and returns
-   * `true` if `new_source` is found among the ancestors, meaning the
+   * Walks UP from `targetComp` via `_usedIn` back-references and returns
+   * `true` if `newSource` is found among the ancestors, meaning the
    * replacement would create a circular reference chain.
    */
   if (!hasattr(newSource, "layers")) return false;
@@ -401,7 +401,7 @@ export class AVLayer extends Layer {
 
   /**
    * The "in" point of the layer, expressed in composition time
-   * (seconds). Clamped to `start_time` for non-still footage layers.
+   * (seconds). Clamped to `startTime` for non-still footage layers.
    * Read / Write.
    *
    * On a time-reversed layer the in point is the later end, and sits
@@ -479,9 +479,9 @@ export class AVLayer extends Layer {
    * The source composition's Essential Graphics controllers that this
    * precomp layer's Essential Properties overrides reference.
    *
-   * Each entry corresponds to a UUID in `essential_property_uuids` (same
+   * Each entry corresponds to a UUID in `essentialPropertyUuids` (same
    * order), resolved against the source comp's
-   * `motion_graphics_controllers` by shared UUID. Empty for a non-precomp
+   * `motionGraphicsControllers` by shared UUID. Empty for a non-precomp
    * layer, a source comp with no controllers, or a layer with no
    * overrides. Read-only.
    */
@@ -509,7 +509,7 @@ export class AVLayer extends Layer {
    * Replacement controller, named after the layer.
    *
    * Returns `true` on success, or `false` when the layer cannot be
-   * added (see `can_add_to_motion_graphics_template`).
+   * added (see `canAddToMotionGraphicsTemplate`).
    *
    * @param comp - The composition to add the layer to.
    */
@@ -522,7 +522,7 @@ export class AVLayer extends Layer {
    * Replacement controller with an explicit `name`.
    *
    * Returns `true` on success, or `false` when the layer cannot be
-   * added (see `can_add_to_motion_graphics_template`).
+   * added (see `canAddToMotionGraphicsTemplate`).
    *
    * @param comp - The composition to add the layer to.
    * @param name - The controller name to show in the Essential Graphics panel.
@@ -738,7 +738,7 @@ export class AVLayer extends Layer {
    * @param pointTopLeft - `[x, y, z]` comp-space position of the source's top-left corner.
    * @param pointTopRight - `[x, y, z]` position of the top-right corner.
    * @param pointBottomLeft - `[x, y, z]` position of the bottom-left corner.
-   * @returns An object of transform property values (`anchor_point`, `position`, `x_rotation`,
+   * @returns An object of transform property values (`anchorPoint`, `position`, `x_rotation`,
    *   `y_rotation`, `z_rotation`, `scale`), assignable to the matching transform properties.
    * @throws {@link ValueError} If the points are coincident or collinear.
    */
@@ -876,7 +876,7 @@ export class AVLayer extends Layer {
   /** `true` if time remapping is enabled for this layer. Read / Write. */
   get timeRemapEnabled(): boolean {
     // From the chunks, not the property: reading a layer's times
-    // (`in_point`, `out_point`) then leaves its property tree unbuilt.
+    // (`inPoint`, `outPoint`) then leaves its property tree unbuilt.
     pyAssert(this._tdgp != null);
     const chunks = getChunksByMatchName(this._tdgp).get("ADBE Time Remapping");
     if (chunks == null || chunks.length === 0) return false;
@@ -950,7 +950,7 @@ export class AVLayer extends Layer {
   }
 
   /**
-   * `true` if this layer has track matte. When true, this layer's `track_matte_type`
+   * `true` if this layer has track matte. When true, this layer's `trackMatteType`
    * value controls how the matte is applied. Read-only.
    */
   get hasTrackMatte(): boolean {
@@ -1041,7 +1041,7 @@ export class AVLayer extends Layer {
 
   /**
    * Sets the track matte layer and type for this layer.
-   * Passing in `null` to `track_matte_layer` parameter removes
+   * Passing in `null` to `trackMatteLayer` parameter removes
    * the track matte. See [remove_track_matte] for another way
    * of removing track matte.
    *
@@ -1052,7 +1052,7 @@ export class AVLayer extends Layer {
    * @param trackMatteType - The {@link TrackMatteType} to apply. Passing `NO_TRACK_MATTE` with a
    *   non-`null` layer is a no-op.
    * @throws {@link AttributeError} If the file predates AE 23.0.
-   * @throws {@link ValueError} If `track_matte_layer` belongs to a different composition.
+   * @throws {@link ValueError} If `trackMatteLayer` belongs to a different composition.
    */
   setTrackMatte(
     trackMatteLayer: AVLayer | null,
@@ -1134,16 +1134,16 @@ export class AVLayer extends Layer {
    * Replace the source item for this layer.
    *
    * **Warning:** Contrary to ExtendScript, if this method is performed
-   * on a null layer, the layer's `null_layer` attribute
+   * on a null layer, the layer's `nullLayer` attribute
    * changes to `false`, making the layer visible
    * in comp viewer and renders.
    *
    * @param newSource - The new source {@link AVItem}.
    * @param fixExpressions - Update expressions that reference the old source name. Not yet
    *   implemented.
-   * @throws {@link NotImplementedError} If `fix_expressions` is `true`.
+   * @throws {@link NotImplementedError} If `fixExpressions` is `true`.
    * @throws {@link ValueError} If the layer has no source (e.g. shape or text layers), if
-   *   `new_source` is not in the project, if `new_source` would create a composition cycle, or if
+   *   `newSource` is not in the project, if `newSource` would create a composition cycle, or if
    *   the layer is a 3D model layer.
    */
   replaceSource(newSource: AVItem, fixExpressions = false): void {

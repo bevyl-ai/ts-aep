@@ -167,7 +167,7 @@ export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): 
 /**
  * `getattr(enum_cls, name, dflt)`. Python returns a classmethod already
  * bound to the enum (its `__self__`); a py_enum method needs `this` bound
- * the same way, and `_enum_class` finds the enum through `__self__`.
+ * the same way, and `_enumClass` finds the enum through `__self__`.
  */
 export function boundEnumMethod<V, R extends number>(
   enumCls: EnumHelpers<number>,
@@ -176,7 +176,7 @@ export function boundEnumMethod<V, R extends number>(
 ): (value: V) => R {
   const m = getattr(enumCls, name, dflt);
   // Python's default is the enum class itself, which is callable (`E(v)`); a
-  // py_enum object is not, so use `E.of` and keep `__self__` for `_enum_class`.
+  // py_enum object is not, so use `E.of` and keep `__self__` for `_enumClass`.
   if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { __self__: dflt }) : dflt;
   if (typeof m !== "function") return m;
   return Object.assign(m.bind(enumCls), { __self__: enumCls });
@@ -189,7 +189,7 @@ export function boundEnumMethod<V, R extends number>(
  * depth AE keeps but has no label for, -16, or a format id from a
  * third-party output plugin); the binary is trusted, so reads must not
  * raise. Mirrors the fallback
- * `_try_enum_or_int` uses for XML params.
+ * `_tryEnumOrInt` uses for XML params.
  *
  * For a chunk-backed field prefer
  * `ChunkField.enum(..., allow_out_of_enum_values=True)`, which applies
@@ -212,7 +212,7 @@ export function enumOrRaw<V, R>(convert: (value: V) => R): (value: V) => R | V {
 }
 
 /**
- * Raise `ValueError` if `value` is not a valid member of `enum_cls`.
+ * Raise `ValueError` if `value` is not a valid member of `enumCls`.
  *
  * Raw ints must appear in the enum's value map; any other type must
  * already be an instance of the enum.
@@ -408,7 +408,7 @@ export class ChunkField<
    * straight into a 1-byte field, so `= 2` would write a byte AE never
    * writes and `= "no"` would only blow up later, at `save()`.
    *
-   * Pass `validate=` to override (compose by calling `validate_bool`
+   * Pass `validate=` to override (compose by calling `validateBool`
    * first). For a bool backed by a generic integer chunk field (e.g.
    * `U1Chunk.value`) add `transform=bool, reverse=int`.
    */
@@ -436,7 +436,7 @@ export class ChunkField<
    * - `allowOutOfEnumValues`: When `true`, a stored value outside the enum reads back raw
    *     instead of raising - real `.aep` files hold them (an unlabelled output depth, a format id
    *     from a third-party output plugin) and the binary is trusted. Wrapping the transform hides
-   *     the enum class from `_enum_class`, so write-side membership strictness is restored via
+   *     the enum class from `_enumClass`, so write-side membership strictness is restored via
    *     `validate=validate_enum(enum_cls)` unless the caller passes its own `validate` (which must
    *     then check membership itself).
    *   The field then reads as `EnumValue<E> | Raw`, `Raw` being the rest of the

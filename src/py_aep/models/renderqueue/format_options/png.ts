@@ -113,7 +113,7 @@ export class PngFormatOptions extends FormatOptionsBase {
   /**
    * The color primaries used for HDR10 metadata. Corresponds to the
    * `Color Primaries` dropdown in the PNG Options dialog.
-   * Only meaningful when `include_hdr10_metadata` is `true`. An
+   * Only meaningful when `includeHdr10Metadata` is `true`. An
    * out-of-enum stored value reads back as a raw `int` (the binary
    * is trusted). Read / Write.
    */

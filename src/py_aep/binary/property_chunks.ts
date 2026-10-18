@@ -2,7 +2,7 @@
  * Property-level chunk types: tdsb, tdb4, cdat, tdum/tduM, and the Curves
  * effect's aRbp layout.
  *
- * TdsbChunk and Tdb4Chunk use `fmt_field()` with `BitField` descriptors.
+ * TdsbChunk and Tdb4Chunk use `fmtField()` with `BitField` descriptors.
  * CdatChunk and TdumChunk override `read()` / `write()` because they
  * have variable-length or context-dependent layouts.
  */
@@ -291,7 +291,7 @@ register("tdb4")(Tdb4Chunk);
 // chunk classes are data containers.
 //
 // Both were measured on AE 2026 output across 1D / 2D / 3D / spatial /
-// color properties; `_animate_tdb4` and `_static_tdb4` in property.py are
+// color properties; `_animateTdb4` and `_staticTdb4` in property.py are
 // the callers.
 // ---------------------------------------------------------------------------
 
@@ -363,9 +363,9 @@ export function tdb4ClearKeyframeRecord(t: Tdb4Chunk): void {
  *
  * @param t - The `Tdb4Chunk` to mutate.
  * @param kw - Keyword arguments:
- * - `in_interpolation`: The removed keyframe's in interpolation code.
- * - `out_interpolation`: The removed keyframe's out interpolation code.
- * - `spatial_flags`: The removed keyframe's spatial flags (0 for a non-spatial keyframe).
+ * - `inInterpolation`: The removed keyframe's in interpolation code.
+ * - `outInterpolation`: The removed keyframe's out interpolation code.
+ * - `spatialFlags`: The removed keyframe's spatial flags (0 for a non-spatial keyframe).
  */
 export function tdb4ApplyStaticTemplate(
   t: Tdb4Chunk,
@@ -403,7 +403,7 @@ export function tdb4ApplyVfAxisTemplate(t: Tdb4Chunk): void {
 /**
  * Property value chunk storing one or more doubles.
  *
- * Normally big-endian.  When `is_le` is true (inside an OTST
+ * Normally big-endian.  When `isLe` is true (inside an OTST
  * orientation list), values are stored little-endian.
  */
 export class CdatChunk extends Chunk {
@@ -714,7 +714,7 @@ define(CurvesRecordItem, {
  *
  * Not registered: an aRbp holds whatever arbitrary data its effect
  * defines, so the tree keeps the raw chunk (and its bytes) and this layout
- * is read from it on demand, by `from_arbp`.
+ * is read from it on demand, by `fromArbp`.
  */
 export class CurvesArbpChunk extends Chunk {
   declare chunkType: string;

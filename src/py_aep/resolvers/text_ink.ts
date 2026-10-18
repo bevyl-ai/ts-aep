@@ -28,7 +28,7 @@
  */
 
 // NOTE(port): text is indexed in UTF-16 units here; Python indexes code points.
-// `_check_envelope` refuses astral characters before any of this runs, so the
+// `_checkEnvelope` refuses astral characters before any of this runs, so the
 // two agree on every text that reaches these helpers.
 
 import type * as fontkit from "fontkit";
@@ -140,7 +140,7 @@ export function _strokeWidth(style: CosDict): number {
 }
 
 /**
- * Grow `box` by the ink of one line whose pen starts at `origin_x`.
+ * Grow `box` by the ink of one line whose pen starts at `originX`.
  *
  * Glyphs are placed by the composer's own shaping and advances
  * (`text_composition`), the ones that break and justify the lines.
@@ -283,7 +283,7 @@ export function _pointTextInk(
         // character (measured on AE 2026: a centered line shifts by
         // half of `tracking * size / 1000`, a right-justified one by
         // all of it). A left-justified line needs no width, so its
-        // glyphs are shaped once, by `_line_ink`.
+        // glyphs are shaped once, by `_lineInk`.
         const last = styles[offset + paragraph.length - 1];
         const width =
           tc._width(paragraph, styles, offset) - (last.tracking / 1000.0) * last.size;

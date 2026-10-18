@@ -118,7 +118,7 @@ export function _propertyAccessors(cls: Function): string[] {
  * hierarchy after the descriptor conversion).
  *
  * Sorted, not a set: reading a model attribute can synthesize property
- * children and populate caches, and `_to_dict` memoizes the first
+ * children and populate caches, and `_toDict` memoizes the first
  * result it reaches a shared object by. Iterating a set therefore let
  * `PYTHONHASHSEED` decide what the report said - two runs over the same
  * project disagreed on whether an effect had all of its parameters.
@@ -169,7 +169,7 @@ export const _propertyNamesCache = new Map<Function, readonly string[]>();
 /**
  * Get public \@property names for a class, cached per type.
  *
- * Sorted for the same reason as `_get_field_names`.
+ * Sorted for the same reason as `_getFieldNames`.
  */
 export function _getPropertyNames(cls: Function): readonly string[] {
   const cached = _propertyNamesCache.get(cls);
@@ -191,9 +191,9 @@ export function _getPropertyNames(cls: Function): readonly string[] {
 export const _PRIMITIVE_TYPES: readonly string[] = ["number", "bigint", "string", "boolean"];
 
 /**
- * A value `to_dict` walks or returns, or the ExtendScript JSON value it is
+ * A value `toDict` walks or returns, or the ExtendScript JSON value it is
  * compared with: a primitive, a list or Map of such values (a model object
- * becomes a `Dict` of its fields), or another object, which `to_dict`
+ * becomes a `Dict` of its fields), or another object, which `toDict`
  * returns unchanged (bytes, sets, callables, `PyFloat`, `String` objects).
  */
 export type ToDictValue =
@@ -209,7 +209,7 @@ export type ToDictValue =
   | object;
 
 /**
- * What `to_dict` makes of a `T`: primitives, bytes, sets, callables, `PyFloat`
+ * What `toDict` makes of a `T`: primitives, bytes, sets, callables, `PyFloat`
  * and `String` objects unchanged, a list element-wise, and any other object (a
  * model object, a Map) a `Dict`. Which objects have fields is only known at
  * runtime; one without any comes back unchanged.
@@ -239,10 +239,10 @@ export function toDict(obj: ToDictValue): ToDictValue {
 }
 
 /**
- * Recursive worker for `to_dict`, memoized on object identity.
+ * Recursive worker for `toDict`, memoized on object identity.
  *
  * The model is a DAG, not a tree: the same layer is reachable through
- * `CompItem.layers`, `av_layers`, `layers_by_id`, `file_layers`, ... and the
+ * `CompItem.layers`, `avLayers`, `layersById`, `fileLayers`, ... and the
  * same property through several group accessors. Without `memo` every such
  * edge re-serializes the whole subtree below it, and those factors multiply
  * down the property nesting - on a production-sized project that is the

@@ -256,7 +256,7 @@ export function _indexPostscript(
 
 /**
  * Yield every font file under the OS font directories. Both index
- * builders (`_build_index`, `_postscript_index`) walk the same tree.
+ * builders (`_buildIndex`, `_postscriptIndex`) walk the same tree.
  */
 export function* _walkFontFiles(): Generator<Path> {
   for (const directory of _fontDirs()) {
@@ -388,7 +388,7 @@ export function _pick(
  * Resolve a single family name to an installed font face, with NO
  * generic fallback.
  *
- * Unlike `resolve_font`, an uninstalled family returns `null` instead
+ * Unlike `resolveFont`, an uninstalled family returns `null` instead
  * of degrading to the sans-serif chain; used where substituting a
  * different font would be wrong (e.g. reading variable-font axes).
  * Returns `(font file path, face index)`.

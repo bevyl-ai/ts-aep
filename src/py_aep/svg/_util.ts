@@ -83,7 +83,7 @@ export function parseNumber(text: string | null, default_: number = 0.0): number
 /**
  * An SVG length in user units: CSS absolute units (`mm`, `pt`, `in`,
  * ...) at 96 px per inch, `em` / `ex` from `fontSize`, a percentage of
- * `percent_of` (the bare number when `null`); a unitless number or an
+ * `percentOf` (the bare number when `null`); a unitless number or an
  * unknown unit is taken as px. `default` when absent or non-numeric.
  */
 export function parseLength(

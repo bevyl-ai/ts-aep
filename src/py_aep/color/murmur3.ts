@@ -3,7 +3,7 @@
  * `Guid` (UID) of a color space.
  *
  * After Effects identifies an OCIO output color space by a 16-byte id stored in the
- * render-queue output module (`output_profile_id`). That id is the color space's
+ * render-queue output module (`outputProfileId`). That id is the color space's
  * `Guid`, computed as a two-stage MurmurHash3. The only non-standard detail is the
  * seed: AE initializes both 64-bit accumulators with `0xC29DE5B8264CD69E` instead
  * of 0. Verified against the ids AE itself stores in the `output_color_space_ocio`
@@ -49,7 +49,7 @@ export function murmurhash3X64128(data: Uint8Array, seed: number | bigint = 0): 
   const length = data.length;
   const nblocks = floordiv(length, 16);
   // `int.from_bytes(..., "little")` on each 8-byte half, kept as an unsigned bigint.
-  // `int_from_bytes` returns a number, which is lossy above 2**53.
+  // `intFromBytes` returns a number, which is lossy above 2**53.
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
   for (let i = 0; i < nblocks; i++) {
     let k1 = dv.getBigUint64(i * 16, true);

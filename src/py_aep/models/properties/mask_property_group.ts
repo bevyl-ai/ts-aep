@@ -179,7 +179,7 @@ export class MaskPropertyGroup extends PropertyGroup {
    * @param kw - Options:
    * - `name`: The display name, stored in the `tdsn` (AE bakes the positional `Mask N` name at
    *     creation).
-   * - `mask_id`: 1-based creation id, stored in the `mkif` and used to pick the outline color from
+   * - `maskId`: 1-based creation id, stored in the `mkif` and used to pick the outline color from
    *     the cycle palette.
    */
   static _new(
@@ -346,7 +346,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     if (existing != null) {
       // `existing.__dict__ = mask_path.__dict__`: replace, not merge - a key
       // the parsed property leaves to its class default must not keep the
-      // placeholder's value. Plain own attributes, plus the `instance_dict`
+      // placeholder's value. Plain own attributes, plus the `instanceDict`
       // Map (non-enumerable, so Object.assign alone would skip it).
       for (const k of Object.keys(existing)) {
         if (!Object.prototype.hasOwnProperty.call(maskPath, k)) Reflect.deleteProperty(existing, k);

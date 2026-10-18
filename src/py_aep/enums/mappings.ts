@@ -145,7 +145,7 @@ export const _ICC_PROFILE_MAPPING: Map<string, string> = new Map<string, string>
 /**
  * Inverse of `_ICC_PROFILE_MAPPING`: color-space name -\> 32-char hex profile ID.
  * Used to write a known Adobe profile's 16-byte ID (footage `apid`, output
- * `output_profile_id`) without needing the ICC file on disk.
+ * `outputProfileId`) without needing the ICC file on disk.
  */
 export const _NAME_TO_ICC_PROFILE: Map<string, string> = new Map<string, string>(
   Array.from(_ICC_PROFILE_MAPPING, ([uid, name]): [string, string] => [name, uid]),
@@ -179,9 +179,9 @@ export function profileIdForName(name: string): Uint8Array | null {
 /**
  * Map the output color space profile UID to a human-readable name.
  *
- * When `output_color_space_working` is `true`, the project's
+ * When `outputColorSpaceWorking` is `true`, the project's
  * working color space name is returned directly.  Otherwise, the
- * 16-byte `output_profile_id` is looked up in the known profiles
+ * 16-byte `outputProfileId` is looked up in the known profiles
  * table.
  *
  * @param outputProfileId - 16-byte binary profile identifier from the output-module `ldat` chunk.
@@ -212,7 +212,7 @@ export function mapOutputColorSpace(
  * @param ipwsEnabled - Whether the "Working Color Space" option is selected (`ipws` chunk value).
  * @param overrideProfileId - 16-byte binary profile identifier from the `apid` chunk inside
  *   `LIST:CLRS`.
- * @returns `"Working Color Space"` when `ipws_enabled` is True, `"Embedded"` when the profile ID is
+ * @returns `"Working Color Space"` when `ipwsEnabled` is True, `"Embedded"` when the profile ID is
  *   all `0xFF` (no override), or the resolved profile name.
  */
 export function mapMediaColorSpace(

@@ -2,7 +2,7 @@
  * Enumerate the color spaces of an OCIO configuration.
  *
  * Backs `Project.listColorProfiles()` in OCIO mode: given the project's
- * `ocio_configuration_file` (a `.ocio` path or a built-in config name like
+ * `ocioConfigurationFile` (a `.ocio` path or a built-in config name like
  * `"ACES 1.2"`), return the assignable color-space names.
  *
  * The list is the OCIO *active* color spaces (`colorspaces` +
@@ -13,7 +13,7 @@
 
 // Python's `platform`, `re`, `fnmatch`, `functools`, `typing` and `pathlib`
 // imports map to `host.platform`, `RegExp`, `fnmatchcase` (below),
-// pyrt `lru_cache`, plain types and pyrt `Path`.
+// pyrt `lruCache`, plain types and pyrt `Path`.
 
 import * as host from "../../pyrt/host.ts";
 import { dep } from "../../pyrt/deps.ts";
@@ -88,7 +88,7 @@ export interface OcioNode extends Map<OcioValue, OcioValue> {}
  * Whether `value` holds a list, dict or set as a mapping key or set member.
  *
  * NOTE(port): PyYAML refuses one ("found unhashable key", a `YAMLError`), so
- * Python's `_load_config_cached` returns `None` for such a config; `yaml`
+ * Python's `_loadConfigCached` returns `None` for such a config; `yaml`
  * (npm) builds it. `seen` guards the cycles anchors can build.
  */
 export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
@@ -116,7 +116,7 @@ export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new S
  * value, discarding the tag.
  *
  * NOTE(port): yaml (npm) has no multi-constructors, so this is never
- * registered; `parse` in `_load_config_cached` drops unresolved tags itself
+ * registered; `parse` in `_loadConfigCached` drops unresolved tags itself
  * (warning silenced by `logLevel: "error"`), which yields the same untagged
  * values as this constructor. `loader` is the yaml `Document`.
  */
@@ -133,9 +133,9 @@ export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioVa
  * Parses a `.ocio` file and returns its top-level mapping, or `null` if it
  * cannot be read or parsed.
  *
- * NOTE(port): pyrt `lru_cache` keys object arguments by identity and never
+ * NOTE(port): pyrt `lruCache` keys object arguments by identity and never
  * evicts, so the cached functions in this module take primitives
- * (path string, `mtime_ns` bigint, `size`) to get real cache hits. The
+ * (path string, `mtimeNs` bigint, `size`) to get real cache hits. The
  * `maxsize=8` eviction is unobservable: results are pure functions of the key.
  */
 export const _loadConfigCached = lruCache(
@@ -157,7 +157,7 @@ export const _loadConfigCached = lruCache(
   },
 );
 
-/** `(mtime_ns, size)` cache key for `config_path`, or `null` if unreadable. */
+/** `(mtime_ns, size)` cache key for `configPath`, or `null` if unreadable. */
 export function _configStamp(configPath: Path): [bigint, number] | null {
   let st: host.HostBigStats;
   try {
@@ -230,13 +230,13 @@ export function listConfigColorSpaces(configPath: Path): string[] {
 }
 
 /**
- * Resolve an `ocio_configuration_file` value to a `.ocio` path.
+ * Resolve an `ocioConfigurationFile` value to a `.ocio` path.
  *
  * Accepts either a filesystem path or a built-in config name (e.g.
  * `"ACES 1.2"`), which After Effects ships under
  * `<install>/Support Files/OpenColorIO-Configs/<name>/`.
  *
- * @param config - The `ocio_configuration_file` value.
+ * @param config - The `ocioConfigurationFile` value.
  * @returns The resolved `.ocio` path, or `null` if it cannot be located.
  */
 export function resolveOcioConfig(config: string): Path | null {
@@ -254,13 +254,13 @@ export function resolveOcioConfig(config: string): Path | null {
 }
 
 /**
- * Resolve an `ocio_configuration_file` value, raising if that fails.
+ * Resolve an `ocioConfigurationFile` value, raising if that fails.
  *
  * The config is REQUIRED for envelope/id computation: the stored bytes
  * depend on whether the name is a direct colorspace, a role/alias, or a
  * `display/view` pair, and only the config can tell those apart.
  *
- * @param config - The project's `ocio_configuration_file` value (`null` when
+ * @param config - The project's `ocioConfigurationFile` value (`null` when
  *   there is no project to read it from).
  * @param purpose - Completes the error message, e.g.
  *   `"build the color-profile envelope for 'ACEScg'"`.
@@ -360,7 +360,7 @@ export class _ConfigIndex {
 /**
  * Index a `.ocio` config for output-color-space resolution.
  *
- * Memoized like `_load_config` (same stamp scheme): every color-space read
+ * Memoized like `_loadConfig` (same stamp scheme): every color-space read
  * and write needs the index, and rebuilding it walks the whole config. The
  * returned index is shared with every other caller - treat it as read-only.
  */
@@ -370,7 +370,7 @@ export function _configIndex(configPath: Path): _ConfigIndex {
   return _configIndexCached(configPath.path, stamp[0], stamp[1]);
 }
 
-/** Memoized body of `_config_index` (`@lru_cache(maxsize=8)`; see `_load_config_cached` TODO). */
+/** Memoized body of `_configIndex` (`@lru_cache(maxsize=8)`; see `_loadConfigCached` TODO). */
 export const _configIndexCached = lruCache(
   (configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
     const doc = _loadConfigCached(configPath, mtimeNs, size);
@@ -420,7 +420,7 @@ export function _items(x: OcioValue): [OcioValue, OcioValue][] {
 }
 
 /**
- * Resolve `color_space` to `(colorProfileName, colorProfileData)` - the
+ * Resolve `colorSpace` to `(colorProfileName, colorProfileData)` - the
  * envelope After Effects hashes for an OCIO output color space.
  *
  * Handles the four selection kinds (each verified byte-exact against
@@ -432,7 +432,7 @@ export function _items(x: OcioValue): [OcioValue, OcioValue][] {
  * - an alias: the alias name, `{"colorSpace1": alias, "ocioColorSpaceType": 2}`.
  * - a `display/view` pair: `{"colorSpace1": display, "colorSpace2": view, "ocioColorSpaceType": 1}`.
  *
- * @throws ValueError If `color_space` is not found in the config.
+ * @throws ValueError If `colorSpace` is not found in the config.
  */
 export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
   // Only a string can be a color-space or alias name; any YAML key a role.
@@ -504,12 +504,12 @@ export const _guidTableCached = lruCache(
 );
 
 /**
- * Reverse-map a 16-byte `output_profile_id` to its OCIO color-space name.
+ * Reverse-map a 16-byte `outputProfileId` to its OCIO color-space name.
  *
  * Returns `null` if no assignable color space in the config produces
- * `profile_id`. The `Guid` of every candidate (~600 two-stage MurmurHash3
+ * `profileId`. The `Guid` of every candidate (~600 two-stage MurmurHash3
  * computations for AE's bundled ACES 1.2) is memoized per config like
- * `_load_config`, so repeated reads are dict lookups.
+ * `_loadConfig`, so repeated reads are dict lookups.
  *
  * @param configPath - The resolved `.ocio` config path.
  * @param profileId - The 16-byte output profile id from the output module.
@@ -533,7 +533,7 @@ export function ocioColorSpaceForProfileId(
  * The envelope's `(colorProfileName, colorProfileData)` pair depends on the
  * SELECTION KIND, not on the slot it is stored in nor the AE version: the
  * project working space uses exactly the same four kinds as an output color
- * space (see `_output_envelope`). Verified against AE-authored samples: a
+ * space (see `_outputEnvelope`). Verified against AE-authored samples: a
  * direct colorspace pick (`ACEScg yo`, family `ACES`) stores
  * `colorProfileName="ACES/ACEScg yo"` with `{"colorSpace1":"ACEScg yo"}`,
  * while a role pick (`mari_int16`) stores `colorProfileName="sRGB (mari_int16)"` with `{...,"ocioColorSpaceType":2}` - and AE 25.6 and
@@ -548,7 +548,7 @@ export function ocioColorSpaceForProfileId(
  * @param colorSpace - The color-space, role, alias, `display/view`, or
  *   `family/color-space` name.
  *
- * @throws ValueError If `color_space` is not found in the config.
+ * @throws ValueError If `colorSpace` is not found in the config.
  */
 export function ocioColorProfileEnvelope(configPath: Path, colorSpace: string): string {
   const index = _configIndex(configPath);
@@ -569,17 +569,17 @@ export function ocioColorProfileEnvelope(configPath: Path, colorSpace: string): 
 }
 
 /**
- * Return the 16-byte `output_profile_id` After Effects stores for an OCIO
+ * Return the 16-byte `outputProfileId` After Effects stores for an OCIO
  * output color space.
  *
- * Resolves `color_space` against the config to build the color-profile
- * envelope AE would hash (see `_output_envelope` for the four selection
+ * Resolves `colorSpace` against the config to build the color-profile
+ * envelope AE would hash (see `_outputEnvelope` for the four selection
  * kinds), then computes its `Guid`.
  *
  * @param configPath - The resolved `.ocio` config path.
  * @param colorSpace - The output color-space name to assign.
  *
- * @throws ValueError If `color_space` is not found in the config.
+ * @throws ValueError If `colorSpace` is not found in the config.
  */
 export function ocioOutputProfileId(configPath: Path, colorSpace: string): Uint8Array {
   const [name, data] = _outputEnvelope(_configIndex(configPath), colorSpace);
@@ -587,7 +587,7 @@ export function ocioOutputProfileId(configPath: Path, colorSpace: string): Uint8
 }
 
 /**
- * Whether an OCIO file rule applies to `file_path`: the `Default` rule
+ * Whether an OCIO file rule applies to `filePath`: the `Default` rule
  * always, a `regex` rule by search, a `pattern` + `extension` rule by glob
  * (the extension case-insensitively).
  */

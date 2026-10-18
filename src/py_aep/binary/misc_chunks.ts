@@ -1,8 +1,8 @@
 /**
  * Miscellaneous chunk types: prin, mkif, shph, NmHd, fips, pard, fth5, dwga.
  *
- * Fixed-layout chunks use `fmt_field()` and `BitField`.
- * Fth5Chunk uses `items_field()` for repeating feather points.
+ * Fixed-layout chunks use `fmtField()` and `BitField`.
+ * Fth5Chunk uses `itemsField()` for repeating feather points.
  * PardChunk and PrdaChunk use variant subclass dispatch for polymorphic layouts.
  */
 
@@ -550,7 +550,7 @@ export function shadowProperty(cls: Function, name: string): void {
  * Effect property parameter definition (polymorphic).
  *
  * Serialized form of the AE SDK `PF_ParamDef`. Layout depends on
- * `property_control_type` (the SDK `PF_ParamType`) at byte 15; the base
+ * `propertyControlType` (the SDK `PF_ParamType`) at byte 15; the base
  * class dispatches to variant subclasses and unknown control types fall
  * back to raw bytes.
  *
@@ -621,7 +621,7 @@ export class PardChunk extends Chunk {
     return false;
   }
 
-  /** Decoded parameter name (from `_raw_name` up to first NUL). */
+  /** Decoded parameter name (from `_rawName` up to first NUL). */
   get name(): string {
     const raw: Uint8Array = "_rawName" in this ? this._rawName : b("");
     if (!raw.length) return "";
@@ -861,7 +861,7 @@ define(BooleanPardChunk, {
  * 2D point control (type 6, SDK `PF_PointDef`).
  *
  * Body: `PF_Fixed` (16.16) value x / y, 3 reserved bytes,
- * `restrict_bounds`, then `PF_Fixed` default x / y in percent of the
+ * `restrictBounds`, then `PF_Fixed` default x / y in percent of the
  * layer size. The cached value comes in two forms: a fraction of the
  * layer size (0.5 = centre), or equal to the percent default.
  */
@@ -1161,7 +1161,7 @@ export const _PARD_VARIANTS = new Map<number, typeof PardChunk>([
   [18, ThreeDPardChunk],
 ]);
 
-// Every variant redeclares `property_control_type` as a field over the base getter.
+// Every variant redeclares `propertyControlType` as a field over the base getter.
 for (const variant of [
   GenericPardChunk,
   ColorPardChunk,

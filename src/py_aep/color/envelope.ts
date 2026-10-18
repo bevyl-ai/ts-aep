@@ -212,7 +212,7 @@ export function parseEnvelope(envelopeJson: string): ColorProfile {
  * The envelope's `colorProfileName`, or `"None"` when the envelope is
  * empty (`{}`, e.g. an unset `pdvc` display chunk) or carries no name.
  *
- * Unlike `parse_envelope`, this does not require `colorProfileData`.
+ * Unlike `parseEnvelope`, this does not require `colorProfileData`.
  */
 export function envelopeProfileName(envelopeJson: string): string {
   const outer = jsonLoads(envelopeJson);

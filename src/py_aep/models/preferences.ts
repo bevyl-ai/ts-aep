@@ -265,7 +265,7 @@ export function defaultCharacterStyle(preferences: Preferences) {
  *
  * This is the style `TextDocument.resetParagraphStyle()` restores.
  * Note that hyphenation has no entry in this sheet, which is why After
- * Effects leaves `auto_hyphenate` untouched on a reset.
+ * Effects leaves `autoHyphenate` untouched on a reset.
  */
 export function defaultParagraphStyle(preferences: Preferences) {
   const [number, flag] = _sheetReaders(preferences, _PARA_SHEET_SECTION);
@@ -467,7 +467,7 @@ export class Preferences {
     this._overrides = new Map();
   }
 
-  /** Lazily parse the preference file for `pref_type` (None if absent). */
+  /** Lazily parse the preference file for `prefType` (None if absent). */
   _file(prefType: PREFType): PrefsFile | null {
     if (!this._files.has(prefType)) {
       const path = this._prefsDir != null ? findPrefsFile(this._prefsDir, prefType) : null;
@@ -485,7 +485,7 @@ export class Preferences {
   /**
    * Return `(found, value, is_override)`.
    *
-   * `value` is a typed value when `is_override` is `true`,
+   * `value` is a typed value when `isOverride` is `true`,
    * otherwise the raw pref-file text (AE's mixed hex/ASCII encoding).
    */
   _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {

@@ -118,7 +118,7 @@ export function _loadFont(path: Path, fontNumber = 0): FontkitFont {
  * cubic segments reach `_lineTo` / `_curveToOne`.
  */
 export class _CubicContourPen {
-  // NOTE(port): fontTools BasePen base class dropped. `_draw_glyph` drives these
+  // NOTE(port): fontTools BasePen base class dropped. `_drawGlyph` drives these
   // methods from fontkit path commands; fontkit already emits implied on-curve
   // points and decomposes composite glyphs.
   declare contours: RawSubpath[];
@@ -282,7 +282,7 @@ export function _outlineRun(
 /**
  * Outline `runs` into per-run subpath lists (parallel to `runs`).
  *
- * `origin_x` / `origin_y` are the `<text>` baseline anchor. Runs are grouped
+ * `originX` / `originY` are the `<text>` baseline anchor. Runs are grouped
  * into SVG text chunks - a run carrying an absolute `x` starts a new chunk -
  * and `text-anchor` (`start` / `middle` / `end`) is applied per chunk, taken
  * from the run that starts the chunk (falling back to `anchor`). Each run's
@@ -394,7 +394,7 @@ export function _pointAt(
  *
  * Each glyph is placed with its advance midpoint at the corresponding
  * arc-length along the (first subpath of the) path and rotated to the local
- * tangent. Glyphs past the path end are dropped. `start_offset` is in user
+ * tangent. Glyphs past the path end are dropped. `startOffset` is in user
  * units; `startOffsetFrac` (0-1) is the percentage form. The path's own
  * transform is not applied (it is taken in the text's coordinate space).
  */

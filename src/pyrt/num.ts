@@ -11,7 +11,7 @@ import { ord } from "./codecs.ts";
  * indistinguishable from an int; boxing carries the distinction with the
  * value through copies and container moves. Arithmetic and relational
  * operators unwrap it through `valueOf`; `===`, `typeof` and the
- * `Number.is*` predicates do not, so compare through `py_eq` / `unbox`.
+ * `Number.is*` predicates do not, so compare through `pyEq` / `unbox`.
  */
 export class PyFloat {
   declare readonly value: number;

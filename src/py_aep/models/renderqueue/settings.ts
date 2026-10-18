@@ -31,7 +31,7 @@ import type { Preferences } from "../preferences.ts";
 // NOTE(port): py_enum members are plain numbers with no owning class, so
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
-// spec's enum class in `settings_to_string` instead.
+// spec's enum class in `settingsToString` instead.
 export const IntEnum = {
   has(_value: SettingValue): _value is number {
     return false;
@@ -39,7 +39,7 @@ export const IntEnum = {
 };
 
 // Python `member.label` property; the enum objects expose it as `E.label(member)`.
-/** An `int_enum` class that also defines a `label(member)` method. */
+/** An `intEnum` class that also defines a `label(member)` method. */
 export type LabeledEnum = EnumHelpers<number> & { label(member: number): string };
 
 export function enumLabel(enumClass: LabeledEnum, member: number): string {
@@ -70,7 +70,7 @@ export type SettingValues = Record<string, SettingValue>;
  * delegates to `setattr(owner, attr_name, value)`. Validation is handled by
  * the underlying ChunkField descriptors or `@property` setters.
  *
- * When `enum_class` is provided for a key, `__setitem__` coerces
+ * When `enumClass` is provided for a key, `__setitem__` coerces
  * the value (int, string label, or enum member) before passing it
  * to the descriptor.
  */

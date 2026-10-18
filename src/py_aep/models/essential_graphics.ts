@@ -99,7 +99,7 @@ export class EssentialGraphicsController {
    */
   declare sourceCompId: number | null;
   /**
-   * The `layer_id` of the source layer that owns the controlled
+   * The `layerId` of the source layer that owns the controlled
    * property (the `CLId` chunk), or `null` when not stored. Read-only.
    */
   declare sourceLayerId: number | null;
@@ -137,7 +137,7 @@ export class EssentialGraphicsController {
      */
     this.sourceLayerId = sourceLayerId;
     /**
-     * The `layer_id` of the source layer that owns the controlled
+     * The `layerId` of the source layer that owns the controlled
      * property (the `CLId` chunk), or `null` when not stored. Read-only.
      */
   }

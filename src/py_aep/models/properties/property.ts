@@ -116,7 +116,7 @@ export const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValu
   PropertyValueType.COLOR,
 ]);
 
-// Effect controls whose values AE reports rounded (`_round_half_up`). Matched
+// Effect controls whose values AE reports rounded (`_roundHalfUp`). Matched
 // against the control type the effect declares (`_propertyControlType`):
 // the type inferred for other properties reads BOOLEAN for plain scalars,
 // and a shape's Star Points of 5.5 reports 5.5 (AE 2026).
@@ -214,7 +214,7 @@ export function _maskIds(prop: Property): number[] | null {
 }
 
 export function _validateKeyValue(prop: Property, value: PropertyValue): void {
-  // Validate a keyframe value: `_validate_value`, after refusing `None` for
+  // Validate a keyframe value: `_validateValue`, after refusing `None` for
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).
   if (value == null && prop._parallelKind() == null && !prop._noValue) {
@@ -427,7 +427,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this._color) {
       // ExtendScript reports every color property as spatial, but AE
       // leaves the tdb4 spatial bit clear on them (an edited effect
-      // color writes `_spatial_static_flags` 0x07, measured in AE
+      // color writes `_spatialStaticFlags` 0x07, measured in AE
       // 2026), so the raw bit would say otherwise.
       return true;
     }
@@ -437,7 +437,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Whether the property interpolates along a spatial motion path.
    *
-   * `is_spatial` also reports `true` for colors, to match what
+   * `isSpatial` also reports `true` for colors, to match what
    * ExtendScript says; a color has no motion path, so the keyframe
    * binary (the ldat item's key flags and layout), the speed math and
    * the roving guard ask this instead.
@@ -881,7 +881,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * and for unused axis slots. Read-only.
    *
    * **Warning:** 
-   * `axis_tag` does not exist in the ExtendScript API. It has
+   * `axisTag` does not exist in the ExtendScript API. It has
    * been added for convenience (ExtendScript surfaces the tag
    * only through the property's display name).
    */
@@ -960,7 +960,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Re-link only the keyframe inserted at `idx` and its neighbours.
    *
    * Equivalent to `_linkKeyframes` after a single insertion, but O(1)
-   * so bulk additions (`set_values_at_times`) stay linear.
+   * so bulk additions (`setValuesAtTimes`) stay linear.
    */
   _linkInsertedKey(idx: number): void {
     const kf = this.keyframes[idx];
@@ -983,7 +983,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * collision.
    *
    * Only applies to a keyframe already in `keyframes`: during
-   * `add_key` construction the time is assigned before insertion, and
+   * `addKey` construction the time is assigned before insertion, and
    * landing on an existing time legitimately returns that keyframe's
    * index instead.
    */
@@ -1007,7 +1007,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * container's chunks (otda / Nmrd / shap / Utf8) and a text
    * property's COS document array. Moving a keyframe past a
    * neighbour must move all of them together and re-link the
-   * prev/next chain (LINEAR ease speeds and `value_at_time` read
+   * prev/next chain (LINEAR ease speeds and `valueAtTime` read
    * neighbours by order). No-op for a keyframe not (yet) in
    * `keyframes` or whose sorted position is unchanged.
    */
@@ -1435,7 +1435,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const dims = this._tdb4.dimensions;
     let value = this._value;
     // A synthesized effect point keeps its raw fraction in the cdat and
-    // no cached value (`_normalize_synthetic_point`): re-deriving the
+    // no cached value (`_normalizeSyntheticPoint`): re-deriving the
     // fraction from pixels would round it.
     const keepCdat = value == null && this._cdat != null;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) value = this.defaultValue;
@@ -1649,14 +1649,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * The leader's value composed from its followers, or `null`.
    *
-   * While `dimensions_separated` is on, the leader's own `cdat` is dead:
+   * While `dimensionsSeparated` is on, the leader's own `cdat` is dead:
    * AE resets it to the comp-centre default on separate and drives the
    * layer from the X / Y / Z followers instead. Reading the stored value
    * reports that default - `keyframe_separated_dimensions.aep` stores
    * `[100, 100, 0]` on a 200x200 comp where AE reports `[0, 200, 0]`.
    *
    * With a `time`, each follower is sampled there instead: the leader
-   * holds no keyframes while separated, so `value_at_time` would
+   * holds no keyframes while separated, so `valueAtTime` would
    * otherwise report the same frozen value for the whole timeline.
    */
   _separatedValue(time: number | null = null): number[] | null {
@@ -1785,7 +1785,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * The value of the named property at the current time.
    *
-   * If `expression_enabled` is `true`, returns the evaluated expression
+   * If `expressionEnabled` is `true`, returns the evaluated expression
    * value. If there are keyframes, returns the keyframed value at the
    * current time. Otherwise, returns the static value. Read / Write.
    *
@@ -1849,7 +1849,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const separated = this._separatedValue();
     if (separated != null) return separated;
     if (this._arbs != null && !this.keyframes?.length) return this._staticCurves();
-    // A copy of a cached list: `value_at_time` hands it out too.
+    // A copy of a cached list: `valueAtTime` hands it out too.
     if (this._value != null) return this._reported(_ownList(this._wireTextVersion(this._value)));
     if (this.keyframes?.length > 0) return this._storedValueAt(0);
     if (this._cdat != null) return this._resolveValue(this._readCdatRaw());
@@ -1880,7 +1880,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * when it reparents a layer: it compensates the followers even though
    * `setValue` on the leader errors. `Layer.parent` is the caller.
    *
-   * While `dimensions_separated` is on the leader's own `cdat` is dead -
+   * While `dimensionsSeparated` is on the leader's own `cdat` is dead -
    * AE drives the layer from the followers - so a write that landed
    * there would read back as the stale default and never reach what AE
    * renders. This is the write-side counterpart of `_separatedValue`.
@@ -2079,7 +2079,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /**
    * The minimum permitted value of the named property. Only valid if
-   * `has_min` is `true`. Read-only.
+   * `hasMin` is `true`. Read-only.
    */
   get minValue(): number | number[] | null {
     if (_UNBOUNDED_MATCH_NAMES.has(this.matchName)) return null;
@@ -2093,7 +2093,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /**
    * The maximum permitted value of the named property. Only valid if
-   * `has_max` is `true`. Read-only.
+   * `hasMax` is `true`. Read-only.
    */
   get maxValue(): number | number[] | null {
     if (_UNBOUNDED_MATCH_NAMES.has(this.matchName)) return null;
@@ -2158,7 +2158,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Dropdown Menu Control. Read / Write.
    *
    * Writing is only supported on the Menu property of a Dropdown
-   * Menu Control (see `is_dropdown_effect`; mirrors ExtendScript
+   * Menu Control (see `isDropdownEffect`; mirrors ExtendScript
    * `Property.setPropertyParameters()`): the new items replace the
    * existing menu entries in the project file. Items must be
    * non-empty unique strings without `\\` or `|` characters; the
@@ -2293,7 +2293,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * **Note:** 
    * A small subset of effect dropdown / menu parameters may report
-   * `can_vary_over_time` as `false` in the binary even though After
+   * `canVaryOverTime` as `false` in the binary even though After
    * Effects allows keyframing them.
    * Read-only.
    */
@@ -2587,7 +2587,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /**
    * The expression for the named property. Writeable only when
-   * `can_set_expression` for the named property is `true`.
+   * `canSetExpression` for the named property is `true`.
    * Read / Write.
    */
   get expression(): string {
@@ -2715,7 +2715,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * on a real write, so they cannot change under a live memo.
    *
    * Uncached this ran on every `propertyValueType` and
-   * `property_control_type` read - 15 times per `value_at_time` on an
+   * `propertyControlType` read - 15 times per `valueAtTime` on an
    * animated Opacity, since `_effectScale` alone consults the control
    * type ten times.
    */
@@ -2983,7 +2983,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * assumed to already be a wrapper).
    *
    * Raises `ValueError` when this property is not a media-replacement slot
-   * (`can_set_alternate_source` is `false`), when `source` is not in the
+   * (`canSetAlternateSource` is `false`), when `source` is not in the
    * project, or when `source.isMediaReplacementCompatible` is `false`,
    * and `TypeError` when `source` is not an `AVItem`.
    */
@@ -3035,7 +3035,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       host.frameRate,
     );
     // AE's wrapper comp shares the host comp's cdta exactly (timebase,
-    // shutter phase, work area) - `add_comp`'s fresh skeleton diverges on
+    // shutter phase, work area) - `addComp`'s fresh skeleton diverges on
     // time_divisor/work_area_start_divisor/shutter_phase, so clone the host
     // cdta over it. idta/iide (the item ids) are separate chunks and stay
     // the wrapper's own.
@@ -3108,7 +3108,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * the parser).
    *
    * ValueError: If `time` is NaN.
-   * NotImplementedError: If `pre_expression` is `false`,
+   * NotImplementedError: If `preExpression` is `false`,
    * because the parser cannot evaluate expressions.
    */
   valueAtTime(time: number, preExpression = true): V {
@@ -3427,10 +3427,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /**
-   * Locate `time_units` among the keyframes.
+   * Locate `timeUnits` among the keyframes.
    *
    * Returns `(index, exists)`: when a keyframe already sits at
-   * `time_units`, `exists` is True and `index` is its position;
+   * `timeUnits`, `exists` is True and `index` is its position;
    * otherwise `exists` is False and `index` is the sorted insertion
    * point. Keyed on raw units rather than frame indices so two
    * sub-frame keyframes inside one frame stay distinct.
@@ -3485,7 +3485,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * property's own name for the controller.
    *
    * Returns `true` on success, or `false` when the property cannot be added
-   * (see `can_add_to_motion_graphics_template`).
+   * (see `canAddToMotionGraphicsTemplate`).
    *
    * comp: The composition to add the property to.
    */
@@ -3498,7 +3498,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * explicit controller `name`.
    *
    * Returns `true` on success, or `false` when the property cannot be
-   * added (see `can_add_to_motion_graphics_template`).
+   * added (see `canAddToMotionGraphicsTemplate`).
    *
    * comp: The composition to add the property to.
    * name: The controller name to show in the Essential Graphics panel.
@@ -3620,7 +3620,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * key and both facing sides come out BEZIER and the curve is kept
    * (measured on AE 2026 in both orders).
    *
-   * `set_value` is for `set_value_at_time`, which seeds a value of its
+   * `setValue` is for `setValueAtTime`, which seeds a value of its
    * own: AE leaves a key it adds that way into a LINEAR segment with a
    * blank (0 / 0) ease, where `addKey` writes the slope (AE 2026).
    */
@@ -3808,7 +3808,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /**
-   * Remove the keyframe at `key_index` (0-based).
+   * Remove the keyframe at `keyIndex` (0-based).
    *
    * Removing the last remaining keyframe reverts the property to a
    * static value (the removed keyframe's value), matching ExtendScript
@@ -3818,7 +3818,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * key_index: The 0-based index of the keyframe to remove.
    *
    * IndexError: If the property has no keyframes.
-   * ValueError: If `key_index` is out of range.
+   * ValueError: If `keyIndex` is out of range.
    */
   removeKey(keyIndex: number): void {
     this._rejectCurvesWrite();
@@ -3853,7 +3853,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Remove every keyframe from this property.
    *
-   * Equivalent to calling `remove_key` for each keyframe: the
+   * Equivalent to calling `removeKey` for each keyframe: the
    * property reverts to a static value (the first keyframe's value).
    * Markers have no static value: the property is left empty. A
    * no-op when the property has no keyframes.
@@ -3878,7 +3878,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._deanimate(firstValue, first._ldatItem);
   }
 
-  /** Set the tdb4 to AE's static state after removing `last_key`. */
+  /** Set the tdb4 to AE's static state after removing `lastKey`. */
   _staticTdb4(lastKey: LdatItem): void {
     const kfData = lastKey.kfData;
     tdb4ApplyStaticTemplate(this._tdb4, {
@@ -3890,7 +3890,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /**
    * Revert an emptied animated property to a static `value`, after
-   * removing `last_key`.
+   * removing `lastKey`.
    */
   _deanimate(value: _ValueType, lastKey: LdatItem): void {
     const inner = this._keyframeInner();
@@ -3926,7 +3926,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * Drops the expression `Utf8` chunk from the `tdbs` and clears the
    * tdb4 expression flag, so `expression` becomes `""` and
-   * `expression_enabled` `false`. A no-op when no expression is set.
+   * `expressionEnabled` `false`. A no-op when no expression is set.
    */
   _clearExpression(): void {
     if (this._expressionUtf8 == null && !this._expression) return;
@@ -3938,8 +3938,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._expression = null;
     this._expressionEnabled = null;
     if (this._tdb4 != null) {
-      // `_expr_flags` (bit 0 = disabled) and the `_pad10` high-byte
-      // marker (`has_expression`) are AE's expression-present flags;
+      // `_exprFlags` (bit 0 = disabled) and the `_pad10` high-byte
+      // marker (`hasExpression`) are AE's expression-present flags;
       // clear both so the tdb4 matches a plain static parameter.
       this._tdb4._exprFlags = 0;
       this._tdb4.hasExpression = false;
@@ -4215,7 +4215,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Add a keyframe to a complex (parallel-container) property.
    *
    * When `value` is omitted, the value is taken from the kind's
-   * `held_value` (interpolated for orientation, held otherwise).
+   * `heldValue` (interpolated for orientation, held otherwise).
    */
   _addParallelKey(time: number, kind: ParallelKind, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
     if (kind === TEXT_KIND) return this._addTextKey(time, value);
@@ -4254,7 +4254,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       container.chunks.splice(idx, 0, valueChunk);
     }
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    // The header item already carries the value (`build_header_item`) and
+    // The header item already carries the value (`buildHeaderItem`) and
     // the container chunk is inserted above, so set the shadow directly:
     // the public `kf.value` setter would re-route complex kinds back into
     // the container write path, rebuilding the just-inserted chunk.
@@ -4279,7 +4279,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /**
-   * Give a keyframe `add_key` inserted on a parallel kind AE's types.
+   * Give a keyframe `addKey` inserted on a parallel kind AE's types.
    *
    * AE does not reshape the curve here; it reads the key sides facing
    * the new key (the left key's out, the right key's in). Any BEZIER
@@ -4442,9 +4442,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Persist `value` into an existing complex keyframe's container
    * chunk and mirrored header item, then rebind the keyframe model.
    *
-   * Shared by `set_value_at_time` (targeting an existing key) and the
+   * Shared by `setValueAtTime` (targeting an existing key) and the
    * `Keyframe.value` setter (BUG 3): a complex keyframe's real value
-   * lives in the parallel container, so writing through `kf_data`
+   * lives in the parallel container, so writing through `kfData`
    * alone never reaches the serialized form.
    */
   _writeParallelKfValue(kf: Keyframe, value: _ValueType, kind: ParallelKind): void {
@@ -4486,7 +4486,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * times: Composition times, in seconds.
    * new_values: Values to set, one per entry in `times`.
    *
-   * ValueError: If `times` and `new_values` differ in length.
+   * ValueError: If `times` and `newValues` differ in length.
    */
   setValuesAtTimes(times: number[], newValues: (PropertyValue | string)[]): void;
   setValuesAtTimes(times: number[], newValues: _ValueType[]): void {
@@ -4729,9 +4729,9 @@ export function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[
  * An Essential Properties override leaf (a child of `ADBE Layer Overrides`).
  *
  * Its `value` is its own override (the leaf `cdat`), but its derived metadata
- * - `enabled`, `minValue`/`maxValue` (hence `has_min`/`has_max`),
- * `is_modified`, `is_spatial`, `unitsText`, `can_vary_over_time` and
- * `can_set_expression` - reflects the Essential Graphics *source* property
+ * - `enabled`, `minValue`/`maxValue` (hence `hasMin`/`hasMax`),
+ * `isModified`, `isSpatial`, `unitsText`, `canVaryOverTime` and
+ * `canSetExpression` - reflects the Essential Graphics *source* property
  * the override points at, matching After Effects: the override leaf's own
  * `tdsb` enable bit, `tdum`/`tduM` bounds and `tdb4` flags are the EGP
  * slider state, not what ExtendScript reports (the leaf has no `pard`, so
@@ -4825,7 +4825,7 @@ export class _EssentialOverrideProperty extends Property {
    * the leaf is not inside an effect, so its own `_effectScale` is `null`
    * and the value would stay normalized. Borrowing the source's scale puts
    * `value` in the same units the source reports (e.g. source-comp pixels
-   * for a point control), matching ExtendScript and making `is_modified`
+   * for a point control), matching ExtendScript and making `isModified`
    * compare like for like. `null` for non-point sources and for
    * media-replacement overrides (whose source is an `AVLayer`, not a
    * `Property`), which fall back to the base (also `null`).

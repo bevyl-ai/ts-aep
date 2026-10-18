@@ -31,7 +31,7 @@ export class View {
    *
    * **Note:** The active locked view index is not persisted in the binary
    * format. It defaults to 0 (first view) and can be changed via
-   * `set_active()` or by setting `viewer.activeViewIndex`.
+   * `setActive()` or by setting `viewer.activeViewIndex`.
    */
   get active(): boolean {
     return this._viewer.activeViewIndex === this._index();
@@ -40,7 +40,7 @@ export class View {
   /**
    * Make this the active view in its viewer.
    *
-   * This sets the parent viewer's `active_view_index` to this view's
+   * This sets the parent viewer's `activeViewIndex` to this view's
    * index. If the viewer is associated with a composition, this also
    * affects which view's ROI is used for output module effective
    * dimensions.

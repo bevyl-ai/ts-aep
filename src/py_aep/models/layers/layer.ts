@@ -329,7 +329,7 @@ export class Layer extends PropertyGroup {
 
   /**
    * Keyframe units per second of this layer's own time, in its
-   * composition or one of `internal_timebase`.
+   * composition or one of `internalTimebase`.
    */
   _layerTimebase(internalTimebase: number | null = null): number {
     if (internalTimebase == null) {
@@ -340,7 +340,7 @@ export class Layer extends PropertyGroup {
 
   /**
    * Hold every keyframe at the same LAYER time across a stretch change
-   * (`rescale_ticks`).
+   * (`rescaleTicks`).
    */
   _retimeToLayerTimebase(old: number, new_: number): void {
     if (new_ === old || old <= 0) return;
@@ -912,11 +912,11 @@ export class Layer extends PropertyGroup {
   }
 
   /**
-   * The child `PropertyGroup` for `match_name`, or `null` when this
+   * The child `PropertyGroup` for `matchName`, or `null` when this
    * layer kind does not have it.
    *
    * Missing top-level groups are synthesized per layer kind by
-   * `synthesize_layer_properties`, so a `null` here means the kind has
+   * `synthesizeLayerProperties`, so a `null` here means the kind has
    * no such group at all, not that the `.aep` merely omitted an empty
    * one (AE writes the Effect / Mask Parade only once it has content).
    */
@@ -1043,11 +1043,11 @@ export class Layer extends PropertyGroup {
   }
 
   /**
-   * Parent this layer to `new_parent` (`null` to unparent), rewriting
-   * its transform so `child_world` (its world matrix under the old
+   * Parent this layer to `newParent` (`null` to unparent), rewriting
+   * its transform so `childWorld` (its world matrix under the old
    * parent, at comp `time`) does not move.
    *
-   * `old_aspects` / `new_aspects` are the `(comp, Position space)` pixel
+   * `oldAspects` / `newAspects` are the `(comp, Position space)` pixel
    * aspects under the old / new parent (see
    * `resolvers.transform.position_space_aspect`): the transform values
    * live in square pixels, so the matrices are squared before they are
@@ -1077,7 +1077,7 @@ export class Layer extends PropertyGroup {
     const newSpace = newAspects[1];
     const ownAspect = layerSourceAspect(this);
     // The local matrix is `T(pos) . Sp^-1 . R . S . Sl . T(-anchor)`
-    // (`build_local_matrix`); undo the two aspect scalings to decompose
+    // (`buildLocalMatrix`); undo the two aspect scalings to decompose
     // the square-pixel `T(Sp pos) . R . S . T(-Sl anchor)`.
     const newLocal = aspectScale(newSpace)
       .__matmul__(newParentInverse)
@@ -1100,7 +1100,7 @@ export class Layer extends PropertyGroup {
 
     // Position and scale come straight from the local matrix - neither
     // depends on how the rotation is split between Orientation and
-    // Rotate X/Y/Z. `new_rz` is only used on the 2D path below, where the
+    // Rotate X/Y/Z. `newRz` is only used on the 2D path below, where the
     // orientation is divided out of the 3x3 first so it cannot leak into
     // the rotation (a layer switched from 3D to 2D can still carry one).
     const orientation = current("ADBE Orientation");
@@ -1111,7 +1111,7 @@ export class Layer extends PropertyGroup {
       squareAnchor,
     );
     if (newScale[0] < 0 && is3d) {
-      // `decompose_transform` signals a mirrored basis by negating x
+      // `decomposeTransform` signals a mirrored basis by negating x
       // alone. AE spreads the flip across all three axes and keeps the
       // rotation proper: a parent scaled [-100, 100, 100] leaves the
       // child at [-100, -100, -100] with Orientation [180, 0, 0]. A 2D
@@ -1172,7 +1172,7 @@ export class Layer extends PropertyGroup {
           : 1.0,
       );
       // Skipped when the parent applies no scale, for the reason
-      // `write_compensation` gives: an unchanged value is not written.
+      // `writeCompensation` gives: an unchanged value is not written.
       if (factors.some((factor) => factor !== 1.0)) {
         for (const keyframe of scaleProp.keyframes) {
           const components = keyframe.value;
@@ -1257,8 +1257,8 @@ export class Layer extends PropertyGroup {
         // AE offsets every rotation keyframe rather than giving up on
         // an animated one - keys of 15 and 75 under a 30-degree
         // parent became -15 and 45. Skipping them, as
-        // `write_compensation` does, left the layer 35 px out.
-        // As a signed turn, not the 0-360 form `compose_orientation`
+        // `writeCompensation` does, left the layer 35 px out.
+        // As a signed turn, not the 0-360 form `composeOrientation`
         // returns: AE stores -15 and 45, not 345 and 405.
         const offset =
           mod(composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0, 360.0) - 180.0;
@@ -1276,7 +1276,7 @@ export class Layer extends PropertyGroup {
     // exactly as they were. Verified on AE 2026 over ten cases.
     //
     // This is not just a different way to store the same result. Writing
-    // the rotations instead collides with `write_compensation` skipping
+    // the rotations instead collides with `writeCompensation` skipping
     // keyframed properties: a child with a keyframed Rotate Z would get
     // its position compensated but not its rotation, and jump by 362 px
     // in a case where AE does not move it at all.
@@ -1304,7 +1304,7 @@ export class Layer extends PropertyGroup {
    * fields, to prevent the jump from occurring.
    *
    * @param newParent - The new parent layer, or `null` to unparent.
-   * @throws {@link ValueError} If `new_parent` is this layer itself, one of its descendants, or a
+   * @throws {@link ValueError} If `newParent` is this layer itself, one of its descendants, or a
    *   layer in another composition.
    */
   setParentWithJump(newParent: Layer | null): void {
@@ -1449,7 +1449,7 @@ export class Layer extends PropertyGroup {
   }
 
   /**
-   * Clone this layer's chunks into `into_comp` and parse the copy:
+   * Clone this layer's chunks into `intoComp` and parse the copy:
    * a {@link duplicate} (directly above, references kept) or a
    * {@link copyToComp} (on top, references cleared).
    */

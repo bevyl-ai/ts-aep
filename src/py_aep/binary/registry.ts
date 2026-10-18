@@ -5,7 +5,7 @@
 import type { Chunk } from "./chunk.ts";
 import type { ChunkClasses } from "./chunk_types.ts";
 
-/** The registry by `chunk_type`; `get` of a literal registered type returns its class. */
+/** The registry by `chunkType`; `get` of a literal registered type returns its class. */
 export interface ChunkRegistry extends Map<string, typeof Chunk> {
   get<K extends keyof ChunkClasses>(chunkType: K): ChunkClasses[K] | undefined;
   get(chunkType: string): typeof Chunk | undefined;
@@ -27,7 +27,7 @@ export function register(...chunkTypes: string[]): <T extends typeof Chunk>(cls:
 }
 
 /**
- * The class registered for `chunk_type`, for modules that cannot import it
+ * The class registered for `chunkType`, for modules that cannot import it
  * (Python's function-level import). Chunk modules register on import
  * (`_register.ts`), so a miss means none of them was loaded.
  */

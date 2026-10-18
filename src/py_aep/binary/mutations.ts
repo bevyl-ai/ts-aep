@@ -55,7 +55,7 @@ export function zerosList(n: number): number[] {
   return Array.from({ length: n }, () => 0.0);
 }
 
-/** Remove all chunks of `chunk_type` from the list in-place. */
+/** Remove all chunks of `chunkType` from the list in-place. */
 export function removeChunksByType(chunks: Chunk[], chunkType: string): void {
   let i = chunks.length - 1;
   while (i >= 0) {
@@ -69,7 +69,7 @@ export function removeChunksByType(chunks: Chunk[], chunkType: string): void {
 /**
  * Add or remove a single-byte flag chunk.
  *
- * When `enable` is true and no chunk of `chunk_type` exists, call
+ * When `enable` is true and no chunk of `chunkType` exists, call
  * `factory()` to create one and append it. When false, remove all
  * matching chunks.
  */
@@ -106,7 +106,7 @@ export function _unflagMarkers(parentChunks: Chunk[], target: ListChunk): void {
 }
 
 /**
- * Point effect internal-param (`-0000`) tdpi chunks at `layer_id`.
+ * Point effect internal-param (`-0000`) tdpi chunks at `layerId`.
  *
  * Every effect's hidden `-0000` parameter carries the owning layer's
  * id in its `tdpi`; AE rewrites these when a layer is duplicated.
@@ -136,7 +136,7 @@ export function rewriteOwnerTdpi(chunk: Chunk, layerId: number): void {
 /** Every layer id referenced by a LAYER parameter under `chunk`.
  *
  * The hidden `-0000` owner params are excluded: those name the owning
- * layer, not a reference (see `rewrite_owner_tdpi`).
+ * layer, not a reference (see `rewriteOwnerTdpi`).
  */
 export function collectLayerRefTdpiIds(chunk: Chunk, out: Set<number> | null = null): Set<number> {
   if (out == null) out = new Set<number>();
@@ -163,7 +163,7 @@ export function collectLayerRefTdpiIds(chunk: Chunk, out: Set<number> | null = n
   return out;
 }
 
-/** Retarget every layer-reference `tdpi` in `chunk` through `id_map`.
+/** Retarget every layer-reference `tdpi` in `chunk` through `idMap`.
  *
  * A LAYER parameter (Set Matte's "Take Matte From Layer", CC Sphere's
  * light layer, Layer Control, ...) stores the referenced layer's id in a
@@ -171,9 +171,9 @@ export function collectLayerRefTdpiIds(chunk: Chunk, out: Set<number> | null = n
  * naming a layer the new comp does not contain, and After Effects then
  * refuses the whole file: "Can't find layer ID=N in composition X".
  *
- * Ids absent from `id_map` are cleared to 0 (no layer), which is what AE
+ * Ids absent from `idMap` are cleared to 0 (no layer), which is what AE
  * writes for a copy whose reference did not travel with it. The hidden
- * `-0000` owner params are skipped - `rewrite_owner_tdpi` owns those.
+ * `-0000` owner params are skipped - `rewriteOwnerTdpi` owns those.
  */
 export function remapLayerRefTdpi(chunk: Chunk, idMap: Map<number, number>): void {
   if (!(chunk instanceof ListChunk)) return;
@@ -198,7 +198,7 @@ export function remapLayerRefTdpi(chunk: Chunk, idMap: Map<number, number>): voi
   }
 }
 
-/** Restamp every non-zero `tdb4` timebase in `chunk` to `time_base`.
+/** Restamp every non-zero `tdb4` timebase in `chunk` to `timeBase`.
  *
  * A `tdb4` carries the timebase of the composition it was written in
  * (`cdta.internal_timebase`). Cloning a subtree into another comp - a
@@ -221,7 +221,7 @@ export function rewriteTimeBase(chunk: Chunk, timeBase: number): void {
 
 /** Drop every synthetic chunk under `chunk`, in place.
  *
- * `write_aep` skips synthetic chunks, so a subtree that is MOVED rather
+ * `writeAep` skips synthetic chunks, so a subtree that is MOVED rather
  * than serialized carries them along - and a re-parse then reads them as
  * though they came from the file. The parser has no way to tell that a
  * synthesized cdat holds a default in whatever units its synthesizer used
@@ -283,8 +283,8 @@ export const LRDR_CHILD_ORDER = ["Rhed", "Rout", "list", "LItm", "LSIf"] as cons
  * Build the render-queue settings `LIST:list` skeleton (lhd3 + ldat).
  *
  * The lhd3 is sized for the 2246-byte render-settings items AE writes; the
- * ldat starts synthetic so `write_aep()` skips it until the queue's first
- * `add()`. Shared by `RenderQueue._new` and `parse_render_queue`'s
+ * ldat starts synthetic so `writeAep()` skips it until the queue's first
+ * `add()`. Shared by `RenderQueue._new` and `parseRenderQueue`'s
  * degenerate-file rebuild so the two skeletons cannot drift.
  *
  * @returns `(inner, lhd3, ldat)` - the `LIST:list`, its header, and the data chunk.
@@ -299,7 +299,7 @@ export function buildRqSettingsList(
   return [inner, lhd3, ldat];
 }
 
-/** Build a fresh keyframe-data payload of `item_type`.
+/** Build a fresh keyframe-data payload of `itemType`.
  *
  * Speed / influence are seeded to zero (LINEAR defaults). The caller
  * sets the actual value afterwards (e.g. via `Keyframe.value`).
@@ -403,7 +403,7 @@ export function buildParallelLdatItem(
  * `bbox` is `(top_left_x, top_left_y, bottom_right_x, bottom_right_y)`;
  * `points` are the normalized bezier control points (3 per vertex);
  * `tensions` the per-vertex RotoBezier tensions (empty `omtn` when
- * `null`); `feather_points` are copied, so the source keeps its own.
+ * `null`); `featherPoints` are copied, so the source keeps its own.
  */
 export function buildShap(
   bbox: [number, number, number, number],
@@ -598,7 +598,7 @@ export function buildColorCctl(
 /** Build a Source Text (CTyp 6) controller.
  *
  * The two `CFEd` / `CSEd` byte flags mirror the `capProp*Edit` booleans
- * of `font_caps_json` (all disabled); the second JSON is the
+ * of `fontCapsJson` (all disabled); the second JSON is the
  * no-alternate-source reference AE writes for a fresh controller.
  */
 export function buildTextCctl(
@@ -686,12 +686,12 @@ export class ColorProfileRecord {
 
 /** Build a complete `LIST:Pin` with required companion chunks.
  *
- * `path_chunks` (the `LIST:Als2` path and, for sequences, the
+ * `pathChunks` (the `LIST:Als2` path and, for sequences, the
  * prefix/extension `Utf8` chunks) are inserted between the leading
  * empty `Utf8` and `opti`. File sources pass them; solid/placeholder
  * sources (no file path) pass nothing.
  *
- * `layer_name` fills the `Utf8` slot after `sspc`: AE stores the
+ * `layerName` fills the `Utf8` slot after `sspc`: AE stores the
  * referenced layer's name there when the footage is a single layer of a
  * layered file (chosen-layer or comp import), and leaves it empty
  * otherwise.
@@ -699,16 +699,16 @@ export class ColorProfileRecord {
  * The `LIST:CLRS` record of the media's own color space takes one of
  * three shapes, each measured from an AE 2026 import:
  *
- * - `embedded_profile` (the profile a PNG/JPEG/TIFF/PSD embeds): `epid`
+ * - `embeddedProfile` (the profile a PNG/JPEG/TIFF/PSD embeds): `epid`
  *   holds the profile's ID and an `mcsp` pair carries the profile itself.
  *   Interpret Footage shows "Embedded".
- * - `assigned_profile` (the profile AE assigns when the media embeds none
+ * - `assignedProfile` (the profile AE assigns when the media embeds none
  *   - sRGB for every format measured): `apid` holds its ID and `ocsp`
  *   carries its bytes.
- * - `embedded_profile_name` (a media color space that is named rather than
+ * - `embeddedProfileName` (a media color space that is named rather than
  *   embedded, e.g. an `.ai` document's): an `empd` flag plus a `Utf8` name.
  *
- * `color_managed` records that the media has a color space of its own even
+ * `colorManaged` records that the media has a color space of its own even
  * when none of the three is given - AE writes exactly that for a JPEG with
  * no profile. Without it the source falls back to the working space, which
  * is what AE writes for a solid.
@@ -913,7 +913,7 @@ export const _DEFAULT_ROTO_MASK_SHAPE_OMS =
  * @param kw - Keyword arguments:
  * - `aspect`: The tdb4 X multiplier AE stamps on a mask path: the layer's mask space in display
  *     pixels, width / height.
- * - `roto_bezier`: Whether the mask-shape `tdsb` roto flag is set. The baked template originates
+ * - `rotoBezier`: Whether the mask-shape `tdsb` roto flag is set. The baked template originates
  *     from an enable-rotoBezier capture (flag on); a plain bezier path write clears it, matching AE
  *     (psd_vector_mask fixtures).
  */
@@ -952,7 +952,7 @@ export function buildDefaultMaskShape(
  * @param kw - Keyword arguments:
  * - `subgroups`: Mandatory empty subgroups to write inside the element, as
  *     `(match_name, tdsb lock flags, tdsb enable flags)` triples.
- * - `path_time_base`: For the Path element (`ADBE Vector Shape - Group`), the comp's internal
+ * - `pathTimeBase`: For the Path element (`ADBE Vector Shape - Group`), the comp's internal
  *     timebase; adds the default empty `ADBE Vector Shape` bezier property.
  */
 export function buildVectorElement(
@@ -996,7 +996,7 @@ export function buildVectorElement(
  * @param matchName - The selector match name (e.g. `ADBE Text Selector`).
  * @param name - The instance name AE bakes into the tdsn (`"Base N"`).
  * @param kw - Keyword arguments:
- * - `has_advanced`: Whether to write the empty Advanced subgroup (Range Selector only).
+ * - `hasAdvanced`: Whether to write the empty Advanced subgroup (Range Selector only).
  */
 export function buildTextSelector(
   matchName: string,
@@ -1069,11 +1069,11 @@ export function buildTextAnimator(name: string): [TdmnChunk, ListChunk] {
  * @param displayName - The default effect name, written to `fnam`.
  * @param partBytes - This control's serialized `LIST:parT` chunk.
  * @param kw - Keyword arguments:
- * - `tdsn_name`: The instance name for the effect tdsn - the unnamed sentinel for a first instance,
+ * - `tdsnName`: The instance name for the effect tdsn - the unnamed sentinel for a first instance,
  *     `"Name N"` for later ones.
- * - `time_base`: The comp's internal timebase (`cdta.internal_timebase`).
- * - `layer_id`: Id of the layer the effect is applied to.
- * - `layer_param_name`: When set, also write the `-0001` value parameter to the tdgp, with this
+ * - `timeBase`: The comp's internal timebase (`cdta.internal_timebase`).
+ * - `layerId`: Id of the layer the effect is applied to.
+ * - `layerParamName`: When set, also write the `-0001` value parameter to the tdgp, with this
  *     tdsn display name.
  */
 export function buildExpressionControl(
@@ -1166,9 +1166,9 @@ export function buildExpressionControl(
  * `-0000` internal param); the Menu enum + items live in the `parT`.
  *
  * @param kw - Keyword arguments:
- * - `tdsn_name`: The instance name for the effect tdsn.
- * - `time_base`: The comp's internal timebase.
- * - `layer_id`: Id of the layer the effect is applied to.
+ * - `tdsnName`: The instance name for the effect tdsn.
+ * - `timeBase`: The comp's internal timebase.
+ * - `layerId`: Id of the layer the effect is applied to.
  */
 export function buildDropdownControl(kw: {
   tdsnName: string;

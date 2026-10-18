@@ -103,7 +103,7 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
    * Resolve `name` against the baked built-in effect templates.
    *
    * Matches the effect match name first, then the display name, the same
-   * order `match_effect_definition` uses for the project's own EfdG. The
+   * order `matchEffectDefinition` uses for the project's own EfdG. The
    * stored blob is deserialized fresh on every call, so the caller owns
    * the returned chunks and the table stays pristine.
    */
@@ -417,7 +417,7 @@ export class PropertyGroup extends PropertyBase {
    *
    * Read it directly only where skipping synthesis is the point - during
    * construction, inside `_runDeferredSynthesis` itself, or when
-   * materializing chunks (`_materialize_layer`), where forcing synthesis
+   * materializing chunks (`_materializeLayer`), where forcing synthesis
    * would write children AE omits. Everywhere else use `properties`, which
    * synthesizes first; reading the raw list from a public method silently
    * sees an unsynthesized group.
@@ -554,7 +554,7 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
-  /** The automatic (display) name derived from `match_name`. */
+  /** The automatic (display) name derived from `matchName`. */
   get autoName(): string {
     if (this._autoName != null) return this._autoName;
     if (this._fnamUtf8 != null) {
@@ -900,7 +900,7 @@ export class PropertyGroup extends PropertyBase {
    * The axis bounds, default value, and display name are read from
    * the variable font file with fontTools (After Effects reads them
    * from the installed font; the project file does not store a font
-   * path). Pass `font_file` explicitly, or leave it `null` to locate
+   * path). Pass `fontFile` explicitly, or leave it `null` to locate
    * the installed font from the text document's font family.
    *
    * **Note:** This functionality was added in After Effects 26.0.
@@ -910,7 +910,7 @@ export class PropertyGroup extends PropertyBase {
    * @param fontFile - Optional path to the variable font file. When `null`, the font is located in
    *   the OS font directories by the text document's font family.
    * @throws {@link ValueError} If this group is not a text animator Properties group, the font
-   *   cannot be located or is not a variable font, `axis_tag` is not one of the font's axes, or all
+   *   cannot be located or is not a variable font, `axisTag` is not one of the font's axes, or all
    *   8 axis slots are in use.
    */
   addVariableFontAxis(axisTag: string, fontFile: string | null = null): Property {
@@ -997,7 +997,7 @@ export class PropertyGroup extends PropertyBase {
    *
    * Indexed groups (and, as a named-group exception, the text
    * animator `Properties` pool) support adding properties; see
-   * `can_add_property`. Accepted names cover every ExtendScript
+   * `canAddProperty`. Accepted names cover every ExtendScript
    * addable family: mask atoms (`ADBE Mask Atom` / `Mask`), the
    * expression controls including the Dropdown Menu Control (e.g.
    * `ADBE Slider Control` / `Slider Control`, `ADBE Dropdown Control`), shape elements on a contents group (e.g.
@@ -1056,7 +1056,7 @@ export class PropertyGroup extends PropertyBase {
     /**
      * The tdsn name for a new effect instance: the first instance uses
      * the unnamed sentinel (so it shows the effect's own name); later ones
-     * get a baked `"{display} N"`. `same_type` is the count of existing
+     * get a baked `"{display} N"`. `sameType` is the count of existing
      * instances (counted per match name, or per pseudo-effect namespace
      * for the Dropdown Control).
      */
@@ -1219,7 +1219,7 @@ export class PropertyGroup extends PropertyBase {
     /**
      * Insert a built effect's chunks, parse, wire the model, append.
      *
-     * `parse_effect` is the canonical chunks-\>model path for effects
+     * `parseEffect` is the canonical chunks-\>model path for effects
      * (param-def merging, child synthesis); `duplicate()` uses it too.
      * `engv` is the engine-version atom AE stores between an effect's
      * `tdmn` and its `sspc` (Puppet only).
@@ -1252,7 +1252,7 @@ export class PropertyGroup extends PropertyBase {
     /**
      * Insert a built group's chunks, parse, wire the model, append.
      *
-     * `parse_property_group` is the canonical chunks-\>model path for
+     * `parsePropertyGroup` is the canonical chunks-\>model path for
      * added groups (mandatory subgroups, the Path element's om-s,
      * deferred child synthesis); the shape, selector and animator
      * builders share it, as `_attachEffect` does for effects.
@@ -1361,7 +1361,7 @@ export class PropertyGroup extends PropertyBase {
 // existing attribute through and only refuses new public names.
 pyClassHooks(PropertyGroup, { setattrPassesPrivate: true });
 
-// Python `@requires_version(26)` on `add_variable_font_axis`: the
+// Python `@requires_version(26)` on `addVariableFontAxis`: the
 // decorator wraps the method once the class body has been evaluated.
 PropertyGroup.prototype.addVariableFontAxis = requiresVersion(26)(
   PropertyGroup.prototype.addVariableFontAxis,

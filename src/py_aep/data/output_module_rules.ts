@@ -15,7 +15,7 @@
  * QuickTime depth union, and PNG's Color byte being free when channels are
  * plain RGB).
  *
- * Lookup contract (`allowed_values`):
+ * Lookup contract (`allowedValues`):
  * - `null` means UNCONSTRAINED - the key has no rule under this format and
  *   context. (Contrast `data/file_formats.py`, where an empty result means
  *   "nothing allowed": callers here must gate on `== null` first.)

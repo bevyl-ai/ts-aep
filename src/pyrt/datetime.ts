@@ -24,7 +24,7 @@ const at = (b: Buf, i: number): number => b[i] ?? 0;
 const isDigit = (c: number): boolean => c >= 0x30 && c <= 0x39;
 const C = (ch: string): number => ch.charCodeAt(0);
 
-/** C `parse_digits`: `n` ASCII digits at `p`, or null. */
+/** C `parseDigits`: `n` ASCII digits at `p`, or null. */
 function parseDigits(b: Buf, p: number, n: number): [number, number] | null {
   let v = 0;
   for (let i = 0; i < n; i++) {
@@ -66,7 +66,7 @@ function ord2ymd(ordinal: number): [number, number, number] {
   return [year, month, n - preceding + 1];
 }
 
-/** C `iso_to_ymd`, or null where C returns an error code. */
+/** C `isoToYmd`, or null where C returns an error code. */
 function isoToYmd(isoYear: number, isoWeek: number, isoDay: number): [number, number, number] | null {
   if (isoYear < 1 || isoYear > 9999) return null;
   if (isoWeek <= 0 || isoWeek >= 53) {
@@ -81,7 +81,7 @@ function isoToYmd(isoYear: number, isoWeek: number, isoDay: number): [number, nu
   return ord2ymd(week1Monday + (isoWeek - 1) * 7 + isoDay - 1);
 }
 
-/** C `parse_isoformat_date`: [year, month, day], or null on any failure. */
+/** C `parseIsoformatDate`: [year, month, day], or null on any failure. */
 function parseIsoformatDate(b: Buf, len: number): [number, number, number] | null {
   let p = 0;
   const y = parseDigits(b, p, 4);
@@ -114,7 +114,7 @@ function parseIsoformatDate(b: Buf, len: number): [number, number, number] | nul
 }
 
 /**
- * C `parse_hh_mm_ss_ff` over `b[p:end]`: [rv, hour, minute, second, microsecond],
+ * C `parseHhMmSsFf` over `b[p:end]`: [rv, hour, minute, second, microsecond],
  * rv 0 at the NUL, 1 when other bytes follow, negative on failure.
  */
 function parseHhMmSsFf(b: Buf, p: number, end: number): [number, number, number, number, number] {
@@ -144,7 +144,7 @@ function parseHhMmSsFf(b: Buf, p: number, end: number): [number, number, number,
   return done(at(b, p) !== 0 ? 1 : 0);
 }
 
-/** C `parse_isoformat_time` over `b[p:p + len]`: [rv, h, m, s, us, tz seconds, tz microseconds]. */
+/** C `parseIsoformatTime` over `b[p:p + len]`: [rv, h, m, s, us, tz seconds, tz microseconds]. */
 function parseIsoformatTime(b: Buf, p: number, len: number): number[] {
   const end = p + len;
   let tz = p;

@@ -1,6 +1,6 @@
 // The model class (and value type) each well-known match name resolves to.
 //
-// `PropertyGroup.__getitem__` / `property()` / `add_property()` return the
+// `PropertyGroup.__getitem__` / `property()` / `addProperty()` return the
 // mapped type for a match-name key. A key outside the map (an index, a display
 // name, an effect parameter) returns `Property | PropertyGroup` as before.
 // Every entry must hold for every layer kind that has the child: a group here is

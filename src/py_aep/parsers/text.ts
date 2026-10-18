@@ -177,7 +177,7 @@ export function parseTextDocuments(
  * @param cosData - The parsed COS Map from a `btdk` chunk (the return
  *   value of {@link CosParser.parse | CosParser.parse}).
  * @param btdkBody - The btdk chunk body for COS write-back.
- * @returns A tuple `(text_documents, fonts)` where `text_documents` is a
+ * @returns A tuple `(text_documents, fonts)` where `textDocuments` is a
  *   array of {@link TextDocument} (one per keyframe) and `fonts` is
  *   the array of {@link FontObject} referenced by the documents.
  */

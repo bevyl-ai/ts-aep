@@ -1,7 +1,7 @@
 /**
  * Footage chunk types: sspc (source settings), opti (asset info).
  *
- * SspcChunk uses `fmt_field()` for all fixed-layout fields with `BitField`
+ * SspcChunk uses `fmtField()` for all fixed-layout fields with `BitField`
  * descriptors for alpha flags.
  * OptiChunk uses variant subclass dispatch: SoliOptiChunk, PsdOptiChunk and
  * TextOptiChunk (fmt_field, some LE), PlaceholderOptiChunk. The `build_*`
@@ -119,16 +119,16 @@ export class SspcChunk extends Chunk {
   declare _reserved6b: Uint8Array;
   declare _isSyntheticB: number;
   declare _reserved6e: Uint8Array;
-  /** Byte 0x70: bit 3 = `media_format`. */
+  /** Byte 0x70: bit 3 = `mediaFormat`. */
   declare _flags70: number;
 
   declare _reserved71: Uint8Array;
-  /** Byte 0x73: bit 0 = `footage_missing_at_save`. */
+  /** Byte 0x73: bit 0 = `footageMissingAtSave`. */
   declare _flags73: number;
 
   /**
    * Bytes 0x74-0x7C: the source's last-modified stamp (see
-   * `source_modified`). AE compares it against the file on open to decide
+   * `sourceModified`). AE compares it against the file on open to decide
    * whether the cached asset info in this chunk is still current.
    */
   declare _sourceStamp: Uint8Array;
@@ -161,8 +161,8 @@ export class SspcChunk extends Chunk {
   declare displayFrameRateFractional: number;
   declare _reserved9c: Uint8Array;
   /**
-   * Byte 0x9F: bit 0 = `high_quality_field_separation`, bit 3 =
-   * `media_file`.
+   * Byte 0x9F: bit 0 = `highQualityFieldSeparation`, bit 3 =
+   * `mediaFile`.
    */
   declare _flags9f: number;
 
@@ -234,7 +234,7 @@ export class SspcChunk extends Chunk {
    * footage, single files and sequences alike (AE 2026).
    */
   declare mediaFormat: boolean;
-  /** As `media_format`, for single files only (clear on a sequence). */
+  /** As `mediaFormat`, for single files only (clear on a sequence). */
   declare mediaFile: boolean;
 
   // -- Computed properties -----------------------------------------------
@@ -507,7 +507,7 @@ register("sspc")(SspcChunk);
  * still importer (`IMIO` on macOS, `STIL` on Windows; imio_sequence.aep
  * and media_replacement.aep are byte-exact).
  *
- * **Note:** TIFF sequences use `build_tiff_opti_data` instead (AE 2026
+ * **Note:** TIFF sequences use `buildTiffOptiData` instead (AE 2026
  * measured); PSD sequences use an empty opti via `PsdOptiChunk`.
  *
  * @param sourceFormat - 4-char `sspc` source-format code.
@@ -549,7 +549,7 @@ export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: bool
  * @param channels - Colour channels, plus one for an alpha sample or Photoshop layer data
  *   (`MediaInfo.pixel_channels`).
  * @param colorMode - The Photoshop colour mode the image reads as (`MediaInfo.color_mode`).
- * @param layerCount - The layer count AE records (see `FileSource`'s `_opti_data`).
+ * @param layerCount - The layer count AE records (see `FileSource`'s `_optiData`).
  */
 export function buildTiffOptiData(
   width: number,
@@ -613,8 +613,8 @@ export function buildPsdOptiData(
  * Build the 602-byte `8BPS` `opti` for a FLATTENED PSD/PSB imported as a
  * one-layer composition.
  *
- * The merged `build_psd_opti_data` of the layerless document (0 layers),
- * with 0x0A (`psd_vector_or_merged`) set to 1 - per-layer optis set it only
+ * The merged `buildPsdOptiData` of the layerless document (0 layers),
+ * with 0x0A (`psdVectorOrMerged`) set to 1 - per-layer optis set it only
  * for a layer with a vector mask (AE 2026 byte-verified against a real
  * flattened RGB PSD, flattened_rgb_comp.aep).
  *
@@ -623,7 +623,7 @@ export function buildPsdOptiData(
  * @param bitDepth - Bits per channel.
  * @param channels - The document's channel count (3 for RGB).
  * @param kw - Keyword arguments:
- * - `color_mode`: The document's Photoshop colour mode (3 = RGB).
+ * - `colorMode`: The document's Photoshop colour mode (3 = RGB).
  */
 export function buildPsdFlattenedOptiData(
   width: number,
@@ -654,25 +654,25 @@ export function buildPsdFlattenedOptiData(
  * source layer selected. The selection is stored in this opti, identically for
  * a whole-canvas (`COMP`) or cropped (`COMP_CROPPED_LAYERS`) import - the crop
  * only changes the footage `sspc` dimensions and the comp-layer transform, not
- * this opti. It differs from the merged `build_psd_opti_data` (which keeps
+ * this opti. It differs from the merged `buildPsdOptiData` (which keeps
  * the `0xFFFFFFFF` layer-index sentinel and an empty trailing name) in:
  *
- * - `psd_vector_or_merged`: 1 for a layer with a vector mask (a shape
+ * - `psdVectorOrMerged`: 1 for a layer with a vector mask (a shape
  *   layer's included, enabled or not).
- * - `psd_layer_index`: the 0-based layer index, clearing the merged sentinel.
+ * - `psdLayerIndex`: the 0-based layer index, clearing the merged sentinel.
  * - `psd_layer_top/left/bottom/right`: the layer's content bounding box
  *   (LE s32; `resolvers.psd_bounds.psd_layer_box`) - NOT the canvas.
- * - `psd_layer_channels`: the layer's channels for a raster layer - the
+ * - `psdLayerChannels`: the layer's channels for a raster layer - the
  *   document's colour channels plus one for its transparency (4 for an RGB
  *   layer, including a fully transparent one with an empty content box; 3
  *   for an RGB Background layer; 2 for a gray layer) - and 0 for an
  *   adjustment layer (which contributes no pixel channels).
- * - `psd_layer_id`: the Photoshop layer id (`lyid`, LE u32).
- * - the trailing name block (`psd_group_name`): the layer name,
+ * - `psdLayerId`: the Photoshop layer id (`lyid`, LE u32).
+ * - the trailing name block (`psdGroupName`): the layer name,
  *   NUL-terminated UTF-8.
  *
  * The `psd_canvas_*` fields keep the full document size, and
- * `psd_channels`/`psd_color_mode` the document's channel count and colour
+ * `psdChannels`/`psdColorMode` the document's channel count and colour
  * mode (2 and grayscale for every layer of a gray document with
  * transparency, footage_depth.aep). Byte-verified against AE 2026's
  * `COMP`/`COMP_CROPPED_LAYERS` import of `8bits.psd`/`.psb` and a margined
@@ -691,8 +691,8 @@ export function buildPsdFlattenedOptiData(
  * @param kw - Keyword arguments:
  * - `channels`: The document's colour channels, plus one when it has alpha
  *     (`MediaInfo.pixel_channels`); 4 for an RGB document with transparency.
- * - `color_mode`: The document's Photoshop colour mode (3 = RGB).
- * - `layer_channels`: The layer's channels when it is a raster layer; 4 for an RGB layer with
+ * - `colorMode`: The document's Photoshop colour mode (3 = RGB).
+ * - `layerChannels`: The layer's channels when it is a raster layer; 4 for an RGB layer with
  *     transparency.
  */
 export function buildPsdLayerOptiData(
@@ -779,7 +779,7 @@ export function buildExrOptiData(compression: number, channelNames: readonly str
  *
  * AE refuses an empty or generic `opti` for HDR, but the dimensions are
  * stored in `sspc` (not this opti), so the body is a fixed template. The
- * `asset_type_int` is 0x002e (46), distinguishing it from the generic
+ * `assetTypeInt` is 0x002e (46), distinguishing it from the generic
  * 0x0005 and the still-importer 0x0109. Reverse-engineered from AE 2026;
  * AE's own opti carries a file-system fingerprint in the trailing 8 bytes
  * that AE re-derives on a cache miss, so it is left zero here.
@@ -813,7 +813,7 @@ export function buildCrawOptiData(): Uint8Array {
  * What AE 2026 writes for eps.eps (1921x2881) imported as footage: the
  * page size and nothing else - no layer count, page count or page-size
  * tail, which an Illustrator/PDF document carries
- * (`build_ai_document_opti_data`). The layout lives on `TextOptiChunk`.
+ * (`buildAiDocumentOptiData`). The layout lives on `TextOptiChunk`.
  */
 export function buildTextOptiData(width: number, height: number): Uint8Array {
   return new TextOptiChunk({ textWidth: width, textHeight: height }).tobytes();
@@ -823,7 +823,7 @@ export function buildTextOptiData(width: number, height: number): Uint8Array {
  * Build the 596-byte `TEXT` `opti` of an Illustrator/PDF file imported
  * whole.
  *
- * The bare body (`build_text_opti_data`) plus the document's layer count,
+ * The bare body (`buildTextOptiData`) plus the document's layer count,
  * a page count of 1 and the page-size tail; no layer is chosen, so the
  * layer name and visibility stay empty. Byte-verified against AE 2026's
  * import of ai.ai, complex.ai, pdf.pdf, ai_no_pdf.ai and two more PDFs
@@ -844,20 +844,20 @@ export function buildAiDocumentOptiData(width: number, height: number, layerCoun
  * When After Effects imports a layered Illustrator/PDF file as a composition,
  * it creates one footage item per layer, each referencing the same file with
  * its source layer selected. The selection is stored entirely in this opti.
- * It extends `build_text_opti_data` with:
+ * It extends `buildTextOptiData` with:
  *
- * - `text_document_layers` (0x30): the source document's layer count.
- * - `text_element_count` (0x3C): element/page count (1).
- * - `text_layer_visible` (0x3D): the source layer's visibility in the
+ * - `textDocumentLayers` (0x30): the source document's layer count.
+ * - `textElementCount` (0x3C): element/page count (1).
+ * - `textLayerVisible` (0x3D): the source layer's visibility in the
  *   Illustrator/PDF document (`false` for a layer the file's default
  *   configuration hides).
- * - `text_layer_name` (0x44): the layer name, NUL-terminated.
- * - `text_page_height`/`text_page_width` (0x248/0x24C): the redundant
+ * - `textLayerName` (0x44): the layer name, NUL-terminated.
+ * - `textPageHeight`/`textPageWidth` (0x248/0x24C): the redundant
  *   page-dimension tail (BE u16).
  *
  * Bytes 0x10-0x1F hold the artwork bounding box as `(x0, y0, x1, y1)` in
  * page points, four signed BE 16.16 values. Document Size keeps the
- * full-page box `(0, 0, width, height)` that `build_text_opti_data`
+ * full-page box `(0, 0, width, height)` that `buildTextOptiData`
  * already writes (its "dimensions at 24/28" are that box's integral x1/y1
  * parts). A chosen layer imported at Layer Size stores the layer's actual
  * artwork box - fractional, and offset from the page origin - from which
@@ -911,7 +911,7 @@ type _OptiReadKw = ChunkReadKwargs;
 /**
  * Footage asset info chunk (polymorphic).
  *
- * Layout depends on `asset_type` (first 4 bytes). The base class
+ * Layout depends on `assetType` (first 4 bytes). The base class
  * dispatches to variant subclasses; unknown asset types fall back
  * to raw bytes.
  */
@@ -997,7 +997,7 @@ define(SoliOptiChunk, {
  *
  * Fixed 602-byte still-importer layout (AE 2026): 344 bytes of typed
  * fields plus the 258-byte trailing layer-name block exposed via
- * `psd_group_name`. Field defaults reproduce AE's merged-import header,
+ * `psdGroupName`. Field defaults reproduce AE's merged-import header,
  * so the `build_psd_*_opti_data` builders only set what differs.
  */
 export class PsdOptiChunk extends OptiChunk {
@@ -1036,7 +1036,7 @@ export class PsdOptiChunk extends OptiChunk {
 
   /**
    * Bit depth per channel (1, 8, 16, or 32). Low byte of a LE u2 whose
-   * high byte stays 0 in `_pad_29`.
+   * high byte stays 0 in `_pad29`.
    */
   declare psdBitDepth: number;
 
@@ -1140,7 +1140,7 @@ define(PsdOptiChunk, {
  * AI/EPS/PDF footage asset (asset_type='TEXT').
  *
  * Fixed 596-byte layout (AE 2026). For a layered Illustrator/PDF import
- * each footage item selects its source layer via `text_layer_name`;
+ * each footage item selects its source layer via `textLayerName`;
  * whole-document footage (and EPS) leaves it empty. Field defaults
  * reproduce AE's whole-document header, so the `build_*_opti_data`
  * builders only set what differs.
@@ -1195,7 +1195,7 @@ export class TextOptiChunk extends OptiChunk {
    * whole-document footage, which has no source layer.
    *
    * Not a "references a layer" flag: AE writes 0 here for a hidden layer's
-   * footage, which is a layer binding all the same (`text_layer_name` and the
+   * footage, which is a layer binding all the same (`textLayerName` and the
    * `sspc` layer index are both set). Reading it as one made those bindings
    * look like whole-document footage.
    */

@@ -7,7 +7,7 @@ import type { OutputModule } from "../output_module.ts";
  *
  * Every wrapper holds an `Ropt` chunk that lives inside its output
  * module's block. `OutputModule.applyTemplate()` and a rolled-back
- * `batch_edit()` REPLACE that chunk (the new one may even be a different
+ * `batchEdit()` REPLACE that chunk (the new one may even be a different
  * format, and so a different wrapper class), rebinding
  * `OutputModule._format_options` to a freshly parsed object. A reference
  * the caller took before that point still wraps the old chunk, which is

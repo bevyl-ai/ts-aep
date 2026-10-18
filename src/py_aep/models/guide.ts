@@ -51,7 +51,7 @@ export class Guide {
   /**
    * Create a new guide with the given orientation and position.
    *
-   * Any `orientation_type` value other than 0 or 1 defaults to
+   * Any `orientationType` value other than 0 or 1 defaults to
    * horizontal (matching ExtendScript behavior).
    *
    * @param orientationType - 0 for horizontal, 1 for vertical.

@@ -58,7 +58,7 @@ export const _PREF_FILE_GLOBS: Readonly<Record<PREFType, string>> = {
 export const _SECTION_RE = /^\["([^\n]*)"\]/;
 export const _KEY_RE = /^\t"([^\n]+?)" = ([^\n]*)$/;
 
-/** Locate the preference file for `pref_type` under `prefs_dir`. */
+/** Locate the preference file for `prefType` under `prefsDir`. */
 export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {
   // Path ordering in Python compares parts; all matches share one parent, so the string form orders the same.
   const matches = sorted(prefsDir.glob(_PREF_FILE_GLOBS[prefType]), (p) => p.toString());
@@ -158,8 +158,8 @@ export function decodePrefBool(raw: string): boolean {
  * Parsed section/key view of one AE preference text file.
  *
  * Values are kept in their raw text form; decode on demand with
- * `decode_pref_string` / `decode_pref_number` / `decode_pref_bool` or
- * `parse_hex_value` for binary blobs.
+ * `decodePrefString` / `decodePrefNumber` / `decodePrefBool` or
+ * `parseHexValue` for binary blobs.
  */
 export class PrefsFile {
   declare _sections: Map<string, Map<string, string>>;

@@ -239,7 +239,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
  * Used for both "Output File Info" (the `Rouu` header) and "Output File
  * Options" (the `Ropt` format options). Values span continuation lines
  * (double-tab indented, trailing backslash) and use AE's mixed hex/ASCII
- * encoding decoded by `parse_hex_value`. Parsing is bounded to the named
+ * encoding decoded by `parseHexValue`. Parsing is bounded to the named
  * section so continuation lines never leak across section boundaries.
  *
  * @param text - Full preferences file text.

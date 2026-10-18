@@ -114,7 +114,7 @@ export class FootageSource {
 
   /**
    * Defines how the alpha information in the footage is interpreted.
-   * If `has_alpha` is `false`, this attribute has no relevant meaning.
+   * If `hasAlpha` is `false`, this attribute has no relevant meaning.
    * Read / Write.
    */
   declare alphaMode: AlphaMode;
@@ -127,7 +127,7 @@ export class FootageSource {
 
   /**
    * When `true`, the footage has an alpha component. In this case, the
-   * attributes `alpha_mode`, `invert_alpha`, and `premultiplied` have valid
+   * attributes `alphaMode`, `invertAlpha`, and `premultiplied` have valid
    * values. When `false`, those attributes have no relevant meaning for the
    * footage. Read-only.
    */
@@ -142,7 +142,7 @@ export class FootageSource {
   /**
    * When `true`, an alpha channel in a footage clip or proxy should be
    * inverted. This attribute is valid only if an alpha is present. If
-   * `has_alpha` is `false`, or if `alpha_mode` is
+   * `hasAlpha` is `false`, or if `alphaMode` is
    * {@link AlphaMode | AlphaMode.IGNORE}, this attribute is
    * ignored. Read / Write.
    */
@@ -156,7 +156,7 @@ export class FootageSource {
 
   /**
    * The color to be premultiplied. This attribute is valid only if
-   * the `alpha_mode` is
+   * the `alphaMode` is
    * {@link AlphaMode | AlphaMode.PREMULTIPLIED}.
    * Read / Write.
    */
@@ -171,8 +171,8 @@ export class FootageSource {
   declare interpretAsLinearLight: LinearLightMode;
 
   /**
-   * A frame rate to use instead of the `native_frame_rate` value. If
-   * set to 0, the `native_frame_rate` is used instead. Read / Write.
+   * A frame rate to use instead of the `nativeFrameRate` value. If
+   * set to 0, the `nativeFrameRate` is used instead. Read / Write.
    *
    * A sequence of stills has no rate of its own, so its assumed rate is
    * kept as the native rate and reads back here; setting one rescales
@@ -227,7 +227,7 @@ export class FootageSource {
 
   /**
    * The effective frame rate as displayed and rendered in compositions.
-   * If `remove_pulldown` is active, the rate is multiplied by 0.8.
+   * If `removePulldown` is active, the rate is multiplied by 0.8.
    * Read-only.
    */
   declare displayFrameRate: number;
@@ -376,7 +376,7 @@ export class FootageSource {
    * file: the dimensions, duration, native frame rate, the alpha
    * interpretation (re-estimated per file) and the embedded colour
    * profile record. Verified against AE 2026 for `replace()`,
-   * `replace_with_sequence()` and `replace_with_placeholder()` over
+   * `replaceWithSequence()` and `replaceWithPlaceholder()` over
    * movie, sequence, still and placeholder sources. Replacing with a
    * solid carries nothing - AE builds that source from the call's
    * arguments.
@@ -426,7 +426,7 @@ export class FootageSource {
    *
    * Every path that attaches a new source to a project calls this
    * (`FootageItem._new`, a replace, a proxy). A source is built with the
-   * `LIST:CLRS` records of the latest release (`build_pin_list`); After
+   * `LIST:CLRS` records of the latest release (`buildPinList`); After
    * Effects writes the older layout when it saves an older version, so
    * the records the project's file version predates are dropped
    * (`_CLRS_RECORDS_SINCE`). A file source also records the input colour
@@ -504,7 +504,7 @@ export class FootageSource {
 
   /**
    * ICC library for Adobe-CMS profile writes - the owning project's
-   * (honouring `icc_profile_dirs`) when wired, else the global default.
+   * (honouring `iccProfileDirs`) when wired, else the global default.
    */
   _iccLib(): IccProfileLibrary {
     if (this._project != null) {

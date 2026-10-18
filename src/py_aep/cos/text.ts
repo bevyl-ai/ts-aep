@@ -30,7 +30,7 @@ export function getCosTemplate(): CosDict {
 // Point text COS template - gzip-compressed, base64-encoded btdk data
 // captured from an AE 2026 `addText("Sample Text")` layer (MyriadPro-
 // Regular, 36px), so a bare TextDocument matches AE 2026's own scripted
-// addText output byte-for-byte. `add_text` additionally applies the
+// addText output byte-for-byte. `addText` additionally applies the
 // "Text Style Sheet" preference on top when an ae_preferences_dir is
 // provided (see models.preferences.apply_text_style_prefs).
 export const POINT_TEXT_COS_TEMPLATE =

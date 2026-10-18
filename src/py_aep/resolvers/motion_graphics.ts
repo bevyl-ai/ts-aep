@@ -30,7 +30,7 @@
  * py_aep refuses (reports "not addable") only what it cannot produce
  * faithfully: an effect param whose parT definitions are unavailable, children
  * of `ADBE Effect Built In Params`, and by-name nodes whose match name is
- * ambiguous among siblings - matching how `can_import_as` gates on what py_aep
+ * ambiguous among siblings - matching how `canImportAs` gates on what py_aep
  * can actually produce rather than on what After Effects allows.
  */
 
@@ -95,7 +95,7 @@ export class PathNode {
 }
 
 /**
- * AE's parT index of `param_mn` inside effect `effect_mn`, or `null`.
+ * AE's parT index of `paramMn` inside effect `effectMn`, or `null`.
  *
  * The project-level param defs preserve parT order and exclude the hidden
  * parameter-group header pard (slot 0), so the AE index is `1 + position`
@@ -149,7 +149,7 @@ export function _effectParamPath(prop: Property): [PathNode[], Layer] | null {
  *   group's children (a mask in the Mask Parade, a shape group in Root
  *   Vectors, a fill in a Vectors Group, an animator in Text Animators);
  * - an effect param carries its parT slot instead (hidden header at 0,
- *   see `_effect_param_path`), so effect subtrees resolve only through
+ *   see `_effectParamPath`), so effect subtrees resolve only through
  *   that dedicated branch;
  * - every other node resolves by name, refused when the match name is
  *   not unique among its siblings (defensive: named groups have unique
@@ -230,7 +230,7 @@ export function classifyProperty(prop: Property): number | null {
     // A slider controller is seeded from the property's current value,
     // so a value-less 1-D property (e.g. `ADBE Layer Source Alternate`)
     // cannot back one - reporting it addable made
-    // `add_to_motion_graphics_template` raise instead of returning False.
+    // `addToMotionGraphicsTemplate` raise instead of returning False.
     if (prop.value == null) return null;
     return CONTROLLER_SLIDER;
   }
@@ -280,7 +280,7 @@ export class PropertyControllerPlan {
  * Resolve everything needed to add `prop` to `comp`'s EGP, or `null`.
  *
  * `null` covers: an unsupported property type, a path py_aep cannot
- * serialize (see `_source_property_path`), a layer not in `comp`, or a
+ * serialize (see `_sourcePropertyPath`), a layer not in `comp`, or a
  * property already exposed.
  */
 export function propertyControllerPlan(prop: Property, comp: CompItem): PropertyControllerPlan | null {

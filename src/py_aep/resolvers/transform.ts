@@ -345,12 +345,12 @@ export function buildLocalMatrix(
  * @param layer - The layer whose world matrix to build.
  * @param time - Composition time in seconds to evaluate animated transform properties at; `null`
  *   uses each property's static `value`.
- * @param flatten2d - Drop the out-of-plane terms (see `_layer_local_matrix`).
+ * @param flatten2d - Drop the out-of-plane terms (see `_layerLocalMatrix`).
  * @param kw - Keyword arguments:
  * - `asParent`: Treat `layer` itself as a parent too - a camera or light then contributes its rig.
  * - `autoOrient`: Apply the layers' auto-orientation (needs `time`).
  * @throws {@link NotImplementedError} With `autoOrient`, for an orientation the math does not
- *   model (see `_auto_rotation`).
+ *   model (see `_autoRotation`).
  */
 export function buildWorldMatrix(
   layer: Layer,
@@ -449,7 +449,7 @@ export function _propValue(group: PropertyGroup, matchName: _PropertyName, time:
 /**
  * Build the local matrix for a single layer from its properties.
  *
- * With `flatten_2d`, the out-of-plane terms are dropped - X/Y rotation,
+ * With `flatten2d`, the out-of-plane terms are dropped - X/Y rotation,
  * the whole Orientation and the Z translation. That is how After Effects
  * places a 2D layer under 3D ancestors, for its point conversions as well
  * as when compensating a reparent: a 2D layer parented to a null rotated
@@ -566,7 +566,7 @@ export function _rigRotation(layer: Layer, time: number | null, spaceAspect: num
 
 /**
  * A camera or light's rig, turning in square pixels like a layer (see
- * `build_local_matrix`).
+ * `buildLocalMatrix`).
  */
 export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
   const position = _propValue(layer.transform, "ADBE Position", time);
@@ -729,7 +729,7 @@ export function composeOrientation(orientation: number[], delta: Mat4): number[]
 /**
  * `matrix` with a layer's Orientation divided out of its 3x3 block.
  *
- * `build_local_matrix` composes `T(pos) . O . R . S . T(-anchor)`, so the
+ * `buildLocalMatrix` composes `T(pos) . O . R . S . T(-anchor)`, so the
  * rotation After Effects would store for a given local matrix is `O^-1`
  * times its 3x3 part - and AE leaves Orientation itself untouched when
  * reparenting (measured on AE 2026: an oriented child under a translating
@@ -760,14 +760,14 @@ export function stripOrientation(matrix: Mat4, orientation: number[]): Mat4 {
  *
  * Given a matrix `M` and a fixed anchor point, extracts the
  * Position, Scale, and Rotation values that would produce `M`
- * via `build_local_matrix`.
+ * via `buildLocalMatrix`.
  *
  * Orientation is assumed to be `[0, 0, 0]` - i.e. any orientation
  * contribution must already be factored out before calling this.
  *
  * @param matrix - The 4x4 transform matrix to decompose.
  * @param anchor - `[ax, ay, az]` anchor point (held constant).
- * @returns A tuple of `(position, scale_pct, rotation_z, rotate_x, rotate_y)` where `scale_pct` is
+ * @returns A tuple of `(position, scale_pct, rotation_z, rotate_x, rotate_y)` where `scalePct` is
  *   in percentage units (100 = 1x).
  */
 export function decomposeTransform(
@@ -902,7 +902,7 @@ export function _vec3Normalize(v: number[]): number[] {
  * @param bottomLeft - `[x, y, z]` position of the source's bottom-left.
  * @param width - Layer source width in pixels.
  * @param height - Layer source height in pixels.
- * @returns An object with `anchor_point`, `position`, `x_rotation`, `y_rotation`, `z_rotation` and
+ * @returns An object with `anchorPoint`, `position`, `x_rotation`, `y_rotation`, `z_rotation` and
  *   `scale` keys, matching the transform property values AE's `calculateTransformFromPoints()`
  *   returns.
  * @throws {@link ValueError} If the points are coincident or collinear.
@@ -1077,7 +1077,7 @@ export function cameraRay(
   const zoom = _propValue(cameraOptions, "ADBE Camera Zoom", time);
 
   // The image plane is in square pixels; the rig matrix narrows the ray
-  // back into comp pixels (see `build_local_matrix`).
+  // back into comp pixels (see `buildLocalMatrix`).
   const direction = world.transformVector([
     (compPoint[0] - cx) * pixelAspect,
     compPoint[1] - cy,

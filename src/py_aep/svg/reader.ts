@@ -1,7 +1,7 @@
 /**
  * Flatten an SVG file into absolute-coordinate drawables.
  *
- * `read_svg` walks the document depth-first, accumulating transforms and
+ * `readSvg` walks the document depth-first, accumulating transforms and
  * inherited styles, expands `<use>` references, drops SMIL animation and
  * non-rendered content, and emits one {@link SvgDrawable} per leaf shape in
  * document (paint) order - mirroring what After Effects produces for an SVG

@@ -50,7 +50,7 @@ export type SpecNode =
   | [kind: "group", matchName: string, body: GroupSpec, extras?: SpecExtras]
   | [kind: "prop", matchName: string, body: PropSpec, extras?: SpecExtras]
   | [kind: "orientation", matchName: string, body: OrientationSpec, extras?: SpecExtras];
-/** A prop node (the kind `_bool_prop` / `_coefficient_prop` build and `_gated` restricts). */
+/** A prop node (the kind `_boolProp` / `_coefficientProp` build and `_gated` restricts). */
 type PropNode = Extract<SpecNode, { 0: "prop" }>;
 /** A viewer pseudo-layer. */
 export type LayerSpec = { listType: string; name: string; ldta: SpecFields; tdgp: GroupSpec; gate?: string };

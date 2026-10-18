@@ -1,9 +1,9 @@
 /**
  * Gradient definitions and resolution to absolute `GradientPaint`.
  *
- * `collect_gradients` indexes `<linearGradient>` / `<radialGradient>`
+ * `collectGradients` indexes `<linearGradient>` / `<radialGradient>`
  * elements by id (following `href` inheritance for stops and geometry).
- * `resolve_gradient` maps a referenced gradient into absolute viewBox
+ * `resolveGradient` maps a referenced gradient into absolute viewBox
  * coordinates given the referencing element's bounding box and transform.
  *
  * **Note:** the mapping of a `GradientPaint` onto After Effects' gradient-fill

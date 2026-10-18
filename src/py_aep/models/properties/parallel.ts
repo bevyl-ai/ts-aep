@@ -108,9 +108,9 @@ export class ParallelKind {
   /**
    * Wrap a freshly built value chunk as its model view, or null.
    *
-   * The returned model reads and writes `value_chunk` directly, so
+   * The returned model reads and writes `valueChunk` directly, so
    * a newly added keyframe can be edited in place (the source model
-   * passed to `build_value_chunk` is backed by a different chunk).
+   * passed to `buildValueChunk` is backed by a different chunk).
    */
   wrapValueChunk(prop: Property, valueChunk: Chunk): PropertyValue {
     return null;
@@ -179,7 +179,7 @@ export class _OrientationKind extends ParallelKind {
   /**
    * Override parsed metadata with what ExtendScript reports for
    * orientation (angle dial, 3D spatial vector), regardless of the
-   * binary tdb4 values. Shared by `parse_orientation` and `on_wrap`.
+   * binary tdb4 values. Shared by `parseOrientation` and `onWrap`.
    */
   applyModelMetadata(prop: Property): void {
     prop._propertyControlType = PropertyControlType.ANGLE;
@@ -226,7 +226,7 @@ export class _MarkerKind extends ParallelKind {
     // another Nmrd. Sharing them would alias one set of bytes into two
     // markers (an edit or a param splice on one corrupts the other). The
     // keyframe's own editable model is rebound to these clones in
-    // `wrap_value_chunk` (mirrors `_GradientKind`).
+    // `wrapValueChunk` (mirrors `_GradientKind`).
     const source: Chunk[] = [
       value._nmhd,
       value._commentUtf8,

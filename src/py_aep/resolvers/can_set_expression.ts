@@ -61,7 +61,7 @@ export const _CLASSIC_3D = "ADBE Advanced 3d";
 export const _MITER_JOIN = 1;
 
 /**
- * Compute `can_set_expression` for a property.
+ * Compute `canSetExpression` for a property.
  *
  * @param prop - The property to evaluate.
  * @returns Whether an expression can be set on this property.

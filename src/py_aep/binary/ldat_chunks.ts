@@ -81,8 +81,8 @@ export const _NUM_VALUE = new Map<number, number>([
 /**
  * Keyframe / list header. Stores item count, size, and raw type.
  *
- * The three `u4` counters after `item_type_raw` (`_count_b`,
- * `_counter_a`, `_counter_b`) are opaque values AE maintains per list.
+ * The three `u4` counters after `itemTypeRaw` (`_countB`,
+ * `_counterA`, `_counterB`) are opaque values AE maintains per list.
  * Their meaning is list-type dependent: for `LIST:LRdr` they track the
  * item count (with a floor of 1 when empty), but for `LIST:Gide` they
  * do not - an empty guide list seeds them to `(1, 1, 2)` and three
@@ -391,8 +391,8 @@ export type KfData = KfNoValue | KfColor | KfPosition | KfMultiDimensional | Uin
 /**
  * A single keyframe item with 8-byte header and typed payload.
  *
- * `time_units` is the keyframe time as a signed 32-bit count of the
- * comp's `internal_timebase` units per second (e.g. 24576 for 24 fps;
+ * `timeUnits` is the keyframe time as a signed 32-bit count of the
+ * comp's `internalTimebase` units per second (e.g. 24576 for 24 fps;
  * measured on AE 2026 keyframes up to 10000 s).
  *
  * Header bytes 6-7 are one big-endian word of key flags: bits 3-5 are

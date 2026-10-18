@@ -35,7 +35,7 @@ import { FontObject } from "./font_object.ts";
 import { CHARACTER_RANGE_OOB, NOT_ASSOCIATED, CharacterRange, ComposedLineRange, DocumentWideCosField, ParagraphRange, _applyCharKey, _buildColorPaint, _cachedLineData, _cachedLineNodes, _charRunSpans, _composedLineSpans, _freshComposedSpans, _lineAdvances, _lineDataFromNodes, _lineOrigin, _paraRunSpans, _parseColor, _rawText, _rebuildKernRuns, _registerFontAt, _visibleLength, u16Len, u16Slice } from "./ranges.ts";
 
 /**
- * `baseline_locs` entry for a line with no visible characters: the
+ * `baselineLocs` entry for a line with no visible characters: the
  * maximum 32-bit float, as After Effects reports (`3.402823466e+38`).
  */
 export const _EMPTY_LINE_LOC = 3.4028234663852886e38;
@@ -1052,7 +1052,7 @@ export class TextDocument {
    * `samples/models/text/box_overflow.aep`). Reads the persisted AE
    * cache while the document is untouched and the calibrated
    * composer after layout-affecting py-side writes (see
-   * `composition_stale`). `null` for point text (ExtendScript reads
+   * `compositionStale`). `null` for point text (ExtendScript reads
    * undefined there) and for documents without a cache.
    */
   get boxOverflow(): boolean | null {
@@ -1076,7 +1076,7 @@ export class TextDocument {
    * time; after a layout-affecting py-side write the calibrated
    * composed-line resolver recomposes it, otherwise the cached
    * count stays (matching ExtendScript's un-reapplied values - see
-   * `composition_stale`). `null` for documents never parsed from a
+   * `compositionStale`). `null` for documents never parsed from a
    * layer.
    */
   get composedLineCount(): number | null {
@@ -1103,7 +1103,7 @@ export class TextDocument {
    * cache, and the composed-line resolver does not reproduce them.
    * After a layout-affecting py-side write the values therefore
    * stay at the persisted layout even when the resolver could
-   * recompose the line spans (see `composition_stale`).
+   * recompose the line spans (see `compositionStale`).
    */
   get baselineLocs(): number[] {
     if (!this._associated) return [];
@@ -1381,7 +1381,7 @@ export class TextDocument {
      *
      * @param character_index - A character index (UTF-16 units) within the text.
      * @returns `{"start": int, "end": int}` for the containing paragraph.
-     * @throws {@link ValueError} When `character_index` is outside the text.
+     * @throws {@link ValueError} When `characterIndex` is outside the text.
      */
     this._requireAssociation();
     validatePositiveInt(characterIndex, this);
@@ -1400,7 +1400,7 @@ export class TextDocument {
      *
      * @param character_index - A character index (UTF-16 units) within the text.
      * @returns `{"start": int, "end": int}` for the containing composed line.
-     * @throws {@link ValueError} When `character_index` is outside the text or the document has no
+     * @throws {@link ValueError} When `characterIndex` is outside the text or the document has no
      *   composed-line cache.
      */
     this._requireAssociation();
@@ -1467,7 +1467,7 @@ descriptor(TextDocument, "direction", DocumentWideCosField.enum(ParagraphDirecti
 // setters above forward to these wrappers.
 
 export const _boxInsetSpacingSet = requiresVersion(24)(function box_inset_spacing(this: TextDocument, value: number): void {
-  /** Setter body for `box_inset_spacing`. */
+  /** Setter body for `boxInsetSpacing`. */
   validatePositiveNumber(value);
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "9", pyfloat(value));
@@ -1476,7 +1476,7 @@ export const _boxInsetSpacingSet = requiresVersion(24)(function box_inset_spacin
 });
 
 export const _boxVerticalAlignmentSet = requiresVersion(24)(function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
-  /** Setter body for `box_vertical_alignment`. */
+  /** Setter body for `boxVerticalAlignment`. */
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "13", BoxVerticalAlignment.toBinary(value));
   _numericSort(cosDict(meta, "items"));
@@ -1484,7 +1484,7 @@ export const _boxVerticalAlignmentSet = requiresVersion(24)(function box_vertica
 });
 
 export const _boxAutoFitPolicySet = requiresVersion(24)(function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
-  /** Setter body for `box_auto_fit_policy`. */
+  /** Setter body for `boxAutoFitPolicy`. */
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "14", BoxAutoFitPolicy.toBinary(value));
   _numericSort(cosDict(meta, "items"));
@@ -1495,7 +1495,7 @@ export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_fi
   this: TextDocument,
   value: BoxFirstBaselineAlignment,
 ): void {
-  /** Setter body for `box_first_baseline_alignment`. */
+  /** Setter body for `boxFirstBaselineAlignment`. */
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
@@ -1506,7 +1506,7 @@ export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_fi
 });
 
 export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
-  /** Setter body for `box_first_baseline_alignment_minimum`. */
+  /** Setter body for `boxFirstBaselineAlignmentMinimum`. */
   const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
   cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));

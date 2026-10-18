@@ -214,7 +214,7 @@ export class FolderItem extends Item {
   }
 
   /**
-   * `add_comp` with the smallest width / height to accept (see
+   * `addComp` with the smallest width / height to accept (see
    * `CompItem._new`).
    */
   _addComp(
@@ -326,7 +326,7 @@ export class FolderItem extends Item {
    * matches the alphabetical sort, not the document/creation order
    * py_aep builds the items in). This rebuilds both the model `items`
    * list and the backing `Sfdr` chunk blocks to match. Used only by the
-   * layered-import path; it does not affect `add_comp`/`add_folder`.
+   * layered-import path; it does not affect `addComp`/`addFolder`.
    */
   _sortChildrenByName(): void {
     const [header, blocks] = this._childChunkBlocks();

@@ -809,7 +809,7 @@ export class _ArcSpline {
   }
 }
 
-// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `tkey`, LRU eviction at 1024); pyrt `lru_cache` keys by identity and would never hit.
+// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `tkey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
 export const _arcSplineCache = new Map<string, _ArcSpline>();
 
 /** A cached `_ArcSpline`: every evaluated frame rebuilds the same one. */
@@ -883,7 +883,7 @@ export function _distanceCurve(
 /**
  * Distance travelled `elapsed` seconds into a spatial span.
  *
- * The span runs from `kf_start` to `kf_end`, a single segment or a whole
+ * The span runs from `kfStart` to `kfEnd`, a single segment or a whole
  * roving run. HOLD on either side keeps it at the start.
  */
 export function _spatialDistance(
@@ -1019,7 +1019,7 @@ export function autoTemporalSpeeds(values: number[][], times: number[], index: n
 /**
  * Ease curve mapping a time fraction to a progress fraction, for eases
  * whose speed is dimensionless (1 = the chord slope, see
- * `_single_progress`). `null` means "no explicit ease", i.e. constant
+ * `_singleProgress`). `null` means "no explicit ease", i.e. constant
  * progress.
  */
 export function _progressEasing(
@@ -1216,7 +1216,7 @@ export function _interpolateBezier1d(
   // Convert AEP ease to normalized bezier control points. Only the x
   // (time) axis is used to find the curve parameter; the value axis is
   // evaluated from absolute control points so a segment whose keys hold
-  // the same value still bows (see `_ease_value_handles`).
+  // the same value still bows (see `_easeValueHandles`).
   const [cx1, cy1, cx2, cy2] = _easeToBezier1d(t0, t1, v0, v1, outEase, inEase);
 
   // Get easing function (cached)
@@ -1426,8 +1426,8 @@ export function motionPathDirection(time: number, keyframes: Keyframe[], metric:
  * @param kfLeft - The keyframe starting the segment.
  * @param kfRight - The keyframe ending it.
  * @param time - Evaluation time, in the owning layer's seconds.
- * @param t0 - `kf_left`'s layer time.
- * @param t1 - `kf_right`'s layer time.
+ * @param t0 - `kfLeft`'s layer time.
+ * @param t1 - `kfRight`'s layer time.
  */
 export function _singleProgress(
   kfLeft: Keyframe,
@@ -1478,7 +1478,7 @@ export function _quaternionMultiply(
  * Orientation angles in degrees as a quaternion.
  *
  * Uses AE's own composition order, `Rx . Ry . Rz` - the same one
- * `build_local_matrix` applies an Orientation with.
+ * `buildLocalMatrix` applies an Orientation with.
  */
 export function eulerToQuaternion(angles: number[]): [number, number, number, number] {
   let q: [number, number, number, number] = [0.0, 0.0, 0.0, 1.0];
@@ -1495,7 +1495,7 @@ export function eulerToQuaternion(angles: number[]): [number, number, number, nu
  * equivalent - a Z orientation eased from 10 to 350 reads 357.5, not
  * -2.5 (AE 2026).
  *
- * The extraction itself is `_euler_xyz`, which this feeds the quaternion's
+ * The extraction itself is `_eulerXyz`, which this feeds the quaternion's
  * rotation matrix; only the elements it needs are built.
  */
 export function quaternionToEuler(q: readonly number[]): number[] {
@@ -1567,7 +1567,7 @@ export type _Cubic = [_Point2, _Point2, _Point2, _Point2];
 /**
  * De Casteljau: the two halves of `cubic` either side of `t`.
  *
- * `split_spatial_path` above is the same subdivision, but it speaks the
+ * `splitSpatialPath` above is the same subdivision, but it speaks the
  * TANGENT representation and returns one side. Resampling chains splits
  * and wants both halves as control points, which is what this returns -
  * marshalling between the two costs more than the 6 lerps do.
@@ -1587,7 +1587,7 @@ export function _splitCubic(cubic: _Cubic, t: number): [_Cubic, _Cubic] {
 }
 
 /**
- * Where AE cuts each segment to reach `target_count` segments.
+ * Where AE cuts each segment to reach `targetCount` segments.
  *
  * After Effects bisects breadth-first: every segment once in path
  * order, then every half in that same order, and so on, stopping the
@@ -1736,7 +1736,7 @@ export function interpolateShapes(start: Shape, end: Shape, progress: number): S
     [vertsB, inB, outB] = _resamplePath(vertsB, inB, outB, end.closed, target);
   }
   if (vertsA.length !== vertsB.length) {
-    // `_resample_path` could not reach the target: a one-vertex open
+    // `_resamplePath` could not reach the target: a one-vertex open
     // path has no segment to subdivide.
     return null;
   }
@@ -1854,7 +1854,7 @@ export function _interpolateColor(
  * @param metric - How the property's motion path is measured, from its `tdb4`; only a spatial
  *   property reads it.
  * @param isColor - Whether the value is a colour, which AE blends along one eased progress (see
- *   `_interpolate_color`).
+ *   `_interpolateColor`).
  * @returns Interpolated value, or `null` if no keyframes.
  */
 export function interpolateKeyframes(

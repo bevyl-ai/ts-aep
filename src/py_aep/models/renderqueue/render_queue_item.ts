@@ -523,7 +523,7 @@ export class RenderQueueItem {
   /**
    * SettingsView map
    * built live from the binary chunk, with ExtendScript-compatible keys
-   * matching `get_settings()` output.
+   * matching `getSettings()` output.
    *
    * Supports item assignment:
    *
@@ -592,7 +592,7 @@ export class RenderQueueItem {
    * lead-in frames, an end before the start renders a single frame) -
    * py_aep validates the values like AE's own dialog.
    *
-   * @param value - Time in seconds, or frame count if `is_frames` is True.
+   * @param value - Time in seconds, or frame count if `isFrames` is True.
    * @param field - Either "start" or "duration".
    * @param isFrames - When True, `value` is a frame count and is converted to seconds via the
    *   composition frame rate before writing.

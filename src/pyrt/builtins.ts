@@ -162,7 +162,7 @@ export function at<T>(xs: ArrayLike<T>, i: number): T {
   return xs[j];
 }
 
-/** What `for item in x` yields for each kind `py_iter` accepts. */
+/** What `for item in x` yields for each kind `pyIter` accepts. */
 type IterItem<X> = X extends string | String
   ? string
   : X extends Uint8Array
