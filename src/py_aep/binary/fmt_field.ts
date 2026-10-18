@@ -111,12 +111,14 @@ export class _NulTailStr extends String {
 /** Decode a fixed-size string field up to its first NUL, keeping the
  * raw bytes when a non-zero tail follows it. */
 export function _decode_fixed_str(value: Uint8Array, encoding: string): string | _NulTailStr {
-  const nul = bytes_.find(value, b("\x00"));
+  const nul = value.indexOf(0);
   // surrogateescape keeps byte-exact round-trips even for legacy
   // non-UTF-8 bytes in old files.
   if (nul < 0) return decode(value, encoding, "surrogateescape");
-  const text = decode(value.slice(0, nul), encoding, "surrogateescape");
-  if (!bytes_.strip(value.slice(nul), b("\x00"))?.length) return text;
+  const text = decode(value.subarray(0, nul), encoding, "surrogateescape");
+  let tail = nul + 1;
+  while (tail < value.length && value[tail] === 0) tail++;
+  if (tail === value.length) return text;
   const tailed = new _NulTailStr(text);
   tailed.raw = value;
   return tailed;
@@ -547,8 +549,10 @@ export function _encode_value(
     const field_size = _struct_for(fmt_str, endian).size;
     if (value instanceof _NulTailStr && value.raw.length === field_size) return value.raw;
     // `String(value)` unwraps a `_NulTailStr` (a String object) to its text.
-    const encoded = encode(String(value), enc, "surrogateescape").slice(0, field_size);
-    return concat(encoded, new Uint8Array(field_size - encoded.length));
+    const encoded = encode(String(value), enc, "surrogateescape");
+    const out = new Uint8Array(field_size);
+    out.set(encoded.length > field_size ? encoded.subarray(0, field_size) : encoded);
+    return out;
   }
   if (coerces.has(idx)) return int(value);
   return value;
@@ -579,13 +583,14 @@ export class FmtItem extends AttrsBase {
       for (const [i, f] of data_fields.entries()) {
         const fe = endians.get(i) ?? ">";
         const ff = f.metadata["fmt"];
-        const f_size = struct.calcsize(fe + ff);
-        const [v] = struct.unpack(fe + ff, data.slice(pos, pos + f_size));
+        const s = _struct_for(ff, fe);
+        const f_size = s.size;
+        const [v] = s.unpack(data.subarray(pos, pos + f_size));
         values.push(v);
         pos += f_size;
       }
     } else {
-      values = struct.unpack(">" + fmt, data.slice(0, expected));
+      values = _struct_for(fmt).unpack(data.subarray(0, expected));
     }
     let kw: FieldKwargs;
     if (simple) {
@@ -625,18 +630,18 @@ export class FmtItem extends AttrsBase {
         const fe = endians.get(i) ?? ">";
         let value = getattr(this, f.name);
         value = _encode_value(value, i, encodings, coerces, fe, f.metadata["fmt"]);
-        parts.push(struct.pack(fe + f.metadata["fmt"], value));
+        parts.push(_struct_for(f.metadata["fmt"], fe).pack(value));
       }
       return bytes_.join(parts);
     }
     const encode_fields = _field_encoder(info);
-    if (encode_fields !== null) return struct.pack(">" + fmt, ...encode_fields(this));
+    if (encode_fields !== null) return _struct_for(fmt).pack(...encode_fields(this));
     const values: struct.PackValue[] = [];
     for (const [i, f] of data_fields.entries()) {
       let value = getattr(this, f.name);
       value = _encode_value(value, i, encodings, coerces, ">", f.metadata["fmt"]);
       values.push(value);
     }
-    return struct.pack(">" + fmt, ...values);
+    return _struct_for(fmt).pack(...values);
   }
 }
