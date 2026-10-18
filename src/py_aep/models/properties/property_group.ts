@@ -16,7 +16,6 @@ import {
   objectSetattr,
   assert,
   pyClassHooks,
-  truthyOr,
   repr,
   split,
   instanceDict,
@@ -36,6 +35,7 @@ import { findByListTypeOrNull, indexByIdentity } from "../../binary/utils.ts";
 import { DROPDOWN_CONTROL } from "../../data/dropdown_control.ts";
 import { readDesignAxes } from "../../resolvers/font_axes.ts";
 import { resolveFontExact } from "../../svg/fonts.ts";
+import type { CameraLayer } from "../layers/camera_layer.ts";
 import { _GROUP_CHILD_SPECS, _LAYER_STYLE_CHILD_SPECS, _USE_VALUE, GroupSpec, type PropSpec } from "../../synthesis/property.ts";
 import { validateString } from "../validators.ts";
 import { _PROPERTY_MIN_MAX } from "./overrides.ts";
@@ -467,7 +467,7 @@ export class PropertyGroup extends PropertyBase {
     // Insert into parent's chunk tree (before parent's group end).
     let _tdmn: TdmnChunk | null = null;
     if (parentProperty != null) {
-      const parentTdgp = getattr(parentProperty, "_tdgp", null);
+      const parentTdgp = "_tdgp" in parentProperty ? parentProperty._tdgp : null;
       if (parentTdgp != null) {
         _tdmn = new TdmnChunk({
           value: matchName,
@@ -656,9 +656,9 @@ export class PropertyGroup extends PropertyBase {
     if (this.matchName !== "ADBE Camera Options Group") return null;
     let zoom: number;
     try {
-      // `None._default_zoom` / a layer without it is an AttributeError in Python.
       const layer = this._containingLayer;
-      zoom = getattr(layer, "_defaultZoom").call(layer);
+      if (!("_defaultZoom" in layer)) return null;
+      zoom = (layer as CameraLayer)._defaultZoom();
     } catch (e) {
       if (e instanceof ValueError || e instanceof AttributeError) return null;
       throw e;

@@ -4,13 +4,10 @@ import { INSPECT, describe } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
-  floatRepr,
   format,
-  getattr,
   objectGetattr,
   objectSetattr,
   valueEquals,
-  repr,
   sorted,
   str,
   type ClassAttributes,
@@ -52,9 +49,8 @@ export class _GradientField<T> {
     const validator = this.constructor._VALIDATORS.get(this._name);
     if (validator != null) validator(value, null);
     objectSetattr(obj, this._slot, value);
-    const gradient = getattr(obj, "_gradient", obj);
-    const serialize = getattr(gradient, "_serialize", null);
-    if (serialize != null) serialize.call(gradient);
+    const gradient: { _serialize?: () => void } = "_gradient" in obj ? (obj._gradient as object) : obj;
+    gradient._serialize?.();
   }
 }
 

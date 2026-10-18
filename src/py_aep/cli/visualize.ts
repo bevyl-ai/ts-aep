@@ -29,8 +29,6 @@ import {
   RuntimeError,
   format,
   int,
-  len,
-  truthy,
   repr,
   round,
   str,

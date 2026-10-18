@@ -23,7 +23,6 @@ import { _validateNumber, validateBool, validateEnum, validateF8, validateName, 
 import type { FolderItem } from "../items/folder.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "../layers/av_layer.ts";
-import type { Layer } from "../layers/layer.ts";
 import type { Project } from "../project.ts";
 import { Curves } from "./curves.ts";
 import type { Gradient } from "./gradient.ts";
@@ -36,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, repr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 
 const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -1140,7 +1139,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._tdbs.synthetic = value;
     for (const chunk of this._tdbs.chunks) {
       chunk.synthetic = value;
-      if (hasattr(chunk, "chunks") && (chunk instanceof ListChunk || chunk instanceof ContainerChunk)) {
+      if (chunk instanceof ListChunk || chunk instanceof ContainerChunk) {
         for (const nested of chunk.chunks) nested.synthetic = value;
       }
     }
@@ -2828,7 +2827,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   get separationLeader(): Property<number[]> | null {
     if (!_SEPARATION_FOLLOWERS.includes(this.matchName)) return null;
     const parent = this.parentProperty;
-    if (parent == null || !hasattr(parent, "properties")) return null;
+    if (parent == null || !("properties" in parent)) return null;
     return parent.property(_SEPARATION_LEADER);
   }
 
@@ -2844,7 +2843,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   getSeparationFollower(dim: number): Property<number> | null {
     if (!this.isSeparationLeader) return null;
     const parent = this.parentProperty;
-    if (parent == null || !hasattr(parent, "properties")) return null;
+    if (parent == null || !("properties" in parent)) return null;
     if (dim < 0 || dim >= _SEPARATION_FOLLOWERS.length) {
       throw new ValueError(`dim must be in range [0, ${_SEPARATION_FOLLOWERS.length - 1}], got ${dim}`);
     }
@@ -4563,7 +4562,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (comp != null) return comp;
     let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
-      const found = getattr(node, "_containingComp", null);
+      const found = "_containingComp" in node ? (node._containingComp as CompItem) : null;
       if (found != null) return found;
       node = node.parentProperty;
     }

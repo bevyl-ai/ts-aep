@@ -13,7 +13,6 @@ import {
   ValueError,
   getattr,
   int,
-  truthy,
   repr,
   hasInstanceDict,
   instanceDict,
@@ -153,21 +152,20 @@ export function isEnum(x: unknown): x is EnumHelpers<number> {
 /**
  * Return the IntEnum class behind `transform`, if any.
  *
- * Detects a `fromBinary` classmethod (via `__self__`) or a direct
- * enum class reference.
+ * Detects a `fromBinary` method bound by `boundEnumMethod` (via its
+ * `enumClass`) or a direct enum class reference.
  */
 export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
   if (transform == null) return null;
-  let enumCls = getattr(transform, "__self__", null);
+  let enumCls: unknown = "enumClass" in transform ? transform.enumClass : null;
   if (enumCls == null && isEnum(transform)) enumCls = transform;
   if (isEnum(enumCls)) return enumCls;
   return null;
 }
 
 /**
- * `getattr(enum_cls, name, dflt)`. Python returns a classmethod already
- * bound to the enum (its `__self__`); a py_enum method needs `this` bound
- * the same way, and `_enumClass` finds the enum through `__self__`.
+ * The enum's `name` method bound to the enum, or `dflt`. The result carries
+ * the enum as `enumClass`, which `_enumClass` reads back.
  */
 export function boundEnumMethod<V, R extends number>(
   enumCls: EnumHelpers<number>,
@@ -176,10 +174,10 @@ export function boundEnumMethod<V, R extends number>(
 ): (value: V) => R {
   const m = getattr(enumCls, name, dflt);
   // Python's default is the enum class itself, which is callable (`E(v)`); a
-  // py_enum object is not, so use `E.of` and keep `__self__` for `_enumClass`.
-  if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { __self__: dflt }) : dflt;
+  // py_enum object is not, so use `E.of` and keep `enumClass` for `_enumClass`.
+  if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { enumClass: dflt }) : dflt;
   if (typeof m !== "function") return m;
-  return Object.assign(m.bind(enumCls), { __self__: enumCls });
+  return Object.assign(m.bind(enumCls), { enumClass: enumCls });
 }
 
 /**
@@ -376,7 +374,7 @@ export class ChunkField<
       instanceDict(obj).set(this.publicName, value);
       return;
     }
-    if (truthy(getattr(body, "synthetic", false))) {
+    if (body.synthetic) {
       const owner: ChunkOwner = obj;
       if (owner._ensureMaterialized == null) {
         throw new AttributeError(`'${typeName(owner)}' object has no attribute '_ensure_materialized'`);

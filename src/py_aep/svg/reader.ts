@@ -524,7 +524,7 @@ export class _Reader {
     const href = tpElem.get("href") || tpElem.get("{http://www.w3.org/1999/xlink}href");
     if (!href || !href.startsWith("#")) return;
     const target = this._byId.get(href.slice(1)) ?? null;
-    if (target == null || !(!!tpElem.text && !!strip(tpElem.text))) {
+    if (target == null || !(tpElem.text && strip(tpElem.text))) {
       return;
     }
     const ctm = this._elementCtm(target);

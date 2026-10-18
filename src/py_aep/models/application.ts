@@ -8,7 +8,7 @@ import { ChunkField } from "./descriptors.ts";
 import { validateAeVersion, validateU1 } from "./validators.ts";
 import type { Preferences } from "./preferences.ts";
 import type { Viewer } from "./viewer/viewer.ts";
-import { descriptor, int, repr, split, str, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
+import { descriptor, int, split, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
 import { Project } from "./project.ts";
 
 // Version-gated parts After Effects expects from the format version alone,

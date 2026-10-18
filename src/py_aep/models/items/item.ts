@@ -13,7 +13,6 @@ import {
   descriptor,
   dictPop,
   format,
-  getattr,
   assert,
   valueEquals,
   type ClassAttributes,
@@ -23,6 +22,7 @@ import { Guide } from "../guide.ts";
 import { validateName, validateString } from "../validators.ts";
 import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
+import type { Viewer } from "../viewer/viewer.ts";
 
 const _folder = deferred<typeof import("./folder.ts")>("py_aep/models/items/folder");
 // NOTE(port): a module-level import in Python; parsers/effect imports the item subclasses, which extend Item.
@@ -185,7 +185,7 @@ export class Item {
     value.items.push(this);
 
     // Relocate the item's open-panel viewer (AVItem only).
-    const viewer = getattr(this, "_viewer", null);
+    const viewer = "_viewer" in this ? (this._viewer as Viewer | null) : null;
     if (viewer != null) {
       listRemove(oldParent._viewers, viewer);
       value._viewers.push(viewer);

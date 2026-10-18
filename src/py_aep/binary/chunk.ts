@@ -25,9 +25,7 @@ import {
   fields,
   floordiv,
   getattr,
-  hasattr,
   valueEquals,
-  truthyOr,
   repr,
   struct,
   type ClassAttributes,
@@ -246,7 +244,7 @@ export class Chunk extends AttrsBase {
     const info = _structInfo(this.constructor);
     if (info == null) return writeBytes(fp, this.data);
     const [
-      fmt,
+      ,
       dataFields,
       encodings,
       optionalStart,
@@ -615,7 +613,7 @@ export class ContainerChunk extends Chunk {
   _legacyBody(): Uint8Array {
     const cls = this.constructor;
     const utf8 = this.chunks.find((c) => c.chunkType === "Utf8") ?? null;
-    const value: string = truthyOr(getattr(utf8, "value", null), "");
+    const value: string = (utf8 != null && "value" in utf8 ? (utf8.value as string) : "") || "";
     if (this.data?.length > 0 && value === cls._legacyValue(_legacyText(this.data))) {
       return this.data;
     }

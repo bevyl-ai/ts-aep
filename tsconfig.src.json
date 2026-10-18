@@ -1,6 +1,7 @@
 {
   // The library alone, for the per-layer loose-type report and the build.
   "extends": "./tsconfig.json",
+  "compilerOptions": { "noUnusedLocals": true },
   "include": ["src"],
   "exclude": []
 }

@@ -32,7 +32,7 @@ import {
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { serialize } from "../../src/py_aep/cos/index.ts";
 // noqa: F401 (documents the data source)
-import { CosParser, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
+import { type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import {
   cosAt,
   cosContains,

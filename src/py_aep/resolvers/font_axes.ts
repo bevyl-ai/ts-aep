@@ -1,6 +1,5 @@
 /** Variable-font design-axis reading via fontTools. */
 
-import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 

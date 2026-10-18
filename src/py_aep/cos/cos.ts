@@ -20,7 +20,6 @@ import {
   pyEnum,
   valueEquals,
   pyfloat,
-  repr,
   str,
   UnicodeDecodeError,
   ValueError,
