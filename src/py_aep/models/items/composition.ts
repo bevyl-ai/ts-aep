@@ -219,15 +219,15 @@ export function _materializeLayer(layer: Layer): void {
   function _materializeProp(prop: Property, inTransform: boolean): void {
     if (camLight && inTransform) {
       if (!_CAMERA_LIGHT_TRANSFORM_SKIP.has(prop.matchName)) {
-        prop._ensure_materialized();
+        prop._ensureMaterialized();
       }
     } else if (prop._tdb4.has_time_base) {
-      prop._ensure_materialized();
+      prop._ensureMaterialized();
     }
   }
 
   function _materializeTree(group: PropertyGroup): void {
-    group._ensure_materialized();
+    group._ensureMaterialized();
     const inTransform = group.matchName === "ADBE Transform Group";
     // Deliberately the raw list, NOT `group.properties`: the public
     // accessor would run the group's deferred child synthesis, and this
@@ -281,7 +281,7 @@ export function _materializeLayer(layer: Layer): void {
       for (const child of top.properties) {
         if (child.matchName === "ADBE Layer Source Alternate" && child instanceof Property) {
           if (aeWrites("source alternate value", aeMajor)) {
-            child._ensure_materialized();
+            child._ensureMaterialized();
           } else if (child._tdmn != null) {
             // AE 22 writes the match name (then blsv/blsi) but
             // no value.
@@ -454,8 +454,8 @@ export interface LayerTypeCache {
   shape: ShapeLayer[];
   camera: CameraLayer[];
   light: LightLayer[];
-  three_d_model: ThreeDModelLayer[];
-  parametric_mesh: ParametricMeshLayer[];
+  threeDModel: ThreeDModelLayer[];
+  parametricMesh: ParametricMeshLayer[];
 }
 
 /**
@@ -484,7 +484,7 @@ export interface LayerTypeCache {
  */
 export class CompItem extends AVItem {
   declare ["constructor"]: ClassAttributes<typeof CompItem>;
-  static _auto_name: string = "Comp";
+  static _autoName: string = "Comp";
 
   /** The background color of the composition. The three array values specify
    * the red, green, and blue components of the color. Read / Write. */
@@ -595,11 +595,11 @@ export class CompItem extends AVItem {
     // Writing frame_rate also rewrites internal_timebase and time_scale
     // (CdtaChunk._update_timebase), so capture the old base first.
     cdta.frame_rate = value;
-    this._retime_to_timebase(oldTimebase, cdta.internal_timebase);
-    this._requantize_comp_timing();
+    this._retimeToTimebase(oldTimebase, cdta.internal_timebase);
+    this._requantizeCompTiming();
   }
 
-  *_walk_properties(): Generator<Property> {
+  *_walkProperties(): Generator<Property> {
     /**
      * Every `Property` under this comp's layers, plus its markers.
      *
@@ -608,7 +608,7 @@ export class CompItem extends AVItem {
      * alone (measured on AE 2026).
      */
     for (const layer of this.layers) {
-      yield* layer._leaf_properties();
+      yield* layer._leafProperties();
     }
     // Through the property: the comp's markers are parsed on first access.
     if (this.markerProperty != null) {
@@ -616,7 +616,7 @@ export class CompItem extends AVItem {
     }
   }
 
-  _retime_to_timebase(old: number, new_: number): void {
+  _retimeToTimebase(old: number, new_: number): void {
     /**
      * Rescale keyframe times and restamp per-property timebases.
      *
@@ -624,7 +624,7 @@ export class CompItem extends AVItem {
      * the same time in seconds means scaling its stored unit count by
      * `new / old`. That ratio is 1 whenever only `time_scale` moved - the
      * whole NTSC family, and 30 \<-\> 60 - but the frame rate cached on each
-     * `Keyframe` still has to be refreshed, because `frame_time` is derived
+     * `Keyframe` still has to be refreshed, because `frameTime` is derived
      * from it.
      *
      * Every property's `tdb4` also carries the comp's timebase, and AE
@@ -639,28 +639,28 @@ export class CompItem extends AVItem {
      */
     const rescale = new_ !== old && old > 0;
     const frameRate = this._cdta.frame_rate;
-    for (const prop of this._walk_properties()) {
-      if (prop._is_live()) {
-        prop._ensure_time_base();
+    for (const prop of this._walkProperties()) {
+      if (prop._isLive()) {
+        prop._ensureTimeBase();
       }
       let propOld = 0;
       let propNew = 0;
       if (rescale) {
-        const stretch = prop._time_stretch;
+        const stretch = prop._timeStretch;
         propOld = layerTimebase(old, stretch);
         propNew = layerTimebase(new_, stretch);
       }
       for (const keyframe of prop.keyframes) {
         if (propOld !== propNew) {
-          const item = keyframe._ldat_item;
+          const item = keyframe._ldatItem;
           item.time_units = rescaleTicks(item.time_units, propOld, propNew);
         }
-        keyframe._frame_rate = frameRate;
+        keyframe._frameRate = frameRate;
       }
     }
   }
 
-  _requantize_comp_timing(): void {
+  _requantizeCompTiming(): void {
     /**
      * Snap comp duration, work area and current time onto the new
      * frame grid.
@@ -671,7 +671,7 @@ export class CompItem extends AVItem {
      * start and end snap independently and its duration follows from them
      * (61 frames from frame 12 at 24 fps become 63 at 25 fps, not the 64
      * its duration alone would round to), then everything is kept inside
-     * the comp (`_keep_times_inside`). Measured on AE 2026. Display start
+     * the comp (`_keepTimesInside`). Measured on AE 2026. Display start
      * and layer in / out / start times are not requantized.
      */
     const cdta = this._cdta;
@@ -685,15 +685,15 @@ export class CompItem extends AVItem {
 
     cdta.duration_dividend = _durationUnits(cdta.duration, timebase, unitsPerFrame);
     cdta.duration_divisor = timebase;
-    this._restore_times_in_timebase();
+    this._restoreTimesInTimebase();
     if (!runsToEnd) {
       cdta.work_area_end_dividend = _frameUnits(workAreaEnd, timebase, unitsPerFrame);
       cdta.work_area_end_divisor = timebase;
     }
-    this._keep_times_inside();
+    this._keepTimesInside();
   }
 
-  _keep_times_inside(): void {
+  _keepTimesInside(): void {
     /**
      * Pull the current time and the work area back inside the comp.
      *
@@ -749,8 +749,8 @@ export class CompItem extends AVItem {
     cdta.duration_divisor = timebase;
     // AE also re-stores the time and work-area start over the timebase
     // on a duration write (a 0/600 time becomes 0/24576 at 24 fps).
-    this._restore_times_in_timebase();
-    this._keep_times_inside();
+    this._restoreTimesInTimebase();
+    this._keepTimesInside();
   }
 
   /** The duration of the item in frames. Read / Write. */
@@ -804,10 +804,10 @@ export class CompItem extends AVItem {
     } else {
       cdta.display_start_time = units / timebase;
     }
-    this._restore_times_in_timebase();
+    this._restoreTimesInTimebase();
   }
 
-  _restore_times_in_timebase(): void {
+  _restoreTimesInTimebase(): void {
     /**
      * AE re-stores the work area start and the current time in whole
      * timebase units whenever the display start changes (AE 2026: a new
@@ -840,7 +840,7 @@ export class CompItem extends AVItem {
       max: (self: CompItem) => self.duration - 1 / self.frameRate,
     })(value, this);
     const runsToEnd = this._cdta.work_area_end_dividend === WORK_AREA_TO_END;
-    this._set_work_area(value, runsToEnd ? null : value + this.workAreaDuration);
+    this._setWorkArea(value, runsToEnd ? null : value + this.workAreaDuration);
   }
 
   /** The work area start frame relative to composition start.
@@ -875,7 +875,7 @@ export class CompItem extends AVItem {
       max: (self: CompItem) => self.duration - self.workAreaStart,
     })(value, this);
     const start = this.workAreaStart;
-    this._set_work_area(start, start + value);
+    this._setWorkArea(start, start + value);
   }
 
   /** The work area duration in frames. Read / Write. */
@@ -892,7 +892,7 @@ export class CompItem extends AVItem {
     this.workAreaDuration = value / _gridRate(this._cdta);
   }
 
-  _set_work_area(start: number, end: number | null): void {
+  _setWorkArea(start: number, end: number | null): void {
     /**
      * Store the work area the way AE's setters do: in whole timebase
      * units, snapped to frames, and with an end at or past the end of the
@@ -914,7 +914,7 @@ export class CompItem extends AVItem {
   /**
    * The current time of the item when it is being previewed directly
    * from the Project panel. This value is a number of seconds. It is an
-   * error to set this value for a {@link FootageItem} whose `main_source` is
+   * error to set this value for a {@link FootageItem} whose `mainSource` is
    * still. Read / Write.
    *
    * Writing snaps the value to the nearest frame, half a frame rounding
@@ -966,7 +966,7 @@ export class CompItem extends AVItem {
     pixelAspect: number,
     duration: number,
     frameRate: number,
-    kw: { project: Project; parent_folder: FolderItem; min_dimension?: number },
+    kw: { project: Project; parentFolder: FolderItem; minDimension?: number },
   ): CompItem {
     /**
      * Create a new empty composition.
@@ -982,7 +982,7 @@ export class CompItem extends AVItem {
      * @param min_dimension - The smallest width / height accepted: 4, as `addComp`, except for an
      *   import that AE builds smaller (an SVG canvas can be 1 px a side).
      */
-    const { project, parent_folder, min_dimension = 4 } = kw;
+    const { project, parentFolder: parent_folder, minDimension: min_dimension = 4 } = kw;
     validateString(name);
     const validateSize = _validateNumber({ min: min_dimension, max: 30000, integer: true });
     validateSize(width);
@@ -991,7 +991,7 @@ export class CompItem extends AVItem {
     validateCompDuration(duration);
     validateCompFrameRate(frameRate);
 
-    const newId = project._allocate_id();
+    const newId = project._allocateId();
     const aeMajor = project._head.ae_version_major;
 
     // AE hard-crashes opening a comp item without the full view-state
@@ -1005,7 +1005,7 @@ export class CompItem extends AVItem {
       pixel_aspect: pixelAspect,
       duration,
       frame_rate: frameRate,
-      allocate_layer_id: project._allocate_id.bind(project),
+      allocate_layer_id: project._allocateId.bind(project),
       ae_major: aeMajor,
       label: labelIndex(project._preferences, "Comp Label Index 2", 15),
     });
@@ -1018,95 +1018,95 @@ export class CompItem extends AVItem {
     const viewData: Chunk[] = [fee, ...buildItemViewChunks()];
 
     const comp = new this({
-      _child_chunks: itemList.chunks,
+      _childChunks: itemList.chunks,
       _cmta: null,
       _idta: idta,
-      _item_list: itemList,
+      _itemList: itemList,
       _gide: gide,
-      _pin_chunks: [],
-      _name_utf8: nameUtf8,
+      _pinChunks: [],
+      _nameUtf8: nameUtf8,
       project,
-      parent_folder,
-      effect_param_defs: project._effect_param_defs,
-      proxy_source: null,
+      parentFolder: parent_folder,
+      effectParamDefs: project._effectParamDefs,
+      proxySource: null,
     });
-    comp._view_data = viewData;
+    comp._viewData = viewData;
     return comp;
   }
 
   declare _layers: Layer[];
-  declare _layers_by_id: Map<number, Layer> | null;
-  declare __type_cache: LayerTypeCache | null;
-  declare __layer_id_to_index: Map<number, number> | null;
+  declare _layersById: Map<number, Layer> | null;
+  declare __typeCache: LayerTypeCache | null;
+  declare __layerIdToIndex: Map<number, number> | null;
   declare _cdta: CdtaChunk;
   declare _cdrp: U1Chunk | null;
   declare prinList: ListChunk;
   declare _prin: PrinChunk;
   declare _prda: PrdaChunk;
-  declare _deferred_layers: [ListChunk[], EffectParamDefs] | null;
-  declare _layers_loaded: boolean;
-  declare _deferred_child_chunks: Chunk[] | null;
-  declare _marker_property: Property<MarkerValue | null> | null;
-  declare _eg_template_name_utf8: Utf8Chunk | null;
-  declare _eg_controllers: EssentialGraphicsController[];
-  declare _view_data: Chunk[];
+  declare _deferredLayers: [ListChunk[], EffectParamDefs] | null;
+  declare _layersLoaded: boolean;
+  declare _deferredChildChunks: Chunk[] | null;
+  declare _markerProperty: Property<MarkerValue | null> | null;
+  declare _egTemplateNameUtf8: Utf8Chunk | null;
+  declare _egControllers: EssentialGraphicsController[];
+  declare _viewData: Chunk[];
 
   constructor(kw: {
-    _child_chunks: Chunk[];
+    _childChunks: Chunk[];
     _cmta: CmtaChunk | null;
     _idta: IdtaChunk;
-    _item_list: ListChunk;
+    _itemList: ListChunk;
     _gide: ListChunk | null;
-    _pin_chunks: ListChunk[];
-    _name_utf8: Utf8Chunk;
+    _pinChunks: ListChunk[];
+    _nameUtf8: Utf8Chunk;
     project: Project;
-    parent_folder: FolderItem;
-    effect_param_defs: EffectParamDefs;
-    proxy_source: FileSource | SolidSource | PlaceholderSource | null;
+    parentFolder: FolderItem;
+    effectParamDefs: EffectParamDefs;
+    proxySource: FileSource | SolidSource | PlaceholderSource | null;
   }) {
     // Skip AVItem's extra params - they're all descriptor-backed on
     // CompItem and read directly from the cdta chunk body.
     super({
       _idta: kw._idta,
-      _name_utf8: kw._name_utf8,
+      _nameUtf8: kw._nameUtf8,
       _cmta: kw._cmta,
-      _item_list: kw._item_list,
+      _itemList: kw._itemList,
       _gide: kw._gide,
-      _pin_chunks: kw._pin_chunks,
+      _pinChunks: kw._pinChunks,
       project: kw.project,
-      parent_folder: kw.parent_folder,
-      type_name: "Composition",
-      proxy_source: kw.proxy_source,
+      parentFolder: kw.parentFolder,
+      typeName: "Composition",
+      proxySource: kw.proxySource,
     });
 
     this._layers = [];
-    this._layers_by_id = null;
-    this.__type_cache = null;
-    this.__layer_id_to_index = null;
+    this._layersById = null;
+    this.__typeCache = null;
+    this.__layerIdToIndex = null;
 
-    this._cdta = findByType(kw._child_chunks, "cdta");
-    this._cdrp = findByTypeOrNull(kw._child_chunks, "cdrp");
-    this.prinList = findByListType(kw._child_chunks, "PRin");
+    this._cdta = findByType(kw._childChunks, "cdta");
+    this._cdrp = findByTypeOrNull(kw._childChunks, "cdrp");
+    this.prinList = findByListType(kw._childChunks, "PRin");
     this._prin = findByType(this.prinList.chunks, "prin");
     this._prda = findByType(this.prinList.chunks, "prda");
 
     // Layer deferral: collect layer chunks and source IDs now, parse
     // the actual Layer objects on first access via _ensure_layers_loaded.
-    const layerChunks = filterByListType(kw._child_chunks, "Layr");
+    const layerChunks = filterByListType(kw._childChunks, "Layr");
     if (layerChunks?.length > 0) {
-      this._deferred_layers = [layerChunks, kw.effect_param_defs];
-      this._layers_loaded = false;
+      this._deferredLayers = [layerChunks, kw.effectParamDefs];
+      this._layersLoaded = false;
     } else {
-      this._deferred_layers = null;
-      this._layers_loaded = true;
+      this._deferredLayers = null;
+      this._layersLoaded = true;
     }
 
     // Deferred markers + Essential Graphics parsing.
-    this._deferred_child_chunks = kw._child_chunks;
-    this._marker_property = null;
-    this._eg_template_name_utf8 = null;
-    this._eg_controllers = [];
-    this._view_data = [];
+    this._deferredChildChunks = kw._childChunks;
+    this._markerProperty = null;
+    this._egTemplateNameUtf8 = null;
+    this._egControllers = [];
+    this._viewData = [];
   }
 
   [Symbol.iterator](): Iterator<Layer> {
@@ -1131,8 +1131,8 @@ export class CompItem extends AVItem {
         continue;
       }
       for (const om of rqi.outputModules) {
-        if (om._om_ldat.post_render_target_comp_id === compId) {
-          om._om_ldat.post_render_target_comp_id = 0;
+        if (om._omLdat.post_render_target_comp_id === compId) {
+          om._omLdat.post_render_target_comp_id = 0;
         }
       }
     }
@@ -1156,22 +1156,22 @@ export class CompItem extends AVItem {
      * @returns The newly created {@link CompItem}.
      */
     const project = this._project;
-    const parent = this._parent_folder;
+    const parent = this._parentFolder;
     pyAssert(parent != null);
-    const container = parent._children_container;
+    const container = parent._childrenContainer;
 
     // Clone the comp's whole block: LIST:Item + trailing view chunks.
     const [start, end] = blockSlice(
       container,
-      this._item_list,
+      this._itemList,
       this.constructor._ITEM_BOUNDARY_LIST_TYPES,
     );
     // The block starts at this comp's own LIST:Item.
-    const clonedItem = cloneChunkTree(this._item_list);
+    const clonedItem = cloneChunkTree(this._itemList);
     const clonedBlock = [clonedItem, ...container.slice(start + 1, end).map((c) => cloneChunkTree(c))];
 
     const oldCompId = this.id;
-    const newCompId = project._allocate_id();
+    const newCompId = project._allocateId();
     // Pre-2020 files have no iide; the id then lives only in idta.
     const iide = findByTypeOrNull(clonedItem.chunks, "iide");
     if (iide !== null) iide.value = newCompId;
@@ -1185,7 +1185,7 @@ export class CompItem extends AVItem {
     const ldtaChunks = recursiveFind(clonedItem.chunks, "ldta");
     const idMap: Map<number, number> = new Map();
     for (const ldta of ldtaChunks) {
-      idMap.set(ldta.layer_id, project._allocate_id());
+      idMap.set(ldta.layer_id, project._allocateId());
     }
     for (const ldta of ldtaChunks) {
       ldta.layer_id = getitem(idMap, ldta.layer_id);
@@ -1231,11 +1231,11 @@ export class CompItem extends AVItem {
 
     // Register the duplicate on its layer sources' used_in if linking
     // already ran (the lazy pass covers it otherwise).
-    if (project._used_in_linked) {
-      for (const sourceId of newComp._source_ids_for_linking()) {
+    if (project._usedInLinked) {
+      for (const sourceId of newComp._sourceIdsForLinking()) {
         const source = project.items.get(sourceId) ?? null;
         if (source instanceof AVItem) {
-          source._used_in.add(newComp);
+          source._usedIn.add(newComp);
         }
       }
     }
@@ -1243,9 +1243,9 @@ export class CompItem extends AVItem {
     return newComp;
   }
 
-  _source_ids_for_linking(): Set<number> {
-    /** Return source IDs for `_used_in` linking without forcing layer parse. */
-    const deferred = this._deferred_layers;
+  _sourceIdsForLinking(): Set<number> {
+    /** Return source IDs for `_usedIn` linking without forcing layer parse. */
+    const deferred = this._deferredLayers;
     if (deferred != null) {
       const sourceIds: Set<number> = new Set();
       for (const lc of deferred[0]) {
@@ -1276,32 +1276,32 @@ export class CompItem extends AVItem {
 
     const out: Set<number> = new Set();
     for (const layer of this._layers) {
-      if (layer instanceof AVLayer && layer._source_id !== 0) {
-        out.add(layer._source_id);
+      if (layer instanceof AVLayer && layer._sourceId !== 0) {
+        out.add(layer._sourceId);
       }
     }
     return out;
   }
 
-  _ensure_layers_loaded(): void {
+  _ensureLayersLoaded(): void {
     /** Parse deferred `LIST:Layr` chunks on first layer access. */
-    if (this._layers_loaded) {
+    if (this._layersLoaded) {
       return;
     }
 
-    const deferred = this._deferred_layers;
+    const deferred = this._deferredLayers;
     pyAssert(deferred != null);
 
     // Clear deferred state first to avoid duplicate work if any nested
     // access re-enters this method.
     const [layerChunks, deferredEffectParamDefs] = deferred;
-    this._deferred_layers = null;
+    this._deferredLayers = null;
 
     let effectParamDefs: EffectParamDefs;
     if (deferredEffectParamDefs?.size > 0) {
       effectParamDefs = deferredEffectParamDefs;
     } else if (this._project != null) {
-      effectParamDefs = this._project._effect_param_defs;
+      effectParamDefs = this._project._effectParamDefs;
     } else {
       effectParamDefs = new Map();
     }
@@ -1313,41 +1313,41 @@ export class CompItem extends AVItem {
 
     this._layers = parsedLayers;
 
-    this._layers_loaded = true;
-    this._invalidate_layer_cache();
+    this._layersLoaded = true;
+    this._invalidateLayerCache();
   }
 
   /**
    * Build the property trees of the layers whose left-out defaults
    * follow this comp (see `width`).
    */
-  _build_live_defaults(): void {
-    this._ensure_layers_loaded();
+  _buildLiveDefaults(): void {
+    this._ensureLayersLoaded();
     for (const layer of this._layers) {
-      if (layer._tree_param_defs != null && layer._leaves_out_live_defaults()) {
-        layer._load_property_tree();
+      if (layer._treeParamDefs != null && layer._leavesOutLiveDefaults()) {
+        layer._loadPropertyTree();
       }
     }
   }
 
-  _ensure_comp_parsed(): void {
+  _ensureCompParsed(): void {
     /** Parse markers and Essential Graphics on first access. */
-    if (this._deferred_child_chunks == null) {
+    if (this._deferredChildChunks == null) {
       return;
     }
 
-    const childChunks = this._deferred_child_chunks;
-    this._deferred_child_chunks = null;
+    const childChunks = this._deferredChildChunks;
+    this._deferredChildChunks = null;
 
-    this._marker_property = _composition()._getMarkers(childChunks, this);
+    this._markerProperty = _composition()._getMarkers(childChunks, this);
     const egResult = parseEssentialGraphics(childChunks);
     if (egResult != null) {
-      this._eg_template_name_utf8 = egResult[0];
-      this._eg_controllers = [...egResult[1]];
+      this._egTemplateNameUtf8 = egResult[0];
+      this._egControllers = [...egResult[1]];
     }
   }
 
-  _build_type_cache(): LayerTypeCache {
+  _buildTypeCache(): LayerTypeCache {
     const av: AVLayer[] = [];
     const text: TextLayer[] = [];
     const shape: ShapeLayer[] = [];
@@ -1375,28 +1375,28 @@ export class CompItem extends AVItem {
         light.push(layer);
       }
     }
-    this._layers_by_id = byId;
+    this._layersById = byId;
     const cache: LayerTypeCache = {
       av,
       text,
       shape,
       camera,
       light,
-      three_d_model: threeDModel,
-      parametric_mesh: parametricMesh,
+      threeDModel: threeDModel,
+      parametricMesh: parametricMesh,
     };
-    this.__type_cache = cache;
+    this.__typeCache = cache;
     return cache;
   }
 
-  _invalidate_layer_cache(): void {
+  _invalidateLayerCache(): void {
     /** Reset layer caches after structural mutations. */
-    this.__type_cache = null;
-    this._layers_by_id = null;
-    this.__layer_id_to_index = null;
+    this.__typeCache = null;
+    this._layersById = null;
+    this.__layerIdToIndex = null;
   }
 
-  _layer_block_slice(layer: Layer): [number, number] {
+  _layerBlockSlice(layer: Layer): [number, number] {
     /**
      * Return `(start, end)` indices of a layer's chunk block in
      * `_item_list.chunks`.
@@ -1404,12 +1404,12 @@ export class CompItem extends AVItem {
      * The block runs from the layer's `LIST:Layr` to the next boundary
      * chunk (another `LIST:Layr`, a view block, or a footer chunk).
      */
-    return blockSlice(this._item_list.chunks, layer._layer_list, _LAYER_BOUNDARY_TYPES);
+    return blockSlice(this._itemList.chunks, layer._layerList, _LAYER_BOUNDARY_TYPES);
   }
 
-  _find_first_layer_position(): number {
+  _findFirstLayerPosition(): number {
     /** Find the insertion point for the first layer in the chunk list. */
-    for (const [i, chunk] of this._item_list.chunks.entries()) {
+    for (const [i, chunk] of this._itemList.chunks.entries()) {
       if (
         chunk instanceof ListChunk &&
         ["DLay", "SLay", "CLay", "SecL", "CIFO"].includes(chunk.list_type)
@@ -1417,14 +1417,14 @@ export class CompItem extends AVItem {
         return i;
       }
     }
-    return this._item_list.chunks.length;
+    return this._itemList.chunks.length;
   }
 
   /**
    * A composition has no main-source pin, so its proxy pin is at
    * index 0 (footage items keep the main pin at 0 and the proxy at 1).
    */
-  get _proxy_pin_index(): number {
+  get _proxyPinIndex(): number {
     return 0;
   }
 
@@ -1433,32 +1433,32 @@ export class CompItem extends AVItem {
    * Read-only. 
    */
   get layers(): Layer[] {
-    this._ensure_layers_loaded();
+    this._ensureLayersLoaded();
     return this._layers;
   }
 
   /** Map of layer ID to layer, for O(1) lookup by sibling layers. */
   get layersById(): Map<number, Layer> {
-    if (this._layers_by_id == null) {
-      this._layers_by_id = new Map(this.layers.map((layer) => [layer.id, layer] as const));
+    if (this._layersById == null) {
+      this._layersById = new Map(this.layers.map((layer) => [layer.id, layer] as const));
     }
-    return this._layers_by_id;
+    return this._layersById;
   }
 
   /** Map of layer ID to 0-based index. */
-  get _layer_id_to_index(): Map<number, number> {
-    if (this.__layer_id_to_index == null) {
-      this.__layer_id_to_index = new Map(
+  get _layerIdToIndex(): Map<number, number> {
+    if (this.__layerIdToIndex == null) {
+      this.__layerIdToIndex = new Map(
         [...this.layers.entries()].map(([idx, layer]) => [layer.id, idx] as const),
       );
     }
-    return this.__layer_id_to_index;
+    return this.__layerIdToIndex;
   }
 
   /** The composition's marker property. Read-only. */
   get markerProperty(): Property<MarkerValue | null> | null {
-    this._ensure_comp_parsed();
-    return this._marker_property;
+    this._ensureCompParsed();
+    return this._markerProperty;
   }
 
   /**
@@ -1468,27 +1468,27 @@ export class CompItem extends AVItem {
    * Read / Write.
    */
   get motionGraphicsTemplateName(): string | null {
-    this._ensure_comp_parsed();
-    if (this._eg_template_name_utf8 == null) {
+    this._ensureCompParsed();
+    if (this._egTemplateNameUtf8 == null) {
       return null;
     }
-    return this._eg_template_name_utf8.value;
+    return this._egTemplateNameUtf8.value;
   }
 
   // @requires_version(15) on the setter: wrapped after the class body.
   set motionGraphicsTemplateName(value: string) {
     validateName(value);
-    this._ensure_comp_parsed();
-    if (this._eg_template_name_utf8 != null) {
-      this._eg_template_name_utf8.value = value;
+    this._ensureCompParsed();
+    if (this._egTemplateNameUtf8 != null) {
+      this._egTemplateNameUtf8.value = value;
     } else {
       const [cps2, utf8Chunk] = buildCps2(value);
       const cif3 = new ListChunk({
         list_type: "CIF3",
         chunks: [cps2, new S4Chunk({ chunk_type: "CcCt" })],
       });
-      this._item_list.chunks.push(cif3);
-      this._eg_template_name_utf8 = utf8Chunk;
+      this._itemList.chunks.push(cif3);
+      this._egTemplateNameUtf8 = utf8Chunk;
     }
   }
 
@@ -1497,8 +1497,8 @@ export class CompItem extends AVItem {
    * Read-only.
    */
   get motionGraphicsControllers(): EssentialGraphicsController[] {
-    this._ensure_comp_parsed();
-    return this._eg_controllers;
+    this._ensureCompParsed();
+    return this._egControllers;
   }
 
   /**
@@ -1524,19 +1524,19 @@ export class CompItem extends AVItem {
     return this.motionGraphicsControllers.map((ctrl) => ctrl.name);
   }
 
-  _cif_containers(): ListChunk[] {
+  _cifContainers(): ListChunk[] {
     /**
      * The `CIFO`/`CIF2`/`CIF3` Essential Graphics containers of this comp,
      * in file order (every comp AE or py_aep writes has all three, except
      * AE 15's, which have no CIF3).
      */
-    return this._item_list.chunks.filter(
+    return this._itemList.chunks.filter(
       (c): c is ListChunk =>
         c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.list_type),
     );
   }
 
-  _build_property_cctl(
+  _buildPropertyCctl(
     plan: PropertyControllerPlan,
     prop: Property,
     name: string,
@@ -1549,13 +1549,13 @@ export class CompItem extends AVItem {
      */
     const compId = this.id;
     const layerId = plan.layer._ldta.layer_id;
-    if (plan.controller_type === CONTROLLER_SLIDER) {
+    if (plan.controllerType === CONTROLLER_SLIDER) {
       // AE seeds the EGP slider range from the pard UI slider range
       // (Slider Control -> 0..100 despite its +/-1e6 valid range,
       // Brightness -> -150..150), falling back to the valid range for
       // pard-less properties (Transform > Opacity -> 0..100).
-      const minV = prop._slider_min != null ? prop._slider_min : prop.minValue;
-      const maxV = prop._slider_max != null ? prop._slider_max : prop.maxValue;
+      const minV = prop._sliderMin != null ? prop._sliderMin : prop.minValue;
+      const maxV = prop._sliderMax != null ? prop._sliderMax : prop.maxValue;
       // Python's `float()` refuses a list bound (a color or multi-dimensional range).
       const floatBound = (v: number | number[]): number => {
         if (Array.isArray(v)) throw new TypeError_("float() argument must be a string or a real number, not 'list'");
@@ -1569,23 +1569,23 @@ export class CompItem extends AVItem {
         maxV != null ? floatBound(maxV) : 100.0,
         compId,
         layerId,
-        plan.path_json,
+        plan.pathJson,
       );
     }
-    if (plan.controller_type === CONTROLLER_CHECKBOX) {
+    if (plan.controllerType === CONTROLLER_CHECKBOX) {
       return buildCheckboxCctl(
         name,
         uuidStr,
         pyBool(prop.value),
         compId,
         layerId,
-        plan.path_json,
+        plan.pathJson,
       );
     }
-    if (plan.controller_type === CONTROLLER_COLOR) {
+    if (plan.controllerType === CONTROLLER_COLOR) {
       let rgba: number[] = prop.value;
       rgba = [...rgba, 1.0, 1.0, 1.0, 1.0].slice(0, 4);
-      return buildColorCctl(name, uuidStr, rgba, compId, layerId, plan.path_json);
+      return buildColorCctl(name, uuidStr, rgba, compId, layerId, plan.pathJson);
     }
     const text = prop.value instanceof TextDocument ? prop.value.text : "";
     return buildTextCctl(
@@ -1595,11 +1595,11 @@ export class CompItem extends AVItem {
       fontCapsJson(prop),
       compId,
       layerId,
-      plan.path_json,
+      plan.pathJson,
     );
   }
 
-  _append_controller(
+  _appendController(
     build: () => [ListChunk, Utf8Chunk, U4Chunk],
   ): [Utf8Chunk, U4Chunk] | null {
     /**
@@ -1610,7 +1610,7 @@ export class CompItem extends AVItem {
      * controller model - the parser's preferred container - or `null` when
      * the comp has no CIF containers (not produced by AE or py_aep).
      */
-    const containers = this._cif_containers();
+    const containers = this._cifContainers();
     if (!containers?.length) {
       return null;
     }
@@ -1627,7 +1627,7 @@ export class CompItem extends AVItem {
     return model;
   }
 
-  _register_controller(
+  _registerController(
     bound: [Utf8Chunk, U4Chunk],
     uuidStr: string,
     nodes: PathNode[],
@@ -1635,28 +1635,28 @@ export class CompItem extends AVItem {
   ): void {
     /** Append the model for a controller just written to the containers. */
     const [nameUtf8, ctyp] = bound;
-    this._eg_controllers.push(
+    this._egControllers.push(
       new EssentialGraphicsController({
-        _name_utf8: nameUtf8,
+        _nameUtf8: nameUtf8,
         _ctyp: ctyp,
         uuid: uuidStr,
-        source_property_path: nodes.map(
-          (node) => new SourcePropertyRef(node.match_name, node.prop_index),
+        sourcePropertyPath: nodes.map(
+          (node) => new SourcePropertyRef(node.matchName, node.propIndex),
         ),
-        source_comp_id: this.id,
-        source_layer_id: layer._ldta.layer_id,
+        sourceCompId: this.id,
+        sourceLayerId: layer._ldta.layer_id,
       }),
     );
   }
 
-  _add_property_controller(prop: Property, name: string | null): boolean {
+  _addPropertyController(prop: Property, name: string | null): boolean {
     /**
      * Add `prop` to this comp's Essential Graphics panel.
      *
      * Returns `false` (adding nothing) when `prop` cannot be exposed - see
      * `resolvers.motion_graphics`.
      */
-    this._ensure_comp_parsed();
+    this._ensureCompParsed();
     const plan = propertyControllerPlan(prop, this);
     if (plan == null) {
       return false;
@@ -1664,17 +1664,17 @@ export class CompItem extends AVItem {
     const display = name != null ? name : prop.name;
     validateName(display);
     const uuidStr = uuid4();
-    const bound = this._append_controller(() =>
-      this._build_property_cctl(plan, prop, display, uuidStr),
+    const bound = this._appendController(() =>
+      this._buildPropertyCctl(plan, prop, display, uuidStr),
     );
     if (bound == null) {
       return false;
     }
-    this._register_controller(bound, uuidStr, plan.nodes, plan.layer);
+    this._registerController(bound, uuidStr, plan.nodes, plan.layer);
     return true;
   }
 
-  _add_layer_controller(layer: AVLayer, name: string | null): boolean {
+  _addLayerController(layer: AVLayer, name: string | null): boolean {
     /**
      * Add `layer` to this comp's Essential Graphics panel as a Media
      * Replacement (type 14) controller.
@@ -1682,7 +1682,7 @@ export class CompItem extends AVItem {
      * Returns `false` (adding nothing) when the layer is not eligible -
      * see `resolvers.motion_graphics.can_add_layer`.
      */
-    this._ensure_comp_parsed();
+    this._ensureCompParsed();
     if (!canAddLayer(layer, this)) {
       return false;
     }
@@ -1696,7 +1696,7 @@ export class CompItem extends AVItem {
     // AE names a per-controller thumbnail cache file it regenerates on
     // open; only the uuid-shaped name is stored in the project.
     const thumbnail = `${uuid4()}.png`;
-    const bound = this._append_controller(() =>
+    const bound = this._appendController(() =>
       buildMediaCctl(
         display,
         uuidStr,
@@ -1714,7 +1714,7 @@ export class CompItem extends AVItem {
     if (bound == null) {
       return false;
     }
-    this._register_controller(bound, uuidStr, nodes, layer);
+    this._registerController(bound, uuidStr, nodes, layer);
     return true;
   }
 
@@ -1901,13 +1901,13 @@ export class CompItem extends AVItem {
   }
 
   /** Cached layer type lists for O(1) access. */
-  get _type_cache(): LayerTypeCache {
-    return this.__type_cache != null ? this.__type_cache : this._build_type_cache();
+  get _typeCache(): LayerTypeCache {
+    return this.__typeCache != null ? this.__typeCache : this._buildTypeCache();
   }
 
   /** An array of all {@link AVLayer} objects in this composition. */
   get avLayers(): AVLayer[] {
-    return this._type_cache.av;
+    return this._typeCache.av;
   }
 
   /** An array of the composition layers whose source are compositions. */
@@ -1949,32 +1949,32 @@ export class CompItem extends AVItem {
 
   /** An array of the text layers in this composition. */
   get textLayers(): TextLayer[] {
-    return this._type_cache.text;
+    return this._typeCache.text;
   }
 
   /** An array of the shape layers in this composition. */
   get shapeLayers(): ShapeLayer[] {
-    return this._type_cache.shape;
+    return this._typeCache.shape;
   }
 
   /** An array of the camera layers in this composition. */
   get cameraLayers(): CameraLayer[] {
-    return this._type_cache.camera;
+    return this._typeCache.camera;
   }
 
   /** An array of the light layers in this composition. */
   get lightLayers(): LightLayer[] {
-    return this._type_cache.light;
+    return this._typeCache.light;
   }
 
   /** An array of the 3D model layers in this composition. */
   get threeDModelLayers(): ThreeDModelLayer[] {
-    return this._type_cache.three_d_model;
+    return this._typeCache.threeDModel;
   }
 
   /** An array of the parametric mesh layers in this composition. */
   get parametricMeshLayers(): ParametricMeshLayer[] {
-    return this._type_cache.parametric_mesh;
+    return this._typeCache.parametricMesh;
   }
 
   /** An array of the null layers in this composition. */
@@ -2004,7 +2004,7 @@ export class CompItem extends AVItem {
 
   // -- Layer creation --------------------------------------------------------
 
-  _synthetic_layer_duration(): number {
+  _syntheticLayerDuration(): number {
     /**
      * Default span of a new sourceless layer (solid, null, text,
      * shape, camera, light), from the "Pref_DEFAULT_SYNTHETIC_OUT_POINT"
@@ -2014,7 +2014,7 @@ export class CompItem extends AVItem {
     return pref != null ? pref : this.duration;
   }
 
-  _still_layer_duration(): number {
+  _stillLayerDuration(): number {
     /**
      * Default span of a new still-footage layer, from the
      * "Pref_DEFAULT_STILL_OUT_POINT" preference; comp duration for the
@@ -2024,7 +2024,7 @@ export class CompItem extends AVItem {
     return pref != null ? pref : this.duration;
   }
 
-  _insert_layer(layer: Layer): void {
+  _insertLayer(layer: Layer): void {
     /**
      * Insert a fully-constructed layer at the top of the layer stack.
      *
@@ -2051,19 +2051,19 @@ export class CompItem extends AVItem {
     let chunkIdx: number;
     if (this.layers?.length > 0) {
       try {
-        chunkIdx = indexByIdentity(this._item_list.chunks, this.layers[0]._layer_list);
+        chunkIdx = indexByIdentity(this._itemList.chunks, this.layers[0]._layerList);
       } catch (e) {
         if (!(e instanceof ValueError)) throw e;
-        chunkIdx = this._find_first_layer_position();
+        chunkIdx = this._findFirstLayerPosition();
       }
     } else {
-      chunkIdx = this._find_first_layer_position();
+      chunkIdx = this._findFirstLayerPosition();
     }
-    this._item_list.chunks.splice(chunkIdx, 0, layer._layer_list, ...viewBlock);
+    this._itemList.chunks.splice(chunkIdx, 0, layer._layerList, ...viewBlock);
 
     _materializeLayer(layer);
     this._layers.unshift(layer);
-    this._invalidate_layer_cache();
+    this._invalidateLayerCache();
   }
 
   addNull(duration: number | null = null): AVLayer {
@@ -2092,13 +2092,13 @@ export class CompItem extends AVItem {
 
     // AE's addNull source is a white 100x100 solid (probed in AE 2026).
     const solidSource = SolidSource._new(name, [1.0, 1.0, 1.0]);
-    const solidsFolder = this._project._solids_folder;
+    const solidsFolder = this._project._solidsFolder;
     const footage = FootageItem._new(solidSource, {
       project: this._project,
-      parent_folder: solidsFolder,
+      parentFolder: solidsFolder,
     });
-    solidsFolder._children_container.push(footage._item_list);
-    solidsFolder._children_container.push(...footage._view_data);
+    solidsFolder._childrenContainer.push(footage._itemList);
+    solidsFolder._childrenContainer.push(...footage._viewData);
     this._project.items.set(footage.id, footage);
     solidsFolder.items.push(footage);
 
@@ -2106,15 +2106,15 @@ export class CompItem extends AVItem {
     // name resolves from the footage item).
     const layer = AVLayer._new({
       name: "",
-      layer_id: this._project._allocate_id(),
-      source_id: footage.id,
-      duration: duration != null ? duration : this._synthetic_layer_duration(),
-      containing_comp: this,
-      null_layer: true,
+      layerId: this._project._allocateId(),
+      sourceId: footage.id,
+      duration: duration != null ? duration : this._syntheticLayerDuration(),
+      containingComp: this,
+      nullLayer: true,
       label: labelIndex(this._project._preferences, "Null Label Index", 1),
-      effect_param_defs: this._project._effect_param_defs,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
     return layer;
   }
 
@@ -2125,16 +2125,16 @@ export class CompItem extends AVItem {
      * @returns The newly created {@link ShapeLayer}.
      */
     const existing = new Set(this.layers.map((lyr) => lyr.name));
-    const name = autoName(ShapeLayer._auto_name, existing);
+    const name = autoName(ShapeLayer._autoName, existing);
 
     const layer = ShapeLayer._new({
       name,
-      layer_id: this._project._allocate_id(),
-      duration: this._synthetic_layer_duration(),
-      containing_comp: this,
-      effect_param_defs: this._project._effect_param_defs,
+      layerId: this._project._allocateId(),
+      duration: this._syntheticLayerDuration(),
+      containingComp: this,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
     return layer;
   }
 
@@ -2148,7 +2148,7 @@ export class CompItem extends AVItem {
      */
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
-      name = autoName(CameraLayer._auto_name, existing);
+      name = autoName(CameraLayer._autoName, existing);
     }
 
     if (centerPoint == null) {
@@ -2159,15 +2159,15 @@ export class CompItem extends AVItem {
 
     const layer = CameraLayer._new({
       name,
-      layer_id: this._project._allocate_id(),
-      duration: this._synthetic_layer_duration(),
-      containing_comp: this,
-      effect_param_defs: this._project._effect_param_defs,
+      layerId: this._project._allocateId(),
+      duration: this._syntheticLayerDuration(),
+      containingComp: this,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / CameraLayer._zoom_dividend, 8);
+    const zoom = round((this.width * this.pixelAspect) / CameraLayer._zoomDividend, 8);
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");
@@ -2197,7 +2197,7 @@ export class CompItem extends AVItem {
      */
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
-      name = autoName(LightLayer._auto_name, existing);
+      name = autoName(LightLayer._autoName, existing);
     }
 
     if (centerPoint == null) {
@@ -2208,16 +2208,16 @@ export class CompItem extends AVItem {
 
     const layer = LightLayer._new({
       name,
-      layer_id: this._project._allocate_id(),
-      duration: this._synthetic_layer_duration(),
-      containing_comp: this,
-      light_type: 1,
-      effect_param_defs: this._project._effect_param_defs,
+      layerId: this._project._allocateId(),
+      duration: this._syntheticLayerDuration(),
+      containingComp: this,
+      lightType: 1,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / LightLayer._zoom_dividend, 8);
+    const zoom = round((this.width * this.pixelAspect) / LightLayer._zoomDividend, 8);
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");
@@ -2232,7 +2232,7 @@ export class CompItem extends AVItem {
 
   addParametricMesh(
     name: string | null = null,
-    kw: { mesh_type: ParametricMeshType },
+    kw: { meshType: ParametricMeshType },
   ): ParametricMeshLayer {
     /**
      * Create a new parametric mesh layer at the top of the layer stack.
@@ -2241,30 +2241,30 @@ export class CompItem extends AVItem {
      * @param mesh_type - The type of parametric mesh (required, keyword-only).
      * @returns The newly created {@link ParametricMeshLayer}.
      */
-    const { mesh_type } = kw;
+    const { meshType: mesh_type } = kw;
     const explicitName = name != null;
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
       // Python's `str.title()`: each run of letters capitalized, the rest lowered.
-      const prefix = ParametricMeshType.name_of(mesh_type)
+      const prefix = ParametricMeshType.nameOf(mesh_type)
         .toLowerCase()
         .replace(/(^|[^a-zA-Z])([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
-      name = autoName(`${prefix} ${ParametricMeshLayer._auto_name}`, existing);
+      name = autoName(`${prefix} ${ParametricMeshLayer._autoName}`, existing);
     }
 
     const layer = ParametricMeshLayer._new({
       name,
-      layer_id: this._project._allocate_id(),
-      duration: this._synthetic_layer_duration(),
-      containing_comp: this,
-      mesh_type,
-      effect_param_defs: this._project._effect_param_defs,
+      layerId: this._project._allocateId(),
+      duration: this._syntheticLayerDuration(),
+      containingComp: this,
+      meshType: mesh_type,
+      effectParamDefs: this._project._effectParamDefs,
     });
     // AE sets the ldta name bit when addParametricMesh receives an
     // explicit name (unlike other sourceless layers); UI-created mesh
     // layers with default names leave it clear.
     layer._ldta.name_set = explicitName;
-    this._insert_layer(layer);
+    this._insertLayer(layer);
     return layer;
   }
 
@@ -2290,7 +2290,7 @@ export class CompItem extends AVItem {
     } else if (item.duration) {
       layerDuration = item.duration;
     } else {
-      layerDuration = this._still_layer_duration();
+      layerDuration = this._stillLayerDuration();
     }
 
     // AE leaves the layer name empty for source-named layers, and the
@@ -2298,18 +2298,18 @@ export class CompItem extends AVItem {
     // in AE 2026, including user-recolored items).
     const layer = AVLayer._new({
       name: "",
-      layer_id: this._project._allocate_id(),
-      source_id: item.id,
+      layerId: this._project._allocateId(),
+      sourceId: item.id,
       duration: layerDuration,
-      containing_comp: this,
+      containingComp: this,
       label: int(item.label),
-      effect_param_defs: this._project._effect_param_defs,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
 
-    this._project._ensure_used_in_linked();
-    if ("_used_in" in item) {
-      item._used_in.add(this);
+    this._project._ensureUsedInLinked();
+    if ("_usedIn" in item) {
+      item._usedIn.add(this);
     }
 
     return layer;
@@ -2378,12 +2378,12 @@ export class CompItem extends AVItem {
           "move_all_attributes=False requires a layer with a " + "replaceable source.",
         );
       }
-      return this._precompose_leave_attributes(layer, name);
+      return this._precomposeLeaveAttributes(layer, name);
     }
-    return this._precompose_move(indices, name);
+    return this._precomposeMove(indices, name);
   }
 
-  _create_precomp_item(name: string, width: number, height: number): CompItem {
+  _createPrecompItem(name: string, width: number, height: number): CompItem {
     /**
      * Create the precompose target composition.
      *
@@ -2406,14 +2406,14 @@ export class CompItem extends AVItem {
     const cloned = cloneChunkTree(this._cdta);
     cloned.width = width;
     cloned.height = height;
-    const cdtaIdx = indexByIdentity(newComp._item_list.chunks, newComp._cdta);
-    newComp._item_list.chunks[cdtaIdx] = cloned;
+    const cdtaIdx = indexByIdentity(newComp._itemList.chunks, newComp._cdta);
+    newComp._itemList.chunks[cdtaIdx] = cloned;
     newComp._cdta = cloned;
-    folder._reposition_child_sorted(newComp);
+    folder._repositionChildSorted(newComp);
     return newComp;
   }
 
-  _precompose_leave_attributes(layer: AVLayer, name: string): CompItem {
+  _precomposeLeaveAttributes(layer: AVLayer, name: string): CompItem {
     /**
      * The `move_all_attributes=False` path: the retained layer only
      * swaps its source to the new comp (sized from the layer's source),
@@ -2421,14 +2421,14 @@ export class CompItem extends AVItem {
      */
     const source = layer.source;
     pyAssert(source != null);
-    const newComp = this._create_precomp_item(name, source.width, source.height);
+    const newComp = this._createPrecompItem(name, source.width, source.height);
     newComp.add(source);
     layer.replaceSource(newComp);
     _dropEssentialOverrides(layer);
     return newComp;
   }
 
-  _precompose_move(indices: number[], name: string): CompItem {
+  _precomposeMove(indices: number[], name: string): CompItem {
     /**
      * The `move_all_attributes=True` path: verbatim chunk-block moves
      * with fresh layer ids.
@@ -2439,32 +2439,32 @@ export class CompItem extends AVItem {
     const oldIds = new Set<number | null>(moved.map((ly) => ly.id));
     const replEnabled = moved[0].enabled;
 
-    const newComp = this._create_precomp_item(name, this.width, this.height);
+    const newComp = this._createPrecompItem(name, this.width, this.height);
 
     // Detach the moved layers' chunk blocks (top-down keeps their
     // relative stacking order).
     // Each block starts at its layer's own LIST:Layr.
     const blocks: [ListChunk, ...Chunk[]][] = [];
     for (const ly of moved) {
-      const [start, end] = this._layer_block_slice(ly);
-      blocks.push([ly._layer_list, ...this._item_list.chunks.slice(start + 1, end)]);
-      this._item_list.chunks.splice(start, end - start);
+      const [start, end] = this._layerBlockSlice(ly);
+      blocks.push([ly._layerList, ...this._itemList.chunks.slice(start + 1, end)]);
+      this._itemList.chunks.splice(start, end - start);
       const atLayer = this._layers.indexOf(ly);
       if (atLayer < 0) {
         throw new ValueError("list.remove(x): x not in list");
       }
       this._layers.splice(atLayer, 1);
     }
-    this._invalidate_layer_cache();
+    this._invalidateLayerCache();
 
     // AE reallocates layer ids on precompose; owner tdpi values inside
     // each layer's tdgp reference the owning layer id and must follow.
     const idMap: Map<number, number> = new Map();
     for (const ly of moved) {
-      const newId = project._allocate_id();
+      const newId = project._allocateId();
       idMap.set(ly.id, newId);
       ly._ldta.layer_id = newId;
-      rewriteOwnerTdpi(ly._layer_list, newId);
+      rewriteOwnerTdpi(ly._layerList, newId);
     }
 
     // A moved layer whose track matte stays behind gets a verbatim
@@ -2480,21 +2480,21 @@ export class CompItem extends AVItem {
       const block = blocks[i];
       finalBlocks.push(block);
       const referenced: number[] = [ly._ldta.matte_layer_id || 0];
-      referenced.push(...sorted([...collectLayerRefTdpiIds(ly._layer_list)]));
+      referenced.push(...sorted([...collectLayerRefTdpiIds(ly._layerList)]));
       for (const matteId of referenced) {
         if (!matteId || idMap.has(matteId) || matteMap.has(matteId)) {
           continue;
         }
         const matteLayer = this.layersById.get(matteId) ?? null;
         if (matteLayer != null) {
-          const [mStart, mEnd] = this._layer_block_slice(matteLayer);
-          const mList = cloneChunkTree(matteLayer._layer_list);
+          const [mStart, mEnd] = this._layerBlockSlice(matteLayer);
+          const mList = cloneChunkTree(matteLayer._layerList);
           const mBlock: [ListChunk, ...Chunk[]] = [
             mList,
-            ...this._item_list.chunks.slice(mStart + 1, mEnd).map((c) => cloneChunkTree(c)),
+            ...this._itemList.chunks.slice(mStart + 1, mEnd).map((c) => cloneChunkTree(c)),
           ];
           const mLdta = findByType(mList.chunks, "ldta");
-          const copyId = project._allocate_id();
+          const copyId = project._allocateId();
           mLdta.layer_id = copyId;
           rewriteOwnerTdpi(mList, copyId);
           // The clone's own references point at old-comp layer
@@ -2541,24 +2541,24 @@ export class CompItem extends AVItem {
 
     // Insert the blocks and re-parse each layer in the new comp's
     // context (the old Layer models go stale, like ExtendScript).
-    newComp._ensure_layers_loaded();
-    let insertAt = newComp._find_first_layer_position();
-    const effectDefs = project._effect_param_defs;
+    newComp._ensureLayersLoaded();
+    let insertAt = newComp._findFirstLayerPosition();
+    const effectDefs = project._effectParamDefs;
     for (const block of finalBlocks) {
-      newComp._item_list.chunks.splice(insertAt, 0, ...block);
+      newComp._itemList.chunks.splice(insertAt, 0, ...block);
       insertAt += block.length;
       const newLayer = parseLayer(block[0], newComp, effectDefs);
       newComp._layers.push(newLayer);
     }
-    newComp._invalidate_layer_cache();
+    newComp._invalidateLayerCache();
 
     // Source usage bookkeeping for the moved (and copied) layers.
-    project._ensure_used_in_linked();
+    project._ensureUsedInLinked();
     for (const newLayer of newComp._layers) {
-      const source = newLayer._source_item;
-      if (source != null && "_used_in" in source) {
+      const source = newLayer._sourceItem;
+      if (source != null && "_usedIn" in source) {
         _unregisterSourceUsage(source, this);
-        source._used_in.add(newComp);
+        source._usedIn.add(newComp);
       }
     }
 
@@ -2589,7 +2589,7 @@ export class CompItem extends AVItem {
       }
     }
 
-    this._invalidate_layer_cache();
+    this._invalidateLayerCache();
     return newComp;
   }
 
@@ -2622,7 +2622,7 @@ export class CompItem extends AVItem {
 
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      const solidName = SolidSource._color_name(color[0], color[1], color[2]);
+      const solidName = SolidSource._colorName(color[0], color[1], color[2]);
       name = autoName(solidName, existing);
     }
 
@@ -2634,13 +2634,13 @@ export class CompItem extends AVItem {
     }
 
     const solidSource = SolidSource._new(name, color, width, height, pixelAspect);
-    const solidsFolder = this._project._solids_folder;
+    const solidsFolder = this._project._solidsFolder;
     const footage = FootageItem._new(solidSource, {
       project: this._project,
-      parent_folder: solidsFolder,
+      parentFolder: solidsFolder,
     });
-    solidsFolder._children_container.push(footage._item_list);
-    solidsFolder._children_container.push(...footage._view_data);
+    solidsFolder._childrenContainer.push(footage._itemList);
+    solidsFolder._childrenContainer.push(...footage._viewData);
     this._project.items.set(footage.id, footage);
     solidsFolder.items.push(footage);
 
@@ -2648,24 +2648,24 @@ export class CompItem extends AVItem {
     // name resolves from the solid footage item).
     const layer = AVLayer._new({
       name: "",
-      layer_id: this._project._allocate_id(),
-      source_id: footage.id,
-      duration: duration != null ? duration : this._synthetic_layer_duration(),
-      containing_comp: this,
+      layerId: this._project._allocateId(),
+      sourceId: footage.id,
+      duration: duration != null ? duration : this._syntheticLayerDuration(),
+      containingComp: this,
       label: labelIndex(this._project._preferences, "Solid Label Index 2", 1),
-      effect_param_defs: this._project._effect_param_defs,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
 
-    this._project._ensure_used_in_linked();
-    if ("_used_in" in footage) {
-      footage._used_in.add(this);
+    this._project._ensureUsedInLinked();
+    if ("_usedIn" in footage) {
+      footage._usedIn.add(this);
     }
 
     return layer;
   }
 
-  _build_text_btds(
+  _buildTextBtds(
     text: string,
     boxSize: number[] | null = null,
     lineOrientation: LineOrientation | null = null,
@@ -2684,7 +2684,7 @@ export class CompItem extends AVItem {
     // every new text layer (probed in AE 2026; the paragraph sheet is
     // not applied).
     applyTextStylePrefs(td, this._project._preferences);
-    const btdk = td._btdk_body;
+    const btdk = td._btdkBody;
 
     // Text-document tdbs carries an empty cdat with 4 trailing zero
     // bytes (matches what AE writes).
@@ -2710,7 +2710,7 @@ export class CompItem extends AVItem {
     return [btds, btgu, tdmn];
   }
 
-  _add_text_layer(
+  _addTextLayer(
     text: string,
     box = false,
     boxSize: number[] | null = null,
@@ -2726,21 +2726,21 @@ export class CompItem extends AVItem {
     }
 
     const existing = new Set(this.layers.map((lyr) => lyr.name));
-    text = text || autoName(TextLayer._auto_name, existing);
+    text = text || autoName(TextLayer._autoName, existing);
 
-    const [btds, btgu, tdMn] = this._build_text_btds(text, boxSize, lineOrientation);
+    const [btds, btgu, tdMn] = this._buildTextBtds(text, boxSize, lineOrientation);
 
     const layer = TextLayer._new({
       name: text,
-      layer_id: this._project._allocate_id(),
-      duration: this._synthetic_layer_duration(),
-      containing_comp: this,
+      layerId: this._project._allocateId(),
+      duration: this._syntheticLayerDuration(),
+      containingComp: this,
       btds,
       btgu,
       tdmn: tdMn,
-      effect_param_defs: this._project._effect_param_defs,
+      effectParamDefs: this._project._effectParamDefs,
     });
-    this._insert_layer(layer);
+    this._insertLayer(layer);
     return layer;
   }
 
@@ -2751,7 +2751,7 @@ export class CompItem extends AVItem {
    * @returns The newly created {@link TextLayer}.
    */
   addText(text = ""): TextLayer {
-    return this._add_text_layer(text, false);
+    return this._addTextLayer(text, false);
   }
 
   /**
@@ -2763,7 +2763,7 @@ export class CompItem extends AVItem {
    * @returns The newly created {@link TextLayer}.
    */
   addBoxText(boxSize: number[] | null = null, text = ""): TextLayer {
-    return this._add_text_layer(text, true, boxSize);
+    return this._addTextLayer(text, true, boxSize);
   }
 
   /**
@@ -2777,7 +2777,7 @@ export class CompItem extends AVItem {
    */
   // @requires_version(24): wrapped after the class body.
   addVerticalText(text = ""): TextLayer {
-    return this._add_text_layer(text, false, null, LineOrientation.VERTICAL_RIGHT_TO_LEFT);
+    return this._addTextLayer(text, false, null, LineOrientation.VERTICAL_RIGHT_TO_LEFT);
   }
 
   /**
@@ -2793,7 +2793,7 @@ export class CompItem extends AVItem {
    */
   // @requires_version(24): wrapped after the class body.
   addVerticalBoxText(boxSize: number[] | null = null, text = ""): TextLayer {
-    return this._add_text_layer(
+    return this._addTextLayer(
       text,
       true,
       boxSize,
@@ -2847,7 +2847,7 @@ descriptor(
   "width",
   new ChunkField("_cdta", "width", {
     validate: validateFootageDimension,
-    pre_set: "_build_live_defaults",
+    preSet: "_buildLiveDefaults",
   }),
 );
 
@@ -2857,7 +2857,7 @@ descriptor(
   "height",
   new ChunkField("_cdta", "height", {
     validate: validateFootageDimension,
-    pre_set: "_build_live_defaults",
+    preSet: "_buildLiveDefaults",
   }),
 );
 
@@ -2922,7 +2922,7 @@ descriptor(
   new ChunkField("_cdta", "pixel_aspect", {
     validate: validatePixelAspect,
     // See `width`.
-    pre_set: "_build_live_defaults",
+    preSet: "_buildLiveDefaults",
   }),
 );
 
@@ -2930,7 +2930,7 @@ descriptor(
 descriptor(
   CompItem,
   "timeScale",
-  new ChunkField("_cdta", "time_scale", { read_only: true }),
+  new ChunkField("_cdta", "time_scale", { readOnly: true }),
 );
 
 /** The time set as the beginning of the composition, in seconds. Read / Write. */
@@ -2940,7 +2940,7 @@ descriptor(
   new ChunkField("_cdta", "display_start_time", {
     // AE 2026's own bounds ("out of range -10800 to 86400").
     validate: _validateNumber({ min: -10800.0, max: 86400.0 }),
-    post_set: "_restore_times_in_timebase",
+    postSet: "_restoreTimesInTimebase",
   }),
 );
 

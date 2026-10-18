@@ -31,12 +31,12 @@ export const LogType = intEnum("LogType", {
   ERRORS_AND_PER_FRAME_INFO: 3214,
 }, {
   /** Convert binary value to LogType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 3212) ?? this.ERRORS_ONLY;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 3212) ?? this.ERRORS_ONLY;
   },
 
   /** Convert LogType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 3212;
   },
 });
@@ -58,12 +58,12 @@ export const RQItemStatus = intEnum("RQItemStatus", {
   DONE: 3019,
 }, {
   /** Convert binary value to RQItemStatus. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 3013) ?? this.UNQUEUED;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 3013) ?? this.UNQUEUED;
   },
 
   /** Convert RQItemStatus to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 3013;
   },
 });

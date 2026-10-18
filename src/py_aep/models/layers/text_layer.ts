@@ -11,13 +11,13 @@ import type { EffectParamDefs } from "../descriptors.ts";
 
 type TextLayerNewKw = {
   name: string;
-  layer_id: number;
+  layerId: number;
   duration: number;
-  containing_comp: CompItem;
+  containingComp: CompItem;
   btds: ListChunk;
   btgu: ListChunk;
   tdmn: TdmnChunk;
-  effect_param_defs?: EffectParamDefs | null;
+  effectParamDefs?: EffectParamDefs | null;
 };
 
 /**
@@ -40,7 +40,7 @@ type TextLayerNewKw = {
  * @see https://ae-scripting.docsforadobe.dev/layer/textlayer/
  */
 export class TextLayer extends AVLayer {
-  static _auto_name: string = "Text";
+  static _autoName: string = "Text";
 
   // NOTE(port): Python has the same `# type: ignore[override]`; the keyword shape differs from AVLayer._new's in both.
   static _new(kw: TextLayerNewKw): TextLayer;
@@ -48,13 +48,13 @@ export class TextLayer extends AVLayer {
   static _new(kw: TextLayerNewKw): TextLayer {
     const {
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
+      containingComp: containing_comp,
       btds,
       btgu,
       tdmn,
-      effect_param_defs = null,
+      effectParamDefs: effect_param_defs = null,
     } = kw;
     const textPropsTdmn = new TdmnChunk({ value: "ADBE Text Properties" });
     const textPropsTdgp = new ListChunk({
@@ -73,15 +73,15 @@ export class TextLayer extends AVLayer {
 
     const layer = super._new<TextLayer>({
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      root_tdgp_extra: [textPropsTdmn, textPropsTdgp],
-      effect_param_defs,
+      containingComp: containing_comp,
+      rootTdgpExtra: [textPropsTdmn, textPropsTdgp],
+      effectParamDefs: effect_param_defs,
     });
     layer._ldta.layer_type = LayerType.TEXT;
     // The base factory named the layer from the AV type it started with.
-    layer._match_name = getitem(
+    layer._matchName = getitem(
       layer.constructor._LAYER_MATCH_NAMES,
       LayerType.TEXT,
     );

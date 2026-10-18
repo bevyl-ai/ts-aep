@@ -27,12 +27,12 @@ function _state(comp: CompItem): Map<string, unknown> {
   const position = _position(comp);
   return new Map<string, unknown>([
     ["separated", position.dimensionsSeparated],
-    ["leader_stored", position._read_cdat_raw()],
+    ["leader_stored", position._readCdatRaw()],
     [
       "followers",
       Array.from(range(3), (dim) => [
         asInstance(position.getSeparationFollower(dim), Property).value,
-        asInstance(position.getSeparationFollower(dim), Property)._is_live(),
+        asInstance(position.getSeparationFollower(dim), Property)._isLive(),
       ]),
     ],
   ]);
@@ -71,9 +71,9 @@ describe("TestSeparate", () => {
 
     position.dimensionsSeparated = true;
 
-    expect(asInstance(position.getSeparationFollower(0), Property)._is_live()).toBe(true);
-    expect(asInstance(position.getSeparationFollower(1), Property)._is_live()).toBe(true);
-    expect(!asInstance(position.getSeparationFollower(2), Property)._is_live()).toBe(true);
+    expect(asInstance(position.getSeparationFollower(0), Property)._isLive()).toBe(true);
+    expect(asInstance(position.getSeparationFollower(1), Property)._isLive()).toBe(true);
+    expect(!asInstance(position.getSeparationFollower(2), Property)._isLive()).toBe(true);
   });
 
   test("test_leader_is_parked_on_its_default", () => {
@@ -89,7 +89,7 @@ describe("TestSeparate", () => {
 
     position.dimensionsSeparated = true;
 
-    expect(approx(position._read_cdat_raw(), [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
+    expect(approx(position._readCdatRaw(), [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
     // ...while the reported value still tracks the followers.
     expect(approx(position.value, [111.0, 222.0, 0.0])).toBe(true);
   });
@@ -116,7 +116,7 @@ describe("TestRecombine", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep"));
     const position = _position(project.compositions[0]);
-    expect(asInstance(position.getSeparationFollower(0), Property)._is_live()).toBe(true);
+    expect(asInstance(position.getSeparationFollower(0), Property)._isLive()).toBe(true);
 
     position.dimensionsSeparated = false;
 
@@ -124,7 +124,7 @@ describe("TestRecombine", () => {
     project.save(out);
     const reloaded = _position(parseAep(out).project.compositions[0]);
     for (const dimension of range(3)) {
-      expect(!asInstance(reloaded.getSeparationFollower(dimension), Property)._is_live()).toBe(true);
+      expect(!asInstance(reloaded.getSeparationFollower(dimension), Property)._isLive()).toBe(true);
     }
   });
 });
@@ -382,15 +382,15 @@ describe("TestSeparatedCompensation", () => {
   test("test_internal_write_reaches_the_followers", () => {
     const comp = parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0];
     const position = _position(comp);
-    const parked = position._read_cdat_raw();
+    const parked = position._readCdatRaw();
 
-    const followers = position._separation_followers();
+    const followers = position._separationFollowers();
     pyAssert(followers != null);
-    position._set_separated_value([11.0, 22.0, 0.0], followers);
+    position._setSeparatedValue([11.0, 22.0, 0.0], followers);
 
     expect(approx(position.value, [11.0, 22.0, 0.0])).toBe(true);
     // The dead leader stays on the default AE parks it on.
-    expect(approx(position._read_cdat_raw(), parked)).toBe(true);
+    expect(approx(position._readCdatRaw(), parked)).toBe(true);
   });
 
   test("test_untouched_z_stays_synthetic_on_a_2d_layer", () => {
@@ -400,12 +400,12 @@ describe("TestSeparatedCompensation", () => {
      */
     const comp = parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0];
     const position = _position(comp);
-    expect(asInstance(position.getSeparationFollower(2), Property)._is_live()).toBe(false);
+    expect(asInstance(position.getSeparationFollower(2), Property)._isLive()).toBe(false);
 
-    const followers = position._separation_followers();
+    const followers = position._separationFollowers();
     pyAssert(followers != null);
-    position._set_separated_value([11.0, 22.0, 0.0], followers);
+    position._setSeparatedValue([11.0, 22.0, 0.0], followers);
 
-    expect(asInstance(position.getSeparationFollower(2), Property)._is_live()).toBe(false);
+    expect(asInstance(position.getSeparationFollower(2), Property)._isLive()).toBe(false);
   });
 });

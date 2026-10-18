@@ -93,7 +93,7 @@ export class MaskPropertyGroup extends PropertyGroup {
   declare maskMotionBlur: MaskMotionBlur;
 
   declare _mkif: MkifChunk;
-  declare _mask_shape_tdsb: TdsbChunk | null;
+  declare _maskShapeTdsb: TdsbChunk | null;
 
   /**
    * When `true`, the mask uses RotoBezier, enabling curved mask segments
@@ -116,22 +116,22 @@ export class MaskPropertyGroup extends PropertyGroup {
    * a RotoBezier mask, which keeps its own tensions.
    */
   get rotoBezier(): boolean {
-    const tdsb = this._mask_shape_tdsb;
+    const tdsb = this._maskShapeTdsb;
     return tdsb != null ? !!tdsb.roto_bezier : false;
   }
 
   set rotoBezier(value: boolean) {
     validateBool(value);
-    if (this._mask_shape_tdsb == null) {
+    if (this._maskShapeTdsb == null) {
       if (!value) {
         // Already the default; AE writes no Mask Shape for this state.
         return;
       }
       // The default path carries tension 1 per vertex, as AE writes it.
-      this._materialize_mask_shape({ roto_bezier: true });
+      this._materializeMaskShape({ rotoBezier: true });
       return;
     }
-    if (!!this._mask_shape_tdsb.roto_bezier === value) {
+    if (!!this._maskShapeTdsb.roto_bezier === value) {
       return;
     }
     const path = this.property("ADBE Mask Shape");
@@ -144,22 +144,22 @@ export class MaskPropertyGroup extends PropertyGroup {
       // a corner) and 1/3 otherwise, then stores the tangents those
       // tensions draw as the handles.
       const tensions = shapes.map((s) =>
-        keyframeTensions([], s._stored_tangents(-1), s._stored_tangents(1)),
+        keyframeTensions([], s._storedTangents(-1), s._storedTangents(1)),
       );
-      this._mask_shape_tdsb.roto_bezier = true;
+      this._maskShapeTdsb.roto_bezier = true;
       for (const [i, shape] of shapes.entries()) {
-        shape._set_tensions(tensions[i]);
-        shape._write_geometry(shape.vertices, shape.inTangents, shape.outTangents);
+        shape._setTensions(tensions[i]);
+        shape._writeGeometry(shape.vertices, shape.inTangents, shape.outTangents);
       }
     } else {
       // Switching it off (AE 2026) keeps the drawn tangents as the
       // handles and drops the tensions.
       const drawn = shapes.map((s) => [s.inTangents, s.outTangents] as const);
-      this._mask_shape_tdsb.roto_bezier = false;
+      this._maskShapeTdsb.roto_bezier = false;
       for (const [i, shape] of shapes.entries()) {
         const [ins, outs] = drawn[i];
-        shape._set_tensions([]);
-        shape._write_geometry(shape.vertices, ins, outs);
+        shape._setTensions([]);
+        shape._writeGeometry(shape.vertices, ins, outs);
       }
     }
   }
@@ -185,15 +185,15 @@ export class MaskPropertyGroup extends PropertyGroup {
   static _new(
     parentProperty: PropertyGroup,
     propertyDepth: number,
-    kw: { name: string; mask_id: number },
+    kw: { name: string; maskId: number },
   ): MaskPropertyGroup;
   static _new(...args: never[]): never;
   static _new(
     parentProperty: PropertyGroup,
     propertyDepth: number,
-    kw: { name: string; mask_id: number },
+    kw: { name: string; maskId: number },
   ): MaskPropertyGroup {
-    const { name, mask_id } = kw;
+    const { name, maskId: mask_id } = kw;
     const color = _MASK_COLOR_CYCLE[mod(mask_id - 1, _MASK_COLOR_CYCLE.length)];
     const _tdmn = new TdmnChunk({ value: "ADBE Mask Atom" });
     const _mkif = new MkifChunk({
@@ -220,17 +220,17 @@ export class MaskPropertyGroup extends PropertyGroup {
       _tdgp,
       _tdsb,
       _mkif,
-      _mask_shape_tdsb: null,
-      _name_utf8: nameUtf8,
-      match_name: "ADBE Mask Atom",
-      property_depth: propertyDepth,
-      auto_name: name,
+      _maskShapeTdsb: null,
+      _nameUtf8: nameUtf8,
+      matchName: "ADBE Mask Atom",
+      propertyDepth: propertyDepth,
+      autoName: name,
       properties: [],
     });
-    mask._parent_property = parentProperty;
-    mask._is_mask = true;
+    mask._parentProperty = parentProperty;
+    mask._isMask = true;
     // Children are filled from _MASK_ATOM_SPECS on first access.
-    mask._deferred_ae_major = getAeVersionMajor(parentProperty._containing_layer);
+    mask._deferredAeMajor = getAeVersionMajor(parentProperty._containingLayer);
     return mask;
   }
 
@@ -239,11 +239,11 @@ export class MaskPropertyGroup extends PropertyGroup {
     _tdgp: ListChunk;
     _tdsb: TdsbChunk | null;
     _mkif: MkifChunk;
-    _mask_shape_tdsb: TdsbChunk | null;
-    _name_utf8?: Utf8Chunk | null;
-    match_name: string;
-    property_depth: number;
-    auto_name?: string | null;
+    _maskShapeTdsb: TdsbChunk | null;
+    _nameUtf8?: Utf8Chunk | null;
+    matchName: string;
+    propertyDepth: number;
+    autoName?: string | null;
     properties: (Property | PropertyGroup)[];
   }) {
     const {
@@ -251,25 +251,25 @@ export class MaskPropertyGroup extends PropertyGroup {
       _tdgp,
       _tdsb,
       _mkif,
-      _mask_shape_tdsb,
-      _name_utf8 = null,
-      match_name,
-      property_depth,
-      auto_name = null,
+      _maskShapeTdsb: _mask_shape_tdsb,
+      _nameUtf8: _name_utf8 = null,
+      matchName: match_name,
+      propertyDepth: property_depth,
+      autoName: auto_name = null,
       properties,
     } = kw;
     super({
       _tdmn,
       _tdgp,
       _tdsb,
-      _name_utf8,
-      match_name,
-      auto_name,
-      property_depth,
+      _nameUtf8: _name_utf8,
+      matchName: match_name,
+      autoName: auto_name,
+      propertyDepth: property_depth,
       properties,
     });
     this._mkif = _mkif;
-    this._mask_shape_tdsb = _mask_shape_tdsb;
+    this._maskShapeTdsb = _mask_shape_tdsb;
   }
 
   /**
@@ -283,15 +283,15 @@ export class MaskPropertyGroup extends PropertyGroup {
    * AE's own imports) materializes the implicit default full-frame
    * rectangle as an explicit path.
    */
-  _materialize_mask_shape(kw: { roto_bezier?: boolean } = {}): void {
-    const { roto_bezier = false } = kw;
-    this._ensure_materialized();
-    this._ensure_children_synthesized();
+  _materializeMaskShape(kw: { rotoBezier?: boolean } = {}): void {
+    const { rotoBezier: roto_bezier = false } = kw;
+    this._ensureMaterialized();
+    this._ensureChildrenSynthesized();
     pyAssert(this._tdgp != null);
-    const layer = this._containing_layer;
+    const layer = this._containingLayer;
     const comp = layer.containingComp;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-    const [width, height] = layer._mask_scale;
+    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    const [width, height] = layer._maskScale;
     const source = layer.source;
     // AE stamps the mask space's display aspect, so a non-square source
     // pixel aspect counts (measured on AE-saved projects). Headless AE
@@ -335,7 +335,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       layer,
     );
     const maskPath = parsed[0];
-    maskPath._parent_property = this;
+    maskPath._parentProperty = this;
     // Transplant the freshly parsed state onto the EXISTING Mask Shape
     // child rather than swapping in a new object, so a handle a caller
     // fetched before materialization keeps pointing at the live chunks.
@@ -355,13 +355,13 @@ export class MaskPropertyGroup extends PropertyGroup {
       const existingDict = instanceDict(existing);
       existingDict.clear();
       for (const [k, v] of instanceDict(maskPath)) existingDict.set(k, v);
-      if (!(existing instanceof _propertyModel().Property)) throw new AttributeError("_link_keyframes");
-      existing._link_keyframes();
+      if (!(existing instanceof _propertyModel().Property)) throw new AttributeError("_linkKeyframes");
+      existing._linkKeyframes();
     } else {
       this._properties.splice(0, 0, maskPath);
     }
     const tdbs = findByListType(oms.chunks, "tdbs");
-    this._mask_shape_tdsb = findByType(tdbs.chunks, "tdsb");
+    this._maskShapeTdsb = findByType(tdbs.chunks, "tdsb");
   }
 }
 

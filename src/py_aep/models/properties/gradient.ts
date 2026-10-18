@@ -177,8 +177,8 @@ export class Gradient {
 
   declare _version: string;
   declare _utf8: Utf8Chunk;
-  declare _color_stops: readonly GradientColorStop[];
-  declare _alpha_stops: readonly GradientAlphaStop[];
+  declare _colorStops: readonly GradientColorStop[];
+  declare _alphaStops: readonly GradientAlphaStop[];
 
   constructor(
     colorStops: GradientColorStop[] | null = null,
@@ -202,12 +202,12 @@ export class Gradient {
     }
     this._version = version;
     this._utf8 = new Utf8Chunk();
-    this._color_stops = [...colorStops];
-    this._alpha_stops = [...alphaStops];
-    for (const stop of this._color_stops) {
+    this._colorStops = [...colorStops];
+    this._alphaStops = [...alphaStops];
+    for (const stop of this._colorStops) {
       stop._gradient = this;
     }
-    for (const astop of this._alpha_stops) {
+    for (const astop of this._alphaStops) {
       astop._gradient = this;
     }
     this._serialize();
@@ -219,22 +219,22 @@ export class Gradient {
    * Does not re-serialize, so the backing chunk keeps its original
    * bytes (parse / save round-trips stay byte-identical).
    */
-  static _from_binary(kw: {
-    color_stops: GradientColorStop[];
-    alpha_stops: GradientAlphaStop[];
+  static _fromBinary(kw: {
+    colorStops: GradientColorStop[];
+    alphaStops: GradientAlphaStop[];
     _utf8: Utf8Chunk;
     version?: string;
   }): Gradient {
-    const { color_stops, alpha_stops, _utf8, version = "1.0" } = kw;
+    const { colorStops: color_stops, alphaStops: alpha_stops, _utf8, version = "1.0" } = kw;
     const obj = Object.create(this.prototype);
     obj._version = version;
     obj._utf8 = _utf8;
-    obj._color_stops = [...color_stops];
-    obj._alpha_stops = [...alpha_stops];
-    for (const stop of obj._color_stops) {
+    obj._colorStops = [...color_stops];
+    obj._alphaStops = [...alpha_stops];
+    for (const stop of obj._colorStops) {
       stop._gradient = obj;
     }
-    for (const astop of obj._alpha_stops) {
+    for (const astop of obj._alphaStops) {
       astop._gradient = obj;
     }
     return obj;
@@ -242,18 +242,18 @@ export class Gradient {
 
   /** Ordered color stops defining the gradient. */
   get colorStops(): readonly GradientColorStop[] {
-    return this._color_stops;
+    return this._colorStops;
   }
 
   set colorStops(value: readonly GradientColorStop[]) {
     if (!value.every((stop) => stop instanceof GradientColorStop)) {
       throw new ValueError("All color stops must be GradientColorStop instances");
     }
-    for (const stop of this._color_stops) {
+    for (const stop of this._colorStops) {
       stop._gradient = null;
     }
-    this._color_stops = [...value];
-    for (const stop of this._color_stops) {
+    this._colorStops = [...value];
+    for (const stop of this._colorStops) {
       stop._gradient = this;
     }
     this._serialize();
@@ -261,18 +261,18 @@ export class Gradient {
 
   /** Ordered alpha stops defining opacity along the gradient. */
   get alphaStops(): readonly GradientAlphaStop[] {
-    return this._alpha_stops;
+    return this._alphaStops;
   }
 
   set alphaStops(value: readonly GradientAlphaStop[]) {
     if (!value.every((stop) => stop instanceof GradientAlphaStop)) {
       throw new ValueError("All alpha stops must be GradientAlphaStop instances");
     }
-    for (const stop of this._alpha_stops) {
+    for (const stop of this._alphaStops) {
       stop._gradient = null;
     }
-    this._alpha_stops = [...value];
-    for (const astop of this._alpha_stops) {
+    this._alphaStops = [...value];
+    for (const astop of this._alphaStops) {
       astop._gradient = this;
     }
     this._serialize();
@@ -282,21 +282,21 @@ export class Gradient {
   addColorStop(offset: number, midpoint: number, color: readonly [number, number, number]): void {
     const stop = new GradientColorStop(offset, midpoint, color);
     stop._gradient = this;
-    this._color_stops = [...this._color_stops, stop];
+    this._colorStops = [...this._colorStops, stop];
     this._serialize();
   }
 
   /** Remove a color stop by index. */
   removeColorStop(stop: number): void {
     validatePositiveInt(stop);
-    if (stop >= this._color_stops.length) {
+    if (stop >= this._colorStops.length) {
       throw new ValueError(
         `color stop index ${stop} out of range ` +
-          `(gradient has ${this._color_stops.length} color stops)`,
+          `(gradient has ${this._colorStops.length} color stops)`,
       );
     }
-    this._color_stops[stop]._gradient = null;
-    this._color_stops = this._color_stops.filter((s, i) => i !== stop);
+    this._colorStops[stop]._gradient = null;
+    this._colorStops = this._colorStops.filter((s, i) => i !== stop);
     this._serialize();
   }
 
@@ -304,21 +304,21 @@ export class Gradient {
   addAlphaStop(offset: number, midpoint: number, alpha: number): void {
     const stop = new GradientAlphaStop(offset, midpoint, alpha);
     stop._gradient = this;
-    this._alpha_stops = [...this._alpha_stops, stop];
+    this._alphaStops = [...this._alphaStops, stop];
     this._serialize();
   }
 
   /** Remove an alpha stop by index. */
   removeAlphaStop(stop: number): void {
     validatePositiveInt(stop);
-    if (stop >= this._alpha_stops.length) {
+    if (stop >= this._alphaStops.length) {
       throw new ValueError(
         `alpha stop index ${stop} out of range ` +
-          `(gradient has ${this._alpha_stops.length} alpha stops)`,
+          `(gradient has ${this._alphaStops.length} alpha stops)`,
       );
     }
-    this._alpha_stops[stop]._gradient = null;
-    this._alpha_stops = this._alpha_stops.filter((s, i) => i !== stop);
+    this._alphaStops[stop]._gradient = null;
+    this._alphaStops = this._alphaStops.filter((s, i) => i !== stop);
     this._serialize();
   }
 
@@ -342,13 +342,13 @@ export class Gradient {
     lines.push(
       ..._stopsLines(
         "Alpha",
-        this._alpha_stops.map((s) => [s.offset, s.midpoint, s.alpha]),
+        this._alphaStops.map((s) => [s.offset, s.midpoint, s.alpha]),
       ),
     );
     lines.push(
       ..._stopsLines(
         "Color",
-        this._color_stops.map((s) => [s.offset, s.midpoint, ...s.color, 1.0]),
+        this._colorStops.map((s) => [s.offset, s.midpoint, ...s.color, 1.0]),
       ),
     );
     lines.push(

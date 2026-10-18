@@ -96,7 +96,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
     if (!(e instanceof ChunkNotFoundError)) throw e;
     // AE 2026 reports SOFTWARE for a CC 12.0 project.
     gpugUtf8 = new Utf8Chunk({
-      value: GpuAccelType.to_binary(GpuAccelType.SOFTWARE),
+      value: GpuAccelType.toBinary(GpuAccelType.SOFTWARE),
       synthetic: true,
     });
   }
@@ -131,20 +131,20 @@ export const parseProject = _suppressMaterialization()(function parse_project(
     _acer: acerChunk,
     _adfr: adfrChunk,
     _dwga: dwgaChunk,
-    _gpug_utf8: gpugUtf8,
-    _exen_utf8: exenUtf8,
-    _cms_utf8: cmsUtf8,
-    _ws_utf8: wsUtf8,
-    _dcs_utf8: dcsUtf8,
+    _gpugUtf8: gpugUtf8,
+    _exenUtf8: exenUtf8,
+    _cmsUtf8: cmsUtf8,
+    _wsUtf8: wsUtf8,
+    _dcsUtf8: dcsUtf8,
     _rifx: rifx,
     _xmp: xmp,
     file: filePath,
     items: new Map(),
-    render_queue: null,
-    ae_preferences_dir: aePreferencesDir,
+    renderQueue: null,
+    aePreferencesDir: aePreferencesDir,
   });
 
-  project._effect_param_defs = parseEffectDefinitions(
+  project._effectParamDefs = parseEffectDefinitions(
     rootChunks,
     nnhdChunk._system_code_page,
   );
@@ -162,7 +162,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
   );
   project.items.set(0, rootFolder);
 
-  project._render_queue = parseRenderQueue(rootChunks, project);
+  project._renderQueue = parseRenderQueue(rootChunks, project);
 
   const fcidChunk = findByTypeOrNull(rootChunks, "fcid");
   if (fcidChunk !== null) {
@@ -170,7 +170,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
     // the id behind when the active item is deleted outside its own
     // bookkeeping, and opens such a file with nothing selected). Treat a
     // dangling id as "no active item" rather than failing the parse.
-    project._active_item = project.items.get(fcidChunk.value) ?? null;
+    project._activeItem = project.items.get(fcidChunk.value) ?? null;
     }
 
   return project;

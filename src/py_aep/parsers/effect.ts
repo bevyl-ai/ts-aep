@@ -47,24 +47,24 @@ export const logger = {
  */
 export interface ParamDef {
   name: string;
-  property_control_type: PropertyControlType;
-  can_vary_over_time: boolean;
-  expressions_disabled: boolean;
-  property_value_type?: PropertyValueType;
-  last_value?: number | number[];
-  default_value?: number | number[];
-  /** A scalar default that only seeds the value when `default_value` is absent. */
+  propertyControlType: PropertyControlType;
+  canVaryOverTime: boolean;
+  expressionsDisabled: boolean;
+  propertyValueType?: PropertyValueType;
+  lastValue?: number | number[];
+  defaultValue?: number | number[];
+  /** A scalar default that only seeds the value when `defaultValue` is absent. */
   default?: number;
-  min_value?: number;
-  max_value?: number;
-  slider_min?: number;
-  slider_max?: number;
-  nb_options?: number;
-  units_text?: "percent";
+  minValue?: number;
+  maxValue?: number;
+  sliderMin?: number;
+  sliderMax?: number;
+  nbOptions?: number;
+  unitsText?: "percent";
   /** The ENUM option labels (`pdnm`, split on `|`). */
-  property_parameters?: string[];
+  propertyParameters?: string[];
   /** The Curves effect's untouched `aRbp` chunk. */
-  default_arbp?: Chunk;
+  defaultArbp?: Chunk;
 }
 
 /** A parameter's value or default as its definition gives it. */
@@ -85,8 +85,8 @@ export const _PVT_DIMENSIONS: Map<number, number> = new Map<number, number>([
  * @returns A `PropSpec` suitable for `Property._new()`.
  */
 export function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec {
-  const pvt = paramDef.property_value_type ?? PropertyValueType.OneD;
-  const controlType = paramDef.property_control_type;
+  const pvt = paramDef.propertyValueType ?? PropertyValueType.OneD;
+  const controlType = paramDef.propertyControlType;
   const isColor = controlType === PropertyControlType.COLOR;
   const dims = _PVT_DIMENSIONS.get(pvt) ?? 1;
   const isSpatial =
@@ -126,7 +126,7 @@ export function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec
  */
 export function _resolveEffectValue(
   matchName: string,
-  paramDef: Pick<ParamDef, "default_value" | "last_value" | "default" | "nb_options">,
+  paramDef: Pick<ParamDef, "defaultValue" | "lastValue" | "default" | "nbOptions">,
   controlType: PropertyControlType,
 ): [ParamValue, ParamValue] {
   if (controlType === PropertyControlType.ENUM) {
@@ -136,10 +136,10 @@ export function _resolveEffectValue(
     // value beyond the choice count is managed by the plug-in (the OCIO
     // transforms keep hashed ids there, which ExtendScript reports) and
     // is kept.
-    let value = paramDef.default_value ?? null;
+    let value = paramDef.defaultValue ?? null;
     // An ENUM's cached value is its 1-based choice, always a number.
-    const last = paramDef.last_value ?? null;
-    if (typeof last === "number" && (value == null || last > (paramDef.nb_options ?? 0))) {
+    const last = paramDef.lastValue ?? null;
+    if (typeof last === "number" && (value == null || last > (paramDef.nbOptions ?? 0))) {
       value = last;
     }
     return [value, value];
@@ -149,7 +149,7 @@ export function _resolveEffectValue(
     // size. The cached value is that same percentage or a 16.16-rounded
     // fraction: Path Text's 80 % caches 0.7999878, ExtendScript reports
     // exactly 80 on a 100-pixel layer.
-    const value = paramDef.default_value ?? null;
+    const value = paramDef.defaultValue ?? null;
     return [value, value];
   }
   // Any other control: AE leaves a parameter at its default out of the
@@ -159,10 +159,10 @@ export function _resolveEffectValue(
   // wrote the definition (another one when the definition is borrowed),
   // or stale - S_BlurDirectional's Bias caches 0 where ExtendScript
   // reports 0.5. It only stands in for a pard that declares no default.
-  let value = paramDef.default_value ?? null;
+  let value = paramDef.defaultValue ?? null;
   if (value == null) value = _PROPERTY_DEFAULTS.get(matchName) ?? null;
   if (value == null) value = paramDef.default ?? null;
-  if (value == null) value = paramDef.last_value ?? null;
+  if (value == null) value = paramDef.lastValue ?? null;
   return [value, value];
 }
 
@@ -177,33 +177,33 @@ export function _resolveEffectValue(
  * @param paramDef - The parameter definition.
  */
 export function _applyParamDefMetadata(prop: Property, paramDef: ParamDef): void {
-  prop.lastValue = paramDef.last_value ?? null;
-  const minVal = paramDef.min_value ?? null;
-  if (minVal != null) prop._min_value_fallback = minVal;
-  const maxVal = paramDef.max_value ?? null;
-  if (maxVal != null) prop._max_value_fallback = maxVal;
+  prop.lastValue = paramDef.lastValue ?? null;
+  const minVal = paramDef.minValue ?? null;
+  if (minVal != null) prop._minValueFallback = minVal;
+  const maxVal = paramDef.maxValue ?? null;
+  if (maxVal != null) prop._maxValueFallback = maxVal;
   // The pard UI slider range - distinct from the valid range and the
   // source of an Essential Graphics slider controller's Smin/Smax.
-  prop._slider_min = paramDef.slider_min ?? null;
-  prop._slider_max = paramDef.slider_max ?? null;
+  prop._sliderMin = paramDef.sliderMin ?? null;
+  prop._sliderMax = paramDef.sliderMax ?? null;
   // Popup-only: written when present, so other properties keep the class
   // default (`null`).
-  const nbOptions = paramDef.nb_options ?? null;
+  const nbOptions = paramDef.nbOptions ?? null;
   if (nbOptions != null) prop.nbOptions = nbOptions;
   // Direct write: the public setter has user-write semantics (validation
   // plus pdnm/pard chunk rewrites).
-  const propertyParameters = paramDef.property_parameters ?? null;
-  if (propertyParameters != null) prop._property_parameters = propertyParameters;
-  const units = paramDef.units_text ?? null;
-  if (units != null) prop._units_text = units;
+  const propertyParameters = paramDef.propertyParameters ?? null;
+  if (propertyParameters != null) prop._propertyParameters = propertyParameters;
+  const units = paramDef.unitsText ?? null;
+  if (units != null) prop._unitsText = units;
   // The pard param flags carry the authoritative can-vary bit; the
   // residue table keeps the rare params where they disagree with
   // ExtendScript (e.g. the Puppet Engine dropdown).
   if (!_CANVARY_OVERRIDES.has(prop.matchName)) {
-    prop._can_vary_over_time = paramDef.can_vary_over_time;
+    prop._canVaryOverTime = paramDef.canVaryOverTime;
   }
-  if (paramDef.expressions_disabled) {
-    prop._expressions_disabled = true;
+  if (paramDef.expressionsDisabled) {
+    prop._expressionsDisabled = true;
   }
 }
 
@@ -217,7 +217,7 @@ export function _pointFraction(raw: PropertyValue): number[] | null {
 }
 
 export function _pointPixels(prop: Property, fraction: number[]): PropertyValue {
-  return prop._resolve_value([...fraction]);
+  return prop._resolveValue([...fraction]);
 }
 
 /**
@@ -234,7 +234,7 @@ export function _pointPixels(prop: Property, fraction: number[]): PropertyValue 
  */
 export function _bindPointDefault(prop: Property, raw: PropertyValue): void {
   const fraction = _pointFraction(raw);
-  if (fraction != null) prop._default_value_source = () => _pointPixels(prop, fraction);
+  if (fraction != null) prop._defaultValueSource = () => _pointPixels(prop, fraction);
 }
 
 /**
@@ -274,8 +274,8 @@ export function parseEffectParamDefs(
     if (index === 0) continue;
     const paramDef = _parseEffectParameterDef(parameterChunks, codePage);
     if (_UNBOUNDED_CHECKBOXES.has(matchName)) {
-      delete paramDef.min_value;
-      delete paramDef.max_value;
+      delete paramDef.minValue;
+      delete paramDef.maxValue;
     }
     paramDefs.set(matchName, paramDef);
   }
@@ -325,12 +325,12 @@ export function _decodePardName(name: string, codePage: number): string {
  * @param paramDef - The parameter definition.
  */
 export function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
-  prop._auto_name = paramDef.name || prop._auto_name;
-  prop._property_control_type = paramDef.property_control_type;
-  if (prop._arbs != null && paramDef.default_arbp !== undefined) {
-    prop._default_arbp = paramDef.default_arbp;
+  prop._autoName = paramDef.name || prop._autoName;
+  prop._propertyControlType = paramDef.propertyControlType;
+  if (prop._arbs != null && paramDef.defaultArbp !== undefined) {
+    prop._defaultArbp = paramDef.defaultArbp;
   }
-  prop._property_value_type = paramDef.property_value_type ?? prop.propertyValueType;
+  prop._propertyValueType = paramDef.propertyValueType ?? prop.propertyValueType;
   // Prefer the override table, then the pard default field. For LAYER
   // references, pard stores a meaningless 0 and we have no static
   // override, so leave default_value unset entirely.
@@ -339,12 +339,12 @@ export function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
   if (staticDefault != null) {
     prop.defaultValue = staticDefault;
   } else if (
-    paramDef.property_control_type === PropertyControlType.TWO_D ||
-    paramDef.property_control_type === PropertyControlType.THREE_D
+    paramDef.propertyControlType === PropertyControlType.TWO_D ||
+    paramDef.propertyControlType === PropertyControlType.THREE_D
   ) {
-    _bindPointDefault(prop, paramDef.default_value ?? null);
-  } else if (paramDef.property_control_type !== PropertyControlType.LAYER) {
-    prop.defaultValue = paramDef.default_value ?? null;
+    _bindPointDefault(prop, paramDef.defaultValue ?? null);
+  } else if (paramDef.propertyControlType !== PropertyControlType.LAYER) {
+    prop.defaultValue = paramDef.defaultValue ?? null;
   }
   _applyParamDefMetadata(prop, paramDef);
 }
@@ -361,31 +361,31 @@ export function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
  * @param paramDef - The parameter definition from parT parsing.
  * @param propertyDepth - The nesting depth for this property.
  * @param kw - Keyword arguments:
- * - `parent_property`: The effect group that owns the synthesized child.
+ * - `parentProperty`: The effect group that owns the synthesized child.
  * @returns A Property or PropertyGroup with default values.
  */
 export function _synthesizeEffectProperty(
   matchName: string,
   paramDef: ParamDef,
   propertyDepth: number,
-  kw: { parent_property: PropertyGroup },
+  kw: { parentProperty: PropertyGroup },
 ): Property | PropertyGroup {
-  const { parent_property } = kw;
-  const controlType = paramDef.property_control_type;
-  const pvt = paramDef.property_value_type ?? PropertyValueType.OneD;
+  const { parentProperty: parent_property } = kw;
+  const controlType = paramDef.propertyControlType;
+  const pvt = paramDef.propertyValueType ?? PropertyValueType.OneD;
 
   if (pvt === PropertyValueType.NO_VALUE) {
     const display = paramDef.name || (MATCH_NAME_TO_AUTO_NAME.get(matchName) ?? "");
     return PropertyGroup._new(matchName, display, propertyDepth, {
-      parent_property,
+      parentProperty: parent_property,
       synthetic: true,
     });
   }
 
   const spec = _paramDefToSpec(matchName, paramDef);
   const prop = Property._new(spec, propertyDepth, {
-    parent_property,
-    control_type: controlType,
+    parentProperty: parent_property,
+    controlType: controlType,
     synthetic: true,
   });
   _applyParamDefMetadata(prop, paramDef);
@@ -446,12 +446,12 @@ export function _parseEffectProperties(
       ordered.push(existing);
     } else {
       const synth = _synthesizeEffectProperty(matchName, paramDef, childDepth, {
-        parent_property: parentProperty,
+        parentProperty: parentProperty,
       });
       if (
         synth instanceof Property &&
-        (synth._property_control_type === PropertyControlType.TWO_D ||
-          synth._property_control_type === PropertyControlType.THREE_D)
+        (synth._propertyControlType === PropertyControlType.TWO_D ||
+          synth._propertyControlType === PropertyControlType.THREE_D)
       ) {
         _normalizeSyntheticPoint(synth);
       }
@@ -470,7 +470,7 @@ export function _parseEffectProperties(
   if (!ordered.some((c) => c.matchName === "ADBE Effect Built In Params")) {
     ordered.push(
       PropertyGroup._new("ADBE Effect Built In Params", "Compositing Options", childDepth, {
-        parent_property: parentProperty,
+        parentProperty: parentProperty,
         synthetic: true,
       }),
     );
@@ -637,20 +637,20 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
     _tdmn: tdmn,
     _tdgp: tdgpChunk,
     _tdsb: effectTdsb,
-    _name_utf8: effectNameUtf8,
-    _fnam_utf8: fnamUtf8,
-    match_name: groupMatchName,
-    property_depth: propertyDepth,
+    _nameUtf8: effectNameUtf8,
+    _fnamUtf8: fnamUtf8,
+    matchName: groupMatchName,
+    propertyDepth: propertyDepth,
     properties: [],
   });
-  effectGroup._is_effect = true;
+  effectGroup._isEffect = true;
   // An effect group is a NAMED group in After Effects: its parameter list is
   // fixed, so AE rejects duplicate/remove/moveTo on a param ("parent is not
   // an INDEXED_GROUP") while accepting them on the effect itself, whose
   // parent is the indexed Effect Parade. Measured on AE 2026:
   // `effect.propertyType === PropertyType.INDEXED_GROUP` is false, the
   // parade's is true.
-  effectGroup._property_type = PropertyType.NAMED_GROUP;
+  effectGroup._propertyType = PropertyType.NAMED_GROUP;
 
   const properties = _parseEffectProperties(
     tdgpChunk,
@@ -663,7 +663,7 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
   );
   effectGroup._properties = properties;
   for (const child of properties) {
-    child._parent_property = effectGroup;
+    child._parentProperty = effectGroup;
   }
 
   return effectGroup;
@@ -689,17 +689,17 @@ export function _pardExtractor(
 // Python's `@_pard_extractor(...)` decorator is applied as a registration call
 // directly after each definition, which keeps the registration order.
 export function _extractAngle(body: AnglePardChunk, result: ParamDef): void {
-  result.last_value = body.last_value;
+  result.lastValue = body.last_value;
   if (body.default_ != null) result.default = _intify(body.default_);
-  result.property_value_type = PropertyValueType.OneD;
+  result.propertyValueType = PropertyValueType.OneD;
 }
 _pardExtractor(PropertyControlType.ANGLE)(_extractAngle);
 
 export function _extractBoolean(body: BooleanPardChunk, result: ParamDef): void {
-  result.last_value = body.last_value;
-  result.default_value = body.default_;
-  result.min_value = 0;
-  result.max_value = 1;
+  result.lastValue = body.last_value;
+  result.defaultValue = body.default_;
+  result.minValue = 0;
+  result.maxValue = 1;
 }
 _pardExtractor(PropertyControlType.BOOLEAN)(_extractBoolean);
 
@@ -708,24 +708,24 @@ export function _extractColor(body: ColorPardChunk, result: ParamDef): void {
   // ExtendScript uses [R, G, B, A] in 0-1 range.
   {
     const [a, r, g, b] = body.last_color;
-    result.last_value = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
+    result.lastValue = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
   }
   {
     const [a, r, g, b] = body.default_color;
-    result.default_value = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
+    result.defaultValue = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
   }
-  result.min_value = -3921568.62745098;
-  result.max_value = 3921568.62745098;
-  result.property_value_type = PropertyValueType.COLOR;
+  result.minValue = -3921568.62745098;
+  result.maxValue = 3921568.62745098;
+  result.propertyValueType = PropertyValueType.COLOR;
 }
 _pardExtractor(PropertyControlType.COLOR)(_extractColor);
 
 export function _extractEnum(body: EnumPardChunk, result: ParamDef): void {
-  result.last_value = body.last_value;
-  result.nb_options = body.nb_options;
-  result.default_value = body.default_;
-  result.min_value = 1;
-  result.max_value = body.nb_options;
+  result.lastValue = body.last_value;
+  result.nbOptions = body.nb_options;
+  result.defaultValue = body.default_;
+  result.minValue = 1;
+  result.maxValue = body.nb_options;
 }
 _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 
@@ -737,71 +737,71 @@ export function _intify(value: number): number {
 
 export function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {
   if (body.default_ != null) result.default = body.default_;
-  result.min_value = body.valid_min;
-  result.max_value = body.valid_max;
+  result.minValue = body.valid_min;
+  result.maxValue = body.valid_max;
 }
 _pardExtractor(PropertyControlType.INTEGER)(_extractInteger);
 
 export function _extractScalar(body: ScalarPardChunk, result: ParamDef): void {
-  result.last_value = body.last_value;
+  result.lastValue = body.last_value;
   if (body.default_ != null) result.default = _intify(body.default_);
-  result.min_value = _intify(body.valid_min);
-  result.max_value = _intify(body.valid_max);
-  result.slider_min = body.slider_min;
-  result.slider_max = body.slider_max;
+  result.minValue = _intify(body.valid_min);
+  result.maxValue = _intify(body.valid_max);
+  result.sliderMin = body.slider_min;
+  result.sliderMax = body.slider_max;
 }
 _pardExtractor(PropertyControlType.SCALAR)(_extractScalar);
 
 export function _extractSlider(body: SliderPardChunk, result: ParamDef): void {
-  result.last_value = body.last_value;
+  result.lastValue = body.last_value;
   if (body.default_ != null && Number.isFinite(body.default_)) {
     result.default = _intify(body.default_);
   }
   // Non-finite bounds mean the side is unbounded.
-  if (Number.isFinite(body.valid_min)) result.min_value = _intify(body.valid_min);
-  if (Number.isFinite(body.valid_max)) result.max_value = _intify(body.valid_max);
-  if (Number.isFinite(body.slider_min)) result.slider_min = body.slider_min;
-  if (Number.isFinite(body.slider_max)) result.slider_max = body.slider_max;
+  if (Number.isFinite(body.valid_min)) result.minValue = _intify(body.valid_min);
+  if (Number.isFinite(body.valid_max)) result.maxValue = _intify(body.valid_max);
+  if (Number.isFinite(body.slider_min)) result.sliderMin = body.slider_min;
+  if (Number.isFinite(body.slider_max)) result.sliderMax = body.slider_max;
   // PF_ValueDisplayFlag_PERCENT is the only display flag AE serializes
   // reliably for float sliders; it maps to unitsText "percent".
-  if (body.displays_percent) result.units_text = "percent";
+  if (body.displays_percent) result.unitsText = "percent";
 }
 _pardExtractor(PropertyControlType.SLIDER)(_extractSlider);
 
 export function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
-  result.last_value = [body.last_value_x, body.last_value_y, body.last_value_z];
+  result.lastValue = [body.last_value_x, body.last_value_y, body.last_value_z];
   // Percent of the layer size; `_point_default_pixels` converts it.
-  result.default_value = body.default_;
-  result.property_value_type = PropertyValueType.ThreeD_SPATIAL;
+  result.defaultValue = body.default_;
+  result.propertyValueType = PropertyValueType.ThreeD_SPATIAL;
 }
 _pardExtractor(PropertyControlType.THREE_D)(_extractThreeD);
 
 export function _extractTwoD(body: TwoDPardChunk, result: ParamDef): void {
-  result.last_value = [body.last_value_x, body.last_value_y];
-  result.default_value = body.default_;
-  result.property_value_type = PropertyValueType.TwoD_SPATIAL;
+  result.lastValue = [body.last_value_x, body.last_value_y];
+  result.defaultValue = body.default_;
+  result.propertyValueType = PropertyValueType.TwoD_SPATIAL;
 }
 _pardExtractor(PropertyControlType.TWO_D)(_extractTwoD);
 
 export function _extractLayer(body: PardChunk, result: ParamDef): void {
-  result.property_value_type = PropertyValueType.LAYER_INDEX;
-  result.default_value = 0;
+  result.propertyValueType = PropertyValueType.LAYER_INDEX;
+  result.defaultValue = 0;
 }
 _pardExtractor(PropertyControlType.LAYER)(_extractLayer);
 
 export function _extractMask(body: PardChunk, result: ParamDef): void {
-  result.property_value_type = PropertyValueType.MASK_INDEX;
-  result.default_value = 0;
+  result.propertyValueType = PropertyValueType.MASK_INDEX;
+  result.defaultValue = 0;
 }
 _pardExtractor(PropertyControlType.MASK)(_extractMask);
 
 export function _extractCurve(body: PardChunk, result: ParamDef): void {
-  result.property_value_type = PropertyValueType.CUSTOM_VALUE;
+  result.propertyValueType = PropertyValueType.CUSTOM_VALUE;
 }
 _pardExtractor(PropertyControlType.CURVE)(_extractCurve);
 
 export function _extractNoValue(body: PardChunk, result: ParamDef): void {
-  result.property_value_type = PropertyValueType.NO_VALUE;
+  result.propertyValueType = PropertyValueType.NO_VALUE;
 }
 _pardExtractor(
   PropertyControlType.GROUP,
@@ -821,11 +821,11 @@ export function _parseEffectParameterDef(
 
   const result: ParamDef = {
     name: _decodePardName(pardChunk.name, codePage),
-    property_control_type: controlType,
+    propertyControlType: controlType,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
-    can_vary_over_time: !and(pardChunk.param_flags, 0x02),
-    expressions_disabled: pardChunk.expressions_disabled,
+    canVaryOverTime: !and(pardChunk.param_flags, 0x02),
+    expressionsDisabled: pardChunk.expressions_disabled,
   };
 
   const extractor = _PARD_EXTRACTORS.get(controlType);
@@ -835,7 +835,7 @@ export function _parseEffectParameterDef(
   // effect's untouched curves, byte-identical to an untouched instance's.
   const defaultArbp = filterByType(parameterChunks, "aRbp");
   if (defaultArbp?.length > 0) {
-    result.default_arbp = defaultArbp[0];
+    result.defaultArbp = defaultArbp[0];
   }
 
   try {
@@ -844,7 +844,7 @@ export function _parseEffectParameterDef(
     const utf8Chunk = findByType(pdnmChunk.chunks, "Utf8");
     const pdnmData = utf8Chunk.value;
     if (controlType === PropertyControlType.ENUM) {
-      result.property_parameters = split(pdnmData, "|");
+      result.propertyParameters = split(pdnmData, "|");
     } else if (
       pdnmData &&
       controlType === PropertyControlType.BOOLEAN &&

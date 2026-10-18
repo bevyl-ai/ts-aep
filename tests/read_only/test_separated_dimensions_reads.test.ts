@@ -54,7 +54,7 @@ test("test_separated_leader_composes_from_its_followers", () => {
   const position = comp.layers[0].transform.property("ADBE Position");
   expect(position.dimensionsSeparated).toBe(true);
 
-  const stored = position._read_cdat_raw();
+  const stored = position._readCdatRaw();
   expect(approx(stored, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
   expect(approx(position.value, [0.0, 200.0, 0.0])).toBe(true);
 });

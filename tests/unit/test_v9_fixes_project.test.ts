@@ -151,8 +151,8 @@ describe("TestWorkingSpaceNone", () => {
     const tmpPath = makeTmpPath();
     const app = py_aep.new();
     const cpid = app.project._cpid.data;
-    const utf8 = app.project._ws_utf8;
-    app.project._ws_utf8 = app.project._rewrite_color_profile(
+    const utf8 = app.project._wsUtf8;
+    app.project._wsUtf8 = app.project._rewriteColorProfile(
       "PwCs",
       '{"baseColorProfile":{"colorProfileName":"X"}}',
     );
@@ -161,7 +161,7 @@ describe("TestWorkingSpaceNone", () => {
     expect(app.project.workingSpace).toBe("None");
     expect(bytesEq(app.project._cpid.data, cpid)).toBe(true);
     expect(bytesEq(cpid, bytes_.repeat(b("\xff"), 16))).toBe(true);
-    expect(app.project._ws_utf8 != null && String(app.project._ws_utf8.value) === "{}").toBe(true);
+    expect(app.project._wsUtf8 != null && String(app.project._wsUtf8.value) === "{}").toBe(true);
     expect(utf8 == null).toBe(true);
     const path = tmpPath.div("ws.aep");
     app.project.save(path);
@@ -173,9 +173,9 @@ describe("TestSaveTempFile", () => {
   test("test_unrelated_tmp_file_survives", () => {
     const tmpPath = makeTmpPath();
     const keep = tmpPath.div("out.aep.tmp");
-    keep.write_bytes(b("user data"));
+    keep.writeBytes(b("user data"));
     py_aep.new().project.save(tmpPath.div("out.aep"));
-    expect(bytesEq(keep.read_bytes(), b("user data"))).toBe(true);
+    expect(bytesEq(keep.readBytes(), b("user data"))).toBe(true);
     expect(parse(tmpPath.div("out.aep")).version).toBe("26.0x67");
     expect(pyEq(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
   });

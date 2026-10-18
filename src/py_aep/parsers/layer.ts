@@ -62,13 +62,13 @@ export const parseLayer = _suppressMaterialization().decorate(function parse_lay
   const layer = new layerCls({
     _ldta: ldta,
     _cmta: cmta,
-    _name_utf8: nameUtf8,
-    _layer_list: layerChunk,
-    containing_comp: composition,
+    _nameUtf8: nameUtf8,
+    _layerList: layerChunk,
+    containingComp: composition,
   });
   layer._tdgp = findByListType(childChunks, "tdgp");
   // The property tree is built on first access (`Layer._tree_param_defs`).
   Reflect.deleteProperty(layer, "_properties");
-  layer._tree_param_defs = effectParamDefs;
+  layer._treeParamDefs = effectParamDefs;
   return layer;
 });

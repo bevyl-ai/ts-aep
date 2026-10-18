@@ -96,8 +96,8 @@ export function _storeFramesOverRate(sspc: SspcChunk, frames: number, rate: numb
 
 /**
  * The `FootageSource` object holds information describing the source of some
- * footage. It is used as the `main_source` of a `FootageItem` object, or the
- * `proxy_source` of a `CompItem` object or `FootageItem`.
+ * footage. It is used as the `mainSource` of a `FootageItem` object, or the
+ * `proxySource` of a `CompItem` object or `FootageItem`.
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/
  */
@@ -110,7 +110,7 @@ export class FootageSource {
    * item-level `Utf8` chunk empty; file footage is named through that `Utf8`
    * chunk instead.
    */
-  static _owns_name: boolean = false;
+  static _ownsName: boolean = false;
 
   /**
    * Defines how the alpha information in the footage is interpreted.
@@ -191,7 +191,7 @@ export class FootageSource {
    */
   get conformFrameRate(): number {
     const sspc = this._sspc;
-    if (this._rate_is_assumed) {
+    if (this._rateIsAssumed) {
       return sspc.conform_frame_rate || sspc.native_frame_rate;
     }
     return sspc.conform_frame_rate;
@@ -210,7 +210,7 @@ export class FootageSource {
       );
     }
     const sspc = this._sspc;
-    if (!this._rate_is_assumed) {
+    if (!this._rateIsAssumed) {
       sspc.conform_frame_rate = value;
       return;
     }
@@ -218,7 +218,7 @@ export class FootageSource {
     // AE keeps an assumed rate in the native slot and the conform slot
     // at 0.
     sspc.conform_frame_rate = 0.0;
-    if (this._is_sequence) {
+    if (this._isSequence) {
       _retimeSequence(sspc, value);
     } else {
       sspc.native_frame_rate = value;
@@ -248,7 +248,7 @@ export class FootageSource {
    * rejects a premultiplied interpretation - resetting the footage to
    * straight alpha when the file is opened - if the bit is clear.
    */
-  _on_alpha_mode_set(): void {
+  _onAlphaModeSet(): void {
     const mode = this.alphaMode;
     if (mode !== AlphaMode.IGNORE) {
       this._sspc.premultiplied = mode === AlphaMode.PREMULTIPLIED;
@@ -265,7 +265,7 @@ export class FootageSource {
    * exempt. Mirror AE's Interpret Footage dialog, which forces a field
    * order and defaults to Upper Field First.
    */
-  _on_remove_pulldown_set(): void {
+  _onRemovePulldownSet(): void {
     if (
       1 <= this._sspc.remove_pulldown &&
       this._sspc.remove_pulldown <= 5 &&
@@ -280,18 +280,18 @@ export class FootageSource {
 
   declare _width: number;
   declare _height: number;
-  declare _pixel_aspect: number;
-  declare _footage_missing: boolean;
+  declare _pixelAspect: number;
+  declare _footageMissing: boolean;
   // Type-only accessor stubs: the ChunkField descriptors below replace them, so
   // FileSource can override with accessors as in Python.
-  get _start_frame(): number {
+  get _startFrame(): number {
     throw new Error("unreachable: replaced by ChunkField descriptor");
   }
-  get _end_frame(): number {
+  get _endFrame(): number {
     throw new Error("unreachable: replaced by ChunkField descriptor");
   }
 
-  get _has_audio(): boolean {
+  get _hasAudio(): boolean {
     return this._sspc.audio_sample_rate > 0;
   }
 
@@ -310,7 +310,7 @@ export class FootageSource {
     return (frames / conform) * sspc.loop;
   }
 
-  get _frame_duration(): number {
+  get _frameDuration(): number {
     // Rounded, not truncated: a 48-frame 23.976 movie lasts 48 frames,
     // though its 16.16 stored rate puts the product at 47.99995.
     return round(this._duration * this.displayFrameRate);
@@ -339,7 +339,7 @@ export class FootageSource {
    * A sequence has no frame rate of its own, so AE keeps its "assume this
    * frame rate" in the native-rate slot instead of the conform slot.
    */
-  get _is_sequence(): boolean {
+  get _isSequence(): boolean {
     return false;
   }
 
@@ -357,15 +357,15 @@ export class FootageSource {
    * placeholder's or sequence's assumed rate nor a movie's conform carries
    * over (AE 2026).
    */
-  _rate_from_media: boolean = false;
+  _rateFromMedia: boolean = false;
 
   /**
    * Whether the native-rate slot holds a rate the user chose rather
    * than one measured from media: a sequence's "assume this frame rate",
    * or the rate a placeholder was created with.
    */
-  get _rate_is_assumed(): boolean {
-    return this._is_sequence;
+  get _rateIsAssumed(): boolean {
+    return this._isSequence;
   }
 
   /**
@@ -381,7 +381,7 @@ export class FootageSource {
    * solid carries nothing - AE builds that source from the call's
    * arguments.
    */
-  _carry_interpretation_to(new_: FootageSource): void {
+  _carryInterpretationTo(new_: FootageSource): void {
     const oldSspc = this._sspc,
       newSspc = new_._sspc;
     newSspc.field_separation_type = oldSspc.field_separation_type;
@@ -400,9 +400,9 @@ export class FootageSource {
     // rate; a still or an audio file has none (its native slot is 0),
     // and a new placeholder takes its rate from the call's arguments.
     let rate = this.conformFrameRate;
-    if (new_._is_sequence) {
+    if (new_._isSequence) {
       rate = rate || this._sspc.native_frame_rate;
-      if (rate && !new_._rate_from_media) {
+      if (rate && !new_._rateFromMedia) {
         // A sequence's stored duration is its frame count over its
         // rate, so it has to move with the rate; a movie keeps the
         // duration it measured and gets the conform factor applied.
@@ -410,14 +410,14 @@ export class FootageSource {
       }
     } else if (
       rate &&
-      !this._rate_is_assumed &&
-      !new_._rate_is_assumed &&
+      !this._rateIsAssumed &&
+      !new_._rateIsAssumed &&
       !new_.isStill
     ) {
       newSspc.conform_frame_rate = rate;
     }
 
-    this._carry_color_management_to(new_);
+    this._carryColorManagementTo(new_);
   }
 
   /**
@@ -432,7 +432,7 @@ export class FootageSource {
    * (`_CLRS_RECORDS_SINCE`). A file source also records the input colour
    * space of an OCIO-managed project (see `FileSource._join_project`).
    */
-  _join_project(project: Project): void {
+  _joinProject(project: Project): void {
     this._project = project;
     if (this._clrs == null) return;
     const head = project._head;
@@ -467,7 +467,7 @@ export class FootageSource {
    * new file's rules would pick another (AE 2026). The embedded profile
    * record is always the new file's.
    */
-  _carry_color_management_to(new_: FootageSource): void {
+  _carryColorManagementTo(new_: FootageSource): void {
     const oldClrs = this._clrs,
       newClrs = new_._clrs;
     if (oldClrs == null || newClrs == null) return;
@@ -480,12 +480,12 @@ export class FootageSource {
 
     const oldApid = findByType(oldClrs.chunks, "apid");
     if (bytesEq(oldApid.data, _UNASSIGNED_PROFILE)) {
-      const oldProfile = this._ocsp_profile();
-      if (oldProfile == null || !oldProfile.is_ocio) return;
+      const oldProfile = this._ocspProfile();
+      if (oldProfile == null || !oldProfile.isOcio) return;
     }
     findByType(newClrs.chunks, "apid").data = oldApid.data;
-    const oldOcsp = this._ocsp_utf8();
-    const newOcsp = new_._ocsp_utf8();
+    const oldOcsp = this._ocspUtf8();
+    const newOcsp = new_._ocspUtf8();
     if (oldOcsp != null && newOcsp != null) {
       newOcsp.value = oldOcsp.value;
     }
@@ -494,11 +494,11 @@ export class FootageSource {
   /**
    * Write the item display name into the source's own `opti` chunk.
    *
-   * The counterpart of `_resolve_name`: it must store the name where that
+   * The counterpart of `_resolveName`: it must store the name where that
    * method reads it back from, or the rename is lost on save. Only called
-   * for a source that owns its name (see `_owns_name`).
+   * for a source that owns its name (see `_ownsName`).
    */
-  _store_name(value: string): void {
+  _storeName(value: string): void {
     throw new NotImplementedError();
   }
 
@@ -506,9 +506,9 @@ export class FootageSource {
    * ICC library for Adobe-CMS profile writes - the owning project's
    * (honouring `icc_profile_dirs`) when wired, else the global default.
    */
-  _icc_lib(): IccProfileLibrary {
+  _iccLib(): IccProfileLibrary {
     if (this._project != null) {
-      return this._project._icc_lib();
+      return this._project._iccLib();
     }
     return defaultIccLibrary();
   }
@@ -572,8 +572,8 @@ export class FootageSource {
     // In OCIO mode the assigned color space is carried as an OCIO envelope in
     // the `ocsp` Utf8 (apid is the unmanaged sentinel). In Adobe mode `ocsp`
     // holds the embedded/override profile and `apid` is the discriminator.
-    const ocsp = this._ocsp_profile();
-    if (ocsp != null && ocsp.profile_type === PROFILE_TYPE_OCIO) {
+    const ocsp = this._ocspProfile();
+    if (ocsp != null && ocsp.profileType === PROFILE_TYPE_OCIO) {
       return ocsp.name;
     }
     const apidChunk = findByType(this._clrs.chunks, "apid");
@@ -595,14 +595,14 @@ export class FootageSource {
       // AE sets ipws, clears the override id, and empties the ocsp Utf8.
       ipwsChunk.value = 1;
       apidChunk.data = bytes_.repeat(b("\xff"), 16);
-      this._write_ocsp("");
+      this._writeOcsp("");
       return;
     }
     ipwsChunk.value = 0;
     if (value === "Embedded") {
       // Revert to the file's embedded profile (mirrored in the Mcsp Utf8).
       apidChunk.data = bytes_.repeat(b("\xff"), 16);
-      this._write_ocsp(this._embedded_envelope());
+      this._writeOcsp(this._embeddedEnvelope());
       return;
     }
     if (profileIdForName(value) != null) {
@@ -611,20 +611,20 @@ export class FootageSource {
       // Color dirs). For most profiles the bytes hash to the same ID; the
       // handful AE generates a private variant for (Apple/Adobe RGB,
       // ColorMatch, ROMM) embed the on-disk copy AE still recognizes.
-      const lib = this._icc_lib();
-      apidChunk.data = lib.hash_for(value);
-      this._write_ocsp(buildIccEnvelope(value, lib.bytes_for(value)));
+      const lib = this._iccLib();
+      apidChunk.data = lib.hashFor(value);
+      this._writeOcsp(buildIccEnvelope(value, lib.bytesFor(value)));
       return;
     }
     // Treat any other name as an OCIO color space (no ICC, apid unmanaged).
     // The envelope depends on the SELECTION KIND, so the config is
     // required - AE-verified against a direct-pick and a role-pick sample.
     apidChunk.data = bytes_.repeat(b("\xff"), 16);
-    this._write_ocsp(this._ocio_envelope(value));
+    this._writeOcsp(this._ocioEnvelope(value));
   }
 
   /** Build the OCIO envelope AE writes for `name` (see {@link py_aep.color.ocio.ocio_color_profile_envelope | ocio_color_profile_envelope}). */
-  _ocio_envelope(name: string): string {
+  _ocioEnvelope(name: string): string {
     const project = this._project;
     const config = requireOcioConfig(
       project != null ? project.ocioConfigurationFile : null,
@@ -634,7 +634,7 @@ export class FootageSource {
   }
 
   /** The `Utf8` chunk after the CLRS `ocsp` marker (the assigned space). */
-  _ocsp_utf8(): Utf8Chunk | null {
+  _ocspUtf8(): Utf8Chunk | null {
     if (this._clrs == null) return null;
     let after: Utf8Chunk[];
     try {
@@ -646,14 +646,14 @@ export class FootageSource {
     return after?.length > 0 ? after[0] : null;
   }
 
-  _ocsp_profile(): ColorProfile | null {
-    const utf8 = this._ocsp_utf8();
+  _ocspProfile(): ColorProfile | null {
+    const utf8 = this._ocspUtf8();
     if (utf8 == null || !utf8.value.includes("baseColorProfile")) return null;
     return parseEnvelope(utf8.value);
   }
 
   /** The embedded source profile envelope (CLRS `Mcsp` Utf8), or `{}`. */
-  _embedded_envelope(): string {
+  _embeddedEnvelope(): string {
     if (this._clrs == null) return "{}";
     let after: Utf8Chunk[];
     try {
@@ -665,8 +665,8 @@ export class FootageSource {
     return after?.length > 0 ? after[0].value : "{}";
   }
 
-  _write_ocsp(envelope: string): void {
-    const utf8 = this._ocsp_utf8();
+  _writeOcsp(envelope: string): void {
+    const utf8 = this._ocspUtf8();
     if (utf8 == null) {
       throw new AttributeError(
         "Cannot set mediaColorSpace: no 'ocsp' color chunk in CLRS.",
@@ -691,7 +691,7 @@ descriptor(
   "alphaMode",
   ChunkField.enum(AlphaMode, "_sspc", "alpha_mode_raw", {
     validate: _validateHasAlpha,
-    post_set: "_on_alpha_mode_set",
+    postSet: "_onAlphaModeSet",
   }),
 );
 descriptor(
@@ -702,7 +702,7 @@ descriptor(
 descriptor(
   FootageSource,
   "hasAlpha",
-  new ChunkField("_sspc", "has_alpha", { read_only: true }),
+  new ChunkField("_sspc", "has_alpha", { readOnly: true }),
 );
 descriptor(
   FootageSource,
@@ -736,47 +736,47 @@ descriptor(
 descriptor(
   FootageSource,
   "displayFrameRate",
-  new ChunkField("_sspc", "display_frame_rate", { read_only: true }),
+  new ChunkField("_sspc", "display_frame_rate", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "removePulldown",
   ChunkField.enum(PulldownPhase, "_sspc", "remove_pulldown", {
-    post_set: "_on_remove_pulldown_set",
+    postSet: "_onRemovePulldownSet",
   }),
 );
 descriptor(
   FootageSource,
   "nativeFrameRate",
-  new ChunkField("_sspc", "native_frame_rate", { read_only: true }),
+  new ChunkField("_sspc", "native_frame_rate", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "_width",
-  new ChunkField("_sspc", "width", { read_only: true }),
+  new ChunkField("_sspc", "width", { readOnly: true }),
 );
 descriptor(
   FootageSource,
   "_height",
-  new ChunkField("_sspc", "height", { read_only: true }),
+  new ChunkField("_sspc", "height", { readOnly: true }),
 );
 descriptor(
   FootageSource,
-  "_pixel_aspect",
-  new ChunkField("_sspc", "pixel_aspect", { read_only: true }),
+  "_pixelAspect",
+  new ChunkField("_sspc", "pixel_aspect", { readOnly: true }),
 );
 descriptor(
   FootageSource,
-  "_footage_missing",
-  new ChunkField("_sspc", "footage_missing_at_save", { read_only: true }),
+  "_footageMissing",
+  new ChunkField("_sspc", "footage_missing_at_save", { readOnly: true }),
 );
 descriptor(
   FootageSource,
-  "_start_frame",
-  new ChunkField("_sspc", "start_frame", { read_only: true }),
+  "_startFrame",
+  new ChunkField("_sspc", "start_frame", { readOnly: true }),
 );
 descriptor(
   FootageSource,
-  "_end_frame",
-  new ChunkField("_sspc", "end_frame", { read_only: true }),
+  "_endFrame",
+  new ChunkField("_sspc", "end_frame", { readOnly: true }),
 );

@@ -31,11 +31,11 @@ import type { U1Chunk } from "../../binary/scalar_chunks.ts";
  * @see https://ae-scripting.docsforadobe.dev/sources/placeholdersource/
  */
 export class PlaceholderSource extends FootageSource {
-  static _owns_name = true;
+  static _ownsName = true;
 
   declare _opti: OptiChunk;
 
-  get _rate_is_assumed(): boolean {
+  get _rateIsAssumed(): boolean {
     return true;
   }
 
@@ -100,11 +100,11 @@ export class PlaceholderSource extends FootageSource {
     return this._sspc.duration * this._sspc.loop;
   }
 
-  _resolve_name(rawName: string): string {
+  _resolveName(rawName: string): string {
     return this._opti.placeholder_name;
   }
 
-  _store_name(value: string): void {
+  _storeName(value: string): void {
     validateOptiName(value);
     this._opti.placeholder_name = value;
   }

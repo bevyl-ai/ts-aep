@@ -77,8 +77,8 @@ describe("TestMatrixPrimitives", () => {
 
   test("test_inverse_roundtrip", () => {
     const m = buildLocalMatrix([30, 20, 10], [5, 5, 0], [150, 80, 100], 37, {
-      rotate_x: 15,
-      rotate_y: 25,
+      rotateX: 15,
+      rotateY: 25,
     });
     const inv = m.inverse();
     const result = m.__matmul__(inv);
@@ -203,7 +203,7 @@ describe("TestRoundTrip3D", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_x: 45.0 });
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotateX: 45.0 });
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
     _approx(dPos, pos);
     _approx(dScale, scale);
@@ -216,7 +216,7 @@ describe("TestRoundTrip3D", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_y: 30.0 });
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotateY: 30.0 });
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
     _approx(dRy, 30.0);
     _approx(dRx, 0.0);
@@ -229,7 +229,7 @@ describe("TestRoundTrip3D", () => {
     const rz = 15.0;
     const rx = 25.0;
     const ry = 35.0;
-    const m = buildLocalMatrix(pos, anchor, scale, rz, { rotate_x: rx, rotate_y: ry });
+    const m = buildLocalMatrix(pos, anchor, scale, rz, { rotateX: rx, rotateY: ry });
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
     _approx(dPos, pos);
     _approx(dScale, scale);
@@ -250,7 +250,7 @@ describe("TestRoundTrip3D", () => {
     // decomposition). The key check is round-trip through
     // build -> decompose -> build produces the same matrix.
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
-    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotateX: dRx, rotateY: dRy });
     _matApprox(m, m2, 1e-5);
   });
 
@@ -268,11 +268,11 @@ describe("TestRoundTrip3D", () => {
     const ry = 5.0;
     const m = buildLocalMatrix(pos, anchor, scale, rz, {
       orientation: orient,
-      rotate_x: rx,
-      rotate_y: ry,
+      rotateX: rx,
+      rotateY: ry,
     });
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
-    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotateX: dRx, rotateY: dRy });
     _matApprox(m, m2, 1e-5);
   });
 });
@@ -449,11 +449,11 @@ describe("TestEdgeCases", () => {
     const pos = [10.0, 20.0, 30.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_x: 45.0, rotate_y: 89.99 });
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotateX: 45.0, rotateY: 89.99 });
     const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
     // The exact angle decomposition may differ but the matrix
     // must be equivalent.
-    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotateX: dRx, rotateY: dRy });
     _matApprox(m, m2, 1e-4);
   });
 });

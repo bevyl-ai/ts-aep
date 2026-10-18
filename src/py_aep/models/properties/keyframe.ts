@@ -27,7 +27,7 @@ const _property = deferred<typeof import("./property.ts")>("py_aep/models/proper
 
 /**
  * Any value a {@link Property} or {@link Keyframe} can hold; which one depends on
- * the property's `property_value_type`. `Property<V>` narrows it per property.
+ * the property's `propertyValueType`. `Property<V>` narrows it per property.
  */
 // TYPE_CHECKING: `_ValueType = Union[list[float], float, Curves, Gradient, MarkerValue, Shape, TextDocument, None]`
 export type PropertyValue = number[] | number | Curves | Gradient | MarkerValue | Shape | TextDocument | null;
@@ -56,7 +56,7 @@ export function _validateInterpolationType(value: KeyframeInterpolationType, key
   // membership check gets a chance to.
   if (!prop.isInterpolationTypeValid(value)) {
     throw new ValueError(
-      `${KeyframeInterpolationType.name_of(value)} is not a valid ` +
+      `${KeyframeInterpolationType.nameOf(value)} is not a valid ` +
         `interpolation type for ${repr(prop.name)}.`,
     );
   }
@@ -98,7 +98,7 @@ export function _validateRoving(value: boolean, keyframe: Keyframe): void {
   if (!value) return;
   const prop = keyframe._property;
   if (prop == null) return;
-  if (!prop._has_motion_path) {
+  if (!prop._hasMotionPath) {
     throw new ValueError(
       `roving can only be set on a spatial property, not ${repr(prop.matchName)}`,
     );
@@ -188,32 +188,32 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   declare temporalContinuous: boolean;
 
-  declare _ldat_item: LdatItem;
-  declare _frame_rate: number;
+  declare _ldatItem: LdatItem;
+  declare _frameRate: number;
   declare _property: Property | null;
   declare _prev: Keyframe | null;
   declare _next: Keyframe | null;
-  declare _in_temporal_ease: KeyframeEase[] | null;
-  declare _out_temporal_ease: KeyframeEase[] | null;
+  declare _inTemporalEase: KeyframeEase[] | null;
+  declare _outTemporalEase: KeyframeEase[] | null;
   declare _value: PropertyValue | typeof _VALUE_FROM_CHUNK;
 
-  constructor(kw: { _ldat_item: LdatItem; _frame_rate: number }) {
-    const { _ldat_item, _frame_rate } = kw;
-    this._ldat_item = _ldat_item;
-    this._frame_rate = _frame_rate;
+  constructor(kw: { _ldatItem: LdatItem; _frameRate: number }) {
+    const { _ldatItem: _ldat_item, _frameRate: _frame_rate } = kw;
+    this._ldatItem = _ldat_item;
+    this._frameRate = _frame_rate;
     this._property = null;
     this._prev = null;
     this._next = null;
 
-    this._in_temporal_ease = null;
-    this._out_temporal_ease = null;
+    this._inTemporalEase = null;
+    this._outTemporalEase = null;
 
     this._value = _VALUE_FROM_CHUNK;
   }
 
-  _on_interpolation_type_set(): void {
-    this._settle_temporal_continuous();
-    this._retime_roving_runs();
+  _onInterpolationTypeSet(): void {
+    this._settleTemporalContinuous();
+    this._retimeRovingRuns();
   }
 
   /**
@@ -223,9 +223,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `setInterpolationTypeAtKey` and `setTemporalEaseAtKey`; an out-HOLD
    * anchor packs the run against itself).
    */
-  _retime_roving_runs(): void {
+  _retimeRovingRuns(): void {
     if (this._property != null) {
-      this._property._redistribute_roving_keyframes();
+      this._property._redistributeRovingKeyframes();
     }
   }
 
@@ -238,12 +238,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * back on for an auto-bezier key with a BEZIER side. Temporal
    * auto-bezier itself survives any type change.
    */
-  _settle_temporal_continuous(): void {
+  _settleTemporalContinuous(): void {
     const bezier = KeyframeInterpolationType.BEZIER;
     if (this.inInterpolationType !== bezier && this.outInterpolationType !== bezier) {
-      this._ldat_item.temporal_continuous = false;
+      this._ldatItem.temporal_continuous = false;
     } else if (this.temporalAutoBezier) {
-      this._ldat_item.temporal_continuous = true;
+      this._ldatItem.temporal_continuous = true;
     }
   }
 
@@ -251,12 +251,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Whether the key rides a roving run rather than bounding one: the
    * first and last keys are anchors even when flagged roving.
    */
-  get _is_roving_run_key(): boolean {
+  get _isRovingRunKey(): boolean {
     return this.roving && this._prev != null && this._next != null;
   }
 
   /** Set both interpolation types to BEZIER, skipping no-op writes. */
-  _force_bezier_both_sides(): void {
+  _forceBezierBothSides(): void {
     if (this.inInterpolationType !== KeyframeInterpolationType.BEZIER) {
       this.inInterpolationType = KeyframeInterpolationType.BEZIER;
     }
@@ -274,7 +274,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * 2026; the flag alone left a keyframe carrying ease AE would never
    * pair with it.
    */
-  _on_temporal_auto_bezier_set(): void {
+  _onTemporalAutoBezierSet(): void {
     if (!this.temporalAutoBezier) {
       // AE keeps the derived ease when the flag is cleared.
       return;
@@ -282,23 +282,23 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // The raw byte, deliberately not the `temporal_continuous` setter:
     // its hook ties the out speed to the in speed, and the derived ease
     // written below is per-side.
-    this._ldat_item.temporal_continuous = true;
-    this._force_bezier_both_sides();
-    const speeds = this._auto_temporal_speeds();
+    this._ldatItem.temporal_continuous = true;
+    this._forceBezierBothSides();
+    const speeds = this._autoTemporalSpeeds();
     if (speeds == null) return;
-    this._ensure_ease();
+    this._ensureEase();
     const pairs: [string, number[], KeyframeEase[] | null][] = [
-      ["in", speeds[0], this._in_temporal_ease],
-      ["out", speeds[1], this._out_temporal_ease],
+      ["in", speeds[0], this._inTemporalEase],
+      ["out", speeds[1], this._outTemporalEase],
     ];
     for (const [direction, values, backing] of pairs) {
       if (backing == null || backing.length !== values.length) continue;
-      this._apply_ease(
+      this._applyEase(
         values.map((speed) => new KeyframeEase(speed, _DEFAULT_INFLUENCE)),
         direction,
       );
     }
-    this._retime_roving_runs();
+    this._retimeRovingRuns();
   }
 
   /**
@@ -314,24 +314,24 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Note the spatial equivalent is NOT symmetric: `spatial_continuous`
    * genuinely leaves the tangents alone.
    */
-  _on_temporal_continuous_set(): void {
+  _onTemporalContinuousSet(): void {
     if (!this.temporalContinuous) {
       // An auto-bezier key stays continuous (AE 2026 turns it back on).
-      this._settle_temporal_continuous();
+      this._settleTemporalContinuous();
       return;
     }
     // Continuous and auto-bezier are exclusive modes: AE 2026 clears
     // temporal auto-bezier here (the raw byte - its setter would
     // re-derive the ease).
-    this._ldat_item.temporal_auto_bezier = false;
-    this._force_bezier_both_sides();
-    this._ensure_ease();
-    const [incoming, outgoing] = [this._in_temporal_ease, this._out_temporal_ease];
+    this._ldatItem.temporal_auto_bezier = false;
+    this._forceBezierBothSides();
+    this._ensureEase();
+    const [incoming, outgoing] = [this._inTemporalEase, this._outTemporalEase];
     if (incoming == null || outgoing == null) return;
     for (const [outEase, inEase] of zip(outgoing, incoming)) {
       outEase.speed = inEase.speed;
     }
-    this._retime_roving_runs();
+    this._retimeRovingRuns();
   }
 
   /**
@@ -343,26 +343,26 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * different spaces - a raw -0.5 on a 200-wide layer is AE's -100.
    * `invert` divides instead, for the write path.
    */
-  _rescale_tangent(tangent: number[], kw: { invert: boolean }): number[] {
+  _rescaleTangent(tangent: number[], kw: { invert: boolean }): number[] {
     const { invert } = kw;
     const prop = this._property;
     if (prop == null) return [...tangent];
-    return prop._apply_effect_scale(tangent, { invert });
+    return prop._applyEffectScale(tangent, { invert });
   }
 
   /** Set the owning property and propagate speed factor to ease. */
-  _bind_property(prop: Property): void {
+  _bindProperty(prop: Property): void {
     this._property = prop;
-    const factor = prop._speed_factor;
+    const factor = prop._speedFactor;
     // Propagate to already-created ease objects
-    if (this._in_temporal_ease != null) {
-      for (const ease of this._in_temporal_ease) {
-        ease._speed_factor = factor;
+    if (this._inTemporalEase != null) {
+      for (const ease of this._inTemporalEase) {
+        ease._speedFactor = factor;
       }
     }
-    if (this._out_temporal_ease != null) {
-      for (const ease of this._out_temporal_ease) {
-        ease._speed_factor = factor;
+    if (this._outTemporalEase != null) {
+      for (const ease of this._outTemporalEase) {
+        ease._speedFactor = factor;
       }
     }
   }
@@ -374,8 +374,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * multi-dimensional or color properties, and `null` when the
    * keyframe type carries no value (e.g. markers).
    */
-  _extract_raw_value(): number[] | number | null {
-    const kfData = this._ldat_item.kf_data;
+  _extractRawValue(): number[] | number | null {
+    const kfData = this._ldatItem.kf_data;
     if (!("value" in kfData)) return null;
     const values: number[] = [...kfData.value];
     if (values.length === 1) return values[0];
@@ -391,32 +391,32 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * spatial types. Returns `([], [])` when the keyframe type
    * carries no ease data (e.g. markers).
    */
-  _create_ease(): [KeyframeEase[], KeyframeEase[]] {
-    const kfData = this._ldat_item.kf_data;
+  _createEase(): [KeyframeEase[], KeyframeEase[]] {
+    const kfData = this._ldatItem.kf_data;
     if (!("in_speed" in kfData)) return [[], []];
 
-    const factor = this._property != null ? this._property._speed_factor : 1.0;
+    const factor = this._property != null ? this._property._speedFactor : 1.0;
 
     let inEase: KeyframeEase[];
     let outEase: KeyframeEase[];
     if (kfData instanceof KfMultiDimensional) {
       inEase = Array.from({ length: kfData.in_speed.length }, (_, i) =>
-        KeyframeEase._from_binary(kfData, i, "in", factor),
+        KeyframeEase._fromBinary(kfData, i, "in", factor),
       );
       outEase = Array.from({ length: kfData.out_speed.length }, (_, i) =>
-        KeyframeEase._from_binary(kfData, i, "out", factor),
+        KeyframeEase._fromBinary(kfData, i, "out", factor),
       );
     } else {
-      inEase = [KeyframeEase._from_binary(kfData, 0, "in", factor)];
-      outEase = [KeyframeEase._from_binary(kfData, 0, "out", factor)];
+      inEase = [KeyframeEase._fromBinary(kfData, 0, "in", factor)];
+      outEase = [KeyframeEase._fromBinary(kfData, 0, "out", factor)];
     }
     return [inEase, outEase];
   }
 
   /** Lazily create ease objects on first access. */
-  _ensure_ease(): void {
-    if (this._in_temporal_ease == null) {
-      [this._in_temporal_ease, this._out_temporal_ease] = this._create_ease();
+  _ensureEase(): void {
+    if (this._inTemporalEase == null) {
+      [this._inTemporalEase, this._outTemporalEase] = this._createEase();
     }
   }
 
@@ -432,25 +432,25 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - If the property value type is neither of these types, returns `null`.
    */
   get inSpatialTangent(): number[] | null {
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     if (!("in_spatial_tangents" in kfData)) return null;
     if (this.spatialAutoBezier) {
-      const derived = this._auto_spatial_tangents();
+      const derived = this._autoSpatialTangents();
       if (derived != null) {
-        return this._rescale_tangent(derived[1], { invert: false });
+        return this._rescaleTangent(derived[1], { invert: false });
       }
     }
-    return this._rescale_tangent([...kfData.in_spatial_tangents], { invert: false });
+    return this._rescaleTangent([...kfData.in_spatial_tangents], { invert: false });
   }
 
   set inSpatialTangent(value: number[] | null) {
     if (value == null || this.inSpatialTangent == null) return;
     validateSequence({ length: this.inSpatialTangent.length })(value);
-    const kfData = this._ldat_item.kf_data;
-    this._leave_spatial_auto_bezier();
+    const kfData = this._ldatItem.kf_data;
+    this._leaveSpatialAutoBezier();
     if ("in_spatial_tangents" in kfData) {
-      kfData.in_spatial_tangents = this._rescale_tangent(value, { invert: true });
-      this._retime_roving_runs();
+      kfData.in_spatial_tangents = this._rescaleTangent(value, { invert: true });
+      this._retimeRovingRuns();
     }
   }
 
@@ -466,25 +466,25 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - If the property value type is neither of these types, returns `null`.
    */
   get outSpatialTangent(): number[] | null {
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     if (!("out_spatial_tangents" in kfData)) return null;
     if (this.spatialAutoBezier) {
-      const derived = this._auto_spatial_tangents();
+      const derived = this._autoSpatialTangents();
       if (derived != null) {
-        return this._rescale_tangent(derived[0], { invert: false });
+        return this._rescaleTangent(derived[0], { invert: false });
       }
     }
-    return this._rescale_tangent([...kfData.out_spatial_tangents], { invert: false });
+    return this._rescaleTangent([...kfData.out_spatial_tangents], { invert: false });
   }
 
   set outSpatialTangent(value: number[] | null) {
     if (value == null || this.outSpatialTangent == null) return;
     validateSequence({ length: this.outSpatialTangent.length })(value);
-    const kfData = this._ldat_item.kf_data;
-    this._leave_spatial_auto_bezier();
+    const kfData = this._ldatItem.kf_data;
+    this._leaveSpatialAutoBezier();
     if (value != null && "out_spatial_tangents" in kfData) {
-      kfData.out_spatial_tangents = this._rescale_tangent(value, { invert: true });
-      this._retime_roving_runs();
+      kfData.out_spatial_tangents = this._rescaleTangent(value, { invert: true });
+      this._retimeRovingRuns();
     }
   }
 
@@ -495,11 +495,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * the derived tangents would keep overriding the written one. The
    * side not written keeps the derived tangent it had.
    */
-  _leave_spatial_auto_bezier(): void {
+  _leaveSpatialAutoBezier(): void {
     // Only a spatial keyframe's KfPosition carries the flag.
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     if (!(kfData instanceof KfPosition && kfData.spatial_auto_bezier)) return;
-    const derived = this._auto_spatial_tangents();
+    const derived = this._autoSpatialTangents();
     if (derived != null) {
       [kfData.out_spatial_tangents, kfData.in_spatial_tangents] = derived;
     }
@@ -513,7 +513,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * ends themselves, so a boundary keyframe simply yields a shorter
    * window rather than a special case here.
    */
-  _neighbour_window(): [Keyframe[], number] {
+  _neighbourWindow(): [Keyframe[], number] {
     const window = [this._prev, this, this._next].filter(
       (kf): kf is Keyframe => kf != null,
     );
@@ -531,11 +531,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Derived in the raw chunk space, matching what these accessors
    * return. Returns `null` when the keyframe carries no spatial data.
    */
-  _auto_spatial_tangents(): [number[], number[]] | null {
-    if (!("in_spatial_tangents" in this._ldat_item.kf_data)) return null;
-    const [window, index] = this._neighbour_window();
+  _autoSpatialTangents(): [number[], number[]] | null {
+    if (!("in_spatial_tangents" in this._ldatItem.kf_data)) return null;
+    const [window, index] = this._neighbourWindow();
     // The neighbours are keys of the same spatial property.
-    const values = window.map((kf) => [...(kf._ldat_item.kf_data as KfPosition).value]);
+    const values = window.map((kf) => [...(kf._ldatItem.kf_data as KfPosition).value]);
     return autoSpatialTangents(values, index);
   }
 
@@ -546,26 +546,26 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Returns `null` when the value is not numeric, so the caller can fall
    * back to the stored ease.
    */
-  _auto_temporal_speeds(): [number[], number[]] | null {
+  _autoTemporalSpeeds(): [number[], number[]] | null {
     const prop = this._property;
-    const kind = prop != null ? prop._parallel_kind() : null;
+    const kind = prop != null ? prop._parallelKind() : null;
     if (prop != null && kind != null) {
       // A path and an Orientation are spatial for ExtendScript but have
       // no motion path to measure: AE reports an auto-bezier side at the
       // unit chord slope, like a LINEAR side, and plays it that way
       // (measured on AE 2026 on a mask path and an Orientation key).
       const unit = kind.linearEaseSpeed;
-      const index = prop._keyframe_index(this);
+      const index = prop._keyframeIndex(this);
       if (unit == null || index == null) return null;
       const last = prop.keyframes.length - 1;
       return [[index === 0 ? 0.0 : unit], [index === last ? 0.0 : unit]];
     }
     if (prop != null && prop._color) {
       // One speed along the colour line, like a motion path.
-      const [window, at] = this._neighbour_window();
+      const [window, at] = this._neighbourWindow();
       const speed = colorAutoSpeed(
         window.map((kf) => kf.value as number[]),
-        window.map((kf) => kf._layer_time),
+        window.map((kf) => kf._layerTime),
         at,
       );
       return [
@@ -573,15 +573,15 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
         [this._next == null ? 0.0 : speed],
       ];
     }
-    if (prop != null && prop._has_motion_path) {
+    if (prop != null && prop._hasMotionPath) {
       const keyframes = prop.keyframes;
       // A keyframe removed from its property is no longer on its path.
-      const index = prop._keyframe_index(this);
+      const index = prop._keyframeIndex(this);
       if (index != null) {
         // A motion path carries ONE ease, a speed along the path. AE
         // writes it on both sides; the outward side of an end key is
         // reported as 0, as on any other property.
-        const speed = autoPathSpeed(keyframes, index, prop._arc_metric);
+        const speed = autoPathSpeed(keyframes, index, prop._arcMetric);
         return [
           [index === 0 ? 0.0 : speed],
           [index === keyframes.length - 1 ? 0.0 : speed],
@@ -599,10 +599,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       return null;
     };
 
-    const [window, index] = this._neighbour_window();
+    const [window, index] = this._neighbourWindow();
     const values = window.map((kf) => asVector(kf));
     if (!values.every((value) => value != null)) return null;
-    const times = window.map((kf) => kf._layer_time);
+    const times = window.map((kf) => kf._layerTime);
     return autoTemporalSpeeds(values, times, index);
   }
 
@@ -617,10 +617,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   get value(): V {
     if (this._property != null && this._property._arbs != null) {
-      return this._declared(this._property._keyframe_curves(this));
+      return this._declared(this._property._keyframeCurves(this));
     }
     const value =
-      this._property == null ? this._stored_value : this._property._mask_inert_z(this._stored_value);
+      this._property == null ? this._storedValue : this._property._maskInertZ(this._storedValue);
     // A list is handed out as a copy: the keyframe's own is its cache.
     return this._declared(Array.isArray(value) ? [...value] : value);
   }
@@ -632,7 +632,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 
   set value(value: PropertyValue) {
     if (this._property != null) {
-      this._property._reject_curves_write();
+      this._property._rejectCurvesWrite();
     }
     if (
       !(
@@ -662,12 +662,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // shared btdk COS blob, not a per-keyframe container). Storing a
       // fresh, disconnected TextDocument leaves the real btdk with fewer
       // COS docs than the keyframe count, so AE rejects the file ("error
-      // reading text layer from index"). Mirror `_set_parallel_value_at`.
-      if (value instanceof TextDocument && prop._parallel_kind() === TEXT_KIND) {
+      // reading text layer from index"). Mirror `_setParallelValueAt`.
+      if (value instanceof TextDocument && prop._parallelKind() === TEXT_KIND) {
         const current = this.value;
         if (current instanceof TextDocument) {
           current.text = value.text;
-          prop._ensure_materialized();
+          prop._ensureMaterialized();
         } else {
           this._value = value;
         }
@@ -679,20 +679,20 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // route the write through the property so the container - and any
     // mirrored header bytes - are updated. Text (no container) keeps the
     // shadow path: its documents live in the shared btdk COS blob.
-    if (prop != null && prop._kf_value_container != null) {
-      const kind = prop._parallel_kind();
+    if (prop != null && prop._kfValueContainer != null) {
+      const kind = prop._parallelKind();
       if (kind != null && kind !== TEXT_KIND) {
-        prop._write_parallel_kf_value(this, kind.coerce(value), kind);
+        prop._writeParallelKfValue(this, kind.coerce(value), kind);
         return;
       }
     }
     if (prop != null && (typeof value === "number" || Array.isArray(value))) {
-      const raw = prop._unresolve_value(value);
-      this._write_kf_value(raw);
+      const raw = prop._unresolveValue(value);
+      this._writeKfValue(raw);
       // Copies: the caller's list (or another property's value list)
       // must not become this keyframe's cache.
       this._value = Array.isArray(raw) ? [...raw] : raw;
-      prop._redistribute_roving_keyframes();
+      prop._redistributeRovingKeyframes();
     } else {
       this._value = Array.isArray(value) ? [...value] : value;
     }
@@ -704,11 +704,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Interpolation and ease measurement read this one: AE measures a
    * 2-D layer's motion path with the stored Z too.
    */
-  get _stored_value(): _ValueType {
+  get _storedValue(): _ValueType {
     const val =
-      this._value !== _VALUE_FROM_CHUNK ? this._value : this._extract_raw_value();
+      this._value !== _VALUE_FROM_CHUNK ? this._value : this._extractRawValue();
     if (this._property != null && (typeof val === "number" || Array.isArray(val))) {
-      return this._property._resolve_value(val);
+      return this._property._resolveValue(val);
     }
     return val;
   }
@@ -719,16 +719,16 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Unlike the public `value` setter this never writes the
    * parallel value container: the chunks already hold the value,
    * only the in-memory shadow needs filling. Numeric values are
-   * stored unresolved, matching `_extract_raw_value`; the write
-   * through `_write_kf_value` is a no-op for parallel-kind
+   * stored unresolved, matching `_extractRawValue`; the write
+   * through `_writeKfValue` is a no-op for parallel-kind
    * properties (component-count mismatch) and byte-faithful
    * otherwise.
    */
-  _cache_value(value: _ValueType): void {
+  _cacheValue(value: _ValueType): void {
     const prop = this._property;
     if (prop != null && (typeof value === "number" || Array.isArray(value))) {
-      const raw = prop._unresolve_value(value);
-      this._write_kf_value(raw);
+      const raw = prop._unresolveValue(value);
+      this._writeKfValue(raw);
       this._value = raw;
     } else {
       this._value = value;
@@ -748,14 +748,14 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * its angles are in `otky`). For an ordinary numeric property a length
    * mismatch is a genuine dimension error from the caller and is raised.
    */
-  _write_kf_value(raw: number[] | number | null): void {
-    const kfData = this._ldat_item.kf_data;
+  _writeKfValue(raw: number[] | number | null): void {
+    const kfData = this._ldatItem.kf_data;
     if (!("value" in kfData)) return;
     let new_: number[] | null = typeof raw === "number" ? [raw] : null;
     if (new_ == null && Array.isArray(raw)) new_ = raw;
     if (new_ == null) return;
     if (new_.length !== kfData.value.length) {
-      if (this._property != null && this._property._parallel_kind() != null) {
+      if (this._property != null && this._property._parallelKind() != null) {
         return;
       }
       throw new ValueError(
@@ -777,14 +777,14 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - For any other value type, the array contains 1 object.
    */
   get inTemporalEase(): KeyframeEase[] {
-    this._ensure_ease();
-    pyAssert(this._in_temporal_ease != null);
-    return this._resolve_ease(this._in_temporal_ease, "in");
+    this._ensureEase();
+    pyAssert(this._inTemporalEase != null);
+    return this._resolveEase(this._inTemporalEase, "in");
   }
 
   set inTemporalEase(value: KeyframeEase[]) {
-    this._apply_ease(value, "in");
-    this._on_ease_written("in");
+    this._applyEase(value, "in");
+    this._onEaseWritten("in");
   }
 
   /**
@@ -798,14 +798,14 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - For any other value type, the array contains 1 object.
    */
   get outTemporalEase(): KeyframeEase[] {
-    this._ensure_ease();
-    pyAssert(this._out_temporal_ease != null);
-    return this._resolve_ease(this._out_temporal_ease, "out");
+    this._ensureEase();
+    pyAssert(this._outTemporalEase != null);
+    return this._resolveEase(this._outTemporalEase, "out");
   }
 
   set outTemporalEase(value: KeyframeEase[]) {
-    this._apply_ease(value, "out");
-    this._on_ease_written("out");
+    this._applyEase(value, "out");
+    this._onEaseWritten("out");
   }
 
   /**
@@ -818,8 +818,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * Only the written side is switched - the per-side setters are the
    * two halves of AE's one call.
    */
-  _on_ease_written(direction: "in" | "out"): void {
-    this._ldat_item.temporal_auto_bezier = false;
+  _onEaseWritten(direction: "in" | "out"): void {
+    this._ldatItem.temporal_auto_bezier = false;
     const bezier = KeyframeInterpolationType.BEZIER;
     const name = `${direction}InterpolationType` as const;
     if (getattr(this, name) !== bezier) {
@@ -828,7 +828,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
         this[name] = bezier;
       }
     }
-    this._retime_roving_runs();
+    this._retimeRovingRuns();
   }
 
   /**
@@ -837,12 +837,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * A user-constructed {@link KeyframeEase} is detached (it carries its own
    * `speed`/`influence` and no chunk), so assigning the array itself
    * would keep the numbers in Python only and lose them on save. The
-   * binary-backed objects live in `_in_temporal_ease` / `_out_temporal_ease`;
+   * binary-backed objects live in `_inTemporalEase` / `_outTemporalEase`;
    * the *getter* may return computed copies (LINEAR, HOLD and boundary
    * keyframes), so the write has to go through these, not through
    * whatever the getter last returned.
    */
-  _apply_ease(value: KeyframeEase[], direction: string): void {
+  _applyEase(value: KeyframeEase[], direction: string): void {
     const field = `${direction}_temporal_ease`;
     if (!Array.isArray(value)) {
       throw new ValueError(`${field} must be a list of KeyframeEase objects`);
@@ -850,8 +850,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if (!value.every((e) => e instanceof KeyframeEase)) {
       throw new ValueError(`${field} must be a list of KeyframeEase objects`);
     }
-    this._ensure_ease();
-    const backing = direction === "in" ? this._in_temporal_ease : this._out_temporal_ease;
+    this._ensureEase();
+    const backing = direction === "in" ? this._inTemporalEase : this._outTemporalEase;
     pyAssert(backing != null);
     if (backing.length === 0) {
       // Marker and other ease-less keyframe types have nowhere to
@@ -863,7 +863,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // accept either length - assigning back what the getter returned has
     // to work. Extra entries have no slot to land in; the first wins,
     // matching what the format can hold.
-    const resolved = this._resolve_ease(backing, direction).length;
+    const resolved = this._resolveEase(backing, direction).length;
     if (value.length !== backing.length && value.length !== resolved) {
       const expected =
         resolved === backing.length ? String(backing.length) : `${backing.length} or ${resolved}`;
@@ -874,30 +874,30 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // The unit factor the getter applies, which a backing ease only
     // carries once it has been read as BEZIER: a LINEAR or end key of an
     // effect point would otherwise store its pixel speed unconverted.
-    const factor = this._speed_unit_factor();
+    const factor = this._speedUnitFactor();
     for (const [target, source] of zip(backing, value)) {
-      target._speed_factor = factor;
-      target._write_from(source);
+      target._speedFactor = factor;
+      target._writeFrom(source);
     }
   }
 
   /** Reported / stored ratio of this keyframe's ease speeds. */
-  _speed_unit_factor(): number {
+  _speedUnitFactor(): number {
     const prop = this._property;
     if (prop == null) return 1.0;
-    const point = prop._effect_point_speed_factor;
-    return point != null ? point : prop._speed_factor;
+    const point = prop._effectPointSpeedFactor;
+    return point != null ? point : prop._speedFactor;
   }
 
   /**
    * Apply interpolation-type overrides to temporal ease.
    *
    * For BEZIER keyframes the binary-backed ease objects are returned
-   * directly (with `_speed_factor` already set).  For LINEAR
+   * directly (with `_speedFactor` already set).  For LINEAR
    * keyframes the speed is computed from the segment between adjacent
    * keyframes.  For HOLD keyframes the speed is always 0.
    */
-  _resolve_ease(rawEase: KeyframeEase[], direction: string): KeyframeEase[] {
+  _resolveEase(rawEase: KeyframeEase[], direction: string): KeyframeEase[] {
     if (rawEase.length === 0) return [new KeyframeEase(0.0, 0.0)];
 
     let interp: KeyframeInterpolationType;
@@ -921,7 +921,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       return rawEase.map(() => new KeyframeEase(0.0, _DEFAULT_INFLUENCE));
     }
     if (interp === KeyframeInterpolationType.LINEAR) {
-      return this._linear_ease(rawEase, direction);
+      return this._linearEase(rawEase, direction);
     }
 
     // A BEZIER side facing a HOLD side reports speed 0, as AE does; the
@@ -929,7 +929,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // skipped: a run is eased by its anchors, so it is the far anchor's
     // side that decides (AE 2026).
     let anchor = neighbour;
-    while (anchor != null && anchor._is_roving_run_key) {
+    while (anchor != null && anchor._isRovingRunKey) {
       anchor = direction === "in" ? anchor._prev : anchor._next;
     }
     const facingHold =
@@ -947,9 +947,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       let chosen: number[] | null = null;
       if (otherInterp === KeyframeInterpolationType.LINEAR) {
         const otherDirection = direction === "in" ? "out" : "in";
-        chosen = this._linear_ease(rawEase, otherDirection).map((e) => e.speed);
+        chosen = this._linearEase(rawEase, otherDirection).map((e) => e.speed);
       } else {
-        const autoSpeeds = this._auto_temporal_speeds();
+        const autoSpeeds = this._autoTemporalSpeeds();
         if (autoSpeeds != null) {
           chosen = direction === "in" ? autoSpeeds[0] : autoSpeeds[1];
         }
@@ -974,13 +974,13 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     }
     // An effect point stores speed normalized against the comp height.
     // Applied here because the factor needs a fully constructed property,
-    // and because `_bind_property` resets ease back to the property-level
+    // and because `_bindProperty` resets ease back to the property-level
     // factor whenever the keyframes are re-linked.
     if (this._property != null) {
-      const factor = this._property._effect_point_speed_factor;
+      const factor = this._property._effectPointSpeedFactor;
       if (factor != null) {
         for (const ease of rawEase) {
-          ease._speed_factor = factor;
+          ease._speedFactor = factor;
         }
       }
     }
@@ -991,7 +991,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * The ease AE reports for a LINEAR side: the segment's own rate,
    * with the default influence.
    */
-  _linear_ease(rawEase: KeyframeEase[], direction: string): KeyframeEase[] {
+  _linearEase(rawEase: KeyframeEase[], direction: string): KeyframeEase[] {
     const other = direction === "out" ? this._next : this._prev;
     if (other == null) {
       return rawEase.map(() => new KeyframeEase(0.0, _DEFAULT_INFLUENCE));
@@ -1007,16 +1007,16 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if (direction === "out") {
       adjacentInterp = other.inInterpolationType;
     } else {
-      while (adjacent._is_roving_run_key && adjacent._prev != null) {
+      while (adjacent._isRovingRunKey && adjacent._prev != null) {
         adjacent = adjacent._prev;
       }
       adjacentInterp = adjacent.outInterpolationType;
     }
-    if (adjacentInterp === KeyframeInterpolationType.HOLD && !adjacent._is_roving_run_key) {
+    if (adjacentInterp === KeyframeInterpolationType.HOLD && !adjacent._isRovingRunKey) {
       return rawEase.map(() => new KeyframeEase(0.0, _DEFAULT_INFLUENCE));
     }
     const prop = this._property;
-    const kind = prop != null ? prop._parallel_kind() : null;
+    const kind = prop != null ? prop._parallelKind() : null;
     if (kind != null && kind.linearEaseSpeed != null) {
       // A path and an Orientation have no scalar magnitude for a
       // speed to measure, so AE reports a LINEAR side's speed as
@@ -1033,17 +1033,17 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // One ease along the colour line, in 0-255 units per second
       // (measured on AE 2026: 191.25 for [1,0,0,1] -> [0,0.5,1,1] over
       // 2 s), not one per channel.
-      const span = right._layer_time - left._layer_time;
+      const span = right._layerTime - left._layerTime;
       const speed =
         span > 0
           ? colorDistance(left.value as number[], right.value as number[]) / span
           : 0.0;
       return rawEase.map(() => new KeyframeEase(speed, _DEFAULT_INFLUENCE));
     }
-    if (prop != null && prop._has_motion_path && kind == null) {
-      const index = prop._keyframe_index(left);
+    if (prop != null && prop._hasMotionPath && kind == null) {
+      const index = prop._keyframeIndex(left);
       if (index != null && Array.isArray(left.value)) {
-        const speed = linearPathSpeed(prop.keyframes, index, prop._arc_metric);
+        const speed = linearPathSpeed(prop.keyframes, index, prop._arcMetric);
         return rawEase.map(() => new KeyframeEase(speed, _DEFAULT_INFLUENCE));
       }
     }
@@ -1058,7 +1058,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `ThreeD_SPATIAL`, the value is `false`.
    */
   get spatialAutoBezier(): boolean {
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     return getattr(kfData, "spatial_auto_bezier", false);
   }
 
@@ -1068,7 +1068,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // for it; the getter tolerantly reads False there, but a write must not
     // silently vanish (ExtendScript's setSpatialAutoBezierAtKey errors).
     validateBool(value);
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     if (!("spatial_auto_bezier" in kfData)) {
       throw new ValueError("spatialAutoBezier can only be set on spatial keyframes");
     }
@@ -1085,7 +1085,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if ("spatial_continuous" in kfData) {
       kfData.spatial_continuous = true;
     }
-    const derived = this._auto_spatial_tangents();
+    const derived = this._autoSpatialTangents();
     if (derived != null) {
       [kfData.out_spatial_tangents, kfData.in_spatial_tangents] = derived;
     }
@@ -1097,14 +1097,14 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `false`.
    */
   get spatialContinuous(): boolean {
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     return getattr(kfData, "spatial_continuous", false);
   }
 
   set spatialContinuous(value: boolean) {
     // See spatial_auto_bezier: non-spatial kf_data has no such slot.
     validateBool(value);
-    const kfData = this._ldat_item.kf_data;
+    const kfData = this._ldatItem.kf_data;
     if (!("spatial_continuous" in kfData)) {
       throw new ValueError("spatialContinuous can only be set on spatial keyframes");
     }
@@ -1122,10 +1122,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   get _timebase(): number {
     const prop = this._property;
     if (prop != null) {
-      const base = prop._layer_timebase;
+      const base = prop._layerTimebase;
       if (base) return base;
     }
-    return _timebaseUnits(this._frame_rate);
+    return _timebaseUnits(this._frameRate);
   }
 
   /**
@@ -1138,8 +1138,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * speeds are per layer second, and a negatively stretched layer's
    * keys only ascend on this axis (see {@link time}).
    */
-  get _layer_time(): number {
-    return this._ldat_item.time_units / this._timebase;
+  get _layerTime(): number {
+    return this._ldatItem.time_units / this._timebase;
   }
 
   /**
@@ -1149,20 +1149,20 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * owning layer's start. Read-only; assign to {@link time} instead.
    */
   get timeUnits(): number {
-    return this._ldat_item.time_units;
+    return this._ldatItem.time_units;
   }
 
   /** Move this keyframe to `units`, re-sorting the property if needed. */
-  _set_time_units(units: number): void {
+  _setTimeUnits(units: number): void {
     _checkTimeUnits(units);
     const prop = this._property;
     if (prop != null) {
-      prop._guard_keyframe_move(this, units);
+      prop._guardKeyframeMove(this, units);
     }
-    this._ldat_item.time_units = units;
+    this._ldatItem.time_units = units;
     if (prop != null) {
-      prop._reposition_keyframe(this);
-      prop._redistribute_roving_keyframes();
+      prop._repositionKeyframe(this);
+      prop._redistributeRovingKeyframes();
     }
   }
 
@@ -1174,12 +1174,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * precision matters.
    */
   get frameTime(): number {
-    return round(this.time * this._frame_rate);
+    return round(this.time * this._frameRate);
   }
 
   set frameTime(value: number) {
     validateInt(value);
-    this.time = value / this._frame_rate;
+    this.time = value / this._frameRate;
   }
 
   /**
@@ -1204,12 +1204,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    *   keyframe is roving.
    */
   get time(): number {
-    let seconds = this._layer_time;
+    let seconds = this._layerTime;
     const prop = this._property;
     if (prop != null) {
       // Ticks are layer time; a stretched layer maps them onto the
       // composition timeline by its stretch factor.
-      seconds = seconds * prop._time_stretch + prop._start_time_offset;
+      seconds = seconds * prop._timeStretch + prop._startTimeOffset;
     }
     return seconds;
   }
@@ -1226,9 +1226,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       );
     }
     const prop = this._property;
-    const offset = prop != null ? prop._start_time_offset : 0.0;
-    const stretch = prop != null ? prop._time_stretch : 1.0;
-    this._set_time_units(round(((value - offset) / stretch) * this._timebase));
+    const offset = prop != null ? prop._startTimeOffset : 0.0;
+    const stretch = prop != null ? prop._timeStretch : 1.0;
+    this._setTimeUnits(round(((value - offset) / stretch) * this._timebase));
   }
 }
 
@@ -1237,45 +1237,45 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 descriptor(
   Keyframe,
   "inInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldat_item", "in_interpolation_type", {
+  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "in_interpolation_type", {
     validate: _validateInterpolationType,
-    post_set: "_on_interpolation_type_set",
+    postSet: "_onInterpolationTypeSet",
   }),
 );
 
-descriptor(Keyframe, "label", ChunkField.enum(Label, "_ldat_item", "label"));
+descriptor(Keyframe, "label", ChunkField.enum(Label, "_ldatItem", "label"));
 
 descriptor(
   Keyframe,
   "outInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldat_item", "out_interpolation_type", {
+  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "out_interpolation_type", {
     validate: _validateInterpolationType,
-    post_set: "_on_interpolation_type_set",
+    postSet: "_onInterpolationTypeSet",
   }),
 );
 
 descriptor(
   Keyframe,
   "roving",
-  ChunkField.bool("_ldat_item", "roving", {
+  ChunkField.bool("_ldatItem", "roving", {
     validate: _validateRoving,
-    post_set: "_retime_roving_runs",
+    postSet: "_retimeRovingRuns",
   }),
 );
 
 descriptor(
   Keyframe,
   "temporalAutoBezier",
-  ChunkField.bool("_ldat_item", "temporal_auto_bezier", {
-    post_set: "_on_temporal_auto_bezier_set",
+  ChunkField.bool("_ldatItem", "temporal_auto_bezier", {
+    postSet: "_onTemporalAutoBezierSet",
   }),
 );
 
 descriptor(
   Keyframe,
   "temporalContinuous",
-  ChunkField.bool("_ldat_item", "temporal_continuous", {
-    post_set: "_on_temporal_continuous_set",
+  ChunkField.bool("_ldatItem", "temporal_continuous", {
+    postSet: "_onTemporalContinuousSet",
   }),
 );
 
@@ -1286,10 +1286,10 @@ export function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {
   // would report a zero-length segment. LAYER seconds, because AE stores
   // ease speeds per layer second - a 150 % layer whose keys are 3 comp
   // seconds apart reports 25 %/s where the comp-time span gives 16.667.
-  const timeSeconds = kfB._layer_time - kfA._layer_time;
+  const timeSeconds = kfB._layerTime - kfA._layerTime;
   if (timeSeconds === 0) return [0.0];
-  const valA = kfA._stored_value;
-  const valB = kfB._stored_value;
+  const valA = kfA._storedValue;
+  const valB = kfB._storedValue;
 
   if (!(typeof valA === "number" || Array.isArray(valA))) return [0.0];
   if (!(typeof valB === "number" || Array.isArray(valB))) return [0.0];

@@ -74,8 +74,8 @@ export function parseFonts(cosData: CosDict): FontObject[] {
     }
     const fontEntry = cosGet(entry, "0");
     const font = new FontObject({
-      _font_data: fontData,
-      _font_entry: fontEntry instanceof Map ? fontEntry : null,
+      _fontData: fontData,
+      _fontEntry: fontEntry instanceof Map ? fontEntry : null,
     });
     fonts.push(font);
   }
@@ -143,13 +143,13 @@ export function parseTextDocuments(
     const paraStyle = _getFirstParaStyle(docEntry);
 
     documents.push(
-      TextDocument._from_binary({
-        _char_style: charStyle,
-        _para_style: paraStyle,
+      TextDocument._fromBinary({
+        _charStyle: charStyle,
+        _paraStyle: paraStyle,
         _doc: docEntry,
         _fonts: fonts,
-        _cos_data: cosData,
-        _btdk_body: btdkBody,
+        _cosData: cosData,
+        _btdkBody: btdkBody,
       }),
     );
   }

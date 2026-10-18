@@ -74,7 +74,7 @@ describe("TestReduceProject", () => {
     const comps = project.compositions;
     expect(len(comps)).toBe(4);
     const keptComp = comps[0];
-    const keptSourceIds = keptComp._source_ids_for_linking();
+    const keptSourceIds = keptComp._sourceIdsForLinking();
 
     const before = new Set(project.items.keys());
     const removed = project.reduceProject([keptComp]);
@@ -153,7 +153,7 @@ describe("TestConsolidateFootage", () => {
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
-    expect(pyEq(first._consolidation_key(), second._consolidation_key())).toBe(true);
+    expect(pyEq(first._consolidationKey(), second._consolidationKey())).toBe(true);
     const before = len(project.footages);
 
     const removed = project.consolidateFootage();
@@ -178,7 +178,7 @@ describe("TestConsolidateFootage", () => {
     const removed = project.consolidateFootage();
 
     expect(removed).toBe(1);
-    expect(pyEq(new Set(comp.avLayers.map((layer) => layer._source_id)), new Set([survivorId]))).toBe(true);
+    expect(pyEq(new Set(comp.avLayers.map((layer) => layer._sourceId)), new Set([survivorId]))).toBe(true);
   });
 
   test("test_retargets_cached_layer_source", () => {
@@ -192,7 +192,7 @@ describe("TestConsolidateFootage", () => {
     const comp = project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.add(first);
     comp.add(second);
-    const dupLayer = comp.avLayers.find((ly) => ly._source_id === second.id);
+    const dupLayer = comp.avLayers.find((ly) => ly._sourceId === second.id);
     if (dupLayer === undefined) throw new StopIteration();
     // Populate the layer's source cache before consolidating.
     expect(dupLayer.source === second).toBe(true);

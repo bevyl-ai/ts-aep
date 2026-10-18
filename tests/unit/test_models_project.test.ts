@@ -21,7 +21,7 @@ const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div(
 /** All ldta layer ids in the project, including viewer pseudo-layers. */
 function _allLdtaIds(project: Project): number[] {
   return project.compositions.flatMap((comp) =>
-    recursiveFind(comp._item_list.chunks, "ldta").map((ldta) => ldta.layer_id),
+    recursiveFind(comp._itemList.chunks, "ldta").map((ldta) => ldta.layer_id),
   );
 }
 
@@ -36,15 +36,15 @@ describe("TestAllocateId", () => {
     const project = parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project;
     // In an AE-written file next_item_id is already > max(all ids).
     const expected = project._head.next_item_id;
-    expect(project._allocate_id()).toBe(expected);
+    expect(project._allocateId()).toBe(expected);
     expect(project._head.next_item_id).toBe(expected + 1);
   });
 
   test("test_successive_calls_increment", (): void => {
     const project = parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project;
-    const first = project._allocate_id();
-    expect(project._allocate_id()).toBe(first + 1);
-    expect(project._allocate_id()).toBe(first + 2);
+    const first = project._allocateId();
+    expect(project._allocateId()).toBe(first + 1);
+    expect(project._allocateId()).toBe(first + 2);
   });
 
   test("test_counter_above_all_ids", (): void => {
@@ -52,7 +52,7 @@ describe("TestAllocateId", () => {
     // pseudo-layers) must stay below the counter.
     const project = parseAep(COMP_SAMPLES_DIR.div("bgColor.aep")).project;
     const allIds = new Set([..._allLdtaIds(project), ...project.items.keys()]);
-    expect(project._allocate_id()).toBeGreaterThan(Math.max(...allIds));
+    expect(project._allocateId()).toBeGreaterThan(Math.max(...allIds));
   });
 
   test("test_reconciles_drifted_counter", (): void => {
@@ -62,7 +62,7 @@ describe("TestAllocateId", () => {
     const project = parseAep(COMP_SAMPLES_DIR.div("bgColor.aep")).project;
     const allIds = new Set([..._allLdtaIds(project), ...project.items.keys()]);
     project._head.next_item_id = 2; // force drift
-    expect(project._allocate_id()).toBe(Math.max(...allIds) + 1);
+    expect(project._allocateId()).toBe(Math.max(...allIds) + 1);
     expect(project._head.next_item_id).toBe(Math.max(...allIds) + 2);
   });
 
@@ -84,8 +84,8 @@ describe("TestSaveExistingPath", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project;
     const out = tmpPath.div("out.aep");
-    out.write_bytes(b("stub"));
+    out.writeBytes(b("stub"));
     raises(FileExistsError, () => project.save(out));
-    expect(pyEq(out.read_bytes(), b("stub"))).toBe(true);
+    expect(pyEq(out.readBytes(), b("stub"))).toBe(true);
   });
 });

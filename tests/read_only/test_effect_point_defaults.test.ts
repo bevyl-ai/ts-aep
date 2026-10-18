@@ -61,7 +61,7 @@ test.each(_CASES)("test_points_and_popups_match_json[%#]", (compName: string, la
     if (
       !contains(
         [PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.ENUM],
-        prop._property_control_type,
+        prop._propertyControlType,
       )
     ) {
       continue;

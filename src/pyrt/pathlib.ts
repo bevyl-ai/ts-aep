@@ -54,11 +54,11 @@ export class Path {
     return this.path.split(nodepath.sep).filter(Boolean);
   }
 
-  with_suffix(suffix: string): Path {
+  withSuffix(suffix: string): Path {
     return new Path(this.parent.path, this.stem + suffix);
   }
 
-  with_name(name: string): Path {
+  withName(name: string): Path {
     return new Path(this.parent.path, name);
   }
 
@@ -66,11 +66,11 @@ export class Path {
     return fs.existsSync(this.path);
   }
 
-  is_file(): boolean {
+  isFile(): boolean {
     return fs.existsSync(this.path) && fs.statSync(this.path).isFile();
   }
 
-  is_dir(): boolean {
+  isDir(): boolean {
     return fs.existsSync(this.path) && fs.statSync(this.path).isDirectory();
   }
 
@@ -78,7 +78,7 @@ export class Path {
     return new Path(nodepath.resolve(this.path));
   }
 
-  read_bytes(): Uint8Array {
+  readBytes(): Uint8Array {
     try {
       // A plain view of the host's buffer (a Node `Buffer` subclasses Uint8Array with other
       // `slice` semantics) instead of a copy of the whole file.
@@ -90,27 +90,27 @@ export class Path {
     }
   }
 
-  write_bytes(data: Uint8Array): number {
+  writeBytes(data: Uint8Array): number {
     fs.writeFileSync(this.path, data);
     return data.length;
   }
 
-  read_text(encoding: ConstructorParameters<typeof TextDecoder>[0] = "utf-8"): string {
-    return new TextDecoder(encoding).decode(this.read_bytes());
+  readText(encoding: ConstructorParameters<typeof TextDecoder>[0] = "utf-8"): string {
+    return new TextDecoder(encoding).decode(this.readBytes());
   }
 
-  write_text(text: string): number {
+  writeText(text: string): number {
     fs.writeFileSync(this.path, text, "utf-8");
     return text.length;
   }
 
-  mkdir(opts: { parents?: boolean; exist_ok?: boolean } = {}): void {
-    if (opts.exist_ok && this.exists()) return;
+  mkdir(opts: { parents?: boolean; existOk?: boolean } = {}): void {
+    if (opts.existOk && this.exists()) return;
     fs.mkdirSync(this.path, { recursive: opts.parents ?? false });
   }
 
-  unlink(opts: { missing_ok?: boolean } = {}): void {
-    if (opts.missing_ok && !this.exists()) return;
+  unlink(opts: { missingOk?: boolean } = {}): void {
+    if (opts.missingOk && !this.exists()) return;
     fs.unlinkSync(this.path);
   }
 
@@ -135,7 +135,7 @@ export class Path {
     const re = new RegExp(
       "^" + leaf.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]") + "$",
     );
-    if (!this.is_dir()) return [];
+    if (!this.isDir()) return [];
     // An unreadable directory (OSError) is skipped.
     const list = (dir: string): HostDirent[] => {
       try {
@@ -264,7 +264,7 @@ const WINDOWS: Flavour = { sep: "\\", altsep: "/", splitroot: ntSplitroot, join:
  * `PureWindowsPath`: pure string manipulation, the same on every host.
  */
 export class PurePath {
-  declare readonly _raw_paths: string[];
+  declare readonly _rawPaths: string[];
   declare readonly drive: string;
   declare readonly root: string;
   declare readonly _tail: string[];
@@ -276,13 +276,13 @@ export class PurePath {
     const paths: string[] = [];
     for (const a of args) {
       if (a instanceof PurePath) {
-        if (a._flavour === WINDOWS && this._flavour === POSIX) paths.push(...a._raw_paths.map((p) => p.replace(/\\/g, "/")));
-        else paths.push(...a._raw_paths);
+        if (a._flavour === WINDOWS && this._flavour === POSIX) paths.push(...a._rawPaths.map((p) => p.replace(/\\/g, "/")));
+        else paths.push(...a._rawPaths);
       } else {
         paths.push(String(a));
       }
     }
-    this._raw_paths = paths;
+    this._rawPaths = paths;
     const f = this._flavour;
     let path = paths.length === 0 ? "" : paths.length === 1 ? paths[0] : f.join(paths[0], ...paths.slice(1));
     let drv = "";
@@ -347,7 +347,7 @@ export class PurePath {
     return this._with(this, ...parts);
   }
 
-  is_absolute(): boolean {
+  isAbsolute(): boolean {
     if (this._flavour === POSIX) return Boolean(this.root);
     return Boolean(this.drive && this.root);
   }

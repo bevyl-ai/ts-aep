@@ -657,14 +657,14 @@ describe("TestParenting", () => {
     const expected = loadExpected(SAMPLES_DIR, "layer_misc");
     const project = parseProject(SAMPLES_DIR.div("layer_misc.aep"));
     const comp = getComp(project, "parent");
-    const childLayer = comp.layers.find((layer) => layer._parent_id !== 0) ?? null;
+    const childLayer = comp.layers.find((layer) => layer._parentId !== 0) ?? null;
     expect(childLayer != null).toBe(true);
     if (childLayer == null) throw new Error("no parented layer in comp 'parent'");
     for (const item of expected["items"]) {
       if (item["name"] === "parent" && "layers" in item) {
         for (const layerJson of item["layers"]) {
           if (layerJson["parent"] != null) {
-            expect(childLayer._parent_id).toBe(layerJson["parent"]);
+            expect(childLayer._parentId).toBe(layerJson["parent"]);
           }
         }
       }
@@ -1325,14 +1325,14 @@ describe("TestLayerStylesEnabled", () => {
     if (layerStylesChild == null) throw new StopIteration();
     const layerStyles = asInstance(layerStylesChild, PropertyGroup);
     expect(layerStyles instanceof PropertyGroup).toBe(true);
-    expect(layerStyles._deferred_ae_major != null).toBe(true);
+    expect(layerStyles._deferredAeMajor != null).toBe(true);
     expect(layerStyles.enabled).toBe(false);
-    expect(layerStyles._deferred_ae_major != null).toBe(true);
+    expect(layerStyles._deferredAeMajor != null).toBe(true);
 
     // Blend Options mirrors the parent
     const blendOptions = layerStyles.properties.find((p) => p.matchName === "ADBE Blend Options Group");
     if (blendOptions == null) throw new StopIteration();
-    expect(layerStyles._deferred_ae_major == null).toBe(true);
+    expect(layerStyles._deferredAeMajor == null).toBe(true);
     expect(blendOptions instanceof PropertyGroup).toBe(true);
     expect(blendOptions.enabled).toBe(false);
 

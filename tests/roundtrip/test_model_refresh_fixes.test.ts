@@ -162,7 +162,7 @@ describe("TestCameraAndLightSeparate", () => {
    * AE 2026 accepts `dimensionsSeparated` on a camera AND a light position,
    * reads it back true and keeps the position. py forced the
    * getter to False, so the write never persisted - and the leader's Z was
-   * destroyed on the way (`_separate_static` parks the leader on its default).
+   * destroyed on the way (`_separateStatic` parks the leader on its default).
    */
 
   test.each([

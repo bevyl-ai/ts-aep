@@ -67,7 +67,7 @@ const LBRACKET = 0x5b; // b"["
 const BACKSLASH = 0x5c; // b"\\"
 const RBRACKET = 0x5d; // b"]"
 
-// `lex_identifier` stops before any of b"()[]<>{}/%".
+// `lexIdentifier` stops before any of b"()[]<>{}/%".
 const IDENTIFIER_DELIMITERS: ReadonlySet<number> = new Set(Array.from("()[]<>{}/%", (c) => c.charCodeAt(0)));
 
 // `\x` string escapes with a fixed byte (octal escapes are handled separately).
@@ -117,12 +117,12 @@ export function reprBytes(x: Uint8Array): string {
 /** The enum-helper surface `enum_str` needs (a pyrt `py_enum`). */
 interface NamedEnum {
   __name__: string;
-  name_of(v: number): string;
+  nameOf(v: number): string;
 }
 
 // `str(member)` / `repr(member)` for an Enum member.
 export function enumStr(E: NamedEnum, v: number): string {
-  return `${E.__name__}.${E.name_of(v)}`;
+  return `${E.__name__}.${E.nameOf(v)}`;
 }
 
 export function enumRepr(E: NamedEnum, v: number): string {
@@ -253,25 +253,25 @@ export class Token {
 
 /** `@dataclass class IndirectObject` */
 export class IndirectObject {
-  declare object_number: number;
-  declare generation_number: number;
+  declare objectNumber: number;
+  declare generationNumber: number;
   declare data: CosNode;
 
   constructor(objectNumber: number, generationNumber: number, data: CosNode) {
-    this.object_number = objectNumber;
-    this.generation_number = generationNumber;
+    this.objectNumber = objectNumber;
+    this.generationNumber = generationNumber;
     this.data = data;
   }
 
   [INSPECT](): string {
-    return `IndirectObject(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)}, data=${reprField(this.data)})`;
+    return `IndirectObject(object_number=${repr(this.objectNumber)}, generation_number=${repr(this.generationNumber)}, data=${reprField(this.data)})`;
   }
 
   equals(other: IndirectObject): boolean {
     return (
       other instanceof IndirectObject &&
-      this.object_number === other.object_number &&
-      this.generation_number === other.generation_number &&
+      this.objectNumber === other.objectNumber &&
+      this.generationNumber === other.generationNumber &&
       pyEq(this.data, other.data)
     );
   }
@@ -279,23 +279,23 @@ export class IndirectObject {
 
 /** `@dataclass class IndirectReference` */
 export class IndirectReference {
-  declare object_number: number;
-  declare generation_number: number;
+  declare objectNumber: number;
+  declare generationNumber: number;
 
   constructor(objectNumber: number, generationNumber: number) {
-    this.object_number = objectNumber;
-    this.generation_number = generationNumber;
+    this.objectNumber = objectNumber;
+    this.generationNumber = generationNumber;
   }
 
   [INSPECT](): string {
-    return `IndirectReference(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)})`;
+    return `IndirectReference(object_number=${repr(this.objectNumber)}, generation_number=${repr(this.generationNumber)})`;
   }
 
   equals(other: IndirectReference): boolean {
     return (
       other instanceof IndirectReference &&
-      this.object_number === other.object_number &&
-      this.generation_number === other.generation_number
+      this.objectNumber === other.objectNumber &&
+      this.generationNumber === other.generationNumber
     );
   }
 }
@@ -312,7 +312,7 @@ export class IndirectReference {
  */
 export class CosString extends String {
   /** Whether the literal was UTF-16 BE (the default for new strings). */
-  declare cos_utf16: boolean;
+  declare cosUtf16: boolean;
   /**
    * The literal's own bytes, kept only when no byte-order mark said how
    * to read them and the lexer fell back to UTF-8. A PDF *text* string
@@ -320,13 +320,13 @@ export class CosString extends String {
    * only the consumer knows to apply - see `decode_pdf_text_string`.
    * `null` whenever a BOM settled the encoding.
    */
-  declare cos_raw: Uint8Array | null;
+  declare cosRaw: Uint8Array | null;
 
   constructor(value: string, kw: { utf16?: boolean; raw?: Uint8Array | null } = {}) {
     super(value);
     const { utf16 = true, raw = null } = kw;
-    this.cos_utf16 = utf16;
-    this.cos_raw = raw;
+    this.cosUtf16 = utf16;
+    this.cosRaw = raw;
   }
 }
 
@@ -376,26 +376,26 @@ export class Stream {
 
 export class CosParser {
   declare file: IO;
-  declare max_pos: number | null;
+  declare maxPos: number | null;
   declare lookahead: Token;
 
   constructor(file: IO, maxPos: number | null = null) {
     this.file = file;
-    this.max_pos = maxPos;
+    this.maxPos = maxPos;
     this.lookahead = new Token(TokenType.Eof);
   }
 
   parse(): CosNode {
     this.lex();
-    if (this.lookahead.type === TokenType.Identifier) return this.parse_dict_content();
+    if (this.lookahead.type === TokenType.Identifier) return this.parseDictContent();
 
-    const val = this.parse_value();
+    const val = this.parseValue();
     if (this.lookahead.type === TokenType.Eof) return val;
 
-    return [val, ...this.parse_array_content()];
+    return [val, ...this.parseArrayContent()];
   }
 
-  parse_value(): CosNode {
+  parseValue(): CosNode {
     if (this.lookahead.type === TokenType.Identifier) {
       const name = this.lookahead.value;
       pyAssert(typeof name === "string");
@@ -423,11 +423,11 @@ export class CosParser {
       if (this.lookahead.type === TokenType.Number) {
         const gen = this.lookahead.value;
         pyAssert(isReal(gen));
-        const state = this.save_state();
+        const state = this.saveState();
         this.lex();
         if (this.lookahead.type === TokenType.IndirectObjectStart) {
           this.lex();
-          const data = this.parse_value();
+          const data = this.parseValue();
           this.expect(TokenType.IndirectObjectEnd);
           this.lex();
           // A float object number equals the int it unboxes to (Python `1.0 == 1`, same hash).
@@ -436,7 +436,7 @@ export class CosParser {
           this.lex();
           return new IndirectReference(unbox(val), unbox(gen));
         } else {
-          this.restore_state(state);
+          this.restoreState(state);
         }
       }
       return val;
@@ -444,7 +444,7 @@ export class CosParser {
 
     if (this.lookahead.type === TokenType.ObjectStart) {
       this.lex();
-      const dictionary = this.parse_dict_content();
+      const dictionary = this.parseDictContent();
       this.expect(TokenType.ObjectEnd);
       this.lex();
       if (this.lookahead.type === TokenType.Stream) {
@@ -458,7 +458,7 @@ export class CosParser {
 
     if (this.lookahead.type === TokenType.ArrayStart) {
       this.lex();
-      const val = this.parse_array_content();
+      const val = this.parseArrayContent();
       this.expect(TokenType.ArrayEnd);
       this.lex();
       return val;
@@ -467,18 +467,18 @@ export class CosParser {
     throw new SyntaxError_(`Expected COS value, got ${str(this.lookahead)}`);
   }
 
-  save_state(): [number | null, number, Token] {
-    return [this.max_pos, this.file.tell(), this.lookahead];
+  saveState(): [number | null, number, Token] {
+    return [this.maxPos, this.file.tell(), this.lookahead];
   }
 
-  restore_state(state: [number | null, number, Token]): void {
+  restoreState(state: [number | null, number, Token]): void {
     const [maxPos, pos, lookahead] = state;
-    this.max_pos = maxPos;
+    this.maxPos = maxPos;
     this.lookahead = lookahead;
     this.file.seek(pos);
   }
 
-  parse_dict_content(): CosDict {
+  parseDictContent(): CosDict {
     const value: CosDict = new Map();
     while (true) {
       if (this.lookahead.type === TokenType.Eof || this.lookahead.type === TokenType.ObjectEnd) {
@@ -489,20 +489,20 @@ export class CosParser {
       const key = this.lookahead.value;
       pyAssert(typeof key === "string");
       this.lex();
-      const val = this.parse_value();
+      const val = this.parseValue();
       value.set(key, val);
     }
 
     return value;
   }
 
-  parse_array_content(): CosNode[] {
+  parseArrayContent(): CosNode[] {
     const value: CosNode[] = [];
     while (true) {
       if (this.lookahead.type === TokenType.Eof || this.lookahead.type === TokenType.ArrayEnd) {
         break;
       }
-      value.push(this.parse_value());
+      value.push(this.parseValue());
     }
     return value;
   }
@@ -514,20 +514,20 @@ export class CosParser {
   }
 
   lex(): void {
-    this.lookahead = this.lex_token();
+    this.lookahead = this.lexToken();
   }
 
   // The lexer works on byte values (`b"x"[0]`) rather than one-byte `bytes`
   // objects: a `read(1)` copy and a `bytes_eq` per character were most of
   // the text-document parse time.
-  lex_token(): Token {
+  lexToken(): Token {
     let char: number | null = null;
     while (true) {
-      char = this.get_char();
+      char = this.getChar();
       if (char == null) {
         return new Token(TokenType.Eof);
       } else if (char === PERCENT) {
-        this.lex_comment();
+        this.lexComment();
       } else if (!isspaceB(char)) {
         break;
       }
@@ -535,21 +535,21 @@ export class CosParser {
 
     // <<
     if (char === LT) {
-      const nextChar = this.get_char();
+      const nextChar = this.getChar();
       if (nextChar === LT) {
         return new Token(TokenType.ObjectStart);
       } else if (nextChar == null) {
-        return this.raise_lex(b("<"));
-      } else if (this.is_hex(nextChar)) {
-        return this.lex_hex_string(nextChar);
+        return this.raiseLex(b("<"));
+      } else if (this.isHex(nextChar)) {
+        return this.lexHexString(nextChar);
       } else {
-        return this.raise_lex(Uint8Array.of(LT, nextChar));
+        return this.raiseLex(Uint8Array.of(LT, nextChar));
       }
     }
 
     // >>
     if (char === GT) {
-      this.expect_char(GT, char);
+      this.expectChar(GT, char);
       return new Token(TokenType.ObjectEnd);
     }
 
@@ -565,61 +565,61 @@ export class CosParser {
 
     // /foo
     if (char === SLASH) {
-      return this.lex_identifier();
+      return this.lexIdentifier();
     }
 
     // (foo)
     if (char === LPAREN) {
-      return this.lex_string();
+      return this.lexString();
     }
 
     // Keyword
     if (isalphaB(char)) {
-      return this.lex_keyword(char);
+      return this.lexKeyword(char);
     }
 
     // Number
     if (isdigitB(char) || char === DOT || char === PLUS || char === MINUS) {
-      return this.lex_number(char);
+      return this.lexNumber(char);
     }
 
-    return this.raise_lex(Uint8Array.of(char));
+    return this.raiseLex(Uint8Array.of(char));
   }
 
-  expect_char(exp: number, head: number): void {
-    const char = this.get_char();
+  expectChar(exp: number, head: number): void {
+    const char = this.getChar();
     if (char !== exp) {
-      this.raise_lex(char == null ? Uint8Array.of(head) : Uint8Array.of(head, char), Uint8Array.of(head, exp));
+      this.raiseLex(char == null ? Uint8Array.of(head) : Uint8Array.of(head, char), Uint8Array.of(head, exp));
     }
   }
 
-  raise_lex(token: Uint8Array, exp: Uint8Array | null = null): never {
+  raiseLex(token: Uint8Array, exp: Uint8Array | null = null): never {
     let msg = `Unknown COS token ${reprBytes(token)}`;
     if (exp != null) msg += `, expected ${reprBytes(exp)}`;
     throw new SyntaxError_(msg);
   }
 
-  get_char(): number | null {
-    if (this.max_pos != null) {
-      if (this.max_pos <= 0) return null;
-      this.max_pos -= 1;
+  getChar(): number | null {
+    if (this.maxPos != null) {
+      if (this.maxPos <= 0) return null;
+      this.maxPos -= 1;
     }
     // `read(1)` gives `b""` at the end of the data. Every lexer loop stops
     // on `None`, so passing `b""` on spun them forever on a truncated
     // document (an empty byte also matched `in b".+-"` as a number start).
-    const byte = this.file.read_byte();
+    const byte = this.file.readByte();
     return byte >= 0 ? byte : null;
   }
 
   unget(): void {
     this.file.seek(-1, SEEK_CUR);
-    if (this.max_pos != null) this.max_pos += 1;
+    if (this.maxPos != null) this.maxPos += 1;
   }
 
   // Skip until newline
-  lex_comment(): void {
+  lexComment(): void {
     while (true) {
-      const char = this.get_char();
+      const char = this.getChar();
       if (char === NEWLINE) {
         break;
       } else if (char == null) {
@@ -628,25 +628,25 @@ export class CosParser {
     }
   }
 
-  lex_number(char: number): Token {
+  lexNumber(char: number): Token {
     if (char === DOT) {
-      return this.lex_num_fract(this.get_char(), ".");
+      return this.lexNumFract(this.getChar(), ".");
     } else if (char === PLUS || char === MINUS) {
-      return this.lex_num_int(this.get_char(), String.fromCharCode(char));
+      return this.lexNumInt(this.getChar(), String.fromCharCode(char));
     } else {
-      return this.lex_num_int(char, "");
+      return this.lexNumInt(char, "");
     }
   }
 
-  lex_num_int(char: number | null, head: string): Token {
+  lexNumInt(char: number | null, head: string): Token {
     while (true) {
       if (char == null) {
         break;
       } else if (char === DOT) {
-        return this.lex_num_fract(this.get_char(), head + ".");
+        return this.lexNumFract(this.getChar(), head + ".");
       } else if (isdigitB(char)) {
         head += String.fromCharCode(char);
-        char = this.get_char();
+        char = this.getChar();
       } else {
         this.unget();
         break;
@@ -669,13 +669,13 @@ export class CosParser {
     return new Token(TokenType.Number, value + 0);
   }
 
-  lex_num_fract(char: number | null, head: string): Token {
+  lexNumFract(char: number | null, head: string): Token {
     while (true) {
       if (char == null) {
         break;
       } else if (isdigitB(char)) {
         head += String.fromCharCode(char);
-        char = this.get_char();
+        char = this.getChar();
       } else {
         this.unget();
         break;
@@ -685,11 +685,11 @@ export class CosParser {
     return new Token(TokenType.Number, pyfloat(float(head)));
   }
 
-  lex_keyword(char: number): Token {
+  lexKeyword(char: number): Token {
     // Keywords are ASCII letters only (`isalpha_b`), so a latin1 string holds them exactly.
     let kw = String.fromCharCode(char);
     while (true) {
-      const nextChar = this.get_char();
+      const nextChar = this.getChar();
       if (nextChar == null) {
         break;
       } else if (isalphaB(nextChar)) {
@@ -713,7 +713,7 @@ export class CosParser {
     } else if (kw === "R") {
       return new Token(TokenType.IndirectReference);
     } else if (kw === "stream") {
-      return this.lex_stream();
+      return this.lexStream();
     } else if (kw === "xref") {
       return new Token(TokenType.Eof);
     } else {
@@ -721,10 +721,10 @@ export class CosParser {
     }
   }
 
-  lex_stream(): Token {
-    const char = this.get_char();
+  lexStream(): Token {
+    const char = this.getChar();
     if (char === CR) {
-      if (this.get_char() !== NEWLINE) throw new SyntaxError_("Invalid newline");
+      if (this.getChar() !== NEWLINE) throw new SyntaxError_("Invalid newline");
     } else if (char !== NEWLINE) {
       throw new SyntaxError_("Expected newline after `stream`");
     }
@@ -736,10 +736,10 @@ export class CosParser {
     let stream = new Uint8Array(65536);
     let streamLen = 0;
     while (true) {
-      const size = this.max_pos == null ? 65536 : Math.min(65536, this.max_pos);
+      const size = this.maxPos == null ? 65536 : Math.min(65536, this.maxPos);
       const block = size > 0 ? this.file.read(size) : bytes_.EMPTY;
       if (!block.length) throw new SyntaxError_("Unterminated stream");
-      if (this.max_pos != null) this.max_pos -= block.length;
+      if (this.maxPos != null) this.maxPos -= block.length;
       const searchFrom = Math.max(0, streamLen - marker.length + 1);
       if (streamLen + block.length > stream.length) {
         const grown = new Uint8Array(Math.max(streamLen + block.length, stream.length * 2));
@@ -753,17 +753,17 @@ export class CosParser {
         // Give back what was read past the marker.
         const extra = streamLen - end - marker.length;
         this.file.seek(-extra, SEEK_CUR);
-        if (this.max_pos != null) this.max_pos += extra;
+        if (this.maxPos != null) this.maxPos += extra;
         return new Token(TokenType.Stream, stream.slice(0, end));
       }
     }
   }
 
-  lex_string(): Token {
+  lexString(): Token {
     // Read the entire string content first
     const acc: number[] = [];
     while (true) {
-      const char = this.lex_string_char();
+      const char = this.lexStringChar();
       if (char == null) break;
       acc.push(char);
     }
@@ -805,14 +805,14 @@ export class CosParser {
     );
   }
 
-  lex_string_char(): number | null {
-    const char = this.get_char();
+  lexStringChar(): number | null {
+    const char = this.getChar();
     if (char == null) {
       throw new SyntaxError_("Unterminated string");
     } else if (char === RPAREN) {
       return null;
     } else if (char === BACKSLASH) {
-      return this.lex_string_escape();
+      return this.lexStringEscape();
     } else {
       // AE's COS strings hold binary UTF-16 data, so a raw 0x0d / 0x0a
       // byte is part of a character (e.g. U+300D), not a line ending.
@@ -822,20 +822,20 @@ export class CosParser {
     }
   }
 
-  lex_string_escape(): number {
-    const char = this.get_char();
+  lexStringEscape(): number {
+    const char = this.getChar();
     if (char == null) throw new SyntaxError_("Unterminated string");
 
     const escaped = STRING_ESCAPES.get(char);
     if (escaped != null) {
       return escaped;
-    } else if (this.is_octal(char)) {
+    } else if (this.isOctal(char)) {
       let octal = char - 0x30; // ord(b"0")
       for (let k = 0; k < 2; k++) {
-        const nextChar = this.get_char();
+        const nextChar = this.getChar();
         if (nextChar == null) {
           break;
-        } else if (!this.is_octal(nextChar)) {
+        } else if (!this.isOctal(nextChar)) {
           this.unget();
           break;
         }
@@ -849,21 +849,21 @@ export class CosParser {
     throw new SyntaxError_("Invalid escape sequence");
   }
 
-  is_octal(char: number): boolean {
+  isOctal(char: number): boolean {
     return char >= 0x30 && char <= 0x37; // b"0" <= char <= b"7"
   }
 
-  is_hex(char: number): boolean {
+  isHex(char: number): boolean {
     return isdigitB(char) || (char >= 0x61 && char <= 0x66) || (char >= 0x41 && char <= 0x46);
   }
 
-  lex_hex_string(hstrFirst: number): Token {
+  lexHexString(hstrFirst: number): Token {
     let hstr = String.fromCharCode(hstrFirst);
     while (true) {
-      const char = this.get_char();
+      const char = this.getChar();
       if (char == null) {
         throw new SyntaxError_("Unterminated hex string");
-      } else if (this.is_hex(char)) {
+      } else if (this.isHex(char)) {
         hstr += String.fromCharCode(char);
       } else if (char === GT) {
         break;
@@ -881,10 +881,10 @@ export class CosParser {
     return new Token(TokenType.HexString, data);
   }
 
-  lex_identifier(): Token {
+  lexIdentifier(): Token {
     let ident = "";
     while (true) {
-      let char = this.get_char();
+      let char = this.getChar();
       if (char == null) {
         break;
       } else if (char < 0x21 || char > 0x7e) {
@@ -894,8 +894,8 @@ export class CosParser {
       } else if (char === HASH) {
         let hexstr = "";
         for (let k = 0; k < 2; k++) {
-          char = this.get_char();
-          if (char == null || !this.is_hex(char)) throw new SyntaxError_("Invalid identifier");
+          char = this.getChar();
+          if (char == null || !this.isHex(char)) throw new SyntaxError_("Invalid identifier");
           hexstr += String.fromCharCode(char);
         }
         ident += String.fromCodePoint(int(hexstr, 16));

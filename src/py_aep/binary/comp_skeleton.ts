@@ -166,7 +166,7 @@ export function _buildViewLayer(
   if (aeWrites("layer OvdG", aeMajor)) {
     chunks.push(buildOvdg());
   }
-  return new ListChunk({ list_type: spec["list_type"], chunks });
+  return new ListChunk({ list_type: spec["listType"], chunks });
 }
 
 /** Build a `LIST:CpS2` template-name block (`CsCt` + name + locale).

@@ -148,7 +148,7 @@ function _croppedOpts(file: Path): ImportOptions {
 /** The chunk types inside a footage item's `LIST:Gide` (and its list). */
 function _gideTree(item: FootageItem): string[][] {
   const gide = asInstance(
-    _next(item._item_list.chunks, (c) => getattr(c, "list_type", null) === "Gide"),
+    _next(item._itemList.chunks, (c) => getattr(c, "list_type", null) === "Gide"),
     ListChunk,
   );
   return gide.chunks.map((child) => {
@@ -376,7 +376,7 @@ describe("TestImportFileSingle", () => {
     project.save(out1);
     const out2 = tmpPath.div("b.aep");
     parseAep(out1).project.save(out2);
-    expect(pyEq(out1.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out1.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_import_exr_premultiplied", () => {
@@ -423,7 +423,7 @@ describe("TestImportFileSingle", () => {
     project.save(out1);
     const out2 = tmpPath.div("b.aep");
     parseAep(out1).project.save(out2);
-    expect(pyEq(out1.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out1.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_roundtrip_png", () => {
@@ -450,7 +450,7 @@ describe("TestImportFileSingle", () => {
     project.save(out1);
     const out2 = tmpPath.div("b.aep");
     parseAep(out1).project.save(out2);
-    expect(pyEq(out1.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out1.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -547,11 +547,11 @@ describe("TestImportFileSequence", () => {
     prefsDir.mkdir();
     prefsDir
       .div("Adobe After Effects 26.0 Prefs-indep-general.txt")
-      .write_text(
+      .writeText(
         '["Import Options Preference Section"]\n' +
           '\t"Import Options Default Sequence FPS" = "25.000000"\n',
       );
-    const project = parseAep(BASE, { ae_preferences_dir: prefsDir }).project;
+    const project = parseAep(BASE, { aePreferencesDir: prefsDir }).project;
     const opts = new ImportOptions(ASSETS.div("new_exr.0002.exr"));
     opts.sequence = true;
     const item = project.importFile(opts);
@@ -648,7 +648,7 @@ describe("TestReplaceAndProxy", () => {
     project.save(out);
     const out2 = tmpPath.div("r2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   // AE only writes the item-level Utf8 name chunk when the user renames the
@@ -663,7 +663,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replace(ASSETS.div("mov_480.mov"));
     expect(item.name).toBe("Custom Name");
-    expect(asInstance(item._name_utf8, Utf8Chunk).value).toBe("Custom Name");
+    expect(asInstance(item._nameUtf8, Utf8Chunk).value).toBe("Custom Name");
   });
 
   test("test_replace_leaves_default_name_derived", () => {
@@ -671,7 +671,7 @@ describe("TestReplaceAndProxy", () => {
     item.replace(ASSETS.div("mov_480.mov"));
     expect(item.name).toBe("mov_480.mov");
     // AE derives the name from the source rather than storing it.
-    expect(asInstance(item._name_utf8, Utf8Chunk).value).toBe("");
+    expect(asInstance(item._nameUtf8, Utf8Chunk).value).toBe("");
   });
 
   test("test_replace_with_sequence_keeps_user_assigned_name", () => {
@@ -685,7 +685,7 @@ describe("TestReplaceAndProxy", () => {
     const [, item] = _pngFootage();
     item.replaceWithSequence(ASSETS.div("new_exr.0002.exr"));
     expect(item.name).toBe("new_exr.[0002-0003].exr");
-    expect(asInstance(item._name_utf8, Utf8Chunk).value).toBe("");
+    expect(asInstance(item._nameUtf8, Utf8Chunk).value).toBe("");
   });
 
   test("test_replace_with_solid_overrides_user_assigned_name", () => {
@@ -693,7 +693,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replaceWithSolid([0.0, 1.0, 0.0], "Solid D", 50, 50);
     expect(item.name).toBe("Solid D");
-    expect(asInstance(item._name_utf8, Utf8Chunk).value).toBe("");
+    expect(asInstance(item._nameUtf8, Utf8Chunk).value).toBe("");
     expect(asInstance(item.mainSource._opti, SoliOptiChunk).solid_name).toBe("Solid D");
   });
 
@@ -702,7 +702,7 @@ describe("TestReplaceAndProxy", () => {
     item.name = "Custom Name";
     item.replaceWithPlaceholder("PH C", 120, 120, 25.0, 5.0);
     expect(item.name).toBe("PH C");
-    expect(asInstance(item._name_utf8, Utf8Chunk).value).toBe("");
+    expect(asInstance(item._nameUtf8, Utf8Chunk).value).toBe("");
     expect(asInstance(item.mainSource._opti, PlaceholderOptiChunk).placeholder_name).toBe("PH C");
   });
 
@@ -740,7 +740,7 @@ describe("TestReplaceAndProxy", () => {
     project.save(out);
     const out2 = tmpPath.div("p2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_replace_with_psd", () => {
@@ -922,14 +922,14 @@ describe("TestReplaceKeepsInterpretation", () => {
   });
 
   /**
-   * A folder holding only a 12-frame sequence, so `force_alphabetical`
+   * A folder holding only a 12-frame sequence, so `forceAlphabetical`
    * gathers the same frames as AE (which takes every file of the type).
    */
   const _twelveFrameSequence = (folder: Path): Path => {
     folder.mkdir();
-    const frame = (ASSETS.div("image_with_alpha.png")).read_bytes();
+    const frame = (ASSETS.div("image_with_alpha.png")).readBytes();
     for (let number = 1; number <= 12; number++) {
-      folder.div(`frame_${String(number).padStart(4, "0")}.png`).write_bytes(frame);
+      folder.div(`frame_${String(number).padStart(4, "0")}.png`).writeBytes(frame);
     }
     return folder.div("frame_0001.png");
   };
@@ -1171,7 +1171,7 @@ describe("TestImportGapFormats", () => {
     project.save(out);
     const out2 = tmpPath.div("g2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_heic_roundtrip_is_byte_identical", () => {
@@ -1183,7 +1183,7 @@ describe("TestImportGapFormats", () => {
     project.save(out);
     const out2 = tmpPath.div("heic_test2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_heic_matches_ae_fixture", () => {
@@ -1215,7 +1215,7 @@ describe("TestImportGapFormats", () => {
     project.save(out);
     const out2 = tmpPath.div("dpx_test2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_generic_still_imports_match_ae_fixtures", () => {
@@ -1395,7 +1395,7 @@ describe("TestImportAiComp", () => {
     project.save(out);
     const out2 = tmpPath.div("ai_comp2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_comp_and_layer_metadata_matches_ae", () => {
@@ -1528,7 +1528,7 @@ function _threeLayerPdf(path: Path, order: number[]): void {
     bytes_.join([1, 2, 3, 4, 5, 6, 7].map((n) => encode(`${String(getitem(offsets, n)).padStart(10, "0")} 00000 n \n`))),
   );
   out = concat(out, encode(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`));
-  path.write_bytes(out);
+  path.writeBytes(out);
 }
 
 /**
@@ -1845,7 +1845,7 @@ describe("TestImportAiHiddenLayerComp", () => {
     project.save(out);
     const out2 = tmpPath.div("hidden2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -1903,7 +1903,7 @@ describe("TestImportEpsComp", () => {
     project.save(out);
     const out2 = tmpPath.div("eps_comp2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -1916,7 +1916,7 @@ describe("TestImportEpsComp", () => {
 describe("TestImportPsdComp", () => {
   test.each(["8bits.psd", "8bits.psb"])("test_read_psd_layers_document_order[%#]", (name: string) => {
     const layers = readPsdLayers(ASSETS.div(name));
-    expect(pyEq(layers.map((layer) => [layer.name, layer.layer_id]), [
+    expect(pyEq(layers.map((layer) => [layer.name, layer.layerId]), [
       ["black", 3],
       ["white with mask", 4],
     ])).toBe(true);
@@ -1971,10 +1971,10 @@ describe("TestImportPsdComp", () => {
           buildPsdLayerOptiData(
             info.width,
             info.height,
-            info.bit_depth,
+            info.bitDepth,
             layers.length,
             getitem(indexByName, compLayer.name),
-            psdLayer.layer_id,
+            psdLayer.layerId,
             compLayer.name,
             asInstance(psdLayer, PsdLayer).bounds,
           ),
@@ -1992,7 +1992,7 @@ describe("TestImportPsdComp", () => {
     project.save(out);
     const out2 = tmpPath.div("comp2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
 
@@ -2084,7 +2084,7 @@ describe("TestImportPsdFlattened", () => {
     pyAssert(source instanceof FileSource);
     const mine = _optiBytes(source);
     expect(
-      pyEq(mine, buildPsdFlattenedOptiData(info.width, info.height, info.bit_depth, info.pixel_channels)),
+      pyEq(mine, buildPsdFlattenedOptiData(info.width, info.height, info.bitDepth, info.pixelChannels)),
     ).toBe(true);
     // Gold standard: byte-identical to AE 2026's own flattened-import opti.
     const fixture = parseAep(IMPORT_DIR.div("flattened_rgb_comp.aep")).project;
@@ -2099,7 +2099,7 @@ describe("TestImportPsdFlattened", () => {
     project.save(out);
     const out2 = tmpPath.div("comp2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -2114,7 +2114,7 @@ describe("TestImportPsdCropped", () => {
   test("test_read_layer_bounds", () => {
     const layers = readPsdLayers(ASSETS.div("layer_bounds.psd"));
     expect(
-      pyEq(layers.map((layer) => [layer.name, layer.layer_id, asInstance(layer, PsdLayer).bounds]), [
+      pyEq(layers.map((layer) => [layer.name, layer.layerId, asInstance(layer, PsdLayer).bounds]), [
         ["red box", 2, [4, 6, 24, 20]],
         ["green box", 3, [30, 10, 55, 34]],
         ["blue dot", 4, [12, 24, 22, 36]],
@@ -2176,7 +2176,7 @@ describe("TestImportPsdCropped", () => {
     project.save(out);
     const out2 = tmpPath.div("cropped2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_margined_comp_opti_uses_content_bounds", () => {
@@ -2229,7 +2229,7 @@ describe("TestImportPsdGroups", () => {
     // Adjustment detection.
     const adj = _next(nodes, (n) => n.name === "hue/sat adj");
     pyAssert(adj instanceof PsdLayer);
-    expect(adj.is_adjustment).toBe(true);
+    expect(adj.isAdjustment).toBe(true);
   });
 
   test("test_build_layer_tree_nested", () => {
@@ -2301,7 +2301,7 @@ describe("TestImportPsdGroups", () => {
     project.save(out);
     const out2 = tmpPath.div("g2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_grouped_cropped_import", () => {
@@ -2708,7 +2708,7 @@ describe("TestChooseLayerImport", () => {
     project.save(out);
     const out2 = tmpPath.div("chooser2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 
   test("test_reparse_keeps_binding", () => {
@@ -2961,9 +2961,9 @@ describe("TestImportFileSequenceRange", () => {
   const TWELVE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const _makeSeq = (tmpPath: Path, numbers: number[], prefix = "range_"): Path => {
-    const data = ASSETS.div("8bits_compressed.png").read_bytes();
+    const data = ASSETS.div("8bits_compressed.png").readBytes();
     for (const n of numbers) {
-      tmpPath.div(`${prefix}${String(n).padStart(4, "0")}.png`).write_bytes(data);
+      tmpPath.div(`${prefix}${String(n).padStart(4, "0")}.png`).writeBytes(data);
     }
     return tmpPath.div(`${prefix}${String(numbers[0]).padStart(4, "0")}.png`);
   };
@@ -3097,7 +3097,7 @@ describe("TestImportFileSequenceRange", () => {
 describe("TestFileSourceReload", () => {
   const _importPng = (tmpPath: Path): [Project, FootageItem, Path] => {
     const target = tmpPath.div("reload_src.png");
-    target.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
+    target.writeBytes(ASSETS.div("8bits_compressed.png").readBytes());
     const project = parseAep(BASE).project;
     const item = asInstance(project.importFile(new ImportOptions(target)), FootageItem);
     return [project, item, target];
@@ -3107,8 +3107,8 @@ describe("TestFileSourceReload", () => {
     const tmpPath = makeTmpPath();
     const [project, item, target] = _importPng(tmpPath);
     expect(pyEq([item.width, item.height], [25, 26])).toBe(true);
-    const newContent = ASSETS.div("image_with_alpha.png").read_bytes();
-    target.write_bytes(newContent);
+    const newContent = ASSETS.div("image_with_alpha.png").readBytes();
+    target.writeBytes(newContent);
     asInstance(item.mainSource, FileSource).reload();
     // The AE fixture values for the same file swap.
     expect(pyEq([item.width, item.height], [640, 346])).toBe(true);
@@ -3132,7 +3132,7 @@ describe("TestFileSourceReload", () => {
   test("test_reload_survives_save_and_reparse", () => {
     const tmpPath = makeTmpPath();
     const [project, item, target] = _importPng(tmpPath);
-    target.write_bytes(ASSETS.div("image_with_alpha.png").read_bytes());
+    target.writeBytes(ASSETS.div("image_with_alpha.png").readBytes());
     asInstance(item.mainSource, FileSource).reload();
     const out = tmpPath.div("reloaded.aep");
     project.save(out);
@@ -3147,7 +3147,7 @@ describe("TestFileSourceReload", () => {
     const tmpPath = makeTmpPath();
     const [project, item] = _importPng(tmpPath);
     const proxy = tmpPath.div("proxy.png");
-    proxy.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
+    proxy.writeBytes(ASSETS.div("8bits_compressed.png").readBytes());
     item.setProxy(proxy);
     pyAssert(item.proxySource instanceof FileSource);
     expect(pyEq([item.proxySource._width, item.proxySource._height], [25, 26])).toBe(true);
@@ -3155,7 +3155,7 @@ describe("TestFileSourceReload", () => {
     // Swap the proxy file on disk for one with different dimensions.
     // (item.width is not asserted here: AE reports the MAIN source's
     // dimensions even while use_proxy is on - see proxy.json.)
-    proxy.write_bytes(ASSETS.div("image_with_alpha.png").read_bytes());
+    proxy.writeBytes(ASSETS.div("image_with_alpha.png").readBytes());
     item.proxySource.reload();
     expect(pyEq([item.proxySource._width, item.proxySource._height], [640, 346])).toBe(true);
 
@@ -3173,12 +3173,12 @@ describe("TestFileSourceReload", () => {
     const tmpPath = makeTmpPath();
     const [, item] = _importPng(tmpPath);
     const proxy = tmpPath.div("proxy.png");
-    proxy.write_bytes(ASSETS.div("8bits_compressed.png").read_bytes());
+    proxy.writeBytes(ASSETS.div("8bits_compressed.png").readBytes());
     item.setProxy(proxy);
     const mainDims = [item.mainSource._width, item.mainSource._height];
     const flagsBefore = asInstance(item._idta, IdtaChunk)._flags_17;
 
-    proxy.write_bytes(ASSETS.div("image_with_alpha.png").read_bytes());
+    proxy.writeBytes(ASSETS.div("image_with_alpha.png").readBytes());
     pyAssert(item.proxySource instanceof FileSource);
     item.proxySource.reload();
 
@@ -3230,9 +3230,9 @@ describe("TestFileSourceReload", () => {
 
   test("test_reload_sequence_rescans_frames", () => {
     const tmpPath = makeTmpPath();
-    const data = ASSETS.div("8bits_compressed.png").read_bytes();
+    const data = ASSETS.div("8bits_compressed.png").readBytes();
     for (let n = 1; n < 4; n++) {
-      tmpPath.div(`seq_${String(n).padStart(4, "0")}.png`).write_bytes(data);
+      tmpPath.div(`seq_${String(n).padStart(4, "0")}.png`).writeBytes(data);
     }
     const project = parseAep(BASE).project;
     const opts = new ImportOptions(tmpPath.div("seq_0001.png"));
@@ -3242,7 +3242,7 @@ describe("TestFileSourceReload", () => {
     expect(pyEq([sspc.start_frame, sspc.end_frame], [1, 3])).toBe(true);
 
     for (let n = 4; n < 7; n++) {
-      tmpPath.div(`seq_${String(n).padStart(4, "0")}.png`).write_bytes(data);
+      tmpPath.div(`seq_${String(n).padStart(4, "0")}.png`).writeBytes(data);
     }
     asInstance(item.mainSource, FileSource).reload();
     expect(pyEq([sspc.start_frame, sspc.end_frame], [1, 6])).toBe(true);

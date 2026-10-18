@@ -41,14 +41,14 @@ export function parseFootage(
 
   return new FootageItem({
     _idta,
-    _name_utf8: _nameUtf8,
+    _nameUtf8: _nameUtf8,
     _cmta,
-    _item_list: _itemList,
+    _itemList: _itemList,
     _gide,
-    _pin_chunks: pinChunks,
+    _pinChunks: pinChunks,
     project,
-    parent_folder: parentFolder,
-    main_source: mainSource,
-    proxy_source: proxySource,
+    parentFolder: parentFolder,
+    mainSource: mainSource,
+    proxySource: proxySource,
   });
 }

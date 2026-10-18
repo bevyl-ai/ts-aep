@@ -13,7 +13,7 @@ import { RenderQueueItem } from "./render_queue_item.ts";
  *
  * `parse_render_queue` leaves a synthesized render-queue scaffold (a missing
  * `LRdr`, settings `LIST:list`, or empty-queue `ldat`) marked `synthetic` so
- * `write_aep` skips it and an untouched queue-less file round-trips
+ * `writeAep` skips it and an untouched queue-less file round-trips
  * byte-identically. The first `add()` calls this to materialize the whole
  * subtree so the populated queue is serialized. A no-op for a normal AE file
  * whose `LRdr` is already fully present and non-synthetic.
@@ -48,8 +48,8 @@ export function _ensureMaterialized(chunk: Chunk): void {
  */
 export class RenderQueue {
   declare _lrdr: ListChunk;
-  declare _rs_lhd3: Lhd3Chunk;
-  declare _rs_ldat: LdatChunk;
+  declare _rsLhd3: Lhd3Chunk;
+  declare _rsLdat: LdatChunk;
   declare _rout: RoutChunk;
   declare _litm: ListChunk;
   declare _arsi: ArsiChunk;
@@ -58,18 +58,18 @@ export class RenderQueue {
 
   constructor(kw: {
     _lrdr: ListChunk;
-    _rs_lhd3: Lhd3Chunk;
-    _rs_ldat: LdatChunk;
+    _rsLhd3: Lhd3Chunk;
+    _rsLdat: LdatChunk;
     _rout: RoutChunk;
     _litm: ListChunk;
     _arsi: ArsiChunk;
     parent: Project;
     items: RenderQueueItem[];
   }) {
-    const { _lrdr, _rs_lhd3, _rs_ldat, _rout, _litm, _arsi, parent, items } = kw;
+    const { _lrdr, _rsLhd3: _rs_lhd3, _rsLdat: _rs_ldat, _rout, _litm, _arsi, parent, items } = kw;
     this._lrdr = _lrdr;
-    this._rs_lhd3 = _rs_lhd3;
-    this._rs_ldat = _rs_ldat;
+    this._rsLhd3 = _rs_lhd3;
+    this._rsLdat = _rs_ldat;
     this._rout = _rout;
     this._litm = _litm;
     this._arsi = _arsi;
@@ -104,8 +104,8 @@ export class RenderQueue {
     });
     return new this({
       _lrdr: lrdr,
-      _rs_lhd3: rsLhd3,
-      _rs_ldat: rsLdat,
+      _rsLhd3: rsLhd3,
+      _rsLdat: rsLdat,
       _rout: rout,
       _litm: litm,
       _arsi: arsi,
@@ -170,17 +170,17 @@ export class RenderQueue {
     // counters in sync with the new item count - AE keeps _count_b /
     // _counter_a / _counter_b equal to `count` for this list and rejects
     // the file ("Invalid read length") when they go stale.
-    this._rs_ldat.items.push(rqi._ldat);
-    setLhd3Count(this._rs_lhd3, this._rs_lhd3.count + 1, LHD3_BLOCK_SINGLE);
+    this._rsLdat.items.push(rqi._ldat);
+    setLhd3Count(this._rsLhd3, this._rsLhd3.count + 1, LHD3_BLOCK_SINGLE);
 
     // Append Rout items (5 per RQ item) and update header
-    for (const ri of rqi._rout_items) {
+    for (const ri of rqi._routItems) {
       this._rout.items.push(ri);
     }
     this._rout.count = this._rout.items.length;
 
     // Insert OM metadata and OM container into LItm
-    this._litm.chunks.push(rqi._list_chunk);
+    this._litm.chunks.push(rqi._listChunk);
     this._litm.chunks.push(rqi._lom);
 
     // AE flips two bytes in the LRdr "LSIf/ARsi" state chunk once the

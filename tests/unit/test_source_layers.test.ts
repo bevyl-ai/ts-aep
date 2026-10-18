@@ -43,8 +43,8 @@ describe("TestResolvePsdLayer", () => {
     // `solo` is the bottom layer: last in the top-first dropdown.
     const leaf = resolvePsdLayer(ASSETS.div("choose_layer.psd"), 3);
     expect(leaf.name).toBe("solo");
-    expect(leaf.record_index).toBe(0);
-    expect(leaf.layer_id).toBe(2);
+    expect(leaf.recordIndex).toBe(0);
+    expect(leaf.layerId).toBe(2);
     expect(pyEq(leaf.bounds, [4, 6, 24, 20])).toBe(true);
   });
 
@@ -52,8 +52,8 @@ describe("TestResolvePsdLayer", () => {
     const leaf = resolvePsdLayer(ASSETS.div("choose_layer.psd"), 1);
     // Record index counts the group divider records.
     expect(leaf.name).toBe("inner");
-    expect(leaf.record_index).toBe(3);
-    expect(leaf.layer_id).toBe(6);
+    expect(leaf.recordIndex).toBe(3);
+    expect(leaf.layerId).toBe(6);
   });
 
   test("test_duplicate_names_resolve_to_distinct_layers", () => {
@@ -61,8 +61,8 @@ describe("TestResolvePsdLayer", () => {
     const bottom = resolvePsdLayer(ASSETS.div("choose_layer.psd"), 2);
     expect(top.name).toBe(bottom.name);
     expect(bottom.name).toBe("twin");
-    expect(top.layer_id).toBe(4);
-    expect(bottom.layer_id).toBe(3);
+    expect(top.layerId).toBe(4);
+    expect(bottom.layerId).toBe(3);
   });
 
   test.each([[-1], [4]])("test_out_of_range_lists_available[%#]", (index) => {
@@ -71,7 +71,7 @@ describe("TestResolvePsdLayer", () => {
 
   test("test_leaves_are_document_order", () => {
     const leaves = psdLeafLayers(ASSETS.div("choose_layer.psd"));
-    expect(pyEq(leaves.map((leaf) => leaf.record_index), [0, 1, 3, 5])).toBe(true);
+    expect(pyEq(leaves.map((leaf) => leaf.recordIndex), [0, 1, 3, 5])).toBe(true);
   });
 });
 
@@ -86,7 +86,7 @@ describe("TestPsd16BitLayers", () => {
     const leaves = psdLeafLayers(ASSETS.div(name));
     expect(
       pyEq(
-        leaves.map((leaf) => [leaf.name, leaf.layer_id, leaf.record_index]),
+        leaves.map((leaf) => [leaf.name, leaf.layerId, leaf.recordIndex]),
         [
           ["Layer 1", 2, 0],
           ["Layer 1 copy", 4, 1],
@@ -101,18 +101,18 @@ describe("TestPsd16BitLayers", () => {
     const leaves = psdLeafLayers(ASSETS.div("psd_noise_gradient_32bpc.psd"));
     expect(
       pyEq(
-        new Set(leaves.map((leaf) => tkey(leaf.name, leaf.layer_id))),
+        new Set(leaves.map((leaf) => tkey(leaf.name, leaf.layerId))),
         new Set([tkey("Layer 1", 2), tkey("Layer 1 copy", 5)]),
       ),
     ).toBe(true);
-    expect(pyEq(new Set(leaves.map((leaf) => leaf.record_index)), new Set([0, 1]))).toBe(true);
+    expect(pyEq(new Set(leaves.map((leaf) => leaf.recordIndex)), new Set([0, 1]))).toBe(true);
   });
 
   test("test_16bit_probe_layer_count", () => {
     const info = probeMedia(ASSETS.div("psd_layer_styles.psd"));
-    expect(info.layer_count).toBe(2);
-    expect(info.has_alpha).toBe(true);
-    expect(info.bit_depth).toBe(16);
+    expect(info.layerCount).toBe(2);
+    expect(info.hasAlpha).toBe(true);
+    expect(info.bitDepth).toBe(16);
   });
 });
 

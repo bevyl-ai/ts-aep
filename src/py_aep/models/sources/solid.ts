@@ -32,7 +32,7 @@ import type { U1Chunk } from "../../binary/scalar_chunks.ts";
 export class SolidSource extends FootageSource {
   declare _opti: OptiChunk;
 
-  static _owns_name = true;
+  static _ownsName = true;
 
   /**
    * The solid color, expressed as `[R, G, B]` values in the
@@ -62,7 +62,7 @@ export class SolidSource extends FootageSource {
    * @param g - Green channel in `[0.0, 1.0]`.
    * @param b - Blue channel in `[0.0, 1.0]`.
    */
-  static _color_name(r: number, g: number, b: number): string {
+  static _colorName(r: number, g: number, b: number): string {
     return solidColorName(r, g, b);
   }
 
@@ -107,11 +107,11 @@ export class SolidSource extends FootageSource {
     return new this({ _sspc: sspc, _opti: opti });
   }
 
-  _resolve_name(rawName: string): string {
+  _resolveName(rawName: string): string {
     return this._opti.solid_name;
   }
 
-  _store_name(value: string): void {
+  _storeName(value: string): void {
     validateOptiName(value);
     this._opti.solid_name = value;
   }

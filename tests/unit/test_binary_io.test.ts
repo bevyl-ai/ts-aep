@@ -293,7 +293,7 @@ test.each(ROUNDTRIP_SAMPLES.map((s) => [s.replace(/\//g, "__"), s]))(
     const tmpPath = makeTmpPath();
     const aepPath = SAMPLES_DIR.div(sample);
     if (!aepPath.exists()) return skip(`Sample not found: ${aepPath}`);
-    const original = aepPath.read_bytes();
+    const original = aepPath.readBytes();
 
     const fp = new BytesIO(original);
     const [rifx, xmp] = readAep(fp);
@@ -301,9 +301,9 @@ test.each(ROUNDTRIP_SAMPLES.map((s) => [s.replace(/\//g, "__"), s]))(
     const out = tmpPath.div("roundtrip.aep");
     const outFp = new BytesIO();
     writeAep(outFp, rifx, xmp);
-    out.write_bytes(outFp.getvalue());
+    out.writeBytes(outFp.getvalue());
 
-    expect(pyEq(out.read_bytes(), original)).toBe(true);
+    expect(pyEq(out.readBytes(), original)).toBe(true);
   },
 );
 

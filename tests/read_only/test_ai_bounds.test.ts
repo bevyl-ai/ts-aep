@@ -68,7 +68,7 @@ function _aeLayerBoxes(aep: Path): Map<string, [number[], number, number]> {
 /** Every layer's measured box, read and measured once per file. */
 const _measuredCached = lruCache((path_: string): Map<string, Box | null> => {
   const path = new Path(path_);
-  const data = path.read_bytes();
+  const data = path.readBytes();
   // Python wraps both reads in `warnings.catch_warnings()` with `simplefilter("ignore", UserWarning)`.
   // NOTE(port): pyrt warn() only records UserWarning-equivalents, so truncating the captured list equals simplefilter("ignore", UserWarning).
   const mark = warnings.length;

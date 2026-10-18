@@ -13,87 +13,87 @@ import { pyEq } from "../../pyrt/index.ts";
 export const _USE_VALUE: unique symbol = Symbol("_USE_VALUE");
 
 type PropSpecField = PropSpec[
-  | "match_name"
-  | "auto_name"
+  | "matchName"
+  | "autoName"
   | "value"
   | "pvt"
   | "dimensions"
-  | "is_spatial"
+  | "isSpatial"
   | "color"
   | "integer"
-  | "min_value"
-  | "max_value"
-  | "default_value"
-  | "can_vary_over_time"
-  | "has_time_base"
-  | "min_major"
-  | "spatial_flags"
+  | "minValue"
+  | "maxValue"
+  | "defaultValue"
+  | "canVaryOverTime"
+  | "hasTimeBase"
+  | "minMajor"
+  | "spatialFlags"
   | "cvot"
-  | "value_hint_type"
-  | "units_text"
-  | "bound_chunks"
-  | "chunk_bounds_are_hints"
-  | "hint_bounds"
-  | "property_category"
+  | "valueHintType"
+  | "unitsText"
+  | "boundChunks"
+  | "chunkBoundsAreHints"
+  | "hintBounds"
+  | "propertyCategory"
   | "pad2a"
 ];
 
-type GroupSpecField = GroupSpec["match_name" | "auto_name" | "min_major" | "enable_flags"];
+type GroupSpecField = GroupSpec["matchName" | "autoName" | "minMajor" | "enableFlags"];
 
 /** Metadata for a synthesized property. */
 export class PropSpec {
   constructor(
-    readonly match_name: string,
-    readonly auto_name: string,
+    readonly matchName: string,
+    readonly autoName: string,
     readonly value: number | number[] | null,
     readonly pvt: PropertyValueType,
     readonly dimensions: number = 1,
-    readonly is_spatial: boolean = false,
+    readonly isSpatial: boolean = false,
     readonly color: boolean = false,
     readonly integer: boolean = false,
-    readonly min_value: number | null = null,
-    readonly max_value: number | null = null,
-    readonly default_value: number | number[] | null | typeof _USE_VALUE = _USE_VALUE,
-    readonly can_vary_over_time: boolean | null = null,
-    readonly has_time_base: boolean = false,
-    readonly min_major: number | null = null,
-    readonly spatial_flags: number | null = null,
+    readonly minValue: number | null = null,
+    readonly maxValue: number | null = null,
+    readonly defaultValue: number | number[] | null | typeof _USE_VALUE = _USE_VALUE,
+    readonly canVaryOverTime: boolean | null = null,
+    readonly hasTimeBase: boolean = false,
+    readonly minMajor: number | null = null,
+    readonly spatialFlags: number | null = null,
     readonly cvot: number | null = null,
-    readonly value_hint_type: number | null = null,
+    readonly valueHintType: number | null = null,
     /**
      * Explicit units string; when `null`, units resolve from
      * `UNITS_TEXT_MAP` by match name (the default for most specs). Set
      * for bulk-generated specs (e.g. the text-animator pool) to keep
      * their units self-contained.
      */
-    readonly units_text: string | null = null,
+    readonly unitsText: string | null = null,
     /**
      * Whether AE writes `tdum`/`tduM` placeholder bound chunks for this
-     * property when materialized. `null` derives it from `min_value` /
-     * `max_value` (bounded, non-integer, non-color, non-spatial).
+     * property when materialized. `null` derives it from `minValue` /
+     * `maxValue` (bounded, non-integer, non-color, non-spatial).
      */
-    readonly bound_chunks: boolean | null = null,
+    readonly boundChunks: boolean | null = null,
     /**
      * Whether this property's binary `tdum`/`tduM` chunks hold UI slider
      * hints rather than real bounds (mesh option streams store 0/100
      * regardless of the actual clamp, e.g. Smoothing Angle is 0-180 with a
-     * 0/100 tduM). When true, `min_value`/`max_value` resolve ONLY from the
+     * 0/100 tduM). When true, `minValue`/`maxValue` resolve ONLY from the
      * spec (`null` = unbounded) and the chunk values are ignored.
      */
-    readonly chunk_bounds_are_hints: boolean = false,
+    readonly chunkBoundsAreHints: boolean = false,
     /**
      * The `tdum`/`tduM` values AE writes when this property materializes -
      * UI slider hints, which can differ from the real clamp (a Layer Styles
      * Size is 0-250 with a 0/100 tduM). `null` keeps the family default
      * (the `[0.0]` placeholders or no bound chunks at all).
      */
-    readonly hint_bounds: [number, number] | null = null,
+    readonly hintBounds: [number, number] | null = null,
     /**
      * Override for the `tdb4` `_property_category` byte; `null` keeps the
      * kind-branch default (integer 0x04, color 0x01, vector 0x09). Layer
      * Styles angles use 0x06.
      */
-    readonly property_category: number | null = null,
+    readonly propertyCategory: number | null = null,
     /**
      * Override for the `tdb4` `_pad2a` field; `null` keeps 0. Layer
      * Styles colors carry 1.
@@ -105,28 +105,28 @@ export class PropSpec {
   _replace(kw: Partial<PropSpec> = {}): PropSpec {
     const f = { ...this, ...kw };
     return new PropSpec(
-      f.match_name,
-      f.auto_name,
+      f.matchName,
+      f.autoName,
       f.value,
       f.pvt,
       f.dimensions,
-      f.is_spatial,
+      f.isSpatial,
       f.color,
       f.integer,
-      f.min_value,
-      f.max_value,
-      f.default_value,
-      f.can_vary_over_time,
-      f.has_time_base,
-      f.min_major,
-      f.spatial_flags,
+      f.minValue,
+      f.maxValue,
+      f.defaultValue,
+      f.canVaryOverTime,
+      f.hasTimeBase,
+      f.minMajor,
+      f.spatialFlags,
       f.cvot,
-      f.value_hint_type,
-      f.units_text,
-      f.bound_chunks,
-      f.chunk_bounds_are_hints,
-      f.hint_bounds,
-      f.property_category,
+      f.valueHintType,
+      f.unitsText,
+      f.boundChunks,
+      f.chunkBoundsAreHints,
+      f.hintBounds,
+      f.propertyCategory,
       f.pad2a,
     );
   }
@@ -139,28 +139,28 @@ export class PropSpec {
 
   *[Symbol.iterator](): Generator<PropSpecField> {
     yield* [
-      this.match_name,
-      this.auto_name,
+      this.matchName,
+      this.autoName,
       this.value,
       this.pvt,
       this.dimensions,
-      this.is_spatial,
+      this.isSpatial,
       this.color,
       this.integer,
-      this.min_value,
-      this.max_value,
-      this.default_value,
-      this.can_vary_over_time,
-      this.has_time_base,
-      this.min_major,
-      this.spatial_flags,
+      this.minValue,
+      this.maxValue,
+      this.defaultValue,
+      this.canVaryOverTime,
+      this.hasTimeBase,
+      this.minMajor,
+      this.spatialFlags,
       this.cvot,
-      this.value_hint_type,
-      this.units_text,
-      this.bound_chunks,
-      this.chunk_bounds_are_hints,
-      this.hint_bounds,
-      this.property_category,
+      this.valueHintType,
+      this.unitsText,
+      this.boundChunks,
+      this.chunkBoundsAreHints,
+      this.hintBounds,
+      this.propertyCategory,
       this.pad2a,
     ];
   }
@@ -169,9 +169,9 @@ export class PropSpec {
 /** Metadata for a synthesized property group. */
 export class GroupSpec {
   constructor(
-    readonly match_name: string,
-    readonly auto_name: string,
-    readonly min_major: number | null = null,
+    readonly matchName: string,
+    readonly autoName: string,
+    readonly minMajor: number | null = null,
     /**
      * `tdsb` enable-flags byte for the synthesized group: bit 0 is the
      * `enabled` toggle, bit 1 the collapsed/UI bit. Defaults to `1`
@@ -180,7 +180,7 @@ export class GroupSpec {
      * apply the style, e.g. a default-red Color Overlay), and groups AE
      * writes collapsed (Layer Styles parent, Blending Options) are `3`.
      */
-    readonly enable_flags: number = 1,
+    readonly enableFlags: number = 1,
   ) {}
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
@@ -190,7 +190,7 @@ export class GroupSpec {
   }
 
   *[Symbol.iterator](): Generator<GroupSpecField> {
-    yield* [this.match_name, this.auto_name, this.min_major, this.enable_flags];
+    yield* [this.matchName, this.autoName, this.minMajor, this.enableFlags];
   }
 }
 
@@ -223,7 +223,7 @@ export function _spec(
   const kind = _PVT_KIND.get(pvt);
   if (kind !== undefined) {
     const [dimensions, isSpatial, color] = kind;
-    kwargs = { dimensions, is_spatial: isSpatial, color, ...kwargs };
+    kwargs = { dimensions, isSpatial: isSpatial, color, ...kwargs };
   }
   return new PropSpec(
     matchName,
@@ -231,23 +231,23 @@ export function _spec(
     value,
     pvt,
     kwargs.dimensions,
-    kwargs.is_spatial,
+    kwargs.isSpatial,
     kwargs.color,
     kwargs.integer,
-    kwargs.min_value,
-    kwargs.max_value,
-    kwargs.default_value,
-    kwargs.can_vary_over_time,
-    kwargs.has_time_base,
-    kwargs.min_major,
-    kwargs.spatial_flags,
+    kwargs.minValue,
+    kwargs.maxValue,
+    kwargs.defaultValue,
+    kwargs.canVaryOverTime,
+    kwargs.hasTimeBase,
+    kwargs.minMajor,
+    kwargs.spatialFlags,
     kwargs.cvot,
-    kwargs.value_hint_type,
-    kwargs.units_text,
-    kwargs.bound_chunks,
-    kwargs.chunk_bounds_are_hints,
-    kwargs.hint_bounds,
-    kwargs.property_category,
+    kwargs.valueHintType,
+    kwargs.unitsText,
+    kwargs.boundChunks,
+    kwargs.chunkBoundsAreHints,
+    kwargs.hintBounds,
+    kwargs.propertyCategory,
     kwargs.pad2a,
   );
 }
@@ -261,152 +261,152 @@ export const _COLOR_MAX: number = 3921568.62745098;
 export const _MATERIAL_SPECS: PropSpec[] = [
   _spec("ADBE Casts Shadows", "Casts Shadows", 0.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Transmission", "Light Transmission", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Accepts Shadows", "Accepts Shadows", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Accepts Lights", "Accepts Lights", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Shadow Color", "Shadow Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
-    has_time_base: true,
-    spatial_flags: 0x07,
-    value_hint_type: 2,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
+    hasTimeBase: true,
+    spatialFlags: 0x07,
+    valueHintType: 2,
     // AE 24.6 lists it, AE 15.1 / 22.5 / 23.6 do not.
-    min_major: 24,
+    minMajor: 24,
   }),
   _spec("ADBE Appears in Reflections", "Appears in Reflections", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Ambient Coefficient", "Ambient", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Diffuse Coefficient", "Diffuse", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Specular Coefficient", "Specular Intensity", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Shininess Coefficient", "Specular Shininess", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Metal Coefficient", "Metal", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Reflection Coefficient", "Reflection Intensity", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Glossiness Coefficient", "Reflection Sharpness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Fresnel Coefficient", "Reflection Rolloff", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Transparency Coefficient", "Transparency", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Transp Rolloff", "Transparency Rolloff", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Index of Refraction", "Index of Refraction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 5,
-    has_time_base: true,
-    value_hint_type: 0xffff,
+    minValue: 1,
+    maxValue: 5,
+    hasTimeBase: true,
+    valueHintType: 0xffff,
   }),
 ];
 
 // Canonical children of "ADBE Extrsn Options Group".
 export const _EXTRUSION_SPECS: PropSpec[] = [
   _spec("ADBE Bevel Styles", "Bevel Style", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 4,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 4,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Bevel Direction", "Bevel Direction", 1.0, PropertyValueType.OneD, {
     integer: true,
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
-    has_time_base: true,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
+    hasTimeBase: true,
     cvot: 0x00,
-    value_hint_type: 2,
+    valueHintType: 2,
   }),
   _spec("ADBE Bevel Depth", "Bevel Depth", 2.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Hole Bevel Depth", "Hole Bevel Depth", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Extrsn Depth", "Extrusion Depth", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 10000,
+    minValue: 0,
+    maxValue: 10000,
   }),
 ];
 
 // Canonical children of "ADBE Plane Options Group".
 export const _PLANE_SPECS: PropSpec[] = [
   _spec("ADBE Plane Curvature", "Curvature", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Plane Subdivision", "Segments", 4.0, PropertyValueType.OneD, {
-    min_value: 2,
-    max_value: 256,
+    minValue: 2,
+    maxValue: 256,
   }),
 ];
 
 // Canonical children of "ADBE Audio Group".
 export const _AUDIO_SPECS: PropSpec[] = [
   _spec("ADBE Audio Levels", "Audio Levels", [0.0, 0.0], PropertyValueType.TwoD, {
-    min_value: -192,
-    max_value: 24,
+    minValue: -192,
+    maxValue: 24,
   }),
 ];
 
 // Canonical children of "ADBE Source Options Group".
 export const _SOURCE_OPTIONS_SPECS: PropSpec[] = [
   _spec("ADBE Layer Source Alternate", "Item Cache Entry", null, PropertyValueType.NO_VALUE, {
-    default_value: 0,
-    can_vary_over_time: true,
-    has_time_base: true,
+    defaultValue: 0,
+    canVaryOverTime: true,
+    hasTimeBase: true,
   }),
 ];
 
@@ -414,15 +414,15 @@ export const _SOURCE_OPTIONS_SPECS: PropSpec[] = [
 export const _COMPOSITING_OPTIONS_SPECS: (PropSpec | GroupSpec)[] = [
   new GroupSpec("ADBE Effect Mask Parade", "Masks"),
   _spec("ADBE Effect Mask Opacity", "Effect Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   // AE 15 lists it among the effect's own parameters (`parT`) instead.
   _spec("ADBE Force CPU GPU", "GPU Rendering", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
-    min_major: 16,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
+    minMajor: 16,
   }),
 ];
 
@@ -430,32 +430,32 @@ export const _3D_COMPOSITING_OPTIONS_SPECS: PropSpec[] = [
   _spec("ADBE Casts Shadows", "Casts Shadows", 1.0, PropertyValueType.OneD, {
     // ExtendScript reports isModified=True on mesh layers: the value
     // is On (1) but the shared Casts Shadows default is Off (0).
-    default_value: 0.0,
+    defaultValue: 0.0,
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Accepts Shadows", "Accepts Shadows", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Accepts Lights", "Accepts Lights", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Appears in Reflections", "Appears in Reflections", 1.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Shadow Color", "Shadow Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
-    has_time_base: true,
-    spatial_flags: 0x07,
-    value_hint_type: 2,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
+    hasTimeBase: true,
+    spatialFlags: 0x07,
+    valueHintType: 2,
   }),
 ];
 
@@ -465,15 +465,15 @@ export const _3D_COMPOSITING_OPTIONS_SPECS: PropSpec[] = [
 // ordering. Its unstored value is built by `Property.value`.
 export const _MASK_ATOM_SPECS: PropSpec[] = [
   _spec("ADBE Mask Shape", "Mask Path", null, PropertyValueType.SHAPE, {
-    is_spatial: true,
+    isSpatial: true,
   }),
   _spec("ADBE Mask Feather", "Mask Feather", [0.0, 0.0], PropertyValueType.TwoD, {
-    min_value: 0,
-    max_value: 32000,
+    minValue: 0,
+    maxValue: 32000,
   }),
   _spec("ADBE Mask Opacity", "Mask Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Mask Offset", "Mask Expansion", 0.0, PropertyValueType.OneD),
 ];
@@ -483,85 +483,85 @@ export const _LIGHT_SPECS: (PropSpec | GroupSpec)[] = [
   new GroupSpec("ADBE Light Env Atom", "Source"),
   _spec("ADBE Light Backgd Visible", "Background Visible", 0.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Backgd Opacity", "Background Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Backgd Blur", "Background Blur", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    has_time_base: true,
+    minValue: 0,
+    maxValue: 100,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Intensity", "Intensity", 100.0, PropertyValueType.OneD),
   _spec("ADBE Light Color", "Color", [1.0, 1.0, 1.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("ADBE Light Cone Angle", "Cone Angle", 90.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
+    minValue: 0,
+    maxValue: 180,
   }),
   _spec("ADBE Light Cone Feather 2", "Cone Feather", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Light Falloff Type", "Falloff", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
+    minValue: 1,
+    maxValue: 3,
   }),
   _spec("ADBE Light Falloff Start", "Radius", 500.0, PropertyValueType.OneD, {
-    min_value: 0,
-    has_time_base: true,
+    minValue: 0,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Falloff Distance", "Falloff Distance", 500.0, PropertyValueType.OneD, {
-    min_value: 0,
-    has_time_base: true,
+    minValue: 0,
+    hasTimeBase: true,
   }),
   _spec("ADBE Casts Shadows", "Casts Shadows", 0.0, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
   _spec("ADBE Light Shadow Darkness", "Shadow Darkness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Light Shadow Diffusion", "Shadow Diffusion", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
+    minValue: 0,
   }),
 ];
 
 // Canonical children of "ADBE3D Para Mat Parade" as reported by ExtendScript.
 export const _PARA_MAT_SPEC: PropSpec[] = [
   _spec("ADBE3D Material Projection", "Projection Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("ADBE3D Material Texturre Offset", "Texture Offset", [0.0, 0.0], PropertyValueType.TwoD, {
-    units_text: "percent",
+    unitsText: "percent",
   }),
   _spec("ADBE3D Material Rotation", "Rotation", 0.0, PropertyValueType.OneD, {
-    units_text: "degrees",
+    unitsText: "degrees",
   }),
   _spec("ADBE3D Material Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
-    units_text: "percent",
+    unitsText: "percent",
   }),
   _spec("ADBE3D Base Color", "Base Color", [0.8, 0.8, 0.8, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("ADBE3D Roughness", "Roughness", 30.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    units_text: "percent",
+    minValue: 0,
+    maxValue: 100,
+    unitsText: "percent",
   }),
   _spec("ADBE3D Metallic", "Metallic", 30.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    units_text: "percent",
+    minValue: 0,
+    maxValue: 100,
+    unitsText: "percent",
   }),
   _spec(
     "ADBE3D Emission",
@@ -569,19 +569,19 @@ export const _PARA_MAT_SPEC: PropSpec[] = [
     [0.99607843137255, 0.99607843137255, 0.99607843137255, 1.0],
     PropertyValueType.COLOR,
     {
-      min_value: _COLOR_MIN,
-      max_value: _COLOR_MAX,
+      minValue: _COLOR_MIN,
+      maxValue: _COLOR_MAX,
     },
   ),
   _spec("ADBE3D Emission Intensity", "Emission Intensity", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    units_text: "percent",
+    minValue: 0,
+    maxValue: 100,
+    unitsText: "percent",
   }),
   _spec("ADBE3D Ambient", "Ambient Response", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    units_text: "percent",
+    minValue: 0,
+    maxValue: 100,
+    unitsText: "percent",
   }),
 ];
 
@@ -591,82 +591,82 @@ export const _PARA_MAT_SPEC: PropSpec[] = [
 // (verified against AE 2026 ExtendScript min/max).
 export const _CUBE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CubeWidthStrm", "Width", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CubeHeightStrm", "Height", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CubeDepthStrm", "Depth", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CubeSmoothingAngleStrm", "Smoothing Angle", 40.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 180,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE CubeBevelOptionsSGrp".
 export const _CUBE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CubeBevelRadiusStrm", "Radius", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CubeBevelSidesStrm", "Sides", 20.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE SphereMeshOptionsSGrp".
 export const _SPHERE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE SphereRadiusStrm", "Radius", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereSidesStrm", "Sides", 48.0, PropertyValueType.OneD, {
-    min_value: 3,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereSliceCapsStrm", "Slice Caps", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereStartAngleStrm", "Slice Start", 0.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereEndAngleStrm", "Slice End", 360.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereInvertSliceStrm", "Invert Slice", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 1,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE SphereSmoothingAngleStrm", "Smoothing Angle", 40.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 180,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE PlaneMeshOptionsSGrp".
 export const _PLANE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE PlaneWidthStrm", "Width", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE PlaneLengthStrm", "Length", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec(
     // Default 1: AE reports the active (empty) Plane group's Corner
@@ -676,187 +676,187 @@ export const _PLANE_MESH_OPTIONS_SPEC: PropSpec[] = [
     1.0,
     PropertyValueType.OneD,
     {
-      min_value: 0,
-      chunk_bounds_are_hints: true,
+      minValue: 0,
+      chunkBoundsAreHints: true,
     },
   ),
   _spec("ADBE PlaneCornerSidesStrm", "Corner Sides", 20.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE TorusMeshOptionsSGrp".
 export const _TORUS_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE TorusRingRadiusStrm", "Ring Radius", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusPipeRadiusStrm", "Pipe Radius", 20.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusRingSidesStrm", "Ring Sides", 48.0, PropertyValueType.OneD, {
-    min_value: 3,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusPipeSidesStrm", "Pipe Sides", 48.0, PropertyValueType.OneD, {
-    min_value: 3,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusCapsStrm", "Caps", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusStartAngleStrm", "Slice Start", 0.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusEndAngleStrm", "Slice End", 360.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusInvertSliceStrm", "Invert Slice", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 1,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE TorusSmoothingAngleStrm", "Smoothing Angle", 40.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 180,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE ConeMeshOptionsSGrp".
 export const _CONE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE ConeTopRadiusStrm", "Top Radius", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeBottomRadiusStrm", "Bottom Radius", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeHeightStrm", "Height", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeSidesStrm", "Sides", 48.0, PropertyValueType.OneD, {
-    min_value: 3,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeTopCapStrm", "Top Cap", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeBottomCapStrm", "Bottom Cap", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeSliceCapsStrm", "Slice Caps", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeStartAngleStrm", "Slice Start", 0.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeEndAngleStrm", "Slice End", 360.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeInvertSliceStrm", "Invert Slice", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 1,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeSmoothingAngleStrm", "Smoothing Angle", 40.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 180,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE ConeBevelBevelSGrp".
 export const _CONE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE ConeBevelTopRadiusStrm", "Top Radius", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeBevelTopSidesStrm", "Top Sides", 20.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeBevelBottomRadiusStrm", "Bottom Radius", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE ConeBevelBottomSidesStrm", "Bottom Sides", 20.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE CylinderMeshOptionsSGrp".
 export const _CYLINDER_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CylinderRadiusStrm", "Radius", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderHeightStrm", "Height", 200.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderSidesStrm", "Sides", 48.0, PropertyValueType.OneD, {
-    min_value: 3,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderTopCapStrm", "Top Cap", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderBottomCapStrm", "Bottom Cap", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderSliceCapsStrm", "Slice Caps", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderStartAngleStrm", "Slice Start", 0.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderEndAngleStrm", "Slice End", 360.0, PropertyValueType.OneD, {
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderInvertSliceStrm", "Invert Slice", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 1,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderSmoothingAngleStrm", "Smoothing Angle", 40.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 180,
-    units_text: "degrees",
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 180,
+    unitsText: "degrees",
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE CylinderBevelOptionsSGrp".
 export const _CYLINDER_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CylinderBevelRadiusStrm", "Radius", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE CylinderBevelSidesStrm", "Sides", 20.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    maxValue: 100,
+    chunkBoundsAreHints: true,
   }),
 ];
 
@@ -866,26 +866,26 @@ export const _CYLINDER_BEVEL_OPTIONS_SPEC: PropSpec[] = [
 // never materialized at creation.
 export const _DISPLACEMENT_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE Displacement Intensity", "Intensity", 100.0, PropertyValueType.OneD, {
-    min_value: -1000,
-    max_value: 1000,
-    units_text: "percent",
+    minValue: -1000,
+    maxValue: 1000,
+    unitsText: "percent",
   }),
   _spec("ADBE Subdivision Count", "Subdivision Count", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 6,
-    can_vary_over_time: false,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    maxValue: 6,
+    canVaryOverTime: false,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Canonical children of "ADBE Camera Options Group" as reported by ExtendScript.
 export const _CAMERA_SPECS: PropSpec[] = [
   _spec("ADBE Camera Zoom", "Zoom", 0.0, PropertyValueType.OneD, {
-    min_value: 1,
+    minValue: 1,
   }),
   _spec("ADBE Camera Depth of Field", "Depth of Field", 0.0, PropertyValueType.OneD),
   _spec("ADBE Camera Focus Distance", "Focus Distance", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec(
     "ADBE Camera Aperture",
@@ -896,69 +896,69 @@ export const _CAMERA_SPECS: PropSpec[] = [
     25.3093363329584,
     PropertyValueType.OneD,
     {
-      min_value: 0,
+      minValue: 0,
     },
   ),
   _spec("ADBE Camera Blur Level", "Blur Level", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
+    minValue: 0,
   }),
   // Added in After Effects 2026 (major 26); AE 25 reports 13 camera
   // options, AE 26 reports 15 (probed type.json AE25 vs camera_defaults
   // AE26). Gated so older-AE files keep the 13-option layout.
   _spec("ADBE Camera Focus Area Width", "Focus Area Width", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    min_major: 26,
+    minValue: 0,
+    minMajor: 26,
     // AE writes tdum/tduM bound chunks but ExtendScript reports no max
     // (hasMax False): the chunk bounds are UI hints, so the spec (min 0,
     // no max) is authoritative.
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Camera Split Blur Level", "Near, Far Blur Level", [100.0, 100.0], PropertyValueType.TwoD, {
-    min_value: 0,
-    min_major: 26,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    minMajor: 26,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Iris Shape", "Iris Shape", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 10,
+    minValue: 1,
+    maxValue: 10,
   }),
   _spec("ADBE Iris Rotation", "Iris Rotation", 0.0, PropertyValueType.OneD),
   _spec("ADBE Iris Roundness", "Iris Roundness", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Iris Aspect Ratio", "Iris Aspect Ratio", 1.0, PropertyValueType.OneD, {
-    min_value: 0.00999999977648,
-    max_value: 100,
+    minValue: 0.00999999977648,
+    maxValue: 100,
   }),
   _spec("ADBE Iris Diffraction Fringe", "Iris Diffraction Fringe", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 500,
+    minValue: 0,
+    maxValue: 500,
   }),
   _spec("ADBE Iris Highlight Gain", "Highlight Gain", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Iris Highlight Threshold", "Highlight Threshold", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("ADBE Iris Hightlight Saturation", "Highlight Saturation", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 // Canonical children of "ADBE Text Path Options".
 export const _TEXT_PATH_OPTIONS_SPECS: PropSpec[] = [
   _spec("ADBE Text Path", "Path", 0, PropertyValueType.MASK_INDEX, {
-    can_vary_over_time: false,
+    canVaryOverTime: false,
     // As AE 2026 writes a text layer's Path set to a mask.
     integer: true,
-    has_time_base: true,
-    spatial_flags: 0x01,
+    hasTimeBase: true,
+    spatialFlags: 0x01,
     cvot: 0x00,
-    value_hint_type: 1,
+    valueHintType: 1,
   }),
   _spec("ADBE Text Reverse Path", "Reverse Path", 0.0, PropertyValueType.OneD),
   _spec("ADBE Text Perpendicular To Path", "Perpendicular To Path", 1.0, PropertyValueType.OneD),
@@ -970,71 +970,71 @@ export const _TEXT_PATH_OPTIONS_SPECS: PropSpec[] = [
 // Canonical children of "ADBE Text More Options".
 export const _TEXT_MORE_OPTIONS_SPECS: PropSpec[] = [
   _spec("ADBE Text Anchor Point Option", "Anchor Point Grouping", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 4,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 4,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Anchor Point Align", "Grouping Alignment", [0.0, 0.0], PropertyValueType.TwoD),
   _spec("ADBE Text Render Order", "Fill & Stroke", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Character Blend Mode", "Inter-Character Blending", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 29,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 29,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Variable Font Spacing", "Variable Font Spacing", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
-    min_major: 26,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
+    minMajor: 26,
   }),
 ];
 
 // Canonical children of "ADBE Vector Shape - Star" (Polystar path).
 export const _VECTOR_STAR_SPECS: PropSpec[] = [
   _spec("ADBE Vector Shape Direction", "Shape Direction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Star Type", "Type", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Star Points", "Points", 5.0, PropertyValueType.OneD, {
-    min_value: 3,
-    chunk_bounds_are_hints: true,
+    minValue: 3,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Star Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Star Rotation", "Rotation", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Star Inner Radius", "Inner Radius", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Star Outer Radius", "Outer Radius", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Star Inner Roundess", "Inner Roundness", 0.0, PropertyValueType.OneD, {
-    bound_chunks: true,
-    chunk_bounds_are_hints: true,
+    boundChunks: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Star Outer Roundess", "Outer Roundness", 0.0, PropertyValueType.OneD, {
-    bound_chunks: true,
-    chunk_bounds_are_hints: true,
+    boundChunks: true,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // Shared vector property specs used across Fill, G-Fill, G-Stroke, Stroke,
 // and Group lists.
 export const _VECTOR_BLEND_MODE: PropSpec = _spec("ADBE Vector Blend Mode", "Blend Mode", 1.0, PropertyValueType.OneD, {
-  min_value: 1,
-  max_value: 29,
-  can_vary_over_time: false,
+  minValue: 1,
+  maxValue: 29,
+  canVaryOverTime: false,
 });
 export const _VECTOR_COMPOSITE_ORDER: PropSpec = _spec(
   "ADBE Vector Composite Order",
@@ -1042,24 +1042,24 @@ export const _VECTOR_COMPOSITE_ORDER: PropSpec = _spec(
   1.0,
   PropertyValueType.OneD,
   {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   },
 );
 export const _VECTOR_FILL_RULE: PropSpec = _spec("ADBE Vector Fill Rule", "Fill Rule", 1.0, PropertyValueType.OneD, {
-  min_value: 1,
-  max_value: 2,
-  can_vary_over_time: false,
+  minValue: 1,
+  maxValue: 2,
+  canVaryOverTime: false,
 });
 export const _VECTOR_FILL_OPACITY: PropSpec = _spec("ADBE Vector Fill Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-  min_value: 0,
-  max_value: 100,
+  minValue: 0,
+  maxValue: 100,
 });
 export const _VECTOR_GRAD_TYPE: PropSpec = _spec("ADBE Vector Grad Type", "Type", 1.0, PropertyValueType.OneD, {
-  min_value: 1,
-  max_value: 2,
-  can_vary_over_time: false,
+  minValue: 1,
+  maxValue: 2,
+  canVaryOverTime: false,
 });
 export const _VECTOR_GRAD_START_PT: PropSpec = _spec(
   "ADBE Vector Grad Start Pt",
@@ -1079,8 +1079,8 @@ export const _VECTOR_GRAD_HILITE_LENGTH: PropSpec = _spec(
   0.0,
   PropertyValueType.OneD,
   {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   },
 );
 export const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
@@ -1093,31 +1093,31 @@ export const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
 // AE 2026 (major 26); 2018-2025 stop at HiLite Angle -> Colors. Probed across
 // AE CC 2018, 2022, 2023, 2024, 2025, 2026 (only 26.0 exposes them).
 export const _VECTOR_GRAD_SCALE: PropSpec = _spec("ADBE Vector Grad Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
-  min_major: 26,
+  minMajor: 26,
 });
 export const _VECTOR_GRAD_ROTATION: PropSpec = _spec("ADBE Vector Grad Rotation", "Rotation", 0.0, PropertyValueType.OneD, {
-  min_major: 26,
+  minMajor: 26,
 });
 export const _VECTOR_GRAD_COLORS: PropSpec = _spec("ADBE Vector Grad Colors", "Colors", null, PropertyValueType.NO_VALUE, {
-  is_spatial: true,
+  isSpatial: true,
 });
 export const _VECTOR_STROKE_OPACITY: PropSpec = _spec("ADBE Vector Stroke Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-  min_value: 0,
-  max_value: 100,
+  minValue: 0,
+  maxValue: 100,
 });
 export const _VECTOR_STROKE_WIDTH: PropSpec = _spec("ADBE Vector Stroke Width", "Stroke Width", 2.0, PropertyValueType.OneD, {
-  min_value: 0,
-  chunk_bounds_are_hints: true,
+  minValue: 0,
+  chunkBoundsAreHints: true,
 });
 export const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec("ADBE Vector Stroke Line Cap", "Line Cap", 1.0, PropertyValueType.OneD, {
-  min_value: 1,
-  max_value: 3,
-  can_vary_over_time: false,
+  minValue: 1,
+  maxValue: 3,
+  canVaryOverTime: false,
 });
 export const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec("ADBE Vector Stroke Line Join", "Line Join", 1.0, PropertyValueType.OneD, {
-  min_value: 1,
-  max_value: 3,
-  can_vary_over_time: false,
+  minValue: 1,
+  maxValue: 3,
+  canVaryOverTime: false,
 });
 export const _VECTOR_STROKE_MITER_LIMIT: PropSpec = _spec(
   "ADBE Vector Stroke Miter Limit",
@@ -1125,8 +1125,8 @@ export const _VECTOR_STROKE_MITER_LIMIT: PropSpec = _spec(
   4.0,
   PropertyValueType.OneD,
   {
-    min_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    chunkBoundsAreHints: true,
   },
 );
 
@@ -1136,8 +1136,8 @@ export const _VECTOR_FILL_SPECS: PropSpec[] = [
   _VECTOR_COMPOSITE_ORDER,
   _VECTOR_FILL_RULE,
   _spec("ADBE Vector Fill Color", "Color", [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _VECTOR_FILL_OPACITY,
 ];
@@ -1185,8 +1185,8 @@ export const _VECTOR_STROKE_SPECS: PropSpec[] = [
   _VECTOR_BLEND_MODE,
   _VECTOR_COMPOSITE_ORDER,
   _spec("ADBE Vector Stroke Color", "Color", [1.0, 1.0, 1.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _VECTOR_STROKE_OPACITY,
   _VECTOR_STROKE_WIDTH,
@@ -1197,74 +1197,74 @@ export const _VECTOR_STROKE_SPECS: PropSpec[] = [
 
 // Canonical children of "ADBE Vector Stroke Dashes".
 export const _VECTOR_STROKE_DASHES_SPECS: PropSpec[] = [
-  _spec("ADBE Vector Stroke Dash 1", "Dash", 10.0, PropertyValueType.OneD, { min_value: 0 }),
-  _spec("ADBE Vector Stroke Gap 1", "Gap", 10.0, PropertyValueType.OneD, { min_value: 0 }),
-  _spec("ADBE Vector Stroke Dash 2", "Dash 2", 10.0, PropertyValueType.OneD, { min_value: 0 }),
-  _spec("ADBE Vector Stroke Gap 2", "Gap 2", 10.0, PropertyValueType.OneD, { min_value: 0 }),
-  _spec("ADBE Vector Stroke Dash 3", "Dash 3", 10.0, PropertyValueType.OneD, { min_value: 0 }),
-  _spec("ADBE Vector Stroke Gap 3", "Gap 3", 10.0, PropertyValueType.OneD, { min_value: 0 }),
+  _spec("ADBE Vector Stroke Dash 1", "Dash", 10.0, PropertyValueType.OneD, { minValue: 0 }),
+  _spec("ADBE Vector Stroke Gap 1", "Gap", 10.0, PropertyValueType.OneD, { minValue: 0 }),
+  _spec("ADBE Vector Stroke Dash 2", "Dash 2", 10.0, PropertyValueType.OneD, { minValue: 0 }),
+  _spec("ADBE Vector Stroke Gap 2", "Gap 2", 10.0, PropertyValueType.OneD, { minValue: 0 }),
+  _spec("ADBE Vector Stroke Dash 3", "Dash 3", 10.0, PropertyValueType.OneD, { minValue: 0 }),
+  _spec("ADBE Vector Stroke Gap 3", "Gap 3", 10.0, PropertyValueType.OneD, { minValue: 0 }),
   _spec("ADBE Vector Stroke Offset", "Offset", 0.0, PropertyValueType.OneD),
 ];
 
 // Canonical children of "ADBE Vector Stroke Taper".
 export const _VECTOR_STROKE_TAPER_SPECS: PropSpec[] = [
   _spec("ADBE Vector Taper Length Units", "Length Units", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Taper Start Length", "Start Length", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper End Length", "End Length", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper StartWidthPx", "Start Length", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Taper EndWidthPx", "End Length", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Taper Start Width", "Start Width", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper End Width", "End Width", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper Start Ease", "Start Ease", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper End Ease", "End Ease", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
 ];
 
 // Canonical children of "ADBE Vector Stroke Wave".
 export const _VECTOR_STROKE_WAVE_SPECS: PropSpec[] = [
   _spec("ADBE Vector Taper Wave Amount", "Amount", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Taper Wave Units", "Units", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Taper Wavelength", "Wavelength", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Taper Wave Cycles", "Cycles", 10.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Taper Wave Phase", "Phase", 0.0, PropertyValueType.OneD),
 ];
@@ -1277,17 +1277,17 @@ export const _VECTOR_TRANSFORM_SPECS: PropSpec[] = [
   _spec("ADBE Vector Anchor", "Anchor Point", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Vector Skew", "Skew", 0.0, PropertyValueType.OneD, {
-    min_value: -85,
-    max_value: 85,
+    minValue: -85,
+    maxValue: 85,
   }),
   _spec("ADBE Vector Skew Axis", "Skew Axis", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Rotation", "Rotation", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Group Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
@@ -1295,52 +1295,52 @@ export const _VECTOR_TRANSFORM_SPECS: PropSpec[] = [
 export function _vec3dFaceSpecs(face: string): PropSpec[] {
   return [
     _spec(`ADBE Vec3D ${face} RGB`, `${face} Color`, [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-      min_value: _COLOR_MIN,
-      max_value: _COLOR_MAX,
+      minValue: _COLOR_MIN,
+      maxValue: _COLOR_MAX,
     }),
     _spec(`ADBE Vec3D ${face} Ambient`, `${face} Ambient`, 100.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Diffuse`, `${face} Diffuse`, 50.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Specular`, `${face} Specular Intensity`, 50.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Shininess`, `${face} Specular Shininess`, 5.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Metal`, `${face} Metal`, 100.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Reflection`, `${face} Reflection Intensity`, 0.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Gloss`, `${face} Reflection Sharpness`, 100.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Fresnel`, `${face} Reflection Rolloff`, 0.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} Xparency`, `${face} Transparency`, 0.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} XparRoll`, `${face} Transparency Rolloff`, 0.0, PropertyValueType.OneD, {
-      min_value: 0,
-      max_value: 100,
+      minValue: 0,
+      maxValue: 100,
     }),
     _spec(`ADBE Vec3D ${face} IOR`, `${face} Index of Refraction`, 1.0, PropertyValueType.OneD, {
-      min_value: 1,
-      max_value: 5,
+      minValue: 1,
+      maxValue: 5,
     }),
   ];
 }
@@ -1353,12 +1353,12 @@ export const _VECTOR_MATERIALS_SPECS: PropSpec[] = ["Front", "Bevel", "Side", "B
 // Canonical children of "ADBE Vector Shape - Ellipse".
 export const _VECTOR_ELLIPSE_SPECS: PropSpec[] = [
   _spec("ADBE Vector Shape Direction", "Shape Direction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Ellipse Size", "Size", [100.0, 100.0], PropertyValueType.TwoD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Vector Ellipse Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
 ];
@@ -1366,17 +1366,17 @@ export const _VECTOR_ELLIPSE_SPECS: PropSpec[] = [
 // Canonical children of "ADBE Vector Shape - Rect".
 export const _VECTOR_RECT_SPECS: PropSpec[] = [
   _spec("ADBE Vector Shape Direction", "Shape Direction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Rect Size", "Size", [100.0, 100.0], PropertyValueType.TwoD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Vector Rect Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Rect Roundness", "Roundness", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
 ];
 
@@ -1385,31 +1385,31 @@ export const _VECTOR_REPEATER_TRANSFORM_SPECS: PropSpec[] = [
   _spec("ADBE Vector Repeater Anchor", "Anchor Point", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Repeater Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Repeater Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Vector Repeater Rotation", "Rotation", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Repeater Opacity 1", "Start Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Repeater Opacity 2", "End Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 // Canonical children of "ADBE Vector Filter - Repeater".
 export const _VECTOR_REPEATER_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Vector Repeater Copies", "Copies", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
+    minValue: 0,
   }),
   _spec("ADBE Vector Repeater Offset", "Offset", 0.0, PropertyValueType.OneD, {
-    bound_chunks: true,
+    boundChunks: true,
   }),
   _spec("ADBE Vector Repeater Order", "Composite", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
   new GroupSpec("ADBE Vector Repeater Transform", "Transform"),
 ];
@@ -1420,85 +1420,85 @@ export const _VECTOR_REPEATER_SPECS: (PropSpec | GroupSpec)[] = [
 // "ADBE Vector Shape - Group" (Path): Shape Direction + the bezier path.
 export const _VECTOR_PATH_SPECS: PropSpec[] = [
   _spec("ADBE Vector Shape Direction", "Shape Direction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Shape", "Path", null, PropertyValueType.CUSTOM_VALUE, {
-    is_spatial: true,
+    isSpatial: true,
   }),
 ];
 
 // "ADBE Vector Filter - Merge".
 export const _VECTOR_MERGE_SPECS: PropSpec[] = [
   _spec("ADBE Vector Merge Type", "Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 5,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 5,
+    canVaryOverTime: false,
   }),
 ];
 
 // "ADBE Vector Filter - Offset".
 export const _VECTOR_OFFSET_SPECS: PropSpec[] = [
   _spec("ADBE Vector Offset Amount", "Amount", 10.0, PropertyValueType.OneD, {
-    bound_chunks: true,
-    chunk_bounds_are_hints: true,
+    boundChunks: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Offset Line Join", "Line Join", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Vector Offset Miter Limit", "Miter Limit", 4.0, PropertyValueType.OneD, {
-    min_value: 1,
-    chunk_bounds_are_hints: true,
+    minValue: 1,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Offset Copies", "Copies", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Offset Copy Offset", "Copy Offset", 1.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // "ADBE Vector Filter - PB" (Pucker & Bloat).
 export const _VECTOR_PUCKER_BLOAT_SPECS: PropSpec[] = [
   _spec("ADBE Vector PuckerBloat Amount", "Amount", 10.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // "ADBE Vector Filter - RC" (Round Corners).
 export const _VECTOR_ROUND_CORNERS_SPECS: PropSpec[] = [
   _spec("ADBE Vector RoundCorner Radius", "Radius", 10.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
 ];
 
 // "ADBE Vector Filter - Trim" (Trim Paths).
 export const _VECTOR_TRIM_SPECS: PropSpec[] = [
   _spec("ADBE Vector Trim Start", "Start", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Trim End", "End", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Trim Offset", "Offset", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Trim Type", "Trim Multiple Shapes", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
 ];
 
 // "ADBE Vector Filter - Twist".
 export const _VECTOR_TWIST_SPECS: PropSpec[] = [
   _spec("ADBE Vector Twist Angle", "Angle", 10.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Twist Center", "Center", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
 ];
@@ -1506,29 +1506,29 @@ export const _VECTOR_TWIST_SPECS: PropSpec[] = [
 // "ADBE Vector Filter - Roughen" (Wiggle Paths).
 export const _VECTOR_ROUGHEN_SPECS: PropSpec[] = [
   _spec("ADBE Vector Roughen Size", "Size", 10.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Roughen Detail", "Detail", 10.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Roughen Points", "Points", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("ADBE Vector Temporal Freq", "Wiggles/Second", 2.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Correlation", "Correlation", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Temporal Phase", "Temporal Phase", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Spatial Phase", "Spatial Phase", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Random Seed", "Random Seed", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 10000,
+    minValue: 0,
+    maxValue: 10000,
   }),
 ];
 
@@ -1543,17 +1543,17 @@ export const _VECTOR_WIGGLER_TRANSFORM_SPECS: PropSpec[] = [
 // "ADBE Vector Filter - Wiggler" (Wiggle Transform).
 export const _VECTOR_WIGGLER_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Vector Xform Temporal Freq", "Wiggles/Second", 2.0, PropertyValueType.OneD, {
-    chunk_bounds_are_hints: true,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Correlation", "Correlation", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Temporal Phase", "Temporal Phase", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Spatial Phase", "Spatial Phase", 0.0, PropertyValueType.OneD),
   _spec("ADBE Vector Random Seed", "Random Seed", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 10000,
+    minValue: 0,
+    maxValue: 10000,
   }),
   new GroupSpec("ADBE Vector Wiggler Transform", "Transform"),
 ];
@@ -1561,16 +1561,16 @@ export const _VECTOR_WIGGLER_SPECS: (PropSpec | GroupSpec)[] = [
 // "ADBE Vector Filter - Zigzag" (Zig Zag).
 export const _VECTOR_ZIGZAG_SPECS: PropSpec[] = [
   _spec("ADBE Vector Zigzag Size", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    chunk_bounds_are_hints: true,
+    minValue: 0,
+    chunkBoundsAreHints: true,
   }),
   _spec("ADBE Vector Zigzag Detail", "Ridges per segment", 10.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Vector Zigzag Points", "Points", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
 ];
 
@@ -1579,74 +1579,74 @@ export const _VECTOR_ZIGZAG_SPECS: PropSpec[] = [
 // "ADBE Text Range Advanced" - the Range Selector's Advanced subgroup.
 export const _TEXT_RANGE_ADVANCED_SPECS: PropSpec[] = [
   _spec("ADBE Text Range Units", "Units", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 2,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Range Type2", "Based On", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 4,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 4,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Selector Mode", "Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 6,
+    minValue: 1,
+    maxValue: 6,
   }),
   _spec("ADBE Text Selector Max Amount", "Amount", 100.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Range Shape", "Shape", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 6,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 6,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Selector Smoothness", "Smoothness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Text Levels Max Ease", "Ease High", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Levels Min Ease", "Ease Low", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Randomize Order", "Randomize Order", 0.0, PropertyValueType.OneD, {
-    can_vary_over_time: false,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Random Seed", "Random Seed", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 10000,
+    minValue: 0,
+    maxValue: 10000,
   }),
 ];
 
 // "ADBE Text Selector" - Range Selector.
 export const _TEXT_RANGE_SELECTOR_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Text Percent Start", "Start", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Percent End", "End", 100.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Percent Offset", "Offset", 0.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Index Start", "Start", 0.0, PropertyValueType.OneD, {
-    min_value: -99999,
-    max_value: 99999,
+    minValue: -99999,
+    maxValue: 99999,
   }),
   _spec("ADBE Text Index End", "End", 0.0, PropertyValueType.OneD, {
-    min_value: -99999,
-    max_value: 99999,
+    minValue: -99999,
+    maxValue: 99999,
   }),
   _spec("ADBE Text Index Offset", "Offset", 0.0, PropertyValueType.OneD, {
-    min_value: -99999,
-    max_value: 99999,
+    minValue: -99999,
+    maxValue: 99999,
   }),
   new GroupSpec("ADBE Text Range Advanced", "Advanced"),
 ];
@@ -1654,52 +1654,52 @@ export const _TEXT_RANGE_SELECTOR_SPECS: (PropSpec | GroupSpec)[] = [
 // "ADBE Text Wiggly Selector".
 export const _TEXT_WIGGLY_SELECTOR_SPECS: PropSpec[] = [
   _spec("ADBE Text Selector Mode", "Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 6,
+    minValue: 1,
+    maxValue: 6,
   }),
   _spec("ADBE Text Wiggly Max Amount", "Max Amount", 100.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Wiggly Min Amount", "Min Amount", -100.0, PropertyValueType.OneD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
   _spec("ADBE Text Range Type2", "Based On", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 4,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 4,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Temporal Freq", "Wiggles/Second", 2.0, PropertyValueType.OneD, {
-    bound_chunks: true,
+    boundChunks: true,
   }),
   _spec("ADBE Text Character Correlation", "Correlation", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("ADBE Text Temporal Phase", "Temporal Phase", 0.0, PropertyValueType.OneD, {
-    bound_chunks: true,
+    boundChunks: true,
   }),
   _spec("ADBE Text Spatial Phase", "Spatial Phase", 0.0, PropertyValueType.OneD, {
-    bound_chunks: true,
+    boundChunks: true,
   }),
   _spec("ADBE Text Wiggly Lock Dim", "Lock Dimensions", 0.0, PropertyValueType.OneD),
   _spec("ADBE Text Wiggly Random Seed", "Random Seed", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 10000,
+    minValue: 0,
+    maxValue: 10000,
   }),
 ];
 
 // "ADBE Text Expressible Selector" - Expression Selector.
 export const _TEXT_EXPRESSIBLE_SELECTOR_SPECS: PropSpec[] = [
   _spec("ADBE Text Range Type2", "Based On", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 4,
-    can_vary_over_time: false,
+    minValue: 1,
+    maxValue: 4,
+    canVaryOverTime: false,
   }),
   _spec("ADBE Text Expressible Amount", "Amount", [100.0, 100.0, 100.0], PropertyValueType.ThreeD, {
-    min_value: -100,
-    max_value: 100,
+    minValue: -100,
+    maxValue: 100,
   }),
 ];
 
@@ -1710,44 +1710,44 @@ export const _TEXT_EXPRESSIBLE_SELECTOR_SPECS: PropSpec[] = [
 // toggles are integer-typed with the default 0xFFFF hint.
 export const _BLEND_OPTIONS_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Global Angle2", "Global Light Angle", 120.0, PropertyValueType.OneD, {
-    value_hint_type: 2,
+    valueHintType: 2,
   }),
   _spec("ADBE Global Altitude2", "Global Light Altitude", 30.0, PropertyValueType.OneD, {
-    value_hint_type: 2,
+    valueHintType: 2,
   }),
   new GroupSpec("ADBE Adv Blend Group", "Advanced Blending"),
 ];
 
 export const _ADV_BLEND_SPECS: PropSpec[] = [
   _spec("ADBE Layer Fill Opacity2", "Fill Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
-    value_hint_type: 0xffff,
-    hint_bounds: [0.0, 100.0],
+    minValue: 0,
+    maxValue: 100,
+    valueHintType: 0xffff,
+    hintBounds: [0.0, 100.0],
   }),
   _spec("ADBE R Channel Blend", "Red", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
     integer: true,
   }),
   _spec("ADBE G Channel Blend", "Green", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
     integer: true,
   }),
   _spec("ADBE B Channel Blend", "Blue", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
     integer: true,
   }),
   _spec("ADBE Blend Interior", "Blend Interior Styles as Group", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
     integer: true,
   }),
   _spec("ADBE Blend Ranges", "Use Blend Ranges from Source", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
     integer: true,
   }),
 ];
@@ -1757,7 +1757,7 @@ export const _ADV_BLEND_SPECS: PropSpec[] = [
  *
  * The pool is a fixed set AE exposes for every text animator; py
  * synthesizes it so the group matches ExtendScript. Units are carried
- * on the spec (`units_text`) to keep the bulk table self-contained.
+ * on the spec (`unitsText`) to keep the bulk table self-contained.
  */
 export function _buildTextAnimatorPoolSpecs(): PropSpec[] {
   const specs: PropSpec[] = [];
@@ -1772,12 +1772,12 @@ export function _buildTextAnimatorPoolSpecs(): PropSpec[] {
     specs.push(
       _spec(e.mn, e.name, e.value, pvt, {
         // dimensions/is_spatial/color derive from pvt (_PVT_KIND).
-        min_value: e.min,
-        max_value: e.max,
+        minValue: e.min,
+        maxValue: e.max,
         // canVary defaults True for the pool; only record False.
-        can_vary_over_time: e.cv === false ? false : null,
-        units_text: e.units,
-        bound_chunks: unbounded1d ? true : null,
+        canVaryOverTime: e.cv === false ? false : null,
+        unitsText: e.units,
+        boundChunks: unbounded1d ? true : null,
       }),
     );
   }
@@ -1790,360 +1790,360 @@ export const _TEXT_ANIMATOR_POOL_SPECS: PropSpec[] = _buildTextAnimatorPoolSpecs
 
 export const _DROP_SHADOW_SPECS: PropSpec[] = [
   _spec("dropShadow/mode2", "Blend Mode", 5.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("dropShadow/color", "Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("dropShadow/opacity", "Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("dropShadow/useGlobalAngle", "Use Global Light", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("dropShadow/localLightingAngle", "Angle", 120.0, PropertyValueType.OneD),
   _spec("dropShadow/distance", "Distance", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 30000,
+    minValue: 0,
+    maxValue: 30000,
   }),
   _spec("dropShadow/chokeMatte", "Spread", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("dropShadow/blur", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("dropShadow/noise", "Noise", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("dropShadow/layerConceals", "Layer Knocks Out Drop Shadow", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
 ];
 
 export const _INNER_SHADOW_SPECS: PropSpec[] = [
   _spec("innerShadow/mode2", "Blend Mode", 5.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("innerShadow/color", "Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("innerShadow/opacity", "Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerShadow/useGlobalAngle", "Use Global Light", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("innerShadow/localLightingAngle", "Angle", 120.0, PropertyValueType.OneD),
   _spec("innerShadow/distance", "Distance", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 30000,
+    minValue: 0,
+    maxValue: 30000,
   }),
   _spec("innerShadow/chokeMatte", "Choke", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerShadow/blur", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("innerShadow/noise", "Noise", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 export const _OUTER_GLOW_SPECS: PropSpec[] = [
   _spec("outerGlow/mode2", "Blend Mode", 11.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("outerGlow/opacity", "Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("outerGlow/noise", "Noise", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("outerGlow/AEColorChoice", "Color Type", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("outerGlow/color", "Color", [1.0, 1.0, 0.74509803921569, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("outerGlow/gradient", "Colors", null, PropertyValueType.NO_VALUE, {
-    is_spatial: true,
-    can_vary_over_time: true,
+    isSpatial: true,
+    canVaryOverTime: true,
   }),
   _spec("outerGlow/gradientSmoothness", "Gradient Smoothness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("outerGlow/glowTechnique", "Technique", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("outerGlow/chokeMatte", "Spread", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("outerGlow/blur", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("outerGlow/inputRange", "Range", 50.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
+    minValue: 1,
+    maxValue: 100,
   }),
   _spec("outerGlow/shadingNoise", "Jitter", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 export const _INNER_GLOW_SPECS: PropSpec[] = [
   _spec("innerGlow/mode2", "Blend Mode", 11.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("innerGlow/opacity", "Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerGlow/noise", "Noise", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerGlow/AEColorChoice", "Color Type", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("innerGlow/color", "Color", [1.0, 1.0, 0.74509803921569, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("innerGlow/gradient", "Colors", null, PropertyValueType.NO_VALUE, {
-    is_spatial: true,
-    can_vary_over_time: true,
+    isSpatial: true,
+    canVaryOverTime: true,
   }),
   _spec("innerGlow/gradientSmoothness", "Gradient Smoothness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerGlow/glowTechnique", "Technique", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("innerGlow/innerGlowSource", "Source", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("innerGlow/chokeMatte", "Choke", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("innerGlow/blur", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("innerGlow/inputRange", "Range", 50.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 100,
+    minValue: 1,
+    maxValue: 100,
   }),
   _spec("innerGlow/shadingNoise", "Jitter", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 export const _BEVEL_EMBOSS_SPECS: PropSpec[] = [
   _spec("bevelEmboss/bevelStyle", "Style", 2.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 5,
+    minValue: 1,
+    maxValue: 5,
   }),
   _spec("bevelEmboss/bevelTechnique", "Technique", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
+    minValue: 1,
+    maxValue: 3,
   }),
   _spec("bevelEmboss/strengthRatio", "Depth", 100.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 1000,
+    minValue: 1,
+    maxValue: 1000,
   }),
   _spec("bevelEmboss/bevelDirection", "Direction", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 2,
+    minValue: 1,
+    maxValue: 2,
   }),
   _spec("bevelEmboss/blur", "Size", 5.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("bevelEmboss/softness", "Soften", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 16,
+    minValue: 0,
+    maxValue: 16,
   }),
   _spec("bevelEmboss/useGlobalAngle", "Use Global Light", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("bevelEmboss/localLightingAngle", "Angle", 120.0, PropertyValueType.OneD),
   _spec("bevelEmboss/localLightingAltitude", "Altitude", 30.0, PropertyValueType.OneD),
   _spec("bevelEmboss/highlightMode", "Highlight Mode", 11.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("bevelEmboss/highlightColor", "Highlight Color", [1.0, 1.0, 1.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("bevelEmboss/highlightOpacity", "Highlight Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("bevelEmboss/shadowMode", "Shadow Mode", 5.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("bevelEmboss/shadowColor", "Shadow Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("bevelEmboss/shadowOpacity", "Shadow Opacity", 75.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 export const _SATIN_SPECS: PropSpec[] = [
   _spec("chromeFX/mode2", "Blend Mode", 5.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("chromeFX/color", "Color", [0.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("chromeFX/opacity", "Opacity", 50.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("chromeFX/localLightingAngle", "Angle", 19.0, PropertyValueType.OneD),
   _spec("chromeFX/distance", "Distance", 11.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 250,
+    minValue: 1,
+    maxValue: 250,
   }),
   _spec("chromeFX/blur", "Size", 14.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 250,
+    minValue: 0,
+    maxValue: 250,
   }),
   _spec("chromeFX/invert", "Invert", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
 ];
 
 export const _COLOR_OVERLAY_SPECS: PropSpec[] = [
   _spec("solidFill/mode2", "Blend Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("solidFill/color", "Color", [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
   _spec("solidFill/opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
 ];
 
 export const _GRADIENT_OVERLAY_SPECS: PropSpec[] = [
   _spec("gradientFill/mode2", "Blend Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("gradientFill/opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("gradientFill/gradient", "Colors", null, PropertyValueType.NO_VALUE, {
-    is_spatial: true,
-    can_vary_over_time: true,
+    isSpatial: true,
+    canVaryOverTime: true,
   }),
   _spec("gradientFill/gradientSmoothness", "Gradient Smoothness", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("gradientFill/angle", "Angle", 90.0, PropertyValueType.OneD),
   _spec("gradientFill/type", "Style", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 5,
+    minValue: 1,
+    maxValue: 5,
   }),
   _spec("gradientFill/reverse", "Reverse", 0.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("gradientFill/align", "Align with Layer", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("gradientFill/scale", "Scale", 100.0, PropertyValueType.OneD, {
-    min_value: 10,
-    max_value: 150,
+    minValue: 10,
+    maxValue: 150,
   }),
   _spec("gradientFill/offset", "Offset", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
 ];
 
 export const _PATTERN_OVERLAY_SPECS: PropSpec[] = [
   _spec("patternFill/mode2", "Blend Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("patternFill/opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("patternFill/align", "Link with Layer", 1.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 1,
+    minValue: 0,
+    maxValue: 1,
   }),
   _spec("patternFill/scale", "Scale", 100.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 1000,
+    minValue: 1,
+    maxValue: 1000,
   }),
   _spec("patternFill/phase", "Offset", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
 ];
 
 export const _STROKE_SPECS: PropSpec[] = [
   _spec("frameFX/mode2", "Blend Mode", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 33,
+    minValue: 1,
+    maxValue: 33,
   }),
   _spec("frameFX/color", "Color", [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
-    min_value: _COLOR_MIN,
-    max_value: _COLOR_MAX,
+    minValue: _COLOR_MIN,
+    maxValue: _COLOR_MAX,
   }),
-  _spec("frameFX/size", "Size", 3.0, PropertyValueType.OneD, { min_value: 1, max_value: 250 }),
+  _spec("frameFX/size", "Size", 3.0, PropertyValueType.OneD, { minValue: 1, maxValue: 250 }),
   _spec("frameFX/opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-    min_value: 0,
-    max_value: 100,
+    minValue: 0,
+    maxValue: 100,
   }),
   _spec("frameFX/style", "Position", 1.0, PropertyValueType.OneD, {
-    min_value: 1,
-    max_value: 3,
+    minValue: 1,
+    maxValue: 3,
   }),
 ];
 
@@ -2201,12 +2201,12 @@ export const _STYLE_HINT_BOUNDS_EXCEPTIONS: Map<string, [number, number]> = new 
 
 /** Stamp the AE materialization canon onto a Layer Styles leaf spec. */
 export function _styleLeafCanon(spec: PropSpec): PropSpec {
-  const suffix = spec.match_name.slice(spec.match_name.lastIndexOf("/") + 1);
+  const suffix = spec.matchName.slice(spec.matchName.lastIndexOf("/") + 1);
   if (spec.color) return spec._replace({ pad2a: 1 });
-  if (_STYLE_ENUM_SUFFIXES.has(suffix)) return spec._replace({ integer: true, value_hint_type: 1 });
-  if (_STYLE_ANGLE_SUFFIXES.has(suffix)) return spec._replace({ integer: true, property_category: 0x06 });
-  const bounds = _STYLE_HINT_BOUNDS_EXCEPTIONS.get(spec.match_name) ?? _STYLE_HINT_BOUNDS.get(suffix);
-  if (bounds != null) return spec._replace({ value_hint_type: 0xffff, hint_bounds: bounds });
+  if (_STYLE_ENUM_SUFFIXES.has(suffix)) return spec._replace({ integer: true, valueHintType: 1 });
+  if (_STYLE_ANGLE_SUFFIXES.has(suffix)) return spec._replace({ integer: true, propertyCategory: 0x06 });
+  const bounds = _STYLE_HINT_BOUNDS_EXCEPTIONS.get(spec.matchName) ?? _STYLE_HINT_BOUNDS.get(suffix);
+  if (bounds != null) return spec._replace({ valueHintType: 0xffff, hintBounds: bounds });
   return spec;
 }
 
@@ -2258,31 +2258,31 @@ export const _TRANSFORM_SPECS: PropSpec[] = [
   _spec("ADBE Anchor Point", "Anchor Point", null, PropertyValueType.ThreeD_SPATIAL),
   _spec("ADBE Position", "Position", null, PropertyValueType.ThreeD_SPATIAL),
   _spec("ADBE Position_0", "X Position", null, PropertyValueType.OneD, {
-    has_time_base: true,
-    bound_chunks: true,
+    hasTimeBase: true,
+    boundChunks: true,
   }),
   _spec("ADBE Position_1", "Y Position", null, PropertyValueType.OneD, {
-    has_time_base: true,
-    bound_chunks: true,
+    hasTimeBase: true,
+    boundChunks: true,
   }),
   _spec("ADBE Position_2", "Z Position", null, PropertyValueType.OneD, {
-    bound_chunks: true,
+    boundChunks: true,
   }),
   _spec("ADBE Scale", "Scale", null, PropertyValueType.ThreeD),
   _spec("ADBE Orientation", "Orientation", null, PropertyValueType.ThreeD_SPATIAL, {
-    has_time_base: true,
-    spatial_flags: 0x07,
+    hasTimeBase: true,
+    spatialFlags: 0x07,
     cvot: 0x07,
-    value_hint_type: 6,
+    valueHintType: 6,
   }),
-  _spec("ADBE Rotate X", "X Rotation", null, PropertyValueType.OneD, { has_time_base: true }),
-  _spec("ADBE Rotate Y", "Y Rotation", null, PropertyValueType.OneD, { has_time_base: true }),
+  _spec("ADBE Rotate X", "X Rotation", null, PropertyValueType.OneD, { hasTimeBase: true }),
+  _spec("ADBE Rotate Y", "Y Rotation", null, PropertyValueType.OneD, { hasTimeBase: true }),
   _spec("ADBE Rotate Z", "Rotation", null, PropertyValueType.OneD),
   _spec("ADBE Opacity", "Opacity", null, PropertyValueType.OneD),
   _spec("ADBE Envir Appear in Reflect", "Appears in Reflections", null, PropertyValueType.OneD, {
     integer: true,
-    can_vary_over_time: false,
-    has_time_base: true,
+    canVaryOverTime: false,
+    hasTimeBase: true,
   }),
 ];
 
@@ -2386,8 +2386,8 @@ export const _TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
   new GroupSpec("ADBE Text Properties", "Text"),
   new GroupSpec("ADBE Root Vectors Group", "Contents"),
   _spec("ADBE Time Remapping", "Time Remap", null, PropertyValueType.OneD, {
-    min_value: 0,
-    has_time_base: true,
+    minValue: 0,
+    hasTimeBase: true,
   }),
   new GroupSpec("ADBE MTrackers", "Motion Trackers"),
   new GroupSpec("ADBE Mask Parade", "Masks"),
@@ -2412,7 +2412,7 @@ export const _TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
 // ExtendScript reports AND AE writes to binary (identical; verified against
 // parametric_meshes.aep and its ExtendScript export). Note the order differs
 // from other AV layers: Geometry Options (Plane) and Essential Properties
-// come after Material Assignment. Group `enable_flags` mirror the tdsb
+// come after Material Assignment. Group `enableFlags` mirror the tdsb
 // bytes AE writes for a new mesh layer; the ACTIVE mesh type's option and
 // bevel groups get `1` at creation time instead (see
 // `CompItem.addParametricMesh`).
@@ -2502,8 +2502,8 @@ export const _SKIP_FOR_REGULAR_AV: ReadonlySet<string> = new Set<string>([
 /** Cameras/lights expose only Marker, Transform and their own options. */
 export function _cameraLightSkip(ownOptions: string): ReadonlySet<string> {
   return new Set<string>(
-    _TOP_LEVEL_SPECS.filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.match_name)).map(
-      (s) => s.match_name,
+    _TOP_LEVEL_SPECS.filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.matchName)).map(
+      (s) => s.matchName,
     ),
   );
 }

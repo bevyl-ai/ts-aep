@@ -113,9 +113,10 @@ export class Dumper {
     const cls: string = value.constructor?.name ?? "object";
     if (cls === "Object") {
       // A plain object stands for a Python dict (kwargs-style record).
+      // ...whose keys are camelCase record fields here, snake_case dict keys in py-aep.
       const keys = Object.keys(value);
-      this.emit(path, { $dict: keys });
-      for (const k of keys) this.walk(`${path}{${k}}`, value[k], depth + 1);
+      this.emit(path, { $dict: keys.map(py_name) });
+      for (const k of keys) this.walk(`${path}{${py_name(k)}}`, value[k], depth + 1);
       return;
     }
     this.emit(path, { $obj: cls });

@@ -18,7 +18,7 @@ export class LayerSpec {
   readonly name: string;
 
   /** The per-layer `opti` asset-info bytes. */
-  readonly opti_data: Uint8Array;
+  readonly optiData: Uint8Array;
 
   /** Footage pixel width (full canvas for COMP, content box for cropped). */
   readonly width: number;
@@ -36,34 +36,34 @@ export class LayerSpec {
    * `true` when the footage spans the full source frame; `false` for a layer
    * cropped to its content box.
    */
-  readonly full_frame: boolean;
+  readonly fullFrame: boolean;
 
   /** `true` when the comp layer should be marked as an adjustment layer. */
-  readonly is_adjustment: boolean;
+  readonly isAdjustment: boolean;
 
   /**
    * Photoshop layer id (`lyid`) for the `sspc` layer binding; `null` for
    * sources without one (AI/PDF layers, EPS, flattened documents).
    */
-  readonly layer_id: number | null;
+  readonly layerId: number | null;
 
   /**
    * 0-based document index of the layer for the `sspc` layer binding;
    * `null` for single-layer documents (EPS, flattened PSD).
    */
-  readonly layer_index: number | null;
+  readonly layerIndex: number | null;
 
   /**
    * Cached source data size for `sspc` byte 0xD0 (PSD: content-box pixel
    * bytes; AI/PDF: file size). `0` lets AE re-derive it.
    */
-  readonly data_size: number;
+  readonly dataSize: number;
 
   /**
    * Override for the `sspc` 0xC8 kind bytes (PSD layer-styles mode);
    * `null` applies `FileSource._new`'s whole-file rule.
    */
-  readonly reserved_c8: Uint8Array | null;
+  readonly reservedC8: Uint8Array | null;
 
   /**
    * Resolved layer styles to serialize on the comp layer (an
@@ -82,7 +82,7 @@ export class LayerSpec {
    * Set the layer's preserve-transparency switch (a clipped PSD layer
    * inside its auto-precomposed clipping run).
    */
-  readonly preserve_transparency: boolean;
+  readonly preserveTransparency: boolean;
 
   /**
    * The comp layer's video switch. `false` for a source layer the document
@@ -96,7 +96,7 @@ export class LayerSpec {
    * which has no transparency. `null` for the layers of other files, which
    * take the file's alpha and depth.
    */
-  readonly has_alpha: boolean | null;
+  readonly hasAlpha: boolean | null;
 
   /**
    * A PSD layer's own pixel depth (`sspc` byte 0x3E); `null` with
@@ -124,21 +124,21 @@ export class LayerSpec {
     depth: number | null = null,
   ) {
     this.name = name;
-    this.opti_data = optiData;
+    this.optiData = optiData;
     this.width = width;
     this.height = height;
     this.transform = transform;
-    this.full_frame = fullFrame;
-    this.is_adjustment = isAdjustment;
-    this.layer_id = layerId;
-    this.layer_index = layerIndex;
-    this.data_size = dataSize;
-    this.reserved_c8 = reservedC8;
+    this.fullFrame = fullFrame;
+    this.isAdjustment = isAdjustment;
+    this.layerId = layerId;
+    this.layerIndex = layerIndex;
+    this.dataSize = dataSize;
+    this.reservedC8 = reservedC8;
     this.styles = styles;
     this.masks = masks;
-    this.preserve_transparency = preserveTransparency;
+    this.preserveTransparency = preserveTransparency;
     this.enabled = enabled;
-    this.has_alpha = hasAlpha;
+    this.hasAlpha = hasAlpha;
     this.depth = depth;
   }
 
@@ -150,33 +150,33 @@ export class LayerSpec {
   *[Symbol.iterator](): Generator<
     LayerSpec[
       | 'name'
-      | 'opti_data'
+      | 'optiData'
       | 'width'
       | 'transform'
-      | 'full_frame'
-      | 'layer_id'
-      | 'reserved_c8'
+      | 'fullFrame'
+      | 'layerId'
+      | 'reservedC8'
       | 'styles'
       | 'masks'
-      | 'has_alpha'
+      | 'hasAlpha'
     ]
   > {
     yield this.name;
-    yield this.opti_data;
+    yield this.optiData;
     yield this.width;
     yield this.height;
     yield this.transform;
-    yield this.full_frame;
-    yield this.is_adjustment;
-    yield this.layer_id;
-    yield this.layer_index;
-    yield this.data_size;
-    yield this.reserved_c8;
+    yield this.fullFrame;
+    yield this.isAdjustment;
+    yield this.layerId;
+    yield this.layerIndex;
+    yield this.dataSize;
+    yield this.reservedC8;
     yield this.styles;
     yield this.masks;
-    yield this.preserve_transparency;
+    yield this.preserveTransparency;
     yield this.enabled;
-    yield this.has_alpha;
+    yield this.hasAlpha;
     yield this.depth;
   }
 }
@@ -197,14 +197,14 @@ export class LayerGroupSpec {
   readonly children: Array<LayerSpec | LayerGroupSpec>;
 
   /** Override for the nested comp's item name; `null` uses `name`. A clipping run's precomp is named `"<main comp> (n)"` by AE. */
-  readonly comp_name: string | null;
+  readonly compName: string | null;
 
   /**
    * Baked parent-layer display name with `name_set` kept OFF (a
    * clipping run bakes the base layer's name); `null` leaves the name
    * empty so it inherits the nested comp's name (groups).
    */
-  readonly layer_name: string | null;
+  readonly layerName: string | null;
 
   /** Collapse transformations on the parent layer (groups); clipping precomps stay uncollapsed. */
   readonly collapsed: boolean;
@@ -226,8 +226,8 @@ export class LayerGroupSpec {
   ) {
     this.name = name;
     this.children = children;
-    this.comp_name = compName;
-    this.layer_name = layerName;
+    this.compName = compName;
+    this.layerName = layerName;
     this.collapsed = collapsed;
     this.enabled = enabled;
   }
@@ -238,12 +238,12 @@ export class LayerGroupSpec {
   }
 
   *[Symbol.iterator](): Generator<
-    LayerGroupSpec['name' | 'children' | 'comp_name' | 'collapsed']
+    LayerGroupSpec['name' | 'children' | 'compName' | 'collapsed']
   > {
     yield this.name;
     yield this.children;
-    yield this.comp_name;
-    yield this.layer_name;
+    yield this.compName;
+    yield this.layerName;
     yield this.collapsed;
     yield this.enabled;
   }

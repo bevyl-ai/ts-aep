@@ -200,7 +200,7 @@ test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
 test("test_garbage_channels_byte_stays_permissive", () => {
   const project = parseProjectFresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
-  om._om_ldat.channels = 7; // not a valid OutputChannels member
+  om._omLdat.channels = 7; // not a valid OutputChannels member
   om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
   om.settings.set("Audio Channels", om.settings.get("Audio Channels")); // clamp path
   expect(pyEq(om.validateState(), [])).toBe(true);

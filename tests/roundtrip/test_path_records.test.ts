@@ -42,7 +42,7 @@ function _sources(project: Project): Map<string, FileSource> {
   const out = new Map<string, FileSource>();
   for (const item of project.footages) {
     if (item instanceof FootageItem && item.mainSource instanceof FileSource) {
-      const kind = item.mainSource._target_is_folder ? "sequence" : "file";
+      const kind = item.mainSource._targetIsFolder ? "sequence" : "file";
       out.set(kind, item.mainSource);
     }
   }
@@ -105,7 +105,7 @@ describe("TestSaveFillsCounts", () => {
     const after = new Map<string, [JsonValue, JsonValue]>();
     for (const [k, s] of _sources(parseProjectFresh(out)).entries()) after.set(k, _counts(s));
     expect(pyEq(after, before)).toBe(true);
-    expect(pyEq(out.read_bytes(), sample.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), sample.readBytes())).toBe(true);
   });
 
   test("test_render_output_path", () => {
@@ -115,7 +115,7 @@ describe("TestSaveFillsCounts", () => {
     om.fileTemplate = fspath(tmpPath.div("renders")) + nodepath.sep + "out.[fileExtension]";
     const out = tmpPath.div("proj", "p.aep");
     project.save(out);
-    const data = getRqi(parseAep(out).project, "base").outputModules[0]._alas_data;
+    const data = getRqi(parseAep(out).project, "base").outputModules[0]._alasData;
     // proj/p.aep vs a file inside renders/.
     expect(
       pyEq([getitem(data, "ascendcount_base"), getitem(data, "ascendcount_target")], [2, 2]),

@@ -58,13 +58,13 @@ export function psdLayerBox(
   const merge = layerStyles === "merge";
   const path = merge ? _pathBox(layer, canvasW, canvasH) : null;
   let box: _Box;
-  if (layer.is_fill) {
+  if (layer.isFill) {
     box = path != null ? path : [0, 0, canvasW, canvasH];
-    if (layer.mask_box != null) {
-      box = _intersect(box, layer.mask_box);
+    if (layer.maskBox != null) {
+      box = _intersect(box, layer.maskBox);
     }
   } else {
-    box = layer.mask_box != null ? layer.mask_box : layer.bounds;
+    box = layer.maskBox != null ? layer.maskBox : layer.bounds;
     if (path != null) {
       box = _intersect(box, path);
     }
@@ -79,7 +79,7 @@ export function psdLayerBox(
 
 /** The pixel extent of an enabled, non-inverted vector mask, or `null`. */
 export function _pathBox(layer: PsdLayer, canvasW: number, canvasH: number): _Box | null {
-  const block = layer.vector_mask;
+  const block = layer.vectorMask;
   if (block == null || block.length < 8) {
     return null;
   }

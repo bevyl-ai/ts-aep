@@ -107,9 +107,9 @@ export function _volumeParts(path: PurePath): number {
 export function relativePathCounts(
   projectFile: string,
   target: string,
-  kw: { target_is_folder: boolean },
+  kw: { targetIsFolder: boolean },
 ): [number, number] {
-  const { target_is_folder } = kw;
+  const { targetIsFolder: target_is_folder } = kw;
   const base = _purePath(projectFile);
   let goal = _purePath(target);
   // `type(base) is type(goal)`

@@ -4,7 +4,7 @@
  * A RotoBezier mask ignores its stored direction handles: After Effects
  * derives every vertex's tangents from the vertices and a per-vertex tension
  * (the shape value's `omtn` chunk), and reports those through
- * `Shape.inTangents` / `out_tangents`. Rules measured on After Effects 2026
+ * `Shape.inTangents` / `outTangents`. Rules measured on After Effects 2026
  * by reading back masks with patched tensions and aspects (3-6 vertices, open
  * and closed paths, collinear and repeated vertices, keyed paths):
  *

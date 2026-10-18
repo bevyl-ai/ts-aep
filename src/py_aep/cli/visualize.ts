@@ -72,7 +72,7 @@ export function buildProjectNode(app: Application, includeProperties: boolean = 
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["version", app.version],
     ["build_number", app.buildNumber],
-    ["bits_per_channel", BitsPerChannel.name_of(project.bitsPerChannel)],
+    ["bits_per_channel", BitsPerChannel.nameOf(project.bitsPerChannel)],
     ["expression_engine", project.expressionEngine],
   ]);
   if (project.effectNames?.length > 0) attrs.set("effects_used", project.effectNames.length);
@@ -111,7 +111,7 @@ export function buildItemNode(item: Item, project: Project, includeProperties: b
     return {
       type: "Item",
       name: item.name,
-      attrs: new Map<string, AttrValue>([["type_name", item.typeName]]),
+      attrs: new Map<string, AttrValue>([["typeName", item.typeName]]),
       children: [],
     };
   }
@@ -128,7 +128,7 @@ export function buildFolderNode(folder: FolderItem, project: Project, includePro
     type: "Folder",
     name: folder.name,
     attrs: new Map<string, AttrValue>([
-      ["label", folder.label !== 0 ? Label.name_of(folder.label).toLowerCase() : null],
+      ["label", folder.label !== 0 ? Label.nameOf(folder.label).toLowerCase() : null],
     ]),
     children,
   };
@@ -278,7 +278,7 @@ export function buildRenderQueueNode(project: Project): Node {
 
 /** Build a render queue item node with output modules. */
 export function buildRenderQueueItemNode(item: RenderQueueItem, index: number, project: Project): Node {
-  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["output_modules", item.outputModules.length]]);
+  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["outputModules", item.outputModules.length]]);
 
   // Try to find the comp name
   const comp = item.comp;
@@ -558,10 +558,10 @@ Examples:
 `;
 
 export type Args = {
-  aep_file: string;
+  aepFile: string;
   format: string;
   depth: number | null;
-  no_properties: boolean;
+  noProperties: boolean;
   output: string | null;
 };
 
@@ -569,7 +569,7 @@ export type Args = {
 export const LONG_OPTIONS = ["--help", "--format", "--depth", "--no-properties", "--output"];
 
 /**
- * argparse's `parse_args` for exactly the options this CLI declares: long and
+ * argparse's `parseArgs` for exactly the options this CLI declares: long and
  * short forms, unambiguous long-option prefixes, `--opt=value`, `-fVALUE`, `--`.
  *
  * TODO(port): no argparse shim. HELP/USAGE are argparse's layout for its default 80-column
@@ -583,7 +583,7 @@ export function parseArgs(argv: string[]): Args {
   };
 
   const choices = ["text", "dot", "mermaid", "json"];
-  const args: Args = { aep_file: "", format: "text", depth: null, no_properties: false, output: null };
+  const args: Args = { aepFile: "", format: "text", depth: null, noProperties: false, output: null };
   const positionals: string[] = [];
 
   const apply = (long: string, value: string): void => {
@@ -632,7 +632,7 @@ export function parseArgs(argv: string[]): Args {
         process.exit(0);
       } else if (flag === "--no-properties") {
         if (inline != null) fail(`argument --no-properties: ignored explicit argument ${repr(inline)}`);
-        args.no_properties = true;
+        args.noProperties = true;
       } else if (flag === "--format") {
         apply("--format", takeValue("--format/-f", inline));
       } else if (flag === "--depth") {
@@ -664,7 +664,7 @@ export function parseArgs(argv: string[]): Args {
 
   if (positionals.length === 0) fail("the following arguments are required: aep_file");
   if (positionals.length > 1) fail(`unrecognized arguments: ${positionals.slice(1).join(" ")}`);
-  args.aep_file = positionals[0];
+  args.aepFile = positionals[0];
   return args;
 }
 
@@ -672,7 +672,7 @@ export function parseArgs(argv: string[]): Args {
 export function main(): number {
   const args = parseArgs(process.argv.slice(2));
 
-  const aepPath = new Path(args.aep_file);
+  const aepPath = new Path(args.aepFile);
   if (!aepPath.exists()) {
     process.stderr.write(`Error: File not found: ${aepPath}\n`);
     return 1;
@@ -680,7 +680,7 @@ export function main(): number {
 
   const app = parse(aepPath);
 
-  const includeProperties = !args.no_properties;
+  const includeProperties = !args.noProperties;
   const rootNode = buildProjectNode(app, includeProperties);
 
   // Output using context manager (get_output): a file when --output is given, else stdout.

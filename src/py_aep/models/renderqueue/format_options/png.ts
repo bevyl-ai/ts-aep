@@ -48,19 +48,19 @@ type Hdr10Meta = Map<string, JsonValue>;
  */
 export class PngFormatOptions extends FormatOptionsBase {
   declare _body: PngRoptChunk;
-  declare _hdr10_utf8: Utf8Chunk | null;
-  declare _hdr10_meta: Hdr10Meta;
+  declare _hdr10Utf8: Utf8Chunk | null;
+  declare _hdr10Meta: Hdr10Meta;
 
-  constructor(kw: { _body: PngRoptChunk; _hdr10_utf8?: Utf8Chunk | null }) {
+  constructor(kw: { _body: PngRoptChunk; _hdr10Utf8?: Utf8Chunk | null }) {
     super();
-    const { _body, _hdr10_utf8 = null } = kw;
+    const { _body, _hdr10Utf8: _hdr10_utf8 = null } = kw;
     this._body = _body;
-    this._hdr10_utf8 = _hdr10_utf8;
-    this._hdr10_meta = new Map();
+    this._hdr10Utf8 = _hdr10_utf8;
+    this._hdr10Meta = new Map();
     if (_hdr10_utf8 != null) {
       try {
         const parsed = jsonLoads(_hdr10_utf8.value);
-        if (parsed instanceof Map) this._hdr10_meta = parsed;
+        if (parsed instanceof Map) this._hdr10Meta = parsed;
       } catch (e) {
         // Python: `except (json.JSONDecodeError, ValueError): pass`
         if (!(e instanceof ValueError)) throw e;
@@ -89,10 +89,10 @@ export class PngFormatOptions extends FormatOptionsBase {
    */
   declare compression: PngCompression | number;
 
-  /** Serialize `_hdr10_meta` back to the Utf8 chunk body. */
-  _sync_hdr10(): void {
-    if (this._hdr10_utf8 != null) {
-      this._hdr10_utf8.value = jsonDumps(this._hdr10_meta, { separators: [",", ":"] });
+  /** Serialize `_hdr10Meta` back to the Utf8 chunk body. */
+  _syncHdr10(): void {
+    if (this._hdr10Utf8 != null) {
+      this._hdr10Utf8.value = jsonDumps(this._hdr10Meta, { separators: [",", ":"] });
     }
   }
 
@@ -102,12 +102,12 @@ export class PngFormatOptions extends FormatOptionsBase {
    * Options dialog. Only available for 16-bit output. Read / Write.
    */
   get includeHdr10Metadata(): boolean {
-    return pyBool(dictGet(this._hdr10_meta, "colorMetadataPresent", false));
+    return pyBool(dictGet(this._hdr10Meta, "colorMetadataPresent", false));
   }
 
   set includeHdr10Metadata(value: boolean) {
-    this._hdr10_meta.set("colorMetadataPresent", !!value);
-    this._sync_hdr10();
+    this._hdr10Meta.set("colorMetadataPresent", !!value);
+    this._syncHdr10();
   }
 
   /**
@@ -118,15 +118,15 @@ export class PngFormatOptions extends FormatOptionsBase {
    * is trusted). Read / Write.
    */
   get colorPrimaries(): Hdr10ColorPrimaries | JsonValue {
-    const raw = this._hdr10_meta.get("displayPrimaries") ?? null;
+    const raw = this._hdr10Meta.get("displayPrimaries") ?? null;
     if (raw == null) return Hdr10ColorPrimaries.P3_D65;
     return enumOrRaw((v: JsonValue) => Hdr10ColorPrimaries.of(jsonInt(v)))(raw);
   }
 
   set colorPrimaries(value: Hdr10ColorPrimaries) {
     validateEnum(Hdr10ColorPrimaries)(value);
-    this._hdr10_meta.set("displayPrimaries", int(value));
-    this._sync_hdr10();
+    this._hdr10Meta.set("displayPrimaries", int(value));
+    this._syncHdr10();
   }
 
   /**
@@ -135,18 +135,18 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `Luminance Minimum` field in the PNG Options dialog. Read / Write.
    */
   get luminanceMin(): number | null {
-    const raw = this._hdr10_meta.get("minLuminance") ?? null;
+    const raw = this._hdr10Meta.get("minLuminance") ?? null;
     return raw != null ? jsonFloat(raw) : null;
   }
 
   set luminanceMin(value: number | null) {
     if (value == null) {
-      this._hdr10_meta.delete("minLuminance");
+      this._hdr10Meta.delete("minLuminance");
     } else {
       validatePositiveNumber(value);
-      this._hdr10_meta.set("minLuminance", value);
+      this._hdr10Meta.set("minLuminance", value);
     }
-    this._sync_hdr10();
+    this._syncHdr10();
   }
 
   /**
@@ -155,18 +155,18 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `Luminance Maximum` field in the PNG Options dialog. Read / Write.
    */
   get luminanceMax(): number | null {
-    const raw = this._hdr10_meta.get("maxLuminance") ?? null;
+    const raw = this._hdr10Meta.get("maxLuminance") ?? null;
     return raw != null ? jsonFloat(raw) : null;
   }
 
   set luminanceMax(value: number | null) {
     if (value == null) {
-      this._hdr10_meta.delete("maxLuminance");
+      this._hdr10Meta.delete("maxLuminance");
     } else {
       validatePositiveNumber(value);
-      this._hdr10_meta.set("maxLuminance", value);
+      this._hdr10Meta.set("maxLuminance", value);
     }
-    this._sync_hdr10();
+    this._syncHdr10();
   }
 
   /**
@@ -175,18 +175,18 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `Content Light Maximum` field in the PNG Options dialog. Read / Write.
    */
   get contentLightMax(): number | null {
-    const raw = this._hdr10_meta.get("maxContentLightLevel") ?? null;
+    const raw = this._hdr10Meta.get("maxContentLightLevel") ?? null;
     return raw != null ? jsonFloat(raw) : null;
   }
 
   set contentLightMax(value: number | null) {
     if (value == null) {
-      this._hdr10_meta.delete("maxContentLightLevel");
+      this._hdr10Meta.delete("maxContentLightLevel");
     } else {
       validatePositiveNumber(value);
-      this._hdr10_meta.set("maxContentLightLevel", value);
+      this._hdr10Meta.set("maxContentLightLevel", value);
     }
-    this._sync_hdr10();
+    this._syncHdr10();
   }
 
   /**
@@ -195,23 +195,23 @@ export class PngFormatOptions extends FormatOptionsBase {
    * `Content Light Average` field in the PNG Options dialog. Read / Write.
    */
   get contentLightAverage(): number | null {
-    const raw = this._hdr10_meta.get("maxFrameAverageLightLevel") ?? null;
+    const raw = this._hdr10Meta.get("maxFrameAverageLightLevel") ?? null;
     return raw != null ? jsonFloat(raw) : null;
   }
 
   set contentLightAverage(value: number | null) {
     if (value == null) {
-      this._hdr10_meta.delete("maxFrameAverageLightLevel");
+      this._hdr10Meta.delete("maxFrameAverageLightLevel");
     } else {
       validatePositiveNumber(value);
-      this._hdr10_meta.set("maxFrameAverageLightLevel", value);
+      this._hdr10Meta.set("maxFrameAverageLightLevel", value);
     }
-    this._sync_hdr10();
+    this._syncHdr10();
   }
 }
 
-descriptor(PngFormatOptions, "width", new ChunkField("_body", "width", { read_only: true }));
-descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { read_only: true }));
+descriptor(PngFormatOptions, "width", new ChunkField("_body", "width", { readOnly: true }));
+descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { readOnly: true }));
 descriptor(
   PngFormatOptions,
   "bitDepth",
@@ -220,5 +220,5 @@ descriptor(
 descriptor(
   PngFormatOptions,
   "compression",
-  ChunkField.enum(PngCompression, "_body", "compression", { allow_out_of_enum_values: true }),
+  ChunkField.enum(PngCompression, "_body", "compression", { allowOutOfEnumValues: true }),
 );

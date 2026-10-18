@@ -330,7 +330,7 @@ class TestMPEGProfile {
   static KEY = "ADBEVideoMPEGProfile";
 
   static _elements(opts: XmlFormatOptions, key: string): ETElement[] {
-    const root = opts._xml_root;
+    const root = opts._xmlRoot;
     pyAssert(root != null);
     const out: ETElement[] = [];
     for (const elem of root.iter("ExporterParam")) {

@@ -79,7 +79,7 @@ export class Mat4 {
   }
 
   /** Transform a 3D point (translation applied). */
-  transform_point(v: number[]): number[] {
+  transformPoint(v: number[]): number[] {
     const x = v[0];
     const y = v[1];
     const z = v.length > 2 ? v[2] : 0.0;
@@ -92,7 +92,7 @@ export class Mat4 {
   }
 
   /** Transform a 3D direction vector (translation ignored). */
-  transform_vector(v: number[]): number[] {
+  transformVector(v: number[]): number[] {
     const x = v[0];
     const y = v[1];
     const z = v.length > 2 ? v[2] : 0.0;
@@ -256,12 +256,12 @@ export function _rotateZ(deg: number): Mat4 {
  * @param rotationZ - Z-axis rotation in degrees.
  * @param kw - Keyword arguments:
  * - `orientation`: `[ox, oy, oz]` orientation angles in degrees (3D layers only).
- * - `rotate_x`: X-axis rotation in degrees (3D layers only).
- * - `rotate_y`: Y-axis rotation in degrees (3D layers only).
- * - `auto_rotation`: A 3D layer's auto-orientation, applied after its own rotations (before the
+ * - `rotateX`: X-axis rotation in degrees (3D layers only).
+ * - `rotateY`: Y-axis rotation in degrees (3D layers only).
+ * - `autoRotation`: A 3D layer's auto-orientation, applied after its own rotations (before the
  *     translation).
- * - `source_aspect`: The pixel aspect of the layer's own pixels (`Sl`).
- * - `space_aspect`: The pixel aspect of the space the layer's Position lives in (`Sp`).
+ * - `sourceAspect`: The pixel aspect of the layer's own pixels (`Sl`).
+ * - `spaceAspect`: The pixel aspect of the space the layer's Position lives in (`Sp`).
  * @returns A 4x4 matrix representing the layer's local transform.
  */
 export function buildLocalMatrix(
@@ -271,20 +271,20 @@ export function buildLocalMatrix(
   rotationZ: number,
   kw: {
     orientation?: number[] | null;
-    rotate_x?: number;
-    rotate_y?: number;
-    auto_rotation?: Mat4 | null;
-    source_aspect?: number;
-    space_aspect?: number;
+    rotateX?: number;
+    rotateY?: number;
+    autoRotation?: Mat4 | null;
+    sourceAspect?: number;
+    spaceAspect?: number;
   } = {},
 ): Mat4 {
   const {
     orientation = null,
-    rotate_x = 0.0,
-    rotate_y = 0.0,
-    auto_rotation = null,
-    source_aspect = 1.0,
-    space_aspect = 1.0,
+    rotateX: rotate_x = 0.0,
+    rotateY: rotate_y = 0.0,
+    autoRotation: auto_rotation = null,
+    sourceAspect: source_aspect = 1.0,
+    spaceAspect: space_aspect = 1.0,
   } = kw;
 
   const sx = scalePct[0] / 100.0;
@@ -347,18 +347,18 @@ export function buildLocalMatrix(
  *   uses each property's static `value`.
  * @param flatten2d - Drop the out-of-plane terms (see `_layer_local_matrix`).
  * @param kw - Keyword arguments:
- * - `as_parent`: Treat `layer` itself as a parent too - a camera or light then contributes its rig.
- * - `auto_orient`: Apply the layers' auto-orientation (needs `time`).
- * @throws {@link NotImplementedError} With `auto_orient`, for an orientation the math does not
+ * - `asParent`: Treat `layer` itself as a parent too - a camera or light then contributes its rig.
+ * - `autoOrient`: Apply the layers' auto-orientation (needs `time`).
+ * @throws {@link NotImplementedError} With `autoOrient`, for an orientation the math does not
  *   model (see `_auto_rotation`).
  */
 export function buildWorldMatrix(
   layer: Layer,
   time: number | null = null,
   flatten2d = false,
-  kw: { as_parent?: boolean; auto_orient?: boolean } = {},
+  kw: { asParent?: boolean; autoOrient?: boolean } = {},
 ): Mat4 {
-  const { as_parent = false, auto_orient = false } = kw;
+  const { asParent: as_parent = false, autoOrient: auto_orient = false } = kw;
 
   const chain: Layer[] = [];
   let current: Layer | null = layer;
@@ -403,7 +403,7 @@ export function buildWorldMatrix(
 
 /** Pixel aspect of a layer's own pixels: its source's, else square. */
 export function layerSourceAspect(layer: Layer): number {
-  const source = layer._source_item;
+  const source = layer._sourceItem;
   const aspect = source != null && "pixelAspect" in source ? source.pixelAspect : null;
   return aspect != null && aspect !== 0 ? aspect : 1.0;
 }
@@ -424,7 +424,7 @@ export function aspectScale(aspect: number): Mat4 {
 }
 
 /**
- * A world matrix from a `space_aspect` space into comp pixels, made to
+ * A world matrix from a `spaceAspect` space into comp pixels, made to
  * map square pixels to square pixels (so its rotation can be read).
  */
 export function squarePixels(matrix: Mat4, compAspect: number, spaceAspect: number): Mat4 {
@@ -495,11 +495,11 @@ export function _layerLocalMatrix(
 
   return buildLocalMatrix(position, anchor, scalePct, rz, {
     orientation: is3d ? orientation : null,
-    rotate_x: rx,
-    rotate_y: ry,
-    auto_rotation: autoRotation,
-    source_aspect: sourceAspect,
-    space_aspect: spaceAspect,
+    rotateX: rx,
+    rotateY: ry,
+    autoRotation: autoRotation,
+    sourceAspect: sourceAspect,
+    spaceAspect: spaceAspect,
   });
 }
 
@@ -512,14 +512,14 @@ export const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPO
  * point of interest: a camera, spot or parallel light orienting towards it
  * (a point light keeps the flag but AE applies no look-at).
  */
-/** A light layer: the only layer kind with a `light_type`. */
+/** A light layer: the only layer kind with a `lightType`. */
 function _isLight(layer: Layer): layer is LightLayer {
   return "lightType" in layer;
 }
 
 /** An AV layer: the only layer kind that resolves its comp's active camera. */
 function _isAvLayer(layer: Layer): layer is AVLayer {
-  return "_active_camera_at" in layer;
+  return "_activeCameraAt" in layer;
 }
 
 export function rigAimsAtPoi(layer: Layer): boolean {
@@ -598,7 +598,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
           "Position dimensions, which the transform math does not model",
       );
     }
-    const direction = prop._motion_direction_at(time);
+    const direction = prop._motionDirectionAt(time);
     if (direction == null) return [null, 0.0];
     if (threeD) {
       const forward = [...direction, 0.0, 0.0].slice(0, 3);
@@ -634,10 +634,10 @@ export function _cameraPosition(layer: Layer, time: number): number[] {
   if (!_isAvLayer(layer)) {
     throw new AttributeError(`'${typeName(layer)}' object has no attribute '_active_camera_at'`);
   }
-  const camera = layer._active_camera_at(time);
+  const camera = layer._activeCameraAt(time);
   if (camera != null) {
-    const world = buildWorldMatrix(camera, time, undefined, { as_parent: true });
-    return world.transform_point([0.0, 0.0, 0.0]);
+    const world = buildWorldMatrix(camera, time, undefined, { asParent: true });
+    return world.transformPoint([0.0, 0.0, 0.0]);
   }
   const zoom = defaultCameraZoom(comp.width, comp.pixelAspect);
   return [comp.width / 2.0, comp.height / 2.0, -zoom];
@@ -1070,15 +1070,15 @@ export function cameraRay(
 
   // The camera's whole parent chain places it (AE 2026: a camera parented
   // to a turned null casts its rays from where the null carries it).
-  const world = buildWorldMatrix(camera, time, undefined, { as_parent: true });
-  const position = world.transform_point([0.0, 0.0, 0.0]);
+  const world = buildWorldMatrix(camera, time, undefined, { asParent: true });
+  const position = world.transformPoint([0.0, 0.0, 0.0]);
 
   const cameraOptions = camera.property("ADBE Camera Options Group");
   const zoom = _propValue(cameraOptions, "ADBE Camera Zoom", time);
 
   // The image plane is in square pixels; the rig matrix narrows the ray
   // back into comp pixels (see `build_local_matrix`).
-  const direction = world.transform_vector([
+  const direction = world.transformVector([
     (compPoint[0] - cx) * pixelAspect,
     compPoint[1] - cy,
     zoom,

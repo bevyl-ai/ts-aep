@@ -58,12 +58,12 @@ export const RenderQuality = intEnum(
     },
 
     /** Convert binary value to RenderQuality (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
 
     /** Convert to binary value (CURRENT_SETTINGS -\> 0xFFFF). */
-    to_binary(self: number): number {
+    toBinary(self: number): number {
       return and(int(self), 0xffff);
     },
   },
@@ -162,7 +162,7 @@ export const MotionBlurSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -196,7 +196,7 @@ export const FrameBlendingSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -230,7 +230,7 @@ export const EffectsSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -265,7 +265,7 @@ export const ProxyUseSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -299,7 +299,7 @@ export const SoloSwitchesSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -331,7 +331,7 @@ export const GuideLayers = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -363,7 +363,7 @@ export const DiskCacheSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
   },
@@ -397,12 +397,12 @@ export const ColorDepthSetting = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CURRENT_SETTINGS). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CURRENT_SETTINGS : this.of(value);
     },
 
     /** Convert to binary value (CURRENT_SETTINGS -\> 0xFFFF). */
-    to_binary(self: number): number {
+    toBinary(self: number): number {
       return and(int(self), 0xffff);
     },
   },
@@ -437,7 +437,7 @@ export const TimeSpanSource = intEnum(
     },
 
     /** Convert binary value (0xFFFF = CUSTOM). */
-    from_binary(value: number) {
+    fromBinary(value: number) {
       return value === 0xffff ? this.CUSTOM : this.of(value);
     },
   },

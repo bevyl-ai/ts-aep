@@ -55,7 +55,7 @@ function _roundtrip(app: Application, tmpPath: Path): Application {
   // `with out.open("wb") as f:` - serialize to memory, then write the file in one go.
   const f = new BytesIO();
   writeAep(f, app.project._rifx, app.project._xmp);
-  out.write_bytes(f.getvalue());
+  out.writeBytes(f.getvalue());
   return parseAep(out);
 }
 
@@ -269,8 +269,8 @@ describe("TestAddKey", () => {
     // a numeric keyframe item for it would produce a wrong-size ldat item.
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    // `op.__dict__["_no_value"] = True` - instance attribute write.
-    op._no_value = true;
+    // `op.__dict__["_noValue"] = True` - instance attribute write.
+    op._noValue = true;
     raises(ValueError, () => {
       op.addKey(0.5);
     });
@@ -937,7 +937,7 @@ describe("TestComplexTypeKeyframes", () => {
     const app = parseAep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
     const mp = app.project.compositions[0].layers[0].property("ADBE Marker");
     expect(pyEq(mp.keyframes, [])).toBe(true);
-    expect(mp._kf_value_container == null).toBe(true);
+    expect(mp._kfValueContainer == null).toBe(true);
     mp.setValueAtTime(1.0, new MarkerValue("first"));
     const app2 = _roundtrip(app, tmpPath);
     const mp2 = app2.project.compositions[0].layers[0].property("ADBE Marker");
@@ -970,7 +970,7 @@ describe("TestComplexTypeKeyframes", () => {
     const o = getOrient(app);
     pyAssert(o != null);
     expect(pyEq(o.keyframes, [])).toBe(true);
-    expect(o._kf_value_container == null).toBe(true);
+    expect(o._kfValueContainer == null).toBe(true);
     o.setValueAtTime(1.0, [10.0, 20.0, 30.0]);
     const app2 = _roundtrip(app, tmpPath);
     const o2 = getOrient(app2);
@@ -1011,7 +1011,7 @@ describe("TestComplexTypeKeyframes", () => {
     const g = getGrad(app);
     pyAssert(g != null);
     expect(pyEq(g.keyframes, [])).toBe(true);
-    expect(g._kf_value_container == null).toBe(true);
+    expect(g._kfValueContainer == null).toBe(true);
     g.addKey(0.5);
     expect(g.keyframes.length).toBe(1);
     const app2 = _roundtrip(app, tmpPath);
@@ -1468,7 +1468,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const keyframe = prop.keyframes[1];
     keyframe.inSpatialTangent = [-40.0, -10.0, 0.0];
     keyframe.outSpatialTangent = [70.0, 25.0, 0.0];
-    const stored = asInstance(keyframe._ldat_item.kf_data, KfPosition);
+    const stored = asInstance(keyframe._ldatItem.kf_data, KfPosition);
 
     keyframe.spatialAutoBezier = true;
 
@@ -1492,7 +1492,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const keyframe = prop.keyframes[1];
     keyframe.spatialAutoBezier = true;
     keyframe.spatialAutoBezier = false;
-    const stored = asInstance(keyframe._ldat_item.kf_data, KfPosition);
+    const stored = asInstance(keyframe._ldatItem.kf_data, KfPosition);
     expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
   });
 
@@ -1668,7 +1668,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
         Property,
       );
       const keyframe = prop.keyframes[0];
-      const stored = asInstance(keyframe._ldat_item.kf_data, KfMultiDimensional);
+      const stored = asInstance(keyframe._ldatItem.kf_data, KfMultiDimensional);
       const before = [[...stored.in_influence], [...stored.out_influence]];
       expect(approx(before[1], [0.9])).toBe(true);
 
@@ -1690,7 +1690,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
           .find((g) => pyBool(asInstance(g, Property).keyframes)),
         Property,
       );
-      const reloaded = asInstance(prop2.keyframes[0]._ldat_item.kf_data, KfMultiDimensional);
+      const reloaded = asInstance(prop2.keyframes[0]._ldatItem.kf_data, KfMultiDimensional);
       expect(approx([...reloaded.out_influence], before[1])).toBe(true);
     },
   );

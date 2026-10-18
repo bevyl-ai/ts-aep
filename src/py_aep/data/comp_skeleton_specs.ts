@@ -53,7 +53,7 @@ export type SpecNode =
 /** A prop node (the kind `_bool_prop` / `_coefficient_prop` build and `_gated` restricts). */
 type PropNode = Extract<SpecNode, { 0: "prop" }>;
 /** A viewer pseudo-layer. */
-export type LayerSpec = { list_type: string; name: string; ldta: SpecFields; tdgp: GroupSpec; gate?: string };
+export type LayerSpec = { listType: string; name: string; ldta: SpecFields; tdgp: GroupSpec; gate?: string };
 
 // ---------------------------------------------------------------------------
 // Shared tdb4 layouts
@@ -238,9 +238,9 @@ export function _viewLayer(
   listType: string,
   name: string,
   position: [number | string, number | string, number | string] | null,
-  kw: { has_scale: boolean },
+  kw: { hasScale: boolean },
 ): LayerSpec {
-  const { has_scale } = kw;
+  const { hasScale: has_scale } = kw;
   const children: SpecNode[] = [_ANCHOR_POINT];
   if (position != null) {
     children.push(_positionProp(...position));
@@ -253,7 +253,7 @@ export function _viewLayer(
   // reserved_8c marks the six secondary (SLay) views.
   const secondary = listType === "SLay" ? 1 : 0;
   return {
-    list_type: listType,
+    listType: listType,
     name,
     ldta: {
       start_time_divisor: 600,
@@ -308,7 +308,7 @@ export const _LAYER_STYLE_NAMES: string[] = [
 ];
 
 export const _MARKERS_LAYER: LayerSpec = {
-  list_type: "SecL",
+  listType: "SecL",
   name: "Markers",
   ldta: {
     quality: 2,
@@ -528,29 +528,29 @@ export const _MARKERS_LAYER: LayerSpec = {
 
 export const COMP_VIEW_LAYER_SPECS: LayerSpec[] = [
   {
-    ..._viewLayer("DLay", "Default", null, { has_scale: true }),
+    ..._viewLayer("DLay", "Default", null, { hasScale: true }),
     gate: "default view layer",
   },
-  _viewLayer("SLay", "Front", ["$W2", "$H2", -5000.0], { has_scale: false }),
-  _viewLayer("SLay", "Left", ["$W2 - 5000", "$H2", 0.0], { has_scale: false }),
-  _viewLayer("SLay", "Top", ["$W2", "$H2 - 5000", 0.0], { has_scale: false }),
-  _viewLayer("SLay", "Back", ["$W2", "$H2", 5000.0], { has_scale: false }),
-  _viewLayer("SLay", "Right", ["$W2 + 5000", "$H2", 0.0], { has_scale: false }),
-  _viewLayer("SLay", "Bottom", ["$W2", "$H2 + 5000", 0.0], { has_scale: false }),
+  _viewLayer("SLay", "Front", ["$W2", "$H2", -5000.0], { hasScale: false }),
+  _viewLayer("SLay", "Left", ["$W2 - 5000", "$H2", 0.0], { hasScale: false }),
+  _viewLayer("SLay", "Top", ["$W2", "$H2 - 5000", 0.0], { hasScale: false }),
+  _viewLayer("SLay", "Back", ["$W2", "$H2", 5000.0], { hasScale: false }),
+  _viewLayer("SLay", "Right", ["$W2 + 5000", "$H2", 0.0], { hasScale: false }),
+  _viewLayer("SLay", "Bottom", ["$W2", "$H2 + 5000", 0.0], { hasScale: false }),
   _viewLayer(
     "CLay",
     "Custom View 1",
     ["$W2 - ZV", "$H2 - ZV", "$-ZV"],
-    { has_scale: true },
+    { hasScale: true },
   ),
   _viewLayer("CLay", "Custom View 2", ["$W2", "$H2 - ZV", "$-ZV"], {
-    has_scale: true,
+    hasScale: true,
   }),
   _viewLayer(
     "CLay",
     "Custom View 3",
     ["$W2 + ZV", "$H2 - ZV", "$-ZV"],
-    { has_scale: true },
+    { hasScale: true },
   ),
   _MARKERS_LAYER,
 ];

@@ -95,12 +95,12 @@ test("test_pencil_curve_decodes_its_map", () => {
 
 test("test_untouched_curves_equal_the_parT_default", () => {
   const prop = _curvesProperty("untouched");
-  pyAssert(prop._default_arbp != null);
+  pyAssert(prop._defaultArbp != null);
   pyAssert(prop._arbs != null);
   // `(arbp,) = ...` raises ValueError on a length mismatch.
   if (len(prop._arbs.chunks) !== 1) throw new ValueError("not exactly one value to unpack");
   const [arbp] = prop._arbs.chunks;
-  expect(bytesEq(arbp.data, prop._default_arbp.data)).toBe(true);
+  expect(bytesEq(arbp.data, prop._defaultArbp.data)).toBe(true);
 });
 
 test("test_curves_are_read_only", () => {

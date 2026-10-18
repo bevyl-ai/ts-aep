@@ -34,7 +34,7 @@ export class UnsupportedAiLayersError extends ValueError {}
 export class AiLayer {
   constructor(
     /** The OCG's PDF indirect-object number. */
-    readonly object_number: number,
+    readonly objectNumber: number,
     /** The layer name. */
     readonly name: string,
     /**
@@ -46,7 +46,7 @@ export class AiLayer {
   ) {}
 
   *[Symbol.iterator](): Generator<number | string | boolean> {
-    yield this.object_number;
+    yield this.objectNumber;
     yield this.name;
     yield this.visible;
   }
@@ -106,7 +106,7 @@ export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
   const parser = new CosParser(new BytesIO(bytes_.slice(data, offset)));
   try {
     parser.lex();
-    const value = parser.parse_value();
+    const value = parser.parseValue();
     return value instanceof IndirectObject ? value.data : value;
   } catch (exc) {
     if (!isMalformed(exc)) throw exc;
@@ -120,7 +120,7 @@ export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
 /** Follow an indirect reference to its object; pass other values through. */
 export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
   if (value instanceof IndirectReference) {
-    const offset = offsets.get(value.object_number) ?? null;
+    const offset = offsets.get(value.objectNumber) ?? null;
     return offset == null ? null : _parseObjectAt(data, offset);
   }
   return value;
@@ -134,8 +134,8 @@ export function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
     for (const entry of value) {
       _orderObjectNumbers(entry, out);
     }
-  } else if (value instanceof IndirectReference && !out.includes(value.object_number)) {
-    out.push(value.object_number);
+  } else if (value instanceof IndirectReference && !out.includes(value.objectNumber)) {
+    out.push(value.objectNumber);
   }
   return out;
 }
@@ -166,7 +166,7 @@ export function readAiLayerOcgs(
   data: Uint8Array | null = null,
 ): AiLayer[] {
   const name = new Path(file).name;
-  if (data == null) data = new Path(file).read_bytes();
+  if (data == null) data = new Path(file).readBytes();
   if (!bytes_.startswith(data, b("%PDF"))) {
     throw new UnsupportedAiLayersError(
       `${name}: not a PDF-compatible file; layered import requires an ` +
@@ -189,7 +189,7 @@ export function readAiLayerOcgs(
       new BytesIO(bytes_.slice(data, marker + b("/OCProperties").length)),
     );
     parser.lex();
-    const ocProperties = _resolve(parser.parse_value(), data, offsets);
+    const ocProperties = _resolve(parser.parseValue(), data, offsets);
     if (!(ocProperties instanceof Map)) {
       throw new UnsupportedAiLayersError(`${name}: unreadable /OCProperties.`);
     }
@@ -205,7 +205,7 @@ export function readAiLayerOcgs(
     const ocgs = _resolve(ocProperties.get("OCGs") ?? null, data, offsets);
     const listed = new Map<number, IndirectReference>();
     for (const ref of Array.isArray(ocgs) ? ocgs : []) {
-      if (ref instanceof IndirectReference) listed.set(ref.object_number, ref);
+      if (ref instanceof IndirectReference) listed.set(ref.objectNumber, ref);
     }
     const refs: IndirectReference[] = order.length > 0
       ? [...order]
@@ -220,9 +220,9 @@ export function readAiLayerOcgs(
       if (isStrOrBytes(layerName)) {
         layers.push(
           new AiLayer(
-            ref.object_number,
+            ref.objectNumber,
             decodePdfTextString(layerName),
-            !hidden.has(ref.object_number),
+            !hidden.has(ref.objectNumber),
           ),
         );
       }
@@ -283,7 +283,7 @@ export function inflateOrNull(body: string): Uint8Array | null {
  * PDF-compatible or has no embedded profile.
  */
 export function _findAiIcc(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
-  if (data == null) data = new Path(file).read_bytes();
+  if (data == null) data = new Path(file).readBytes();
   if (!bytes_.startswith(data, b("%PDF"))) return null;
   for (const match of latin1(data).matchAll(_STREAM_RE)) {
     const body = match[1];

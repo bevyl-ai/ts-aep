@@ -53,7 +53,7 @@ const FLT_MAX = 3.4028234663852886e38;
 type UsedFontRecord = { font: { postScriptName: string }; usedAt: { layerID: number; layerTimeD: number }[] };
 
 function _fixture(name: string) {
-  return JSON.parse(SAMPLES_DIR.div(name).read_text());
+  return JSON.parse(SAMPLES_DIR.div(name).readText());
 }
 
 function _doc(project: Project, compName: string, layerName: string): TextDocument {
@@ -111,7 +111,7 @@ class TestUsedFonts {
   _snapshot(project: Project) {
     return project.usedFonts.map((entry) => [
       entry.font.postScriptName,
-      entry.used_at.map((u) => [u.layer_id, u.layer_time]),
+      entry.usedAt.map((u) => [u.layerId, u.layerTime]),
     ]);
   }
 
@@ -194,7 +194,7 @@ describe("TestReplaceFont", () => {
     const expected = _fixture("replace_font_probe.json").after.usedFonts.value;
     const got = project.usedFonts.map((e) => [
       e.font.postScriptName,
-      e.used_at.map((u) => [u.layer_id, u.layer_time]),
+      e.usedAt.map((u) => [u.layerId, u.layerTime]),
     ]);
     const want = expected.map((r: UsedFontRecord) => [
       r.font.postScriptName,
@@ -417,13 +417,13 @@ describe("TestFuzzRegressions", () => {
       names.filter((n) => n === "MyriadPro-Regular").length === 2,
       "sample lost its duplicate",
     );
-    expect(pyEq(doc._used_font_objects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
+    expect(pyEq(doc._usedFontObjects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
       true,
     );
 
     expect(project.replaceFont("MyriadPro-Regular", "Georgia")).toBe(true);
 
-    expect(pyEq(doc._used_font_objects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
+    expect(pyEq(doc._usedFontObjects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
     expect(
       project.usedFonts
         .map((e) => e.font.postScriptName)

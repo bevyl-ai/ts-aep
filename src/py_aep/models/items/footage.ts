@@ -50,19 +50,19 @@ import type { FolderItem } from "./folder.ts";
  * @see https://ae-scripting.docsforadobe.dev/item/footageitem/
  */
 export class FootageItem extends AVItem {
-  declare _main_source: FileSource | SolidSource | PlaceholderSource;
-  declare _view_data: Chunk[];
+  declare _mainSource: FileSource | SolidSource | PlaceholderSource;
+  declare _viewData: Chunk[];
   // Set in the constructor from the source's resolved name; declared here because the base class does not own it.
   declare _name: string;
 
   /** The width of the item in pixels. Read-only. */
   get width(): number {
-    return this._main_source._width;
+    return this._mainSource._width;
   }
 
   /** The height of the item in pixels. Read-only. */
   get height(): number {
-    return this._main_source._height;
+    return this._mainSource._height;
   }
 
   /**
@@ -70,12 +70,12 @@ export class FootageItem extends AVItem {
    * of 0. Read-only.
    */
   get duration(): number {
-    return this._main_source._duration;
+    return this._mainSource._duration;
   }
 
   /** The frame rate of the item in frames-per-second. Read-only. */
   get frameRate(): number {
-    return this._main_source.displayFrameRate;
+    return this._mainSource.displayFrameRate;
   }
 
   /**
@@ -83,7 +83,7 @@ export class FootageItem extends AVItem {
    * of 0. Read-only.
    */
   get frameDuration(): number {
-    return this._main_source._frame_duration;
+    return this._mainSource._frameDuration;
   }
 
   /**
@@ -95,12 +95,12 @@ export class FootageItem extends AVItem {
    * is stored as given.
    */
   get pixelAspect(): number {
-    return this._main_source._pixel_aspect;
+    return this._mainSource._pixelAspect;
   }
 
   set pixelAspect(value: number) {
     validatePixelAspect(value);
-    this._main_source._sspc.pixel_aspect = value;
+    this._mainSource._sspc.pixel_aspect = value;
   }
 
   /**
@@ -114,7 +114,7 @@ export class FootageItem extends AVItem {
    * Read-only.
    */
   get footageMissing(): boolean {
-    return this._main_source._footage_missing;
+    return this._mainSource._footageMissing;
   }
 
   /**
@@ -125,10 +125,10 @@ export class FootageItem extends AVItem {
    * Read-only.
    */
   get hasAudio(): boolean {
-    if (this.useProxy && this._proxy_source != null) {
-      return this._proxy_source._has_audio;
+    if (this.useProxy && this._proxySource != null) {
+      return this._proxySource._hasAudio;
     }
-    return this._main_source._has_audio;
+    return this._mainSource._hasAudio;
   }
 
   /**
@@ -141,11 +141,11 @@ export class FootageItem extends AVItem {
    * `.fbx` as incompatible even though it has video).
    */
   get isMediaReplacementCompatible(): boolean {
-    const source = this._main_source;
+    const source = this._mainSource;
     if (source instanceof SolidSource) {
       return false;
     }
-    if (source instanceof FileSource && source._is_3d_model_scene) {
+    if (source instanceof FileSource && source._is3dModelScene) {
       return false;
     }
     return this.hasVideo;
@@ -153,56 +153,56 @@ export class FootageItem extends AVItem {
 
   /** The footage start frame. Read-only. */
   get startFrame(): number {
-    return this._main_source._start_frame;
+    return this._mainSource._startFrame;
   }
 
   /** The footage end frame. Read-only. */
   get endFrame(): number {
-    return this._main_source._end_frame;
+    return this._mainSource._endFrame;
   }
 
   constructor(kw: {
     _idta: IdtaChunk;
-    _name_utf8: Utf8Chunk;
+    _nameUtf8: Utf8Chunk;
     _cmta: CmtaChunk | null;
-    _item_list: ListChunk;
+    _itemList: ListChunk;
     _gide: ListChunk | null;
-    _pin_chunks: ListChunk[];
+    _pinChunks: ListChunk[];
     project: Project;
-    parent_folder: FolderItem;
-    main_source: FileSource | SolidSource | PlaceholderSource;
-    proxy_source: FileSource | SolidSource | PlaceholderSource | null;
+    parentFolder: FolderItem;
+    mainSource: FileSource | SolidSource | PlaceholderSource;
+    proxySource: FileSource | SolidSource | PlaceholderSource | null;
   }) {
     const {
       _idta,
-      _name_utf8,
+      _nameUtf8: _name_utf8,
       _cmta,
-      _item_list,
+      _itemList: _item_list,
       _gide,
-      _pin_chunks,
+      _pinChunks: _pin_chunks,
       project,
-      parent_folder,
-      main_source,
-      proxy_source,
+      parentFolder: parent_folder,
+      mainSource: main_source,
+      proxySource: proxy_source,
     } = kw;
     super({
       _idta,
-      _name_utf8,
+      _nameUtf8: _name_utf8,
       _cmta,
-      _item_list,
+      _itemList: _item_list,
       _gide,
-      _pin_chunks,
+      _pinChunks: _pin_chunks,
       project,
-      parent_folder,
-      type_name: "Footage",
-      proxy_source,
+      parentFolder: parent_folder,
+      typeName: "Footage",
+      proxySource: proxy_source,
     });
-    this._main_source = main_source;
+    this._mainSource = main_source;
     main_source._project = project;
-    this._view_data = [];
+    this._viewData = [];
     // Cache the resolved display name rather than mutating the binary
     // Utf8 chunk, which for a solid or placeholder AE leaves empty.
-    this._name = main_source._resolve_name(_name_utf8.value);
+    this._name = main_source._resolveName(_name_utf8.value);
   }
 
   /**
@@ -216,28 +216,28 @@ export class FootageItem extends AVItem {
   set name(value: string) {
     validateName(value);
     // A footage item always carries a Utf8 name chunk (see parse_item).
-    pyAssert(this._name_utf8 != null);
-    // The display name has to be written where `_resolve_name` reads it
+    pyAssert(this._nameUtf8 != null);
+    // The display name has to be written where `_resolveName` reads it
     // back from. AE keeps a solid's or placeholder's name in the source
     // `opti` chunk and leaves the item-level Utf8 empty; only file
     // footage is named through the item chunk.
-    if (this._main_source.constructor._owns_name) {
-      this._main_source._store_name(value);
-      this._name_utf8.value = "";
+    if (this._mainSource.constructor._ownsName) {
+      this._mainSource._storeName(value);
+      this._nameUtf8.value = "";
     } else {
-      this._name_utf8.value = value;
+      this._nameUtf8.value = value;
     }
     this._name = value;
   }
 
   /** The footage source. Read-only. */
   get mainSource(): FileSource | SolidSource | PlaceholderSource {
-    return this._main_source;
+    return this._mainSource;
   }
 
   /** The footage type (placeholder, solid, file). Read-only. */
   get assetType(): string {
-    const mainSource: object | null = this._main_source;
+    const mainSource: object | null = this._mainSource;
     if (mainSource instanceof SolidSource) {
       return "solid";
     } else if (mainSource instanceof FileSource) {
@@ -254,8 +254,8 @@ export class FootageItem extends AVItem {
 
   /** The footage file path if its source is a {@link FileSource}, else `null`. */
   get file(): string | null {
-    if (this._main_source instanceof FileSource) {
-      return this._main_source.file;
+    if (this._mainSource instanceof FileSource) {
+      return this._mainSource.file;
     }
     return null;
   }
@@ -270,8 +270,8 @@ export class FootageItem extends AVItem {
    * The Python tuple is returned as a `tkey(...)` string because the
    * caller uses it as a Map/Set key.
    */
-  _consolidation_key(): string | null {
-    const source = this._main_source;
+  _consolidationKey(): string | null {
+    const source = this._mainSource;
     if (!(source instanceof FileSource)) {
       return null;
     }
@@ -307,10 +307,10 @@ export class FootageItem extends AVItem {
    */
   static _new(
     source: FileSource | PlaceholderSource | SolidSource,
-    kw: { project: Project; parent_folder: FolderItem },
+    kw: { project: Project; parentFolder: FolderItem },
   ): FootageItem {
-    const { project, parent_folder } = kw;
-    const itemId = project._allocate_id();
+    const { project, parentFolder: parent_folder } = kw;
+    const itemId = project._allocateId();
 
     // AE labels footage items by kind (probed in AE 2026): solids use
     // "Solid Label Index 2" (factory 1), audio-only files "Audio Label
@@ -319,7 +319,7 @@ export class FootageItem extends AVItem {
     let label: number;
     if (source instanceof SolidSource) {
       label = labelIndex(project._preferences, "Solid Label Index 2", 1);
-    } else if (source instanceof FileSource && source._has_audio && source._width === 0) {
+    } else if (source instanceof FileSource && source._hasAudio && source._width === 0) {
       label = labelIndex(project._preferences, "Audio Label Index 2", 7);
     } else if (source instanceof FileSource && source.isStill) {
       label = labelIndex(project._preferences, "Still Label Index 2", 5);
@@ -337,13 +337,13 @@ export class FootageItem extends AVItem {
     // A file source carries the footage-kind flags; solid/placeholder
     // sources keep the chunk default.
     if (source instanceof FileSource) {
-      idta._flags_17 = source._idta_flags17();
+      idta._flags_17 = source._idtaFlags17();
     }
     // AE leaves the item-level Utf8 empty; the display name resolves
     // from the source (solid / placeholder / file name).
     const nameUtf8 = new Utf8Chunk({});
 
-    const pinList = AVItem._pin_for_source(source);
+    const pinList = AVItem._pinForSource(source);
 
     const ftgi = new FtgiChunk({});
 
@@ -364,26 +364,26 @@ export class FootageItem extends AVItem {
 
     const item = new this({
       _idta: idta,
-      _name_utf8: nameUtf8,
+      _nameUtf8: nameUtf8,
       _cmta: null,
-      _item_list: itemList,
+      _itemList: itemList,
       _gide: null,
-      _pin_chunks: [pinList],
+      _pinChunks: [pinList],
       project,
-      parent_folder,
-      main_source: source,
-      proxy_source: null,
+      parentFolder: parent_folder,
+      mainSource: source,
+      proxySource: null,
     });
-    source._join_project(project);
+    source._joinProject(project);
     // AE writes the guide list with no `ldat` until a guide is added.
     [item._gide, item._lhd3, item._inner] = buildGideList();
-    item._item_list.chunks.push(item._gide);
-    item._view_data = viewData;
-    item._sync_modified_time();
+    item._itemList.chunks.push(item._gide);
+    item._viewData = viewData;
+    item._syncModifiedTime();
     return item;
   }
 
-  _sync_modified_time(): void {
+  _syncModifiedTime(): void {
     // AE 2026 stamps idta with the last-modified time of the file in use
     // - the proxy's while a file proxy is in use, the main file's
     // otherwise - on import, replace, reload and every proxy change. A
@@ -392,7 +392,7 @@ export class FootageItem extends AVItem {
     // solid, which would make py_aep's output depend on when it ran.
     // AE replaces an unset (0) stamp with the save time without
     // re-reading the media, so leaving one is harmless.
-    const source = this.useProxy ? this._proxy_source : this._main_source;
+    const source = this.useProxy ? this._proxySource : this._mainSource;
     if (source instanceof FileSource) {
       pyAssert(this._idta != null);
       this._idta.modified_time = source._sspc.source_modified;
@@ -423,7 +423,7 @@ export class FootageItem extends AVItem {
     }
 
     const source = PlaceholderSource._new(name, width, height, frameRate, duration);
-    this._replace_main_source(source);
+    this._replaceMainSource(source);
   }
 
   /**
@@ -446,14 +446,14 @@ export class FootageItem extends AVItem {
   ): void {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      const solidName = SolidSource._color_name(color[0], color[1], color[2]);
+      const solidName = SolidSource._colorName(color[0], color[1], color[2]);
       name = autoName(solidName, existing);
     } else if (name === "") {
       name = "????";
     }
 
     const source = SolidSource._new(name, color, width, height, pixelAspect);
-    this._replace_main_source(source);
+    this._replaceMainSource(source);
   }
 
   /**
@@ -462,11 +462,11 @@ export class FootageItem extends AVItem {
    * Changes the source of this `FootageItem` to the specified file.
    *
    * In addition to loading the file, the method creates a new `FileSource` object
-   * for the file and sets `main_source` to that object. In the new source object, it
+   * for the file and sets `mainSource` to that object. In the new source object, it
    * sets the name, width, height, `frame_duration`, and duration attributes (see
    * `AVItem` object) based on the contents of the file.
    *
-   * The method preserves interpretation parameters from the previous `main_source`
+   * The method preserves interpretation parameters from the previous `mainSource`
    * object.
    *
    * py_aep extension: `layer_index` binds the new source to a single
@@ -488,7 +488,7 @@ export class FootageItem extends AVItem {
    * `layer_dimensions` is ignored when `layer_index` is `null` (a merged
    * document is always document-sized).
    *
-   * `layer_styles` chooses how a PSD layer's styles are treated (see
+   * `layerStyles` chooses how a PSD layer's styles are treated (see
    * `ImportOptions.layerStyles`): `"merge"` (bake them into the raster,
    * AE's dialog default) or `"ignore"`. `CURRENT_VALUE` (the default)
    * preserves the current binding's recorded choice verbatim - including
@@ -517,7 +517,7 @@ export class FootageItem extends AVItem {
    * non-layered file, if
    * `layer_index` is out of range for the new file, if
    * `layer_dimensions` is not `"document"`/`"layer"`/`CURRENT_VALUE`,
-   * if `layer_styles` is not `"merge"`/`"ignore"`/`CURRENT_VALUE`
+   * if `layerStyles` is not `"merge"`/`"ignore"`/`CURRENT_VALUE`
    * or is passed explicitly for an AI/PDF target, or if
    * `CURRENT_VALUE` is passed while the current source does
    * not reference a single layer (or the new file has no layer at
@@ -537,8 +537,8 @@ export class FootageItem extends AVItem {
     layerStyles: string | _CurrentValue = CURRENT_VALUE,
   ): void {
     if (layerIndex == null) {
-      this._replace_main_source(
-        FileSource._from_file(file, { windows: this._project._windows }),
+      this._replaceMainSource(
+        FileSource._fromFile(file, { windows: this._project._windows }),
       );
       return;
     }
@@ -562,7 +562,7 @@ export class FootageItem extends AVItem {
       throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) targets only");
     }
     if (layerIndex instanceof _CurrentValue) {
-      const current = this._main_source;
+      const current = this._mainSource;
       if (!(current instanceof FileSource && current.layerName)) {
         throw new ValueError(
           "CURRENT_VALUE requires the current source to reference " +
@@ -575,7 +575,7 @@ export class FootageItem extends AVItem {
     if (layerDimensions instanceof _CurrentValue) {
       // Preserve the Document/Layer Size choice of the current binding.
       dimensions = null;
-      const current = this._main_source;
+      const current = this._mainSource;
       if (
         current instanceof FileSource &&
         current.layerName &&
@@ -590,16 +590,16 @@ export class FootageItem extends AVItem {
     if (layerStyles instanceof _CurrentValue) {
       // Preserve the recorded choice verbatim (00/01/02); "merge" is
       // AE's dialog default when the current source has no binding.
-      const current = this._main_source;
+      const current = this._mainSource;
       const styles = current instanceof FileSource ? current.layerStyles : null;
       resolvedStyles = styles ?? "merge";
     } else {
       resolvedStyles = layerStyles;
     }
-    this._replace_main_source(
-      FileSource._from_layer(file, layerIndex, {
+    this._replaceMainSource(
+      FileSource._fromLayer(file, layerIndex, {
         dimensions,
-        layer_styles: resolvedStyles,
+        layerStyles: resolvedStyles,
         windows: this._project._windows,
       }),
     );
@@ -609,11 +609,11 @@ export class FootageItem extends AVItem {
    * Changes the source of this `FootageItem` to the specified image sequence.
    *
    * In addition to loading the file, the method creates a new `FileSource` object
-   * for the file and sets `main_source` to that object. In the new source object, it
+   * for the file and sets `mainSource` to that object. In the new source object, it
    * sets the name, width, height, `frame_duration`, and duration attributes (see
    * `AVItem` object) based on the contents of the file.
    *
-   * The method preserves interpretation parameters from the previous `main_source`
+   * The method preserves interpretation parameters from the previous `mainSource`
    * object.
    *
    * **Note:** 
@@ -633,46 +633,46 @@ export class FootageItem extends AVItem {
    * `opti` header not implemented for this format.
    */
   replaceWithSequence(file: string | PathLike, forceAlphabetical: boolean = false): void {
-    this._replace_main_source(
-      FileSource._from_file(file, {
+    this._replaceMainSource(
+      FileSource._fromFile(file, {
         sequence: true,
-        force_alphabetical: forceAlphabetical,
+        forceAlphabetical: forceAlphabetical,
         windows: this._project._windows,
-        default_sequence_fps: defaultSequenceFps(this._project._preferences),
+        defaultSequenceFps: defaultSequenceFps(this._project._preferences),
       }),
     );
   }
 
   /** Replace the first LIST:Pin in _item_list with a new source. */
-  _replace_main_source(source: FileSource | PlaceholderSource | SolidSource): void {
+  _replaceMainSource(source: FileSource | PlaceholderSource | SolidSource): void {
     const isSolid = source instanceof SolidSource;
     if (!isSolid) {
       // AE keeps the Interpret Footage settings across a replace; only
-      // a solid starts from scratch (see `_carry_interpretation_to`).
-      this._main_source._carry_interpretation_to(source);
+      // a solid starts from scratch (see `_carryInterpretationTo`).
+      this._mainSource._carryInterpretationTo(source);
     }
-    this._replace_pin(0, AVItem._pin_for_source(source));
+    this._replacePin(0, AVItem._pinForSource(source));
 
-    this._main_source = source;
-    source._join_project(this._project);
+    this._mainSource = source;
+    source._joinProject(this._project);
 
     pyAssert(this._idta != null);
     this._idta.is_footage = true;
     this._idta.is_solid = isSolid;
     if (source instanceof FileSource) {
-      this._idta._flags_17 = source._idta_flags17();
+      this._idta._flags_17 = source._idtaFlags17();
     }
-    this._sync_modified_time();
+    this._syncModifiedTime();
 
     // AE only ever writes the item-level Utf8 when the user renames the
     // item, so a replace leaves it alone: a default (source-derived) name
     // re-derives from the new source, a user-assigned one survives.
     // A solid or placeholder carries its name in the new `opti` chunk
     // instead, so the Utf8 goes back to empty.
-    pyAssert(this._name_utf8 != null);
-    if (source.constructor._owns_name) {
-      this._name_utf8.value = "";
+    pyAssert(this._nameUtf8 != null);
+    if (source.constructor._ownsName) {
+      this._nameUtf8.value = "";
     }
-    this._name = source._resolve_name(this._name_utf8.value);
+    this._name = source._resolveName(this._nameUtf8.value);
   }
 }

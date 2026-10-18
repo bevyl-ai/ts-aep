@@ -26,7 +26,7 @@ describe("TestViewOptionsWithoutItem", () => {
    * Version-gated fields work when the viewer's item is no AVItem.
    *
    * parsers/view.py creates `ViewOptions(_item=None)` for such viewers;
-   * the `min_version` gate must be skipped (write allowed) when no AE
+   * the `minVersion` gate must be skipped (write allowed) when no AE
    * version can be determined, instead of raising TypeError.
    */
 

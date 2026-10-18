@@ -104,7 +104,7 @@ describe("TestSvgImportBasics", () => {
     app.project.save(out);
     const again = tmpPath.div("svg_cropped_2.aep");
     parse(out).project.save(again);
-    expect(bytesEq(out.read_bytes(), again.read_bytes())).toBe(true);
+    expect(bytesEq(out.readBytes(), again.readBytes())).toBe(true);
   });
 });
 
@@ -138,7 +138,7 @@ describe("TestSvgImportGradients", () => {
     app.project.save(out);
     const again = tmpPath.div("butterfly_2.aep");
     parse(out).project.save(again);
-    expect(bytesEq(out.read_bytes(), again.read_bytes())).toBe(true);
+    expect(bytesEq(out.readBytes(), again.readBytes())).toBe(true);
   });
 
   test("test_radial_gradient_transform_becomes_grad_scale", () => {
@@ -177,7 +177,7 @@ describe("TestSvgImportGradients", () => {
 /** Import an inline 200x200 SVG into a fresh project; return its groups. */
 function _importText(tmpPath: Path, body: string): PropertyGroup[] {
   const svg = tmpPath.div("probe.svg");
-  svg.write_text(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${body}</svg>`);
+  svg.writeText(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${body}</svg>`);
   const opts = new ImportOptions(svg);
   opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
   const comp = asInstance(new_().project.importFile(opts), CompItem);
@@ -313,7 +313,7 @@ describe("TestSvgImportByteFidelity", () => {
 
     const tmpPath = makeTmpPath();
     const svg = tmpPath.div("go.svg");
-    svg.write_text(
+    svg.writeText(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
         '<defs><linearGradient id="g" gradientUnits="objectBoundingBox"' +
         ' x1="0" y1="0" x2="1" y2="0">' +

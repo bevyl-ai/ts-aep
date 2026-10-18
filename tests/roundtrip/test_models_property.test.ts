@@ -436,7 +436,7 @@ describe("TestRoundtripKeyframeLabel", () => {
     const keyFlagBytes = (path: Path): Uint8Array[] => {
       const proj = parseAep(path).project;
       const prop = asInstance(_findProperty(getComp(proj, "TestComp").layers[0], "ADBE Opacity"), Property);
-      return prop.keyframes.map((kf) => bytes_.slice(kf._ldat_item.tobytes(), 6, 8));
+      return prop.keyframes.map((kf) => bytes_.slice(kf._ldatItem.tobytes(), 6, 8));
     };
 
     expect(pyEq(keyFlagBytes(out), keyFlagBytes(SAMPLES_DIR.div("keyframe_labels.aep")))).toBe(true);
@@ -759,10 +759,10 @@ describe("TestRoundtripExpressionCreate", () => {
     const prop = _findProperty(layer, "ADBE Rotate Z");
     pyAssert(prop != null);
     expect(prop.expression).toBe("");
-    expect(prop._expression_utf8 == null).toBe(true);
+    expect(prop._expressionUtf8 == null).toBe(true);
 
     prop.expression = "time * 90";
-    pyAssert(prop._expression_utf8 != null);
+    pyAssert(prop._expressionUtf8 != null);
     const out = tmpPath.div("new_expression.aep");
     project.save(out);
 
@@ -788,7 +788,7 @@ describe("TestRoundtripExpressionCreate", () => {
 
     // Clearing removes the chunk and the marker again.
     prop.expression = "";
-    expect(prop._expression_utf8 == null).toBe(true);
+    expect(prop._expressionUtf8 == null).toBe(true);
     expect(prop._tdb4.has_expression).toBe(false);
   });
 });
@@ -1443,7 +1443,7 @@ describe("TestAddProperty", () => {
     expect(pyEq(oms.chunks.map((c: Chunk) => getattr(c, "list_type", null)), ["tdbs", "omks"])).toBe(true);
     const path = mask2.property("ADBE Mask Shape");
     expect(path.expression).toBe("value");
-    const [w, h] = asInstance(layer2, AVLayer)._mask_scale;
+    const [w, h] = asInstance(layer2, AVLayer)._maskScale;
     expect(pyEq(path.value.vertices, [[0.0, 0.0], [0.0, h], [w, h], [w, 0.0]])).toBe(true);
   });
 
@@ -1530,9 +1530,9 @@ describe("TestAddProperty", () => {
     expect(len(layer.masks) > 0).toBe(false);
     const parade = layer.property("ADBE Mask Parade");
     pyAssert(parade instanceof PropertyGroup);
-    expect(parade._is_live()).toBe(false);
+    expect(parade._isLive()).toBe(false);
     const newMask = parade.addProperty("ADBE Mask Atom");
-    expect(parade._is_live()).toBe(true);
+    expect(parade._isLive()).toBe(true);
     expect(newMask.name).toBe("Mask 1");
     expect(layer.masks).toBe(parade);
     const out = tmpPath.div("out.aep");
@@ -1676,8 +1676,8 @@ describe("TestAddProperty", () => {
     const m2 = asInstance(parseAep(out).project.compositions[0].layers[0].masks, PropertyGroup).properties.at(-1);
     pyAssert(m2 instanceof MaskPropertyGroup);
     expect(m2.rotoBezier).toBe(false);
-    pyAssert(m2._mask_shape_tdsb != null);
-    expect(m2._mask_shape_tdsb.roto_bezier).toBe(false);
+    pyAssert(m2._maskShapeTdsb != null);
+    expect(m2._maskShapeTdsb.roto_bezier).toBe(false);
   });
 
   test("test_materialize_mask_shape_preserves_handle", () => {
@@ -1962,9 +1962,9 @@ describe("TestAddEffect", () => {
     expect(len(layer.effects) > 0).toBe(false); // `not layer.effects` (py_bool would raise through the group proxy)
     const parade = layer.property("ADBE Effect Parade");
     pyAssert(parade instanceof PropertyGroup);
-    expect(parade._is_live()).toBe(false);
+    expect(parade._isLive()).toBe(false);
     parade.addProperty("ADBE Slider Control");
-    expect(parade._is_live()).toBe(true);
+    expect(parade._isLive()).toBe(true);
     expect(layer.effects).toBe(parade);
     const out = tmpPath.div("out.aep");
     app.project.save(out);
@@ -2121,7 +2121,7 @@ describe("TestBakedBuiltinEffects", () => {
   test("test_add_to_project_with_no_effect_definitions", () => {
     const tmpPath = makeTmpPath();
     const app = pyAepNew();
-    expect(pyEq(app.project._effect_param_defs, new Map())).toBe(true);
+    expect(pyEq(app.project._effectParamDefs, new Map())).toBe(true);
     const comp = app.project.rootFolder.addComp("c", 1920, 1080, 1.0, 10.0, 24.0);
     const layer = comp.addNull();
     const parade = layer.property("ADBE Effect Parade");
@@ -2163,7 +2163,7 @@ describe("TestBakedBuiltinEffects", () => {
     const app = parseAep(SAMPLES_DIR.div("effects.aep"));
     const layer = getLayer(app.project, "effect_2dPoint");
     const parade = layer.property("ADBE Effect Parade");
-    const resolved = parade._installed_effect_def("ADBE Lens Flare");
+    const resolved = parade._installedEffectDef("ADBE Lens Flare");
     pyAssert(resolved != null);
     expect(_bakedEffectDef("ADBE Lens Flare") == null).toBe(true);
     expect(resolved[2] != null).toBe(true);
@@ -2197,7 +2197,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
         for (const effect of asInstance(layer.effects, PropertyGroup).properties) {
           for (const prop of asInstance(effect, PropertyGroup).properties) {
             const tdb4 = getattr(prop, "_tdb4", null);
-            const control = getattr(prop, "_property_control_type", null);
+            const control = getattr(prop, "_propertyControlType", null);
             if (tdb4 == null || control == null) {
               continue;
             }
@@ -2223,14 +2223,14 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const app = parseAep(AEP);
     const layer = getLayer(app.project, "effect_2dPoint");
     const prop = asInstance(asInstance(asInstance(layer.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"), Property);
-    expect(prop._is_live()).toBe(false);
+    expect(prop._isLive()).toBe(false);
     prop.value = [10.0, 20.0];
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const reloaded = getLayer(parseAep(out).project, "effect_2dPoint");
     const written = asInstance(asInstance(asInstance(reloaded.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"), Property);
-    expect(written._is_live()).toBe(true);
+    expect(written._isLive()).toBe(true);
     expect(pyEq(written.value, [10.0, 20.0])).toBe(true);
     // Bit 1 is what makes AE read the value instead of the parT default.
     expect(pyBool(and(written._tdb4._spatial_static_flags, 0x02))).toBe(true);
@@ -2242,7 +2242,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const layer = getLayer(app.project, "effect_3dPoint");
     const effect = asInstance(_next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup);
     const prop = asInstance(effect.property("Light Color"), Property);
-    expect(prop._is_live()).toBe(false);
+    expect(prop._isLive()).toBe(false);
     prop.value = [1.0, 0.0, 0.0, 1.0];
 
     const out = tmpPath.div("out.aep");
@@ -2252,7 +2252,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
       asInstance(_next(asInstance(reloaded.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup).property("Light Color"),
       Property,
     );
-    expect(written._is_live()).toBe(true);
+    expect(written._isLive()).toBe(true);
     expect(pyEq(written.value, [1.0, 0.0, 0.0, 1.0])).toBe(true);
     expect(pyBool(and(written._tdb4._spatial_static_flags, 0x02))).toBe(true);
   });
@@ -2284,10 +2284,10 @@ describe("TestSynthesizedEffectParamWrites", () => {
     // `next(...)` over a lazy generator: stop at the first match without walking later layers.
     let prop: Property | null = null;
     find_prop: for (const layer of project.compositions[0].layers) {
-      for (const p of layer._leaf_properties()) {
+      for (const p of layer._leafProperties()) {
         if (
-          p._is_in_effect() &&
-          p._property_control_type === PropertyControlType.COLOR &&
+          p._isInEffect() &&
+          p._propertyControlType === PropertyControlType.COLOR &&
           pyBool(p.keyframes)
         ) {
           prop = p;
@@ -2303,8 +2303,8 @@ describe("TestSynthesizedEffectParamWrites", () => {
     project.save(out);
     let written: Property | null = null;
     find_written: for (const layer of parseAep(out).project.compositions[0].layers) {
-      for (const p of layer._leaf_properties()) {
-        if (p._is_in_effect() && p._property_control_type === PropertyControlType.COLOR) {
+      for (const p of layer._leafProperties()) {
+        if (p._isInEffect() && p._propertyControlType === PropertyControlType.COLOR) {
           written = p;
           break find_written;
         }
@@ -3551,10 +3551,10 @@ describe("TestPlaceholderBoundsValueSetter", () => {
   test("test_roundtrip_is_byte_identical", () => {
     const tmpPath = makeTmpPath();
     // Parsing (which reads the suppressed bounds) must not mutate chunks.
-    const raw = SAMPLE.read_bytes();
+    const raw = SAMPLE.readBytes();
     const out = tmpPath.div("rt.aep");
     parseAep(SAMPLE).project.save(out);
-    expect(pyEq(out.read_bytes(), raw)).toBe(true);
+    expect(pyEq(out.readBytes(), raw)).toBe(true);
   });
 
   test("test_unbounded_props_match_extendscript", () => {
@@ -4204,7 +4204,7 @@ describe("TestKeyPathlessMask", () => {
     "indexed_group_controllers.aep",
   );
 
-  /** Static method `_mask_path` in the Python class. */
+  /** Static method `_maskPath` in the Python class. */
   function _maskPath(project: Project): Property<Shape> {
     const comp = getComp(project, "Comp 1");
     const layer = _next(comp.layers, (layer) => layer.name === "Gray Solid 1");
@@ -4271,7 +4271,7 @@ describe("TestMaskLayerSpaceWrites", () => {
     }
     const out = tmpPath.div("read.aep");
     project.save(out);
-    expect(pyEq(out.read_bytes(), AEP.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), AEP.readBytes())).toBe(true);
   });
 
   test("test_edited_unstored_path_is_written", () => {
@@ -4350,7 +4350,7 @@ describe("TestRotoBezierWrites", () => {
     }
     const out = tmpPath.div("read.aep");
     project.save(out);
-    expect(pyEq(out.read_bytes(), AEP.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), AEP.readBytes())).toBe(true);
   });
 
   test("test_interpolated_value_stores_the_blended_stored_handles", () => {
@@ -4368,8 +4368,8 @@ describe("TestRotoBezierWrites", () => {
     const reparsed = _keyed(parseProjectFresh(out));
     const value = _next(reparsed.keyframes, (kf) => kf.time === 0.5).value;
     expect(approx(value.vertices[0], [200.0, 150.0], { abs: 1e-3 })).toBe(true);
-    expect(approx(value._stored_tangents(-1)[0], [-15.0, 5.0], { abs: 1e-3 })).toBe(true);
-    expect(approx(value._stored_tangents(1)[0], [20.0, -10.0], { abs: 1e-3 })).toBe(true);
+    expect(approx(value._storedTangents(-1)[0], [-15.0, 5.0], { abs: 1e-3 })).toBe(true);
+    expect(approx(value._storedTangents(1)[0], [20.0, -10.0], { abs: 1e-3 })).toBe(true);
   });
 });
 
@@ -4453,7 +4453,7 @@ describe("TestSyntheticValuesAreOwned", () => {
     position.value = [10.0, 20.0, 40.0];
     position.value[0] = 5.0;
     expect(pyEq(position.value, [5.0, 20.0, 0.0])).toBe(true);
-    const stored = position._stored_static_value();
+    const stored = position._storedStaticValue();
     pyAssert(Array.isArray(stored));
     expect(stored[2]).toBe(40.0);
   });
@@ -4622,7 +4622,7 @@ describe("TestMaskReferences", () => {
     const [layer, fillMask] = _fillMask(parseProjectFresh(SAMPLES_DIR.div("mask_reference_moved.aep")));
     const masks = _masks(layer).properties;
     expect(masks.map((m) => asInstance(m, MaskPropertyGroup)._mkif.mask_id)).toEqual([2, 1]);
-    expect(fillMask._tdli_chunk()?.value).toBe(2);
+    expect(fillMask._tdliChunk()?.value).toBe(2);
     expect(fillMask.value).toBe(1);
   });
 
@@ -4706,7 +4706,7 @@ describe("TestRoundedControls", () => {
     const out = tmpPath.div("rounded.aep");
     project.save(out);
     const saved = _dims(parseProjectFresh(out));
-    expect(saved._read_cdat_raw()).toBe(2.5);
+    expect(saved._readCdatRaw()).toBe(2.5);
     expect(saved.value).toBe(3);
   });
 
@@ -4715,7 +4715,7 @@ describe("TestRoundedControls", () => {
     const project = parseProjectFresh(LAYER_SAMPLES_DIR.div("shape_source_rect.aep"));
     const layer = getComp(project, "SHAPE_RECTS").layers.find((ly) => ly.name === "ps_k2_p5.5_r50");
     pyAssert(layer != null);
-    const points = [...layer._leaf_properties()].find((p) => p.matchName === "ADBE Vector Star Points");
+    const points = [...layer._leafProperties()].find((p) => p.matchName === "ADBE Vector Star Points");
     pyAssert(points != null);
     expect(points.value).toBe(5.5);
   });
@@ -4780,7 +4780,7 @@ describe("TestAudioLayerMasks", () => {
    * path as four points at the origin and hangs writing one.
    */
 
-  /** Static method `_mask_path` in the Python class. */
+  /** Static method `_maskPath` in the Python class. */
   function _maskPath(project: Project): Property<Shape> {
     const layer = getLayer(project, "audioEnabled_true");
     pyAssert(layer.masks != null);

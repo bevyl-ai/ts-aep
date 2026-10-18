@@ -58,14 +58,14 @@ export const parseOutputModule = _suppressMaterialization().decorate(
     const formatOptions = parseFormatOptions(chunks);
 
     return new OutputModule({
-      _om_ldat: omLdatData,
+      _omLdat: omLdatData,
       _roou: roouChunk,
-      _alas_utf8: alasUtf8,
-      _file_name_utf8: fileNameUtf8,
-      _name_utf8: nameUtf8,
-      _render_settings_ldat: renderQueueItem._ldat,
+      _alasUtf8: alasUtf8,
+      _fileNameUtf8: fileNameUtf8,
+      _nameUtf8: nameUtf8,
+      _renderSettingsLdat: renderQueueItem._ldat,
       parent: renderQueueItem,
-      format_options: formatOptions,
+      formatOptions: formatOptions,
     });
   },
 );

@@ -37,14 +37,14 @@ function countNl(s: string, end: number): number {
 }
 
 export type LoadsOptions = {
-  /** `parse_float`: called with the number's text; default boxes it as `PyFloat`. */
-  parse_float?: (text: string) => JsonValue;
-  /** `parse_int`: called with the number's text; default `number`, or `bigint` past 2**53. */
-  parse_int?: (text: string) => JsonValue;
-  /** `parse_constant`: called with "NaN", "Infinity" or "-Infinity". */
-  parse_constant?: (text: string) => JsonValue;
-  /** `object_pairs_hook`: builds an object from its `[key, value]` pairs (default: `Map`). */
-  object_pairs_hook?: (pairs: [string, JsonValue][]) => JsonValue;
+  /** `parseFloat`: called with the number's text; default boxes it as `PyFloat`. */
+  parseFloat?: (text: string) => JsonValue;
+  /** `parseInt`: called with the number's text; default `number`, or `bigint` past 2**53. */
+  parseInt?: (text: string) => JsonValue;
+  /** `parseConstant`: called with "NaN", "Infinity" or "-Infinity". */
+  parseConstant?: (text: string) => JsonValue;
+  /** `objectPairsHook`: builds an object from its `[key, value]` pairs (default: `Map`). */
+  objectPairsHook?: (pairs: [string, JsonValue][]) => JsonValue;
 };
 
 function defaultInt(text: string): number | bigint {
@@ -131,10 +131,10 @@ export function jsonLoads(s: string | Uint8Array, opts: LoadsOptions = {}): Json
     text = String(s);
     if (text.startsWith("﻿")) throw new JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)", text, 0);
   }
-  const floatParser = opts.parse_float ?? defaultFloat;
-  const intParser = opts.parse_int ?? defaultInt;
-  const parseConstant = opts.parse_constant ?? ((c: string) => CONSTANTS[c]);
-  const pairsHook = opts.object_pairs_hook ?? ((pairs: [string, JsonValue][]) => new Map(pairs));
+  const floatParser = opts.parseFloat ?? defaultFloat;
+  const intParser = opts.parseInt ?? defaultInt;
+  const parseConstant = opts.parseConstant ?? ((c: string) => CONSTANTS[c]);
+  const pairsHook = opts.objectPairsHook ?? ((pairs: [string, JsonValue][]) => new Map(pairs));
   const n = text.length;
   const fail: (msg: string, pos: number) => never = (msg, pos) => {
     throw new JSONDecodeError(msg, text, pos);
@@ -256,9 +256,9 @@ export function jsonLoads(s: string | Uint8Array, opts: LoadsOptions = {}): Json
 }
 
 export type DumpsOptions = {
-  ensure_ascii?: boolean;
-  allow_nan?: boolean;
-  sort_keys?: boolean;
+  ensureAscii?: boolean;
+  allowNan?: boolean;
+  sortKeys?: boolean;
   indent?: number | string | null;
   separators?: readonly [string, string] | null;
   /** `default`: called for an object json cannot serialize; returns a serializable stand-in. */
@@ -321,7 +321,7 @@ function intRepr(x: number): string {
  * `bigint` an int, a non-integral `number` or a `PyFloat` a float.
  */
 export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
-  const { ensure_ascii = true, allow_nan = true, sort_keys = false, skipkeys = false } = opts;
+  const { ensureAscii: ensure_ascii = true, allowNan: allow_nan = true, sortKeys: sort_keys = false, skipkeys = false } = opts;
   const default_ = opts.default_ ?? null;
   const indent = typeof opts.indent === "number" ? " ".repeat(opts.indent) : (opts.indent ?? null);
   const [itemSep, keySep] = opts.separators ?? (indent !== null ? [",", ": "] : [", ", ": "]);

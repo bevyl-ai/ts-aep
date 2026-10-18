@@ -140,14 +140,14 @@ descriptor(
 
 descriptor(ViewOptions, "grid", ChunkField.bool("_fips", "grid"));
 
-descriptor(ViewOptions, "guidesLocked", ChunkField.bool("_fips", "guides_locked", { min_version: 16 }));
+descriptor(ViewOptions, "guidesLocked", ChunkField.bool("_fips", "guides_locked", { minVersion: 16 }));
 
-descriptor(ViewOptions, "guidesSnap", ChunkField.bool("_fips", "guides_snap", { min_version: 16 }));
+descriptor(ViewOptions, "guidesSnap", ChunkField.bool("_fips", "guides_snap", { minVersion: 16 }));
 
 descriptor(
   ViewOptions,
   "guidesVisibility",
-  ChunkField.bool("_fips", "guides_visibility", { min_version: 16 }),
+  ChunkField.bool("_fips", "guides_visibility", { minVersion: 16 }),
 );
 
 descriptor(ViewOptions, "maskAndShapePath", ChunkField.bool("_fips", "mask_and_shape_path"));
@@ -204,7 +204,7 @@ descriptor(
   }),
 );
 
-descriptor(ViewOptions, "rulers", ChunkField.bool("_fips", "rulers", { min_version: 16 }));
+descriptor(ViewOptions, "rulers", ChunkField.bool("_fips", "rulers", { minVersion: 16 }));
 
 descriptor(ViewOptions, "titleActionSafe", ChunkField.bool("_fips", "title_action_safe"));
 
@@ -225,5 +225,5 @@ descriptor(
 descriptor(
   ViewOptions,
   "fastPreview",
-  ChunkField.enum(FastPreviewType, "_fips", "fast_preview_type", { min_version: 12 }),
+  ChunkField.enum(FastPreviewType, "_fips", "fast_preview_type", { minVersion: 12 }),
 );

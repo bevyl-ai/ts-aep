@@ -413,7 +413,7 @@ describe("TestMarkerLazyParseRoundtrip", () => {
    */
   test("test_access_then_save_is_byte_identical", () => {
     const tmpPath = makeTmpPath();
-    const src = SAMPLES_DIR.div("comp_marker.aep").read_bytes();
+    const src = SAMPLES_DIR.div("comp_marker.aep").readBytes();
     // Parse fresh: the conftest parse_project_fresh cache returns projects
     // other tests may have mutated.
     const project = parseAep(SAMPLES_DIR.div("comp_marker.aep")).project;
@@ -422,7 +422,7 @@ describe("TestMarkerLazyParseRoundtrip", () => {
     }
     const out = tmpPath.div("out.aep");
     project.save(out);
-    expect(pyEq(out.read_bytes(), src)).toBe(true);
+    expect(pyEq(out.readBytes(), src)).toBe(true);
   });
 });
 

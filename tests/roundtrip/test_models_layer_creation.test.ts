@@ -425,7 +425,7 @@ describe("TestAddSolid", () => {
     let comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 24.0);
     const first = comp.addSolid([1.0, 0.0, 0.0], "A");
     const folder = asInstance(asInstance(first.source, FootageItem).parentFolder, FolderItem);
-    expect(app.project._solids_folder_id).toBe(folder.id);
+    expect(app.project._solidsFolderId).toBe(folder.id);
     folder.name = "Renamed";
     const holder = app.project.rootFolder.addFolder("Holder");
     folder.parentFolder = holder;
@@ -449,7 +449,7 @@ describe("TestAddSolid", () => {
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 24.0);
     const layer = comp.addSolid([1.0, 0.0, 0.0], "A");
     expect(asInstance(layer.source, FootageItem).parentFolder).toBe(existing);
-    expect(app.project._solids_folder_id).toBe(0);
+    expect(app.project._solidsFolderId).toBe(0);
   });
 
   test("test_roundtrip", () => {

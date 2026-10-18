@@ -55,22 +55,22 @@ export const _fontCache = new Map<string, FontkitFont>();
 /**
  * One styled run of text within a `<text>` (the parent text or a `<tspan>`).
  *
- * Positioning follows SVG: `abs_x` / `abs_y` (when not `null`) reset the
+ * Positioning follows SVG: `absX` / `absY` (when not `null`) reset the
  * cursor; otherwise `dx` / `dy` offset it from the previous run's end.
  */
 export class TextRun {
   declare text: string;
-  declare font_path: Path;
-  declare font_size: number;
-  declare letter_spacing: number;
-  declare abs_x: number | null;
-  declare abs_y: number | null;
+  declare fontPath: Path;
+  declare fontSize: number;
+  declare letterSpacing: number;
+  declare absX: number | null;
+  declare absY: number | null;
   declare dx: number;
   declare dy: number;
   /** CSS `text-anchor` for this run's chunk (`null` = inherit the caller's). */
   declare anchor: string | null;
   /** Face index within a `.ttc` collection (0 for a single-face file). */
-  declare font_number: number;
+  declare fontNumber: number;
 
   constructor(
     text: string,
@@ -85,15 +85,15 @@ export class TextRun {
     fontNumber = 0,
   ) {
     this.text = text;
-    this.font_path = fontPath;
-    this.font_size = fontSize;
-    this.letter_spacing = letterSpacing;
-    this.abs_x = absX;
-    this.abs_y = absY;
+    this.fontPath = fontPath;
+    this.fontSize = fontSize;
+    this.letterSpacing = letterSpacing;
+    this.absX = absX;
+    this.absY = absY;
     this.dx = dx;
     this.dy = dy;
     this.anchor = anchor;
-    this.font_number = fontNumber;
+    this.fontNumber = fontNumber;
   }
 }
 
@@ -248,8 +248,8 @@ export function _advanceWidth(
   glyphs: TextGlyphs,
 ): number {
   const [, advances, unitsPerEm] = glyphs;
-  const scale = run.font_size / unitsPerEm;
-  return sum(advances) * scale + run.letter_spacing * Array.from(run.text).length;
+  const scale = run.fontSize / unitsPerEm;
+  return sum(advances) * scale + run.letterSpacing * Array.from(run.text).length;
 }
 
 /** Outline one run starting at `(pen_x, pen_y)`; return (subpaths, end_x). */
@@ -261,7 +261,7 @@ export function _outlineRun(
   glyphs: TextGlyphs,
 ): [Subpath[], number] {
   const [names, advances, unitsPerEm, glyphSet] = glyphs;
-  const scale = run.font_size / unitsPerEm;
+  const scale = run.fontSize / unitsPerEm;
   const subpaths: Subpath[] = [];
   for (const [gname, advance] of zip(names, advances)) {
     if (gname != null && _inGlyphSet(glyphSet, gname)) {
@@ -273,7 +273,7 @@ export function _outlineRun(
         if (sub != null) subpaths.push(sub);
       }
     }
-    penX += advance * scale + run.letter_spacing;
+    penX += advance * scale + run.letterSpacing;
   }
   return [subpaths, penX];
 }
@@ -296,7 +296,7 @@ export function outlineRuns(
   anchor = "start",
 ): Subpath[][] {
   const glyphData = runs.map((run) =>
-    _glyphs(_loadFont(run.font_path, run.font_number), run.text),
+    _glyphs(_loadFont(run.fontPath, run.fontNumber), run.text),
   );
   const widths = runs.map((run, k) => _advanceWidth(run, glyphData[k]));
   const result: Subpath[][] = runs.map(() => []);
@@ -307,7 +307,7 @@ export function outlineRuns(
   while (i < n) {
     // The chunk runs from `i` up to (not including) the next absolute-x run.
     let j = i + 1;
-    while (j < n && runs[j].abs_x == null) j += 1;
+    while (j < n && runs[j].absX == null) j += 1;
     const first = runs[i];
     const chunkAdvance = sum(Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx));
     const chunkAnchor = first.anchor || anchor;
@@ -319,12 +319,12 @@ export function outlineRuns(
           : 0.0;
     // An absolute x resets the cursor; otherwise the (first) chunk continues
     // from the running pen. The anchor shifts the whole chunk left.
-    const baseX = first.abs_x != null ? first.abs_x : penX;
+    const baseX = first.absX != null ? first.absX : penX;
     penX = baseX - shift;
     for (let k = i; k < j; k++) {
       const run = runs[k];
       penX = penX + run.dx;
-      penY = run.abs_y != null ? run.abs_y : penY + run.dy;
+      penY = run.absY != null ? run.absY : penY + run.dy;
       const [subpaths, endX] = _outlineRun(run, penX, penY, ctm, glyphData[k]);
       penX = endX;
       result[k] = subpaths;
@@ -394,7 +394,7 @@ export function _pointAt(
  * Each glyph is placed with its advance midpoint at the corresponding
  * arc-length along the (first subpath of the) path and rotated to the local
  * tangent. Glyphs past the path end are dropped. `start_offset` is in user
- * units; `start_offset_frac` (0-1) is the percentage form. The path's own
+ * units; `startOffsetFrac` (0-1) is the percentage form. The path's own
  * transform is not applied (it is taken in the text's coordinate space).
  */
 export function outlineTextPath(
@@ -404,17 +404,17 @@ export function outlineTextPath(
   fontSize: number,
   ctm: Affine,
   kw: {
-    font_number?: number;
-    start_offset?: number;
-    start_offset_frac?: number | null;
-    letter_spacing?: number;
+    fontNumber?: number;
+    startOffset?: number;
+    startOffsetFrac?: number | null;
+    letterSpacing?: number;
   } = {},
 ): Subpath[] {
   const {
-    font_number = 0,
-    start_offset = 0.0,
-    start_offset_frac = null,
-    letter_spacing = 0.0,
+    fontNumber: font_number = 0,
+    startOffset: start_offset = 0.0,
+    startOffsetFrac: start_offset_frac = null,
+    letterSpacing: letter_spacing = 0.0,
   } = kw;
   if (!path?.length) return [];
   const pts = _polyline(path[0]);

@@ -60,7 +60,7 @@ const _TOLERANCE = new Map<string, number>([
 
 /** The single property under `layer` with this match name. */
 function _find(layer: Layer, matchName: string): Property {
-  const found = Array.from(layer._leaf_properties()).filter((p) => p.matchName === matchName);
+  const found = Array.from(layer._leafProperties()).filter((p) => p.matchName === matchName);
   pyAssert(len(found) === 1, `${matchName}: expected 1 match, got ${len(found)}`);
   return found[0];
 }
@@ -222,7 +222,7 @@ class TestValueSpaces {
 
 describe("TestValueSpaces", () => {
   test("test_mask_shape_is_bound_to_its_layer_at_parse_time", () => {
-    // Reached through `_value` / `_ldat_item`, never through `.value`:
+    // Reached through `_value` / `_ldatItem`, never through `.value`:
     // the binding is the parser's job, so a read must not be what
     // establishes it. `_parse_shape_shap` raises if a mask path is
     // parsed without its layer, which makes a missed parse site loud

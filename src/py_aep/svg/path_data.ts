@@ -124,10 +124,10 @@ export class _PathParser {
   cy: number;
   sx: number;
   sy: number;
-  _prev_cmd: string;
+  _prevCmd: string;
   // Last cubic control point (for S) and quadratic control (for T).
-  _prev_cubic_ctrl: [number, number] | null;
-  _prev_quad_ctrl: [number, number] | null;
+  _prevCubicCtrl: [number, number] | null;
+  _prevQuadCtrl: [number, number] | null;
   _segs: CubicSeg[];
   _subpaths: RawSubpath[];
 
@@ -138,9 +138,9 @@ export class _PathParser {
     this.cy = 0.0;
     this.sx = 0.0;
     this.sy = 0.0;
-    this._prev_cmd = "";
-    this._prev_cubic_ctrl = null;
-    this._prev_quad_ctrl = null;
+    this._prevCmd = "";
+    this._prevCubicCtrl = null;
+    this._prevQuadCtrl = null;
     this._segs = [];
     this._subpaths = [];
   }
@@ -173,7 +173,7 @@ export class _PathParser {
     return this._subpaths;
   }
 
-  _read_args(n: number): number[] {
+  _readArgs(n: number): number[] {
     const args: number[] = [];
     for (let i = 0; i < n; i++) {
       if (this._i >= this._tokens.length || _COMMANDS.has(this._tokens[this._i])) {
@@ -203,32 +203,32 @@ export class _PathParser {
     }
     this.cx = this.sx;
     this.cy = this.sy;
-    this._prev_cubic_ctrl = null;
-    this._prev_quad_ctrl = null;
-    this._prev_cmd = "Z";
+    this._prevCubicCtrl = null;
+    this._prevQuadCtrl = null;
+    this._prevCmd = "Z";
   }
 
-  _line_to(x: number, y: number): void {
+  _lineTo(x: number, y: number): void {
     this._segs.push([this.cx, this.cy, this.cx, this.cy, x, y, x, y]);
     this.cx = x;
     this.cy = y;
   }
 
-  _cubic_to(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
+  _cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
     this._segs.push([this.cx, this.cy, x1, y1, x2, y2, x, y]);
-    this._prev_cubic_ctrl = [x2, y2];
+    this._prevCubicCtrl = [x2, y2];
     this.cx = x;
     this.cy = y;
   }
 
-  _quad_to(qx: number, qy: number, x: number, y: number): void {
+  _quadTo(qx: number, qy: number, x: number, y: number): void {
     // Elevate quadratic to cubic.
     const c1x = this.cx + (2.0 / 3.0) * (qx - this.cx);
     const c1y = this.cy + (2.0 / 3.0) * (qy - this.cy);
     const c2x = x + (2.0 / 3.0) * (qx - x);
     const c2y = y + (2.0 / 3.0) * (qy - y);
     this._segs.push([this.cx, this.cy, c1x, c1y, c2x, c2y, x, y]);
-    this._prev_quad_ctrl = [qx, qy];
+    this._prevQuadCtrl = [qx, qy];
     this.cx = x;
     this.cy = y;
   }
@@ -237,7 +237,7 @@ export class _PathParser {
     // flat command dispatch
     const rel = islower(cmd);
     const up = cmd.toUpperCase();
-    const a = this._read_args(_ARGC[up]);
+    const a = this._readArgs(_ARGC[up]);
     const [ox, oy] = rel ? [this.cx, this.cy] : [0.0, 0.0];
 
     if (up === "M") {
@@ -247,49 +247,49 @@ export class _PathParser {
       this.sx = this.cx;
       this.sy = this.cy;
     } else if (up === "L") {
-      this._line_to(a[0] + ox, a[1] + oy);
+      this._lineTo(a[0] + ox, a[1] + oy);
     } else if (up === "H") {
-      this._line_to(a[0] + (rel ? this.cx : 0.0), this.cy);
+      this._lineTo(a[0] + (rel ? this.cx : 0.0), this.cy);
     } else if (up === "V") {
-      this._line_to(this.cx, a[0] + (rel ? this.cy : 0.0));
+      this._lineTo(this.cx, a[0] + (rel ? this.cy : 0.0));
     } else if (up === "C") {
-      this._cubic_to(a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy, a[4] + ox, a[5] + oy);
+      this._cubicTo(a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy, a[4] + ox, a[5] + oy);
     } else if (up === "S") {
       let rx: number, ry: number;
-      if (["C", "S"].includes(this._prev_cmd) && this._prev_cubic_ctrl != null) {
-        rx = 2 * this.cx - this._prev_cubic_ctrl[0];
-        ry = 2 * this.cy - this._prev_cubic_ctrl[1];
+      if (["C", "S"].includes(this._prevCmd) && this._prevCubicCtrl != null) {
+        rx = 2 * this.cx - this._prevCubicCtrl[0];
+        ry = 2 * this.cy - this._prevCubicCtrl[1];
       } else {
         rx = this.cx;
         ry = this.cy;
       }
-      this._cubic_to(rx, ry, a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy);
+      this._cubicTo(rx, ry, a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy);
     } else if (up === "Q") {
-      this._quad_to(a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy);
+      this._quadTo(a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy);
     } else if (up === "T") {
       let qx: number, qy: number;
-      if (["Q", "T"].includes(this._prev_cmd) && this._prev_quad_ctrl != null) {
-        qx = 2 * this.cx - this._prev_quad_ctrl[0];
-        qy = 2 * this.cy - this._prev_quad_ctrl[1];
+      if (["Q", "T"].includes(this._prevCmd) && this._prevQuadCtrl != null) {
+        qx = 2 * this.cx - this._prevQuadCtrl[0];
+        qy = 2 * this.cy - this._prevQuadCtrl[1];
       } else {
         qx = this.cx;
         qy = this.cy;
       }
-      this._quad_to(qx, qy, a[0] + ox, a[1] + oy);
+      this._quadTo(qx, qy, a[0] + ox, a[1] + oy);
     } else if (up === "A") {
-      this._arc_to(a[0], a[1], a[2], a[3] !== 0, a[4] !== 0, a[5] + ox, a[6] + oy);
+      this._arcTo(a[0], a[1], a[2], a[3] !== 0, a[4] !== 0, a[5] + ox, a[6] + oy);
     }
 
     if (up !== "C" && up !== "S") {
-      this._prev_cubic_ctrl = null;
+      this._prevCubicCtrl = null;
     }
     if (up !== "Q" && up !== "T") {
-      this._prev_quad_ctrl = null;
+      this._prevQuadCtrl = null;
     }
-    this._prev_cmd = up;
+    this._prevCmd = up;
   }
 
-  _arc_to(
+  _arcTo(
     rx: number,
     ry: number,
     phiDeg: number,
@@ -302,7 +302,7 @@ export class _PathParser {
     const x1 = this.cx;
     const y1 = this.cy;
     if (rx === 0 || ry === 0) {
-      this._line_to(x, y);
+      this._lineTo(x, y);
       return;
     }
     rx = Math.abs(rx);

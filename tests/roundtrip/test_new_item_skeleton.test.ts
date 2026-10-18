@@ -27,7 +27,7 @@ const PRDA_CLASSIC_DEFAULT = bytes_.fromhex("000000010000000000000000");
 function _savedRifx(app: Application, tmpPath: Path): ListChunk {
   const out = tmpPath.div("out.aep");
   app.project.save(out);
-  const f = new BytesIO(out.read_bytes());
+  const f = new BytesIO(out.readBytes());
   const [rifx] = readAep(f);
   return rifx;
 }

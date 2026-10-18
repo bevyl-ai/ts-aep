@@ -13,7 +13,7 @@
 //   BlendingMode["ADD"]            BlendingMode.by_name("ADD")  (KeyError if unknown)
 //   BlendingMode.__name__          BlendingMode.__name__
 //
-// Class-level methods (`from_binary`, `to_binary`, `_missing_`, ...) go in
+// Class-level methods (`fromBinary`, `toBinary`, `_missing_`, ...) go in
 // `methods`; they are called with the enum object as `this`.
 //
 //   export const BlendingMode = int_enum("BlendingMode", { NORMAL: 5212, ADD: 5220 }, {
@@ -37,15 +37,15 @@ export type EnumHelpers<V> = {
   /** `Enum(value)` */
   of(value: unknown): V;
   /** `Enum(value)`, or `null` where it would raise ValueError. */
-  of_or_null(value: unknown): V | null;
+  ofOrNull(value: unknown): V | null;
   /** `member.name` */
-  name_of(value: V): string;
+  nameOf(value: V): string;
   /** `isinstance(value, Enum)` */
   has(value: unknown): value is V;
   /** `list(Enum)` (aliases excluded, definition order). */
   members(): V[];
   /** `Enum[name]` */
-  by_name(name: string): V;
+  byName(name: string): V;
   /** `Enum.__members__` (aliases included). */
   readonly __members__: ReadonlyMap<string, V>;
 };
@@ -75,16 +75,16 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
   const helpers: EnumHelpers<V> = {
     __name__: name,
     of(value: unknown): V {
-      const found = helpers.of_or_null(value);
+      const found = helpers.ofOrNull(value);
       if (found !== null) return found;
       throw new ValueError(`${typeof value === "string" ? `'${value}'` : String(value)} is not a valid ${name}`);
     },
-    of_or_null(value: unknown): V | null {
+    ofOrNull(value: unknown): V | null {
       if (helpers.has(value)) return value;
       if (typeof self._missing_ === "function") return self._missing_(value) ?? null;
       return null;
     },
-    name_of(value: V): string {
+    nameOf(value: V): string {
       const n = byValue.get(value);
       if (n === undefined) throw new ValueError(`${String(value)} is not a valid ${name}`);
       return n;
@@ -95,7 +95,7 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
     members(): V[] {
       return [...canonical];
     },
-    by_name(n: string): V {
+    byName(n: string): V {
       const v = byName.get(n);
       if (v === undefined) throw new KeyError(`'${n}'`);
       return v;

@@ -43,6 +43,6 @@ describe("TestNegativeTimeSpanDecode", () => {
     parseProjectFresh(SAMPLE).save(out);
     parseProjectFresh(out).save(out2);
 
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });

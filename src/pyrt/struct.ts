@@ -110,16 +110,16 @@ export class Struct<F extends string = string> {
       if (c.ch === "x") continue;
       n += c.ch === "s" || c.ch === "p" ? 1 : c.count;
     }
-    this.n_values = n;
+    this.nValues = n;
   }
 
   /** Number of values `unpack` yields. */
-  readonly n_values: number;
+  readonly nValues: number;
 
-  /** Compiled `unpack_from` body; null where code generation is blocked (CSP, Workers). */
+  /** Compiled `unpackFrom` body; null where code generation is blocked (CSP, Workers). */
   private unpacker: Unpacker | null | undefined;
 
-  /** Compiled `pack_to` body (after the arity check); null where code generation is blocked. */
+  /** Compiled `packTo` body (after the arity check); null where code generation is blocked. */
   private packer: Packer | null | undefined;
 
   unpack(data: Uint8Array): Unpacked<F>;
@@ -127,11 +127,11 @@ export class Struct<F extends string = string> {
     if (data.length !== this.size) {
       throw new StructError(`unpack requires a buffer of ${this.size} bytes`);
     }
-    return this.unpack_from(data, 0);
+    return this.unpackFrom(data, 0);
   }
 
-  unpack_from(data: Uint8Array, offset?: number): Unpacked<F>;
-  unpack_from(data: Uint8Array, offset = 0): PackValue[] {
+  unpackFrom(data: Uint8Array, offset?: number): Unpacked<F>;
+  unpackFrom(data: Uint8Array, offset = 0): PackValue[] {
     if (data.length - offset < this.size) {
       throw new StructError(`unpack_from requires a buffer of at least ${this.size + offset} bytes`);
     }
@@ -177,7 +177,7 @@ export class Struct<F extends string = string> {
 
   pack(...values: PackValue[]): Uint8Array {
     const out = new Uint8Array(this.size);
-    this.pack_to(out, 0, values);
+    this.packTo(out, 0, values);
     return out;
   }
 
@@ -186,9 +186,9 @@ export class Struct<F extends string = string> {
    * `size` bytes. Pad bytes are zeroed, so `out` need not be zero-filled; on a
    * bad value, bytes before the failing field are already written.
    */
-  pack_to(out: Uint8Array, offset: number, values: PackValue[]): void {
-    if (values.length !== this.n_values) {
-      throw new StructError(`pack expected ${this.n_values} items for packing (got ${values.length})`);
+  packTo(out: Uint8Array, offset: number, values: PackValue[]): void {
+    if (values.length !== this.nValues) {
+      throw new StructError(`pack expected ${this.nValues} items for packing (got ${values.length})`);
     }
     if (this.packer === undefined) this.packer = compilePack(this.codes, this.le);
     if (this.packer !== null) return this.packer(out, offset, values);
@@ -287,7 +287,7 @@ function packOne(out: Uint8Array, p: number, ch: string, v: PackValue, le: boole
 
 type Packer = (out: Uint8Array, p: number, v: PackValue[]) => void;
 
-/** Straight-line `pack_to` for `codes`: integers inline, other codes through `pack_one` in order. */
+/** Straight-line `packTo` for `codes`: integers inline, other codes through `pack_one` in order. */
 function compilePack(codes: Code[], le: boolean): Packer | null {
   const body = ["let n;"];
   let k = 0;
@@ -331,7 +331,7 @@ function compilePack(codes: Code[], le: boolean): Packer | null {
 
 type Unpacker = (d: Uint8Array, p: number) => PackValue[];
 
-/** Straight-line `unpack_from` for `codes`: one expression per value at a fixed offset. */
+/** Straight-line `unpackFrom` for `codes`: one expression per value at a fixed offset. */
 function compileUnpack(codes: Code[], le: boolean): Unpacker | null {
   const u16 = (k: number) => (le ? `(d[p+${k}]|d[p+${k + 1}]<<8)` : `(d[p+${k}]<<8|d[p+${k + 1}])`);
   const u32 = (k: number) =>
@@ -491,7 +491,7 @@ export function unpack(format: string, data: Uint8Array): PackValue[] {
 /** `struct.unpack_from(fmt, data, offset)` */
 export function unpackFrom<F extends string>(format: F, data: Uint8Array, offset?: number): Unpacked<F>;
 export function unpackFrom(format: string, data: Uint8Array, offset = 0): PackValue[] {
-  return get(format).unpack_from(data, offset);
+  return get(format).unpackFrom(data, offset);
 }
 
 /** `struct.pack_into(fmt, buffer, offset, *values)` (negative offsets count from the end). */

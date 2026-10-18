@@ -53,7 +53,7 @@ export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): bool
   /**
    * Check if using `new_source` as a layer source would create a cycle.
    *
-   * Walks UP from `target_comp` via `_used_in` back-references and returns
+   * Walks UP from `target_comp` via `_usedIn` back-references and returns
    * `true` if `new_source` is found among the ancestors, meaning the
    * replacement would create a circular reference chain.
    */
@@ -87,9 +87,9 @@ export function _unregisterSourceUsage(
    */
   const { exclude = null } = kw;
   for (const layer of comp.avLayers) {
-    if (layer !== exclude && layer._source_id === source.id) return;
+    if (layer !== exclude && layer._sourceId === source.id) return;
   }
-  source._used_in.delete(comp);
+  source._usedIn.delete(comp);
 }
 
 export function _validateCollapseTransformation(value: boolean, obj: AVLayer): void {
@@ -104,15 +104,15 @@ export function _validateCollapseTransformation(value: boolean, obj: AVLayer): v
 /** Keyword arguments of `AVLayer._new`. */
 type AVLayerNewKw = {
   name: string;
-  layer_id: number;
+  layerId: number;
   duration: number;
-  containing_comp: CompItem;
-  source_id?: number;
-  null_layer?: boolean;
-  three_d_layer?: boolean;
+  containingComp: CompItem;
+  sourceId?: number;
+  nullLayer?: boolean;
+  threeDLayer?: boolean;
   label?: number;
-  root_tdgp_extra?: Chunk[] | null;
-  effect_param_defs?: EffectParamDefs | null;
+  rootTdgpExtra?: Chunk[] | null;
+  effectParamDefs?: EffectParamDefs | null;
 };
 
 /**
@@ -217,7 +217,7 @@ export class AVLayer extends Layer {
   }
 
   /** The layer's pixel dimensions, or `null` when either is zero. */
-  get _pixel_size(): [number, number] | null {
+  get _pixelSize(): [number, number] | null {
     const width = this.width;
     const height = this.height;
     if (width && height) {
@@ -231,7 +231,7 @@ export class AVLayer extends Layer {
    * size, or 1 x 1 for a source-less (text / shape) layer, whose mask
    * paths AE stores in layer pixels (measured on AE 2026).
    */
-  get _mask_scale(): [number, number] {
+  get _maskScale(): [number, number] {
     const source = this.source;
     if (source == null) {
       return [1.0, 1.0];
@@ -247,7 +247,7 @@ export class AVLayer extends Layer {
   declare threeDPerChar: boolean;
 
   /** The ID of the source item for this layer. 0 for a text layer. Read-only. */
-  declare _source_id: number;
+  declare _sourceId: number;
 
   /** The resolved source item; unset until first read (see `source`). */
   declare _source?: AVItem | null;
@@ -257,15 +257,15 @@ export class AVLayer extends Layer {
   static _new<T extends AVLayer>(this: new (kw: ConstructorParameters<typeof Layer>[0]) => T, kw: AVLayerNewKw): T {
     const {
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      source_id = 0,
-      null_layer = false,
-      three_d_layer = false,
+      containingComp: containing_comp,
+      sourceId: source_id = 0,
+      nullLayer: null_layer = false,
+      threeDLayer: three_d_layer = false,
       label = 1,
-      root_tdgp_extra = null,
-      effect_param_defs = null,
+      rootTdgpExtra: root_tdgp_extra = null,
+      effectParamDefs: effect_param_defs = null,
     } = kw;
     // Python slices code points, not UTF-16 units.
     const nameChars = Array.from(name);
@@ -287,15 +287,15 @@ export class AVLayer extends Layer {
     return super._new<T>({
       ldta,
       name,
-      containing_comp,
-      root_tdgp_extra,
-      effect_param_defs,
+      containingComp: containing_comp,
+      rootTdgpExtra: root_tdgp_extra,
+      effectParamDefs: effect_param_defs,
     });
   }
 
   /** The blending mode of the layer. Read / Write. */
   get blendingMode(): BlendingMode {
-    const mode = BlendingMode.from_binary(this._ldta.blending_mode);
+    const mode = BlendingMode.fromBinary(this._ldta.blending_mode);
     if (mode === BlendingMode.DISSOLVE && this._ldta.dancing_dissolve) {
       return BlendingMode.DANCING_DISSOLVE;
     }
@@ -308,10 +308,10 @@ export class AVLayer extends Layer {
     // Dancing Dissolve has no transfer-mode value of its own: AE stores it
     // as Dissolve plus the dancing-dissolve flag in the ldta transfer byte.
     if (value === BlendingMode.DANCING_DISSOLVE) {
-      this._ldta.blending_mode = BlendingMode.to_binary(BlendingMode.DISSOLVE);
+      this._ldta.blending_mode = BlendingMode.toBinary(BlendingMode.DISSOLVE);
       this._ldta.dancing_dissolve = true;
     } else {
-      this._ldta.blending_mode = BlendingMode.to_binary(value);
+      this._ldta.blending_mode = BlendingMode.toBinary(value);
       this._ldta.dancing_dissolve = false;
     }
   }
@@ -330,23 +330,23 @@ export class AVLayer extends Layer {
    * Read / Write.
    */
   get trackMatteType(): TrackMatteType {
-    return TrackMatteType.from_binary(this._ldta.track_matte_type);
+    return TrackMatteType.fromBinary(this._ldta.track_matte_type);
   }
 
   set trackMatteType(value: TrackMatteType | number) {
     validateEnum(TrackMatteType)(value);
     value = TrackMatteType.of(value);
     const oldMatte = this.trackMatteLayer;
-    this._ldta.track_matte_type = TrackMatteType.to_binary(value);
+    this._ldta.track_matte_type = TrackMatteType.toBinary(value);
     if (value === TrackMatteType.NO_TRACK_MATTE && this._ldta.matte_layer_id != null) {
       this._ldta.matte_layer_id = 0;
       if (oldMatte != null) {
-        this._re_enable_matte(oldMatte);
+        this._reEnableMatte(oldMatte);
       }
     }
   }
 
-  _on_environment_layer_set(): void {
+  _onEnvironmentLayerSet(): void {
     if (this._ldta.environment_layer && this._ldta.three_d_layer) {
       // Through the 3-D switch, which AE turns off here, with all a
       // toggle does.
@@ -354,12 +354,12 @@ export class AVLayer extends Layer {
     }
   }
 
-  _on_three_d_layer_set(): void {
+  _onThreeDLayerSet(): void {
     // Circular: synthesis.core imports the layer classes it synthesizes for.
     // AE renames "Rotation" <-> "Z Rotation" the moment the 3-D switch is
     // toggled, and normalizes a 2-D layer's dead Scale Z to 100 in the
     // chunk on either side of it - so the setter always writes through.
-    _core().applyDimensionalityNaming(this, { reset_scale_z: true });
+    _core().applyDimensionalityNaming(this, { resetScaleZ: true });
   }
 
   /**
@@ -368,7 +368,7 @@ export class AVLayer extends Layer {
    * `0` when no track matte is applied.
    * Conditional in the binary (AE \>= 23 only).
    */
-  get _matte_layer_id(): number {
+  get _matteLayerId(): number {
     // matte_layer_id is conditional (only in AE >= 23)
     return pyOr("matte_layer_id" in this._ldta ? this._ldta.matte_layer_id : 0, 0);
   }
@@ -379,7 +379,7 @@ export class AVLayer extends Layer {
    * After Effects clamps in/outPoint when queried via ExtendScript
    * for non-still footage layers without time remapping enabled.
    */
-  _should_clamp_times(): boolean {
+  _shouldClampTimes(): boolean {
     const source = this.source;
     if (source == null) {
       return false;
@@ -410,7 +410,7 @@ export class AVLayer extends Layer {
    */
   get inPoint(): number {
     const raw = super.inPoint;
-    if (!this._should_clamp_times()) {
+    if (!this._shouldClampTimes()) {
       return raw;
     }
     return max([raw, this.startTime]);
@@ -418,7 +418,7 @@ export class AVLayer extends Layer {
 
   set inPoint(value: number) {
     validateNumber(value);
-    this._set_raw_in_point(value);
+    this._setRawInPoint(value);
   }
 
   /**
@@ -431,18 +431,18 @@ export class AVLayer extends Layer {
    */
   get outPoint(): number {
     const raw = super.outPoint;
-    if (!this._should_clamp_times()) {
+    if (!this._shouldClampTimes()) {
       return raw;
     }
     pyAssert(this.source != null); // _should_clamp_times guards
     const sourceDuration = this.source.duration;
-    const maxOut = this.startTime + sourceDuration * this._stretch_factor;
+    const maxOut = this.startTime + sourceDuration * this._stretchFactor;
     return min([raw, maxOut]);
   }
 
   set outPoint(value: number) {
     validateNumber(value);
-    this._set_raw_out_point(value);
+    this._setRawOutPoint(value);
   }
 
   /** `true` if frame blending is enabled for this layer. Read-only. */
@@ -458,11 +458,11 @@ export class AVLayer extends Layer {
     if (hasattr(this, "_source") && this._source !== undefined) {
       return this._source;
     }
-    if (this._source_id === 0) {
+    if (this._sourceId === 0) {
       this._source = null;
       return null;
     } else {
-      const result = this.containingComp._project.items.get(this._source_id) ?? null;
+      const result = this.containingComp._project.items.get(this._sourceId) ?? null;
       if (result != null) {
         this._source = result as AVItem;
         return this._source;
@@ -471,7 +471,7 @@ export class AVLayer extends Layer {
     }
   }
 
-  get _source_item(): AVItem | null {
+  get _sourceItem(): AVItem | null {
     return this.source;
   }
 
@@ -514,7 +514,7 @@ export class AVLayer extends Layer {
    * @param comp - The composition to add the layer to.
    */
   addToMotionGraphicsTemplate(comp: CompItem): boolean {
-    return comp._add_layer_controller(this, null);
+    return comp._addLayerController(this, null);
   }
 
   /**
@@ -529,7 +529,7 @@ export class AVLayer extends Layer {
    */
   addToMotionGraphicsTemplateAs(comp: CompItem, name: string): boolean {
     validateName(name);
-    return comp._add_layer_controller(this, name);
+    return comp._addLayerController(this, name);
   }
 
   /**
@@ -616,7 +616,7 @@ export class AVLayer extends Layer {
    * `time` (py_aep extension), else the comp's current time - what AE
    * uses, i.e. the playhead position saved in the file.
    */
-  _geometry_time(time: number | null): number {
+  _geometryTime(time: number | null): number {
     if (time != null) {
       validateNumber(time);
       return time;
@@ -651,10 +651,10 @@ export class AVLayer extends Layer {
    */
   sourcePointToComp(point: number[], time: number | null = null): number[] {
     validateVector2(point);
-    const evalTime = this._geometry_time(time);
+    const evalTime = this._geometryTime(time);
     const comp = this.containingComp;
-    const world = this._world_matrix(evalTime);
-    const worldPoint = world.transform_point([point[0], point[1], 0.0]);
+    const world = this._worldMatrix(evalTime);
+    const worldPoint = world.transformPoint([point[0], point[1], 0.0]);
     return _finite(projectToComp(worldPoint, comp.width, comp.height, comp.pixelAspect));
   }
 
@@ -662,8 +662,8 @@ export class AVLayer extends Layer {
    * World matrix for the point conversions at comp `time`: a 2D
    * layer is placed as AE places it, its 3D ancestors flattened.
    */
-  _world_matrix(time: number): Mat4 {
-    return buildWorldMatrix(this, time, !this.threeDLayer, { auto_orient: true });
+  _worldMatrix(time: number): Mat4 {
+    return buildWorldMatrix(this, time, !this.threeDLayer, { autoOrient: true });
   }
 
   /**
@@ -696,10 +696,10 @@ export class AVLayer extends Layer {
    */
   compPointToSource(point: number[], time: number | null = null): number[] {
     validateVector2(point);
-    const evalTime = this._geometry_time(time);
+    const evalTime = this._geometryTime(time);
     const comp = this.containingComp;
-    const world = this._world_matrix(evalTime);
-    const camera = this.threeDLayer ? this._active_camera_at(evalTime) : null;
+    const world = this._worldMatrix(evalTime);
+    const camera = this.threeDLayer ? this._activeCameraAt(evalTime) : null;
     const [origin, direction] = cameraRay(
       camera,
       [point[0], point[1]],
@@ -712,7 +712,7 @@ export class AVLayer extends Layer {
   }
 
   /** The front-most enabled camera layer active at `time`, or `null`. */
-  _active_camera_at(time: number): Layer | null {
+  _activeCameraAt(time: number): Layer | null {
     for (const camera of this.containingComp.cameraLayers) {
       if (camera.enabled && camera.inPoint <= time && time < camera.outPoint) {
         return camera;
@@ -800,7 +800,7 @@ export class AVLayer extends Layer {
     // Property values are evaluated at composition time.
     const compTime = this.startTime + (time * this.stretch) / 100.0;
     if (layerType === LayerType.TEXT) {
-      return this._text_ink_rect(compTime);
+      return this._textInkRect(compTime);
     }
     if (layerType === LayerType.SHAPE) {
       const contents = this.property("ADBE Root Vectors Group");
@@ -814,7 +814,7 @@ export class AVLayer extends Layer {
     };
   }
 
-  _text_ink_rect(time: number): { top: number; left: number; width: number; height: number } {
+  _textInkRect(time: number): { top: number; left: number; width: number; height: number } {
     const text = this.property("ADBE Text Properties");
     const animators = text.property("ADBE Text Animators");
     if (animators.properties?.length > 0) {
@@ -912,8 +912,8 @@ export class AVLayer extends Layer {
       const source = this.source;
       pyAssert(source != null); // can_set_time_remap_enabled guarantees it
       const duration = source.duration;
-      prop._add_key(this.startTime, 0.0);
-      prop._add_key(this.startTime + duration, duration);
+      prop._addKey(this.startTime, 0.0);
+      prop._addKey(this.startTime + duration, duration);
     } else if (!value && currentlyEnabled) {
       while (prop.keyframes?.length > 0) {
         prop.removeKey(0);
@@ -960,7 +960,7 @@ export class AVLayer extends Layer {
   /** `true` if this layer is being used as a track matte. Read-only. */
   get isTrackMatte(): boolean {
     // AE 23+: explicit ID-based references
-    if (this.containingComp.avLayers.some((layer) => layer._matte_layer_id === this.id)) {
+    if (this.containingComp.avLayers.some((layer) => layer._matteLayerId === this.id)) {
       return true;
     }
     // Pre-2023 positional fallback: layer below has has_track_matte
@@ -970,7 +970,7 @@ export class AVLayer extends Layer {
       const below = layers[idx + 1];
       if (
         below instanceof AVLayer &&
-        below._matte_layer_id === 0 &&
+        below._matteLayerId === 0 &&
         below.hasTrackMatte
       ) {
         return true;
@@ -985,8 +985,8 @@ export class AVLayer extends Layer {
    */
   get trackMatteLayer(): AVLayer | null {
     // AE 23+: explicit ID-based lookup
-    if (this._matte_layer_id !== 0) {
-      const layer = this.containingComp.layersById.get(this._matte_layer_id) ?? null;
+    if (this._matteLayerId !== 0) {
+      const layer = this.containingComp.layersById.get(this._matteLayerId) ?? null;
       if (layer instanceof AVLayer) {
         return layer;
       }
@@ -1011,7 +1011,7 @@ export class AVLayer extends Layer {
     if (this.source != null) {
       return this.source.name;
     }
-    return this._auto_name || "";
+    return this._autoName || "";
   }
 
   /**
@@ -1030,9 +1030,9 @@ export class AVLayer extends Layer {
   // ------------------------------------------------------------------
 
   /** Re-enable `matte` if no other layer in the comp uses it. */
-  _re_enable_matte(matte: AVLayer): void {
+  _reEnableMatte(matte: AVLayer): void {
     for (const layer of this.containingComp.avLayers) {
-      if (layer !== this && layer._matte_layer_id === matte.id) {
+      if (layer !== this && layer._matteLayerId === matte.id) {
         return;
       }
     }
@@ -1074,10 +1074,10 @@ export class AVLayer extends Layer {
     // Re-enable old matte if it is being replaced
     const oldMatte = this.trackMatteLayer;
     if (oldMatte != null && oldMatte !== trackMatteLayer) {
-      this._re_enable_matte(oldMatte);
+      this._reEnableMatte(oldMatte);
     }
 
-    this._ldta.track_matte_type = TrackMatteType.to_binary(trackMatteType);
+    this._ldta.track_matte_type = TrackMatteType.toBinary(trackMatteType);
 
     if (trackMatteLayer != null) {
       this._ldta.matte_layer_id = trackMatteLayer.id;
@@ -1102,7 +1102,7 @@ export class AVLayer extends Layer {
     this._ldta.matte_layer_id = 0;
 
     if (oldMatte != null) {
-      this._re_enable_matte(oldMatte);
+      this._reEnableMatte(oldMatte);
     }
   }
 
@@ -1115,7 +1115,7 @@ export class AVLayer extends Layer {
    * the user has set one, the value is theirs and a source swap must not
    * move it.
    */
-  _refresh_former_null_defaults(): void {
+  _refreshFormerNullDefaults(): void {
     // Circular: synthesis.core imports the layer classes it synthesizes for.
     const transform = this.transform;
     if (transform == null) {
@@ -1125,8 +1125,8 @@ export class AVLayer extends Layer {
 
     const opacity = transform.property("ADBE Opacity");
     opacity.defaultValue = 100.0;
-    if (!opacity._is_live()) {
-      opacity._cache_value(100.0);
+    if (!opacity._isLive()) {
+      opacity._cacheValue(100.0);
     }
   }
 
@@ -1178,21 +1178,21 @@ export class AVLayer extends Layer {
     }
 
     const oldSource = this.source;
-    if (oldSource != null && "_used_in" in oldSource) {
+    if (oldSource != null && "_usedIn" in oldSource) {
       _unregisterSourceUsage(oldSource, comp, { exclude: this });
     }
 
-    this._source_id = newSource.id;
+    this._sourceId = newSource.id;
     this._source = newSource;
 
-    newSource._used_in.add(comp);
+    newSource._usedIn.add(comp);
 
     if (this.nullLayer) {
       this._ldta.null_layer = false;
       // A null's Anchor Point default is the origin; with a source it is
       // the source's centre. Refresh the cached default so the model
       // reports what a re-parse of this file will.
-      this._refresh_former_null_defaults();
+      this._refreshFormerNullDefaults();
     }
   }
 }
@@ -1209,7 +1209,7 @@ descriptor(AVLayer, "effectsActive", ChunkField.bool("_ldta", "effects_active"))
 descriptor(
   AVLayer,
   "environmentLayer",
-  ChunkField.bool("_ldta", "environment_layer", { post_set: "_on_environment_layer_set" }),
+  ChunkField.bool("_ldta", "environment_layer", { postSet: "_onEnvironmentLayerSet" }),
 );
 descriptor(AVLayer, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frame_blending_type"));
 descriptor(AVLayer, "guideLayer", ChunkField.bool("_ldta", "guide_layer"));
@@ -1219,7 +1219,7 @@ descriptor(AVLayer, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality")
 descriptor(
   AVLayer,
   "samplingQuality",
-  ChunkField.enum(LayerSamplingQuality, "_ldta", "sampling_quality", { min_version: 12 }),
+  ChunkField.enum(LayerSamplingQuality, "_ldta", "sampling_quality", { minVersion: 12 }),
 );
 descriptor(
   AVLayer,
@@ -1227,12 +1227,12 @@ descriptor(
   ChunkField.bool("_ldta", "three_d_layer", {
     // Built at the dimensionality the file has, so the toggle sees the
     // dead 2-D Scale Z it normalizes.
-    pre_set: "_load_property_tree",
-    post_set: "_on_three_d_layer_set",
+    preSet: "_loadPropertyTree",
+    postSet: "_onThreeDLayerSet",
   }),
 );
 descriptor(AVLayer, "threeDPerChar", ChunkField.bool("_ldta", "three_d_per_char"));
-descriptor(AVLayer, "_source_id", new ChunkField("_ldta", "source_id"));
+descriptor(AVLayer, "_sourceId", new ChunkField("_ldta", "source_id"));
 
 // `@requires_version(23)` on the two track-matte methods, applied bottom-up after the class.
 AVLayer.prototype.setTrackMatte = requiresVersion(23)(AVLayer.prototype.setTrackMatte);

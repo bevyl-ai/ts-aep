@@ -47,6 +47,6 @@ export const parseApp = _suppressMaterialization()(function parse_app(
   return new Application({
     _head: headChunk,
     project,
-    active_viewer: activeViewer,
+    activeViewer: activeViewer,
   });
 });

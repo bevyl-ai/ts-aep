@@ -215,7 +215,7 @@ class TestRenderTemplatesDefaultIndex {
     }
     prefsDir
       .div("Adobe After Effects 26.0 Prefs-indep-render.txt")
-      .write_text(
+      .writeText(
         '["Render Settings Preference Section"]\n' +
           '\t"Render Settings List" = ' +
           bytes_.hex(raw) +
@@ -239,7 +239,7 @@ class TestRenderTemplatesDefaultIndex {
     for (const [i, name] of names.entries()) {
       lines.push(`\t"Output Module Spec Strings Name #${i}" = "${name}"`);
     }
-    prefsDir.div("Adobe After Effects 26.0 Prefs-indep-output.txt").write_text(lines.join("\n") + "\n");
+    prefsDir.div("Adobe After Effects 26.0 Prefs-indep-output.txt").writeText(lines.join("\n") + "\n");
   }
 }
 

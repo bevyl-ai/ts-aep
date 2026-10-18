@@ -63,7 +63,7 @@ function _effectParam(comp: CompItem, effectMn: string, paramMn: string, layerIn
 
 function _cif3Cctls(comp: CompItem): ListChunk[] {
   const cif3 = asInstance(
-    next(comp._item_list.chunks, (c) => c instanceof ListChunk && c.list_type === "CIF3"),
+    next(comp._itemList.chunks, (c) => c instanceof ListChunk && c.list_type === "CIF3"),
     ListChunk,
   );
   return cif3.chunks.filter((c): c is ListChunk => c instanceof ListChunk && c.list_type === "CCtl");
@@ -78,7 +78,7 @@ function _chunkBytes(chunk: ListChunk): Uint8Array {
 /** Number of CCtl children per CIF container of a comp. */
 function _cctlCount(comp: CompItem): Map<string, number> {
   const counts = new Map<string, number>();
-  for (const cif of comp._item_list.chunks) {
+  for (const cif of comp._itemList.chunks) {
     if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.list_type)) {
       counts.set(
         cif.list_type,
@@ -231,7 +231,7 @@ describe("TestAddProperty", () => {
     project.save(out);
     const out2 = tmpPath.div("mgt2.aep");
     parseAep(out).project.save(out2);
-    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), out2.readBytes())).toBe(true);
   });
 });
 
@@ -361,7 +361,7 @@ describe("TestIndexedGroupControllers", () => {
       pyAssert(rebuilt != null, ctrl.name);
       pyAssert(
         pyEq(
-          rebuilt[0].map((n) => [n.match_name, n.prop_index]),
+          rebuilt[0].map((n) => [n.matchName, n.propIndex]),
           ctrl.sourcePropertyPath.map((r) => [r.matchName, r.propIndex]),
         ),
         ctrl.name,
@@ -437,7 +437,7 @@ describe("TestIndexedGroupControllers", () => {
     pyAssert(resolved != null);
     expect(
       pyEq(
-        resolved[0].map((n) => [n.match_name, n.prop_index]),
+        resolved[0].map((n) => [n.matchName, n.propIndex]),
         [
           ["ADBE Effect Parade", null],
           ["ADBE Fractal Noise", 0],

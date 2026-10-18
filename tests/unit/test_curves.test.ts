@@ -37,7 +37,7 @@ function _blob(
 
 function _curves(data: Uint8Array): Curves {
   const arbp = new Chunk({ chunk_type: "aRbp", data });
-  return Curves._from_binary(CurvesArbpChunk.from_arbp(arbp));
+  return Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
 }
 
 test("test_decodes_points_in_channel_order", () => {
@@ -130,8 +130,8 @@ test("test_pencil_identity_map_with_stale_points_is_identity", () => {
 test("test_same_curves_compares_points_not_bytes", () => {
   const edited = new Map([["rgb", [[0, 0], [128, 90], [255, 255]]]]);
   const stale = _curves(_blob(edited, undefined, true));
-  expect(stale._same_curves(_curves(_blob(edited)))).toBe(true);
-  expect(stale._same_curves(_curves(_blob(new Map())))).toBe(false);
+  expect(stale._sameCurves(_curves(_blob(edited)))).toBe(true);
+  expect(stale._sameCurves(_curves(_blob(new Map())))).toBe(false);
 });
 
 const evaluateRejectsRows: [string, number][] = [

@@ -114,7 +114,7 @@ export function _fontDirs(): Path[] {
       Path.home().div(".local", "share", "fonts"),
     );
   }
-  return dirs.filter((d) => d.is_dir());
+  return dirs.filter((d) => d.isDir());
 }
 
 /** fontTools name IDs -\> fontkit `getName` keys. */
@@ -186,7 +186,7 @@ export function _adobeFontDirs(): Path[] {
       ),
     );
   }
-  return dirs.filter((d) => d.is_dir());
+  return dirs.filter((d) => d.isDir());
 }
 
 /**
@@ -279,7 +279,7 @@ export function _postscriptIndex(): Map<string, [Path, number, string | null]> {
     }
     for (const directory of _adobeFontDirs()) {
       for (const path of directory.rglob("*")) {
-        if (path.is_file()) {
+        if (path.isFile()) {
           _indexPostscript(path, idx);
         }
       }

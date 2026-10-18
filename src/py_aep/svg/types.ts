@@ -17,7 +17,7 @@ export type Rgba = [number, number, number, number];
 /**
  * A single bezier outline: one `M ... [Z]` run of a path.
  *
- * `in_tangents` / `out_tangents` are per-vertex offsets relative to the
+ * `inTangents` / `outTangents` are per-vertex offsets relative to the
  * vertex, matching After Effects' Shape model (straight segments have
  * zero tangents).
  */
@@ -26,18 +26,18 @@ export class Subpath {
   declare vertices: number[][];
 
   /** Incoming tangent offset per vertex (relative to the vertex). */
-  declare in_tangents: number[][];
+  declare inTangents: number[][];
 
   /** Outgoing tangent offset per vertex (relative to the vertex). */
-  declare out_tangents: number[][];
+  declare outTangents: number[][];
 
   /** Whether the subpath closes back to its first vertex. */
   declare closed: boolean;
 
   constructor(vertices: number[][], inTangents: number[][], outTangents: number[][], closed: boolean) {
     this.vertices = vertices;
-    this.in_tangents = inTangents;
-    this.out_tangents = outTangents;
+    this.inTangents = inTangents;
+    this.outTangents = outTangents;
     this.closed = closed;
   }
 }
@@ -130,7 +130,7 @@ export class StrokeStyle {
   declare join: number;
 
   /** Miter limit. */
-  declare miter_limit: number;
+  declare miterLimit: number;
 
   /** Dash array (empty for a solid stroke). */
   declare dashes: number[];
@@ -147,7 +147,7 @@ export class StrokeStyle {
     this.width = width;
     this.cap = cap;
     this.join = join;
-    this.miter_limit = miterLimit;
+    this.miterLimit = miterLimit;
     this.dashes = dashes;
   }
 }

@@ -29,7 +29,7 @@ test.each([
   // A fresh chunk reproduces the Ropt AE 2026 writes for the format's
   // default output module (black point 0; DWA compression level 45).
   const project = parseProject(FORMAT_DIR.div(folder, "base.aep"));
-  const lom = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0]._parent_rqi._lom;
+  const lom = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0]._parentRqi._lom;
   const aeRopt = findByType(lom.chunks, "Ropt");
   expect(pyEq(new chunkCls({}).tobytes(), aeRopt.tobytes())).toBe(true);
 });

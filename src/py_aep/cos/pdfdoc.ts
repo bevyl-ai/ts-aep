@@ -72,7 +72,7 @@ export const _OVERRIDES: Map<number, number> = new Map<number, number>([
  * PDFDocEncoding, and reaches this function one of two ways: as raw
  * bytes the lexer could not decode at all, or - when the bytes happen to
  * form valid UTF-8 - as a `CosString` the lexer decoded speculatively
- * but kept the original bytes on, as `cos_raw`.
+ * but kept the original bytes on, as `cosRaw`.
  *
  * Probed on AE 2026, which imports `.ai` / `.pdf` layer names strictly
  * this way: `(caf\\xc3\\xa9)` with no BOM becomes `caf` + U+00C3 U+00A9,
@@ -84,8 +84,8 @@ export function decodePdfTextString(raw: Uint8Array | string | CosString): strin
   if (raw instanceof Uint8Array) {
     return _fromBytes(raw);
   }
-  if (raw instanceof CosString && raw.cos_raw != null) {
-    return _fromBytes(raw.cos_raw);
+  if (raw instanceof CosString && raw.cosRaw != null) {
+    return _fromBytes(raw.cosRaw);
   }
   // A decoded CosString passes through with its text.
   return String(raw);

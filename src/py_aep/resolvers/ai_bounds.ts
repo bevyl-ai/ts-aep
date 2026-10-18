@@ -224,7 +224,7 @@ export class _Acc {
     if (y > this.y1) this.y1 = y;
   }
 
-  add_box(box: Box | null): void {
+  addBox(box: Box | null): void {
     if (box == null) return;
     this.add(box[0], box[1]);
     this.add(box[2], box[3]);
@@ -295,7 +295,7 @@ export class _Document {
     this._offsets = _objectOffsets(data);
     this._cache = new Map();
     this._catalog = null;
-    this._check_supported();
+    this._checkSupported();
   }
 
   _reject(why: string): UnsupportedAiLayersError {
@@ -310,7 +310,7 @@ export class _Document {
    * PDF from another producer would otherwise be measured from whatever
    * objects the scanner happened to find.
    */
-  _check_supported(): void {
+  _checkSupported(): void {
     if (bytes_.contains(this._data, b("/ObjStm"))) {
       throw this._reject(
         "the file uses compressed object streams (/ObjStm), which " +
@@ -325,7 +325,7 @@ export class _Document {
   /** Follow an indirect reference to its object; pass values through. */
   resolve(value: CosNode): CosNode {
     while (value instanceof IndirectReference) {
-      const number = value.object_number;
+      const number = value.objectNumber;
       if (this._cache.has(number)) {
         value = getitem(this._cache, number);
         break;
@@ -366,7 +366,7 @@ export class _Document {
       body = raw;
     } else if (value instanceof Map && reference instanceof IndirectReference) {
       info = value;
-      body = this._raw_stream(reference.object_number, value);
+      body = this._rawStream(reference.objectNumber, value);
     }
     if (body == null) throw this._reject("unreadable content stream");
     const filters = this.get(info, "Filter");
@@ -396,7 +396,7 @@ export class _Document {
     return body;
   }
 
-  _raw_stream(number: number, info: CosDict): Uint8Array | null {
+  _rawStream(number: number, info: CosDict): Uint8Array | null {
     const offset = this._offsets.get(number) ?? null;
     if (offset == null) return null;
     let start = bytes_.find(this._data, b("stream"), offset);
@@ -448,12 +448,12 @@ export class _Document {
 
   /** The page dictionaries, in `/Kids` order (at least one). */
   pages(): CosDict[] {
-    const pages = [...this._walk_pages(this.get(this.catalog(), "Pages"), 0)];
+    const pages = [...this._walkPages(this.get(this.catalog(), "Pages"), 0)];
     if (pages.length === 0) throw this._reject("the document has no pages");
     return pages;
   }
 
-  *_walk_pages(node: CosNode, depth: number): Generator<CosDict> {
+  *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
     const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
     if (str(dictGet(table, "Type", "")) === "Page") {
@@ -462,12 +462,12 @@ export class _Document {
     }
     const kids = this.get(table, "Kids");
     for (const kid of Array.isArray(kids) ? kids : []) {
-      yield* this._walk_pages(kid, depth + 1);
+      yield* this._walkPages(kid, depth + 1);
     }
   }
 
   /** The page's content stream(s), concatenated and decoded. */
-  page_content(page: CosDict): Uint8Array {
+  pageContent(page: CosDict): Uint8Array {
     const contents = this.resolve(cosGetOr(this.resolve(page), "Contents", null));
     const parts: CosNode[] = Array.isArray(contents) ? contents : [contents];
     return joinBytes(
@@ -744,17 +744,17 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
 export class _GState {
   ctm: Matrix = _IDENTITY;
   clip: Box | null = null;
-  line_width = 1.0;
+  lineWidth = 1.0;
   miter = 10.0;
   font: CosDict | null = null;
   metrics: Metrics = _NO_FONT_METRICS;
   size = 0.0;
-  char_spacing = 0.0;
-  word_spacing = 0.0;
-  h_scale = 100.0;
+  charSpacing = 0.0;
+  wordSpacing = 0.0;
+  hScale = 100.0;
   leading = 0.0;
   rise = 0.0;
-  render_mode = 0;
+  renderMode = 0;
 
   copy(): _GState {
     return Object.assign(new _GState(), this);
@@ -768,8 +768,8 @@ export class _GState {
    * 10pt line expands x by 20 and y by 5. A single geometric-mean scale
    * would give 10 for both.
    */
-  stroke_half_width(): [number, number] {
-    const half = this.line_width / 2.0;
+  strokeHalfWidth(): [number, number] {
+    const half = this.lineWidth / 2.0;
     return [
       half * hypot(this.ctm[0], this.ctm[1]),
       half * hypot(this.ctm[2], this.ctm[3]),
@@ -914,7 +914,7 @@ export class _Measurer {
     return this._doc.get(this._doc.get(resources, category), _operandStr(name));
   }
 
-  _resource_ref(resources: CosNode, category: string, name: CosNode): CosNode {
+  _resourceRef(resources: CosNode, category: string, name: CosNode): CosNode {
     const table = _asDict(this._doc.resolve(this._doc.get(resources, category)));
     if (table == null) return null;
     return table.get(_operandStr(name)) ?? null;
@@ -947,13 +947,13 @@ export class _Measurer {
         // Python multiplies the raw operands: a non-number raises TypeError.
         gs.ctm = _matMul(operands.slice(-6).map(cosNum), gs.ctm);
       } else if (op === "w" && operands.length > 0) {
-        gs.line_width = cosFloat(operands[operands.length - 1]);
+        gs.lineWidth = cosFloat(operands[operands.length - 1]);
       } else if (op === "M" && operands.length > 0) {
         gs.miter = cosFloat(operands[operands.length - 1]);
       } else if (op === "gs" && operands.length > 0) {
         const ext = this._resource(resources, "ExtGState", operands[operands.length - 1]);
         if (ext instanceof Map && ext.has("LW")) {
-          gs.line_width = this._doc.number(getitem(ext, "LW"), gs.line_width);
+          gs.lineWidth = this._doc.number(getitem(ext, "LW"), gs.lineWidth);
         }
       }
       // ---- path construction
@@ -1000,7 +1000,7 @@ export class _Measurer {
         pendingClip = true;
       } else if (_PAINT_OPS.has(op)) {
         if (segments.length > 0) {
-          if (op !== "n") this._commit_path(gs, segments, _STROKE_OPS.has(op), fromRect);
+          if (op !== "n") this._commitPath(gs, segments, _STROKE_OPS.has(op), fromRect);
           if (pendingClip) gs.clip = _intersect(gs.clip, this._hull(gs, segments));
         }
         pendingClip = false;
@@ -1011,22 +1011,22 @@ export class _Measurer {
         // A shading paints the whole clip region.
         const target = this._target();
         if (target != null && gs.clip != null) {
-          target.add_box(_clamp(_grow(gs.clip, FILL_PAD, FILL_PAD)));
+          target.addBox(_clamp(_grow(gs.clip, FILL_PAD, FILL_PAD)));
         }
       } else if (op === "Do" && operands.length > 0) {
-        this._draw_xobject(gs, resources, operands[operands.length - 1]);
+        this._drawXobject(gs, resources, operands[operands.length - 1]);
       } else if (op === "BI") {
         // Inferred from the `q_image` probe layer rather than measured
         // on its own: an inline image is the same painting operator as
         // an image XObject, spelled inline. Illustrator never emits one.
-        this._add_image(gs.ctm);
+        this._addImage(gs.ctm);
       }
       // ---- optional content
       else if (op === "BDC" || op === "BMC") {
         let number = -1;
         if (op === "BDC" && operands.length >= 2 && str(operands[operands.length - 2]) === "OC") {
-          const reference = this._resource_ref(resources, "Properties", operands[operands.length - 1]);
-          if (reference instanceof IndirectReference) number = reference.object_number;
+          const reference = this._resourceRef(resources, "Properties", operands[operands.length - 1]);
+          if (reference instanceof IndirectReference) number = reference.objectNumber;
         }
         this._stack.push(number);
       } else if (op === "EMC") {
@@ -1058,15 +1058,15 @@ export class _Measurer {
       } else if (op === "TL" && operands.length > 0) {
         gs.leading = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tc" && operands.length > 0) {
-        gs.char_spacing = cosFloat(operands[operands.length - 1]);
+        gs.charSpacing = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tw" && operands.length > 0) {
-        gs.word_spacing = cosFloat(operands[operands.length - 1]);
+        gs.wordSpacing = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tz" && operands.length > 0) {
-        gs.h_scale = cosFloat(operands[operands.length - 1]);
+        gs.hScale = cosFloat(operands[operands.length - 1]);
       } else if (op === "Ts" && operands.length > 0) {
         gs.rise = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tr" && operands.length > 0) {
-        gs.render_mode = cosInt(operands[operands.length - 1]);
+        gs.renderMode = cosInt(operands[operands.length - 1]);
       } else if ((op === "Tj" || op === "TJ" || op === "'" || op === '"') && operands.length > 0) {
         if (op === "'" || op === '"') {
           lineMatrix = _matMul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], lineMatrix);
@@ -1074,7 +1074,7 @@ export class _Measurer {
         }
         const shown = operands[operands.length - 1];
         const items: CosNode[] = Array.isArray(shown) ? shown : [shown];
-        textMatrix = this._show_text(gs, textMatrix, items);
+        textMatrix = this._showText(gs, textMatrix, items);
       }
       operands = [];
     }
@@ -1099,14 +1099,14 @@ export class _Measurer {
     return acc.box();
   }
 
-  _commit_path(gs: _GState, segments: Segment[], stroked: boolean, fromRect: boolean): void {
+  _commitPath(gs: _GState, segments: Segment[], stroked: boolean, fromRect: boolean): void {
     const target = this._target();
     if (target == null) return;
     let hull = this._hull(gs, segments);
     if (hull == null) return;
     hull = _clamp(hull);
     if (!stroked) {
-      target.add_box(_clamp(_grow(hull, FILL_PAD, FILL_PAD)));
+      target.addBox(_clamp(_grow(hull, FILL_PAD, FILL_PAD)));
       return;
     }
     // A stroke's expansion depends only on the shape class, never on the
@@ -1122,12 +1122,12 @@ export class _Measurer {
     } else {
       factor = gs.miter / 2.0;
     }
-    const [halfX, halfY] = gs.stroke_half_width();
-    target.add_box(_clamp(_grow(hull, halfX * factor, halfY * factor)));
+    const [halfX, halfY] = gs.strokeHalfWidth();
+    target.addBox(_clamp(_grow(hull, halfX * factor, halfY * factor)));
   }
 
   /** A form or image XObject contributes its box with no expansion. */
-  _draw_xobject(gs: _GState, resources: CosNode, name: CosNode): void {
+  _drawXobject(gs: _GState, resources: CosNode, name: CosNode): void {
     const xobject = _asDict(this._resource(resources, "XObject", name));
     if (xobject == null) return;
     const target = this._target();
@@ -1153,27 +1153,27 @@ export class _Measurer {
       ];
       for (const point of points) acc.add(..._apply(ctm, point[0], point[1]));
       const box = acc.box();
-      if (box != null) target.add_box(_clamp(box));
+      if (box != null) target.addBox(_clamp(box));
     } else if (subtype === "Image") {
-      this._add_image(ctm);
+      this._addImage(ctm);
     }
   }
 
   /** An image contributes its unit square through the CTM, unexpanded. */
-  _add_image(ctm: Matrix): void {
+  _addImage(ctm: Matrix): void {
     const target = this._target();
     if (target == null) return;
     const acc = new _Acc();
     for (const point of _UNIT_SQUARE) acc.add(..._apply(ctm, point[0], point[1]));
     const box = acc.box();
-    if (box != null) target.add_box(_clamp(box));
+    if (box != null) target.addBox(_clamp(box));
   }
 
   /** Measure a text-showing operator and advance the text matrix. */
-  _show_text(gs: _GState, textMatrix: Matrix, items: CosNode[]): Matrix {
+  _showText(gs: _GState, textMatrix: Matrix, items: CosNode[]): Matrix {
     const [widths, default_, yMin, yMax, twoByte] = gs.metrics;
     const target = this._target();
-    const scale = gs.h_scale / 100.0;
+    const scale = gs.hScale / 100.0;
     for (const item of items) {
       if (isReal(item)) {
         const shift = -float(item) / 1000.0 * gs.size * scale;
@@ -1192,11 +1192,11 @@ export class _Measurer {
       }
       for (const code of codes) {
         const width = (widths.get(code) ?? default_) / 1000.0;
-        let spacing = gs.char_spacing;
-        if (code === 32 && !twoByte) spacing += gs.word_spacing;
+        let spacing = gs.charSpacing;
+        if (code === 32 && !twoByte) spacing += gs.wordSpacing;
         const advance = (width * gs.size + spacing) * scale;
         if (target != null) {
-          this._add_glyph_cell(gs, target, textMatrix, advance, yMin, yMax, width);
+          this._addGlyphCell(gs, target, textMatrix, advance, yMin, yMax, width);
         }
         textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, advance, 0.0], textMatrix);
       }
@@ -1211,7 +1211,7 @@ export class _Measurer {
    * spacing widen the cell. Invisible render modes are measured too; the
    * stroking modes grow the cell by the stroke half-width.
    */
-  _add_glyph_cell(
+  _addGlyphCell(
     gs: _GState,
     target: _Acc,
     textMatrix: Matrix,
@@ -1220,7 +1220,7 @@ export class _Measurer {
     yMax: number,
     width: number,
   ): void {
-    const scale = gs.h_scale / 100.0;
+    const scale = gs.hScale / 100.0;
     let render = _matMul([gs.size * scale, 0.0, 0.0, gs.size, 0.0, gs.rise], textMatrix);
     render = _matMul(render, gs.ctm);
     const horizontal = gs.size !== 0 && scale !== 0 ? advance / (gs.size * scale) : width;
@@ -1234,11 +1234,11 @@ export class _Measurer {
     for (const [x, y] of corners) acc.add(..._apply(render, x, y));
     let box = acc.box();
     if (box == null) return;
-    if (_STROKING_TEXT_MODES.has(gs.render_mode)) {
-      const [halfX, halfY] = gs.stroke_half_width();
+    if (_STROKING_TEXT_MODES.has(gs.renderMode)) {
+      const [halfX, halfY] = gs.strokeHalfWidth();
       box = _grow(box, halfX, halfY);
     }
-    target.add_box(_clamp(box));
+    target.addBox(_clamp(box));
   }
 }
 
@@ -1269,7 +1269,7 @@ export class _Measurer {
  */
 export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null): (Box | null)[] {
   const path = new Path(file);
-  if (data == null) data = path.read_bytes();
+  if (data == null) data = path.readBytes();
   const layers = readAiLayerOcgs(path, data);
   const doc = new _Document(data, path.name);
   const pages = doc.pages();
@@ -1284,9 +1284,9 @@ export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null
   }
   const page = pages[0];
   const measurer = new _Measurer(doc);
-  measurer.run(doc.page_content(page), doc.get(page, "Resources"));
+  measurer.run(doc.pageContent(page), doc.get(page, "Resources"));
   return layers.map((layer) =>
-    measurer.boxes.has(layer.object_number) ? getitem(measurer.boxes, layer.object_number).box() : null,
+    measurer.boxes.has(layer.objectNumber) ? getitem(measurer.boxes, layer.objectNumber).box() : null,
   );
 }
 
@@ -1313,12 +1313,12 @@ export const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v\/\[\]()<>{}%]+)[ \t\n\r\f\v]
  * @param data - The file's bytes, if the caller already read them.
  */
 export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
-  if (data == null) data = new Path(file).read_bytes();
+  if (data == null) data = new Path(file).readBytes();
   if (!bytes_.startswith(data, b("%PDF"))) return null;
   try {
     const doc = new _Document(data, new Path(file).name);
     const page = doc.pages()[0];
-    const content = doc.page_content(page);
+    const content = doc.pageContent(page);
     const spaces = doc.get(doc.get(page, "Resources"), "ColorSpace");
     for (const match of decode(content, "latin-1").matchAll(_COLOR_SPACE_OP_RE)) {
       const space = doc.get(spaces, match[1]);

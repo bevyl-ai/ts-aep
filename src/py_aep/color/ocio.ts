@@ -142,7 +142,7 @@ export const _loadConfigCached = lruCache(
   (configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
     let doc: OcioValue;
     try {
-      doc = parse(decode(new Path(configPath).read_bytes(), "utf-8"), {
+      doc = parse(decode(new Path(configPath).readBytes(), "utf-8"), {
         ..._OcioLoader.options,
       });
     } catch (e) {
@@ -242,10 +242,10 @@ export function listConfigColorSpaces(configPath: Path): string[] {
 export function resolveOcioConfig(config: string): Path | null {
   if (!config) return null;
   const direct = new Path(config);
-  if (direct.is_file()) return direct;
+  if (direct.isFile()) return direct;
   for (const root of _builtinConfigRoots()) {
     const configDir = root.div(config);
-    if (configDir.is_dir()) {
+    if (configDir.isDir()) {
       const ocioFiles = sorted(configDir.glob("*.ocio"), (p: Path) => p.path);
       if (ocioFiles.length > 0) return ocioFiles[0];
     }
@@ -293,7 +293,7 @@ export const _builtinConfigRoots = lruCache((): Path[] => {
       : [new Path("/Applications")];
   const roots: Path[] = [];
   for (const base of bases) {
-    if (!base.is_dir()) continue;
+    if (!base.isDir()) continue;
     // Newest install first, by release year: a plain name sort would put
     // "Adobe After Effects CC 2019" before "Adobe After Effects 2026"
     // ("C" > "2"). Year-less installs (CS6, bare CC) sort last.

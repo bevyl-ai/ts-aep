@@ -30,7 +30,7 @@ const ASSETS = SAMPLES.div("assets");
 const BASE = SAMPLES.div("models", "folder", "folder.aep");
 // An Adobe-CMS project (no working space), as AE's own imports were probed in.
 const ADOBE_BASE = SAMPLES.div("models", "import", "windows_stills.aep");
-const _ICC_AVAILABLE = defaultIccDirectories().some((d) => d.is_dir());
+const _ICC_AVAILABLE = defaultIccDirectories().some((d) => d.isDir());
 
 // NOTE(port): shutil.copy(src, dest) copies file bytes and permission bits; copyFileSync does the same for these file-to-file calls
 function shutilCopy(src: Path, dest: Path): Path {
@@ -129,7 +129,7 @@ function _psd(path: Path, size: number, records: [Uint8Array, Uint8Array][]): Pa
   );
   let body = concat(struct.pack(">II", 0, 0), struct.pack(">I", len(section)), section);
   body = concat(body, struct.pack(">H", 0), bytes_.repeat(Uint8Array.of(128), size * size * 3));
-  path.write_bytes(concat(header, body));
+  path.writeBytes(concat(header, body));
   return path;
 }
 
@@ -176,7 +176,7 @@ function _tiff(path: Path, bits: number[], photometric: number, extra: number | 
     out = concat(out, struct.pack("<HHI", tag, kind, count), value);
   }
   out = concat(out, b("\0\0\0\0"));
-  path.write_bytes(out);
+  path.writeBytes(out);
   return path;
 }
 
@@ -205,7 +205,7 @@ function _png(path: Path, width: number, height: number): Path {
 
   const header = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0);
   // NOTE(port): both are zlib deflate at level 9; the tests only read the decoded pixels, never the compressed bytes
-  path.write_bytes(
+  path.writeBytes(
     concat(
       b("\x89PNG\r\n\x1a\n"),
       chunk(b("IHDR"), header),
@@ -227,7 +227,7 @@ test.each([
   // as whole-document footage, as before.
   const tmpPath = makeTmpPath();
   const path = tmpPath.div("bad.ai");
-  path.write_bytes(data);
+  path.writeBytes(data);
   const item = _import(_project(), path);
   expect(_fileSource(item)._opti.text_document_layers).toBe(0);
 });
@@ -321,10 +321,10 @@ test("test_footage_wider_than_32767_px_is_rejected_unmodified", () => {
     _psd(tmpPath.div("wide.psd"), 1, [_psdRecord("a", [0, 0, 1, 1])]),
   ]) {
     if (path.suffix === ".psd") {
-      const data = Uint8Array.from(path.read_bytes());
+      const data = Uint8Array.from(path.readBytes());
       // struct.pack_into(">I", data, 18, 40000) - canvas width
       data.set(struct.pack(">I", 40000), 18);
-      path.write_bytes(data);
+      path.writeBytes(data);
     }
     for (const how of [ImportAsType.FOOTAGE, ImportAsType.COMP]) {
       if (how === ImportAsType.COMP && path.suffix !== ".psd") continue;
@@ -509,11 +509,11 @@ test("test_invalid_default_sequence_fps_preference_is_rejected", () => {
   const tmpPath = makeTmpPath();
   const prefs = tmpPath.div("prefs");
   prefs.mkdir();
-  prefs.div("Adobe After Effects 26.0 Prefs-indep-general.txt").write_text(
+  prefs.div("Adobe After Effects 26.0 Prefs-indep-general.txt").writeText(
     '["Import Options Preference Section"]\n' +
       '\t"Import Options Default Sequence FPS" = "0.000000"\n',
   );
-  const project = parseAep(BASE, { ae_preferences_dir: prefs }).project;
+  const project = parseAep(BASE, { aePreferencesDir: prefs }).project;
   raises(
     ValueError,
     () => _import(project, ASSETS.div("dpx_seq.0001.dpx"), { sequence: true }),
@@ -624,7 +624,7 @@ test.each([
   if (!_ICC_AVAILABLE) return skip("Adobe ICC profiles not installed");
   const clrs = _clrs(_fileSource(_import(_project(ADOBE_BASE), ASSETS.div(asset))));
   const other = slot === "epid" ? "apid" : "epid";
-  expect(pyEq(getitem(clrs, slot), iccProfileId(defaultIccLibrary().bytes_for(profile)))).toBe(true);
+  expect(pyEq(getitem(clrs, slot), iccProfileId(defaultIccLibrary().bytesFor(profile)))).toBe(true);
   expect(pyEq(getitem(clrs, other), _UNSET)).toBe(true);
   expect(clrs.has("empd")).toBe(false);
   expect(getitem(clrs, "ipws")).toBe(0);

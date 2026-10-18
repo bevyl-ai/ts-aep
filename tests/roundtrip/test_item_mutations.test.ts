@@ -135,10 +135,10 @@ describe("TestAddComp", () => {
     const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("NewComp", 1920, 1080, 1.0, 10.0, 24.0);
-    const container = root._children_container;
+    const container = root._childrenContainer;
     // First chunk is the fdta header; the new comp's Item follows it.
     expect(container[0].chunk_type).toBe("fdta");
-    expect(container[1] === comp._item_list).toBe(true);
+    expect(container[1] === comp._itemList).toBe(true);
     expect(root.items[0] === comp).toBe(true);
   });
 
@@ -341,8 +341,8 @@ describe("TestItemRemove", () => {
     // First check if any comp is used as a layer source
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        if (layer instanceof AVLayer && pyBool(layer._source_id)) {
-          const sourceItem = dictGet(app.project.items, layer._source_id);
+        if (layer instanceof AVLayer && pyBool(layer._sourceId)) {
+          const sourceItem = dictGet(app.project.items, layer._sourceId);
           if (sourceItem instanceof CompItem) {
             // Found a comp used as a layer source
             const sourceId = sourceItem.id;
@@ -351,7 +351,7 @@ describe("TestItemRemove", () => {
             // Layer referencing the removed comp should be gone
             for (const remainingLayer of parentComp.layers) {
               if (remainingLayer instanceof AVLayer) {
-                expect(remainingLayer._source_id !== sourceId).toBe(true);
+                expect(remainingLayer._sourceId !== sourceId).toBe(true);
               }
             }
             return;

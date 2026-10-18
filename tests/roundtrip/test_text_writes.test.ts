@@ -71,11 +71,11 @@ function cached<T>(load: () => T): () => T {
 
 // The pytest fixtures below are module-scoped in the Python suite, so each is
 // loaded at most once per file and shared between tests.
-const getProbe = cached(() => JSON.parse(PROBE.read_text("utf-8")));
+const getProbe = cached(() => JSON.parse(PROBE.readText("utf-8")));
 const getFixtureApp = cached(() => parseAppFresh(FIXTURE));
-const getProbe2 = cached(() => JSON.parse(PROBE2.read_text("utf-8")));
+const getProbe2 = cached(() => JSON.parse(PROBE2.readText("utf-8")));
 const getFixture2App = cached(() => parseAppFresh(FIXTURE2));
-const getProbe3 = cached(() => JSON.parse(PROBE3.read_text("utf-8")));
+const getProbe3 = cached(() => JSON.parse(PROBE3.readText("utf-8")));
 const getFixture3App = cached(() => parseAppFresh(FIXTURE3));
 
 function _docFor(app: Application, layerName: string): TextDocument {
@@ -114,16 +114,16 @@ function _maskedBytes(cosData: CosDict): Uint8Array {
   return serialize(clone);
 }
 
-/** The F1 invariant: `_char_style` must be the live first-run style. */
+/** The F1 invariant: `_charStyle` must be the live first-run style. */
 function _assertAliasIntegrity(doc: TextDocument): void {
   const first = _cosPath(doc._doc, "0", "6", "0", 0, "0", "0", "6");
-  expect<CosNode>(doc._char_style).toBe(first);
+  expect<CosNode>(doc._charStyle).toBe(first);
 }
 
 function _assertByteParity(pyDoc: TextDocument, fixtureApp: Application, opName: string): void {
   const expected = _docFor(fixtureApp, opName);
   pyAssert(
-    pyEq(_maskedBytes(pyDoc._cos_data), _maskedBytes(expected._cos_data)),
+    pyEq(_maskedBytes(pyDoc._cosData), _maskedBytes(expected._cosData)),
     `${opName}: py-written btdk diverges from the AE fixture ` +
       `(outside the masked /PC cache)`,
   );
@@ -277,7 +277,7 @@ describe("TestColorFontLeadingWrites", () => {
     // The fixture embeds the version string AE resolved from the
     // host font; byte parity only holds where that font matches.
     const expected = _docFor(fixtureApp, "W_FONT");
-    const fixtureVersion = dictGet(cosDict(_cosPath(expected._cos_data, "0", "1", "0", 0, "0", "0"), "get"), "5");
+    const fixtureVersion = dictGet(cosDict(_cosPath(expected._cosData, "0", "1", "0", 0, "0", "0"), "get"), "5");
     if (!pyEq(fontVersionString("Arial-BoldMT"), fixtureVersion)) {
       return skip("Arial-BoldMT not installed at the fixture's version");
     }
@@ -651,7 +651,7 @@ describe("TestDocumentWideWrites", () => {
     doc.characterRange(1, 4).leading = 50;
     doc.autoLeading = true;
     expect(cosLen(_cosPath(doc._doc, "0", "6", "0"))).toBe(1);
-    expect(pyEq(cosItem(doc._char_style, "5"), 0.01)).toBe(true);
+    expect(pyEq(cosItem(doc._charStyle, "5"), 0.01)).toBe(true);
   });
 });
 
@@ -665,7 +665,7 @@ describe("TestRoundTripAfterWrite", () => {
     const app2 = parseAppFresh(first);
     const second = tmpPath.div("second.aep");
     app2.project.save(second);
-    expect(pyEq(first.read_bytes(), second.read_bytes())).toBe(true);
+    expect(pyEq(first.readBytes(), second.readBytes())).toBe(true);
   });
 
   test("test_document_getter_tracks_first_run_after_writes", () => {

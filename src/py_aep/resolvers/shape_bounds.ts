@@ -135,7 +135,7 @@ export class BoxAccumulator {
     this.bottom = max([this.bottom, bottom]);
   }
 
-  add_box(other: BoxAccumulator): void {
+  addBox(other: BoxAccumulator): void {
     if (other.left <= other.right) {
       this.add(other.left, other.top, other.right, other.bottom);
     }
@@ -454,7 +454,7 @@ export function _walk(
         : null;
       for (const path of pending.slice(painted)) {
         if (path?.length > 0) {
-          geometry.add_box(_pathBox(_mapPath(toLayer, path)));
+          geometry.addBox(_pathBox(_mapPath(toLayer, path)));
         }
       }
       painted = pending.length;
@@ -507,7 +507,7 @@ export function shapeLayerRect(
   const strokeBoxes = new BoxAccumulator();
   _walk(root, time, IDENTITY, geometry, strokeBoxes);
   if (extents) {
-    geometry.add_box(strokeBoxes);
+    geometry.addBox(strokeBoxes);
   }
   return geometry.rect();
 }

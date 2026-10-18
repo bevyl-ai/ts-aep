@@ -73,7 +73,7 @@ test.each([
     lexer decodes anything that is valid UTF-8 before this function ever
     sees it, so only a literal exercises the case that matters.
     */
-    const token = new CosParser(new BytesIO(concat(literal, b(")")))).lex_string();
+    const token = new CosParser(new BytesIO(concat(literal, b(")")))).lexString();
     const value = token.value;
     pyAssert(value instanceof Uint8Array || value instanceof CosString);
     expect(pyEq(decodePdfTextString(value), expected)).toBe(true);

@@ -25,12 +25,12 @@ function _isIterable(x: unknown): x is Iterable<unknown> {
 /**
  * One node in a controller's source-property path, from root to leaf.
  *
- * `prop_index` is After Effects' raw 0-based position of the node within its
+ * `propIndex` is After Effects' raw 0-based position of the node within its
  * parent property group's full (AE-internal) child list, or `null` to match
  * by name (AE stores `0xFFFFFFFF` for by-name). It does NOT correspond to
  * py_aep's `property(n)`/`properties[n]` index - e.g. the Fill effect's
  * `ADBE Fill-0002` leaf has `prop_index=3` but is py_aep child position 1.
- * (Named `prop_index`, not `index`, to avoid shadowing `tuple.index`.)
+ * (Named `propIndex`, not `index`, to avoid shadowing `tuple.index`.)
  */
 export class SourcePropertyRef {
   readonly matchName: string;
@@ -42,9 +42,9 @@ export class SourcePropertyRef {
   }
 
   /** NamedTuple `_replace(**kw)`: a copy with the given fields changed. */
-  _replace(kw: { match_name?: string; prop_index?: number | null } = {}): SourcePropertyRef {
-    const f = { match_name: this.matchName, prop_index: this.propIndex, ...kw };
-    return new SourcePropertyRef(f.match_name, f.prop_index);
+  _replace(kw: { matchName?: string; propIndex?: number | null } = {}): SourcePropertyRef {
+    const f = { matchName: this.matchName, propIndex: this.propIndex, ...kw };
+    return new SourcePropertyRef(f.matchName, f.propIndex);
   }
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
@@ -84,7 +84,7 @@ export class EssentialGraphicsController {
    */
   declare controllerType: number;
 
-  declare _name_utf8: Utf8Chunk;
+  declare _nameUtf8: Utf8Chunk;
   declare _ctyp: U4Chunk;
   declare uuid: string;
   /**
@@ -105,22 +105,22 @@ export class EssentialGraphicsController {
   declare sourceLayerId: number | null;
 
   constructor(kw: {
-    _name_utf8: Utf8Chunk;
+    _nameUtf8: Utf8Chunk;
     _ctyp: U4Chunk;
     uuid: string;
-    source_property_path: SourcePropertyRef[];
-    source_comp_id?: number | null;
-    source_layer_id?: number | null;
+    sourcePropertyPath: SourcePropertyRef[];
+    sourceCompId?: number | null;
+    sourceLayerId?: number | null;
   }) {
     const {
-      _name_utf8,
+      _nameUtf8: _name_utf8,
       _ctyp,
       uuid,
-      source_property_path,
-      source_comp_id = null,
-      source_layer_id = null,
+      sourcePropertyPath: source_property_path,
+      sourceCompId: source_comp_id = null,
+      sourceLayerId: source_layer_id = null,
     } = kw;
-    this._name_utf8 = _name_utf8;
+    this._nameUtf8 = _name_utf8;
     this._ctyp = _ctyp;
     this.uuid = uuid;
     /** The unique identifier for this controller. */
@@ -154,10 +154,10 @@ export class EssentialGraphicsController {
 descriptor(
   EssentialGraphicsController,
   "name",
-  new ChunkField("_name_utf8", "value", { validate: validateName }),
+  new ChunkField("_nameUtf8", "value", { validate: validateName }),
 );
 descriptor(
   EssentialGraphicsController,
   "controllerType",
-  new ChunkField("_ctyp", "value", { read_only: true }),
+  new ChunkField("_ctyp", "value", { readOnly: true }),
 );

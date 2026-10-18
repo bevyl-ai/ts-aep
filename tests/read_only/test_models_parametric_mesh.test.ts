@@ -61,7 +61,7 @@ describe("TestParametricMeshModel", () => {
 
   test("test_mesh_type_enum_binary_roundtrip", () => {
     for (const mt of ParametricMeshType.members()) {
-      expect(ParametricMeshType.from_binary(ParametricMeshType.to_binary(mt)) === mt).toBe(true);
+      expect(ParametricMeshType.fromBinary(ParametricMeshType.toBinary(mt)) === mt).toBe(true);
     }
   });
 });

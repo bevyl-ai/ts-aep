@@ -568,7 +568,7 @@ describe("TestAtomicSave", () => {
       throw new RuntimeError("simulated write failure");
     };
 
-    const undo = monkeypatchSetattr(project_mod.moduleGlobals, "write_aep", boom);
+    const undo = monkeypatchSetattr(project_mod.moduleGlobals, "writeAep", boom);
     const target = tmpPath.div("out.aep");
     try {
       raises(RuntimeError, () => app.project.save(target));

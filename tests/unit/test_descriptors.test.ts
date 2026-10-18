@@ -136,7 +136,7 @@ class _ReadOnlyModel {
     this._body = body;
   }
 }
-descriptor(_ReadOnlyModel, "width", new ChunkField<number>("_body", "width", { read_only: true }));
+descriptor(_ReadOnlyModel, "width", new ChunkField<number>("_body", "width", { readOnly: true }));
 
 /** Model with a ChunkField that has a default. */
 class _DefaultModel {
@@ -185,7 +185,7 @@ class _PostSetModel {
     this.post_called = true;
   }
 }
-descriptor(_PostSetModel, "mode", new ChunkField<number>("_body", "mode", { post_set: "_on_mode_change" }));
+descriptor(_PostSetModel, "mode", new ChunkField<number>("_body", "mode", { postSet: "_on_mode_change" }));
 
 /** Model with synthetic body that tracks materialization. */
 class _SyntheticModel {
@@ -198,7 +198,7 @@ class _SyntheticModel {
     this.materialized = false;
   }
 
-  _ensure_materialized(): void {
+  _ensureMaterialized(): void {
     this.materialized = true;
     pyAssert(this._body != null);
     objectSetattr(this._body, "synthetic", false);
@@ -207,7 +207,7 @@ class _SyntheticModel {
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));
 
 const _MyEnum = intEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
-  // NOTE(port): _enum_class/getattr(enum, "from_binary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
+  // NOTE(port): _enum_class/getattr(enum, "fromBinary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
   from_binary(value: number) {
     return this.of(value);
   },
@@ -234,7 +234,7 @@ class _ForgivingEnumModel {
     this._body = body;
   }
 }
-descriptor(_ForgivingEnumModel, "mode", ChunkField.enum(_MyEnum, "_body", "mode", { allow_out_of_enum_values: true }));
+descriptor(_ForgivingEnumModel, "mode", ChunkField.enum(_MyEnum, "_body", "mode", { allowOutOfEnumValues: true }));
 
 /** Model with a ChunkField.bool field. */
 class _BoolModel {
@@ -500,7 +500,7 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
     }
 
     const cf = ChunkField.enum(_MyEnum, "_body", "mode", {
-      allow_out_of_enum_values: true,
+      allowOutOfEnumValues: true,
       validate: _record,
     });
     expect(cf.validate).toBe(_record);
@@ -508,8 +508,8 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
 
   test("test_read_only_gets_no_validate", () => {
     const cf = ChunkField.enum(_MyEnum, "_body", "mode", {
-      allow_out_of_enum_values: true,
-      read_only: true,
+      allowOutOfEnumValues: true,
+      readOnly: true,
     });
     expect(cf.validate).toBe(null);
   });
@@ -577,39 +577,39 @@ describe("TestChunkFieldTransform", () => {
 /** Model using CosField with scalar reverse. */
 class _CosModel {
   declare _style: CosDict | null;
-  declare font_size: number | null;
-  declare _propagate_called: boolean;
+  declare fontSize: number | null;
+  declare _propagateCalled: boolean;
 
   constructor(style: CosDict | null) {
     this._style = style;
-    this._propagate_called = false;
+    this._propagateCalled = false;
   }
 
-  _propagate_cos(): void {
-    this._propagate_called = true;
+  _propagateCos(): void {
+    this._propagateCalled = true;
   }
 }
-descriptor(_CosModel, "font_size", new CosField<number | null, "_style", _CosModel>("_style", "1", { transform: cosFloat, reverse: float, accepts: (v: unknown): v is number => typeof v === "number", default: null }));
+descriptor(_CosModel, "fontSize", new CosField<number | null, "_style", _CosModel>("_style", "1", { transform: cosFloat, reverse: float, accepts: (v: unknown): v is number => typeof v === "number", default: null }));
 
 describe("TestCosFieldScalarReverse", () => {
   test("test_scalar_reverse_writes_to_dict", () => {
     const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
-    model.font_size = 24.0;
+    model.fontSize = 24.0;
     expect(getitem(style, "1")).toBe(24.0);
   });
 
   test("test_propagate_cos_called", () => {
     const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
-    model.font_size = 18.0;
-    expect(model._propagate_called).toBe(true);
+    model.fontSize = 18.0;
+    expect(model._propagateCalled).toBe(true);
   });
 
   test("test_none_value_removes_key", () => {
     const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
-    model.font_size = null;
+    model.fontSize = null;
     expect(style.has("1")).toBe(false);
   });
 });

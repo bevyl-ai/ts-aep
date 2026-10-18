@@ -122,8 +122,8 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
 
   const renderQueue = new RenderQueue({
     _lrdr: lrdrChunk,
-    _rs_lhd3: settingsLhd3,
-    _rs_ldat: settingsLdat,
+    _rsLhd3: settingsLhd3,
+    _rsLdat: settingsLdat,
     _rout: routChunk,
     _litm: litmChunk,
     _arsi: arsiChunk,
@@ -238,14 +238,14 @@ export function parseRenderQueueItem(
   const renderQueueItem = new RenderQueueItem({
     _ldat: ldatBody,
     _litm: litmChunk,
-    _list_chunk: listChunk,
+    _listChunk: listChunk,
     _lom: lomChunk,
     _rcom: rcomContainer,
-    _rcom_utf8: rcomUtf8,
-    _rout_items: routItems,
+    _rcomUtf8: rcomUtf8,
+    _routItems: routItems,
     parent: renderQueue,
     comp,
-    output_modules: [],
+    outputModules: [],
   });
 
   const outputModules: OutputModule[] = [];
@@ -258,7 +258,7 @@ export function parseRenderQueueItem(
     outputModules.push(outputModule);
   }
 
-  renderQueueItem._output_modules = outputModules;
+  renderQueueItem._outputModules = outputModules;
 
   return renderQueueItem;
 }

@@ -22,7 +22,7 @@ const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "a
 function _vectorMask(psd: string, layer: string): Uint8Array {
   for (const node of readPsdLayers(ASSETS.div(psd))) {
     if (node.name === layer) {
-      const mask = asInstance(node, PsdLayer).vector_mask;
+      const mask = asInstance(node, PsdLayer).vectorMask;
       pyAssert(mask != null);
       return mask;
     }

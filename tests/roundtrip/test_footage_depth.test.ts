@@ -175,7 +175,7 @@ test("test_sequence_sets_only_the_first_media_flag", () => {
   // AE 2026 (macOS) imports a GIF sequence with 0x70 bit 3 set and 0x9F
   // bit 3 clear (imio_sequence.aep).
   const truth = parseProject(SAMPLES.div("models", "import", "imio_sequence.aep"));
-  const aeItem = truth.footages.find((f) => asInstance(f.mainSource, FileSource)._target_is_folder);
+  const aeItem = truth.footages.find((f) => asInstance(f.mainSource, FileSource)._targetIsFolder);
   if (aeItem == null) throw new StopIteration();
   const ae = asInstance(aeItem.mainSource, FileSource);
   const project = parseAep(BASE, { platform: "macos" }).project;

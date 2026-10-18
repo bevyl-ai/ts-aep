@@ -117,7 +117,7 @@ export const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValu
 ]);
 
 // Effect controls whose values AE reports rounded (`_round_half_up`). Matched
-// against the control type the effect declares (`_property_control_type`):
+// against the control type the effect declares (`_propertyControlType`):
 // the type inferred for other properties reads BOOLEAN for plain scalars,
 // and a shape's Star Points of 5.5 reports 5.5 (AE 2026).
 export const _ROUNDED_CONTROL_TYPES: ReadonlySet<PropertyControlType> = new Set<PropertyControlType>([
@@ -143,8 +143,8 @@ export function _samePath(a: Shape, b: PropertyValue): boolean {
     b instanceof Shape &&
     a.closed == b.closed &&
     pyEq(a.vertices, b.vertices) &&
-    pyEq(a._stored_tangents(-1), b._stored_tangents(-1)) &&
-    pyEq(a._stored_tangents(1), b._stored_tangents(1)) &&
+    pyEq(a._storedTangents(-1), b._storedTangents(-1)) &&
+    pyEq(a._storedTangents(1), b._storedTangents(1)) &&
     !a.featherPoints?.length &&
     !b.featherPoints?.length
   );
@@ -156,13 +156,13 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
   // value ("Array is not of the correct type"), and the numeric write path
   // it would otherwise take leaves the file untouched while the model
   // reports the stray value.
-  if (prop._parallel_kind() === SHAPE_KIND && !(value instanceof Shape)) {
+  if (prop._parallelKind() === SHAPE_KIND && !(value instanceof Shape)) {
     throw new TypeError_(`${repr(prop.matchName)} takes a Shape, got ${typeName(value)}`);
   }
   if (prop.matchName === "ADBE Mask Shape") {
-    const layer = prop._containing_layer;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-    if (layer._mask_scale.includes(0)) {
+    const layer = prop._containingLayer;
+    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    if (layer._maskScale.includes(0)) {
       // Mask paths are stored normalized to the layer's source, so on an
       // audio-only layer (0 x 0) every path reads back as four points at
       // the origin. AE 2026 hangs on the same write.
@@ -185,7 +185,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
   // so this must run BEFORE the numeric-type gate below - otherwise the
   // gate returns early and axis values skip finite/range validation
   // entirely (a NaN/inf or out-of-[min,max] weight would be written).
-  if (prop._is_vf_axis && (typeof value === "number" || typeof value === "boolean")) {
+  if (prop._isVfAxis && (typeof value === "number" || typeof value === "boolean")) {
     _validateScalar(value, prop);
     return;
   }
@@ -202,7 +202,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
 export function _maskIds(prop: Property): number[] | null {
   let masks: PropertyGroup | null;
   try {
-    masks = prop._containing_layer.masks;
+    masks = prop._containingLayer.masks;
   } catch (e) {
     if (!(e instanceof ValueError)) throw e;
     return null;
@@ -217,7 +217,7 @@ export function _validateKeyValue(prop: Property, value: PropertyValue): void {
   // Validate a keyframe value: `_validate_value`, after refusing `None` for
   // a numeric keyframe, which always holds a number (storing `None` only in
   // the model left the file at whatever the slot held, 0).
-  if (value == null && prop._parallel_kind() == null && !prop._no_value) {
+  if (value == null && prop._parallelKind() == null && !prop._noValue) {
     throw new TypeError_(`${repr(prop.matchName)} keyframe value cannot be None`);
   }
   _validateValue(prop, value);
@@ -328,7 +328,7 @@ export class _PropertyValueList {
         }
         // A copy: for a keyed property this is the first key's own value,
         // which the setter then refuses to replace.
-        const stored = owner._stored_static_value();
+        const stored = owner._storedStaticValue();
         if (!Array.isArray(stored)) throw new TypeError_(`'${typeName(stored)}' object is not iterable`);
         const new_ = [...stored];
         if (index >= new_.length) throw new IndexError("list assignment index out of range");
@@ -403,7 +403,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   declare _integer: boolean;
 
-  declare _no_value: boolean;
+  declare _noValue: boolean;
 
   declare _vector: boolean;
 
@@ -414,7 +414,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   declare lockedRatio: boolean;
 
-  declare _is_spatial_raw: boolean;
+  declare _isSpatialRaw: boolean;
 
   /**
    * When `true`, the named property defines a spatial value.
@@ -431,7 +431,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // 2026), so the raw bit would say otherwise.
       return true;
     }
-    return !!this._is_spatial_raw;
+    return !!this._isSpatialRaw;
   }
 
   /**
@@ -442,7 +442,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * binary (the ldat item's key flags and layout), the speed math and
    * the roving guard ask this instead.
    */
-  get _has_motion_path(): boolean {
+  get _hasMotionPath(): boolean {
     return this.isSpatial && !this._color;
   }
 
@@ -454,7 +454,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // AE stores the name (from the font's axis name table) in a vfdn
     // sibling chunk; fall back to mapping the registered OpenType
     // tags, with custom tags showing the raw tag.
-    if (this._is_vf_axis) {
+    if (this._isVfAxis) {
       if (this._vfdn != null) {
         try {
           return this._vfdn.utf8.value;
@@ -468,7 +468,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const baseName = super.name;
     // NO_VALUE effect properties that store the match_name in tdsn
     // are unnamed separators/group headers - ExtendScript returns "".
-    if (this.propertyValueType === PropertyValueType.NO_VALUE && baseName === this.matchName && this._is_in_effect()) {
+    if (this.propertyValueType === PropertyValueType.NO_VALUE && baseName === this.matchName && this._isInEffect()) {
       return "";
     }
     return baseName;
@@ -490,7 +490,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * value: Override for the property value. When omitted, uses
    * `spec.value`.
    * default_value: Override for the default value. When omitted,
-   * uses the spec's `default_value` logic.
+   * uses the spec's `defaultValue` logic.
    * synthetic: If True, mark backing chunks as synthetic
    * (skipped during serialization).
    * control_type: Override for the property control type. When
@@ -500,19 +500,19 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     spec: PropSpec,
     propertyDepth: number,
     kw: {
-      parent_property: PropertyGroup;
+      parentProperty: PropertyGroup;
       value?: PropertyValue | typeof _USE_VALUE;
-      default_value?: PropertyValue | typeof _USE_VALUE;
+      defaultValue?: PropertyValue | typeof _USE_VALUE;
       synthetic?: boolean;
-      control_type?: PropertyControlType | null;
+      controlType?: PropertyControlType | null;
     },
   ): Property {
-    const { parent_property, value = _USE_VALUE, default_value = _USE_VALUE, synthetic = false, control_type = null } = kw;
+    const { parentProperty: parent_property, value = _USE_VALUE, defaultValue: default_value = _USE_VALUE, synthetic = false, controlType: control_type = null } = kw;
     const finalValue = value === _USE_VALUE ? spec.value : value;
     const noValue = spec.pvt === PropertyValueType.NO_VALUE;
     let canVary: boolean;
-    if (spec.can_vary_over_time != null) {
-      canVary = spec.can_vary_over_time;
+    if (spec.canVaryOverTime != null) {
+      canVary = spec.canVaryOverTime;
     } else {
       canVary = !noValue;
     }
@@ -520,39 +520,39 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const _tdsb = new TdsbChunk({ synthetic });
 
     const _tdb4 = new Tdb4Chunk({ synthetic, dimensions: spec.dimensions });
-    if (spec.has_time_base) {
-      const binaryNv = noValue || (spec.is_spatial && !spec.color);
+    if (spec.hasTimeBase) {
+      const binaryNv = noValue || (spec.isSpatial && !spec.color);
       _tdb4._time_base = 0x7800;
-      _tdb4._spatial_marker = spec.is_spatial;
+      _tdb4._spatial_marker = spec.isSpatial;
       _tdb4.no_value = binaryNv;
-      if (spec.spatial_flags != null) _tdb4._spatial_static_flags = spec.spatial_flags;
+      if (spec.spatialFlags != null) _tdb4._spatial_static_flags = spec.spatialFlags;
       if (spec.integer) {
         _tdb4.integer = true;
         _tdb4._cvot_flags = spec.cvot ?? 0x04;
         _tdb4._property_category = 0x04;
-        _tdb4._value_hint_type = spec.value_hint_type ?? 0xffff;
+        _tdb4._value_hint_type = spec.valueHintType ?? 0xffff;
       } else if (spec.color) {
         _tdb4.color = true;
         _tdb4._cvot_flags = spec.cvot ?? 0xff;
         _tdb4._property_category = 0x01;
-        _tdb4._value_hint_type = spec.value_hint_type ?? 1;
+        _tdb4._value_hint_type = spec.valueHintType ?? 1;
         _tdb4._value_hint_flag = 0xff;
       } else if (binaryNv) {
-        _tdb4._type_flags = spec.is_spatial ? 0x18 : 0x08;
+        _tdb4._type_flags = spec.isSpatial ? 0x18 : 0x08;
         _tdb4._cvot_flags = spec.cvot ?? 0x04;
-        _tdb4._value_hint_type = spec.value_hint_type ?? 1;
+        _tdb4._value_hint_type = spec.valueHintType ?? 1;
       } else {
         _tdb4.vector = true;
         _tdb4._cvot_flags = spec.cvot ?? 0xff;
         _tdb4._property_category = 0x09;
-        _tdb4._value_hint_type = spec.value_hint_type ?? 1;
+        _tdb4._value_hint_type = spec.valueHintType ?? 1;
         _tdb4._value_hint_flag = 0xff;
       }
     } else {
-      if (spec.spatial_flags != null) {
-        _tdb4._spatial_static_flags = spec.spatial_flags;
+      if (spec.spatialFlags != null) {
+        _tdb4._spatial_static_flags = spec.spatialFlags;
       } else {
-        _tdb4.is_spatial = spec.is_spatial;
+        _tdb4.is_spatial = spec.isSpatial;
       }
       _tdb4.no_value = noValue;
       _tdb4.color = spec.color;
@@ -561,7 +561,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       _tdb4.can_vary_over_time = canVary;
     }
 
-    if (spec.property_category != null) _tdb4._property_category = spec.property_category;
+    if (spec.propertyCategory != null) _tdb4._property_category = spec.propertyCategory;
     if (spec.pad2a != null) _tdb4._pad2a = spec.pad2a;
 
     // AE writes the unnamed sentinel; the display name resolves
@@ -590,7 +590,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
     // Insert into parent's chunk tree (before parent's group end).
     const _tdmn = new TdmnChunk({
-      value: spec.match_name,
+      value: spec.matchName,
       synthetic,
     });
     const tdgp = parent_property._tdgp;
@@ -604,39 +604,39 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       _tdsb,
       _tdb4,
       _tdbs,
-      _name_utf8: nameUtf8,
+      _nameUtf8: nameUtf8,
       _cdat,
       keyframes: [],
-      match_name: spec.match_name,
-      auto_name: spec.auto_name,
-      parent_property,
-      property_control_type: control_type || PropertyControlType.UNKNOWN,
-      property_depth: propertyDepth,
-      property_value_type: spec.pvt,
+      matchName: spec.matchName,
+      autoName: spec.autoName,
+      parentProperty: parent_property,
+      propertyControlType: control_type || PropertyControlType.UNKNOWN,
+      propertyDepth: propertyDepth,
+      propertyValueType: spec.pvt,
       value: finalValue,
-      can_vary_over_time: spec.can_vary_over_time,
-      units_text: spec.units_text,
+      canVaryOverTime: spec.canVaryOverTime,
+      unitsText: spec.unitsText,
     });
     if (default_value !== _USE_VALUE) {
       prop.defaultValue = default_value;
     } else {
-      prop.defaultValue = spec.default_value === _USE_VALUE ? finalValue : spec.default_value;
+      prop.defaultValue = spec.defaultValue === _USE_VALUE ? finalValue : spec.defaultValue;
     }
-    if (spec.chunk_bounds_are_hints) {
+    if (spec.chunkBoundsAreHints) {
       // tdum/tduM hold UI slider hints, not real bounds: the spec is
       // authoritative (None = unbounded).
-      prop._min_value_fallback = spec.min_value;
-      prop._max_value_fallback = spec.max_value;
+      prop._minValueFallback = spec.minValue;
+      prop._maxValueFallback = spec.maxValue;
     } else {
-      if (spec.min_value != null) prop._min_value_fallback = spec.min_value;
-      if (spec.max_value != null) prop._max_value_fallback = spec.max_value;
+      if (spec.minValue != null) prop._minValueFallback = spec.minValue;
+      if (spec.maxValue != null) prop._maxValueFallback = spec.maxValue;
     }
-    if (spec.hint_bounds != null) prop._hint_bounds = spec.hint_bounds;
-    if (spec.bound_chunks != null) {
-      prop._bound_chunks_hint = spec.bound_chunks;
+    if (spec.hintBounds != null) prop._hintBounds = spec.hintBounds;
+    if (spec.boundChunks != null) {
+      prop._boundChunksHint = spec.boundChunks;
     } else {
-      prop._bound_chunks_hint =
-        (spec.min_value != null || spec.max_value != null) && !spec.integer && !spec.color && !spec.is_spatial;
+      prop._boundChunksHint =
+        (spec.minValue != null || spec.maxValue != null) && !spec.integer && !spec.color && !spec.isSpatial;
     }
 
     return prop;
@@ -644,7 +644,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   declare _tdmn: TdmnChunk;
   declare _tdb4: Tdb4Chunk;
-  declare _expression_utf8: Utf8Chunk | null;
+  declare _expressionUtf8: Utf8Chunk | null;
   declare _tdbs: ListChunk;
   declare _tdum: TdumChunk | null;
   declare _tduM: TdumChunk | null;
@@ -655,19 +655,19 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Whether AE writes tdum/tduM placeholder bounds for this property when
    * materialized. Set from the synthesis spec in `_new`.
    */
-  declare _bound_chunks_hint: boolean;
+  declare _boundChunksHint: boolean;
   /**
    * The tdum/tduM values AE writes at materialization (UI slider hints),
    * set from `PropSpec.hint_bounds` in `_new`; `null` keeps the family
-   * behavior in `_ensure_bound_chunks`.
+   * behavior in `_ensureBoundChunks`.
    */
-  declare _hint_bounds: [number, number] | null;
+  declare _hintBounds: [number, number] | null;
   /**
    * Parallel per-keyframe value container for complex value types (otky /
    * mrky / omks / GCky), one value chunk per keyframe, aligned with
    * `keyframes`. Set by the specialized parsers.
    */
-  declare _kf_value_container: ListChunk | null;
+  declare _kfValueContainer: ListChunk | null;
   /**
    * The wrapper LIST holding this property's tdbs + value container (otst
    * / mrst / om-s / GCst / btds). Set by the specialized parsers; null for
@@ -683,41 +683,41 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * id (0 = no replacement set).
    */
   declare _blsi: U4Chunk | null;
-  declare _can_vary_over_time: boolean | null;
+  declare _canVaryOverTime: boolean | null;
   /**
    * Expressions can never be set on this parameter (from the pard
    * definition header flag; set by _apply_param_def_metadata).
    */
-  declare _expressions_disabled: boolean;
-  declare _dimensions_separated: boolean | null;
-  declare _expression_enabled: boolean | null;
+  declare _expressionsDisabled: boolean;
+  declare _dimensionsSeparated: boolean | null;
+  declare _expressionEnabled: boolean | null;
   declare _expression: string | null;
-  declare _property_control_type: PropertyControlType | null;
-  declare _property_value_type: PropertyValueType | null;
+  declare _propertyControlType: PropertyControlType | null;
+  declare _propertyValueType: PropertyValueType | null;
   declare _value: PropertyValue;
-  declare _units_text: string | null;
+  declare _unitsText: string | null;
   /**
    * A default that follows other state (a camera's Position follows its
-   * Zoom) reads from this callable instead of `_default_value`.
+   * Zoom) reads from this callable instead of `_defaultValue`.
    */
-  declare _default_value_source: (() => V) | null;
-  declare _default_value: V | null;
-  declare _keyframe_positions: Map<Keyframe, number> | null;
-  declare _types_memo: [number[], [PropertyControlType, PropertyValueType]] | null;
-  declare _effect_scale_dict: { value: number[] | null } | null;
-  declare _min_value_fallback: number | null | typeof _UNSET;
-  declare _max_value_fallback: number | null | typeof _UNSET;
-  declare _slider_min: number | null;
-  declare _slider_max: number | null;
-  declare _scale_z_override: number | null;
-  declare _property_parameters: string[] | null;
-  declare _property_type: PropertyType;
+  declare _defaultValueSource: (() => V) | null;
+  declare _defaultValue: V | null;
+  declare _keyframePositions: Map<Keyframe, number> | null;
+  declare _typesMemo: [number[], [PropertyControlType, PropertyValueType]] | null;
+  declare _effectScaleDict: { value: number[] | null } | null;
+  declare _minValueFallback: number | null | typeof _UNSET;
+  declare _maxValueFallback: number | null | typeof _UNSET;
+  declare _sliderMin: number | null;
+  declare _sliderMax: number | null;
+  declare _scaleZOverride: number | null;
+  declare _propertyParameters: string[] | null;
+  declare _propertyType: PropertyType;
   /**
    * Cached raw axis-tag number for variable-font axis properties; survives
    * de-animation (the tag lives in the value data, which keyframe removal
    * deletes before `_deanimate` re-writes it).
    */
-  declare _vf_tag_cache: number | null;
+  declare _vfTagCache: number | null;
   /**
    * The axis display-name container AE writes after an active variable-font
    * axis slot's tdbs (set by the parser).
@@ -732,86 +732,86 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /** The static aRbp decoded, on first read. */
   declare _curves: Curves | null;
   /** The Curves effect's default curves, from its parT (set by the parser). */
-  declare _default_arbp: Chunk | null;
+  declare _defaultArbp: Chunk | null;
 
   constructor(kw: {
     _tdmn: TdmnChunk;
     _tdsb: TdsbChunk;
     _tdb4: Tdb4Chunk;
-    _expression_utf8?: Utf8Chunk | null;
-    _name_utf8: Utf8Chunk;
+    _expressionUtf8?: Utf8Chunk | null;
+    _nameUtf8: Utf8Chunk;
     _tdbs: ListChunk;
     _tdum?: TdumChunk | null;
     _tduM?: TdumChunk | null;
     _cdat?: CdatChunk | null;
     _tdpi?: S4Chunk | null;
     _composition?: CompItem | null;
-    parent_property?: PropertyGroup | null;
-    match_name: string;
-    property_depth: number;
-    auto_name?: string | null;
+    parentProperty?: PropertyGroup | null;
+    matchName: string;
+    propertyDepth: number;
+    autoName?: string | null;
     keyframes: Keyframe<KeyframeValue<NoInfer<V>>>[];
     value: PropertyValue;
-    property_control_type?: PropertyControlType | null;
-    property_value_type?: PropertyValueType | null;
-    units_text?: string | null;
-    can_vary_over_time?: boolean | null;
+    propertyControlType?: PropertyControlType | null;
+    propertyValueType?: PropertyValueType | null;
+    unitsText?: string | null;
+    canVaryOverTime?: boolean | null;
   }) {
     const {
       _tdmn,
       _tdsb,
       _tdb4,
-      _expression_utf8 = null,
-      _name_utf8,
+      _expressionUtf8: _expression_utf8 = null,
+      _nameUtf8: _name_utf8,
       _tdbs,
       _tdum = null,
       _tduM = null,
       _cdat = null,
       _tdpi = null,
       _composition = null,
-      parent_property = null,
-      match_name,
-      property_depth,
-      auto_name = null,
+      parentProperty: parent_property = null,
+      matchName: match_name,
+      propertyDepth: property_depth,
+      autoName: auto_name = null,
       keyframes,
       value,
-      property_control_type = null,
-      property_value_type = null,
-      units_text = null,
-      can_vary_over_time = null,
+      propertyControlType: property_control_type = null,
+      propertyValueType: property_value_type = null,
+      unitsText: units_text = null,
+      canVaryOverTime: can_vary_over_time = null,
     } = kw;
     super({
       _tdsb,
-      _name_utf8,
-      parent_property,
-      match_name,
-      auto_name,
-      property_depth,
+      _nameUtf8: _name_utf8,
+      parentProperty: parent_property,
+      matchName: match_name,
+      autoName: auto_name,
+      propertyDepth: property_depth,
     });
     // py-aep keeps these as class defaults, set on an instance only when it
     // has a value (CPython instance-dict sizing); here every instance starts
     // at the same defaults.
-    this._expression_utf8 = _expression_utf8;
+    this._expressionUtf8 = _expression_utf8;
     this._tdpi = _tdpi;
-    this._units_text = units_text;
+    this._unitsText = units_text;
     this.expressionError = "";
     this.nbOptions = null;
-    this._dimensions_separated = null;
-    this._expression_enabled = null;
+    this._dimensionsSeparated = null;
+    this._expressionEnabled = null;
     this._expression = null;
-    this._kf_value_container = null;
+    this._kfValueContainer = null;
     this._wrapper = null;
     this._blsv = null;
     this._blsi = null;
-    this._expressions_disabled = false;
-    this._default_value_source = null;
-    this._scale_z_override = null;
-    this._property_parameters = null;
-    this._vf_tag_cache = null;
+    this._expressionsDisabled = false;
+    this._defaultValueSource = null;
+    this._scaleZOverride = null;
+    this._propertyParameters = null;
+    this._vfTagCache = null;
     this._vfdn = null;
     this._arbs = null;
     this._curves = null;
-    this._default_arbp = null;
+    this._defaultArbp = null;
 
     this._tdmn = _tdmn;
     this._tdb4 = _tdb4;
@@ -819,36 +819,36 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._cdat = _cdat;
 
     this.keyframes = keyframes;
-    this._link_keyframes();
+    this._linkKeyframes();
 
-    this._property_control_type = property_control_type;
+    this._propertyControlType = property_control_type;
 
-    this._property_value_type = property_value_type;
+    this._propertyValueType = property_value_type;
 
     this._value = _ownList(value);
 
-    this._default_value = null;
+    this._defaultValue = null;
 
-    this._min_value_fallback = _UNSET;
-    this._max_value_fallback = _UNSET;
+    this._minValueFallback = _UNSET;
+    this._maxValueFallback = _UNSET;
 
-    this._property_type = PropertyType.PROPERTY;
+    this._propertyType = PropertyType.PROPERTY;
 
     this._tdum = _tdum;
     this._tduM = _tduM;
     this._composition = _composition;
-    this._can_vary_over_time = can_vary_over_time;
-    this._bound_chunks_hint = false;
-    this._hint_bounds = null;
-    this._types_memo = null;
+    this._canVaryOverTime = can_vary_over_time;
+    this._boundChunksHint = false;
+    this._hintBounds = null;
+    this._typesMemo = null;
     this.lastValue = null;
     // The pard UI slider range (effect params only; None elsewhere).
-    this._slider_min = null;
-    this._slider_max = null;
+    this._sliderMin = null;
+    this._sliderMax = null;
   }
 
   /** `true` for a variable-font axis slot property. */
-  get _is_vf_axis(): boolean {
+  get _isVfAxis(): boolean {
     return this.matchName.startsWith(VF_AXIS_PREFIX);
   }
 
@@ -856,20 +856,20 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * The raw 4CC tag number of an ACTIVE axis property, else `null`.
    *
    * Read from the static value's second dimension or the first
-   * keyframe's, then cached (see `_vf_tag_cache`).
+   * keyframe's, then cached (see `_vfTagCache`).
    */
-  _vf_axis_tag_raw(): number | null {
-    if (!this._is_vf_axis) return null;
-    if (this._vf_tag_cache != null) return this._vf_tag_cache;
+  _vfAxisTagRaw(): number | null {
+    if (!this._isVfAxis) return null;
+    if (this._vfTagCache != null) return this._vfTagCache;
     let raw: number | null = null;
     if (this._cdat != null && this._cdat.values.length >= 2) {
       raw = this._cdat.values[1];
     } else if (this.keyframes?.length > 0) {
-      const kfRaw = this.keyframes[0]._extract_raw_value();
+      const kfRaw = this.keyframes[0]._extractRawValue();
       if (Array.isArray(kfRaw) && kfRaw.length >= 2) raw = kfRaw[1];
     }
     if (raw != null && raw !== 0) {
-      this._vf_tag_cache = raw;
+      this._vfTagCache = raw;
       return raw;
     }
     return null;
@@ -886,13 +886,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * only through the property's display name).
    */
   get axisTag(): string | null {
-    const raw = this._vf_axis_tag_raw();
+    const raw = this._vfAxisTagRaw();
     if (raw == null) return null;
     return _vfTagToStr(raw);
   }
 
   /** Speed unit factor for ease objects: 100 for percent properties. */
-  get _speed_factor(): number {
+  get _speedFactor(): number {
     if (_PERCENT_MATCH_NAMES.has(this.matchName)) return 100.0;
     return 1.0;
   }
@@ -910,12 +910,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * 4.5, one of 114.6 px/s on a 200x100 solid 1.146).
    *
    * Resolved when the ease is read rather than pushed onto every
-   * keyframe: `_effect_scale` is unavailable while the property is still
+   * keyframe: `_effectScale` is unavailable while the property is still
    * being constructed, and re-deriving it per value read used to rescan
    * every keyframe, which is quadratic in the keyframe count.
    */
-  get _effect_point_speed_factor(): number | null {
-    const scale = this._effect_scale;
+  get _effectPointSpeedFactor(): number | null {
+    const scale = this._effectScale;
     if (scale == null || scale[1] === 0) return null;
     return scale[1];
   }
@@ -926,12 +926,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Each keyframe gets a reference to its owning property and to its
    * prev/next neighbours for lazy ease computation.
    */
-  _link_keyframes(): void {
+  _linkKeyframes(): void {
     // Assign None explicitly at the boundaries: after a removal or a
     // reorder the previous links are stale, and boundary keyframes
     // must read prev/next as None (ease resolution depends on it).
     for (const [i, kf] of this.keyframes.entries()) {
-      kf._bind_property(this);
+      kf._bindProperty(this);
       kf._prev = i > 0 ? this.keyframes[i - 1] : null;
       kf._next = i < this.keyframes.length - 1 ? this.keyframes[i + 1] : null;
     }
@@ -944,13 +944,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * to the list a stale entry is rebuilt (once) rather than trusted: an
    * ease read on a long track no longer scans every keyframe.
    */
-  _keyframe_index(keyframe: Keyframe): number | null {
+  _keyframeIndex(keyframe: Keyframe): number | null {
     const keyframes = this.keyframes;
-    let positions: Map<Keyframe, number> = this._keyframe_positions || new Map();
+    let positions: Map<Keyframe, number> = this._keyframePositions || new Map();
     let index = positions.get(keyframe) ?? null;
     if (index == null || index >= keyframes.length || keyframes[index] !== keyframe) {
       positions = new Map(keyframes.map((kf, i) => [kf, i] as const));
-      this._keyframe_positions = positions;
+      this._keyframePositions = positions;
       index = positions.get(keyframe) ?? null;
     }
     return index;
@@ -959,10 +959,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Re-link only the keyframe inserted at `idx` and its neighbours.
    *
-   * Equivalent to `_link_keyframes` after a single insertion, but O(1)
+   * Equivalent to `_linkKeyframes` after a single insertion, but O(1)
    * so bulk additions (`set_values_at_times`) stay linear.
    */
-  _link_inserted_key(idx: number): void {
+  _linkInsertedKey(idx: number): void {
     const kf = this.keyframes[idx];
     if (idx > 0) {
       kf._prev = this.keyframes[idx - 1];
@@ -987,7 +987,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * landing on an existing time legitimately returns that keyframe's
    * index instead.
    */
-  _guard_keyframe_move(kf: Keyframe, newUnits: number): void {
+  _guardKeyframeMove(kf: Keyframe, newUnits: number): void {
     try {
       indexByIdentity(this.keyframes, kf);
     } catch (e) {
@@ -1011,7 +1011,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * neighbours by order). No-op for a keyframe not (yet) in
    * `keyframes` or whose sorted position is unchanged.
    */
-  _reposition_keyframe(kf: Keyframe): void {
+  _repositionKeyframe(kf: Keyframe): void {
     let old: number;
     try {
       old = indexByIdentity(this.keyframes, kf);
@@ -1022,10 +1022,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const newUnits = kf.timeUnits;
     const new_ = this.keyframes.filter((k) => k !== kf && k.timeUnits < newUnits).length;
     if (new_ === old) return;
-    const [_lhd3, ldat] = this._ensure_animated();
+    const [_lhd3, ldat] = this._ensureAnimated();
     this.keyframes.splice(new_, 0, ...this.keyframes.splice(old, 1));
     ldat.items.splice(new_, 0, ...ldat.items.splice(old, 1));
-    const container = this._kf_value_container;
+    const container = this._kfValueContainer;
     if (container != null && old < container.chunks.length) {
       container.chunks.splice(new_, 0, ...container.chunks.splice(old, 1));
     }
@@ -1034,17 +1034,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // position, so a key's curves move with it.
       this._arbs.chunks.splice(new_, 0, ...this._arbs.chunks.splice(old, 1));
     }
-    if (this._parallel_kind() === TEXT_KIND) {
+    if (this._parallelKind() === TEXT_KIND) {
       const td = kf.value;
       if (td instanceof TextDocument) {
-        const docArray = cosGet(td._cos_data, "1", "1");
+        const docArray = cosGet(td._cosData, "1", "1");
         if (old < cosLen(docArray)) {
           cosInsert(docArray, new_, cosPopAt(docArray, old));
         }
-        td._propagate_cos();
+        td._propagateCos();
       }
     }
-    this._link_keyframes();
+    this._linkKeyframes();
   }
 
   /**
@@ -1053,10 +1053,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Called after any mutation that can reshape a roving run: a value
    * edit (the path changed), a bounding keyframe's time moving (the
    * span changed), or a roving flag flip. Writes directly to the
-   * backing time field to avoid recursion through `_set_time_units`.
+   * backing time field to avoid recursion through `_setTimeUnits`.
    */
-  _redistribute_roving_keyframes(): void {
-    if (!this._has_motion_path) return;
+  _redistributeRovingKeyframes(): void {
+    if (!this._hasMotionPath) return;
     // Orientation is spatial-valued but inert under roving: AE's
     // menu accepts the command (26.3x87) yet the keyframe keeps its
     // time and ease unchanged.
@@ -1067,8 +1067,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // with no roving keyframes must not pay for a full pass. The flag is
     // read off the chunk rather than through the `roving` descriptor:
     // that hop was four fifths of the cost.
-    if (!keyframes.some((kf) => kf._ldat_item.roving)) return;
-    const targets = rovingKeyframeTimes(keyframes, this._arc_metric);
+    if (!keyframes.some((kf) => kf._ldatItem.roving)) return;
+    const targets = rovingKeyframeTimes(keyframes, this._arcMetric);
     if (!targets?.size) return;
     // Units count layer time, so there is no composition-time offset or
     // stretch to undo here. Converting scaled the run by the stretch
@@ -1092,7 +1092,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (units === kf.timeUnits || (holders.get(units) ?? index) !== index) continue;
       holders.delete(kf.timeUnits);
       holders.set(units, index);
-      kf._ldat_item.time_units = units;
+      kf._ldatItem.time_units = units;
     }
   }
 
@@ -1103,40 +1103,40 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * to a synthesized property. After this method, the property is
    * indistinguishable from one that was parsed from binary.
    */
-  _ensure_materialized(): void {
+  _ensureMaterialized(): void {
     pyAssert(this._tdsb != null);
     if (!this._tdsb.synthetic) return;
 
     const parent = this.parentProperty;
-    if (this.matchName === "ADBE Mask Shape" && parent != null && parent._is_mask && parent instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    if (this.matchName === "ADBE Mask Shape" && parent != null && parent._isMask && parent instanceof _maskPropertyGroup().MaskPropertyGroup) {
       // A path-less mask stores no path. Whatever first writes its
       // Mask Path (a value, a key, an expression) makes AE write the
       // default full-frame rectangle it stands for; a bare placeholder
       // instead is "file is damaged" (AE 2026). The builder replaces
       // the placeholder in place and rebinds this property to it.
-      parent._materialize_mask_shape();
+      parent._materializeMaskShape();
       return;
     }
-    if (parent != null) parent._ensure_materialized();
+    if (parent != null) parent._ensureMaterialized();
 
-    this._set_subtree_synthetic(false);
+    this._setSubtreeSynthetic(false);
 
-    this._ensure_time_base();
-    this._complete_static_value_chunks();
-    this._reposition_canonically();
-    this._ensure_bound_chunks();
-    this._materialize_static_orientation();
-    this._ensure_mask_index_chunks();
+    this._ensureTimeBase();
+    this._completeStaticValueChunks();
+    this._repositionCanonically();
+    this._ensureBoundChunks();
+    this._materializeStaticOrientation();
+    this._ensureMaskIndexChunks();
   }
 
   /**
    * Flip the synthetic flag on `tdmn` and the whole `tdbs` subtree.
    *
-   * `write_aep` skips synthetic chunks, so this is what hides a
+   * `writeAep` skips synthetic chunks, so this is what hides a
    * property from the writer or reveals it: `false` materializes,
-   * `true` un-materializes (see `_revert_to_synthetic`).
+   * `true` un-materializes (see `_revertToSynthetic`).
    */
-  _set_subtree_synthetic(value: boolean): void {
+  _setSubtreeSynthetic(value: boolean): void {
     if (this._tdmn != null) this._tdmn.synthetic = value;
     this._tdbs.synthetic = value;
     for (const chunk of this._tdbs.chunks) {
@@ -1153,17 +1153,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * AE stores a mask-index param's value in a `tdli` (S4Chunk) after the
    * cdat (the cdat itself stays all-zeros, see
-   * `_complete_static_value_chunks`), and rejects a materialized tdbs
+   * `_completeStaticValueChunks`), and rejects a materialized tdbs
    * lacking it with "missing data in file".
    */
-  _ensure_mask_index_chunks(): void {
+  _ensureMaskIndexChunks(): void {
     if (this.propertyValueType !== PropertyValueType.MASK_INDEX) return;
-    if (this._tdli_chunk() != null) return;
+    if (this._tdliChunk() != null) return;
     // No mask; a value write that follows stores its mask's id.
     this._tdbs.chunks.push(new S4Chunk({ chunk_type: "tdli", value: 0 }));
   }
 
-  _tdli_chunk(): S4Chunk | null {
+  _tdliChunk(): S4Chunk | null {
     for (const chunk of this._tdbs.chunks) {
       if (chunk.chunk_type === "tdli" && chunk instanceof S4Chunk) return chunk;
     }
@@ -1180,8 +1180,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * removed, and after it is duplicated (the copy gets id 3 and goes
    * after it). An id no mask has reads 0.
    */
-  _mask_index(): number {
-    const tdli = this._tdli_chunk();
+  _maskIndex(): number {
+    const tdli = this._tdliChunk();
     if (tdli == null || tdli.value === 0) return 0;
     const ids = _maskIds(this);
     if (ids == null) return tdli.value;
@@ -1195,22 +1195,22 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * every layer-level tdb4 and rejects the file with "zero denominator
    * converting ratio denominators" when the field is 0. Synthesized
    * tdb4 chunks start at 0 (or the 30 fps placeholder 0x7800), so fix
-   * them up the moment they become visible to `write_aep`. Chunks
+   * them up the moment they become visible to `writeAep`. Chunks
    * parsed from a real file never reach this method (the synthetic
    * early-return above), preserving byte identity.
    */
-  _ensure_time_base(): void {
+  _ensureTimeBase(): void {
     if (this._tdb4 == null) return;
-    const comp = this._owning_comp();
+    const comp = this._owningComp();
     if (comp != null) {
       // The layer's own base, not the comp's: a stretched layer counts
       // its keyframe ticks against `internal_timebase * |stretch|`.
-      this._tdb4._time_base = int(this._layer_timebase || comp._cdta.internal_timebase);
-      if (this._tdb4._spatial_marker && !this._tdb4.color && !this._tdb4.no_value && this._effect_scale == null) {
+      this._tdb4._time_base = int(this._layerTimebase || comp._cdta.internal_timebase);
+      if (this._tdb4._spatial_marker && !this._tdb4.color && !this._tdb4.no_value && this._effectScale == null) {
         // AE writes the comp's pixel aspect into a layer's spatial
         // point tdb4s (not orientation / color). A point stored
         // normalized to its layer is measured otherwise, stamped
-        // when keyed (`_stamp_normalized_arc_metric`).
+        // when keyed (`_stampNormalizedArcMetric`).
         this._tdb4.pixel_aspect = comp._cdta.pixel_aspect;
       }
     }
@@ -1228,11 +1228,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * stored values (AE 2026: 15.0 on a 3000x200 solid, 3.556 on a 640x360
    * one with 2:1 pixels; a point keyed with 1.0 plays up to 3 px off).
    */
-  _stamp_normalized_arc_metric(): void {
-    const scale = this._effect_scale;
-    if (scale == null || scale[1] === 0 || !this._has_motion_path) return;
-    const layer = this._containing_layer;
-    const source = layer._source_item;
+  _stampNormalizedArcMetric(): void {
+    const scale = this._effectScale;
+    if (scale == null || scale[1] === 0 || !this._hasMotionPath) return;
+    const layer = this._containingLayer;
+    const source = layer._sourceItem;
     const pixelAspect = source != null ? source.pixelAspect : layer.containingComp.pixelAspect;
     this._tdb4.pixel_aspect = (scale[0] * pixelAspect) / scale[1];
     this._tdb4._arc_accuracy = NORMALIZED_ARC_ACCURACY;
@@ -1250,12 +1250,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * unbounded 1D (Rotation), integer and color properties do not
    * need them.
    */
-  _ensure_bound_chunks(): void {
+  _ensureBoundChunks(): void {
     if (this._tdum != null || this._tduM != null) return;
-    if (this._hint_bounds != null) {
+    if (this._hintBounds != null) {
       // Layer Styles scalars: AE writes the UI slider hints (not the
       // real clamp) as the bound values (psd_layer_styles fixtures).
-      const [low, high] = this._hint_bounds;
+      const [low, high] = this._hintBounds;
       this._tdbs.chunks.push(new TdumChunk({ chunk_type: "tdum", values: [low] }));
       this._tdbs.chunks.push(new TdumChunk({ chunk_type: "tduM", values: [high] }));
       return;
@@ -1266,25 +1266,25 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // ENUM / LAYER. This bypasses the can_vary / fallback gating below,
     // which only governs layer/shape props.
     const effectBounded =
-      this._is_in_effect() && this.constructor._EFFECT_BOUNDED_CONTROL_TYPES.has(this._property_control_type);
+      this._isInEffect() && this.constructor._EFFECT_BOUNDED_CONTROL_TYPES.has(this._propertyControlType);
     if (!effectBounded) {
       // AE writes [0.0] bounds only on ANIMATABLE bounded leaves; it omits
       // them on bounded menu/dropdown leaves (Line Cap, Fill Rule, Grad
       // Type, ...) which report can_vary_over_time=False. Match that.
-      if (this._can_vary_over_time === false) return;
+      if (this._canVaryOverTime === false) return;
       const multiDimVector = !this._color && !this.isSpatial && this._vector && this.dimensions > 1;
       const fallbackBounded =
-        (this._min_value_fallback !== _UNSET || this._max_value_fallback !== _UNSET) &&
+        (this._minValueFallback !== _UNSET || this._maxValueFallback !== _UNSET) &&
         !this._color &&
         !this.isSpatial &&
         !this._tdb4.integer &&
-        !this._is_in_effect();
+        !this._isInEffect();
       // AE persists the [0.0] placeholder tdum/tduM for the props in
       // _PLACEHOLDER_UNBOUNDED (e.g. Light Intensity) even though
       // ExtendScript reports hasMin/hasMax=False, and rejects a
       // materialized one that lacks them ("missing data in file").
       const placeholderUnbounded = _PLACEHOLDER_UNBOUNDED.has(this.matchName);
-      if (!multiDimVector && !this._bound_chunks_hint && !fallbackBounded && !placeholderUnbounded) {
+      if (!multiDimVector && !this._boundChunksHint && !fallbackBounded && !placeholderUnbounded) {
         return;
       }
     }
@@ -1295,8 +1295,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // bounds, and AE 2026 materializing a Slider Control writes 0 / 100).
     // AE reads neither back: the bounds ExtendScript reports come from
     // the effect's definition.
-    const sliderLow = effectBounded ? this._slider_min : null;
-    const sliderHigh = effectBounded ? this._slider_max : null;
+    const sliderLow = effectBounded ? this._sliderMin : null;
+    const sliderHigh = effectBounded ? this._sliderMax : null;
     this._tdbs.chunks.push(
       new TdumChunk({
         chunk_type: "tdum",
@@ -1346,8 +1346,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * ("missing data in file"). Complex kinds (orientation, marker,
    * shape, gradient, text) manage their own value containers.
    */
-  _complete_static_value_chunks(): void {
-    if (this._parallel_kind() != null || this._tdb4 == null) return;
+  _completeStaticValueChunks(): void {
+    if (this._parallelKind() != null || this._tdb4 == null) return;
     if (this.propertyValueType === PropertyValueType.MASK_INDEX) {
       // MASK_INDEX cdat is 5 zero doubles (like OneD); the index value
       // lives in a separate `tdli` chunk (see _ensure_mask_index_chunks),
@@ -1404,7 +1404,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       this._tdb4._type_flags = 0x08;
       this._tdb4._property_category = 0x09;
       this._tdb4._spatial_marker = true;
-    } else if (this._color && !this._is_in_effect() && this._tdb4._value_hint_type === 0) {
+    } else if (this._color && !this._isInEffect() && this._tdb4._value_hint_type === 0) {
       // Static color canon (measured on a script-modified vector
       // fill color, AE 2026); with the synthesis-default flags AE
       // silently ignores the materialized value.
@@ -1419,7 +1419,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       !this._color &&
       !this.isSpatial &&
       !this._tdb4.integer &&
-      !this._is_in_effect() &&
+      !this._isInEffect() &&
       this._tdb4._value_hint_type === 0 &&
       this._tdb4._property_category === 0
     ) {
@@ -1451,7 +1451,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     } else if (this._cdat.values.length < target) {
       this._cdat.values = [...this._cdat.values, ...listMul([0.0], target - this._cdat.values.length)];
     }
-    if (!keepCdat) this._write_cdat(value);
+    if (!keepCdat) this._writeCdat(value);
   }
 
   /**
@@ -1461,15 +1461,15 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * AE rejects a bare big-endian Orientation tdbs with "missing data
    * in file".
    */
-  _materialize_static_orientation(): void {
-    const kind = this._parallel_kind();
+  _materializeStaticOrientation(): void {
+    const kind = this._parallelKind();
     if (kind == null || kind.name !== "orientation") return;
     if (this._wrapper != null || this.keyframes?.length > 0) return;
     let value = this._value;
     if (!Array.isArray(value)) {
       value = Array.isArray(this.defaultValue) ? this.defaultValue : [0.0, 0.0, 0.0];
     }
-    const container = this._materialize_parallel_container(kind);
+    const container = this._materializeParallelContainer(kind);
     container.chunks.push(kind.buildValueChunk(this, value));
     const newCdat = kind.staticCdat(value);
     if (this._cdat != null && this._tdbs.chunks.some((c) => c === this._cdat)) {
@@ -1480,7 +1480,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._cdat = newCdat;
   }
 
-  _chunk_body(): ListChunk | null {
+  _chunkBody(): ListChunk | null {
     return this._tdbs;
   }
 
@@ -1495,12 +1495,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Time Remapping, whose `maxValue=0` ExtendScript does report) are
    * untouched.
    */
-  _is_placeholder_bound(body: TdumChunk): boolean {
+  _isPlaceholderBound(body: TdumChunk): boolean {
     return _PLACEHOLDER_UNBOUNDED.has(this.matchName) && body.values.every((v) => v === 0.0);
   }
 
   /** Extract value from a tdum/tduM chunk body. */
-  static _read_tdum(body: TdumChunk): number | number[] {
+  static _readTdum(body: TdumChunk): number | number[] {
     if (body.is_color) return [...body.values];
     if (body.is_integer) return int(body.values[0]);
     if (body.values.length === 1) return body.values[0];
@@ -1514,7 +1514,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * multi-dimensional or color properties, or `null` when the
    * chunk has no data.
    */
-  _read_cdat_raw(): number | number[] | null {
+  _readCdatRaw(): number | number[] | null {
     if (this._cdat == null) return null;
     const values = this._cdat.values.slice(0, this.dimensions);
     if (values.length === 0) return null;
@@ -1528,12 +1528,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Applied in order: percent scaling, color conversion, effect point
    * denormalization.
    */
-  _resolve_value(raw: number[] | number | null): number[] | number | null {
+  _resolveValue(raw: number[] | number | null): number[] | number | null {
     if (raw == null) return null;
     // 0. Variable-font axis: the binary stores [value, tag4cc] but
     //    ExtendScript exposes only the scalar axis value.
-    if (this._is_vf_axis && Array.isArray(raw) && raw.length >= 2) {
-      if (this._vf_tag_cache == null && raw[1] !== 0) this._vf_tag_cache = raw[1];
+    if (this._isVfAxis && Array.isArray(raw) && raw.length >= 2) {
+      if (this._vfTagCache == null && raw[1] !== 0) this._vfTagCache = raw[1];
       return raw[0];
     }
     // 1. Percent scaling (0-1 fraction -> 0-100 percentage)
@@ -1545,8 +1545,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       }
       // For 2D layers, Z-Scale is stored as 0.01 in the binary
       // (irrelevant axis). ES always normalizes it to 100.
-      if (this._scale_z_override != null && Array.isArray(raw) && raw.length >= 3) {
-        raw[2] = this._scale_z_override;
+      if (this._scaleZOverride != null && Array.isArray(raw) && raw.length >= 3) {
+        raw[2] = this._scaleZOverride;
       }
     }
     // 2. Color (ARGB 0-255 -> RGBA 0-1)
@@ -1558,10 +1558,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     // 3. Effect point (0-1 fraction -> pixel coordinates)
     if (Array.isArray(raw) && raw.length >= 2) {
-      raw = this._apply_effect_scale(raw);
+      raw = this._applyEffectScale(raw);
     }
     // 4. Checkbox / popup: reported rounded, stored as given
-    if (this._property_control_type != null && _ROUNDED_CONTROL_TYPES.has(this._property_control_type)) {
+    if (this._propertyControlType != null && _ROUNDED_CONTROL_TYPES.has(this._propertyControlType)) {
       raw = _roundHalfUp(raw);
     }
     return raw;
@@ -1569,16 +1569,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /**
    * A cached value (one the setter or synthesis stored) as AE reports it,
-   * as `_resolve_value` does for a stored one: a 2-D layer's Scale Z is 100
+   * as `_resolveValue` does for a stored one: a 2-D layer's Scale Z is 100
    * whatever was written (AE 2026 stores the 40 of `setValue([50, 60, 40])`
    * and reports `[50, 60, 100]`), a checkbox or popup value is rounded.
    */
   _reported(value: PropertyValue): PropertyValue {
     if (Array.isArray(value)) {
-      if (this._scale_z_override != null && value.length >= 3) {
-        value[2] = this._scale_z_override;
+      if (this._scaleZOverride != null && value.length >= 3) {
+        value[2] = this._scaleZOverride;
       }
-    } else if (this._property_control_type != null && _ROUNDED_CONTROL_TYPES.has(this._property_control_type)) {
+    } else if (this._propertyControlType != null && _ROUNDED_CONTROL_TYPES.has(this._propertyControlType)) {
       value = _roundHalfUp(value);
     }
     return value;
@@ -1590,22 +1590,22 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Applied in reverse order: effect point normalization, color
    * conversion, then percent scaling.
    */
-  _unresolve_value(value: number | number[]): number | number[];
-  _unresolve_value(value: _ValueType | boolean): _ValueType | boolean;
-  _unresolve_value(value: _ValueType | boolean): _ValueType | boolean {
+  _unresolveValue(value: number | number[]): number | number[];
+  _unresolveValue(value: _ValueType | boolean): _ValueType | boolean;
+  _unresolveValue(value: _ValueType | boolean): _ValueType | boolean {
     if (value == null) return null;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) return value;
     if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean")) return value;
     // 0. Variable-font axis: re-attach the tag dimension to a scalar
     //    ExtendScript-style value (raw 2-dim lists pass through).
-    if (this._is_vf_axis && (typeof value === "number" || typeof value === "boolean")) {
-      const tag = this._vf_axis_tag_raw();
+    if (this._isVfAxis && (typeof value === "number" || typeof value === "boolean")) {
+      const tag = this._vfAxisTagRaw();
       if (tag != null) return [float(value), tag];
       return value;
     }
     // 3. Reverse effect point (pixel coordinates -> 0-1 fraction)
     if (Array.isArray(value) && value.length >= 2) {
-      value = this._apply_effect_scale(value, { invert: true });
+      value = this._applyEffectScale(value, { invert: true });
     }
     // 2. Reverse color (RGBA 0-1 -> ARGB 0-255)
     if (this._color) {
@@ -1628,14 +1628,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Write a user-facing value to the cdat chunk body.
    *
-   * Applies `_unresolve_value` to convert back to raw binary units
+   * Applies `_unresolveValue` to convert back to raw binary units
    * before writing.
    */
-  _write_cdat(value: PropertyValue): void {
+  _writeCdat(value: PropertyValue): void {
     if (this._cdat == null) return;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) return;
     if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean")) return;
-    const rawValue = this._unresolve_value(value);
+    const rawValue = this._unresolveValue(value);
     const raw = [...this._cdat.values];
     if (Array.isArray(rawValue)) {
       // `raw[:len(raw_value)] = raw_value` - a slice assignment.
@@ -1659,8 +1659,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * holds no keyframes while separated, so `value_at_time` would
    * otherwise report the same frozen value for the whole timeline.
    */
-  _separated_value(time: number | null = null): number[] | null {
-    const followers = this._separation_followers();
+  _separatedValue(time: number | null = null): number[] | null {
+    const followers = this._separationFollowers();
     if (followers == null) return null;
     const composed: number[] = [];
     for (const follower of followers) {
@@ -1679,7 +1679,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * the leader, so the leader is briefly separated with nothing to
    * drive.
    */
-  _separation_followers(): Property<number>[] | null {
+  _separationFollowers(): Property<number>[] | null {
     if (!this.isSeparationLeader || !this.dimensionsSeparated) return null;
     const followers = Array.from({ length: 3 }, (_, dim) => this.getSeparationFollower(dim));
     if (!followers.every((follower) => follower != null)) return null;
@@ -1687,11 +1687,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /** The Curves effect's static curves, decoded from its aRbp. */
-  _static_curves(): Curves {
+  _staticCurves(): Curves {
     pyAssert(this._arbs != null);
     if (this._curves == null) {
       const arbp = this._arbs.chunks[0];
-      this._curves = Curves._from_binary(CurvesArbpChunk.from_arbp(arbp));
+      this._curves = Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
     }
     return this._curves;
   }
@@ -1701,14 +1701,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * `null` when the aRbs does not hold one aRbp per keyframe.
    */
-  _keyframe_curves(keyframe: Keyframe): Curves | null {
+  _keyframeCurves(keyframe: Keyframe): Curves | null {
     pyAssert(this._arbs != null);
     const arbps = this._arbs.chunks;
     if (arbps.length !== this.keyframes.length) {
       return null;
     }
     const arbp = arbps[indexByIdentity(this.keyframes, keyframe)];
-    return Curves._from_binary(CurvesArbpChunk.from_arbp(arbp));
+    return Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
   }
 
   /**
@@ -1720,9 +1720,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * default aRbp), whatever the project's stored definition of the
    * effect holds.
    */
-  _reset_curves(): void {
-    pyAssert(this._arbs != null && this._default_arbp != null);
-    const inner = this._keyframe_inner();
+  _resetCurves(): void {
+    pyAssert(this._arbs != null && this._defaultArbp != null);
+    const inner = this._keyframeInner();
     if (inner != null) {
       const cdat = new CdatChunk({ pad: _EMPTY_CDAT_PAD });
       const chunks = this._tdbs.chunks;
@@ -1731,7 +1731,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       this.keyframes.length = 0;
       tdb4ApplyStaticTemplate(this._tdb4, { in_interpolation: 0, out_interpolation: 0, spatial_flags: 0 });
     }
-    this._arbs.chunks.splice(0, this._arbs.chunks.length, new Chunk({ chunk_type: "aRbp", data: this._default_arbp.data }));
+    this._arbs.chunks.splice(0, this._arbs.chunks.length, new Chunk({ chunk_type: "aRbp", data: this._defaultArbp.data }));
     this._curves = null;
   }
 
@@ -1744,14 +1744,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * (reading a Curves key's value aborts the script), so between them
    * this is `null` rather than a guess.
    */
-  _keyed_curves_at(time: number): Curves | null {
+  _keyedCurvesAt(time: number): Curves | null {
     const keys = this.keyframes;
-    if (time <= keys[0].time) return this._keyframe_curves(keys[0]);
-    if (time >= keys[keys.length - 1].time) return this._keyframe_curves(keys[keys.length - 1]);
+    if (time <= keys[0].time) return this._keyframeCurves(keys[0]);
+    if (time >= keys[keys.length - 1].time) return this._keyframeCurves(keys[keys.length - 1]);
     const previous = [...keys].reverse().find((k) => k.time <= time);
     if (previous === undefined) throw new StopIteration();
     if (isclose(previous.time, time, 0.0, 1e-9) || previous.outInterpolationType === KeyframeInterpolationType.HOLD) {
-      return this._keyframe_curves(previous);
+      return this._keyframeCurves(previous);
     }
     return null;
   }
@@ -1761,7 +1761,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * ValueError: If this property holds a Curves effect's curves.
    */
-  _reject_curves_write(): void {
+  _rejectCurvesWrite(): void {
     if (this._arbs != null) {
       throw new ValueError(
         `${repr(this.matchName)} holds the Curves effect's curves, which ` +
@@ -1772,14 +1772,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** The default value of the property. */
   get defaultValue(): V | null {
-    if (this._default_value_source != null) return this._default_value_source();
-    return this._default_value;
+    if (this._defaultValueSource != null) return this._defaultValueSource();
+    return this._defaultValue;
   }
 
   set defaultValue(value: V | null) {
-    this._default_value = this._declared(_ownList(value));
+    this._defaultValue = this._declared(_ownList(value));
     // back to the class default
-    if (this._default_value_source != null) this._default_value_source = null;
+    if (this._defaultValueSource != null) this._defaultValueSource = null;
   }
 
   /**
@@ -1789,7 +1789,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * value. If there are keyframes, returns the keyframed value at the
    * current time. Otherwise, returns the static value. Read / Write.
    *
-   * The type depends on `property_value_type`:
+   * The type depends on `propertyValueType`:
    * `number[]`, `number`, {@link Curves}, {@link Gradient},
    * {@link MarkerValue}, {@link Shape}, {@link TextDocument}, or `null`.
    *
@@ -1821,47 +1821,47 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * ```
    */
   get value(): V {
-    const value = this._mask_inert_z(this._stored_static_value());
+    const value = this._maskInertZ(this._storedStaticValue());
     if (Array.isArray(value)) return this._declared(_PropertyValueList.bind(value, this));
     return this._declared(value);
   }
 
   set value(value: V) {
-    this._reject_curves_write();
-    if (this._separation_followers() != null) {
+    this._rejectCurvesWrite();
+    if (this._separationFollowers() != null) {
       throw new ValueError(
         `cannot set the value of ${repr(this.matchName)} while its ` +
           "dimensions are separated; write its X / Y / Z followers " +
           "instead (getSeparationFollower)",
       );
     }
-    this._set_own_value(value);
+    this._setOwnValue(value);
   }
 
   /** {@link Property.value | value} before a 2-D layer's Z is reported as 0. */
-  _stored_static_value(): PropertyValue {
+  _storedStaticValue(): PropertyValue {
     if (this._tdpi != null && this._composition != null) {
       const layerId = this._tdpi.value;
       if (layerId === 0) return 0;
-      return (this._composition._layer_id_to_index.get(layerId) ?? -1) + 1;
+      return (this._composition._layerIdToIndex.get(layerId) ?? -1) + 1;
     }
-    if (this._property_value_type === PropertyValueType.MASK_INDEX) return this._mask_index();
-    const separated = this._separated_value();
+    if (this._propertyValueType === PropertyValueType.MASK_INDEX) return this._maskIndex();
+    const separated = this._separatedValue();
     if (separated != null) return separated;
-    if (this._arbs != null && !this.keyframes?.length) return this._static_curves();
+    if (this._arbs != null && !this.keyframes?.length) return this._staticCurves();
     // A copy of a cached list: `value_at_time` hands it out too.
-    if (this._value != null) return this._reported(_ownList(this._wire_text_version(this._value)));
-    if (this.keyframes?.length > 0) return this._stored_value_at(0);
-    if (this._cdat != null) return this._resolve_value(this._read_cdat_raw());
+    if (this._value != null) return this._reported(_ownList(this._wireTextVersion(this._value)));
+    if (this.keyframes?.length > 0) return this._storedValueAt(0);
+    if (this._cdat != null) return this._resolveValue(this._readCdatRaw());
     if (this.matchName === "ADBE Mask Shape") {
       // A mask AE never needed a path for stores none; AE reports the
       // rectangle bounding the layer's mask space, the path it writes
       // once one is needed. Built on every read, not cached, so it
       // follows the layer's source and a read, edited and re-assigned
       // value is still written.
-      const layer = this._containing_layer;
-      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-      const [w, h] = layer._mask_scale;
+      const layer = this._containingLayer;
+      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+      const [w, h] = layer._maskScale;
       return new Shape([
         [0.0, 0.0],
         [0.0, h],
@@ -1883,13 +1883,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * While `dimensions_separated` is on the leader's own `cdat` is dead -
    * AE drives the layer from the followers - so a write that landed
    * there would read back as the stale default and never reach what AE
-   * renders. This is the write-side counterpart of `_separated_value`.
+   * renders. This is the write-side counterpart of `_separatedValue`.
    *
    * Only components that actually change are written, which leaves an
    * untouched Z follower synthetic on a 2D layer (as AE does) and
    * avoids materializing it for nothing.
    */
-  _set_separated_value(value: _ValueType, followers: Property<number>[]): void {
+  _setSeparatedValue(value: _ValueType, followers: Property<number>[]): void {
     _validateValue(this, value);
     if (!Array.isArray(value)) {
       throw new ValueError(
@@ -1905,24 +1905,24 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Whether this is the Mask Path of a mask AE has written no path for
    * (a fresh mask, which reports the default rectangle).
    */
-  _unstored_mask_path(): boolean {
-    return this.matchName === "ADBE Mask Shape" && this._kf_value_container == null;
+  _unstoredMaskPath(): boolean {
+    return this.matchName === "ADBE Mask Shape" && this._kfValueContainer == null;
   }
 
   /**
    * Write this property's own value, bypassing any separation fan-out.
    *
    * The raw path under the `value` setter, for the deliberate "park the
-   * leader on its default" writes in `_separate_static` /
-   * `_separate_animated`, which target the dead leader on purpose.
+   * leader on its default" writes in `_separateStatic` /
+   * `_separateAnimated`, which target the dead leader on purpose.
    */
-  _set_own_value(value: _ValueType): void {
+  _setOwnValue(value: _ValueType): void {
     // Re-assigning the identical complex value object (TextDocument,
     // Shape, MarkerValue, Gradient) is a no-op: those types write through
     // to the backing chunks via their own descriptors. Plain numeric/list
     // values have no write-through, so a value read, mutated in place, and
     // re-assigned must still be written to the cdat chunk.
-    if (value == null && this._parallel_kind() === SHAPE_KIND) {
+    if (value == null && this._parallelKind() === SHAPE_KIND) {
       // A fresh mask caches no value, so the identity shortcut below
       // would swallow `None` instead of rejecting it.
       _validateValue(this, value);
@@ -1935,7 +1935,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new ValueError("Cannot set value on a property with keyframes. " + "Use setValueAtTime() instead.");
     }
     _validateValue(this, value);
-    if (this._unstored_mask_path() && _samePath(value as Shape, this.value)) {
+    if (this._unstoredMaskPath() && _samePath(value as Shape, this.value)) {
       // AE 2026 writes no path for a fresh mask set to the rectangle it
       // already reports (`maskPath.setValue(maskPath.value)` saves the
       // bare mask atom), so the default stays implicit here too.
@@ -1954,13 +1954,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           "property; its data is not stored in the numeric value chunk.",
       );
     }
-    this._ensure_materialized();
+    this._ensureMaterialized();
     if (complexValue) {
       // A new complex value object (Shape, Gradient, TextDocument,
-      // MarkerValue) assigned to a static property: `_write_cdat`
+      // MarkerValue) assigned to a static property: `_writeCdat`
       // only writes numeric values, so the static value container
       // must be rebuilt.
-      this._value = this._write_static_complex_value(value);
+      this._value = this._writeStaticComplexValue(value);
       return;
     }
     if (this.propertyValueType === PropertyValueType.MASK_INDEX) {
@@ -1968,13 +1968,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // stays all-zeros); _ensure_materialized has appended one.
       const ids = _maskIds(this);
       const index = typeof value === "number" || typeof value === "boolean" ? int(value) : 0;
-      const tdli = this._tdli_chunk();
+      const tdli = this._tdliChunk();
       if (tdli == null) throw new AttributeError("'NoneType' object has no attribute 'value'");
       tdli.value = index !== 0 && ids != null ? ids[index - 1] : index;
       return;
     }
-    this._write_cdat(value);
-    this._cache_written(value);
+    this._writeCdat(value);
+    this._cacheWritten(value);
   }
 
   /**
@@ -1983,16 +1983,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Unlike the public `value` setter this never rebuilds value
    * containers, never enforces the keyframe guard, and skips
    * validation: the value comes from the file and the chunks
-   * already hold it. `_write_cdat` keeps the numeric path
+   * already hold it. `_writeCdat` keeps the numeric path
    * byte-faithful (a no-op write-back of the values just read).
    */
-  _cache_value(value: _ValueType): void {
-    this._write_cdat(value);
-    this._cache_written(value);
+  _cacheValue(value: _ValueType): void {
+    this._writeCdat(value);
+    this._cacheWritten(value);
   }
 
   /**
-   * Cache a numeric value `_write_cdat` just stored.
+   * Cache a numeric value `_writeCdat` just stored.
    *
    * Not an effect point's: it is stored normalized and AE re-reads the
    * stored fraction against the layer's current size - [30, 40] on a
@@ -2004,8 +2004,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * the solid is 400 wide, and [60, 80] after `replaceSource` with a
    * 400x200 one (AE 2026).
    */
-  _cache_written(value: _ValueType): void {
-    if (this._cdat != null && this._effect_scale != null) {
+  _cacheWritten(value: _ValueType): void {
+    if (this._cdat != null && this._effectScale != null) {
       this._value = null;
     } else {
       this._value = _ownList(value);
@@ -2020,15 +2020,15 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * from `value` and return the model rebound to the inserted chunk
    * (so later in-place edits reach the serialized form, not the
    * caller's chunk). Orientation stores its value in the
-   * (little-endian) cdat, which `_write_cdat` handles, so it is left
+   * (little-endian) cdat, which `_writeCdat` handles, so it is left
    * to the numeric path. Text (byte-format-sensitive btdk COS) and
    * markers (no static value) have no clean from-scratch container
    * build and are rejected.
    */
-  _write_static_complex_value(value: PropertyValue): PropertyValue {
-    const kind = this._parallel_kind();
+  _writeStaticComplexValue(value: PropertyValue): PropertyValue {
+    const kind = this._parallelKind();
     if (kind == null || kind.name === "orientation") {
-      this._write_cdat(value);
+      this._writeCdat(value);
       return value;
     }
     if (kind.name === "text") {
@@ -2038,7 +2038,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       );
     }
     if (kind.name === "marker") throw new ValueError("Markers have no static value to set.");
-    let container = this._kf_value_container;
+    let container = this._kfValueContainer;
     if (container == null) {
       // A synthesized complex property (e.g. a freshly added gradient
       // fill) has no wrapper/container yet; build it the same way
@@ -2046,7 +2046,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (!kind.canMaterializeWrapper) {
         throw new ValueError(`static ${repr(this.matchName)} property has no value ` + "container to update");
       }
-      container = this._materialize_parallel_container(kind);
+      container = this._materializeParallelContainer(kind);
       // AE keeps an (empty) cdat in the static tdbs; a synthesized
       // gradient leaf has none, which AE rejects as "missing data".
       if (this._cdat == null && this._tdbs != null && this._tdb4 != null) {
@@ -2070,7 +2070,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * version-gated attributes can resolve the AE major version. No-op for
    * other value types or when the containing comp is unknown.
    */
-  _wire_text_version<T extends _ValueType>(value: T): T {
+  _wireTextVersion<T extends _ValueType>(value: T): T {
     if (value instanceof TextDocument && this._composition != null) {
       value._head = this._composition._project._head;
     }
@@ -2083,10 +2083,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   get minValue(): number | number[] | null {
     if (_UNBOUNDED_MATCH_NAMES.has(this.matchName)) return null;
-    if (this._min_value_fallback !== _UNSET) return this._min_value_fallback;
+    if (this._minValueFallback !== _UNSET) return this._minValueFallback;
     if (this._tdum != null) {
-      if (this._is_placeholder_bound(this._tdum)) return null;
-      return this.constructor._read_tdum(this._tdum);
+      if (this._isPlaceholderBound(this._tdum)) return null;
+      return this.constructor._readTdum(this._tdum);
     }
     return null;
   }
@@ -2097,10 +2097,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   get maxValue(): number | number[] | null {
     if (_UNBOUNDED_MATCH_NAMES.has(this.matchName)) return null;
-    if (this._max_value_fallback !== _UNSET) return this._max_value_fallback;
+    if (this._maxValueFallback !== _UNSET) return this._maxValueFallback;
     if (this._tduM != null) {
-      if (this._is_placeholder_bound(this._tduM)) return null;
-      return this.constructor._read_tdum(this._tduM);
+      if (this._isPlaceholderBound(this._tduM)) return null;
+      return this.constructor._readTdum(this._tduM);
     }
     return null;
   }
@@ -2113,13 +2113,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * has no specific unit. Read-only.
    */
   get unitsText(): string {
-    if (this._units_text != null) return this._units_text;
-    if (this._property_control_type === PropertyControlType.ANGLE) return "degrees";
+    if (this._unitsText != null) return this._unitsText;
+    if (this._propertyControlType === PropertyControlType.ANGLE) return "degrees";
     // The map holds the spatial-valued exceptions (e.g. ADBE Orientation
     // is 3D-spatial but degrees), so it must win over the pixels heuristic.
     const mapped = UNITS_TEXT_MAP.get(this.matchName) ?? null;
     if (mapped != null) return mapped;
-    const valueType = this._property_value_type;
+    const valueType = this._propertyValueType;
     if (valueType === PropertyValueType.TwoD_SPATIAL || valueType === PropertyValueType.ThreeD_SPATIAL) {
       return "pixels";
     }
@@ -2165,11 +2165,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * string `(-` inserts a separator line (and may repeat).
    */
   get propertyParameters(): string[] | null {
-    return this._property_parameters;
+    return this._propertyParameters;
   }
 
   set propertyParameters(items: string[]) {
-    const effect = this._parent_property;
+    const effect = this._parentProperty;
     if (!(this.isDropdownEffect && effect != null && effect.matchName.startsWith("Pseudo/"))) {
       throw new ValueError(
         "propertyParameters can only be set on the Menu property " + "of a Dropdown Menu Control.",
@@ -2194,10 +2194,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       }
     }
     items = [...items];
-    this._write_dropdown_items(items);
-    this._property_parameters = items;
+    this._writeDropdownItems(items);
+    this._propertyParameters = items;
     this.nbOptions = items.length;
-    this._max_value_fallback = items.length;
+    this._maxValueFallback = items.length;
   }
 
   /**
@@ -2208,14 +2208,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * `LIST:EfdG`; both copies must stay in sync when the menu items
    * change.
    */
-  _dropdown_param_defs(): ListChunk[] {
-    const effect = this._parent_property;
+  _dropdownParamDefs(): ListChunk[] {
+    const effect = this._parentProperty;
     pyAssert(effect != null);
     const parts: ListChunk[] = [];
-    const parade = effect._parent_property;
+    const parade = effect._parentProperty;
     if (parade != null) {
       if (parade._tdgp != null) {
-        const sspc = effect._backing_list_chunk(parade._tdgp);
+        const sspc = effect._backingListChunk(parade._tdgp);
         if (sspc.list_type === "sspc") {
           const part = findByListTypeOrNull(sspc.chunks, "parT");
           if (part !== null) parts.push(part);
@@ -2224,9 +2224,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // The project-level EfdG mirror, via the parade's cached
       // definitions lookup. Effect params can parse without a
       // composition ref, leaving the project unreachable.
-      let entry: ReturnType<PropertyGroup["_installed_effect_def"]>;
+      let entry: ReturnType<PropertyGroup["_installedEffectDef"]>;
       try {
-        entry = parade._installed_effect_def(effect.matchName);
+        entry = parade._installedEffectDef(effect.matchName);
       } catch (e) {
         if (!(e instanceof ValueError)) throw e;
         entry = null;
@@ -2240,10 +2240,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /** Write new menu items into every copy of this param's definition. */
-  _write_dropdown_items(items: string[]): void {
+  _writeDropdownItems(items: string[]): void {
     const joined = items.join("|");
     let written = false;
-    for (const part of this._dropdown_param_defs()) {
+    for (const part of this._dropdownParamDefs()) {
       let current: string | null = null;
       for (const chunk of part.chunks) {
         if (chunk.chunk_type === "tdmn" && chunk instanceof TdmnChunk) {
@@ -2266,23 +2266,23 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // Keep the synthesis-side parameter definitions in sync. Effect
     // params parse without a composition ref; reach the project
     // through the owning layer instead.
-    const effect = this._parent_property;
+    const effect = this._parentProperty;
     pyAssert(effect != null);
     let comp = this._composition;
     if (comp == null) {
       try {
-        comp = this._containing_layer.containingComp;
+        comp = this._containingLayer.containingComp;
       } catch (e) {
         if (!(e instanceof ValueError)) throw e;
         comp = null;
       }
     }
     if (comp != null) {
-      const paramDef = comp._project._effect_param_defs.get(effect.matchName)?.get(this.matchName);
+      const paramDef = comp._project._effectParamDefs.get(effect.matchName)?.get(this.matchName);
       if (paramDef != null) {
-        paramDef.property_parameters = [...items];
-        paramDef.nb_options = items.length;
-        paramDef.max_value = items.length;
+        paramDef.propertyParameters = [...items];
+        paramDef.nbOptions = items.length;
+        paramDef.maxValue = items.length;
       }
     }
   }
@@ -2299,14 +2299,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   get canVaryOverTime(): boolean {
     // The residue table first: a synthesized effect parameter carries its
-    // pard's verdict in `_can_vary_over_time`, and the Puppet Engine's
+    // pard's verdict in `_canVaryOverTime`, and the Puppet Engine's
     // pard claims it varies where AE says it does not.
     const override = _CANVARY_OVERRIDES.get(this.matchName);
     if (override !== undefined) return override;
-    if (this._can_vary_over_time != null) return this._can_vary_over_time;
+    if (this._canVaryOverTime != null) return this._canVaryOverTime;
     // NO_VALUE properties always report canVaryOverTime=True in AE,
     // even though the binary byte says otherwise.
-    return !!(this._tdb4.can_vary_over_time || this._no_value);
+    return !!(this._tdb4.can_vary_over_time || this._noValue);
   }
 
   /**
@@ -2318,7 +2318,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * that can be separated). Read / Write.
    */
   get dimensionsSeparated(): boolean {
-    if (this._dimensions_separated != null) return this._dimensions_separated;
+    if (this._dimensionsSeparated != null) return this._dimensionsSeparated;
     if (this.matchName === "ADBE Position") {
       // Camera and Light positions separate like any other 3-D layer's:
       // AE 2026 reports `dimensionsSeparated` false on a fresh one,
@@ -2354,14 +2354,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const animated = this.keyframes?.length > 0 || live.some((follower) => follower.keyframes?.length > 0);
     if (value) {
       if (animated) {
-        this._separate_animated(live);
+        this._separateAnimated(live);
       } else {
-        this._separate_static(live);
+        this._separateStatic(live);
       }
     } else if (animated) {
-      this._recombine_animated(live);
+      this._recombineAnimated(live);
     } else {
-      this._recombine_static(live);
+      this._recombineStatic(live);
     }
   }
 
@@ -2372,12 +2372,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * layer (enable byte 0x3, lock byte 0x8 on every separated position it
    * authored) and shows it again once recombined (enable byte 0x1).
    */
-  _set_separated_flags(separated: boolean): void {
-    this._ensure_materialized();
+  _setSeparatedFlags(separated: boolean): void {
+    this._ensureMaterialized();
     pyAssert(this._tdsb != null);
     this._tdsb.dimensions_separated = separated;
     this._tdsb.hidden = separated;
-    this._dimensions_separated = separated;
+    this._dimensionsSeparated = separated;
   }
 
   /**
@@ -2389,18 +2389,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * only on a 3D layer, matching AE (`transform_separated.aep` leaves it
    * synthetic on a 2D one).
    */
-  _separate_static(followers: Property<number>[]): void {
+  _separateStatic(followers: Property<number>[]): void {
     const components = this.value as number[];
     const default_ = this.defaultValue as number[];
-    this._set_separated_flags(true);
-    const threeD = this._containing_layer.is3d;
+    this._setSeparatedFlags(true);
+    const threeD = this._containingLayer.is3d;
     for (const [dimension, follower] of followers.entries()) {
       if (dimension === 2 && !threeD) continue;
       follower.value = components[dimension];
     }
     // The leader keeps a value AE never reads again; AE parks it on the
     // default rather than leaving the old position there.
-    this._set_own_value([...default_]);
+    this._setOwnValue([...default_]);
   }
 
   /**
@@ -2409,15 +2409,15 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * AE writes the composed value onto the leader and reverts the
    * followers to their dead, unserialized state.
    */
-  _recombine_static(followers: Property<number>[]): void {
+  _recombineStatic(followers: Property<number>[]): void {
     const composed = followers.map((follower) => follower.value);
-    this._set_separated_flags(false);
-    this._set_own_value(composed);
+    this._setSeparatedFlags(false);
+    this._setOwnValue(composed);
     for (const follower of followers) _deactivateFollower(follower);
   }
 
   /** Incoming and outgoing segment durations for each keyframe. */
-  static _segment_spans(times: number[]): [number[], number[]] {
+  static _segmentSpans(times: number[]): [number[], number[]] {
     const incoming = [0.0, ...Array.from({ length: times.length - 1 }, (_, i) => times[i + 1] - times[i])];
     const outgoing = [...Array.from({ length: times.length - 1 }, (_, i) => times[i + 1] - times[i]), 0.0];
     return [incoming, outgoing];
@@ -2438,7 +2438,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * HOLD keyframe to LINEAR here, and this project prefers not to mirror
    * that loss.
    */
-  _separate_animated(followers: Property<number>[]): void {
+  _separateAnimated(followers: Property<number>[]): void {
     const keyframes = [...this.keyframes];
     const times = keyframes.map((keyframe) => keyframe.time);
     const values = keyframes.map((keyframe) => keyframe.value as number[]);
@@ -2447,17 +2447,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const interpolation = keyframes.map(
       (keyframe) => [keyframe.inInterpolationType, keyframe.outInterpolationType] as const,
     );
-    const [incoming, outgoing] = this.constructor._segment_spans(times);
+    const [incoming, outgoing] = this.constructor._segmentSpans(times);
 
     this.removeAllKeys();
-    this._set_separated_flags(true);
-    this._set_own_value([...(this.defaultValue as number[])]);
+    this._setSeparatedFlags(true);
+    this._setOwnValue([...(this.defaultValue as number[])]);
 
-    const threeD = this._containing_layer.is3d;
+    const threeD = this._containingLayer.is3d;
     for (const [dimension, follower] of followers.entries()) {
       if (dimension === 2 && !threeD) continue;
       for (const [index, time] of times.entries()) {
-        const added = follower._add_key(time, values[index][dimension]);
+        const added = follower._addKey(time, values[index][dimension]);
         const keyframe = follower.keyframes[added];
         keyframe.inInterpolationType = interpolation[index][0];
         keyframe.outInterpolationType = interpolation[index][1];
@@ -2474,7 +2474,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           if (span <= 0 || dimension >= tangent.length) {
             // An outer side has no segment to ease along; AE
             // parks it on zero speed and the default influence.
-            keyframe._apply_ease([new KeyframeEase(0.0, _DEFAULT_INFLUENCE)], direction);
+            keyframe._applyEase([new KeyframeEase(0.0, _DEFAULT_INFLUENCE)], direction);
             continue;
           }
           let speed = tangent[dimension] * 100.0;
@@ -2483,7 +2483,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           // shorter than 0.01 s (sub-frame keys, or one frame of a
           // very high frame rate) drives `1/dt` past the 100% the
           // field can mean.
-          keyframe._apply_ease([new KeyframeEase(speed, Math.min(1.0 / span, 100.0))], direction);
+          keyframe._applyEase([new KeyframeEase(speed, Math.min(1.0 / span, 100.0))], direction);
         }
       }
     }
@@ -2492,7 +2492,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Fold the followers' keyframes back into the leader.
    *
-   * The inverse of `_separate_animated`: a tangent component is
+   * The inverse of `_separateAnimated`: a tangent component is
    * `speed * (influence / 100) * dt`, which round-tripped exactly in the
    * AE probe.
    *
@@ -2503,16 +2503,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * no keyframe of its own at a given time contributes its interpolated
    * value there, and no tangent.
    */
-  _recombine_animated(followers: Property<number>[]): void {
+  _recombineAnimated(followers: Property<number>[]): void {
     if (!followers.some((follower) => follower.keyframes?.length > 0)) {
-      this._recombine_static(followers);
+      this._recombineStatic(followers);
       return;
     }
     const keysAt: Map<number, Keyframe<number>>[] = followers.map(
       (follower) => new Map(follower.keyframes.map((kf) => [kf.time, kf] as const)),
     );
     const times = sorted([...new Set(keysAt.flatMap((perDimension) => [...perDimension.keys()]))]);
-    const [incoming, outgoing] = this.constructor._segment_spans(times);
+    const [incoming, outgoing] = this.constructor._segmentSpans(times);
     const dimensions = followers.length;
     const composed = times.map(() => listMul([0.0], dimensions));
     const inTangents = times.map(() => listMul([0.0], dimensions));
@@ -2554,9 +2554,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
     for (const follower of followers) _deactivateFollower(follower);
 
-    this._set_separated_flags(false);
+    this._setSeparatedFlags(false);
     for (const [index, time] of times.entries()) {
-      this._add_key(time, composed[index]);
+      this._addKey(time, composed[index]);
     }
     for (const [index, keyframe] of this.keyframes.entries()) {
       if (index >= times.length) break;
@@ -2572,17 +2572,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /**
-   * Hide this property's chunks from `write_aep` again.
+   * Hide this property's chunks from `writeAep` again.
    *
-   * The inverse of `_ensure_materialized`'s flag flip, for a property AE
+   * The inverse of `_ensureMaterialized`'s flag flip, for a property AE
    * un-materializes - a separation follower once its leader is
    * recombined. Chunk order is left alone: synthetic chunks are skipped
-   * on write, and `_reposition_canonically` runs again if the property is
+   * on write, and `_repositionCanonically` runs again if the property is
    * ever materialized anew.
    */
-  _revert_to_synthetic(): void {
+  _revertToSynthetic(): void {
     if (this._tdsb == null || this._tdsb.synthetic) return;
-    this._set_subtree_synthetic(true);
+    this._setSubtreeSynthetic(true);
   }
 
   /**
@@ -2592,7 +2592,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   get expression(): string {
     if (this._expression != null) return this._expression;
-    if (this._expression_utf8 != null) return this._expression_utf8.value;
+    if (this._expressionUtf8 != null) return this._expressionUtf8.value;
     return "";
   }
 
@@ -2605,12 +2605,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     validateText(value);
     if (!value) {
       // Empty string clears the expression (chunk + tdb4 markers).
-      this._clear_expression();
+      this._clearExpression();
       return;
     }
-    this._ensure_materialized();
-    if (this._expression_utf8 != null) {
-      this._expression_utf8.value = value;
+    this._ensureMaterialized();
+    if (this._expressionUtf8 != null) {
+      this._expressionUtf8.value = value;
     } else {
       const chunk = new Utf8Chunk({ value });
       // AE stores the expression Utf8 immediately after the value
@@ -2618,18 +2618,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // tdum/tduM bounds - the order is positional, so appending at
       // the tail makes AE reject the file ("missing data in file").
       const chunks = this._tdbs.chunks;
-      const anchor = this._cdat ?? this._keyframe_inner();
+      const anchor = this._cdat ?? this._keyframeInner();
       if (anchor != null) {
         chunks.splice(indexByIdentity(chunks, anchor) + 1, 0, chunk);
       } else {
         chunks.splice(indexByIdentity(chunks, this._tdb4) + 1, 0, chunk);
       }
-      this._expression_utf8 = chunk;
+      this._expressionUtf8 = chunk;
     }
     this._expression = value;
     // Assigning an expression enables it (AE semantics): clear any stale
     // disabled state so the cache recomputes True (mirrors _clear_expression).
-    this._expression_enabled = null;
+    this._expressionEnabled = null;
     if (this._tdb4 != null) {
       // AE marks an expression-bearing parameter in tdb4._pad10; the
       // inverse of _clear_expression so a created expression round-trips.
@@ -2644,7 +2644,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * value of the property is used. Read / Write.
    */
   get expressionEnabled(): boolean {
-    if (this._expression_enabled != null) return this._expression_enabled;
+    if (this._expressionEnabled != null) return this._expressionEnabled;
     const disabled = "expression_disabled" in this._tdb4 ? this._tdb4.expression_disabled : true;
     return !disabled && !!this.expression;
   }
@@ -2667,13 +2667,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // mirroring the no-op keeps the caller's mistake visible.
       throw new ValueError(`property ${repr(this.matchName)} has no expression to enable`);
     }
-    if (!value && !this.expression && this._unstored_mask_path()) {
+    if (!value && !this.expression && this._unstoredMaskPath()) {
       // Nothing to disable: AE 2026 saves a fresh mask given
       // `expressionEnabled = false` as the bare atom, with no path.
       return;
     }
-    this._ensure_materialized();
-    this._expression_enabled = value;
+    this._ensureMaterialized();
+    this._expressionEnabled = value;
     this._tdb4.expression_disabled = !value;
   }
 
@@ -2684,8 +2684,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** The control type of the property (e.g., scalar, color, boolean). Read-only. */
   get propertyControlType(): PropertyControlType {
-    if (this._property_control_type != null) return this._property_control_type;
-    const [pct] = this._determine_property_types();
+    if (this._propertyControlType != null) return this._propertyControlType;
+    const [pct] = this._determinePropertyTypes();
     return pct;
   }
 
@@ -2696,8 +2696,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * array of three floating-point values. Read-only.
    */
   get propertyValueType(): PropertyValueType {
-    if (this._property_value_type != null) return this._property_value_type;
-    const [, pvt] = this._determine_property_types();
+    if (this._propertyValueType != null) return this._propertyValueType;
+    const [, pvt] = this._determinePropertyTypes();
     return pvt;
   }
 
@@ -2709,41 +2709,41 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * materializing a synthesized property, activating a VF axis -
    * invalidates it for free, with no invalidation hook to keep in sync.
    *
-   * The `__dict__` overrides of `_no_value` / `_color` / `_vector` /
+   * The `__dict__` overrides of `_noValue` / `_color` / `_vector` /
    * `dimensions` are not in the key. They are set once at parse or
    * synthesis time before any read, and `ChunkField.__set__` pops them
    * on a real write, so they cannot change under a live memo.
    *
-   * Uncached this ran on every `property_value_type` and
+   * Uncached this ran on every `propertyValueType` and
    * `property_control_type` read - 15 times per `value_at_time` on an
-   * animated Opacity, since `_effect_scale` alone consults the control
+   * animated Opacity, since `_effectScale` alone consults the control
    * type ten times.
    */
-  _determine_property_types(): [PropertyControlType, PropertyValueType] {
+  _determinePropertyTypes(): [PropertyControlType, PropertyValueType] {
     const tdb4 = this._tdb4;
     let key: number[] | null;
     if (tdb4 != null) {
       key = [tdb4.dimensions, tdb4._type_flags, tdb4._spatial_static_flags, tdb4._no_value_flags];
-      const memo = this._types_memo;
+      const memo = this._typesMemo;
       if (memo != null && pyEq(memo[0], key)) {
         return memo[1];
       }
     } else {
       key = null;
     }
-    const result = this._compute_property_types();
+    const result = this._computePropertyTypes();
     if (key != null) {
-      this._types_memo = [key, result];
+      this._typesMemo = [key, result];
     }
     return result;
   }
 
   /** Derive the control and value types from the tdb4 flags. */
-  _compute_property_types(): [PropertyControlType, PropertyValueType] {
+  _computePropertyTypes(): [PropertyControlType, PropertyValueType] {
     let pct: PropertyControlType = PropertyControlType.UNKNOWN;
     let pvt: PropertyValueType = PropertyValueType.UNKNOWN;
 
-    if (this._no_value) pvt = PropertyValueType.NO_VALUE;
+    if (this._noValue) pvt = PropertyValueType.NO_VALUE;
     if (this._color) {
       pct = PropertyControlType.COLOR;
       pvt = PropertyValueType.COLOR;
@@ -2782,7 +2782,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           ` | integer: ${this._integer}` +
           ` | is_spatial: ${this.isSpatial}` +
           ` | vector: ${this._vector}` +
-          ` | no_value: ${this._no_value}` +
+          ` | no_value: ${this._noValue}` +
           ` | color: ${this._color}`,
       );
     }
@@ -2851,7 +2851,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     const matchName = _SEPARATION_FOLLOWERS[dim];
     // A separated leader on a 2D layer genuinely has no Z follower.
-    return parent._child_or_null(matchName);
+    return parent._childOrNull(matchName);
   }
 
   /**
@@ -2880,7 +2880,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * A property is considered modified when it has keyframes, has an
    * expression (enabled or disabled), or when its current value
-   * differs from `default_value`.
+   * differs from `defaultValue`.
    */
   get isModified(): boolean {
     if (this._animated) return true;
@@ -2896,7 +2896,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.isSeparationFollower && this.separationDimension === 2) {
       const leader = this.separationLeader;
       if (leader != null && !leader.dimensionsSeparated) {
-        const layer = this._containing_layer;
+        const layer = this._containingLayer;
         const layerType = layer._ldta.layer_type;
         if (layerType === LayerType.CAMERA || layerType === LayerType.LIGHT) return true;
       }
@@ -2906,14 +2906,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.matchName === "ADBE Text Document" && this.value != null) return true;
     // NO_VALUE (button/separator/group header) properties inside effects
     // are always reported as modified in ExtendScript.
-    if (this.propertyValueType === PropertyValueType.NO_VALUE) return this._is_in_effect();
+    if (this.propertyValueType === PropertyValueType.NO_VALUE) return this._isInEffect();
     // Mask reference properties that exist in the binary are always
     // modified - their presence indicates user interaction even when
     // the value is 0 (no mask).  Synthesized default slots (synthetic)
     // remain unmodified.
     if (
       this.propertyValueType === PropertyValueType.MASK_INDEX &&
-      this._is_in_effect() &&
+      this._isInEffect() &&
       this._tdsb != null &&
       !this._tdsb.synthetic
     ) {
@@ -2923,10 +2923,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // untouched instance's is byte-identical to it. The curves are
     // compared, not the bytes, which carry stale points and junk.
     if (this._arbs != null) {
-      const curves = this._static_curves();
-      if (this._default_arbp == null) return !curves.isIdentity;
-      const default_ = CurvesArbpChunk.from_arbp(this._default_arbp);
-      return !curves._same_curves(Curves._from_binary(default_));
+      const curves = this._staticCurves();
+      if (this._defaultArbp == null) return !curves.isIdentity;
+      const default_ = CurvesArbpChunk.from_arbp(this._defaultArbp);
+      return !curves._sameCurves(Curves._fromBinary(default_));
     }
     if (_ALWAYS_MODIFIED.has(this.matchName)) return true;
     if (this.defaultValue != null) return !_valuesEqual(this.value, this.defaultValue);
@@ -2937,7 +2937,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // layer references should report False when unset.
     if (
       this.value != null &&
-      this._is_in_effect() &&
+      this._isInEffect() &&
       this.propertyValueType !== PropertyValueType.LAYER_INDEX
     ) {
       return true;
@@ -3008,7 +3008,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       );
     }
     if (source instanceof FootageItem) {
-      this._blsi.value = this._build_replacement_wrapper(source).id;
+      this._blsi.value = this._buildReplacementWrapper(source).id;
     } else {
       this._blsi.value = source.id;
     }
@@ -3020,7 +3020,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * folder holding `footage` as its single layer, named
    * `{this property's name}_{unique footage basename}`.
    */
-  _build_replacement_wrapper(footage: FootageItem): CompItem {
+  _buildReplacementWrapper(footage: FootageItem): CompItem {
     const host = this._composition;
     pyAssert(host != null); // guarded by the caller's project check
     const project = host._project;
@@ -3040,7 +3040,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // cdta over it. idta/iide (the item ids) are separate chunks and stay
     // the wrapper's own.
     const newCdta = deepcopy(host._cdta);
-    const chunks = wrapper._item_list.chunks;
+    const chunks = wrapper._itemList.chunks;
     // Python `chunks.index(...)` compares by attrs equality (first equal chunk).
     const cdtaIndex = chunks.findIndex((c: Chunk) => pyEq(c, wrapper._cdta));
     if (cdtaIndex < 0) throw new ValueError("list.index(x): x not in list");
@@ -3071,7 +3071,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // Graphics override leaf keeps that match name). AE 2026 reports
     // false on every other popup, named pseudo effects' ones included.
     return (
-      this._property_control_type === PropertyControlType.ENUM &&
+      this._propertyControlType === PropertyControlType.ENUM &&
       this.matchName.startsWith("Pseudo/@@")
     );
   }
@@ -3124,7 +3124,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // last keyframe's value), so only NaN is rejected here.
       throw new ValueError("time must be a number, got NaN");
     }
-    return this._declared(this._mask_inert_z(this._stored_value_at(time)));
+    return this._declared(this._maskInertZ(this._storedValueAt(time)));
   }
 
   /**
@@ -3132,26 +3132,26 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * AE stores in a key added at `time` (measured on AE 2026: `addKey`
    * between keys at Z 40 and -30 stores Z 5.0005).
    */
-  _stored_value_at(time: number): PropertyValue {
+  _storedValueAt(time: number): PropertyValue {
     if (!this.keyframes?.length) {
-      const separated = this._separated_value(time);
+      const separated = this._separatedValue(time);
       if (separated != null) return separated;
-      return this._stored_static_value();
+      return this._storedStaticValue();
     }
-    if (this._arbs != null) return this._keyed_curves_at(time);
+    if (this._arbs != null) return this._keyedCurvesAt(time);
 
-    const kind = this._parallel_kind();
-    const hasMotionPath = this._has_motion_path;
+    const kind = this._parallelKind();
+    const hasMotionPath = this._hasMotionPath;
     const result = interpolateKeyframes(
-      this._evaluated_layer_time(time),
+      this._evaluatedLayerTime(time),
       this.keyframes,
       hasMotionPath,
-      this._inert_dimensions(),
+      this._inertDimensions(),
       kind,
-      hasMotionPath ? this._arc_metric : new ArcMetric(),
+      hasMotionPath ? this._arcMetric : new ArcMetric(),
       !!this._color,
     );
-    return this._clamp_to_range(result);
+    return this._clampToRange(result);
   }
 
   /**
@@ -3173,12 +3173,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * speeds (measured on AE 2026: a static [100, 120, 40] and keys at Z
    * 40 / -30 on a 2-D layer read Z = 0 and keep the 40 in the file).
    */
-  _mask_inert_z(value: PropertyValue): PropertyValue {
+  _maskInertZ(value: PropertyValue): PropertyValue {
     if (
       Array.isArray(value) &&
       value.length === 3 &&
       (this.matchName === "ADBE Position" || this.matchName === "ADBE Anchor Point") &&
-      !this._containing_layer.is3d
+      !this._containingLayer.is3d
     ) {
       return [value[0], value[1], 0.0];
     }
@@ -3194,11 +3194,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * 50, 150, 200, -100 and -150 % stretch, with and without a start
    * offset). Off the grid, the exact time is up to half a tick away.
    */
-  _evaluated_layer_time(time: number): number {
-    const base = this._layer_timebase;
-    if (base === 0 || !Number.isFinite(time)) return this._layer_time_from_comp(time);
+  _evaluatedLayerTime(time: number): number {
+    const base = this._layerTimebase;
+    if (base === 0 || !Number.isFinite(time)) return this._layerTimeFromComp(time);
     const snapped = Math.floor(time * base + 0.5) / base;
-    const layer = this._layer_time_from_comp(snapped);
+    const layer = this._layerTimeFromComp(snapped);
     return Math.floor(layer * base + 0.5) / base;
   }
 
@@ -3210,7 +3210,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Mask Expansion, Stroke Width and a Slider all read their bound,
    * never past it).
    */
-  _clamp_to_range(value: PropertyValue): PropertyValue {
+  _clampToRange(value: PropertyValue): PropertyValue {
     const lo = _getMin(this);
     const hi = _getMax(this);
     if (lo == null && hi == null) return value;
@@ -3234,14 +3234,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * is measured in its stored fractions of the layer, so its reported
    * pixels and ease speeds are divided back first.
    */
-  get _arc_metric(): ArcMetric {
+  get _arcMetric(): ArcMetric {
     const tdb4 = this._tdb4;
-    const scale = this._effect_scale;
+    const scale = this._effectScale;
     return new ArcMetric(
       tdb4._arc_accuracy,
       [tdb4.pixel_aspect, tdb4._arc_multiplier_y, tdb4._arc_multiplier_z, tdb4._arc_multiplier_w],
       scale != null ? [...scale] : null,
-      // `_effect_point_speed_factor`, from the scale already in hand.
+      // `_effectPointSpeedFactor`, from the scale already in hand.
       scale != null && scale[1] !== 0 ? scale[1] : 1.0,
     );
   }
@@ -3254,8 +3254,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * are per layer second and a negatively stretched layer's keyframes
    * only ascend here.
    */
-  _layer_time_from_comp(time: number): number {
-    return (time - this._start_time_offset) / this._time_stretch;
+  _layerTimeFromComp(time: number): number {
+    return (time - this._startTimeOffset) / this._timeStretch;
   }
 
   /**
@@ -3265,9 +3265,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * flat across a segment whose X and Y bow - it will not even store a
    * Z other than 100 there.
    */
-  _inert_dimensions(): ReadonlySet<number> {
+  _inertDimensions(): ReadonlySet<number> {
     if (this.matchName !== "ADBE Scale") return new Set<number>();
-    const layer = this._containing_layer;
+    const layer = this._containingLayer;
     if (layer == null || layer.is3d) return new Set<number>();
     return new Set<number>([2]);
   }
@@ -3303,22 +3303,22 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // checkbox/dropdown test: the tdb4 flag fallback in
     // _determine_property_types maps any 1-D integer scalar to BOOLEAN,
     // but integer sliders (e.g. Mosaic blocks) interpolate in AE.
-    const controlType = this._property_control_type;
+    const controlType = this._propertyControlType;
     return !(controlType === PropertyControlType.BOOLEAN || controlType === PropertyControlType.ENUM);
   }
 
   // -- Keyframe mutation -------------------------------------------------
 
   /** The frame rate keyframe times convert with. */
-  _keyframe_frame_rate(): number {
-    if (this.keyframes?.length > 0) return this.keyframes[0]._frame_rate;
+  _keyframeFrameRate(): number {
+    if (this.keyframes?.length > 0) return this.keyframes[0]._frameRate;
     let comp = this._composition;
-    if (comp == null) comp = this._containing_layer.containingComp;
+    if (comp == null) comp = this._containingLayer.containingComp;
     return comp.frameRate;
   }
 
   /** The `LIST:list` holding the keyframe header chunks, or None. */
-  _keyframe_inner(): ListChunk | null {
+  _keyframeInner(): ListChunk | null {
     return findByListTypeOrNull(this._tdbs.chunks, "list");
   }
 
@@ -3326,10 +3326,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * The complex-value kind storing keyframe values in a parallel
    * container, or `null` for ordinary numeric properties.
    */
-  _parallel_kind(): ParallelKind | null {
+  _parallelKind(): ParallelKind | null {
     const wrapper = this._wrapper;
     if (wrapper != null) {
-      // `_materialize_parallel_container` can adopt an arbitrary
+      // `_materializeParallelContainer` can adopt an arbitrary
       // sibling LIST as the wrapper, so an unknown type falls through
       // to the match name rather than deciding the answer is None.
       const kind = _WRAPPER_KINDS.get(wrapper.list_type) ?? null;
@@ -3339,11 +3339,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /** The `LdatItemType` for this property's keyframe header data. */
-  _keyframe_item_type(): LdatItemType {
-    const kind = this._parallel_kind();
+  _keyframeItemType(): LdatItemType {
+    const kind = this._parallelKind();
     if (kind != null) return kind.headerItemType;
     if (this._color) return LdatItemType.color;
-    if (this._no_value) return LdatItemType.no_value;
+    if (this._noValue) return LdatItemType.no_value;
     const dims = this.dimensions;
     if (dims >= 3) {
       return this.isSpatial ? LdatItemType.three_d_spatial : LdatItemType.three_d;
@@ -3365,9 +3365,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * fields (verified against AE 2026 static-vs-one-keyframe pairs for
    * text / shape / orientation / marker / gradient).
    */
-  _animate_tdb4(): void {
+  _animateTdb4(): void {
     const t = this._tdb4;
-    if (this._parallel_kind() != null) {
+    if (this._parallelKind() != null) {
       t.static = false;
       t.animated = true;
       t._spatial_marker = false;
@@ -3381,14 +3381,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // and time base unchanged across the static<->animated
     // transition (verified against the variable_font_axis_animated
     // AE 2026 fixture).
-    const preserved = this._is_vf_axis ? [t._value_hint_flag, t._cvot_flags, t._time_base] : null;
-    tdb4ApplyAnimatedTemplate(t, { color: !!this._color, spatial: this._has_motion_path });
+    const preserved = this._isVfAxis ? [t._value_hint_flag, t._cvot_flags, t._time_base] : null;
+    tdb4ApplyAnimatedTemplate(t, { color: !!this._color, spatial: this._hasMotionPath });
     // The template cannot know the comp's timebase or pixel aspect.
-    // `_ensure_materialized` stamps them, but only for a synthesized
+    // `_ensureMaterialized` stamps them, but only for a synthesized
     // property - one parsed from a real file returns early there, so
     // animating it needs the stamp applied here too.
-    this._ensure_time_base();
-    this._stamp_normalized_arc_metric();
+    this._ensureTimeBase();
+    this._stampNormalizedArcMetric();
     // After the stamp, which reads the record's 0x4F to spot a static
     // spatial point.
     tdb4ClearKeyframeRecord(t);
@@ -3404,14 +3404,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * with a `LIST:list` keyframe container and rewrites the `tdb4`
    * metadata to AE's animated state.
    */
-  _ensure_animated(): [Lhd3Chunk, LdatChunk] {
-    let inner = this._keyframe_inner();
+  _ensureAnimated(): [Lhd3Chunk, LdatChunk] {
+    let inner = this._keyframeInner();
     if (inner == null) {
-      const itemType = this._keyframe_item_type();
+      const itemType = this._keyframeItemType();
       let lhd3: Lhd3Chunk;
       let ldat: LdatChunk;
       [inner, lhd3, ldat] = buildKeyframeList(itemType, getitem(ITEM_SIZE_BY_TYPE, itemType));
-      this._animate_tdb4();
+      this._animateTdb4();
       const chunks = this._tdbs.chunks;
       if (this._cdat != null) {
         chunks[indexByIdentity(chunks, this._cdat)] = inner;
@@ -3435,7 +3435,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * point. Keyed on raw units rather than frame indices so two
    * sub-frame keyframes inside one frame stay distinct.
    */
-  _keyframe_insert_index(timeUnits: number): [number, boolean] {
+  _keyframeInsertIndex(timeUnits: number): [number, boolean] {
     for (const [i, kf] of this.keyframes.entries()) {
       const units = kf.timeUnits;
       if (units === timeUnits) return [i, true];
@@ -3448,16 +3448,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Layer-relative keyframe units for a composition `time` in seconds.
    *
    * Where AE puts a key added at `time`: the layer tick it evaluates
-   * `time` at (`_evaluated_layer_time`), not the nearest tick to the
+   * `time` at (`_evaluatedLayerTime`), not the nearest tick to the
    * exact layer time. Measured on AE 2026: 584 of 585 `setValueAtTime`
    * keys over 8 frame rates and stretches from -500 to 9900 % (the
    * one-step rounding missed 10, each by one tick).
    */
-  _keyframe_units_at(time: number): number {
-    let timebase: number = this._layer_timebase;
-    if (timebase !== 0) return round(this._evaluated_layer_time(time) * timebase);
-    timebase = _timebaseUnits(this._keyframe_frame_rate());
-    return round(((time - this._start_time_offset) / this._time_stretch) * timebase);
+  _keyframeUnitsAt(time: number): number {
+    let timebase: number = this._layerTimebase;
+    if (timebase !== 0) return round(this._evaluatedLayerTime(time) * timebase);
+    timebase = _timebaseUnits(this._keyframeFrameRate());
+    return round(((time - this._startTimeOffset) / this._timeStretch) * timebase);
   }
 
   /**
@@ -3490,7 +3490,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * comp: The composition to add the property to.
    */
   addToMotionGraphicsTemplate(comp: CompItem): boolean {
-    return comp._add_property_controller(this, null);
+    return comp._addPropertyController(this, null);
   }
 
   /**
@@ -3505,7 +3505,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   addToMotionGraphicsTemplateAs(comp: CompItem, name: string): boolean {
     validateName(name);
-    return comp._add_property_controller(this, name);
+    return comp._addPropertyController(this, name);
   }
 
   /**
@@ -3522,8 +3522,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * value to keyframe.
    */
   addKey(time: number): number {
-    this._reject_curves_write();
-    return this._add_key(time);
+    this._rejectCurvesWrite();
+    return this._addKey(time);
   }
 
   /**
@@ -3532,57 +3532,57 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * When `value` is omitted, the keyframe takes the property's value at
    * `time` (interpolated when animated, the static value otherwise).
    */
-  _add_key(time: number, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
+  _addKey(time: number, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
     validateNumber(time);
     if (!this.canVaryOverTime) {
       throw new ValueError(`property ${repr(this.matchName)} cannot vary over time`);
     }
-    const kind = this._parallel_kind();
-    if (kind != null) return this._add_parallel_key(time, kind, value);
+    const kind = this._parallelKind();
+    if (kind != null) return this._addParallelKey(time, kind, value);
     // A no-value numeric property has no value slot to keyframe; building
     // a numeric keyframe item for it produces a wrong-size ldat item.
     // (Complex kinds above store their value in a sibling container and
     // legitimately report no_value=True, so this only guards the numeric
     // path.)
-    if (this._no_value) {
+    if (this._noValue) {
       throw new ValueError(`property ${repr(this.matchName)} has no value to keyframe`);
     }
-    const frameRate = this._keyframe_frame_rate();
+    const frameRate = this._keyframeFrameRate();
 
-    const itemType = this._keyframe_item_type();
+    const itemType = this._keyframeItemType();
     const kfData = buildKfData(itemType, this.dimensions);
-    const ldatItem = buildLdatItem(kfData, { spatial: this._has_motion_path });
+    const ldatItem = buildLdatItem(kfData, { spatial: this._hasMotionPath });
 
     const kf = new Keyframe<KeyframeValue<V>>({
-      _ldat_item: ldatItem,
-      _frame_rate: frameRate,
+      _ldatItem: ldatItem,
+      _frameRate: frameRate,
     });
-    kf._bind_property(this);
+    kf._bindProperty(this);
     // Before any mutation: `time` can be far enough out that its tick
     // count overflows the 32-bit field, and animating first left the
     // property marked animated with no keyframes and its static value
-    // gone (issue #228). `_add_parallel_key` orders itself the same way.
-    kf._set_time_units(this._keyframe_units_at(time));
+    // gone (issue #228). `_addParallelKey` orders itself the same way.
+    kf._setTimeUnits(this._keyframeUnitsAt(time));
 
-    const [idx, exists] = this._keyframe_insert_index(kf.timeUnits);
+    const [idx, exists] = this._keyframeInsertIndex(kf.timeUnits);
     if (exists) return idx;
     // At the key's own time, which is `time` rounded to whole units: the
     // value has to be where the curve is when the key sits, or it kinks
     // the motion path at the split.
-    const newValue = value === _USE_VALUE ? this._stored_value_at(kf.time) : value;
+    const newValue = value === _USE_VALUE ? this._storedValueAt(kf.time) : value;
     // Written into the detached keyframe first: the setter validates the
     // value (type, length, finiteness, range), and a rejected one must
     // leave the property exactly as it was rather than holding a new key
     // at 0.
     kf.value = newValue;
-    this._ensure_materialized();
-    const [lhd3, ldat] = this._ensure_animated();
+    this._ensureMaterialized();
+    const [lhd3, ldat] = this._ensureAnimated();
     ldat.items.splice(idx, 0, ldatItem);
     this.keyframes.splice(idx, 0, kf);
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    this._link_inserted_key(idx);
-    this._preserve_curve_on_insert(idx, value !== _USE_VALUE);
-    this._redistribute_roving_keyframes();
+    this._linkInsertedKey(idx);
+    this._preserveCurveOnInsert(idx, value !== _USE_VALUE);
+    this._redistributeRovingKeyframes();
     // The static value is now dead: `value` reads the keyframes, but its
     // cache short-circuits ahead of that check, so animating a property
     // that had been read (or written) statically kept reporting the old
@@ -3624,7 +3624,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * own: AE leaves a key it adds that way into a LINEAR segment with a
    * blank (0 / 0) ease, where `addKey` writes the slope (AE 2026).
    */
-  _preserve_curve_on_insert(idx: number, setValue = false): void {
+  _preserveCurveOnInsert(idx: number, setValue = false): void {
     if (idx <= 0 || idx >= this.keyframes.length - 1) {
       // Outside the keyed range there is no segment to preserve.
       return;
@@ -3657,9 +3657,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
     // Layer time: the speeds synthesized below are stored per layer
     // second, and on a reversed layer only this axis ascends.
-    const t0 = prevKf._layer_time;
-    const t1 = nextKf._layer_time;
-    const t = kf._layer_time;
+    const t0 = prevKf._layerTime;
+    const t1 = nextKf._layerTime;
+    const t = kf._layerTime;
     if (!(t0 < t && t < t1)) return;
     if (setValue && outType === KeyframeInterpolationType.LINEAR) return;
 
@@ -3689,10 +3689,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // A spatial ease's speed is measured along the PATH, so the split
       // runs once over the segment's arc length - the chord would be
       // short wherever the tangents bow the curve.
-      pairs = [[0.0, this._segment_arc_length(prevKf, nextKf)]];
+      pairs = [[0.0, this._segmentArcLength(prevKf, nextKf)]];
       // Read before the eases below change: the new key has to sit
       // where the path was at its time.
-      splitAt = this._motion_path_parameter(idx, t);
+      splitAt = this._motionPathParameter(idx, t);
     }
 
     for (let d = 0; d < nEase; d++) {
@@ -3741,13 +3741,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       rightIn.push(new KeyframeEase(iSpeed, inflNext));
     }
 
-    kf._apply_ease(newIn, "in");
-    kf._apply_ease(newOut, "out");
-    prevKf._apply_ease(leftOut, "out");
-    nextKf._apply_ease(rightIn, "in");
+    kf._applyEase(newIn, "in");
+    kf._applyEase(newOut, "out");
+    prevKf._applyEase(leftOut, "out");
+    nextKf._applyEase(rightIn, "in");
 
     if (splitAt != null) {
-      this._split_motion_path(prevKf, kf, nextKf, splitAt);
+      this._splitMotionPath(prevKf, kf, nextKf, splitAt);
     }
   }
 
@@ -3756,19 +3756,19 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * In the units the property's ease speeds are reported in.
    */
-  _segment_arc_length(prevKf: Keyframe, nextKf: Keyframe): number {
-    const v0 = prevKf._stored_value;
-    const v1 = nextKf._stored_value;
+  _segmentArcLength(prevKf: Keyframe, nextKf: Keyframe): number {
+    const v0 = prevKf._storedValue;
+    const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
     const outTangent = pyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
     const inTangent = pyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
-    return motionPathLength(v0, v1, outTangent, inTangent, this._arc_metric);
+    return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
   /** The direction this property's motion path heads at comp `time`. */
-  _motion_direction_at(time: number): number[] | null {
-    return motionPathDirection(this._layer_time_from_comp(time), this.keyframes, this._arc_metric);
+  _motionDirectionAt(time: number): number[] | null {
+    return motionPathDirection(this._layerTimeFromComp(time), this.keyframes, this._arcMetric);
   }
 
   /**
@@ -3778,10 +3778,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * inserted, which is what the inserted key's value was read from.
    * `null` when the time falls on another segment of a roving run.
    */
-  _motion_path_parameter(idx: number, time: number): number | null {
+  _motionPathParameter(idx: number, time: number): number | null {
     const before = [...this.keyframes.slice(0, idx), ...this.keyframes.slice(idx + 1)];
     if (!before.every((kf) => Array.isArray(kf.value))) return null;
-    const [segment, u] = spatialLocation(time, before, idx - 1, this._arc_metric);
+    const [segment, u] = spatialLocation(time, before, idx - 1, this._arcMetric);
     return segment === idx - 1 ? u : null;
   }
 
@@ -3792,9 +3792,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Without this the new keyframe carries no spatial tangents and the
    * single curve becomes two straight-ish halves.
    */
-  _split_motion_path(prevKf: Keyframe, kf: Keyframe, nextKf: Keyframe, u: number): void {
-    const v0 = prevKf._stored_value;
-    const v1 = nextKf._stored_value;
+  _splitMotionPath(prevKf: Keyframe, kf: Keyframe, nextKf: Keyframe, u: number): void {
+    const v0 = prevKf._storedValue;
+    const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
     const outTangent = pyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
@@ -3821,33 +3821,33 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * ValueError: If `key_index` is out of range.
    */
   removeKey(keyIndex: number): void {
-    this._reject_curves_write();
+    this._rejectCurvesWrite();
     if (!this.keyframes?.length) throw new IndexError("property has no keyframes");
     _validateNumber({ integer: true, min: 0, max: this.keyframes.length - 1 })(keyIndex);
-    const kind = this._parallel_kind();
+    const kind = this._parallelKind();
     if (kind != null) {
       if (this.keyframes.length === 1) {
-        this._deanimate_parallel(kind);
+        this._deanimateParallel(kind);
         return;
       }
-      this._remove_parallel_key(keyIndex, kind);
+      this._removeParallelKey(keyIndex, kind);
       return;
     }
-    this._ensure_materialized();
-    const [lhd3, ldat] = this._ensure_animated();
+    this._ensureMaterialized();
+    const [lhd3, ldat] = this._ensureAnimated();
     const removed = this.keyframes[keyIndex];
-    const removedValue = removed._stored_value;
+    const removedValue = removed._storedValue;
     ldat.items.splice(keyIndex, 1);
     this.keyframes.splice(keyIndex, 1);
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    this._link_keyframes();
+    this._linkKeyframes();
     if (!this.keyframes?.length) {
-      this._deanimate(removedValue, removed._ldat_item);
+      this._deanimate(removedValue, removed._ldatItem);
       return;
     }
     // The run a removed anchor bounded now spans to the next anchor: AE
     // re-times its roving keys along it (AE 2026).
-    this._redistribute_roving_keyframes();
+    this._redistributeRovingKeyframes();
   }
 
   /**
@@ -3859,8 +3859,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * no-op when the property has no keyframes.
    */
   removeAllKeys(): void {
-    if (this.keyframes?.length > 0) this._reject_curves_write();
-    if (this._parallel_kind() != null) {
+    if (this.keyframes?.length > 0) this._rejectCurvesWrite();
+    if (this._parallelKind() != null) {
       while (this.keyframes?.length > 0) this.removeKey(this.keyframes.length - 1);
       return;
     }
@@ -3868,18 +3868,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // Bulk path: clearing key-by-key would re-link the remaining
     // keyframes after every removal (quadratic) and decode values
     // that are thrown away.
-    this._ensure_materialized();
-    const [lhd3, ldat] = this._ensure_animated();
+    this._ensureMaterialized();
+    const [lhd3, ldat] = this._ensureAnimated();
     const first = this.keyframes[0];
-    const firstValue = first._stored_value;
+    const firstValue = first._storedValue;
     ldat.items.splice(0);
     this.keyframes.splice(0);
     setLhd3Count(lhd3, 0, LHD3_BLOCK_KEYFRAMES);
-    this._deanimate(firstValue, first._ldat_item);
+    this._deanimate(firstValue, first._ldatItem);
   }
 
   /** Set the tdb4 to AE's static state after removing `last_key`. */
-  _static_tdb4(lastKey: LdatItem): void {
+  _staticTdb4(lastKey: LdatItem): void {
     const kfData = lastKey.kf_data;
     tdb4ApplyStaticTemplate(this._tdb4, {
       in_interpolation: lastKey.in_interpolation_type,
@@ -3893,11 +3893,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * removing `last_key`.
    */
   _deanimate(value: _ValueType, lastKey: LdatItem): void {
-    const inner = this._keyframe_inner();
+    const inner = this._keyframeInner();
     const chunks = this._tdbs.chunks;
-    this._static_tdb4(lastKey);
+    this._staticTdb4(lastKey);
     const raw =
-      typeof value === "number" || typeof value === "boolean" || Array.isArray(value) ? this._unresolve_value(value) : null;
+      typeof value === "number" || typeof value === "boolean" || Array.isArray(value) ? this._unresolveValue(value) : null;
     let rawVals: number[];
     if (typeof raw === "number" || typeof raw === "boolean") {
       rawVals = [float(raw)];
@@ -3928,15 +3928,15 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * tdb4 expression flag, so `expression` becomes `""` and
    * `expression_enabled` `false`. A no-op when no expression is set.
    */
-  _clear_expression(): void {
-    if (this._expression_utf8 == null && !this._expression) return;
-    if (this._expression_utf8 != null) {
-      const kept = this._tdbs.chunks.filter((c) => c !== this._expression_utf8);
+  _clearExpression(): void {
+    if (this._expressionUtf8 == null && !this._expression) return;
+    if (this._expressionUtf8 != null) {
+      const kept = this._tdbs.chunks.filter((c) => c !== this._expressionUtf8);
       this._tdbs.chunks.splice(0, this._tdbs.chunks.length, ...kept);
-      this._expression_utf8 = null;
+      this._expressionUtf8 = null;
     }
     this._expression = null;
-    this._expression_enabled = null;
+    this._expressionEnabled = null;
     if (this._tdb4 != null) {
       // `_expr_flags` (bit 0 = disabled) and the `_pad10` high-byte
       // marker (`has_expression`) are AE's expression-present flags;
@@ -3967,7 +3967,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * for every vertex of a value set on a RotoBezier mask, handles or
    * not). A mask path keeps the value's feather points.
    */
-  _build_shap_chunk(shape: Shape): Chunk {
+  _buildShapChunk(shape: Shape): Chunk {
     const points = pyOr(shape._points, []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
     const src = shape._shph;
     let bbox: number[];
@@ -3977,14 +3977,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       bbox = [0.0, 0.0, 0.0, 0.0];
     }
     const isMaskPath = this.matchName === "ADBE Mask Shape";
-    const sourceSize = shape._is_mask ? shape._comp_size : null;
+    const sourceSize = shape._isMask ? shape._compSize : null;
     const [srcW, srcH] = sourceSize ?? [1.0, 1.0];
     let dstW: number;
     let dstH: number;
     if (isMaskPath) {
-      const layer = this._containing_layer;
-      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-      [dstW, dstH] = layer._mask_scale;
+      const layer = this._containingLayer;
+      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+      [dstW, dstH] = layer._maskScale;
     } else {
       [dstW, dstH] = [1.0, 1.0];
     }
@@ -3999,10 +3999,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       ];
     }
     let tensions: number[] | null = null;
-    const mask = this._parent_property;
-    if (isMaskPath && mask != null && mask._is_mask && mask instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    const mask = this._parentProperty;
+    if (isMaskPath && mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup) {
       if (mask.rotoBezier) {
-        const own = shape._own_tensions();
+        const own = shape._ownTensions();
         const count = floordiv(points.length, 3);
         tensions = own.length === count ? own : listMul([1.0], count);
       }
@@ -4027,16 +4027,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Wrap a COS doc Map as a {@link TextDocument} sharing `template`'s
    * COS data / btdk chunk.
    */
-  _build_text_view(doc: CosNode, template: TextDocument): TextDocument {
+  _buildTextView(doc: CosNode, template: TextDocument): TextDocument {
     const char = cosGet(doc, "0", "6", "0", 0, "0", "0", "6");
     const para = cosGet(doc, "0", "5", "0", 0, "0", "0", "5");
-    const view = TextDocument._from_binary({
-      _char_style: char instanceof Map ? char : null,
-      _para_style: para instanceof Map ? para : null,
+    const view = TextDocument._fromBinary({
+      _charStyle: char instanceof Map ? char : null,
+      _paraStyle: para instanceof Map ? para : null,
       _doc: doc,
       _fonts: template._fonts,
-      _cos_data: template._cos_data,
-      _btdk_body: template._btdk_body,
+      _cosData: template._cosData,
+      _btdkBody: template._btdkBody,
     });
     if (template._siblings != null) {
       template._siblings.push(view);
@@ -4044,9 +4044,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     // The clone copies the template's text AND its (possibly stale)
     // layout cache, so it inherits the template's staleness verdict.
-    view._layout_dirty = template._layout_dirty;
-    view._composition_calibrated = template._composition_calibrated;
-    return this._wire_text_version(view);
+    view._layoutDirty = template._layoutDirty;
+    view._compositionCalibrated = template._compositionCalibrated;
+    return this._wireTextVersion(view);
   }
 
   /**
@@ -4058,18 +4058,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * the tdb4 static / animated flags (the COS blob is byte-identical
    * between the static and one-keyframe states in AE 2026 output).
    */
-  _animate_static_text(time: number, value: _ValueType | string | typeof _USE_VALUE = _USE_VALUE): number {
+  _animateStaticText(time: number, value: _ValueType | string | typeof _USE_VALUE = _USE_VALUE): number {
     const template = this._value;
     if (!(template instanceof TextDocument)) {
       throw new NotImplementedError("text property has no TextDocument value to animate");
     }
-    const frameRate = this._keyframe_frame_rate();
-    this._ensure_materialized();
-    const [lhd3, ldat] = this._ensure_animated();
-    const ldatItem = buildParallelLdatItem(this._keyframe_item_type());
-    const kf = new Keyframe<KeyframeValue<V>>({ _ldat_item: ldatItem, _frame_rate: frameRate });
-    kf._bind_property(this);
-    kf._set_time_units(this._keyframe_units_at(time));
+    const frameRate = this._keyframeFrameRate();
+    this._ensureMaterialized();
+    const [lhd3, ldat] = this._ensureAnimated();
+    const ldatItem = buildParallelLdatItem(this._keyframeItemType());
+    const kf = new Keyframe<KeyframeValue<V>>({ _ldatItem: ldatItem, _frameRate: frameRate });
+    kf._bindProperty(this);
+    kf._setTimeUnits(this._keyframeUnitsAt(time));
     ldat.items.push(ldatItem);
     this.keyframes.push(kf);
     setLhd3Count(lhd3, 1, LHD3_BLOCK_KEYFRAMES);
@@ -4080,7 +4080,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     } else if (value instanceof TextDocument) {
       template.text = value.text;
     }
-    this._link_keyframes();
+    this._linkKeyframes();
     return 0;
   }
 
@@ -4094,31 +4094,31 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * recomputes the per-keyframe box-frame / glyph caches on open, so
    * they are left untouched.
    */
-  _add_text_key(time: number, value: _ValueType | string | typeof _USE_VALUE = _USE_VALUE): number {
-    if (this._keyframe_inner() == null || !this.keyframes?.length) {
-      return this._animate_static_text(time, value);
+  _addTextKey(time: number, value: _ValueType | string | typeof _USE_VALUE = _USE_VALUE): number {
+    if (this._keyframeInner() == null || !this.keyframes?.length) {
+      return this._animateStaticText(time, value);
     }
-    const [lhd3, ldat] = this._ensure_animated();
-    const frameRate = this._keyframe_frame_rate();
+    const [lhd3, ldat] = this._ensureAnimated();
+    const frameRate = this._keyframeFrameRate();
     const nearest = this.nearestKeyIndex(time);
     const template = this.keyframes[nearest].value;
     if (!(template instanceof TextDocument)) {
       throw new NotImplementedError("text keyframe value is not a TextDocument");
     }
-    const docArray = cosGet(template._cos_data, "1", "1");
+    const docArray = cosGet(template._cosData, "1", "1");
     const newDoc = deepcopy(cosAt(docArray, nearest));
 
-    const ldatItem = buildParallelLdatItem(this._keyframe_item_type());
-    const kf = new Keyframe<KeyframeValue<V>>({ _ldat_item: ldatItem, _frame_rate: frameRate });
-    kf._bind_property(this);
-    kf._set_time_units(this._keyframe_units_at(time));
-    const [idx, exists] = this._keyframe_insert_index(kf.timeUnits);
+    const ldatItem = buildParallelLdatItem(this._keyframeItemType());
+    const kf = new Keyframe<KeyframeValue<V>>({ _ldatItem: ldatItem, _frameRate: frameRate });
+    kf._bindProperty(this);
+    kf._setTimeUnits(this._keyframeUnitsAt(time));
+    const [idx, exists] = this._keyframeInsertIndex(kf.timeUnits);
     if (exists) return idx;
-    this._ensure_materialized();
+    this._ensureMaterialized();
     ldat.items.splice(idx, 0, ldatItem);
     cosInsert(docArray, idx, newDoc);
     this.keyframes.splice(idx, 0, kf);
-    const td = this._build_text_view(newDoc, template);
+    const td = this._buildTextView(newDoc, template);
     kf._value = td;
     if (typeof value === "string") {
       td.text = value;
@@ -4127,10 +4127,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     } else {
       // The text setter above already re-serializes the COS blob; when
       // no text was supplied, propagate the structural insert ourselves.
-      td._propagate_cos();
+      td._propagateCos();
     }
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    this._link_inserted_key(idx);
+    this._linkInsertedKey(idx);
     return idx;
   }
 
@@ -4140,20 +4140,20 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * The per-keyframe box-frame / glyph caches are left untouched -
    * After Effects recomputes them on open.
    */
-  _remove_text_key(keyIndex: number): void {
-    const [lhd3, ldat] = this._ensure_animated();
+  _removeTextKey(keyIndex: number): void {
+    const [lhd3, ldat] = this._ensureAnimated();
     const removed = this.keyframes[keyIndex].value;
     if (!(removed instanceof TextDocument)) {
       throw new NotImplementedError("text keyframe value is not a TextDocument");
     }
-    const docArray = cosGet(removed._cos_data, "1", "1");
-    this._ensure_materialized();
+    const docArray = cosGet(removed._cosData, "1", "1");
+    this._ensureMaterialized();
     ldat.items.splice(keyIndex, 1);
     if (keyIndex < cosLen(docArray)) cosPopAt(docArray, keyIndex);
     this.keyframes.splice(keyIndex, 1);
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    removed._propagate_cos();
-    this._link_keyframes();
+    removed._propagateCos();
+    this._linkKeyframes();
   }
 
   /**
@@ -4167,12 +4167,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * kind's wrapper LIST holding the per-keyframe value container,
    * with kind-specific `tdb4` baselines (AE 2026 output).
    */
-  _materialize_parallel_container(kind: ParallelKind): ListChunk {
+  _materializeParallelContainer(kind: ParallelKind): ListChunk {
     if (this.matchName === "ADBE Mask Shape") {
       // A path-less mask keys the default full-frame rectangle it
-      // stands for, which materializing writes (`_ensure_materialized`).
-      this._ensure_materialized();
-      const container = this._kf_value_container;
+      // stands for, which materializing writes (`_ensureMaterialized`).
+      this._ensureMaterialized();
+      const container = this._kfValueContainer;
       pyAssert(container != null);
       return container;
     }
@@ -4181,7 +4181,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     // Materialize while the bare tdbs is still the property's body in
     // the parent tdgp, so canonical repositioning can anchor it.
-    this._ensure_materialized();
+    this._ensureMaterialized();
     const parent = this.parentProperty;
     pyAssert(parent != null && parent._tdgp != null);
     const chunks = parent._tdgp.chunks;
@@ -4201,13 +4201,13 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // AE writes the unnamed sentinel into tdsn when it wraps the
       // property (synthesis seeds the auto-name; a pristine
       // orientation stores its real name).
-      if (this._name_utf8 != null) this._name_utf8.value = TDSN_SENTINEL;
+      if (this._nameUtf8 != null) this._nameUtf8.value = TDSN_SENTINEL;
       kind.onWrap(this);
     } else {
       throw new NotImplementedError(`animating a static ${repr(this.matchName)} property is not yet supported`);
     }
     this._wrapper = wrapper;
-    this._kf_value_container = container;
+    this._kfValueContainer = container;
     return container;
   }
 
@@ -4217,18 +4217,18 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * When `value` is omitted, the value is taken from the kind's
    * `held_value` (interpolated for orientation, held otherwise).
    */
-  _add_parallel_key(time: number, kind: ParallelKind, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
-    if (kind === TEXT_KIND) return this._add_text_key(time, value);
+  _addParallelKey(time: number, kind: ParallelKind, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
+    if (kind === TEXT_KIND) return this._addTextKey(time, value);
     // Check the time and a given value before building the container:
     // that build materializes a fresh mask's default path, and a
     // rejected call must leave the file untouched.
     validateF8(time);
-    const units = this._keyframe_units_at(time);
+    const units = this._keyframeUnitsAt(time);
     _checkTimeUnits(units);
     if (value !== _USE_VALUE) kind.buildValueChunk(this, kind.coerce(value));
-    let container = this._kf_value_container;
-    if (container == null) container = this._materialize_parallel_container(kind);
-    const frameRate = this._keyframe_frame_rate();
+    let container = this._kfValueContainer;
+    if (container == null) container = this._materializeParallelContainer(kind);
+    const frameRate = this._keyframeFrameRate();
     // Resolve the held value before _ensure_animated: for a static
     // orientation it reads the cdat that the swap removes.
     let newValue = value === _USE_VALUE ? kind.heldValue(this, time) : value;
@@ -4236,14 +4236,14 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const ldatItem = kind.buildHeaderItem(newValue);
     const valueChunk = kind.buildValueChunk(this, newValue);
 
-    const kf = new Keyframe<KeyframeValue<V>>({ _ldat_item: ldatItem, _frame_rate: frameRate });
-    kf._bind_property(this);
-    kf._set_time_units(units);
-    const [idx, exists] = this._keyframe_insert_index(kf.timeUnits);
+    const kf = new Keyframe<KeyframeValue<V>>({ _ldatItem: ldatItem, _frameRate: frameRate });
+    kf._bindProperty(this);
+    kf._setTimeUnits(units);
+    const [idx, exists] = this._keyframeInsertIndex(kf.timeUnits);
     if (exists) return idx;
     const wasStatic = !this.keyframes?.length;
-    this._ensure_materialized();
-    const [lhd3, ldat] = this._ensure_animated();
+    this._ensureMaterialized();
+    const [lhd3, ldat] = this._ensureAnimated();
     ldat.items.splice(idx, 0, ldatItem);
     this.keyframes.splice(idx, 0, kf);
     if (wasStatic && container.chunks?.length > 0) {
@@ -4271,9 +4271,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // the first keyframe's Shape; other kinds read through keyframes.
       this._value = kind.aliasesStaticValue ? kf._value : null;
     }
-    this._link_inserted_key(idx);
+    this._linkInsertedKey(idx);
     if (!wasStatic && this.isInterpolationTypeValid(KeyframeInterpolationType.BEZIER)) {
-      this._type_new_parallel_key(kf);
+      this._typeNewParallelKey(kf);
     }
     return idx;
   }
@@ -4290,7 +4290,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * first and after the last key, on mask and shape paths and
    * Orientation.
    */
-  _type_new_parallel_key(kf: Keyframe): void {
+  _typeNewParallelKey(kf: Keyframe): void {
     const bezier = KeyframeInterpolationType.BEZIER;
     const hold = KeyframeInterpolationType.HOLD;
     const sides = [
@@ -4300,8 +4300,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (sides.includes(bezier)) {
       kf.inInterpolationType = bezier;
       kf.outInterpolationType = bezier;
-      kf._ldat_item.temporal_continuous = true;
-      const data = kf._ldat_item.kf_data as KfPosition;
+      kf._ldatItem.temporal_continuous = true;
+      const data = kf._ldatItem.kf_data as KfPosition;
       const speed = sides.length === 2 ? 1.0 : 0.0;
       data.in_speed = speed;
       data.out_speed = speed;
@@ -4314,21 +4314,21 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   }
 
   /** Remove a keyframe from a complex (parallel-container) property. */
-  _remove_parallel_key(keyIndex: number, kind: ParallelKind): void {
+  _removeParallelKey(keyIndex: number, kind: ParallelKind): void {
     if (kind === TEXT_KIND) {
-      this._remove_text_key(keyIndex);
+      this._removeTextKey(keyIndex);
       return;
     }
-    const [lhd3, ldat] = this._ensure_animated();
-    const container = this._kf_value_container;
-    this._ensure_materialized();
+    const [lhd3, ldat] = this._ensureAnimated();
+    const container = this._kfValueContainer;
+    this._ensureMaterialized();
     ldat.items.splice(keyIndex, 1);
     this.keyframes.splice(keyIndex, 1);
     if (container != null && keyIndex < container.chunks.length) {
       container.chunks.splice(keyIndex, 1);
     }
     setLhd3Count(lhd3, this.keyframes.length, LHD3_BLOCK_KEYFRAMES);
-    this._link_keyframes();
+    this._linkKeyframes();
   }
 
   /**
@@ -4344,20 +4344,20 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * value (reverting it to the default gradient); keeping it matches
    * the persisted static-gradient form and `removeKey` semantics.
    */
-  _deanimate_parallel(kind: ParallelKind): void {
+  _deanimateParallel(kind: ParallelKind): void {
     const removed = this.keyframes[0];
-    const removedValue = removed._stored_value;
-    this._ensure_materialized();
-    const inner = this._keyframe_inner();
+    const removedValue = removed._storedValue;
+    this._ensureMaterialized();
+    const inner = this._keyframeInner();
     this.keyframes.splice(0, 1);
-    this._link_keyframes();
-    const container = this._kf_value_container;
+    this._linkKeyframes();
+    const container = this._kfValueContainer;
     if (!kind.keepsValueOnRevert && container != null && container.chunks?.length > 0) {
       container.chunks.splice(0, 1);
     }
     const cdat = kind.staticCdat(removedValue);
     this._value = kind.keepsValueOnRevert ? removedValue : null;
-    this._static_tdb4(removed._ldat_item);
+    this._staticTdb4(removed._ldatItem);
     const chunks = this._tdbs.chunks;
     if (inner != null) {
       chunks[indexByIdentity(chunks, inner)] = cdat;
@@ -4379,9 +4379,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   setValueAtTime(time: number, newValue: PropertyValue | string): void;
   setValueAtTime(time: number, newValue: _ValueType): void {
-    this._reject_curves_write();
+    this._rejectCurvesWrite();
     validateNumber(time);
-    if (this._separation_followers() != null) {
+    if (this._separationFollowers() != null) {
       // AE 2026 rejects this on a separated leader for the same reason
       // `setValue` is rejected: the followers hold the animation.
       throw new ValueError(
@@ -4390,17 +4390,17 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           "instead (getSeparationFollower)",
       );
     }
-    const kind = this._parallel_kind();
+    const kind = this._parallelKind();
     if (kind != null) {
-      this._set_parallel_value_at(time, newValue, kind);
+      this._setParallelValueAt(time, newValue, kind);
       return;
     }
-    const [idx, exists] = this._keyframe_insert_index(this._keyframe_units_at(time));
+    const [idx, exists] = this._keyframeInsertIndex(this._keyframeUnitsAt(time));
     if (exists) {
       this.keyframes[idx].value = newValue;
       return;
     }
-    this._add_key(time, newValue);
+    this._addKey(time, newValue);
   }
 
   /**
@@ -4410,8 +4410,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * container, so an existing key's value chunk is rebuilt rather than
    * written through a descriptor.
    */
-  _set_parallel_value_at(time: number, value: _ValueType, kind: ParallelKind): void {
-    const targetUnits = this._keyframe_units_at(time);
+  _setParallelValueAt(time: number, value: _ValueType, kind: ParallelKind): void {
+    const targetUnits = this._keyframeUnitsAt(time);
     if (kind === TEXT_KIND) {
       const newText = value instanceof TextDocument ? value.text : value;
       for (const kf of this.keyframes) {
@@ -4420,22 +4420,22 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
           if (td instanceof TextDocument && typeof newText === "string") {
             // The text setter already re-serializes the COS blob.
             td.text = newText;
-            this._ensure_materialized();
+            this._ensureMaterialized();
           }
           return;
         }
       }
-      this._add_text_key(time, value);
+      this._addTextKey(time, value);
       return;
     }
     value = kind.coerce(value);
     for (const kf of this.keyframes) {
       if (kf.timeUnits === targetUnits) {
-        this._write_parallel_kf_value(kf, value, kind);
+        this._writeParallelKfValue(kf, value, kind);
         return;
       }
     }
-    this._add_parallel_key(time, kind, value);
+    this._addParallelKey(time, kind, value);
   }
 
   /**
@@ -4447,9 +4447,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * lives in the parallel container, so writing through `kf_data`
    * alone never reaches the serialized form.
    */
-  _write_parallel_kf_value(kf: Keyframe, value: _ValueType, kind: ParallelKind): void {
-    kind.updateHeaderItem(kf._ldat_item, value);
-    const container = this._kf_value_container;
+  _writeParallelKfValue(kf: Keyframe, value: _ValueType, kind: ParallelKind): void {
+    kind.updateHeaderItem(kf._ldatItem, value);
+    const container = this._kfValueContainer;
     if (container != null) {
       let i: number;
       try {
@@ -4462,7 +4462,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
         const valueChunk = kind.buildValueChunk(this, value);
         container.chunks[i] = valueChunk;
         // Re-bind the keyframe's model to the chunk actually
-        // inserted (mirrors `_add_parallel_key`); `value` is backed
+        // inserted (mirrors `_addParallelKey`); `value` is backed
         // by a different chunk, so editing the keyframe's value
         // afterwards would otherwise reach the caller's chunk -
         // corrupting any other keyframe that shares it.
@@ -4475,7 +4475,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       kf._value = _ownList(value);
     }
     kind.bindKeyframe(kf._value, kf);
-    this._ensure_materialized();
+    this._ensureMaterialized();
   }
 
   /**
@@ -4512,8 +4512,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * frame-rate change, which a rounded offset would then quantize. A
    * reversed layer starts a hair early (`Layer._time_origin`).
    */
-  get _start_time_offset(): number {
-    return this._containing_layer._time_origin;
+  get _startTimeOffset(): number {
+    return this._containingLayer._timeOrigin;
   }
 
   /**
@@ -4522,10 +4522,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * `layer.stretch / 100`, signed: a negative stretch plays the layer
    * backwards, so its keyframes run down the composition timeline.
    */
-  get _time_stretch(): number {
+  get _timeStretch(): number {
     let stretch: number;
     try {
-      stretch = this._containing_layer.stretch;
+      stretch = this._containingLayer.stretch;
     } catch (e) {
       if (!(e instanceof ValueError || e instanceof AttributeError)) throw e;
       return 1.0;
@@ -4545,12 +4545,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * 36864 ticks, which AE reports at composition second 1.5). Derived
    * rather than read back so the read and write paths cannot disagree.
    */
-  get _layer_timebase(): number {
-    const comp = this._owning_comp();
+  get _layerTimebase(): number {
+    const comp = this._owningComp();
     if (comp == null) return 0.0;
     const base = comp._cdta.internal_timebase;
     if (base === 0) return 0.0;
-    return layerTimebase(base, this._time_stretch);
+    return layerTimebase(base, this._timeStretch);
   }
 
   /**
@@ -4559,12 +4559,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * `_composition` is unset on a freshly synthesized property, whose
    * comp is only reachable by walking up to the layer.
    */
-  _owning_comp(): CompItem | null {
+  _owningComp(): CompItem | null {
     const comp = this._composition;
     if (comp != null) return comp;
     let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
-      const found = getattr(node, "_containing_comp", null);
+      const found = getattr(node, "_containingComp", null);
       if (found != null) return found;
       node = node.parentProperty;
     }
@@ -4582,9 +4582,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * A component with no matching scale factor passes through, so the
    * vector keeps its length rather than being truncated to the scale's.
    */
-  _apply_effect_scale(values: number[], kw: { invert?: boolean } = {}): number[] {
+  _applyEffectScale(values: number[], kw: { invert?: boolean } = {}): number[] {
     const { invert = false } = kw;
-    const scale = this._effect_scale;
+    const scale = this._effectScale;
     if (scale == null) return [...values];
     const result: number[] = [];
     for (const [index, component] of values.entries()) {
@@ -4613,10 +4613,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * scale (which would fall back to comp size) corrupts the value.
    * - All others: `null`.
    */
-  get _effect_scale(): number[] | null {
+  get _effectScale(): number[] | null {
     // Allow explicit override via __dict__ (e.g. from tests).
-    if (this._effect_scale_dict != null) {
-      const result: number[] | null = this._effect_scale_dict.value;
+    if (this._effectScaleDict != null) {
+      const result: number[] | null = this._effectScaleDict.value;
       return result;
     }
 
@@ -4625,9 +4625,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (this.matchName === "ADBE Anchor Point") {
       // Only footage/comp layers normalize the anchor to source size;
       // source-less layers (shape, text, null) store it in raw pixels.
-      const layer = this._containing_layer;
-      if (layer._source_item != null) {
-        const size = layer._pixel_size;
+      const layer = this._containingLayer;
+      if (layer._sourceItem != null) {
+        const size = layer._pixelSize;
         if (size != null) {
           // Z shares the height divisor, as on a 3-D effect point
           // (AE 2026: an anchor at Z 80 on a 400x300 solid stores
@@ -4644,7 +4644,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // [0.25, 0.25], exactly like a declared effect point.
       (this.propertyControlType === PropertyControlType.TWO_D ||
         this.propertyControlType === PropertyControlType.THREE_D) &&
-      this._is_in_effect()
+      this._isInEffect()
     ) {
       // An effect point is stored normalized against the LAYER, not
       // the composition. Measured on AE 2026: a Ramp start point set to
@@ -4660,7 +4660,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // its composition (`Layer._effect_point_size`).
       let size: [number, number] | null;
       try {
-        size = this._containing_layer._effect_point_size;
+        size = this._containingLayer._effectPointSize;
       } catch (e) {
         // an EfdG definition: no layer yet
         if (!(e instanceof ValueError)) throw e;
@@ -4675,11 +4675,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     return scale;
   }
 
-  set _effect_scale(value: number[] | null) {
+  set _effectScale(value: number[] | null) {
     if (value != null && (!Array.isArray(value) || value.length < 2)) {
       throw new ValueError("_effect_scale must be a list of at least 2 floats");
     }
-    this._effect_scale_dict = { value };
+    this._effectScaleDict = { value };
   }
 
   /**
@@ -4689,9 +4689,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * definition parsed out of `LIST:EfdG` is a free-standing template,
    * so there is nothing to normalize against yet.
    */
-  _layer_pixel_size(): [number, number] | null {
+  _layerPixelSize(): [number, number] | null {
     try {
-      return this._containing_layer._pixel_size;
+      return this._containingLayer._pixelSize;
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
       return null;
@@ -4707,14 +4707,14 @@ export function _deactivateFollower(follower: Property): void {
   // the value reset the model keeps reporting the separated numbers while the
   // file - and any re-parse of it - reads 0.
   follower.removeAllKeys();
-  follower._revert_to_synthetic();
+  follower._revertToSynthetic();
   follower._value = 0.0;
 }
 
 /** Per-dimension `(v0, v1)` pairs for the segment, or `null` if not numeric. */
 export function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[][], number] | null {
-  const v0 = prevKf._stored_value;
-  const v1 = nextKf._stored_value;
+  const v0 = prevKf._storedValue;
+  const v1 = nextKf._storedValue;
   if ((typeof v0 === "number" || typeof v0 === "boolean") && (typeof v1 === "number" || typeof v1 === "boolean")) {
     return [[[v0, v1]], 1];
   }
@@ -4729,8 +4729,8 @@ export function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[
  * An Essential Properties override leaf (a child of `ADBE Layer Overrides`).
  *
  * Its `value` is its own override (the leaf `cdat`), but its derived metadata
- * - `enabled`, `min_value`/`max_value` (hence `has_min`/`has_max`),
- * `is_modified`, `is_spatial`, `units_text`, `can_vary_over_time` and
+ * - `enabled`, `minValue`/`maxValue` (hence `has_min`/`has_max`),
+ * `is_modified`, `is_spatial`, `unitsText`, `can_vary_over_time` and
  * `can_set_expression` - reflects the Essential Graphics *source* property
  * the override points at, matching After Effects: the override leaf's own
  * `tdsb` enable bit, `tdum`/`tduM` bounds and `tdb4` flags are the EGP
@@ -4742,19 +4742,19 @@ export function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[
  * accessors - and round-trip serialization - untouched.
  */
 export class _EssentialOverrideProperty extends Property {
-  declare _ov_src: Property | null;
-  declare _ov_ctrl_name: string | null;
+  declare _ovSrc: Property | null;
+  declare _ovCtrlName: string | null;
 
   /**
    * The resolved source `Property`, or `null` when it does not resolve
    * (e.g. a Media Replacement leaf whose source is an `AVLayer`). Cached.
    */
-  _override_source(): Property | null {
-    const cached = this._ov_src !== undefined ? this._ov_src : _UNSET;
+  _overrideSource(): Property | null {
+    const cached = this._ovSrc !== undefined ? this._ovSrc : _UNSET;
     if (cached !== _UNSET) return cached;
     const src = this.essentialPropertySource;
     const resolved = src instanceof Property ? src : null;
-    this._ov_src = resolved;
+    this._ovSrc = resolved;
     return resolved;
   }
 
@@ -4763,17 +4763,17 @@ export class _EssentialOverrideProperty extends Property {
    * `null` when it does not resolve. Cached. This is the display name AE
    * shows for the override - the leaf's own `tdsn` may be empty.
    */
-  _override_controller_name(): string | null {
-    const cached = this._ov_ctrl_name !== undefined ? this._ov_ctrl_name : _UNSET;
+  _overrideControllerName(): string | null {
+    const cached = this._ovCtrlName !== undefined ? this._ovCtrlName : _UNSET;
     if (cached !== _UNSET) return cached;
     const controller = resolveEssentialPropertyController(this);
     const name = controller != null ? controller.name : null;
-    this._ov_ctrl_name = name;
+    this._ovCtrlName = name;
     return name;
   }
 
   get name(): string {
-    const ctrlName = this._override_controller_name();
+    const ctrlName = this._overrideControllerName();
     return ctrlName != null ? ctrlName : super.name;
   }
 
@@ -4783,38 +4783,38 @@ export class _EssentialOverrideProperty extends Property {
 
 
   get minValue(): number | number[] | null {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.minValue : super.minValue;
   }
 
   get maxValue(): number | number[] | null {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.maxValue : super.maxValue;
   }
 
   get isModified(): boolean {
-    const src = this._override_source();
+    const src = this._overrideSource();
     if (src != null) return !_valuesEqual(this.value, src.value);
     return super.isModified;
   }
 
   get isSpatial(): boolean {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.isSpatial : super.isSpatial;
   }
 
   get unitsText(): string {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.unitsText : super.unitsText;
   }
 
   get canVaryOverTime(): boolean {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.canVaryOverTime : super.canVaryOverTime;
   }
 
   get canSetExpression(): boolean {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.canSetExpression : super.canSetExpression;
   }
 
@@ -4822,7 +4822,7 @@ export class _EssentialOverrideProperty extends Property {
    * Inherit the source parameter's denormalization scale.
    *
    * An override leaf stores its value in the raw 0-1 form AE keeps, but
-   * the leaf is not inside an effect, so its own `_effect_scale` is `null`
+   * the leaf is not inside an effect, so its own `_effectScale` is `null`
    * and the value would stay normalized. Borrowing the source's scale puts
    * `value` in the same units the source reports (e.g. source-comp pixels
    * for a point control), matching ExtendScript and making `is_modified`
@@ -4830,21 +4830,21 @@ export class _EssentialOverrideProperty extends Property {
    * media-replacement overrides (whose source is an `AVLayer`, not a
    * `Property`), which fall back to the base (also `null`).
    */
-  get _effect_scale(): number[] | null {
-    if (this._effect_scale_dict != null) {
-      const result: number[] | null = this._effect_scale_dict.value;
+  get _effectScale(): number[] | null {
+    if (this._effectScaleDict != null) {
+      const result: number[] | null = this._effectScaleDict.value;
       return result;
     }
-    const src = this._override_source();
-    if (src != null) return src._effect_scale;
-    return super._effect_scale;
+    const src = this._overrideSource();
+    if (src != null) return src._effectScale;
+    return super._effectScale;
   }
 
-  set _effect_scale(value: number[] | null) {
+  set _effectScale(value: number[] | null) {
     if (value != null && (!Array.isArray(value) || value.length < 2)) {
       throw new ValueError("_effect_scale must be a list of at least 2 floats");
     }
-    this._effect_scale_dict = { value };
+    this._effectScaleDict = { value };
   }
 }
 
@@ -4854,7 +4854,7 @@ Object.defineProperty(_EssentialOverrideProperty.prototype, "enabled", {
   configurable: true,
   enumerable: false,
   get(this: _EssentialOverrideProperty): boolean {
-    const src = this._override_source();
+    const src = this._overrideSource();
     return src != null ? src.enabled : Reflect.get(PropertyBase.prototype, "enabled", this);
   },
   set(this: _EssentialOverrideProperty, value: boolean) {
@@ -4900,7 +4900,7 @@ export function _stripSequenceBasename(name: string): string {
 
 // ---- Chunk-backed field descriptors (ChunkField class attributes) ----
 
-descriptor(Property, "dimensions", new ChunkField("_tdb4", "dimensions", { default: 1, read_only: true }));
+descriptor(Property, "dimensions", new ChunkField("_tdb4", "dimensions", { default: 1, readOnly: true }));
 
 descriptor(Property, "_animated", new ChunkField("_tdb4", "animated"));
 
@@ -4908,7 +4908,7 @@ descriptor(Property, "_color", new ChunkField("_tdb4", "color"));
 
 descriptor(Property, "_integer", new ChunkField("_tdb4", "integer"));
 
-descriptor(Property, "_no_value", new ChunkField("_tdb4", "no_value"));
+descriptor(Property, "_noValue", new ChunkField("_tdb4", "no_value"));
 
 descriptor(Property, "_vector", new ChunkField("_tdb4", "vector"));
 
@@ -4918,7 +4918,7 @@ descriptor(Property, "_vector", new ChunkField("_tdb4", "vector"));
 descriptor(
   Property,
   "lockedRatio",
-  new ChunkField("_tdsb", "ratio_unlinked", { transform: (v) => !v, read_only: true }),
+  new ChunkField("_tdsb", "ratio_unlinked", { transform: (v) => !v, readOnly: true }),
 );
 
-descriptor(Property, "_is_spatial_raw", new ChunkField("_tdb4", "is_spatial"));
+descriptor(Property, "_isSpatialRaw", new ChunkField("_tdb4", "is_spatial"));

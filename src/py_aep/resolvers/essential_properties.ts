@@ -72,12 +72,12 @@ export function _resolveControllerSourceLayer(project: Project, controller: Esse
 export function _resolveIndexedChild(group: PropertyGroup, ref: SourcePropertyRef, project: Project): Property | PropertyGroup | null {
   if (ref.propIndex == null) return null;
   if (group.isEffect) {
-    const defs = project._effect_param_defs.get(group.matchName);
+    const defs = project._effectParamDefs.get(group.matchName);
     if (defs != null && defs.size > 0) {
       const keys = [...defs.keys()];
       const pos = ref.propIndex - 1;
       if (0 <= pos && pos < keys.length && keys[pos] === ref.matchName) {
-        return group._child_or_null(ref.matchName);
+        return group._childOrNull(ref.matchName);
       }
     }
     return null;
@@ -112,7 +112,7 @@ export function _walkSourceProperty(sourceLayer: AVLayer, path: SourcePropertyRe
     let child: Property | PropertyGroup | null = null;
     if (ref.propIndex != null) child = _resolveIndexedChild(cur, ref, project);
     if (child == null) {
-      child = cur._child_or_null(ref.matchName);
+      child = cur._childOrNull(ref.matchName);
       if (child === null) return null;
     }
     cur = child;
@@ -154,12 +154,12 @@ export function _preorderIndex(root: PropertyGroup, target: Property): number | 
  * override leaf or the controller cannot be resolved (e.g. it was removed).
  */
 export function resolveEssentialPropertyController(prop: Property): EssentialGraphicsController | null {
-  let root: PropertyGroup | Property | null = prop._parent_property;
+  let root: PropertyGroup | Property | null = prop._parentProperty;
   while (root != null && root.matchName !== "ADBE Layer Overrides") {
-    root = root._parent_property;
+    root = root._parentProperty;
   }
   if (root == null) return null;
-  const layer = root._parent_property;
+  const layer = root._parentProperty;
   if (!(layer instanceof _avLayer().AVLayer)) return null;
   const idx = _preorderIndex(root, prop);
   if (idx == null) return null;
@@ -175,8 +175,8 @@ export function resolveEssentialPropertyController(prop: Property): EssentialGra
  *
  * For a media-replacement override (`ADBE Layer Source Alternate`, controller
  * type 14) this returns the source-composition `AVLayer` the slot points at -
- * matched via the override's controller `source_comp_id` (`CCId`) and
- * `source_layer_id` (`CLId`). For a Property-source controller (created from a
+ * matched via the override's controller `sourceCompId` (`CCId`) and
+ * `sourceLayerId` (`CLId`). For a Property-source controller (created from a
  * Property rather than Media Replacement Footage) it walks the controller's
  * source-property path by match name and returns the source `Property` (or
  * `PropertyGroup` for a grouped controller).

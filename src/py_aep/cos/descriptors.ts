@@ -51,10 +51,10 @@ export function _extract<T, D>(d: CosDict, key: string, transform: (x: CosNode) 
   }
 }
 
-/** An IntEnum with COS conversions (`from_binary` / `to_binary`). */
+/** An IntEnum with COS conversions (`fromBinary` / `toBinary`). */
 export type CosEnum<V> = EnumHelpers<V> & {
-  from_binary(value: number): number;
-  to_binary(self: number): number;
+  fromBinary(value: number): number;
+  toBinary(self: number): number;
 };
 
 /**
@@ -62,11 +62,11 @@ export type CosEnum<V> = EnumHelpers<V> & {
  * (`TypeError` when `raw` is not a number) and the enum lookup.
  */
 export function enumFromCos<V>(E: CosEnum<V>, raw: CosNode): V {
-  return E.of(E.from_binary(cosNum(raw)));
+  return E.of(E.fromBinary(cosNum(raw)));
 }
 
 /** A model whose `A` attribute holds the COS sub-dict a field reads (`null` without COS backing). */
-export type CosBacked<A extends string> = { readonly [P in A]: CosDict | null } & { _propagate_cos?(): void };
+export type CosBacked<A extends string> = { readonly [P in A]: CosDict | null } & { _propagateCos?(): void };
 
 /**
  * Options of {@link CosField}: `transform` reads the COS value as the
@@ -78,10 +78,10 @@ export interface CosFieldOptions<T extends InstanceValue, O> {
   /** Whether an instance override (Python `obj.__dict__[name]`) holds a `T`. */
   accepts: (v: InstanceValue) => v is T;
   reverse?: ((x: NonNullable<T>) => CosNode) | null;
-  read_only?: boolean;
+  readOnly?: boolean;
   validate?: InstanceValidator<O> | null;
   default: T;
-  min_version?: number | null;
+  minVersion?: number | null;
 }
 
 /** A value stored in a model's instance dict (`obj.__dict__`). */
@@ -96,7 +96,7 @@ export type InstanceValue = string | number | boolean | object | null;
  * Unlike `ChunkField`, this descriptor is scalar-only: `reverse`
  * always returns a single value written to one dict key.
  *
- * @param dict_attr - Name of the model attribute holding the COS sub-dict (e.g. `"_char_style"`).
+ * @param dict_attr - Name of the model attribute holding the COS sub-dict (e.g. `"_charStyle"`).
  * @param key - String key into that dict (e.g. `"1"` for font_size).
  * @param transform - Callable applied when *getting* (COS value -\> user-facing value).
  * @param reverse - 1-arg callable applied when *setting* (user-facing -\> COS value). Always returns
@@ -121,7 +121,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   declare publicName: string;
 
   constructor(dictAttr: A, key: string, kw: CosFieldOptions<T, O>) {
-    const { transform, accepts, reverse = null, read_only = false, validate = null, default: default_, min_version = null } = kw;
+    const { transform, accepts, reverse = null, readOnly: read_only = false, validate = null, default: default_, minVersion: min_version = null } = kw;
     this.dictAttr = dictAttr;
     this.key = key;
     this.transform = transform;
@@ -161,9 +161,9 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
 
   /**
    * Raise if this field cannot be written to `obj` - read-only, or
-   * the file predates the field's `min_version`.
+   * the file predates the field's `minVersion`.
    */
-  _check_writable(obj: O): void {
+  _checkWritable(obj: O): void {
     if (this.readOnly) {
       throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     }
@@ -186,7 +186,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   }
 
   __set__(obj: O, value: T | null): void {
-    this._check_writable(obj);
+    this._checkWritable(obj);
     // Clear any instance-dict override
     instanceDict(obj).delete(this.publicName);
     const d = obj[this.dictAttr];
@@ -202,7 +202,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     } else {
       d.set(this.key, this._coerce(obj, value));
     }
-    obj._propagate_cos?.();
+    obj._propagateCos?.();
   }
 }
 
@@ -211,7 +211,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
  * required: it decides whether the field can read `null` (an instance
  * override of `null` is only accepted back when the default is `null`).
  */
-export type CosFieldExtras<D extends InstanceValue, O> = Partial<Pick<CosFieldOptions<D, O>, "read_only" | "validate" | "min_version">> & {
+export type CosFieldExtras<D extends InstanceValue, O> = Partial<Pick<CosFieldOptions<D, O>, "readOnly" | "validate" | "minVersion">> & {
   default: D;
 };
 
@@ -254,14 +254,14 @@ export function intField<D extends number | null, O>(kw: CosFieldExtras<D, O>): 
 }
 
 /**
- * Options of an IntEnum-backed field: `from_binary` on read (Python's
- * `raw + offset`, so a non-number raises `TypeError`), `to_binary` on
+ * Options of an IntEnum-backed field: `fromBinary` on read (Python's
+ * `raw + offset`, so a non-number raises `TypeError`), `toBinary` on
  * write.
  */
 export function enumField<V extends number, D extends V | null, O>(E: CosEnum<V>, kw: CosFieldExtras<D, O>): CosFieldOptions<V | D, O> {
   return {
     transform: (x: CosNode) => enumFromCos(E, x),
-    reverse: (v: V) => E.to_binary(v),
+    reverse: (v: V) => E.toBinary(v),
     accepts: (v): v is V | D => (v === null ? kw.default === null : E.has(v)),
     ...kw,
   };

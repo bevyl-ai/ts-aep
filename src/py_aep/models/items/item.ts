@@ -70,13 +70,13 @@ export class Item {
    */
 
   declare _idta: IdtaChunk | null;
-  declare _name_utf8: Utf8Chunk | null;
+  declare _nameUtf8: Utf8Chunk | null;
   declare _cmta: CmtaChunk | null;
-  declare _item_list: ListChunk;
+  declare _itemList: ListChunk;
   declare _gide: ListChunk | null;
   declare _project: Project;
-  declare _parent_folder: FolderItem | null;
-  declare _type_name: string;
+  declare _parentFolder: FolderItem | null;
+  declare _typeName: string;
   declare _guides: Guide[];
   declare _inner: ListChunk | null;
   declare _lhd3: Lhd3Chunk | null;
@@ -84,23 +84,23 @@ export class Item {
 
   constructor(kw: {
     _idta: IdtaChunk | null;
-    _name_utf8: Utf8Chunk | null;
+    _nameUtf8: Utf8Chunk | null;
     _cmta: CmtaChunk | null;
-    _item_list: ListChunk;
+    _itemList: ListChunk;
     _gide?: ListChunk | null;
     project: Project;
-    parent_folder: FolderItem | null;
-    type_name: string;
+    parentFolder: FolderItem | null;
+    typeName: string;
   }) {
-    const { _idta, _name_utf8, _cmta, _item_list, _gide = null, project, parent_folder, type_name } = kw;
+    const { _idta, _nameUtf8: _name_utf8, _cmta, _itemList: _item_list, _gide = null, project, parentFolder: parent_folder, typeName: type_name } = kw;
     this._idta = _idta;
-    this._name_utf8 = _name_utf8;
+    this._nameUtf8 = _name_utf8;
     this._cmta = _cmta;
-    this._item_list = _item_list;
+    this._itemList = _item_list;
     this._gide = _gide;
     this._project = project;
-    this._parent_folder = parent_folder;
-    this._type_name = type_name;
+    this._parentFolder = parent_folder;
+    this._typeName = type_name;
     this._guides = [];
 
     if (this._gide == null) {
@@ -136,7 +136,7 @@ export class Item {
     } else if (value) {
       const chunk = new CmtaChunk({});
       chunk.value = value;
-      this._item_list.chunks.push(chunk);
+      this._itemList.chunks.push(chunk);
       this._cmta = chunk;
     }
   }
@@ -165,22 +165,22 @@ export class Item {
    * @throws {@link TypeError} If the value is not a {@link FolderItem}.
    */
   get parentFolder(): FolderItem | null {
-    return this._parent_folder;
+    return this._parentFolder;
   }
 
   set parentFolder(value: FolderItem | null) {
-    const oldParent = this._parent_folder;
+    const oldParent = this._parentFolder;
     if (oldParent == null) throw new ValueError("Cannot move the root folder");
     if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parentFolder must be a FolderItem");
     if (value === oldParent) return;
     // A folder cannot become its own descendant. Walking up from the
     // target also covers value is self and value under the root.
-    for (let ancestor: Item | null = value; ancestor != null; ancestor = ancestor._parent_folder) {
+    for (let ancestor: Item | null = value; ancestor != null; ancestor = ancestor._parentFolder) {
       if (ancestor === this) throw new ValueError("a folder cannot be moved inside itself");
     }
 
-    const block = this._remove_from_parent_chunks();
-    value._children_container.push(...block);
+    const block = this._removeFromParentChunks();
+    value._childrenContainer.push(...block);
 
     listRemove(oldParent.items, this);
     value.items.push(this);
@@ -192,7 +192,7 @@ export class Item {
       value._viewers.push(viewer);
     }
 
-    this._parent_folder = value;
+    this._parentFolder = value;
   }
 
   /**
@@ -212,7 +212,7 @@ export class Item {
    * Read-only.
    */
   get typeName(): string {
-    return this._type_name;
+    return this._typeName;
   }
 
   /**
@@ -235,12 +235,12 @@ export class Item {
    * @returns The index of the new guide.
    */
   addGuide(orientationType: number, position: number): number {
-    this._ensure_guides_container();
+    this._ensureGuidesContainer();
     pyAssert(this._lhd3 != null);
     pyAssert(this._ldat != null);
     const guide = Guide._new(orientationType, position);
     this._guides.push(guide);
-    this._ldat.items.push(guide._guide_item);
+    this._ldat.items.push(guide._guideItem);
     setLhd3Count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
     return this._lhd3.count - 1;
   }
@@ -263,7 +263,7 @@ export class Item {
     this._ldat.items.splice(guideIndex, 1);
     this._guides.splice(guideIndex, 1);
     setLhd3Count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
-    if (this._lhd3.count === 0) this._empty_guides_container();
+    if (this._lhd3.count === 0) this._emptyGuidesContainer();
   }
 
   /**
@@ -279,7 +279,7 @@ export class Item {
   }
 
   /** Create the guides container if needed. */
-  _ensure_guides_container(): void {
+  _ensureGuidesContainer(): void {
     if (this._ldat != null) return;
     this._ldat = new LdatChunk({
       items: [],
@@ -289,7 +289,7 @@ export class Item {
     if (this._lhd3 == null) {
       [this._gide, this._lhd3, this._inner] = buildGideList();
       this._inner.chunks.push(this._ldat);
-      this._item_list.chunks.push(this._gide);
+      this._itemList.chunks.push(this._gide);
     } else {
       pyAssert(this._inner != null);
       this._inner.chunks.push(this._ldat);
@@ -304,7 +304,7 @@ export class Item {
    * container entirely leaves the project in a state AE opens but cannot
    * re-save. So we drop only the `ldat` and keep `gide`/`lhd3`/`inner`.
    */
-  _empty_guides_container(): void {
+  _emptyGuidesContainer(): void {
     if (this._gide == null) return;
     if (this._ldat != null && this._inner != null) {
       this._inner.chunks.splice(indexByIdentity(this._inner.chunks, this._ldat), 1);
@@ -326,14 +326,14 @@ export class Item {
    */
   remove(): void {
     // Remove from parent folder's binary chunks
-    const removed = this._remove_from_parent_chunks();
+    const removed = this._removeFromParentChunks();
     _effect().rehomeEffectDefinitions(this._project, _effect()._effectInstances(removed));
 
     // Remove from model collections
-    pyAssert(this._parent_folder != null);
-    listRemove(this._parent_folder.items, this);
+    pyAssert(this._parentFolder != null);
+    listRemove(this._parentFolder.items, this);
     dictPop(this._project.items, this.id);
-    this._project._clear_active_item(this);
+    this._project._clearActiveItem(this);
   }
 
   /** list_types that mark the start of the next item block. */
@@ -343,15 +343,15 @@ export class Item {
    * Detach this item's LIST:Item and trailing view-data chunks.
    *
    * Returns the removed block so callers can relocate it (e.g. the
-   * `parent_folder` setter); `remove()` discards it.
+   * `parentFolder` setter); `remove()` discards it.
    */
-  _remove_from_parent_chunks(): Chunk[] {
-    const parent = this._parent_folder;
+  _removeFromParentChunks(): Chunk[] {
+    const parent = this._parentFolder;
     pyAssert(parent != null);
-    const container = parent._children_container;
+    const container = parent._childrenContainer;
     const [start, end] = blockSlice(
       container,
-      this._item_list,
+      this._itemList,
       this.constructor._ITEM_BOUNDARY_LIST_TYPES,
     );
     const block = container.slice(start, end);
@@ -367,8 +367,8 @@ descriptor(
   "label",
   ChunkField.enum(Label, "_idta", "label", { default: Label.NONE }),
 );
-descriptor(Item, "id", new ChunkField("_idta", "item_id", { read_only: true, default: 0 }));
-descriptor(Item, "name", new ChunkField("_name_utf8", "value", { validate: validateName }));
+descriptor(Item, "id", new ChunkField("_idta", "item_id", { readOnly: true, default: 0 }));
+descriptor(Item, "name", new ChunkField("_nameUtf8", "value", { validate: validateName }));
 
 // `@requires_version(16)` on add_guide, remove_guide and remove_all_guides:
 // Python applies these decorators while the class body runs; here they wrap

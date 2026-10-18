@@ -53,9 +53,9 @@ export function parseGradientXml(utf8: Utf8Chunk): Gradient | null {
   const colorStops = _parseColorStops(dataPairs.get("Color Stops") ?? null);
   const alphaStops = _parseAlphaStops(dataPairs.get("Alpha Stops") ?? null);
 
-  return Gradient._from_binary({
-    color_stops: colorStops,
-    alpha_stops: alphaStops,
+  return Gradient._fromBinary({
+    colorStops: colorStops,
+    alphaStops: alphaStops,
     version: versionStr || "1.0",
     _utf8: utf8,
   });

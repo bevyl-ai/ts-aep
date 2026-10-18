@@ -74,23 +74,23 @@ export function _owningLayer(prop: Property): Layer | null {
 /**
  * One CPrp path node: a match name plus AE's child index.
  *
- * `prop_index` is `null` for by-name resolution (serialized as
+ * `propIndex` is `null` for by-name resolution (serialized as
  * `0xFFFFFFFF`); a number is AE's hidden-param-aware child index (see the
- * module docstring). Named `prop_index`, not `index`, to avoid shadowing
+ * module docstring). Named `propIndex`, not `index`, to avoid shadowing
  * `Array.prototype.indexOf` - mirroring `SourcePropertyRef`.
  */
 export class PathNode {
-  readonly match_name: string;
-  readonly prop_index: number | null;
+  readonly matchName: string;
+  readonly propIndex: number | null;
 
   constructor(matchName: string, propIndex: number | null) {
-    this.match_name = matchName;
-    this.prop_index = propIndex;
+    this.matchName = matchName;
+    this.propIndex = propIndex;
   }
 
   *[Symbol.iterator](): Generator<string | number | null> {
-    yield this.match_name;
-    yield this.prop_index;
+    yield this.matchName;
+    yield this.propIndex;
   }
 }
 
@@ -103,7 +103,7 @@ export class PathNode {
  * every `* Control-0001` -\> 1).
  */
 export function _effectParamIndex(layer: Layer, effectMn: string, paramMn: string): number | null {
-  const defs = layer.containingComp._project._effect_param_defs.get(effectMn) ?? null;
+  const defs = layer.containingComp._project._effectParamDefs.get(effectMn) ?? null;
   if (defs == null || defs.size === 0) return null;
   const keys = [...defs.keys()];
   if (!keys.includes(paramMn)) return null;
@@ -200,8 +200,8 @@ export function _pathJson(nodes: PathNode[]): string {
     nodes.map((node, i): [string, { index: number; matchName: string }] => [
       String(i),
       {
-        index: node.prop_index != null ? node.prop_index : _BY_NAME_INDEX,
-        matchName: node.match_name,
+        index: node.propIndex != null ? node.propIndex : _BY_NAME_INDEX,
+        matchName: node.matchName,
       },
     ]),
   );
@@ -212,7 +212,7 @@ export function _pathJson(nodes: PathNode[]): string {
  * Return the Essential Graphics controller type for `prop`, or `null`.
  *
  * Supported (per the AE Scripting Guide): Checkbox, Color, single-value
- * numeric Slider, and Source Text. Classified on `property_value_type`
+ * numeric Slider, and Source Text. Classified on `propertyValueType`
  * (the control type is `UNKNOWN` for many transform properties, e.g.
  * Opacity), with the Checkbox control type distinguishing a boolean from a
  * plain numeric slider (both are 1-D value types).
@@ -245,7 +245,7 @@ export function classifyProperty(prop: Property): number | null {
  * addable.
  */
 export function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]): boolean {
-  const wanted = nodes.map((node) => [node.match_name, node.prop_index]);
+  const wanted = nodes.map((node) => [node.matchName, node.propIndex]);
   for (const ctrl of comp.motionGraphicsControllers) {
     if (ctrl.sourceLayerId !== layerId) continue;
     const stored = ctrl.sourcePropertyPath.map((ref) => [ref.matchName, ref.propIndex]);
@@ -256,22 +256,22 @@ export function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]
 
 /** Everything `CompItem` needs to add a property controller. */
 export class PropertyControllerPlan {
-  readonly controller_type: number;
+  readonly controllerType: number;
   readonly nodes: PathNode[];
-  readonly path_json: string;
+  readonly pathJson: string;
   readonly layer: Layer;
 
   constructor(controllerType: number, nodes: PathNode[], pathJson: string, layer: Layer) {
-    this.controller_type = controllerType;
+    this.controllerType = controllerType;
     this.nodes = nodes;
-    this.path_json = pathJson;
+    this.pathJson = pathJson;
     this.layer = layer;
   }
 
   *[Symbol.iterator](): Generator<number | PathNode[] | string | Layer> {
-    yield this.controller_type;
+    yield this.controllerType;
     yield this.nodes;
-    yield this.path_json;
+    yield this.pathJson;
     yield this.layer;
   }
 }

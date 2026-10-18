@@ -273,8 +273,8 @@ describe("TestRoundtripBitsPerChannel", () => {
     const project2 = parseAep(out).project;
 
     expect(project2.bitsPerChannel).toBe(BitsPerChannel.THIRTY_TWO);
-    expect(project2._nhed.bits_per_channel).toBe(BitsPerChannel.to_binary(BitsPerChannel.THIRTY_TWO));
-    expect(project2._nnhd.bits_per_channel).toBe(BitsPerChannel.to_binary(BitsPerChannel.THIRTY_TWO));
+    expect(project2._nhed.bits_per_channel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
+    expect(project2._nnhd.bits_per_channel).toBe(BitsPerChannel.toBinary(BitsPerChannel.THIRTY_TWO));
   });
 
   test("test_set_eight", () => {
@@ -708,12 +708,12 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     // The ACEScct ICC exactly as AE embedded it, next to the cpid AE
     // wrote for it.
     const donor = parseAep(TestRoundtripWorkingSpaceProfileId.ACESCCT_DONOR).project;
-    pyAssert(donor._ws_utf8 != null);
-    const icc = parseEnvelope(donor._ws_utf8.value).data;
+    pyAssert(donor._wsUtf8 != null);
+    const icc = parseEnvelope(donor._wsUtf8.value).data;
     expect(bytes_.hex(TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe("ae27d1e66d65c5a0a50fe0ec149a24fa");
     const iccDir = tmpPath.div("icc");
     iccDir.mkdir();
-    iccDir.div("ACEScct.icc").write_bytes(icc);
+    iccDir.div("ACEScct.icc").writeBytes(icc);
 
     const project = parseAep(SAMPLES_DIR.div("workingSpace_sRGB.aep")).project;
     project.iccProfileDirs = [iccDir];
@@ -761,7 +761,7 @@ class TestRoundtripPre22WorkingSpace {
     const iccDir = tmpPath.div("icc");
     iccDir.mkdir();
     for (const [i, pprf] of _profilePool(parseAep(this.DONOR).project).entries()) {
-      iccDir.div(`${i}.icc`).write_bytes(pprf.data);
+      iccDir.div(`${i}.icc`).writeBytes(pprf.data);
     }
     return iccDir;
   }
@@ -919,12 +919,12 @@ describe("TestIdempotency", () => {
   test("test_roundtrip_complete", () => {
     const tmpPath = makeTmpPath();
     const aepPath = VERSIONS_DIR.div("ae2025", "complete.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    const roundtripBytes = out.read_bytes();
+    const roundtripBytes = out.readBytes();
 
     expect(pyEq(originalBytes, roundtripBytes)).toBe(true);
   });

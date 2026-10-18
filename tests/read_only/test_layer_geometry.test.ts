@@ -110,7 +110,7 @@ type AutoOrientProbeJson = Record<string, Record<string, Record<string, number[]
 type TextInkProbeJson = Record<string, { ext: Rect; noext: Rect }>;
 
 function _fixture<T>(name: string): T {
-  return JSON.parse(SAMPLES_DIR.div(name).read_text("utf-8"));
+  return JSON.parse(SAMPLES_DIR.div(name).readText("utf-8"));
 }
 
 // NOTE(port): local stand-in for Python `next(genexpr)`; first match or StopIteration, as in CPython.

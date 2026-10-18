@@ -50,7 +50,7 @@ export function _compact(obj: object): string {
    * raw UTF-8 (matching AE's `Utf8` chunk) rather than `\uXXXX` escapes, which
    * would break the byte-identical round-trip.
    */
-  return jsonDumps(obj, { separators: [",", ":"], ensure_ascii: false });
+  return jsonDumps(obj, { separators: [",", ":"], ensureAscii: false });
 }
 
 export function _b64(text: string): string {
@@ -145,36 +145,36 @@ export class ColorProfile {
   readonly name: string;
 
   /** `baseProfileType`: one of `PROFILE_TYPE_TAG/ICC/OCIO`. */
-  readonly profile_type: number;
+  readonly profileType: number;
 
   /** Decoded `colorProfileData`: raw ICC bytes, OCIO JSON bytes, or tag blob. */
   readonly data: Uint8Array;
 
   constructor(name: string, profileType: number, data: Uint8Array) {
     this.name = name;
-    this.profile_type = profileType;
+    this.profileType = profileType;
     this.data = data;
   }
 
   *[Symbol.iterator](): Generator<string | number | Uint8Array> {
     yield this.name;
-    yield this.profile_type;
+    yield this.profileType;
     yield this.data;
   }
 
   /** Whether this is an OCIO profile (`baseProfileType == 3`). */
-  get is_ocio(): boolean {
-    return this.profile_type === PROFILE_TYPE_OCIO;
+  get isOcio(): boolean {
+    return this.profileType === PROFILE_TYPE_OCIO;
   }
 
   /** Whether this is an Adobe ICC profile (`baseProfileType == 2`). */
-  get is_icc(): boolean {
-    return this.profile_type === PROFILE_TYPE_ICC;
+  get isIcc(): boolean {
+    return this.profileType === PROFILE_TYPE_ICC;
   }
 
   /** The OCIO `(colorSpace1[, colorSpace2])` names, or an empty array if not OCIO. */
-  get ocio_color_spaces(): readonly string[] {
-    if (!this.is_ocio) return [];
+  get ocioColorSpaces(): readonly string[] {
+    if (!this.isOcio) return [];
     const inner = jsonLoads(this.data);
     const names = [jsonGetitem(inner, "colorSpace1")];
     if (inner instanceof Map && inner.has("colorSpace2")) names.push(jsonGetitem(inner, "colorSpace2"));

@@ -54,8 +54,8 @@ export class FontObject {
    */
   declare designVector: number[] | null;
 
-  declare _font_data: CosDict;
-  declare _font_entry: CosDict | null;
+  declare _fontData: CosDict;
+  declare _fontEntry: CosDict | null;
 
   /** Returns `true` if the font is a variable font. Read-only. */
   get hasDesignAxes(): boolean {
@@ -73,14 +73,14 @@ export class FontObject {
   }
 
   constructor(kw: {
-    _font_data: CosDict;
-    _font_entry?: CosDict | null;
-    post_script_name?: string | null;
+    _fontData: CosDict;
+    _fontEntry?: CosDict | null;
+    postScriptName?: string | null;
     version?: string | null;
   }) {
-    const { _font_data, _font_entry = null, post_script_name = null, version = null } = kw;
-    this._font_data = _font_data;
-    this._font_entry = _font_entry;
+    const { _fontData: _font_data, _fontEntry: _font_entry = null, postScriptName: post_script_name = null, version = null } = kw;
+    this._fontData = _font_data;
+    this._fontEntry = _font_entry;
     if (post_script_name != null) {
       instanceDict(this).set("postScriptName", post_script_name);
     }
@@ -93,7 +93,7 @@ export class FontObject {
 descriptor(
   FontObject,
   "postScriptName",
-  new CosField<string, "_font_data", FontObject>("_font_data", "0", {
+  new CosField<string, "_fontData", FontObject>("_fontData", "0", {
     transform: str,
     accepts: isString,
     reverse: (x: string) => x,
@@ -103,7 +103,7 @@ descriptor(
 descriptor(
   FontObject,
   "version",
-  new CosField<string | null, "_font_data", FontObject>("_font_data", "5", {
+  new CosField<string | null, "_fontData", FontObject>("_fontData", "5", {
     transform: str,
     accepts: isStringOrNull,
     reverse: (x: string) => x,
@@ -113,10 +113,10 @@ descriptor(
 descriptor(
   FontObject,
   "designVector",
-  new CosField<number[] | null, "_font_data", FontObject>("_font_data", "4", {
+  new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
     transform: _designVectorFromCos,
     accepts: isNumberList,
-    read_only: true,
+    readOnly: true,
     default: null,
   }),
 );

@@ -92,7 +92,7 @@ let _testFontCache: Path | null = null;
 function fixtureTestFont(): Path {
   if (_testFontCache == null) {
     const fontsDir = makeTmpPath().div("fonts");
-    fontsDir.mkdir({ parents: true, exist_ok: true });
+    fontsDir.mkdir({ parents: true, existOk: true });
     const path = fontsDir.div("pyaeptest.ttf");
     _buildTestFont(path);
     _testFontCache = path;

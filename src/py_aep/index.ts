@@ -27,7 +27,7 @@ export const __version__ = "0.0.0";
  *
  * @param aepFilePath - Path to the `.aep` file.
  * @param kw - Options:
- * - `ae_preferences_dir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/25.6`). When provided, render settings and output module templates are parsed lazily when needed.
+ * - `aePreferencesDir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/25.6`). When provided, render settings and output module templates are parsed lazily when needed.
  * - `platform`: The After Effects platform the project is for: `"windows"` or `"macos"`. Footage and render output paths py_aep writes are stored in that platform's style (`C:\\x` \<-\> `/x`, see {@link py_aep.resolvers.platform_paths.platform_path | platform_path}), and imported footage is recorded the way After Effects on that platform records it: BMP and GIF files take the platform's importer code (After Effects on the other platform refuses an image sequence tagged for it), and on Windows a HEIC file has no alpha channel. Defaults to the running operating system.
  *
  * @example
@@ -41,9 +41,9 @@ export const __version__ = "0.0.0";
  */
 export function parse(
   aepFilePath: string | PathLike,
-  kw: { ae_preferences_dir?: string | PathLike | null; platform?: string | null } = {},
+  kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
-  const { ae_preferences_dir = null, platform = null } = kw;
+  const { aePreferencesDir: ae_preferences_dir = null, platform = null } = kw;
   // NOTE(port): py-aep defers only Layr. tdgp also covers the property trees
   // of the comp-level SLay/CLay/SecL/DLay lists and effect definitions, which
   // parsing never reads.
@@ -55,7 +55,7 @@ export function parse(
   const filePath = fspath(aepFilePath);
   const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
   // `with open(file_path, "rb") as f:`
-  const f = new BytesIO(new Path(filePath).read_bytes());
+  const f = new BytesIO(new Path(filePath).readBytes());
   const [rifx, xmp] = readAep(f, { defer_list_types: _DEFERRED_LIST_TYPES });
   const project = parseProject(rifx, xmp, filePath, prefsPath);
   if (platform != null) {
@@ -83,7 +83,7 @@ export const _DEFAULT_NEW_VERSION = "26.0x67";
  *   2026 project and file-format stamp, so the file also opens in
  *   After Effects 2026.
  * @param kw - Options:
- * - `ae_preferences_dir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/26.0`), required only for adding items to the render queue.
+ * - `aePreferencesDir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/26.0`), required only for adding items to the render queue.
  * - `platform`: The After Effects platform the project is for, as in {@link py_aep.parse | parse}. It also selects the header stamps and the GPU renderer (Metal on macOS, CUDA on Windows) a project created on that platform carries. Defaults to the running operating system.
  *
  * @throws ValueError If `version` is malformed, names a major before 26 that
@@ -102,9 +102,9 @@ export const _DEFAULT_NEW_VERSION = "26.0x67";
  */
 export function new_(
   version: string = _DEFAULT_NEW_VERSION,
-  kw: { ae_preferences_dir?: string | PathLike | null; platform?: string | null } = {},
+  kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
-  const { ae_preferences_dir = null, platform = null } = kw;
+  const { aePreferencesDir: ae_preferences_dir = null, platform = null } = kw;
   validateAeRelease(version);
   if (platform != null) {
     validatePlatform(platform);

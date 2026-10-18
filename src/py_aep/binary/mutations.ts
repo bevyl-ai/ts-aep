@@ -379,7 +379,7 @@ export function buildParallelLdatItem(
   } else {
     // CPython 3.12 repr of an IntEnum member: <LdatItemType.name: value>
     throw new ValueError(
-      `unsupported parallel item type <LdatItemType.${LdatItemType.name_of(itemType)}: ${itemType}>`,
+      `unsupported parallel item type <LdatItemType.${LdatItemType.nameOf(itemType)}: ${itemType}>`,
     );
   }
   const bodyLen = 8 + (kfData instanceof Uint8Array ? kfData.length : len(kfData.tobytes()));

@@ -226,14 +226,14 @@ export const CPY = {
   [
    "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
    {
-    "sort_keys": true
+    "sortKeys": true
    },
    "{\"10\": {\"1\": true, \"2\": null}, \"a\": [1.0, 2, 0, Infinity, NaN, -Infinity], \"b\": 1}"
   ],
   [
    "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
    {
-    "ensure_ascii": false
+    "ensureAscii": false
    },
    "{\"b\": 1, \"a\": [1.0, 2, 0, Infinity, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}"
   ],
@@ -262,14 +262,14 @@ export const CPY = {
   [
    "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
    {
-    "sort_keys": true
+    "sortKeys": true
    },
    "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]"
   ],
   [
    "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
    {
-    "ensure_ascii": false
+    "ensureAscii": false
    },
    "[12345678901234567890, 0.1, \"\ud83d\ude00\u00e9\\n\"]"
   ],
@@ -298,14 +298,14 @@ export const CPY = {
   [
    "\"x\"",
    {
-    "sort_keys": true
+    "sortKeys": true
    },
    "\"x\""
   ],
   [
    "\"x\"",
    {
-    "ensure_ascii": false
+    "ensureAscii": false
    },
    "\"x\""
   ],
@@ -334,14 +334,14 @@ export const CPY = {
   [
    " {\"a\" : {} , \"b\":[ ]} ",
    {
-    "sort_keys": true
+    "sortKeys": true
    },
    "{\"a\": {}, \"b\": []}"
   ],
   [
    " {\"a\" : {} , \"b\":[ ]} ",
    {
-    "ensure_ascii": false
+    "ensureAscii": false
    },
    "{\"a\": {}, \"b\": []}"
   ],
@@ -370,14 +370,14 @@ export const CPY = {
   [
    "{\"a\": 1, \"a\": 2, \"b\": 3}",
    {
-    "sort_keys": true
+    "sortKeys": true
    },
    "{\"a\": 2, \"b\": 3}"
   ],
   [
    "{\"a\": 1, \"a\": 2, \"b\": 3}",
    {
-    "ensure_ascii": false
+    "ensureAscii": false
    },
    "{\"a\": 2, \"b\": 3}"
   ],

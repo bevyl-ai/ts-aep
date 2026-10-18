@@ -422,7 +422,7 @@ describe("TestRoundtripComment", () => {
     const items = renderQueueOf(project).items;
     expect(len(items)).toBe(2);
     for (const rqi of items) {
-      expect(rqi._rcom_utf8 == null).toBe(true);
+      expect(rqi._rcomUtf8 == null).toBe(true);
       expect(rqi.comment).toBe("");
     }
 
@@ -683,7 +683,7 @@ describe("TestRoundtripPreserveRgb", () => {
     const got = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
     const want = renderQueueOf(parseAep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0]
       .outputModules[0];
-    expect(pyEq(got._om_ldat.tobytes(), want._om_ldat.tobytes())).toBe(true);
+    expect(pyEq(got._omLdat.tobytes(), want._omLdat.tobytes())).toBe(true);
     expect(got.settings.get("Preserve RGB")).toBe(true);
   });
 });
@@ -1135,8 +1135,8 @@ describe("TestRoutChunkIntegrity", () => {
     const app = parseAep(SAMPLES_DIR.div("2_rqitems.aep"));
     const rq = renderQueueOf(app.project);
     _assertRoutConsistent(app);
-    const block0 = rq.items[0]._rout_items;
-    const block1 = rq.items[1]._rout_items;
+    const block0 = rq.items[0]._routItems;
+    const block1 = rq.items[1]._routItems;
     expect(len(block0)).toBe(ROUT_ITEMS_PER_RQ_ITEM);
     expect(len(block1)).toBe(ROUT_ITEMS_PER_RQ_ITEM);
     expect(block0.some((a) => block1.some((b) => a === b))).toBe(false);
@@ -1350,7 +1350,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRQAdd", () => {
   test("test_add_to_existing", () => {
     const tmpPath = makeTmpPath();
     /** Adding a comp to RQ with existing items increases count. */
-    const app = parseAep(SAMPLES_DIR.div("base.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("base.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = rq.items[0].comp;
     const origCount = len(rq.items);
@@ -1368,7 +1368,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRQAdd", () => {
 
   /** add() returns a RenderQueueItem. */
   test("test_add_returns_rqitem", () => {
-    const app = parseAep(SAMPLES_DIR.div("base.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("base.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = rq.items[0].comp;
     const newItem = rq.add(comp);
@@ -1378,7 +1378,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRQAdd", () => {
   /** Adding to an emptied queue works and roundtrips. */
   test("test_add_after_remove_all", () => {
     const tmpPath = makeTmpPath();
-    const app = parseAep(SAMPLES_DIR.div("base.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("base.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = rq.items[0].comp;
 
@@ -1484,7 +1484,7 @@ describe("TestRQAddWithoutPreferences", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), src.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), src.readBytes())).toBe(true);
   });
 
   test("test_add_to_empty_queue_reparse_links_comp", () => {
@@ -1617,7 +1617,7 @@ describe("TestOMRemove", () => {
 describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
   test("test_add_returns_rq_item", () => {
     // RenderQueue.add() returns a RenderQueueItem.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
@@ -1626,7 +1626,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_increments_num_items", () => {
     // Adding a comp increases num_items by 1.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const n = rq.numItems;
@@ -1636,7 +1636,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_sets_comp_reference", () => {
     // The new RQ item references the correct comp.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
@@ -1645,7 +1645,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_default_status_needs_output", () => {
     // New item has NEEDS_OUTPUT status (no output file path set yet).
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
@@ -1654,7 +1654,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_default_time_span", () => {
     // New item has WORK_AREA_ONLY time span source (matches AE add()).
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
@@ -1663,7 +1663,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_has_one_output_module", () => {
     // New item has exactly 1 output module.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
@@ -1672,7 +1672,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_to_empty_queue", () => {
     // Adding to an empty render queue works.
-    const app = parseAep(SAMPLES_DIR.div("empty.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("empty.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     expect(rq.numItems).toBe(0);
     const comp = app.project.compositions[0];
@@ -1683,7 +1683,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_to_existing_queue", () => {
     // Adding to a queue that already has items works.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const n = rq.numItems;
     const comp = app.project.compositions[0];
@@ -1695,7 +1695,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
   test("test_add_roundtrip", () => {
     // Save + reparse preserves the new RQ item.
     const tmpPath = makeTmpPath();
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     rq.add(comp);
@@ -1709,7 +1709,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
 
   test("test_add_then_remove", () => {
     // Add then remove leaves RQ in original state.
-    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rq = renderQueueOf(app.project);
     const originalCount = rq.numItems;
     const comp = app.project.compositions[0];
@@ -1752,7 +1752,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
   test("test_apply_template_leaves_sibling_untouched", () => {
     // Applying a template to module 1 must not rewrite module 0's Ropt
     // (the shared LOm list holds both modules' chunks back to back).
-    const app = parseAep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rqi = renderQueueOf(app.project).items[0];
     const [om0, om1] = rqi.outputModules;
     const om0FoBefore = om0.formatOptions;
@@ -1774,7 +1774,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     const tmpPath = makeTmpPath();
     // After apply_template the format_options must wrap the NEW Ropt, so
     // an edit through it serializes (the old chunk was detached/unwritten).
-    const app = parseAep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { ae_preferences_dir: AE_PREFS_DIR });
+    const app = parseAep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { aePreferencesDir: AE_PREFS_DIR });
     const rqi = renderQueueOf(app.project).items[0];
     const om1 = rqi.outputModules[1];
     om1.applyTemplate("TIFF Sequence with Alpha");
@@ -1786,7 +1786,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
-    const rqi2 = renderQueueOf(parseAep(out, { ae_preferences_dir: AE_PREFS_DIR }).project).items[0];
+    const rqi2 = renderQueueOf(parseAep(out, { aePreferencesDir: AE_PREFS_DIR }).project).items[0];
     expect(asInstance(rqi2.outputModules[1].formatOptions, TiffFormatOptions).lzwCompression).toBe(newValue);
   });
 });
@@ -1799,11 +1799,11 @@ describe("TestRQItemDuplicateStatus", () => {
       const app = parseAep(SAMPLES_DIR.div("base.aep"));
       const rqi = renderQueueOf(app.project).items[0];
       // status stores the raw binary value, so set it via to_binary().
-      rqi._ldat.status = RQItemStatus.to_binary(doneStatus);
+      rqi._ldat.status = RQItemStatus.toBinary(doneStatus);
 
       const dup = rqi.duplicate();
 
-      expect(RQItemStatus.from_binary(dup._ldat.status)).toBe(RQItemStatus.QUEUED);
+      expect(RQItemStatus.fromBinary(dup._ldat.status)).toBe(RQItemStatus.QUEUED);
     },
   );
 });
@@ -1826,14 +1826,14 @@ describe("TestCompRemoveWithRenderQueue", () => {
     expect(len(rq.items)).toBe(1);
     expect(rq.items[0].comp).toBe(comp1);
     // Chunk-level bookkeeping stays in sync (no orphaned settings entry).
-    expect(rq._rs_lhd3.count).toBe(1);
+    expect(rq._rsLhd3.count).toBe(1);
     expect(rq._rout.count).toBe(ROUT_ITEMS_PER_RQ_ITEM);
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const rq2 = renderQueueOf(parseAep(out).project);
     expect(len(rq2.items)).toBe(1);
-    expect(rq2._rs_lhd3.count).toBe(1);
+    expect(rq2._rsLhd3.count).toBe(1);
   });
 
   test("test_remove_comp_keeps_remaining_item_removable", () => {
@@ -1851,7 +1851,7 @@ describe("TestCompRemoveWithRenderQueue", () => {
 
     rq2.items[0].remove();
     expect(len(rq2.items)).toBe(0);
-    expect(rq2._rs_lhd3.count).toBe(0);
+    expect(rq2._rsLhd3.count).toBe(0);
     expect(rq2._rout.count).toBe(0);
   });
 });
@@ -1866,7 +1866,7 @@ describe("TestCompRemoveWithRenderQueue", () => {
 describe("TestRenderQueueMissingScaffolding", () => {
   function _stripScaffolding(tmpPath: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
-    const [rifx, xmp] = readAep(new BytesIO(src.read_bytes()));
+    const [rifx, xmp] = readAep(new BytesIO(src.readBytes()));
     const lrdr = findByListType(rifx.chunks, "LRdr");
     lrdr.chunks = lrdr.chunks.filter(
       (c) =>
@@ -1876,7 +1876,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const out = tmpPath.div("stripped.aep");
     const f = new BytesIO();
     writeAep(f, rifx, xmp);
-    out.write_bytes(f.getvalue());
+    out.writeBytes(f.getvalue());
     return out;
   }
 
@@ -1896,7 +1896,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const app = parseAep(stripped);
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), stripped.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), stripped.readBytes())).toBe(true);
   });
 });
 
@@ -1911,12 +1911,12 @@ describe("TestRenderQueueMissingScaffolding", () => {
 describe("TestRenderQueueNoLRdr", () => {
   function _stripLrdr(tmpPath: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
-    const [rifx, xmp] = readAep(new BytesIO(src.read_bytes()));
+    const [rifx, xmp] = readAep(new BytesIO(src.readBytes()));
     rifx.chunks = rifx.chunks.filter((c) => !(c instanceof ListChunk && c.list_type === "LRdr"));
     const out = tmpPath.div("no_lrdr.aep");
     const f = new BytesIO();
     writeAep(f, rifx, xmp);
-    out.write_bytes(f.getvalue());
+    out.writeBytes(f.getvalue());
     return out;
   }
 
@@ -1935,7 +1935,7 @@ describe("TestRenderQueueNoLRdr", () => {
     const app = parseAep(stripped);
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), stripped.read_bytes())).toBe(true);
+    expect(pyEq(out.readBytes(), stripped.readBytes())).toBe(true);
   });
 
   test("test_add_reparse_links_comp", () => {
@@ -1978,8 +1978,8 @@ describe("TestRoundtripOutputColorSpace", () => {
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
     expect(om2.outputColorSpace).toBe(name);
     // output_profile_id is the catalogued ID (matches AE ground truth).
-    expect(pyEq(om2._om_ldat.output_profile_id, profileIdForName(name))).toBe(true);
-    expect(om2._om_ldat.output_color_space_working).toBe(0);
+    expect(pyEq(om2._omLdat.output_profile_id, profileIdForName(name))).toBe(true);
+    expect(om2._omLdat.output_color_space_working).toBe(0);
   });
 
   test("test_set_working_color_space", () => {
@@ -1987,14 +1987,14 @@ describe("TestRoundtripOutputColorSpace", () => {
     const project = parseAep(ADOBE_SAMPLE).project;
     const om = renderQueueOf(project).items[0].outputModules[0];
     om.outputColorSpace = "ARRI LogC3 Wide Color Gamut - EI 800";
-    expect(om._om_ldat.output_color_space_working).toBe(0);
+    expect(om._omLdat.output_color_space_working).toBe(0);
     om.outputColorSpace = "Working Color Space";
 
     const out = tmpPath.div("modified.aep");
     project.save(out);
     const project2 = parseAep(out).project;
     const om2 = renderQueueOf(project2).items[0].outputModules[0];
-    expect(om2._om_ldat.output_color_space_working).toBe(1);
+    expect(om2._omLdat.output_color_space_working).toBe(1);
     // "Working Color Space" resolves to the project's working space name.
     expect(om2.outputColorSpace).toBe(project2.workingSpace);
   });
@@ -2017,15 +2017,15 @@ describe("TestRoundtripOutputColorSpace", () => {
     // "ACEScc yo" - AE's own Guid for it is the committed aces_acescc_yo id.
     om.outputColorSpace = "ACEScc yo";
     const expected = bytes_.fromhex("596cbde737d61ec5a84b8008888dd03f");
-    expect(pyEq(om._om_ldat.output_profile_id, expected)).toBe(true);
-    expect(om._om_ldat.output_color_space_working).toBe(0);
+    expect(pyEq(om._omLdat.output_profile_id, expected)).toBe(true);
+    expect(om._omLdat.output_color_space_working).toBe(0);
     // the id reverse-maps back to the color-space name (read/write symmetry).
     expect(om.outputColorSpace).toBe("ACEScc yo");
 
     const out = tmpPath.div("modified.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(om2._om_ldat.output_profile_id, expected)).toBe(true);
+    expect(pyEq(om2._omLdat.output_profile_id, expected)).toBe(true);
     expect(om2.outputColorSpace).toBe("ACEScc yo");
   });
 
@@ -2178,7 +2178,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
       const got = _omByFileStem(saved, start);
       const want = _omByFileStem(saved, case_);
       expect(pyEq(got._roou.tobytes(), want._roou.tobytes())).toBe(true);
-      expect(pyEq(asdict(got._om_ldat), asdict(want._om_ldat))).toBe(true);
+      expect(pyEq(asdict(got._omLdat), asdict(want._omLdat))).toBe(true);
     },
   );
 

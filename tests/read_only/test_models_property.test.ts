@@ -649,7 +649,7 @@ describe("TestEffectProperties", () => {
    * (0.79998779 x 100).
    */
   // skipif: samples/debug is not committed
-  test.skipIf(!CANVARY_DIR.is_dir())("test_omitted_point_takes_pard_default", () => {
+  test.skipIf(!CANVARY_DIR.isDir())("test_omitted_point_takes_pard_default", () => {
     const project = parseProject(CANVARY_DIR.div("effects_canvary.aep"));
     const expected = loadExpected(CANVARY_DIR, "effects_canvary");
     expect(pyEq(getitem(_jsonValuesByMatchName(expected), "ADBE Path Text-0020"), [80, 50])).toBe(true);
@@ -1388,7 +1388,7 @@ describe("TestUnitsText", () => {
   /**
    * Tests for Property.unitsText.
    *
-   * The `units_text` attribute is determined by the property's `match_name`
+   * The `unitsText` attribute is determined by the property's `match_name`
    * and returns one of `"pixels"`, `"degrees"`, `"percent"`,
    * `"seconds"`, `"dB"`, or `""` (no unit).
    */
@@ -2608,31 +2608,31 @@ describe("TestEffectPointSpeed", () => {
     // ExtendScript reports 120 / 260, i.e. exactly height (300) - the same
     // scalar for both directions, and independent of the width.
     const prop = TestEffectPointSpeed._ramp_start(parseProject(TestEffectPointSpeed.SAMPLE));
-    expect(pyEq(prop._effect_scale, [400.0, 300.0])).toBe(true);
-    expect(prop._effect_point_speed_factor).toBe(300.0);
+    expect(pyEq(prop._effectScale, [400.0, 300.0])).toBe(true);
+    expect(prop._effectPointSpeedFactor).toBe(300.0);
     const middle = prop.keyframes[1];
-    expect(approx(asInstance(middle._ldat_item.kf_data, KfPosition).in_speed, 0.4)).toBe(true);
+    expect(approx(asInstance(middle._ldatItem.kf_data, KfPosition).in_speed, 0.4)).toBe(true);
     expect(approx(middle.inTemporalEase[0].speed, 120.0)).toBe(true);
     expect(approx(middle.outTemporalEase[0].speed, 260.0)).toBe(true);
   });
 
   test("test_reading_effect_scale_does_not_touch_ease", () => {
-    // `_effect_scale` used to push factors onto every keyframe's ease on
+    // `_effectScale` used to push factors onto every keyframe's ease on
     // each read, which made resolving a property's speeds quadratic in its
     // keyframe count. It must be a pure computation. Parsed fresh: the
     // cached project is shared, and reading ease anywhere creates it.
     const prop = TestEffectPointSpeed._ramp_start(parseAep(TestEffectPointSpeed.SAMPLE).project);
     expect(
       prop.keyframes.every(
-        (keyframe) => keyframe._in_temporal_ease == null && keyframe._out_temporal_ease == null,
+        (keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null,
       ),
     ).toBe(true);
     for (const _ of range(3)) {
-      expect(prop._effect_scale).not.toBeNull();
+      expect(prop._effectScale).not.toBeNull();
     }
     expect(
       prop.keyframes.every(
-        (keyframe) => keyframe._in_temporal_ease == null && keyframe._out_temporal_ease == null,
+        (keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null,
       ),
     ).toBe(true);
   });
@@ -2644,7 +2644,7 @@ describe("TestEffectPointSpeed", () => {
     // NOTE(port): Python swaps `type(prop)._effect_point_speed_factor` for a counting
     // property on the class; this patches the accessor on the prototype the same way.
     const proto: object = Object.getPrototypeOf(prop);
-    const original = Object.getOwnPropertyDescriptor(proto, "_effect_point_speed_factor");
+    const original = Object.getOwnPropertyDescriptor(proto, "_effectPointSpeedFactor");
     const originalGet = original?.get;
     if (original === undefined || originalGet === undefined) {
       throw new AssertionError_("_effect_point_speed_factor is not a getter on the class");
@@ -2653,14 +2653,14 @@ describe("TestEffectPointSpeed", () => {
       lookups += 1;
       return originalGet.call(this);
     };
-    Object.defineProperty(proto, "_effect_point_speed_factor", { get: counting, configurable: true });
+    Object.defineProperty(proto, "_effectPointSpeedFactor", { get: counting, configurable: true });
     try {
       for (const keyframe of prop.keyframes) {
         keyframe.inTemporalEase;
         keyframe.outTemporalEase;
       }
     } finally {
-      Object.defineProperty(proto, "_effect_point_speed_factor", original);
+      Object.defineProperty(proto, "_effectPointSpeedFactor", original);
     }
 
     expect(lookups <= 2 * len(prop.keyframes)).toBe(true);
@@ -2691,7 +2691,7 @@ describe("TestEffectPointSpeed", () => {
             child.matchName === "ADBE Geometry2-0001" &&
             pyBool(child.keyframes)
           ) {
-            expect(pyEq(child._effect_scale, [2356.0, 1002.0])).toBe(true);
+            expect(pyEq(child._effectScale, [2356.0, 1002.0])).toBe(true);
             expect(approx(child.keyframes[0].outTemporalEase[0].speed, 29.151890878813)).toBe(true);
             expect(approx(child.keyframes[1].inTemporalEase[0].speed, 29.151890878813)).toBe(true);
             return;
@@ -2731,7 +2731,7 @@ describe("TestEffectPointNormalization", () => {
         .find((child) => child.name === "Point"),
       Property,
     );
-    expect(point._is_live()).toBe(false);
+    expect(point._isLive()).toBe(false);
     // AE's default is the layer centre; the composition centre would be
     // [960, 540] - what py_aep reported before the layer was threaded in.
     expect(pyEq(point.value, [100.0, 50.0])).toBe(true);
@@ -2758,7 +2758,7 @@ describe("TestEffectPointNormalization", () => {
     // The fixture's Z is 0, which every divisor reproduces, so assert the
     // divisor itself: [width, height, height], not [width, height, 1] or
     // the comp size.
-    expect(pyEq(point._effect_scale, [200.0, 100.0, 100.0])).toBe(true);
+    expect(pyEq(point._effectScale, [200.0, 100.0, 100.0])).toBe(true);
   });
 });
 
@@ -2777,7 +2777,7 @@ interface JsonMaskLayerSpaceProbe extends JsonMaskShape {
 
 // json.loads at import time, as in Python.
 const _MASK_LAYER_SPACE_PROBE: Record<string, JsonMaskLayerSpaceProbe> = JSON.parse(
-  SAMPLES_DIR.div("mask_layer_space_probe.json").read_text("utf-8"),
+  SAMPLES_DIR.div("mask_layer_space_probe.json").readText("utf-8"),
 );
 
 class TestMaskLayerSpace {
@@ -2813,7 +2813,7 @@ describe("TestMaskLayerSpace", () => {
       MaskPropertyGroup,
     );
     // The fixture's fresh masks really are path-less.
-    expect(mask._mask_shape_tdsb == null).toBe(maskName === "Mask 1");
+    expect(mask._maskShapeTdsb == null).toBe(maskName === "Mask 1");
     const maskPath = mask.property("ADBE Mask Shape");
     expect(maskPath.propertyValueType).toBe(PropertyValueType.SHAPE);
     expect(maskPath.canSetExpression).toBe(expected["canSetExpression"]);
@@ -2839,7 +2839,7 @@ type RotoBezierProbe = Record<string, JsonMaskShape | Record<string, JsonMaskSha
 // NOTE(port): Python reads the probe with `load_expected`; it is no project
 // export, so it is parsed here with its own shape (as `_MASK_LAYER_SPACE_PROBE` is).
 function _loadRotobezierProbe(stem: string): RotoBezierProbe {
-  return JSON.parse(SAMPLES_DIR.div(`${stem}_probe.json`).read_text("utf-8"));
+  return JSON.parse(SAMPLES_DIR.div(`${stem}_probe.json`).readText("utf-8"));
 }
 
 /** Python `"vertices" in value`: a static mask's probe entry is the shape itself. */

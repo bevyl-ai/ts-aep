@@ -139,9 +139,9 @@ describe("btdk schema", () => {
       doc.characterRange(0, 2).pasteFrom(doc.characterRange(6, 9));
       doc.boxTextSize = [300, 120];
       doc.boxInsetSpacing = 4;
-      expect(mismatches(doc._cos_data)).toEqual([]);
+      expect(mismatches(doc._cosData)).toEqual([]);
     }
     const fresh = new TextDocument("New\ntext", [200, 100], LineOrientation.VERTICAL_RIGHT_TO_LEFT);
-    expect(mismatches(fresh._cos_data)).toEqual([]);
+    expect(mismatches(fresh._cosData)).toEqual([]);
   });
 });

@@ -27,8 +27,8 @@ for (const f of files) fs.readFileSync(f);
 function saveToMemory(app: py_aep.Application): Uint8Array {
   const project = app.project;
   for (const comp of project.compositions) {
-    if (comp._layers_loaded) {
-      for (const layer of comp.layers) layer._write_out_moved_defaults();
+    if (comp._layersLoaded) {
+      for (const layer of comp.layers) layer._writeOutMovedDefaults();
     }
   }
   const buf = new BytesIO();
@@ -41,7 +41,7 @@ function readAll(app: py_aep.Application): number {
   let n = 0;
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
-      for (const prop of layer._leaf_properties()) {
+      for (const prop of layer._leafProperties()) {
         try {
           void prop.value;
           n++;

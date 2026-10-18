@@ -30,9 +30,9 @@ import { PsdGroup, readPsdLayers, type PsdLayer, type PsdNode } from "./psd_laye
  */
 export function psdLeafLayers(
   file: PathLike,
-  kw: { mask_boxes?: boolean } = {},
+  kw: { maskBoxes?: boolean } = {},
 ): PsdLayer[] {
-  const { mask_boxes = true } = kw;
+  const { maskBoxes: mask_boxes = true } = kw;
   const leaves: PsdLayer[] = [];
 
   const _walk = (nodes: PsdNode[]): void => {
@@ -45,11 +45,11 @@ export function psdLeafLayers(
     }
   };
 
-  _walk(readPsdLayers(file, { mask_boxes }));
+  _walk(readPsdLayers(file, { maskBoxes: mask_boxes }));
   leaves.splice(
     0,
     leaves.length,
-    ...sorted(leaves, (leaf) => leaf.record_index),
+    ...sorted(leaves, (leaf) => leaf.recordIndex),
   );
   return leaves;
 }
@@ -69,7 +69,7 @@ export function psdLeafLayers(
 export function listLayers(file: PathLike): string[] {
   const suffix = new Path(file).suffix.toLowerCase();
   if (PSD_COMP_EXTENSIONS.has(suffix)) {
-    const leaves = psdLeafLayers(file, { mask_boxes: false });
+    const leaves = psdLeafLayers(file, { maskBoxes: false });
     return [...leaves].reverse().map((leaf) => leaf.name);
   }
   if (AI_COMP_EXTENSIONS.has(suffix)) {
@@ -98,16 +98,16 @@ export function layerIndexForStored(
 ): number {
   const suffix = new Path(file).suffix.toLowerCase();
   if (PSD_COMP_EXTENSIONS.has(suffix)) {
-    const leaves = psdLeafLayers(file, { mask_boxes: false });
+    const leaves = psdLeafLayers(file, { maskBoxes: false });
     for (const [i, leaf] of [...leaves].reverse().entries()) {
-      if (leaf.record_index === storedIndex) {
+      if (leaf.recordIndex === storedIndex) {
         return i;
       }
     }
     throw new ValueError(
       `${new Path(file).name}: no selectable layer has stored index ` +
         `${storedIndex} (leaf record indices: ` +
-        `${repr(leaves.map((leaf) => leaf.record_index))})`,
+        `${repr(leaves.map((leaf) => leaf.recordIndex))})`,
     );
   }
   if (AI_COMP_EXTENSIONS.has(suffix)) {

@@ -195,22 +195,22 @@ test("test_cc12_working_gamma_has_nowhere_to_go_and_raises", () => {
 
 test("test_cc12_timecode_default_base_synced_to_nhed", () => {
   const project = _asCc12Project();
-  project._timecode_default_base = 60;
+  project._timecodeDefaultBase = 60;
   expect(project._nhed.timecode_default_base).toBe(60);
 });
 
 test("test_cc12_timecode_default_base_above_u1_raises", () => {
   const project = _asCc12Project();
   raises(ValueError, () => {
-    project._timecode_default_base = 300;
+    project._timecodeDefaultBase = 300;
   });
   expect(project._nhed.timecode_default_base).toBe(30);
 });
 
 test("test_gpu_accel_type_software_without_gpug", () => {
   const project = _asCc12Project();
-  project._gpug_utf8 = new Utf8Chunk({
-    value: GpuAccelType.to_binary(GpuAccelType.SOFTWARE),
+  project._gpugUtf8 = new Utf8Chunk({
+    value: GpuAccelType.toBinary(GpuAccelType.SOFTWARE),
     synthetic: true,
   });
   expect(project.gpuAccelType).toBe(GpuAccelType.SOFTWARE);

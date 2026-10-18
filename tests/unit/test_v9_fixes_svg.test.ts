@@ -36,7 +36,7 @@ function _bbox(markup: string): [number, number, number, number] {
 function _import(tmpPath: Path, markup: string): CompItem {
   const svg = tmpPath.div("probe.svg");
   // encoding="utf-8" is the default of pyrt Path.write_text.
-  svg.write_text(markup);
+  svg.writeText(markup);
   const app = new_();
   const opts = new ImportOptions(svg);
   opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;

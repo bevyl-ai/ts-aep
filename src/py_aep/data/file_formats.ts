@@ -2,7 +2,7 @@
  * Footage file-format table: extension -\> AE source-format code and defaults.
  *
  * Derived empirically by importing `samples/assets/` in AE 2026 and decoding the
- * resulting `sspc` chunks (see the `filesource-aep-format` notes). `source_format`
+ * resulting `sspc` chunks (see the `filesource-aep-format` notes). `sourceFormat`
  * is the 4-char code stored in `SspcChunk.source_format_type`.
  */
 
@@ -12,10 +12,10 @@ import { ImportAsType } from "../enums/index.ts";
 /** Static per-format defaults for footage import. */
 export class FileFormat {
   /** 4-char `sspc.source_format_type` code (e.g. `png!`, `oEXR`). */
-  readonly source_format: string;
+  readonly sourceFormat: string;
 
   /** When the footage has alpha, `true` selects PREMULTIPLIED, else STRAIGHT. */
-  readonly alpha_premultiplied: boolean;
+  readonly alphaPremultiplied: boolean;
 
   /**
    * `opti` asset-info strategy, verified against AE 2026:
@@ -51,7 +51,7 @@ export class FileFormat {
    * (`SspcChunk.media_format`, and `media_file` for a single file): JPEG,
    * BMP/GIF, HEIC, movies, audio and data files.
    */
-  readonly media_flag: boolean;
+  readonly mediaFlag: boolean;
 
   constructor(
     sourceFormat: string,
@@ -60,19 +60,19 @@ export class FileFormat {
     sequence: boolean = true,
     mediaFlag: boolean = false,
   ) {
-    this.source_format = sourceFormat;
-    this.alpha_premultiplied = alphaPremultiplied;
+    this.sourceFormat = sourceFormat;
+    this.alphaPremultiplied = alphaPremultiplied;
     this.opti = opti;
     this.sequence = sequence;
-    this.media_flag = mediaFlag;
+    this.mediaFlag = mediaFlag;
   }
 
   *[Symbol.iterator]() {
-    yield this.source_format;
-    yield this.alpha_premultiplied;
+    yield this.sourceFormat;
+    yield this.alphaPremultiplied;
     yield this.opti;
     yield this.sequence;
-    yield this.media_flag;
+    yield this.mediaFlag;
   }
 }
 
@@ -98,10 +98,10 @@ export const GENERIC_STILL_FORMATS = { macos: "IMIO", windows: "STIL" } as const
  */
 export function platformSourceFormat(fmt: FileFormat, kw: { windows: boolean }): string {
   const { windows } = kw;
-  if (windows && fmt.source_format === GENERIC_STILL_FORMATS["macos"]) {
+  if (windows && fmt.sourceFormat === GENERIC_STILL_FORMATS["macos"]) {
     return GENERIC_STILL_FORMATS["windows"];
   }
-  return fmt.source_format;
+  return fmt.sourceFormat;
 }
 
 export const _FILE_FORMATS: Map<string, FileFormat> = new Map<string, FileFormat>([

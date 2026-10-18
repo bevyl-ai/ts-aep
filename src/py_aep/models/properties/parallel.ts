@@ -182,8 +182,8 @@ export class _OrientationKind extends ParallelKind {
    * binary tdb4 values. Shared by `parse_orientation` and `on_wrap`.
    */
   applyModelMetadata(prop: Property): void {
-    prop._property_control_type = PropertyControlType.ANGLE;
-    prop._property_value_type = PropertyValueType.ThreeD_SPATIAL;
+    prop._propertyControlType = PropertyControlType.ANGLE;
+    prop._propertyValueType = PropertyValueType.ThreeD_SPATIAL;
     instanceDict(prop).set("dimensions", 3);
     instanceDict(prop).set("_vector", true);
   }
@@ -193,7 +193,7 @@ export class _OrientationKind extends ParallelKind {
     // 0x6000 (24 fps) is the fallback when the containing comp is
     // unknown; _ensure_time_base overrides it with the comp's timebase.
     prop._tdb4._time_base = 0x6000;
-    prop._ensure_time_base();
+    prop._ensureTimeBase();
     this.applyModelMetadata(prop);
   }
 }
@@ -229,12 +229,12 @@ export class _MarkerKind extends ParallelKind {
     // `wrap_value_chunk` (mirrors `_GradientKind`).
     const source: Chunk[] = [
       value._nmhd,
-      value._comment_utf8,
-      value._chapter_utf8,
-      value._url_utf8,
-      value._frame_target_utf8,
-      value._cue_point_name_utf8,
-      ...value._param_utf8s,
+      value._commentUtf8,
+      value._chapterUtf8,
+      value._urlUtf8,
+      value._frameTargetUtf8,
+      value._cuePointNameUtf8,
+      ...value._paramUtf8s,
     ];
     return new ListChunk({ list_type: "Nmrd", chunks: source.map((c) => cloneChunkTree(c)) });
   }
@@ -289,13 +289,13 @@ export class _ShapeKind extends ParallelKind {
     if (!(value instanceof Shape)) {
       throw new TypeError_("shape value must be a Shape");
     }
-    return prop._build_shap_chunk(value);
+    return prop._buildShapChunk(value);
   }
 
   wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
     return _specializedProperties()._parseShapeShap(
       valueChunk,
-      prop._containing_layer,
+      prop._containingLayer,
       prop.matchName === "ADBE Mask Shape" ? prop : null,
     );
   }

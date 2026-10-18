@@ -321,7 +321,7 @@ export function alasPlatform(fullpath: string): number {
  * keys, no whitespace.
  */
 export function dumpAlas(data: AlasData): string {
-  return jsonDumps(data, { sort_keys: true, separators: [",", ":"] });
+  return jsonDumps(data, { sortKeys: true, separators: [",", ":"] });
 }
 
 /**

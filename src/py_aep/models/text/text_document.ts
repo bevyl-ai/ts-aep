@@ -147,13 +147,13 @@ export class TextDocument {
   // Set by the first layout-affecting py-side write; while `False` the
   // persisted composed-line cache is authoritative. Underscore-prefixed,
   // so to_dict skips both.
-  _layout_dirty: boolean = false;
+  _layoutDirty: boolean = false;
 
   // Verdict of calibrating the composed-line resolver against this
   // document's own AE cache: `None` = never attempted, `True` = the
   // composer reproduces AE for this document (post-mutation
   // recomposition is trusted), `False` = refused or mismatched.
-  _composition_calibrated: boolean | null = null;
+  _compositionCalibrated: boolean | null = null;
 
   // Wrappers sharing this layer's btdk COS data (one per keyframe,
   // including self); `None` for template-constructed documents. Frame
@@ -163,20 +163,20 @@ export class TextDocument {
 
   // Python instance `__dict__`: overrides for fields without COS backing.
   // `_override` reads it directly, so it must stay separate from accessors.
-  // Shared with CosField.__get__ via instance_dict, so CosField-backed `_from_binary` kwargs are read back.
+  // Shared with CosField.__get__ via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
   __dict__: Map<string, InstanceValue> = instanceDict(this);
 
-  // COS backing, assigned by `__init__` / `_from_binary`. The style dicts
+  // COS backing, assigned by `__init__` / `_fromBinary`. The style dicts
   // alias the first runs' styles (`null` when a run carries none); `_doc`
   // is whatever the document array holds (py_aep reads it lazily).
-  declare _char_style: CosDict | null;
-  declare _para_style: CosDict | null;
+  declare _charStyle: CosDict | null;
+  declare _paraStyle: CosDict | null;
   declare _doc: CosNode;
   declare _fonts: FontObject[];
-  declare _cos_data: CosDict;
-  declare _btdk_body: ListChunk;
+  declare _cosData: CosDict;
+  declare _btdkBody: ListChunk;
 
-  _mark_frame_layout_dirty(): void {
+  _markFrameLayoutDirty(): void {
     /**
      * Mark a frame-level write (box meta, orientation) on ALL
      * documents sharing this layer's frame.
@@ -186,11 +186,11 @@ export class TextDocument {
      */
     const siblings = this._siblings;
     for (const doc of siblings != null && siblings.length > 0 ? siblings : [this]) {
-      doc._mark_layout_dirty();
+      doc._markLayoutDirty();
     }
   }
 
-  _mark_layout_dirty(): void {
+  _markLayoutDirty(): void {
     /**
      * Record a layout-affecting write, calibrating the composer first.
      *
@@ -202,14 +202,14 @@ export class TextDocument {
      */
     // Every layout write invalidates the memoized composition.
     this.__dict__.delete("_composed_cache");
-    if (this._layout_dirty) return;
-    if (this.boxText && this._composition_calibrated == null) {
+    if (this._layoutDirty) return;
+    if (this.boxText && this._compositionCalibrated == null) {
       const cached = _cachedLineData(this);
       if (cached != null) {
-        this._composition_calibrated = calibrateComposition(this, cached[0], cached[1]);
+        this._compositionCalibrated = calibrateComposition(this, cached[0], cached[1]);
       }
     }
-    this._layout_dirty = true;
+    this._layoutDirty = true;
   }
 
   /**
@@ -229,7 +229,7 @@ export class TextDocument {
    * no longer matches its text.
    */
   get compositionStale(): boolean {
-    if (!this.boxText || !this._layout_dirty) return false;
+    if (!this.boxText || !this._layoutDirty) return false;
     return _freshComposedSpans(this) == null;
   }
 
@@ -255,10 +255,10 @@ export class TextDocument {
    * leading-edge value like the range setter (probed `X_AKT_SET`).
    */
   get autoKernType(): AutoKernType | null {
-    const override = this._override_of("autoKernType", (v): v is AutoKernType => AutoKernType.has(v));
+    const override = this._overrideOf("autoKernType", (v): v is AutoKernType => AutoKernType.has(v));
     if (override != null) return override;
-    if (this._char_style == null) return AutoKernType.NO_AUTO_KERN;
-    const raw = this._char_style.get("11");
+    if (this._charStyle == null) return AutoKernType.NO_AUTO_KERN;
+    const raw = this._charStyle.get("11");
     if (raw == null) return AutoKernType.NO_AUTO_KERN;
     return enumFromCos(AutoKernType, raw);
   }
@@ -266,17 +266,17 @@ export class TextDocument {
   set autoKernType(value: AutoKernType) {
     validateEnum(AutoKernType)(value);
     this.__dict__.delete("autoKernType");
-    if (this._char_style == null) {
-      this._set_override("autoKernType", AutoKernType.of(value));
+    if (this._charStyle == null) {
+      this._setOverride("autoKernType", AutoKernType.of(value));
       return;
     }
     const total = u16Len(_rawText(this));
-    _applyCharKey(this, 0, total, "11", AutoKernType.to_binary(AutoKernType.of(value)));
+    _applyCharKey(this, 0, total, "11", AutoKernType.toBinary(AutoKernType.of(value)));
     if (value !== AutoKernType.NO_AUTO_KERN) {
       // Drops the kern-run array and leading-edge value with it.
       _rebuildKernRuns(this, Array<null>(total).fill(null));
     }
-    this._propagate_cos();
+    this._propagateCos();
   }
 
   /** This Text layer's horizontal scale in pixels. Read / Write. */
@@ -336,17 +336,17 @@ export class TextDocument {
    * AE's sentinel across the document (probed `X_AL_SET`).
    */
   get autoLeading(): boolean | null {
-    const override = this._override_of("autoLeading", isBool);
+    const override = this._overrideOf("autoLeading", isBool);
     if (override != null) return override;
-    if (this._char_style == null) return true;
-    return pyBool(cosGetOr(this._char_style, "4", true));
+    if (this._charStyle == null) return true;
+    return pyBool(cosGetOr(this._charStyle, "4", true));
   }
 
   set autoLeading(value: boolean) {
     validateBool(value);
     this.__dict__.delete("autoLeading");
-    if (this._char_style == null) {
-      this._set_override("autoLeading", value);
+    if (this._charStyle == null) {
+      this._setOverride("autoLeading", value);
       return;
     }
     const total = u16Len(_rawText(this));
@@ -354,7 +354,7 @@ export class TextDocument {
     if (value) {
       _applyCharKey(this, 0, total, "5", pyfloat(0.01));
     }
-    this._propagate_cos();
+    this._propagateCos();
   }
 
   /** The Text layer's paragraph leading type. Read / Write. */
@@ -396,7 +396,7 @@ export class TextDocument {
   /**
    * Build a {@link TextDocument} from the point-text COS template.
    *
-   * Creates a document whose `_cos_data` and `_btdk_body` are wired
+   * Creates a document whose `_cosData` and `_btdkBody` are wired
    * together so that descriptor / setter writes propagate to the
    * backing `btdk` chunk.
    *
@@ -408,7 +408,7 @@ export class TextDocument {
    *   orientation (e.g. vertical); `null` leaves the template's horizontal default.
    */
   constructor(text?: string, boxSize?: number[] | null, lineOrientation?: LineOrientation | null);
-  /** `cls.__new__(cls)`: an uninitialized instance for {@link TextDocument._from_binary}. */
+  /** `cls.__new__(cls)`: an uninitialized instance for {@link TextDocument._fromBinary}. */
   constructor(token: typeof _NEW);
   constructor(
     text: string | typeof _NEW = "",
@@ -430,60 +430,60 @@ export class TextDocument {
       const fontEntry = cosItem(entry, "0");
       const fontData = cosItem(fontEntry, "0");
       pyAssert(fontEntry instanceof Map && fontData instanceof Map);
-      return new FontObject({ _font_data: fontData, _font_entry: fontEntry });
+      return new FontObject({ _fontData: fontData, _fontEntry: fontEntry });
     });
-    this._char_style = charStyle;
-    this._para_style = paraStyle;
+    this._charStyle = charStyle;
+    this._paraStyle = paraStyle;
     this._doc = doc;
     this._fonts = fonts;
-    this._cos_data = cos;
-    this._btdk_body = btdk;
+    this._cosData = cos;
+    this._btdkBody = btdk;
     if (text) this.text = text;
     if (boxSize != null) this.boxTextSize = boxSize;
     if (lineOrientation != null) this.lineOrientation = lineOrientation;
   }
 
-  static _from_binary(kw: {
-    _char_style?: CosDict | null;
-    _para_style?: CosDict | null;
+  static _fromBinary(kw: {
+    _charStyle?: CosDict | null;
+    _paraStyle?: CosDict | null;
     _doc: CosNode;
     _fonts: FontObject[];
-    _cos_data: CosDict;
-    _btdk_body: ListChunk;
+    _cosData: CosDict;
+    _btdkBody: ListChunk;
     // Fallback kwargs for fields without COS backing
     text?: string | null;
     font?: string | null;
-    font_object?: FontObject | null;
-    fill_color?: number[] | null;
-    stroke_color?: number[] | null;
-    paragraph_count?: number | null;
+    fontObject?: FontObject | null;
+    fillColor?: number[] | null;
+    strokeColor?: number[] | null;
+    paragraphCount?: number | null;
     [key: string]: InstanceValue | undefined;
   }): TextDocument {
     /** Wrap parsed COS data as a `TextDocument`. */
     const {
-      _char_style = null,
-      _para_style = null,
+      _charStyle: _char_style = null,
+      _paraStyle: _para_style = null,
       _doc,
       _fonts,
-      _cos_data,
-      _btdk_body,
+      _cosData: _cos_data,
+      _btdkBody: _btdk_body,
       text = null,
       font = null,
-      font_object = null,
-      fill_color = null,
-      stroke_color = null,
-      paragraph_count = null,
+      fontObject: font_object = null,
+      fillColor: fill_color = null,
+      strokeColor: stroke_color = null,
+      paragraphCount: paragraph_count = null,
       ...kwargs
     } = kw;
     // `cls.__new__(cls)` skips `__init__`; the field initializers restate
     // the class-level defaults.
     const obj = new TextDocument(_NEW);
-    obj._char_style = _char_style;
-    obj._para_style = _para_style;
+    obj._charStyle = _char_style;
+    obj._paraStyle = _para_style;
     obj._doc = _doc;
     obj._fonts = _fonts;
-    obj._cos_data = _cos_data;
-    obj._btdk_body = _btdk_body;
+    obj._cosData = _cos_data;
+    obj._btdkBody = _btdk_body;
     obj._associated = true;
     // Instance overrides for non-descriptor fields, plus any
     // CosField-backed kwargs
@@ -506,19 +506,19 @@ export class TextDocument {
     /**
      * Instance override stored when a field has no COS backing.
      *
-     * Set by `_from_binary` fallback kwargs and by setters when the
+     * Set by `_fromBinary` fallback kwargs and by setters when the
      * backing style dict is `null`. Returns `null` when absent.
      */
     return this.__dict__.get(name) ?? null;
   }
 
   /** {@link TextDocument._override} when it holds a `T` (the setters only store their own type). */
-  _override_of<T extends InstanceValue>(name: string, accepts: (v: InstanceValue) => v is T): T | null {
+  _overrideOf<T extends InstanceValue>(name: string, accepts: (v: InstanceValue) => v is T): T | null {
     const value = this._override(name);
     return value != null && accepts(value) ? value : null;
   }
 
-  _set_override(name: string, value: InstanceValue): void {
+  _setOverride(name: string, value: InstanceValue): void {
     /** Store an instance override for a field without COS backing. */
     this.__dict__.set(name, value);
   }
@@ -527,7 +527,7 @@ export class TextDocument {
 
   /** The text value for the Source Text property. Read / Write. */
   get text(): string {
-    const override = this._override_of("text", isStr);
+    const override = this._overrideOf("text", isStr);
     if (override != null) return override;
     const val = cosGet(this._doc, "0", "0");
     if (val != null) {
@@ -544,18 +544,18 @@ export class TextDocument {
   set text(value: string) {
     validateText(value);
     this.__dict__.delete("text");
-    this._mark_layout_dirty();
+    this._markLayoutDirty();
     const inner = cosSetdefault(this._doc, "0", new Map());
     // AE stores every line break and the run terminator as CR (\r);
     // without a trailing CR terminator AE fails to read the layer.
     const normalized = value.replaceAll("\r\n", "\r").replaceAll("\n", "\r");
     const raw = normalized + "\r";
-    this._rebuild_runs_for_text(raw);
+    this._rebuildRunsForText(raw);
     cosSetitem(inner, "0", raw);
-    this._propagate_cos();
+    this._propagateCos();
   }
 
-  _rebuild_runs_for_text(raw: string): void {
+  _rebuildRunsForText(raw: string): void {
     /**
      * Collapse the style runs for newly assigned text.
      *
@@ -579,7 +579,7 @@ export class TextDocument {
       // belongs to the last paragraph rather than opening a new one.
       let parts = raw.split("\r");
       if (parts.at(-1) === "") parts = parts.slice(0, -1);
-      // Keep the first run object itself: `_para_style` (and the
+      // Keep the first run object itself: `_paraStyle` (and the
       // parser's back-references) alias its style dict.
       const template = paraRuns[0];
       const rebuilt: CosNode[] = [template, ...parts.slice(1).map(() => deepcopy(template))];
@@ -587,13 +587,13 @@ export class TextDocument {
         cosSetitem(run, "1", u16Len(part) + 1);
       }
       paraRuns.splice(0, paraRuns.length, ...rebuilt);
-      this._rebuild_line_count_runs(parts);
+      this._rebuildLineCountRuns(parts);
     }
     cosPop(inner, "8");
     cosPop(inner, "7");
   }
 
-  _rebuild_line_count_runs(parts: string[]): void {
+  _rebuildLineCountRuns(parts: string[]): void {
     /**
      * Keep `doc["1"]["1"]` (per-paragraph composed-line counts)
      * structurally consistent with the paragraphs.
@@ -636,19 +636,19 @@ export class TextDocument {
   // TextDocument fields) are deliberately not exposed: AE does not store them
   // in the .aep. It resolves them at runtime from the host font engine
   // (CoolType) given the stored PostScript name below, so their values are
-  // host-dependent and not decodable from the binary. Use `font_object`.
+  // host-dependent and not decodable from the binary. Use `fontObject`.
 
   /** The Text layer's font PostScript name. Read / Write. */
   get font(): string | null {
-    const override = this._override_of("font", isStr);
+    const override = this._overrideOf("font", isStr);
     if (override != null) return override;
-    return this._font_at_style_index()?.postScriptName ?? null;
+    return this._fontAtStyleIndex()?.postScriptName ?? null;
   }
 
   /** The font the first character style's index (`isinstance(.., int)`) points at, if in range. */
-  _font_at_style_index(): FontObject | null {
-    if (this._char_style == null) return null;
-    const fontIdx = read(charStyle, this._char_style, "0");
+  _fontAtStyleIndex(): FontObject | null {
+    if (this._charStyle == null) return null;
+    const fontIdx = read(charStyle, this._charStyle, "0");
     if (fontIdx == null) return null;
     const index = Number(fontIdx);
     return 0 <= index && index < this._fonts.length ? this._fonts[index] : null;
@@ -656,19 +656,19 @@ export class TextDocument {
 
   set font(value: string) {
     validateFontName(value);
-    if (this._char_style == null) {
-      this._set_override("font", value);
+    if (this._charStyle == null) {
+      this._setOverride("font", value);
       return;
     }
-    let idx = this._font_index(value);
-    if (idx == null) idx = this._register_font(value);
+    let idx = this._fontIndex(value);
+    if (idx == null) idx = this._registerFont(value);
     _applyCharKey(this, 0, u16Len(_rawText(this)), "0", idx);
     this.__dict__.delete("font");
     this.__dict__.delete("fontObject");
-    this._propagate_cos();
+    this._propagateCos();
   }
 
-  _font_index(postScriptName: string): number | null {
+  _fontIndex(postScriptName: string): number | null {
     /** Return the index of a font in `_fonts`, or `null` if absent. */
     for (const [idx, fo] of this._fonts.entries()) {
       if (fo.postScriptName === postScriptName) return idx;
@@ -676,7 +676,7 @@ export class TextDocument {
     return null;
   }
 
-  _register_font(postScriptName: string): number {
+  _registerFont(postScriptName: string): number {
     /**
      * Prepend a new font to the COS font array and `_fonts`.
      *
@@ -687,7 +687,7 @@ export class TextDocument {
     return _registerFontAt(this, postScriptName);
   }
 
-  _used_font_objects(): FontObject[] {
+  _usedFontObjects(): FontObject[] {
     /**
      * The distinct fonts this document's character runs reference, in
      * first-appearance order.
@@ -714,17 +714,17 @@ export class TextDocument {
 
   /** The Text layer's {@link FontObject}. Read-only. */
   get fontObject(): FontObject | null {
-    const override = this._override_of("fontObject", isFontObject);
+    const override = this._overrideOf("fontObject", isFontObject);
     if (override != null) return override;
-    return this._font_at_style_index();
+    return this._fontAtStyleIndex();
   }
 
   /** The Text layer's fill color as `[r, g, b]`. Read / Write. */
   get fillColor(): number[] | null {
-    const override = this._override_of("fillColor", isRgb);
+    const override = this._overrideOf("fillColor", isRgb);
     if (override != null) return override;
-    if (this._char_style != null) {
-      return _parseColor(this._char_style.get("53") ?? null);
+    if (this._charStyle != null) {
+      return _parseColor(this._charStyle.get("53") ?? null);
     }
     return null;
   }
@@ -732,21 +732,21 @@ export class TextDocument {
   set fillColor(value: number[] | null) {
     if (value != null) validateRgbColor(value);
     this.__dict__.delete("fillColor");
-    if (this._char_style != null) {
+    if (this._charStyle != null) {
       const payload = value != null ? _buildColorPaint(value) : null;
       _applyCharKey(this, 0, u16Len(_rawText(this)), "53", payload);
-      this._propagate_cos();
+      this._propagateCos();
     } else {
-      this._set_override("fillColor", value);
+      this._setOverride("fillColor", value);
     }
   }
 
   /** The Text layer's stroke color as `[r, g, b]`. Read / Write. */
   get strokeColor(): number[] | null {
-    const override = this._override_of("strokeColor", isRgb);
+    const override = this._overrideOf("strokeColor", isRgb);
     if (override != null) return override;
-    if (this._char_style != null) {
-      return _parseColor(this._char_style.get("54") ?? null);
+    if (this._charStyle != null) {
+      return _parseColor(this._charStyle.get("54") ?? null);
     }
     return null;
   }
@@ -754,12 +754,12 @@ export class TextDocument {
   set strokeColor(value: number[] | null) {
     if (value != null) validateRgbColor(value);
     this.__dict__.delete("strokeColor");
-    if (this._char_style != null) {
+    if (this._charStyle != null) {
       const payload = value != null ? _buildColorPaint(value) : null;
       _applyCharKey(this, 0, u16Len(_rawText(this)), "54", payload);
-      this._propagate_cos();
+      this._propagateCos();
     } else {
-      this._set_override("strokeColor", value);
+      this._setOverride("strokeColor", value);
     }
   }
 
@@ -769,15 +769,15 @@ export class TextDocument {
    * When auto-leading is enabled, returns font_size * auto_leading_factor.
    */
   get leading(): number | null {
-    const override = this._override_of("leading", isNum);
+    const override = this._overrideOf("leading", isNum);
     if (override != null) return override;
-    if (this._char_style != null) {
-      const raw = read(charStyle, this._char_style, "5");
+    if (this._charStyle != null) {
+      const raw = read(charStyle, this._charStyle, "5");
       if (raw != null) {
         // When auto-leading is on, AE stores a sentinel in key "5"
         // and displays font_size * auto_leading_factor (para "7").
-        if (this.autoLeading && this._para_style != null) {
-          const factor = cosGetOr(this._para_style, "7", 1.2);
+        if (this.autoLeading && this._paraStyle != null) {
+          const factor = cosGetOr(this._paraStyle, "7", 1.2);
           const fs = this.fontSize;
           if (fs != null) return fs * cosFloat(factor);
         }
@@ -790,20 +790,20 @@ export class TextDocument {
   set leading(value: number | null) {
     if (value != null) validatePositiveNumber(value);
     this.__dict__.delete("leading");
-    if (this._char_style != null && value != null) {
+    if (this._charStyle != null && value != null) {
       // Setting an explicit leading turns auto-leading off, matching AE.
       const total = u16Len(_rawText(this));
       _applyCharKey(this, 0, total, "5", pyfloat(value));
       _applyCharKey(this, 0, total, "4", false);
-      this._propagate_cos();
+      this._propagateCos();
     } else {
-      this._set_override("leading", value);
+      this._setOverride("leading", value);
     }
   }
 
   /** The number of paragraphs in the text layer. Read-only. */
   get paragraphCount(): number | null {
-    const override = this._override_of("paragraphCount", isNum);
+    const override = this._overrideOf("paragraphCount", isNum);
     if (override != null) return override;
     const paraRuns = cosGet(this._doc, "0", "5", "0");
     if (Array.isArray(paraRuns)) return paraRuns.length;
@@ -840,7 +840,7 @@ export class TextDocument {
 
   /** The Text layer's composer engine type. Read-only. */
   get composerEngine(): ComposerEngine | null {
-    const engineInfo = cosGet(this._cos_data, "1", "4");
+    const engineInfo = cosGet(this._cosData, "1", "4");
     if (engineInfo instanceof Map) {
       const engineName = engineInfo.get("3");
       if (pyEq(engineName, "DVA")) return ComposerEngine.LATIN_CJK_ENGINE;
@@ -867,28 +867,28 @@ export class TextDocument {
 
   /** The Text layer's line orientation. Read / Write. */
   get lineOrientation(): LineOrientation {
-    const val = cosGet(this._cos_data, "0", "8", "0", 0, "0", "2", "1");
+    const val = cosGet(this._cosData, "0", "8", "0", 0, "0", "2", "1");
     if (is(pyInt, val)) return enumFromCos(LineOrientation, val);
     return LineOrientation.HORIZONTAL;
   }
 
   set lineOrientation(value: LineOrientation) {
-    const frameMeta = cosGet(this._cos_data, "0", "8", "0", 0, "0", "2");
+    const frameMeta = cosGet(this._cosData, "0", "8", "0", 0, "0", "2");
     if (!(frameMeta instanceof Map)) {
       throw new ValueError("text layer has no orientation frame to set");
     }
-    this._mark_frame_layout_dirty();
-    frameMeta.set("1", LineOrientation.to_binary(value));
-    this._propagate_cos();
+    this._markFrameLayoutDirty();
+    frameMeta.set("1", LineOrientation.toBinary(value));
+    this._propagateCos();
   }
 
-  _box_frame(): CosDict | null {
+  _boxFrame(): CosDict | null {
     /** Return the COS box-frame dict, or `null` if absent. */
-    const frame = cosGet(this._cos_data, "0", "8", "0", 0, "0");
+    const frame = cosGet(this._cosData, "0", "8", "0", 0, "0");
     return frame instanceof Map ? frame : null;
   }
 
-  _ensure_frame(): CosNode {
+  _ensureFrame(): CosNode {
     /**
      * Return the box-frame dict, creating the COS path if needed.
      *
@@ -897,16 +897,16 @@ export class TextDocument {
      * whose write can change line composition, and the mark (with
      * its calibration) must run before the mutation lands.
      */
-    this._mark_frame_layout_dirty();
-    const eight = cosSetdefault(cosSetdefault(this._cos_data, "0", new Map()), "8", new Map());
+    this._markFrameLayoutDirty();
+    const eight = cosSetdefault(cosSetdefault(this._cosData, "0", new Map()), "8", new Map());
     const slot = cosSetdefault(eight, "0", [new Map()]);
     if (!pyBool(slot)) cosAppend(slot, new Map());
     return cosSetdefault(cosAt(slot, 0), "0", new Map());
   }
 
-  _box_outline(): CosNode[] | null {
+  _boxOutline(): CosNode[] | null {
     /** Return the box's 16-vertex outline coordinates, or `null`. */
-    const frame = this._box_frame();
+    const frame = this._boxFrame();
     const coords = frame != null ? cosGet(frame, "1", "0") : null;
     if (Array.isArray(coords) && coords.length >= 14) return coords;
     return null;
@@ -919,7 +919,7 @@ export class TextDocument {
    * text omits it.
    */
   get boxText(): boolean {
-    const frame = this._box_frame();
+    const frame = this._boxFrame();
     return frame instanceof Map && frame.get("1") instanceof Map;
   }
 
@@ -936,7 +936,7 @@ export class TextDocument {
    * box while keeping its top-left corner fixed.
    */
   get boxTextSize(): number[] | null {
-    const coords = this._box_outline();
+    const coords = this._boxOutline();
     if (coords == null) return null;
     return [Math.abs(cosNum(coords[12]) - cosNum(coords[0])), Math.abs(cosNum(coords[13]) - cosNum(coords[1]))];
   }
@@ -945,8 +945,8 @@ export class TextDocument {
     validateBoxSize(value);
     const width = value[0];
     const height = value[1];
-    const frame = this._ensure_frame();
-    const coords = this._box_outline();
+    const frame = this._ensureFrame();
+    const coords = this._boxOutline();
     let left: number;
     let top: number;
     if (coords != null) {
@@ -959,7 +959,7 @@ export class TextDocument {
       _applyBoxConversion(cosSetdefault(frame, "2", new Map()));
     }
     cosSetitem(cosSetdefault(frame, "1", new Map()), "0", _boxCoords(left, top, width, height));
-    this._propagate_cos();
+    this._propagateCos();
   }
 
   /**
@@ -970,28 +970,28 @@ export class TextDocument {
    * as they are (numbers in every file AE writes).
    */
   get boxTextPos(): CosUnboxed[] | null {
-    const coords = this._box_outline();
+    const coords = this._boxOutline();
     if (coords == null) return null;
     return [cosUnbox(coords[0]), cosUnbox(coords[1])];
   }
 
   set boxTextPos(value: number[]) {
     validateVector2(value);
-    const coords = this._box_outline();
+    const coords = this._boxOutline();
     if (coords == null) {
       throw new ValueError("boxTextPos requires box text; set boxTextSize first");
     }
     const width = Math.abs(cosNum(coords[12]) - cosNum(coords[0]));
     const height = Math.abs(cosNum(coords[13]) - cosNum(coords[1]));
-    const frame = this._box_frame();
+    const frame = this._boxFrame();
     pyAssert(frame != null);
     cosSetitem(cosItem(frame, "1"), "0", _boxCoords(value[0], value[1], width, height));
-    this._propagate_cos();
+    this._propagateCos();
   }
 
   /** The box's inset (padding) spacing in pixels. Read / Write. */
   get boxInsetSpacing(): number {
-    const val = cosGet(this._box_frame(), "2", "9");
+    const val = cosGet(this._boxFrame(), "2", "9");
     return is(pyNumber, val) ? float(val) : 0.0;
   }
 
@@ -1001,7 +1001,7 @@ export class TextDocument {
 
   /** The box's vertical text alignment. Read / Write. */
   get boxVerticalAlignment(): BoxVerticalAlignment {
-    const raw = cosGet(this._box_frame(), "2", "13");
+    const raw = cosGet(this._boxFrame(), "2", "13");
     if (is(pyInt, raw)) return enumFromCos(BoxVerticalAlignment, raw);
     return BoxVerticalAlignment.TOP;
   }
@@ -1012,7 +1012,7 @@ export class TextDocument {
 
   /** The box's auto-fit policy. Read / Write. */
   get boxAutoFitPolicy(): BoxAutoFitPolicy {
-    const raw = cosGet(this._box_frame(), "2", "14");
+    const raw = cosGet(this._boxFrame(), "2", "14");
     if (is(pyInt, raw)) return enumFromCos(BoxAutoFitPolicy, raw);
     return BoxAutoFitPolicy.NONE;
   }
@@ -1023,7 +1023,7 @@ export class TextDocument {
 
   /** The box's first-baseline alignment. Read / Write. */
   get boxFirstBaselineAlignment(): BoxFirstBaselineAlignment {
-    const sub = cosGet(this._box_frame(), "2", "10");
+    const sub = cosGet(this._boxFrame(), "2", "10");
     const raw = sub instanceof Map ? read(firstBaseline, sub, "0") : undefined;
     if (raw != null) return enumFromCos(BoxFirstBaselineAlignment, raw);
     return BoxFirstBaselineAlignment.ASCENT;
@@ -1035,7 +1035,7 @@ export class TextDocument {
 
   /** The minimum for `MINIMUM_VALUE_*` first-baseline alignment. R/W. */
   get boxFirstBaselineAlignmentMinimum(): number {
-    const sub = cosGet(this._box_frame(), "2", "10");
+    const sub = cosGet(this._boxFrame(), "2", "10");
     const minimum = sub instanceof Map ? read(firstBaseline, sub, "1") : undefined;
     return minimum != null ? float(minimum) : 0.0;
   }
@@ -1221,8 +1221,8 @@ export class TextDocument {
    * @throws {@link ValueError} If the document was never associated with a layer.
    */
   resetCharStyle(): void {
-    this._require_association();
-    const style = defaultCharacterStyle(this._effective_preferences());
+    this._requireAssociation();
+    const style = defaultCharacterStyle(this._effectivePreferences());
     this.font = style.font;
     this.fontSize = style.font_size;
     this.fauxBold = style.faux_bold;
@@ -1264,8 +1264,8 @@ export class TextDocument {
    * @throws {@link ValueError} If the document was never associated with a layer.
    */
   resetParagraphStyle(): void {
-    this._require_association();
-    const style = defaultParagraphStyle(this._effective_preferences());
+    this._requireAssociation();
+    const style = defaultParagraphStyle(this._effectivePreferences());
     this.justification = style.justification;
     this.firstLineIndent = style.first_line_indent;
     this.startIndent = style.start_indent;
@@ -1276,7 +1276,7 @@ export class TextDocument {
     this.everyLineComposer = style.every_line_composer;
   }
 
-  _effective_preferences(): Preferences {
+  _effectivePreferences(): Preferences {
     /**
      * The project's AE preferences, or an empty set (AE factory
      * defaults) for a document parsed without a preferences directory.
@@ -1287,7 +1287,7 @@ export class TextDocument {
 
   // -- Text ranges (AE 24.3+ ExtendScript API) -----------------------------
 
-  _require_association(): void {
+  _requireAssociation(): void {
     /**
      * Raise unless this document was parsed from a layer's data.
      *
@@ -1313,7 +1313,7 @@ export class TextDocument {
      * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
      *   creation time).
      */
-    this._require_association();
+    this._requireAssociation();
     validatePositiveInt(characterStart, this);
     if (signedCharacterEnd == null) {
       signedCharacterEnd = characterStart + 1;
@@ -1337,7 +1337,7 @@ export class TextDocument {
      * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
      *   creation time).
      */
-    this._require_association();
+    this._requireAssociation();
     validatePositiveInt(paragraphIndexStart, this);
     if (signedParagraphIndexEnd == null) {
       signedParagraphIndexEnd = paragraphIndexStart + 1;
@@ -1365,7 +1365,7 @@ export class TextDocument {
      * @throws {@link ValueError} When the indices are outside the cached composed lines (AE raises
      *   at creation time).
      */
-    this._require_association();
+    this._requireAssociation();
     validatePositiveInt(composedLineIndexStart, this);
     if (signedComposedLineIndexEnd == null) {
       signedComposedLineIndexEnd = composedLineIndexStart + 1;
@@ -1383,7 +1383,7 @@ export class TextDocument {
      * @returns `{"start": int, "end": int}` for the containing paragraph.
      * @throws {@link ValueError} When `character_index` is outside the text.
      */
-    this._require_association();
+    this._requireAssociation();
     validatePositiveInt(characterIndex, this);
     const visible = _visibleLength(this);
     for (const [start, end] of _paraRunSpans(this)) {
@@ -1403,7 +1403,7 @@ export class TextDocument {
      * @throws {@link ValueError} When `character_index` is outside the text or the document has no
      *   composed-line cache.
      */
-    this._require_association();
+    this._requireAssociation();
     validatePositiveInt(characterIndex, this);
     const visible = _visibleLength(this);
     const spans = _composedLineSpans(this);
@@ -1419,9 +1419,9 @@ export class TextDocument {
 
   // -- COS write-back ----------------------------------------------------
 
-  _propagate_cos(): void {
+  _propagateCos(): void {
     /** Serialize COS data back to the btdk chunk's binary_data. */
-    this._btdk_body.data = serialize(this._cos_data);
+    this._btdkBody.data = serialize(this._cosData);
   }
 
 }
@@ -1430,37 +1430,37 @@ export class TextDocument {
 // Each `declare` above has its descriptor installed on the prototype here, in
 // source order (pyrt `descriptor`, which also runs `__set_name__`).
 
-descriptor(TextDocument, "fontSize", DocumentWideCosField.float("_char_style", "1", { default: null, validate: validatePositiveNonzeroNumber }));
-descriptor(TextDocument, "fauxBold", DocumentWideCosField.bool("_char_style", "2", { default: null }));
-descriptor(TextDocument, "fauxItalic", DocumentWideCosField.bool("_char_style", "3", { default: null }));
-descriptor(TextDocument, "tracking", DocumentWideCosField.int("_char_style", "8", { default: null, validate: validateS4 }));
-descriptor(TextDocument, "horizontalScale", DocumentWideCosField.float("_char_style", "6", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "verticalScale", DocumentWideCosField.float("_char_style", "7", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "baselineShift", DocumentWideCosField.float("_char_style", "9", { default: null, validate: validateNumber }));
-descriptor(TextDocument, "fontCapsOption", DocumentWideCosField.enum(FontCapsOption, "_char_style", "12", { default: null }));
-descriptor(TextDocument, "fontBaselineOption", DocumentWideCosField.enum(FontBaselineOption, "_char_style", "13", { default: null }));
-descriptor(TextDocument, "tsume", DocumentWideCosField.float("_char_style", "36", { default: 0.0, validate: validateNormalizedFloat }));
-descriptor(TextDocument, "applyFill", DocumentWideCosField.bool("_char_style", "56", { default: null }));
-descriptor(TextDocument, "applyStroke", DocumentWideCosField.bool("_char_style", "57", { default: false }));
-descriptor(TextDocument, "strokeOverFill", DocumentWideCosField.bool("_char_style", "58", { default: true }));
-descriptor(TextDocument, "strokeWidth", DocumentWideCosField.float("_char_style", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
+descriptor(TextDocument, "fontSize", DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }));
+descriptor(TextDocument, "fauxBold", DocumentWideCosField.bool("_charStyle", "2", { default: null }));
+descriptor(TextDocument, "fauxItalic", DocumentWideCosField.bool("_charStyle", "3", { default: null }));
+descriptor(TextDocument, "tracking", DocumentWideCosField.int("_charStyle", "8", { default: null, validate: validateS4 }));
+descriptor(TextDocument, "horizontalScale", DocumentWideCosField.float("_charStyle", "6", { default: null, validate: validateNumber }));
+descriptor(TextDocument, "verticalScale", DocumentWideCosField.float("_charStyle", "7", { default: null, validate: validateNumber }));
+descriptor(TextDocument, "baselineShift", DocumentWideCosField.float("_charStyle", "9", { default: null, validate: validateNumber }));
+descriptor(TextDocument, "fontCapsOption", DocumentWideCosField.enum(FontCapsOption, "_charStyle", "12", { default: null }));
+descriptor(TextDocument, "fontBaselineOption", DocumentWideCosField.enum(FontBaselineOption, "_charStyle", "13", { default: null }));
+descriptor(TextDocument, "tsume", DocumentWideCosField.float("_charStyle", "36", { default: 0.0, validate: validateNormalizedFloat }));
+descriptor(TextDocument, "applyFill", DocumentWideCosField.bool("_charStyle", "56", { default: null }));
+descriptor(TextDocument, "applyStroke", DocumentWideCosField.bool("_charStyle", "57", { default: false }));
+descriptor(TextDocument, "strokeOverFill", DocumentWideCosField.bool("_charStyle", "58", { default: true }));
+descriptor(TextDocument, "strokeWidth", DocumentWideCosField.float("_charStyle", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
 
-descriptor(TextDocument, "justification", DocumentWideCosField.enum(ParagraphJustification, "_para_style", "0", { default: null }));
-descriptor(TextDocument, "firstLineIndent", DocumentWideCosField.float("_para_style", "1", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "startIndent", DocumentWideCosField.float("_para_style", "2", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "endIndent", DocumentWideCosField.float("_para_style", "3", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "spaceBefore", DocumentWideCosField.float("_para_style", "4", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "spaceAfter", DocumentWideCosField.float("_para_style", "5", { default: 0.0, validate: validateNumber }));
-descriptor(TextDocument, "leadingType", DocumentWideCosField.enum(LeadingType, "_para_style", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
-descriptor(TextDocument, "autoHyphenate", DocumentWideCosField.bool("_para_style", "9", { default: null }));
-descriptor(TextDocument, "hangingRoman", DocumentWideCosField.bool("_para_style", "21", { default: false }));
-descriptor(TextDocument, "everyLineComposer", DocumentWideCosField.bool("_para_style", "29", { default: false }));
-descriptor(TextDocument, "baselineDirection", DocumentWideCosField.enum(BaselineDirection, "_char_style", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
-descriptor(TextDocument, "ligature", DocumentWideCosField.bool("_char_style", "18", { default: false }));
-descriptor(TextDocument, "noBreak", DocumentWideCosField.bool("_char_style", "52", { default: false }));
-descriptor(TextDocument, "digitSet", DocumentWideCosField.enum(DigitSet, "_char_style", "70", { default: DigitSet.DEFAULT_DIGITS }));
-descriptor(TextDocument, "lineJoinType", DocumentWideCosField.enum(LineJoinType, "_char_style", "62", { default: LineJoinType.LINE_JOIN_MITER }));
-descriptor(TextDocument, "direction", DocumentWideCosField.enum(ParagraphDirection, "_para_style", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
+descriptor(TextDocument, "justification", DocumentWideCosField.enum(ParagraphJustification, "_paraStyle", "0", { default: null }));
+descriptor(TextDocument, "firstLineIndent", DocumentWideCosField.float("_paraStyle", "1", { default: 0.0, validate: validateNumber }));
+descriptor(TextDocument, "startIndent", DocumentWideCosField.float("_paraStyle", "2", { default: 0.0, validate: validateNumber }));
+descriptor(TextDocument, "endIndent", DocumentWideCosField.float("_paraStyle", "3", { default: 0.0, validate: validateNumber }));
+descriptor(TextDocument, "spaceBefore", DocumentWideCosField.float("_paraStyle", "4", { default: 0.0, validate: validateNumber }));
+descriptor(TextDocument, "spaceAfter", DocumentWideCosField.float("_paraStyle", "5", { default: 0.0, validate: validateNumber }));
+descriptor(TextDocument, "leadingType", DocumentWideCosField.enum(LeadingType, "_paraStyle", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+descriptor(TextDocument, "autoHyphenate", DocumentWideCosField.bool("_paraStyle", "9", { default: null }));
+descriptor(TextDocument, "hangingRoman", DocumentWideCosField.bool("_paraStyle", "21", { default: false }));
+descriptor(TextDocument, "everyLineComposer", DocumentWideCosField.bool("_paraStyle", "29", { default: false }));
+descriptor(TextDocument, "baselineDirection", DocumentWideCosField.enum(BaselineDirection, "_charStyle", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
+descriptor(TextDocument, "ligature", DocumentWideCosField.bool("_charStyle", "18", { default: false }));
+descriptor(TextDocument, "noBreak", DocumentWideCosField.bool("_charStyle", "52", { default: false }));
+descriptor(TextDocument, "digitSet", DocumentWideCosField.enum(DigitSet, "_charStyle", "70", { default: DigitSet.DEFAULT_DIGITS }));
+descriptor(TextDocument, "lineJoinType", DocumentWideCosField.enum(LineJoinType, "_charStyle", "62", { default: LineJoinType.LINE_JOIN_MITER }));
+descriptor(TextDocument, "direction", DocumentWideCosField.enum(ParagraphDirection, "_paraStyle", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
 
 // -- `@requires_version(24)` setter bodies --------------------------------
 // The Python decorator wraps each setter; the gate runs before the body. The
@@ -1469,26 +1469,26 @@ descriptor(TextDocument, "direction", DocumentWideCosField.enum(ParagraphDirecti
 export const _boxInsetSpacingSet = requiresVersion(24)(function box_inset_spacing(this: TextDocument, value: number): void {
   /** Setter body for `box_inset_spacing`. */
   validatePositiveNumber(value);
-  const meta = cosSetdefault(this._ensure_frame(), "2", new Map());
+  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   cosSetitem(meta, "9", pyfloat(value));
   _numericSort(cosDict(meta, "items"));
-  this._propagate_cos();
+  this._propagateCos();
 });
 
 export const _boxVerticalAlignmentSet = requiresVersion(24)(function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
   /** Setter body for `box_vertical_alignment`. */
-  const meta = cosSetdefault(this._ensure_frame(), "2", new Map());
-  cosSetitem(meta, "13", BoxVerticalAlignment.to_binary(value));
+  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+  cosSetitem(meta, "13", BoxVerticalAlignment.toBinary(value));
   _numericSort(cosDict(meta, "items"));
-  this._propagate_cos();
+  this._propagateCos();
 });
 
 export const _boxAutoFitPolicySet = requiresVersion(24)(function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
   /** Setter body for `box_auto_fit_policy`. */
-  const meta = cosSetdefault(this._ensure_frame(), "2", new Map());
-  cosSetitem(meta, "14", BoxAutoFitPolicy.to_binary(value));
+  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+  cosSetitem(meta, "14", BoxAutoFitPolicy.toBinary(value));
   _numericSort(cosDict(meta, "items"));
-  this._propagate_cos();
+  this._propagateCos();
 });
 
 export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_first_baseline_alignment(
@@ -1496,21 +1496,21 @@ export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(function box_fi
   value: BoxFirstBaselineAlignment,
 ): void {
   /** Setter body for `box_first_baseline_alignment`. */
-  const meta = cosSetdefault(this._ensure_frame(), "2", new Map());
+  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
-  cosSetitem(sub, "0", BoxFirstBaselineAlignment.to_binary(value));
+  cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
   // AE always stores the minimum alongside the alignment.
   cosSetdefault(sub, "1", pyfloat(0.0));
   _numericSort(cosDict(meta, "items"));
-  this._propagate_cos();
+  this._propagateCos();
 });
 
 export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
   /** Setter body for `box_first_baseline_alignment_minimum`. */
-  const meta = cosSetdefault(this._ensure_frame(), "2", new Map());
+  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
   const sub = cosSetdefault(meta, "10", new Map());
-  cosSetdefault(sub, "0", BoxFirstBaselineAlignment.to_binary(BoxFirstBaselineAlignment.ASCENT));
+  cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));
   cosSetitem(sub, "1", pyfloat(value));
   _numericSort(cosDict(meta, "items"));
-  this._propagate_cos();
+  this._propagateCos();
 });

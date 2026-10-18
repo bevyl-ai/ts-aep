@@ -80,14 +80,14 @@ export class ByteDifference {
   byte1: number;
   byte2: number;
   /** 7 to 0 from left to right, null if multiple bits differ */
-  bit_position: number | null;
+  bitPosition: number | null;
 
   constructor(path: string, offset: number, byte1: number, byte2: number, bitPosition: number | null = null) {
     this.path = path;
     this.offset = offset;
     this.byte1 = byte1;
     this.byte2 = byte2;
-    this.bit_position = bitPosition;
+    this.bitPosition = bitPosition;
     this.__post_init__();
   }
 
@@ -96,13 +96,13 @@ export class ByteDifference {
     const xor = this.byte1 ^ this.byte2;
     if (xor !== 0 && (xor & (xor - 1)) === 0) {
       // Check if only one bit is set
-      this.bit_position = 7 - (bitLength(xor) - 1);
+      this.bitPosition = 7 - (bitLength(xor) - 1);
     }
   }
 
   /** Format the difference for display. */
-  format_diff(): string {
-    const bitInfo = this.bit_position != null ? `, bit ${this.bit_position}` : "";
+  formatDiff(): string {
+    const bitInfo = this.bitPosition != null ? `, bit ${this.bitPosition}` : "";
     return (
       `  Offset ${format(this.offset, "4d")} (0x${format(this.offset, "04X")}): ` +
       `0x${format(this.byte1, "02X")} (${bin8(this.byte1)}) vs ` +
@@ -114,19 +114,19 @@ export class ByteDifference {
 /** Represents all differences within a specific chunk/element. */
 export class ChunkDifference {
   path: string;
-  byte_diffs: ByteDifference[];
+  byteDiffs: ByteDifference[];
   size1: number;
   size2: number;
 
   constructor(path: string, byteDiffs: ByteDifference[], size1: number, size2: number) {
     this.path = path;
-    this.byte_diffs = byteDiffs;
+    this.byteDiffs = byteDiffs;
     this.size1 = size1;
     this.size2 = size2;
   }
 
   /** Check if the chunks have different sizes. */
-  has_size_difference(): boolean {
+  hasSizeDifference(): boolean {
     return this.size1 !== this.size2;
   }
 }
@@ -137,13 +137,13 @@ export class MultiFileDifference {
   offset: number;
   /** Byte value per file. `-1` if the chunk is missing in that file. */
   values: number[];
-  bit_position: number | null;
+  bitPosition: number | null;
 
   constructor(path: string, offset: number, values: number[], bitPosition: number | null = null) {
     this.path = path;
     this.offset = offset;
     this.values = values;
-    this.bit_position = bitPosition;
+    this.bitPosition = bitPosition;
     this.__post_init__();
   }
 
@@ -155,7 +155,7 @@ export class MultiFileDifference {
       const [a, b_] = sorted(distinct);
       const xor = a ^ b_;
       if (xor !== 0 && (xor & (xor - 1)) === 0) {
-        this.bit_position = 7 - (bitLength(xor) - 1);
+        this.bitPosition = 7 - (bitLength(xor) - 1);
       }
     }
   }
@@ -455,8 +455,8 @@ export function _compareStructureRecursive(c1: Chunk, c2: Chunk, path: string, d
 export function compareStructure(file1: Path, file2: Path): StructuralDifference[] {
   // `with open(file, "rb") as f: read_aep(f)` is modelled by reading the
   // whole file first; read_aep consumes all of it, so the handle can close.
-  const [rifx1] = readAep(new BytesIO(file1.read_bytes()));
-  const [rifx2] = readAep(new BytesIO(file2.read_bytes()));
+  const [rifx1] = readAep(new BytesIO(file1.readBytes()));
+  const [rifx2] = readAep(new BytesIO(file2.readBytes()));
   const diffs: StructuralDifference[] = [];
   _compareStructureRecursive(rifx1, rifx2, "", diffs);
   return diffs;
@@ -634,11 +634,11 @@ export function printResults(
 
     for (const diff of differences) {
       print(`\n[${diff.path}]`);
-      if (diff.has_size_difference()) {
+      if (diff.hasSizeDifference()) {
         print(`  Size: ${diff.size1} bytes vs ${diff.size2} bytes`);
       }
 
-      for (const byteDiff of diff.byte_diffs) {
+      for (const byteDiff of diff.byteDiffs) {
         if (byteDiff.byte1 === MISSING_BYTE) {
           print(
             `  Offset ${format(byteDiff.offset, "4d")} ` +
@@ -652,7 +652,7 @@ export function printResults(
               `0x${format(byteDiff.byte1, "02X")} vs <missing>`,
           );
         } else {
-          print(byteDiff.format_diff());
+          print(byteDiff.formatDiff());
         }
 
         // Context display
@@ -671,7 +671,7 @@ export function printResults(
   }
 
   // Summary
-  const totalByteDiffs = sum(differences.map((d) => d.byte_diffs.length));
+  const totalByteDiffs = sum(differences.map((d) => d.byteDiffs.length));
   print(`\n${"=".repeat(80)}`);
   print("Summary:");
   if (structuralDiffs != null && structuralDiffs.length > 0) {
@@ -733,7 +733,7 @@ export function printMultiResults(
       }
 
       for (const diff of chunkDiff.diffs) {
-        const bitInfo = diff.bit_position != null ? `, bit ${diff.bit_position}` : "";
+        const bitInfo = diff.bitPosition != null ? `, bit ${diff.bitPosition}` : "";
         const valueParts: string[] = [];
         for (const v of diff.values) {
           if (v === MISSING_BYTE) {
@@ -788,7 +788,7 @@ export function toJsonOutput(
       path: diff.path,
       size1: diff.size1,
       size2: diff.size2,
-      byte_differences: diff.byte_diffs.map((bd) => ({
+      byte_differences: diff.byteDiffs.map((bd) => ({
         offset: bd.offset,
         offset_hex: `0x${format(bd.offset, "04X")}`,
         byte1: bd.byte1 !== MISSING_BYTE ? bd.byte1 : null,
@@ -797,7 +797,7 @@ export function toJsonOutput(
         byte2: bd.byte2 !== MISSING_BYTE ? bd.byte2 : null,
         byte2_hex: bd.byte2 !== MISSING_BYTE ? `0x${format(bd.byte2, "02X")}` : null,
         byte2_binary: bd.byte2 !== MISSING_BYTE ? bin8(bd.byte2) : null,
-        bit_position: bd.bit_position,
+        bit_position: bd.bitPosition,
       })),
     })),
     only_in_file1: onlyInFile1,
@@ -805,7 +805,7 @@ export function toJsonOutput(
     suppressed_float_diffs: suppressed,
     summary: {
       chunks_with_differences: differences.length,
-      total_byte_differences: sum(differences.map((d) => d.byte_diffs.length)),
+      total_byte_differences: sum(differences.map((d) => d.byteDiffs.length)),
       only_in_file1: onlyInFile1.length,
       only_in_file2: onlyInFile2.length,
       suppressed_float_diffs: suppressed,

@@ -211,7 +211,7 @@ class _Structure {
 }
 
 function _read(path: Path): ListChunk {
-  const [rifx, _xmp] = readAep(new BytesIO(path.read_bytes()));
+  const [rifx, _xmp] = readAep(new BytesIO(path.readBytes()));
   return rifx;
 }
 
@@ -241,7 +241,7 @@ function _newProject(version: string): py_aep.Application {
 // Module-scoped fixture `written`: one saved-and-reread project per year.
 const written = lruCache((year: string): _Structure => {
   const dir = makeTmpPath().div(year);
-  dir.mkdir({ parents: true, exist_ok: true });
+  dir.mkdir({ parents: true, existOk: true });
   const path = dir.div("new.aep");
   _newProject(RELEASES[year]).project.save(path);
   return new _Structure(_read(path));
@@ -317,7 +317,7 @@ test.each(RELEASE_VERSIONS)("test_gated_project_round_trips[%#]", (version) => {
   const second = tmpPath.div("second.aep");
   _newProject(version).project.save(first);
   py_aep.parse(first).project.save(second);
-  expect(pyEq(first.read_bytes(), second.read_bytes())).toBe(true);
+  expect(pyEq(first.readBytes(), second.readBytes())).toBe(true);
 });
 
 test("test_layer_comment_written_before_ovdg", () => {

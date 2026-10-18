@@ -194,7 +194,7 @@ type Token = [string, string];
 type Select = (context: SelectorContext, result: Iterable<Element>) => Iterable<Element>;
 
 class SelectorContext {
-  parent_map: Map<Element, Element> | null = null;
+  parentMap: Map<Element, Element> | null = null;
   root: Element;
   constructor(root: Element) {
     this.root = root;
@@ -202,12 +202,12 @@ class SelectorContext {
 }
 
 function getParentMap(context: SelectorContext): Map<Element, Element> {
-  if (context.parent_map === null) {
+  if (context.parentMap === null) {
     const pm = new Map<Element, Element>();
     for (const p of context.root.iter()) for (const c of p) pm.set(c, p);
-    context.parent_map = pm;
+    context.parentMap = pm;
   }
-  return context.parent_map;
+  return context.parentMap;
 }
 
 const xpathTokenizerRe =
@@ -587,10 +587,10 @@ function _serializeText(write: (s: string) => void, elem: Element): void {
 }
 
 export interface ToStringOptions {
-  xml_declaration?: boolean | null;
-  default_namespace?: string | null;
+  xmlDeclaration?: boolean | null;
+  defaultNamespace?: string | null;
   method?: "xml" | "text" | null;
-  short_empty_elements?: boolean;
+  shortEmptyElements?: boolean;
 }
 
 function _tostringUnicode(element: Element, opts: ToStringOptions): string {
@@ -602,8 +602,8 @@ function _tostringUnicode(element: Element, opts: ToStringOptions): string {
   if (method === "text") {
     _serializeText(write, element);
   } else if (method === "xml") {
-    const [qnames, namespaces] = _namespaces(element, opts.default_namespace ?? null);
-    _serializeXml(write, element, qnames, namespaces, opts.short_empty_elements ?? true);
+    const [qnames, namespaces] = _namespaces(element, opts.defaultNamespace ?? null);
+    _serializeXml(write, element, qnames, namespaces, opts.shortEmptyElements ?? true);
   } else {
     throw new ValueError(`unknown serialization method '${method}'`);
   }
@@ -620,13 +620,13 @@ export function tostring(
   const enc = encoding ?? "us-ascii";
   const body = _tostringUnicode(element, opts);
   if (enc === "unicode") {
-    const decl = opts.xml_declaration === true ? "<?xml version='1.0'?>\n" : "";
+    const decl = opts.xmlDeclaration === true ? "<?xml version='1.0'?>\n" : "";
     return decl + body;
   }
   const lower = enc.toLowerCase();
   const declare =
-    opts.xml_declaration === true ||
-    (opts.xml_declaration == null && !["utf-8", "us-ascii", "unicode"].includes(lower));
+    opts.xmlDeclaration === true ||
+    (opts.xmlDeclaration == null && !["utf-8", "us-ascii", "unicode"].includes(lower));
   const decl = declare ? `<?xml version='1.0' encoding='${enc}'?>\n` : "";
   const text = decl + body;
   if (lower === "us-ascii" || lower === "ascii") {
@@ -690,13 +690,13 @@ class _Parser {
     throw e;
   }
 
-  skip_ws(): boolean {
+  skipWs(): boolean {
     const start = this.pos;
     while (this.pos < this.s.length && isWsCode(this.s.charCodeAt(this.pos))) this.pos++;
     return this.pos > start;
   }
 
-  read_name(): string {
+  readName(): string {
     const s = this.s;
     const start = this.pos;
     if (ASCII_NAME[s.charCodeAt(start)] === 1) {
@@ -719,7 +719,7 @@ class _Parser {
     return m[0];
   }
 
-  check_chars(text: string, at: number): void {
+  checkChars(text: string, at: number): void {
     const m = BAD_CHAR_RE.exec(text);
     if (m !== null) this.err("not well-formed (invalid token)", at + m.index);
   }
@@ -752,7 +752,7 @@ class _Parser {
     const val = this.entities.get(body);
     if (val === undefined) this.err("undefined entity", start);
     if (depth > 40) this.err("recursive entity reference", start);
-    const out = this.expand_entity_value(val, depth + 1, start);
+    const out = this.expandEntityValue(val, depth + 1, start);
     this.expanded += out.length;
     if (this.expanded > EXPANSION_LIMIT) {
       this.err("limit on input amplification factor (from DTD and entities) breached", start);
@@ -760,7 +760,7 @@ class _Parser {
     return out;
   }
 
-  expand_entity_value(val: string, depth: number, at: number): string {
+  expandEntityValue(val: string, depth: number, at: number): string {
     if (val.includes("<")) this.err("not well-formed (invalid token)", at);
     if (!val.includes("&")) return val;
     const sub = new _Parser(val);
@@ -781,11 +781,11 @@ class _Parser {
     return out;
   }
 
-  parse_doctype(): void {
+  parseDoctype(): void {
     const s = this.s;
     this.pos += "<!DOCTYPE".length;
-    this.skip_ws();
-    this.read_name();
+    this.skipWs();
+    this.readName();
     // external id and internal subset
     for (;;) {
       if (this.pos >= s.length) this.err("unclosed token");
@@ -800,18 +800,18 @@ class _Parser {
         this.pos = e + 1;
       } else if (c === "[") {
         this.pos++;
-        this.parse_internal_subset();
+        this.parseInternalSubset();
       } else {
         this.pos++;
       }
     }
   }
 
-  parse_internal_subset(): void {
+  parseInternalSubset(): void {
     const s = this.s;
     const entityRe = new RegExp(`<!ENTITY\\s+(%\\s+)?([${NAME_START}][${NAME_CHAR}]*)\\s+(?:"([^"]*)"|'([^']*)')\\s*>`, "uy");
     for (;;) {
-      this.skip_ws();
+      this.skipWs();
       if (this.pos >= s.length) this.err("unclosed token");
       if (s[this.pos] === "]") {
         this.pos++;
@@ -832,10 +832,10 @@ class _Parser {
           if (!m[1] && !this.entities.has(m[2])) this.entities.set(m[2], m[3] ?? m[4]);
           this.pos = entityRe.lastIndex;
         } else {
-          this.skip_decl();
+          this.skipDecl();
         }
       } else if (s.startsWith("<!", this.pos)) {
-        this.skip_decl();
+        this.skipDecl();
       } else if (s[this.pos] === "%") {
         const e = s.indexOf(";", this.pos);
         if (e < 0) this.err("unclosed token");
@@ -846,7 +846,7 @@ class _Parser {
     }
   }
 
-  skip_decl(): void {
+  skipDecl(): void {
     const s = this.s;
     for (;;) {
       if (this.pos >= s.length) this.err("unclosed token");
@@ -864,46 +864,46 @@ class _Parser {
     }
   }
 
-  skip_misc_token(): boolean {
+  skipMiscToken(): boolean {
     const s = this.s;
     if (s.startsWith("<!--", this.pos)) {
       const e = s.indexOf("-->", this.pos + 4);
       if (e < 0) this.err("unclosed token");
       if (s.slice(this.pos + 4, e).includes("--")) this.err("not well-formed (invalid token)");
-      this.check_chars(s.slice(this.pos, e), this.pos);
+      this.checkChars(s.slice(this.pos, e), this.pos);
       this.pos = e + 3;
       return true;
     }
     if (s.startsWith("<?", this.pos)) {
-      this.skip_pi();
+      this.skipPi();
       return true;
     }
     return false;
   }
 
-  skip_pi(): void {
+  skipPi(): void {
     const s = this.s;
     const start = this.pos;
     this.pos += 2;
-    const target = this.read_name();
+    const target = this.readName();
     if (target.toLowerCase() === "xml") {
       this.err("XML or text declaration not at start of entity", start);
     }
     const e = s.indexOf("?>", this.pos);
     if (e < 0) this.err("unclosed token");
     if (this.pos < e && !isWs(s[this.pos])) this.err("processing instruction not well-formed", this.pos);
-    this.check_chars(s.slice(this.pos, e), this.pos);
+    this.checkChars(s.slice(this.pos, e), this.pos);
     this.pos = e + 2;
   }
 
-  parse_attr_value(quote: string): string {
+  parseAttrValue(quote: string): string {
     const s = this.s;
     this.pos++;
     const close = s.indexOf(quote, this.pos);
     if (close >= 0) {
       const value = s.slice(this.pos, close);
       if (!ATTR_SLOW_RE.test(value)) {
-        this.check_chars(value, this.pos);
+        this.checkChars(value, this.pos);
         this.pos = close + 1;
         return value;
       }
@@ -924,7 +924,7 @@ class _Parser {
       const start = this.pos;
       while (this.pos < s.length && s[this.pos] !== quote && s[this.pos] !== "<" && s[this.pos] !== "&") this.pos++;
       const chunk = s.slice(start, this.pos);
-      this.check_chars(chunk, start);
+      this.checkChars(chunk, start);
       out += chunk.replace(/[\t\n]/g, " ");
     }
   }
@@ -939,12 +939,12 @@ class _Parser {
     }
     // prolog
     for (;;) {
-      this.skip_ws();
+      this.skipWs();
       if (this.pos >= s.length) this.err("no element found");
       if (s[this.pos] !== "<") this.err("syntax error");
-      if (this.skip_misc_token()) continue;
+      if (this.skipMiscToken()) continue;
       if (s.startsWith("<!DOCTYPE", this.pos)) {
-        this.parse_doctype();
+        this.parseDoctype();
         continue;
       }
       break;
@@ -983,12 +983,12 @@ class _Parser {
     const startTag = (): Element => {
       const tagAt = this.pos;
       this.pos++;
-      const raw = this.read_name();
+      const raw = this.readName();
       const rawAttrs: [string, string][] = [];
       let hasDecls = false;
       let selfClose = false;
       for (;;) {
-        const hadWs = this.skip_ws();
+        const hadWs = this.skipWs();
         if (this.pos >= s.length) this.err("unclosed token");
         const c = s[this.pos];
         if (c === ">") {
@@ -1004,16 +1004,16 @@ class _Parser {
         }
         if (!hadWs) this.err("not well-formed (invalid token)");
         const at = this.pos;
-        const name = this.read_name();
-        this.skip_ws();
+        const name = this.readName();
+        this.skipWs();
         if (this.pos >= s.length) this.err("unclosed token");
         if (s[this.pos] !== "=") this.err("not well-formed (invalid token)");
         this.pos++;
-        this.skip_ws();
+        this.skipWs();
         if (this.pos >= s.length) this.err("unclosed token");
         const q = s[this.pos];
         if (q !== '"' && q !== "'") this.err("not well-formed (invalid token)");
-        const value = this.parse_attr_value(q);
+        const value = this.parseAttrValue(q);
         for (const [n] of rawAttrs) if (n === name) this.err("duplicate attribute", at);
         if (name === "xmlns" || name.startsWith("xmlns:")) hasDecls = true;
         rawAttrs.push([name, value]);
@@ -1052,9 +1052,9 @@ class _Parser {
         const next = s.charCodeAt(this.pos + 1);
         if (next === 0x2f) {
           this.pos += 2;
-          const name = this.read_name();
+          const name = this.readName();
           const at = this.pos;
-          this.skip_ws();
+          this.skipWs();
           if (this.pos >= s.length) this.err("unclosed token");
           if (s[this.pos] !== ">") this.err("not well-formed (invalid token)");
           if (name !== stack[stack.length - 1].raw) this.err("mismatched tag", at);
@@ -1065,11 +1065,11 @@ class _Parser {
           const e = s.indexOf("]]>", this.pos + 9);
           if (e < 0) this.err("unclosed CDATA section");
           const data = s.slice(this.pos + 9, e);
-          this.check_chars(data, this.pos + 9);
+          this.checkChars(data, this.pos + 9);
           pending += data;
           this.pos = e + 3;
         } else if (next === 0x3f || (next === 0x21 && s.startsWith("<!--", this.pos))) {
-          this.skip_misc_token();
+          this.skipMiscToken();
         } else if (next === 0x21) {
           this.err("not well-formed (invalid token)");
         } else {
@@ -1082,7 +1082,7 @@ class _Parser {
         let c = s.charCodeAt(this.pos);
         while (c !== 0x3c && c !== 0x26 && this.pos < s.length) c = s.charCodeAt(++this.pos);
         const chunk = s.slice(start, this.pos);
-        this.check_chars(chunk, start);
+        this.checkChars(chunk, start);
         const cd = chunk.indexOf("]]>");
         if (cd >= 0) this.err("not well-formed (invalid token)", start + cd + 2);
         pending += chunk;
@@ -1094,9 +1094,9 @@ class _Parser {
   epilog(root: Element): Element {
     const s = this.s;
     for (;;) {
-      this.skip_ws();
+      this.skipWs();
       if (this.pos >= s.length) return root;
-      if (s[this.pos] === "<" && this.skip_misc_token()) continue;
+      if (s[this.pos] === "<" && this.skipMiscToken()) continue;
       this.err("junk after document element");
     }
   }

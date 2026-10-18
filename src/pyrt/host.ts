@@ -205,13 +205,13 @@ export class MemoryFs implements HostFs {
   readonly files = new Map<string, _MemFile>();
   readonly dirs = new Set<string>(["/"]);
   private readonly fds = new Map<number, _MemFd>();
-  private next_fd = 3;
+  private nextFd = 3;
 
   key(p: string): string {
     return path.resolve(String(p));
   }
 
-  private _is_dir(k: string): boolean {
+  private _isDir(k: string): boolean {
     if (this.dirs.has(k) || path.dirname(k) === k) return true;
     const prefix = k.endsWith(path.sep) ? k : k + path.sep;
     for (const f of this.files.keys()) if (f.startsWith(prefix)) return true;
@@ -230,19 +230,19 @@ export class MemoryFs implements HostFs {
   private _stats(k: string): HostStats {
     const f = this.files.get(k);
     if (f) return { isFile: () => true, isDirectory: () => false, size: f.data.length, mtimeMs: f.mtimeMs };
-    if (this._is_dir(k)) return { isFile: () => false, isDirectory: () => true, size: 0, mtimeMs: 0 };
+    if (this._isDir(k)) return { isFile: () => false, isDirectory: () => true, size: 0, mtimeMs: 0 };
     throw _fsError("ENOENT", "stat", k);
   }
 
   private _put(k: string, data: Uint8Array, syscall: string): void {
-    if (this._is_dir(k)) throw _fsError("EISDIR", syscall, k);
-    if (!this._is_dir(path.dirname(k))) throw _fsError("ENOENT", syscall, k);
+    if (this._isDir(k)) throw _fsError("EISDIR", syscall, k);
+    if (!this._isDir(path.dirname(k))) throw _fsError("ENOENT", syscall, k);
     this.files.set(k, { data, mtimeMs: Date.now() });
   }
 
   existsSync(p: string): boolean {
     const k = this.key(p);
-    return this.files.has(k) || this._is_dir(k);
+    return this.files.has(k) || this._isDir(k);
   }
 
   statSync(p: string, opts?: { bigint?: false }): HostStats;
@@ -264,7 +264,7 @@ export class MemoryFs implements HostFs {
   readFileSync(p: string, encoding?: string): Uint8Array | string {
     const k = this.key(p);
     const f = this.files.get(k);
-    if (!f) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
+    if (!f) throw _fsError(this._isDir(k) ? "EISDIR" : "ENOENT", "open", k);
     const copy = f.data.slice();
     return encoding ? new TextDecoder().decode(copy) : copy;
   }
@@ -277,12 +277,12 @@ export class MemoryFs implements HostFs {
   mkdirSync(p: string, opts: { recursive?: boolean } = {}): void {
     const k = this.key(p);
     if (this.files.has(k)) throw _fsError("EEXIST", "mkdir", k);
-    if (this._is_dir(k)) {
+    if (this._isDir(k)) {
       if (opts.recursive) return;
       throw _fsError("EEXIST", "mkdir", k);
     }
     const parent = path.dirname(k);
-    if (!this._is_dir(parent)) {
+    if (!this._isDir(parent)) {
       if (!opts.recursive) throw _fsError("ENOENT", "mkdir", k);
       this.mkdirSync(parent, opts);
     }
@@ -294,7 +294,7 @@ export class MemoryFs implements HostFs {
   readdirSync(p: string, opts?: { withFileTypes?: boolean }): string[] | HostDirent[] {
     const k = this.key(p);
     if (this.files.has(k)) throw _fsError("ENOTDIR", "scandir", k);
-    if (!this._is_dir(k)) throw _fsError("ENOENT", "scandir", k);
+    if (!this._isDir(k)) throw _fsError("ENOENT", "scandir", k);
     const names = this._children(k).sort();
     if (!opts?.withFileTypes) return names;
     return names.map((name) => {
@@ -312,7 +312,7 @@ export class MemoryFs implements HostFs {
 
   unlinkSync(p: string): void {
     const k = this.key(p);
-    if (!this.files.delete(k)) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "unlink", k);
+    if (!this.files.delete(k)) throw _fsError(this._isDir(k) ? "EISDIR" : "ENOENT", "unlink", k);
   }
 
   renameSync(from: string, to: string): void {
@@ -340,7 +340,7 @@ export class MemoryFs implements HostFs {
   rmSync(p: string, opts: { recursive?: boolean; force?: boolean } = {}): void {
     const k = this.key(p);
     if (this.files.delete(k)) return;
-    if (!this._is_dir(k)) {
+    if (!this._isDir(k)) {
       if (opts.force) return;
       throw _fsError("ENOENT", "rm", k);
     }
@@ -357,14 +357,14 @@ export class MemoryFs implements HostFs {
   openSync(p: string, flags: string): number {
     const k = this.key(p);
     if (flags === "r") {
-      if (!this.files.has(k)) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
+      if (!this.files.has(k)) throw _fsError(this._isDir(k) ? "EISDIR" : "ENOENT", "open", k);
     } else if (flags === "w" || flags === "wx") {
-      if (flags === "wx" && (this.files.has(k) || this._is_dir(k))) throw _fsError("EEXIST", "open", k);
+      if (flags === "wx" && (this.files.has(k) || this._isDir(k))) throw _fsError("EEXIST", "open", k);
       this._put(k, new Uint8Array(0), "open");
     } else {
       throw new Error(`memory fs: unsupported open flags '${flags}'`);
     }
-    const fd = this.next_fd++;
+    const fd = this.nextFd++;
     this.fds.set(fd, { path: k, writable: flags !== "r" });
     return fd;
   }

@@ -5,7 +5,7 @@
  * with `scripts/dev/gen_effect_controls.py` (see its docstring). The
  * `part` bytes are each control's serialized `LIST:parT` parameter
  * definitions - opaque plugin data, identical across projects.
- * `layer_param` marks controls whose value parameter is written to the
+ * `layerParam` marks controls whose value parameter is written to the
  * binary tdgp on creation (only the Layer Control; other controls leave
  * their parameter at its default, omitted from binary).
  *
@@ -13,12 +13,12 @@
  * effect with a generated per-project match name (`Pseudo/@@...`).
  */
 
-export type EffectControl = { name: string; layer_param: string | null; part: string };
+export type EffectControl = { name: string; layerParam: string | null; part: string };
 
 export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, EffectControl>([
   ["ADBE Slider Control", {
     name: "Slider Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "4520536c6964657220436f6e74726f6c2d303030300000000000000000000000000000" +
@@ -43,7 +43,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Color Control", {
     name: "Color Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "4520436f6c6f7220436f6e74726f6c2d30303030000000000000000000000000000000" +
@@ -68,7 +68,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Checkbox Control", {
     name: "Checkbox Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000284706172547061726e000000040000000374646d6e00000028414442" +
       "4520436865636b626f7820436f6e74726f6c2d30303030000000000000000000000000" +
@@ -93,7 +93,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Point Control", {
     name: "Point Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "4520506f696e7420436f6e74726f6c2d30303030000000000000000000000000000000" +
@@ -118,7 +118,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Point3D Control", {
     name: "3D Point Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "4520506f696e74334420436f6e74726f6c2d3030303000000000000000000000000000" +
@@ -143,7 +143,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Angle Control", {
     name: "Angle Control",
-    layer_param: null,
+    layerParam: null,
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "4520416e676c6520436f6e74726f6c2d30303030000000000000000000000000000000" +
@@ -168,7 +168,7 @@ export const EXPRESSION_CONTROLS: Map<string, EffectControl> = new Map<string, E
   }],
   ["ADBE Layer Control", {
     name: "Layer Control",
-    layer_param: "Layer",
+    layerParam: "Layer",
     part: (
       "4c49535400000274706172547061726e000000040000000374646d6e00000028414442" +
       "45204c6179657220436f6e74726f6c2d30303030000000000000000000000000000000" +

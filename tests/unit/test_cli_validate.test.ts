@@ -88,7 +88,7 @@ describe("TestValidationResult", () => {
 
   test("test_add_diff", () => {
     const result = new ValidationResult();
-    result.add_diff("test.field", 1, 2, "test");
+    result.addDiff("test.field", 1, 2, "test");
     expect(len(result)).toBe(1);
     expect(result.differences[0].includes("test.field")).toBe(true);
     expect(getitem(result.categories, "test")).toBe(1);
@@ -96,7 +96,7 @@ describe("TestValidationResult", () => {
 
   test("test_add_warning", () => {
     const result = new ValidationResult();
-    result.add_warning("some warning");
+    result.addWarning("some warning");
     expect(len(result.warnings)).toBe(1);
     expect(result.warnings[0]).toBe("some warning");
   });
@@ -164,7 +164,7 @@ describe("TestTraversalOrder", () => {
   /** The reported differences must not vary between runs. */
   test("test_repeated_validation_is_identical", async () => {
     const aep = SAMPLES_DIR.div("bugs", "29.97_fps_time_scale_3.125.aep");
-    const jsonPath = aep.with_suffix(".json");
+    const jsonPath = aep.withSuffix(".json");
     if (!aep.exists() || !jsonPath.exists()) return skip("sample not available");
     // Separate interpreters, so each gets its own hash seed.
     // NOTE(port): Python relies on the default per-process random hash seed (no PYTHONHASHSEED set); Bun children are likewise separate processes, same check.

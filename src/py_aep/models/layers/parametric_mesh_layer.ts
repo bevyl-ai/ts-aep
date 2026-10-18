@@ -34,11 +34,11 @@ export function _typeOf(x: { constructor: Function } | null | undefined): Functi
 /** Keyword arguments of `ParametricMeshLayer._new`. */
 type ParametricMeshLayerNewKw = {
   name: string;
-  layer_id: number;
+  layerId: number;
   duration: number;
-  containing_comp: CompItem;
-  mesh_type: ParametricMeshType;
-  effect_param_defs?: EffectParamDefs | null;
+  containingComp: CompItem;
+  meshType: ParametricMeshType;
+  effectParamDefs?: EffectParamDefs | null;
 };
 
 /**
@@ -64,7 +64,7 @@ type ParametricMeshLayerNewKw = {
  */
 export class ParametricMeshLayer extends AVLayer {
   // NOTE(port): Layer.__init__ -> PropertyBase.__init__ assigns instance `_auto_name = None`, shadowing this class attribute in Python too; AVLayer.name's `self._auto_name` therefore sees None in both.
-  static _auto_name: string = "Mesh Layer";
+  static _autoName: string = "Mesh Layer";
 
   /** For a parametric mesh layer, its mesh type. Read / write. */
   declare parametricMeshType: ParametricMeshType;
@@ -77,20 +77,20 @@ export class ParametricMeshLayer extends AVLayer {
 
   constructor(...args: ConstructorParameters<typeof AVLayer>) {
     super(...args);
-    this._update_options();
+    this._updateOptions();
   }
 
   // Python `# type: ignore[override]`: keyword shape differs from AVLayer._new's; overloads keep the base static side assignable.
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer;
   static _new(...args: never[]): never;
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer {
-    const { name, layer_id, duration, containing_comp, mesh_type, effect_param_defs = null } = kw;
+    const { name, layerId: layer_id, duration, containingComp: containing_comp, meshType: mesh_type, effectParamDefs: effect_param_defs = null } = kw;
     const layer = super._new<ParametricMeshLayer>({
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      effect_param_defs,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs,
     });
     layer._ldta.layer_type = LayerType.PARAMETRIC_MESH;
     layer._ldta.label = labelIndex(containing_comp._project._preferences, "Parametrics Label Index", 9);
@@ -110,7 +110,7 @@ export class ParametricMeshLayer extends AVLayer {
     // (tdsb=1) while the other mesh groups stay collapsed (tdsb=3, the
     // synthesized default). Override the active groups before the layer
     // is materialized so the written tdsb matches AE.
-    const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.to_binary(mesh_type)) ?? [];
+    const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.toBinary(mesh_type)) ?? [];
     for (const child of layer.properties) {
       if (activeGroups.includes(child.matchName) && child._tdsb != null) {
         child._tdsb._enable_flags = 1;
@@ -120,7 +120,7 @@ export class ParametricMeshLayer extends AVLayer {
   }
 
   /** Update the parametric mesh options from the layer's current state. */
-  _update_options(): void {
+  _updateOptions(): void {
     // Plain instance attributes, read as own properties (Python's
     // `__dict__`): `getattr` on a missing one would search the layer's
     // properties for that name.
@@ -162,7 +162,7 @@ descriptor(
   ParametricMeshLayer,
   "parametricMeshType",
   ChunkField.enum(ParametricMeshType, "_ldta", "light_and_mesh_type", {
-    post_set: (obj: ParametricMeshLayer) => obj._update_options(),
+    postSet: (obj: ParametricMeshLayer) => obj._updateOptions(),
   }),
 );
 
@@ -174,7 +174,7 @@ export const BEVEL_OPTION_TYPES: Map<number, typeof ParametricBevelOptions> = ne
 /** Decorator that registers a ParametricMeshOptions subclass for one mesh_type. */
 export function register(meshType: ParametricMeshType) {
   function decorator<M extends typeof ParametricMeshOptions>(cls: M): M {
-    OPTION_TYPES.set(ParametricMeshType.to_binary(meshType), cls);
+    OPTION_TYPES.set(ParametricMeshType.toBinary(meshType), cls);
     return cls;
   }
   return decorator;
@@ -183,7 +183,7 @@ export function register(meshType: ParametricMeshType) {
 /** Decorator that registers a ParametricBevelOptions subclass for one mesh_type. */
 export function registerBevel(meshType: ParametricMeshType) {
   function decorator<B extends typeof ParametricBevelOptions>(cls: B): B {
-    BEVEL_OPTION_TYPES.set(ParametricMeshType.to_binary(meshType), cls);
+    BEVEL_OPTION_TYPES.set(ParametricMeshType.toBinary(meshType), cls);
     return cls;
   }
   return decorator;
@@ -195,20 +195,20 @@ export function registerBevel(meshType: ParametricMeshType) {
  * @param property_name - Name of the property in the parametric mesh options group.
  */
 export class ParaMeshField<T extends number | boolean = number> {
-  declare _property_name: string;
+  declare _propertyName: string;
 
   constructor(propertyName: string) {
-    this._property_name = propertyName;
+    this._propertyName = propertyName;
   }
 
   __get__(obj: ParametricMeshOptions | ParametricBevelOptions | null, objtype: Function): T | this {
     if (obj == null) return this;
-    const value = obj._properties(this._property_name).value;
+    const value = obj._properties(this._propertyName).value;
     return value;
   }
 
   __set__(obj: ParametricMeshOptions | ParametricBevelOptions, value: T): void {
-    obj._properties(this._property_name).value = value;
+    obj._properties(this._propertyName).value = value;
   }
 }
 
@@ -221,7 +221,7 @@ export class ParaMeshField<T extends number | boolean = number> {
 export class ParametricMeshOptions {
   declare ["constructor"]: ClassAttributes<typeof ParametricMeshOptions>;
   // Annotation-only in Python; each subclass sets its own value.
-  static _match_name: string;
+  static _matchName: string;
 
   declare _layer: ParametricMeshLayer;
   declare _group: PropertyGroup | null;
@@ -234,7 +234,7 @@ export class ParametricMeshOptions {
   _properties(name: string): Property {
     // Python casts both lookups; a wrong kind fails at its next attribute read.
     if (this._group == null) {
-      const group = this._layer.property(this.constructor._match_name);
+      const group = this._layer.property(this.constructor._matchName);
       if (!(group instanceof PropertyGroup)) throw new AttributeError(`'${typeName(group)}' object has no attribute 'property'`);
       this._group = group;
     }
@@ -256,7 +256,7 @@ export class ParametricMeshOptions {
 }
 
 export class CubeMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE CubeMeshOptionsSGrp";
+  static _matchName = "ADBE CubeMeshOptionsSGrp";
 
   declare width: number;
   declare height: number;
@@ -270,7 +270,7 @@ descriptor(CubeMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothi
 register(ParametricMeshType.CUBE)(CubeMeshOptions);
 
 export class SphereMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE SphereMeshOptionsSGrp";
+  static _matchName = "ADBE SphereMeshOptionsSGrp";
 
   declare radius: number;
   declare sides: number;
@@ -288,7 +288,7 @@ descriptor(SphereMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoot
 register(ParametricMeshType.SPHERE)(SphereMeshOptions);
 
 export class PlaneMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE PlaneMeshOptionsSGrp";
+  static _matchName = "ADBE PlaneMeshOptionsSGrp";
 
   declare width: number;
   declare length: number;
@@ -302,7 +302,7 @@ descriptor(PlaneMeshOptions, "cornerSides", new ParaMeshField<number>("Corner Si
 register(ParametricMeshType.PLANE)(PlaneMeshOptions);
 
 export class TorusMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE TorusMeshOptionsSGrp";
+  static _matchName = "ADBE TorusMeshOptionsSGrp";
 
   declare ringRadius: number;
   declare pipeRadius: number;
@@ -324,7 +324,7 @@ descriptor(TorusMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smooth
 register(ParametricMeshType.TORUS)(TorusMeshOptions);
 
 export class ConeMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE ConeMeshOptionsSGrp";
+  static _matchName = "ADBE ConeMeshOptionsSGrp";
 
   declare topRadius: number;
   declare bottomRadius: number;
@@ -350,7 +350,7 @@ descriptor(ConeMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothi
 register(ParametricMeshType.CONE)(ConeMeshOptions);
 
 export class CylinderMeshOptions extends ParametricMeshOptions {
-  static _match_name = "ADBE CylinderMeshOptionsSGrp";
+  static _matchName = "ADBE CylinderMeshOptionsSGrp";
 
   declare radius: number;
   declare height: number;
@@ -382,7 +382,7 @@ register(ParametricMeshType.CYLINDER)(CylinderMeshOptions);
 export class ParametricBevelOptions extends ParametricMeshOptions {}
 
 export class CubeBevelOptions extends ParametricBevelOptions {
-  static _match_name = "ADBE CubeBevelOptionsSGrp";
+  static _matchName = "ADBE CubeBevelOptionsSGrp";
 
   declare radius: number;
   declare sides: number;
@@ -392,7 +392,7 @@ descriptor(CubeBevelOptions, "sides", new ParaMeshField<number>("Sides"));
 registerBevel(ParametricMeshType.CUBE)(CubeBevelOptions);
 
 export class ConeBevelOptions extends ParametricBevelOptions {
-  static _match_name = "ADBE ConeBevelBevelSGrp";
+  static _matchName = "ADBE ConeBevelBevelSGrp";
 
   declare topRadius: number;
   declare topSides: number;
@@ -406,7 +406,7 @@ descriptor(ConeBevelOptions, "bottomSides", new ParaMeshField<number>("Bottom Si
 registerBevel(ParametricMeshType.CONE)(ConeBevelOptions);
 
 export class CylinderBevelOptions extends ParametricBevelOptions {
-  static _match_name = "ADBE CylinderBevelOptionsSGrp";
+  static _matchName = "ADBE CylinderBevelOptionsSGrp";
 
   declare radius: number;
   declare sides: number;

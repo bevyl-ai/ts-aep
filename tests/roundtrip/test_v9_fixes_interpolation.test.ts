@@ -93,7 +93,7 @@ function _verts(shape: Shape): number[] {
 
 /** `kf._stored_value[2]`: the stored Z of a 3-D key. */
 function _storedZ(kf: Keyframe): number {
-  const stored = kf._stored_value;
+  const stored = kf._storedValue;
   pyAssert(Array.isArray(stored));
   return stored[2];
 }
@@ -586,7 +586,7 @@ describe("TestTwoDimensionalLayerZ", () => {
     anchor.value = [30, 20, 15];
     expect(pyEq(anchor.value, [30.0, 20.0, 0.0])).toBe(true);
     const again = _reparse(app, tmpPath).property(TG);
-    expect(pyEq(again.property("ADBE Anchor Point")._stored_static_value(), [30, 20, 15])).toBe(true);
+    expect(pyEq(again.property("ADBE Anchor Point")._storedStaticValue(), [30, 20, 15])).toBe(true);
     const stored = again.property("ADBE Position").keyframes.map((k) => _storedZ(k));
     expect(_eqApprox(stored, _approx([40.0, 5.0005441476708805, -30.0]))).toBe(true);
   });
@@ -719,7 +719,7 @@ describe("TestParallelAddKeyTypes", () => {
     expect(k0.outInterpolationType).toBe(getitem(_T, leftOut));
     expect(k2.inInterpolationType).toBe(getitem(_T, rightIn));
     if (continuous) {
-      const data = asInstance(new_._ldat_item.kf_data, KfNoValue);
+      const data = asInstance(new_._ldatItem.kf_data, KfNoValue);
       expect(pyEq([data.in_speed, data.out_speed], [1.0, 1.0])).toBe(true);
       expect(_eqApprox(data.in_influence, _approx(1 / 6))).toBe(true);
     }

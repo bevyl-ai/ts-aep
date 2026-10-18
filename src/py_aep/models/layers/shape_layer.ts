@@ -10,10 +10,10 @@ import type { EffectParamDefs } from "../descriptors.ts";
 /** Keyword arguments of `ShapeLayer._new`. */
 type ShapeLayerNewKw = {
   name: string;
-  layer_id: number;
+  layerId: number;
   duration: number;
-  containing_comp: CompItem;
-  effect_param_defs?: EffectParamDefs | null;
+  containingComp: CompItem;
+  effectParamDefs?: EffectParamDefs | null;
 };
 
 /**
@@ -36,28 +36,28 @@ type ShapeLayerNewKw = {
  * @see https://ae-scripting.docsforadobe.dev/layer/shapelayer/
  */
 export class ShapeLayer extends AVLayer {
-  static _auto_name: string = "Shape Layer";
+  static _autoName: string = "Shape Layer";
 
   static _new(kw: ShapeLayerNewKw): ShapeLayer;
   static _new(...args: never[]): never;
   static _new(kw: ShapeLayerNewKw): ShapeLayer {
     const {
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      effect_param_defs = null,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs = null,
     } = kw;
     const layer = super._new<ShapeLayer>({
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      effect_param_defs,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs,
     });
     layer._ldta.layer_type = LayerType.SHAPE;
     // The base factory named the layer from the AV type it started with.
-    layer._match_name = getitem(
+    layer._matchName = getitem(
       layer.constructor._LAYER_MATCH_NAMES,
       LayerType.SHAPE,
     );

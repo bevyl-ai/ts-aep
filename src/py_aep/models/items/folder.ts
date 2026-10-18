@@ -32,39 +32,39 @@ import { CompItem } from "./composition.ts";
  * @see https://ae-scripting.docsforadobe.dev/item/folderitem/
  */
 export class FolderItem extends Item {
-  static _auto_name: string = "Untitled";
+  static _autoName: string = "Untitled";
 
   /**
    * The items in this folder. Contains only the top-level items in the folder.
    * Read-only.
    */
   declare items: Item[];
-  declare _children_container: Chunk[];
+  declare _childrenContainer: Chunk[];
   declare _viewers: Viewer[];
 
   constructor(kw: {
     _idta: IdtaChunk | null;
-    _name_utf8: Utf8Chunk | null;
+    _nameUtf8: Utf8Chunk | null;
     _cmta: CmtaChunk | null;
-    _item_list: ListChunk;
+    _itemList: ListChunk;
     _gide: ListChunk | null;
-    _children_container: Chunk[];
+    _childrenContainer: Chunk[];
     project: Project;
-    parent_folder: FolderItem | null;
+    parentFolder: FolderItem | null;
   }) {
-    const { _idta, _name_utf8, _cmta, _item_list, _gide, _children_container, project, parent_folder } = kw;
+    const { _idta, _nameUtf8: _name_utf8, _cmta, _itemList: _item_list, _gide, _childrenContainer: _children_container, project, parentFolder: parent_folder } = kw;
     super({
       _idta,
-      _name_utf8,
+      _nameUtf8: _name_utf8,
       _cmta,
-      _item_list,
+      _itemList: _item_list,
       _gide,
       project,
-      parent_folder,
-      type_name: "Folder",
+      parentFolder: parent_folder,
+      typeName: "Folder",
     });
     this.items = [];
-    this._children_container = _children_container;
+    this._childrenContainer = _children_container;
     this._viewers = [];
   }
 
@@ -94,7 +94,7 @@ export class FolderItem extends Item {
 
   /** Remove this folder and all its children from the project. */
   remove(): void {
-    if (this._parent_folder == null) {
+    if (this._parentFolder == null) {
       throw new ValueError("Cannot remove the root folder");
     }
     for (const child of [...this.items]) {
@@ -109,15 +109,15 @@ export class FolderItem extends Item {
    * @param name - The name of the new folder.
    * @param kw - Options:
    * - `project`: The project that owns this folder.
-   * - `parent_folder`: The folder that will contain this folder.
+   * - `parentFolder`: The folder that will contain this folder.
    */
   static _new(
     name: string,
-    kw: { project: Project; parent_folder: FolderItem },
+    kw: { project: Project; parentFolder: FolderItem },
   ): FolderItem {
-    const { project, parent_folder } = kw;
+    const { project, parentFolder: parent_folder } = kw;
     validateString(name);
-    const newId = project._allocate_id();
+    const newId = project._allocateId();
 
     // AE labels new folders with the "Folder Label Index 2" preference
     // (factory 2, probed in AE 2026).
@@ -143,13 +143,13 @@ export class FolderItem extends Item {
 
     const folder = new this({
       _idta: idta,
-      _name_utf8: nameUtf8,
+      _nameUtf8: nameUtf8,
       _cmta: null,
-      _item_list: itemList,
+      _itemList: itemList,
       _gide: null,
-      _children_container: sfdr.chunks,
+      _childrenContainer: sfdr.chunks,
       project,
-      parent_folder,
+      parentFolder: parent_folder,
     });
     return folder;
   }
@@ -173,16 +173,16 @@ export class FolderItem extends Item {
   addFolder(name: string | null = null): FolderItem {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      name = autoName(FolderItem._auto_name, existing);
+      name = autoName(FolderItem._autoName, existing);
     }
 
     const folder = FolderItem._new(name, {
       project: this._project,
-      parent_folder: this,
+      parentFolder: this,
     });
 
     // Insert into parent container
-    this._children_container.push(folder._item_list);
+    this._childrenContainer.push(folder._itemList);
 
     // Register in project and parent
     this._project.items.set(folder.id, folder);
@@ -210,27 +210,27 @@ export class FolderItem extends Item {
     duration: number,
     frameRate: number,
   ): CompItem {
-    return this._add_comp(name, width, height, pixelAspect, duration, frameRate);
+    return this._addComp(name, width, height, pixelAspect, duration, frameRate);
   }
 
   /**
    * `add_comp` with the smallest width / height to accept (see
    * `CompItem._new`).
    */
-  _add_comp(
+  _addComp(
     name: string | null,
     width: number,
     height: number,
     pixelAspect: number,
     duration: number,
     frameRate: number,
-    kw: { min_dimension?: number } = {},
+    kw: { minDimension?: number } = {},
   ): CompItem {
-    const { min_dimension = 4 } = kw;
+    const { minDimension: min_dimension = 4 } = kw;
 
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      name = autoName(CompItem._auto_name, existing);
+      name = autoName(CompItem._autoName, existing);
     }
 
     const comp = CompItem._new(
@@ -242,8 +242,8 @@ export class FolderItem extends Item {
       frameRate,
       {
         project: this._project,
-        parent_folder: this,
-        min_dimension,
+        parentFolder: this,
+        minDimension: min_dimension,
       },
     );
 
@@ -251,8 +251,8 @@ export class FolderItem extends Item {
     // chunks) at the FRONT of the folder - right after the root folder's
     // `fdta` header, or at index 0 in a subfolder's Sfdr (verified in AE
     // 2026 for both script addComp and SVG import). Match that ordering.
-    const block = [comp._item_list, ...comp._view_data];
-    const container = this._children_container;
+    const block = [comp._itemList, ...comp._viewData];
+    const container = this._childrenContainer;
     const insertAt = container?.length > 0 && container[0].chunk_type === "fdta" ? 1 : 0;
     container.splice(insertAt, 0, ...block);
 
@@ -328,12 +328,12 @@ export class FolderItem extends Item {
    * list and the backing `Sfdr` chunk blocks to match. Used only by the
    * layered-import path; it does not affect `add_comp`/`add_folder`.
    */
-  _sort_children_by_name(): void {
-    const [header, blocks] = this._child_chunk_blocks();
+  _sortChildrenByName(): void {
+    const [header, blocks] = this._childChunkBlocks();
     blocks.splice(0, blocks.length, ...sorted(blocks, (b) => b[0].name.toLowerCase()));
-    this._children_container.splice(
+    this._childrenContainer.splice(
       0,
-      this._children_container.length,
+      this._childrenContainer.length,
       ...header,
       ...blocks.flatMap(([, chunks]) => chunks),
     );
@@ -341,18 +341,18 @@ export class FolderItem extends Item {
   }
 
   /**
-   * Partition `_children_container` into a leading header and one
+   * Partition `_childrenContainer` into a leading header and one
    * chunk block per child item (the item's chunk list plus any
    * trailing non-item chunks, e.g. view data).
    */
-  _child_chunk_blocks(): [Chunk[], [Item, Chunk[]][]] {
+  _childChunkBlocks(): [Chunk[], [Item, Chunk[]][]] {
     // Keyed by object identity, as Python's `id()` was.
     const byItemList = new Map<Chunk, Item>(
-      this.items.map((item): [Chunk, Item] => [item._item_list, item]),
+      this.items.map((item): [Chunk, Item] => [item._itemList, item]),
     );
     const header: Chunk[] = [];
     const blocks: [Item, Chunk[]][] = [];
-    for (const chunk of this._children_container) {
+    for (const chunk of this._childrenContainer) {
       const item = byItemList.get(chunk) ?? null;
       if (item != null) {
         blocks.push([item, [chunk]]);
@@ -371,11 +371,11 @@ export class FolderItem extends Item {
    *
    * AE stores folder children in Project-panel display order and
    * inserts a precompose result comp at that position. Unlike
-   * `_sort_children_by_name` this moves only `item`, leaving the
+   * `_sortChildrenByName` this moves only `item`, leaving the
    * other children's stored order untouched.
    */
-  _reposition_child_sorted(item: Item): void {
-    const [header, blocks] = this._child_chunk_blocks();
+  _repositionChildSorted(item: Item): void {
+    const [header, blocks] = this._childChunkBlocks();
     const moved = blocks.find((b) => b[0] === item);
     // Python's `next()` without a default raises StopIteration on a miss.
     if (moved == null) {
@@ -388,9 +388,9 @@ export class FolderItem extends Item {
       pos = blocks.length;
     }
     blocks.splice(pos, 0, moved);
-    this._children_container.splice(
+    this._childrenContainer.splice(
       0,
-      this._children_container.length,
+      this._childrenContainer.length,
       ...header,
       ...blocks.flatMap(([, chunks]) => chunks),
     );
