@@ -3369,7 +3369,7 @@ describe("TestLayerStylesEditableImport", () => {
     "test_styles_subtree_matches_ae[%#]",
     (psd: Path, fixture: string, fixtureComp: string | null, layers: string[]) => {
       const aeProject = parseAep(IMPORT_DIR.div(fixture)).project;
-      // NOTE(port): warnings.catch_warnings + simplefilter("ignore") - pyrt warn() never echoes, so nothing needs silencing.
+      // NOTE(port): warnings.catch_warnings + simplefilter("ignore") - tests/setup.ts already silences warnings.
       const [project, comp] = _stylesImport(psd, ImportAsType.COMP);
       // A named fixture_comp that exists in the py project too (the nested
       // group comp) targets that comp on both sides; otherwise the py side

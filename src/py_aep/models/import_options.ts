@@ -180,8 +180,8 @@ export class ImportOptions {
    * The file to be imported. If a file is set in the constructor, you can access
    * it through this attribute. Read / Write.
    */
-  get file(): Path {
-    return this._file;
+  get file(): string {
+    return this._file.toString();
   }
 
   set file(value: string | PathLike) {

@@ -22,7 +22,7 @@ import {
   assert,
   literal,
   sorted,
-  tkey,
+  compositeKey,
   type PathLike,
 } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
@@ -266,8 +266,7 @@ export class FootageItem extends AVItem {
    * footage sharing the same source file and interpretation, or `null`
    * for sources that are always unique (solids, placeholders).
    *
-   * The Python tuple is returned as a `tkey(...)` string because the
-   * caller uses it as a Map/Set key.
+   * A `compositeKey(...)` string, so the caller can use it as a Map/Set key.
    */
   _consolidationKey(): string | null {
     const source = this._mainSource;
@@ -275,7 +274,7 @@ export class FootageItem extends AVItem {
       return null;
     }
     const attrs = source.fileAttributes;
-    return tkey(
+    return compositeKey(
       source.file,
       [...source.fileNames],
       source.alphaMode,

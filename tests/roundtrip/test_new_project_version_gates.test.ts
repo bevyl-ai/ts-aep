@@ -28,7 +28,7 @@ import {
   setdefault,
   sorted,
   StopIteration,
-  tkey,
+  compositeKey,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
@@ -182,9 +182,9 @@ class _Structure {
   _add_view_layer(view: ListChunk): void {
     const ldta = view.chunks[0];
     const name = getattr(view.chunks[1], "value");
-    this.view_layers.set(tkey(view.listType, name), _signature(view));
+    this.view_layers.set(compositeKey(view.listType, name), _signature(view));
     this.view_ldta_tails.add(
-      tkey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),
+      compositeKey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),
     );
   }
 

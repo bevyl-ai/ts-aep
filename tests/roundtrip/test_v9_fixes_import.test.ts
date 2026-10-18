@@ -50,7 +50,7 @@ function _import(project: Project, path: Path, options: ImportOptionValues = {})
   const opts = new ImportOptions(path);
   // setattr(opts, key, value) for each option: Object.assign runs the setters.
   Object.assign(opts, options);
-  // NOTE(port): warnings.simplefilter("ignore") only silences output; pyrt warn records without echoing, so import_file behaves the same
+  // NOTE(port): warnings.simplefilter("ignore") only silences output; tests/setup.ts already silences warnings, so import_file behaves the same
   return project.importFile(opts);
 }
 

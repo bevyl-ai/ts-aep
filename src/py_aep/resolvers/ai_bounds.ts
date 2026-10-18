@@ -1274,7 +1274,7 @@ export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null
   const doc = new _Document(data, path.name);
   const pages = doc.pages();
   if (pages.length > 1) {
-    // NOTE(port): pyrt warn records the message, the only part observable to pytest.warns(match=); UserWarning category and stacklevel are not modeled.
+    // NOTE(port): warn() carries the message, the only part observable to pytest.warns(match=); UserWarning category and stacklevel are not modeled.
     warn(
       `${path.name}: the document has ${pages.length} artboards. ` +
         "py_aep measures the first one; After Effects measures the " +

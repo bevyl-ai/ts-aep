@@ -45,7 +45,7 @@ import {
   split,
   str,
   descriptor,
-  pyfloat,
+  boxFloat,
 } from "../../../pyrt/index.ts";
 import { CosField, CosName, cosGet, runSpans } from "../../cos/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
@@ -319,7 +319,7 @@ export function _buildColorPaint(rgb: number[]): CosDict {
       "0",
       new Map<string, CosNode>([
         ["0", 1],
-        ["1", [pyfloat(1.0), pyfloat(rgb[0]), pyfloat(rgb[1]), pyfloat(rgb[2])]],
+        ["1", [boxFloat(1.0), boxFloat(rgb[0]), boxFloat(rgb[1]), boxFloat(rgb[2])]],
       ]),
     ],
   ]);
@@ -968,7 +968,7 @@ export class RangeField<T extends InstanceValue> {
   /** Create a RangeField that coerces to float. */
   static float(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
     // The stored value is a Python float, so box it to keep `1.0` from serializing as `1`.
-    return new RangeField<number>(kind, key, { transform: cosFloat, reverse: (x: number) => pyfloat(x), ...kwargs });
+    return new RangeField<number>(kind, key, { transform: cosFloat, reverse: (x: number) => boxFloat(x), ...kwargs });
   }
 
   /**
@@ -1458,7 +1458,7 @@ export class CharacterRange extends _TextRange {
     const [start, end] = this._bounds();
     _applyCharKey(this._docRef, start, end, "4", value);
     if (value) {
-      _applyCharKey(this._docRef, start, end, "5", pyfloat(0.01));
+      _applyCharKey(this._docRef, start, end, "5", boxFloat(0.01));
     }
     this._propagate();
   }
@@ -1561,7 +1561,7 @@ export class CharacterRange extends _TextRange {
     if (value == null) {
       _applyCharKey(this._docRef, start, end, "5", null);
     } else {
-      _applyCharKey(this._docRef, start, end, "5", pyfloat(value));
+      _applyCharKey(this._docRef, start, end, "5", boxFloat(value));
       _applyCharKey(this._docRef, start, end, "4", false);
     }
     this._propagate();

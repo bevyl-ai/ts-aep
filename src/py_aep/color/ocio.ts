@@ -30,7 +30,7 @@ import {
   str,
   typeName,
   truthyOr,
-  tkey,
+  compositeKey,
   setdefault,
   sorted,
   int,
@@ -485,7 +485,7 @@ export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValu
 /**
  * `Guid` -\> name for every assignable output color space in the config.
  *
- * Keys are `tkey(guid)` strings: a `Uint8Array` key would compare by identity
+ * Keys are `compositeKey(guid)` strings: a `Uint8Array` key would compare by identity
  * in a `Map`, the same way a Python `bytes` key compares by value.
  */
 export const _guidTableCached = lruCache(
@@ -496,7 +496,7 @@ export const _guidTableCached = lruCache(
       const [name, data] = _outputEnvelope(index, colorSpace);
       // Two names can resolve to the same envelope (e.g. two roles sharing
       // a target); keep the first, like the linear scan this table replaces.
-      setdefault(table, tkey(_colorSpaceGuid(name, data)), colorSpace);
+      setdefault(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
     }
     return table;
   },
@@ -519,7 +519,7 @@ export function ocioColorSpaceForProfileId(
 ): string | null {
   const stamp = _configStamp(configPath);
   if (stamp == null) return null;
-  const name = _guidTableCached(configPath.path, stamp[0], stamp[1]).get(tkey(profileId)) ?? null;
+  const name = _guidTableCached(configPath.path, stamp[0], stamp[1]).get(compositeKey(profileId)) ?? null;
   // NOTE(port): Python hands back a non-string role key (`roles: {3: x}`) as
   // is; the `str`-typed `OutputModule.outputColorSpace` gets its `str()`.
   if (typeof name === "string") return name;

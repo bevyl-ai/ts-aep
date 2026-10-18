@@ -84,7 +84,7 @@ import {
   sorted,
   str,
   strip,
-  tkey,
+  compositeKey,
   warn,
   bytesEq,
   descriptor,
@@ -1270,7 +1270,7 @@ export class Project {
       throw new ValueError("layerDimensions requires layerIndex");
     }
 
-    const suffix = options.file.suffix.toLowerCase();
+    const suffix = options._file.suffix.toLowerCase();
     if (options.layerStyles != null) {
       if (!PSD_COMP_EXTENSIONS.has(suffix)) {
         throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) imports only");
@@ -1298,13 +1298,13 @@ export class Project {
     }
     if (options.importAs === ImportAsType.COMP_CROPPED_LAYERS) {
       if (suffix === ".svg") {
-        return this._importSvgCropped(options.file);
+        return this._importSvgCropped(options._file);
       }
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
-        return this._importPsdLayered(options.file, true, this._resolveCompLayerStyles(options));
+        return this._importPsdLayered(options._file, true, this._resolveCompLayerStyles(options));
       }
       if (AI_COMP_EXTENSIONS.has(suffix)) {
-        return this._importAiLayered(options.file, { cropped: true });
+        return this._importAiLayered(options._file, { cropped: true });
       }
       throw new ValueError(
         "importFile supports COMP_CROPPED_LAYERS for SVG and layered " +
@@ -1313,13 +1313,13 @@ export class Project {
     }
     if (options.importAs === ImportAsType.COMP) {
       if (AI_COMP_EXTENSIONS.has(suffix)) {
-        return this._importAiLayered(options.file);
+        return this._importAiLayered(options._file);
       }
       if (EPS_COMP_EXTENSIONS.has(suffix)) {
-        return this._importEpsComp(options.file);
+        return this._importEpsComp(options._file);
       }
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
-        return this._importPsdLayered(options.file, false, this._resolveCompLayerStyles(options));
+        return this._importPsdLayered(options._file, false, this._resolveCompLayerStyles(options));
       }
       throw new ValueError(`importFile does not support COMP import for ${literal(suffix)}`);
     }
@@ -1358,13 +1358,13 @@ export class Project {
         if (styles == null) styles = psdFootageLayerStyles(this._preferences);
         if (dimensions == null) dimensions = psdFootageDimensions(this._preferences);
       }
-      source = FileSource._fromLayer(options.file, options.layerIndex, {
+      source = FileSource._fromLayer(options._file, options.layerIndex, {
         dimensions,
         layerStyles: styles,
         windows: this._windows,
       });
     } else {
-      source = FileSource._fromFile(options.file, {
+      source = FileSource._fromFile(options._file, {
         sequence: options.sequence,
         forceAlphabetical: options.forceAlphabetical,
         windows: this._windows,
@@ -1936,7 +1936,7 @@ export class Project {
         if (doc == null) continue;
         for (const font of doc._usedFontObjects()) {
           const vector = font.designVector;
-          const key = tkey(font.postScriptName, font.version, vector != null ? [...vector] : null);
+          const key = compositeKey(font.postScriptName, font.version, vector != null ? [...vector] : null);
           let record = records.get(key);
           if (record == null) {
             record = { name: font.postScriptName, font, usedAt: [] };

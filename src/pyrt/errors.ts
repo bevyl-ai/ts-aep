@@ -1,33 +1,34 @@
-// Python's builtin exception hierarchy, so `except X` maps to `instanceof X`.
+// Error classes named after the Python exceptions py-aep raises, so callers and the
+// py-aep differential see the same class names. Catch `AepError` for any of them.
 // Python's `TypeError` and `SyntaxError` are JS's own (built-in) errors.
 
-export class PyException extends Error {
+export class AepError extends Error {
   constructor(message = "") {
     super(message);
     this.name = new.target.name;
   }
 }
 
-export class ValueError extends PyException {}
-export class KeyError extends PyException {}
-export class IndexError extends PyException {}
-export class AttributeError extends PyException {}
-export class NotImplementedError extends PyException {}
-export class RuntimeError extends PyException {}
-export class AssertionError extends PyException {}
-export class ZeroDivisionError extends PyException {}
-export class OverflowError extends PyException {}
-export class StopIteration extends PyException {}
-export class LookupError extends PyException {}
+export class ValueError extends AepError {}
+export class AttributeError extends AepError {}
+export class NotImplementedError extends AepError {}
+export class RuntimeError extends AepError {}
+export class AssertionError extends AepError {}
+export class ZeroDivisionError extends AepError {}
+export class OverflowError extends AepError {}
+export class StopIteration extends AepError {}
+export class LookupError extends AepError {}
+export class KeyError extends LookupError {}
+export class IndexError extends LookupError {}
 /** Python's `OSError` (alias `IOError`). */
-export class OSError extends PyException {}
+export class OSError extends AepError {}
 export class FileNotFoundError extends OSError {}
 export class FileExistsError extends OSError {}
 export class UnicodeError extends ValueError {}
 export class UnicodeDecodeError extends UnicodeError {}
 export class UnicodeEncodeError extends UnicodeError {}
 /** `struct.error` */
-export class StructError extends PyException {}
+export class StructError extends AepError {}
 
 /**
  * `SystemExit` (a `BaseException`, so not a `PyException`: translated
@@ -52,9 +53,27 @@ export function assert(cond: unknown, message = ""): asserts cond {
   if (!cond) throw new AssertionError(message);
 }
 
-export function warn(message: string): void {
-  warnings.push(message);
+function emitWarning(message: string): void {
+  const proc = (globalThis as { process?: { emitWarning?: (message: string, type: string) => void } }).process;
+  if (typeof proc?.emitWarning === "function") proc.emitWarning(message, "AepWarning");
+  else console.warn(`AepWarning: ${message}`);
 }
 
-/** Captured `warnings.warn` messages, for `pytest.warns` translations. */
-export const warnings: string[] = [];
+let warningHandler: (message: string) => void = emitWarning;
+
+/**
+ * Route ts-aep's warnings (skipped content, fallbacks, deprecations) to `handler`,
+ * or back to the default with `null`: `process.emitWarning` where it exists,
+ * `console.warn` elsewhere. Pass `() => {}` to silence them. Returns the
+ * handler it replaces.
+ */
+export function setWarningHandler(handler: ((message: string) => void) | null): (message: string) => void {
+  const previous = warningHandler;
+  warningHandler = handler ?? emitWarning;
+  return previous;
+}
+
+/** Raise a warning through the warning handler (see `setWarningHandler`). */
+export function warn(message: string): void {
+  warningHandler(message);
+}

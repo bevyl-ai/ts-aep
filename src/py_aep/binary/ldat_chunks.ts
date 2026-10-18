@@ -10,10 +10,10 @@ import {
   concat,
   define,
   descriptor,
-  intEnum,
+  defineEnum,
   assert,
   struct,
-  tkey,
+  compositeKey,
   ValueError,
   at,
 } from "../../pyrt/index.ts";
@@ -30,7 +30,7 @@ import { OutputModuleSettingsItem, RenderSettingsItem } from "./render_chunks.ts
 // ---------------------------------------------------------------------------
 
 /** Keyframe / list data item type, derived from lhd3 raw type + size. */
-export const LdatItemType = intEnum("LdatItemType", {
+export const LdatItemType = defineEnum("LdatItemType", {
   unknown: 0,
   color: 1,
   three_d_spatial: 2,
@@ -51,18 +51,18 @@ export type LdatItemType = EnumValue<typeof LdatItemType>;
 
 // Dispatch table: (item_type_raw, item_size) -> LdatItemType
 export const _ITEM_TYPE_MAP = new Map<string, LdatItemType>([
-  [tkey(1, 2246), LdatItemType.lrdr],
-  [tkey(1, 128), LdatItemType.litm],
-  [tkey(2, 16), LdatItemType.gide],
-  [tkey(4, 152), LdatItemType.color],
-  [tkey(4, 128), LdatItemType.three_d],
-  [tkey(4, 104), LdatItemType.two_d_spatial],
-  [tkey(4, 88), LdatItemType.two_d],
-  [tkey(4, 80), LdatItemType.orientation],
-  [tkey(4, 64), LdatItemType.no_value],
-  [tkey(4, 48), LdatItemType.one_d],
-  [tkey(4, 16), LdatItemType.marker],
-  [tkey(4, 8), LdatItemType.shape],
+  [compositeKey(1, 2246), LdatItemType.lrdr],
+  [compositeKey(1, 128), LdatItemType.litm],
+  [compositeKey(2, 16), LdatItemType.gide],
+  [compositeKey(4, 152), LdatItemType.color],
+  [compositeKey(4, 128), LdatItemType.three_d],
+  [compositeKey(4, 104), LdatItemType.two_d_spatial],
+  [compositeKey(4, 88), LdatItemType.two_d],
+  [compositeKey(4, 80), LdatItemType.orientation],
+  [compositeKey(4, 64), LdatItemType.no_value],
+  [compositeKey(4, 48), LdatItemType.one_d],
+  [compositeKey(4, 16), LdatItemType.marker],
+  [compositeKey(4, 8), LdatItemType.shape],
 ]);
 
 // num_value for multi-dimensional / spatial keyframe types
@@ -104,7 +104,7 @@ export class Lhd3Chunk extends Chunk {
 
   /** Effective item type derived from raw type and item size. */
   get itemType(): LdatItemType {
-    return _ITEM_TYPE_MAP.get(tkey(this.itemTypeRaw, this.itemSize)) ?? LdatItemType.unknown;
+    return _ITEM_TYPE_MAP.get(compositeKey(this.itemTypeRaw, this.itemSize)) ?? LdatItemType.unknown;
   }
 }
 define(Lhd3Chunk, {

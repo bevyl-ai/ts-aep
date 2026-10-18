@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { ValueError, getOrThrow, int, intEnum, literal, type EnumValue } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, int, defineEnum, literal, type EnumValue } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 
 /**
@@ -15,7 +15,7 @@ import type { EnumHelpers } from "../../pyrt/enum.ts";
  *
  * @see https://ae-scripting.docsforadobe.dev/item/item/#itemlabel
  */
-export const Label = intEnum("Label", {
+export const Label = defineEnum("Label", {
   NONE: 0,
   RED: 1,
   YELLOW: 2,
@@ -46,7 +46,7 @@ export type Label = EnumValue<typeof Label>;
  *
  * Does not exist in ExtendScript.
  */
-export const ItemType = intEnum("ItemType", {
+export const ItemType = defineEnum("ItemType", {
   FOLDER: 1,
   COMPOSITION: 4,
   FOOTAGE: 7,
@@ -58,7 +58,7 @@ export type ItemType = EnumValue<typeof ItemType>;
  *
  * Does not exist in ExtendScript.
  */
-export const LayerType = intEnum("LayerType", {
+export const LayerType = defineEnum("LayerType", {
   AV: 0,
   LIGHT: 1,
   CAMERA: 2,
@@ -70,7 +70,7 @@ export const LayerType = intEnum("LayerType", {
 export type LayerType = EnumValue<typeof LayerType>;
 
 /** Type of parametric mesh. */
-export const ParametricMeshType = intEnum("ParametricMeshType", {
+export const ParametricMeshType = defineEnum("ParametricMeshType", {
   CUBE: 14612,
   SPHERE: 14613,
   PLANE: 14614,
@@ -94,7 +94,7 @@ export type ParametricMeshType = EnumValue<typeof ParametricMeshType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourcealphamode
  */
-export const AlphaMode = intEnum("AlphaMode", {
+export const AlphaMode = defineEnum("AlphaMode", {
   STRAIGHT: 5412,
   IGNORE: 5413,
   PREMULTIPLIED: 5414,
@@ -124,7 +124,7 @@ export const _ALPHA_MODE_TO_BINARY: Map<number, number> = new Map<number, number
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectbitsperchannel
  */
-export const BitsPerChannel = intEnum("BitsPerChannel", {
+export const BitsPerChannel = defineEnum("BitsPerChannel", {
   EIGHT: 8,
   SIXTEEN: 16,
   THIRTY_TWO: 32,
@@ -154,7 +154,7 @@ export const _BITS_PER_CHANNEL_TO_BINARY: Map<number, number> = new Map<number, 
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/layer/#layerautoorient
  */
-export const AutoOrientType = intEnum("AutoOrientType", {
+export const AutoOrientType = defineEnum("AutoOrientType", {
   NO_AUTO_ORIENT: 4212,
   ALONG_PATH: 4213,
   CAMERA_OR_POINT_OF_INTEREST: 4214,
@@ -176,7 +176,7 @@ export type AutoOrientType = EnumValue<typeof AutoOrientType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerblendingmode
  */
-export const BlendingMode = intEnum("BlendingMode", {
+export const BlendingMode = defineEnum("BlendingMode", {
   NORMAL: 5212,
   DISSOLVE: 5213,
   DANCING_DISSOLVE: 5214,
@@ -292,7 +292,7 @@ _BLENDING_MODE_TO_BINARY.set(BlendingMode.DANCING_DISSOLVE, 3);
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewoptions/#attributes
  */
-export const ChannelType = intEnum("ChannelType", {
+export const ChannelType = defineEnum("ChannelType", {
   CHANNEL_RGB: 7812,
   CHANNEL_RED: 7813,
   CHANNEL_GREEN: 7814,
@@ -317,14 +317,14 @@ export const ChannelType = intEnum("ChannelType", {
 export type ChannelType = EnumValue<typeof ChannelType>;
 
 /** Color management system for the project. */
-export const ColorManagementSystem = intEnum("ColorManagementSystem", {
+export const ColorManagementSystem = defineEnum("ColorManagementSystem", {
   ADOBE: 0,
   OCIO: 1,
 });
 export type ColorManagementSystem = EnumValue<typeof ColorManagementSystem>;
 
 /** LUT interpolation method for the project. */
-export const LutInterpolationMethod = intEnum("LutInterpolationMethod", {
+export const LutInterpolationMethod = defineEnum("LutInterpolationMethod", {
   TRILINEAR: 0,
   TETRAHEDRAL: 1,
 });
@@ -335,7 +335,7 @@ export type LutInterpolationMethod = EnumValue<typeof LutInterpolationMethod>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectclose
  */
-export const CloseOptions = intEnum("CloseOptions", {
+export const CloseOptions = defineEnum("CloseOptions", {
   DO_NOT_SAVE_CHANGES: 1212,
   PROMPT_TO_SAVE_CHANGES: 1213,
   SAVE_CHANGES: 1214,
@@ -347,7 +347,7 @@ export type CloseOptions = EnumValue<typeof CloseOptions>;
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewoptions/#viewoptionsfastpreview
  */
-export const FastPreviewType = intEnum("FastPreviewType", {
+export const FastPreviewType = defineEnum("FastPreviewType", {
   FP_OFF: 8012,
   FP_ADAPTIVE_RESOLUTION: 8013,
   FP_DRAFT: 8014,
@@ -375,7 +375,7 @@ export type FastPreviewType = EnumValue<typeof FastPreviewType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectfeetframesfilmtype
  */
-export const FeetFramesFilmType = intEnum("FeetFramesFilmType", {
+export const FeetFramesFilmType = defineEnum("FeetFramesFilmType", {
   MM16: 2412,
   MM35: 2413,
 }, {
@@ -396,7 +396,7 @@ export type FeetFramesFilmType = EnumValue<typeof FeetFramesFilmType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourcefieldseparationtype
  */
-export const FieldSeparationType = intEnum("FieldSeparationType", {
+export const FieldSeparationType = defineEnum("FieldSeparationType", {
   UPPER_FIELD_FIRST: 5612,
   OFF: 5613,
   LOWER_FIELD_FIRST: 5614,
@@ -426,7 +426,7 @@ export const _FIELD_SEP_TO_BINARY: Map<number, number> = new Map<number, number>
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectfootagetimecodedisplaystarttype
  */
-export const FootageTimecodeDisplayStartType = intEnum("FootageTimecodeDisplayStartType", {
+export const FootageTimecodeDisplayStartType = defineEnum("FootageTimecodeDisplayStartType", {
   FTCS_USE_SOURCE_MEDIA: 2212,
   FTCS_START_0: 2213,
 }, {
@@ -454,7 +454,7 @@ export const _FOOTAGE_TIMECODE_TO_BINARY: Map<number, number> = new Map<number, 
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerframeblendingtype
  */
-export const FrameBlendingType = intEnum("FrameBlendingType", {
+export const FrameBlendingType = defineEnum("FrameBlendingType", {
   NO_FRAME_BLEND: 4012,
   FRAME_MIX: 4013,
   PIXEL_MOTION: 4014,
@@ -475,7 +475,7 @@ export type FrameBlendingType = EnumValue<typeof FrameBlendingType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectframescounttype
  */
-export const FramesCountType = intEnum("FramesCountType", {
+export const FramesCountType = defineEnum("FramesCountType", {
   FC_START_0: 2612,
   FC_START_1: 2613,
   FC_TIMECODE_CONVERSION: 2614,
@@ -496,7 +496,7 @@ export type FramesCountType = EnumValue<typeof FramesCountType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectgpuacceltype
  */
-export const GpuAccelType = intEnum("GpuAccelType", {
+export const GpuAccelType = defineEnum("GpuAccelType", {
   OPENCL: 1812,
   CUDA: 1813,
   METAL: 1814,
@@ -570,7 +570,7 @@ export const _GPU_ENUM_TO_UUID: Map<GpuAccelType, string> = new Map<GpuAccelType
  *
  * **Note:** There is no ExtendScript equivalent for this enum.
  */
-export const GuideOrientationType = intEnum("GuideOrientationType", {
+export const GuideOrientationType = defineEnum("GuideOrientationType", {
   HORIZONTAL: 0,
   VERTICAL: 1,
 }, {
@@ -598,7 +598,7 @@ export const _GUIDE_ORIENTATION_TO_BINARY: Map<number, number> = new Map<number,
  *
  * @see https://ae-scripting.docsforadobe.dev/other/importoptions/#importoptionsimportas
  */
-export const ImportAsType = intEnum("ImportAsType", {
+export const ImportAsType = defineEnum("ImportAsType", {
   COMP_CROPPED_LAYERS: 3812,
   FOOTAGE: 3813,
   COMP: 3814,
@@ -611,7 +611,7 @@ export type ImportAsType = EnumValue<typeof ImportAsType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/application/#appisolanguage
  */
-export const Language = intEnum("Language", {
+export const Language = defineEnum("Language", {
   ENGLISH: 1612,
   JAPANESE: 1613,
   GERMAN: 1614,
@@ -630,7 +630,7 @@ export type Language = EnumValue<typeof Language>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerquality
  */
-export const LayerQuality = intEnum("LayerQuality", {
+export const LayerQuality = defineEnum("LayerQuality", {
   WIREFRAME: 4612,
   DRAFT: 4613,
   BEST: 4614,
@@ -651,7 +651,7 @@ export type LayerQuality = EnumValue<typeof LayerQuality>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayersamplingquality
  */
-export const LayerSamplingQuality = intEnum("LayerSamplingQuality", {
+export const LayerSamplingQuality = defineEnum("LayerSamplingQuality", {
   BILINEAR: 4812,
   BICUBIC: 4813,
 }, {
@@ -671,7 +671,7 @@ export type LayerSamplingQuality = EnumValue<typeof LayerSamplingQuality>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/lightlayer/#lightlayerlighttype
  */
-export const LightType = intEnum("LightType", {
+export const LightType = defineEnum("LightType", {
   PARALLEL: 4412,
   SPOT: 4413,
   POINT: 4414,
@@ -697,7 +697,7 @@ export type LightType = EnumValue<typeof LightType>;
  *
  * **Note:** Not exposed in ExtendScript.
  */
-export const LinearLightMode = intEnum("LinearLightMode", {
+export const LinearLightMode = defineEnum("LinearLightMode", {
   OFF: 0,
   ON: 1,
   ON_FOR_32BPC: 2,
@@ -714,7 +714,7 @@ export const LinearLightMode = intEnum("LinearLightMode", {
 export type LinearLightMode = EnumValue<typeof LinearLightMode>;
 
 /** Loop mode for preview playback. */
-export const LoopMode = intEnum("LoopMode", {
+export const LoopMode = defineEnum("LoopMode", {
   LOOP: 8412,
   PLAY_ONCE: 8413,
   PING_PONG: 8414,
@@ -726,7 +726,7 @@ export type LoopMode = EnumValue<typeof LoopMode>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskfeatherfalloff
  */
-export const MaskFeatherFalloff = intEnum("MaskFeatherFalloff", {
+export const MaskFeatherFalloff = defineEnum("MaskFeatherFalloff", {
   FFO_SMOOTH: 7212,
   FFO_LINEAR: 7213,
 }, {
@@ -746,7 +746,7 @@ export type MaskFeatherFalloff = EnumValue<typeof MaskFeatherFalloff>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskmode
  */
-export const MaskMode = intEnum("MaskMode", {
+export const MaskMode = defineEnum("MaskMode", {
   NONE: 6812,
   ADD: 6813,
   SUBTRACT: 6814,
@@ -771,7 +771,7 @@ export type MaskMode = EnumValue<typeof MaskMode>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskmotionblur
  */
-export const MaskMotionBlur = intEnum("MaskMotionBlur", {
+export const MaskMotionBlur = defineEnum("MaskMotionBlur", {
   SAME_AS_LAYER: 7012,
   ON: 7013,
   OFF: 7014,
@@ -806,7 +806,7 @@ export const _MASK_MOTION_BLUR_TO_BINARY: Map<number, number> = new Map<number, 
  *
  * Not documented in AE scripting reference.
  */
-export const PlayMode = intEnum("PlayMode", {
+export const PlayMode = defineEnum("PlayMode", {
   SPACEBAR: 8212,
   RAM_PREVIEW: 8213,
 });
@@ -817,7 +817,7 @@ export type PlayMode = EnumValue<typeof PlayMode>;
  *
  * @see https://ae-scripting.docsforadobe.dev/other/preferences/#preferences-object
  */
-export const PREFType = intEnum("PREFType", {
+export const PREFType = defineEnum("PREFType", {
   PREF_Type_MACHINE_SPECIFIC: 8812,
   PREF_Type_MACHINE_INDEPENDENT: 8813,
   PREF_Type_MACHINE_INDEPENDENT_RENDER: 8814,
@@ -833,7 +833,7 @@ export type PREFType = EnumValue<typeof PREFType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/propertybase/#propertybasepropertytype
  */
-export const PropertyType = intEnum("PropertyType", {
+export const PropertyType = defineEnum("PropertyType", {
   PROPERTY: 6212,
   NAMED_GROUP: 6213,
   INDEXED_GROUP: 6214,
@@ -845,7 +845,7 @@ export type PropertyType = EnumValue<typeof PropertyType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourceguesspulldown
  */
-export const PulldownMethod = intEnum("PulldownMethod", {
+export const PulldownMethod = defineEnum("PulldownMethod", {
   PULLDOWN_3_2: 6012,
   ADVANCE_24P: 6013,
 });
@@ -856,7 +856,7 @@ export type PulldownMethod = EnumValue<typeof PulldownMethod>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourceremovepulldown
  */
-export const PulldownPhase = intEnum("PulldownPhase", {
+export const PulldownPhase = defineEnum("PulldownPhase", {
   WSSWW: 5812,
   OFF: 5813,
   SSWWW: 5814,
@@ -902,7 +902,7 @@ export const _PULLDOWN_TO_BINARY: Map<number, number> = new Map<number, number>(
  *
  * @see https://ae-scripting.docsforadobe.dev/general/application/#apppurge
  */
-export const PurgeTarget = intEnum("PurgeTarget", {
+export const PurgeTarget = defineEnum("PurgeTarget", {
   ALL_CACHES: 1412,
   UNDO_CACHES: 1413,
   SNAPSHOT_CACHES: 1414,
@@ -915,7 +915,7 @@ export type PurgeTarget = EnumValue<typeof PurgeTarget>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectresolveconflict
  */
-export const ResolveType = intEnum("ResolveType", {
+export const ResolveType = defineEnum("ResolveType", {
   ACCEPT_THEIRS: 8612,
   ACCEPT_THEIRS_AND_COPY: 8613,
   ACCEPT_YOURS: 8614,
@@ -927,7 +927,7 @@ export type ResolveType = EnumValue<typeof ResolveType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projecttimedisplaytype
  */
-export const TimeDisplayType = intEnum("TimeDisplayType", {
+export const TimeDisplayType = defineEnum("TimeDisplayType", {
   TIMECODE: 2012,
   FRAMES: 2013,
 }, {
@@ -947,7 +947,7 @@ export type TimeDisplayType = EnumValue<typeof TimeDisplayType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projecttooltype
  */
-export const ToolType = intEnum("ToolType", {
+export const ToolType = defineEnum("ToolType", {
   Tool_Arrow: 9012,
   Tool_Rotate: 9013,
   Tool_CameraMaya: 9014,
@@ -995,7 +995,7 @@ export type ToolType = EnumValue<typeof ToolType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayertrackmattetype
  */
-export const TrackMatteType = intEnum("TrackMatteType", {
+export const TrackMatteType = defineEnum("TrackMatteType", {
   NO_TRACK_MATTE: 5012,
   ALPHA: 5013,
   ALPHA_INVERTED: 5014,
@@ -1018,7 +1018,7 @@ export type TrackMatteType = EnumValue<typeof TrackMatteType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewer/#viewertype
  */
-export const ViewerType = intEnum("ViewerType", {
+export const ViewerType = defineEnum("ViewerType", {
   VIEWER_COMPOSITION: 7612,
   VIEWER_LAYER: 7613,
   VIEWER_FOOTAGE: 7614,
@@ -1053,7 +1053,7 @@ export const _VIEWER_STRING_MAP: Map<string, ViewerType> = new Map<string, Viewe
  *
  * Not documented in AE scripting reference.
  */
-export const FillLightingCorrectionType = intEnum("FillLightingCorrectionType", {
+export const FillLightingCorrectionType = defineEnum("FillLightingCorrectionType", {
   LightingCorrection_NONE: 9812,
   LightingCorrection_SUBTLE: 9813,
   LightingCorrection_MODERATE: 9814,
@@ -1066,7 +1066,7 @@ export type FillLightingCorrectionType = EnumValue<typeof FillLightingCorrection
  *
  * Not documented in AE scripting reference.
  */
-export const FillMethodType = intEnum("FillMethodType", {
+export const FillMethodType = defineEnum("FillMethodType", {
   Method_OBJECT: 9412,
   Method_SURFACE: 9413,
   Method_EDGEBLEND: 9414,
@@ -1078,7 +1078,7 @@ export type FillMethodType = EnumValue<typeof FillMethodType>;
  *
  * Not documented in AE scripting reference.
  */
-export const FillOutputDepthType = intEnum("FillOutputDepthType", {
+export const FillOutputDepthType = defineEnum("FillOutputDepthType", {
   OutputDepth_PROJECT: 9612,
   OutputDepth_EIGHT: 9613,
   OutputDepth_SIXTEEN: 9614,
@@ -1091,7 +1091,7 @@ export type FillOutputDepthType = EnumValue<typeof FillOutputDepthType>;
  *
  * Not documented in AE scripting reference.
  */
-export const FillRangeType = intEnum("FillRangeType", {
+export const FillRangeType = defineEnum("FillRangeType", {
   Range_ENTIRE: 9212,
   Range_WORKAREA: 9213,
 });
@@ -1102,7 +1102,7 @@ export type FillRangeType = EnumValue<typeof FillRangeType>;
  *
  * Not documented in AE scripting reference.
  */
-export const ProjectThread = intEnum("ProjectThread", {
+export const ProjectThread = defineEnum("ProjectThread", {
   MainThread: 2812,
   RQThread: 2813,
   WorkQueueThread: 2814,

@@ -10,14 +10,14 @@ import {
   float,
   getOrThrow,
   int,
-  intEnum,
+  defineEnum,
   objectSetattr,
   assert,
   truthy,
   instanceDict,
 } from "../../src/pyrt/index.ts";
 import type { EnumValue } from "../../src/pyrt/index.ts";
-import { pyfloat } from "../../src/pyrt/num.ts";
+import { boxFloat } from "../../src/pyrt/num.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import type { CosDict, CosNode } from "../../src/py_aep/cos/cos.ts";
 import { CosField } from "../../src/py_aep/cos/descriptors.ts";
@@ -205,7 +205,7 @@ class _SyntheticModel {
 }
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));
 
-const _MyEnum = intEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
+const _MyEnum = defineEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
   // NOTE(port): _enum_class/getattr(enum, "fromBinary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
   from_binary(value: number) {
     return this.of(value);
@@ -517,7 +517,7 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
 describe("TestChunkFieldBool", () => {
   /** `ChunkField.bool` bakes in `validate_bool`. */
 
-  test.each([["no"], [2], [1], [0], [null], [[]], [pyfloat(1)]])("test_rejects_non_bool[%#]", (bad) => {
+  test.each([["no"], [2], [1], [0], [null], [[]], [boxFloat(1)]])("test_rejects_non_bool[%#]", (bad) => {
     const body = new _FakeBody({ flag: false });
     new _FakeParent(body);
     const model = new _BoolModel(body);

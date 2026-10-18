@@ -10,7 +10,7 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import { AttributeError, KeyError, PyFloat, at, float, int, literal, typeName } from "../../pyrt/index.ts";
+import { AttributeError, KeyError, BoxedFloat, at, float, int, literal, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
 /** A COS value kind: a guard that narrows a value to the kind's type. */
@@ -20,9 +20,9 @@ export type Kind<T extends CosNode> = (x: CosNode | undefined) => x is T;
 export const pyInt: Kind<boolean | number> = (x): x is boolean | number =>
   typeof x === "boolean" || (typeof x === "number" && Number.isInteger(x) && !Object.is(x, -0));
 
-/** `isinstance(x, (int, float))`: a boolean, a JS number, or a boxed `PyFloat` (a COS real). */
-export const pyNumber: Kind<boolean | number | PyFloat> = (x): x is boolean | number | PyFloat =>
-  typeof x === "boolean" || typeof x === "number" || x instanceof PyFloat;
+/** `isinstance(x, (int, float))`: a boolean, a JS number, or a boxed `BoxedFloat` (a COS real). */
+export const pyNumber: Kind<boolean | number | BoxedFloat> = (x): x is boolean | number | BoxedFloat =>
+  typeof x === "boolean" || typeof x === "number" || x instanceof BoxedFloat;
 
 /** `isinstance(x, str)`: a plain string or a `CosString`. */
 export const pyStr: Kind<string | CosString> = (x): x is string | CosString => typeof x === "string" || x instanceof CosString;
@@ -138,17 +138,17 @@ export function cosAppend(x: CosNode, item: CosNode): void {
 
 /** A COS value as Python hands it out: floats are plain numbers, at any depth. */
 export type CosUnboxed =
-  | Exclude<CosNode, PyFloat | CosNode[] | CosDict>
+  | Exclude<CosNode, BoxedFloat | CosNode[] | CosDict>
   | CosUnboxed[]
   | Map<string, CosUnboxed>;
 
 /**
- * `x` as Python hands it out: a `PyFloat` unboxed to its number. A list or
+ * `x` as Python hands it out: a `BoxedFloat` unboxed to its number. A list or
  * dict is a copy with its floats unboxed (Python returns the stored object;
  * only its identity differs).
  */
 export function cosUnbox(x: CosNode): CosUnboxed {
-  if (x instanceof PyFloat) return x.value;
+  if (x instanceof BoxedFloat) return x.value;
   if (Array.isArray(x)) return x.map(cosUnbox);
   if (x instanceof Map) return new Map([...x].map(([k, v]): [string, CosUnboxed] => [k, cosUnbox(v)]));
   return x;
@@ -172,30 +172,30 @@ export function cosIn(x: CosNode | undefined, ints: ReadonlySet<number>): boolea
   throw new TypeError(`unhashable type: '${typeName(x)}'`);
 }
 
-/** A Python int or float held in COS data: a JS number, or a boxed `PyFloat` for an integral float. */
-export type PyNum = number | PyFloat;
+/** A Python int or float held in COS data: a JS number, or a boxed `BoxedFloat` for an integral float. */
+export type PyNum = number | BoxedFloat;
 
-/** Whether a Python number is a float (`PyFloat`, or a JS number that is no integer). */
+/** Whether a Python number is a float (`BoxedFloat`, or a JS number that is no integer). */
 function isFloat(x: PyNum): boolean {
-  return x instanceof PyFloat || !Number.isInteger(x) || Object.is(x, -0);
+  return x instanceof BoxedFloat || !Number.isInteger(x) || Object.is(x, -0);
 }
 
 /** `x` as a Python numeric operand (`a + b`): bool as int, else `TypeError` for non-numbers. */
 export function pyNum(x: CosNode): PyNum {
   if (typeof x === "boolean") return x ? 1 : 0;
-  if (typeof x === "number" || x instanceof PyFloat) return x;
+  if (typeof x === "number" || x instanceof BoxedFloat) return x;
   throw new TypeError(`unsupported operand type(s) for +: 'int' and '${typeName(x)}'`);
 }
 
 /** Python `a + b` / `a - b` on numbers: a float (kept boxed) when either side is one. */
 export function pyAdd(a: PyNum, b: PyNum): PyNum {
   const sum = float(a) + float(b);
-  return isFloat(a) || isFloat(b) ? new PyFloat(sum) : sum;
+  return isFloat(a) || isFloat(b) ? new BoxedFloat(sum) : sum;
 }
 
 export function pySub(a: PyNum, b: PyNum): PyNum {
   const diff = float(a) - float(b);
-  return isFloat(a) || isFloat(b) ? new PyFloat(diff) : diff;
+  return isFloat(a) || isFloat(b) ? new BoxedFloat(diff) : diff;
 }
 
 /** Python `len(x)` on a COS value: `TypeError` for kinds without a length. */

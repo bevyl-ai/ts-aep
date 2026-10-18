@@ -15,7 +15,7 @@ import {
   valueEquals,
   setattr,
   sorted,
-  tkey,
+  compositeKey,
   ValueError,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -926,11 +926,11 @@ describe("TestPngOptionsFollowTheModule", () => {
 
   test("test_after_effects_samples_are_in_step", () => {
     const lockstep = new Map<string, [boolean, number, number]>(
-      _PNG_LOCKSTEP.map(([c, d, fields]) => [tkey(int(c), int(d)), fields]),
+      _PNG_LOCKSTEP.map(([c, d, fields]) => [compositeKey(int(c), int(d)), fields]),
     );
     for (const path of sorted(FORMAT_DIR.div("png").glob("*.aep"), (p: Path) => p.toString())) {
       const om = asInstance(parse(path).project.renderQueue, RenderQueue).items[0].outputModules[0];
-      const key = tkey(int(om.settings.get("Channels")), int(om.settings.get("Depth")));
+      const key = compositeKey(int(om.settings.get("Channels")), int(om.settings.get("Depth")));
       assert(valueEquals(_pngOptionFields(om), getOrThrow(lockstep, key)), path.name);
     }
   });

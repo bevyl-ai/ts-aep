@@ -7,7 +7,7 @@
  * bytes suitable for writing back into a btdk chunk's `binary_data`.
  */
 
-import { BytesIO, b, Bytes, concat, encode, format, PyFloat, typeName, unbox } from "../../pyrt/index.ts";
+import { BytesIO, b, Bytes, concat, encode, format, BoxedFloat, typeName, unbox } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 
 // Literals written per token, built once (`BytesIO.write` copies them).
@@ -67,10 +67,10 @@ export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boole
     _space(buf);
     buf.write(value ? TRUE : FALSE);
   } else if (typeof value === "number" && Number.isInteger(value) && !Object.is(value, -0)) {
-    // A plain integral JS number is a Python int; a Python float reaches here boxed as `PyFloat`.
+    // A plain integral JS number is a Python int; a Python float reaches here boxed as `BoxedFloat`.
     _space(buf);
     buf.write(encode(String(value), "ascii"));
-  } else if (typeof value === "number" || value instanceof PyFloat) {
+  } else if (typeof value === "number" || value instanceof BoxedFloat) {
     _space(buf);
     buf.write(_formatFloat(unbox(value)));
   } else if (value instanceof CosName) {

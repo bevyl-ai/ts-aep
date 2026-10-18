@@ -6,10 +6,13 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, PyException, floordiv, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
+import { IndexError, AepError, floordiv, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
+
+/** A malformed replacement template (Python `re.error`, `re.PatternError` since 3.13). */
+export class PatternError extends AepError {}
 
 // Roou format_id (4-char) to file extension.
 export const FORMAT_ID_EXTENSIONS: Map<string, string> = new Map<string, string>([
@@ -106,33 +109,33 @@ export function _expandTemplate(template: string, match: string): string {
       continue;
     }
     if (i >= template.length) {
-      throw new PyException(`bad escape (end of pattern) at position ${start}`);
+      throw new PatternError(`bad escape (end of pattern) at position ${start}`);
     }
     const c = template[i++];
     let this_ = ch + c;
     if (c === "g") {
       if (template[i] !== "<") {
-        throw new PyException(`missing < at position ${i}`);
+        throw new PatternError(`missing < at position ${i}`);
       }
       i++;
       const end = template.indexOf(">", i);
       if (end < 0) {
-        throw new PyException(`missing >, unterminated name at position ${i}`);
+        throw new PatternError(`missing >, unterminated name at position ${i}`);
       }
       const name = template.slice(i, end);
       i = end + 1;
       if (name === "") {
-        throw new PyException(`missing group name at position ${end}`);
+        throw new PatternError(`missing group name at position ${end}`);
       }
       if (/^[^\W\d]\w*$/u.test(name)) {
         throw new IndexError(`unknown group name '${name}'`);
       }
       if (!/^[0-9]+$/.test(name)) {
-        throw new PyException(`bad character in group name '${name}' at position ${end - name.length}`);
+        throw new PatternError(`bad character in group name '${name}' at position ${end - name.length}`);
       }
       const index = Number(name);
       if (index > 0) {
-        throw new PyException(`invalid group reference ${index} at position ${i - this_.length - name.length - 1}`);
+        throw new PatternError(`invalid group reference ${index} at position ${i - this_.length - name.length - 1}`);
       }
       out.push(match);
     } else if (c === "0") {
@@ -152,7 +155,7 @@ export function _expandTemplate(template: string, match: string): string {
           isoctal = true;
           const code = parseInt(this_.slice(1), 8);
           if (code > 0o377) {
-            throw new PyException(
+            throw new PatternError(
               `octal escape value ${this_} outside of range 0-0o377 at position ${start}`,
             );
           }
@@ -160,13 +163,13 @@ export function _expandTemplate(template: string, match: string): string {
         }
       }
       if (!isoctal) {
-        throw new PyException(`invalid group reference ${Number(this_.slice(1))} at position ${start + 1}`);
+        throw new PatternError(`invalid group reference ${Number(this_.slice(1))} at position ${start + 1}`);
       }
     } else if (this_ in ESCAPES) {
       out.push(ESCAPES[this_]);
     } else {
       if (/^[A-Za-z]$/.test(c)) {
-        throw new PyException(`bad escape ${this_} at position ${start}`);
+        throw new PatternError(`bad escape ${this_} at position ${start}`);
       }
       out.push(this_);
     }

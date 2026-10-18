@@ -18,13 +18,12 @@ import {
   jsonDumps,
   jsonGetitem,
   jsonLoads,
-  listMul,
   patternFindall,
   patternMatch,
   assert,
   valueEquals,
   pyRe,
-  pyfloat,
+  boxFloat,
   reEscape,
   repr,
   struct,
@@ -100,7 +99,7 @@ describe("num", () => {
     expect(truediv(1, 4)).toBe(0.25);
     expect(raises(ZeroDivisionError, () => truediv(1, 0)).message).toBe("float division by zero");
     expect(raises(ZeroDivisionError, () => truediv(1, 0, "int")).message).toBe("division by zero");
-    expect(raises(ZeroDivisionError, () => truediv(pyfloat(1), 0, "int")).message).toBe("float division by zero");
+    expect(raises(ZeroDivisionError, () => truediv(boxFloat(1), 0, "int")).message).toBe("float division by zero");
   });
 });
 
@@ -230,14 +229,12 @@ describe("builtins", () => {
   });
 
   test("typeName", () => {
-    expect([1, 1.5, pyfloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
+    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
       "int", "float", "float", "int", "str", "bytes", "list", "dict", "set", "NoneType", "bool", "BytesIO",
     ]);
   });
 
-  test("list_mul and dict", () => {
-    expect(listMul([0, 1], 2)).toEqual([0, 1, 0, 1]);
-    expect(listMul([0], -1)).toEqual([]);
+  test("dict", () => {
     const view = { keys: () => ["a", "b"], get: (k: string) => k.toUpperCase() };
     expect(valueEquals(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
     expect(valueEquals(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);

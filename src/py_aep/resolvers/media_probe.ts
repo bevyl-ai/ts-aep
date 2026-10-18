@@ -40,7 +40,7 @@ import {
   sorted,
   strip,
   struct,
-  tkey,
+  compositeKey,
   type FileReader,
   jsonGet,
   jsonLoads,
@@ -2146,17 +2146,17 @@ export const _MPEG_FR: Map<number, number> = new Map([
 
 /**
  * AE's pixel aspect for the D1/DV frame sizes, keyed by
- * `(width, height, aspect_ratio_information)` (`tkey`). AE applies its own named
+ * `(width, height, aspect_ratio_information)` (`compositeKey`). AE applies its own named
  * presets here instead of the arithmetic the sequence header implies:
  * 720x480 flagged 16:9 imports as D1/DV NTSC Widescreen (40/33 = 1.2121),
  * not the (16/9)/(720/480) = 1.1852 the frame size alone would give. Every
  * other frame size measured square. Values verified against AE 2026.
  */
 export const _MPEG_D1_PIXEL_ASPECT: Map<string, number> = new Map([
-  [tkey(720, 480, 2), 10 / 11],
-  [tkey(720, 480, 3), 40 / 33],
-  [tkey(720, 576, 2), 128 / 117],
-  [tkey(720, 576, 3), 512 / 351],
+  [compositeKey(720, 480, 2), 10 / 11],
+  [compositeKey(720, 480, 3), 40 / 33],
+  [compositeKey(720, 576, 2), 128 / 117],
+  [compositeKey(720, 576, 3), 512 / 351],
 ]);
 
 /** Offset of a PES packet's payload, skipping its variable-length header. */
@@ -2251,7 +2251,7 @@ export function _probeMpeg(fp: ProbeStream): MediaInfo {
   const fps = _MPEG_FR.get(val & 0xf) ?? 0.0;
   const frames = Bytes.count(video, b("\x00\x00\x01\x00"));
   const duration = fps ? frames / fps : 0.0;
-  const pixelAspect = _MPEG_D1_PIXEL_ASPECT.get(tkey(width, height, (val >>> 4) & 0xf)) ?? 1.0;
+  const pixelAspect = _MPEG_D1_PIXEL_ASPECT.get(compositeKey(width, height, (val >>> 4) & 0xf)) ?? 1.0;
   return new MediaInfo({
     width,
     height,
@@ -2470,7 +2470,7 @@ export const _ASF_INT_TYPES: Map<number, "<H" | "<I" | "<Q"> = new Map([
 
 /**
  * Decode the Metadata Object's integer records, keyed by `(stream, name)`
- * (`tkey`).
+ * (`compositeKey`).
  *
  * This is where AE finds a WMV's pixel aspect (`AspectRatioX`/`AspectRatioY`)
  * and its frame count (`NumberOfFrames`).
@@ -2489,7 +2489,7 @@ export function _asfMetadata(body: Uint8Array, start: number, end: number): Map<
     const fmt = _ASF_INT_TYPES.get(valueType) ?? null;
     if (fmt != null && valueLen >= struct.calcsize(fmt)) {
       const name = rstrip(decode(body.slice(nameAt, valueAt), "utf-16-le", "replace"), "\x00");
-      out.set(tkey(stream, name), Number(struct.unpackFrom(fmt, body, valueAt)[0]));
+      out.set(compositeKey(stream, name), Number(struct.unpackFrom(fmt, body, valueAt)[0]));
     }
     pos = valueAt + valueLen;
   }
@@ -2544,15 +2544,15 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   // file whose header claims 29.97 imports at 29.97. Without it, invert AE's
   // own duration rule below against the Metadata Object's frame count.
   const avg = avgFrameTime.get(videoStream) ?? 0;
-  const frames = metadata.get(tkey(videoStream, "NumberOfFrames")) ?? 0;
+  const frames = metadata.get(compositeKey(videoStream, "NumberOfFrames")) ?? 0;
   if (avg) {
     frameRate = round(1e7 / avg, 3);
   } else if (frames > 1 && sendDuration) {
     frameRate = round((frames - 1) / sendDuration, 3);
   }
 
-  const aspectX = metadata.get(tkey(videoStream, "AspectRatioX")) ?? 0;
-  const aspectY = metadata.get(tkey(videoStream, "AspectRatioY")) ?? 0;
+  const aspectX = metadata.get(compositeKey(videoStream, "AspectRatioX")) ?? 0;
+  const aspectY = metadata.get(compositeKey(videoStream, "AspectRatioY")) ?? 0;
   const pixelAspect = aspectX && aspectY ? round(aspectX / aspectY, 5) : 1.0;
 
   // AE reports the Send Duration rounded out to a whole frame, plus one:

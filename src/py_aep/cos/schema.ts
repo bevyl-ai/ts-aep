@@ -24,7 +24,7 @@
  * the typed path.
  */
 
-import { PyFloat } from "../../pyrt/index.ts";
+import { BoxedFloat } from "../../pyrt/index.ts";
 import { CosName, CosString, IndirectObject, IndirectReference, Stream, type CosDict, type CosNode } from "./cos.ts";
 import { pyBoolKind, pyInt, pyNumber, type Kind } from "./kinds.ts";
 
@@ -40,7 +40,7 @@ function isCosNode(x: CosNode): boolean {
     return true;
   }
   return (
-    x instanceof PyFloat ||
+    x instanceof BoxedFloat ||
     x instanceof CosString ||
     x instanceof Uint8Array ||
     x instanceof CosName ||

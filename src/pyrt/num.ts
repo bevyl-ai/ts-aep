@@ -13,7 +13,7 @@ import { ord } from "./codecs.ts";
  * operators unwrap it through `valueOf`; `===`, `typeof` and the
  * `Number.is*` predicates do not, so compare through `valueEquals` / `unbox`.
  */
-export class PyFloat {
+export class BoxedFloat {
   declare readonly value: number;
   constructor(value: number) {
     this.value = +value;
@@ -36,37 +36,37 @@ export class PyFloat {
   equals(other: unknown): boolean {
     return unbox(other) === this.value;
   }
-  deepCopy(): PyFloat {
+  deepCopy(): BoxedFloat {
     return this;
   }
 }
 
-/** Python `float(x)` kept as a float: a boxed `PyFloat` (see `PyFloat`). */
-export function pyfloat(x: number | PyFloat): PyFloat {
-  return x instanceof PyFloat ? x : new PyFloat(x);
+/** Python `float(x)` kept as a float: a boxed `BoxedFloat` (see `BoxedFloat`). */
+export function boxFloat(x: number | BoxedFloat): BoxedFloat {
+  return x instanceof BoxedFloat ? x : new BoxedFloat(x);
 }
 
-/** `isinstance(x, (int, float))` without the bool case: a JS number or a boxed `PyFloat`. */
-export function isReal(x: unknown): x is number | PyFloat {
-  return typeof x === "number" || x instanceof PyFloat;
+/** `isinstance(x, (int, float))` without the bool case: a JS number or a boxed `BoxedFloat`. */
+export function isReal(x: unknown): x is number | BoxedFloat {
+  return typeof x === "number" || x instanceof BoxedFloat;
 }
 
-/** The plain JS number behind a possibly boxed `PyFloat`; other values pass through. */
-export function unbox(x: number | PyFloat): number;
-export function unbox<T>(x: T): T extends PyFloat ? number : T;
+/** The plain JS number behind a possibly boxed `BoxedFloat`; other values pass through. */
+export function unbox(x: number | BoxedFloat): number;
+export function unbox<T>(x: T): T extends BoxedFloat ? number : T;
 export function unbox<T>(x: T): T | number {
-  return (x instanceof PyFloat ? x.value : x);
+  return (x instanceof BoxedFloat ? x.value : x);
 }
 
 /**
  * `a / b` (true division) raising `ZeroDivisionError` like CPython 3.12:
  * "float division by zero" when an operand is a float, "division by zero"
  * for int / int. JS cannot see int-ness of an integral number, so the caller
- * states it: `operands` is `"float"` (default) or `"int"`; a boxed `PyFloat`
+ * states it: `operands` is `"float"` (default) or `"int"`; a boxed `BoxedFloat`
  * operand always counts as float.
  */
-export function truediv(a: number | PyFloat, b: number | PyFloat, operands: "float" | "int" = "float"): number {
-  const isFloat = operands === "float" || a instanceof PyFloat || b instanceof PyFloat;
+export function truediv(a: number | BoxedFloat, b: number | BoxedFloat, operands: "float" | "int" = "float"): number {
+  const isFloat = operands === "float" || a instanceof BoxedFloat || b instanceof BoxedFloat;
   const x = unbox(a);
   const y = unbox(b);
   if (y === 0) throw new ZeroDivisionError(isFloat ? "float division by zero" : "division by zero");
@@ -158,8 +158,8 @@ const SIMPLE_DECIMAL_FLOAT = /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)$/;
  * whitespace, a sign, base prefixes (base 0, 2, 8, 16), single underscores
  * between digits, and Unicode decimal digits (`int("\u0663")` is 3).
  */
-export function int(x: number | string | boolean | bigint | PyFloat | String, base = 10): number {
-  if (x instanceof PyFloat) x = x.value;
+export function int(x: number | string | boolean | bigint | BoxedFloat | String, base = 10): number {
+  if (x instanceof BoxedFloat) x = x.value;
   if (typeof x === "boolean") return x ? 1 : 0;
   if (typeof x === "bigint") return Number(x);
   if (typeof x === "string" || x instanceof String) {
@@ -213,8 +213,8 @@ export function int(x: number | string | boolean | bigint | PyFloat | String, ba
  * `float(text)`: `PyFloat_FromString` - surrounding whitespace, Unicode
  * decimal digits, underscores between digits, inf / infinity / nan.
  */
-export function float(x: string | number | boolean | PyFloat | String): number {
-  if (x instanceof PyFloat) return x.value;
+export function float(x: string | number | boolean | BoxedFloat | String): number {
+  if (x instanceof BoxedFloat) return x.value;
   if (typeof x === "number") return x;
   if (typeof x === "boolean") return x ? 1 : 0;
   const orig = String(x);
@@ -265,8 +265,8 @@ export function floatAsRatio(x: number): [bigint, bigint] {
  * Python `round(x)` (ties to even, returns an int) and `round(x, n)`
  * (correctly rounded on the exact binary value, ties to even).
  */
-export function round(x: number | PyFloat, ndigits?: number | null): number {
-  if (x instanceof PyFloat) x = x.value;
+export function round(x: number | BoxedFloat, ndigits?: number | null): number {
+  if (x instanceof BoxedFloat) x = x.value;
   if (ndigits == null) {
     if (Number.isNaN(x)) throw new ValueError("cannot convert float NaN to integer");
     if (!Number.isFinite(x)) throw new OverflowError("cannot convert float infinity to integer");
@@ -359,7 +359,7 @@ export function fsum(values: Iterable<number>): number {
 }
 
 /** `math.isclose(a, b, rel_tol=1e-9, abs_tol=0)` */
-export function isclose(a: number | PyFloat, b: number | PyFloat, relTol = 1e-9, absTol = 0): boolean {
+export function isclose(a: number | BoxedFloat, b: number | BoxedFloat, relTol = 1e-9, absTol = 0): boolean {
   a = unbox(a);
   b = unbox(b);
   if (a === b) return true;
@@ -369,7 +369,7 @@ export function isclose(a: number | PyFloat, b: number | PyFloat, relTol = 1e-9,
 }
 
 /** `math.copysign` */
-export function copysign(x: number | PyFloat, y: number | PyFloat): number {
+export function copysign(x: number | BoxedFloat, y: number | BoxedFloat): number {
   x = unbox(x);
   y = unbox(y);
   const neg = y < 0 || Object.is(y, -0);
@@ -381,8 +381,8 @@ export const radians = (x: number): number => x * (Math.PI / 180);
 export const degrees = (x: number): number => x * (180 / Math.PI);
 
 /** Python `repr(float)` / `str(float)`: shortest round-trip, Python spelling. */
-export function floatRepr(x: number | PyFloat): string {
-  if (x instanceof PyFloat) x = x.value;
+export function floatRepr(x: number | BoxedFloat): string {
+  if (x instanceof BoxedFloat) x = x.value;
   if (Number.isNaN(x)) return "nan";
   if (!Number.isFinite(x)) return x > 0 ? "inf" : "-inf";
   if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
@@ -397,8 +397,8 @@ export function floatRepr(x: number | PyFloat): string {
 }
 
 /** Python `str(x)` for a number that may be an int or a float. */
-export function numStr(x: number | PyFloat, isFloat = x instanceof PyFloat || !Number.isInteger(x)): string {
-  if (x instanceof PyFloat) x = x.value;
+export function numStr(x: number | BoxedFloat, isFloat = x instanceof BoxedFloat || !Number.isInteger(x)): string {
+  if (x instanceof BoxedFloat) x = x.value;
   return isFloat ? floatRepr(x) : String(x);
 }
 
@@ -406,8 +406,8 @@ export function numStr(x: number | PyFloat, isFloat = x instanceof PyFloat || !N
  * Python `format(x, spec)` for the numeric specs py_aep uses:
  * `[sign][0][width][.prec](f|e|g|%|d|x|X)`, plus `,` grouping.
  */
-export function format(x: number | PyFloat, spec: string): string {
-  const isFloat = x instanceof PyFloat;
+export function format(x: number | BoxedFloat, spec: string): string {
+  const isFloat = x instanceof BoxedFloat;
   x = unbox(x);
   const m = /^([<>=^]?)([+\- ]?)(0?)(\d*)(,?)(?:\.(\d+))?([fFeEgGdxX%n]?)$/.exec(spec);
   if (!m) throw new ValueError(`Unsupported format spec ${spec}`);

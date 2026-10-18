@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sorted, sum, tkey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, floordiv, getOrThrow, int, max, min, mod, radians, sorted, sum, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -169,7 +169,7 @@ export const _easingCache = new Map<string, _BezierEasing>();
 
 /** Get or create a cached BezierEasing instance. */
 export function _getBezierEasing(cx1: number, cy1: number, cx2: number, cy2: number): _BezierEasing {
-  const key = tkey(cx1, cy1, cx2, cy2);
+  const key = compositeKey(cx1, cy1, cx2, cy2);
   const cached = _easingCache.get(key);
   if (cached != null) return cached;
   const easing = new _BezierEasing(cx1, cy1, cx2, cy2);
@@ -809,12 +809,12 @@ export class _ArcSpline {
   }
 }
 
-// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `tkey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
+// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `compositeKey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
 export const _arcSplineCache = new Map<string, _ArcSpline>();
 
 /** A cached `_ArcSpline`: every evaluated frame rebuilds the same one. */
 export function _arcSpline(curve: _Curve, accuracy: number): _ArcSpline {
-  const key = tkey(curve, accuracy);
+  const key = compositeKey(curve, accuracy);
   const cached = _arcSplineCache.get(key);
   if (cached !== undefined) {
     // Re-insert so the entry becomes the most recently used one.

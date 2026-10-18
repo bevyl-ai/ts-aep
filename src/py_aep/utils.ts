@@ -13,7 +13,7 @@ import { warn } from "../pyrt/index.ts";
 export function deprecated(message: string) {
   return function decorator<T, A extends unknown[], R>(func: (this: T, ...args: A) => R): (this: T, ...args: A) => R {
     function wrapper(this: T, ...args: A): R {
-      // TODO(port): pyrt warn(message) records only the message string, so the DeprecationWarning
+      // TODO(port): warn(message) carries only the message string, so the DeprecationWarning
       // category and stacklevel=2 (caller attribution) are not represented; affects only warning-filter
       // and location semantics, not the message text.
       // TODO(port): JS functions have no __qualname__; func.name is used, so a decorated method warns as

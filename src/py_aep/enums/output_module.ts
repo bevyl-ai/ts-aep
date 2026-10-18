@@ -9,7 +9,7 @@
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.
 
-import { ValueError, getOrThrow, round, int, decode, literal, format, intEnum } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, round, int, decode, literal, format, defineEnum } from "../../pyrt/index.ts";
 import type { EnumValue } from "../../pyrt/index.ts";
 
 /**
@@ -19,7 +19,7 @@ import type { EnumValue } from "../../pyrt/index.ts";
  *
  * Not documented in AE scripting reference.
  */
-export const OutputChannels = intEnum("OutputChannels", {
+export const OutputChannels = defineEnum("OutputChannels", {
   RGB: 0,
   RGBA: 1,
   ALPHA: 2,
@@ -48,7 +48,7 @@ export const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> =
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorDepth = intEnum("OutputColorDepth", {
+export const OutputColorDepth = defineEnum("OutputColorDepth", {
   FLOATING_POINT_GRAY: -32, // 32 bpc gray (single channel float)
   COLORS_256: 8, // 8 bpc indexed (256 colors)
   MILLIONS_OF_COLORS: 24, // 8 bpc RGB (24 bpp)
@@ -85,7 +85,7 @@ export const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, strin
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorMode = intEnum("OutputColorMode", {
+export const OutputColorMode = defineEnum("OutputColorMode", {
   STRAIGHT_UNMATTED: 0,
   PREMULTIPLIED: 1,
 }, {
@@ -108,7 +108,7 @@ export const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>
  *
  * Not documented in AE scripting reference.
  */
-export const OutputAudio = intEnum("OutputAudio", {
+export const OutputAudio = defineEnum("OutputAudio", {
   OFF: 1,
   ON: 2,
   AUTO: 3,
@@ -137,7 +137,7 @@ export const _OUTPUT_AUDIO_LABELS: Readonly<Record<OutputAudio, string>> = {
  *
  * Not available in ExtendScript.
  */
-export const FormatKind = intEnum("FormatKind", {
+export const FormatKind = defineEnum("FormatKind", {
   /** Audio stream only (AIFF, MP3, WAV): video output is always off. */
   AUDIO: 1,
   /** Single movie file, video and/or audio (AVI, H.264, QuickTime). */
@@ -154,7 +154,7 @@ export type FormatKind = EnumValue<typeof FormatKind>;
  *
  * Not documented in AE scripting reference.
  */
-export const OutputFormat = intEnum("OutputFormat", {
+export const OutputFormat = defineEnum("OutputFormat", {
   AIFF: 0,
   AVI: 1,
   DPX_CINEON_SEQUENCE: 2,
@@ -278,7 +278,7 @@ export const _OUTPUT_FORMAT_TO_FORMAT_ID: Map<number, string> = new Map<number, 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioBitDepth = intEnum("AudioBitDepth", {
+export const AudioBitDepth = defineEnum("AudioBitDepth", {
   EIGHT_BIT: 1,
   SIXTEEN_BIT: 2,
   /**
@@ -317,7 +317,7 @@ export const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioChannels = intEnum("AudioChannels", {
+export const AudioChannels = defineEnum("AudioChannels", {
   MONO: 1,
   STEREO: 2,
 }, {
@@ -348,7 +348,7 @@ export const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const ResizeQuality = intEnum("ResizeQuality", {
+export const ResizeQuality = defineEnum("ResizeQuality", {
   LOW: 0,
   HIGH: 1,
 }, {
@@ -374,7 +374,7 @@ export const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const AudioSampleRate = intEnum("AudioSampleRate", {
+export const AudioSampleRate = defineEnum("AudioSampleRate", {
   OFF: -1,
   RATE_8000: 8000,
   RATE_11025: 11025,
@@ -434,7 +434,7 @@ export type AudioSampleRate = EnumValue<typeof AudioSampleRate>;
  *
  * Not documented in AE scripting reference.
  */
-export const ConvertToLinearLight = intEnum("ConvertToLinearLight", {
+export const ConvertToLinearLight = defineEnum("ConvertToLinearLight", {
   OFF: 0,
   ON: 1,
   ON_FOR_32_BPC: 2,
@@ -453,7 +453,7 @@ export const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLig
 };
 
 /** Action after rendering completes. */
-export const PostRenderAction = intEnum("PostRenderAction", {
+export const PostRenderAction = defineEnum("PostRenderAction", {
   NONE: 3612,
   IMPORT: 3613,
   IMPORT_AND_REPLACE_USAGE: 3614,

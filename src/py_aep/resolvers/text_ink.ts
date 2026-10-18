@@ -44,7 +44,7 @@ import {
   rstrip,
   split,
   str,
-  tkey,
+  compositeKey,
   zip,
 } from "../../pyrt/index.ts";
 import type { TextDocument } from "../models/text/text_document.ts";
@@ -82,7 +82,7 @@ export function _openFace(path: string, faceIndex: number): fontkit.Font {
 /** `(font, is_cff, outline bounds by glyph id)` for a PostScript name, cached; the bounds fill in as glyphs are measured. */
 export function _fontOutlines(psName: string): [fontkit.Font, boolean, _GlyphBounds] {
   const [path, faceIndex] = tc._resolveFace(psName);
-  const key = tkey(path.toString(), faceIndex);
+  const key = compositeKey(path.toString(), faceIndex);
   let cached = _glyphCache.get(key);
   if (cached === undefined) {
     let font: fontkit.Font;

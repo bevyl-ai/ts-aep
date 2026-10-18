@@ -3,7 +3,7 @@
 import { DeferredListChunk, ListChunk } from "./chunk.ts";
 import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 import {
-  PyException,
+  AepError,
   ValueError,
   b,
   jsonDumps,
@@ -14,7 +14,7 @@ import {
 import { Chunk } from "./chunk.ts";
 import type { ChunkOf } from "./chunk_types.ts";
 
-export class ChunkNotFoundError extends PyException {
+export class ChunkNotFoundError extends AepError {
   /** Raised when a required chunk is not found in the AEP chunk tree. */
 }
 

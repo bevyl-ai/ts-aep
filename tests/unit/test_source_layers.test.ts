@@ -9,7 +9,7 @@ import { AiLayer } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { FlattenedPsdError } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { psdLeafLayers, resolveAiLayer, resolvePsdLayer } from "../../src/py_aep/resolvers/source_layers.ts";
-import { Path, valueEquals, tkey, ValueError } from "../../src/pyrt/index.ts";
+import { Path, valueEquals, compositeKey, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
@@ -101,8 +101,8 @@ describe("TestPsd16BitLayers", () => {
     const leaves = psdLeafLayers(ASSETS.div("psd_noise_gradient_32bpc.psd"));
     expect(
       valueEquals(
-        new Set(leaves.map((leaf) => tkey(leaf.name, leaf.layerId))),
-        new Set([tkey("Layer 1", 2), tkey("Layer 1 copy", 5)]),
+        new Set(leaves.map((leaf) => compositeKey(leaf.name, leaf.layerId))),
+        new Set([compositeKey("Layer 1", 2), compositeKey("Layer 1 copy", 5)]),
       ),
     ).toBe(true);
     expect(valueEquals(new Set(leaves.map((leaf) => leaf.recordIndex)), new Set([0, 1]))).toBe(true);
