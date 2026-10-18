@@ -27,7 +27,7 @@
  *   and lines that fall wholly outside raise.
  */
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
+import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   NotImplementedError,
@@ -41,7 +41,6 @@ import {
   valueEquals,
   literal,
   round,
-  sorted,
   split,
   str,
   descriptor,
@@ -585,7 +584,7 @@ function _runCount(run: CosNode): PyNum {
  * `_charStyle` alias stays inside the serialized tree.
  */
 export function _splitRunArray(runs: CosNode[], offsets: Set<number>): void {
-  const cuts = sorted(offsets);
+  const cuts = [...offsets].sort(compare);
   let pos: PyNum = 0;
   let i = 0;
   while (i < runs.length) {

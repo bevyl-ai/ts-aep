@@ -28,8 +28,7 @@ import {
   decode,
   literal,
   rstrip,
-  sorted,
-} from "../../pyrt/index.ts";
+  compare } from "../../pyrt/index.ts";
 import { profileIdForName } from "../enums/mappings.ts";
 
 /**
@@ -197,7 +196,7 @@ export class IccProfileLibrary {
       const byName = new Map<string, Path>();
       for (const directory of this._dirs) {
         if (!directory.isDir()) continue;
-        for (const f of sorted(directory.iterdir())) {
+        for (const f of [...directory.iterdir()].sort(compare)) {
           if (![".icc", ".icm"].includes(f.suffix.toLowerCase())) continue;
           let data: Uint8Array;
           try {

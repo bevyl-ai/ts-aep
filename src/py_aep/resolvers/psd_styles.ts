@@ -36,7 +36,6 @@ import {
   bytesEq,
   copysign,
   decode,
-  getOr,
   fspath,
   getOrThrow,
   int,
@@ -791,7 +790,7 @@ export function parseLayerStyles(
     // `present` distinguishes an unchecked-but-kept style (imported,
     // tdsb 0x00) from a removed one Photoshop left in the descriptor
     // (skeleton, 0x02). Old writers without the key follow `enab`.
-    const isPresent = truthy(getOr(instance, "present", isEnabled));
+    const isPresent = truthy(instance.has("present") ? instance.get("present") : isEnabled);
     if (!isPresent && !_ALWAYS_WHEN_PRESENT.has(prefix)) continue;
     try {
       for (const [k, v] of _convertStyle(prefix, params, instance)) values.set(k, v);
@@ -900,9 +899,9 @@ export function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number
 }
 
 export function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
-  const style = getOr(instance, "bvlS", "InrB");
+  const style = instance.has("bvlS") ? instance.get("bvlS") : "InrB";
   if (style === "InrB") return null;
-  const size = jsonFloat(getOr(instance, "blur", 0));
+  const size = jsonFloat(instance.has("blur") ? instance.get("blur") as _Value : 0);
   let height: number;
   if (style === "OtrB") {
     height = size;
@@ -914,14 +913,14 @@ export function _bevelPads(instance: Map<string, _Value>, name: string): [number
         "known; import without merging its layer styles",
     );
   }
-  const smooth = getOr(instance, "bvlT", "SfBL") === "SfBL";
+  const smooth = (instance.has("bvlT") ? instance.get("bvlT") : "SfBL") === "SfBL";
   let reach: number;
   if (smooth) {
     reach = size > 0 ? Math.max(height, 2) + 1.5 : 2.0;
   } else {
     reach = height + 4;
   }
-  const softening = jsonFloat(getOr(instance, "Sftn", 0));
+  const softening = jsonFloat(instance.has("Sftn") ? instance.get("Sftn") as _Value : 0);
   if (softening > 0) {
     reach += Math.max(softening, 2) - 0.5;
   }
@@ -946,22 +945,22 @@ export function _instanceBox(
   if (key === "DrSh" || key === "OrGl") {
     const precise = key === "OrGl" && instance.get("GlwT") === "PrBL";
     const reach = _blurReach(
-      jsonFloat(getOr(instance, "blur", 0)),
-      jsonFloat(getOr(instance, "Ckmt", 0)),
+      jsonFloat(instance.has("blur") ? instance.get("blur") as _Value : 0),
+      jsonFloat(instance.has("Ckmt") ? instance.get("Ckmt") as _Value : 0),
       precise,
     );
     [lead, trail] = _pads(reach, truthy(instance.get("AntA")));
     if (key === "DrSh") {
       const angle = radians(
-        truthy(instance.get("uglg")) ? globalAngle : jsonFloat(getOr(instance, "lagl", 0)),
+        truthy(instance.get("uglg")) ? globalAngle : jsonFloat(instance.has("lagl") ? instance.get("lagl") as _Value : 0),
       );
-      const distance = jsonFloat(getOr(instance, "Dstn", 0));
+      const distance = jsonFloat(instance.has("Dstn") ? instance.get("Dstn") as _Value : 0);
       dx = _roundAway(-Math.cos(angle) * distance);
       dy = _roundAway(Math.sin(angle) * distance);
     }
   } else if (key === "FrFX") {
-    const size = jsonFloat(getOr(instance, "Sz  ", 0));
-    const position = getOr(instance, "Styl", "OutF");
+    const size = jsonFloat(instance.has("Sz  ") ? instance.get("Sz  ") as _Value : 0);
+    const position = instance.has("Styl") ? instance.get("Styl") : "OutF";
     if (position === "InsF") return null;
     const reach = position === "OutF" ? size : Math.ceil(size / 2);
     lead = trail = int(reach) + 2;

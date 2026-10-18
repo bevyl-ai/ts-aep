@@ -32,7 +32,6 @@ import {
   truthyOr,
   compositeKey,
   setdefault,
-  sorted,
   int,
   literal,
   encode,
@@ -40,8 +39,7 @@ import {
   b,
   concat,
   Bytes,
-  reSearch,
-} from "../../pyrt/index.ts";
+  reSearch, compare } from "../../pyrt/index.ts";
 import { _compact, buildOcioEnvelope } from "./envelope.ts";
 import { aeGuid } from "./murmur3.ts";
 
@@ -245,7 +243,7 @@ export function resolveOcioConfig(config: string): Path | null {
   for (const root of _builtinConfigRoots()) {
     const configDir = root.div(config);
     if (configDir.isDir()) {
-      const ocioFiles = sorted(configDir.glob("*.ocio"), (p: Path) => p.path);
+      const ocioFiles = [...configDir.glob("*.ocio")].sort((a, b) => compare(a.path, b.path));
       if (ocioFiles.length > 0) return ocioFiles[0];
     }
   }
@@ -296,7 +294,7 @@ export const _builtinConfigRoots = lruCache((): Path[] => {
     // Newest install first, by release year: a plain name sort would put
     // "Adobe After Effects CC 2019" before "Adobe After Effects 2026"
     // ("C" > "2"). Year-less installs (CS6, bare CC) sort last.
-    for (const aeDir of sorted(base.glob("Adobe After Effects *"), _installYear, true)) {
+    for (const aeDir of [...base.glob("Adobe After Effects *")].sort((a, b) => compare(_installYear(b), _installYear(a)))) {
       roots.push(aeDir.div("Support Files", "OpenColorIO-Configs"));
     }
   }

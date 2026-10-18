@@ -37,7 +37,6 @@ import {
   round,
   rshift,
   rstrip,
-  sorted,
   strip,
   struct,
   compositeKey,
@@ -46,8 +45,7 @@ import {
   jsonLoads,
   type JsonValue,
   openRb,
-  typeName,
-} from "../../pyrt/index.ts";
+  typeName, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /** Read/seek surface shared by `BytesIO` and `_BoundedReader`. */
@@ -302,7 +300,7 @@ export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInf
   if (parser == null) {
     throw new NotImplementedError(
       `Media-header probing is not implemented for ${literal(suffix)}. ` +
-        `Supported: ${sorted([..._PARSERS.keys()]).join(", ")}.`,
+        `Supported: ${[..._PARSERS.keys()].sort(compare).join(", ")}.`,
     );
   }
   // The parsers trust the header layout; a truncated or corrupt file would

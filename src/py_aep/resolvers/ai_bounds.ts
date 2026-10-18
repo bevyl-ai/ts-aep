@@ -45,7 +45,6 @@ import {
   Bytes,
   bytesEq,
   decode,
-  getOr,
   float,
   getOrThrow,
   int,
@@ -438,7 +437,7 @@ export class _Document {
     for (const number of this._offsets.keys()) numbers.push(number);
     for (const number of numbers) {
       const candidate = this.resolve(new IndirectReference(number, 0));
-      if (candidate instanceof Map && str(getOr(candidate, "Type", "")) === "Catalog") {
+      if (candidate instanceof Map && str(candidate.has("Type") ? candidate.get("Type") : "") === "Catalog") {
         this._catalog = candidate;
         return candidate;
       }
@@ -456,7 +455,7 @@ export class _Document {
   *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
     const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
-    if (str(getOr(table, "Type", "")) === "Page") {
+    if (str(table.has("Type") ? table.get("Type") : "") === "Page") {
       yield table;
       return;
     }

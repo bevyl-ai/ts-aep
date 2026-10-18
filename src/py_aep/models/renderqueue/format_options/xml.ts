@@ -10,7 +10,6 @@ import {
   concat,
   decode,
   descriptor,
-  getOr,
   encode,
   getOrThrow,
   int,
@@ -127,7 +126,7 @@ export class _ScalarParam {
 
   get(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
     if (obj == null) return this;
-    const raw = getOr(obj.params, this._key, "");
+    const raw = obj.params.get(this._key) ?? "";
     if (!raw) return null;
     try {
       return int(raw);
@@ -576,7 +575,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Returns `null` when the param is absent or non-numeric.
    */
   _enumParam(key: string, enumCls: EnumHelpers<number>): number | null {
-    const raw = getOr(this.params, key, "");
+    const raw = this.params.get(key) ?? "";
     if (!raw) return null;
     return _tryEnumOrInt(enumCls, raw);
   }
@@ -608,7 +607,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Read / Write.
    */
   get frameRate(): number | null {
-    const fpsStr = getOr(this.params, "ADBEVideoFPS", "");
+    const fpsStr = this.params.get("ADBEVideoFPS") ?? "";
     if (!fpsStr) return null;
     try {
       const ticks = int(fpsStr);
@@ -679,7 +678,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * {@link MPEGProfile} enum.
    */
   get profile(): MPEGProfile | number {
-    const raw = getOr(this.params, "ADBEVideoMPEGProfile", "");
+    const raw = this.params.get("ADBEVideoMPEGProfile") ?? "";
     if (!raw) return MPEGProfile.BASELINE;
     const result = _tryEnumOrInt(MPEGProfile, raw);
     // A non-numeric param is as good as absent.

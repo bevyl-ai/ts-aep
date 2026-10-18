@@ -32,9 +32,7 @@ import {
   getOrThrow,
   int,
   literal,
-  sorted,
-  str,
-} from "../../pyrt/index.ts";
+  str, compare } from "../../pyrt/index.ts";
 
 export const sys = { stderr: process.stderr };
 export function print(text: string, kw: { file?: typeof sys.stderr } = {}): void {
@@ -208,11 +206,11 @@ export function _dumpChunk(path: Path, chunkPath: string): number {
   const chunks = extractLeafChunks(path);
 
   if (!chunks.has(chunkPath)) {
-    const matches = sorted(chunks.keys()).filter((p) => p.includes(chunkPath));
+    const matches = [...chunks.keys()].sort(compare).filter((p) => p.includes(chunkPath));
     if (matches.length === 0) {
       print(`Chunk path not found: ${chunkPath}`, { file: sys.stderr });
       print("\nAvailable leaf chunk paths:", { file: sys.stderr });
-      for (const p of sorted(chunks.keys())) {
+      for (const p of [...chunks.keys()].sort(compare)) {
         print(`  ${p} (${getOrThrow(chunks, p).length}B)`, { file: sys.stderr });
       }
       return 1;

@@ -19,15 +19,13 @@ import {
   int,
   literal,
   round,
-  sorted,
   split,
   str,
   strip,
   compositeKey,
   zip,
   typeName,
-  truthyOr,
-} from "../../pyrt/index.ts";
+  truthyOr, compare } from "../../pyrt/index.ts";
 
 export const _validatePrefType = validateEnum(PREFType);
 
@@ -757,7 +755,7 @@ export class Preferences {
     if (prefsFile == null) return new Map();
     const section = prefsFile.section("Output File Name Template Presets Section v6");
     const presets = new Map<string, string>();
-    for (const key of sorted([...section.keys()])) {
+    for (const key of [...section.keys()].sort(compare)) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
       const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), b("\x00")).filter((p) => p?.length > 0);

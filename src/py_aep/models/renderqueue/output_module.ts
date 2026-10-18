@@ -31,7 +31,6 @@ import {
   b,
   Bytes,
   descriptor,
-  getOr,
   getattr,
   getOrThrow,
   int,
@@ -42,15 +41,13 @@ import {
   literal,
   round,
   rstrip,
-  sorted,
   str,
   Path,
   RuntimeError,
   ValueError,
   NotImplementedError,
   jsonLoads,
-  type ClassAttributes,
-} from "../../../pyrt/index.ts";
+  type ClassAttributes, compare } from "../../../pyrt/index.ts";
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `isInt` keeps that so raw bool fields still count as ints in the checks below.
@@ -732,7 +729,7 @@ export class OutputModule {
     }
     // `label` (output-module enums) > `name` (plain IntEnums, which
     // str() to their bare value on 3.11+) > str (ints, strings).
-    const labels = sorted(allowed, (v) => [typeof v === "string", v])
+    const labels = [...allowed].sort((a, b) => compare([typeof a === "string", a], [typeof b === "string", b]))
       .map((v) => _labelOrName(key, v))
       .join(", ");
     throw new ValueError(
@@ -800,7 +797,7 @@ export class OutputModule {
     const context = this._rulesContext();
     const audioOn = this._outputAudio !== OutputAudio.OFF;
     const videoOn = this._videoOutput;
-    for (const key of sorted(constrainedKeys(fmt))) {
+    for (const key of [...constrainedKeys(fmt)].sort(compare)) {
       if (!audioOn && cls._AUDIO_STATE_KEYS.has(key)) {
         continue;
       }
@@ -983,7 +980,7 @@ export class OutputModule {
       const details = violations
         .map(
           ([key, value, allowed]) =>
-            `${key}: ${_nameOrStr(key, value)} not in ` + `{${sorted([...allowed].map((v) => _nameOrStr(key, v))).join(", ")}}`,
+            `${key}: ${_nameOrStr(key, value)} not in ` + `{${[...[...allowed].map((v) => _nameOrStr(key, v))].sort(compare).join(", ")}}`,
         )
         .join("; ");
       throw new ValueError(`batchEdit rolled back, invalid final state: ${details}`);
@@ -1358,7 +1355,7 @@ export class OutputModule {
 
   /** The output folder path from the alas chunk. */
   get _folderPath(): string {
-    return str(getOr(this._alasData, "fullpath", ""));
+    return str(this._alasData.has("fullpath") ? this._alasData.get("fullpath") : "");
   }
 
   /** The file name template from the Utf8 chunk. */

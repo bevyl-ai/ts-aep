@@ -37,12 +37,10 @@ import {
   max,
   valueEquals,
   literal,
-  sorted,
   str,
   sum,
   SystemExit,
-  jsonDumps,
-} from "../../pyrt/index.ts";
+  jsonDumps, compare } from "../../pyrt/index.ts";
 
 export function print(...args: string[]): void {
   console.log(args.join(" "));
@@ -150,7 +148,7 @@ export class MultiFileDifference {
   _deriveFields(): void {
     const distinct = new Set(this.values.filter((v) => v !== MISSING_BYTE));
     if (distinct.size === 2) {
-      const [a, b_] = sorted(distinct);
+      const [a, b_] = [...distinct].sort(compare);
       const xor = a ^ b_;
       if (xor !== 0 && (xor & (xor - 1)) === 0) {
         this.bitPosition = 7 - (bitLength(xor) - 1);
@@ -365,9 +363,9 @@ export function _compareChunkDicts(
   const paths1 = new Set(data1.keys());
   const paths2 = new Set(data2.keys());
 
-  const onlyIn1 = sorted([...paths1].filter((p) => !paths2.has(p)));
-  const onlyIn2 = sorted([...paths2].filter((p) => !paths1.has(p)));
-  const commonPaths = sorted([...paths1].filter((p) => paths2.has(p)));
+  const onlyIn1 = [...[...paths1].filter((p) => !paths2.has(p))].sort(compare);
+  const onlyIn2 = [...[...paths2].filter((p) => !paths1.has(p))].sort(compare);
+  const commonPaths = [...[...paths1].filter((p) => paths2.has(p))].sort(compare);
 
   const differences: ChunkDifference[] = [];
   const suppressed: string[] = [];
@@ -489,7 +487,7 @@ export function compareMultiAepFiles(
   const missingChunks: [string, number[]][] = [];
   const suppressed: string[] = [];
 
-  for (const path of sorted(allPaths)) {
+  for (const path of [...allPaths].sort(compare)) {
     const present: number[] = [];
     for (const [i, d] of allData.entries()) {
       if (d.has(path)) present.push(i);

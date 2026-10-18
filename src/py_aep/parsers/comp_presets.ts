@@ -14,7 +14,7 @@
 
 import { CompPresetItem } from "../binary/composition_chunks.ts";
 import { PrefsFile, decodePrefString, parseHexValue } from "./prefs.ts";
-import { getOrThrow, assert, sorted } from "../../pyrt/index.ts";
+import { getOrThrow, assert, compare } from "../../pyrt/index.ts";
 
 export const _NAMES_SECTION = "Composition Preset Names Section v11";
 export const _PRESETS_SECTION = "Composition Presets Section v11";
@@ -56,7 +56,7 @@ export function parseCompPresets(prefsFile: PrefsFile): CompPreset[] {
   const names = prefsFile.section(_NAMES_SECTION);
   const entries = prefsFile.section(_PRESETS_SECTION);
   const presets: CompPreset[] = [];
-  for (const key of sorted(entries.keys())) {
+  for (const key of [...entries.keys()].sort(compare)) {
     const rawName = names.get(key) ?? null;
     if (rawName == null) continue;
     const name = decodePrefString(rawName);

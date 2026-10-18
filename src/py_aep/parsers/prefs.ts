@@ -36,11 +36,9 @@ import {
   int,
   rstrip,
   setdefault,
-  sorted,
   split,
   strip,
-  ValueError,
-} from "../../pyrt/index.ts";
+  ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 // One glob per preference file category; file names embed the AE version.
@@ -61,7 +59,7 @@ export const _KEY_RE = /^\t"([^\n]+?)" = ([^\n]*)$/;
 /** Locate the preference file for `prefType` under `prefsDir`. */
 export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {
   // Path ordering in Python compares parts; all matches share one parent, so the string form orders the same.
-  const matches = sorted(prefsDir.glob(_PREF_FILE_GLOBS[prefType]), (p) => p.toString());
+  const matches = [...prefsDir.glob(_PREF_FILE_GLOBS[prefType])].sort((a, b) => compare(a.toString(), b.toString()));
   return matches?.length > 0 ? matches[0] : null;
 }
 
