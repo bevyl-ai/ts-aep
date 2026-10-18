@@ -53,13 +53,13 @@ export class PngFormatOptions extends FormatOptionsBase {
 
   constructor(kw: { _body: PngRoptChunk; _hdr10Utf8?: Utf8Chunk | null }) {
     super();
-    const { _body, _hdr10Utf8: _hdr10_utf8 = null } = kw;
+    const { _body, _hdr10Utf8 = null } = kw;
     this._body = _body;
-    this._hdr10Utf8 = _hdr10_utf8;
+    this._hdr10Utf8 = _hdr10Utf8;
     this._hdr10Meta = new Map();
-    if (_hdr10_utf8 != null) {
+    if (_hdr10Utf8 != null) {
       try {
-        const parsed = jsonLoads(_hdr10_utf8.value);
+        const parsed = jsonLoads(_hdr10Utf8.value);
         if (parsed instanceof Map) this._hdr10Meta = parsed;
       } catch (e) {
         // Python: `except (json.JSONDecodeError, ValueError): pass`

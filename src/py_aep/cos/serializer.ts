@@ -47,16 +47,16 @@ export function _space(buf: BytesIO): void {
 
 /** Dispatch `value` to the appropriate serialization handler. */
 export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boolean } = {}): void {
-  const { topLevel: top_level = false } = kw;
+  const { topLevel = false } = kw;
   if (value instanceof Map) {
-    if (top_level) {
+    if (topLevel) {
       _writeDictContent(buf, value);
     } else {
       _space(buf);
       _writeDict(buf, value);
     }
   } else if (Array.isArray(value)) {
-    if (top_level) {
+    if (topLevel) {
       _writeArrayContent(buf, value);
     } else {
       _space(buf);

@@ -413,17 +413,17 @@ export class Project {
       _acer,
       _adfr,
       _dwga,
-      _gpugUtf8: _gpug_utf8,
-      _exenUtf8: _exen_utf8,
-      _cmsUtf8: _cms_utf8,
-      _wsUtf8: _ws_utf8,
-      _dcsUtf8: _dcs_utf8,
+      _gpugUtf8,
+      _exenUtf8,
+      _cmsUtf8,
+      _wsUtf8,
+      _dcsUtf8,
       _rifx,
       _xmp,
       file,
       items,
-      renderQueue: render_queue,
-      aePreferencesDir: ae_preferences_dir = null,
+      renderQueue,
+      aePreferencesDir = null,
     } = kw;
     // Chunk body references for descriptors
     this._nhed = _nhed;
@@ -432,11 +432,11 @@ export class Project {
     this._acer = _acer;
     this._adfr = _adfr;
     this._dwga = _dwga;
-    this._gpugUtf8 = _gpug_utf8;
-    this._exenUtf8 = _exen_utf8;
-    this._cmsUtf8 = _cms_utf8;
-    this._wsUtf8 = _ws_utf8;
-    this._dcsUtf8 = _dcs_utf8;
+    this._gpugUtf8 = _gpugUtf8;
+    this._exenUtf8 = _exenUtf8;
+    this._cmsUtf8 = _cmsUtf8;
+    this._wsUtf8 = _wsUtf8;
+    this._dcsUtf8 = _dcsUtf8;
     this._rifx = _rifx;
     this._xmp = _xmp;
     this._aep = this;
@@ -444,15 +444,15 @@ export class Project {
     // Read-only attributes
     this._file = file;
     this._items = items;
-    this._renderQueue = render_queue;
+    this._renderQueue = renderQueue;
     this._activeItem = null;
     this._effectParamDefs = new Map();
     this._effectDefinitionsCache = null;
     this._usedInLinked = false;
 
     this._idCounterReconciled = false; // lazily done on first allocation
-    this._aePreferencesDir = ae_preferences_dir;
-    this._preferences = new Preferences(ae_preferences_dir);
+    this._aePreferencesDir = aePreferencesDir;
+    this._preferences = new Preferences(aePreferencesDir);
     // Class attribute read through the instance until `_new` assigns one.
     this._platform = this.constructor._platform;
     // ICC profile discovery for Adobe-CMS working-space writes. `None`
@@ -663,7 +663,7 @@ export class Project {
       file: "",
       items: new Map(),
       renderQueue: null,
-      aePreferencesDir: aePreferencesDir,
+      aePreferencesDir,
     });
     project._platform = platform;
 
@@ -1545,17 +1545,17 @@ export class Project {
       const hasAlpha = spec.hasAlpha == null ? info.hasAlpha : spec.hasAlpha;
       const depth = spec.depth == null ? info.depth : spec.depth;
       const source = FileSource._new(file, {
-        sourceFormat: sourceFormat,
+        sourceFormat,
         width: spec.width,
         height: spec.height,
         duration: 0.0,
         frameRate: 0.0,
         pixelAspect: info.pixelAspect,
         iccProfile: info.iccProfile,
-        hasAlpha: hasAlpha,
+        hasAlpha,
         depth,
         optiData: spec.optiData,
-        embeddedProfileName: embeddedProfileName,
+        embeddedProfileName,
         fullFrame: spec.fullFrame,
         layerName: spec.layerIndex != null ? spec.name : "",
         layerId: spec.layerId,
@@ -1944,7 +1944,7 @@ export class Project {
             record = { name: font.postScriptName, font, usedAt: [] };
             records.set(key, record);
           }
-          record.usedAt.push({ layerId: layer.id, layerTime: layerTime });
+          record.usedAt.push({ layerId: layer.id, layerTime });
         }
       }
     }

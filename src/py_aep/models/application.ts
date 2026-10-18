@@ -120,10 +120,10 @@ export class Application {
   declare _activeViewer: Viewer | null;
 
   constructor(kw: { _head: HeadChunk; project: Project; activeViewer?: Viewer | null }) {
-    const { _head, project, activeViewer: active_viewer = null } = kw;
+    const { _head, project, activeViewer = null } = kw;
     this._head = _head;
     this._project = project;
-    this._activeViewer = active_viewer;
+    this._activeViewer = activeViewer;
   }
 
   /**

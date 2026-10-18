@@ -240,13 +240,13 @@ export function _viewLayer(
   position: [number | string, number | string, number | string] | null,
   kw: { hasScale: boolean },
 ): LayerSpec {
-  const { hasScale: has_scale } = kw;
+  const { hasScale } = kw;
   const children: SpecNode[] = [_ANCHOR_POINT];
   if (position != null) {
     children.push(_positionProp(...position));
   }
   children.push(..._SPLIT_POSITIONS);
-  if (has_scale) {
+  if (hasScale) {
     children.push(_SCALE);
   }
   children.push(_ROTATE_Z, _OPACITY, _ENVIR_APPEAR);

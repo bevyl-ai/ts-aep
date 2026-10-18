@@ -363,7 +363,7 @@ export function _registerFontAt(
   index = 0,
   kw: { usedRecord?: boolean } = {},
 ): number {
-  const { usedRecord: used_record = true } = kw;
+  const { usedRecord = true } = kw;
   const cos = doc._cosData;
   const fontArray = cosSetdefault(cosSetdefault(cosSetdefault(cos, "0", new Map()), "1", new Map()), "0", []);
   const entry = _buildFontEntry(postScriptName);
@@ -413,7 +413,7 @@ export function _registerFontAt(
       for (const record of records) {
         if (record instanceof Map) bump(record);
       }
-      if (used_record && !appended) {
+      if (usedRecord && !appended) {
         records.push(newRecord);
         appended = true;
       }
@@ -926,7 +926,7 @@ export class RangeField<T extends InstanceValue> {
   declare publicName: string;
 
   constructor(kind: RangeKind, key: string, kw: RangeFieldOptions<T>) {
-    const { transform, default: default_ = null, gate = null, reverse = null, validate = null, readOnly: read_only = false } = kw;
+    const { transform, default: default_ = null, gate = null, reverse = null, validate = null, readOnly = false } = kw;
     this.kind = kind;
     this.key = key;
     this.transform = transform;
@@ -934,7 +934,7 @@ export class RangeField<T extends InstanceValue> {
     this.gate = gate;
     this.reverse = reverse;
     this.validate = validate;
-    this.readOnly = read_only;
+    this.readOnly = readOnly;
   }
 
   __set_name__(owner: Function, name: string): void {

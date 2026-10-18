@@ -370,22 +370,22 @@ export function _synthesizeEffectProperty(
   propertyDepth: number,
   kw: { parentProperty: PropertyGroup },
 ): Property | PropertyGroup {
-  const { parentProperty: parent_property } = kw;
+  const { parentProperty } = kw;
   const controlType = paramDef.propertyControlType;
   const pvt = paramDef.propertyValueType ?? PropertyValueType.OneD;
 
   if (pvt === PropertyValueType.NO_VALUE) {
     const display = paramDef.name || (MATCH_NAME_TO_AUTO_NAME.get(matchName) ?? "");
     return PropertyGroup._new(matchName, display, propertyDepth, {
-      parentProperty: parent_property,
+      parentProperty,
       synthetic: true,
     });
   }
 
   const spec = _paramDefToSpec(matchName, paramDef);
   const prop = Property._new(spec, propertyDepth, {
-    parentProperty: parent_property,
-    controlType: controlType,
+    parentProperty,
+    controlType,
     synthetic: true,
   });
   _applyParamDefMetadata(prop, paramDef);
@@ -446,7 +446,7 @@ export function _parseEffectProperties(
       ordered.push(existing);
     } else {
       const synth = _synthesizeEffectProperty(matchName, paramDef, childDepth, {
-        parentProperty: parentProperty,
+        parentProperty,
       });
       if (
         synth instanceof Property &&
@@ -470,7 +470,7 @@ export function _parseEffectProperties(
   if (!ordered.some((c) => c.matchName === "ADBE Effect Built In Params")) {
     ordered.push(
       PropertyGroup._new("ADBE Effect Built In Params", "Compositing Options", childDepth, {
-        parentProperty: parentProperty,
+        parentProperty,
         synthetic: true,
       }),
     );
@@ -640,7 +640,7 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
     _nameUtf8: effectNameUtf8,
     _fnamUtf8: fnamUtf8,
     matchName: groupMatchName,
-    propertyDepth: propertyDepth,
+    propertyDepth,
     properties: [],
   });
   effectGroup._isEffect = true;

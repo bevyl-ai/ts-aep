@@ -198,9 +198,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   declare _value: PropertyValue | typeof _VALUE_FROM_CHUNK;
 
   constructor(kw: { _ldatItem: LdatItem; _frameRate: number }) {
-    const { _ldatItem: _ldat_item, _frameRate: _frame_rate } = kw;
-    this._ldatItem = _ldat_item;
-    this._frameRate = _frame_rate;
+    const { _ldatItem, _frameRate } = kw;
+    this._ldatItem = _ldatItem;
+    this._frameRate = _frameRate;
     this._property = null;
     this._prev = null;
     this._next = null;

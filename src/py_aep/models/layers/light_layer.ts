@@ -103,34 +103,34 @@ export class LightLayer extends Layer {
     // NOTE(port): Python `# type: ignore[override]` is type-only; the `never` overload above keeps Layer._new's signatures uncallable.
     const {
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      lightType: light_type = 1,
-      effectParamDefs: effect_param_defs = null,
+      containingComp,
+      lightType = 1,
+      effectParamDefs = null,
     } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
-      layerId: layer_id,
-      sourceId: _noSourceId(containing_comp),
+      layerId,
+      sourceId: _noSourceId(containingComp),
       label: labelIndex(
-        containing_comp._project._preferences,
+        containingComp._project._preferences,
         "Light Label Index 2",
         6,
       ),
       layerType: LayerType.LIGHT,
-      lightAndMeshType: light_type,
+      lightAndMeshType: lightType,
       layerFlags2: 0x01,
-      layerName: layerName,
+      layerName,
     });
     ldta.outPoint = duration;
     ldta.threeDLayer = true;
     return super._new<LightLayer>({
-      ldta: ldta,
-      name: name,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs,
+      ldta,
+      name,
+      containingComp,
+      effectParamDefs,
     });
   }
 

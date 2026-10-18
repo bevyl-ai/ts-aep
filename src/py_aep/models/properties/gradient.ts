@@ -225,12 +225,12 @@ export class Gradient {
     _utf8: Utf8Chunk;
     version?: string;
   }): Gradient {
-    const { colorStops: color_stops, alphaStops: alpha_stops, _utf8, version = "1.0" } = kw;
+    const { colorStops, alphaStops, _utf8, version = "1.0" } = kw;
     const obj = Object.create(this.prototype);
     obj._version = version;
     obj._utf8 = _utf8;
-    obj._colorStops = [...color_stops];
-    obj._alphaStops = [...alpha_stops];
+    obj._colorStops = [...colorStops];
+    obj._alphaStops = [...alphaStops];
     for (const stop of obj._colorStops) {
       stop._gradient = obj;
     }

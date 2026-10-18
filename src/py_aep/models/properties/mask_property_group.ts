@@ -193,12 +193,12 @@ export class MaskPropertyGroup extends PropertyGroup {
     propertyDepth: number,
     kw: { name: string; maskId: number },
   ): MaskPropertyGroup {
-    const { name, maskId: mask_id } = kw;
-    const color = _MASK_COLOR_CYCLE[mod(mask_id - 1, _MASK_COLOR_CYCLE.length)];
+    const { name, maskId } = kw;
+    const color = _MASK_COLOR_CYCLE[mod(maskId - 1, _MASK_COLOR_CYCLE.length)];
     const _tdmn = new TdmnChunk({ value: "ADBE Mask Atom" });
     const _mkif = new MkifChunk({
       mode: 1, // binary PF_MaskMode for MaskMode.ADD
-      maskId: mask_id,
+      maskId,
       colorR: color[0],
       colorG: color[1],
       colorB: color[2],
@@ -223,7 +223,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       _maskShapeTdsb: null,
       _nameUtf8: nameUtf8,
       matchName: "ADBE Mask Atom",
-      propertyDepth: propertyDepth,
+      propertyDepth,
       autoName: name,
       properties: [],
     });
@@ -251,25 +251,25 @@ export class MaskPropertyGroup extends PropertyGroup {
       _tdgp,
       _tdsb,
       _mkif,
-      _maskShapeTdsb: _mask_shape_tdsb,
-      _nameUtf8: _name_utf8 = null,
-      matchName: match_name,
-      propertyDepth: property_depth,
-      autoName: auto_name = null,
+      _maskShapeTdsb,
+      _nameUtf8 = null,
+      matchName,
+      propertyDepth,
+      autoName = null,
       properties,
     } = kw;
     super({
       _tdmn,
       _tdgp,
       _tdsb,
-      _nameUtf8: _name_utf8,
-      matchName: match_name,
-      autoName: auto_name,
-      propertyDepth: property_depth,
+      _nameUtf8,
+      matchName,
+      autoName,
+      propertyDepth,
       properties,
     });
     this._mkif = _mkif;
-    this._maskShapeTdsb = _mask_shape_tdsb;
+    this._maskShapeTdsb = _maskShapeTdsb;
   }
 
   /**
@@ -284,7 +284,7 @@ export class MaskPropertyGroup extends PropertyGroup {
    * rectangle as an explicit path.
    */
   _materializeMaskShape(kw: { rotoBezier?: boolean } = {}): void {
-    const { rotoBezier: roto_bezier = false } = kw;
+    const { rotoBezier = false } = kw;
     this._ensureMaterialized();
     this._ensureChildrenSynthesized();
     pyAssert(this._tdgp != null);
@@ -304,7 +304,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       // An audio-only layer has a 0x0 mask space (its default path is
       // four points at the origin) and no aspect to stamp.
       aspect: height !== 0 ? (width * pixelAspect) / height : 1.0,
-      rotoBezier: roto_bezier,
+      rotoBezier,
     });
 
     // Synthesis inserts a bare synthetic `tdmn + tdbs` placeholder for

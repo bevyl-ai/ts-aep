@@ -982,9 +982,9 @@ export class CompItem extends AVItem {
      * @param min_dimension - The smallest width / height accepted: 4, as `addComp`, except for an
      *   import that AE builds smaller (an SVG canvas can be 1 px a side).
      */
-    const { project, parentFolder: parent_folder, minDimension: min_dimension = 4 } = kw;
+    const { project, parentFolder, minDimension = 4 } = kw;
     validateString(name);
-    const validateSize = _validateNumber({ min: min_dimension, max: 30000, integer: true });
+    const validateSize = _validateNumber({ min: minDimension, max: 30000, integer: true });
     validateSize(width);
     validateSize(height);
     validatePixelAspect(pixelAspect);
@@ -1002,11 +1002,11 @@ export class CompItem extends AVItem {
       name,
       width,
       height,
-      pixelAspect: pixelAspect,
+      pixelAspect,
       duration,
-      frameRate: frameRate,
+      frameRate,
       allocateLayerId: project._allocateId.bind(project),
-      aeMajor: aeMajor,
+      aeMajor,
       label: labelIndex(project._preferences, "Comp Label Index 2", 15),
     });
 
@@ -1026,7 +1026,7 @@ export class CompItem extends AVItem {
       _pinChunks: [],
       _nameUtf8: nameUtf8,
       project,
-      parentFolder: parent_folder,
+      parentFolder,
       effectParamDefs: project._effectParamDefs,
       proxySource: null,
     });
@@ -1382,8 +1382,8 @@ export class CompItem extends AVItem {
       shape,
       camera,
       light,
-      threeDModel: threeDModel,
-      parametricMesh: parametricMesh,
+      threeDModel,
+      parametricMesh,
     };
     this.__typeCache = cache;
     return cache;
@@ -2241,12 +2241,12 @@ export class CompItem extends AVItem {
      * @param mesh_type - The type of parametric mesh (required, keyword-only).
      * @returns The newly created {@link ParametricMeshLayer}.
      */
-    const { meshType: mesh_type } = kw;
+    const { meshType } = kw;
     const explicitName = name != null;
     if (name == null) {
       const existing = new Set(this.layers.map((lyr) => lyr.name));
       // Python's `str.title()`: each run of letters capitalized, the rest lowered.
-      const prefix = ParametricMeshType.nameOf(mesh_type)
+      const prefix = ParametricMeshType.nameOf(meshType)
         .toLowerCase()
         .replace(/(^|[^a-zA-Z])([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
       name = autoName(`${prefix} ${ParametricMeshLayer._autoName}`, existing);
@@ -2257,7 +2257,7 @@ export class CompItem extends AVItem {
       layerId: this._project._allocateId(),
       duration: this._syntheticLayerDuration(),
       containingComp: this,
-      meshType: mesh_type,
+      meshType,
       effectParamDefs: this._project._effectParamDefs,
     });
     // AE sets the ldta name bit when addParametricMesh receives an

@@ -175,34 +175,34 @@ export class FootageItem extends AVItem {
   }) {
     const {
       _idta,
-      _nameUtf8: _name_utf8,
+      _nameUtf8,
       _cmta,
-      _itemList: _item_list,
+      _itemList,
       _gide,
-      _pinChunks: _pin_chunks,
+      _pinChunks,
       project,
-      parentFolder: parent_folder,
-      mainSource: main_source,
-      proxySource: proxy_source,
+      parentFolder,
+      mainSource,
+      proxySource,
     } = kw;
     super({
       _idta,
-      _nameUtf8: _name_utf8,
+      _nameUtf8,
       _cmta,
-      _itemList: _item_list,
+      _itemList,
       _gide,
-      _pinChunks: _pin_chunks,
+      _pinChunks,
       project,
-      parentFolder: parent_folder,
+      parentFolder,
       typeName: "Footage",
-      proxySource: proxy_source,
+      proxySource,
     });
-    this._mainSource = main_source;
-    main_source._project = project;
+    this._mainSource = mainSource;
+    mainSource._project = project;
     this._viewData = [];
     // Cache the resolved display name rather than mutating the binary
     // Utf8 chunk, which for a solid or placeholder AE leaves empty.
-    this._name = main_source._resolveName(_name_utf8.value);
+    this._name = mainSource._resolveName(_nameUtf8.value);
   }
 
   /**
@@ -309,7 +309,7 @@ export class FootageItem extends AVItem {
     source: FileSource | PlaceholderSource | SolidSource,
     kw: { project: Project; parentFolder: FolderItem },
   ): FootageItem {
-    const { project, parentFolder: parent_folder } = kw;
+    const { project, parentFolder } = kw;
     const itemId = project._allocateId();
 
     // AE labels footage items by kind (probed in AE 2026): solids use
@@ -329,7 +329,7 @@ export class FootageItem extends AVItem {
 
     const idta = new IdtaChunk({
       itemType: 7,
-      itemId: itemId,
+      itemId,
       label,
     });
     idta.isFootage = true;
@@ -370,7 +370,7 @@ export class FootageItem extends AVItem {
       _gide: null,
       _pinChunks: [pinList],
       project,
-      parentFolder: parent_folder,
+      parentFolder,
       mainSource: source,
       proxySource: null,
     });
@@ -636,7 +636,7 @@ export class FootageItem extends AVItem {
     this._replaceMainSource(
       FileSource._fromFile(file, {
         sequence: true,
-        forceAlphabetical: forceAlphabetical,
+        forceAlphabetical,
         windows: this._project._windows,
         defaultSequenceFps: defaultSequenceFps(this._project._preferences),
       }),

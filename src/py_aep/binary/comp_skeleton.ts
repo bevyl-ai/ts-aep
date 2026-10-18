@@ -155,7 +155,7 @@ export function _buildViewLayer(
     delete ldtaKwargs.reserved94;
     delete ldtaKwargs.reserved98;
   }
-  const ldta = new LdtaChunk({ layerId: layerId, ...ldtaKwargs });
+  const ldta = new LdtaChunk({ layerId, ...ldtaKwargs });
   const [gide, _lhd3, _inner] = buildGideList();
   const chunks: Chunk[] = [
     ldta,
@@ -275,20 +275,20 @@ export function buildNewCompItem(kw: {
   label?: number;
 }): [ListChunk, IdtaChunk, Utf8Chunk, ListChunk] {
   const {
-    itemId: item_id,
+    itemId,
     name,
     width,
     height,
-    pixelAspect: pixel_aspect,
+    pixelAspect,
     duration,
-    frameRate: frame_rate,
-    allocateLayerId: allocate_layer_id,
-    aeMajor: ae_major,
+    frameRate,
+    allocateLayerId,
+    aeMajor,
     label = 15,
   } = kw;
-  const idta = new IdtaChunk({ itemType: 4, itemId: item_id, label, flags17: 0x20 });
+  const idta = new IdtaChunk({ itemType: 4, itemId, label, flags17: 0x20 });
   const nameUtf8 = new Utf8Chunk({ value: name });
-  const cdta = _buildCdta(width, height, pixel_aspect, duration, frame_rate);
+  const cdta = _buildCdta(width, height, pixelAspect, duration, frameRate);
   const prin = new ListChunk({
     listType: "PRin",
     chunks: [new PrinChunk(), new ClassicPrdaChunk()],
@@ -297,15 +297,15 @@ export function buildNewCompItem(kw: {
   const env: Record<string, number> = {
     W2: width / 2.0,
     H2: height / 2.0,
-    ZV: (width * pixel_aspect) / 0.72,
+    ZV: (width * pixelAspect) / 0.72,
     TB: cdta.internalTimebase,
     DUR_UNITS: cdta.durationDividend,
-    PAR: pixel_aspect,
-    SHADOW_ALPHA: aeWrites("markers shadow alpha", ae_major) ? 255.0 : 0.0,
+    PAR: pixelAspect,
+    SHADOW_ALPHA: aeWrites("markers shadow alpha", aeMajor) ? 255.0 : 0.0,
   };
 
   const children: Chunk[] = [
-    ...buildItemIdChunks(item_id, ae_major),
+    ...buildItemIdChunks(itemId, aeMajor),
     idta,
     nameUtf8,
     new ListChunk({
@@ -315,17 +315,17 @@ export function buildNewCompItem(kw: {
     cdta,
     new U1Chunk({ chunkType: "cdrp" }),
   ];
-  if (aeWrites("comr", ae_major)) {
+  if (aeWrites("comr", aeMajor)) {
     children.push(new Chunk({ chunkType: "comr", data: b("\x00") }));
   }
   children.push(prin);
   for (const spec of COMP_VIEW_LAYER_SPECS) {
-    if (spec.gate !== undefined && !aeWrites(spec.gate, ae_major)) continue;
-    children.push(_buildViewLayer(spec, env, allocate_layer_id(), ae_major));
+    if (spec.gate !== undefined && !aeWrites(spec.gate, aeMajor)) continue;
+    children.push(_buildViewLayer(spec, env, allocateLayerId(), aeMajor));
     children.push(...buildLayerViewBlock());
   }
   const cifTypes = ["CIFO", "CIF2"];
-  if (aeWrites("CIF3", ae_major)) {
+  if (aeWrites("CIF3", aeMajor)) {
     cifTypes.push("CIF3");
   }
   children.push(...cifTypes.map((t) => _buildCif(t)));

@@ -154,9 +154,9 @@ descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "cornerAngle"))
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const shape_layer = comp.shapeLayers[0];
- * const shape_prop = shape_layer.property("ADBE Root Vectors Group").property("ADBE Vector Shape - Group").property("ADBE Vector Shape");
- * console.log(shape_prop.value.vertices);
+ * const shapeLayer = comp.shapeLayers[0];
+ * const shapeProp = shapeLayer.property("ADBE Root Vectors Group").property("ADBE Vector Shape - Group").property("ADBE Vector Shape");
+ * console.log(shapeProp.value.vertices);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/other/shape/
  */
@@ -199,11 +199,11 @@ export class Shape {
     outTangents: number[][] | null = null,
     kw: { closed?: boolean; featherPoints?: FeatherPoint[] | null } = {},
   ) {
-    const { closed = true, featherPoints: feather_points = null } = kw;
+    const { closed = true, featherPoints = null } = kw;
     validateBool(closed);
     if (
-      feather_points != null &&
-      !(Array.isArray(feather_points) && feather_points.every((fp) => fp instanceof FeatherPoint))
+      featherPoints != null &&
+      !(Array.isArray(featherPoints) && featherPoints.every((fp) => fp instanceof FeatherPoint))
     ) {
       throw new TypeError_("featherPoints must be a list of FeatherPoint");
     }
@@ -218,7 +218,7 @@ export class Shape {
     // A shape built here owns its points, so a different vertex count
     // can rebuild them; a parsed one shares them with its file chunks.
     this._detached = true;
-    this.featherPoints = feather_points ?? [];
+    this.featherPoints = featherPoints ?? [];
     /** Array of variable-width mask feather points. */
 
     const verts = vertices ?? [];
@@ -320,22 +320,22 @@ export class Shape {
     const {
       _shph,
       _points,
-      _isMask: _is_mask = false,
+      _isMask = false,
       _layer = null,
       _omtn = null,
-      _maskPath: _mask_path = null,
-      featherPoints: feather_points = null,
+      _maskPath = null,
+      featherPoints = null,
     } = kw;
     const obj: Shape = Object.create(this.prototype);
     obj._shph = _shph;
     obj._points = _points;
-    obj._isMask = _is_mask;
+    obj._isMask = _isMask;
     obj._layer = _layer;
     obj._omtn = _omtn;
-    obj._maskPath = _mask_path;
+    obj._maskPath = _maskPath;
     obj._tensions = null;
     obj._detached = false;
-    obj.featherPoints = feather_points ?? [];
+    obj.featherPoints = featherPoints ?? [];
     return obj;
   }
 

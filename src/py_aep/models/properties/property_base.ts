@@ -176,17 +176,17 @@ export class PropertyBase {
   }) {
     const {
       _tdsb,
-      _nameUtf8: _name_utf8 = null,
-      parentProperty: parent_property = null,
-      matchName: match_name,
-      propertyDepth: property_depth,
-      autoName: auto_name = null,
+      _nameUtf8 = null,
+      parentProperty = null,
+      matchName,
+      propertyDepth,
+      autoName = null,
     } = kw;
     this._tdsb = _tdsb;
-    this._nameUtf8 = _name_utf8;
-    this._matchName = match_name;
-    this._autoName = auto_name;
-    this._propertyDepth = property_depth;
+    this._nameUtf8 = _nameUtf8;
+    this._matchName = matchName;
+    this._autoName = autoName;
+    this._propertyDepth = propertyDepth;
     this._tdmn = null;
 
     this._name = null;
@@ -194,7 +194,7 @@ export class PropertyBase {
     this._elided = false;
     this._isEffect = false;
     this._isMask = false;
-    this._parentProperty = parent_property;
+    this._parentProperty = parentProperty;
     this._propertyType = PropertyType.NAMED_GROUP;
   }
 

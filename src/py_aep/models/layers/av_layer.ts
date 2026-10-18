@@ -257,39 +257,39 @@ export class AVLayer extends Layer {
   static _new<T extends AVLayer>(this: new (kw: ConstructorParameters<typeof Layer>[0]) => T, kw: AVLayerNewKw): T {
     const {
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      sourceId: source_id = 0,
-      nullLayer: null_layer = false,
-      threeDLayer: three_d_layer = false,
+      containingComp,
+      sourceId = 0,
+      nullLayer = false,
+      threeDLayer = false,
       label = 1,
-      rootTdgpExtra: root_tdgp_extra = null,
-      effectParamDefs: effect_param_defs = null,
+      rootTdgpExtra = null,
+      effectParamDefs = null,
     } = kw;
     // Python slices code points, not UTF-16 units.
     const nameChars = Array.from(name);
     const ldta = new LdtaChunk({
-      layerId: layer_id,
+      layerId,
       quality: 2,
-      sourceId: source_id,
+      sourceId,
       label,
       blendingMode: 2,
       layerType: LayerType.AV,
       layerName: nameChars.length > 31 ? nameChars.slice(0, 31).join("") : name,
     });
     ldta.outPoint = duration;
-    ldta.nullLayer = null_layer;
-    ldta.threeDLayer = three_d_layer;
+    ldta.nullLayer = nullLayer;
+    ldta.threeDLayer = threeDLayer;
     // AE writes _reserved_3b=1 (and _reserved_3c=0) for every AV layer
     // (verified across 237/238 AE-native AV layers); cameras/lights use 0/0.
     ldta._reserved3b = 1;
     return super._new<T>({
       ldta,
       name,
-      containingComp: containing_comp,
-      rootTdgpExtra: root_tdgp_extra,
-      effectParamDefs: effect_param_defs,
+      containingComp,
+      rootTdgpExtra,
+      effectParamDefs,
     });
   }
 

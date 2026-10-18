@@ -52,19 +52,19 @@ export class FolderItem extends Item {
     project: Project;
     parentFolder: FolderItem | null;
   }) {
-    const { _idta, _nameUtf8: _name_utf8, _cmta, _itemList: _item_list, _gide, _childrenContainer: _children_container, project, parentFolder: parent_folder } = kw;
+    const { _idta, _nameUtf8, _cmta, _itemList, _gide, _childrenContainer, project, parentFolder } = kw;
     super({
       _idta,
-      _nameUtf8: _name_utf8,
+      _nameUtf8,
       _cmta,
-      _itemList: _item_list,
+      _itemList,
       _gide,
       project,
-      parentFolder: parent_folder,
+      parentFolder,
       typeName: "Folder",
     });
     this.items = [];
-    this._childrenContainer = _children_container;
+    this._childrenContainer = _childrenContainer;
     this._viewers = [];
   }
 
@@ -115,7 +115,7 @@ export class FolderItem extends Item {
     name: string,
     kw: { project: Project; parentFolder: FolderItem },
   ): FolderItem {
-    const { project, parentFolder: parent_folder } = kw;
+    const { project, parentFolder } = kw;
     validateString(name);
     const newId = project._allocateId();
 
@@ -149,7 +149,7 @@ export class FolderItem extends Item {
       _gide: null,
       _childrenContainer: sfdr.chunks,
       project,
-      parentFolder: parent_folder,
+      parentFolder,
     });
     return folder;
   }
@@ -226,7 +226,7 @@ export class FolderItem extends Item {
     frameRate: number,
     kw: { minDimension?: number } = {},
   ): CompItem {
-    const { minDimension: min_dimension = 4 } = kw;
+    const { minDimension = 4 } = kw;
 
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
@@ -243,7 +243,7 @@ export class FolderItem extends Item {
       {
         project: this._project,
         parentFolder: this,
-        minDimension: min_dimension,
+        minDimension,
       },
     );
 

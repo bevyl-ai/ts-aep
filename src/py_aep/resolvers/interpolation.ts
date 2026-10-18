@@ -1027,7 +1027,7 @@ export function _progressEasing(
   inEase: KeyframeEase | null,
   kw: { outLinear?: boolean; inLinear?: boolean } = {},
 ): _BezierEasing | null {
-  const { outLinear: out_linear = false, inLinear: in_linear = false } = kw;
+  const { outLinear = false, inLinear = false } = kw;
   if (outEase == null || inEase == null) return null;
   if (outEase.influence <= 0 && inEase.influence <= 0) return null;
 
@@ -1043,8 +1043,8 @@ export function _progressEasing(
   // progress advances at a constant rate on that side. The side's
   // interpolation type governs the EASE only - the path itself always
   // follows the spatial tangents (AE 2026).
-  if (out_linear) cy1 = cx1;
-  if (in_linear) cy2 = cx2;
+  if (outLinear) cy1 = cx1;
+  if (inLinear) cy2 = cx2;
 
   // Between two eased sides, a handle that reaches past the unit square is
   // shortened ALONG ITS OWN SLOPE, which keeps the speed the user asked for
@@ -1054,7 +1054,7 @@ export function _progressEasing(
   // influence 50 % into a LINEAR key reads [203.94, 60.25, 293.25] 0.125 s
   // in - about 2.9 times the way - and a mask path bows past its end shape
   // the same way (AE 2026).
-  if (!(out_linear || in_linear)) {
+  if (!(outLinear || inLinear)) {
     if (cy1 > 1.0) {
       cx1 = cx1 / cy1;
       cy1 = 1.0;

@@ -252,7 +252,7 @@ export function _reorderAndFill(
    * @param tail_mode - What non-spec children to append after the canonical entries: `"groups"`
    *   (only `PropertyGroup`), `"all"` (everything), or `"none"` (nothing).
    */
-  const { skip = new Set<string>(), valueOverrides: value_overrides = null, tailMode: tail_mode = "groups", aeMajor: ae_major } = kw;
+  const { skip = new Set<string>(), valueOverrides = null, tailMode = "groups", aeMajor } = kw;
 
   const existing = new Map<string, Property | PropertyGroup>();
   for (const child of container.properties) {
@@ -299,7 +299,7 @@ export function _reorderAndFill(
       ordered.push(child);
     } else if (skip.has(mn)) {
       continue;
-    } else if (spec.minMajor != null && spec.minMajor > ae_major) {
+    } else if (spec.minMajor != null && spec.minMajor > aeMajor) {
       continue;
     } else if (spec instanceof GroupSpec) {
       const group = PropertyGroup._new(spec.matchName, spec.autoName, childDepth, {
@@ -309,7 +309,7 @@ export function _reorderAndFill(
       });
       ordered.push(group);
     } else {
-      const [v, d] = dictGet<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(value_overrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
+      const [v, d] = dictGet<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(valueOverrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
       const prop = Property._new(spec, childDepth, {
         parentProperty: container,
         value: v,
@@ -320,11 +320,11 @@ export function _reorderAndFill(
     }
   }
 
-  if (tail_mode !== "none") {
+  if (tailMode !== "none") {
     const specMatchNames = new Set(specs.map((s) => s.matchName));
     for (const child of container.properties) {
       if (!specMatchNames.has(child.matchName)) {
-        if (tail_mode === "all" || child instanceof PropertyGroup) ordered.push(child);
+        if (tailMode === "all" || child instanceof PropertyGroup) ordered.push(child);
       }
     }
   }
@@ -354,14 +354,14 @@ export function _deriveLayerStylesEnabled(
    * individual style is enabled, and Blend Options mirrors the parent.
    * Synthesized (not in binary) style groups default to disabled.
    */
-  const { synthesizeSubgroups: synthesize_subgroups } = kw;
+  const { synthesizeSubgroups } = kw;
   let anyStyleEnabled = false;
   let blendOptions: PropertyGroup | null = null;
   for (const child of group.properties) {
     if (!(child instanceof PropertyGroup)) continue;
     const childSpecs = _LAYER_STYLE_CHILD_SPECS.get(child.matchName) ?? null;
-    if (childSpecs != null && synthesize_subgroups) {
-      _reorderAndFill(child, childSpecs, child.propertyDepth + 1, { aeMajor: aeMajor });
+    if (childSpecs != null && synthesizeSubgroups) {
+      _reorderAndFill(child, childSpecs, child.propertyDepth + 1, { aeMajor });
     }
     if (child.matchName === "ADBE Blend Options Group") {
       blendOptions = child;
@@ -450,9 +450,9 @@ export class PropertyGroup extends PropertyBase {
       enableFlags?: number;
     } = {},
   ): PropertyGroup {
-    const { parentProperty: parent_property = null, synthetic = false, enableFlags: enable_flags = 1 } = kw;
+    const { parentProperty = null, synthetic = false, enableFlags = 1 } = kw;
     const _tdsb = new TdsbChunk({ synthetic });
-    _tdsb._enableFlags = enable_flags;
+    _tdsb._enableFlags = enableFlags;
     // AE writes the unnamed sentinel; the display name resolves
     // from auto_name on the model.
     const tdsn = TdsnChunk.new_(TDSN_SENTINEL, { synthetic });
@@ -466,8 +466,8 @@ export class PropertyGroup extends PropertyBase {
 
     // Insert into parent's chunk tree (before parent's group end).
     let _tdmn: TdmnChunk | null = null;
-    if (parent_property != null) {
-      const parentTdgp = getattr(parent_property, "_tdgp", null);
+    if (parentProperty != null) {
+      const parentTdgp = getattr(parentProperty, "_tdgp", null);
       if (parentTdgp != null) {
         _tdmn = new TdmnChunk({
           value: matchName,
@@ -483,11 +483,11 @@ export class PropertyGroup extends PropertyBase {
       _tdsb,
       _tdgp,
       _nameUtf8: nameUtf8,
-      matchName: matchName,
-      autoName: autoName,
-      propertyDepth: propertyDepth,
+      matchName,
+      autoName,
+      propertyDepth,
       properties: [],
-      parentProperty: parent_property,
+      parentProperty,
     });
   }
 
@@ -507,31 +507,31 @@ export class PropertyGroup extends PropertyBase {
       _tdmn = null,
       _tdgp = null,
       _tdsb,
-      _nameUtf8: _name_utf8 = null,
-      _fnamUtf8: _fnam_utf8 = null,
-      parentProperty: parent_property = null,
-      matchName: match_name,
-      propertyDepth: property_depth,
+      _nameUtf8 = null,
+      _fnamUtf8 = null,
+      parentProperty = null,
+      matchName,
+      propertyDepth,
       properties,
-      autoName: auto_name = null,
+      autoName = null,
     } = kw;
     super({
       _tdsb,
-      _nameUtf8: _name_utf8,
-      parentProperty: parent_property,
-      matchName: match_name,
-      propertyDepth: property_depth,
-      autoName: auto_name,
+      _nameUtf8,
+      parentProperty,
+      matchName,
+      propertyDepth,
+      autoName,
     });
 
     this._tdmn = _tdmn;
     this._tdgp = _tdgp;
-    this._fnamUtf8 = _fnam_utf8;
+    this._fnamUtf8 = _fnamUtf8;
     this._deferredAeMajor = null;
 
     this._properties = properties;
 
-    if (_INDEXED_GROUP_MATCH_NAMES.has(match_name)) {
+    if (_INDEXED_GROUP_MATCH_NAMES.has(matchName)) {
       this._propertyType = PropertyType.INDEXED_GROUP;
     }
 
@@ -545,7 +545,7 @@ export class PropertyGroup extends PropertyBase {
         "ADBE Text Animator Properties",
         // The Paint effect's stroke list.
         "ADBE Paint Group",
-      ].includes(match_name)
+      ].includes(matchName)
     ) {
       this._elided = true;
     }
@@ -626,7 +626,7 @@ export class PropertyGroup extends PropertyBase {
     const specs = _GROUP_CHILD_SPECS.get(this.matchName) ?? null;
     if (specs != null) {
       _reorderAndFill(this, specs, this.propertyDepth + 1, {
-        aeMajor: aeMajor,
+        aeMajor,
         valueOverrides: this._synthesisValueOverrides(),
       });
     }
@@ -974,7 +974,7 @@ export class PropertyGroup extends PropertyBase {
     ] as const) {
       const existing = getattr(slot, attr);
       if (existing == null) {
-        const created = new TdumChunk({ chunkType: chunkType, values: [bound] });
+        const created = new TdumChunk({ chunkType, values: [bound] });
         tdbs.chunks.push(created);
         slot[attr] = created;
       } else {
@@ -1106,7 +1106,7 @@ export class PropertyGroup extends PropertyBase {
       display,
       bytes_.fromhex(skeleton.part),
       {
-        tdsnName: tdsnName,
+        tdsnName,
         timeBase: comp._cdta.internalTimebase,
         layerId: this._containingLayer.id,
         layerParamName: skeleton.layerParam,
@@ -1133,7 +1133,7 @@ export class PropertyGroup extends PropertyBase {
     const tdsnName = this._effectInstanceName(display, sameType);
 
     const [tdmn, sspc] = buildDropdownControl({
-      tdsnName: tdsnName,
+      tdsnName,
       timeBase: comp._cdta.internalTimebase,
       layerId: this._containingLayer.id,
     });
@@ -1294,7 +1294,7 @@ export class PropertyGroup extends PropertyBase {
       this._freeNumberedName(base, sameType + 1),
       {
         subgroups: _VECTOR_SUBGROUPS.get(matchName) ?? [],
-        pathTimeBase: pathTimeBase,
+        pathTimeBase,
       },
     );
     return this._attachGroup(tdmn, tdgp, matchName);

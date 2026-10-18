@@ -340,7 +340,7 @@ export function buildAls2List(
   fullpath: string,
   kw: { targetIsFolder: boolean },
 ): ListChunk {
-  const { targetIsFolder: target_is_folder } = kw;
+  const { targetIsFolder } = kw;
   const data: AlasData = new Map<string, JsonValue>([
     ["ascendcount_base", PENDING_ASCENDCOUNT],
     ["ascendcount_target", PENDING_ASCENDCOUNT],
@@ -348,7 +348,7 @@ export function buildAls2List(
     ["platform", alasPlatform(fullpath)],
     ["server_name", ""],
     ["server_volume_name", ""],
-    ["target_is_folder", target_is_folder],
+    ["target_is_folder", targetIsFolder],
   ]);
   const alas = new Utf8Chunk({ chunkType: "alas", value: dumpAlas(data) });
   return new ListChunk({ listType: "Als2", chunks: [alas] });
@@ -414,13 +414,13 @@ export function toggleFlagChunk(
   enable: boolean,
   kw: { afterTypes?: readonly string[] } = {},
 ): void {
-  const { afterTypes: after_types = [] } = kw;
+  const { afterTypes = [] } = kw;
 
   const existing = container.chunks.flatMap((c, i) => (c.chunkType === chunkType ? [i] : []));
   if (enable && existing.length === 0) {
-    const newChunk = new Chunk({ chunkType: chunkType, data: b("\x01") });
+    const newChunk = new Chunk({ chunkType, data: b("\x01") });
     const anchors = container.chunks.flatMap((c, i) =>
-      after_types.includes(c.chunkType) ? [i] : [],
+      afterTypes.includes(c.chunkType) ? [i] : [],
     );
     if (anchors.length > 0) {
       container.chunks.splice(anchors[anchors.length - 1] + 1, 0, newChunk);

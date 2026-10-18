@@ -280,11 +280,11 @@ export function buildLocalMatrix(
 ): Mat4 {
   const {
     orientation = null,
-    rotateX: rotate_x = 0.0,
-    rotateY: rotate_y = 0.0,
-    autoRotation: auto_rotation = null,
-    sourceAspect: source_aspect = 1.0,
-    spaceAspect: space_aspect = 1.0,
+    rotateX = 0.0,
+    rotateY = 0.0,
+    autoRotation = null,
+    sourceAspect = 1.0,
+    spaceAspect = 1.0,
   } = kw;
 
   const sx = scalePct[0] / 100.0;
@@ -293,15 +293,15 @@ export function buildLocalMatrix(
 
   // Start from right: T(-anchor)
   let m = _translation(-anchor[0], -anchor[1], anchor.length > 2 ? -anchor[2] : 0.0);
-  if (source_aspect !== 1.0) m = _scale(source_aspect, 1.0, 1.0).__matmul__(m);
+  if (sourceAspect !== 1.0) m = _scale(sourceAspect, 1.0, 1.0).__matmul__(m);
 
   // Scale
   m = _scale(sx, sy, sz).__matmul__(m);
 
   // Per-axis rotations: Rz * Ry * Rx (applied right-to-left)
   m = _rotateZ(rotationZ).__matmul__(m);
-  m = _rotateY(rotate_y).__matmul__(m);
-  m = _rotateX(rotate_x).__matmul__(m);
+  m = _rotateY(rotateY).__matmul__(m);
+  m = _rotateX(rotateX).__matmul__(m);
 
   // Orientation: Rz(oz) * Ry(oy) * Rx(ox)
   if (orientation != null) {
@@ -313,9 +313,9 @@ export function buildLocalMatrix(
     m = _rotateX(ox).__matmul__(m);
   }
 
-  if (auto_rotation != null) m = auto_rotation.__matmul__(m);
+  if (autoRotation != null) m = autoRotation.__matmul__(m);
 
-  if (space_aspect !== 1.0) m = _scale(1.0 / space_aspect, 1.0, 1.0).__matmul__(m);
+  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).__matmul__(m);
 
   // Position
   const px = position[0];
@@ -358,7 +358,7 @@ export function buildWorldMatrix(
   flatten2d = false,
   kw: { asParent?: boolean; autoOrient?: boolean } = {},
 ): Mat4 {
-  const { asParent: as_parent = false, autoOrient: auto_orient = false } = kw;
+  const { asParent = false, autoOrient = false } = kw;
 
   const chain: Layer[] = [];
   let current: Layer | null = layer;
@@ -373,7 +373,7 @@ export function buildWorldMatrix(
   const comp = layer.containingComp;
   let spaceAspect = comp.pixelAspect;
   for (const lyr of chain.reverse()) {
-    if ((lyr !== layer || as_parent) && _RIG_TYPES.has(lyr._ldta.layerType)) {
+    if ((lyr !== layer || asParent) && _RIG_TYPES.has(lyr._ldta.layerType)) {
       if (flatten2d) {
         // Under a 2D layer a rig acts as a 2D layer anchored on the
         // comp centre, turned by Rotate Z alone (AE 2026: children
@@ -393,7 +393,7 @@ export function buildWorldMatrix(
     } else {
       const sourceAspect = layerSourceAspect(lyr);
       m = m.__matmul__(
-        _layerLocalMatrix(lyr, time, flatten2d, auto_orient, sourceAspect, spaceAspect),
+        _layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect),
       );
       spaceAspect = sourceAspect;
     }
@@ -497,9 +497,9 @@ export function _layerLocalMatrix(
     orientation: is3d ? orientation : null,
     rotateX: rx,
     rotateY: ry,
-    autoRotation: autoRotation,
-    sourceAspect: sourceAspect,
-    spaceAspect: spaceAspect,
+    autoRotation,
+    sourceAspect,
+    spaceAspect,
   });
 }
 

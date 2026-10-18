@@ -18,8 +18,8 @@ import { AVLayer } from "./av_layer.ts";
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const model_layer = comp.threeDModelLayers[0];
- * console.log(model_layer.source);
+ * const modelLayer = comp.threeDModelLayers[0];
+ * console.log(modelLayer.source);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/threedmodellayer/
  */

@@ -632,14 +632,14 @@ export function buildPsdFlattenedOptiData(
   channels: number,
   kw: { colorMode?: number } = {},
 ): Uint8Array {
-  const { colorMode: color_mode = 3 } = kw;
+  const { colorMode = 3 } = kw;
   const chunk = new PsdOptiChunk({
     psdVectorOrMerged: true,
     psdChannels: channels,
     psdCanvasWidth: width,
     psdCanvasHeight: height,
     psdBitDepth: bitDepth,
-    psdColorMode: color_mode,
+    psdColorMode: colorMode,
     psdLayerCount: 0,
   });
   chunk.psdGroupName = "";
@@ -708,7 +708,7 @@ export function buildPsdLayerOptiData(
   hasVectorMask = false,
   kw: { channels?: number; colorMode?: number; layerChannels?: number } = {},
 ): Uint8Array {
-  const { channels = 4, colorMode: color_mode = 3, layerChannels: layer_channels = 4 } = kw;
+  const { channels = 4, colorMode = 3, layerChannels = 4 } = kw;
   const [left, top, right, bottom] = bounds;
   const chunk = new PsdOptiChunk({
     psdVectorOrMerged: hasVectorMask,
@@ -717,7 +717,7 @@ export function buildPsdLayerOptiData(
     psdCanvasWidth: canvasWidth,
     psdCanvasHeight: canvasHeight,
     psdBitDepth: bitDepth,
-    psdColorMode: color_mode,
+    psdColorMode: colorMode,
     psdLayerCount: Math.max(layerCount, 1),
     psdLayerTop: top,
     psdLayerLeft: left,
@@ -728,7 +728,7 @@ export function buildPsdLayerOptiData(
     // for an adjustment layer, which has no pixel channels
     // (grouped_layers "hue/sat adj"). AE 2026 measured; the empty content
     // box alone does NOT drop the channels.
-    psdLayerChannels: isAdjustment ? 0 : layer_channels,
+    psdLayerChannels: isAdjustment ? 0 : layerChannels,
     psdLayerId: layerId,
   });
   chunk.psdGroupName = layerName;
@@ -920,13 +920,13 @@ export class OptiChunk extends Chunk {
 
   static read(fp: IO, size: number, kw?: _OptiReadKw): OptiChunk;
   static read(fp: IO, size: number, kw: _OptiReadKw = {}): Chunk {
-    const { chunkType: chunk_type = "" } = kw;
+    const { chunkType = "" } = kw;
     if (this !== OptiChunk) {
       // Variant subclass - use its own read
-      return super.read(fp, size, { chunkType: chunk_type }); // returns Self
+      return super.read(fp, size, { chunkType }); // returns Self
     }
     if (size < 6) {
-      return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
+      return new this({ chunkType, data: readBytes(fp, size) });
     }
     // Peek at discriminator (first 4 bytes = asset_type)
     const discRaw = readBytes(fp, 6);
@@ -936,13 +936,13 @@ export class OptiChunk extends Chunk {
     fp.seek(-6, 1);
     // Placeholder: asset_type is empty but asset_type_int == 2
     if (!assetType && assetTypeInt === 2) {
-      return PlaceholderOptiChunk.read(fp, size, { chunkType: chunk_type });
+      return PlaceholderOptiChunk.read(fp, size, { chunkType });
     }
     const variantCls = _OPTI_VARIANTS.get(assetType) ?? OptiChunk;
     if (variantCls === OptiChunk) {
-      return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
+      return new this({ chunkType, data: readBytes(fp, size) });
     }
-    return variantCls.read(fp, size, { chunkType: chunk_type });
+    return variantCls.read(fp, size, { chunkType });
   }
 }
 

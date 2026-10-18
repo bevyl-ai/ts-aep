@@ -58,7 +58,7 @@ function _optionalLayout(dataFields: readonly FmtAttribute[], optionalStart: num
     const reqParts = dataFields.slice(0, optionalStart).map((f) => f.metadata["fmt"]);
     const reqFmt = reqParts.length ? reqParts.join("") : null;
     layout = {
-      reqFmt: reqFmt,
+      reqFmt,
       reqSize: reqFmt !== null ? struct.calcsize(">" + reqFmt) : 0,
       optional: dataFields.slice(optionalStart).map((f) => [f.metadata["fmt"], struct.calcsize(">" + f.metadata["fmt"])]),
     };
@@ -111,13 +111,13 @@ export class Chunk extends AttrsBase {
   static _nests = false;
 
   static read(fp: IO, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
-    const { chunkType: chunk_type = "" } = kwargs;
+    const { chunkType = "" } = kwargs;
     const cls = this;
     // Get fields
     const info = _structInfo(cls);
     if (info == null) {
       const data = readBytes(fp, size);
-      return new cls({ chunkType: chunk_type, data });
+      return new cls({ chunkType, data });
     }
     const [
       fmt,
@@ -145,12 +145,12 @@ export class Chunk extends AttrsBase {
       }
       let kw: FieldKwargs;
       if (make !== null) {
-        kw = make(values, chunk_type);
+        kw = make(values, chunkType);
       } else {
         kw = {};
         const n = Math.min(initNames.length, values.length);
         for (let i = 0; i < n; i++) kw[initNames[i]] = values[i];
-        kw.chunkType = chunk_type;
+        kw.chunkType = chunkType;
         for (const [i, crc] of coerces) {
           const name = initNames[i];
           kw[name] = crc(kw[name]);
@@ -183,7 +183,7 @@ export class Chunk extends AttrsBase {
           remainingMe -= fSize;
         } else if (i < optionalStart) {
           throw new OSError(
-            `${chunk_type} body too short: expected >= ` +
+            `${chunkType} body too short: expected >= ` +
               `${size - remainingMe + fSize} bytes, got ${size}`,
           );
         } else {
@@ -197,15 +197,15 @@ export class Chunk extends AttrsBase {
       values = fmt ? [...readFmt(fmt, fp)] : [];
       itemsStart = expected;
     } else {
-      const { reqFmt: req_fmt, reqSize: req_size, optional } = _optionalLayout(dataFields, optionalStart);
-      if (size < req_size) {
+      const { reqFmt, reqSize, optional } = _optionalLayout(dataFields, optionalStart);
+      if (size < reqSize) {
         throw new OSError(
-          `${chunk_type} body too short: expected >= ${req_size} ` +
+          `${chunkType} body too short: expected >= ${reqSize} ` +
             `bytes, got ${size}`,
         );
       }
-      values = req_fmt !== null ? [...readFmt(req_fmt, fp)] : [];
-      let remaining = size - req_size;
+      values = reqFmt !== null ? [...readFmt(reqFmt, fp)] : [];
+      let remaining = size - reqSize;
       for (const [fFmt, fSize] of optional) {
         if (remaining >= fSize) {
           values.push(...readFmt(fFmt, fp));
@@ -220,7 +220,7 @@ export class Chunk extends AttrsBase {
     }
 
     const kw2: InitKwargs = _decodeFields(dataFields, values, encodings, coerces, initNames);
-    kw2.chunkType = chunk_type;
+    kw2.chunkType = chunkType;
     let extraTrailing: Uint8Array | null = null;
     if (itemsInfo != null) {
       const [itemsName, itemCls, itemSize] = itemsInfo;
@@ -357,33 +357,33 @@ export class ListChunk extends Chunk {
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): ListChunk {
-    const { chunkType: chunk_type = "LIST", deferListTypes: defer_list_types = null } = kwargs;
-    if (size < 4) throw new OSError(`${chunk_type} body too small: ${size}`);
+    const { chunkType = "LIST", deferListTypes = null } = kwargs;
+    if (size < 4) throw new OSError(`${chunkType} body too small: ${size}`);
     const ctx = kwargs.ctx ?? EMPTY_CTX;
     const listType = _typeName(readFmt("I", fp)[0]);
     if (listType === "btdk") {
       const data = readBytes(fp, size - 4);
-      return new this({ listType: listType, data, chunkType: chunk_type });
+      return new this({ listType, data, chunkType });
     }
     const parentResult = kwargs.parentResult ?? null;
     const childCtx = new ReadContext(listType, ctx.parentListType, parentResult);
-    if (defer_list_types != null && defer_list_types.size > 0 && defer_list_types.has(listType)) {
+    if (deferListTypes != null && deferListTypes.size > 0 && deferListTypes.has(listType)) {
       const rawBody = fp.read(size - 4);
       return new DeferredListChunk({
-        chunkType: chunk_type,
-        listType: listType,
-        rawBody: rawBody,
+        chunkType,
+        listType,
+        rawBody,
         rawCtx: childCtx,
       });
     }
     const chunks = readChunks(fp, size - 4, {
       ctx: childCtx,
-      deferListTypes: defer_list_types,
+      deferListTypes,
     });
     return new this({
-      listType: listType,
+      listType,
       chunks,
-      chunkType: chunk_type,
+      chunkType,
     });
   }
 
@@ -456,17 +456,17 @@ export class DeferredListChunk extends ListChunk {
   ) {
     super(NO_INIT);
     const {
-      chunkType: chunk_type = "LIST",
-      listType: list_type = "",
-      rawBody: raw_body = b(""),
-      rawCtx: raw_ctx = null,
+      chunkType = "LIST",
+      listType = "",
+      rawBody = b(""),
+      rawCtx = null,
     } = kwargs;
-    this.chunkType = chunk_type;
-    this.listType = list_type;
+    this.chunkType = chunkType;
+    this.listType = listType;
     this.data = b("");
     this.synthetic = false;
-    this._rawBody = raw_body;
-    this._rawCtx = raw_ctx;
+    this._rawBody = rawBody;
+    this._rawCtx = rawCtx;
     this._parsedChunks = null;
   }
 
@@ -538,15 +538,15 @@ export class ContainerChunk extends Chunk {
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): ContainerChunk {
-    const { chunkType: chunk_type = "" } = kwargs;
+    const { chunkType = "" } = kwargs;
     const ctx = kwargs.ctx ?? EMPTY_CTX;
     if (!_tilesAsChunks(fp, size)) {
-      return this._readLegacy(fp, size, { chunkType: chunk_type });
+      return this._readLegacy(fp, size, { chunkType });
     }
     const defer = kwargs.deferListTypes ?? null;
     // Pass-through context (no list_type level change)
     const chunks = readChunks(fp, size, { ctx, deferListTypes: defer });
-    return new this({ chunkType: chunk_type, chunks });
+    return new this({ chunkType, chunks });
   }
 
   static _readLegacy(fp: IO, size: number, kwargs: { chunkType: string }): ContainerChunk {
@@ -557,7 +557,7 @@ export class ContainerChunk extends Chunk {
      * it in a `Utf8` child. The bytes are kept to be written back as they
      * were; the string is a synthetic `Utf8` child, for the readers.
      */
-    const { chunkType: chunk_type } = kwargs;
+    const { chunkType } = kwargs;
     const data = readBytes(fp, size);
     // Registry lookup instead of a deferred import: scalar_chunks imports Chunk
     // from this module, which imports the chunk modules only once Chunk is defined.
@@ -566,7 +566,7 @@ export class ContainerChunk extends Chunk {
       value: this._legacyValue(_legacyText(data)),
       synthetic: true,
     });
-    return new this({ chunkType: chunk_type, data, chunks: [utf8] });
+    return new this({ chunkType, data, chunks: [utf8] });
   }
 
   /** The `Utf8` value standing for a legacy body's string. */
@@ -901,7 +901,7 @@ export function readChunks(
   size: number,
   kwargs: { ctx?: ReadContext; deferListTypes?: ReadonlySet<string> | null } = {},
 ): Chunk[] {
-  const { ctx = EMPTY_CTX, deferListTypes: defer_list_types = null } = kwargs;
+  const { ctx = EMPTY_CTX, deferListTypes = null } = kwargs;
   const end = fp.tell() + size;
   const result: Chunk[] = [];
   let pos = end - size;
@@ -912,11 +912,11 @@ export function readChunks(
     const resolver = _CONTEXT_RESOLVERS.get(chunkType);
     const chunk: Chunk = cls._nests
       ? // No resolver targets a nesting chunk (tests/unit/test_binary_io.test.ts).
-        cls.read(fp, lenBody, { chunkType: chunkType, ctx, parentResult: result, deferListTypes: defer_list_types })
+        cls.read(fp, lenBody, { chunkType, ctx, parentResult: result, deferListTypes })
       : resolver != null
-        ? cls.read(fp, lenBody, { chunkType: chunkType, ...resolver(result, ctx) })
+        ? cls.read(fp, lenBody, { chunkType, ...resolver(result, ctx) })
         : // Leaf chunks take no reading context.
-          cls.read(fp, lenBody, { chunkType: chunkType });
+          cls.read(fp, lenBody, { chunkType });
     result.push(chunk);
 
     // Consume pad byte if len_body is odd
@@ -940,7 +940,7 @@ export function readAep(
   fp: IO,
   kwargs: { deferListTypes?: ReadonlySet<string> | null } = {},
 ): [ListChunk, string] {
-  const { deferListTypes: defer_list_types = null } = kwargs;
+  const { deferListTypes = null } = kwargs;
   const rawType = readBytes(fp, 4);
   const chunkType = decode(rawType, "ASCII");
   if (chunkType !== "RIFX") {
@@ -949,7 +949,7 @@ export function readAep(
   const [lenBody] = readFmt("I", fp);
   const rifx = ListChunk.read(fp, lenBody, {
     chunkType: "RIFX",
-    deferListTypes: defer_list_types,
+    deferListTypes,
   });
   const xmp = decode(fp.read(), "UTF-8");
   return [rifx, xmp];

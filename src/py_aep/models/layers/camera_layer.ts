@@ -90,31 +90,31 @@ export class CameraLayer extends Layer {
   }): CameraLayer {
     const {
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs = null,
+      containingComp,
+      effectParamDefs = null,
     } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
-      layerId: layer_id,
+      layerId,
       label: labelIndex(
-        containing_comp._project._preferences,
+        containingComp._project._preferences,
         "Camera Label Index 2",
         4,
       ),
       layerType: LayerType.CAMERA,
       layerFlags2: 0x01,
-      layerName: layerName,
+      layerName,
     });
     ldta.outPoint = duration;
     ldta.threeDLayer = true;
     return super._new<CameraLayer>({
       ldta,
       name,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs,
+      containingComp,
+      effectParamDefs,
     });
   }
 }

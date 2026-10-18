@@ -43,7 +43,7 @@ export function parse(
   aepFilePath: string | PathLike,
   kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
-  const { aePreferencesDir: ae_preferences_dir = null, platform = null } = kw;
+  const { aePreferencesDir = null, platform = null } = kw;
   // NOTE(port): py-aep defers only Layr. tdgp also covers the property trees
   // of the comp-level SLay/CLay/SecL/DLay lists and effect definitions, which
   // parsing never reads.
@@ -53,7 +53,7 @@ export function parse(
     validatePlatform(platform);
   }
   const filePath = fspath(aepFilePath);
-  const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
+  const prefsPath = aePreferencesDir ? new Path(aePreferencesDir) : null;
   // `with open(file_path, "rb") as f:`
   const f = new BytesIO(new Path(filePath).readBytes());
   const [rifx, xmp] = readAep(f, { deferListTypes: _DEFERRED_LIST_TYPES });
@@ -104,12 +104,12 @@ export function new_(
   version: string = _DEFAULT_NEW_VERSION,
   kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
-  const { aePreferencesDir: ae_preferences_dir = null, platform = null } = kw;
+  const { aePreferencesDir = null, platform = null } = kw;
   validateAeRelease(version);
   if (platform != null) {
     validatePlatform(platform);
   }
-  const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
+  const prefsPath = aePreferencesDir ? new Path(aePreferencesDir) : null;
   return Application._new(version, prefsPath, platform);
 }
 

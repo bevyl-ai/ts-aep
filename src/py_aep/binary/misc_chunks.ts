@@ -102,18 +102,18 @@ export class PrdaChunk extends Chunk {
     size: number,
     kw: { chunkType?: string; rendererMatchName?: string } = {},
   ): PrdaChunk {
-    const { chunkType: chunk_type = "", rendererMatchName: renderer_match_name = "" } = kw;
+    const { chunkType = "", rendererMatchName = "" } = kw;
     if (this !== PrdaChunk) {
-      const result = super.read(fp, size, { chunkType: chunk_type });
+      const result = super.read(fp, size, { chunkType });
       pyAssert(result instanceof PrdaChunk);
       return result;
     }
-    const variant = _PRDA_VARIANTS.get(renderer_match_name);
+    const variant = _PRDA_VARIANTS.get(rendererMatchName);
     if (variant == null || variant[1] !== size) {
       // preserve unknown raw bytes
-      return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
+      return new this({ chunkType, data: readBytes(fp, size) });
     }
-    return variant[0].read(fp, size, { chunkType: chunk_type });
+    return variant[0].read(fp, size, { chunkType });
   }
 }
 define(PrdaChunk, {
@@ -574,20 +574,20 @@ export class PardChunk extends Chunk {
     size: number,
     kw: { chunkType?: string } = {},
   ): PardChunk {
-    const { chunkType: chunk_type = "" } = kw;
+    const { chunkType = "" } = kw;
     if (this !== PardChunk) {
-      const result = super.read(fp, size, { chunkType: chunk_type });
+      const result = super.read(fp, size, { chunkType });
       pyAssert(result instanceof PardChunk);
       return result;
     }
-    if (size < 56) return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
+    if (size < 56) return new this({ chunkType, data: readBytes(fp, size) });
     // Peek at discriminator (byte 15)
     const header = readBytes(fp, 16);
     const controlType = header[15];
     fp.seek(-16, 1);
     const variantCls = _PARD_VARIANTS.get(controlType) ?? PardChunk;
-    if (variantCls === PardChunk) return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
-    return variantCls.read(fp, size, { chunkType: chunk_type });
+    if (variantCls === PardChunk) return new this({ chunkType, data: readBytes(fp, size) });
+    return variantCls.read(fp, size, { chunkType });
   }
 
   /**

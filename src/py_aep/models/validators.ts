@@ -61,7 +61,7 @@ type StaticSequenceKw = StaticNumberKw & { length?: number | null };
 export function _validateNumber(kw?: StaticNumberKw): Validator;
 export function _validateNumber<O>(kw: NumberKw<O>): InstanceValidator<O>;
 export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidator<O> {
-  const { min: min_ = null, max: max_ = null, integer = false, exclusiveMin: exclusive_min = false } = kw;
+  const { min: min_ = null, max: max_ = null, integer = false, exclusiveMin = false } = kw;
   const typeLabel = integer ? "an integer" : "a number";
 
   return function _validator(value: unknown, instance: O | null = null): void {
@@ -99,8 +99,8 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
     // A bool compares as its int value, as in Python.
     const num = Number(value);
     if (lo != null) {
-      if (exclusive_min && num <= lo) throw new ValueError(`must be > ${str(lo)}, got ${str(value)}`);
-      if (!exclusive_min && num < lo) throw new ValueError(`must be >= ${str(lo)}, got ${str(value)}`);
+      if (exclusiveMin && num <= lo) throw new ValueError(`must be > ${str(lo)}, got ${str(value)}`);
+      if (!exclusiveMin && num < lo) throw new ValueError(`must be >= ${str(lo)}, got ${str(value)}`);
     }
     if (hi != null && num > hi) throw new ValueError(`must be <= ${str(hi)}, got ${str(value)}`);
   };
@@ -123,9 +123,9 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
 export function validateSequence(kw?: StaticSequenceKw): Validator;
 export function validateSequence<O>(kw: SequenceKw<O>): InstanceValidator<O>;
 export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceValidator<O> {
-  const { length = null, min: min_ = null, max: max_ = null, integer = false, exclusiveMin: exclusive_min = false } = kw;
+  const { length = null, min: min_ = null, max: max_ = null, integer = false, exclusiveMin = false } = kw;
   const typeLabel = integer ? "an integer" : "a number";
-  const _elementValidator = _validateNumber({ min: min_, max: max_, integer, exclusiveMin: exclusive_min });
+  const _elementValidator = _validateNumber({ min: min_, max: max_, integer, exclusiveMin });
 
   return function _validator(value: unknown, instance: O | null = null): void {
     const n = typeof length === "function" ? length(instance) : length;
@@ -232,7 +232,7 @@ export const validatePlatform = validateOneOf(["windows", "macos"]);
 export function _validateStr(
   kw: { allowEmpty?: boolean; maxLength?: number | null; maxBytes?: number | null; allowNull?: boolean } = {},
 ): Validator {
-  const { allowEmpty: allow_empty = true, maxLength: max_length = null, maxBytes: max_bytes = null, allowNull: allow_null = true } = kw;
+  const { allowEmpty = true, maxLength = null, maxBytes = null, allowNull = true } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
     // `_NulTailStr` (a `str` subclass) arrives as a String object.
@@ -240,17 +240,17 @@ export function _validateStr(
       throw new TypeError_(`expected a string, got ${typeName(value)}`);
     }
     const text = String(value);
-    if (!allow_empty && !text) throw new ValueError("must not be empty");
-    if (!allow_null && text.includes("\x00")) throw new ValueError("must not contain null bytes");
+    if (!allowEmpty && !text) throw new ValueError("must not be empty");
+    if (!allowNull && text.includes("\x00")) throw new ValueError("must not contain null bytes");
     // NOTE(port): Python `len` counts code points; Array.from matches that for astral text.
     const nChars = Array.from(text).length;
-    if (max_length != null && nChars > max_length) {
-      throw new ValueError(`must be at most ${max_length} characters, got ${nChars}`);
+    if (maxLength != null && nChars > maxLength) {
+      throw new ValueError(`must be at most ${maxLength} characters, got ${nChars}`);
     }
-    if (max_bytes != null) {
+    if (maxBytes != null) {
       const encoded = encode(text, "utf-8").length;
-      if (encoded > max_bytes) {
-        throw new ValueError(`must be at most ${max_bytes} UTF-8 bytes, got ${encoded}`);
+      if (encoded > maxBytes) {
+        throw new ValueError(`must be at most ${maxBytes} UTF-8 bytes, got ${encoded}`);
       }
     }
   };
@@ -269,17 +269,17 @@ export function _validateStr(
 export function _validatePath(
   kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {},
 ): Validator {
-  const { mustExist: must_exist = null, mustBeFile: must_be_file = false } = kw;
+  const { mustExist = null, mustBeFile = false } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!(typeof value === "string" || value instanceof String || value instanceof Path)) {
       throw new TypeError_(`expected a file system path, got ${typeName(value)}`);
     }
     const path = new Path(String(value));
-    if (must_exist === true) {
+    if (mustExist === true) {
       if (!path.exists()) throw new ValueError(`path does not exist: ${path}`);
-      if (must_be_file && !path.isFile()) throw new ValueError(`path is not a file: ${path}`);
-    } else if (must_exist === false) {
+      if (mustBeFile && !path.isFile()) throw new ValueError(`path is not a file: ${path}`);
+    } else if (mustExist === false) {
       if (path.exists()) throw new FileExistsError(`path already exists: ${path}`);
     }
     // must_exist is None: accept both existing and non-existing paths

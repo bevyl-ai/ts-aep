@@ -121,16 +121,16 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   declare publicName: string;
 
   constructor(dictAttr: A, key: string, kw: CosFieldOptions<T, O>) {
-    const { transform, accepts, reverse = null, readOnly: read_only = false, validate = null, default: default_, minVersion: min_version = null } = kw;
+    const { transform, accepts, reverse = null, readOnly = false, validate = null, default: default_, minVersion = null } = kw;
     this.dictAttr = dictAttr;
     this.key = key;
     this.transform = transform;
     this.accepts = accepts;
     this.reverse = reverse;
-    this.readOnly = read_only;
+    this.readOnly = readOnly;
     this.validate = validate;
     this.default = default_;
-    this.minVersion = min_version;
+    this.minVersion = minVersion;
   }
 
   __set_name__(owner: Function, name: string): void {
