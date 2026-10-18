@@ -2,14 +2,14 @@
  * Shared low-level helpers for the SVG reader package.
  */
 
-import { float, strip, hypot, pattern_match, py_re } from "../../pyrt/index.ts";
+import { float, strip, hypot, patternMatch, pyRe } from "../../pyrt/index.ts";
 
 /** An SVG/CSS number token: optional sign, decimal or integer, optional exponent. */
-export const NUMBER_RE = py_re(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
+export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
 /** The same token allowing a trailing `%` (CSS color / ratio values). */
-export const NUMBER_PCT_RE = py_re(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?%?`, 0, "g");
+export const NUMBER_PCT_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?%?`, 0, "g");
 /** A length: a number and an optional unit or `%`. */
-export const _LENGTH_RE = py_re(String.raw`([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?`);
+export const _LENGTH_RE = pyRe(String.raw`([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?`);
 /** CSS absolute units in user units (px): CSS Values 3 fixes 1in = 96px. */
 export const _ABSOLUTE_UNITS = new Map<string, number>([
   ["px", 1.0],
@@ -34,10 +34,10 @@ export class LengthContext {
   readonly height: number;
   readonly font_size: number;
 
-  constructor(width: number, height: number, font_size: number = DEFAULT_FONT_SIZE) {
+  constructor(width: number, height: number, fontSize: number = DEFAULT_FONT_SIZE) {
     this.width = width;
     this.height = height;
-    this.font_size = font_size;
+    this.font_size = fontSize;
   }
 
   *[Symbol.iterator](): Generator<number> {
@@ -58,7 +58,7 @@ export class LengthContext {
 /**
  * Strip an XML namespace, e.g. `{http://...}rect` -\> `rect`.
  */
-export function local_name(tag: string): string {
+export function localName(tag: string): string {
   const parts = tag.split("}");
   return parts[parts.length - 1];
 }
@@ -74,9 +74,9 @@ export function clamp01(value: number): number {
  * Leading numeric value of `text`, ignoring a unit suffix (e.g.
  * `"40px"` -\> `40.0`); `default` when absent or non-numeric.
  */
-export function parse_number(text: string | null, default_: number = 0.0): number {
+export function parseNumber(text: string | null, default_: number = 0.0): number {
   if (!text) return default_;
-  const m = pattern_match(NUMBER_RE, strip(text));
+  const m = patternMatch(NUMBER_RE, strip(text));
   return m ? float(m[0]) : default_;
 }
 
@@ -86,25 +86,25 @@ export function parse_number(text: string | null, default_: number = 0.0): numbe
  * `percent_of` (the bare number when `null`); a unitless number or an
  * unknown unit is taken as px. `default` when absent or non-numeric.
  */
-export function parse_length(
+export function parseLength(
   text: string | null,
   default_: number = 0.0,
-  percent_of: number | null = null,
-  font_size: number = DEFAULT_FONT_SIZE,
+  percentOf: number | null = null,
+  fontSize: number = DEFAULT_FONT_SIZE,
 ): number {
   if (!text) return default_;
-  const m = pattern_match(_LENGTH_RE, strip(text));
+  const m = patternMatch(_LENGTH_RE, strip(text));
   if (m == null) return default_;
   const value = float(m[1]);
   const unit = (m[2] ?? "").toLowerCase();
   if (unit === "%") {
-    return percent_of != null ? (value * percent_of) / 100.0 : value;
+    return percentOf != null ? (value * percentOf) / 100.0 : value;
   }
   if (unit === "em") {
-    return value * font_size;
+    return value * fontSize;
   }
   if (unit === "ex") {
-    return (value * font_size) / 2.0;
+    return (value * fontSize) / 2.0;
   }
   return value * (_ABSOLUTE_UNITS.get(unit) ?? 1.0);
 }
@@ -113,10 +113,10 @@ export function parse_length(
  * CSS ratio (`0.5` or `50%`) clamped to `[0, 1]`; `default` when the
  * value is absent or non-numeric (e.g. the keyword `inherit`).
  */
-export function parse_ratio(text: string | null, default_: number): number {
+export function parseRatio(text: string | null, default_: number): number {
   if (text == null) return default_;
   text = strip(text);
-  const m = pattern_match(NUMBER_RE, text);
+  const m = patternMatch(NUMBER_RE, text);
   if (m == null) return default_;
   const val = float(m[0]);
   return clamp01(text.endsWith("%") ? val / 100.0 : val);

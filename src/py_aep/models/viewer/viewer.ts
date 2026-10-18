@@ -1,6 +1,6 @@
 import { ViewerType } from "../../enums/index.ts";
 import { ChunkField } from "../descriptors.ts";
-import { _validate_number } from "../validators.ts";
+import { _validateNumber } from "../validators.ts";
 import { descriptor } from "../../../pyrt/index.ts";
 import type { AsciiChunk, U1Chunk } from "../../binary/scalar_chunks.ts";
 import type { View } from "./view.ts";
@@ -64,8 +64,8 @@ export class Viewer {
     // With no views the index is moot; clamp the upper bound to 0 so the
     // bound stays valid (an empty views list would otherwise give max=-1,
     // rejecting every value including 0).
-    const max_index = this._views.length > 0 ? this._views.length - 1 : 0;
-    _validate_number({ min: 0, max: max_index, integer: true })(value);
+    const maxIndex = this._views.length > 0 ? this._views.length - 1 : 0;
+    _validateNumber({ min: 0, max: maxIndex, integer: true })(value);
     this._active_view_index = value;
   }
 

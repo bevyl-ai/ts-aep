@@ -4,14 +4,14 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { int_enum, type EnumValue } from "../../pyrt/index.ts";
+import { intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Font technology type.
  *
  * @see https://ae-scripting.docsforadobe.dev/text/fontobject/#fontobjecttechnology
  */
-export const CTFontTechnology = int_enum("CTFontTechnology", {
+export const CTFontTechnology = intEnum("CTFontTechnology", {
   CT_TYPE1_FONT: 0,
   CT_TRUETYPE_FONT: 1,
   CT_CID_FONT: 2,
@@ -28,7 +28,7 @@ export type CTFontTechnology = EnumValue<typeof CTFontTechnology>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/fontobject/#fontobjecttype
  */
-export const CTFontType = int_enum("CTFontType", {
+export const CTFontType = intEnum("CTFontType", {
   CT_TYPE1_FONTTYPE: 0,
   CT_TRUETYPE_FONTTYPE: 1,
   CT_CID_FONTTYPE: 2,
@@ -47,7 +47,7 @@ export type CTFontType = EnumValue<typeof CTFontType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/fontobject/#fontobjectwritingscripts
  */
-export const CTScript = int_enum("CTScript", {
+export const CTScript = intEnum("CTScript", {
   CT_ROMAN_SCRIPT: 0,
   CT_JAPANESE_SCRIPT: 1,
   CT_TRADITIONALCHINESE_SCRIPT: 2,

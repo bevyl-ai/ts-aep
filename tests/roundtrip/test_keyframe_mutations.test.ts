@@ -17,18 +17,18 @@ import {
   hasattr,
   len,
   Path,
-  py_bool,
-  py_eq,
-  py_assert,
-  py_slice,
+  pyBool,
+  pyEq,
+  pyAssert,
+  pySlice,
   sorted,
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
-import { write_aep } from "../../src/py_aep/binary/chunk.ts";
+import { writeAep } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
@@ -40,105 +40,105 @@ import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import { MarkerValue } from "../../src/py_aep/models/properties/marker.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
-import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
+import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { KfMultiDimensional, KfPosition } from "../../src/py_aep/binary/ldat_chunks.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 const SAMPLES_ROOT = new Path(import.meta.path).parent.parent.parent.div("samples");
 
 function _fresh(name: string): Application {
-  return parse_aep(SAMPLES.div(name));
+  return parseAep(SAMPLES.div(name));
 }
 
-function _roundtrip(app: Application, tmp_path: Path): Application {
-  const out = tmp_path.div("out.aep");
+function _roundtrip(app: Application, tmpPath: Path): Application {
+  const out = tmpPath.div("out.aep");
   // `with out.open("wb") as f:` - serialize to memory, then write the file in one go.
   const f = new BytesIO();
-  write_aep(f, app.project._rifx, app.project._xmp);
+  writeAep(f, app.project._rifx, app.project._xmp);
   out.write_bytes(f.getvalue());
-  return parse_aep(out);
+  return parseAep(out);
 }
 
-function _prop(app: Application, match_name: string, kw: { comp?: number; layer?: number } = {}): Property {
+function _prop(app: Application, matchName: string, kw: { comp?: number; layer?: number } = {}): Property {
   const { comp = 0, layer = 0 } = kw;
   const lay = app.project.compositions[comp].layers[layer];
-  const found = [...lay.transform].find((p) => p.matchName === match_name);
+  const found = [...lay.transform].find((p) => p.matchName === matchName);
   if (found === undefined) throw new StopIteration();
-  return as_instance(found, Property);
+  return asInstance(found, Property);
 }
 
 /** Compare two lists of [x, y] pairs within tolerance. */
-function _approx_points(actual: number[][], expected: number[][], abs_tol = 1e-2): boolean {
+function _approxPoints(actual: number[][], expected: number[][], absTol = 1e-2): boolean {
   if (actual.length !== expected.length) return false;
-  return actual.every((a, i) => approx(a, expected[i], { abs: abs_tol }));
+  return actual.every((a, i) => approx(a, expected[i], { abs: absTol }));
 }
 
-function _find_static(app: Application, match_name: string): [Property | null, number | null, number | null] {
+function _findStatic(app: Application, matchName: string): [Property | null, number | null, number | null] {
   for (const [ci, comp] of app.project.compositions.entries()) {
     for (const [li, lay] of comp.layers.entries()) {
       for (const p of lay.transform) {
-        if (p.matchName !== match_name) continue;
-        const prop = as_instance(p, Property);
-        if (!py_bool(prop.keyframes)) return [prop, ci, li];
+        if (p.matchName !== matchName) continue;
+        const prop = asInstance(p, Property);
+        if (!pyBool(prop.keyframes)) return [prop, ci, li];
       }
     }
   }
   return [null, null, null];
 }
 
-function _walk(group: PropertyGroup, match_name: string, out: Property[]): void {
+function _walk(group: PropertyGroup, matchName: string, out: Property[]): void {
   for (const p of getattr(group, "properties", [])) {
-    if (p.matchName === match_name) out.push(as_instance(p, Property));
-    if (hasattr(p, "properties")) _walk(as_instance(p, PropertyGroup), match_name, out);
+    if (p.matchName === matchName) out.push(asInstance(p, Property));
+    if (hasattr(p, "properties")) _walk(asInstance(p, PropertyGroup), matchName, out);
   }
 }
 
-function _grad_kf_prop(app: Application): Property<Gradient> | null {
+function _gradKfProp(app: Application): Property<Gradient> | null {
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const out: Property[] = [];
       _walk(layer, "ADBE Vector Grad Colors", out);
       for (const p of out) {
-        if (py_bool(p.keyframes)) return p;
+        if (pyBool(p.keyframes)) return p;
       }
     }
   }
   return null;
 }
 
-function _orientation_kf_prop(app: Application): Property<number[]> | null {
+function _orientationKfProp(app: Application): Property<number[]> | null {
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const out: Property[] = [];
       _walk(layer, "ADBE Orientation", out);
       for (const p of out) {
-        if (py_bool(p.keyframes)) return p;
+        if (pyBool(p.keyframes)) return p;
       }
     }
   }
   return null;
 }
 
-function _text_static_prop(app: Application): Property<TextDocument> | null {
+function _textStaticProp(app: Application): Property<TextDocument> | null {
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const out: Property[] = [];
       _walk(layer, "ADBE Text Document", out);
       for (const p of out) {
-        if (!py_bool(p.keyframes)) return p;
+        if (!pyBool(p.keyframes)) return p;
       }
     }
   }
   return null;
 }
 
-function _grad_static_prop(app: Application): Property<Gradient> | null {
+function _gradStaticProp(app: Application): Property<Gradient> | null {
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const out: Property[] = [];
       _walk(layer, "ADBE Vector Grad Colors", out);
       for (const p of out) {
-        if (!py_bool(p.keyframes)) return p;
+        if (!pyBool(p.keyframes)) return p;
       }
     }
   }
@@ -147,39 +147,39 @@ function _grad_static_prop(app: Application): Property<Gradient> | null {
 
 describe("TestKeyframeValuePersistence", () => {
   test("test_1d_value_roundtrips", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     _prop(app, "ADBE Opacity").keyframes[0].value = 42.0;
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     expect(approx(_prop(app2, "ADBE Opacity").keyframes[0].value, 42.0)).toBe(true);
   });
 
   test("test_multidim_value_roundtrips", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_LINEAR.aep");
     const pos = _prop(app, "ADBE Position");
-    const pos_value = pos.keyframes[0].value;
-    if (!Array.isArray(pos_value)) throw new AssertionError_("ADBE Position keyframe value is not a list");
-    const v = [...pos_value];
+    const posValue = pos.keyframes[0].value;
+    if (!Array.isArray(posValue)) throw new AssertionError_("ADBE Position keyframe value is not a list");
+    const v = [...posValue];
     v[0] += 7.0;
     pos.keyframes[0].value = v;
-    const app2 = _roundtrip(app, tmp_path);
-    const pos2_value = _prop(app2, "ADBE Position").keyframes[0].value;
-    if (!Array.isArray(pos2_value)) throw new AssertionError_("ADBE Position keyframe value is not a list");
-    expect(approx(pos2_value[0], v[0])).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
+    const pos2Value = _prop(app2, "ADBE Position").keyframes[0].value;
+    if (!Array.isArray(pos2Value)) throw new AssertionError_("ADBE Position keyframe value is not a list");
+    expect(approx(pos2Value[0], v[0])).toBe(true);
   });
 });
 
 describe("TestAddKey", () => {
   test("test_add_key_to_animated", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
     const idx = op.addKey(0.5);
     expect(op.keyframes.length).toBe(n0 + 1);
     expect(0 <= idx && idx <= n0).toBe(true);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     expect(_prop(app2, "ADBE Opacity").keyframes.length).toBe(n0 + 1);
   });
 
@@ -189,15 +189,15 @@ describe("TestAddKey", () => {
     // with no keyframes and its static value discarded.
     const app = _fresh("2_gaussian.aep");
     const op = _prop(app, "ADBE Opacity");
-    expect(py_bool(op.keyframes)).toBe(false);
+    expect(pyBool(op.keyframes)).toBe(false);
     const before = op.value;
 
     raises(ValueError, () => {
       op.addKey(1e9);
     }, "32-bit keyframe time field");
 
-    expect(py_bool(op.keyframes)).toBe(false);
-    expect(py_eq(op.value, before)).toBe(true);
+    expect(pyBool(op.keyframes)).toBe(false);
+    expect(pyEq(op.value, before)).toBe(true);
 
     // ... and the property still animates normally afterwards.
     op.addKey(1.0);
@@ -208,16 +208,16 @@ describe("TestAddKey", () => {
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
-    const existing_time = op.keyframes[0].time;
-    const idx = op.addKey(existing_time);
+    const existingTime = op.keyframes[0].time;
+    const idx = op.addKey(existingTime);
     expect(idx).toBe(0);
     expect(op.keyframes.length).toBe(n0);
   });
 
   test("test_first_key_animates_static_property", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
-    const [prop, _, li] = _find_static(app, "ADBE Rotate Z");
+    const [prop, _, li] = _findStatic(app, "ADBE Rotate Z");
     expect(prop != null).toBe(true);
     if (prop == null || li == null) throw new AssertionError_("no static ADBE Rotate Z property");
     prop.addKey(0.0);
@@ -225,8 +225,8 @@ describe("TestAddKey", () => {
     prop.keyframes[1].value = 25.0;
     expect(prop._animated).toBe(true);
     expect(prop.keyframes.length).toBe(2);
-    const app2 = _roundtrip(app, tmp_path);
-    const prop2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const app2 = _roundtrip(app, tmpPath);
+    const prop2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Rotate Z"), Property);
     expect(prop2.keyframes.length).toBe(2);
     expect(approx(prop2.keyframes[1].value, 25.0)).toBe(true);
   });
@@ -239,9 +239,9 @@ describe("TestAddKey", () => {
    * into canonical order, or AE rejects the file.
    */
   test("test_synthetic_multidim_property_animates", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
-    const [scale, _, li] = _find_static(app, "ADBE Scale");
+    const [scale, _, li] = _findStatic(app, "ADBE Scale");
     expect(scale != null).toBe(true);
     if (scale == null || li == null) throw new AssertionError_("no static ADBE Scale property");
     scale.setValueAtTime(0.0, [50.0, 50.0, 100.0]);
@@ -250,8 +250,8 @@ describe("TestAddKey", () => {
     // tdum/tduM bound chunks were added on materialization.
     const kinds = scale._tdbs.chunks.map((c) => getattr(c, "chunk_type", null));
     expect(kinds.includes("tdum") && kinds.includes("tduM")).toBe(true);
-    const app2 = _roundtrip(app, tmp_path);
-    const scale2 = as_instance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
+    const app2 = _roundtrip(app, tmpPath);
+    const scale2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
     expect(scale2.keyframes.length).toBe(2);
   });
 
@@ -261,7 +261,7 @@ describe("TestAddKey", () => {
     op.addKey(0.5);
     op.addKey(0.1);
     const times = op.keyframes.map((kf) => kf.frameTime);
-    expect(py_eq(times, sorted(times))).toBe(true);
+    expect(pyEq(times, sorted(times))).toBe(true);
   });
 
   test("test_add_key_no_value_property_raises", () => {
@@ -279,29 +279,29 @@ describe("TestAddKey", () => {
 
 describe("TestRemoveKey", () => {
   test("test_remove_middle_key", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     const n0 = op.keyframes.length;
     op.removeKey(1);
     expect(op.keyframes.length).toBe(n0 - 1);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     expect(_prop(app2, "ADBE Opacity").keyframes.length).toBe(n0 - 1);
   });
 
   test("test_remove_last_key_deanimates", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    const last_val = op.keyframes[0].value;
-    while (py_bool(op.keyframes)) {
+    const lastVal = op.keyframes[0].value;
+    while (pyBool(op.keyframes)) {
       op.removeKey(0);
     }
     expect(op._animated).toBe(false);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     const op2 = _prop(app2, "ADBE Opacity");
     expect(op2.keyframes.length).toBe(0);
-    expect(approx(op2.value, last_val)).toBe(true);
+    expect(approx(op2.value, lastVal)).toBe(true);
   });
 
   test("test_remove_key_out_of_range", () => {
@@ -316,7 +316,7 @@ describe("TestRemoveKey", () => {
 /** Writing Keyframe.time / frame_time re-sorts keyframes and chunks. */
 describe("TestMoveKeyframe", () => {
   test("test_move_past_neighbour_resorts", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
     expect(op.keyframes.length >= 2).toBe(true);
@@ -327,14 +327,14 @@ describe("TestMoveKeyframe", () => {
     first.time = at(op.keyframes, -1).time + 1.0;
     expect(op.keyframes.at(-1)).toBe(first);
     const times = op.keyframes.map((kf) => kf.frameTime);
-    expect(py_eq(times, sorted(times))).toBe(true);
+    expect(pyEq(times, sorted(times))).toBe(true);
     // prev/next chain follows the new order.
     expect(first._next == null).toBe(true);
     expect(at(op.keyframes, -2)._next).toBe(first);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     const op2 = _prop(app2, "ADBE Opacity");
     const times2 = op2.keyframes.map((kf) => kf.frameTime);
-    expect(py_eq(times2, sorted(times2))).toBe(true);
+    expect(pyEq(times2, sorted(times2))).toBe(true);
     // The moved keyframe's value traveled with it through the save.
     expect(approx(at(op2.keyframes, -1).value, 10.0)).toBe(true);
     expect(approx(op2.keyframes[0].value, 20.0)).toBe(true);
@@ -347,7 +347,7 @@ describe("TestMoveKeyframe", () => {
     kf.frameTime = op.keyframes[1].frameTime - 1;
     expect(op.keyframes[0]).toBe(kf);
     const times = op.keyframes.map((k) => k.frameTime);
-    expect(py_eq(times, sorted(times))).toBe(true);
+    expect(pyEq(times, sorted(times))).toBe(true);
   });
 
   test("test_move_onto_existing_keyframe_raises", () => {
@@ -368,44 +368,44 @@ describe("TestMoveKeyframe", () => {
   test("test_move_marker_key_moves_container_value", () => {
     // Markers keep their values in the parallel Nmrd container, paired
     // by position: the container entry must travel with the keyframe.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
-    const comp = get_comp(app.project, "layer_multiple_markers");
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
+    const comp = getComp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
     expect(mp.keyframes.length >= 2).toBe(true);
     mp.keyframes[0].value = new MarkerValue("moved");
     mp.keyframes[0].time = at(mp.keyframes, -1).time + 1.0;
-    const app2 = _roundtrip(app, tmp_path);
-    const mp2 = get_comp(app2.project, "layer_multiple_markers").layers[0].property("ADBE Marker");
+    const app2 = _roundtrip(app, tmpPath);
+    const mp2 = getComp(app2.project, "layer_multiple_markers").layers[0].property("ADBE Marker");
     const times2 = mp2.keyframes.map((kf) => kf.frameTime);
-    expect(py_eq(times2, sorted(times2))).toBe(true);
+    expect(pyEq(times2, sorted(times2))).toBe(true);
     expect(at(mp2.keyframes, -1).value.comment).toBe("moved");
-    expect(py_slice(mp2.keyframes, null, -1).every((kf) => kf.value.comment !== "moved")).toBe(true);
+    expect(pySlice(mp2.keyframes, null, -1).every((kf) => kf.value.comment !== "moved")).toBe(true);
   });
 });
 
 /** Collect every descendant property that has keyframes. */
-function _keyframed_props(group: PropertyBase): PropertyBase[] {
+function _keyframedProps(group: PropertyBase): PropertyBase[] {
   const out: PropertyBase[] = [];
   for (const p of getattr(group, "properties", [])) {
-    if (py_bool(getattr(p, "keyframes", null))) out.push(p);
-    out.push(..._keyframed_props(p));
+    if (pyBool(getattr(p, "keyframes", null))) out.push(p);
+    out.push(..._keyframedProps(p));
   }
   return out;
 }
 
 describe("TestRemoveAllKeys", () => {
   test("test_property_reverts_to_first_key_value", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_HOLD.aep");
     const op = _prop(app, "ADBE Opacity");
-    const first_val = op.keyframes[0].value;
+    const firstVal = op.keyframes[0].value;
     op.removeAllKeys();
-    expect(py_eq(op.keyframes, [])).toBe(true);
-    const app2 = _roundtrip(app, tmp_path);
+    expect(pyEq(op.keyframes, [])).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
     const op2 = _prop(app2, "ADBE Opacity");
-    expect(py_eq(op2.keyframes, [])).toBe(true);
-    expect(approx(op2.value, first_val)).toBe(true);
+    expect(pyEq(op2.keyframes, [])).toBe(true);
+    expect(approx(op2.value, firstVal)).toBe(true);
   });
 
   test("test_noop_when_no_keyframes", () => {
@@ -413,25 +413,25 @@ describe("TestRemoveAllKeys", () => {
     const op = _prop(app, "ADBE Opacity");
     op.removeAllKeys();
     op.removeAllKeys();
-    expect(py_eq(op.keyframes, [])).toBe(true);
+    expect(pyEq(op.keyframes, [])).toBe(true);
   });
 
   test("test_layer_remove_all_keys_recursive", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
     expect(
-      app.project.compositions.some((comp) => comp.layers.some((lay) => py_bool(_keyframed_props(lay)))),
+      app.project.compositions.some((comp) => comp.layers.some((lay) => pyBool(_keyframedProps(lay)))),
     ).toBe(true);
     for (const comp of app.project.compositions) {
       for (const lay of comp.layers) {
         lay.removeAllKeys();
-        expect(py_eq(_keyframed_props(lay), [])).toBe(true);
+        expect(pyEq(_keyframedProps(lay), [])).toBe(true);
       }
     }
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     for (const comp of app2.project.compositions) {
       for (const lay of comp.layers) {
-        expect(py_eq(_keyframed_props(lay), [])).toBe(true);
+        expect(pyEq(_keyframedProps(lay), [])).toBe(true);
       }
     }
   });
@@ -450,7 +450,7 @@ describe("TestSetValueAtTime", () => {
   });
 
   test("test_add_new_key", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = _fresh("keyframe_LINEAR.aep");
     const pos = _prop(app, "ADBE Position");
     const n0 = pos.keyframes.length;
@@ -458,7 +458,7 @@ describe("TestSetValueAtTime", () => {
     const target = [99.0, 88.0, 0.0].slice(0, len(pos.keyframes[0].value));
     pos.setValueAtTime(t, target);
     expect(pos.keyframes.length).toBe(n0 + 1);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     expect(_prop(app2, "ADBE Position").keyframes.length).toBe(n0 + 1);
   });
 
@@ -483,13 +483,13 @@ describe("TestSetValueAtTime", () => {
 /** add_key / remove_key / set_value_at_time for complex value types. */
 describe("TestComplexTypeKeyframes", () => {
   test("test_orientation", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "layer", "orientation_with_keyframes.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "layer", "orientation_with_keyframes.aep"));
     const o = _prop(app, "ADBE Orientation");
     const n0 = o.keyframes.length;
     o.setValueAtTime(at(o.keyframes, -1).time + 0.3, [12.0, 34.0, 56.0]);
     expect(o.keyframes.length).toBe(n0 + 1);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     const o2 = _prop(app2, "ADBE Orientation");
     expect(contains(o2.keyframes.map((k) => k.value), [12.0, 34.0, 56.0])).toBe(true);
     o2.removeKey(0);
@@ -497,15 +497,15 @@ describe("TestComplexTypeKeyframes", () => {
   });
 
   test("test_marker", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
-    const comp = get_comp(app.project, "layer_multiple_markers");
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
+    const comp = getComp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
     const n0 = mp.keyframes.length;
     mp.setValueAtTime(at(mp.keyframes, -1).time + 1.0, new MarkerValue("X"));
     mp.setValueAtTime(at(mp.keyframes, -1).time + 2.0, "str comment");
-    const app2 = _roundtrip(app, tmp_path);
-    const comp2 = get_comp(app2.project, "layer_multiple_markers");
+    const app2 = _roundtrip(app, tmpPath);
+    const comp2 = getComp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
     const comments = mp2.keyframes.map((k) => k.value.comment);
     expect(comments.includes("X") && comments.includes("str comment")).toBe(true);
@@ -513,10 +513,10 @@ describe("TestComplexTypeKeyframes", () => {
   });
 
   test("test_shape", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
 
-    function get_ms(a: Application): Property<Shape> | null {
+    function getMs(a: Application): Property<Shape> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
@@ -528,15 +528,15 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(mp, "ADBE Mask Shape", out);
           for (const p of out) {
-            if (py_bool(p.keyframes)) return p;
+            if (pyBool(p.keyframes)) return p;
           }
         }
       }
       return null;
     }
 
-    const ms = get_ms(app);
-    py_assert(ms != null);
+    const ms = getMs(app);
+    pyAssert(ms != null);
     const n0 = ms.keyframes.length;
     ms.setValueAtTime(
       at(ms.keyframes, -1).time + 0.5,
@@ -548,19 +548,19 @@ describe("TestComplexTypeKeyframes", () => {
       ]),
     );
     expect(ms.keyframes.length).toBe(n0 + 1);
-    const app2 = _roundtrip(app, tmp_path);
-    const ms2 = get_ms(app2);
-    py_assert(ms2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const ms2 = getMs(app2);
+    pyAssert(ms2 != null);
     expect(ms2.keyframes.length).toBe(n0 + 1);
     ms2.removeKey(0);
     expect(ms2.keyframes.length).toBe(n0);
   });
 
   test("test_gradient", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "gradient_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "gradient_animated.aep"));
 
-    function get_grad(a: Application): Property<Gradient> | null {
+    function getGrad(a: Application): Property<Gradient> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
@@ -572,29 +572,29 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(root, "ADBE Vector Grad Colors", out);
           for (const p of out) {
-            if (py_bool(p.keyframes)) return p;
+            if (pyBool(p.keyframes)) return p;
           }
         }
       }
       return null;
     }
 
-    const g = get_grad(app);
-    py_assert(g != null);
+    const g = getGrad(app);
+    pyAssert(g != null);
     const n0 = g.keyframes.length;
     g.addKey(g.keyframes[0].time + 0.1);
     expect(g.keyframes.length).toBe(n0 + 1);
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = get_grad(app2);
-    py_assert(g2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = getGrad(app2);
+    pyAssert(g2 != null);
     expect(g2.keyframes.length).toBe(n0 + 1);
   });
 
   test("test_text", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
 
-    function get_text(a: Application): Property<TextDocument> | null {
+    function getText(a: Application): Property<TextDocument> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
@@ -606,21 +606,21 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(tp, "ADBE Text Document", out);
           for (const p of out) {
-            if (py_bool(p.keyframes)) return p;
+            if (pyBool(p.keyframes)) return p;
           }
         }
       }
       return null;
     }
 
-    const t = get_text(app);
-    py_assert(t != null);
+    const t = getText(app);
+    pyAssert(t != null);
     const n0 = t.keyframes.length;
     t.setValueAtTime(at(t.keyframes, -1).time + 0.5, "NewLine");
     expect(t.keyframes.length).toBe(n0 + 1);
-    const app2 = _roundtrip(app, tmp_path);
-    const t2 = get_text(app2);
-    py_assert(t2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const t2 = getText(app2);
+    pyAssert(t2 != null);
     const texts = t2.keyframes.map((k) => k.value.text);
     expect(contains(texts, "NewLine")).toBe(true);
     expect(t2.keyframes.length).toBe(n0 + 1);
@@ -632,7 +632,7 @@ describe("TestComplexTypeKeyframes", () => {
     // Regression: a newly added shape keyframe must wrap its own chunk,
     // not alias the donor keyframe's Shape; otherwise editing the new
     // keyframe's value would write through to the donor's chunk.
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
     let ms: Property<Shape> | null = null;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
@@ -649,42 +649,42 @@ describe("TestComplexTypeKeyframes", () => {
       }
       if (ms != null) break;
     }
-    py_assert(ms != null);
+    pyAssert(ms != null);
     const t = at(ms.keyframes, -1).time + 0.5;
     ms.addKey(t);
     const idx = ms.nearestKeyIndex(t);
-    const new_shph = ms.keyframes[idx].value._shph;
+    const newShph = ms.keyframes[idx].value._shph;
     const others = ms.keyframes.filter((_k, j) => j !== idx).map((k) => k.value._shph);
-    expect(others.every((o) => new_shph !== o)).toBe(true);
+    expect(others.every((o) => newShph !== o)).toBe(true);
   });
 
   test("test_remove_last_marker_key", () => {
     // Markers have no static value: removing the last one leaves the
     // valid zero-marker state, and a new marker can be added again.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
-    const comp = get_comp(app.project, "layer_multiple_markers");
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
+    const comp = getComp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
-    while (py_bool(mp.keyframes)) {
+    while (pyBool(mp.keyframes)) {
       mp.removeKey(0);
     }
-    const app2 = _roundtrip(app, tmp_path);
-    const comp2 = get_comp(app2.project, "layer_multiple_markers");
+    const app2 = _roundtrip(app, tmpPath);
+    const comp2 = getComp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
-    expect(py_eq(mp2.keyframes, [])).toBe(true);
+    expect(pyEq(mp2.keyframes, [])).toBe(true);
     mp2.setValueAtTime(1.0, new MarkerValue("back"));
-    const app3 = _roundtrip(app2, tmp_path);
+    const app3 = _roundtrip(app2, tmpPath);
     const comp3 = app3.project.compositions.find((c) => c.name === "layer_multiple_markers");
     if (comp3 === undefined) throw new StopIteration();
     const mp3 = comp3.layers[0].property("ADBE Marker");
-    expect(py_eq(mp3.keyframes.map((k) => k.value.comment), ["back"])).toBe(true);
+    expect(pyEq(mp3.keyframes.map((k) => k.value.comment), ["back"])).toBe(true);
   });
 
   test("test_remove_last_text_key_reverts_to_static", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
 
-    function get_text(a: Application): Property<TextDocument> | null {
+    function getText(a: Application): Property<TextDocument> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
@@ -696,33 +696,33 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(tp, "ADBE Text Document", out);
           for (const p of out) {
-            if (py_bool(p.keyframes) || p.value != null) return p;
+            if (pyBool(p.keyframes) || p.value != null) return p;
           }
         }
       }
       return null;
     }
 
-    const t = get_text(app);
-    py_assert(t != null);
+    const t = getText(app);
+    pyAssert(t != null);
     // The last keyframe removed provides the static value.
-    const last_text = at(t.keyframes, -1).value.text;
-    while (py_bool(t.keyframes)) {
+    const lastText = at(t.keyframes, -1).value.text;
+    while (pyBool(t.keyframes)) {
       t.removeKey(0);
     }
-    expect(t.value.text).toBe(last_text);
-    const app2 = _roundtrip(app, tmp_path);
-    const t2 = get_text(app2);
-    py_assert(t2 != null);
-    expect(py_eq(t2.keyframes, [])).toBe(true);
-    expect(t2.value.text).toBe(last_text);
+    expect(t.value.text).toBe(lastText);
+    const app2 = _roundtrip(app, tmpPath);
+    const t2 = getText(app2);
+    pyAssert(t2 != null);
+    expect(pyEq(t2.keyframes, [])).toBe(true);
+    expect(t2.value.text).toBe(lastText);
   });
 
   test("test_remove_last_shape_key_reverts_to_static", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
 
-    function get_ms(a: Application): Property<Shape> | null {
+    function getMs(a: Application): Property<Shape> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
@@ -734,32 +734,32 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(mp, "ADBE Mask Shape", out);
           for (const p of out) {
-            if (py_bool(p.keyframes) || p.value != null) return p;
+            if (pyBool(p.keyframes) || p.value != null) return p;
           }
         }
       }
       return null;
     }
 
-    const ms = get_ms(app);
-    py_assert(ms != null);
+    const ms = getMs(app);
+    pyAssert(ms != null);
     // The last keyframe removed provides the static value.
-    const last_vertices = at(ms.keyframes, -1).value.vertices;
-    while (py_bool(ms.keyframes)) {
+    const lastVertices = at(ms.keyframes, -1).value.vertices;
+    while (pyBool(ms.keyframes)) {
       ms.removeKey(0);
     }
-    const app2 = _roundtrip(app, tmp_path);
-    const ms2 = get_ms(app2);
-    py_assert(ms2 != null);
-    expect(py_eq(ms2.keyframes, [])).toBe(true);
-    expect(_approx_points(ms2.value.vertices, last_vertices)).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
+    const ms2 = getMs(app2);
+    pyAssert(ms2 != null);
+    expect(pyEq(ms2.keyframes, [])).toBe(true);
+    expect(_approxPoints(ms2.value.vertices, lastVertices)).toBe(true);
   });
 
   test("test_remove_last_gradient_key_reverts_to_static", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "gradient_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "gradient_animated.aep"));
 
-    function get_grad(a: Application): Property<Gradient> | null {
+    function getGrad(a: Application): Property<Gradient> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
@@ -771,46 +771,46 @@ describe("TestComplexTypeKeyframes", () => {
           const out: Property[] = [];
           _walk(root, "ADBE Vector Grad Colors", out);
           for (const p of out) {
-            if (py_bool(p.keyframes) || p.value != null) return p;
+            if (pyBool(p.keyframes) || p.value != null) return p;
           }
         }
       }
       return null;
     }
 
-    const g = get_grad(app);
-    py_assert(g != null);
-    while (py_bool(g.keyframes)) {
+    const g = getGrad(app);
+    pyAssert(g != null);
+    while (pyBool(g.keyframes)) {
       g.removeKey(0);
     }
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = get_grad(app2);
-    py_assert(g2 != null);
-    expect(py_eq(g2.keyframes, [])).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = getGrad(app2);
+    pyAssert(g2 != null);
+    expect(pyEq(g2.keyframes, [])).toBe(true);
     expect(g2.value != null).toBe(true);
   });
 
   test("test_remove_last_orientation_key_reverts_to_static", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "layer", "orientation_with_keyframes.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "layer", "orientation_with_keyframes.aep"));
     const o = _prop(app, "ADBE Orientation");
-    let last_value: PropertyValue = null;
-    while (py_bool(o.keyframes)) {
-      last_value = o.keyframes[0].value;
+    let lastValue: PropertyValue = null;
+    while (pyBool(o.keyframes)) {
+      lastValue = o.keyframes[0].value;
       o.removeKey(0);
     }
-    expect(approx(o.value, last_value)).toBe(true);
-    const app2 = _roundtrip(app, tmp_path);
+    expect(approx(o.value, lastValue)).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
     const o2 = _prop(app2, "ADBE Orientation");
-    expect(py_eq(o2.keyframes, [])).toBe(true);
-    expect(approx(o2.value, last_value)).toBe(true);
+    expect(pyEq(o2.keyframes, [])).toBe(true);
+    expect(approx(o2.value, lastValue)).toBe(true);
   });
 
   test("test_animate_static_text", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "layer", "type.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "layer", "type.aep"));
 
-    function get_text(a: Application): Property<TextDocument> | null {
+    function getText(a: Application): Property<TextDocument> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let tp: PropertyGroup;
@@ -821,38 +821,38 @@ describe("TestComplexTypeKeyframes", () => {
           }
           const out: Property[] = [];
           _walk(tp, "ADBE Text Document", out);
-          if (py_bool(out)) return out[0];
+          if (pyBool(out)) return out[0];
         }
       }
       return null;
     }
 
-    const t = get_text(app);
-    py_assert(t != null);
-    expect(py_eq(t.keyframes, [])).toBe(true);
+    const t = getText(app);
+    pyAssert(t != null);
+    expect(pyEq(t.keyframes, [])).toBe(true);
     const original = t.value.text;
     const idx = t.addKey(1.0);
     expect(idx).toBe(0);
     expect(t.keyframes.length).toBe(1);
     expect(t.keyframes[0].value.text).toBe(original);
-    const app2 = _roundtrip(app, tmp_path);
-    const t2 = get_text(app2);
-    py_assert(t2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const t2 = getText(app2);
+    pyAssert(t2 != null);
     expect(t2.keyframes.length).toBe(1);
     expect(approx(t2.keyframes[0].time, 1.0)).toBe(true);
     expect(t2.keyframes[0].value.text).toBe(original);
     t2.setValueAtTime(2.0, "Second");
-    const app3 = _roundtrip(app2, tmp_path);
-    const t3 = get_text(app3);
-    py_assert(t3 != null);
-    expect(py_eq(t3.keyframes.map((k) => k.value.text), [original, "Second"])).toBe(true);
+    const app3 = _roundtrip(app2, tmpPath);
+    const t3 = getText(app3);
+    pyAssert(t3 != null);
+    expect(pyEq(t3.keyframes.map((k) => k.value.text), [original, "Second"])).toBe(true);
   });
 
   test("test_animate_static_mask_shape", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
 
-    function get_ms(a: Application): Property<Shape> | null {
+    function getMs(a: Application): Property<Shape> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let mp: PropertyGroup;
@@ -863,31 +863,31 @@ describe("TestComplexTypeKeyframes", () => {
           }
           const out: Property[] = [];
           _walk(mp, "ADBE Mask Shape", out);
-          if (py_bool(out)) return out[0];
+          if (pyBool(out)) return out[0];
         }
       }
       return null;
     }
 
-    const ms = get_ms(app);
-    py_assert(ms != null);
-    expect(py_eq(ms.keyframes, [])).toBe(true);
+    const ms = getMs(app);
+    pyAssert(ms != null);
+    expect(pyEq(ms.keyframes, [])).toBe(true);
     const vertices = ms.value.vertices;
     ms.addKey(1.0);
     expect(ms.keyframes.length).toBe(1);
-    const app2 = _roundtrip(app, tmp_path);
-    const ms2 = get_ms(app2);
-    py_assert(ms2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const ms2 = getMs(app2);
+    pyAssert(ms2 != null);
     expect(ms2.keyframes.length).toBe(1);
     expect(approx(ms2.keyframes[0].time, 1.0)).toBe(true);
-    expect(_approx_points(ms2.keyframes[0].value.vertices, vertices)).toBe(true);
+    expect(_approxPoints(ms2.keyframes[0].value.vertices, vertices)).toBe(true);
   });
 
   test("test_animate_static_gradient", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "gradient.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "gradient.aep"));
 
-    function get_grad(a: Application): Property<Gradient> | null {
+    function getGrad(a: Application): Property<Gradient> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
@@ -898,33 +898,33 @@ describe("TestComplexTypeKeyframes", () => {
           }
           const out: Property[] = [];
           _walk(root, "ADBE Vector Grad Colors", out);
-          if (py_bool(out)) return out[0];
+          if (pyBool(out)) return out[0];
         }
       }
       return null;
     }
 
-    const g = get_grad(app);
-    py_assert(g != null);
-    expect(py_eq(g.keyframes, [])).toBe(true);
+    const g = getGrad(app);
+    pyAssert(g != null);
+    expect(pyEq(g.keyframes, [])).toBe(true);
     expect(g.value != null).toBe(true);
     g.addKey(0.5);
     expect(g.keyframes.length).toBe(1);
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = get_grad(app2);
-    py_assert(g2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = getGrad(app2);
+    pyAssert(g2 != null);
     expect(g2.keyframes.length).toBe(1);
     expect(g2.keyframes[0].value != null).toBe(true);
   });
 
   test("test_animate_static_orientation", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
     const o = _prop(app, "ADBE Orientation");
-    expect(py_eq(o.keyframes, [])).toBe(true);
+    expect(pyEq(o.keyframes, [])).toBe(true);
     o.setValueAtTime(1.0, [10.0, 20.0, 30.0]);
     expect(o.keyframes.length).toBe(1);
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     const o2 = _prop(app2, "ADBE Orientation");
     expect(o2.keyframes.length).toBe(1);
     expect(approx(o2.keyframes[0].value, [10.0, 20.0, 30.0])).toBe(true);
@@ -933,65 +933,65 @@ describe("TestComplexTypeKeyframes", () => {
   test("test_add_first_marker_to_unmarked_layer", () => {
     // A never-marked layer has no mrst subtree at all; adding the first
     // marker materializes it.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "mask.aep"));
     const mp = app.project.compositions[0].layers[0].property("ADBE Marker");
-    expect(py_eq(mp.keyframes, [])).toBe(true);
+    expect(pyEq(mp.keyframes, [])).toBe(true);
     expect(mp._kf_value_container == null).toBe(true);
     mp.setValueAtTime(1.0, new MarkerValue("first"));
-    const app2 = _roundtrip(app, tmp_path);
+    const app2 = _roundtrip(app, tmpPath);
     const mp2 = app2.project.compositions[0].layers[0].property("ADBE Marker");
-    expect(py_eq(mp2.keyframes.map((k) => k.value.comment), ["first"])).toBe(true);
+    expect(pyEq(mp2.keyframes.map((k) => k.value.comment), ["first"])).toBe(true);
     expect(approx(mp2.keyframes[0].time, 1.0)).toBe(true);
     mp2.removeKey(0);
-    const app3 = _roundtrip(app2, tmp_path);
+    const app3 = _roundtrip(app2, tmpPath);
     const mp3 = app3.project.compositions[0].layers[0].property("ADBE Marker");
-    expect(py_eq(mp3.keyframes, [])).toBe(true);
+    expect(pyEq(mp3.keyframes, [])).toBe(true);
   });
 
   test("test_animate_pristine_camera_orientation", () => {
     // A never-modified camera orientation is stored as a bare tdbs (no
     // otst / otky); keying it materializes the wrapper.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "layer", "type.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "layer", "type.aep"));
 
-    function get_orient(a: Application): Property | null {
+    function getOrient(a: Application): Property | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           if (layer.name !== "CameraLayer") continue;
           const found = [...layer.transform].find((p) => p.matchName === "ADBE Orientation");
           if (found === undefined) throw new StopIteration();
-          return as_instance(found, Property);
+          return asInstance(found, Property);
         }
       }
       return null;
     }
 
-    const o = get_orient(app);
-    py_assert(o != null);
-    expect(py_eq(o.keyframes, [])).toBe(true);
+    const o = getOrient(app);
+    pyAssert(o != null);
+    expect(pyEq(o.keyframes, [])).toBe(true);
     expect(o._kf_value_container == null).toBe(true);
     o.setValueAtTime(1.0, [10.0, 20.0, 30.0]);
-    const app2 = _roundtrip(app, tmp_path);
-    const o2 = get_orient(app2);
-    py_assert(o2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const o2 = getOrient(app2);
+    pyAssert(o2 != null);
     expect(o2.keyframes.length).toBe(1);
     expect(approx(o2.keyframes[0].value, [10.0, 20.0, 30.0])).toBe(true);
     o2.removeKey(0);
-    const app3 = _roundtrip(app2, tmp_path);
-    const o3 = get_orient(app3);
-    py_assert(o3 != null);
-    expect(py_eq(o3.keyframes, [])).toBe(true);
+    const app3 = _roundtrip(app2, tmpPath);
+    const o3 = getOrient(app3);
+    pyAssert(o3 != null);
+    expect(pyEq(o3.keyframes, [])).toBe(true);
     expect(approx(o3.value, [10.0, 20.0, 30.0])).toBe(true);
   });
 
   test("test_animate_never_edited_gradient", () => {
     // A never-edited gradient fill has no GCst data; the first keyframe
     // materializes it with AE's default gradient.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
 
-    function get_grad(a: Application): Property<Gradient> | null {
+    function getGrad(a: Application): Property<Gradient> | null {
       for (const comp of a.project.compositions) {
         for (const layer of comp.layers) {
           let root: PropertyGroup;
@@ -1002,21 +1002,21 @@ describe("TestComplexTypeKeyframes", () => {
           }
           const out: Property[] = [];
           _walk(root, "ADBE Vector Grad Colors", out);
-          if (py_bool(out)) return out[0];
+          if (pyBool(out)) return out[0];
         }
       }
       return null;
     }
 
-    const g = get_grad(app);
-    py_assert(g != null);
-    expect(py_eq(g.keyframes, [])).toBe(true);
+    const g = getGrad(app);
+    pyAssert(g != null);
+    expect(pyEq(g.keyframes, [])).toBe(true);
     expect(g._kf_value_container == null).toBe(true);
     g.addKey(0.5);
     expect(g.keyframes.length).toBe(1);
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = get_grad(app2);
-    py_assert(g2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = getGrad(app2);
+    pyAssert(g2 != null);
     expect(g2.keyframes.length).toBe(1);
     expect(g2.keyframes[0].value != null).toBe(true);
   });
@@ -1033,11 +1033,11 @@ describe("TestParallelValueAliasing", () => {
     // BUG 1: setting one MarkerValue at two times must not alias a single
     // set of chunks into both Nmrds; editing one keyframe afterwards must
     // leave the other untouched, with consistent nmhd.num_params.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
-    const comp = get_comp(app.project, "layer_multiple_markers");
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_ROOT.div("models", "marker", "layer_marker.aep"));
+    const comp = getComp(app.project, "layer_multiple_markers");
     const mp = comp.layers[0].property("ADBE Marker");
-    while (py_bool(mp.keyframes)) {
+    while (pyBool(mp.keyframes)) {
       mp.removeKey(0);
     }
 
@@ -1056,47 +1056,47 @@ describe("TestParallelValueAliasing", () => {
       ["a", "1"],
       ["b", "2"],
     ]);
-    expect(py_eq(k0.value.params, new Map())).toBe(true);
+    expect(pyEq(k0.value.params, new Map())).toBe(true);
     expect(k0.value._nmhd.num_params).toBe(0);
     expect(k1.value._nmhd.num_params).toBe(2);
 
-    const app2 = _roundtrip(app, tmp_path);
-    const comp2 = get_comp(app2.project, "layer_multiple_markers");
+    const app2 = _roundtrip(app, tmpPath);
+    const comp2 = getComp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
-    const by_comment = new Map(mp2.keyframes.map((k) => [k.value.comment, k.value] as const));
-    expect(py_eq(getitem(by_comment, "first_only").params, new Map())).toBe(true);
-    expect(getitem(by_comment, "first_only")._nmhd.num_params).toBe(0);
+    const byComment = new Map(mp2.keyframes.map((k) => [k.value.comment, k.value] as const));
+    expect(pyEq(getitem(byComment, "first_only").params, new Map())).toBe(true);
+    expect(getitem(byComment, "first_only")._nmhd.num_params).toBe(0);
     expect(
-      py_eq(
-        getitem(by_comment, "shared").params,
+      pyEq(
+        getitem(byComment, "shared").params,
         new Map([
           ["a", "1"],
           ["b", "2"],
         ]),
       ),
     ).toBe(true);
-    expect(getitem(by_comment, "shared")._nmhd.num_params).toBe(2);
+    expect(getitem(byComment, "shared")._nmhd.num_params).toBe(2);
   });
 
   test("test_gradient_set_value_at_time_not_aliased", () => {
     // BUG 2: set_value_at_time(kf1.time, kf0.value) must rebind kf1 to its
     // own chunk; mutating kf1 afterwards must not change kf0.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(GRAD_ANIM);
-    const g = _grad_kf_prop(app);
-    py_assert(g != null);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(GRAD_ANIM);
+    const g = _gradKfProp(app);
+    pyAssert(g != null);
     const kf0 = g.keyframes[0];
     const kf1 = g.keyframes[1];
-    const kf0_xml_before = kf0.value._utf8.value;
+    const kf0XmlBefore = kf0.value._utf8.value;
 
     g.setValueAtTime(kf1.time, kf0.value);
     expect(kf1.value !== kf0.value).toBe(true);
     kf1.value.addColorStop(0.5, 0.5, [1.0, 0.0, 0.0]);
-    expect(kf0.value._utf8.value).toBe(kf0_xml_before);
+    expect(kf0.value._utf8.value).toBe(kf0XmlBefore);
 
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = _grad_kf_prop(app2);
-    py_assert(g2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = _gradKfProp(app2);
+    pyAssert(g2 != null);
     expect(g2.keyframes[0].value.colorStops.length).toBe(kf0.value.colorStops.length);
     expect(g2.keyframes[1].value.colorStops.length).toBe(kf1.value.colorStops.length);
     expect(g2.keyframes[0].value.colorStops.length !== g2.keyframes[1].value.colorStops.length).toBe(true);
@@ -1105,44 +1105,44 @@ describe("TestParallelValueAliasing", () => {
   test("test_orientation_keyframe_value_persists", () => {
     // BUG 3: assigning kf.value on an animated orientation must write the
     // parallel otda container, not just the in-memory shadow.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(ORIENT_ANIM);
-    const o = _orientation_kf_prop(app);
-    py_assert(o != null);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(ORIENT_ANIM);
+    const o = _orientationKfProp(app);
+    pyAssert(o != null);
     o.keyframes[0].value = [0.0, 0.0, 90.0];
-    expect(py_eq(o.keyframes[0].value, [0.0, 0.0, 90.0])).toBe(true);
+    expect(pyEq(o.keyframes[0].value, [0.0, 0.0, 90.0])).toBe(true);
 
-    const app2 = _roundtrip(app, tmp_path);
-    const o2 = _orientation_kf_prop(app2);
-    py_assert(o2 != null);
-    expect(py_eq(o2.keyframes[0].value, [0.0, 0.0, 90.0])).toBe(true);
+    const app2 = _roundtrip(app, tmpPath);
+    const o2 = _orientationKfProp(app2);
+    pyAssert(o2 != null);
+    expect(pyEq(o2.keyframes[0].value, [0.0, 0.0, 90.0])).toBe(true);
   });
 
   test("test_static_gradient_value_reassign_persists", () => {
     // BUG 4 (implemented kind): assigning a new Gradient to a static
     // gradient property rebuilds its GCky container chunk.
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(GRAD_STATIC);
-    const g = _grad_static_prop(app);
-    py_assert(g != null);
-    const new_grad = new Gradient();
-    new_grad.addColorStop(0.5, 0.5, [1.0, 0.0, 0.0]);
-    const n_stops = new_grad.colorStops.length;
-    g.value = new_grad;
+    const tmpPath = makeTmpPath();
+    const app = parseAep(GRAD_STATIC);
+    const g = _gradStaticProp(app);
+    pyAssert(g != null);
+    const newGrad = new Gradient();
+    newGrad.addColorStop(0.5, 0.5, [1.0, 0.0, 0.0]);
+    const nStops = newGrad.colorStops.length;
+    g.value = newGrad;
 
-    const app2 = _roundtrip(app, tmp_path);
-    const g2 = _grad_static_prop(app2);
-    py_assert(g2 != null);
-    expect(g2.value.colorStops.length).toBe(n_stops);
+    const app2 = _roundtrip(app, tmpPath);
+    const g2 = _gradStaticProp(app2);
+    pyAssert(g2 != null);
+    expect(g2.value.colorStops.length).toBe(nStops);
   });
 
   test("test_static_text_value_reassign_raises", () => {
     // BUG 4 (rejected kind): a brand-new TextDocument cannot replace a
     // static text value (the btdk COS blob is byte-format-sensitive);
     // the documented in-place alternative is mutating prop.value.text.
-    const app = parse_aep(TEXT_STATIC);
-    const t = _text_static_prop(app);
-    py_assert(t != null);
+    const app = parseAep(TEXT_STATIC);
+    const t = _textStaticProp(app);
+    pyAssert(t != null);
     raises(
       ValueError,
       () => {
@@ -1155,14 +1155,14 @@ describe("TestParallelValueAliasing", () => {
   test("test_static_text_inplace_mutation_persists", () => {
     // BUG 4 (rejected kind): the documented alternative - mutating the
     // existing value object in place - must still persist (no silent loss).
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(TEXT_STATIC);
-    const t = _text_static_prop(app);
-    py_assert(t != null);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(TEXT_STATIC);
+    const t = _textStaticProp(app);
+    pyAssert(t != null);
     t.value.text = "CHANGED_TEXT";
-    const app2 = _roundtrip(app, tmp_path);
-    const t2 = _text_static_prop(app2);
-    py_assert(t2 != null);
+    const app2 = _roundtrip(app, tmpPath);
+    const t2 = _textStaticProp(app2);
+    pyAssert(t2 != null);
     expect(t2.value.text).toBe("CHANGED_TEXT");
   });
 });
@@ -1210,8 +1210,8 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
 
   /** 1.5 s in a 25 fps comp is frame 37.5. Before the fix this read back as 1.52. */
   test("test_off_grid_time_is_exact", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLE);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLE);
     const comp = project.compositions[0];
     expect(comp.frameRate).toBe(25.0);
     const prop = comp.layers[0].transform.property("ADBE Opacity");
@@ -1221,9 +1221,9 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     if (keyframe === undefined) throw new StopIteration();
     expect(approx(keyframe.time, 1.5)).toBe(true);
 
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions[0];
+    const comp2 = parseAep(out).project.compositions[0];
     const prop2 = comp2.layers[0].transform.property("ADBE Opacity");
     const keyframe2 = prop2.keyframes.find((k) => k.timeUnits === 38400);
     if (keyframe2 === undefined) throw new StopIteration();
@@ -1232,7 +1232,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
 
   /** `kf.time = kf.time` used to snap an off-grid keyframe to the nearest frame. */
   test("test_rewriting_its_own_time_does_not_move_a_keyframe", () => {
-    const project = parse_project_fresh(SAMPLE);
+    const project = parseProjectFresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     prop.addKey(1.5);
     const keyframe = prop.keyframes.find((k) => k.timeUnits === 38400);
@@ -1248,7 +1248,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
    * duplicate-time guard must compare units and not frame indices.
    */
   test("test_two_keyframes_can_share_a_frame", () => {
-    const project = parse_project_fresh(SAMPLE);
+    const project = parseProjectFresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     // Both round to frame 37 at 25 fps (37.025 and 37.375) while
     // occupying different timebase units.
@@ -1262,7 +1262,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
   });
 
   test("test_frame_time_still_rounds", () => {
-    const project = parse_project_fresh(SAMPLE);
+    const project = parseProjectFresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     prop.addKey(1.5);
     const keyframe = prop.keyframes.find((k) => k.timeUnits === 38400);
@@ -1276,24 +1276,24 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
    * off-grid start must not quantize the keyframe.
    */
   test("test_layer_start_offset_stays_in_seconds", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLE);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLE);
     const comp = project.compositions[0];
     const layer = comp.layers[0];
     layer.startTime = 0.29166666666666663; // 7/24 s, off the 25 fps grid
     const prop = layer.transform.property("ADBE Opacity");
     prop.addKey(2.0);
 
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = parse_aep(out).project.compositions[0];
+    const comp2 = parseAep(out).project.compositions[0];
     const prop2 = comp2.layers[0].transform.property("ADBE Opacity");
     // Times are an integer count of timebase units, so a request that
     // falls between units lands on the nearest one - AE requantizes
     // identically (it stored 0.99998697916667 for a 1.0 s request on a
     // layer with this start).
-    const half_unit = 0.5 / comp2._cdta.internal_timebase;
-    expect(prop2.keyframes.some((k) => Math.abs(k.time - 2.0) <= half_unit)).toBe(true);
+    const halfUnit = 0.5 / comp2._cdta.internal_timebase;
+    expect(prop2.keyframes.some((k) => Math.abs(k.time - 2.0) <= halfUnit)).toBe(true);
   });
 });
 
@@ -1309,12 +1309,12 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
 describe("TestRoundtripRoving", () => {
   const SAMPLE = SAMPLES.div("effect_point_speed.aep");
 
-  function _bowed_path(bow: number): Property<number[]> {
-    const project = parse_project_fresh(SAMPLE);
+  function _bowedPath(bow: number): Property<number[]> {
+    const project = parseProjectFresh(SAMPLE);
     const comp = project.compositions[0];
     expect(comp.frameRate).toBe(25.0);
     const prop = comp.layers[0].transform.property("ADBE Position");
-    while (py_bool(prop.keyframes)) {
+    while (pyBool(prop.keyframes)) {
       prop.removeKey(0);
     }
     for (const [time, value] of [
@@ -1339,7 +1339,7 @@ describe("TestRoundtripRoving", () => {
    * between the same keyframes would put it at 0.667 s.
    */
   test("test_roving_uses_arc_length_not_chord", () => {
-    const prop = _bowed_path(400.0);
+    const prop = _bowedPath(400.0);
     expect(prop.keyframes[1].time).toBe(1.0);
 
     prop.keyframes[1].roving = true;
@@ -1353,18 +1353,18 @@ describe("TestRoundtripRoving", () => {
    * back to 0.819296875 s (20974 units).
    */
   test("test_flattening_the_path_moves_the_roving_key", () => {
-    const prop = _bowed_path(40.0);
+    const prop = _bowedPath(40.0);
     prop.keyframes[1].roving = true;
     expect(prop.keyframes[1].timeUnits).toBe(20974);
     expect(approx(prop.keyframes[1].time, 0.819296875)).toBe(true);
   });
 
   test("test_roving_survives_a_save", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLE);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLE);
     const comp = project.compositions[0];
     const prop = comp.layers[0].transform.property("ADBE Position");
-    while (py_bool(prop.keyframes)) {
+    while (pyBool(prop.keyframes)) {
       prop.removeKey(0);
     }
     for (const [time, value] of [
@@ -1378,9 +1378,9 @@ describe("TestRoundtripRoving", () => {
     prop.keyframes[1].roving = true;
     const moved = prop.keyframes[1].timeUnits;
 
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Position");
+    const prop2 = parseAep(out).project.compositions[0].layers[0].transform.property("ADBE Position");
     expect(prop2.keyframes[1].roving).toBe(true);
     expect(prop2.keyframes[1].timeUnits).toBe(moved);
   });
@@ -1390,7 +1390,7 @@ describe("TestRoundtripRoving", () => {
    * happened, and turning the flag off leaves the key where it moved to.
    */
   test("test_unroving_keeps_the_redistributed_time", () => {
-    const prop = _bowed_path(400.0);
+    const prop = _bowedPath(400.0);
     prop.keyframes[1].roving = true;
     const moved = prop.keyframes[1].timeUnits;
 
@@ -1402,9 +1402,9 @@ describe("TestRoundtripRoving", () => {
 
   /** AE raises here: "This property does not have a spatial PropertyValueType". */
   test("test_non_spatial_property_is_rejected", () => {
-    const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
+    const project = parseProjectFresh(SAMPLES.div("keyframe_misc.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
-    expect(py_bool(prop.isSpatial)).toBe(false);
+    expect(pyBool(prop.isSpatial)).toBe(false);
     raises(
       ValueError,
       () => {
@@ -1416,7 +1416,7 @@ describe("TestRoundtripRoving", () => {
 
   /** AE silently no-ops these; py-aep raises so the caller sees it. */
   test.each([0, -1])("test_first_and_last_keyframe_are_rejected[%#]", (index) => {
-    const prop = _bowed_path(400.0);
+    const prop = _bowedPath(400.0);
     raises(
       ValueError,
       () => {
@@ -1442,10 +1442,10 @@ describe("TestRoundtripAutoBezierWrites", () => {
    * t = 0 / 1 / 4 with x = 0 / 100 / 600 - uneven in time, so a
    * time-weighted tangent rule would disagree with AE's chord/6.
    */
-  function _uneven_position(): Property<number[]> {
-    const project = parse_project_fresh(SAMPLES.div("effect_point_speed.aep"));
+  function _unevenPosition(): Property<number[]> {
+    const project = parseProjectFresh(SAMPLES.div("effect_point_speed.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Position");
-    while (py_bool(prop.keyframes)) {
+    while (pyBool(prop.keyframes)) {
       prop.removeKey(0);
     }
     for (const [time, x] of [
@@ -1464,11 +1464,11 @@ describe("TestRoundtripAutoBezierWrites", () => {
   }
 
   test("test_spatial_auto_bezier_writes_the_derived_tangents", () => {
-    const prop = _uneven_position();
+    const prop = _unevenPosition();
     const keyframe = prop.keyframes[1];
     keyframe.inSpatialTangent = [-40.0, -10.0, 0.0];
     keyframe.outSpatialTangent = [70.0, 25.0, 0.0];
-    const stored = as_instance(keyframe._ldat_item.kf_data, KfPosition);
+    const stored = asInstance(keyframe._ldat_item.kf_data, KfPosition);
 
     keyframe.spatialAutoBezier = true;
 
@@ -1477,7 +1477,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
   });
 
   test("test_spatial_auto_bezier_forces_continuity", () => {
-    const prop = _uneven_position();
+    const prop = _unevenPosition();
     const keyframe = prop.keyframes[1];
     keyframe.spatialContinuous = false;
 
@@ -1488,11 +1488,11 @@ describe("TestRoundtripAutoBezierWrites", () => {
 
   /** AE does not restore what was there before. */
   test("test_clearing_spatial_auto_bezier_keeps_the_derived_tangents", () => {
-    const prop = _uneven_position();
+    const prop = _unevenPosition();
     const keyframe = prop.keyframes[1];
     keyframe.spatialAutoBezier = true;
     keyframe.spatialAutoBezier = false;
-    const stored = as_instance(keyframe._ldat_item.kf_data, KfPosition);
+    const stored = asInstance(keyframe._ldat_item.kf_data, KfPosition);
     expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
   });
 
@@ -1501,18 +1501,18 @@ describe("TestRoundtripAutoBezierWrites", () => {
    * dimension speeds 150 and 25, not one shared scalar.
    */
   test("test_temporal_auto_bezier_is_per_dimension", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLES.div("keyframe_misc.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
-    while (py_bool(prop.keyframes)) {
+    while (pyBool(prop.keyframes)) {
       prop.removeKey(0);
     }
-    const scale_values: [number, number[]][] = [
+    const scaleValues: [number, number[]][] = [
       [0.0, [100.0, 100.0, 100.0]],
       [1.0, [200.0, 120.0, 100.0]],
       [2.0, [400.0, 150.0, 100.0]],
     ];
-    for (const [time, value] of scale_values) {
+    for (const [time, value] of scaleValues) {
       prop.addKey(time);
       at(prop.keyframes, -1).value = value;
     }
@@ -1523,9 +1523,9 @@ describe("TestRoundtripAutoBezierWrites", () => {
 
     prop.keyframes[1].temporalAutoBezier = true;
 
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const prop2 = parse_aep(out).project.compositions[0].layers[0].transform.property("ADBE Scale");
+    const prop2 = parseAep(out).project.compositions[0].layers[0].transform.property("ADBE Scale");
     const speeds = prop2.keyframes[1].inTemporalEase.map((ease) => ease.speed);
     expect(approx(speeds, [150.0, 25.0, 0.0])).toBe(true);
     const influences = prop2.keyframes[1].inTemporalEase.map((ease) => ease.influence);
@@ -1547,7 +1547,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
     ];
     const times = [0.0, 1.0, 2.0];
 
-    const project = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
+    const project = parseProjectFresh(SAMPLES.div("keyframe_misc.aep"));
     const transform = project.compositions[0].layers[0].transform;
     const scale = transform.property("ADBE Scale");
     scale.removeAllKeys();
@@ -1557,7 +1557,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
 
     const references: Property<number>[] = [];
     for (const curve of curves) {
-      const reference = parse_project_fresh(SAMPLES.div("keyframe_misc.aep"));
+      const reference = parseProjectFresh(SAMPLES.div("keyframe_misc.aep"));
       const rotation = reference.compositions[0].layers[0].transform.property("ADBE Rotate Z");
       rotation.removeAllKeys();
       for (const [index, time] of times.entries()) {
@@ -1582,7 +1582,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
   });
 
   test("test_temporal_auto_bezier_forces_continuity_and_bezier", () => {
-    const prop = _uneven_position();
+    const prop = _unevenPosition();
     const keyframe = prop.keyframes[1];
     keyframe.inInterpolationType = KeyframeInterpolationType.LINEAR;
     keyframe.outInterpolationType = KeyframeInterpolationType.LINEAR;
@@ -1600,22 +1600,22 @@ describe("TestRoundtripAutoBezierWrites", () => {
    * are tied, both influences survive.
    */
   test("test_temporal_continuous_ties_the_out_speed_to_the_in_speed", () => {
-    const project = parse_project_fresh(SAMPLES.div("keyframe_bezier_nonzero_speed.aep"));
-    const prop = as_instance(
+    const project = parseProjectFresh(SAMPLES.div("keyframe_bezier_nonzero_speed.aep"));
+    const prop = asInstance(
       project.compositions[0].layers
         .flatMap((layer) => layer.transform.properties)
-        .find((g) => py_bool(as_instance(g, Property).keyframes) && g.matchName === "ADBE Opacity"),
+        .find((g) => pyBool(asInstance(g, Property).keyframes) && g.matchName === "ADBE Opacity"),
       Property,
     );
     const keyframe = prop.keyframes[0];
-    const in_speed = keyframe.inTemporalEase[0].speed;
-    const out_influence = keyframe.outTemporalEase[0].influence;
-    expect(keyframe.outTemporalEase[0].speed !== in_speed).toBe(true);
+    const inSpeed = keyframe.inTemporalEase[0].speed;
+    const outInfluence = keyframe.outTemporalEase[0].influence;
+    expect(keyframe.outTemporalEase[0].speed !== inSpeed).toBe(true);
 
     keyframe.temporalContinuous = true;
 
-    expect(approx(keyframe.outTemporalEase[0].speed, in_speed)).toBe(true);
-    expect(approx(keyframe.outTemporalEase[0].influence, out_influence)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].speed, inSpeed)).toBe(true);
+    expect(approx(keyframe.outTemporalEase[0].influence, outInfluence)).toBe(true);
   });
 
   /**
@@ -1626,7 +1626,7 @@ describe("TestRoundtripAutoBezierWrites", () => {
    * slope (100 on this ramp) but AE gives back the stored 10.
    */
   test("test_temporal_continuous_forces_bezier_and_uses_the_stored_speed", () => {
-    const prop = _uneven_position();
+    const prop = _unevenPosition();
     const keyframe = prop.keyframes[1];
     keyframe.inTemporalEase = [new KeyframeEase(10.0, 75.0)];
     keyframe.outTemporalEase = [new KeyframeEase(90.0, 25.0)];
@@ -1659,16 +1659,16 @@ describe("TestRoundtripAutoBezierWrites", () => {
   test.each([KeyframeInterpolationType.HOLD, KeyframeInterpolationType.LINEAR])(
     "test_interpolation_change_preserves_the_stored_ease[%#]",
     (interpolation) => {
-      const tmp_path = make_tmp_path();
-      const project = parse_project_fresh(SAMPLES.div("keyframe_bezier_asymmetric_ease_1D.aep"));
-      const prop = as_instance(
+      const tmpPath = makeTmpPath();
+      const project = parseProjectFresh(SAMPLES.div("keyframe_bezier_asymmetric_ease_1D.aep"));
+      const prop = asInstance(
         project.compositions[0].layers
           .flatMap((layer) => layer.transform.properties)
-          .find((g) => py_bool(as_instance(g, Property).keyframes)),
+          .find((g) => pyBool(asInstance(g, Property).keyframes)),
         Property,
       );
       const keyframe = prop.keyframes[0];
-      const stored = as_instance(keyframe._ldat_item.kf_data, KfMultiDimensional);
+      const stored = asInstance(keyframe._ldat_item.kf_data, KfMultiDimensional);
       const before = [[...stored.in_influence], [...stored.out_influence]];
       expect(approx(before[1], [0.9])).toBe(true);
 
@@ -1682,15 +1682,15 @@ describe("TestRoundtripAutoBezierWrites", () => {
       keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
       expect(approx(keyframe.outTemporalEase[0].influence, 90.0)).toBe(true);
 
-      const out = tmp_path.div("modified.aep");
+      const out = tmpPath.div("modified.aep");
       project.save(out);
-      const prop2 = as_instance(
-        parse_aep(out).project.compositions[0].layers
+      const prop2 = asInstance(
+        parseAep(out).project.compositions[0].layers
           .flatMap((layer) => layer.transform.properties)
-          .find((g) => py_bool(as_instance(g, Property).keyframes)),
+          .find((g) => pyBool(asInstance(g, Property).keyframes)),
         Property,
       );
-      const reloaded = as_instance(prop2.keyframes[0]._ldat_item.kf_data, KfMultiDimensional);
+      const reloaded = asInstance(prop2.keyframes[0]._ldat_item.kf_data, KfMultiDimensional);
       expect(approx([...reloaded.out_influence], before[1])).toBe(true);
     },
   );

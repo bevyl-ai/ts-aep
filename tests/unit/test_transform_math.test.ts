@@ -7,9 +7,9 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { ValueError, enumerate, float_repr, py_assert, zip } from "../../src/pyrt/index.ts";
+import { ValueError, enumerate, floatRepr, pyAssert, zip } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { Mat4, _rotate_x, _rotate_y, _rotate_z, _translation, build_local_matrix, compose_orientation, decompose_transform } from "../../src/py_aep/resolvers/transform.ts";
+import { Mat4, _rotateX, _rotateY, _rotateZ, _translation, buildLocalMatrix, composeOrientation, decomposeTransform } from "../../src/py_aep/resolvers/transform.ts";
 
 // ------------------------------------------------------------------
 // Helpers
@@ -18,22 +18,22 @@ import { Mat4, _rotate_x, _rotate_y, _rotate_z, _translation, build_local_matrix
 /** Assert two values (scalar or nested list) are approximately equal. */
 function _approx(a: number | number[], b: number | number[], tol = 1e-6): void {
   if (Array.isArray(a) && Array.isArray(b)) {
-    py_assert(a.length === b.length, `length mismatch: ${a.length} vs ${b.length}`);
+    pyAssert(a.length === b.length, `length mismatch: ${a.length} vs ${b.length}`);
     for (const [i, [ai, bi]] of enumerate(zip(a, b))) {
-      py_assert(approx(ai, bi, { abs: tol }), `index ${i}: ${float_repr(ai)} != ${float_repr(bi)}`);
+      pyAssert(approx(ai, bi, { abs: tol }), `index ${i}: ${floatRepr(ai)} != ${floatRepr(bi)}`);
     }
   } else {
-    py_assert(approx(a, b, { abs: tol }));
+    pyAssert(approx(a, b, { abs: tol }));
   }
 }
 
 /** Assert two 4x4 matrices are approximately equal. */
-function _mat_approx(a: Mat4, b: Mat4, tol = 1e-6): void {
+function _matApprox(a: Mat4, b: Mat4, tol = 1e-6): void {
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
-      py_assert(
+      pyAssert(
         approx(a.row(r)[c], b.row(r)[c], { abs: tol }),
-        `M[${r}][${c}]: ${float_repr(a.row(r)[c])} != ${float_repr(b.row(r)[c])}`,
+        `M[${r}][${c}]: ${floatRepr(a.row(r)[c])} != ${floatRepr(b.row(r)[c])}`,
       );
     }
   }
@@ -55,34 +55,34 @@ describe("TestMatrixPrimitives", () => {
   });
 
   test("test_multiply_identity", () => {
-    const a = build_local_matrix([10, 20, 0], [0, 0, 0], [100, 100, 100], 45);
+    const a = buildLocalMatrix([10, 20, 0], [0, 0, 0], [100, 100, 100], 45);
     const result = Mat4.identity().__matmul__(a);
-    _mat_approx(result, a);
+    _matApprox(result, a);
     const result2 = a.__matmul__(Mat4.identity());
-    _mat_approx(result2, a);
+    _matApprox(result2, a);
   });
 
   test("test_translation_roundtrip", () => {
     const t = _translation(5, 10, 15);
-    const t_inv = t.inverse();
-    const result = t.__matmul__(t_inv);
-    _mat_approx(result, Mat4.identity());
+    const tInv = t.inverse();
+    const result = t.__matmul__(tInv);
+    _matApprox(result, Mat4.identity());
   });
 
   test("test_inverse_of_identity", () => {
     const m = Mat4.identity();
     const inv = m.inverse();
-    _mat_approx(inv, Mat4.identity());
+    _matApprox(inv, Mat4.identity());
   });
 
   test("test_inverse_roundtrip", () => {
-    const m = build_local_matrix([30, 20, 10], [5, 5, 0], [150, 80, 100], 37, {
+    const m = buildLocalMatrix([30, 20, 10], [5, 5, 0], [150, 80, 100], 37, {
       rotate_x: 15,
       rotate_y: 25,
     });
     const inv = m.inverse();
     const result = m.__matmul__(inv);
-    _mat_approx(result, Mat4.identity(), 1e-5);
+    _matApprox(result, Mat4.identity(), 1e-5);
   });
 
   test("test_singular_raises", () => {
@@ -103,13 +103,13 @@ describe("TestRoundTrip2D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = 0.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
-    _approx(d_rx, 0.0);
-    _approx(d_ry, 0.0);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
+    _approx(dRx, 0.0);
+    _approx(dRy, 0.0);
   });
 
   test("test_position_only", () => {
@@ -117,11 +117,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = 0.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   test("test_position_with_anchor", () => {
@@ -129,11 +129,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [25.0, 25.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = 0.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   test("test_rotation_only", () => {
@@ -141,11 +141,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = 45.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   test("test_scale_only", () => {
@@ -153,11 +153,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [200.0, 50.0, 100.0];
     const rz = 0.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   test("test_combined_2d", () => {
@@ -165,11 +165,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [10.0, 10.0, 0.0];
     const scale = [150.0, 80.0, 100.0];
     const rz = 30.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   test("test_negative_rotation", () => {
@@ -177,11 +177,11 @@ describe("TestRoundTrip2D", () => {
     const anchor = [50.0, 50.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = -45.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
   });
 
   /** Rotations > 180 degrees decompose into [-180, 180] range. */
@@ -190,10 +190,10 @@ describe("TestRoundTrip2D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const rz = 270.0;
-    const m = build_local_matrix(pos, anchor, scale, rz);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
+    const m = buildLocalMatrix(pos, anchor, scale, rz);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
     // 270 degrees decomposes to -90 (same visual rotation)
-    _approx(d_rz, -90.0);
+    _approx(dRz, -90.0);
   });
 });
 
@@ -203,23 +203,23 @@ describe("TestRoundTrip3D", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0, { rotate_x: 45.0 });
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rx, 45.0);
-    _approx(d_ry, 0.0);
-    _approx(d_rz, 0.0);
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_x: 45.0 });
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRx, 45.0);
+    _approx(dRy, 0.0);
+    _approx(dRz, 0.0);
   });
 
   test("test_rotate_y_only", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0, { rotate_y: 30.0 });
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    _approx(d_ry, 30.0);
-    _approx(d_rx, 0.0);
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_y: 30.0 });
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    _approx(dRy, 30.0);
+    _approx(dRx, 0.0);
   });
 
   test("test_combined_3d_rotations", () => {
@@ -229,13 +229,13 @@ describe("TestRoundTrip3D", () => {
     const rz = 15.0;
     const rx = 25.0;
     const ry = 35.0;
-    const m = build_local_matrix(pos, anchor, scale, rz, { rotate_x: rx, rotate_y: ry });
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
-    _approx(d_scale, scale);
-    _approx(d_rz, rz);
-    _approx(d_rx, rx);
-    _approx(d_ry, ry);
+    const m = buildLocalMatrix(pos, anchor, scale, rz, { rotate_x: rx, rotate_y: ry });
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
+    _approx(dScale, scale);
+    _approx(dRz, rz);
+    _approx(dRx, rx);
+    _approx(dRy, ry);
   });
 
   /** Orientation angles compose into the matrix correctly. */
@@ -244,14 +244,14 @@ describe("TestRoundTrip3D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const orient = [10.0, 20.0, 30.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0, { orientation: orient });
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { orientation: orient });
     // The decomposition extracts the combined rotation into
     // per-axis angles (since orientation is assumed zero for
     // decomposition). The key check is round-trip through
     // build -> decompose -> build produces the same matrix.
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    const m2 = build_local_matrix(d_pos, anchor, d_scale, d_rz, { rotate_x: d_rx, rotate_y: d_ry });
-    _mat_approx(m, m2, 1e-5);
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    _matApprox(m, m2, 1e-5);
   });
 
   /**
@@ -266,14 +266,14 @@ describe("TestRoundTrip3D", () => {
     const rz = 20.0;
     const rx = 10.0;
     const ry = 5.0;
-    const m = build_local_matrix(pos, anchor, scale, rz, {
+    const m = buildLocalMatrix(pos, anchor, scale, rz, {
       orientation: orient,
       rotate_x: rx,
       rotate_y: ry,
     });
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
-    const m2 = build_local_matrix(d_pos, anchor, d_scale, d_rz, { rotate_x: d_rx, rotate_y: d_ry });
-    _mat_approx(m, m2, 1e-5);
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    _matApprox(m, m2, 1e-5);
   });
 });
 
@@ -285,123 +285,123 @@ describe("TestRoundTrip3D", () => {
 describe("TestParentChild", () => {
   /** Child at [0,0,0] with parent at [73,41,0] -> child becomes [73,41,0]. */
   test("test_position_only_parent", () => {
-    const parent_pos = [73.0, 41.0, 0.0];
-    const child_pos = [0.0, 0.0, 0.0];
-    const child_anchor = [50.0, 50.0, 0.0];
+    const parentPos = [73.0, 41.0, 0.0];
+    const childPos = [0.0, 0.0, 0.0];
+    const childAnchor = [50.0, 50.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
 
-    const parent_m = build_local_matrix(parent_pos, [0.0, 0.0, 0.0], scale, 0.0);
-    const child_m = build_local_matrix(child_pos, child_anchor, scale, 0.0);
+    const parentM = buildLocalMatrix(parentPos, [0.0, 0.0, 0.0], scale, 0.0);
+    const childM = buildLocalMatrix(childPos, childAnchor, scale, 0.0);
 
-    const world = parent_m.__matmul__(child_m);
-    const [d_pos, d_scale, d_rz] = decompose_transform(world, child_anchor);
-    _approx(d_pos, [73.0, 41.0, 0.0]);
-    _approx(d_scale, scale);
-    _approx(d_rz, 0.0);
+    const world = parentM.__matmul__(childM);
+    const [dPos, dScale, dRz] = decomposeTransform(world, childAnchor);
+    _approx(dPos, [73.0, 41.0, 0.0]);
+    _approx(dScale, scale);
+    _approx(dRz, 0.0);
   });
 
   /** Child at [100,0,0] with parent rotated 90deg -> child at [0,100,0]. */
   test("test_rotated_parent", () => {
-    const parent_m = build_local_matrix(
+    const parentM = buildLocalMatrix(
       [0.0, 0.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       90.0,
     );
-    const child_m = build_local_matrix(
+    const childM = buildLocalMatrix(
       [100.0, 0.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parent_m.__matmul__(child_m);
-    const [d_pos, d_scale, d_rz] = decompose_transform(world, [0.0, 0.0, 0.0]);
-    _approx(d_pos, [0.0, 100.0, 0.0]);
-    _approx(d_rz, 90.0);
+    const world = parentM.__matmul__(childM);
+    const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
+    _approx(dPos, [0.0, 100.0, 0.0]);
+    _approx(dRz, 90.0);
   });
 
   /** Child at [50,50,0] with parent at 200% -> child at [100,100,0] with 200% scale. */
   test("test_scaled_parent", () => {
-    const parent_m = build_local_matrix(
+    const parentM = buildLocalMatrix(
       [0.0, 0.0, 0.0],
       [0.0, 0.0, 0.0],
       [200.0, 200.0, 100.0],
       0.0,
     );
-    const child_m = build_local_matrix(
+    const childM = buildLocalMatrix(
       [50.0, 50.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parent_m.__matmul__(child_m);
-    const [d_pos, d_scale] = decompose_transform(world, [0.0, 0.0, 0.0]);
-    _approx(d_pos, [100.0, 100.0, 0.0]);
-    _approx(d_scale, [200.0, 200.0, 100.0]);
+    const world = parentM.__matmul__(childM);
+    const [dPos, dScale] = decomposeTransform(world, [0.0, 0.0, 0.0]);
+    _approx(dPos, [100.0, 100.0, 0.0]);
+    _approx(dScale, [200.0, 200.0, 100.0]);
   });
 
   /** Combined parent transform: pos + rotation + scale. */
   test("test_complex_parent", () => {
-    const parent_m = build_local_matrix(
+    const parentM = buildLocalMatrix(
       [30.0, 20.0, 0.0],
       [0.0, 0.0, 0.0],
       [150.0, 150.0, 100.0],
       30.0,
     );
-    const child_m = build_local_matrix(
+    const childM = buildLocalMatrix(
       [10.0, 5.0, 0.0],
       [0.0, 0.0, 0.0],
       [80.0, 80.0, 100.0],
       15.0,
     );
-    const world = parent_m.__matmul__(child_m);
-    const [d_pos, d_scale, d_rz] = decompose_transform(world, [0.0, 0.0, 0.0]);
+    const world = parentM.__matmul__(childM);
+    const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     // Verify round-trip: rebuild from decomposed values matches world
-    const m2 = build_local_matrix(d_pos, [0.0, 0.0, 0.0], d_scale, d_rz);
-    _mat_approx(world, m2, 1e-5);
+    const m2 = buildLocalMatrix(dPos, [0.0, 0.0, 0.0], dScale, dRz);
+    _matApprox(world, m2, 1e-5);
   });
 
   /** Parent with non-zero anchor: rotates around its anchor point. */
   test("test_parent_with_anchor_offset", () => {
-    const parent_anchor = [25.0, 25.0, 0.0];
-    const parent_m = build_local_matrix(
+    const parentAnchor = [25.0, 25.0, 0.0];
+    const parentM = buildLocalMatrix(
       [50.0, 50.0, 0.0],
-      parent_anchor,
+      parentAnchor,
       [100.0, 100.0, 100.0],
       90.0,
     );
-    const child_m = build_local_matrix(
+    const childM = buildLocalMatrix(
       [20.0, 0.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const world = parent_m.__matmul__(child_m);
-    const [d_pos, d_scale, d_rz] = decompose_transform(world, [0.0, 0.0, 0.0]);
+    const world = parentM.__matmul__(childM);
+    const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     // Rebuild from decomposed values
-    const m2 = build_local_matrix(d_pos, [0.0, 0.0, 0.0], d_scale, d_rz);
-    _mat_approx(world, m2, 1e-5);
+    const m2 = buildLocalMatrix(dPos, [0.0, 0.0, 0.0], dScale, dRz);
+    _matApprox(world, m2, 1e-5);
   });
 
   /** Assigning a new parent: child_new_local = inv(parent) @ child_world. */
   test("test_inverse_parent_gives_identity_child", () => {
-    const parent_m = build_local_matrix(
+    const parentM = buildLocalMatrix(
       [50.0, 30.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const child_world = build_local_matrix(
+    const childWorld = buildLocalMatrix(
       [50.0, 30.0, 0.0],
       [0.0, 0.0, 0.0],
       [100.0, 100.0, 100.0],
       0.0,
     );
-    const child_local = parent_m.inverse().__matmul__(child_world);
-    const [d_pos, d_scale, d_rz] = decompose_transform(child_local, [0.0, 0.0, 0.0]);
-    _approx(d_pos, [0.0, 0.0, 0.0]);
-    _approx(d_scale, [100.0, 100.0, 100.0]);
-    _approx(d_rz, 0.0);
+    const childLocal = parentM.inverse().__matmul__(childWorld);
+    const [dPos, dScale, dRz] = decomposeTransform(childLocal, [0.0, 0.0, 0.0]);
+    _approx(dPos, [0.0, 0.0, 0.0]);
+    _approx(dScale, [100.0, 100.0, 100.0]);
+    _approx(dRz, 0.0);
   });
 });
 
@@ -415,13 +415,13 @@ describe("TestEdgeCases", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [-100.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
     // Scale should come back negative on x
-    expect(d_scale[0] < 0).toBe(true);
+    expect(dScale[0] < 0).toBe(true);
     // Rebuild should match
-    const m2 = build_local_matrix(d_pos, anchor, d_scale, d_rz);
-    _mat_approx(m, m2, 1e-5);
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz);
+    _matApprox(m, m2, 1e-5);
   });
 
   /** Zero scale doesn't crash - clamped to epsilon. */
@@ -429,19 +429,19 @@ describe("TestEdgeCases", () => {
     const pos = [10.0, 20.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [0.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0);
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0);
     // Should not raise
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(d_pos, pos);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(dPos, pos);
   });
 
   test("test_180_rotation", () => {
     const pos = [0.0, 0.0, 0.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 180.0);
-    const [d_pos, d_scale, d_rz] = decompose_transform(m, anchor);
-    _approx(Math.abs(d_rz), 180.0, 0.01);
+    const m = buildLocalMatrix(pos, anchor, scale, 180.0);
+    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    _approx(Math.abs(dRz), 180.0, 0.01);
   });
 
   /** Near gimbal lock (ry=90) still decomposes to same matrix. */
@@ -449,12 +449,12 @@ describe("TestEdgeCases", () => {
     const pos = [10.0, 20.0, 30.0];
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
-    const m = build_local_matrix(pos, anchor, scale, 0.0, { rotate_x: 45.0, rotate_y: 89.99 });
-    const [d_pos, d_scale, d_rz, d_rx, d_ry] = decompose_transform(m, anchor);
+    const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotate_x: 45.0, rotate_y: 89.99 });
+    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
     // The exact angle decomposition may differ but the matrix
     // must be equivalent.
-    const m2 = build_local_matrix(d_pos, anchor, d_scale, d_rz, { rotate_x: d_rx, rotate_y: d_ry });
-    _mat_approx(m, m2, 1e-4);
+    const m2 = buildLocalMatrix(dPos, anchor, dScale, dRz, { rotate_x: dRx, rotate_y: dRy });
+    _matApprox(m, m2, 1e-4);
   });
 });
 
@@ -470,42 +470,42 @@ describe("TestEdgeCases", () => {
  * on X.
  */
 describe("TestGimbalLock", () => {
-  const gamma_rows: number[] = [30.0, 60.0, 90.0, 135.0, 210.0, 330.0];
-  const parent_composed_rows: [number, number][] = [
+  const gammaRows: number[] = [30.0, 60.0, 90.0, 135.0, 210.0, 330.0];
+  const parentComposedRows: [number, number][] = [
     [90.0, 270.0],
     [-90.0, 90.0],
   ];
   // pytest stacks parametrize decorators with the top one (gamma) varying fastest.
-  const match_rows: [number, number, number][] = parent_composed_rows.flatMap(
-    ([parent_y, composed_y]) =>
-      gamma_rows.map((gamma): [number, number, number] => [gamma, parent_y, composed_y]),
+  const matchRows: [number, number, number][] = parentComposedRows.flatMap(
+    ([parentY, composedY]) =>
+      gammaRows.map((gamma): [number, number, number] => [gamma, parentY, composedY]),
   );
 
-  test.each(match_rows)("test_matches_after_effects[%#]", (gamma, parent_y, composed_y) => {
-    const delta = _rotate_y(parent_y).inverse();
+  test.each(matchRows)("test_matches_after_effects[%#]", (gamma, parentY, composedY) => {
+    const delta = _rotateY(parentY).inverse();
     expect(
-      approx(compose_orientation([0.0, 0.0, gamma], delta), [0.0, composed_y, gamma], {
+      approx(composeOrientation([0.0, 0.0, gamma], delta), [0.0, composedY, gamma], {
         abs: 1e-9,
       }),
     ).toBe(true);
   });
 
-  const reconstruct_rows: [number, number][] = [90.0, -90.0].flatMap(
-    (parent_y): [number, number][] =>
-      [0.0, 45.0, 137.0, 300.0].map((gamma): [number, number] => [gamma, parent_y]),
+  const reconstructRows: [number, number][] = [90.0, -90.0].flatMap(
+    (parentY): [number, number][] =>
+      [0.0, 45.0, 137.0, 300.0].map((gamma): [number, number] => [gamma, parentY]),
   );
 
-  test.each(reconstruct_rows)("test_reconstructs_the_rotation[%#]", (gamma, parent_y) => {
+  test.each(reconstructRows)("test_reconstructs_the_rotation[%#]", (gamma, parentY) => {
     // The split is a convention, but it must still describe the SAME
     // rotation - solving the pole relation for X instead did not, at
     // Y = -90.
-    const delta = _rotate_y(parent_y).inverse();
-    const original = _rotate_x(0.0).__matmul__(_rotate_y(0.0)).__matmul__(_rotate_z(gamma));
+    const delta = _rotateY(parentY).inverse();
+    const original = _rotateX(0.0).__matmul__(_rotateY(0.0)).__matmul__(_rotateZ(gamma));
     const composed = delta.__matmul__(original);
-    const angles = compose_orientation([0.0, 0.0, gamma], delta);
-    const rebuilt = _rotate_x(angles[0])
-      .__matmul__(_rotate_y(angles[1]))
-      .__matmul__(_rotate_z(angles[2]));
-    _mat_approx(composed, rebuilt, 1e-9);
+    const angles = composeOrientation([0.0, 0.0, gamma], delta);
+    const rebuilt = _rotateX(angles[0])
+      .__matmul__(_rotateY(angles[1]))
+      .__matmul__(_rotateZ(angles[2]));
+    _matApprox(composed, rebuilt, 1e-9);
   });
 });

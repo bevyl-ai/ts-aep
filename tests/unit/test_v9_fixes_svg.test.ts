@@ -9,12 +9,12 @@ import { describe, expect, test } from "bun:test";
 import { ImportAsType, ImportOptions, new as new_ } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { GradientPaint, SolidPaint, UnsupportedSVGError, read_svg } from "../../src/py_aep/svg/index.ts";
-import { parse_color } from "../../src/py_aep/svg/colors.ts";
-import { IDENTITY, parse_transform } from "../../src/py_aep/svg/transform.ts";
-import { at, encode, max, min, py_assert, py_eq, zip, type Path } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { as_instance } from "../helpers.ts";
+import { GradientPaint, SolidPaint, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
+import { parseColor } from "../../src/py_aep/svg/colors.ts";
+import { IDENTITY, parseTransform } from "../../src/py_aep/svg/transform.ts";
+import { at, encode, max, min, pyAssert, pyEq, zip, type Path } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { asInstance } from "../helpers.ts";
 
 const NS = 'xmlns="http://www.w3.org/2000/svg"';
 
@@ -23,7 +23,7 @@ function _svg(body: string, attrs = 'viewBox="0 0 200 100"'): string {
 }
 
 function _vertices(markup: string): number[][] {
-  return read_svg(markup).drawables[0].subpaths[0].vertices;
+  return readSvg(markup).drawables[0].subpaths[0].vertices;
 }
 
 function _bbox(markup: string): [number, number, number, number] {
@@ -33,15 +33,15 @@ function _bbox(markup: string): [number, number, number, number] {
   return [min(xs), min(ys), max(xs), max(ys)];
 }
 
-function _import(tmp_path: Path, markup: string): CompItem {
-  const svg = tmp_path.div("probe.svg");
+function _import(tmpPath: Path, markup: string): CompItem {
+  const svg = tmpPath.div("probe.svg");
   // encoding="utf-8" is the default of pyrt Path.write_text.
   svg.write_text(markup);
   const app = new_();
   const opts = new ImportOptions(svg);
   opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
   const comp = app.project.importFile(opts);
-  return as_instance(comp, CompItem);
+  return asInstance(comp, CompItem);
 }
 
 function _approx(a: number[], b: number[], tol = 1e-9): boolean {
@@ -50,17 +50,17 @@ function _approx(a: number[], b: number[], tol = 1e-9): boolean {
 
 describe("TestMiterLimit", () => {
   test.each(["0.5", "0", "-4"])("test_below_one_clamps_to_one[%#]", (value) => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // AE 2026 imports stroke-miterlimit="0.5" with Miter Limit 1.0.
     const comp = _import(
-      tmp_path,
+      tmpPath,
       _svg(
         "<path d='M10 10 L50 50 L90 10' stroke='red' fill='none' " +
           `stroke-miterlimit='${value}'/>`,
       ),
     );
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
-    const stroke = as_instance(contents.property(0), PropertyGroup)
+    const stroke = asInstance(contents.property(0), PropertyGroup)
       .property("ADBE Vectors Group")
       .property("ADBE Vector Graphic - Stroke");
     expect(stroke.property("ADBE Vector Stroke Miter Limit").value).toBe(1.0);
@@ -71,8 +71,8 @@ describe("TestBoundingBoxGradients", () => {
   const _RECT = "<rect x='20' y='10' width='80' height='40' fill='url(#g)'/>";
 
   const _paint = (gradient: string): GradientPaint => {
-    const paint = read_svg(_svg(`<defs>${gradient}</defs>${_RECT}`)).drawables[0].fill;
-    return as_instance(paint, GradientPaint);
+    const paint = readSvg(_svg(`<defs>${gradient}</defs>${_RECT}`)).drawables[0].fill;
+    return asInstance(paint, GradientPaint);
   };
 
   test("test_plain_number_radius_is_a_box_fraction", () => {
@@ -116,7 +116,7 @@ describe("TestBoundingBoxGradients", () => {
         "<stop offset='0.3' stop-color='blue'/></linearGradient>",
     );
     expect(
-      py_eq(
+      pyEq(
         paint.stops.map((s) => [s.offset, s.color.slice(0, 3)]),
         [
           [0.6, [1.0, 0.0, 0.0]],
@@ -130,21 +130,21 @@ describe("TestBoundingBoxGradients", () => {
 describe("TestMalformedInput", () => {
   test("test_wrong_arity_transform_is_ignored", () => {
     // AE 2026 imports a `matrix(1 0 0 1)` group untransformed.
-    expect(py_eq([...parse_transform("matrix(1 0 0 1)")], [...IDENTITY])).toBe(true);
-    expect(py_eq([...parse_transform("translate(5) skewX()")], [...IDENTITY])).toBe(true);
+    expect(pyEq([...parseTransform("matrix(1 0 0 1)")], [...IDENTITY])).toBe(true);
+    expect(pyEq([...parseTransform("translate(5) skewX()")], [...IDENTITY])).toBe(true);
     const bbox = _bbox(
       _svg("<g transform='matrix(1 0 0 1)'><rect x='3' width='10' height='10'/></g>"),
     );
-    expect(py_eq(bbox, [3.0, 0.0, 13.0, 10.0])).toBe(true);
+    expect(pyEq(bbox, [3.0, 0.0, 13.0, 10.0])).toBe(true);
   });
 
   test("test_non_finite_transform_is_ignored", () => {
-    expect(py_eq([...parse_transform("rotate(1e400)")], [...IDENTITY])).toBe(true);
-    expect(py_eq([...parse_transform("skewY(1e400)")], [...IDENTITY])).toBe(true);
+    expect(pyEq([...parseTransform("rotate(1e400)")], [...IDENTITY])).toBe(true);
+    expect(pyEq([...parseTransform("skewY(1e400)")], [...IDENTITY])).toBe(true);
   });
 
   test("test_unknown_transform_still_raises", () => {
-    raises(UnsupportedSVGError, () => parse_transform("perspective(3)"), "perspective");
+    raises(UnsupportedSVGError, () => parseTransform("perspective(3)"), "perspective");
   });
 
   test("test_tiny_arc_radius_scales_up", () => {
@@ -163,23 +163,23 @@ describe("TestMalformedInput", () => {
     ["<path d='M0 0 L 1e39 10 L 0 10 Z'/>"],
     ["<rect width='10' height='10' stroke='red' stroke-width='1e400'/>"],
   ])("test_out_of_range_number_raises_unsupported[%#]", (body) => {
-    raises(UnsupportedSVGError, () => read_svg(_svg(body)), "out of range");
+    raises(UnsupportedSVGError, () => readSvg(_svg(body)), "out of range");
   });
 
   test.each([[""], ["not xml"], [`<svg ${NS}><rect>`], [`<svg ${NS}>&undefined;</svg>`]])(
     "test_malformed_xml_raises_unsupported[%#]",
     (markup) => {
-      raises(UnsupportedSVGError, () => read_svg(encode(markup, "utf-8")), "Malformed SVG");
+      raises(UnsupportedSVGError, () => readSvg(encode(markup, "utf-8")), "Malformed SVG");
     },
   );
 
   test.each([['viewBox="0 0 0.5 100"'], ['viewBox="0 0 1e400 100"'], ['viewBox="0 0 0 0"'], [""]])(
     "test_unusable_canvas_raises_unsupported[%#]",
     (attrs) => {
-      const tmp_path = make_tmp_path();
+      const tmpPath = makeTmpPath();
       raises(
         UnsupportedSVGError,
-        () => _import(tmp_path, _svg("<rect width='2' height='2'/>", attrs)),
+        () => _import(tmpPath, _svg("<rect width='2' height='2'/>", attrs)),
         "1 to 30000 px",
       );
     },
@@ -196,10 +196,10 @@ describe("TestLengths", () => {
 
   test("test_percentage_stroke_width_refers_to_the_diagonal", () => {
     // AE 2026: 5 % of a 200 x 100 viewBox is 7.906.
-    const stroke = read_svg(
+    const stroke = readSvg(
       _svg("<rect width='10' height='10' stroke='red' stroke-width='5%'/>"),
     ).drawables[0].stroke;
-    py_assert(stroke != null);
+    pyAssert(stroke != null);
     expect(approx(stroke.width, 0.05 * Math.sqrt((200 ** 2 + 100 ** 2) / 2))).toBe(true);
   });
 
@@ -232,23 +232,23 @@ describe("TestLengths", () => {
 describe("TestCascadeAndViewports", () => {
   test("test_important_rule_beats_inline_style", () => {
     // AE 2026: `rect{fill:red !important}` wins over style="fill:blue".
-    const fill = read_svg(
+    const fill = readSvg(
       _svg(
         "<style>rect{fill:red !important}</style>" +
           "<rect style='fill:blue' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(py_eq(as_instance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(pyEq(asInstance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_inline_important_beats_important_rule", () => {
-    const fill = read_svg(
+    const fill = readSvg(
       _svg(
         "<style>rect{fill:red !important}</style>" +
           "<rect style='fill:blue !important' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(py_eq(as_instance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
+    expect(pyEq(asInstance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
   });
 
   test("test_nested_svg_maps_its_viewbox", () => {
@@ -302,7 +302,7 @@ describe("TestRadialRotation", () => {
     ["", 360.0],
   ])("test_grad_rotation_is_360_minus_the_screen_angle[%#]", (rotate, expected) => {
     // AE 2026 writes Grad Rotation 330 / 420 / 360 for these.
-    const paint = read_svg(
+    const paint = readSvg(
       _svg(
         "<defs><radialGradient id='g' gradientUnits='userSpaceOnUse' " +
           `cx='100' cy='50' r='30' gradientTransform='${rotate}'>` +
@@ -311,13 +311,13 @@ describe("TestRadialRotation", () => {
           "<rect x='40' width='120' height='100' fill='url(#g)'/>",
       ),
     ).drawables[0].fill;
-    expect(approx(as_instance(paint, GradientPaint).rotation, expected)).toBe(true);
+    expect(approx(asInstance(paint, GradientPaint).rotation, expected)).toBe(true);
   });
 });
 
 describe("TestColors", () => {
   test("test_hsl_clamps_saturation_and_lightness_first", () => {
-    expect(py_eq(parse_color("hsl(400, 150%, -5%)"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
-    expect(py_eq(parse_color("hsl(120, 100%, 25%)"), [0.0, 0.5, 0.0, 1.0])).toBe(true);
+    expect(pyEq(parseColor("hsl(400, 150%, -5%)"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(pyEq(parseColor("hsl(120, 100%, 25%)"), [0.0, 0.5, 0.0, 1.0])).toBe(true);
   });
 });

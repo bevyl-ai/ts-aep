@@ -24,13 +24,13 @@ import {
   Path,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   decode,
   repr,
   rstrip,
   sorted,
 } from "../../pyrt/index.ts";
-import { profile_id_for_name } from "../enums/mappings.ts";
+import { profileIdForName } from "../enums/mappings.ts";
 
 /**
  * Compute the 16-byte ICC Profile ID per ISO 15076-1 7.2.18.
@@ -42,10 +42,10 @@ import { profile_id_for_name } from "../enums/mappings.ts";
  * @param data - Raw ICC profile bytes.
  * @returns The 16-byte digest.
  */
-export function icc_profile_id(data: Uint8Array): Uint8Array {
+export function iccProfileId(data: Uint8Array): Uint8Array {
   let buf = new Uint8Array(data);
   // bytearray slice assignment: a short buffer is padded/grown instead of clamped.
-  const zero_slice = (start: number, stop: number): void => {
+  const zeroSlice = (start: number, stop: number): void => {
     const s0 = Math.min(start, buf.length);
     const e0 = Math.max(s0, Math.min(stop, buf.length));
     const grown = new Uint8Array(buf.length - (e0 - s0) + (stop - start));
@@ -53,9 +53,9 @@ export function icc_profile_id(data: Uint8Array): Uint8Array {
     grown.set(buf.subarray(e0), s0 + (stop - start));
     buf = grown;
   };
-  zero_slice(44, 48);
-  zero_slice(64, 68);
-  zero_slice(84, 100);
+  zeroSlice(44, 48);
+  zeroSlice(64, 68);
+  zeroSlice(84, 100);
   return md5(buf);
 }
 
@@ -68,41 +68,41 @@ export function icc_profile_id(data: Uint8Array): Uint8Array {
  * @param data - Raw ICC profile bytes.
  * @returns The profile description string, or `null` if not found.
  */
-export function icc_profile_description(data: Uint8Array): string | null {
+export function iccProfileDescription(data: Uint8Array): string | null {
   if (data.length < 132) return null;
-  const tag_count = bytes_.int_from_bytes(bytes_.slice(data, 128, 132), "big");
+  const tagCount = bytes_.intFromBytes(bytes_.slice(data, 128, 132), "big");
   let offset = 132;
-  for (let i = 0; i < tag_count; i++) {
+  for (let i = 0; i < tagCount; i++) {
     if (offset + 12 > data.length) return null;
     const sig = bytes_.slice(data, offset, offset + 4);
-    const tag_offset = bytes_.int_from_bytes(bytes_.slice(data, offset + 4, offset + 8), "big");
-    if (bytes_eq(sig, b("desc"))) {
-      if (tag_offset + 12 > data.length) return null;
-      const type_sig = bytes_.slice(data, tag_offset, tag_offset + 4);
-      if (bytes_eq(type_sig, b("desc"))) {
+    const tagOffset = bytes_.intFromBytes(bytes_.slice(data, offset + 4, offset + 8), "big");
+    if (bytesEq(sig, b("desc"))) {
+      if (tagOffset + 12 > data.length) return null;
+      const typeSig = bytes_.slice(data, tagOffset, tagOffset + 4);
+      if (bytesEq(typeSig, b("desc"))) {
         // ICCv2 textDescriptionType
-        const str_len = bytes_.int_from_bytes(bytes_.slice(data, tag_offset + 8, tag_offset + 12), "big");
-        const end = Math.min(tag_offset + 12 + str_len, data.length);
-        const raw = bytes_.slice(data, tag_offset + 12, end);
+        const strLen = bytes_.intFromBytes(bytes_.slice(data, tagOffset + 8, tagOffset + 12), "big");
+        const end = Math.min(tagOffset + 12 + strLen, data.length);
+        const raw = bytes_.slice(data, tagOffset + 12, end);
         return decode(bytes_.rstrip(raw, b("\x00")), "ascii", "replace");
       }
-      if (bytes_eq(type_sig, b("mluc"))) {
+      if (bytesEq(typeSig, b("mluc"))) {
         // ICCv4 multiLocalizedUnicodeType
-        if (tag_offset + 16 > data.length) return null;
-        const rec_count = bytes_.int_from_bytes(bytes_.slice(data, tag_offset + 8, tag_offset + 12), "big");
-        if (rec_count === 0) return null;
-        const rec_off = tag_offset + 16;
-        const s_len = bytes_.int_from_bytes(bytes_.slice(data, rec_off + 4, rec_off + 8), "big");
-        const s_offset = bytes_.int_from_bytes(bytes_.slice(data, rec_off + 8, rec_off + 12), "big");
-        const abs_off = tag_offset + s_offset;
-        const end = Math.min(abs_off + s_len, data.length);
-        const raw16 = bytes_.slice(data, abs_off, end);
+        if (tagOffset + 16 > data.length) return null;
+        const recCount = bytes_.intFromBytes(bytes_.slice(data, tagOffset + 8, tagOffset + 12), "big");
+        if (recCount === 0) return null;
+        const recOff = tagOffset + 16;
+        const sLen = bytes_.intFromBytes(bytes_.slice(data, recOff + 4, recOff + 8), "big");
+        const sOffset = bytes_.intFromBytes(bytes_.slice(data, recOff + 8, recOff + 12), "big");
+        const absOff = tagOffset + sOffset;
+        const end = Math.min(absOff + sLen, data.length);
+        const raw16 = bytes_.slice(data, absOff, end);
         // pyrt decode() keeps lone surrogates and drops a trailing odd byte; CPython emits U+FFFD for each.
         const dec16 = decode(raw16, "utf-16-be", "replace");
-        const odd_after_high = raw16.length % 2 === 1 && /[\uD800-\uDBFF]$/.test(dec16);
+        const oddAfterHigh = raw16.length % 2 === 1 && /[\uD800-\uDBFF]$/.test(dec16);
         const text16 =
           dec16.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD") +
-          (raw16.length % 2 === 1 && !odd_after_high ? "\uFFFD" : "");
+          (raw16.length % 2 === 1 && !oddAfterHigh ? "\uFFFD" : "");
         return rstrip(text16, "\x00");
       }
     }
@@ -122,16 +122,16 @@ export function icc_profile_description(data: Uint8Array): string | null {
  * (`* wsRGB`, `* wscRGB`) that After Effects generates at runtime and caches
  * nowhere else on disk.
  */
-export function default_icc_directories(): Path[] {
+export function defaultIccDirectories(): Path[] {
   if (host.platform === "win32") {
     const base = new Path("C:\\Program Files (x86)\\Common Files\\Adobe\\Color");
     const dirs = [base.div("MPProfiles"), base.div("Profiles"), base.div("Profiles", "Recommended")];
-    const local_appdata = host.env.LOCALAPPDATA;
-    if (local_appdata) {
-      dirs.push(new Path(local_appdata).div("Adobe", "Color", "Profiles"));
+    const localAppdata = host.env.LOCALAPPDATA;
+    if (localAppdata) {
+      dirs.push(new Path(localAppdata).div("Adobe", "Color", "Profiles"));
     }
-    const system_root = host.env.SystemRoot ?? "C:\\Windows";
-    dirs.push(new Path(system_root).div("System32", "spool", "drivers", "color"));
+    const systemRoot = host.env.SystemRoot ?? "C:\\Windows";
+    dirs.push(new Path(systemRoot).div("System32", "spool", "drivers", "color"));
     return dirs;
   }
   // macOS
@@ -185,7 +185,7 @@ export class IccProfileLibrary {
    *   platform's standard Adobe Color directories are used.
    */
   constructor(dirs: Path[] | null = null) {
-    this._dirs = dirs != null ? dirs : default_icc_directories();
+    this._dirs = dirs != null ? dirs : defaultIccDirectories();
     this._by_name = null;
   }
 
@@ -194,7 +194,7 @@ export class IccProfileLibrary {
     // only the path: the OS color store commonly holds hundreds of
     // profiles, and the library singleton lives for the whole process.
     if (this._by_name == null) {
-      const by_name = new Map<string, Path>();
+      const byName = new Map<string, Path>();
       for (const directory of this._dirs) {
         if (!directory.is_dir()) continue;
         for (const f of sorted(directory.iterdir())) {
@@ -204,17 +204,17 @@ export class IccProfileLibrary {
             data = f.read_bytes();
           } catch (e) {
             // pyrt Path.read_bytes rethrows non-ENOENT Node errors (EACCES, EISDIR, ...) unwrapped.
-            const has_code = (typeof e === "object" || typeof e === "function") && e !== null && "code" in e;
-            if (!(e instanceof OSError || (has_code && typeof e.code === "string"))) throw e;
+            const hasCode = (typeof e === "object" || typeof e === "function") && e !== null && "code" in e;
+            if (!(e instanceof OSError || (hasCode && typeof e.code === "string"))) throw e;
             continue;
           }
-          if (data.length < 132 || !bytes_eq(bytes_.slice(data, 36, 40), b("acsp"))) continue;
-          const desc = icc_profile_description(data);
+          if (data.length < 132 || !bytesEq(bytes_.slice(data, 36, 40), b("acsp"))) continue;
+          const desc = iccProfileDescription(data);
           // First directory wins (MPProfiles is the canonical set).
-          if (desc && !by_name.has(desc)) by_name.set(desc, f);
+          if (desc && !byName.has(desc)) byName.set(desc, f);
         }
       }
-      this._by_name = by_name;
+      this._by_name = byName;
     }
     return this._by_name;
   }
@@ -241,15 +241,15 @@ export class IccProfileLibrary {
    *   found on disk.
    */
   hash_for(name: string): Uint8Array {
-    const known = profile_id_for_name(name);
+    const known = profileIdForName(name);
     if (known != null) return known;
     const path = this._index().get(name);
     if (path == null) throw new ColorProfileNotFoundError(name, this._dirs);
-    return icc_profile_id(path.read_bytes());
+    return iccProfileId(path.read_bytes());
   }
 }
 
-export let _default_library: IccProfileLibrary | null = null;
+export let _defaultLibrary: IccProfileLibrary | null = null;
 
 /**
  * Return a shared `IccProfileLibrary` over the standard Adobe Color dirs.
@@ -257,7 +257,7 @@ export let _default_library: IccProfileLibrary | null = null;
  * Used where no per-project `icc_profile_dirs` override is available (e.g.
  * footage sources). Scanned once and cached for the process.
  */
-export function default_icc_library(): IccProfileLibrary {
-  if (_default_library == null) _default_library = new IccProfileLibrary();
-  return _default_library;
+export function defaultIccLibrary(): IccProfileLibrary {
+  if (_defaultLibrary == null) _defaultLibrary = new IccProfileLibrary();
+  return _defaultLibrary;
 }

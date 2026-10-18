@@ -7,8 +7,8 @@
 // are accepted, as Python does.
 
 import { AttributeError, KeyError, ValueError, TypeError_ } from "./errors.ts";
-import { float, float_repr, int, PyFloat, pyfloat } from "./num.ts";
-import { py_cmp, repr, type_name } from "./builtins.ts";
+import { float, floatRepr, int, PyFloat, pyfloat } from "./num.ts";
+import { pyCmp, repr, typeName } from "./builtins.ts";
 import { decode } from "./codecs.ts";
 
 /** `json.JSONDecodeError` (a `ValueError`) with CPython's message and position fields. */
@@ -19,7 +19,7 @@ export class JSONDecodeError extends ValueError {
   declare lineno: number;
   declare colno: number;
   constructor(msg: string, doc: string, pos: number) {
-    const lineno = count_nl(doc, pos) + 1;
+    const lineno = countNl(doc, pos) + 1;
     const colno = pos - doc.lastIndexOf("\n", pos - 1);
     super(`${msg}: line ${lineno} column ${colno} (char ${pos})`);
     this.msg = msg;
@@ -30,7 +30,7 @@ export class JSONDecodeError extends ValueError {
   }
 }
 
-function count_nl(s: string, end: number): number {
+function countNl(s: string, end: number): number {
   let n = 0;
   for (let i = s.indexOf("\n"); i !== -1 && i < end; i = s.indexOf("\n", i + 1)) n++;
   return n;
@@ -47,17 +47,17 @@ export type LoadsOptions = {
   object_pairs_hook?: (pairs: [string, JsonValue][]) => JsonValue;
 };
 
-function default_int(text: string): number | bigint {
+function defaultInt(text: string): number | bigint {
   const n = Number(text);
   if (n === 0) return 0; // `-0` is the int 0
   return Number.isSafeInteger(n) ? n : BigInt(text);
 }
 
-const default_float = (text: string): PyFloat => pyfloat(Number(text));
+const defaultFloat = (text: string): PyFloat => pyfloat(Number(text));
 const CONSTANTS: Record<string, number> = { NaN: NaN, Infinity: Infinity, "-Infinity": -Infinity };
 
 /** `json.detect_encoding(b)` */
-function detect_encoding(b: Uint8Array): string {
+function detectEncoding(b: Uint8Array): string {
   if (b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf) return "utf-8-sig";
   if ((b[0] === 0xff && b[1] === 0xfe) || (b[0] === 0xfe && b[1] === 0xff)) {
     return b[0] === 0xff && b[1] === 0xfe && b[2] === 0 && b[3] === 0 ? "utf-32" : "utf-16";
@@ -87,7 +87,7 @@ const ESC: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f
 export type JsonValue = null | boolean | number | bigint | PyFloat | string | JsonValue[] | Map<string, JsonValue>;
 
 /** Python `x[key]` on a decoded JSON value: `KeyError` when absent, `TypeError` when `x` is no object. */
-export function json_getitem(x: JsonValue, key: string): JsonValue {
+export function jsonGetitem(x: JsonValue, key: string): JsonValue {
   if (x instanceof Map) {
     const value = x.get(key);
     if (value === undefined) throw new KeyError(repr(key));
@@ -95,46 +95,46 @@ export function json_getitem(x: JsonValue, key: string): JsonValue {
   }
   if (Array.isArray(x)) throw new TypeError_("list indices must be integers or slices, not str");
   if (typeof x === "string") throw new TypeError_("string indices must be integers, not 'str'");
-  throw new TypeError_(`'${type_name(x)}' object is not subscriptable`);
+  throw new TypeError_(`'${typeName(x)}' object is not subscriptable`);
 }
 
 /** Python `x.get(key, default)` on a decoded JSON value: `AttributeError` when `x` is no object. */
-export function json_get<D>(x: JsonValue, key: string, default_: D): JsonValue | D {
-  if (!(x instanceof Map)) throw new AttributeError(`'${type_name(x)}' object has no attribute 'get'`);
+export function jsonGet<D>(x: JsonValue, key: string, default_: D): JsonValue | D {
+  if (!(x instanceof Map)) throw new AttributeError(`'${typeName(x)}' object has no attribute 'get'`);
   const value = x.get(key);
   return value === undefined ? default_ : value;
 }
 
 /** Python `int(x)` on a decoded JSON value: `TypeError` for null, lists and objects. */
-export function json_int(x: JsonValue): number {
+export function jsonInt(x: JsonValue): number {
   if (x === null || Array.isArray(x) || x instanceof Map) {
-    throw new TypeError_(`int() argument must be a string, a bytes-like object or a real number, not '${type_name(x)}'`);
+    throw new TypeError_(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
   }
   return int(x);
 }
 
 /** Python `float(x)` on a decoded JSON value: `TypeError` for null, lists and objects. */
-export function json_float(x: JsonValue): number {
+export function jsonFloat(x: JsonValue): number {
   if (x === null || Array.isArray(x) || x instanceof Map) {
-    throw new TypeError_(`float() argument must be a string or a real number, not '${type_name(x)}'`);
+    throw new TypeError_(`float() argument must be a string or a real number, not '${typeName(x)}'`);
   }
   return float(typeof x === "bigint" ? Number(x) : x);
 }
 
 /** `json.loads(s)`. */
-export function json_loads(s: string | Uint8Array, opts: LoadsOptions = {}): JsonValue {
+export function jsonLoads(s: string | Uint8Array, opts: LoadsOptions = {}): JsonValue {
   let text: string;
   if (s instanceof Uint8Array) {
-    const enc = detect_encoding(s);
+    const enc = detectEncoding(s);
     text = enc === "utf-8-sig" ? decode(s.subarray(3), "utf-8") : decode(s, enc);
   } else {
     text = String(s);
     if (text.startsWith("﻿")) throw new JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)", text, 0);
   }
-  const parse_float = opts.parse_float ?? default_float;
-  const parse_int = opts.parse_int ?? default_int;
-  const parse_constant = opts.parse_constant ?? ((c: string) => CONSTANTS[c]);
-  const pairs_hook = opts.object_pairs_hook ?? ((pairs: [string, JsonValue][]) => new Map(pairs));
+  const floatParser = opts.parse_float ?? defaultFloat;
+  const intParser = opts.parse_int ?? defaultInt;
+  const parseConstant = opts.parse_constant ?? ((c: string) => CONSTANTS[c]);
+  const pairsHook = opts.object_pairs_hook ?? ((pairs: [string, JsonValue][]) => new Map(pairs));
   const n = text.length;
   const fail: (msg: string, pos: number) => never = (msg, pos) => {
     throw new JSONDecodeError(msg, text, pos);
@@ -193,51 +193,51 @@ export function json_loads(s: string | Uint8Array, opts: LoadsOptions = {}): Jso
   const NUM = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
 
   // scan_once: returns [value, end] or null (StopIteration) at `i`.
-  const scan_once = (i: number): [JsonValue, number] | null => {
+  const scanOnce = (i: number): [JsonValue, number] | null => {
     if (i >= n) return null;
     const c = text[i];
     if (c === '"') return scanstring(i + 1);
-    if (c === "{") return parse_object(i + 1);
-    if (c === "[") return parse_array(i + 1);
+    if (c === "{") return parseObject(i + 1);
+    if (c === "[") return parseArray(i + 1);
     if (c === "n" && text.startsWith("null", i)) return [null, i + 4];
     if (c === "t" && text.startsWith("true", i)) return [true, i + 4];
     if (c === "f" && text.startsWith("false", i)) return [false, i + 5];
-    if (c === "N" && text.startsWith("NaN", i)) return [parse_constant("NaN"), i + 3];
-    if (c === "I" && text.startsWith("Infinity", i)) return [parse_constant("Infinity"), i + 8];
-    if (c === "-" && text.startsWith("-Infinity", i)) return [parse_constant("-Infinity"), i + 9];
+    if (c === "N" && text.startsWith("NaN", i)) return [parseConstant("NaN"), i + 3];
+    if (c === "I" && text.startsWith("Infinity", i)) return [parseConstant("Infinity"), i + 8];
+    if (c === "-" && text.startsWith("-Infinity", i)) return [parseConstant("-Infinity"), i + 9];
     NUM.lastIndex = i;
     const m = NUM.exec(text);
     if (m === null) return null;
     const end = i + m[0].length;
-    return [m[1] !== undefined || m[2] !== undefined ? parse_float(m[0]) : parse_int(m[0]), end];
+    return [m[1] !== undefined || m[2] !== undefined ? floatParser(m[0]) : intParser(m[0]), end];
   };
 
-  const parse_object = (i: number): [JsonValue, number] => {
+  const parseObject = (i: number): [JsonValue, number] => {
     const pairs: [string, JsonValue][] = [];
     i = skip(i);
-    if (text[i] === "}") return [pairs_hook(pairs), i + 1];
+    if (text[i] === "}") return [pairsHook(pairs), i + 1];
     for (;;) {
       if (text[i] !== '"') fail("Expecting property name enclosed in double quotes", i);
       const [key, kend] = scanstring(i + 1);
       i = skip(kend);
       if (text[i] !== ":") fail("Expecting ':' delimiter", i);
       i = skip(i + 1);
-      const r = scan_once(i);
+      const r = scanOnce(i);
       if (r === null) fail("Expecting value", i);
       pairs.push([key, r[0]]);
       i = skip(r[1]);
-      if (text[i] === "}") return [pairs_hook(pairs), i + 1];
+      if (text[i] === "}") return [pairsHook(pairs), i + 1];
       if (text[i] !== ",") fail("Expecting ',' delimiter", i);
       i = skip(i + 1);
     }
   };
 
-  const parse_array = (i: number): [JsonValue[], number] => {
+  const parseArray = (i: number): [JsonValue[], number] => {
     const out: JsonValue[] = [];
     i = skip(i);
     if (text[i] === "]") return [out, i + 1];
     for (;;) {
-      const r = scan_once(i);
+      const r = scanOnce(i);
       if (r === null) fail("Expecting value", i);
       out.push(r[0]);
       i = skip(r[1]);
@@ -248,7 +248,7 @@ export function json_loads(s: string | Uint8Array, opts: LoadsOptions = {}): Jso
   };
 
   const start = skip(0);
-  const r = scan_once(start);
+  const r = scanOnce(start);
   if (r === null) fail("Expecting value", start);
   const end = skip(r[1]);
   if (end !== n) fail("Extra data", end);
@@ -277,7 +277,7 @@ const ESCAPE_DCT: Record<string, string> = {
 };
 
 /** `json.encoder.encode_basestring_ascii` (per UTF-16 unit, lowercase hex, as CPython). */
-export function encode_basestring_ascii(s: string): string {
+export function encodeBasestringAscii(s: string): string {
   let out = '"';
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -291,7 +291,7 @@ export function encode_basestring_ascii(s: string): string {
 }
 
 /** `json.encoder.encode_basestring` (`ensure_ascii=False`). */
-export function encode_basestring(s: string): string {
+export function encodeBasestring(s: string): string {
   let out = '"';
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -304,14 +304,14 @@ export function encode_basestring(s: string): string {
   return out + '"';
 }
 
-function is_plain_object(o: unknown): o is Record<string, unknown> {
+function isPlainObject(o: unknown): o is Record<string, unknown> {
   if (o === null || typeof o !== "object") return false;
   const p = Object.getPrototypeOf(o);
   return p === Object.prototype || p === null;
 }
 
 /** `int.__repr__` for an integral JS number (exact decimal, no exponent). */
-function int_repr(x: number): string {
+function intRepr(x: number): string {
   return Number.isSafeInteger(x) ? String(x) : BigInt(x).toString();
 }
 
@@ -320,12 +320,12 @@ function int_repr(x: number): string {
  * plain object is a JSON object, an array a JSON array, an integral `number` or a
  * `bigint` an int, a non-integral `number` or a `PyFloat` a float.
  */
-export function json_dumps(obj: unknown, opts: DumpsOptions = {}): string {
+export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
   const { ensure_ascii = true, allow_nan = true, sort_keys = false, skipkeys = false } = opts;
   const default_ = opts.default_ ?? null;
   const indent = typeof opts.indent === "number" ? " ".repeat(opts.indent) : (opts.indent ?? null);
-  const [item_sep, key_sep] = opts.separators ?? (indent !== null ? [",", ": "] : [", ", ": "]);
-  const enc = ensure_ascii ? encode_basestring_ascii : encode_basestring;
+  const [itemSep, keySep] = opts.separators ?? (indent !== null ? [",", ": "] : [", ", ": "]);
+  const enc = ensure_ascii ? encodeBasestringAscii : encodeBasestring;
   const markers = new Set<unknown>();
 
   const floatstr = (x: number): string => {
@@ -333,41 +333,41 @@ export function json_dumps(obj: unknown, opts: DumpsOptions = {}): string {
     if (Number.isNaN(x)) text = "NaN";
     else if (x === Infinity) text = "Infinity";
     else if (x === -Infinity) text = "-Infinity";
-    else return float_repr(x);
-    if (!allow_nan) throw new ValueError(`Out of range float values are not JSON compliant: ${float_repr(x)}`);
+    else return floatRepr(x);
+    if (!allow_nan) throw new ValueError(`Out of range float values are not JSON compliant: ${floatRepr(x)}`);
     return text;
   };
 
-  const encode_scalar = (o: unknown): string | undefined => {
+  const encodeScalar = (o: unknown): string | undefined => {
     if (o == null) return "null";
     if (o === true) return "true";
     if (o === false) return "false";
     if (typeof o === "string" || o instanceof String) return enc(String(o));
     if (o instanceof PyFloat) return floatstr(o.value);
-    if (typeof o === "number") return Number.isInteger(o) ? int_repr(o) : floatstr(o);
+    if (typeof o === "number") return Number.isInteger(o) ? intRepr(o) : floatstr(o);
     if (typeof o === "bigint") return o.toString();
     return undefined;
   };
 
-  const key_str = (k: unknown): string | null => {
+  const keyStr = (k: unknown): string | null => {
     if (typeof k === "string" || k instanceof String) return String(k);
     if (k instanceof PyFloat) return floatstr(k.value);
-    if (typeof k === "number") return Number.isInteger(k) ? int_repr(k) : floatstr(k);
+    if (typeof k === "number") return Number.isInteger(k) ? intRepr(k) : floatstr(k);
     if (typeof k === "bigint") return k.toString();
     if (k === true) return "true";
     if (k === false) return "false";
     if (k == null) return "null";
     if (skipkeys) return null;
-    throw new TypeError_(`keys must be str, int, float, bool or None, not ${type_name(k)}`);
+    throw new TypeError_(`keys must be str, int, float, bool or None, not ${typeName(k)}`);
   };
 
   const encode = (o: unknown, level: number): string => {
-    const s = encode_scalar(o);
+    const s = encodeScalar(o);
     if (s !== undefined) return s;
-    const is_list = Array.isArray(o);
-    const is_dict = o instanceof Map || is_plain_object(o);
-    if (!is_list && !is_dict) {
-      if (default_ === null) throw new TypeError_(`Object of type ${type_name(o)} is not JSON serializable`);
+    const isList = Array.isArray(o);
+    const isDict = o instanceof Map || isPlainObject(o);
+    if (!isList && !isDict) {
+      if (default_ === null) throw new TypeError_(`Object of type ${typeName(o)} is not JSON serializable`);
       if (markers.has(o)) throw new ValueError("Circular reference detected");
       markers.add(o);
       const r = encode(default_(o), level);
@@ -376,35 +376,35 @@ export function json_dumps(obj: unknown, opts: DumpsOptions = {}): string {
     }
     if (markers.has(o)) throw new ValueError("Circular reference detected");
     let items: [unknown, unknown][];
-    if (is_list) {
+    if (isList) {
       if (o.length === 0) return "[]";
       items = o;
     } else {
       items = o instanceof Map ? [...o] : Object.entries(o);
       if (items.length === 0) return "{}";
-      if (sort_keys) items = [...items].sort((a, b) => py_cmp(a[0], b[0]));
+      if (sort_keys) items = [...items].sort((a, b) => pyCmp(a[0], b[0]));
     }
     markers.add(o);
-    let open = is_list ? "[" : "{";
-    let sep = item_sep;
+    let open = isList ? "[" : "{";
+    let sep = itemSep;
     const inner = level + 1;
     if (indent !== null) {
       const nl = "\n" + indent.repeat(inner);
-      sep = item_sep + nl;
+      sep = itemSep + nl;
       open += nl;
     }
     const parts: string[] = [];
-    if (is_list) {
+    if (isList) {
       for (const v of items) parts.push(encode(v, inner));
     } else {
       for (const [k, v] of items) {
-        const ks = key_str(k);
+        const ks = keyStr(k);
         if (ks === null) continue;
-        parts.push(enc(ks) + key_sep + encode(v, inner));
+        parts.push(enc(ks) + keySep + encode(v, inner));
       }
     }
     markers.delete(o);
-    const close = (indent !== null ? "\n" + indent.repeat(level) : "") + (is_list ? "]" : "}");
+    const close = (indent !== null ? "\n" + indent.repeat(level) : "") + (isList ? "]" : "}");
     return open + parts.join(sep) + close;
   };
 

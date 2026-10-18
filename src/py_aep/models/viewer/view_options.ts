@@ -1,6 +1,6 @@
 import { ChannelType, FastPreviewType } from "../../enums/index.ts";
 import { ChunkField } from "../descriptors.ts";
-import { _validate_number } from "../validators.ts";
+import { _validateNumber } from "../validators.ts";
 import { descriptor } from "../../../pyrt/index.ts";
 import type { FipsChunk } from "../../binary/misc_chunks.ts";
 import type { AVItem } from "../items/av_item.ts";
@@ -134,7 +134,7 @@ descriptor(
   ViewOptions,
   "exposure",
   new ChunkField("_fips", "exposure", {
-    validate: _validate_number({ min: -40.0, max: 40.0 }),
+    validate: _validateNumber({ min: -40.0, max: 40.0 }),
   }),
 );
 
@@ -160,7 +160,7 @@ descriptor(
   ViewOptions,
   "roiTop",
   new ChunkField("_fips", "roi_top", {
-    validate: _validate_number({
+    validate: _validateNumber({
       min: 0,
       max: (self: ViewOptions) => self.roiBottom - 1,
       integer: true,
@@ -172,7 +172,7 @@ descriptor(
   ViewOptions,
   "roiLeft",
   new ChunkField("_fips", "roi_left", {
-    validate: _validate_number({
+    validate: _validateNumber({
       min: 0,
       max: (self: ViewOptions) => self.roiRight - 1,
       integer: true,
@@ -184,7 +184,7 @@ descriptor(
   ViewOptions,
   "roiBottom",
   new ChunkField("_fips", "roi_bottom", {
-    validate: _validate_number({
+    validate: _validateNumber({
       min: (self: ViewOptions) => self.roiTop + 1,
       max: (self: ViewOptions) => (self._item ? self._item.height : null),
       integer: true,
@@ -196,7 +196,7 @@ descriptor(
   ViewOptions,
   "roiRight",
   new ChunkField("_fips", "roi_right", {
-    validate: _validate_number({
+    validate: _validateNumber({
       min: (self: ViewOptions) => self.roiLeft + 1,
       max: (self: ViewOptions) => (self._item ? self._item.width : null),
       integer: true,
@@ -218,7 +218,7 @@ descriptor(
   ViewOptions,
   "zoom",
   new ChunkField("_fips", "zoom", {
-    validate: _validate_number({ min: 0.01, max: 16.0 }),
+    validate: _validateNumber({ min: 0.01, max: 16.0 }),
   }),
 );
 

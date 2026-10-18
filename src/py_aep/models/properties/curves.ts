@@ -18,16 +18,16 @@ import {
   ValueError,
   at,
   bytes_,
-  bytes_eq,
+  bytesEq,
   floordiv,
   getitem,
   int,
-  py_eq,
+  pyEq,
   repr,
   sorted,
   zip,
 } from "../../../pyrt/index.ts";
-import { validate_number } from "../validators.ts";
+import { validateNumber } from "../validators.ts";
 import type { CurvesArbpChunk } from "../../binary/property_chunks.ts";
 
 /**
@@ -47,9 +47,9 @@ export class _NaturalSpline {
   declare m: number[];
 
   constructor(points: Array<[number, number]>) {
-    const by_x = new Map<number, number>();
-    for (const [x, y] of points) by_x.set(x, y);
-    const pts = sorted(by_x.entries());
+    const byX = new Map<number, number>();
+    for (const [x, y] of points) byX.set(x, y);
+    const pts = sorted(byX.entries());
     this.xs = pts.map((p) => p[0]);
     this.ys = pts.map((p) => p[1]);
     const n = pts.length;
@@ -129,14 +129,14 @@ export class CurvesChannel {
     points: Array<[number, number]>,
     lut: Uint8Array,
     selected: number,
-    uses_points = true,
+    usesPoints = true,
   ) {
     this._name = name;
     this._points = points;
     this._map = lut;
     // AE leaves junk here at times (0x9200FF with 3 points).
     this._selected = 0 <= selected && selected < points.length ? selected : -1;
-    this._uses_points = uses_points;
+    this._uses_points = usesPoints;
     /**
      * The natural cubic spline through the points, in 0..255 on both axes.
      */
@@ -178,9 +178,9 @@ export class CurvesChannel {
    * stale, so only the map counts.
    */
   get isIdentity(): boolean {
-    const map_is_identity = this._map.every((v, i) => v === i);
-    if (!this._uses_points) return map_is_identity;
-    return map_is_identity && this._points.every(([x, y]) => x === y);
+    const mapIsIdentity = this._map.every((v, i) => v === i);
+    if (!this._uses_points) return mapIsIdentity;
+    return mapIsIdentity && this._points.every(([x, y]) => x === y);
   }
 
   /**
@@ -188,8 +188,8 @@ export class CurvesChannel {
    * through theirs, else the same map (what a pencil curve renders).
    */
   _same_curve(other: CurvesChannel): boolean {
-    if (this._uses_points && other._uses_points) return py_eq(this._points, other._points);
-    return bytes_eq(this._map, other._map);
+    if (this._uses_points && other._uses_points) return pyEq(this._points, other._points);
+    return bytesEq(this._map, other._map);
   }
 
   [INSPECT](): string {
@@ -299,7 +299,7 @@ export class Curves {
         `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${repr(channel)}`,
       );
     }
-    validate_number(x);
+    validateNumber(x);
     const ch = getitem(this._channels, channel);
     let y: number;
     if (this.usesPoints) {

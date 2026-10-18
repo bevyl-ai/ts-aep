@@ -2,7 +2,7 @@
 
 import type { Chunk } from "../binary/chunk.ts";
 import { OpenExrRoptChunk, PngRoptChunk } from "../binary/render_chunks.ts";
-import { find_by_type_or_null } from "../binary/utils.ts";
+import { findByTypeOrNull } from "../binary/utils.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../models/renderqueue/format_options/index.ts";
 
 export type FormatOptions =
@@ -24,36 +24,36 @@ export const _XML_FORMAT_CODES: ReadonlySet<string> = new Set([".AVI", "H264", "
  * @returns A format-specific options object, or `null` when the Ropt chunk is absent or the format
  *   is not yet supported.
  */
-export function parse_format_options(chunks: Chunk[]): FormatOptions | null {
-  const ropt_chunk = find_by_type_or_null(chunks, "Ropt");
-  if (ropt_chunk === null) return null;
+export function parseFormatOptions(chunks: Chunk[]): FormatOptions | null {
+  const roptChunk = findByTypeOrNull(chunks, "Ropt");
+  if (roptChunk === null) return null;
 
-  const format_code = ropt_chunk.format_code;
+  const formatCode = roptChunk.format_code;
 
-  if (format_code === "sDPX") {
-    return new CineonFormatOptions({ _body: ropt_chunk });
+  if (formatCode === "sDPX") {
+    return new CineonFormatOptions({ _body: roptChunk });
   }
-  if (format_code === "JPEG") {
-    return new JpegFormatOptions({ _body: ropt_chunk });
+  if (formatCode === "JPEG") {
+    return new JpegFormatOptions({ _body: roptChunk });
   }
-  if (format_code === "TPIC") {
-    return new TargaFormatOptions({ _body: ropt_chunk });
+  if (formatCode === "TPIC") {
+    return new TargaFormatOptions({ _body: roptChunk });
   }
-  if (format_code === "TIF ") {
-    return new TiffFormatOptions({ _body: ropt_chunk });
+  if (formatCode === "TIF ") {
+    return new TiffFormatOptions({ _body: roptChunk });
   }
-  if (format_code === "oEXR" && ropt_chunk instanceof OpenExrRoptChunk) {
-    return new OpenExrFormatOptions({ _body: ropt_chunk });
+  if (formatCode === "oEXR" && roptChunk instanceof OpenExrRoptChunk) {
+    return new OpenExrFormatOptions({ _body: roptChunk });
   }
-  if (format_code === "png!" && ropt_chunk instanceof PngRoptChunk) {
-    const hdr10_utf8 = find_by_type_or_null(chunks, "Utf8");
+  if (formatCode === "png!" && roptChunk instanceof PngRoptChunk) {
+    const hdr10Utf8 = findByTypeOrNull(chunks, "Utf8");
     return new PngFormatOptions({
-      _body: ropt_chunk,
-      _hdr10_utf8: hdr10_utf8,
+      _body: roptChunk,
+      _hdr10_utf8: hdr10Utf8,
     });
   }
-  if (_XML_FORMAT_CODES.has(format_code)) {
-    return new XmlFormatOptions({ _body: ropt_chunk });
+  if (_XML_FORMAT_CODES.has(formatCode)) {
+    return new XmlFormatOptions({ _body: roptChunk });
   }
 
   return null;

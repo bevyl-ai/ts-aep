@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import { len, Path, skip } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_project } from "../conftest.ts";
+import { parseProject } from "../conftest.ts";
 import { Project } from "../../src/py_aep/index.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
@@ -18,9 +18,9 @@ describe("TestVersionCompatibility", () => {
   test.each(["ae2018", "ae2022", "ae2023", "ae2024", "ae2025", "ae2026"])(
     "test_all_versions_parseable[%#]",
     (version: string) => {
-      const aep_path = VERSIONS_DIR.div(version, "complete.aep");
-      if (!aep_path.exists()) return skip(`${version} sample not found`);
-      const project = parse_project(aep_path);
+      const aepPath = VERSIONS_DIR.div(version, "complete.aep");
+      if (!aepPath.exists()) return skip(`${version} sample not found`);
+      const project = parseProject(aepPath);
       expect(project instanceof Project).toBe(true);
       expect(len(project.compositions) >= 1).toBe(true);
     },

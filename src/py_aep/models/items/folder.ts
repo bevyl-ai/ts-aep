@@ -1,16 +1,16 @@
 import { ListChunk, type Chunk } from "../../binary/chunk.ts";
 import { IdtaChunk, type CmtaChunk } from "../../binary/item_chunks.ts";
 import { SfdtChunk } from "../../binary/misc_chunks.ts";
-import { build_item_id_chunks } from "../../binary/mutations.ts";
+import { buildItemIdChunks } from "../../binary/mutations.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { auto_name } from "../naming.ts";
-import { label_index } from "../preferences.ts";
-import { validate_name, validate_string } from "../validators.ts";
+import { autoName } from "../naming.ts";
+import { labelIndex } from "../preferences.ts";
+import { validateName, validateString } from "../validators.ts";
 import { FootageItem } from "./footage.ts";
 import { Item } from "./item.ts";
 import type { Project } from "../project.ts";
 import type { Viewer } from "../viewer/viewer.ts";
-import { ValueError, StopIteration, py_cmp, repr, sorted } from "../../../pyrt/index.ts";
+import { ValueError, StopIteration, pyCmp, repr, sorted } from "../../../pyrt/index.ts";
 import { CompItem } from "./composition.ts";
 
 /**
@@ -116,26 +116,26 @@ export class FolderItem extends Item {
     kw: { project: Project; parent_folder: FolderItem },
   ): FolderItem {
     const { project, parent_folder } = kw;
-    validate_string(name);
-    const new_id = project._allocate_id();
+    validateString(name);
+    const newId = project._allocate_id();
 
     // AE labels new folders with the "Folder Label Index 2" preference
     // (factory 2, probed in AE 2026).
     const idta = new IdtaChunk({
       item_type: 1,
-      item_id: new_id,
-      label: label_index(project._preferences, "Folder Label Index 2", 2),
+      item_id: newId,
+      label: labelIndex(project._preferences, "Folder Label Index 2", 2),
     });
-    const name_utf8 = new Utf8Chunk({ value: name });
+    const nameUtf8 = new Utf8Chunk({ value: name });
     const sfdt = new SfdtChunk({});
     const sfdr = new ListChunk({ list_type: "Sfdr" });
 
-    const item_list = new ListChunk({
+    const itemList = new ListChunk({
       list_type: "Item",
       chunks: [
-        ...build_item_id_chunks(new_id, project._head.ae_version_major),
+        ...buildItemIdChunks(newId, project._head.ae_version_major),
         idta,
-        name_utf8,
+        nameUtf8,
         sfdt,
         sfdr,
       ],
@@ -143,9 +143,9 @@ export class FolderItem extends Item {
 
     const folder = new this({
       _idta: idta,
-      _name_utf8: name_utf8,
+      _name_utf8: nameUtf8,
       _cmta: null,
-      _item_list: item_list,
+      _item_list: itemList,
       _gide: null,
       _children_container: sfdr.chunks,
       project,
@@ -173,7 +173,7 @@ export class FolderItem extends Item {
   addFolder(name: string | null = null): FolderItem {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      name = auto_name(FolderItem._auto_name, existing);
+      name = autoName(FolderItem._auto_name, existing);
     }
 
     const folder = FolderItem._new(name, {
@@ -197,20 +197,20 @@ export class FolderItem extends Item {
    *   `Comp 2`, ...). An empty string is allowed.
    * @param width - The width of the composition in pixels.
    * @param height - The height of the composition in pixels.
-   * @param pixel_aspect - The pixel aspect ratio (1.0 for square pixels).
+   * @param pixelAspect - The pixel aspect ratio (1.0 for square pixels).
    * @param duration - The duration in seconds.
-   * @param frame_rate - The frame rate in frames per second.
+   * @param frameRate - The frame rate in frames per second.
    * @returns The newly created {@link CompItem}.
    */
   addComp(
     name: string | null,
     width: number,
     height: number,
-    pixel_aspect: number,
+    pixelAspect: number,
     duration: number,
-    frame_rate: number,
+    frameRate: number,
   ): CompItem {
-    return this._add_comp(name, width, height, pixel_aspect, duration, frame_rate);
+    return this._add_comp(name, width, height, pixelAspect, duration, frameRate);
   }
 
   /**
@@ -221,25 +221,25 @@ export class FolderItem extends Item {
     name: string | null,
     width: number,
     height: number,
-    pixel_aspect: number,
+    pixelAspect: number,
     duration: number,
-    frame_rate: number,
+    frameRate: number,
     kw: { min_dimension?: number } = {},
   ): CompItem {
     const { min_dimension = 4 } = kw;
 
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      name = auto_name(CompItem._auto_name, existing);
+      name = autoName(CompItem._auto_name, existing);
     }
 
     const comp = CompItem._new(
       name,
       width,
       height,
-      pixel_aspect,
+      pixelAspect,
       duration,
-      frame_rate,
+      frameRate,
       {
         project: this._project,
         parent_folder: this,
@@ -253,8 +253,8 @@ export class FolderItem extends Item {
     // 2026 for both script addComp and SVG import). Match that ordering.
     const block = [comp._item_list, ...comp._view_data];
     const container = this._children_container;
-    const insert_at = container?.length > 0 && container[0].chunk_type === "fdta" ? 1 : 0;
-    container.splice(insert_at, 0, ...block);
+    const insertAt = container?.length > 0 && container[0].chunk_type === "fdta" ? 1 : 0;
+    container.splice(insertAt, 0, ...block);
 
     // Register in project and parent
     this._project.items.set(comp.id, comp);
@@ -286,7 +286,7 @@ export class FolderItem extends Item {
     preset: string,
     duration: number,
   ): CompItem {
-    validate_name(preset);
+    validateName(preset);
     const presets = this._project._preferences.compositionPresets();
     if (!presets?.length) {
       throw new ValueError(
@@ -347,13 +347,13 @@ export class FolderItem extends Item {
    */
   _child_chunk_blocks(): [Chunk[], [Item, Chunk[]][]] {
     // Keyed by object identity, as Python's `id()` was.
-    const by_item_list = new Map<Chunk, Item>(
+    const byItemList = new Map<Chunk, Item>(
       this.items.map((item): [Chunk, Item] => [item._item_list, item]),
     );
     const header: Chunk[] = [];
     const blocks: [Item, Chunk[]][] = [];
     for (const chunk of this._children_container) {
-      const item = by_item_list.get(chunk) ?? null;
+      const item = byItemList.get(chunk) ?? null;
       if (item != null) {
         blocks.push([item, [chunk]]);
       } else if (blocks.length > 0) {
@@ -383,7 +383,7 @@ export class FolderItem extends Item {
     }
     blocks.splice(blocks.indexOf(moved), 1);
     const key = item.name.toLowerCase();
-    let pos = blocks.findIndex((b) => py_cmp(b[0].name.toLowerCase(), key) > 0);
+    let pos = blocks.findIndex((b) => pyCmp(b[0].name.toLowerCase(), key) > 0);
     if (pos === -1) {
       pos = blocks.length;
     }

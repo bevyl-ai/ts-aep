@@ -7,17 +7,17 @@
  */
 
 import { expect, test } from "bun:test";
-import { at, BytesIO, getitem, Path, py_assert, py_bool, py_eq } from "../../src/pyrt/index.ts";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
-import { type Chunk, write_chunk } from "../../src/py_aep/binary/chunk.ts";
+import { at, BytesIO, getitem, Path, pyAssert, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { parse as parseAep } from "../../src/py_aep/index.ts";
+import { type Chunk, writeChunk } from "../../src/py_aep/binary/chunk.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { as_instance, parse_project_fresh } from "../helpers.ts";
+import { asInstance, parseProjectFresh } from "../helpers.ts";
 
 const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "property", "curves.aep");
@@ -29,19 +29,19 @@ function _layer(project: Project, name: string): Layer {
 }
 
 function _curves(layer: Layer, index = 0): Property {
-  const prop = as_instance(layer.property("ADBE Effect Parade").properties[index], PropertyGroup).property(
+  const prop = asInstance(layer.property("ADBE Effect Parade").properties[index], PropertyGroup).property(
     "ADBE CurvesCustom-0001",
   );
-  py_assert(prop instanceof Property);
+  pyAssert(prop instanceof Property);
   return prop;
 }
 
 function _bytes(...chunks: (Chunk | null)[]): Uint8Array[] {
   const out: Uint8Array[] = [];
   for (const chunk of chunks) {
-    py_assert(chunk != null);
+    pyAssert(chunk != null);
     const buf = new BytesIO();
-    write_chunk(buf, chunk);
+    writeChunk(buf, chunk);
     out.push(buf.getvalue());
   }
   return out;
@@ -52,42 +52,42 @@ function _stream(prop: Property): Uint8Array[] {
 }
 
 test("test_add_property_writes_an_untouched_curves", () => {
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   // AE 2026's addProperty("ADBE CurvesCustom") writes an untouched
   // instance's bytes here, although the stored definition is keyed.
-  const project = parse_project_fresh(SAMPLE);
+  const project = parseProjectFresh(SAMPLE);
   _layer(project, "keyed").property("ADBE Effect Parade").addProperty("ADBE CurvesCustom");
-  const out = tmp_path.div("out.aep");
+  const out = tmpPath.div("out.aep");
   project.save(out);
 
-  const reopened = parse_aep(out).project;
+  const reopened = parseAep(out).project;
   const added = _curves(_layer(reopened, "keyed"), 1);
   const untouched = _curves(_layer(reopened, "untouched"));
 
-  expect(py_bool(added.keyframes)).toBe(false);
+  expect(pyBool(added.keyframes)).toBe(false);
   expect(added.isModified).toBe(false);
   const curves = added.value;
   expect(curves instanceof Curves).toBe(true);
   expect(curves.isIdentity).toBe(true);
-  expect(py_eq(_stream(added), _stream(untouched))).toBe(true);
+  expect(pyEq(_stream(added), _stream(untouched))).toBe(true);
 });
 
 test("test_moving_a_key_moves_its_curves", () => {
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   // AE pairs a keyed Curves' aRbps with its keys by position: rendered in
   // AE 2026, the key moved last shows its own curves only when its aRbp
   // moved with it.
-  const project = parse_project_fresh(SAMPLE);
+  const project = parseProjectFresh(SAMPLE);
   const prop = _curves(_layer(project, "keyed"));
   const first = prop.keyframes[0].value;
-  py_assert(first instanceof Curves);
+  pyAssert(first instanceof Curves);
   prop.keyframes[0].time = 3.0;
-  const out = tmp_path.div("out.aep");
+  const out = tmpPath.div("out.aep");
   project.save(out);
 
-  const keys = _curves(_layer(parse_aep(out).project, "keyed")).keyframes;
+  const keys = _curves(_layer(parseAep(out).project, "keyed")).keyframes;
   const moved = at(keys, -1).value;
   expect(at(keys, -1).time).toBe(3.0);
-  py_assert(moved instanceof Curves);
-  expect(py_eq(getitem(moved.channels, "rgb").points, getitem(first.channels, "rgb").points)).toBe(true);
+  pyAssert(moved instanceof Curves);
+  expect(pyEq(getitem(moved.channels, "rgb").points, getitem(first.channels, "rgb").points)).toBe(true);
 });

@@ -2,7 +2,7 @@
 
 import { descriptor } from "../../../../pyrt/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { validate_cinema_4d_quality } from "../../validators.ts";
+import { validateCinema4dQuality } from "../../validators.ts";
 import { RendererOptionsBase } from "./renderer_options_base.ts";
 import type { Cinema4DPrdaChunk } from "../../../binary/misc_chunks.ts";
 import type { SettingsSpec } from "../../renderqueue/settings.ts";
@@ -19,5 +19,5 @@ export class Cinema4DRendererOptions extends RendererOptionsBase {
 descriptor(
   Cinema4DRendererOptions,
   "quality",
-  new ChunkField("_body", "quality", { validate: validate_cinema_4d_quality }),
+  new ChunkField("_body", "quality", { validate: validateCinema4dQuality }),
 );

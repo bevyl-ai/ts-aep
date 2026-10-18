@@ -9,12 +9,12 @@
  * to the project file, and `ascendcount_target`, the same down to the target.
  */
 
-import { py_eq, PurePath, PurePosixPath, PureWindowsPath } from "../../pyrt/index.ts";
+import { pyEq, PurePath, PurePosixPath, PureWindowsPath } from "../../pyrt/index.ts";
 
 export const _DRIVE = /^([A-Za-z]):[\\\/]?(.*)$/s;
 export const _UNC = /^(?:\\\\|\/\/)[^\\\/]+[\\\/]([^\\\/]+)[\\\/]?(.*)$/s;
 
-export function _is_posix(path: string): boolean {
+export function _isPosix(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//");
 }
 
@@ -34,15 +34,15 @@ export function _is_posix(path: string): boolean {
  * @param kw - Keyword arguments:
  * - `windows`: `true` for After Effects on Windows, `false` for macOS.
  */
-export function platform_path(path: string, kw: { windows: boolean }): string {
+export function platformPath(path: string, kw: { windows: boolean }): string {
   const { windows } = kw;
   if (windows) {
-    if (_is_posix(path)) {
+    if (_isPosix(path)) {
       return "C:" + path.replace(/\//g, "\\");
     }
     return path;
   }
-  if (_is_posix(path)) {
+  if (_isPosix(path)) {
     return path;
   }
   const drive = _DRIVE.exec(path);
@@ -64,8 +64,8 @@ export function platform_path(path: string, kw: { windows: boolean }): string {
   return rest !== "" || root === "" ? `${root}/${rest}` : root;
 }
 
-export function _pure_path(path: string): PurePath | null {
-  if (_is_posix(path)) {
+export function _purePath(path: string): PurePath | null {
+  if (_isPosix(path)) {
     return new PurePosixPath(path);
   }
   if (_DRIVE.test(path) || _UNC.test(path)) {
@@ -76,7 +76,7 @@ export function _pure_path(path: string): PurePath | null {
 
 /** How many leading parts name the volume: the drive or UNC share, or
  * on macOS `/Volumes/<name>` (else the root). */
-export function _volume_parts(path: PurePath): number {
+export function _volumeParts(path: PurePath): number {
   if (path instanceof PurePosixPath) {
     return path.parts.length > 2 && path.parts[1] === "Volumes" ? 3 : 1;
   }
@@ -98,20 +98,20 @@ export function _volume_parts(path: PurePath): number {
  * `/Volumes/<name>` mount is taken as its own volume, like a drive or share
  * (not measured).
  *
- * @param project_file - Absolute path of the saved `.aep` file, in the same style as `target` (see
+ * @param projectFile - Absolute path of the saved `.aep` file, in the same style as `target` (see
  *   `platform_path`).
  * @param target - The record's absolute `fullpath`.
  * @param kw - Keyword arguments:
  * - `target_is_folder`: The record's `target_is_folder`.
  */
-export function relative_path_counts(
-  project_file: string,
+export function relativePathCounts(
+  projectFile: string,
   target: string,
   kw: { target_is_folder: boolean },
 ): [number, number] {
   const { target_is_folder } = kw;
-  const base = _pure_path(project_file);
-  let goal = _pure_path(target);
+  const base = _purePath(projectFile);
+  let goal = _purePath(target);
   // `type(base) is type(goal)`
   if (base == null || goal == null || base.constructor !== goal.constructor) {
     return [0, 0];
@@ -123,8 +123,8 @@ export function relative_path_counts(
   const fold = base instanceof PureWindowsPath;
   const a = base.parts.map((p) => (fold ? p.toLowerCase() : p));
   const b = goal.parts.map((p) => (fold ? p.toLowerCase() : p));
-  const volume = _volume_parts(base);
-  if (!py_eq(a.slice(0, volume), b.slice(0, _volume_parts(goal)))) {
+  const volume = _volumeParts(base);
+  if (!pyEq(a.slice(0, volume), b.slice(0, _volumeParts(goal)))) {
     return [0, 0];
   }
   let common = 0;

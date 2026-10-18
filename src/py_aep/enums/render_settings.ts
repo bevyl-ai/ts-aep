@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { and, int, int_enum, type EnumValue } from "../../pyrt/index.ts";
+import { and, int, intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Frame rate source setting for rendering.
@@ -16,7 +16,7 @@ import { and, int, int_enum, type EnumValue } from "../../pyrt/index.ts";
  *
  * Not documented in AE scripting reference.
  */
-export const FrameRateSetting = int_enum(
+export const FrameRateSetting = intEnum(
   "FrameRateSetting",
   {
     USE_COMP_FRAME_RATE: 0,
@@ -43,7 +43,7 @@ export const _FRAME_RATE_SETTING_LABELS: Readonly<Record<FrameRateSetting, strin
  *
  * Not documented in AE scripting reference.
  */
-export const RenderQuality = int_enum(
+export const RenderQuality = intEnum(
   "RenderQuality",
   {
     CURRENT_SETTINGS: -1,
@@ -84,7 +84,7 @@ export const _RENDER_QUALITY_LABELS: Readonly<Record<RenderQuality, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const FieldRender = int_enum(
+export const FieldRender = intEnum(
   "FieldRender",
   {
     OFF: 0,
@@ -113,7 +113,7 @@ export const _FIELD_RENDER_LABELS: Readonly<Record<FieldRender, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const PulldownSetting = int_enum(
+export const PulldownSetting = intEnum(
   "PulldownSetting",
   {
     OFF: 0,
@@ -148,7 +148,7 @@ export const _PULLDOWN_SETTING_LABELS: Readonly<Record<PulldownSetting, string>>
  *
  * Not documented in AE scripting reference.
  */
-export const MotionBlurSetting = int_enum(
+export const MotionBlurSetting = intEnum(
   "MotionBlurSetting",
   {
     OFF_FOR_ALL_LAYERS: 0,
@@ -182,7 +182,7 @@ export const _MOTION_BLUR_SETTING_LABELS: Readonly<Record<MotionBlurSetting, str
  *
  * Not documented in AE scripting reference.
  */
-export const FrameBlendingSetting = int_enum(
+export const FrameBlendingSetting = intEnum(
   "FrameBlendingSetting",
   {
     OFF_FOR_ALL_LAYERS: 0,
@@ -216,7 +216,7 @@ export const _FRAME_BLENDING_SETTING_LABELS: Readonly<Record<FrameBlendingSettin
  *
  * Not documented in AE scripting reference.
  */
-export const EffectsSetting = int_enum(
+export const EffectsSetting = intEnum(
   "EffectsSetting",
   {
     ALL_OFF: 0,
@@ -250,7 +250,7 @@ export const _EFFECTS_SETTING_LABELS: Readonly<Record<EffectsSetting, string>> =
  *
  * Not documented in AE scripting reference.
  */
-export const ProxyUseSetting = int_enum(
+export const ProxyUseSetting = intEnum(
   "ProxyUseSetting",
   {
     USE_NO_PROXIES: 0,
@@ -286,7 +286,7 @@ export const _PROXY_USE_SETTING_LABELS: Readonly<Record<ProxyUseSetting, string>
  *
  * Not documented in AE scripting reference.
  */
-export const SoloSwitchesSetting = int_enum(
+export const SoloSwitchesSetting = intEnum(
   "SoloSwitchesSetting",
   {
     ALL_OFF: 0,
@@ -318,7 +318,7 @@ export const _SOLO_SWITCHES_SETTING_LABELS: Readonly<Record<SoloSwitchesSetting,
  *
  * Not documented in AE scripting reference.
  */
-export const GuideLayers = int_enum(
+export const GuideLayers = intEnum(
   "GuideLayers",
   {
     ALL_OFF: 0,
@@ -350,7 +350,7 @@ export const _GUIDE_LAYERS_LABELS: Readonly<Record<GuideLayers, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const DiskCacheSetting = int_enum(
+export const DiskCacheSetting = intEnum(
   "DiskCacheSetting",
   {
     READ_ONLY: 0,
@@ -382,7 +382,7 @@ export const _DISK_CACHE_SETTING_LABELS: Readonly<Record<DiskCacheSetting, strin
  *
  * Not documented in AE scripting reference.
  */
-export const ColorDepthSetting = int_enum(
+export const ColorDepthSetting = intEnum(
   "ColorDepthSetting",
   {
     CURRENT_SETTINGS: -1,
@@ -423,7 +423,7 @@ export const _COLOR_DEPTH_SETTING_LABELS: Readonly<Record<ColorDepthSetting, str
  *
  * Not documented in AE scripting reference.
  */
-export const TimeSpanSource = int_enum(
+export const TimeSpanSource = intEnum(
   "TimeSpanSource",
   {
     LENGTH_OF_COMP: 0,
@@ -457,7 +457,7 @@ export const _TIME_SPAN_SOURCE_LABELS: Readonly<Record<TimeSpanSource, string>> 
  *
  * Not documented in AE scripting reference.
  */
-export const PostRenderActionSetting = int_enum(
+export const PostRenderActionSetting = intEnum(
   "PostRenderActionSetting",
   {
     NONE: 0,

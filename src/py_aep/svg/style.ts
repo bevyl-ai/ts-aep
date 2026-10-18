@@ -77,7 +77,7 @@ export class CssRule {
 // `search`); patterns use only classes/`\s`/`$` where Python and JS agree (trailing `\s*` eats any "\n" before `$`).
 export const _RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
 
-export function parse_css(text: string): CssRule[] {
+export function parseCss(text: string): CssRule[] {
   /** Parse a `<style>` block into rules (comma groups split out).
    *
    * Supports simple selectors: `tag`, `.class`, `#id`, `*`, and chains
@@ -87,10 +87,10 @@ export function parse_css(text: string): CssRule[] {
   const rules: CssRule[] = [];
   text = text.replace(/\/\*.*?\*\//gs, "");
   let order = 0;
-  for (const [, sel_group, body] of text.matchAll(_RULE_RE)) {
-    const [decls, important] = _split_declarations(body);
+  for (const [, selGroup, body] of text.matchAll(_RULE_RE)) {
+    const [decls, important] = _splitDeclarations(body);
     if (!decls?.size) continue;
-    for (const raw of sel_group.split(",")) {
+    for (const raw of selGroup.split(",")) {
       const sel = strip(raw);
       if (!sel) continue;
       rules.push(new CssRule(_specificity(sel), order, sel, decls, important));
@@ -102,7 +102,7 @@ export function parse_css(text: string): CssRule[] {
 
 export const _IMPORTANT_RE = /\s*!\s*important\s*$/i;
 
-export function _split_declarations(
+export function _splitDeclarations(
   body: string,
   tracked: readonly string[] | ReadonlySet<string> = _TRACKED,
 ): [Map<string, string>, Map<string, string>] {
@@ -146,10 +146,10 @@ export function _specificity(selector: string): [number, number, number] {
   return [ids, classes, types];
 }
 
-export function selector_matches(
+export function selectorMatches(
   selector: string,
   tag: string,
-  elem_id: string,
+  elemId: string,
   classes: ReadonlySet<string>,
 ): boolean {
   /** Test a simple selector against an element.
@@ -168,7 +168,7 @@ export function selector_matches(
   if (selector.includes(":") || selector.includes("[")) return false;
   for (const [, prefix, name] of selector.matchAll(_SEL_TOKEN_RE)) {
     if (prefix === "#") {
-      if (name !== elem_id) return false;
+      if (name !== elemId) return false;
     } else if (prefix === ".") {
       if (!classes.has(name)) return false;
     } else if (name !== "*") {
@@ -178,11 +178,11 @@ export function selector_matches(
   return true;
 }
 
-export function resolve_properties(
+export function resolveProperties(
   parent: Map<string, string>,
   tag: string,
   attrs: Map<string, string>,
-  css_rules: CssRule[],
+  cssRules: CssRule[],
 ): Map<string, string> {
   /**
    * Compute the effective presentation properties for an element.
@@ -206,10 +206,10 @@ export function resolve_properties(
 
   // Matching CSS rules, applied in (specificity, order) ascending so the
   // strongest wins.
-  const elem_id = attrs.get("id") ?? "";
+  const elemId = attrs.get("id") ?? "";
   const classes = new Set(split(attrs.get("class") ?? ""));
-  const matched = css_rules.filter((r) =>
-    selector_matches(r.selector, tag, elem_id, classes),
+  const matched = cssRules.filter((r) =>
+    selectorMatches(r.selector, tag, elemId, classes),
   );
   const ordered = sorted(matched, (r: CssRule) => [r.specificity, r.order]);
   for (const rule of ordered) {
@@ -217,7 +217,7 @@ export function resolve_properties(
   }
 
   // Inline style attribute (strongest normal declarations).
-  const [inline, inline_important] = _split_declarations(attrs.get("style") ?? "");
+  const [inline, inlineImportant] = _splitDeclarations(attrs.get("style") ?? "");
   for (const [k, v] of inline) style.set(k, v);
 
   // `!important` declarations outrank every normal one: a stylesheet's
@@ -226,7 +226,7 @@ export function resolve_properties(
   for (const rule of ordered) {
     for (const [k, v] of rule.important) style.set(k, v);
   }
-  for (const [k, v] of inline_important) style.set(k, v);
+  for (const [k, v] of inlineImportant) style.set(k, v);
 
   return style;
 }

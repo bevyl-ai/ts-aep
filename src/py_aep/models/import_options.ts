@@ -1,13 +1,13 @@
 /** Import options for importing files into an After Effects project. */
 
 import { INSPECT } from "../../pyrt/index.ts";
-import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, get_file_format, get_import_as_types, type FileFormat } from "../data/file_formats.ts";
+import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, getFileFormat, getImportAsTypes, type FileFormat } from "../data/file_formats.ts";
 import { ImportAsType } from "../enums/index.ts";
-import { validate_bool, validate_enum, validate_one_of, validate_path, validate_positive_int, validate_u4 } from "./validators.ts";
-import { Path, ValueError, int, repr, type PathLike, py_re } from "../../pyrt/index.ts";
+import { validateBool, validateEnum, validateOneOf, validatePath, validatePositiveInt, validateU4 } from "./validators.ts";
+import { Path, ValueError, int, repr, type PathLike, pyRe } from "../../pyrt/index.ts";
 
 // Pattern to match trailing digits in a filename stem (e.g. "frame001").
-export const _NUMBERED_RE = py_re(String.raw`(\d+)$`);
+export const _NUMBERED_RE = pyRe(String.raw`(\d+)$`);
 
 /** Type of the `CURRENT_VALUE` sentinel. */
 export class _CurrentValue {
@@ -61,7 +61,7 @@ export class ImportOptions {
   _range_end: number;
 
   constructor(file: string | PathLike) {
-    validate_path(file);
+    validatePath(file);
     this._file = new Path(file);
     this._import_as = ImportAsType.FOOTAGE;
     this._sequence = false;
@@ -100,7 +100,7 @@ export class ImportOptions {
           "import has no current binding to keep",
       );
     }
-    if (value != null) validate_positive_int(value);
+    if (value != null) validatePositiveInt(value);
     this._layer_index = value;
   }
 
@@ -128,7 +128,7 @@ export class ImportOptions {
   }
 
   set layerDimensions(value: string | null) {
-    if (value != null) validate_one_of(["document", "layer"])(value);
+    if (value != null) validateOneOf(["document", "layer"])(value);
     this._layer_dimensions = value;
   }
 
@@ -172,7 +172,7 @@ export class ImportOptions {
           "import has no current binding to keep",
       );
     }
-    if (value != null) validate_one_of(["editable", "merge", "ignore"])(value);
+    if (value != null) validateOneOf(["editable", "merge", "ignore"])(value);
     this._layer_styles = value;
   }
 
@@ -185,7 +185,7 @@ export class ImportOptions {
   }
 
   set file(value: string | PathLike) {
-    validate_path(value);
+    validatePath(value);
     this._file = new Path(value);
   }
 
@@ -195,7 +195,7 @@ export class ImportOptions {
   }
 
   set importAs(value: ImportAsType) {
-    validate_enum(ImportAsType)(value);
+    validateEnum(ImportAsType)(value);
     this._import_as = ImportAsType.of(value);
   }
 
@@ -208,7 +208,7 @@ export class ImportOptions {
   }
 
   set sequence(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     this._sequence = value;
   }
 
@@ -229,7 +229,7 @@ export class ImportOptions {
   }
 
   set forceAlphabetical(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     this._force_alphabetical = value;
     if (value) {
       this._range_start = 0;
@@ -257,7 +257,7 @@ export class ImportOptions {
   }
 
   set rangeStart(value: number) {
-    validate_u4(value);
+    validateU4(value);
     if (this._force_alphabetical) {
       throw new ValueError("cannot set a sequence range start for an alphabetical sequence");
     }
@@ -284,7 +284,7 @@ export class ImportOptions {
   }
 
   set rangeEnd(value: number) {
-    validate_u4(value);
+    validateU4(value);
     if (this._force_alphabetical) {
       throw new ValueError("cannot set a sequence range end for an alphabetical sequence");
     }
@@ -309,25 +309,25 @@ export class ImportOptions {
    * @returns `true` if the file can be imported as `type`.
    */
   canImportAs(type: number): boolean {
-    validate_enum(ImportAsType)(type);
-    const as_type = ImportAsType.of(type);
-    if (as_type === ImportAsType.PROJECT) return false;
+    validateEnum(ImportAsType)(type);
+    const asType = ImportAsType.of(type);
+    if (asType === ImportAsType.PROJECT) return false;
     const suffix = this._file.suffix.toLowerCase();
     if (COMP_CONVERSION_EXTENSIONS.has(suffix)) {
       // Comp-conversion formats (e.g. SVG) have no media-format entry;
       // gate on the import-type table alone.
-      return get_import_as_types(suffix).has(as_type);
+      return getImportAsTypes(suffix).has(asType);
     }
     let fmt: FileFormat;
     try {
-      fmt = get_file_format(suffix);
+      fmt = getFileFormat(suffix);
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
       return false;
     }
     if (fmt.opti === "unsupported") return false;
     if (
-      as_type === ImportAsType.COMP_CROPPED_LAYERS &&
+      asType === ImportAsType.COMP_CROPPED_LAYERS &&
       !PSD_COMP_EXTENSIONS.has(suffix) &&
       !AI_COMP_EXTENSIONS.has(suffix)
     ) {
@@ -336,7 +336,7 @@ export class ImportOptions {
       // Photoshop only.
       return false;
     }
-    return get_import_as_types(suffix).has(as_type);
+    return getImportAsTypes(suffix).has(asType);
   }
 
   /**

@@ -8,7 +8,7 @@
  * do not touch the binary layer.
  */
 
-import { py_eq } from "../../pyrt/index.ts";
+import { pyEq } from "../../pyrt/index.ts";
 import type { Shape } from "../models/properties/shape.ts";
 import type { PsdLayerStyles } from "../resolvers/psd_styles.ts";
 
@@ -106,45 +106,45 @@ export class LayerSpec {
 
   constructor(
     name: string,
-    opti_data: Uint8Array,
+    optiData: Uint8Array,
     width: number,
     height: number,
     transform: readonly [readonly [number, number], readonly [number, number]] | null = null,
-    full_frame: boolean = true,
-    is_adjustment: boolean = false,
-    layer_id: number | null = null,
-    layer_index: number | null = null,
-    data_size: number = 0,
-    reserved_c8: Uint8Array | null = null,
+    fullFrame: boolean = true,
+    isAdjustment: boolean = false,
+    layerId: number | null = null,
+    layerIndex: number | null = null,
+    dataSize: number = 0,
+    reservedC8: Uint8Array | null = null,
     styles: PsdLayerStyles | null = null,
     masks: readonly Shape[] = [],
-    preserve_transparency: boolean = false,
+    preserveTransparency: boolean = false,
     enabled: boolean = true,
-    has_alpha: boolean | null = null,
+    hasAlpha: boolean | null = null,
     depth: number | null = null,
   ) {
     this.name = name;
-    this.opti_data = opti_data;
+    this.opti_data = optiData;
     this.width = width;
     this.height = height;
     this.transform = transform;
-    this.full_frame = full_frame;
-    this.is_adjustment = is_adjustment;
-    this.layer_id = layer_id;
-    this.layer_index = layer_index;
-    this.data_size = data_size;
-    this.reserved_c8 = reserved_c8;
+    this.full_frame = fullFrame;
+    this.is_adjustment = isAdjustment;
+    this.layer_id = layerId;
+    this.layer_index = layerIndex;
+    this.data_size = dataSize;
+    this.reserved_c8 = reservedC8;
     this.styles = styles;
     this.masks = masks;
-    this.preserve_transparency = preserve_transparency;
+    this.preserve_transparency = preserveTransparency;
     this.enabled = enabled;
-    this.has_alpha = has_alpha;
+    this.has_alpha = hasAlpha;
     this.depth = depth;
   }
 
   /** NamedTuple equality: field-wise. */
   equals(other: object | null): boolean {
-    return other instanceof LayerSpec && py_eq([...this], [...other]);
+    return other instanceof LayerSpec && pyEq([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<
@@ -219,22 +219,22 @@ export class LayerGroupSpec {
   constructor(
     name: string,
     children: Array<LayerSpec | LayerGroupSpec>,
-    comp_name: string | null = null,
-    layer_name: string | null = null,
+    compName: string | null = null,
+    layerName: string | null = null,
     collapsed: boolean = true,
     enabled: boolean = true,
   ) {
     this.name = name;
     this.children = children;
-    this.comp_name = comp_name;
-    this.layer_name = layer_name;
+    this.comp_name = compName;
+    this.layer_name = layerName;
     this.collapsed = collapsed;
     this.enabled = enabled;
   }
 
   /** NamedTuple equality: field-wise. */
   equals(other: object | null): boolean {
-    return other instanceof LayerGroupSpec && py_eq([...this], [...other]);
+    return other instanceof LayerGroupSpec && pyEq([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<

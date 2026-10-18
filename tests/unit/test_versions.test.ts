@@ -5,7 +5,7 @@
 import { describe, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { validate_aep } from "../../src/py_aep/cli/validate.ts";
+import { validateAep } from "../../src/py_aep/cli/validate.ts";
 import { Path, warn } from "../../src/pyrt/index.ts";
 import { skip } from "../../src/pyrt/pytest.ts";
 
@@ -17,12 +17,12 @@ describe("TestAE2025", () => {
 
   test("test_validate_against_json", () => {
     /** Validate AE2025 project against ExtendScript JSON export. */
-    const aep_path = VERSIONS_DIR.div("ae2025", "complete.aep");
-    const json_path = VERSIONS_DIR.div("ae2025", "complete.json");
-    if (!aep_path.exists() || !json_path.exists()) {
+    const aepPath = VERSIONS_DIR.div("ae2025", "complete.aep");
+    const jsonPath = VERSIONS_DIR.div("ae2025", "complete.json");
+    if (!aepPath.exists() || !jsonPath.exists()) {
       return skip("ae2025 sample or JSON reference not found");
     }
-    const result = validate_aep(aep_path, json_path);
+    const result = validateAep(aepPath, jsonPath);
     // Report differences as warnings, not failures
     for (const diff of result.differences) {
       // NOTE(port): stacklevel=1 only selects the reported source location; the warning text and test outcome match Python.

@@ -13,37 +13,37 @@
 
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { parseProjectFresh } from "../helpers.ts";
 import {
   at,
   floordiv,
   len,
   mod,
   Path,
-  py_assert,
-  py_eq,
+  pyAssert,
+  pyEq,
   repr,
   sorted,
   ValueError,
 } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { frame_grid } from "../../src/py_aep/binary/composition_chunks.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { frameGrid } from "../../src/py_aep/binary/composition_chunks.ts";
 import type { Layer, Project, Property } from "../../src/py_aep/models/index.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 
 function _position(sample: string): Property {
-  const project = parse_project_fresh(SAMPLES_DIR.div(sample));
+  const project = parseProjectFresh(SAMPLES_DIR.div(sample));
   const layer: Layer = project.compositions[0].layers[0];
   const prop = layer.transform.property("ADBE Position");
-  py_assert(prop != null);
+  pyAssert(prop != null);
   return prop;
 }
 
-function _position_from(project: Project): Property {
+function _positionFrom(project: Project): Property {
   const layer: Layer = project.compositions[0].layers[0];
   const prop = layer.transform.property("ADBE Position");
-  py_assert(prop != null);
+  pyAssert(prop != null);
   return prop;
 }
 
@@ -57,10 +57,10 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
 
   test("test_recompute_is_idempotent", () => {
     const prop = _position("keyframe_roving.aep");
-    expect(py_eq(prop.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
+    expect(pyEq(prop.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
     const expected = _times(prop);
     prop._redistribute_roving_keyframes();
-    expect(py_eq(_times(prop), expected)).toBe(true);
+    expect(pyEq(_times(prop), expected)).toBe(true);
   });
 
   test("test_rederived_from_clobbered_times", () => {
@@ -71,7 +71,7 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
     }
     // Touching one member re-times the whole run it belongs to.
     prop.keyframes[1].roving = true;
-    expect(py_eq(_times(prop), expected)).toBe(true);
+    expect(pyEq(_times(prop), expected)).toBe(true);
   });
 
   test("test_bounding_keyframes_keep_their_times", () => {
@@ -86,7 +86,7 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
     const prop = _position("keyframe_roving.aep");
     prop.keyframes[0].value = [0.0, 0.0, 0.0];
     const times = _times(prop);
-    expect(py_eq(times, sorted(times))).toBe(true);
+    expect(pyEq(times, sorted(times))).toBe(true);
     expect(len(new Set(times))).toBe(len(times));
   });
 });
@@ -105,7 +105,7 @@ describe("TestRoundtripRovingFollowsBoundingEase", () => {
   test("test_ease_in_out_pulls_the_run_inward", () => {
     const prop = _position("keyframe_roving.aep");
     const span = at(_times(prop), -1);
-    expect(py_eq(_times(prop).slice(1, 3), [floordiv(span, 3), floordiv(span * 2, 3)])).toBe(true);
+    expect(pyEq(_times(prop).slice(1, 3), [floordiv(span, 3), floordiv(span * 2, 3)])).toBe(true);
 
     prop.keyframes[0].outTemporalEase[0].influence = 100.0 / 3.0;
     at(prop.keyframes, -1).inTemporalEase[0].influence = 100.0 / 3.0;
@@ -154,10 +154,10 @@ describe("TestRoundtripRovingTriggers", () => {
   test("test_roved_times_are_not_whole_frames", () => {
     const prop = _position("keyframe_roving.aep");
     prop.keyframes[3].frameTime = 199;
-    const units_per_frame = frame_grid(prop.keyframes[0]._frame_rate)[1];
+    const unitsPerFrame = frameGrid(prop.keyframes[0]._frame_rate)[1];
     // A whole-frame-only implementation could not produce a remainder.
-    py_assert(
-      _times(prop).slice(1, 3).some((time) => mod(time, units_per_frame) !== 0),
+    pyAssert(
+      _times(prop).slice(1, 3).some((time) => mod(time, unitsPerFrame) !== 0),
       "roved times should not all land on frame boundaries",
     );
   });
@@ -181,7 +181,7 @@ describe("TestRoundtripRovingTriggers", () => {
     // which shifts where the roving keyframes land.
     prop.keyframes[0].outSpatialTangent = [100.0, 0.0, 0.0];
     const after = _times(prop);
-    expect(!py_eq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
+    expect(!pyEq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
     expect(after[0]).toBe(before[0]);
     expect(after[3]).toBe(before[3]);
   });
@@ -199,9 +199,9 @@ describe("TestRoundtripRovingNonSpatial", () => {
   /** AE rejects roving on a non-spatial property with a ValueError. */
 
   test("test_scale_rejects_roving", () => {
-    const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_bezier_ease_scale.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_bezier_ease_scale.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
-    py_assert(prop != null);
+    pyAssert(prop != null);
     expect(prop.isSpatial).toBe(false);
     raises(ValueError, () => {
       prop.keyframes[1].roving = true;
@@ -209,9 +209,9 @@ describe("TestRoundtripRovingNonSpatial", () => {
   });
 
   test("test_opacity_rejects_roving", () => {
-    const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
-    py_assert(prop != null);
+    pyAssert(prop != null);
     expect(prop.isSpatial).toBe(false);
     raises(ValueError, () => {
       prop.keyframes[3].roving = true;
@@ -232,47 +232,47 @@ describe("TestRoundtripRovingPersistence", () => {
    */
 
   test("test_roved_tick_is_bit_identical_after_save_reparse", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_roving.aep"));
-    const prop = _position_from(project);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_roving.aep"));
+    const prop = _positionFrom(project);
     // Re-derive from a clobbered time, like
     // test_rederived_from_clobbered_times, so the saved value is
     // provably the model's own answer and not just the untouched byte
     // AE originally wrote.
     prop.keyframes[1]._ldat_item.time_units = 4321;
     prop.keyframes[1].roving = true;
-    const in_memory = _times(prop);
+    const inMemory = _times(prop);
 
-    const out = tmp_path.div("keyframe_roving_saved.aep");
+    const out = tmpPath.div("keyframe_roving_saved.aep");
     project.save(out);
 
-    const reparsed = parse_project_fresh(out);
-    const on_disk = _times(_position_from(reparsed));
+    const reparsed = parseProjectFresh(out);
+    const onDisk = _times(_positionFrom(reparsed));
 
-    py_assert(
-      py_eq(on_disk, in_memory),
+    pyAssert(
+      pyEq(onDisk, inMemory),
       "save/reparse did not preserve the re-derived roved ticks " +
-        `exactly: in-memory ${repr(in_memory)}, on disk ${repr(on_disk)}`,
+        `exactly: in-memory ${repr(inMemory)}, on disk ${repr(onDisk)}`,
     );
   });
 
   test("test_non_spatial_roving_flag_survives_save_reparse", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
-    py_assert(prop != null);
-    const before_times = prop.keyframes.map((kf) => kf._ldat_item.time_units);
+    pyAssert(prop != null);
+    const beforeTimes = prop.keyframes.map((kf) => kf._ldat_item.time_units);
 
     prop.keyframes[3]._ldat_item.roving = true;
 
-    const out = tmp_path.div("keyframe_bounce_pattern_saved.aep");
+    const out = tmpPath.div("keyframe_bounce_pattern_saved.aep");
     project.save(out);
 
-    const reparsed = parse_project_fresh(out);
-    const reparsed_prop = reparsed.compositions[0].layers[0].transform.property("ADBE Opacity");
-    py_assert(reparsed_prop != null);
-    expect(reparsed_prop.keyframes[3].roving).toBe(true);
-    expect(py_eq(reparsed_prop.keyframes.map((kf) => kf._ldat_item.time_units), before_times)).toBe(true);
+    const reparsed = parseProjectFresh(out);
+    const reparsedProp = reparsed.compositions[0].layers[0].transform.property("ADBE Opacity");
+    pyAssert(reparsedProp != null);
+    expect(reparsedProp.keyframes[3].roving).toBe(true);
+    expect(pyEq(reparsedProp.keyframes.map((kf) => kf._ldat_item.time_units), beforeTimes)).toBe(true);
   });
 });
 
@@ -285,7 +285,7 @@ describe("TestOrientationInert", () => {
    */
 
   test("test_roved_orientation_keeps_its_time", () => {
-    const project = parse_project_fresh(SAMPLES_DIR.parent.div("layer", "orientation_0_0_5.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.parent.div("layer", "orientation_0_0_5.aep"));
     let prop: Property | null = null;
     for (const layer of project.compositions[0].layers) {
       const candidate = layer.transform.property("ADBE Orientation");
@@ -294,7 +294,7 @@ describe("TestOrientationInert", () => {
         break;
       }
     }
-    py_assert(prop != null);
+    pyAssert(prop != null);
     for (const [time, z] of [[0.0, 0.0], [0.5, 10.0], [1.0, 40.0]]) {
       prop.setValueAtTime(time, [0.0, 0.0, z]);
     }
@@ -302,7 +302,7 @@ describe("TestOrientationInert", () => {
     keyframes[1]._ldat_item.roving = true;
     const before = keyframes.map((k) => k._ldat_item.time_units);
     prop._redistribute_roving_keyframes();
-    expect(py_eq(keyframes.map((k) => k._ldat_item.time_units), before)).toBe(true);
+    expect(pyEq(keyframes.map((k) => k._ldat_item.time_units), before)).toBe(true);
     expect(keyframes[1].roving).toBe(true);
   });
 });
@@ -321,7 +321,7 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
     raises(ValueError, () => {
       prop.keyframes[1].time = 0.25;
     }, "derived from the spatial path");
-    expect(py_eq(_times(prop), before)).toBe(true);
+    expect(pyEq(_times(prop), before)).toBe(true);
   });
 
   test("test_setting_frame_time_on_a_roving_keyframe_raises", () => {
@@ -330,7 +330,7 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
     raises(ValueError, () => {
       prop.keyframes[1].frameTime = 6;
     }, "derived from the spatial path");
-    expect(py_eq(_times(prop), before)).toBe(true);
+    expect(pyEq(_times(prop), before)).toBe(true);
   });
 
   test("test_an_anchor_still_moves_and_retimes_the_run", () => {
@@ -339,7 +339,7 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
     at(prop.keyframes, -1).time = at(prop.keyframes, -1).time + 1.0;
     const after = _times(prop);
     expect(at(after, -1) > at(before, -1)).toBe(true);
-    expect(!py_eq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
+    expect(!pyEq(after.slice(1, 3), before.slice(1, 3))).toBe(true);
   });
 
   test("test_clearing_roving_makes_the_time_writable_again", () => {
@@ -368,14 +368,14 @@ describe("TestRoundtripRovingEarlyOut", () => {
     prop.keyframes[0].value = [-400.0, 150.0, 0.0];
     prop.keyframes[2].outSpatialTangent = [80.0, 0.0, 0.0];
 
-    expect(py_eq(_times(prop), before)).toBe(true);
+    expect(pyEq(_times(prop), before)).toBe(true);
   });
 
   test("test_roving_run_still_retimes_after_the_early_out", () => {
     const prop = _position("keyframe_roving.aep");
-    py_assert(prop.keyframes.some((kf) => kf.roving), "sample must carry a run");
+    pyAssert(prop.keyframes.some((kf) => kf.roving), "sample must carry a run");
     const before = _times(prop);
     prop.keyframes[0].value = [-400.0, 150.0, 0.0];
-    expect(!py_eq(_times(prop), before)).toBe(true);
+    expect(!pyEq(_times(prop), before)).toBe(true);
   });
 });

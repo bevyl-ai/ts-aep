@@ -6,13 +6,13 @@
  * PardChunk and PrdaChunk use variant subclass dispatch for polymorphic layouts.
  */
 
-import { uuid4_bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, bytes_, decode, encode, getattr, len, py_assert, round, descriptor, TypeError_, ValueError } from "../../pyrt/index.ts";
+import { uuid4Bytes } from "../../pyrt/uuid.ts";
+import { define, field, b, bytes_, decode, encode, getattr, len, pyAssert, round, descriptor, TypeError_, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
-import { read_bytes } from "./bin_utils.ts";
+import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
-import { FmtItem, ascii_field, bool_field, bytes_field, f4_field, f8_field, items_field, s2_field, s4_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { FmtItem, asciiField, boolField, bytesField, f4Field, f8Field, itemsField, s2Field, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -36,11 +36,11 @@ export class PrinChunk extends Chunk {
 }
 define(PrinChunk, {
   chunk_type: field({ default: "prin" }),
-  _reserved_00: bytes_field(4, { repr: false }),
-  match_name: ascii_field(48, { default: "ADBE Escher" }),
-  display_name: ascii_field(48, { default: "Classic 3D" }),
-  _reserved_68: bytes_field(3, { repr: false }),
-  _end_marker: bytes_field(1, { default: b("\x01"), repr: false }),
+  _reserved_00: bytesField(4, { repr: false }),
+  match_name: asciiField(48, { default: "ADBE Escher" }),
+  display_name: asciiField(48, { default: "Classic 3D" }),
+  _reserved_68: bytesField(3, { repr: false }),
+  _end_marker: bytesField(1, { default: b("\x01"), repr: false }),
 });
 register("prin")(PrinChunk);
 
@@ -55,7 +55,7 @@ export class SfdtChunk extends Chunk {
 }
 define(SfdtChunk, {
   chunk_type: field({ default: "sfdt" }),
-  value: u4_field({ default: 1 }),
+  value: u4Field({ default: 1 }),
 });
 register("sfdt")(SfdtChunk);
 
@@ -71,12 +71,12 @@ export class PguiChunk extends Chunk {
   /** Build a pgui with a fresh random GUID. */
   static new_(): PguiChunk {
     // uuid4().bytes: random bits with the version nibble and RFC 4122 variant set.
-    return new this({ guid: uuid4_bytes() });
+    return new this({ guid: uuid4Bytes() });
   }
 }
 define(PguiChunk, {
   chunk_type: field({ default: "pgui" }),
-  guid: bytes_field(16),
+  guid: bytesField(16),
 });
 register("pgui")(PguiChunk);
 
@@ -105,13 +105,13 @@ export class PrdaChunk extends Chunk {
     const { chunk_type = "", renderer_match_name = "" } = kw;
     if (this !== PrdaChunk) {
       const result = super.read(fp, size, { chunk_type });
-      py_assert(result instanceof PrdaChunk);
+      pyAssert(result instanceof PrdaChunk);
       return result;
     }
     const variant = _PRDA_VARIANTS.get(renderer_match_name);
     if (variant == null || variant[1] !== size) {
       // preserve unknown raw bytes
-      return new this({ chunk_type, data: read_bytes(fp, size) });
+      return new this({ chunk_type, data: readBytes(fp, size) });
     }
     return variant[0].read(fp, size, { chunk_type });
   }
@@ -134,9 +134,9 @@ export class ClassicPrdaChunk extends PrdaChunk {
    * 1=250, 2=500, 3=750, 4=1000, 5=1500, 6=2000, 7=3000, 8=4000. */
 }
 define(ClassicPrdaChunk, {
-  _version: u4_field({ default: 1, repr: false }),
-  _renderer_tag: u4_field({ default: 0, repr: false }),
-  shadow_map_resolution: u4_field({ default: 0 }),
+  _version: u4Field({ default: 1, repr: false }),
+  _renderer_tag: u4Field({ default: 0, repr: false }),
+  shadow_map_resolution: u4Field({ default: 0 }),
 });
 
 /**
@@ -177,19 +177,19 @@ export class AdvancedPrdaChunk extends PrdaChunk {
   declare casting_box_center_z: number;
 }
 define(AdvancedPrdaChunk, {
-  _version: u4_field({ default: 1, repr: false }),
-  _renderer_tag: u4_field({ default: 3, repr: false }),
-  quality: u4_field({ default: 8 }),
-  _reserved_12: u4_field({ default: 1, repr: false }),
-  _reserved_16: u4_field({ default: 0, repr: false }),
-  resolution: u4_field({ default: 1, endian: "<" }),
-  smoothness: u4_field({ default: 3, endian: "<" }),
-  casting_box_size_x: f4_field({ default: 1.0, endian: "<" }),
-  casting_box_size_y: f4_field({ default: 1.0, endian: "<" }),
-  casting_box_size_z: f4_field({ default: 1.0, endian: "<" }),
-  casting_box_center_x: f4_field({ default: 0.0, endian: "<" }),
-  casting_box_center_y: f4_field({ default: 0.0, endian: "<" }),
-  casting_box_center_z: f4_field({ default: 0.0, endian: "<" }),
+  _version: u4Field({ default: 1, repr: false }),
+  _renderer_tag: u4Field({ default: 3, repr: false }),
+  quality: u4Field({ default: 8 }),
+  _reserved_12: u4Field({ default: 1, repr: false }),
+  _reserved_16: u4Field({ default: 0, repr: false }),
+  resolution: u4Field({ default: 1, endian: "<" }),
+  smoothness: u4Field({ default: 3, endian: "<" }),
+  casting_box_size_x: f4Field({ default: 1.0, endian: "<" }),
+  casting_box_size_y: f4Field({ default: 1.0, endian: "<" }),
+  casting_box_size_z: f4Field({ default: 1.0, endian: "<" }),
+  casting_box_center_x: f4Field({ default: 0.0, endian: "<" }),
+  casting_box_center_y: f4Field({ default: 0.0, endian: "<" }),
+  casting_box_center_z: f4Field({ default: 0.0, endian: "<" }),
 });
 
 /** Cinema 4D (`ADBE Ernst`) options, 20 bytes. */
@@ -202,11 +202,11 @@ export class Cinema4DPrdaChunk extends PrdaChunk {
   declare _reserved_16: number;
 }
 define(Cinema4DPrdaChunk, {
-  _version: u4_field({ default: 1, repr: false }),
-  _renderer_tag: u4_field({ default: 1, repr: false }),
-  quality: u4_field({ default: 25 }),
-  _reserved_12: u4_field({ default: 1, repr: false }),
-  _reserved_16: u4_field({ default: 0, repr: false }),
+  _version: u4Field({ default: 1, repr: false }),
+  _renderer_tag: u4Field({ default: 1, repr: false }),
+  quality: u4Field({ default: 25 }),
+  _reserved_12: u4Field({ default: 1, repr: false }),
+  _reserved_16: u4Field({ default: 0, repr: false }),
 });
 
 /**
@@ -223,10 +223,10 @@ export class RayTracedPrdaChunk extends PrdaChunk {
   declare _unknown_12: number;
 }
 define(RayTracedPrdaChunk, {
-  _version: u4_field({ default: 1, repr: false }),
-  _renderer_tag: u4_field({ default: 0, repr: false }),
-  _unknown_08: u4_field({ default: 3, repr: false }),
-  _unknown_12: u4_field({ default: 1, repr: false }),
+  _version: u4Field({ default: 1, repr: false }),
+  _renderer_tag: u4Field({ default: 0, repr: false }),
+  _unknown_08: u4Field({ default: 3, repr: false }),
+  _unknown_12: u4Field({ default: 1, repr: false }),
 });
 
 // Body size -> variant. Sizes are distinct per renderer, so size alone
@@ -282,17 +282,17 @@ export class MkifChunk extends Chunk {
 }
 define(MkifChunk, {
   chunk_type: field({ default: "mkif" }),
-  inverted: bool_field(),
-  locked: bool_field(),
-  mask_motion_blur: u1_field(),
-  mask_feather_falloff: u1_field(),
-  _reserved_04: bytes_field(2, { repr: false }),
-  mode: u2_field(),
-  mask_id: u4_field(),
-  _reserved_0c: bytes_field(33, { repr: false }),
-  color_r: u1_field(),
-  color_g: u1_field(),
-  color_b: u1_field(),
+  inverted: boolField(),
+  locked: boolField(),
+  mask_motion_blur: u1Field(),
+  mask_feather_falloff: u1Field(),
+  _reserved_04: bytesField(2, { repr: false }),
+  mode: u2Field(),
+  mask_id: u4Field(),
+  _reserved_0c: bytesField(33, { repr: false }),
+  color_r: u1Field(),
+  color_g: u1Field(),
+  color_b: u1Field(),
 });
 register("mkif")(MkifChunk);
 
@@ -330,13 +330,13 @@ export class ShphChunk extends Chunk {
 }
 define(ShphChunk, {
   chunk_type: field({ default: "shph" }),
-  _reserved_00: bytes_field(3, { default: b("\xb3\xde\x02"), repr: false }),
-  _flags: u1_field({ default: 1, repr: false }),
-  top_left_x: f4_field(),
-  top_left_y: f4_field(),
-  bottom_right_x: f4_field(),
-  bottom_right_y: f4_field(),
-  _reserved_14: bytes_field(4, { default: b("\x01\x00\x00\x00"), repr: false }),
+  _reserved_00: bytesField(3, { default: b("\xb3\xde\x02"), repr: false }),
+  _flags: u1Field({ default: 1, repr: false }),
+  top_left_x: f4Field(),
+  top_left_y: f4Field(),
+  bottom_right_x: f4Field(),
+  bottom_right_y: f4Field(),
+  _reserved_14: bytesField(4, { default: b("\x01\x00\x00\x00"), repr: false }),
 });
 descriptor(ShphChunk, "normalized", new BitField("_flags", 0));
 descriptor(ShphChunk, "open", new BitField("_flags", 3));
@@ -386,13 +386,13 @@ export class NmhdChunk extends Chunk {
 }
 define(NmhdChunk, {
   chunk_type: field({ default: "NmHd" }),
-  _reserved_00: bytes_field(3, { repr: false }),
-  _marker_flags: u1_field({ repr: false }),
-  num_params: u4_field(),
-  duration_value: u4_field(),
-  duration_scale: u4_field({ default: 600 }),
-  label: u1_field(),
-  _reserved_11: bytes_field(3, { repr: false }),
+  _reserved_00: bytesField(3, { repr: false }),
+  _marker_flags: u1Field({ repr: false }),
+  num_params: u4Field(),
+  duration_value: u4Field(),
+  duration_scale: u4Field({ default: 600 }),
+  label: u1Field(),
+  _reserved_11: bytesField(3, { repr: false }),
 });
 // BitField descriptors
 descriptor(NmhdChunk, "protected_region", new BitField("_marker_flags", 1));
@@ -487,29 +487,29 @@ export class FipsChunk extends Chunk {
 }
 define(FipsChunk, {
   chunk_type: field({ default: "fips" }),
-  _pad_00: bytes_field(7, { repr: false }),
-  channels: u1_field(),
-  _pad_08: bytes_field(3, { repr: false }),
-  _grid_safe_flags: u1_field({ repr: false }),
-  _draft_flags: u1_field({ repr: false }),
-  _preview_flags: u1_field({ repr: false }),
-  _view_flags: u1_field({ repr: false }),
-  _display_flags: u1_field({ repr: false }),
-  _pad_10: bytes_field(7, { repr: false }),
-  _guide_flags: u1_field({ repr: false }),
-  _pad_18: bytes_field(16, { repr: false }),
-  roi_top: u2_field(),
-  roi_left: u2_field(),
-  roi_bottom: u2_field(),
-  roi_right: u2_field(),
-  _pad_30: bytes_field(21, { repr: false }),
-  zoom_type: u1_field(),
-  _pad_46: bytes_field(2, { repr: false }),
-  zoom: f8_field(),
-  exposure: f4_field(),
-  _pad_54: u1_field({ repr: false }),
-  _color_mgmt_flags: u1_field({ default: 1, repr: false }),
-  _resolution_flags: u1_field({ repr: false }),
+  _pad_00: bytesField(7, { repr: false }),
+  channels: u1Field(),
+  _pad_08: bytesField(3, { repr: false }),
+  _grid_safe_flags: u1Field({ repr: false }),
+  _draft_flags: u1Field({ repr: false }),
+  _preview_flags: u1Field({ repr: false }),
+  _view_flags: u1Field({ repr: false }),
+  _display_flags: u1Field({ repr: false }),
+  _pad_10: bytesField(7, { repr: false }),
+  _guide_flags: u1Field({ repr: false }),
+  _pad_18: bytesField(16, { repr: false }),
+  roi_top: u2Field(),
+  roi_left: u2Field(),
+  roi_bottom: u2Field(),
+  roi_right: u2Field(),
+  _pad_30: bytesField(21, { repr: false }),
+  zoom_type: u1Field(),
+  _pad_46: bytesField(2, { repr: false }),
+  zoom: f8Field(),
+  exposure: f4Field(),
+  _pad_54: u1Field({ repr: false }),
+  _color_mgmt_flags: u1Field({ default: 1, repr: false }),
+  _resolution_flags: u1Field({ repr: false }),
 });
 descriptor(FipsChunk, "proportional_grid", new BitField("_grid_safe_flags", 1));
 descriptor(FipsChunk, "title_action_safe", new BitField("_grid_safe_flags", 0));
@@ -537,7 +537,7 @@ register("fips")(FipsChunk);
 // NOTE(port): Python lets a subclass attrs field replace the base property; attrs `define` assigns
 // with `self[name] = v`, so a writable data property on each variant prototype (applied after
 // `_PARD_VARIANTS`) gives the same behavior.
-export function shadow_property(cls: Function, name: string): void {
+export function shadowProperty(cls: Function, name: string): void {
   Object.defineProperty(cls.prototype, name, {
     configurable: true,
     enumerable: true,
@@ -577,17 +577,17 @@ export class PardChunk extends Chunk {
     const { chunk_type = "" } = kw;
     if (this !== PardChunk) {
       const result = super.read(fp, size, { chunk_type });
-      py_assert(result instanceof PardChunk);
+      pyAssert(result instanceof PardChunk);
       return result;
     }
-    if (size < 56) return new this({ chunk_type, data: read_bytes(fp, size) });
+    if (size < 56) return new this({ chunk_type, data: readBytes(fp, size) });
     // Peek at discriminator (byte 15)
-    const header = read_bytes(fp, 16);
-    const control_type = header[15];
+    const header = readBytes(fp, 16);
+    const controlType = header[15];
     fp.seek(-16, 1);
-    const variant_cls = _PARD_VARIANTS.get(control_type) ?? PardChunk;
-    if (variant_cls === PardChunk) return new this({ chunk_type, data: read_bytes(fp, size) });
-    return variant_cls.read(fp, size, { chunk_type });
+    const variantCls = _PARD_VARIANTS.get(controlType) ?? PardChunk;
+    if (variantCls === PardChunk) return new this({ chunk_type, data: readBytes(fp, size) });
+    return variantCls.read(fp, size, { chunk_type });
   }
 
   /**
@@ -655,15 +655,15 @@ export class GenericPardChunk extends PardChunk {
   declare _body: Uint8Array;
 }
 define(GenericPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field(),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  _body: bytes_field(92, { repr: false }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field(),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  _body: bytesField(92, { repr: false }),
 });
 
 /** `bytes(list_of_ints)`: raises like CPython outside 0..255 instead of wrapping. */
-export function _bytes_from_ints(value: number[]): Uint8Array {
+export function _bytesFromInts(value: number[]): Uint8Array {
   const out = new Uint8Array(value.length);
   for (let i = 0; i < value.length; i++) {
     const v = value[i];
@@ -692,7 +692,7 @@ export class ColorPardChunk extends PardChunk {
   }
 
   set last_color(value: number[]) {
-    this._last_color = _bytes_from_ints(value);
+    this._last_color = _bytesFromInts(value);
   }
 
   get default_color(): number[] {
@@ -700,16 +700,16 @@ export class ColorPardChunk extends PardChunk {
   }
 
   set default_color(value: number[]) {
-    this._default_color = _bytes_from_ints(value);
+    this._default_color = _bytesFromInts(value);
   }
 }
 define(ColorPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 5 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  _last_color: bytes_field(4, { repr: false }),
-  _default_color: bytes_field(4, { repr: false }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 5 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  _last_color: bytesField(4, { repr: false }),
+  _default_color: bytesField(4, { repr: false }),
 });
 
 /**
@@ -734,18 +734,18 @@ export class IntegerPardChunk extends PardChunk {
   declare default_: number | null;
 }
 define(IntegerPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 1 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value: s4_field(),
-  _value_str: bytes_field(32, { repr: false }),
-  _value_desc: bytes_field(32, { repr: false }),
-  valid_min: s4_field(),
-  valid_max: s4_field(),
-  slider_min: s4_field({ optional: true, default: null }),
-  slider_max: s4_field({ optional: true, default: null }),
-  default_: s4_field({ optional: true, default: null }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 1 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value: s4Field(),
+  _value_str: bytesField(32, { repr: false }),
+  _value_desc: bytesField(32, { repr: false }),
+  valid_min: s4Field(),
+  valid_max: s4Field(),
+  slider_min: s4Field({ optional: true, default: null }),
+  slider_max: s4Field({ optional: true, default: null }),
+  default_: s4Field({ optional: true, default: null }),
 });
 
 /**
@@ -796,18 +796,18 @@ export class ScalarPardChunk extends PardChunk {
   }
 }
 define(ScalarPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 2 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value_raw: s4_field(),
-  _value_str: bytes_field(32, { repr: false }),
-  _value_desc: bytes_field(32, { repr: false }),
-  valid_min_raw: s4_field(),
-  valid_max_raw: s4_field(),
-  slider_min_raw: s4_field(),
-  slider_max_raw: s4_field(),
-  default_raw: s4_field({ optional: true, default: null }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 2 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value_raw: s4Field(),
+  _value_str: bytesField(32, { repr: false }),
+  _value_desc: bytesField(32, { repr: false }),
+  valid_min_raw: s4Field(),
+  valid_max_raw: s4Field(),
+  slider_min_raw: s4Field(),
+  slider_max_raw: s4Field(),
+  default_raw: s4Field({ optional: true, default: null }),
 });
 
 /**
@@ -832,12 +832,12 @@ export class AnglePardChunk extends PardChunk {
   }
 }
 define(AnglePardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 3 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value_raw: s4_field(),
-  default_raw: s4_field({ optional: true, default: null }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 3 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value_raw: s4Field(),
+  default_raw: s4Field({ optional: true, default: null }),
 });
 
 /** Boolean control (type 4): u4 last_value, u1 default. */
@@ -849,12 +849,12 @@ export class BooleanPardChunk extends PardChunk {
   declare default_: number;
 }
 define(BooleanPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 4 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value: u4_field(),
-  default_: u1_field(),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 4 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value: u4Field(),
+  default_: u1Field(),
 });
 
 /**
@@ -890,16 +890,16 @@ export class TwoDPardChunk extends PardChunk {
   }
 }
 define(TwoDPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 6 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value_x_raw: s4_field(),
-  last_value_y_raw: s4_field(),
-  _reserved_40: bytes_field(3, { repr: false }),
-  restrict_bounds: u1_field(),
-  default_x_raw: s4_field(),
-  default_y_raw: s4_field(),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 6 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value_x_raw: s4Field(),
+  last_value_y_raw: s4Field(),
+  _reserved_40: bytesField(3, { repr: false }),
+  restrict_bounds: u1Field(),
+  default_x_raw: s4Field(),
+  default_y_raw: s4Field(),
 });
 
 /**
@@ -916,13 +916,13 @@ export class EnumPardChunk extends PardChunk {
   declare default_: number;
 }
 define(EnumPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 7 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value: u4_field(),
-  nb_options: s2_field(),
-  default_: s2_field(),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 7 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value: u4Field(),
+  nb_options: s2Field(),
+  default_: s2Field(),
 });
 
 /**
@@ -959,20 +959,20 @@ export class SliderPardChunk extends PardChunk {
   }
 }
 define(SliderPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 10 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value: f8_field(),
-  phase: f8_field(),
-  _value_desc: bytes_field(32, { repr: false }),
-  valid_min: f4_field(),
-  valid_max: f4_field(),
-  slider_min: f4_field(),
-  slider_max: f4_field(),
-  default_: f4_field({ optional: true, default: null }),
-  _precision: u2_field({ optional: true, default: null, repr: false }),
-  display_flags: u2_field({ optional: true, default: null }),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 10 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value: f8Field(),
+  phase: f8Field(),
+  _value_desc: bytesField(32, { repr: false }),
+  valid_min: f4Field(),
+  valid_max: f4Field(),
+  slider_min: f4Field(),
+  slider_max: f4Field(),
+  default_: f4Field({ optional: true, default: null }),
+  _precision: u2Field({ optional: true, default: null, repr: false }),
+  display_flags: u2Field({ optional: true, default: null }),
 });
 
 /**
@@ -1010,16 +1010,16 @@ export class ThreeDPardChunk extends PardChunk {
   }
 }
 define(ThreeDPardChunk, {
-  _pad_pre: bytes_field(15, { repr: false }),
-  property_control_type: u1_field({ default: 18 }),
-  _raw_name: bytes_field(32, { repr: false }),
-  _pad_post: bytes_field(8, { repr: false }),
-  last_value_x_raw: f8_field(),
-  last_value_y_raw: f8_field(),
-  last_value_z_raw: f8_field(),
-  default_x: f8_field(),
-  default_y: f8_field(),
-  default_z: f8_field(),
+  _pad_pre: bytesField(15, { repr: false }),
+  property_control_type: u1Field({ default: 18 }),
+  _raw_name: bytesField(32, { repr: false }),
+  _pad_post: bytesField(8, { repr: false }),
+  last_value_x_raw: f8Field(),
+  last_value_y_raw: f8Field(),
+  last_value_z_raw: f8Field(),
+  default_x: f8Field(),
+  default_y: f8Field(),
+  default_z: f8Field(),
 });
 
 // ---------------------------------------------------------------------------
@@ -1047,8 +1047,8 @@ export class DwgaChunk extends Chunk {
 }
 define(DwgaChunk, {
   chunk_type: field({ default: "dwga" }),
-  working_gamma_selector: u1_field(),
-  _reserved_01: bytes_field(3, { repr: false }),
+  working_gamma_selector: u1Field(),
+  _reserved_01: bytesField(3, { repr: false }),
 });
 register("dwga")(DwgaChunk);
 
@@ -1068,8 +1068,8 @@ export class EwotItem extends FmtItem {
   declare selected: boolean;
 }
 define(EwotItem, {
-  _flags: u1_field(),
-  _data: bytes_field(3),
+  _flags: u1Field(),
+  _data: bytesField(3),
 });
 descriptor(EwotItem, "is_child_property", new BitField("_flags", 7));
 descriptor(EwotItem, "selected", new BitField("_flags", 6));
@@ -1086,8 +1086,8 @@ export class EwotChunk extends Chunk {
 }
 define(EwotChunk, {
   chunk_type: field({ default: "ewot" }),
-  num_entries: u4_field(),
-  items: items_field(EwotItem, 4),
+  num_entries: u4Field(),
+  items: itemsField(EwotItem, 4),
 });
 register("ewot")(EwotChunk);
 
@@ -1116,9 +1116,9 @@ export class OtlnItem extends FmtItem {
   }
 }
 define(OtlnItem, {
-  _flags: u1_field(),
-  _unnamed6: bytes_field(2),
-  entry_type: u1_field(),
+  _flags: u1Field(),
+  _unnamed6: bytesField(2),
+  entry_type: u1Field(),
 });
 descriptor(OtlnItem, "collapsed", new BitField("_flags", 7));
 descriptor(OtlnItem, "selected", new BitField("_flags", 6));
@@ -1137,8 +1137,8 @@ export class OtlnChunk extends Chunk {
 }
 define(OtlnChunk, {
   chunk_type: field({ default: "otln" }),
-  num_entries: u4_field(),
-  items: items_field(OtlnItem, 4),
+  num_entries: u4Field(),
+  items: itemsField(OtlnItem, 4),
 });
 register("otln")(OtlnChunk);
 
@@ -1174,7 +1174,7 @@ for (const variant of [
   SliderPardChunk,
   ThreeDPardChunk,
 ]) {
-  shadow_property(variant, "property_control_type");
+  shadowProperty(variant, "property_control_type");
 }
 
 // ---------------------------------------------------------------------------
@@ -1201,12 +1201,12 @@ export class FeatherPointItem extends FmtItem {
   declare tension: number;
 }
 define(FeatherPointItem, {
-  seg_loc: u4_field({ endian: "<" }),
-  interp_raw: u4_field({ endian: "<" }),
-  rel_seg_loc: f8_field({ default: 0.0 }),
-  radius: f8_field({ default: 0.0 }),
-  corner_angle: f4_field({ default: 0.0 }),
-  tension: f4_field({ default: 0.0 }),
+  seg_loc: u4Field({ endian: "<" }),
+  interp_raw: u4Field({ endian: "<" }),
+  rel_seg_loc: f8Field({ default: 0.0 }),
+  radius: f8Field({ default: 0.0 }),
+  corner_angle: f4Field({ default: 0.0 }),
+  tension: f4Field({ default: 0.0 }),
 });
 
 export const _FTH5_ITEM_SIZE = 32;
@@ -1218,7 +1218,7 @@ export class Fth5Chunk extends Chunk {
 }
 define(Fth5Chunk, {
   chunk_type: field({ default: "fth5" }),
-  points: items_field(FeatherPointItem, 32),
+  points: itemsField(FeatherPointItem, 32),
 });
 register("fth5")(Fth5Chunk);
 
@@ -1231,7 +1231,7 @@ export class TensionItem extends FmtItem {
   declare value: number;
 }
 define(TensionItem, {
-  value: f4_field({ default: 0.0 }),
+  value: f4Field({ default: 0.0 }),
 });
 
 /**
@@ -1245,7 +1245,7 @@ export class OmtnChunk extends Chunk {
 }
 define(OmtnChunk, {
   chunk_type: field({ default: "omtn" }),
-  tensions: items_field(TensionItem, 4),
+  tensions: itemsField(TensionItem, 4),
 });
 register("omtn")(OmtnChunk);
 
@@ -1288,7 +1288,7 @@ export class EmpdChunk extends Chunk {
 }
 define(EmpdChunk, {
   chunk_type: field({ default: "empd" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("empd")(EmpdChunk);
 
@@ -1299,7 +1299,7 @@ export class LinlChunk extends Chunk {
 }
 define(LinlChunk, {
   chunk_type: field({ default: "linl" }),
-  value: u4_field({ endian: "<", default: 2 }),
+  value: u4Field({ endian: "<", default: 2 }),
 });
 register("linl")(LinlChunk);
 
@@ -1310,7 +1310,7 @@ export class EmbpChunk extends Chunk {
 }
 define(EmbpChunk, {
   chunk_type: field({ default: "embp" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("embp")(EmbpChunk);
 
@@ -1321,7 +1321,7 @@ export class IpwsChunk extends Chunk {
 }
 define(IpwsChunk, {
   chunk_type: field({ default: "ipws" }),
-  value: u1_field({ default: 1 }),
+  value: u1Field({ default: 1 }),
 });
 register("ipws")(IpwsChunk);
 
@@ -1332,7 +1332,7 @@ export class DcuiChunk extends Chunk {
 }
 define(DcuiChunk, {
   chunk_type: field({ default: "dcui" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("dcui")(DcuiChunk);
 
@@ -1343,7 +1343,7 @@ export class PrgbChunk extends Chunk {
 }
 define(PrgbChunk, {
   chunk_type: field({ default: "prgb" }),
-  value: u1_field({ default: 1 }),
+  value: u1Field({ default: 1 }),
 });
 register("prgb")(PrgbChunk);
 
@@ -1354,7 +1354,7 @@ export class McspChunk extends Chunk {
 }
 define(McspChunk, {
   chunk_type: field({ default: "Mcsp" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("Mcsp")(McspChunk);
 
@@ -1365,7 +1365,7 @@ export class OcspChunk extends Chunk {
 }
 define(OcspChunk, {
   chunk_type: field({ default: "ocsp" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("ocsp")(OcspChunk);
 
@@ -1376,7 +1376,7 @@ export class HdrmChunk extends Chunk {
 }
 define(HdrmChunk, {
   chunk_type: field({ default: "hdrm" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("hdrm")(HdrmChunk);
 
@@ -1389,9 +1389,9 @@ export class StrtChunk extends Chunk {
 }
 define(StrtChunk, {
   chunk_type: field({ default: "strt" }),
-  _reserved_00: bytes_field(4, { repr: false }),
-  fps_byte: u1_field({ default: 1 }),
-  _reserved_05: bytes_field(3, { repr: false }),
+  _reserved_00: bytesField(4, { repr: false }),
+  fps_byte: u1Field({ default: 1 }),
+  _reserved_05: bytesField(3, { repr: false }),
 });
 register("strt")(StrtChunk);
 
@@ -1402,7 +1402,7 @@ export class DropChunk extends Chunk {
 }
 define(DropChunk, {
   chunk_type: field({ default: "drop" }),
-  value: bool_field({ default: true }),
+  value: boolField({ default: true }),
 });
 register("drop")(DropChunk);
 
@@ -1416,9 +1416,9 @@ export class FtgiChunk extends Chunk {
 }
 define(FtgiChunk, {
   chunk_type: field({ default: "ftgi" }),
-  start_offset: u4_field(),
-  frame_rate_num: u4_field({ default: 1 }),
-  end_frame: u4_field({ default: 0xffffffff }),
-  time_base: u4_field({ default: 600 }),
+  start_offset: u4Field(),
+  frame_rate_num: u4Field({ default: 1 }),
+  end_frame: u4Field({ default: 0xffffffff }),
+  time_base: u4Field({ default: 600 }),
 });
 register("ftgi")(FtgiChunk);

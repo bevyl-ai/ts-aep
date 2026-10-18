@@ -31,6 +31,11 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Doc examples compile, TSDoc is clean
+        run: |
+          bun tools/doc_examples.ts | tail -1 | python3 -c "import json,sys; sys.exit(json.loads(sys.stdin.read())['errors'] != 0)"
+          bun tools/tsdoc_lint.ts | python3 -c "import json,sys; sys.exit(json.loads(sys.stdin.read())['messages'] != 0)"
+
       - name: Upstream test suite
         run: bun test --timeout 60000
 

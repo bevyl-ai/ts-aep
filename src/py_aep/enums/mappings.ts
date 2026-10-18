@@ -12,17 +12,17 @@ import { OutputAudio } from "./output_module.ts";
 /**
  * Derive the Output Audio setting from two binary sources.
  *
- * @param audio_enabled - Whether audio is enabled.
- * @param audio_auto - Whether audio is set to auto.
+ * @param audioEnabled - Whether audio is enabled.
+ * @param audioAuto - Whether audio is set to auto.
  */
-export function map_output_audio(
-  audio_enabled: boolean,
-  audio_auto: boolean,
+export function mapOutputAudio(
+  audioEnabled: boolean,
+  audioAuto: boolean,
 ): OutputAudio {
-  if (!audio_enabled) {
+  if (!audioEnabled) {
     return OutputAudio.OFF;
   }
-  if (audio_auto) {
+  if (audioAuto) {
     return OutputAudio.AUTO;
   }
   return OutputAudio.ON;
@@ -158,7 +158,7 @@ export const _NAME_TO_ICC_PROFILE: Map<string, string> = new Map<string, string>
  * `app.project.listColorProfiles()` returns in Adobe CMS mode (verified
  * set-identical, 102 names).
  */
-export function adobe_color_profile_names(): string[] {
+export function adobeColorProfileNames(): string[] {
   return [..._ICC_PROFILE_MAPPING.values()];
 }
 
@@ -171,9 +171,9 @@ export function adobe_color_profile_names(): string[] {
  *
  * @param name - The color-space name (e.g. `"sRGB IEC61966-2.1"`).
  */
-export function profile_id_for_name(name: string): Uint8Array | null {
-  const uid_hex = _NAME_TO_ICC_PROFILE.get(name) ?? null;
-  return uid_hex != null ? bytes_.fromhex(uid_hex) : null;
+export function profileIdForName(name: string): Uint8Array | null {
+  const uidHex = _NAME_TO_ICC_PROFILE.get(name) ?? null;
+  return uidHex != null ? bytes_.fromhex(uidHex) : null;
 }
 
 /**
@@ -184,21 +184,21 @@ export function profile_id_for_name(name: string): Uint8Array | null {
  * 16-byte `output_profile_id` is looked up in the known profiles
  * table.
  *
- * @param output_profile_id - 16-byte binary profile identifier from the output-module `ldat` chunk.
- * @param output_color_space_working - Flag indicating "Working Color Space".
- * @param working_space - The project's working color space name.
+ * @param outputProfileId - 16-byte binary profile identifier from the output-module `ldat` chunk.
+ * @param outputColorSpaceWorking - Flag indicating "Working Color Space".
+ * @param workingSpace - The project's working color space name.
  * @returns The color space name, or `null` if the profile is unknown.
  */
-export function map_output_color_space(
-  output_profile_id: Uint8Array,
-  output_color_space_working: boolean,
-  working_space: string,
+export function mapOutputColorSpace(
+  outputProfileId: Uint8Array,
+  outputColorSpaceWorking: boolean,
+  workingSpace: string,
 ): string | null {
-  if (output_color_space_working) {
-    return working_space;
+  if (outputColorSpaceWorking) {
+    return workingSpace;
   }
-  const uid_hex = bytes_.hex(output_profile_id);
-  return _ICC_PROFILE_MAPPING.get(uid_hex) ?? null;
+  const uidHex = bytes_.hex(outputProfileId);
+  return _ICC_PROFILE_MAPPING.get(uidHex) ?? null;
 }
 
 /**
@@ -209,22 +209,22 @@ export function map_output_color_space(
  * override profile, while the `ipws` chunk indicates whether
  * the project working space is used instead.
  *
- * @param ipws_enabled - Whether the "Working Color Space" option is selected (`ipws` chunk value).
- * @param override_profile_id - 16-byte binary profile identifier from the `apid` chunk inside
+ * @param ipwsEnabled - Whether the "Working Color Space" option is selected (`ipws` chunk value).
+ * @param overrideProfileId - 16-byte binary profile identifier from the `apid` chunk inside
  *   `LIST:CLRS`.
  * @returns `"Working Color Space"` when `ipws_enabled` is True, `"Embedded"` when the profile ID is
  *   all `0xFF` (no override), or the resolved profile name.
  */
-export function map_media_color_space(
-  ipws_enabled: boolean,
-  override_profile_id: Uint8Array,
+export function mapMediaColorSpace(
+  ipwsEnabled: boolean,
+  overrideProfileId: Uint8Array,
 ): string {
-  if (ipws_enabled) {
+  if (ipwsEnabled) {
     return "Working Color Space";
   }
-  const uid_hex = bytes_.hex(override_profile_id);
-  if (uid_hex === "f".repeat(32)) {
+  const uidHex = bytes_.hex(overrideProfileId);
+  if (uidHex === "f".repeat(32)) {
     return "Embedded";
   }
-  return _ICC_PROFILE_MAPPING.get(uid_hex) ?? uid_hex;
+  return _ICC_PROFILE_MAPPING.get(uidHex) ?? uidHex;
 }

@@ -1,7 +1,7 @@
 /** Shared plumbing for the per-renderer option wrappers. */
 
 import { INSPECT } from "../../../../pyrt/index.ts";
-import { AttributeError, object_setattr, py_object, repr } from "../../../../pyrt/index.ts";
+import { AttributeError, objectSetattr, pyObject, repr } from "../../../../pyrt/index.ts";
 import { SettingsView, type SettingsSpec } from "../../renderqueue/settings.ts";
 import type { CompItem } from "../composition.ts";
 import type { Chunk } from "../../../binary/chunk.ts";
@@ -16,8 +16,7 @@ import type { Chunk } from "../../../binary/chunk.ts";
  * ```ts
  * import type { CompItem } from "@bevyl-ai/ts-aep";
  * declare const comp: CompItem;
- * comp.rendererOptions.__setitem__("Quality", 61);   // mapping
- * comp.rendererOptions.__setattr__("quality", 61);   // typed, validated
+ * comp.rendererOptions.set("Quality", 61);
  * ```
  *
  * The {@link CompItem} is held because Advanced 3D stores its Casting Box
@@ -40,8 +39,8 @@ export class RendererOptionsBase extends SettingsView {
     this._comp = comp;
     // Python's owner is the (possibly proxied) instance itself, so writes via
     // the mapping side go through `__setattr__` as well.
-    const self = py_object(this);
-    object_setattr(self, "_owner", self);
+    const self = pyObject(this);
+    objectSetattr(self, "_owner", self);
     return self;
   }
 
@@ -53,7 +52,7 @@ export class RendererOptionsBase extends SettingsView {
     if (!name.startsWith("_") && !(name in this.constructor.prototype)) {
       throw new AttributeError(`${this.constructor.name} has no option ${repr(name)}`);
     }
-    object_setattr(this, name, value);
+    objectSetattr(this, name, value);
   }
 
   [INSPECT](): string {

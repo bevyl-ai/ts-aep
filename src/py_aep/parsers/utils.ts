@@ -1,6 +1,6 @@
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { TdmnChunk } from "../binary/property_chunks.ts";
-import { py_bool, setdefault } from "../../pyrt/index.ts";
+import { pyBool, setdefault } from "../../pyrt/index.ts";
 
 export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
 
@@ -14,23 +14,23 @@ export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
  * preserved for same-type properties separated by others (unlike
  * `get_chunks_by_match_name`, which merges them).
  */
-export function get_match_name_runs(root_chunk: ListChunk): [string, Chunk[]][] {
+export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
   const runs: [string, Chunk[]][] = [];
-  if (py_bool(root_chunk)) {
-    let skip_to_next_tdmn_flag = true;
-    for (const chunk of root_chunk.chunks) {
+  if (pyBool(rootChunk)) {
+    let skipToNextTdmnFlag = true;
+    for (const chunk of rootChunk.chunks) {
       if (chunk.chunk_type === "tdmn" && chunk instanceof TdmnChunk) {
-        const match_name = chunk.value;
-        if (match_name === "ADBE Group End") {
-          skip_to_next_tdmn_flag = true;
+        const matchName = chunk.value;
+        if (matchName === "ADBE Group End") {
+          skipToNextTdmnFlag = true;
           continue;
         }
-        skip_to_next_tdmn_flag = false;
-        if (runs.length === 0 || runs[runs.length - 1][0] !== match_name) {
-          runs.push([match_name, []]);
+        skipToNextTdmnFlag = false;
+        if (runs.length === 0 || runs[runs.length - 1][0] !== matchName) {
+          runs.push([matchName, []]);
         }
         runs[runs.length - 1][1].push(chunk);
-      } else if (!skip_to_next_tdmn_flag && !_SKIP_CHUNK_TYPES.includes(chunk.chunk_type)) {
+      } else if (!skipToNextTdmnFlag && !_SKIP_CHUNK_TYPES.includes(chunk.chunk_type)) {
         runs[runs.length - 1][1].push(chunk);
       }
     }
@@ -45,10 +45,10 @@ export function get_match_name_runs(root_chunk: ListChunk): [string, Chunk[]][] 
  * relative order of same-type properties separated by others; use
  * `get_match_name_runs` when property order matters.
  */
-export function get_chunks_by_match_name(root_chunk: ListChunk): Map<string, Chunk[]> {
-  const chunks_by_match_name = new Map<string, Chunk[]>();
-  for (const [match_name, chunks] of get_match_name_runs(root_chunk)) {
-    setdefault(chunks_by_match_name, match_name, []).push(...chunks);
+export function getChunksByMatchName(rootChunk: ListChunk): Map<string, Chunk[]> {
+  const chunksByMatchName = new Map<string, Chunk[]>();
+  for (const [matchName, chunks] of getMatchNameRuns(rootChunk)) {
+    setdefault(chunksByMatchName, matchName, []).push(...chunks);
   }
-  return chunks_by_match_name;
+  return chunksByMatchName;
 }

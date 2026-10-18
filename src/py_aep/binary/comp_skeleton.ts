@@ -10,21 +10,21 @@
  * strings are expressions over the comp parameters, evaluated here.
  */
 
-import { ae_writes } from "../ae_version.ts";
+import { aeWrites } from "../ae_version.ts";
 import { COMP_VIEW_LAYER_SPECS, type GroupSpec, type LayerSpec, type PropSpec, type SpecExtras, type SpecValue } from "../data/comp_skeleton_specs.ts";
 import { Chunk, ListChunk } from "./chunk.ts";
-import { CdtaChunk, CsctChunk, frame_grid } from "./composition_chunks.ts";
+import { CdtaChunk, CsctChunk, frameGrid } from "./composition_chunks.ts";
 import { IdtaChunk } from "./item_chunks.ts";
 import { LdtaChunk } from "./layer_chunks.ts";
 import { ClassicPrdaChunk, PrinChunk } from "./misc_chunks.ts";
-import { build_gide_list, build_item_id_chunks, build_ovdg, build_ovg2 } from "./mutations.ts";
+import { buildGideList, buildItemIdChunks, buildOvdg, buildOvg2 } from "./mutations.ts";
 import { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk } from "./property_chunks.ts";
 import { S2Chunk, S4Chunk, U1Chunk, U4Chunk, Utf8Chunk } from "./scalar_chunks.ts";
 import { b, bytes_, float, floordiv, repr, round, ValueError } from "../../pyrt/index.ts";
 
 /** Build the `fvdv` ... `fifl` view-data septet AE writes after every
  * item's `LIST:Item` (and twice after each comp viewer layer). */
-export function build_item_view_chunks(): Chunk[] {
+export function buildItemViewChunks(): Chunk[] {
   return [
     new U4Chunk({ chunk_type: "fvdv", value: 3 }),
     new U1Chunk({ chunk_type: "fiop" }),
@@ -38,11 +38,11 @@ export function build_item_view_chunks(): Chunk[] {
 
 /** Build the per-layer view block AE writes after each layer's LIST
  * (an empty `Ewst` plus two view-data septets). */
-export function build_layer_view_block(): Chunk[] {
+export function buildLayerViewBlock(): Chunk[] {
   return [
     new ListChunk({ list_type: "Ewst", chunks: [] }),
-    ...build_item_view_chunks(),
-    ...build_item_view_chunks(),
+    ...buildItemViewChunks(),
+    ...buildItemViewChunks(),
   ];
 }
 
@@ -57,7 +57,7 @@ export function _evaluate(value: SpecValue, env: Record<string, number>): SpecVa
   return value;
 }
 
-export function _build_tdbs(spec: PropSpec, env: Record<string, number>): ListChunk {
+export function _buildTdbs(spec: PropSpec, env: Record<string, number>): ListChunk {
   const tdb4 = new Tdb4Chunk(
     Object.fromEntries(Object.entries<SpecValue>(spec["tdb4"]).map(([k, v]) => [k, _evaluate(v, env)])),
   );
@@ -86,11 +86,11 @@ export function _build_tdbs(spec: PropSpec, env: Record<string, number>): ListCh
   return new ListChunk({ list_type: "tdbs", chunks });
 }
 
-export function _build_extras(extras: SpecExtras): Chunk[] {
+export function _buildExtras(extras: SpecExtras): Chunk[] {
   const out: Chunk[] = [];
   for (const [kind, payload] of extras) {
     if (kind === "OvG2") {
-      out.push(build_ovg2());
+      out.push(buildOvg2());
     } else {
       out.push(new Chunk({ chunk_type: kind, data: bytes_.fromhex(payload) }));
     }
@@ -98,35 +98,35 @@ export function _build_extras(extras: SpecExtras): Chunk[] {
   return out;
 }
 
-export function _build_tdgp(
+export function _buildTdgp(
   spec: GroupSpec,
   env: Record<string, number>,
-  ae_major: number,
+  aeMajor: number,
 ): ListChunk {
   const chunks: Chunk[] = [
     new TdsbChunk({ ...(spec["tdsb"] ?? {}) }),
     TdsnChunk.new_(spec["tdsn"] ?? ""),
   ];
   for (const node of spec["children"]) {
-    const [kind, match_name, body, extras] = node;
-    if (body.gate !== undefined && !ae_writes(body.gate, ae_major)) continue;
-    chunks.push(new TdmnChunk({ value: match_name }));
-    if (extras !== undefined) chunks.push(..._build_extras(extras));
+    const [kind, matchName, body, extras] = node;
+    if (body.gate !== undefined && !aeWrites(body.gate, aeMajor)) continue;
+    chunks.push(new TdmnChunk({ value: matchName }));
+    if (extras !== undefined) chunks.push(..._buildExtras(extras));
     if (kind === "group") {
-      chunks.push(_build_tdgp(body, env, ae_major));
+      chunks.push(_buildTdgp(body, env, aeMajor));
     } else if (kind === "prop") {
-      chunks.push(_build_tdbs(body, env));
+      chunks.push(_buildTdbs(body, env));
     } else if (kind === "orientation") {
-      const otda_values = body.otda.map((v) => float(_evaluate(v, env)));
+      const otdaValues = body.otda.map((v) => float(_evaluate(v, env)));
       const { otda: _otda, ...inner } = body;
       const otky = new ListChunk({
         list_type: "otky",
-        chunks: [new OtdaChunk({ values: otda_values })],
+        chunks: [new OtdaChunk({ values: otdaValues })],
       });
       chunks.push(
         new ListChunk({
           list_type: "otst",
-          chunks: [_build_tdbs(inner, env), otky],
+          chunks: [_buildTdbs(inner, env), otky],
         }),
       );
     } else {
@@ -137,34 +137,34 @@ export function _build_tdgp(
   return new ListChunk({ list_type: "tdgp", chunks });
 }
 
-export function _build_view_layer(
+export function _buildViewLayer(
   spec: LayerSpec,
   env: Record<string, number>,
-  layer_id: number,
-  ae_major: number,
+  layerId: number,
+  aeMajor: number,
 ): ListChunk {
-  const ldta_kwargs: Record<string, SpecValue> = Object.fromEntries(
+  const ldtaKwargs: Record<string, SpecValue> = Object.fromEntries(
     Object.entries<SpecValue>(spec["ldta"]).map(([k, v]) => [k, _evaluate(v, env)]),
   );
-  if (!ae_writes("matte layer id", ae_major)) {
+  if (!aeWrites("matte layer id", aeMajor)) {
     // The matte-layer field arrived with AE 23: AE 22 writes 160-byte
     // records and refuses a 22-format file with the longer one.
-    delete ldta_kwargs.matte_layer_id;
+    delete ldtaKwargs.matte_layer_id;
   }
-  if (!ae_writes("view layer ldta tail", ae_major)) {
-    delete ldta_kwargs.reserved_94;
-    delete ldta_kwargs.reserved_98;
+  if (!aeWrites("view layer ldta tail", aeMajor)) {
+    delete ldtaKwargs.reserved_94;
+    delete ldtaKwargs.reserved_98;
   }
-  const ldta = new LdtaChunk({ layer_id, ...ldta_kwargs });
-  const [gide, _lhd3, _inner] = build_gide_list();
+  const ldta = new LdtaChunk({ layer_id: layerId, ...ldtaKwargs });
+  const [gide, _lhd3, _inner] = buildGideList();
   const chunks: Chunk[] = [
     ldta,
     new Utf8Chunk({ value: spec["name"] }),
-    _build_tdgp(spec["tdgp"], env, ae_major),
+    _buildTdgp(spec["tdgp"], env, aeMajor),
     gide,
   ];
-  if (ae_writes("layer OvdG", ae_major)) {
-    chunks.push(build_ovdg());
+  if (aeWrites("layer OvdG", aeMajor)) {
+    chunks.push(buildOvdg());
   }
   return new ListChunk({ list_type: spec["list_type"], chunks });
 }
@@ -174,19 +174,19 @@ export function _build_view_layer(
  * Returns `(cps2, name_utf8)` so callers can keep a reference to the
  * name chunk for later edits.
  */
-export function build_cps2(name: string): [ListChunk, Utf8Chunk] {
-  const name_utf8 = new Utf8Chunk({ value: name });
+export function buildCps2(name: string): [ListChunk, Utf8Chunk] {
+  const nameUtf8 = new Utf8Chunk({ value: name });
   const cps2 = new ListChunk({
     list_type: "CpS2",
-    chunks: [new CsctChunk(), name_utf8, new Utf8Chunk({ value: "en_US" })],
+    chunks: [new CsctChunk(), nameUtf8, new Utf8Chunk({ value: "en_US" })],
   });
-  return [cps2, name_utf8];
+  return [cps2, nameUtf8];
 }
 
-export function _build_cif(list_type: string): ListChunk {
-  const [cps2, _name_utf8] = build_cps2("Untitled");
+export function _buildCif(listType: string): ListChunk {
+  const [cps2, _nameUtf8] = buildCps2("Untitled");
   return new ListChunk({
-    list_type,
+    list_type: listType,
     chunks: [
       cps2,
       new ListChunk({
@@ -214,9 +214,9 @@ export function _build_cif(list_type: string): ListChunk {
  * `frames / 23.976` on its frame even though the stored rate is only
  * 16.16-accurate.
  */
-export function _frame_units(seconds: number, timebase: number, units_per_frame: number): number {
+export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: number): number {
   const units = round(seconds * timebase);
-  return floordiv(units + floordiv(units_per_frame, 2), units_per_frame) * units_per_frame;
+  return floordiv(units + floordiv(unitsPerFrame, 2), unitsPerFrame) * unitsPerFrame;
 }
 
 /** A comp duration in timebase units, snapped like `_frame_units`.
@@ -224,32 +224,32 @@ export function _frame_units(seconds: number, timebase: number, units_per_frame:
  * Under half a frame, AE stores a zero-length composition; py_aep keeps one
  * frame instead.
  */
-export function _duration_units(duration: number, timebase: number, units_per_frame: number): number {
-  return Math.max(_frame_units(duration, timebase, units_per_frame), units_per_frame);
+export function _durationUnits(duration: number, timebase: number, unitsPerFrame: number): number {
+  return Math.max(_frameUnits(duration, timebase, unitsPerFrame), unitsPerFrame);
 }
 
 /** Build a `cdta` matching AE's new-comp field encoding (600-based
  * cursor / work-area divisors, duration in timebase units). */
-export function _build_cdta(
+export function _buildCdta(
   width: number,
   height: number,
-  pixel_aspect: number,
+  pixelAspect: number,
   duration: number,
-  frame_rate: number,
+  frameRate: number,
 ): CdtaChunk {
   const cdta = new CdtaChunk({ width, height });
-  cdta.frame_rate = frame_rate;
+  cdta.frame_rate = frameRate;
   // The grid of the rate as given: the stored 16.16 rate of 3.3333 fps
   // (3.33329773) would round 8000 units a frame to 7999.
-  const [timebase, units_per_frame] = frame_grid(frame_rate);
+  const [timebase, unitsPerFrame] = frameGrid(frameRate);
   cdta.time_dividend = 0;
   cdta.time_divisor = 600;
   cdta.work_area_start_dividend = 0;
   cdta.work_area_start_divisor = 600;
   cdta.work_area_end_divisor = 600;
-  cdta.duration_dividend = _duration_units(duration, timebase, units_per_frame);
+  cdta.duration_dividend = _durationUnits(duration, timebase, unitsPerFrame);
   cdta.duration_divisor = timebase;
-  cdta.pixel_aspect = pixel_aspect;
+  cdta.pixel_aspect = pixelAspect;
   cdta.display_start_time_dividend = 0;
   return cdta;
 }
@@ -262,7 +262,7 @@ export function _build_cdta(
  * "Comp Label Index 2" label preference (AE factory value 15). Returns
  * `(item_list, idta, name_utf8, gide)`.
  */
-export function build_new_comp_item(kw: {
+export function buildNewCompItem(kw: {
   item_id: number;
   name: string;
   width: number;
@@ -287,8 +287,8 @@ export function build_new_comp_item(kw: {
     label = 15,
   } = kw;
   const idta = new IdtaChunk({ item_type: 4, item_id, label, flags_17: 0x20 });
-  const name_utf8 = new Utf8Chunk({ value: name });
-  const cdta = _build_cdta(width, height, pixel_aspect, duration, frame_rate);
+  const nameUtf8 = new Utf8Chunk({ value: name });
+  const cdta = _buildCdta(width, height, pixel_aspect, duration, frame_rate);
   const prin = new ListChunk({
     list_type: "PRin",
     chunks: [new PrinChunk(), new ClassicPrdaChunk()],
@@ -301,13 +301,13 @@ export function build_new_comp_item(kw: {
     TB: cdta.internal_timebase,
     DUR_UNITS: cdta.duration_dividend,
     PAR: pixel_aspect,
-    SHADOW_ALPHA: ae_writes("markers shadow alpha", ae_major) ? 255.0 : 0.0,
+    SHADOW_ALPHA: aeWrites("markers shadow alpha", ae_major) ? 255.0 : 0.0,
   };
 
   const children: Chunk[] = [
-    ...build_item_id_chunks(item_id, ae_major),
+    ...buildItemIdChunks(item_id, ae_major),
     idta,
-    name_utf8,
+    nameUtf8,
     new ListChunk({
       list_type: "dats",
       chunks: [new Chunk({ chunk_type: "numS", data: bytes_.repeat(b("\x00"), 4) })],
@@ -315,23 +315,23 @@ export function build_new_comp_item(kw: {
     cdta,
     new U1Chunk({ chunk_type: "cdrp" }),
   ];
-  if (ae_writes("comr", ae_major)) {
+  if (aeWrites("comr", ae_major)) {
     children.push(new Chunk({ chunk_type: "comr", data: b("\x00") }));
   }
   children.push(prin);
   for (const spec of COMP_VIEW_LAYER_SPECS) {
-    if (spec.gate !== undefined && !ae_writes(spec.gate, ae_major)) continue;
-    children.push(_build_view_layer(spec, env, allocate_layer_id(), ae_major));
-    children.push(...build_layer_view_block());
+    if (spec.gate !== undefined && !aeWrites(spec.gate, ae_major)) continue;
+    children.push(_buildViewLayer(spec, env, allocate_layer_id(), ae_major));
+    children.push(...buildLayerViewBlock());
   }
-  const cif_types = ["CIFO", "CIF2"];
-  if (ae_writes("CIF3", ae_major)) {
-    cif_types.push("CIF3");
+  const cifTypes = ["CIFO", "CIF2"];
+  if (aeWrites("CIF3", ae_major)) {
+    cifTypes.push("CIF3");
   }
-  children.push(...cif_types.map((t) => _build_cif(t)));
-  const [gide, _lhd3, _inner] = build_gide_list();
+  children.push(...cifTypes.map((t) => _buildCif(t)));
+  const [gide, _lhd3, _inner] = buildGideList();
   children.push(gide);
 
-  const item_list = new ListChunk({ list_type: "Item", chunks: children });
-  return [item_list, idta, name_utf8, gide];
+  const itemList = new ListChunk({ list_type: "Item", chunks: children });
+  return [itemList, idta, nameUtf8, gide];
 }

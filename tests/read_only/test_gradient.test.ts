@@ -2,12 +2,12 @@
 
 import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { Path, StopIteration, hasattr, len, py_eq } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, hasattr, len, pyEq } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 // Python's SAMPLE is cwd-relative ("samples/..."); resolved from this file so
 // the test does not depend on where bun is started.
@@ -211,17 +211,17 @@ const DEFAULT_AE_GRADIENT_XML =
   "</prop.map>\n";
 
 /** `@pytest.fixture()` gradient_comp: each test calls this in place of taking the fixture as a parameter. */
-function gradient_comp_fixture(): CompItem {
+function gradientCompFixture(): CompItem {
   const app = parse(SAMPLE);
   for (const v of app.project.items.values()) {
-    if (hasattr(v, "layers")) return as_instance(v, CompItem);
+    if (hasattr(v, "layers")) return asInstance(v, CompItem);
   }
   throw new StopIteration();
 }
 
 test("test_g_fill_gradient_colors", () => {
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
@@ -239,8 +239,8 @@ test("test_g_fill_gradient_colors", () => {
 });
 
 test("test_g_stroke_gradient_colors", () => {
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gstroke = contents.property("ADBE Vector Graphic - G-Stroke");
   const colors = gstroke.property("ADBE Vector Grad Colors");
@@ -252,12 +252,12 @@ test("test_g_stroke_gradient_colors", () => {
 
 /** G-Fill has all expected properties from synthesis specs. */
 test("test_g_fill_synthesized_properties", () => {
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
 
-  const expected_match_names = [
+  const expectedMatchNames = [
     "ADBE Vector Blend Mode",
     "ADBE Vector Composite Order",
     "ADBE Vector Fill Rule",
@@ -274,17 +274,17 @@ test("test_g_fill_synthesized_properties", () => {
     "ADBE Vector Fill Opacity",
   ];
   const actual = gfill.properties.map((p) => p.matchName);
-  expect(py_eq(actual, expected_match_names)).toBe(true);
+  expect(pyEq(actual, expectedMatchNames)).toBe(true);
 });
 
 /** G-Stroke has all expected properties from synthesis specs. */
 test("test_g_stroke_synthesized_properties", () => {
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gstroke = contents.property("ADBE Vector Graphic - G-Stroke");
 
-  const expected_match_names = [
+  const expectedMatchNames = [
     "ADBE Vector Blend Mode",
     "ADBE Vector Composite Order",
     "ADBE Vector Grad Type",
@@ -305,13 +305,13 @@ test("test_g_stroke_synthesized_properties", () => {
     "ADBE Vector Stroke Wave",
   ];
   const actual = gstroke.properties.map((p) => p.matchName);
-  expect(py_eq(actual, expected_match_names)).toBe(true);
+  expect(pyEq(actual, expectedMatchNames)).toBe(true);
 });
 
 /** Re-serializing a parsed (AE-written) gradient reproduces its bytes. */
 test("test_reserialize_matches_ae_bytes", () => {
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
@@ -320,5 +320,5 @@ test("test_reserialize_matches_ae_bytes", () => {
 
   const original = gradient._utf8.value;
   gradient._serialize();
-  expect(py_eq(gradient._utf8.value, original)).toBe(true);
+  expect(pyEq(gradient._utf8.value, original)).toBe(true);
 });

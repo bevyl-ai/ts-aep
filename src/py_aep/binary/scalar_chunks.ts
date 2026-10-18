@@ -11,9 +11,9 @@
 
 import { define, field, decode, encode } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
-import { read_bytes, write_bytes } from "./bin_utils.ts";
+import { readBytes, writeBytes } from "./bin_utils.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { f8_field, s2_field, s4_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { f8Field, s2Field, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -34,12 +34,12 @@ export class _StringChunkBase extends Chunk {
   ): _StringChunkBase {
     const { chunk_type = "" } = kwargs;
     const cls = this;
-    const raw = read_bytes(fp, size);
+    const raw = readBytes(fp, size);
     return new cls({ chunk_type, value: decode(raw, cls._ENCODING) });
   }
 
   write(fp: IO): number {
-    return write_bytes(
+    return writeBytes(
       fp,
       encode(this.value, this.constructor._ENCODING),
     );
@@ -58,7 +58,7 @@ export class U1Chunk extends Chunk {
   declare value: number;
 }
 define(U1Chunk, {
-  value: u1_field(),
+  value: u1Field(),
 });
 register(
   "efdc",
@@ -80,7 +80,7 @@ export class U2Chunk extends Chunk {
   declare value: number;
 }
 define(U2Chunk, {
-  value: u2_field(),
+  value: u2Field(),
 });
 register("oacc")(U2Chunk);
 
@@ -89,7 +89,7 @@ export class S2Chunk extends Chunk {
   declare value: number;
 }
 define(S2Chunk, {
-  value: s2_field(),
+  value: s2Field(),
 });
 register("fivc", "fipc")(S2Chunk);
 
@@ -98,7 +98,7 @@ export class U4Chunk extends Chunk {
   declare value: number;
 }
 define(U4Chunk, {
-  value: u4_field(),
+  value: u4Field(),
 });
 register(
   "CapL",
@@ -134,7 +134,7 @@ export class U4LeChunk extends Chunk {
   declare value: number;
 }
 define(U4LeChunk, {
-  value: u4_field({ endian: "<" }),
+  value: u4Field({ endian: "<" }),
 });
 register("iide", "mrid", "sfid", "StVS")(U4LeChunk);
 
@@ -150,7 +150,7 @@ export class S4Chunk extends Chunk {
   declare value: number;
 }
 define(S4Chunk, {
-  value: s4_field(),
+  value: s4Field(),
 });
 register("tdli", "tdpi", "tdps", "CcCt", "CprC", "parn")(S4Chunk);
 
@@ -163,7 +163,7 @@ export class F8Chunk extends Chunk {
   declare value: number;
 }
 define(F8Chunk, {
-  value: f8_field({ default: 0.0 }),
+  value: f8Field({ default: 0.0 }),
 });
 register("Smax", "Smin", "adfr", "ppSn")(F8Chunk);
 

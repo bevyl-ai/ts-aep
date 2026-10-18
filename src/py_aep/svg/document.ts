@@ -1,7 +1,7 @@
 /** SVG root parsing: canvas size and the viewBox origin transform. */
 
-import { float, min, max, py_eq, split } from "../../pyrt/index.ts";
-import { NUMBER_RE, parse_length } from "./_util.ts";
+import { float, min, max, pyEq, split } from "../../pyrt/index.ts";
+import { NUMBER_RE, parseLength } from "./_util.ts";
 import { Affine } from "./transform.ts";
 
 import type { Element } from "../../pyrt/etree.ts";
@@ -15,7 +15,7 @@ export type ViewBox = readonly [number, number, number, number];
  * when it is absent or invalid (not four finite numbers, or a size that is
  * not positive: SVG treats those as an error / no viewBox).
  */
-export function _view_box(value: string | null): ViewBox | null {
+export function _viewBox(value: string | null): ViewBox | null {
   if (!value) return null;
   const nums = Array.from(value.matchAll(NUMBER_RE), (n) => float(n[0]));
   if (nums.length !== 4 || !nums.every((n) => Number.isFinite(n))) return null;
@@ -32,18 +32,18 @@ export function _view_box(value: string | null): ViewBox | null {
  * space.
  */
 export function canvas(root: Element): [number, number, Affine] {
-  const view_box = _view_box(root.get("viewBox"));
-  if (view_box != null) {
-    const [min_x, min_y, vb_w, vb_h] = view_box;
+  const viewBox = _viewBox(root.get("viewBox"));
+  if (viewBox != null) {
+    const [minX, minY, vbW, vbH] = viewBox;
     // AE 2026 sizes the comp from the viewBox dimensions and only
     // shifts geometry by the viewBox origin (verified on the sample
     // SVG). Where width/height differ from the viewBox, AE also scales
     // the geometry by them while keeping the viewBox-sized comp;
     // py_aep keeps the drawing in viewBox units, so it fills the comp.
-    return [vb_w, vb_h, new Affine(undefined, undefined, undefined, undefined, -min_x, -min_y)];
+    return [vbW, vbH, new Affine(undefined, undefined, undefined, undefined, -minX, -minY)];
   }
-  const width = parse_length(root.get("width"));
-  const height = parse_length(root.get("height"));
+  const width = parseLength(root.get("width"));
+  const height = parseLength(root.get("height"));
   if (!(Number.isFinite(width) && Number.isFinite(height))) {
     return [0.0, 0.0, new Affine()];
   }
@@ -58,30 +58,30 @@ export function canvas(root: Element): [number, number, Affine] {
  * and the viewport size its percentages resolve against (the viewBox
  * size when there is one).
  */
-export function viewport_transform(
-  view_box: string | null,
-  preserve_aspect_ratio: string | null,
+export function viewportTransform(
+  viewBox: string | null,
+  preserveAspectRatio: string | null,
   x: number,
   y: number,
   width: number,
   height: number,
 ): [Affine, [number, number]] {
-  const vb = _view_box(view_box);
+  const vb = _viewBox(viewBox);
   if (vb == null) {
     return [new Affine(undefined, undefined, undefined, undefined, x, y), [width, height]];
   }
-  const [min_x, min_y, vb_w, vb_h] = vb;
-  let sx = width / vb_w;
-  let sy = height / vb_h;
-  const tokens = split(preserve_aspect_ratio || "").filter((t) => t !== "defer");
+  const [minX, minY, vbW, vbH] = vb;
+  let sx = width / vbW;
+  let sy = height / vbH;
+  const tokens = split(preserveAspectRatio || "").filter((t) => t !== "defer");
   const align = tokens.length > 0 ? tokens[0] : "xMidYMid";
   if (align !== "none") {
-    const s = py_eq(tokens.slice(1, 2), ["slice"]) ? max([sx, sy]) : min([sx, sy]);
+    const s = pyEq(tokens.slice(1, 2), ["slice"]) ? max([sx, sy]) : min([sx, sy]);
     sx = sy = s;
     const ax = (new Map<string, number>([["xMin", 0.0], ["xMid", 0.5], ["xMax", 1.0]])).get(align.slice(0, 4)) ?? 0.5;
     const ay = (new Map<string, number>([["YMin", 0.0], ["YMid", 0.5], ["YMax", 1.0]])).get(align.slice(4)) ?? 0.5;
-    x += (width - vb_w * s) * ax;
-    y += (height - vb_h * s) * ay;
+    x += (width - vbW * s) * ax;
+    y += (height - vbH * s) * ay;
   }
-  return [new Affine(sx, undefined, undefined, sy, x - min_x * sx, y - min_y * sy), [vb_w, vb_h]];
+  return [new Affine(sx, undefined, undefined, sy, x - minX * sx, y - minY * sy), [vbW, vbH]];
 }

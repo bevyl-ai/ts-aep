@@ -3,9 +3,9 @@
 import { INSPECT } from "../../pyrt/index.ts";
 import { GuideItem } from "../binary/ldat_chunks.ts";
 import { GuideOrientationType } from "../enums/index.ts";
-import { descriptor, float_repr } from "../../pyrt/index.ts";
+import { descriptor, floatRepr } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
-import { validate_f8 } from "./validators.ts";
+import { validateF8 } from "./validators.ts";
 
 /**
  * A ruler guide used for alignment in a composition.
@@ -44,8 +44,8 @@ export class Guide {
 
   declare _guide_item: GuideItem;
 
-  constructor(_guide_item: GuideItem) {
-    this._guide_item = _guide_item;
+  constructor(_guideItem: GuideItem) {
+    this._guide_item = _guideItem;
   }
 
   /**
@@ -54,13 +54,13 @@ export class Guide {
    * Any `orientation_type` value other than 0 or 1 defaults to
    * horizontal (matching ExtendScript behavior).
    *
-   * @param orientation_type - 0 for horizontal, 1 for vertical.
+   * @param orientationType - 0 for horizontal, 1 for vertical.
    * @param position - The pixel position of the guide.
    * @returns A new `Guide` instance backed by a freshly created `GuideItem`.
    */
-  static _new(orientation_type: number, position: number): Guide {
-    const orientation = GuideOrientationType.from_binary(orientation_type);
-    validate_f8(position);
+  static _new(orientationType: number, position: number): Guide {
+    const orientation = GuideOrientationType.from_binary(orientationType);
+    validateF8(position);
     const item = new GuideItem({
       orientation_type: GuideOrientationType.to_binary(orientation),
       position_type: 0,
@@ -74,7 +74,7 @@ export class Guide {
       this.orientationType === GuideOrientationType.HORIZONTAL
         ? "horizontal"
         : "vertical";
-    return `Guide(${orient}, position=${float_repr(this.position)})`;
+    return `Guide(${orient}, position=${floatRepr(this.position)})`;
   }
 }
 
@@ -91,7 +91,7 @@ descriptor(
 descriptor(
   Guide,
   "position",
-  new ChunkField("_guide_item", "position", { validate: validate_f8 }),
+  new ChunkField("_guide_item", "position", { validate: validateF8 }),
 );
 
 descriptor(

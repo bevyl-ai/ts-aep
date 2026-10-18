@@ -6,10 +6,10 @@ export {
   IndirectObject,
   IndirectReference,
   Stream,
-  cos_get,
-  run_spans,
+  cosGet,
+  runSpans,
 } from "./cos.ts";
 export { CosField } from "./descriptors.ts";
-export { decode_pdf_text_string } from "./pdfdoc.ts";
+export { decodePdfTextString } from "./pdfdoc.ts";
 export { serialize } from "./serializer.ts";
-export { POINT_TEXT_COS_TEMPLATE, get_cos_template } from "./text.ts";
+export { POINT_TEXT_COS_TEMPLATE, getCosTemplate } from "./text.ts";

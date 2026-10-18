@@ -2,7 +2,7 @@
 
 import { getitem } from "../../../pyrt/index.ts";
 import { LayerType } from "../../enums/index.ts";
-import { label_index } from "../preferences.ts";
+import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { EffectParamDefs } from "../descriptors.ts";
@@ -61,7 +61,7 @@ export class ShapeLayer extends AVLayer {
       layer.constructor._LAYER_MATCH_NAMES,
       LayerType.SHAPE,
     );
-    layer._ldta.label = label_index(
+    layer._ldta.label = labelIndex(
       containing_comp._project._preferences,
       "Shape Label Index 2",
       8,

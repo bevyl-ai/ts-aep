@@ -5,22 +5,22 @@ import { AudioBitDepth, AudioChannels, AudioCodec, AudioSampleRate, CineonFileFo
 // not imported by the Python module. They are imported here because `_rules_context` and
 // `validate_state` check `isinstance(value, IntEnum)` on values read from the XML format options,
 // and an enum-class membership test is the only way to tell a decoded member from a raw fallback.
-import { map_output_audio, map_output_color_space, profile_id_for_name } from "../../enums/mappings.ts";
-import { ocio_color_space_for_profile_id, ocio_output_profile_id, require_ocio_config, resolve_ocio_config } from "../../color/ocio.ts";
-import { allowed_values, constrained_keys, type RuleValue } from "../../data/output_module_rules.ts";
-import { parse_format_options } from "../../parsers/format_options.ts";
-import { FORMAT_ID_EXTENSIONS, VIDEO_CODEC_NAMES, resolve_output_filename, resolve_time_span } from "../../resolvers/output.ts";
-import { platform_path } from "../../resolvers/platform_paths.ts";
+import { mapOutputAudio, mapOutputColorSpace, profileIdForName } from "../../enums/mappings.ts";
+import { ocioColorSpaceForProfileId, ocioOutputProfileId, requireOcioConfig, resolveOcioConfig } from "../../color/ocio.ts";
+import { allowedValues, constrainedKeys, type RuleValue } from "../../data/output_module_rules.ts";
+import { parseFormatOptions } from "../../parsers/format_options.ts";
+import { FORMAT_ID_EXTENSIONS, VIDEO_CODEC_NAMES, resolveOutputFilename, resolveTimeSpan } from "../../resolvers/output.ts";
+import { platformPath } from "../../resolvers/platform_paths.ts";
 import { ChunkField } from "../descriptors.ts";
 import { CompItem } from "../items/composition.ts";
-import { _validate_number, validate_bool, validate_enum, validate_sequence, validate_string } from "../validators.ts";
+import { _validateNumber, validateBool, validateEnum, validateSequence, validateString } from "../validators.ts";
 import { CineonFormatOptions, PngFormatOptions, XmlFormatOptions, type JpegFormatOptions, type OpenExrFormatOptions, type TargaFormatOptions, type TiffFormatOptions } from "./format_options/index.ts";
-import { SettingsView, build_resize_to_strings, settings_to_number, settings_to_string, type SettingsSpec, type SettingValue, type SettingValues } from "./settings.ts";
-import { LHD3_BLOCK_SINGLE, set_lhd3_count } from "../../binary/ldat_chunks.ts";
+import { SettingsView, buildResizeToStrings, settingsToNumber, settingsToString, type SettingsSpec, type SettingValue, type SettingValues } from "./settings.ts";
+import { LHD3_BLOCK_SINGLE, setLhd3Count } from "../../binary/ldat_chunks.ts";
 import { HdrmChunk } from "../../binary/misc_chunks.ts";
 import { OutputModuleSettingsItem, RoptChunk, RouuChunk, TiffRoptChunk, type RenderSettingsItem } from "../../binary/render_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { PENDING_ASCENDCOUNT, alas_platform, type AlasData, build_als2_list, dump_alas, find_by_type, index_by_identity } from "../../binary/utils.ts";
+import { PENDING_ASCENDCOUNT, alasPlatform, type AlasData, buildAls2List, dumpAlas, findByType, indexByIdentity } from "../../binary/utils.ts";
 import type { Chunk } from "../../binary/chunk.ts";
 import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { OutputModuleTemplate } from "../../parsers/templates.ts";
@@ -31,14 +31,14 @@ import {
   b,
   bytes_,
   descriptor,
-  dict_get,
+  dictGet,
   getattr,
   getitem,
   int,
-  py_assert,
-  py_bool,
-  py_eq,
-  py_or,
+  pyAssert,
+  pyBool,
+  pyEq,
+  pyOr,
   repr,
   round,
   rstrip,
@@ -48,13 +48,13 @@ import {
   RuntimeError,
   ValueError,
   NotImplementedError,
-  json_loads,
+  jsonLoads,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `is_int` keeps that so raw bool fields still count as ints in the checks below.
-export function is_int(v: RuleValue | null): v is number | boolean {
+export function isInt(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
 }
 
@@ -82,7 +82,7 @@ export const _KEY_ENUM = new Map<string, KeyEnum>([
   ["Audio Bit Depth", AudioBitDepth],
 ]);
 
-export function _is_enum_member(key: string, value: RuleValue | null): value is RuleValue {
+export function _isEnumMember(key: string, value: RuleValue | null): value is RuleValue {
   return getitem(_KEY_ENUM, key).has(value);
 }
 
@@ -92,7 +92,7 @@ export function _is_enum_member(key: string, value: RuleValue | null): value is 
  * taking the member, `name` is `name_of`). Values that are not members of the key's enum
  * (ints, strings, bools) fall through to `str(v)`.
  */
-export function _label_or_name(key: string | null, v: RuleValue): string {
+export function _labelOrName(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) {
     const label = typeof E.label === "function" ? E.label(v) : null;
@@ -103,7 +103,7 @@ export function _label_or_name(key: string | null, v: RuleValue): string {
 }
 
 /** Python `getattr(v, "name", None) or str(v)` (see `_label_or_name`). */
-export function _name_or_str(key: string | null, v: RuleValue): string {
+export function _nameOrStr(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.name_of(v);
   return str(v);
@@ -111,24 +111,24 @@ export function _name_or_str(key: string | null, v: RuleValue): string {
 
 // NOTE(port): `{value!r}` of an IntEnum member is `<Cls.NAME: n>` in Python but a raw int stays
 // `n`; both are the same number here, so a member of the key's enum always reprs as a member.
-export function _value_repr(key: string, v: RuleValue): string {
+export function _valueRepr(key: string, v: RuleValue): string {
   const E = _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return `<${E.__name__}.${E.name_of(v)}: ${v}>`;
   return repr(v);
 }
 
 /** Factory for crop validators that check range and final dimension. */
-export function _validate_crop(peer_field: string, dimension: string): (value: number, obj: OutputModule) => void {
-  const range_check = _validate_number({ min: -30000, max: 30000, integer: true });
+export function _validateCrop(peerField: string, dimension: string): (value: number, obj: OutputModule) => void {
+  const rangeCheck = _validateNumber({ min: -30000, max: 30000, integer: true });
 
   return (value: number, obj: OutputModule): void => {
-    range_check(value, obj);
-    const peer: number = getattr(obj, peer_field);
-    const parent_rqi = obj._parent_rqi;
-    const comp_dim: number = getattr(parent_rqi.comp, dimension);
-    const res_attr = dimension === "width" ? "resolution_x" : "resolution_y";
-    const divisor = py_or(getattr(parent_rqi._ldat, res_attr), 1);
-    const dim = Math.ceil(comp_dim / divisor);
+    rangeCheck(value, obj);
+    const peer: number = getattr(obj, peerField);
+    const parentRqi = obj._parent_rqi;
+    const compDim: number = getattr(parentRqi.comp, dimension);
+    const resAttr = dimension === "width" ? "resolution_x" : "resolution_y";
+    const divisor = pyOr(getattr(parentRqi._ldat, resAttr), 1);
+    const dim = Math.ceil(compDim / divisor);
     const remaining = dim - value - peer;
     if (remaining < 1) {
       throw new ValueError(`Crop would reduce ${dimension} to ${remaining}px (must be >= 1)`);
@@ -160,7 +160,7 @@ export const _AUDIO_ENCODINGS = new Map<number, number>([
  * After Effects has no 24-bit audio output: AE 2026 crashes when a
  * script sets it and reads a stored 24-bit format back as 16 Bit.
  */
-export function _reject_24_bit_audio(value: RuleValue, obj: OutputModule): void {
+export function _reject24BitAudio(value: RuleValue, obj: OutputModule): void {
   if (value === AudioBitDepth.TWENTY_FOUR_BIT) {
     throw new ValueError(
       "Audio Bit Depth 24 Bit is not available: After Effects has no " +
@@ -177,7 +177,7 @@ export function _reject_24_bit_audio(value: RuleValue, obj: OutputModule): void 
  * fields whose forgiving read transform hides the enum class from
  * `ChunkField`).
  */
-export function _validate_for_format(
+export function _validateForFormat(
   key: string,
   pre: ((value: RuleValue, obj: OutputModule) => void) | null = null,
 ): (value: RuleValue, obj: OutputModule) => void {
@@ -191,7 +191,7 @@ export function _validate_for_format(
 // Reading/writing through the module keeps _CLAMP_ACCESSORS free of
 // isinstance lambdas; every writer is a raw write (validation bypass).
 
-export function _xml_options_of<K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec">(
+export function _xmlOptionsOf<K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec">(
   om: OutputModule,
   attr: K,
 ): XmlFormatOptions[K] | null {
@@ -202,10 +202,10 @@ export function _xml_options_of<K extends "audioBitrate" | "audioCodec" | "bitra
   return null;
 }
 
-export function _set_xml_param_raw(om: OutputModule, param_key: string, value: number): void {
+export function _setXmlParamRaw(om: OutputModule, paramKey: string, value: number): void {
   const fo = om._format_options;
   if (fo instanceof XmlFormatOptions) {
-    fo._set_param(param_key, str(value));
+    fo._set_param(paramKey, str(value));
   }
 }
 
@@ -397,9 +397,9 @@ export class OutputModule {
     [
       "Audio Format",
       [
-        (om) => _xml_options_of(om, "mpegAudioFormat"),
+        (om) => _xmlOptionsOf(om, "mpegAudioFormat"),
         (om, v) => {
-          _set_xml_param_raw(om, "ADBEMPEGAudioFormat", int(v));
+          _setXmlParamRaw(om, "ADBEMPEGAudioFormat", int(v));
         },
       ],
     ],
@@ -419,12 +419,12 @@ export class OutputModule {
     ["Audio Sample Rate", (om) => om._audio_sample_rate],
     ["Audio Channels", (om) => om._audio_channels],
     ["Audio Bit Depth", (om) => om._audio_bit_depth],
-    ["Audio Codec", (om) => _xml_options_of(om, "audioCodec")],
-    ["Video Codec", (om) => _xml_options_of(om, "videoCodec")],
-    ["Audio Format", (om) => _xml_options_of(om, "mpegAudioFormat")],
-    ["Multiplexer", (om) => _xml_options_of(om, "mpegMultiplexer")],
-    ["BitRate", (om) => _xml_options_of(om, "bitrate")],
-    ["Audio Bitrate", (om) => _xml_options_of(om, "audioBitrate")],
+    ["Audio Codec", (om) => _xmlOptionsOf(om, "audioCodec")],
+    ["Video Codec", (om) => _xmlOptionsOf(om, "videoCodec")],
+    ["Audio Format", (om) => _xmlOptionsOf(om, "mpegAudioFormat")],
+    ["Multiplexer", (om) => _xmlOptionsOf(om, "mpegMultiplexer")],
+    ["BitRate", (om) => _xmlOptionsOf(om, "bitrate")],
+    ["Audio Bitrate", (om) => _xmlOptionsOf(om, "audioBitrate")],
   ]);
 
   /** Keys whose stored value is a plain int/bool by design (everything
@@ -490,24 +490,24 @@ export class OutputModule {
    */
   static _new(kw: { render_settings_ldat: RenderSettingsItem; parent: RenderQueueItem }): [OutputModule, Chunk[]] {
     const { render_settings_ldat, parent } = kw;
-    const om_ldat_item = new OutputModuleSettingsItem();
+    const omLdatItem = new OutputModuleSettingsItem();
     const roou = new RouuChunk(); // defaults reproduce AE's fresh image-sequence Rouu
     const ropt = new TiffRoptChunk(); // AE's exact 602-byte TIFF format options
     const hdrm = new HdrmChunk();
-    const hdr_json = new Utf8Chunk({ value: "{}" });
-    const name_utf8 = new Utf8Chunk({ value: "TIFF Sequence with Alpha" });
+    const hdrJson = new Utf8Chunk({ value: "{}" });
+    const nameUtf8 = new Utf8Chunk({ value: "TIFF Sequence with Alpha" });
     // A freshly added module has no output file: AE leaves the file name
     // empty and writes no Als2 alias (it is created when a path is set).
-    const file_name_utf8 = new Utf8Chunk();
+    const fileNameUtf8 = new Utf8Chunk();
 
-    const lom_chunks: Chunk[] = [roou, ropt, hdrm, hdr_json, name_utf8, file_name_utf8];
+    const lomChunks: Chunk[] = [roou, ropt, hdrm, hdrJson, nameUtf8, fileNameUtf8];
 
     const om = new this({
-      _om_ldat: om_ldat_item,
+      _om_ldat: omLdatItem,
       _roou: roou,
       _alas_utf8: null,
-      _file_name_utf8: file_name_utf8,
-      _name_utf8: name_utf8,
+      _file_name_utf8: fileNameUtf8,
+      _name_utf8: nameUtf8,
       _render_settings_ldat: render_settings_ldat,
       parent,
       format_options: null,
@@ -516,7 +516,7 @@ export class OutputModule {
     // others keeps the item's skip frames.
     om._finalize_roou();
 
-    return [om, lom_chunks];
+    return [om, lomChunks];
   }
 
   /**
@@ -564,11 +564,11 @@ export class OutputModule {
    * `SET_PROXY`. Read-only.
    */
   get postRenderTargetComp(): CompItem {
-    const comp_id = this._om_ldat.post_render_target_comp_id || null;
-    if (comp_id == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
+    const compId = this._om_ldat.post_render_target_comp_id || null;
+    if (compId == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
       return this._parent_rqi.comp;
     }
-    return getitem(this._project.items, comp_id) as CompItem;
+    return getitem(this._project.items, compId) as CompItem;
   }
 
   set postRenderTargetComp(comp: CompItem) {
@@ -610,7 +610,7 @@ export class OutputModule {
         // real write to a read-only key still raises. An unknown key
         // short-circuits to `__setitem__`, which names the valid keys
         // (reading it here would raise a bare KeyError).
-        if (OM_SETTINGS.has(k) && py_eq(view.get(k), v)) {
+        if (OM_SETTINGS.has(k) && pyEq(view.get(k), v)) {
           continue;
         }
         view.set(k, v);
@@ -623,10 +623,10 @@ export class OutputModule {
   }
 
   set _video_output(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     // Format gate is necessary: turning video on for an audio
     // format would write comp dimensions into an audio-only Rouu.
-    _validate_for_format("Video Output")(value, this);
+    _validateForFormat("Video Output")(value, this);
     if (value) {
       const [w, h] = this._effective_dimensions;
       this._roou.width = w;
@@ -640,11 +640,11 @@ export class OutputModule {
   /** Output audio setting (the On and Auto flags of the settings). */
   get _output_audio(): OutputAudio {
     const ldat = this._om_ldat;
-    return map_output_audio(ldat.output_audio !== 0, ldat.output_audio_auto !== 0);
+    return mapOutputAudio(ldat.output_audio !== 0, ldat.output_audio_auto !== 0);
   }
 
   set _output_audio(value: OutputAudio) {
-    _validate_for_format("Output Audio")(value, this);
+    _validateForFormat("Output Audio")(value, this);
     if (value === OutputAudio.OFF) {
       // AE keeps the Auto flag when audio is switched off.
       this._om_ldat.output_audio = 0;
@@ -682,7 +682,7 @@ export class OutputModule {
         if (!(e instanceof ValueError)) throw e;
         continue;
       }
-      if (_is_enum_member(key, value)) {
+      if (_isEnumMember(key, value)) {
         context.set(key, value);
       }
     }
@@ -696,15 +696,15 @@ export class OutputModule {
         ["Multiplexer", fo.mpegMultiplexer],
       ];
       for (const [key, value] of pairs) {
-        if (_is_enum_member(key, value)) {
+        if (_isEnumMember(key, value)) {
           context.set(key, value);
         }
       }
-      if (is_int(fo.bitrate)) {
+      if (isInt(fo.bitrate)) {
         context.set("BitRate", fo.bitrate);
       }
     } else if (fo instanceof CineonFormatOptions) {
-      if (_is_enum_member("File Format", fo.fileFormat)) {
+      if (_isEnumMember("File Format", fo.fileFormat)) {
         context.set("File Format", fo.fileFormat);
       }
     }
@@ -727,17 +727,17 @@ export class OutputModule {
     if (!OutputFormat.has(fmt)) {
       return;
     }
-    const allowed = allowed_values(fmt, key, this._rules_context());
+    const allowed = allowedValues(fmt, key, this._rules_context());
     if (allowed == null || allowed.has(value)) {
       return;
     }
     // `label` (output-module enums) > `name` (plain IntEnums, which
     // str() to their bare value on 3.11+) > str (ints, strings).
     const labels = sorted(allowed, (v) => [typeof v === "string", v])
-      .map((v) => _label_or_name(key, v))
+      .map((v) => _labelOrName(key, v))
       .join(", ");
     throw new ValueError(
-      `${key} ${_value_repr(key, value)} is not available for format ${repr(OutputFormat.label(fmt))}. ` + `Allowed: ${labels}`,
+      `${key} ${_valueRepr(key, value)} is not available for format ${repr(OutputFormat.label(fmt))}. ` + `Allowed: ${labels}`,
     );
   }
 
@@ -761,7 +761,7 @@ export class OutputModule {
       return;
     }
     for (const key of keys) {
-      const allowed = allowed_values(fmt, key, this._rules_context());
+      const allowed = allowedValues(fmt, key, this._rules_context());
       if (allowed == null || allowed.size !== 1) {
         continue;
       }
@@ -799,16 +799,16 @@ export class OutputModule {
       return violations;
     }
     const context = this._rules_context();
-    const audio_on = this._output_audio !== OutputAudio.OFF;
-    const video_on = this._video_output;
-    for (const key of sorted(constrained_keys(fmt))) {
-      if (!audio_on && cls._AUDIO_STATE_KEYS.has(key)) {
+    const audioOn = this._output_audio !== OutputAudio.OFF;
+    const videoOn = this._video_output;
+    for (const key of sorted(constrainedKeys(fmt))) {
+      if (!audioOn && cls._AUDIO_STATE_KEYS.has(key)) {
         continue;
       }
-      if (!video_on && cls._VIDEO_STATE_KEYS.has(key)) {
+      if (!videoOn && cls._VIDEO_STATE_KEYS.has(key)) {
         continue;
       }
-      const allowed = allowed_values(fmt, key, context);
+      const allowed = allowedValues(fmt, key, context);
       if (allowed == null) {
         continue;
       }
@@ -823,10 +823,10 @@ export class OutputModule {
         continue;
       }
       if (cls._RAW_VALUE_KEYS.has(key)) {
-        if (!is_int(value)) {
+        if (!isInt(value)) {
           continue; // raw string fallback (garbage param): skip
         }
-      } else if (!_is_enum_member(key, value)) {
+      } else if (!_isEnumMember(key, value)) {
         continue; // raw fallback: unclean, skip
       }
       if (key === "Audio Sample Rate" && value === AudioSampleRate.OFF) {
@@ -844,49 +844,49 @@ export class OutputModule {
 
   /** Capture the batch rollback state (settings + format header/options). */
   _snapshot_state(): [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean] {
-    const lom_chunks = this._parent_rqi._lom.chunks;
+    const lomChunks = this._parent_rqi._lom.chunks;
     let start: number;
     let end: number;
     try {
-      [start, end] = this._block_span(lom_chunks);
+      [start, end] = this._block_span(lomChunks);
     } catch (e) {
       // _block_span locates this module's Roou by identity; it is
       // gone exactly when the module was removed.
       if (!(e instanceof ValueError)) throw e;
       throw new RuntimeError("This output module was removed from its render queue item; it can no longer be edited.");
     }
-    let ropt_bytes: Uint8Array | null = null;
+    let roptBytes: Uint8Array | null = null;
     for (let i = start; i < end; i++) {
-      if (lom_chunks[i].chunk_type === "Ropt") {
-        ropt_bytes = lom_chunks[i].tobytes();
+      if (lomChunks[i].chunk_type === "Ropt") {
+        roptBytes = lomChunks[i].tobytes();
         break;
       }
     }
-    let hdr10_value: string | null = null;
+    let hdr10Value: string | null = null;
     const fo = this._format_options;
     if (fo instanceof PngFormatOptions && fo._hdr10_utf8 != null) {
-      hdr10_value = fo._hdr10_utf8.value;
+      hdr10Value = fo._hdr10_utf8.value;
     }
-    return [this._om_ldat.tobytes(), this._roou.tobytes(), ropt_bytes, hdr10_value, fo != null];
+    return [this._om_ldat.tobytes(), this._roou.tobytes(), roptBytes, hdr10Value, fo != null];
   }
 
   /** Roll the module back to a `_snapshot_state` capture. */
   _restore_state(snapshot: [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean]): void {
-    const [ldat_bytes, roou_bytes, ropt_bytes, hdr10_value, had_options] = snapshot;
+    const [ldatBytes, roouBytes, roptBytes, hdr10Value, hadOptions] = snapshot;
     // In-place field copy keeps the item's identity in the ldat list.
-    const restored_item = OutputModuleSettingsItem.frombytes(ldat_bytes);
-    py_assert(restored_item instanceof OutputModuleSettingsItem);
-    this._om_ldat.restore_from(restored_item);
-    const lom_chunks = this._parent_rqi._lom.chunks;
-    const [start, end] = this._block_span(lom_chunks);
-    const new_roou = RouuChunk.frombytes(roou_bytes, { chunk_type: "Roou" });
-    py_assert(new_roou instanceof RouuChunk);
-    lom_chunks[start] = new_roou;
-    this._roou = new_roou;
-    if (ropt_bytes != null) {
+    const restoredItem = OutputModuleSettingsItem.frombytes(ldatBytes);
+    pyAssert(restoredItem instanceof OutputModuleSettingsItem);
+    this._om_ldat.restore_from(restoredItem);
+    const lomChunks = this._parent_rqi._lom.chunks;
+    const [start, end] = this._block_span(lomChunks);
+    const newRoou = RouuChunk.frombytes(roouBytes, { chunk_type: "Roou" });
+    pyAssert(newRoou instanceof RouuChunk);
+    lomChunks[start] = newRoou;
+    this._roou = newRoou;
+    if (roptBytes != null) {
       for (let i = start; i < end; i++) {
-        if (lom_chunks[i].chunk_type === "Ropt") {
-          lom_chunks[i] = RoptChunk.frombytes(ropt_bytes, { chunk_type: "Ropt" });
+        if (lomChunks[i].chunk_type === "Ropt") {
+          lomChunks[i] = RoptChunk.frombytes(roptBytes, { chunk_type: "Ropt" });
           break;
         }
       }
@@ -894,8 +894,8 @@ export class OutputModule {
     // Restore the PNG HDR10 sidecar before re-deriving the wrapper
     // (the wrapper caches the parsed JSON).
     const fo = this._format_options;
-    if (hdr10_value != null && fo instanceof PngFormatOptions && fo._hdr10_utf8 != null) {
-      fo._hdr10_utf8.value = hdr10_value;
+    if (hdr10Value != null && fo instanceof PngFormatOptions && fo._hdr10_utf8 != null) {
+      fo._hdr10_utf8.value = hdr10Value;
     }
     // Detach the outgoing wrapper. A reference the caller fetched
     // before the rollback wraps an Ropt that is no longer in the tree,
@@ -906,8 +906,8 @@ export class OutputModule {
     }
     // A module built without a format-options wrapper (_new) must
     // come out of a rollback the same way.
-    if (had_options) {
-      this._format_options = parse_format_options(lom_chunks.slice(start, end));
+    if (hadOptions) {
+      this._format_options = parseFormatOptions(lomChunks.slice(start, end));
       if (this._format_options != null) {
         this._format_options._parent_om = this;
       }
@@ -937,8 +937,8 @@ export class OutputModule {
    *
    * const om = parse("project.aep").project.renderQueue.items[0].outputModules[0];
    * om.batchEdit(() => {
-   *   om.settings.__setitem__("Audio Channels", AudioChannels.MONO);
-   *   om.settings.__setitem__("Audio Sample Rate", 22050);
+   *   om.settings.set("Audio Channels", AudioChannels.MONO);
+   *   om.settings.set("Audio Sample Rate", 22050);
    * });
    * ```
    */
@@ -955,7 +955,7 @@ export class OutputModule {
       return this;
     }
     const snapshot = this._snapshot_state();
-    const old_channels = this._om_ldat.channels;
+    const oldChannels = this._om_ldat.channels;
     this._batch_depth = 1;
     try {
       body(this);
@@ -972,7 +972,7 @@ export class OutputModule {
     // would make a batch REJECT a write that succeeds outside one. A
     // batch that never changed channels keeps explicit Depth writes
     // as-is; the parity rules then decide whether the pair is legal.
-    if (this._om_ldat.channels !== old_channels) {
+    if (this._om_ldat.channels !== oldChannels) {
       this._pair_depth_to_channels();
       this._apply_singleton_clamps(["Color"]);
     }
@@ -984,7 +984,7 @@ export class OutputModule {
       const details = violations
         .map(
           ([key, value, allowed]) =>
-            `${key}: ${_name_or_str(key, value)} not in ` + `{${sorted([...allowed].map((v) => _name_or_str(key, v))).join(", ")}}`,
+            `${key}: ${_nameOrStr(key, value)} not in ` + `{${sorted([...allowed].map((v) => _nameOrStr(key, v))).join(", ")}}`,
         )
         .join("; ");
       throw new ValueError(`batchEdit rolled back, invalid final state: ${details}`);
@@ -994,10 +994,10 @@ export class OutputModule {
 
   /** Re-pair the depth to the alpha choice (RGBA \<-\> `+` depths). */
   _pair_depth_to_channels(): void {
-    const depth_val = int(this._depth);
-    const is_rgba = this._om_ldat.channels === int(OutputChannels.RGBA);
-    const target = is_rgba ? _DEPTH_PLUS : _DEPTH_MINUS;
-    const paired = target.get(depth_val);
+    const depthVal = int(this._depth);
+    const isRgba = this._om_ldat.channels === int(OutputChannels.RGBA);
+    const target = isRgba ? _DEPTH_PLUS : _DEPTH_MINUS;
+    const paired = target.get(depthVal);
     if (paired !== undefined) {
       this._roou.depth = paired;
     }
@@ -1093,11 +1093,11 @@ export class OutputModule {
    */
   get _effective_dimensions(): [number, number] {
     const comp = this._parent_rqi.comp;
-    const res_x = this._parent_rqi._ldat.resolution_x || 1;
-    const res_y = this._parent_rqi._ldat.resolution_y || 1;
+    const resX = this._parent_rqi._ldat.resolution_x || 1;
+    const resY = this._parent_rqi._ldat.resolution_y || 1;
 
-    let w = Math.ceil(comp.width / res_x);
-    let h = Math.ceil(comp.height / res_y);
+    let w = Math.ceil(comp.width / resX);
+    let h = Math.ceil(comp.height / resY);
 
     if (this._om_ldat.resize) {
       [w, h] = [this._roou.width, this._roou.height];
@@ -1175,7 +1175,7 @@ export class OutputModule {
 
   /** Output color space derived from ICC profile and working space. */
   get _output_color_space(): string | null {
-    return map_output_color_space(
+    return mapOutputColorSpace(
       this._om_ldat.output_profile_id,
       this._om_ldat.output_color_space_working !== 0,
       this._project.workingSpace,
@@ -1202,9 +1202,9 @@ export class OutputModule {
     const project = this._project;
     const ldat = this._om_ldat;
     if (project.colorManagementSystem === ColorManagementSystem.OCIO && !ldat.output_color_space_working) {
-      const config = resolve_ocio_config(project.ocioConfigurationFile);
+      const config = resolveOcioConfig(project.ocioConfigurationFile);
       if (config != null) {
-        const name = ocio_color_space_for_profile_id(config, new Uint8Array(ldat.output_profile_id));
+        const name = ocioColorSpaceForProfileId(config, new Uint8Array(ldat.output_profile_id));
         if (name != null) {
           return name;
         }
@@ -1214,7 +1214,7 @@ export class OutputModule {
   }
 
   set outputColorSpace(value: string) {
-    validate_string(value);
+    validateString(value);
     const ldat = this._om_ldat;
     if (value === "Working Color Space") {
       ldat.output_color_space_working = 1;
@@ -1223,41 +1223,41 @@ export class OutputModule {
     }
     const project = this._project;
     if (project.colorManagementSystem === ColorManagementSystem.OCIO) {
-      const config = require_ocio_config(project.ocioConfigurationFile, `compute the output color space id for ${repr(value)}`);
+      const config = requireOcioConfig(project.ocioConfigurationFile, `compute the output color space id for ${repr(value)}`);
       ldat.output_color_space_working = 0;
-      ldat.output_profile_id = ocio_output_profile_id(config, value);
+      ldat.output_profile_id = ocioOutputProfileId(config, value);
       return;
     }
-    const profile_id = profile_id_for_name(value);
-    if (profile_id == null) {
+    const profileId = profileIdForName(value);
+    if (profileId == null) {
       throw new NotImplementedError(`Output color space ${repr(value)} is not a known Adobe ICC profile.`);
     }
     ldat.output_color_space_working = 0;
-    ldat.output_profile_id = profile_id;
+    ldat.output_profile_id = profileId;
   }
 
   /** Output file info (read-only). */
   get _output_file_info(): Map<string, string> {
-    const file_template = this.fileTemplate;
-    const folder_path = this._folder_path;
-    const file_name_template = this._file_name_template;
-    let subfolder_path: string;
-    let file_name: string;
-    if (file_name_template.includes("\\") || file_name_template.includes("/")) {
-      const sep = file_name_template.includes("\\") ? "\\" : "/";
-      const last_sep_idx = file_name_template.lastIndexOf(sep);
-      subfolder_path = file_name_template.slice(0, last_sep_idx);
-      file_name = file_name_template.slice(last_sep_idx + 1);
+    const fileTemplate = this.fileTemplate;
+    const folderPath = this._folder_path;
+    const fileNameTemplate = this._file_name_template;
+    let subfolderPath: string;
+    let fileName: string;
+    if (fileNameTemplate.includes("\\") || fileNameTemplate.includes("/")) {
+      const sep = fileNameTemplate.includes("\\") ? "\\" : "/";
+      const lastSepIdx = fileNameTemplate.lastIndexOf(sep);
+      subfolderPath = fileNameTemplate.slice(0, lastSepIdx);
+      fileName = fileNameTemplate.slice(lastSepIdx + 1);
     } else {
-      subfolder_path = "";
-      file_name = file_name_template;
+      subfolderPath = "";
+      fileName = fileNameTemplate;
     }
     return new Map<string, string>([
-      ["Full Flat Path", file_template],
-      ["Base Path", folder_path],
-      ["Subfolder Path", subfolder_path],
-      ["File Name", file_name],
-      ["File Template", file_name_template],
+      ["Full Flat Path", fileTemplate],
+      ["Base Path", folderPath],
+      ["Subfolder Path", subfolderPath],
+      ["File Name", fileName],
+      ["File Template", fileNameTemplate],
     ]);
   }
 
@@ -1267,13 +1267,13 @@ export class OutputModule {
       return this._roou.starting_number;
     }
     const rqi = this._parent_rqi;
-    const start_seconds = rqi.timeSpanStart;
-    const frame_rate = rqi.comp.frameRate;
-    return int(round(start_seconds * frame_rate));
+    const startSeconds = rqi.timeSpanStart;
+    const frameRate = rqi.comp.frameRate;
+    return int(round(startSeconds * frameRate));
   }
 
   set _starting_number(value: number) {
-    _validate_number({ min: 0, max: 9999999, integer: true })(value);
+    _validateNumber({ min: 0, max: 9999999, integer: true })(value);
     this._roou.starting_number = value;
   }
 
@@ -1283,7 +1283,7 @@ export class OutputModule {
   }
 
   set _resize_to(value: [number, number]) {
-    validate_sequence({ min: 1, max: 30000, length: 2, integer: true })(value);
+    validateSequence({ min: 1, max: 30000, length: 2, integer: true })(value);
     if (!this._video_output) {
       // Writing resize targets into the Rouu would flip video
       // output on (dimensions ARE the video-output flag).
@@ -1298,27 +1298,27 @@ export class OutputModule {
    * Combines the output folder path and file name template into a single
    * path string, using the path separator found in the folder path.
    *
-   * @param folder_path - The output folder path from alas data.
-   * @param file_name_template - The file name template (e.g., `[compName].[fileExtension]`).
-   * @param is_folder - Whether the alas path points to a folder.
+   * @param folderPath - The output folder path from alas data.
+   * @param fileNameTemplate - The file name template (e.g., `[compName].[fileExtension]`).
+   * @param isFolder - Whether the alas path points to a folder.
    * @returns The complete file template path.
    */
-  static _build_file_template(folder_path: string, file_name_template: string, is_folder: boolean): string {
-    if (!folder_path) {
+  static _build_file_template(folderPath: string, fileNameTemplate: string, isFolder: boolean): string {
+    if (!folderPath) {
       return "";
     }
 
-    if (!file_name_template) {
-      return folder_path;
+    if (!fileNameTemplate) {
+      return folderPath;
     }
 
-    if (is_folder) {
-      const path_sep = folder_path.includes("\\") ? "\\" : "/";
-      const cleaned_path = rstrip(folder_path, path_sep);
-      return `${cleaned_path}${path_sep}${file_name_template}`;
+    if (isFolder) {
+      const pathSep = folderPath.includes("\\") ? "\\" : "/";
+      const cleanedPath = rstrip(folderPath, pathSep);
+      return `${cleanedPath}${pathSep}${fileNameTemplate}`;
     }
 
-    return folder_path;
+    return folderPath;
   }
 
   /** Parsed JSON from the alas chunk. */
@@ -1330,13 +1330,13 @@ export class OutputModule {
     if (!text) {
       return new Map();
     }
-    const data = json_loads(text);
+    const data = jsonLoads(text);
     return data instanceof Map ? data : new Map();
   }
 
   /** Whether the alas path points to a folder. */
   get _is_folder(): boolean {
-    return py_bool(dict_get(this._alas_data, "target_is_folder", false));
+    return pyBool(dictGet(this._alas_data, "target_is_folder", false));
   }
 
   /** The four-character video codec identifier. */
@@ -1346,20 +1346,20 @@ export class OutputModule {
 
   /** Derive file extension from format_id, with Cineon special case. */
   get _resolve_extension(): string | null {
-    const format_id = this._roou.format_id;
-    if (format_id === "sDPX") {
+    const formatId = this._roou.format_id;
+    if (formatId === "sDPX") {
       const fo = this._format_options;
       if (fo instanceof CineonFormatOptions) {
         return fo.fileFormat === CineonFileFormat.DPX ? "dpx" : "cin";
       }
       return "dpx";
     }
-    return FORMAT_ID_EXTENSIONS.get(format_id) ?? null;
+    return FORMAT_ID_EXTENSIONS.get(formatId) ?? null;
   }
 
   /** The output folder path from the alas chunk. */
   get _folder_path(): string {
-    return str(dict_get(this._alas_data, "fullpath", ""));
+    return str(dictGet(this._alas_data, "fullpath", ""));
   }
 
   /** The file name template from the Utf8 chunk. */
@@ -1382,38 +1382,38 @@ export class OutputModule {
   }
 
   set fileTemplate(value: string) {
-    validate_string(value);
+    validateString(value);
     let alas = this._alas_utf8;
     if (alas == null) {
       alas = this._add_output_path_record();
     }
-    let folder_path: string;
-    let file_name: string;
+    let folderPath: string;
+    let fileName: string;
     if (this._is_folder) {
-      const path_sep = value.includes("\\") ? "\\" : "/";
-      const last_sep = value.lastIndexOf(path_sep);
-      if (last_sep >= 0) {
-        folder_path = value.slice(0, last_sep + 1);
-        file_name = value.slice(last_sep + 1);
+      const pathSep = value.includes("\\") ? "\\" : "/";
+      const lastSep = value.lastIndexOf(pathSep);
+      if (lastSep >= 0) {
+        folderPath = value.slice(0, lastSep + 1);
+        fileName = value.slice(lastSep + 1);
       } else {
-        folder_path = this._folder_path;
-        file_name = value;
+        folderPath = this._folder_path;
+        fileName = value;
       }
     } else {
-      folder_path = value;
-      file_name = "";
+      folderPath = value;
+      fileName = "";
     }
 
     const data = this._alas_data;
-    folder_path = platform_path(folder_path, { windows: this._project._windows });
-    data.set("fullpath", folder_path);
-    data.set("platform", alas_platform(folder_path));
+    folderPath = platformPath(folderPath, { windows: this._project._windows });
+    data.set("fullpath", folderPath);
+    data.set("platform", alasPlatform(folderPath));
     data.set("ascendcount_base", PENDING_ASCENDCOUNT);
     data.set("ascendcount_target", PENDING_ASCENDCOUNT);
-    alas.value = dump_alas(data);
+    alas.value = dumpAlas(data);
 
     if (this._file_name_utf8 != null) {
-      this._file_name_utf8.value = file_name;
+      this._file_name_utf8.value = fileName;
     }
   }
 
@@ -1425,16 +1425,16 @@ export class OutputModule {
    * the item leaves "Needs Output" for "Queued" (measured on AE 2026).
    */
   _add_output_path_record(): Utf8Chunk {
-    const lom_chunks = this._parent_rqi._lom.chunks;
-    const als2 = build_als2_list("", { target_is_folder: true });
+    const lomChunks = this._parent_rqi._lom.chunks;
+    const als2 = buildAls2List("", { target_is_folder: true });
     let position: number;
     if (this._name_utf8 != null) {
-      position = index_by_identity(lom_chunks, this._name_utf8);
+      position = indexByIdentity(lomChunks, this._name_utf8);
     } else {
-      position = this._block_span(lom_chunks)[1];
+      position = this._block_span(lomChunks)[1];
     }
-    lom_chunks.splice(position, 0, als2);
-    const alas = (this._alas_utf8 = find_by_type(als2.chunks, "alas"));
+    lomChunks.splice(position, 0, als2);
+    const alas = (this._alas_utf8 = findByType(als2.chunks, "alas"));
     this._om_ldat.has_output_file = true;
     if (this._parent_rqi.status === RQItemStatus.NEEDS_OUTPUT) {
       this._parent_rqi.status = RQItemStatus.QUEUED;
@@ -1456,41 +1456,41 @@ export class OutputModule {
    */
   get file(): string {
     const comp = this.parent.comp;
-    const rq_settings = this.parent.settings;
+    const rqSettings = this.parent.settings;
 
     const extension = this._resolve_extension;
-    const om_channels = this.settings.get("Channels");
-    const om_depth = this.settings.get("Depth");
+    const omChannels = this.settings.get("Channels");
+    const omDepth = this.settings.get("Depth");
     const compressor = this._video_codec ? VIDEO_CODEC_NAMES.get(this._video_codec) ?? this._video_codec : null;
 
-    const [effective_width, effective_height] = this._effective_dimensions;
-    const effective_frame_rate = this._effective_frame_rate;
-    const time_span = resolve_time_span(comp, rq_settings, effective_frame_rate);
+    const [effectiveWidth, effectiveHeight] = this._effective_dimensions;
+    const effectiveFrameRate = this._effective_frame_rate;
+    const timeSpan = resolveTimeSpan(comp, rqSettings, effectiveFrameRate);
 
     const project = this._project;
-    const project_name = project.file ? new Path(project.file).stem : "Untitled Project";
+    const projectName = project.file ? new Path(project.file).stem : "Untitled Project";
 
-    return resolve_output_filename(
+    return resolveOutputFilename(
       this.fileTemplate,
-      project_name,
+      projectName,
       comp.name,
       this.parent.name,
       this.name,
-      effective_width,
-      effective_height,
-      effective_frame_rate,
-      time_span.start_frame,
-      time_span.end_frame,
-      time_span.duration_frames,
-      time_span.start_time,
-      time_span.end_time,
-      time_span.duration_time,
-      om_channels,
+      effectiveWidth,
+      effectiveHeight,
+      effectiveFrameRate,
+      timeSpan.start_frame,
+      timeSpan.end_frame,
+      timeSpan.duration_frames,
+      timeSpan.start_time,
+      timeSpan.end_time,
+      timeSpan.duration_time,
+      omChannels,
       int(project.bitsPerChannel),
-      om_depth,
+      omDepth,
       compressor,
-      rq_settings.get("Field Render"),
-      rq_settings.get("3:2 Pulldown"),
+      rqSettings.get("Field Render"),
+      rqSettings.get("3:2 Pulldown"),
       extension,
     );
   }
@@ -1507,10 +1507,10 @@ export class OutputModule {
    */
   getSettings(format: GetSettingsFormat = GetSettingsFormat.STRING): Map<string, SettingValue> {
     if (format === GetSettingsFormat.STRING) {
-      return settings_to_string(this.settings, build_resize_to_strings(this._project._preferences));
+      return settingsToString(this.settings, buildResizeToStrings(this._project._preferences));
     }
     if (format === GetSettingsFormat.NUMBER) {
-      return settings_to_number(this.settings);
+      return settingsToNumber(this.settings);
     }
     throw new ValueError(`Unsupported format: ${repr(format)}`);
   }
@@ -1576,11 +1576,11 @@ export class OutputModule {
    * end of the list - the same span the parser builds with
    * `split_on_type(lom_chunks, "Roou")`.
    */
-  _block_span(lom_chunks: Chunk[]): [number, number] {
-    const start = index_by_identity(lom_chunks, this._roou);
-    let end = lom_chunks.length;
-    for (let i = start + 1; i < lom_chunks.length; i++) {
-      if (lom_chunks[i].chunk_type === "Roou") {
+  _block_span(lomChunks: Chunk[]): [number, number] {
+    const start = indexByIdentity(lomChunks, this._roou);
+    let end = lomChunks.length;
+    for (let i = start + 1; i < lomChunks.length; i++) {
+      if (lomChunks[i].chunk_type === "Roou") {
         end = i;
         break;
       }
@@ -1601,32 +1601,32 @@ export class OutputModule {
    * so those two are not yet byte-identical to AE's runtime output.
    */
   _apply_output_template(template: OutputModuleTemplate): void {
-    const lom_chunks = this._parent_rqi._lom.chunks;
+    const lomChunks = this._parent_rqi._lom.chunks;
     this._om_ldat.copy_settings_from(template.settings);
 
     // The LOm list holds every output module of the RQ item back to back.
     // Locate this module's own block (its Roou up to the next Roou) by
     // identity so edits below never touch a sibling module.
-    const [roou_idx, block_end] = this._block_span(lom_chunks);
+    const [roouIdx, blockEnd] = this._block_span(lomChunks);
 
     if (template.format_info != null) {
-      const new_roou = RouuChunk.frombytes(template.format_info, { chunk_type: "Roou" });
-      py_assert(new_roou instanceof RouuChunk);
-      lom_chunks[roou_idx] = new_roou;
-      this._roou = new_roou;
+      const newRoou = RouuChunk.frombytes(template.format_info, { chunk_type: "Roou" });
+      pyAssert(newRoou instanceof RouuChunk);
+      lomChunks[roouIdx] = newRoou;
+      this._roou = newRoou;
       this._finalize_roou();
     }
 
     // Replace the Ropt with the template's format options (or an empty
     // Ropt for formats that have none, e.g. AIFF). Scope the search to
     // this module's block so a sibling module's Ropt is never hit.
-    const new_ropt: Chunk =
+    const newRopt: Chunk =
       template.format_options != null
         ? RoptChunk.frombytes(template.format_options, { chunk_type: "Ropt" })
         : new RoptChunk();
-    for (let i = roou_idx; i < block_end; i++) {
-      if (lom_chunks[i].chunk_type === "Ropt") {
-        lom_chunks[i] = new_ropt;
+    for (let i = roouIdx; i < blockEnd; i++) {
+      if (lomChunks[i].chunk_type === "Ropt") {
+        lomChunks[i] = newRopt;
         break;
       }
     }
@@ -1640,7 +1640,7 @@ export class OutputModule {
     if (this._format_options != null) {
       this._format_options._detached = true;
     }
-    this._format_options = parse_format_options(lom_chunks.slice(roou_idx, block_end));
+    this._format_options = parseFormatOptions(lomChunks.slice(roouIdx, blockEnd));
     if (this._format_options != null) {
       this._format_options._parent_om = this;
     }
@@ -1661,22 +1661,22 @@ export class OutputModule {
     }
 
     const rqi = this._parent_rqi;
-    const om_idx = rqi._output_modules.indexOf(this);
+    const omIdx = rqi._output_modules.indexOf(this);
 
     // Remove this module's chunk block from LOm (its Roou to the next Roou
     // or end). Located by identity and bounded the same way the parser
     // splits modules, so byte-equal sibling modules are never hit.
-    const lom_chunks = rqi._lom.chunks;
-    const [roou_idx, end_idx] = this._block_span(lom_chunks);
-    lom_chunks.splice(roou_idx, end_idx - roou_idx);
+    const lomChunks = rqi._lom.chunks;
+    const [roouIdx, endIdx] = this._block_span(lomChunks);
+    lomChunks.splice(roouIdx, endIdx - roouIdx);
 
-    const om_ldat = find_by_type(rqi._list_chunk.chunks, "ldat");
-    om_ldat.items.splice(om_idx, 1);
+    const omLdat = findByType(rqi._list_chunk.chunks, "ldat");
+    omLdat.items.splice(omIdx, 1);
 
-    const om_lhd3 = find_by_type(rqi._list_chunk.chunks, "lhd3");
-    set_lhd3_count(om_lhd3, om_lhd3.count - 1, LHD3_BLOCK_SINGLE);
+    const omLhd3 = findByType(rqi._list_chunk.chunks, "lhd3");
+    setLhd3Count(omLhd3, omLhd3.count - 1, LHD3_BLOCK_SINGLE);
 
-    rqi._output_modules.splice(om_idx, 1);
+    rqi._output_modules.splice(omIdx, 1);
   }
 }
 
@@ -1690,7 +1690,7 @@ descriptor(
   OutputModule,
   "_audio_bit_depth",
   ChunkField.enum(AudioBitDepth, "_roou", "audio_bit_depth", {
-    validate: _validate_for_format("Audio Bit Depth", _reject_24_bit_audio),
+    validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
     post_set: "_sync_audio_format",
   }),
 );
@@ -1699,7 +1699,7 @@ descriptor(
   OutputModule,
   "_audio_channels",
   ChunkField.enum(AudioChannels, "_roou", "audio_channels", {
-    validate: _validate_for_format("Audio Channels"),
+    validate: _validateForFormat("Audio Channels"),
     post_set: "_clamp_audio_dependents",
   }),
 );
@@ -1708,7 +1708,7 @@ descriptor(
   OutputModule,
   "_audio_sample_rate",
   ChunkField.enum(AudioSampleRate, "_roou", "audio_sample_rate", {
-    validate: _validate_for_format("Audio Sample Rate"),
+    validate: _validateForFormat("Audio Sample Rate"),
   }),
 );
 
@@ -1716,7 +1716,7 @@ descriptor(
   OutputModule,
   "_channels",
   ChunkField.enum(OutputChannels, "_om_ldat", "channels", {
-    validate: _validate_for_format("Channels"),
+    validate: _validateForFormat("Channels"),
     post_set: "_sync_after_channels",
   }),
 );
@@ -1725,7 +1725,7 @@ descriptor(
   OutputModule,
   "_color_mode",
   ChunkField.enum(OutputColorMode, "_roou", "color_premultiplied", {
-    validate: _validate_for_format("Color"),
+    validate: _validateForFormat("Color"),
   }),
 );
 
@@ -1737,7 +1737,7 @@ descriptor(
   OutputModule,
   "_crop_bottom",
   new ChunkField("_om_ldat", "crop_bottom", {
-    validate: _validate_crop("_crop_top", "height"),
+    validate: _validateCrop("_crop_top", "height"),
     post_set: "_update_output_dimensions",
   }),
 );
@@ -1746,7 +1746,7 @@ descriptor(
   OutputModule,
   "_crop_left",
   new ChunkField("_om_ldat", "crop_left", {
-    validate: _validate_crop("_crop_right", "width"),
+    validate: _validateCrop("_crop_right", "width"),
     post_set: "_update_output_dimensions",
   }),
 );
@@ -1755,7 +1755,7 @@ descriptor(
   OutputModule,
   "_crop_right",
   new ChunkField("_om_ldat", "crop_right", {
-    validate: _validate_crop("_crop_left", "width"),
+    validate: _validateCrop("_crop_left", "width"),
     post_set: "_update_output_dimensions",
   }),
 );
@@ -1764,7 +1764,7 @@ descriptor(
   OutputModule,
   "_crop_top",
   new ChunkField("_om_ldat", "crop_top", {
-    validate: _validate_crop("_crop_bottom", "height"),
+    validate: _validateCrop("_crop_bottom", "height"),
     post_set: "_update_output_dimensions",
   }),
 );
@@ -1774,7 +1774,7 @@ descriptor(
   "_depth",
   ChunkField.enum(OutputColorDepth, "_roou", "depth", {
     allow_out_of_enum_values: true,
-    validate: _validate_for_format("Depth", validate_enum(OutputColorDepth)),
+    validate: _validateForFormat("Depth", validateEnum(OutputColorDepth)),
     post_set: "_sync_png_options",
   }),
 );

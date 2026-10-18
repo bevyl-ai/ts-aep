@@ -3,9 +3,9 @@
 import { warn } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { PropertyValueType } from "../enums/index.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { Keyframe } from "../models/properties/keyframe.ts";
 import { Property } from "../models/properties/property.ts";
 import type { CompItem } from "../models/items/composition.ts";
@@ -28,63 +28,63 @@ export const logger = {
  * @param composition - The parent composition.
  * @param property_depth - The nesting depth of this property (0 = layer level).
  */
-export const parse_property = _suppress_materialization().decorate(function parse_property(
-  tdbs_chunk: ListChunk,
-  match_name: string,
+export const parseProperty = _suppressMaterialization().decorate(function parse_property(
+  tdbsChunk: ListChunk,
+  matchName: string,
   composition: CompItem,
-  property_depth: number,
+  propertyDepth: number,
   tdmn: TdmnChunk,
 ): Property {
-  const tdbs_child_chunks = tdbs_chunk.chunks;
+  const tdbsChildChunks = tdbsChunk.chunks;
 
-  const tdsb_chunk = find_by_type(tdbs_child_chunks, "tdsb");
+  const tdsbChunk = findByType(tdbsChildChunks, "tdsb");
 
-  const tdb4_chunk = find_by_type(tdbs_child_chunks, "tdb4");
+  const tdb4Chunk = findByType(tdbsChildChunks, "tdb4");
 
   // The optional chunks, first of each type (py-aep gathers them in one
   // pass; the typed lookups here keep each chunk's class).
-  const cdat = find_by_type_or_null(tdbs_child_chunks, "cdat");
+  const cdat = findByTypeOrNull(tdbsChildChunks, "cdat");
 
   // For LAYER control properties, keep the tdpi chunk reference so the
   // layer index can be resolved lazily (it changes on layer reorder).
-  const tdpi = find_by_type_or_null(tdbs_child_chunks, "tdpi");
+  const tdpi = findByTypeOrNull(tdbsChildChunks, "tdpi");
   // AE writes a tdli (the mask's id, resolved lazily by
   // `Property._mask_index`) only for mask-index properties; their tdb4
   // alone reads as OneD (e.g. a text layer's Path).
-  let property_value_type: PropertyValueType | null = null;
-  if (find_by_type_or_null(tdbs_child_chunks, "tdli") !== null) {
-    property_value_type = PropertyValueType.MASK_INDEX;
+  let propertyValueType: PropertyValueType | null = null;
+  if (findByTypeOrNull(tdbsChildChunks, "tdli") !== null) {
+    propertyValueType = PropertyValueType.MASK_INDEX;
   }
 
-  const expression_utf8 = find_by_type_or_null(tdbs_child_chunks, "Utf8");
+  const expressionUtf8 = findByTypeOrNull(tdbsChildChunks, "Utf8");
 
-  const tdum = find_by_type_or_null(tdbs_child_chunks, "tdum");
-  const tduM = find_by_type_or_null(tdbs_child_chunks, "tduM");
+  const tdum = findByTypeOrNull(tdbsChildChunks, "tdum");
+  const tduM = findByTypeOrNull(tdbsChildChunks, "tduM");
 
-  const keyframes = _parse_keyframes(tdbs_child_chunks, composition.frameRate);
+  const keyframes = _parseKeyframes(tdbsChildChunks, composition.frameRate);
 
   // Resolve _name_utf8 from the LIST:tdbs tdsn child.
-  const tdsn = find_by_type(tdbs_child_chunks, "tdsn");
-  const name_utf8 = tdsn.utf8;
+  const tdsn = findByType(tdbsChildChunks, "tdsn");
+  const nameUtf8 = tdsn.utf8;
 
   const prop = new Property({
     _tdmn: tdmn,
-    _tdsb: tdsb_chunk,
-    _tdb4: tdb4_chunk,
-    _expression_utf8: expression_utf8,
-    _name_utf8: name_utf8,
-    _tdbs: tdbs_chunk,
+    _tdsb: tdsbChunk,
+    _tdb4: tdb4Chunk,
+    _expression_utf8: expressionUtf8,
+    _name_utf8: nameUtf8,
+    _tdbs: tdbsChunk,
     _tdum: tdum,
     _tduM: tduM,
     _cdat: cdat,
     _tdpi: tdpi,
     _composition: composition,
-    match_name,
-    property_depth,
+    match_name: matchName,
+    property_depth: propertyDepth,
     keyframes,
     // Read lazily from the chunks (`Property._stored_static_value`).
     value: null,
-    property_value_type,
+    property_value_type: propertyValueType,
   });
 
   return prop;
@@ -93,18 +93,18 @@ export const parse_property = _suppress_materialization().decorate(function pars
 /**
  * Parse keyframes from a property's child chunks.
  *
- * @param tdbs_child_chunks - The child chunks of the TDBS chunk.
- * @param frame_rate - The frame rate of the parent composition.
+ * @param tdbsChildChunks - The child chunks of the TDBS chunk.
+ * @param frameRate - The frame rate of the parent composition.
  */
-export function _parse_keyframes(tdbs_child_chunks: Chunk[], frame_rate: number): Keyframe[] {
-  const list_chunk = find_by_list_type_or_null(tdbs_child_chunks, "list");
-  if (list_chunk === null) return [];
+export function _parseKeyframes(tdbsChildChunks: Chunk[], frameRate: number): Keyframe[] {
+  const listChunk = findByListTypeOrNull(tdbsChildChunks, "list");
+  if (listChunk === null) return [];
 
-  const ldat = find_by_type_or_null(list_chunk.chunks, "ldat");
+  const ldat = findByTypeOrNull(listChunk.chunks, "ldat");
 
   if (ldat === null) return [];
 
-  const kf_items = ldat.items;
+  const kfItems = ldat.items;
 
-  return kf_items.map((kf) => new Keyframe({ _ldat_item: kf, _frame_rate: frame_rate }));
+  return kfItems.map((kf) => new Keyframe({ _ldat_item: kf, _frame_rate: frameRate }));
 }

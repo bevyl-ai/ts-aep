@@ -7,8 +7,8 @@
 
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
-import { get_folder, get_folder_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { Path, len, py_bool } from "../../src/pyrt/index.ts";
+import { getFolder, getFolderFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
+import { Path, len, pyBool } from "../../src/pyrt/index.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
@@ -17,78 +17,78 @@ const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "mode
 /** Tests for basic folder attributes. */
 describe("TestFolderBasic", () => {
   test("test_empty", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "EmptyFolder");
-    const folder = get_folder(project, "EmptyFolder");
-    expect(folder.name).toBe(folder_json["name"]);
-    expect(folder_json["name"]).toBe("EmptyFolder");
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "EmptyFolder");
+    const folder = getFolder(project, "EmptyFolder");
+    expect(folder.name).toBe(folderJson["name"]);
+    expect(folderJson["name"]).toBe("EmptyFolder");
   });
 
   test("test_name_renamed", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "RenamedFolder");
-    const folder = get_folder(project, "RenamedFolder");
-    expect(folder.name).toBe(folder_json["name"]);
-    expect(folder_json["name"]).toBe("RenamedFolder");
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "RenamedFolder");
+    const folder = getFolder(project, "RenamedFolder");
+    expect(folder.name).toBe(folderJson["name"]);
+    expect(folderJson["name"]).toBe("RenamedFolder");
   });
 
   test("test_comment", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "comment");
-    const folder = get_folder(project, "comment");
-    expect(folder.comment).toBe(folder_json["comment"]);
-    expect(folder_json["comment"]).toBe("Folder comment");
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "comment");
+    const folder = getFolder(project, "comment");
+    expect(folder.comment).toBe(folderJson["comment"]);
+    expect(folderJson["comment"]).toBe("Folder comment");
   });
 });
 
 /** Tests for folder label attribute. */
 describe("TestFolderLabel", () => {
   test("test_label_1", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "label_1");
-    const folder = get_folder(project, "label_1");
-    expect(folder.label).toBe(folder_json["label"]);
-    expect(folder_json["label"]).toBe(1);
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "label_1");
+    const folder = getFolder(project, "label_1");
+    expect(folder.label).toBe(folderJson["label"]);
+    expect(folderJson["label"]).toBe(1);
   });
 
   test("test_label_5", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "label_5");
-    const folder = get_folder(project, "label_5");
-    expect(folder.label).toBe(folder_json["label"]);
-    expect(folder_json["label"]).toBe(5);
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "label_5");
+    const folder = getFolder(project, "label_5");
+    expect(folder.label).toBe(folderJson["label"]);
+    expect(folderJson["label"]).toBe(5);
   });
 
   test("test_label_10", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "label_10");
-    const folder = get_folder(project, "label_10");
-    expect(folder.label).toBe(folder_json["label"]);
-    expect(folder_json["label"]).toBe(10);
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "label_10");
+    const folder = getFolder(project, "label_10");
+    expect(folder.label).toBe(folderJson["label"]);
+    expect(folderJson["label"]).toBe(10);
   });
 });
 
 /** Tests for folder nesting. */
 describe("TestFolderNesting", () => {
   test("test_parentFolder_nested", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const nested = project.folders.filter((f) => py_bool(f.parentFolder));
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const nested = project.folders.filter((f) => pyBool(f.parentFolder));
     expect(len(nested)).toBeGreaterThanOrEqual(3);
   });
 
   test("test_numItems_3", () => {
-    const project = parse_project(SAMPLES_DIR.div("folder.aep"));
-    const expected = load_expected(SAMPLES_DIR, "folder");
-    const folder_json = get_folder_from_json_by_name(expected, "FolderWithItems");
-    const folder = get_folder(project, "FolderWithItems");
-    expect(folder_json["numItems"]).toBe(3);
-    expect(len(folder.items)).toBe(folder_json["numItems"]);
+    const project = parseProject(SAMPLES_DIR.div("folder.aep"));
+    const expected = loadExpected(SAMPLES_DIR, "folder");
+    const folderJson = getFolderFromJsonByName(expected, "FolderWithItems");
+    const folder = getFolder(project, "FolderWithItems");
+    expect(folderJson["numItems"]).toBe(3);
+    expect(len(folder.items)).toBe(folderJson["numItems"]);
     expect(folder.items.every((item) => "id" in item)).toBe(true);
   });
 });

@@ -5,10 +5,10 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { parse_app } from "../conftest.ts";
+import { parseApp } from "../conftest.ts";
 
 import type { Application } from "../../src/py_aep/index.ts";
-import { build_project_node, format_dot, format_json, format_mermaid, format_text, type Node } from "../../src/py_aep/cli/visualize.ts";
+import { buildProjectNode, formatDot, formatJson, formatMermaid, formatText, type Node } from "../../src/py_aep/cli/visualize.ts";
 import { Path, len, StringIO } from "../../src/pyrt/index.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples"
@@ -21,9 +21,9 @@ const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples");
  * The Python module-scoped fixture is served by `parse_app`, which is already
  * lru-cached in `tests/helpers.ts`, so each call here returns the same parse.
  */
-function sample_app(): Application {
-  const aep_path = SAMPLES_DIR.div("versions", "ae2025", "complete.aep");
-  return parse_app(aep_path);
+function sampleApp(): Application {
+  const aepPath = SAMPLES_DIR.div("versions", "ae2025", "complete.aep");
+  return parseApp(aepPath);
 }
 
 describe("TestBuildProjectNode", () => {
@@ -31,9 +31,9 @@ describe("TestBuildProjectNode", () => {
 
   /** Test that project node is built with correct structure. */
   test("test_builds_project_structure", () => {
-    const app = sample_app();
+    const app = sampleApp();
     // Use include_properties=False to avoid PropertyGroup/Property type mismatch
-    const node = build_project_node(app, false);
+    const node = buildProjectNode(app, false);
 
     expect(node["type"]).toBe("Project");
     expect("name" in node).toBe(true);
@@ -44,21 +44,21 @@ describe("TestBuildProjectNode", () => {
 
   /** Test building project node without layer properties. */
   test("test_project_node_without_properties", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     expect(node["type"]).toBe("Project");
 
     // Check that no property nodes exist in the tree
-    function has_property_node(n: Node): boolean {
+    function hasPropertyNode(n: Node): boolean {
       if (n["type"] === "Property") return true;
       for (const child of n["children"] ?? []) {
-        if (has_property_node(child)) return true;
+        if (hasPropertyNode(child)) return true;
       }
       return false;
     }
 
-    expect(has_property_node(node)).toBe(false);
+    expect(hasPropertyNode(node)).toBe(false);
   });
 });
 
@@ -67,11 +67,11 @@ describe("TestFormatText", () => {
 
   /** Test that text output produces content. */
   test("test_text_output_not_empty", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     const output = new StringIO();
-    format_text(node, output);
+    formatText(node, output);
 
     const result = output.getvalue();
     expect(len(result) > 0).toBe(true);
@@ -80,20 +80,20 @@ describe("TestFormatText", () => {
 
   /** Test that depth limit reduces output. */
   test("test_text_output_with_depth_limit", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
-    const output_full = new StringIO();
+    const outputFull = new StringIO();
     // Python: format_text(node, output_full, max_depth=None); prefix and is_last are skipped.
-    format_text(node, output_full, undefined, undefined, null);
+    formatText(node, outputFull, undefined, undefined, null);
 
-    const output_limited = new StringIO();
+    const outputLimited = new StringIO();
     // Python: format_text(node, output_limited, max_depth=1)
-    format_text(node, output_limited, undefined, undefined, 1);
+    formatText(node, outputLimited, undefined, undefined, 1);
 
     // Limited depth should produce less or equal output
     // Python len(str) counts code points; spreading a string iterates code points.
-    expect([...output_limited.getvalue()].length <= [...output_full.getvalue()].length).toBe(true);
+    expect([...outputLimited.getvalue()].length <= [...outputFull.getvalue()].length).toBe(true);
   });
 });
 
@@ -102,11 +102,11 @@ describe("TestFormatJson", () => {
 
   /** Test that JSON output is valid JSON. */
   test("test_json_output_valid", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     const output = new StringIO();
-    format_json(node, output);
+    formatJson(node, output);
 
     const result = output.getvalue();
     // Should be valid JSON
@@ -117,11 +117,11 @@ describe("TestFormatJson", () => {
 
   /** Test that JSON respects depth limit. */
   test("test_json_output_with_depth_limit", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     const output = new StringIO();
-    format_json(node, output, 1);
+    formatJson(node, output, 1);
 
     const result = output.getvalue();
     const parsed = JSON.parse(result);
@@ -140,11 +140,11 @@ describe("TestFormatDot", () => {
 
   /** Test that DOT output has valid Graphviz structure. */
   test("test_dot_output_valid_structure", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     const output = new StringIO();
-    format_dot(node, output);
+    formatDot(node, output);
 
     const result = output.getvalue();
     expect(result.includes("digraph")).toBe(true);
@@ -158,11 +158,11 @@ describe("TestFormatMermaid", () => {
 
   /** Test that Mermaid output has valid flowchart structure. */
   test("test_mermaid_output_valid_structure", () => {
-    const app = sample_app();
-    const node = build_project_node(app, false);
+    const app = sampleApp();
+    const node = buildProjectNode(app, false);
 
     const output = new StringIO();
-    format_mermaid(node, output);
+    formatMermaid(node, output);
 
     const result = output.getvalue();
     expect(result.includes("flowchart") || result.includes("graph")).toBe(true);

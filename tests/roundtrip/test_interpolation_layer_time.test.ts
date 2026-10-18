@@ -19,33 +19,33 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { KeyframeEase, KeyframeInterpolationType } from "../../src/py_aep/index.ts";
-import { as_instance, parse_app_fresh } from "../helpers.ts";
+import { asInstance, parseAppFresh } from "../helpers.ts";
 import type { Application } from "../../src/py_aep/index.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { max, min, py_eq, range, sorted } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
+import { max, min, pyEq, range, sorted } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
-function _new_comp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
+function _newComp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
   const app = py_aep.new();
   const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
   return [app, comp];
 }
 
-function _bezier_both_sides(prop: Property): void {
+function _bezierBothSides(prop: Property): void {
   for (const kf of prop.keyframes) {
     kf.inInterpolationType = KeyframeInterpolationType.BEZIER;
     kf.outInterpolationType = KeyframeInterpolationType.BEZIER;
   }
 }
 
-function _shape_fill_colour(comp: CompItem): Property {
+function _shapeFillColour(comp: CompItem): Property {
   const layer = comp.addShape();
-  const contents = as_instance(layer.property("Contents"), PropertyGroup).addProperty("ADBE Vector Group");
-  const inner = as_instance(contents.property("Contents"), PropertyGroup);
+  const contents = asInstance(layer.property("Contents"), PropertyGroup).addProperty("ADBE Vector Group");
+  const inner = asInstance(contents.property("Contents"), PropertyGroup);
   inner.addProperty("ADBE Vector Shape - Ellipse");
-  return as_instance(inner.addProperty("ADBE Vector Graphic - Fill").property("Color"), Property);
+  return asInstance(inner.addProperty("ADBE Vector Graphic - Fill").property("Color"), Property);
 }
 
 /**
@@ -76,12 +76,12 @@ class TestStretchedLayerEaseTimeBase {
   ]);
 
   _build(stretch: number): [Application, Property] {
-    const [app, comp] = _new_comp();
+    const [app, comp] = _newComp();
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const opacity = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const opacity = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     opacity.setValueAtTime(0.0, 0.0);
     opacity.setValueAtTime(2.0, 100.0);
-    _bezier_both_sides(opacity);
+    _bezierBothSides(opacity);
     opacity.keyframes[0].outTemporalEase = [
       new KeyframeEase(60.0, 50.0),
     ];
@@ -114,10 +114,10 @@ class TestNegativeStretchInterpolates {
   ]);
 
   _build(): [Application, Property] {
-    const [app, comp] = _new_comp();
+    const [app, comp] = _newComp();
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     layer.stretch = -150.0;
-    const opacity = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const opacity = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     opacity.setValueAtTime(1.0, 0.0);
     opacity.setValueAtTime(4.0, 50.0);
     opacity.setValueAtTime(7.0, 100.0);
@@ -169,10 +169,10 @@ class TestRovingRedistributionUnderStretch {
   static AE_ROVING_TIMES = [1.982869, 2.956299];
 
   _build(stretch: number): [Application, Property] {
-    const [app, comp] = _new_comp(400, 400);
+    const [app, comp] = _newComp(400, 400);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     layer.stretch = stretch;
-    const position = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
+    const position = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
     const keys: [number, number[]][] = [
       [0.0, [50.0, 50.0, 0.0]],
       [2.0, [120.0, 250.0, 0.0]],
@@ -182,7 +182,7 @@ class TestRovingRedistributionUnderStretch {
     for (const [time, value] of keys) {
       position.setValueAtTime(time, value);
     }
-    _bezier_both_sides(position);
+    _bezierBothSides(position);
     position.keyframes[0].outTemporalEase = [
       new KeyframeEase(120.0, 40.0),
     ];
@@ -210,14 +210,14 @@ class TestInertScaleDimension {
     [1.5, [188.941757, 93.764502, 100.0]],
   ]);
 
-  _build(three_d: boolean): Property {
-    const [_app, comp] = _new_comp(400, 400);
+  _build(threeD: boolean): Property {
+    const [_app, comp] = _newComp(400, 400);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    layer.threeDLayer = three_d;
-    const scale = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Scale"), Property);
+    layer.threeDLayer = threeD;
+    const scale = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Scale"), Property);
     scale.setValueAtTime(0.0, [100.0, 100.0, 100.0]);
     scale.setValueAtTime(2.0, [200.0, 100.0, 100.0]);
-    _bezier_both_sides(scale);
+    _bezierBothSides(scale);
     scale.keyframes[0].outTemporalEase = Array<KeyframeEase>(3).fill(
       new KeyframeEase(60.0, 50.0),
     );
@@ -245,8 +245,8 @@ class TestColourUsesOneSharedProgress {
   ]);
 
   _build(): Property {
-    const [_app, comp] = _new_comp(400, 400);
-    const colour = _shape_fill_colour(comp);
+    const [_app, comp] = _newComp(400, 400);
+    const colour = _shapeFillColour(comp);
     colour.setValueAtTime(0.0, [1.0, 0.0, 0.0, 1.0]);
     colour.setValueAtTime(2.0, [0.0, 0.0, 1.0, 1.0]);
     colour.keyframes[0].outTemporalEase = [
@@ -255,7 +255,7 @@ class TestColourUsesOneSharedProgress {
     colour.keyframes[1].inTemporalEase = [
       new KeyframeEase(0.2, 70.0),
     ];
-    _bezier_both_sides(colour);
+    _bezierBothSides(colour);
     return colour;
   }
 }
@@ -283,13 +283,13 @@ describe("TestStretchedLayerEaseTimeBase", () => {
   });
 
   test("test_survives_a_save_and_reparse", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const [app, _opacity] = self._build(200.0);
-    const path = tmp_path.div("stretched.aep");
+    const path = tmpPath.div("stretched.aep");
     app.project.save(path);
 
-    const opacity = as_instance(
-      as_instance(parse_app_fresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Opacity"),
+    const opacity = asInstance(
+      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Opacity"),
       Property,
     );
     for (const [time, value] of TestStretchedLayerEaseTimeBase.AE_200.entries()) {
@@ -310,7 +310,7 @@ describe("TestNegativeStretchInterpolates", () => {
         { abs: 1e-4 },
       ),
     ).toBe(true);
-    expect(py_eq(opacity.keyframes.map((kf) => kf.value), [100.0, 50.0, 0.0])).toBe(true);
+    expect(pyEq(opacity.keyframes.map((kf) => kf.value), [100.0, 50.0, 0.0])).toBe(true);
   });
 
   test("test_interpolates_across_the_reversed_span", () => {
@@ -325,9 +325,9 @@ describe("TestLinearOutSideKeepsTheNextEase", () => {
   const self = new TestLinearOutSideKeepsTheNextEase();
 
   test("test_matches_after_effects", () => {
-    const [_app, comp] = _new_comp();
+    const [_app, comp] = _newComp();
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const opacity = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const opacity = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     opacity.setValueAtTime(0.0, 0.0);
     opacity.setValueAtTime(2.0, 100.0);
     opacity.keyframes[1].inInterpolationType = KeyframeInterpolationType.BEZIER;
@@ -351,9 +351,9 @@ describe("TestLinearOutSideKeepsTheNextEase", () => {
    * layer then stretched to 200 %.
    */
   test("test_linear_on_both_sides_is_still_a_straight_line", () => {
-    const [_app, comp] = _new_comp();
+    const [_app, comp] = _newComp();
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const opacity = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const opacity = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     opacity.setValueAtTime(0.0, 0.0);
     opacity.setValueAtTime(2.0, 100.0);
     layer.stretch = 200.0;
@@ -376,10 +376,10 @@ describe("TestLinearEaseSpeedIsLayerTime", () => {
     [150.0, 25.0],
     [-150.0, -25.0],
   ])("test_speed_is_per_layer_second[%#]", (stretch, expected) => {
-    const [_app, comp] = _new_comp();
+    const [_app, comp] = _newComp();
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     layer.stretch = stretch;
-    const opacity = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const opacity = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     opacity.setValueAtTime(1.0, 0.0);
     opacity.setValueAtTime(4.0, 50.0);
     opacity.setValueAtTime(7.0, 100.0);
@@ -413,27 +413,27 @@ describe("TestRovingRedistributionUnderStretch", () => {
       position.keyframes[1].roving = true;
       position.keyframes[2].roving = true;
 
-      expect(py_eq(position.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
+      expect(pyEq(position.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
       const low = min(anchors);
       const high = max(anchors);
       expect(
         position.keyframes.slice(1, 3).every((kf) => low <= kf.time && kf.time <= high),
       ).toBe(true);
-      const layer_times = position.keyframes.map((kf) => kf._layer_time);
-      expect(py_eq(layer_times, sorted(layer_times))).toBe(true);
+      const layerTimes = position.keyframes.map((kf) => kf._layer_time);
+      expect(pyEq(layerTimes, sorted(layerTimes))).toBe(true);
     },
   );
 
   test("test_redistribution_persists_through_a_save", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const [app, position] = self._build(200.0);
     position.keyframes[1].roving = true;
     position.keyframes[2].roving = true;
-    const path = tmp_path.div("roving.aep");
+    const path = tmpPath.div("roving.aep");
     app.project.save(path);
 
-    const reparsed = as_instance(
-      as_instance(parse_app_fresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Position"),
+    const reparsed = asInstance(
+      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Position"),
       Property,
     );
     expect(

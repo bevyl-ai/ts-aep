@@ -4,23 +4,23 @@ import {
   ValueError,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   descriptor,
-  float_repr,
-  py_cmp,
+  floatRepr,
+  pyCmp,
   repr,
   round,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
-import { to_dividend_divisor } from "../../binary/bin_utils.ts";
-import { ChunkNotFoundError, find_by_type, find_chunks_after, toggle_flag_chunk } from "../../binary/utils.ts";
-import { PROFILE_TYPE_OCIO, build_icc_envelope, parse_envelope } from "../../color/envelope.ts";
-import { default_icc_library } from "../../color/icc.ts";
-import { ocio_color_profile_envelope, require_ocio_config } from "../../color/ocio.ts";
+import { toDividendDivisor } from "../../binary/bin_utils.ts";
+import { ChunkNotFoundError, findByType, findChunksAfter, toggleFlagChunk } from "../../binary/utils.ts";
+import { PROFILE_TYPE_OCIO, buildIccEnvelope, parseEnvelope } from "../../color/envelope.ts";
+import { defaultIccLibrary } from "../../color/icc.ts";
+import { ocioColorProfileEnvelope, requireOcioConfig } from "../../color/ocio.ts";
 import { AlphaMode, FieldSeparationType, LinearLightMode, PulldownPhase } from "../../enums/index.ts";
-import { map_media_color_space, profile_id_for_name } from "../../enums/mappings.ts";
+import { mapMediaColorSpace, profileIdForName } from "../../enums/mappings.ts";
 import { ChunkField } from "../descriptors.ts";
-import { _validate_number, validate_bool, validate_conform_frame_rate, validate_rgb_color, validate_string } from "../validators.ts";
+import { _validateNumber, validateBool, validateConformFrameRate, validateRgbColor, validateString } from "../validators.ts";
 
 import type { Chunk, ListChunk } from "../../binary/chunk.ts";
 import type { SspcChunk } from "../../binary/footage_chunks.ts";
@@ -52,7 +52,7 @@ export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [numb
  * writing a mode over it would claim an alpha channel the media does not
  * have. AE greys the whole alpha section out for such footage.
  */
-export function _validate_has_alpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
+export function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
   if (instance != null && !instance.hasAlpha) {
     throw new ValueError(
       "cannot set alphaMode: the footage has no alpha channel " +
@@ -72,21 +72,21 @@ export const _MIN_CONFORM_FRAME_RATE = 0.0005;
  * 29.9700012) and leaves the fraction unreduced: 12 frames is 12/24 at
  * 24 fps, 1200/2997 at 29.97 (measured on AE 2026).
  */
-export function _retime_sequence(sspc: SspcChunk, rate: number): void {
+export function _retimeSequence(sspc: SspcChunk, rate: number): void {
   const frames = round(sspc.duration * sspc.native_frame_rate);
   sspc.native_frame_rate = rate;
-  _store_frames_over_rate(sspc, frames, round(rate, 3));
+  _storeFramesOverRate(sspc, frames, round(rate, 3));
 }
 
 /**
  * Store a sequence's duration as AE does: `frames` over `rate`, the
  * fraction unreduced (3/30, not 1/10, in every AE-authored sequence).
  */
-export function _store_frames_over_rate(sspc: SspcChunk, frames: number, rate: number): void {
-  const [rate_num, rate_den] = to_dividend_divisor(rate);
-  if (frames * rate_den <= 0xffffffff) {
-    sspc.duration_dividend = frames * rate_den;
-    sspc.duration_divisor = rate_num;
+export function _storeFramesOverRate(sspc: SspcChunk, frames: number, rate: number): void {
+  const [rateNum, rateDen] = toDividendDivisor(rate);
+  if (frames * rateDen <= 0xffffffff) {
+    sspc.duration_dividend = frames * rateDen;
+    sspc.duration_divisor = rateNum;
   } else {
     // Too many frames for the unreduced form in the u4 dividend (a huge
     // frame range at a fractional rate): store it reduced.
@@ -198,7 +198,7 @@ export class FootageSource {
   }
 
   set conformFrameRate(value: number) {
-    validate_conform_frame_rate(value);
+    validateConformFrameRate(value);
     if (0 < value && value < _MIN_CONFORM_FRAME_RATE) {
       // AE 2026 takes the rate to the nearest thousandth: below 0.0005
       // that is 0, and AE refuses to open the project ("zero
@@ -206,7 +206,7 @@ export class FootageSource {
       // 3-frame sequence.
       throw new ValueError(
         "conformFrameRate must be 0 or at least " +
-          `${float_repr(_MIN_CONFORM_FRAME_RATE)}, got ${float_repr(value)}`,
+          `${floatRepr(_MIN_CONFORM_FRAME_RATE)}, got ${floatRepr(value)}`,
       );
     }
     const sspc = this._sspc;
@@ -219,7 +219,7 @@ export class FootageSource {
     // at 0.
     sspc.conform_frame_rate = 0.0;
     if (this._is_sequence) {
-      _retime_sequence(sspc, value);
+      _retimeSequence(sspc, value);
     } else {
       sspc.native_frame_rate = value;
     }
@@ -244,7 +244,7 @@ export class FootageSource {
    *
    * AE writes the mode byte and bit 0 of the alpha flags together:
    * premultiplied (1) sets the bit, straight (0) clears it, and ignore
-   * (2) leaves it as it was (AE 2026, a PNG and an FBX alike). It
+   * (2) leaves it was (AE 2026, a PNG and an FBX alike). It
    * rejects a premultiplied interpretation - resetting the footage to
    * straight alpha when the file is opened - if the bit is clear.
    */
@@ -382,13 +382,13 @@ export class FootageSource {
    * arguments.
    */
   _carry_interpretation_to(new_: FootageSource): void {
-    const old_sspc = this._sspc,
-      new_sspc = new_._sspc;
-    new_sspc.field_separation_type = old_sspc.field_separation_type;
-    new_sspc.high_quality_field_separation = old_sspc.high_quality_field_separation;
-    new_sspc.remove_pulldown = old_sspc.remove_pulldown;
-    new_sspc.loop = old_sspc.loop;
-    new_sspc.pixel_aspect = old_sspc.pixel_aspect;
+    const oldSspc = this._sspc,
+      newSspc = new_._sspc;
+    newSspc.field_separation_type = oldSspc.field_separation_type;
+    newSspc.high_quality_field_separation = oldSspc.high_quality_field_separation;
+    newSspc.remove_pulldown = oldSspc.remove_pulldown;
+    newSspc.loop = oldSspc.loop;
+    newSspc.pixel_aspect = oldSspc.pixel_aspect;
 
     // A sequence of stills has no rate of its own, so AE keeps its
     // "assume this frame rate" as the native rate and leaves the conform
@@ -406,7 +406,7 @@ export class FootageSource {
         // A sequence's stored duration is its frame count over its
         // rate, so it has to move with the rate; a movie keeps the
         // duration it measured and gets the conform factor applied.
-        _retime_sequence(new_sspc, rate);
+        _retimeSequence(newSspc, rate);
       }
     } else if (
       rate &&
@@ -414,7 +414,7 @@ export class FootageSource {
       !new_._rate_is_assumed &&
       !new_.isStill
     ) {
-      new_sspc.conform_frame_rate = rate;
+      newSspc.conform_frame_rate = rate;
     }
 
     this._carry_color_management_to(new_);
@@ -438,7 +438,7 @@ export class FootageSource {
     const head = project._head;
     const version = [head.file_format_version, head._format_subversion];
     const dropped = new Set(
-      _CLRS_RECORDS_SINCE.filter(([, since]) => py_cmp(version, since) < 0).map(
+      _CLRS_RECORDS_SINCE.filter(([, since]) => pyCmp(version, since) < 0).map(
         ([marker]) => marker,
       ),
     );
@@ -468,26 +468,26 @@ export class FootageSource {
    * record is always the new file's.
    */
   _carry_color_management_to(new_: FootageSource): void {
-    const old_clrs = this._clrs,
-      new_clrs = new_._clrs;
-    if (old_clrs == null || new_clrs == null) return;
-    for (const chunk_type of ["ipws", "linl"] as const) {
-      const old_chunk = find_by_type(old_clrs.chunks, chunk_type);
-      const new_chunk = find_by_type(new_clrs.chunks, chunk_type);
-      new_chunk.value = old_chunk.value;
+    const oldClrs = this._clrs,
+      newClrs = new_._clrs;
+    if (oldClrs == null || newClrs == null) return;
+    for (const chunkType of ["ipws", "linl"] as const) {
+      const oldChunk = findByType(oldClrs.chunks, chunkType);
+      const newChunk = findByType(newClrs.chunks, chunkType);
+      newChunk.value = oldChunk.value;
     }
-    toggle_flag_chunk(new_clrs, "prgb", this.preserveRgb);
+    toggleFlagChunk(newClrs, "prgb", this.preserveRgb);
 
-    const old_apid = find_by_type(old_clrs.chunks, "apid");
-    if (bytes_eq(old_apid.data, _UNASSIGNED_PROFILE)) {
-      const old_profile = this._ocsp_profile();
-      if (old_profile == null || !old_profile.is_ocio) return;
+    const oldApid = findByType(oldClrs.chunks, "apid");
+    if (bytesEq(oldApid.data, _UNASSIGNED_PROFILE)) {
+      const oldProfile = this._ocsp_profile();
+      if (oldProfile == null || !oldProfile.is_ocio) return;
     }
-    find_by_type(new_clrs.chunks, "apid").data = old_apid.data;
-    const old_ocsp = this._ocsp_utf8();
-    const new_ocsp = new_._ocsp_utf8();
-    if (old_ocsp != null && new_ocsp != null) {
-      new_ocsp.value = old_ocsp.value;
+    findByType(newClrs.chunks, "apid").data = oldApid.data;
+    const oldOcsp = this._ocsp_utf8();
+    const newOcsp = new_._ocsp_utf8();
+    if (oldOcsp != null && newOcsp != null) {
+      newOcsp.value = oldOcsp.value;
     }
   }
 
@@ -510,7 +510,7 @@ export class FootageSource {
     if (this._project != null) {
       return this._project._icc_lib();
     }
-    return default_icc_library();
+    return defaultIccLibrary();
   }
 
   /**
@@ -525,13 +525,13 @@ export class FootageSource {
   }
 
   set preserveRgb(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     if (this._clrs == null) {
       throw new AttributeError(
         "Cannot set preserveRgb: no CLRS container. Update the value in After Effects then re-parse the project to modify this footage source.",
       );
     }
-    toggle_flag_chunk(this._clrs, "prgb", value);
+    toggleFlagChunk(this._clrs, "prgb", value);
   }
 
   /**
@@ -567,8 +567,8 @@ export class FootageSource {
    */
   get mediaColorSpace(): string {
     if (this._clrs == null) return "Embedded";
-    const ipws_chunk = find_by_type(this._clrs.chunks, "ipws");
-    if (ipws_chunk.value) return "Working Color Space";
+    const ipwsChunk = findByType(this._clrs.chunks, "ipws");
+    if (ipwsChunk.value) return "Working Color Space";
     // In OCIO mode the assigned color space is carried as an OCIO envelope in
     // the `ocsp` Utf8 (apid is the unmanaged sentinel). In Adobe mode `ocsp`
     // holds the embedded/override profile and `apid` is the discriminator.
@@ -576,12 +576,12 @@ export class FootageSource {
     if (ocsp != null && ocsp.profile_type === PROFILE_TYPE_OCIO) {
       return ocsp.name;
     }
-    const apid_chunk = find_by_type(this._clrs.chunks, "apid");
-    return map_media_color_space(false, apid_chunk.data);
+    const apidChunk = findByType(this._clrs.chunks, "apid");
+    return mapMediaColorSpace(false, apidChunk.data);
   }
 
   set mediaColorSpace(value: string) {
-    validate_string(value);
+    validateString(value);
     if (this._clrs == null) {
       throw new AttributeError(
         "Cannot set mediaColorSpace: no CLRS container. Update the " +
@@ -589,48 +589,48 @@ export class FootageSource {
           "this footage source.",
       );
     }
-    const ipws_chunk = find_by_type(this._clrs.chunks, "ipws");
-    const apid_chunk = find_by_type(this._clrs.chunks, "apid");
+    const ipwsChunk = findByType(this._clrs.chunks, "ipws");
+    const apidChunk = findByType(this._clrs.chunks, "apid");
     if (value === "Working Color Space") {
       // AE sets ipws, clears the override id, and empties the ocsp Utf8.
-      ipws_chunk.value = 1;
-      apid_chunk.data = bytes_.repeat(b("\xff"), 16);
+      ipwsChunk.value = 1;
+      apidChunk.data = bytes_.repeat(b("\xff"), 16);
       this._write_ocsp("");
       return;
     }
-    ipws_chunk.value = 0;
+    ipwsChunk.value = 0;
     if (value === "Embedded") {
       // Revert to the file's embedded profile (mirrored in the Mcsp Utf8).
-      apid_chunk.data = bytes_.repeat(b("\xff"), 16);
+      apidChunk.data = bytes_.repeat(b("\xff"), 16);
       this._write_ocsp(this._embedded_envelope());
       return;
     }
-    if (profile_id_for_name(value) != null) {
+    if (profileIdForName(value) != null) {
       // Adobe ICC override: apid is the catalogued profile ID and the ocsp
       // carries the embedded ICC bytes (discovered from the standard Adobe
       // Color dirs). For most profiles the bytes hash to the same ID; the
       // handful AE generates a private variant for (Apple/Adobe RGB,
       // ColorMatch, ROMM) embed the on-disk copy AE still recognizes.
       const lib = this._icc_lib();
-      apid_chunk.data = lib.hash_for(value);
-      this._write_ocsp(build_icc_envelope(value, lib.bytes_for(value)));
+      apidChunk.data = lib.hash_for(value);
+      this._write_ocsp(buildIccEnvelope(value, lib.bytes_for(value)));
       return;
     }
     // Treat any other name as an OCIO color space (no ICC, apid unmanaged).
     // The envelope depends on the SELECTION KIND, so the config is
     // required - AE-verified against a direct-pick and a role-pick sample.
-    apid_chunk.data = bytes_.repeat(b("\xff"), 16);
+    apidChunk.data = bytes_.repeat(b("\xff"), 16);
     this._write_ocsp(this._ocio_envelope(value));
   }
 
   /** Build the OCIO envelope AE writes for `name` (see {@link py_aep.color.ocio.ocio_color_profile_envelope | ocio_color_profile_envelope}). */
   _ocio_envelope(name: string): string {
     const project = this._project;
-    const config = require_ocio_config(
+    const config = requireOcioConfig(
       project != null ? project.ocioConfigurationFile : null,
       `build the color-profile envelope for ${repr(name)}`,
     );
-    return ocio_color_profile_envelope(config, name);
+    return ocioColorProfileEnvelope(config, name);
   }
 
   /** The `Utf8` chunk after the CLRS `ocsp` marker (the assigned space). */
@@ -638,7 +638,7 @@ export class FootageSource {
     if (this._clrs == null) return null;
     let after: Utf8Chunk[];
     try {
-      after = find_chunks_after(this._clrs.chunks, "Utf8", "ocsp");
+      after = findChunksAfter(this._clrs.chunks, "Utf8", "ocsp");
     } catch (e) {
       if (!(e instanceof ChunkNotFoundError)) throw e;
       return null;
@@ -649,7 +649,7 @@ export class FootageSource {
   _ocsp_profile(): ColorProfile | null {
     const utf8 = this._ocsp_utf8();
     if (utf8 == null || !utf8.value.includes("baseColorProfile")) return null;
-    return parse_envelope(utf8.value);
+    return parseEnvelope(utf8.value);
   }
 
   /** The embedded source profile envelope (CLRS `Mcsp` Utf8), or `{}`. */
@@ -657,7 +657,7 @@ export class FootageSource {
     if (this._clrs == null) return "{}";
     let after: Utf8Chunk[];
     try {
-      after = find_chunks_after(this._clrs.chunks, "Utf8", "Mcsp");
+      after = findChunksAfter(this._clrs.chunks, "Utf8", "Mcsp");
     } catch (e) {
       if (!(e instanceof ChunkNotFoundError)) throw e;
       return "{}";
@@ -690,7 +690,7 @@ descriptor(
   FootageSource,
   "alphaMode",
   ChunkField.enum(AlphaMode, "_sspc", "alpha_mode_raw", {
-    validate: _validate_has_alpha,
+    validate: _validateHasAlpha,
     post_set: "_on_alpha_mode_set",
   }),
 );
@@ -718,13 +718,13 @@ descriptor(
   FootageSource,
   "loop",
   new ChunkField("_sspc", "loop", {
-    validate: _validate_number({ min: 1, max: 9999, integer: true }),
+    validate: _validateNumber({ min: 1, max: 9999, integer: true }),
   }),
 );
 descriptor(
   FootageSource,
   "premulColor",
-  new ChunkField("_sspc", "premul_color", { validate: validate_rgb_color }),
+  new ChunkField("_sspc", "premul_color", { validate: validateRgbColor }),
 );
 descriptor(
   FootageSource,

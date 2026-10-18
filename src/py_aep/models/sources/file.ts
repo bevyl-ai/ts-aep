@@ -2,28 +2,28 @@
 
 import * as host from "../../../pyrt/host.ts";
 
-import { OptiChunk, SspcChunk, TextOptiChunk, build_ai_document_opti_data, build_ai_layer_opti_data, build_craw_opti_data, build_dpx_opti_data, build_exr_opti_data, build_generic_opti_data, build_psd_layer_opti_data, build_psd_opti_data, build_rhdr_opti_data, build_text_opti_data, build_tiff_opti_data } from "../../binary/footage_chunks.ts";
+import { OptiChunk, SspcChunk, TextOptiChunk, buildAiDocumentOptiData, buildAiLayerOptiData, buildCrawOptiData, buildDpxOptiData, buildExrOptiData, buildGenericOptiData, buildPsdLayerOptiData, buildPsdOptiData, buildRhdrOptiData, buildTextOptiData, buildTiffOptiData } from "../../binary/footage_chunks.ts";
 import { EmpdChunk } from "../../binary/misc_chunks.ts";
-import { ColorProfileRecord, build_pin_list } from "../../binary/mutations.ts";
+import { ColorProfileRecord, buildPinList } from "../../binary/mutations.ts";
 import { Utf8Chunk, type U1Chunk } from "../../binary/scalar_chunks.ts";
-import { build_als2_list, build_stvc_list, ChunkNotFoundError, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_chunks_before, alas_fullpath, alas_target_is_folder, index_by_identity, parse_alas_data, UNDEFINED_FRAME } from "../../binary/utils.ts";
+import { buildAls2List, buildStvcList, ChunkNotFoundError, filterByType, findByListType, findByListTypeOrNull, findByType, findChunksBefore, alasFullpath, alasTargetIsFolder, indexByIdentity, parseAlasData, UNDEFINED_FRAME } from "../../binary/utils.ts";
 import type { Chunk, ListChunk } from "../../binary/chunk.ts";
-import { build_icc_envelope } from "../../color/envelope.ts";
-import { ColorProfileNotFoundError, default_icc_library, icc_profile_description, icc_profile_id } from "../../color/icc.ts";
-import { ocio_input_envelope, resolve_ocio_config } from "../../color/ocio.ts";
-import { AI_COMP_EXTENSIONS, FORMAT_3D_MODEL_SCENE, PSD_COMP_EXTENSIONS, get_file_format, platform_source_format, type FileFormat } from "../../data/file_formats.ts";
+import { buildIccEnvelope } from "../../color/envelope.ts";
+import { ColorProfileNotFoundError, defaultIccLibrary, iccProfileDescription, iccProfileId } from "../../color/icc.ts";
+import { ocioInputEnvelope, resolveOcioConfig } from "../../color/ocio.ts";
+import { AI_COMP_EXTENSIONS, FORMAT_3D_MODEL_SCENE, PSD_COMP_EXTENSIONS, getFileFormat, platformSourceFormat, type FileFormat } from "../../data/file_formats.ts";
 import { ColorManagementSystem, LinearLightMode } from "../../enums/index.ts";
 import type { Box } from "../../resolvers/ai_bounds.ts";
-import { EMPTY_BOX, footage_size, read_ai_icc_profile, read_ai_layer_bounds } from "../../resolvers/ai_bounds.ts";
-import { UnsupportedAiLayersError, read_ai_layer_ocgs } from "../../resolvers/ai_layers.ts";
-import { MediaInfo, pixel_buffer_size, probe_media, psd_layer_channels, psd_layer_depth, type MediaInfoFields } from "../../resolvers/media_probe.ts";
-import { platform_path } from "../../resolvers/platform_paths.ts";
-import { psd_layer_box } from "../../resolvers/psd_bounds.ts";
-import { read_global_light } from "../../resolvers/psd_styles.ts";
-import { layer_index_for_stored, resolve_ai_layer, resolve_psd_layer } from "../../resolvers/source_layers.ts";
+import { EMPTY_BOX, footageSize, readAiIccProfile, readAiLayerBounds } from "../../resolvers/ai_bounds.ts";
+import { UnsupportedAiLayersError, readAiLayerOcgs } from "../../resolvers/ai_layers.ts";
+import { MediaInfo, pixelBufferSize, probeMedia, psdLayerChannels, psdLayerDepth, type MediaInfoFields } from "../../resolvers/media_probe.ts";
+import { platformPath } from "../../resolvers/platform_paths.ts";
+import { psdLayerBox } from "../../resolvers/psd_bounds.ts";
+import { readGlobalLight } from "../../resolvers/psd_styles.ts";
+import { layerIndexForStored, resolveAiLayer, resolvePsdLayer } from "../../resolvers/source_layers.ts";
 import type { PsdLayer } from "../../resolvers/psd_layers.ts";
-import { validate_bool, validate_file_exists } from "../validators.ts";
-import { _UNASSIGNED_PROFILE, FootageSource, _store_frames_over_rate } from "./footage.ts";
+import { validateBool, validateFileExists } from "../validators.ts";
+import { _UNASSIGNED_PROFILE, FootageSource, _storeFramesOverRate } from "./footage.ts";
 import type { FootageItem } from "../items/footage.ts";
 import type { Project } from "../project.ts";
 import {
@@ -35,7 +35,7 @@ import {
   at,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   concat,
   floordiv,
   format,
@@ -43,8 +43,8 @@ import {
   setattr,
   getitem,
   int,
-  py_bool,
-  py_or,
+  pyBool,
+  pyOr,
   repr,
   round,
   sorted,
@@ -53,7 +53,7 @@ import {
   type PathLike,
   PurePosixPath,
   PureWindowsPath,
-  py_re,
+  pyRe,
 } from "../../../pyrt/index.ts";
 
 /**
@@ -68,7 +68,7 @@ export function _replace(obj: MediaInfo | FileFormat, kw: Partial<MediaInfoField
 }
 
 /** `os.path.splitext(name)[1]` */
-export function _splitext_ext(name: string): string {
+export function _splitextExt(name: string): string {
   // Leading dots belong to the stem, as in os.path.splitext.
   const stripped = name.replace(/^\.+/, "");
   const i = stripped.lastIndexOf(".");
@@ -80,11 +80,11 @@ export function _splitext_ext(name: string): string {
  * `Path` lets raw Node errors through, which are not `OSError` instances, so
  * the `errno` check matches Python's `except OSError` for fs failures.
  */
-export function _is_os_error(e: unknown): boolean {
+export function _isOsError(e: unknown): boolean {
   return e instanceof OSError || (typeof e === "object" && e !== null && "errno" in e && typeof e.errno === "number");
 }
 
-export function _opti_data(
+export function _optiData(
   fmt: FileFormat,
   info: MediaInfo,
   path: Path,
@@ -122,7 +122,7 @@ export function _opti_data(
    */
   const { sequence = false, data = null } = kw;
   if (fmt.opti === "tiff") {
-    return build_tiff_opti_data(
+    return buildTiffOptiData(
       info.width,
       info.height,
       info.bit_depth,
@@ -132,7 +132,7 @@ export function _opti_data(
     );
   }
   if (fmt.opti === "psd") {
-    return build_psd_opti_data(
+    return buildPsdOptiData(
       info.width,
       info.height,
       info.bit_depth,
@@ -141,21 +141,21 @@ export function _opti_data(
       info.layer_count,
     );
   }
-  if (fmt.opti === "hdr") return build_rhdr_opti_data();
-  if (fmt.opti === "craw") return build_craw_opti_data();
-  if (fmt.opti === "dpx") return build_dpx_opti_data();
+  if (fmt.opti === "hdr") return buildRhdrOptiData();
+  if (fmt.opti === "craw") return buildCrawOptiData();
+  if (fmt.opti === "dpx") return buildDpxOptiData();
   if (fmt.opti === "text") {
     if (AI_COMP_EXTENSIONS.has(path.suffix.toLowerCase())) {
-      return build_ai_document_opti_data(info.width, info.height, _ai_layer_count(path, data));
+      return buildAiDocumentOptiData(info.width, info.height, _aiLayerCount(path, data));
     }
-    return build_text_opti_data(info.width, info.height);
+    return buildTextOptiData(info.width, info.height);
   }
-  if (fmt.opti === "exr") return build_exr_opti_data(info.compression, info.channel_names);
+  if (fmt.opti === "exr") return buildExrOptiData(info.compression, info.channel_names);
   if (fmt.opti === "empty" && !sequence) return b("");
-  return build_generic_opti_data(fmt.source_format, { sequence });
+  return buildGenericOptiData(fmt.source_format, { sequence });
 }
 
-export function _ai_layer_count(path: Path, data: Uint8Array | null = null): number {
+export function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
   /**
    * How many layers an Illustrator/PDF document has, as AE records it for
    * the whole document: 0 for one without layers (pdf.pdf, ai_no_pdf.ai in
@@ -164,14 +164,14 @@ export function _ai_layer_count(path: Path, data: Uint8Array | null = null): num
    * footage, which imports without it.
    */
   try {
-    return read_ai_layer_ocgs(path, data).length;
+    return readAiLayerOcgs(path, data).length;
   } catch (e) {
     if (!(e instanceof UnsupportedAiLayersError)) throw e;
     return 0;
   }
 }
 
-export function _still_data_size(fmt: FileFormat, info: MediaInfo, path: Path): number {
+export function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
   /**
    * The source data size AE caches in `sspc` for a single file.
    *
@@ -181,7 +181,7 @@ export function _still_data_size(fmt: FileFormat, info: MediaInfo, path: Path): 
    * choose_layer_merged / flattened_rgb_comp / footage_depth.aep fixtures).
    */
   if (!["psd", "tiff"].includes(fmt.opti)) return path.stat().size;
-  return pixel_buffer_size(info.width, info.height, info.pixel_channels, info.bit_depth);
+  return pixelBufferSize(info.width, info.height, info.pixel_channels, info.bit_depth);
 }
 
 /** What After Effects records for the footage of one Photoshop layer. */
@@ -195,15 +195,15 @@ export class PsdLayerFootage {
 
   constructor(
     box: [number, number, number, number],
-    opti_data: Uint8Array,
-    data_size: number,
-    has_alpha: boolean,
+    optiData: Uint8Array,
+    dataSize: number,
+    hasAlpha: boolean,
     depth: number,
   ) {
     this.box = box;
-    this.optiData = opti_data;
-    this.dataSize = data_size;
-    this.hasAlpha = has_alpha;
+    this.optiData = optiData;
+    this.dataSize = dataSize;
+    this.hasAlpha = hasAlpha;
     this.depth = depth;
   }
 
@@ -216,11 +216,11 @@ export class PsdLayerFootage {
   }
 }
 
-export function psd_layer_footage(
+export function psdLayerFootage(
   info: MediaInfo,
   layer: PsdLayer,
-  layer_styles: string,
-  global_angle: number,
+  layerStyles: string,
+  globalAngle: number,
 ): PsdLayerFootage {
   /**
    * The content box, `opti`, cached data size, alpha and depth AE
@@ -233,10 +233,10 @@ export function psd_layer_footage(
    * @param layer_styles - The Layer Options choice: `"merge"`, `"editable"` or `"ignore"`.
    * @param global_angle - The document's global light angle.
    */
-  const box = psd_layer_box(layer, info.width, info.height, layer_styles, global_angle);
+  const box = psdLayerBox(layer, info.width, info.height, layerStyles, globalAngle);
   const [left, top, right, bottom] = box;
-  const layer_channels = psd_layer_channels(info, layer.has_transparency);
-  const opti_data = build_psd_layer_opti_data(
+  const layerChannels = psdLayerChannels(info, layer.has_transparency);
+  const optiData = buildPsdLayerOptiData(
     info.width,
     info.height,
     info.bit_depth,
@@ -250,25 +250,25 @@ export function psd_layer_footage(
     {
       channels: info.pixel_channels,
       color_mode: info.color_mode,
-      layer_channels,
+      layer_channels: layerChannels,
     },
   );
-  const data_size = pixel_buffer_size(
+  const dataSize = pixelBufferSize(
     Math.max(right - left, 0),
     Math.max(bottom - top, 0),
-    layer_channels,
+    layerChannels,
     info.bit_depth,
   );
   return new PsdLayerFootage(
     box,
-    opti_data,
-    data_size,
+    optiData,
+    dataSize,
     layer.has_transparency,
-    psd_layer_depth(info, layer.has_transparency),
+    psdLayerDepth(info, layer.has_transparency),
   );
 }
 
-export function _platform_media_info(
+export function _platformMediaInfo(
   info: MediaInfo,
   fmt: FileFormat,
   kw: { windows: boolean },
@@ -368,22 +368,22 @@ export const _LINEAR_LIGHT_OFF_FORMATS = new Set([
   "AIDE",
 ]);
 
-export function _catalogued_profile(name: string): Uint8Array | null {
+export function _cataloguedProfile(name: string): Uint8Array | null {
   /** After Effects' own copy of the named profile, if it is installed. */
   try {
-    return default_icc_library().bytes_for(name);
+    return defaultIccLibrary().bytes_for(name);
   } catch (e) {
     if (!(e instanceof ColorProfileNotFoundError)) throw e;
     return null;
   }
 }
 
-export function _profile_record(blob: Uint8Array): ColorProfileRecord {
-  const name = icc_profile_description(blob) || "";
-  return new ColorProfileRecord(icc_profile_id(blob), build_icc_envelope(name, blob));
+export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
+  const name = iccProfileDescription(blob) || "";
+  return new ColorProfileRecord(iccProfileId(blob), buildIccEnvelope(name, blob));
 }
 
-export function named_media_profile(source_format: string, info: MediaInfo): string | null {
+export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string | null {
   /**
    * The profile After Effects records by name only for a TIFF or Photoshop
    * image whose colours are not RGB, or `null` when it records an ICC
@@ -392,20 +392,20 @@ export function named_media_profile(source_format: string, info: MediaInfo): str
    * A file tagged with a non-RGB profile names that profile; an untagged one
    * names AE's default for its colour mode (`_MODE_PROFILE_NAMES`).
    */
-  if (!_CATALOGUED_PROFILE_FORMATS.has(source_format)) return null;
+  if (!_CATALOGUED_PROFILE_FORMATS.has(sourceFormat)) return null;
   if (info.icc_profile != null) {
-    if (bytes_eq(bytes_.slice(info.icc_profile, 16, 20), b("RGB "))) return null;
-    return icc_profile_description(info.icc_profile);
+    if (bytesEq(bytes_.slice(info.icc_profile, 16, 20), b("RGB "))) return null;
+    return iccProfileDescription(info.icc_profile);
   }
   if (info.color_mode === 1 && info.bit_depth === 32) {
     // Measured for a float TIFF only; a 32-bit grayscale PSD keeps the
     // RGB rule until it is measured.
-    return source_format === "TIF " ? _LINEAR_GRAY_PROFILE_NAME : null;
+    return sourceFormat === "TIF " ? _LINEAR_GRAY_PROFILE_NAME : null;
   }
   return _MODE_PROFILE_NAMES.get(info.color_mode) ?? null;
 }
 
-export function ai_document_profile(
+export function aiDocumentProfile(
   path: Path,
   data: Uint8Array | null = null,
 ): [Uint8Array | null, string | null] {
@@ -415,19 +415,19 @@ export function ai_document_profile(
    * or the name of a non-RGB one, which AE records by name only (AE 2026:
    * complex.ai embeds sRGB, ai.ai names Coated FOGRA39).
    */
-  const icc = read_ai_icc_profile(path, data);
+  const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
-  if (bytes_eq(bytes_.slice(icc, 16, 20), b("RGB "))) return [icc, null];
-  return [null, icc_profile_description(icc)];
+  if (bytesEq(bytes_.slice(icc, 16, 20), b("RGB "))) return [icc, null];
+  return [null, iccProfileDescription(icc)];
 }
 
-export function _media_profile_records(
-  icc_profile: Uint8Array | null,
-  source_format: string,
-  has_video: boolean,
-  is_video: boolean,
-  embedded_profile_name: string | null,
-  color_mode: number = 3,
+export function _mediaProfileRecords(
+  iccProfile: Uint8Array | null,
+  sourceFormat: string,
+  hasVideo: boolean,
+  isVideo: boolean,
+  embeddedProfileName: string | null,
+  colorMode: number = 3,
 ): [ColorProfileRecord | null, ColorProfileRecord | null] {
   /**
    * The `(embedded, assigned)` CLRS profile records for a source file.
@@ -451,52 +451,52 @@ export function _media_profile_records(
    *   {@link MediaInfo | MediaInfo.color_mode}); an untagged bitmap
    *   TIFF/PSD is assigned sRGB rather than taken as carrying it.
    */
-  if (embedded_profile_name != null || _UNPROFILED_FORMATS.has(source_format)) {
+  if (embeddedProfileName != null || _UNPROFILED_FORMATS.has(sourceFormat)) {
     return [null, null]; // a named space, or none at all (DPX/Cineon)
   }
-  let blob = icc_profile;
-  const camera_raw_profile = _CAMERA_RAW_PROFILES.get(source_format);
-  if (blob == null && camera_raw_profile !== undefined) {
-    blob = _catalogued_profile(camera_raw_profile);
-  } else if (blob == null && _CATALOGUED_PROFILE_FORMATS.has(source_format) && color_mode !== 0) {
-    blob = _catalogued_profile(_DEFAULT_PROFILE);
+  let blob = iccProfile;
+  const cameraRawProfile = _CAMERA_RAW_PROFILES.get(sourceFormat);
+  if (blob == null && cameraRawProfile !== undefined) {
+    blob = _cataloguedProfile(cameraRawProfile);
+  } else if (blob == null && _CATALOGUED_PROFILE_FORMATS.has(sourceFormat) && colorMode !== 0) {
+    blob = _cataloguedProfile(_DEFAULT_PROFILE);
   } else if (
     blob != null &&
-    (_CATALOGUED_PROFILE_FORMATS.has(source_format) || source_format === "TEXT")
+    (_CATALOGUED_PROFILE_FORMATS.has(sourceFormat) || sourceFormat === "TEXT")
   ) {
-    const catalogued = _catalogued_profile(icc_profile_description(blob) || "");
-    if (catalogued != null && bytes_eq(icc_profile_id(catalogued), icc_profile_id(blob))) {
+    const catalogued = _cataloguedProfile(iccProfileDescription(blob) || "");
+    if (catalogued != null && bytesEq(iccProfileId(catalogued), iccProfileId(blob))) {
       blob = catalogued;
     }
   }
-  if (blob != null) return [_profile_record(blob), null];
+  if (blob != null) return [_profileRecord(blob), null];
   if (
-    _UNRECORDED_PROFILE_FORMATS.has(source_format) ||
-    (has_video && _VIDEO_CONTAINER_FORMATS.has(source_format))
+    _UNRECORDED_PROFILE_FORMATS.has(sourceFormat) ||
+    (hasVideo && _VIDEO_CONTAINER_FORMATS.has(sourceFormat))
   ) {
     return [null, null];
   }
   const name =
-    is_video && _VIDEO_DECODED_FORMATS.has(source_format) ? _VIDEO_PROFILE : _DEFAULT_PROFILE;
-  const assigned = _catalogued_profile(name);
+    isVideo && _VIDEO_DECODED_FORMATS.has(sourceFormat) ? _VIDEO_PROFILE : _DEFAULT_PROFILE;
+  const assigned = _cataloguedProfile(name);
   if (assigned == null) {
     // Nothing to assign without the profile's bytes; the record stays
     // empty so the import still works with no ICC store on the machine.
     return [null, null];
   }
-  return [null, _profile_record(assigned)];
+  return [null, _profileRecord(assigned)];
 }
 
-export function _alpha_mode_raw(has_alpha: boolean, premultiplied: boolean): number {
+export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
   /**
    * The `sspc` alpha byte AE stores: 3 = no alpha, 1 = premultiplied,
    * 0 = straight.
    */
-  if (!has_alpha) return 3;
+  if (!hasAlpha) return 3;
   return premultiplied ? 1 : 0;
 }
 
-export function _sync_premultiplied(sspc: SspcChunk): void {
+export function _syncPremultiplied(sspc: SspcChunk): void {
   /**
    * Set the `sspc` premultiplied flag bit AE writes with the alpha byte.
    *
@@ -527,14 +527,14 @@ export const _C9_TO_LAYER_STYLES = new Map<number, string>(
 // A sequence frame number is at most the last 9 digits of the file stem; any
 // digits before them belong to the prefix (AE 2026: f_99999999998.png and
 // f_99999999999.png import as `f_99[999999998-999999999].png`).
-export const _FRAME_NUMBER_RE = py_re(String.raw`(\d{1,9})$`);
+export const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
 
 // AE reads the `sspc` width and height as signed 16-bit values: a py_aep file
 // holding a 65535-px-wide PNG opens -1 px wide in AE 2026, and 65536 does not
 // fit the field at all.
 export const _MAX_FOOTAGE_SIZE = 32767;
 
-export function check_footage_size(name: string, width: number, height: number): void {
+export function checkFootageSize(name: string, width: number, height: number): void {
   /**
    * Reject footage dimensions After Effects cannot store or read back.
    *
@@ -548,7 +548,7 @@ export function check_footage_size(name: string, width: number, height: number):
   }
 }
 
-export function _join_sequence_frame(folder: string, frame_name: string): string {
+export function _joinSequenceFrame(folder: string, frameName: string): string {
   /**
    * Join a footage folder with an image-sequence frame filename using the
    * folder's own separator, so the result matches AE's `fsName` (all `\` for
@@ -557,8 +557,8 @@ export function _join_sequence_frame(folder: string, frame_name: string): string
    * splits any embedded `/`, while `PurePosixPath` leaves a native POSIX path
    * intact (`PureWindowsPath` would rewrite its forward slashes to `\`).
    */
-  if (folder.includes("\\")) return String(new PureWindowsPath(folder).div(frame_name));
-  return String(new PurePosixPath(folder).div(frame_name));
+  if (folder.includes("\\")) return String(new PureWindowsPath(folder).div(frameName));
+  return String(new PurePosixPath(folder).div(frameName));
 }
 
 export type NewSourceKw = {
@@ -674,8 +674,8 @@ export class FileSource extends FootageSource {
     }
     const profile = this._ocsp_profile();
     if (profile != null && profile.is_ocio) return;
-    const config = resolve_ocio_config(project.ocioConfigurationFile);
-    const envelope = config == null ? null : ocio_input_envelope(config, this._file);
+    const config = resolveOcioConfig(project.ocioConfigurationFile);
+    const envelope = config == null ? null : ocioInputEnvelope(config, this._file);
     if (envelope == null) {
       // TODO(port): Python passes stacklevel=3 so the warning is attributed to the caller of the public API (warning filename/lineno); pyrt warn(message) has no stacklevel and JS has no Python frames, so only that attribution differs, not the message text.
       warn(
@@ -685,9 +685,9 @@ export class FileSource extends FootageSource {
       );
       return;
     }
-    const ipws = find_by_type(this._clrs.chunks, "ipws");
+    const ipws = findByType(this._clrs.chunks, "ipws");
     ipws.value = 0;
-    find_by_type(this._clrs.chunks, "apid").data = _UNASSIGNED_PROFILE;
+    findByType(this._clrs.chunks, "apid").data = _UNASSIGNED_PROFILE;
     this._write_ocsp(envelope);
   }
 
@@ -771,19 +771,19 @@ export class FileSource extends FootageSource {
     this._pin = _pin;
     this._opti = _opti;
 
-    const pin_chunks = _pin.chunks;
+    const pinChunks = _pin.chunks;
 
     // Derive file_names from StVc LIST
-    const stvc_chunk = find_by_list_type_or_null(pin_chunks, "StVc");
-    this._file_names = stvc_chunk === null ? [] : filter_by_type(stvc_chunk.chunks, "Utf8").map((chunk) => chunk.value);
+    const stvcChunk = findByListTypeOrNull(pinChunks, "StVc");
+    this._file_names = stvcChunk === null ? [] : filterByType(stvcChunk.chunks, "Utf8").map((chunk) => chunk.value);
 
     // Derive file path and target_is_folder from Als2/alas JSON
-    const alas_data = parse_alas_data(pin_chunks);
-    this._target_is_folder = alas_target_is_folder(alas_data);
+    const alasData = parseAlasData(pinChunks);
+    this._target_is_folder = alasTargetIsFolder(alasData);
     if (this._file_names?.length > 0) {
-      this._file = _join_sequence_frame(alas_fullpath(alas_data), this._file_names[0]);
+      this._file = _joinSequenceFrame(alasFullpath(alasData), this._file_names[0]);
     } else {
-      this._file = alas_fullpath(alas_data);
+      this._file = alasFullpath(alasData);
     }
 
     // Old-format AE files lack the StVc LIST that stores per-frame
@@ -794,39 +794,39 @@ export class FileSource extends FootageSource {
       _sspc.frame_padding > 0 &&
       _sspc.start_frame !== UNDEFINED_FRAME
     ) {
-      let utf8_before_opti: Utf8Chunk[];
+      let utf8BeforeOpti: Utf8Chunk[];
       try {
-        utf8_before_opti = find_chunks_before(pin_chunks, "Utf8", "opti");
+        utf8BeforeOpti = findChunksBefore(pinChunks, "Utf8", "opti");
       } catch (e) {
         if (!(e instanceof ChunkNotFoundError)) throw e;
-        utf8_before_opti = [];
+        utf8BeforeOpti = [];
       }
-      if (utf8_before_opti.length >= 2) {
-        const prefix = utf8_before_opti[utf8_before_opti.length - 2].value;
-        const extension = utf8_before_opti[utf8_before_opti.length - 1].value;
+      if (utf8BeforeOpti.length >= 2) {
+        const prefix = utf8BeforeOpti[utf8BeforeOpti.length - 2].value;
+        const extension = utf8BeforeOpti[utf8BeforeOpti.length - 1].value;
         if (prefix || extension) {
-          const first_frame =
+          const firstFrame =
             `${prefix}${format(_sspc.start_frame, `0${_sspc.frame_padding}d`)}` +
             `${extension}`;
-          this._file = _join_sequence_frame(this._file, first_frame);
+          this._file = _joinSequenceFrame(this._file, firstFrame);
         }
       }
     }
 
     if (getattr(_opti, "asset_type", "") === "8BPS") {
-      const psd_opti = _opti;
+      const psdOpti = _opti;
       this._file_attributes = new Map<string, number | string>([
-        ["psd_layer_index", psd_opti.psd_layer_index],
-        ["psd_group_name", psd_opti.psd_group_name || ""],
-        ["psd_layer_count", psd_opti.psd_layer_count],
-        ["psd_canvas_width", psd_opti.psd_canvas_width],
-        ["psd_canvas_height", psd_opti.psd_canvas_height],
-        ["psd_bit_depth", psd_opti.psd_bit_depth],
-        ["psd_channels", psd_opti.psd_channels],
-        ["psd_layer_top", psd_opti.psd_layer_top],
-        ["psd_layer_left", psd_opti.psd_layer_left],
-        ["psd_layer_bottom", psd_opti.psd_layer_bottom],
-        ["psd_layer_right", psd_opti.psd_layer_right],
+        ["psd_layer_index", psdOpti.psd_layer_index],
+        ["psd_group_name", psdOpti.psd_group_name || ""],
+        ["psd_layer_count", psdOpti.psd_layer_count],
+        ["psd_canvas_width", psdOpti.psd_canvas_width],
+        ["psd_canvas_height", psdOpti.psd_canvas_height],
+        ["psd_bit_depth", psdOpti.psd_bit_depth],
+        ["psd_channels", psdOpti.psd_channels],
+        ["psd_layer_top", psdOpti.psd_layer_top],
+        ["psd_layer_left", psdOpti.psd_layer_left],
+        ["psd_layer_bottom", psdOpti.psd_layer_bottom],
+        ["psd_layer_right", psdOpti.psd_layer_right],
       ]);
     } else {
       this._file_attributes = new Map();
@@ -923,16 +923,16 @@ export class FileSource extends FootageSource {
       color_mode = 3,
       windows,
     } = kw;
-    let reserved_c8: Uint8Array | null = kw.reserved_c8 ?? null;
+    let reservedC8: Uint8Array | null = kw.reserved_c8 ?? null;
 
-    check_footage_size(new Path(file).name, width, height);
-    const is_sequence = sequence_prefix != null || sequence_files != null;
+    checkFootageSize(new Path(file).name, width, height);
+    const isSequence = sequence_prefix != null || sequence_files != null;
     // AE locates footage only by an absolute path (a relative one opens
     // as missing), and its scripts' `new File()` resolves a relative path
     // against the current folder: resolve against the working directory.
     const path = new Path(host.path.resolve(String(file)));
 
-    if (reserved_c8 == null) {
+    if (reservedC8 == null) {
       // AE 2026 writes byte 0xC9 = 0x02 for raster/media file footage but
       // 0x00 for the layers of an Illustrator/PDF composition import
       // (ai_comp.aep, complex_comp.aep); solids/placeholders keep the
@@ -940,26 +940,26 @@ export class FileSource extends FootageSource {
       // fixtures. Other sources override this (chosen PSD layer = 0x01,
       // chosen AI layer = 0x02, merged PSD = 0x03, a whole AI/EPS/PDF
       // file = 0x02; choose_layer_*.aep, footage_depth.aep).
-      reserved_c8 = source_format === "TEXT" ? b("\x00\x00") : b("\x00\x02");
+      reservedC8 = source_format === "TEXT" ? b("\x00\x00") : b("\x00\x02");
     }
     const sspc = new SspcChunk({
       source_format_type: source_format,
       width,
       height,
-      alpha_mode_raw: _alpha_mode_raw(has_alpha, alpha_premultiplied),
+      alpha_mode_raw: _alphaModeRaw(has_alpha, alpha_premultiplied),
       is_synthetic_a: 0,
       is_synthetic_b: 0,
       is_synthetic_c: 0,
       full_frame,
-      reserved_c8,
+      reserved_c8: reservedC8,
       data_size,
       depth,
       reserved_40: b("\x01\x01"), // every file source (AE 2026)
     });
-    _sync_premultiplied(sspc);
+    _syncPremultiplied(sspc);
     if (media_flag) {
       sspc.media_format = true;
-      sspc.media_file = !is_sequence;
+      sspc.media_file = !isSequence;
     }
     if (layer_id != null) sspc.layer_id = layer_id;
     if (layer_index != null) sspc.layer_index = layer_index;
@@ -977,11 +977,11 @@ export class FileSource extends FootageSource {
     sspc.from_file = true;
     // Media that is not on this machine stays unstamped, which is the
     // "re-read me" state AE itself writes for missing footage.
-    const stamp_target = is_sequence ? path.parent : path;
+    const stampTarget = isSequence ? path.parent : path;
     try {
-      sspc.source_modified = int(stamp_target.stat().mtimeMs / 1000);
+      sspc.source_modified = int(stampTarget.stat().mtimeMs / 1000);
     } catch (e) {
-      if (!_is_os_error(e)) throw e;
+      if (!_isOsError(e)) throw e;
     }
     if (sequence_files != null) {
       // An alphabetical sequence lists its frames by name (in the Pin's
@@ -994,7 +994,7 @@ export class FileSource extends FootageSource {
       sspc._reserved_b8 = b("\x00");
       sspc._reserved_ba = b("\x00\x00");
       sspc._source_stamp = concat(b("\x01"), bytes_.slice(sspc._source_stamp, 1));
-    } else if (is_sequence) {
+    } else if (isSequence) {
       sspc.start_frame = start_frame;
       sspc.end_frame = end_frame;
       sspc.frame_padding = frame_padding;
@@ -1004,12 +1004,12 @@ export class FileSource extends FootageSource {
       // Byte 0xB8 marks zero-padded frame numbers: 0 for p410.png
       // or s1.png ... s12.png, 1 for z_0410.png or frame_001.png.
       sspc._reserved_a8 = b("\x00\x00\x00\x02");
-      const zero_padded = str(start_frame).length < frame_padding;
-      sspc._reserved_b8 = zero_padded ? b("\x01") : b("\x00");
+      const zeroPadded = str(start_frame).length < frame_padding;
+      sspc._reserved_b8 = zeroPadded ? b("\x01") : b("\x00");
       sspc._reserved_ba = b("\x01\x01");
     }
-    if (is_sequence) {
-      _store_frames_over_rate(sspc, round(duration * frame_rate), frame_rate);
+    if (isSequence) {
+      _storeFramesOverRate(sspc, round(duration * frame_rate), frame_rate);
     }
 
     // Route through variant dispatch so a recognized asset type (e.g.
@@ -1022,27 +1022,27 @@ export class FileSource extends FootageSource {
       opti = new OptiChunk({ chunk_type: "opti" });
     }
 
-    const fullpath = platform_path(is_sequence ? String(path.parent) : String(path), {
+    const fullpath = platformPath(isSequence ? String(path.parent) : String(path), {
       windows,
     });
-    const path_chunks: Chunk[] = [build_als2_list(fullpath, { target_is_folder: is_sequence })];
+    const pathChunks: Chunk[] = [buildAls2List(fullpath, { target_is_folder: isSequence })];
     if (sequence_files != null) {
-      path_chunks.push(build_stvc_list(sequence_files));
-    } else if (is_sequence) {
-      path_chunks.push(new Utf8Chunk({ value: sequence_prefix || "" }));
-      path_chunks.push(new Utf8Chunk({ value: sequence_ext || "" }));
+      pathChunks.push(buildStvcList(sequence_files));
+    } else if (isSequence) {
+      pathChunks.push(new Utf8Chunk({ value: sequence_prefix || "" }));
+      pathChunks.push(new Utf8Chunk({ value: sequence_ext || "" }));
     }
 
-    const [embedded, assigned] = _media_profile_records(
+    const [embedded, assigned] = _mediaProfileRecords(
       icc_profile,
       source_format,
       width > 0,
-      width > 0 && duration > 0 && !is_sequence,
+      width > 0 && duration > 0 && !isSequence,
       embedded_profile_name,
       color_mode,
     );
-    const pin = build_pin_list(sspc, opti, {
-      path_chunks,
+    const pin = buildPinList(sspc, opti, {
+      path_chunks: pathChunks,
       embedded_profile_name,
       embedded_profile: embedded,
       assigned_profile: assigned,
@@ -1052,9 +1052,9 @@ export class FileSource extends FootageSource {
       color_managed: embedded_profile_name == null && !_UNPROFILED_FORMATS.has(source_format),
       layer_name,
     });
-    const clrs = find_by_list_type(pin.chunks, "CLRS");
-    const linl = find_by_type(clrs.chunks, "linl");
-    if (_LINEAR_LIGHT_OFF_FORMATS.has(source_format) && width > 0 && !is_sequence) {
+    const clrs = findByListType(pin.chunks, "CLRS");
+    const linl = findByType(clrs.chunks, "linl");
+    if (_LINEAR_LIGHT_OFF_FORMATS.has(source_format) && width > 0 && !isSequence) {
       linl.value = int(LinearLightMode.OFF);
     }
 
@@ -1103,9 +1103,9 @@ export class FileSource extends FootageSource {
       range_start = 0,
       range_end = 0,
     } = kw;
-    validate_file_exists(file);
+    validateFileExists(file);
     const path = new Path(file);
-    let fmt = get_file_format(path.suffix);
+    let fmt = getFileFormat(path.suffix);
     if (fmt.opti === "unsupported") {
       throw new NotImplementedError(
         `footage import does not yet support ${path.suffix}: After ` +
@@ -1126,29 +1126,29 @@ export class FileSource extends FootageSource {
         range_end,
       });
     }
-    fmt = _replace(fmt, { source_format: platform_source_format(fmt, { windows }) });
+    fmt = _replace(fmt, { source_format: platformSourceFormat(fmt, { windows }) });
     // An AI/EPS/PDF file is read once for its probe, layers and profile.
     const data = fmt.opti === "text" ? path.read_bytes() : null;
-    let info = _platform_media_info(probe_media(path, data), fmt, { windows });
-    const opti_data = _opti_data(fmt, info, path, { sequence: false, data });
+    let info = _platformMediaInfo(probeMedia(path, data), fmt, { windows });
+    const optiData = _optiData(fmt, info, path, { sequence: false, data });
     // The profile AE records in CLRS: an AI/EPS/PDF page's (embedded when
     // RGB, named otherwise), or the name of a non-RGB TIFF/PSD's.
     let icc: Uint8Array | null;
-    let profile_name: string | null;
+    let profileName: string | null;
     if (fmt.opti === "text") {
-      [icc, profile_name] = ai_document_profile(path, data);
+      [icc, profileName] = aiDocumentProfile(path, data);
       info = _replace(info, { icc_profile: icc });
     } else {
-      profile_name = named_media_profile(fmt.source_format, info);
+      profileName = namedMediaProfile(fmt.source_format, info);
     }
     // Merged PSD footage: AE writes kind 0x0003. An AI/EPS/PDF file
     // imported whole takes the file-footage 0x0002 (footage_depth.aep),
     // not the 0x0000 of an Illustrator composition's layers.
-    const reserved_c8 = (new Map<string, Uint8Array>([
+    const reservedC8 = (new Map<string, Uint8Array>([
         ["psd", b("\x00\x03")],
         ["text", b("\x00\x02")],
       ])).get(fmt.opti) ?? null;
-    const data_size = _still_data_size(fmt, info, path);
+    const dataSize = _stillDataSize(fmt, info, path);
     return this._new(path, {
       source_format: fmt.source_format,
       width: info.width,
@@ -1162,10 +1162,10 @@ export class FileSource extends FootageSource {
       media_flag: fmt.media_flag,
       alpha_premultiplied: fmt.alpha_premultiplied,
       audio_sample_rate: info.audio_sample_rate,
-      opti_data,
-      embedded_profile_name: profile_name,
-      data_size,
-      reserved_c8,
+      opti_data: optiData,
+      embedded_profile_name: profileName,
+      data_size: dataSize,
+      reserved_c8: reservedC8,
       color_mode: info.color_mode,
       windows,
     });
@@ -1173,7 +1173,7 @@ export class FileSource extends FootageSource {
 
   static _from_layer(
     file: PathLike,
-    layer_index: number,
+    layerIndex: number,
     kw: { dimensions?: string | null; layer_styles?: string | null; windows: boolean },
   ): FileSource {
     /**
@@ -1203,15 +1203,15 @@ export class FileSource extends FootageSource {
      *   page content py_aep cannot read.
      */
     const { dimensions = null, layer_styles = null, windows } = kw;
-    validate_file_exists(file);
+    validateFileExists(file);
     const path = new Path(file);
     const suffix = path.suffix.toLowerCase();
     if (PSD_COMP_EXTENSIONS.has(suffix)) {
-      const info = probe_media(path);
-      const fmt = get_file_format(suffix);
-      const leaf = resolve_psd_layer(path, layer_index);
+      const info = probeMedia(path);
+      const fmt = getFileFormat(suffix);
+      const leaf = resolvePsdLayer(path, layerIndex);
       const styles = layer_styles == null ? "merge" : layer_styles;
-      const footage = psd_layer_footage(info, leaf, styles, read_global_light(path)[0]);
+      const footage = psdLayerFootage(info, leaf, styles, readGlobalLight(path)[0]);
       const [left, top, right, bottom] = footage.box;
       let width: number;
       let height: number;
@@ -1245,36 +1245,36 @@ export class FileSource extends FootageSource {
         layer_index: leaf.record_index,
         data_size: footage.dataSize,
         reserved_c8: getitem(PSD_LAYER_STYLES_C8, styles),
-        embedded_profile_name: named_media_profile(fmt.source_format, info),
+        embedded_profile_name: namedMediaProfile(fmt.source_format, info),
         color_mode: info.color_mode,
         windows,
       });
     }
     if (AI_COMP_EXTENSIONS.has(suffix)) {
       const data = path.read_bytes();
-      const info = probe_media(path, data);
-      const fmt = get_file_format(suffix);
-      const [ai_layers, index] = resolve_ai_layer(path, layer_index, data);
-      const ai_layer = at(ai_layers, index);
-      const [icc, profile_name] = ai_document_profile(path, data);
-      let artwork_bounds: Box | null = null;
+      const info = probeMedia(path, data);
+      const fmt = getFileFormat(suffix);
+      const [aiLayers, index] = resolveAiLayer(path, layerIndex, data);
+      const aiLayer = at(aiLayers, index);
+      const [icc, profileName] = aiDocumentProfile(path, data);
+      let artworkBounds: Box | null = null;
       let width = info.width;
       let height = info.height;
       if (dimensions === "layer") {
         // The artwork box is the whole binding for a Layer Size
         // import: After Effects derives the footage pixel size from
         // it and does not recompute it on open.
-        const bounds = at(read_ai_layer_bounds(path, data), index);
-        artwork_bounds = bounds == null ? EMPTY_BOX : bounds;
-        [width, height] = footage_size(bounds);
+        const bounds = at(readAiLayerBounds(path, data), index);
+        artworkBounds = bounds == null ? EMPTY_BOX : bounds;
+        [width, height] = footageSize(bounds);
       }
-      const opti_data = build_ai_layer_opti_data(
+      const optiData = buildAiLayerOptiData(
         info.width,
         info.height,
-        ai_layer.name,
-        ai_layers.length,
-        artwork_bounds,
-        ai_layer.visible,
+        aiLayer.name,
+        aiLayers.length,
+        artworkBounds,
+        aiLayer.visible,
       );
       return this._new(path, {
         source_format: fmt.source_format,
@@ -1288,10 +1288,10 @@ export class FileSource extends FootageSource {
         depth: info.depth,
         alpha_premultiplied: fmt.alpha_premultiplied,
         audio_sample_rate: info.audio_sample_rate,
-        opti_data,
-        embedded_profile_name: profile_name,
+        opti_data: optiData,
+        embedded_profile_name: profileName,
         full_frame: dimensions !== "layer",
-        layer_name: ai_layer.name,
+        layer_name: aiLayer.name,
         layer_index: index,
         data_size: data.length,
         reserved_c8: b("\x00\x02"),
@@ -1304,8 +1304,8 @@ export class FileSource extends FootageSource {
   static _build_sequence(
     file: Path,
     fmt: FileFormat,
-    force_alphabetical: boolean,
-    default_frame_rate: number,
+    forceAlphabetical: boolean,
+    defaultFrameRate: number,
     kw: { windows: boolean; range_start?: number; range_end?: number },
   ): FileSource {
     /**
@@ -1324,71 +1324,71 @@ export class FileSource extends FootageSource {
      * folder that also holds `x.jpg` and a subfolder.
      */
     const { windows, range_start = 0, range_end = 0 } = kw;
-    validate_bool(force_alphabetical);
-    if (!(0 < default_frame_rate && default_frame_rate <= 999)) {
+    validateBool(forceAlphabetical);
+    if (!(0 < defaultFrameRate && defaultFrameRate <= 999)) {
       // The "Import Options Default Sequence FPS" preference; outside
       // the conform-rate range it cannot time a sequence (0 divided
       // by zero below).
-      throw new ValueError(`invalid default sequence frame rate ${repr(default_frame_rate)}`);
+      throw new ValueError(`invalid default sequence frame rate ${repr(defaultFrameRate)}`);
     }
     const m = _FRAME_NUMBER_RE.exec(file.stem);
-    if (m == null && !force_alphabetical) {
+    if (m == null && !forceAlphabetical) {
       throw new ValueError(`Sequence import requires a numbered filename, got ${repr(file.name)}`);
     }
 
-    const has_range = range_start > 0 || range_end > 0;
-    if (has_range && range_end === 0) {
+    const hasRange = range_start > 0 || range_end > 0;
+    if (hasRange && range_end === 0) {
       // AE errors at import time ("Found no matches for the selected
       // file name") when a start is set without an end.
       throw new ValueError("a sequence range start requires a range end");
     }
-    if (has_range && range_end < range_start) {
+    if (hasRange && range_end < range_start) {
       throw new ValueError("Range end cannot be less than range start");
     }
 
     // BMP/GIF sequences take the target platform's importer code. AE
     // refuses the other one (see GENERIC_STILL_FORMATS).
-    fmt = _replace(fmt, { source_format: platform_source_format(fmt, { windows }) });
+    fmt = _replace(fmt, { source_format: platformSourceFormat(fmt, { windows }) });
 
-    let file_names: string[] | null = null;
+    let fileNames: string[] | null = null;
     let prefix: string | null = null;
     let ext: string | null = null;
     let frames: [number, string, number, string][] = [];
-    let first_frame: string;
-    let start_frame: number;
-    let end_frame: number;
+    let firstFrame: string;
+    let startFrame: number;
+    let endFrame: number;
     let padding: number;
-    if (m == null || force_alphabetical) {
+    if (m == null || forceAlphabetical) {
       const suffix = file.suffix.toLowerCase();
       // scandir's entries know their type, and the cheap name test runs
       // first: no stat per file of a large frame folder.
-      file_names = sorted(
+      fileNames = sorted(
         host
           .scandir(file.parent.path)
           .map((ent) => ent.name)
           .filter(
             (name) =>
-              _splitext_ext(name).toLowerCase() === suffix && file.parent.div(name).is_file(),
+              _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).is_file(),
           ),
         (name: string) => name.toLowerCase(),
       );
-      first_frame = at(file_names, 0);
-      start_frame = end_frame = UNDEFINED_FRAME;
+      firstFrame = at(fileNames, 0);
+      startFrame = endFrame = UNDEFINED_FRAME;
       padding = 0;
     } else {
       prefix = file.stem.slice(0, m.index);
       ext = file.suffix;
-      const ext_key = ext.toLowerCase();
-      const prefix_key = prefix.toLowerCase();
+      const extKey = ext.toLowerCase();
+      const prefixKey = prefix.toLowerCase();
       // (number, name, digit count, own prefix)
       for (const sibling of file.parent.iterdir()) {
-        if (sibling.suffix.toLowerCase() !== ext_key) continue;
+        if (sibling.suffix.toLowerCase() !== extKey) continue;
         // Each file splits into its own prefix and frame number, and
         // the prefixes compare case-insensitively: AE 2026 (Windows)
         // gathers F_001.png and f_002.png into `F_[001-002].png`.
         const stem = sibling.stem;
         const sm = _FRAME_NUMBER_RE.exec(stem);
-        if (sm != null && stem.slice(0, sm.index).toLowerCase() === prefix_key) {
+        if (sm != null && stem.slice(0, sm.index).toLowerCase() === prefixKey) {
           frames.push([int(sm[1]), sibling.name, sm[1].length, stem.slice(0, sm.index)]);
         }
       }
@@ -1396,7 +1396,7 @@ export class FileSource extends FootageSource {
         frames = [[int(m[1]), file.name, m[1].length, prefix]];
       }
 
-      if (has_range) {
+      if (hasRange) {
         frames = frames.filter((fr) => range_start <= fr[0] && fr[0] <= range_end);
         if (!frames?.length) {
           throw new ValueError(
@@ -1411,33 +1411,33 @@ export class FileSource extends FootageSource {
       // even from s12.png. The sequence is named after the first
       // frame's own prefix (the case can differ from the picked file's:
       // `F_[001-002].png`).
-      [, first_frame, padding, prefix] = frames[0];
-      if (has_range) {
-        start_frame = range_start;
-        end_frame = range_end;
+      [, firstFrame, padding, prefix] = frames[0];
+      if (hasRange) {
+        startFrame = range_start;
+        endFrame = range_end;
       } else {
-        start_frame = frames[0][0];
-        end_frame = frames[frames.length - 1][0];
+        startFrame = frames[0][0];
+        endFrame = frames[frames.length - 1][0];
       }
     }
 
-    const file_count = file_names != null ? file_names.length : frames.length;
-    const first_path = file.parent.div(first_frame);
-    const info = probe_media(first_path);
-    const frame_rate = py_or(info.frame_rate, default_frame_rate);
+    const fileCount = fileNames != null ? fileNames.length : frames.length;
+    const firstPath = file.parent.div(firstFrame);
+    const info = probeMedia(firstPath);
+    const frameRate = pyOr(info.frame_rate, defaultFrameRate);
     let duration: number;
     if (info.duration !== 0) {
       // A first frame with a timeline of its own (an animated GIF) sets
       // the sequence's rate and duration: AE 2026 imports two 14-frame
       // 10 fps GIFs as one 1.4 s sequence at 10 fps.
       duration = info.duration;
-    } else if (file_names != null) {
-      duration = file_names.length / frame_rate;
+    } else if (fileNames != null) {
+      duration = fileNames.length / frameRate;
     } else {
       // Frame-number span, not file count: AE counts absent interior
       // frames as implied placeholders (probed: a 1-12 sequence with
       // frames 6-7 missing imports with a 12-frame duration).
-      duration = (end_frame - start_frame + 1) / frame_rate;
+      duration = (endFrame - startFrame + 1) / frameRate;
     }
 
     const source = this._new(file, {
@@ -1445,7 +1445,7 @@ export class FileSource extends FootageSource {
       width: info.width,
       height: info.height,
       duration,
-      frame_rate,
+      frame_rate: frameRate,
       pixel_aspect: info.pixel_aspect,
       has_alpha: info.has_alpha,
       depth: info.depth,
@@ -1455,21 +1455,21 @@ export class FileSource extends FootageSource {
       icc_profile: info.icc_profile,
       sequence_prefix: prefix,
       sequence_ext: ext,
-      sequence_files: file_names,
-      start_frame,
-      end_frame,
+      sequence_files: fileNames,
+      start_frame: startFrame,
+      end_frame: endFrame,
       frame_padding: padding,
-      opti_data: _opti_data(fmt, info, first_path, { sequence: true }),
+      opti_data: _optiData(fmt, info, firstPath, { sequence: true }),
       // AE caches the first frame's size times the file count, however
       // large the others are (a 4928-byte first GIF in three files is
       // 14784), on macOS and Windows alike.
-      data_size: file_count * first_path.stat().size,
-      embedded_profile_name: named_media_profile(fmt.source_format, info),
+      data_size: fileCount * firstPath.stat().size,
+      embedded_profile_name: namedMediaProfile(fmt.source_format, info),
       color_mode: info.color_mode,
       windows,
     });
     source._rate_from_media = info.duration !== 0;
-    if (has_range) {
+    if (hasRange) {
       source._sspc.frame_range_set = true;
     }
     return source;
@@ -1516,10 +1516,10 @@ export class FileSource extends FootageSource {
 
     // A path stored for the other platform is read where AE on this one
     // looks for it (`/Users/x` -> `C:\Users\x`).
-    const host_file = platform_path(this._file, { windows: host.platform === "win32" });
-    validate_file_exists(host_file);
-    const path = new Path(host_file);
-    let fmt = get_file_format(path.suffix);
+    const hostFile = platformPath(this._file, { windows: host.platform === "win32" });
+    validateFileExists(hostFile);
+    const path = new Path(hostFile);
+    let fmt = getFileFormat(path.suffix);
     if (fmt.opti === "unsupported") {
       throw new NotImplementedError(
         `footage reload does not support ${path.suffix}: After ` +
@@ -1541,15 +1541,15 @@ export class FileSource extends FootageSource {
       // the rebuild would widen the sequence to every sibling frame
       // while the marker still claimed a range. The range bounds are
       // the stored start/end frames.
-      const range_start = sspc.frame_range_set ? this._start_frame : 0;
-      const range_end = sspc.frame_range_set ? this._end_frame : 0;
+      const rangeStart = sspc.frame_range_set ? this._start_frame : 0;
+      const rangeEnd = sspc.frame_range_set ? this._end_frame : 0;
       const alphabetical = this._is_alphabetical;
       const fresh = FileSource._build_sequence(
         path,
         fmt,
         alphabetical,
-        py_or(sspc.native_frame_rate, 30.0),
-        { windows: this._windows, range_start, range_end },
+        pyOr(sspc.native_frame_rate, 30.0),
+        { windows: this._windows, range_start: rangeStart, range_end: rangeEnd },
       );
       // The duration as frames over rate, unreduced, as the import writes
       // it (the float setter would store 3/30 as 1/10).
@@ -1564,9 +1564,9 @@ export class FileSource extends FootageSource {
       );
       if (alphabetical) {
         // An alphabetical sequence re-lists its folder by name.
-        const stvc = find_by_list_type(this._pin.chunks, "StVc");
-        const index = index_by_identity(this._pin.chunks, stvc);
-        this._pin.chunks[index] = find_by_list_type(fresh._pin.chunks, "StVc");
+        const stvc = findByListType(this._pin.chunks, "StVc");
+        const index = indexByIdentity(this._pin.chunks, stvc);
+        this._pin.chunks[index] = findByListType(fresh._pin.chunks, "StVc");
         this._file_names = fresh._file_names;
         this._file = fresh._file;
       }
@@ -1579,7 +1579,7 @@ export class FileSource extends FootageSource {
       // does, and everything is measured before anything is written.
       const fresh = FileSource._from_layer(
         path,
-        layer_index_for_stored(path, sspc.layer_index),
+        layerIndexForStored(path, sspc.layer_index),
         {
           dimensions: sspc.full_frame ? null : "layer",
           layer_styles: this.layerStyles,
@@ -1589,28 +1589,28 @@ export class FileSource extends FootageSource {
       this._adopt_measured(fresh, "pixel_aspect", "layer_id");
     } else {
       const data = fmt.opti === "text" ? path.read_bytes() : null;
-      const info = _platform_media_info(probe_media(path, data), fmt, {
+      const info = _platformMediaInfo(probeMedia(path, data), fmt, {
         windows: this._windows,
       });
       sspc.width = info.width;
       sspc.height = info.height;
       sspc.depth = info.depth;
-      sspc.alpha_mode_raw = _alpha_mode_raw(info.has_alpha, fmt.alpha_premultiplied);
+      sspc.alpha_mode_raw = _alphaModeRaw(info.has_alpha, fmt.alpha_premultiplied);
       sspc.native_frame_rate = info.frame_rate;
       sspc.duration = info.duration;
       sspc.pixel_aspect = info.pixel_aspect;
       sspc.audio_sample_rate = info.audio_sample_rate;
       // AE refreshes the cached source size (probed on a PNG: the file
       // size, 3614 -> 223874 across the reload fixture pair).
-      sspc.data_size = _still_data_size(fmt, info, path);
-      const opti_data = _opti_data(fmt, info, path, { sequence: false, data });
-      let new_opti: OptiChunk;
-      if (opti_data?.length > 0) {
-        new_opti = OptiChunk.read(new BytesIO(opti_data), opti_data.length, { chunk_type: "opti" });
+      sspc.data_size = _stillDataSize(fmt, info, path);
+      const optiData = _optiData(fmt, info, path, { sequence: false, data });
+      let newOpti: OptiChunk;
+      if (optiData?.length > 0) {
+        newOpti = OptiChunk.read(new BytesIO(optiData), optiData.length, { chunk_type: "opti" });
       } else {
-        new_opti = new OptiChunk({ chunk_type: "opti" });
+        newOpti = new OptiChunk({ chunk_type: "opti" });
       }
-      this._swap_opti(new_opti);
+      this._swap_opti(newOpti);
       // AE 2026 restamps the source with the file's current mtime on a
       // reload; a stale stamp makes it re-read the media at every open.
       sspc.source_modified = int(path.stat().mtimeMs / 1000);
@@ -1619,10 +1619,10 @@ export class FileSource extends FootageSource {
       // for PNG/MOV/MPEG too, and a reload that only re-reads the
       // same pixels must not erase it.
       if (fmt.opti === "text") {
-        this._update_embedded_profile(ai_document_profile(path, data)[1]);
+        this._update_embedded_profile(aiDocumentProfile(path, data)[1]);
       }
     }
-    _sync_premultiplied(sspc);
+    _syncPremultiplied(sspc);
 
     const idta = getattr(owner, "_idta", null);
     if (owner != null && idta != null) {
@@ -1633,10 +1633,10 @@ export class FileSource extends FootageSource {
   }
 
   /** Replace the pin's `opti` chunk (and this source's reference). */
-  _swap_opti(new_opti: OptiChunk): void {
-    const index = index_by_identity(this._pin.chunks, this._opti);
-    this._pin.chunks[index] = new_opti;
-    this._opti = new_opti;
+  _swap_opti(newOpti: OptiChunk): void {
+    const index = indexByIdentity(this._pin.chunks, this._opti);
+    this._pin.chunks[index] = newOpti;
+    this._opti = newOpti;
   }
 
   /**
@@ -1647,12 +1647,12 @@ export class FileSource extends FootageSource {
    */
   _adopt_measured(fresh: FileSource, ...fields: string[]): void {
     const sspc = this._sspc;
-    const fresh_sspc = fresh._sspc;
+    const freshSspc = fresh._sspc;
     for (const name of ["width", "height", "depth", "alpha_mode_raw", ...fields]) {
-      setattr(sspc, name, getattr(fresh_sspc, name));
+      setattr(sspc, name, getattr(freshSspc, name));
     }
-    sspc.data_size = fresh_sspc.data_size;
-    sspc._source_stamp = fresh_sspc._source_stamp;
+    sspc.data_size = freshSspc.data_size;
+    sspc._source_stamp = freshSspc._source_stamp;
     this._swap_opti(fresh._opti);
   }
 
@@ -1674,10 +1674,10 @@ export class FileSource extends FootageSource {
       }
     }
     if (name != null) {
-      const apid_index = chunks.findIndex((ch) => ch.chunk_type === "apid");
-      const insert_at = apid_index >= 0 ? apid_index + 1 : 0;
-      chunks.splice(insert_at, 0, new Utf8Chunk({ value: name }));
-      chunks.splice(insert_at, 0, new EmpdChunk());
+      const apidIndex = chunks.findIndex((ch) => ch.chunk_type === "apid");
+      const insertAt = apidIndex >= 0 ? apidIndex + 1 : 0;
+      chunks.splice(insertAt, 0, new Utf8Chunk({ value: name }));
+      chunks.splice(insertAt, 0, new EmpdChunk());
     }
   }
 
@@ -1704,8 +1704,8 @@ export class FileSource extends FootageSource {
    * py_aep extension: ExtendScript exposes no layer-selection API.
    */
   get layerName(): string {
-    const psd_layer = getattr(this._opti, "psd_group_name", "");
-    if (py_bool(psd_layer)) return str(psd_layer);
+    const psdLayer = getattr(this._opti, "psd_group_name", "");
+    if (pyBool(psdLayer)) return str(psdLayer);
     // AI/EPS/PDF: a `TEXT` opti carries the layer name as a typed
     // `TextOptiChunk` field (0x44). The name alone marks the binding -
     // the 0x3D byte next to it is the layer's visibility, and AE writes
@@ -1744,27 +1744,27 @@ export class FileSource extends FootageSource {
    * from the source: a sequence pattern (e.g. `render.[0001-0700].exr`),
    * `layername/filename` for a layer-bound source, else the filename.
    */
-  _resolve_name(raw_name: string): string {
-    let item_name = raw_name;
+  _resolve_name(rawName: string): string {
+    let itemName = rawName;
 
-    if (!item_name) {
+    if (!itemName) {
       if (this._duration !== 0 && this._target_is_folder) {
-        item_name = this._build_sequence_name();
+        itemName = this._build_sequence_name();
       }
-      if (!item_name) {
+      if (!itemName) {
         // PureWindowsPath handles both / and \ separators,
         // unlike PurePosixPath which only splits on /.
         const basename = new PureWindowsPath(this._file).name;
         const layer = this.layerName;
         if (layer) {
-          item_name = `${layer}/${basename}`;
+          itemName = `${layer}/${basename}`;
         } else {
-          item_name = basename;
+          itemName = basename;
         }
       }
     }
 
-    return item_name;
+    return itemName;
   }
 
   /**
@@ -1778,29 +1778,29 @@ export class FileSource extends FootageSource {
    */
   _build_sequence_name(): string {
     if (this._is_alphabetical) return new PureWindowsPath(this._file).parent.name;
-    const start_frame = this._start_frame;
-    const end_frame = this._end_frame;
-    if (start_frame === UNDEFINED_FRAME || end_frame === UNDEFINED_FRAME) return "";
+    const startFrame = this._start_frame;
+    const endFrame = this._end_frame;
+    if (startFrame === UNDEFINED_FRAME || endFrame === UNDEFINED_FRAME) return "";
 
-    let utf8_before_opti: Utf8Chunk[];
+    let utf8BeforeOpti: Utf8Chunk[];
     try {
-      utf8_before_opti = find_chunks_before(this._pin.chunks, "Utf8", "opti");
+      utf8BeforeOpti = findChunksBefore(this._pin.chunks, "Utf8", "opti");
     } catch (e) {
       if (!(e instanceof ChunkNotFoundError)) throw e;
-      utf8_before_opti = [];
+      utf8BeforeOpti = [];
     }
 
-    if (utf8_before_opti.length < 2) return "";
+    if (utf8BeforeOpti.length < 2) return "";
 
-    const prefix = utf8_before_opti[utf8_before_opti.length - 2].value;
-    const extension = utf8_before_opti[utf8_before_opti.length - 1].value;
+    const prefix = utf8BeforeOpti[utf8BeforeOpti.length - 2].value;
+    const extension = utf8BeforeOpti[utf8BeforeOpti.length - 1].value;
 
     if (!prefix && !extension) return "";
 
-    const frame_padding = this._sspc.frame_padding;
-    const frame_range =
-      `[${format(start_frame, `0${frame_padding}d`)}` +
-      `-${format(end_frame, `0${frame_padding}d`)}]`;
-    return `${prefix}${frame_range}${extension}`;
+    const framePadding = this._sspc.frame_padding;
+    const frameRange =
+      `[${format(startFrame, `0${framePadding}d`)}` +
+      `-${format(endFrame, `0${framePadding}d`)}]`;
+    return `${prefix}${frameRange}${extension}`;
   }
 }

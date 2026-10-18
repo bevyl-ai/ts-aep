@@ -59,9 +59,9 @@ export const _SECTION_RE = /^\["([^\n]*)"\]/;
 export const _KEY_RE = /^\t"([^\n]+?)" = ([^\n]*)$/;
 
 /** Locate the preference file for `pref_type` under `prefs_dir`. */
-export function find_prefs_file(prefs_dir: Path, pref_type: PREFType): Path | null {
+export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {
   // Path ordering in Python compares parts; all matches share one parent, so the string form orders the same.
-  const matches = sorted(prefs_dir.glob(_PREF_FILE_GLOBS[pref_type]), (p) => p.toString());
+  const matches = sorted(prefsDir.glob(_PREF_FILE_GLOBS[prefType]), (p) => p.toString());
   return matches?.length > 0 ? matches[0] : null;
 }
 
@@ -72,7 +72,7 @@ export function find_prefs_file(prefs_dir: Path, pref_type: PREFType): Path | nu
  * lines are indented further (or start with a tab but no quote) and
  * are appended to the previous logical line.
  */
-export function collapse_continuation_lines(text: string): string[] {
+export function collapseContinuationLines(text: string): string[] {
   const lines = split(text, "\n");
   const result: string[] = [];
   for (const line of lines) {
@@ -94,7 +94,7 @@ export function collapse_continuation_lines(text: string): string[] {
  * The value contains hex digits and quoted ASCII strings like:
  * `00D00BEE..."Best Settings"0000...`
  */
-export function parse_hex_value(value: string): Uint8Array {
+export function parseHexValue(value: string): Uint8Array {
   const raw: number[] = [];
   let i = 0;
   while (i < value.length) {
@@ -115,7 +115,7 @@ export function parse_hex_value(value: string): Uint8Array {
 }
 
 /** Parse decimal text into an int when integral, else a float. */
-export function parse_number_text(text: string): number {
+export function parseNumberText(text: string): number {
   const stripped = strip(text);
   try {
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); "30.0" and "30" both yield 30 (read-only getter, never written to a file).
@@ -127,8 +127,8 @@ export function parse_number_text(text: string): number {
 }
 
 /** Decode a preference value as text (hex escapes become UTF-8). */
-export function decode_pref_string(raw: string): string {
-  return decode(parse_hex_value(raw), "utf-8", "replace");
+export function decodePrefString(raw: string): string {
+  return decode(parseHexValue(raw), "utf-8", "replace");
 }
 
 /**
@@ -140,18 +140,18 @@ export function decode_pref_string(raw: string): string {
  *
  * @throws {@link ValueError} If a quoted value is not numeric text.
  */
-export function decode_pref_number(raw: string): number {
-  if (raw.includes('"')) return parse_number_text(decode_pref_string(raw));
-  const data = parse_hex_value(raw);
+export function decodePrefNumber(raw: string): number {
+  if (raw.includes('"')) return parseNumberText(decodePrefString(raw));
+  const data = parseHexValue(raw);
   // TODO(port): Python's int is exact; get_pref_as_number's public return type is number, so an
   // unquoted hex value of 7+ significant bytes (or quoted integer text) beyond 2^53 rounds to the
   // nearest double. decode_pref_bool stays exact: no nonzero integer rounds to 0.
-  return bytes_.int_from_bytes(data, "big");
+  return bytes_.intFromBytes(data, "big");
 }
 
 /** Decode a preference value as a boolean (`01`, `"1"`, `00`, `"0"`). */
-export function decode_pref_bool(raw: string): boolean {
-  return decode_pref_number(raw) !== 0;
+export function decodePrefBool(raw: string): boolean {
+  return decodePrefNumber(raw) !== 0;
 }
 
 /**
@@ -172,15 +172,15 @@ export class PrefsFile {
   static from_text(text: string): PrefsFile {
     const sections: Map<string, Map<string, string>> = new Map();
     let current: Map<string, string> | null = null;
-    for (const line of collapse_continuation_lines(text)) {
-      const section_match = _SECTION_RE.exec(line);
-      if (section_match) {
-        current = setdefault(sections, section_match[1], new Map<string, string>());
+    for (const line of collapseContinuationLines(text)) {
+      const sectionMatch = _SECTION_RE.exec(line);
+      if (sectionMatch) {
+        current = setdefault(sections, sectionMatch[1], new Map<string, string>());
         continue;
       }
-      const key_match = _KEY_RE.exec(line);
-      if (key_match && current != null) {
-        current.set(key_match[1], key_match[2]);
+      const keyMatch = _KEY_RE.exec(line);
+      if (keyMatch && current != null) {
+        current.set(keyMatch[1], keyMatch[2]);
       }
     }
     return new this(sections);

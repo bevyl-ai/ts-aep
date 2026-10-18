@@ -2,53 +2,53 @@ import { at } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { filter_by_list_type } from "../binary/utils.ts";
+import { filterByListType } from "../binary/utils.ts";
 import { FootageItem } from "../models/items/footage.ts";
 import type { FolderItem } from "../models/items/folder.ts";
 import type { FileSource } from "../models/sources/file.ts";
 import type { PlaceholderSource } from "../models/sources/placeholder.ts";
 import type { SolidSource } from "../models/sources/solid.ts";
 import type { Project } from "../models/project.ts";
-import { parse_source } from "./source.ts";
+import { parseSource } from "./source.ts";
 
 /**
  * Parse a footage item.
  *
- * @param child_chunks - The footage item child chunks.
+ * @param childChunks - The footage item child chunks.
  * @param _idta - The idta chunk.
- * @param _name_utf8 - The Utf8 chunk containing the item name.
+ * @param _nameUtf8 - The Utf8 chunk containing the item name.
  * @param _cmta - The cmta chunk (None if no comment).
- * @param _item_list - The LIST chunk for creating new chunks.
+ * @param _itemList - The LIST chunk for creating new chunks.
  * @param _gide - The LIST chunk for guides (None if no guides).
  * @param project - The project.
- * @param parent_folder - The item's parent folder.
+ * @param parentFolder - The item's parent folder.
  */
-export function parse_footage(
-  child_chunks: Chunk[],
+export function parseFootage(
+  childChunks: Chunk[],
   _idta: IdtaChunk,
-  _name_utf8: Utf8Chunk,
+  _nameUtf8: Utf8Chunk,
   _cmta: CmtaChunk | null,
-  _item_list: ListChunk,
+  _itemList: ListChunk,
   _gide: ListChunk | null,
   project: Project,
-  parent_folder: FolderItem,
+  parentFolder: FolderItem,
 ): FootageItem {
-  const pin_chunks = filter_by_list_type(child_chunks, "Pin ");
+  const pinChunks = filterByListType(childChunks, "Pin ");
 
-  const main_source = parse_source(at(pin_chunks, 0));
-  const proxy_source: FileSource | SolidSource | PlaceholderSource | null =
-    pin_chunks.length > 1 ? parse_source(pin_chunks[1]) : null;
+  const mainSource = parseSource(at(pinChunks, 0));
+  const proxySource: FileSource | SolidSource | PlaceholderSource | null =
+    pinChunks.length > 1 ? parseSource(pinChunks[1]) : null;
 
   return new FootageItem({
     _idta,
-    _name_utf8,
+    _name_utf8: _nameUtf8,
     _cmta,
-    _item_list,
+    _item_list: _itemList,
     _gide,
-    _pin_chunks: pin_chunks,
+    _pin_chunks: pinChunks,
     project,
-    parent_folder,
-    main_source,
-    proxy_source,
+    parent_folder: parentFolder,
+    main_source: mainSource,
+    proxy_source: proxySource,
   });
 }

@@ -14,21 +14,21 @@
 import { describe, expect, test } from "bun:test";
 import { raises } from "../../src/pyrt/pytest.ts";
 import {
-  dict_get,
+  dictGet,
   float,
   format,
   max,
   NotImplementedError,
   Path,
-  py_assert,
-  py_eq,
+  pyAssert,
+  pyEq,
   zip,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Property } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
-import { get_first_layer, parse_project } from "../conftest.ts";
-import { load_expected_value_at_time, type ExpectedFrame } from "../helpers.ts";
+import { getFirstLayer, parseProject } from "../conftest.ts";
+import { loadExpectedValueAtTime, type ExpectedFrame } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples").div("models").div("property");
 const VAT_DIR = SAMPLES_DIR.div("value_at_time");
@@ -44,27 +44,27 @@ const _FINDERS: Map<string, (ly: Layer) => Property> = new Map<string, (ly: Laye
 ]);
 
 /** Load value_at_time JSON and return (matchName, frames). */
-function _load_vat(base_name: string): [string, ExpectedFrame[]] {
-  const data = load_expected_value_at_time(VAT_DIR, `${base_name}_value_at_time`);
+function _loadVat(baseName: string): [string, ExpectedFrame[]] {
+  const data = loadExpectedValueAtTime(VAT_DIR, `${baseName}_value_at_time`);
   const prop = data.comps[0].layers[0].properties[0];
   return [prop.matchName, prop.frames];
 }
 
 /** Parse .aep and return the target property. */
-function _get_prop(base_name: string): Property {
-  const aep = SAMPLES_DIR.div(`${base_name}.aep`);
-  const layer = get_first_layer(parse_project(aep));
-  const [match_name] = _load_vat(base_name);
-  const finder = dict_get(_FINDERS, match_name);
-  py_assert(finder != null, `No finder for ${match_name}`);
+function _getProp(baseName: string): Property {
+  const aep = SAMPLES_DIR.div(`${baseName}.aep`);
+  const layer = getFirstLayer(parseProject(aep));
+  const [matchName] = _loadVat(baseName);
+  const finder = dictGet(_FINDERS, matchName);
+  pyAssert(finder != null, `No finder for ${matchName}`);
   const prop = finder(layer);
-  py_assert(prop != null, `Property ${match_name} not found`);
+  pyAssert(prop != null, `Property ${matchName} not found`);
   return prop;
 }
 
 /** Compute maximum abs error across all frames. */
-function _max_error(prop: Property, frames: ExpectedFrame[]): number {
-  let max_err = 0.0;
+function _maxError(prop: Property, frames: ExpectedFrame[]): number {
+  let maxErr = 0.0;
   for (const f of frames) {
     const got = prop.valueAtTime(f.time);
     const expected = f.value;
@@ -76,9 +76,9 @@ function _max_error(prop: Property, frames: ExpectedFrame[]): number {
     } else {
       err = float("inf");
     }
-    max_err = max([max_err, err]);
+    maxErr = max([maxErr, err]);
   }
-  return max_err;
+  return maxErr;
 }
 
 // -- Tolerance groups -------------------------------------------------------
@@ -131,10 +131,10 @@ const _SPATIAL_SAMPLES: string[] = [
 /** Non-spatial samples: error < 0.001. */
 describe("TestValueAtTimeNonSpatial", () => {
   test.each(_NON_SPATIAL_SAMPLES)("test_value_at_time[%#]", (sample: string) => {
-    const prop = _get_prop(sample);
-    const [, frames] = _load_vat(sample);
-    const max_err = _max_error(prop, frames);
-    py_assert(max_err < 0.001, `${sample}: max error ${format(max_err, ".6f")}`);
+    const prop = _getProp(sample);
+    const [, frames] = _loadVat(sample);
+    const maxErr = _maxError(prop, frames);
+    pyAssert(maxErr < 0.001, `${sample}: max error ${format(maxErr, ".6f")}`);
   });
 });
 
@@ -149,19 +149,19 @@ describe("TestValueAtTimeNonSpatial", () => {
  */
 describe("TestValueAtTimeSpatial", () => {
   test.each(_SPATIAL_SAMPLES)("test_value_at_time[%#]", (sample: string) => {
-    const prop = _get_prop(sample);
-    const [, frames] = _load_vat(sample);
-    const max_err = _max_error(prop, frames);
-    py_assert(max_err < 1e-9, `${sample}: max error ${format(max_err, ".3e")}`);
+    const prop = _getProp(sample);
+    const [, frames] = _loadVat(sample);
+    const maxErr = _maxError(prop, frames);
+    pyAssert(maxErr < 1e-9, `${sample}: max error ${format(maxErr, ".3e")}`);
   });
 
   test("test_eased_roving_run_times", () => {
     /** The roving keys' derived times are the ticks AE stored. */
-    const prop = _get_prop("keyframe_roving_eased");
+    const prop = _getProp("keyframe_roving_eased");
     const stored = prop.keyframes.map((kf) => kf._ldat_item.time_units);
-    expect(py_eq(stored, [0, 56852, 74884, 122880])).toBe(true);
+    expect(pyEq(stored, [0, 56852, 74884, 122880])).toBe(true);
     prop._redistribute_roving_keyframes();
-    expect(py_eq(prop.keyframes.map((kf) => kf._ldat_item.time_units), stored)).toBe(true);
+    expect(pyEq(prop.keyframes.map((kf) => kf._ldat_item.time_units), stored)).toBe(true);
   });
 });
 
@@ -169,7 +169,7 @@ describe("TestValueAtTimeSpatial", () => {
 describe("TestValueAtTimeAPI", () => {
   test("test_pre_expression_false_raises", () => {
     /** pre_expression=False raises NotImplementedError. */
-    const prop = _get_prop("property_1D_opacity");
+    const prop = _getProp("property_1D_opacity");
     raises(NotImplementedError, () => {
       prop.valueAtTime(0.0, false);
     });
@@ -177,8 +177,8 @@ describe("TestValueAtTimeAPI", () => {
 
   test("test_static_value", () => {
     /** Static (non-animated) property returns its value at any time. */
-    const prop = _get_prop("property_1D_opacity");
-    const [, frames] = _load_vat("property_1D_opacity");
+    const prop = _getProp("property_1D_opacity");
+    const [, frames] = _loadVat("property_1D_opacity");
     for (const f of frames.slice(0, 5)) {
       const result = prop.valueAtTime(f.time);
       const expected = f.value;

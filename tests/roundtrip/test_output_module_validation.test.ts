@@ -8,19 +8,19 @@
 
 import { expect, test } from "bun:test";
 
-import { as_instance, parse_project_fresh } from "../helpers.ts";
+import { asInstance, parseProjectFresh } from "../helpers.ts";
 import { OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode } from "../../src/py_aep/enums/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
-import { Path, py_assert, py_eq, ValueError } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { Path, pyAssert, pyEq, ValueError } from "../../src/pyrt/index.ts";
+import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+  return asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 const REJECTS: [string, string, SettingValue][] = [
@@ -54,14 +54,14 @@ const REJECTS: [string, string, SettingValue][] = [
 // for the Python ids (`f"{s}-{k}-{v}"`).
 // NOTE(port): ids only name the test row; the parametrized rows and assertions are identical to Python.
 test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: string, value: SettingValue) => {
-  const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
+  const project = parseProjectFresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);
   const before = om.getSettings();
   raises(ValueError, () => {
     om.settings.set(key, value);
   });
   // NOTE(port): py_assert carries the same assert message as the Python original.
-  py_assert(py_eq(om.getSettings(), before), "rejected write must not mutate");
+  pyAssert(pyEq(om.getSettings(), before), "rejected write must not mutate");
 });
 
 // NOTE: the samples store RGB channels, so only base (non-`+`) depths
@@ -84,8 +84,8 @@ const ACCEPTS: [string, string, SettingValue][] = [
 /** QT alpha is AE-legal: the factory template "High Quality with
  * Alpha" writes a QT Rouu with depth 32 (millions+). */
 test("test_quicktime_supports_alpha", () => {
-  const tmp_path = make_tmp_path();
-  const project = parse_project_fresh(
+  const tmpPath = makeTmpPath();
+  const project = parseProjectFresh(
     new Path(import.meta.dir)
       .parent.parent.div("samples")
       .div("models")
@@ -93,19 +93,19 @@ test("test_quicktime_supports_alpha", () => {
       .div("quicktime")
       .div("apple_prores_4444.aep"),
   );
-  const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+  const om = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0];
   om.settings.set("Channels", OutputChannels.RGBA);
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  project.save(tmp_path.div("out.aep"));
-  const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
+  project.save(tmpPath.div("out.aep"));
+  const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  expect(py_eq(om2.validateState(), [])).toBe(true);
+  expect(pyEq(om2.validateState(), [])).toBe(true);
 });
 
 /** AE offers `+` depths only under RGB+Alpha (parity rows). */
 test("test_plus_depth_requires_rgba_channels", () => {
-  const project = parse_project_fresh(RQ_DIR.div("format_photoshop_sequence.aep"));
+  const project = parseProjectFresh(RQ_DIR.div("format_photoshop_sequence.aep"));
   const om = _om(project);
   raises(ValueError, () => {
     om.settings.set("Depth", OutputColorDepth.FLOATING_POINT_PLUS); // RGB module
@@ -118,48 +118,48 @@ test("test_plus_depth_requires_rgba_channels", () => {
 });
 
 test.each(ACCEPTS)("test_allowed_write_survives_roundtrip[%#]", (sample: string, key: string, value: SettingValue) => {
-  const tmp_path = make_tmp_path();
-  const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
+  const tmpPath = makeTmpPath();
+  const project = parseProjectFresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);
   om.settings.set(key, value);
   expect(om.settings.get(key)).toBe(value);
-  project.save(tmp_path.div("out.aep"));
-  const reparsed = parse_project_fresh(tmp_path.div("out.aep"));
+  project.save(tmpPath.div("out.aep"));
+  const reparsed = parseProjectFresh(tmpPath.div("out.aep"));
   expect(_om(reparsed).settings.get(key)).toBe(value);
 });
 
 /** Switching PNG to RGB+Alpha forces Straight and the +alpha depth. */
 test("test_png_rgba_clamps_color_straight", () => {
-  const tmp_path = make_tmp_path();
-  const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
+  const tmpPath = makeTmpPath();
+  const project = parseProjectFresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
   om.settings.set("Color", OutputColorMode.PREMULTIPLIED); // inert while RGB
   om.settings.set("Channels", OutputChannels.RGBA);
   expect(om.settings.get("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  project.save(tmp_path.div("out.aep"));
-  const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
+  project.save(tmpPath.div("out.aep"));
+  const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
   expect(om2.settings.get("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_exr_rgba_clamps_color_premultiplied", () => {
-  const tmp_path = make_tmp_path();
-  const project = parse_project_fresh(RQ_DIR.div("format_openexr_sequence.aep"));
+  const tmpPath = makeTmpPath();
+  const project = parseProjectFresh(RQ_DIR.div("format_openexr_sequence.aep"));
   const om = _om(project);
   om.settings.set("Color", OutputColorMode.STRAIGHT_UNMATTED); // inert while RGB
   om.settings.set("Channels", OutputChannels.RGBA);
   expect(om.settings.get("Color")).toBe(OutputColorMode.PREMULTIPLIED);
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
-  project.save(tmp_path.div("out.aep"));
-  const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
+  project.save(tmpPath.div("out.aep"));
+  const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(om2.settings.get("Color")).toBe(OutputColorMode.PREMULTIPLIED);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.FLOATING_POINT_PLUS);
 });
 
 test("test_rgba_color_write_rejected_after_clamp", () => {
-  const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
+  const project = parseProjectFresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
   om.settings.set("Channels", OutputChannels.RGBA);
   raises(ValueError, () => {
@@ -175,15 +175,15 @@ test("test_rgba_color_write_rejected_after_clamp", () => {
  * ARE the video-output flag) into the audio-only Rouu.
  */
 test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
-  const project = parse_project_fresh(RQ_DIR.div("format_mp3.aep"));
+  const project = parseProjectFresh(RQ_DIR.div("format_mp3.aep"));
   const om = _om(project);
   om.settings.set("Crop", true);
   om.settings.set("Crop Left", 10);
   om.settings.set("Use Region of Interest", true);
   om.settings.set("Resize", false);
   expect(om.settings.get("Video Output")).toBe(false);
-  expect(py_eq([om._roou.width, om._roou.height], [0, 0])).toBe(true);
-  expect(py_eq(om.validateState(), [])).toBe(true);
+  expect(pyEq([om._roou.width, om._roou.height], [0, 0])).toBe(true);
+  expect(pyEq(om.validateState(), [])).toBe(true);
   raises(ValueError, () => {
     om.settings.set("Resize to", [1280, 720]);
   });
@@ -198,10 +198,10 @@ test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
  * propagating (permissive-degradation contract).
  */
 test("test_garbage_channels_byte_stays_permissive", () => {
-  const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
+  const project = parseProjectFresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
   om._om_ldat.channels = 7; // not a valid OutputChannels member
   om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
   om.settings.set("Audio Channels", om.settings.get("Audio Channels")); // clamp path
-  expect(py_eq(om.validateState(), [])).toBe(true);
+  expect(pyEq(om.validateState(), [])).toBe(true);
 });

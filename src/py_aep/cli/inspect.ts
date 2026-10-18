@@ -19,10 +19,10 @@
 // Python's `from ..binary.chunk import ...` runs py_aep/__init__ first, which
 // loads every module. Standalone CLI runs need the same.
 import "../index.ts";
-import { ListChunk, read_aep } from "../binary/chunk.ts";
+import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { filter_by_list_type } from "../binary/utils.ts";
-import { chunk_label, extract_leaf_chunks, format_hex_dump, walk_chunks } from "./_chunk_helpers.ts";
+import { filterByListType } from "../binary/utils.ts";
+import { chunkLabel, extractLeafChunks, formatHexDump, walkChunks } from "./_chunk_helpers.ts";
 import {
   BytesIO,
   Path,
@@ -47,7 +47,7 @@ export function print(text: string, kw: { file?: typeof sys.stderr } = {}): void
 
 
 /** Return size or value detail for a leaf chunk. */
-export function _chunk_detail(chunk: Chunk): string {
+export function _chunkDetail(chunk: Chunk): string {
   const val = getattr(chunk, "value", null);
   if (val != null) {
     let v = repr(val);
@@ -66,17 +66,17 @@ export function _chunk_detail(chunk: Chunk): string {
  *
  * @param chunk - Root chunk to print.
  * @param depth - Current depth (for indentation).
- * @param max_depth - Maximum depth to recurse (-1 for unlimited).
+ * @param maxDepth - Maximum depth to recurse (-1 for unlimited).
  */
-export function print_tree(chunk: Chunk, depth: number = 0, max_depth: number = -1): void {
-  if (max_depth >= 0 && depth > max_depth) return;
-  const label = chunk_label(chunk);
+export function printTree(chunk: Chunk, depth: number = 0, maxDepth: number = -1): void {
+  if (maxDepth >= 0 && depth > maxDepth) return;
+  const label = chunkLabel(chunk);
   if (chunk instanceof ListChunk) {
     const n = chunk.chunks.length;
     print(`${"  ".repeat(depth)}${label} (${n} children)`);
-    for (const c of chunk.chunks) print_tree(c, depth + 1, max_depth);
+    for (const c of chunk.chunks) printTree(c, depth + 1, maxDepth);
   } else {
-    const detail = _chunk_detail(chunk);
+    const detail = _chunkDetail(chunk);
     print(`${"  ".repeat(depth)}${label} (${detail})`);
   }
 }
@@ -90,9 +90,9 @@ export function print_tree(chunk: Chunk, depth: number = 0, max_depth: number = 
  * @param index - 0-based item index within `LIST:Fold`.
  * @returns Exit code (0 on success, 1 on error).
  */
-export function _inspect_item(path: Path, index: number): number {
+export function _inspectItem(path: Path, index: number): number {
   const fp = new BytesIO(path.read_bytes());
-  const [rifx, _] = read_aep(fp);
+  const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
   for (const c of rifx.chunks) {
@@ -106,7 +106,7 @@ export function _inspect_item(path: Path, index: number): number {
     return 1;
   }
 
-  const items = filter_by_list_type(fold.chunks, "Item");
+  const items = filterByListType(fold.chunks, "Item");
   if (index >= items.length) {
     print(`ERROR: Item[${index}] out of range (only ${items.length} items)`, { file: sys.stderr });
     return 1;
@@ -116,20 +116,20 @@ export function _inspect_item(path: Path, index: number): number {
   const item = at(items, index);
   print(`=== ${path.name} Item[${index}] (${item.chunks.length} children) ===`);
   for (const [i, c] of item.chunks.entries()) {
-    const label = chunk_label(c);
+    const label = chunkLabel(c);
     if (c instanceof ListChunk) {
       print(`  [${format(i, "2d")}] ${label} (${c.chunks.length} children)`);
       for (const [j, cc] of c.chunks.entries()) {
-        const cl = chunk_label(cc);
+        const cl = chunkLabel(cc);
         if (cc instanceof ListChunk) {
           print(`    [${format(j, "2d")}] ${cl} (${cc.chunks.length} children)`);
         } else {
-          const detail = _chunk_detail(cc);
+          const detail = _chunkDetail(cc);
           print(`    [${format(j, "2d")}] ${cl} (${detail})`);
         }
       }
     } else {
-      const detail = _chunk_detail(c);
+      const detail = _chunkDetail(c);
       print(`  [${format(i, "2d")}] ${label} (${detail})`);
     }
   }
@@ -144,9 +144,9 @@ export function _inspect_item(path: Path, index: number): number {
  * @param path - Path to the `.aep` file.
  * @returns Exit code.
  */
-export function _item_summary(path: Path): number {
+export function _itemSummary(path: Path): number {
   const fp = new BytesIO(path.read_bytes());
-  const [rifx, _] = read_aep(fp);
+  const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
   for (const c of rifx.chunks) {
@@ -160,10 +160,10 @@ export function _item_summary(path: Path): number {
     return 1;
   }
 
-  const items = filter_by_list_type(fold.chunks, "Item");
+  const items = filterByListType(fold.chunks, "Item");
   print(`${path.name}: ${items.length} items in Fold`);
   for (const [i, item] of items.entries()) {
-    const children = item.chunks.map((c) => chunk_label(c));
+    const children = item.chunks.map((c) => chunkLabel(c));
     print(`  Item[${i}]: ${children.length} children - ${children.join(", ")}`);
   }
   return 0;
@@ -177,14 +177,14 @@ export function _item_summary(path: Path): number {
  * @param path - Path to the `.aep` file.
  * @returns Exit code.
  */
-export function _list_chunks(path: Path): number {
+export function _listChunks(path: Path): number {
   const fp = new BytesIO(path.read_bytes());
-  const [rifx, _xmp] = read_aep(fp);
+  const [rifx, _xmp] = readAep(fp);
 
   print(`\nChunk tree: ${path.name}\n`);
-  for (const [_path, identifier, size, depth, is_list] of walk_chunks(rifx.chunks)) {
+  for (const [_path, identifier, size, depth, isList] of walkChunks(rifx.chunks)) {
     const indent = "  ".repeat(depth);
-    if (is_list) {
+    if (isList) {
       print(`${indent}${identifier}/`);
     } else {
       print(`${indent}${identifier} (${size}B)`);
@@ -202,16 +202,16 @@ export function _list_chunks(path: Path): number {
  * attempted. Prints available paths on failure.
  *
  * @param path - Path to the `.aep` file.
- * @param chunk_path - Full or partial chunk path (e.g. `LIST:Fold/ftts`).
+ * @param chunkPath - Full or partial chunk path (e.g. `LIST:Fold/ftts`).
  * @returns Exit code.
  */
-export function _dump_chunk(path: Path, chunk_path: string): number {
-  const chunks = extract_leaf_chunks(path);
+export function _dumpChunk(path: Path, chunkPath: string): number {
+  const chunks = extractLeafChunks(path);
 
-  if (!chunks.has(chunk_path)) {
-    const matches = sorted(chunks.keys()).filter((p) => p.includes(chunk_path));
+  if (!chunks.has(chunkPath)) {
+    const matches = sorted(chunks.keys()).filter((p) => p.includes(chunkPath));
     if (matches.length === 0) {
-      print(`Chunk path not found: ${chunk_path}`, { file: sys.stderr });
+      print(`Chunk path not found: ${chunkPath}`, { file: sys.stderr });
       print("\nAvailable leaf chunk paths:", { file: sys.stderr });
       for (const p of sorted(chunks.keys())) {
         print(`  ${p} (${getitem(chunks, p).length}B)`, { file: sys.stderr });
@@ -219,9 +219,9 @@ export function _dump_chunk(path: Path, chunk_path: string): number {
       return 1;
     }
     if (matches.length === 1) {
-      chunk_path = matches[0];
+      chunkPath = matches[0];
     } else {
-      print(`Ambiguous chunk path '${chunk_path}'. Matches:`, { file: sys.stderr });
+      print(`Ambiguous chunk path '${chunkPath}'. Matches:`, { file: sys.stderr });
       for (const m of matches) {
         print(`  ${m} (${getitem(chunks, m).length}B)`, { file: sys.stderr });
       }
@@ -229,9 +229,9 @@ export function _dump_chunk(path: Path, chunk_path: string): number {
     }
   }
 
-  const data = getitem(chunks, chunk_path);
-  print(`\n[${chunk_path}] (${data.length} bytes)\n`);
-  print(format_hex_dump(data));
+  const data = getitem(chunks, chunkPath);
+  print(`\n[${chunkPath}] (${data.length} bytes)\n`);
+  print(formatHexDump(data));
   return 0;
 }
 
@@ -289,14 +289,14 @@ export class ArgumentParser<T extends Namespace = Namespace> {
 
   add_argument(name: string, kwargs: ArgumentOptions = {}): void {
     const positional = !name.startsWith("-");
-    const store_true = kwargs.action === "store_true";
+    const storeTrue = kwargs.action === "store_true";
     this.specs.push({
       dest: positional ? name : name.replace(/^--/, "").replace(/-/g, "_"),
       flag: positional ? null : name,
       positional,
-      store_true,
+      store_true: storeTrue,
       type_: kwargs.type ?? null,
-      default_: kwargs.default ?? (store_true ? false : null),
+      default_: kwargs.default ?? (storeTrue ? false : null),
       metavar: kwargs.metavar ?? null,
       help: kwargs.help ?? "",
     });
@@ -312,35 +312,35 @@ export class ArgumentParser<T extends Namespace = Namespace> {
   format_usage(): string {
     const width = 78;
     const prefix = "usage: ";
-    const opt_parts = [
+    const optParts = [
       "[-h]",
       ...this.specs
         .filter((s) => !s.positional)
         .map((s) => (s.store_true ? `[${s.flag}]` : `[${s.flag} ${s.metavar ?? s.dest.toUpperCase()}]`)),
     ];
-    const pos_parts = this.specs.filter((s) => s.positional).map((s) => s.dest);
-    const one_line = [this.prog, ...opt_parts, ...pos_parts].join(" ");
-    if (prefix.length + one_line.length <= width) return prefix + one_line;
+    const posParts = this.specs.filter((s) => s.positional).map((s) => s.dest);
+    const oneLine = [this.prog, ...optParts, ...posParts].join(" ");
+    if (prefix.length + oneLine.length <= width) return prefix + oneLine;
     // HelpFormatter._format_usage's get_lines, with the parts indented under the prog.
     const indent = " ".repeat(prefix.length + this.prog.length + 1);
-    const get_lines = (parts: string[], first_len: number | null): string[] => {
+    const getLines = (parts: string[], firstLen: number | null): string[] => {
       const lines: string[] = [];
       let line: string[] = [];
-      let line_len = first_len ?? indent.length - 1;
+      let lineLen = firstLen ?? indent.length - 1;
       for (const part of parts) {
-        if (line_len + 1 + part.length > width && line.length) {
+        if (lineLen + 1 + part.length > width && line.length) {
           lines.push(indent + line.join(" "));
           line = [];
-          line_len = indent.length - 1;
+          lineLen = indent.length - 1;
         }
         line.push(part);
-        line_len += part.length + 1;
+        lineLen += part.length + 1;
       }
       if (line.length) lines.push(indent + line.join(" "));
-      if (first_len !== null) lines[0] = lines[0].slice(indent.length);
+      if (firstLen !== null) lines[0] = lines[0].slice(indent.length);
       return lines;
     };
-    const lines = [...get_lines([this.prog, ...opt_parts], prefix.length - 1), ...get_lines(pos_parts, null)];
+    const lines = [...getLines([this.prog, ...optParts], prefix.length - 1), ...getLines(posParts, null)];
     return prefix + lines.join("\n");
   }
 
@@ -351,9 +351,9 @@ export class ArgumentParser<T extends Namespace = Namespace> {
     const rows: [string, string][] = [["-h, --help", "show this help message and exit"]];
     for (const s of this.specs) if (!s.positional) rows.push([invocation(s), s.help]);
     const positionals: [string, string][] = this.specs.filter((s) => s.positional).map((s) => [invocation(s), s.help]);
-    const help_position = Math.min(Math.max(...[...rows, ...positionals].map(([inv]) => inv.length + 2)) + 2, 24);
+    const helpPosition = Math.min(Math.max(...[...rows, ...positionals].map(([inv]) => inv.length + 2)) + 2, 24);
     const row = ([inv, help]: [string, string]): string =>
-      inv.length + 2 <= help_position - 2 ? `  ${inv.padEnd(help_position - 4)}  ${help}` : `  ${inv}\n${" ".repeat(help_position)}${help}`;
+      inv.length + 2 <= helpPosition - 2 ? `  ${inv.padEnd(helpPosition - 4)}  ${help}` : `  ${inv}\n${" ".repeat(helpPosition)}${help}`;
     const lines = [this.format_usage(), "", this.description, "", "positional arguments:", ...positionals.map(row)];
     lines.push("", "options:", ...rows.map(row));
     return lines.join("\n") + "\n" + this.epilog.replaceAll("%(prog)s", this.prog);
@@ -493,25 +493,25 @@ export function main(): number {
 
   if (args.tree) {
     const fp = new BytesIO(path.read_bytes());
-    const [rifx, _] = read_aep(fp);
-    print_tree(rifx, undefined, args.depth);
+    const [rifx, _] = readAep(fp);
+    printTree(rifx, undefined, args.depth);
     return 0;
   }
 
   if (args.item != null) {
-    return _inspect_item(path, args.item);
+    return _inspectItem(path, args.item);
   }
 
   if (args.list) {
-    return _list_chunks(path);
+    return _listChunks(path);
   }
 
   if (args.dump != null) {
-    return _dump_chunk(path, args.dump);
+    return _dumpChunk(path, args.dump);
   }
 
   // Default: item summary
-  return _item_summary(path);
+  return _itemSummary(path);
 }
 
 // Python's `if __name__ == "__main__": sys.exit(main())`.

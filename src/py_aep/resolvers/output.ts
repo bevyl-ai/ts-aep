@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, PyException, floordiv, format, int, mod, num_str, py_or, round } from "../../pyrt/index.ts";
+import { IndexError, PyException, floordiv, format, int, mod, numStr, pyOr, round } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -80,7 +80,7 @@ export const VIDEO_CODEC_NAMES: Map<string, string> = new Map<string, string>([
 
 // NOTE(port): local port of CPython 3.12 re._parser.parse_template for a pattern with
 // zero capture groups (the only use: re.sub(rf"\[{key}\]", ...)); same escapes and errors.
-export function _expand_template(template: string, match: string): string {
+export function _expandTemplate(template: string, match: string): string {
   if (!template.includes("\\")) {
     return template;
   }
@@ -190,7 +190,7 @@ export function gcd(a: number, b: number): number {
  * @param height - Frame height in pixels.
  * @returns Aspect ratio string like '16x9', '4x3', etc.
  */
-export function calculate_aspect_ratio(width: number, height: number): string {
+export function calculateAspectRatio(width: number, height: number): string {
   const gcd_ = gcd(width, height);
   return `${floordiv(width, gcd_)}x${floordiv(height, gcd_)}`;
 }
@@ -205,11 +205,11 @@ export function calculate_aspect_ratio(width: number, height: number): string {
  * @param fps - Frames per second (not used in this format).
  * @returns Formatted frame string like '0045+00' (45 feet, 0 frames).
  */
-export function format_frame_number(frame: number, fps: number): string {
-  const frames_per_foot = 16; // Standard 35mm film: 16 frames per foot
-  const feet = floordiv(frame, frames_per_foot);
-  const remaining_frames = mod(frame, frames_per_foot);
-  return `${format(feet, "04d")}+${format(remaining_frames, "02d")}`;
+export function formatFrameNumber(frame: number, fps: number): string {
+  const framesPerFoot = 16; // Standard 35mm film: 16 frames per foot
+  const feet = floordiv(frame, framesPerFoot);
+  const remainingFrames = mod(frame, framesPerFoot);
+  return `${format(feet, "04d")}+${format(remainingFrames, "02d")}`;
 }
 
 /**
@@ -217,26 +217,26 @@ export function format_frame_number(frame: number, fps: number): string {
  *
  * @param seconds - Time in seconds.
  * @param fps - Frames per second.
- * @param is_duration - If true, uses ceiling for frame calculation (for
+ * @param isDuration - If true, uses ceiling for frame calculation (for
  *   durations). If false, uses floor (for absolute times).
  * @returns Timecode string like '0-00-00-00' (hours-minutes-seconds-frames).
  */
-export function format_timecode(seconds: number, fps: number, is_duration = false): string {
-  const fps_int = fps !== 0 ? int(fps) : 1;
+export function formatTimecode(seconds: number, fps: number, isDuration = false): string {
+  const fpsInt = fps !== 0 ? int(fps) : 1;
   // Use ceiling for durations, floor for absolute times
-  let total_frames: number;
-  if (is_duration) {
-    total_frames = Math.ceil(seconds * fps_int);
+  let totalFrames: number;
+  if (isDuration) {
+    totalFrames = Math.ceil(seconds * fpsInt);
   } else {
-    total_frames = int(seconds * fps_int);
+    totalFrames = int(seconds * fpsInt);
   }
 
-  const frames = mod(total_frames, fps_int);
-  const total_seconds = floordiv(total_frames, fps_int);
-  const secs = mod(total_seconds, 60);
-  const total_minutes = floordiv(total_seconds, 60);
-  const mins = mod(total_minutes, 60);
-  const hours = floordiv(total_minutes, 60);
+  const frames = mod(totalFrames, fpsInt);
+  const totalSeconds = floordiv(totalFrames, fpsInt);
+  const secs = mod(totalSeconds, 60);
+  const totalMinutes = floordiv(totalSeconds, 60);
+  const mins = mod(totalMinutes, 60);
+  const hours = floordiv(totalMinutes, 60);
 
   return `${hours}-${format(mins, "02d")}-${format(secs, "02d")}-${format(frames, "02d")}`;
 }
@@ -248,104 +248,104 @@ export function format_timecode(seconds: number, fps: number, is_duration = fals
  * `[compName]` and `[fileExtension]`. This function resolves those
  * variables to produce the actual filename that would be rendered.
  *
- * @param file_template - The file path containing template variables.
+ * @param fileTemplate - The file path containing template variables.
  *   e.g., `C:/Output/[compName].[fileExtension]`
- * @param project_name - The project name (without .aep extension) for
+ * @param projectName - The project name (without .aep extension) for
  *   `[projectName]`.
- * @param comp_name - The composition name for `[compName]`.
- * @param render_settings_name - The render settings template name for
+ * @param compName - The composition name for `[compName]`.
+ * @param renderSettingsName - The render settings template name for
  *   `[renderSettingsName]`.
- * @param output_module_name - The output module name for
+ * @param outputModuleName - The output module name for
  *   `[outputModuleName]`.
  * @param width - The composition width for `[width]`.
  * @param height - The composition height for `[height]`.
- * @param frame_rate - The frame rate for `[frameRate]` and timecodes.
- * @param start_frame - The start frame for `[startFrame]`
+ * @param frameRate - The frame rate for `[frameRate]` and timecodes.
+ * @param startFrame - The start frame for `[startFrame]`
  *   (feet+frames format).
- * @param end_frame - The end frame for `[endFrame]`
+ * @param endFrame - The end frame for `[endFrame]`
  *   (feet+frames format).
- * @param duration_frames - The duration in frames for `[durationFrames]`
+ * @param durationFrames - The duration in frames for `[durationFrames]`
  *   (feet+frames format).
- * @param start_time - The start time in seconds for `[startTimecode]`
+ * @param startTime - The start time in seconds for `[startTimecode]`
  *   (uses floor).
- * @param end_time - The end time in seconds for `[endTimecode]`
+ * @param endTime - The end time in seconds for `[endTimecode]`
  *   (uses floor).
- * @param duration_time - The duration in seconds for `[durationTimecode]`
+ * @param durationTime - The duration in seconds for `[durationTimecode]`
  *   (uses ceiling).
  * @param channels - The output channels setting for `[channels]`.
- * @param project_color_depth - The project bits per channel (8/16/32) for
+ * @param projectColorDepth - The project bits per channel (8/16/32) for
  *   `[projectColorDepth]`.
- * @param output_color_depth - The output color depth for
+ * @param outputColorDepth - The output color depth for
  *   `[outputColorDepth]`.
  * @param compressor - The video codec/compressor name for `[compressor]`.
- * @param field_render - The field render setting for `[fieldOrder]`.
- * @param pulldown_phase - The 3:2 pulldown phase for `[pulldownPhase]`.
- * @param file_extension - The file extension for `[fileExtension]`.
+ * @param fieldRender - The field render setting for `[fieldOrder]`.
+ * @param pulldownPhase - The 3:2 pulldown phase for `[pulldownPhase]`.
+ * @param fileExtension - The file extension for `[fileExtension]`.
  * @returns The resolved file path, or an empty string if file_template is None.
  */
-export function resolve_output_filename(
-  file_template: string,
-  project_name: string | null = null,
-  comp_name: string | null = null,
-  render_settings_name: string | null = null,
-  output_module_name = "",
+export function resolveOutputFilename(
+  fileTemplate: string,
+  projectName: string | null = null,
+  compName: string | null = null,
+  renderSettingsName: string | null = null,
+  outputModuleName = "",
   width: number | null = null,
   height: number | null = null,
-  frame_rate: number | null = null,
-  start_frame: number | null = null,
-  end_frame: number | null = null,
-  duration_frames: number | null = null,
-  start_time: number | null = null,
-  end_time: number | null = null,
-  duration_time: number | null = null,
+  frameRate: number | null = null,
+  startFrame: number | null = null,
+  endFrame: number | null = null,
+  durationFrames: number | null = null,
+  startTime: number | null = null,
+  endTime: number | null = null,
+  durationTime: number | null = null,
   channels: OutputChannels | null = null,
-  project_color_depth: number | null = null,
-  output_color_depth: OutputColorDepth | null = null,
+  projectColorDepth: number | null = null,
+  outputColorDepth: OutputColorDepth | null = null,
   compressor: string | null = null,
-  field_render: number | null = null,
-  pulldown_phase: number | null = null,
-  file_extension: string | null = null,
+  fieldRender: number | null = null,
+  pulldownPhase: number | null = null,
+  fileExtension: string | null = null,
 ): string {
-  if (!file_template) {
+  if (!fileTemplate) {
     return "";
   }
 
-  const fps: number = py_or(frame_rate, 24.0);
+  const fps: number = pyOr(frameRate, 24.0);
 
   // Precompute formatted frame rate string
-  let frame_rate_str: string | null = null;
-  if (frame_rate != null) {
-    frame_rate_str = frame_rate === int(frame_rate) ? `${int(frame_rate)}` : num_str(frame_rate);
+  let frameRateStr: string | null = null;
+  if (frameRate != null) {
+    frameRateStr = frameRate === int(frameRate) ? `${int(frameRate)}` : numStr(frameRate);
   }
 
   // Build substitution map: template_key -> resolved_value
   // Entries with None values are skipped during application
   const substitutions = new Map<string, string | null>([
-    ["projectName", project_name],
-    ["compName", comp_name],
-    ["renderSettingsName", render_settings_name],
-    ["outputModuleName", output_module_name],
+    ["projectName", projectName],
+    ["compName", compName],
+    ["renderSettingsName", renderSettingsName],
+    ["outputModuleName", outputModuleName],
     ["width", width != null ? `${width}` : null],
     ["height", height != null ? `${height}` : null],
-    ["frameRate", frame_rate_str],
+    ["frameRate", frameRateStr],
     [
       "aspectRatio",
-      width != null && height != null ? calculate_aspect_ratio(width, height) : null,
+      width != null && height != null ? calculateAspectRatio(width, height) : null,
     ],
-    ["startFrame", start_frame != null ? format_frame_number(start_frame, fps) : null],
-    ["endFrame", end_frame != null ? format_frame_number(end_frame, fps) : null],
+    ["startFrame", startFrame != null ? formatFrameNumber(startFrame, fps) : null],
+    ["endFrame", endFrame != null ? formatFrameNumber(endFrame, fps) : null],
     [
       "durationFrames",
-      duration_frames != null ? format_frame_number(duration_frames, fps) : null,
+      durationFrames != null ? formatFrameNumber(durationFrames, fps) : null,
     ],
     [
       "startTimecode",
-      start_time != null ? format_timecode(start_time, fps, false) : null,
+      startTime != null ? formatTimecode(startTime, fps, false) : null,
     ],
-    ["endTimecode", end_time != null ? format_timecode(end_time, fps, false) : null],
+    ["endTimecode", endTime != null ? formatTimecode(endTime, fps, false) : null],
     [
       "durationTimecode",
-      duration_time != null ? format_timecode(duration_time, fps, true) : null,
+      durationTime != null ? formatTimecode(durationTime, fps, true) : null,
     ],
     [
       "channels",
@@ -353,31 +353,31 @@ export function resolve_output_filename(
     ],
     [
       "projectColorDepth",
-      project_color_depth != null ? PROJECT_COLOR_DEPTH_NAMES.get(project_color_depth) ?? "8bit" : null,
+      projectColorDepth != null ? PROJECT_COLOR_DEPTH_NAMES.get(projectColorDepth) ?? "8bit" : null,
     ],
     [
       "outputColorDepth",
-      output_color_depth != null ? OUTPUT_COLOR_DEPTH_NAMES.get(output_color_depth) ?? "Millions" : null,
+      outputColorDepth != null ? OUTPUT_COLOR_DEPTH_NAMES.get(outputColorDepth) ?? "Millions" : null,
     ],
     ["compressor", compressor],
     [
       "fieldOrder",
-      field_render != null ? FIELD_ORDER_NAMES.get(field_render) ?? "Off" : null,
+      fieldRender != null ? FIELD_ORDER_NAMES.get(fieldRender) ?? "Off" : null,
     ],
     [
       "pulldownPhase",
-      pulldown_phase != null ? PULLDOWN_PHASE_NAMES.get(pulldown_phase) ?? "Off" : null,
+      pulldownPhase != null ? PULLDOWN_PHASE_NAMES.get(pulldownPhase) ?? "Off" : null,
     ],
     ["projectFolder", ""], // Always resolves to empty string
-    ["fileExtension", file_extension],
+    ["fileExtension", fileExtension],
   ]);
 
-  let result = file_template;
+  let result = fileTemplate;
   for (const [key, value] of substitutions) {
     if (value != null) {
-      _expand_template(value, ""); // re.sub compiles the template eagerly (raises on bad escapes)
+      _expandTemplate(value, ""); // re.sub compiles the template eagerly (raises on bad escapes)
       result = result.replace(new RegExp(`\\[${key}\\]`, "gi"), (match: string) =>
-        _expand_template(value, match),
+        _expandTemplate(value, match),
       );
     }
   }
@@ -392,15 +392,15 @@ export function resolve_output_filename(
  * Time Span mode (Work Area, Length of Comp, or Custom).
  *
  * @param comp - The composition being rendered.
- * @param rq_settings - The render queue item's settings view.
- * @param effective_frame_rate - The effective frame rate for rendering.
+ * @param rqSettings - The render queue item's settings view.
+ * @param effectiveFrameRate - The effective frame rate for rendering.
  * @returns Object with keys: start_frame, end_frame, duration_frames,
  *   start_time, end_time, duration_time.
  */
-export function resolve_time_span(
+export function resolveTimeSpan(
   comp: CompItem,
-  rq_settings: Pick<SettingsView<RenderSettingValues>, "get">,
-  effective_frame_rate: number,
+  rqSettings: Pick<SettingsView<RenderSettingValues>, "get">,
+  effectiveFrameRate: number,
 ): {
   start_frame: number;
   end_frame: number;
@@ -409,38 +409,38 @@ export function resolve_time_span(
   end_time: number;
   duration_time: number;
 } {
-  const time_span_mode = rq_settings.get("Time Span");
+  const timeSpanMode = rqSettings.get("Time Span");
 
-  let time_span_start: number;
-  let duration_time: number;
-  let time_span_end: number;
-  let duration_frames: number;
-  let first_rendered_frame: number;
-  if (time_span_mode === TimeSpanSource.LENGTH_OF_COMP) {
-    time_span_start = 0.0;
-    duration_time = comp.duration;
-    time_span_end = comp.duration;
-    duration_frames = round(comp.duration * effective_frame_rate);
-    first_rendered_frame = int(comp.displayStartTime * effective_frame_rate);
+  let timeSpanStart: number;
+  let durationTime: number;
+  let timeSpanEnd: number;
+  let durationFrames: number;
+  let firstRenderedFrame: number;
+  if (timeSpanMode === TimeSpanSource.LENGTH_OF_COMP) {
+    timeSpanStart = 0.0;
+    durationTime = comp.duration;
+    timeSpanEnd = comp.duration;
+    durationFrames = round(comp.duration * effectiveFrameRate);
+    firstRenderedFrame = int(comp.displayStartTime * effectiveFrameRate);
   } else {
-    time_span_start = rq_settings.get("Time Span Start");
-    duration_time = rq_settings.get("Time Span Duration");
-    time_span_end = rq_settings.get("Time Span End");
-    duration_frames = round(duration_time * effective_frame_rate);
-    first_rendered_frame =
-      int(comp.displayStartTime * effective_frame_rate) +
-      int(time_span_start * effective_frame_rate);
+    timeSpanStart = rqSettings.get("Time Span Start");
+    durationTime = rqSettings.get("Time Span Duration");
+    timeSpanEnd = rqSettings.get("Time Span End");
+    durationFrames = round(durationTime * effectiveFrameRate);
+    firstRenderedFrame =
+      int(comp.displayStartTime * effectiveFrameRate) +
+      int(timeSpanStart * effectiveFrameRate);
   }
 
-  const start_frame = first_rendered_frame;
-  const end_frame = first_rendered_frame + duration_frames;
+  const startFrame = firstRenderedFrame;
+  const endFrame = firstRenderedFrame + durationFrames;
 
   return {
-    start_frame,
-    end_frame,
-    duration_frames,
-    start_time: comp.displayStartTime + time_span_start,
-    end_time: comp.displayStartTime + time_span_end,
-    duration_time,
+    start_frame: startFrame,
+    end_frame: endFrame,
+    duration_frames: durationFrames,
+    start_time: comp.displayStartTime + timeSpanStart,
+    end_time: comp.displayStartTime + timeSpanEnd,
+    duration_time: durationTime,
   };
 }

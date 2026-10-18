@@ -6,10 +6,10 @@ import {
   PyException,
   ValueError,
   b,
-  json_dumps,
-  json_loads,
+  jsonDumps,
+  jsonLoads,
   len,
-  type_name,
+  typeName,
   TypeError_,
   type JsonValue,
 } from "../../pyrt/index.ts";
@@ -24,19 +24,19 @@ export class ChunkNotFoundError extends PyException {
 export const UNDEFINED_FRAME = 0xFFFFFFFF;
 
 /** `getattr(chunk, "list_type", None)`: the list type of a LIST chunk, else `null`. */
-export function list_type_of(chunk: Chunk | null | undefined): string | null {
+export function listTypeOf(chunk: Chunk | null | undefined): string | null {
   return chunk instanceof ListChunk ? chunk.list_type : null;
 }
 
 /** `c.chunk_type == chunk_type`: `c` was read as the class registered for that type. */
-export function is_chunk_type<K extends string>(c: Chunk, chunk_type: K): c is ChunkOf<K> {
-  return c.chunk_type === chunk_type;
+export function isChunkType<K extends string>(c: Chunk, chunkType: K): c is ChunkOf<K> {
+  return c.chunk_type === chunkType;
 }
 
 /** Return first chunk matching `chunk_type`, or null if there is none. */
-export function find_by_type_or_null<K extends string>(chunks: Chunk[], chunk_type: K): ChunkOf<K> | null {
+export function findByTypeOrNull<K extends string>(chunks: Chunk[], chunkType: K): ChunkOf<K> | null {
   for (const c of chunks) {
-    if (is_chunk_type(c, chunk_type)) return c;
+    if (isChunkType(c, chunkType)) return c;
   }
   return null;
 }
@@ -46,16 +46,16 @@ export function find_by_type_or_null<K extends string>(chunks: Chunk[], chunk_ty
  *
  * @throws {@link ChunkNotFoundError} If no matching chunk is found.
  */
-export function find_by_type<K extends string>(chunks: Chunk[], chunk_type: K): ChunkOf<K> {
-  const c = find_by_type_or_null(chunks, chunk_type);
-  if (c === null) throw new ChunkNotFoundError(`Missing ${chunk_type} chunk`);
+export function findByType<K extends string>(chunks: Chunk[], chunkType: K): ChunkOf<K> {
+  const c = findByTypeOrNull(chunks, chunkType);
+  if (c === null) throw new ChunkNotFoundError(`Missing ${chunkType} chunk`);
   return c;
 }
 
 /** Return first ListChunk with matching `list_type`, or null if there is none. */
-export function find_by_list_type_or_null(chunks: Chunk[], list_type: string): ListChunk | null {
+export function findByListTypeOrNull(chunks: Chunk[], listType: string): ListChunk | null {
   for (const c of chunks) {
-    if (c instanceof ListChunk && c.list_type === list_type) return c;
+    if (c instanceof ListChunk && c.list_type === listType) return c;
   }
   return null;
 }
@@ -65,21 +65,21 @@ export function find_by_list_type_or_null(chunks: Chunk[], list_type: string): L
  *
  * @throws {@link ChunkNotFoundError} If no matching LIST chunk is found.
  */
-export function find_by_list_type(chunks: Chunk[], list_type: string): ListChunk {
-  const c = find_by_list_type_or_null(chunks, list_type);
-  if (c === null) throw new ChunkNotFoundError(`Missing LIST/${list_type} chunk`);
+export function findByListType(chunks: Chunk[], listType: string): ListChunk {
+  const c = findByListTypeOrNull(chunks, listType);
+  if (c === null) throw new ChunkNotFoundError(`Missing LIST/${listType} chunk`);
   return c;
 }
 
 /** Return all chunks matching `chunk_type`. */
-export function filter_by_type<K extends string>(chunks: Chunk[], chunk_type: K): ChunkOf<K>[] {
-  return chunks.filter((c) => is_chunk_type(c, chunk_type));
+export function filterByType<K extends string>(chunks: Chunk[], chunkType: K): ChunkOf<K>[] {
+  return chunks.filter((c) => isChunkType(c, chunkType));
 }
 
 /** Return all ListChunks with matching `list_type`. */
-export function filter_by_list_type(chunks: Chunk[], list_type: string): ListChunk[] {
+export function filterByListType(chunks: Chunk[], listType: string): ListChunk[] {
   return chunks.filter(
-    (c): c is ListChunk => c instanceof ListChunk && c.list_type === list_type,
+    (c): c is ListChunk => c instanceof ListChunk && c.list_type === listType,
   );
 }
 
@@ -91,7 +91,7 @@ export function filter_by_list_type(chunks: Chunk[], list_type: string): ListChu
  *
  * @throws {@link ValueError} If `target` is not found in `chunks`.
  */
-export function index_by_identity<_T>(chunks: readonly _T[], target: object | null): number {
+export function indexByIdentity<_T>(chunks: readonly _T[], target: object | null): number {
   for (const [i, c] of chunks.entries()) {
     if (c === target) return i;
   }
@@ -107,18 +107,18 @@ export function index_by_identity<_T>(chunks: readonly _T[], target: object | nu
  *
  * @param chunks - The chunk list to search.
  * @param target - The chunk that starts the block (matched by identity).
- * @param boundary_list_types - `list_type` values that mark the beginning of the next block.
+ * @param boundaryListTypes - `list_type` values that mark the beginning of the next block.
  * @throws {@link ValueError} If `target` is not found in `chunks`.
  */
-export function block_slice(
+export function blockSlice(
   chunks: Chunk[],
   target: Chunk,
-  boundary_list_types: ReadonlySet<string>,
+  boundaryListTypes: ReadonlySet<string>,
 ): [number, number] {
-  const start = index_by_identity(chunks, target);
+  const start = indexByIdentity(chunks, target);
   for (let end = start + 1; end < chunks.length; end++) {
     const c = chunks[end];
-    if (c instanceof ListChunk && boundary_list_types.has(c.list_type)) {
+    if (c instanceof ListChunk && boundaryListTypes.has(c.list_type)) {
       return [start, end];
     }
   }
@@ -133,9 +133,9 @@ export function block_slice(
  *
  * @throws {@link ChunkNotFoundError} If no matching chunk is found.
  */
-export function _find_anchor_index(chunks: Chunk[], anchor_type: string): number {
-  if (anchor_type.startsWith("LIST:")) {
-    const lt = anchor_type.slice(5);
+export function _findAnchorIndex(chunks: Chunk[], anchorType: string): number {
+  if (anchorType.startsWith("LIST:")) {
+    const lt = anchorType.slice(5);
     for (const [i, c] of chunks.entries()) {
       if (c instanceof ListChunk && c.list_type === lt) return i;
     }
@@ -143,9 +143,9 @@ export function _find_anchor_index(chunks: Chunk[], anchor_type: string): number
   }
 
   for (const [i, c] of chunks.entries()) {
-    if (c.chunk_type === anchor_type) return i;
+    if (c.chunk_type === anchorType) return i;
   }
-  throw new ChunkNotFoundError(`Missing ${anchor_type} chunk`);
+  throw new ChunkNotFoundError(`Missing ${anchorType} chunk`);
 }
 
 /**
@@ -159,16 +159,16 @@ export function _find_anchor_index(chunks: Chunk[], anchor_type: string): number
  *
  * @throws {@link ChunkNotFoundError} If no chunk with `before_type` is found.
  */
-export function find_chunks_before<K extends string>(
+export function findChunksBefore<K extends string>(
   chunks: Chunk[],
-  chunk_type: K,
-  before_type: string,
+  chunkType: K,
+  beforeType: string,
 ): ChunkOf<K>[] {
-  const anchor = _find_anchor_index(chunks, before_type);
+  const anchor = _findAnchorIndex(chunks, beforeType);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor - 1; i >= 0; i--) {
     const c = chunks[i];
-    if (is_chunk_type(c, chunk_type)) {
+    if (isChunkType(c, chunkType)) {
       result.unshift(c);
     } else {
       break;
@@ -188,16 +188,16 @@ export function find_chunks_before<K extends string>(
  *
  * @throws {@link ChunkNotFoundError} If no chunk with `after_type` is found.
  */
-export function find_chunks_after<K extends string>(
+export function findChunksAfter<K extends string>(
   chunks: Chunk[],
-  chunk_type: K,
-  after_type: string,
+  chunkType: K,
+  afterType: string,
 ): ChunkOf<K>[] {
-  const anchor = _find_anchor_index(chunks, after_type);
+  const anchor = _findAnchorIndex(chunks, afterType);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor + 1; i < chunks.length; i++) {
     const c = chunks[i];
-    if (is_chunk_type(c, chunk_type)) {
+    if (isChunkType(c, chunkType)) {
       result.push(c);
     } else {
       break;
@@ -211,19 +211,19 @@ export function find_chunks_after<K extends string>(
  *
  * Chunks that fall outside any group are ignored.
  */
-export function group_chunks(
+export function groupChunks(
   chunks: Chunk[],
-  start_type: string,
-  end_type: string,
+  startType: string,
+  endType: string,
 ): Chunk[][] {
   const groups: Chunk[][] = [];
   let current: Chunk[] | null = null;
   for (const chunk of chunks) {
-    if (chunk.chunk_type === start_type && current == null) {
+    if (chunk.chunk_type === startType && current == null) {
       current = [chunk];
     } else if (current != null) {
       current.push(chunk);
-      if (chunk.chunk_type === end_type) {
+      if (chunk.chunk_type === endType) {
         groups.push(current);
         current = null;
       }
@@ -238,11 +238,11 @@ export function group_chunks(
  * Every time a chunk with `chunk_type` is encountered a new group begins.
  * Chunks that appear before the first occurrence are discarded.
  */
-export function split_on_type(chunks: Chunk[], chunk_type: string): Chunk[][] {
+export function splitOnType(chunks: Chunk[], chunkType: string): Chunk[][] {
   const groups: Chunk[][] = [];
   let current: Chunk[] | null = null;
   for (const chunk of chunks) {
-    if (chunk.chunk_type === chunk_type) {
+    if (chunk.chunk_type === chunkType) {
       if (current != null) groups.push(current);
       current = [chunk];
     } else if (current != null) {
@@ -267,15 +267,15 @@ export type AlasData = Map<string, JsonValue>;
  * @returns Map of alas data (fullpath, target_is_folder, etc.), or an empty Map if not found
  *   or invalid.
  */
-export function parse_alas_data(parent_chunks: Chunk[]): AlasData {
-  const als2_chunk = find_by_list_type_or_null(parent_chunks, "Als2");
-  if (als2_chunk === null) return new Map();
-  const alas_chunk = find_by_type_or_null(als2_chunk.chunks, "alas");
-  if (alas_chunk === null) return new Map();
-  const alas_text = alas_chunk.value;
+export function parseAlasData(parentChunks: Chunk[]): AlasData {
+  const als2Chunk = findByListTypeOrNull(parentChunks, "Als2");
+  if (als2Chunk === null) return new Map();
+  const alasChunk = findByTypeOrNull(als2Chunk.chunks, "alas");
+  if (alasChunk === null) return new Map();
+  const alasText = alasChunk.value;
   // `value` may be a `_NulTailStr` (String object), which py_bool would call truthy.
-  if (alas_text == null || String(alas_text).length === 0) return new Map();
-  const result = json_loads(String(alas_text));
+  if (alasText == null || String(alasText).length === 0) return new Map();
+  const result = jsonLoads(String(alasText));
   return result instanceof Map ? result : new Map();
 }
 
@@ -283,21 +283,21 @@ export function parse_alas_data(parent_chunks: Chunk[]): AlasData {
  * `data.get("fullpath", "")`. After Effects always writes the path as a
  * string; anything else is a corrupt record and fails here.
  */
-export function alas_fullpath(data: AlasData): string {
+export function alasFullpath(data: AlasData): string {
   const stored = data.get("fullpath");
   const fullpath = stored === undefined ? "" : stored;
-  if (typeof fullpath !== "string") throw new TypeError_(`alas fullpath must be a str, not '${type_name(fullpath)}'`);
+  if (typeof fullpath !== "string") throw new TypeError_(`alas fullpath must be a str, not '${typeName(fullpath)}'`);
   return fullpath;
 }
 
 /** `data.get("target_is_folder", False)`, which After Effects writes as a boolean. */
-export function alas_target_is_folder(data: AlasData): boolean {
+export function alasTargetIsFolder(data: AlasData): boolean {
   const stored = data.get("target_is_folder");
-  const target_is_folder = stored === undefined ? false : stored;
-  if (typeof target_is_folder !== "boolean") {
-    throw new TypeError_(`alas targetIsFolder must be a bool, not '${type_name(target_is_folder)}'`);
+  const targetIsFolder = stored === undefined ? false : stored;
+  if (typeof targetIsFolder !== "boolean") {
+    throw new TypeError_(`alas targetIsFolder must be a bool, not '${typeName(targetIsFolder)}'`);
   }
-  return target_is_folder;
+  return targetIsFolder;
 }
 
 /**
@@ -312,7 +312,7 @@ export const PENDING_ASCENDCOUNT = -1;
  * POSIX path, 1 for a drive-letter or UNC path (it follows the path's
  * style, not the saving machine).
  */
-export function alas_platform(fullpath: string): number {
+export function alasPlatform(fullpath: string): number {
   return fullpath.startsWith("/") ? 2 : 1;
 }
 
@@ -320,8 +320,8 @@ export function alas_platform(fullpath: string): number {
  * Serialize an `alas` record the way After Effects writes it: sorted
  * keys, no whitespace.
  */
-export function dump_alas(data: AlasData): string {
-  return json_dumps(data, { sort_keys: true, separators: [",", ":"] });
+export function dumpAlas(data: AlasData): string {
+  return jsonDumps(data, { sort_keys: true, separators: [",", ":"] });
 }
 
 /**
@@ -336,7 +336,7 @@ export function dump_alas(data: AlasData): string {
  * @param kw - Options:
  * - `target_is_folder`: `true` when `fullpath` is a sequence folder.
  */
-export function build_als2_list(
+export function buildAls2List(
   fullpath: string,
   kw: { target_is_folder: boolean },
 ): ListChunk {
@@ -345,12 +345,12 @@ export function build_als2_list(
     ["ascendcount_base", PENDING_ASCENDCOUNT],
     ["ascendcount_target", PENDING_ASCENDCOUNT],
     ["fullpath", fullpath],
-    ["platform", alas_platform(fullpath)],
+    ["platform", alasPlatform(fullpath)],
     ["server_name", ""],
     ["server_volume_name", ""],
     ["target_is_folder", target_is_folder],
   ]);
-  const alas = new Utf8Chunk({ chunk_type: "alas", value: dump_alas(data) });
+  const alas = new Utf8Chunk({ chunk_type: "alas", value: dumpAlas(data) });
   return new ListChunk({ list_type: "Als2", chunks: [alas] });
 }
 
@@ -358,12 +358,12 @@ export function build_als2_list(
  * Build the `LIST:StVc` frame list of an alphabetical image sequence:
  * the file count, then one `Utf8` name per frame, in order.
  */
-export function build_stvc_list(file_names: string[]): ListChunk {
-  const names: Chunk[] = file_names.map((name) => new Utf8Chunk({ value: name }));
+export function buildStvcList(fileNames: string[]): ListChunk {
+  const names: Chunk[] = fileNames.map((name) => new Utf8Chunk({ value: name }));
   return new ListChunk({
     list_type: "StVc",
     chunks: [
-      new U4LeChunk({ chunk_type: "StVS", value: file_names.length }),
+      new U4LeChunk({ chunk_type: "StVS", value: fileNames.length }),
       ...names,
     ],
   });
@@ -376,7 +376,7 @@ export function build_stvc_list(file_names: string[]): ListChunk {
  * @param depth - Max depth to recurse (-1 for unlimited).
  * @param indent - Current indentation level (used internally).
  */
-export function chunk_tree(chunks: Chunk[], depth = -1, indent = 0): string {
+export function chunkTree(chunks: Chunk[], depth = -1, indent = 0): string {
   const lines: string[] = [];
   const prefix = "  ".repeat(indent);
   for (const chunk of chunks) {
@@ -387,7 +387,7 @@ export function chunk_tree(chunks: Chunk[], depth = -1, indent = 0): string {
       const label = `LIST:${lt}`;
       lines.push(`${prefix}${label}`);
       if (depth !== 0 && children != null) {
-        lines.push(chunk_tree(children, depth - 1, indent + 1));
+        lines.push(chunkTree(children, depth - 1, indent + 1));
       }
     } else {
       lines.push(`${prefix}${chunk.chunk_type} (${size} B)`);
@@ -408,24 +408,24 @@ export function chunk_tree(chunks: Chunk[], depth = -1, indent = 0): string {
  * chunk of one of those types (e.g. `("cpid",)` for `lnrb`); when none of
  * them is present, or `after_types` is empty, the chunk is appended.
  */
-export function toggle_flag_chunk(
+export function toggleFlagChunk(
   container: ListChunk,
-  chunk_type: string,
+  chunkType: string,
   enable: boolean,
   kw: { after_types?: readonly string[] } = {},
 ): void {
   const { after_types = [] } = kw;
 
-  const existing = container.chunks.flatMap((c, i) => (c.chunk_type === chunk_type ? [i] : []));
+  const existing = container.chunks.flatMap((c, i) => (c.chunk_type === chunkType ? [i] : []));
   if (enable && existing.length === 0) {
-    const new_chunk = new Chunk({ chunk_type, data: b("\x01") });
+    const newChunk = new Chunk({ chunk_type: chunkType, data: b("\x01") });
     const anchors = container.chunks.flatMap((c, i) =>
       after_types.includes(c.chunk_type) ? [i] : [],
     );
     if (anchors.length > 0) {
-      container.chunks.splice(anchors[anchors.length - 1] + 1, 0, new_chunk);
+      container.chunks.splice(anchors[anchors.length - 1] + 1, 0, newChunk);
     } else {
-      container.chunks.push(new_chunk);
+      container.chunks.push(newChunk);
     }
   } else if (!enable && existing.length > 0) {
     for (const i of [...existing].reverse()) {
@@ -443,39 +443,39 @@ export function toggle_flag_chunk(
  *
  * @returns All matching chunks across the entire tree, in DFS order.
  */
-export function recursive_find<K extends string>(
+export function recursiveFind<K extends string>(
   chunks: Chunk[],
-  chunk_type: K,
-  list_type?: null,
-  skip_unparsed?: boolean,
+  chunkType: K,
+  listType?: null,
+  skipUnparsed?: boolean,
 ): ChunkOf<K>[];
-export function recursive_find(
+export function recursiveFind(
   chunks: Chunk[],
-  chunk_type?: string | null,
-  list_type?: string | null,
-  skip_unparsed?: boolean,
+  chunkType?: string | null,
+  listType?: string | null,
+  skipUnparsed?: boolean,
 ): Chunk[];
-export function recursive_find(
+export function recursiveFind(
   chunks: Chunk[],
-  chunk_type: string | null = null,
-  list_type: string | null = null,
-  skip_unparsed = false,
+  chunkType: string | null = null,
+  listType: string | null = null,
+  skipUnparsed = false,
 ): Chunk[] {
-  if (chunk_type == null && list_type == null) {
+  if (chunkType == null && listType == null) {
     throw new ValueError("At least one of chunk_type or list_type is required");
   }
   const results: Chunk[] = [];
   for (const chunk of chunks) {
-    if (list_type != null) {
-      if (chunk instanceof ListChunk && chunk.list_type === list_type) results.push(chunk);
-    } else if (chunk.chunk_type === chunk_type) {
+    if (listType != null) {
+      if (chunk instanceof ListChunk && chunk.list_type === listType) results.push(chunk);
+    } else if (chunk.chunk_type === chunkType) {
       results.push(chunk);
     }
-    if (skip_unparsed && chunk instanceof DeferredListChunk && !chunk.is_parsed) {
+    if (skipUnparsed && chunk instanceof DeferredListChunk && !chunk.is_parsed) {
       continue;
     }
     if (chunk instanceof ListChunk) {
-      for (const found of recursive_find(chunk.chunks, chunk_type, list_type, skip_unparsed)) {
+      for (const found of recursiveFind(chunk.chunks, chunkType, listType, skipUnparsed)) {
         results.push(found);
       }
     }

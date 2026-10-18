@@ -3,19 +3,19 @@
 // are dropped: annotations are types only, and `cast` becomes `as`.
 
 import type { ListChunk } from "../binary/chunk.ts";
-import { find_by_type } from "../binary/utils.ts";
+import { findByType } from "../binary/utils.ts";
 import { Application } from "../models/application.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { FolderItem } from "../models/items/folder.ts";
 import type { Project } from "../models/project.ts";
 import type { Viewer } from "../models/viewer/viewer.ts";
 
 /** Recursively collect viewers from a folder and its subfolders. */
-export function* _collect_viewers(folder: FolderItem): Generator<Viewer> {
+export function* _collectViewers(folder: FolderItem): Generator<Viewer> {
   yield* folder._viewers;
   for (const item of folder.items) {
     if (item instanceof FolderItem) {
-      yield* _collect_viewers(item);
+      yield* _collectViewers(item);
     }
   }
 }
@@ -26,27 +26,27 @@ export function* _collect_viewers(folder: FolderItem): Generator<Viewer> {
  * @param rifx - The parsed binary RIFX root chunk.
  * @param project - The already-parsed {@link Project}.
  */
-export const parse_app = _suppress_materialization()(function parse_app(
+export const parseApp = _suppressMaterialization()(function parse_app(
   rifx: ListChunk,
   project: Project,
 ): Application {
-  const root_chunks = rifx.chunks;
-  const head_chunk = find_by_type(root_chunks, "head");
+  const rootChunks = rifx.chunks;
+  const headChunk = findByType(rootChunks, "head");
 
   // Collect viewer panels from the folder tree (parsed during parse_folder)
-  const viewers = _collect_viewers(project.rootFolder);
+  const viewers = _collectViewers(project.rootFolder);
   // `next((v for v in viewers if v.active), None)`
-  let active_viewer: Viewer | null = null;
+  let activeViewer: Viewer | null = null;
   for (const v of viewers) {
     if (v.active) {
-      active_viewer = v;
+      activeViewer = v;
       break;
     }
   }
 
   return new Application({
-    _head: head_chunk,
+    _head: headChunk,
     project,
-    active_viewer,
+    active_viewer: activeViewer,
   });
 });

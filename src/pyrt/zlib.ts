@@ -8,7 +8,7 @@
 // Error texts follow CPython's ("Error -3 while decompressing data: ...").
 
 import { Inflate, gunzipSync } from "fflate";
-import { error_code } from "./errors.ts";
+import { errorCode } from "./errors.ts";
 
 /** fflate's private `Inflate.s` decoder state (untyped in its typings). */
 type InflateState = { f: number; l: number; p: number };
@@ -37,18 +37,18 @@ const _FFLATE_MESSAGES: Record<number, string> = {
 };
 
 function _rethrow(e: unknown): never {
-  const code = error_code(e);
+  const code = errorCode(e);
   if (code === 0) _fail(Z_BUF_ERROR, "incomplete or truncated stream");
   if (typeof code === "number" && code in _FFLATE_MESSAGES) _fail(Z_DATA_ERROR, _FFLATE_MESSAGES[code]);
   throw e;
 }
 
 /** zlib's header checks (wbits=15); returns the header length (always 2). */
-function _check_header(data: Uint8Array, truncated_is_error: true): number;
-function _check_header(data: Uint8Array, truncated_is_error: false): number | null;
-function _check_header(data: Uint8Array, truncated_is_error: boolean): number | null {
+function _checkHeader(data: Uint8Array, truncatedIsError: true): number;
+function _checkHeader(data: Uint8Array, truncatedIsError: false): number | null;
+function _checkHeader(data: Uint8Array, truncatedIsError: boolean): number | null {
   if (data.length < 2) {
-    if (truncated_is_error) _fail(Z_BUF_ERROR, "incomplete or truncated stream");
+    if (truncatedIsError) _fail(Z_BUF_ERROR, "incomplete or truncated stream");
     return null;
   }
   const cmf = data[0],
@@ -134,7 +134,7 @@ function _inflate(body: Uint8Array, limit: number, step: number): _Inflated {
 
 /** `zlib.decompress(data)` (wbits=15). */
 export function decompress(data: Uint8Array): Uint8Array {
-  const start = _check_header(data, true);
+  const start = _checkHeader(data, true);
   const r = _inflate(data.subarray(start), -1, Math.max(data.length, 1));
   if (r.rest == null || r.rest.length < 4) _fail(Z_BUF_ERROR, "incomplete or truncated stream");
   const t = r.rest;
@@ -145,12 +145,12 @@ export function decompress(data: Uint8Array): Uint8Array {
 }
 
 /** `zlib.decompressobj()`; only the one-shot `decompress(data, max_length)` is used. */
-export function decompressobj(): { decompress(data: Uint8Array, max_length?: number): Uint8Array } {
+export function decompressobj(): { decompress(data: Uint8Array, maxLength?: number): Uint8Array } {
   return {
-    decompress(data: Uint8Array, max_length = 0): Uint8Array {
-      const start = _check_header(data, false);
+    decompress(data: Uint8Array, maxLength = 0): Uint8Array {
+      const start = _checkHeader(data, false);
       if (start == null) return new Uint8Array(0);
-      const limit = max_length > 0 ? max_length : -1;
+      const limit = maxLength > 0 ? maxLength : -1;
       // One push: fflate's streaming decoder can misread a code cut at a
       // push boundary. Unlike CPython, input past the max_length-th output
       // byte is therefore still decoded, and a fault there still raises.
@@ -168,6 +168,6 @@ export function decompressobj(): { decompress(data: Uint8Array, max_length?: num
 }
 
 /** `gzip.decompress(data)` (single member). */
-export function gzip_decompress(data: Uint8Array): Uint8Array {
+export function gzipDecompress(data: Uint8Array): Uint8Array {
   return gunzipSync(data);
 }

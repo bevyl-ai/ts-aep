@@ -15,7 +15,7 @@
 //   assert a == b                           expect(py_eq(a, b)).toBe(true)  or  expect(a).toBe(b) for primitives
 
 import { fs, path as nodepath, tmpdir } from "./host.ts";
-import { py_eq } from "./builtins.ts";
+import { pyEq } from "./builtins.ts";
 import { warnings } from "./errors.ts";
 import { Path } from "./pathlib.ts";
 
@@ -53,7 +53,7 @@ export function approx(actual: ApproxOperand, expected: ApproxOperand, opts: { r
     const e = Array.from(expected as ArrayLike<ApproxOperand>);
     return a.length === e.length && a.every((x, i) => approx(x, e[i], opts));
   }
-  if (typeof expected !== "number" || typeof actual !== "number") return py_eq(actual, expected);
+  if (typeof expected !== "number" || typeof actual !== "number") return pyEq(actual, expected);
   if (actual === expected) return true;
   if (Number.isNaN(actual) || Number.isNaN(expected)) return false;
   const rel = opts.rel ?? (opts.abs === undefined ? 1e-6 : 0);
@@ -94,6 +94,6 @@ export function importorskip(name: string): boolean {
   }
 }
 
-export function make_tmp_path(): Path {
+export function makeTmpPath(): Path {
   return new Path(fs.mkdtempSync(nodepath.join(tmpdir(), "py_aep-")));
 }

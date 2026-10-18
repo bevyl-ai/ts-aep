@@ -2,86 +2,86 @@ import { at, getitem, sorted } from "../../pyrt/index.ts";
 import { ContainerChunk, ListChunk } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { LdatChunk } from "../binary/ldat_chunks.ts";
-import { LRDR_CHILD_ORDER, build_rq_settings_list } from "../binary/mutations.ts";
+import { LRDR_CHILD_ORDER, buildRqSettingsList } from "../binary/mutations.ts";
 import { ROUT_ITEMS_PER_RQ_ITEM, ArsiChunk, RoutChunk } from "../binary/render_chunks.ts";
 import type { RenderSettingsItem, RoutItem } from "../binary/render_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { find_by_list_type_or_null, find_by_type, find_by_type_or_null, split_on_type } from "../binary/utils.ts";
+import { findByListTypeOrNull, findByType, findByTypeOrNull, splitOnType } from "../binary/utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import { RenderQueue } from "../models/renderqueue/render_queue.ts";
 import { RenderQueueItem } from "../models/renderqueue/render_queue_item.ts";
 import type { Project } from "../models/project.ts";
 import type { OutputModule } from "../models/renderqueue/output_module.ts";
-import { parse_output_module } from "./output_module.ts";
+import { parseOutputModule } from "./output_module.ts";
 
 /**
  * Parse the render queue from the top-level chunks.
  *
- * @param root_chunks - The top-level chunks from the AEP file.
+ * @param rootChunks - The top-level chunks from the AEP file.
  * @param project - The Project object being constructed, used to link comp references in render
  *   queue items.
  */
-export function parse_render_queue(root_chunks: Chunk[], project: Project): RenderQueue {
-  const lrdr_chunk = find_by_list_type_or_null(root_chunks, "LRdr");
-  if (lrdr_chunk === null) {
+export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQueue {
+  const lrdrChunk = findByListTypeOrNull(rootChunks, "LRdr");
+  if (lrdrChunk === null) {
     // Legacy/hand-built files may omit the render-queue scaffold entirely
     // (AE always writes an LRdr, but a minimal file need not). Synthesize an
     // empty queue and attach its LRdr to the root, marked synthetic so
     // write_aep skips it - an untouched queue-less file still round-trips
     // byte-identically. The first add() materializes the tree.
-    const render_queue = RenderQueue._new(project);
-    render_queue._lrdr.synthetic = true;
+    const renderQueue = RenderQueue._new(project);
+    renderQueue._lrdr.synthetic = true;
     // AE writes LRdr immediately before LIST:PTRE (the workspace blob), so
     // insert at that canonical root position rather than appending past it.
-    const ptre_found = root_chunks.findIndex(
+    const ptreFound = rootChunks.findIndex(
       (c) => c instanceof ListChunk && c.list_type === "PTRE",
     );
-    const ptre_idx = ptre_found === -1 ? root_chunks.length : ptre_found;
-    root_chunks.splice(ptre_idx, 0, render_queue._lrdr);
-    return render_queue;
+    const ptreIdx = ptreFound === -1 ? rootChunks.length : ptreFound;
+    rootChunks.splice(ptreIdx, 0, renderQueue._lrdr);
+    return renderQueue;
   }
-  const lrdr_child_chunks = lrdr_chunk.chunks;
+  const lrdrChildChunks = lrdrChunk.chunks;
   let synthesized = false;
 
-  let list_settings_chunk = find_by_list_type_or_null(lrdr_child_chunks, "list");
-  if (list_settings_chunk === null) {
+  let listSettingsChunk = findByListTypeOrNull(lrdrChildChunks, "list");
+  if (listSettingsChunk === null) {
     synthesized = true;
     // An LRdr present but lacking its settings 'list' is degenerate;
     // rebuild it so the parse still yields an empty queue instead of
     // raising.
-    [list_settings_chunk] = build_rq_settings_list({ synthetic: true });
-    lrdr_child_chunks.push(list_settings_chunk);
+    [listSettingsChunk] = buildRqSettingsList({ synthetic: true });
+    lrdrChildChunks.push(listSettingsChunk);
   }
-  const settings_lhd3 = find_by_type(list_settings_chunk.chunks, "lhd3");
+  const settingsLhd3 = findByType(listSettingsChunk.chunks, "lhd3");
 
   // Legacy/minimal files may omit the queue scaffolding (Rout, LItm,
   // LSIf/ARsi). Substitute synthetic placeholders attached to the tree so
   // the parse still yields an (empty) render queue; write_aep() skips
   // synthetic chunks, so untouched files round-trip byte-identically.
-  let rout_chunk = find_by_type_or_null(lrdr_child_chunks, "Rout");
-  if (rout_chunk === null) {
+  let routChunk = findByTypeOrNull(lrdrChildChunks, "Rout");
+  if (routChunk === null) {
     synthesized = true;
-    rout_chunk = new RoutChunk({ synthetic: true });
-    lrdr_child_chunks.push(rout_chunk);
+    routChunk = new RoutChunk({ synthetic: true });
+    lrdrChildChunks.push(routChunk);
   }
 
-  let litm_chunk = find_by_list_type_or_null(lrdr_child_chunks, "LItm");
-  if (litm_chunk === null) {
+  let litmChunk = findByListTypeOrNull(lrdrChildChunks, "LItm");
+  if (litmChunk === null) {
     synthesized = true;
-    litm_chunk = new ListChunk({ list_type: "LItm", synthetic: true });
-    lrdr_child_chunks.push(litm_chunk);
+    litmChunk = new ListChunk({ list_type: "LItm", synthetic: true });
+    lrdrChildChunks.push(litmChunk);
   }
 
-  let lsif_chunk = find_by_list_type_or_null(lrdr_child_chunks, "LSIf");
-  if (lsif_chunk === null) {
+  let lsifChunk = findByListTypeOrNull(lrdrChildChunks, "LSIf");
+  if (lsifChunk === null) {
     synthesized = true;
-    lsif_chunk = new ListChunk({ list_type: "LSIf", synthetic: true });
-    lrdr_child_chunks.push(lsif_chunk);
+    lsifChunk = new ListChunk({ list_type: "LSIf", synthetic: true });
+    lrdrChildChunks.push(lsifChunk);
   }
-  let arsi_chunk = find_by_type_or_null(lsif_chunk.chunks, "ARsi");
-  if (arsi_chunk === null) {
-    arsi_chunk = new ArsiChunk({ synthetic: true });
-    lsif_chunk.chunks.push(arsi_chunk);
+  let arsiChunk = findByTypeOrNull(lsifChunk.chunks, "ARsi");
+  if (arsiChunk === null) {
+    arsiChunk = new ArsiChunk({ synthetic: true });
+    lsifChunk.chunks.push(arsiChunk);
   }
 
   if (synthesized) {
@@ -92,55 +92,55 @@ export function parse_render_queue(root_chunks: Chunk[], project: Project): Rend
     const _canon = new Map<string, number>(
       LRDR_CHILD_ORDER.map((t, i): [string, number] => [t, i]),
     );
-    lrdr_child_chunks.splice(
+    lrdrChildChunks.splice(
       0,
-      lrdr_child_chunks.length,
-      ...sorted(lrdr_child_chunks, (c) =>
+      lrdrChildChunks.length,
+      ...sorted(lrdrChildChunks, (c) =>
         _canon.get((c instanceof ListChunk && c.list_type) || c.chunk_type) ?? _canon.size,
       ),
     );
   }
 
-  let settings_ldat: LdatChunk;
-  if (settings_lhd3.count === 0) {
+  let settingsLdat: LdatChunk;
+  if (settingsLhd3.count === 0) {
     // Empty render queue: AE writes the settings 'list' with only an lhd3
     // (no ldat). Create a synthetic ldat and attach it to the tree so the
     // model and tree agree. write_aep() skips synthetic chunks, so an
     // untouched empty queue still round-trips byte-identically; the first
     // add() flips it to non-synthetic. (AE may instead write an empty ldat
     // with count==0; reuse it when present.)
-    const existing = find_by_type_or_null(list_settings_chunk.chunks, "ldat");
+    const existing = findByTypeOrNull(listSettingsChunk.chunks, "ldat");
     if (existing === null) {
-      settings_ldat = new LdatChunk({ chunk_type: "ldat", synthetic: true });
-      list_settings_chunk.chunks.push(settings_ldat);
+      settingsLdat = new LdatChunk({ chunk_type: "ldat", synthetic: true });
+      listSettingsChunk.chunks.push(settingsLdat);
     } else {
-      settings_ldat = existing;
+      settingsLdat = existing;
     }
   } else {
-    settings_ldat = find_by_type(list_settings_chunk.chunks, "ldat");
+    settingsLdat = findByType(listSettingsChunk.chunks, "ldat");
   }
 
-  const render_queue = new RenderQueue({
-    _lrdr: lrdr_chunk,
-    _rs_lhd3: settings_lhd3,
-    _rs_ldat: settings_ldat,
-    _rout: rout_chunk,
-    _litm: litm_chunk,
-    _arsi: arsi_chunk,
+  const renderQueue = new RenderQueue({
+    _lrdr: lrdrChunk,
+    _rs_lhd3: settingsLhd3,
+    _rs_ldat: settingsLdat,
+    _rout: routChunk,
+    _litm: litmChunk,
+    _arsi: arsiChunk,
     parent: project,
     items: [],
   });
 
-  if (settings_lhd3.count > 0) {
-    render_queue._items = parse_render_queue_items(
-      litm_chunk,
-      settings_ldat.items,
-      rout_chunk.items,
+  if (settingsLhd3.count > 0) {
+    renderQueue._items = parseRenderQueueItems(
+      litmChunk,
+      settingsLdat.items,
+      routChunk.items,
       project,
-      render_queue,
+      renderQueue,
     );
   }
-  return render_queue;
+  return renderQueue;
 }
 
 /**
@@ -151,50 +151,50 @@ export function parse_render_queue(root_chunks: Chunk[], project: Project): Rend
  * - A LIST 'list' chunk with OM metadata (lhd3 + ldat)
  * - A LIST 'LOm ' chunk with output module chunks
  *
- * @param litm_chunk - The LIST 'LItm' chunk containing per-item groups.
- * @param render_settings - The parsed RenderSettingsItem list from LRdr's ldat.
- * @param rout_items - The parsed RoutItem list from the Rout chunk.
+ * @param litmChunk - The LIST 'LItm' chunk containing per-item groups.
+ * @param renderSettings - The parsed RenderSettingsItem list from LRdr's ldat.
+ * @param routItems - The parsed RoutItem list from the Rout chunk.
  * @param project - The Project object, used to resolve comp references.
- * @param render_queue - The parent RenderQueue being constructed.
+ * @param renderQueue - The parent RenderQueue being constructed.
  */
-export function parse_render_queue_items(
-  litm_chunk: ListChunk,
-  render_settings: RenderSettingsItem[],
-  rout_items: RoutItem[],
+export function parseRenderQueueItems(
+  litmChunk: ListChunk,
+  renderSettings: RenderSettingsItem[],
+  routItems: RoutItem[],
   project: Project,
-  render_queue: RenderQueue,
+  renderQueue: RenderQueue,
 ): RenderQueueItem[] {
   const items: RenderQueueItem[] = [];
-  let item_index = 0;
-  let rcom_container: ContainerChunk | null = null;
-  let rcom_utf8: Utf8Chunk | null = null;
-  let list_chunk: ListChunk | null = null;
+  let itemIndex = 0;
+  let rcomContainer: ContainerChunk | null = null;
+  let rcomUtf8: Utf8Chunk | null = null;
+  let listChunk: ListChunk | null = null;
 
-  for (const chunk of litm_chunk.chunks) {
+  for (const chunk of litmChunk.chunks) {
     if (chunk instanceof ContainerChunk && chunk.chunk_type === "RCom") {
-      rcom_container = chunk;
-      rcom_utf8 = find_by_type(chunk.chunks, "Utf8");
+      rcomContainer = chunk;
+      rcomUtf8 = findByType(chunk.chunks, "Utf8");
     } else if (chunk instanceof ListChunk) {
       if (chunk.list_type === "list") {
-        list_chunk = chunk;
-      } else if (chunk.list_type === "LOm " && list_chunk != null) {
-        const rout_start = item_index * ROUT_ITEMS_PER_RQ_ITEM;
-        const item = parse_render_queue_item(
-          list_chunk,
+        listChunk = chunk;
+      } else if (chunk.list_type === "LOm " && listChunk != null) {
+        const routStart = itemIndex * ROUT_ITEMS_PER_RQ_ITEM;
+        const item = parseRenderQueueItem(
+          listChunk,
           chunk,
-          at(render_settings, item_index),
-          rcom_container,
-          rcom_utf8,
-          rout_items.slice(rout_start, rout_start + ROUT_ITEMS_PER_RQ_ITEM),
-          litm_chunk,
+          at(renderSettings, itemIndex),
+          rcomContainer,
+          rcomUtf8,
+          routItems.slice(routStart, routStart + ROUT_ITEMS_PER_RQ_ITEM),
+          litmChunk,
           project,
-          render_queue,
+          renderQueue,
         );
         items.push(item);
-        item_index += 1;
-        rcom_container = null;
-        rcom_utf8 = null;
-        list_chunk = null;
+        itemIndex += 1;
+        rcomContainer = null;
+        rcomUtf8 = null;
+        listChunk = null;
       }
     }
   }
@@ -205,60 +205,60 @@ export function parse_render_queue_items(
 /**
  * Parse a single render queue item from its component chunks.
  *
- * @param list_chunk - The LIST 'list' chunk containing OM metadata.
- * @param lom_chunk - The LIST 'LOm ' chunk containing output modules.
- * @param ldat_body - The RenderSettingsItem for this item.
- * @param rcom_container - The RCom ContainerChunk, or None if absent.
- * @param rcom_utf8 - The Utf8 chunk inside RCom, or None if absent.
- * @param rout_items - This item's block of RoutItems (AE writes 5 per item).
- * @param litm_chunk - The LIST 'LItm' chunk.
+ * @param listChunk - The LIST 'list' chunk containing OM metadata.
+ * @param lomChunk - The LIST 'LOm ' chunk containing output modules.
+ * @param ldatBody - The RenderSettingsItem for this item.
+ * @param rcomContainer - The RCom ContainerChunk, or None if absent.
+ * @param rcomUtf8 - The Utf8 chunk inside RCom, or None if absent.
+ * @param routItems - This item's block of RoutItems (AE writes 5 per item).
+ * @param litmChunk - The LIST 'LItm' chunk.
  * @param project - The Project object, used to resolve comp references.
- * @param render_queue - The parent RenderQueue being constructed.
+ * @param renderQueue - The parent RenderQueue being constructed.
  */
-export function parse_render_queue_item(
-  list_chunk: ListChunk,
-  lom_chunk: ListChunk,
-  ldat_body: RenderSettingsItem,
-  rcom_container: ContainerChunk | null,
-  rcom_utf8: Utf8Chunk | null,
-  rout_items: RoutItem[],
-  litm_chunk: ListChunk,
+export function parseRenderQueueItem(
+  listChunk: ListChunk,
+  lomChunk: ListChunk,
+  ldatBody: RenderSettingsItem,
+  rcomContainer: ContainerChunk | null,
+  rcomUtf8: Utf8Chunk | null,
+  routItems: RoutItem[],
+  litmChunk: ListChunk,
   project: Project,
-  render_queue: RenderQueue,
+  renderQueue: RenderQueue,
 ): RenderQueueItem {
-  const om_ldat = find_by_type(list_chunk.chunks, "ldat");
-  const om_ldat_items = om_ldat.items;
+  const omLdat = findByType(listChunk.chunks, "ldat");
+  const omLdatItems = omLdat.items;
 
-  const comp_id = ldat_body.comp_id;
-  const comp = getitem(project.items, comp_id) as CompItem;
+  const compId = ldatBody.comp_id;
+  const comp = getitem(project.items, compId) as CompItem;
 
   // Group chunks by Roou - each Roou starts a new output module
-  const om_groups = split_on_type(lom_chunk.chunks, "Roou");
+  const omGroups = splitOnType(lomChunk.chunks, "Roou");
 
-  const render_queue_item = new RenderQueueItem({
-    _ldat: ldat_body,
-    _litm: litm_chunk,
-    _list_chunk: list_chunk,
-    _lom: lom_chunk,
-    _rcom: rcom_container,
-    _rcom_utf8: rcom_utf8,
-    _rout_items: rout_items,
-    parent: render_queue,
+  const renderQueueItem = new RenderQueueItem({
+    _ldat: ldatBody,
+    _litm: litmChunk,
+    _list_chunk: listChunk,
+    _lom: lomChunk,
+    _rcom: rcomContainer,
+    _rcom_utf8: rcomUtf8,
+    _rout_items: routItems,
+    parent: renderQueue,
     comp,
     output_modules: [],
   });
 
-  const output_modules: OutputModule[] = [];
-  for (const [om_index, group] of om_groups.entries()) {
-    const output_module = parse_output_module(
+  const outputModules: OutputModule[] = [];
+  for (const [omIndex, group] of omGroups.entries()) {
+    const outputModule = parseOutputModule(
       group,
-      at(om_ldat_items, om_index),
-      render_queue_item,
+      at(omLdatItems, omIndex),
+      renderQueueItem,
     );
-    output_modules.push(output_module);
+    outputModules.push(outputModule);
   }
 
-  render_queue_item._output_modules = output_modules;
+  renderQueueItem._output_modules = outputModules;
 
-  return render_queue_item;
+  return renderQueueItem;
 }

@@ -13,7 +13,7 @@ import { CHILD_MATCH_NAMES } from "../../src/py_aep/data/child_names.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { parseProjectFresh } from "../helpers.ts";
 
 const TABLE: Record<string, Record<string, string>> = CHILD_MATCH_NAMES;
 
@@ -21,7 +21,7 @@ const TABLE: Record<string, Record<string, string>> = CHILD_MATCH_NAMES;
 function misses(layer: Layer): [string, string, string][] {
   const out: [string, string, string][] = [];
   const walk = (group: PropertyGroup): void => {
-    for (const [attr, match_name] of Object.entries(TABLE[group.matchName] ?? {})) {
+    for (const [attr, matchName] of Object.entries(TABLE[group.matchName] ?? {})) {
       let found: string;
       try {
         const child: unknown = Reflect.get(group, attr);
@@ -29,7 +29,7 @@ function misses(layer: Layer): [string, string, string][] {
       } catch (e) {
         found = e instanceof Error ? e.constructor.name : String(e);
       }
-      if (found !== match_name) out.push([group.matchName, attr, found]);
+      if (found !== matchName) out.push([group.matchName, attr, found]);
     }
     for (const child of group.properties) if (child instanceof PropertyGroup) walk(child);
   };
@@ -54,7 +54,7 @@ describe("child attributes", () => {
   }, 120_000);
 
   test("resolve on layers created through the API", () => {
-    const project = parse_project_fresh("samples/models/composition/renderer_classic_3d.aep");
+    const project = parseProjectFresh("samples/models/composition/renderer_classic_3d.aep");
     const comp = project.compositions[0];
     const created: Layer[] = [
       comp.addNull(),
@@ -68,7 +68,7 @@ describe("child attributes", () => {
   });
 
   test("typed reads", () => {
-    const comp = parse_project_fresh("samples/models/composition/renderer_classic_3d.aep").compositions[0];
+    const comp = parseProjectFresh("samples/models/composition/renderer_classic_3d.aep").compositions[0];
     const text = comp.addText("typed").text;
     expect(text?.sourceText.value.text).toBe("typed");
     const position: number[] = comp.addNull().transform.position.value;

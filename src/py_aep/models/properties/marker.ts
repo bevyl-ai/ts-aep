@@ -1,16 +1,16 @@
-import { ValueError, descriptor, round, py_or } from "../../../pyrt/index.ts";
+import { ValueError, descriptor, round, pyOr } from "../../../pyrt/index.ts";
 import { Label } from "../../enums/index.ts";
 
 import { NmhdChunk } from "../../binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { index_by_identity } from "../../binary/utils.ts";
+import { indexByIdentity } from "../../binary/utils.ts";
 import { ChunkField } from "../descriptors.ts";
-import { validate_int, validate_marker_duration, validate_string, validate_u4 } from "../validators.ts";
+import { validateInt, validateMarkerDuration, validateString, validateU4 } from "../validators.ts";
 
 import type { ListChunk } from "../../binary/chunk.ts";
 import type { Keyframe } from "./keyframe.ts";
 
-export function _validate_params(value: Map<string, string>): void {
+export function _validateParams(value: Map<string, string>): void {
   if (!(value instanceof Map)) {
     throw new ValueError("params must be a dictionary of string key-value pairs");
   }
@@ -63,20 +63,20 @@ export class MarkerValue {
     comment: string = "",
     chapter: string = "",
     url: string = "",
-    frame_target: string = "",
-    cue_point_name: string = "",
+    frameTarget: string = "",
+    cuePointName: string = "",
     params: Map<string, string> | null = null,
   ) {
-    for (const arg of [comment, chapter, url, frame_target, cue_point_name]) {
-      validate_string(arg);
+    for (const arg of [comment, chapter, url, frameTarget, cuePointName]) {
+      validateString(arg);
     }
-    if (params != null) _validate_params(params);
+    if (params != null) _validateParams(params);
     this._nmhd = new NmhdChunk();
     this._comment_utf8 = new Utf8Chunk({ value: comment });
     this._chapter_utf8 = new Utf8Chunk({ value: chapter });
     this._url_utf8 = new Utf8Chunk({ value: url });
-    this._frame_target_utf8 = new Utf8Chunk({ value: frame_target });
-    this._cue_point_name_utf8 = new Utf8Chunk({ value: cue_point_name });
+    this._frame_target_utf8 = new Utf8Chunk({ value: frameTarget });
+    this._cue_point_name_utf8 = new Utf8Chunk({ value: cuePointName });
     this._keyframe = null;
     this._nmrd = null;
     this._frame_time = 0;
@@ -126,7 +126,7 @@ export class MarkerValue {
     obj._keyframe = _keyframe;
     obj._nmrd = _nmrd;
     obj._frame_time = frame_time;
-    obj._param_utf8s = py_or(_param_utf8s, []);
+    obj._param_utf8s = pyOr(_param_utf8s, []);
     return obj;
   }
 
@@ -142,7 +142,7 @@ export class MarkerValue {
   }
 
   set params(value: Map<string, string>) {
-    _validate_params(value);
+    _validateParams(value);
     const old = this._param_utf8s;
     const new_: Utf8Chunk[] = [];
     for (const [i, [key, val]] of [...value].entries()) {
@@ -162,7 +162,7 @@ export class MarkerValue {
       const chunks = this._nmrd.chunks;
       for (const chunk of removed) {
         try {
-          chunks.splice(index_by_identity(chunks, chunk), 1);
+          chunks.splice(indexByIdentity(chunks, chunk), 1);
         } catch (e) {
           if (!(e instanceof ValueError)) throw e;
         }
@@ -172,7 +172,7 @@ export class MarkerValue {
         const anchor = kept.length > 0 ? kept[kept.length - 1] :this._cue_point_name_utf8;
         let pos: number;
         try {
-          pos = index_by_identity(chunks, anchor);
+          pos = indexByIdentity(chunks, anchor);
         } catch (e) {
           if (!(e instanceof ValueError)) throw e;
           pos = chunks.length - 1;
@@ -193,7 +193,7 @@ export class MarkerValue {
   }
 
   set frameTime(value: number) {
-    validate_int(value);
+    validateInt(value);
     if (this._keyframe != null) {
       this._keyframe.frameTime = value;
     } else {
@@ -212,7 +212,7 @@ export class MarkerValue {
   }
 
   set frameDuration(value: number) {
-    validate_u4(value);
+    validateU4(value);
     this.duration = value / this._frame_rate();
   }
 
@@ -236,7 +236,7 @@ export class MarkerValue {
 }
 
 /** The marker's duration, in seconds. Read / Write. */
-descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "duration_seconds", { validate: validate_marker_duration }));
+descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "duration_seconds", { validate: validateMarkerDuration }));
 
 /**
  * The label color. Colors are represented by their number (0 for None, or 1

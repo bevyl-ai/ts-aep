@@ -94,7 +94,7 @@ export function _numbers(text: string): number[] {
  *   arguments or a non-finite one).
  * @throws UnsupportedSVGError For an unknown transform function.
  */
-export function parse_transform(value: string): Affine {
+export function parseTransform(value: string): Affine {
   let result = IDENTITY;
   if (!value) {
     return result;
@@ -113,7 +113,7 @@ export function parse_transform(value: string): Affine {
       // 2026 imports a `matrix(1 0 0 1)` group untransformed.
       return IDENTITY;
     }
-    result = result.multiply(_single_transform(name, nums));
+    result = result.multiply(_singleTransform(name, nums));
   }
   return result;
 }
@@ -123,7 +123,7 @@ export function parse_transform(value: string): Affine {
  * by `parse_transform`.
  */
 // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
-export function _single_transform(name: string, n: number[]): Affine {
+export function _singleTransform(name: string, n: number[]): Affine {
   if (name === "matrix") {
     return new Affine(n[0], n[1], n[2], n[3], n[4], n[5]);
   }

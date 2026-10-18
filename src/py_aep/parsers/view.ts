@@ -1,4 +1,4 @@
-import { filter_by_type, find_by_type, find_by_type_or_null, group_chunks } from "../binary/utils.ts";
+import { filterByType, findByType, findByTypeOrNull, groupChunks } from "../binary/utils.ts";
 import { AVItem } from "../models/items/av_item.ts";
 import { View } from "../models/viewer/view.ts";
 import { ViewOptions } from "../models/viewer/view_options.ts";
@@ -17,19 +17,19 @@ import type { Item } from "../models/items/item.ts";
  * present (open panel). Views (from `fips` chunks) are assigned to the
  * viewer, and the viewer is linked back to AVItems for OutputModule ROI.
  *
- * @param folder_chunks - Chunks from a `LIST:Fold` or `LIST:Sfdr` body.
+ * @param folderChunks - Chunks from a `LIST:Fold` or `LIST:Sfdr` body.
  * @param items - Ordered list of items in this folder, used to resolve each viewer block to its
  *   item.
  * @returns A list of parsed {@link Viewer | Viewer} objects.
  */
-export function parse_viewers(folder_chunks: Chunk[], items: Item[]): Viewer[] {
-  const blocks = group_chunks(folder_chunks, "fvdv", "fifl");
+export function parseViewers(folderChunks: Chunk[], items: Item[]): Viewer[] {
+  const blocks = groupChunks(folderChunks, "fvdv", "fifl");
   const viewers: Viewer[] = [];
   for (const [i, block] of blocks.entries()) {
     const item = i < items.length ? items[i] : null;
-    const viewer = _build_viewer(block);
+    const viewer = _buildViewer(block);
     if (viewer != null) {
-      viewer._views = _parse_views(block, item, viewer);
+      viewer._views = _parseViews(block, item, viewer);
       if (item instanceof AVItem) item._viewer = viewer;
       viewers.push(viewer);
     }
@@ -49,18 +49,18 @@ export function parse_viewers(folder_chunks: Chunk[], items: Item[]): Viewer[] {
  * @param viewer - The parent viewer that owns these views.
  * @returns A list of {@link View | View} objects.
  */
-export function _parse_views(block: Chunk[], item: Item | null, viewer: Viewer): View[] {
-  const fips_chunks = filter_by_type(block, "fips");
-  const av_item = item instanceof AVItem ? item : null;
+export function _parseViews(block: Chunk[], item: Item | null, viewer: Viewer): View[] {
+  const fipsChunks = filterByType(block, "fips");
+  const avItem = item instanceof AVItem ? item : null;
   // Each locked view owns 4 consecutive fips (3D viewport slots).
   // Create one View per group of 4, using the first slot.
   const views: View[] = [];
-  for (let i = 0; i < fips_chunks.length; i += 4) {
-    const fips = fips_chunks[i];
+  for (let i = 0; i < fipsChunks.length; i += 4) {
+    const fips = fipsChunks[i];
     views.push(
       new View({
         _viewer: viewer,
-        options: new ViewOptions({ _fips: fips, _item: av_item }),
+        options: new ViewOptions({ _fips: fips, _item: avItem }),
       }),
     );
   }
@@ -77,12 +77,12 @@ export function _parse_views(block: Chunk[], item: Item | null, viewer: Viewer):
  * @returns A {@link Viewer | Viewer} instance, or `null` if the block
  *   does not contain a recognised viewer type.
  */
-export function _build_viewer(block: Chunk[]): Viewer | null {
-  const fitt = find_by_type_or_null(block, "fitt");
+export function _buildViewer(block: Chunk[]): Viewer | null {
+  const fitt = findByTypeOrNull(block, "fitt");
   if (fitt === null) return null;
 
-  const foac = find_by_type(block, "foac");
-  const fiac = find_by_type(block, "fiac");
+  const foac = findByType(block, "foac");
+  const fiac = findByType(block, "fiac");
 
   return new Viewer({
     _fitt: fitt,

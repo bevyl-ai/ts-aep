@@ -10,7 +10,7 @@
 import { expect, test } from "bun:test";
 
 import { b, decode } from "../../src/pyrt/index.ts";
-import { _decode_pard_name } from "../../src/py_aep/parsers/effect.ts";
+import { _decodePardName } from "../../src/py_aep/parsers/effect.ts";
 
 const _APOSTROPHE = String.fromCodePoint(0x2019);
 
@@ -22,8 +22,8 @@ test.each<[Uint8Array, number, string]>([
   [b("Blur"), 1252, "Blur"],
   // A code page there is no codec for: kept as read.
   [b("a\x92"), 99999, "a" + String.fromCharCode(0xdc92)],
-])("test_decodes_in_the_project_code_page[%#]", (raw, code_page, expected) => {
+])("test_decodes_in_the_project_code_page[%#]", (raw, codePage, expected) => {
   // As the pard chunk reads it: UTF-8, other bytes kept as surrogates.
   const name = decode(raw, "utf-8", "surrogateescape");
-  expect(_decode_pard_name(name, code_page)).toBe(expected);
+  expect(_decodePardName(name, codePage)).toBe(expected);
 });

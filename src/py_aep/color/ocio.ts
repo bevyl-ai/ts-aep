@@ -20,17 +20,17 @@ import { parse, YAMLError, isMap, isSeq, isScalar } from "yaml";
 import type { Document, Node, DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from "yaml";
 import {
   Path,
-  lru_cache,
+  lruCache,
   AttributeError,
   OSError,
   TypeError_,
   ValueError,
   getitem,
-  py_bool,
-  py_iter,
+  pyBool,
+  pyIter,
   str,
-  type_name,
-  py_or,
+  typeName,
+  pyOr,
   tkey,
   setdefault,
   sorted,
@@ -41,10 +41,10 @@ import {
   b,
   concat,
   bytes_,
-  re_search,
+  reSearch,
 } from "../../pyrt/index.ts";
-import { _compact, build_ocio_envelope } from "./envelope.ts";
-import { ae_guid } from "./murmur3.ts";
+import { _compact, buildOcioEnvelope } from "./envelope.ts";
+import { aeGuid } from "./murmur3.ts";
 
 /**
  * `class _OcioLoader(yaml.SafeLoader)`: a YAML loader that ignores OCIO's custom tags.
@@ -91,18 +91,18 @@ export interface OcioNode extends Map<OcioValue, OcioValue> {}
  * Python's `_load_config_cached` returns `None` for such a config; `yaml`
  * (npm) builds it. `seen` guards the cycles anchors can build.
  */
-export function _has_unhashable_key(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
+export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
   if (!(Array.isArray(value) || value instanceof Map || value instanceof Set) || seen.has(value)) return false;
   seen.add(value);
   const unhashable = (x: OcioValue): boolean => Array.isArray(x) || x instanceof Map || x instanceof Set;
   if (value instanceof Map) {
     for (const [k, v] of value) {
-      if (unhashable(k) || _has_unhashable_key(v, seen)) return true;
+      if (unhashable(k) || _hasUnhashableKey(v, seen)) return true;
     }
     return false;
   }
   for (const item of value) {
-    if ((value instanceof Set && unhashable(item)) || _has_unhashable_key(item, seen)) return true;
+    if ((value instanceof Set && unhashable(item)) || _hasUnhashableKey(item, seen)) return true;
   }
   return false;
 }
@@ -120,7 +120,7 @@ export function _has_unhashable_key(value: OcioValue, seen: Set<OcioValue> = new
  * (warning silenced by `logLevel: "error"`), which yields the same untagged
  * values as this constructor. `loader` is the yaml `Document`.
  */
-export function _ignore_tag(loader: Document, suffix: string, node: Node): OcioValue | null {
+export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioValue | null {
   if (isMap(node) || isSeq(node) || isScalar(node)) {
     return node.toJS(loader, { mapAsMap: true });
   }
@@ -138,33 +138,33 @@ export function _ignore_tag(loader: Document, suffix: string, node: Node): OcioV
  * (path string, `mtime_ns` bigint, `size`) to get real cache hits. The
  * `maxsize=8` eviction is unobservable: results are pure functions of the key.
  */
-export const _load_config_cached = lru_cache(
-  (config_path: string, _mtime_ns: bigint, _size: number): OcioNode | null => {
+export const _loadConfigCached = lruCache(
+  (configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
     let doc: OcioValue;
     try {
-      doc = parse(decode(new Path(config_path).read_bytes(), "utf-8"), {
+      doc = parse(decode(new Path(configPath).read_bytes(), "utf-8"), {
         ..._OcioLoader.options,
       });
     } catch (e) {
       // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
-      if (!(e instanceof OSError || e instanceof YAMLError || (e instanceof Error && "code" in e && py_bool(e.code)))) {
+      if (!(e instanceof OSError || e instanceof YAMLError || (e instanceof Error && "code" in e && pyBool(e.code)))) {
         throw e;
       }
       return null;
     }
-    if (_has_unhashable_key(doc)) return null;
+    if (_hasUnhashableKey(doc)) return null;
     return doc instanceof Map ? doc : null;
   },
 );
 
 /** `(mtime_ns, size)` cache key for `config_path`, or `null` if unreadable. */
-export function _config_stamp(config_path: Path): [bigint, number] | null {
+export function _configStamp(configPath: Path): [bigint, number] | null {
   let st: host.HostBigStats;
   try {
-    st = host.fs.statSync(config_path.path, { bigint: true });
+    st = host.fs.statSync(configPath.path, { bigint: true });
   } catch (e) {
     // `except OSError`: node fs errors carry a `code`.
-    if (!(e instanceof Error && "code" in e && py_bool(e.code))) throw e;
+    if (!(e instanceof Error && "code" in e && pyBool(e.code))) throw e;
     return null;
   }
   return [st.mtimeNs, Number(st.size)];
@@ -182,10 +182,10 @@ export function _config_stamp(config_path: Path): [bigint, number] | null {
  * The returned Map is shared with every other caller - treat it as
  * read-only.
  */
-export function _load_config(config_path: Path): OcioNode | null {
-  const stamp = _config_stamp(config_path);
+export function _loadConfig(configPath: Path): OcioNode | null {
+  const stamp = _configStamp(configPath);
   if (stamp == null) return null;
-  return _load_config_cached(config_path.path, stamp[0], stamp[1]);
+  return _loadConfigCached(configPath.path, stamp[0], stamp[1]);
 }
 
 /**
@@ -195,14 +195,14 @@ export function _load_config(config_path: Path): OcioNode | null {
  * listed in `inactive_colorspaces`. Returns `[]` if the file cannot be read or
  * parsed.
  *
- * @param config_path - Path to a `.ocio` configuration file.
+ * @param configPath - Path to a `.ocio` configuration file.
  */
-export function list_config_color_spaces(config_path: Path): string[] {
-  const doc = _load_config(config_path);
+export function listConfigColorSpaces(configPath: Path): string[] {
+  const doc = _loadConfig(configPath);
   if (doc == null) return [];
   const names: string[] = [];
   for (const key of ["colorspaces", "display_colorspaces"] as const) {
-    for (const entry of py_iter(py_or(doc.get(key), []))) {
+    for (const entry of pyIter(pyOr(doc.get(key), []))) {
       if (entry instanceof Map) {
         const name = entry.get("name") ?? null;
         if (typeof name === "string") names.push(name);
@@ -211,9 +211,9 @@ export function list_config_color_spaces(config_path: Path): string[] {
   }
   // `set(...)`: a list, dict or set member is unhashable.
   const inactive = new Set<OcioValue>();
-  for (const n of py_iter(py_or(doc.get("inactive_colorspaces"), []))) {
+  for (const n of pyIter(pyOr(doc.get("inactive_colorspaces"), []))) {
     if (Array.isArray(n) || n instanceof Map || n instanceof Set) {
-      throw new TypeError_(`unhashable type: '${type_name(n)}'`);
+      throw new TypeError_(`unhashable type: '${typeName(n)}'`);
     }
     inactive.add(n);
   }
@@ -239,15 +239,15 @@ export function list_config_color_spaces(config_path: Path): string[] {
  * @param config - The `ocio_configuration_file` value.
  * @returns The resolved `.ocio` path, or `null` if it cannot be located.
  */
-export function resolve_ocio_config(config: string): Path | null {
+export function resolveOcioConfig(config: string): Path | null {
   if (!config) return null;
   const direct = new Path(config);
   if (direct.is_file()) return direct;
-  for (const root of _builtin_config_roots()) {
-    const config_dir = root.div(config);
-    if (config_dir.is_dir()) {
-      const ocio_files = sorted(config_dir.glob("*.ocio"), (p: Path) => p.path);
-      if (ocio_files.length > 0) return ocio_files[0];
+  for (const root of _builtinConfigRoots()) {
+    const configDir = root.div(config);
+    if (configDir.is_dir()) {
+      const ocioFiles = sorted(configDir.glob("*.ocio"), (p: Path) => p.path);
+      if (ocioFiles.length > 0) return ocioFiles[0];
     }
   }
   return null;
@@ -267,8 +267,8 @@ export function resolve_ocio_config(config: string): Path | null {
  *
  * @throws ValueError If the configuration cannot be located.
  */
-export function require_ocio_config(config: string | null, purpose: string): Path {
-  const resolved = config != null ? resolve_ocio_config(config) : null;
+export function requireOcioConfig(config: string | null, purpose: string): Path {
+  const resolved = config != null ? resolveOcioConfig(config) : null;
   if (resolved == null) {
     throw new ValueError(
       `Cannot resolve the project's OCIO configuration (${repr(config)}), ` +
@@ -285,7 +285,7 @@ export function require_ocio_config(config: string | null, purpose: string): Pat
  * into an OCIO project resolves the config once per file (every layer of
  * a layered PSD), so an install added while it runs goes unseen.
  */
-export const _builtin_config_roots = lru_cache((): Path[] => {
+export const _builtinConfigRoots = lruCache((): Path[] => {
   // `platform.system() == "Windows"` -> `host.platform === "win32"`; macOS otherwise.
   const bases =
     host.platform === "win32"
@@ -297,17 +297,17 @@ export const _builtin_config_roots = lru_cache((): Path[] => {
     // Newest install first, by release year: a plain name sort would put
     // "Adobe After Effects CC 2019" before "Adobe After Effects 2026"
     // ("C" > "2"). Year-less installs (CS6, bare CC) sort last.
-    for (const ae_dir of sorted(base.glob("Adobe After Effects *"), _install_year, true)) {
-      roots.push(ae_dir.div("Support Files", "OpenColorIO-Configs"));
+    for (const aeDir of sorted(base.glob("Adobe After Effects *"), _installYear, true)) {
+      roots.push(aeDir.div("Support Files", "OpenColorIO-Configs"));
     }
   }
   return roots;
 });
 
 /** Sort key for an install directory: its release year, then its name. */
-export function _install_year(install_dir: Path): [number, string] {
-  const match = re_search(String.raw`(\d{4})`, install_dir.name);
-  return [match ? int(match[1]) : 0, install_dir.name];
+export function _installYear(installDir: Path): [number, string] {
+  const match = reSearch(String.raw`(\d{4})`, installDir.name);
+  return [match ? int(match[1]) : 0, installDir.name];
 }
 
 /** `baseProfileType` for an OCIO color space (see `color/envelope.py`). */
@@ -320,18 +320,18 @@ export const _OCIO_PROFILE_TYPE = 3;
  * name + the `colorProfileData` JSON; the outer `ColorSpace` Guid wraps that
  * with the `baseProfileType` and a flag byte.
  *
- * @param profile_name - The `colorProfileName` (e.g. `"ACES/ACEScg yo"`).
- * @param profile_data - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
+ * @param profileName - The `colorProfileName` (e.g. `"ACES/ACEScg yo"`).
+ * @param profileData - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
  */
-export function _color_space_guid(profile_name: string, profile_data: string): Uint8Array {
-  const inner = ae_guid(
-    concat(b("DVAColorProfile"), encode(profile_name, "utf-8"), encode(profile_data, "utf-8")),
+export function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
+  const inner = aeGuid(
+    concat(b("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")),
   );
-  return ae_guid(
+  return aeGuid(
     concat(
       b("DVAColorSpace"),
       inner,
-      bytes_.int_to_bytes(_OCIO_PROFILE_TYPE, 4, "little"),
+      bytes_.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
       b("\x00"),
     ),
   );
@@ -364,40 +364,40 @@ export class _ConfigIndex {
  * and write needs the index, and rebuilding it walks the whole config. The
  * returned index is shared with every other caller - treat it as read-only.
  */
-export function _config_index(config_path: Path): _ConfigIndex {
-  const stamp = _config_stamp(config_path);
+export function _configIndex(configPath: Path): _ConfigIndex {
+  const stamp = _configStamp(configPath);
   if (stamp == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
-  return _config_index_cached(config_path.path, stamp[0], stamp[1]);
+  return _configIndexCached(configPath.path, stamp[0], stamp[1]);
 }
 
 /** Memoized body of `_config_index` (`@lru_cache(maxsize=8)`; see `_load_config_cached` TODO). */
-export const _config_index_cached = lru_cache(
-  (config_path: string, mtime_ns: bigint, size: number): _ConfigIndex => {
-    const doc = _load_config_cached(config_path, mtime_ns, size);
+export const _configIndexCached = lruCache(
+  (configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
+    const doc = _loadConfigCached(configPath, mtimeNs, size);
     if (doc == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
     const families = new Map<string, OcioValue>();
     const aliases = new Map<string, OcioValue>();
     for (const key of ["colorspaces", "display_colorspaces"] as const) {
-      for (const cs of py_iter(py_or(doc.get(key), []))) {
+      for (const cs of pyIter(pyOr(doc.get(key), []))) {
         if (!(cs instanceof Map)) continue;
         const name = cs.get("name");
         if (typeof name === "string") {
-          const family = py_or(cs.get("family"), "");
+          const family = pyOr(cs.get("family"), "");
           families.set(name, family);
-          for (const alias of py_iter(py_or(cs.get("aliases"), []))) {
+          for (const alias of pyIter(pyOr(cs.get("aliases"), []))) {
             if (typeof alias === "string") aliases.set(alias, family);
           }
         }
       }
     }
     const roles = new Map<OcioValue, string>();
-    for (const [r, t] of _items(py_or(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
+    for (const [r, t] of _items(pyOr(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
       if (typeof t === "string") roles.set(r, t);
     }
     const displays = new Map<OcioValue, string[]>();
-    for (const [display, items] of _items(py_or(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
+    for (const [display, items] of _items(pyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
       const views: string[] = [];
-      for (const item of py_iter(py_or(items, []))) {
+      for (const item of pyIter(pyOr(items, []))) {
         // `!<Views> [name, ..]` (shared views) or `!<View> {name: ..}`; the
         // OCIO loader strips the tags to a list or a dict respectively.
         if (Array.isArray(item)) {
@@ -416,7 +416,7 @@ export const _config_index_cached = lru_cache(
 /** Python `x.items()` on a config value: `AttributeError` when it is not a dict. */
 export function _items(x: OcioValue): [OcioValue, OcioValue][] {
   if (x instanceof Map) return [...x];
-  throw new AttributeError(`'${type_name(x)}' object has no attribute 'items'`);
+  throw new AttributeError(`'${typeName(x)}' object has no attribute 'items'`);
 }
 
 /**
@@ -434,47 +434,47 @@ export function _items(x: OcioValue): [OcioValue, OcioValue][] {
  *
  * @throws ValueError If `color_space` is not found in the config.
  */
-export function _output_envelope(index: _ConfigIndex, color_space: OcioValue): [string, string] {
+export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
   // Only a string can be a color-space or alias name; any YAML key a role.
-  if (typeof color_space === "string" && index.families.has(color_space)) {
-    const family = getitem(index.families, color_space);
-    const name = py_bool(family) ? `${str(family)}/${color_space}` : color_space;
-    return [name, _compact({ colorSpace1: color_space })];
+  if (typeof colorSpace === "string" && index.families.has(colorSpace)) {
+    const family = getitem(index.families, colorSpace);
+    const name = pyBool(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+    return [name, _compact({ colorSpace1: colorSpace })];
   }
-  if (index.roles.has(color_space)) {
-    const target = getitem(index.roles, color_space);
+  if (index.roles.has(colorSpace)) {
+    const target = getitem(index.roles, colorSpace);
     return [target, _compact({ colorSpace1: target, ocioColorSpaceType: 2 })];
   }
-  if (typeof color_space === "string" && index.aliases.has(color_space)) {
-    return [color_space, _compact({ colorSpace1: color_space, ocioColorSpaceType: 2 })];
+  if (typeof colorSpace === "string" && index.aliases.has(colorSpace)) {
+    return [colorSpace, _compact({ colorSpace1: colorSpace, ocioColorSpaceType: 2 })];
   }
-  if (typeof color_space !== "string") {
+  if (typeof colorSpace !== "string") {
     // `"/" in color_space`: unreachable (a non-string name is a role key), but it is what Python would raise.
-    throw new TypeError_(`argument of type '${type_name(color_space)}' is not iterable`);
+    throw new TypeError_(`argument of type '${typeName(colorSpace)}' is not iterable`);
   }
-  if (color_space.includes("/")) {
-    const i = color_space.lastIndexOf("/"); // `rsplit("/", 1)`
-    const display = color_space.slice(0, i);
-    const view = color_space.slice(i + 1);
+  if (colorSpace.includes("/")) {
+    const i = colorSpace.lastIndexOf("/"); // `rsplit("/", 1)`
+    const display = colorSpace.slice(0, i);
+    const view = colorSpace.slice(i + 1);
     // The view must really be one of that display's: a config can name a
     // display after a family (ACES 1.2's only display is `ACES`, which is
     // also the family of `ACES - ACEScg`), and matching on the display
     // alone would claim the `family/name` form the getters return.
     if ((index.displays.get(display) ?? []).includes(view)) {
       return [
-        color_space,
+        colorSpace,
         _compact({ colorSpace1: display, colorSpace2: view, ocioColorSpaceType: 1 }),
       ];
     }
   }
-  throw new ValueError(`${repr(color_space)} is not a color space in the OCIO config`);
+  throw new ValueError(`${repr(colorSpace)} is not a color space in the OCIO config`);
 }
 
 /**
  * Yield every assignable OCIO output color-space name (color spaces,
  * aliases, roles, and `display/view` pairs).
  */
-export function* _iter_output_color_spaces(index: _ConfigIndex): Generator<OcioValue> {
+export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValue> {
   yield* index.families.keys();
   yield* index.aliases.keys();
   yield* index.roles.keys();
@@ -489,15 +489,15 @@ export function* _iter_output_color_spaces(index: _ConfigIndex): Generator<OcioV
  * Keys are `tkey(guid)` strings: a `Uint8Array` key would compare by identity
  * in a `Map`, the same way a Python `bytes` key compares by value.
  */
-export const _guid_table_cached = lru_cache(
-  (config_path: string, mtime_ns: bigint, size: number): Map<string, OcioValue> => {
-    const index = _config_index_cached(config_path, mtime_ns, size);
+export const _guidTableCached = lruCache(
+  (configPath: string, mtimeNs: bigint, size: number): Map<string, OcioValue> => {
+    const index = _configIndexCached(configPath, mtimeNs, size);
     const table = new Map<string, OcioValue>();
-    for (const color_space of _iter_output_color_spaces(index)) {
-      const [name, data] = _output_envelope(index, color_space);
+    for (const colorSpace of _iterOutputColorSpaces(index)) {
+      const [name, data] = _outputEnvelope(index, colorSpace);
       // Two names can resolve to the same envelope (e.g. two roles sharing
       // a target); keep the first, like the linear scan this table replaces.
-      setdefault(table, tkey(_color_space_guid(name, data)), color_space);
+      setdefault(table, tkey(_colorSpaceGuid(name, data)), colorSpace);
     }
     return table;
   },
@@ -511,16 +511,16 @@ export const _guid_table_cached = lru_cache(
  * computations for AE's bundled ACES 1.2) is memoized per config like
  * `_load_config`, so repeated reads are dict lookups.
  *
- * @param config_path - The resolved `.ocio` config path.
- * @param profile_id - The 16-byte output profile id from the output module.
+ * @param configPath - The resolved `.ocio` config path.
+ * @param profileId - The 16-byte output profile id from the output module.
  */
-export function ocio_color_space_for_profile_id(
-  config_path: Path,
-  profile_id: Uint8Array,
+export function ocioColorSpaceForProfileId(
+  configPath: Path,
+  profileId: Uint8Array,
 ): string | null {
-  const stamp = _config_stamp(config_path);
+  const stamp = _configStamp(configPath);
   if (stamp == null) return null;
-  const name = _guid_table_cached(config_path.path, stamp[0], stamp[1]).get(tkey(profile_id)) ?? null;
+  const name = _guidTableCached(configPath.path, stamp[0], stamp[1]).get(tkey(profileId)) ?? null;
   // NOTE(port): Python hands back a non-string role key (`roles: {3: x}`) as
   // is; the `str`-typed `OutputModule.outputColorSpace` gets its `str()`.
   if (typeof name === "string") return name;
@@ -544,28 +544,28 @@ export function ocio_color_space_for_profile_id(
  * `colorProfileName` and therefore what `Project.workingSpace` reads back -
  * without this, assigning a project its own working space would raise.
  *
- * @param config_path - The resolved `.ocio` config path.
- * @param color_space - The color-space, role, alias, `display/view`, or
+ * @param configPath - The resolved `.ocio` config path.
+ * @param colorSpace - The color-space, role, alias, `display/view`, or
  *   `family/color-space` name.
  *
  * @throws ValueError If `color_space` is not found in the config.
  */
-export function ocio_color_profile_envelope(config_path: Path, color_space: string): string {
-  const index = _config_index(config_path);
+export function ocioColorProfileEnvelope(configPath: Path, colorSpace: string): string {
+  const index = _configIndex(configPath);
   let name: string;
   let data: string;
   try {
-    [name, data] = _output_envelope(index, color_space);
+    [name, data] = _outputEnvelope(index, colorSpace);
   } catch (e) {
     if (!(e instanceof ValueError)) throw e;
     // `family, _, bare = color_space.rpartition("/")`: no "/" gives ("", "", whole).
-    const i = color_space.lastIndexOf("/");
-    const family = i >= 0 ? color_space.slice(0, i) : "";
-    const bare = i >= 0 ? color_space.slice(i + 1) : color_space;
+    const i = colorSpace.lastIndexOf("/");
+    const family = i >= 0 ? colorSpace.slice(0, i) : "";
+    const bare = i >= 0 ? colorSpace.slice(i + 1) : colorSpace;
     if (!family || (index.families.get(bare) ?? null) !== family) throw e;
-    [name, data] = _output_envelope(index, bare);
+    [name, data] = _outputEnvelope(index, bare);
   }
-  return build_ocio_envelope(name, data);
+  return buildOcioEnvelope(name, data);
 }
 
 /**
@@ -576,14 +576,14 @@ export function ocio_color_profile_envelope(config_path: Path, color_space: stri
  * envelope AE would hash (see `_output_envelope` for the four selection
  * kinds), then computes its `Guid`.
  *
- * @param config_path - The resolved `.ocio` config path.
- * @param color_space - The output color-space name to assign.
+ * @param configPath - The resolved `.ocio` config path.
+ * @param colorSpace - The output color-space name to assign.
  *
  * @throws ValueError If `color_space` is not found in the config.
  */
-export function ocio_output_profile_id(config_path: Path, color_space: string): Uint8Array {
-  const [name, data] = _output_envelope(_config_index(config_path), color_space);
-  return _color_space_guid(name, data);
+export function ocioOutputProfileId(configPath: Path, colorSpace: string): Uint8Array {
+  const [name, data] = _outputEnvelope(_configIndex(configPath), colorSpace);
+  return _colorSpaceGuid(name, data);
 }
 
 /**
@@ -591,20 +591,20 @@ export function ocio_output_profile_id(config_path: Path, color_space: string): 
  * always, a `regex` rule by search, a `pattern` + `extension` rule by glob
  * (the extension case-insensitively).
  */
-export function _rule_matches(rule: OcioNode, file_path: string): boolean {
+export function _ruleMatches(rule: OcioNode, filePath: string): boolean {
   if ((rule.get("name") ?? null) === "Default") return true;
   const regex = rule.get("regex") ?? null;
   if (typeof regex === "string") {
-    return re_search(regex, file_path) != null;
+    return reSearch(regex, filePath) != null;
   }
   const pattern = rule.get("pattern") ?? null;
   const extension = rule.get("extension");
   if (typeof pattern === "string" && typeof extension === "string") {
     // `stem, dot, ext = file_path.rpartition(".")`: no "." gives ("", "", whole).
-    const i = file_path.lastIndexOf(".");
-    const stem = i >= 0 ? file_path.slice(0, i) : "";
+    const i = filePath.lastIndexOf(".");
+    const stem = i >= 0 ? filePath.slice(0, i) : "";
     const dot = i >= 0 ? "." : "";
-    const ext = i >= 0 ? file_path.slice(i + 1) : file_path;
+    const ext = i >= 0 ? filePath.slice(i + 1) : filePath;
     return (
       !!dot &&
       fnmatchcase(stem, pattern) &&
@@ -622,21 +622,21 @@ export function _rule_matches(rule: OcioNode, file_path: string): boolean {
  * matched against the whole name (CPython 3.12 bracket handling).
  */
 export function fnmatchcase(name: string, pat: string): boolean {
-  let re_src = "";
+  let reSrc = "";
   let i = 0;
   while (i < pat.length) {
     const c = pat[i++];
     if (c === "*") {
-      re_src += ".*";
+      reSrc += ".*";
     } else if (c === "?") {
-      re_src += ".";
+      reSrc += ".";
     } else if (c === "[") {
       let j = i;
       if (j < pat.length && pat[j] === "!") j++;
       if (j < pat.length && pat[j] === "]") j++;
       while (j < pat.length && pat[j] !== "]") j++;
       if (j >= pat.length) {
-        re_src += "\\[";
+        reSrc += "\\[";
       } else {
         let stuff: string;
         if (!pat.slice(i, j).includes("-")) {
@@ -664,19 +664,19 @@ export function fnmatchcase(name: string, pat: string): boolean {
           stuff = chunks.map((x) => x.replace(/\\/g, "\\\\").replace(/-/g, "\\-")).join("-");
         }
         i = j + 1;
-        if (!stuff) re_src += "(?!)";
-        else if (stuff === "!") re_src += ".";
+        if (!stuff) reSrc += "(?!)";
+        else if (stuff === "!") reSrc += ".";
         else {
           if (stuff[0] === "!") stuff = "^" + stuff.slice(1);
           else if (stuff[0] === "^" || stuff[0] === "[") stuff = "\\" + stuff;
-          re_src += `[${stuff}]`;
+          reSrc += `[${stuff}]`;
         }
       }
     } else {
-      re_src += c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      reSrc += c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
   }
-  return new RegExp(`^(?:${re_src})$`, "su").test(name);
+  return new RegExp(`^(?:${reSrc})$`, "su").test(name);
 }
 
 /**
@@ -690,29 +690,29 @@ export function fnmatchcase(name: string, pat: string): boolean {
  * `default` role, recorded as a role pick. A `ColorSpaceNamePathSearch`
  * rule is not modelled (it is skipped).
  *
- * @param config_path - The resolved `.ocio` config path.
- * @param file_path - The imported file's path.
+ * @param configPath - The resolved `.ocio` config path.
+ * @param filePath - The imported file's path.
  *
  * @returns The envelope, or `null` when no rule matches and the config has no
  *   `default` role.
  */
-export function ocio_input_envelope(config_path: Path, file_path: string): string | null {
-  const doc = _load_config(config_path);
+export function ocioInputEnvelope(configPath: Path, filePath: string): string | null {
+  const doc = _loadConfig(configPath);
   if (doc == null) return null;
-  const index = _config_index(config_path);
+  const index = _configIndex(configPath);
   const rules = doc.get("file_rules") ?? null;
-  if (py_bool(rules)) {
-    for (const rule of py_iter(rules)) {
-      if (!(rule instanceof Map) || !_rule_matches(rule, file_path)) continue;
-      const color_space = rule.get("colorspace") ?? null;
-      if (typeof color_space !== "string") return null;
-      const target = index.roles.get(color_space) ?? color_space;
-      const family = py_or(py_or(index.families.get(target) ?? null, index.aliases.get(target) ?? null), "");
-      const name = py_bool(family) ? `${str(family)}/${color_space}` : color_space;
-      return build_ocio_envelope(name, _compact({ colorSpace1: color_space }));
+  if (pyBool(rules)) {
+    for (const rule of pyIter(rules)) {
+      if (!(rule instanceof Map) || !_ruleMatches(rule, filePath)) continue;
+      const colorSpace = rule.get("colorspace") ?? null;
+      if (typeof colorSpace !== "string") return null;
+      const target = index.roles.get(colorSpace) ?? colorSpace;
+      const family = pyOr(pyOr(index.families.get(target) ?? null, index.aliases.get(target) ?? null), "");
+      const name = pyBool(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+      return buildOcioEnvelope(name, _compact({ colorSpace1: colorSpace }));
     }
     return null;
   }
   if (!index.roles.has("default")) return null;
-  return build_ocio_envelope(..._output_envelope(index, "default"));
+  return buildOcioEnvelope(..._outputEnvelope(index, "default"));
 }

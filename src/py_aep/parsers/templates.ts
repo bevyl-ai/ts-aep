@@ -18,18 +18,18 @@ import {
   decode,
   floordiv,
   int,
-  py_assert,
+  pyAssert,
   rstrip,
   split,
   strip,
-  pattern_match,
-  py_re,
-  re_escape,
-  re_match,
+  patternMatch,
+  pyRe,
+  reEscape,
+  reMatch,
 } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../binary/render_chunks.ts";
-import { collapse_continuation_lines, parse_hex_value } from "./prefs.ts";
+import { collapseContinuationLines, parseHexValue } from "./prefs.ts";
 
 // Render settings prefs format:
 // RenderSettingsItem is 2182 bytes in prefs (2246 in AEP, difference = 64).
@@ -65,32 +65,32 @@ export class OutputModuleTemplate {
   constructor(
     settings: OutputModuleSettingsItem,
     name: string,
-    format_info: Uint8Array | null = null,
-    format_options: Uint8Array | null = null,
-    format_options_xml: string | null = null,
+    formatInfo: Uint8Array | null = null,
+    formatOptions: Uint8Array | null = null,
+    formatOptionsXml: string | null = null,
   ) {
     this.settings = settings;
     this.name = name;
-    this.format_info = format_info;
-    this.format_options = format_options;
-    this.format_options_xml = format_options_xml;
+    this.format_info = formatInfo;
+    this.format_options = formatOptions;
+    this.format_options_xml = formatOptionsXml;
   }
 }
 
 /** Extract a hex/ASCII value from a preference section. */
-export function _extract_section_value(lines: string[], key: string): Uint8Array | null {
+export function _extractSectionValue(lines: string[], key: string): Uint8Array | null {
   for (const [i, line] of lines.entries()) {
     if (!line.includes(key)) continue;
-    const m = re_match(String.raw`\s*"` + re_escape(key) + String.raw`"\s*=\s*(.+)`, line);
+    const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*(.+)`, line);
     if (!m) continue;
-    const value_parts: string[] = [strip(m[1])];
+    const valueParts: string[] = [strip(m[1])];
     for (let j = i + 1; j < lines.length; j++) {
-      const next_line = strip(lines[j]);
-      if (!next_line || next_line.startsWith("#") || next_line.startsWith("[")) break;
-      if (next_line.startsWith('"')) break;
-      value_parts.push(next_line);
+      const nextLine = strip(lines[j]);
+      if (!nextLine || nextLine.startsWith("#") || nextLine.startsWith("[")) break;
+      if (nextLine.startsWith('"')) break;
+      valueParts.push(nextLine);
     }
-    return parse_hex_value(value_parts.join(""));
+    return parseHexValue(valueParts.join(""));
   }
   return null;
 }
@@ -98,23 +98,23 @@ export function _extract_section_value(lines: string[], key: string): Uint8Array
 /**
  * Parse render settings templates from AE preferences.
  *
- * @param prefs_dir - Path to the AE version preferences directory (e.g.
+ * @param prefsDir - Path to the AE version preferences directory (e.g.
  *   `~/AppData/Roaming/Adobe/After Effects/25.6`).
  * @returns A tuple of (templates, default_index). Templates is a list of parsed
  *   {@link RenderSettingsItem} objects. Default_index is the index of the default render settings
  *   template in the returned list, or None if not found (or the default entry was filtered out).
  */
-export function parse_render_templates(prefs_dir: Path): [RenderSettingsItem[], number | null] {
-  const render_files = prefs_dir.glob("*-indep-render.txt");
-  if (!render_files?.length) {
+export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], number | null] {
+  const renderFiles = prefsDir.glob("*-indep-render.txt");
+  if (!renderFiles?.length) {
     return [[], null];
   }
 
   // Python read_text(errors="replace"); pathlib shim has no errors= parameter.
-  const text = decode(render_files[0].read_bytes(), "utf-8", "replace");
-  const lines = collapse_continuation_lines(text);
+  const text = decode(renderFiles[0].read_bytes(), "utf-8", "replace");
+  const lines = collapseContinuationLines(text);
 
-  const raw = _extract_section_value(lines, "Render Settings List");
+  const raw = _extractSectionValue(lines, "Render Settings List");
   if (raw == null) {
     return [[], null];
   }
@@ -123,36 +123,36 @@ export function parse_render_templates(prefs_dir: Path): [RenderSettingsItem[], 
   // Pad to match the aep format.
   const remaining = raw.length - _HEADER_SIZE;
 
-  const raw_default_index = _extract_int_value(lines, "Default RS Index");
+  const rawDefaultIndex = _extractIntValue(lines, "Default RS Index");
 
   const count = floordiv(remaining, _RS_PREFS_ITEM_SIZE);
   const templates: RenderSettingsItem[] = [];
-  let default_index: number | null = null;
+  let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {
     const offset = _HEADER_SIZE + idx * _RS_PREFS_ITEM_SIZE;
-    const item_data = bytes_.slice(raw, offset, offset + _RS_PREFS_ITEM_SIZE);
+    const itemData = bytes_.slice(raw, offset, offset + _RS_PREFS_ITEM_SIZE);
     const item = RenderSettingsItem.frombytes(
-      concat(item_data, bytes_.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
+      concat(itemData, bytes_.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
     );
-    py_assert(item instanceof RenderSettingsItem);
+    pyAssert(item instanceof RenderSettingsItem);
     if (!item.clean_template_name) {
       continue;
     }
     // The prefs default index counts raw entries; remap it to the
     // filtered list. A filtered-out default yields None (no default).
-    if (idx === raw_default_index) {
-      default_index = templates.length;
+    if (idx === rawDefaultIndex) {
+      defaultIndex = templates.length;
     }
     templates.push(item);
   }
 
-  return [templates, default_index];
+  return [templates, defaultIndex];
 }
 
 /** Extract an integer value from a preference line like `"Key" = 42`. */
-export function _extract_int_value(lines: string[], key: string): number | null {
+export function _extractIntValue(lines: string[], key: string): number | null {
   for (const line of lines) {
-    const m = re_match(String.raw`\s*"` + re_escape(key) + String.raw`"\s*=\s*"?(\d+)"?`, line);
+    const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*"?(\d+)"?`, line);
     if (m) {
       return int(m[1]);
     }
@@ -163,74 +163,74 @@ export function _extract_int_value(lines: string[], key: string): number | null 
 /**
  * Parse output module templates from AE preferences.
  *
- * @param prefs_dir - Path to the AE version preferences directory (e.g.
+ * @param prefsDir - Path to the AE version preferences directory (e.g.
  *   `~/AppData/Roaming/Adobe/After Effects/25.6`).
  * @returns A tuple of (templates, default_index). Templates is a list of
  *   {@link OutputModuleTemplate} objects. Default_index is the index of the default output module
  *   template in the returned list, or None if not found (or the default entry was filtered out).
  *   Templates whose name starts with `_HIDDEN` are excluded.
  */
-export function parse_output_templates(prefs_dir: Path): [OutputModuleTemplate[], number | null] {
-  const output_files = prefs_dir.glob("*-indep-output.txt");
-  if (!output_files?.length) {
+export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], number | null] {
+  const outputFiles = prefsDir.glob("*-indep-output.txt");
+  if (!outputFiles?.length) {
     return [[], null];
   }
 
   // Python read_text(errors="replace"); pathlib shim has no errors= parameter.
-  const text = decode(output_files[0].read_bytes(), "utf-8", "replace");
-  const lines = collapse_continuation_lines(text);
+  const text = decode(outputFiles[0].read_bytes(), "utf-8", "replace");
+  const lines = collapseContinuationLines(text);
 
-  const raw = _extract_section_value(lines, "Output Module List v28");
+  const raw = _extractSectionValue(lines, "Output Module List v28");
   if (raw == null) {
     return [[], null];
   }
 
-  const names = _extract_template_names(lines);
+  const names = _extractTemplateNames(lines);
 
   // Rouu header bytes ("Output File Info") and the format-specific Ropt
   // bytes ("Output File Options"), both keyed by the same template index.
-  const format_infos = _parse_id_hex_section(
+  const formatInfos = _parseIdHexSection(
     text,
     "Output File Info Preference Section",
     "Output File Info",
   );
-  const format_opts = _parse_id_hex_section(
+  const formatOpts = _parseIdHexSection(
     text,
     "Output File Options Preference Section",
     "Output File Options",
   );
 
-  const raw_default_index = _extract_int_value(lines, "Default OM Index");
+  const rawDefaultIndex = _extractIntValue(lines, "Default OM Index");
 
   const remaining = raw.length - _HEADER_SIZE;
   const count = floordiv(remaining, _OM_PREFS_ITEM_SIZE);
   const templates: OutputModuleTemplate[] = [];
-  let default_index: number | null = null;
+  let defaultIndex: number | null = null;
   for (let idx = 0; idx < count; idx++) {
     const offset = _HEADER_SIZE + idx * _OM_PREFS_ITEM_SIZE;
-    const item_data = bytes_.slice(raw, offset, offset + _OM_PREFS_ITEM_SIZE);
-    const item = OutputModuleSettingsItem.frombytes(item_data);
-    py_assert(item instanceof OutputModuleSettingsItem);
+    const itemData = bytes_.slice(raw, offset, offset + _OM_PREFS_ITEM_SIZE);
+    const item = OutputModuleSettingsItem.frombytes(itemData);
+    pyAssert(item instanceof OutputModuleSettingsItem);
     const name = names.get(idx) ?? "";
     if (!name || name.startsWith("_HIDDEN")) {
       continue;
     }
     // The prefs default index counts raw entries; remap it to the
     // filtered list. A filtered-out default yields None (no default).
-    if (idx === raw_default_index) {
-      default_index = templates.length;
+    if (idx === rawDefaultIndex) {
+      defaultIndex = templates.length;
     }
     templates.push(
       new OutputModuleTemplate(
         item,
         name,
-        format_infos.get(idx) ?? null,
-        format_opts.get(idx) ?? null,
+        formatInfos.get(idx) ?? null,
+        formatOpts.get(idx) ?? null,
       ),
     );
   }
 
-  return [templates, default_index];
+  return [templates, defaultIndex];
 }
 
 /**
@@ -245,21 +245,21 @@ export function parse_output_templates(prefs_dir: Path): [OutputModuleTemplate[]
  * @param text - Full preferences file text.
  * @param section - Substring identifying the section header line (e.g. "Output File Info Preference
  *   Section").
- * @param id_prefix - The per-entry key prefix (e.g. "Output File Info").
+ * @param idPrefix - The per-entry key prefix (e.g. "Output File Info").
  * @returns A dict mapping template index to decoded raw bytes.
  */
-export function _parse_id_hex_section(text: string, section: string, id_prefix: string): Map<number, Uint8Array> {
+export function _parseIdHexSection(text: string, section: string, idPrefix: string): Map<number, Uint8Array> {
   const entries = new Map<number, Uint8Array>();
-  let current_idx: number | null = null;
-  let current_value = "";
-  let in_section = false;
-  const entry_re = py_re(String.raw`\s*"` + re_escape(id_prefix) + String.raw` ID #\s*(\d+)"\s*=\s*(.+)`);
+  let currentIdx: number | null = null;
+  let currentValue = "";
+  let inSection = false;
+  const entryRe = pyRe(String.raw`\s*"` + reEscape(idPrefix) + String.raw` ID #\s*(\d+)"\s*=\s*(.+)`);
 
   // Python `nonlocal current_idx`: the closure writes the enclosing `let`.
   function _flush(): void {
-    if (current_idx != null) {
-      entries.set(current_idx, parse_hex_value(current_value));
-      current_idx = null;
+    if (currentIdx != null) {
+      entries.set(currentIdx, parseHexValue(currentValue));
+      currentIdx = null;
     }
   }
 
@@ -271,23 +271,23 @@ export function _parse_id_hex_section(text: string, section: string, id_prefix: 
     if (stripped.startsWith("[")) {
       // section boundary
       _flush();
-      in_section = stripped.includes(section);
+      inSection = stripped.includes(section);
       continue;
     }
-    if (!in_section) {
+    if (!inSection) {
       continue;
     }
-    const m = pattern_match(entry_re, stripped);
+    const m = patternMatch(entryRe, stripped);
     if (m) {
       _flush();
-      current_idx = int(m[1]);
+      currentIdx = int(m[1]);
       const value = strip(m[2]);
-      current_value = value.endsWith("\\") ? value.slice(0, -1) : value;
+      currentValue = value.endsWith("\\") ? value.slice(0, -1) : value;
       continue;
     }
-    if (current_idx != null && stripped.startsWith("\t\t")) {
+    if (currentIdx != null && stripped.startsWith("\t\t")) {
       const value = strip(stripped);
-      current_value += value.endsWith("\\") ? value.slice(0, -1) : value;
+      currentValue += value.endsWith("\\") ? value.slice(0, -1) : value;
     }
   }
 
@@ -296,10 +296,10 @@ export function _parse_id_hex_section(text: string, section: string, id_prefix: 
 }
 
 /** Extract template names from Output Module Spec Strings section. */
-export function _extract_template_names(lines: string[]): Map<number, string> {
+export function _extractTemplateNames(lines: string[]): Map<number, string> {
   const names = new Map<number, string>();
   for (const line of lines) {
-    const m = re_match(String.raw`\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"`, line);
+    const m = reMatch(String.raw`\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"`, line);
     if (m) {
       const idx = int(m[1]);
       names.set(idx, m[2]);

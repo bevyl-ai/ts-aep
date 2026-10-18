@@ -4,11 +4,11 @@
 
 import { expect, test } from "bun:test";
 
-import { py_eq } from "../../src/pyrt/index.ts";
-import { PENDING_ASCENDCOUNT, alas_platform, build_als2_list } from "../../src/py_aep/binary/utils.ts";
+import { pyEq } from "../../src/pyrt/index.ts";
+import { PENDING_ASCENDCOUNT, alasPlatform, buildAls2List } from "../../src/py_aep/binary/utils.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
-import { as_instance } from "../helpers.ts";
-import { platform_path, relative_path_counts } from "../../src/py_aep/resolvers/platform_paths.ts";
+import { asInstance } from "../helpers.ts";
+import { platformPath, relativePathCounts } from "../../src/py_aep/resolvers/platform_paths.ts";
 
 const SHOT = "\\\\serge\\as_serie\\fabrication\\episodes\\e203\\final_compo\\s030";
 
@@ -25,7 +25,7 @@ test.each([
   ["/Users/x/a.png", "/Users/x/a.png"],
   ["relative/a.png", "relative/a.png"],
 ])("test_platform_path_macos[%#]", (path: string, macos: string) => {
-  expect(platform_path(path, { windows: false })).toBe(macos);
+  expect(platformPath(path, { windows: false })).toBe(macos);
 });
 
 test.each([
@@ -36,7 +36,7 @@ test.each([
   ["\\\\server\\share\\a.png", "\\\\server\\share\\a.png"],
   ["relative/a.png", "relative/a.png"],
 ])("test_platform_path_windows[%#]", (path: string, windows: string) => {
-  expect(platform_path(path, { windows: true })).toBe(windows);
+  expect(platformPath(path, { windows: true })).toBe(windows);
 });
 
 test.each<[string, string, boolean, [number, number]]>([
@@ -86,9 +86,9 @@ test.each<[string, string, boolean, [number, number]]>([
   ["/Users/a/proj/p.aep", "/Users/a/media/b.png", false, [2, 2]],
 ])(
   "test_counts[%#]",
-  (project: string, target: string, is_folder: boolean, expected: [number, number]) => {
+  (project: string, target: string, isFolder: boolean, expected: [number, number]) => {
     expect(
-      py_eq(relative_path_counts(project, target, { target_is_folder: is_folder }), expected),
+      pyEq(relativePathCounts(project, target, { target_is_folder: isFolder }), expected),
     ).toBe(true);
   },
 );
@@ -103,7 +103,7 @@ test.each([
   ["C:\\p\\a.aep", "relative\\b.png"],
 ])("test_no_relative_path[%#]", (project: string, target: string) => {
   expect(
-    py_eq(relative_path_counts(project, target, { target_is_folder: false }), [0, 0]),
+    pyEq(relativePathCounts(project, target, { target_is_folder: false }), [0, 0]),
   ).toBe(true);
 });
 
@@ -115,13 +115,13 @@ test("test_counts_survive_the_platform_mapping", () => {
     [SHOT + "\\work\\p.aep", SHOT + "\\preview\\x.mov"],
   ];
   for (const [project, target] of pairs) {
-    const host = relative_path_counts(project, target, { target_is_folder: false });
-    const mapped = relative_path_counts(
-      platform_path(project, { windows: false }),
-      platform_path(target, { windows: false }),
+    const host = relativePathCounts(project, target, { target_is_folder: false });
+    const mapped = relativePathCounts(
+      platformPath(project, { windows: false }),
+      platformPath(target, { windows: false }),
       { target_is_folder: false },
     );
-    expect(py_eq(mapped, host)).toBe(true);
+    expect(pyEq(mapped, host)).toBe(true);
   }
 });
 
@@ -130,9 +130,9 @@ test.each([
   ["C:\\a\\b.png", 1],
   ["\\\\server\\share\\b.png", 1],
 ])("test_alas_platform_follows_path_style[%#]", (path: string, code: number) => {
-  expect(alas_platform(path)).toBe(code);
-  const alas = build_als2_list(path, { target_is_folder: false }).chunks[0];
-  const data = JSON.parse(as_instance(alas, Utf8Chunk).value);
+  expect(alasPlatform(path)).toBe(code);
+  const alas = buildAls2List(path, { target_is_folder: false }).chunks[0];
+  const data = JSON.parse(asInstance(alas, Utf8Chunk).value);
   expect(data["platform"]).toBe(code);
   expect(data["ascendcount_base"]).toBe(PENDING_ASCENDCOUNT);
   expect(data["ascendcount_target"]).toBe(PENDING_ASCENDCOUNT);

@@ -4,14 +4,14 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { getitem, int, int_enum, type EnumValue } from "../../pyrt/index.ts";
+import { getitem, int, intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Auto kerning type option for text characters.
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentautokerntype
  */
-export const AutoKernType = int_enum(
+export const AutoKernType = intEnum(
   "AutoKernType",
   {
     NO_AUTO_KERN: 11412,
@@ -39,7 +39,7 @@ export type AutoKernType = EnumValue<typeof AutoKernType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentbaselinedirection
  */
-export const BaselineDirection = int_enum(
+export const BaselineDirection = intEnum(
   "BaselineDirection",
   {
     BASELINE_WITH_STREAM: 11612,
@@ -68,7 +68,7 @@ export type BaselineDirection = EnumValue<typeof BaselineDirection>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentboxautofitpolicy
  */
-export const BoxAutoFitPolicy = int_enum(
+export const BoxAutoFitPolicy = intEnum(
   "BoxAutoFitPolicy",
   {
     NONE: 13412,
@@ -94,7 +94,7 @@ export type BoxAutoFitPolicy = EnumValue<typeof BoxAutoFitPolicy>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentboxfirstbaselinealignment
  */
-export const BoxFirstBaselineAlignment = int_enum(
+export const BoxFirstBaselineAlignment = intEnum(
   "BoxFirstBaselineAlignment",
   {
     MINIMUM_VALUE_ROMAN: 13012,
@@ -125,7 +125,7 @@ export type BoxFirstBaselineAlignment = EnumValue<typeof BoxFirstBaselineAlignme
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentboxverticalalignment
  */
-export const BoxVerticalAlignment = int_enum(
+export const BoxVerticalAlignment = intEnum(
   "BoxVerticalAlignment",
   {
     TOP: 12812,
@@ -151,7 +151,7 @@ export type BoxVerticalAlignment = EnumValue<typeof BoxVerticalAlignment>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentcomposerengine
  */
-export const ComposerEngine = int_enum("ComposerEngine", {
+export const ComposerEngine = intEnum("ComposerEngine", {
   LATIN_CJK_ENGINE: 10413,
   UNIVERSAL_TYPE_ENGINE: 10414,
 });
@@ -162,7 +162,7 @@ export type ComposerEngine = EnumValue<typeof ComposerEngine>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentdigitset
  */
-export const DigitSet = int_enum(
+export const DigitSet = intEnum(
   "DigitSet",
   {
     DEFAULT_DIGITS: 12012,
@@ -189,7 +189,7 @@ export type DigitSet = EnumValue<typeof DigitSet>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentfontbaselineoption
  */
-export const FontBaselineOption = int_enum(
+export const FontBaselineOption = intEnum(
   "FontBaselineOption",
   {
     FONT_NORMAL_BASELINE: 11212,
@@ -214,7 +214,7 @@ export type FontBaselineOption = EnumValue<typeof FontBaselineOption>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentfontcapsoption
  */
-export const FontCapsOption = int_enum(
+export const FontCapsOption = intEnum(
   "FontCapsOption",
   {
     FONT_NORMAL_CAPS: 11012,
@@ -240,7 +240,7 @@ export type FontCapsOption = EnumValue<typeof FontCapsOption>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentleadingtype
  */
-export const LeadingType = int_enum(
+export const LeadingType = intEnum(
   "LeadingType",
   {
     ROMAN_LEADING_TYPE: 10812,
@@ -264,7 +264,7 @@ export type LeadingType = EnumValue<typeof LeadingType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentlinejointype
  */
-export const LineJoinType = int_enum(
+export const LineJoinType = intEnum(
   "LineJoinType",
   {
     LINE_JOIN_MITER: 11812,
@@ -289,7 +289,7 @@ export type LineJoinType = EnumValue<typeof LineJoinType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentlineorientation
  */
-export const LineOrientation = int_enum(
+export const LineOrientation = intEnum(
   "LineOrientation",
   {
     HORIZONTAL: 13212,
@@ -328,7 +328,7 @@ export const _LINE_ORIENTATION_TO_BINARY: Map<LineOrientation, number> = new Map
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentdirection
  */
-export const ParagraphDirection = int_enum(
+export const ParagraphDirection = intEnum(
   "ParagraphDirection",
   {
     DIRECTION_LEFT_TO_RIGHT: 10212,
@@ -352,7 +352,7 @@ export type ParagraphDirection = EnumValue<typeof ParagraphDirection>;
  *
  * @see https://ae-scripting.docsforadobe.dev/text/textdocument/#textdocumentjustification
  */
-export const ParagraphJustification = int_enum(
+export const ParagraphJustification = intEnum(
   "ParagraphJustification",
   {
     MULTIPLE_JUSTIFICATIONS: 7412,
@@ -393,7 +393,7 @@ export type ParagraphJustification = EnumValue<typeof ParagraphJustification>;
  * **Note:** This functionality was added in After Effects 26.0. The enum
  * values match the property's stored value directly.
  */
-export const VariableFontSpacing = int_enum("VariableFontSpacing", {
+export const VariableFontSpacing = intEnum("VariableFontSpacing", {
   ADAPTIVE: 1,
   PER_CHARACTER: 2,
   DEFAULT: 3,

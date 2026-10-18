@@ -3,8 +3,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { _timebase_units } from "../../src/py_aep/models/properties/keyframe.ts";
-import { BytesIO, struct, py_eq } from "../../src/pyrt/index.ts";
+import { _timebaseUnits } from "../../src/py_aep/models/properties/keyframe.ts";
+import { BytesIO, struct, pyEq } from "../../src/pyrt/index.ts";
 
 // AE 2026's frame grid: the rate to the thousandth as p/q, q * 2**k
 // units a frame (12.3456 fps -> 24692 units a second, 2000 a frame).
@@ -14,7 +14,7 @@ test.each([
   [29.97, 23976.0],
   [24.0, 24576.0],
 ])("test_timebase_units_follow_frame_grid[%#]", (fps: number, units: number) => {
-  expect(_timebase_units(fps)).toBe(units);
+  expect(_timebaseUnits(fps)).toBe(units);
 });
 
 describe("TestIntegerFlaggedBounds", () => {
@@ -27,9 +27,9 @@ describe("TestIntegerFlaggedBounds", () => {
   test("test_eight_byte_body_is_a_double", () => {
     const raw = struct.pack(">d", 100.0);
     const chunk = TdumChunk.read(new BytesIO(raw), 8, { chunk_type: "tduM", is_integer: true });
-    expect(py_eq(chunk.values, [100.0])).toBe(true);
+    expect(pyEq(chunk.values, [100.0])).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
-    expect(py_eq(out.getvalue(), raw)).toBe(true);
+    expect(pyEq(out.getvalue(), raw)).toBe(true);
   });
 });

@@ -4,20 +4,20 @@ import { INSPECT } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
-  float_repr,
+  floatRepr,
   format,
   getattr,
-  object_getattr,
-  object_setattr,
-  py_eq,
+  objectGetattr,
+  objectSetattr,
+  pyEq,
   repr,
   sorted,
   str,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
-import { to_f4 } from "../../binary/bin_utils.ts";
+import { toF4 } from "../../binary/bin_utils.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { validate_normalized_float, validate_positive_int, validate_rgb_color, type Validator } from "../validators.ts";
+import { validateNormalizedFloat, validatePositiveInt, validateRgbColor, type Validator } from "../validators.ts";
 
 /**
  * Descriptor triggering gradient XML serialization on write.
@@ -28,10 +28,10 @@ import { validate_normalized_float, validate_positive_int, validate_rgb_color, t
 export class _GradientField<T> {
   declare ["constructor"]: ClassAttributes<typeof _GradientField>;
   static _VALIDATORS: Map<string, Validator> = new Map<string, Validator>([
-    ["offset", validate_normalized_float],
-    ["midpoint", validate_normalized_float],
-    ["color", validate_rgb_color],
-    ["alpha", validate_normalized_float],
+    ["offset", validateNormalizedFloat],
+    ["midpoint", validateNormalizedFloat],
+    ["color", validateRgbColor],
+    ["alpha", validateNormalizedFloat],
   ]);
 
   declare _slot: string;
@@ -44,14 +44,14 @@ export class _GradientField<T> {
 
   __get__(obj: object | null, objtype?: Function | null): T | this {
     if (obj == null) return this;
-    const value: T = object_getattr(obj, this._slot);
+    const value: T = objectGetattr(obj, this._slot);
     return value;
   }
 
   __set__(obj: object, value: T): void {
     const validator = this.constructor._VALIDATORS.get(this._name);
     if (validator != null) validator(value, null);
-    object_setattr(obj, this._slot, value);
+    objectSetattr(obj, this._slot, value);
     const gradient = getattr(obj, "_gradient", obj);
     const serialize = getattr(gradient, "_serialize", null);
     if (serialize != null) serialize.call(gradient);
@@ -79,9 +79,9 @@ export class GradientColorStop {
   declare _color: readonly [number, number, number];
 
   constructor(offset: number, midpoint: number, color: readonly [number, number, number]) {
-    validate_normalized_float(offset);
-    validate_normalized_float(midpoint);
-    validate_rgb_color(color);
+    validateNormalizedFloat(offset);
+    validateNormalizedFloat(midpoint);
+    validateRgbColor(color);
     this._gradient = null;
     this._offset = offset;
     this._midpoint = midpoint;
@@ -92,8 +92,8 @@ export class GradientColorStop {
     const [r, g, b] = this.color;
     // NOTE(port): fields are annotated float (parsed/default values are floats), so float_repr matches f"{x}"; only out-of-annotation int args would differ.
     return (
-      `GradientColorStop(offset=${float_repr(this.offset)}, midpoint=${float_repr(this.midpoint)}, ` +
-      `color=(${float_repr(r)}, ${float_repr(g)}, ${float_repr(b)}))`
+      `GradientColorStop(offset=${floatRepr(this.offset)}, midpoint=${floatRepr(this.midpoint)}, ` +
+      `color=(${floatRepr(r)}, ${floatRepr(g)}, ${floatRepr(b)}))`
     );
   }
 
@@ -103,7 +103,7 @@ export class GradientColorStop {
     return (
       this.offset === other.offset &&
       this.midpoint === other.midpoint &&
-      py_eq(this.color, other.color)
+      pyEq(this.color, other.color)
     );
   }
 }
@@ -131,9 +131,9 @@ export class GradientAlphaStop {
   declare _alpha: number;
 
   constructor(offset: number, midpoint: number, alpha: number) {
-    validate_normalized_float(offset);
-    validate_normalized_float(midpoint);
-    validate_normalized_float(alpha);
+    validateNormalizedFloat(offset);
+    validateNormalizedFloat(midpoint);
+    validateNormalizedFloat(alpha);
     this._gradient = null;
     this._offset = offset;
     this._midpoint = midpoint;
@@ -143,8 +143,8 @@ export class GradientAlphaStop {
   [INSPECT](): string {
     // NOTE(port): see GradientColorStop.__repr__.
     return (
-      `GradientAlphaStop(offset=${float_repr(this.offset)}, midpoint=${float_repr(this.midpoint)}, ` +
-      `alpha=${float_repr(this.alpha)})`
+      `GradientAlphaStop(offset=${floatRepr(this.offset)}, midpoint=${floatRepr(this.midpoint)}, ` +
+      `alpha=${floatRepr(this.alpha)})`
     );
   }
 
@@ -181,29 +181,29 @@ export class Gradient {
   declare _alpha_stops: readonly GradientAlphaStop[];
 
   constructor(
-    color_stops: GradientColorStop[] | null = null,
-    alpha_stops: GradientAlphaStop[] | null = null,
+    colorStops: GradientColorStop[] | null = null,
+    alphaStops: GradientAlphaStop[] | null = null,
     version: string = "1.0",
   ) {
-    if (color_stops == null) {
-      color_stops = [
+    if (colorStops == null) {
+      colorStops = [
         new GradientColorStop(0.0, 0.5, [1.0, 1.0, 1.0]),
         new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0]),
       ];
     }
-    if (alpha_stops == null) {
-      alpha_stops = [new GradientAlphaStop(0.0, 0.5, 1.0), new GradientAlphaStop(1.0, 0.5, 1.0)];
+    if (alphaStops == null) {
+      alphaStops = [new GradientAlphaStop(0.0, 0.5, 1.0), new GradientAlphaStop(1.0, 0.5, 1.0)];
     }
-    if (!color_stops.every((stop) => stop instanceof GradientColorStop)) {
+    if (!colorStops.every((stop) => stop instanceof GradientColorStop)) {
       throw new ValueError("All color stops must be GradientColorStop instances");
     }
-    if (!alpha_stops.every((stop) => stop instanceof GradientAlphaStop)) {
+    if (!alphaStops.every((stop) => stop instanceof GradientAlphaStop)) {
       throw new ValueError("All alpha stops must be GradientAlphaStop instances");
     }
     this._version = version;
     this._utf8 = new Utf8Chunk();
-    this._color_stops = [...color_stops];
-    this._alpha_stops = [...alpha_stops];
+    this._color_stops = [...colorStops];
+    this._alpha_stops = [...alphaStops];
     for (const stop of this._color_stops) {
       stop._gradient = this;
     }
@@ -288,7 +288,7 @@ export class Gradient {
 
   /** Remove a color stop by index. */
   removeColorStop(stop: number): void {
-    validate_positive_int(stop);
+    validatePositiveInt(stop);
     if (stop >= this._color_stops.length) {
       throw new ValueError(
         `color stop index ${stop} out of range ` +
@@ -310,7 +310,7 @@ export class Gradient {
 
   /** Remove an alpha stop by index. */
   removeAlphaStop(stop: number): void {
-    validate_positive_int(stop);
+    validatePositiveInt(stop);
     if (stop >= this._alpha_stops.length) {
       throw new ValueError(
         `alpha stop index ${stop} out of range ` +
@@ -340,13 +340,13 @@ export class Gradient {
       "<prop.list>",
     ];
     lines.push(
-      ..._stops_lines(
+      ..._stopsLines(
         "Alpha",
         this._alpha_stops.map((s) => [s.offset, s.midpoint, s.alpha]),
       ),
     );
     lines.push(
-      ..._stops_lines(
+      ..._stopsLines(
         "Color",
         this._color_stops.map((s) => [s.offset, s.midpoint, ...s.color, 1.0]),
       ),
@@ -375,8 +375,8 @@ export class Gradient {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof Gradient)) return false;
     return (
-      py_eq(this.colorStops, other.colorStops) &&
-      py_eq(this.alphaStops, other.alphaStops) &&
+      pyEq(this.colorStops, other.colorStops) &&
+      pyEq(this.alphaStops, other.alphaStops) &&
       this.version === other.version
     );
   }
@@ -390,12 +390,12 @@ descriptor(Gradient, "version", new _GradientField<string>());
  * AE stores stop values as float32 and prints them at up to 8
  * significant digits (e.g. `0.83` becomes `0.82999998`).
  */
-export function _format_float(value: number): string {
-  return format(to_f4(value), ".8g");
+export function _formatFloat(value: number): string {
+  return format(toF4(value), ".8g");
 }
 
 /** XML lines for one `Alpha Stops` / `Color Stops` prop.pair. */
-export function _stops_lines(kind: string, stops: number[][]): string[] {
+export function _stopsLines(kind: string, stops: number[][]): string[] {
   const lines: string[] = [
     "<prop.pair>",
     `<key>${kind} Stops</key>`,
@@ -419,7 +419,7 @@ export function _stops_lines(kind: string, stops: number[][]): string[] {
       "<array>",
       "<array.type><float/></array.type>",
     );
-    lines.push(...values.map((v) => `<float>${_format_float(v)}</float>`));
+    lines.push(...values.map((v) => `<float>${_formatFloat(v)}</float>`));
     lines.push("</array>", "</prop.pair>", "</prop.list>", "</prop.pair>");
   }
   lines.push(

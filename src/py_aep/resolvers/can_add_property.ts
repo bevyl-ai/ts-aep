@@ -5,7 +5,7 @@
  * can be added to a specific indexed group.
  */
 
-import { py_enum, type EnumValue } from "../../pyrt/index.ts";
+import { pyEnum, type EnumValue } from "../../pyrt/index.ts";
 import { EXPRESSION_CONTROLS } from "../data/effect_controls.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { TEXT_ANIMATOR_POOL } from "../data/text_animator_pool.ts";
@@ -18,7 +18,7 @@ import { PropertyType } from "../enums/index.ts";
  * the model can dispatch on it without re-deriving the category from the
  * resolved match name.
  */
-export const AddableKind = py_enum("AddableKind", {
+export const AddableKind = pyEnum("AddableKind", {
   MASK: "mask",
   EXPRESSION_CONTROL: "expression_control",
   DROPDOWN: "dropdown",
@@ -133,23 +133,23 @@ export const _NAMED_ADDABLE_GROUPS: ReadonlySet<string> = new Set(["ADBE Text An
  * the expression controls py_aep can create are accepted (AE itself
  * validates against the installed effects).
  *
- * @param match_name - The match name of the parent group.
- * @param property_type - The property type of the parent group.
+ * @param matchName - The match name of the parent group.
+ * @param propertyType - The property type of the parent group.
  * @param name - A match name or display name to resolve.
  */
-export function resolve_addable(
-  match_name: string,
-  property_type: PropertyType,
+export function resolveAddable(
+  matchName: string,
+  propertyType: PropertyType,
   name: string,
 ): [string, AddableKind] | null {
   if (!name) return null;
   // Most addable groups are indexed; the text-animator Properties group
   // is the NAMED-group exception (see _NAMED_ADDABLE_GROUPS).
-  if (property_type !== PropertyType.INDEXED_GROUP && !_NAMED_ADDABLE_GROUPS.has(match_name)) {
+  if (propertyType !== PropertyType.INDEXED_GROUP && !_NAMED_ADDABLE_GROUPS.has(matchName)) {
     return null;
   }
 
-  if (match_name === "ADBE Effect Parade") {
+  if (matchName === "ADBE Effect Parade") {
     const resolved = _ADDABLE_EFFECT_MATCH_NAMES.has(name)
       ? name
       : _EFFECT_DISPLAY_TO_MATCH.get(name) ?? null;
@@ -159,7 +159,7 @@ export function resolve_addable(
     return [resolved, kind];
   }
 
-  const entry = _ADDABLE_BY_GROUP.get(match_name) ?? null;
+  const entry = _ADDABLE_BY_GROUP.get(matchName) ?? null;
   if (entry == null) return null;
   const [allowed, kind] = entry;
   if (allowed.has(name)) return [name, kind];
@@ -181,14 +181,14 @@ export function resolve_addable(
  * Parade, only the expression controls py_aep can create are
  * accepted.
  *
- * @param match_name - The match name of the parent group.
- * @param property_type - The property type of the parent group.
+ * @param matchName - The match name of the parent group.
+ * @param propertyType - The property type of the parent group.
  * @param name - A match name or display name to check.
  */
-export function can_add_property(
-  match_name: string,
-  property_type: PropertyType,
+export function canAddProperty(
+  matchName: string,
+  propertyType: PropertyType,
   name: string,
 ): boolean {
-  return resolve_addable(match_name, property_type, name) !== null;
+  return resolveAddable(matchName, propertyType, name) !== null;
 }

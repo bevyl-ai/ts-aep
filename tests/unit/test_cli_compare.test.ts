@@ -8,12 +8,12 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { format_hex_dump } from "../../src/py_aep/cli/_chunk_helpers.ts";
-import { ByteDifference, ChunkDifference, MultiFileDifference, _compare_chunk_dicts, _gradient_xml_only_float_diff, _multi_only_float_diff, _only_float_diff, compare_binary_data, filter_differences, to_json_output } from "../../src/py_aep/cli/compare.ts";
+import { formatHexDump } from "../../src/py_aep/cli/_chunk_helpers.ts";
+import { ByteDifference, ChunkDifference, MultiFileDifference, _compareChunkDicts, _gradientXmlOnlyFloatDiff, _multiOnlyFloatDiff, _onlyFloatDiff, compareBinaryData, filterDifferences, toJsonOutput } from "../../src/py_aep/cli/compare.ts";
 import { CdatChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { ShphChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
-import { Path, b, py_eq, range, split, strip } from "../../src/pyrt/index.ts";
+import { Path, b, pyEq, range, split, strip } from "../../src/pyrt/index.ts";
 
 // SAMPLES_DIR = Path(__file__).parent.parent.parent / "samples"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -67,7 +67,7 @@ describe("TestCompareBinaryData", () => {
   /** Test that identical byte sequences produce no differences. */
   test("test_identical_bytes_no_differences", () => {
     const data = b("\x00\x01\x02\x03");
-    const diffs = [...compare_binary_data(data, data, "test")];
+    const diffs = [...compareBinaryData(data, data, "test")];
     expect(diffs.length).toBe(0);
   });
 
@@ -75,7 +75,7 @@ describe("TestCompareBinaryData", () => {
   test("test_single_byte_difference", () => {
     const data1 = b("\x00\x01\x02\x03");
     const data2 = b("\x00\xff\x02\x03");
-    const diffs = [...compare_binary_data(data1, data2, "test")];
+    const diffs = [...compareBinaryData(data1, data2, "test")];
     expect(diffs.length).toBe(1);
     expect(diffs[0].offset).toBe(1);
     expect(diffs[0].byte1).toBe(0x01);
@@ -86,7 +86,7 @@ describe("TestCompareBinaryData", () => {
   test("test_different_lengths_reported", () => {
     const data1 = b("\x00\x01\x02");
     const data2 = b("\x00\x01\x02\x03\x04");
-    const diffs = [...compare_binary_data(data1, data2, "test")];
+    const diffs = [...compareBinaryData(data1, data2, "test")];
     expect(diffs.length).toBe(2); // Two extra bytes in data2
     expect(diffs[0].offset).toBe(3);
     expect(diffs[0].byte1).toBe(-1); // Missing in data1
@@ -101,11 +101,11 @@ describe("TestCompareChunkDicts", () => {
       ["a", b("\x00\x01")],
       ["b", b("\x02\x03")],
     ]);
-    const [diffs, only1, only2, suppressed] = _compare_chunk_dicts(data, data);
+    const [diffs, only1, only2, suppressed] = _compareChunkDicts(data, data);
     expect(diffs.length).toBe(0);
     expect(only1.length).toBe(0);
     expect(only2.length).toBe(0);
-    expect(py_eq(suppressed, [])).toBe(true);
+    expect(pyEq(suppressed, [])).toBe(true);
   });
 
   /** Paths in one dict but not the other are reported. */
@@ -118,7 +118,7 @@ describe("TestCompareChunkDicts", () => {
       ["a", b("\x00")],
       ["c", b("\x02")],
     ]);
-    const [_, only1, only2, __] = _compare_chunk_dicts(data1, data2);
+    const [_, only1, only2, __] = _compareChunkDicts(data1, data2);
     expect(only1).toContain("b");
     expect(only2).toContain("c");
   });
@@ -134,7 +134,7 @@ describe("TestFloatTolerance", () => {
   test("test_cdat_within_tolerance_suppressed", () => {
     const c1 = new CdatChunk({ values: [535.0, 228.0, 0.0] });
     const c2 = new CdatChunk({ values: [535.00001, 228.0, 0.0] });
-    expect(_only_float_diff(c1, c2)).toBe(true);
+    expect(_onlyFloatDiff(c1, c2)).toBe(true);
   });
 
   /**
@@ -144,13 +144,13 @@ describe("TestFloatTolerance", () => {
   test("test_gradient_xml_color_ulp_suppressed", () => {
     const c1 = new Utf8Chunk({ value: _GRAD_XML.replace("{a}", "0.44705886") });
     const c2 = new Utf8Chunk({ value: _GRAD_XML.replace("{a}", "0.44705883") });
-    expect(_only_float_diff(c1, c2)).toBe(true);
+    expect(_onlyFloatDiff(c1, c2)).toBe(true);
   });
 
   test("test_gradient_xml_real_color_change_reported", () => {
     const c1 = new Utf8Chunk({ value: _GRAD_XML.replace("{a}", "0.44705886") });
     const c2 = new Utf8Chunk({ value: _GRAD_XML.replace("{a}", "0.80000001") });
-    expect(_only_float_diff(c1, c2)).toBe(false);
+    expect(_onlyFloatDiff(c1, c2)).toBe(false);
   });
 
   /**
@@ -159,7 +159,7 @@ describe("TestFloatTolerance", () => {
    */
   test("test_gradient_xml_empty_float_tag_not_crash", () => {
     const xml = "<prop.map><array><float>0.5</float><float></float></array></prop.map>";
-    expect(_gradient_xml_only_float_diff(xml, xml)).toBe(false);
+    expect(_gradientXmlOnlyFloatDiff(xml, xml)).toBe(false);
   });
 
   /**
@@ -168,20 +168,20 @@ describe("TestFloatTolerance", () => {
    */
   test("test_non_gradient_utf8_not_tolerated", () => {
     expect(
-      _only_float_diff(new Utf8Chunk({ value: "Layer 1" }), new Utf8Chunk({ value: "Layer 2" })),
+      _onlyFloatDiff(new Utf8Chunk({ value: "Layer 1" }), new Utf8Chunk({ value: "Layer 2" })),
     ).toBe(false);
   });
 
   test("test_cdat_beyond_tolerance_reported", () => {
     const c1 = new CdatChunk({ values: [535.0, 228.0, 0.0] });
     const c2 = new CdatChunk({ values: [600.0, 228.0, 0.0] });
-    expect(_only_float_diff(c1, c2)).toBe(false);
+    expect(_onlyFloatDiff(c1, c2)).toBe(false);
   });
 
   test("test_shph_within_tolerance_suppressed", () => {
     const c1 = new ShphChunk({ top_left_x: -29.75, top_left_y: -32.5 });
     const c2 = new ShphChunk({ top_left_x: -29.7500012, top_left_y: -32.5 });
-    expect(_only_float_diff(c1, c2)).toBe(true);
+    expect(_onlyFloatDiff(c1, c2)).toBe(true);
   });
 
   /** Same floats but a different open/closed flag must NOT be suppressed. */
@@ -189,7 +189,7 @@ describe("TestFloatTolerance", () => {
     const c1 = new ShphChunk({ top_left_x: 1.0, bottom_right_x: 2.0 });
     const c2 = new ShphChunk({ top_left_x: 1.0, bottom_right_x: 2.0 });
     c2.open = true;
-    expect(_only_float_diff(c1, c2)).toBe(false);
+    expect(_onlyFloatDiff(c1, c2)).toBe(false);
   });
 
   test("test_dict_compare_suppresses_float_noise", () => {
@@ -199,20 +199,20 @@ describe("TestFloatTolerance", () => {
     const data2 = new Map([["x", c2.tobytes()]]);
     const typed1 = new Map([["x", c1]]);
     const typed2 = new Map([["x", c2]]);
-    const [diffs, _, __, suppressed] = _compare_chunk_dicts(data1, data2, typed1, typed2);
-    expect(py_eq(diffs, [])).toBe(true);
+    const [diffs, _, __, suppressed] = _compareChunkDicts(data1, data2, typed1, typed2);
+    expect(pyEq(diffs, [])).toBe(true);
     // the float-only diff is reported, not silent
-    expect(py_eq(suppressed, ["x"])).toBe(true);
+    expect(pyEq(suppressed, ["x"])).toBe(true);
     // --exact disables tolerance.
-    const [diffs_exact, ___, ____, suppressed_exact] = _compare_chunk_dicts(
+    const [diffsExact, ___, ____, suppressedExact] = _compareChunkDicts(
       data1,
       data2,
       typed1,
       typed2,
       true,
     );
-    expect(diffs_exact.length).toBe(1);
-    expect(py_eq(suppressed_exact, [])).toBe(true);
+    expect(diffsExact.length).toBe(1);
+    expect(pyEq(suppressedExact, [])).toBe(true);
   });
 
   /**
@@ -223,15 +223,15 @@ describe("TestFloatTolerance", () => {
     const ref = new CdatChunk({ values: [1.0, 2.0] });
     const close = new CdatChunk({ values: [1.00001, 2.0] });
     const same = new CdatChunk({ values: [1.0, 2.0] });
-    const all_typed = [new Map([["x", ref]]), new Map([["x", close]]), new Map([["x", same]])];
-    expect(_multi_only_float_diff(all_typed, [0, 1, 2], "x")).toBe(true);
+    const allTyped = [new Map([["x", ref]]), new Map([["x", close]]), new Map([["x", same]])];
+    expect(_multiOnlyFloatDiff(allTyped, [0, 1, 2], "x")).toBe(true);
   });
 
   test("test_multi_real_diff_not_suppressed", () => {
     const ref = new CdatChunk({ values: [1.0, 2.0] });
     const far = new CdatChunk({ values: [9.0, 2.0] }); // beyond tolerance
-    const all_typed = [new Map([["x", ref]]), new Map([["x", far]])];
-    expect(_multi_only_float_diff(all_typed, [0, 1], "x")).toBe(false);
+    const allTyped = [new Map([["x", ref]]), new Map([["x", far]])];
+    expect(_multiOnlyFloatDiff(allTyped, [0, 1], "x")).toBe(false);
   });
 });
 
@@ -239,7 +239,7 @@ describe("TestFormatHexDump", () => {
   /** Hex dump of a few bytes formats correctly. */
   test("test_small_data", () => {
     const data = b("\x00\x01\x02\x03");
-    const result = format_hex_dump(data);
+    const result = formatHexDump(data);
     expect(result).toContain("0000:");
     expect(result).toContain("00 01 02 03");
   });
@@ -247,14 +247,14 @@ describe("TestFormatHexDump", () => {
   /** ASCII column shows printable chars and dots for non-printable. */
   test("test_ascii_representation", () => {
     const data = b("Hello\x00World");
-    const result = format_hex_dump(data);
+    const result = formatHexDump(data);
     expect(result).toContain("Hello.World");
   });
 
   /** Data longer than 16 bytes produces multiple lines. */
   test("test_multi_line", () => {
     const data = Uint8Array.from(range(32));
-    const result = format_hex_dump(data);
+    const result = formatHexDump(data);
     const lines = split(strip(result), "\n");
     expect(lines.length).toBe(2);
     expect(lines[0].startsWith("0000:")).toBe(true);
@@ -269,7 +269,7 @@ describe("TestFilterDifferences", () => {
     const diff2 = new ChunkDifference("LIST:Comp/cdta", [], 10, 10);
     const differences = [diff1, diff2];
 
-    const [filtered, _, __] = filter_differences(differences, [], [], "ldta");
+    const [filtered, _, __] = filterDifferences(differences, [], [], "ldta");
     expect(filtered.length).toBe(1);
     expect(filtered[0].path).toBe("LIST:Layr/ldta");
   });
@@ -277,7 +277,7 @@ describe("TestFilterDifferences", () => {
   /** Test that filter is case-insensitive. */
   test("test_filter_case_insensitive", () => {
     const diff = new ChunkDifference("LIST:Layr/LDTA", [], 10, 10);
-    const [filtered, _, __] = filter_differences([diff], [], [], "ldta");
+    const [filtered, _, __] = filterDifferences([diff], [], [], "ldta");
     expect(filtered.length).toBe(1);
   });
 });
@@ -291,7 +291,7 @@ describe("TestToJsonOutput", () => {
       10,
       10,
     );
-    const output = to_json_output(
+    const output = toJsonOutput(
       new Path("file1.aep"),
       new Path("file2.aep"),
       [diff],

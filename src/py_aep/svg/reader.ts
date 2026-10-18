@@ -9,29 +9,29 @@
  */
 
 import { FLOAT32_MAX } from "../binary/bin_utils.ts";
-import { DEFAULT_FONT_SIZE, LengthContext, local_name, parse_length, parse_number, parse_ratio } from "./_util.ts";
-import { parse_color } from "./colors.ts";
-import { canvas, viewport_transform } from "./document.ts";
+import { DEFAULT_FONT_SIZE, LengthContext, localName, parseLength, parseNumber, parseRatio } from "./_util.ts";
+import { parseColor } from "./colors.ts";
+import { canvas, viewportTransform } from "./document.ts";
 import { UnsupportedSVGError } from "./errors.ts";
-import { resolve_font as _resolve_font_impl } from "./fonts.ts";
+import { resolveFont as _resolveFontImpl } from "./fonts.ts";
 /**
- * `monkeypatch.setattr(reader, "resolve_font", fn)` hook: ESM exports are
+ * `monkeypatch.setattr(reader, "resolveFont", fn)` hook: ESM exports are
  * read-only, so the Python module-global lookup goes through this holder.
  */
-export let _resolve_font_override: typeof _resolve_font_impl | null = null;
-export function _set_resolve_font(fn: typeof _resolve_font_impl | null): void {
-  _resolve_font_override = fn;
+export let _resolveFontOverride: typeof _resolveFontImpl | null = null;
+export function _setResolveFont(fn: typeof _resolveFontImpl | null): void {
+  _resolveFontOverride = fn;
 }
-function resolve_font(...args: Parameters<typeof _resolve_font_impl>): ReturnType<typeof _resolve_font_impl> {
-  return (_resolve_font_override ?? _resolve_font_impl)(...args);
+function resolveFont(...args: Parameters<typeof _resolveFontImpl>): ReturnType<typeof _resolveFontImpl> {
+  return (_resolveFontOverride ?? _resolveFontImpl)(...args);
 }
 
-import { type GradientDef, collect_gradients, resolve_gradient } from "./gradients.ts";
+import { type GradientDef, collectGradients, resolveGradient } from "./gradients.ts";
 import type { RawSubpath } from "./path_data.ts";
-import { cubics_to_subpath, element_subpaths } from "./shapes.ts";
-import { type CssRule, parse_css, resolve_properties } from "./style.ts";
-import { TextRun, outline_runs, outline_text_path } from "./text.ts";
-import { Affine, parse_transform } from "./transform.ts";
+import { cubicsToSubpath, elementSubpaths } from "./shapes.ts";
+import { type CssRule, parseCss, resolveProperties } from "./style.ts";
+import { TextRun, outlineRuns, outlineTextPath } from "./text.ts";
+import { Affine, parseTransform } from "./transform.ts";
 import { GradientStop, SolidPaint, StrokeStyle, SvgDocument, SvgDrawable, type GradientPaint, type Subpath } from "./types.ts";
 import {
   Path,
@@ -127,7 +127,7 @@ export const _URL_RE = new RegExp(`^url\\([${_PY_WS}]*#([^)${_PY_WS}]+)[${_PY_WS
  * @throws UnsupportedSVGError For SVG features py_aep cannot import, and for
  *   a file that is not well-formed XML.
  */
-export function read_svg(source: string | PathLike | Uint8Array): SvgDocument {
+export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   let data: Uint8Array;
   if (source instanceof Uint8Array) {
     data = source.slice();
@@ -146,20 +146,20 @@ export function read_svg(source: string | PathLike | Uint8Array): SvgDocument {
       { cause: exc },
     );
   }
-  if (local_name(root.tag) !== "svg") {
-    throw new UnsupportedSVGError(`Root element is <${local_name(root.tag)}>, not <svg>`);
+  if (localName(root.tag) !== "svg") {
+    throw new UnsupportedSVGError(`Root element is <${localName(root.tag)}>, not <svg>`);
   }
 
-  let [width, height, root_tf] = canvas(root);
+  let [width, height, rootTf] = canvas(root);
   const reader = new _Reader(root);
   // The root <svg>'s own presentation attributes (e.g. fill="none") form
   // the inherited base for all children.
-  const root_style = resolve_properties(new Map(), "svg", root.attrib, reader._css);
-  root_tf = root_tf.multiply(parse_transform(root.get("transform", "")));
-  reader._root_ctm = root_tf;
+  const rootStyle = resolveProperties(new Map(), "svg", root.attrib, reader._css);
+  rootTf = rootTf.multiply(parseTransform(root.get("transform", "")));
+  reader._root_ctm = rootTf;
   reader._viewport = [width, height];
-  const root_opacity = parse_ratio(root_style.get("opacity") ?? null, 1.0);
-  const drawables = reader.walk(root, root_tf, root_style, root_opacity);
+  const rootOpacity = parseRatio(rootStyle.get("opacity") ?? null, 1.0);
+  const drawables = reader.walk(root, rootTf, rootStyle, rootOpacity);
   return new SvgDocument(width, height, drawables);
 }
 
@@ -179,7 +179,7 @@ export class _Reader {
   _use_stack: string[];
 
   constructor(root: Element) {
-    this._gradients = collect_gradients(root);
+    this._gradients = collectGradients(root);
     this._css = _Reader._collect_css(root);
     this._by_id = new Map();
     for (const elem of root.iter()) {
@@ -196,8 +196,8 @@ export class _Reader {
   static _collect_css(root: Element): CssRule[] {
     const rules: CssRule[] = [];
     for (const elem of root.iter()) {
-      if (local_name(elem.tag) === "style" && elem.text) {
-        rules.push(...parse_css(elem.text));
+      if (localName(elem.tag) === "style" && elem.text) {
+        rules.push(...parseCss(elem.text));
       }
     }
     return rules;
@@ -223,7 +223,7 @@ export class _Reader {
     }
     let ctm = this._root_ctm;
     for (const node of [...chain].reverse()) {
-      ctm = ctm.multiply(parse_transform(node.get("transform", "")));
+      ctm = ctm.multiply(parseTransform(node.get("transform", "")));
     }
     return ctm;
   }
@@ -231,14 +231,14 @@ export class _Reader {
   walk(
     elem: Element,
     ctm: Affine,
-    parent_style: Map<string, string>,
+    parentStyle: Map<string, string>,
     opacity: number,
     depth = 0,
   ): SvgDrawable[] {
     if (depth > _MAX_SVG_DEPTH) throw new UnsupportedSVGError("SVG container nesting too deep");
     const out: SvgDrawable[] = [];
     for (const child of elem) {
-      this._visit(child, ctm, parent_style, opacity, out, depth);
+      this._visit(child, ctm, parentStyle, opacity, out, depth);
     }
     return out;
   }
@@ -246,12 +246,12 @@ export class _Reader {
   _visit(
     elem: Element,
     ctm: Affine,
-    parent_style: Map<string, string>,
+    parentStyle: Map<string, string>,
     opacity: number,
     out: SvgDrawable[],
     depth = 0,
   ): void {
-    const tag = local_name(elem.tag);
+    const tag = localName(elem.tag);
     if (_SKIP_TAGS.has(tag)) return;
     if (tag === "image") {
       // Raster <image> is not rendered (AE drops it too). Unlike the
@@ -262,38 +262,38 @@ export class _Reader {
     }
     if (_UNSUPPORTED_TAGS.has(tag)) throw new UnsupportedSVGError(`Unsupported element: <${tag}>`);
 
-    const style = resolve_properties(parent_style, tag, elem.attrib, this._css);
+    const style = resolveProperties(parentStyle, tag, elem.attrib, this._css);
     if ((style.get("display") ?? null) === "none") return;
-    const local_tf = ctm.multiply(parse_transform(elem.get("transform", "")));
+    const localTf = ctm.multiply(parseTransform(elem.get("transform", "")));
     // `opacity` is a non-inherited compositing factor; AE flattens an SVG
     // group/element opacity by multiplying it into the leaf's paint
     // opacity, so accumulate it down the tree and fold it into the leaf.
-    const eff_opacity = opacity * parse_ratio(style.get("opacity") ?? null, 1.0);
+    const effOpacity = opacity * parseRatio(style.get("opacity") ?? null, 1.0);
 
     if (tag === "svg") {
-      this._visit_viewport(elem, local_tf, style, eff_opacity, out, depth);
+      this._visit_viewport(elem, localTf, style, effOpacity, out, depth);
       return;
     }
     if (_CONTAINER_TAGS.has(tag)) {
-      for (const d of this.walk(elem, local_tf, style, eff_opacity, depth + 1)) out.push(d);
+      for (const d of this.walk(elem, localTf, style, effOpacity, depth + 1)) out.push(d);
       return;
     }
     if (tag === "use") {
-      this._visit_use(elem, local_tf, style, eff_opacity, out, depth);
+      this._visit_use(elem, localTf, style, effOpacity, out, depth);
       return;
     }
     if (tag === "text") {
-      this._visit_text(elem, local_tf, style, eff_opacity, out);
+      this._visit_text(elem, localTf, style, effOpacity, out);
       return;
     }
     if (_DRAWABLE_TAGS.has(tag)) {
-      const drawable = this._build_drawable(tag, elem, local_tf, style, eff_opacity);
+      const drawable = this._build_drawable(tag, elem, localTf, style, effOpacity);
       if (drawable != null) out.push(drawable);
       return;
     }
     // Unknown element: ignore (forward-compatible) but recurse in case
     // it wraps drawables.
-    for (const d of this.walk(elem, local_tf, style, eff_opacity, depth + 1)) out.push(d);
+    for (const d of this.walk(elem, localTf, style, effOpacity, depth + 1)) out.push(d);
   }
 
   _ctx(style: Map<string, string>): LengthContext {
@@ -301,13 +301,13 @@ export class _Reader {
      * What this element's percentage and `em` lengths resolve against:
      * the nearest viewport and its font size.
      */
-    const font_size = parse_length(
+    const fontSize = parseLength(
       style.get("font-size") ?? null,
       DEFAULT_FONT_SIZE,
       DEFAULT_FONT_SIZE,
       DEFAULT_FONT_SIZE,
     );
-    return new LengthContext(this._viewport[0], this._viewport[1], font_size);
+    return new LengthContext(this._viewport[0], this._viewport[1], fontSize);
   }
 
   _visit_viewport(
@@ -324,8 +324,8 @@ export class _Reader {
      * AE 2026 imports it. Its content is not clipped (AE clips it).
      */
     const ctx = this._ctx(style);
-    const x = parse_length(elem.get("x"), 0.0, ctx.width, ctx.font_size);
-    const y = parse_length(elem.get("y"), 0.0, ctx.height, ctx.font_size);
+    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.font_size);
+    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.font_size);
     this._walk_viewport(elem, elem, ctm, style, opacity, out, depth, x, y);
   }
 
@@ -347,19 +347,19 @@ export class _Reader {
      * to the viewport's own, then 100 %).
      */
     const ctx = this._ctx(style);
-    const width = parse_length(
+    const width = parseLength(
       sizing.get("width") || viewport.get("width"),
       ctx.width,
       ctx.width,
       ctx.font_size,
     );
-    const height = parse_length(
+    const height = parseLength(
       sizing.get("height") || viewport.get("height"),
       ctx.height,
       ctx.height,
       ctx.font_size,
     );
-    const [tf, size] = viewport_transform(
+    const [tf, size] = viewportTransform(
       viewport.get("viewBox"),
       viewport.get("preserveAspectRatio"),
       x,
@@ -367,12 +367,12 @@ export class _Reader {
       width,
       height,
     );
-    const parent_viewport = this._viewport;
+    const parentViewport = this._viewport;
     this._viewport = size;
     try {
       for (const d of this.walk(viewport, ctm.multiply(tf), style, opacity, depth + 1)) out.push(d);
     } finally {
-      this._viewport = parent_viewport;
+      this._viewport = parentViewport;
     }
   }
 
@@ -386,25 +386,25 @@ export class _Reader {
   ): void {
     const ref = elem.get("href") || elem.get("{http://www.w3.org/1999/xlink}href");
     if (!ref || !ref.startsWith("#")) return;
-    const target_id = ref.slice(1);
-    if (this._use_stack.includes(target_id)) {
-      throw new UnsupportedSVGError(`Recursive <use> reference: #${target_id}`);
+    const targetId = ref.slice(1);
+    if (this._use_stack.includes(targetId)) {
+      throw new UnsupportedSVGError(`Recursive <use> reference: #${targetId}`);
     }
-    const target = this._by_id.get(target_id) ?? null;
+    const target = this._by_id.get(targetId) ?? null;
     if (target == null) return;
     const ctx = this._ctx(style);
-    const x = parse_length(elem.get("x"), 0.0, ctx.width, ctx.font_size);
-    const y = parse_length(elem.get("y"), 0.0, ctx.height, ctx.font_size);
-    const use_tf = ctm.multiply(new Affine(1.0, 0.0, 0.0, 1.0, x, y));
-    this._use_stack.push(target_id);
+    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.font_size);
+    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.font_size);
+    const useTf = ctm.multiply(new Affine(1.0, 0.0, 0.0, 1.0, x, y));
+    this._use_stack.push(targetId);
     try {
-      const t_tag = local_name(target.tag);
-      if (t_tag === "symbol" || t_tag === "svg") {
+      const tTag = localName(target.tag);
+      if (tTag === "symbol" || tTag === "svg") {
         // The instance is a viewport sized by the <use> (AE 2026
         // maps a 10 x 10 symbol viewBox onto `width="50"`).
-        this._walk_viewport(target, elem, use_tf, style, opacity, out, depth, 0.0, 0.0);
+        this._walk_viewport(target, elem, useTf, style, opacity, out, depth, 0.0, 0.0);
       } else {
-        this._visit(target, use_tf, style, opacity, out, depth);
+        this._visit(target, useTf, style, opacity, out, depth);
       }
     } finally {
       this._use_stack.pop();
@@ -429,9 +429,9 @@ export class _Reader {
       if (run != null) runs.push([run, style]);
     }
     for (const child of elem) {
-      const ctag = local_name(child.tag);
+      const ctag = localName(child.tag);
       if (ctag === "tspan") {
-        const cstyle = resolve_properties(style, "tspan", child.attrib, this._css);
+        const cstyle = resolveProperties(style, "tspan", child.attrib, this._css);
         if (child.text && strip(child.text)) {
           const run = this._make_run(child.text, cstyle, child);
           if (run != null) runs.push([run, cstyle]);
@@ -451,8 +451,8 @@ export class _Reader {
         // run so the pen advances by a space glyph before the next run,
         // rather than laying the runs out flush. A leading whitespace-
         // only tail (no prior run) is document-leading and dropped.
-        const last_run = runs[runs.length - 1][0];
-        if (!last_run.text.endsWith(" ")) last_run.text += " ";
+        const lastRun = runs[runs.length - 1][0];
+        if (!lastRun.text.endsWith(" ")) lastRun.text += " ";
       }
     }
     if (runs.length === 0) return;
@@ -462,107 +462,107 @@ export class _Reader {
     runs[0][0].text = lstrip(runs[0][0].text, " ");
     const last = runs[runs.length - 1][0];
     last.text = rstrip(last.text, " ");
-    const origin_x = parse_number(elem.get("x", "0"));
-    const origin_y = parse_number(elem.get("y", "0"));
+    const originX = parseNumber(elem.get("x", "0"));
+    const originY = parseNumber(elem.get("y", "0"));
     const anchor = strip(style.get("text-anchor") || "start");
-    const per_run = outline_runs(
+    const perRun = outlineRuns(
       runs.map(([r]) => r),
-      origin_x,
-      origin_y,
+      originX,
+      originY,
       ctm,
       anchor,
     );
-    for (const [[, run_style], subpaths] of zip(runs, per_run)) {
+    for (const [[, runStyle], subpaths] of zip(runs, perRun)) {
       if (!subpaths?.length) continue;
-      out.push(this._emit(subpaths, run_style, ctm, elem.get("id"), opacity));
+      out.push(this._emit(subpaths, runStyle, ctm, elem.get("id"), opacity));
     }
   }
 
   _make_run(text: string, style: Map<string, string>, elem: Element | null): TextRun | null {
     // Font is resolved from the cascaded/inherited style; position
     // attributes (x/y/dx/dy) come from the run's own element.
-    text = _collapse_ws(text);
+    text = _collapseWs(text);
     const family = style.get("font-family") ?? "sans-serif";
     const weight = strip(style.get("font-weight") || "");
-    const font_style = strip(style.get("font-style") || "");
+    const fontStyle = strip(style.get("font-style") || "");
     const bold = ["bold", "bolder"].includes(weight) || (isdigit(weight) && int(weight) >= 600);
-    const italic = ["italic", "oblique"].includes(font_style);
-    const resolved = resolve_font(family, { bold, italic });
+    const italic = ["italic", "oblique"].includes(fontStyle);
+    const resolved = resolveFont(family, { bold, italic });
     if (resolved == null) return null;
-    const [font_path, font_number] = resolved;
-    const abs_x =
-      elem != null && elem.get("x") ? parse_number(elem.get("x")) : null;
-    const abs_y =
-      elem != null && elem.get("y") ? parse_number(elem.get("y")) : null;
-    const dx = elem != null && elem.get("dx") ? parse_number(elem.get("dx")) : 0.0;
-    const dy = elem != null && elem.get("dy") ? parse_number(elem.get("dy")) : 0.0;
+    const [fontPath, fontNumber] = resolved;
+    const absX =
+      elem != null && elem.get("x") ? parseNumber(elem.get("x")) : null;
+    const absY =
+      elem != null && elem.get("y") ? parseNumber(elem.get("y")) : null;
+    const dx = elem != null && elem.get("dx") ? parseNumber(elem.get("dx")) : 0.0;
+    const dy = elem != null && elem.get("dy") ? parseNumber(elem.get("dy")) : 0.0;
     // TextRun fields in declaration order: text, font_path, font_size,
     // letter_spacing, abs_x, abs_y, dx, dy, anchor, font_number.
     return new TextRun(
       text,
-      font_path,
-      parse_number(style.get("font-size") || "16"),
-      parse_number(style.get("letter-spacing") || "0"),
-      abs_x,
-      abs_y,
+      fontPath,
+      parseNumber(style.get("font-size") || "16"),
+      parseNumber(style.get("letter-spacing") || "0"),
+      absX,
+      absY,
       dx,
       dy,
       strip(style.get("text-anchor") || "") || null,
-      font_number,
+      fontNumber,
     );
   }
 
   _add_text_path(
-    text_elem: Element,
-    tp_elem: Element,
-    parent_style: Map<string, string>,
+    textElem: Element,
+    tpElem: Element,
+    parentStyle: Map<string, string>,
     opacity: number,
     out: SvgDrawable[],
   ): void {
     // A <textPath> lays its text along a referenced path's geometry, in the
     // path's own coordinate space (its accumulated transform).
-    const href = tp_elem.get("href") || tp_elem.get("{http://www.w3.org/1999/xlink}href");
+    const href = tpElem.get("href") || tpElem.get("{http://www.w3.org/1999/xlink}href");
     if (!href || !href.startsWith("#")) return;
     const target = this._by_id.get(href.slice(1)) ?? null;
-    if (target == null || !(!!tp_elem.text && !!strip(tp_elem.text))) {
+    if (target == null || !(!!tpElem.text && !!strip(tpElem.text))) {
       return;
     }
     const ctm = this._element_ctm(target);
-    const style = resolve_properties(parent_style, "textPath", tp_elem.attrib, this._css);
-    const run = this._make_run(tp_elem.text, style, null);
+    const style = resolveProperties(parentStyle, "textPath", tpElem.attrib, this._css);
+    const run = this._make_run(tpElem.text, style, null);
     if (run == null) return;
     let path: RawSubpath[];
     try {
-      path = element_subpaths(local_name(target.tag), target.attrib, this._ctx(style));
+      path = elementSubpaths(localName(target.tag), target.attrib, this._ctx(style));
     } catch (e) {
       if (!(e instanceof UnsupportedSVGError)) throw e;
       return; // referenced element is not a path/basic shape
     }
-    const raw_off = strip(tp_elem.get("startOffset") || "0");
-    let off_abs: number;
-    let off_frac: number | null;
-    if (raw_off.endsWith("%")) {
-      off_abs = 0.0;
-      off_frac = parse_number(raw_off) / 100.0;
+    const rawOff = strip(tpElem.get("startOffset") || "0");
+    let offAbs: number;
+    let offFrac: number | null;
+    if (rawOff.endsWith("%")) {
+      offAbs = 0.0;
+      offFrac = parseNumber(rawOff) / 100.0;
     } else {
-      off_abs = parse_number(raw_off);
-      off_frac = null;
+      offAbs = parseNumber(rawOff);
+      offFrac = null;
     }
-    const subpaths = outline_text_path(
-      strip(_collapse_ws(tp_elem.text)),
+    const subpaths = outlineTextPath(
+      strip(_collapseWs(tpElem.text)),
       path,
       run.font_path,
       run.font_size,
       ctm,
       {
         font_number: run.font_number,
-        start_offset: off_abs,
-        start_offset_frac: off_frac,
+        start_offset: offAbs,
+        start_offset_frac: offFrac,
         letter_spacing: run.letter_spacing,
       },
     );
     if (!subpaths?.length) return;
-    out.push(this._emit(subpaths, style, ctm, text_elem.get("id"), opacity));
+    out.push(this._emit(subpaths, style, ctm, textElem.get("id"), opacity));
   }
 
   _build_drawable(
@@ -572,10 +572,10 @@ export class _Reader {
     style: Map<string, string>,
     opacity: number,
   ): SvgDrawable | null {
-    const raws = element_subpaths(tag, elem.attrib, this._ctx(style));
+    const raws = elementSubpaths(tag, elem.attrib, this._ctx(style));
     const subpaths: Subpath[] = [];
     for (const raw of raws) {
-      const sp = cubics_to_subpath(raw, ctm);
+      const sp = cubicsToSubpath(raw, ctm);
       if (sp != null) subpaths.push(sp);
     }
     if (subpaths.length === 0) return null;
@@ -630,7 +630,7 @@ export class _Reader {
     if (value == null) return null;
     value = strip(value);
     if (value === "none") return null;
-    const alpha = parse_ratio(opacity, 1.0);
+    const alpha = parseRatio(opacity, 1.0);
     const url = _URL_RE.exec(value);
     if (url) {
       const gd = this._gradients.get(url[1]) ?? null;
@@ -638,14 +638,14 @@ export class _Reader {
         // Unknown paint server (pattern, missing gradient): no paint.
         return null;
       }
-      const gradient = resolve_gradient(gd, bbox, ctm, this._viewport);
+      const gradient = resolveGradient(gd, bbox, ctm, this._viewport);
       gradient.stops = gradient.stops.map(
         (s) =>
           new GradientStop(s.offset, [s.color[0], s.color[1], s.color[2], s.color[3] * alpha]),
       );
       return gradient;
     }
-    const color = parse_color(value);
+    const color = parseColor(value);
     if (color == null) return null;
     return new SolidPaint([color[0], color[1], color[2], color[3] * alpha]);
   }
@@ -662,7 +662,7 @@ export class _Reader {
     // A percentage width refers to the viewport's normalized diagonal
     // (AE 2026: 5 % of a 200 x 100 viewBox is 7.906).
     const width =
-      parse_length(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.font_size) *
+      parseLength(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.font_size) *
       ctm.mean_scale;
     if (width <= 0) return null;
     if (!Number.isFinite(width)) throw new UnsupportedSVGError("SVG stroke-width is out of range");
@@ -670,11 +670,11 @@ export class _Reader {
     const join = _JOIN.get(strip(style.get("stroke-linejoin") || "")) ?? 1;
     // SVG requires a miter limit >= 1 (AE's Miter Limit too); AE 2026
     // imports a smaller one clamped to 1.
-    const miter = max([1.0, parse_number(style.get("stroke-miterlimit") ?? "4")]);
+    const miter = max([1.0, parseNumber(style.get("stroke-miterlimit") ?? "4")]);
     const dashes = strip(style.get("stroke-dasharray") || "")
       .split(new RegExp(`[,${_PY_WS}]+`))
       .filter((t) => !!t && t !== "none")
-      .map((t) => parse_number(t) * ctm.mean_scale);
+      .map((t) => parseNumber(t) * ctm.mean_scale);
     return new StrokeStyle(paint, width, cap, join, miter, dashes);
   }
 }
@@ -702,6 +702,6 @@ export const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");
  * is laid out as leading glyph advances. Edge spaces are kept here and
  * trimmed once across the whole run sequence by the caller.
  */
-export function _collapse_ws(text: string): string {
+export function _collapseWs(text: string): string {
   return text.replace(_WS_RE, " ");
 }

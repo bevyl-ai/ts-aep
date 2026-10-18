@@ -1,11 +1,11 @@
 /** Parser for Essential Graphics panel data (LIST:CIF3 chunks). */
 
-import { filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type } from "../binary/utils.ts";
+import { filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType } from "../binary/utils.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
-import { at, int, json_get, json_getitem, json_loads, sorted, type_name, TypeError_ } from "../../pyrt/index.ts";
+import { at, int, jsonGet, jsonGetitem, jsonLoads, sorted, typeName, TypeError_ } from "../../pyrt/index.ts";
 
 // AE stores 0xFFFFFFFF in a CPrp path node's `index` to mean "match by name".
 export const _BY_NAME_INDEX = 0xffffffff;
@@ -17,18 +17,18 @@ export const _BY_NAME_INDEX = 0xffffffff;
  * `{"index", "matchName"}` nodes describing the path from the layer root to
  * the source property the controller exposes.
  */
-export function _parse_source_property_path(raw: string): SourcePropertyRef[] {
-  const nodes = json_loads(raw);
-  if (!(nodes instanceof Map)) throw new TypeError_(`'${type_name(nodes)}' object is not a path node map`);
+export function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
+  const nodes = jsonLoads(raw);
+  if (!(nodes instanceof Map)) throw new TypeError_(`'${typeName(nodes)}' object is not a path node map`);
   const path: SourcePropertyRef[] = [];
   for (const key of sorted(nodes.keys(), (k) => int(k))) {
-    const node = json_getitem(nodes, key);
-    const index = json_get(node, "index", null);
-    const match_name = json_get(node, "matchName", "");
-    if (typeof match_name !== "string" || (index !== null && typeof index !== "number")) {
+    const node = jsonGetitem(nodes, key);
+    const index = jsonGet(node, "index", null);
+    const matchName = jsonGet(node, "matchName", "");
+    if (typeof matchName !== "string" || (index !== null && typeof index !== "number")) {
       throw new TypeError_(`malformed CPrp path node ${key}`);
     }
-    path.push(new SourcePropertyRef(match_name, index === _BY_NAME_INDEX ? null : index));
+    path.push(new SourcePropertyRef(matchName, index === _BY_NAME_INDEX ? null : index));
   }
   return path;
 }
@@ -36,48 +36,48 @@ export function _parse_source_property_path(raw: string): SourcePropertyRef[] {
 /**
  * Parse a single LIST:CCtl chunk into a controller.
  *
- * @param cctl_chunk - A LIST:CCtl chunk.
+ * @param cctlChunk - A LIST:CCtl chunk.
  */
-export function _parse_controller(cctl_chunk: ListChunk): EssentialGraphicsController {
-  const cps2 = find_by_list_type(cctl_chunk.chunks, "CpS2");
-  const name_utf8 = at(filter_by_type(cps2.chunks, "Utf8"), 0);
+export function _parseController(cctlChunk: ListChunk): EssentialGraphicsController {
+  const cps2 = findByListType(cctlChunk.chunks, "CpS2");
+  const nameUtf8 = at(filterByType(cps2.chunks, "Utf8"), 0);
 
-  const ctyp = find_by_type(cctl_chunk.chunks, "CTyp");
+  const ctyp = findByType(cctlChunk.chunks, "CTyp");
 
-  const uuid_chunks = filter_by_type(cctl_chunk.chunks, "Utf8");
-  const uuid = uuid_chunks?.length > 0 ? uuid_chunks[0].value : "";
+  const uuidChunks = filterByType(cctlChunk.chunks, "Utf8");
+  const uuid = uuidChunks?.length > 0 ? uuidChunks[0].value : "";
 
   // The controlled-property path is the nested LIST:CPrp's Utf8 (JSON), a
   // different CPrp from the override-side OvG2/CPrp. Absent for some
   // controllers -> empty path.
-  let source_property_path: SourcePropertyRef[] = [];
-  let source_comp_id: number | null = null;
-  let source_layer_id: number | null = null;
-  const cprp = find_by_list_type_or_null(cctl_chunk.chunks, "CPrp");
+  let sourcePropertyPath: SourcePropertyRef[] = [];
+  let sourceCompId: number | null = null;
+  let sourceLayerId: number | null = null;
+  const cprp = findByListTypeOrNull(cctlChunk.chunks, "CPrp");
   if (cprp != null) {
-    const path_utf8 = filter_by_type(cprp.chunks, "Utf8");
-    if (path_utf8?.length > 0) {
-      source_property_path = _parse_source_property_path(path_utf8[0].value);
+    const pathUtf8 = filterByType(cprp.chunks, "Utf8");
+    if (pathUtf8?.length > 0) {
+      sourcePropertyPath = _parseSourcePropertyPath(pathUtf8[0].value);
     }
     // CCId / CLId identify the source comp + layer that own the
     // controlled property (the layer is matched by its `layer_id`).
-    const ccid = filter_by_type(cprp.chunks, "CCId");
+    const ccid = filterByType(cprp.chunks, "CCId");
     if (ccid?.length > 0) {
-      source_comp_id = ccid[0].value;
+      sourceCompId = ccid[0].value;
     }
-    const clid = filter_by_type(cprp.chunks, "CLId");
+    const clid = filterByType(cprp.chunks, "CLId");
     if (clid?.length > 0) {
-      source_layer_id = clid[0].value;
+      sourceLayerId = clid[0].value;
     }
   }
 
   return new EssentialGraphicsController({
-    _name_utf8: name_utf8,
+    _name_utf8: nameUtf8,
     _ctyp: ctyp,
     uuid,
-    source_property_path,
-    source_comp_id,
-    source_layer_id,
+    source_property_path: sourcePropertyPath,
+    source_comp_id: sourceCompId,
+    source_layer_id: sourceLayerId,
   });
 }
 
@@ -97,26 +97,26 @@ export function _parse_controller(cctl_chunk: ListChunk): EssentialGraphicsContr
  * @returns A tuple of (template_name_utf8_chunk, controllers) if an Essential Graphics container is
  *   found, otherwise `null`.
  */
-export const parse_essential_graphics = _suppress_materialization().decorate(
+export const parseEssentialGraphics = _suppressMaterialization().decorate(
   function parse_essential_graphics(
-    child_chunks: Chunk[],
+    childChunks: Chunk[],
   ): [Utf8Chunk, EssentialGraphicsController[]] | null {
     let cif: ListChunk | null = null;
-    for (const list_type of ["CIF3", "CIF2", "CIFO"]) {
-      cif = find_by_list_type_or_null(child_chunks, list_type);
+    for (const listType of ["CIF3", "CIF2", "CIFO"]) {
+      cif = findByListTypeOrNull(childChunks, listType);
       if (cif !== null) break;
     }
     if (cif == null) return null;
 
-    const cif_chunks = cif.chunks;
+    const cifChunks = cif.chunks;
 
     // Template name from the first LIST:CpS2
-    const cps2 = find_by_list_type(cif_chunks, "CpS2");
-    const template_name_utf8 = at(filter_by_type(cps2.chunks, "Utf8"), 0);
+    const cps2 = findByListType(cifChunks, "CpS2");
+    const templateNameUtf8 = at(filterByType(cps2.chunks, "Utf8"), 0);
 
-    const cctl_chunks = filter_by_list_type(cif_chunks, "CCtl");
-    const controllers = cctl_chunks.map((cctl) => _parse_controller(cctl));
+    const cctlChunks = filterByListType(cifChunks, "CCtl");
+    const controllers = cctlChunks.map((cctl) => _parseController(cctl));
 
-    return [template_name_utf8, controllers];
+    return [templateNameUtf8, controllers];
   },
 );

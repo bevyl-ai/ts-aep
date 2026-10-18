@@ -15,7 +15,7 @@ import {
   decode,
   divmod,
   encode,
-  float_repr,
+  floatRepr,
   floordiv,
   int,
   round,
@@ -49,16 +49,16 @@ export const MAC_EPOCH_OFFSET = 2082844800;
  * @throws {@link ValueError} If the value's whole part alone cannot fit int32 (about 68 years for a
  *   time field) - which also rejects `nan` / `inf`.
  */
-export function to_dividend_divisor(value: number): [number, number] {
+export function toDividendDivisor(value: number): [number, number] {
   if (!(_INT32_MIN <= value && value <= _INT32_MAX)) {
     throw new ValueError(
-      `ratio value ${float_repr(value)} is out of range (must be within +/-${_INT32_MAX})`,
+      `ratio value ${floatRepr(value)} is out of range (must be within +/-${_INT32_MAX})`,
     );
   }
   // |dividend| ~= |value| * denominator, so capping the denominator at
   // INT32_MAX // (|value| + 2) keeps the dividend strictly inside int32.
-  const max_denominator = Math.max(1, floordiv(_INT32_MAX, int(Math.abs(value)) + 2));
-  const frac = new Fraction(value).limit_denominator(Math.min(1_000_000, max_denominator));
+  const maxDenominator = Math.max(1, floordiv(_INT32_MAX, int(Math.abs(value)) + 2));
+  const frac = new Fraction(value).limit_denominator(Math.min(1_000_000, maxDenominator));
   return [frac.numerator, frac.denominator];
 }
 
@@ -71,8 +71,8 @@ export function to_dividend_divisor(value: number): [number, number] {
  * 8.33e-7 (whose exact float32 ratio needs a 2^44 divisor) -\>
  * 330/396000001.
  */
-export function to_float32_ratio(value: number): [number, number] {
-  const frac = new Fraction(to_f4(value)).limit_denominator(_INT32_MAX);
+export function toFloat32Ratio(value: number): [number, number] {
+  const frac = new Fraction(toF4(value)).limit_denominator(_INT32_MAX);
   return [frac.numerator, frac.denominator];
 }
 
@@ -83,16 +83,16 @@ export function to_float32_ratio(value: number): [number, number] {
  * The whole value is rounded before the split: rounding the fraction alone
  * turns 23.99999999 into 23 + 65536/65536, which overflows a u2 fraction.
  */
-export function to_fixed_16_16(value: number): [number, number] {
+export function toFixed1616(value: number): [number, number] {
   return divmod(round(value * 65536), 65536);
 }
 
 /** Return a cached `struct.Struct` for `full_fmt`. */
-export function _get_struct(full_fmt: string): struct.Struct {
-  let s = _STRUCT_CACHE.get(full_fmt);
+export function _getStruct(fullFmt: string): struct.Struct {
+  let s = _STRUCT_CACHE.get(fullFmt);
   if (s == null) {
-    s = new struct.Struct(full_fmt);
-    _STRUCT_CACHE.set(full_fmt, s);
+    s = new struct.Struct(fullFmt);
+    _STRUCT_CACHE.set(fullFmt, s);
   }
   return s;
 }
@@ -101,13 +101,13 @@ const _BIG_ENDIAN_STRUCTS = new Map<string, struct.Struct>();
 const _STRUCTS_BY_ENDIAN = new Map<string, Map<string, struct.Struct>>([[">", _BIG_ENDIAN_STRUCTS]]);
 
 /** `_get_struct(endian + fmt)` without building the key string on a hit. */
-export function _struct_for(fmt: string, endian = ">"): struct.Struct {
-  let by_fmt = endian === ">" ? _BIG_ENDIAN_STRUCTS : _STRUCTS_BY_ENDIAN.get(endian);
-  if (by_fmt === undefined) _STRUCTS_BY_ENDIAN.set(endian, (by_fmt = new Map()));
-  let s = by_fmt.get(fmt);
+export function _structFor(fmt: string, endian = ">"): struct.Struct {
+  let byFmt = endian === ">" ? _BIG_ENDIAN_STRUCTS : _STRUCTS_BY_ENDIAN.get(endian);
+  if (byFmt === undefined) _STRUCTS_BY_ENDIAN.set(endian, (byFmt = new Map()));
+  let s = byFmt.get(fmt);
   if (s === undefined) {
-    s = _get_struct(endian + fmt);
-    by_fmt.set(fmt, s);
+    s = _getStruct(endian + fmt);
+    byFmt.set(fmt, s);
   }
   return s;
 }
@@ -120,9 +120,9 @@ export function _struct_for(fmt: string, endian = ">"): struct.Struct {
  *
  * @throws {@link IOError} If fewer bytes are available than the format requires.
  */
-export function read_fmt<F extends string>(fmt: F, fp: IO, endian?: string): struct.Unpacked<F>;
-export function read_fmt(fmt: string, fp: IO, endian = ">"): struct.Unpacked<string> {
-  const s = _struct_for(fmt, endian);
+export function readFmt<F extends string>(fmt: F, fp: IO, endian?: string): struct.Unpacked<F>;
+export function readFmt(fmt: string, fp: IO, endian = ">"): struct.Unpacked<string> {
+  const s = _structFor(fmt, endian);
   const values = fp.unpack(s);
   if (values === null) {
     // Consume the short tail, as `fp.read(s.size)` does in Python.
@@ -140,22 +140,22 @@ export function read_fmt(fmt: string, fp: IO, endian = ">"): struct.Unpacked<str
 // Python's keyword-only `endian` follows `*args`; in TS it is a trailing plain
 // `{ endian }` options object (struct values are never plain objects).
 export type WriteFmtOptions = { endian?: string };
-function _is_write_fmt_options(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
+function _isWriteFmtOptions(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
   return v != null && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype;
 }
-export function write_fmt(fp: IO, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
+export function writeFmt(fp: IO, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
   const items: (struct.PackValue | WriteFmtOptions)[] = args;
   const last = items[items.length - 1];
-  const opts = _is_write_fmt_options(last) ? last : {};
-  const values = items.filter((v): v is struct.PackValue => !_is_write_fmt_options(v));
-  return fp.pack(_struct_for(fmt, opts.endian), values);
+  const opts = _isWriteFmtOptions(last) ? last : {};
+  const values = items.filter((v): v is struct.PackValue => !_isWriteFmtOptions(v));
+  return fp.pack(_structFor(fmt, opts.endian), values);
 }
 
 /** The largest finite IEEE-754 single (float32). */
 export const FLOAT32_MAX = 3.4028234663852886e38;
 
 /** Round a Python float (f8) to float32 (f4) precision. */
-export function to_f4(value: number): number {
+export function toF4(value: number): number {
   return struct.unpack("<f", struct.pack("<f", value))[0];
 }
 
@@ -164,7 +164,7 @@ export function to_f4(value: number): number {
  *
  * @throws {@link IOError} If fewer bytes are available than requested.
  */
-export function read_bytes(fp: IO, size: number): Uint8Array {
+export function readBytes(fp: IO, size: number): Uint8Array {
   const data = fp.read(size);
   if (data.length < size) {
     throw new OSError(`Short read: expected ${size} bytes, got ${data.length}`);
@@ -173,7 +173,7 @@ export function read_bytes(fp: IO, size: number): Uint8Array {
 }
 
 /** Write raw bytes to `fp`. Returns bytes written. */
-export function write_bytes(fp: IO, data: Uint8Array): number {
+export function writeBytes(fp: IO, data: Uint8Array): number {
   fp.write(data);
   return data.length;
 }
@@ -186,12 +186,12 @@ export function write_bytes(fp: IO, data: Uint8Array): number {
  * is always valid UTF-8 and never exceeds `max_bytes`. Used for fixed-width
  * AEP name fields.
  */
-export function truncate_utf8(value: string, max_bytes: number): Uint8Array {
-  return encode(decode(bytes_.slice(encode(value, "utf-8"), 0, max_bytes), "utf-8", "ignore"), "utf-8");
+export function truncateUtf8(value: string, maxBytes: number): Uint8Array {
+  return encode(decode(bytes_.slice(encode(value, "utf-8"), 0, maxBytes), "utf-8", "ignore"), "utf-8");
 }
 
 /** Check if `size` bytes can be read without consuming them. */
-export function is_readable(fp: IO, size = 1): boolean {
+export function isReadable(fp: IO, size = 1): boolean {
   const pos = fp.tell();
   const data = fp.read(size);
   fp.seek(pos);
@@ -202,7 +202,7 @@ export function is_readable(fp: IO, size = 1): boolean {
 const _PAD = b("\x00");
 
 /** Write a pad byte if `size` is odd. Returns bytes written (0 or 1). */
-export function write_pad(fp: IO, size: number): number {
+export function writePad(fp: IO, size: number): number {
   if (size % 2 !== 0) {
     fp.write(_PAD);
     return 1;
@@ -211,7 +211,7 @@ export function write_pad(fp: IO, size: number): number {
 }
 
 /** Consume a pad byte if `size` is odd. */
-export function read_pad(fp: IO, size: number): void {
+export function readPad(fp: IO, size: number): void {
   if (size % 2 !== 0) {
     fp.read_byte();
   }

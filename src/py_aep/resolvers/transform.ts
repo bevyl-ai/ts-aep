@@ -26,7 +26,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, type_name, float_repr, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, typeName, floatRepr, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -135,49 +135,49 @@ export class Mat4 {
     // Relative to the linear part's magnitude: a layer uniformly scaled
     // to 0.03 % has a determinant of 2.7e-11 and is perfectly invertible
     // (AE 2026 compensates a parent that small).
-    const abs_vals: number[] = [];
+    const absVals: number[] = [];
     for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 3; c++) abs_vals.push(Math.abs(s[r * 4 + c]));
+      for (let c = 0; c < 3; c++) absVals.push(Math.abs(s[r * 4 + c]));
     }
     // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
-    const scale = max(abs_vals);
+    const scale = max(absVals);
     if (det === 0.0 || Math.abs(det) <= _EPSILON * 1e-2 * scale ** 3) {
       throw new ValueError("Singular matrix, cannot invert.");
     }
 
-    const inv_det = 1.0 / det;
+    const invDet = 1.0 / det;
 
     return new Mat4([
       [
-        (s[5] * c5 - s[6] * c4 + s[7] * c3) * inv_det,
-        (-s[1] * c5 + s[2] * c4 - s[3] * c3) * inv_det,
-        (s[13] * s5 - s[14] * s4 + s[15] * s3) * inv_det,
-        (-s[9] * s5 + s[10] * s4 - s[11] * s3) * inv_det,
+        (s[5] * c5 - s[6] * c4 + s[7] * c3) * invDet,
+        (-s[1] * c5 + s[2] * c4 - s[3] * c3) * invDet,
+        (s[13] * s5 - s[14] * s4 + s[15] * s3) * invDet,
+        (-s[9] * s5 + s[10] * s4 - s[11] * s3) * invDet,
       ],
       [
-        (-s[4] * c5 + s[6] * c2 - s[7] * c1) * inv_det,
-        (s[0] * c5 - s[2] * c2 + s[3] * c1) * inv_det,
-        (-s[12] * s5 + s[14] * s2 - s[15] * s1) * inv_det,
-        (s[8] * s5 - s[10] * s2 + s[11] * s1) * inv_det,
+        (-s[4] * c5 + s[6] * c2 - s[7] * c1) * invDet,
+        (s[0] * c5 - s[2] * c2 + s[3] * c1) * invDet,
+        (-s[12] * s5 + s[14] * s2 - s[15] * s1) * invDet,
+        (s[8] * s5 - s[10] * s2 + s[11] * s1) * invDet,
       ],
       [
-        (s[4] * c4 - s[5] * c2 + s[7] * c0) * inv_det,
-        (-s[0] * c4 + s[1] * c2 - s[3] * c0) * inv_det,
-        (s[12] * s4 - s[13] * s2 + s[15] * s0) * inv_det,
-        (-s[8] * s4 + s[9] * s2 - s[11] * s0) * inv_det,
+        (s[4] * c4 - s[5] * c2 + s[7] * c0) * invDet,
+        (-s[0] * c4 + s[1] * c2 - s[3] * c0) * invDet,
+        (s[12] * s4 - s[13] * s2 + s[15] * s0) * invDet,
+        (-s[8] * s4 + s[9] * s2 - s[11] * s0) * invDet,
       ],
       [
-        (-s[4] * c3 + s[5] * c1 - s[6] * c0) * inv_det,
-        (s[0] * c3 - s[1] * c1 + s[2] * c0) * inv_det,
-        (-s[12] * s3 + s[13] * s1 - s[14] * s0) * inv_det,
-        (s[8] * s3 - s[9] * s1 + s[10] * s0) * inv_det,
+        (-s[4] * c3 + s[5] * c1 - s[6] * c0) * invDet,
+        (s[0] * c3 - s[1] * c1 + s[2] * c0) * invDet,
+        (-s[12] * s3 + s[13] * s1 - s[14] * s0) * invDet,
+        (s[8] * s3 - s[9] * s1 + s[10] * s0) * invDet,
       ],
     ]);
   }
 
   [INSPECT](): string {
     // rows hold floats: render each through float_repr so 1 prints as "1.0" like Python
-    return `Mat4([${this._rows.map((row) => `[${row.map((x) => float_repr(x)).join(", ")}]`).join(", ")}])`;
+    return `Mat4([${this._rows.map((row) => `[${row.map((x) => floatRepr(x)).join(", ")}]`).join(", ")}])`;
   }
 }
 
@@ -201,7 +201,7 @@ export function _scale(sx: number, sy: number, sz: number): Mat4 {
   return m;
 }
 
-export function _rotate_x(deg: number): Mat4 {
+export function _rotateX(deg: number): Mat4 {
   const r = deg * _DEG2RAD;
   // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   const c = Math.cos(r);
@@ -214,7 +214,7 @@ export function _rotate_x(deg: number): Mat4 {
   return m;
 }
 
-export function _rotate_y(deg: number): Mat4 {
+export function _rotateY(deg: number): Mat4 {
   const r = deg * _DEG2RAD;
   const c = Math.cos(r);
   const s = Math.sin(r);
@@ -226,7 +226,7 @@ export function _rotate_y(deg: number): Mat4 {
   return m;
 }
 
-export function _rotate_z(deg: number): Mat4 {
+export function _rotateZ(deg: number): Mat4 {
   const r = deg * _DEG2RAD;
   const c = Math.cos(r);
   const s = Math.sin(r);
@@ -252,8 +252,8 @@ export function _rotate_z(deg: number): Mat4 {
  *
  * @param position - `[x, y, z]` position in pixels.
  * @param anchor - `[x, y, z]` anchor point in pixels.
- * @param scale_pct - `[sx, sy, sz]` scale as percentages (100 = 1x).
- * @param rotation_z - Z-axis rotation in degrees.
+ * @param scalePct - `[sx, sy, sz]` scale as percentages (100 = 1x).
+ * @param rotationZ - Z-axis rotation in degrees.
  * @param kw - Keyword arguments:
  * - `orientation`: `[ox, oy, oz]` orientation angles in degrees (3D layers only).
  * - `rotate_x`: X-axis rotation in degrees (3D layers only).
@@ -264,11 +264,11 @@ export function _rotate_z(deg: number): Mat4 {
  * - `space_aspect`: The pixel aspect of the space the layer's Position lives in (`Sp`).
  * @returns A 4x4 matrix representing the layer's local transform.
  */
-export function build_local_matrix(
+export function buildLocalMatrix(
   position: number[],
   anchor: number[],
-  scale_pct: number[],
-  rotation_z: number,
+  scalePct: number[],
+  rotationZ: number,
   kw: {
     orientation?: number[] | null;
     rotate_x?: number;
@@ -287,9 +287,9 @@ export function build_local_matrix(
     space_aspect = 1.0,
   } = kw;
 
-  const sx = scale_pct[0] / 100.0;
-  const sy = scale_pct[1] / 100.0;
-  const sz = scale_pct.length > 2 ? scale_pct[2] / 100.0 : 1.0;
+  const sx = scalePct[0] / 100.0;
+  const sy = scalePct[1] / 100.0;
+  const sz = scalePct.length > 2 ? scalePct[2] / 100.0 : 1.0;
 
   // Start from right: T(-anchor)
   let m = _translation(-anchor[0], -anchor[1], anchor.length > 2 ? -anchor[2] : 0.0);
@@ -299,18 +299,18 @@ export function build_local_matrix(
   m = _scale(sx, sy, sz).__matmul__(m);
 
   // Per-axis rotations: Rz * Ry * Rx (applied right-to-left)
-  m = _rotate_z(rotation_z).__matmul__(m);
-  m = _rotate_y(rotate_y).__matmul__(m);
-  m = _rotate_x(rotate_x).__matmul__(m);
+  m = _rotateZ(rotationZ).__matmul__(m);
+  m = _rotateY(rotate_y).__matmul__(m);
+  m = _rotateX(rotate_x).__matmul__(m);
 
   // Orientation: Rz(oz) * Ry(oy) * Rx(ox)
   if (orientation != null) {
     const ox = orientation[0];
     const oy = orientation[1];
     const oz = orientation[2];
-    m = _rotate_z(oz).__matmul__(m);
-    m = _rotate_y(oy).__matmul__(m);
-    m = _rotate_x(ox).__matmul__(m);
+    m = _rotateZ(oz).__matmul__(m);
+    m = _rotateY(oy).__matmul__(m);
+    m = _rotateX(ox).__matmul__(m);
   }
 
   if (auto_rotation != null) m = auto_rotation.__matmul__(m);
@@ -345,17 +345,17 @@ export function build_local_matrix(
  * @param layer - The layer whose world matrix to build.
  * @param time - Composition time in seconds to evaluate animated transform properties at; `null`
  *   uses each property's static `value`.
- * @param flatten_2d - Drop the out-of-plane terms (see `_layer_local_matrix`).
+ * @param flatten2d - Drop the out-of-plane terms (see `_layer_local_matrix`).
  * @param kw - Keyword arguments:
  * - `as_parent`: Treat `layer` itself as a parent too - a camera or light then contributes its rig.
  * - `auto_orient`: Apply the layers' auto-orientation (needs `time`).
  * @throws {@link NotImplementedError} With `auto_orient`, for an orientation the math does not
  *   model (see `_auto_rotation`).
  */
-export function build_world_matrix(
+export function buildWorldMatrix(
   layer: Layer,
   time: number | null = null,
-  flatten_2d = false,
+  flatten2d = false,
   kw: { as_parent?: boolean; auto_orient?: boolean } = {},
 ): Mat4 {
   const { as_parent = false, auto_orient = false } = kw;
@@ -371,38 +371,38 @@ export function build_world_matrix(
   // Position lives in its parent's pixels (the comp's for the root).
   let m = Mat4.identity();
   const comp = layer.containingComp;
-  let space_aspect = comp.pixelAspect;
+  let spaceAspect = comp.pixelAspect;
   for (const lyr of chain.reverse()) {
     if ((lyr !== layer || as_parent) && _RIG_TYPES.has(lyr._ldta.layer_type)) {
-      if (flatten_2d) {
+      if (flatten2d) {
         // Under a 2D layer a rig acts as a 2D layer anchored on the
         // comp centre, turned by Rotate Z alone (AE 2026: children
         // of a camera, a spot and a point light all fit
         // `T(pos.xy) . Rz . T(-w/2, -h/2)` exactly).
-        const position = _prop_value(lyr.transform, "ADBE Position", time);
-        const rz = _prop_value(lyr.transform, "ADBE Rotate Z", time);
+        const position = _propValue(lyr.transform, "ADBE Position", time);
+        const rz = _propValue(lyr.transform, "ADBE Rotate Z", time);
         m = m.__matmul__(
           _translation(position[0], position[1], 0.0)
-            .__matmul__(_rotate_z(rz))
+            .__matmul__(_rotateZ(rz))
             .__matmul__(_translation(-comp.width / 2.0, -comp.height / 2.0, 0.0)),
         );
       } else {
-        m = m.__matmul__(_rig_matrix(lyr, time, space_aspect));
+        m = m.__matmul__(_rigMatrix(lyr, time, spaceAspect));
       }
-      space_aspect = 1.0;
+      spaceAspect = 1.0;
     } else {
-      const source_aspect = layer_source_aspect(lyr);
+      const sourceAspect = layerSourceAspect(lyr);
       m = m.__matmul__(
-        _layer_local_matrix(lyr, time, flatten_2d, auto_orient, source_aspect, space_aspect),
+        _layerLocalMatrix(lyr, time, flatten2d, auto_orient, sourceAspect, spaceAspect),
       );
-      space_aspect = source_aspect;
+      spaceAspect = sourceAspect;
     }
   }
   return m;
 }
 
 /** Pixel aspect of a layer's own pixels: its source's, else square. */
-export function layer_source_aspect(layer: Layer): number {
+export function layerSourceAspect(layer: Layer): number {
   const source = layer._source_item;
   const aspect = source != null && "pixelAspect" in source ? source.pixelAspect : null;
   return aspect != null && aspect !== 0 ? aspect : 1.0;
@@ -412,14 +412,14 @@ export function layer_source_aspect(layer: Layer): number {
  * Pixel aspect of the space a child of `parent` keeps its Position in:
  * the comp's at the root, square under a camera or light.
  */
-export function position_space_aspect(parent: Layer | null, comp: CompItem): number {
+export function positionSpaceAspect(parent: Layer | null, comp: CompItem): number {
   if (parent == null) return comp.pixelAspect;
   if (_RIG_TYPES.has(parent._ldta.layer_type)) return 1.0;
-  return layer_source_aspect(parent);
+  return layerSourceAspect(parent);
 }
 
 /** `diag(aspect, 1, 1)`: widens pixels of that aspect to square ones. */
-export function aspect_scale(aspect: number): Mat4 {
+export function aspectScale(aspect: number): Mat4 {
   return _scale(aspect, 1.0, 1.0);
 }
 
@@ -427,21 +427,21 @@ export function aspect_scale(aspect: number): Mat4 {
  * A world matrix from a `space_aspect` space into comp pixels, made to
  * map square pixels to square pixels (so its rotation can be read).
  */
-export function square_pixels(matrix: Mat4, comp_aspect: number, space_aspect: number): Mat4 {
-  return aspect_scale(comp_aspect).__matmul__(matrix).__matmul__(aspect_scale(1.0 / space_aspect));
+export function squarePixels(matrix: Mat4, compAspect: number, spaceAspect: number): Mat4 {
+  return aspectScale(compAspect).__matmul__(matrix).__matmul__(aspectScale(1.0 / spaceAspect));
 }
 
 /**
  * Evaluate `group[match_name]`: static `value` when `time` is `null`,
  * else `value_at_time(time)`.
  */
-export function _prop_value<K extends _PropertyName>(
+export function _propValue<K extends _PropertyName>(
   group: PropertyGroup,
-  match_name: K,
+  matchName: K,
   time: number | null,
 ): _PropertyValueOf<K>;
-export function _prop_value(group: PropertyGroup, match_name: _PropertyName, time: number | null) {
-  const prop = group.property(match_name);
+export function _propValue(group: PropertyGroup, matchName: _PropertyName, time: number | null) {
+  const prop = group.property(matchName);
   if (time == null) return prop.value;
   return prop.valueAtTime(time);
 }
@@ -457,49 +457,49 @@ export function _prop_value(group: PropertyGroup, match_name: _PropertyName, tim
  * a parent's Orientation does not turn it at all (measured on AE 2026: a
  * parent with Orientation [0, 0, 30] leaves the child's Rotate Z at 0).
  */
-export function _layer_local_matrix(
+export function _layerLocalMatrix(
   layer: Layer,
   time: number | null = null,
-  flatten_2d = false,
-  auto_orient = false,
-  source_aspect = 1.0,
-  space_aspect = 1.0,
+  flatten2d = false,
+  autoOrient = false,
+  sourceAspect = 1.0,
+  spaceAspect = 1.0,
 ): Mat4 {
   const transform = layer.transform;
 
-  const value = <K extends _PropertyName>(match_name: K): _PropertyValueOf<K> => _prop_value(transform, match_name, time);
+  const value = <K extends _PropertyName>(matchName: K): _PropertyValueOf<K> => _propValue(transform, matchName, time);
 
   let position: number[] = value("ADBE Position");
   const anchor: number[] = value("ADBE Anchor Point");
-  const scale_pct: number[] = value("ADBE Scale");
+  const scalePct: number[] = value("ADBE Scale");
   let rz: number = value("ADBE Rotate Z");
   let orientation: number[] = value("ADBE Orientation");
   let rx: number = value("ADBE Rotate X");
   let ry: number = value("ADBE Rotate Y");
 
-  if (flatten_2d) {
+  if (flatten2d) {
     position = [...position.slice(0, 2), 0.0];
     rx = 0.0;
     ry = 0.0;
     orientation = [0.0, 0.0, 0.0];
   }
 
-  let auto_rotation: Mat4 | null = null;
-  if (auto_orient && time != null) {
-    const [rot, auto_rz] = _auto_rotation(layer, time, position);
-    auto_rotation = rot;
-    rz += auto_rz;
+  let autoRotation: Mat4 | null = null;
+  if (autoOrient && time != null) {
+    const [rot, autoRz] = _autoRotation(layer, time, position);
+    autoRotation = rot;
+    rz += autoRz;
   }
 
-  const is_3d = rx !== 0.0 || ry !== 0.0 || orientation.some((v) => v !== 0.0);
+  const is3d = rx !== 0.0 || ry !== 0.0 || orientation.some((v) => v !== 0.0);
 
-  return build_local_matrix(position, anchor, scale_pct, rz, {
-    orientation: is_3d ? orientation : null,
+  return buildLocalMatrix(position, anchor, scalePct, rz, {
+    orientation: is3d ? orientation : null,
     rotate_x: rx,
     rotate_y: ry,
-    auto_rotation,
-    source_aspect,
-    space_aspect,
+    auto_rotation: autoRotation,
+    source_aspect: sourceAspect,
+    space_aspect: spaceAspect,
   });
 }
 
@@ -513,20 +513,20 @@ export const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPO
  * (a point light keeps the flag but AE applies no look-at).
  */
 /** A light layer: the only layer kind with a `light_type`. */
-function _is_light(layer: Layer): layer is LightLayer {
+function _isLight(layer: Layer): layer is LightLayer {
   return "lightType" in layer;
 }
 
 /** An AV layer: the only layer kind that resolves its comp's active camera. */
-function _is_av_layer(layer: Layer): layer is AVLayer {
+function _isAvLayer(layer: Layer): layer is AVLayer {
   return "_active_camera_at" in layer;
 }
 
-export function rig_aims_at_poi(layer: Layer): boolean {
-  const layer_type = layer._ldta.layer_type;
-  if (!_RIG_TYPES.has(layer_type)) return false;
+export function rigAimsAtPoi(layer: Layer): boolean {
+  const layerType = layer._ldta.layer_type;
+  if (!_RIG_TYPES.has(layerType)) return false;
   const aims =
-    layer_type === LayerType.CAMERA || (_is_light(layer) && _AIMED_LIGHTS.has(layer.lightType));
+    layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
   return aims && layer.autoOrient === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
 }
 
@@ -541,37 +541,37 @@ export function rig_aims_at_poi(layer: Layer): boolean {
  * The look-at aims in square pixels, its Position and point of interest
  * widened by the pixel aspect of the space they live in.
  */
-export function _rig_rotation(layer: Layer, time: number | null, space_aspect: number): Mat4 {
+export function _rigRotation(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
   const transform = layer.transform;
 
-  const value = <K extends _PropertyName>(match_name: K): _PropertyValueOf<K> => _prop_value(transform, match_name, time);
+  const value = <K extends _PropertyName>(matchName: K): _PropertyValueOf<K> => _propValue(transform, matchName, time);
 
   let rotation = Mat4.identity();
-  if (rig_aims_at_poi(layer)) {
+  if (rigAimsAtPoi(layer)) {
     const eye: number[] = [...value("ADBE Position")];
     const target: number[] = [...value("ADBE Anchor Point")];
-    eye[0] *= space_aspect;
-    target[0] *= space_aspect;
-    rotation = _look_at_rotation(eye, target);
+    eye[0] *= spaceAspect;
+    target[0] *= spaceAspect;
+    rotation = _lookAtRotation(eye, target);
   }
   const orientation: number[] = value("ADBE Orientation");
   return rotation
-    .__matmul__(_rotate_x(orientation[0]))
-    .__matmul__(_rotate_y(orientation[1]))
-    .__matmul__(_rotate_z(orientation[2]))
-    .__matmul__(_rotate_x(value("ADBE Rotate X")))
-    .__matmul__(_rotate_y(value("ADBE Rotate Y")))
-    .__matmul__(_rotate_z(value("ADBE Rotate Z")));
+    .__matmul__(_rotateX(orientation[0]))
+    .__matmul__(_rotateY(orientation[1]))
+    .__matmul__(_rotateZ(orientation[2]))
+    .__matmul__(_rotateX(value("ADBE Rotate X")))
+    .__matmul__(_rotateY(value("ADBE Rotate Y")))
+    .__matmul__(_rotateZ(value("ADBE Rotate Z")));
 }
 
 /**
  * A camera or light's rig, turning in square pixels like a layer (see
  * `build_local_matrix`).
  */
-export function _rig_matrix(layer: Layer, time: number | null, space_aspect: number): Mat4 {
-  const position = _prop_value(layer.transform, "ADBE Position", time);
-  let m = _rig_rotation(layer, time, space_aspect);
-  if (space_aspect !== 1.0) m = _scale(1.0 / space_aspect, 1.0, 1.0).__matmul__(m);
+export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
+  const position = _propValue(layer.transform, "ADBE Position", time);
+  let m = _rigRotation(layer, time, spaceAspect);
+  if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).__matmul__(m);
   return _translation(position[0], position[1], position[2]).__matmul__(m);
 }
 
@@ -587,9 +587,9 @@ export function _rig_matrix(layer: Layer, time: number | null, space_aspect: num
  * @throws {@link NotImplementedError} For separated Position dimensions along a path, a parented
  *   layer turned towards the camera, and characters turned towards the camera.
  */
-export function _auto_rotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
+export function _autoRotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
   const mode = layer.autoOrient;
-  const three_d = !!layer._ldta.three_d_layer;
+  const threeD = !!layer._ldta.three_d_layer;
   if (mode === AutoOrientType.ALONG_PATH) {
     const prop = layer.transform.property("ADBE Position");
     if (prop.dimensionsSeparated) {
@@ -600,20 +600,20 @@ export function _auto_rotation(layer: Layer, time: number, position: number[]): 
     }
     const direction = prop._motion_direction_at(time);
     if (direction == null) return [null, 0.0];
-    if (three_d) {
+    if (threeD) {
       const forward = [...direction, 0.0, 0.0].slice(0, 3);
-      return [_look_at_rotation([0.0, 0.0, 0.0], forward), 0.0];
+      return [_lookAtRotation([0.0, 0.0, 0.0], forward), 0.0];
     }
     return [null, degrees(Math.atan2(direction[1], direction[0]))];
   }
-  if (mode === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST && three_d) {
+  if (mode === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST && threeD) {
     if (layer.parent != null) {
       throw new NotImplementedError(
         `layer ${repr(layer.name)} is parented and turned towards the ` +
           "camera, which the transform math does not model",
       );
     }
-    return [_look_at_rotation(_camera_position(layer, time), position), 0.0];
+    return [_lookAtRotation(_cameraPosition(layer, time), position), 0.0];
   }
   if (mode === AutoOrientType.CHARACTERS_TOWARD_CAMERA) {
     throw new NotImplementedError(
@@ -628,18 +628,18 @@ export function _auto_rotation(layer: Layer, time: number, position: number[]): 
  * World position of the camera active at `time` in `layer`'s comp:
  * the front-most enabled camera layer, else the comp's default camera.
  */
-export function _camera_position(layer: Layer, time: number): number[] {
+export function _cameraPosition(layer: Layer, time: number): number[] {
   const comp = layer.containingComp;
   // Python `cast("AVLayer", layer)._active_camera_at(time)`.
-  if (!_is_av_layer(layer)) {
-    throw new AttributeError(`'${type_name(layer)}' object has no attribute '_active_camera_at'`);
+  if (!_isAvLayer(layer)) {
+    throw new AttributeError(`'${typeName(layer)}' object has no attribute '_active_camera_at'`);
   }
   const camera = layer._active_camera_at(time);
   if (camera != null) {
-    const world = build_world_matrix(camera, time, undefined, { as_parent: true });
+    const world = buildWorldMatrix(camera, time, undefined, { as_parent: true });
     return world.transform_point([0.0, 0.0, 0.0]);
   }
-  const zoom = default_camera_zoom(comp.width, comp.pixelAspect);
+  const zoom = defaultCameraZoom(comp.width, comp.pixelAspect);
   return [comp.width / 2.0, comp.height / 2.0, -zoom];
 }
 
@@ -647,7 +647,7 @@ export function _camera_position(layer: Layer, time: number): number[] {
 // Matrix decomposition
 // ------------------------------------------------------------------
 
-export function _vec3_norm(v: number[]): number {
+export function _vec3Norm(v: number[]): number {
   // hypot, not sqrt(x*x + y*y + z*z): squaring overflows to inf above ~1.34e154
   // and the norm then poisons every value derived from it. Nested 2-argument
   // calls because hypot only takes 3 arguments from Python 3.8.
@@ -655,7 +655,7 @@ export function _vec3_norm(v: number[]): number {
 }
 
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
-export function _mat3_det(m: Mat4): number {
+export function _mat3Det(m: Mat4): number {
   return (
     m.row(0)[0] *
       (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
@@ -681,17 +681,17 @@ export function _mat3_det(m: Mat4): number {
  * and no rotation represents it - the case where AE's own reparenting jumps
  * too.
  */
-export function rotation_part(matrix: Mat4): Mat4 {
+export function rotationPart(matrix: Mat4): Mat4 {
   const rows: number[][] = Array.from({ length: 4 }, () => [0.0, 0.0, 0.0, 0.0]);
   rows[3][3] = 1.0;
   for (let column = 0; column < 3; column++) {
     const axis = [0, 1, 2].map((row) => matrix.row(row)[column]);
-    const norm = _vec3_norm(axis);
+    const norm = _vec3Norm(axis);
     const length = norm !== 0 ? norm : 1.0;
     for (let row = 0; row < 3; row++) rows[row][column] = axis[row] / length;
   }
   const normalized = new Mat4(rows);
-  if (_mat3_det(normalized) < 0) {
+  if (_mat3Det(normalized) < 0) {
     for (let row = 0; row < 3; row++) {
       for (let column = 0; column < 3; column++) rows[row][column] = -rows[row][column];
     }
@@ -709,12 +709,12 @@ export function rotation_part(matrix: Mat4): Mat4 {
  * rotations - those cancel out of the relation, which is why the answer
  * does not depend on them.
  */
-export function compose_orientation(orientation: number[], delta: Mat4): number[] {
-  const current = _rotate_x(orientation[0])
-    .__matmul__(_rotate_y(orientation[1]))
-    .__matmul__(_rotate_z(orientation[2]));
+export function composeOrientation(orientation: number[], delta: Mat4): number[] {
+  const current = _rotateX(orientation[0])
+    .__matmul__(_rotateY(orientation[1]))
+    .__matmul__(_rotateZ(orientation[2]));
   const combined = delta.__matmul__(current);
-  const angles = _euler_xyz(
+  const angles = _eulerXyz(
     combined.row(0)[0],
     combined.row(0)[1],
     combined.row(0)[2],
@@ -740,11 +740,11 @@ export function compose_orientation(orientation: number[], delta: Mat4): number[
  * compensated position as well; the position decomposes from
  * `M[:,3] + M3 . anchor`, which the orientation never enters.
  */
-export function strip_orientation(matrix: Mat4, orientation: number[]): Mat4 {
+export function stripOrientation(matrix: Mat4, orientation: number[]): Mat4 {
   const ox = orientation[0];
   const oy = orientation[1];
   const oz = orientation[2];
-  const inverse = _rotate_z(-oz).__matmul__(_rotate_y(-oy)).__matmul__(_rotate_x(-ox));
+  const inverse = _rotateZ(-oz).__matmul__(_rotateY(-oy)).__matmul__(_rotateX(-ox));
   const rotated = inverse.__matmul__(matrix);
   const rows = [0, 1, 2, 3].map((r) => [...matrix.row(r)]);
   for (let r = 0; r < 3; r++) {
@@ -770,7 +770,7 @@ export function strip_orientation(matrix: Mat4, orientation: number[]): Mat4 {
  * @returns A tuple of `(position, scale_pct, rotation_z, rotate_x, rotate_y)` where `scale_pct` is
  *   in percentage units (100 = 1x).
  */
-export function decompose_transform(
+export function decomposeTransform(
   matrix: Mat4,
   anchor: number[],
 ): [number[], number[], number, number, number] {
@@ -781,8 +781,8 @@ export function decompose_transform(
   // Q = M @ T(anchor) - factors out the anchor translation.
   // This gives Q = T(pos) * R * S, which is straightforward to
   // decompose.
-  const t_anchor = _translation(ax, ay, az);
-  const q = matrix.__matmul__(t_anchor);
+  const tAnchor = _translation(ax, ay, az);
+  const q = matrix.__matmul__(tAnchor);
 
   // Position is in the last column.
   const pos = [q.row(0)[3], q.row(1)[3], q.row(2)[3]];
@@ -792,13 +792,13 @@ export function decompose_transform(
   const col1 = [q.row(0)[1], q.row(1)[1], q.row(2)[1]];
   const col2 = [q.row(0)[2], q.row(1)[2], q.row(2)[2]];
 
-  let sx = _vec3_norm(col0);
-  let sy = _vec3_norm(col1);
-  let sz = _vec3_norm(col2);
+  let sx = _vec3Norm(col0);
+  let sy = _vec3Norm(col1);
+  let sz = _vec3Norm(col2);
 
   // Flip detection: if determinant is negative, one scale axis is
   // flipped. Convention: negate sx.
-  if (_mat3_det(q) < 0) sx = -sx;
+  if (_mat3Det(q) < 0) sx = -sx;
 
   // Clamp near-zero scales to avoid division by zero.
   if (Math.abs(sx) < _EPSILON) sx = sx >= 0 ? _EPSILON : -_EPSILON;
@@ -814,10 +814,10 @@ export function decompose_transform(
   const r12 = col2[1] / sz;
   const r22 = col2[2] / sz;
 
-  const [rx_deg, ry_deg, rz_deg] = _euler_xyz(r00, r01, r02, r10, r11, r12, r22);
+  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(r00, r01, r02, r10, r11, r12, r22);
 
-  const scale_pct = [sx * 100.0, sy * 100.0, sz * 100.0];
-  return [pos, scale_pct, rz_deg, rx_deg, ry_deg];
+  const scalePct = [sx * 100.0, sy * 100.0, sz * 100.0];
+  return [pos, scalePct, rzDeg, rxDeg, ryDeg];
 }
 
 /**
@@ -827,7 +827,7 @@ export function decompose_transform(
  *     | sa*sb*cg+ca*sg  -sa*sb*sg+ca*cg  -sa*cb |
  *     | -ca*sb*cg+sa*sg  ca*sb*sg+sa*cg   ca*cb |
  */
-export function _euler_xyz(
+export function _eulerXyz(
   r00: number,
   r01: number,
   r02: number,
@@ -837,23 +837,23 @@ export function _euler_xyz(
   r22: number,
 ): [number, number, number] {
   // Clamp to [-1, 1] for asin safety.
-  const sin_beta = max([-1.0, min([1.0, r02])]);
+  const sinBeta = max([-1.0, min([1.0, r02])]);
   // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
-  const beta = Math.asin(sin_beta);
+  const beta = Math.asin(sinBeta);
   // cos(beta) straight off the matrix. Going through `cos(asin(r02))`
   // loses most of its digits as r02 approaches 1, which matters because
   // an orientation slerping towards a 90-degree Y passes near the pole
   // on almost every frame without ever reaching it.
-  const cos_beta = hypot(r00, r01);
+  const cosBeta = hypot(r00, r01);
 
-  let rx_deg: number;
-  let ry_deg: number;
-  let rz_deg: number;
-  if (Math.abs(cos_beta) > _EPSILON) {
+  let rxDeg: number;
+  let ryDeg: number;
+  let rzDeg: number;
+  if (Math.abs(cosBeta) > _EPSILON) {
     // Normal case: no gimbal lock.
-    rx_deg = Math.atan2(-r12, r22) * _RAD2DEG;
-    ry_deg = beta * _RAD2DEG;
-    rz_deg = Math.atan2(-r01, r00) * _RAD2DEG;
+    rxDeg = Math.atan2(-r12, r22) * _RAD2DEG;
+    ryDeg = beta * _RAD2DEG;
+    rzDeg = Math.atan2(-r01, r00) * _RAD2DEG;
   } else {
     // Gimbal lock: beta = +/-90 deg, where X and Z turn about the same
     // line and only their combination is recoverable. AE puts all of it
@@ -862,23 +862,23 @@ export function _euler_xyz(
     // which AE writes back as [0, 270, g] / [0, 90, g] for g across a
     // full turn. Solving the same relation for X instead (the previous
     // behavior) does not even reconstruct the rotation at beta = -90.
-    rx_deg = 0.0;
-    rz_deg = Math.atan2(r10, r11) * _RAD2DEG;
-    ry_deg = beta * _RAD2DEG;
+    rxDeg = 0.0;
+    rzDeg = Math.atan2(r10, r11) * _RAD2DEG;
+    ryDeg = beta * _RAD2DEG;
   }
-  return [rx_deg, ry_deg, rz_deg];
+  return [rxDeg, ryDeg, rzDeg];
 }
 
 // ------------------------------------------------------------------
 // Vector helpers
 // ------------------------------------------------------------------
 
-export function _vec3_cross(a: number[], b: number[]): number[] {
+export function _vec3Cross(a: number[], b: number[]): number[] {
   return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
-export function _vec3_normalize(v: number[]): number[] {
-  const n = _vec3_norm(v);
+export function _vec3Normalize(v: number[]): number[] {
+  const n = _vec3Norm(v);
   if (n < _EPSILON) throw new ValueError("cannot normalize a zero-length vector");
   return [v[0] / n, v[1] / n, v[2] / n];
 }
@@ -897,9 +897,9 @@ export function _vec3_normalize(v: number[]): number[] {
  * `scale[2] = 100 * sin(angle(x, y))`; reflections come out as 180-degree
  * rotation combinations, never negative scale.
  *
- * @param top_left - `[x, y, z]` comp-space position of the source's top-left.
- * @param top_right - `[x, y, z]` position of the source's top-right.
- * @param bottom_left - `[x, y, z]` position of the source's bottom-left.
+ * @param topLeft - `[x, y, z]` comp-space position of the source's top-left.
+ * @param topRight - `[x, y, z]` position of the source's top-right.
+ * @param bottomLeft - `[x, y, z]` position of the source's bottom-left.
  * @param width - Layer source width in pixels.
  * @param height - Layer source height in pixels.
  * @returns An object with `anchor_point`, `position`, `x_rotation`, `y_rotation`, `z_rotation` and
@@ -907,50 +907,50 @@ export function _vec3_normalize(v: number[]): number[] {
  *   returns.
  * @throws {@link ValueError} If the points are coincident or collinear.
  */
-export function transform_from_points(
-  top_left: number[],
-  top_right: number[],
-  bottom_left: number[],
+export function transformFromPoints(
+  topLeft: number[],
+  topRight: number[],
+  bottomLeft: number[],
   width: number,
   height: number,
 ): Record<string, number | number[]> {
-  const x_axis = [0, 1, 2].map((i) => top_right[i] - top_left[i]);
-  const y_axis = [0, 1, 2].map((i) => bottom_left[i] - top_left[i]);
-  const x_len = _vec3_norm(x_axis);
-  const y_len = _vec3_norm(y_axis);
-  if (x_len < _EPSILON || y_len < _EPSILON) {
+  const xAxis = [0, 1, 2].map((i) => topRight[i] - topLeft[i]);
+  const yAxis = [0, 1, 2].map((i) => bottomLeft[i] - topLeft[i]);
+  const xLen = _vec3Norm(xAxis);
+  const yLen = _vec3Norm(yAxis);
+  if (xLen < _EPSILON || yLen < _EPSILON) {
     throw new ValueError("transform points must not be coincident");
   }
-  const x_hat = x_axis.map((c) => c / x_len);
-  const y_raw_hat = y_axis.map((c) => c / y_len);
+  const xHat = xAxis.map((c) => c / xLen);
+  const yRawHat = yAxis.map((c) => c / yLen);
 
   // Shear is absorbed into the z scale: 100 * sin(angle between x and y).
-  const sin_theta = _vec3_norm(_vec3_cross(x_hat, y_raw_hat));
+  const sinTheta = _vec3Norm(_vec3Cross(xHat, yRawHat));
 
-  const x_dot_y = sum([0, 1, 2].map((i) => x_hat[i] * y_axis[i]));
-  const y_ortho = [0, 1, 2].map((i) => y_axis[i] - x_dot_y * x_hat[i]);
-  const y_ortho_len = _vec3_norm(y_ortho);
-  if (y_ortho_len < _EPSILON) throw new ValueError("transform points must not be collinear");
-  const y_hat = y_ortho.map((c) => c / y_ortho_len);
-  const z_hat = _vec3_cross(x_hat, y_hat);
+  const xDotY = sum([0, 1, 2].map((i) => xHat[i] * yAxis[i]));
+  const yOrtho = [0, 1, 2].map((i) => yAxis[i] - xDotY * xHat[i]);
+  const yOrthoLen = _vec3Norm(yOrtho);
+  if (yOrthoLen < _EPSILON) throw new ValueError("transform points must not be collinear");
+  const yHat = yOrtho.map((c) => c / yOrthoLen);
+  const zHat = _vec3Cross(xHat, yHat);
 
-  const [rx_deg, ry_deg, rz_deg] = _euler_xyz(
-    x_hat[0],
-    y_hat[0],
-    z_hat[0],
-    x_hat[1],
-    y_hat[1],
-    z_hat[1],
-    z_hat[2],
+  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(
+    xHat[0],
+    yHat[0],
+    zHat[0],
+    xHat[1],
+    yHat[1],
+    zHat[1],
+    zHat[2],
   );
 
   return {
     anchor_point: [0.0, 0.0, 0.0],
-    position: [top_left[0], top_left[1], top_left[2]],
-    x_rotation: rx_deg,
-    y_rotation: ry_deg,
-    z_rotation: rz_deg,
-    scale: [(x_len / width) * 100.0, (y_ortho_len / height) * 100.0, sin_theta * 100.0],
+    position: [topLeft[0], topLeft[1], topLeft[2]],
+    x_rotation: rxDeg,
+    y_rotation: ryDeg,
+    z_rotation: rzDeg,
+    scale: [(xLen / width) * 100.0, (yOrthoLen / height) * 100.0, sinTheta * 100.0],
   };
 }
 
@@ -966,8 +966,8 @@ export function transform_from_points(
  * width by its pixel aspect ratio first (verified against AE 2026 at
  * pixel aspects 0.5 / 1.0 / 1.21212).
  */
-export function default_camera_zoom(comp_width: number, pixel_aspect: number): number {
-  return (comp_width * pixel_aspect) / 0.72;
+export function defaultCameraZoom(compWidth: number, pixelAspect: number): number {
+  return (compWidth * pixelAspect) / 0.72;
 }
 
 /**
@@ -979,17 +979,17 @@ export function default_camera_zoom(comp_width: number, pixel_aspect: number): n
  * a point in the z=0 plane the projection is the identity, so 2D layers
  * fall out naturally.
  */
-export function project_to_comp(
-  world_point: number[],
-  comp_width: number,
-  comp_height: number,
-  pixel_aspect: number,
+export function projectToComp(
+  worldPoint: number[],
+  compWidth: number,
+  compHeight: number,
+  pixelAspect: number,
 ): number[] {
-  const zoom = default_camera_zoom(comp_width, pixel_aspect);
-  const cx = comp_width / 2.0;
-  const cy = comp_height / 2.0;
-  const factor = zoom / (zoom + world_point[2]);
-  return [cx + (world_point[0] - cx) * factor, cy + (world_point[1] - cy) * factor];
+  const zoom = defaultCameraZoom(compWidth, pixelAspect);
+  const cx = compWidth / 2.0;
+  const cy = compHeight / 2.0;
+  const factor = zoom / (zoom + worldPoint[2]);
+  return [cx + (worldPoint[0] - cx) * factor, cy + (worldPoint[1] - cy) * factor];
 }
 
 /**
@@ -1011,27 +1011,27 @@ export function project_to_comp(
  *   (|cross| is ~1.7e-9 at 1e-7 degrees off vertical, vs ~6e-17 or an
  *   exact 0 at the pole).
  */
-export function _look_at_rotation(eye: number[], target: number[]): Mat4 {
+export function _lookAtRotation(eye: number[], target: number[]): Mat4 {
   const delta = [0, 1, 2].map((i) => target[i] - eye[i]);
   let forward: number[];
-  if (_vec3_norm(delta) < _EPSILON) {
+  if (_vec3Norm(delta) < _EPSILON) {
     forward = [0.0, 0.0, 1.0];
   } else {
-    forward = _vec3_normalize(delta);
+    forward = _vec3Normalize(delta);
   }
   const up = [0.0, 1.0, 0.0];
-  const cross = _vec3_cross(up, forward);
-  let x_axis: number[];
-  if (_vec3_norm(cross) < _EPSILON) {
-    x_axis = [1.0, 0.0, 0.0];
+  const cross = _vec3Cross(up, forward);
+  let xAxis: number[];
+  if (_vec3Norm(cross) < _EPSILON) {
+    xAxis = [1.0, 0.0, 0.0];
   } else {
-    x_axis = _vec3_normalize(cross);
+    xAxis = _vec3Normalize(cross);
   }
-  const y_axis = _vec3_cross(forward, x_axis);
+  const yAxis = _vec3Cross(forward, xAxis);
   const m = Mat4.identity();
   for (let row = 0; row < 3; row++) {
-    m.row(row)[0] = x_axis[row];
-    m.row(row)[1] = y_axis[row];
+    m.row(row)[0] = xAxis[row];
+    m.row(row)[1] = yAxis[row];
     m.row(row)[2] = forward[row];
   }
   return m;
@@ -1050,37 +1050,37 @@ export function _look_at_rotation(eye: number[], target: number[]): Mat4 {
  *
  * @returns `(origin, direction)` in world space.
  */
-export function camera_ray(
+export function cameraRay(
   camera: Layer | null,
-  comp_point: number[],
-  comp_width: number,
-  comp_height: number,
-  pixel_aspect: number,
+  compPoint: number[],
+  compWidth: number,
+  compHeight: number,
+  pixelAspect: number,
   time: number | null = null,
 ): [number[], number[]] {
-  const cx = comp_width / 2.0;
-  const cy = comp_height / 2.0;
+  const cx = compWidth / 2.0;
+  const cy = compHeight / 2.0;
 
   if (camera == null) {
-    const zoom = default_camera_zoom(comp_width, pixel_aspect);
+    const zoom = defaultCameraZoom(compWidth, pixelAspect);
     const origin = [cx, cy, -zoom];
-    const direction = [comp_point[0] - cx, comp_point[1] - cy, zoom];
+    const direction = [compPoint[0] - cx, compPoint[1] - cy, zoom];
     return [origin, direction];
   }
 
   // The camera's whole parent chain places it (AE 2026: a camera parented
   // to a turned null casts its rays from where the null carries it).
-  const world = build_world_matrix(camera, time, undefined, { as_parent: true });
+  const world = buildWorldMatrix(camera, time, undefined, { as_parent: true });
   const position = world.transform_point([0.0, 0.0, 0.0]);
 
-  const camera_options = camera.property("ADBE Camera Options Group");
-  const zoom = _prop_value(camera_options, "ADBE Camera Zoom", time);
+  const cameraOptions = camera.property("ADBE Camera Options Group");
+  const zoom = _propValue(cameraOptions, "ADBE Camera Zoom", time);
 
   // The image plane is in square pixels; the rig matrix narrows the ray
   // back into comp pixels (see `build_local_matrix`).
   const direction = world.transform_vector([
-    (comp_point[0] - cx) * pixel_aspect,
-    comp_point[1] - cy,
+    (compPoint[0] - cx) * pixelAspect,
+    compPoint[1] - cy,
     zoom,
   ]);
   return [[...position], direction];
@@ -1110,25 +1110,25 @@ export function camera_ray(
  *   the plane, or the plane is at or behind the ray origin - or if the layer plane is degenerate
  *   (an X or Y scale of 0).
  */
-export function intersect_layer_plane(world: Mat4, origin: number[], direction: number[]): number[] {
-  const axis_u = [0, 1, 2].map((r) => world.row(r)[0]);
-  const axis_v = [0, 1, 2].map((r) => world.row(r)[1]);
+export function intersectLayerPlane(world: Mat4, origin: number[], direction: number[]): number[] {
+  const axisU = [0, 1, 2].map((r) => world.row(r)[0]);
+  const axisV = [0, 1, 2].map((r) => world.row(r)[1]);
   const rhs = [0, 1, 2].map((r) => origin[r] - world.row(r)[3]);
-  const neg_d = [0, 1, 2].map((r) => -direction[r]);
-  const normal = _vec3_cross(axis_u, axis_v);
-  const normal_len = _vec3_norm(normal);
-  if (normal_len === 0.0) throw new ValueError("the layer plane is degenerate");
-  const det = _det3(axis_u, axis_v, neg_d);
-  if (Math.abs(det) <= _EPSILON * normal_len * _vec3_norm(direction)) {
+  const negD = [0, 1, 2].map((r) => -direction[r]);
+  const normal = _vec3Cross(axisU, axisV);
+  const normalLen = _vec3Norm(normal);
+  if (normalLen === 0.0) throw new ValueError("the layer plane is degenerate");
+  const det = _det3(axisU, axisV, negD);
+  if (Math.abs(det) <= _EPSILON * normalLen * _vec3Norm(direction)) {
     throw new ValueError("ray is parallel to the layer plane");
   }
-  const t = _det3(axis_u, axis_v, rhs) / det;
+  const t = _det3(axisU, axisV, rhs) / det;
   if (t <= 0.0) throw new ValueError("the layer plane is not in front of the camera");
-  return [_det3(rhs, axis_v, neg_d) / det, _det3(axis_u, rhs, neg_d) / det];
+  return [_det3(rhs, axisV, negD) / det, _det3(axisU, rhs, negD) / det];
 }
 
 /** Determinant of the 3x3 matrix with columns `a`, `b`, `c`. */
 export function _det3(a: number[], b: number[], c: number[]): number {
-  const cross = _vec3_cross(b, c);
+  const cross = _vec3Cross(b, c);
   return a[0] * cross[0] + a[1] * cross[1] + a[2] * cross[2];
 }

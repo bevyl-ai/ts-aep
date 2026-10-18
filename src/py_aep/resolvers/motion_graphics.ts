@@ -42,7 +42,7 @@ import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { deferred, py_eq, int, json_dumps } from "../../pyrt/index.ts";
+import { deferred, pyEq, int, jsonDumps } from "../../pyrt/index.ts";
 
 const _composition = deferred<typeof import("../models/items/composition.ts")>("py_aep/models/items/composition");
 import { FootageItem } from "../models/items/footage.ts";
@@ -62,7 +62,7 @@ export const CONTROLLER_COLOR = 4;
 export const CONTROLLER_TEXT = 6;
 
 /** The `Layer` that owns `prop`, or `null` if not layer-owned. */
-export function _owning_layer(prop: Property): Layer | null {
+export function _owningLayer(prop: Property): Layer | null {
   let group: PropertyGroup | null = prop.parentProperty;
   while (group != null) {
     if (group instanceof _layer().Layer) return group;
@@ -83,9 +83,9 @@ export class PathNode {
   readonly match_name: string;
   readonly prop_index: number | null;
 
-  constructor(match_name: string, prop_index: number | null) {
-    this.match_name = match_name;
-    this.prop_index = prop_index;
+  constructor(matchName: string, propIndex: number | null) {
+    this.match_name = matchName;
+    this.prop_index = propIndex;
   }
 
   *[Symbol.iterator](): Generator<string | number | null> {
@@ -102,12 +102,12 @@ export class PathNode {
  * (verified across the essential_graphics fixtures: `ADBE Fill-0002` -\> 3,
  * every `* Control-0001` -\> 1).
  */
-export function _effect_param_index(layer: Layer, effect_mn: string, param_mn: string): number | null {
-  const defs = layer.containingComp._project._effect_param_defs.get(effect_mn) ?? null;
+export function _effectParamIndex(layer: Layer, effectMn: string, paramMn: string): number | null {
+  const defs = layer.containingComp._project._effect_param_defs.get(effectMn) ?? null;
   if (defs == null || defs.size === 0) return null;
   const keys = [...defs.keys()];
-  if (!keys.includes(param_mn)) return null;
-  return 1 + keys.indexOf(param_mn);
+  if (!keys.includes(paramMn)) return null;
+  return 1 + keys.indexOf(paramMn);
 }
 
 /**
@@ -117,22 +117,22 @@ export function _effect_param_index(layer: Layer, effect_mn: string, param_mn: s
  * parT index; the parade itself resolves by name. Duplicate effect
  * instances are fine - the index disambiguates them.
  */
-export function _effect_param_path(prop: Property): [PathNode[], Layer] | null {
+export function _effectParamPath(prop: Property): [PathNode[], Layer] | null {
   const effect: PropertyGroup | null = prop.parentProperty;
   if (effect == null || !effect.isEffect) return null;
   const parade: PropertyGroup | null = effect.parentProperty;
   if (parade == null || parade.matchName !== "ADBE Effect Parade") return null;
   const layer: PropertyGroup | null = parade.parentProperty;
   if (!(layer instanceof _layer().Layer)) return null;
-  const effect_index = parade.properties.findIndex((e) => e === effect);
-  if (effect_index === -1) return null;
-  const leaf_index = _effect_param_index(layer, effect.matchName, prop.matchName);
-  if (leaf_index == null) return null;
+  const effectIndex = parade.properties.findIndex((e) => e === effect);
+  if (effectIndex === -1) return null;
+  const leafIndex = _effectParamIndex(layer, effect.matchName, prop.matchName);
+  if (leafIndex == null) return null;
   return [
     [
       new PathNode("ADBE Effect Parade", null),
-      new PathNode(effect.matchName, effect_index),
-      new PathNode(prop.matchName, leaf_index),
+      new PathNode(effect.matchName, effectIndex),
+      new PathNode(prop.matchName, leafIndex),
     ],
     layer,
   ];
@@ -159,9 +159,9 @@ export function _effect_param_path(prop: Property): [PathNode[], Layer] | null {
  * `null` when `prop` is not owned by a layer, an effect node cannot be
  * indexed, or a by-name node is ambiguous.
  */
-export function _source_property_path(prop: Property): [PathNode[], Layer] | null {
-  const effect_path = _effect_param_path(prop);
-  if (effect_path != null) return effect_path;
+export function _sourcePropertyPath(prop: Property): [PathNode[], Layer] | null {
+  const effectPath = _effectParamPath(prop);
+  if (effectPath != null) return effectPath;
 
   const chain: PathNode[] = [];
   let node: Property | PropertyGroup = prop;
@@ -195,7 +195,7 @@ export function _source_property_path(prop: Property): [PathNode[], Layer] | nul
 }
 
 /** Serialize a CPrp path into AE's JSON (by-name nodes as `0xFFFFFFFF`). */
-export function _path_json(nodes: PathNode[]): string {
+export function _pathJson(nodes: PathNode[]): string {
   const body = new Map(
     nodes.map((node, i): [string, { index: number; matchName: string }] => [
       String(i),
@@ -205,7 +205,7 @@ export function _path_json(nodes: PathNode[]): string {
       },
     ]),
   );
-  return json_dumps(body, { separators: [",", ":"] });
+  return jsonDumps(body, { separators: [",", ":"] });
 }
 
 /**
@@ -217,7 +217,7 @@ export function _path_json(nodes: PathNode[]): string {
  * Opacity), with the Checkbox control type distinguishing a boolean from a
  * plain numeric slider (both are 1-D value types).
  */
-export function classify_property(prop: Property): number | null {
+export function classifyProperty(prop: Property): number | null {
   if (prop.matchName === _TEXT_DOCUMENT) return CONTROLLER_TEXT;
   if (prop.propertyValueType === PropertyValueType.COLOR) return CONTROLLER_COLOR;
   if (prop.propertyControlType === PropertyControlType.BOOLEAN) return CONTROLLER_CHECKBOX;
@@ -244,12 +244,12 @@ export function classify_property(prop: Property): number | null {
  * (identical match names, different parade indices) stay independently
  * addable.
  */
-export function _already_added(comp: CompItem, layer_id: number, nodes: PathNode[]): boolean {
+export function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]): boolean {
   const wanted = nodes.map((node) => [node.match_name, node.prop_index]);
   for (const ctrl of comp.motionGraphicsControllers) {
-    if (ctrl.sourceLayerId !== layer_id) continue;
+    if (ctrl.sourceLayerId !== layerId) continue;
     const stored = ctrl.sourcePropertyPath.map((ref) => [ref.matchName, ref.propIndex]);
-    if (py_eq(stored, wanted)) return true;
+    if (pyEq(stored, wanted)) return true;
   }
   return false;
 }
@@ -261,10 +261,10 @@ export class PropertyControllerPlan {
   readonly path_json: string;
   readonly layer: Layer;
 
-  constructor(controller_type: number, nodes: PathNode[], path_json: string, layer: Layer) {
-    this.controller_type = controller_type;
+  constructor(controllerType: number, nodes: PathNode[], pathJson: string, layer: Layer) {
+    this.controller_type = controllerType;
     this.nodes = nodes;
-    this.path_json = path_json;
+    this.path_json = pathJson;
     this.layer = layer;
   }
 
@@ -283,27 +283,27 @@ export class PropertyControllerPlan {
  * serialize (see `_source_property_path`), a layer not in `comp`, or a
  * property already exposed.
  */
-export function property_controller_plan(prop: Property, comp: CompItem): PropertyControllerPlan | null {
-  const controller_type = classify_property(prop);
-  if (controller_type == null) return null;
-  const resolved = _source_property_path(prop);
+export function propertyControllerPlan(prop: Property, comp: CompItem): PropertyControllerPlan | null {
+  const controllerType = classifyProperty(prop);
+  if (controllerType == null) return null;
+  const resolved = _sourcePropertyPath(prop);
   if (resolved == null) return null;
   const [nodes, layer] = resolved;
   if (layer.containingComp !== comp) return null;
-  if (_already_added(comp, layer._ldta.layer_id, nodes)) return null;
-  return new PropertyControllerPlan(controller_type, nodes, _path_json(nodes), layer);
+  if (_alreadyAdded(comp, layer._ldta.layer_id, nodes)) return null;
+  return new PropertyControllerPlan(controllerType, nodes, _pathJson(nodes), layer);
 }
 
 /** Whether `prop` can be added to `comp`'s Essential Graphics panel. */
-export function can_add_property(prop: Property, comp: CompItem): boolean {
-  return property_controller_plan(prop, comp) != null;
+export function canAddProperty(prop: Property, comp: CompItem): boolean {
+  return propertyControllerPlan(prop, comp) != null;
 }
 
 /**
  * Build the Source Text controller's font-caps JSON from the property's
  * current TextDocument (AE 2025 key order).
  */
-export function font_caps_json(prop: Property): string {
+export function fontCapsJson(prop: Property): string {
   const value = prop.value;
   let font: string | null = "";
   let size: number = 0;
@@ -312,7 +312,7 @@ export function font_caps_json(prop: Property): string {
     const fs = value.fontSize;
     if (fs != null) size = Number.isInteger(fs) ? int(fs) : fs;
   }
-  return json_dumps(
+  return jsonDumps(
     {
       capPropFontEdit: false,
       capPropFontFauxStyleEdit: false,
@@ -334,12 +334,12 @@ export function font_caps_json(prop: Property): string {
  * AE always targets the layer's `ADBE Layer Source Alternate` leaf (under
  * Source Options), both nodes by name.
  */
-export function media_controller_path(): [PathNode[], string] {
+export function mediaControllerPath(): [PathNode[], string] {
   const nodes = [
     new PathNode("ADBE Source Options Group", null),
     new PathNode("ADBE Layer Source Alternate", null),
   ];
-  return [nodes, _path_json(nodes)];
+  return [nodes, _pathJson(nodes)];
 }
 
 /**
@@ -350,7 +350,7 @@ export function media_controller_path(): [PathNode[], string] {
  * or null layer, source is a footage/comp item that is not a solid), must
  * live in `comp`, and must not already be exposed.
  */
-export function can_add_layer(layer: AVLayer, comp: CompItem): boolean {
+export function canAddLayer(layer: AVLayer, comp: CompItem): boolean {
   if (layer.containingComp !== comp) return false;
   if (!layer.hasVideo || layer.adjustmentLayer || layer.nullLayer) return false;
   const source: AVItem | null = layer.source;
@@ -362,6 +362,6 @@ export function can_add_layer(layer: AVLayer, comp: CompItem): boolean {
   // Only an existing MEDIA controller blocks the layer; property
   // controllers (slider/checkbox/...) on the same layer coexist with a
   // Media Replacement in AE.
-  const [nodes] = media_controller_path();
-  return !_already_added(comp, layer._ldta.layer_id, nodes);
+  const [nodes] = mediaControllerPath();
+  return !_alreadyAdded(comp, layer._ldta.layer_id, nodes);
 }

@@ -1,18 +1,18 @@
 import { LayerType, LightType } from "../../enums/index.ts";
 
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
-import { default_camera_zoom } from "../../resolvers/transform.ts";
+import { defaultCameraZoom } from "../../resolvers/transform.ts";
 import {ChunkField, type EffectParamDefs} from "../descriptors.ts";
-import { label_index } from "../preferences.ts";
+import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
-import { _UNDEFINED_ID, Layer, _no_source_id, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
-import { AttributeError, ValueError, descriptor, py_cmp } from "../../../pyrt/index.ts";
+import { _UNDEFINED_ID, Layer, _noSourceId, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
+import { AttributeError, ValueError, descriptor, pyCmp } from "../../../pyrt/index.ts";
 import type { CompItem } from "../items/composition.ts";
 
-export function _require_environment_lights(comp: CompItem, what: string): void {
+export function _requireEnvironmentLights(comp: CompItem, what: string): void {
   /** Environment lights and their light source arrived in AE 24.3. */
   const head = comp._project._head;
-  if (py_cmp([head.ae_version_major, head.ae_version_minor], [24, 3]) < 0) {
+  if (pyCmp([head.ae_version_major, head.ae_version_minor], [24, 3]) < 0) {
     throw new AttributeError(
       `${what} requires AE 24.3+ file format (file is AE ` +
         `${head.ae_version_major}.${head.ae_version_minor}).`,
@@ -20,9 +20,9 @@ export function _require_environment_lights(comp: CompItem, what: string): void 
   }
 }
 
-export function _validate_light_type(value: number, obj: LightLayer): void {
+export function _validateLightType(value: number, obj: LightLayer): void {
   if (value === LightType.ENVIRONMENT) {
-    _require_environment_lights(obj.containingComp, "LightType.ENVIRONMENT");
+    _requireEnvironmentLights(obj.containingComp, "LightType.ENVIRONMENT");
   }
 }
 
@@ -69,7 +69,7 @@ export class LightLayer extends Layer {
    * 1440x1620, 2880x810, 810x1440 and a 2:1 pixel aspect. */
   _default_position(): number[] {
     const comp = this.containingComp;
-    const zoom = default_camera_zoom(comp.width, comp.pixelAspect);
+    const zoom = defaultCameraZoom(comp.width, comp.pixelAspect);
     return [
       comp.width / 2.0 + 0.03 * zoom,
       comp.height / 2.0 - 0.03 * zoom,
@@ -109,12 +109,12 @@ export class LightLayer extends Layer {
       light_type = 1,
       effect_param_defs = null,
     } = kw;
-    const name_cps = Array.from(name);
-    const layer_name = name_cps.length > 31 ? name_cps.slice(0, 31).join("") : name;
+    const nameCps = Array.from(name);
+    const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
       layer_id: layer_id,
-      source_id: _no_source_id(containing_comp),
-      label: label_index(
+      source_id: _noSourceId(containing_comp),
+      label: labelIndex(
         containing_comp._project._preferences,
         "Light Label Index 2",
         6,
@@ -122,7 +122,7 @@ export class LightLayer extends Layer {
       layer_type: LayerType.LIGHT,
       light_and_mesh_type: light_type,
       layer_flags_2: 0x01,
-      layer_name: layer_name,
+      layer_name: layerName,
     });
     ldta.out_point = duration;
     ldta.three_d_layer = true;
@@ -158,10 +158,10 @@ export class LightLayer extends Layer {
   set lightSource(value: Layer | null) {
     const comp = this.containingComp;
     if (value == null) {
-      this._ldta.source_id = _no_source_id(comp);
+      this._ldta.source_id = _noSourceId(comp);
       return;
     }
-    _require_environment_lights(comp, "light_source");
+    _requireEnvironmentLights(comp, "light_source");
 
     if (!(value instanceof Layer)) {
       throw new ValueError("lightSource must be a Layer or None");
@@ -193,7 +193,7 @@ descriptor(
   LightLayer,
   "lightType",
   ChunkField.enum(LightType, "_ldta", "light_and_mesh_type", {
-    validate: _validate_light_type,
+    validate: _validateLightType,
   }),
 );
 

@@ -5,24 +5,24 @@ import type { LdtaChunk } from "../../binary/layer_chunks.ts";
 import type { Keyframe } from "../properties/keyframe.ts";
 import type { MarkerValue } from "../properties/marker.ts";
 import { AutoOrientType, Label, LayerType } from "../../enums/index.ts";
-import { ae_writes } from "../../ae_version.ts";
+import { aeWrites } from "../../ae_version.ts";
 import { Chunk, ListChunk } from "../../binary/chunk.ts";
-import { layer_timebase, rescale_ticks } from "../../binary/composition_chunks.ts";
+import { layerTimebase, rescaleTicks } from "../../binary/composition_chunks.ts";
 import { CmtaChunk } from "../../binary/item_chunks.ts";
-import { build_gide_list, build_ovdg, clone_chunk_tree, remap_layer_ref_tdpi, rewrite_owner_tdpi, rewrite_time_base } from "../../binary/mutations.ts";
+import { buildGideList, buildOvdg, cloneChunkTree, remapLayerRefTdpi, rewriteOwnerTdpi, rewriteTimeBase } from "../../binary/mutations.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { filter_by_list_type, filter_by_type, find_by_type, index_by_identity, list_type_of } from "../../binary/utils.ts";
-import { _effect_instances, rehome_effect_definitions } from "../../parsers/effect.ts";
-import { parse_properties } from "../../parsers/property.ts";
-import { get_chunks_by_match_name, get_match_name_runs } from "../../parsers/utils.ts";
-import { Mat4, aspect_scale, build_world_matrix, compose_orientation, decompose_transform, layer_source_aspect, position_space_aspect, rig_aims_at_poi, rotation_part, square_pixels, strip_orientation } from "../../resolvers/transform.ts";
-import { ChunkField, _suppress_materialization, type EffectParamDefs } from "../descriptors.ts";
-import { auto_name } from "../naming.ts";
+import { filterByListType, filterByType, findByType, indexByIdentity, listTypeOf } from "../../binary/utils.ts";
+import { _effectInstances, rehomeEffectDefinitions } from "../../parsers/effect.ts";
+import { parseProperties } from "../../parsers/property.ts";
+import { getChunksByMatchName, getMatchNameRuns } from "../../parsers/utils.ts";
+import { Mat4, aspectScale, buildWorldMatrix, composeOrientation, decomposeTransform, layerSourceAspect, positionSpaceAspect, rigAimsAtPoi, rotationPart, squarePixels, stripOrientation } from "../../resolvers/transform.ts";
+import { ChunkField, _suppressMaterialization, type EffectParamDefs } from "../descriptors.ts";
+import { autoName } from "../naming.ts";
 import { Property } from "../properties/property.ts";
 import { PropertyBase } from "../properties/property_base.ts";
 import { PropertyGroup } from "../properties/property_group.ts";
-import { _validate_number, validate_int, validate_number, validate_string } from "../validators.ts";
+import { _validateNumber, validateInt, validateNumber, validateString } from "../validators.ts";
 import type { AVItem } from "../items/av_item.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "./av_layer.ts";
@@ -33,11 +33,11 @@ import {
   getattr,
   setattr,
   mod,
-  object_setattr,
-  py_assert,
-  py_bool,
-  py_eq,
-  py_or,
+  objectSetattr,
+  pyAssert,
+  pyBool,
+  pyEq,
+  pyOr,
   repr,
   round,
   warn,
@@ -46,8 +46,8 @@ import {
 } from "../../../pyrt/index.ts";
 import type { MatchNameTypes } from "../properties/match_name_types.ts";
 
-const _synthesis_core = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
-const _av_layer = deferred<typeof import("./av_layer.ts")>("py_aep/models/layers/av_layer");
+const _synthesisCore = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
+const _avLayer = deferred<typeof import("./av_layer.ts")>("py_aep/models/layers/av_layer");
 const _composition = deferred<typeof import("../items/composition.ts")>("py_aep/models/items/composition");
 const _layer = deferred<typeof import("../../parsers/layer.ts")>("py_aep/parsers/layer");
 
@@ -64,13 +64,13 @@ export const _MIN_STRETCH = (655 * 100) / 65536;
 
 // The stretch is a float32 stored as a ratio with a signed 32-bit dividend;
 // 2147483520 is the largest float32 under 2**31.
-export const _validate_stretch = _validate_number({
+export const _validateStretch = _validateNumber({
   min: -2147483520 * 100.0,
   max: 2147483520 * 100.0,
 });
 
 // The start time is a signed 32-bit count of the layer's timebase ticks.
-export const _validate_start_time = _validate_number({
+export const _validateStartTime = _validateNumber({
   min: (layer: Layer) => -0x80000000 / layer._layer_timebase(),
   max: (layer: Layer) => 0x7fffffff / layer._layer_timebase(),
 });
@@ -82,27 +82,27 @@ export const _UNDEFINED_ID = 0xffffffff;
  * The ldta source id of a light without a source: 0 before AE 23, which
  * writes the undefined id.
  */
-export function _no_source_id(comp: CompItem): number {
+export function _noSourceId(comp: CompItem): number {
   const major = comp._project._head.ae_version_major;
-  return ae_writes("light source id", major) ? _UNDEFINED_ID : 0;
+  return aeWrites("light source id", major) ? _UNDEFINED_ID : 0;
 }
 
 /**
  * Extract Essential Properties override UUIDs from LIST:OvG2 chunks.
  *
- * @param tdgp_chunks - The children of the layer's root `tdgp` group, where `LIST:OvG2` is a direct
+ * @param tdgpChunks - The children of the layer's root `tdgp` group, where `LIST:OvG2` is a direct
  *   child (beside the "ADBE Layer Overrides" marker). NOT the layer LIST's own children - `OvG2`
  *   sits one level deeper than that.
  * @returns A list of controller UUID strings from the OvG2/CPrp/Utf8 entries; each matches an
  *   `EssentialGraphicsController.uuid` on the source comp.
  */
-export function _parse_ovg2_uuids(tdgp_chunks: Chunk[]): string[] {
+export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
   const uuids: string[] = [];
-  for (const ovg2_list of filter_by_list_type(tdgp_chunks, "OvG2")) {
-    for (const cprp of filter_by_list_type(ovg2_list.chunks, "CPrp")) {
-      const utf8_chunks = filter_by_type(cprp.chunks, "Utf8");
-      if (utf8_chunks.length > 0) {
-        uuids.push(utf8_chunks[0].value);
+  for (const ovg2List of filterByListType(tdgpChunks, "OvG2")) {
+    for (const cprp of filterByListType(ovg2List.chunks, "CPrp")) {
+      const utf8Chunks = filterByType(cprp.chunks, "Utf8");
+      if (utf8Chunks.length > 0) {
+        uuids.push(utf8Chunks[0].value);
       }
     }
   }
@@ -110,19 +110,19 @@ export function _parse_ovg2_uuids(tdgp_chunks: Chunk[]): string[] {
 }
 
 /** World matrix a child of `parent` is placed in, at comp `time`. */
-export function _parent_world(parent: Layer | null, time: number, child_is_3d: boolean): Mat4 {
+export function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
   if (parent == null) return Mat4.identity();
-  return build_world_matrix(parent, time, !child_is_3d, { as_parent: true });
+  return buildWorldMatrix(parent, time, !childIs3d, { as_parent: true });
 }
 
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
-export function _list_index<T>(xs: T[], x: T): number {
+export function _listIndex<T>(xs: T[], x: T): number {
   for (let i = 0; i < xs.length; i++) if (xs[i] === x) return i;
   throw new ValueError(`${repr(x)} is not in list`);
 }
 
 /** `list.remove(x)` with CPython's ValueError. */
-export function _list_remove<T>(xs: T[], x: T): void {
+export function _listRemove<T>(xs: T[], x: T): void {
   for (let i = 0; i < xs.length; i++) {
     if (xs[i] === x) {
       xs.splice(i, 1);
@@ -283,7 +283,7 @@ export class Layer extends PropertyGroup {
   }
 
   set startTime(value: number) {
-    _validate_start_time(value, this);
+    _validateStartTime(value, this);
     const timebase = this._layer_timebase();
     const ldta = this._ldta;
     ldta.start_time_dividend = Math.floor(value * timebase + 0.5);
@@ -318,7 +318,7 @@ export class Layer extends PropertyGroup {
   }
 
   set stretch(value: number) {
-    _validate_stretch(value, this);
+    _validateStretch(value, this);
     if (Math.abs(value) < 1.0) {
       value = value < 0 ? -_MIN_STRETCH : _MIN_STRETCH;
     }
@@ -331,11 +331,11 @@ export class Layer extends PropertyGroup {
    * Keyframe units per second of this layer's own time, in its
    * composition or one of `internal_timebase`.
    */
-  _layer_timebase(internal_timebase: number | null = null): number {
-    if (internal_timebase == null) {
-      internal_timebase = this.containingComp._cdta.internal_timebase;
+  _layer_timebase(internalTimebase: number | null = null): number {
+    if (internalTimebase == null) {
+      internalTimebase = this.containingComp._cdta.internal_timebase;
     }
-    return layer_timebase(internal_timebase, this._stretch_factor);
+    return layerTimebase(internalTimebase, this._stretch_factor);
   }
 
   /**
@@ -348,7 +348,7 @@ export class Layer extends PropertyGroup {
       if (prop._is_live()) prop._ensure_time_base();
       for (const keyframe of prop.keyframes) {
         const item = keyframe._ldat_item;
-        item.time_units = rescale_ticks(item.time_units, old, new_);
+        item.time_units = rescaleTicks(item.time_units, old, new_);
       }
     }
   }
@@ -364,7 +364,7 @@ export class Layer extends PropertyGroup {
   __setattr__(name: string, value: unknown): void {
     // Layers set public instance attributes of their own, which
     // `PropertyGroup.__setattr__` would refuse.
-    object_setattr(this, name, value);
+    objectSetattr(this, name, value);
   }
 
   constructor(kw: LayerInitKw) {
@@ -377,20 +377,20 @@ export class Layer extends PropertyGroup {
     } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
-    const layer_type_raw = _ldta.layer_type;
-    const layer_type = LayerType.of_or_null(layer_type_raw);
-    let match_name = layer_type === null ? undefined : new.target._LAYER_MATCH_NAMES.get(layer_type);
-    if (match_name === undefined) {
+    const layerTypeRaw = _ldta.layer_type;
+    const layerType = LayerType.of_or_null(layerTypeRaw);
+    let matchName = layerType === null ? undefined : new.target._LAYER_MATCH_NAMES.get(layerType);
+    if (matchName === undefined) {
       logger.warning(
-        `Unknown layer type ${layer_type_raw} for layer '${_name_utf8.value}' in comp '${containing_comp.name}'. Defaulting to 'ADBE AV Layer'.`,
+        `Unknown layer type ${layerTypeRaw} for layer '${_name_utf8.value}' in comp '${containing_comp.name}'. Defaulting to 'ADBE AV Layer'.`,
       );
-      match_name = "ADBE AV Layer";
+      matchName = "ADBE AV Layer";
     }
 
     super({
       _tdsb: null,
       _name_utf8,
-      match_name,
+      match_name: matchName,
       auto_name: "",
       property_depth: 0,
       properties: [],
@@ -412,38 +412,38 @@ export class Layer extends PropertyGroup {
   static _new(...args: never[]): never;
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T {
     const { ldta, name, containing_comp } = kw;
-    const root_tdgp_extra = kw.root_tdgp_extra ?? null;
-    const effect_param_defs = kw.effect_param_defs ?? null;
+    const rootTdgpExtra = kw.root_tdgp_extra ?? null;
+    const effectParamDefs = kw.effect_param_defs ?? null;
 
-    validate_string(name);
+    validateString(name);
 
-    const name_utf8 = new Utf8Chunk({ value: name });
-    const tdgp_chunks: Chunk[] = [new TdsbChunk({}), TdsnChunk.new_()];
-    if (root_tdgp_extra != null && root_tdgp_extra.length > 0) tdgp_chunks.push(...root_tdgp_extra);
+    const nameUtf8 = new Utf8Chunk({ value: name });
+    const tdgpChunks: Chunk[] = [new TdsbChunk({}), TdsnChunk.new_()];
+    if (rootTdgpExtra != null && rootTdgpExtra.length > 0) tdgpChunks.push(...rootTdgpExtra);
     // AE terminates every tdgp match-name stream with ADBE Group End
     // and rejects layers whose root tdgp lacks it ("missing data in
     // file"). Synthesized children are inserted before this marker.
-    tdgp_chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-    const root_tdgp = new ListChunk({ list_type: "tdgp", chunks: tdgp_chunks });
-    const ae_major = containing_comp._project._head.ae_version_major;
+    tdgpChunks.push(new TdmnChunk({ value: "ADBE Group End" }));
+    const rootTdgp = new ListChunk({ list_type: "tdgp", chunks: tdgpChunks });
+    const aeMajor = containing_comp._project._head.ae_version_major;
     // The ldta matte-layer field (164- instead of 160-byte records).
-    ldta.matte_layer_id = ae_writes("matte layer id", ae_major) ? 0 : null;
-    const [gide, _lhd3, _inner] = build_gide_list();
-    const layer_list = new ListChunk({
+    ldta.matte_layer_id = aeWrites("matte layer id", aeMajor) ? 0 : null;
+    const [gide, _lhd3, _inner] = buildGideList();
+    const layerList = new ListChunk({
       list_type: "Layr",
-      chunks: [ldta, name_utf8, root_tdgp, gide],
+      chunks: [ldta, nameUtf8, rootTdgp, gide],
     });
-    if (ae_writes("layer OvdG", ae_major)) layer_list.chunks.push(build_ovdg());
+    if (aeWrites("layer OvdG", aeMajor)) layerList.chunks.push(buildOvdg());
 
     const layer = new this({
       _ldta: ldta,
       _cmta: null,
-      _name_utf8: name_utf8,
-      _layer_list: layer_list,
+      _name_utf8: nameUtf8,
+      _layer_list: layerList,
       containing_comp,
     });
-    layer._tdgp = root_tdgp;
-    layer._build_property_tree(py_or(effect_param_defs, new Map()));
+    layer._tdgp = rootTdgp;
+    layer._build_property_tree(pyOr(effectParamDefs, new Map()));
     return layer;
   }
 
@@ -469,20 +469,20 @@ export class Layer extends PropertyGroup {
 
   /** Build the property tree of a parsed layer, if not built yet. */
   _load_property_tree(): void {
-    _suppress_materialization().run(() => {
-      const effect_param_defs = this._tree_param_defs;
-      if (effect_param_defs == null) return;
+    _suppressMaterialization().run(() => {
+      const effectParamDefs = this._tree_param_defs;
+      if (effectParamDefs == null) return;
       // Cleared first, with an empty tree in place as during an eager
       // parse: parsing and synthesis read the layer's own properties.
       this._tree_param_defs = null;
       this._properties = [];
       try {
-        this._build_property_tree(effect_param_defs);
+        this._build_property_tree(effectParamDefs);
       } catch (e) {
         // Unbuilt again, so the next read raises too rather than seeing
         // a partial tree.
         Reflect.deleteProperty(this, "_properties");
-        this._tree_param_defs = effect_param_defs;
+        this._tree_param_defs = effectParamDefs;
         throw e;
       }
     });
@@ -492,18 +492,18 @@ export class Layer extends PropertyGroup {
    * Parse the root tdgp into this layer's properties and synthesize
    * the ones the file leaves out.
    */
-  _build_property_tree(effect_param_defs: EffectParamDefs): void {
-    py_assert(this._tdgp != null);
-    const props = parse_properties(
-      get_match_name_runs(this._tdgp),
+  _build_property_tree(effectParamDefs: EffectParamDefs): void {
+    pyAssert(this._tdgp != null);
+    const props = parseProperties(
+      getMatchNameRuns(this._tdgp),
       1,
-      effect_param_defs,
+      effectParamDefs,
       this.containingComp,
       this,
     );
     this._properties = props;
     for (const child of props) child._parent_property = this;
-    _synthesis_core().synthesize_layer_properties(this);
+    _synthesisCore().synthesizeLayerProperties(this);
   }
 
   /**
@@ -514,8 +514,8 @@ export class Layer extends PropertyGroup {
    */
   get essentialPropertyUuids(): string[] {
     if (this._essential_property_uuids == null) {
-      py_assert(this._tdgp != null);
-      this._essential_property_uuids = _parse_ovg2_uuids(this._tdgp.chunks);
+      pyAssert(this._tdgp != null);
+      this._essential_property_uuids = _parseOvg2Uuids(this._tdgp.chunks);
     }
     return this._essential_property_uuids;
   }
@@ -543,14 +543,14 @@ export class Layer extends PropertyGroup {
     // renamed back to the original default name (headless rename
     // experiment on parametric_meshes.aep), matching addParametricMesh's
     // explicit-name behavior.
-    const source_id = this._ldta.source_id;
+    const sourceId = this._ldta.source_id;
     if (this._ldta.layer_type === LayerType.PARAMETRIC_MESH) {
       this._ldta.name_set = true;
-    } else if (!value || source_id === 0) {
+    } else if (!value || sourceId === 0) {
       this._ldta.name_set = false;
     } else {
-      const source_item = this.containingComp._project.items.get(source_id);
-      this._ldta.name_set = (source_item?.name ?? null) !== value;
+      const sourceItem = this.containingComp._project.items.get(sourceId);
+      this._ldta.name_set = (sourceItem?.name ?? null) !== value;
     }
   }
 
@@ -562,12 +562,12 @@ export class Layer extends PropertyGroup {
   }
 
   set comment(value: string) {
-    validate_string(value);
+    validateString(value);
     if (!value) {
       // AE drops the chunk and the flag rather than store "".
       if (this._cmta != null) {
         const chunks = this._layer_list.chunks;
-        chunks.splice(index_by_identity(chunks, this._cmta), 1);
+        chunks.splice(indexByIdentity(chunks, this._cmta), 1);
         this._cmta = null;
       }
       this._ldta.has_comment = false;
@@ -581,8 +581,8 @@ export class Layer extends PropertyGroup {
       chunk.value = value;
       const chunks = this._layer_list.chunks;
       // AE 15 writes the comment before the LIST:OvdG closing a layer.
-      const ends_with_ovdg = list_type_of(chunks.at(-1)) === "OvdG";
-      chunks.splice(ends_with_ovdg ? chunks.length - 1 : chunks.length, 0, chunk);
+      const endsWithOvdg = listTypeOf(chunks.at(-1)) === "OvdG";
+      chunks.splice(endsWithOvdg ? chunks.length - 1 : chunks.length, 0, chunk);
       this._cmta = chunk;
     }
   }
@@ -699,7 +699,7 @@ export class Layer extends PropertyGroup {
   }
 
   set inPoint(value: number) {
-    validate_number(value);
+    validateNumber(value);
     this._set_raw_in_point(value);
   }
 
@@ -715,7 +715,7 @@ export class Layer extends PropertyGroup {
   }
 
   set outPoint(value: number) {
-    validate_number(value);
+    validateNumber(value);
     this._set_raw_out_point(value);
   }
 
@@ -728,7 +728,7 @@ export class Layer extends PropertyGroup {
   }
 
   set frameInPoint(value: number) {
-    validate_int(value);
+    validateInt(value);
     this.inPoint = value / this.containingComp.frameRate;
   }
 
@@ -741,7 +741,7 @@ export class Layer extends PropertyGroup {
   }
 
   set frameOutPoint(value: number) {
-    validate_int(value);
+    validateInt(value);
     this.outPoint = value / this.containingComp.frameRate;
   }
 
@@ -754,7 +754,7 @@ export class Layer extends PropertyGroup {
   }
 
   set frameStartTime(value: number) {
-    validate_int(value);
+    validateInt(value);
     this.startTime = value / this.containingComp.frameRate;
   }
 
@@ -765,7 +765,7 @@ export class Layer extends PropertyGroup {
    * convention so that `comp.layers[layer.index]` works directly.
    */
   get index(): number {
-    return _list_index(this.containingComp.layers, this);
+    return _listIndex(this.containingComp.layers, this);
   }
 
   /**
@@ -859,7 +859,7 @@ export class Layer extends PropertyGroup {
    */
   get transform(): MatchNameTypes["ADBE Transform Group"] {
     const group = this.property("ADBE Transform Group");
-    py_assert(group instanceof PropertyGroup);
+    pyAssert(group instanceof PropertyGroup);
     return group;
   }
 
@@ -920,8 +920,8 @@ export class Layer extends PropertyGroup {
    * no such group at all, not that the `.aep` merely omitted an empty
    * one (AE writes the Effect / Mask Parade only once it has content).
    */
-  _optional_group<K extends keyof MatchNameTypes>(match_name: K): (MatchNameTypes[K] & PropertyGroup) | null {
-    const group = this._child_or_null(match_name);
+  _optional_group<K extends keyof MatchNameTypes>(matchName: K): (MatchNameTypes[K] & PropertyGroup) | null {
+    const group = this._child_or_null(matchName);
     return group instanceof PropertyGroup ? group : null;
   }
 
@@ -930,11 +930,11 @@ export class Layer extends PropertyGroup {
    * chunks so that the tree stays unbuilt when none is.
    */
   _leaves_out_live_defaults(): boolean {
-    py_assert(this._tdgp != null);
-    const groups = get_chunks_by_match_name(this._tdgp);
-    for (const [group_name, match_name] of this.constructor._LIVE_DEFAULTS) {
-      const group = filter_by_list_type(groups.get(group_name) ?? [], "tdgp");
-      if (group.length === 0 || !get_chunks_by_match_name(group[0]).has(match_name)) {
+    pyAssert(this._tdgp != null);
+    const groups = getChunksByMatchName(this._tdgp);
+    for (const [groupName, matchName] of this.constructor._LIVE_DEFAULTS) {
+      const group = filterByListType(groups.get(groupName) ?? [], "tdgp");
+      if (group.length === 0 || !getChunksByMatchName(group[0]).has(matchName)) {
         return true;
       }
     }
@@ -956,9 +956,9 @@ export class Layer extends PropertyGroup {
       // Never built, so nothing moved (`CompItem._build_live_defaults`).
       return;
     }
-    for (const [group_name, match_name] of this.constructor._LIVE_DEFAULTS) {
-      const group = this.property(group_name);
-      const prop = group.property(match_name);
+    for (const [groupName, matchName] of this.constructor._LIVE_DEFAULTS) {
+      const group = this.property(groupName);
+      const prop = group.property(matchName);
       if (prop._tdsb == null || !prop._tdsb.synthetic) continue;
       if (prop.isModified) prop._ensure_materialized();
     }
@@ -969,19 +969,19 @@ export class Layer extends PropertyGroup {
    * another comp, the layer itself, or any of its own descendants
    * (which would create a parenting cycle).
    */
-  _validate_parent(new_parent: Layer | null): void {
-    if (new_parent == null) return;
-    if (!(new_parent instanceof Layer)) {
+  _validate_parent(newParent: Layer | null): void {
+    if (newParent == null) return;
+    if (!(newParent instanceof Layer)) {
       throw new ValueError("parent must be a Layer or None");
     }
-    if (new_parent.containingComp !== this.containingComp) {
+    if (newParent.containingComp !== this.containingComp) {
       throw new ValueError("parent must be a layer in the same composition");
     }
     // Walk up from the candidate; hitting self means a cycle. The
     // visited set keeps this terminating even on a file that already
     // contains a parenting cycle.
     const seen = new Set<Layer>([this]);
-    let current: Layer | null = new_parent;
+    let current: Layer | null = newParent;
     while (current != null) {
       if (seen.has(current)) {
         throw new ValueError(
@@ -1019,8 +1019,8 @@ export class Layer extends PropertyGroup {
 
   set parent(value: Layer | null) {
     this._validate_parent(value);
-    const old_parent = this.parent;
-    if (old_parent === value) return;
+    const oldParent = this.parent;
+    if (oldParent === value) return;
 
     // AE compensates once, from the transforms at the comp's current
     // time (measured on AE 2026: with the playhead at 1 s, a child of a
@@ -1029,16 +1029,16 @@ export class Layer extends PropertyGroup {
     // A 2D child cannot store an out-of-plane rotation, and AE does not
     // try: it compensates as though every ancestor were 2D. Building the
     // matrices the same way keeps our answer on AE's.
-    const is_3d = this.is3d;
+    const is3d = this.is3d;
     const comp = this.containingComp;
     this._compensate_reparent(
       value,
-      build_world_matrix(this, time, !is_3d),
-      _parent_world(old_parent, time, is_3d),
-      _parent_world(value, time, is_3d),
+      buildWorldMatrix(this, time, !is3d),
+      _parentWorld(oldParent, time, is3d),
+      _parentWorld(value, time, is3d),
       time,
-      [comp.pixelAspect, position_space_aspect(old_parent, comp)],
-      [comp.pixelAspect, position_space_aspect(value, comp)],
+      [comp.pixelAspect, positionSpaceAspect(oldParent, comp)],
+      [comp.pixelAspect, positionSpaceAspect(value, comp)],
     );
   }
 
@@ -1054,49 +1054,49 @@ export class Layer extends PropertyGroup {
    * decomposed.
    */
   _compensate_reparent(
-    new_parent: Layer | null,
-    child_world: Mat4,
-    old_parent_world: Mat4,
-    new_parent_world: Mat4,
+    newParent: Layer | null,
+    childWorld: Mat4,
+    oldParentWorld: Mat4,
+    newParentWorld: Mat4,
     time: number,
-    old_aspects: [number, number],
-    new_aspects: [number, number],
+    oldAspects: [number, number],
+    newAspects: [number, number],
   ): void {
-    let new_parent_inverse: Mat4;
+    let newParentInverse: Mat4;
     try {
-      new_parent_inverse = new_parent_world.inverse();
+      newParentInverse = newParentWorld.inverse();
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
       // A parent scaled to 0 has no inverse; AE 2026 parents to it
       // anyway and leaves the child's values untouched.
-      this._parent_id = new_parent != null ? new_parent.id : 0;
+      this._parent_id = newParent != null ? newParent.id : 0;
       return;
     }
-    this._parent_id = new_parent != null ? new_parent.id : 0;
-    const is_3d = this.is3d;
-    const new_space = new_aspects[1];
-    const own_aspect = layer_source_aspect(this);
+    this._parent_id = newParent != null ? newParent.id : 0;
+    const is3d = this.is3d;
+    const newSpace = newAspects[1];
+    const ownAspect = layerSourceAspect(this);
     // The local matrix is `T(pos) . Sp^-1 . R . S . Sl . T(-anchor)`
     // (`build_local_matrix`); undo the two aspect scalings to decompose
     // the square-pixel `T(Sp pos) . R . S . T(-Sl anchor)`.
-    const new_local = aspect_scale(new_space)
-      .__matmul__(new_parent_inverse)
-      .__matmul__(child_world)
-      .__matmul__(aspect_scale(1.0 / own_aspect));
+    const newLocal = aspectScale(newSpace)
+      .__matmul__(newParentInverse)
+      .__matmul__(childWorld)
+      .__matmul__(aspectScale(1.0 / ownAspect));
     // Maps a point from the old parent's space into the new one; used by
     // both keyframed-Position branches below.
-    const parent_remap = new_parent_inverse.__matmul__(old_parent_world);
+    const parentRemap = newParentInverse.__matmul__(oldParentWorld);
 
     const transform = this.transform;
 
-    const current = (match_name: "ADBE Anchor Point" | "ADBE Orientation" | "ADBE Scale"): number[] => {
-      const prop = transform.property(match_name);
+    const current = (matchName: "ADBE Anchor Point" | "ADBE Orientation" | "ADBE Scale"): number[] => {
+      const prop = transform.property(matchName);
       return prop.keyframes?.length > 0 ? prop.valueAtTime(time) : prop.value;
     };
 
     // Decompose into AE transform components, keeping anchor fixed.
     const anchor = current("ADBE Anchor Point");
-    const square_anchor = [anchor[0] * own_aspect, ...anchor.slice(1)];
+    const squareAnchor = [anchor[0] * ownAspect, ...anchor.slice(1)];
 
     // Position and scale come straight from the local matrix - neither
     // depends on how the rotation is split between Orientation and
@@ -1104,13 +1104,13 @@ export class Layer extends PropertyGroup {
     // orientation is divided out of the 3x3 first so it cannot leak into
     // the rotation (a layer switched from 3D to 2D can still carry one).
     const orientation = current("ADBE Orientation");
-    let new_pos = decompose_transform(new_local, square_anchor)[0];
-    new_pos = [new_pos[0] / new_space, ...new_pos.slice(1)];
-    let [, new_scale, new_rz] = decompose_transform(
-      strip_orientation(new_local, orientation),
-      square_anchor,
+    let newPos = decomposeTransform(newLocal, squareAnchor)[0];
+    newPos = [newPos[0] / newSpace, ...newPos.slice(1)];
+    let [, newScale, newRz] = decomposeTransform(
+      stripOrientation(newLocal, orientation),
+      squareAnchor,
     );
-    if (new_scale[0] < 0 && is_3d) {
+    if (newScale[0] < 0 && is3d) {
       // `decompose_transform` signals a mirrored basis by negating x
       // alone. AE spreads the flip across all three axes and keeps the
       // rotation proper: a parent scaled [-100, 100, 100] leaves the
@@ -1118,27 +1118,27 @@ export class Layer extends PropertyGroup {
       // layer has no Orientation to absorb that and keeps the x-only
       // flip (AE 2026: a [-100, 100] child under a 150 % parent gets
       // [-66.7, 66.7, 100]).
-      new_scale = new_scale.map((component) => -Math.abs(component));
+      newScale = newScale.map((component) => -Math.abs(component));
     }
 
-    const write_compensation = (match_name: "ADBE Position" | "ADBE Scale" | "ADBE Rotate Z", new_value: number | number[]): void => {
+    const writeCompensation = (matchName: "ADBE Position" | "ADBE Scale" | "ADBE Rotate Z", newValue: number | number[]): void => {
       // Only write values that actually changed to avoid materializing
       // synthetic properties unnecessarily. Keyframed scale / rotation
       // values are left untouched, matching ExtendScript (the layer
       // may visually jump for those).
-      const prop = transform.property(match_name);
+      const prop = transform.property(matchName);
       if (prop.keyframes?.length > 0) return;
-      if (!py_eq(prop.value, new_value)) prop.value = new_value;
+      if (!pyEq(prop.value, newValue)) prop.value = newValue;
     };
 
-    const remap_separated_keyframes = (leader: Property<number[]>, followers: Property<number>[]): void => {
+    const remapSeparatedKeyframes = (leader: Property<number[]>, followers: Property<number>[]): void => {
       // Remap an animated separated Position into the new parent's space.
       //
       // A separated leader holds no keyframes of its own, so the generic
       // keyframe branch below never sees this case. Each follower
       // keyframe is remapped through the leader's composed position at
       // its own time, because the transform mixes the axes.
-      const remap = parent_remap;
+      const remap = parentRemap;
       // Collected first, applied after: every sample has to see the
       // pre-remap followers, and a component write would move them.
       const updates: [Keyframe, number][] = [];
@@ -1163,18 +1163,18 @@ export class Layer extends PropertyGroup {
     // scaled to 50% each key doubles, and under one scaled
     // [200, 50, 100] each key is divided per axis. Skipping them left
     // the layer 25 px out at one time and 62 px at another.
-    const scale_prop = transform.property("ADBE Scale");
-    if (scale_prop.keyframes?.length > 0) {
-      const scale_now = current("ADBE Scale");
-      const factors = Array.from({ length: new_scale.length }, (_, axis) =>
-        axis < scale_now.length && scale_now[axis] !== 0
-          ? new_scale[axis] / scale_now[axis]
+    const scaleProp = transform.property("ADBE Scale");
+    if (scaleProp.keyframes?.length > 0) {
+      const scaleNow = current("ADBE Scale");
+      const factors = Array.from({ length: newScale.length }, (_, axis) =>
+        axis < scaleNow.length && scaleNow[axis] !== 0
+          ? newScale[axis] / scaleNow[axis]
           : 1.0,
       );
       // Skipped when the parent applies no scale, for the reason
       // `write_compensation` gives: an unchanged value is not written.
       if (factors.some((factor) => factor !== 1.0)) {
-        for (const keyframe of scale_prop.keyframes) {
+        for (const keyframe of scaleProp.keyframes) {
           const components = keyframe.value;
           keyframe.value = components.map((component, axis) =>
             axis < factors.length ? component * factors[axis] : component,
@@ -1182,7 +1182,7 @@ export class Layer extends PropertyGroup {
         }
       }
     } else {
-      write_compensation("ADBE Scale", new_scale);
+      writeCompensation("ADBE Scale", newScale);
     }
 
     // ExtendScript remaps every POSITION keyframe into the new parent's
@@ -1195,25 +1195,25 @@ export class Layer extends PropertyGroup {
       // separated child at (150, 160) under a parent at (300, 40)
       // becomes X = -150, Y = 120), so go through them directly.
       if (separated.some((follower) => follower.keyframes?.length > 0)) {
-        remap_separated_keyframes(pos, separated);
+        remapSeparatedKeyframes(pos, separated);
       } else {
-        pos._set_separated_value(new_pos, separated);
+        pos._set_separated_value(newPos, separated);
       }
     } else if (pos.keyframes?.length > 0) {
-      const remap = parent_remap;
+      const remap = parentRemap;
       for (const kf of pos.keyframes) {
-        const kf_value = kf.value;
-        const dims = kf_value.length;
-        kf.value = remap.transform_point(kf_value).slice(0, dims);
-        for (const tangent_attr of ["inSpatialTangent", "outSpatialTangent"]) {
-          const tangent = getattr(kf, tangent_attr);
-          if (py_bool(tangent)) {
-            setattr(kf, tangent_attr, remap.transform_vector(tangent).slice(0, tangent.length));
+        const kfValue = kf.value;
+        const dims = kfValue.length;
+        kf.value = remap.transform_point(kfValue).slice(0, dims);
+        for (const tangentAttr of ["inSpatialTangent", "outSpatialTangent"]) {
+          const tangent = getattr(kf, tangentAttr);
+          if (pyBool(tangent)) {
+            setattr(kf, tangentAttr, remap.transform_vector(tangent).slice(0, tangent.length));
           }
         }
       }
     } else {
-      write_compensation("ADBE Position", new_pos);
+      writeCompensation("ADBE Position", newPos);
     }
 
     if (this._ldta.layer_type === LayerType.CAMERA || this._ldta.layer_type === LayerType.LIGHT) {
@@ -1225,14 +1225,14 @@ export class Layer extends PropertyGroup {
       const poi = transform.property("ADBE Anchor Point");
       if (poi.keyframes?.length > 0) {
         for (const kf of poi.keyframes) {
-          const kf_value = kf.value;
-          kf.value = parent_remap.transform_point(kf_value).slice(0, kf_value.length);
+          const kfValue = kf.value;
+          kf.value = parentRemap.transform_point(kfValue).slice(0, kfValue.length);
         }
       } else {
-        const remapped = parent_remap.transform_point(anchor).slice(0, anchor.length);
-        if (!py_eq(remapped, anchor)) poi.value = remapped;
+        const remapped = parentRemap.transform_point(anchor).slice(0, anchor.length);
+        if (!pyEq(remapped, anchor)) poi.value = remapped;
       }
-      if (rig_aims_at_poi(this)) {
+      if (rigAimsAtPoi(this)) {
         // The look-at toward the remapped POI already turns the rig;
         // AE leaves its Orientation alone.
         return;
@@ -1245,10 +1245,10 @@ export class Layer extends PropertyGroup {
       // a 3D layer's Orientation, animated path or static).
       return;
     }
-    const rotation_delta = rotation_part(square_pixels(new_parent_world, ...new_aspects))
+    const rotationDelta = rotationPart(squarePixels(newParentWorld, ...newAspects))
       .inverse()
-      .__matmul__(rotation_part(square_pixels(old_parent_world, ...old_aspects)));
-    if (!is_3d) {
+      .__matmul__(rotationPart(squarePixels(oldParentWorld, ...oldAspects)));
+    if (!is3d) {
       // A 2D layer has no Orientation to use, so AE puts the rotation
       // into Rotate Z (measured: a 2D child under a 30-degree parent
       // gets rotZ = -30 and orientation stays [0,0,0]).
@@ -1261,13 +1261,13 @@ export class Layer extends PropertyGroup {
         // As a signed turn, not the 0-360 form `compose_orientation`
         // returns: AE stores -15 and 45, not 345 and 405.
         const offset =
-          mod(compose_orientation([0.0, 0.0, 0.0], rotation_delta)[2] + 180.0, 360.0) - 180.0;
+          mod(composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0, 360.0) - 180.0;
         for (const keyframe of rotation.keyframes) {
           keyframe.value = keyframe.value + offset;
         }
         return;
       }
-      write_compensation("ADBE Rotate Z", new_rz);
+      writeCompensation("ADBE Rotate Z", newRz);
       return;
     }
 
@@ -1280,15 +1280,15 @@ export class Layer extends PropertyGroup {
     // keyframed properties: a child with a keyframed Rotate Z would get
     // its position compensated but not its rotation, and jump by 362 px
     // in a case where AE does not move it at all.
-    const orientation_prop = transform.property("ADBE Orientation");
-    if (orientation_prop.keyframes?.length > 0) {
-      for (const keyframe of orientation_prop.keyframes) {
-        keyframe.value = compose_orientation(keyframe.value, rotation_delta);
+    const orientationProp = transform.property("ADBE Orientation");
+    if (orientationProp.keyframes?.length > 0) {
+      for (const keyframe of orientationProp.keyframes) {
+        keyframe.value = composeOrientation(keyframe.value, rotationDelta);
       }
       return;
     }
-    const rotated = compose_orientation(orientation, rotation_delta);
-    if (!py_eq(orientation_prop.value, rotated)) orientation_prop.value = rotated;
+    const rotated = composeOrientation(orientation, rotationDelta);
+    if (!pyEq(orientationProp.value, rotated)) orientationProp.value = rotated;
   }
 
   /**
@@ -1303,13 +1303,13 @@ export class Layer extends PropertyGroup {
    * In this case, an offset is calculated and set in the child layer's transform
    * fields, to prevent the jump from occurring.
    *
-   * @param new_parent - The new parent layer, or `null` to unparent.
+   * @param newParent - The new parent layer, or `null` to unparent.
    * @throws {@link ValueError} If `new_parent` is this layer itself, one of its descendants, or a
    *   layer in another composition.
    */
-  setParentWithJump(new_parent: Layer | null): void {
-    this._validate_parent(new_parent);
-    this._parent_id = new_parent != null ? new_parent.id : 0;
+  setParentWithJump(newParent: Layer | null): void {
+    this._validate_parent(newParent);
+    this._parent_id = newParent != null ? newParent.id : 0;
   }
 
   /**
@@ -1326,11 +1326,11 @@ export class Layer extends PropertyGroup {
    * @param time - The time in seconds.
    */
   activeAtTime(time: number): boolean {
-    validate_number(time);
+    validateNumber(time);
     if (!this.enabled) return false;
 
-    const any_solo = this.containingComp.soloLayers?.length > 0;
-    if (any_solo && !this.solo) return false;
+    const anySolo = this.containingComp.soloLayers?.length > 0;
+    if (anySolo && !this.solo) return false;
 
     if (time < this.inPoint || time >= this.outPoint) return false;
 
@@ -1374,12 +1374,12 @@ export class Layer extends PropertyGroup {
    */
   remove(this: Layer): void {
     const comp = this.containingComp;
-    const removed_id = this.id;
+    const removedId = this.id;
 
     // Unparent children - triggers transform recalculation via the
     // parent setter so the child doesn't visually jump.
     for (const layer of comp.layers) {
-      if (layer !== this && layer._parent_id === removed_id) {
+      if (layer !== this && layer._parent_id === removedId) {
         layer.parent = null;
       }
     }
@@ -1388,7 +1388,7 @@ export class Layer extends PropertyGroup {
     for (const layer of comp.avLayers) {
       if (layer !== this) {
         const ldta = layer._ldta;
-        if ("matte_layer_id" in ldta && ldta.matte_layer_id === removed_id) {
+        if ("matte_layer_id" in ldta && ldta.matte_layer_id === removedId) {
           ldta.matte_layer_id = 0;
         }
       }
@@ -1398,16 +1398,16 @@ export class Layer extends PropertyGroup {
     comp._project._ensure_used_in_linked();
     const source = this._source_item;
     if (source != null && "_used_in" in source) {
-      _av_layer()._unregister_source_usage(source, comp, { exclude: this });
+      _avLayer()._unregisterSourceUsage(source, comp, { exclude: this });
     }
 
     // Remove chunk block from comp's chunk list
     const [start, end] = comp._layer_block_slice(this);
     const removed = comp._item_list.chunks.splice(start, end - start);
-    rehome_effect_definitions(comp._project, _effect_instances(removed));
+    rehomeEffectDefinitions(comp._project, _effectInstances(removed));
 
     // Remove from model list and rebuild caches
-    _list_remove(comp._layers, this);
+    _listRemove(comp._layers, this);
     comp._invalidate_layer_cache();
   }
 
@@ -1437,15 +1437,15 @@ export class Layer extends PropertyGroup {
    * marker times are kept in seconds whatever the target's frame rate
    * (measured on AE 2026).
    *
-   * @param into_comp - The target {@link CompItem}.
+   * @param intoComp - The target {@link CompItem}.
    * @returns The newly created {@link Layer} in the target composition.
    */
-  copyToComp(into_comp: CompItem): Layer {
+  copyToComp(intoComp: CompItem): Layer {
     // Circular: models.items.composition -> models.layers -> layer
-    if (!(into_comp instanceof _composition().CompItem)) {
+    if (!(intoComp instanceof _composition().CompItem)) {
       throw new ValueError("Target composition must be a CompItem.");
     }
-    return this._clone_into(into_comp, { duplicate: false });
+    return this._clone_into(intoComp, { duplicate: false });
   }
 
   /**
@@ -1453,13 +1453,13 @@ export class Layer extends PropertyGroup {
    * a {@link duplicate} (directly above, references kept) or a
    * {@link copyToComp} (on top, references cleared).
    */
-  _clone_into(into_comp: CompItem, kw: { duplicate: boolean }): Layer {
+  _clone_into(intoComp: CompItem, kw: { duplicate: boolean }): Layer {
     const { duplicate } = kw;
 
-    const same_comp = into_comp === this.containingComp;
+    const sameComp = intoComp === this.containingComp;
     // Names before the copy joins the comp: it only clashes with others.
-    const existing = new Set<string>(into_comp.layers.map((lyr) => lyr.name));
-    const old_timebase = this._layer_timebase();
+    const existing = new Set<string>(intoComp.layers.map((lyr) => lyr.name));
+    const oldTimebase = this._layer_timebase();
     // The copy keeps its place without its parent: AE bakes the parent's
     // transform at time 0 into it, whatever the playhead (measured on
     // AE 2026: a child at [960, 540] under a parent at [100, 100] with
@@ -1467,48 +1467,48 @@ export class Layer extends PropertyGroup {
     // an animated parent is still taken at 0).
     let unparent: [Mat4, Mat4, [number, number]] | null = null;
     if (!duplicate && this.parent != null) {
-      const is_3d = this.is3d;
-      const src_comp = this.containingComp;
+      const is3d = this.is3d;
+      const srcComp = this.containingComp;
       unparent = [
-        build_world_matrix(this, 0.0, !is_3d),
-        _parent_world(this.parent, 0.0, is_3d),
-        [src_comp.pixelAspect, position_space_aspect(this.parent, src_comp)],
+        buildWorldMatrix(this, 0.0, !is3d),
+        _parentWorld(this.parent, 0.0, is3d),
+        [srcComp.pixelAspect, positionSpaceAspect(this.parent, srcComp)],
       ];
     }
 
     // Clone the full layer block (LIST:Layr + trailing view chunks)
-    const [src_start, src_end] = this.containingComp._layer_block_slice(this);
-    const src_block = this.containingComp._item_list.chunks.slice(src_start, src_end);
+    const [srcStart, srcEnd] = this.containingComp._layer_block_slice(this);
+    const srcBlock = this.containingComp._item_list.chunks.slice(srcStart, srcEnd);
     // The block starts at this layer's own LIST:Layr.
-    const cloned_list = clone_chunk_tree(this._layer_list);
-    const cloned_block = [cloned_list, ...src_block.slice(1).map((c) => clone_chunk_tree(c))];
+    const clonedList = cloneChunkTree(this._layer_list);
+    const clonedBlock = [clonedList, ...srcBlock.slice(1).map((c) => cloneChunkTree(c))];
 
     // Patch layer ID
-    const cloned_ldta = find_by_type(cloned_list.chunks, "ldta");
+    const clonedLdta = findByType(clonedList.chunks, "ldta");
     // Layer IDs are unique project-wide, not per-comp.
-    cloned_ldta.layer_id = into_comp._project._allocate_id();
+    clonedLdta.layer_id = intoComp._project._allocate_id();
     // AE points every effect's hidden -0000 param tdpi at the owning
     // layer; retarget the clones at the fresh id (layer-reference
     // tdpi values keep pointing at the originally referenced layer).
-    rewrite_owner_tdpi(cloned_list, cloned_ldta.layer_id);
+    rewriteOwnerTdpi(clonedList, clonedLdta.layer_id);
 
     // Determine chunk insertion point
-    let model_idx: number;
-    let chunk_idx: number;
+    let modelIdx: number;
+    let chunkIdx: number;
     if (duplicate) {
-      model_idx = _list_index(into_comp._layers, this);
-      chunk_idx = src_start;
+      modelIdx = _listIndex(intoComp._layers, this);
+      chunkIdx = srcStart;
     } else {
       // AE's copyToComp clears the parent and the effect layer
       // references even within the same comp; the matte (a pre-AE 23
       // record has no matte field and must stay that size) and an
       // environment light's source only when they would point into
       // another comp.
-      cloned_ldta.parent_id = 0;
-      if (!same_comp) {
-        if (cloned_ldta.matte_layer_id != null) cloned_ldta.matte_layer_id = 0;
-        if (cloned_ldta.layer_type === LayerType.LIGHT) {
-          cloned_ldta.source_id = _no_source_id(into_comp);
+      clonedLdta.parent_id = 0;
+      if (!sameComp) {
+        if (clonedLdta.matte_layer_id != null) clonedLdta.matte_layer_id = 0;
+        if (clonedLdta.layer_type === LayerType.LIGHT) {
+          clonedLdta.source_id = _noSourceId(intoComp);
         }
       }
       // A LAYER parameter (Set Matte, Layer Control, CC Sphere's light
@@ -1516,74 +1516,74 @@ export class Layer extends PropertyGroup {
       // destination comp cannot resolve it and AE refuses the whole file
       // ("Can't find layer ID=N in composition X"). AE 2026 writes 0 -
       // "no layer" - into the copy's parameter.
-      remap_layer_ref_tdpi(cloned_list, new Map());
+      remapLayerRefTdpi(clonedList, new Map());
       // tdb4 carries the comp the property was written in; AE restamps
       // the copy to the destination comp (measured: copyToComp from a
       // 25 fps comp into a 24 fps one writes 24576, not 25600). The
       // layer's own stretch scales it, exactly as `_layer_timebase`
       // derives it - a 200 % layer counts ticks against twice the
       // comp's base.
-      rewrite_time_base(
-        cloned_list,
-        this._layer_timebase(into_comp._cdta.internal_timebase),
+      rewriteTimeBase(
+        clonedList,
+        this._layer_timebase(intoComp._cdta.internal_timebase),
       );
-      model_idx = 0;
-      if (into_comp.layers.length > 0) {
-        chunk_idx = index_by_identity(
-          into_comp._item_list.chunks,
-          into_comp.layers[0]._layer_list,
+      modelIdx = 0;
+      if (intoComp.layers.length > 0) {
+        chunkIdx = indexByIdentity(
+          intoComp._item_list.chunks,
+          intoComp.layers[0]._layer_list,
         );
       } else {
-        chunk_idx = into_comp._find_first_layer_position();
+        chunkIdx = intoComp._find_first_layer_position();
       }
     }
-    into_comp._item_list.chunks.splice(chunk_idx, 0, ...cloned_block);
+    intoComp._item_list.chunks.splice(chunkIdx, 0, ...clonedBlock);
 
     // Re-parse cloned chunks into a model instance
-    const effect_defs = into_comp._project._effect_param_defs;
-    const new_layer = _layer().parse_layer(cloned_list, into_comp, effect_defs);
+    const effectDefs = intoComp._project._effect_param_defs;
+    const newLayer = _layer().parseLayer(clonedList, intoComp, effectDefs);
 
-    into_comp._layers.splice(model_idx, 0, new_layer);
+    intoComp._layers.splice(modelIdx, 0, newLayer);
 
-    if (!same_comp) {
-      this._carry_comp_relative_transform(new_layer);
+    if (!sameComp) {
+      this._carry_comp_relative_transform(newLayer);
       // Keyframe ticks count against the layer's timebase; keep every
       // key (markers included) at the same second, as AE does (a key
       // at 1 s copied from 25 to 24 fps stays at 1 s).
-      new_layer._retime_to_layer_timebase(old_timebase, new_layer._layer_timebase());
+      newLayer._retime_to_layer_timebase(oldTimebase, newLayer._layer_timebase());
     }
     if (unparent != null) {
       // Unparented as in the source comp: the copy carries those values
       // whatever the target's pixel aspect (AE 2026 keeps Scale 100
       // copying into a 2:1 comp).
-      const [child_world, parent_world, old_aspects] = unparent;
-      const source_aspect = old_aspects[0];
-      new_layer._compensate_reparent(
+      const [childWorld, parentWorld, oldAspects] = unparent;
+      const sourceAspect = oldAspects[0];
+      newLayer._compensate_reparent(
         null,
-        child_world,
-        parent_world,
+        childWorld,
+        parentWorld,
         Mat4.identity(),
         0.0,
-        old_aspects,
-        [source_aspect, source_aspect],
+        oldAspects,
+        [sourceAspect, sourceAspect],
       );
     }
 
     // Increment user-defined name
-    if (new_layer.isNameSet && existing.has(new_layer.name)) {
-      new_layer.name = auto_name(new_layer.name, existing);
+    if (newLayer.isNameSet && existing.has(newLayer.name)) {
+      newLayer.name = autoName(newLayer.name, existing);
     }
 
-    into_comp._invalidate_layer_cache();
+    intoComp._invalidate_layer_cache();
 
     // Register source _used_in for the cloned layer
-    into_comp._project._ensure_used_in_linked();
-    const new_source = new_layer._source_item;
-    if (new_source != null && "_used_in" in new_source) {
-      new_source._used_in.add(into_comp);
+    intoComp._project._ensure_used_in_linked();
+    const newSource = newLayer._source_item;
+    if (newSource != null && "_used_in" in newSource) {
+      newSource._used_in.add(intoComp);
     }
 
-    return new_layer;
+    return newLayer;
   }
 
   /**
@@ -1609,26 +1609,26 @@ export class Layer extends PropertyGroup {
    * reads 400,300, with `ADBE Position` now a real cdat).
    */
   _carry_comp_relative_transform(copy: Layer): void {
-    const src_transform = this.transform;
-    const dst_transform = copy.transform;
-    if (src_transform == null || dst_transform == null) return;
-    for (const match_name of this.constructor._COMP_RELATIVE_TRANSFORM) {
-      let src_prop: Property | PropertyGroup;
-      let dst_prop: Property | PropertyGroup;
+    const srcTransform = this.transform;
+    const dstTransform = copy.transform;
+    if (srcTransform == null || dstTransform == null) return;
+    for (const matchName of this.constructor._COMP_RELATIVE_TRANSFORM) {
+      let srcProp: Property | PropertyGroup;
+      let dstProp: Property | PropertyGroup;
       try {
-        src_prop = src_transform.property(match_name);
-        dst_prop = dst_transform.property(match_name);
+        srcProp = srcTransform.property(matchName);
+        dstProp = dstTransform.property(matchName);
       } catch (e) {
         if (!(e instanceof KeyError || e instanceof ValueError)) throw e;
         continue;
       }
-      if (!(src_prop instanceof Property) || !(dst_prop instanceof Property)) continue;
+      if (!(srcProp instanceof Property) || !(dstProp instanceof Property)) continue;
       // An animated property carries real chunks that the clone copied
       // verbatim, so there is nothing to carry over.
-      if (src_prop.keyframes?.length > 0 || dst_prop.keyframes?.length > 0) continue;
-      const value = src_prop.value;
-      if (value == null || py_eq(value, dst_prop.value)) continue;
-      dst_prop.value = value;
+      if (srcProp.keyframes?.length > 0 || dstProp.keyframes?.length > 0) continue;
+      const value = srcProp.value;
+      if (value == null || pyEq(value, dstProp.value)) continue;
+      dstProp.value = value;
     }
   }
 
@@ -1645,10 +1645,10 @@ export class Layer extends PropertyGroup {
     if (layer.containingComp !== comp) {
       throw new ValueError("Target layer must be in the same composition.");
     }
-    const self_idx = _list_index(comp._layers, this);
-    const target_idx = _list_index(comp._layers, layer);
+    const selfIdx = _listIndex(comp._layers, this);
+    const targetIdx = _listIndex(comp._layers, layer);
     // After self is removed, target shifts left by 1 if self was before it
-    const effective = target_idx - (self_idx < target_idx ? 1 : 0);
+    const effective = targetIdx - (selfIdx < targetIdx ? 1 : 0);
     this._move_to(effective + 1);
   }
 
@@ -1665,9 +1665,9 @@ export class Layer extends PropertyGroup {
     if (layer.containingComp !== comp) {
       throw new ValueError("Target layer must be in the same composition.");
     }
-    const self_idx = _list_index(comp._layers, this);
-    const target_idx = _list_index(comp._layers, layer);
-    const effective = target_idx - (self_idx < target_idx ? 1 : 0);
+    const selfIdx = _listIndex(comp._layers, this);
+    const targetIdx = _listIndex(comp._layers, layer);
+    const effective = targetIdx - (selfIdx < targetIdx ? 1 : 0);
     this._move_to(effective);
   }
 
@@ -1688,7 +1688,7 @@ export class Layer extends PropertyGroup {
    * `remove()`, so parent and track matte connections on other
    * layers are preserved.
    */
-  _move_to(target_index: number): void {
+  _move_to(targetIndex: number): void {
     const comp = this.containingComp;
 
     // Extract and remove chunk block
@@ -1696,28 +1696,28 @@ export class Layer extends PropertyGroup {
     const block = comp._item_list.chunks.slice(start, end);
     comp._item_list.chunks.splice(start, end - start);
 
-    _list_remove(comp._layers, this);
+    _listRemove(comp._layers, this);
 
     // Clamp target index
-    target_index = Math.min(target_index, comp._layers.length);
+    targetIndex = Math.min(targetIndex, comp._layers.length);
 
     // Find chunk insertion point
-    let chunk_idx: number;
-    if (target_index < comp._layers.length) {
-      chunk_idx = index_by_identity(
+    let chunkIdx: number;
+    if (targetIndex < comp._layers.length) {
+      chunkIdx = indexByIdentity(
         comp._item_list.chunks,
-        comp._layers[target_index]._layer_list,
+        comp._layers[targetIndex]._layer_list,
       );
     } else if (comp._layers.length > 0) {
-      const [, last_end] = comp._layer_block_slice(comp._layers[comp._layers.length - 1]);
-      chunk_idx = last_end;
+      const [, lastEnd] = comp._layer_block_slice(comp._layers[comp._layers.length - 1]);
+      chunkIdx = lastEnd;
     } else {
-      chunk_idx = comp._find_first_layer_position();
+      chunkIdx = comp._find_first_layer_position();
     }
 
     // Insert block and model entry
-    comp._item_list.chunks.splice(chunk_idx, 0, ...block);
-    comp._layers.splice(target_index, 0, this);
+    comp._item_list.chunks.splice(chunkIdx, 0, ...block);
+    comp._layers.splice(targetIndex, 0, this);
 
     comp._invalidate_layer_cache();
   }

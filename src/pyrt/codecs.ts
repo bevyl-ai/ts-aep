@@ -39,13 +39,13 @@ const NORM = new Map<string, string>();
 function norm(encoding: string): string {
   let n = NORM.get(encoding);
   if (n === undefined) {
-    n = norm_uncached(encoding);
+    n = normUncached(encoding);
     NORM.set(encoding, n);
   }
   return n;
 }
 
-function norm_uncached(encoding: string): string {
+function normUncached(encoding: string): string {
   const e = encoding.toLowerCase().replace(/_/g, "-");
   if (e === "utf8" || e === "utf-8") return "utf-8";
   if (e === "ascii" || e === "us-ascii") return "ascii";
@@ -88,7 +88,7 @@ const CJK: ReadonlyMap<string, CjkCodepage> = new Map([
   ["cp950", CP950],
 ]);
 
-function bad_byte(out: string[], byte: number, errors: Errors, enc: string, pos: number, reason = "invalid start byte"): void {
+function badByte(out: string[], byte: number, errors: Errors, enc: string, pos: number, reason = "invalid start byte"): void {
   if (errors === "surrogateescape") {
     out.push(String.fromCharCode(0xdc00 + byte));
   } else if (errors === "replace") {
@@ -100,7 +100,7 @@ function bad_byte(out: string[], byte: number, errors: Errors, enc: string, pos:
   }
 }
 
-function is_ascii(data: Uint8Array): boolean {
+function isAscii(data: Uint8Array): boolean {
   for (let i = 0; i < data.length; i++) if (data[i] >= 0x80) return false;
   return true;
 }
@@ -120,15 +120,15 @@ function chars(data: Uint8Array): string {
 // decoder below applies the error handler.
 const UTF8_FATAL = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
-function decode_utf8(data: Uint8Array, errors: Errors): string {
+function decodeUtf8(data: Uint8Array, errors: Errors): string {
   try {
     return UTF8_FATAL.decode(data);
   } catch {
-    return decode_utf8_slow(data, errors);
+    return decodeUtf8Slow(data, errors);
   }
 }
 
-function decode_utf8_slow(data: Uint8Array, errors: Errors): string {
+function decodeUtf8Slow(data: Uint8Array, errors: Errors): string {
   const out: string[] = [];
   const n = data.length;
   let i = 0;
@@ -157,7 +157,7 @@ function decode_utf8_slow(data: Uint8Array, errors: Errors): string {
       if (b0 === 0xf0) lo = 0x90;
       if (b0 === 0xf4) hi = 0x8f;
     } else {
-      bad_byte(out, b0, errors, "utf-8", i);
+      badByte(out, b0, errors, "utf-8", i);
       i += 1;
       continue;
     }
@@ -188,7 +188,7 @@ function decode_utf8_slow(data: Uint8Array, errors: Errors): string {
       if (errors === "replace") {
         out.push("�");
       } else {
-        for (let k = 0; k < j; k++) bad_byte(out, data[i + k], errors, "utf-8", i + k);
+        for (let k = 0; k < j; k++) badByte(out, data[i + k], errors, "utf-8", i + k);
       }
       i += j;
       continue;
@@ -203,13 +203,13 @@ const UTF8_ENCODER = new TextEncoder();
 /** `String.prototype.isWellFormed` (ES2024, newer than the lib this builds against); absent on older hosts. */
 const IS_WELL_FORMED: ((this: string) => boolean) | undefined = Reflect.get(String.prototype, "isWellFormed");
 
-function encode_utf8(text: string, errors: Errors): Uint8Array {
+function encodeUtf8(text: string, errors: Errors): Uint8Array {
   // TextEncoder would turn a lone surrogate into U+FFFD; those go byte-wise.
   if (typeof IS_WELL_FORMED === "function" && IS_WELL_FORMED.call(text)) return UTF8_ENCODER.encode(text);
-  return encode_utf8_slow(text, errors);
+  return encodeUtf8Slow(text, errors);
 }
 
-function encode_utf8_slow(text: string, errors: Errors): Uint8Array {
+function encodeUtf8Slow(text: string, errors: Errors): Uint8Array {
   const out: number[] = [];
   for (let i = 0; i < text.length; i++) {
     let c = text.charCodeAt(i);
@@ -243,22 +243,22 @@ function encode_utf8_slow(text: string, errors: Errors): Uint8Array {
   return Uint8Array.from(out);
 }
 
-function decode_single_byte(data: Uint8Array, errors: Errors, limit: number, enc: string, table?: readonly number[]): string {
+function decodeSingleByte(data: Uint8Array, errors: Errors, limit: number, enc: string, table?: readonly number[]): string {
   if (limit === 0x100) return chars(data);
-  if (is_ascii(data)) return UTF8_FATAL.decode(data);
+  if (isAscii(data)) return UTF8_FATAL.decode(data);
   const out: string[] = [];
   for (let i = 0; i < data.length; i++) {
     const b = data[i];
     if (b < limit) out.push(String.fromCharCode(b));
     else if (table && table[b - 0x80] >= 0) out.push(String.fromCharCode(table[b - 0x80]));
-    else bad_byte(out, b, errors, enc, i, table ? "character maps to <undefined>" : "ordinal not in range(128)");
+    else badByte(out, b, errors, enc, i, table ? "character maps to <undefined>" : "ordinal not in range(128)");
   }
   return out.join("");
 }
 
 const CJK_DECODERS = new Map<string, TextDecoder | null>();
 
-function cjk_decoder(label: string): TextDecoder | null {
+function cjkDecoder(label: string): TextDecoder | null {
   const cached = CJK_DECODERS.get(label);
   if (cached !== undefined) return cached;
   let decoder: TextDecoder | null = null;
@@ -278,8 +278,8 @@ function cjk_decoder(label: string): TextDecoder | null {
  * resumes at the next byte); runs of valid characters go through the WHATWG
  * decoder, which decodes them as CPython does except for the listed overrides.
  */
-function decode_cjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encoding: string): string {
-  const decoder = cjk_decoder(codec.label);
+function decodeCjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encoding: string): string {
+  const decoder = cjkDecoder(codec.label);
   if (decoder === null) throw new LookupError(`unknown encoding: ${encoding}`);
   const out: string[] = [];
   let run = 0;
@@ -321,7 +321,7 @@ function decode_cjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encodi
       }
     }
     flush(i);
-    bad_byte(out, b, errors, codec.name, i, `${i + 1 < data.length ? "illegal" : "incomplete"} multibyte sequence`);
+    badByte(out, b, errors, codec.name, i, `${i + 1 < data.length ? "illegal" : "incomplete"} multibyte sequence`);
     i += 1;
     run = i;
   }
@@ -329,17 +329,17 @@ function decode_cjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encodi
   return out.join("");
 }
 
-function encode_single_byte(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
+function encodeSingleByte(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
   const out = new Uint8Array(text.length);
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    if (c >= limit) return encode_single_byte_slow(text, errors, limit, enc, table);
+    if (c >= limit) return encodeSingleByteSlow(text, errors, limit, enc, table);
     out[i] = c;
   }
   return out;
 }
 
-function encode_single_byte_slow(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
+function encodeSingleByteSlow(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
   const out: number[] = [];
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
@@ -363,7 +363,7 @@ function encode_single_byte_slow(text: string, errors: Errors, limit: number, en
   return Uint8Array.from(out);
 }
 
-function decode_utf16(data: Uint8Array, errors: Errors, le: boolean): string {
+function decodeUtf16(data: Uint8Array, errors: Errors, le: boolean): string {
   if (data.length % 2 && errors === "strict") {
     throw new UnicodeDecodeError(`'utf-16-${le ? "le" : "be"}' codec can't decode byte: truncated data`);
   }
@@ -374,7 +374,7 @@ function decode_utf16(data: Uint8Array, errors: Errors, le: boolean): string {
   return units.join("");
 }
 
-function encode_utf16(text: string, le: boolean): Uint8Array {
+function encodeUtf16(text: string, le: boolean): Uint8Array {
   const out = new Uint8Array(text.length * 2);
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
@@ -390,7 +390,7 @@ function encode_utf16(text: string, le: boolean): Uint8Array {
  * error handler (`surrogateescape` escapes the leading bytes >= 0x80 of the
  * bad span and resumes after them, raising when there are none).
  */
-function decode_utf32(data: Uint8Array, errors: Errors, le: boolean, offset = 0): string {
+function decodeUtf32(data: Uint8Array, errors: Errors, le: boolean, offset = 0): string {
   const enc = le ? "utf-32-le" : "utf-32-be";
   const out: string[] = [];
   const n = data.length;
@@ -430,7 +430,7 @@ function decode_utf32(data: Uint8Array, errors: Errors, le: boolean, offset = 0)
   return out.join("");
 }
 
-function encode_utf32(text: string, errors: Errors, le: boolean, name: string): Uint8Array {
+function encodeUtf32(text: string, errors: Errors, le: boolean, name: string): Uint8Array {
   const cps: number[] = [];
   let pos = 0;
   for (const ch of text) {
@@ -462,36 +462,36 @@ function encode_utf32(text: string, errors: Errors, le: boolean, name: string): 
 export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "strict"): string {
   switch (encoding === "utf-8" ? encoding : norm(encoding)) {
     case "utf-8":
-      return decode_utf8(data, errors);
+      return decodeUtf8(data, errors);
     case "ascii":
-      return decode_single_byte(data, errors, 0x80, "ascii");
+      return decodeSingleByte(data, errors, 0x80, "ascii");
     case "latin-1":
-      return decode_single_byte(data, errors, 0x100, "latin-1");
+      return decodeSingleByte(data, errors, 0x100, "latin-1");
     case "utf-16-le":
-      return decode_utf16(data, errors, true);
+      return decodeUtf16(data, errors, true);
     case "utf-16-be":
-      return decode_utf16(data, errors, false);
+      return decodeUtf16(data, errors, false);
     case "utf-16": {
-      if (data[0] === 0xff && data[1] === 0xfe) return decode_utf16(data.subarray(2), errors, true);
-      if (data[0] === 0xfe && data[1] === 0xff) return decode_utf16(data.subarray(2), errors, false);
-      return decode_utf16(data, errors, true);
+      if (data[0] === 0xff && data[1] === 0xfe) return decodeUtf16(data.subarray(2), errors, true);
+      if (data[0] === 0xfe && data[1] === 0xff) return decodeUtf16(data.subarray(2), errors, false);
+      return decodeUtf16(data, errors, true);
     }
     case "utf-32-le":
-      return decode_utf32(data, errors, true);
+      return decodeUtf32(data, errors, true);
     case "utf-32-be":
-      return decode_utf32(data, errors, false);
+      return decodeUtf32(data, errors, false);
     case "utf-32": {
       // A BOM picks the byte order and is dropped; without one, little-endian (the native order).
-      if (data[0] === 0xff && data[1] === 0xfe && data[2] === 0 && data[3] === 0) return decode_utf32(data.subarray(4), errors, true, 4);
-      if (data[0] === 0 && data[1] === 0 && data[2] === 0xfe && data[3] === 0xff) return decode_utf32(data.subarray(4), errors, false, 4);
-      return decode_utf32(data, errors, true);
+      if (data[0] === 0xff && data[1] === 0xfe && data[2] === 0 && data[3] === 0) return decodeUtf32(data.subarray(4), errors, true, 4);
+      if (data[0] === 0 && data[1] === 0 && data[2] === 0xfe && data[3] === 0xff) return decodeUtf32(data.subarray(4), errors, false, 4);
+      return decodeUtf32(data, errors, true);
     }
     default: {
       const n = norm(encoding);
       const table = SINGLE_BYTE.get(n);
-      if (table) return decode_single_byte(data, errors, 0x80, "charmap", table);
+      if (table) return decodeSingleByte(data, errors, 0x80, "charmap", table);
       const cjk = CJK.get(n);
-      if (cjk) return decode_cjk(data, errors, cjk, encoding);
+      if (cjk) return decodeCjk(data, errors, cjk, encoding);
       throw new LookupError(`unknown encoding: ${encoding}`);
     }
   }
@@ -501,28 +501,28 @@ export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "s
 export function encode(text: string, encoding = "utf-8", errors: Errors = "strict"): Uint8Array {
   switch (encoding === "utf-8" ? encoding : norm(encoding)) {
     case "utf-8":
-      return encode_utf8(text, errors);
+      return encodeUtf8(text, errors);
     case "ascii":
-      return encode_single_byte(text, errors, 0x80, "ascii");
+      return encodeSingleByte(text, errors, 0x80, "ascii");
     case "latin-1":
-      return encode_single_byte(text, errors, 0x100, "latin-1");
+      return encodeSingleByte(text, errors, 0x100, "latin-1");
     case "utf-16-le":
-      return encode_utf16(text, true);
+      return encodeUtf16(text, true);
     case "utf-16-be":
-      return encode_utf16(text, false);
+      return encodeUtf16(text, false);
     case "utf-16": {
-      const body = encode_utf16(text, true);
+      const body = encodeUtf16(text, true);
       const out = new Uint8Array(body.length + 2);
       out.set([0xff, 0xfe]);
       out.set(body, 2);
       return out;
     }
     case "utf-32-le":
-      return encode_utf32(text, errors, true, "utf-32-le");
+      return encodeUtf32(text, errors, true, "utf-32-le");
     case "utf-32-be":
-      return encode_utf32(text, errors, false, "utf-32-be");
+      return encodeUtf32(text, errors, false, "utf-32-be");
     case "utf-32": {
-      const body = encode_utf32(text, errors, true, "utf-32");
+      const body = encodeUtf32(text, errors, true, "utf-32");
       const out = new Uint8Array(body.length + 4);
       out.set([0xff, 0xfe, 0, 0]);
       out.set(body, 4);
@@ -531,7 +531,7 @@ export function encode(text: string, encoding = "utf-8", errors: Errors = "stric
     default: {
       const n = norm(encoding);
       const table = SINGLE_BYTE.get(n);
-      if (table) return encode_single_byte(text, errors, 0x80, "charmap", table);
+      if (table) return encodeSingleByte(text, errors, 0x80, "charmap", table);
       if (CJK.has(n)) throw new NotImplementedError(`encoding to ${encoding} is not supported`);
       throw new LookupError(`unknown encoding: ${encoding}`);
     }

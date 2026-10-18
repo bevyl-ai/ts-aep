@@ -22,13 +22,13 @@ export class PyFloat {
     return this.value;
   }
   toString(): string {
-    return float_repr(this.value);
+    return floatRepr(this.value);
   }
   toJSON(): number {
     return this.value;
   }
   [INSPECT](): string {
-    return float_repr(this.value);
+    return floatRepr(this.value);
   }
   __bool__(): boolean {
     return this.value !== 0;
@@ -47,7 +47,7 @@ export function pyfloat(x: number | PyFloat): PyFloat {
 }
 
 /** `isinstance(x, (int, float))` without the bool case: a JS number or a boxed `PyFloat`. */
-export function is_real(x: unknown): x is number | PyFloat {
+export function isReal(x: unknown): x is number | PyFloat {
   return typeof x === "number" || x instanceof PyFloat;
 }
 
@@ -66,10 +66,10 @@ export function unbox<T>(x: T): T | number {
  * operand always counts as float.
  */
 export function truediv(a: number | PyFloat, b: number | PyFloat, operands: "float" | "int" = "float"): number {
-  const is_float = operands === "float" || a instanceof PyFloat || b instanceof PyFloat;
+  const isFloat = operands === "float" || a instanceof PyFloat || b instanceof PyFloat;
   const x = unbox(a);
   const y = unbox(b);
-  if (y === 0) throw new ZeroDivisionError(is_float ? "float division by zero" : "division by zero");
+  if (y === 0) throw new ZeroDivisionError(isFloat ? "float division by zero" : "division by zero");
   return x / y;
 }
 
@@ -110,7 +110,7 @@ const PY_SPACE = /[\t\n\v\f\r\x1c-\x20\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u2
 const ND = /\p{Nd}/u;
 
 /** Digit value of a Unicode decimal digit (Nd digits come in runs of ten from zero). */
-function nd_value(cp: number): number {
+function ndValue(cp: number): number {
   let start = cp;
   while (ND.test(String.fromCodePoint(start - 1))) start--;
   return (cp - start) % 10;
@@ -121,13 +121,13 @@ function nd_value(cp: number): number {
  * space and Unicode decimal digits their ASCII digit; any other non-ASCII
  * character becomes `?` (always invalid downstream).
  */
-function to_ascii_number(s: string): string {
+function toAsciiNumber(s: string): string {
   let out = "";
   for (const ch of s) {
     const cp = ord(ch);
     if (cp < 128) out += PY_SPACE.test(ch) ? " " : ch;
     else if (PY_SPACE.test(ch)) out += " ";
-    else if (ND.test(ch)) out += String(nd_value(cp));
+    else if (ND.test(ch)) out += String(ndValue(cp));
     else out += "?";
   }
   return out;
@@ -171,7 +171,7 @@ export function int(x: number | string | boolean | bigint | PyFloat | String, ba
     const bad = (): never => {
       throw new ValueError(`invalid literal for int() with base ${base}: ${repr200(orig)}`);
     };
-    let t = to_ascii_number(orig).replace(ASCII_WS, "");
+    let t = toAsciiNumber(orig).replace(ASCII_WS, "");
     let neg = false;
     if (t[0] === "+" || t[0] === "-") {
       neg = t[0] === "-";
@@ -223,7 +223,7 @@ export function float(x: string | number | boolean | PyFloat | String): number {
   const bad = (): never => {
     throw new ValueError(`could not convert string to float: ${repr200(orig)}`);
   };
-  let s = to_ascii_number(orig).replace(ASCII_WS, "");
+  let s = toAsciiNumber(orig).replace(ASCII_WS, "");
   if (s.includes("_")) {
     // Each underscore must sit between two digits.
     if (!/^[^_]*$|^(?:[^_]|(?<=[0-9])_(?=[0-9]))*$/.test(s)) bad();
@@ -237,7 +237,7 @@ export function float(x: string | number | boolean | PyFloat | String): number {
 }
 
 /** The exact rational value of a finite double as `num / 2**exp2` (exp2 >= 0) or `num * 2**-exp2`. */
-export function float_as_ratio(x: number): [bigint, bigint] {
+export function floatAsRatio(x: number): [bigint, bigint] {
   if (!Number.isFinite(x)) throw new OverflowError("cannot convert Infinity to integer ratio");
   if (x === 0) return [0n, 1n];
   const dv = new DataView(new ArrayBuffer(8));
@@ -278,17 +278,17 @@ export function round(x: number | PyFloat, ndigits?: number | null): number {
   }
   if (!Number.isFinite(x) || x === 0) return x;
   if (Number.isInteger(x) && ndigits >= 0) return x;
-  const [num, den] = float_as_ratio(x);
+  const [num, den] = floatAsRatio(x);
   // value * 10**n = num * 10**n / den, rounded half-even to an integer q.
-  let scaled_num = num;
-  let scaled_den = den;
-  if (ndigits >= 0) scaled_num *= 10n ** BigInt(ndigits);
-  else scaled_den *= 10n ** BigInt(-ndigits);
-  const neg = scaled_num < 0n;
-  const a = neg ? -scaled_num : scaled_num;
-  let q = a / scaled_den;
-  const r2 = 2n * (a - q * scaled_den);
-  if (r2 > scaled_den || (r2 === scaled_den && q & 1n)) q += 1n;
+  let scaledNum = num;
+  let scaledDen = den;
+  if (ndigits >= 0) scaledNum *= 10n ** BigInt(ndigits);
+  else scaledDen *= 10n ** BigInt(-ndigits);
+  const neg = scaledNum < 0n;
+  const a = neg ? -scaledNum : scaledNum;
+  let q = a / scaledDen;
+  const r2 = 2n * (a - q * scaledDen);
+  if (r2 > scaledDen || (r2 === scaledDen && q & 1n)) q += 1n;
   const text = `${neg ? "-" : ""}${q}e${-ndigits}`;
   const result = Number(text);
   if (!Number.isFinite(result)) throw new OverflowError("rounded value too large to represent");
@@ -302,13 +302,13 @@ export function round(x: number | PyFloat, ndigits?: number | null): number {
 export function sum(values: Iterable<number>, start = 0): number {
   let f = start;
   let c = 0;
-  let any_float = !Number.isInteger(start);
+  let anyFloat = !Number.isInteger(start);
   for (const x of values) {
-    if (!any_float && Number.isInteger(x) && Number.isInteger(f) && Math.abs(f + x) < 2 ** 53) {
+    if (!anyFloat && Number.isInteger(x) && Number.isInteger(f) && Math.abs(f + x) < 2 ** 53) {
       f += x;
       continue;
     }
-    any_float = true;
+    anyFloat = true;
     const t = f + x;
     if (Number.isFinite(t)) {
       if (Math.abs(f) >= Math.abs(x)) c += f - t + x;
@@ -359,13 +359,13 @@ export function fsum(values: Iterable<number>): number {
 }
 
 /** `math.isclose(a, b, rel_tol=1e-9, abs_tol=0)` */
-export function isclose(a: number | PyFloat, b: number | PyFloat, rel_tol = 1e-9, abs_tol = 0): boolean {
+export function isclose(a: number | PyFloat, b: number | PyFloat, relTol = 1e-9, absTol = 0): boolean {
   a = unbox(a);
   b = unbox(b);
   if (a === b) return true;
   if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
   const diff = Math.abs(b - a);
-  return diff <= Math.abs(rel_tol * b) || diff <= Math.abs(rel_tol * a) || diff <= abs_tol;
+  return diff <= Math.abs(relTol * b) || diff <= Math.abs(relTol * a) || diff <= absTol;
 }
 
 /** `math.copysign` */
@@ -381,7 +381,7 @@ export const radians = (x: number): number => x * (Math.PI / 180);
 export const degrees = (x: number): number => x * (180 / Math.PI);
 
 /** Python `repr(float)` / `str(float)`: shortest round-trip, Python spelling. */
-export function float_repr(x: number | PyFloat): string {
+export function floatRepr(x: number | PyFloat): string {
   if (x instanceof PyFloat) x = x.value;
   if (Number.isNaN(x)) return "nan";
   if (!Number.isFinite(x)) return x > 0 ? "inf" : "-inf";
@@ -397,9 +397,9 @@ export function float_repr(x: number | PyFloat): string {
 }
 
 /** Python `str(x)` for a number that may be an int or a float. */
-export function num_str(x: number | PyFloat, is_float = x instanceof PyFloat || !Number.isInteger(x)): string {
+export function numStr(x: number | PyFloat, isFloat = x instanceof PyFloat || !Number.isInteger(x)): string {
   if (x instanceof PyFloat) x = x.value;
-  return is_float ? float_repr(x) : String(x);
+  return isFloat ? floatRepr(x) : String(x);
 }
 
 /**
@@ -407,12 +407,12 @@ export function num_str(x: number | PyFloat, is_float = x instanceof PyFloat || 
  * `[sign][0][width][.prec](f|e|g|%|d|x|X)`, plus `,` grouping.
  */
 export function format(x: number | PyFloat, spec: string): string {
-  const is_float = x instanceof PyFloat;
+  const isFloat = x instanceof PyFloat;
   x = unbox(x);
   const m = /^([<>=^]?)([+\- ]?)(0?)(\d*)(,?)(?:\.(\d+))?([fFeEgGdxX%n]?)$/.exec(spec);
   if (!m) throw new ValueError(`Unsupported format spec ${spec}`);
-  const [, align, sign, zero, width_s, comma, prec_s, type] = m;
-  const prec = prec_s === undefined ? undefined : Number(prec_s);
+  const [, align, sign, zero, widthS, comma, precS, type] = m;
+  const prec = precS === undefined ? undefined : Number(precS);
   const neg = x < 0 || Object.is(x, -0);
   const a = Math.abs(x);
   let body: string;
@@ -443,17 +443,17 @@ export function format(x: number | PyFloat, spec: string): string {
       body = Math.trunc(a).toString(16).toUpperCase();
       break;
     default:
-      body = prec === undefined ? (!is_float && Number.isInteger(x) ? String(a) : float_repr(a)) : general(a, prec, true);
+      body = prec === undefined ? (!isFloat && Number.isInteger(x) ? String(a) : floatRepr(a)) : general(a, prec, true);
   }
   if (type === "E" || type === "G" || type === "F") body = body.toUpperCase();
   if (comma) {
     const [i, f] = body.split(".");
     body = i.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (f === undefined ? "" : "." + f);
   }
-  const sign_s = neg && !(a === 0 && type === "d") ? "-" : sign === "+" ? "+" : sign === " " ? " " : "";
-  const width = width_s ? Number(width_s) : 0;
-  if (zero && !align) return sign_s + body.padStart(width - sign_s.length, "0");
-  const s = sign_s + body;
+  const signS = neg && !(a === 0 && type === "d") ? "-" : sign === "+" ? "+" : sign === " " ? " " : "";
+  const width = widthS ? Number(widthS) : 0;
+  if (zero && !align) return signS + body.padStart(width - signS.length, "0");
+  const s = signS + body;
   if (align === "<") return s.padEnd(width);
   if (align === "^") {
     const pad = Math.max(0, width - s.length);
@@ -466,7 +466,7 @@ export function format(x: number | PyFloat, spec: string): string {
  * The shortest round-trip digits of a non-negative finite double and its decimal
  * exponent: `0.00125` is `["125", -3]`.
  */
-function shortest_digits(a: number): [string, number] {
+function shortestDigits(a: number): [string, number] {
   const s = a.toExponential();
   const e = s.indexOf("e");
   return [s.slice(0, e).replace(".", ""), Number(s.slice(e + 1))];
@@ -482,13 +482,13 @@ const MIN_NORMAL = 2.2250738585072014e-308;
 /** Correctly rounded fixed-point text of a non-negative double (ties to even on the exact value). */
 function fixed(a: number, prec: number): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
-  const [d, e] = shortest_digits(a);
+  const [d, e] = shortestDigits(a);
   const pad = prec - (d.length - 1 - e);
   if (pad >= 0 && e + 1 + prec <= 15 && (a === 0 || a >= MIN_NORMAL)) {
     const digits = (d + "0".repeat(pad)).padStart(prec + 1, "0");
     return prec ? `${digits.slice(0, -prec)}.${digits.slice(-prec)}` : digits;
   }
-  const [num, den] = float_as_ratio(a);
+  const [num, den] = floatAsRatio(a);
   const scaled = num * 10n ** BigInt(prec);
   let q = scaled / den;
   const r2 = 2n * (scaled - q * den);
@@ -498,13 +498,13 @@ function fixed(a: number, prec: number): string {
 }
 
 /** Correctly rounded `%.{prec}e` digits: [mantissa digits, exponent]. */
-function sci_digits(a: number, prec: number): [string, number] {
+function sciDigits(a: number, prec: number): [string, number] {
   if (a === 0) return ["0".repeat(prec + 1), 0];
   if (prec < 15 && a >= MIN_NORMAL) {
-    const [d, e] = shortest_digits(a);
+    const [d, e] = shortestDigits(a);
     if (d.length <= prec + 1) return [d.padEnd(prec + 1, "0"), e];
   }
-  const [num, den] = float_as_ratio(a);
+  const [num, den] = floatAsRatio(a);
   let exp = Math.floor(Math.log10(a));
   for (;;) {
     const shift = prec - exp;
@@ -523,17 +523,17 @@ function sci_digits(a: number, prec: number): [string, number] {
 
 function expo(a: number, prec: number): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
-  const [d, e] = sci_digits(a, prec);
+  const [d, e] = sciDigits(a, prec);
   const m = prec ? `${d[0]}.${d.slice(1)}` : d;
   return `${m}e${e < 0 ? "-" : "+"}${String(Math.abs(e)).padStart(2, "0")}`;
 }
 
 /** `%g` (and the bare `.Ng` spec when `keep_point_free` is false). */
-function general(a: number, prec: number, repr_style: boolean): string {
+function general(a: number, prec: number, reprStyle: boolean): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
   const p = prec === 0 ? 1 : prec;
-  if (a === 0) return repr_style ? "0.0" : "0";
-  const [d, e] = sci_digits(a, p - 1);
+  if (a === 0) return reprStyle ? "0.0" : "0";
+  const [d, e] = sciDigits(a, p - 1);
   let out: string;
   if (e < -4 || e >= p) {
     let m = p > 1 ? `${d[0]}.${d.slice(1)}` : d;
@@ -542,7 +542,7 @@ function general(a: number, prec: number, repr_style: boolean): string {
   } else {
     out = fixed(a, Math.max(0, p - 1 - e));
     if (out.includes(".")) out = out.replace(/0+$/, "").replace(/\.$/, "");
-    if (repr_style && !out.includes(".") && !out.includes("e")) out += ".0";
+    if (reprStyle && !out.includes(".") && !out.includes("e")) out += ".0";
   }
   return out;
 }
@@ -565,7 +565,7 @@ export function or(x: number, y: number): number {
   return Number(BigInt(x) | BigInt(y));
 }
 /** `x & ~mask` for non-negative operands up to 2**53. */
-export function and_not(x: number, mask: number): number {
+export function andNot(x: number, mask: number): number {
   if (x <= 0xffffffff && mask <= 0xffffffff && x >= 0 && mask >= 0) return (x & ~mask) >>> 0;
   return Number(BigInt(x) & ~BigInt(mask));
 }

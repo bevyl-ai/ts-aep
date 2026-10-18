@@ -2,9 +2,9 @@
 
 import type { ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { ChunkNotFoundError, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { CosParser } from "../cos/index.ts";
-import { decode_btdk } from "../cos/schema.ts";
+import { decodeBtdk } from "../cos/schema.ts";
 // Python's builtin `SyntaxError` as raised by `CosParser`.
 import { type CosNode, SyntaxError_ } from "../cos/cos.ts";
 import { PropertyValueType } from "../enums/index.ts";
@@ -14,10 +14,10 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { Gradient } from "../models/properties/gradient.ts";
-import { parse_gradient_xml } from "./gradient.ts";
-import { parse_property } from "./property_value.ts";
-import { parse_btdk_cos } from "./text.ts";
-import { BytesIO, OverflowError, ValueError, warn, zip, instance_dict } from "../../pyrt/index.ts";
+import { parseGradientXml } from "./gradient.ts";
+import { parseProperty } from "./property_value.ts";
+import { parseBtdkCos } from "./text.ts";
+import { BytesIO, OverflowError, ValueError, warn, zip, instanceDict } from "../../pyrt/index.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
 export const logger = {
@@ -26,10 +26,10 @@ export const logger = {
   warning: (m: string) => warn(m),
 };
 
-export function parse_orientation(
-  otst_chunk: ListChunk,
-  match_name: string,
-  property_depth: number,
+export function parseOrientation(
+  otstChunk: ListChunk,
+  matchName: string,
+  propertyDepth: number,
   composition: CompItem,
   tdmn: TdmnChunk,
 ): Property {
@@ -45,14 +45,14 @@ export function parse_orientation(
    * @param property_depth - The nesting depth of this property (0 = layer level).
    * @param composition - The parent composition.
    */
-  const tdbs_chunk = find_by_list_type(otst_chunk.chunks, "tdbs");
-  const prop = parse_property(tdbs_chunk, match_name, composition, property_depth, tdmn);
-  prop._wrapper = otst_chunk;
+  const tdbsChunk = findByListType(otstChunk.chunks, "tdbs");
+  const prop = parseProperty(tdbsChunk, matchName, composition, propertyDepth, tdmn);
+  prop._wrapper = otstChunk;
   ORIENTATION_KIND.applyModelMetadata(prop);
 
   // cdat is parameterized with is_le; .value returns the correctly-
   // endian doubles regardless of context.
-  const cdat = find_by_type_or_null(tdbs_chunk.chunks, "cdat");
+  const cdat = findByTypeOrNull(tdbsChunk.chunks, "cdat");
   if (cdat === null) {
     prop._cache_value(null);
   } else {
@@ -66,12 +66,12 @@ export function parse_orientation(
   // otst.  The tdbs items carry ease only and no value at all, so each
   // keyframe's value comes from the otda data instead.
   try {
-    const otky_chunk = find_by_list_type(otst_chunk.chunks, "otky");
-    prop._kf_value_container = otky_chunk;
-    const otda_chunks = filter_by_type(otky_chunk.chunks, "otda");
+    const otkyChunk = findByListType(otstChunk.chunks, "otky");
+    prop._kf_value_container = otkyChunk;
+    const otdaChunks = filterByType(otkyChunk.chunks, "otda");
     for (const [idx, kf] of prop.keyframes.entries()) {
-      if (idx < otda_chunks.length) {
-        kf._cache_value([...otda_chunks[idx].values]);
+      if (idx < otdaChunks.length) {
+        kf._cache_value([...otdaChunks[idx].values]);
       }
     }
   } catch (e) {
@@ -81,7 +81,7 @@ export function parse_orientation(
   return prop;
 }
 
-export function _parse_shape_shap(shap_chunk: ListChunk, layer: Layer | null, mask_path: Property | null): Shape {
+export function _parseShapeShap(shapChunk: ListChunk, layer: Layer | null, maskPath: Property | null): Shape {
   /**
    * Parse a single shape path from a `shap` LIST chunk.
    *
@@ -109,39 +109,39 @@ export function _parse_shape_shap(shap_chunk: ListChunk, layer: Layer | null, ma
    * @throws {@link ValueError} If a mask shape is parsed without its layer, which would silently
    *   yield raw normalized coordinates.
    */
-  const is_mask_shape = mask_path != null;
-  if (is_mask_shape && layer == null) {
+  const isMaskShape = maskPath != null;
+  if (isMaskShape && layer == null) {
     throw new ValueError("a mask shape must be parsed with its owning layer");
   }
-  const shph_chunk = find_by_type(shap_chunk.chunks, "shph");
-  const list_chunk = find_by_list_type(shap_chunk.chunks, "list");
+  const shphChunk = findByType(shapChunk.chunks, "shph");
+  const listChunk = findByListType(shapChunk.chunks, "list");
 
   // An empty path (no vertices) carries only the lhd3 header, no ldat;
   // treat it as zero points so the value is an empty Shape, not None.
-  const ldat = find_by_type_or_null(list_chunk.chunks, "ldat");
+  const ldat = findByTypeOrNull(listChunk.chunks, "ldat");
   const points: Parameters<typeof Shape._from_binary>[0]["_points"] = ldat === null ? [] : ldat.items;
 
   // Extract variable-width mask feather data from fth5 chunk (if present).
-  const fth5 = find_by_type_or_null(shap_chunk.chunks, "fth5");
-  const feather_points = fth5 === null ? [] : fth5.points.map((pt) => new FeatherPoint({ _fp: pt }));
+  const fth5 = findByTypeOrNull(shapChunk.chunks, "fth5");
+  const featherPoints = fth5 === null ? [] : fth5.points.map((pt) => new FeatherPoint({ _fp: pt }));
 
-  const omtn = find_by_type_or_null(shap_chunk.chunks, "omtn");
+  const omtn = findByTypeOrNull(shapChunk.chunks, "omtn");
 
   return Shape._from_binary({
-    _shph: shph_chunk,
+    _shph: shphChunk,
     _points: points,
-    _is_mask: is_mask_shape,
-    _layer: is_mask_shape ? layer : null,
+    _is_mask: isMaskShape,
+    _layer: isMaskShape ? layer : null,
     _omtn: omtn,
-    _mask_path: mask_path,
-    feather_points,
+    _mask_path: maskPath,
+    feather_points: featherPoints,
   });
 }
 
-export function parse_shape(
-  oms_chunk: ListChunk,
-  match_name: string,
-  property_depth: number,
+export function parseShape(
+  omsChunk: ListChunk,
+  matchName: string,
+  propertyDepth: number,
   composition: CompItem,
   tdmn: TdmnChunk,
   layer: Layer | null = null,
@@ -163,51 +163,51 @@ export function parse_shape(
    * @returns A {@link Property} with `property_value_type` set to
    *   {@link PropertyValueType.SHAPE | SHAPE} and `value` set to a {@link Shape}.
    */
-  const tdbs_chunk = find_by_list_type(oms_chunk.chunks, "tdbs");
-  const prop = parse_property(tdbs_chunk, match_name, composition, property_depth, tdmn);
+  const tdbsChunk = findByListType(omsChunk.chunks, "tdbs");
+  const prop = parseProperty(tdbsChunk, matchName, composition, propertyDepth, tdmn);
 
-  prop._wrapper = oms_chunk;
+  prop._wrapper = omsChunk;
   prop._property_value_type = PropertyValueType.SHAPE;
   // Shape properties always carry a value (from omks), even though
   // tdb4 may report no_value=True (a static shape's cdat is the empty
   // 4-byte form).
-  instance_dict(prop).set("_no_value", false);
+  instanceDict(prop).set("_no_value", false);
 
   // Collect shape values from omks > shap LISTs
-  let shape_values: Shape[];
+  let shapeValues: Shape[];
   try {
-    const omks_chunk = find_by_list_type(oms_chunk.chunks, "omks");
-    prop._kf_value_container = omks_chunk;
-    const mask_path = match_name === "ADBE Mask Shape" ? prop : null;
-    shape_values = filter_by_list_type(omks_chunk.chunks, "shap").map((shap_chunk) =>
-      _parse_shape_shap(shap_chunk, layer, mask_path),
+    const omksChunk = findByListType(omsChunk.chunks, "omks");
+    prop._kf_value_container = omksChunk;
+    const maskPath = matchName === "ADBE Mask Shape" ? prop : null;
+    shapeValues = filterByListType(omksChunk.chunks, "shap").map((shapChunk) =>
+      _parseShapeShap(shapChunk, layer, maskPath),
     );
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
-    logger.debug("Could not parse omks shape data for %s", match_name);
+    logger.debug("Could not parse omks shape data for %s", matchName);
     return prop;
   }
 
   // Assign static value (first shape).  Set an empty Shape as default
   // so that is_modified detects any real mask path as modified.
   prop.defaultValue = new Shape(null, null, null, { closed: false });
-  if (shape_values.length) {
-    prop._cache_value(shape_values[0]);
+  if (shapeValues.length) {
+    prop._cache_value(shapeValues[0]);
   }
 
   for (const [idx, kf] of prop.keyframes.entries()) {
-    if (idx < shape_values.length) {
-      kf._cache_value(shape_values[idx]);
+    if (idx < shapeValues.length) {
+      kf._cache_value(shapeValues[idx]);
     }
   }
 
   return prop;
 }
 
-export function parse_text_document(
-  btds_chunk: ListChunk,
-  match_name: string,
-  property_depth: number,
+export function parseTextDocument(
+  btdsChunk: ListChunk,
+  matchName: string,
+  propertyDepth: number,
   composition: CompItem,
   tdmn: TdmnChunk,
 ): Property {
@@ -223,18 +223,18 @@ export function parse_text_document(
    * @param property_depth - The nesting depth of this property (0 = layer level).
    * @param composition - The parent composition.
    */
-  const tdbs_chunk = find_by_list_type(btds_chunk.chunks, "tdbs");
-  const prop = parse_property(tdbs_chunk, match_name, composition, property_depth, tdmn);
-  prop._wrapper = btds_chunk;
+  const tdbsChunk = findByListType(btdsChunk.chunks, "tdbs");
+  const prop = parseProperty(tdbsChunk, matchName, composition, propertyDepth, tdmn);
+  prop._wrapper = btdsChunk;
   prop._property_value_type = PropertyValueType.TEXT_DOCUMENT;
 
-  let btdk_chunk: ListChunk;
-  let cos_data: CosNode;
+  let btdkChunk: ListChunk;
+  let cosData: CosNode;
   try {
-    btdk_chunk = find_by_list_type(btds_chunk.chunks, "btdk");
+    btdkChunk = findByListType(btdsChunk.chunks, "btdk");
     // btdk is a ListChunk with list_type="btdk"; raw data stored in .data
-    const parser = new CosParser(new BytesIO(btdk_chunk.data), btdk_chunk.data.length);
-    cos_data = parser.parse();
+    const parser = new CosParser(new BytesIO(btdkChunk.data), btdkChunk.data.length);
+    cosData = parser.parse();
   } catch (e) {
     if (
       !(
@@ -246,45 +246,45 @@ export function parse_text_document(
     ) {
       throw e;
     }
-    logger.debug("Failed to parse btdk COS binary for %s", match_name);
+    logger.debug("Failed to parse btdk COS binary for %s", matchName);
     return prop;
   }
 
   // The decode boundary: from here on the tree is a typed COS dictionary.
-  const tree = decode_btdk(cos_data);
+  const tree = decodeBtdk(cosData);
   if (tree == null) {
-    logger.debug("Unexpected btdk COS structure for %s", match_name);
+    logger.debug("Unexpected btdk COS structure for %s", matchName);
     return prop;
   }
 
-  const [text_documents, _fonts] = parse_btdk_cos(tree, btdk_chunk);
+  const [textDocuments, _fonts] = parseBtdkCos(tree, btdkChunk);
   // Wire each document to the project head so version-gated attributes
   // (e.g. the box-text setters) can resolve the AE major version, and to
   // the AE preferences, which hold the Character/Paragraph panel defaults
   // the reset methods restore.
-  const project_head = composition._project._head;
-  const project_preferences = composition._project._preferences;
-  for (const doc of text_documents) {
-    doc._head = project_head;
-    doc._preferences = project_preferences;
+  const projectHead = composition._project._head;
+  const projectPreferences = composition._project._preferences;
+  for (const doc of textDocuments) {
+    doc._head = projectHead;
+    doc._preferences = projectPreferences;
   }
-  if (text_documents?.length > 0) {
+  if (textDocuments?.length > 0) {
     if (prop.keyframes?.length > 0) {
-      for (const [kf, doc] of zip(prop.keyframes, text_documents)) {
+      for (const [kf, doc] of zip(prop.keyframes, textDocuments)) {
         kf._cache_value(doc);
       }
     } else {
-      prop._cache_value(text_documents[0]);
+      prop._cache_value(textDocuments[0]);
     }
   }
 
   return prop;
 }
 
-export function parse_gradient(
-  gcst_chunk: ListChunk,
-  match_name: string,
-  property_depth: number,
+export function parseGradient(
+  gcstChunk: ListChunk,
+  matchName: string,
+  propertyDepth: number,
   composition: CompItem,
   tdmn: TdmnChunk,
 ): Property {
@@ -301,30 +301,30 @@ export function parse_gradient(
    * @param composition - The parent composition.
    * @param tdmn - The tdmn chunk for this property.
    */
-  const tdbs_chunk = find_by_list_type(gcst_chunk.chunks, "tdbs");
-  const prop = parse_property(tdbs_chunk, match_name, composition, property_depth, tdmn);
+  const tdbsChunk = findByListType(gcstChunk.chunks, "tdbs");
+  const prop = parseProperty(tdbsChunk, matchName, composition, propertyDepth, tdmn);
 
-  prop._wrapper = gcst_chunk;
-  const gcky_chunk = find_by_list_type_or_null(gcst_chunk.chunks, "GCky");
-  if (gcky_chunk === null) return prop;
+  prop._wrapper = gcstChunk;
+  const gckyChunk = findByListTypeOrNull(gcstChunk.chunks, "GCky");
+  if (gckyChunk === null) return prop;
 
-  prop._kf_value_container = gcky_chunk;
-  const utf8_chunks = filter_by_type(gcky_chunk.chunks, "Utf8");
-  const gradient_values: Gradient[] = [];
-  for (const utf8 of utf8_chunks) {
-    const gdata = parse_gradient_xml(utf8);
+  prop._kf_value_container = gckyChunk;
+  const utf8Chunks = filterByType(gckyChunk.chunks, "Utf8");
+  const gradientValues: Gradient[] = [];
+  for (const utf8 of utf8Chunks) {
+    const gdata = parseGradientXml(utf8);
     if (gdata != null) {
-      gradient_values.push(gdata);
+      gradientValues.push(gdata);
     }
   }
 
-  if (gradient_values.length) {
+  if (gradientValues.length) {
     if (prop.keyframes?.length > 0) {
-      for (const [kf, gdata] of zip(prop.keyframes, gradient_values)) {
+      for (const [kf, gdata] of zip(prop.keyframes, gradientValues)) {
         kf._cache_value(gdata);
       }
     } else {
-      prop._cache_value(gradient_values[0]);
+      prop._cache_value(gradientValues[0]);
     }
   }
 

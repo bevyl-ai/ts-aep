@@ -8,10 +8,10 @@
 
 import { expect, test } from "bun:test";
 
-import { Path, ValueError, b, bytes_, py_eq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, b, bytes_, pyEq } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
-import { GUID_SEED, murmurhash3_x64_128 } from "../../src/py_aep/color/murmur3.ts";
-import { ocio_color_space_for_profile_id, ocio_output_profile_id } from "../../src/py_aep/color/ocio.ts";
+import { GUID_SEED, murmurhash3X64128 } from "../../src/py_aep/color/murmur3.ts";
+import { ocioColorSpaceForProfileId, ocioOutputProfileId } from "../../src/py_aep/color/ocio.ts";
 
 // `Path(__file__).parent.parent.parent`: tests/unit/<file> -> repo root.
 const CONFIG = new Path(import.meta.dir)
@@ -19,14 +19,14 @@ const CONFIG = new Path(import.meta.dir)
 
 test("test_murmurhash3_empty_is_zero", () => {
   // Standard MurmurHash3_x64_128 of an empty input with seed 0 is all zeros.
-  expect(py_eq(murmurhash3_x64_128(b(""), 0), bytes_.repeat(b("\x00"), 16))).toBe(true);
+  expect(pyEq(murmurhash3X64128(b(""), 0), bytes_.repeat(b("\x00"), 16))).toBe(true);
 });
 
 test("test_guid_seed", () => {
   expect(GUID_SEED).toBe(0xc29de5b8264cd69en);
 });
 
-const ocio_output_profile_id_rows: [string, string][] = [
+const ocioOutputProfileIdRows: [string, string][] = [
   // direct color space (family "ACES")
   ["ACEScg yo", "cd772629527fa64b21927794e61262e1"],
   // display color space (family "Display")
@@ -41,24 +41,24 @@ const ocio_output_profile_id_rows: [string, string][] = [
   ["sRGB yo/Un-tone-mapped yo", "57046209b3a07b687fa241e6f4bae3b4"],
 ];
 
-test.each(ocio_output_profile_id_rows)(
+test.each(ocioOutputProfileIdRows)(
   "test_ocio_output_profile_id_matches_ae[%#]",
-  (color_space: string, expected: string) => {
-    expect(bytes_.hex(ocio_output_profile_id(CONFIG, color_space))).toBe(expected);
+  (colorSpace: string, expected: string) => {
+    expect(bytes_.hex(ocioOutputProfileId(CONFIG, colorSpace))).toBe(expected);
   },
 );
 
 test("test_ocio_output_profile_id_unknown_raises", () => {
-  raises(ValueError, () => ocio_output_profile_id(CONFIG, "Not A Color Space In This Config"), "not a color space");
+  raises(ValueError, () => ocioOutputProfileId(CONFIG, "Not A Color Space In This Config"), "not a color space");
 });
 
 test("test_reverse_map_round_trips", () => {
-  for (const color_space of ["ACEScg yo", "sRGB yo", "sRGB yo/Un-tone-mapped yo"]) {
-    const profile_id = ocio_output_profile_id(CONFIG, color_space);
-    expect(ocio_color_space_for_profile_id(CONFIG, profile_id)).toBe(color_space);
+  for (const colorSpace of ["ACEScg yo", "sRGB yo", "sRGB yo/Un-tone-mapped yo"]) {
+    const profileId = ocioOutputProfileId(CONFIG, colorSpace);
+    expect(ocioColorSpaceForProfileId(CONFIG, profileId)).toBe(colorSpace);
   }
 });
 
 test("test_reverse_map_unknown_id_is_none", () => {
-  expect(ocio_color_space_for_profile_id(CONFIG, bytes_.repeat(b("\x00"), 16))).toBe(null);
+  expect(ocioColorSpaceForProfileId(CONFIG, bytes_.repeat(b("\x00"), 16))).toBe(null);
 });

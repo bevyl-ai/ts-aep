@@ -13,8 +13,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { parse_envelope } from "../../src/py_aep/color/envelope.ts";
-import { ocio_color_profile_envelope, resolve_ocio_config } from "../../src/py_aep/color/ocio.ts";
+import { parseEnvelope } from "../../src/py_aep/color/envelope.ts";
+import { ocioColorProfileEnvelope, resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
 import { decode, Path, ValueError } from "../../src/pyrt/index.ts";
 import { raises, skip } from "../../src/pyrt/pytest.ts";
 
@@ -33,12 +33,12 @@ const ROLE_MARI_INT16 =
 describe("TestByteExactAgainstAE", () => {
   test("test_direct_colorspace", () => {
     // family/name, and NO ocioColorSpaceType key.
-    expect(ocio_color_profile_envelope(CONFIG, "ACEScg yo")).toBe(DIRECT_ACESCG);
+    expect(ocioColorProfileEnvelope(CONFIG, "ACEScg yo")).toBe(DIRECT_ACESCG);
   });
 
   test("test_role", () => {
     // The role's TARGET name, with ocioColorSpaceType 2 and no family.
-    expect(ocio_color_profile_envelope(CONFIG, "mari_int16")).toBe(ROLE_MARI_INT16);
+    expect(ocioColorProfileEnvelope(CONFIG, "mari_int16")).toBe(ROLE_MARI_INT16);
   });
 
   test("test_direct_and_role_shapes_differ", () => {
@@ -52,21 +52,21 @@ describe("TestQualifiedNameRoundTrips", () => {
   test("test_family_qualified_name_is_accepted", () => {
     // `Project.workingSpace` reads back the qualified name, so assigning
     // it straight back must not raise.
-    expect(ocio_color_profile_envelope(CONFIG, "ACES/ACEScg yo")).toBe(DIRECT_ACESCG);
+    expect(ocioColorProfileEnvelope(CONFIG, "ACES/ACEScg yo")).toBe(DIRECT_ACESCG);
   });
 
   test("test_display_view_pair", () => {
-    const env = ocio_color_profile_envelope(CONFIG, "sRGB yo/Raw");
+    const env = ocioColorProfileEnvelope(CONFIG, "sRGB yo/Raw");
     expect(env.includes('"colorProfileName":"sRGB yo/Raw"')).toBe(true);
     expect(_decoded(env).includes('"ocioColorSpaceType":1')).toBe(true);
   });
 
   test("test_unknown_name_raises", () => {
-    raises(ValueError, () => ocio_color_profile_envelope(CONFIG, "NotAColorSpace"), "not a color space");
+    raises(ValueError, () => ocioColorProfileEnvelope(CONFIG, "NotAColorSpace"), "not a color space");
   });
 
   test("test_bogus_family_prefix_raises", () => {
-    raises(ValueError, () => ocio_color_profile_envelope(CONFIG, "Nope/ACEScg yo"), "not a color space");
+    raises(ValueError, () => ocioColorProfileEnvelope(CONFIG, "Nope/ACEScg yo"), "not a color space");
   });
 });
 
@@ -81,38 +81,38 @@ describe("TestFamilyNamedLikeADisplay", () => {
    * `sergb.ocio` has no display called `ACES`, so this only shows up here.
    */
 
-  const ACES12 = resolve_ocio_config("ACES 1.2");
+  const ACES12 = resolveOcioConfig("ACES 1.2");
 
   // Python autouse fixture `_require_aces12`, inlined as a per-test guard.
   test("test_family_qualified_name_is_a_direct_pick", () => {
     if (ACES12 == null) return skip("AE's bundled ACES 1.2 config is not installed");
-    const env = ocio_color_profile_envelope(ACES12, "ACES/ACES - ACEScg");
+    const env = ocioColorProfileEnvelope(ACES12, "ACES/ACES - ACEScg");
     expect(_decoded(env)).toBe('{"colorSpace1":"ACES - ACEScg"}');
     expect(env.includes('"colorProfileName":"ACES/ACES - ACEScg"')).toBe(true);
   });
 
   test("test_bare_name_gives_the_same_envelope", () => {
     if (ACES12 == null) return skip("AE's bundled ACES 1.2 config is not installed");
-    expect(ocio_color_profile_envelope(ACES12, "ACES - ACEScg")).toBe(
-      ocio_color_profile_envelope(ACES12, "ACES/ACES - ACEScg"),
+    expect(ocioColorProfileEnvelope(ACES12, "ACES - ACEScg")).toBe(
+      ocioColorProfileEnvelope(ACES12, "ACES/ACES - ACEScg"),
     );
   });
 
   test("test_real_display_view_pair_still_resolves", () => {
     if (ACES12 == null) return skip("AE's bundled ACES 1.2 config is not installed");
     // `sRGB` IS a view of the `ACES` display - this must stay type 1.
-    const env = ocio_color_profile_envelope(ACES12, "ACES/sRGB");
+    const env = ocioColorProfileEnvelope(ACES12, "ACES/sRGB");
     expect(_decoded(env).includes('"ocioColorSpaceType":1')).toBe(true);
     expect(_decoded(env).includes('"colorSpace1":"ACES"')).toBe(true);
   });
 
   test("test_display_prefix_with_a_non_view_raises", () => {
     if (ACES12 == null) return skip("AE's bundled ACES 1.2 config is not installed");
-    raises(ValueError, () => ocio_color_profile_envelope(ACES12, "ACES/NotAView"), "not a color space");
+    raises(ValueError, () => ocioColorProfileEnvelope(ACES12, "ACES/NotAView"), "not a color space");
   });
 });
 
 /** Decode the envelope's `Utf8` payload back to its JSON text. */
 function _decoded(envelope: string): string {
-  return decode(parse_envelope(envelope).data, "utf-8");
+  return decode(parseEnvelope(envelope).data, "utf-8");
 }

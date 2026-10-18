@@ -13,12 +13,12 @@
 // `pytest.approx` is the pyrt `approx` (pytest.ts), not an index re-export.
 
 import { expect, test } from "bun:test";
-import { dict_get, Path, py_assert, py_bool, py_or, tkey, zip } from "../../src/pyrt/index.ts";
+import { dictGet, Path, pyAssert, pyBool, pyOr, tkey, zip } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
-import { load_expected, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
+import { loadExpected, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
 
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 
@@ -26,27 +26,27 @@ const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "ver
 function* _keyed(comp: CompItem): Generator<[string, Property]> {
   for (const layer of comp.layers) {
     for (const prop of layer._leaf_properties()) {
-      if (py_bool(prop.keyframes)) {
+      if (pyBool(prop.keyframes)) {
         yield [layer.name, prop];
       }
     }
   }
 }
 
-function* _json_properties(document: ExpectedProject): Generator<[string, string, ExpectedProperty]> {
+function* _jsonProperties(document: ExpectedProject): Generator<[string, string, ExpectedProperty]> {
   const walk = (prop: ExpectedProperty, out: ExpectedProperty[]): void => {
-    if (py_bool(prop.numKeys ?? null)) {
+    if (pyBool(prop.numKeys ?? null)) {
       out.push(prop);
     }
-    for (const child of py_or(prop.properties ?? null, [])) {
+    for (const child of pyOr(prop.properties ?? null, [])) {
       walk(child, out);
     }
   };
 
   for (const item of "items" in document ? document.items : []) {
-    for (const layer of py_or("layers" in item ? item.layers : null, [])) {
+    for (const layer of pyOr("layers" in item ? item.layers : null, [])) {
       const found: ExpectedProperty[] = [];
-      for (const group of py_or(layer.properties ?? null, [])) {
+      for (const group of pyOr(layer.properties ?? null, [])) {
         walk(group, found);
       }
       for (const prop of found) {
@@ -62,43 +62,43 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
   "test_auto_bezier_accessors_match_extendscript[%#]",
   (version: string) => {
     const aep = VERSIONS_DIR.div(version, "complete.aep");
-    const expected = load_expected(VERSIONS_DIR.div(version), "complete");
-    const app = parse_aep(aep);
+    const expected = loadExpected(VERSIONS_DIR.div(version), "complete");
+    const app = parseAep(aep);
 
     const parsed = new Map<string, Property>();
     for (const comp of app.project.compositions) {
-      for (const [layer_name, prop] of _keyed(comp)) {
-        parsed.set(tkey(comp.name, layer_name, prop.matchName), prop);
+      for (const [layerName, prop] of _keyed(comp)) {
+        parsed.set(tkey(comp.name, layerName, prop.matchName), prop);
       }
     }
 
     let compared = 0;
-    for (const [comp_name, layer_name, json_prop] of _json_properties(expected)) {
-      const key = tkey(comp_name, layer_name, json_prop.matchName);
-      const prop = dict_get(parsed, key);
+    for (const [compName, layerName, jsonProp] of _jsonProperties(expected)) {
+      const key = tkey(compName, layerName, jsonProp.matchName);
+      const prop = dictGet(parsed, key);
       if (prop == null) continue;
-      const keys = py_or(json_prop.keyframes ?? null, []);
+      const keys = pyOr(jsonProp.keyframes ?? null, []);
       if (keys.length !== prop.keyframes.length) continue;
-      for (const [json_key, keyframe] of zip(keys, prop.keyframes)) {
-        if (py_bool(json_key.spatialAutoBezier ?? null)) {
+      for (const [jsonKey, keyframe] of zip(keys, prop.keyframes)) {
+        if (pyBool(jsonKey.spatialAutoBezier ?? null)) {
           compared += 1;
-          expect(approx(keyframe.inSpatialTangent, json_key.inSpatialTangent, { abs: 0.001 })).toBe(true);
-          expect(approx(keyframe.outSpatialTangent, json_key.outSpatialTangent, { abs: 0.001 })).toBe(true);
+          expect(approx(keyframe.inSpatialTangent, jsonKey.inSpatialTangent, { abs: 0.001 })).toBe(true);
+          expect(approx(keyframe.outSpatialTangent, jsonKey.outSpatialTangent, { abs: 0.001 })).toBe(true);
         }
-        if (py_bool(json_key.temporalAutoBezier ?? null)) {
+        if (pyBool(jsonKey.temporalAutoBezier ?? null)) {
           compared += 1;
-          for (const [ease, json_ease] of zip(keyframe.inTemporalEase, json_key.inTemporalEase)) {
-            expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
-            expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
+          for (const [ease, jsonEase] of zip(keyframe.inTemporalEase, jsonKey.inTemporalEase)) {
+            expect(approx(ease.speed, jsonEase.speed, { abs: 0.001 })).toBe(true);
+            expect(approx(ease.influence, jsonEase.influence, { abs: 0.001 })).toBe(true);
           }
-          for (const [ease, json_ease] of zip(keyframe.outTemporalEase, json_key.outTemporalEase)) {
-            expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
-            expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
+          for (const [ease, jsonEase] of zip(keyframe.outTemporalEase, jsonKey.outTemporalEase)) {
+            expect(approx(ease.speed, jsonEase.speed, { abs: 0.001 })).toBe(true);
+            expect(approx(ease.influence, jsonEase.influence, { abs: 0.001 })).toBe(true);
           }
         }
       }
     }
 
-    py_assert(compared, `${version} exercised no auto-bezier keyframe`);
+    pyAssert(compared, `${version} exercised no auto-bezier keyframe`);
   },
 );

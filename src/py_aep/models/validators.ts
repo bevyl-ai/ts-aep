@@ -17,7 +17,7 @@ import {
   TypeError_,
   ValueError,
   encode,
-  float_repr,
+  floatRepr,
   int,
   max,
   repr,
@@ -25,7 +25,7 @@ import {
   split,
   str,
   FileExistsError,
-  type_name,
+  typeName,
 } from "../../pyrt/index.ts";
 
 /**
@@ -58,15 +58,15 @@ type StaticSequenceKw = StaticNumberKw & { length?: number | null };
  *     positive-but-non-zero size).
  */
 // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); error messages print whole-number bounds without Python's trailing ".0".
-export function _validate_number(kw?: StaticNumberKw): Validator;
-export function _validate_number<O>(kw: NumberKw<O>): InstanceValidator<O>;
-export function _validate_number<O>(kw: NumberKw<O | null> = {}): InstanceValidator<O> {
+export function _validateNumber(kw?: StaticNumberKw): Validator;
+export function _validateNumber<O>(kw: NumberKw<O>): InstanceValidator<O>;
+export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidator<O> {
   const { min: min_ = null, max: max_ = null, integer = false, exclusive_min = false } = kw;
-  const type_label = integer ? "an integer" : "a number";
+  const typeLabel = integer ? "an integer" : "a number";
 
   return function _validator(value: unknown, instance: O | null = null): void {
     if (Array.isArray(value)) {
-      throw new TypeError_(`expected ${type_label}, got ${type_name(value)}`);
+      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (integer && (!(typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
       // `bool` subclasses `int`, so an isinstance check alone lets
@@ -76,13 +76,13 @@ export function _validate_number<O>(kw: NumberKw<O | null> = {}): InstanceValida
       // Not `type(value) is not int`: that would also reject IntEnum
       // members and numpy integers.
       // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float such as 2.0 is accepted here where Python rejects it.
-      throw new TypeError_(`expected ${type_label}, got ${type_name(value)}`);
+      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && !Number.isFinite(value)) {
       // NaN/inf would pass any `value < min or value > max` check (those
       // comparisons are always False for NaN) and serialize as a corrupt
       // IEEE special into a float32 field that AE may reject.
-      throw new ValueError(`must be a finite number, got ${float_repr(value)}`);
+      throw new ValueError(`must be a finite number, got ${floatRepr(value)}`);
     }
     const lo = typeof min_ === "function" ? min_(instance) : min_;
     const hi = typeof max_ === "function" ? max_(instance) : max_;
@@ -94,7 +94,7 @@ export function _validate_number<O>(kw: NumberKw<O | null> = {}): InstanceValida
     }
     // NOTE(port): Python `isinstance(value, (int, float))` also admits bool; mirrored here.
     if (!(typeof value === "number" || typeof value === "boolean")) {
-      throw new TypeError_(`expected ${type_label}, got ${type_name(value)}`);
+      throw new TypeError_(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     // A bool compares as its int value, as in Python.
     const num = Number(value);
@@ -120,12 +120,12 @@ export function _validate_number<O>(kw: NumberKw<O | null> = {}): InstanceValida
  * - `exclusive_min`: When `true`, each element must be strictly greater than `min` (e.g. a
  *     non-zero-area box size).
  */
-export function validate_sequence(kw?: StaticSequenceKw): Validator;
-export function validate_sequence<O>(kw: SequenceKw<O>): InstanceValidator<O>;
-export function validate_sequence<O>(kw: SequenceKw<O | null> = {}): InstanceValidator<O> {
+export function validateSequence(kw?: StaticSequenceKw): Validator;
+export function validateSequence<O>(kw: SequenceKw<O>): InstanceValidator<O>;
+export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceValidator<O> {
   const { length = null, min: min_ = null, max: max_ = null, integer = false, exclusive_min = false } = kw;
-  const type_label = integer ? "an integer" : "a number";
-  const _element_validator = _validate_number({ min: min_, max: max_, integer, exclusive_min });
+  const typeLabel = integer ? "an integer" : "a number";
+  const _elementValidator = _validateNumber({ min: min_, max: max_, integer, exclusive_min });
 
   return function _validator(value: unknown, instance: O | null = null): void {
     const n = typeof length === "function" ? length(instance) : length;
@@ -143,10 +143,10 @@ export function validate_sequence<O>(kw: SequenceKw<O | null> = {}): InstanceVal
       // (Gradient, Shape, ...) - never for a member of a fixed-length
       // numeric sequence, which would otherwise accept a string here.
       if (!(typeof v === "number" || typeof v === "boolean")) {
-        throw new TypeError_(`element [${i}] expected ${type_label}, got ${type_name(v)}`);
+        throw new TypeError_(`element [${i}] expected ${typeLabel}, got ${typeName(v)}`);
       }
       try {
-        _element_validator(v, instance);
+        _elementValidator(v, instance);
       } catch (exc) {
         if (!(exc instanceof TypeError_ || exc instanceof ValueError)) throw exc;
         // `raise type(exc)(...) from None`: same exception class, no chained cause.
@@ -171,30 +171,30 @@ export const _ENUM_VALIDATORS = new Map<EnumHelpers<number>, Validator>();
  * not a valid member value raises `ValueError`; any other wrong type
  * raises `TypeError`. The returned validator is memoized per `enum_cls`.
  *
- * @param enum_cls - The enum class the value must be a member of.
+ * @param enumCls - The enum class the value must be a member of.
  */
-export function validate_enum(enum_cls: EnumHelpers<number>): Validator {
-  const cached = _ENUM_VALIDATORS.get(enum_cls) ?? null;
+export function validateEnum(enumCls: EnumHelpers<number>): Validator {
+  const cached = _ENUM_VALIDATORS.get(enumCls) ?? null;
   if (cached != null) return cached;
 
   const _validator = function (value: unknown, instance: unknown = null): void {
     // NOTE(port): enum members are plain numbers, so `has` also accepts member ints; Python's int branch accepts those too (enum_cls(value) succeeds), so outcomes match.
-    if (enum_cls.has(value)) return;
+    if (enumCls.has(value)) return;
     // Before the int branch: `bool` subclasses `int`, so `om.format =
     // True` would otherwise silently select the member whose value is 1.
     if (typeof value === "boolean") {
-      throw new TypeError_(`expected a ${enum_cls.__name__}, got ${type_name(value)}`);
+      throw new TypeError_(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && Number.isInteger(value)) {
-      if (enum_cls.of_or_null(value) === null) {
-        throw new ValueError(`${repr(value)} is not a valid ${enum_cls.__name__} value`);
+      if (enumCls.of_or_null(value) === null) {
+        throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__} value`);
       }
       return;
     }
-    throw new TypeError_(`expected a ${enum_cls.__name__}, got ${type_name(value)}`);
+    throw new TypeError_(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
   };
 
-  _ENUM_VALIDATORS.set(enum_cls, _validator);
+  _ENUM_VALIDATORS.set(enumCls, _validator);
   return _validator;
 }
 
@@ -203,20 +203,20 @@ export function validate_enum(enum_cls: EnumHelpers<number>): Validator {
  *
  * @param allowed - Iterable of valid values.
  */
-export function validate_one_of<T>(allowed: Iterable<T>): Validator {
-  const allowed_list = [...allowed];
-  const allowed_set = new Set<unknown>(allowed_list);
-  const formatted = allowed_list.map((v) => str(v)).join(", ");
+export function validateOneOf<T>(allowed: Iterable<T>): Validator {
+  const allowedList = [...allowed];
+  const allowedSet = new Set<unknown>(allowedList);
+  const formatted = allowedList.map((v) => str(v)).join(", ");
 
   return function _validator(value: unknown, instance: unknown = null): void {
-    if (!allowed_set.has(value instanceof String ? String(value) : value)) {
+    if (!allowedSet.has(value instanceof String ? String(value) : value)) {
       throw new ValueError(`must be one of [${formatted}], got ${repr(value)}`);
     }
   };
 }
 
 /** The After Effects platforms py_aep writes footage for (see `py_aep.parse`). */
-export const validate_platform = validate_one_of(["windows", "macos"]);
+export const validatePlatform = validateOneOf(["windows", "macos"]);
 
 /**
  * Return a validator that checks a string value.
@@ -229,7 +229,7 @@ export const validate_platform = validate_one_of(["windows", "macos"]);
  * - `allow_null`: When `false`, reject strings containing a NUL (`\x00`) character, which corrupt
  *     the COS/text blobs AE reads.
  */
-export function _validate_str(
+export function _validateStr(
   kw: { allow_empty?: boolean; max_length?: number | null; max_bytes?: number | null; allow_null?: boolean } = {},
 ): Validator {
   const { allow_empty = true, max_length = null, max_bytes = null, allow_null = true } = kw;
@@ -237,15 +237,15 @@ export function _validate_str(
   return function _validator(value: unknown, instance: unknown = null): void {
     // `_NulTailStr` (a `str` subclass) arrives as a String object.
     if (!(typeof value === "string" || value instanceof String)) {
-      throw new TypeError_(`expected a string, got ${type_name(value)}`);
+      throw new TypeError_(`expected a string, got ${typeName(value)}`);
     }
     const text = String(value);
     if (!allow_empty && !text) throw new ValueError("must not be empty");
     if (!allow_null && text.includes("\x00")) throw new ValueError("must not contain null bytes");
     // NOTE(port): Python `len` counts code points; Array.from matches that for astral text.
-    const n_chars = Array.from(text).length;
-    if (max_length != null && n_chars > max_length) {
-      throw new ValueError(`must be at most ${max_length} characters, got ${n_chars}`);
+    const nChars = Array.from(text).length;
+    if (max_length != null && nChars > max_length) {
+      throw new ValueError(`must be at most ${max_length} characters, got ${nChars}`);
     }
     if (max_bytes != null) {
       const encoded = encode(text, "utf-8").length;
@@ -266,14 +266,14 @@ export function _validate_str(
  *     this a directory passes `must_exist` and only fails later, deep in a reader, as an
  *     OS-specific error (`PermissionError` on Windows, `IsADirectoryError` elsewhere).
  */
-export function _validate_path(
+export function _validatePath(
   kw: { must_exist?: boolean | null; must_be_file?: boolean } = {},
 ): Validator {
   const { must_exist = null, must_be_file = false } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!(typeof value === "string" || value instanceof String || value instanceof Path)) {
-      throw new TypeError_(`expected a file system path, got ${type_name(value)}`);
+      throw new TypeError_(`expected a file system path, got ${typeName(value)}`);
     }
     const path = new Path(String(value));
     if (must_exist === true) {
@@ -287,135 +287,135 @@ export function _validate_path(
 }
 
 /** Validate that a value is a `bool` (rejects 0/1 integers). */
-export function validate_bool(value: unknown, instance: unknown = null): void {
+export function validateBool(value: unknown, instance: unknown = null): void {
   if (typeof value !== "boolean") {
-    throw new TypeError_(`expected a bool, got ${type_name(value)}`);
+    throw new TypeError_(`expected a bool, got ${typeName(value)}`);
   }
 }
 
 // ---- Shared domain validators ----
 // Re-use these across models instead of defining per-module duplicates.
 
-export const validate_number = _validate_number();
+export const validateNumber = _validateNumber();
 
-export const validate_positive_number = _validate_number({ min: 0.0 });
+export const validatePositiveNumber = _validateNumber({ min: 0.0 });
 
-export const validate_normalized_float = _validate_number({ min: 0.0, max: 1.0 });
+export const validateNormalizedFloat = _validateNumber({ min: 0.0, max: 1.0 });
 
-export const validate_int = _validate_number({ integer: true });
+export const validateInt = _validateNumber({ integer: true });
 
-export const validate_positive_int = _validate_number({ min: 0, integer: true });
+export const validatePositiveInt = _validateNumber({ min: 0, integer: true });
 
 // A u1 field (e.g. the head chunk's 8-bit build number) holds 0..255.
-export const validate_u1 = _validate_number({ min: 0, max: 0xff, integer: true });
+export const validateU1 = _validateNumber({ min: 0, max: 0xff, integer: true });
 
 // A u2 field (e.g. the Cineon highlight expansion) holds 0..65535.
-export const validate_u2 = _validate_number({ min: 0, max: 0xffff, integer: true });
+export const validateU2 = _validateNumber({ min: 0, max: 0xffff, integer: true });
 
 // A u4 field (e.g. a marker's frame_duration or the project revision counter)
 // holds 0..4294967295.
-export const validate_u4 = _validate_number({ min: 0, max: 0xffffffff, integer: true });
+export const validateU4 = _validateNumber({ min: 0, max: 0xffffffff, integer: true });
 
 // A signed 32-bit metric (e.g. text kerning/tracking). AE 2026 reads values
 // up to 2**31 fine but rejects the whole text layer for larger magnitudes
 // ("Error reading the text layer", probed 2**31 OK / 10**10 fails); the s4
 // range is the conservative bound that stays inside that limit. Not
 // `integer=True`: kerning/tracking accept a float and round it on write.
-export const validate_s4 = _validate_number({ min: -(2 ** 31), max: 2 ** 31 - 1 });
+export const validateS4 = _validateNumber({ min: -(2 ** 31), max: 2 ** 31 - 1 });
 
 // Any finite double: a signed f8 field with no domain restriction of its own
 // (e.g. a guide position, which may sit outside the composition). Bounding it
 // by the field width rather than leaving it unbounded keeps the type check -
 // a bare `validate_number` deliberately lets non-numerics through for complex
 // property values.
-export const validate_f8 = _validate_number({ min: -Number.MAX_VALUE, max: Number.MAX_VALUE });
+export const validateF8 = _validateNumber({ min: -Number.MAX_VALUE, max: Number.MAX_VALUE });
 
 // A marker duration in seconds maps to a u4 600ths-of-a-second field
 // (round(seconds * 600)); cap at the field capacity and reject NaN/inf/negative.
-export const validate_marker_duration = _validate_number({ min: 0.0, max: 0xffffffff / 600.0 });
+export const validateMarkerDuration = _validateNumber({ min: 0.0, max: 0xffffffff / 600.0 });
 
-export const validate_footage_dimension = _validate_number({ min: 4, max: 30000, integer: true });
+export const validateFootageDimension = _validateNumber({ min: 4, max: 30000, integer: true });
 
-export const validate_solid_dimension = _validate_number({ min: 1, max: 30000, integer: true });
+export const validateSolidDimension = _validateNumber({ min: 1, max: 30000, integer: true });
 
-export const validate_pixel_aspect = _validate_number({ min: 0.01, max: 100.0 });
+export const validatePixelAspect = _validateNumber({ min: 0.01, max: 100.0 });
 
 // Min is one frame at the maximum 99 fps: a composition / footage duration of
 // exactly 0 has no frames and After Effects rejects it (ExtendScript raises).
-export const validate_duration = _validate_number({ min: 1.0 / 99.0, max: 10800.0 });
+export const validateDuration = _validateNumber({ min: 1.0 / 99.0, max: 10800.0 });
 
-export const validate_frame_rate = _validate_number({ min: 1.0, max: 99.0 });
+export const validateFrameRate = _validateNumber({ min: 1.0, max: 99.0 });
 
 // A composition's frame rate: AE 2026's own range ("out of range 1 to 999"),
 // for `addComp` and the `frameRate` setter alike.
-export const validate_comp_frame_rate = _validate_number({ min: 1.0, max: 999.0 });
+export const validateCompFrameRate = _validateNumber({ min: 1.0, max: 999.0 });
 
 // A composition's duration: at least one frame at the fastest composition
 // rate (999 fps), at most AE's 10800 seconds.
-export const validate_comp_duration = _validate_number({ min: 1.0 / 999.0, max: 10800.0 });
+export const validateCompDuration = _validateNumber({ min: 1.0 / 999.0, max: 10800.0 });
 
 // 0 means "use the footage's own rate"; the upper bound is the `sspc` field's
 // (a u2 of whole frames per second).
-export const validate_conform_frame_rate = _validate_number({ min: 0.0, max: 999.0 });
+export const validateConformFrameRate = _validateNumber({ min: 0.0, max: 999.0 });
 
-export const validate_vector2 = validate_sequence({ length: 2 });
+export const validateVector2 = validateSequence({ length: 2 });
 
-export const validate_vector3 = validate_sequence({ length: 3 });
+export const validateVector3 = validateSequence({ length: 3 });
 
-export const validate_rgb_color = validate_sequence({ length: 3, min: 0.0, max: 1.0 });
+export const validateRgbColor = validateSequence({ length: 3, min: 0.0, max: 1.0 });
 
-export const validate_string = _validate_str();
+export const validateString = _validateStr();
 
-export const validate_name = _validate_str({ allow_empty: false });
+export const validateName = _validateStr({ allow_empty: false });
 
 // A solid or placeholder name lives in a 256-byte NUL-padded UTF-8 field of the
 // `opti` chunk, leaving 255 usable bytes. AE 2026 silently truncates a longer
 // name to those same 255 bytes on assignment.
-export const validate_opti_name = _validate_str({ allow_empty: false, max_bytes: 255 });
+export const validateOptiName = _validateStr({ allow_empty: false, max_bytes: 255 });
 
 // Strictly positive (non-zero) size, e.g. font size or stroke width.
-export const validate_positive_nonzero_number = _validate_number({ min: 0.0, exclusive_min: true });
+export const validatePositiveNonzeroNumber = _validateNumber({ min: 0.0, exclusive_min: true });
 
 // A font PostScript name must be a non-empty, NUL-free string.
-export const validate_font_name = _validate_str({ allow_empty: false, allow_null: false });
+export const validateFontName = _validateStr({ allow_empty: false, allow_null: false });
 
 // Text content may be empty but must not contain NUL bytes (they corrupt the
 // COS text blob AE reads).
-export const validate_text = _validate_str({ allow_null: false });
+export const validateText = _validateStr({ allow_null: false });
 
 // A box-text size needs a strictly positive width and height (a zero-area box
 // has nothing to lay text into).
-export const validate_box_size = validate_sequence({ length: 2, min: 0.0, exclusive_min: true });
+export const validateBoxSize = validateSequence({ length: 2, min: 0.0, exclusive_min: true });
 
-export const validate_path = _validate_path();
+export const validatePath = _validatePath();
 
-export const validate_path_exists = _validate_path({ must_exist: true });
+export const validatePathExists = _validatePath({ must_exist: true });
 
 // For media paths: a directory must be refused here, not by the format reader.
-export const validate_file_exists = _validate_path({ must_exist: true, must_be_file: true });
+export const validateFileExists = _validatePath({ must_exist: true, must_be_file: true });
 
-export const validate_path_does_not_exist = _validate_path({ must_exist: false });
+export const validatePathDoesNotExist = _validatePath({ must_exist: false });
 
 // 3D renderer options validators
-export const validate_advanced_quality = _validate_number({ min: 1, max: 125, integer: true });
-export const validate_shadow_smoothness = _validate_number({ min: 1, max: 20, integer: true });
-export const validate_casting_box_size = _validate_number({ min: 0, max: 30000 });
-export const validate_casting_box_center = validate_sequence({ length: 3, min: -30000, max: 30000 });
-export const validate_cinema_4d_quality = _validate_number({ min: 1, max: 99, integer: true });
+export const validateAdvancedQuality = _validateNumber({ min: 1, max: 125, integer: true });
+export const validateShadowSmoothness = _validateNumber({ min: 1, max: 20, integer: true });
+export const validateCastingBoxSize = _validateNumber({ min: 0, max: 30000 });
+export const validateCastingBoxCenter = validateSequence({ length: 3, min: -30000, max: 30000 });
+export const validateCinema4dQuality = _validateNumber({ min: 1, max: 99, integer: true });
 
 // An `[x, y]` point stored as two float32 values (shape vertices / tangents,
 // and the bounding box): a larger coordinate cannot be serialized.
 // NOTE(port): Python reads FLOAT32_MAX at import too; bin_utils imports neither this module nor anything that does, so no cycle.
-export const validate_f4_point = validate_sequence({ length: 2, min: -FLOAT32_MAX, max: FLOAT32_MAX });
+export const validateF4Point = validateSequence({ length: 2, min: -FLOAT32_MAX, max: FLOAT32_MAX });
 
 /** Validate an After Effects version string, `"{major}.{minor}x{build}"`.
  *
  * The head chunk holds the major in 8 bits, the minor in 4 and the build
  * in 8.
  */
-export function validate_ae_version(value: unknown, instance: unknown = null): void {
+export function validateAeVersion(value: unknown, instance: unknown = null): void {
   if (!(typeof value === "string" || value instanceof String)) {
-    throw new TypeError_(`expected a version string, got ${type_name(value)}`);
+    throw new TypeError_(`expected a version string, got ${typeName(value)}`);
   }
   const match = AE_VERSION_RE.exec(String(value));
   if (match == null) {
@@ -434,8 +434,8 @@ export function validate_ae_version(value: unknown, instance: unknown = null): v
  * release py_aep has a file-format stamp for (`FORMAT_VERSIONS`: AE 15-18
  * and 22-26, there was no AE 19-21), or a newer one.
  */
-export function validate_ae_release(value: unknown, instance: unknown = null): void {
-  validate_ae_version(value);
+export function validateAeRelease(value: unknown, instance: unknown = null): void {
+  validateAeVersion(value);
   const major = int(split(str(value), ".", 1)[0]);
   if (!FORMAT_VERSIONS.has(major) && major < max([...FORMAT_VERSIONS.keys()])) {
     throw new ValueError(

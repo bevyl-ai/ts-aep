@@ -3,7 +3,7 @@
  * layer each After Effects release writes.
  */
 
-import { AttributeError, TypeError_, getattr, getitem, hasattr, int, type_name } from "../pyrt/index.ts";
+import { AttributeError, TypeError_, getattr, getitem, hasattr, int, typeName } from "../pyrt/index.ts";
 
 // The After Effects majors whose saves contain each version-gated part of a
 // new project, item or layer, as `(first, last)` (`last` None: still
@@ -54,7 +54,7 @@ export const _WRITTEN_BY = new Map<string, readonly [number, number | null]>([
  * Whether After Effects `major` writes the version-gated `part` (a
  * `_WRITTEN_BY` key) for a newly created project, item or layer.
  */
-export function ae_writes(part: string, major: number): boolean {
+export function aeWrites(part: string, major: number): boolean {
   const [first, last] = getitem(_WRITTEN_BY, part);
   return first <= major && (last == null || major <= last);
 }
@@ -66,14 +66,14 @@ export function ae_writes(part: string, major: number): boolean {
  * ViewOptions (via `_item`), Property / PropertyGroup (via
  * `_containing_layer`), and Project (via `_head`).
  */
-export function get_ae_version_major(obj: any): number {
+export function getAeVersionMajor(obj: any): number {
   // Layer -> CompItem -> Project -> HeadChunk
   if (hasattr(obj, "_containing_comp")) {
     return int(obj._containing_comp._project._head.ae_version_major);
   }
   // Property / PropertyGroup -> owning Layer (parent_property chain)
   if (hasattr(obj, "_containing_layer")) {
-    return get_ae_version_major(obj._containing_layer);
+    return getAeVersionMajor(obj._containing_layer);
   }
   // Item / RenderQueueItem -> Project -> HeadChunk
   if (hasattr(obj, "_project")) {
@@ -90,22 +90,22 @@ export function get_ae_version_major(obj: any): number {
   if (head != null) {
     return int(head.ae_version_major);
   }
-  throw new TypeError_(`Cannot determine AE version from ${type_name(obj)}`);
+  throw new TypeError_(`Cannot determine AE version from ${typeName(obj)}`);
 }
 
 /**
  * Restrict a model method to files from a minimum AE major version.
  *
- * @param min_major - Minimum AE major version number (e.g. 23 for AE 23.x).
+ * @param minMajor - Minimum AE major version number (e.g. 23 for AE 23.x).
  * @throws {@link AttributeError} If the file predates the required version.
  */
-export function requires_version(min_major: number) {
+export function requiresVersion(minMajor: number) {
   return function decorator<T, A extends unknown[], R>(method: (this: T, ...args: A) => R): (this: T, ...args: A) => R {
     const wrapper = function (this: T, ...args: A): R {
-      const major = get_ae_version_major(this);
-      if (major < min_major) {
+      const major = getAeVersionMajor(this);
+      if (major < minMajor) {
         throw new AttributeError(
-          `${method.name}() requires AE ${min_major}+ ` +
+          `${method.name}() requires AE ${minMajor}+ ` +
             `file format (file is AE ${major}).`,
         );
       }

@@ -2,7 +2,7 @@
 // annotations are TypeScript types only.
 import { descriptor } from "../../../../pyrt/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { validate_one_of } from "../../validators.ts";
+import { validateOneOf } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
 import type { RoptChunk } from "../../../binary/render_chunks.ts";
 
@@ -51,6 +51,6 @@ export class TargaFormatOptions extends FormatOptionsBase {
 descriptor(
   TargaFormatOptions,
   "bitsPerPixel",
-  new ChunkField("_body", "bits_per_pixel", { validate: validate_one_of([24, 32]) }),
+  new ChunkField("_body", "bits_per_pixel", { validate: validateOneOf([24, 32]) }),
 );
 descriptor(TargaFormatOptions, "rleCompression", ChunkField.bool("_body", "rle_compression"));

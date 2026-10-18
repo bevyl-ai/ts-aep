@@ -7,12 +7,12 @@ import "./binary/_register.ts";
 import { BytesIO, Path, fspath, type PathLike } from "../pyrt/index.ts";
 import { AlphaMode, AudioBitDepth, AudioChannels, AudioSampleRate, AutoKernType, AutoOrientType, BaselineDirection, BitsPerChannel, BlendingMode, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, ChannelType, CloseOptions, ColorDepthSetting, ColorManagementSystem, ComposerEngine, CTFontTechnology, CTFontType, CTScript, DigitSet, DiskCacheSetting, EffectsSetting, EnvironmentLightShadowResolution, FastPreviewType, FeetFramesFilmType, FieldRender, FieldSeparationType, FillLightingCorrectionType, FillMethodType, FillOutputDepthType, FillRangeType, FontBaselineOption, FontCapsOption, FootageTimecodeDisplayStartType, FrameBlendingSetting, FrameBlendingType, FrameRateSetting, FramesCountType, GetSettingsFormat, GpuAccelType, GuideLayers, GuideOrientationType, ImportAsType, KeyframeInterpolationType, Label, Language, LayerQuality, LayerSamplingQuality, LeadingType, LightType, LinearLightMode, LineJoinType, LineOrientation, LogType, LoopMode, LutInterpolationMethod, MaskFeatherFalloff, MaskMode, MaskMotionBlur, MotionBlurSetting, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, ParagraphDirection, ParagraphJustification, ParametricMeshType, PlayMode, PostRenderAction, PREFType, ProjectThread, PropertyControlType, PropertyType, PropertyValueType, ProxyUseSetting, PulldownMethod, PulldownPhase, PulldownSetting, PurgeTarget, RenderQuality, ResizeQuality, ResolveType, RQItemStatus, ShadowMapResolution, SoloSwitchesSetting, TimeDisplayType, TimeSpanSource, ToolType, TrackMatteType, ViewerType } from "./enums/index.ts";
 import { CURRENT_VALUE, AdvancedRendererOptions, Application, AVItem, AVLayer, CameraLayer, Cinema4DRendererOptions, CineonFormatOptions, ClassicRendererOptions, CompItem, FeatherPoint, FileSource, FolderItem, FontObject, FootageItem, FootageSource, Guide, ImportOptions, Item, JpegFormatOptions, Keyframe, KeyframeEase, Layer, LightLayer, MarkerValue, MaskPropertyGroup, OpenExrFormatOptions, OutputModule, ParametricMeshLayer, PlaceholderSource, PngFormatOptions, Preferences, Project, Property, PropertyBase, PropertyGroup, RayTracedRendererOptions, RendererOptionsBase, RenderQueue, RenderQueueItem, SettingsView, Shape, ShapeLayer, SolidSource, TargaFormatOptions, TextDocument, TextLayer, ThreeDModelLayer, TiffFormatOptions, View, Viewer, ViewOptions, XmlFormatOptions } from "./models/index.ts";
-import { validate_ae_release, validate_platform } from "./models/validators.ts";
+import { validateAeRelease, validatePlatform } from "./models/validators.ts";
 import { CompPreset } from "./parsers/comp_presets.ts";
-import { list_layers } from "./resolvers/source_layers.ts";
-import { read_aep } from "./binary/chunk.ts";
-import { parse_app } from "./parsers/application.ts";
-import { parse_project } from "./parsers/project.ts";
+import { listLayers } from "./resolvers/source_layers.ts";
+import { readAep } from "./binary/chunk.ts";
+import { parseApp } from "./parsers/application.ts";
+import { parseProject } from "./parsers/project.ts";
 
 // NOTE(port): Python falls back to "0.0.0" when package metadata is absent; this port has no installed py_aep distribution (package.json is also 0.0.0), so the fallback is the Python value.
 export const __version__ = "0.0.0";
@@ -25,7 +25,7 @@ export const __version__ = "0.0.0";
  * {@link Application.project | project} attribute
  * holds the full project tree.
  *
- * @param aep_file_path - Path to the `.aep` file.
+ * @param aepFilePath - Path to the `.aep` file.
  * @param kw - Options:
  * - `ae_preferences_dir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/25.6`). When provided, render settings and output module templates are parsed lazily when needed.
  * - `platform`: The After Effects platform the project is for: `"windows"` or `"macos"`. Footage and render output paths py_aep writes are stored in that platform's style (`C:\\x` \<-\> `/x`, see {@link py_aep.resolvers.platform_paths.platform_path | platform_path}), and imported footage is recorded the way After Effects on that platform records it: BMP and GIF files take the platform's importer code (After Effects on the other platform refuses an image sequence tagged for it), and on Windows a HEIC file has no alpha channel. Defaults to the running operating system.
@@ -40,7 +40,7 @@ export const __version__ = "0.0.0";
  * ```
  */
 export function parse(
-  aep_file_path: string | PathLike,
+  aepFilePath: string | PathLike,
   kw: { ae_preferences_dir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
   const { ae_preferences_dir = null, platform = null } = kw;
@@ -50,18 +50,18 @@ export function parse(
   const _DEFERRED_LIST_TYPES: ReadonlySet<string> = new Set(["Layr", "tdgp"]);
 
   if (platform != null) {
-    validate_platform(platform);
+    validatePlatform(platform);
   }
-  const file_path = fspath(aep_file_path);
-  const prefs_path = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
+  const filePath = fspath(aepFilePath);
+  const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
   // `with open(file_path, "rb") as f:`
-  const f = new BytesIO(new Path(file_path).read_bytes());
-  const [rifx, xmp] = read_aep(f, { defer_list_types: _DEFERRED_LIST_TYPES });
-  const project = parse_project(rifx, xmp, file_path, prefs_path);
+  const f = new BytesIO(new Path(filePath).read_bytes());
+  const [rifx, xmp] = readAep(f, { defer_list_types: _DEFERRED_LIST_TYPES });
+  const project = parseProject(rifx, xmp, filePath, prefsPath);
   if (platform != null) {
     project._platform = platform;
   }
-  return parse_app(rifx, project);
+  return parseApp(rifx, project);
 }
 
 // Default target version: the AE build the empty-project skeleton was
@@ -105,19 +105,19 @@ export function new_(
   kw: { ae_preferences_dir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
   const { ae_preferences_dir = null, platform = null } = kw;
-  validate_ae_release(version);
+  validateAeRelease(version);
   if (platform != null) {
-    validate_platform(platform);
+    validatePlatform(platform);
   }
-  const prefs_path = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
-  return Application._new(version, prefs_path, platform);
+  const prefsPath = ae_preferences_dir ? new Path(ae_preferences_dir) : null;
+  return Application._new(version, prefsPath, platform);
 }
 
-export { AdvancedRendererOptions, AlphaMode, Application, AudioBitDepth, AudioChannels, AudioSampleRate, AutoKernType, AutoOrientType, AVItem, AVLayer, BaselineDirection, BitsPerChannel, BlendingMode, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, CameraLayer, ChannelType, Cinema4DRendererOptions, CineonFormatOptions, ClassicRendererOptions, CloseOptions, ColorDepthSetting, ColorManagementSystem, CompPreset, CompItem, ComposerEngine, CTFontTechnology, CTFontType, CTScript, DigitSet, DiskCacheSetting, EffectsSetting, EnvironmentLightShadowResolution, FastPreviewType, FeatherPoint, FeetFramesFilmType, FieldRender, FieldSeparationType, FileSource, FillLightingCorrectionType, FillMethodType, FillOutputDepthType, FillRangeType, FolderItem, FontBaselineOption, FontCapsOption, FontObject, FootageItem, FootageSource, FootageTimecodeDisplayStartType, FrameBlendingSetting, FrameBlendingType, FrameRateSetting, FramesCountType, GetSettingsFormat, GpuAccelType, GuideOrientationType, GuideLayers, Guide, ImportAsType, ImportOptions, Item, CURRENT_VALUE, JpegFormatOptions, Keyframe, KeyframeEase, KeyframeInterpolationType, Label, Language, Layer, LayerQuality, LayerSamplingQuality, LeadingType, LightLayer, LightType, LinearLightMode, LineJoinType, LineOrientation, list_layers, LogType, LoopMode, LutInterpolationMethod, MarkerValue, MaskFeatherFalloff, MaskMode, MaskMotionBlur, MaskPropertyGroup, MotionBlurSetting, new_ as new, OpenExrFormatOptions, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, OutputModule, ParametricMeshLayer, ParametricMeshType, ParagraphDirection, ParagraphJustification, PlaceholderSource, PlayMode, PngFormatOptions, PostRenderAction, Preferences, PREFType, Project, ProjectThread, Property, PropertyBase, PropertyControlType, PropertyGroup, PropertyType, PropertyValueType, ProxyUseSetting, PulldownMethod, PulldownPhase, PulldownSetting, PurgeTarget, RayTracedRendererOptions, RendererOptionsBase, RenderQuality, RenderQueue, RenderQueueItem, ResizeQuality, ResolveType, RQItemStatus, SettingsView, ShadowMapResolution, Shape, ShapeLayer, SolidSource, SoloSwitchesSetting, TargaFormatOptions, TextDocument, TextLayer, ThreeDModelLayer, TiffFormatOptions, TimeDisplayType, TimeSpanSource, ToolType, TrackMatteType, View, Viewer, ViewerType, ViewOptions, XmlFormatOptions };
+export { AdvancedRendererOptions, AlphaMode, Application, AudioBitDepth, AudioChannels, AudioSampleRate, AutoKernType, AutoOrientType, AVItem, AVLayer, BaselineDirection, BitsPerChannel, BlendingMode, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, CameraLayer, ChannelType, Cinema4DRendererOptions, CineonFormatOptions, ClassicRendererOptions, CloseOptions, ColorDepthSetting, ColorManagementSystem, CompPreset, CompItem, ComposerEngine, CTFontTechnology, CTFontType, CTScript, DigitSet, DiskCacheSetting, EffectsSetting, EnvironmentLightShadowResolution, FastPreviewType, FeatherPoint, FeetFramesFilmType, FieldRender, FieldSeparationType, FileSource, FillLightingCorrectionType, FillMethodType, FillOutputDepthType, FillRangeType, FolderItem, FontBaselineOption, FontCapsOption, FontObject, FootageItem, FootageSource, FootageTimecodeDisplayStartType, FrameBlendingSetting, FrameBlendingType, FrameRateSetting, FramesCountType, GetSettingsFormat, GpuAccelType, GuideOrientationType, GuideLayers, Guide, ImportAsType, ImportOptions, Item, CURRENT_VALUE, JpegFormatOptions, Keyframe, KeyframeEase, KeyframeInterpolationType, Label, Language, Layer, LayerQuality, LayerSamplingQuality, LeadingType, LightLayer, LightType, LinearLightMode, LineJoinType, LineOrientation, listLayers, LogType, LoopMode, LutInterpolationMethod, MarkerValue, MaskFeatherFalloff, MaskMode, MaskMotionBlur, MaskPropertyGroup, MotionBlurSetting, new_ as new, OpenExrFormatOptions, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, OutputModule, ParametricMeshLayer, ParametricMeshType, ParagraphDirection, ParagraphJustification, PlaceholderSource, PlayMode, PngFormatOptions, PostRenderAction, Preferences, PREFType, Project, ProjectThread, Property, PropertyBase, PropertyControlType, PropertyGroup, PropertyType, PropertyValueType, ProxyUseSetting, PulldownMethod, PulldownPhase, PulldownSetting, PurgeTarget, RayTracedRendererOptions, RendererOptionsBase, RenderQuality, RenderQueue, RenderQueueItem, ResizeQuality, ResolveType, RQItemStatus, SettingsView, ShadowMapResolution, Shape, ShapeLayer, SolidSource, SoloSwitchesSetting, TargaFormatOptions, TextDocument, TextLayer, ThreeDModelLayer, TiffFormatOptions, TimeDisplayType, TimeSpanSource, ToolType, TrackMatteType, View, Viewer, ViewerType, ViewOptions, XmlFormatOptions };
 
 // Host file system controls (not part of py_aep's Python API): browsers and
 // Workers read and write through the in-memory fs; see README "Use".
-export { memfs, use_memory_fs, use_host_fs, fs_backend } from "../pyrt/host.ts";
+export { memfs, useMemoryFs, useHostFs, fsBackend } from "../pyrt/host.ts";
 
 // Last import: registers every `deferred()` target (pyrt/deferred.ts).
 import "./_modules.ts";

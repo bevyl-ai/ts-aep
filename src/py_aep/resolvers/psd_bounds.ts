@@ -25,9 +25,9 @@
  */
 
 import { and, bytes_, max, min, OverflowError, struct, ValueError } from "../../pyrt/index.ts";
-import { parse_vector_mask } from "./psd_paths.ts";
-import { merged_styles_bounds } from "./psd_styles.ts";
-import { cubic_range } from "./shape_bounds.ts";
+import { parseVectorMask } from "./psd_paths.ts";
+import { mergedStylesBounds } from "./psd_styles.ts";
+import { cubicRange } from "./shape_bounds.ts";
 import type { PsdLayer } from "./psd_layers.ts";
 
 export type _Box = [number, number, number, number];
@@ -40,26 +40,26 @@ export const _SUBPIXEL = 64;
  * footage, in canvas pixels (see the module rules).
  *
  * @param layer - The Photoshop layer.
- * @param canvas_w - Document width in pixels.
- * @param canvas_h - Document height in pixels.
- * @param layer_styles - The Layer Options choice: `"merge"`, `"editable"` or `"ignore"`. Only
+ * @param canvasW - Document width in pixels.
+ * @param canvasH - Document height in pixels.
+ * @param layerStyles - The Layer Options choice: `"merge"`, `"editable"` or `"ignore"`. Only
  *   merging bakes vector masks and styles.
- * @param global_angle - The document's global light angle, for merged styles.
+ * @param globalAngle - The document's global light angle, for merged styles.
  * @throws {@link NotImplementedError} For merged styles whose rasterized bounds are not known (see
  *   `psd_styles.merged_styles_bounds`).
  */
-export function psd_layer_box(
+export function psdLayerBox(
   layer: PsdLayer,
-  canvas_w: number,
-  canvas_h: number,
-  layer_styles: string,
-  global_angle: number,
+  canvasW: number,
+  canvasH: number,
+  layerStyles: string,
+  globalAngle: number,
 ): _Box {
-  const merge = layer_styles === "merge";
-  const path = merge ? _path_box(layer, canvas_w, canvas_h) : null;
+  const merge = layerStyles === "merge";
+  const path = merge ? _pathBox(layer, canvasW, canvasH) : null;
   let box: _Box;
   if (layer.is_fill) {
-    box = path != null ? path : [0, 0, canvas_w, canvas_h];
+    box = path != null ? path : [0, 0, canvasW, canvasH];
     if (layer.mask_box != null) {
       box = _intersect(box, layer.mask_box);
     }
@@ -72,13 +72,13 @@ export function psd_layer_box(
   if (merge && box[2] > box[0] && box[3] > box[1]) {
     // Merged styles are rasterized into the footage, whose content box
     // grows to hold them, from the masked content.
-    box = merged_styles_bounds(layer._replace({ bounds: box }), global_angle);
+    box = mergedStylesBounds(layer._replace({ bounds: box }), globalAngle);
   }
   return box;
 }
 
 /** The pixel extent of an enabled, non-inverted vector mask, or `null`. */
-export function _path_box(layer: PsdLayer, canvas_w: number, canvas_h: number): _Box | null {
+export function _pathBox(layer: PsdLayer, canvasW: number, canvasH: number): _Box | null {
   const block = layer.vector_mask;
   if (block == null || block.length < 8) {
     return null;
@@ -90,7 +90,7 @@ export function _path_box(layer: PsdLayer, canvas_w: number, canvas_h: number): 
   }
   const xs: number[] = [];
   const ys: number[] = [];
-  for (const shape of parse_vector_mask(block, canvas_w, canvas_h)) {
+  for (const shape of parseVectorMask(block, canvasW, canvasH)) {
     const vertices = shape.vertices;
     const count = vertices.length;
     for (let i = 0; i < count; i++) {
@@ -109,18 +109,18 @@ export function _path_box(layer: PsdLayer, canvas_w: number, canvas_h: number): 
         p1 = [p0[0] + out[0], p0[1] + out[1]];
         p2 = [p3[0] + in_[0], p3[1] + in_[1]];
       }
-      xs.push(...cubic_range(p0[0], p1[0], p2[0], p3[0]));
-      ys.push(...cubic_range(p0[1], p1[1], p2[1], p3[1]));
+      xs.push(...cubicRange(p0[0], p1[0], p2[0], p3[0]));
+      ys.push(...cubicRange(p0[1], p1[1], p2[1], p3[1]));
     }
   }
   if (xs.length === 0) {
     return null;
   }
   return [
-    _floor_edge(min(xs)),
-    _floor_edge(min(ys)),
-    _ceil_edge(max(xs)),
-    _ceil_edge(max(ys)),
+    _floorEdge(min(xs)),
+    _floorEdge(min(ys)),
+    _ceilEdge(max(xs)),
+    _ceilEdge(max(ys)),
   ];
 }
 
@@ -135,11 +135,11 @@ function _finite(value: number): number {
   return value;
 }
 
-export function _floor_edge(value: number): number {
+export function _floorEdge(value: number): number {
   return Math.floor(_finite(Math.ceil(_finite(value * _SUBPIXEL))) / _SUBPIXEL);
 }
 
-export function _ceil_edge(value: number): number {
+export function _ceilEdge(value: number): number {
   return Math.ceil(_finite(Math.floor(_finite(value * _SUBPIXEL))) / _SUBPIXEL);
 }
 

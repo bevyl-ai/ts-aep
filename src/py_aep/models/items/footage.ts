@@ -1,26 +1,26 @@
 // Python: src/py_aep/models/items/footage.py (`from __future__ import annotations`: dropped)
 
 import { ListChunk, type Chunk } from "../../binary/chunk.ts";
-import { build_item_view_chunks } from "../../binary/comp_skeleton.ts";
+import { buildItemViewChunks } from "../../binary/comp_skeleton.ts";
 import { IdtaChunk, type CmtaChunk } from "../../binary/item_chunks.ts";
 import { FtgiChunk } from "../../binary/misc_chunks.ts";
-import { build_gide_list, build_item_id_chunks } from "../../binary/mutations.ts";
+import { buildGideList, buildItemIdChunks } from "../../binary/mutations.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import { AI_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../../data/file_formats.ts";
-import { layer_index_for_stored } from "../../resolvers/source_layers.ts";
+import { layerIndexForStored } from "../../resolvers/source_layers.ts";
 import { CURRENT_VALUE, _CurrentValue } from "../import_options.ts";
-import { auto_name } from "../naming.ts";
-import { default_sequence_fps, label_index } from "../preferences.ts";
+import { autoName } from "../naming.ts";
+import { defaultSequenceFps, labelIndex } from "../preferences.ts";
 import { FileSource } from "../sources/file.ts";
 import { PlaceholderSource } from "../sources/placeholder.ts";
 import { SolidSource } from "../sources/solid.ts";
-import { validate_name, validate_one_of, validate_pixel_aspect, validate_positive_int } from "../validators.ts";
+import { validateName, validateOneOf, validatePixelAspect, validatePositiveInt } from "../validators.ts";
 import { AVItem } from "./av_item.ts";
 import {
   Path,
   TypeError_,
   ValueError,
-  py_assert,
+  pyAssert,
   repr,
   sorted,
   tkey,
@@ -99,7 +99,7 @@ export class FootageItem extends AVItem {
   }
 
   set pixelAspect(value: number) {
-    validate_pixel_aspect(value);
+    validatePixelAspect(value);
     this._main_source._sspc.pixel_aspect = value;
   }
 
@@ -214,9 +214,9 @@ export class FootageItem extends AVItem {
   }
 
   set name(value: string) {
-    validate_name(value);
+    validateName(value);
     // A footage item always carries a Utf8 name chunk (see parse_item).
-    py_assert(this._name_utf8 != null);
+    pyAssert(this._name_utf8 != null);
     // The display name has to be written where `_resolve_name` reads it
     // back from. AE keeps a solid's or placeholder's name in the source
     // `opti` chunk and leaves the item-level Utf8 empty; only file
@@ -237,17 +237,17 @@ export class FootageItem extends AVItem {
 
   /** The footage type (placeholder, solid, file). Read-only. */
   get assetType(): string {
-    const main_source: object | null = this._main_source;
-    if (main_source instanceof SolidSource) {
+    const mainSource: object | null = this._main_source;
+    if (mainSource instanceof SolidSource) {
       return "solid";
-    } else if (main_source instanceof FileSource) {
+    } else if (mainSource instanceof FileSource) {
       return "file";
-    } else if (main_source instanceof PlaceholderSource) {
+    } else if (mainSource instanceof PlaceholderSource) {
       return "placeholder";
     } else {
       // TODO(port): Python formats `type(src)` as `<class 'py_aep.<module>.<Name>'>`; JS has no module path, so only the bare class name is printed. Affects only this unreachable-in-practice error message.
       throw new TypeError_(
-        `Unexpected source type for ${this.name}: ${main_source?.constructor?.name}`,
+        `Unexpected source type for ${this.name}: ${mainSource?.constructor?.name}`,
       );
     }
   }
@@ -310,7 +310,7 @@ export class FootageItem extends AVItem {
     kw: { project: Project; parent_folder: FolderItem },
   ): FootageItem {
     const { project, parent_folder } = kw;
-    const item_id = project._allocate_id();
+    const itemId = project._allocate_id();
 
     // AE labels footage items by kind (probed in AE 2026): solids use
     // "Solid Label Index 2" (factory 1), audio-only files "Audio Label
@@ -318,18 +318,18 @@ export class FootageItem extends AVItem {
     // sequences, and placeholders "Video Label Index 2" (3).
     let label: number;
     if (source instanceof SolidSource) {
-      label = label_index(project._preferences, "Solid Label Index 2", 1);
+      label = labelIndex(project._preferences, "Solid Label Index 2", 1);
     } else if (source instanceof FileSource && source._has_audio && source._width === 0) {
-      label = label_index(project._preferences, "Audio Label Index 2", 7);
+      label = labelIndex(project._preferences, "Audio Label Index 2", 7);
     } else if (source instanceof FileSource && source.isStill) {
-      label = label_index(project._preferences, "Still Label Index 2", 5);
+      label = labelIndex(project._preferences, "Still Label Index 2", 5);
     } else {
-      label = label_index(project._preferences, "Video Label Index 2", 3);
+      label = labelIndex(project._preferences, "Video Label Index 2", 3);
     }
 
     const idta = new IdtaChunk({
       item_type: 7,
-      item_id,
+      item_id: itemId,
       label,
     });
     idta.is_footage = true;
@@ -341,34 +341,34 @@ export class FootageItem extends AVItem {
     }
     // AE leaves the item-level Utf8 empty; the display name resolves
     // from the source (solid / placeholder / file name).
-    const name_utf8 = new Utf8Chunk({});
+    const nameUtf8 = new Utf8Chunk({});
 
-    const pin_list = AVItem._pin_for_source(source);
+    const pinList = AVItem._pin_for_source(source);
 
     const ftgi = new FtgiChunk({});
 
-    const item_list = new ListChunk({
+    const itemList = new ListChunk({
       list_type: "Item",
       chunks: [
-        ...build_item_id_chunks(item_id, project._head.ae_version_major),
+        ...buildItemIdChunks(itemId, project._head.ae_version_major),
         idta,
-        name_utf8,
-        pin_list,
+        nameUtf8,
+        pinList,
         ftgi,
         new Utf8Chunk({}),
       ],
     });
 
     // View data chunks AE expects after LIST:Item in the parent folder
-    const view_data: Chunk[] = build_item_view_chunks();
+    const viewData: Chunk[] = buildItemViewChunks();
 
     const item = new this({
       _idta: idta,
-      _name_utf8: name_utf8,
+      _name_utf8: nameUtf8,
       _cmta: null,
-      _item_list: item_list,
+      _item_list: itemList,
       _gide: null,
-      _pin_chunks: [pin_list],
+      _pin_chunks: [pinList],
       project,
       parent_folder,
       main_source: source,
@@ -376,9 +376,9 @@ export class FootageItem extends AVItem {
     });
     source._join_project(project);
     // AE writes the guide list with no `ldat` until a guide is added.
-    [item._gide, item._lhd3, item._inner] = build_gide_list();
+    [item._gide, item._lhd3, item._inner] = buildGideList();
     item._item_list.chunks.push(item._gide);
-    item._view_data = view_data;
+    item._view_data = viewData;
     item._sync_modified_time();
     return item;
   }
@@ -394,7 +394,7 @@ export class FootageItem extends AVItem {
     // re-reading the media, so leaving one is harmless.
     const source = this.useProxy ? this._proxy_source : this._main_source;
     if (source instanceof FileSource) {
-      py_assert(this._idta != null);
+      pyAssert(this._idta != null);
       this._idta.modified_time = source._sspc.source_modified;
     }
   }
@@ -413,7 +413,7 @@ export class FootageItem extends AVItem {
     name: string | null,
     width: number,
     height: number,
-    frame_rate: number,
+    frameRate: number,
     duration: number,
   ): void {
     if (name == null) {
@@ -422,7 +422,7 @@ export class FootageItem extends AVItem {
       name = "Placeholder";
     }
 
-    const source = PlaceholderSource._new(name, width, height, frame_rate, duration);
+    const source = PlaceholderSource._new(name, width, height, frameRate, duration);
     this._replace_main_source(source);
   }
 
@@ -442,17 +442,17 @@ export class FootageItem extends AVItem {
     name: string | null,
     width: number,
     height: number,
-    pixel_aspect: number = 1.0,
+    pixelAspect: number = 1.0,
   ): void {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      const solid_name = SolidSource._color_name(color[0], color[1], color[2]);
-      name = auto_name(solid_name, existing);
+      const solidName = SolidSource._color_name(color[0], color[1], color[2]);
+      name = autoName(solidName, existing);
     } else if (name === "") {
       name = "????";
     }
 
-    const source = SolidSource._new(name, color, width, height, pixel_aspect);
+    const source = SolidSource._new(name, color, width, height, pixelAspect);
     this._replace_main_source(source);
   }
 
@@ -532,24 +532,24 @@ export class FootageItem extends AVItem {
    */
   replace(
     file: string | PathLike,
-    layer_index: number | _CurrentValue | null = null,
-    layer_dimensions: string | _CurrentValue = CURRENT_VALUE,
-    layer_styles: string | _CurrentValue = CURRENT_VALUE,
+    layerIndex: number | _CurrentValue | null = null,
+    layerDimensions: string | _CurrentValue = CURRENT_VALUE,
+    layerStyles: string | _CurrentValue = CURRENT_VALUE,
   ): void {
-    if (layer_index == null) {
+    if (layerIndex == null) {
       this._replace_main_source(
         FileSource._from_file(file, { windows: this._project._windows }),
       );
       return;
     }
-    if (!(layer_index instanceof _CurrentValue)) {
-      validate_positive_int(layer_index);
+    if (!(layerIndex instanceof _CurrentValue)) {
+      validatePositiveInt(layerIndex);
     }
-    if (!(layer_dimensions instanceof _CurrentValue)) {
-      validate_one_of(["document", "layer"])(layer_dimensions);
+    if (!(layerDimensions instanceof _CurrentValue)) {
+      validateOneOf(["document", "layer"])(layerDimensions);
     }
-    if (!(layer_styles instanceof _CurrentValue)) {
-      validate_one_of(["merge", "ignore"])(layer_styles);
+    if (!(layerStyles instanceof _CurrentValue)) {
+      validateOneOf(["merge", "ignore"])(layerStyles);
     }
     const suffix = new Path(file).suffix.toLowerCase();
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !AI_COMP_EXTENSIONS.has(suffix)) {
@@ -558,10 +558,10 @@ export class FootageItem extends AVItem {
           `file, got ${repr(suffix)}`,
       );
     }
-    if (!PSD_COMP_EXTENSIONS.has(suffix) && !(layer_styles instanceof _CurrentValue)) {
+    if (!PSD_COMP_EXTENSIONS.has(suffix) && !(layerStyles instanceof _CurrentValue)) {
       throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) targets only");
     }
-    if (layer_index instanceof _CurrentValue) {
+    if (layerIndex instanceof _CurrentValue) {
       const current = this._main_source;
       if (!(current instanceof FileSource && current.layerName)) {
         throw new ValueError(
@@ -569,10 +569,10 @@ export class FootageItem extends AVItem {
             "a single layer of a layered file",
         );
       }
-      layer_index = layer_index_for_stored(file, current._sspc.layer_index);
+      layerIndex = layerIndexForStored(file, current._sspc.layer_index);
     }
     let dimensions: string | null;
-    if (layer_dimensions instanceof _CurrentValue) {
+    if (layerDimensions instanceof _CurrentValue) {
       // Preserve the Document/Layer Size choice of the current binding.
       dimensions = null;
       const current = this._main_source;
@@ -584,22 +584,22 @@ export class FootageItem extends AVItem {
         dimensions = "layer";
       }
     } else {
-      dimensions = layer_dimensions;
+      dimensions = layerDimensions;
     }
-    let resolved_styles: string;
-    if (layer_styles instanceof _CurrentValue) {
+    let resolvedStyles: string;
+    if (layerStyles instanceof _CurrentValue) {
       // Preserve the recorded choice verbatim (00/01/02); "merge" is
       // AE's dialog default when the current source has no binding.
       const current = this._main_source;
       const styles = current instanceof FileSource ? current.layerStyles : null;
-      resolved_styles = styles ?? "merge";
+      resolvedStyles = styles ?? "merge";
     } else {
-      resolved_styles = layer_styles;
+      resolvedStyles = layerStyles;
     }
     this._replace_main_source(
-      FileSource._from_layer(file, layer_index, {
+      FileSource._from_layer(file, layerIndex, {
         dimensions,
-        layer_styles: resolved_styles,
+        layer_styles: resolvedStyles,
         windows: this._project._windows,
       }),
     );
@@ -632,21 +632,21 @@ export class FootageItem extends AVItem {
    * NotImplementedError: If After Effects requires a format-specific
    * `opti` header not implemented for this format.
    */
-  replaceWithSequence(file: string | PathLike, force_alphabetical: boolean = false): void {
+  replaceWithSequence(file: string | PathLike, forceAlphabetical: boolean = false): void {
     this._replace_main_source(
       FileSource._from_file(file, {
         sequence: true,
-        force_alphabetical,
+        force_alphabetical: forceAlphabetical,
         windows: this._project._windows,
-        default_sequence_fps: default_sequence_fps(this._project._preferences),
+        default_sequence_fps: defaultSequenceFps(this._project._preferences),
       }),
     );
   }
 
   /** Replace the first LIST:Pin in _item_list with a new source. */
   _replace_main_source(source: FileSource | PlaceholderSource | SolidSource): void {
-    const is_solid = source instanceof SolidSource;
-    if (!is_solid) {
+    const isSolid = source instanceof SolidSource;
+    if (!isSolid) {
       // AE keeps the Interpret Footage settings across a replace; only
       // a solid starts from scratch (see `_carry_interpretation_to`).
       this._main_source._carry_interpretation_to(source);
@@ -656,9 +656,9 @@ export class FootageItem extends AVItem {
     this._main_source = source;
     source._join_project(this._project);
 
-    py_assert(this._idta != null);
+    pyAssert(this._idta != null);
     this._idta.is_footage = true;
-    this._idta.is_solid = is_solid;
+    this._idta.is_solid = isSolid;
     if (source instanceof FileSource) {
       this._idta._flags_17 = source._idta_flags17();
     }
@@ -669,7 +669,7 @@ export class FootageItem extends AVItem {
     // re-derives from the new source, a user-assigned one survives.
     // A solid or placeholder carries its name in the new `opti` chunk
     // instead, so the Utf8 goes back to empty.
-    py_assert(this._name_utf8 != null);
+    pyAssert(this._name_utf8 != null);
     if (source.constructor._owns_name) {
       this._name_utf8.value = "";
     }

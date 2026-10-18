@@ -31,7 +31,7 @@
  */
 
 import { AudioBitDepth, AudioChannels, AudioCodec, FormatKind, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, VideoCodec } from "../enums/index.ts";
-import { contains, getitem, py_eq, setdefault } from "../../pyrt/index.ts";
+import { contains, getitem, pyEq, setdefault } from "../../pyrt/index.ts";
 
 /**
  * One conditional rule: (conditions, constraints). Every condition must
@@ -257,7 +257,7 @@ getitem(_FORMAT_RULES, OutputFormat.QUICKTIME).set(
 // The H.264 AAC audio-bitrate matrix: (codec, rate group, channels) ->
 // allowed kbps. The kbps ladders are irregular (not simple slices), so
 // they are transcribed literally from the AE dialog research.
-export function _aac_bitrate_rows(): Rule[] {
+export function _aacBitrateRows(): Rule[] {
   const rows: Rule[] = [];
   const matrix: [AudioCodec, [number[], AudioChannels, number[]][]][] = [
     [
@@ -316,12 +316,12 @@ export function _aac_bitrate_rows(): Rule[] {
   ];
   for (const [codec, groups] of matrix) {
     for (const [rates, channels, kbps] of groups) {
-      const rate_cond: number | number[] = rates.length > 1 ? rates : rates[0];
+      const rateCond: number | number[] = rates.length > 1 ? rates : rates[0];
       rows.push([
         new Map<string, RuleValue | RuleValue[]>([
           ["Audio Format", MPEGAudioFormat.AAC],
           ["Audio Codec", codec],
-          ["Audio Sample Rate", rate_cond],
+          ["Audio Sample Rate", rateCond],
           ["Audio Channels", channels],
         ]),
         new Map<string, ReadonlySet<RuleValue>>([["Audio Bitrate", new Set(kbps)]]),
@@ -569,7 +569,7 @@ getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(
     new Map<string, ReadonlySet<RuleValue>>([["Audio Channels", new Set([AudioChannels.STEREO])]]),
   ],
 );
-getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aac_bitrate_rows());
+getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aacBitrateRows());
 
 // NOTE: Targa's bits-per-pixel radio is NOT coupled to the OM channels
 // in the binary: AE-saved files hold RGB + 32 bpp (targa/base.aep) AND
@@ -586,19 +586,19 @@ getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aac_bitrate_rows());
 // exits all enforce it through the ordinary lookup. Inserted FIRST so
 // codec-specific Depth rows still win the general->specific merge.
 export const _PLUS_DEPTHS: ReadonlySet<RuleValue> = new Set([_MILLIONS_PLUS, _TRILLIONS_PLUS, _FLOAT_PLUS]);
-for (const [_fmt, _fmt_rules] of _FORMAT_RULES) {
-  const _depths = _fmt_rules.get("Depth") ?? null;
+for (const [_fmt, _fmtRules] of _FORMAT_RULES) {
+  const _depths = _fmtRules.get("Depth") ?? null;
   if (_depths == null) continue;
   const _rows = setdefault(_CONDITIONAL_RULES, _fmt, []);
-  const _rgba_depths = new Set([..._depths].filter((d) => _PLUS_DEPTHS.has(d)));
-  if (_rgba_depths.size > 0) {
-    _rows.unshift([new Map<string, RuleValue | RuleValue[]>([["Channels", OutputChannels.RGBA]]), new Map<string, ReadonlySet<RuleValue>>([["Depth", _rgba_depths]])]);
+  const _rgbaDepths = new Set([..._depths].filter((d) => _PLUS_DEPTHS.has(d)));
+  if (_rgbaDepths.size > 0) {
+    _rows.unshift([new Map<string, RuleValue | RuleValue[]>([["Channels", OutputChannels.RGBA]]), new Map<string, ReadonlySet<RuleValue>>([["Depth", _rgbaDepths]])]);
   }
-  const _base_depths = new Set([..._depths].filter((d) => !_PLUS_DEPTHS.has(d)));
-  if (_base_depths.size > 0) {
+  const _baseDepths = new Set([..._depths].filter((d) => !_PLUS_DEPTHS.has(d)));
+  if (_baseDepths.size > 0) {
     _rows.unshift([
       new Map<string, RuleValue | RuleValue[]>([["Channels", [OutputChannels.RGB, OutputChannels.ALPHA]]]),
-      new Map<string, ReadonlySet<RuleValue>>([["Depth", _base_depths]]),
+      new Map<string, ReadonlySet<RuleValue>>([["Depth", _baseDepths]]),
     ]);
   }
 }
@@ -625,13 +625,13 @@ export const CLAMP_DEPENDENTS: Map<string, readonly string[]> = new Map<string, 
  * An array condition value means "in"; a context key that is absent
  * never matches (permissive degradation).
  */
-export function _conditions_match(conditions: Map<string, RuleValue | RuleValue[]>, context: ReadonlyMap<string, RuleValue>): boolean {
+export function _conditionsMatch(conditions: Map<string, RuleValue | RuleValue[]>, context: ReadonlyMap<string, RuleValue>): boolean {
   for (const [key, expected] of conditions) {
     const actual = context.get(key) ?? null;
     if (actual == null) return false;
     if (Array.isArray(expected)) {
       if (!contains(expected, actual)) return false;
-    } else if (!py_eq(actual, expected)) {
+    } else if (!pyEq(actual, expected)) {
       return false;
     }
   }
@@ -644,7 +644,7 @@ export function _conditions_match(conditions: Map<string, RuleValue | RuleValue[
  * Drives whole-state validation (`OutputModule.validateState`): keys
  * outside this set are unconstrained for the format and never checked.
  */
-export function constrained_keys(fmt: OutputFormat): ReadonlySet<string> {
+export function constrainedKeys(fmt: OutputFormat): ReadonlySet<string> {
   const keys = new Set<string>(getitem(_KIND_RULES, OutputFormat.kind(fmt)).keys());
   for (const k of (_FORMAT_RULES.get(fmt) ?? new Map<string, ReadonlySet<RuleValue>>()).keys()) keys.add(k);
   for (const [, constraints] of (_CONDITIONAL_RULES.get(fmt) ?? [])) {
@@ -663,7 +663,7 @@ export function constrained_keys(fmt: OutputFormat): ReadonlySet<string> {
  *   keys disable the rules that need them.
  * @returns The allowed value set, or `null` when unconstrained.
  */
-export function allowed_values(
+export function allowedValues(
   fmt: OutputFormat,
   key: string,
   context: ReadonlyMap<string, RuleValue> | null = null,
@@ -673,7 +673,7 @@ export function allowed_values(
   for (const [k, v] of (_FORMAT_RULES.get(fmt) ?? new Map<string, ReadonlySet<RuleValue>>())) rules.set(k, v);
   if (context == null) context = new Map<string, RuleValue>();
   for (const [conditions, constraints] of (_CONDITIONAL_RULES.get(fmt) ?? [])) {
-    if (_conditions_match(conditions, context)) {
+    if (_conditionsMatch(conditions, context)) {
       for (const [k, v] of constraints) rules.set(k, v);
     }
   }

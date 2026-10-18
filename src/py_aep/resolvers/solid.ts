@@ -27,9 +27,9 @@ export const _HUE_BANDS: [number, string][] = [
 ];
 
 /** Map a hue angle (0-360) to a color name. */
-export function _hue_name(h_deg: number): string {
+export function _hueName(hDeg: number): string {
   for (const [upper, name] of _HUE_BANDS) {
-    if (h_deg < upper) {
+    if (hDeg < upper) {
       return name;
     }
   }
@@ -37,7 +37,7 @@ export function _hue_name(h_deg: number): string {
 }
 
 // NOTE(port): line-for-line copy of CPython 3.12 colorsys.rgb_to_hsv (same operation order, Python-sign mod), so floats match.
-export function _rgb_to_hsv(r: number, g: number, b: number): [number, number, number] {
+export function _rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   const maxc = Math.max(r, g, b);
   const minc = Math.min(r, g, b);
   const v = maxc;
@@ -71,11 +71,11 @@ export function _rgb_to_hsv(r: number, g: number, b: number): [number, number, n
  * @param g - Green channel in `[0.0, 1.0]`.
  * @param b - Blue channel in `[0.0, 1.0]`.
  */
-export function solid_color_name(r: number, g: number, b: number): string {
-  const [h_raw, s_raw, v_raw] = _rgb_to_hsv(r, g, b);
-  const h = h_raw * 360.0;
-  const s = s_raw * 100.0;
-  const v = v_raw * 100.0;
+export function solidColorName(r: number, g: number, b: number): string {
+  const [hRaw, sRaw, vRaw] = _rgbToHsv(r, g, b);
+  const h = hRaw * 360.0;
+  const s = sRaw * 100.0;
+  const v = vRaw * 100.0;
 
   let label: string;
   if (s === 0) {
@@ -92,7 +92,7 @@ export function solid_color_name(r: number, g: number, b: number): string {
       label = "White";
     }
   } else {
-    const hue = _hue_name(h);
+    const hue = _hueName(h);
     if (s < 25) {
       if (v === 0) {
         label = "Black";

@@ -35,27 +35,27 @@ export const DEFAULT_TENSION = 1.0 / 3.0;
  * @param vertices - The path's vertices, in layer pixels.
  * @param closed - Whether the path is closed.
  * @param tensions - One tension per vertex.
- * @param scale_x - Multiplier from layer pixels to the measuring space along x (the stored aspect
+ * @param scaleX - Multiplier from layer pixels to the measuring space along x (the stored aspect
  *   over the layer width).
- * @param scale_y - The same along y (one over the layer height).
+ * @param scaleY - The same along y (one over the layer height).
  */
-export function roto_bezier_tangents(
+export function rotoBezierTangents(
   vertices: number[][],
   closed: boolean,
   tensions: number[],
-  scale_x: number,
-  scale_y: number,
+  scaleX: number,
+  scaleY: number,
 ): [number[][], number[][]] {
   const points: [number, number][] = vertices.map(
-    ([x, y]): [number, number] => [x * scale_x, y * scale_y],
+    ([x, y]): [number, number] => [x * scaleX, y * scaleY],
   );
   const count = points.length;
   const ks = tensions.map((t) => (1.0 - t) * 0.5);
   const ins: number[][] = Array.from({ length: count }, () => [0.0, 0.0]);
   const outs: number[][] = Array.from({ length: count }, () => [0.0, 0.0]);
-  const loop_start = closed ? 0 : 1;
-  const loop_stop = closed ? count : count - 1;
-  for (let i = loop_start; i < loop_stop; i++) {
+  const loopStart = closed ? 0 : 1;
+  const loopStop = closed ? count : count - 1;
+  for (let i = loopStart; i < loopStop; i++) {
     const [vx, vy] = points[i];
     const [px, py] = points[(i + count - 1) % count];
     const [nx, ny] = points[(i + 1) % count];
@@ -85,8 +85,8 @@ export function roto_bezier_tangents(
     ];
   }
   return [
-    ins.map(([x, y]) => [x / scale_x, y / scale_y]),
-    outs.map(([x, y]) => [x / scale_x, y / scale_y]),
+    ins.map(([x, y]) => [x / scaleX, y / scaleY]),
+    outs.map(([x, y]) => [x / scaleX, y / scaleY]),
   ];
 }
 
@@ -95,15 +95,15 @@ export function roto_bezier_tangents(
  * its own, or, when it has none, 1 at a vertex whose stored handles are
  * both zero and 1/3 at any other.
  */
-export function keyframe_tensions(
+export function keyframeTensions(
   tensions: number[],
-  in_tangents: number[][],
-  out_tangents: number[][],
+  inTangents: number[][],
+  outTangents: number[][],
 ): number[] {
-  if (tensions.length === in_tangents.length) {
+  if (tensions.length === inTangents.length) {
     return [...tensions];
   }
-  return zip(in_tangents, out_tangents).map(([a, b]) =>
+  return zip(inTangents, outTangents).map(([a, b]) =>
     // Python any() over floats: truthy when any element is nonzero.
     !a.some((v) => v !== 0) && !b.some((v) => v !== 0) ? 1.0 : DEFAULT_TENSION,
   );

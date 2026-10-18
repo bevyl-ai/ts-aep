@@ -23,20 +23,20 @@ import {
   TypeError_,
   ValueError,
   float,
-  float_repr,
+  floatRepr,
   format,
   getitem,
-  py_assert,
-  py_eq,
+  pyAssert,
+  pyEq,
   repr,
   sorted,
   split,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_project } from "../conftest.ts";
-import { font_version_string } from "../../src/py_aep/svg/fonts.ts";
+import { parseProject } from "../conftest.ts";
+import { fontVersionString } from "../../src/py_aep/svg/fonts.ts";
 import { AVLayer, CompItem, Layer, Project } from "../../src/py_aep/index.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");
@@ -55,16 +55,16 @@ const CAMERA_POINTS = [[0.0, 0.0], [100.0, 50.0], [200.0, 100.0]];
  *
  * Returns true when the test must be skipped; callers `return` on true.
  */
-function _skip_unless_fonts_match(layer: Layer): boolean {
+function _skipUnlessFontsMatch(layer: Layer): boolean {
   // TODO(port): harfbuzzjs (0.4.7) vs uharfbuzz shaping cannot be closed here. This
   // check only proves the package resolves; text-layer sourceRectAtTime cases
   // (TEXT_INK fixture) may differ from uharfbuzz-measured advances.
   if (!importorskip("harfbuzzjs")) return true;
   const text = layer.text;
-  py_assert(text != null, "not a text layer");
+  pyAssert(text != null, "not a text layer");
   const document = text.property("ADBE Text Document").value;
   for (const font of document._fonts) {
-    if (!py_eq(font_version_string(font.postScriptName), font.version)) {
+    if (!pyEq(fontVersionString(font.postScriptName), font.version)) {
       skip(`${font.postScriptName} not installed at the fixture's version`);
       return true;
     }
@@ -73,8 +73,8 @@ function _skip_unless_fonts_match(layer: Layer): boolean {
 }
 
 // `str(list_of_floats)` for assertion messages (POINTS are all floats).
-function _pt_repr(pt: number[]): string {
-  return `[${pt.map(float_repr).join(", ")}]`;
+function _ptRepr(pt: number[]): string {
+  return `[${pt.map(floatRepr).join(", ")}]`;
 }
 
 // Shapes of the AE probe JSON fixtures.
@@ -120,16 +120,16 @@ function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
 }
 
 function _comp(project: Project, name: string): CompItem {
-  return _next(project.compositions, (c) => py_eq(c.name, name));
+  return _next(project.compositions, (c) => pyEq(c.name, name));
 }
 
-function _probe_comp(project: Project): CompItem {
+function _probeComp(project: Project): CompItem {
   return _comp(project, "PROBE_MAIN");
 }
 
 function _layer(comp: CompItem, name: string): AVLayer {
-  return as_instance(
-    _next(comp.layers, (ly) => py_eq(ly.name, name)),
+  return asInstance(
+    _next(comp.layers, (ly) => pyEq(ly.name, name)),
     AVLayer,
   );
 }
@@ -146,26 +146,26 @@ describe("TestPointConversions", () => {
   test.each([
     ["time0", 0.0],
     ["time1.5", 1.5],
-  ])("test_all_layers_match_ae[%#]", (time_key, time_val) => {
-    const expected = _fixture<PointsProbeJson>("geometry_points_probe.json")[time_key];
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
-    for (const [layer_name, entry] of Object.entries(expected)) {
-      const layer = _layer(comp, layer_name);
+  ])("test_all_layers_match_ae[%#]", (timeKey, timeVal) => {
+    const expected = _fixture<PointsProbeJson>("geometry_points_probe.json")[timeKey];
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
+    for (const [layerName, entry] of Object.entries(expected)) {
+      const layer = _layer(comp, layerName);
       for (const [pi, pt] of POINTS.entries()) {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
-          const got = layer.sourcePointToComp(pt, time_val);
-          py_assert(
+          const got = layer.sourcePointToComp(pt, timeVal);
+          pyAssert(
             approx(got, want["value"], { abs: 5e-3 }),
-            `${layer_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
+            `${layerName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
         }
-        const want_c2s = entry["c2s"][pi];
-        if (want_c2s["ok"]) {
-          const got = layer.compPointToSource(pt, time_val);
-          py_assert(
-            approx(got, want_c2s["value"], { abs: 5e-3 }),
-            `${layer_name} c2s ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
+        const wantC2s = entry["c2s"][pi];
+        if (wantC2s["ok"]) {
+          const got = layer.compPointToSource(pt, timeVal);
+          pyAssert(
+            approx(got, wantC2s["value"], { abs: 5e-3 }),
+            `${layerName} c2s ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
         }
       }
@@ -175,24 +175,24 @@ describe("TestPointConversions", () => {
   test("test_default_time_is_comp_time", () => {
     // The saved playhead of the fixture is 0, so the no-time call must
     // equal the explicit t=0 call (AE evaluates at the comp time).
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     expect(comp.time).toBe(0.0);
     const layer = _layer(comp, "solid_keyed");
     expect(approx(layer.sourcePointToComp([0.0, 0.0]), layer.sourcePointToComp([0.0, 0.0], 0.0))).toBe(true);
   });
 
   test("test_roundtrip_inverse_2d", () => {
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_xform");
     for (const pt of POINTS) {
-      const comp_pt = layer.sourcePointToComp(pt, 0.0);
-      const back = layer.compPointToSource(comp_pt, 0.0);
+      const compPt = layer.sourcePointToComp(pt, 0.0);
+      const back = layer.compPointToSource(compPt, 0.0);
       expect(approx(back, pt, { abs: 1e-6 })).toBe(true);
     }
   });
 
   test("test_invalid_point_raises", () => {
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     raises(ValueError, () => layer.sourcePointToComp([1.0, 2.0, 3.0]));
   });
@@ -206,28 +206,28 @@ describe("TestPointConversionsUnderCameras", () => {
     ["CAM_TWO", "two_node"],
     ["CAM_KEYED", "keyed_zoom"],
     ["CAM_NONE", "no_camera"],
-  ])("test_rig_matches_ae[%#]", (comp_name, fixture_key) => {
-    const expected = _fixture<CameraRigsProbeJson>("camera_rigs_probe.json")[fixture_key]["conv"];
-    const project = parse_project(CAMERAS_AEP);
-    const comp = _comp(project, comp_name);
+  ])("test_rig_matches_ae[%#]", (compName, fixtureKey) => {
+    const expected = _fixture<CameraRigsProbeJson>("camera_rigs_probe.json")[fixtureKey]["conv"];
+    const project = parseProject(CAMERAS_AEP);
+    const comp = _comp(project, compName);
     const layer = _layer(comp, "target3d");
-    for (const [time_key, entry] of Object.entries(expected)) {
-      const time_val = float(time_key.slice(1));
+    for (const [timeKey, entry] of Object.entries(expected)) {
+      const timeVal = float(timeKey.slice(1));
       for (const [pi, pt] of CAMERA_POINTS.entries()) {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
-          const got = layer.sourcePointToComp(pt, time_val);
-          py_assert(
+          const got = layer.sourcePointToComp(pt, timeVal);
+          pyAssert(
             approx(got, want["value"], { abs: 5e-3 }),
-            `${comp_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
+            `${compName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
         }
-        const want_c2s = entry["c2s"][pi];
-        if (want_c2s["ok"]) {
-          const got = layer.compPointToSource(pt, time_val);
-          py_assert(
-            approx(got, want_c2s["value"], { abs: 5e-3 }),
-            `${comp_name} c2s ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
+        const wantC2s = entry["c2s"][pi];
+        if (wantC2s["ok"]) {
+          const got = layer.compPointToSource(pt, timeVal);
+          pyAssert(
+            approx(got, wantC2s["value"], { abs: 5e-3 }),
+            `${compName} c2s ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
         }
       }
@@ -258,8 +258,8 @@ describe("TestCalculateTransformFromPoints", () => {
     ["rect200x100", [[0, 0, 0], [200, 0, 0], [0, 100, 0]]],
   ]);
 
-  function _assert_matches(got: Record<string, number | number[]>, want: CtfpValue): void {
-    expect(py_eq(got["anchor_point"], want["anchorPoint"])).toBe(true);
+  function _assertMatches(got: Record<string, number | number[]>, want: CtfpValue): void {
+    expect(pyEq(got["anchor_point"], want["anchorPoint"])).toBe(true);
     expect(approx(got["position"], want["position"], { abs: 1e-9 })).toBe(true);
     expect(approx(got["x_rotation"], want["xRotation"], { abs: 1e-4 })).toBe(true);
     expect(approx(got["y_rotation"], want["yRotation"], { abs: 1e-4 })).toBe(true);
@@ -267,39 +267,39 @@ describe("TestCalculateTransformFromPoints", () => {
     expect(approx(got["scale"], want["scale"], { abs: 1e-4 })).toBe(true);
   }
 
-  test.each([["layer2d"], ["layer3d"]])("test_solid_point_sets[%#]", (layer_key) => {
-    const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe.json")[layer_key];
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
-    const layer = _layer(comp, layer_key === "layer2d" ? "solid_default" : "solid_3d");
+  test.each([["layer2d"], ["layer3d"]])("test_solid_point_sets[%#]", (layerKey) => {
+    const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe.json")[layerKey];
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
+    const layer = _layer(comp, layerKey === "layer2d" ? "solid_default" : "solid_3d");
     for (const [key, [tl, tr, bl]] of SETS) {
       const got = layer.calculateTransformFromPoints(tl, tr, bl);
-      _assert_matches(got, expected[key]["value"]);
+      _assertMatches(got, expected[key]["value"]);
     }
   });
 
   test("test_mirrored_point_sets", () => {
     const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe2.json")["solid"];
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     for (const [key, [tl, tr, bl]] of MIRROR_SETS) {
       const got = layer.calculateTransformFromPoints(tl, tr, bl);
-      _assert_matches(got, expected[key]["value"]);
+      _assertMatches(got, expected[key]["value"]);
     }
   });
 
   test("test_source_dimension_divisor", () => {
     // 640x346 footage: confirms the scale divisor is the SOURCE size.
     const expected = _fixture<CtfpProbeJson>("geometry_ctfp_probe2.json")["footage"];
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "footage_layer");
     for (const [key, [tl, tr, bl]] of FOOTAGE_SETS) {
       const got = layer.calculateTransformFromPoints(tl, tr, bl);
-      _assert_matches(got, expected[key]["value"]);
+      _assertMatches(got, expected[key]["value"]);
     }
   });
 
   test("test_degenerate_points_raise", () => {
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     raises(ValueError, () => layer.calculateTransformFromPoints([0, 0, 0], [0, 0, 0], [0, 1, 0]));
     // collinear
@@ -312,8 +312,8 @@ describe("TestSourceRectAtTime", () => {
 
   test("test_rects_match_ae", () => {
     const expected = _fixture<RectsProbeJson>("geometry_rects_probe.json");
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
-    for (const layer_name of [
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
+    for (const layerName of [
       "solid_default",
       "solid_xform",
       "solid_parented",
@@ -323,12 +323,12 @@ describe("TestSourceRectAtTime", () => {
       "footage_layer",
       "shape_rect",
     ]) {
-      const layer = _layer(comp, layer_name);
-      for (const time_val of [0.0, 1.5, 2.5]) {
+      const layer = _layer(comp, layerName);
+      for (const timeVal of [0.0, 1.5, 2.5]) {
         for (const extents of [false, true]) {
           const suffix = extents ? "ext" : "noext";
-          const want = expected[layer_name][`t${format(time_val, "g")}_${suffix}`]["value"];
-          const got = layer.sourceRectAtTime(time_val, extents);
+          const want = expected[layerName][`t${format(timeVal, "g")}_${suffix}`]["value"];
+          const got = layer.sourceRectAtTime(timeVal, extents);
           expect(approx(got["top"], want["top"])).toBe(true);
           expect(approx(got["left"], want["left"])).toBe(true);
           expect(approx(got["width"], want["width"])).toBe(true);
@@ -338,13 +338,13 @@ describe("TestSourceRectAtTime", () => {
     }
   });
 
-  test.each([["text_point"], ["text_box"], ["text_animated"]])("test_text_rects_match_ae[%#]", (layer_name) => {
-    const expected = _fixture<RectsProbeJson>("geometry_rects_probe.json")[layer_name];
-    const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), layer_name);
-    if (_skip_unless_fonts_match(layer)) return;
+  test.each([["text_point"], ["text_box"], ["text_animated"]])("test_text_rects_match_ae[%#]", (layerName) => {
+    const expected = _fixture<RectsProbeJson>("geometry_rects_probe.json")[layerName];
+    const layer = _layer(_probeComp(parseProject(GEOMETRY_AEP)), layerName);
+    if (_skipUnlessFontsMatch(layer)) return;
     for (const [key, record] of Object.entries(expected)) {
-      const [time_key, suffix] = split(key, "_");
-      const got = layer.sourceRectAtTime(float(time_key.slice(1)), suffix === "ext");
+      const [timeKey, suffix] = split(key, "_");
+      const got = layer.sourceRectAtTime(float(timeKey.slice(1)), suffix === "ext");
       for (const side of ["top", "left", "width", "height"] as const) {
         expect(approx(got[side], record["value"][side], { abs: 1e-3 })).toBe(true);
       }
@@ -352,7 +352,7 @@ describe("TestSourceRectAtTime", () => {
   });
 
   test("test_invalid_args_raise", () => {
-    const comp = _probe_comp(parse_project(GEOMETRY_AEP));
+    const comp = _probeComp(parseProject(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     raises(TypeError_, () =>
       // @ts-expect-error deliberately passes a list time to check runtime validation
@@ -379,7 +379,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
   test.each([[1e6], [1e100], [1e154], [1e200], [1e300]])(
     "test_huge_but_finite_points_give_a_finite_transform[%#]",
     (magnitude) => {
-      const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), "solid_default");
+      const layer = _layer(_probeComp(parseProject(GEOMETRY_AEP)), "solid_default");
       const got = layer.calculateTransformFromPoints(
         [0.0, 0.0, 0.0],
         [magnitude, 0.0, 0.0],
@@ -393,14 +393,14 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
         got["y_rotation"],
         got["z_rotation"],
       ];
-      py_assert(values.every((v) => Number.isFinite(v)), repr(got));
+      pyAssert(values.every((v) => Number.isFinite(v)), repr(got));
     },
   );
 
   test("test_scale_is_proportional_at_huge_magnitudes", () => {
     // 1e300 wide over a source `width` must scale to 1e300 / width * 100,
     // not saturate.
-    const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), "solid_default");
+    const layer = _layer(_probeComp(parseProject(GEOMETRY_AEP)), "solid_default");
     const got = layer.calculateTransformFromPoints(
       [0.0, 0.0, 0.0],
       [1e300, 0.0, 0.0],
@@ -423,30 +423,30 @@ describe("TestShapeSourceRect", () => {
    */
 
   // `@pytest.fixture(scope="class") def comp` - parsed once, on first use.
-  let _shapes_comp: CompItem | undefined;
-  function comp_fixture(): CompItem {
-    _shapes_comp ??= _comp(parse_project(SHAPES_AEP), "SHAPE_RECTS");
-    return _shapes_comp;
+  let _shapesComp: CompItem | undefined;
+  function compFixture(): CompItem {
+    _shapesComp ??= _comp(parseProject(SHAPES_AEP), "SHAPE_RECTS");
+    return _shapesComp;
   }
 
   const SHAPE_NAMES = sorted(Object.keys(_SHAPE_TRUTH).filter((n) => !_UNMODELED_SHAPES.has(n)));
   const SHAPE_CASES = SHAPE_NAMES.flatMap((name) => [false, true].map((extents): [string, boolean] => [name, extents]));
 
   test.each(SHAPE_CASES)("test_matches_ae[%#]", (name, extents) => {
-    const comp = comp_fixture();
+    const comp = compFixture();
     const record = _SHAPE_TRUTH[name];
     const want = record[extents ? "ext" : "noext"];
     const got = _layer(comp, name).sourceRectAtTime(record["time"], extents);
     for (const key of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
-      py_assert(approx(got[key], want[key], { abs: 1e-3 }), key);
+      pyAssert(approx(got[key], want[key], { abs: 1e-3 }), key);
     }
   });
 
   test.each(sorted(_UNMODELED_SHAPES).map((name) => [name]))(
     "test_unmodeled_constructs_raise[%#]",
     (name) => {
-      const comp = comp_fixture();
+      const comp = compFixture();
       raises(NotImplementedError, () => _layer(comp, name).sourceRectAtTime(0.0, false));
     },
   );
@@ -466,19 +466,19 @@ describe("TestAutoOrientPointConversions", () => {
    */
 
   let _comps: Map<string, CompItem> | undefined;
-  function comps_fixture(): Map<string, CompItem> {
-    _comps ??= new Map(parse_project(AUTO_ORIENT_AEP).compositions.map((comp) => [String(comp.name), comp]));
+  function compsFixture(): Map<string, CompItem> {
+    _comps ??= new Map(parseProject(AUTO_ORIENT_AEP).compositions.map((comp) => [String(comp.name), comp]));
     return _comps;
   }
 
   test.each(sorted(Object.keys(_ORIENT_TRUTH)).map((key) => [key]))("test_matches_ae[%#]", (key) => {
-    const comps = comps_fixture();
-    const [comp_name, layer_name] = split(key, "/", 1);
-    const layer = _layer(getitem(comps, comp_name), layer_name);
-    for (const [time_key, record] of Object.entries(_ORIENT_TRUTH[key])) {
-      if (!time_key.startsWith("t")) continue;
-      py_assert(typeof record !== "string", time_key);
-      const time = float(time_key.slice(1));
+    const comps = compsFixture();
+    const [compName, layerName] = split(key, "/", 1);
+    const layer = _layer(getitem(comps, compName), layerName);
+    for (const [timeKey, record] of Object.entries(_ORIENT_TRUTH[key])) {
+      if (!timeKey.startsWith("t")) continue;
+      pyAssert(typeof record !== "string", timeKey);
+      const time = float(timeKey.slice(1));
       // All three conversions run before any comparison, as in the Python tuple.
       const probes: [string, number[]][] = [
         ["p00", layer.sourcePointToComp([0.0, 0.0], time)],
@@ -486,9 +486,9 @@ describe("TestAutoOrientPointConversions", () => {
         ["inv", layer.compPointToSource([500.0, 400.0], time)],
       ];
       for (const [point, got] of probes) {
-        py_assert(
+        pyAssert(
           approx(got, record[point], { abs: 1e-2 }),
-          `(${repr(time_key)}, ${repr(point)})`,
+          `(${repr(timeKey)}, ${repr(point)})`,
         );
       }
     }
@@ -504,22 +504,22 @@ describe("TestTextSourceRect", () => {
    * TrueType fonts, justification, leading, tracking and stroke.
    */
 
-  let _text_comp: CompItem | undefined;
-  function comp_fixture(): CompItem {
-    _text_comp ??= _comp(parse_project(TEXT_INK_AEP), "TEXT_INK");
-    return _text_comp;
+  let _textComp: CompItem | undefined;
+  function compFixture(): CompItem {
+    _textComp ??= _comp(parseProject(TEXT_INK_AEP), "TEXT_INK");
+    return _textComp;
   }
 
   const TEXT_CASES = sorted(Object.keys(_TEXT_TRUTH)).flatMap((name) => [false, true].map((extents): [string, boolean] => [name, extents]));
 
   test.each(TEXT_CASES)("test_matches_ae[%#]", (name, extents) => {
-    const layer = _layer(comp_fixture(), name);
-    if (_skip_unless_fonts_match(layer)) return;
+    const layer = _layer(compFixture(), name);
+    if (_skipUnlessFontsMatch(layer)) return;
     const want = _TEXT_TRUTH[name][extents ? "ext" : "noext"];
     const got = layer.sourceRectAtTime(0.0, extents);
     for (const side of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
-      py_assert(approx(got[side], want[side], { abs: 1e-3 }), side);
+      pyAssert(approx(got[side], want[side], { abs: 1e-3 }), side);
     }
   });
 });

@@ -34,30 +34,30 @@
 import * as zlib from "../../pyrt/zlib.ts";
 import { IndirectObject, IndirectReference, Stream } from "../cos/index.ts";
 import type { CosDict, CosNode } from "../cos/cos.ts";
-import { cos_float, cos_get_or, cos_int, cos_num } from "../cos/kinds.ts";
+import { cosFloat, cosGetOr, cosInt, cosNum } from "../cos/kinds.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../data/std14_metrics.ts";
-import { UnsupportedAiLayersError, _find_ai_icc, _object_offsets, _parse_object_at, read_ai_layer_ocgs } from "./ai_layers.ts";
+import { UnsupportedAiLayersError, _findAiIcc, _objectOffsets, _parseObjectAt, readAiLayerOcgs } from "./ai_layers.ts";
 import {
   Path,
   type PathLike,
   ValueError,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   decode,
-  dict_get,
+  dictGet,
   float,
   getitem,
   int,
-  num_str,
-  py_or,
-  py_eq,
+  numStr,
+  pyOr,
+  pyEq,
   setdefault,
   split,
   str,
   warn,
   round,
-  is_real,
+  isReal,
   hypot,
 } from "../../pyrt/index.ts";
 
@@ -152,8 +152,8 @@ export const _INLINE_IMAGE_END = /[ \t\n\r\f\v\x00]EI[ \t\n\r\f\v\x00]|[ \t\n\r\
 // geometry
 
 /** `str(x)` for a content-stream operand: every number there is a Python float (`1.0`). */
-export function _operand_str(x: CosNode): string {
-  return is_real(x) ? num_str(x, true) : str(x);
+export function _operandStr(x: CosNode): string {
+  return isReal(x) ? numStr(x, true) : str(x);
 }
 
 /**
@@ -171,7 +171,7 @@ export function _max2(a: number, b_: number): number {
 }
 
 /** `sep.join(parts)` for bytes. */
-export function join_bytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
+export function joinBytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
   const out: Uint8Array[] = [];
   parts.forEach((part, i) => {
     if (i > 0) out.push(sep);
@@ -181,12 +181,12 @@ export function join_bytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
 }
 
 /** `bytes.isdigit()`: non-empty and every byte an ASCII digit. */
-export function _isdigit_bytes(data: Uint8Array): boolean {
+export function _isdigitBytes(data: Uint8Array): boolean {
   return data.length > 0 && Array.from(data).every((c) => c >= 0x30 && c <= 0x39);
 }
 
 /** Concatenate two PDF matrices: the result applies `a` then `b`. */
-export function _mat_mul(a: Matrix, b_: Matrix): Matrix {
+export function _matMul(a: Matrix, b_: Matrix): Matrix {
   return [
     a[0] * b_[0] + a[1] * b_[2],
     a[0] * b_[1] + a[1] * b_[3],
@@ -237,7 +237,7 @@ export class _Acc {
 }
 
 /** The dictionary of a plain dict or of a `Stream` object. */
-export function _as_dict(value: CosNode): CosDict | null {
+export function _asDict(value: CosNode): CosDict | null {
   if (value instanceof Map) return value;
   // `getattr(value, "dictionary", None)`: of the COS kinds only a `Stream` has one.
   const dictionary = value instanceof Stream ? value.dictionary : null;
@@ -292,7 +292,7 @@ export class _Document {
   constructor(data: Uint8Array, name: string) {
     this._data = data;
     this._name = name;
-    this._offsets = _object_offsets(data);
+    this._offsets = _objectOffsets(data);
     this._cache = new Map();
     this._catalog = null;
     this._check_supported();
@@ -332,7 +332,7 @@ export class _Document {
       }
       const offset = this._offsets.get(number) ?? null;
       if (offset == null) return null;
-      const resolved = _parse_object_at(this._data, offset);
+      const resolved = _parseObjectAt(this._data, offset);
       this._cache.set(number, resolved);
       value = resolved;
     }
@@ -341,12 +341,12 @@ export class _Document {
 
   number(value: CosNode, default_: number = 0.0): number {
     const resolved = this.resolve(value);
-    if (!is_real(resolved)) return default_;
+    if (!isReal(resolved)) return default_;
     return float(resolved);
   }
 
   get(mapping: CosNode, key: string, default_: CosNode = null): CosNode {
-    const table = _as_dict(this.resolve(mapping));
+    const table = _asDict(this.resolve(mapping));
     if (table == null || !table.has(key)) return default_;
     return this.resolve(getitem(table, key));
   }
@@ -362,7 +362,7 @@ export class _Document {
     // `getattr(value, "data", None)`: of the COS kinds a `Stream` and an `IndirectObject` have one.
     const raw = value instanceof Stream || value instanceof IndirectObject ? value.data : null;
     if (raw instanceof Uint8Array) {
-      info = py_or(value instanceof Stream ? value.dictionary : null, new Map());
+      info = pyOr(value instanceof Stream ? value.dictionary : null, new Map());
       body = raw;
     } else if (value instanceof Map && reference instanceof IndirectReference) {
       info = value;
@@ -379,10 +379,10 @@ export class _Document {
     }
     for (const entry of names) {
       if (entry == null) continue;
-      const filter_name = str(this.resolve(entry));
-      if (!_SUPPORTED_FILTERS.has(filter_name)) {
+      const filterName = str(this.resolve(entry));
+      if (!_SUPPORTED_FILTERS.has(filterName)) {
         throw this._reject(
-          `the content stream uses the ${filter_name} filter, which ` +
+          `the content stream uses the ${filterName} filter, which ` +
             "py_aep cannot decode",
         );
       }
@@ -402,16 +402,16 @@ export class _Document {
     let start = bytes_.find(this._data, b("stream"), offset);
     if (start < 0) return null;
     start += "stream".length;
-    if (bytes_eq(bytes_.slice(this._data, start, start + 2), CRLF)) {
+    if (bytesEq(bytes_.slice(this._data, start, start + 2), CRLF)) {
       start += 2;
     } else if (
-      bytes_eq(bytes_.slice(this._data, start, start + 1), NEWLINE) ||
-      bytes_eq(bytes_.slice(this._data, start, start + 1), CARRIAGE_RETURN)
+      bytesEq(bytes_.slice(this._data, start, start + 1), NEWLINE) ||
+      bytesEq(bytes_.slice(this._data, start, start + 1), CARRIAGE_RETURN)
     ) {
       start += 1;
     }
     const length = this.get(info, "Length");
-    if (is_real(length)) {
+    if (isReal(length)) {
       return bytes_.slice(this._data, start, start + int(length));
     }
     const end = bytes_.find(this._data, b("endstream"), start);
@@ -438,7 +438,7 @@ export class _Document {
     for (const number of this._offsets.keys()) numbers.push(number);
     for (const number of numbers) {
       const candidate = this.resolve(new IndirectReference(number, 0));
-      if (candidate instanceof Map && str(dict_get(candidate, "Type", "")) === "Catalog") {
+      if (candidate instanceof Map && str(dictGet(candidate, "Type", "")) === "Catalog") {
         this._catalog = candidate;
         return candidate;
       }
@@ -454,9 +454,9 @@ export class _Document {
   }
 
   *_walk_pages(node: CosNode, depth: number): Generator<CosDict> {
-    const table = _as_dict(this.resolve(node));
+    const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
-    if (str(dict_get(table, "Type", "")) === "Page") {
+    if (str(dictGet(table, "Type", "")) === "Page") {
       yield table;
       return;
     }
@@ -468,9 +468,9 @@ export class _Document {
 
   /** The page's content stream(s), concatenated and decoded. */
   page_content(page: CosDict): Uint8Array {
-    const contents = this.resolve(cos_get_or(this.resolve(page), "Contents", null));
+    const contents = this.resolve(cosGetOr(this.resolve(page), "Contents", null));
     const parts: CosNode[] = Array.isArray(contents) ? contents : [contents];
-    return join_bytes(
+    return joinBytes(
       NEWLINE,
       parts.filter((part) => part != null).map((part) => this.stream(part)),
     );
@@ -501,13 +501,13 @@ export function* _tokenize(
       pos += 1;
       continue;
     }
-    if (bytes_eq(char, PERCENT)) {
+    if (bytesEq(char, PERCENT)) {
       let end = pos;
       while (end < size && !bytes_.contains(CRLF, data.subarray(end, end + 1))) end += 1;
       pos = end;
       continue;
     }
-    if (bytes_eq(char, SLASH)) {
+    if (bytesEq(char, SLASH)) {
       let end = pos + 1;
       while (end < size) {
         const nxt = data.subarray(end, end + 1);
@@ -518,28 +518,28 @@ export function* _tokenize(
       pos = end;
       continue;
     }
-    if (bytes_eq(char, LPAREN)) {
-      const [literal, next] = _read_literal_string(data, pos);
+    if (bytesEq(char, LPAREN)) {
+      const [literal, next] = _readLiteralString(data, pos);
       pos = next;
       yield ["str", literal];
       continue;
     }
-    if (bytes_eq(char, LT)) {
-      if (bytes_eq(data.subarray(pos + 1, pos + 2), LT)) {
-        const [mapping, next] = _read_dict(data, pos);
+    if (bytesEq(char, LT)) {
+      if (bytesEq(data.subarray(pos + 1, pos + 2), LT)) {
+        const [mapping, next] = _readDict(data, pos);
         pos = next;
         yield ["dict", mapping];
         continue;
       }
-      const hexed = _read_hex_string(data, pos);
+      const hexed = _readHexString(data, pos);
       if (hexed == null) return;
       const [literal, next] = hexed;
       pos = next;
       yield ["str", literal];
       continue;
     }
-    if (bytes_eq(char, LBRACKET)) {
-      const [array, next] = _read_array(data, pos);
+    if (bytesEq(char, LBRACKET)) {
+      const [array, next] = _readArray(data, pos);
       pos = next;
       yield ["array", array];
       continue;
@@ -585,23 +585,23 @@ export function* _tokenize(
   }
 }
 
-export function _read_literal_string(data: Uint8Array, pos: number): [Uint8Array, number] {
+export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, number] {
   pos += 1;
   let depth = 1;
   const out: number[] = [];
   const size = data.length;
   while (pos < size) {
     const char = data.subarray(pos, pos + 1);
-    if (bytes_eq(char, BACKSLASH)) {
+    if (bytesEq(char, BACKSLASH)) {
       const nxt = data.subarray(pos + 1, pos + 2);
       const simple = nxt.length === 1 ? SIMPLE_ESCAPES.get(nxt[0]) : undefined;
       if (simple !== undefined) {
         out.push(...simple);
         pos += 2;
-      } else if (_isdigit_bytes(nxt)) {
+      } else if (_isdigitBytes(nxt)) {
         pos += 1;
         let digits = "";
-        while (digits.length < 3 && _isdigit_bytes(data.subarray(pos, pos + 1))) {
+        while (digits.length < 3 && _isdigitBytes(data.subarray(pos, pos + 1))) {
           digits += String.fromCharCode(data[pos]);
           pos += 1;
         }
@@ -610,12 +610,12 @@ export function _read_literal_string(data: Uint8Array, pos: number): [Uint8Array
           throw new ValueError(`invalid literal for int() with base 8: b'${digits}'`);
         }
         out.push(int(digits, 8) & 0xff);
-      } else if (bytes_eq(nxt, NEWLINE) || bytes_eq(nxt, CARRIAGE_RETURN)) {
+      } else if (bytesEq(nxt, NEWLINE) || bytesEq(nxt, CARRIAGE_RETURN)) {
         // PDF 7.3.4.2: a reverse solidus before an end-of-line marker
         // is a line continuation - both bytes are dropped. Keeping the
         // newline would measure it as one more glyph.
         pos += 2;
-        if (bytes_eq(nxt, CARRIAGE_RETURN) && bytes_eq(data.subarray(pos, pos + 1), NEWLINE)) {
+        if (bytesEq(nxt, CARRIAGE_RETURN) && bytesEq(data.subarray(pos, pos + 1), NEWLINE)) {
           pos += 1;
         }
       } else {
@@ -624,9 +624,9 @@ export function _read_literal_string(data: Uint8Array, pos: number): [Uint8Array
       }
       continue;
     }
-    if (bytes_eq(char, LPAREN)) {
+    if (bytesEq(char, LPAREN)) {
       depth += 1;
-    } else if (bytes_eq(char, RPAREN)) {
+    } else if (bytesEq(char, RPAREN)) {
       depth -= 1;
       if (depth === 0) return [Uint8Array.from(out), pos + 1];
     }
@@ -643,7 +643,7 @@ export function _read_literal_string(data: Uint8Array, pos: number): [Uint8Array
  * string inside a `TJ` array has to decode to the same bytes a bare `Tj`
  * operand does, or its glyph codes come out as their own hex digits.
  */
-export function _read_hex_string(data: Uint8Array, pos: number): [Uint8Array, number] | null {
+export function _readHexString(data: Uint8Array, pos: number): [Uint8Array, number] | null {
   const end = bytes_.find(data, GT, pos);
   if (end < 0) return null;
   let digits = decode(data.subarray(pos + 1, end), "latin-1").replace(/[^0-9A-Fa-f]/g, "");
@@ -651,17 +651,17 @@ export function _read_hex_string(data: Uint8Array, pos: number): [Uint8Array, nu
   return [bytes_.fromhex(digits), end + 1];
 }
 
-export function _read_array(data: Uint8Array, pos: number): [CosNode[], number] {
+export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
   pos += 1;
   const out: CosNode[] = [];
   const size = data.length;
   while (pos < size) {
-    if (bytes_eq(data.subarray(pos, pos + 1), RBRACKET)) return [out, pos + 1];
+    if (bytesEq(data.subarray(pos, pos + 1), RBRACKET)) return [out, pos + 1];
     if (bytes_.contains(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
     }
-    const sub = _next_simple(data, pos);
+    const sub = _nextSimple(data, pos);
     if (sub == null) return [out, pos + 1];
     const [value, next] = sub;
     pos = next;
@@ -670,23 +670,23 @@ export function _read_array(data: Uint8Array, pos: number): [CosNode[], number] 
   return [out, pos];
 }
 
-export function _read_dict(data: Uint8Array, pos: number): [CosDict, number] {
+export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
   pos += 2;
   const out: CosDict = new Map();
   const size = data.length;
   let key: string | null = null;
   while (pos < size) {
-    if (bytes_eq(data.subarray(pos, pos + 2), DICT_END)) return [out, pos + 2];
+    if (bytesEq(data.subarray(pos, pos + 2), DICT_END)) return [out, pos + 2];
     if (bytes_.contains(_WHITESPACE, data.subarray(pos, pos + 1))) {
       pos += 1;
       continue;
     }
-    const sub = _next_simple(data, pos);
+    const sub = _nextSimple(data, pos);
     if (sub == null) return [out, pos + 1];
     const [value, next] = sub;
     pos = next;
     if (key == null) {
-      key = _operand_str(value);
+      key = _operandStr(value);
     } else {
       out.set(key, value);
       key = null;
@@ -696,10 +696,10 @@ export function _read_dict(data: Uint8Array, pos: number): [CosDict, number] {
 }
 
 /** Read one array/dictionary element starting at `pos`. */
-export function _next_simple(data: Uint8Array, pos: number): [CosNode, number] | null {
+export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
   const char = data.subarray(pos, pos + 1);
   const size = data.length;
-  if (bytes_eq(char, SLASH)) {
+  if (bytesEq(char, SLASH)) {
     let end = pos + 1;
     while (end < size) {
       const nxt = data.subarray(end, end + 1);
@@ -708,11 +708,11 @@ export function _next_simple(data: Uint8Array, pos: number): [CosNode, number] |
     }
     return [decode(data.subarray(pos + 1, end), "latin-1"), end];
   }
-  if (bytes_eq(char, LPAREN)) return _read_literal_string(data, pos);
-  if (bytes_eq(char, LBRACKET)) return _read_array(data, pos);
-  if (bytes_eq(char, LT)) {
-    if (bytes_eq(data.subarray(pos + 1, pos + 2), LT)) return _read_dict(data, pos);
-    return _read_hex_string(data, pos);
+  if (bytesEq(char, LPAREN)) return _readLiteralString(data, pos);
+  if (bytesEq(char, LBRACKET)) return _readArray(data, pos);
+  if (bytesEq(char, LT)) {
+    if (bytesEq(data.subarray(pos + 1, pos + 2), LT)) return _readDict(data, pos);
+    return _readHexString(data, pos);
   }
   if (bytes_.contains(_NUMBER_START, char)) {
     let end = pos;
@@ -778,21 +778,21 @@ export class _GState {
 }
 
 /** The font's base encoding name, empty when it uses its built-in one. */
-export function _base_encoding(doc: _Document, font: CosDict): string {
+export function _baseEncoding(doc: _Document, font: CosDict): string {
   const encoding = doc.get(font, "Encoding");
-  const table = _as_dict(doc.resolve(encoding));
+  const table = _asDict(doc.resolve(encoding));
   if (table != null) return str(doc.get(table, "BaseEncoding", ""));
   return encoding == null ? "" : str(encoding);
 }
 
 /** The advances After Effects supplies for a font with no `/Widths`. */
-export function _builtin_widths(doc: _Document, font: CosDict, base: string): Map<number, number> {
+export function _builtinWidths(doc: _Document, font: CosDict, base: string): Map<number, number> {
   const table = STD14_WIDTHS.get(base);
   if (table == null) return new Map();
   const widths = new Map<number, number>();
   for (const [i, w] of table.entries()) widths.set(STD14_FIRST_CODE + i, w);
   const quotes = STD14_STANDARD_QUOTES.get(base);
-  if (quotes != null && !_ASCII_QUOTE_ENCODINGS.has(_base_encoding(doc, font))) {
+  if (quotes != null && !_ASCII_QUOTE_ENCODINGS.has(_baseEncoding(doc, font))) {
     widths.set(39, quotes[0]);
     widths.set(96, quotes[1]);
   }
@@ -807,27 +807,27 @@ export function _builtin_widths(doc: _Document, font: CosDict, base: string): Ma
  * the same values, but a font where they disagree measures by the
  * `/FontBBox`.
  */
-export function _font_metrics(doc: _Document, font: CosDict | null): Metrics {
+export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
   if (!(font instanceof Map)) return _NO_FONT_METRICS;
   const subtype = str(doc.get(font, "Subtype", ""));
-  if (subtype === "Type0") return _type0_metrics(doc, font);
+  if (subtype === "Type0") return _type0Metrics(doc, font);
   const first = int(doc.number(font.get("FirstChar") ?? null, 0.0));
-  const raw_widths = doc.get(font, "Widths");
+  const rawWidths = doc.get(font, "Widths");
   let widths = new Map<number, number>();
-  if (Array.isArray(raw_widths)) {
-    for (const [index, entry] of raw_widths.entries()) {
+  if (Array.isArray(rawWidths)) {
+    for (const [index, entry] of rawWidths.entries()) {
       widths.set(first + index, doc.number(entry));
     }
   }
   const descriptor = doc.get(font, "FontDescriptor");
-  const base = _base_font(str(doc.get(font, "BaseFont", "")));
+  const base = _baseFont(str(doc.get(font, "BaseFont", "")));
   const default_ = doc.number(doc.get(descriptor, "MissingWidth"), 0.0);
-  if (widths.size === 0) widths = _builtin_widths(doc, font, base);
-  const [y_min, y_max] = _vertical_extent(doc, descriptor, STD14_EXTENT.get(base) ?? null);
-  return [widths, default_ !== 0 ? default_ : _DEFAULT_WIDTH, y_min, y_max, false];
+  if (widths.size === 0) widths = _builtinWidths(doc, font, base);
+  const [yMin, yMax] = _verticalExtent(doc, descriptor, STD14_EXTENT.get(base) ?? null);
+  return [widths, default_ !== 0 ? default_ : _DEFAULT_WIDTH, yMin, yMax, false];
 }
 
-export function _type0_metrics(doc: _Document, font: CosDict): Metrics {
+export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
   const descendants = doc.get(font, "DescendantFonts");
   const child: CosNode =
     Array.isArray(descendants) && descendants.length > 0
@@ -857,11 +857,11 @@ export function _type0_metrics(doc: _Document, font: CosDict): Metrics {
     }
   }
   const descriptor = doc.get(child, "FontDescriptor");
-  const [y_min, y_max] = _vertical_extent(doc, descriptor, null);
-  return [widths, default_, y_min, y_max, true];
+  const [yMin, yMax] = _verticalExtent(doc, descriptor, null);
+  return [widths, default_, yMin, yMax, true];
 }
 
-export function _vertical_extent(
+export function _verticalExtent(
   doc: _Document,
   descriptor: CosNode,
   std: [number, number] | null,
@@ -881,7 +881,7 @@ export function _vertical_extent(
 }
 
 /** Strip a subset tag and a style suffix from a `/BaseFont` name. */
-export function _base_font(name: string): string {
+export function _baseFont(name: string): string {
   const parts = split(name, "+");
   return split(parts[parts.length - 1], ",")[0];
 }
@@ -911,13 +911,13 @@ export class _Measurer {
   }
 
   _resource(resources: CosNode, category: string, name: CosNode): CosNode {
-    return this._doc.get(this._doc.get(resources, category), _operand_str(name));
+    return this._doc.get(this._doc.get(resources, category), _operandStr(name));
   }
 
   _resource_ref(resources: CosNode, category: string, name: CosNode): CosNode {
-    const table = _as_dict(this._doc.resolve(this._doc.get(resources, category)));
+    const table = _asDict(this._doc.resolve(this._doc.get(resources, category)));
     if (table == null) return null;
-    return table.get(_operand_str(name)) ?? null;
+    return table.get(_operandStr(name)) ?? null;
   }
 
   run(content: Uint8Array, resources: CosNode): void {
@@ -927,10 +927,10 @@ export class _Measurer {
     let segments: Segment[] = [];
     let current: Pt | null = null;
     let start: Pt | null = null;
-    let from_rect = false;
-    let pending_clip = false;
-    let text_matrix: Matrix = _IDENTITY;
-    let line_matrix: Matrix = _IDENTITY;
+    let fromRect = false;
+    let pendingClip = false;
+    let textMatrix: Matrix = _IDENTITY;
+    let lineMatrix: Matrix = _IDENTITY;
 
     for (const [kind, value] of _tokenize(content)) {
       if (kind !== "op") {
@@ -945,11 +945,11 @@ export class _Measurer {
         if (restored !== undefined) gs = restored;
       } else if (op === "cm" && operands.length >= 6) {
         // Python multiplies the raw operands: a non-number raises TypeError.
-        gs.ctm = _mat_mul(operands.slice(-6).map(cos_num), gs.ctm);
+        gs.ctm = _matMul(operands.slice(-6).map(cosNum), gs.ctm);
       } else if (op === "w" && operands.length > 0) {
-        gs.line_width = cos_float(operands[operands.length - 1]);
+        gs.line_width = cosFloat(operands[operands.length - 1]);
       } else if (op === "M" && operands.length > 0) {
-        gs.miter = cos_float(operands[operands.length - 1]);
+        gs.miter = cosFloat(operands[operands.length - 1]);
       } else if (op === "gs" && operands.length > 0) {
         const ext = this._resource(resources, "ExtGState", operands[operands.length - 1]);
         if (ext instanceof Map && ext.has("LW")) {
@@ -958,32 +958,32 @@ export class _Measurer {
       }
       // ---- path construction
       else if (op === "m" && operands.length >= 2) {
-        const point: Pt = [cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])];
+        const point: Pt = [cosFloat(operands[operands.length - 2]), cosFloat(operands[operands.length - 1])];
         current = start = point;
       } else if (op === "l" && operands.length >= 2 && current != null) {
-        const point: Pt = [cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])];
+        const point: Pt = [cosFloat(operands[operands.length - 2]), cosFloat(operands[operands.length - 1])];
         segments.push(["l", current, point]);
         current = point;
       } else if (op === "c" && operands.length >= 6 && current != null) {
-        const a = operands.slice(-6).map(cos_float);
+        const a = operands.slice(-6).map(cosFloat);
         segments.push(["c", current, [a[0], a[1]], [a[2], a[3]], [a[4], a[5]]]);
         current = [a[4], a[5]];
       } else if (op === "v" && operands.length >= 4 && current != null) {
-        const a = operands.slice(-4).map(cos_float);
+        const a = operands.slice(-4).map(cosFloat);
         segments.push(["c", current, current, [a[0], a[1]], [a[2], a[3]]]);
         current = [a[2], a[3]];
       } else if (op === "y" && operands.length >= 4 && current != null) {
-        const a = operands.slice(-4).map(cos_float);
+        const a = operands.slice(-4).map(cosFloat);
         const end: Pt = [a[2], a[3]];
         segments.push(["c", current, [a[0], a[1]], end, end]);
         current = end;
       } else if (op === "h") {
-        if (current != null && start != null && !py_eq(current, start)) {
+        if (current != null && start != null && !pyEq(current, start)) {
           segments.push(["l", current, start]);
         }
         current = start;
       } else if (op === "re" && operands.length >= 4) {
-        const [x, y, width, height] = operands.slice(-4).map(cos_float);
+        const [x, y, width, height] = operands.slice(-4).map(cosFloat);
         const corners: Pt[] = [
           [x, y],
           [x + width, y],
@@ -995,17 +995,17 @@ export class _Measurer {
         }
         const origin: Pt = [x, y];
         current = start = origin;
-        from_rect = true;
+        fromRect = true;
       } else if (op === "W" || op === "W*") {
-        pending_clip = true;
+        pendingClip = true;
       } else if (_PAINT_OPS.has(op)) {
         if (segments.length > 0) {
-          if (op !== "n") this._commit_path(gs, segments, _STROKE_OPS.has(op), from_rect);
-          if (pending_clip) gs.clip = _intersect(gs.clip, this._hull(gs, segments));
+          if (op !== "n") this._commit_path(gs, segments, _STROKE_OPS.has(op), fromRect);
+          if (pendingClip) gs.clip = _intersect(gs.clip, this._hull(gs, segments));
         }
-        pending_clip = false;
+        pendingClip = false;
         segments = [];
-        from_rect = false;
+        fromRect = false;
         current = start = null;
       } else if (op === "sh") {
         // A shading paints the whole clip region.
@@ -1034,47 +1034,47 @@ export class _Measurer {
       }
       // ---- text
       else if (op === "BT") {
-        text_matrix = line_matrix = _IDENTITY;
+        textMatrix = lineMatrix = _IDENTITY;
       } else if (op === "Tf" && operands.length >= 2) {
         const font = this._resource(resources, "Font", operands[operands.length - 2]);
         gs.font = font instanceof Map ? font : null;
         // The metrics are a property of the font, so they are resolved
         // here rather than rebuilt for every text-showing operator.
-        gs.metrics = _font_metrics(this._doc, gs.font);
-        gs.size = cos_float(operands[operands.length - 1]);
+        gs.metrics = _fontMetrics(this._doc, gs.font);
+        gs.size = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tm" && operands.length >= 6) {
-        const tm = operands.slice(-6).map(cos_float);
-        text_matrix = line_matrix = tm;
+        const tm = operands.slice(-6).map(cosFloat);
+        textMatrix = lineMatrix = tm;
       } else if ((op === "Td" || op === "TD") && operands.length >= 2) {
-        if (op === "TD") gs.leading = -cos_float(operands[operands.length - 1]);
-        line_matrix = _mat_mul(
-          [1.0, 0.0, 0.0, 1.0, cos_float(operands[operands.length - 2]), cos_float(operands[operands.length - 1])],
-          line_matrix,
+        if (op === "TD") gs.leading = -cosFloat(operands[operands.length - 1]);
+        lineMatrix = _matMul(
+          [1.0, 0.0, 0.0, 1.0, cosFloat(operands[operands.length - 2]), cosFloat(operands[operands.length - 1])],
+          lineMatrix,
         );
-        text_matrix = line_matrix;
+        textMatrix = lineMatrix;
       } else if (op === "T*") {
-        line_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], line_matrix);
-        text_matrix = line_matrix;
+        lineMatrix = _matMul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], lineMatrix);
+        textMatrix = lineMatrix;
       } else if (op === "TL" && operands.length > 0) {
-        gs.leading = cos_float(operands[operands.length - 1]);
+        gs.leading = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tc" && operands.length > 0) {
-        gs.char_spacing = cos_float(operands[operands.length - 1]);
+        gs.char_spacing = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tw" && operands.length > 0) {
-        gs.word_spacing = cos_float(operands[operands.length - 1]);
+        gs.word_spacing = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tz" && operands.length > 0) {
-        gs.h_scale = cos_float(operands[operands.length - 1]);
+        gs.h_scale = cosFloat(operands[operands.length - 1]);
       } else if (op === "Ts" && operands.length > 0) {
-        gs.rise = cos_float(operands[operands.length - 1]);
+        gs.rise = cosFloat(operands[operands.length - 1]);
       } else if (op === "Tr" && operands.length > 0) {
-        gs.render_mode = cos_int(operands[operands.length - 1]);
+        gs.render_mode = cosInt(operands[operands.length - 1]);
       } else if ((op === "Tj" || op === "TJ" || op === "'" || op === '"') && operands.length > 0) {
         if (op === "'" || op === '"') {
-          line_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], line_matrix);
-          text_matrix = line_matrix;
+          lineMatrix = _matMul([1.0, 0.0, 0.0, 1.0, 0.0, -gs.leading], lineMatrix);
+          textMatrix = lineMatrix;
         }
         const shown = operands[operands.length - 1];
         const items: CosNode[] = Array.isArray(shown) ? shown : [shown];
-        text_matrix = this._show_text(gs, text_matrix, items);
+        textMatrix = this._show_text(gs, textMatrix, items);
       }
       operands = [];
     }
@@ -1099,7 +1099,7 @@ export class _Measurer {
     return acc.box();
   }
 
-  _commit_path(gs: _GState, segments: Segment[], stroked: boolean, from_rect: boolean): void {
+  _commit_path(gs: _GState, segments: Segment[], stroked: boolean, fromRect: boolean): void {
     const target = this._target();
     if (target == null) return;
     let hull = this._hull(gs, segments);
@@ -1115,20 +1115,20 @@ export class _Measurer {
     // a worst-case half the miter limit. A path that is both filled and
     // stroked uses this alone - the fill pad is not also applied.
     let factor: number;
-    if (from_rect) {
+    if (fromRect) {
       factor = Math.sqrt(2.0);
     } else if (segments.length === 1 && segments[0][0] === "l") {
       factor = 1.0;
     } else {
       factor = gs.miter / 2.0;
     }
-    const [half_x, half_y] = gs.stroke_half_width();
-    target.add_box(_clamp(_grow(hull, half_x * factor, half_y * factor)));
+    const [halfX, halfY] = gs.stroke_half_width();
+    target.add_box(_clamp(_grow(hull, halfX * factor, halfY * factor)));
   }
 
   /** A form or image XObject contributes its box with no expansion. */
   _draw_xobject(gs: _GState, resources: CosNode, name: CosNode): void {
-    const xobject = _as_dict(this._resource(resources, "XObject", name));
+    const xobject = _asDict(this._resource(resources, "XObject", name));
     if (xobject == null) return;
     const target = this._target();
     if (target == null) return;
@@ -1138,7 +1138,7 @@ export class _Measurer {
     if (subtype === "Form") {
       const matrix = doc.get(xobject, "Matrix");
       if (Array.isArray(matrix) && matrix.length === 6) {
-        ctm = _mat_mul(matrix.map((v) => doc.number(v)), ctm);
+        ctm = _matMul(matrix.map((v) => doc.number(v)), ctm);
       }
     }
     const bbox = doc.get(xobject, "BBox");
@@ -1170,22 +1170,22 @@ export class _Measurer {
   }
 
   /** Measure a text-showing operator and advance the text matrix. */
-  _show_text(gs: _GState, text_matrix: Matrix, items: CosNode[]): Matrix {
-    const [widths, default_, y_min, y_max, two_byte] = gs.metrics;
+  _show_text(gs: _GState, textMatrix: Matrix, items: CosNode[]): Matrix {
+    const [widths, default_, yMin, yMax, twoByte] = gs.metrics;
     const target = this._target();
     const scale = gs.h_scale / 100.0;
     for (const item of items) {
-      if (is_real(item)) {
+      if (isReal(item)) {
         const shift = -float(item) / 1000.0 * gs.size * scale;
-        text_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, shift, 0.0], text_matrix);
+        textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, shift, 0.0], textMatrix);
         continue;
       }
       if (!(item instanceof Uint8Array)) continue;
       let codes: number[];
-      if (two_byte) {
+      if (twoByte) {
         codes = [];
         for (let index = 0; index < item.length - 1; index += 2) {
-          codes.push(bytes_.int_from_bytes(bytes_.slice(item, index, index + 2), "big"));
+          codes.push(bytes_.intFromBytes(bytes_.slice(item, index, index + 2), "big"));
         }
       } else {
         codes = Array.from(item);
@@ -1193,15 +1193,15 @@ export class _Measurer {
       for (const code of codes) {
         const width = (widths.get(code) ?? default_) / 1000.0;
         let spacing = gs.char_spacing;
-        if (code === 32 && !two_byte) spacing += gs.word_spacing;
+        if (code === 32 && !twoByte) spacing += gs.word_spacing;
         const advance = (width * gs.size + spacing) * scale;
         if (target != null) {
-          this._add_glyph_cell(gs, target, text_matrix, advance, y_min, y_max, width);
+          this._add_glyph_cell(gs, target, textMatrix, advance, yMin, yMax, width);
         }
-        text_matrix = _mat_mul([1.0, 0.0, 0.0, 1.0, advance, 0.0], text_matrix);
+        textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, advance, 0.0], textMatrix);
       }
     }
-    return text_matrix;
+    return textMatrix;
   }
 
   /**
@@ -1214,29 +1214,29 @@ export class _Measurer {
   _add_glyph_cell(
     gs: _GState,
     target: _Acc,
-    text_matrix: Matrix,
+    textMatrix: Matrix,
     advance: number,
-    y_min: number,
-    y_max: number,
+    yMin: number,
+    yMax: number,
     width: number,
   ): void {
     const scale = gs.h_scale / 100.0;
-    let render = _mat_mul([gs.size * scale, 0.0, 0.0, gs.size, 0.0, gs.rise], text_matrix);
-    render = _mat_mul(render, gs.ctm);
+    let render = _matMul([gs.size * scale, 0.0, 0.0, gs.size, 0.0, gs.rise], textMatrix);
+    render = _matMul(render, gs.ctm);
     const horizontal = gs.size !== 0 && scale !== 0 ? advance / (gs.size * scale) : width;
     const acc = new _Acc();
     const corners: Pt[] = [
-      [0.0, y_min / 1000.0],
-      [horizontal, y_min / 1000.0],
-      [horizontal, y_max / 1000.0],
-      [0.0, y_max / 1000.0],
+      [0.0, yMin / 1000.0],
+      [horizontal, yMin / 1000.0],
+      [horizontal, yMax / 1000.0],
+      [0.0, yMax / 1000.0],
     ];
     for (const [x, y] of corners) acc.add(..._apply(render, x, y));
     let box = acc.box();
     if (box == null) return;
     if (_STROKING_TEXT_MODES.has(gs.render_mode)) {
-      const [half_x, half_y] = gs.stroke_half_width();
-      box = _grow(box, half_x, half_y);
+      const [halfX, halfY] = gs.stroke_half_width();
+      box = _grow(box, halfX, halfY);
     }
     target.add_box(_clamp(box));
   }
@@ -1267,10 +1267,10 @@ export class _Measurer {
  * (compressed object streams, encryption, or a content-stream filter other
  * than Flate).
  */
-export function read_ai_layer_bounds(file: PathLike, data: Uint8Array | null = null): (Box | null)[] {
+export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null): (Box | null)[] {
   const path = new Path(file);
   if (data == null) data = path.read_bytes();
-  const layers = read_ai_layer_ocgs(path, data);
+  const layers = readAiLayerOcgs(path, data);
   const doc = new _Document(data, path.name);
   const pages = doc.pages();
   if (pages.length > 1) {
@@ -1312,7 +1312,7 @@ export const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v\/\[\]()<>{}%]+)[ \t\n\r\f\v]
  * @param file - Path to a `.ai` or `.pdf` file.
  * @param data - The file's bytes, if the caller already read them.
  */
-export function read_ai_icc_profile(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
+export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).read_bytes();
   if (!bytes_.startswith(data, b("%PDF"))) return null;
   try {
@@ -1324,14 +1324,14 @@ export function read_ai_icc_profile(file: PathLike, data: Uint8Array | null = nu
       const space = doc.get(spaces, match[1]);
       if (Array.isArray(space) && space.length === 2 && str(space[0]) === "ICCBased") {
         const profile = doc.stream(space[1]);
-        if (profile.length >= 132 && bytes_eq(bytes_.slice(profile, 36, 40), b("acsp"))) {
+        if (profile.length >= 132 && bytesEq(bytes_.slice(profile, 36, 40), b("acsp"))) {
           return profile;
         }
       }
     }
   } catch (e) {
     if (!(e instanceof UnsupportedAiLayersError)) throw e;
-    return _find_ai_icc(file, data);
+    return _findAiIcc(file, data);
   }
   return null;
 }
@@ -1346,7 +1346,7 @@ export function read_ai_icc_profile(file: PathLike, data: Uint8Array | null = nu
  *
  * @param box - An entry of `read_ai_layer_bounds`, or `null` for an empty layer.
  */
-export function footage_size(box: Box | null): [number, number] {
+export function footageSize(box: Box | null): [number, number] {
   const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => round(v * 65536));
   return [
     Math.max(1, Math.ceil((x1 - x0) / 65536.0)),

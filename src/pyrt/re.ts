@@ -16,7 +16,7 @@ import { NotImplementedError, ValueError } from "./errors.ts";
 export class PyReError extends ValueError {}
 
 /** Python `re` flag values. */
-export const re_flags = {
+export const reFlags = {
   I: 2,
   IGNORECASE: 2,
   M: 8,
@@ -48,33 +48,33 @@ const cache = new Map<string, RegExp>();
  * `lastIndex`). Results are cached; a `g`/`y` RegExp is stateful, so those
  * are returned fresh.
  */
-export function py_re(pattern: string, flags = 0, js_flags = ""): RegExp {
-  const key = `${flags}\u0000${js_flags}\u0000${pattern}`;
+export function pyRe(pattern: string, flags = 0, jsFlags = ""): RegExp {
+  const key = `${flags}\u0000${jsFlags}\u0000${pattern}`;
   const hit = cache.get(key);
-  if (hit && !js_flags) return hit;
-  const [source, final_flags] = translate(pattern, flags);
-  const re = new RegExp(source, "u" + (final_flags & re_flags.I ? "i" : "") + js_flags);
-  if (!js_flags) cache.set(key, re);
+  if (hit && !jsFlags) return hit;
+  const [source, finalFlags] = translate(pattern, flags);
+  const re = new RegExp(source, "u" + (finalFlags & reFlags.I ? "i" : "") + jsFlags);
+  if (!jsFlags) cache.set(key, re);
   return re;
 }
 
 /** `re.search(pattern, s, flags)`: the first match anywhere, or `null`. */
-export function re_search(pattern: string, s: string, flags = 0): RegExpExecArray | null {
-  return py_re(pattern, flags).exec(s);
+export function reSearch(pattern: string, s: string, flags = 0): RegExpExecArray | null {
+  return pyRe(pattern, flags).exec(s);
 }
 
 /** `re.match(pattern, s, flags)`: a match at the start of `s`, or `null`. */
-export function re_match(pattern: string, s: string, flags = 0): RegExpExecArray | null {
-  return pattern_match(py_re(pattern, flags), s);
+export function reMatch(pattern: string, s: string, flags = 0): RegExpExecArray | null {
+  return patternMatch(pyRe(pattern, flags), s);
 }
 
 /** `re.fullmatch(pattern, s, flags)` */
-export function re_fullmatch(pattern: string, s: string, flags = 0): RegExpExecArray | null {
-  return pattern_match(py_re(`(?:${pattern})\\Z`, flags), s);
+export function reFullmatch(pattern: string, s: string, flags = 0): RegExpExecArray | null {
+  return patternMatch(pyRe(`(?:${pattern})\\Z`, flags), s);
 }
 
 /** `re.escape(s)`: a backslash before each of `()[]{}?*+-|^$\\.&~#` and ASCII whitespace. */
-export function re_escape(s: string): string {
+export function reEscape(s: string): string {
   return s.replace(/[()[\]{}?*+\-|^$\\.&~# \t\n\r\v\f]/g, "\\$&");
 }
 
@@ -87,10 +87,10 @@ function translate(p: string, flags: number): [string, number] {
     for (const f of m[1]) flags |= INLINE[f];
     i += m[0].length;
   }
-  const ascii = (flags & re_flags.A) !== 0;
-  const verbose = (flags & re_flags.X) !== 0;
-  const dotall = (flags & re_flags.S) !== 0;
-  const multiline = (flags & re_flags.M) !== 0;
+  const ascii = (flags & reFlags.A) !== 0;
+  const verbose = (flags & reFlags.X) !== 0;
+  const dotall = (flags & reFlags.S) !== 0;
+  const multiline = (flags & reFlags.M) !== 0;
   const word = ascii ? A_WORD : U_WORD;
   const space = ascii ? A_SPACE : U_SPACE;
   const digit = ascii ? "0-9" : "\\p{Nd}";
@@ -103,13 +103,13 @@ function translate(p: string, flags: number): [string, number] {
   };
 
   // A literal code point, escaped as needed for u-mode.
-  const literal = (ch: string, in_class: boolean): string => {
-    if (in_class) return "\\^-]\\[".includes(ch) ? "\\" + ch : ch;
+  const literal = (ch: string, inClass: boolean): string => {
+    if (inClass) return "\\^-]\\[".includes(ch) ? "\\" + ch : ch;
     return JS_SYNTAX.has(ch) ? "\\" + ch : ch;
   };
 
   // Escape sequence at p[i] === "\\"; returns [js, consumed].
-  const escape = (in_class: boolean): string => {
+  const escape = (inClass: boolean): string => {
     const c = p[i + 1];
     if (c === undefined) err("bad escape (end of pattern)");
     const two = (js: string): string => {
@@ -118,31 +118,31 @@ function translate(p: string, flags: number): [string, number] {
     };
     switch (c) {
       case "d":
-        return two(in_class ? digit : `[${digit}]`);
+        return two(inClass ? digit : `[${digit}]`);
       case "D":
-        if (in_class) return two(ascii ? err_ni("\\D inside a class with re.ASCII") : "\\P{Nd}");
+        if (inClass) return two(ascii ? errNi("\\D inside a class with re.ASCII") : "\\P{Nd}");
         return two(`[^${digit}]`);
       case "w":
-        return two(in_class ? word : W);
+        return two(inClass ? word : W);
       case "W":
-        if (in_class) err_ni("\\W inside a character class");
+        if (inClass) errNi("\\W inside a character class");
         return two(`[^${word}]`);
       case "s":
-        return two(in_class ? space : `[${space}]`);
+        return two(inClass ? space : `[${space}]`);
       case "S":
-        if (in_class) err_ni("\\S inside a character class");
+        if (inClass) errNi("\\S inside a character class");
         return two(`[^${space}]`);
       case "b":
-        if (in_class) return two("\\x08");
+        if (inClass) return two("\\x08");
         return two(ascii ? "\\b" : `(?:(?<=${W})(?!${W})|(?<!${W})(?=${W}))`);
       case "B":
-        if (in_class) err("bad escape \\B");
+        if (inClass) err("bad escape \\B");
         return two(ascii ? "\\B" : `(?:(?<=${W})(?=${W})|(?<!${W})(?!${W}))`);
       case "A":
-        if (in_class) err("bad escape \\A");
+        if (inClass) err("bad escape \\A");
         return two("(?<![\\s\\S])");
       case "Z":
-        if (in_class) err("bad escape \\Z");
+        if (inClass) err("bad escape \\Z");
         return two("(?![\\s\\S])");
       case "n":
       case "t":
@@ -173,11 +173,11 @@ function translate(p: string, flags: number): [string, number] {
         return "\\u{" + cp.toString(16) + "}";
       }
       case "N":
-        return err_ni("\\N{...} escapes");
+        return errNi("\\N{...} escapes");
     }
     if (c >= "0" && c <= "9") {
       const oct = /^[0-7]{3}/.exec(p.slice(i + 1));
-      if (c === "0" || (oct && !in_class) || in_class) {
+      if (c === "0" || (oct && !inClass) || inClass) {
         // Octal escape: \0, \0oo, \ooo (in a class every digit escape is octal).
         const m = /^[0-7]{1,3}/.exec(p.slice(i + 1));
         if (!m) err(`bad escape \\${c}`);
@@ -195,10 +195,10 @@ function translate(p: string, flags: number): [string, number] {
     // Escaped punctuation / non-ASCII: the literal character.
     const [ch] = p.slice(i + 1, i + 3);
     i += 1 + ch.length;
-    return literal(ch, in_class);
+    return literal(ch, inClass);
   };
 
-  const err_ni = (what: string): never => {
+  const errNi = (what: string): never => {
     throw new NotImplementedError(`py_re: ${what} has no JS RegExp equivalent`);
   };
 
@@ -280,7 +280,7 @@ function translate(p: string, flags: number): [string, number] {
       }
       if (/^\(\?[aiLmsux-]+[:)]/.test(rest)) {
         if (/^\(\?[aiLmsux]+\)/.test(rest)) err("global flags not at the start of the expression");
-        err_ni("scoped inline flags (?flags:...)");
+        errNi("scoped inline flags (?flags:...)");
       }
       err("unknown extension");
     }
@@ -289,7 +289,7 @@ function translate(p: string, flags: number): [string, number] {
       if (m && (m[1] !== "" || m[2] !== undefined)) {
         out.push(`{${m[1] === "" ? "0" : m[1]}${m[2] !== undefined ? "," + m[3] : ""}}`);
         i += m[0].length;
-        if (p[i] === "+") err_ni("possessive quantifiers");
+        if (p[i] === "+") errNi("possessive quantifiers");
         continue;
       }
       out.push("\\{");
@@ -316,7 +316,7 @@ function translate(p: string, flags: number): [string, number] {
       i++;
       continue;
     }
-    if ((c === "*" || c === "+" || c === "?") && p[i + 1] === "+") err_ni("possessive quantifiers");
+    if ((c === "*" || c === "+" || c === "?") && p[i + 1] === "+") errNi("possessive quantifiers");
     const [ch] = p.slice(i, i + 2);
     out.push(ch === "/" ? "\\/" : ch);
     i += ch.length;
@@ -339,14 +339,14 @@ function variant(cache: WeakMap<RegExp, RegExp>, re: RegExp, flag: string): RegE
 }
 
 /** `pattern.match(s, pos)`: a match starting exactly at `pos`, or `null`. */
-export function pattern_match(re: RegExp, s: string, pos = 0): RegExpExecArray | null {
+export function patternMatch(re: RegExp, s: string, pos = 0): RegExpExecArray | null {
   const y = variant(sticky, re, "y");
   y.lastIndex = pos;
   return y.exec(s);
 }
 
 /** `pattern.search(s, pos)`: the first match at or after `pos`, or `null`. */
-export function pattern_search(re: RegExp, s: string, pos = 0): RegExpExecArray | null {
+export function patternSearch(re: RegExp, s: string, pos = 0): RegExpExecArray | null {
   const g = variant(global, re, "g");
   g.lastIndex = pos;
   return g.exec(s);
@@ -357,7 +357,7 @@ export function pattern_search(re: RegExp, s: string, pos = 0): RegExpExecArray 
  * the pattern has no groups, group 1 when it has one, else an array of all
  * groups (an unmatched group is "").
  */
-export function pattern_findall(re: RegExp, s: string): (string | string[])[] {
+export function patternFindall(re: RegExp, s: string): (string | string[])[] {
   const out: (string | string[])[] = [];
   for (const m of s.matchAll(variant(global, re, "g"))) {
     if (m.length === 1) out.push(m[0]);

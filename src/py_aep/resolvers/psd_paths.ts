@@ -17,11 +17,11 @@ export const _OPEN_LENGTH = 3;
 export const _KNOT_SELECTORS: ReadonlySet<number> = new Set([1, 2, 4, 5]);
 
 /** Decode a knot record to `[in_point, anchor, out_point]` pixel coords. */
-export function _knot(record: Uint8Array, canvas_w: number, canvas_h: number): number[][] {
+export function _knot(record: Uint8Array, canvasW: number, canvasH: number): number[][] {
   const points: number[][] = [];
   for (let i = 0; i < 3; i++) {
     const [vert, horiz] = struct.unpack(">ii", bytes_.slice(record, 2 + i * 8, 10 + i * 8));
-    points.push([(horiz / 0x1000000) * canvas_w, (vert / 0x1000000) * canvas_h]);
+    points.push([(horiz / 0x1000000) * canvasW, (vert / 0x1000000) * canvasH]);
   }
   return points;
 }
@@ -30,28 +30,28 @@ export function _knot(record: Uint8Array, canvas_w: number, canvas_h: number): n
  * Decode a `vmsk`/`vsms` block into one {@link Shape} per subpath.
  *
  * @param block - The raw tagged-block body (version + flags + path records).
- * @param canvas_w - Document canvas width in pixels.
- * @param canvas_h - Document canvas height in pixels.
+ * @param canvasW - Document canvas width in pixels.
+ * @param canvasH - Document canvas height in pixels.
  * @returns The subpaths in file order (usually one). A malformed block yields
  *   the subpaths decoded so far.
  */
-export function parse_vector_mask(block: Uint8Array, canvas_w: number, canvas_h: number): Shape[] {
+export function parseVectorMask(block: Uint8Array, canvasW: number, canvasH: number): Shape[] {
   const shapes: Shape[] = [];
   const vertices: number[][] = [];
-  const in_tangents: number[][] = [];
-  const out_tangents: number[][] = [];
+  const inTangents: number[][] = [];
+  const outTangents: number[][] = [];
   let closed = true;
 
   const flush = (): void => {
     if (vertices.length) {
       shapes.push(
-        new Shape([...vertices], [...in_tangents], [...out_tangents], {
+        new Shape([...vertices], [...inTangents], [...outTangents], {
           closed,
         }),
       );
       vertices.splice(0, vertices.length);
-      in_tangents.splice(0, in_tangents.length);
-      out_tangents.splice(0, out_tangents.length);
+      inTangents.splice(0, inTangents.length);
+      outTangents.splice(0, outTangents.length);
     }
   };
 
@@ -63,10 +63,10 @@ export function parse_vector_mask(block: Uint8Array, canvas_w: number, canvas_h:
       flush();
       closed = selector === _CLOSED_LENGTH;
     } else if (_KNOT_SELECTORS.has(selector)) {
-      const [in_point, anchor, out_point] = _knot(record, canvas_w, canvas_h);
+      const [inPoint, anchor, outPoint] = _knot(record, canvasW, canvasH);
       vertices.push(anchor);
-      in_tangents.push([in_point[0] - anchor[0], in_point[1] - anchor[1]]);
-      out_tangents.push([out_point[0] - anchor[0], out_point[1] - anchor[1]]);
+      inTangents.push([inPoint[0] - anchor[0], inPoint[1] - anchor[1]]);
+      outTangents.push([outPoint[0] - anchor[0], outPoint[1] - anchor[1]]);
     }
     pos += 26;
   }

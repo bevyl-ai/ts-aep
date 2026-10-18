@@ -14,26 +14,26 @@
 import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import { parse } from "../../src/py_aep/index.ts";
-import { ListChunk, read_aep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
+import { ListChunk, readAep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { CosParser, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import {
-  cache_line,
-  char_style,
-  decode_btdk,
-  first_baseline,
-  font_ref,
+  cacheLine,
+  charStyle,
+  decodeBtdk,
+  firstBaseline,
+  fontRef,
   read,
   type Layout,
 } from "../../src/py_aep/cos/schema.ts";
-import { get_cos_template } from "../../src/py_aep/cos/text.ts";
-import { BytesIO, py_assert } from "../../src/pyrt/index.ts";
+import { getCosTemplate } from "../../src/py_aep/cos/text.ts";
+import { BytesIO, pyAssert } from "../../src/pyrt/index.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { LineOrientation, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
 
-function* btdk_chunks(chunk: Chunk): Generator<ListChunk> {
+function* btdkChunks(chunk: Chunk): Generator<ListChunk> {
   if (!(chunk instanceof ListChunk)) return;
   if (chunk.list_type === "btdk") yield chunk;
-  for (const child of chunk.chunks ?? []) yield* btdk_chunks(child);
+  for (const child of chunk.chunks ?? []) yield* btdkChunks(child);
 }
 
 const dict = (x: CosNode | undefined): CosDict | null => (x instanceof Map ? x : null);
@@ -45,33 +45,33 @@ function* positions(root: CosDict): Generator<[string, Layout, CosDict]> {
   const state = dict(root.get("1"));
   for (const preset of list(dict(res?.get("5"))?.get("0"))) {
     const style = dict(dict(dict(preset)?.get("0"))?.get("6"));
-    if (style) yield ["char_style (preset)", char_style, style];
+    if (style) yield ["char_style (preset)", charStyle, style];
   }
   for (const slot of list(dict(res?.get("8"))?.get("0"))) {
     const meta = dict(dict(dict(slot)?.get("0"))?.get("2"));
     const sub = dict(meta?.get("10"));
-    if (sub) yield ["first_baseline", first_baseline, sub];
+    if (sub) yield ["first_baseline", firstBaseline, sub];
   }
   const typography = dict(dict(state?.get("0"))?.get("0"));
-  if (typography) yield ["font_ref (typography)", font_ref, typography];
-  const default_style = dict(state?.get("2"));
-  if (default_style) yield ["char_style (default)", char_style, default_style];
+  if (typography) yield ["font_ref (typography)", fontRef, typography];
+  const defaultStyle = dict(state?.get("2"));
+  if (defaultStyle) yield ["char_style (default)", charStyle, defaultStyle];
   for (const session of list(state?.get("5"))) {
     for (const record of list(dict(session)?.get("4"))) {
       const r = dict(record);
-      if (r) yield ["font_ref (used font)", font_ref, r];
+      if (r) yield ["font_ref (used font)", fontRef, r];
     }
   }
   for (const doc of list(state?.get("1"))) {
     const text = dict(dict(doc)?.get("0"));
     for (const entry of list(dict(text?.get("6"))?.get("0"))) {
       const style = dict(dict(dict(dict(entry)?.get("0"))?.get("0"))?.get("6"));
-      if (style) yield ["char_style", char_style, style];
+      if (style) yield ["char_style", charStyle, style];
     }
     const walk = function* (node: CosNode): Generator<[string, Layout, CosDict]> {
       const d = dict(node);
       if (!d) return;
-      if (String(d.get("99")) === "L") yield ["cache_line", cache_line, d];
+      if (String(d.get("99")) === "L") yield ["cache_line", cacheLine, d];
       for (const child of list(d.get("6"))) yield* walk(child);
     };
     for (const node of list(dict(dict(doc)?.get("1"))?.get("2"))) yield* walk(node);
@@ -97,9 +97,9 @@ describe("btdk schema", () => {
     let checked = 0;
     const failures: string[] = [];
     for (const file of files) {
-      const [rifx] = read_aep(new BytesIO(new Uint8Array(fs.readFileSync(file))));
-      for (const chunk of btdk_chunks(rifx)) {
-        const root = decode_btdk(new CosParser(new BytesIO(chunk.data), chunk.data.length).parse());
+      const [rifx] = readAep(new BytesIO(new Uint8Array(fs.readFileSync(file))));
+      for (const chunk of btdkChunks(rifx)) {
+        const root = decodeBtdk(new CosParser(new BytesIO(chunk.data), chunk.data.length).parse());
         trees++;
         if (root == null) {
           failures.push(`${file}: does not decode`);
@@ -115,13 +115,13 @@ describe("btdk schema", () => {
   }, 120_000);
 
   test("the point-text template conforms", () => {
-    expect(mismatches(get_cos_template())).toEqual([]);
+    expect(mismatches(getCosTemplate())).toEqual([]);
   });
 
   test("trees py_aep writes conform", () => {
     const app = parse("samples/models/text/text_writes.aep");
     const docs = app.project.compositions[0].textLayers.map((layer) => {
-      py_assert(layer.text != null);
+      pyAssert(layer.text != null);
       return layer.text.property("ADBE Text Document").value;
     });
     expect(docs.length).toBeGreaterThan(0);

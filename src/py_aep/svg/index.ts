@@ -10,7 +10,7 @@
  */
 
 export { UnsupportedSVGError } from "./errors.ts";
-export { read_svg } from "./reader.ts";
+export { readSvg } from "./reader.ts";
 export {
   GradientPaint,
   GradientStop,

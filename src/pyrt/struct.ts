@@ -135,7 +135,7 @@ export class Struct<F extends string = string> {
     if (data.length - offset < this.size) {
       throw new StructError(`unpack_from requires a buffer of at least ${this.size + offset} bytes`);
     }
-    if (this.unpacker === undefined) this.unpacker = compile_unpack(this.codes, this.le);
+    if (this.unpacker === undefined) this.unpacker = compileUnpack(this.codes, this.le);
     if (this.unpacker !== null) return this.unpacker(data, offset);
     // Integers are assembled from bytes and floats go through a scratch view:
     // `data.buffer` would make JSC materialize a backing store per call.
@@ -165,7 +165,7 @@ export class Struct<F extends string = string> {
           case "I": case "L": out.push(u32(d, p, le)); break;
           case "q": out.push(scratch(d, p, 8).getBigInt64(0, le)); break;
           case "Q": out.push(scratch(d, p, 8).getBigUint64(0, le)); break;
-          case "e": out.push(half_to_float(u16(d, p, le))); break;
+          case "e": out.push(halfToFloat(u16(d, p, le))); break;
           case "f": out.push(scratch(d, p, 4).getFloat32(0, le)); break;
           case "d": out.push(scratch(d, p, 8).getFloat64(0, le)); break;
         }
@@ -190,7 +190,7 @@ export class Struct<F extends string = string> {
     if (values.length !== this.n_values) {
       throw new StructError(`pack expected ${this.n_values} items for packing (got ${values.length})`);
     }
-    if (this.packer === undefined) this.packer = compile_pack(this.codes, this.le);
+    if (this.packer === undefined) this.packer = compilePack(this.codes, this.le);
     if (this.packer !== null) return this.packer(out, offset, values);
     const le = this.le;
     let p = offset;
@@ -202,12 +202,12 @@ export class Struct<F extends string = string> {
         continue;
       }
       if (ch === "s" || ch === "p") {
-        pack_s(out, p, values[vi++], count);
+        packS(out, p, values[vi++], count);
         p += count;
         continue;
       }
       for (let k = 0; k < count; k++) {
-        pack_one(out, p, ch, values[vi++], le);
+        packOne(out, p, ch, values[vi++], le);
         p += SIZES[ch];
       }
     }
@@ -215,20 +215,20 @@ export class Struct<F extends string = string> {
 }
 
 /** Pack an `s`/`p` field: `v` truncated or zero-padded to `count` bytes. */
-function pack_s(out: Uint8Array, p: number, v: PackValue, count: number): void {
+function packS(out: Uint8Array, p: number, v: PackValue, count: number): void {
   if (!(v instanceof Uint8Array)) throw new StructError("argument for 's' must be a bytes object");
   const n = Math.min(v.length, count);
   for (let i = 0; i < n; i++) out[p + i] = v[i];
   if (n < count) out.fill(0, p + n, p + count);
 }
 
-function range_error(ch: string): StructError {
+function rangeError(ch: string): StructError {
   const range = INT_RANGE[ch];
   return new StructError(`'${ch}' format requires ${range[0]} <= number <= ${range[1]}`);
 }
 
 /** Pack one value of a single-item code (anything but `x`, `s`, `p`) at `p`. */
-function pack_one(out: Uint8Array, p: number, ch: string, v: PackValue, le: boolean): void {
+function packOne(out: Uint8Array, p: number, ch: string, v: PackValue, le: boolean): void {
   switch (ch) {
     case "c":
       if (!(v instanceof Uint8Array) || v.length !== 1) {
@@ -241,7 +241,7 @@ function pack_one(out: Uint8Array, p: number, ch: string, v: PackValue, le: bool
       break;
     case "q":
     case "Q": {
-      const big = to_bigint(v);
+      const big = toBigint(v);
       if (ch === "Q") {
         if (big < 0n || big > 0xffffffffffffffffn) throw new StructError("argument out of range");
         SCRATCH_DV.setBigUint64(0, big, le);
@@ -253,10 +253,10 @@ function pack_one(out: Uint8Array, p: number, ch: string, v: PackValue, le: bool
       break;
     }
     case "e":
-      put16(out, p, float_to_half(to_float(v)), le);
+      put16(out, p, floatToHalf(toFloat(v)), le);
       break;
     case "f": {
-      const x = to_float(v);
+      const x = toFloat(v);
       if (Number.isFinite(x) && Math.abs(x) > FLOAT32_MAX && !Number.isFinite(Math.fround(x))) {
         throw new OverflowError("float too large to pack with f format");
       }
@@ -268,13 +268,13 @@ function pack_one(out: Uint8Array, p: number, ch: string, v: PackValue, le: bool
       break;
     }
     case "d":
-      SCRATCH_DV.setFloat64(0, to_float(v), le);
+      SCRATCH_DV.setFloat64(0, toFloat(v), le);
       out.set(SCRATCH_U8, p);
       break;
     default: {
-      const n = to_int(v);
+      const n = toInt(v);
       const range = INT_RANGE[ch];
-      if (n < range[0] || n > range[1]) throw range_error(ch);
+      if (n < range[0] || n > range[1]) throw rangeError(ch);
       // Uint8Array stores take the low 8 bits, which covers negative values.
       switch (ch) {
         case "b": case "B": out[p] = n; break;
@@ -288,7 +288,7 @@ function pack_one(out: Uint8Array, p: number, ch: string, v: PackValue, le: bool
 type Packer = (out: Uint8Array, p: number, v: PackValue[]) => void;
 
 /** Straight-line `pack_to` for `codes`: integers inline, other codes through `pack_one` in order. */
-function compile_pack(codes: Code[], le: boolean): Packer | null {
+function compilePack(codes: Code[], le: boolean): Packer | null {
   const body = ["let n;"];
   let k = 0;
   let vi = 0;
@@ -319,10 +319,10 @@ function compile_pack(codes: Code[], le: boolean): Packer | null {
   }
   try {
     return new Function("to_int", "pack_one", "pack_s", "range_error", `return (out, p, v) => {${body.join("")}};`)(
-      to_int,
-      pack_one,
-      pack_s,
-      range_error,
+      toInt,
+      packOne,
+      packS,
+      rangeError,
     );
   } catch {
     return null;
@@ -332,7 +332,7 @@ function compile_pack(codes: Code[], le: boolean): Packer | null {
 type Unpacker = (d: Uint8Array, p: number) => PackValue[];
 
 /** Straight-line `unpack_from` for `codes`: one expression per value at a fixed offset. */
-function compile_unpack(codes: Code[], le: boolean): Unpacker | null {
+function compileUnpack(codes: Code[], le: boolean): Unpacker | null {
   const u16 = (k: number) => (le ? `(d[p+${k}]|d[p+${k + 1}]<<8)` : `(d[p+${k}]<<8|d[p+${k + 1}])`);
   const u32 = (k: number) =>
     le
@@ -371,7 +371,7 @@ function compile_unpack(codes: Code[], le: boolean): Unpacker | null {
     }
   }
   try {
-    return new Function("scratch", "half_to_float", `return (d, p) => [${exprs.join(",")}];`)(scratch, half_to_float);
+    return new Function("scratch", "half_to_float", `return (d, p) => [${exprs.join(",")}];`)(scratch, halfToFloat);
   } catch {
     return null;
   }
@@ -421,7 +421,7 @@ function scratch(d: Uint8Array, p: number, n: number): DataView {
   return SCRATCH_DV;
 }
 
-function to_int(v: PackValue): number {
+function toInt(v: PackValue): number {
   if (typeof v === "boolean") return v ? 1 : 0;
   if (typeof v === "bigint") return Number(v);
   if (typeof v !== "number" || !Number.isInteger(v)) {
@@ -430,19 +430,19 @@ function to_int(v: PackValue): number {
   return v;
 }
 
-function to_bigint(v: PackValue): bigint {
+function toBigint(v: PackValue): bigint {
   if (typeof v === "bigint") return v;
-  return BigInt(to_int(v));
+  return BigInt(toInt(v));
 }
 
-function to_float(v: PackValue): number {
+function toFloat(v: PackValue): number {
   if (typeof v === "boolean") return v ? 1 : 0;
   if (typeof v === "bigint") return Number(v);
   if (typeof v !== "number") throw new StructError("required argument is not a float");
   return v;
 }
 
-function half_to_float(h: number): number {
+function halfToFloat(h: number): number {
   const s = h & 0x8000 ? -1 : 1;
   const e = (h >> 10) & 0x1f;
   const f = h & 0x3ff;
@@ -451,7 +451,7 @@ function half_to_float(h: number): number {
   return s * (1 + f / 1024) * 2 ** (e - 15);
 }
 
-function float_to_half(x: number): number {
+function floatToHalf(x: number): number {
   const f32 = new Float32Array([x]);
   const u = new Uint32Array(f32.buffer)[0];
   const sign = (u >> 16) & 0x8000;
@@ -489,13 +489,13 @@ export function unpack(format: string, data: Uint8Array): PackValue[] {
 }
 
 /** `struct.unpack_from(fmt, data, offset)` */
-export function unpack_from<F extends string>(format: F, data: Uint8Array, offset?: number): Unpacked<F>;
-export function unpack_from(format: string, data: Uint8Array, offset = 0): PackValue[] {
+export function unpackFrom<F extends string>(format: F, data: Uint8Array, offset?: number): Unpacked<F>;
+export function unpackFrom(format: string, data: Uint8Array, offset = 0): PackValue[] {
   return get(format).unpack_from(data, offset);
 }
 
 /** `struct.pack_into(fmt, buffer, offset, *values)` (negative offsets count from the end). */
-export function pack_into(format: string, buffer: Uint8Array, offset: number, ...values: PackValue[]): void {
+export function packInto(format: string, buffer: Uint8Array, offset: number, ...values: PackValue[]): void {
   const s = get(format);
   if (offset < 0) {
     if (offset + s.size > 0) throw new StructError(`no space to pack ${s.size} bytes at offset ${offset}`);

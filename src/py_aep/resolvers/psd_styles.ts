@@ -23,7 +23,7 @@
 import * as host from "../../pyrt/host.ts";
 
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
-import { iter_image_resources } from "./media_probe.ts";
+import { iterImageResources } from "./media_probe.ts";
 import type { PsdGroup, PsdLayer, PsdStyleBlocks } from "./psd_layers.ts";
 import {
   BytesIO,
@@ -35,15 +35,15 @@ import {
   ValueError,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   copysign,
   decode,
-  dict_get,
+  dictGet,
   fspath,
   getitem,
   int,
-  json_float,
-  py_bool,
+  jsonFloat,
+  pyBool,
   radians,
   repr,
   round,
@@ -105,13 +105,13 @@ export class PsdLayerStyles {
     enabled: readonly string[],
     dropped: readonly string[],
     disabled: readonly string[] = [],
-    blend_options = false,
+    blendOptions = false,
   ) {
     this.values = values;
     this.enabled = enabled;
     this.dropped = dropped;
     this.disabled = disabled;
-    this.blend_options = blend_options;
+    this.blend_options = blendOptions;
   }
 
   *[Symbol.iterator](): Generator<Map<string, StyleValue> | readonly string[] | boolean> {
@@ -161,57 +161,57 @@ export class _Reader {
 /** A parsed descriptor value: Objc/GlbO become Maps, VlLs arrays, tdta/alis null. */
 export type _Value = number | string | boolean | null | _Value[] | Map<string, _Value>;
 
-export function _parse_item(reader: _Reader, os_type: string): _Value {
-  if (["Objc", "GlbO"].includes(os_type)) {
+export function _parseItem(reader: _Reader, osType: string): _Value {
+  if (["Objc", "GlbO"].includes(osType)) {
     reader.ustr(); // name from classID (unused)
     const cls = reader.key();
     const out = new Map<string, _Value>([["_class", cls]]);
     for (let i = 0, n = reader.u4(); i < n; i++) {
       const key = reader.key();
-      out.set(key, _parse_item(reader, decode(reader.raw(4), "latin-1")));
+      out.set(key, _parseItem(reader, decode(reader.raw(4), "latin-1")));
     }
     return out;
   }
-  if (os_type === "VlLs") {
-    return Array.from({ length: reader.u4() }, () => _parse_item(reader, decode(reader.raw(4), "latin-1")));
+  if (osType === "VlLs") {
+    return Array.from({ length: reader.u4() }, () => _parseItem(reader, decode(reader.raw(4), "latin-1")));
   }
-  if (os_type === "doub") {
+  if (osType === "doub") {
     return struct.unpack(">d", reader.raw(8))[0];
   }
-  if (os_type === "UntF") {
+  if (osType === "UntF") {
     reader.raw(4); // unit (imported verbatim; the unit tag is redundant)
     return struct.unpack(">d", reader.raw(8))[0];
   }
-  if (os_type === "TEXT") {
+  if (osType === "TEXT") {
     return reader.ustr();
   }
-  if (os_type === "enum") {
+  if (osType === "enum") {
     reader.key(); // enum type
     return reader.key();
   }
-  if (os_type === "long") {
+  if (osType === "long") {
     return struct.unpack(">i", reader.raw(4))[0];
   }
-  if (os_type === "comp") {
+  if (osType === "comp") {
     // Python ints are unbounded; Number() rounds to nearest exactly like
     // float(int), and every consumer in this module converts to float first.
     return Number(struct.unpack(">q", reader.raw(8))[0]);
   }
-  if (os_type === "bool") {
-    return !bytes_eq(reader.raw(1), b("\x00"));
+  if (osType === "bool") {
+    return !bytesEq(reader.raw(1), b("\x00"));
   }
-  if (os_type === "type" || os_type === "GlbC") {
+  if (osType === "type" || osType === "GlbC") {
     reader.ustr();
     return reader.key();
   }
-  if (os_type === "tdta" || os_type === "alis") {
+  if (osType === "tdta" || osType === "alis") {
     reader.raw(reader.u4());
     return null;
   }
-  throw new ValueError(`unhandled descriptor OSType ${repr(os_type)}`);
+  throw new ValueError(`unhandled descriptor OSType ${repr(osType)}`);
 }
 
-export function _parse_effects_descriptor(body: Uint8Array): Map<string, _Value> {
+export function _parseEffectsDescriptor(body: Uint8Array): Map<string, _Value> {
   /** Parse an `lmfx`/`lfx2` block body: version u4s (ending 16) + root Objc. */
   const reader = new _Reader(body);
   let found = false;
@@ -222,7 +222,7 @@ export function _parse_effects_descriptor(body: Uint8Array): Map<string, _Value>
     }
   }
   if (!found) throw new ValueError("no descriptor version marker");
-  const root = _parse_item(reader, "Objc");
+  const root = _parseItem(reader, "Objc");
   if (!(root instanceof Map)) throw new ValueError("effects descriptor root is not an object");
   return root;
 }
@@ -353,7 +353,7 @@ export function _number(value: _Value): number {
 }
 
 export function _bool01(value: _Value): number {
-  return py_bool(value) ? 1.0 : 0.0;
+  return pyBool(value) ? 1.0 : 0.0;
 }
 
 /** Python int/float/bool operand for `/`: bool counts as 0/1, anything else raises. */
@@ -370,7 +370,7 @@ export function _subscript(obj: _Value, key: string): _Value {
 }
 
 /** Python `for x in value` over a parsed descriptor value. */
-export function _py_iter(value: _Value): _Value[] {
+export function _pyIter(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
   if (value instanceof Map) return [...value.keys()];
   if (typeof value === "string") return Array.from(value);
@@ -410,10 +410,10 @@ export function _gradient(value: _Value): Gradient {
   // Intr=4096, so it must not be used as the divisor (smoothness 50%
   // would double every offset, and 0% would divide by zero). Smoothness
   // is left unmapped (AE's gradientSmoothness handling is unprobed).
-  const color_stops: GradientColorStop[] = [];
-  for (const stop of _py_iter(getitem(value, "Clrs"))) {
+  const colorStops: GradientColorStop[] = [];
+  for (const stop of _pyIter(getitem(value, "Clrs"))) {
     const [red, green, blue] = _color(_subscript(stop, "Clr "));
-    color_stops.push(
+    colorStops.push(
       new GradientColorStop(
         _arith(_subscript(stop, "Lctn")) / 4096.0,
         _arith(_subscript(stop, "Mdpn")) / 100.0,
@@ -421,7 +421,7 @@ export function _gradient(value: _Value): Gradient {
       ),
     );
   }
-  const alpha_stops = _py_iter(getitem(value, "Trns")).map(
+  const alphaStops = _pyIter(getitem(value, "Trns")).map(
     (stop) =>
       new GradientAlphaStop(
         _arith(_subscript(stop, "Lctn")) / 4096.0,
@@ -429,7 +429,7 @@ export function _gradient(value: _Value): Gradient {
         _number(_subscript(stop, "Opct")) / 100.0,
       ),
   );
-  return new Gradient(color_stops, alpha_stops);
+  return new Gradient(colorStops, alphaStops);
 }
 
 export class _Param {
@@ -437,8 +437,8 @@ export class _Param {
   suffix: string;
   convert: (value: _Value) => StyleValue;
 
-  constructor(descriptor_key: string, suffix: string, convert: (value: _Value) => StyleValue) {
-    this.descriptor_key = descriptor_key;
+  constructor(descriptorKey: string, suffix: string, convert: (value: _Value) => StyleValue) {
+    this.descriptor_key = descriptorKey;
     this.suffix = suffix;
     this.convert = convert;
   }
@@ -591,7 +591,7 @@ export const _MULTI_KEYS = new Map<string, string>(
   [..._STYLES].map(([key, [prefix]]): [string, string] => [`${prefix}Multi`, key]),
 );
 
-export function _style_instances(descriptor: Map<string, _Value>): Map<string, _Value[]> {
+export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _Value[]> {
   /**
    * Collect style instances per descriptor style key.
    *
@@ -630,7 +630,7 @@ export const _GRADIENT_SMOOTHNESS_PREFIXES: ReadonlySet<string> = new Set([
   "gradientFill",
 ]);
 
-export function _convert_style(
+export function _convertStyle(
   prefix: string,
   params: readonly _Param[],
   instance: Map<string, _Value>,
@@ -681,7 +681,7 @@ export function _convert_style(
 // Blend options
 // ---------------------------------------------------------------------------
 
-export function read_global_light(file: PathLike): [number, number] {
+export function readGlobalLight(file: PathLike): [number, number] {
   /**
    * The document's global light `(angle, altitude)` in degrees.
    *
@@ -704,23 +704,23 @@ export function read_global_light(file: PathLike): [number, number] {
       }
     })(),
   );
-  if (!bytes_eq(fp.read(4), b("8BPS"))) return [angle, altitude];
+  if (!bytesEq(fp.read(4), b("8BPS"))) return [angle, altitude];
   fp.seek(26);
-  for (const [resource_id, body] of iter_image_resources(fp)) {
-    if (resource_id === 1037 && body.length >= 4) {
+  for (const [resourceId, body] of iterImageResources(fp)) {
+    if (resourceId === 1037 && body.length >= 4) {
       angle = struct.unpack(">i", bytes_.slice(body, 0, 4))[0];
-    } else if (resource_id === 1049 && body.length >= 4) {
+    } else if (resourceId === 1049 && body.length >= 4) {
       altitude = struct.unpack(">i", bytes_.slice(body, 0, 4))[0];
     }
   }
   return [angle, altitude];
 }
 
-export function _blend_options_values(
+export function _blendOptionsValues(
   blocks: PsdStyleBlocks,
-  global_light: [number, number],
+  globalLight: [number, number],
 ): Map<string, StyleValue> {
-  const [angle, altitude] = global_light;
+  const [angle, altitude] = globalLight;
   const values = new Map<string, StyleValue>([
     ["ADBE Global Angle2", angle],
     ["ADBE Global Altitude2", altitude],
@@ -747,9 +747,9 @@ export function _blend_options_values(
 // Public API
 // ---------------------------------------------------------------------------
 
-export function parse_layer_styles(
+export function parseLayerStyles(
   leaf: PsdLayer,
-  global_light: [number, number],
+  globalLight: [number, number],
 ): PsdLayerStyles | null {
   /**
    * Resolve a layer's styles to AE Layer Styles values.
@@ -766,14 +766,14 @@ export function parse_layer_styles(
   // only a USER deviation activates AE's blend-options chain: a Fill
   // slider away from 100% (`iOpa`), Blend Interior checked (`infx` true)
   // or a channel restriction (`brst`).
-  const blend_data =
+  const blendData =
     blocks.fill_opacity != null ||
     !!blocks.blend_interior ||
     blocks.channel_restrictions?.length > 0;
   let descriptor = new Map<string, _Value>();
   if (blocks.effects != null) {
     try {
-      descriptor = _parse_effects_descriptor(blocks.effects);
+      descriptor = _parseEffectsDescriptor(blocks.effects);
     } catch (exc) {
       if (!(exc instanceof ValueError)) throw exc;
       warn(
@@ -787,45 +787,45 @@ export function parse_layer_styles(
   const enabled: string[] = [];
   const dropped: string[] = [];
   const disabled: string[] = [];
-  let imported_any = false;
-  for (const [key, instances] of _style_instances(descriptor)) {
+  let importedAny = false;
+  for (const [key, instances] of _styleInstances(descriptor)) {
     const [prefix, params] = getitem(_STYLES, key);
-    const present_instances = instances.filter((inst) => inst instanceof Map);
-    if (present_instances.length > 1) {
+    const presentInstances = instances.filter((inst) => inst instanceof Map);
+    if (presentInstances.length > 1) {
       // AE drops a multi-instance style entirely, even when every
       // instance is representable.
       dropped.push(prefix);
       continue;
     }
-    if (present_instances.length === 0) continue;
-    const instance = present_instances[0];
-    const is_enabled = py_bool(dict_get(instance, "enab", false));
+    if (presentInstances.length === 0) continue;
+    const instance = presentInstances[0];
+    const isEnabled = pyBool(dictGet(instance, "enab", false));
     // `present` distinguishes an unchecked-but-kept style (imported,
     // tdsb 0x00) from a removed one Photoshop left in the descriptor
     // (skeleton, 0x02). Old writers without the key follow `enab`.
-    const is_present = py_bool(dict_get(instance, "present", is_enabled));
-    if (!is_present && !_ALWAYS_WHEN_PRESENT.has(prefix)) continue;
+    const isPresent = pyBool(dictGet(instance, "present", isEnabled));
+    if (!isPresent && !_ALWAYS_WHEN_PRESENT.has(prefix)) continue;
     try {
-      for (const [k, v] of _convert_style(prefix, params, instance)) values.set(k, v);
+      for (const [k, v] of _convertStyle(prefix, params, instance)) values.set(k, v);
     } catch (exc) {
       if (!(exc instanceof KeyError || exc instanceof TypeError_)) throw exc;
       dropped.push(prefix);
       continue;
     }
-    imported_any = true;
-    if (is_enabled) {
+    importedAny = true;
+    if (isEnabled) {
       enabled.push(prefix);
-    } else if (is_present) {
+    } else if (isPresent) {
       disabled.push(prefix);
     }
   }
-  if (imported_any || blend_data) {
-    for (const [k, v] of _blend_options_values(blocks, global_light)) values.set(k, v);
+  if (importedAny || blendData) {
+    for (const [k, v] of _blendOptionsValues(blocks, globalLight)) values.set(k, v);
   }
-  return new PsdLayerStyles(values, enabled, dropped, disabled, blend_data);
+  return new PsdLayerStyles(values, enabled, dropped, disabled, blendData);
 }
 
-export function has_enabled_styles(node: PsdLayer | PsdGroup): boolean {
+export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
   /**
    * Whether any style instance is enabled on the layer or group.
    *
@@ -838,21 +838,21 @@ export function has_enabled_styles(node: PsdLayer | PsdGroup): boolean {
   if (blocks == null || blocks.effects == null) return false;
   let descriptor: Map<string, _Value>;
   try {
-    descriptor = _parse_effects_descriptor(blocks.effects);
+    descriptor = _parseEffectsDescriptor(blocks.effects);
   } catch (exc) {
     if (!(exc instanceof ValueError)) throw exc;
     return true;
   }
-  return !_enabled_instances(descriptor).next().done;
+  return !_enabledInstances(descriptor).next().done;
 }
 
-export function* _enabled_instances(
+export function* _enabledInstances(
   descriptor: Map<string, _Value>,
 ): Generator<[string, Map<string, _Value>]> {
   /** `(key, instance)` of every enabled style instance in a descriptor. */
-  for (const [key, instances] of _style_instances(descriptor)) {
+  for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
-      if (instance instanceof Map && py_bool(dict_get(instance, "enab", false))) {
+      if (instance instanceof Map && pyBool(dictGet(instance, "enab", false))) {
         yield [key, instance];
       }
     }
@@ -887,34 +887,34 @@ export function* _enabled_instances(
 // - The box is the union of the layer's own bounds and every enabled style
 //   instance's box. The effects-scale percentage has no effect.
 
-export function _round_away(value: number): number {
+export function _roundAway(value: number): number {
   // The epsilon lands exact halves (a 30 degree light: sin * 11 = 5.4999...
   // in doubles) where AE does.
   return int(copysign(Math.floor(Math.abs(value) + 0.5 + 1e-9), value));
 }
 
-export function _blur_reach(size: number, spread: number, precise: boolean): number {
-  const spread_px = Math.floor((size * spread) / 100 + 0.5);
-  const radius = size - spread_px;
+export function _blurReach(size: number, spread: number, precise: boolean): number {
+  const spreadPx = Math.floor((size * spread) / 100 + 0.5);
+  const radius = size - spreadPx;
   let reach: number;
   if (precise) {
     reach = radius > 0 ? radius + 2.5 : 6.5;
   } else {
     reach = radius > 0 ? Math.max(radius, 2) : 4.5;
   }
-  return reach + (spread_px > 0 ? spread_px + 2 : 0);
+  return reach + (spreadPx > 0 ? spreadPx + 2 : 0);
 }
 
 /** The px a style covers before (left, above) and after (right, below). */
-export function _pads(reach: number, anti_aliased: boolean, shift = 0.0): [number, number] {
-  const lead = Math.ceil(reach - shift) - (anti_aliased ? 0 : 1);
+export function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number, number] {
+  const lead = Math.ceil(reach - shift) - (antiAliased ? 0 : 1);
   return [lead, Math.floor(reach + shift)];
 }
 
-export function _bevel_pads(instance: Map<string, _Value>, name: string): [number, number] | null {
-  const style = dict_get(instance, "bvlS", "InrB");
+export function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
+  const style = dictGet(instance, "bvlS", "InrB");
   if (style === "InrB") return null;
-  const size = json_float(dict_get(instance, "blur", 0));
+  const size = jsonFloat(dictGet(instance, "blur", 0));
   let height: number;
   if (style === "OtrB") {
     height = size;
@@ -926,28 +926,28 @@ export function _bevel_pads(instance: Map<string, _Value>, name: string): [numbe
         "known; import without merging its layer styles",
     );
   }
-  const smooth = dict_get(instance, "bvlT", "SfBL") === "SfBL";
+  const smooth = dictGet(instance, "bvlT", "SfBL") === "SfBL";
   let reach: number;
   if (smooth) {
     reach = size > 0 ? Math.max(height, 2) + 1.5 : 2.0;
   } else {
     reach = height + 4;
   }
-  const softening = json_float(dict_get(instance, "Sftn", 0));
+  const softening = jsonFloat(dictGet(instance, "Sftn", 0));
   if (softening > 0) {
     reach += Math.max(softening, 2) - 0.5;
   }
   const shift = softening === 0 && (!smooth || size === 0) ? -1.0 : 0.0;
-  const anti_aliased =
-    py_bool(dict_get(instance, "useShape", false)) && py_bool(dict_get(instance, "AntA", false));
-  return _pads(reach, anti_aliased, shift);
+  const antiAliased =
+    pyBool(dictGet(instance, "useShape", false)) && pyBool(dictGet(instance, "AntA", false));
+  return _pads(reach, antiAliased, shift);
 }
 
-export function _instance_box(
+export function _instanceBox(
   key: string,
   instance: Map<string, _Value>,
   bounds: _Box,
-  global_angle: number,
+  globalAngle: number,
   name: string,
 ): _Box | null {
   const [left, top, right, bottom] = bounds;
@@ -957,28 +957,28 @@ export function _instance_box(
   let trail = 0;
   if (key === "DrSh" || key === "OrGl") {
     const precise = key === "OrGl" && (instance.get("GlwT") ?? null) === "PrBL";
-    const reach = _blur_reach(
-      json_float(dict_get(instance, "blur", 0)),
-      json_float(dict_get(instance, "Ckmt", 0)),
+    const reach = _blurReach(
+      jsonFloat(dictGet(instance, "blur", 0)),
+      jsonFloat(dictGet(instance, "Ckmt", 0)),
       precise,
     );
-    [lead, trail] = _pads(reach, py_bool(dict_get(instance, "AntA", false)));
+    [lead, trail] = _pads(reach, pyBool(dictGet(instance, "AntA", false)));
     if (key === "DrSh") {
       const angle = radians(
-        py_bool(instance.get("uglg")) ? global_angle : json_float(dict_get(instance, "lagl", 0)),
+        pyBool(instance.get("uglg")) ? globalAngle : jsonFloat(dictGet(instance, "lagl", 0)),
       );
-      const distance = json_float(dict_get(instance, "Dstn", 0));
-      dx = _round_away(-Math.cos(angle) * distance);
-      dy = _round_away(Math.sin(angle) * distance);
+      const distance = jsonFloat(dictGet(instance, "Dstn", 0));
+      dx = _roundAway(-Math.cos(angle) * distance);
+      dy = _roundAway(Math.sin(angle) * distance);
     }
   } else if (key === "FrFX") {
-    const size = json_float(dict_get(instance, "Sz  ", 0));
-    const position = dict_get(instance, "Styl", "OutF");
+    const size = jsonFloat(dictGet(instance, "Sz  ", 0));
+    const position = dictGet(instance, "Styl", "OutF");
     if (position === "InsF") return null;
     const reach = position === "OutF" ? size : Math.ceil(size / 2);
     lead = trail = int(reach) + 2;
   } else if (key === "ebbl") {
-    const pads = _bevel_pads(instance, name);
+    const pads = _bevelPads(instance, name);
     if (pads == null) return null;
     [lead, trail] = pads;
   } else {
@@ -988,7 +988,7 @@ export function _instance_box(
   return [left + dx - lead, top + dy - lead, right + dx + trail, bottom + dy + trail];
 }
 
-export function merged_styles_bounds(node: PsdLayer, global_angle: number): _Box {
+export function mergedStylesBounds(node: PsdLayer, globalAngle: number): _Box {
   /**
    * The layer's content box once its enabled styles are merged into it.
    *
@@ -1005,7 +1005,7 @@ export function merged_styles_bounds(node: PsdLayer, global_angle: number): _Box
   if (blocks == null || blocks.effects == null) return bounds;
   let descriptor: Map<string, _Value>;
   try {
-    descriptor = _parse_effects_descriptor(blocks.effects);
+    descriptor = _parseEffectsDescriptor(blocks.effects);
   } catch (exc) {
     if (!(exc instanceof ValueError)) throw exc;
     throw Object.assign(
@@ -1017,8 +1017,8 @@ export function merged_styles_bounds(node: PsdLayer, global_angle: number): _Box
     );
   }
   let [left, top, right, bottom] = bounds;
-  for (const [key, instance] of _enabled_instances(descriptor)) {
-    const box = _instance_box(key, instance, bounds, global_angle, node.name);
+  for (const [key, instance] of _enabledInstances(descriptor)) {
+    const box = _instanceBox(key, instance, bounds, globalAngle, node.name);
     if (box != null) {
       left = Math.min(left, box[0]);
       top = Math.min(top, box[1]);

@@ -73,7 +73,7 @@ const py: Record<string, { name: string; single: (number | null)[]; leads: numbe
   proc.stdout.toString(),
 );
 
-function decode_js(label: string, bytes: number[]): number[] | null {
+function decodeJs(label: string, bytes: number[]): number[] | null {
   try {
     const decoder: TextDecoder = Reflect.construct(TextDecoder, [label, { fatal: true }]);
     return Array.from(decoder.decode(new Uint8Array(bytes)), (c) => c.codePointAt(0) ?? -1);
@@ -111,24 +111,24 @@ lines.push(
   "}",
 );
 for (const [name, codec, label] of CJK) {
-  const { name: py_name, single, leads, pairs } = py[codec];
-  const lead_set = new Set(leads);
-  const lead_index: number[] = [];
+  const { name: pyName, single, leads, pairs } = py[codec];
+  const leadSet = new Set(leads);
+  const leadIndex: number[] = [];
   const trails: number[][] = [];
   const singles: [number, number][] = [];
   const overrides: [number, number][] = [];
   for (let b = 0; b < 0x100; b++) {
     const cp = single[b];
     if (cp != null) {
-      const js = decode_js(label, [b]);
+      const js = decodeJs(label, [b]);
       if (js?.length !== 1 || js[0] !== cp) {
         if (b < 0x80) throw new Error(`${codec}: ASCII byte ${b} differs`);
         singles.push([b, cp]);
       }
-      if (b >= 0x80) lead_index.push(-1);
+      if (b >= 0x80) leadIndex.push(-1);
       continue;
     }
-    if (!lead_set.has(b)) throw new Error(`${codec}: byte ${b} is neither a character nor a lead`);
+    if (!leadSet.has(b)) throw new Error(`${codec}: byte ${b} is neither a character nor a lead`);
     const ranges: number[] = [];
     for (let t = 0; t <= 0x100; t++) {
       const valid = t < 0x100 && pairs[`${b},${t}`] !== undefined;
@@ -136,19 +136,19 @@ for (const [name, codec, label] of CJK) {
       if (valid && !open) ranges.push(t);
       else if (!valid && open) ranges.push(t - 1);
       if (valid) {
-        const js = decode_js(label, [b, t]);
+        const js = decodeJs(label, [b, t]);
         if (js?.length !== 1 || js[0] !== pairs[`${b},${t}`]) overrides.push([(b << 8) | t, pairs[`${b},${t}`]]);
       }
     }
     let k = trails.findIndex((r) => r.length === ranges.length && r.every((x, i) => x === ranges[i]));
     if (k < 0) k = trails.push(ranges) - 1;
-    lead_index.push(k);
+    leadIndex.push(k);
   }
   lines.push(
     `export const ${name}: CjkCodepage = {`,
-    `  name: ${JSON.stringify(py_name)},`,
+    `  name: ${JSON.stringify(pyName)},`,
     `  label: ${JSON.stringify(label)},`,
-    `  leads: ${JSON.stringify(lead_index)},`,
+    `  leads: ${JSON.stringify(leadIndex)},`,
     `  trails: ${JSON.stringify(trails)},`,
     `  singles: new Map(${JSON.stringify(singles)}),`,
     `  pairs: new Map(${JSON.stringify(overrides)}),`,

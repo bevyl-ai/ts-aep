@@ -47,7 +47,7 @@ export function join(parts: Iterable<Uint8Array>): Uint8Array {
 }
 
 /** `a == b` */
-export function bytes_eq(a: Uint8Array | null | undefined, b: Uint8Array | null | undefined): boolean {
+export function bytesEq(a: Uint8Array | null | undefined, b: Uint8Array | null | undefined): boolean {
   if (a == null || b == null) return a == b;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
@@ -63,13 +63,13 @@ export function slice(data: Uint8Array, start?: number | null, end?: number | nu
   return data.slice(s, e);
 }
 
-function as_needle(sub: Uint8Array | number): Uint8Array {
+function asNeedle(sub: Uint8Array | number): Uint8Array {
   return typeof sub === "number" ? Uint8Array.of(sub) : sub;
 }
 
 /** `data.find(sub, start)` */
 export function find(data: Uint8Array, sub: Uint8Array | number, start = 0, end?: number): number {
-  const needle = as_needle(sub);
+  const needle = asNeedle(sub);
   const stop = (end ?? data.length) - needle.length;
   outer: for (let i = Math.max(0, start); i <= stop; i++) {
     for (let j = 0; j < needle.length; j++) if (data[i + j] !== needle[j]) continue outer;
@@ -92,7 +92,7 @@ export function contains(data: Uint8Array, sub: Uint8Array | number): boolean {
 
 /** `data.count(sub)` */
 export function count(data: Uint8Array, sub: Uint8Array | number): number {
-  const needle = as_needle(sub);
+  const needle = asNeedle(sub);
   let n = 0;
   let i = find(data, needle);
   while (i >= 0) {
@@ -150,7 +150,7 @@ export function ljust(data: Uint8Array, width: number, fill = 0): Uint8Array {
 
 /** `data.split(sep)` */
 export function split(data: Uint8Array, sep?: Uint8Array | null, maxsplit = -1): Uint8Array[] {
-  if (sep == null) return split_whitespace(data, maxsplit);
+  if (sep == null) return splitWhitespace(data, maxsplit);
   const out: Uint8Array[] = [];
   let s = 0;
   let i = find(data, sep);
@@ -194,7 +194,7 @@ export function fromhex(text: string): Uint8Array {
 }
 
 /** `int.from_bytes(data, byteorder, signed=...)` - bigint when it may exceed 2^53. */
-export function int_from_bytes(data: Uint8Array, byteorder: "big" | "little", signed = false): number {
+export function intFromBytes(data: Uint8Array, byteorder: "big" | "little", signed = false): number {
   let v = 0n;
   const n = data.length;
   for (let i = 0; i < n; i++) {
@@ -206,7 +206,7 @@ export function int_from_bytes(data: Uint8Array, byteorder: "big" | "little", si
 }
 
 /** `value.to_bytes(length, byteorder, signed=...)` */
-export function int_to_bytes(value: number | bigint, length: number, byteorder: "big" | "little", signed = false): Uint8Array {
+export function intToBytes(value: number | bigint, length: number, byteorder: "big" | "little", signed = false): Uint8Array {
   let v = BigInt(value);
   if (signed && v < 0n) v += 1n << BigInt(8 * length);
   if (v < 0n || v >= 1n << BigInt(8 * length)) throw new ValueError("int too big to convert");
@@ -219,15 +219,15 @@ export function int_to_bytes(value: number | bigint, length: number, byteorder: 
 }
 
 /** `bytes.isspace()` bytes: space, \t, \n, \v, \f, \r. */
-const is_ws = (c: number): boolean => c === 0x20 || (c >= 0x09 && c <= 0x0d);
+const isWs = (c: number): boolean => c === 0x20 || (c >= 0x09 && c <= 0x0d);
 
 /** `data.split()` / `data.split(None, maxsplit)`: runs of ASCII whitespace separate fields. */
-function split_whitespace(data: Uint8Array, maxsplit: number): Uint8Array[] {
+function splitWhitespace(data: Uint8Array, maxsplit: number): Uint8Array[] {
   const out: Uint8Array[] = [];
   const n = data.length;
   let i = 0;
   while (i < n) {
-    while (i < n && is_ws(data[i])) i++;
+    while (i < n && isWs(data[i])) i++;
     if (i === n) break;
     if (maxsplit >= 0 && out.length === maxsplit) {
       // The remainder keeps its trailing whitespace, as in CPython.
@@ -235,14 +235,14 @@ function split_whitespace(data: Uint8Array, maxsplit: number): Uint8Array[] {
       break;
     }
     let j = i;
-    while (j < n && !is_ws(data[j])) j++;
+    while (j < n && !isWs(data[j])) j++;
     out.push(data.slice(i, j));
     i = j;
   }
   return out;
 }
 /** Latin-1 view of bytes (one char per byte), e.g. to run a byte regex as a string regex. */
-export function latin1_str(data: Uint8Array): string {
+export function latin1Str(data: Uint8Array): string {
   let out = "";
   for (let i = 0; i < data.length; i += 0x8000) {
     out += Reflect.apply(String.fromCharCode, null, data.subarray(i, i + 0x8000));
@@ -251,7 +251,7 @@ export function latin1_str(data: Uint8Array): string {
 }
 
 /** Inverse of `latin1_str`; code units above 0xFF keep their low byte. */
-export function latin1_bytes(text: string): Uint8Array {
+export function latin1Bytes(text: string): Uint8Array {
   const out = new Uint8Array(text.length);
   for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
   return out;

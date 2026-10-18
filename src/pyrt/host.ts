@@ -111,7 +111,7 @@ export function cwd(): string {
 
 // ---------------------------------------------------------------- paths
 
-function _normalize_posix(path: string): string {
+function _normalizePosix(path: string): string {
   const absolute = path.startsWith("/");
   const out: string[] = [];
   for (const seg of path.split("/")) {
@@ -129,11 +129,11 @@ function _normalize_posix(path: string): string {
 }
 
 /** `node:path`'s POSIX flavour, for hosts without `node:path`. */
-export const posix_path: HostPath = {
+export const posixPath: HostPath = {
   sep: "/",
   join(...parts: string[]): string {
     const joined = parts.filter((p) => p.length > 0).join("/");
-    return joined ? _normalize_posix(joined) : ".";
+    return joined ? _normalizePosix(joined) : ".";
   },
   resolve(...parts: string[]): string {
     let resolved = "";
@@ -142,7 +142,7 @@ export const posix_path: HostPath = {
       if (!p) continue;
       resolved = resolved ? `${p}/${resolved}` : p;
     }
-    const n = _normalize_posix(resolved);
+    const n = _normalizePosix(resolved);
     return n === "." ? "/" : n.length > 1 && n.endsWith("/") ? n.slice(0, -1) : n;
   },
   dirname(path: string): string {
@@ -169,11 +169,11 @@ export const posix_path: HostPath = {
 };
 
 /** The host's `os.path`: Node's own where present, POSIX otherwise. */
-export const path: HostPath = _builtin("node:path") ?? posix_path;
+export const path: HostPath = _builtin("node:path") ?? posixPath;
 
 // ---------------------------------------------------------------- memory fs
 
-function _fs_error(code: string, syscall: string, p: string): Error {
+function _fsError(code: string, syscall: string, p: string): Error {
   const text: Record<string, string> = {
     ENOENT: "no such file or directory",
     EEXIST: "file already exists",
@@ -231,12 +231,12 @@ export class MemoryFs implements HostFs {
     const f = this.files.get(k);
     if (f) return { isFile: () => true, isDirectory: () => false, size: f.data.length, mtimeMs: f.mtimeMs };
     if (this._is_dir(k)) return { isFile: () => false, isDirectory: () => true, size: 0, mtimeMs: 0 };
-    throw _fs_error("ENOENT", "stat", k);
+    throw _fsError("ENOENT", "stat", k);
   }
 
   private _put(k: string, data: Uint8Array, syscall: string): void {
-    if (this._is_dir(k)) throw _fs_error("EISDIR", syscall, k);
-    if (!this._is_dir(path.dirname(k))) throw _fs_error("ENOENT", syscall, k);
+    if (this._is_dir(k)) throw _fsError("EISDIR", syscall, k);
+    if (!this._is_dir(path.dirname(k))) throw _fsError("ENOENT", syscall, k);
     this.files.set(k, { data, mtimeMs: Date.now() });
   }
 
@@ -264,7 +264,7 @@ export class MemoryFs implements HostFs {
   readFileSync(p: string, encoding?: string): Uint8Array | string {
     const k = this.key(p);
     const f = this.files.get(k);
-    if (!f) throw _fs_error(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
+    if (!f) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
     const copy = f.data.slice();
     return encoding ? new TextDecoder().decode(copy) : copy;
   }
@@ -276,14 +276,14 @@ export class MemoryFs implements HostFs {
 
   mkdirSync(p: string, opts: { recursive?: boolean } = {}): void {
     const k = this.key(p);
-    if (this.files.has(k)) throw _fs_error("EEXIST", "mkdir", k);
+    if (this.files.has(k)) throw _fsError("EEXIST", "mkdir", k);
     if (this._is_dir(k)) {
       if (opts.recursive) return;
-      throw _fs_error("EEXIST", "mkdir", k);
+      throw _fsError("EEXIST", "mkdir", k);
     }
     const parent = path.dirname(k);
     if (!this._is_dir(parent)) {
-      if (!opts.recursive) throw _fs_error("ENOENT", "mkdir", k);
+      if (!opts.recursive) throw _fsError("ENOENT", "mkdir", k);
       this.mkdirSync(parent, opts);
     }
     this.dirs.add(k);
@@ -293,14 +293,14 @@ export class MemoryFs implements HostFs {
   readdirSync(p: string, opts: { withFileTypes: true }): HostDirent[];
   readdirSync(p: string, opts?: { withFileTypes?: boolean }): string[] | HostDirent[] {
     const k = this.key(p);
-    if (this.files.has(k)) throw _fs_error("ENOTDIR", "scandir", k);
-    if (!this._is_dir(k)) throw _fs_error("ENOENT", "scandir", k);
+    if (this.files.has(k)) throw _fsError("ENOTDIR", "scandir", k);
+    if (!this._is_dir(k)) throw _fsError("ENOENT", "scandir", k);
     const names = this._children(k).sort();
     if (!opts?.withFileTypes) return names;
     return names.map((name) => {
       const child = path.join(k, name);
-      const is_file = this.files.has(child);
-      return { name, isFile: () => is_file, isDirectory: () => !is_file };
+      const isFile = this.files.has(child);
+      return { name, isFile: () => isFile, isDirectory: () => !isFile };
     });
   }
 
@@ -312,13 +312,13 @@ export class MemoryFs implements HostFs {
 
   unlinkSync(p: string): void {
     const k = this.key(p);
-    if (!this.files.delete(k)) throw _fs_error(this._is_dir(k) ? "EISDIR" : "ENOENT", "unlink", k);
+    if (!this.files.delete(k)) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "unlink", k);
   }
 
   renameSync(from: string, to: string): void {
     const src = this.key(from);
     const f = this.files.get(src);
-    if (!f) throw _fs_error("ENOENT", "rename", src);
+    if (!f) throw _fsError("ENOENT", "rename", src);
     const dst = this.key(to);
     this._put(dst, f.data, "rename");
     if (dst !== src) this.files.delete(src);
@@ -342,11 +342,11 @@ export class MemoryFs implements HostFs {
     if (this.files.delete(k)) return;
     if (!this._is_dir(k)) {
       if (opts.force) return;
-      throw _fs_error("ENOENT", "rm", k);
+      throw _fsError("ENOENT", "rm", k);
     }
     const prefix = k.endsWith(path.sep) ? k : k + path.sep;
     const nested = [...this.files.keys(), ...this.dirs].filter((e) => e.startsWith(prefix));
-    if (nested.length && !opts.recursive) throw _fs_error("ENOTEMPTY", "rm", k);
+    if (nested.length && !opts.recursive) throw _fsError("ENOTEMPTY", "rm", k);
     for (const e of nested) {
       this.files.delete(e);
       this.dirs.delete(e);
@@ -357,9 +357,9 @@ export class MemoryFs implements HostFs {
   openSync(p: string, flags: string): number {
     const k = this.key(p);
     if (flags === "r") {
-      if (!this.files.has(k)) throw _fs_error(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
+      if (!this.files.has(k)) throw _fsError(this._is_dir(k) ? "EISDIR" : "ENOENT", "open", k);
     } else if (flags === "w" || flags === "wx") {
-      if (flags === "wx" && (this.files.has(k) || this._is_dir(k))) throw _fs_error("EEXIST", "open", k);
+      if (flags === "wx" && (this.files.has(k) || this._is_dir(k))) throw _fsError("EEXIST", "open", k);
       this._put(k, new Uint8Array(0), "open");
     } else {
       throw new Error(`memory fs: unsupported open flags '${flags}'`);
@@ -371,7 +371,7 @@ export class MemoryFs implements HostFs {
 
   private _fd(fd: number): _MemFd {
     const entry = this.fds.get(fd);
-    if (!entry) throw _fs_error("EBADF", "fd", String(fd));
+    if (!entry) throw _fsError("EBADF", "fd", String(fd));
     return entry;
   }
 
@@ -385,7 +385,7 @@ export class MemoryFs implements HostFs {
 
   writeSync(fd: number, data: Uint8Array | string): number {
     const entry = this._fd(fd);
-    if (!entry.writable) throw _fs_error("EBADF", "write", entry.path);
+    if (!entry.writable) throw _fsError("EBADF", "write", entry.path);
     const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
     const f = this.files.get(entry.path);
     const prev = f?.data ?? new Uint8Array(0);
@@ -407,28 +407,28 @@ export class MemoryFs implements HostFs {
 }
 
 const _memory = new MemoryFs();
-const _node_fs: HostFs | null = _builtin("node:fs");
+const _nodeFs: HostFs | null = _builtin("node:fs");
 let _active: HostFs | null = null;
 
 /** Route every py_aep file access to the in-memory file system. */
-export function use_memory_fs(): void {
+export function useMemoryFs(): void {
   _active = _memory;
 }
 
 /** Route file access back to the host's `node:fs` (when it has one). */
-export function use_host_fs(): void {
+export function useHostFs(): void {
   _active = null;
 }
 
 /** "node" when file access goes to the host's `node:fs`, else "memory". */
-export function fs_backend(): "node" | "memory" {
-  return (_active ?? _node_fs ?? _memory) === _memory ? "memory" : "node";
+export function fsBackend(): "node" | "memory" {
+  return (_active ?? _nodeFs ?? _memory) === _memory ? "memory" : "node";
 }
 
 /** The active file system: the host's `node:fs`, or the in-memory one. */
 export const fs: HostFs = new Proxy({} as HostFs, {
   get(_t, name: string) {
-    const target: HostFs = _active ?? _node_fs ?? _memory;
+    const target: HostFs = _active ?? _nodeFs ?? _memory;
     const v: unknown = Reflect.get(target, name);
     return typeof v === "function" ? v.bind(target) : v;
   },

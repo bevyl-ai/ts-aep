@@ -2,10 +2,10 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { BytesIO, bytes_, py_eq } from "../../src/pyrt/index.ts";
+import { BytesIO, bytes_, pyEq } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, PrdaChunk, RayTracedPrdaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 
 const PRDA_CLASSIC_DEFAULT = bytes_.fromhex("000000010000000000000000");
@@ -32,13 +32,13 @@ describe("TestPrdaVariants", () => {
     [PRDA_RAYTRACED, "ADBE Picasso", RayTracedPrdaChunk],
     [PRDA_CINEMA_DEFAULT, "ADBE Ernst", Cinema4DPrdaChunk],
     [PRDA_ADVANCED_DEFAULT, "ADBE Calder", AdvancedPrdaChunk],
-  ])("test_dispatch_by_renderer[%#]", (body, match_name, expected_cls) => {
+  ])("test_dispatch_by_renderer[%#]", (body, matchName, expectedCls) => {
     /** Dispatch keys off the sibling prin chunk's match name. */
     const chunk = PrdaChunk.frombytes(body, {
       chunk_type: "prda",
-      renderer_match_name: match_name,
+      renderer_match_name: matchName,
     });
-    expect(chunk.constructor).toBe(expected_cls);
+    expect(chunk.constructor).toBe(expectedCls);
   });
 
   test.each<[Uint8Array, string]>([
@@ -49,18 +49,18 @@ describe("TestPrdaVariants", () => {
     [PRDA_CINEMA_SET, "ADBE Ernst"],
     [PRDA_ADVANCED_DEFAULT, "ADBE Calder"],
     [PRDA_ADVANCED_SET, "ADBE Calder"],
-  ])("test_roundtrip_byte_exact[%#]", (body, match_name) => {
+  ])("test_roundtrip_byte_exact[%#]", (body, matchName) => {
     const chunk = PrdaChunk.frombytes(body, {
       chunk_type: "prda",
-      renderer_match_name: match_name,
+      renderer_match_name: matchName,
     });
     const buf = new BytesIO();
     chunk.write(buf);
-    expect(py_eq(buf.getvalue(), body)).toBe(true);
+    expect(pyEq(buf.getvalue(), body)).toBe(true);
   });
 
   test("test_classic_shadow_map_resolution", () => {
-    const chunk = as_instance(
+    const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_CLASSIC_SET, {
         chunk_type: "prda",
         renderer_match_name: "ADBE Escher",
@@ -71,7 +71,7 @@ describe("TestPrdaVariants", () => {
   });
 
   test("test_cinema_quality", () => {
-    const chunk = as_instance(
+    const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_CINEMA_SET, {
         chunk_type: "prda",
         renderer_match_name: "ADBE Ernst",
@@ -83,7 +83,7 @@ describe("TestPrdaVariants", () => {
 
   test("test_advanced_fields_mixed_endian", () => {
     /** Head is big-endian, the tail from offset 20 little-endian. */
-    const chunk = as_instance(
+    const chunk = asInstance(
       PrdaChunk.frombytes(PRDA_ADVANCED_SET, {
         chunk_type: "prda",
         renderer_match_name: "ADBE Calder",
@@ -110,7 +110,7 @@ describe("TestPrdaVariants", () => {
     /** A default-constructed variant equals AE's own default blob. */
     const buf = new BytesIO();
     new cls().write(buf);
-    expect(py_eq(buf.getvalue(), expected)).toBe(true);
+    expect(pyEq(buf.getvalue(), expected)).toBe(true);
   });
 
   test.each<[Uint8Array, string]>([
@@ -121,14 +121,14 @@ describe("TestPrdaVariants", () => {
     [PRDA_CLASSIC_DEFAULT, "ADBE Calder"],
     // No prin sibling resolved at all.
     [PRDA_CLASSIC_DEFAULT, ""],
-  ])("test_unrecognised_prda_falls_back_to_raw[%#]", (body, match_name) => {
+  ])("test_unrecognised_prda_falls_back_to_raw[%#]", (body, matchName) => {
     const chunk = PrdaChunk.frombytes(body, {
       chunk_type: "prda",
-      renderer_match_name: match_name,
+      renderer_match_name: matchName,
     });
     expect(chunk.constructor).toBe(PrdaChunk);
     const buf = new BytesIO();
     chunk.write(buf);
-    expect(py_eq(buf.getvalue(), body)).toBe(true);
+    expect(pyEq(buf.getvalue(), body)).toBe(true);
   });
 });

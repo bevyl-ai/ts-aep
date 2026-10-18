@@ -11,7 +11,7 @@ import {
   concat,
   decode,
   descriptor,
-  dict_get,
+  dictGet,
   encode,
   getitem,
   int,
@@ -19,12 +19,12 @@ import {
   repr,
   round,
   str,
-  type_name,
+  typeName,
 } from "../../../../pyrt/index.ts";
 import { CLAMP_DEPENDENTS } from "../../../data/output_module_rules.ts";
 import { AudioCodec, AudioInterleave, DnxResolution, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, VideoCodec } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { _validate_number, validate_enum, validate_int } from "../../validators.ts";
+import { _validateNumber, validateEnum, validateInt } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
 import type { EnumHelpers } from "../../../../pyrt/enum.ts";
 import type { RoptChunk } from "../../../binary/render_chunks.ts";
@@ -74,7 +74,7 @@ type ETElement = ET.Element;
 /** `dict(*args).items()` for `ParamsDict.update`. */
 export type DictSource = Map<string, string> | Iterable<[string, string]> | Record<string, string>;
 
-export function _dict_items(args: DictSource[]): Iterable<[string, string]> {
+export function _dictItems(args: DictSource[]): Iterable<[string, string]> {
   if (args.length === 0) return [];
   const src = args[0];
   if (src instanceof Map) return src.entries();
@@ -88,9 +88,9 @@ export class _EnumParam {
   declare _enum_cls: EnumHelpers<number>;
   declare _name: string;
 
-  constructor(key: string, enum_cls: EnumHelpers<number>) {
+  constructor(key: string, enumCls: EnumHelpers<number>) {
     this._key = key;
-    this._enum_cls = enum_cls;
+    this._enum_cls = enumCls;
   }
 
   __set_name__(owner: Function, name: string): void {
@@ -128,7 +128,7 @@ export class _ScalarParam {
 
   __get__(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
     if (obj == null) return this;
-    const raw = dict_get(obj.params, this._key, "");
+    const raw = dictGet(obj.params, this._key, "");
     if (!raw) return null;
     try {
       return int(raw);
@@ -140,7 +140,7 @@ export class _ScalarParam {
 
   __set__(obj: XmlFormatOptions, value: number | null): void {
     if (value == null) return;
-    validate_int(value);
+    validateInt(value);
     obj._check_param_rule(this._key, value);
     obj._set_param(this._key, str(value));
     obj._clamp_after_param(this._key);
@@ -164,36 +164,36 @@ export class _ScalarParam {
  * @param root - The parsed XML root element.
  * @returns Tuple of (params dict, value-elements dict, param-elements dict).
  */
-export function _extract_params(
+export function _extractParams(
   root: ETElement,
 ): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
   const params = new Map<string, string>();
-  const value_elements = new Map<string, ETElement>();
-  const param_elements = new Map<string, ETElement>();
+  const valueElements = new Map<string, ETElement>();
+  const paramElements = new Map<string, ETElement>();
   for (const elem of root.iter("ExporterParam")) {
-    const id_elem = elem.find("ParamIdentifier");
-    if (id_elem == null || id_elem.text == null) continue;
-    const identifier = id_elem.text;
+    const idElem = elem.find("ParamIdentifier");
+    if (idElem == null || idElem.text == null) continue;
+    const identifier = idElem.text;
     if (isdigit(identifier)) continue;
-    param_elements.set(identifier, elem);
-    const val_elem = elem.find("ParamValue");
-    if (val_elem == null) continue;
-    params.set(identifier, val_elem.text || "");
-    value_elements.set(identifier, val_elem);
+    paramElements.set(identifier, elem);
+    const valElem = elem.find("ParamValue");
+    if (valElem == null) continue;
+    params.set(identifier, valElem.text || "");
+    valueElements.set(identifier, valElem);
   }
-  return [params, value_elements, param_elements];
+  return [params, valueElements, paramElements];
 }
 
 /** Try to parse an int, then map to an enum; fall back to int. */
-export function _try_enum_or_int(enum_cls: EnumHelpers<number>, raw_str: string): number | null {
-  let raw_value: number;
+export function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): number | null {
+  let rawValue: number;
   try {
-    raw_value = int(raw_str);
+    rawValue = int(rawStr);
   } catch (e) {
     if (!(e instanceof ValueError)) throw e;
     return null;
   }
-  return enum_cls.of_or_null(raw_value) ?? raw_value;
+  return enumCls.of_or_null(rawValue) ?? rawValue;
 }
 
 /**
@@ -228,7 +228,7 @@ export class ParamsDict extends Map<string, string> {
 
   // NOTE(port): `**kwargs` has no TS equivalent; callers pass a mapping as the positional arg.
   update(...args: DictSource[]): void {
-    for (const [key, value] of _dict_items(args)) {
+    for (const [key, value] of _dictItems(args)) {
       this.set(key, value);
     }
   }
@@ -330,14 +330,14 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._param_elements = new Map();
     this.params = new ParamsDict();
     this.params._owner = null;
-    const xml_start = bytes_.find(raw, b("<?xml"));
-    if (xml_start >= 0) {
-      this._xml_header = raw.slice(0, xml_start);
-      const xml_text = decode(raw.slice(xml_start), "utf-8", "replace").split("\x00")[0];
-      this._xml_root = ET.fromstring(xml_text);
-      const [data, val_elements, param_elements] = _extract_params(this._xml_root);
-      this._val_elements = val_elements;
-      this._param_elements = param_elements;
+    const xmlStart = bytes_.find(raw, b("<?xml"));
+    if (xmlStart >= 0) {
+      this._xml_header = raw.slice(0, xmlStart);
+      const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
+      this._xml_root = ET.fromstring(xmlText);
+      const [data, valElements, paramElements] = _extractParams(this._xml_root);
+      this._val_elements = valElements;
+      this._param_elements = paramElements;
       this.params.update(data);
     }
     this.params._owner = this;
@@ -353,40 +353,40 @@ export class XmlFormatOptions extends FormatOptionsBase {
   // -- write helpers -----------------------------------------------------
 
   /** Update a parameter in the XML tree and sync to the raw body. */
-  _set_param(key: string, str_value: string): void {
-    this.params.set(key, str_value);
+  _set_param(key: string, strValue: string): void {
+    this.params.set(key, strValue);
   }
 
   /** Sync a param change to the XML tree and raw body. */
-  _on_param_changed(key: string, str_value: string): void {
+  _on_param_changed(key: string, strValue: string): void {
     // Every `params` mutation funnels through here by design, so this is
     // where a detached wrapper's raw-dict writes are caught - `params`
     // is a `__setitem__` surface, which `__setattr__` cannot see.
     this._check_attached();
     if (this._xml_root == null) return;
-    const val_elem = this._val_elements.get(key);
-    if (val_elem != null) {
-      val_elem.text = str_value;
+    const valElem = this._val_elements.get(key);
+    if (valElem != null) {
+      valElem.text = strValue;
       this._sync_xml();
       return;
     }
-    const param_elem = this._param_elements.get(key);
-    if (param_elem != null) {
+    const paramElem = this._param_elements.get(key);
+    if (paramElem != null) {
       // An existing but UNSET param: restore its value in place rather
       // than appending a duplicate element. AE writes `ParamValue` as
       // the element's first child; its tail carries the indentation
       // that used to precede the (currently first) next sibling, which
       // is what the element's own `text` holds.
       const val = new ET.Element("ParamValue");
-      val.text = str_value;
-      val.tail = param_elem.text;
-      param_elem.insert(0, val);
+      val.text = strValue;
+      val.tail = paramElem.text;
+      paramElem.insert(0, val);
       this._val_elements.set(key, val);
     } else {
       const ep = ET.SubElement(this._xml_root, "ExporterParam");
       ET.SubElement(ep, "ParamIdentifier").text = key;
       const val = ET.SubElement(ep, "ParamValue");
-      val.text = str_value;
+      val.text = strValue;
       this._val_elements.set(key, val);
       this._param_elements.set(key, ep);
     }
@@ -407,35 +407,35 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._check_attached();
     if (this._xml_root == null) return;
     this._val_elements.delete(key);
-    const param_elem = this._param_elements.get(key);
-    if (param_elem == null) return;
-    const val = param_elem.find("ParamValue");
-    if (val != null) param_elem.remove(val);
+    const paramElem = this._param_elements.get(key);
+    if (paramElem == null) return;
+    const val = paramElem.find("ParamValue");
+    if (val != null) paramElem.remove(val);
     this._sync_xml();
   }
 
   /** Set an Adobe parameter from an enum or int value. */
-  _set_enum_param(key: string, value: number | null, enum_cls: EnumHelpers<number> | null = null): void {
+  _set_enum_param(key: string, value: number | null, enumCls: EnumHelpers<number> | null = null): void {
     if (value == null) return;
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral float such as 2.0 is accepted where Python raises TypeError.
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
-      throw new TypeError_(`expected an int or IntEnum for ${repr(key)}, got ${type_name(value)}`);
+      throw new TypeError_(`expected an int or IntEnum for ${repr(key)}, got ${typeName(value)}`);
     }
     // int() normalizes IntEnum members so str() yields the numeric form.
-    const int_value = int(value);
-    if (enum_cls != null && !enum_cls.has(int_value)) {
-      const members = enum_cls
+    const intValue = int(value);
+    if (enumCls != null && !enumCls.has(intValue)) {
+      const members = enumCls
         .members()
-        .map((m: number) => `${enum_cls.name_of(m)} (${m})`)
+        .map((m: number) => `${enumCls.name_of(m)} (${m})`)
         .join(", ");
       throw new ValueError(
         `Invalid value ${repr(value)} for ${repr(key)}. ` +
-          `Valid ${enum_cls.__name__} values: ${members}`,
+          `Valid ${enumCls.__name__} values: ${members}`,
       );
     }
-    const checked = enum_cls != null ? enum_cls.of(int_value) : int_value;
+    const checked = enumCls != null ? enumCls.of(intValue) : intValue;
     this._check_param_rule(key, checked);
-    this._set_param(key, str(int_value));
+    this._set_param(key, str(intValue));
     // NOTE: Rouu.videoCodec is NOT synced here - it holds a constant
     // per-output-plugin handler tag ('DOVT' for QuickTime, 'CTXF' for
     // AVI/H.264), not the codec 4cc; every corpus sample confirms it
@@ -464,17 +464,17 @@ export class XmlFormatOptions extends FormatOptionsBase {
    *
    * Params outside `_PARAM_RULE_KEYS` are not format-gated.
    */
-  _check_param_rule(param_key: string, value: number): void {
-    const rule_key = _PARAM_RULE_KEYS.get(param_key) ?? null;
-    if (rule_key == null) return;
-    this._require_om()._check_format_rule(rule_key, value);
+  _check_param_rule(paramKey: string, value: number): void {
+    const ruleKey = _PARAM_RULE_KEYS.get(paramKey) ?? null;
+    if (ruleKey == null) return;
+    this._require_om()._check_format_rule(ruleKey, value);
   }
 
   /** Re-resolve dependent settings after a context param write. */
-  _clamp_after_param(param_key: string): void {
-    const rule_key = _PARAM_RULE_KEYS.get(param_key) ?? null;
-    if (rule_key == null) return;
-    this._require_om()._apply_singleton_clamps(CLAMP_DEPENDENTS.get(rule_key) ?? []);
+  _clamp_after_param(paramKey: string): void {
+    const ruleKey = _PARAM_RULE_KEYS.get(paramKey) ?? null;
+    if (ruleKey == null) return;
+    this._require_om()._apply_singleton_clamps(CLAMP_DEPENDENTS.get(ruleKey) ?? []);
   }
 
   /**
@@ -505,8 +505,8 @@ export class XmlFormatOptions extends FormatOptionsBase {
     // `ET` self-closes every empty element; AE only does so when the
     // element has attributes, and expands the attribute-less ones.
     const text = text1.replace(_EMPTY_ELEMENT_RE, "<$1></$1>");
-    const xml_bytes = concat(_XML_DECLARATION, encode(text, "utf-8"), _XML_TERMINATOR);
-    const body = new Uint8Array(concat(this._xml_header, xml_bytes));
+    const xmlBytes = concat(_XML_DECLARATION, encode(text, "utf-8"), _XML_TERMINATOR);
+    const body = new Uint8Array(concat(this._xml_header, xmlBytes));
     // Back-patch the two self-describing lengths AE honours (a stale one
     // silently truncates the XML). These stay here rather than becoming
     // an `XmlRoptChunk` in `binary/render_chunks.py` alongside the other
@@ -515,8 +515,8 @@ export class XmlFormatOptions extends FormatOptionsBase {
     // which is `eq=False` - two modules with different render settings
     // would then compare equal, and any missed `.data` write would drop
     // the payload silently.
-    body.set(bytes_.int_to_bytes(body.length, 4, "big"), _LEN_BODY_OFFSET);
-    body.set(bytes_.int_to_bytes(xml_bytes.length - _XML_NULS.length, 4, "big"), _LEN_XML_OFFSET);
+    body.set(bytes_.intToBytes(body.length, 4, "big"), _LEN_BODY_OFFSET);
+    body.set(bytes_.intToBytes(xmlBytes.length - _XML_NULS.length, 4, "big"), _LEN_XML_OFFSET);
     this._body.data = new Uint8Array(body);
   }
 
@@ -527,10 +527,10 @@ export class XmlFormatOptions extends FormatOptionsBase {
    *
    * Returns `null` when the param is absent or non-numeric.
    */
-  _enum_param(key: string, enum_cls: EnumHelpers<number>): number | null {
-    const raw = dict_get(this.params, key, "");
+  _enum_param(key: string, enumCls: EnumHelpers<number>): number | null {
+    const raw = dictGet(this.params, key, "");
     if (!raw) return null;
-    return _try_enum_or_int(enum_cls, raw);
+    return _tryEnumOrInt(enumCls, raw);
   }
 
   /**
@@ -560,10 +560,10 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * Read / Write.
    */
   get frameRate(): number | null {
-    const fps_str = dict_get(this.params, "ADBEVideoFPS", "");
-    if (!fps_str) return null;
+    const fpsStr = dictGet(this.params, "ADBEVideoFPS", "");
+    if (!fpsStr) return null;
     try {
-      const ticks = int(fps_str);
+      const ticks = int(fpsStr);
       if (ticks > 0) return _ADOBE_TICKS_PER_SECOND / ticks;
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
@@ -573,7 +573,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
 
   set frameRate(value: number | null) {
     if (value == null) return;
-    _validate_number({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
+    _validateNumber({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
     const ticks = round(_ADOBE_TICKS_PER_SECOND / value);
     // BigInt keeps Python's exact int spelling for ticks >= 1e21.
     this._set_param("ADBEVideoFPS", BigInt(ticks).toString());
@@ -631,16 +631,16 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * {@link MPEGProfile} enum.
    */
   get profile(): MPEGProfile | number {
-    const raw = dict_get(this.params, "ADBEVideoMPEGProfile", "");
+    const raw = dictGet(this.params, "ADBEVideoMPEGProfile", "");
     if (!raw) return MPEGProfile.BASELINE;
-    const result = _try_enum_or_int(MPEGProfile, raw);
+    const result = _tryEnumOrInt(MPEGProfile, raw);
     // A non-numeric param is as good as absent.
     if (result == null) return MPEGProfile.BASELINE;
     return result;
   }
 
   set profile(value: MPEGProfile | number) {
-    validate_enum(MPEGProfile)(value);
+    validateEnum(MPEGProfile)(value);
     if (MPEGProfile.of(value) === MPEGProfile.BASELINE) {
       this.params.pop("ADBEVideoMPEGProfile", "");
       return;

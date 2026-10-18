@@ -25,7 +25,7 @@ function* walk(dir: string): Generator<string> {
 }
 
 /** `__eq__(other: unknown)`: the dunder compares against any object, like Python's `object`. */
-function is_eq_param(node: ts.Node): boolean {
+function isEqParam(node: ts.Node): boolean {
   const param = node.parent;
   return ts.isParameter(param) && ts.isMethodDeclaration(param.parent) && param.parent.name.getText() === "__eq__";
 }
@@ -54,7 +54,7 @@ for (const abs of walk(path.join(ROOT, "src"))) {
       hit(node, "non-null");
     } else if (node.kind === ts.SyntaxKind.AnyKeyword) {
       hit(node, "any");
-    } else if (node.kind === ts.SyntaxKind.UnknownKeyword && !is_eq_param(node)) {
+    } else if (node.kind === ts.SyntaxKind.UnknownKeyword && !isEqParam(node)) {
       c.unknown++;
     }
     ts.forEachChild(node, visit);

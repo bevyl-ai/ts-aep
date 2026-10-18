@@ -1,24 +1,24 @@
-import { get_ae_version_major } from "../../ae_version.ts";
+import { getAeVersionMajor } from "../../ae_version.ts";
 import { ListChunk } from "../../binary/chunk.ts";
 import { MkifChunk } from "../../binary/misc_chunks.ts";
-import { build_default_mask_shape } from "../../binary/mutations.ts";
+import { buildDefaultMaskShape } from "../../binary/mutations.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
-import { find_by_list_type, find_by_type } from "../../binary/utils.ts";
+import { findByListType, findByType } from "../../binary/utils.ts";
 import { MaskFeatherFalloff, MaskMode, MaskMotionBlur } from "../../enums/index.ts";
-import { keyframe_tensions } from "../../resolvers/roto_bezier.ts";
+import { keyframeTensions } from "../../resolvers/roto_bezier.ts";
 import { ChunkField } from "../descriptors.ts";
-import { validate_bool, validate_rgb_color } from "../validators.ts";
+import { validateBool, validateRgbColor } from "../validators.ts";
 // NOTE(port): property_group.ts reaches this module only through `deferred(...)` (the
 // port of Python's in-method import), so `extends PropertyGroup` evaluates after it.
-import { PropertyGroup, _insert_before_group_end } from "./property_group.ts";
-import { AttributeError, deferred, descriptor, mod, py_assert, instance_dict } from "../../../pyrt/index.ts";
+import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
+import { AttributeError, deferred, descriptor, mod, pyAssert, instanceDict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
 
 const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
-const _property_model = deferred<typeof import("./property.ts")>("py_aep/models/properties/property");
-const _av_layer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+const _propertyModel = deferred<typeof import("./property.ts")>("py_aep/models/properties/property");
+const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
 
 // Mask outline colors cycled by creation index for new masks. AE picks
 // from the label colors via an app-global counter that persists across
@@ -121,7 +121,7 @@ export class MaskPropertyGroup extends PropertyGroup {
   }
 
   set rotoBezier(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     if (this._mask_shape_tdsb == null) {
       if (!value) {
         // Already the default; AE writes no Mask Shape for this state.
@@ -144,7 +144,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       // a corner) and 1/3 otherwise, then stores the tangents those
       // tensions draw as the handles.
       const tensions = shapes.map((s) =>
-        keyframe_tensions([], s._stored_tangents(-1), s._stored_tangents(1)),
+        keyframeTensions([], s._stored_tangents(-1), s._stored_tangents(1)),
       );
       this._mask_shape_tdsb.roto_bezier = true;
       for (const [i, shape] of shapes.entries()) {
@@ -174,8 +174,8 @@ export class MaskPropertyGroup extends PropertyGroup {
    * and the child properties (Mask Path, Feather, Opacity,
    * Expansion) are synthesized on first access, like a fresh parse.
    *
-   * @param parent_property - The Masks parade group to add the atom to.
-   * @param property_depth - The depth of the mask atom in the tree.
+   * @param parentProperty - The Masks parade group to add the atom to.
+   * @param propertyDepth - The depth of the mask atom in the tree.
    * @param kw - Options:
    * - `name`: The display name, stored in the `tdsn` (AE bakes the positional `Mask N` name at
    *     creation).
@@ -183,14 +183,14 @@ export class MaskPropertyGroup extends PropertyGroup {
    *     the cycle palette.
    */
   static _new(
-    parent_property: PropertyGroup,
-    property_depth: number,
+    parentProperty: PropertyGroup,
+    propertyDepth: number,
     kw: { name: string; mask_id: number },
   ): MaskPropertyGroup;
   static _new(...args: never[]): never;
   static _new(
-    parent_property: PropertyGroup,
-    property_depth: number,
+    parentProperty: PropertyGroup,
+    propertyDepth: number,
     kw: { name: string; mask_id: number },
   ): MaskPropertyGroup {
     const { name, mask_id } = kw;
@@ -205,15 +205,15 @@ export class MaskPropertyGroup extends PropertyGroup {
     });
     const _tdsb = new TdsbChunk();
     const tdsn = TdsnChunk.new_(name);
-    const name_utf8 = tdsn.utf8;
-    const group_end = new TdmnChunk({ value: "ADBE Group End" });
-    const _tdgp = new ListChunk({ list_type: "tdgp", chunks: [_tdsb, tdsn, group_end] });
+    const nameUtf8 = tdsn.utf8;
+    const groupEnd = new TdmnChunk({ value: "ADBE Group End" });
+    const _tdgp = new ListChunk({ list_type: "tdgp", chunks: [_tdsb, tdsn, groupEnd] });
 
-    const parent_tdgp = parent_property._tdgp;
-    py_assert(parent_tdgp != null);
-    _insert_before_group_end(parent_tdgp, _tdmn);
-    _insert_before_group_end(parent_tdgp, _mkif);
-    _insert_before_group_end(parent_tdgp, _tdgp);
+    const parentTdgp = parentProperty._tdgp;
+    pyAssert(parentTdgp != null);
+    _insertBeforeGroupEnd(parentTdgp, _tdmn);
+    _insertBeforeGroupEnd(parentTdgp, _mkif);
+    _insertBeforeGroupEnd(parentTdgp, _tdgp);
 
     const mask = new this({
       _tdmn,
@@ -221,16 +221,16 @@ export class MaskPropertyGroup extends PropertyGroup {
       _tdsb,
       _mkif,
       _mask_shape_tdsb: null,
-      _name_utf8: name_utf8,
+      _name_utf8: nameUtf8,
       match_name: "ADBE Mask Atom",
-      property_depth,
+      property_depth: propertyDepth,
       auto_name: name,
       properties: [],
     });
-    mask._parent_property = parent_property;
+    mask._parent_property = parentProperty;
     mask._is_mask = true;
     // Children are filled from _MASK_ATOM_SPECS on first access.
-    mask._deferred_ae_major = get_ae_version_major(parent_property._containing_layer);
+    mask._deferred_ae_major = getAeVersionMajor(parentProperty._containing_layer);
     return mask;
   }
 
@@ -287,10 +287,10 @@ export class MaskPropertyGroup extends PropertyGroup {
     const { roto_bezier = false } = kw;
     this._ensure_materialized();
     this._ensure_children_synthesized();
-    py_assert(this._tdgp != null);
+    pyAssert(this._tdgp != null);
     const layer = this._containing_layer;
     const comp = layer.containingComp;
-    if (!(layer instanceof _av_layer().AVLayer)) throw new AttributeError("_mask_scale");
+    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
     const [width, height] = layer._mask_scale;
     const source = layer.source;
     // AE stamps the mask space's display aspect, so a non-square source
@@ -299,11 +299,11 @@ export class MaskPropertyGroup extends PropertyGroup {
     // the first write (path, key, expression, RotoBezier), yet the
     // aspect on one created in the same session. RotoBezier tangents are
     // measured in this space, so 1.0 would bend them: keep the aspect.
-    const pixel_aspect = source != null ? source.pixelAspect : 1.0;
-    const [tdmn, oms] = build_default_mask_shape(comp._cdta.internal_timebase, {
+    const pixelAspect = source != null ? source.pixelAspect : 1.0;
+    const [tdmn, oms] = buildDefaultMaskShape(comp._cdta.internal_timebase, {
       // An audio-only layer has a 0x0 mask space (its default path is
       // four points at the origin) and no aspect to stamp.
-      aspect: height !== 0 ? (width * pixel_aspect) / height : 1.0,
+      aspect: height !== 0 ? (width * pixelAspect) / height : 1.0,
       roto_bezier,
     });
 
@@ -312,30 +312,30 @@ export class MaskPropertyGroup extends PropertyGroup {
     // real full-frame om-s (the other children stay synthetic, skipped
     // on write, exactly as AE leaves them).
     const chunks = this._tdgp.chunks;
-    const found_at = chunks.findIndex(
+    const foundAt = chunks.findIndex(
       (c) =>
         c.chunk_type === "tdmn" &&
         "value" in c && c.value === "ADBE Mask Shape" &&
         c.synthetic,
     );
-    const insert_at = found_at >= 0 ? found_at : chunks.length;
-    if (found_at >= 0) {
-      chunks.splice(found_at, 2);
+    const insertAt = foundAt >= 0 ? foundAt : chunks.length;
+    if (foundAt >= 0) {
+      chunks.splice(foundAt, 2);
     }
-    chunks.splice(insert_at, 0, tdmn);
-    chunks.splice(insert_at + 1, 0, oms);
+    chunks.splice(insertAt, 0, tdmn);
+    chunks.splice(insertAt + 1, 0, oms);
 
     // Rebind the Mask Path child to the inserted om-s via the canonical
     // parser, so its value and tdsb reflect the materialized path.
-    const parsed = _property().parse_properties(
+    const parsed = _property().parseProperties(
       [["ADBE Mask Shape", [tdmn, oms]]],
       this.propertyDepth + 1,
       new Map(),
       comp,
       layer,
     );
-    const mask_path = parsed[0];
-    mask_path._parent_property = this;
+    const maskPath = parsed[0];
+    maskPath._parent_property = this;
     // Transplant the freshly parsed state onto the EXISTING Mask Shape
     // child rather than swapping in a new object, so a handle a caller
     // fetched before materialization keeps pointing at the live chunks.
@@ -349,19 +349,19 @@ export class MaskPropertyGroup extends PropertyGroup {
       // placeholder's value. Plain own attributes, plus the `instance_dict`
       // Map (non-enumerable, so Object.assign alone would skip it).
       for (const k of Object.keys(existing)) {
-        if (!Object.prototype.hasOwnProperty.call(mask_path, k)) Reflect.deleteProperty(existing, k);
+        if (!Object.prototype.hasOwnProperty.call(maskPath, k)) Reflect.deleteProperty(existing, k);
       }
-      Object.assign(existing, mask_path);
-      const existing_dict = instance_dict(existing);
-      existing_dict.clear();
-      for (const [k, v] of instance_dict(mask_path)) existing_dict.set(k, v);
-      if (!(existing instanceof _property_model().Property)) throw new AttributeError("_link_keyframes");
+      Object.assign(existing, maskPath);
+      const existingDict = instanceDict(existing);
+      existingDict.clear();
+      for (const [k, v] of instanceDict(maskPath)) existingDict.set(k, v);
+      if (!(existing instanceof _propertyModel().Property)) throw new AttributeError("_link_keyframes");
       existing._link_keyframes();
     } else {
-      this._properties.splice(0, 0, mask_path);
+      this._properties.splice(0, 0, maskPath);
     }
-    const tdbs = find_by_list_type(oms.chunks, "tdbs");
-    this._mask_shape_tdsb = find_by_type(tdbs.chunks, "tdsb");
+    const tdbs = findByListType(oms.chunks, "tdbs");
+    this._mask_shape_tdsb = findByType(tdbs.chunks, "tdsb");
   }
 }
 
@@ -370,7 +370,7 @@ export class MaskPropertyGroup extends PropertyGroup {
 descriptor(
   MaskPropertyGroup,
   "color",
-  new ChunkField("_mkif", "color", { validate: validate_rgb_color }),
+  new ChunkField("_mkif", "color", { validate: validateRgbColor }),
 );
 descriptor(MaskPropertyGroup, "inverted", ChunkField.bool("_mkif", "inverted"));
 descriptor(MaskPropertyGroup, "locked", ChunkField.bool("_mkif", "locked"));

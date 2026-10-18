@@ -23,7 +23,7 @@
  * order; reproducing it exactly is required for byte-identical output.
  */
 
-import { encode, json_dumps, json_get, json_getitem, json_loads, str, type_name, TypeError_, type JsonValue } from "../../pyrt/index.ts";
+import { encode, jsonDumps, jsonGet, jsonGetitem, jsonLoads, str, typeName, TypeError_, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
 
 // baseProfileType values.
@@ -50,14 +50,14 @@ export function _compact(obj: object): string {
    * raw UTF-8 (matching AE's `Utf8` chunk) rather than `\uXXXX` escapes, which
    * would break the byte-identical round-trip.
    */
-  return json_dumps(obj, { separators: [",", ":"], ensure_ascii: false });
+  return jsonDumps(obj, { separators: [",", ":"], ensure_ascii: false });
 }
 
 export function _b64(text: string): string {
   return b64encode(encode(text, "utf-8"));
 }
 
-export function _envelope(color_profile_data_b64: string, name: string, profile_type: number): string {
+export function _envelope(colorProfileDataB64: string, name: string, profileType: number): string {
   /**
    * Wrap pre-encoded `colorProfileData` in the outer envelope.
    *
@@ -66,10 +66,10 @@ export function _envelope(color_profile_data_b64: string, name: string, profile_
    */
   return _compact({
     baseColorProfile: {
-      colorProfileData: color_profile_data_b64,
+      colorProfileData: colorProfileDataB64,
       colorProfileName: name,
     },
-    baseProfileType: profile_type,
+    baseProfileType: profileType,
   });
 }
 
@@ -82,11 +82,11 @@ export function _envelope(color_profile_data_b64: string, name: string, profile_
  * which is what callers should use. This function is the pure byte-format
  * half, kept here with the rest of the envelope spec.
  *
- * @param profile_name - The `colorProfileName` (e.g. `"ACES/ACEScg yo"`).
- * @param profile_data - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
+ * @param profileName - The `colorProfileName` (e.g. `"ACES/ACEScg yo"`).
+ * @param profileData - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
  */
-export function build_ocio_envelope(profile_name: string, profile_data: string): string {
-  return _envelope(_b64(profile_data), profile_name, PROFILE_TYPE_OCIO);
+export function buildOcioEnvelope(profileName: string, profileData: string): string {
+  return _envelope(_b64(profileData), profileName, PROFILE_TYPE_OCIO);
 }
 
 /**
@@ -104,7 +104,7 @@ export function build_ocio_envelope(profile_name: string, profile_data: string):
  *
  * @param colorspace - The OCIO role target or alias name.
  */
-export function build_ocio_colorspace_envelope(colorspace: string): string {
+export function buildOcioColorspaceEnvelope(colorspace: string): string {
   const inner = _compact({ colorSpace1: colorspace, ocioColorSpaceType: OCIO_TYPE_COLORSPACE });
   return _envelope(_b64(inner), colorspace, PROFILE_TYPE_OCIO);
 }
@@ -117,7 +117,7 @@ export function build_ocio_colorspace_envelope(colorspace: string): string {
  * @param display - The OCIO display name (e.g. `"sRGB - Display"`).
  * @param view - The OCIO view name (e.g. `"ACES 1.0 - SDR Video"`).
  */
-export function build_ocio_display_envelope(display: string, view: string): string {
+export function buildOcioDisplayEnvelope(display: string, view: string): string {
   const inner = _compact({
     colorSpace1: display,
     colorSpace2: view,
@@ -133,10 +133,10 @@ export function build_ocio_display_envelope(display: string, view: string): stri
  * Adobe CMS mode.
  *
  * @param name - The profile description (e.g. `"ProPhoto RGB"`).
- * @param icc_bytes - The raw ICC profile bytes to embed.
+ * @param iccBytes - The raw ICC profile bytes to embed.
  */
-export function build_icc_envelope(name: string, icc_bytes: Uint8Array): string {
-  return _envelope(b64encode(icc_bytes), name, PROFILE_TYPE_ICC);
+export function buildIccEnvelope(name: string, iccBytes: Uint8Array): string {
+  return _envelope(b64encode(iccBytes), name, PROFILE_TYPE_ICC);
 }
 
 /** A decoded color-profile envelope. */
@@ -150,9 +150,9 @@ export class ColorProfile {
   /** Decoded `colorProfileData`: raw ICC bytes, OCIO JSON bytes, or tag blob. */
   readonly data: Uint8Array;
 
-  constructor(name: string, profile_type: number, data: Uint8Array) {
+  constructor(name: string, profileType: number, data: Uint8Array) {
     this.name = name;
-    this.profile_type = profile_type;
+    this.profile_type = profileType;
     this.data = data;
   }
 
@@ -175,10 +175,10 @@ export class ColorProfile {
   /** The OCIO `(colorSpace1[, colorSpace2])` names, or an empty array if not OCIO. */
   get ocio_color_spaces(): readonly string[] {
     if (!this.is_ocio) return [];
-    const inner = json_loads(this.data);
-    const names = [json_getitem(inner, "colorSpace1")];
-    if (inner instanceof Map && inner.has("colorSpace2")) names.push(json_getitem(inner, "colorSpace2"));
-    return names.map((name) => _envelope_string(name, "OCIO color space"));
+    const inner = jsonLoads(this.data);
+    const names = [jsonGetitem(inner, "colorSpace1")];
+    if (inner instanceof Map && inner.has("colorSpace2")) names.push(jsonGetitem(inner, "colorSpace2"));
+    return names.map((name) => _envelopeString(name, "OCIO color space"));
   }
 }
 
@@ -187,24 +187,24 @@ export class ColorProfile {
  * JSON holds; a non-string here only comes from a corrupt envelope, and fails
  * at the read instead of later.
  */
-function _envelope_string(value: JsonValue, field: string): string {
-  if (typeof value !== "string") throw new TypeError_(`${field} must be a str, not '${type_name(value)}'`);
+function _envelopeString(value: JsonValue, field: string): string {
+  if (typeof value !== "string") throw new TypeError_(`${field} must be a str, not '${typeName(value)}'`);
   return value;
 }
 
 /**
  * Decode a color-profile envelope `Utf8` value into a `ColorProfile`.
  *
- * @param envelope_json - The raw `Utf8` chunk value (the outer JSON string).
+ * @param envelopeJson - The raw `Utf8` chunk value (the outer JSON string).
  */
-export function parse_envelope(envelope_json: string): ColorProfile {
-  const outer = json_loads(envelope_json);
-  const base = json_getitem(outer, "baseColorProfile");
-  const name = json_getitem(base, "colorProfileName");
-  const profile_type = json_getitem(outer, "baseProfileType");
-  const data = json_getitem(base, "colorProfileData");
-  if (typeof profile_type !== "number") throw new TypeError_(`baseProfileType must be an int, not '${type_name(profile_type)}'`);
-  return new ColorProfile(_envelope_string(name, "colorProfileName"), profile_type, b64decode(_envelope_string(data, "colorProfileData")));
+export function parseEnvelope(envelopeJson: string): ColorProfile {
+  const outer = jsonLoads(envelopeJson);
+  const base = jsonGetitem(outer, "baseColorProfile");
+  const name = jsonGetitem(base, "colorProfileName");
+  const profileType = jsonGetitem(outer, "baseProfileType");
+  const data = jsonGetitem(base, "colorProfileData");
+  if (typeof profileType !== "number") throw new TypeError_(`baseProfileType must be an int, not '${typeName(profileType)}'`);
+  return new ColorProfile(_envelopeString(name, "colorProfileName"), profileType, b64decode(_envelopeString(data, "colorProfileData")));
 }
 
 
@@ -214,7 +214,7 @@ export function parse_envelope(envelope_json: string): ColorProfile {
  *
  * Unlike `parse_envelope`, this does not require `colorProfileData`.
  */
-export function envelope_profile_name(envelope_json: string): string {
-  const outer = json_loads(envelope_json);
-  return str(json_get(json_get(outer, "baseColorProfile", new Map<string, JsonValue>()), "colorProfileName", "None"));
+export function envelopeProfileName(envelopeJson: string): string {
+  const outer = jsonLoads(envelopeJson);
+  return str(jsonGet(jsonGet(outer, "baseColorProfile", new Map<string, JsonValue>()), "colorProfileName", "None"));
 }
