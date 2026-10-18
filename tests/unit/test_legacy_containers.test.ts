@@ -180,8 +180,8 @@ function _as_cc12_project(): py_aep.Project {
 
 test("test_cc12_settings_synced_to_nhed_write_through", () => {
   const project = _as_cc12_project();
-  project.bits_per_channel = BitsPerChannel.SIXTEEN;
-  expect(project.bits_per_channel).toBe(BitsPerChannel.SIXTEEN);
+  project.bitsPerChannel = BitsPerChannel.SIXTEEN;
+  expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
   expect(project._nhed.bits_per_channel).toBe(project._nnhd.bits_per_channel);
   expect(project._nnhd.synthetic).toBe(true);
 });
@@ -189,7 +189,7 @@ test("test_cc12_settings_synced_to_nhed_write_through", () => {
 test("test_cc12_working_gamma_has_nowhere_to_go_and_raises", () => {
   const project = _as_cc12_project();
   raises(AttributeError, () => {
-    project.working_gamma = 2.4;
+    project.workingGamma = 2.4;
   }, "requires AE 13");
 });
 
@@ -213,7 +213,7 @@ test("test_gpu_accel_type_software_without_gpug", () => {
     value: GpuAccelType.to_binary(GpuAccelType.SOFTWARE),
     synthetic: true,
   });
-  expect(project.gpu_accel_type).toBe(GpuAccelType.SOFTWARE);
+  expect(project.gpuAccelType).toBe(GpuAccelType.SOFTWARE);
 });
 
 function _older_project_bytes(name_chunks: Chunk[], file_format_version: number): Uint8Array {
@@ -254,12 +254,12 @@ test("test_new_names_in_an_older_project_are_written_as_strings", () => {
 test("test_names_edited_in_an_older_project_read_back", () => {
   const tmp_path = make_tmp_path();
   const project = py_aep.new("15.0x1").project;
-  const comp = project.root_folder.add_comp("comp", 100, 100, 1.0, 1.0, 24.0);
-  const solid = comp.add_solid([1, 0, 0], "solid", 100, 100, 1.0);
-  solid.property("ADBE Mask Parade").add_property("ADBE Mask Atom").name = "mask";
-  solid.property("ADBE Effect Parade").add_property("ADBE Slider Control").name = "slider";
-  solid.property("ADBE Effect Parade").add_property("ADBE Checkbox Control");
-  as_instance(project.render_queue, RenderQueue).add(comp).comment = "note";
+  const comp = project.rootFolder.addComp("comp", 100, 100, 1.0, 1.0, 24.0);
+  const solid = comp.addSolid([1, 0, 0], "solid", 100, 100, 1.0);
+  solid.property("ADBE Mask Parade").addProperty("ADBE Mask Atom").name = "mask";
+  solid.property("ADBE Effect Parade").addProperty("ADBE Slider Control").name = "slider";
+  solid.property("ADBE Effect Parade").addProperty("ADBE Checkbox Control");
+  as_instance(project.renderQueue, RenderQueue).add(comp).comment = "note";
   project._head.file_format_version = 91;
   const out = tmp_path.div("older.aep");
   project.save(out);
@@ -282,7 +282,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
       ["slider", "Checkbox Control"],
     ),
   ).toBe(true);
-  expect(py_eq(as_instance(back.render_queue, RenderQueue).items[0].comment, "note")).toBe(true);
+  expect(py_eq(as_instance(back.renderQueue, RenderQueue).items[0].comment, "note")).toBe(true);
 });
 
 test("test_an_older_project_cannot_be_relabelled", () => {

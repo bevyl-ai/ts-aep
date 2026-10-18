@@ -40,52 +40,52 @@ const PROBE = SAMPLES_DIR.div("text_ranges_probe.json");
 // deliberately not exposed (host-font-resolved) are absent: fontFamily,
 // fontStyle, fontLocation.
 const ATTR_MAP: Map<string, string> = new Map([
-  ["characterStart", "character_start"],
-  ["characterEnd", "character_end"],
-  ["isRangeValid", "is_range_valid"],
+  ["characterStart", "characterStart"],
+  ["characterEnd", "characterEnd"],
+  ["isRangeValid", "isRangeValid"],
   ["text", "text"],
-  ["fillColor", "fill_color"],
-  ["strokeColor", "stroke_color"],
-  ["strokeOverFill", "stroke_over_fill"],
-  ["strokeWidth", "stroke_width"],
-  ["applyFill", "apply_fill"],
-  ["applyStroke", "apply_stroke"],
+  ["fillColor", "fillColor"],
+  ["strokeColor", "strokeColor"],
+  ["strokeOverFill", "strokeOverFill"],
+  ["strokeWidth", "strokeWidth"],
+  ["applyFill", "applyFill"],
+  ["applyStroke", "applyStroke"],
   ["font", "font"],
-  ["fontObject", "font_object"],
-  ["fontSize", "font_size"],
-  ["fauxBold", "faux_bold"],
-  ["fauxItalic", "faux_italic"],
-  ["autoLeading", "auto_leading"],
+  ["fontObject", "fontObject"],
+  ["fontSize", "fontSize"],
+  ["fauxBold", "fauxBold"],
+  ["fauxItalic", "fauxItalic"],
+  ["autoLeading", "autoLeading"],
   ["leading", "leading"],
   ["kerning", "kerning"],
-  ["autoKernType", "auto_kern_type"],
+  ["autoKernType", "autoKernType"],
   ["tracking", "tracking"],
-  ["baselineShift", "baseline_shift"],
-  ["horizontalScale", "horizontal_scale"],
-  ["verticalScale", "vertical_scale"],
-  ["fontCapsOption", "font_caps_option"],
-  ["fontBaselineOption", "font_baseline_option"],
+  ["baselineShift", "baselineShift"],
+  ["horizontalScale", "horizontalScale"],
+  ["verticalScale", "verticalScale"],
+  ["fontCapsOption", "fontCapsOption"],
+  ["fontBaselineOption", "fontBaselineOption"],
   ["ligature", "ligature"],
-  ["noBreak", "no_break"],
-  ["baselineDirection", "baseline_direction"],
+  ["noBreak", "noBreak"],
+  ["baselineDirection", "baselineDirection"],
   ["tsume", "tsume"],
-  ["digitSet", "digit_set"],
-  ["lineJoinType", "line_join_type"],
-  ["allCaps", "all_caps"],
-  ["smallCaps", "small_caps"],
+  ["digitSet", "digitSet"],
+  ["lineJoinType", "lineJoinType"],
+  ["allCaps", "allCaps"],
+  ["smallCaps", "smallCaps"],
   ["superscript", "superscript"],
   ["subscript", "subscript"],
-  ["composerEngine", "composer_engine"],
+  ["composerEngine", "composerEngine"],
   ["justification", "justification"],
-  ["firstLineIndent", "first_line_indent"],
-  ["startIndent", "start_indent"],
-  ["endIndent", "end_indent"],
-  ["spaceBefore", "space_before"],
-  ["spaceAfter", "space_after"],
-  ["leadingType", "leading_type"],
-  ["autoHyphenate", "auto_hyphenate"],
-  ["hangingRoman", "hanging_roman"],
-  ["everyLineComposer", "every_line_composer"],
+  ["firstLineIndent", "firstLineIndent"],
+  ["startIndent", "startIndent"],
+  ["endIndent", "endIndent"],
+  ["spaceBefore", "spaceBefore"],
+  ["spaceAfter", "spaceAfter"],
+  ["leadingType", "leadingType"],
+  ["autoHyphenate", "autoHyphenate"],
+  ["hangingRoman", "hangingRoman"],
+  ["everyLineComposer", "everyLineComposer"],
   ["direction", "direction"],
 ]);
 
@@ -119,8 +119,8 @@ function _range_from_key(doc: TextDocument, key: string) {
   const start_s = key.slice(0, i);
   const end_s = key.slice(i + 1);
   const start = int(start_s);
-  if (end_s === "def") return doc.character_range(start);
-  return doc.character_range(start, int(end_s));
+  if (end_s === "def") return doc.characterRange(start);
+  return doc.characterRange(start, int(end_s));
 }
 
 /** Return a mismatch description, or `null` when values agree. */
@@ -131,7 +131,7 @@ function _compare(py_val: unknown, expected: ProbeJson, attr: string): string | 
   }
   if (attr === "fontObject") {
     const expected_name = typeof expected === "string" ? at(split(expected, ":", 1), 1) : null;
-    const actual_name = py_val != null ? getattr(py_val, "post_script_name") : null;
+    const actual_name = py_val != null ? getattr(py_val, "postScriptName") : null;
     if (py_eq(actual_name, expected_name)) return null;
     return `${attr}: expected ${repr(expected_name)}, got ${repr(actual_name)}`;
   }
@@ -177,10 +177,10 @@ const docs = lru_cache((): Map<string, TextDocument> => {
   const project = parse_project(SAMPLE);
   const comp = project.compositions[0];
   return new Map(
-    comp.text_layers.map((layer): [string, TextDocument] => {
+    comp.textLayers.map((layer): [string, TextDocument] => {
       const text = layer.text;
       py_assert(text != null);
-      return [layer.name, text.source_text.value];
+      return [layer.name, text.sourceText.value];
     }),
   );
 });
@@ -206,14 +206,14 @@ describe("TestDocumentLevel", () => {
   test.each(LAYER_NAMES)("test_paragraph_count[%#]", (name: string) => {
     const expected = probe().layers[name].paragraphCount;
     if (expected.ok) {
-      expect(getitem(docs(), name).paragraph_count).toBe(expected.value);
+      expect(getitem(docs(), name).paragraphCount).toBe(expected.value);
     }
   });
 
   test.each(LAYER_NAMES)("test_composed_line_count[%#]", (name: string) => {
     const expected = probe().layers[name].composedLineCount;
     if (expected.ok) {
-      expect(getitem(docs(), name).composed_line_count).toBe(expected.value);
+      expect(getitem(docs(), name).composedLineCount).toBe(expected.value);
     }
   });
 
@@ -222,7 +222,7 @@ describe("TestDocumentLevel", () => {
     // even with manual per-character kerning present; the real values
     // are only reachable through character_range(...).kerning.
     expect(getitem(docs(), "RangesKernLead").kerning).toBe(0);
-    expect(getitem(docs(), "RangesKernLead").character_range(1, 4).kerning).toBe(200);
+    expect(getitem(docs(), "RangesKernLead").characterRange(1, 4).kerning).toBe(200);
   });
 });
 
@@ -233,12 +233,12 @@ describe("TestRangeBoundaries", () => {
     for (const entry of probe().layers[name].paragraphRanges) {
       py_assert(entry.ok, `${name}: ES probe failed: ${_dict_repr(entry)}`);
       const exp = entry.value;
-      const pr = doc.paragraph_range(exp.index);
+      const pr = doc.paragraphRange(exp.index);
       expect(str(pr)).toBe(exp.str);
-      expect(pr.character_start).toBe(exp.characterStart);
-      expect(pr.character_end).toBe(exp.characterEnd);
-      expect(pr.is_range_valid).toBe(exp.isRangeValid);
-      expect(pr.character_range().text).toBe(_expected_text(exp.charRangeText));
+      expect(pr.characterStart).toBe(exp.characterStart);
+      expect(pr.characterEnd).toBe(exp.characterEnd);
+      expect(pr.isRangeValid).toBe(exp.isRangeValid);
+      expect(pr.characterRange().text).toBe(_expected_text(exp.charRangeText));
     }
   });
 
@@ -247,12 +247,12 @@ describe("TestRangeBoundaries", () => {
     for (const entry of probe().layers[name].composedLineRanges) {
       py_assert(entry.ok, `${name}: ES probe failed: ${_dict_repr(entry)}`);
       const exp = entry.value;
-      const clr = doc.composed_line_range(exp.index);
+      const clr = doc.composedLineRange(exp.index);
       expect(str(clr)).toBe(exp.str);
-      expect(clr.character_start).toBe(exp.characterStart);
-      expect(clr.character_end).toBe(exp.characterEnd);
-      expect(clr.is_range_valid).toBe(exp.isRangeValid);
-      expect(clr.character_range().text).toBe(_expected_text(exp.charRangeText));
+      expect(clr.characterStart).toBe(exp.characterStart);
+      expect(clr.characterEnd).toBe(exp.characterEnd);
+      expect(clr.isRangeValid).toBe(exp.isRangeValid);
+      expect(clr.characterRange().text).toBe(_expected_text(exp.charRangeText));
     }
   });
 
@@ -263,14 +263,14 @@ describe("TestRangeBoundaries", () => {
     for (const [idx_s, entry] of Object.entries<ProbeResult<ProbeRecord>>(layer_probe.paragraphCharacterIndexesAt)) {
       if (entry.ok) {
         expect(
-          py_eq(_as_dict(doc.paragraph_character_indexes_at(int(idx_s))), _as_dict(entry.value)),
+          py_eq(_as_dict(doc.paragraphCharacterIndexesAt(int(idx_s))), _as_dict(entry.value)),
         ).toBe(true);
       }
     }
     for (const [idx_s, entry] of Object.entries<ProbeResult<ProbeRecord>>(layer_probe.composedLineCharacterIndexesAt)) {
       if (entry.ok) {
         expect(
-          py_eq(_as_dict(doc.composed_line_character_indexes_at(int(idx_s))), _as_dict(entry.value)),
+          py_eq(_as_dict(doc.composedLineCharacterIndexesAt(int(idx_s))), _as_dict(entry.value)),
         ).toBe(true);
       }
     }
@@ -320,63 +320,63 @@ describe("TestEdgeCases", () => {
     const edges = probe().layers.RangesPoint.edges;
     const length = len(doc.text);
 
-    _assert_edge(doc, edges.eof_default_end, () => doc.character_range(length));
-    _assert_edge(doc, edges.neg_two_end, () => doc.character_range(0, -2));
-    _assert_edge(doc, edges.para_0_0, () => doc.paragraph_range(0, 0));
-    _assert_edge(doc, edges.start_oob, () => doc.character_range(9999));
-    _assert_edge(doc, edges.end_oob, () => doc.character_range(0, 9999));
-    _assert_edge(doc, edges.end_before_start, () => doc.character_range(5, 2));
-    _assert_edge(doc, edges.para_oob, () => doc.paragraph_range(99));
+    _assert_edge(doc, edges.eof_default_end, () => doc.characterRange(length));
+    _assert_edge(doc, edges.neg_two_end, () => doc.characterRange(0, -2));
+    _assert_edge(doc, edges.para_0_0, () => doc.paragraphRange(0, 0));
+    _assert_edge(doc, edges.start_oob, () => doc.characterRange(9999));
+    _assert_edge(doc, edges.end_oob, () => doc.characterRange(0, 9999));
+    _assert_edge(doc, edges.end_before_start, () => doc.characterRange(5, 2));
+    _assert_edge(doc, edges.para_oob, () => doc.paragraphRange(99));
 
     {
       const eof = edges.eof_zero_span.value;
-      const rng = doc.character_range(length, -1);
-      expect(rng.character_start).toBe(eof.s);
-      expect(rng.character_end).toBe(eof.e);
+      const rng = doc.characterRange(length, -1);
+      expect(rng.characterStart).toBe(eof.s);
+      expect(rng.characterEnd).toBe(eof.e);
       expect(rng.text).toBe(eof.text);
-      expect(rng.font_size).toBe(eof.fontSize);
+      expect(rng.fontSize).toBe(eof.fontSize);
     }
 
     {
       const zero = edges.char_0_0.value;
-      const rng = doc.character_range(0, 0);
-      expect(rng.character_start).toBe(zero.s);
-      expect(rng.character_end).toBe(zero.e);
+      const rng = doc.characterRange(0, 0);
+      expect(rng.characterStart).toBe(zero.s);
+      expect(rng.characterEnd).toBe(zero.e);
       expect(rng.text).toBe(zero.text);
     }
 
     {
       const neg = edges.line_neg_end.value;
-      const clr = doc.composed_line_range(0, -1);
-      expect(clr.character_start).toBe(neg.s);
-      expect(clr.character_end).toBe(neg.e);
+      const clr = doc.composedLineRange(0, -1);
+      expect(clr.characterStart).toBe(neg.s);
+      expect(clr.characterEnd).toBe(neg.e);
     }
   });
 
   test("test_empty_edges", () => {
     const doc = getitem(docs(), "RangesEmpty");
     const edges = probe().layers.RangesEmpty.edges;
-    _assert_edge(doc, edges.char_0_def, () => doc.character_range(0));
+    _assert_edge(doc, edges.char_0_def, () => doc.characterRange(0));
     const para = edges.para_0.value;
-    const pr = doc.paragraph_range(0);
-    expect(pr.character_start).toBe(para.s);
-    expect(pr.character_end).toBe(para.e);
+    const pr = doc.paragraphRange(0);
+    expect(pr.characterStart).toBe(para.s);
+    expect(pr.characterEnd).toBe(para.e);
     const line = edges.line_0.value;
-    const clr = doc.composed_line_range(0);
-    expect(clr.character_start).toBe(line.s);
-    expect(clr.character_end).toBe(line.e);
+    const clr = doc.composedLineRange(0);
+    expect(clr.characterStart).toBe(line.s);
+    expect(clr.characterEnd).toBe(line.e);
   });
 
   test("test_split_surrogate", () => {
     const doc = getitem(docs(), "RangesEmoji");
     const edges = probe().layers.RangesEmoji.edges;
     const split_ = edges.split_surrogate_range.value;
-    const rng = doc.character_range(2, 3);
-    expect(rng.character_start).toBe(split_.s);
-    expect(rng.character_end).toBe(split_.e);
+    const rng = doc.characterRange(2, 3);
+    expect(rng.characterStart).toBe(split_.s);
+    expect(rng.characterEnd).toBe(split_.e);
     expect(rng.text).toBe(_expected_text(split_.text));
-    expect(rng.font_size).toBe(split_.fontSize);
+    expect(rng.fontSize).toBe(split_.fontSize);
     const prefix = edges.split_surrogate_text.value;
-    expect(doc.character_range(0, 3).text).toBe(_expected_text(prefix));
+    expect(doc.characterRange(0, 3).text).toBe(_expected_text(prefix));
   });
 });

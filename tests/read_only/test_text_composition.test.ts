@@ -70,10 +70,10 @@ function docs_fixture(): Map<string, TextDocument> {
     const project = parse_project(FIXTURE);
     const comp = project.compositions[0];
     _cache.docs = new Map(
-      comp.text_layers.map((layer) => {
+      comp.textLayers.map((layer) => {
         const text = layer.text;
         py_assert(text != null);
-        return [layer.name, text.source_text.value] as const;
+        return [layer.name, text.sourceText.value] as const;
       }),
     );
   }

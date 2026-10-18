@@ -1,27 +1,25 @@
 # ts-aep
 
 An [AI rewrite](https://bun.com/blog/bun-in-rust) of the amazing
-[py-aep](https://github.com/forticheprod/py-aep) package. We were crossing
-language boundaries just to use py-aep, so this is a faithful in-place rewrite
-with identical APIs, for JS users.
+[py-aep](https://github.com/forticheprod/py-aep) package, the After Effects
+`.aep` reader/writer, in idiomatic TypeScript. It behaves exactly like py-aep
+at upstream commit `2cef9f4` (see `UPSTREAM_COMMIT`): the same values, the same
+errors, byte-identical saves.
 
 **This is a proof-of-concept project — use with caution.**
 
-A 1:1 TypeScript port of [py-aep](https://github.com/forticheprod/py-aep), the
-After Effects `.aep` reader/writer, pinned to upstream commit
-`edcae7a` (see `UPSTREAM_COMMIT`).
-
-Every Python module, class and function has a twin with the same name at the
-same path (`src/py_aep/a/b.py` → `src/py_aep/a/b.ts`), so upstream changes sync
-file by file. Python semantics the port depends on (rounding, floor division,
-`struct`, `surrogateescape`, attrs, enums, descriptors, ElementTree, …) live in
-`src/pyrt/`. Translation rules: `RULEBOOK.md`.
+The API uses After Effects' own scripting names in camelCase (`comp.frameRate`,
+`layer.transform.anchorPoint`, `layer.threeDLayer`, `group.property("ADBE
+Position")`), and JS conventions: settings are Map-shaped (`get`/`set`/`has`/
+`size`), groups have `length`, `console.log(layer)` prints a readable summary.
+Files keep their py-aep twins' paths, so an upstream change maps to the TS file
+it touches. Python semantics the behaviour depends on (rounding, floor division,
+`struct`, `surrogateescape`, …) live in `src/pyrt/`. Rules: `RULEBOOK.md`.
 
 ## Status
 
-Against upstream at the pinned commit (CI runs all of this on every push; the
-py-aep differential runs when the head commit message contains `[ci diff]`, or
-on a manual workflow run):
+Against upstream at the pinned commit (CI runs all of this, including the py-aep
+differential, on every push):
 
 - Test suite: all 15,431 upstream tests translated to `bun:test`; 15,369 pass,
   62 skip on missing system fonts / OCIO configs / AE preferences — identical to
@@ -55,7 +53,7 @@ app.project.save("copy.aep");
 ## Use
 
 The library runs unchanged in Node 22.3+, Bun, browsers and Cloudflare Workers.
-The API is py-aep's: `parse(path)` and `Project.save(path)` take paths. All
+`parse(path)` and `project.save(path)` take paths. All
 host access goes through `src/pyrt/host.ts`: Node and Bun use their own
 `node:fs`, `node:path` and `node:os` (via `process.getBuiltinModule`); hosts
 without them get an in-memory file system and POSIX paths.
@@ -78,7 +76,7 @@ attribute name, as in py-aep:
 ```ts
 const layer = comp.layers[0];
 const position: number[] = layer.transform.position.value;
-const text = comp.text_layers[0].text?.source_text.value.text;
+const text = comp.textLayers[0].text?.sourceText.value.text;
 ```
 
 A child whose attribute name depends on the layer (`anchor_point` on an AV

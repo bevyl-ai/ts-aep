@@ -96,7 +96,7 @@ export const _DEFAULT_NEW_VERSION = "26.0x67";
  * import { new as new_project } from "@bevyl-ai/ts-aep";
  *
  * const app = new_project();
- * const comp = app.project.root_folder.add_comp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
+ * const comp = app.project.rootFolder.addComp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
  * app.project.save("new_project.aep");
  * ```
  */

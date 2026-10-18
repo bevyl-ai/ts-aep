@@ -22,13 +22,13 @@ import { validate_f8 } from "./validators.ts";
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
  * for (const guide of comp.guides) {
- *   console.log(guide.orientation_type, guide.position);
+ *   console.log(guide.orientationType, guide.position);
  * }
  * ```
  */
 export class Guide {
   /** The orientation of the guide. Read / Write. */
-  declare orientation_type: GuideOrientationType;
+  declare orientationType: GuideOrientationType;
 
   /**
    * The position of the guide in pixels from the top (horizontal) or
@@ -40,7 +40,7 @@ export class Guide {
   declare position: number;
 
   /** The position type of the guide. Always 0 (pixels). Read / Write. */
-  declare position_type: number;
+  declare positionType: number;
 
   declare _guide_item: GuideItem;
 
@@ -71,7 +71,7 @@ export class Guide {
 
   [INSPECT](): string {
     const orient =
-      this.orientation_type === GuideOrientationType.HORIZONTAL
+      this.orientationType === GuideOrientationType.HORIZONTAL
         ? "horizontal"
         : "vertical";
     return `Guide(${orient}, position=${float_repr(this.position)})`;
@@ -80,7 +80,7 @@ export class Guide {
 
 descriptor(
   Guide,
-  "orientation_type",
+  "orientationType",
   ChunkField.enum(
     GuideOrientationType,
     "_guide_item",
@@ -96,6 +96,6 @@ descriptor(
 
 descriptor(
   Guide,
-  "position_type",
+  "positionType",
   new ChunkField("_guide_item", "position_type"),
 );

@@ -48,7 +48,7 @@ export function parse_orientation(
   const tdbs_chunk = find_by_list_type(otst_chunk.chunks, "tdbs");
   const prop = parse_property(tdbs_chunk, match_name, composition, property_depth, tdmn);
   prop._wrapper = otst_chunk;
-  ORIENTATION_KIND.apply_model_metadata(prop);
+  ORIENTATION_KIND.applyModelMetadata(prop);
 
   // cdat is parameterized with is_le; .value returns the correctly-
   // endian doubles regardless of context.
@@ -190,7 +190,7 @@ export function parse_shape(
 
   // Assign static value (first shape).  Set an empty Shape as default
   // so that is_modified detects any real mask path as modified.
-  prop.default_value = new Shape(null, null, null, { closed: false });
+  prop.defaultValue = new Shape(null, null, null, { closed: false });
   if (shape_values.length) {
     prop._cache_value(shape_values[0]);
   }

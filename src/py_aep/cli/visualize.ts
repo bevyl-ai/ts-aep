@@ -71,23 +71,23 @@ export function build_project_node(app: Application, include_properties: boolean
   const project = app.project;
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["version", app.version],
-    ["build_number", app.build_number],
-    ["bits_per_channel", BitsPerChannel.name_of(project.bits_per_channel)],
-    ["expression_engine", project.expression_engine],
+    ["build_number", app.buildNumber],
+    ["bits_per_channel", BitsPerChannel.name_of(project.bitsPerChannel)],
+    ["expression_engine", project.expressionEngine],
   ]);
-  if (project.effect_names?.length > 0) attrs.set("effects_used", project.effect_names.length);
+  if (project.effectNames?.length > 0) attrs.set("effects_used", project.effectNames.length);
 
   const children: Node[] = [];
-  const root = project.root_folder;
+  const root = project.rootFolder;
   for (const item of root) {
     children.push(build_item_node(item, project, include_properties));
   }
 
   // Add render queue if it has items
-  if (project.render_queue == null) {
+  if (project.renderQueue == null) {
     throw new RuntimeError("Project render_queue should not be None");
   }
-  if (project.render_queue.items?.length > 0) {
+  if (project.renderQueue.items?.length > 0) {
     children.push(build_render_queue_node(project));
   }
 
@@ -111,7 +111,7 @@ export function build_item_node(item: Item, project: Project, include_properties
     return {
       type: "Item",
       name: item.name,
-      attrs: new Map<string, AttrValue>([["type_name", item.type_name]]),
+      attrs: new Map<string, AttrValue>([["type_name", item.typeName]]),
       children: [],
     };
   }
@@ -139,7 +139,7 @@ export function build_comp_node(comp: CompItem, project: Project, include_proper
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["size", `${comp.width}x${comp.height}`],
     ["duration", `${format(comp.duration, ".2f")}s`],
-    ["frame_rate", pyfloat(comp.frame_rate)],
+    ["frame_rate", pyfloat(comp.frameRate)],
     ["layers_count", comp.layers.length],
   ]);
   if (comp.markers?.length > 0) attrs.set("markers", comp.markers.length);
@@ -160,7 +160,7 @@ export function build_comp_node(comp: CompItem, project: Project, include_proper
 /** Build a footage item node. */
 export function build_footage_node(footage: FootageItem): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
-    ["asset_type", footage.asset_type],
+    ["asset_type", footage.assetType],
     ["size", `${footage.width}x${footage.height}`],
   ]);
   if (footage.duration > 0) attrs.set("duration", `${format(footage.duration, ".2f")}s`);
@@ -177,11 +177,11 @@ export function build_footage_node(footage: FootageItem): Node {
 /** Build a layer node with properties. */
 export function build_layer_node(layer: Layer, project: Project, include_properties: boolean = true): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
-    ["type", layer.layer_type],
+    ["type", layer.layerType],
     ["enabled", layer.enabled],
   ]);
   if (!layer.enabled) attrs.set("enabled", false);
-  if (layer.null_layer) attrs.set("null", true);
+  if (layer.nullLayer) attrs.set("null", true);
   const parent = layer.parent;
   if (parent != null && parent.length > 0) attrs.set("parent", parent.name);
   if (layer.markers?.length > 0) attrs.set("markers", layer.markers.length);
@@ -210,7 +210,7 @@ export function build_layer_node(layer: Layer, project: Project, include_propert
 /** Build a property group node. */
 export function build_property_group_node(group: PropertyGroup): Node {
   const attrs: Map<string, boolean> = new Map<string, boolean>();
-  if (group.is_effect) attrs.set("effect", true);
+  if (group.isEffect) attrs.set("effect", true);
 
   const children = group.properties.map((p) => build_property_or_group_node(p));
 
@@ -235,7 +235,7 @@ export function build_property_node(prop: Property): Node {
     attrs.set("animated", true);
     attrs.set("keyframes", prop.keyframes.length);
   }
-  if (prop.expression_enabled && prop.expression) attrs.set("expression", true);
+  if (prop.expressionEnabled && prop.expression) attrs.set("expression", true);
   if (prop.value != null && !prop._animated) {
     // Format value for display
     if (Array.isArray(prop.value)) {
@@ -258,13 +258,13 @@ export function build_property_node(prop: Property): Node {
 
 /** Build a render queue node with its items. */
 export function build_render_queue_node(project: Project): Node {
-  if (project.render_queue == null) {
+  if (project.renderQueue == null) {
     throw new RuntimeError("Project render_queue should not be None");
   }
-  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["items", project.render_queue.items.length]]);
+  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["items", project.renderQueue.items.length]]);
 
   const children: Node[] = [];
-  for (const [i, item] of project.render_queue.items.entries()) {
+  for (const [i, item] of project.renderQueue.items.entries()) {
     children.push(build_render_queue_item_node(item, i + 1, project));
   }
 
@@ -278,14 +278,14 @@ export function build_render_queue_node(project: Project): Node {
 
 /** Build a render queue item node with output modules. */
 export function build_render_queue_item_node(item: RenderQueueItem, index: number, project: Project): Node {
-  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["output_modules", item.output_modules.length]]);
+  const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["output_modules", item.outputModules.length]]);
 
   // Try to find the comp name
   const comp = item.comp;
   attrs.set("comp", comp?.name ?? null);
 
   const children: Node[] = [];
-  for (const om of item.output_modules) {
+  for (const om of item.outputModules) {
     children.push(build_output_module_node(om));
   }
 
@@ -301,7 +301,7 @@ export function build_render_queue_item_node(item: RenderQueueItem, index: numbe
 export function build_output_module_node(om: OutputModule): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>();
   if (om.file) attrs.set("file", new Path(om.file).name);
-  if (om.file_template) attrs.set("name_template", om.file_template);
+  if (om.fileTemplate) attrs.set("name_template", om.fileTemplate);
 
   return {
     type: "OutputModule",

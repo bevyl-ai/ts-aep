@@ -18,19 +18,19 @@ import { AVLayer } from "./av_layer.ts";
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const model_layer = comp.three_d_model_layers[0];
+ * const model_layer = comp.threeDModelLayers[0];
  * console.log(model_layer.source);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/threedmodellayer/
  */
 export class ThreeDModelLayer extends AVLayer {
   /** `true` for 3D Model layers. Read-only. */
-  get can_set_collapse_transformation(): boolean {
+  get canSetCollapseTransformation(): boolean {
     return true;
   }
 
   /** `false` for 3D Model layers (time remapping is not supported). Read-only. */
-  get can_set_time_remap_enabled(): boolean {
+  get canSetTimeRemapEnabled(): boolean {
     return false;
   }
 }

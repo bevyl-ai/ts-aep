@@ -1,5 +1,5 @@
 /**
- * `Property.value_at_time` on the value kinds AE blends as one quantity.
+ * `Property.valueAtTime` on the value kinds AE blends as one quantity.
  *
  * Ground truth is the per-frame `valueAtTime` export of two AE 2026 probe
  * projects (`scripts/jsx/export_value_at_time.jsx`):
@@ -60,7 +60,7 @@ const _TOLERANCE = new Map<string, number>([
 
 /** The single property under `layer` with this match name. */
 function _find(layer: Layer, match_name: string): Property {
-  const found = Array.from(layer._leaf_properties()).filter((p) => p.match_name === match_name);
+  const found = Array.from(layer._leaf_properties()).filter((p) => p.matchName === match_name);
   py_assert(len(found) === 1, `${match_name}: expected 1 match, got ${len(found)}`);
   return found[0];
 }
@@ -69,7 +69,7 @@ function _find(layer: Layer, match_name: string): Property {
 function _flatten(value: Shape | ExpectedShape | number[] | number): number[] {
   if (value instanceof Shape) {
     const numbers: number[] = [];
-    for (const points of [value.vertices, value.in_tangents, value.out_tangents]) {
+    for (const points of [value.vertices, value.inTangents, value.outTangents]) {
       for (const point of points) numbers.push(...point);
     }
     return numbers;
@@ -183,7 +183,7 @@ test.each(_cases())("test_matches_extendscript[%#]", (base, comp_name, layer_nam
   const tolerance = getitem(_TOLERANCE, match_name);
 
   for (const frame of frames) {
-    const got = prop.value_at_time(frame.time);
+    const got = prop.valueAtTime(frame.time);
     const expected = _flatten(frame.value);
     const actual = _flatten(got);
     py_assert(
@@ -254,7 +254,7 @@ describe("TestValueSpaces", () => {
     // AE reports the pin in layer pixels; the file holds it normalized
     // against the 200x100 layer.
     const prop = _find(TestValueSpaces._probe_layer("probe_puppet"), "ADBE FreePin3 PosPin Position");
-    expect(prop.units_text).toBe("pixels");
+    expect(prop.unitsText).toBe("pixels");
     const value = prop.keyframes[0].value;
     py_assert(Array.isArray(value));
     for (const [got, expected] of zip(value, [50.0, 25.0])) {
@@ -270,8 +270,8 @@ describe("TestValueSpaces", () => {
     const layer = comp.layers.find((ly) => ly.name === "orient_asym");
     if (layer === undefined) throw new StopIteration();
     const prop = _find(layer, "ADBE Orientation");
-    const out_ease = prop.keyframes[0].out_temporal_ease[0];
-    const in_ease = prop.keyframes[1].in_temporal_ease[0];
+    const out_ease = prop.keyframes[0].outTemporalEase[0];
+    const in_ease = prop.keyframes[1].inTemporalEase[0];
     expect(py_eq([out_ease.speed, out_ease.influence], [0.0, 90.0])).toBe(true);
     expect(py_eq([in_ease.speed, in_ease.influence], [0.0, 20.0])).toBe(true);
   });
@@ -280,8 +280,8 @@ describe("TestValueSpaces", () => {
     // AE reports 1 for a LINEAR side of a value with no scalar
     // magnitude, not the euler-vector slope.
     const prop = _find(TestValueSpaces._probe_layer("probe_solid"), "ADBE Orientation");
-    expect(prop.keyframes[0].out_temporal_ease[0].speed).toBe(1.0);
-    expect(prop.keyframes[1].in_temporal_ease[0].speed).toBe(1.0);
+    expect(prop.keyframes[0].outTemporalEase[0].speed).toBe(1.0);
+    expect(prop.keyframes[1].inTemporalEase[0].speed).toBe(1.0);
   });
 });
 
@@ -325,8 +325,8 @@ describe("TestShapeInterpolationEdges", () => {
         [10.0, 10.0],
       ]),
     ).toBe(true);
-    expect(py_eq(blended.in_tangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
-    expect(py_eq(blended.out_tangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
+    expect(py_eq(blended.inTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
+    expect(py_eq(blended.outTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
   });
 
   test("test_resampling_a_curve_preserves_its_shape", () => {
@@ -343,8 +343,8 @@ describe("TestShapeInterpolationEdges", () => {
     expect(blended != null).toBe(true);
     if (blended == null) throw new AssertionError_("interpolate_shapes returned null");
     expect(py_eq(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
-    expect(py_eq(blended.out_tangents[0], [20.0, 0.0])).toBe(true);
-    expect(py_eq(blended.in_tangents[2], [-20.0, 0.0])).toBe(true);
+    expect(py_eq(blended.outTangents[0], [20.0, 0.0])).toBe(true);
+    expect(py_eq(blended.inTangents[2], [-20.0, 0.0])).toBe(true);
   });
 
   test("test_empty_shapes_hold_the_left_key", () => {

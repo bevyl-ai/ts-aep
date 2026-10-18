@@ -37,7 +37,7 @@ export function _ensure_materialized(chunk: Chunk): void {
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const render_queue = app.project.render_queue;
+ * const render_queue = app.project.renderQueue;
  * for (const rq_item of render_queue) {
  *   // ...
  * }
@@ -140,7 +140,7 @@ export class RenderQueue {
    *
    * **Note:** Equivalent to `len(render_queue.items)`
    */
-  get num_items(): number {
+  get numItems(): number {
     return this.items.length;
   }
 

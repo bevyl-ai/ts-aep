@@ -17,9 +17,9 @@ import type { RoptChunk } from "../../../binary/render_chunks.ts";
  * import { parse, TargaFormatOptions } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof TargaFormatOptions) {
- *   console.log(om.format_options.bits_per_pixel);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof TargaFormatOptions) {
+ *   console.log(om.formatOptions.bitsPerPixel);
  * }
  * ```
  */
@@ -42,15 +42,15 @@ export class TargaFormatOptions extends FormatOptionsBase {
    * 2026 renders a 32-bpp TGA with 8 alpha bits for an RGB module whose
    * value is 32, and a 24-bpp TGA once it is 24.
    */
-  declare bits_per_pixel: number;
+  declare bitsPerPixel: number;
 
   /** Whether RLE compression is enabled. Read / Write. */
-  declare rle_compression: boolean;
+  declare rleCompression: boolean;
 }
 
 descriptor(
   TargaFormatOptions,
-  "bits_per_pixel",
+  "bitsPerPixel",
   new ChunkField("_body", "bits_per_pixel", { validate: validate_one_of([24, 32]) }),
 );
-descriptor(TargaFormatOptions, "rle_compression", ChunkField.bool("_body", "rle_compression"));
+descriptor(TargaFormatOptions, "rleCompression", ChunkField.bool("_body", "rle_compression"));

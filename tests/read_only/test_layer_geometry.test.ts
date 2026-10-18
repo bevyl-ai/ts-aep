@@ -64,8 +64,8 @@ function _skip_unless_fonts_match(layer: Layer): boolean {
   py_assert(text != null, "not a text layer");
   const document = text.property("ADBE Text Document").value;
   for (const font of document._fonts) {
-    if (!py_eq(font_version_string(font.post_script_name), font.version)) {
-      skip(`${font.post_script_name} not installed at the fixture's version`);
+    if (!py_eq(font_version_string(font.postScriptName), font.version)) {
+      skip(`${font.postScriptName} not installed at the fixture's version`);
       return true;
     }
   }
@@ -154,7 +154,7 @@ describe("TestPointConversions", () => {
       for (const [pi, pt] of POINTS.entries()) {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
-          const got = layer.source_point_to_comp(pt, time_val);
+          const got = layer.sourcePointToComp(pt, time_val);
           py_assert(
             approx(got, want["value"], { abs: 5e-3 }),
             `${layer_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
@@ -162,7 +162,7 @@ describe("TestPointConversions", () => {
         }
         const want_c2s = entry["c2s"][pi];
         if (want_c2s["ok"]) {
-          const got = layer.comp_point_to_source(pt, time_val);
+          const got = layer.compPointToSource(pt, time_val);
           py_assert(
             approx(got, want_c2s["value"], { abs: 5e-3 }),
             `${layer_name} c2s ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
@@ -178,15 +178,15 @@ describe("TestPointConversions", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     expect(comp.time).toBe(0.0);
     const layer = _layer(comp, "solid_keyed");
-    expect(approx(layer.source_point_to_comp([0.0, 0.0]), layer.source_point_to_comp([0.0, 0.0], 0.0))).toBe(true);
+    expect(approx(layer.sourcePointToComp([0.0, 0.0]), layer.sourcePointToComp([0.0, 0.0], 0.0))).toBe(true);
   });
 
   test("test_roundtrip_inverse_2d", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_xform");
     for (const pt of POINTS) {
-      const comp_pt = layer.source_point_to_comp(pt, 0.0);
-      const back = layer.comp_point_to_source(comp_pt, 0.0);
+      const comp_pt = layer.sourcePointToComp(pt, 0.0);
+      const back = layer.compPointToSource(comp_pt, 0.0);
       expect(approx(back, pt, { abs: 1e-6 })).toBe(true);
     }
   });
@@ -194,7 +194,7 @@ describe("TestPointConversions", () => {
   test("test_invalid_point_raises", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
-    raises(ValueError, () => layer.source_point_to_comp([1.0, 2.0, 3.0]));
+    raises(ValueError, () => layer.sourcePointToComp([1.0, 2.0, 3.0]));
   });
 });
 
@@ -216,7 +216,7 @@ describe("TestPointConversionsUnderCameras", () => {
       for (const [pi, pt] of CAMERA_POINTS.entries()) {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
-          const got = layer.source_point_to_comp(pt, time_val);
+          const got = layer.sourcePointToComp(pt, time_val);
           py_assert(
             approx(got, want["value"], { abs: 5e-3 }),
             `${comp_name} s2c ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
@@ -224,7 +224,7 @@ describe("TestPointConversionsUnderCameras", () => {
         }
         const want_c2s = entry["c2s"][pi];
         if (want_c2s["ok"]) {
-          const got = layer.comp_point_to_source(pt, time_val);
+          const got = layer.compPointToSource(pt, time_val);
           py_assert(
             approx(got, want_c2s["value"], { abs: 5e-3 }),
             `${comp_name} c2s ${_pt_repr(pt)} @ ${float_repr(time_val)}`,
@@ -272,7 +272,7 @@ describe("TestCalculateTransformFromPoints", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, layer_key === "layer2d" ? "solid_default" : "solid_3d");
     for (const [key, [tl, tr, bl]] of SETS) {
-      const got = layer.calculate_transform_from_points(tl, tr, bl);
+      const got = layer.calculateTransformFromPoints(tl, tr, bl);
       _assert_matches(got, expected[key]["value"]);
     }
   });
@@ -282,7 +282,7 @@ describe("TestCalculateTransformFromPoints", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
     for (const [key, [tl, tr, bl]] of MIRROR_SETS) {
-      const got = layer.calculate_transform_from_points(tl, tr, bl);
+      const got = layer.calculateTransformFromPoints(tl, tr, bl);
       _assert_matches(got, expected[key]["value"]);
     }
   });
@@ -293,7 +293,7 @@ describe("TestCalculateTransformFromPoints", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "footage_layer");
     for (const [key, [tl, tr, bl]] of FOOTAGE_SETS) {
-      const got = layer.calculate_transform_from_points(tl, tr, bl);
+      const got = layer.calculateTransformFromPoints(tl, tr, bl);
       _assert_matches(got, expected[key]["value"]);
     }
   });
@@ -301,9 +301,9 @@ describe("TestCalculateTransformFromPoints", () => {
   test("test_degenerate_points_raise", () => {
     const comp = _probe_comp(parse_project(GEOMETRY_AEP));
     const layer = _layer(comp, "solid_default");
-    raises(ValueError, () => layer.calculate_transform_from_points([0, 0, 0], [0, 0, 0], [0, 1, 0]));
+    raises(ValueError, () => layer.calculateTransformFromPoints([0, 0, 0], [0, 0, 0], [0, 1, 0]));
     // collinear
-    raises(ValueError, () => layer.calculate_transform_from_points([0, 0, 0], [1, 0, 0], [2, 0, 0]));
+    raises(ValueError, () => layer.calculateTransformFromPoints([0, 0, 0], [1, 0, 0], [2, 0, 0]));
   });
 });
 
@@ -328,7 +328,7 @@ describe("TestSourceRectAtTime", () => {
         for (const extents of [false, true]) {
           const suffix = extents ? "ext" : "noext";
           const want = expected[layer_name][`t${format(time_val, "g")}_${suffix}`]["value"];
-          const got = layer.source_rect_at_time(time_val, extents);
+          const got = layer.sourceRectAtTime(time_val, extents);
           expect(approx(got["top"], want["top"])).toBe(true);
           expect(approx(got["left"], want["left"])).toBe(true);
           expect(approx(got["width"], want["width"])).toBe(true);
@@ -344,7 +344,7 @@ describe("TestSourceRectAtTime", () => {
     if (_skip_unless_fonts_match(layer)) return;
     for (const [key, record] of Object.entries(expected)) {
       const [time_key, suffix] = split(key, "_");
-      const got = layer.source_rect_at_time(float(time_key.slice(1)), suffix === "ext");
+      const got = layer.sourceRectAtTime(float(time_key.slice(1)), suffix === "ext");
       for (const side of ["top", "left", "width", "height"] as const) {
         expect(approx(got[side], record["value"][side], { abs: 1e-3 })).toBe(true);
       }
@@ -356,11 +356,11 @@ describe("TestSourceRectAtTime", () => {
     const layer = _layer(comp, "solid_default");
     raises(TypeError_, () =>
       // @ts-expect-error deliberately passes a list time to check runtime validation
-      layer.source_rect_at_time([0.0], false),
+      layer.sourceRectAtTime([0.0], false),
     );
     raises(TypeError_, () =>
       // @ts-expect-error deliberately passes a string extents to check runtime validation
-      layer.source_rect_at_time(0.0, "yes"),
+      layer.sourceRectAtTime(0.0, "yes"),
     );
   });
 });
@@ -380,7 +380,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
     "test_huge_but_finite_points_give_a_finite_transform[%#]",
     (magnitude) => {
       const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), "solid_default");
-      const got = layer.calculate_transform_from_points(
+      const got = layer.calculateTransformFromPoints(
         [0.0, 0.0, 0.0],
         [magnitude, 0.0, 0.0],
         [0.0, magnitude, 0.0],
@@ -401,7 +401,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
     // 1e300 wide over a source `width` must scale to 1e300 / width * 100,
     // not saturate.
     const layer = _layer(_probe_comp(parse_project(GEOMETRY_AEP)), "solid_default");
-    const got = layer.calculate_transform_from_points(
+    const got = layer.calculateTransformFromPoints(
       [0.0, 0.0, 0.0],
       [1e300, 0.0, 0.0],
       [0.0, 1e300, 0.0],
@@ -436,7 +436,7 @@ describe("TestShapeSourceRect", () => {
     const comp = comp_fixture();
     const record = _SHAPE_TRUTH[name];
     const want = record[extents ? "ext" : "noext"];
-    const got = _layer(comp, name).source_rect_at_time(record["time"], extents);
+    const got = _layer(comp, name).sourceRectAtTime(record["time"], extents);
     for (const key of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
       py_assert(approx(got[key], want[key], { abs: 1e-3 }), key);
@@ -447,7 +447,7 @@ describe("TestShapeSourceRect", () => {
     "test_unmodeled_constructs_raise[%#]",
     (name) => {
       const comp = comp_fixture();
-      raises(NotImplementedError, () => _layer(comp, name).source_rect_at_time(0.0, false));
+      raises(NotImplementedError, () => _layer(comp, name).sourceRectAtTime(0.0, false));
     },
   );
 });
@@ -481,9 +481,9 @@ describe("TestAutoOrientPointConversions", () => {
       const time = float(time_key.slice(1));
       // All three conversions run before any comparison, as in the Python tuple.
       const probes: [string, number[]][] = [
-        ["p00", layer.source_point_to_comp([0.0, 0.0], time)],
-        ["p10050", layer.source_point_to_comp([100.0, 50.0], time)],
-        ["inv", layer.comp_point_to_source([500.0, 400.0], time)],
+        ["p00", layer.sourcePointToComp([0.0, 0.0], time)],
+        ["p10050", layer.sourcePointToComp([100.0, 50.0], time)],
+        ["inv", layer.compPointToSource([500.0, 400.0], time)],
       ];
       for (const [point, got] of probes) {
         py_assert(
@@ -516,7 +516,7 @@ describe("TestTextSourceRect", () => {
     const layer = _layer(comp_fixture(), name);
     if (_skip_unless_fonts_match(layer)) return;
     const want = _TEXT_TRUTH[name][extents ? "ext" : "noext"];
-    const got = layer.source_rect_at_time(0.0, extents);
+    const got = layer.sourceRectAtTime(0.0, extents);
     for (const side of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
       py_assert(approx(got[side], want[side], { abs: 1e-3 }), side);

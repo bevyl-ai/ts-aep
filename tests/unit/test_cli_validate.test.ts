@@ -115,7 +115,7 @@ describe("TestCompareMarker", () => {
       ["duration", 0],
     ]);
     const parsed_marker = new Map<string, number | string>([
-      ["frame_time", 30],
+      ["frameTime", 30],
       ["comment", "test"],
       ["chapter", ""],
       ["url", ""],

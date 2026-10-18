@@ -12,9 +12,9 @@ describe("TestImportOptions", () => {
   test("test_constructor", () => {
     const opts = new ImportOptions(new Path("footage/shot.png"));
     expect(py_eq(opts.file, new Path("footage/shot.png"))).toBe(true);
-    expect(opts.import_as).toBe(ImportAsType.FOOTAGE);
+    expect(opts.importAs).toBe(ImportAsType.FOOTAGE);
     expect(opts.sequence).toBe(false);
-    expect(opts.force_alphabetical).toBe(false);
+    expect(opts.forceAlphabetical).toBe(false);
   });
 
   test("test_constructor_accepts_path", () => {
@@ -30,8 +30,8 @@ describe("TestImportOptions", () => {
 
   test("test_import_as_setter", () => {
     const opts = new ImportOptions(new Path("a.psd"));
-    opts.import_as = ImportAsType.COMP;
-    expect(opts.import_as).toBe(ImportAsType.COMP);
+    opts.importAs = ImportAsType.COMP;
+    expect(opts.importAs).toBe(ImportAsType.COMP);
   });
 
   test("test_sequence_setter", () => {
@@ -42,8 +42,8 @@ describe("TestImportOptions", () => {
 
   test("test_force_alphabetical_setter", () => {
     const opts = new ImportOptions(new Path("frame001.png"));
-    opts.force_alphabetical = true;
-    expect(opts.force_alphabetical).toBe(true);
+    opts.forceAlphabetical = true;
+    expect(opts.forceAlphabetical).toBe(true);
   });
 
   // --- can_import_as ---
@@ -122,7 +122,7 @@ describe("TestImportOptions", () => {
           ? expected.has(t) && t !== ImportAsType.PROJECT && (t !== ImportAsType.COMP_CROPPED_LAYERS || cropped_ok)
           : false;
         // Labeled so a failing row names its extension and type, as pytest's message does.
-        expect({ label: `${ext} / ${ImportAsType.name_of(t)}`, got: opts.can_import_as(t) }).toEqual({
+        expect({ label: `${ext} / ${ImportAsType.name_of(t)}`, got: opts.canImportAs(t) }).toEqual({
           label: `${ext} / ${ImportAsType.name_of(t)}`,
           got: want,
         });
@@ -132,43 +132,43 @@ describe("TestImportOptions", () => {
 
   test("test_can_import_as_unknown_extension_all_false", () => {
     const opts = new ImportOptions(new Path("data.xyz"));
-    expect(opts.can_import_as(ImportAsType.FOOTAGE)).toBe(false);
-    expect(opts.can_import_as(ImportAsType.COMP)).toBe(false);
-    expect(opts.can_import_as(ImportAsType.COMP_CROPPED_LAYERS)).toBe(false);
-    expect(opts.can_import_as(ImportAsType.PROJECT)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.FOOTAGE)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.COMP)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.COMP_CROPPED_LAYERS)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.PROJECT)).toBe(false);
   });
 
   test("test_can_import_as_accepts_int", () => {
     const opts = new ImportOptions(new Path("design.psd"));
-    expect(opts.can_import_as(int(ImportAsType.COMP))).toBe(true);
+    expect(opts.canImportAs(int(ImportAsType.COMP))).toBe(true);
   });
 
   // --- is_file_name_numbered ---
 
   test("test_numbered_filename", () => {
     const opts = new ImportOptions(new Path("frame001.png"));
-    const [is_numbered, first] = opts.is_file_name_numbered();
+    const [is_numbered, first] = opts.isFileNameNumbered();
     expect(is_numbered).toBe(true);
     expect(first).toBe(1);
   });
 
   test("test_numbered_filename_large", () => {
     const opts = new ImportOptions(new Path("shot_1234.exr"));
-    const [is_numbered, first] = opts.is_file_name_numbered();
+    const [is_numbered, first] = opts.isFileNameNumbered();
     expect(is_numbered).toBe(true);
     expect(first).toBe(1234);
   });
 
   test("test_not_numbered_filename", () => {
     const opts = new ImportOptions(new Path("background.png"));
-    const [is_numbered, first] = opts.is_file_name_numbered();
+    const [is_numbered, first] = opts.isFileNameNumbered();
     expect(is_numbered).toBe(false);
     expect(first).toBe(0);
   });
 
   test("test_numbered_no_prefix", () => {
     const opts = new ImportOptions(new Path("0042.tiff"));
-    const [is_numbered, first] = opts.is_file_name_numbered();
+    const [is_numbered, first] = opts.isFileNameNumbered();
     expect(is_numbered).toBe(true);
     expect(first).toBe(42);
   });
@@ -187,14 +187,14 @@ describe("TestImportOptions", () => {
 
   test("test_can_import_as_case_insensitive", () => {
     const opts = new ImportOptions(new Path("FILE.PSD"));
-    expect(opts.can_import_as(ImportAsType.COMP)).toBe(true);
+    expect(opts.canImportAs(ImportAsType.COMP)).toBe(true);
   });
 
   test("test_can_import_as_project_always_false", () => {
     // AE can import a .mov as a project, but py_aep does not implement
     // PROJECT import for any format, so can_import_as gates it out.
     const opts = new ImportOptions(new Path("CLIP.MOV"));
-    expect(opts.can_import_as(ImportAsType.PROJECT)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.PROJECT)).toBe(false);
   });
 });
 
@@ -203,24 +203,24 @@ describe("TestImportOptionsLayerSelection", () => {
 
   test("test_defaults", () => {
     const opts = new ImportOptions(new Path("a.psd"));
-    expect(opts.layer_index).toBe(null);
-    expect(opts.layer_dimensions).toBe(null);
+    expect(opts.layerIndex).toBe(null);
+    expect(opts.layerDimensions).toBe(null);
   });
 
   test("test_layer_index_setter", () => {
     const opts = new ImportOptions(new Path("a.psd"));
-    opts.layer_index = 0;
-    expect(opts.layer_index).toBe(0);
-    opts.layer_index = 3;
-    expect(opts.layer_index).toBe(3);
-    opts.layer_index = null;
-    expect(opts.layer_index).toBe(null);
+    opts.layerIndex = 0;
+    expect(opts.layerIndex).toBe(0);
+    opts.layerIndex = 3;
+    expect(opts.layerIndex).toBe(3);
+    opts.layerIndex = null;
+    expect(opts.layerIndex).toBe(null);
   });
 
   test("test_layer_index_rejects_negative", () => {
     const opts = new ImportOptions(new Path("a.psd"));
     raises(ValueError, () => {
-      opts.layer_index = -1;
+      opts.layerIndex = -1;
     });
   });
 
@@ -228,7 +228,7 @@ describe("TestImportOptionsLayerSelection", () => {
     const opts = new ImportOptions(new Path("a.psd"));
     raises(TypeError_, () => {
       // @ts-expect-error a layer name is not an index; the setter must reject it at runtime
-      opts.layer_index = "Layer 1";
+      opts.layerIndex = "Layer 1";
     });
   });
 
@@ -239,7 +239,7 @@ describe("TestImportOptionsLayerSelection", () => {
     raises(
       ValueError,
       () => {
-        opts.layer_index = CURRENT_VALUE;
+        opts.layerIndex = CURRENT_VALUE;
       },
       "only valid for FootageItem.replace",
     );
@@ -251,18 +251,18 @@ describe("TestImportOptionsLayerSelection", () => {
 
   test("test_layer_dimensions_setter", () => {
     const opts = new ImportOptions(new Path("a.psd"));
-    opts.layer_dimensions = "layer";
-    expect(opts.layer_dimensions).toBe("layer");
-    opts.layer_dimensions = "document";
-    expect(opts.layer_dimensions).toBe("document");
-    opts.layer_dimensions = null;
-    expect(opts.layer_dimensions).toBe(null);
+    opts.layerDimensions = "layer";
+    expect(opts.layerDimensions).toBe("layer");
+    opts.layerDimensions = "document";
+    expect(opts.layerDimensions).toBe("document");
+    opts.layerDimensions = null;
+    expect(opts.layerDimensions).toBe(null);
   });
 
   test("test_layer_dimensions_rejects_unknown", () => {
     const opts = new ImportOptions(new Path("a.psd"));
     raises(ValueError, () => {
-      opts.layer_dimensions = "canvas";
+      opts.layerDimensions = "canvas";
     });
   });
 });
@@ -272,35 +272,35 @@ describe("TestImportOptionsRange", () => {
 
   test("test_defaults_are_zero", () => {
     const opts = new ImportOptions(new Path("a.png"));
-    expect(opts.range_start).toBe(0);
-    expect(opts.range_end).toBe(0);
+    expect(opts.rangeStart).toBe(0);
+    expect(opts.rangeEnd).toBe(0);
   });
 
   test("test_setters", () => {
     const opts = new ImportOptions(new Path("a.png"));
-    opts.range_start = 10;
-    opts.range_end = 30;
-    expect(opts.range_start).toBe(10);
-    expect(opts.range_end).toBe(30);
+    opts.rangeStart = 10;
+    opts.rangeEnd = 30;
+    expect(opts.rangeStart).toBe(10);
+    expect(opts.rangeEnd).toBe(30);
   });
 
   test("test_rejects_negative_and_non_int", () => {
     const opts = new ImportOptions(new Path("a.png"));
     raises(ValueError, () => {
-      opts.range_start = -1;
+      opts.rangeStart = -1;
     });
     raises(TypeError_, () => {
       // @ts-expect-error a str is not an int; the setter must reject it at runtime
-      opts.range_end = "5";
+      opts.rangeEnd = "5";
     });
   });
 
   test("test_accepts_the_full_u4_range", () => {
     const opts = new ImportOptions(new Path("a.png"));
     for (const value of [0, 1, 2 ** 31, 0xffffffff]) {
-      opts.range_start = value;
-      opts.range_end = value;
-      expect([opts.range_start, opts.range_end]).toEqual([value, value]);
+      opts.rangeStart = value;
+      opts.rangeEnd = value;
+      expect([opts.rangeStart, opts.rangeEnd]).toEqual([value, value]);
     }
   });
 
@@ -311,10 +311,10 @@ describe("TestImportOptionsRange", () => {
     // AE 2026 opens a ranged sequence well past that.
     const opts = new ImportOptions(new Path("a.png"));
     raises(ValueError, () => {
-      opts.range_start = value;
+      opts.rangeStart = value;
     });
     raises(ValueError, () => {
-      opts.range_end = value;
+      opts.rangeEnd = value;
     });
   });
 
@@ -322,18 +322,18 @@ describe("TestImportOptionsRange", () => {
     // AE: "You cannot set sequence range start for an alphabetical
     // sequence" - thrown at set time.
     const opts = new ImportOptions(new Path("a.png"));
-    opts.force_alphabetical = true;
+    opts.forceAlphabetical = true;
     raises(
       ValueError,
       () => {
-        opts.range_start = 2;
+        opts.rangeStart = 2;
       },
       "alphabetical",
     );
     raises(
       ValueError,
       () => {
-        opts.range_end = 5;
+        opts.rangeEnd = 5;
       },
       "alphabetical",
     );
@@ -343,10 +343,10 @@ describe("TestImportOptionsRange", () => {
     // AE resets the range (no error) when force_alphabetical is set
     // AFTER a range - probed 2026-07-14.
     const opts = new ImportOptions(new Path("a.png"));
-    opts.range_start = 2;
-    opts.range_end = 5;
-    opts.force_alphabetical = true;
-    expect(opts.range_start).toBe(0);
-    expect(opts.range_end).toBe(0);
+    opts.rangeStart = 2;
+    opts.rangeEnd = 5;
+    opts.forceAlphabetical = true;
+    expect(opts.rangeStart).toBe(0);
+    expect(opts.rangeEnd).toBe(0);
   });
 });

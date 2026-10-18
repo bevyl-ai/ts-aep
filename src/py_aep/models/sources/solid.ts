@@ -17,8 +17,8 @@ import type { U1Chunk } from "../../binary/scalar_chunks.ts";
  *
  * const app = parse("project.aep");
  * const footage = app.project.footages[0];
- * if (footage.main_source instanceof SolidSource) {
- *   console.log(footage.main_source.color);
+ * if (footage.mainSource instanceof SolidSource) {
+ *   console.log(footage.mainSource.color);
  * }
  * ```
  *

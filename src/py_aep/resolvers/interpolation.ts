@@ -2,7 +2,7 @@
  * Interpolation utilities for keyframe-based property evaluation.
  *
  * Implements HOLD, LINEAR, and BEZIER interpolation for
- * `Property.value_at_time()`.  Pure Python with no external dependencies.
+ * `Property.valueAtTime()`.  Pure Python with no external dependencies.
  *
  * The temporal structure follows `lottie-web <https://github.com/airbnb/ lottie-web>`_, the industry-standard renderer for Lottie/bodymovin
  * animations exported from After Effects, with the numerics adjusted to
@@ -865,7 +865,7 @@ export function _distance_curve(
   if (out_type === KeyframeInterpolationType.LINEAR) {
     out_handle = [duration * _LINEAR_HANDLE, distance * _LINEAR_HANDLE];
   } else {
-    const out_ease = kf_start.out_temporal_ease[0];
+    const out_ease = kf_start.outTemporalEase[0];
     const reach = duration * (out_ease.influence / 100.0);
     out_handle = [reach, reach * (out_ease.speed / speed_divisor)];
   }
@@ -873,7 +873,7 @@ export function _distance_curve(
   if (in_type === KeyframeInterpolationType.LINEAR) {
     in_handle = [duration - duration * _LINEAR_HANDLE, distance - distance * _LINEAR_HANDLE];
   } else {
-    const in_ease = kf_end.in_temporal_ease[0];
+    const in_ease = kf_end.inTemporalEase[0];
     const reach = -(in_ease.influence / 100.0) * duration;
     in_handle = [reach + duration, reach * (in_ease.speed / speed_divisor) + distance];
   }
@@ -894,8 +894,8 @@ export function _spatial_distance(
   kf_end: Keyframe,
   speed_divisor: number,
 ): number {
-  const out_type = kf_start.out_interpolation_type;
-  const in_type = kf_end.in_interpolation_type;
+  const out_type = kf_start.outInterpolationType;
+  const in_type = kf_end.inInterpolationType;
   if ([out_type, in_type].includes(KeyframeInterpolationType.HOLD)) return 0.0;
   if (out_type === KeyframeInterpolationType.LINEAR && in_type === KeyframeInterpolationType.LINEAR) {
     return (elapsed / duration) * distance;
@@ -1112,10 +1112,10 @@ export function roving_keyframe_times(keyframes: Keyframe[], metric: ArcMetric):
     if (total <= 0) continue;
     const first = keyframes[start];
     const last = keyframes[end];
-    const units0 = first.time_units;
-    const units1 = last.time_units;
-    const out_type = first.out_interpolation_type;
-    const in_type = last.in_interpolation_type;
+    const units0 = first.timeUnits;
+    const units1 = last.timeUnits;
+    const out_type = first.outInterpolationType;
+    const in_type = last.inInterpolationType;
     // HOLD on either anchor keeps the whole run at its start.
     const held = [out_type, in_type].includes(KeyframeInterpolationType.HOLD);
     let curve: _Point2[] | null = null;
@@ -1177,15 +1177,15 @@ export function _spatial_tangents(keyframes: Keyframe[], first: number, last: nu
   const result = new Map<number, [number[], number[]]>();
   for (let i = first; i <= last; i++) {
     const kf = keyframes[i];
-    if (kf.spatial_auto_bezier) {
+    if (kf.spatialAutoBezier) {
       const low = Math.max(i - 1, 0);
       const window = keyframes.slice(low, i + 2).map((k) => k._stored_value as number[]);
       result.set(i, auto_spatial_tangents(window, i - low));
       continue;
     }
     const zero = new Array<number>((kf._stored_value as number[]).length).fill(0.0);
-    const out_tangent = kf.out_spatial_tangent;
-    const in_tangent = kf.in_spatial_tangent;
+    const out_tangent = kf.outSpatialTangent;
+    const in_tangent = kf.inSpatialTangent;
     result.set(i, [out_tangent != null && out_tangent.length > 0 ? out_tangent : zero, in_tangent != null && in_tangent.length > 0 ? in_tangent : zero]);
   }
   return result;
@@ -1384,7 +1384,7 @@ export function motion_path_direction(time: number, keyframes: Keyframe[], metri
     } else {
       [index, u] = spatial_location(time, keyframes, index, metric);
     }
-    if (keyframes[index].out_interpolation_type === KeyframeInterpolationType.HOLD) return null;
+    if (keyframes[index].outInterpolationType === KeyframeInterpolationType.HOLD) return null;
   }
   const [p0, p1, p2, p3] = _segment_curve(keyframes, index);
   const mt = 1 - u;
@@ -1438,14 +1438,14 @@ export function _single_progress(
 ): number {
   // Bound to locals: `in/out_temporal_ease` re-derives its list on every
   // read, and this runs once per interpolated frame.
-  const out_ease = kf_left.out_temporal_ease;
-  const in_ease = kf_right.in_temporal_ease;
+  const out_ease = kf_left.outTemporalEase;
+  const in_ease = kf_right.inTemporalEase;
   const easing = _progress_easing(
     out_ease?.length > 0 ? out_ease[0] : null,
     in_ease?.length > 0 ? in_ease[0] : null,
     {
-      out_linear: kf_left.out_interpolation_type === KeyframeInterpolationType.LINEAR,
-      in_linear: kf_right.in_interpolation_type === KeyframeInterpolationType.LINEAR,
+      out_linear: kf_left.outInterpolationType === KeyframeInterpolationType.LINEAR,
+      in_linear: kf_right.inInterpolationType === KeyframeInterpolationType.LINEAR,
     },
   );
   const x = (time - t0) / (t1 - t0);
@@ -1815,21 +1815,21 @@ export function _interpolate_color(
   const distance = color_distance(v0, v1);
   let cx1: number;
   let cy1: number;
-  if (kf_left.out_interpolation_type === KeyframeInterpolationType.LINEAR) {
+  if (kf_left.outInterpolationType === KeyframeInterpolationType.LINEAR) {
     cx1 = _DEFAULT_INFLUENCE / 100.0;
     cy1 = cx1;
   } else {
-    const out_ease = kf_left.out_temporal_ease[0];
+    const out_ease = kf_left.outTemporalEase[0];
     cx1 = out_ease.influence / 100.0;
     cy1 = distance !== 0 ? (out_ease.speed * cx1 * duration) / distance : cx1;
   }
   let cx2: number;
   let cy2: number;
-  if (kf_right.in_interpolation_type === KeyframeInterpolationType.LINEAR) {
+  if (kf_right.inInterpolationType === KeyframeInterpolationType.LINEAR) {
     cx2 = 1.0 - _DEFAULT_INFLUENCE / 100.0;
     cy2 = cx2;
   } else {
-    const in_ease = kf_right.in_temporal_ease[0];
+    const in_ease = kf_right.inTemporalEase[0];
     const reach = in_ease.influence / 100.0;
     cx2 = 1.0 - reach;
     cy2 = distance !== 0 ? 1.0 - (in_ease.speed * reach * duration) / distance : cx2;
@@ -1844,7 +1844,7 @@ export function _interpolate_color(
  * @param time - Time in the owning LAYER's seconds, not composition seconds. AE evaluates the
  *   temporal bezier in layer time - its ease speeds are per layer second, and a negatively
  *   stretched layer's keyframes only ascend on this axis.
- *   {@link Property.value_at_time | Property.value_at_time} converts before calling.
+ *   {@link Property.valueAtTime | Property.valueAtTime} converts before calling.
  * @param keyframes - Keyframes in stored (layer time ascending) order.
  * @param is_spatial - Whether the property is spatial.
  * @param inert_dimensions - Indices the layer ignores, held at the left keyframe's value instead of
@@ -1902,8 +1902,8 @@ export function interpolate_keyframes(
 
   const v0 = kf_left._stored_value;
   const v1 = kf_right._stored_value;
-  const out_type = kf_left.out_interpolation_type;
-  const in_type = kf_right.in_interpolation_type;
+  const out_type = kf_left.outInterpolationType;
+  const in_type = kf_right.inInterpolationType;
 
   // A motion path is evaluated by distance, through AE's arc-length model.
   // A LINEAR key still follows the cubic its tangents define - only the
@@ -1969,11 +1969,11 @@ export function interpolate_keyframes(
       // colour, but py's own key insertion can leave one side holding a
       // per-channel list, and a single ease on either side still means
       // one progress.
-      if (Math.min(kf_left.out_temporal_ease.length, kf_right.in_temporal_ease.length) === 1) {
+      if (Math.min(kf_left.outTemporalEase.length, kf_right.inTemporalEase.length) === 1) {
         const progress = _get_bezier_easing(
-          kf_left.out_temporal_ease[0].influence / 100.0,
+          kf_left.outTemporalEase[0].influence / 100.0,
           0.0,
-          1.0 - kf_right.in_temporal_ease[0].influence / 100.0,
+          1.0 - kf_right.inTemporalEase[0].influence / 100.0,
           1.0,
         ).get((time - t0) / (t1 - t0));
         return Array.from({ length: v0.length }, (_v, d) => v0[d] + (v1[d] - v0[d]) * progress);
@@ -1990,17 +1990,17 @@ export function interpolate_keyframes(
           continue;
         }
         const out_e =
-          d < kf_left.out_temporal_ease.length ? kf_left.out_temporal_ease[d] : kf_left.out_temporal_ease[0];
+          d < kf_left.outTemporalEase.length ? kf_left.outTemporalEase[d] : kf_left.outTemporalEase[0];
         const in_e =
-          d < kf_right.in_temporal_ease.length ? kf_right.in_temporal_ease[d] : kf_right.in_temporal_ease[0];
+          d < kf_right.inTemporalEase.length ? kf_right.inTemporalEase[d] : kf_right.inTemporalEase[0];
         result.push(_interpolate_bezier_1d(time, t0, t1, v0[d], v1[d], out_e, in_e));
       }
       return result;
     }
 
     if (typeof v0 === "number" && typeof v1 === "number") {
-      const out_e_1d = kf_left.out_temporal_ease?.length > 0 ? kf_left.out_temporal_ease[0] : null;
-      const in_e_1d = kf_right.in_temporal_ease?.length > 0 ? kf_right.in_temporal_ease[0] : null;
+      const out_e_1d = kf_left.outTemporalEase?.length > 0 ? kf_left.outTemporalEase[0] : null;
+      const in_e_1d = kf_right.inTemporalEase?.length > 0 ? kf_right.inTemporalEase[0] : null;
       if (out_e_1d != null && in_e_1d != null) {
         return _interpolate_bezier_1d(time, t0, t1, v0, v1, out_e_1d, in_e_1d);
       }

@@ -25,21 +25,21 @@ describe("TestBitsPerChannel", () => {
     const expected = load_expected(SAMPLES_DIR, "bitsPerChannel_8");
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_8.aep"));
     expect(expected["bitsPerChannel"]).toBe(8);
-    expect(project.bits_per_channel).toBe(expected["bitsPerChannel"]);
+    expect(project.bitsPerChannel).toBe(expected["bitsPerChannel"]);
   });
 
   test("test_16bpc", () => {
     const expected = load_expected(SAMPLES_DIR, "bitsPerChannel_16");
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_16.aep"));
     expect(expected["bitsPerChannel"]).toBe(16);
-    expect(project.bits_per_channel).toBe(expected["bitsPerChannel"]);
+    expect(project.bitsPerChannel).toBe(expected["bitsPerChannel"]);
   });
 
   test("test_32bpc", () => {
     const expected = load_expected(SAMPLES_DIR, "bitsPerChannel_32");
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_32.aep"));
     expect(expected["bitsPerChannel"]).toBe(32);
-    expect(project.bits_per_channel).toBe(expected["bitsPerChannel"]);
+    expect(project.bitsPerChannel).toBe(expected["bitsPerChannel"]);
   });
 });
 
@@ -50,7 +50,7 @@ describe("TestExpressionEngine", () => {
     const expected = load_expected(SAMPLES_DIR, "expressionEngine_javascript");
     const project = parse_project(SAMPLES_DIR.div("expressionEngine_javascript.aep"));
     expect(expected["expressionEngine"]).toBe("javascript-1.0");
-    expect(project.expression_engine).toBe(expected["expressionEngine"]);
+    expect(project.expressionEngine).toBe(expected["expressionEngine"]);
   });
 });
 
@@ -61,7 +61,7 @@ describe("TestDisplayStartFrame", () => {
     const expected = load_expected(SAMPLES_DIR, "displayStartFrame_1");
     const project = parse_project(SAMPLES_DIR.div("displayStartFrame_1.aep"));
     expect(expected["displayStartFrame"]).toBe(1);
-    expect(project.display_start_frame).toBe(expected["displayStartFrame"]);
+    expect(project.displayStartFrame).toBe(expected["displayStartFrame"]);
   });
 });
 
@@ -71,7 +71,7 @@ describe("TestFramesCountType", () => {
   test("test_start0", () => {
     load_expected(SAMPLES_DIR, "framesCountType_start0");
     const project = parse_project(SAMPLES_DIR.div("framesCountType_start0.aep"));
-    expect(project.display_start_frame).toBe(0);
+    expect(project.displayStartFrame).toBe(0);
   });
 });
 
@@ -80,12 +80,12 @@ describe("TestWorkingGamma", () => {
 
   test("test_workingGamma_2_4", () => {
     const project = parse_project(SAMPLES_DIR.div("workingGamma_2.4.aep"));
-    expect(project.working_gamma).toBe(2.4);
+    expect(project.workingGamma).toBe(2.4);
   });
 
   test("test_workingGamma_2_2", () => {
     const project = parse_project(SAMPLES_DIR.div("workingGamma_2.2.aep"));
-    expect(project.working_gamma).toBe(2.2);
+    expect(project.workingGamma).toBe(2.2);
   });
 });
 
@@ -96,7 +96,7 @@ describe("TestWorkingSpace", () => {
     const expected = load_expected(SAMPLES_DIR, "workingSpace_sRGB");
     const project = parse_project(SAMPLES_DIR.div("workingSpace_sRGB.aep"));
     expect(expected["workingSpace"]).toBe("sRGB IEC61966-2.1");
-    expect(project.working_space).toBe(expected["workingSpace"]);
+    expect(project.workingSpace).toBe(expected["workingSpace"]);
   });
 
   /**
@@ -107,14 +107,14 @@ describe("TestWorkingSpace", () => {
     const expected = load_expected(VERSIONS_DIR.div("ae2018"), "complete");
     const project = parse_project(VERSIONS_DIR.div("ae2018", "complete.aep"));
     expect(expected["workingSpace"]).toBe("sRGB IEC61966-2.1");
-    expect(project.working_space).toBe(expected["workingSpace"]);
+    expect(project.workingSpace).toBe(expected["workingSpace"]);
   });
 
   test("test_pre_color_management_no_working_space", () => {
     // The all-0xFF `cpid` of an empty CC 2018 project: AE 2026 reports
     // workingSpace "None" for it.
     const project = parse_project(SAMPLES_DIR.div("emptier_2018.aep"));
-    expect(project.working_space).toBe("None");
+    expect(project.workingSpace).toBe("None");
   });
 });
 
@@ -123,17 +123,17 @@ describe("TestDisplayColorSpace", () => {
 
   test("test_none", () => {
     const project = parse_project(SAMPLES_DIR.div("display_color_space_ACES_None.aep"));
-    expect(project.display_color_space).toBe("None");
+    expect(project.displayColorSpace).toBe("None");
   });
 
   test("test_srgb", () => {
     const project = parse_project(SAMPLES_DIR.div("display_color_space_ACES_sRGB.aep"));
-    expect(project.display_color_space).toBe("ACES/sRGB");
+    expect(project.displayColorSpace).toBe("ACES/sRGB");
   });
 
   test("test_dcdm", () => {
     const project = parse_project(SAMPLES_DIR.div("display_color_space_ACES_DCDM.aep"));
-    expect(project.display_color_space).toBe("ACES/DCDM");
+    expect(project.displayColorSpace).toBe("ACES/DCDM");
   });
 });
 
@@ -142,12 +142,12 @@ describe("TestAudioSampleRate", () => {
 
   test("test_96000", () => {
     const project = parse_project(SAMPLES_DIR.div("Audio_sample_rate_96000.aep"));
-    expect(project.audio_sample_rate).toBe(96000.0);
+    expect(project.audioSampleRate).toBe(96000.0);
   });
 
   test("test_22050", () => {
     const project = parse_project(SAMPLES_DIR.div("Audio_sample_rate_22050.aep"));
-    expect(project.audio_sample_rate).toBe(22050.0);
+    expect(project.audioSampleRate).toBe(22050.0);
   });
 });
 
@@ -158,20 +158,20 @@ describe("TestGpuAccelType", () => {
     const expected = load_expected(SAMPLES_DIR, "gpuAccelType_mercury_gpu_acceleration_CUDA");
     const project = parse_project(SAMPLES_DIR.div("gpuAccelType_mercury_gpu_acceleration_CUDA.aep"));
     expect(expected["gpuAccelType"]).toBe(1813);
-    expect(project.gpu_accel_type).toBe(expected["gpuAccelType"]);
+    expect(project.gpuAccelType).toBe(expected["gpuAccelType"]);
   });
 
   test("test_software", () => {
     const expected = load_expected(SAMPLES_DIR, "gpuAccelType_mercury_software_only");
     const project = parse_project(SAMPLES_DIR.div("gpuAccelType_mercury_software_only.aep"));
     expect(expected["gpuAccelType"]).toBe(1816);
-    expect(project.gpu_accel_type).toBe(expected["gpuAccelType"]);
+    expect(project.gpuAccelType).toBe(expected["gpuAccelType"]);
   });
 
   test("test_opencl", () => {
     // Saved by AE 25.3 (Windows); AE 2026 reports gpuAccelType 1812 for it.
     const project = parse_project(SAMPLES_DIR.parent.parent.div("bugs", "outputmodule_path.aep"));
-    expect(project.gpu_accel_type).toBe(GpuAccelType.OPENCL);
+    expect(project.gpuAccelType).toBe(GpuAccelType.OPENCL);
   });
 
   test("test_renderer_ids", () => {
@@ -196,12 +196,12 @@ describe("TestLinearBlending", () => {
 
   test("test_linearBlending_false", () => {
     const project = parse_project(SAMPLES_DIR.div("linearBlending_false.aep"));
-    expect(!py_bool(project.linear_blending)).toBe(true);
+    expect(!py_bool(project.linearBlending)).toBe(true);
   });
 
   test("test_linearBlending_true", () => {
     const project = parse_project(SAMPLES_DIR.div("linearBlending_true.aep"));
-    expect(py_bool(project.linear_blending)).toBe(true);
+    expect(py_bool(project.linearBlending)).toBe(true);
   });
 });
 
@@ -210,12 +210,12 @@ describe("TestTransparencyGridThumbnails", () => {
 
   test("test_true", () => {
     const project = parse_project(SAMPLES_DIR.div("transparencyGridThumbnails_true.aep"));
-    expect(project.transparency_grid_thumbnails).toBe(true);
+    expect(project.transparencyGridThumbnails).toBe(true);
   });
 
   test("test_false", () => {
     const project = parse_project(SAMPLES_DIR.div("transparencyGridThumbnails_false.aep"));
-    expect(project.transparency_grid_thumbnails).toBe(false);
+    expect(project.transparencyGridThumbnails).toBe(false);
   });
 });
 
@@ -224,24 +224,24 @@ describe("TestColorManagement", () => {
 
   test("test_colorManagementSystem_adobe", () => {
     const project = parse_project(SAMPLES_DIR.div("colorManagementSystem_adobe.aep"));
-    expect(ColorManagementSystem.name_of(project.color_management_system)).toBe("ADOBE");
+    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("ADOBE");
   });
 
   test("test_colorManagementSystem_ocio", () => {
     const project = parse_project(SAMPLES_DIR.div("colorManagementSystem_ocio.aep"));
-    expect(ColorManagementSystem.name_of(project.color_management_system)).toBe("OCIO");
+    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("OCIO");
   });
 
-  // `project.lut_interpolation_method.TRILINEAR` is a class attribute read
+  // `project.lutInterpolationMethod.TRILINEAR` is a class attribute read
   // through an instance in Python; the port reads it from the enum itself.
   test("test_lutInterpolationMethod_trilinear", () => {
     const project = parse_project(SAMPLES_DIR.div("lutInterpolationMethod_trilinear.aep"));
-    expect(project.lut_interpolation_method).toBe(LutInterpolationMethod.TRILINEAR);
+    expect(project.lutInterpolationMethod).toBe(LutInterpolationMethod.TRILINEAR);
   });
 
   test("test_lutInterpolationMethod_tetrahedral", () => {
     const project = parse_project(SAMPLES_DIR.div("lutInterpolationMethod_tetrahedral.aep"));
-    expect(project.lut_interpolation_method).toBe(LutInterpolationMethod.TETRAHEDRAL);
+    expect(project.lutInterpolationMethod).toBe(LutInterpolationMethod.TETRAHEDRAL);
   });
 });
 
@@ -274,7 +274,7 @@ describe("TestActiveItem", () => {
 
   test("test_comp1_active", () => {
     const project = parse_project(VIEW_SAMPLES_DIR.div("comp1_active.aep"));
-    const active_item = project.active_item;
+    const active_item = project.activeItem;
     expect(active_item != null).toBe(true);
     if (active_item == null) throw new Error("project has no active item");
     expect(active_item.name).toBe("Comp 1");
@@ -282,7 +282,7 @@ describe("TestActiveItem", () => {
 
   test("test_comp2_active", () => {
     const project = parse_project(VIEW_SAMPLES_DIR.div("comp2_active.aep"));
-    const active_item = project.active_item;
+    const active_item = project.activeItem;
     expect(active_item != null).toBe(true);
     if (active_item == null) throw new Error("project has no active item");
     expect(active_item.name).toBe("Comp 2");
@@ -290,12 +290,12 @@ describe("TestActiveItem", () => {
 });
 
 describe("TestListColorProfiles", () => {
-  /** Tests for Project.list_color_profiles(). */
+  /** Tests for Project.listColorProfiles(). */
 
   test("test_adobe_mode_matches_catalogue", () => {
     // Validated set-equal to AE listColorProfiles() (102 names, AE 2026).
     const project = parse_project(SAMPLES_DIR.div("workingSpace_sRGB.aep"));
-    const profiles = project.list_color_profiles();
+    const profiles = project.listColorProfiles();
     expect(len(profiles)).toBe(102);
     for (const expected of ["sRGB IEC61966-2.1", "ProPhoto RGB", "Apple RGB"]) {
       expect(contains(profiles, expected)).toBe(true);
@@ -306,14 +306,14 @@ describe("TestListColorProfiles", () => {
     // This sample's stored ocioConfigurationFile path no longer exists; the
     // method degrades gracefully to an empty list.
     const project = parse_project(SAMPLES_DIR.div("colorManagementSystem_ocio.aep"));
-    expect(ColorManagementSystem.name_of(project.color_management_system)).toBe("OCIO");
-    expect(py_eq(project.list_color_profiles(), [])).toBe(true);
+    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("OCIO");
+    expect(py_eq(project.listColorProfiles(), [])).toBe(true);
   });
 });
 
 describe("TestDynamicLinkGUID", () => {
   /**
-   * Tests for Item.dynamic_link_guid.
+   * Tests for Item.dynamicLinkGuid.
    *
    * The id-derived formula was validated against AE 2026 (2026-07-14 probe:
    * all 11 items of a generated project matched, stable across re-open, and
@@ -324,7 +324,7 @@ describe("TestDynamicLinkGUID", () => {
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_8.aep"));
     expect(py_bool(project.items)).toBe(true);
     for (const [item_id, item] of project.items) {
-      expect(item.dynamic_link_guid).toBe(`${format(item_id, "08x")}-0000-0000-0000-000000000000`);
+      expect(item.dynamicLinkGuid).toBe(`${format(item_id, "08x")}-0000-0000-0000-000000000000`);
     }
   });
 
@@ -332,7 +332,7 @@ describe("TestDynamicLinkGUID", () => {
     const project = parse_project(SAMPLES_DIR.div("bitsPerChannel_8.aep"));
     const first = project.items.values().next();
     if (first.done) throw new StopIteration();
-    const guid = first.value.dynamic_link_guid;
+    const guid = first.value.dynamicLinkGuid;
     const groups = split(guid, "-");
     expect(py_eq(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
     expect(guid).toBe(guid.toLowerCase());

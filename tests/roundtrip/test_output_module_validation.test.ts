@@ -20,7 +20,7 @@ import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 const REJECTS: [string, string, SettingValue][] = [
@@ -56,12 +56,12 @@ const REJECTS: [string, string, SettingValue][] = [
 test.each(REJECTS)("test_disallowed_write_raises[%#]", (sample: string, key: string, value: SettingValue) => {
   const project = parse_project_fresh(RQ_DIR.div(`${sample}.aep`));
   const om = _om(project);
-  const before = om.get_settings();
+  const before = om.getSettings();
   raises(ValueError, () => {
     om.settings.set(key, value);
   });
   // NOTE(port): py_assert carries the same assert message as the Python original.
-  py_assert(py_eq(om.get_settings(), before), "rejected write must not mutate");
+  py_assert(py_eq(om.getSettings(), before), "rejected write must not mutate");
 });
 
 // NOTE: the samples store RGB channels, so only base (non-`+`) depths
@@ -93,14 +93,14 @@ test("test_quicktime_supports_alpha", () => {
       .div("quicktime")
       .div("apple_prores_4444.aep"),
   );
-  const om = as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+  const om = as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
   om.settings.set("Channels", OutputChannels.RGBA);
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
   expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  expect(py_eq(om2.validate_state(), [])).toBe(true);
+  expect(py_eq(om2.validateState(), [])).toBe(true);
 });
 
 /** AE offers `+` depths only under RGB+Alpha (parity rows). */
@@ -183,7 +183,7 @@ test("test_crop_resize_roi_writes_keep_audio_module_audio_only", () => {
   om.settings.set("Resize", false);
   expect(om.settings.get("Video Output")).toBe(false);
   expect(py_eq([om._roou.width, om._roou.height], [0, 0])).toBe(true);
-  expect(py_eq(om.validate_state(), [])).toBe(true);
+  expect(py_eq(om.validateState(), [])).toBe(true);
   raises(ValueError, () => {
     om.settings.set("Resize to", [1280, 720]);
   });
@@ -203,5 +203,5 @@ test("test_garbage_channels_byte_stays_permissive", () => {
   om._om_ldat.channels = 7; // not a valid OutputChannels member
   om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // no raise
   om.settings.set("Audio Channels", om.settings.get("Audio Channels")); // clamp path
-  expect(py_eq(om.validate_state(), [])).toBe(true);
+  expect(py_eq(om.validateState(), [])).toBe(true);
 });

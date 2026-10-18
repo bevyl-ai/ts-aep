@@ -5,7 +5,7 @@
  * (channels, exposure, zoom, fast preview, toggle flags, etc.) from the
  * `fips` chunks in the binary AEP format.
  *
- * The viewer panel data is accessed via `project.active_viewer`, which
+ * The viewer panel data is accessed via `project.activeViewer`, which
  * represents the focused Composition/Layer/Footage panel. Each panel has
  * one or more `View` objects containing `ViewOptions`.
  */
@@ -26,18 +26,18 @@ const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "
 /** Parse a project and return the ViewOptions of the active viewer's first view. */
 function _get_active_view_options(aep_path: Path): ViewOptions {
   const app = parse_app_fresh(aep_path);
-  py_assert(app.active_viewer != null);
-  expect(app.active_viewer.type).toBe(ViewerType.VIEWER_COMPOSITION);
-  expect(app.active_viewer.views.length >= 1).toBe(true);
-  return app.active_viewer.views[0].options;
+  py_assert(app.activeViewer != null);
+  expect(app.activeViewer.type).toBe(ViewerType.VIEWER_COMPOSITION);
+  expect(app.activeViewer.views.length >= 1).toBe(true);
+  return app.activeViewer.views[0].options;
 }
 
 /** Parse a non-cached app and return (app, active view options). */
 function _get_active_app_and_options(aep_path: Path): [Application, ViewOptions] {
   const app = parse_aep(aep_path);
-  py_assert(app.active_viewer != null);
-  expect(app.active_viewer.views.length >= 1).toBe(true);
-  return [app, app.active_viewer.views[0].options];
+  py_assert(app.activeViewer != null);
+  expect(app.activeViewer.views.length >= 1).toBe(true);
+  return [app, app.activeViewer.views[0].options];
 }
 
 /** Save the project, re-parse, and return the active view options. */
@@ -45,31 +45,31 @@ function _roundtrip_options(app: Application, tmp_path: Path): ViewOptions {
   const out = tmp_path.div("modified.aep");
   app.project.save(out);
   const app2 = parse_aep(out);
-  py_assert(app2.active_viewer != null);
-  expect(app2.active_viewer.views.length >= 1).toBe(true);
-  return app2.active_viewer.views[0].options;
+  py_assert(app2.activeViewer != null);
+  expect(app2.activeViewer.views.length >= 1).toBe(true);
+  return app2.activeViewer.views[0].options;
 }
 
 describe("TestViewActive", () => {
   /** The first view should be active by default. */
   test("test_first_view_active_by_default", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_base.aep"));
-    py_assert(app.active_viewer != null);
-    expect(app.active_viewer.views[0].active).toBe(true);
+    py_assert(app.activeViewer != null);
+    expect(app.activeViewer.views[0].active).toBe(true);
   });
 
   /** set_active() should update the viewer's active_view_index. */
   test("test_set_active_changes_index", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_left_viewer.aep"));
-    py_assert(app.active_viewer != null);
-    const viewer = app.active_viewer;
+    py_assert(app.activeViewer != null);
+    const viewer = app.activeViewer;
     expect(viewer.views.length).toBe(2);
-    expect(viewer.active_view_index).toBe(0);
+    expect(viewer.activeViewIndex).toBe(0);
     expect(viewer.views[0].active).toBe(true);
     expect(viewer.views[1].active).toBe(false);
 
-    viewer.views[1].set_active();
-    expect(viewer.active_view_index).toBe(1);
+    viewer.views[1].setActive();
+    expect(viewer.activeViewIndex).toBe(1);
     expect(viewer.views[0].active).toBe(false);
     expect(viewer.views[1].active).toBe(true);
   });
@@ -77,10 +77,10 @@ describe("TestViewActive", () => {
   /** Setting an invalid active_view_index should raise ValueError. */
   test("test_active_view_index_setter_validation", () => {
     const app = parse_app_fresh(SAMPLES_DIR.div("roi_base.aep"));
-    py_assert(app.active_viewer != null);
-    const viewer = app.active_viewer;
+    py_assert(app.activeViewer != null);
+    const viewer = app.activeViewer;
     raises(ValueError, () => {
-      viewer.active_view_index = 99;
+      viewer.activeViewIndex = 99;
     });
   });
 });
@@ -160,49 +160,49 @@ describe("TestRoundtripExposure", () => {
 });
 
 describe("TestRoundtripFastPreview", () => {
-  /** Roundtrip tests for ViewOptions.fast_preview. */
+  /** Roundtrip tests for ViewOptions.fastPreview. */
   test("test_modify_fast_preview_to_wireframe", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("fast_preview_off.aep"));
-    expect(opts.fast_preview).toBe(FastPreviewType.FP_OFF);
+    expect(opts.fastPreview).toBe(FastPreviewType.FP_OFF);
 
-    opts.fast_preview = FastPreviewType.FP_WIREFRAME;
+    opts.fastPreview = FastPreviewType.FP_WIREFRAME;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.fast_preview).toBe(FastPreviewType.FP_WIREFRAME);
+    expect(opts2.fastPreview).toBe(FastPreviewType.FP_WIREFRAME);
   });
 
   test("test_modify_fast_preview_to_adaptive", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("fast_preview_off.aep"));
-    opts.fast_preview = FastPreviewType.FP_ADAPTIVE_RESOLUTION;
+    opts.fastPreview = FastPreviewType.FP_ADAPTIVE_RESOLUTION;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.fast_preview).toBe(FastPreviewType.FP_ADAPTIVE_RESOLUTION);
+    expect(opts2.fastPreview).toBe(FastPreviewType.FP_ADAPTIVE_RESOLUTION);
   });
 
   test("test_modify_fast_preview_to_off", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("fast_preview_wireframe.aep"));
-    expect(opts.fast_preview).toBe(FastPreviewType.FP_WIREFRAME);
+    expect(opts.fastPreview).toBe(FastPreviewType.FP_WIREFRAME);
 
-    opts.fast_preview = FastPreviewType.FP_OFF;
+    opts.fastPreview = FastPreviewType.FP_OFF;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.fast_preview).toBe(FastPreviewType.FP_OFF);
+    expect(opts2.fastPreview).toBe(FastPreviewType.FP_OFF);
   });
 
   test("test_modify_fast_preview_to_draft", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("fast_preview_off.aep"));
-    opts.fast_preview = FastPreviewType.FP_DRAFT;
+    opts.fastPreview = FastPreviewType.FP_DRAFT;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.fast_preview).toBe(FastPreviewType.FP_DRAFT);
+    expect(opts2.fastPreview).toBe(FastPreviewType.FP_DRAFT);
   });
 
   test("test_modify_fast_preview_to_fast_draft", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("fast_preview_off.aep"));
-    opts.fast_preview = FastPreviewType.FP_FAST_DRAFT;
+    opts.fastPreview = FastPreviewType.FP_FAST_DRAFT;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.fast_preview).toBe(FastPreviewType.FP_FAST_DRAFT);
+    expect(opts2.fastPreview).toBe(FastPreviewType.FP_FAST_DRAFT);
   });
 });
 
@@ -220,80 +220,80 @@ describe("TestRoundtripGrid", () => {
 });
 
 describe("TestRoundtripGuidesLocked", () => {
-  /** Roundtrip tests for ViewOptions.guides_locked. */
+  /** Roundtrip tests for ViewOptions.guidesLocked. */
   test("test_toggle_guides_locked", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("lock_guides_off.aep"));
-    expect(opts.guides_locked).toBe(false);
+    expect(opts.guidesLocked).toBe(false);
 
-    opts.guides_locked = true;
+    opts.guidesLocked = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.guides_locked).toBe(true);
+    expect(opts2.guidesLocked).toBe(true);
   });
 });
 
 describe("TestRoundtripGuidesSnap", () => {
-  /** Roundtrip tests for ViewOptions.guides_snap. */
+  /** Roundtrip tests for ViewOptions.guidesSnap. */
   test("test_toggle_guides_snap", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("snap_to_guides_off.aep"));
-    expect(opts.guides_snap).toBe(false);
+    expect(opts.guidesSnap).toBe(false);
 
-    opts.guides_snap = true;
+    opts.guidesSnap = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.guides_snap).toBe(true);
+    expect(opts2.guidesSnap).toBe(true);
   });
 });
 
 describe("TestRoundtripGuidesVisibility", () => {
-  /** Roundtrip tests for ViewOptions.guides_visibility. */
+  /** Roundtrip tests for ViewOptions.guidesVisibility. */
   test("test_toggle_guides_visibility", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("guides_off.aep"));
-    expect(opts.guides_visibility).toBe(false);
+    expect(opts.guidesVisibility).toBe(false);
 
-    opts.guides_visibility = true;
+    opts.guidesVisibility = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.guides_visibility).toBe(true);
+    expect(opts2.guidesVisibility).toBe(true);
   });
 });
 
 describe("TestRoundtripMaskAndShapePath", () => {
-  /** Roundtrip tests for ViewOptions.mask_and_shape_path. */
+  /** Roundtrip tests for ViewOptions.maskAndShapePath. */
   test("test_toggle_mask_and_shape_path", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("mask_and_shape_path_off.aep"));
-    expect(opts.mask_and_shape_path).toBe(false);
+    expect(opts.maskAndShapePath).toBe(false);
 
-    opts.mask_and_shape_path = true;
+    opts.maskAndShapePath = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.mask_and_shape_path).toBe(true);
+    expect(opts2.maskAndShapePath).toBe(true);
   });
 });
 
 describe("TestRoundtripProportionalGrid", () => {
-  /** Roundtrip tests for ViewOptions.proportional_grid. */
+  /** Roundtrip tests for ViewOptions.proportionalGrid. */
   test("test_toggle_proportional_grid", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("proportional_grid_off.aep"));
-    expect(opts.proportional_grid).toBe(false);
+    expect(opts.proportionalGrid).toBe(false);
 
-    opts.proportional_grid = true;
+    opts.proportionalGrid = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.proportional_grid).toBe(true);
+    expect(opts2.proportionalGrid).toBe(true);
   });
 });
 
 describe("TestRoundtripRegionOfInterest", () => {
-  /** Roundtrip tests for ViewOptions.region_of_interest. */
+  /** Roundtrip tests for ViewOptions.regionOfInterest. */
   test("test_toggle_region_of_interest", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("roi_off.aep"));
-    expect(opts.region_of_interest).toBe(false);
+    expect(opts.regionOfInterest).toBe(false);
 
-    opts.region_of_interest = true;
+    opts.regionOfInterest = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.region_of_interest).toBe(true);
+    expect(opts2.regionOfInterest).toBe(true);
   });
 });
 
@@ -311,30 +311,30 @@ describe("TestRoundtripRulers", () => {
 });
 
 describe("TestRoundtripTitleActionSafe", () => {
-  /** Roundtrip tests for ViewOptions.title_action_safe. */
+  /** Roundtrip tests for ViewOptions.titleActionSafe. */
   test("test_toggle_title_action_safe", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("title_action_safe_off.aep"));
-    expect(opts.title_action_safe).toBe(false);
+    expect(opts.titleActionSafe).toBe(false);
 
-    opts.title_action_safe = true;
+    opts.titleActionSafe = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.title_action_safe).toBe(true);
+    expect(opts2.titleActionSafe).toBe(true);
   });
 });
 
 describe("TestRoundtripUseDisplayColorManagement", () => {
-  /** Roundtrip tests for ViewOptions.use_display_color_management. */
+  /** Roundtrip tests for ViewOptions.useDisplayColorManagement. */
   test("test_toggle_display_color_management", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(
       SAMPLES_DIR.div("channels_use_display_color_management_off.aep"),
     );
-    expect(opts.use_display_color_management).toBe(false);
+    expect(opts.useDisplayColorManagement).toBe(false);
 
-    opts.use_display_color_management = true;
+    opts.useDisplayColorManagement = true;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.use_display_color_management).toBe(true);
+    expect(opts2.useDisplayColorManagement).toBe(true);
   });
 });
 
@@ -378,17 +378,17 @@ describe("TestRoundtripRoi", () => {
   test("test_modify_roi_coordinates", () => {
     const tmp_path = make_tmp_path();
     const [app, opts] = _get_active_app_and_options(SAMPLES_DIR.div("roi_base.aep"));
-    expect(opts.roi_top).toBe(111);
+    expect(opts.roiTop).toBe(111);
 
-    opts.roi_top = 50;
-    opts.roi_left = 60;
-    opts.roi_bottom = 400;
-    opts.roi_right = 450;
+    opts.roiTop = 50;
+    opts.roiLeft = 60;
+    opts.roiBottom = 400;
+    opts.roiRight = 450;
     const opts2 = _roundtrip_options(app, tmp_path);
-    expect(opts2.roi_top).toBe(50);
-    expect(opts2.roi_left).toBe(60);
-    expect(opts2.roi_bottom).toBe(400);
-    expect(opts2.roi_right).toBe(450);
+    expect(opts2.roiTop).toBe(50);
+    expect(opts2.roiLeft).toBe(60);
+    expect(opts2.roiBottom).toBe(400);
+    expect(opts2.roiRight).toBe(450);
   });
 });
 
@@ -399,7 +399,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_top = -1;
+        opts.roiTop = -1;
       },
       "must be >= 0",
     );
@@ -410,7 +410,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_left = -1;
+        opts.roiLeft = -1;
       },
       "must be >= 0",
     );
@@ -422,7 +422,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_top = 339;
+        opts.roiTop = 339;
       },
       "must be <= 338",
     );
@@ -434,7 +434,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_left = 366;
+        opts.roiLeft = 366;
       },
       "must be <= 365",
     );
@@ -446,7 +446,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_bottom = 111;
+        opts.roiBottom = 111;
       },
       "must be >= 112",
     );
@@ -458,7 +458,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_right = 123;
+        opts.roiRight = 123;
       },
       "must be >= 124",
     );
@@ -470,7 +470,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_bottom = 501;
+        opts.roiBottom = 501;
       },
       "must be <= 500",
     );
@@ -482,7 +482,7 @@ describe("TestRoiValidation", () => {
     raises(
       ValueError,
       () => {
-        opts.roi_right = 501;
+        opts.roiRight = 501;
       },
       "must be <= 500",
     );
@@ -493,7 +493,7 @@ describe("TestRoiValidation", () => {
     raises(
       TypeError_,
       () => {
-        opts.roi_top = 50.5;
+        opts.roiTop = 50.5;
       },
       "an integer",
     );
@@ -505,13 +505,13 @@ describe("TestRoiValidation", () => {
     // the shared roi_base.aep app would corrupt the read-only ROI tests
     // (e.g. test_roi_base) when they land on the same xdist worker.
     const [_, opts] = _get_active_app_and_options(SAMPLES_DIR.div("roi_base.aep"));
-    opts.roi_top = 0;
-    opts.roi_left = 0;
-    opts.roi_bottom = 500;
-    opts.roi_right = 500;
-    expect(opts.roi_top).toBe(0);
-    expect(opts.roi_left).toBe(0);
-    expect(opts.roi_bottom).toBe(500);
-    expect(opts.roi_right).toBe(500);
+    opts.roiTop = 0;
+    opts.roiLeft = 0;
+    opts.roiBottom = 500;
+    opts.roiRight = 500;
+    expect(opts.roiTop).toBe(0);
+    expect(opts.roiLeft).toBe(0);
+    expect(opts.roiBottom).toBe(500);
+    expect(opts.roiRight).toBe(500);
   });
 });

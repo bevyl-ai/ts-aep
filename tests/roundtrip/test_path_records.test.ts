@@ -41,9 +41,9 @@ function _counts(source: FileSource): [JsonValue, JsonValue] {
 function _sources(project: Project): Map<string, FileSource> {
   const out = new Map<string, FileSource>();
   for (const item of project.footages) {
-    if (item instanceof FootageItem && item.main_source instanceof FileSource) {
-      const kind = item.main_source._target_is_folder ? "sequence" : "file";
-      out.set(kind, item.main_source);
+    if (item instanceof FootageItem && item.mainSource instanceof FileSource) {
+      const kind = item.mainSource._target_is_folder ? "sequence" : "file";
+      out.set(kind, item.mainSource);
     }
   }
   return out;
@@ -57,10 +57,10 @@ function _project_with_media(tmp_path: Path, platform: string | null = null): Pr
     copy2(ASSETS.div("image_with_alpha.png"), media.div("seq", `s_${String(n).padStart(4, "0")}.png`));
   }
   const project = parse_aep(BASE, { platform }).project;
-  project.import_file(new ImportOptions(media.div("img.png")));
+  project.importFile(new ImportOptions(media.div("img.png")));
   const opts = new ImportOptions(media.div("seq", "s_0001.png"));
   opts.sequence = true;
-  project.import_file(opts);
+  project.importFile(opts);
   return project;
 }
 
@@ -111,11 +111,11 @@ describe("TestSaveFillsCounts", () => {
   test("test_render_output_path", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES.div("models", "renderqueue", "render_settings.aep")).project;
-    const om = get_rqi(project, "base").output_modules[0];
-    om.file_template = fspath(tmp_path.div("renders")) + nodepath.sep + "out.[fileExtension]";
+    const om = get_rqi(project, "base").outputModules[0];
+    om.fileTemplate = fspath(tmp_path.div("renders")) + nodepath.sep + "out.[fileExtension]";
     const out = tmp_path.div("proj", "p.aep");
     project.save(out);
-    const data = get_rqi(parse_aep(out).project, "base").output_modules[0]._alas_data;
+    const data = get_rqi(parse_aep(out).project, "base").outputModules[0]._alas_data;
     // proj/p.aep vs a file inside renders/.
     expect(
       py_eq([getitem(data, "ascendcount_base"), getitem(data, "ascendcount_target")], [2, 2]),

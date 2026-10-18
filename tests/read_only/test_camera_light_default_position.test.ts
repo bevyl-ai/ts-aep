@@ -100,10 +100,10 @@ function _assert_matches_json(sample: string, comp_name: string, layer_name: str
     const prop = _position(layer, match_name);
     const prop_json = getitem(expected, match_name);
     py_assert(approx(prop.value, prop_json["value"]), match_name);
-    py_assert(prop.is_modified === prop_json["isModified"], match_name);
+    py_assert(prop.isModified === prop_json["isModified"], match_name);
   }
   const leader_json = getitem(expected, "ADBE Position");
-  expect(_position(layer).dimensions_separated).toBe(json_field(leader_json, "dimensionsSeparated"));
+  expect(_position(layer).dimensionsSeparated).toBe(json_field(leader_json, "dimensionsSeparated"));
 }
 
 describe("TestCameraDefaultPosition", () => {
@@ -115,19 +115,19 @@ describe("TestCameraDefaultPosition", () => {
     // AE places a dropped Position from the camera's Zoom at time 0, not
     // the comp's default zoom (-2000), also once the Zoom is keyed.
     const camera = _layer("camera_default_position", comp_name, "Camera");
-    expect(approx(_position(camera).default_value, [720.0, 405.0, -1000.0])).toBe(true);
+    expect(approx(_position(camera).defaultValue, [720.0, 405.0, -1000.0])).toBe(true);
   });
 
   test("test_separated_followers_default_to_leader", () => {
     const camera = _layer("camera_default_position", "zoom_1000_separated", "Camera");
-    const defaults = Array.from(range(3), (dim) => _position(camera, `ADBE Position_${dim}`).default_value);
+    const defaults = Array.from(range(3), (dim) => _position(camera, `ADBE Position_${dim}`).defaultValue);
     expect(approx(defaults, [720.0, 405.0, -1000.0])).toBe(true);
   });
 
   test("test_moved_off_default", () => {
     const camera = _layer("camera_default_position", "moved", "Camera");
     const position = _position(camera);
-    expect(approx(position.default_value, [720.0, 405.0, -1000.0])).toBe(true);
+    expect(approx(position.defaultValue, [720.0, 405.0, -1000.0])).toBe(true);
   });
 
   test("test_camera_with_default_zoom", () => {
@@ -139,7 +139,7 @@ describe("TestCameraDefaultPosition", () => {
     if (camera === undefined) throw new StopIteration();
     const position = _position(camera);
     expect(approx(position.value, [960.0, 53.5, -2424.24242418])).toBe(true);
-    expect(position.is_modified).toBe(false);
+    expect(position.isModified).toBe(false);
   });
 });
 
@@ -150,20 +150,20 @@ describe("TestLightDefaultPosition", () => {
 
   test.each(_LIGHT_COMPS)("test_default_value[%#]", (comp_name) => {
     const light = _layer("light_default_position", comp_name, "Point");
-    const comp = light.containing_comp;
-    const zoom = (comp.width * comp.pixel_aspect) / 0.72;
+    const comp = light.containingComp;
+    const zoom = (comp.width * comp.pixelAspect) / 0.72;
     const expected = [
       comp.width / 2 + 0.03 * zoom,
       comp.height / 2 - 0.03 * zoom,
       -zoom / 4,
     ];
-    expect(approx(_position(light).default_value, expected)).toBe(true);
+    expect(approx(_position(light).defaultValue, expected)).toBe(true);
   });
 
   test.each(_LIGHT_COMPS)("test_separated_followers_default_to_leader[%#]", (comp_name) => {
     const light = _layer("light_default_position", comp_name, "Point Separated");
-    const defaults = Array.from(range(3), (dim) => _position(light, `ADBE Position_${dim}`).default_value);
-    expect(approx(defaults, _position(light).default_value)).toBe(true);
+    const defaults = Array.from(range(3), (dim) => _position(light, `ADBE Position_${dim}`).defaultValue);
+    expect(approx(defaults, _position(light).defaultValue)).toBe(true);
   });
 
   test("test_environment_light_stored_at_default", () => {
@@ -173,8 +173,8 @@ describe("TestLightDefaultPosition", () => {
     const light = comp.layers.find((ly) => ly.name === "Environment Light 1");
     if (light === undefined) throw new StopIteration();
     const position = _position(light);
-    expect(approx(position.default_value, [1040.0, 460.0, -2000.0 / 3])).toBe(true);
-    expect(approx(position.value, position.default_value)).toBe(true);
-    expect(position.is_modified).toBe(false);
+    expect(approx(position.defaultValue, [1040.0, 460.0, -2000.0 / 3])).toBe(true);
+    expect(approx(position.value, position.defaultValue)).toBe(true);
+    expect(position.isModified).toBe(false);
   });
 });

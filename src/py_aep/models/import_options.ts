@@ -25,14 +25,14 @@ export class _CurrentValue {
  * current source's. For `layer_dimensions`, preserves the current single-layer
  * binding's Document/Layer Size choice.
  *
- * Not valid for `ImportOptions.layer_index` - an import has no current binding.
+ * Not valid for `ImportOptions.layerIndex` - an import has no current binding.
  */
 export const CURRENT_VALUE = new _CurrentValue();
 
 /**
  * Options for importing a file into an After Effects project.
  *
- * This is a parameter container used by `Project.import_file()`. It
+ * This is a parameter container used by `Project.importFile()`. It
  * validates the import settings before the actual import operation.
  *
  * Unlike most py_aep classes, `ImportOptions` has no chunk backing -
@@ -43,7 +43,7 @@ export const CURRENT_VALUE = new _CurrentValue();
  *
  * const opts = new ImportOptions("footage/shot_001.png");
  * opts.sequence = true;
- * opts.import_as = ImportAsType.FOOTAGE;
+ * opts.importAs = ImportAsType.FOOTAGE;
  * ```
  *
  * @example
@@ -89,11 +89,11 @@ export class ImportOptions {
    * @throws {@link ValueError} On import, if the index is out of range for the file's selectable
    *   layers (see `list_layers`).
    */
-  get layer_index(): number | null {
+  get layerIndex(): number | null {
     return this._layer_index;
   }
 
-  set layer_index(value: number | null | _CurrentValue) {
+  set layerIndex(value: number | null | _CurrentValue) {
     if (value instanceof _CurrentValue) {
       throw new ValueError(
         "CURRENT_VALUE is only valid for FootageItem.replace; an " +
@@ -123,11 +123,11 @@ export class ImportOptions {
    * treats first-artboard layers as empty; py_aep measures the first
    * and emits a `UserWarning`.
    */
-  get layer_dimensions(): string | null {
+  get layerDimensions(): string | null {
     return this._layer_dimensions;
   }
 
-  set layer_dimensions(value: string | null) {
+  set layerDimensions(value: string | null) {
     if (value != null) validate_one_of(["document", "layer"])(value);
     this._layer_dimensions = value;
   }
@@ -150,7 +150,7 @@ export class ImportOptions {
    *
    * Valid combinations (checked at import time): a FOOTAGE import
    * accepts `"merge"`/`"ignore"` and requires
-   * {@link ImportOptions.layer_index | layer_index} (AE's "Merged Layers"
+   * {@link ImportOptions.layerIndex | layer_index} (AE's "Merged Layers"
    * whole-document import - `layer_index=None` - always flattens the
    * styles into the composite and offers no choice); a COMP import
    * accepts `"editable"`/`"merge"`. Note the naming collision in AE's
@@ -161,11 +161,11 @@ export class ImportOptions {
    * @throws {@link ValueError} On import, if the value is not offered for the import context (see
    *   above), or if the file is not `.psd`/`.psb`.
    */
-  get layer_styles(): string | null {
+  get layerStyles(): string | null {
     return this._layer_styles;
   }
 
-  set layer_styles(value: string | null | _CurrentValue) {
+  set layerStyles(value: string | null | _CurrentValue) {
     if (value instanceof _CurrentValue) {
       throw new ValueError(
         "CURRENT_VALUE is only valid for FootageItem.replace; an " +
@@ -190,11 +190,11 @@ export class ImportOptions {
   }
 
   /** How to import the file. Read / Write. */
-  get import_as(): ImportAsType {
+  get importAs(): ImportAsType {
     return this._import_as;
   }
 
-  set import_as(value: ImportAsType) {
+  set importAs(value: ImportAsType) {
     validate_enum(ImportAsType)(value);
     this._import_as = ImportAsType.of(value);
   }
@@ -220,15 +220,15 @@ export class ImportOptions {
    * imported file's type in its folder, numbered or not, in
    * case-insensitive name order, and is named after the folder.
    *
-   * Setting `true` resets {@link ImportOptions.range_start | range_start} and
-   * {@link ImportOptions.range_end | range_end} to 0 (matching After Effects:
+   * Setting `true` resets {@link ImportOptions.rangeStart | range_start} and
+   * {@link ImportOptions.rangeEnd | range_end} to 0 (matching After Effects:
    * an alphabetical sequence cannot carry a frame range).
    */
-  get force_alphabetical(): boolean {
+  get forceAlphabetical(): boolean {
     return this._force_alphabetical;
   }
 
-  set force_alphabetical(value: boolean) {
+  set forceAlphabetical(value: boolean) {
     validate_bool(value);
     this._force_alphabetical = value;
     if (value) {
@@ -252,11 +252,11 @@ export class ImportOptions {
    *   cannot set sequence range start for an alphabetical sequence"), or if the value does not fit
    *   the `sspc` `start_frame` field (a `u4`: 0..4294967295).
    */
-  get range_start(): number {
+  get rangeStart(): number {
     return this._range_start;
   }
 
-  set range_start(value: number) {
+  set rangeStart(value: number) {
     validate_u4(value);
     if (this._force_alphabetical) {
       throw new ValueError("cannot set a sequence range start for an alphabetical sequence");
@@ -279,11 +279,11 @@ export class ImportOptions {
    * @throws {@link ValueError} If set while `force_alphabetical` is `true`, or if the value does
    *   not fit the `sspc` `end_frame` field (a `u4`: 0..4294967295).
    */
-  get range_end(): number {
+  get rangeEnd(): number {
     return this._range_end;
   }
 
-  set range_end(value: number) {
+  set rangeEnd(value: number) {
     validate_u4(value);
     if (this._force_alphabetical) {
       throw new ValueError("cannot set a sequence range end for an alphabetical sequence");
@@ -308,7 +308,7 @@ export class ImportOptions {
    * @param type - The import type to check.
    * @returns `true` if the file can be imported as `type`.
    */
-  can_import_as(type: number): boolean {
+  canImportAs(type: number): boolean {
     validate_enum(ImportAsType)(type);
     const as_type = ImportAsType.of(type);
     if (as_type === ImportAsType.PROJECT) return false;
@@ -346,7 +346,7 @@ export class ImportOptions {
    *   filename stem ends with digits and `first_number` is the parsed integer value (or `0` when
    *   not numbered).
    */
-  is_file_name_numbered(): [boolean, number] {
+  isFileNameNumbered(): [boolean, number] {
     const stem = this._file.stem;
     const m = _NUMBERED_RE.exec(stem);
     if (m != null) return [true, int(m[1])];

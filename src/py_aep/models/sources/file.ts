@@ -188,9 +188,9 @@ export function _still_data_size(fmt: FileFormat, info: MediaInfo, path: Path): 
 export class PsdLayerFootage {
   /** The content box `(left, top, right, bottom)` in canvas pixels. */
   readonly box: [number, number, number, number];
-  readonly opti_data: Uint8Array;
-  readonly data_size: number;
-  readonly has_alpha: boolean;
+  readonly optiData: Uint8Array;
+  readonly dataSize: number;
+  readonly hasAlpha: boolean;
   readonly depth: number;
 
   constructor(
@@ -201,17 +201,17 @@ export class PsdLayerFootage {
     depth: number,
   ) {
     this.box = box;
-    this.opti_data = opti_data;
-    this.data_size = data_size;
-    this.has_alpha = has_alpha;
+    this.optiData = opti_data;
+    this.dataSize = data_size;
+    this.hasAlpha = has_alpha;
     this.depth = depth;
   }
 
-  *[Symbol.iterator](): Generator<PsdLayerFootage["box" | "opti_data" | "data_size" | "has_alpha" | "depth"]> {
+  *[Symbol.iterator](): Generator<PsdLayerFootage["box" | "optiData" | "dataSize" | "hasAlpha" | "depth"]> {
     yield this.box;
-    yield this.opti_data;
-    yield this.data_size;
-    yield this.has_alpha;
+    yield this.optiData;
+    yield this.dataSize;
+    yield this.hasAlpha;
     yield this.depth;
   }
 }
@@ -606,8 +606,8 @@ export type NewSourceKw = {
  *
  * const app = parse("project.aep");
  * const footage = app.project.footages[0];
- * if (footage.main_source instanceof FileSource) {
- *   console.log(footage.main_source.file);
+ * if (footage.mainSource instanceof FileSource) {
+ *   console.log(footage.mainSource.file);
  * }
  * ```
  * @see https://ae-scripting.docsforadobe.dev/sources/filesource/
@@ -626,12 +626,12 @@ export class FileSource extends FootageSource {
   }
 
   /** The filenames if the footage is an image sequence. Read-only. */
-  get file_names(): string[] {
+  get fileNames(): string[] {
     return this._file_names;
   }
 
   /** `true` if the file is a folder, else `false`. Read-only. */
-  get target_is_folder(): boolean {
+  get targetIsFolder(): boolean {
     return this._target_is_folder;
   }
 
@@ -668,18 +668,18 @@ export class FileSource extends FootageSource {
     super._join_project(project);
     if (
       this._clrs == null ||
-      project.color_management_system !== ColorManagementSystem.OCIO
+      project.colorManagementSystem !== ColorManagementSystem.OCIO
     ) {
       return;
     }
     const profile = this._ocsp_profile();
     if (profile != null && profile.is_ocio) return;
-    const config = resolve_ocio_config(project.ocio_configuration_file);
+    const config = resolve_ocio_config(project.ocioConfigurationFile);
     const envelope = config == null ? null : ocio_input_envelope(config, this._file);
     if (envelope == null) {
       // TODO(port): Python passes stacklevel=3 so the warning is attributed to the caller of the public API (warning filename/lineno); pyrt warn(message) has no stacklevel and JS has no Python frames, so only that attribution differs, not the message text.
       warn(
-        `OCIO configuration ${repr(project.ocio_configuration_file)} not found ` +
+        `OCIO configuration ${repr(project.ocioConfigurationFile)} not found ` +
           `or without a default color space: ${new Path(this._file).name} keeps ` +
           "an Adobe color profile",
       );
@@ -701,7 +701,7 @@ export class FileSource extends FootageSource {
    * at the time the project was last saved, otherwise an empty string.
    * Read-only.
    */
-  get missing_footage_path(): string {
+  get missingFootagePath(): string {
     if (this._sspc.footage_missing_at_save) return this._file;
     return "";
   }
@@ -731,7 +731,7 @@ export class FileSource extends FootageSource {
    *
    * Read-only.
    */
-  get file_attributes(): Map<string, number | string> {
+  get fileAttributes(): Map<string, number | string> {
     return this._file_attributes;
   }
 
@@ -886,7 +886,7 @@ export class FileSource extends FootageSource {
      *   unbound sentinel.
      * @param layer_index - 0-based document index of the referenced layer; `null` keeps the
      *   `0xFFFFFFFF` unbound sentinel.
-     * @param data_size - Cached source data size for `sspc` byte 0xD0 (see `SspcChunk.data_size`);
+     * @param data_size - Cached source data size for `sspc` byte 0xD0 (see `SspcChunk.dataSize`);
      *   `0` lets AE re-derive it.
      * @param reserved_c8 - Override for the `sspc` 0xC8 kind bytes. `null` applies the whole-file
      *   rule (see below); layer-bound and merged-PSD sources pass AE's observed per-context value.
@@ -1075,8 +1075,8 @@ export class FileSource extends FootageSource {
     /**
      * Build a `FileSource` by probing a media file's header.
      *
-     * Shared by `Project.import_file`, `FootageItem.replace*`, and
-     * `AVItem.set_proxy*`.
+     * Shared by `Project.importFile`, `FootageItem.replace*`, and
+     * `AVItem.setProxy*`.
      *
      * @param file - Path to the source file, or a representative frame for a sequence.
      * @param sequence - When `true`, import as a numbered image sequence.
@@ -1087,7 +1087,7 @@ export class FileSource extends FootageSource {
      * @param default_sequence_fps - Frame rate for formats with no native rate (AE's "Import
      *   Options Default Sequence FPS" preference; AE's factory value is 30).
      * @param range_start - First frame number of the sequence clipping range (see
-     *   `ImportOptions.range_start`). 0 with `range_end` 0 imports every frame.
+     *   `ImportOptions.rangeStart`). 0 with `range_end` 0 imports every frame.
      * @param range_end - Last frame number of the clipping range, inclusive.
      * @throws {@link ValueError} If the extension is not a supported footage format (or, with
      *   `sequence`, one AE does not import as a sequence), if the frame range is invalid, or if the
@@ -1181,7 +1181,7 @@ export class FileSource extends FootageSource {
      *
      * Mirrors the "Choose Layer" option of AE's import dialog for
      * `.psd`/`.psb` (layer records) and `.ai`/`.pdf` (PDF Optional Content
-     * Groups). Shared by `Project.import_file` (`ImportOptions.layer_index`)
+     * Groups). Shared by `Project.importFile` (`ImportOptions.layerIndex`)
      * and `FootageItem.replace`. Byte-verified against the AE 2026
      * `choose_layer_*.aep` / `ai_choose_layer*.aep` fixtures.
      *
@@ -1234,16 +1234,16 @@ export class FileSource extends FootageSource {
         frame_rate: info.frame_rate,
         icc_profile: info.icc_profile,
         pixel_aspect: info.pixel_aspect,
-        has_alpha: footage.has_alpha,
+        has_alpha: footage.hasAlpha,
         depth: footage.depth,
         alpha_premultiplied: fmt.alpha_premultiplied,
         audio_sample_rate: info.audio_sample_rate,
-        opti_data: footage.opti_data,
+        opti_data: footage.optiData,
         full_frame: dimensions !== "layer",
         layer_name: leaf.name,
         layer_id: leaf.layer_id,
         layer_index: leaf.record_index,
-        data_size: footage.data_size,
+        data_size: footage.dataSize,
         reserved_c8: getitem(PSD_LAYER_STYLES_C8, styles),
         embedded_profile_name: named_media_profile(fmt.source_format, info),
         color_mode: info.color_mode,
@@ -1570,7 +1570,7 @@ export class FileSource extends FootageSource {
         this._file_names = fresh._file_names;
         this._file = fresh._file;
       }
-    } else if (this.layer_name) {
+    } else if (this.layerName) {
       // A single layer of a layered file: re-measure that layer, not the
       // merged document. AE 2026 keeps the binding, its Document/Layer
       // Size choice and its Layer Options across a reload (cropped PSD
@@ -1582,7 +1582,7 @@ export class FileSource extends FootageSource {
         layer_index_for_stored(path, sspc.layer_index),
         {
           dimensions: sspc.full_frame ? null : "layer",
-          layer_styles: this.layer_styles,
+          layer_styles: this.layerStyles,
           windows: this._windows,
         },
       );
@@ -1690,7 +1690,7 @@ export class FileSource extends FootageSource {
   _idta_flags17(): number {
     let flags = 0;
     if (this._width > 0) flags |= 0x20;
-    if (this.is_still) flags |= 0x10;
+    if (this.isStill) flags |= 0x10;
     if (this._has_audio) flags |= 0x04;
     return flags;
   }
@@ -1703,7 +1703,7 @@ export class FileSource extends FootageSource {
    *
    * py_aep extension: ExtendScript exposes no layer-selection API.
    */
-  get layer_name(): string {
+  get layerName(): string {
     const psd_layer = getattr(this._opti, "psd_group_name", "");
     if (py_bool(psd_layer)) return str(psd_layer);
     // AI/EPS/PDF: a `TEXT` opti carries the layer name as a typed
@@ -1718,7 +1718,7 @@ export class FileSource extends FootageSource {
   /**
    * The layer-styles choice recorded for a Photoshop single-layer
    * binding: `"editable"`, `"merge"` or `"ignore"` (see
-   * `ImportOptions.layer_styles`), or `null` when this source is not a
+   * `ImportOptions.layerStyles`), or `null` when this source is not a
    * PSD single-layer binding (merged/whole-document footage, other
    * formats). Read-only.
    *
@@ -1729,8 +1729,8 @@ export class FileSource extends FootageSource {
    * was pinned on AE 2026 output; on much older projects the reported
    * value is whatever the byte says.
    */
-  get layer_styles(): string | null {
-    if (this._sspc.source_format_type !== "8BPS" || !this.layer_name) return null;
+  get layerStyles(): string | null {
+    if (this._sspc.source_format_type !== "8BPS" || !this.layerName) return null;
     return _C9_TO_LAYER_STYLES.get(this._sspc._reserved_c8[1]) ?? null;
   }
 
@@ -1755,7 +1755,7 @@ export class FileSource extends FootageSource {
         // PureWindowsPath handles both / and \ separators,
         // unlike PurePosixPath which only splits on /.
         const basename = new PureWindowsPath(this._file).name;
-        const layer = this.layer_name;
+        const layer = this.layerName;
         if (layer) {
           item_name = `${layer}/${basename}`;
         } else {

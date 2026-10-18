@@ -51,7 +51,7 @@ describe("TestPlaceholders", () => {
       "placeholder_still",
     );
     expect(footage_json["mainSource"]["isStill"]).toBe(true);
-    expect(footage.main_source.is_still).toBe(footage_json["mainSource"]["isStill"]);
+    expect(footage.mainSource.isStill).toBe(footage_json["mainSource"]["isStill"]);
   });
 
   test("test_placeholder_movie", () => {
@@ -62,7 +62,7 @@ describe("TestPlaceholders", () => {
       "placeholder_movie",
     );
     expect(footage_json["mainSource"]["isStill"]).toBe(false);
-    expect(footage.main_source.is_still).toBe(footage_json["mainSource"]["isStill"]);
+    expect(footage.mainSource.isStill).toBe(footage_json["mainSource"]["isStill"]);
   });
 
   test("test_placeholder_720p", () => {
@@ -99,7 +99,7 @@ describe("TestPlaceholders", () => {
       "placeholder_30fps",
     );
     expect(footage_json["frameRate"]).toBe(30);
-    expect(isclose(footage.frame_rate, footage_json["frameRate"])).toBe(true);
+    expect(isclose(footage.frameRate, footage_json["frameRate"])).toBe(true);
   });
 
   test("test_placeholder_60fps", () => {
@@ -110,7 +110,7 @@ describe("TestPlaceholders", () => {
       "placeholder_60fps",
     );
     expect(footage_json["frameRate"]).toBe(60);
-    expect(isclose(footage.frame_rate, footage_json["frameRate"])).toBe(true);
+    expect(isclose(footage.frameRate, footage_json["frameRate"])).toBe(true);
   });
 
   test("test_frameRate_23976", () => {
@@ -120,7 +120,7 @@ describe("TestPlaceholders", () => {
       parse_project(SAMPLES_DIR.div("footage_misc.aep")),
       "frameRate_23976",
     );
-    expect(isclose(footage.frame_rate, footage_json["frameRate"], 0.001)).toBe(true);
+    expect(isclose(footage.frameRate, footage_json["frameRate"], 0.001)).toBe(true);
   });
 });
 
@@ -131,35 +131,35 @@ describe("TestIsMediaReplacementCompatible", () => {
   test("test_comp_is_compatible", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const comp = get_comp(project, "solid_size_1920x1080");
-    expect(comp.is_media_replacement_compatible).toBe(true);
+    expect(comp.isMediaReplacementCompatible).toBe(true);
   });
 
   test("test_solid_is_not_compatible", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const solid = as_instance(as_instance(get_comp(project, "solid_size_1920x1080").layers[0], AVLayer).source, FootageItem);
-    expect(solid.is_media_replacement_compatible).toBe(false);
+    expect(solid.isMediaReplacementCompatible).toBe(false);
   });
 
   test("test_placeholder_is_compatible", () => {
     const project = parse_project(SAMPLES_DIR.div("placeholder.aep"));
-    expect(get_footage(project, "placeholder_still").is_media_replacement_compatible).toBe(true);
-    expect(get_footage(project, "placeholder_movie").is_media_replacement_compatible).toBe(true);
+    expect(get_footage(project, "placeholder_still").isMediaReplacementCompatible).toBe(true);
+    expect(get_footage(project, "placeholder_movie").isMediaReplacementCompatible).toBe(true);
   });
 
   test("test_audio_only_footage_is_not_compatible", () => {
     const project = parse_project(LAYER_SAMPLES_DIR.div("audioEnabled.aep"));
     const wav = get_footage(project, "wav.wav");
-    expect(wav.has_video).toBe(false);
-    expect(wav.is_media_replacement_compatible).toBe(false);
+    expect(wav.hasVideo).toBe(false);
+    expect(wav.isMediaReplacementCompatible).toBe(false);
   });
 
   test("test_3d_model_is_not_compatible_but_movie_is", () => {
     const project = parse_project(LAYER_SAMPLES_DIR.div("light_source_default.aep"));
     const fbx = get_footage(project, "crystal.fbx");
-    expect(fbx.has_video).toBe(true);
-    expect(fbx.is_media_replacement_compatible).toBe(false);
+    expect(fbx.hasVideo).toBe(true);
+    expect(fbx.isMediaReplacementCompatible).toBe(false);
     const mov = get_footage(project, "mov_23_976.mov");
-    expect(mov.is_media_replacement_compatible).toBe(true);
+    expect(mov.isMediaReplacementCompatible).toBe(true);
   });
 });
 
@@ -169,21 +169,21 @@ describe("TestSolidColors", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = get_comp(project, "solid_color_red");
     const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(py_eq(as_instance(footage.main_source, SolidSource).color.slice(0, 3), [1, 0, 0])).toBe(true);
+    expect(py_eq(as_instance(footage.mainSource, SolidSource).color.slice(0, 3), [1, 0, 0])).toBe(true);
   });
 
   test("test_color_green", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = get_comp(project, "solid_color_green");
     const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(py_eq(as_instance(footage.main_source, SolidSource).color.slice(0, 3), [0, 1, 0])).toBe(true);
+    expect(py_eq(as_instance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 1, 0])).toBe(true);
   });
 
   test("test_color_blue", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = get_comp(project, "solid_color_blue");
     const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(py_eq(as_instance(footage.main_source, SolidSource).color.slice(0, 3), [0, 0, 1])).toBe(true);
+    expect(py_eq(as_instance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 0, 1])).toBe(true);
   });
 });
 
@@ -196,7 +196,7 @@ describe("TestAlphaMode", () => {
       parse_project(SAMPLES_DIR.div("alphaMode.aep")),
       "alphaMode_IGNORE",
     );
-    expect(footage.main_source.alpha_mode).toBe(footage_json["mainSource"]["alphaMode"]);
+    expect(footage.mainSource.alphaMode).toBe(footage_json["mainSource"]["alphaMode"]);
     expect(footage_json["mainSource"]["alphaMode"]).toBe(AlphaMode.IGNORE);
   });
 
@@ -207,7 +207,7 @@ describe("TestAlphaMode", () => {
       parse_project(SAMPLES_DIR.div("alphaMode.aep")),
       "alphaMode_STRAIGHT",
     );
-    expect(footage.main_source.alpha_mode).toBe(footage_json["mainSource"]["alphaMode"]);
+    expect(footage.mainSource.alphaMode).toBe(footage_json["mainSource"]["alphaMode"]);
     expect(footage_json["mainSource"]["alphaMode"]).toBe(AlphaMode.STRAIGHT);
   });
 
@@ -221,7 +221,7 @@ describe("TestAlphaMode", () => {
       parse_project(SAMPLES_DIR.div("alphaMode.aep")),
       "alphaMode_PREMULTIPLIED",
     );
-    expect(footage.main_source.alpha_mode).toBe(footage_json["mainSource"]["alphaMode"]);
+    expect(footage.mainSource.alphaMode).toBe(footage_json["mainSource"]["alphaMode"]);
     expect(footage_json["mainSource"]["alphaMode"]).toBe(AlphaMode.PREMULTIPLIED);
   });
 });
@@ -238,7 +238,7 @@ describe("TestFieldSeparation", () => {
       parse_project(SAMPLES_DIR.div("fieldSeparationType.aep")),
       "fieldSeparationType_OFF",
     );
-    expect(footage.main_source.field_separation_type).toBe(
+    expect(footage.mainSource.fieldSeparationType).toBe(
       footage_json["mainSource"]["fieldSeparationType"],
     );
     expect(footage_json["mainSource"]["fieldSeparationType"]).toBe(FieldSeparationType.OFF);
@@ -254,7 +254,7 @@ describe("TestFieldSeparation", () => {
       parse_project(SAMPLES_DIR.div("fieldSeparationType.aep")),
       "fieldSeparationType_UPPER",
     );
-    expect(footage.main_source.field_separation_type).toBe(
+    expect(footage.mainSource.fieldSeparationType).toBe(
       footage_json["mainSource"]["fieldSeparationType"],
     );
     expect(footage_json["mainSource"]["fieldSeparationType"]).toBe(
@@ -272,7 +272,7 @@ describe("TestFieldSeparation", () => {
       parse_project(SAMPLES_DIR.div("fieldSeparationType.aep")),
       "fieldSeparationType_LOWER",
     );
-    expect(footage.main_source.field_separation_type).toBe(
+    expect(footage.mainSource.fieldSeparationType).toBe(
       footage_json["mainSource"]["fieldSeparationType"],
     );
     expect(footage_json["mainSource"]["fieldSeparationType"]).toBe(
@@ -290,7 +290,7 @@ describe("TestFieldSeparation", () => {
       parse_project(SAMPLES_DIR.div("footage_misc.aep")),
       "highQualityFieldSeparation_true",
     );
-    expect(footage.main_source.high_quality_field_separation).toBe(
+    expect(footage.mainSource.highQualityFieldSeparation).toBe(
       footage_json["mainSource"]["highQualityFieldSeparation"],
     );
     expect(footage_json["mainSource"]["highQualityFieldSeparation"]).toBe(true);
@@ -306,7 +306,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_24",
     );
-    expect(footage.main_source.conform_frame_rate).toBe(
+    expect(footage.mainSource.conformFrameRate).toBe(
       footage_json["mainSource"]["conformFrameRate"],
     );
     expect(footage_json["mainSource"]["conformFrameRate"]).toBe(24);
@@ -319,7 +319,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_30",
     );
-    expect(footage.main_source.conform_frame_rate).toBe(
+    expect(footage.mainSource.conformFrameRate).toBe(
       footage_json["mainSource"]["conformFrameRate"],
     );
     expect(footage_json["mainSource"]["conformFrameRate"]).toBe(30);
@@ -331,7 +331,7 @@ describe("TestFootageSettings", () => {
     );
     expect(footage != null).toBe(true);
     if (footage == null) throw new AssertionError_("sample has no footage item");
-    expect(footage.main_source.conform_frame_rate).toBe(2.5);
+    expect(footage.mainSource.conformFrameRate).toBe(2.5);
   });
 
   test("test_conformed_duration_is_frame_count_over_rate", () => {
@@ -353,7 +353,7 @@ describe("TestFootageSettings", () => {
     const expected = load_expected(SAMPLES_DIR, "footage_misc");
     const footage_json = get_footage_from_json_by_name(expected, "loop_3");
     const footage = get_footage(parse_project(SAMPLES_DIR.div("footage_misc.aep")), "loop_3");
-    expect(footage.main_source.loop).toBe(footage_json["mainSource"]["loop"]);
+    expect(footage.mainSource.loop).toBe(footage_json["mainSource"]["loop"]);
     expect(footage_json["mainSource"]["loop"]).toBe(3);
   });
 
@@ -361,7 +361,7 @@ describe("TestFootageSettings", () => {
     const project = parse_project(SAMPLES_DIR.div("solid_sizes.aep"));
     const comp = get_comp(project, "solid_pixelAspect_2");
     const footage = as_instance(as_instance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(isclose(footage.pixel_aspect, 2)).toBe(true);
+    expect(isclose(footage.pixelAspect, 2)).toBe(true);
   });
 
   test("test_invertAlpha_true", () => {
@@ -371,7 +371,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("footage_misc.aep")),
       "invertAlpha_true",
     );
-    expect(footage.main_source.invert_alpha).toBe(footage_json["mainSource"]["invertAlpha"]);
+    expect(footage.mainSource.invertAlpha).toBe(footage_json["mainSource"]["invertAlpha"]);
     expect(footage_json["mainSource"]["invertAlpha"]).toBe(true);
   });
 
@@ -382,7 +382,7 @@ describe("TestFootageSettings", () => {
       parse_project(SAMPLES_DIR.div("premulColor.aep")),
       "premulColor_black",
     );
-    expect(py_eq(footage.main_source.premul_color, footage_json["mainSource"]["premulColor"])).toBe(
+    expect(py_eq(footage.mainSource.premulColor, footage_json["mainSource"]["premulColor"])).toBe(
       true,
     );
     expect(py_eq(footage_json["mainSource"]["premulColor"], [0, 0, 0])).toBe(true);
@@ -397,7 +397,7 @@ describe("TestFootageSettings", () => {
     );
     expect(py_eq(footage_json["mainSource"]["premulColor"], [1, 0, 0])).toBe(true);
     expect(
-      py_eq(footage.main_source.premul_color, footage_json["mainSource"]["premulColor"]),
+      py_eq(footage.mainSource.premulColor, footage_json["mainSource"]["premulColor"]),
     ).toBe(true);
   });
 
@@ -413,67 +413,67 @@ describe("TestFootageSettings", () => {
   });
 });
 
-/** Read-only tests for FootageSource.native_frame_rate. */
+/** Read-only tests for FootageSource.nativeFrameRate. */
 describe("TestNativeFrameRate", () => {
   test("test_native_frame_rate", () => {
     const source = get_footage(
       parse_project(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_24",
-    ).main_source;
-    expect(source.native_frame_rate).toBe(30.0);
+    ).mainSource;
+    expect(source.nativeFrameRate).toBe(30.0);
   });
 });
 
-/** Read-only tests for FootageSource.display_frame_rate. */
+/** Read-only tests for FootageSource.displayFrameRate. */
 describe("TestDisplayFrameRate", () => {
   test("test_display_frame_rate_with_conform", () => {
     const source = get_footage(
       parse_project(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_24",
-    ).main_source;
-    expect(source.display_frame_rate).toBe(24.0);
+    ).mainSource;
+    expect(source.displayFrameRate).toBe(24.0);
   });
 
   test("test_display_frame_rate_without_conform", () => {
     const source = get_footage(
       parse_project(SAMPLES_DIR.div("footage_misc.aep")),
       "loop_3",
-    ).main_source;
-    expect(source.conform_frame_rate).toBe(0.0);
-    expect(source.display_frame_rate).toBe(30.0);
+    ).mainSource;
+    expect(source.conformFrameRate).toBe(0.0);
+    expect(source.displayFrameRate).toBe(30.0);
   });
 
   test("test_display_frame_rate_with_pulldown", () => {
     const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep")),
-    ), FootageItem).main_source;
-    expect(source.conform_frame_rate).toBe(2.5);
-    expect(source.display_frame_rate).toBe(2.0);
+    ), FootageItem).mainSource;
+    expect(source.conformFrameRate).toBe(2.5);
+    expect(source.displayFrameRate).toBe(2.0);
   });
 
   test("test_display_frame_rate_without_pulldown", () => {
     const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    ), FootageItem).main_source;
-    expect(source.conform_frame_rate).toBe(2.5);
-    expect(source.display_frame_rate).toBe(2.5);
+    ), FootageItem).mainSource;
+    expect(source.conformFrameRate).toBe(2.5);
+    expect(source.displayFrameRate).toBe(2.5);
   });
 });
 
-/** Tests for FootageSource.media_color_space. */
+/** Tests for FootageSource.mediaColorSpace. */
 describe("TestOverrideMediaColorSpace", () => {
   test("test_embedded", () => {
     const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("override_media_colorspace_embedded.aep")),
-    ), FootageItem).main_source;
-    expect(source.media_color_space).toBe("Embedded");
+    ), FootageItem).mainSource;
+    expect(source.mediaColorSpace).toBe("Embedded");
   });
 
   test("test_custom_profile", () => {
     const source = as_instance(get_first_footage(
       parse_project(SAMPLES_DIR.div("override_media_colorspace_apple_rgb.aep")),
-    ), FootageItem).main_source;
-    expect(source.media_color_space).toBe("Apple RGB");
+    ), FootageItem).mainSource;
+    expect(source.mediaColorSpace).toBe("Apple RGB");
   });
 
   test("test_working_colorspace", () => {
@@ -481,8 +481,8 @@ describe("TestOverrideMediaColorSpace", () => {
       parse_project(
         SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-.aep"),
       ),
-    ), FootageItem).main_source;
-    expect(source.media_color_space).toBe("Working Color Space");
+    ), FootageItem).mainSource;
+    expect(source.mediaColorSpace).toBe("Working Color Space");
   });
 
   test("test_working_colorspace_aces", () => {
@@ -490,25 +490,25 @@ describe("TestOverrideMediaColorSpace", () => {
       parse_project(
         SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-aces_cg_or_cct.aep"),
       ),
-    ), FootageItem).main_source;
-    expect(source.media_color_space).toBe("Working Color Space");
+    ), FootageItem).mainSource;
+    expect(source.mediaColorSpace).toBe("Working Color Space");
   });
 });
 
-/** Tests for FootageItem.has_audio. */
+/** Tests for FootageItem.hasAudio. */
 describe("TestHasAudio", () => {
   test("test_footage_with_audio", () => {
     const project = parse_project(SAMPLES_DIR.div("no_audio.aep"));
     const footage = project.footages.find((f) => f.name === "mov_23_976.mov");
     if (footage === undefined) throw new StopIteration();
-    expect(footage.has_audio).toBe(true);
+    expect(footage.hasAudio).toBe(true);
   });
 
   test("test_footage_without_audio", () => {
     const project = parse_project(SAMPLES_DIR.div("no_audio.aep"));
     const footage = project.footages.find((f) => f.name === "mov_23_976_no_audio.mov");
     if (footage === undefined) throw new StopIteration();
-    expect(footage.has_audio).toBe(false);
+    expect(footage.hasAudio).toBe(false);
   });
 });
 
@@ -532,7 +532,7 @@ describe("TestImageSequenceSource", () => {
       "mainSource"
     ];
     // Exact string match against AE's fsName, separators included.
-    const main_source = as_instance(footage.main_source, FileSource);
+    const main_source = as_instance(footage.mainSource, FileSource);
     expect(main_source.file).toBe(exp_source["filePath"]);
     // This sample is Windows-authored: no stray forward slash on any host.
     expect(main_source.file.includes("/")).toBe(false);
@@ -554,14 +554,14 @@ describe("TestAlphabeticalSequence", () => {
     expect(footage.name).toBe(footage_json["name"]);
     expect(footage_json["name"]).toBe("assets");
     expect(footage.duration).toBe(footage_json["duration"]);
-    expect(footage.frame_rate).toBe(footage_json["frameRate"]);
-    expect(as_instance(footage.main_source, FileSource).file).toBe(footage_json["mainSource"]["filePath"]);
+    expect(footage.frameRate).toBe(footage_json["frameRate"]);
+    expect(as_instance(footage.mainSource, FileSource).file).toBe(footage_json["mainSource"]["filePath"]);
   });
 
   test("test_lists_its_files", () => {
-    const source = as_instance(get_footage(parse_project(SAMPLE), "assets").main_source, FileSource);
+    const source = as_instance(get_footage(parse_project(SAMPLE), "assets").mainSource, FileSource);
     expect(
-      py_eq(source.file_names, [
+      py_eq(source.fileNames, [
         "new_exr.0002.exr",
         "new_exr.0003.exr",
         "old_exr.00004.exr",

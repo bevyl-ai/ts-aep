@@ -39,8 +39,8 @@ function _import(tmp_path: Path, markup: string): CompItem {
   svg.write_text(markup);
   const app = new_();
   const opts = new ImportOptions(svg);
-  opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-  const comp = app.project.import_file(opts);
+  opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+  const comp = app.project.importFile(opts);
   return as_instance(comp, CompItem);
 }
 

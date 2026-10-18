@@ -285,7 +285,7 @@ export function _fresh_composed_spans(doc: TextDocument): [number, number][] | n
  * the AE-parity clamp semantics) remains.
  */
 export function _composed_line_spans(doc: TextDocument): [number, number][] | null {
-  if (!doc.box_text) {
+  if (!doc.boxText) {
     const para = _para_run_spans(doc);
     if (!para.length) return null;
     return para.map(([start, end]): [number, number] => [start, end]);
@@ -352,7 +352,7 @@ export function _build_font_entry(post_script_name: string): CosDict {
  * and the used-font record like AE does, when the font is installed.
  *
  * `index` 0 is AE's insertion point for a new font on a style write
- * (probed: `W_FONT`, `W_PASTE_XDOC`); `Project.replace_font` inserts
+ * (probed: `W_FONT`, `W_PASTE_XDOC`); `Project.replaceFont` inserts
  * directly after the font being replaced instead, and passes
  * `used_record=False` because a replacement repoints the used-font
  * record of the font it replaces rather than adding one. Returns `index`.
@@ -442,7 +442,7 @@ export function _replace_layer_font(docs: TextDocument[], from_name: string, to_
   const first = docs[0];
   const from_indices = new Set<number>();
   for (const [i, font] of first._fonts.entries()) {
-    if (font.post_script_name === from_name) from_indices.add(i);
+    if (font.postScriptName === from_name) from_indices.add(i);
   }
   if (!from_indices.size) return false;
   const referenced = docs.some((doc) =>
@@ -452,7 +452,7 @@ export function _replace_layer_font(docs: TextDocument[], from_name: string, to_
 
   let to_index: number | null = null;
   for (const [i, font] of first._fonts.entries()) {
-    if (font.post_script_name === to_name) {
+    if (font.postScriptName === to_name) {
       to_index = i;
       break;
     }
@@ -922,8 +922,8 @@ export class RangeField<T extends InstanceValue> {
   declare gate: string | null;
   declare reverse: ((value: NonNullable<T>) => CosNode) | null;
   declare validate: InstanceValidator<TextDocument> | null;
-  declare read_only: boolean;
-  declare public_name: string;
+  declare readOnly: boolean;
+  declare publicName: string;
 
   constructor(kind: RangeKind, key: string, kw: RangeFieldOptions<T>) {
     const { transform, default: default_ = null, gate = null, reverse = null, validate = null, read_only = false } = kw;
@@ -934,11 +934,11 @@ export class RangeField<T extends InstanceValue> {
     this.gate = gate;
     this.reverse = reverse;
     this.validate = validate;
-    this.read_only = read_only;
+    this.readOnly = read_only;
   }
 
   __set_name__(owner: Function, name: string): void {
-    this.public_name = name;
+    this.publicName = name;
   }
 
   __get__(obj: CharacterRange | null, objtype?: Function | null): T | null | this {
@@ -947,12 +947,12 @@ export class RangeField<T extends InstanceValue> {
   }
 
   __set__(obj: CharacterRange, value: T | null): void {
-    if (this.read_only) throw new AttributeError(`${repr(this.public_name)} is read-only.`);
+    if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     let raw: CosNode = null;
     if (value != null) {
       if (this.validate != null) this.validate(value, obj._doc_ref);
       // Every writable field declares its reverse; only read-only ones omit it.
-      if (this.reverse == null) throw new AttributeError(`${repr(this.public_name)} is read-only.`);
+      if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
       raw = this.reverse(value);
     }
     const [start, end] = obj._bounds();
@@ -1017,8 +1017,8 @@ type StyleAttr = "_char_style" | "_para_style";
  */
 export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, StyleAttr, TextDocument> {
   __set__(obj: TextDocument, value: T | null): void {
-    const is_char = this.dict_attr === "_char_style";
-    const backing = obj[this.dict_attr];
+    const is_char = this.dictAttr === "_char_style";
+    const backing = obj[this.dictAttr];
     let runs: CosNode = null;
     if (backing != null) {
       runs = cos_get(obj._doc, "0", is_char ? "6" : "5", "0");
@@ -1030,7 +1030,7 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
       return;
     }
     this._check_writable(obj);
-    obj.__dict__.delete(this.public_name);
+    obj.__dict__.delete(this.publicName);
     const raw_value = value == null ? null : this._coerce(obj, value);
     const total = u16_len(_raw_text(obj));
     if (is_char) _apply_char_key(obj, 0, total, this.key, raw_value);
@@ -1095,17 +1095,17 @@ export class _TextRange {
   }
 
   /** The range's first character index. Read-only. */
-  get character_start(): number {
+  get characterStart(): number {
     return this._bounds()[0];
   }
 
   /** The range's last character index + 1. Read-only. */
-  get character_end(): number {
+  get characterEnd(): number {
     return this._bounds()[1];
   }
 
   /** `true` while the range lies within the document bounds. Read-only. */
-  get is_range_valid(): boolean {
+  get isRangeValid(): boolean {
     try {
       this._bounds();
     } catch (e) {
@@ -1138,7 +1138,7 @@ export class _IndexRange extends _TextRange {
    * The returned range holds resolved indices and does not follow
    * later changes to this range's paragraphs or lines.
    */
-  character_range(): CharacterRange {
+  characterRange(): CharacterRange {
     const [start, end] = this._bounds();
     return new CharacterRange(this._doc_ref, start, end);
   }
@@ -1151,7 +1151,7 @@ export class _IndexRange extends _TextRange {
 /**
  * A contiguous character span of a {@link TextDocument}.
  *
- * Created via `TextDocument.character_range(character_start, signed_character_end)`. Most `TextDocument` styling attributes are
+ * Created via `TextDocument.characterRange(character_start, signed_character_end)`. Most `TextDocument` styling attributes are
  * readable on the range; when the range spans style runs with
  * differing values the attribute reads `null` (ExtendScript
  * `undefined`). Bounds re-resolve on every access, so a range created
@@ -1165,38 +1165,38 @@ export class _IndexRange extends _TextRange {
 export class CharacterRange extends _TextRange {
   // Descriptor-backed style fields: installed after the class (see the
   // `descriptor(CharacterRange, ...)` calls at the end of this module).
-  declare font_size: number | null;
-  declare faux_bold: boolean | null;
-  declare faux_italic: boolean | null;
-  declare horizontal_scale: number | null;
-  declare vertical_scale: number | null;
+  declare fontSize: number | null;
+  declare fauxBold: boolean | null;
+  declare fauxItalic: boolean | null;
+  declare horizontalScale: number | null;
+  declare verticalScale: number | null;
   declare tracking: number | null;
-  declare baseline_shift: number | null;
-  declare font_caps_option: FontCapsOption | null;
-  declare font_baseline_option: FontBaselineOption | null;
+  declare baselineShift: number | null;
+  declare fontCapsOption: FontCapsOption | null;
+  declare fontBaselineOption: FontBaselineOption | null;
   declare ligature: boolean | null;
-  declare baseline_direction: BaselineDirection | null;
+  declare baselineDirection: BaselineDirection | null;
   declare tsume: number | null;
-  declare no_break: boolean | null;
-  declare apply_fill: boolean | null;
-  declare apply_stroke: boolean | null;
-  declare stroke_over_fill: boolean | null;
-  declare line_join_type: LineJoinType | null;
-  declare stroke_width: number | null;
-  declare digit_set: DigitSet | null;
+  declare noBreak: boolean | null;
+  declare applyFill: boolean | null;
+  declare applyStroke: boolean | null;
+  declare strokeOverFill: boolean | null;
+  declare lineJoinType: LineJoinType | null;
+  declare strokeWidth: number | null;
+  declare digitSet: DigitSet | null;
   declare justification: ParagraphJustification | null;
-  declare first_line_indent: number | null;
-  declare start_indent: number | null;
-  declare end_indent: number | null;
-  declare space_before: number | null;
-  declare space_after: number | null;
-  declare leading_type: LeadingType | null;
-  declare auto_hyphenate: boolean | null;
-  declare hanging_roman: boolean | null;
-  declare every_line_composer: boolean | null;
+  declare firstLineIndent: number | null;
+  declare startIndent: number | null;
+  declare endIndent: number | null;
+  declare spaceBefore: number | null;
+  declare spaceAfter: number | null;
+  declare leadingType: LeadingType | null;
+  declare autoHyphenate: boolean | null;
+  declare hangingRoman: boolean | null;
+  declare everyLineComposer: boolean | null;
   declare direction: ParagraphDirection | null;
-  declare fill_color: number[] | null;
-  declare stroke_color: number[] | null;
+  declare fillColor: number[] | null;
+  declare strokeColor: number[] | null;
 
   // -- Bounds --------------------------------------------------------------
 
@@ -1309,7 +1309,7 @@ export class CharacterRange extends _TextRange {
    * @param source_range - The {@link CharacterRange} to copy from (may belong to another document
    *   or project).
    */
-  paste_from(source_range: CharacterRange): void {
+  pasteFrom(source_range: CharacterRange): void {
     if (!(source_range instanceof CharacterRange)) {
       throw new TypeError_("paste_from expects a CharacterRange");
     }
@@ -1344,11 +1344,11 @@ export class CharacterRange extends _TextRange {
         if (style instanceof Map) {
           const index = read(char_style, style, "0");
           if (index != null && 0 <= Number(index) && Number(index) < src_doc._fonts.length) {
-            needed.set(Number(index), src_doc._fonts[Number(index)].post_script_name);
+            needed.set(Number(index), src_doc._fonts[Number(index)].postScriptName);
           }
         }
       }
-      const existing = new Set<string>(doc._fonts.map((f) => f.post_script_name));
+      const existing = new Set<string>(doc._fonts.map((f) => f.postScriptName));
       for (const name of needed.values()) {
         if (!existing.has(name)) {
           _register_font_at(doc, name);
@@ -1356,7 +1356,7 @@ export class CharacterRange extends _TextRange {
         }
       }
       const target_index = new Map<string, number>();
-      for (const [i, f] of doc._fonts.entries()) target_index.set(f.post_script_name, i);
+      for (const [i, f] of doc._fonts.entries()) target_index.set(f.postScriptName, i);
       for (const clone of entries) {
         const style = cos_get(clone, "0", "0", "6");
         if (style instanceof Map) {
@@ -1403,11 +1403,11 @@ export class CharacterRange extends _TextRange {
    * Enabling auto-leading also resets the explicit leading key to
    * AE's sentinel (probed `X_AL_SET`).
    */
-  get auto_leading(): boolean | null {
+  get autoLeading(): boolean | null {
     return this._resolve_mixed("char", "4", bool, true, null);
   }
 
-  set auto_leading(value: boolean) {
+  set autoLeading(value: boolean) {
     validate_bool(value);
     const [start, end] = this._bounds();
     _apply_char_key(this._doc_ref, start, end, "4", value);
@@ -1424,11 +1424,11 @@ export class CharacterRange extends _TextRange {
    * over the range; AE drops the kern-run array entirely when no
    * values remain (probed `X_AKT_SET`).
    */
-  get auto_kern_type(): AutoKernType | null {
+  get autoKernType(): AutoKernType | null {
     return this._resolve_mixed("char", "11", (raw) => enum_from_cos(AutoKernType, raw), AutoKernType.NO_AUTO_KERN, null);
   }
 
-  set auto_kern_type(value: AutoKernType) {
+  set autoKernType(value: AutoKernType) {
     validate_enum(AutoKernType)(value);
     const doc = this._doc_ref;
     const [start, end] = _snap_to_pairs(_raw_text(doc), ...this._bounds());
@@ -1458,8 +1458,8 @@ export class CharacterRange extends _TextRange {
    * it and reindexes existing references, matching AE.
    */
   get font(): string | null {
-    const font_obj = this.font_object;
-    return font_obj != null ? font_obj.post_script_name : null;
+    const font_obj = this.fontObject;
+    return font_obj != null ? font_obj.postScriptName : null;
   }
 
   set font(value: string) {
@@ -1473,7 +1473,7 @@ export class CharacterRange extends _TextRange {
     }
     let index: number | null = null;
     for (const [i, font_obj] of doc._fonts.entries()) {
-      if (font_obj.post_script_name === value) {
+      if (font_obj.postScriptName === value) {
         index = i;
         break;
       }
@@ -1484,7 +1484,7 @@ export class CharacterRange extends _TextRange {
   }
 
   /** The range's {@link FontObject}; `null` when mixed. Read-only. */
-  get font_object(): FontObject | null {
+  get fontObject(): FontObject | null {
     const idx = this._resolve_mixed("char", "0", (raw) => raw, null, null);
     const fonts = this._doc_ref._fonts;
     if (is(py_int, idx) && 0 <= Number(idx) && Number(idx) < fonts.length) {
@@ -1504,7 +1504,7 @@ export class CharacterRange extends _TextRange {
    * auto-leading.
    */
   get leading(): number | null {
-    const auto = this.auto_leading;
+    const auto = this.autoLeading;
     if (auto == null || auto) return null;
     return this._resolve_mixed("char", "5", cos_float, null, null);
   }
@@ -1535,7 +1535,7 @@ export class CharacterRange extends _TextRange {
    * A boolean stored where AE writes an int reads back as itself.
    */
   get kerning(): number | boolean | null {
-    if (this.auto_kern_type !== AutoKernType.NO_AUTO_KERN) return null;
+    if (this.autoKernType !== AutoKernType.NO_AUTO_KERN) return null;
     const value = this._resolve_mixed("kern", "0", (raw) => raw, null, null);
     return is(py_int, value) ? value : null;
   }
@@ -1572,36 +1572,36 @@ export class CharacterRange extends _TextRange {
   }
 
   /** `true` if the range has All Caps enabled; `null` when mixed. Read-only. */
-  get all_caps(): boolean | null {
-    const caps = this.font_caps_option;
+  get allCaps(): boolean | null {
+    const caps = this.fontCapsOption;
     if (caps == null) return null;
     return caps === FontCapsOption.FONT_ALL_CAPS;
   }
 
   /** `true` if the range has Small Caps enabled; `null` when mixed. Read-only. */
-  get small_caps(): boolean | null {
-    const caps = this.font_caps_option;
+  get smallCaps(): boolean | null {
+    const caps = this.fontCapsOption;
     if (caps == null) return null;
     return caps === FontCapsOption.FONT_SMALL_CAPS;
   }
 
   /** `true` if the range is superscript; `null` when mixed. Read-only. */
   get superscript(): boolean | null {
-    const baseline = this.font_baseline_option;
+    const baseline = this.fontBaselineOption;
     if (baseline == null) return null;
     return baseline === FontBaselineOption.FONT_FAUXED_SUPERSCRIPT;
   }
 
   /** `true` if the range is subscript; `null` when mixed. Read-only. */
   get subscript(): boolean | null {
-    const baseline = this.font_baseline_option;
+    const baseline = this.fontBaselineOption;
     if (baseline == null) return null;
     return baseline === FontBaselineOption.FONT_FAUXED_SUBSCRIPT;
   }
 
   /** The document's composer engine (document-wide). Read-only. */
-  get composer_engine(): ComposerEngine | null {
-    return this._doc_ref.composer_engine;
+  get composerEngine(): ComposerEngine | null {
+    return this._doc_ref.composerEngine;
   }
 }
 
@@ -1612,7 +1612,7 @@ export class CharacterRange extends _TextRange {
 /**
  * A paragraph span of a {@link TextDocument}.
  *
- * Created via `TextDocument.paragraph_range(paragraph_index_start, signed_paragraph_index_end)`. Paragraph character boundaries include
+ * Created via `TextDocument.paragraphRange(paragraph_index_start, signed_paragraph_index_end)`. Paragraph character boundaries include
  * each paragraph's trailing `\r`; the final boundary is clamped to
  * the visible text length, so a trailing empty paragraph reports a
  * zero-span range.
@@ -1640,11 +1640,11 @@ export class ParagraphRange extends _IndexRange {
 /**
  * A composed-line span of a {@link TextDocument}.
  *
- * Created via `TextDocument.composed_line_range( composed_line_index_start, signed_composed_line_index_end)`.
+ * Created via `TextDocument.composedLineRange( composed_line_index_start, signed_composed_line_index_end)`.
  * Point text derives its lines from the paragraphs (always fresh).
  * Box text reads the layout cache AE persisted at save time; after a
  * layout-affecting py-side write the calibrated composed-line
- * resolver recomposes it (see `TextDocument.composition_stale`).
+ * resolver recomposes it (see `TextDocument.compositionStale`).
  * When no calibrated composer is available the stale cache behaves
  * like AE's own un-reapplied TextDocument values: line boundaries
  * clamp to the current text and lines falling wholly outside it
@@ -1682,31 +1682,31 @@ export class ComposedLineRange extends _IndexRange {
 // ---------------------------------------------------------------------------
 
 /** `font_size`: the range's font size in pixels; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "font_size", RangeField.float("char", "1", { validate: validate_positive_nonzero_number }));
+descriptor(CharacterRange, "fontSize", RangeField.float("char", "1", { validate: validate_positive_nonzero_number }));
 
 /** `faux_bold`: `true` if faux bold is enabled across the range. Read / Write. */
-descriptor(CharacterRange, "faux_bold", RangeField.bool("char", "2"));
+descriptor(CharacterRange, "fauxBold", RangeField.bool("char", "2"));
 
 /** `faux_italic`: `true` if faux italic is enabled across the range. Read / Write. */
-descriptor(CharacterRange, "faux_italic", RangeField.bool("char", "3"));
+descriptor(CharacterRange, "fauxItalic", RangeField.bool("char", "3"));
 
 /** `horizontal_scale`: the range's horizontal scale; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "horizontal_scale", RangeField.float("char", "6", { validate: validate_number }));
+descriptor(CharacterRange, "horizontalScale", RangeField.float("char", "6", { validate: validate_number }));
 
 /** `vertical_scale`: the range's vertical scale; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "vertical_scale", RangeField.float("char", "7", { validate: validate_number }));
+descriptor(CharacterRange, "verticalScale", RangeField.float("char", "7", { validate: validate_number }));
 
 /** `tracking`: the range's spacing between characters; `null` when mixed. Read / Write. */
 descriptor(CharacterRange, "tracking", RangeField.int("char", "8", { validate: validate_s4 }));
 
 /** `baseline_shift`: the range's baseline shift in pixels; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "baseline_shift", RangeField.float("char", "9", { validate: validate_number }));
+descriptor(CharacterRange, "baselineShift", RangeField.float("char", "9", { validate: validate_number }));
 
 /** `font_caps_option`: the range's font caps option; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "font_caps_option", RangeField.enum(FontCapsOption, "char", "12"));
+descriptor(CharacterRange, "fontCapsOption", RangeField.enum(FontCapsOption, "char", "12"));
 
 /** `font_baseline_option`: the range's font baseline option; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "font_baseline_option", RangeField.enum(FontBaselineOption, "char", "13"));
+descriptor(CharacterRange, "fontBaselineOption", RangeField.enum(FontBaselineOption, "char", "13"));
 
 /** `ligature`: `true` when ligature is used across the range. Read / Write. */
 descriptor(CharacterRange, "ligature", RangeField.bool("char", "18", { default: false }));
@@ -1714,7 +1714,7 @@ descriptor(CharacterRange, "ligature", RangeField.bool("char", "18", { default: 
 /** `baseline_direction`: the range's baseline direction; `null` when mixed. Read / Write. */
 descriptor(
   CharacterRange,
-  "baseline_direction",
+  "baselineDirection",
   RangeField.enum(BaselineDirection, "char", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }),
 );
 
@@ -1726,63 +1726,63 @@ descriptor(
 );
 
 /** `no_break`: `true` when no-break is applied across the range. Read / Write. */
-descriptor(CharacterRange, "no_break", RangeField.bool("char", "52", { default: false }));
+descriptor(CharacterRange, "noBreak", RangeField.bool("char", "52", { default: false }));
 
 /** `apply_fill`: when `true`, the range shows a fill; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "apply_fill", RangeField.bool("char", "56"));
+descriptor(CharacterRange, "applyFill", RangeField.bool("char", "56"));
 
 /** `apply_stroke`: when `true`, the range shows a stroke; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "apply_stroke", RangeField.bool("char", "57", { default: false }));
+descriptor(CharacterRange, "applyStroke", RangeField.bool("char", "57", { default: false }));
 
 /** `stroke_over_fill`: when `true`, the stroke appears over the fill; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "stroke_over_fill", RangeField.bool("char", "58", { default: true }));
+descriptor(CharacterRange, "strokeOverFill", RangeField.bool("char", "58", { default: true }));
 
 /** `line_join_type`: the range's line join type for strokes; `null` when mixed. Read / Write. */
 descriptor(
   CharacterRange,
-  "line_join_type",
+  "lineJoinType",
   RangeField.enum(LineJoinType, "char", "62", { default: LineJoinType.LINE_JOIN_MITER }),
 );
 
 /** `stroke_width`: the range's stroke thickness; `null` when mixed. Read / Write. */
 descriptor(
   CharacterRange,
-  "stroke_width",
+  "strokeWidth",
   RangeField.float("char", "63", { default: 1.0, validate: validate_positive_nonzero_number }),
 );
 
 /** `digit_set`: the range's digit set option; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "digit_set", RangeField.enum(DigitSet, "char", "70", { default: DigitSet.DEFAULT_DIGITS }));
+descriptor(CharacterRange, "digitSet", RangeField.enum(DigitSet, "char", "70", { default: DigitSet.DEFAULT_DIGITS }));
 
 /** `justification`: the justification of paragraphs in the range; `null` when mixed. Read / Write. */
 descriptor(CharacterRange, "justification", RangeField.enum(ParagraphJustification, "para", "0"));
 
 /** `first_line_indent`: the paragraphs' first line indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "first_line_indent", RangeField.float("para", "1", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validate_number }));
 
 /** `start_indent`: the paragraphs' start indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "start_indent", RangeField.float("para", "2", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "startIndent", RangeField.float("para", "2", { default: 0.0, validate: validate_number }));
 
 /** `end_indent`: the paragraphs' end indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "end_indent", RangeField.float("para", "3", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validate_number }));
 
 /** `space_before`: the paragraphs' space before; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "space_before", RangeField.float("para", "4", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validate_number }));
 
 /** `space_after`: the paragraphs' space after; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "space_after", RangeField.float("para", "5", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validate_number }));
 
 /** `leading_type`: the paragraphs' leading type; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "leading_type", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+descriptor(CharacterRange, "leadingType", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
 
 /** `auto_hyphenate`: the paragraphs' auto-hyphenate option; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "auto_hyphenate", RangeField.bool("para", "9"));
+descriptor(CharacterRange, "autoHyphenate", RangeField.bool("para", "9"));
 
 /** `hanging_roman`: the paragraphs' Roman Hanging Punctuation; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "hanging_roman", RangeField.bool("para", "21", { default: false }));
+descriptor(CharacterRange, "hangingRoman", RangeField.bool("para", "21", { default: false }));
 
 /** `every_line_composer`: the paragraphs' Every-Line Composer option; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "every_line_composer", RangeField.bool("para", "29", { default: false }));
+descriptor(CharacterRange, "everyLineComposer", RangeField.bool("para", "29", { default: false }));
 
 /** `direction`: the paragraphs' direction; `null` when mixed. Read / Write. */
 descriptor(
@@ -1801,7 +1801,7 @@ descriptor(
  */
 descriptor(
   CharacterRange,
-  "fill_color",
+  "fillColor",
   new RangeField("char", "53", {
     transform: _parse_color,
     gate: "56",
@@ -1821,7 +1821,7 @@ descriptor(
  */
 descriptor(
   CharacterRange,
-  "stroke_color",
+  "strokeColor",
   new RangeField("char", "54", {
     transform: _parse_color,
     gate: "57",

@@ -69,19 +69,19 @@ function _tdpi_by_param_suffix(layer: Layer): Map<string, number[]> {
 }
 
 describe("TestLightSource", () => {
-  /** Tests for LightLayer.light_source. */
+  /** Tests for LightLayer.lightSource. */
 
   test("test_light_source_default_is_none", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("light_source_default.aep"));
     const layer = as_instance(get_first_layer(project), LightLayer);
-    expect(layer.light_source == null).toBe(true);
+    expect(layer.lightSource == null).toBe(true);
   });
 
   test("test_light_source_mov", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("light_source_mov_23_976.mov.aep"));
     const layer = as_instance(get_first_layer(project), LightLayer);
-    expect(layer.light_source != null).toBe(true);
-    const light_source = as_instance(layer.light_source, AVLayer);
+    expect(layer.lightSource != null).toBe(true);
+    const light_source = as_instance(layer.lightSource, AVLayer);
     expect(light_source.name).toBe("mov_23_976.mov");
   });
 
@@ -89,77 +89,77 @@ describe("TestLightSource", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("light_source_mov_23_976.mov.aep"));
     const layer = as_instance(get_first_layer(project), LightLayer);
-    expect(layer.light_source != null).toBe(true);
+    expect(layer.lightSource != null).toBe(true);
 
-    layer.light_source = null;
+    layer.lightSource = null;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_first_layer(parse_aep(out).project), LightLayer);
-    expect(layer2.light_source == null).toBe(true);
+    expect(layer2.lightSource == null).toBe(true);
   });
 
   test("test_light_source_set_none_before_ae_23", () => {
     // AE 22 stores no light source as 0 (0xFFFFFFFF from AE 23).
     const project = py_aep.new("22.5x53").project;
-    const comp = project.root_folder.add_comp("Comp", 100, 100, 1.0, 1.0, 24.0);
-    const light = comp.add_light("Light", [50, 50]);
-    light.light_source = null;
+    const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 24.0);
+    const light = comp.addLight("Light", [50, 50]);
+    light.lightSource = null;
     expect(light._ldta.source_id).toBe(0);
   });
 
   test("test_light_source_rejects_3d_layer", () => {
     const project = parse_aep(SAMPLES_DIR.div("light_source_mov_23_976.mov.aep")).project;
-    const light = project.compositions[0].light_layers[0];
+    const light = project.compositions[0].lightLayers[0];
     expect(light instanceof LightLayer).toBe(true);
-    const source = as_instance(light.light_source, AVLayer);
+    const source = as_instance(light.lightSource, AVLayer);
 
-    source.three_d_layer = true;
+    source.threeDLayer = true;
     raises(ValueError, () => {
-      light.light_source = source;
+      light.lightSource = source;
     }, "Invalid light source specified");
   });
 });
 
 describe("TestRoundtripLightType", () => {
-  /** Roundtrip tests for LightLayer.light_type. */
+  /** Roundtrip tests for LightLayer.lightType. */
 
   test("test_modify_light_type_to_spot", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("lightType.aep"));
     const layer = as_instance(get_layer(project, "lightType_AMBIENT"), LightLayer);
-    expect(layer.light_type).toBe(LightType.AMBIENT);
+    expect(layer.lightType).toBe(LightType.AMBIENT);
 
-    layer.light_type = LightType.SPOT;
+    layer.lightType = LightType.SPOT;
     const out = tmp_path.div("modified_light_type.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "lightType_AMBIENT"), LightLayer);
-    expect(layer2.light_type).toBe(LightType.SPOT);
+    expect(layer2.lightType).toBe(LightType.SPOT);
   });
 
   test("test_modify_light_type_to_point", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("lightType.aep"));
     const layer = as_instance(get_layer(project, "lightType_SPOT"), LightLayer);
-    expect(layer.light_type).toBe(LightType.SPOT);
+    expect(layer.lightType).toBe(LightType.SPOT);
 
-    layer.light_type = LightType.POINT;
+    layer.lightType = LightType.POINT;
     const out = tmp_path.div("modified_light_type_point.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "lightType_SPOT"), LightLayer);
-    expect(layer2.light_type).toBe(LightType.POINT);
+    expect(layer2.lightType).toBe(LightType.POINT);
   });
 
   test("test_modify_light_type_to_parallel", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("lightType.aep"));
     const layer = as_instance(get_layer(project, "lightType_POINT"), LightLayer);
-    expect(layer.light_type).toBe(LightType.POINT);
+    expect(layer.lightType).toBe(LightType.POINT);
 
-    layer.light_type = LightType.PARALLEL;
+    layer.lightType = LightType.PARALLEL;
     const out = tmp_path.div("modified_light_type_parallel.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "lightType_POINT"), LightLayer);
-    expect(layer2.light_type).toBe(LightType.PARALLEL);
+    expect(layer2.lightType).toBe(LightType.PARALLEL);
   });
 
   test("test_light_type_validation_rejects_invalid", () => {
@@ -168,7 +168,7 @@ describe("TestRoundtripLightType", () => {
     expect(layer instanceof LightLayer).toBe(true);
     raises(ValueError, () => {
       // @ts-expect-error type: ignore[assignment] in Python: the value is deliberately invalid.
-      as_instance(layer, LightLayer).light_type = 9999;
+      as_instance(layer, LightLayer).lightType = 9999;
     }, "Invalid value");
   });
 });
@@ -223,13 +223,13 @@ describe("TestRoundtripAVLayerFlags", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("blendingMode.aep"));
     const layer = as_instance(get_layer(project, "blendingMode_ADD"), AVLayer);
-    expect(layer.blending_mode).toBe(BlendingMode.ADD);
+    expect(layer.blendingMode).toBe(BlendingMode.ADD);
 
-    layer.blending_mode = BlendingMode.MULTIPLY;
+    layer.blendingMode = BlendingMode.MULTIPLY;
     const out = tmp_path.div("modified_blending.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "blendingMode_ADD"), AVLayer);
-    expect(layer2.blending_mode).toBe(BlendingMode.MULTIPLY);
+    expect(layer2.blendingMode).toBe(BlendingMode.MULTIPLY);
   });
 
   test("test_dancing_dissolve_roundtrip", () => {
@@ -240,11 +240,11 @@ describe("TestRoundtripAVLayerFlags", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("blendingMode.aep"));
     const layer = as_instance(get_layer(project, "blendingMode_ADD"), AVLayer);
 
-    layer.blending_mode = BlendingMode.DANCING_DISSOLVE;
+    layer.blendingMode = BlendingMode.DANCING_DISSOLVE;
     const out = tmp_path.div("dancing.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "blendingMode_ADD"), AVLayer);
-    expect(layer2.blending_mode).toBe(BlendingMode.DANCING_DISSOLVE);
+    expect(layer2.blendingMode).toBe(BlendingMode.DANCING_DISSOLVE);
   });
 
   test("test_dancing_dissolve_independent_of_preserve_transparency", () => {
@@ -253,29 +253,29 @@ describe("TestRoundtripAVLayerFlags", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("blendingMode.aep"));
     const layer = as_instance(get_layer(project, "blendingMode_ADD"), AVLayer);
-    layer.blending_mode = BlendingMode.DANCING_DISSOLVE;
-    layer.preserve_transparency = true;
+    layer.blendingMode = BlendingMode.DANCING_DISSOLVE;
+    layer.preserveTransparency = true;
     const out = tmp_path.div("dancing_pt.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "blendingMode_ADD"), AVLayer);
-    expect(layer2.blending_mode).toBe(BlendingMode.DANCING_DISSOLVE);
-    expect(layer2.preserve_transparency).toBe(true);
+    expect(layer2.blendingMode).toBe(BlendingMode.DANCING_DISSOLVE);
+    expect(layer2.preserveTransparency).toBe(true);
     // Switching to a non-Dissolve mode clears only the dancing flag.
-    layer2.blending_mode = BlendingMode.NORMAL;
-    expect(layer2.preserve_transparency).toBe(true);
+    layer2.blendingMode = BlendingMode.NORMAL;
+    expect(layer2.preserveTransparency).toBe(true);
   });
 
   test("test_modify_three_d_layer", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "threeDLayer_true"), AVLayer);
-    expect(layer.three_d_layer).toBe(true);
+    expect(layer.threeDLayer).toBe(true);
 
-    layer.three_d_layer = false;
+    layer.threeDLayer = false;
     const out = tmp_path.div("modified_3d.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "threeDLayer_true"), AVLayer);
-    expect(layer2.three_d_layer).toBe(false);
+    expect(layer2.threeDLayer).toBe(false);
   });
 
   test("test_environment_layer_makes_a_3d_layer_2d", () => {
@@ -286,17 +286,17 @@ describe("TestRoundtripAVLayerFlags", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "threeDLayer_true"), AVLayer);
-    expect(layer.environment_layer).toBe(false);
+    expect(layer.environmentLayer).toBe(false);
 
-    layer.environment_layer = true;
-    expect(layer.three_d_layer).toBe(false);
+    layer.environmentLayer = true;
+    expect(layer.threeDLayer).toBe(false);
     expect(layer.transform.property("ADBE Rotate Z").name).toBe("Rotation");
 
     const out = tmp_path.div("modified_env.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "threeDLayer_true"), AVLayer);
-    expect(layer2.environment_layer).toBe(true);
-    expect(layer2.three_d_layer).toBe(false);
+    expect(layer2.environmentLayer).toBe(true);
+    expect(layer2.threeDLayer).toBe(false);
   });
 
   test("test_environment_layer_leaves_a_2d_layer_alone", () => {
@@ -304,11 +304,11 @@ describe("TestRoundtripAVLayerFlags", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("light_source_default.aep"));
     const layer = as_instance(get_comp(project, "crystal").layers[1], AVLayer);
-    expect(layer.three_d_layer).toBe(false);
+    expect(layer.threeDLayer).toBe(false);
     layer.transform.property("ADBE Scale").value = [50.0, 60.0, 40.0];
 
-    layer.environment_layer = true;
-    expect(layer.three_d_layer).toBe(false);
+    layer.environmentLayer = true;
+    expect(layer.threeDLayer).toBe(false);
 
     const out = tmp_path.div("env_2d.aep");
     project.save(out);
@@ -327,45 +327,45 @@ describe("TestRoundtripAVLayerFlags", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "threeDLayer_true"), AVLayer);
 
-    layer.environment_layer = true;
-    layer.three_d_layer = true;
-    expect(layer.environment_layer).toBe(true);
+    layer.environmentLayer = true;
+    layer.threeDLayer = true;
+    expect(layer.environmentLayer).toBe(true);
 
     const out = tmp_path.div("modified_3d_env.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "threeDLayer_true"), AVLayer);
-    expect(layer2.three_d_layer).toBe(true);
-    expect(layer2.environment_layer).toBe(true);
+    expect(layer2.threeDLayer).toBe(true);
+    expect(layer2.environmentLayer).toBe(true);
   });
 });
 
 describe("TestRoundtripAutoOrient", () => {
-  /** Roundtrip tests for Layer.auto_orient. */
+  /** Roundtrip tests for Layer.autoOrient. */
 
   test("test_modify_along_path_to_no_auto_orient", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("autoOrient.aep"));
     const layer = get_layer(project, "autoOrient_ALONG_PATH");
-    expect(layer.auto_orient).toBe(AutoOrientType.ALONG_PATH);
+    expect(layer.autoOrient).toBe(AutoOrientType.ALONG_PATH);
 
-    layer.auto_orient = AutoOrientType.NO_AUTO_ORIENT;
+    layer.autoOrient = AutoOrientType.NO_AUTO_ORIENT;
     const out = tmp_path.div("modified_auto_orient.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "autoOrient_ALONG_PATH");
-    expect(layer2.auto_orient).toBe(AutoOrientType.NO_AUTO_ORIENT);
+    expect(layer2.autoOrient).toBe(AutoOrientType.NO_AUTO_ORIENT);
   });
 
   test("test_modify_no_auto_orient_to_along_path", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
-    expect(layer.auto_orient).toBe(AutoOrientType.NO_AUTO_ORIENT);
+    expect(layer.autoOrient).toBe(AutoOrientType.NO_AUTO_ORIENT);
 
-    layer.auto_orient = AutoOrientType.ALONG_PATH;
+    layer.autoOrient = AutoOrientType.ALONG_PATH;
     const out = tmp_path.div("modified_auto_orient.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(layer2.auto_orient).toBe(AutoOrientType.ALONG_PATH);
+    expect(layer2.autoOrient).toBe(AutoOrientType.ALONG_PATH);
   });
 });
 
@@ -387,34 +387,34 @@ describe("TestRoundtripComment", () => {
 });
 
 describe("TestRoundtripInOutPoint", () => {
-  /** Roundtrip tests for Layer.in_point and Layer.out_point. */
+  /** Roundtrip tests for Layer.inPoint and Layer.outPoint. */
 
   test("test_modify_in_point", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
-    const original_in = layer.in_point;
+    const original_in = layer.inPoint;
 
     const new_in = original_in + 1.0;
-    layer.in_point = new_in;
+    layer.inPoint = new_in;
     const out = tmp_path.div("modified_in_point.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(Math.abs(layer2.in_point - new_in) < 0.001).toBe(true);
+    expect(Math.abs(layer2.inPoint - new_in) < 0.001).toBe(true);
   });
 
   test("test_modify_out_point", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
-    const original_out = layer.out_point;
+    const original_out = layer.outPoint;
 
     const new_out = original_out - 1.0;
-    layer.out_point = new_out;
+    layer.outPoint = new_out;
     const out = tmp_path.div("modified_out_point.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(Math.abs(layer2.out_point - new_out) < 0.001).toBe(true);
+    expect(Math.abs(layer2.outPoint - new_out) < 0.001).toBe(true);
   });
 });
 
@@ -443,11 +443,11 @@ describe("TestRoundtripFramePoints", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
 
-    layer.frame_in_point = 10;
+    layer.frameInPoint = 10;
     const out = tmp_path.div("modified_frame_in_point.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(layer2.frame_in_point).toBe(10);
+    expect(layer2.frameInPoint).toBe(10);
   });
 
   test("test_modify_frame_out_point", () => {
@@ -455,11 +455,11 @@ describe("TestRoundtripFramePoints", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
 
-    layer.frame_out_point = 20;
+    layer.frameOutPoint = 20;
     const out = tmp_path.div("modified_frame_out_point.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(layer2.frame_out_point).toBe(20);
+    expect(layer2.frameOutPoint).toBe(20);
   });
 
   test("test_modify_frame_start_time", () => {
@@ -467,74 +467,74 @@ describe("TestRoundtripFramePoints", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("inPoint.aep"));
     const layer = get_layer(project, "inPoint_5");
 
-    layer.frame_start_time = 5;
+    layer.frameStartTime = 5;
     const out = tmp_path.div("modified_frame_start_time.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "inPoint_5");
-    expect(layer2.frame_start_time).toBe(5);
+    expect(layer2.frameStartTime).toBe(5);
   });
 });
 
 describe("TestRoundtripFrameBlendingType", () => {
-  /** Roundtrip tests for AVLayer.frame_blending_type. */
+  /** Roundtrip tests for AVLayer.frameBlendingType. */
 
   test("test_no_blend_to_frame_mix", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("frameBlendingType.aep"));
     const layer = as_instance(get_layer(project, "frameBlendingType_NO_FRAME_BLEND"), AVLayer);
-    expect(layer.frame_blending_type).toBe(FrameBlendingType.NO_FRAME_BLEND);
-    expect(layer.frame_blending).toBe(false);
+    expect(layer.frameBlendingType).toBe(FrameBlendingType.NO_FRAME_BLEND);
+    expect(layer.frameBlending).toBe(false);
 
-    layer.frame_blending_type = FrameBlendingType.FRAME_MIX;
+    layer.frameBlendingType = FrameBlendingType.FRAME_MIX;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "frameBlendingType_NO_FRAME_BLEND"), AVLayer);
-    expect(layer2.frame_blending_type).toBe(FrameBlendingType.FRAME_MIX);
-    expect(layer2.frame_blending).toBe(true);
+    expect(layer2.frameBlendingType).toBe(FrameBlendingType.FRAME_MIX);
+    expect(layer2.frameBlending).toBe(true);
   });
 
   test("test_frame_mix_to_pixel_motion", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("frameBlendingType.aep"));
     const layer = as_instance(get_layer(project, "frameBlendingType_FRAME_MIX"), AVLayer);
-    expect(layer.frame_blending_type).toBe(FrameBlendingType.FRAME_MIX);
+    expect(layer.frameBlendingType).toBe(FrameBlendingType.FRAME_MIX);
 
-    layer.frame_blending_type = FrameBlendingType.PIXEL_MOTION;
+    layer.frameBlendingType = FrameBlendingType.PIXEL_MOTION;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "frameBlendingType_FRAME_MIX"), AVLayer);
-    expect(layer2.frame_blending_type).toBe(FrameBlendingType.PIXEL_MOTION);
+    expect(layer2.frameBlendingType).toBe(FrameBlendingType.PIXEL_MOTION);
   });
 
   test("test_pixel_motion_to_no_blend", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("frameBlendingType.aep"));
     const layer = as_instance(get_layer(project, "frameBlendingType_PIXEL_MOTION"), AVLayer);
-    expect(layer.frame_blending_type).toBe(FrameBlendingType.PIXEL_MOTION);
+    expect(layer.frameBlendingType).toBe(FrameBlendingType.PIXEL_MOTION);
 
-    layer.frame_blending_type = FrameBlendingType.NO_FRAME_BLEND;
+    layer.frameBlendingType = FrameBlendingType.NO_FRAME_BLEND;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "frameBlendingType_PIXEL_MOTION"), AVLayer);
-    expect(layer2.frame_blending_type).toBe(FrameBlendingType.NO_FRAME_BLEND);
-    expect(layer2.frame_blending).toBe(false);
+    expect(layer2.frameBlendingType).toBe(FrameBlendingType.NO_FRAME_BLEND);
+    expect(layer2.frameBlending).toBe(false);
   });
 });
 
 describe("TestRoundtripTimeRemapEnabled", () => {
-  /** Roundtrip tests for AVLayer.time_remap_enabled. */
+  /** Roundtrip tests for AVLayer.timeRemapEnabled. */
 
   test("test_disable_time_remap", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("outPoint_no_clamp.aep"));
     const layer = as_instance(get_layer(project, "outPoint_no_clamp_timeRemap"), AVLayer);
-    expect(layer.time_remap_enabled).toBe(true);
+    expect(layer.timeRemapEnabled).toBe(true);
 
-    layer.time_remap_enabled = false;
+    layer.timeRemapEnabled = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "outPoint_no_clamp_timeRemap"), AVLayer);
-    expect(layer2.time_remap_enabled).toBe(false);
+    expect(layer2.timeRemapEnabled).toBe(false);
   });
 
   test("test_enable_time_remap", () => {
@@ -542,19 +542,19 @@ describe("TestRoundtripTimeRemapEnabled", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("outPoint_no_clamp.aep"));
     const layer = as_instance(get_layer(project, "outPoint_no_clamp_timeRemap"), AVLayer);
 
-    layer.time_remap_enabled = false;
+    layer.timeRemapEnabled = false;
     const out = tmp_path.div("disabled.aep");
     project.save(out);
 
     const project2 = parse_aep(out).project;
     const layer2 = as_instance(get_layer(project2, "outPoint_no_clamp_timeRemap"), AVLayer);
-    expect(layer2.time_remap_enabled).toBe(false);
+    expect(layer2.timeRemapEnabled).toBe(false);
 
-    layer2.time_remap_enabled = true;
+    layer2.timeRemapEnabled = true;
     const out2 = tmp_path.div("re_enabled.aep");
     project2.save(out2);
     const layer3 = as_instance(get_layer(parse_aep(out2).project, "outPoint_no_clamp_timeRemap"), AVLayer);
-    expect(layer3.time_remap_enabled).toBe(true);
+    expect(layer3.timeRemapEnabled).toBe(true);
   });
 });
 
@@ -616,92 +616,92 @@ describe("TestRoundtripAVLayerBoolFlags", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "adjustmentLayer_true"), AVLayer);
-    expect(layer.adjustment_layer).toBe(true);
+    expect(layer.adjustmentLayer).toBe(true);
 
-    layer.adjustment_layer = false;
+    layer.adjustmentLayer = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = get_layer(parse_aep(out).project, "adjustmentLayer_true");
     expect(layer2 instanceof AVLayer).toBe(true);
-    expect(layer2.adjustment_layer).toBe(false);
+    expect(layer2.adjustmentLayer).toBe(false);
   });
 
   test("test_modify_audio_enabled", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("audioEnabled.aep"));
     const layer = as_instance(get_layer(project, "audioEnabled_false"), AVLayer);
-    expect(layer.audio_enabled).toBe(false);
+    expect(layer.audioEnabled).toBe(false);
 
-    layer.audio_enabled = true;
+    layer.audioEnabled = true;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "audioEnabled_false"), AVLayer);
-    expect(layer2.audio_enabled).toBe(true);
+    expect(layer2.audioEnabled).toBe(true);
   });
 
   test("test_modify_collapse_transformation", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "collapseTransformation_true"), AVLayer);
-    expect(layer.collapse_transformation).toBe(true);
+    expect(layer.collapseTransformation).toBe(true);
 
-    layer.collapse_transformation = false;
+    layer.collapseTransformation = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "collapseTransformation_true"), AVLayer);
-    expect(layer2.collapse_transformation).toBe(false);
+    expect(layer2.collapseTransformation).toBe(false);
   });
 
   test("test_modify_effects_active", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "effectsActive_false"), AVLayer);
-    expect(layer.effects_active).toBe(false);
+    expect(layer.effectsActive).toBe(false);
 
-    layer.effects_active = true;
+    layer.effectsActive = true;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "effectsActive_false"), AVLayer);
-    expect(layer2.effects_active).toBe(true);
+    expect(layer2.effectsActive).toBe(true);
   });
 
   test("test_modify_guide_layer", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "guideLayer_true"), AVLayer);
-    expect(layer.guide_layer).toBe(true);
+    expect(layer.guideLayer).toBe(true);
 
-    layer.guide_layer = false;
+    layer.guideLayer = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "guideLayer_true"), AVLayer);
-    expect(layer2.guide_layer).toBe(false);
+    expect(layer2.guideLayer).toBe(false);
   });
 
   test("test_modify_motion_blur", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "motionBlur_true"), AVLayer);
-    expect(layer.motion_blur).toBe(true);
+    expect(layer.motionBlur).toBe(true);
 
-    layer.motion_blur = false;
+    layer.motionBlur = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "motionBlur_true"), AVLayer);
-    expect(layer2.motion_blur).toBe(false);
+    expect(layer2.motionBlur).toBe(false);
   });
 
   test("test_modify_preserve_transparency", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "preserveTransparency_true"), AVLayer);
-    expect(layer.preserve_transparency).toBe(true);
+    expect(layer.preserveTransparency).toBe(true);
 
-    layer.preserve_transparency = false;
+    layer.preserveTransparency = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "preserveTransparency_true"), AVLayer);
-    expect(layer2.preserve_transparency).toBe(false);
+    expect(layer2.preserveTransparency).toBe(false);
   });
 });
 
@@ -725,35 +725,35 @@ describe("TestRoundtripAVLayerQuality", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("avlayer_flags.aep"));
     const layer = as_instance(get_layer(project, "samplingQuality_BICUBIC"), AVLayer);
-    expect(layer.sampling_quality).toBe(LayerSamplingQuality.BICUBIC);
+    expect(layer.samplingQuality).toBe(LayerSamplingQuality.BICUBIC);
 
-    layer.sampling_quality = LayerSamplingQuality.BILINEAR;
+    layer.samplingQuality = LayerSamplingQuality.BILINEAR;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_layer(parse_aep(out).project, "samplingQuality_BICUBIC"), AVLayer);
-    expect(layer2.sampling_quality).toBe(LayerSamplingQuality.BILINEAR);
+    expect(layer2.samplingQuality).toBe(LayerSamplingQuality.BILINEAR);
   });
 });
 
 describe("TestRoundtripThreeDPerChar", () => {
-  /** Roundtrip tests for AVLayer.three_d_per_char. */
+  /** Roundtrip tests for AVLayer.threeDPerChar. */
 
   test("test_modify_three_d_per_char", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("threeDPerChar_on.aep"));
     const layer = as_instance(get_first_layer(project), AVLayer);
-    expect(layer.three_d_per_char).toBe(true);
+    expect(layer.threeDPerChar).toBe(true);
 
-    layer.three_d_per_char = false;
+    layer.threeDPerChar = false;
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const layer2 = as_instance(get_first_layer(parse_aep(out).project), AVLayer);
-    expect(layer2.three_d_per_char).toBe(false);
+    expect(layer2.threeDPerChar).toBe(false);
   });
 });
 
 describe("TestRoundtripTrackMatteType", () => {
-  /** Roundtrip tests for AVLayer.track_matte_type. */
+  /** Roundtrip tests for AVLayer.trackMatteType. */
 
   test("test_modify_track_matte_type", () => {
     const tmp_path = make_tmp_path();
@@ -762,7 +762,7 @@ describe("TestRoundtripTrackMatteType", () => {
     // Track matte layer is the one with ALPHA matte
     let matte_layer = null;
     for (const layer of comp.layers) {
-      if (layer instanceof AVLayer && layer.track_matte_type === TrackMatteType.ALPHA) {
+      if (layer instanceof AVLayer && layer.trackMatteType === TrackMatteType.ALPHA) {
         matte_layer = layer;
         break;
       }
@@ -770,14 +770,14 @@ describe("TestRoundtripTrackMatteType", () => {
     expect(matte_layer != null).toBe(true);
     if (matte_layer == null) throw new Error("no alpha-matte layer in comp");
 
-    matte_layer.track_matte_type = TrackMatteType.LUMA;
+    matte_layer.trackMatteType = TrackMatteType.LUMA;
     const out = tmp_path.div("modified.aep");
     project.save(out);
 
     const comp2 = get_comp(parse_aep(out).project, "trackMatteType_ALPHA");
     let matte_layer2 = null;
     for (const layer of comp2.layers) {
-      if (layer instanceof AVLayer && layer.track_matte_type === TrackMatteType.LUMA) {
+      if (layer instanceof AVLayer && layer.trackMatteType === TrackMatteType.LUMA) {
         matte_layer2 = layer;
         break;
       }
@@ -807,7 +807,7 @@ describe("TestRoundtripLayerName", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("layer_misc.aep"));
     const layer = get_layer(project, "comment");
-    expect(layer.is_name_set).toBe(false);
+    expect(layer.isNameSet).toBe(false);
 
     layer.name = "CustomName";
     const out = tmp_path.div("set_name.aep");
@@ -815,12 +815,12 @@ describe("TestRoundtripLayerName", () => {
 
     const layer2 = get_layer(parse_project_fresh(out), "comment");
     expect(layer2.name).toBe("CustomName");
-    expect(layer2.is_name_set).toBe(true);
+    expect(layer2.isNameSet).toBe(true);
   });
 });
 
 describe("TestSetTrackMatte", () => {
-  /** Tests for AVLayer.set_track_matte(). */
+  /** Tests for AVLayer.setTrackMatte(). */
 
   test("test_basic", () => {
     /** Assign ALPHA track matte on a file that has none. */
@@ -829,11 +829,11 @@ describe("TestSetTrackMatte", () => {
     const matted = as_instance(comp.layers[0], AVLayer);
     const matte = as_instance(comp.layers[1], AVLayer);
 
-    matted.set_track_matte(matte, TrackMatteType.ALPHA);
+    matted.setTrackMatte(matte, TrackMatteType.ALPHA);
 
-    expect(matted.track_matte_type).toBe(TrackMatteType.ALPHA);
+    expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
     expect(matted._matte_layer_id).toBe(matte.id);
-    expect(matted.track_matte_layer).toBe(matte);
+    expect(matted.trackMatteLayer).toBe(matte);
     expect(matte.enabled).toBe(false);
   });
 
@@ -845,7 +845,7 @@ describe("TestSetTrackMatte", () => {
     const matted = as_instance(comp.layers[0], AVLayer);
     const matte = as_instance(comp.layers[1], AVLayer);
 
-    matted.set_track_matte(matte, TrackMatteType.LUMA);
+    matted.setTrackMatte(matte, TrackMatteType.LUMA);
     app.project.save(tmp_path.div("out.aep"));
 
     const app2 = parse_aep(tmp_path.div("out.aep"));
@@ -853,7 +853,7 @@ describe("TestSetTrackMatte", () => {
     const matted2 = as_instance(comp2.layers[0], AVLayer);
     const matte2 = comp2.layers[1];
 
-    expect(matted2.track_matte_type).toBe(TrackMatteType.LUMA);
+    expect(matted2.trackMatteType).toBe(TrackMatteType.LUMA);
     expect(matted2._matte_layer_id).toBe(matte2.id);
     expect(matte2.enabled).toBe(false);
   });
@@ -867,8 +867,8 @@ describe("TestSetTrackMatte", () => {
     expect(old_matte.enabled).toBe(false);
 
     // Switch to LUMA with the same matte layer (type changes only)
-    matted.set_track_matte(old_matte, TrackMatteType.LUMA);
-    expect(matted.track_matte_type).toBe(TrackMatteType.LUMA);
+    matted.setTrackMatte(old_matte, TrackMatteType.LUMA);
+    expect(matted.trackMatteType).toBe(TrackMatteType.LUMA);
     // Matte stays disabled since it's still the matte
     expect(old_matte.enabled).toBe(false);
   });
@@ -881,11 +881,11 @@ describe("TestSetTrackMatte", () => {
     const matte = as_instance(comp.layers[1], AVLayer);
     expect(matte.enabled).toBe(false);
 
-    matted.set_track_matte(null, TrackMatteType.ALPHA);
+    matted.setTrackMatte(null, TrackMatteType.ALPHA);
 
-    expect(matted.track_matte_type).toBe(TrackMatteType.ALPHA);
+    expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
     expect(matted._matte_layer_id).toBe(0);
-    expect(matted.track_matte_layer == null).toBe(true);
+    expect(matted.trackMatteLayer == null).toBe(true);
     // Old matte re-enabled
     expect(matte.enabled).toBe(true);
   });
@@ -896,11 +896,11 @@ describe("TestSetTrackMatte", () => {
     const comp = app.project.compositions[0];
     const matted = as_instance(comp.layers[0], AVLayer);
     const matte = as_instance(comp.layers[1], AVLayer);
-    const original_type = matted.track_matte_type;
+    const original_type = matted.trackMatteType;
 
-    matted.set_track_matte(matte, TrackMatteType.NO_TRACK_MATTE);
+    matted.setTrackMatte(matte, TrackMatteType.NO_TRACK_MATTE);
 
-    expect(matted.track_matte_type).toBe(original_type);
+    expect(matted.trackMatteType).toBe(original_type);
     expect(matted._matte_layer_id).toBe(0);
     expect(matte.enabled).toBe(true);
   });
@@ -912,7 +912,7 @@ describe("TestSetTrackMatte", () => {
     const layer = as_instance(comp.layers[0], AVLayer);
 
     raises(AttributeError, () => {
-      layer.set_track_matte(layer, TrackMatteType.ALPHA);
+      layer.setTrackMatte(layer, TrackMatteType.ALPHA);
     }, "AE 23");
   });
 
@@ -925,13 +925,13 @@ describe("TestSetTrackMatte", () => {
     const foreign = as_instance(comp_l.layers[1], AVLayer);
 
     raises(ValueError, () => {
-      matted.set_track_matte(foreign, TrackMatteType.ALPHA);
+      matted.setTrackMatte(foreign, TrackMatteType.ALPHA);
     }, "same composition");
   });
 });
 
 describe("TestRemoveTrackMatte", () => {
-  /** Tests for AVLayer.remove_track_matte(). */
+  /** Tests for AVLayer.removeTrackMatte(). */
 
   test("test_basic", () => {
     /** Remove matte reference and re-enable the matte layer. */
@@ -941,10 +941,10 @@ describe("TestRemoveTrackMatte", () => {
     const matte = as_instance(comp.layers[1], AVLayer);
     expect(matte.enabled).toBe(false);
 
-    matted.remove_track_matte();
+    matted.removeTrackMatte();
 
     expect(matted._matte_layer_id).toBe(0);
-    expect(matted.track_matte_layer == null).toBe(true);
+    expect(matted.trackMatteLayer == null).toBe(true);
     expect(matte.enabled).toBe(true);
   });
 
@@ -953,11 +953,11 @@ describe("TestRemoveTrackMatte", () => {
     const app = parse_aep(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = app.project.compositions[0];
     const matted = as_instance(comp.layers[0], AVLayer);
-    expect(matted.track_matte_type).toBe(TrackMatteType.ALPHA);
+    expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
 
-    matted.remove_track_matte();
+    matted.removeTrackMatte();
 
-    expect(matted.track_matte_type).toBe(TrackMatteType.ALPHA);
+    expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
   });
 
   test("test_roundtrip", () => {
@@ -965,7 +965,7 @@ describe("TestRemoveTrackMatte", () => {
     /** Remove matte, save, reparse. */
     const app = parse_aep(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = app.project.compositions[0];
-    as_instance(comp.layers[0], AVLayer).remove_track_matte();
+    as_instance(comp.layers[0], AVLayer).removeTrackMatte();
     app.project.save(tmp_path.div("out.aep"));
 
     const app2 = parse_aep(tmp_path.div("out.aep"));
@@ -979,13 +979,13 @@ describe("TestRemoveTrackMatte", () => {
     const app = parse_aep(VERSIONS_DIR.div("ae2022", "complete.aep"));
     const comp = app.project.compositions[0];
     raises(AttributeError, () => {
-      as_instance(comp.layers[0], AVLayer).remove_track_matte();
+      as_instance(comp.layers[0], AVLayer).removeTrackMatte();
     }, "AE 23");
   });
 });
 
 describe("TestReplaceSource", () => {
-  /** Tests for AVLayer.replace_source(). */
+  /** Tests for AVLayer.replaceSource(). */
 
   test("test_basic", () => {
     /** Swap source and verify the new source is returned. */
@@ -996,7 +996,7 @@ describe("TestReplaceSource", () => {
     // Pick any other footage item as new source
     const new_source = as_instance(app.project.footages.find((item) => item !== old_source), FootageItem);
 
-    layer.replace_source(new_source);
+    layer.replaceSource(new_source);
 
     expect(layer.source).toBe(new_source);
     expect(layer._source_id).toBe(new_source.id);
@@ -1011,7 +1011,7 @@ describe("TestReplaceSource", () => {
     const new_source = as_instance(app.project.footages.find((item) => item !== layer.source), FootageItem);
     const new_id = new_source.id;
 
-    layer.replace_source(new_source);
+    layer.replaceSource(new_source);
     app.project.save(tmp_path.div("out.aep"));
 
     const app2 = parse_aep(tmp_path.div("out.aep"));
@@ -1030,7 +1030,7 @@ describe("TestReplaceSource", () => {
       FootageItem,
     );
 
-    layer.replace_source(new_source);
+    layer.replaceSource(new_source);
 
     expect(new_source._used_in.has(comp)).toBe(true);
     // old_source removed if no other layer in comp uses it
@@ -1050,7 +1050,7 @@ describe("TestReplaceSource", () => {
     const source = app.project.footages[0];
 
     raises(NotImplementedError, () => {
-      layer.replace_source(source, true);
+      layer.replaceSource(source, true);
     }, "fix_expressions");
   });
 
@@ -1067,7 +1067,7 @@ describe("TestReplaceSource", () => {
 
     raises(ValueError, () => {
       // @ts-expect-error a non-AVItem source is deliberately passed to the runtime check
-      layer.replace_source(new _FakeItem());
+      layer.replaceSource(new _FakeItem());
     }, "must be an AVItem");
   });
 
@@ -1078,7 +1078,7 @@ describe("TestReplaceSource", () => {
     expect(layer.source == null).toBe(true);
 
     raises(ValueError, () => {
-      layer.replace_source(project.footages[0]);
+      layer.replaceSource(project.footages[0]);
     }, "does not have a source");
   });
 
@@ -1088,7 +1088,7 @@ describe("TestReplaceSource", () => {
     const layer = as_instance(get_first_layer(project), ThreeDModelLayer);
 
     raises(ValueError, () => {
-      layer.replace_source(as_instance(layer.source, AVItem));
+      layer.replaceSource(as_instance(layer.source, AVItem));
     }, "3D model layers");
   });
 
@@ -1099,7 +1099,7 @@ describe("TestReplaceSource", () => {
     const layer = as_instance(comp.layers[0], AVLayer);
 
     raises(ValueError, () => {
-      layer.replace_source(comp);
+      layer.replaceSource(comp);
     }, "composition cycle");
   });
 
@@ -1109,7 +1109,7 @@ describe("TestReplaceSource", () => {
     const comp = get_comp(app.project, "Main_Comp");
     // Find a sub-comp used as a source by a layer in Main_Comp
     let sub_comp = null;
-    for (const layer of comp.av_layers) {
+    for (const layer of comp.avLayers) {
       const src = layer.source;
       if (src != null && "layers" in src && src !== comp) {
         sub_comp = src;
@@ -1121,7 +1121,7 @@ describe("TestReplaceSource", () => {
     }
     // Find a layer in sub_comp that has a source (not text/shape)
     let sub_layer = null;
-    for (const ly of as_instance(sub_comp, CompItem).av_layers) {
+    for (const ly of as_instance(sub_comp, CompItem).avLayers) {
       if (ly.source != null) {
         sub_layer = ly;
         break;
@@ -1133,7 +1133,7 @@ describe("TestReplaceSource", () => {
     // sub_comp is used inside Main_Comp, so setting a layer
     // in sub_comp to point at Main_Comp would create A > B > A.
     raises(ValueError, () => {
-      sub_layer.replace_source(comp);
+      sub_layer.replaceSource(comp);
     }, "composition cycle");
   });
 });
@@ -1171,10 +1171,10 @@ describe("TestLayerRemove", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const last_id = at(comp.layers, -1).id;
-    void comp.layers_by_id; // Build cache
-    expect(comp.layers_by_id.has(last_id)).toBe(true);
+    void comp.layersById; // Build cache
+    expect(comp.layersById.has(last_id)).toBe(true);
     at(comp.layers, -1).remove();
-    expect(comp.layers_by_id.has(last_id)).toBe(false);
+    expect(comp.layersById.has(last_id)).toBe(false);
   });
 
   test("test_remove_all_layers", () => {
@@ -1327,14 +1327,14 @@ describe("TestParentSetter", () => {
 });
 
 describe("TestLayerMove", () => {
-  /** Tests for Layer.move_to_beginning/end/after/before. */
+  /** Tests for Layer.moveToBeginning/end/after/before. */
 
   test("test_move_to_end", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const first = comp.layers[0];
     const first_id = first.id;
-    first.move_to_end();
+    first.moveToEnd();
     expect(comp.layers.at(-1)).toBe(first);
     expect(at(comp.layers, -1).id).toBe(first_id);
   });
@@ -1344,7 +1344,7 @@ describe("TestLayerMove", () => {
     const comp = get_comp(app.project, "crystal");
     const last = at(comp.layers, -1);
     const last_id = last.id;
-    last.move_to_beginning();
+    last.moveToBeginning();
     expect(comp.layers[0]).toBe(last);
     expect(comp.layers[0].id).toBe(last_id);
   });
@@ -1355,7 +1355,7 @@ describe("TestLayerMove", () => {
     const ids_before = comp.layers.map((ly) => ly.id);
     const first = comp.layers[0];
     const target = comp.layers[2];
-    first.move_after(target);
+    first.moveAfter(target);
     // [0] moved after [2]: new order is [1, 2, 0]
     expect(comp.layers[0].id).toBe(ids_before[1]);
     expect(comp.layers[1].id).toBe(ids_before[2]);
@@ -1368,7 +1368,7 @@ describe("TestLayerMove", () => {
     const ids_before = comp.layers.map((ly) => ly.id);
     const last = comp.layers[2];
     const target = comp.layers[0];
-    last.move_before(target);
+    last.moveBefore(target);
     // [2] moved before [0]: new order is [2, 0, 1]
     expect(comp.layers[0].id).toBe(ids_before[2]);
     expect(comp.layers[1].id).toBe(ids_before[0]);
@@ -1380,7 +1380,7 @@ describe("TestLayerMove", () => {
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0]; // ChildLayer, parent_id=57
     const parent = comp.layers[1]; // ParentNull, id=57
-    parent.move_to_beginning();
+    parent.moveToBeginning();
     expect(child._parent_id).toBe(57);
   });
 
@@ -1388,7 +1388,7 @@ describe("TestLayerMove", () => {
     const app = parse_aep(SAMPLES_DIR.div("track_matte_yes.aep"));
     const comp = app.project.compositions[0];
     const matted = comp.layers[0]; // Gray Solid 2, matte_layer_id=15
-    comp.layers[1].move_to_beginning(); // Move matte source
+    comp.layers[1].moveToBeginning(); // Move matte source
     expect(matted._ldta.matte_layer_id).toBe(15);
   });
 
@@ -1397,7 +1397,7 @@ describe("TestLayerMove", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const ids_before = comp.layers.map((ly) => ly.id);
-    comp.layers[1].move_before(comp.layers[1]);
+    comp.layers[1].moveBefore(comp.layers[1]);
     expect(py_eq(comp.layers.map((ly) => ly.id), ids_before)).toBe(true);
   });
 
@@ -1410,7 +1410,7 @@ describe("TestLayerMove", () => {
     const layer_a = comps[0].layers[0];
     const layer_b = comps[1].layers[0];
     raises(ValueError, () => {
-      layer_a.move_after(layer_b);
+      layer_a.moveAfter(layer_b);
     }, "same composition");
   });
 
@@ -1419,7 +1419,7 @@ describe("TestLayerMove", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const names_before = comp.layers.map((ly) => ly.name);
-    comp.layers[0].move_to_end();
+    comp.layers[0].moveToEnd();
     const expected = [...names_before.slice(1), names_before[0]];
     expect(py_eq(comp.layers.map((ly) => ly.name), expected)).toBe(true);
 
@@ -1434,13 +1434,13 @@ describe("TestLayerMove", () => {
     const comp = get_comp(app.project, "crystal");
     const layer = comp.layers[0];
     expect(layer.index).toBe(0);
-    layer.move_to_end();
+    layer.moveToEnd();
     expect(layer.index).toBe(2);
   });
 });
 
 describe("TestSetParentWithJump", () => {
-  /** Tests for Layer.set_parent_with_jump(). */
+  /** Tests for Layer.setParentWithJump(). */
 
   test("test_set_parent", () => {
     /** Setting parent via set_parent_with_jump writes the ID. */
@@ -1449,7 +1449,7 @@ describe("TestSetParentWithJump", () => {
     const child = comp.layers[0]; // ChildLayer
 
     // Unparent without transform compensation
-    child.set_parent_with_jump(null);
+    child.setParentWithJump(null);
     expect(child._parent_id).toBe(0);
     expect(child.parent == null).toBe(true);
     // Local position should NOT change (no compensation)
@@ -1462,8 +1462,8 @@ describe("TestSetParentWithJump", () => {
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0];
     const parent = comp.layers[1];
-    child.set_parent_with_jump(null);
-    child.set_parent_with_jump(parent);
+    child.setParentWithJump(null);
+    child.setParentWithJump(parent);
     expect(child._parent_id).toBe(parent.id);
     expect(child.parent).toBe(parent);
   });
@@ -1474,7 +1474,7 @@ describe("TestSetParentWithJump", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer_misc.aep"));
     const comp = get_comp(app.project, "parent");
     const child = comp.layers[0];
-    child.set_parent_with_jump(null);
+    child.setParentWithJump(null);
 
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
@@ -1527,7 +1527,7 @@ describe("TestLayerDuplicate", () => {
     expect(layer.effects != null).toBe(true);
     if (layer.effects == null) throw new Error("layer has no effects group");
     // Layer Control references the containing layer by default.
-    layer.effects.add_property("ADBE Layer Control");
+    layer.effects.addProperty("ADBE Layer Control");
     const original_id = layer.id;
 
     const dup = layer.duplicate();
@@ -1548,7 +1548,7 @@ describe("TestLayerDuplicate", () => {
     const layer = app.project.compositions[0].layers[0];
     expect(layer.effects != null).toBe(true);
     if (layer.effects == null) throw new Error("layer has no effects group");
-    layer.effects.add_property("ADBE Layer Control");
+    layer.effects.addProperty("ADBE Layer Control");
     const original_id = layer.id;
     const dup = layer.duplicate();
     const dup_id = dup.id;
@@ -1566,7 +1566,7 @@ describe("TestLayerDuplicate", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const original = comp.layers[1]; // mov_23_976.mov - name from source
-    expect(original.is_name_set).toBe(false);
+    expect(original.isNameSet).toBe(false);
     const dup = original.duplicate();
     expect(dup.name).toBe(original.name);
   });
@@ -1576,7 +1576,7 @@ describe("TestLayerDuplicate", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     const original = comp.layers[0]; // Environment Light 1 - user-defined
-    expect(original.is_name_set).toBe(true);
+    expect(original.isNameSet).toBe(true);
     const dup = original.duplicate();
     expect(dup.name).toBe("Environment Light 2");
   });
@@ -1586,7 +1586,7 @@ describe("TestLayerDuplicate", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer_misc.aep"));
     const comp = get_comp(app.project, "parent");
     const parent_null = comp.layers[1]; // ParentNull - user-defined
-    expect(parent_null.is_name_set).toBe(true);
+    expect(parent_null.isNameSet).toBe(true);
     const dup = parent_null.duplicate();
     expect(dup.name).toBe("ParentNull 2");
   });
@@ -1628,9 +1628,9 @@ describe("TestLayerDuplicate", () => {
   test("test_duplicate_invalidates_cache", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
-    void comp.layers_by_id; // Build cache
+    void comp.layersById; // Build cache
     const dup = comp.layers[0].duplicate();
-    expect(comp.layers_by_id.has(dup.id)).toBe(true);
+    expect(comp.layersById.has(dup.id)).toBe(true);
   });
 
   test("test_duplicate_roundtrip", () => {
@@ -1699,14 +1699,14 @@ describe("TestDuplicateComplexValueLayers", () => {
 });
 
 describe("TestCopyToComp", () => {
-  /** Tests for Layer.copy_to_comp(). */
+  /** Tests for Layer.copyToComp(). */
 
   test("test_copy_increases_count", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer_misc.aep"));
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
     expect(len(dst_comp.layers)).toBe(1);
-    src_comp.layers[0].copy_to_comp(dst_comp);
+    src_comp.layers[0].copyToComp(dst_comp);
     expect(len(dst_comp.layers)).toBe(2);
   });
 
@@ -1715,7 +1715,7 @@ describe("TestCopyToComp", () => {
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
     const n_before = len(src_comp.layers);
-    src_comp.layers[0].copy_to_comp(dst_comp);
+    src_comp.layers[0].copyToComp(dst_comp);
     expect(len(src_comp.layers)).toBe(n_before);
   });
 
@@ -1725,7 +1725,7 @@ describe("TestCopyToComp", () => {
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
     const original_name = src_comp.layers[0].name;
-    src_comp.layers[0].copy_to_comp(dst_comp);
+    src_comp.layers[0].copyToComp(dst_comp);
     expect(dst_comp.layers[0].name).toBe(original_name);
   });
 
@@ -1736,7 +1736,7 @@ describe("TestCopyToComp", () => {
     const dst_comp = get_comp(app.project, "comment");
     const child = src_comp.layers[0]; // ChildLayer, has parent
     expect(child._parent_id).not.toBe(0);
-    child.copy_to_comp(dst_comp);
+    child.copyToComp(dst_comp);
     expect(dst_comp.layers[0]._parent_id).toBe(0);
   });
 
@@ -1745,7 +1745,7 @@ describe("TestCopyToComp", () => {
     const app = parse_aep(SAMPLES_DIR.div("light_source_default.aep"));
     const comp = get_comp(app.project, "crystal");
     expect(len(comp.layers)).toBe(3);
-    const result = comp.layers[0].copy_to_comp(comp);
+    const result = comp.layers[0].copyToComp(comp);
     expect(len(comp.layers)).toBe(4);
     expect(result).toBe(comp.layers[0]);
   });
@@ -1755,7 +1755,7 @@ describe("TestCopyToComp", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer_misc.aep"));
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
-    const result = src_comp.layers[0].copy_to_comp(dst_comp);
+    const result = src_comp.layers[0].copyToComp(dst_comp);
     expect(result).toBe(dst_comp.layers[0]);
   });
 
@@ -1765,7 +1765,7 @@ describe("TestCopyToComp", () => {
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
     const existing_ids = new Set(dst_comp.layers.map((ly) => ly.id));
-    src_comp.layers[0].copy_to_comp(dst_comp);
+    src_comp.layers[0].copyToComp(dst_comp);
     const new_id = dst_comp.layers[0].id;
     expect(existing_ids.has(new_id)).toBe(false);
   });
@@ -1775,7 +1775,7 @@ describe("TestCopyToComp", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer_misc.aep"));
     const src_comp = get_comp(app.project, "parent");
     const dst_comp = get_comp(app.project, "comment");
-    src_comp.layers[0].copy_to_comp(dst_comp);
+    src_comp.layers[0].copyToComp(dst_comp);
     const copied_name = dst_comp.layers[0].name;
     const copied_id = dst_comp.layers[0].id;
 
@@ -1797,11 +1797,11 @@ describe("TestLayerReservedBytes", () => {
    */
 
   test("test_new_layer_reserved_bytes", () => {
-    const comp = py_aep.new().project.root_folder.add_comp("t", 100, 100, 1.0, 1.0, 30.0);
-    const av = comp.add_solid([1.0, 0.0, 0.0]);
-    const shape = comp.add_shape();
-    const camera = comp.add_camera();
-    const light = comp.add_light();
+    const comp = py_aep.new().project.rootFolder.addComp("t", 100, 100, 1.0, 1.0, 30.0);
+    const av = comp.addSolid([1.0, 0.0, 0.0]);
+    const shape = comp.addShape();
+    const camera = comp.addCamera();
+    const light = comp.addLight();
     for (const layer of [av, shape]) {
       expect(layer._ldta._reserved_3b).toBe(1);
       expect(layer._ldta._reserved_3c).toBe(0);
@@ -1832,29 +1832,29 @@ describe("TestGeometryAutoOrientGuard", () => {
   test("test_along_path_with_separated_position_raises", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const layer = _probe_layer(project, "solid_keyed");
-    layer.transform.property("ADBE Position").dimensions_separated = true;
-    layer.auto_orient = AutoOrientType.ALONG_PATH;
+    layer.transform.property("ADBE Position").dimensionsSeparated = true;
+    layer.autoOrient = AutoOrientType.ALONG_PATH;
     raises(NotImplementedError, () => {
-      layer.source_point_to_comp([0.0, 0.0]);
+      layer.sourcePointToComp([0.0, 0.0]);
     }, "separated");
   });
 
   test("test_parented_layer_towards_camera_raises", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const child = _probe_layer(project, "solid_parented");
-    child.three_d_layer = true;
-    child.auto_orient = AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
+    child.threeDLayer = true;
+    child.autoOrient = AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
     raises(NotImplementedError, () => {
-      child.comp_point_to_source([0.0, 0.0]);
+      child.compPointToSource([0.0, 0.0]);
     }, "towards the camera");
   });
 
   test("test_characters_towards_camera_raises", () => {
     const project = parse_project_fresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const layer = _probe_layer(project, "text_point");
-    layer.auto_orient = AutoOrientType.CHARACTERS_TOWARD_CAMERA;
+    layer.autoOrient = AutoOrientType.CHARACTERS_TOWARD_CAMERA;
     raises(NotImplementedError, () => {
-      layer.source_point_to_comp([0.0, 0.0]);
+      layer.sourcePointToComp([0.0, 0.0]);
     }, "characters");
   });
 });
@@ -1880,7 +1880,7 @@ describe("TestForwardRayOnly", () => {
 
   test("test_layer_in_front_resolves", () => {
     const layer = _probe_3d_layer();
-    expect(layer.comp_point_to_source([100.0, 100.0]) != null).toBe(true);
+    expect(layer.compPointToSource([100.0, 100.0]) != null).toBe(true);
   });
 
   test("test_layer_behind_camera_raises", () => {
@@ -1888,7 +1888,7 @@ describe("TestForwardRayOnly", () => {
     // Default comp camera sits at z = -zoom; push the layer behind it.
     layer.transform.property("ADBE Position").value = [960.0, 540.0, -20000.0];
     raises(ValueError, () => {
-      layer.comp_point_to_source([100.0, 100.0]);
+      layer.compPointToSource([100.0, 100.0]);
     }, "not in front of the camera");
   });
 });
@@ -1916,8 +1916,8 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const authored = layer.property("ADBE Time Remapping").keyframes.map((k) => [k.time, k.value]);
     expect(py_eq(authored, [[0.0, 0.0], [5.0, 5.0]])).toBe(true);
 
-    layer.time_remap_enabled = false;
-    layer.time_remap_enabled = true;
+    layer.timeRemapEnabled = false;
+    layer.timeRemapEnabled = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
@@ -1930,15 +1930,15 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("outPoint_no_clamp.aep"));
     const layer = as_instance(get_comp(project, "outPoint_no_clamp_timeRemap").layers[0], AVLayer);
-    layer.time_remap_enabled = false;
-    layer.time_remap_enabled = true;
+    layer.timeRemapEnabled = false;
+    layer.timeRemapEnabled = true;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const comp2 = get_comp(parse_aep(out).project, "outPoint_no_clamp_timeRemap");
     for (const keyframe of comp2.layers[0].property("ADBE Time Remapping").keyframes) {
-      expect(keyframe.in_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
-      expect(keyframe.out_interpolation_type).toBe(KeyframeInterpolationType.LINEAR);
+      expect(keyframe.inInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
+      expect(keyframe.outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     }
   });
 
@@ -1949,10 +1949,10 @@ describe("TestRoundtripTimeRemapRamp", () => {
      */
     const project = parse_project_fresh(SAMPLES_DIR.div("outPoint_no_clamp.aep"));
     const layer = as_instance(get_comp(project, "outPoint_no_clamp_timeRemap").layers[0], AVLayer);
-    layer.time_remap_enabled = false;
-    layer.start_time = 2.0;
-    layer.in_point = 3.0;
-    layer.time_remap_enabled = true;
+    layer.timeRemapEnabled = false;
+    layer.startTime = 2.0;
+    layer.inPoint = 3.0;
+    layer.timeRemapEnabled = true;
 
     const source = as_instance(layer.source, AVItem);
     const times = layer.property("ADBE Time Remapping").keyframes.map((k) => k.time);
@@ -2001,18 +2001,18 @@ describe("TestTextSourceRectRefusals", () => {
   test("test_faux_bold_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
     py_assert(layer.text != null);
-    layer.text.property("ADBE Text Document").value.faux_bold = true;
+    layer.text.property("ADBE Text Document").value.fauxBold = true;
     raises(NotImplementedError, () => {
-      layer.source_rect_at_time(0.0, false);
+      layer.sourceRectAtTime(0.0, false);
     }, "faux bold");
   });
 
   test("test_text_animator_raises", () => {
     const layer = _hello(parse_project_fresh(SAMPLES_DIR.div("text_ink.aep")));
     py_assert(layer.text != null);
-    layer.text.property("ADBE Text Animators").add_property("ADBE Text Animator");
+    layer.text.property("ADBE Text Animators").addProperty("ADBE Text Animator");
     raises(NotImplementedError, () => {
-      layer.source_rect_at_time(0.0, false);
+      layer.sourceRectAtTime(0.0, false);
     }, "animators");
   });
 });
@@ -2036,8 +2036,8 @@ describe("TestPointOfInterestDefault", () => {
     comp.width += 64;
     const poi = light.transform.property("ADBE Anchor Point");
     expect(py_eq(poi.value, [960.0, 540.0, 0.0])).toBe(true);
-    expect(py_eq(poi.default_value, [992.0, 540.0, 0.0])).toBe(true);
-    expect(poi.is_modified).toBe(true);
+    expect(py_eq(poi.defaultValue, [992.0, 540.0, 0.0])).toBe(true);
+    expect(poi.isModified).toBe(true);
   });
 });
 
@@ -2051,15 +2051,15 @@ describe("TestNullOpacity", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.div("auto_orient.aep"));
     const layer = project.compositions[0].layers[1];
-    expect(layer.null_layer).toBe(true);
+    expect(layer.nullLayer).toBe(true);
     let opacity = layer.transform.property("ADBE Opacity");
-    expect([opacity.value, opacity.is_modified]).toEqual([0.0, false]);
+    expect([opacity.value, opacity.isModified]).toEqual([0.0, false]);
     opacity.value = written;
     const out = tmp_path.div("opacity.aep");
     project.save(out);
     const reopened = parse_project_fresh(out).compositions[0].layers[1];
     opacity = reopened.transform.property("ADBE Opacity");
-    expect([opacity.value, opacity.default_value, opacity.is_modified]).toEqual([written, 0.0, true]);
+    expect([opacity.value, opacity.defaultValue, opacity.isModified]).toEqual([written, 0.0, true]);
   });
 });
 
@@ -2078,24 +2078,24 @@ describe("TestAnchorFollowsSource", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLES_DIR.parent.div("composition", "duplicate.aep"));
     const comp = get_comp(project, "AltSrc");
-    const precomp = project.root_folder.add_comp("pc", 200, 100, 1.0, 10.0, 24.0);
+    const precomp = project.rootFolder.addComp("pc", 200, 100, 1.0, 10.0, 24.0);
     const layers = [0, 1].map((i) =>
       change === "precomp_resize"
         ? comp.add(precomp)
-        : comp.add_solid([1.0, 0.0, 0.0], `S${i}`, 200, 100, 1.0),
+        : comp.addSolid([1.0, 0.0, 0.0], `S${i}`, 200, 100, 1.0),
     );
     layers[1].transform.property("ADBE Anchor Point").value = [30.0, 40.0, 0.0];
     if (change === "replace_source") {
-      const big = comp.add_solid([0.0, 0.0, 1.0], "Big", 400, 200, 1.0).source;
+      const big = comp.addSolid([0.0, 0.0, 1.0], "Big", 400, 200, 1.0).source;
       if (big == null) throw new StopIteration();
       for (const layer of layers) {
-        layer.replace_source(big);
+        layer.replaceSource(big);
       }
     } else if (change === "solid_resize") {
       for (const layer of layers) {
         const solid = as_instance(layer.source, FootageItem);
-        const main_source = as_instance(solid.main_source, SolidSource);
-        solid.replace_with_solid(main_source.color, solid.name, 400, 100);
+        const main_source = as_instance(solid.mainSource, SolidSource);
+        solid.replaceWithSolid(main_source.color, solid.name, 400, 100);
       }
     } else {
       precomp.width = 400;
@@ -2103,7 +2103,7 @@ describe("TestAnchorFollowsSource", () => {
 
     function anchors(layers: Layer[]): [number[], boolean][] {
       const props = layers.map((layer) => layer.transform.property("ADBE Anchor Point"));
-      return props.map((p): [number[], boolean] => [[...p.value], p.is_modified]);
+      return props.map((p): [number[], boolean] => [[...p.value], p.isModified]);
     }
 
     const expected = [
@@ -2135,7 +2135,7 @@ describe("TestLazyPropertyTree", () => {
     const layers = _layers(parse_project_fresh(SAMPLE));
     expect(layers.length > 0).toBe(true);
     for (const layer of layers) {
-      void [layer.name, layer.in_point, layer.out_point, layer.enabled];
+      void [layer.name, layer.inPoint, layer.outPoint, layer.enabled];
       void layer.label;
       if (layer instanceof AVLayer) {
         // (A missing attribute would search the children by name.)
@@ -2155,13 +2155,13 @@ describe("TestLazyPropertyTree", () => {
     const layer = _layers(parse_project_fresh(SAMPLE))[0];
     expect(layer.transform != null).toBe(true);
     expect(layer._tree_param_defs == null).toBe(true);
-    expect(layer.properties.every((p) => p.parent_property === layer)).toBe(true);
+    expect(layer.properties.every((p) => p.parentProperty === layer)).toBe(true);
   });
 
   test("test_unbuilt_layers_save_unchanged", () => {
     const project = parse_project_fresh(SAMPLE);
     for (const layer of _layers(project)) {
-      void [layer.in_point, layer.out_point];
+      void [layer.inPoint, layer.outPoint];
     }
     expect(py_eq(project_bytes(project), SAMPLE.read_bytes())).toBe(true);
   });
@@ -2169,8 +2169,8 @@ describe("TestLazyPropertyTree", () => {
   const mutations: [string, (comp: CompItem, layer: Layer) => void][] = [
     ["width", (comp) => (comp.width = comp.width + 64)],
     ["height", (comp) => (comp.height = comp.height + 64)],
-    ["pixel_aspect", (comp) => (comp.pixel_aspect = 2.0)],
-    ["three_d_layer", (_comp, layer) => (as_instance(layer, AVLayer).three_d_layer = true)],
+    ["pixelAspect", (comp) => (comp.pixelAspect = 2.0)],
+    ["threeDLayer", (_comp, layer) => (as_instance(layer, AVLayer).threeDLayer = true)],
     ["stretch", (_comp, layer) => (layer.stretch = 200.0)],
   ];
 
@@ -2221,9 +2221,9 @@ describe("TestLazyPropertyTree", () => {
     const effect = as_instance(other.property("ADBE Effect Parade").property("ADBE Geometry2"), PropertyGroup);
     // As AE 15.1 reports: GPU Rendering is an effect parameter in AE 15,
     // not a Compositing Options one.
-    expect(effect.num_properties).toBe(14);
-    expect(effect.properties[12].match_name).toBe("ADBE Force CPU GPU");
-    expect(as_instance(effect.property("ADBE Effect Built In Params"), PropertyGroup).num_properties).toBe(2);
+    expect(effect.numProperties).toBe(14);
+    expect(effect.properties[12].matchName).toBe("ADBE Force CPU GPU");
+    expect(as_instance(effect.property("ADBE Effect Built In Params"), PropertyGroup).numProperties).toBe(2);
   });
 
   test.each([["layer"], ["effect"], ["comp"]])(
@@ -2250,13 +2250,13 @@ describe("TestLazyPropertyTree", () => {
         other_comp.layers[0].property("ADBE Effect Parade").property("ADBE Geometry2"),
         PropertyGroup,
       );
-      expect(effect.num_properties).toBe(14);
+      expect(effect.numProperties).toBe(14);
       const out = tmp_path.div("removed.aep");
       project.save(out);
       const reopened = parse_project_fresh(out).compositions.find((c) => c.id === other_id);
       if (reopened === undefined) throw new StopIteration();
       effect = as_instance(reopened.layers[0].property("ADBE Effect Parade").property("ADBE Geometry2"), PropertyGroup);
-      expect(effect.num_properties).toBe(14);
+      expect(effect.numProperties).toBe(14);
     },
   );
 
@@ -2293,18 +2293,18 @@ describe("TestLazyPropertyTree", () => {
     const position = get_comp(parse_project_fresh(out), "TestComp").layers[0].transform.property("ADBE Position");
     expect(position._tdsb?.synthetic).toBe(false);
     expect(py_eq(position.value, [50.0, 50.0, 0.0])).toBe(true);
-    expect(position.is_modified).toBe(true);
+    expect(position.isModified).toBe(true);
   });
 
   test("test_time_remap_enabled_leaves_the_tree_unbuilt", () => {
     const project = parse_project_fresh(SAMPLE);
     const layers = _layers(project).filter((la) => la instanceof AVLayer);
-    const flags = layers.map((la) => la.time_remap_enabled);
+    const flags = layers.map((la) => la.timeRemapEnabled);
     expect(layers.every((la) => la._tree_param_defs != null)).toBe(true);
     // The same answer as the property it is read from.
     expect(flags).toEqual(
       layers.map((la) =>
-        la.properties.map((p) => p.match_name).includes("ADBE Time Remapping")
+        la.properties.map((p) => p.matchName).includes("ADBE Time Remapping")
           ? !!la.property("ADBE Time Remapping")._animated
           : false,
       ),
@@ -2317,7 +2317,7 @@ describe("TestLazyPropertyTree", () => {
       new Path(import.meta.path).parent.parent.parent.div("samples", "models", "essential_graphics", "multiple_controllers.aep"),
     );
     const main = get_comp(project, "main");
-    expect(main.layers.filter((la) => la.essential_property_uuids.length === 3).length).toBe(1);
+    expect(main.layers.filter((la) => la.essentialPropertyUuids.length === 3).length).toBe(1);
     expect(main.layers.every((la) => la._tree_param_defs != null)).toBe(true);
   });
 });

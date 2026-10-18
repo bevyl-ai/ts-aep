@@ -68,9 +68,9 @@ function asdict(inst: OutputModuleSettingsItem): Map<string, SettingValue> {
   return out;
 }
 
-/** `project.render_queue`, failing the test when the project has none. */
+/** `project.renderQueue`, failing the test when the project has none. */
 function render_queue_of(project: Project): RenderQueue {
-  const rq = project.render_queue;
+  const rq = project.renderQueue;
   if (rq == null) throw new AssertionError_("project has no render queue");
   return rq;
 }
@@ -95,18 +95,18 @@ function _assert_rout_consistent(app: Application): void {
   );
 }
 
-/** Roundtrip tests for RenderQueueItem.log_type. */
+/** Roundtrip tests for RenderQueueItem.logType. */
 describe("TestRoundtripLogType", () => {
   test("test_modify_log_type", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.log_type = LogType.ERRORS_AND_PER_FRAME_INFO;
+    rqi.logType = LogType.ERRORS_AND_PER_FRAME_INFO;
 
     const out = tmp_path.div("modified_log_type.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.log_type).toBe(LogType.ERRORS_AND_PER_FRAME_INFO);
+    expect(rqi2.logType).toBe(LogType.ERRORS_AND_PER_FRAME_INFO);
   });
 
   test("test_log_type_validation_rejects_invalid", () => {
@@ -114,24 +114,24 @@ describe("TestRoundtripLogType", () => {
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
       // @ts-expect-error 9999 is not a LogType; the setter must reject it at runtime
-      rqi.log_type = 9999;
+      rqi.logType = 9999;
     }, "Invalid value");
   });
 });
 
-/** Roundtrip tests for RenderQueueItem.queue_item_notify. */
+/** Roundtrip tests for RenderQueueItem.queueItemNotify. */
 describe("TestRoundtripQueueItemNotify", () => {
   test("test_modify_queue_item_notify", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const original = rqi.queue_item_notify;
-    rqi.queue_item_notify = !original;
+    const original = rqi.queueItemNotify;
+    rqi.queueItemNotify = !original;
 
     const out = tmp_path.div("modified_notify.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.queue_item_notify).toBe(!original);
+    expect(rqi2.queueItemNotify).toBe(!original);
   });
 });
 
@@ -173,14 +173,14 @@ describe("TestRoundtripStatus", () => {
     rqi._ldat.elapsed_seconds = 42;
 
     rqi.status = RQItemStatus.QUEUED;
-    expect(rqi.start_time == null).toBe(true);
-    expect(rqi.elapsed_seconds).toBe(0);
+    expect(rqi.startTime == null).toBe(true);
+    expect(rqi.elapsedSeconds).toBe(0);
 
     const out = tmp_path.div("status_reset.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.start_time == null).toBe(true);
-    expect(rqi2.elapsed_seconds).toBe(0);
+    expect(rqi2.startTime == null).toBe(true);
+    expect(rqi2.elapsedSeconds).toBe(0);
     expect(rqi2.status).toBe(RQItemStatus.QUEUED);
   });
 });
@@ -236,42 +236,42 @@ describe("TestRoundtripTimeSpan", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.time_span_start_frame = 10;
+    rqi.timeSpanStartFrame = 10;
 
     const out = tmp_path.div("modified_ts_start.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.time_span_start_frame).toBe(10);
+    expect(rqi2.timeSpanStartFrame).toBe(10);
   });
 
   test("test_modify_time_span_duration_frames", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.time_span_duration_frames = 48;
+    rqi.timeSpanDurationFrames = 48;
 
     const out = tmp_path.div("modified_ts_dur.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.time_span_duration_frames).toBe(48);
+    expect(rqi2.timeSpanDurationFrames).toBe(48);
   });
 });
 
-/** Tests for RenderQueueItem.start_time (read-only). */
+/** Tests for RenderQueueItem.startTime (read-only). */
 describe("TestRoundtripStartTime", () => {
   test("test_start_time_is_read_only", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(AttributeError, () => {
       // NOTE(port): Date months are 0-based, so month 5 is Python's datetime(2025, 6, 15, 12, 0, 0).
-      rqi.start_time = new Date(2025, 5, 15, 12, 0, 0);
+      rqi.startTime = new Date(2025, 5, 15, 12, 0, 0);
     }, "read-only");
   });
 
   test("test_start_time_default_is_none", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    expect(rqi.start_time == null).toBe(true);
+    expect(rqi.startTime == null).toBe(true);
   });
 });
 
@@ -281,7 +281,7 @@ describe("TestReadOnlyFields", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(AttributeError, () => {
-      rqi.elapsed_seconds = 999;
+      rqi.elapsedSeconds = 999;
     }, "read-only");
   });
 });
@@ -437,71 +437,71 @@ describe("TestRoundtripComment", () => {
   });
 });
 
-/** Roundtrip tests for OutputModule.include_source_xmp. */
+/** Roundtrip tests for OutputModule.includeSourceXmp. */
 describe("TestRoundtripOutputModuleIncludeSourceXmp", () => {
   test("test_modify_include_source_xmp", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("om_misc.aep")).project;
     const rqi = get_rqi(project, "include_source_xmp_data_on");
-    const om = rqi.output_modules[0];
-    expect(om.include_source_xmp).toBe(true);
-    om.include_source_xmp = false;
+    const om = rqi.outputModules[0];
+    expect(om.includeSourceXmp).toBe(true);
+    om.includeSourceXmp = false;
 
     const out = tmp_path.div("xmp_off.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "include_source_xmp_data_on");
-    const om2 = rqi2.output_modules[0];
-    expect(om2.include_source_xmp).toBe(false);
+    const om2 = rqi2.outputModules[0];
+    expect(om2.includeSourceXmp).toBe(false);
   });
 
   test("test_enable_include_source_xmp", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("include_source_xmp_data_off.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
-    expect(om.include_source_xmp).toBe(false);
-    om.include_source_xmp = true;
+    const om = render_queue_of(project).items[0].outputModules[0];
+    expect(om.includeSourceXmp).toBe(false);
+    om.includeSourceXmp = true;
 
     const out = tmp_path.div("xmp_on.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
-    expect(om2.include_source_xmp).toBe(true);
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
+    expect(om2.includeSourceXmp).toBe(true);
   });
 });
 
-/** Roundtrip tests for OutputModule.post_render_action. */
+/** Roundtrip tests for OutputModule.postRenderAction. */
 describe("TestRoundtripOutputModulePostRenderAction", () => {
   test("test_modify_post_render_action", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    om.post_render_action = PostRenderAction.IMPORT;
+    const om = rqi.outputModules[0];
+    om.postRenderAction = PostRenderAction.IMPORT;
 
     const out = tmp_path.div("pra_import.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    const om2 = rqi2.output_modules[0];
-    expect(om2.post_render_action).toBe(PostRenderAction.IMPORT);
+    const om2 = rqi2.outputModules[0];
+    expect(om2.postRenderAction).toBe(PostRenderAction.IMPORT);
   });
 
   test("test_post_render_action_validation_rejects_invalid", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     raises(ValueError, () => {
       // @ts-expect-error 9999 is not a PostRenderAction; the setter must reject it at runtime
-      om.post_render_action = 9999;
+      om.postRenderAction = 9999;
     }, "Invalid value");
   });
 });
 
-/** Roundtrip tests for OutputModule.file_template property. */
+/** Roundtrip tests for OutputModule.fileTemplate property. */
 describe("TestRoundtripFileTemplate", () => {
   test("test_file_template_read", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    expect(py_bool(om.file_template)).toBe(true); // should be non-empty
+    const om = rqi.outputModules[0];
+    expect(py_bool(om.fileTemplate)).toBe(true); // should be non-empty
   });
 
   test("test_file_template_roundtrip", () => {
@@ -510,25 +510,25 @@ describe("TestRoundtripFileTemplate", () => {
     // would store a set path in macOS style.
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep"), { platform: "windows" }).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
-    const original = om.file_template;
+    const om = rqi.outputModules[0];
+    const original = om.fileTemplate;
     expect(py_bool(original)).toBe(true); // non-empty
 
     // Replace the filename portion with a custom template
     const sep = original.includes("\\") ? "\\" : "/";
     const last_sep = original.lastIndexOf(sep);
     const new_template = original.slice(0, last_sep + 1) + "custom_output.[fileExtension]";
-    om.file_template = new_template;
+    om.fileTemplate = new_template;
 
     const out = tmp_path.div("ft_roundtrip.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    const om2 = rqi2.output_modules[0];
-    expect(om2.file_template).toBe(new_template);
+    const om2 = rqi2.outputModules[0];
+    expect(om2.fileTemplate).toBe(new_template);
   });
 });
 
-/** Roundtrip tests for RenderQueueItem.skip_frames setter. */
+/** Roundtrip tests for RenderQueueItem.skipFrames setter. */
 describe("TestRoundtripSkipFrames", () => {
   test("test_set_skip_frames", () => {
     const tmp_path = make_tmp_path();
@@ -536,24 +536,24 @@ describe("TestRoundtripSkipFrames", () => {
     // opens and renders all frames, so a re-parsed item reads 0.
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_0");
-    expect(rqi.skip_frames).toBe(0);
-    rqi.skip_frames = 1;
-    expect(rqi.skip_frames).toBe(1);
-    expect(rqi.output_modules[0]._roou.frame_rate).toBe(15.0);
+    expect(rqi.skipFrames).toBe(0);
+    rqi.skipFrames = 1;
+    expect(rqi.skipFrames).toBe(1);
+    expect(rqi.outputModules[0]._roou.frame_rate).toBe(15.0);
 
     const out = tmp_path.div("skip1.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "skip_frames_0");
-    expect(rqi2.skip_frames).toBe(0);
-    expect(rqi2.output_modules[0]._roou.frame_rate).toBe(15.0);
+    expect(rqi2.skipFrames).toBe(0);
+    expect(rqi2.outputModules[0]._roou.frame_rate).toBe(15.0);
   });
 
   test("test_set_skip_frames_back_to_0", () => {
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_1");
-    rqi.skip_frames = 1;
-    rqi.skip_frames = 0;
-    expect(rqi.output_modules[0]._roou.frame_rate).toBe(30.0);
+    rqi.skipFrames = 1;
+    rqi.skipFrames = 0;
+    expect(rqi.outputModules[0]._roou.frame_rate).toBe(30.0);
   });
 
   test.each([1, 2, 3].map((n) => [n]))("test_set_skip_frames_writes_after_effects_bytes[%#]", (n: number) => {
@@ -561,7 +561,7 @@ describe("TestRoundtripSkipFrames", () => {
     // Every item of the sample renders at 30 fps; AE stored 30 / (n + 1)
     // fps in the output module of `skip_frames_n` (7.5 = 00 07 80 00).
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
-    get_rqi(project, "skip_frames_0").skip_frames = n;
+    get_rqi(project, "skip_frames_0").skipFrames = n;
 
     const out = tmp_path.div("skip.aep");
     project.save(out);
@@ -569,9 +569,9 @@ describe("TestRoundtripSkipFrames", () => {
     const got = get_rqi(saved, "skip_frames_0");
     const want = get_rqi(saved, `skip_frames_${n}`);
     expect(
-      py_eq(got.output_modules[0]._roou.tobytes(), want.output_modules[0]._roou.tobytes()),
+      py_eq(got.outputModules[0]._roou.tobytes(), want.outputModules[0]._roou.tobytes()),
     ).toBe(true);
-    expect(got.skip_frames).toBe(0);
+    expect(got.skipFrames).toBe(0);
   });
 
   test("test_comp_frame_rate_change_keeps_skip_frames", () => {
@@ -579,30 +579,30 @@ describe("TestRoundtripSkipFrames", () => {
     // and leaves the 12 fps output rate stored in the module as it is.
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_1");
-    rqi.skip_frames = 1;
-    const stored = rqi.output_modules[0]._roou.frame_rate;
-    rqi.comp.frame_rate = rqi.comp.frame_rate * 2.5;
-    expect(rqi.skip_frames).toBe(1);
-    expect(rqi.output_modules[0]._roou.frame_rate).toBe(stored);
+    rqi.skipFrames = 1;
+    const stored = rqi.outputModules[0]._roou.frame_rate;
+    rqi.comp.frameRate = rqi.comp.frameRate * 2.5;
+    expect(rqi.skipFrames).toBe(1);
+    expect(rqi.outputModules[0]._roou.frame_rate).toBe(stored);
   });
 
   test("test_use_this_frame_rate_keeps_skip_frames", () => {
     // AE 2026 keeps skipFrames when "Use this frame rate" changes.
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_2");
-    rqi.skip_frames = 2;
+    rqi.skipFrames = 2;
     rqi.settings.set("Use this frame rate", 24);
-    expect(rqi.skip_frames).toBe(2);
-    expect(rqi.output_modules[0]._roou.frame_rate).toBe(8.0);
+    expect(rqi.skipFrames).toBe(2);
+    expect(rqi.outputModules[0]._roou.frame_rate).toBe(8.0);
   });
 
   test("test_frame_rate_setting_keeps_skip_frames", () => {
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_2");
-    rqi.skip_frames = 2;
+    rqi.skipFrames = 2;
     rqi.settings.set("Frame Rate", FrameRateSetting.USE_COMP_FRAME_RATE);
-    expect(rqi.skip_frames).toBe(2);
-    expect(rqi.output_modules[0]._roou.frame_rate).toBe(8.0); // 24 fps comp
+    expect(rqi.skipFrames).toBe(2);
+    expect(rqi.outputModules[0]._roou.frame_rate).toBe(8.0); // 24 fps comp
   });
 
   test.each([12.5, 29.97, 60.0].map((fps) => [fps]))("test_new_item_stores_render_frame_rate[%#]", (fps: number) => {
@@ -610,11 +610,11 @@ describe("TestRoundtripSkipFrames", () => {
     // render frame rate (AE 2026: 60 and 12.5 fps comps store 60 and
     // 12.5), so a new item reads skip_frames 0 at any comp rate.
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"));
-    const comp = app.project.root_folder.add_comp("C", 64, 36, 1.0, 1.0, fps);
+    const comp = app.project.rootFolder.addComp("C", 64, 36, 1.0, 1.0, fps);
     const rqi = render_queue_of(app.project).add(comp);
-    expect(approx(rqi.output_modules[0]._roou.frame_rate, fps, { abs: 1 / 65536 })).toBe(true);
-    expect(rqi.skip_frames).toBe(0);
-    expect(rqi.add()._roou.frame_rate).toBe(rqi.output_modules[0]._roou.frame_rate);
+    expect(approx(rqi.outputModules[0]._roou.frame_rate, fps, { abs: 1 / 65536 })).toBe(true);
+    expect(rqi.skipFrames).toBe(0);
+    expect(rqi.add()._roou.frame_rate).toBe(rqi.outputModules[0]._roou.frame_rate);
   });
 });
 
@@ -624,13 +624,13 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
   test("test_depth_write_keeps_29_97_frame_rate", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(FO_SAMPLES_DIR.div("png", "png_rgba.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
     expect(py_eq(bytes_.slice(om._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
     om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
 
     const out = tmp_path.div("depth.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     expect(py_eq(bytes_.slice(om2._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520040"))).toBe(true);
     expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
   });
@@ -677,56 +677,56 @@ describe("TestRoundtripPreserveRgb", () => {
     const tmp_path = make_tmp_path();
     // preserve_rgb_off/on differ only in that byte.
     const project = parse_aep(OM_SAMPLES_DIR.div("preserve_rgb_off.aep")).project;
-    render_queue_of(project).items[0].output_modules[0].settings.set("Preserve RGB", true);
+    render_queue_of(project).items[0].outputModules[0].settings.set("Preserve RGB", true);
     const out = tmp_path.div("prgb.aep");
     project.save(out);
-    const got = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const got = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     const want = render_queue_of(parse_aep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0]
-      .output_modules[0];
+      .outputModules[0];
     expect(py_eq(got._om_ldat.tobytes(), want._om_ldat.tobytes())).toBe(true);
     expect(got.settings.get("Preserve RGB")).toBe(true);
   });
 });
 
-/** Roundtrip tests for RenderQueueItem.time_span_start setter. */
+/** Roundtrip tests for RenderQueueItem.timeSpanStart setter. */
 describe("TestRoundtripTimeSpanStart", () => {
   test("test_set_time_span_start", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("time_span.aep")).project;
     const rqi = get_rqi(project, "time_span_custom_start_1s23f");
-    rqi.time_span_start = 2.0;
+    rqi.timeSpanStart = 2.0;
 
     const out = tmp_path.div("ts_start.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "time_span_custom_start_1s23f");
-    expect(approx(rqi2.time_span_start, 2.0, { abs: 0.04 })).toBe(true);
+    expect(approx(rqi2.timeSpanStart, 2.0, { abs: 0.04 })).toBe(true);
   });
 
   test("test_set_time_span_start_switches_to_custom", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("time_span.aep")).project;
     const rqi = get_rqi(project, "time_span_length_of_comp");
-    rqi.time_span_start = 1.0;
+    rqi.timeSpanStart = 1.0;
 
     const out = tmp_path.div("ts_custom.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "time_span_length_of_comp");
-    expect(approx(rqi2.time_span_start, 1.0, { abs: 0.04 })).toBe(true);
+    expect(approx(rqi2.timeSpanStart, 1.0, { abs: 0.04 })).toBe(true);
   });
 });
 
-/** Roundtrip tests for RenderQueueItem.time_span_duration setter. */
+/** Roundtrip tests for RenderQueueItem.timeSpanDuration setter. */
 describe("TestRoundtripTimeSpanDuration", () => {
   test("test_set_time_span_duration", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("time_span.aep")).project;
     const rqi = get_rqi(project, "time_span_custom_24s13f");
-    rqi.time_span_duration = 5.0;
+    rqi.timeSpanDuration = 5.0;
 
     const out = tmp_path.div("ts_dur.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "time_span_custom_24s13f");
-    expect(approx(rqi2.time_span_duration, 5.0, { abs: 0.04 })).toBe(true);
+    expect(approx(rqi2.timeSpanDuration, 5.0, { abs: 0.04 })).toBe(true);
   });
 });
 
@@ -736,29 +736,29 @@ describe("TestRoundtripTimeSpanEnd", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("time_span.aep")).project;
     const rqi = get_rqi(project, "time_span_custom_start_1s23f");
-    const start = rqi.time_span_start;
-    rqi.time_span_end = start + 3.0;
+    const start = rqi.timeSpanStart;
+    rqi.timeSpanEnd = start + 3.0;
 
     const out = tmp_path.div("ts_end.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "time_span_custom_start_1s23f");
-    expect(approx(rqi2.time_span_duration, 3.0, { abs: 0.04 })).toBe(true);
-    expect(approx(rqi2.time_span_end, start + 3.0, { abs: 0.04 })).toBe(true);
+    expect(approx(rqi2.timeSpanDuration, 3.0, { abs: 0.04 })).toBe(true);
+    expect(approx(rqi2.timeSpanEnd, start + 3.0, { abs: 0.04 })).toBe(true);
   });
 
   test("test_set_time_span_end_frame", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.time_span_start_frame = 5;
-    rqi.time_span_end_frame = 30;
+    rqi.timeSpanStartFrame = 5;
+    rqi.timeSpanEndFrame = 30;
 
     const out = tmp_path.div("ts_end_frame.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.time_span_start_frame).toBe(5);
-    expect(rqi2.time_span_duration_frames).toBe(25);
-    expect(rqi2.time_span_end_frame).toBe(30);
+    expect(rqi2.timeSpanStartFrame).toBe(5);
+    expect(rqi2.timeSpanDurationFrames).toBe(25);
+    expect(rqi2.timeSpanEndFrame).toBe(30);
   });
 });
 
@@ -975,31 +975,31 @@ describe("TestRoundtripOutputModuleResize", () => {
   test("test_set_resize_to", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
     expect(py_eq(om.settings.get("Resize to"), [960, 540])).toBe(true);
 
     om.settings.set("Resize to", [1280, 720]);
     const out = tmp_path.div("resize_720p.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     expect(py_eq(om2.settings.get("Resize to"), [1280, 720])).toBe(true);
   });
 
   test("test_resize_roundtrip_back", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
     om.settings.set("Resize to", [3840, 2160]);
 
     const out = tmp_path.div("resize_4k.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     expect(py_eq(om2.settings.get("Resize to"), [3840, 2160])).toBe(true);
 
     om2.settings.set("Resize to", [640, 480]);
     const out2 = tmp_path.div("resize_vga.aep");
     om2._project.save(out2);
-    const om3 = render_queue_of(parse_aep(out2).project).items[0].output_modules[0];
+    const om3 = render_queue_of(parse_aep(out2).project).items[0].outputModules[0];
     expect(py_eq(om3.settings.get("Resize to"), [640, 480])).toBe(true);
   });
 
@@ -1008,16 +1008,16 @@ describe("TestRoundtripOutputModuleResize", () => {
     // to" from the AE-verified factory fallback table; a non-preset
     // resolution reads "Custom".
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
 
     om.settings.set("Resize to", [1920, 1080]);
-    expect(getitem(om.get_settings(GetSettingsFormat.STRING), "Resize to")).toBe(
+    expect(getitem(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe(
       "HD  •  1920x1080 • 24 fps",
     );
-    expect(om.get_setting("Resize to")).toBe("HD  •  1920x1080 • 24 fps");
+    expect(om.getSetting("Resize to")).toBe("HD  •  1920x1080 • 24 fps");
 
     om.settings.set("Resize to", [960, 540]);
-    expect(getitem(om.get_settings(GetSettingsFormat.STRING), "Resize to")).toBe("Custom");
+    expect(getitem(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe("Custom");
   });
 });
 
@@ -1027,7 +1027,7 @@ describe("TestRoundtripOutputModuleCrop", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("om_crop.aep")).project;
     const rqi = get_rqi(project, "crop_checked");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
 
     om.settings.set("Crop Top", 20);
     om.settings.set("Crop Left", 30);
@@ -1037,7 +1037,7 @@ describe("TestRoundtripOutputModuleCrop", () => {
     const out = tmp_path.div("crop_all.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "crop_checked");
-    const om2 = rqi2.output_modules[0];
+    const om2 = rqi2.outputModules[0];
     expect(om2.settings.get("Crop Top")).toBe(20);
     expect(om2.settings.get("Crop Left")).toBe(30);
     expect(om2.settings.get("Crop Bottom")).toBe(40);
@@ -1047,7 +1047,7 @@ describe("TestRoundtripOutputModuleCrop", () => {
   test("test_toggle_crop_and_set_values", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("crop_unchecked.aep")).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
     expect(om.settings.get("Crop")).toBe(false);
 
     om.settings.set("Crop", true);
@@ -1056,7 +1056,7 @@ describe("TestRoundtripOutputModuleCrop", () => {
 
     const out = tmp_path.div("crop_enabled.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     expect(om2.settings.get("Crop")).toBe(true);
     expect(om2.settings.get("Crop Top")).toBe(10);
     expect(om2.settings.get("Crop Bottom")).toBe(10);
@@ -1069,26 +1069,26 @@ describe("TestRoundtripOutputModuleSettings", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("om_resize.aep")).project;
     const rqi = get_rqi(project, "resize_quality_low");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     expect(om.settings.get("Resize Quality")).toBe(ResizeQuality.LOW);
 
     om.settings.set("Resize Quality", ResizeQuality.HIGH);
     const out = tmp_path.div("rq_high.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "resize_quality_low");
-    const om2 = rqi2.output_modules[0];
+    const om2 = rqi2.outputModules[0];
     expect(om2.settings.get("Resize Quality")).toBe(ResizeQuality.HIGH);
   });
 
   test("test_read_only_om_settings", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     raises(AttributeError, () => {
       om.settings.set("Output File Info", new Map());
     }, "read-only");
     // "Output Color Space" is not a settings key - it is a KeyError, not
-    // a read-only setting (use the OutputModule.output_color_space
+    // a read-only setting (use the OutputModule.outputColorSpace
     // property to read/write it).
     raises(KeyError, () => {
       om.settings.set("Output Color Space", "sRGB");
@@ -1098,7 +1098,7 @@ describe("TestRoundtripOutputModuleSettings", () => {
   test("test_om_settings_contain_required_keys", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     const settings = om.settings;
     expect(contains(settings, "Channels")).toBe(true);
     expect(contains(settings, "Depth")).toBe(true);
@@ -1176,11 +1176,11 @@ describe("TestIterationWhileRemoving", () => {
     }
 
     expect(py_eq([...rq], [])).toBe(true);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
-    expect(render_queue_of(parse_aep(out).project).num_items).toBe(0);
+    expect(render_queue_of(parse_aep(out).project).numItems).toBe(0);
   });
 
   test("test_removing_every_layer_while_iterating", () => {
@@ -1300,15 +1300,15 @@ describe("TestRQItemDuplicate", () => {
     /** Duplicated item has the same number of output modules. */
     const app = parse_aep(SAMPLES_DIR.div("base.aep"));
     const rq = render_queue_of(app.project);
-    const orig_om_count = len(rq.items[0].output_modules);
+    const orig_om_count = len(rq.items[0].outputModules);
 
     const new_item = rq.items[0].duplicate();
-    expect(len(new_item.output_modules)).toBe(orig_om_count);
+    expect(len(new_item.outputModules)).toBe(orig_om_count);
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
-    expect(len(render_queue_of(app2.project).items[1].output_modules)).toBe(orig_om_count);
+    expect(len(render_queue_of(app2.project).items[1].outputModules)).toBe(orig_om_count);
   });
 
   test("test_duplicate_from_two_items", () => {
@@ -1358,7 +1358,7 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRQAdd", () => {
     const new_item = rq.add(comp);
     expect(len(rq.items)).toBe(orig_count + 1);
     expect(new_item.comp).toBe(comp);
-    expect(len(new_item.output_modules)).toBe(1);
+    expect(len(new_item.outputModules)).toBe(1);
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
@@ -1408,16 +1408,16 @@ describe("TestRQAddWithoutPreferences", () => {
     const app = parse_aep(SAMPLES_DIR.div("custom.aep")); // no ae_preferences_dir
     const rq = render_queue_of(app.project);
     const comp = app.project.compositions[0];
-    const orig = rq.num_items;
+    const orig = rq.numItems;
 
     const rqi = rq.add(comp);
 
-    expect(rq.num_items).toBe(orig + 1);
+    expect(rq.numItems).toBe(orig + 1);
     expect(rqi.name).toBe("Best Settings");
     // Fresh item has no output file set yet -> NEEDS_OUTPUT, like AE.
     expect(rqi.status).toBe(RQItemStatus.NEEDS_OUTPUT);
-    expect(rqi.num_output_modules).toBe(1);
-    expect(rqi.output_modules[0].name).toBe("TIFF Sequence with Alpha");
+    expect(rqi.numOutputModules).toBe(1);
+    expect(rqi.outputModules[0].name).toBe("TIFF Sequence with Alpha");
   });
 
   test("test_fresh_om_structure_matches_ae", () => {
@@ -1441,7 +1441,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"));
     const rq = render_queue_of(app.project);
     const comp = app.project.compositions[0];
-    const orig = rq.num_items;
+    const orig = rq.numItems;
 
     rq.add(comp);
 
@@ -1449,8 +1449,8 @@ describe("TestRQAddWithoutPreferences", () => {
     app.project.save(out);
     const app2 = parse_aep(out);
     const rq2 = render_queue_of(app2.project);
-    expect(rq2.num_items).toBe(orig + 1);
-    expect(rq2.items[len(rq2.items) - 1].output_modules[0].name).toBe("TIFF Sequence with Alpha");
+    expect(rq2.numItems).toBe(orig + 1);
+    expect(rq2.items[len(rq2.items) - 1].outputModules[0].name).toBe("TIFF Sequence with Alpha");
   });
 
   test("test_add_to_empty_queue_roundtrips", () => {
@@ -1460,18 +1460,18 @@ describe("TestRQAddWithoutPreferences", () => {
     // the ldat so the new settings get written.
     const app = parse_aep(SAMPLES_DIR.div("empty.aep"));
     const rq = render_queue_of(app.project);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
     const comp = app.project.compositions[0];
 
     rq.add(comp);
-    expect(rq.num_items).toBe(1);
+    expect(rq.numItems).toBe(1);
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
     const rq2 = render_queue_of(app2.project);
-    expect(rq2.num_items).toBe(1);
-    expect(rq2.items[0].output_modules[0].name).toBe("TIFF Sequence with Alpha");
+    expect(rq2.numItems).toBe(1);
+    expect(rq2.items[0].outputModules[0].name).toBe("TIFF Sequence with Alpha");
   });
 
   test("test_empty_queue_unchanged_roundtrip_is_byte_identical", () => {
@@ -1480,7 +1480,7 @@ describe("TestRQAddWithoutPreferences", () => {
     // so parsing then saving an untouched empty queue is byte-identical.
     const src = SAMPLES_DIR.div("empty.aep");
     const app = parse_aep(src);
-    expect(render_queue_of(app.project).num_items).toBe(0);
+    expect(render_queue_of(app.project).numItems).toBe(0);
 
     const out = tmp_path.div("roundtrip.aep");
     app.project.save(out);
@@ -1493,7 +1493,7 @@ describe("TestRQAddWithoutPreferences", () => {
     // must yield exactly one item linked to the original comp.
     const app = parse_aep(SAMPLES_DIR.div("empty.aep"));
     const rq = render_queue_of(app.project);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
     const comp = app.project.compositions[0];
 
     rq.add(comp);
@@ -1502,7 +1502,7 @@ describe("TestRQAddWithoutPreferences", () => {
     app.project.save(out);
     const app2 = parse_aep(out);
     const rq2 = render_queue_of(app2.project);
-    expect(rq2.num_items).toBe(1);
+    expect(rq2.numItems).toBe(1);
     expect(rq2.items[0].comp.name).toBe(comp.name);
     expect(rq2.items[0].comp.id).toBe(comp.id);
   });
@@ -1578,7 +1578,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const arsi = as_instance(recursive_find(rq._lrdr.chunks, "ARsi")[0], ArsiChunk);
     expect(arsi instanceof ArsiChunk).toBe(true);
     expect(len(arsi.tobytes())).toBe(1872);
-    expect(arsi.queue_nonempty).toBe(rq.num_items ? 1 : 0);
+    expect(arsi.queue_nonempty).toBe(rq.numItems ? 1 : 0);
   });
 
   test("test_parse_id_hex_section_is_bounded", () => {
@@ -1605,10 +1605,10 @@ describe("TestOMRemove", () => {
     const app = parse_aep(SAMPLES_DIR.div("base.aep"));
     const rq = render_queue_of(app.project);
     const rqi = rq.items[0];
-    expect(len(rqi.output_modules)).toBe(1);
+    expect(len(rqi.outputModules)).toBe(1);
 
     raises(ValueError, () => {
-      rqi.output_modules[0].remove();
+      rqi.outputModules[0].remove();
     }, "last output module");
   });
 });
@@ -1629,9 +1629,9 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rq = render_queue_of(app.project);
     const comp = app.project.compositions[0];
-    const n = rq.num_items;
+    const n = rq.numItems;
     rq.add(comp);
-    expect(rq.num_items).toBe(n + 1);
+    expect(rq.numItems).toBe(n + 1);
   });
 
   test("test_add_sets_comp_reference", () => {
@@ -1667,17 +1667,17 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     const rq = render_queue_of(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
-    expect(len(rqi.output_modules)).toBe(1);
+    expect(len(rqi.outputModules)).toBe(1);
   });
 
   test("test_add_to_empty_queue", () => {
     // Adding to an empty render queue works.
     const app = parse_aep(SAMPLES_DIR.div("empty.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rq = render_queue_of(app.project);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
-    expect(rq.num_items).toBe(1);
+    expect(rq.numItems).toBe(1);
     expect(rqi.comp).toBe(comp);
   });
 
@@ -1685,10 +1685,10 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     // Adding to a queue that already has items works.
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rq = render_queue_of(app.project);
-    const n = rq.num_items;
+    const n = rq.numItems;
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
-    expect(rq.num_items).toBe(n + 1);
+    expect(rq.numItems).toBe(n + 1);
     expect(rq.items.at(-1)).toBe(rqi);
   });
 
@@ -1703,7 +1703,7 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     app.project.save(tmp_path.div("out.aep"));
     const app2 = parse_aep(tmp_path.div("out.aep"));
     const rq2 = render_queue_of(app2.project);
-    expect(rq2.num_items).toBe(2);
+    expect(rq2.numItems).toBe(2);
     expect(rq2.items[len(rq2.items) - 1].comp.name).toBe(comp.name);
   });
 
@@ -1711,12 +1711,12 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     // Add then remove leaves RQ in original state.
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rq = render_queue_of(app.project);
-    const original_count = rq.num_items;
+    const original_count = rq.numItems;
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
-    expect(rq.num_items).toBe(original_count + 1);
+    expect(rq.numItems).toBe(original_count + 1);
     rqi.remove();
-    expect(rq.num_items).toBe(original_count);
+    expect(rq.numItems).toBe(original_count);
   });
 });
 
@@ -1728,22 +1728,22 @@ describe("TestOMRemoveIdenticalModules", () => {
     // value-based lookup remove() would delete the first module's chunks.
     const app = parse_aep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"));
     const rqi = render_queue_of(app.project).items[0];
-    const [om0, om1] = rqi.output_modules;
+    const [om0, om1] = rqi.outputModules;
     // Distinguish the two modules by a per-module Roou value.
     om0._roou.starting_number = 7;
     om1._roou.starting_number = 99;
 
     om1.remove();
-    expect(len(rqi.output_modules)).toBe(1);
+    expect(len(rqi.outputModules)).toBe(1);
     // The surviving module is module 0, with its chunks intact.
-    expect(rqi.output_modules[0]).toBe(om0);
-    expect(rqi.output_modules[0]._roou.starting_number).toBe(7);
+    expect(rqi.outputModules[0]).toBe(om0);
+    expect(rqi.outputModules[0]._roou.starting_number).toBe(7);
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const rqi2 = render_queue_of(parse_aep(out).project).items[0];
-    expect(len(rqi2.output_modules)).toBe(1);
-    expect(rqi2.output_modules[0]._roou.starting_number).toBe(7);
+    expect(len(rqi2.outputModules)).toBe(1);
+    expect(rqi2.outputModules[0]._roou.starting_number).toBe(7);
   });
 });
 
@@ -1754,18 +1754,18 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     // (the shared LOm list holds both modules' chunks back to back).
     const app = parse_aep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rqi = render_queue_of(app.project).items[0];
-    const [om0, om1] = rqi.output_modules;
-    const om0_fo_before = om0.format_options;
+    const [om0, om1] = rqi.outputModules;
+    const om0_fo_before = om0.formatOptions;
     if (om0_fo_before == null) throw new AssertionError_("output module 0 has no format_options");
     const om0_ropt_before = om0_fo_before._body.tobytes();
     const om0_format_before = om0._roou.format_id;
 
-    om1.apply_template("TIFF Sequence with Alpha");
+    om1.applyTemplate("TIFF Sequence with Alpha");
 
     // Module 1 switched to TIFF; module 0 still H.264 with the same Ropt.
     expect(om1._roou.format_id).toBe("TIF ");
     expect(om0._roou.format_id).toBe(om0_format_before);
-    const om0_fo_after = om0.format_options;
+    const om0_fo_after = om0.formatOptions;
     if (om0_fo_after == null) throw new AssertionError_("output module 0 has no format_options");
     expect(py_eq(om0_fo_after._body.tobytes(), om0_ropt_before)).toBe(true);
   });
@@ -1776,18 +1776,18 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     // an edit through it serializes (the old chunk was detached/unwritten).
     const app = parse_aep(OM_SAMPLES_DIR.div("numOutputModules_2.aep"), { ae_preferences_dir: AE_PREFS_DIR });
     const rqi = render_queue_of(app.project).items[0];
-    const om1 = rqi.output_modules[1];
-    om1.apply_template("TIFF Sequence with Alpha");
+    const om1 = rqi.outputModules[1];
+    om1.applyTemplate("TIFF Sequence with Alpha");
 
-    const fo = as_instance(om1.format_options, TiffFormatOptions);
+    const fo = as_instance(om1.formatOptions, TiffFormatOptions);
     expect(fo.constructor.name).toBe("TiffFormatOptions");
-    const new_value = !fo.lzw_compression;
-    fo.lzw_compression = new_value;
+    const new_value = !fo.lzwCompression;
+    fo.lzwCompression = new_value;
 
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const rqi2 = render_queue_of(parse_aep(out, { ae_preferences_dir: AE_PREFS_DIR }).project).items[0];
-    expect(as_instance(rqi2.output_modules[1].format_options, TiffFormatOptions).lzw_compression).toBe(new_value);
+    expect(as_instance(rqi2.outputModules[1].formatOptions, TiffFormatOptions).lzwCompression).toBe(new_value);
   });
 });
 
@@ -1885,7 +1885,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const stripped = _strip_scaffolding(tmp_path);
     const app = parse_aep(stripped);
     const rq = render_queue_of(app.project);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
     expect(py_eq([...rq], [])).toBe(true);
   });
 
@@ -1924,7 +1924,7 @@ describe("TestRenderQueueNoLRdr", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(_strip_lrdr(tmp_path));
     const rq = render_queue_of(app.project);
-    expect(rq.num_items).toBe(0);
+    expect(rq.numItems).toBe(0);
     expect(py_eq([...rq], [])).toBe(true);
   });
 
@@ -1945,18 +1945,18 @@ describe("TestRenderQueueNoLRdr", () => {
     const rq = render_queue_of(app.project);
     const comp = app.project.compositions[0];
     rq.add(comp);
-    expect(rq.num_items).toBe(1);
+    expect(rq.numItems).toBe(1);
 
     const out = tmp_path.div("added.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
     const rq2 = render_queue_of(app2.project);
-    expect(rq2.num_items).toBe(1);
+    expect(rq2.numItems).toBe(1);
     expect(rq2.items[0].comp.id).toBe(comp.id);
   });
 });
 
-/** Roundtrip tests for OutputModule.output_color_space. */
+/** Roundtrip tests for OutputModule.outputColorSpace. */
 describe("TestRoundtripOutputColorSpace", () => {
   const _ROOT = TEST_FILE.parent.parent.parent;
   /** Adobe-CMS project (output color space = a catalogued Adobe ICC profile). */
@@ -1969,14 +1969,14 @@ describe("TestRoundtripOutputColorSpace", () => {
   test("test_set_adobe_profile", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(ADOBE_SAMPLE).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
+    const om = render_queue_of(project).items[0].outputModules[0];
     const name = "ARRI LogC3 Wide Color Gamut - EI 800";
-    om.output_color_space = name;
+    om.outputColorSpace = name;
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
-    expect(om2.output_color_space).toBe(name);
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
+    expect(om2.outputColorSpace).toBe(name);
     // output_profile_id is the catalogued ID (matches AE ground truth).
     expect(py_eq(om2._om_ldat.output_profile_id, profile_id_for_name(name))).toBe(true);
     expect(om2._om_ldat.output_color_space_working).toBe(0);
@@ -1985,56 +1985,56 @@ describe("TestRoundtripOutputColorSpace", () => {
   test("test_set_working_color_space", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(ADOBE_SAMPLE).project;
-    const om = render_queue_of(project).items[0].output_modules[0];
-    om.output_color_space = "ARRI LogC3 Wide Color Gamut - EI 800";
+    const om = render_queue_of(project).items[0].outputModules[0];
+    om.outputColorSpace = "ARRI LogC3 Wide Color Gamut - EI 800";
     expect(om._om_ldat.output_color_space_working).toBe(0);
-    om.output_color_space = "Working Color Space";
+    om.outputColorSpace = "Working Color Space";
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
     const project2 = parse_aep(out).project;
-    const om2 = render_queue_of(project2).items[0].output_modules[0];
+    const om2 = render_queue_of(project2).items[0].outputModules[0];
     expect(om2._om_ldat.output_color_space_working).toBe(1);
     // "Working Color Space" resolves to the project's working space name.
-    expect(om2.output_color_space).toBe(project2.working_space);
+    expect(om2.outputColorSpace).toBe(project2.workingSpace);
   });
 
   test("test_unknown_adobe_name_not_supported", () => {
     const project = parse_aep(ADOBE_SAMPLE).project;
-    expect(project.color_management_system).toBe(ColorManagementSystem.ADOBE);
-    const om = render_queue_of(project).items[0].output_modules[0];
+    expect(project.colorManagementSystem).toBe(ColorManagementSystem.ADOBE);
+    const om = render_queue_of(project).items[0].outputModules[0];
     raises(NotImplementedError, () => {
-      om.output_color_space = "not a catalogued ICC profile";
+      om.outputColorSpace = "not a catalogued ICC profile";
     });
   });
 
   test("test_set_ocio_color_space", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OCIO_SAMPLE).project;
-    expect(project.color_management_system).toBe(ColorManagementSystem.OCIO);
-    project.ocio_configuration_file = fspath(OCIO_CONFIG);
-    const om = render_queue_of(project).items[0].output_modules[0];
+    expect(project.colorManagementSystem).toBe(ColorManagementSystem.OCIO);
+    project.ocioConfigurationFile = fspath(OCIO_CONFIG);
+    const om = render_queue_of(project).items[0].outputModules[0];
     // "ACEScc yo" - AE's own Guid for it is the committed aces_acescc_yo id.
-    om.output_color_space = "ACEScc yo";
+    om.outputColorSpace = "ACEScc yo";
     const expected = bytes_.fromhex("596cbde737d61ec5a84b8008888dd03f");
     expect(py_eq(om._om_ldat.output_profile_id, expected)).toBe(true);
     expect(om._om_ldat.output_color_space_working).toBe(0);
     // the id reverse-maps back to the color-space name (read/write symmetry).
-    expect(om.output_color_space).toBe("ACEScc yo");
+    expect(om.outputColorSpace).toBe("ACEScc yo");
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
-    const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
+    const om2 = render_queue_of(parse_aep(out).project).items[0].outputModules[0];
     expect(py_eq(om2._om_ldat.output_profile_id, expected)).toBe(true);
-    expect(om2.output_color_space).toBe("ACEScc yo");
+    expect(om2.outputColorSpace).toBe("ACEScc yo");
   });
 
   test("test_ocio_unknown_color_space_raises", () => {
     const project = parse_aep(OCIO_SAMPLE).project;
-    project.ocio_configuration_file = fspath(OCIO_CONFIG);
-    const om = render_queue_of(project).items[0].output_modules[0];
+    project.ocioConfigurationFile = fspath(OCIO_CONFIG);
+    const om = render_queue_of(project).items[0].outputModules[0];
     raises(ValueError, () => {
-      om.output_color_space = "NotAColorSpaceInThisConfig";
+      om.outputColorSpace = "NotAColorSpaceInThisConfig";
     }, "not a color space");
   });
 });
@@ -2140,7 +2140,7 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, SettingValue>[]]>([
 
 function _om_by_file_stem(project: Project, stem: string): OutputModule {
   for (const rqi of render_queue_of(project).items) {
-    const om = rqi.output_modules[0];
+    const om = rqi.outputModules[0];
     if (new PureWindowsPath(om.file).stem === stem) return om;
   }
   throw new KeyError(repr(stem));

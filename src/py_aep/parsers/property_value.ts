@@ -61,7 +61,7 @@ export const parse_property = _suppress_materialization().decorate(function pars
   const tdum = find_by_type_or_null(tdbs_child_chunks, "tdum");
   const tduM = find_by_type_or_null(tdbs_child_chunks, "tduM");
 
-  const keyframes = _parse_keyframes(tdbs_child_chunks, composition.frame_rate);
+  const keyframes = _parse_keyframes(tdbs_child_chunks, composition.frameRate);
 
   // Resolve _name_utf8 from the LIST:tdbs tdsn child.
   const tdsn = find_by_type(tdbs_child_chunks, "tdsn");

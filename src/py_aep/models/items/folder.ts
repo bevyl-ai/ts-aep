@@ -23,7 +23,7 @@ import { CompItem } from "./composition.ts";
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const root = app.project.root_folder;
+ * const root = app.project.rootFolder;
  * console.log(root.name);
  * for (const item of root) {
  *   // ...
@@ -159,7 +159,7 @@ export class FolderItem extends Item {
    *
    * **Note:** Equivalent to `len(folder.items)`
    */
-  get num_items(): number {
+  get numItems(): number {
     return this.items.length;
   }
 
@@ -170,7 +170,7 @@ export class FolderItem extends Item {
    *   `Untitled 2`, ...). An empty string is allowed.
    * @returns The newly created {@link FolderItem}.
    */
-  add_folder(name: string | null = null): FolderItem {
+  addFolder(name: string | null = null): FolderItem {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
       name = auto_name(FolderItem._auto_name, existing);
@@ -202,7 +202,7 @@ export class FolderItem extends Item {
    * @param frame_rate - The frame rate in frames per second.
    * @returns The newly created {@link CompItem}.
    */
-  add_comp(
+  addComp(
     name: string | null,
     width: number,
     height: number,
@@ -268,7 +268,7 @@ export class FolderItem extends Item {
    *
    * Width, height, pixel aspect and frame rate resolve from the named
    * preset in the AE preferences (see
-   * {@link Preferences.composition_presets});
+   * {@link Preferences.compositionPresets});
    * presets carry no duration, so it must be given.
    *
    * @param name - The name of the new composition. Pass `null` to auto-generate a name (`Comp 1`,
@@ -281,13 +281,13 @@ export class FolderItem extends Item {
    * @throws {@link ValueError} If no preferences directory was provided, or the preset name does
    *   not resolve to exactly one preset.
    */
-  add_comp_from_preset(
+  addCompFromPreset(
     name: string | null,
     preset: string,
     duration: number,
   ): CompItem {
     validate_name(preset);
-    const presets = this._project._preferences.composition_presets();
+    const presets = this._project._preferences.compositionPresets();
     if (!presets?.length) {
       throw new ValueError(
         "no composition presets available; pass 'ae_preferences_dir' " +
@@ -307,13 +307,13 @@ export class FolderItem extends Item {
       );
     }
     const found = matches[0];
-    return this.add_comp(
+    return this.addComp(
       name,
       found.width,
       found.height,
-      found.pixel_aspect,
+      found.pixelAspect,
       duration,
-      found.frame_rate,
+      found.frameRate,
     );
   }
 

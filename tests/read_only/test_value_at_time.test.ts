@@ -1,5 +1,5 @@
 /**
- * Tests for Property.value_at_time() interpolation against ExtendScript ground truth.
+ * Tests for Property.valueAtTime() interpolation against ExtendScript ground truth.
  *
  * Ground truth comes from `export_value_at_time.jsx` which evaluates
  * `prop.valueAtTime(frame * comp.frameDuration)` in After Effects and stores
@@ -66,7 +66,7 @@ function _get_prop(base_name: string): Property {
 function _max_error(prop: Property, frames: ExpectedFrame[]): number {
   let max_err = 0.0;
   for (const f of frames) {
-    const got = prop.value_at_time(f.time);
+    const got = prop.valueAtTime(f.time);
     const expected = f.value;
     let err: number;
     if (Array.isArray(expected) && Array.isArray(got)) {
@@ -171,7 +171,7 @@ describe("TestValueAtTimeAPI", () => {
     /** pre_expression=False raises NotImplementedError. */
     const prop = _get_prop("property_1D_opacity");
     raises(NotImplementedError, () => {
-      prop.value_at_time(0.0, false);
+      prop.valueAtTime(0.0, false);
     });
   });
 
@@ -180,7 +180,7 @@ describe("TestValueAtTimeAPI", () => {
     const prop = _get_prop("property_1D_opacity");
     const [, frames] = _load_vat("property_1D_opacity");
     for (const f of frames.slice(0, 5)) {
-      const result = prop.value_at_time(f.time);
+      const result = prop.valueAtTime(f.time);
       const expected = f.value;
       if (typeof expected === "number") {
         expect(Math.abs(float(result) - float(expected)) < 0.001).toBe(true);

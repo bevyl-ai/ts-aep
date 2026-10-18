@@ -18,11 +18,11 @@ const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("m
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
+  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 function _fo(om: OutputModule): XmlFormatOptions {
-  return as_instance(om.format_options, XmlFormatOptions);
+  return as_instance(om.formatOptions, XmlFormatOptions);
 }
 
 /** The write order that raises outside a batch passes inside one. */
@@ -32,17 +32,17 @@ test("test_coupled_writes_succeed_in_any_order", () => {
   // raises. In a batch both orders converge on the same valid state.
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
-  om.batch_edit(() => {
+  om.batchEdit(() => {
     om.settings.set("Audio Sample Rate", 22050);
-    _fo(om).audio_codec = AudioCodec.GSM_6_10;
+    _fo(om).audioCodec = AudioCodec.GSM_6_10;
     om.settings.set("Audio Channels", AudioChannels.MONO);
   });
   project.save(tmp_path.div("a.aep"));
 
   const project2 = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om2 = _om(project2);
-  om2.batch_edit(() => {
-    _fo(om2).audio_codec = AudioCodec.GSM_6_10;
+  om2.batchEdit(() => {
+    _fo(om2).audioCodec = AudioCodec.GSM_6_10;
     om2.settings.set("Audio Channels", AudioChannels.MONO);
     om2.settings.set("Audio Sample Rate", 22050);
   });
@@ -50,7 +50,7 @@ test("test_coupled_writes_succeed_in_any_order", () => {
 
   for (const name of ["a.aep", "b.aep"]) {
     const om3 = _om(parse_project_fresh(tmp_path.div(name)));
-    expect(_fo(om3).audio_codec).toBe(AudioCodec.GSM_6_10);
+    expect(_fo(om3).audioCodec).toBe(AudioCodec.GSM_6_10);
     expect(om3.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
     expect(int(om3.settings.get("Audio Sample Rate"))).toBe(22050);
   }
@@ -59,11 +59,11 @@ test("test_coupled_writes_succeed_in_any_order", () => {
 test("test_invalid_final_state_rolls_back_everything", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
-  const before = om.get_settings();
-  const before_codec = _fo(om).audio_codec;
+  const before = om.getSettings();
+  const before_codec = _fo(om).audioCodec;
   const excinfo = raises(ValueError, () => {
-    om.batch_edit(() => {
-      _fo(om).audio_codec = AudioCodec.GSM_6_10;
+    om.batchEdit(() => {
+      _fo(om).audioCodec = AudioCodec.GSM_6_10;
       om.settings.set("Audio Sample Rate", 96000); // invalid under GSM
       om.settings.set("Audio Channels", AudioChannels.STEREO); // invalid
     });
@@ -71,15 +71,15 @@ test("test_invalid_final_state_rolls_back_everything", () => {
   // One error, every violation listed.
   expect(excinfo.message.includes("Audio Sample Rate")).toBe(true);
   expect(excinfo.message.includes("Audio Channels")).toBe(true);
-  expect(py_eq(om.get_settings(), before)).toBe(true);
-  expect(_fo(om).audio_codec).toBe(before_codec);
+  expect(py_eq(om.getSettings(), before)).toBe(true);
+  expect(_fo(om).audioCodec).toBe(before_codec);
 });
 
 test("test_body_exception_rolls_back_and_propagates", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
   raises(RuntimeError, () => {
-    om.batch_edit(() => {
+    om.batchEdit(() => {
       _fo(om).bitrate = 320;
       throw new RuntimeError("boom");
     });
@@ -97,8 +97,8 @@ test("test_rollback_restores_byte_identical_save", () => {
   const project2 = parse_project_fresh(sample);
   const om = _om(project2);
   raises(ValueError, () => {
-    om.batch_edit(() => {
-      _fo(om).audio_codec = AudioCodec.GSM_6_10;
+    om.batchEdit(() => {
+      _fo(om).audioCodec = AudioCodec.GSM_6_10;
       om.settings.set("Audio Sample Rate", 96000);
     });
   });
@@ -115,7 +115,7 @@ test("test_stale_untouched_dependent_is_flagged", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
   const excinfo = raises(ValueError, () => {
-    om.batch_edit(() => {
+    om.batchEdit(() => {
       _fo(om).bitrate = 320; // stored rate stays 44100
     });
   });
@@ -135,7 +135,7 @@ test("test_depth_and_channels_converge_in_any_order", () => {
   ]) {
     const project = parse_project_fresh(RQ_DIR.div("format_photoshop_sequence.aep"));
     const om = _om(project);
-    om.batch_edit(() => {
+    om.batchEdit(() => {
       for (const step of [first, second]) {
         if (step === "depth") {
           om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS);
@@ -161,7 +161,7 @@ test("test_unpaired_depth_without_channels_change_raises", () => {
   const om = _om(project);
   om.settings.set("Channels", OutputChannels.RGBA); // depth pairs to 32
   const excinfo = raises(ValueError, () => {
-    om.batch_edit(() => {
+    om.batchEdit(() => {
       om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // base
     });
   });
@@ -172,8 +172,8 @@ test("test_unpaired_depth_without_channels_change_raises", () => {
 test("test_nested_batches_validate_at_outermost", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_png_sequence.aep"));
   const om = _om(project);
-  om.batch_edit(() => {
-    om.batch_edit(() => {
+  om.batchEdit(() => {
+    om.batchEdit(() => {
       om.settings.set("Channels", OutputChannels.RGBA);
     });
     // Inner exit must not validate: Color is still premultiplied-free
@@ -193,7 +193,7 @@ test("test_batch_on_removed_module_raises_clearly", () => {
   raises(
     RuntimeError,
     () => {
-      om.batch_edit(() => {});
+      om.batchEdit(() => {});
     },
     "removed",
   );
@@ -201,5 +201,5 @@ test("test_batch_on_removed_module_raises_clearly", () => {
 
 test("test_validate_state_clean_on_parsed_sample", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "audio_codec_gsm_6.10.aep"));
-  expect(py_eq(_om(project).validate_state(), [])).toBe(true);
+  expect(py_eq(_om(project).validateState(), [])).toBe(true);
 });

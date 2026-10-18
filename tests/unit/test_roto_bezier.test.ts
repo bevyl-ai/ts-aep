@@ -1,5 +1,5 @@
 /**
- * RotoBezier tangent rule (`resolvers.roto_bezier`), against values
+ * RotoBezier tangent rule (`resolvers.rotoBezier`), against values
  * measured on After Effects 2026.
  */
 

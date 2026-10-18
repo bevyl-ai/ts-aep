@@ -53,13 +53,13 @@ export class FeatherPoint {
    * (0-based, segments are portions of the path between vertices).
    * Read / Write.
    */
-  declare seg_loc: number;
+  declare segLoc: number;
 
   /**
    * Relative position on the segment, from 0.0 (at the starting
    * vertex) to 1.0 (at the next vertex). Read / Write.
    */
-  declare rel_seg_loc: number;
+  declare relSegLoc: number;
 
   /**
    * Feather radius (amount). Negative values indicate inner feather
@@ -82,7 +82,7 @@ export class FeatherPoint {
    * The angle value is 0% for feather points not at corners.
    * Read / Write.
    */
-  declare rel_corner_angle: number;
+  declare relCornerAngle: number;
 
   declare _fp: FeatherPointItem;
 
@@ -100,8 +100,8 @@ export class FeatherPoint {
   }
 }
 
-descriptor(FeatherPoint, "seg_loc", new ChunkField("_fp", "seg_loc", { validate: validate_positive_int }));
-descriptor(FeatherPoint, "rel_seg_loc", new ChunkField("_fp", "rel_seg_loc", { validate: validate_normalized_float }));
+descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "seg_loc", { validate: validate_positive_int }));
+descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "rel_seg_loc", { validate: validate_normalized_float }));
 descriptor(FeatherPoint, "radius", new ChunkField("_fp", "radius"));
 descriptor(
   FeatherPoint,
@@ -109,7 +109,7 @@ descriptor(
   new ChunkField("_fp", "interp_raw", { transform: _interp_transform, reverse: _interp_reverse }),
 );
 descriptor(FeatherPoint, "tension", new ChunkField("_fp", "tension", { validate: validate_normalized_float }));
-descriptor(FeatherPoint, "rel_corner_angle", new ChunkField("_fp", "corner_angle"));
+descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "corner_angle"));
 
 /**
  * The Shape object encapsulates information describing a shape in a shape layer, or
@@ -136,7 +136,7 @@ descriptor(FeatherPoint, "rel_corner_angle", new ChunkField("_fp", "corner_angle
  * final `vertex` and back into the first `vertex`.
  *
  * roto_bezier masks calculate their tangents automatically
- * (see MaskPropertyGroup.roto_bezier). If a shape is used in a roto_bezier mask, the
+ * (see MaskPropertyGroup.rotoBezier). If a shape is used in a roto_bezier mask, the
  * tangent values are ignored.
  *
  * For closed mask shapes, variable-width mask feather points can exist anywhere along
@@ -154,7 +154,7 @@ descriptor(FeatherPoint, "rel_corner_angle", new ChunkField("_fp", "corner_angle
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const shape_layer = comp.shape_layers[0];
+ * const shape_layer = comp.shapeLayers[0];
  * const shape_prop = shape_layer.property("ADBE Root Vectors Group").property("ADBE Vector Shape - Group").property("ADBE Vector Shape");
  * console.log(shape_prop.value.vertices);
  * ```
@@ -172,7 +172,7 @@ export class Shape {
   declare _points: ShapePoint[] | null;
 
   /** Array of variable-width mask feather points. */
-  declare feather_points: FeatherPoint[];
+  declare featherPoints: FeatherPoint[];
 
   /**
    * Create a shape from scratch.
@@ -218,7 +218,7 @@ export class Shape {
     // A shape built here owns its points, so a different vertex count
     // can rebuild them; a parsed one shares them with its file chunks.
     this._detached = true;
-    this.feather_points = feather_points ?? [];
+    this.featherPoints = feather_points ?? [];
     /** Array of variable-width mask feather points. */
 
     const verts = vertices ?? [];
@@ -335,7 +335,7 @@ export class Shape {
     obj._mask_path = _mask_path;
     obj._tensions = null;
     obj._detached = false;
-    obj.feather_points = feather_points ?? [];
+    obj.featherPoints = feather_points ?? [];
     return obj;
   }
 
@@ -344,13 +344,13 @@ export class Shape {
     const prop = this._mask_path;
     if (prop == null || prop._tdb4 == null) return false;
     const mask = prop._parent_property;
-    return mask != null && mask._is_mask && mask instanceof _mask_property_group().MaskPropertyGroup && mask.roto_bezier;
+    return mask != null && mask._is_mask && mask instanceof _mask_property_group().MaskPropertyGroup && mask.rotoBezier;
   }
 
   _roto_tangents(): [number[][], number[][]] | null {
     /**
      * The tangents AE draws the path with when its mask is RotoBezier
-     * (`resolvers.roto_bezier`), or `null` for any other shape.
+     * (`resolvers.rotoBezier`), or `null` for any other shape.
      */
     const prop = this._mask_path;
     if (prop == null || !this._is_roto_bezier()) return null;
@@ -479,12 +479,12 @@ export class Shape {
    * If the shape is in a roto_bezier mask, all tangent values are ignored and the
    * tangents are automatically calculated.
    */
-  get in_tangents(): number[][] {
+  get inTangents(): number[][] {
     const roto = this._roto_tangents();
     return roto !== null ? roto[0] : this._stored_tangents(-1);
   }
 
-  set in_tangents(value: number[][]) {
+  set inTangents(value: number[][]) {
     if (this._points == null || this._shph == null) return;
     if (!Array.isArray(value)) {
       throw new ValueError("in_tangents must be a list of [x,y] pairs");
@@ -524,12 +524,12 @@ export class Shape {
    * If the shape is in a roto_bezier mask, all tangent values are ignored and the
    * tangents are automatically calculated.
    */
-  get out_tangents(): number[][] {
+  get outTangents(): number[][] {
     const roto = this._roto_tangents();
     return roto !== null ? roto[1] : this._stored_tangents(1);
   }
 
-  set out_tangents(value: number[][]) {
+  set outTangents(value: number[][]) {
     if (this._points == null || this._shph == null) return;
     if (!Array.isArray(value)) {
       throw new ValueError("out_tangents must be a list of [x,y] pairs");

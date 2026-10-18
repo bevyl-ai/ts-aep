@@ -38,25 +38,25 @@ describe("TestParametricMeshModel", () => {
 
     const cube = getitem(by_name, "Cube Mesh Layer 1");
     py_assert(cube instanceof ParametricMeshLayer);
-    expect(cube.parametric_mesh_type === ParametricMeshType.CUBE).toBe(true);
-    expect(cube.parametric_mesh_options instanceof CubeMeshOptions).toBe(true);
+    expect(cube.parametricMeshType === ParametricMeshType.CUBE).toBe(true);
+    expect(cube.parametricMeshOptions instanceof CubeMeshOptions).toBe(true);
 
     const cyl = as_instance(getitem(by_name, "Cylinder Mesh Layer 1"), ParametricMeshLayer);
-    expect(cyl.parametric_mesh_type === ParametricMeshType.CYLINDER).toBe(true);
-    expect(cyl.parametric_mesh_options instanceof CylinderMeshOptions).toBe(true);
+    expect(cyl.parametricMeshType === ParametricMeshType.CYLINDER).toBe(true);
+    expect(cyl.parametricMeshOptions instanceof CylinderMeshOptions).toBe(true);
   });
 
   test("test_layer_type_string_is_parametric_mesh", () => {
     const project = parse_project(MESH_AEP);
     const cube = at(project.compositions[0].layers, -1);
     // AE reports these as their own type, not AVLayer.
-    expect(cube.layer_type === "ParametricMeshLayer").toBe(true);
+    expect(cube.layerType === "ParametricMeshLayer").toBe(true);
   });
 
   test("test_cannot_set_collapse_transformation", () => {
     const project = parse_project(MESH_AEP);
     const cube = at(project.compositions[0].layers, -1);
-    expect(as_instance(cube, ParametricMeshLayer).can_set_collapse_transformation).toBe(false);
+    expect(as_instance(cube, ParametricMeshLayer).canSetCollapseTransformation).toBe(false);
   });
 
   test("test_mesh_type_enum_binary_roundtrip", () => {

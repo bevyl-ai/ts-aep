@@ -63,7 +63,7 @@ function _sample_id(p: Path): string {
 function _find_property(layer: Layer, match_name: string): Property | null {
   function _search(group: PropertyGroup): Property | null {
     for (const prop of group.properties) {
-      if (prop instanceof Property && prop.match_name === match_name) {
+      if (prop instanceof Property && prop.matchName === match_name) {
         return prop;
       }
       if (prop instanceof PropertyGroup) {
@@ -77,7 +77,7 @@ function _find_property(layer: Layer, match_name: string): Property | null {
   }
 
   for (const group of layer.properties) {
-    if (group instanceof Property && group.match_name === match_name) {
+    if (group instanceof Property && group.matchName === match_name) {
       return group;
     }
     if (group instanceof PropertyGroup) {
@@ -96,7 +96,7 @@ function _find_synthesized_effect_prop(layer: Layer, effect_index: number, match
   const effect = layer.effects.properties[effect_index];
   py_assert(effect instanceof PropertyGroup);
   for (const prop of effect.properties) {
-    if (prop instanceof Property && prop.match_name === match_name) {
+    if (prop instanceof Property && prop.matchName === match_name) {
       return prop;
     }
   }
@@ -154,7 +154,7 @@ describe("TestMaterializationLifecycle", () => {
     const layer = get_first_layer(app.project);
     const blur = _find_synthesized_effect_prop(layer, 0, "ADBE Gaussian Blur 2-0001");
     expect(blur.enabled).toBe(true);
-    expect(blur.can_set_enabled).toBe(false);
+    expect(blur.canSetEnabled).toBe(false);
 
     raises(AttributeError, () => {
       blur.enabled = false;

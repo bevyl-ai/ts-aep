@@ -118,7 +118,7 @@ describe("TestCompMarkerFrameTarget", () => {
     const expected = load_expected(SAMPLES_DIR, "comp_marker");
     const marker_json = get_comp_marker_from_json_by_name(expected, "frameTarget");
     const marker = get_first_comp_marker(parse_project(SAMPLES_DIR.div("comp_marker.aep")), "frameTarget");
-    expect(marker.frame_target).toBe(marker_json["frameTarget"]);
+    expect(marker.frameTarget).toBe(marker_json["frameTarget"]);
     expect(marker_json["frameTarget"]).toBe("_blank");
   });
 });
@@ -129,7 +129,7 @@ describe("TestCompMarkerCuePoint", () => {
     const expected = load_expected(SAMPLES_DIR, "comp_marker");
     const marker_json = get_comp_marker_from_json_by_name(expected, "cuePointName");
     const marker = get_first_comp_marker(parse_project(SAMPLES_DIR.div("comp_marker.aep")), "cuePointName");
-    expect(marker.cue_point_name).toBe(marker_json["cuePointName"]);
+    expect(marker.cuePointName).toBe(marker_json["cuePointName"]);
     expect(marker_json["cuePointName"]).toBe("cue_test");
   });
 });
@@ -141,7 +141,7 @@ describe("TestCompMarkerProtectedRegion", () => {
     const marker_json = get_comp_marker_from_json_by_name(expected, "protectedRegion_true");
     const marker = get_first_comp_marker(parse_project(SAMPLES_DIR.div("comp_marker.aep")), "protectedRegion_true");
     expect(marker_json["protectedRegion"]).toBe(true);
-    expect(marker.protected_region).toBe(marker_json["protectedRegion"]);
+    expect(marker.protectedRegion).toBe(marker_json["protectedRegion"]);
   });
 });
 
@@ -167,7 +167,7 @@ describe("TestLayerMarker", () => {
     const expected = load_expected(SAMPLES_DIR, "layer_marker");
     const marker_json = get_layer_marker_from_json_by_comp(expected, "layer_cuePointName");
     const marker = get_first_layer_marker(parse_project(SAMPLES_DIR.div("layer_marker.aep")), "layer_cuePointName");
-    expect(marker.cue_point_name).toBe(marker_json["cuePointName"]);
+    expect(marker.cuePointName).toBe(marker_json["cuePointName"]);
     expect(marker_json["cuePointName"]).toBe("layer_cue_1");
   });
 

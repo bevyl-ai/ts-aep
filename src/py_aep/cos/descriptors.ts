@@ -109,32 +109,32 @@ export type InstanceValue = string | number | boolean | object | null;
  *   file raise `AttributeError`; reads are always allowed. Mirrors `models.descriptors.ChunkField`.
  */
 export class CosField<T extends InstanceValue, A extends string = string, O extends CosBacked<A> = CosBacked<A>> {
-  declare dict_attr: A;
+  declare dictAttr: A;
   declare key: string;
   declare transform: (x: CosNode) => T;
   declare accepts: (v: InstanceValue) => v is T;
   declare reverse: ((x: NonNullable<T>) => CosNode) | null;
-  declare read_only: boolean;
+  declare readOnly: boolean;
   declare validate: InstanceValidator<O> | null;
   declare default: T;
-  declare min_version: number | null;
-  declare public_name: string;
+  declare minVersion: number | null;
+  declare publicName: string;
 
   constructor(dict_attr: A, key: string, kw: CosFieldOptions<T, O>) {
     const { transform, accepts, reverse = null, read_only = false, validate = null, default: default_, min_version = null } = kw;
-    this.dict_attr = dict_attr;
+    this.dictAttr = dict_attr;
     this.key = key;
     this.transform = transform;
     this.accepts = accepts;
     this.reverse = reverse;
-    this.read_only = read_only;
+    this.readOnly = read_only;
     this.validate = validate;
     this.default = default_;
-    this.min_version = min_version;
+    this.minVersion = min_version;
   }
 
   __set_name__(owner: Function, name: string): void {
-    this.public_name = name;
+    this.publicName = name;
   }
 
   /**
@@ -144,8 +144,8 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    */
   _override(obj: O): { value: T } | null {
     const idict: Map<string, InstanceValue> = instance_dict(obj);
-    if (!idict.has(this.public_name)) return null;
-    const value = idict.get(this.public_name) ?? null;
+    if (!idict.has(this.publicName)) return null;
+    const value = idict.get(this.publicName) ?? null;
     return this.accepts(value) ? { value } : null;
   }
 
@@ -154,7 +154,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     // Instance-dict overrides (set by parser or user when no dict)
     const override = this._override(obj);
     if (override != null) return override.value;
-    const d = obj[this.dict_attr];
+    const d = obj[this.dictAttr];
     if (d == null) return this.default;
     return _extract(d, this.key, this.transform, this.default);
   }
@@ -164,12 +164,12 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    * the file predates the field's `min_version`.
    */
   _check_writable(obj: O): void {
-    if (this.read_only) {
-      throw new AttributeError(`${repr(this.public_name)} is read-only.`);
+    if (this.readOnly) {
+      throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     }
-    if (this.min_version != null) {
-      if (get_ae_version_major(obj) < this.min_version) {
-        throw new AttributeError(`${repr(this.public_name)} requires AE ${this.min_version}+ file format.`);
+    if (this.minVersion != null) {
+      if (get_ae_version_major(obj) < this.minVersion) {
+        throw new AttributeError(`${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
   }
@@ -181,18 +181,18 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   _coerce(obj: O, value: NonNullable<T>): CosNode {
     if (this.validate != null) this.validate(value, obj);
     // Every writable field declares its reverse; only read-only ones omit it.
-    if (this.reverse == null) throw new AttributeError(`${repr(this.public_name)} is read-only.`);
+    if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     return this.reverse(value);
   }
 
   __set__(obj: O, value: T | null): void {
     this._check_writable(obj);
     // Clear any instance-dict override
-    instance_dict(obj).delete(this.public_name);
-    const d = obj[this.dict_attr];
+    instance_dict(obj).delete(this.publicName);
+    const d = obj[this.dictAttr];
     if (d == null) {
       // No backing dict - store as instance override
-      instance_dict(obj).set(this.public_name, value);
+      instance_dict(obj).set(this.publicName, value);
       return;
     }
     // `None` clears the key (an optional field is being unset); there is

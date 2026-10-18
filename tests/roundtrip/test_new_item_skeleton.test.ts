@@ -72,7 +72,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_root_tdgp_ends_with_group_end", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const tdgp = find_by_list_type(layer.chunks, "tdgp");
@@ -84,9 +84,9 @@ describe("TestNewLayerSkeleton", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_null");
-    comp.add_null();
-    comp.add_camera("Cam");
-    comp.add_light("Light");
+    comp.addNull();
+    comp.addCamera("Cam");
+    comp.addLight("Light");
     const rifx = _saved_rifx(app, tmp_path);
     const item = _find_comp_item(rifx, "type_null");
     const bases = new Set(recursive_find(item.chunks, "tdb4").map((t) => t._time_base));
@@ -96,7 +96,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_time_remapping_has_value_and_bounds", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const tdgp = find_by_list_type(layer.chunks, "tdgp");
@@ -114,7 +114,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_layer_overrides_followed_by_ovg2", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const tdgp = find_by_list_type(layer.chunks, "tdgp");
@@ -129,7 +129,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_source_alternate_blsv_blsi_and_empty_cdat", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const root = find_by_list_type(layer.chunks, "tdgp");
@@ -150,7 +150,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_empty_parade_groups_not_written", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const tdgp = find_by_list_type(layer.chunks, "tdgp");
@@ -163,7 +163,7 @@ describe("TestNewLayerSkeleton", () => {
   test("test_static_orientation_written_as_otst", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
-    get_comp(app.project, "type_null").add_null();
+    get_comp(app.project, "type_null").addNull();
     const rifx = _saved_rifx(app, tmp_path);
     const layer = _top_layer(rifx, "type_null");
     const root = find_by_list_type(layer.chunks, "tdgp");
@@ -183,9 +183,9 @@ describe("TestNewLayerSkeleton", () => {
   test("test_camera_position_and_poi", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_null");
-    const cam = comp.add_camera("Cam");
-    const pos = as_instance([...cam.transform].find((p) => p.match_name === "ADBE Position"), Property);
-    const anchor = as_instance([...cam.transform].find((p) => p.match_name === "ADBE Anchor Point"), Property);
+    const cam = comp.addCamera("Cam");
+    const pos = as_instance([...cam.transform].find((p) => p.matchName === "ADBE Position"), Property);
+    const anchor = as_instance([...cam.transform].find((p) => p.matchName === "ADBE Anchor Point"), Property);
     const zoom = round(comp.width / 0.72, 8);
     expect(py_eq(pos.value, [0.0, 0.0, -zoom])).toBe(true);
     expect(py_eq(anchor.value, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
@@ -197,7 +197,7 @@ describe("TestNewCompSkeleton", () => {
   test("test_full_view_state_skeleton_written", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    app.project.root_folder.add_comp("MinComp", 1280, 720, 1.0, 10.0, 30.0);
+    app.project.rootFolder.addComp("MinComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _saved_rifx(app, tmp_path);
     const item = _find_comp_item(rifx, "MinComp");
     const kinds = item.chunks.map((c) => getattr(c, "list_type", c.chunk_type));
@@ -212,7 +212,7 @@ describe("TestNewCompSkeleton", () => {
   test("test_comp_params_patched_into_template", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    const comp = app.project.root_folder.add_comp("OtherComp", 1920, 1080, 2.0, 4.5, 23.976);
+    const comp = app.project.rootFolder.addComp("OtherComp", 1920, 1080, 2.0, 4.5, 23.976);
     const comp_id = comp.id;
     const rifx = _saved_rifx(app, tmp_path);
     const item = _find_comp_item(rifx, "OtherComp");
@@ -233,14 +233,14 @@ describe("TestNewCompSkeleton", () => {
   test("test_reparse_roundtrip", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    const comp = app.project.root_folder.add_comp("RT", 1280, 720, 1.0, 10.0, 30.0);
-    comp.add_solid([0.5, 0.5, 0.5], "S");
+    const comp = app.project.rootFolder.addComp("RT", 1280, 720, 1.0, 10.0, 30.0);
+    comp.addSolid([0.5, 0.5, 0.5], "S");
     const out = tmp_path.div("rt.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
     const comp2 = app2.project.compositions.find((c) => c.name === "RT");
     if (comp2 == null) throw new StopIteration();
-    expect(approx(comp2.frame_rate, 30.0)).toBe(true);
+    expect(approx(comp2.frameRate, 30.0)).toBe(true);
     expect(py_eq(comp2.layers.map((lyr) => lyr.name), ["S"])).toBe(true);
   });
 });
@@ -250,7 +250,7 @@ describe("TestNewCompPrda", () => {
   test("test_new_comp_prda_is_classic_variant", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    app.project.root_folder.add_comp("PrdaComp", 1280, 720, 1.0, 10.0, 30.0);
+    app.project.rootFolder.addComp("PrdaComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _saved_rifx(app, tmp_path);
     const prda = _find_prda(rifx, "PrdaComp");
     expect(prda instanceof ClassicPrdaChunk).toBe(true);
@@ -260,7 +260,7 @@ describe("TestNewCompPrda", () => {
   test("test_new_comp_prda_bytes_match_after_effects", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    app.project.root_folder.add_comp("PrdaComp", 1280, 720, 1.0, 10.0, 30.0);
+    app.project.rootFolder.addComp("PrdaComp", 1280, 720, 1.0, 10.0, 30.0);
     const rifx = _saved_rifx(app, tmp_path);
     const buf = new BytesIO();
     _find_prda(rifx, "PrdaComp").write(buf);

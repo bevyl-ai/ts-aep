@@ -56,7 +56,7 @@ test("test_add_property_writes_an_untouched_curves", () => {
   // AE 2026's addProperty("ADBE CurvesCustom") writes an untouched
   // instance's bytes here, although the stored definition is keyed.
   const project = parse_project_fresh(SAMPLE);
-  _layer(project, "keyed").property("ADBE Effect Parade").add_property("ADBE CurvesCustom");
+  _layer(project, "keyed").property("ADBE Effect Parade").addProperty("ADBE CurvesCustom");
   const out = tmp_path.div("out.aep");
   project.save(out);
 
@@ -65,10 +65,10 @@ test("test_add_property_writes_an_untouched_curves", () => {
   const untouched = _curves(_layer(reopened, "untouched"));
 
   expect(py_bool(added.keyframes)).toBe(false);
-  expect(added.is_modified).toBe(false);
+  expect(added.isModified).toBe(false);
   const curves = added.value;
   expect(curves instanceof Curves).toBe(true);
-  expect(curves.is_identity).toBe(true);
+  expect(curves.isIdentity).toBe(true);
   expect(py_eq(_stream(added), _stream(untouched))).toBe(true);
 });
 

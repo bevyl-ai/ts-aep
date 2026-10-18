@@ -214,11 +214,11 @@ export const _VERSION_GATED_GROUPS = [
  * synthesis) and get flipped to non-synthetic by _ensure_materialized().
  */
 export function _materialize_layer(layer: Layer): void {
-  const cam_light = ["ADBE Camera Layer", "ADBE Light Layer"].includes(layer.match_name);
+  const cam_light = ["ADBE Camera Layer", "ADBE Light Layer"].includes(layer.matchName);
 
   function _materialize_prop(prop: Property, in_transform: boolean): void {
     if (cam_light && in_transform) {
-      if (!_CAMERA_LIGHT_TRANSFORM_SKIP.has(prop.match_name)) {
+      if (!_CAMERA_LIGHT_TRANSFORM_SKIP.has(prop.matchName)) {
         prop._ensure_materialized();
       }
     } else if (prop._tdb4.has_time_base) {
@@ -228,14 +228,14 @@ export function _materialize_layer(layer: Layer): void {
 
   function _materialize_tree(group: PropertyGroup): void {
     group._ensure_materialized();
-    const in_transform = group.match_name === "ADBE Transform Group";
+    const in_transform = group.matchName === "ADBE Transform Group";
     // Deliberately the raw list, NOT `group.properties`: the public
     // accessor would run the group's deferred child synthesis, and this
     // walk would then materialize children AE leaves out. Measured on a
     // five-layer new project: 60 extra tdb4 chunks, +23 KB.
     for (const child of group._properties) {
       if (child instanceof PropertyGroup) {
-        if (_OMITTED_EMPTY_GROUPS.has(child.match_name) && !child.properties?.length) {
+        if (_OMITTED_EMPTY_GROUPS.has(child.matchName) && !child.properties?.length) {
           continue;
         }
         _materialize_tree(child);
@@ -256,10 +256,10 @@ export function _materialize_layer(layer: Layer): void {
 
   for (const top of layer.properties) {
     if (top instanceof PropertyGroup) {
-      if (unwritten.has(top.match_name)) {
+      if (unwritten.has(top.matchName)) {
         continue;
       }
-      if (_OMITTED_EMPTY_GROUPS.has(top.match_name) && !top.properties?.length) {
+      if (_OMITTED_EMPTY_GROUPS.has(top.matchName) && !top.properties?.length) {
         continue;
       }
       _materialize_tree(top);
@@ -275,11 +275,11 @@ export function _materialize_layer(layer: Layer): void {
   for (const top of layer.properties) {
     if (
       top instanceof PropertyGroup &&
-      top.match_name === "ADBE Source Options Group" &&
-      !unwritten.has(top.match_name)
+      top.matchName === "ADBE Source Options Group" &&
+      !unwritten.has(top.matchName)
     ) {
       for (const child of top.properties) {
-        if (child.match_name === "ADBE Layer Source Alternate" && child instanceof Property) {
+        if (child.matchName === "ADBE Layer Source Alternate" && child instanceof Property) {
           if (ae_writes("source alternate value", ae_major)) {
             child._ensure_materialized();
           } else if (child._tdmn != null) {
@@ -331,9 +331,9 @@ export function _drop_essential_overrides(layer: Layer): void {
       break;
     }
   }
-  layer.essential_property_uuids.length = 0;
+  layer.essentialPropertyUuids.length = 0;
   for (const child of layer.properties) {
-    if (child.match_name === "ADBE Layer Overrides") {
+    if (child.matchName === "ADBE Layer Overrides") {
       if (!(child instanceof PropertyGroup)) throw new AttributeError(`'${type_name(child)}' object has no attribute 'properties'`);
       child._properties.length = 0;
       break;
@@ -475,7 +475,7 @@ export interface LayerTypeCache {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * console.log(comp.frame_rate);
+ * console.log(comp.frameRate);
  * for (const layer of comp) {
  *   // ...
  * }
@@ -488,7 +488,7 @@ export class CompItem extends AVItem {
 
   /** The background color of the composition. The three array values specify
    * the red, green, and blue components of the color. Read / Write. */
-  declare bg_color: number[];
+  declare bgColor: number[];
 
   /**
    * When `true`, Draft 3D mode is enabled for the composition.
@@ -501,30 +501,30 @@ export class CompItem extends AVItem {
   /** When `true`, frame blending is enabled for this Composition. Corresponds
    * to the value of the Frame Blending button in the Composition panel.
    * Read / Write. */
-  declare frame_blending: boolean;
+  declare frameBlending: boolean;
 
   /** When `true`, only layers with `shy` set to `false` are shown in the
    * Timeline panel. When `false`, all layers are visible, including those
    * whose `shy` value is `true`. Corresponds to the value of the Hide All
    * Shy Layers button in the Composition panel. Read / Write. */
-  declare hide_shy_layers: boolean;
+  declare hideShyLayers: boolean;
 
   /** When `true`, motion blur is enabled for the composition. Corresponds
    * to the value of the Motion Blur button in the Composition panel.
    * Read / Write. */
-  declare motion_blur: boolean;
+  declare motionBlur: boolean;
 
   /** When `true`, the frame rate of nested compositions is preserved in
    * the current composition. Corresponds to the value of the "Preserve frame
    * rate when nested or in render queue" option in the Advanced tab of the
    * Composition Settings dialog box. Read / Write. */
-  declare preserve_nested_frame_rate: boolean;
+  declare preserveNestedFrameRate: boolean;
 
   /** When `true`, the resolution of nested compositions is preserved in
    * the current composition. Corresponds to the value of the "Preserve
    * Resolution When Nested" option in the Advanced tab of the Composition
    * Settings dialog box. Read / Write. */
-  declare preserve_nested_resolution: boolean;
+  declare preserveNestedResolution: boolean;
 
   // Left-out camera and light properties follow the comp's size and pixel
   // aspect. Building them before a change builds them at the size the file
@@ -540,12 +540,12 @@ export class CompItem extends AVItem {
   /** The shutter angle setting for the composition. This corresponds to the
    * Shutter Angle setting in the Advanced tab of the Composition Settings
    * dialog box. Read / Write. */
-  declare shutter_angle: number;
+  declare shutterAngle: number;
 
   /** The shutter phase setting for the composition. This corresponds to the
    * Shutter Phase setting in the Advanced tab of the Composition Settings
    * dialog box. Read / Write. */
-  declare shutter_phase: number;
+  declare shutterPhase: number;
 
   /** The x and y downsample resolution factors for rendering the
    * composition. The two values in the array specify how many pixels to skip
@@ -553,7 +553,7 @@ export class CompItem extends AVItem {
    * controls vertical sampling. Full resolution is [1, 1], half resolution
    * is [2, 2], and quarter resolution is [4, 4]. The default is [1, 1].
    * Read / Write. */
-  declare resolution_factor: number[];
+  declare resolutionFactor: number[];
 
   /**
    * The maximum number of motion blur samples of 2D layer motion. This
@@ -561,13 +561,13 @@ export class CompItem extends AVItem {
    * the Composition Settings dialog box. Must be \>= `samples_per_frame`.
    * Read / Write. 
    */
-  declare motion_blur_adaptive_sample_limit: number;
+  declare motionBlurAdaptiveSampleLimit: number;
 
   /** The minimum number of motion blur samples per frame for Classic 3D
    * layers, shape layers, and certain effects. This corresponds to the
    * Samples Per Frame setting in the Advanced tab of the Composition
    * Settings dialog box. Read / Write. */
-  declare motion_blur_samples_per_frame: number;
+  declare motionBlurSamplesPerFrame: number;
 
   /** The frame rate of the item in frames-per-second. Read / Write.
    *
@@ -579,11 +579,11 @@ export class CompItem extends AVItem {
    * and current time are requantized onto the new frame grid; layer
    * timing and nested compositions are left untouched.
    */
-  get frame_rate(): number {
+  get frameRate(): number {
     return this._cdta.frame_rate;
   }
 
-  set frame_rate(value: number) {
+  set frameRate(value: number) {
     validate_comp_frame_rate(value);
     const cdta = this._cdta;
     if (cdta.frame_rate === value) {
@@ -611,8 +611,8 @@ export class CompItem extends AVItem {
       yield* layer._leaf_properties();
     }
     // Through the property: the comp's markers are parsed on first access.
-    if (this.marker_property != null) {
-      yield this.marker_property;
+    if (this.markerProperty != null) {
+      yield this.markerProperty;
     }
   }
 
@@ -754,28 +754,28 @@ export class CompItem extends AVItem {
   }
 
   /** The duration of the item in frames. Read / Write. */
-  get frame_duration(): number {
+  get frameDuration(): number {
     return this._cdta.frame_duration;
   }
 
-  set frame_duration(value: number) {
+  set frameDuration(value: number) {
     _validate_number({ min: 1, integer: true })(value);
     this.duration = value / _grid_rate(this._cdta);
   }
 
   /** The pixel aspect ratio of the item (1.0 is square). Read / Write. */
-  declare pixel_aspect: number;
+  declare pixelAspect: number;
 
   /** The time scale, used as a divisor for keyframe time values. Read-only. */
-  declare time_scale: number;
+  declare timeScale: number;
 
   /** The time set as the beginning of the composition, in seconds. This
    * is the equivalent of the Start Timecode or Start Frame setting in the
    * Composition Settings dialog box. Read / Write. */
-  declare display_start_time: number;
+  declare displayStartTime: number;
 
   /** The frame value of the beginning of the composition. Read / Write. */
-  get display_start_frame(): number {
+  get displayStartFrame(): number {
     const cdta = this._cdta;
     return _frame_number(
       cdta,
@@ -784,7 +784,7 @@ export class CompItem extends AVItem {
     );
   }
 
-  set display_start_frame(value: number) {
+  set displayStartFrame(value: number) {
     // AE 2026 accepts the frames from -10800 s to 86340 s (at 24 fps
     // -259200 to 2072160, at 29.97 -323676 to 2587609), although its
     // `displayStartTime` goes on to 86400 s.
@@ -830,33 +830,33 @@ export class CompItem extends AVItem {
    * that would carry the work area past the end of the composition, it
    * ends there instead; After Effects moves the start back.
    */
-  get work_area_start(): number {
+  get workAreaStart(): number {
     return this._cdta.work_area_start;
   }
 
-  set work_area_start(value: number) {
+  set workAreaStart(value: number) {
     _validate_number({
       min: 0.0,
-      max: (self: CompItem) => self.duration - 1 / self.frame_rate,
+      max: (self: CompItem) => self.duration - 1 / self.frameRate,
     })(value, this);
     const runs_to_end = this._cdta.work_area_end_dividend === WORK_AREA_TO_END;
-    this._set_work_area(value, runs_to_end ? null : value + this.work_area_duration);
+    this._set_work_area(value, runs_to_end ? null : value + this.workAreaDuration);
   }
 
   /** The work area start frame relative to composition start.
    * Read / Write. */
-  get work_area_start_frame(): number {
+  get workAreaStartFrame(): number {
     const cdta = this._cdta;
     return _frame_number(cdta, cdta.work_area_start_dividend, cdta.work_area_start_divisor);
   }
 
-  set work_area_start_frame(value: number) {
+  set workAreaStartFrame(value: number) {
     _validate_number({
       min: 0,
-      max: (self: CompItem) => self.frame_duration - 1,
+      max: (self: CompItem) => self.frameDuration - 1,
       integer: true,
     })(value, this);
-    this.work_area_start = value / _grid_rate(this._cdta);
+    this.workAreaStart = value / _grid_rate(this._cdta);
   }
 
   /**
@@ -865,31 +865,31 @@ export class CompItem extends AVItem {
    * Writing snaps the end of the work area to the nearest frame, half a
    * frame rounding up, as After Effects does.
    */
-  get work_area_duration(): number {
+  get workAreaDuration(): number {
     return this._cdta.work_area_duration;
   }
 
-  set work_area_duration(value: number) {
+  set workAreaDuration(value: number) {
     _validate_number({
-      min: (self: CompItem) => 1 / self.frame_rate,
-      max: (self: CompItem) => self.duration - self.work_area_start,
+      min: (self: CompItem) => 1 / self.frameRate,
+      max: (self: CompItem) => self.duration - self.workAreaStart,
     })(value, this);
-    const start = this.work_area_start;
+    const start = this.workAreaStart;
     this._set_work_area(start, start + value);
   }
 
   /** The work area duration in frames. Read / Write. */
-  get work_area_duration_frame(): number {
+  get workAreaDurationFrame(): number {
     return this._cdta.work_area_duration_frame;
   }
 
-  set work_area_duration_frame(value: number) {
+  set workAreaDurationFrame(value: number) {
     _validate_number({
       min: 1,
-      max: (self: CompItem) => self.frame_duration - self.work_area_start_frame,
+      max: (self: CompItem) => self.frameDuration - self.workAreaStartFrame,
       integer: true,
     })(value, this);
-    this.work_area_duration = value / _grid_rate(this._cdta);
+    this.workAreaDuration = value / _grid_rate(this._cdta);
   }
 
   _set_work_area(start: number, end: number | null): void {
@@ -938,12 +938,12 @@ export class CompItem extends AVItem {
    * from the Project panel. This value is a number of frames.
    * Read / Write.
    */
-  get frame_time(): number {
+  get frameTime(): number {
     const cdta = this._cdta;
     return _frame_number(cdta, cdta.time_dividend, cdta.time_divisor);
   }
 
-  set frame_time(value: number) {
+  set frameTime(value: number) {
     // The frames `time`'s 0 to 10800 s range holds.
     _validate_number({
       min: 0,
@@ -957,7 +957,7 @@ export class CompItem extends AVItem {
    * When `true`, timecode is displayed in drop-frame format. Only
    * applicable when `frameRate` is 29.97 or 59.94. Read / Write.
    */
-  declare drop_frame: boolean;
+  declare dropFrame: boolean;
 
   static _new(
     name: string,
@@ -1040,7 +1040,7 @@ export class CompItem extends AVItem {
   declare __layer_id_to_index: Map<number, number> | null;
   declare _cdta: CdtaChunk;
   declare _cdrp: U1Chunk | null;
-  declare prin_list: ListChunk;
+  declare prinList: ListChunk;
   declare _prin: PrinChunk;
   declare _prda: PrdaChunk;
   declare _deferred_layers: [ListChunk[], EffectParamDefs] | null;
@@ -1086,9 +1086,9 @@ export class CompItem extends AVItem {
 
     this._cdta = find_by_type(kw._child_chunks, "cdta");
     this._cdrp = find_by_type_or_null(kw._child_chunks, "cdrp");
-    this.prin_list = find_by_list_type(kw._child_chunks, "PRin");
-    this._prin = find_by_type(this.prin_list.chunks, "prin");
-    this._prda = find_by_type(this.prin_list.chunks, "prda");
+    this.prinList = find_by_list_type(kw._child_chunks, "PRin");
+    this._prin = find_by_type(this.prinList.chunks, "prin");
+    this._prda = find_by_type(this.prinList.chunks, "prda");
 
     // Layer deferral: collect layer chunks and source IDs now, parse
     // the actual Layer objects on first access via _ensure_layers_loaded.
@@ -1120,7 +1120,7 @@ export class CompItem extends AVItem {
 
   remove(): void {
     /** Remove this composition, including any render-queue items targeting it. */
-    const rq = this._project.render_queue;
+    const rq = this._project.renderQueue;
     py_assert(rq != null);
     const comp_id = this.id;
     for (const rqi of [...rq.items]) {
@@ -1130,7 +1130,7 @@ export class CompItem extends AVItem {
         rqi.remove();
         continue;
       }
-      for (const om of rqi.output_modules) {
+      for (const om of rqi.outputModules) {
         if (om._om_ldat.post_render_target_comp_id === comp_id) {
           om._om_ldat.post_render_target_comp_id = 0;
         }
@@ -1438,7 +1438,7 @@ export class CompItem extends AVItem {
   }
 
   /** Map of layer ID to layer, for O(1) lookup by sibling layers. */
-  get layers_by_id(): Map<number, Layer> {
+  get layersById(): Map<number, Layer> {
     if (this._layers_by_id == null) {
       this._layers_by_id = new Map(this.layers.map((layer) => [layer.id, layer] as const));
     }
@@ -1456,7 +1456,7 @@ export class CompItem extends AVItem {
   }
 
   /** The composition's marker property. Read-only. */
-  get marker_property(): Property<MarkerValue | null> | null {
+  get markerProperty(): Property<MarkerValue | null> | null {
     this._ensure_comp_parsed();
     return this._marker_property;
   }
@@ -1467,7 +1467,7 @@ export class CompItem extends AVItem {
    * for the file name of an exported Motion Graphics template.
    * Read / Write.
    */
-  get motion_graphics_template_name(): string | null {
+  get motionGraphicsTemplateName(): string | null {
     this._ensure_comp_parsed();
     if (this._eg_template_name_utf8 == null) {
       return null;
@@ -1476,7 +1476,7 @@ export class CompItem extends AVItem {
   }
 
   // @requires_version(15) on the setter: wrapped after the class body.
-  set motion_graphics_template_name(value: string) {
+  set motionGraphicsTemplateName(value: string) {
     validate_name(value);
     this._ensure_comp_parsed();
     if (this._eg_template_name_utf8 != null) {
@@ -1496,7 +1496,7 @@ export class CompItem extends AVItem {
    * The Essential Graphics controllers for this composition.
    * Read-only.
    */
-  get motion_graphics_controllers(): EssentialGraphicsController[] {
+  get motionGraphicsControllers(): EssentialGraphicsController[] {
     this._ensure_comp_parsed();
     return this._eg_controllers;
   }
@@ -1510,8 +1510,8 @@ export class CompItem extends AVItem {
    * this count is one lower per group than ExtendScript's
    * `motionGraphicsTemplateControllerCount`.
    */
-  get motion_graphics_template_controller_count(): number {
-    return this.motion_graphics_controllers.length;
+  get motionGraphicsTemplateControllerCount(): number {
+    return this.motionGraphicsControllers.length;
   }
 
   /**
@@ -1520,8 +1520,8 @@ export class CompItem extends AVItem {
    * synthesizes but does not store (see
    * `motion_graphics_template_controller_count`).
    */
-  get motion_graphics_template_controller_names(): string[] {
-    return this.motion_graphics_controllers.map((ctrl) => ctrl.name);
+  get motionGraphicsTemplateControllerNames(): string[] {
+    return this.motionGraphicsControllers.map((ctrl) => ctrl.name);
   }
 
   _cif_containers(): ListChunk[] {
@@ -1554,8 +1554,8 @@ export class CompItem extends AVItem {
       // (Slider Control -> 0..100 despite its +/-1e6 valid range,
       // Brightness -> -150..150), falling back to the valid range for
       // pard-less properties (Transform > Opacity -> 0..100).
-      const min_v = prop._slider_min != null ? prop._slider_min : prop.min_value;
-      const max_v = prop._slider_max != null ? prop._slider_max : prop.max_value;
+      const min_v = prop._slider_min != null ? prop._slider_min : prop.minValue;
+      const max_v = prop._slider_max != null ? prop._slider_max : prop.maxValue;
       // Python's `float()` refuses a list bound (a color or multi-dimensional range).
       const float_bound = (v: number | number[]): number => {
         if (Array.isArray(v)) throw new TypeError_("float() argument must be a string or a real number, not 'list'");
@@ -1702,8 +1702,8 @@ export class CompItem extends AVItem {
         uuid_str,
         source.width,
         source.height,
-        round(layer.in_point * timebase),
-        round(layer.out_point * timebase),
+        round(layer.inPoint * timebase),
+        round(layer.outPoint * timebase),
         timebase,
         thumbnail,
         this.id,
@@ -1754,7 +1754,7 @@ export class CompItem extends AVItem {
     // Create a fresh prda chunk using requested renderer's default settings
     const new_prda = new (getitem(_PRDA_VARIANTS, binary_name)[0])();
     // Replace the existing prda chunk
-    const prin_chunks = this.prin_list.chunks;
+    const prin_chunks = this.prinList.chunks;
     prin_chunks[index_by_identity(prin_chunks, this._prda)] = new_prda;
     this._prda = new_prda;
   }
@@ -1782,19 +1782,19 @@ export class CompItem extends AVItem {
    * import { parse } from "@bevyl-ai/ts-aep";
    *
    * const comp = parse("project.aep").project.compositions[0];
-   * comp.renderer_options.__setitem__("Quality", 61);
+   * comp.rendererOptions.__setitem__("Quality", 61);
    * ```
    */
-  get renderer_options(): RendererOptions {
+  get rendererOptions(): RendererOptions {
     return renderer_options_for(this._prda, this);
   }
 
-  set renderer_options(value: Map<string, SettingValue> | SettingsView) {
+  set rendererOptions(value: Map<string, SettingValue> | SettingsView) {
     // A Python Mapping: a dict, or another comp's renderer options view.
     if (!(value instanceof Map || value instanceof SettingsView)) {
       throw new ValueError("renderer_options must be a mapping of key-value pairs");
     }
-    const view = this.renderer_options;
+    const view = this.rendererOptions;
     for (const [key, option] of value instanceof Map ? value.entries() : value.items()) {
       view.set(key, option);
     }
@@ -1807,8 +1807,8 @@ export class CompItem extends AVItem {
    * source with audio.
    * Read-only.
    */
-  get has_audio(): boolean {
-    return this.av_layers.some((layer) => layer.has_audio);
+  get hasAudio(): boolean {
+    return this.avLayers.some((layer) => layer.hasAudio);
   }
 
   /**
@@ -1828,25 +1828,25 @@ export class CompItem extends AVItem {
    * ```
    */
   get markers(): MarkerValue[] {
-    if (this.marker_property == null) {
+    if (this.markerProperty == null) {
       return [];
     }
-    return this.marker_property.keyframes.map((kf) => kf.value);
+    return this.markerProperty.keyframes.map((kf) => kf.value);
   }
 
-  remove_all_markers(): void {
+  removeAllMarkers(): void {
     /**
      * Remove all markers from this composition.
      *
      * A no-op when the composition has no markers.
      */
-    if (this.marker_property != null) {
-      this.marker_property.remove_all_keys();
+    if (this.markerProperty != null) {
+      this.markerProperty.removeAllKeys();
     }
   }
 
   /** The number of layers in the composition. */
-  get num_layers(): number {
+  get numLayers(): number {
     return this.layers.length;
   }
 
@@ -1857,8 +1857,8 @@ export class CompItem extends AVItem {
    * composition time. The value is `null` when the composition
    * contains no active camera layers.
    */
-  get active_camera(): CameraLayer | null {
-    for (const layer of this.camera_layers) {
+  get activeCamera(): CameraLayer | null {
+    for (const layer of this.cameraLayers) {
       if (layer.active) {
         return layer;
       }
@@ -1906,99 +1906,99 @@ export class CompItem extends AVItem {
   }
 
   /** An array of all {@link AVLayer} objects in this composition. */
-  get av_layers(): AVLayer[] {
+  get avLayers(): AVLayer[] {
     return this._type_cache.av;
   }
 
   /** An array of the composition layers whose source are compositions. */
-  get composition_layers(): AVLayer[] {
-    return this.av_layers.filter((layer) => layer.source instanceof CompItem);
+  get compositionLayers(): AVLayer[] {
+    return this.avLayers.filter((layer) => layer.source instanceof CompItem);
   }
 
   /** An array of the composition layers whose source are footages. */
-  get footage_layers(): AVLayer[] {
-    return this.av_layers.filter((layer) => layer.source instanceof FootageItem);
+  get footageLayers(): AVLayer[] {
+    return this.avLayers.filter((layer) => layer.source instanceof FootageItem);
   }
 
   /** An array of the layers whose source are file footages. */
-  get file_layers(): AVLayer[] {
-    return this.footage_layers.filter(
+  get fileLayers(): AVLayer[] {
+    return this.footageLayers.filter(
       (layer) =>
         layer.source instanceof FootageItem &&
-        layer.source.main_source instanceof FileSource,
+        layer.source.mainSource instanceof FileSource,
     );
   }
 
   /** An array of the layers whose source are solids. */
-  get solid_layers(): AVLayer[] {
-    return this.footage_layers.filter(
+  get solidLayers(): AVLayer[] {
+    return this.footageLayers.filter(
       (layer) =>
         layer.source instanceof FootageItem &&
-        layer.source.main_source instanceof SolidSource,
+        layer.source.mainSource instanceof SolidSource,
     );
   }
 
   /** An array of the layers whose source are placeholders. */
-  get placeholder_layers(): AVLayer[] {
-    return this.footage_layers.filter(
+  get placeholderLayers(): AVLayer[] {
+    return this.footageLayers.filter(
       (layer) =>
         layer.source instanceof FootageItem &&
-        layer.source.main_source instanceof PlaceholderSource,
+        layer.source.mainSource instanceof PlaceholderSource,
     );
   }
 
   /** An array of the text layers in this composition. */
-  get text_layers(): TextLayer[] {
+  get textLayers(): TextLayer[] {
     return this._type_cache.text;
   }
 
   /** An array of the shape layers in this composition. */
-  get shape_layers(): ShapeLayer[] {
+  get shapeLayers(): ShapeLayer[] {
     return this._type_cache.shape;
   }
 
   /** An array of the camera layers in this composition. */
-  get camera_layers(): CameraLayer[] {
+  get cameraLayers(): CameraLayer[] {
     return this._type_cache.camera;
   }
 
   /** An array of the light layers in this composition. */
-  get light_layers(): LightLayer[] {
+  get lightLayers(): LightLayer[] {
     return this._type_cache.light;
   }
 
   /** An array of the 3D model layers in this composition. */
-  get three_d_model_layers(): ThreeDModelLayer[] {
+  get threeDModelLayers(): ThreeDModelLayer[] {
     return this._type_cache.three_d_model;
   }
 
   /** An array of the parametric mesh layers in this composition. */
-  get parametric_mesh_layers(): ParametricMeshLayer[] {
+  get parametricMeshLayers(): ParametricMeshLayer[] {
     return this._type_cache.parametric_mesh;
   }
 
   /** An array of the null layers in this composition. */
-  get null_layers(): Layer[] {
-    return this.layers.filter((layer) => layer.null_layer);
+  get nullLayers(): Layer[] {
+    return this.layers.filter((layer) => layer.nullLayer);
   }
 
   /** An array of the adjustment layers in this composition. */
-  get adjustment_layers(): AVLayer[] {
-    return this.av_layers.filter((layer) => layer.adjustment_layer);
+  get adjustmentLayers(): AVLayer[] {
+    return this.avLayers.filter((layer) => layer.adjustmentLayer);
   }
 
   /** An array of the 3D layers in this composition. */
-  get three_d_layers(): AVLayer[] {
-    return this.av_layers.filter((layer) => layer.three_d_layer);
+  get threeDLayers(): AVLayer[] {
+    return this.avLayers.filter((layer) => layer.threeDLayer);
   }
 
   /** An array of the guide layers in this composition. */
-  get guide_layers(): AVLayer[] {
-    return this.av_layers.filter((layer) => layer.guide_layer);
+  get guideLayers(): AVLayer[] {
+    return this.avLayers.filter((layer) => layer.guideLayer);
   }
 
   /** An array of the soloed layers in this composition. */
-  get solo_layers(): Layer[] {
+  get soloLayers(): Layer[] {
     return this.layers.filter((layer) => layer.solo);
   }
 
@@ -2036,14 +2036,14 @@ export class CompItem extends AVItem {
     // = time, out shifted by the same amount (probed in AE 2026 for
     // every scripted layer add). duplicate() bypasses this path and
     // keeps the source timing, matching AE.
-    const at_time_zero = this._project._preferences.get_pref_as_bool(
+    const at_time_zero = this._project._preferences.getPrefAsBool(
       "General Section",
       "Create New Layers At Time Zero",
       PREFType.PREF_Type_MACHINE_INDEPENDENT,
       { default: true },
     );
     if (!at_time_zero && this.time) {
-      layer.start_time = this.time;
+      layer.startTime = this.time;
     }
 
     const view_block = build_layer_view_block();
@@ -2066,7 +2066,7 @@ export class CompItem extends AVItem {
     this._invalidate_layer_cache();
   }
 
-  add_null(duration: number | null = null): AVLayer {
+  addNull(duration: number | null = null): AVLayer {
     /**
      * Create a new null layer at the top of the layer stack.
      *
@@ -2118,7 +2118,7 @@ export class CompItem extends AVItem {
     return layer;
   }
 
-  add_shape(): ShapeLayer {
+  addShape(): ShapeLayer {
     /**
      * Create a new empty shape layer at the top of the layer stack.
      *
@@ -2138,7 +2138,7 @@ export class CompItem extends AVItem {
     return layer;
   }
 
-  add_camera(name: string | null = null, center_point: number[] | null = null): CameraLayer {
+  addCamera(name: string | null = null, center_point: number[] | null = null): CameraLayer {
     /**
      * Create a new camera layer at the top of the layer stack.
      *
@@ -2167,7 +2167,7 @@ export class CompItem extends AVItem {
     this._insert_layer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixel_aspect) / CameraLayer._zoom_dividend, 8);
+    const zoom = round((this.width * this.pixelAspect) / CameraLayer._zoom_dividend, 8);
 
     const transform = layer.transform;
     const anchor_point = transform.property("ADBE Anchor Point");
@@ -2187,7 +2187,7 @@ export class CompItem extends AVItem {
     return layer;
   }
 
-  add_light(name: string | null = null, center_point: number[] | null = null): LightLayer {
+  addLight(name: string | null = null, center_point: number[] | null = null): LightLayer {
     /**
      * Create a new light layer at the top of the layer stack.
      *
@@ -2217,7 +2217,7 @@ export class CompItem extends AVItem {
     this._insert_layer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixel_aspect) / LightLayer._zoom_dividend, 8);
+    const zoom = round((this.width * this.pixelAspect) / LightLayer._zoom_dividend, 8);
 
     const transform = layer.transform;
     const anchor_point = transform.property("ADBE Anchor Point");
@@ -2230,7 +2230,7 @@ export class CompItem extends AVItem {
     return layer;
   }
 
-  add_parametric_mesh(
+  addParametricMesh(
     name: string | null = null,
     kw: { mesh_type: ParametricMeshType },
   ): ParametricMeshLayer {
@@ -2393,15 +2393,15 @@ export class CompItem extends AVItem {
      * width/height overridden in the leave-attributes path), and the
      * item is stored at the alphabetical position AE uses.
      */
-    const folder = this.parent_folder;
+    const folder = this.parentFolder;
     py_assert(folder != null);
-    const new_comp = folder.add_comp(
+    const new_comp = folder.addComp(
       name,
       width,
       height,
-      this.pixel_aspect,
+      this.pixelAspect,
       this.duration,
-      this.frame_rate,
+      this.frameRate,
     );
     const cloned = clone_chunk_tree(this._cdta);
     cloned.width = width;
@@ -2423,7 +2423,7 @@ export class CompItem extends AVItem {
     py_assert(source != null);
     const new_comp = this._create_precomp_item(name, source.width, source.height);
     new_comp.add(source);
-    layer.replace_source(new_comp);
+    layer.replaceSource(new_comp);
     _drop_essential_overrides(layer);
     return new_comp;
   }
@@ -2485,7 +2485,7 @@ export class CompItem extends AVItem {
         if (!matte_id || id_map.has(matte_id) || matte_map.has(matte_id)) {
           continue;
         }
-        const matte_layer = this.layers_by_id.get(matte_id) ?? null;
+        const matte_layer = this.layersById.get(matte_id) ?? null;
         if (matte_layer != null) {
           const [m_start, m_end] = this._layer_block_slice(matte_layer);
           const m_list = clone_chunk_tree(matte_layer._layer_list);
@@ -2568,7 +2568,7 @@ export class CompItem extends AVItem {
     // it stays off).
     const repl = this.add(new_comp);
     if (top_index > 0) {
-      repl.move_after(this.layers[top_index]);
+      repl.moveAfter(this.layers[top_index]);
     }
     repl.label = Label.SANDSTONE;
     repl.enabled = repl_enabled;
@@ -2593,7 +2593,7 @@ export class CompItem extends AVItem {
     return new_comp;
   }
 
-  add_solid(
+  addSolid(
     color: number[],
     name: string | null = null,
     width: number | null = null,
@@ -2750,7 +2750,7 @@ export class CompItem extends AVItem {
    * @param text - Initial text content.
    * @returns The newly created {@link TextLayer}.
    */
-  add_text(text = ""): TextLayer {
+  addText(text = ""): TextLayer {
     return this._add_text_layer(text, false);
   }
 
@@ -2762,7 +2762,7 @@ export class CompItem extends AVItem {
    * @param text - Initial text content.
    * @returns The newly created {@link TextLayer}.
    */
-  add_box_text(box_size: number[] | null = null, text = ""): TextLayer {
+  addBoxText(box_size: number[] | null = null, text = ""): TextLayer {
     return this._add_text_layer(text, true, box_size);
   }
 
@@ -2776,7 +2776,7 @@ export class CompItem extends AVItem {
    * @returns The newly created {@link TextLayer}.
    */
   // @requires_version(24): wrapped after the class body.
-  add_vertical_text(text = ""): TextLayer {
+  addVerticalText(text = ""): TextLayer {
     return this._add_text_layer(text, false, null, LineOrientation.VERTICAL_RIGHT_TO_LEFT);
   }
 
@@ -2792,7 +2792,7 @@ export class CompItem extends AVItem {
    * @returns The newly created {@link TextLayer}.
    */
   // @requires_version(24): wrapped after the class body.
-  add_vertical_box_text(box_size: number[] | null = null, text = ""): TextLayer {
+  addVerticalBoxText(box_size: number[] | null = null, text = ""): TextLayer {
     return this._add_text_layer(
       text,
       true,
@@ -2808,7 +2808,7 @@ export class CompItem extends AVItem {
  * the red, green, and blue components of the color. Read / Write. */
 descriptor(
   CompItem,
-  "bg_color",
+  "bgColor",
   new ChunkField("_cdta", "bg_color", { validate: validate_rgb_color }),
 );
 
@@ -2816,20 +2816,20 @@ descriptor(
 descriptor(CompItem, "draft3d", ChunkField.bool("_cdta", "draft3d"));
 
 /** When `true`, frame blending is enabled for this Composition. Read / Write. */
-descriptor(CompItem, "frame_blending", ChunkField.bool("_cdta", "frame_blending"));
+descriptor(CompItem, "frameBlending", ChunkField.bool("_cdta", "frame_blending"));
 
 /** When `true`, only layers with `shy` set to `false` are shown in the
  * Timeline panel. Read / Write. */
-descriptor(CompItem, "hide_shy_layers", ChunkField.bool("_cdta", "hide_shy_layers"));
+descriptor(CompItem, "hideShyLayers", ChunkField.bool("_cdta", "hide_shy_layers"));
 
 /** When `true`, motion blur is enabled for the composition. Read / Write. */
-descriptor(CompItem, "motion_blur", ChunkField.bool("_cdta", "motion_blur"));
+descriptor(CompItem, "motionBlur", ChunkField.bool("_cdta", "motion_blur"));
 
 /** When `true`, the frame rate of nested compositions is preserved in
  * the current composition. Read / Write. */
 descriptor(
   CompItem,
-  "preserve_nested_frame_rate",
+  "preserveNestedFrameRate",
   ChunkField.bool("_cdta", "preserve_nested_frame_rate"),
 );
 
@@ -2837,7 +2837,7 @@ descriptor(
  * the current composition. Read / Write. */
 descriptor(
   CompItem,
-  "preserve_nested_resolution",
+  "preserveNestedResolution",
   ChunkField.bool("_cdta", "preserve_nested_resolution"),
 );
 
@@ -2864,7 +2864,7 @@ descriptor(
 /** The shutter angle setting for the composition. Read / Write. */
 descriptor(
   CompItem,
-  "shutter_angle",
+  "shutterAngle",
   new ChunkField("_cdta", "shutter_angle", {
     validate: _validate_number({ min: 0, max: 720, integer: true }),
   }),
@@ -2873,7 +2873,7 @@ descriptor(
 /** The shutter phase setting for the composition. Read / Write. */
 descriptor(
   CompItem,
-  "shutter_phase",
+  "shutterPhase",
   new ChunkField("_cdta", "shutter_phase", {
     validate: _validate_number({ min: -360, max: 360, integer: true }),
   }),
@@ -2883,7 +2883,7 @@ descriptor(
  * composition. The default is [1, 1]. Read / Write. */
 descriptor(
   CompItem,
-  "resolution_factor",
+  "resolutionFactor",
   new ChunkField("_cdta", "resolution_factor", {
     validate: validate_sequence({ length: 2, min: 1, max: 99, integer: true }),
   }),
@@ -2895,10 +2895,10 @@ descriptor(
  */
 descriptor(
   CompItem,
-  "motion_blur_adaptive_sample_limit",
+  "motionBlurAdaptiveSampleLimit",
   new ChunkField("_cdta", "motion_blur_adaptive_sample_limit", {
     validate: _validate_number({
-      min: (self: CompItem) => self.motion_blur_samples_per_frame,
+      min: (self: CompItem) => self.motionBlurSamplesPerFrame,
       max: 256,
       integer: true,
     }),
@@ -2909,7 +2909,7 @@ descriptor(
  * layers, shape layers, and certain effects. Read / Write. */
 descriptor(
   CompItem,
-  "motion_blur_samples_per_frame",
+  "motionBlurSamplesPerFrame",
   new ChunkField("_cdta", "motion_blur_samples_per_frame", {
     validate: _validate_number({ min: 2, max: 64, integer: true }),
   }),
@@ -2918,7 +2918,7 @@ descriptor(
 /** The pixel aspect ratio of the item (1.0 is square). Read / Write. */
 descriptor(
   CompItem,
-  "pixel_aspect",
+  "pixelAspect",
   new ChunkField("_cdta", "pixel_aspect", {
     validate: validate_pixel_aspect,
     // See `width`.
@@ -2929,14 +2929,14 @@ descriptor(
 /** The time scale, used as a divisor for keyframe time values. Read-only. */
 descriptor(
   CompItem,
-  "time_scale",
+  "timeScale",
   new ChunkField("_cdta", "time_scale", { read_only: true }),
 );
 
 /** The time set as the beginning of the composition, in seconds. Read / Write. */
 descriptor(
   CompItem,
-  "display_start_time",
+  "displayStartTime",
   new ChunkField("_cdta", "display_start_time", {
     // AE 2026's own bounds ("out of range -10800 to 86400").
     validate: _validate_number({ min: -10800.0, max: 86400.0 }),
@@ -2948,7 +2948,7 @@ descriptor(
  * applicable when `frameRate` is 29.97 or 59.94. Read / Write. */
 descriptor(
   CompItem,
-  "drop_frame",
+  "dropFrame",
   ChunkField.bool("_cdrp", "value", {
     transform: (v: number) => v !== 0,
     reverse: (v: boolean) => int(v),
@@ -2960,17 +2960,17 @@ descriptor(
 // `@requires_version(24)` on the vertical text methods. Python applies these
 // decorators while the class body runs; here they wrap the finished class.
 {
-  const d = Object.getOwnPropertyDescriptor(CompItem.prototype, "motion_graphics_template_name");
+  const d = Object.getOwnPropertyDescriptor(CompItem.prototype, "motionGraphicsTemplateName");
   const set = d?.set;
   py_assert(set !== undefined);
   // A setter's own name is "set <prop>"; Python's error names the method.
-  Object.defineProperty(set, "name", { value: "motion_graphics_template_name" });
-  Object.defineProperty(CompItem.prototype, "motion_graphics_template_name", {
+  Object.defineProperty(set, "name", { value: "motionGraphicsTemplateName" });
+  Object.defineProperty(CompItem.prototype, "motionGraphicsTemplateName", {
     ...d,
     set: requires_version(15)(set),
   });
 }
-CompItem.prototype.add_vertical_text = requires_version(24)(CompItem.prototype.add_vertical_text);
-CompItem.prototype.add_vertical_box_text = requires_version(24)(
-  CompItem.prototype.add_vertical_box_text,
+CompItem.prototype.addVerticalText = requires_version(24)(CompItem.prototype.addVerticalText);
+CompItem.prototype.addVerticalBoxText = requires_version(24)(
+  CompItem.prototype.addVerticalBoxText,
 );

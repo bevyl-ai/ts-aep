@@ -177,7 +177,7 @@ export function _resolve_effect_value(
  * @param param_def - The parameter definition.
  */
 export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): void {
-  prop.last_value = param_def.last_value ?? null;
+  prop.lastValue = param_def.last_value ?? null;
   const min_val = param_def.min_value ?? null;
   if (min_val != null) prop._min_value_fallback = min_val;
   const max_val = param_def.max_value ?? null;
@@ -189,7 +189,7 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
   // Popup-only: written when present, so other properties keep the class
   // default (`null`).
   const nb_options = param_def.nb_options ?? null;
-  if (nb_options != null) prop.nb_options = nb_options;
+  if (nb_options != null) prop.nbOptions = nb_options;
   // Direct write: the public setter has user-write semantics (validation
   // plus pdnm/pard chunk rewrites).
   const property_parameters = param_def.property_parameters ?? null;
@@ -199,7 +199,7 @@ export function _apply_param_def_metadata(prop: Property, param_def: ParamDef): 
   // The pard param flags carry the authoritative can-vary bit; the
   // residue table keeps the rare params where they disagree with
   // ExtendScript (e.g. the Puppet Engine dropdown).
-  if (!_CANVARY_OVERRIDES.has(prop.match_name)) {
+  if (!_CANVARY_OVERRIDES.has(prop.matchName)) {
     prop._can_vary_over_time = param_def.can_vary_over_time;
   }
   if (param_def.expressions_disabled) {
@@ -330,21 +330,21 @@ export function _merge_param_def(prop: Property, param_def: ParamDef): void {
   if (prop._arbs != null && param_def.default_arbp !== undefined) {
     prop._default_arbp = param_def.default_arbp;
   }
-  prop._property_value_type = param_def.property_value_type ?? prop.property_value_type;
+  prop._property_value_type = param_def.property_value_type ?? prop.propertyValueType;
   // Prefer the override table, then the pard default field. For LAYER
   // references, pard stores a meaningless 0 and we have no static
   // override, so leave default_value unset entirely.
-  let static_default = _PROPERTY_DEFAULTS.get(prop.match_name) ?? null;
+  let static_default = _PROPERTY_DEFAULTS.get(prop.matchName) ?? null;
   if (static_default == null) static_default = param_def.default ?? null;
   if (static_default != null) {
-    prop.default_value = static_default;
+    prop.defaultValue = static_default;
   } else if (
     param_def.property_control_type === PropertyControlType.TWO_D ||
     param_def.property_control_type === PropertyControlType.THREE_D
   ) {
     _bind_point_default(prop, param_def.default_value ?? null);
   } else if (param_def.property_control_type !== PropertyControlType.LAYER) {
-    prop.default_value = param_def.default_value ?? null;
+    prop.defaultValue = param_def.default_value ?? null;
   }
   _apply_param_def_metadata(prop, param_def);
 }
@@ -431,7 +431,7 @@ export function _parse_effect_properties(
 
   // Index parsed children by match_name for O(1) lookup.
   const parsed_by_mn = new Map<string, Property | PropertyGroup>(
-    parsed.map((p): [string, Property | PropertyGroup] => [p.match_name, p]),
+    parsed.map((p): [string, Property | PropertyGroup] => [p.matchName, p]),
   );
 
   // Single ordered walk over param_defs: merge existing or synthesize
@@ -462,12 +462,12 @@ export function _parse_effect_properties(
   // Append tail children not in param_defs (e.g. ADBE Effect Built In
   // Params) in their original parsed order.
   for (const child of parsed) {
-    if (!param_defs.has(child.match_name)) ordered.push(child);
+    if (!param_defs.has(child.matchName)) ordered.push(child);
   }
 
   // Synthesize Compositing Options group when absent from the binary.
   // synthesize_children() will fill it from _COMPOSITING_OPTIONS_SPECS.
-  if (!ordered.some((c) => c.match_name === "ADBE Effect Built In Params")) {
+  if (!ordered.some((c) => c.matchName === "ADBE Effect Built In Params")) {
     ordered.push(
       PropertyGroup._new("ADBE Effect Built In Params", "Compositing Options", child_depth, {
         parent_property,
@@ -572,7 +572,7 @@ export function rehome_effect_definitions(project: Project, removed: Iterable<[s
  *   match name is not displayed, but you can refer to it in scripts. Every property has a unique
  *   match-name identifier. Match names are stable from version to version regardless of the display
  *   name (the name attribute value) or any changes to the application. Unlike the display name, it
- *   is not localized. An indexed group (`PropertyBase.property_type == PropertyType.indexed_group`)
+ *   is not localized. An indexed group (`PropertyBase.propertyType == PropertyType.indexed_group`)
  *   may not have a name value, but always has a match_name value.
  * @param property_depth - The nesting depth of this group (0 = layer level).
  * @param effect_param_defs - Project-level effect parameter definitions, used as fallback when

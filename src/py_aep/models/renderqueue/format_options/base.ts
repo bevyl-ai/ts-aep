@@ -6,7 +6,7 @@ import type { OutputModule } from "../output_module.ts";
  * Shared plumbing for the format-specific render-option wrappers.
  *
  * Every wrapper holds an `Ropt` chunk that lives inside its output
- * module's block. `OutputModule.apply_template()` and a rolled-back
+ * module's block. `OutputModule.applyTemplate()` and a rolled-back
  * `batch_edit()` REPLACE that chunk (the new one may even be a different
  * format, and so a different wrapper class), rebinding
  * `OutputModule._format_options` to a freshly parsed object. A reference

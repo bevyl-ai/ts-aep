@@ -57,7 +57,7 @@ type ParametricMeshLayerNewKw = {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const mesh = comp.parametric_mesh_layers[0];
+ * const mesh = comp.parametricMeshLayers[0];
  * console.log(mesh.name);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/parametricmeshlayer/
@@ -67,13 +67,13 @@ export class ParametricMeshLayer extends AVLayer {
   static _auto_name: string = "Mesh Layer";
 
   /** For a parametric mesh layer, its mesh type. Read / write. */
-  declare parametric_mesh_type: ParametricMeshType;
+  declare parametricMeshType: ParametricMeshType;
 
   /** The ParametricMeshOptions object represents the options for a parametric mesh layer. */
-  declare parametric_mesh_options: ParametricMeshOptions;
+  declare parametricMeshOptions: ParametricMeshOptions;
 
   /** The ParametricBevelOptions object represents the bevel options for a parametric mesh layer. */
-  declare parametric_bevel_options: ParametricBevelOptions;
+  declare parametricBevelOptions: ParametricBevelOptions;
 
   constructor(...args: ConstructorParameters<typeof AVLayer>) {
     super(...args);
@@ -105,14 +105,14 @@ export class ParametricMeshLayer extends AVLayer {
     layer._ldta.in_point_divisor = time_base;
     layer._ldta.out_point_dividend = round(duration * time_base);
     layer._ldta.out_point_divisor = time_base;
-    layer.parametric_mesh_type = mesh_type;
+    layer.parametricMeshType = mesh_type;
     // AE writes the active mesh type's option/bevel groups expanded
     // (tdsb=1) while the other mesh groups stay collapsed (tdsb=3, the
     // synthesized default). Override the active groups before the layer
     // is materialized so the written tdsb matches AE.
     const active_groups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.to_binary(mesh_type)) ?? [];
     for (const child of layer.properties) {
-      if (active_groups.includes(child.match_name) && child._tdsb != null) {
+      if (active_groups.includes(child.matchName) && child._tdsb != null) {
         child._tdsb._enable_flags = 1;
       }
     }
@@ -125,20 +125,20 @@ export class ParametricMeshLayer extends AVLayer {
     // `__dict__`): `getattr` on a missing one would search the layer's
     // properties for that name.
     const options_cls = OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_options = Object.hasOwn(this, "parametric_mesh_options") ? this.parametric_mesh_options : null;
+    const old_options = Object.hasOwn(this, "parametricMeshOptions") ? this.parametricMeshOptions : null;
     if (_type_of(old_options) !== options_cls) {
-      Reflect.deleteProperty(this, "parametric_mesh_options");
+      Reflect.deleteProperty(this, "parametricMeshOptions");
       if (options_cls != null) {
-        this.parametric_mesh_options = new options_cls(this);
+        this.parametricMeshOptions = new options_cls(this);
       }
     }
 
     const bevel_cls = BEVEL_OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_bevel = Object.hasOwn(this, "parametric_bevel_options") ? this.parametric_bevel_options : null;
+    const old_bevel = Object.hasOwn(this, "parametricBevelOptions") ? this.parametricBevelOptions : null;
     if (_type_of(old_bevel) !== bevel_cls) {
-      Reflect.deleteProperty(this, "parametric_bevel_options");
+      Reflect.deleteProperty(this, "parametricBevelOptions");
       if (bevel_cls != null) {
-        this.parametric_bevel_options = new bevel_cls(this);
+        this.parametricBevelOptions = new bevel_cls(this);
       }
     }
   }
@@ -147,12 +147,12 @@ export class ParametricMeshLayer extends AVLayer {
    * `false` for Parametric Mesh layers: collapse transformation is
    * forced on and cannot be changed. Read-only.
    */
-  get can_set_collapse_transformation(): boolean {
+  get canSetCollapseTransformation(): boolean {
     return false;
   }
 
   /** `false` for Parametric Mesh layers (time remapping is not supported). Read-only. */
-  get can_set_time_remap_enabled(): boolean {
+  get canSetTimeRemapEnabled(): boolean {
     return false;
   }
 }
@@ -160,7 +160,7 @@ export class ParametricMeshLayer extends AVLayer {
 // Class-body `ChunkField` assignment in Python, installed as a descriptor.
 descriptor(
   ParametricMeshLayer,
-  "parametric_mesh_type",
+  "parametricMeshType",
   ChunkField.enum(ParametricMeshType, "_ldta", "light_and_mesh_type", {
     post_set: (obj: ParametricMeshLayer) => obj._update_options(),
   }),
@@ -261,12 +261,12 @@ export class CubeMeshOptions extends ParametricMeshOptions {
   declare width: number;
   declare height: number;
   declare depth: number;
-  declare smoothing_angle: number;
+  declare smoothingAngle: number;
 }
 descriptor(CubeMeshOptions, "width", new ParaMeshField<number>("Width"));
 descriptor(CubeMeshOptions, "height", new ParaMeshField<number>("Height"));
 descriptor(CubeMeshOptions, "depth", new ParaMeshField<number>("Depth"));
-descriptor(CubeMeshOptions, "smoothing_angle", new ParaMeshField<number>("Smoothing Angle"));
+descriptor(CubeMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothing Angle"));
 register(ParametricMeshType.CUBE)(CubeMeshOptions);
 
 export class SphereMeshOptions extends ParametricMeshOptions {
@@ -274,17 +274,17 @@ export class SphereMeshOptions extends ParametricMeshOptions {
 
   declare radius: number;
   declare sides: number;
-  declare slice_caps: boolean;
-  declare slice_start: number;
-  declare slice_end: number;
-  declare smoothing_angle: number;
+  declare sliceCaps: boolean;
+  declare sliceStart: number;
+  declare sliceEnd: number;
+  declare smoothingAngle: number;
 }
 descriptor(SphereMeshOptions, "radius", new ParaMeshField<number>("Radius"));
 descriptor(SphereMeshOptions, "sides", new ParaMeshField<number>("Sides"));
-descriptor(SphereMeshOptions, "slice_caps", new ParaMeshField<boolean>("Slice Caps"));
-descriptor(SphereMeshOptions, "slice_start", new ParaMeshField<number>("Slice Start"));
-descriptor(SphereMeshOptions, "slice_end", new ParaMeshField<number>("Slice End"));
-descriptor(SphereMeshOptions, "smoothing_angle", new ParaMeshField<number>("Smoothing Angle"));
+descriptor(SphereMeshOptions, "sliceCaps", new ParaMeshField<boolean>("Slice Caps"));
+descriptor(SphereMeshOptions, "sliceStart", new ParaMeshField<number>("Slice Start"));
+descriptor(SphereMeshOptions, "sliceEnd", new ParaMeshField<number>("Slice End"));
+descriptor(SphereMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothing Angle"));
 register(ParametricMeshType.SPHERE)(SphereMeshOptions);
 
 export class PlaneMeshOptions extends ParametricMeshOptions {
@@ -292,61 +292,61 @@ export class PlaneMeshOptions extends ParametricMeshOptions {
 
   declare width: number;
   declare length: number;
-  declare corner_radius: number;
-  declare corner_sides: number;
+  declare cornerRadius: number;
+  declare cornerSides: number;
 }
 descriptor(PlaneMeshOptions, "width", new ParaMeshField<number>("Width"));
 descriptor(PlaneMeshOptions, "length", new ParaMeshField<number>("Length"));
-descriptor(PlaneMeshOptions, "corner_radius", new ParaMeshField<number>("Corner Radius"));
-descriptor(PlaneMeshOptions, "corner_sides", new ParaMeshField<number>("Corner Sides"));
+descriptor(PlaneMeshOptions, "cornerRadius", new ParaMeshField<number>("Corner Radius"));
+descriptor(PlaneMeshOptions, "cornerSides", new ParaMeshField<number>("Corner Sides"));
 register(ParametricMeshType.PLANE)(PlaneMeshOptions);
 
 export class TorusMeshOptions extends ParametricMeshOptions {
   static _match_name = "ADBE TorusMeshOptionsSGrp";
 
-  declare ring_radius: number;
-  declare pipe_radius: number;
-  declare ring_sides: number;
-  declare pipe_sides: number;
+  declare ringRadius: number;
+  declare pipeRadius: number;
+  declare ringSides: number;
+  declare pipeSides: number;
   declare caps: boolean;
-  declare slice_start: number;
-  declare slice_end: number;
-  declare smoothing_angle: number;
+  declare sliceStart: number;
+  declare sliceEnd: number;
+  declare smoothingAngle: number;
 }
-descriptor(TorusMeshOptions, "ring_radius", new ParaMeshField<number>("Ring Radius"));
-descriptor(TorusMeshOptions, "pipe_radius", new ParaMeshField<number>("Pipe Radius"));
-descriptor(TorusMeshOptions, "ring_sides", new ParaMeshField<number>("Ring Sides"));
-descriptor(TorusMeshOptions, "pipe_sides", new ParaMeshField<number>("Pipe Sides"));
+descriptor(TorusMeshOptions, "ringRadius", new ParaMeshField<number>("Ring Radius"));
+descriptor(TorusMeshOptions, "pipeRadius", new ParaMeshField<number>("Pipe Radius"));
+descriptor(TorusMeshOptions, "ringSides", new ParaMeshField<number>("Ring Sides"));
+descriptor(TorusMeshOptions, "pipeSides", new ParaMeshField<number>("Pipe Sides"));
 descriptor(TorusMeshOptions, "caps", new ParaMeshField<boolean>("Caps"));
-descriptor(TorusMeshOptions, "slice_start", new ParaMeshField<number>("Slice Start"));
-descriptor(TorusMeshOptions, "slice_end", new ParaMeshField<number>("Slice End"));
-descriptor(TorusMeshOptions, "smoothing_angle", new ParaMeshField<number>("Smoothing Angle"));
+descriptor(TorusMeshOptions, "sliceStart", new ParaMeshField<number>("Slice Start"));
+descriptor(TorusMeshOptions, "sliceEnd", new ParaMeshField<number>("Slice End"));
+descriptor(TorusMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothing Angle"));
 register(ParametricMeshType.TORUS)(TorusMeshOptions);
 
 export class ConeMeshOptions extends ParametricMeshOptions {
   static _match_name = "ADBE ConeMeshOptionsSGrp";
 
-  declare top_radius: number;
-  declare bottom_radius: number;
+  declare topRadius: number;
+  declare bottomRadius: number;
   declare height: number;
   declare sides: number;
-  declare top_cap: boolean;
-  declare bottom_cap: boolean;
-  declare slice_caps: boolean;
-  declare slice_start: number;
-  declare slice_end: number;
-  declare smoothing_angle: number;
+  declare topCap: boolean;
+  declare bottomCap: boolean;
+  declare sliceCaps: boolean;
+  declare sliceStart: number;
+  declare sliceEnd: number;
+  declare smoothingAngle: number;
 }
-descriptor(ConeMeshOptions, "top_radius", new ParaMeshField<number>("Top Radius"));
-descriptor(ConeMeshOptions, "bottom_radius", new ParaMeshField<number>("Bottom Radius"));
+descriptor(ConeMeshOptions, "topRadius", new ParaMeshField<number>("Top Radius"));
+descriptor(ConeMeshOptions, "bottomRadius", new ParaMeshField<number>("Bottom Radius"));
 descriptor(ConeMeshOptions, "height", new ParaMeshField<number>("Height"));
 descriptor(ConeMeshOptions, "sides", new ParaMeshField<number>("Sides"));
-descriptor(ConeMeshOptions, "top_cap", new ParaMeshField<boolean>("Top Cap"));
-descriptor(ConeMeshOptions, "bottom_cap", new ParaMeshField<boolean>("Bottom Cap"));
-descriptor(ConeMeshOptions, "slice_caps", new ParaMeshField<boolean>("Slice Caps"));
-descriptor(ConeMeshOptions, "slice_start", new ParaMeshField<number>("Slice Start"));
-descriptor(ConeMeshOptions, "slice_end", new ParaMeshField<number>("Slice End"));
-descriptor(ConeMeshOptions, "smoothing_angle", new ParaMeshField<number>("Smoothing Angle"));
+descriptor(ConeMeshOptions, "topCap", new ParaMeshField<boolean>("Top Cap"));
+descriptor(ConeMeshOptions, "bottomCap", new ParaMeshField<boolean>("Bottom Cap"));
+descriptor(ConeMeshOptions, "sliceCaps", new ParaMeshField<boolean>("Slice Caps"));
+descriptor(ConeMeshOptions, "sliceStart", new ParaMeshField<number>("Slice Start"));
+descriptor(ConeMeshOptions, "sliceEnd", new ParaMeshField<number>("Slice End"));
+descriptor(ConeMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothing Angle"));
 register(ParametricMeshType.CONE)(ConeMeshOptions);
 
 export class CylinderMeshOptions extends ParametricMeshOptions {
@@ -355,22 +355,22 @@ export class CylinderMeshOptions extends ParametricMeshOptions {
   declare radius: number;
   declare height: number;
   declare sides: number;
-  declare top_cap: boolean;
-  declare bottom_cap: boolean;
-  declare slice_caps: boolean;
-  declare slice_start: number;
-  declare slice_end: number;
-  declare smoothing_angle: number;
+  declare topCap: boolean;
+  declare bottomCap: boolean;
+  declare sliceCaps: boolean;
+  declare sliceStart: number;
+  declare sliceEnd: number;
+  declare smoothingAngle: number;
 }
 descriptor(CylinderMeshOptions, "radius", new ParaMeshField<number>("Radius"));
 descriptor(CylinderMeshOptions, "height", new ParaMeshField<number>("Height"));
 descriptor(CylinderMeshOptions, "sides", new ParaMeshField<number>("Sides"));
-descriptor(CylinderMeshOptions, "top_cap", new ParaMeshField<boolean>("Top Cap"));
-descriptor(CylinderMeshOptions, "bottom_cap", new ParaMeshField<boolean>("Bottom Cap"));
-descriptor(CylinderMeshOptions, "slice_caps", new ParaMeshField<boolean>("Slice Caps"));
-descriptor(CylinderMeshOptions, "slice_start", new ParaMeshField<number>("Slice Start"));
-descriptor(CylinderMeshOptions, "slice_end", new ParaMeshField<number>("Slice End"));
-descriptor(CylinderMeshOptions, "smoothing_angle", new ParaMeshField<number>("Smoothing Angle"));
+descriptor(CylinderMeshOptions, "topCap", new ParaMeshField<boolean>("Top Cap"));
+descriptor(CylinderMeshOptions, "bottomCap", new ParaMeshField<boolean>("Bottom Cap"));
+descriptor(CylinderMeshOptions, "sliceCaps", new ParaMeshField<boolean>("Slice Caps"));
+descriptor(CylinderMeshOptions, "sliceStart", new ParaMeshField<number>("Slice Start"));
+descriptor(CylinderMeshOptions, "sliceEnd", new ParaMeshField<number>("Slice End"));
+descriptor(CylinderMeshOptions, "smoothingAngle", new ParaMeshField<number>("Smoothing Angle"));
 register(ParametricMeshType.CYLINDER)(CylinderMeshOptions);
 
 /**
@@ -394,15 +394,15 @@ register_bevel(ParametricMeshType.CUBE)(CubeBevelOptions);
 export class ConeBevelOptions extends ParametricBevelOptions {
   static _match_name = "ADBE ConeBevelBevelSGrp";
 
-  declare top_radius: number;
-  declare top_sides: number;
-  declare bottom_radius: number;
-  declare bottom_sides: number;
+  declare topRadius: number;
+  declare topSides: number;
+  declare bottomRadius: number;
+  declare bottomSides: number;
 }
-descriptor(ConeBevelOptions, "top_radius", new ParaMeshField<number>("Top Radius"));
-descriptor(ConeBevelOptions, "top_sides", new ParaMeshField<number>("Top Sides"));
-descriptor(ConeBevelOptions, "bottom_radius", new ParaMeshField<number>("Bottom Radius"));
-descriptor(ConeBevelOptions, "bottom_sides", new ParaMeshField<number>("Bottom Sides"));
+descriptor(ConeBevelOptions, "topRadius", new ParaMeshField<number>("Top Radius"));
+descriptor(ConeBevelOptions, "topSides", new ParaMeshField<number>("Top Sides"));
+descriptor(ConeBevelOptions, "bottomRadius", new ParaMeshField<number>("Bottom Radius"));
+descriptor(ConeBevelOptions, "bottomSides", new ParaMeshField<number>("Bottom Sides"));
 register_bevel(ParametricMeshType.CONE)(ConeBevelOptions);
 
 export class CylinderBevelOptions extends ParametricBevelOptions {

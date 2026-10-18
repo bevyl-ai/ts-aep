@@ -66,23 +66,23 @@ function _expected_is_modified(layer_name: string): boolean {
 
 test.each(["pencil", "untouched", "points", "keyed"])("test_is_modified_matches_json[%#]", (layer_name: string) => {
   const prop = _curves_property(layer_name);
-  expect(prop.is_modified).toBe(_expected_is_modified(layer_name));
+  expect(prop.isModified).toBe(_expected_is_modified(layer_name));
 });
 
 test("test_untouched_curves_are_identity", () => {
   const curves = _curves_property("untouched").value;
   expect(curves instanceof Curves).toBe(true);
-  expect(curves.uses_points).toBe(true);
-  expect(curves.is_identity).toBe(true);
+  expect(curves.usesPoints).toBe(true);
+  expect(curves.isIdentity).toBe(true);
 });
 
 test("test_pencil_curve_decodes_its_map", () => {
   const curves: Curves = _curves_property("pencil").value;
   expect(curves instanceof Curves).toBe(true);
-  expect(curves.uses_points).toBe(false);
+  expect(curves.usesPoints).toBe(false);
   expect(
     py_eq(
-      [...curves.channels].filter(([, ch]) => !ch.is_identity).map(([name]) => name),
+      [...curves.channels].filter(([, ch]) => !ch.isIdentity).map(([name]) => name),
       ["rgb"],
     ),
   ).toBe(true);
@@ -109,7 +109,7 @@ test("test_curves_are_read_only", () => {
     prop.value = prop.value;
   }, "read-only");
   raises(ValueError, () => {
-    prop.set_value_at_time(1.0, prop.value);
+    prop.setValueAtTime(1.0, prop.value);
   }, "read-only");
 });
 
@@ -117,7 +117,7 @@ test("test_curves_are_read_only", () => {
 function _rounded_spline_is_the_map(curves: Curves): string[] {
   const matching: string[] = [];
   for (const [name, channel] of curves.channels) {
-    if (channel.is_identity) continue;
+    if (channel.isIdentity) continue;
     const spline = channel._spline;
     const levels = Array.from(range(256), (level) =>
       Math.floor(min([max([spline.__call__(level), 0.0]), 255.0]) + 0.5),
@@ -130,7 +130,7 @@ function _rounded_spline_is_the_map(curves: Curves): string[] {
 test("test_point_curves_reproduce_their_maps", () => {
   const curves: Curves = _curves_property("points").value;
   expect(curves instanceof Curves).toBe(true);
-  expect(curves.uses_points).toBe(true);
+  expect(curves.usesPoints).toBe(true);
   expect(
     py_eq(getitem(curves.channels, "rgb").points, [
       [0, 0],
@@ -178,7 +178,7 @@ test("test_keyed_curves_at_a_time", () => {
   py_assert(last instanceof Curves);
 
   const points = (time: number): Array<[number, number]> | null => {
-    const value = prop.value_at_time(time);
+    const value = prop.valueAtTime(time);
     return value == null ? null : getitem(as_instance(value, Curves).channels, "rgb").points;
   };
 
@@ -192,10 +192,10 @@ test("test_keyed_curves_at_a_time", () => {
 test("test_keyed_curves_keys_are_read_only", () => {
   const prop = _curves_property("keyed");
   raises(ValueError, () => {
-    prop.remove_key(0);
+    prop.removeKey(0);
   }, "read-only");
   raises(ValueError, () => {
-    prop.remove_all_keys();
+    prop.removeAllKeys();
   }, "read-only");
   raises(ValueError, () => {
     prop.keyframes[0].value = prop.keyframes[1].value;

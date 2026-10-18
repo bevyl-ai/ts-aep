@@ -68,10 +68,10 @@ function _doc(project: Project, comp_name: string, layer_name: string): TextDocu
 }
 
 describe("TestBaselineLocs", () => {
-  /** TextDocument.baseline_locs vs AE's own baselineLocs dump. */
+  /** TextDocument.baselineLocs vs AE's own baselineLocs dump. */
   test.each(["text_point", "text_box", "text_animated"])("test_matches_ae[%#]", (layer_name: string) => {
     const expected: number[] = _fixture("baseline_locs_probe.json")[layer_name].baselineLocs.value;
-    const got = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", layer_name).baseline_locs;
+    const got = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", layer_name).baselineLocs;
     expect(len(got)).toBe(len(expected));
     for (const [g, w] of zip(got, expected)) {
       if (w > 1e38) {
@@ -85,7 +85,7 @@ describe("TestBaselineLocs", () => {
 
   test("test_empty_line_is_float_max", () => {
     // "Hello\rWorld line two\r\rAfter empty": the third line is empty.
-    const locs = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", "text_point").baseline_locs;
+    const locs = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", "text_point").baselineLocs;
     expect(py_eq(locs.slice(8, 12), Array(4).fill(FLT_MAX))).toBe(true);
   });
 
@@ -93,24 +93,24 @@ describe("TestBaselineLocs", () => {
     // A box's cached origins are box-relative; layer coordinates add
     // box_text_pos (AE: -110/-70 for a centered 220x140 box).
     const doc = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", "text_box");
-    expect(py_eq(doc.box_text_pos, [-110.0, -70.0])).toBe(true);
-    expect(approx(doc.baseline_locs[0], -110.0)).toBe(true);
+    expect(py_eq(doc.boxTextPos, [-110.0, -70.0])).toBe(true);
+    expect(approx(doc.baselineLocs[0], -110.0)).toBe(true);
   });
 
   test("test_four_floats_per_composed_line", () => {
     const doc = _doc(parse_project(BASELINES_AEP), "PROBE_MAIN", "text_box");
-    expect(len(doc.baseline_locs)).toBe(4 * py_or(doc.composed_line_count, 0));
+    expect(len(doc.baselineLocs)).toBe(4 * py_or(doc.composedLineCount, 0));
   });
 
   test("test_detached_document_is_empty", () => {
-    expect(py_eq(new TextDocument("hi").baseline_locs, [])).toBe(true);
+    expect(py_eq(new TextDocument("hi").baselineLocs, [])).toBe(true);
   });
 });
 
 class TestUsedFonts {
   _snapshot(project: Project) {
-    return project.used_fonts.map((entry) => [
-      entry.font.post_script_name,
+    return project.usedFonts.map((entry) => [
+      entry.font.postScriptName,
       entry.used_at.map((u) => [u.layer_id, u.layer_time]),
     ]);
   }
@@ -124,7 +124,7 @@ class TestUsedFonts {
 }
 
 describe("TestUsedFonts", () => {
-  /** Project.used_fonts vs AE's usedFonts dump. */
+  /** Project.usedFonts vs AE's usedFonts dump. */
   const self = new TestUsedFonts();
 
   test("test_matches_ae", () => {
@@ -141,8 +141,8 @@ describe("TestUsedFonts", () => {
   });
 
   test("test_sorted_by_post_script_name", () => {
-    const names = parse_project(REPLACE_FONT_AEP).used_fonts.map(
-      (e) => e.font.post_script_name,
+    const names = parse_project(REPLACE_FONT_AEP).usedFonts.map(
+      (e) => e.font.postScriptName,
     );
     expect(py_eq(names, sorted(names))).toBe(true);
   });
@@ -164,7 +164,7 @@ class TestReplaceFont {
         [prop.value],
       );
       state.set(name, [
-        docs[0]._fonts.map((f) => f.post_script_name),
+        docs[0]._fonts.map((f) => f.postScriptName),
         docs.map((d) =>
           _char_run_spans(d).map(([s, e, style]) => [s, e, dict_get(style, "0")]),
         ),
@@ -175,12 +175,12 @@ class TestReplaceFont {
 }
 
 describe("TestReplaceFont", () => {
-  /** Project.replace_font vs AE's own replaceFont output. */
+  /** Project.replaceFont vs AE's own replaceFont output. */
   const self = new TestReplaceFont();
 
   test("test_matches_ae_font_tables_and_runs", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
-    expect(project.replace_font("Verdana", "Georgia")).toBe(true);
+    expect(project.replaceFont("Verdana", "Georgia")).toBe(true);
     // AE inserts the replacement directly after the replaced font and
     // keeps the old entry; unaffected runs are untouched.
     expect(
@@ -190,10 +190,10 @@ describe("TestReplaceFont", () => {
 
   test("test_used_fonts_after_replace_matches_ae", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
-    project.replace_font("Verdana", "Georgia");
+    project.replaceFont("Verdana", "Georgia");
     const expected = _fixture("replace_font_probe.json").after.usedFonts.value;
-    const got = project.used_fonts.map((e) => [
-      e.font.post_script_name,
+    const got = project.usedFonts.map((e) => [
+      e.font.postScriptName,
       e.used_at.map((u) => [u.layer_id, u.layer_time]),
     ]);
     const want = expected.map((r: UsedFontRecord) => [
@@ -206,32 +206,32 @@ describe("TestReplaceFont", () => {
   test("test_same_font_is_noop", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
     const before = self._layer_state(project);
-    expect(project.replace_font("Verdana", "Verdana")).toBe(false);
+    expect(project.replaceFont("Verdana", "Verdana")).toBe(false);
     expect(py_eq(self._layer_state(project), before)).toBe(true);
   });
 
   test("test_unused_font_returns_false", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
-    expect(project.replace_font("NotInstalledFontXYZ", "Georgia")).toBe(false);
+    expect(project.replaceFont("NotInstalledFontXYZ", "Georgia")).toBe(false);
   });
 
   test("test_accepts_font_objects", () => {
     const project = parse_project_fresh(REPLACE_FONT_AEP);
-    const verdana = project.used_fonts
+    const verdana = project.usedFonts
       .map((e) => e.font)
-      .find((f) => f.post_script_name === "Verdana");
+      .find((f) => f.postScriptName === "Verdana");
     if (verdana === undefined) throw new StopIteration();
-    expect(project.replace_font(verdana, "Georgia")).toBe(true);
+    expect(project.replaceFont(verdana, "Georgia")).toBe(true);
   });
 
   test("test_survives_save_and_reparse", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(REPLACE_FONT_AEP);
-    project.replace_font("Verdana", "Georgia");
+    project.replaceFont("Verdana", "Georgia");
     const out = tmp_path.div("replaced.aep");
     project.save(out);
-    const names = parse_project_fresh(out).used_fonts.map(
-      (e) => e.font.post_script_name,
+    const names = parse_project_fresh(out).usedFonts.map(
+      (e) => e.font.postScriptName,
     );
     expect(names.includes("Georgia")).toBe(true);
     expect(names.includes("Verdana")).toBe(false);
@@ -248,29 +248,29 @@ describe("TestReplaceFont", () => {
 class TestResetStyles {
   static CHAR_MAP = new Map<string, string>([
     ["font", "font"],
-    ["fontSize", "font_size"],
-    ["fauxBold", "faux_bold"],
-    ["fauxItalic", "faux_italic"],
-    ["applyFill", "apply_fill"],
-    ["applyStroke", "apply_stroke"],
-    ["strokeWidth", "stroke_width"],
-    ["strokeOverFill", "stroke_over_fill"],
+    ["fontSize", "fontSize"],
+    ["fauxBold", "fauxBold"],
+    ["fauxItalic", "fauxItalic"],
+    ["applyFill", "applyFill"],
+    ["applyStroke", "applyStroke"],
+    ["strokeWidth", "strokeWidth"],
+    ["strokeOverFill", "strokeOverFill"],
     ["tracking", "tracking"],
     ["tsume", "tsume"],
-    ["horizontalScale", "horizontal_scale"],
-    ["verticalScale", "vertical_scale"],
-    ["baselineShift", "baseline_shift"],
-    ["autoLeading", "auto_leading"],
+    ["horizontalScale", "horizontalScale"],
+    ["verticalScale", "verticalScale"],
+    ["baselineShift", "baselineShift"],
+    ["autoLeading", "autoLeading"],
   ]);
   static PARA_MAP = new Map<string, string>([
     ["justification", "justification"],
-    ["firstLineIndent", "first_line_indent"],
-    ["startIndent", "start_indent"],
-    ["endIndent", "end_indent"],
-    ["spaceBefore", "space_before"],
-    ["spaceAfter", "space_after"],
-    ["hangingRoman", "hanging_roman"],
-    ["everyLineComposer", "every_line_composer"],
+    ["firstLineIndent", "firstLineIndent"],
+    ["startIndent", "startIndent"],
+    ["endIndent", "endIndent"],
+    ["spaceBefore", "spaceBefore"],
+    ["spaceAfter", "spaceAfter"],
+    ["hangingRoman", "hangingRoman"],
+    ["everyLineComposer", "everyLineComposer"],
   ]);
 }
 
@@ -278,7 +278,7 @@ describe("TestResetStyles", () => {
   test("test_char_reset_matches_ae", () => {
     const expected = _fixture("reset_style_probe.json").char_after;
     const doc = _doc(parse_project_fresh(RESET_AEP), "RESET2", "rc_char");
-    doc.reset_char_style();
+    doc.resetCharStyle();
     for (const [ae_key, py_key] of TestResetStyles.CHAR_MAP.entries()) {
       const got = getattr(doc, py_key);
       const want = expected[ae_key];
@@ -292,7 +292,7 @@ describe("TestResetStyles", () => {
 
   test("test_char_reset_collapses_runs", () => {
     const doc = _doc(parse_project_fresh(RESET_AEP), "RESET2", "rc_char");
-    doc.reset_char_style();
+    doc.resetCharStyle();
     // AE leaves a single character run spanning the whole document.
     expect(len(_char_run_spans(doc))).toBe(1);
   });
@@ -300,7 +300,7 @@ describe("TestResetStyles", () => {
   test("test_paragraph_reset_matches_ae", () => {
     const expected = _fixture("reset_style_probe.json").para_after;
     const doc = _doc(parse_project_fresh(RESET_AEP), "RESET2", "rp_para");
-    doc.reset_paragraph_style();
+    doc.resetParagraphStyle();
     for (const [ae_key, py_key] of TestResetStyles.PARA_MAP.entries()) {
       const got = getattr(doc, py_key);
       const want = expected[ae_key];
@@ -317,21 +317,21 @@ describe("TestResetStyles", () => {
     // leaves it alone (probed: True before and after).
     const expected = _fixture("reset_style_probe.json").para_after.autoHyphenate;
     const doc = _doc(parse_project_fresh(RESET_AEP), "RESET2", "rp_para");
-    doc.reset_paragraph_style();
-    expect(doc.auto_hyphenate).toBe(expected);
+    doc.resetParagraphStyle();
+    expect(doc.autoHyphenate).toBe(expected);
   });
 
   test("test_reset_without_prefs_uses_factory_defaults", () => {
     // Parsed with no preferences directory: AE's factory panel values.
     const doc = _doc(parse_project_fresh(RESET_AEP), "RESET2", "rc_char");
-    doc.reset_char_style();
+    doc.resetCharStyle();
     expect(doc.font).toBe("MyriadPro-Regular");
-    expect(approx(doc.font_size, 36.0)).toBe(true);
-    expect(approx(doc.fill_color, Array(3).fill(0.92156994342804))).toBe(true);
+    expect(approx(doc.fontSize, 36.0)).toBe(true);
+    expect(approx(doc.fillColor, Array(3).fill(0.92156994342804))).toBe(true);
   });
 
   test("test_detached_document_raises", () => {
-    for (const method of ["reset_char_style", "reset_paragraph_style"]) {
+    for (const method of ["resetCharStyle", "resetParagraphStyle"]) {
       raises(
         ValueError,
         () => {
@@ -347,12 +347,12 @@ describe("TestResetStyles", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(RESET_AEP);
     const doc = _doc(project, "RESET2", "rc_char");
-    doc.reset_char_style();
+    doc.resetCharStyle();
     const out = tmp_path.div("reset.aep");
     project.save(out);
     const reparsed = _doc(parse_project_fresh(out), "RESET2", "rc_char");
-    expect(approx(reparsed.font_size, 36.0)).toBe(true);
-    expect(reparsed.faux_bold).toBe(false);
+    expect(approx(reparsed.fontSize, 36.0)).toBe(true);
+    expect(reparsed.fauxBold).toBe(false);
   });
 });
 
@@ -369,8 +369,8 @@ describe("TestFuzzRegressions", () => {
     const project = parse_project(TestFuzzRegressions.BOX_MATRIX);
     const comp = project.compositions[0];
     const doc = _doc(project, comp.name, "M_LIGA");
-    const locs = doc.baseline_locs;
-    expect(len(locs)).toBe(4 * py_or(doc.composed_line_count, 0));
+    const locs = doc.baselineLocs;
+    expect(len(locs)).toBe(4 * py_or(doc.composedLineCount, 0));
     // Line 0 is "affinity " - the extent excludes the trailing space.
     expect(approx(locs[2], locs[0] + 104.292, { abs: 5e-3 })).toBe(true);
   });
@@ -382,7 +382,7 @@ describe("TestFuzzRegressions", () => {
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
         if (layer.text == null) continue;
-        const locs = layer.text.property("ADBE Text Document").value.baseline_locs;
+        const locs = layer.text.property("ADBE Text Document").value.baselineLocs;
         expect(mod(len(locs), 4)).toBe(0);
       }
     }
@@ -395,12 +395,12 @@ describe("TestFuzzRegressions", () => {
     const project = parse_project_fresh(TestFuzzRegressions.WRITES);
     const comp = project.compositions[0];
     const doc = _doc(project, comp.name, "W_KERN_START");
-    expect(doc.auto_kern_type).toBe(AutoKernType.NO_AUTO_KERN);
+    expect(doc.autoKernType).toBe(AutoKernType.NO_AUTO_KERN);
     expect(cos_get(doc._doc, "0", "8") != null).toBe(true); // manual kern runs
 
-    doc.reset_char_style();
+    doc.resetCharStyle();
 
-    expect(doc.auto_kern_type).toBe(AutoKernType.METRIC_KERN);
+    expect(doc.autoKernType).toBe(AutoKernType.METRIC_KERN);
     expect(cos_get(doc._doc, "0", "8") == null).toBe(true); // manual kerning cleared
     expect(len(_char_run_spans(doc))).toBe(1);
   });
@@ -412,21 +412,21 @@ describe("TestFuzzRegressions", () => {
     // only the first silently skipped the layer.
     const project = parse_project_fresh(REPLACE_FONT_AEP);
     const doc = _doc(project, "RESET", "reset_para");
-    const names = doc._fonts.map((f) => f.post_script_name);
+    const names = doc._fonts.map((f) => f.postScriptName);
     py_assert(
       names.filter((n) => n === "MyriadPro-Regular").length === 2,
       "sample lost its duplicate",
     );
-    expect(py_eq(doc._used_font_objects().map((f) => f.post_script_name), ["MyriadPro-Regular"])).toBe(
+    expect(py_eq(doc._used_font_objects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
       true,
     );
 
-    expect(project.replace_font("MyriadPro-Regular", "Georgia")).toBe(true);
+    expect(project.replaceFont("MyriadPro-Regular", "Georgia")).toBe(true);
 
-    expect(py_eq(doc._used_font_objects().map((f) => f.post_script_name), ["Georgia"])).toBe(true);
+    expect(py_eq(doc._used_font_objects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
     expect(
-      project.used_fonts
-        .map((e) => e.font.post_script_name)
+      project.usedFonts
+        .map((e) => e.font.postScriptName)
         .includes("MyriadPro-Regular"),
     ).toBe(false);
   });

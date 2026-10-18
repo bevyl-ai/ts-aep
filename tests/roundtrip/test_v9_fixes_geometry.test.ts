@@ -103,7 +103,7 @@ function _first_effect_value(layer: Layer) {
 /** Rect, or null after reporting a skip (callers `return` to abort the test body like pytest.skip). */
 function _rect(layer: Layer, time: number): number[] | null {
   try {
-    const r = as_instance(layer, AVLayer).source_rect_at_time(time, false);
+    const r = as_instance(layer, AVLayer).sourceRectAtTime(time, false);
     // source_rect_at_time returns a fixed-key record (plain object), not a Map.
     return [r.left, r.top, r.width, r.height];
   } catch (exc) {
@@ -158,7 +158,7 @@ describe("TestComment", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Layer.copy_to_comp / duplicate
+// Layer.copyToComp / duplicate
 // ---------------------------------------------------------------------------
 
 function _copy_truth(src: string, dst: string) {
@@ -175,7 +175,7 @@ describe("TestCopyToComp", () => {
         const project = parse_project_fresh(REPARENT);
         const [_, src] = _layer(project, "PC_SRC", src_name);
         const dst = _next(project.compositions, (c) => c.name === dst_name);
-        const copy = src.copy_to_comp(dst);
+        const copy = src.copyToComp(dst);
         const truth = _copy_truth(src_name, dst_name);
         const keys = copy.transform.property("ADBE Position").keyframes.map((kf) => kf.time);
         expect(
@@ -196,7 +196,7 @@ describe("TestCopyToComp", () => {
     const project = parse_project_fresh(REPARENT);
     const [_, src] = _layer(project, "PC_SRC", "kf_pos");
     const dst = _next(project.compositions, (c) => c.name === "PC_D24");
-    src.copy_to_comp(dst);
+    src.copyToComp(dst);
     const out = tmp_path.div("copy.aep");
     project.save(out);
     const [__, copy] = _layer(parse_aep(out).project, "PC_D24", "kf_pos");
@@ -214,12 +214,12 @@ describe("TestCopyToComp", () => {
       const project = parse_project_fresh(REPARENT);
       const [_, src] = _layer(project, "PC_SRC", "tr_kf");
       const dst = _next(project.compositions, (c) => c.name === "PC_D24");
-      expect(src.copy_to_comp(dst).name).toBe("tr_kf");
+      expect(src.copyToComp(dst).name).toBe("tr_kf");
     }
     // Same comp: the source's name clashes, as in AE ("tr_kf 2").
     const project = parse_project_fresh(REPARENT);
     const [comp, src] = _layer(project, "PC_SRC", "tr_kf");
-    expect(src.copy_to_comp(comp).name).toBe("tr_kf 2");
+    expect(src.copyToComp(comp).name).toBe("tr_kf 2");
   });
 
   test("test_parented_copy_keeps_its_place", () => {
@@ -227,7 +227,7 @@ describe("TestCopyToComp", () => {
       const project = parse_project_fresh(REPARENT);
       const [_, src] = _layer(project, "PC_SRC", "fx_ref");
       const dst = _next(project.compositions, (c) => c.name === dst_name);
-      const copy = src.copy_to_comp(dst);
+      const copy = src.copyToComp(dst);
       expect(copy.parent == null).toBe(true);
       expect(_close(copy.transform.property("ADBE Position").value, [960, 590, 0], 1e-6)).toBe(true);
       // Into the 2:1 comp too: AE keeps the values (Scale 100).
@@ -239,7 +239,7 @@ describe("TestCopyToComp", () => {
     {
       const project = parse_project_fresh(REPARENT);
       const [comp, src] = _layer(project, "PC_SRC", "fx_ref");
-      const copy = src.copy_to_comp(comp);
+      const copy = src.copyToComp(comp);
       expect(copy.index).toBe(0);
       expect(copy.parent == null).toBe(true);
       expect(_first_effect_value(copy)).toBe(0);
@@ -247,9 +247,9 @@ describe("TestCopyToComp", () => {
     {
       const project = parse_project_fresh(REPARENT);
       const [comp, src] = _layer(project, "PC_SRC", "matte_user");
-      const copy = as_instance(src.copy_to_comp(comp), AVLayer);
-      expect(copy.track_matte_layer != null).toBe(true);
-      expect(getattr(copy.track_matte_layer, "name")).toBe("txt");
+      const copy = as_instance(src.copyToComp(comp), AVLayer);
+      expect(copy.trackMatteLayer != null).toBe(true);
+      expect(getattr(copy.trackMatteLayer, "name")).toBe("txt");
     }
   });
 
@@ -270,7 +270,7 @@ describe("TestCopyToComp", () => {
     const project = parse_project_fresh(MORE);
     const [_, src] = _layer(project, "PH_SRC", truth.src);
     const dst = _next(project.compositions, (c) => c.name === truth.dst);
-    const copy = src.copy_to_comp(dst);
+    const copy = src.copyToComp(dst);
     expect(copy.parent == null).toBe(true);
     _assert_transform(copy, dst, truth.T);
   });
@@ -279,18 +279,18 @@ describe("TestCopyToComp", () => {
     const project = parse_project_fresh(REPARENT);
     const [_, src] = _layer(project, "PC_SRC", "env_light");
     const dst = _next(project.compositions, (c) => c.name === "PC_D24");
-    const copy = as_instance(src.copy_to_comp(dst), LightLayer);
-    expect(copy.light_source == null).toBe(true);
+    const copy = as_instance(src.copyToComp(dst), LightLayer);
+    expect(copy.lightSource == null).toBe(true);
     expect(copy._ldta.source_id).toBe(0xffffffff);
     {
       const [comp, light] = _layer(parse_project_fresh(REPARENT), "PC_SRC", "env_light");
-      expect(getattr(as_instance(light.copy_to_comp(comp), LightLayer).light_source, "name")).toBe("env_src");
+      expect(getattr(as_instance(light.copyToComp(comp), LightLayer).lightSource, "name")).toBe("env_src");
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// LightLayer.light_source
+// LightLayer.lightSource
 // ---------------------------------------------------------------------------
 
 describe("TestLightSource", () => {
@@ -303,7 +303,7 @@ describe("TestLightSource", () => {
       expect(contains(REPARENT_TRUTH.light[target].env, "ERR")).toBe(true);
       const before = env._ldta.source_id;
       raises(ValueError, () => {
-        env.light_source = _next(comp.layers, (ly) => ly.name === target);
+        env.lightSource = _next(comp.layers, (ly) => ly.name === target);
       });
       expect(env._ldta.source_id).toBe(before);
     },
@@ -314,7 +314,7 @@ describe("TestLightSource", () => {
     const env = as_instance(_layer(project, "PC_SRC", "env_light")[1], LightLayer);
     const [__, other] = _layer(project, "PC_D24", "other_comp_solid");
     raises(ValueError, () => {
-      env.light_source = other;
+      env.lightSource = other;
     });
   });
 
@@ -325,17 +325,17 @@ describe("TestLightSource", () => {
     const [comp, spot_layer] = _layer(project, "PB", "spot2");
     const spot = as_instance(spot_layer, LightLayer);
     const text = _next(comp.layers, (ly) => ly.name === "c_text");
-    expect(spot.light_type).toBe(LightType.SPOT);
+    expect(spot.lightType).toBe(LightType.SPOT);
     raises(ValueError, () => {
-      spot.light_source = text;
+      spot.lightSource = text;
     });
-    spot.light_type = LightType.POINT;
+    spot.lightType = LightType.POINT;
     raises(ValueError, () => {
-      spot.light_source = text;
+      spot.lightSource = text;
     });
-    spot.light_type = LightType.PARALLEL;
-    spot.light_source = text;
-    expect(spot.light_source === text).toBe(true);
+    spot.lightType = LightType.PARALLEL;
+    spot.lightSource = text;
+    expect(spot.lightSource === text).toBe(true);
   });
 
   test("test_text_and_shape_sources_accepted", () => {
@@ -344,29 +344,29 @@ describe("TestLightSource", () => {
     const env = as_instance(env_layer, LightLayer);
     for (const name of ["txt", "shp", "kf_pos"]) {
       expect(REPARENT_TRUTH.light[name].env).toBe(name);
-      env.light_source = _next(comp.layers, (ly) => ly.name === name);
-      expect(getattr(env.light_source, "name")).toBe(name);
+      env.lightSource = _next(comp.layers, (ly) => ly.name === name);
+      expect(getattr(env.lightSource, "name")).toBe(name);
     }
   });
 
   test("test_version_gate", () => {
     const project = parse_project_fresh(SAMPLES.div("versions", "ae2023", "complete.aep"));
-    const light = _next(project.compositions.flatMap((c) => c.light_layers), () => true);
+    const light = _next(project.compositions.flatMap((c) => c.lightLayers), () => true);
     const solid = _next(
-      light.containing_comp.av_layers,
-      (ly) => !ly.three_d_layer && !ly.null_layer,
+      light.containingComp.avLayers,
+      (ly) => !ly.threeDLayer && !ly.nullLayer,
     );
     raises(
       AttributeError,
       () => {
-        light.light_type = LightType.ENVIRONMENT;
+        light.lightType = LightType.ENVIRONMENT;
       },
       "24.3",
     );
     raises(
       AttributeError,
       () => {
-        light.light_source = solid;
+        light.lightSource = solid;
       },
       "24.3",
     );
@@ -433,7 +433,7 @@ function _assert_transform(child: Layer, comp: CompItem, truth: _TransformTruth)
     if (!(match_name in truth)) continue;
     const prop = child.transform.property(match_name);
     const expected = getattr(truth, match_name);
-    const got = py_bool(prop.keyframes) ? prop.value_at_time(comp.time) : prop.value;
+    const got = py_bool(prop.keyframes) ? prop.valueAtTime(comp.time) : prop.value;
     const exp = expected.v;
     const scalars: number[] = typeof got === "number" ? [got] : [...got];
     const wanted: number[] = typeof exp === "number" ? [exp] : [...exp];
@@ -548,7 +548,7 @@ describe("TestPointConversions", () => {
     for (const [index, time] of TIMES.entries()) {
       const row = truth[`t${index}`];
       for (const [point, expected] of zip(PTS, row.s2c)) {
-        const got = layer.source_point_to_comp(point, time);
+        const got = layer.sourcePointToComp(point, time);
         py_assert(
           _close(got, expected, 1e-2 * Math.max(1.0, Math.max(...expected.map((v: number) => Math.abs(v)))) * 1e-1),
           `${time} ${repr(point)} ${repr(got)} ${repr(expected)}`,
@@ -556,7 +556,7 @@ describe("TestPointConversions", () => {
       }
       for (const [point, expected] of zip(CPTS, row.c2s)) {
         if (!Array.isArray(expected) || py_eq(expected, [0, 0])) continue;
-        const got = layer.comp_point_to_source(point, time);
+        const got = layer.compPointToSource(point, time);
         const tol = 1e-3 * Math.max(1.0, Math.max(...expected.map((v: number) => Math.abs(v))));
         py_assert(
           _close(got, expected, Math.max(tol, 1e-2)),
@@ -574,7 +574,7 @@ describe("TestPointConversions", () => {
     const rows = MORE_TRUTH.s2c[`${comp_name}/${layer_name}`];
     for (const [index, time] of MORE_TIMES.entries()) {
       for (const [point, expected] of zip(PTS, rows[index])) {
-        const got = layer.source_point_to_comp(point, time);
+        const got = layer.sourcePointToComp(point, time);
         expect(_close(got, expected, 1e-3)).toBe(true);
       }
     }
@@ -586,7 +586,7 @@ describe("TestPointConversions", () => {
     raises(
       ValueError,
       () => {
-        layer.comp_point_to_source([500.0, 400.0], 0.0);
+        layer.compPointToSource([500.0, 400.0], 0.0);
       },
       "degenerate",
     );
@@ -599,7 +599,7 @@ describe("TestPointConversions", () => {
     raises(
       ValueError,
       () => {
-        layer.source_point_to_comp([1.7e308, 1.7e308], 0.0);
+        layer.sourcePointToComp([1.7e308, 1.7e308], 0.0);
       },
       "overflow",
     );
@@ -608,14 +608,14 @@ describe("TestPointConversions", () => {
   test("test_camera_default_position", () => {
     const project = parse_project_fresh(SAMPLES.div("models", "view", "draft3d_false.aep"));
     const comp = project.compositions[0];
-    const camera = comp.camera_layers[0];
+    const camera = comp.cameraLayers[0];
     // AE 2026 (the sample's ExtendScript export): [960, 53.5, -2424.24242418]
     expect(
       _close(camera.transform.property("ADBE Position").value, [960.0, 53.5, -2424.24242418], 1e-5),
     ).toBe(true);
     const layer = as_instance(comp.layers.find((ly) => ly.name === "Dark Gray Solid 1"), AVLayer);
     // The camera sits on the default comp camera: c2s is the identity.
-    expect(_close(layer.comp_point_to_source([100.0, 100.0], 0.0), [100.0, 100.0], 1e-6)).toBe(true);
+    expect(_close(layer.compPointToSource([100.0, 100.0], 0.0), [100.0, 100.0], 1e-6)).toBe(true);
   });
 });
 
@@ -680,11 +680,11 @@ describe("TestSourceRect", () => {
     const layer = as_instance(project.compositions[0].layers[0], ThreeDModelLayer);
     // AE 2026 (the sample's ExtendScript export): anchor [0, 0, 0].
     expect(py_eq(layer.transform.property("ADBE Anchor Point").value, [0.0, 0.0, 0.0])).toBe(true);
-    expect(_close(layer.source_point_to_comp([0.0, 0.0], 0.0), [960.0, 540.0], 1e-6)).toBe(true);
+    expect(_close(layer.sourcePointToComp([0.0, 0.0], 0.0), [960.0, 540.0], 1e-6)).toBe(true);
     raises(
       NotImplementedError,
       () => {
-        layer.source_rect_at_time(0.0, false);
+        layer.sourceRectAtTime(0.0, false);
       },
       "3D model",
     );

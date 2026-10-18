@@ -52,18 +52,18 @@ describe("TestCompItemBasic", () => {
     const expected = load_expected(SAMPLES_DIR, "bgColor");
     const comp_json = get_comp_from_json_by_name(expected, "bgColor_red");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
-    expect(isclose(comp.bg_color[0], comp_json["bgColor"][0])).toBe(true);
-    expect(isclose(comp.bg_color[1], comp_json["bgColor"][1])).toBe(true);
-    expect(isclose(comp.bg_color[2], comp_json["bgColor"][2])).toBe(true);
+    expect(isclose(comp.bgColor[0], comp_json["bgColor"][0])).toBe(true);
+    expect(isclose(comp.bgColor[1], comp_json["bgColor"][1])).toBe(true);
+    expect(isclose(comp.bgColor[2], comp_json["bgColor"][2])).toBe(true);
   });
 
   test("test_bgColor_custom", () => {
     const expected = load_expected(SAMPLES_DIR, "bgColor");
     const comp_json = get_comp_from_json_by_name(expected, "bgColor_custom");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("bgColor.aep")), "bgColor_custom");
-    expect(isclose(comp.bg_color[0], comp_json["bgColor"][0])).toBe(true);
-    expect(isclose(comp.bg_color[1], comp_json["bgColor"][1])).toBe(true);
-    expect(isclose(comp.bg_color[2], comp_json["bgColor"][2])).toBe(true);
+    expect(isclose(comp.bgColor[0], comp_json["bgColor"][0])).toBe(true);
+    expect(isclose(comp.bgColor[1], comp_json["bgColor"][1])).toBe(true);
+    expect(isclose(comp.bgColor[2], comp_json["bgColor"][2])).toBe(true);
   });
 });
 
@@ -96,7 +96,7 @@ describe("TestCompItemFrameRate", () => {
     const expected = load_expected(SAMPLES_DIR, "frameRate");
     const comp_json = get_comp_from_json_by_name(expected, "frameRate_23976");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("frameRate.aep")), "frameRate_23976");
-    expect(isclose(comp.frame_rate, comp_json["frameRate"], 0.001)).toBe(true);
+    expect(isclose(comp.frameRate, comp_json["frameRate"], 0.001)).toBe(true);
   });
 
   test("test_frameRate_30", () => {
@@ -104,7 +104,7 @@ describe("TestCompItemFrameRate", () => {
     const comp_json = get_comp_from_json_by_name(expected, "frameRate_30");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("frameRate.aep")), "frameRate_30");
     expect(comp_json["frameRate"]).toBe(30);
-    expect(isclose(comp.frame_rate, comp_json["frameRate"], 0.001)).toBe(true);
+    expect(isclose(comp.frameRate, comp_json["frameRate"], 0.001)).toBe(true);
   });
 });
 
@@ -126,14 +126,14 @@ describe("TestCompItemMotionBlur", () => {
     const comp_json = get_comp_from_json_by_name(expected, "motionBlur_true");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("comp_flags.aep")), "motionBlur_true");
     expect(comp_json["motionBlur"]).toBe(true);
-    expect(comp.motion_blur).toBe(comp_json["motionBlur"]);
+    expect(comp.motionBlur).toBe(comp_json["motionBlur"]);
   });
 
   test("test_shutterAngle_180", () => {
     const expected = load_expected(SAMPLES_DIR, "shutterAngle");
     const comp_json = get_comp_from_json_by_name(expected, "shutterAngle_180");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("shutterAngle.aep")), "shutterAngle_180");
-    expect(comp.shutter_angle).toBe(comp_json["shutterAngle"]);
+    expect(comp.shutterAngle).toBe(comp_json["shutterAngle"]);
     expect(comp_json["shutterAngle"]).toBe(180);
   });
 
@@ -141,7 +141,7 @@ describe("TestCompItemMotionBlur", () => {
     const expected = load_expected(SAMPLES_DIR, "shutterAngle");
     const comp_json = get_comp_from_json_by_name(expected, "shutterAngle_360");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("shutterAngle.aep")), "shutterAngle_360");
-    expect(comp.shutter_angle).toBe(comp_json["shutterAngle"]);
+    expect(comp.shutterAngle).toBe(comp_json["shutterAngle"]);
     expect(comp_json["shutterAngle"]).toBe(360);
   });
 
@@ -149,7 +149,7 @@ describe("TestCompItemMotionBlur", () => {
     const expected = load_expected(SAMPLES_DIR, "comp_flags");
     const comp_json = get_comp_from_json_by_name(expected, "shutterPhase_minus90");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("comp_flags.aep")), "shutterPhase_minus90");
-    expect(comp.shutter_phase).toBe(comp_json["shutterPhase"]);
+    expect(comp.shutterPhase).toBe(comp_json["shutterPhase"]);
     expect(comp_json["shutterPhase"]).toBe(-90);
   });
 
@@ -160,7 +160,7 @@ describe("TestCompItemMotionBlur", () => {
       parse_project(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurSamplesPerFrame_32",
     );
-    expect(comp.motion_blur_samples_per_frame).toBe(comp_json["motionBlurSamplesPerFrame"]);
+    expect(comp.motionBlurSamplesPerFrame).toBe(comp_json["motionBlurSamplesPerFrame"]);
     expect(comp_json["motionBlurSamplesPerFrame"]).toBe(32);
   });
 
@@ -171,7 +171,7 @@ describe("TestCompItemMotionBlur", () => {
       parse_project(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurAdaptiveSampleLimit_256",
     );
-    expect(comp.motion_blur_adaptive_sample_limit).toBe(comp_json["motionBlurAdaptiveSampleLimit"]);
+    expect(comp.motionBlurAdaptiveSampleLimit).toBe(comp_json["motionBlurAdaptiveSampleLimit"]);
     expect(comp_json["motionBlurAdaptiveSampleLimit"]).toBe(256);
   });
 });
@@ -185,7 +185,7 @@ describe("TestCompItemResolution", () => {
       parse_project(SAMPLES_DIR.div("resolutionFactor.aep")),
       "resolutionFactor_half",
     );
-    expect(py_eq(comp.resolution_factor, comp_json["resolutionFactor"])).toBe(true);
+    expect(py_eq(comp.resolutionFactor, comp_json["resolutionFactor"])).toBe(true);
   });
 
   test("test_resolutionFactor_quarter", () => {
@@ -195,7 +195,7 @@ describe("TestCompItemResolution", () => {
       parse_project(SAMPLES_DIR.div("resolutionFactor.aep")),
       "resolutionFactor_quarter",
     );
-    expect(py_eq(comp.resolution_factor, comp_json["resolutionFactor"])).toBe(true);
+    expect(py_eq(comp.resolutionFactor, comp_json["resolutionFactor"])).toBe(true);
   });
 });
 
@@ -209,7 +209,7 @@ describe("TestCompItemNestedOptions", () => {
       "preserveNestedFrameRate_true",
     );
     expect(comp_json["preserveNestedFrameRate"]).toBe(true);
-    expect(comp.preserve_nested_frame_rate).toBe(comp_json["preserveNestedFrameRate"]);
+    expect(comp.preserveNestedFrameRate).toBe(comp_json["preserveNestedFrameRate"]);
   });
 
   test("test_preserveNestedResolution_true", () => {
@@ -220,7 +220,7 @@ describe("TestCompItemNestedOptions", () => {
       "preserveNestedResolution_true",
     );
     expect(comp_json["preserveNestedResolution"]).toBe(true);
-    expect(comp.preserve_nested_resolution).toBe(comp_json["preserveNestedResolution"]);
+    expect(comp.preserveNestedResolution).toBe(comp_json["preserveNestedResolution"]);
   });
 });
 
@@ -231,7 +231,7 @@ describe("TestCompItemFrameBlending", () => {
     const comp_json = get_comp_from_json_by_name(expected, "frameBlending_true");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("comp_flags.aep")), "frameBlending_true");
     expect(comp_json["frameBlending"]).toBe(true);
-    expect(comp.frame_blending).toBe(comp_json["frameBlending"]);
+    expect(comp.frameBlending).toBe(comp_json["frameBlending"]);
   });
 });
 
@@ -242,7 +242,7 @@ describe("TestCompItemShyLayers", () => {
     const comp_json = get_comp_from_json_by_name(expected, "hideShyLayers_true");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("comp_flags.aep")), "hideShyLayers_true");
     expect(comp_json["hideShyLayers"]).toBe(true);
-    expect(comp.hide_shy_layers).toBe(comp_json["hideShyLayers"]);
+    expect(comp.hideShyLayers).toBe(comp_json["hideShyLayers"]);
   });
 });
 
@@ -277,14 +277,14 @@ describe("TestCompItemWorkArea", () => {
     const expected = load_expected(SAMPLES_DIR, "workArea");
     const comp_json = get_comp_from_json_by_name(expected, "workAreaStart_5");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("workArea.aep")), "workAreaStart_5");
-    expect(isclose(comp.work_area_start, comp_json["workAreaStart"], 0.001)).toBe(true);
+    expect(isclose(comp.workAreaStart, comp_json["workAreaStart"], 0.001)).toBe(true);
   });
 
   test("test_workAreaDuration_10", () => {
     const expected = load_expected(SAMPLES_DIR, "workArea");
     const comp_json = get_comp_from_json_by_name(expected, "workAreaDuration_10");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("workArea.aep")), "workAreaDuration_10");
-    expect(isclose(comp.work_area_duration, comp_json["workAreaDuration"], 0.001)).toBe(true);
+    expect(isclose(comp.workAreaDuration, comp_json["workAreaDuration"], 0.001)).toBe(true);
   });
 });
 
@@ -294,7 +294,7 @@ describe("TestCompItemDisplayStart", () => {
     const expected = load_expected(SAMPLES_DIR, "displayStart");
     const comp_json = get_comp_from_json_by_name(expected, "displayStartFrame_100");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("displayStart.aep")), "displayStartFrame_100");
-    expect(comp.display_start_frame).toBe(comp_json["displayStartFrame"]);
+    expect(comp.displayStartFrame).toBe(comp_json["displayStartFrame"]);
     expect(comp_json["displayStartFrame"]).toBe(100);
   });
 
@@ -303,7 +303,7 @@ describe("TestCompItemDisplayStart", () => {
     const comp_json = get_comp_from_json_by_name(expected, "displayStartTime_10");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("displayStart.aep")), "displayStartTime_10");
     expect(comp_json["displayStartTime"]).toBe(10);
-    expect(isclose(comp.display_start_time, comp_json["displayStartTime"])).toBe(true);
+    expect(isclose(comp.displayStartTime, comp_json["displayStartTime"])).toBe(true);
   });
 });
 
@@ -313,14 +313,14 @@ describe("TestCompItemPixelAspect", () => {
     const expected = load_expected(SAMPLES_DIR, "pixelAspect");
     const comp_json = get_comp_from_json_by_name(expected, "pixelAspect_0.75");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("pixelAspect.aep")), "pixelAspect_0.75");
-    expect(isclose(comp.pixel_aspect, comp_json["pixelAspect"])).toBe(true);
+    expect(isclose(comp.pixelAspect, comp_json["pixelAspect"])).toBe(true);
   });
 
   test("test_pixelAspect_2_0", () => {
     const expected = load_expected(SAMPLES_DIR, "pixelAspect");
     const comp_json = get_comp_from_json_by_name(expected, "pixelAspect_2");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("pixelAspect.aep")), "pixelAspect_2");
-    expect(isclose(comp.pixel_aspect, comp_json["pixelAspect"])).toBe(true);
+    expect(isclose(comp.pixelAspect, comp_json["pixelAspect"])).toBe(true);
   });
 });
 
@@ -365,7 +365,7 @@ describe("TestCompItemDropFrame", () => {
     const comp_json = get_comp_from_json_by_name(expected, "dropFrame_true");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("dropFrame.aep")), "dropFrame_true");
     expect(comp_json["dropFrame"]).toBe(true);
-    expect(comp.drop_frame).toBe(comp_json["dropFrame"]);
+    expect(comp.dropFrame).toBe(comp_json["dropFrame"]);
   });
 
   test("test_dropFrame_false", () => {
@@ -373,7 +373,7 @@ describe("TestCompItemDropFrame", () => {
     const comp_json = get_comp_from_json_by_name(expected, "dropFrame_false");
     const comp = get_comp(parse_project(SAMPLES_DIR.div("dropFrame.aep")), "dropFrame_false");
     expect(comp_json["dropFrame"]).toBe(false);
-    expect(comp.drop_frame).toBe(comp_json["dropFrame"]);
+    expect(comp.dropFrame).toBe(comp_json["dropFrame"]);
   });
 });
 
@@ -411,20 +411,20 @@ describe("TestCompItemRenderer", () => {
 describe("TestCompItemLayerFiltering", () => {
   test("test_text_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_text");
-    expect(len(comp.text_layers)).toBe(1);
-    expect(comp.text_layers.every((layer) => layer instanceof TextLayer)).toBe(true);
+    expect(len(comp.textLayers)).toBe(1);
+    expect(comp.textLayers.every((layer) => layer instanceof TextLayer)).toBe(true);
   });
 
   test("test_shape_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_shape");
-    expect(len(comp.shape_layers)).toBe(1);
-    expect(comp.shape_layers.every((layer) => layer instanceof ShapeLayer)).toBe(true);
+    expect(len(comp.shapeLayers)).toBe(1);
+    expect(comp.shapeLayers.every((layer) => layer instanceof ShapeLayer)).toBe(true);
   });
 
   test("test_camera_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_camera");
-    expect(len(comp.camera_layers)).toBe(1);
-    expect(comp.camera_layers.every((layer) => layer instanceof CameraLayer)).toBe(true);
+    expect(len(comp.cameraLayers)).toBe(1);
+    expect(comp.cameraLayers.every((layer) => layer instanceof CameraLayer)).toBe(true);
   });
 
   test("test_light_layers", () => {
@@ -432,14 +432,14 @@ describe("TestCompItemLayerFiltering", () => {
       parse_project(LAYER_SAMPLES_DIR.div("lightType.aep")),
       "lightType_POINT",
     );
-    expect(len(comp.light_layers)).toBe(1);
-    expect(comp.light_layers.every((layer) => layer instanceof LightLayer)).toBe(true);
+    expect(len(comp.lightLayers)).toBe(1);
+    expect(comp.lightLayers.every((layer) => layer instanceof LightLayer)).toBe(true);
   });
 
   test("test_null_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_null");
-    expect(len(comp.null_layers)).toBe(1);
-    expect(comp.null_layers.every((layer) => layer.null_layer)).toBe(true);
+    expect(len(comp.nullLayers)).toBe(1);
+    expect(comp.nullLayers.every((layer) => layer.nullLayer)).toBe(true);
   });
 
   test("test_adjustment_layers", () => {
@@ -447,9 +447,9 @@ describe("TestCompItemLayerFiltering", () => {
       parse_project(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
       "adjustmentLayer_true",
     );
-    expect(len(comp.adjustment_layers)).toBe(1);
+    expect(len(comp.adjustmentLayers)).toBe(1);
     expect(
-      comp.adjustment_layers.every((layer) => layer instanceof AVLayer && layer.adjustment_layer),
+      comp.adjustmentLayers.every((layer) => layer instanceof AVLayer && layer.adjustmentLayer),
     ).toBe(true);
   });
 
@@ -458,9 +458,9 @@ describe("TestCompItemLayerFiltering", () => {
       parse_project(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
       "threeDLayer_true",
     );
-    expect(len(comp.three_d_layers)).toBe(1);
+    expect(len(comp.threeDLayers)).toBe(1);
     expect(
-      comp.three_d_layers.every((layer) => layer instanceof AVLayer && layer.three_d_layer),
+      comp.threeDLayers.every((layer) => layer instanceof AVLayer && layer.threeDLayer),
     ).toBe(true);
   });
 
@@ -469,9 +469,9 @@ describe("TestCompItemLayerFiltering", () => {
       parse_project(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
       "guideLayer_true",
     );
-    expect(len(comp.guide_layers)).toBe(1);
+    expect(len(comp.guideLayers)).toBe(1);
     expect(
-      comp.guide_layers.every((layer) => layer instanceof AVLayer && layer.guide_layer),
+      comp.guideLayers.every((layer) => layer instanceof AVLayer && layer.guideLayer),
     ).toBe(true);
   });
 
@@ -480,56 +480,56 @@ describe("TestCompItemLayerFiltering", () => {
       parse_project(LAYER_SAMPLES_DIR.div("layer_switches.aep")),
       "solo_true",
     );
-    expect(len(comp.solo_layers)).toBe(1);
-    expect(comp.solo_layers.every((layer) => layer.solo)).toBe(true);
+    expect(len(comp.soloLayers)).toBe(1);
+    expect(comp.soloLayers.every((layer) => layer.solo)).toBe(true);
   });
 
   /** A comp with only a shape layer has no text layers. */
   test("test_empty_text_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_shape");
-    expect(py_eq(comp.text_layers, [])).toBe(true);
+    expect(py_eq(comp.textLayers, [])).toBe(true);
   });
 
   /** A comp with only a text layer has no camera layers. */
   test("test_empty_camera_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_text");
-    expect(py_eq(comp.camera_layers, [])).toBe(true);
+    expect(py_eq(comp.cameraLayers, [])).toBe(true);
   });
 
   /** A comp with only a text layer has no light layers. */
   test("test_empty_light_layers", () => {
     const comp = get_comp(parse_project(LAYER_SAMPLES_DIR.div("type.aep")), "type_text");
-    expect(py_eq(comp.light_layers, [])).toBe(true);
+    expect(py_eq(comp.lightLayers, [])).toBe(true);
   });
 
   test("test_file_layers", () => {
     const comp = parse_project(FOOTAGE_SAMPLES_DIR.div("footage_not_missing.aep")).compositions[0];
-    expect(len(comp.file_layers)).toBe(1);
-    for (const layer of comp.file_layers) {
+    expect(len(comp.fileLayers)).toBe(1);
+    for (const layer of comp.fileLayers) {
       expect(layer instanceof AVLayer).toBe(true);
-      expect(as_instance(layer.source, FootageItem).main_source instanceof FileSource).toBe(true);
+      expect(as_instance(layer.source, FootageItem).mainSource instanceof FileSource).toBe(true);
     }
   });
 
   test("test_solid_layers", () => {
     const comp = parse_project(LAYER_SAMPLES_DIR.div("gray_solid_1_above.aep")).compositions[0];
-    expect(len(comp.solid_layers)).toBe(2);
-    for (const layer of comp.solid_layers) {
+    expect(len(comp.solidLayers)).toBe(2);
+    for (const layer of comp.solidLayers) {
       expect(layer instanceof AVLayer).toBe(true);
-      expect(as_instance(layer.source, FootageItem).main_source instanceof SolidSource).toBe(true);
+      expect(as_instance(layer.source, FootageItem).mainSource instanceof SolidSource).toBe(true);
     }
   });
 
   /** A comp with only solid layers has no placeholder layers. */
   test("test_placeholder_layers_empty", () => {
     const comp = parse_project(LAYER_SAMPLES_DIR.div("gray_solid_1_above.aep")).compositions[0];
-    expect(py_eq(comp.placeholder_layers, [])).toBe(true);
+    expect(py_eq(comp.placeholderLayers, [])).toBe(true);
   });
 
   /** A comp with only solid layers has no file layers. */
   test("test_empty_file_layers", () => {
     const comp = parse_project(LAYER_SAMPLES_DIR.div("gray_solid_1_above.aep")).compositions[0];
-    expect(py_eq(comp.file_layers, [])).toBe(true);
+    expect(py_eq(comp.fileLayers, [])).toBe(true);
   });
 });
 
@@ -549,9 +549,9 @@ describe("TestCompItemGuides", () => {
     const guides_json = comp_json["guides"];
     py_assert(Array.isArray(guides_json), "export has no guides list");
     const exp = guides_json[0];
-    expect(guide.orientation_type).toBe(exp["orientationType"]);
+    expect(guide.orientationType).toBe(exp["orientationType"]);
     expect(guide.position).toBe(exp["position"]);
-    expect(guide.position_type).toBe(exp["positionType"]);
+    expect(guide.positionType).toBe(exp["positionType"]);
   });
 
   test("test_both_guides", () => {
@@ -562,9 +562,9 @@ describe("TestCompItemGuides", () => {
     py_assert(Array.isArray(guides_json), "export has no guides list");
     expect(len(comp.guides)).toBe(len(guides_json));
     for (const [guide, exp] of zip(comp.guides, guides_json)) {
-      expect(guide.orientation_type).toBe(exp["orientationType"]);
+      expect(guide.orientationType).toBe(exp["orientationType"]);
       expect(guide.position).toBe(exp["position"]);
-      expect(guide.position_type).toBe(exp["positionType"]);
+      expect(guide.positionType).toBe(exp["positionType"]);
     }
   });
 
@@ -575,13 +575,13 @@ describe("TestCompItemGuides", () => {
 
   test("test_guide_orientation_horizontal", () => {
     const comp = get_comp(parse_project(SAMPLES_DIR.div("guides.aep")), "guides_horizontal");
-    expect(comp.guides[0].orientation_type).toBe(GuideOrientationType.HORIZONTAL);
+    expect(comp.guides[0].orientationType).toBe(GuideOrientationType.HORIZONTAL);
   });
 
   test("test_guide_orientation_vertical", () => {
     const comp = get_comp(parse_project(SAMPLES_DIR.div("guides.aep")), "guides_both");
     const vertical_guides = comp.guides.filter(
-      (g) => g.orientation_type === GuideOrientationType.VERTICAL,
+      (g) => g.orientationType === GuideOrientationType.VERTICAL,
     );
     expect(len(vertical_guides)).toBe(1);
     expect(vertical_guides[0].position).toBe(960.0);
@@ -593,24 +593,24 @@ describe("TestEssentialGraphics", () => {
   test("test_fill_color_added", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("fill_color_added.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
-    expect(comp.motion_graphics_template_name).toBe("Untitled");
-    expect(comp.motion_graphics_template_controller_count).toBe(1);
-    expect(comp.motion_graphics_controllers[0].name).toBe("Fill Color");
-    expect(py_eq(comp.motion_graphics_template_controller_names, ["Fill Color"])).toBe(true);
+    expect(comp.motionGraphicsTemplateName).toBe("Untitled");
+    expect(comp.motionGraphicsTemplateControllerCount).toBe(1);
+    expect(comp.motionGraphicsControllers[0].name).toBe("Fill Color");
+    expect(py_eq(comp.motionGraphicsTemplateControllerNames, ["Fill Color"])).toBe(true);
   });
 
   test("test_custom_template_name", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("custom_template_name.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
-    expect(comp.motion_graphics_template_name).toBe("My Custom Template");
+    expect(comp.motionGraphicsTemplateName).toBe("My Custom Template");
   });
 
   test("test_multiple_controllers", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("multiple_controllers.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
-    expect(comp.motion_graphics_template_controller_count).toBe(3);
+    expect(comp.motionGraphicsTemplateControllerCount).toBe(3);
     expect(
-      py_eq(comp.motion_graphics_template_controller_names, [
+      py_eq(comp.motionGraphicsTemplateControllerNames, [
         "Brightness",
         "Layer Opacity",
         "Background Color",
@@ -621,21 +621,21 @@ describe("TestEssentialGraphics", () => {
   test("test_controller_renamed", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("controller_renamed.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
-    expect(comp.motion_graphics_controllers[0].name).toBe("Renamed Color");
+    expect(comp.motionGraphicsControllers[0].name).toBe("Renamed Color");
   });
 
   test("test_no_essential_properties", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("no_essential_properties.aep"));
     for (const comp of project.compositions) {
-      expect(comp.motion_graphics_template_controller_count).toBe(0);
-      expect(py_eq(comp.motion_graphics_template_controller_names, [])).toBe(true);
+      expect(comp.motionGraphicsTemplateControllerCount).toBe(0);
+      expect(py_eq(comp.motionGraphicsTemplateControllerNames, [])).toBe(true);
     }
   });
 
   test("test_main_comp_has_no_controllers", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("fill_color_added.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "main"));
-    expect(comp.motion_graphics_template_controller_count).toBe(0);
+    expect(comp.motionGraphicsTemplateControllerCount).toBe(0);
   });
 
   /** Verify controller_type for each controller type sample. */
@@ -651,12 +651,12 @@ describe("TestEssentialGraphics", () => {
     for (const [sample, expected_type] of type_samples) {
       const project = parse_project(EG_SAMPLES_DIR.div(`${sample}.aep`));
       const comp = next_(project.compositions.find((c) => c.name === "primary"));
-      const ctrls = comp.motion_graphics_controllers;
+      const ctrls = comp.motionGraphicsControllers;
       py_assert(py_bool(ctrls), `${sample}: no controllers`);
       const ctrl = ctrls[0];
       py_assert(
-        ctrl.controller_type === expected_type,
-        `${sample}: expected type ${expected_type}, got ${ctrl.controller_type}`,
+        ctrl.controllerType === expected_type,
+        `${sample}: expected type ${expected_type}, got ${ctrl.controllerType}`,
       );
     }
   });
@@ -670,13 +670,13 @@ describe("TestEssentialGraphics", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("multiple_controllers.aep"));
     const source = next_(project.compositions.find((c) => c.name === "primary"));
     // NOTE(port): MotionGraphicsController.uuid is a str in Python and a string here, so Set identity matches.
-    const controller_uuids = new Set(source.motion_graphics_controllers.map((c) => c.uuid));
+    const controller_uuids = new Set(source.motionGraphicsControllers.map((c) => c.uuid));
     expect(len(controller_uuids)).toBe(3);
 
     const main = next_(project.compositions.find((c) => c.name === "main"));
-    const with_overrides = main.layers.filter((layer) => py_bool(layer.essential_property_uuids));
+    const with_overrides = main.layers.filter((layer) => py_bool(layer.essentialPropertyUuids));
     expect(len(with_overrides)).toBe(1);
-    const overrides = with_overrides[0].essential_property_uuids;
+    const overrides = with_overrides[0].essentialPropertyUuids;
     expect(len(overrides)).toBe(3);
     expect([...new Set(overrides)].every((u) => controller_uuids.has(u))).toBe(true);
   });
@@ -685,7 +685,7 @@ describe("TestEssentialGraphics", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("no_essential_properties.aep"));
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
-        expect(py_eq(layer.essential_property_uuids, [])).toBe(true);
+        expect(py_eq(layer.essentialPropertyUuids, [])).toBe(true);
       }
     }
   });
@@ -695,11 +695,11 @@ describe("TestEssentialGraphics", () => {
     // controllers by shared UUID, in override order.
     const project = parse_project(EG_SAMPLES_DIR.div("multiple_controllers.aep"));
     const main = next_(project.compositions.find((c) => c.name === "main"));
-    const layer = next_(main.layers.find((la) => py_bool(la.essential_property_uuids)));
-    const controllers = as_instance(layer, AVLayer).essential_property_controllers;
+    const layer = next_(main.layers.find((la) => py_bool(la.essentialPropertyUuids)));
+    const controllers = as_instance(layer, AVLayer).essentialPropertyControllers;
     expect(py_eq(controllers.map((c) => c.name), ["Brightness", "Layer Opacity", "Background Color"])).toBe(true);
     // Each resolved controller's uuid is the override uuid at that position.
-    expect(py_eq(controllers.map((c) => c.uuid), layer.essential_property_uuids)).toBe(true);
+    expect(py_eq(controllers.map((c) => c.uuid), layer.essentialPropertyUuids)).toBe(true);
   });
 
   test("test_essential_property_controllers_single_override", () => {
@@ -707,9 +707,9 @@ describe("TestEssentialGraphics", () => {
     const layer = next_(
       project.compositions
         .flatMap((comp) => comp.layers)
-        .find((la) => py_bool(la.essential_property_uuids)),
+        .find((la) => py_bool(la.essentialPropertyUuids)),
     );
-    const controllers = as_instance(layer, AVLayer).essential_property_controllers;
+    const controllers = as_instance(layer, AVLayer).essentialPropertyControllers;
     expect(len(controllers)).toBe(1);
     expect(controllers[0].name).toBe("Title Text");
   });
@@ -719,7 +719,7 @@ describe("TestEssentialGraphics", () => {
     const project = parse_project(EG_SAMPLES_DIR.div("multiple_controllers.aep"));
     const primary = next_(project.compositions.find((c) => c.name === "primary"));
     const solid = next_(primary.layers.find((layer) => layer.name === "Gray Solid 1"));
-    expect(py_eq(as_instance(solid, AVLayer).essential_property_controllers, [])).toBe(true);
+    expect(py_eq(as_instance(solid, AVLayer).essentialPropertyControllers, [])).toBe(true);
   });
 
   test("test_controller_source_property_path", () => {
@@ -727,16 +727,16 @@ describe("TestEssentialGraphics", () => {
     // property it exposes (match name + index; None index = match by name).
     const project = parse_project(EG_SAMPLES_DIR.div("multiple_controllers.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
-    const by_name = new Map(comp.motion_graphics_controllers.map((c) => [c.name, c] as const));
+    const by_name = new Map(comp.motionGraphicsControllers.map((c) => [c.name, c] as const));
 
-    const bg = getitem(by_name, "Background Color").source_property_path;
-    expect(py_eq(bg.map((n) => n.match_name), ["ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"])).toBe(true);
-    expect(py_eq(bg.map((n) => n.prop_index), [null, 0, 3])).toBe(true);
+    const bg = getitem(by_name, "Background Color").sourcePropertyPath;
+    expect(py_eq(bg.map((n) => n.matchName), ["ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"])).toBe(true);
+    expect(py_eq(bg.map((n) => n.propIndex), [null, 0, 3])).toBe(true);
 
     // A transform property (not an effect): every node matches by name.
-    const opacity = getitem(by_name, "Layer Opacity").source_property_path;
-    expect(py_eq(opacity.map((n) => n.match_name), ["ADBE Transform Group", "ADBE Opacity"])).toBe(true);
-    expect(opacity.every((n) => n.prop_index == null)).toBe(true);
+    const opacity = getitem(by_name, "Layer Opacity").sourcePropertyPath;
+    expect(py_eq(opacity.map((n) => n.matchName), ["ADBE Transform Group", "ADBE Opacity"])).toBe(true);
+    expect(opacity.every((n) => n.propIndex == null)).toBe(true);
   });
 
   test("test_group_controller", () => {
@@ -749,7 +749,7 @@ describe("TestEssentialGraphics", () => {
     const comp = next_(project.compositions.find((c) => c.name === "Comp 1"));
     expect(
       py_eq(
-        comp.motion_graphics_controllers.map((c) => [c.name, c.controller_type]),
+        comp.motionGraphicsControllers.map((c) => [c.name, c.controllerType]),
         [
           ["Group", 10],
           ["Gaussian Blur Blurriness", 2],
@@ -757,17 +757,17 @@ describe("TestEssentialGraphics", () => {
         ],
       ),
     ).toBe(true);
-    expect(py_eq(comp.motion_graphics_controllers[0].source_property_path, [])).toBe(true);
+    expect(py_eq(comp.motionGraphicsControllers[0].sourcePropertyPath, [])).toBe(true);
     // Pin the deliberate one-lower-than-ExtendScript count (ES reports 4
     // including the unstored runtime "GropDropZone"); guards against drift.
-    expect(comp.motion_graphics_template_controller_count).toBe(3);
-    expect(comp.motion_graphics_template_controller_names.includes("GropDropZone")).toBe(false);
+    expect(comp.motionGraphicsTemplateControllerCount).toBe(3);
+    expect(comp.motionGraphicsTemplateControllerNames.includes("GropDropZone")).toBe(false);
 
     // The precomp layer's overrides resolve to all three (incl. the group).
     const main = next_(project.compositions.find((c) => c.name === "main"));
-    const layer = next_(main.layers.find((la) => py_bool(la.essential_property_uuids)));
+    const layer = next_(main.layers.find((la) => py_bool(la.essentialPropertyUuids)));
     expect(
-      py_eq(as_instance(layer, AVLayer).essential_property_controllers.map((c) => c.name), ["Group", "Gaussian Blur Blurriness", "Fill Color"]),
+      py_eq(as_instance(layer, AVLayer).essentialPropertyControllers.map((c) => c.name), ["Group", "Gaussian Blur Blurriness", "Fill Color"]),
     ).toBe(true);
   });
 
@@ -777,14 +777,14 @@ describe("TestEssentialGraphics", () => {
     // ExtendScript exactly.
     const project = parse_project(EG_SAMPLES_DIR.div("media_replacement.aep"));
     const comp = next_(project.compositions.find((c) => c.name === "image_with_alpha"));
-    const ctrls = comp.motion_graphics_controllers;
-    expect(comp.motion_graphics_template_controller_count).toBe(1);
+    const ctrls = comp.motionGraphicsControllers;
+    expect(comp.motionGraphicsTemplateControllerCount).toBe(1);
     expect(len(ctrls)).toBe(1);
-    expect(ctrls[0].controller_type).toBe(14);
+    expect(ctrls[0].controllerType).toBe(14);
     expect(ctrls[0].name).toBe("image_with_alpha.png");
     // The controller records the source comp + layer it controls.
-    expect(ctrls[0].source_comp_id).toBe(2);
-    expect(ctrls[0].source_layer_id).toBe(14);
+    expect(ctrls[0].sourceCompId).toBe(2);
+    expect(ctrls[0].sourceLayerId).toBe(14);
   });
 
   test("test_media_replacement_override_attributes", () => {
@@ -794,34 +794,34 @@ describe("TestEssentialGraphics", () => {
     // footage in a composition, so alternate_source is that comp).
     const project = parse_project(EG_SAMPLES_DIR.div("media_replacement.aep"));
     const host = next_(project.compositions.find((c) => c.name === "image_with_alpha 2"));
-    const layer = next_(host.layers.find((la) => py_bool(la.essential_property_uuids)));
+    const layer = next_(host.layers.find((la) => py_bool(la.essentialPropertyUuids)));
 
-    const overrides = as_instance(next_(layer.properties.find((p) => p.match_name === "ADBE Layer Overrides")), PropertyGroup);
-    expect(overrides.num_properties).toBe(1);
+    const overrides = as_instance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    expect(overrides.numProperties).toBe(1);
     const alt = as_instance(overrides.properties[0], Property);
-    expect(alt.match_name).toBe("ADBE Layer Source Alternate");
+    expect(alt.matchName).toBe("ADBE Layer Source Alternate");
     expect(alt.name).toBe("image_with_alpha.png");
-    expect(alt.can_set_alternate_source).toBe(true);
-    expect(alt.is_modified).toBe(true);
-    expect(alt.alternate_source != null).toBe(true);
-    py_assert(alt.alternate_source != null);
-    expect(alt.alternate_source.name).toBe("image_with_alpha.png_sequence");
+    expect(alt.canSetAlternateSource).toBe(true);
+    expect(alt.isModified).toBe(true);
+    expect(alt.alternateSource != null).toBe(true);
+    py_assert(alt.alternateSource != null);
+    expect(alt.alternateSource.name).toBe("image_with_alpha.png_sequence");
     // essential_property_source resolves the override to its source layer
     // in the master comp (matched via the controller's CCId/CLId).
-    const src = alt.essential_property_source;
+    const src = alt.essentialPropertySource;
     expect(src != null).toBe(true);
     py_assert(src instanceof AVLayer);
     expect(src.name).toBe("image_with_alpha.png");
-    expect(src.containing_comp.name).toBe("image_with_alpha");
+    expect(src.containingComp.name).toBe("image_with_alpha");
 
     // The Source Options copy is an unset slot (blsi == 0).
-    const src_group = as_instance(next_(layer.properties.find((p) => p.match_name === "ADBE Source Options Group")), PropertyGroup);
+    const src_group = as_instance(next_(layer.properties.find((p) => p.matchName === "ADBE Source Options Group")), PropertyGroup);
     const src_alt = as_instance(
-      next_(src_group.properties.find((c) => c.match_name === "ADBE Layer Source Alternate")),
+      next_(src_group.properties.find((c) => c.matchName === "ADBE Layer Source Alternate")),
       Property,
     );
-    expect(src_alt.can_set_alternate_source).toBe(false);
-    expect(src_alt.alternate_source == null).toBe(true);
+    expect(src_alt.canSetAlternateSource).toBe(false);
+    expect(src_alt.alternateSource == null).toBe(true);
   });
 
   test("test_property_source_essential_property_walk", () => {
@@ -845,13 +845,13 @@ describe("TestEssentialGraphics", () => {
     const src_layer = _resolve_controller_source_layer(project, blur);
     expect(src_layer != null).toBe(true);
     if (src_layer == null) throw new AssertionError_("blur controller has no source layer");
-    const leaf_node = _walk_source_property(src_layer, blur.source_property_path);
+    const leaf_node = _walk_source_property(src_layer, blur.sourcePropertyPath);
     expect(leaf_node != null).toBe(true);
     const leaf = as_instance(leaf_node, Property);
-    expect(leaf.match_name).toBe("ADBE Gaussian Blur 2-0001");
+    expect(leaf.matchName).toBe("ADBE Gaussian Blur 2-0001");
     expect(leaf.enabled).toBe(true);
-    expect(leaf.min_value).toBe(0);
-    expect(leaf.max_value).toBe(30000);
+    expect(leaf.minValue).toBe(0);
+    expect(leaf.maxValue).toBe(30000);
     expect(leaf.value).toBe(25.0);
 
     // The override leaf carries its OWN value; the source Property here is
@@ -859,15 +859,15 @@ describe("TestEssentialGraphics", () => {
     const fill = getitem(by_name, "Fill Color");
     const fill_src_layer = _resolve_controller_source_layer(project, fill);
     if (fill_src_layer == null) throw new AssertionError_("fill controller has no source layer");
-    const fill_leaf_node = _walk_source_property(fill_src_layer, fill.source_property_path);
+    const fill_leaf_node = _walk_source_property(fill_src_layer, fill.sourcePropertyPath);
     expect(fill_leaf_node != null).toBe(true);
     const fill_leaf = as_instance(fill_leaf_node, Property);
-    expect(fill_leaf.match_name).toBe("ADBE Fill-0002");
+    expect(fill_leaf.matchName).toBe("ADBE Fill-0002");
     expect(py_eq(Array.from(fill_leaf.value), [1.0, 0.0, 0.0, 1.0])).toBe(true);
 
     // A Group controller (type 10) stores no source-property path -> no leaf.
     const group = getitem(by_name, "Group");
-    expect(py_eq(group.source_property_path, [])).toBe(true);
+    expect(py_eq(group.sourcePropertyPath, [])).toBe(true);
   });
 
   test("test_essential_property_override_metadata", () => {
@@ -880,42 +880,42 @@ describe("TestEssentialGraphics", () => {
         .flatMap((comp) => comp.layers)
         .find(
           (la) =>
-            la.properties.some((p) => p.match_name === "ADBE Layer Overrides") &&
-            as_instance(next_(la.properties.find((p) => p.match_name === "ADBE Layer Overrides")), PropertyGroup).num_properties > 0,
+            la.properties.some((p) => p.matchName === "ADBE Layer Overrides") &&
+            as_instance(next_(la.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup).numProperties > 0,
         ),
     );
-    const overrides = as_instance(next_(layer.properties.find((p) => p.match_name === "ADBE Layer Overrides")), PropertyGroup);
-    expect(overrides.num_properties).toBe(1);
-    expect(overrides.is_modified).toBe(true); // non-empty override group
+    const overrides = as_instance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    expect(overrides.numProperties).toBe(1);
+    expect(overrides.isModified).toBe(true); // non-empty override group
 
     const grp = as_instance(overrides.properties[0], PropertyGroup);
-    expect(grp.match_name).toBe("ADBE Layer Overrides Group");
-    expect(grp.num_properties).toBe(2);
-    expect(grp.is_modified).toBe(true);
+    expect(grp.matchName).toBe("ADBE Layer Overrides Group");
+    expect(grp.numProperties).toBe(2);
+    expect(grp.isModified).toBe(true);
 
     const [blur, fill] = grp.properties.map((leaf) => as_instance(leaf, Property));
     // Source-derived bounds/enabled (leaf's own tduM is 50, source is 30000).
     expect(blur.name).toBe("Gaussian Blur Blurriness");
     expect(blur.enabled).toBe(true);
-    expect(blur.has_min && blur.has_max).toBe(true);
-    expect(py_eq([blur.min_value, blur.max_value], [0, 30000])).toBe(true);
+    expect(blur.hasMin && blur.hasMax).toBe(true);
+    expect(py_eq([blur.minValue, blur.maxValue], [0, 30000])).toBe(true);
     expect(blur.value).toBe(25.0); // own override value
-    expect(blur.is_modified).toBe(false); // equals source value
+    expect(blur.isModified).toBe(false); // equals source value
 
     // Fill leaf has no tdum/tduM; bounds come from the source Fill Color.
     expect(fill.name).toBe("Fill Color");
-    expect(fill.has_min && fill.has_max).toBe(true);
-    py_assert(typeof fill.max_value === "number");
-    expect(round(fill.max_value, 2)).toBe(3921568.63);
-    expect(fill.is_modified).toBe(true); // override differs from source [1,0,0,1]
+    expect(fill.hasMin && fill.hasMax).toBe(true);
+    py_assert(typeof fill.maxValue === "number");
+    expect(round(fill.maxValue, 2)).toBe(3921568.63);
+    expect(fill.isModified).toBe(true); // override differs from source [1,0,0,1]
     expect(py_eq(fill.value.map((c: number) => round(c, 4)), [0.2475, 0.7255, 0.6299, 1.0])).toBe(true);
 
     // Public essential_property_source resolves the override to its source
     // Property (a different object than the override leaf).
-    const src = blur.essential_property_source;
+    const src = blur.essentialPropertySource;
     expect(src != null && src !== blur).toBe(true);
     py_assert(src != null);
-    expect(src.match_name).toBe("ADBE Gaussian Blur 2-0001");
+    expect(src.matchName).toBe("ADBE Gaussian Blur 2-0001");
   });
 
   test("test_point_override_value_in_source_pixels", () => {
@@ -928,16 +928,16 @@ describe("TestEssentialGraphics", () => {
       project.compositions
         .flatMap((comp) => comp.layers)
         .find((la) =>
-          la.properties.some((p) => p.match_name === "ADBE Layer Overrides" && as_instance(p, PropertyGroup).num_properties > 0),
+          la.properties.some((p) => p.matchName === "ADBE Layer Overrides" && as_instance(p, PropertyGroup).numProperties > 0),
         ),
     );
-    const overrides = as_instance(next_(layer.properties.find((p) => p.match_name === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = as_instance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
     const leaf = as_instance(overrides.properties[0], Property);
-    expect(leaf.match_name).toBe("ADBE Point Control-0001");
+    expect(leaf.matchName).toBe("ADBE Point Control-0001");
     expect(py_eq(leaf.value, [500.0, 500.0])).toBe(true); // pixels, not the stored [0.5, 0.5]
-    expect(leaf.is_modified).toBe(false); // equals source, once in the same units
-    expect(leaf.units_text).toBe("pixels");
-    const src = leaf.essential_property_source;
+    expect(leaf.isModified).toBe(false); // equals source, once in the same units
+    expect(leaf.unitsText).toBe("pixels");
+    const src = leaf.essentialPropertySource;
     expect(src != null && py_eq(getattr(src, "value"), [500.0, 500.0])).toBe(true);
   });
 
@@ -949,10 +949,10 @@ describe("TestEssentialGraphics", () => {
       project.compositions
         .flatMap((comp) => comp.layers)
         .find((la) =>
-          la.properties.some((p) => p.match_name === "ADBE Layer Overrides" && as_instance(p, PropertyGroup).num_properties > 0),
+          la.properties.some((p) => p.matchName === "ADBE Layer Overrides" && as_instance(p, PropertyGroup).numProperties > 0),
         ),
     );
-    const overrides = as_instance(next_(layer.properties.find((p) => p.match_name === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = as_instance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
     const names = overrides.properties.map((leaf) => leaf.name);
     expect(py_eq(names, ["Brightness", "Layer Opacity", "Background Color"])).toBe(true);
   });
@@ -965,8 +965,8 @@ describe("TestEssentialGraphics", () => {
     const project = parse_project(versions.div("ae2018", "complete.aep"));
     expect(py_bool(project.compositions)).toBe(true);
     for (const comp of project.compositions) {
-      expect(comp.motion_graphics_template_name).toBe("Untitled");
-      expect(comp.motion_graphics_template_controller_count).toBe(0);
+      expect(comp.motionGraphicsTemplateName).toBe("Untitled");
+      expect(comp.motionGraphicsTemplateControllerCount).toBe(0);
     }
   });
 });

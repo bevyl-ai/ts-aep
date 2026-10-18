@@ -68,7 +68,7 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
     const parsed = new Map<string, Property>();
     for (const comp of app.project.compositions) {
       for (const [layer_name, prop] of _keyed(comp)) {
-        parsed.set(tkey(comp.name, layer_name, prop.match_name), prop);
+        parsed.set(tkey(comp.name, layer_name, prop.matchName), prop);
       }
     }
 
@@ -82,16 +82,16 @@ test.each(["ae2018", "ae2022", "ae2023", "ae2026"])(
       for (const [json_key, keyframe] of zip(keys, prop.keyframes)) {
         if (py_bool(json_key.spatialAutoBezier ?? null)) {
           compared += 1;
-          expect(approx(keyframe.in_spatial_tangent, json_key.inSpatialTangent, { abs: 0.001 })).toBe(true);
-          expect(approx(keyframe.out_spatial_tangent, json_key.outSpatialTangent, { abs: 0.001 })).toBe(true);
+          expect(approx(keyframe.inSpatialTangent, json_key.inSpatialTangent, { abs: 0.001 })).toBe(true);
+          expect(approx(keyframe.outSpatialTangent, json_key.outSpatialTangent, { abs: 0.001 })).toBe(true);
         }
         if (py_bool(json_key.temporalAutoBezier ?? null)) {
           compared += 1;
-          for (const [ease, json_ease] of zip(keyframe.in_temporal_ease, json_key.inTemporalEase)) {
+          for (const [ease, json_ease] of zip(keyframe.inTemporalEase, json_key.inTemporalEase)) {
             expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
             expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
           }
-          for (const [ease, json_ease] of zip(keyframe.out_temporal_ease, json_key.outTemporalEase)) {
+          for (const [ease, json_ease] of zip(keyframe.outTemporalEase, json_key.outTemporalEase)) {
             expect(approx(ease.speed, json_ease.speed, { abs: 0.001 })).toBe(true);
             expect(approx(ease.influence, json_ease.influence, { abs: 0.001 })).toBe(true);
           }

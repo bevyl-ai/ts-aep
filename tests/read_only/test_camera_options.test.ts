@@ -46,22 +46,22 @@ describe("TestCameraOptionDefaults", () => {
     expect(approx(zoom.value, expected)).toBe(true);
     expect(approx(focus.value, expected)).toBe(true);
     // An untouched default is not "modified".
-    expect(zoom.is_modified).toBe(false);
-    expect(focus.is_modified).toBe(false);
+    expect(zoom.isModified).toBe(false);
+    expect(focus.isModified).toBe(false);
   });
 
   test("test_aperture_is_constant", () => {
     const cam = _camera("CAM_ONE");
     const aperture = _opt(cam, "ADBE Camera Aperture");
     expect(approx(aperture.value, 25.3093363329584)).toBe(true);
-    expect(aperture.is_modified).toBe(false);
+    expect(aperture.isModified).toBe(false);
   });
 
   test("test_ae26_has_fifteen_options", () => {
     const cam = _camera("CAM_ONE");
     const options = cam.property("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(15);
-    const names = options.map((p) => p.match_name);
+    const names = options.map((p) => p.matchName);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(true);
     expect(names.includes("ADBE Camera Split Blur Level")).toBe(true);
     // Iris Shape follows the two 2026 additions.
@@ -72,15 +72,15 @@ describe("TestCameraOptionDefaults", () => {
     const cam = _camera("CAM_ONE");
     const focus_area = _opt(cam, "ADBE Camera Focus Area Width");
     expect(approx(focus_area.value, 0.0)).toBe(true);
-    expect(focus_area.has_min).toBe(true);
-    expect(focus_area.has_max).toBe(false);
-    expect(focus_area.can_set_expression).toBe(false);
+    expect(focus_area.hasMin).toBe(true);
+    expect(focus_area.hasMax).toBe(false);
+    expect(focus_area.canSetExpression).toBe(false);
 
     const split_blur = _opt(cam, "ADBE Camera Split Blur Level");
     expect(approx(Array.from(split_blur.value), [100.0, 100.0])).toBe(true);
-    expect(split_blur.has_max).toBe(false);
-    expect(split_blur.can_set_expression).toBe(false);
-    expect(split_blur.units_text).toBe("percent");
+    expect(split_blur.hasMax).toBe(false);
+    expect(split_blur.canSetExpression).toBe(false);
+    expect(split_blur.unitsText).toBe("percent");
   });
 
   test("test_ae25_gate_keeps_thirteen_options", () => {
@@ -94,7 +94,7 @@ describe("TestCameraOptionDefaults", () => {
     if (cam === undefined) throw new StopIteration();
     const options = cam.property("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(13);
-    const names = options.map((p) => p.match_name);
+    const names = options.map((p) => p.matchName);
     expect(names.includes("ADBE Camera Focus Area Width")).toBe(false);
     expect(names.includes("ADBE Camera Split Blur Level")).toBe(false);
   });
@@ -121,7 +121,7 @@ describe("TestCameraLightTransformMetadata", () => {
     // These probes assume the leader is NOT dimension-separated.
     const leader = layer.transform.property("ADBE Position");
     expect(leader instanceof Property).toBe(true);
-    expect(leader.dimensions_separated).toBe(false);
+    expect(leader.dimensionsSeparated).toBe(false);
     return prop;
   };
 
@@ -129,7 +129,7 @@ describe("TestCameraLightTransformMetadata", () => {
     for (const comp_name of ["CAM_ONE", "CAM_TWO"]) {
       const cam = _camera(comp_name);
       // Compared as [name, value] so a failure names the comp, like the Python message.
-      expect([comp_name, _z_follower(cam).is_modified]).toEqual([comp_name, true]);
+      expect([comp_name, _z_follower(cam).isModified]).toEqual([comp_name, true]);
     }
   });
 
@@ -140,7 +140,7 @@ describe("TestCameraLightTransformMetadata", () => {
     if (comp === undefined) throw new StopIteration();
     const solid = comp.layers.find((ly) => ly.name === "solid_3d");
     if (solid === undefined) throw new StopIteration();
-    expect(_z_follower(solid).is_modified).toBe(false);
+    expect(_z_follower(solid).isModified).toBe(false);
   });
 
   test("test_two_node_camera_poi_expressionable", () => {
@@ -148,7 +148,7 @@ describe("TestCameraLightTransformMetadata", () => {
     expect(cam._ldta.poi_auto_orient).toBe(true);
     const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
-    expect(poi.can_set_expression).toBe(true);
+    expect(poi.canSetExpression).toBe(true);
   });
 
   test("test_one_node_camera_poi_not_expressionable", () => {
@@ -156,6 +156,6 @@ describe("TestCameraLightTransformMetadata", () => {
     expect(cam._ldta.poi_auto_orient).toBe(false);
     const poi = cam.transform.property("ADBE Anchor Point");
     expect(poi instanceof Property).toBe(true);
-    expect(poi.can_set_expression).toBe(false);
+    expect(poi.canSetExpression).toBe(false);
   });
 });

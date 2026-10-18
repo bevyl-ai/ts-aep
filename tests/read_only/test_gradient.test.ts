@@ -226,16 +226,16 @@ test("test_g_fill_gradient_colors", () => {
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
 
-  expect(colors.match_name).toBe("ADBE Vector Grad Colors");
+  expect(colors.matchName).toBe("ADBE Vector Grad Colors");
   expect(colors.name).toBe("Colors");
 
   const gd = colors.value;
   expect(gd instanceof Gradient).toBe(true);
-  expect(len(gd.color_stops)).toBe(2);
-  expect(len(gd.alpha_stops)).toBe(2);
+  expect(len(gd.colorStops)).toBe(2);
+  expect(len(gd.alphaStops)).toBe(2);
   // Non-default values set in the sample
-  expect(approx(gd.color_stops[0].offset, 0.065, { abs: 0.001 })).toBe(true);
-  expect(approx(gd.alpha_stops[0].alpha, 0.83, { abs: 0.01 })).toBe(true);
+  expect(approx(gd.colorStops[0].offset, 0.065, { abs: 0.001 })).toBe(true);
+  expect(approx(gd.alphaStops[0].alpha, 0.83, { abs: 0.01 })).toBe(true);
 });
 
 test("test_g_stroke_gradient_colors", () => {
@@ -247,7 +247,7 @@ test("test_g_stroke_gradient_colors", () => {
 
   const gd = colors.value;
   expect(gd instanceof Gradient).toBe(true);
-  expect(len(gd.color_stops)).toBeGreaterThanOrEqual(2);
+  expect(len(gd.colorStops)).toBeGreaterThanOrEqual(2);
 });
 
 /** G-Fill has all expected properties from synthesis specs. */
@@ -273,7 +273,7 @@ test("test_g_fill_synthesized_properties", () => {
     "ADBE Vector Grad Colors",
     "ADBE Vector Fill Opacity",
   ];
-  const actual = gfill.properties.map((p) => p.match_name);
+  const actual = gfill.properties.map((p) => p.matchName);
   expect(py_eq(actual, expected_match_names)).toBe(true);
 });
 
@@ -304,7 +304,7 @@ test("test_g_stroke_synthesized_properties", () => {
     "ADBE Vector Stroke Taper",
     "ADBE Vector Stroke Wave",
   ];
-  const actual = gstroke.properties.map((p) => p.match_name);
+  const actual = gstroke.properties.map((p) => p.matchName);
   expect(py_eq(actual, expected_match_names)).toBe(true);
 });
 

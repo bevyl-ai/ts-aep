@@ -49,14 +49,14 @@ function _assert_written(prop: Property, value: number[] | number): void {
   py_assert(prop._tdsb != null);
   expect(prop._tdsb.synthetic).toBe(false);
   expect(approx(prop.value, value)).toBe(true);
-  expect(prop.is_modified).toBe(true);
+  expect(prop.isModified).toBe(true);
 }
 
 function _assert_left_out(prop: Property, value: number[] | number): void {
   py_assert(prop._tdsb != null);
   expect(prop._tdsb.synthetic).toBe(true);
   expect(approx(prop.value, value)).toBe(true);
-  expect(prop.is_modified).toBe(false);
+  expect(prop.isModified).toBe(false);
 }
 
 describe("TestCameraCompResize", () => {
@@ -77,7 +77,7 @@ describe("TestCameraCompResize", () => {
     // A camera's default Position follows its own Zoom, not the pixel
     // aspect, so AE leaves it out.
     const project = parse_project_fresh(CAMERA_SAMPLE);
-    get_comp(project, "zoom_1000").pixel_aspect = 2.0;
+    get_comp(project, "zoom_1000").pixelAspect = 2.0;
 
     const camera = _reopened(project, tmp_path, "zoom_1000", "Camera");
 
@@ -100,7 +100,7 @@ describe("TestLightCompResize", () => {
   const rows: [string, number][] = [
     ["width", 1280],
     ["height", 720],
-    ["pixel_aspect", 2.0],
+    ["pixelAspect", 2.0],
   ];
   test.each(rows)("test_writes_position[%#]", (attr, value) => {
     const tmp_path = make_tmp_path();

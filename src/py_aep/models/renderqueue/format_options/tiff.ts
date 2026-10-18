@@ -17,9 +17,9 @@ import type { RoptChunk } from "../../../binary/render_chunks.ts";
  * import { TiffFormatOptions } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const om = app.project.render_queue.items[0].output_modules[0];
- * if (om.format_options instanceof TiffFormatOptions) {
- *   console.log(om.format_options.lzw_compression);
+ * const om = app.project.renderQueue.items[0].outputModules[0];
+ * if (om.formatOptions instanceof TiffFormatOptions) {
+ *   console.log(om.formatOptions.lzwCompression);
  * }
  * ```
  */
@@ -33,12 +33,12 @@ export class TiffFormatOptions extends FormatOptionsBase {
   }
 
   /** Whether LZW compression is enabled. Read / Write. */
-  declare lzw_compression: boolean;
+  declare lzwCompression: boolean;
 
   /** Whether IBM PC byte order (little-endian) is used. Read / Write. */
-  declare ibm_pc_byte_order: boolean;
+  declare ibmPcByteOrder: boolean;
 }
 
-descriptor(TiffFormatOptions, "lzw_compression", ChunkField.bool("_body", "lzw_compression"));
+descriptor(TiffFormatOptions, "lzwCompression", ChunkField.bool("_body", "lzw_compression"));
 
-descriptor(TiffFormatOptions, "ibm_pc_byte_order", ChunkField.bool("_body", "ibm_pc_byte_order"));
+descriptor(TiffFormatOptions, "ibmPcByteOrder", ChunkField.bool("_body", "ibm_pc_byte_order"));

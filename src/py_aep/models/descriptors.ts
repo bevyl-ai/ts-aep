@@ -263,18 +263,18 @@ export class ChunkField<
   A extends AttrName<O> = AttrName<O>,
   F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>,
 > {
-  declare chunk_attr: string;
+  declare chunkAttr: string;
   declare field: string;
   declare transform: ((value: FieldValue) => T) | null;
   declare reverse: ((value: T) => FieldValue) | null;
-  declare read_only: boolean;
+  declare readOnly: boolean;
   declare validate: ((value: T, obj: O) => void) | null;
   declare default: T | typeof _SENTINEL;
-  declare pre_set: string | null;
-  declare post_set: ((obj: O) => void) | string | null;
-  declare min_version: number | null;
+  declare preSet: string | null;
+  declare postSet: ((obj: O) => void) | string | null;
+  declare minVersion: number | null;
   declare _enum_cls: EnumHelpers<number> | null;
-  declare public_name: string;
+  declare publicName: string;
 
   /**
    * `O` is the model the descriptor is installed on. `A`/`F` are the chunk
@@ -298,23 +298,23 @@ export class ChunkField<
       post_set = null,
       min_version = null,
     } = kw;
-    this.chunk_attr = chunk_attr;
+    this.chunkAttr = chunk_attr;
     this.field = field;
     this.transform = transform;
     this.reverse = reverse;
-    this.read_only = read_only;
+    this.readOnly = read_only;
     this.validate = validate;
     this.default = default_;
-    this.pre_set = pre_set;
-    this.post_set = post_set;
-    this.min_version = min_version;
+    this.preSet = pre_set;
+    this.postSet = post_set;
+    this.minVersion = min_version;
     // Derived once so __set__ validates membership without
     // re-inspecting the transform on every write.
     this._enum_cls = _enum_class(transform);
   }
 
   __set_name__(owner: Function, name: string): void {
-    this.public_name = name;
+    this.publicName = name;
   }
 
   __get__(obj: O | null, objtype?: Function | null): T | ChunkField<T, O> {
@@ -326,20 +326,20 @@ export class ChunkField<
     // does not create it (shaped for speed: every model field read lands here).
     if (Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
       const overrides = instance_dict(obj);
-      if (overrides.has(this.public_name)) return overrides.get(this.public_name);
+      if (overrides.has(this.publicName)) return overrides.get(this.publicName);
     }
-    const body = getattr(obj, this.chunk_attr);
+    const body = getattr(obj, this.chunkAttr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
-      throw new AttributeError(`chunk body ${repr(this.chunk_attr)} is None`);
+      throw new AttributeError(`chunk body ${repr(this.chunkAttr)} is None`);
     }
     const value = getattr(body, this.field);
     return (this.transform ? this.transform(value) : value);
   }
 
   __set__(obj: O & ChunkOwner, value: T): void {
-    if (this.read_only) throw new AttributeError(`${repr(this.public_name)} is read-only.`);
-    if (this.min_version != null) {
+    if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+    if (this.minVersion != null) {
       let major: number | null;
       try {
         major = get_ae_version_major(obj);
@@ -349,16 +349,16 @@ export class ChunkField<
         // has no AVItem); skip the gate and allow the write.
         major = null;
       }
-      if (major != null && major < this.min_version) {
+      if (major != null && major < this.minVersion) {
         throw new AttributeError(
-          `${repr(this.public_name)} requires AE ${this.min_version}+ file format.`,
+          `${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`,
         );
       }
     }
     if (!_materialization_allowed.get()) {
       throw new RuntimeError(
-        `Cannot write ${repr(this.public_name)} via descriptor during ` +
-          `parsing. Use obj.__dict__[${repr(this.public_name)}] for ` +
+        `Cannot write ${repr(this.publicName)} via descriptor during ` +
+          `parsing. Use obj.__dict__[${repr(this.publicName)}] for ` +
           `parse-time overrides.`,
       );
     }
@@ -369,12 +369,12 @@ export class ChunkField<
     // validate too, or its `__dict__` fallback below would accept a
     // value the chunk-backed path rejects.
     if (this.validate) this.validate(value, obj);
-    if (this._enum_cls != null) _validate_enum_member(this._enum_cls, value, this.public_name);
-    if (this.pre_set != null) getattr(obj, this.pre_set).call(obj);
-    instance_dict(obj).delete(this.public_name);
-    let body = getattr(obj, this.chunk_attr);
+    if (this._enum_cls != null) _validate_enum_member(this._enum_cls, value, this.publicName);
+    if (this.preSet != null) getattr(obj, this.preSet).call(obj);
+    instance_dict(obj).delete(this.publicName);
+    let body = getattr(obj, this.chunkAttr);
     if (body == null) {
-      instance_dict(obj).set(this.public_name, value);
+      instance_dict(obj).set(this.publicName, value);
       return;
     }
     if (py_bool(getattr(body, "synthetic", false))) {
@@ -383,15 +383,15 @@ export class ChunkField<
         throw new AttributeError(`'${type_name(owner)}' object has no attribute '_ensure_materialized'`);
       }
       owner._ensure_materialized();
-      body = getattr(obj, this.chunk_attr);
+      body = getattr(obj, this.chunkAttr);
     }
     if (this.reverse != null) body[this.field] = this.reverse(value);
     else body[this.field] = value;
-    if (this.post_set != null) {
-      if (typeof this.post_set === "string") {
-        getattr(obj, this.post_set).call(obj);
+    if (this.postSet != null) {
+      if (typeof this.postSet === "string") {
+        getattr(obj, this.postSet).call(obj);
       } else {
-        const post = this.post_set;
+        const post = this.postSet;
         post(obj);
       }
     }

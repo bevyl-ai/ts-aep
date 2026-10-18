@@ -242,12 +242,12 @@ test("test_gradient_value_write_through", () => {
   expect(gradient._utf8 != null).toBe(true);
 
   // Mutate via descriptor - auto-serializes
-  gradient.color_stops = [
+  gradient.colorStops = [
     new GradientColorStop(0.0, 0.5, [0.0, 1.0, 0.0]),
     new GradientColorStop(0.5, 0.5, [1.0, 1.0, 0.0]),
     new GradientColorStop(1.0, 0.5, [0.0, 0.0, 1.0]),
   ];
-  gradient.alpha_stops = [
+  gradient.alphaStops = [
     new GradientAlphaStop(0.0, 0.5, 1.0),
     new GradientAlphaStop(1.0, 0.5, 1.0),
   ];
@@ -270,11 +270,11 @@ test("test_gradient_binary_roundtrip", () => {
   const gradient = colors.value;
   expect(gradient instanceof Gradient).toBe(true);
 
-  gradient.color_stops = [
+  gradient.colorStops = [
     new GradientColorStop(0.0, 0.5, [0.25, 0.75, 0.5]),
     new GradientColorStop(1.0, 0.5, [0.75, 0.25, 0.5]),
   ];
-  gradient.alpha_stops = [
+  gradient.alphaStops = [
     new GradientAlphaStop(0.0, 0.5, 0.8),
     new GradientAlphaStop(1.0, 0.5, 0.2),
   ];
@@ -290,8 +290,8 @@ test("test_gradient_binary_roundtrip", () => {
   const gfill2 = contents2.property("ADBE Vector Graphic - G-Fill");
   const colors2 = gfill2.property("ADBE Vector Grad Colors");
   expect(colors2.value instanceof Gradient).toBe(true);
-  expect(colors2.value.color_stops.length).toBe(2);
-  expect(approx(colors2.value.color_stops[0].color[0], 0.25)).toBe(true);
+  expect(colors2.value.colorStops.length).toBe(2);
+  expect(approx(colors2.value.colorStops[0].color[0], 0.25)).toBe(true);
 });
 
 test("test_gradient_add_color_stop_serializes", () => {
@@ -304,15 +304,15 @@ test("test_gradient_add_color_stop_serializes", () => {
 
   const gradient = colors.value;
   expect(gradient instanceof Gradient).toBe(true);
-  const original_count = gradient.color_stops.length;
+  const original_count = gradient.colorStops.length;
 
-  gradient.add_color_stop(0.5, 0.5, [1.0, 1.0, 0.0]);
+  gradient.addColorStop(0.5, 0.5, [1.0, 1.0, 0.0]);
 
   // Re-parse from utf8 to confirm serialization
   const reparsed = parse_gradient_xml(gradient._utf8);
   expect(reparsed != null).toBe(true);
   if (reparsed == null) throw new Error("gradient XML did not reparse");
-  expect(reparsed.color_stops.length).toBe(original_count + 1);
+  expect(reparsed.colorStops.length).toBe(original_count + 1);
 });
 
 test("test_gradient_remove_color_stop_serializes", () => {
@@ -325,13 +325,13 @@ test("test_gradient_remove_color_stop_serializes", () => {
 
   const gradient = colors.value;
   expect(gradient instanceof Gradient).toBe(true);
-  const original_count = gradient.color_stops.length;
+  const original_count = gradient.colorStops.length;
 
-  gradient.remove_color_stop(0);
+  gradient.removeColorStop(0);
 
-  expect(gradient.color_stops.length).toBe(original_count - 1);
+  expect(gradient.colorStops.length).toBe(original_count - 1);
   const reparsed = parse_gradient_xml(gradient._utf8);
   expect(reparsed != null).toBe(true);
   if (reparsed == null) throw new Error("gradient XML did not reparse");
-  expect(reparsed.color_stops.length).toBe(original_count - 1);
+  expect(reparsed.colorStops.length).toBe(original_count - 1);
 });

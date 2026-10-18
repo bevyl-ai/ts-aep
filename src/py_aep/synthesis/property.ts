@@ -9,7 +9,7 @@ import { TEXT_ANIMATOR_POOL } from "../data/text_animator_pool.ts";
 import { PropertyValueType } from "../enums/index.ts";
 import { py_eq } from "../../pyrt/index.ts";
 
-/** Sentinel indicating `PropSpec.default_value` should mirror `value`. */
+/** Sentinel indicating `PropSpec.defaultValue` should mirror `value`. */
 export const _USE_VALUE: unique symbol = Symbol("_USE_VALUE");
 
 type PropSpecField = PropSpec[
@@ -2415,7 +2415,7 @@ export const _TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
 // come after Material Assignment. Group `enable_flags` mirror the tdsb
 // bytes AE writes for a new mesh layer; the ACTIVE mesh type's option and
 // bevel groups get `1` at creation time instead (see
-// `CompItem.add_parametric_mesh`).
+// `CompItem.addParametricMesh`).
 export const _PARAMETRIC_MESH_TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
   _MARKER_SPEC,
   new GroupSpec("ADBE MTrackers", "Motion Trackers"),

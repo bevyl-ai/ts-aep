@@ -38,7 +38,7 @@ import type { FolderItem } from "./folder.ts";
  *
  * const app = parse("project.aep");
  * const footage = app.project.footages[0];
- * console.log(footage.main_source);
+ * console.log(footage.mainSource);
  * ```
  *
  * Info:
@@ -74,15 +74,15 @@ export class FootageItem extends AVItem {
   }
 
   /** The frame rate of the item in frames-per-second. Read-only. */
-  get frame_rate(): number {
-    return this._main_source.display_frame_rate;
+  get frameRate(): number {
+    return this._main_source.displayFrameRate;
   }
 
   /**
    * The duration of the item in frames. Still footages have a duration
    * of 0. Read-only.
    */
-  get frame_duration(): number {
+  get frameDuration(): number {
     return this._main_source._frame_duration;
   }
 
@@ -94,11 +94,11 @@ export class FootageItem extends AVItem {
    * preset ratio (1.09 becomes the 1.0940 of D1/DV PAL), the value
    * is stored as given.
    */
-  get pixel_aspect(): number {
+  get pixelAspect(): number {
     return this._main_source._pixel_aspect;
   }
 
-  set pixel_aspect(value: number) {
+  set pixelAspect(value: number) {
     validate_pixel_aspect(value);
     this._main_source._sspc.pixel_aspect = value;
   }
@@ -109,23 +109,23 @@ export class FootageItem extends AVItem {
    *
    * In this case, the path of the missing source file is in the
    * `missing_footage_path` attribute of the footage item's source-file object.
-   * See {@link FootageItem.main_source} and
-   * {@link FileSource.missing_footage_path | FileSource.missing_footage_path}.
+   * See {@link FootageItem.mainSource} and
+   * {@link FileSource.missingFootagePath | FileSource.missingFootagePath}.
    * Read-only.
    */
-  get footage_missing(): boolean {
+  get footageMissing(): boolean {
     return this._main_source._footage_missing;
   }
 
   /**
    * When `true`, the footage has an audio component.
    *
-   * When {@link AVItem.use_proxy | use_proxy} is
+   * When {@link AVItem.useProxy | use_proxy} is
    * `true`, reflects the proxy source rather than the main source.
    * Read-only.
    */
-  get has_audio(): boolean {
-    if (this.use_proxy && this._proxy_source != null) {
+  get hasAudio(): boolean {
+    if (this.useProxy && this._proxy_source != null) {
       return this._proxy_source._has_audio;
     }
     return this._main_source._has_audio;
@@ -133,14 +133,14 @@ export class FootageItem extends AVItem {
 
   /**
    * `true` if the footage can be used as an alternate source when setting
-   * {@link Property.alternate_source | Property.alternate_source}.
+   * {@link Property.alternateSource | Property.alternateSource}.
    * Read-only.
    *
    * `false` for solids, for footage without a video component (audio-only
    * or data files), and for 3D model scenes (AE 2026 reports an imported
    * `.fbx` as incompatible even though it has video).
    */
-  get is_media_replacement_compatible(): boolean {
+  get isMediaReplacementCompatible(): boolean {
     const source = this._main_source;
     if (source instanceof SolidSource) {
       return false;
@@ -148,16 +148,16 @@ export class FootageItem extends AVItem {
     if (source instanceof FileSource && source._is_3d_model_scene) {
       return false;
     }
-    return this.has_video;
+    return this.hasVideo;
   }
 
   /** The footage start frame. Read-only. */
-  get start_frame(): number {
+  get startFrame(): number {
     return this._main_source._start_frame;
   }
 
   /** The footage end frame. Read-only. */
-  get end_frame(): number {
+  get endFrame(): number {
     return this._main_source._end_frame;
   }
 
@@ -231,12 +231,12 @@ export class FootageItem extends AVItem {
   }
 
   /** The footage source. Read-only. */
-  get main_source(): FileSource | SolidSource | PlaceholderSource {
+  get mainSource(): FileSource | SolidSource | PlaceholderSource {
     return this._main_source;
   }
 
   /** The footage type (placeholder, solid, file). Read-only. */
-  get asset_type(): string {
+  get assetType(): string {
     const main_source: object | null = this._main_source;
     if (main_source instanceof SolidSource) {
       return "solid";
@@ -261,7 +261,7 @@ export class FootageItem extends AVItem {
   }
 
   /**
-   * Identity used by {@link Project.consolidate_footage}.
+   * Identity used by {@link Project.consolidateFootage}.
    *
    * Returns a hashable key for footage that can be merged with other
    * footage sharing the same source file and interpretation, or `null`
@@ -275,22 +275,22 @@ export class FootageItem extends AVItem {
     if (!(source instanceof FileSource)) {
       return null;
     }
-    const attrs = source.file_attributes;
+    const attrs = source.fileAttributes;
     return tkey(
       source.file,
-      [...source.file_names],
-      source.alpha_mode,
-      source.invert_alpha,
-      [...source.premul_color],
-      source.field_separation_type,
-      source.remove_pulldown,
+      [...source.fileNames],
+      source.alphaMode,
+      source.invertAlpha,
+      [...source.premulColor],
+      source.fieldSeparationType,
+      source.removePulldown,
       source.loop,
-      source.conform_frame_rate,
-      source.high_quality_field_separation,
-      source.interpret_as_linear_light,
-      source.is_still,
-      source.native_frame_rate,
-      source.media_color_space,
+      source.conformFrameRate,
+      source.highQualityFieldSeparation,
+      source.interpretAsLinearLight,
+      source.isStill,
+      source.nativeFrameRate,
+      source.mediaColorSpace,
       attrs?.size > 0 ? sorted(Array.from(attrs.entries())) : [],
     );
   }
@@ -321,7 +321,7 @@ export class FootageItem extends AVItem {
       label = label_index(project._preferences, "Solid Label Index 2", 1);
     } else if (source instanceof FileSource && source._has_audio && source._width === 0) {
       label = label_index(project._preferences, "Audio Label Index 2", 7);
-    } else if (source instanceof FileSource && source.is_still) {
+    } else if (source instanceof FileSource && source.isStill) {
       label = label_index(project._preferences, "Still Label Index 2", 5);
     } else {
       label = label_index(project._preferences, "Video Label Index 2", 3);
@@ -392,7 +392,7 @@ export class FootageItem extends AVItem {
     // solid, which would make py_aep's output depend on when it ran.
     // AE replaces an unset (0) stamp with the save time without
     // re-reading the media, so leaving one is harmless.
-    const source = this.use_proxy ? this._proxy_source : this._main_source;
+    const source = this.useProxy ? this._proxy_source : this._main_source;
     if (source instanceof FileSource) {
       py_assert(this._idta != null);
       this._idta.modified_time = source._sspc.source_modified;
@@ -409,7 +409,7 @@ export class FootageItem extends AVItem {
    * frame_rate: Frame rate in fps (1.0-99.0).
    * duration: Duration in seconds (\> 0, \<= 10800).
    */
-  replace_with_placeholder(
+  replaceWithPlaceholder(
     name: string | null,
     width: number,
     height: number,
@@ -437,7 +437,7 @@ export class FootageItem extends AVItem {
    * height: Height in pixels (1-30000).
    * pixel_aspect: Pixel aspect ratio (0.01-100.0).
    */
-  replace_with_solid(
+  replaceWithSolid(
     color: number[],
     name: string | null,
     width: number,
@@ -471,7 +471,7 @@ export class FootageItem extends AVItem {
    *
    * py_aep extension: `layer_index` binds the new source to a single
    * layer of a layered file, by `list_layers` position (see
-   * `ImportOptions.layer_index`). `null` (the default) always replaces
+   * `ImportOptions.layerIndex`). `null` (the default) always replaces
    * with the merged/whole document, even when the current source references a
    * single layer - consistent with `import_file`, where `layer_index=None`
    * imports merged. Pass `CURRENT_VALUE` to rebind at the current source's
@@ -479,7 +479,7 @@ export class FootageItem extends AVItem {
    * index) in the new file.
    *
    * `layer_dimensions` chooses the footage dimensions when a layer is
-   * selected (see `ImportOptions.layer_dimensions`): `"document"` (the
+   * selected (see `ImportOptions.layerDimensions`): `"document"` (the
    * full canvas) or `"layer"` (the layer's content box). `CURRENT_VALUE`
    * (the default) preserves the current single-layer binding's choice.
    * For an AI/PDF target the content box is the artwork box measured from
@@ -489,7 +489,7 @@ export class FootageItem extends AVItem {
    * document is always document-sized).
    *
    * `layer_styles` chooses how a PSD layer's styles are treated (see
-   * `ImportOptions.layer_styles`): `"merge"` (bake them into the raster,
+   * `ImportOptions.layerStyles`): `"merge"` (bake them into the raster,
    * AE's dialog default) or `"ignore"`. `CURRENT_VALUE` (the default)
    * preserves the current binding's recorded choice verbatim - including
    * the `"editable"` marker of an editable-comp per-layer footage item,
@@ -563,7 +563,7 @@ export class FootageItem extends AVItem {
     }
     if (layer_index instanceof _CurrentValue) {
       const current = this._main_source;
-      if (!(current instanceof FileSource && current.layer_name)) {
+      if (!(current instanceof FileSource && current.layerName)) {
         throw new ValueError(
           "CURRENT_VALUE requires the current source to reference " +
             "a single layer of a layered file",
@@ -578,7 +578,7 @@ export class FootageItem extends AVItem {
       const current = this._main_source;
       if (
         current instanceof FileSource &&
-        current.layer_name &&
+        current.layerName &&
         !current._sspc.full_frame
       ) {
         dimensions = "layer";
@@ -591,7 +591,7 @@ export class FootageItem extends AVItem {
       // Preserve the recorded choice verbatim (00/01/02); "merge" is
       // AE's dialog default when the current source has no binding.
       const current = this._main_source;
-      const styles = current instanceof FileSource ? current.layer_styles : null;
+      const styles = current instanceof FileSource ? current.layerStyles : null;
       resolved_styles = styles ?? "merge";
     } else {
       resolved_styles = layer_styles;
@@ -624,7 +624,7 @@ export class FootageItem extends AVItem {
    * folder are gathered into the sequence.
    * force_alphabetical: Take every file of the same type in the
    * folder, in alphabetical order, rather than the numbered
-   * frames (see `ImportOptions.force_alphabetical`).
+   * frames (see `ImportOptions.forceAlphabetical`).
    *
    * ValueError: If the extension is not a supported footage format,
    * or one After Effects does not import as a sequence (movies,
@@ -632,7 +632,7 @@ export class FootageItem extends AVItem {
    * NotImplementedError: If After Effects requires a format-specific
    * `opti` header not implemented for this format.
    */
-  replace_with_sequence(file: string | PathLike, force_alphabetical: boolean = false): void {
+  replaceWithSequence(file: string | PathLike, force_alphabetical: boolean = false): void {
     this._replace_main_source(
       FileSource._from_file(file, {
         sequence: true,

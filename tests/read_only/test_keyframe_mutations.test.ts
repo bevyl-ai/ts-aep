@@ -35,7 +35,7 @@ function _prop(
   const lay = app.project.compositions[comp].layers[layer];
   // `next(gen)` without a default raises StopIteration when nothing matches.
   for (const p of lay.transform) {
-    if (p.match_name === match_name) return as_instance(p, Property);
+    if (p.matchName === match_name) return as_instance(p, Property);
   }
   throw new StopIteration();
 }
@@ -50,7 +50,7 @@ describe("TestNearestKeyIndex", () => {
     const op = _prop(app, "ADBE Opacity");
     expect(len(op.keyframes) >= 2).toBe(true);
     for (const [i, kf] of op.keyframes.entries()) {
-      expect(op.nearest_key_index(kf.time)).toBe(i);
+      expect(op.nearestKeyIndex(kf.time)).toBe(i);
     }
   });
 });

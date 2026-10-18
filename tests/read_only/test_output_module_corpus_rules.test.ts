@@ -31,9 +31,9 @@ const _CORPUS: Path[] = sorted(
 const _SAMPLES_PREFIX = `${String(SAMPLES_DIR)}/`;
 test.each(_CORPUS.map((p) => [String(p).slice(_SAMPLES_PREFIX.length), p] as const))("test_ae_written_state_passes_our_tables[%s]", (_id: string, aep_path: Path) => {
   const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.render_queue, RenderQueue).items) {
-    for (const om of rqi.output_modules) {
-      expect(py_eq(om.validate_state(), [])).toBe(true);
+  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+    for (const om of rqi.outputModules) {
+      expect(py_eq(om.validateState(), [])).toBe(true);
     }
   }
 });

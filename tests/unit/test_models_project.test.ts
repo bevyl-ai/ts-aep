@@ -68,8 +68,8 @@ describe("TestAllocateId", () => {
 
   test("test_new_layer_and_comp_ids_unique_project_wide", (): void => {
     const project = parse_aep(COMP_SAMPLES_DIR.div("bgColor.aep")).project;
-    project.compositions[0].add_null();
-    project.root_folder.add_comp("New", 100, 100, 1.0, 5.0, 25.0);
+    project.compositions[0].addNull();
+    project.rootFolder.addComp("New", 100, 100, 1.0, 5.0, 25.0);
     const all_ids = [..._all_ldta_ids(project), ...project.items.keys()];
     expect(all_ids.length).toBe(new Set(all_ids).size);
     // The persisted counter must remain above every live id.

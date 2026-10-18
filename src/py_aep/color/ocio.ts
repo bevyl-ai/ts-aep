@@ -1,7 +1,7 @@
 /**
  * Enumerate the color spaces of an OCIO configuration.
  *
- * Backs `Project.list_color_profiles()` in OCIO mode: given the project's
+ * Backs `Project.listColorProfiles()` in OCIO mode: given the project's
  * `ocio_configuration_file` (a `.ocio` path or a built-in config name like
  * `"ACES 1.2"`), return the assignable color-space names.
  *
@@ -522,7 +522,7 @@ export function ocio_color_space_for_profile_id(
   if (stamp == null) return null;
   const name = _guid_table_cached(config_path.path, stamp[0], stamp[1]).get(tkey(profile_id)) ?? null;
   // NOTE(port): Python hands back a non-string role key (`roles: {3: x}`) as
-  // is; the `str`-typed `OutputModule.output_color_space` gets its `str()`.
+  // is; the `str`-typed `OutputModule.outputColorSpace` gets its `str()`.
   if (typeof name === "string") return name;
   return name == null ? null : str(name);
 }
@@ -541,7 +541,7 @@ export function ocio_color_space_for_profile_id(
  *
  * Accepts the qualified `"<family>/<name>"` form as well as the bare
  * color-space name, because that qualified form is what AE stores as
- * `colorProfileName` and therefore what `Project.working_space` reads back -
+ * `colorProfileName` and therefore what `Project.workingSpace` reads back -
  * without this, assigning a project its own working space would raise.
  *
  * @param config_path - The resolved `.ocio` config path.

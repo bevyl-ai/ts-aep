@@ -226,15 +226,15 @@ const _after_effects = lru_cache(
 function _new_project(version: string): py_aep.Application {
   const app = py_aep.new(version);
   const project = app.project;
-  const comp = project.root_folder.add_comp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
-  project.root_folder.add_folder("Folder 1");
-  comp.add_solid([1.0, 0.0, 0.0], "Red", 320, 240);
-  comp.add_null();
-  comp.add_camera("Camera 1", [160.0, 120.0]);
-  comp.add_light("Light 1", [160.0, 120.0]);
-  comp.add_text("Hello");
-  comp.add_shape();
-  comp.add(project.import_file(new ImportOptions(PNG)));
+  const comp = project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
+  project.rootFolder.addFolder("Folder 1");
+  comp.addSolid([1.0, 0.0, 0.0], "Red", 320, 240);
+  comp.addNull();
+  comp.addCamera("Camera 1", [160.0, 120.0]);
+  comp.addLight("Light 1", [160.0, 120.0]);
+  comp.addText("Hello");
+  comp.addShape();
+  comp.add(project.importFile(new ImportOptions(PNG)));
   return app;
 }
 
@@ -335,8 +335,8 @@ test("test_layer_comment_written_before_ovdg", () => {
     }
   }
   const app = py_aep.new(RELEASES.ae2018);
-  const comp = app.project.root_folder.add_comp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
-  comp.add_solid([1.0, 0.0, 0.0], "Red", 320, 240).comment = "note";
+  const comp = app.project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
+  comp.addSolid([1.0, 0.0, 0.0], "Red", 320, 240).comment = "note";
   const path = tmp_path.div("comment.aep");
   app.project.save(path);
   const saved = new Set<string>();

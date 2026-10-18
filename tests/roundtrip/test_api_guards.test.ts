@@ -50,7 +50,7 @@ describe("TestValueSetterOnKeyframedProperty", () => {
   test("test_set_value_on_static_property_still_works", () => {
     const app = parse_aep(SAMPLES_DIR.div("property", "all_animated.aep"));
     const comp = app.project.compositions[0];
-    const rot = comp.av_layers[0].transform.property("ADBE Rotate Z");
+    const rot = comp.avLayers[0].transform.property("ADBE Rotate Z");
     expect(py_bool(rot.keyframes)).toBe(false);
     rot.value = 45.0;
     expect(rot.value).toBe(45.0);
@@ -64,10 +64,10 @@ describe("TestSetAlternateSource", () => {
   const _override_leaf = (app: Application): [Layer, Property] => {
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
-    const layer = host.layers.find((la) => py_bool(la.essential_property_uuids));
+    const layer = host.layers.find((la) => py_bool(la.essentialPropertyUuids));
     if (layer == null) throw new StopIteration();
     const overrides = as_instance(
-      layer.properties.find((p) => p.match_name === "ADBE Layer Overrides"),
+      layer.properties.find((p) => p.matchName === "ADBE Layer Overrides"),
       PropertyGroup,
     );
     return [layer, as_instance(overrides.properties[0], Property)];
@@ -79,13 +79,13 @@ describe("TestSetAlternateSource", () => {
     const [, alt] = _override_leaf(app);
     const master = app.project.compositions.find((c) => c.name === "image_with_alpha");
     if (master == null) throw new StopIteration();
-    alt.alternate_source = master;
+    alt.alternateSource = master;
     const out = tmp_path.div("media.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
     const [, alt2] = _override_leaf(app2);
-    expect(alt2.alternate_source != null).toBe(true);
-    expect(alt2.alternate_source?.id).toBe(master.id);
+    expect(alt2.alternateSource != null).toBe(true);
+    expect(alt2.alternateSource?.id).toBe(master.id);
   });
 
   test("test_set_alternate_source_footage_autowraps", () => {
@@ -100,7 +100,7 @@ describe("TestSetAlternateSource", () => {
     if (host == null) throw new StopIteration();
     const gif = as_instance([...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"), FootageItem);
     const before = new Set(app.project.items.keys());
-    alt.alternate_source = gif;
+    alt.alternateSource = gif;
     const created = [...new Set(app.project.items.keys())].filter((k) => !before.has(k));
     expect(created.length).toBe(1); // only the wrapper comp
 
@@ -108,16 +108,16 @@ describe("TestSetAlternateSource", () => {
     app.project.save(out);
     const app2 = parse_aep(out);
     const [, alt2] = _override_leaf(app2);
-    const wrapper = alt2.alternate_source;
+    const wrapper = alt2.alternateSource;
     py_assert(wrapper instanceof CompItem);
     expect(wrapper.name).toBe("image_with_alpha.png_sequence");
-    expect(wrapper.parent_folder?.name).toBe("Media Replacement Comps");
+    expect(wrapper.parentFolder?.name).toBe("Media Replacement Comps");
     expect(py_eq([wrapper.width, wrapper.height], [host.width, host.height])).toBe(true);
     expect(wrapper.duration).toBe(host.duration);
     // cdta cloned from the host comp (not add_comp's fresh skeleton).
     expect(wrapper._cdta.shutter_phase).toBe(host._cdta.shutter_phase);
     expect(wrapper._cdta.time_divisor).toBe(host._cdta.time_divisor);
-    expect(wrapper.num_layers).toBe(1);
+    expect(wrapper.numLayers).toBe(1);
     expect(as_instance(wrapper.layers[0], AVLayer).source?.name).toBe("sequence_[001-003].gif");
   });
 
@@ -129,7 +129,7 @@ describe("TestSetAlternateSource", () => {
     const folders_before = [...app.project.items.values()].filter(
       (it) => it.constructor.name === "FolderItem" && it.name === "Media Replacement Comps",
     );
-    alt.alternate_source = gif;
+    alt.alternateSource = gif;
     const folders_after = [...app.project.items.values()].filter(
       (it) => it.constructor.name === "FolderItem" && it.name === "Media Replacement Comps",
     );
@@ -146,7 +146,7 @@ describe("TestSetAlternateSource", () => {
     raises(
       ValueError,
       () => {
-        pos.alternate_source = master;
+        pos.alternateSource = master;
       },
       "media replacement",
     );
@@ -161,14 +161,14 @@ describe("TestSetAlternateSource", () => {
     const [, alt] = _override_leaf(app);
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
-    const solid = host.add_solid([1.0, 0.0, 0.0], "Guard Solid").source;
+    const solid = host.addSolid([1.0, 0.0, 0.0], "Guard Solid").source;
     if (solid == null) throw new Error("solid layer has no source");
     expect(app.project.items.has(solid.id)).toBe(true);
-    expect(solid.is_media_replacement_compatible).toBe(false);
+    expect(solid.isMediaReplacementCompatible).toBe(false);
     raises(
       ValueError,
       () => {
-        alt.alternate_source = solid;
+        alt.alternateSource = solid;
       },
       "is_media_replacement_compatible",
     );
@@ -181,7 +181,7 @@ describe("TestSetAlternateSource", () => {
     const [, alt] = _override_leaf(app);
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
-    const solid = host.add_solid([0.0, 1.0, 0.0], "Guard Solid 2").source;
+    const solid = host.addSolid([0.0, 1.0, 0.0], "Guard Solid 2").source;
     py_assert(solid != null);
     // Snapshot after add_solid (which legitimately adds the solid and
     // AE's `Solids` folder) so this measures only the failed assignment.
@@ -189,7 +189,7 @@ describe("TestSetAlternateSource", () => {
     const before_blsi = alt._blsi.value;
     const before_items = new Set(app.project.items.keys());
     raises(ValueError, () => {
-      alt.alternate_source = solid;
+      alt.alternateSource = solid;
     });
     expect(py_eq(alt._blsi?.value, before_blsi)).toBe(true);
     expect(py_eq(new Set(app.project.items.keys()), before_items)).toBe(true); // no wrapper leaked
@@ -217,18 +217,18 @@ describe("TestParentValidation", () => {
 
   test("test_self_parent_with_jump_raises", () => {
     const [, a] = _two_layers();
-    raises(ValueError, () => a.set_parent_with_jump(a), "itself");
+    raises(ValueError, () => a.setParentWithJump(a), "itself");
   });
 
   test("test_cycle_raises", () => {
     const [, a, b] = _two_layers();
-    a.set_parent_with_jump(b);
-    raises(ValueError, () => b.set_parent_with_jump(a), "descendants");
+    a.setParentWithJump(b);
+    raises(ValueError, () => b.setParentWithJump(a), "descendants");
   });
 
   test("test_cycle_via_setter_raises", () => {
     const [, a, b] = _two_layers();
-    a.set_parent_with_jump(b);
+    a.setParentWithJump(b);
     raises(
       ValueError,
       () => {
@@ -242,7 +242,7 @@ describe("TestParentValidation", () => {
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const src = get_comp(app.project, "type_null").layers[0];
     const other = get_comp(app.project, "type_camera").layers[0];
-    raises(ValueError, () => src.set_parent_with_jump(other), "same composition");
+    raises(ValueError, () => src.setParentWithJump(other), "same composition");
     raises(
       ValueError,
       () => {
@@ -268,9 +268,9 @@ describe("TestParentValidation", () => {
     py_assert(last != null);
     const [comp, lyr] = last;
     const anchor = lyr.transform.property("ADBE Anchor Point");
-    anchor.set_value_at_time(0.0, [10.0, 20.0, 0.0]);
-    anchor.set_value_at_time(1.0, [70.0, 80.0, 0.0]);
-    const null_ = comp.add_null();
+    anchor.setValueAtTime(0.0, [10.0, 20.0, 0.0]);
+    anchor.setValueAtTime(1.0, [70.0, 80.0, 0.0]);
+    const null_ = comp.addNull();
     const null_pos = null_.transform.property("ADBE Position");
     null_pos.value = [10.0, 20.0, 0.0];
     const null_rot = null_.transform.property("ADBE Rotate Z");
@@ -323,7 +323,7 @@ describe("TestUnicodeNames", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_text");
-    comp.add_text("你好");
+    comp.addText("你好");
     const out = tmp_path.div("t.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
@@ -335,7 +335,7 @@ describe("TestUnicodeNames", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_null");
-    comp.add_solid([1.0, 0.0, 0.0], "solid \u{1f600}");
+    comp.addSolid([1.0, 0.0, 0.0], "solid \u{1f600}");
     const out = tmp_path.div("s.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
@@ -351,7 +351,7 @@ describe("TestUnicodeNames", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = get_comp(app.project, "type_text");
-    const text = comp.text_layers[0].text;
+    const text = comp.textLayers[0].text;
     if (text == null) throw new Error("text layer has no Text group");
     const prop = text.property("ADBE Text Document");
     const doc = prop.value;
@@ -361,7 +361,7 @@ describe("TestUnicodeNames", () => {
     app.project.save(out);
     const app2 = parse_aep(out);
     const comp2 = get_comp(app2.project, "type_text");
-    const text2 = comp2.text_layers[0].text;
+    const text2 = comp2.textLayers[0].text;
     if (text2 == null) throw new Error("text layer has no Text group");
     const prop2 = text2.property("ADBE Text Document");
     expect(prop2.value.text).toBe("你好 \u{1f600}");
@@ -381,7 +381,7 @@ describe("TestLongKeyframeTimes", () => {
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
     if (prop == null) throw new Error("no keyframed transform property");
-    prop.set_value_at_time(9999.0, prop.keyframes[0].value);
+    prop.setValueAtTime(9999.0, prop.keyframes[0].value);
     const out = tmp_path.div("far.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
@@ -401,7 +401,7 @@ describe("TestLongKeyframeTimes", () => {
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
       .find((p) => py_bool(p.keyframes));
     if (prop == null) throw new Error("no keyframed transform property");
-    prop.set_value_at_time(2.0, prop.keyframes[0].value);
+    prop.setValueAtTime(2.0, prop.keyframes[0].value);
     app.project.save(tmp_path.div("ok.aep"));
   });
 });
@@ -419,24 +419,24 @@ describe("TestTextRangeNumericValidation", () => {
 
   const _doc = (app: Application, name = "RangesPoint"): TextDocument => {
     const comp = app.project.compositions[0];
-    const layer = comp.text_layers.find((ly) => ly.name === name);
+    const layer = comp.textLayers.find((ly) => ly.name === name);
     if (layer == null) throw new StopIteration();
     const text = layer.text;
     py_assert(text != null);
-    return text.source_text.value;
+    return text.sourceText.value;
   };
 
   const bads = [NaN, Infinity];
-  const char_fields = ["baseline_shift", "horizontal_scale", "vertical_scale"];
-  const para_fields = ["first_line_indent", "start_indent", "end_indent", "space_before", "space_after"];
-  const doc_wide_fields = ["baseline_shift", "horizontal_scale", "first_line_indent"];
+  const char_fields = ["baselineShift", "horizontalScale", "verticalScale"];
+  const para_fields = ["firstLineIndent", "startIndent", "endIndent", "spaceBefore", "spaceAfter"];
+  const doc_wide_fields = ["baselineShift", "horizontalScale", "firstLineIndent"];
 
   // Parametrize (field x bad), in the decorator order of the Python source.
   const char_rows = char_fields.flatMap((field) => bads.map((bad) => [field, bad] as const));
   const para_rows = para_fields.flatMap((field) => bads.map((bad) => [field, bad] as const));
 
   test.each(char_rows)("test_char_float_rejects_nonfinite[%#]", (field: string, bad: number) => {
-    const rng = _doc(parse_aep(SAMPLE)).character_range(0, 5);
+    const rng = _doc(parse_aep(SAMPLE)).characterRange(0, 5);
     raises(
       ValueError,
       () => {
@@ -447,7 +447,7 @@ describe("TestTextRangeNumericValidation", () => {
   });
 
   test.each(para_rows)("test_para_float_rejects_nonfinite[%#]", (field: string, bad: number) => {
-    const rng = _doc(parse_aep(SAMPLE), "RangesJust").paragraph_range(0).character_range();
+    const rng = _doc(parse_aep(SAMPLE), "RangesJust").paragraphRange(0).characterRange();
     raises(
       ValueError,
       () => {
@@ -475,16 +475,16 @@ describe("TestTextRangeNumericValidation", () => {
     // round-trip intact - the pre-fix NaN made source_text.value None.
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLE);
-    _doc(app).character_range(0, 5).baseline_shift = -3.5;
+    _doc(app).characterRange(0, 5).baselineShift = -3.5;
     const out = tmp_path.div("bs.aep");
     app.project.save(out);
     const doc2 = _doc(parse_aep(out));
     expect(doc2 != null).toBe(true);
-    expect(approx(doc2.character_range(0, 5).baseline_shift, -3.5)).toBe(true);
+    expect(approx(doc2.characterRange(0, 5).baselineShift, -3.5)).toBe(true);
   });
 
   test("test_range_enum_rejects_out_of_range_int", () => {
-    const cr = _doc(parse_aep(SAMPLE), "RangesJust").paragraph_range(0).character_range();
+    const cr = _doc(parse_aep(SAMPLE), "RangesJust").paragraphRange(0).characterRange();
     raises(
       ValueError,
       () => {
@@ -511,7 +511,7 @@ describe("TestTextRangeNumericValidation", () => {
     // AE 2026 rejects the whole text layer for kerning/tracking beyond
     // the signed-32-bit range ("Error reading the text layer"; probed
     // 2**31 OK / 10**10 fails).
-    const rng = _doc(parse_aep(SAMPLE), "RangesKernLead").character_range(1, 4);
+    const rng = _doc(parse_aep(SAMPLE), "RangesKernLead").characterRange(1, 4);
     raises(
       ValueError,
       () => {
@@ -522,7 +522,7 @@ describe("TestTextRangeNumericValidation", () => {
   });
 
   test.each([10 ** 10, 10 ** 12])("test_tracking_rejects_out_of_s4_range[%#]", (value: number) => {
-    const rng = _doc(parse_aep(SAMPLE)).character_range(0, 5);
+    const rng = _doc(parse_aep(SAMPLE)).characterRange(0, 5);
     raises(
       ValueError,
       () => {
@@ -548,13 +548,13 @@ describe("TestTextRangeNumericValidation", () => {
     // value are accepted and survive a disk round-trip.
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLE);
-    _doc(app, "RangesKernLead").character_range(1, 4).kerning = 2 ** 31 - 1;
-    _doc(app).character_range(0, 5).tracking = -5000;
+    _doc(app, "RangesKernLead").characterRange(1, 4).kerning = 2 ** 31 - 1;
+    _doc(app).characterRange(0, 5).tracking = -5000;
     const out = tmp_path.div("kt.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
-    expect(_doc(app2, "RangesKernLead").character_range(1, 4).kerning).toBe(2 ** 31 - 1);
-    expect(_doc(app2).character_range(0, 5).tracking).toBe(-5000);
+    expect(_doc(app2, "RangesKernLead").characterRange(1, 4).kerning).toBe(2 ** 31 - 1);
+    expect(_doc(app2).characterRange(0, 5).tracking).toBe(-5000);
   });
 });
 

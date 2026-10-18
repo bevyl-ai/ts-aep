@@ -40,7 +40,7 @@ function _layer_refs(app: Application): [string, string, string, number, boolean
         if (tdpi == null || !py_bool(tdpi.value)) {
           continue;
         }
-        out.push([comp.name, lyr.name, prop.match_name, tdpi.value, ids.has(tdpi.value)]);
+        out.push([comp.name, lyr.name, prop.matchName, tdpi.value, ids.has(tdpi.value)]);
       }
     }
   }
@@ -55,20 +55,20 @@ describe("TestActiveItemRemoval", () => {
   test("test_remove_active_comp_clears_fcid", () => {
     const tmp_path: Path = make_tmp_path();
     const app = parse_app_fresh(PROPERTY_DIR.div("gradient.aep"));
-    expect(app.project.active_item).toBe(app.project.compositions[0]);
+    expect(app.project.activeItem).toBe(app.project.compositions[0]);
 
     app.project.compositions[0].remove();
 
     const fcid = find_by_type(app.project._rifx.chunks, "fcid");
     expect(fcid.value).toBe(0);
-    expect(app.project.active_item == null).toBe(true);
+    expect(app.project.activeItem == null).toBe(true);
 
     const out = tmp_path.div("removed.aep");
     app.project.save(out);
     // Used to raise KeyError: 1. `fcid = 0` is the root folder, which is
     // what AE's own saves carry once the active item is gone.
     const reparsed = parse_app_fresh(out);
-    expect(reparsed.project.active_item).toBe(reparsed.project.root_folder);
+    expect(reparsed.project.activeItem).toBe(reparsed.project.rootFolder);
   });
 
   /** A file naming a missing item still parses - AE opens one too. */
@@ -79,7 +79,7 @@ describe("TestActiveItemRemoval", () => {
     const out = tmp_path.div("dangling.aep");
     app.project.save(out);
 
-    expect(parse_app_fresh(out).project.active_item == null).toBe(true);
+    expect(parse_app_fresh(out).project.activeItem == null).toBe(true);
   });
 });
 
@@ -99,18 +99,18 @@ describe("TestEffectParameterIsNotIndexed", () => {
   test("test_effect_group_is_named_group", () => {
     const app = parse_app_fresh(PROPERTY_DIR.div("2_gaussian.aep"));
     const [effect, _param] = _blur_param(app);
-    expect(effect.property_type).toBe(PropertyType.NAMED_GROUP);
-    expect(effect.parent_property?.property_type).toBe(PropertyType.INDEXED_GROUP);
+    expect(effect.propertyType).toBe(PropertyType.NAMED_GROUP);
+    expect(effect.parentProperty?.propertyType).toBe(PropertyType.INDEXED_GROUP);
   });
 
-  test.each(["duplicate", "remove", "move_to"])("test_parameter_mutation_rejected[%#]", (op: string) => {
+  test.each(["duplicate", "remove", "moveTo"])("test_parameter_mutation_rejected[%#]", (op: string) => {
     const app = parse_app_fresh(PROPERTY_DIR.div("2_gaussian.aep"));
     const [_effect, param] = _blur_param(app);
     raises(
       ValueError,
       () => {
         if (op === "move_to") {
-          param.move_to(1);
+          param.moveTo(1);
         } else {
           // getattr returns the bare method, so bind it back to the param.
           getattr(param, op).call(param);
@@ -167,7 +167,7 @@ describe("TestLayerReferencesFollowTheirLayer", () => {
     const target = comps.find((c) => c !== source);
     if (target == null) throw new StopIteration();
 
-    source.layers[0].copy_to_comp(target);
+    source.layers[0].copyToComp(target);
 
     const out = tmp_path.div("copied.aep");
     app.project.save(out);
@@ -207,7 +207,7 @@ describe("TestCopyToCompTransform", () => {
     const layer = source.layers[0];
     const before = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property).value;
 
-    const copy = layer.copy_to_comp(target);
+    const copy = layer.copyToComp(target);
 
     expect(
       py_eq(as_instance(as_instance(copy.property("Transform"), PropertyGroup).property("Position"), Property).value, before),
@@ -219,10 +219,10 @@ describe("TestCopyToCompTransform", () => {
     const comps = app.project.compositions;
     const source = comps.find((c) => py_bool(c.layers));
     if (source == null) throw new StopIteration();
-    const target = comps.find((c) => c !== source && c.frame_rate !== source.frame_rate);
+    const target = comps.find((c) => c !== source && c.frameRate !== source.frameRate);
     if (target == null) throw new StopIteration();
 
-    const copy = source.layers[0].copy_to_comp(target);
+    const copy = source.layers[0].copyToComp(target);
 
     const want = target._cdta.internal_timebase;
     expect(source.layers[0].stretch).toBe(100.0);
@@ -252,7 +252,7 @@ describe("TestCopyToCompTransform", () => {
     if (target == null) throw new StopIteration();
     expect(source.layers[0].stretch).toBe(200.0);
 
-    const copy = source.layers[0].copy_to_comp(target);
+    const copy = source.layers[0].copyToComp(target);
 
     const want = target._cdta.internal_timebase * 2;
     const bases = new Set(

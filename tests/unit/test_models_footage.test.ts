@@ -75,7 +75,7 @@ describe("TestFootageReadOnly", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("footage_misc.aep"));
     _raises_read_only(() => {
       // @ts-expect-error read-only property (type: ignore[misc])
-      footage.frame_rate = 30.0;
+      footage.frameRate = 30.0;
     });
   });
 
@@ -83,7 +83,7 @@ describe("TestFootageReadOnly", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("placeholder.aep"));
     _raises_read_only(() => {
       // @ts-expect-error read-only property (type: ignore[misc])
-      footage.frame_duration = 100;
+      footage.frameDuration = 100;
     });
   });
 
@@ -91,14 +91,14 @@ describe("TestFootageReadOnly", () => {
     const footage = _get_first_footage(SAMPLES_DIR.div("footage_missing.aep"));
     _raises_read_only(() => {
       // @ts-expect-error read-only property (type: ignore[misc])
-      footage.footage_missing = false;
+      footage.footageMissing = false;
     });
   });
 });
 
 describe("TestSequenceFrameBoundsDerivation", () => {
   /**
-   * AE leaves `sspc.start_frame`/`end_frame` undefined for some image
+   * AE leaves `sspc.startFrame`/`end_frame` undefined for some image
    * sequences and stores the real numbers only in the `StVc` filenames.
    * py_aep derives them on read; it must NOT write them back, or an
    * untouched parse/save round trip stops being byte-identical (every
@@ -198,10 +198,10 @@ describe("TestAlphaModeWrites", () => {
 
   function _png_source(): FileSource {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
-    const item = project.import_file(
+    const item = project.importFile(
       new ImportOptions(SAMPLES.parent.div("assets", "image_with_alpha.png")),
     );
-    return as_instance(as_instance(item, FootageItem).main_source, FileSource);
+    return as_instance(as_instance(item, FootageItem).mainSource, FileSource);
   }
 
   test.each([
@@ -210,39 +210,39 @@ describe("TestAlphaModeWrites", () => {
     [AlphaMode.IGNORE, 2, false],
   ])("test_mode_byte_and_flag_bit_agree[%#]", (mode: AlphaMode, raw: number, premultiplied: boolean) => {
     const source = _png_source();
-    source.alpha_mode = mode;
+    source.alphaMode = mode;
     expect(source._sspc.alpha_mode_raw).toBe(raw);
     expect(source._sspc.premultiplied).toBe(premultiplied);
-    expect(source.alpha_mode).toBe(mode);
+    expect(source.alphaMode).toBe(mode);
   });
 
   test("test_ignore_keeps_the_flag_bit", () => {
     // AE 2026 leaves the bit as it was on Ignore: set after
     // Premultiplied, clear after Straight (a PNG and an FBX alike).
     const source = _png_source();
-    source.alpha_mode = AlphaMode.PREMULTIPLIED;
-    source.alpha_mode = AlphaMode.IGNORE;
+    source.alphaMode = AlphaMode.PREMULTIPLIED;
+    source.alphaMode = AlphaMode.IGNORE;
     expect(source._sspc.premultiplied).toBe(true);
-    source.alpha_mode = AlphaMode.STRAIGHT;
-    source.alpha_mode = AlphaMode.IGNORE;
+    source.alphaMode = AlphaMode.STRAIGHT;
+    source.alphaMode = AlphaMode.IGNORE;
     expect(source._sspc.premultiplied).toBe(false);
   });
 
   test("test_rejected_without_an_alpha_channel", () => {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
-    const item = project.import_file(new ImportOptions(SAMPLES.parent.div("assets", "mov_480.mov")));
-    const source = as_instance(item, FootageItem).main_source;
-    expect(source.has_alpha).toBe(false);
+    const item = project.importFile(new ImportOptions(SAMPLES.parent.div("assets", "mov_480.mov")));
+    const source = as_instance(item, FootageItem).mainSource;
+    expect(source.hasAlpha).toBe(false);
     raises(
       ValueError,
       () => {
-        source.alpha_mode = AlphaMode.PREMULTIPLIED;
+        source.alphaMode = AlphaMode.PREMULTIPLIED;
       },
       "no alpha channel",
     );
     // The "no alpha channel" marker survives the rejected write.
     expect(source._sspc.alpha_mode_raw).toBe(3);
-    expect(source.has_alpha).toBe(false);
+    expect(source.hasAlpha).toBe(false);
   });
 });
 
@@ -256,9 +256,9 @@ describe("TestSourceModifiedStamp", () => {
   test("test_single_file_carries_its_own_mtime", () => {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
     const path = SAMPLES.parent.div("assets", "new_exr.0002.exr");
-    const item = project.import_file(new ImportOptions(path));
+    const item = project.importFile(new ImportOptions(path));
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect(as_instance(item, FootageItem).main_source._sspc.source_modified).toBe(int(path.stat().mtimeMs / 1000));
+    expect(as_instance(item, FootageItem).mainSource._sspc.source_modified).toBe(int(path.stat().mtimeMs / 1000));
   });
 
   test("test_sequence_carries_the_folder_mtime", () => {
@@ -266,9 +266,9 @@ describe("TestSourceModifiedStamp", () => {
     const path = SAMPLES.parent.div("assets", "new_exr.0002.exr");
     const opts = new ImportOptions(path);
     opts.sequence = true;
-    const item = project.import_file(opts);
+    const item = project.importFile(opts);
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect(as_instance(item, FootageItem).main_source._sspc.source_modified).toBe(int(path.parent.stat().mtimeMs / 1000));
+    expect(as_instance(item, FootageItem).mainSource._sspc.source_modified).toBe(int(path.parent.stat().mtimeMs / 1000));
   });
 
   test("test_unreadable_media_stays_unstamped", () => {
@@ -315,8 +315,8 @@ describe("TestMediaColorProfileRecord", () => {
 
   function _import(name: string): FileSource {
     const project = parse_aep(SAMPLES.div("project", "emptier.aep")).project;
-    const item = project.import_file(new ImportOptions(SAMPLES.parent.div("assets", name)));
-    return as_instance(as_instance(item, FootageItem).main_source, FileSource);
+    const item = project.importFile(new ImportOptions(SAMPLES.parent.div("assets", name)));
+    return as_instance(as_instance(item, FootageItem).mainSource, FileSource);
   }
 
   test.each([
@@ -332,7 +332,7 @@ describe("TestMediaColorProfileRecord", () => {
     if (expected !== "Embedded") {
       if (!_require_profile(expected)) return;
     }
-    expect(_import(filename).media_color_space).toBe(expected);
+    expect(_import(filename).mediaColorSpace).toBe(expected);
   });
 
   test("test_embedded_profile_is_recorded_by_id", () => {
@@ -354,12 +354,12 @@ describe("TestMediaColorProfileRecord", () => {
     const clrs = as_instance(source._clrs, ListChunk);
     expect(as_instance(find_by_type(clrs.chunks, "ipws"), IpwsChunk).value).toBe(0);
     expect(py_eq(find_by_type(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
-    expect(source.media_color_space).toBe("Embedded");
+    expect(source.mediaColorSpace).toBe("Embedded");
   });
 
   test("test_untagged_jpeg_records_no_profile", () => {
     const source = _import("11_progressive.jpg");
-    expect(source.media_color_space).toBe("Embedded");
+    expect(source.mediaColorSpace).toBe("Embedded");
   });
 
   test.each([
@@ -375,7 +375,7 @@ describe("TestMediaColorProfileRecord", () => {
      * still or an image sequence of the same format.
      */
     if (!_require_profile(expected)) return;
-    expect(_import(filename).media_color_space).toBe(expected);
+    expect(_import(filename).mediaColorSpace).toBe(expected);
   });
 
   test("test_tiff_and_psd_embed_the_catalogued_copy", () => {
@@ -416,8 +416,8 @@ describe("TestMediaColorProfileRecord", () => {
       if (sequence) {
         opts.sequence = true;
       }
-      const item = project.import_file(opts);
-      expect(as_instance(item, FootageItem).main_source.interpret_as_linear_light).toBe(expected);
+      const item = project.importFile(opts);
+      expect(as_instance(item, FootageItem).mainSource.interpretAsLinearLight).toBe(expected);
     },
   );
 });
@@ -431,31 +431,31 @@ describe("TestWritableInterpretation", () => {
     if (sequence) {
       opts.sequence = true;
     }
-    return as_instance(project.import_file(opts), FootageItem);
+    return as_instance(project.importFile(opts), FootageItem);
   }
 
   test("test_pixel_aspect_is_writable", () => {
     const item = _import("image_with_alpha.png");
-    item.pixel_aspect = 1.5;
-    expect(item.pixel_aspect).toBe(1.5);
-    expect(item.main_source._sspc.pixel_aspect_dividend).toBe(3);
-    expect(item.main_source._sspc.pixel_aspect_divisor).toBe(2);
+    item.pixelAspect = 1.5;
+    expect(item.pixelAspect).toBe(1.5);
+    expect(item.mainSource._sspc.pixel_aspect_dividend).toBe(3);
+    expect(item.mainSource._sspc.pixel_aspect_divisor).toBe(2);
   });
 
   test.each([0.0, -1.0, 0.001, 1000.0])("test_pixel_aspect_bounds[%#]", (value: number) => {
     /** AE accepts 0.01 to 100. */
     const item = _import("image_with_alpha.png");
     raises(ValueError, () => {
-      item.pixel_aspect = value;
+      item.pixelAspect = value;
     });
   });
 
   test("test_conform_rate_on_a_movie_uses_the_conform_slot", () => {
     const item = _import("mov_480.mov");
-    item.main_source.conform_frame_rate = 25.0;
-    expect(item.main_source._sspc.conform_frame_rate).toBe(25.0);
-    expect(item.main_source._sspc.native_frame_rate).toBe(30.0);
-    expect(item.main_source.conform_frame_rate).toBe(25.0);
+    item.mainSource.conformFrameRate = 25.0;
+    expect(item.mainSource._sspc.conform_frame_rate).toBe(25.0);
+    expect(item.mainSource._sspc.native_frame_rate).toBe(30.0);
+    expect(item.mainSource.conformFrameRate).toBe(25.0);
   });
 
   test("test_conform_rate_on_a_sequence_uses_the_native_slot", () => {
@@ -465,29 +465,29 @@ describe("TestWritableInterpretation", () => {
      * duration over the new rate.
      */
     const item = _import("new_exr.0002.exr", true);
-    const sspc = item.main_source._sspc;
+    const sspc = item.mainSource._sspc;
     expect(sspc.native_frame_rate).toBe(30.0);
     expect(approx(sspc.duration, 2 / 30)).toBe(true);
-    item.main_source.conform_frame_rate = 25.0;
+    item.mainSource.conformFrameRate = 25.0;
     expect(sspc.conform_frame_rate).toBe(0.0);
     expect(sspc.native_frame_rate).toBe(25.0);
     expect(approx(sspc.duration, 2 / 25)).toBe(true);
-    expect(item.main_source.conform_frame_rate).toBe(25.0);
-    expect(item.frame_rate).toBe(25.0);
+    expect(item.mainSource.conformFrameRate).toBe(25.0);
+    expect(item.frameRate).toBe(25.0);
   });
 
   test("test_zero_conform_rate_is_ignored_on_a_sequence", () => {
     const item = _import("new_exr.0002.exr", true);
-    item.main_source.conform_frame_rate = 25.0;
-    item.main_source.conform_frame_rate = 0.0;
-    expect(item.main_source.conform_frame_rate).toBe(25.0);
+    item.mainSource.conformFrameRate = 25.0;
+    item.mainSource.conformFrameRate = 0.0;
+    expect(item.mainSource.conformFrameRate).toBe(25.0);
   });
 
   test("test_zero_conform_rate_clears_it_on_a_movie", () => {
     const item = _import("mov_480.mov");
-    item.main_source.conform_frame_rate = 25.0;
-    item.main_source.conform_frame_rate = 0.0;
-    expect(item.main_source.conform_frame_rate).toBe(0.0);
-    expect(item.frame_rate).toBe(30.0);
+    item.mainSource.conformFrameRate = 25.0;
+    item.mainSource.conformFrameRate = 0.0;
+    expect(item.mainSource.conformFrameRate).toBe(0.0);
+    expect(item.frameRate).toBe(30.0);
   });
 });

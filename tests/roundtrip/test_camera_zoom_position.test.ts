@@ -52,16 +52,16 @@ describe("TestZoomChange", () => {
   test("test_default_follows_zoom_in_memory", () => {
     const camera = _camera(parse_project_fresh(SAMPLE));
     const position = _position(camera);
-    expect(position.is_modified).toBe(false);
+    expect(position.isModified).toBe(false);
 
     _zoom(camera).value = 3000;
 
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
-    expect(approx(position.default_value, [720.0, 405.0, -3000.0])).toBe(true);
-    expect(position.is_modified).toBe(true);
+    expect(approx(position.defaultValue, [720.0, 405.0, -3000.0])).toBe(true);
+    expect(position.isModified).toBe(true);
     const z_follower = camera.transform.property("ADBE Position_2");
     expect(z_follower instanceof Property).toBe(true);
-    expect(approx(z_follower.default_value, -3000.0)).toBe(true);
+    expect(approx(z_follower.defaultValue, -3000.0)).toBe(true);
   });
 
   test("test_default_is_float_after_int_zoom", () => {
@@ -69,7 +69,7 @@ describe("TestZoomChange", () => {
     const camera = _camera(parse_project_fresh(SAMPLE));
     _zoom(camera).value = 3000;
 
-    const default_ = _position(camera).default_value;
+    const default_ = _position(camera).defaultValue;
     py_assert(default_ != null);
     expect(default_.every((v) => typeof v === "number")).toBe(true);
   });
@@ -82,20 +82,20 @@ describe("TestZoomChange", () => {
     const position = _reopened_position(project, tmp_path);
 
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
-    expect(position.is_modified).toBe(true);
+    expect(position.isModified).toBe(true);
   });
 
   test("test_keyed_zoom_change_at_time_0_writes_position", () => {
     const tmp_path = make_tmp_path();
     const project = parse_project_fresh(SAMPLE);
     const zoom = _zoom(_camera(project));
-    zoom.set_value_at_time(0, 3000);
-    zoom.set_value_at_time(2, 1000);
+    zoom.setValueAtTime(0, 3000);
+    zoom.setValueAtTime(2, 1000);
 
     const position = _reopened_position(project, tmp_path);
 
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
-    expect(position.is_modified).toBe(true);
+    expect(position.isModified).toBe(true);
   });
 
   test("test_untouched_position_stays_left_out", () => {
@@ -105,7 +105,7 @@ describe("TestZoomChange", () => {
     py_assert(position._tdsb != null);
     expect(position._tdsb.synthetic).toBe(true);
     expect(approx(position.value, [720.0, 405.0, -1000.0])).toBe(true);
-    expect(position.is_modified).toBe(false);
+    expect(position.isModified).toBe(false);
   });
 
   test("test_start_shift_keeps_keyed_zoom_default", () => {
@@ -117,8 +117,8 @@ describe("TestZoomChange", () => {
     const project = parse_project_fresh(SAMPLE);
     const camera = get_comp(project, "zoom_keyed").layers[0];
     py_assert(camera instanceof CameraLayer);
-    camera.start_time = -1;
-    expect(_position(camera).is_modified).toBe(false);
+    camera.startTime = -1;
+    expect(_position(camera).isModified).toBe(false);
 
     const out = tmp_path.div("out.aep");
     project.save(out);

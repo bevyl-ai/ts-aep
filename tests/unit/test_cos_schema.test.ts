@@ -120,7 +120,7 @@ describe("btdk schema", () => {
 
   test("trees py_aep writes conform", () => {
     const app = parse("samples/models/text/text_writes.aep");
-    const docs = app.project.compositions[0].text_layers.map((layer) => {
+    const docs = app.project.compositions[0].textLayers.map((layer) => {
       py_assert(layer.text != null);
       return layer.text.property("ADBE Text Document").value;
     });
@@ -129,16 +129,16 @@ describe("btdk schema", () => {
       if (!(doc instanceof TextDocument)) continue;
       doc.text = "Hello\nwide world";
       doc.font = "Georgia";
-      doc.fill_color = [0.25, 0.5, 0.75];
-      doc.stroke_color = [1, 0, 0];
+      doc.fillColor = [0.25, 0.5, 0.75];
+      doc.strokeColor = [1, 0, 0];
       doc.leading = 40;
-      const range = doc.character_range(1, 4);
+      const range = doc.characterRange(1, 4);
       range.kerning = 25;
-      range.font_size = 18;
-      doc.character_range(7, 9).justification = ParagraphJustification.CENTER_JUSTIFY;
-      doc.character_range(0, 2).paste_from(doc.character_range(6, 9));
-      doc.box_text_size = [300, 120];
-      doc.box_inset_spacing = 4;
+      range.fontSize = 18;
+      doc.characterRange(7, 9).justification = ParagraphJustification.CENTER_JUSTIFY;
+      doc.characterRange(0, 2).pasteFrom(doc.characterRange(6, 9));
+      doc.boxTextSize = [300, 120];
+      doc.boxInsetSpacing = 4;
       expect(mismatches(doc._cos_data)).toEqual([]);
     }
     const fresh = new TextDocument("New\ntext", [200, 100], LineOrientation.VERTICAL_RIGHT_TO_LEFT);

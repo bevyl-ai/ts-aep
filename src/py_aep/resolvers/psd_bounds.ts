@@ -104,8 +104,8 @@ export function _path_box(layer: PsdLayer, canvas_w: number, canvas_h: number): 
         p1 = p0;
         p2 = p3;
       } else {
-        const out = shape.out_tangents[i];
-        const in_ = shape.in_tangents[j];
+        const out = shape.outTangents[i];
+        const in_ = shape.inTangents[j];
         p1 = [p0[0] + out[0], p0[1] + out[1]];
         p2 = [p3[0] + in_[0], p3[1] + in_[1]];
       }

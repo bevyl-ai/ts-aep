@@ -1,4 +1,4 @@
-/** Tests for importing SVGs as cropped comps (`Project.import_file`). */
+/** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
 import { at, bytes_eq, getattr, py_assert, py_bool, py_eq, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
@@ -20,8 +20,8 @@ const ASSETS = SAMPLES.div("assets");
 function _import(name: string): [Application, CompItem] {
   const app = parse(BASE);
   const opts = new ImportOptions(ASSETS.div(`${name}.svg`));
-  opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-  const comp = app.project.import_file(opts);
+  opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+  const comp = app.project.importFile(opts);
   return [app, as_instance(comp, CompItem)];
 }
 
@@ -35,15 +35,15 @@ function unpack_one<T>(xs: T[]): T {
 describe("TestSvgImportBasics", () => {
   test("test_can_import_svg_as_cropped", () => {
     const opts = new ImportOptions(ASSETS.div("svg.svg"));
-    expect(opts.can_import_as(ImportAsType.COMP_CROPPED_LAYERS)).toBe(true);
-    expect(opts.can_import_as(ImportAsType.FOOTAGE)).toBe(false);
-    expect(opts.can_import_as(ImportAsType.COMP)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.COMP_CROPPED_LAYERS)).toBe(true);
+    expect(opts.canImportAs(ImportAsType.FOOTAGE)).toBe(false);
+    expect(opts.canImportAs(ImportAsType.COMP)).toBe(false);
   });
 
   test("test_footage_import_of_svg_rejected", () => {
     const app = parse(BASE);
     const opts = new ImportOptions(ASSETS.div("svg.svg")); // default import_as = FOOTAGE
-    raises(ValueError, () => app.project.import_file(opts), "[Uu]nsupported footage format");
+    raises(ValueError, () => app.project.importFile(opts), "[Uu]nsupported footage format");
   });
 
   test("test_cropped_import_of_unsupported_format_rejected", () => {
@@ -51,15 +51,15 @@ describe("TestSvgImportBasics", () => {
     // other formats (here audio) are still rejected.
     const app = parse(BASE);
     const opts = new ImportOptions(ASSETS.div("click.aiff"));
-    opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-    raises(ValueError, () => app.project.import_file(opts), "COMP_CROPPED_LAYERS");
+    opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+    raises(ValueError, () => app.project.importFile(opts), "COMP_CROPPED_LAYERS");
   });
 
   test("test_creates_comp_and_single_shape_layer", () => {
     const [_app, comp] = _import("svg");
     expect(comp.name).toBe("svg.svg");
     expect(py_eq([comp.width, comp.height], [1070, 456])).toBe(true);
-    expect(comp.frame_rate).toBe(30.0);
+    expect(comp.frameRate).toBe(30.0);
     expect(comp.layers.length).toBe(1);
     expect(comp.layers[0] instanceof ShapeLayer).toBe(true);
     expect(comp.layers[0].name).toBe("svg.svg");
@@ -70,7 +70,7 @@ describe("TestSvgImportBasics", () => {
     const [_app, comp] = _import("svg");
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     expect(contents instanceof PropertyGroup).toBe(true);
-    const groups = contents.properties.filter((g) => g.match_name === "ADBE Vector Group");
+    const groups = contents.properties.filter((g) => g.matchName === "ADBE Vector Group");
     expect(groups.length).toBe(29);
   });
 
@@ -87,7 +87,7 @@ describe("TestSvgImportBasics", () => {
     const inner = group.property("ADBE Vectors Group");
     const path = inner.property("ADBE Vector Shape - Group").property("ADBE Vector Shape").value;
     const pos_prop = group.property("ADBE Vector Transform Group").properties.find(
-      (p) => p.match_name === "ADBE Vector Position",
+      (p) => p.matchName === "ADBE Vector Position",
     );
     if (pos_prop == null) throw new StopIteration();
     const pos: number[] = as_instance(pos_prop, Property).value;
@@ -115,14 +115,14 @@ describe("TestSvgImportGradients", () => {
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     let gfills = 0;
     for (const group of contents.properties) {
-      if (group.match_name !== "ADBE Vector Group") continue;
+      if (group.matchName !== "ADBE Vector Group") continue;
       const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
-        if (child.match_name === "ADBE Vector Graphic - G-Fill") {
+        if (child.matchName === "ADBE Vector Graphic - G-Fill") {
           gfills += 1;
           const gfill = as_instance(child, PropertyGroup);
           const grad = gfill.property("ADBE Vector Grad Colors").value;
-          expect(grad.color_stops.length).toBeGreaterThanOrEqual(2);
+          expect(grad.colorStops.length).toBeGreaterThanOrEqual(2);
           expect([1.0, 2.0].includes(as_instance(gfill.property("ADBE Vector Grad Type"), Property).value)).toBe(true);
         }
       }
@@ -150,17 +150,17 @@ describe("TestSvgImportGradients", () => {
 
     const app = new_();
     const opts = new ImportOptions(ASSETS.div("butterfly.svg"));
-    opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-    const comp = as_instance(app.project.import_file(opts), CompItem);
+    opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+    const comp = as_instance(app.project.importFile(opts), CompItem);
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     expect(contents instanceof PropertyGroup).toBe(true);
 
     const scales_y: number[] = [];
     for (const group of contents.properties) {
-      if (group.match_name !== "ADBE Vector Group") continue;
+      if (group.matchName !== "ADBE Vector Group") continue;
       const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
-        if (child.match_name !== "ADBE Vector Graphic - G-Fill") continue;
+        if (child.matchName !== "ADBE Vector Graphic - G-Fill") continue;
         const gfill = as_instance(child, PropertyGroup);
         if (as_instance(gfill.property("ADBE Vector Grad Type"), Property).value !== 2.0) continue; // radial only
         // Every radial gradient carries AE's 360-degree baseline.
@@ -179,12 +179,12 @@ function _import_text(tmp_path: Path, body: string): PropertyGroup[] {
   const svg = tmp_path.div("probe.svg");
   svg.write_text(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${body}</svg>`);
   const opts = new ImportOptions(svg);
-  opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-  const comp = as_instance(new_().project.import_file(opts), CompItem);
+  opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+  const comp = as_instance(new_().project.importFile(opts), CompItem);
   const contents = comp.layers[0].property("ADBE Root Vectors Group");
   expect(contents instanceof PropertyGroup).toBe(true);
   return contents.properties.filter(
-    (g): g is PropertyGroup => g instanceof PropertyGroup && g.match_name === "ADBE Vector Group",
+    (g): g is PropertyGroup => g instanceof PropertyGroup && g.matchName === "ADBE Vector Group",
   );
 }
 
@@ -215,7 +215,7 @@ describe("TestSvgImportAeConventions", () => {
     const group = unpack_one(
       _import_text(tmp_path, '<line x1="20" y1="30" x2="150" y2="170" stroke="#000"/>'),
     );
-    const kinds = group.property("ADBE Vectors Group").properties.map((c) => c.match_name);
+    const kinds = group.property("ADBE Vectors Group").properties.map((c) => c.matchName);
     expect(py_eq(kinds, ["ADBE Vector Shape - Group", "ADBE Vector Graphic - Stroke"])).toBe(true);
   });
 
@@ -236,10 +236,10 @@ describe("TestSvgImportAeConventions", () => {
     );
     const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
     const grad = fill.property("ADBE Vector Grad Colors").value;
-    expect(py_eq(grad.color_stops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
+    expect(py_eq(grad.colorStops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
     expect(
       py_eq(
-        grad.alpha_stops.map((s) => [s.offset, s.alpha]),
+        grad.alphaStops.map((s) => [s.offset, s.alpha]),
         [
           [0.0, 1.0],
           [0.5, 1.0],
@@ -289,7 +289,7 @@ describe("TestSvgImportAeConventions", () => {
     const grad = fill.property("ADBE Vector Grad Colors").value;
     expect(
       py_eq(
-        grad.alpha_stops.map((s) => [s.offset, round(s.alpha, 4)]),
+        grad.alphaStops.map((s) => [s.offset, round(s.alpha, 4)]),
         [
           [0.0, 1.0],
           [0.5, 1.0],
@@ -327,24 +327,24 @@ describe("TestSvgImportByteFidelity", () => {
     );
     const app = new_();
     const opts = new ImportOptions(svg);
-    opts.import_as = ImportAsType.COMP_CROPPED_LAYERS;
-    const comp = as_instance(app.project.import_file(opts), CompItem);
+    opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
+    const comp = as_instance(app.project.importFile(opts), CompItem);
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     expect(contents instanceof PropertyGroup).toBe(true);
 
     const fill_ops: number[] = [];
     const stroke_ops: number[] = [];
     for (const group of contents.properties) {
-      if (group.match_name !== "ADBE Vector Group") continue;
+      if (group.matchName !== "ADBE Vector Group") continue;
       const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
-        if (child.match_name === "ADBE Vector Graphic - G-Fill") {
+        if (child.matchName === "ADBE Vector Graphic - G-Fill") {
           const gfill = as_instance(child, PropertyGroup);
           fill_ops.push(gfill.property("ADBE Vector Fill Opacity").value);
           // opacity lives in the leaf, not the gradient alpha stops
           const grad = gfill.property("ADBE Vector Grad Colors").value;
-          expect(grad.alpha_stops.every((s) => s.alpha === 1.0)).toBe(true);
-        } else if (child.match_name === "ADBE Vector Graphic - G-Stroke") {
+          expect(grad.alphaStops.every((s) => s.alpha === 1.0)).toBe(true);
+        } else if (child.matchName === "ADBE Vector Graphic - G-Stroke") {
           stroke_ops.push(as_instance(child, PropertyGroup).property("ADBE Vector Stroke Opacity").value);
         }
       }
@@ -363,8 +363,8 @@ describe("TestSvgImportByteFidelity", () => {
     // AE stores a shape layer's anchor in raw pixels (not normalized by
     // comp size). Setting it must write the raw cdat, not value/comp.
     const app = parse(BASE);
-    const comp = app.project.root_folder.add_comp("T", 1070, 456, 1.0, 1.0, 30.0);
-    const layer = comp.add_shape();
+    const comp = app.project.rootFolder.addComp("T", 1070, 456, 1.0, 1.0, 30.0);
+    const layer = comp.addShape();
     const anchor = layer.transform.property("ADBE Anchor Point");
     anchor.value = [535.0, 228.0, 0.0];
     const cdat = find_by_type(anchor._tdbs.chunks, "cdat");
@@ -375,10 +375,10 @@ describe("TestSvgImportByteFidelity", () => {
     // AE writes the Vector Materials Group tdsb with _enable_flags=3
     // (enabled + collapsed); py defaulted to 1.
     const app = parse(BASE);
-    const comp = app.project.root_folder.add_comp("T", 100, 100, 1.0, 1.0, 30.0);
-    const layer = comp.add_shape();
+    const comp = app.project.rootFolder.addComp("T", 100, 100, 1.0, 1.0, 30.0);
+    const layer = comp.addShape();
     const contents = layer.property("ADBE Root Vectors Group");
-    const group = contents.add_property("ADBE Vector Group");
+    const group = contents.addProperty("ADBE Vector Group");
     const materials = group.property("ADBE Vector Materials Group");
     py_assert(materials._tdgp != null);
     const tdsb = find_by_type_or_null(materials._tdgp.chunks, "tdsb");
@@ -398,10 +398,10 @@ describe("TestSvgImportByteFidelity", () => {
     let multi = 0;
     let single = 0;
     for (const group of contents.properties) {
-      if (group.match_name !== "ADBE Vector Group") continue;
+      if (group.matchName !== "ADBE Vector Group") continue;
       const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
-      const nshapes = inner.properties.filter((c) => c.match_name === "ADBE Vector Shape - Group").length;
-      const merges = inner.properties.filter((c) => c.match_name === "ADBE Vector Filter - Merge");
+      const nshapes = inner.properties.filter((c) => c.matchName === "ADBE Vector Shape - Group").length;
+      const merges = inner.properties.filter((c) => c.matchName === "ADBE Vector Filter - Merge");
       if (nshapes > 1) {
         multi += 1;
         py_assert(merges.length === 1, `${group.name}: nshapes=${nshapes}`);
@@ -424,8 +424,8 @@ describe("TestSvgImportByteFidelity", () => {
     // surfaces after a save + reparse: check there.
     const tmp_path = make_tmp_path();
     const app = parse(BASE);
-    const comp = app.project.root_folder.add_comp("T", 100, 100, 1.0, 1.0, 30.0);
-    comp.add_shape();
+    const comp = app.project.rootFolder.addComp("T", 100, 100, 1.0, 1.0, 30.0);
+    comp.addShape();
     const out = tmp_path.div("ls.aep");
     app.project.save(out);
 
@@ -439,11 +439,11 @@ describe("TestSvgImportByteFidelity", () => {
     py_assert(styles._tdsb != null && styles._tdsb.synthetic === false);
     expect(styles._tdsb._enable_flags).toBe(3); // enabled+collapsed parent
     for (const child of styles.properties) {
-      py_assert(child.enabled === false, child.match_name);
+      py_assert(child.enabled === false, child.matchName);
       py_assert(child._tdsb != null);
       // Blending Options mirrors the parent (3); the 10 style toggles
       // are disabled (2 = bit 0 clear).
-      const expected = child.match_name === "ADBE Blend Options Group" ? 3 : 2;
+      const expected = child.matchName === "ADBE Blend Options Group" ? 3 : 2;
       expect(child._tdsb._enable_flags).toBe(expected);
     }
   });
@@ -452,13 +452,13 @@ describe("TestSvgImportByteFidelity", () => {
     // Bounded but non-animatable menu leaves (e.g. Stroke Line Cap) must
     // NOT get tdum/tduM bound chunks - AE omits them.
     const app = parse(BASE);
-    const comp = app.project.root_folder.add_comp("T", 100, 100, 1.0, 1.0, 30.0);
-    const layer = comp.add_shape();
+    const comp = app.project.rootFolder.addComp("T", 100, 100, 1.0, 1.0, 30.0);
+    const layer = comp.addShape();
     const contents = layer.property("ADBE Root Vectors Group");
-    const stroke = contents.add_property("ADBE Vector Graphic - Stroke");
+    const stroke = contents.addProperty("ADBE Vector Graphic - Stroke");
     const cap = stroke.property("ADBE Vector Stroke Line Cap");
     cap.value = 2.0; // round - non-default, forces materialization
-    expect(cap.can_vary_over_time).toBe(false);
+    expect(cap.canVaryOverTime).toBe(false);
     const kinds = cap._tdbs.chunks.map((c) => c.chunk_type);
     expect(kinds.includes("tdum")).toBe(false);
     expect(kinds.includes("tduM")).toBe(false);
@@ -476,12 +476,12 @@ describe("TestSvgImportByteFidelity", () => {
     const fills: number[] = [];
     const strokes: number[] = [];
     for (const group of contents.properties) {
-      if (group.match_name !== "ADBE Vector Group") continue;
+      if (group.matchName !== "ADBE Vector Group") continue;
       const inner = as_instance(group, PropertyGroup).property("ADBE Vectors Group");
       for (const child of inner.properties) {
-        if (child.match_name === "ADBE Vector Graphic - Fill") {
+        if (child.matchName === "ADBE Vector Graphic - Fill") {
           fills.push(as_instance(child, PropertyGroup).property("ADBE Vector Fill Opacity").value);
-        } else if (child.match_name === "ADBE Vector Graphic - Stroke") {
+        } else if (child.matchName === "ADBE Vector Graphic - Stroke") {
           strokes.push(as_instance(child, PropertyGroup).property("ADBE Vector Stroke Opacity").value);
         }
       }

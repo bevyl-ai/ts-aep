@@ -27,8 +27,8 @@ const is_number_list = (v: InstanceValue): v is number[] | null =>
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const font = comp.text_layers[0].text.source_text.value.font_object;
- * console.log(font.post_script_name);
+ * const font = comp.textLayers[0].text.sourceText.value.fontObject;
+ * console.log(font.postScriptName);
  * ```
  *
  * **Note:** 
@@ -39,7 +39,7 @@ const is_number_list = (v: InstanceValue): v is number[] | null =>
  */
 export class FontObject {
   /** The PostScript name of the font. Read-only. */
-  declare post_script_name: string;
+  declare postScriptName: string;
 
   /** The version number of the font. Read-only. */
   declare version: string | null;
@@ -52,14 +52,14 @@ export class FontObject {
    * Stored in the file as 16.16 fixed-point integers; exposed as floats
    * (e.g. `[700.0, 87.5]`).
    */
-  declare design_vector: number[] | null;
+  declare designVector: number[] | null;
 
   declare _font_data: CosDict;
   declare _font_entry: CosDict | null;
 
   /** Returns `true` if the font is a variable font. Read-only. */
-  get has_design_axes(): boolean {
-    return this.design_vector != null;
+  get hasDesignAxes(): boolean {
+    return this.designVector != null;
   }
 
   /**
@@ -67,9 +67,9 @@ export class FontObject {
    * of the PostScript name `SFPro-Bold` is `SFPro`. `null` for
    * non-variable fonts. Read-only.
    */
-  get family_prefix(): string | null {
-    if (!this.has_design_axes) return null;
-    return split(this.post_script_name, "-", 1)[0];
+  get familyPrefix(): string | null {
+    if (!this.hasDesignAxes) return null;
+    return split(this.postScriptName, "-", 1)[0];
   }
 
   constructor(kw: {
@@ -82,7 +82,7 @@ export class FontObject {
     this._font_data = _font_data;
     this._font_entry = _font_entry;
     if (post_script_name != null) {
-      instance_dict(this).set("post_script_name", post_script_name);
+      instance_dict(this).set("postScriptName", post_script_name);
     }
     if (version != null) {
       instance_dict(this).set("version", version);
@@ -92,7 +92,7 @@ export class FontObject {
 
 descriptor(
   FontObject,
-  "post_script_name",
+  "postScriptName",
   new CosField<string, "_font_data", FontObject>("_font_data", "0", {
     transform: str,
     accepts: is_string,
@@ -112,7 +112,7 @@ descriptor(
 );
 descriptor(
   FontObject,
-  "design_vector",
+  "designVector",
   new CosField<number[] | null, "_font_data", FontObject>("_font_data", "4", {
     transform: _design_vector_from_cos,
     accepts: is_number_list,

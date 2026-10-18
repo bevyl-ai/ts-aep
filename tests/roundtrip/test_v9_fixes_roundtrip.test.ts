@@ -105,13 +105,13 @@ describe("TestFixedStringTail", () => {
     const tmp_path = make_tmp_path();
     // The NUL-led CSV code in a real project, read and written whole.
     const app = parse(SAMPLES.div("models", "folder", "folder.aep"));
-    app.project.import_file(new ImportOptions(ASSETS.div("csv.csv")));
+    app.project.importFile(new ImportOptions(ASSETS.div("csv.csv")));
     const first = tmp_path.div("first.aep");
     app.project.save(first);
     const reparsed = parse(first);
     _read_every_layer(reparsed.project);
     for (const item of reparsed.project.footages) {
-      expect(item.main_source != null).toBe(true);
+      expect(item.mainSource != null).toBe(true);
     }
     const second = tmp_path.div("second.aep");
     reparsed.project.save(second);
@@ -157,7 +157,7 @@ describe("TestDataFootageSourceCode", () => {
     // values importer's NUL-led codes, in sspc and in the opti header.
     const app = parse(SAMPLES.div("models", "folder", "folder.aep"));
     for (const name of ["csv.csv", "txt.txt"]) {
-      app.project.import_file(new ImportOptions(ASSETS.div(name)));
+      app.project.importFile(new ImportOptions(ASSETS.div(name)));
     }
     const out = tmp_path.div("data.aep");
     app.project.save(out);
@@ -178,7 +178,7 @@ describe("TestDataFootageSourceCode", () => {
     expect(expected_codes.every((c) => optis.has(c))).toBe(true);
     for (const item of parse(out).project.footages) {
       if (["csv.csv", "txt.txt"].includes(item.name)) {
-        expect(String(item.main_source._sspc.source_format_type)).toBe("");
+        expect(String(item.mainSource._sspc.source_format_type)).toBe("");
       }
     }
   });

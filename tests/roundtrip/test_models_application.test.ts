@@ -17,19 +17,19 @@ describe("TestBuildName", () => {
 
   test("test_build_name_equals_version", () => {
     const app = parse_aep(SAMPLE);
-    expect(app.build_name).toBe(app.version);
+    expect(app.buildName).toBe(app.version);
   });
 
   test("test_set_build_name_updates_version", () => {
     const app = parse_aep(SAMPLE);
-    app.build_name = "25.0x100";
+    app.buildName = "25.0x100";
     expect(app.version).toBe("25.0x100");
   });
 
   test("test_set_version_updates_build_name", () => {
     const app = parse_aep(SAMPLE);
     app.version = "24.3x50";
-    expect(app.build_name).toBe("24.3x50");
+    expect(app.buildName).toBe("24.3x50");
   });
 });
 
@@ -48,7 +48,7 @@ describe("TestVersionUpdatesFormatGate", () => {
 
   test("test_build_name_setter_syncs_format_version", () => {
     const app = parse_aep(SAMPLE);
-    app.build_name = "23.0x1";
+    app.buildName = "23.0x1";
     const head = app._head;
     expect(py_eq([head.file_format_version, head._format_subversion], [94, 9])).toBe(true);
   });
@@ -84,17 +84,17 @@ describe("TestRoundtripBuildName", () => {
   test("test_roundtrip_build_name", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(SAMPLE);
-    const original = app.build_name;
+    const original = app.buildName;
 
-    app.build_name = "24.1x42";
-    expect(app.build_name).toBe("24.1x42");
+    app.buildName = "24.1x42";
+    expect(app.buildName).toBe("24.1x42");
 
     const out = tmp_path.div("modified.aep");
     app.project.save(out);
     const app2 = parse_aep(out);
 
-    expect(app2.build_name).toBe("24.1x42");
+    expect(app2.buildName).toBe("24.1x42");
     expect(app2.version).toBe("24.1x42");
-    expect(app2.build_name).not.toBe(original);
+    expect(app2.buildName).not.toBe(original);
   });
 });

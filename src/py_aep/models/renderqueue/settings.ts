@@ -148,9 +148,9 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     return this.items().map(([, v]) => v);
   }
 
-  get_or(key: string): SettingValue | null;
-  get_or<D>(key: string, default_: D): SettingValue | D;
-  get_or<D>(key: string, default_: D | null = null): SettingValue | D | null {
+  getOr(key: string): SettingValue | null;
+  getOr<D>(key: string, default_: D): SettingValue | D;
+  getOr<D>(key: string, default_: D | null = null): SettingValue | D | null {
     try {
       return this.get(key);
     } catch (e) {
@@ -325,13 +325,13 @@ export const _RESIZE_TO_STRINGS: Map<string, string> = new Map<string, string>([
  * factory-preset labels) when no preferences directory was provided.
  */
 export function build_resize_to_strings(preferences: Preferences): Map<string, string> {
-  const presets = preferences.composition_presets();
+  const presets = preferences.compositionPresets();
   if (!presets?.length) return _RESIZE_TO_STRINGS;
   const best = new Map<string, CompPreset>();
   for (const preset of presets) {
     const key = tkey(preset.width, preset.height);
     const current = best.get(key);
-    if (current == null || preset.frame_rate <= current.frame_rate) best.set(key, preset);
+    if (current == null || preset.frameRate <= current.frameRate) best.set(key, preset);
   }
   return new Map<string, string>([...best.entries()].map(([key, preset]) => [key, preset.name]));
 }

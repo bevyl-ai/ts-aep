@@ -56,7 +56,7 @@ export function build_shape_layer_contents(
 }
 
 export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): void {
-  const group = _grp(contents.add_property("ADBE Vector Group"));
+  const group = _grp(contents.addProperty("ADBE Vector Group"));
   const inner = _grp(group.property("ADBE Vectors Group"));
 
   // AE stores each group's vertices centred on the box of their vertices
@@ -65,7 +65,7 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
   // matches AE byte-for-byte.
   const [cx, cy] = _bbox_center(drawable);
   for (const subpath of drawable.subpaths) {
-    const path_group = _grp(inner.add_property("ADBE Vector Shape - Group"));
+    const path_group = _grp(inner.addProperty("ADBE Vector Shape - Group"));
     _leaf(path_group, "ADBE Vector Shape").value = new Shape(
       subpath.vertices.map((v) => [v[0] - cx, v[1] - cy]),
       subpath.in_tangents.map((t) => [...t]),
@@ -79,7 +79,7 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
   // without it AE fills each subpath solid and the holes disappear. AE adds
   // one (Merge Type 1 = "Merge", the default) after the paths, before paint.
   if (drawable.subpaths.length > 1) {
-    inner.add_property("ADBE Vector Filter - Merge");
+    inner.addProperty("ADBE Vector Filter - Merge");
   }
 
   // Stroke is listed before fill so it renders on top (SVG paint order).
@@ -188,11 +188,11 @@ export function _apply_paint(
   let grp: PropertyGroup;
   let pct: number | null;
   if (paint instanceof GradientPaint) {
-    grp = _grp(inner.add_property(`ADBE Vector Graphic - G-${kind}`));
+    grp = _grp(inner.addProperty(`ADBE Vector Graphic - G-${kind}`));
     _apply_gradient(grp, paint, cx, cy);
     pct = _grad_opacity_pct(opacity);
   } else {
-    grp = _grp(inner.add_property(`ADBE Vector Graphic - ${kind}`));
+    grp = _grp(inner.addProperty(`ADBE Vector Graphic - ${kind}`));
     const c = paint.color;
     _leaf(grp, `ADBE Vector ${kind} Color`).value = [c[0], c[1], c[2], 1.0];
     pct = _opacity_pct(c[3] * opacity);
@@ -292,7 +292,7 @@ export function _set_if_present<K extends _LeafName>(
   match_name: K,
   value: _LeafValue<K>,
 ): void {
-  if (group.properties.some((p) => p.match_name === match_name)) {
+  if (group.properties.some((p) => p.matchName === match_name)) {
     const leaf: Property = _leaf(group, match_name);
     leaf.value = value;
   }

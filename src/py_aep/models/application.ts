@@ -69,7 +69,7 @@ export class Application {
    * **Warning:** This attribute is read-only in ExtendScript. Modifying it could
    * cause issues when opening the file in After Effects.
    */
-  declare build_number: number;
+  declare buildNumber: number;
 
   /**
    * The version of After Effects that last saved the project, formatted as
@@ -105,14 +105,14 @@ export class Application {
    * **Warning:** This attribute is read-only in ExtendScript. Modifying it could
    * cause issues when opening the file in After Effects.
    */
-  declare is_beta: boolean;
+  declare isBeta: boolean;
 
   /** The name of the application. Always "After Effects". Read-only. */
-  static app_name: string = "After Effects";
+  static appName: string = "After Effects";
 
-  /** Instance-level read of the class attribute (`app.app_name` in Python). */
-  get app_name(): string {
-    return this.constructor.app_name;
+  /** Instance-level read of the class attribute (`app.appName` in Python). */
+  get appName(): string {
+    return this.constructor.appName;
   }
 
   declare _head: HeadChunk;
@@ -137,7 +137,7 @@ export class Application {
   }
 
   [INSPECT](): string {
-    return `Application(version=${repr(this.version)}, build_number=${repr(this.build_number)}, app_name=${repr(this.app_name)})`;
+    return `Application(version=${repr(this.version)}, build_number=${repr(this.buildNumber)}, app_name=${repr(this.appName)})`;
   }
 
   /** The project that is currently loaded. Read-only. */
@@ -150,7 +150,7 @@ export class Application {
    * (Composition, Layer, or Footage) panel. Returns `null` if no viewers
    * are open. Read-only.
    */
-  get active_viewer(): Viewer | null {
+  get activeViewer(): Viewer | null {
     return this._active_viewer;
   }
 
@@ -172,18 +172,18 @@ export class Application {
    * **Warning:** This attribute is read-only in ExtendScript. Modifying it could
    * cause issues when opening the file in After Effects.
    */
-  get build_name(): string {
+  get buildName(): string {
     return this.version;
   }
 
-  set build_name(value: string) {
+  set buildName(value: string) {
     this.version = value;
   }
 }
 
 descriptor(
   Application,
-  "build_number",
+  "buildNumber",
   new ChunkField("_head", "ae_build_number", {
     // An 8-bit field of the head chunk: a larger build would wrap.
     validate: validate_u1,
@@ -199,4 +199,4 @@ descriptor(
   }),
 );
 
-descriptor(Application, "is_beta", ChunkField.bool("_head", "ae_version_beta_flag"));
+descriptor(Application, "isBeta", ChunkField.bool("_head", "ae_version_beta_flag"));

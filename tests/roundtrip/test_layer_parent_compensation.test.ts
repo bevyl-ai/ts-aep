@@ -47,7 +47,7 @@ describe("TestParentOrientation", () => {
     const child = comp.layers[0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [0.0, 0.0, 0.0];
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     const before = build_world_matrix(child);
 
@@ -63,7 +63,7 @@ describe("TestParentOrientation", () => {
     const child = comp.layers[0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [0.0, 0.0, 0.0];
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
 
     child.parent = parent;
@@ -80,7 +80,7 @@ describe("TestParentOrientation", () => {
     const comp = project.compositions[0];
     const child = comp.layers[0];
     expect(approx(child.transform.property("ADBE Orientation").value, [0.0, 0.0, 0.0])).toBe(true);
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Rotate Z").value = 30.0;
     parent.transform.property("ADBE Position").value = [500.0, 400.0, 0.0];
     const before = build_world_matrix(child);
@@ -109,14 +109,14 @@ describe("TestParentSeparatedPosition", () => {
     child.transform.property("ADBE Anchor Point").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position_0").value = 150.0;
     child.transform.property("ADBE Position_1").value = 160.0;
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
 
     child.parent = parent;
 
     expect(approx(child.transform.property("ADBE Position_0").value, -150.0)).toBe(true);
     expect(approx(child.transform.property("ADBE Position_1").value, 120.0)).toBe(true);
-    expect(child.transform.property("ADBE Position").dimensions_separated).toBe(true);
+    expect(child.transform.property("ADBE Position").dimensionsSeparated).toBe(true);
 
     const out = tmp_path.div("modified.aep");
     project.save(out);
@@ -143,7 +143,7 @@ describe("TestParentCameraIsAlwaysThreeD", () => {
     const comp = get_comp(project, "CAM_ONE");
     const camera = comp.layers[0];
     const target = comp.layers[1];
-    expect("three_d_layer" in camera).toBe(false);
+    expect("threeDLayer" in camera).toBe(false);
     target.transform.property("ADBE Rotate X").value = 20.0;
     target.transform.property("ADBE Rotate Z").value = 30.0;
     // A camera's world is its rig (position + rotations): its point of
@@ -195,14 +195,14 @@ describe("TestParentCompensationConvention", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Orientation").value = [...orientation];
     for (const [name, value] of zip(["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"], rotations)) {
       as_instance(child.transform.property(name), Property).value = float(value);
     }
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate X").value = 20.0;
     parent.transform.property("ADBE Rotate Y").value = -35.0;
@@ -246,9 +246,9 @@ describe("TestParentCompensationConvention", () => {
      */
     const [child, parent] = _setup([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
     const rotation = child.transform.property("ADBE Rotate Z");
-    rotation.add_key(0.0);
+    rotation.addKey(0.0);
     at(rotation.keyframes, -1).value = 15.0;
-    rotation.add_key(2.0);
+    rotation.addKey(2.0);
     at(rotation.keyframes, -1).value = 75.0;
     const before = build_world_matrix(child);
 
@@ -263,9 +263,9 @@ describe("TestParentCompensationConvention", () => {
     /** AE rewrites every orientation keyframe, as it does for position. */
     const [child, parent] = _setup([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
     const orientation = child.transform.property("ADBE Orientation");
-    orientation.add_key(0.0);
+    orientation.addKey(0.0);
     at(orientation.keyframes, -1).value = [0.0, 30.0, 0.0];
-    orientation.add_key(2.0);
+    orientation.addKey(2.0);
     at(orientation.keyframes, -1).value = [0.0, 120.0, 0.0];
 
     child.parent = parent;
@@ -279,10 +279,10 @@ describe("TestParentCompensationConvention", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = false;
+    child.threeDLayer = false;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate Z").value = 30.0;
 
@@ -307,11 +307,11 @@ describe("TestParentNonUniformParentScaleJumps", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate Z").value = 30.0;
     parent.transform.property("ADBE Scale").value = [200.0, 50.0, 100.0];
@@ -340,14 +340,14 @@ describe("TestParentScaledParentEdgeCases", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     child.transform.property("ADBE Scale").value = [100.0, 100.0, 100.0];
     child.transform.property("ADBE Rotate Z").value = child_rotation;
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     return [child, parent];
   }
@@ -441,16 +441,16 @@ describe("TestParentKeyframedChild", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = false;
+    child.threeDLayer = false;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const rotation = child.transform.property("ADBE Rotate Z");
-    rotation.add_key(0.0);
+    rotation.addKey(0.0);
     at(rotation.keyframes, -1).value = 15.0;
-    rotation.add_key(2.0);
+    rotation.addKey(2.0);
     at(rotation.keyframes, -1).value = 75.0;
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate Z").value = 30.0;
     const before = build_world_matrix(child);
@@ -469,17 +469,17 @@ describe("TestParentKeyframedChild", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const scale = child.transform.property("ADBE Scale");
-    scale.add_key(0.0);
+    scale.addKey(0.0);
     at(scale.keyframes, -1).value = [100.0, 100.0, 100.0];
-    scale.add_key(2.0);
+    scale.addKey(2.0);
     at(scale.keyframes, -1).value = [250.0, 60.0, 100.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate Z").value = 30.0;
     const before = new Map<number, Mat4>();
@@ -503,16 +503,16 @@ describe("TestParentKeyframedChild", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     const position = parent.transform.property("ADBE Position");
-    position.add_key(0.0);
+    position.addKey(0.0);
     at(position.keyframes, -1).value = [300.0, 40.0, 0.0];
-    position.add_key(2.0);
+    position.addKey(2.0);
     at(position.keyframes, -1).value = [700.0, 300.0, 0.0];
     const before = build_world_matrix(child, 0.0);
 
@@ -538,17 +538,17 @@ describe("TestParentScaledParentKeyframes", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const scale = child.transform.property("ADBE Scale");
-    scale.add_key(0.0);
+    scale.addKey(0.0);
     at(scale.keyframes, -1).value = [100.0, 100.0, 100.0];
-    scale.add_key(2.0);
+    scale.addKey(2.0);
     at(scale.keyframes, -1).value = [250.0, 60.0, 100.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Scale").value = [...parent_scale];
     return [child, parent, scale];
@@ -580,16 +580,16 @@ describe("TestParentScaledParentKeyframes", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
     const position = child.transform.property("ADBE Position");
-    position.add_key(0.0);
+    position.addKey(0.0);
     at(position.keyframes, -1).value = [150.0, 160.0, 0.0];
-    position.add_key(2.0);
+    position.addKey(2.0);
     at(position.keyframes, -1).value = [400.0, 500.0, 0.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Scale").value = [50.0, 50.0, 50.0];
 
@@ -614,12 +614,12 @@ describe("TestParentAcrossTheTwoDThreeDBoundary", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = false;
+    child.threeDLayer = false;
     child.transform.property("ADBE Orientation").value = [0.0, 0.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
-    const parent = comp.add_null();
-    parent.three_d_layer = true;
+    const parent = comp.addNull();
+    parent.threeDLayer = true;
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate X").value = 20.0;
     parent.transform.property("ADBE Rotate Y").value = -35.0;
@@ -635,11 +635,11 @@ describe("TestParentAcrossTheTwoDThreeDBoundary", () => {
     const project = parse_project_fresh(LAYER_DIR.div("orientation_0_279_0.aep"));
     const comp = project.compositions[0];
     const child = as_instance(comp.layers[0], AVLayer);
-    child.three_d_layer = true;
+    child.threeDLayer = true;
     child.transform.property("ADBE Orientation").value = [0.0, 279.0, 0.0];
     child.transform.property("ADBE Position").value = [150.0, 160.0, 0.0];
     child.transform.property("ADBE Anchor Point").value = [50.0, 50.0, 0.0];
-    const parent = comp.add_null();
+    const parent = comp.addNull();
     parent.transform.property("ADBE Position").value = [300.0, 40.0, 0.0];
     parent.transform.property("ADBE Rotate Z").value = 30.0;
 

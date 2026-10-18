@@ -1,4 +1,4 @@
-/** Tests for CompItem.renderer_options (3D renderer options). */
+/** Tests for CompItem.rendererOptions (3D renderer options). */
 
 import { describe, expect, test } from "bun:test";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
@@ -43,34 +43,34 @@ describe("TestRenderOptionEnums", () => {
 describe("TestRendererOptionsReads", () => {
   test("test_classic_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_classic_3d.aep")).project.compositions[0];
-    const opts = as_instance(comp.renderer_options, ClassicRendererOptions);
+    const opts = as_instance(comp.rendererOptions, ClassicRendererOptions);
 
-    expect(opts.shadow_map_resolution).toBe(ShadowMapResolution.COMP_SIZE);
+    expect(opts.shadowMapResolution).toBe(ShadowMapResolution.COMP_SIZE);
     expect(opts.get("Shadow Map Resolution")).toBe(ShadowMapResolution.COMP_SIZE);
   });
 
   test("test_advanced_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_advanced_3d.aep")).project.compositions[0];
-    const opts = as_instance(comp.renderer_options, AdvancedRendererOptions);
+    const opts = as_instance(comp.rendererOptions, AdvancedRendererOptions);
 
     expect(opts.quality).toBe(8);
     expect(opts.resolution).toBe(EnvironmentLightShadowResolution.FULL);
     expect(opts.smoothness).toBe(3);
     // Comp-relative: stored 1.0 / 0.0 render as comp width and centre.
-    expect(approx(opts.casting_box_size, comp.width)).toBe(true);
-    expect(approx(opts.casting_box_center, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
+    expect(approx(opts.castingBoxSize, comp.width)).toBe(true);
+    expect(approx(opts.castingBoxCenter, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
   });
 
   test("test_cinema_4d_defaults", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
 
-    expect(as_instance(comp.renderer_options, Cinema4DRendererOptions).quality).toBe(25);
+    expect(as_instance(comp.rendererOptions, Cinema4DRendererOptions).quality).toBe(25);
   });
 
   /** renderer_options returns a Mapping. */
   test("test_is_a_mapping", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
-    const opts = comp.renderer_options;
+    const opts = comp.rendererOptions;
 
     expect(py_eq(dict(opts), new Map([["Quality", 25]]))).toBe(true);
     expect(py_eq([...opts.keys()], ["Quality"])).toBe(true);
@@ -80,7 +80,7 @@ describe("TestRendererOptionsReads", () => {
   /** AE 26.3 cannot author this renderer, so we do not let anyone edit it. */
   test("test_ray_traced_is_read_only", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_ray_traced.aep")).project.compositions[0];
-    const opts = comp.renderer_options;
+    const opts = comp.rendererOptions;
 
     py_assert(opts instanceof RayTracedRendererOptions);
     expect(py_eq(dict(opts), new Map())).toBe(true);
@@ -99,22 +99,22 @@ describe("TestRendererOptionsNonDefaults", () => {
   test("test_classic_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_classic_3d.aep")).project.compositions[0];
 
-    expect(as_instance(comp.renderer_options, ClassicRendererOptions).shadow_map_resolution).toBe(ShadowMapResolution.RES_750);
+    expect(as_instance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution).toBe(ShadowMapResolution.RES_750);
   });
 
   test("test_cinema_4d_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_cinema_4d.aep")).project.compositions[0];
 
-    expect(as_instance(comp.renderer_options, Cinema4DRendererOptions).quality).toBe(44);
+    expect(as_instance(comp.rendererOptions, Cinema4DRendererOptions).quality).toBe(44);
   });
 
   test("test_advanced_non_default", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_options_advanced_3d.aep")).project.compositions[0];
 
-    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).quality).toBe(61);
-    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).resolution).toBe(EnvironmentLightShadowResolution.DOUBLE);
-    expect(as_instance(comp.renderer_options, AdvancedRendererOptions).smoothness).toBe(6);
-    expect(approx(as_instance(comp.renderer_options, AdvancedRendererOptions).casting_box_size, 600.0)).toBe(true);
-    expect(approx(as_instance(comp.renderer_options, AdvancedRendererOptions).casting_box_center, [400.0, 600.0, -100.0])).toBe(true);
+    expect(as_instance(comp.rendererOptions, AdvancedRendererOptions).quality).toBe(61);
+    expect(as_instance(comp.rendererOptions, AdvancedRendererOptions).resolution).toBe(EnvironmentLightShadowResolution.DOUBLE);
+    expect(as_instance(comp.rendererOptions, AdvancedRendererOptions).smoothness).toBe(6);
+    expect(approx(as_instance(comp.rendererOptions, AdvancedRendererOptions).castingBoxSize, 600.0)).toBe(true);
+    expect(approx(as_instance(comp.rendererOptions, AdvancedRendererOptions).castingBoxCenter, [400.0, 600.0, -100.0])).toBe(true);
   });
 });

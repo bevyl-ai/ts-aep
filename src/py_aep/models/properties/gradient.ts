@@ -241,11 +241,11 @@ export class Gradient {
   }
 
   /** Ordered color stops defining the gradient. */
-  get color_stops(): readonly GradientColorStop[] {
+  get colorStops(): readonly GradientColorStop[] {
     return this._color_stops;
   }
 
-  set color_stops(value: readonly GradientColorStop[]) {
+  set colorStops(value: readonly GradientColorStop[]) {
     if (!value.every((stop) => stop instanceof GradientColorStop)) {
       throw new ValueError("All color stops must be GradientColorStop instances");
     }
@@ -260,11 +260,11 @@ export class Gradient {
   }
 
   /** Ordered alpha stops defining opacity along the gradient. */
-  get alpha_stops(): readonly GradientAlphaStop[] {
+  get alphaStops(): readonly GradientAlphaStop[] {
     return this._alpha_stops;
   }
 
-  set alpha_stops(value: readonly GradientAlphaStop[]) {
+  set alphaStops(value: readonly GradientAlphaStop[]) {
     if (!value.every((stop) => stop instanceof GradientAlphaStop)) {
       throw new ValueError("All alpha stops must be GradientAlphaStop instances");
     }
@@ -279,7 +279,7 @@ export class Gradient {
   }
 
   /** Add a color stop. */
-  add_color_stop(offset: number, midpoint: number, color: readonly [number, number, number]): void {
+  addColorStop(offset: number, midpoint: number, color: readonly [number, number, number]): void {
     const stop = new GradientColorStop(offset, midpoint, color);
     stop._gradient = this;
     this._color_stops = [...this._color_stops, stop];
@@ -287,7 +287,7 @@ export class Gradient {
   }
 
   /** Remove a color stop by index. */
-  remove_color_stop(stop: number): void {
+  removeColorStop(stop: number): void {
     validate_positive_int(stop);
     if (stop >= this._color_stops.length) {
       throw new ValueError(
@@ -301,7 +301,7 @@ export class Gradient {
   }
 
   /** Add an alpha stop. */
-  add_alpha_stop(offset: number, midpoint: number, alpha: number): void {
+  addAlphaStop(offset: number, midpoint: number, alpha: number): void {
     const stop = new GradientAlphaStop(offset, midpoint, alpha);
     stop._gradient = this;
     this._alpha_stops = [...this._alpha_stops, stop];
@@ -309,7 +309,7 @@ export class Gradient {
   }
 
   /** Remove an alpha stop by index. */
-  remove_alpha_stop(stop: number): void {
+  removeAlphaStop(stop: number): void {
     validate_positive_int(stop);
     if (stop >= this._alpha_stops.length) {
       throw new ValueError(
@@ -366,8 +366,8 @@ export class Gradient {
 
   [INSPECT](): string {
     return (
-      `Gradient(color_stops=${this.color_stops.length}, ` +
-      `alpha_stops=${this.alpha_stops.length}, version=${repr(this.version)})`
+      `Gradient(color_stops=${this.colorStops.length}, ` +
+      `alpha_stops=${this.alphaStops.length}, version=${repr(this.version)})`
     );
   }
 
@@ -375,8 +375,8 @@ export class Gradient {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof Gradient)) return false;
     return (
-      py_eq(this.color_stops, other.color_stops) &&
-      py_eq(this.alpha_stops, other.alpha_stops) &&
+      py_eq(this.colorStops, other.colorStops) &&
+      py_eq(this.alphaStops, other.alphaStops) &&
       this.version === other.version
     );
   }

@@ -23,16 +23,16 @@ const SAMPLE = new Path(import.meta.dir)
 describe("TestNegativeTimeSpanDecode", () => {
   test("test_negative_start_decodes_signed", () => {
     const project = parse_project(SAMPLE);
-    const rqi = as_instance(project.render_queue, RenderQueue).items[0];
-    expect(rqi.time_span_start).toBe(-5.0);
-    expect(rqi.time_span_duration).toBe(15.0);
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
+    expect(rqi.timeSpanStart).toBe(-5.0);
+    expect(rqi.timeSpanDuration).toBe(15.0);
   });
 
   test("test_negative_duration_decodes_signed", () => {
     const project = parse_project(SAMPLE);
-    const rqi = as_instance(project.render_queue, RenderQueue).items[1];
-    expect(rqi.time_span_start).toBe(110.0);
-    expect(rqi.time_span_duration).toBe(-100.0);
+    const rqi = as_instance(project.renderQueue, RenderQueue).items[1];
+    expect(rqi.timeSpanStart).toBe(110.0);
+    expect(rqi.timeSpanDuration).toBe(-100.0);
   });
 
   test("test_roundtrip_stays_byte_identical", () => {

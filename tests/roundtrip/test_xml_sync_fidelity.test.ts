@@ -39,7 +39,7 @@ const PER_FORMAT: [Path, string][] = [
 
 function _options(path: Path): [Project, XmlFormatOptions] {
   const project = parse(path).project;
-  const opts = as_instance(as_instance(project.render_queue, RenderQueue).items[0].output_modules[0].format_options, XmlFormatOptions);
+  const opts = as_instance(as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
   return [project, opts];
 }
 
@@ -69,7 +69,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     test.skipIf(!_ATTR_ORDER_PRESERVED)(`test_no_op_sync_is_byte_identical[${index}]`, () => {
       const [, opts] = _options(sample);
       expect(opts instanceof XmlFormatOptions).toBe(true);
-      expect(opts.format_code).toBe(format_code);
+      expect(opts.formatCode).toBe(format_code);
       const before = opts._body.data;
       opts._sync_xml(); // no semantic change whatsoever
       expect(py_eq(opts._body.data, before)).toBe(true);

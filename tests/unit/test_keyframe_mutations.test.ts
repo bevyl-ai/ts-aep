@@ -28,8 +28,8 @@ describe("TestShapeFromScratch", () => {
     const s = new Shape(verts);
     expect(s.closed).toBe(true);
     expect(_approx_points(s.vertices, verts)).toBe(true);
-    expect(_approx_points(s.in_tangents, Array(3).fill([0, 0]))).toBe(true);
-    expect(_approx_points(s.out_tangents, Array(3).fill([0, 0]))).toBe(true);
+    expect(_approx_points(s.inTangents, Array(3).fill([0, 0]))).toBe(true);
+    expect(_approx_points(s.outTangents, Array(3).fill([0, 0]))).toBe(true);
   });
 
   test("test_open_path_with_tangents", () => {
@@ -39,8 +39,8 @@ describe("TestShapeFromScratch", () => {
     const s = new Shape(verts, ins, outs, { closed: false });
     expect(s.closed).toBe(false);
     expect(_approx_points(s.vertices, verts)).toBe(true);
-    expect(_approx_points(s.in_tangents, ins)).toBe(true);
-    expect(_approx_points(s.out_tangents, outs)).toBe(true);
+    expect(_approx_points(s.inTangents, ins)).toBe(true);
+    expect(_approx_points(s.outTangents, outs)).toBe(true);
   });
 
   test("test_empty_shape", () => {

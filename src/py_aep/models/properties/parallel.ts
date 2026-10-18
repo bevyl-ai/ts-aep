@@ -45,42 +45,42 @@ export class ParallelKind {
   declare name: string;
 
   /** The wrapper LIST type holding the tdbs + value container. */
-  declare wrapper_type: string;
+  declare wrapperType: string;
 
   /**
    * The per-keyframe value container LIST type (null for text,
    * whose values live in the shared btdk COS blob).
    */
-  declare container_type: string | null;
+  declare containerType: string | null;
 
   /** The ldat item type of the keyframe header entries. */
-  declare header_item_type: LdatItemType;
+  declare headerItemType: LdatItemType;
 
   /**
    * Whether the container keeps the removed keyframe's value chunk
    * as the static value when the last keyframe is removed (markers
    * have no static value).
    */
-  keeps_value_on_revert: boolean = true;
+  keepsValueOnRevert: boolean = true;
 
   /**
    * Whether `Property.value` stays aliased to the first keyframe's
    * model after animating (matches the shape parser).
    */
-  aliases_static_value: boolean = false;
+  aliasesStaticValue: boolean = false;
 
   /**
    * The speed AE reports for a LINEAR side of this kind, if its value
    * has no scalar magnitude for a speed to be a rate OF. `null` means the
    * speed is a real rate and gets measured from the segment.
    */
-  linear_ease_speed: number | null = null;
+  linearEaseSpeed: number | null = null;
 
   /**
    * Whether the wrapper subtree can be created from scratch when the
    * binary stores nothing for the property.
    */
-  can_materialize_wrapper: boolean = false;
+  canMaterializeWrapper: boolean = false;
 
   /**
    * The value a new keyframe takes at `time` when none is given.
@@ -88,11 +88,11 @@ export class ParallelKind {
    * Most kinds cannot be interpolated: hold the nearest existing
    * keyframe's value, or the static value.
    */
-  held_value(prop: Property, time: number): PropertyValue {
+  heldValue(prop: Property, time: number): PropertyValue {
     if (!prop.keyframes?.length) {
       return prop._value;
     }
-    return prop.keyframes[prop.nearest_key_index(time)].value;
+    return prop.keyframes[prop.nearestKeyIndex(time)].value;
   }
 
   /** Normalize a user-supplied value to the kind's value object. */
@@ -101,7 +101,7 @@ export class ParallelKind {
   }
 
   /** Build the parallel-container value chunk holding `value`. */
-  build_value_chunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     throw new NotImplementedError();
   }
 
@@ -112,62 +112,62 @@ export class ParallelKind {
    * a newly added keyframe can be edited in place (the source model
    * passed to `build_value_chunk` is backed by a different chunk).
    */
-  wrap_value_chunk(prop: Property, value_chunk: Chunk): PropertyValue {
+  wrapValueChunk(prop: Property, value_chunk: Chunk): PropertyValue {
     return null;
   }
 
   /** Attach kind-specific back-references after a value is set. */
-  bind_keyframe(value: PropertyValue, kf: Keyframe): void {}
+  bindKeyframe(value: PropertyValue, kf: Keyframe): void {}
 
   /** Build the keyframe header ldat item for `value`. */
-  build_header_item(value: PropertyValue): LdatItem {
-    return build_parallel_ldat_item(this.header_item_type);
+  buildHeaderItem(value: PropertyValue): LdatItem {
+    return build_parallel_ldat_item(this.headerItemType);
   }
 
   /** Refresh value data mirrored into an existing header item. */
-  update_header_item(item: LdatItem, value: PropertyValue): void {}
+  updateHeaderItem(item: LdatItem, value: PropertyValue): void {}
 
   /** The cdat AE writes when the property reverts to static. */
-  static_cdat(removed_value: PropertyValue): CdatChunk {
+  staticCdat(removed_value: PropertyValue): CdatChunk {
     return new CdatChunk({ pad: _EMPTY_CDAT_PAD });
   }
 
   /** Kind-specific tdb4 / model fixups after wrapping a bare tdbs. */
-  on_wrap(prop: Property): void {}
+  onWrap(prop: Property): void {}
 }
 
 export class _OrientationKind extends ParallelKind {
   name = "orientation";
-  wrapper_type = "otst";
-  container_type = "otky";
-  header_item_type = LdatItemType.orientation;
-  can_materialize_wrapper = true;
-  linear_ease_speed = 1.0;
+  wrapperType = "otst";
+  containerType = "otky";
+  headerItemType = LdatItemType.orientation;
+  canMaterializeWrapper = true;
+  linearEaseSpeed = 1.0;
 
-  held_value(prop: Property, time: number): PropertyValue {
+  heldValue(prop: Property, time: number): PropertyValue {
     // Orientation values interpolate numerically.
-    return prop.value_at_time(time);
+    return prop.valueAtTime(time);
   }
 
-  build_value_chunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     const vals = Array.isArray(value) ? value : [0.0, 0.0, 0.0];
     return new OtdaChunk({ values: vals });
   }
 
-  build_header_item(value: PropertyValue): LdatItem {
+  buildHeaderItem(value: PropertyValue): LdatItem {
     return build_parallel_ldat_item(
-      this.header_item_type,
+      this.headerItemType,
       Array.isArray(value) ? value : null,
     );
   }
 
-  update_header_item(item: LdatItem, value: PropertyValue): void {
+  updateHeaderItem(item: LdatItem, value: PropertyValue): void {
     if (Array.isArray(value)) {
       set_orientation_item_values(item, value);
     }
   }
 
-  static_cdat(removed_value: PropertyValue): CdatChunk {
+  staticCdat(removed_value: PropertyValue): CdatChunk {
     // Inside an otst the cdat doubles are little-endian and hold the
     // actual angles.
     if (Array.isArray(removed_value)) {
@@ -181,32 +181,32 @@ export class _OrientationKind extends ParallelKind {
    * orientation (angle dial, 3D spatial vector), regardless of the
    * binary tdb4 values. Shared by `parse_orientation` and `on_wrap`.
    */
-  apply_model_metadata(prop: Property): void {
+  applyModelMetadata(prop: Property): void {
     prop._property_control_type = PropertyControlType.ANGLE;
     prop._property_value_type = PropertyValueType.ThreeD_SPATIAL;
     instance_dict(prop).set("dimensions", 3);
     instance_dict(prop).set("_vector", true);
   }
 
-  on_wrap(prop: Property): void {
+  onWrap(prop: Property): void {
     prop._tdb4.dimensions = 1;
     // 0x6000 (24 fps) is the fallback when the containing comp is
     // unknown; _ensure_time_base overrides it with the comp's timebase.
     prop._tdb4._time_base = 0x6000;
     prop._ensure_time_base();
-    this.apply_model_metadata(prop);
+    this.applyModelMetadata(prop);
   }
 }
 
 export class _MarkerKind extends ParallelKind {
   name = "marker";
-  wrapper_type = "mrst";
-  container_type = "mrky";
-  header_item_type = LdatItemType.marker;
-  keeps_value_on_revert = false;
-  can_materialize_wrapper = true;
+  wrapperType = "mrst";
+  containerType = "mrky";
+  headerItemType = LdatItemType.marker;
+  keepsValueOnRevert = false;
+  canMaterializeWrapper = true;
 
-  held_value(prop: Property, time: number): PropertyValue {
+  heldValue(prop: Property, time: number): PropertyValue {
     return new MarkerValue();
   }
 
@@ -217,7 +217,7 @@ export class _MarkerKind extends ParallelKind {
     return value;
   }
 
-  build_value_chunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     if (!(value instanceof MarkerValue)) {
       throw new TypeError_("marker value must be a MarkerValue or str comment");
     }
@@ -239,17 +239,17 @@ export class _MarkerKind extends ParallelKind {
     return new ListChunk({ list_type: "Nmrd", chunks: source.map((c) => clone_chunk_tree(c)) });
   }
 
-  wrap_value_chunk(prop: Property, value_chunk: ListChunk): PropertyValue {
+  wrapValueChunk(prop: Property, value_chunk: ListChunk): PropertyValue {
     return _marker().parse_marker(value_chunk);
   }
 
-  bind_keyframe(value: PropertyValue, kf: Keyframe): void {
+  bindKeyframe(value: PropertyValue, kf: Keyframe): void {
     if (value instanceof MarkerValue) {
       value._keyframe = kf;
     }
   }
 
-  on_wrap(prop: Property): void {
+  onWrap(prop: Property): void {
     const t = prop._tdb4;
     t.dimensions = 1;
     t._time_base = 0x6000;
@@ -266,11 +266,11 @@ export class _MarkerKind extends ParallelKind {
 
 export class _ShapeKind extends ParallelKind {
   name = "shape";
-  wrapper_type = "om-s";
-  container_type = "omks";
-  header_item_type = LdatItemType.no_value;
-  aliases_static_value = true;
-  linear_ease_speed = 1.0;
+  wrapperType = "om-s";
+  containerType = "omks";
+  headerItemType = LdatItemType.no_value;
+  aliasesStaticValue = true;
+  linearEaseSpeed = 1.0;
 
   /**
    * A path interpolates: a key added between two keys takes the
@@ -278,37 +278,37 @@ export class _ShapeKind extends ParallelKind {
    * 0.7 s on a 0 -\> 2 s LINEAR segment, [[7, 3.5], [117.5, 0],
    * [107, 114]]).
    */
-  held_value(prop: Property, time: number): PropertyValue {
+  heldValue(prop: Property, time: number): PropertyValue {
     if (!prop.keyframes?.length) {
       return prop._value;
     }
-    return prop.value_at_time(time);
+    return prop.valueAtTime(time);
   }
 
-  build_value_chunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     if (!(value instanceof Shape)) {
       throw new TypeError_("shape value must be a Shape");
     }
     return prop._build_shap_chunk(value);
   }
 
-  wrap_value_chunk(prop: Property, value_chunk: ListChunk): PropertyValue {
+  wrapValueChunk(prop: Property, value_chunk: ListChunk): PropertyValue {
     return _specialized_properties()._parse_shape_shap(
       value_chunk,
       prop._containing_layer,
-      prop.match_name === "ADBE Mask Shape" ? prop : null,
+      prop.matchName === "ADBE Mask Shape" ? prop : null,
     );
   }
 }
 
 export class _GradientKind extends ParallelKind {
   name = "gradient";
-  wrapper_type = "GCst";
-  container_type = "GCky";
-  header_item_type = LdatItemType.no_value;
-  can_materialize_wrapper = true;
+  wrapperType = "GCst";
+  containerType = "GCky";
+  headerItemType = LdatItemType.no_value;
+  canMaterializeWrapper = true;
 
-  build_value_chunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
     if (value == null) {
       // A never-edited gradient has no parsed Gradient model;
       // AE's default gradient seeds the first keyframe.
@@ -321,11 +321,11 @@ export class _GradientKind extends ParallelKind {
     return new Utf8Chunk({ value: value._utf8.value });
   }
 
-  wrap_value_chunk(prop: Property, value_chunk: Utf8Chunk): PropertyValue {
+  wrapValueChunk(prop: Property, value_chunk: Utf8Chunk): PropertyValue {
     return parse_gradient_xml(value_chunk);
   }
 
-  on_wrap(prop: Property): void {
+  onWrap(prop: Property): void {
     const t = prop._tdb4;
     t.dimensions = 1;
     t._time_base = 0x6000;
@@ -347,9 +347,9 @@ export class _GradientKind extends ParallelKind {
  */
 export class _TextKind extends ParallelKind {
   name = "text";
-  wrapper_type = "btds";
-  container_type = null;
-  header_item_type = LdatItemType.marker;
+  wrapperType = "btds";
+  containerType = null;
+  headerItemType = LdatItemType.marker;
 }
 
 export const ORIENTATION_KIND = new _OrientationKind();

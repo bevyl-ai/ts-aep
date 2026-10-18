@@ -44,16 +44,16 @@ test("test_decodes_points_in_channel_order", () => {
   const curves = _curves(
     _blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]), 1, true),
   );
-  expect(curves.uses_points).toBe(true);
+  expect(curves.usesPoints).toBe(true);
   expect(py_eq(getitem(curves.channels, "rgb").points, [[0, 0], [168, 93], [255, 246]])).toBe(true);
   expect(py_eq(getitem(curves.channels, "red").points, [[0, 0], [255, 255]])).toBe(true);
-  expect(getitem(curves.channels, "red").is_identity).toBe(true);
-  expect(getitem(curves.channels, "rgb").is_identity).toBe(false);
-  expect(curves.is_identity).toBe(false);
+  expect(getitem(curves.channels, "red").isIdentity).toBe(true);
+  expect(getitem(curves.channels, "rgb").isIdentity).toBe(false);
+  expect(curves.isIdentity).toBe(false);
 });
 
 test("test_untouched_curves_are_identity", () => {
-  expect(_curves(_blob(new Map())).is_identity).toBe(true);
+  expect(_curves(_blob(new Map())).isIdentity).toBe(true);
 });
 
 test("test_natural_spline_goes_through_the_points", () => {
@@ -89,7 +89,7 @@ test("test_pencil_mode_reads_the_maps", () => {
   const blob = new Uint8Array(_blob(new Map(), 0));
   blob.set(Uint8Array.from(range(256), (i) => 255 - i), 4);
   const curves = _curves(new Uint8Array(blob));
-  expect(curves.uses_points).toBe(false);
+  expect(curves.usesPoints).toBe(false);
   expect(isclose(curves.evaluate("rgb", 0.0), 1.0)).toBe(true);
   expect(isclose(curves.evaluate("rgb", 1.0), 0.0)).toBe(true);
 });
@@ -98,7 +98,7 @@ test("test_to_dict_emits_the_curves", () => {
   const data = to_dict(_curves(_blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]))));
   expect(getitem(data, "mode")).toBe(1);
   expect(getitem(data, "version")).toBe(1);
-  expect(getitem(data, "is_identity")).toBe(false);
+  expect(getitem(data, "isIdentity")).toBe(false);
   const channels: Dict = getitem(data, "channels");
   const rgb: Dict = getitem(channels, "rgb");
   expect(py_eq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
@@ -123,8 +123,8 @@ test("test_pencil_identity_map_with_stale_points_is_identity", () => {
   const curves = _curves(
     _blob(new Map([["rgb", [[0, 0], [128, 40], [255, 255]]]]), 0),
   );
-  expect(getitem(curves.channels, "rgb").is_identity).toBe(true);
-  expect(curves.is_identity).toBe(true);
+  expect(getitem(curves.channels, "rgb").isIdentity).toBe(true);
+  expect(curves.isIdentity).toBe(true);
 });
 
 test("test_same_curves_compares_points_not_bytes", () => {

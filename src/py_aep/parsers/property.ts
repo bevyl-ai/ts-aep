@@ -346,7 +346,7 @@ export function _dispatch_ovg2(ctx: _ParseContext): (Property | PropertyGroup)[]
    *
    * The match-name run holds the `LIST:OvG2` metadata block (override count +
    * controller UUIDs, already parsed at the layer level into
-   * `Layer.essential_property_uuids`) followed by a sibling `LIST:tdgp` that
+   * `Layer.essentialPropertyUuids`) followed by a sibling `LIST:tdgp` that
    * carries the override properties themselves.
    *
    * All override groups are exposed (media replacement and grouped/regular
@@ -395,7 +395,7 @@ export function _reclass_override_leaves(group: PropertyGroup): void {
  *   match name is not displayed, but you can refer to it in scripts. Every property has a unique
  *   match-name identifier. Match names are stable from version to version regardless of the display
  *   name (the name attribute value) or any changes to the application. Unlike the display name, it
- *   is not localized. An indexed group (`PropertyBase.property_type == PropertyType.indexed_group`)
+ *   is not localized. An indexed group (`PropertyBase.propertyType == PropertyType.indexed_group`)
  *   may not have a name value, but always has a match_name value.
  * @param property_depth - The nesting depth of this group (0 = layer level).
  * @param effect_param_defs - Project-level effect parameter definitions, used as fallback when
@@ -501,11 +501,11 @@ export const _parse_mask_atom = _suppress_materialization().decorate(function _p
     _name_utf8: base._name_utf8,
     _mkif: mkif_chunk,
     _mask_shape_tdsb: mask_shape_tdsb,
-    match_name: base.match_name,
-    property_depth: base.property_depth,
+    match_name: base.matchName,
+    property_depth: base.propertyDepth,
     properties: base.properties,
   });
-  mask_group._property_type = base.property_type;
+  mask_group._property_type = base.propertyType;
   mask_group._is_mask = true;
   return mask_group;
 });

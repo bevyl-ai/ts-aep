@@ -34,7 +34,7 @@ type TextLayerNewKw = {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const text_layer = comp.text_layers[0];
+ * const text_layer = comp.textLayers[0];
  * console.log(text_layer.text);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/textlayer/

@@ -1,11 +1,18 @@
 # py_aep → TypeScript port rulebook
 
-Goal: a **1:1 structural port** of py_aep (pinned upstream commit in `../PINNED_COMMIT`).
-Every Python module, class, function, method, constant and parameter has a TS twin with the
-**same name** in the **same relative place**. Future upstream changes are synced by diffing
-upstream and regenerating the touched files, so never restructure, merge, split, rename or
-"improve" anything. Behavior must match CPython 3.12 exactly — including byte-identical saves
-and float results. When unsure, choose the literal translation.
+Goal: **py-aep's behaviour in idiomatic TypeScript.** Behaviour must match CPython 3.12 py-aep
+exactly: byte-identical saves, the same values, the same errors (the py-aep differential in CI is
+the gate). The code and the API are TypeScript, not Python:
+
+- Public members are camelCase and use ExtendScript's names (`comp.frameRate`,
+  `layer.transform.anchorPoint`, `layer.threeDLayer`). Binary chunk fields stay snake_case: they
+  are the file schema, not API.
+- JS protocols instead of Python dunders: `group.property(key)`, Map-shaped views
+  (`get`/`set`/`delete`/`has`/`size`), `length` getters, `equals(other)`, `toString()`, and
+  `[INSPECT]()` (Node's `util.inspect.custom`) for the readable form `repr()` and `console.log`
+  print.
+- Files keep their py-aep twins' paths so `tools/sync_upstream.py` can still map an upstream
+  change to the TS file it touches; port each upstream change by hand.
 
 Python source: `../repo/src/py_aep/**`, `../repo/tests/**`. TS root: this directory.
 Runtime shims for Python semantics live in `src/pyrt/` — **read `src/pyrt/*.ts` before

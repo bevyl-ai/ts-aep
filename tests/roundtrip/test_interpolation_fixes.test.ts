@@ -18,7 +18,7 @@ const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 
 function _new_comp(width = 800, height = 400, fps = 24.0): [Application, CompItem] {
   const app = py_aep.new();
-  const comp = app.project.root_folder.add_comp("C", width, height, 1.0, 10.0, fps);
+  const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
   return [app, comp];
 }
 
@@ -30,21 +30,21 @@ function _position_with(
   in_tan: number[] | null = null,
   eases: [KeyframeEase, KeyframeEase] | null = null,
 ): [AVLayer, Property] {
-  const layer = comp.add_solid([1, 0, 0], name, 100, 100, 1.0);
+  const layer = comp.addSolid([1, 0, 0], name, 100, 100, 1.0);
   const pos = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
   for (const [t, value] of keys) {
-    pos.set_value_at_time(t, value);
+    pos.setValueAtTime(t, value);
   }
   if (out_tan != null) {
-    pos.keyframes[0].out_spatial_tangent = out_tan;
+    pos.keyframes[0].outSpatialTangent = out_tan;
   }
   if (in_tan != null) {
-    at(pos.keyframes, -1).in_spatial_tangent = in_tan;
+    at(pos.keyframes, -1).inSpatialTangent = in_tan;
   }
   if (eases != null) {
     const [out_ease, in_ease] = eases;
-    pos.keyframes[0].out_temporal_ease = [out_ease];
-    at(pos.keyframes, -1).in_temporal_ease = [in_ease];
+    pos.keyframes[0].outTemporalEase = [out_ease];
+    at(pos.keyframes, -1).inTemporalEase = [in_ease];
   }
   return [layer, pos];
 }
@@ -68,44 +68,44 @@ describe("TestFlatBezierSegment", () => {
 
   function _build(): [Application, Property] {
     const [app, comp] = _new_comp(200, 200);
-    const layer = comp.add_solid([1, 0, 0], "L", 100, 100, 1.0);
+    const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
-    op.set_value_at_time(0.0, 50.0);
-    op.set_value_at_time(2.0, 50.0);
+    op.setValueAtTime(0.0, 50.0);
+    op.setValueAtTime(2.0, 50.0);
     for (const kf of op.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      kf.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      kf.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      kf.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
-    op.keyframes[0].out_temporal_ease = [new KeyframeEase(100.0, 33.0)];
-    op.keyframes[1].in_temporal_ease = [new KeyframeEase(-100.0, 33.0)];
+    op.keyframes[0].outTemporalEase = [new KeyframeEase(100.0, 33.0)];
+    op.keyframes[1].inTemporalEase = [new KeyframeEase(-100.0, 33.0)];
     return [app, op];
   }
 
   test("test_matches_after_effects", () => {
     const [_app, op] = _build();
     for (const [t, want] of AE) {
-      expect(approx(op.value_at_time(t), want, { abs: 1e-4 })).toBe(true);
+      expect(approx(op.valueAtTime(t), want, { abs: 1e-4 })).toBe(true);
     }
   });
 
   /** The headline symptom: every sample used to read exactly 50. */
   test("test_peaks_between_the_keys", () => {
     const [_app, op] = _build();
-    expect(op.value_at_time(1.0) > 99.0).toBe(true);
+    expect(op.valueAtTime(1.0) > 99.0).toBe(true);
   });
 
   /** The absolute and normalized forms agree whenever `v1 != v0`. */
   test("test_still_linear_when_the_values_differ", () => {
     const [app, comp] = _new_comp(200, 200);
-    const layer = comp.add_solid([1, 0, 0], "L", 100, 100, 1.0);
+    const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
-    op.set_value_at_time(0.0, 0.0);
-    op.set_value_at_time(2.0, 100.0);
+    op.setValueAtTime(0.0, 0.0);
+    op.setValueAtTime(2.0, 100.0);
     for (const kf of op.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.LINEAR;
-      kf.out_interpolation_type = KeyframeInterpolationType.LINEAR;
+      kf.inInterpolationType = KeyframeInterpolationType.LINEAR;
+      kf.outInterpolationType = KeyframeInterpolationType.LINEAR;
     }
-    expect(approx(op.value_at_time(1.0), 50.0, { abs: 1e-6 })).toBe(true);
+    expect(approx(op.valueAtTime(1.0), 50.0, { abs: 1e-6 })).toBe(true);
   });
 });
 
@@ -136,12 +136,12 @@ describe("TestLinearSideKeepsTheMotionPath", () => {
       [-100.0, 200.0, 0.0],
     );
     for (const kf of pos.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.LINEAR;
-      kf.out_interpolation_type = KeyframeInterpolationType.LINEAR;
+      kf.inInterpolationType = KeyframeInterpolationType.LINEAR;
+      kf.outInterpolationType = KeyframeInterpolationType.LINEAR;
     }
 
     for (const [t, want] of AE) {
-      const got = pos.value_at_time(t);
+      const got = pos.valueAtTime(t);
       expect(approx(got.slice(0, 2), want, { abs: 1e-6 })).toBe(true);
     }
   });
@@ -162,10 +162,10 @@ describe("TestLinearSideKeepsTheMotionPath", () => {
       [2.0, [100.0, 200.0, 0.0]],
     ]);
     for (const kf of pos.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.LINEAR;
-      kf.out_interpolation_type = KeyframeInterpolationType.LINEAR;
+      kf.inInterpolationType = KeyframeInterpolationType.LINEAR;
+      kf.outInterpolationType = KeyframeInterpolationType.LINEAR;
     }
-    const [x, y] = pos.value_at_time(1.0).slice(0, 2);
+    const [x, y] = pos.valueAtTime(1.0).slice(0, 2);
     expect(y).toBe(2.0 * x);
     expect(approx([x, y], [50.0007773538156, 100.001554707631], { abs: 1e-9 })).toBe(true);
   });
@@ -201,12 +201,12 @@ describe("TestSpatialEaseDivisorAndClamp", () => {
       [new KeyframeEase(900.0, 90.0), new KeyframeEase(900.0, 90.0)],
     );
     for (const kf of pos.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      kf.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      kf.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      kf.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
 
     for (const [t, want_x] of AE) {
-      expect(approx(pos.value_at_time(t)[0], want_x, { abs: 1e-6 })).toBe(true);
+      expect(approx(pos.valueAtTime(t)[0], want_x, { abs: 1e-6 })).toBe(true);
     }
   });
 });
@@ -228,7 +228,7 @@ describe("TestRovingRunIsOneEasedSpan", () => {
 
   function _build(): Property<number[]> {
     const [_app, comp] = _new_comp(800, 400);
-    const layer = comp.add_solid([0, 0, 1], "Roving", 100, 100, 1.0);
+    const layer = comp.addSolid([0, 0, 1], "Roving", 100, 100, 1.0);
     const pos = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
     const keys: [number, number[]][] = [
       [0.0, [50.0, 200.0, 0.0]],
@@ -237,24 +237,24 @@ describe("TestRovingRunIsOneEasedSpan", () => {
       [8.0, [750.0, 200.0, 0.0]],
     ];
     for (const [t, value] of keys) {
-      pos.set_value_at_time(t, value);
+      pos.setValueAtTime(t, value);
     }
     // AE's fixture has straight sub-segments; auto tangents would change
     // the arc lengths the roving keys are spaced along.
     for (const kf of pos.keyframes) {
-      kf.in_spatial_tangent = [0.0, 0.0, 0.0];
-      kf.out_spatial_tangent = [0.0, 0.0, 0.0];
+      kf.inSpatialTangent = [0.0, 0.0, 0.0];
+      kf.outSpatialTangent = [0.0, 0.0, 0.0];
     }
     // The anchors must be BEZIER for their ease to apply at all - a
     // LINEAR anchor carries no ease, and the run is then spaced evenly by
     // arc length (which is what AE does too).
     for (const kf of [pos.keyframes[0], at(pos.keyframes, -1)]) {
-      kf.in_interpolation_type = KeyframeInterpolationType.BEZIER;
-      kf.out_interpolation_type = KeyframeInterpolationType.BEZIER;
+      kf.inInterpolationType = KeyframeInterpolationType.BEZIER;
+      kf.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
     const ease = new KeyframeEase(0.0, 80.0);
-    pos.keyframes[0].out_temporal_ease = [ease];
-    at(pos.keyframes, -1).in_temporal_ease = [ease];
+    pos.keyframes[0].outTemporalEase = [ease];
+    at(pos.keyframes, -1).inTemporalEase = [ease];
     pos.keyframes[1].roving = true;
     pos.keyframes[2].roving = true;
     return pos;
@@ -269,7 +269,7 @@ describe("TestRovingRunIsOneEasedSpan", () => {
   test("test_curve_matches_after_effects", () => {
     const pos = _build();
     for (const [t, want] of AE_CURVE) {
-      expect(approx(pos.value_at_time(t).slice(0, 2), want, { abs: 1e-6 })).toBe(true);
+      expect(approx(pos.valueAtTime(t).slice(0, 2), want, { abs: 1e-6 })).toBe(true);
     }
   });
 });
@@ -299,7 +299,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
           if (!py_bool(getattr(prop, "keyframes", null)) || len(prop.keyframes) < 2) {
             continue;
           }
-          if (prop.is_spatial) {
+          if (prop.isSpatial) {
             continue; // covered by the AE-measured cases above
           }
           const key_times = prop.keyframes.map((kf) => kf.time);
@@ -307,9 +307,9 @@ describe("TestAddKeyPreservesTheCurve", () => {
           if (key_times.some((t) => Math.abs(mid - t) < 1e-6)) {
             continue;
           }
-          const before = times.map((t) => prop.value_at_time(t));
-          prop.add_key(mid);
-          const after = times.map((t) => prop.value_at_time(t));
+          const before = times.map((t) => prop.valueAtTime(t));
+          prop.addKey(mid);
+          const after = times.map((t) => prop.valueAtTime(t));
           expect(approx(after, before, { abs: 1e-6 })).toBe(true);
           checked += 1;
         }
@@ -346,8 +346,8 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const pos = app.project.compositions[0].layers[0].transform.property("ADBE Position");
     const k0 = pos.keyframes[0];
     const k1 = pos.keyframes[1];
-    const out_tangent = k0.out_spatial_tangent;
-    const in_tangent = k1.in_spatial_tangent;
+    const out_tangent = k0.outSpatialTangent;
+    const in_tangent = k1.inSpatialTangent;
     if (out_tangent == null || in_tangent == null) throw new Error("spatial keyframe has no tangents");
     const curve = [
       k0.value,
@@ -359,11 +359,11 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const t0 = k0.time;
     const t1 = k1.time;
 
-    pos.add_key(t0 + (t1 - t0) * 0.37);
+    pos.addKey(t0 + (t1 - t0) * 0.37);
 
     let worst = 0.0;
     for (let i = 1; i < 50; i++) {
-      const p = pos.value_at_time(t0 + (t1 - t0) * i / 50);
+      const p = pos.valueAtTime(t0 + (t1 - t0) * i / 50);
       worst = max([
         worst,
         min(zip(path, path.slice(1)).map(([a, b]) => distance_to(p, a, b))),
@@ -383,20 +383,20 @@ describe("TestAddKeyPreservesTheCurve", () => {
       .find((p) => py_bool(getattr(p, "keyframes", null)) && len(p.keyframes) === 2);
     if (prop == null) throw new StopIteration();
 
-    const index = prop.add_key(2.5);
+    const index = prop.addKey(2.5);
 
     const kf = prop.keyframes[index];
     expect(approx(kf.time, 2.5)).toBe(true);
     expect(approx(kf.value, 50.0)).toBe(true);
-    expect(kf.in_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect(kf.out_interpolation_type).toBe(KeyframeInterpolationType.BEZIER);
-    expect(approx(kf.in_temporal_ease[0].speed, 80.0, { abs: 1e-3 })).toBe(true);
-    expect(approx(kf.in_temporal_ease[0].influence, 12.5, { abs: 1e-3 })).toBe(true);
-    expect(approx(kf.out_temporal_ease[0].speed, 80.0, { abs: 1e-3 })).toBe(true);
-    expect(approx(kf.out_temporal_ease[0].influence, 12.5, { abs: 1e-3 })).toBe(true);
+    expect(kf.inInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
+    expect(approx(kf.inTemporalEase[0].speed, 80.0, { abs: 1e-3 })).toBe(true);
+    expect(approx(kf.inTemporalEase[0].influence, 12.5, { abs: 1e-3 })).toBe(true);
+    expect(approx(kf.outTemporalEase[0].speed, 80.0, { abs: 1e-3 })).toBe(true);
+    expect(approx(kf.outTemporalEase[0].influence, 12.5, { abs: 1e-3 })).toBe(true);
     // AE leaves the neighbours' handles alone in this case.
-    expect(approx(prop.keyframes[0].out_temporal_ease[0].influence, 75.0)).toBe(true);
-    expect(approx(prop.keyframes[2].in_temporal_ease[0].influence, 75.0)).toBe(true);
+    expect(approx(prop.keyframes[0].outTemporalEase[0].influence, 75.0)).toBe(true);
+    expect(approx(prop.keyframes[2].inTemporalEase[0].influence, 75.0)).toBe(true);
   });
 
   /**
@@ -405,21 +405,21 @@ describe("TestAddKeyPreservesTheCurve", () => {
    */
   test("test_hold_segment_stays_held", () => {
     const [app, comp] = _new_comp(200, 200);
-    const layer = comp.add_solid([1, 0, 0], "L", 100, 100, 1.0);
+    const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
-    op.set_value_at_time(0.0, 100.0);
-    op.set_value_at_time(4.0, 0.0);
+    op.setValueAtTime(0.0, 100.0);
+    op.setValueAtTime(4.0, 0.0);
     for (const kf of op.keyframes) {
-      kf.in_interpolation_type = KeyframeInterpolationType.HOLD;
-      kf.out_interpolation_type = KeyframeInterpolationType.HOLD;
+      kf.inInterpolationType = KeyframeInterpolationType.HOLD;
+      kf.outInterpolationType = KeyframeInterpolationType.HOLD;
     }
 
-    const before = [0.0, 1.0, 2.0, 3.0, 4.0].map((t) => op.value_at_time(t));
-    op.add_key(2.0);
-    const after = [0.0, 1.0, 2.0, 3.0, 4.0].map((t) => op.value_at_time(t));
+    const before = [0.0, 1.0, 2.0, 3.0, 4.0].map((t) => op.valueAtTime(t));
+    op.addKey(2.0);
+    const after = [0.0, 1.0, 2.0, 3.0, 4.0].map((t) => op.valueAtTime(t));
 
     expect(approx(after, before)).toBe(true);
-    expect(op.keyframes[1].out_interpolation_type).toBe(KeyframeInterpolationType.HOLD);
+    expect(op.keyframes[1].outInterpolationType).toBe(KeyframeInterpolationType.HOLD);
   });
 
   test("test_add_then_remove_restores_the_keyframes", () => {
@@ -429,16 +429,16 @@ describe("TestAddKeyPreservesTheCurve", () => {
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
       .find(
         (p) =>
-          py_bool(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.is_spatial,
+          py_bool(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
       );
     if (prop == null) throw new StopIteration();
     const times = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0];
-    const before = times.map((t) => prop.value_at_time(t));
+    const before = times.map((t) => prop.valueAtTime(t));
     const mid = (prop.keyframes[0].time + prop.keyframes[1].time) / 2.0;
 
-    const index = prop.add_key(mid);
-    prop.remove_key(index);
+    const index = prop.addKey(mid);
+    prop.removeKey(index);
 
-    expect(approx(times.map((t) => prop.value_at_time(t)), before, { abs: 1e-6 })).toBe(true);
+    expect(approx(times.map((t) => prop.valueAtTime(t)), before, { abs: 1e-6 })).toBe(true);
   });
 });

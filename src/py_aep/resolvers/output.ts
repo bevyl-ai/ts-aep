@@ -421,14 +421,14 @@ export function resolve_time_span(
     duration_time = comp.duration;
     time_span_end = comp.duration;
     duration_frames = round(comp.duration * effective_frame_rate);
-    first_rendered_frame = int(comp.display_start_time * effective_frame_rate);
+    first_rendered_frame = int(comp.displayStartTime * effective_frame_rate);
   } else {
     time_span_start = rq_settings.get("Time Span Start");
     duration_time = rq_settings.get("Time Span Duration");
     time_span_end = rq_settings.get("Time Span End");
     duration_frames = round(duration_time * effective_frame_rate);
     first_rendered_frame =
-      int(comp.display_start_time * effective_frame_rate) +
+      int(comp.displayStartTime * effective_frame_rate) +
       int(time_span_start * effective_frame_rate);
   }
 
@@ -439,8 +439,8 @@ export function resolve_time_span(
     start_frame,
     end_frame,
     duration_frames,
-    start_time: comp.display_start_time + time_span_start,
-    end_time: comp.display_start_time + time_span_end,
+    start_time: comp.displayStartTime + time_span_start,
+    end_time: comp.displayStartTime + time_span_end,
     duration_time,
   };
 }
