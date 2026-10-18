@@ -9,9 +9,9 @@ import {
   Path,
   ValueError,
   len,
-  pyAssert,
-  pyBool,
-  pyOr,
+  assert,
+  truthy,
+  truthyOr,
   range,
 } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
@@ -28,9 +28,9 @@ function _leaves(app: Application, predicate: (p: Property) => boolean): Propert
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const stack: PropertyGroup[] = [layer];
-      while (pyBool(stack)) {
+      while (truthy(stack)) {
         const group = stack.pop();
-        pyAssert(group != null);
+        assert(group != null);
         for (const child of group) {
           if ("keyframes" in child) {
             if (predicate(child)) found.push(child);
@@ -47,7 +47,7 @@ function _leaves(app: Application, predicate: (p: Property) => boolean): Propert
 
 function _firstLeaf(app: Application, predicate: (p: Property) => boolean): Property {
   const hits = _leaves(app, predicate);
-  pyAssert(pyBool(hits), "no property matched");
+  assert(truthy(hits), "no property matched");
   return hits[0];
 }
 
@@ -101,19 +101,19 @@ describe("TestPropertyNameGuard", () => {
     let renamed = 0;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        for (const mask of pyOr(layer.masks, [])) {
+        for (const mask of truthyOr(layer.masks, [])) {
           mask.name = "Kept Mask";
           renamed += 1;
         }
       }
     }
-    expect(pyBool(renamed)).toBe(true);
+    expect(truthy(renamed)).toBe(true);
     const out = tmpPath.div("mask_rename.aep");
     app.project.save(out);
     const names = parseAep(out).project.compositions.flatMap((comp) =>
-      comp.layers.flatMap((layer) => [...pyOr(layer.masks, [])].map((mask) => mask.name)),
+      comp.layers.flatMap((layer) => [...truthyOr(layer.masks, [])].map((mask) => mask.name)),
     );
-    expect(pyBool(names) && names.every((name) => name === "Kept Mask")).toBe(true);
+    expect(truthy(names) && names.every((name) => name === "Kept Mask")).toBe(true);
   });
 
   test("test_effect_rename_still_round_trips", () => {
@@ -122,7 +122,7 @@ describe("TestPropertyNameGuard", () => {
     let effect: Property | PropertyGroup | null = null;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        for (const candidate of pyOr(layer.effects, [])) {
+        for (const candidate of truthyOr(layer.effects, [])) {
           effect = candidate;
           break;
         }
@@ -130,12 +130,12 @@ describe("TestPropertyNameGuard", () => {
       }
       if (effect != null) break;
     }
-    pyAssert(effect != null);
+    assert(effect != null);
     effect.name = "Renamed Effect";
     const out = tmpPath.div("effect_rename.aep");
     app.project.save(out);
     const names = parseAep(out).project.compositions.flatMap((comp) =>
-      comp.layers.flatMap((layer) => [...pyOr(layer.effects, [])]),
+      comp.layers.flatMap((layer) => [...truthyOr(layer.effects, [])]),
     ).map((fx) => fx.name);
     expect(names.includes("Renamed Effect")).toBe(true);
   });
@@ -232,7 +232,7 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
   const BEZ = SAMPLES_DIR.div("property", "keyframe_bezier_multi_ease_1D.aep");
 
   function _animated(app: Application): Property {
-    return _firstLeaf(app, (p) => pyBool(p.keyframes));
+    return _firstLeaf(app, (p) => truthy(p.keyframes));
   }
 
   test("test_middle_keyframe_round_trips", () => {
@@ -321,13 +321,13 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
         }
       }
     }
-    expect(pyBool(checked)).toBe(true);
+    expect(truthy(checked)).toBe(true);
   });
 
   test("test_value_less_slider_is_not_addable", () => {
     const app = parseAep(EG);
     const targets = _leaves(app, (p) => p.matchName === "ADBE Layer Source Alternate");
-    expect(pyBool(targets)).toBe(true);
+    expect(truthy(targets)).toBe(true);
     const comp = app.project.compositions[0];
     for (const prop of targets) {
       expect(prop.value == null).toBe(true);

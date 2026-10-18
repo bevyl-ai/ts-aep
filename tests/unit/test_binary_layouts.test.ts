@@ -11,16 +11,16 @@ import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { WsnsChunk } from "../../src/py_aep/binary/project_chunks.ts";
 import { Tdb4Chunk, TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { CHUNK_TYPES } from "../../src/py_aep/binary/registry.ts";
-import { BytesIO, b, getattr, getitem, len, pyAssert, pyEq, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, b, getattr, getOrThrow, len, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { asInstance } from "../helpers.ts";
 
 function _read(chunkType: string, body: Uint8Array): Chunk {
-  const cls = getitem(CHUNK_TYPES, chunkType);
+  const cls = getOrThrow(CHUNK_TYPES, chunkType);
   const chunk = cls.read(new BytesIO(body), len(body), { chunkType: chunkType });
   const out = new BytesIO();
   chunk.write(out);
-  pyAssert(pyEq(out.getvalue(), body));
+  assert(valueEquals(out.getvalue(), body));
   return chunk;
 }
 
@@ -32,9 +32,9 @@ function _read(chunkType: string, body: Uint8Array): Chunk {
 describe("TestLittleEndianAtoms", () => {
   test("test_csct", () => {
     const chunk = _read("CsCt", b("\x02\x00\x00\x00"));
-    pyAssert(chunk instanceof CsctChunk);
+    assert(chunk instanceof CsctChunk);
     expect(chunk.value).toBe(2);
-    expect(pyEq(new CsctChunk().tobytes(), b("\x01\x00\x00\x00"))).toBe(true);
+    expect(valueEquals(new CsctChunk().tobytes(), b("\x01\x00\x00\x00"))).toBe(true);
   });
 
   test("test_sfid_and_mrid", () => {
@@ -58,7 +58,7 @@ describe("TestSignedCounters", () => {
       expect(getattr(_read(tag, b("\xff\xfe")), "value")).toBe(-2);
     }
     const chunk = _read("wsns", b("\x00\x0e"));
-    pyAssert(chunk instanceof WsnsChunk);
+    assert(chunk instanceof WsnsChunk);
     expect(chunk.value).toBe(14);
   });
 });
@@ -73,11 +73,11 @@ describe("TestLdtaDoubles", () => {
     struct.packInto(">dd", body, 0x70, 1.5, -2.25);
     struct.packInto(">IIId", body, 0x8c, 1, 0x01000000, 1, 36.0);
     const chunk = _read("ldta", body);
-    pyAssert(chunk instanceof LdtaChunk);
+    assert(chunk instanceof LdtaChunk);
     expect(chunk._reserved70).toBe(1.5);
     expect(chunk._reserved78).toBe(-2.25);
     expect(
-      pyEq(
+      valueEquals(
         [chunk._reserved8c, chunk._reserved90, chunk._reserved94],
         [1, 0x01000000, 1],
       ),
@@ -98,9 +98,9 @@ describe("TestTdb4Layout", () => {
     body[0x4d] = 1;
     struct.packInto(">dddd", body, 0x54, 0.0, 0.16666666667, 0.0, 0.5);
     const chunk = _read("tdb4", body);
-    pyAssert(chunk instanceof Tdb4Chunk);
+    assert(chunk instanceof Tdb4Chunk);
     expect(chunk._reserved48).toBe(0xa800);
-    expect(pyEq([chunk._reserved4c, chunk._reserved4d], [3, 1])).toBe(true);
+    expect(valueEquals([chunk._reserved4c, chunk._reserved4d], [3, 1])).toBe(true);
     expect(chunk._reserved5c).toBe(0.16666666667);
     expect(chunk._reserved6c).toBe(0.5);
   });
@@ -113,13 +113,13 @@ describe("TestTdb4Layout", () => {
 describe("TestTdsbRatioLink", () => {
   test("test_unlinked", () => {
     const chunk = _read("tdsb", b("\x00\x00\x20\x01"));
-    pyAssert(chunk instanceof TdsbChunk);
+    assert(chunk instanceof TdsbChunk);
     expect(chunk.ratioUnlinked).toBe(true);
   });
 
   test("test_linked", () => {
     const chunk = _read("tdsb", b("\x00\x00\x00\x01"));
-    pyAssert(chunk instanceof TdsbChunk);
+    assert(chunk instanceof TdsbChunk);
     expect(chunk.ratioUnlinked).toBe(false);
   });
 });

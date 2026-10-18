@@ -9,7 +9,7 @@
  * points, type, and color stops AE writes for an SVG import.
  */
 
-import { max, min, pyEq, zip } from "../../pyrt/index.ts";
+import { max, min, valueEquals, zip } from "../../pyrt/index.ts";
 import { toF4 } from "../binary/bin_utils.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -237,7 +237,7 @@ export function _applyGradient(
   // leaves are AE 2026-only, so they are absent when importing into an
   // older project - in which case AE itself can only render the circular
   // approximation, so skipping them matches AE's pre-2026 behaviour.
-  if (!pyEq(paint.scale, [100.0, 100.0])) {
+  if (!valueEquals(paint.scale, [100.0, 100.0])) {
     _setIfPresent(group, "ADBE Vector Grad Scale", [paint.scale[0], paint.scale[1]]);
   }
   if (paint.rotation !== 0) {
@@ -259,7 +259,7 @@ export function _gradientValue(paint: GradientPaint): Gradient {
   const alphaStops: GradientAlphaStop[] = [];
   for (const s of stops) {
     const prev = alphaStops.length ? alphaStops.at(-1) : null;
-    if (prev == null || !pyEq([prev.offset, prev.alpha], [s.offset, s.color[3]])) {
+    if (prev == null || !valueEquals([prev.offset, prev.alpha], [s.offset, s.color[3]])) {
       alphaStops.push(new GradientAlphaStop(s.offset, 0.5, s.color[3]));
     }
   }

@@ -7,7 +7,7 @@
 // and `member.name` is `E.name_of(member)`.
 
 import { describe, expect, test } from "bun:test";
-import { contains, format, len, Path, pyBool, pyEq, split, StopIteration } from "../../src/pyrt/index.ts";
+import { contains, format, len, Path, truthy, valueEquals, split, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { loadExpected, parseProject } from "../conftest.ts";
 import { ColorManagementSystem, GpuAccelType, LutInterpolationMethod } from "../../src/py_aep/enums/index.ts";
@@ -196,12 +196,12 @@ describe("TestLinearBlending", () => {
 
   test("test_linearBlending_false", () => {
     const project = parseProject(SAMPLES_DIR.div("linearBlending_false.aep"));
-    expect(!pyBool(project.linearBlending)).toBe(true);
+    expect(!truthy(project.linearBlending)).toBe(true);
   });
 
   test("test_linearBlending_true", () => {
     const project = parseProject(SAMPLES_DIR.div("linearBlending_true.aep"));
-    expect(pyBool(project.linearBlending)).toBe(true);
+    expect(truthy(project.linearBlending)).toBe(true);
   });
 });
 
@@ -307,7 +307,7 @@ describe("TestListColorProfiles", () => {
     // method degrades gracefully to an empty list.
     const project = parseProject(SAMPLES_DIR.div("colorManagementSystem_ocio.aep"));
     expect(ColorManagementSystem.nameOf(project.colorManagementSystem)).toBe("OCIO");
-    expect(pyEq(project.listColorProfiles(), [])).toBe(true);
+    expect(valueEquals(project.listColorProfiles(), [])).toBe(true);
   });
 });
 
@@ -322,7 +322,7 @@ describe("TestDynamicLinkGUID", () => {
 
   test("test_derived_from_item_id", () => {
     const project = parseProject(SAMPLES_DIR.div("bitsPerChannel_8.aep"));
-    expect(pyBool(project.items)).toBe(true);
+    expect(truthy(project.items)).toBe(true);
     for (const [itemId, item] of project.items) {
       expect(item.dynamicLinkGuid).toBe(`${format(itemId, "08x")}-0000-0000-0000-000000000000`);
     }
@@ -334,7 +334,7 @@ describe("TestDynamicLinkGUID", () => {
     if (first.done) throw new StopIteration();
     const guid = first.value.dynamicLinkGuid;
     const groups = split(guid, "-");
-    expect(pyEq(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
+    expect(valueEquals(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
     expect(guid).toBe(guid.toLowerCase());
   });
 });

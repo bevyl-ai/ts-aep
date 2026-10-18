@@ -10,7 +10,7 @@
 import "../binary/_register.ts";
 import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { BytesIO, bytes_, floordiv, format, getitem, ValueError } from "../../pyrt/index.ts";
+import { BytesIO, bytes_, floordiv, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /**
@@ -52,10 +52,10 @@ export function buildChunkPath(
     counters.set(counterKey, count + 1);
   }
 
-  if (getitem(counters, counterKey) > 0) {
+  if (getOrThrow(counters, counterKey) > 0) {
     return parentPath
-      ? `${parentPath}/${identifier}[${getitem(counters, counterKey)}]`
-      : `${identifier}[${getitem(counters, counterKey)}]`;
+      ? `${parentPath}/${identifier}[${getOrThrow(counters, counterKey)}]`
+      : `${identifier}[${getOrThrow(counters, counterKey)}]`;
   }
   return parentPath ? `${parentPath}/${identifier}` : identifier;
 }

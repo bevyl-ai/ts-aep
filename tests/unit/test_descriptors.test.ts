@@ -8,12 +8,12 @@ import {
   ValueError,
   descriptor,
   float,
-  getitem,
+  getOrThrow,
   int,
   intEnum,
   objectSetattr,
-  pyAssert,
-  pyBool,
+  assert,
+  truthy,
   instanceDict,
 } from "../../src/pyrt/index.ts";
 import type { EnumValue } from "../../src/pyrt/index.ts";
@@ -199,7 +199,7 @@ class _SyntheticModel {
 
   _ensureMaterialized(): void {
     this.materialized = true;
-    pyAssert(this._body != null);
+    assert(this._body != null);
     objectSetattr(this._body, "synthetic", false);
   }
 }
@@ -560,7 +560,7 @@ describe("TestChunkFieldTransform", () => {
     const model = new _ScalarModel(body);
     // _ScalarModel has reverse=int but no transform,
     // so we test with a model that does have transform.
-    const cf = new ChunkField<boolean>("_body", "flag", { transform: pyBool, reverse: int });
+    const cf = new ChunkField<boolean>("_body", "flag", { transform: truthy, reverse: int });
     cf.__set_name__(model.constructor, "flag");
     model._body = new _FakeBody({ flag: 0 });
     expect(cf.__get__(model, model.constructor)).toBe(false);
@@ -595,7 +595,7 @@ describe("TestCosFieldScalarReverse", () => {
     const style = new Map<string, CosNode>([["1", 12]]);
     const model = new _CosModel(style);
     model.fontSize = 24.0;
-    expect(getitem(style, "1")).toBe(24.0);
+    expect(getOrThrow(style, "1")).toBe(24.0);
   });
 
   test("test_propagate_cos_called", () => {

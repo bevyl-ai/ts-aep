@@ -11,7 +11,7 @@ import {
   concat,
   int,
   len,
-  pyEq,
+  valueEquals,
   range,
   struct,
   zip,
@@ -52,7 +52,7 @@ describe("TestChannelFlags", () => {
   test("test_raw_8bit", () => {
     const chunk = concat(struct.pack(">H", 0), new Uint8Array([0, 7, 0, 255, 0, 0]));
     expect(
-      pyEq(_channelFlags(chunk, 3, 2, 8, false), [
+      valueEquals(_channelFlags(chunk, 3, 2, 8, false), [
         b("\x00\x01\x00"),
         b("\x01\x00\x00"),
       ]),
@@ -65,7 +65,7 @@ describe("TestChannelFlags", () => {
     const row2 = new Uint8Array([2, 0, 4, 0]);
     const chunk = concat(struct.pack(">HHH", 1, len(row1), len(row2)), row1, row2);
     expect(
-      pyEq(_channelFlags(chunk, 3, 2, 8, false), [
+      valueEquals(_channelFlags(chunk, 3, 2, 8, false), [
         b("\x01\x01\x01"),
         b("\x00\x01\x00"),
       ]),
@@ -79,7 +79,7 @@ describe("TestChannelFlags", () => {
     ];
     const chunk = _zipPredicted(rows, 16);
     expect(
-      pyEq(_channelFlags(chunk, 4, 2, 16, false), [
+      valueEquals(_channelFlags(chunk, 4, 2, 16, false), [
         b("\x00\x01\x00\x01"),
         b("\x01\x00\x00\x01"),
       ]),
@@ -93,7 +93,7 @@ describe("TestChannelFlags", () => {
     ];
     const chunk = _zipPredicted(rows, 32);
     expect(
-      pyEq(_channelFlags(chunk, 4, 2, 32, false), [
+      valueEquals(_channelFlags(chunk, 4, 2, 32, false), [
         b("\x00\x01\x00\x01"),
         b("\x01\x00\x01\x00"),
       ]),
@@ -106,7 +106,7 @@ describe("TestChannelFlags", () => {
       zlib.deflateSync(_delta(new Uint8Array([0, 5, 5, 0]))),
     );
     expect(
-      pyEq(_channelFlags(chunk, 4, 1, 8, false), [b("\x00\x01\x01\x00")]),
+      valueEquals(_channelFlags(chunk, 4, 1, 8, false), [b("\x00\x01\x01\x00")]),
     ).toBe(true);
   });
 });

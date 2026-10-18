@@ -1,4 +1,4 @@
-import { at, getitem, sorted } from "../../pyrt/index.ts";
+import { at, getOrThrow, sorted } from "../../pyrt/index.ts";
 import { ContainerChunk, ListChunk } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { LdatChunk } from "../binary/ldat_chunks.ts";
@@ -230,7 +230,7 @@ export function parseRenderQueueItem(
   const omLdatItems = omLdat.items;
 
   const compId = ldatBody.compId;
-  const comp = getitem(project.items, compId) as CompItem;
+  const comp = getOrThrow(project.items, compId) as CompItem;
 
   // Group chunks by Roou - each Roou starts a new output module
   const omGroups = splitOnType(lomChunk.chunks, "Roou");

@@ -13,7 +13,7 @@ import { ByteDifference, ChunkDifference, MultiFileDifference, _compareChunkDict
 import { CdatChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { ShphChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
-import { Path, b, pyEq, range, split, strip } from "../../src/pyrt/index.ts";
+import { Path, b, valueEquals, range, split, strip } from "../../src/pyrt/index.ts";
 
 // SAMPLES_DIR = Path(__file__).parent.parent.parent / "samples"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -105,7 +105,7 @@ describe("TestCompareChunkDicts", () => {
     expect(diffs.length).toBe(0);
     expect(only1.length).toBe(0);
     expect(only2.length).toBe(0);
-    expect(pyEq(suppressed, [])).toBe(true);
+    expect(valueEquals(suppressed, [])).toBe(true);
   });
 
   /** Paths in one dict but not the other are reported. */
@@ -200,9 +200,9 @@ describe("TestFloatTolerance", () => {
     const typed1 = new Map([["x", c1]]);
     const typed2 = new Map([["x", c2]]);
     const [diffs, _, __, suppressed] = _compareChunkDicts(data1, data2, typed1, typed2);
-    expect(pyEq(diffs, [])).toBe(true);
+    expect(valueEquals(diffs, [])).toBe(true);
     // the float-only diff is reported, not silent
-    expect(pyEq(suppressed, ["x"])).toBe(true);
+    expect(valueEquals(suppressed, ["x"])).toBe(true);
     // --exact disables tolerance.
     const [diffsExact, ___, ____, suppressedExact] = _compareChunkDicts(
       data1,
@@ -212,7 +212,7 @@ describe("TestFloatTolerance", () => {
       true,
     );
     expect(diffsExact.length).toBe(1);
-    expect(pyEq(suppressedExact, [])).toBe(true);
+    expect(valueEquals(suppressedExact, [])).toBe(true);
   });
 
   /**

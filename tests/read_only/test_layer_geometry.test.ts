@@ -24,9 +24,9 @@ import {
   float,
   floatRepr,
   format,
-  getitem,
-  pyAssert,
-  pyEq,
+  getOrThrow,
+  assert,
+  valueEquals,
   repr,
   sorted,
   split,
@@ -60,10 +60,10 @@ function _skipUnlessFontsMatch(layer: Layer): boolean {
   // (TEXT_INK fixture) may differ from uharfbuzz-measured advances.
   if (!importorskip("harfbuzzjs")) return true;
   const text = layer.text;
-  pyAssert(text != null, "not a text layer");
+  assert(text != null, "not a text layer");
   const document = text.property("ADBE Text Document").value;
   for (const font of document._fonts) {
-    if (!pyEq(fontVersionString(font.postScriptName), font.version)) {
+    if (!valueEquals(fontVersionString(font.postScriptName), font.version)) {
       skip(`${font.postScriptName} not installed at the fixture's version`);
       return true;
     }
@@ -119,7 +119,7 @@ function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
 }
 
 function _comp(project: Project, name: string): CompItem {
-  return _next(project.compositions, (c) => pyEq(c.name, name));
+  return _next(project.compositions, (c) => valueEquals(c.name, name));
 }
 
 function _probeComp(project: Project): CompItem {
@@ -128,7 +128,7 @@ function _probeComp(project: Project): CompItem {
 
 function _layer(comp: CompItem, name: string): AVLayer {
   return asInstance(
-    _next(comp.layers, (ly) => pyEq(ly.name, name)),
+    _next(comp.layers, (ly) => valueEquals(ly.name, name)),
     AVLayer,
   );
 }
@@ -154,7 +154,7 @@ describe("TestPointConversions", () => {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.sourcePointToComp(pt, timeVal);
-          pyAssert(
+          assert(
             approx(got, want["value"], { abs: 5e-3 }),
             `${layerName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
@@ -162,7 +162,7 @@ describe("TestPointConversions", () => {
         const wantC2s = entry["c2s"][pi];
         if (wantC2s["ok"]) {
           const got = layer.compPointToSource(pt, timeVal);
-          pyAssert(
+          assert(
             approx(got, wantC2s["value"], { abs: 5e-3 }),
             `${layerName} c2s ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
@@ -216,7 +216,7 @@ describe("TestPointConversionsUnderCameras", () => {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.sourcePointToComp(pt, timeVal);
-          pyAssert(
+          assert(
             approx(got, want["value"], { abs: 5e-3 }),
             `${compName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
@@ -224,7 +224,7 @@ describe("TestPointConversionsUnderCameras", () => {
         const wantC2s = entry["c2s"][pi];
         if (wantC2s["ok"]) {
           const got = layer.compPointToSource(pt, timeVal);
-          pyAssert(
+          assert(
             approx(got, wantC2s["value"], { abs: 5e-3 }),
             `${compName} c2s ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
           );
@@ -258,7 +258,7 @@ describe("TestCalculateTransformFromPoints", () => {
   ]);
 
   function _assertMatches(got: Record<string, number | number[]>, want: CtfpValue): void {
-    expect(pyEq(got["anchor_point"], want["anchorPoint"])).toBe(true);
+    expect(valueEquals(got["anchor_point"], want["anchorPoint"])).toBe(true);
     expect(approx(got["position"], want["position"], { abs: 1e-9 })).toBe(true);
     expect(approx(got["x_rotation"], want["xRotation"], { abs: 1e-4 })).toBe(true);
     expect(approx(got["y_rotation"], want["yRotation"], { abs: 1e-4 })).toBe(true);
@@ -392,7 +392,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
         got["y_rotation"],
         got["z_rotation"],
       ];
-      pyAssert(values.every((v) => Number.isFinite(v)), repr(got));
+      assert(values.every((v) => Number.isFinite(v)), repr(got));
     },
   );
 
@@ -438,7 +438,7 @@ describe("TestShapeSourceRect", () => {
     const got = _layer(comp, name).sourceRectAtTime(record["time"], extents);
     for (const key of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
-      pyAssert(approx(got[key], want[key], { abs: 1e-3 }), key);
+      assert(approx(got[key], want[key], { abs: 1e-3 }), key);
     }
   });
 
@@ -473,10 +473,10 @@ describe("TestAutoOrientPointConversions", () => {
   test.each(sorted(Object.keys(_ORIENT_TRUTH)).map((key) => [key]))("test_matches_ae[%#]", (key) => {
     const comps = compsFixture();
     const [compName, layerName] = split(key, "/", 1);
-    const layer = _layer(getitem(comps, compName), layerName);
+    const layer = _layer(getOrThrow(comps, compName), layerName);
     for (const [timeKey, record] of Object.entries(_ORIENT_TRUTH[key])) {
       if (!timeKey.startsWith("t")) continue;
-      pyAssert(typeof record !== "string", timeKey);
+      assert(typeof record !== "string", timeKey);
       const time = float(timeKey.slice(1));
       // All three conversions run before any comparison, as in the Python tuple.
       const probes: [string, number[]][] = [
@@ -485,7 +485,7 @@ describe("TestAutoOrientPointConversions", () => {
         ["inv", layer.compPointToSource([500.0, 400.0], time)],
       ];
       for (const [point, got] of probes) {
-        pyAssert(
+        assert(
           approx(got, record[point], { abs: 1e-2 }),
           `(${repr(timeKey)}, ${repr(point)})`,
         );
@@ -518,7 +518,7 @@ describe("TestTextSourceRect", () => {
     const got = layer.sourceRectAtTime(0.0, extents);
     for (const side of ["top", "left", "width", "height"] as const) {
       // AE measures in single precision.
-      pyAssert(approx(got[side], want[side], { abs: 1e-3 }), side);
+      assert(approx(got[side], want[side], { abs: 1e-3 }), side);
     }
   });
 });

@@ -36,7 +36,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getitem, isclose, pyEq, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, pyAssert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, pyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, repr, hasattr, getattr, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 
 const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -142,9 +142,9 @@ export function _samePath(a: Shape, b: PropertyValue): boolean {
   return (
     b instanceof Shape &&
     a.closed == b.closed &&
-    pyEq(a.vertices, b.vertices) &&
-    pyEq(a._storedTangents(-1), b._storedTangents(-1)) &&
-    pyEq(a._storedTangents(1), b._storedTangents(1)) &&
+    valueEquals(a.vertices, b.vertices) &&
+    valueEquals(a._storedTangents(-1), b._storedTangents(-1)) &&
+    valueEquals(a._storedTangents(1), b._storedTangents(1)) &&
     !a.featherPoints?.length &&
     !b.featherPoints?.length
   );
@@ -260,13 +260,13 @@ export function _valuesEqual(a: PropertyValue, b: PropertyValue): boolean {
   // Handles scalars, arrays, booleans, and null.
   // Uses [math.isclose][] for numeric comparisons.
   if (a == null || b == null) return a == b;
-  if (typeof a === "boolean" || typeof b === "boolean") return pyEq(a, b);
+  if (typeof a === "boolean" || typeof b === "boolean") return valueEquals(a, b);
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
     return a.every((x, i) => _valuesEqual(x, b[i]));
   }
   if (typeof a === "number" && typeof b === "number") return isclose(a, b, 1e-9, 1e-6);
-  return pyEq(a, b);
+  return valueEquals(a, b);
 }
 
 /**
@@ -1103,7 +1103,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * indistinguishable from one that was parsed from binary.
    */
   _ensureMaterialized(): void {
-    pyAssert(this._tdsb != null);
+    assert(this._tdsb != null);
     if (!this._tdsb.synthetic) return;
 
     const parent = this.parentProperty;
@@ -1687,7 +1687,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 
   /** The Curves effect's static curves, decoded from its aRbp. */
   _staticCurves(): Curves {
-    pyAssert(this._arbs != null);
+    assert(this._arbs != null);
     if (this._curves == null) {
       const arbp = this._arbs.chunks[0];
       this._curves = Curves._fromBinary(CurvesArbpChunk.fromArbp(arbp));
@@ -1701,7 +1701,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * `null` when the aRbs does not hold one aRbp per keyframe.
    */
   _keyframeCurves(keyframe: Keyframe): Curves | null {
-    pyAssert(this._arbs != null);
+    assert(this._arbs != null);
     const arbps = this._arbs.chunks;
     if (arbps.length !== this.keyframes.length) {
       return null;
@@ -1720,7 +1720,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * effect holds.
    */
   _resetCurves(): void {
-    pyAssert(this._arbs != null && this._defaultArbp != null);
+    assert(this._arbs != null && this._defaultArbp != null);
     const inner = this._keyframeInner();
     if (inner != null) {
       const cdat = new CdatChunk({ pad: _EMPTY_CDAT_PAD });
@@ -2209,7 +2209,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _dropdownParamDefs(): ListChunk[] {
     const effect = this._parentProperty;
-    pyAssert(effect != null);
+    assert(effect != null);
     const parts: ListChunk[] = [];
     const parade = effect._parentProperty;
     if (parade != null) {
@@ -2266,7 +2266,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // params parse without a composition ref; reach the project
     // through the owning layer instead.
     const effect = this._parentProperty;
-    pyAssert(effect != null);
+    assert(effect != null);
     let comp = this._composition;
     if (comp == null) {
       try {
@@ -2323,7 +2323,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // AE 2026 reports `dimensionsSeparated` false on a fresh one,
       // accepts the write, and reads back true with the position intact.
       //
-      pyAssert(this._tdsb != null);
+      assert(this._tdsb != null);
       return !!this._tdsb.dimensionsSeparated;
     }
     return false;
@@ -2373,7 +2373,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _setSeparatedFlags(separated: boolean): void {
     this._ensureMaterialized();
-    pyAssert(this._tdsb != null);
+    assert(this._tdsb != null);
     this._tdsb.dimensionsSeparated = separated;
     this._tdsb.hidden = separated;
     this._dimensionsSeparated = separated;
@@ -2441,8 +2441,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const keyframes = [...this.keyframes];
     const times = keyframes.map((keyframe) => keyframe.time);
     const values = keyframes.map((keyframe) => keyframe.value as number[]);
-    const inTangents = keyframes.map((keyframe) => pyOr(keyframe.inSpatialTangent, []));
-    const outTangents = keyframes.map((keyframe) => pyOr(keyframe.outSpatialTangent, []));
+    const inTangents = keyframes.map((keyframe) => truthyOr(keyframe.inSpatialTangent, []));
+    const outTangents = keyframes.map((keyframe) => truthyOr(keyframe.outSpatialTangent, []));
     const interpolation = keyframes.map(
       (keyframe) => [keyframe.inInterpolationType, keyframe.outInterpolationType] as const,
     );
@@ -2724,7 +2724,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (tdb4 != null) {
       key = [tdb4.dimensions, tdb4._typeFlags, tdb4._spatialStaticFlags, tdb4._noValueFlags];
       const memo = this._typesMemo;
-      if (memo != null && pyEq(memo[0], key)) {
+      if (memo != null && valueEquals(memo[0], key)) {
         return memo[1];
       }
     } else {
@@ -3021,7 +3021,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _buildReplacementWrapper(footage: FootageItem): CompItem {
     const host = this._composition;
-    pyAssert(host != null); // guarded by the caller's project check
+    assert(host != null); // guarded by the caller's project check
     const project = host._project;
     const folder = _findOrCreateWrapperFolder(project);
     const name = `${this.name}_${_uniqueWrapperSuffix(footage, project)}`;
@@ -3041,7 +3041,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const newCdta = deepcopy(host._cdta);
     const chunks = wrapper._itemList.chunks;
     // Python `chunks.index(...)` compares by attrs equality (first equal chunk).
-    const cdtaIndex = chunks.findIndex((c: Chunk) => pyEq(c, wrapper._cdta));
+    const cdtaIndex = chunks.findIndex((c: Chunk) => valueEquals(c, wrapper._cdta));
     if (cdtaIndex < 0) throw new ValueError("list.index(x): x not in list");
     chunks[cdtaIndex] = newCdta;
     wrapper._cdta = newCdta;
@@ -3409,7 +3409,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       const itemType = this._keyframeItemType();
       let lhd3: Lhd3Chunk;
       let ldat: LdatChunk;
-      [inner, lhd3, ldat] = buildKeyframeList(itemType, getitem(ITEM_SIZE_BY_TYPE, itemType));
+      [inner, lhd3, ldat] = buildKeyframeList(itemType, getOrThrow(ITEM_SIZE_BY_TYPE, itemType));
       this._animateTdb4();
       const chunks = this._tdbs.chunks;
       if (this._cdat != null) {
@@ -3760,8 +3760,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
-    const outTangent = pyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
-    const inTangent = pyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
+    const outTangent = truthyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
+    const inTangent = truthyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
     return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
@@ -3796,8 +3796,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
-    const outTangent = pyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
-    const inTangent = pyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
+    const outTangent = truthyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
+    const inTangent = truthyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
     if (_tangentsAreZero(outTangent) && _tangentsAreZero(inTangent)) return;
     const [leftOut, newIn, _split, newOut, rightIn] = splitSpatialPath(v0, v1, outTangent, inTangent, u);
     prevKf.outSpatialTangent = leftOut;
@@ -3967,7 +3967,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * not). A mask path keeps the value's feather points.
    */
   _buildShapChunk(shape: Shape): Chunk {
-    const points = pyOr(shape._points, []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
+    const points = truthyOr(shape._points, []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
     const src = shape._shph;
     let bbox: number[];
     if (src != null) {
@@ -4172,7 +4172,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // stands for, which materializing writes (`_ensureMaterialized`).
       this._ensureMaterialized();
       const container = this._kfValueContainer;
-      pyAssert(container != null);
+      assert(container != null);
       return container;
     }
     if (!kind.canMaterializeWrapper || kind.containerType == null) {
@@ -4182,7 +4182,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // the parent tdgp, so canonical repositioning can anchor it.
     this._ensureMaterialized();
     const parent = this.parentProperty;
-    pyAssert(parent != null && parent._tdgp != null);
+    assert(parent != null && parent._tdgp != null);
     const chunks = parent._tdgp.chunks;
     const container = new ListChunk({ listType: kind.containerType, chunks: [] });
     let wrapper = this._wrapper;

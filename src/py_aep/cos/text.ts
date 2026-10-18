@@ -7,7 +7,7 @@
 
 import { b64decode } from "../../pyrt/base64.ts";
 import { gzipDecompress } from "../../pyrt/zlib.ts";
-import { BytesIO, bytes_, pyAssert } from "../../pyrt/index.ts";
+import { BytesIO, bytes_, assert } from "../../pyrt/index.ts";
 import { CosParser, type CosDict } from "./cos.ts";
 import { decodeBtdk } from "./schema.ts";
 
@@ -22,7 +22,7 @@ export function getCosTemplate(): CosDict {
   const raw = bytes_.lstrip(gzipDecompress(b64decode(POINT_TEXT_COS_TEMPLATE)));
   const parser = new CosParser(new BytesIO(raw), raw.length);
   const result = decodeBtdk(parser.parse());
-  pyAssert(result != null);
+  assert(result != null);
   _COS_TEMPLATE_CACHE = result;
   return result;
 }

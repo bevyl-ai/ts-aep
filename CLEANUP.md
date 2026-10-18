@@ -34,10 +34,10 @@ If a rewrite needs a paragraph-long comment to justify it, don't make it.
 Replace pyrt helpers with plain TS where the operand types make it exact. No
 renames, no signature changes, no structural changes.
 
-Applied by `bun tools/codemods/pass1_native_idioms.ts`, which asks the type
+Applied by a one-off codemod (since removed), which asked the type
 checker for each operand and only rewrites when a rule below holds; calls on
 `any`, on maps whose values may be null, or on `__len__`/`__eq__` objects stay.
-`--dry --report` lists what it keeps and why. Hand edits on top of it go
+Hand edits on top of it go
 through the same rules.
 
 ### Truthiness: `py_bool`, `py_or`, `py_and`
@@ -168,12 +168,12 @@ imports are erased and don't count), counting static imports already added
 during the same run. The target then fully evaluates before the importer, and
 it cannot observe a half-initialized module: every module still evaluating
 reaches the importer, so the target reaching one would mean it reaches the
-importer. `tools/codemods/acyclic_deferred.ts`
-applies this; rerun `bun tools/gen_deferred_modules.ts` afterwards.
+importer. A one-off codemod (since removed)
+applied this; rerun `bun tools/gen_deferred_modules.ts` afterwards.
 
 ## Pass 2: docstrings to TSDoc
 
-`tools/codemods/pass2_tsdoc.ts` rewrites comments only (`tools/tsdoc_lint.ts`
+A one-off codemod (since removed) rewrote comments only (`tools/tsdoc_lint.ts`
 must report 0 messages; code printed without comments is identical before and
 after):
 
@@ -196,7 +196,7 @@ paths); pass 3 rewrites it in TypeScript terms.
 Types and docs only. `bun tools/js_equal.ts <base>` must show that the
 JavaScript TypeScript emits for every touched file is unchanged.
 
-- `tools/codemods/pass3_ts_terms.ts`: `` `None` `` / `` `True` `` / `` `False` `` →
+- A one-off codemod (since removed): `` `None` `` / `` `True` `` / `` `False` `` →
   `` `null` `` / `` `true` `` / `` `false` ``; `{@link py_aep.models.x.Name}` → `{@link Name}`.
 - Per file, from the Python annotations of the same symbol: `any` → real types
   (port classes, enums, `Map<…>`, `unknown` where nothing reads the value).

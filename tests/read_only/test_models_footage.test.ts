@@ -10,7 +10,7 @@ import { AlphaMode, FieldSeparationType } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
 import { getComp, getFirstFootage, getFootage, getFootageFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
-import { AssertionError, Path, StopIteration, isclose, pyEq } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, StopIteration, isclose, valueEquals } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/index.ts";
@@ -169,21 +169,21 @@ describe("TestSolidColors", () => {
     const project = parseProject(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = getComp(project, "solid_color_red");
     const footage = asInstance(asInstance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(pyEq(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [1, 0, 0])).toBe(true);
+    expect(valueEquals(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [1, 0, 0])).toBe(true);
   });
 
   test("test_color_green", () => {
     const project = parseProject(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = getComp(project, "solid_color_green");
     const footage = asInstance(asInstance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(pyEq(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 1, 0])).toBe(true);
+    expect(valueEquals(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 1, 0])).toBe(true);
   });
 
   test("test_color_blue", () => {
     const project = parseProject(SAMPLES_DIR.div("solid_colors.aep"));
     const comp = getComp(project, "solid_color_blue");
     const footage = asInstance(asInstance(comp.layers[0], AVLayer).source, FootageItem);
-    expect(pyEq(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 0, 1])).toBe(true);
+    expect(valueEquals(asInstance(footage.mainSource, SolidSource).color.slice(0, 3), [0, 0, 1])).toBe(true);
   });
 });
 
@@ -382,10 +382,10 @@ describe("TestFootageSettings", () => {
       parseProject(SAMPLES_DIR.div("premulColor.aep")),
       "premulColor_black",
     );
-    expect(pyEq(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"])).toBe(
+    expect(valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"])).toBe(
       true,
     );
-    expect(pyEq(footageJson["mainSource"]["premulColor"], [0, 0, 0])).toBe(true);
+    expect(valueEquals(footageJson["mainSource"]["premulColor"], [0, 0, 0])).toBe(true);
   });
 
   test("test_premulColor_red", () => {
@@ -395,9 +395,9 @@ describe("TestFootageSettings", () => {
       parseProject(SAMPLES_DIR.div("premulColor.aep")),
       "premulColor_red",
     );
-    expect(pyEq(footageJson["mainSource"]["premulColor"], [1, 0, 0])).toBe(true);
+    expect(valueEquals(footageJson["mainSource"]["premulColor"], [1, 0, 0])).toBe(true);
     expect(
-      pyEq(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"]),
+      valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"]),
     ).toBe(true);
   });
 
@@ -561,7 +561,7 @@ describe("TestAlphabeticalSequence", () => {
   test("test_lists_its_files", () => {
     const source = asInstance(getFootage(parseProject(SAMPLE), "assets").mainSource, FileSource);
     expect(
-      pyEq(source.fileNames, [
+      valueEquals(source.fileNames, [
         "new_exr.0002.exr",
         "new_exr.0003.exr",
         "old_exr.00004.exr",

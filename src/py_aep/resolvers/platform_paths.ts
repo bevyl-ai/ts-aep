@@ -9,7 +9,7 @@
  * to the project file, and `ascendcount_target`, the same down to the target.
  */
 
-import { pyEq, PurePath, PurePosixPath, PureWindowsPath } from "../../pyrt/index.ts";
+import { valueEquals, PurePath, PurePosixPath, PureWindowsPath } from "../../pyrt/index.ts";
 
 export const _DRIVE = /^([A-Za-z]):[\\\/]?(.*)$/s;
 export const _UNC = /^(?:\\\\|\/\/)[^\\\/]+[\\\/]([^\\\/]+)[\\\/]?(.*)$/s;
@@ -124,7 +124,7 @@ export function relativePathCounts(
   const a = base.parts.map((p) => (fold ? p.toLowerCase() : p));
   const b = goal.parts.map((p) => (fold ? p.toLowerCase() : p));
   const volume = _volumeParts(base);
-  if (!pyEq(a.slice(0, volume), b.slice(0, _volumeParts(goal)))) {
+  if (!valueEquals(a.slice(0, volume), b.slice(0, _volumeParts(goal)))) {
     return [0, 0];
   }
   let common = 0;

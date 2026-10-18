@@ -7,8 +7,8 @@ import {
   Path,
   bytes_,
   len,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   repr,
 } from "../../src/pyrt/index.ts";
 import { PsdLayer, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
@@ -23,7 +23,7 @@ function _vectorMask(psd: string, layer: string): Uint8Array {
   for (const node of readPsdLayers(ASSETS.div(psd))) {
     if (node.name === layer) {
       const mask = asInstance(node, PsdLayer).vectorMask;
-      pyAssert(mask != null);
+      assert(mask != null);
       return mask;
     }
   }
@@ -42,7 +42,7 @@ describe("TestParseVectorMask", () => {
     const shape = shapes[0];
     expect(shape.closed).toBe(true);
     expect(
-      pyEq(shape.vertices, [
+      valueEquals(shape.vertices, [
         [20.0, 12.0],
         [52.0, 12.0],
         [52.0, 44.0],
@@ -50,7 +50,7 @@ describe("TestParseVectorMask", () => {
       ]),
     ).toBe(true);
     expect(
-      pyEq(
+      valueEquals(
         shape.inTangents,
         Array.from({ length: 4 }, () => [0.0, 0.0]),
       ),
@@ -67,7 +67,7 @@ describe("TestParseVectorMask", () => {
     );
     const shape = shapes[0];
     expect(
-      pyEq(shape.vertices, [
+      valueEquals(shape.vertices, [
         [32.0, 8.0],
         [56.0, 32.0],
         [32.0, 56.0],
@@ -75,7 +75,7 @@ describe("TestParseVectorMask", () => {
       ]),
     ).toBe(true);
     expect(
-      pyEq(shape.inTangents, [
+      valueEquals(shape.inTangents, [
         [12.0, 0.0],
         [0.0, 12.0],
         [-12.0, 0.0],
@@ -83,7 +83,7 @@ describe("TestParseVectorMask", () => {
       ]),
     ).toBe(true);
     expect(
-      pyEq(shape.outTangents, [
+      valueEquals(shape.outTangents, [
         [-12.0, 0.0],
         [0.0, -12.0],
         [12.0, 0.0],
@@ -99,8 +99,8 @@ describe("TestParseVectorMask", () => {
       64,
     );
     expect(len(shapes)).toBe(2);
-    expect(pyEq(shapes[0].vertices[0], [6.0, 6.0])).toBe(true);
-    expect(pyEq(shapes[1].vertices[0], [38.0, 38.0])).toBe(true);
+    expect(valueEquals(shapes[0].vertices[0], [6.0, 6.0])).toBe(true);
+    expect(valueEquals(shapes[1].vertices[0], [38.0, 38.0])).toBe(true);
   });
 
   test("test_truncated_block_returns_decoded_prefix", () => {

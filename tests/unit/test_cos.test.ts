@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { BytesIO, b, bytes_, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { BytesIO, b, bytes_, assert, valueEquals } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
 import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
@@ -54,68 +54,68 @@ describe("TestCosParserPrimitives", () => {
   });
 
   test("test_parse_string", () => {
-    expect(pyEq(_parse(b("(hello)")), "hello")).toBe(true);
+    expect(valueEquals(_parse(b("(hello)")), "hello")).toBe(true);
   });
 
   test("test_parse_string_with_escape", () => {
-    expect(pyEq(_parse(b("(line1\\nline2)")), "line1\nline2")).toBe(true);
+    expect(valueEquals(_parse(b("(line1\\nline2)")), "line1\nline2")).toBe(true);
   });
 
   test("test_parse_string_with_parentheses_escape", () => {
-    expect(pyEq(_parse(b("(a\\(b\\)c)")), "a(b)c")).toBe(true);
+    expect(valueEquals(_parse(b("(a\\(b\\)c)")), "a(b)c")).toBe(true);
   });
 
   test("test_parse_string_with_backslash_escape", () => {
-    expect(pyEq(_parse(b("(a\\\\b)")), "a\\b")).toBe(true);
+    expect(valueEquals(_parse(b("(a\\\\b)")), "a\\b")).toBe(true);
   });
 
   test("test_parse_string_with_octal_escape", () => {
-    expect(pyEq(_parse(b("(\\101)")), "A")).toBe(true); // octal 101 = 65 = 'A'
+    expect(valueEquals(_parse(b("(\\101)")), "A")).toBe(true); // octal 101 = 65 = 'A'
   });
 
   test("test_parse_string_with_carriage_return", () => {
-    expect(pyEq(_parse(b("(a\\rb)")), "a\rb")).toBe(true);
+    expect(valueEquals(_parse(b("(a\\rb)")), "a\rb")).toBe(true);
   });
 
   test("test_parse_string_utf8_bom", () => {
-    expect(pyEq(_parse(b("(\xef\xbb\xbfhello)")), "hello")).toBe(true);
+    expect(valueEquals(_parse(b("(\xef\xbb\xbfhello)")), "hello")).toBe(true);
   });
 
   test("test_parse_string_utf16be_bom", () => {
     const data = b("(\xfe\xff\x00h\x00i)");
-    expect(pyEq(_parse(data), "hi")).toBe(true);
+    expect(valueEquals(_parse(data), "hi")).toBe(true);
   });
 
   test("test_parse_string_utf16le_bom", () => {
     const data = b("(\xff\xfeh\x00i\x00)");
-    expect(pyEq(_parse(data), "hi")).toBe(true);
+    expect(valueEquals(_parse(data), "hi")).toBe(true);
   });
 
   test("test_parse_hex_string", () => {
     const result = _parse(b("<48656C6C6F>"));
-    expect(pyEq(result, b("Hello"))).toBe(true);
+    expect(valueEquals(result, b("Hello"))).toBe(true);
   });
 
   test("test_parse_hex_string_odd_length", () => {
     // Odd-length hex string gets padded with 0
     const result = _parse(b("<ABC>"));
-    expect(pyEq(result, new Uint8Array([0xab, 0xc0]))).toBe(true);
+    expect(valueEquals(result, new Uint8Array([0xab, 0xc0]))).toBe(true);
   });
 
   test("test_parse_hex_string_with_spaces", () => {
     const result = _parse(b("<48 65 6C>"));
-    expect(pyEq(result, b("Hel"))).toBe(true);
+    expect(valueEquals(result, b("Hel"))).toBe(true);
   });
 
   test("test_parse_identifier", () => {
     // Top-level identifier triggers dict-content mode
     const result = _parse(b("/Name 42"));
-    expect(pyEq(result, new Map<string, CosNode>([["Name", 42]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["Name", 42]]))).toBe(true);
   });
 
   test("test_parse_identifier_hex_escape", () => {
     const result = _parse(b("/Name#20Here 1"));
-    expect(pyEq(result, new Map<string, CosNode>([["Name Here", 1]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["Name Here", 1]]))).toBe(true);
   });
 });
 
@@ -124,48 +124,48 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_dict", () => {
     const result = _parse(b("<< /Key1 42 /Key2 (hello) >>"));
-    expect(pyEq(result, new Map<string, CosNode>([["Key1", 42], ["Key2", "hello"]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["Key1", 42], ["Key2", "hello"]]))).toBe(true);
   });
 
   test("test_parse_empty_dict", () => {
     const result = _parse(b("<< >>"));
-    expect(pyEq(result, new Map<string, CosNode>())).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>())).toBe(true);
   });
 
   test("test_parse_nested_dict", () => {
     const result = _parse(b("<< /outer << /inner 1 >> >>"));
-    expect(pyEq(result, new Map<string, CosNode>([["outer", new Map<string, CosNode>([["inner", 1]])]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["outer", new Map<string, CosNode>([["inner", 1]])]]))).toBe(true);
   });
 
   test("test_parse_array", () => {
     const result = _parse(b("[1 2 3]"));
-    expect(pyEq(result, [1, 2, 3])).toBe(true);
+    expect(valueEquals(result, [1, 2, 3])).toBe(true);
   });
 
   test("test_parse_empty_array", () => {
     const result = _parse(b("[]"));
-    expect(pyEq(result, [])).toBe(true);
+    expect(valueEquals(result, [])).toBe(true);
   });
 
   test("test_parse_mixed_array", () => {
     const result = _parse(b("[1 (two) true null]"));
-    expect(pyEq(result, [1, "two", true, null])).toBe(true);
+    expect(valueEquals(result, [1, "two", true, null])).toBe(true);
   });
 
   test("test_parse_nested_array", () => {
     const result = _parse(b("[[1 2] [3 4]]"));
-    expect(pyEq(result, [[1, 2], [3, 4]])).toBe(true);
+    expect(valueEquals(result, [[1, 2], [3, 4]])).toBe(true);
   });
 
   test("test_parse_dict_in_array", () => {
     const result = _parse(b("[<< /a 1 >>]"));
-    expect(pyEq(result, [new Map<string, CosNode>([["a", 1]])])).toBe(true);
+    expect(valueEquals(result, [new Map<string, CosNode>([["a", 1]])])).toBe(true);
   });
 
   test("test_parse_bare_values_as_array", () => {
     // Multiple bare number values become a list
     const result = _parse(b("1 2 3"));
-    expect(pyEq(result, [1, 2, 3])).toBe(true);
+    expect(valueEquals(result, [1, 2, 3])).toBe(true);
   });
 });
 
@@ -174,7 +174,7 @@ describe("TestCosParserIndirect", () => {
 
   test("test_parse_indirect_object", () => {
     const result = _parse(b("1 0 obj 42 endobj"));
-    pyAssert(result instanceof IndirectObject);
+    assert(result instanceof IndirectObject);
     expect(result.objectNumber).toBe(1);
     expect(result.generationNumber).toBe(0);
     expect(result.data).toBe(42);
@@ -182,7 +182,7 @@ describe("TestCosParserIndirect", () => {
 
   test("test_parse_indirect_reference", () => {
     const result = _parse(b("<< /Ref 5 0 R >>"));
-    expect(pyEq(result, new Map<string, CosNode>([["Ref", new IndirectReference(5, 0)]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["Ref", new IndirectReference(5, 0)]]))).toBe(true);
   });
 });
 
@@ -194,9 +194,9 @@ describe("TestCosParserStream", () => {
     const f = new BytesIO(data);
     const parser = new CosParser(f, data.length);
     const result = parser.parse();
-    pyAssert(result instanceof Stream);
-    expect(pyEq(result.dictionary, new Map<string, CosNode>([["Length", 5]]))).toBe(true);
-    expect(pyEq(result.data, b("hello"))).toBe(true);
+    assert(result instanceof Stream);
+    expect(valueEquals(result.dictionary, new Map<string, CosNode>([["Length", 5]]))).toBe(true);
+    expect(valueEquals(result.data, b("hello"))).toBe(true);
   });
 });
 
@@ -210,7 +210,7 @@ describe("TestCosParserComments", () => {
 
   test("test_inline_comment", () => {
     const result = _parse(b("[1 % mid-array comment\n2]"));
-    expect(pyEq(result, [1, 2])).toBe(true);
+    expect(valueEquals(result, [1, 2])).toBe(true);
   });
 });
 
@@ -252,7 +252,7 @@ describe("TestCosParserMaxPos", () => {
     const f = new BytesIO(b("[1 2]"));
     const parser = new CosParser(f, 5);
     const result = parser.parse();
-    expect(pyEq(result, [1, 2])).toBe(true);
+    expect(valueEquals(result, [1, 2])).toBe(true);
   });
 });
 
@@ -279,7 +279,7 @@ describe("TestCosSerializer", () => {
     const parsed = _parse(original);
     const serialized = serialize(parsed);
     const reparsed = _parse(serialized);
-    expect(pyEq(reparsed, parsed)).toBe(true);
+    expect(valueEquals(reparsed, parsed)).toBe(true);
   });
 
   test("test_roundtrip_array", () => {
@@ -287,7 +287,7 @@ describe("TestCosSerializer", () => {
     const parsed = _parse(original);
     const serialized = serialize(parsed);
     const reparsed = _parse(serialized);
-    expect(pyEq(reparsed, parsed)).toBe(true);
+    expect(valueEquals(reparsed, parsed)).toBe(true);
   });
 
   test("test_roundtrip_nested", () => {
@@ -295,7 +295,7 @@ describe("TestCosSerializer", () => {
     const parsed = _parse(original);
     const serialized = serialize(parsed);
     const reparsed = _parse(serialized);
-    expect(pyEq(reparsed, parsed)).toBe(true);
+    expect(valueEquals(reparsed, parsed)).toBe(true);
   });
 
   test("test_serialize_none", () => {

@@ -4,7 +4,7 @@ import "../../src/py_aep/binary/_register.ts";
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 
-import { Path, pyEq, ValueError } from "../../src/pyrt/index.ts";
+import { Path, valueEquals, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 
@@ -39,18 +39,18 @@ describe("TestVersionUpdatesFormatGate", () => {
   test("test_version_setter_syncs_format_version", () => {
     const app = parseAep(SAMPLE); // AE 2025 -> format 96.9
     const head = app._head;
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], [96, 9])).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [96, 9])).toBe(true);
     app.version = "24.0x1";
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], [95, 6])).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [95, 6])).toBe(true);
     app.version = "26.0x67";
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
   });
 
   test("test_build_name_setter_syncs_format_version", () => {
     const app = parseAep(SAMPLE);
     app.buildName = "23.0x1";
     const head = app._head;
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], [94, 9])).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [94, 9])).toBe(true);
   });
 
   test.each(["27.0x1", "255.15x255"])("test_unknown_release_keeps_the_format_stamp[%#]", (version) => {
@@ -64,7 +64,7 @@ describe("TestVersionUpdatesFormatGate", () => {
     app.project.save(out);
     const head = parseAep(out)._head;
     expect(head.version).toBe(version);
-    expect(pyEq([head.fileFormatVersion, head._formatSubversion], [96, 9])).toBe(true);
+    expect(valueEquals([head.fileFormatVersion, head._formatSubversion], [96, 9])).toBe(true);
   });
 
   test("test_relabel_across_the_layer_record_change_rejected", () => {

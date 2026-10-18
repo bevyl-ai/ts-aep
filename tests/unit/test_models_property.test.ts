@@ -8,7 +8,7 @@ import { TdmnChunk, TdsnChunk } from "../../src/py_aep/binary/property_chunks.ts
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { _resolveEffectValue, type ParamDef } from "../../src/py_aep/parsers/effect.ts";
 import { parsePropertyGroup } from "../../src/py_aep/parsers/property.ts";
-import { Path, pyEq } from "../../src/pyrt/index.ts";
+import { Path, valueEquals } from "../../src/pyrt/index.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");
@@ -81,7 +81,7 @@ describe("TestResolveEffectValue", () => {
     ],
   ])("test_resolve_effect_value[%#]", (paramDef: Partial<ParamDef>, controlType: PropertyControlType, expected: unknown) => {
     const result = _resolveEffectValue("TEST-0001", paramDef, controlType);
-    expect(pyEq(result, expected)).toBe(true);
+    expect(valueEquals(result, expected)).toBe(true);
   });
 });
 

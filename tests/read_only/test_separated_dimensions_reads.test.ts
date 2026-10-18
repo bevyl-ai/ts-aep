@@ -12,7 +12,7 @@
 
 import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { AssertionError, Path, getitem, pyAssert, pyOr, range } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, getOrThrow, assert, truthyOr, range } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, getLayerFromJson, loadExpected, parseProject, type ExpectedProperty } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -22,9 +22,9 @@ const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "mode
 /** `{matchName: property dict}` for the first layer's transform group. */
 function _expectedTransform(sample: string): Map<string, ExpectedProperty> {
   const layer = getLayerFromJson(loadExpected(SAMPLES_DIR, sample));
-  for (const group of pyOr(layer.properties, [])) {
+  for (const group of truthyOr(layer.properties, [])) {
     if (group.matchName === "ADBE Transform Group") {
-      return new Map(pyOr(group.properties, []).map((child) => [child.matchName, child]));
+      return new Map(truthyOr(group.properties, []).map((child) => [child.matchName, child]));
     }
   }
   throw new AssertionError(`no transform group in ${sample}.json`);
@@ -38,9 +38,9 @@ test.each(["transform_unseparated", "transform_separated", "keyframe_separated_d
 
     for (const matchName of ["ADBE Position", "ADBE Position_0", "ADBE Position_1", "ADBE Position_2"]) {
       const prop = asInstance(layer.transform.property(matchName), Property);
-      const wanted = getitem(expected, matchName);
-      pyAssert(approx(prop.value, wanted.value), matchName);
-      pyAssert(prop.canSetExpression === wanted.canSetExpression, matchName);
+      const wanted = getOrThrow(expected, matchName);
+      assert(approx(prop.value, wanted.value), matchName);
+      assert(prop.canSetExpression === wanted.canSetExpression, matchName);
     }
   },
 );

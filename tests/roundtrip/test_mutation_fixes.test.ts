@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getattr, hasattr, len, pyAssert, pyBool, pyEq, StopIteration, ValueError, type Path } from "../../src/pyrt/index.ts";
+import { getattr, hasattr, len, assert, truthy, valueEquals, StopIteration, ValueError, type Path } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { findByType } from "../../src/py_aep/binary/utils.ts";
 import { PropertyType } from "../../src/py_aep/enums/index.ts";
@@ -37,7 +37,7 @@ function _layerRefs(app: Application): [string, string, string, number, boolean]
     for (const lyr of comp.layers) {
       for (const prop of _walk(lyr)) {
         const tdpi = getattr(prop, "_tdpi", null);
-        if (tdpi == null || !pyBool(tdpi.value)) {
+        if (tdpi == null || !truthy(tdpi.value)) {
           continue;
         }
         out.push([comp.name, lyr.name, prop.matchName, tdpi.value, ids.has(tdpi.value)]);
@@ -91,7 +91,7 @@ describe("TestActiveItemRemoval", () => {
 describe("TestEffectParameterIsNotIndexed", () => {
   function _blurParam(app: Application): [PropertyGroup, Property] {
     const layer = app.project.compositions[0].layers[0];
-    pyAssert(layer.effects != null);
+    assert(layer.effects != null);
     const effect = asInstance(layer.effects.properties[0], PropertyGroup);
     return [effect, asInstance(effect.properties[0], Property)];
   }
@@ -162,7 +162,7 @@ describe("TestLayerReferencesFollowTheirLayer", () => {
     const tmpPath: Path = makeTmpPath();
     const app = parseAppFresh(PROPERTY_DIR.div("effects.aep"));
     const comps = app.project.compositions;
-    const source = comps.find((c) => pyBool(c.layers));
+    const source = comps.find((c) => truthy(c.layers));
     if (source == null) throw new StopIteration();
     const target = comps.find((c) => c !== source);
     if (target == null) throw new StopIteration();
@@ -172,7 +172,7 @@ describe("TestLayerReferencesFollowTheirLayer", () => {
     const out = tmpPath.div("copied.aep");
     app.project.save(out);
     const unresolved = _layerRefs(parseAppFresh(out)).filter((r) => !r[4]);
-    expect(pyEq(unresolved, [])).toBe(true);
+    expect(valueEquals(unresolved, [])).toBe(true);
   });
 
   test("test_precompose_keeps_the_reference_resolvable", () => {
@@ -186,7 +186,7 @@ describe("TestLayerReferencesFollowTheirLayer", () => {
     const out = tmpPath.div("pre.aep");
     app.project.save(out);
     const unresolved = _layerRefs(parseAppFresh(out)).filter((r) => !r[4]);
-    expect(pyEq(unresolved, [])).toBe(true);
+    expect(valueEquals(unresolved, [])).toBe(true);
   });
 });
 
@@ -198,10 +198,10 @@ describe("TestCopyToCompTransform", () => {
   test("test_position_survives_a_different_sized_comp", () => {
     const app = parseAppFresh(COMP_DIR.div("duplicate.aep"));
     const comps = app.project.compositions;
-    const source = comps.find((c) => pyBool(c.layers));
+    const source = comps.find((c) => truthy(c.layers));
     if (source == null) throw new StopIteration();
     const target = comps.find(
-      (c) => c !== source && !pyEq([c.width, c.height], [source.width, source.height]),
+      (c) => c !== source && !valueEquals([c.width, c.height], [source.width, source.height]),
     );
     if (target == null) throw new StopIteration();
     const layer = source.layers[0];
@@ -210,14 +210,14 @@ describe("TestCopyToCompTransform", () => {
     const copy = layer.copyToComp(target);
 
     expect(
-      pyEq(asInstance(asInstance(copy.property("Transform"), PropertyGroup).property("Position"), Property).value, before),
+      valueEquals(asInstance(asInstance(copy.property("Transform"), PropertyGroup).property("Position"), Property).value, before),
     ).toBe(true);
   });
 
   test("test_timebase_is_restamped_to_the_destination", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("effect_point_speed.aep"));
     const comps = app.project.compositions;
-    const source = comps.find((c) => pyBool(c.layers));
+    const source = comps.find((c) => truthy(c.layers));
     if (source == null) throw new StopIteration();
     const target = comps.find((c) => c !== source && c.frameRate !== source.frameRate);
     if (target == null) throw new StopIteration();
@@ -232,12 +232,12 @@ describe("TestCopyToCompTransform", () => {
           (prop): prop is Property =>
             prop instanceof Property &&
             getattr(prop, "_tdb4", null) != null &&
-            !pyBool(prop._tdbs.synthetic) &&
-            pyBool(prop._tdb4._timeBase),
+            !truthy(prop._tdbs.synthetic) &&
+            truthy(prop._tdb4._timeBase),
         )
         .map((prop) => prop._tdb4._timeBase),
     );
-    expect(pyEq(bases, new Set([want]))).toBe(true);
+    expect(valueEquals(bases, new Set([want]))).toBe(true);
   });
 
   /**
@@ -261,12 +261,12 @@ describe("TestCopyToCompTransform", () => {
           (prop): prop is Property =>
             prop instanceof Property &&
             getattr(prop, "_tdb4", null) != null &&
-            !pyBool(prop._tdbs.synthetic) &&
-            pyBool(prop._tdb4._timeBase),
+            !truthy(prop._tdbs.synthetic) &&
+            truthy(prop._tdb4._timeBase),
         )
         .map((prop) => prop._tdb4._timeBase),
     );
-    expect(pyEq(bases, new Set([want]))).toBe(true);
+    expect(valueEquals(bases, new Set([want]))).toBe(true);
   });
 });
 
@@ -289,7 +289,7 @@ describe("TestPrecomposeSideEffects", () => {
       asInstance(newComp.layers[0].property("Transform"), PropertyGroup).property("ADBE Anchor Point"),
       Property,
     ).value;
-    expect(pyEq(after, before)).toBe(true);
+    expect(valueEquals(after, before)).toBe(true);
   });
 
   /** AE drops the overrides (3 -> 0); they point into the old source. */

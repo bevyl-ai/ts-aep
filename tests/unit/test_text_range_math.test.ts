@@ -19,10 +19,10 @@ import {
   ValueError,
   deepcopy,
   descriptorsOf,
-  dictGet,
+  getOr,
   getDescriptor,
-  pyEq,
-  pyOr,
+  valueEquals,
+  truthyOr,
   repr,
   setattr,
   str,
@@ -43,7 +43,7 @@ describe("TestWriteEnginePrimitives", () => {
     ];
     const original = runs[0];
     _splitRunArray(runs, new Set([3, 7]));
-    expect(pyEq(runs.map((r) => cosItem(r, "1")), [3, 4, 3])).toBe(true);
+    expect(valueEquals(runs.map((r) => cosItem(r, "1")), [3, 4, 3])).toBe(true);
     // Run 0 keeps its object (and its style dict) as the left piece.
     expect(runs[0]).toBe(original);
     expect(cosItem(cosItem(cosItem(runs[0], "0"), "0"), "6")).toBe(style);
@@ -67,20 +67,20 @@ describe("TestWriteEnginePrimitives", () => {
     ]);
     const runs: CosNode[] = [a, b, c];
     _mergeAdjacentRuns(runs);
-    expect(pyEq(runs, [a, c])).toBe(true);
+    expect(valueEquals(runs, [a, c])).toBe(true);
     expect(runs[0]).toBe(a);
     expect(cosItem(runs[0], "1")).toBe(7);
   });
 
   test("test_snap_to_pairs", () => {
     const raw = `ab${EMOJI}cd\r`;
-    expect(pyEq(_snapToPairs(raw, 3, 5), [2, 5])).toBe(true);
-    expect(pyEq(_snapToPairs(raw, 2, 3), [2, 4])).toBe(true);
-    expect(pyEq(_snapToPairs(raw, 0, 2), [0, 2])).toBe(true);
+    expect(valueEquals(_snapToPairs(raw, 3, 5), [2, 5])).toBe(true);
+    expect(valueEquals(_snapToPairs(raw, 2, 3), [2, 4])).toBe(true);
+    expect(valueEquals(_snapToPairs(raw, 0, 2), [0, 2])).toBe(true);
     // A mid-pair caret moves past the pair but stays zero-span, so
     // caret writes remain no-ops instead of covering the glyph.
-    expect(pyEq(_snapToPairs(raw, 3, 3), [4, 4])).toBe(true);
-    expect(pyEq(_snapToPairs(raw, 1, 1), [1, 1])).toBe(true);
+    expect(valueEquals(_snapToPairs(raw, 3, 3), [4, 4])).toBe(true);
+    expect(valueEquals(_snapToPairs(raw, 1, 1), [1, 1])).toBe(true);
   });
 
   test("test_deepcopy_preserves_cos_scalars", () => {
@@ -99,7 +99,7 @@ describe("TestWriteEnginePrimitives", () => {
     const doc = makeDoc("abcdefghij\r");
     new CharacterRange(doc, 3, 7).fontSize = 72;
     const lengths = cosIter(cosItem(cosItem(cosItem(doc._doc, "0"), "6"), "0")).map((r) => cosItem(r, "1"));
-    expect(pyEq(lengths, [3, 4, 4])).toBe(true);
+    expect(valueEquals(lengths, [3, 4, 4])).toBe(true);
     expect(new CharacterRange(doc, 3, 7).fontSize).toBe(72.0);
     // key absent -> default
     expect(new CharacterRange(doc, 0, 3).fontSize).toBeNull();
@@ -127,7 +127,7 @@ describe("TestWriteEnginePrimitives", () => {
     const doc = makeDoc("AVAW\r");
     new CharacterRange(doc, 2, 4).kerning = 100;
     const runs = cosItem(cosItem(cosItem(doc._doc, "0"), "8"), "0");
-    expect(pyEq(cosAt(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
+    expect(valueEquals(cosAt(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
     expect(sum(cosIter(runs).map((r) => cosNum(cosItem(r, "1"))))).toBe(5);
   });
 });
@@ -155,8 +155,8 @@ function makeDoc(
 
   const total = u16Len(raw);
   const doc = new Map<string, CosNode>([["0", new Map<string, CosNode>([["0", raw]])]]);
-  cosSetitem(cosItem(doc, "0"), "6", runArray(pyOr(charRuns, [[total, new Map<string, CosNode>()]]), "6"));
-  cosSetitem(cosItem(doc, "0"), "5", runArray(pyOr(paraRuns, [[total, new Map<string, CosNode>()]]), "5"));
+  cosSetitem(cosItem(doc, "0"), "6", runArray(truthyOr(charRuns, [[total, new Map<string, CosNode>()]]), "6"));
+  cosSetitem(cosItem(doc, "0"), "5", runArray(truthyOr(paraRuns, [[total, new Map<string, CosNode>()]]), "5"));
   if (lineCache != null) doc.set("1", new Map<string, CosNode>([["2", lineCache]]));
   // Docs carrying a line cache act as box text (point text derives its
   // composed lines from the paragraphs and never reads the cache).
@@ -218,7 +218,7 @@ describe("TestComposedLineSpans", () => {
       ]),
     ];
     const doc = makeDoc("abcdefgh\r", null, null, cache);
-    expect(pyEq(_composedLineSpans(doc), [[0, 5], [5, 9]])).toBe(true);
+    expect(valueEquals(_composedLineSpans(doc), [[0, 5], [5, 9]])).toBe(true);
   });
 
   test("test_multiple_frames", () => {
@@ -235,7 +235,7 @@ describe("TestComposedLineSpans", () => {
       ]),
     ];
     const doc = makeDoc("abcdefgh\r", null, null, cache);
-    expect(pyEq(_composedLineSpans(doc), [[0, 4], [4, 9]])).toBe(true);
+    expect(valueEquals(_composedLineSpans(doc), [[0, 4], [4, 9]])).toBe(true);
   });
 
   test("test_box_without_cache", () => {
@@ -251,7 +251,7 @@ describe("TestComposedLineSpans", () => {
       [3, new Map<string, CosNode>()],
       [3, new Map<string, CosNode>()],
     ]);
-    expect(pyEq(_composedLineSpans(doc), [[0, 3], [3, 6]])).toBe(true);
+    expect(valueEquals(_composedLineSpans(doc), [[0, 3], [3, 6]])).toBe(true);
   });
 
   test("test_stale_cache_clamps_and_raises", () => {
@@ -264,7 +264,7 @@ describe("TestComposedLineSpans", () => {
     ];
     const doc = makeDoc("ab\r", null, null, cache);
     const first = new ComposedLineRange(doc, 0, 1);
-    expect(pyEq([first.characterStart, first.characterEnd], [0, 2])).toBe(true);
+    expect(valueEquals([first.characterStart, first.characterEnd], [0, 2])).toBe(true);
     raises(ValueError, () => new ComposedLineRange(doc, 1, 2), "ComposedLine index range");
   });
 });
@@ -325,7 +325,7 @@ describe("TestCharacterRangeMath", () => {
       [4, new Map<string, CosNode>([["57", true], ["54", red]])],
     ]);
     // Only the applyStroke run participates: uniform red, not mixed.
-    expect(pyEq(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
     // A range over non-stroked runs only reads None.
     expect(new CharacterRange(doc, 0, 3).strokeColor).toBeNull();
   });
@@ -374,7 +374,7 @@ describe("TestSpecConsistency", () => {
           `${name}: RangeField key ${repr(field.key)} != CosField key ${repr(cosField.key)}`,
         );
       }
-      const expectedDictAttr = dictGet(KIND_TO_DICT_ATTR, field.kind);
+      const expectedDictAttr = getOr(KIND_TO_DICT_ATTR, field.kind);
       if (cosField.dictAttr !== expectedDictAttr) {
         mismatches.push(
           `${name}: RangeField kind ${repr(field.kind)} vs CosField dict ` +

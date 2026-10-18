@@ -15,7 +15,7 @@ import {
   bytes_,
   decode,
   float,
-  getitem,
+  getOrThrow,
   int,
   repr,
   round,
@@ -26,7 +26,7 @@ import {
   tkey,
   zip,
   typeName,
-  pyOr,
+  truthyOr,
 } from "../../pyrt/index.ts";
 
 export const _validatePrefType = validateEnum(PREFType);
@@ -355,7 +355,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
 
   const fill = [number("Fill Red"), number("Fill Green"), number("Fill Blue")];
   if (fill.every((n) => n !== null)) {
-    const currentFill = pyOr(document.fillColor, [0.0, 0.0, 0.0]);
+    const currentFill = truthyOr(document.fillColor, [0.0, 0.0, 0.0]);
     if (zip(currentFill, fill).some(([c, n]) => differs(c, n))) {
       document.fillColor = [...fill];
     }
@@ -394,7 +394,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
       }
       const stroke = [number("Stroke Red"), number("Stroke Green"), number("Stroke Blue")];
       if (stroke.every((n) => n !== null)) {
-        const current = pyOr(document.strokeColor, [0.0, 0.0, 0.0]);
+        const current = truthyOr(document.strokeColor, [0.0, 0.0, 0.0]);
         if (zip(current, stroke).some(([c, n]) => differs(c, n))) {
           document.strokeColor = [...stroke];
         }
@@ -472,7 +472,7 @@ export class Preferences {
       const path = this._prefsDir != null ? findPrefsFile(this._prefsDir, prefType) : null;
       this._files.set(prefType, path ? PrefsFile.fromPath(path) : null);
     }
-    return getitem(this._files, prefType);
+    return getOrThrow(this._files, prefType);
   }
 
   _raw(sectionName: string, keyName: string, prefType: PREFType): string | null {
@@ -493,7 +493,7 @@ export class Preferences {
     _validatePrefType(prefType);
     const key = [PREFType.of(prefType), sectionName, keyName] as const;
     if (this._overrides.has(tkey(...key))) {
-      const value = getitem(this._overrides, tkey(...key));
+      const value = getOrThrow(this._overrides, tkey(...key));
       if (value === _DELETED) return [false, null, false];
       return [true, value, true];
     }
@@ -760,7 +760,7 @@ export class Preferences {
     for (const key of sorted([...section.keys()])) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = bytes_.split(parseHexValue(getitem(section, key)), b("\x00")).filter((p) => p?.length > 0);
+      const parts = bytes_.split(parseHexValue(getOrThrow(section, key)), b("\x00")).filter((p) => p?.length > 0);
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

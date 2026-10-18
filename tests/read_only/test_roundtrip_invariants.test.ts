@@ -8,7 +8,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { Path, len, pyAssert, pyEq, AssertionError, repr } from "../../src/pyrt/index.ts";
+import { Path, len, assert, valueEquals, AssertionError, repr } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getFirstLayer, getLayer } from "../conftest.ts";
@@ -84,7 +84,7 @@ function _findProperty(layer: Layer, matchName: string): Property | null {
 /** Find a synthesized effect property by match name. */
 function _findSynthesizedEffectProp(layer: Layer, effectIndex: number, matchName: string): Property {
   const effect = asInstance(layer.effects, PropertyGroup).properties[effectIndex];
-  pyAssert(effect instanceof PropertyGroup);
+  assert(effect instanceof PropertyGroup);
   for (const prop of effect.properties) {
     if (prop instanceof Property && prop.matchName === matchName) {
       return prop;
@@ -112,7 +112,7 @@ describe("TestSynthesizedPropertyInvisibility", () => {
     // Save WITHOUT mutating anything
     const out = tmpPath.div("untouched.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_top_level_groups_invisible", () => {
@@ -132,7 +132,7 @@ describe("TestSynthesizedPropertyInvisibility", () => {
     // Save without mutation
     const out = tmpPath.div("untouched.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 });
 
@@ -156,7 +156,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_spatial_2d_ldat", () => {
@@ -175,7 +175,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_spatial_3d_ldat", () => {
@@ -194,7 +194,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_tdum_with_effects", () => {
@@ -211,7 +211,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_nonspatial_1d_ldat", () => {
@@ -230,6 +230,6 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
+    expect(valueEquals(out.readBytes(), originalBytes)).toBe(true);
   });
 });

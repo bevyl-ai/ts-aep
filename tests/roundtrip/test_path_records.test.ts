@@ -7,9 +7,9 @@ import * as fs from "node:fs";
 import * as nodepath from "node:path";
 import {
   fspath,
-  getitem,
+  getOrThrow,
   Path,
-  pyEq,
+  valueEquals,
   type JsonValue,
 } from "../../src/pyrt/index.ts";
 import { makeTmpPath, skip } from "../../src/pyrt/pytest.ts";
@@ -34,7 +34,7 @@ function copy2(src: Path, dst: Path): void {
 
 function _counts(source: FileSource): [JsonValue, JsonValue] {
   const data = parseAlasData(source._pin.chunks);
-  return [getitem(data, "ascendcount_base"), getitem(data, "ascendcount_target")];
+  return [getOrThrow(data, "ascendcount_base"), getOrThrow(data, "ascendcount_target")];
 }
 
 /** File sources by kind: `"file"` or `"sequence"`. */
@@ -72,8 +72,8 @@ describe("TestSaveFillsCounts", () => {
     project.save(out);
     const sources = _sources(parseProjectFresh(out));
     // proj/shots/p.aep vs media/img.png and media/seq/<frame>.
-    expect(pyEq(_counts(getitem(sources, "file")), [3, 2])).toBe(true);
-    expect(pyEq(_counts(getitem(sources, "sequence")), [3, 3])).toBe(true);
+    expect(valueEquals(_counts(getOrThrow(sources, "file")), [3, 2])).toBe(true);
+    expect(valueEquals(_counts(getOrThrow(sources, "sequence")), [3, 3])).toBe(true);
   });
 
   test("test_each_save_recomputes", () => {
@@ -82,14 +82,14 @@ describe("TestSaveFillsCounts", () => {
     project.save(tmpPath.div("a.aep"));
     project.save(tmpPath.div("deep", "b.aep"));
     expect(
-      pyEq(_counts(getitem(_sources(parseProjectFresh(tmpPath.div("a.aep"))), "file")), [1, 2]),
+      valueEquals(_counts(getOrThrow(_sources(parseProjectFresh(tmpPath.div("a.aep"))), "file")), [1, 2]),
     ).toBe(true);
     expect(
-      pyEq(_counts(getitem(_sources(parseProjectFresh(tmpPath.div("deep", "b.aep"))), "file")), [2, 2]),
+      valueEquals(_counts(getOrThrow(_sources(parseProjectFresh(tmpPath.div("deep", "b.aep"))), "file")), [2, 2]),
     ).toBe(true);
     // The in-memory records stay pending for the next save.
     for (const source of _sources(project).values()) {
-      expect(pyEq(_counts(source), [PENDING_ASCENDCOUNT, PENDING_ASCENDCOUNT])).toBe(true);
+      expect(valueEquals(_counts(source), [PENDING_ASCENDCOUNT, PENDING_ASCENDCOUNT])).toBe(true);
     }
   });
 
@@ -104,8 +104,8 @@ describe("TestSaveFillsCounts", () => {
     parseAep(sample).project.save(out);
     const after = new Map<string, [JsonValue, JsonValue]>();
     for (const [k, s] of _sources(parseProjectFresh(out)).entries()) after.set(k, _counts(s));
-    expect(pyEq(after, before)).toBe(true);
-    expect(pyEq(out.readBytes(), sample.readBytes())).toBe(true);
+    expect(valueEquals(after, before)).toBe(true);
+    expect(valueEquals(out.readBytes(), sample.readBytes())).toBe(true);
   });
 
   test("test_render_output_path", () => {
@@ -118,7 +118,7 @@ describe("TestSaveFillsCounts", () => {
     const data = getRqi(parseAep(out).project, "base").outputModules[0]._alasData;
     // proj/p.aep vs a file inside renders/.
     expect(
-      pyEq([getitem(data, "ascendcount_base"), getitem(data, "ascendcount_target")], [2, 2]),
+      valueEquals([getOrThrow(data, "ascendcount_base"), getOrThrow(data, "ascendcount_target")], [2, 2]),
     ).toBe(true);
   });
 });
@@ -134,9 +134,9 @@ describe("TestPathStyleFollowsPlatform", () => {
       ["file", tmpPath.div("media", "img.png")],
       ["sequence", tmpPath.div("media", "seq")],
     ] as const) {
-      const data = parseAlasData(getitem(sources, kind)._pin.chunks);
-      expect(getitem(data, "fullpath")).toBe(platformPath(fspath(host), { windows }));
-      expect(getitem(data, "platform")).toBe(windows ? 1 : 2);
+      const data = parseAlasData(getOrThrow(sources, kind)._pin.chunks);
+      expect(getOrThrow(data, "fullpath")).toBe(platformPath(fspath(host), { windows }));
+      expect(getOrThrow(data, "platform")).toBe(windows ? 1 : 2);
     }
   });
 
@@ -148,8 +148,8 @@ describe("TestPathStyleFollowsPlatform", () => {
     const out = tmpPath.div("proj", "shots", "p.aep");
     project.save(out);
     const sources = _sources(parseProjectFresh(out));
-    expect(pyEq(_counts(getitem(sources, "file")), [3, 2])).toBe(true);
-    expect(pyEq(_counts(getitem(sources, "sequence")), [3, 3])).toBe(true);
+    expect(valueEquals(_counts(getOrThrow(sources, "file")), [3, 2])).toBe(true);
+    expect(valueEquals(_counts(getOrThrow(sources, "sequence")), [3, 3])).toBe(true);
   });
 
   test("test_reload_reads_the_host_file", () => {
@@ -157,7 +157,7 @@ describe("TestPathStyleFollowsPlatform", () => {
     if (process.platform === "win32" && !fspath(tmpPath).toUpperCase().startsWith("C:")) {
       return skip("only the system drive maps back to a macOS path");
     }
-    const source = getitem(_sources(_projectWithMedia(tmpPath, OTHER)), "file");
+    const source = getOrThrow(_sources(_projectWithMedia(tmpPath, OTHER)), "file");
     source.reload();
     expect(source._sspc.width).toBe(640);
   });

@@ -15,7 +15,7 @@ import {
   ValueError,
   descriptor,
   int,
-  pyAssert,
+  assert,
   type PathLike,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -155,7 +155,7 @@ export function _syncProxyActive(obj: AVItem): void {
   // idta 0x38 records that a proxy is assigned, not that it is in use:
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
-  pyAssert(obj._idta != null);
+  assert(obj._idta != null);
   obj._idta._proxyActive = int(obj._proxySource != null);
   obj._syncModifiedTime();
 }
@@ -255,7 +255,7 @@ export class AVItem extends Item {
       }
     }
     if (this._viewer != null) {
-      pyAssert(this._parentFolder != null);
+      assert(this._parentFolder != null);
       // NOTE(port): Python `list.remove` uses `==`; `Viewer` defines no `__eq__` (viewer.py), so identity matches.
       const idx = this._parentFolder._viewers.indexOf(this._viewer);
       if (idx < 0) {

@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { Path, contains, dictGet, getitem, len, pyEq } from "../../src/pyrt/index.ts";
+import { Path, contains, getOr, getOrThrow, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -31,7 +31,7 @@ test.each([
   const project = parseProject(FORMAT_DIR.div(folder, "base.aep"));
   const lom = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0]._parentRqi._lom;
   const aeRopt = findByType(lom.chunks, "Ropt");
-  expect(pyEq(new chunkCls({}).tobytes(), aeRopt.tobytes())).toBe(true);
+  expect(valueEquals(new chunkCls({}).tobytes(), aeRopt.tobytes())).toBe(true);
 });
 
 /** Parse a Cineon sample and return its CineonFormatOptions. */
@@ -275,27 +275,27 @@ describe("TestAviFormatOptions", () => {
   /** Audio interleave 'None' has no ADBEAudioInterleave param. */
   test("test_audio_interleave_none", () => {
     const opts = _aviOpts("audio_interleave_none");
-    expect(dictGet(opts.params, "ADBEAudioInterleave")).toBe(null);
+    expect(getOr(opts.params, "ADBEAudioInterleave")).toBe(null);
   });
 
   test("test_audio_interleave_1_frame", () => {
     const opts = _aviOpts("audio_interleave_1_frame");
-    expect(getitem(opts.params, "ADBEAudioInterleave")).toBe("1");
+    expect(getOrThrow(opts.params, "ADBEAudioInterleave")).toBe("1");
   });
 
   test("test_audio_interleave_half_second", () => {
     const opts = _aviOpts("audio_interleave_half_second");
-    expect(getitem(opts.params, "ADBEAudioInterleave")).toBe("2");
+    expect(getOrThrow(opts.params, "ADBEAudioInterleave")).toBe("2");
   });
 
   test("test_audio_interleave_1_second", () => {
     const opts = _aviOpts("audio_interleave_1_second");
-    expect(getitem(opts.params, "ADBEAudioInterleave")).toBe("3");
+    expect(getOrThrow(opts.params, "ADBEAudioInterleave")).toBe("3");
   });
 
   test("test_audio_interleave_2_seconds", () => {
     const opts = _aviOpts("audio_interleave2_seconds");
-    expect(getitem(opts.params, "ADBEAudioInterleave")).toBe("4");
+    expect(getOrThrow(opts.params, "ADBEAudioInterleave")).toBe("4");
   });
 });
 
@@ -346,14 +346,14 @@ describe("TestH264FormatOptions", () => {
     const opts = asInstance(asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     expect(opts.mpegAudioFormat).toBe(MPEGAudioFormat.MPEG);
-    expect(getitem(opts.params, "ADBEMPEGAudioLayer")).toBe("1");
+    expect(getOrThrow(opts.params, "ADBEMPEGAudioLayer")).toBe("1");
   });
 
   test("test_mpeg_audio_layer_ii", () => {
     const project = parseProject(FORMAT_DIR.div("h.264", "audio_format_mpeg_layer_II.aep"));
     const opts = asInstance(asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
     expect(opts instanceof XmlFormatOptions).toBe(true);
-    expect(getitem(opts.params, "ADBEMPEGAudioLayer")).toBe("2");
+    expect(getOrThrow(opts.params, "ADBEMPEGAudioLayer")).toBe("2");
   });
 
   /** PCM audio format sample. */

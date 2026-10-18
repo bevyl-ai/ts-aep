@@ -11,7 +11,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { raises } from "../../src/pyrt/pytest.ts";
-import { encode, pyEq } from "../../src/pyrt/index.ts";
+import { encode, valueEquals } from "../../src/pyrt/index.ts";
 import { AiLayer, UnsupportedAiLayersError, readAiLayerOcgs, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 
 /** A minimal PDF body whose catalog carries `oc_properties`. */
@@ -47,7 +47,7 @@ describe("TestStaleGroups", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]>>>>");
 
     expect(
-      pyEq(
+      valueEquals(
         asFields(readAiLayerOcgs("probe.ai", data)),
         asFields([new AiLayer(11, "Hidden", true), new AiLayer(12, "Visible", true)]),
       ),
@@ -58,20 +58,20 @@ describe("TestStaleGroups", () => {
   test("test_order_decides_membership_not_order", () => {
     const data = _pdf("<</OCGs[12 0 R 11 0 R]/D<</Order[11 0 R 12 0 R]>>>>");
 
-    expect(pyEq(readAiLayers("probe.ai", data), ["Visible", "Hidden"])).toBe(true);
+    expect(valueEquals(readAiLayers("probe.ai", data), ["Visible", "Hidden"])).toBe(true);
   });
 
   /** Illustrator sublayers nest, with an optional label string first. */
   test("test_nested_order_entries_count_as_members", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</Order[(Set)[12 0 R] 11 0 R]>>>>");
 
-    expect(pyEq(readAiLayers("probe.ai", data), ["Hidden", "Visible"])).toBe(true);
+    expect(valueEquals(readAiLayers("probe.ai", data), ["Hidden", "Visible"])).toBe(true);
   });
 
   test("test_a_file_without_order_keeps_every_group", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</BaseState/ON>>>>");
 
-    expect(pyEq(readAiLayers("probe.ai", data), ["Stale", "Hidden", "Visible"])).toBe(true);
+    expect(valueEquals(readAiLayers("probe.ai", data), ["Stale", "Hidden", "Visible"])).toBe(true);
   });
 
   test("test_no_group_survives_the_filter_raises", () => {
@@ -93,7 +93,7 @@ describe("TestVisibility", () => {
     const data = _pdf("<</OCGs[11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]/OFF[11 0 R]>>>>");
 
     expect(
-      pyEq(
+      valueEquals(
         asFields(readAiLayerOcgs("probe.ai", data)),
         asFields([new AiLayer(11, "Hidden", false), new AiLayer(12, "Visible", true)]),
       ),
@@ -104,7 +104,7 @@ describe("TestVisibility", () => {
     const data = _pdf("<</OCGs[11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]>>>>");
 
     expect(
-      pyEq(
+      valueEquals(
         readAiLayerOcgs("probe.ai", data).map((layer) => layer.visible),
         [true, true],
       ),

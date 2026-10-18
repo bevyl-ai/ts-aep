@@ -17,7 +17,7 @@ import {
   deferred,
   descriptor,
   getattr,
-  pyAssert,
+  assert,
   repr,
   round,
   zip,
@@ -778,7 +778,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   get inTemporalEase(): KeyframeEase[] {
     this._ensureEase();
-    pyAssert(this._inTemporalEase != null);
+    assert(this._inTemporalEase != null);
     return this._resolveEase(this._inTemporalEase, "in");
   }
 
@@ -799,7 +799,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   get outTemporalEase(): KeyframeEase[] {
     this._ensureEase();
-    pyAssert(this._outTemporalEase != null);
+    assert(this._outTemporalEase != null);
     return this._resolveEase(this._outTemporalEase, "out");
   }
 
@@ -852,7 +852,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     }
     this._ensureEase();
     const backing = direction === "in" ? this._inTemporalEase : this._outTemporalEase;
-    pyAssert(backing != null);
+    assert(backing != null);
     if (backing.length === 0) {
       // Marker and other ease-less keyframe types have nowhere to
       // store it; ExtendScript's setTemporalEaseAtKey rejects them too.

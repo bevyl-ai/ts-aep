@@ -1,7 +1,7 @@
 /** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
-import { at, bytesEq, getattr, pyAssert, pyBool, pyEq, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, bytesEq, getattr, assert, truthy, valueEquals, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -58,7 +58,7 @@ describe("TestSvgImportBasics", () => {
   test("test_creates_comp_and_single_shape_layer", () => {
     const [_app, comp] = _import("svg");
     expect(comp.name).toBe("svg.svg");
-    expect(pyEq([comp.width, comp.height], [1070, 456])).toBe(true);
+    expect(valueEquals([comp.width, comp.height], [1070, 456])).toBe(true);
     expect(comp.frameRate).toBe(30.0);
     expect(comp.layers.length).toBe(1);
     expect(comp.layers[0] instanceof ShapeLayer).toBe(true);
@@ -111,7 +111,7 @@ describe("TestSvgImportBasics", () => {
 describe("TestSvgImportGradients", () => {
   test("test_butterfly_gradient_fills", () => {
     const [_app, comp] = _import("butterfly");
-    expect(pyEq([comp.width, comp.height], [2434, 1699])).toBe(true);
+    expect(valueEquals([comp.width, comp.height], [2434, 1699])).toBe(true);
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     let gfills = 0;
     for (const group of contents.properties) {
@@ -170,7 +170,7 @@ describe("TestSvgImportGradients", () => {
     }
     // Five radial gradients: four stretched wings (200/200/300/400) plus
     // the unstretched body (100).
-    expect(pyEq(sorted(scalesY.map((s) => round(s))), [100, 200, 200, 300, 400])).toBe(true);
+    expect(valueEquals(sorted(scalesY.map((s) => round(s))), [100, 200, 200, 300, 400])).toBe(true);
   });
 });
 
@@ -205,7 +205,7 @@ describe("TestSvgImportAeConventions", () => {
       .property("ADBE Vectors Group")
       .property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape").value;
-    expect(pyEq(shape.vertices, [[-40.0, 20.0], [40.0, 20.0]])).toBe(true);
+    expect(valueEquals(shape.vertices, [[-40.0, 20.0], [40.0, 20.0]])).toBe(true);
   });
 
   test("test_line_has_no_fill", () => {
@@ -216,7 +216,7 @@ describe("TestSvgImportAeConventions", () => {
       _importText(tmpPath, '<line x1="20" y1="30" x2="150" y2="170" stroke="#000"/>'),
     );
     const kinds = group.property("ADBE Vectors Group").properties.map((c) => c.matchName);
-    expect(pyEq(kinds, ["ADBE Vector Shape - Group", "ADBE Vector Graphic - Stroke"])).toBe(true);
+    expect(valueEquals(kinds, ["ADBE Vector Shape - Group", "ADBE Vector Graphic - Stroke"])).toBe(true);
   });
 
   test("test_duplicate_alpha_stops_collapse", () => {
@@ -236,9 +236,9 @@ describe("TestSvgImportAeConventions", () => {
     );
     const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
     const grad = fill.property("ADBE Vector Grad Colors").value;
-    expect(pyEq(grad.colorStops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
+    expect(valueEquals(grad.colorStops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
     expect(
-      pyEq(
+      valueEquals(
         grad.alphaStops.map((s) => [s.offset, s.alpha]),
         [
           [0.0, 1.0],
@@ -288,7 +288,7 @@ describe("TestSvgImportAeConventions", () => {
     const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
     const grad = fill.property("ADBE Vector Grad Colors").value;
     expect(
-      pyEq(
+      valueEquals(
         grad.alphaStops.map((s) => [s.offset, round(s.alpha, 4)]),
         [
           [0.0, 1.0],
@@ -368,7 +368,7 @@ describe("TestSvgImportByteFidelity", () => {
     const anchor = layer.transform.property("ADBE Anchor Point");
     anchor.value = [535.0, 228.0, 0.0];
     const cdat = findByType(anchor._tdbs.chunks, "cdat");
-    expect(pyEq(Array.from(cdat.values).slice(0, 3), [535.0, 228.0, 0.0])).toBe(true);
+    expect(valueEquals(Array.from(cdat.values).slice(0, 3), [535.0, 228.0, 0.0])).toBe(true);
   });
 
   test("test_vector_materials_group_tdsb_collapsed", () => {
@@ -380,7 +380,7 @@ describe("TestSvgImportByteFidelity", () => {
     const contents = layer.property("ADBE Root Vectors Group");
     const group = contents.addProperty("ADBE Vector Group");
     const materials = group.property("ADBE Vector Materials Group");
-    pyAssert(materials._tdgp != null);
+    assert(materials._tdgp != null);
     const tdsb = findByTypeOrNull(materials._tdgp.chunks, "tdsb");
     if (tdsb == null) throw new StopIteration();
     expect(tdsb._enableFlags).toBe(3);
@@ -404,11 +404,11 @@ describe("TestSvgImportByteFidelity", () => {
       const merges = inner.properties.filter((c) => c.matchName === "ADBE Vector Filter - Merge");
       if (nshapes > 1) {
         multi += 1;
-        pyAssert(merges.length === 1, `${group.name}: nshapes=${nshapes}`);
+        assert(merges.length === 1, `${group.name}: nshapes=${nshapes}`);
         expect(asInstance(asInstance(merges[0], PropertyGroup).property("ADBE Vector Merge Type"), Property).value).toBe(1.0);
       } else {
         single += 1;
-        pyAssert(!pyBool(merges), `${group.name} (single subpath) has a Merge`);
+        assert(!truthy(merges), `${group.name} (single subpath) has a Merge`);
       }
     }
     expect(multi).toBe(3);
@@ -430,17 +430,17 @@ describe("TestSvgImportByteFidelity", () => {
     app.project.save(out);
 
     const reparsed = parse(out);
-    const item = [...reparsed.project.items.values()].find((item) => pyBool(getattr(item, "layers", null)));
+    const item = [...reparsed.project.items.values()].find((item) => truthy(getattr(item, "layers", null)));
     if (item == null) throw new StopIteration();
     const layer = asInstance(item, CompItem).layers[0];
     const styles = layer.property("ADBE Layer Styles");
     expect(styles instanceof PropertyGroup).toBe(true);
     expect(styles.enabled).toBe(false);
-    pyAssert(styles._tdsb != null && styles._tdsb.synthetic === false);
+    assert(styles._tdsb != null && styles._tdsb.synthetic === false);
     expect(styles._tdsb._enableFlags).toBe(3); // enabled+collapsed parent
     for (const child of styles.properties) {
-      pyAssert(child.enabled === false, child.matchName);
-      pyAssert(child._tdsb != null);
+      assert(child.enabled === false, child.matchName);
+      assert(child._tdsb != null);
       // Blending Options mirrors the parent (3); the 10 style toggles
       // are disabled (2 = bit 0 clear).
       const expected = child.matchName === "ADBE Blend Options Group" ? 3 : 2;

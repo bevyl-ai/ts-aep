@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, pyEq } from "../../src/pyrt/index.ts";
+import { Path, b, bytes_, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../../src/py_aep/binary/render_chunks.ts";
 import { OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
@@ -93,7 +93,7 @@ test("test_output_module_preserves_noncanonical_true_byte", () => {
   const settings = OutputModuleSettingsItem.frombytes(new Uint8Array(raw));
 
   expect(settings.includeProjectLink).toBe(true);
-  expect(pyEq(settings.tobytes(), raw)).toBe(true);
+  expect(valueEquals(settings.tobytes(), raw)).toBe(true);
 });
 
 test("test_output_module_template_copy_preserves_include_project_link_byte", () => {
@@ -257,7 +257,7 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     // Empty-named entry at raw index 0; raw default index 2 ("Best").
     TestRenderTemplatesDefaultIndex._write_render_prefs(tmpPath, 2, ["", "Draft", "Best"]);
     const [templates, default_] = parseRenderTemplates(tmpPath);
-    expect(pyEq(templates.map((t) => t.cleanTemplateName), ["Draft", "Best"])).toBe(true);
+    expect(valueEquals(templates.map((t) => t.cleanTemplateName), ["Draft", "Best"])).toBe(true);
     expect(default_).toBe(1);
     if (default_ == null) throw new Error("no default render template");
     expect(templates[default_].cleanTemplateName).toBe("Best");
@@ -276,7 +276,7 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     // _HIDDEN entry at raw index 0; raw default index 1 ("Lossless").
     TestRenderTemplatesDefaultIndex._write_output_prefs(tmpPath, 1, ["_HIDDEN X", "Lossless", "TIFF"]);
     const [templates, default_] = parseOutputTemplates(tmpPath);
-    expect(pyEq(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
+    expect(valueEquals(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
     expect(default_).toBe(0);
     if (default_ == null) throw new Error("no default output template");
     expect(templates[default_].name).toBe("Lossless");

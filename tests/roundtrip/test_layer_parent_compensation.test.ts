@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, float, getitem, max, Path, pyEq, range, round, StopIteration, zip, AssertionError } from "../../src/pyrt/index.ts";
+import { at, float, getOrThrow, max, Path, valueEquals, range, round, StopIteration, zip, AssertionError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { buildWorldMatrix, type Mat4 } from "../../src/py_aep/resolvers/transform.ts";
@@ -174,12 +174,12 @@ describe("TestParentCameraIsAlwaysThreeD", () => {
     camera.parent = target;
 
     expect(
-      pyEq(
+      valueEquals(
         ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"].map((name) => asInstance(camera.transform.property(name), Property).value),
         rotationsBefore,
       ),
     ).toBe(true);
-    expect(pyEq(camera.transform.property("ADBE Orientation").value, orientationBefore)).toBe(false);
+    expect(valueEquals(camera.transform.property("ADBE Orientation").value, orientationBefore)).toBe(false);
   });
 });
 
@@ -255,7 +255,7 @@ describe("TestParentCompensationConvention", () => {
     child.parent = parent;
 
     expect(_worldDelta(before, buildWorldMatrix(child))).toBeLessThan(1e-9);
-    expect(pyEq([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, 15.0], [2.0, 75.0]])).toBe(true);
+    expect(valueEquals([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, 15.0], [2.0, 75.0]])).toBe(true);
     expect(approx(child.transform.property("ADBE Orientation").value, [358.013, 39.627, 337.08], { abs: 0.001 })).toBe(true);
   });
 
@@ -458,7 +458,7 @@ describe("TestParentKeyframedChild", () => {
     child.parent = parent;
 
     expect(_worldDelta(before, buildWorldMatrix(child))).toBeLessThan(1e-9);
-    expect(pyEq([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, -15.0], [2.0, 45.0]])).toBe(true);
+    expect(valueEquals([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, -15.0], [2.0, 45.0]])).toBe(true);
   });
 
   test("test_keyframed_scale_is_left_alone", () => {
@@ -488,9 +488,9 @@ describe("TestParentKeyframedChild", () => {
     child.parent = parent;
 
     for (const time of [0.0, 2.0]) {
-      expect(_worldDelta(getitem(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
+      expect(_worldDelta(getOrThrow(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
     }
-    expect(pyEq([...scale.keyframes].map((k) => k.value), [[100.0, 100.0, 100.0], [250.0, 60.0, 100.0]])).toBe(true);
+    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[100.0, 100.0, 100.0], [250.0, 60.0, 100.0]])).toBe(true);
   });
 
   test("test_animated_parent_is_compensated_at_time_zero_only", () => {
@@ -520,7 +520,7 @@ describe("TestParentKeyframedChild", () => {
 
     expect(_worldDelta(before, buildWorldMatrix(child, 0.0))).toBeLessThan(1e-9);
     expect(approx(child.transform.property("ADBE Position").value, [-150.0, 120.0, 0.0])).toBe(true);
-    expect(pyEq(child.transform.property("ADBE Position").keyframes, [])).toBe(true);
+    expect(valueEquals(child.transform.property("ADBE Position").keyframes, [])).toBe(true);
   });
 });
 
@@ -561,9 +561,9 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(pyEq([...scale.keyframes].map((k) => k.value), [[200.0, 200.0, 200.0], [500.0, 120.0, 200.0]])).toBe(true);
+    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[200.0, 200.0, 200.0], [500.0, 120.0, 200.0]])).toBe(true);
     for (const time of [0.0, 2.0]) {
-      expect(_worldDelta(getitem(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
+      expect(_worldDelta(getOrThrow(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
     }
   });
 
@@ -573,7 +573,7 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(pyEq([...scale.keyframes].map((k) => k.value), [[50.0, 200.0, 100.0], [125.0, 120.0, 100.0]])).toBe(true);
+    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[50.0, 200.0, 100.0], [125.0, 120.0, 100.0]])).toBe(true);
   });
 
   test("test_keyframed_position_remap_includes_the_parent_scale", () => {
@@ -595,7 +595,7 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(pyEq([...position.keyframes].map((k) => k.value), [[-300.0, 240.0, 0.0], [200.0, 920.0, 0.0]])).toBe(true);
+    expect(valueEquals([...position.keyframes].map((k) => k.value), [[-300.0, 240.0, 0.0], [200.0, 920.0, 0.0]])).toBe(true);
   });
 });
 
@@ -710,6 +710,6 @@ describe.skipIf(!TRANSFORM_FIXTURES.isDir())("TestUnparentAgainstAeFixtures", ()
 
     child.parent = null;
 
-    expect(pyEq(_snapshot(child), expected)).toBe(true);
+    expect(valueEquals(_snapshot(child), expected)).toBe(true);
   });
 });

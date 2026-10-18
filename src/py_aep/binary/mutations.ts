@@ -10,13 +10,13 @@ import {
   copy,
   encode,
   floordiv,
-  getitem,
+  getOrThrow,
   len,
   rstrip,
   struct,
   ValueError,
-  pyAssert,
-  pyOr,
+  assert,
+  truthyOr,
 } from "../../pyrt/index.ts";
 import { aeWrites } from "../ae_version.ts";
 import { DROPDOWN_CONTROL } from "../data/dropdown_control.ts";
@@ -360,7 +360,7 @@ export function buildParallelLdatItem(
   itemType: LdatItemType,
   orientationValues: number[] | null = null,
 ): LdatItem {
-  const itemSize = getitem(ITEM_SIZE_BY_TYPE, itemType);
+  const itemSize = getOrThrow(ITEM_SIZE_BY_TYPE, itemType);
   // Orientation shares the valueless 48-byte ease prefix with shape and
   // gradient keys; only the trailing padding (which holds a copy of the
   // angles) differs.
@@ -434,7 +434,7 @@ export function buildShap(
   });
   const inner = new ListChunk({ listType: "list", chunks: [lhd3, ldat] });
   const omtn = new OmtnChunk({
-    tensions: pyOr(tensions, []).map((t) => new TensionItem({ value: t })),
+    tensions: truthyOr(tensions, []).map((t) => new TensionItem({ value: t })),
   });
   const chunks: Chunk[] = [shph, inner, omtn];
   if (featherPoints != null && featherPoints.length > 0) {
@@ -790,7 +790,7 @@ export function buildPinList(
     chunks: [
       sspc,
       new Utf8Chunk({ value: layerName }),
-      ...pyOr(pathChunks, []),
+      ...truthyOr(pathChunks, []),
       opti,
       PguiChunk.new_(),
       clrs,
@@ -924,9 +924,9 @@ export function buildDefaultMaskShape(
   const { aspect, rotoBezier = false } = kw;
   const raw = bytes_.fromhex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
   const oms = readChunks(new BytesIO(raw), raw.length)[0];
-  pyAssert(oms instanceof ListChunk);
+  assert(oms instanceof ListChunk);
   const tdbs = oms.chunks[0];
-  pyAssert(tdbs instanceof ListChunk);
+  assert(tdbs instanceof ListChunk);
   for (const c of tdbs.chunks) {
     if (c instanceof Tdb4Chunk) {
       c._timeBase = timeBase;

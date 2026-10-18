@@ -7,9 +7,9 @@ import {
   descriptor,
   float,
   int,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   rstrip,
   sorted,
   str,
@@ -339,7 +339,7 @@ export class TextDocument {
     const override = this._overrideOf("autoLeading", isBool);
     if (override != null) return override;
     if (this._charStyle == null) return true;
-    return pyBool(cosGetOr(this._charStyle, "4", true));
+    return truthy(cosGetOr(this._charStyle, "4", true));
   }
 
   set autoLeading(value: boolean) {
@@ -425,11 +425,11 @@ export class TextDocument {
     const charStyle = cosItem(cosItem(cosItem(cosAt(cosItem(cosItem(cosItem(doc, "0"), "6"), "0"), 0), "0"), "0"), "6");
     const paraStyle = cosItem(cosItem(cosItem(cosAt(cosItem(cosItem(cosItem(doc, "0"), "5"), "0"), 0), "0"), "0"), "5");
     // The template is fixed: every dict it is read as is one.
-    pyAssert(charStyle instanceof Map && paraStyle instanceof Map);
+    assert(charStyle instanceof Map && paraStyle instanceof Map);
     const fonts = cosIter(cosItem(cosItem(cosItem(cos, "0"), "1"), "0")).map((entry) => {
       const fontEntry = cosItem(entry, "0");
       const fontData = cosItem(fontEntry, "0");
-      pyAssert(fontEntry instanceof Map && fontData instanceof Map);
+      assert(fontEntry instanceof Map && fontData instanceof Map);
       return new FontObject({ _fontData: fontData, _fontEntry: fontEntry });
     });
     this._charStyle = charStyle;
@@ -843,8 +843,8 @@ export class TextDocument {
     const engineInfo = cosGet(this._cosData, "1", "4");
     if (engineInfo instanceof Map) {
       const engineName = engineInfo.get("3");
-      if (pyEq(engineName, "DVA")) return ComposerEngine.LATIN_CJK_ENGINE;
-      if (pyEq(engineName, "Universal")) return ComposerEngine.UNIVERSAL_TYPE_ENGINE;
+      if (valueEquals(engineName, "DVA")) return ComposerEngine.LATIN_CJK_ENGINE;
+      if (valueEquals(engineName, "Universal")) return ComposerEngine.UNIVERSAL_TYPE_ENGINE;
     }
     return null;
   }
@@ -900,7 +900,7 @@ export class TextDocument {
     this._markFrameLayoutDirty();
     const eight = cosSetdefault(cosSetdefault(this._cosData, "0", new Map()), "8", new Map());
     const slot = cosSetdefault(eight, "0", [new Map()]);
-    if (!pyBool(slot)) cosAppend(slot, new Map());
+    if (!truthy(slot)) cosAppend(slot, new Map());
     return cosSetdefault(cosAt(slot, 0), "0", new Map());
   }
 
@@ -984,7 +984,7 @@ export class TextDocument {
     const width = Math.abs(cosNum(coords[12]) - cosNum(coords[0]));
     const height = Math.abs(cosNum(coords[13]) - cosNum(coords[1]));
     const frame = this._boxFrame();
-    pyAssert(frame != null);
+    assert(frame != null);
     cosSetitem(cosItem(frame, "1"), "0", _boxCoords(value[0], value[1], width, height));
     this._propagateCos();
   }

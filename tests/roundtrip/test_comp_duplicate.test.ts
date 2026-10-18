@@ -25,15 +25,15 @@ import {
   BytesIO,
   bytes_,
   contains,
-  dictGet,
+  getOr,
   enumerate,
-  getitem,
+  getOrThrow,
   len,
   max,
   Path,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   StopIteration,
   zip,
 } from "../../src/pyrt/index.ts";
@@ -106,8 +106,8 @@ function _graph(comp: CompItem): Map<string, unknown> {
     layers.push(
       new Map<string, unknown>([
         ["name", layer.name],
-        ["parent", ld.parentId ? dictGet(pos, ld.parentId) : null],
-        ["matte", matte ? dictGet(pos, matte) : null],
+        ["parent", ld.parentId ? getOr(pos, ld.parentId) : null],
+        ["matte", matte ? getOr(pos, matte) : null],
         ["source", ld.sourceId],
         ["override_uuids", [...layer.essentialPropertyUuids]],
       ]),
@@ -115,14 +115,14 @@ function _graph(comp: CompItem): Map<string, unknown> {
   }
   const tdpi = recursiveFind(comp._itemList.chunks, "tdpi").map((c) => {
     const v = c.value;
-    return dictGet(pos, v, ["ext", v]);
+    return getOr(pos, v, ["ext", v]);
   });
   const eg = comp.motionGraphicsControllers.map(
     (ctrl) =>
       new Map<string, unknown>([
         ["name", ctrl.name],
         ["comp_is_self", ctrl.sourceCompId === comp.id],
-        ["layer_pos", dictGet(pos, ctrl.sourceLayerId || -1)],
+        ["layer_pos", getOr(pos, ctrl.sourceLayerId || -1)],
       ]),
   );
   return new Map<string, unknown>([
@@ -154,7 +154,7 @@ describe("TestDuplicateAgainstAE", () => {
     const project = parseProjectFresh(SAMPLE);
     const pyDup = _comp(project, "DupSrc").duplicate();
     const aeDup = _comp(project, "DupSrc 2");
-    expect(pyEq(_graph(pyDup), _graph(aeDup))).toBe(true);
+    expect(valueEquals(_graph(pyDup), _graph(aeDup))).toBe(true);
   });
 
   test("test_id_uniqueness_and_counter_invariant", () => {
@@ -176,7 +176,7 @@ describe("TestDuplicateAgainstAE", () => {
     expect(dup.name).toBe("DupSrc 3");
     const folderItems = asInstance(src.parentFolder, FolderItem).items;
     expect(folderItems.indexOf(dup)).toBe(folderItems.indexOf(src) + 1);
-    expect(getitem(project.items, dup.id)).toBe(dup);
+    expect(getOrThrow(project.items, dup.id)).toBe(dup);
   });
 
   test("test_eg_controller_identity", () => {
@@ -187,7 +187,7 @@ describe("TestDuplicateAgainstAE", () => {
     const dupCtrls = dup.motionGraphicsControllers;
     expect(len(dupCtrls)).toBe(len(src.motionGraphicsControllers));
     const shared = [...new Set(dupCtrls.map((c) => c.uuid))].filter((u) => srcUuids.has(u));
-    expect(pyBool(shared)).toBe(false);
+    expect(truthy(shared)).toBe(false);
     // The three CIF containers must carry the SAME fresh uuid per
     // controller (AE keeps them in sync; matched by old uuid).
     const uuidsPerContainer = _cctls(dup).map(
@@ -202,7 +202,7 @@ describe("TestDuplicateAgainstAE", () => {
       expect(ccid.value).toBe(dup.id);
       for (const chunk of cctl.chunks) {
         if (["CVal", "CDef"].includes(chunk.chunkType)) {
-          expect(pyEq(chunk.data, bytes_.repeat(b("\x00"), len(chunk.data)))).toBe(true);
+          expect(valueEquals(chunk.data, bytes_.repeat(b("\x00"), len(chunk.data)))).toBe(true);
         }
       }
     }
@@ -213,11 +213,11 @@ describe("TestDuplicateAgainstAE", () => {
     const src = _comp(project, "DupSrc");
     const dup = src.duplicate();
     // Layer sources (solid footage, the Inner precomp) are shared.
-    expect(pyEq(dup.layers.map((la) => la._ldta.sourceId), src.layers.map((la) => la._ldta.sourceId))).toBe(true);
+    expect(valueEquals(dup.layers.map((la) => la._ldta.sourceId), src.layers.map((la) => la._ldta.sourceId))).toBe(true);
     // Layer-side Essential Properties override uuids reference the
     // SOURCE comp's controllers and must stay verbatim.
     expect(
-      pyEq(
+      valueEquals(
         dup.layers.map((la) => la.essentialPropertyUuids),
         src.layers.map((la) => la.essentialPropertyUuids),
       ),
@@ -251,18 +251,18 @@ describe("TestDuplicateAgainstAE", () => {
     idMap.set(pyDup.id, aeDup.id);
 
     for (const ld of pyLdta) {
-      ld.layerId = getitem(idMap, ld.layerId);
+      ld.layerId = getOrThrow(idMap, ld.layerId);
       if (idMap.has(ld.parentId)) {
-        ld.parentId = getitem(idMap, ld.parentId);
+        ld.parentId = getOrThrow(idMap, ld.parentId);
       }
       const matte = ld.matteLayerId;
       if (matte != null && idMap.has(matte)) {
-        ld.matteLayerId = getitem(idMap, matte);
+        ld.matteLayerId = getOrThrow(idMap, matte);
       }
     }
     for (const tdpi of recursiveFind(pyDup._itemList.chunks, "tdpi")) {
       if (idMap.has(tdpi.value)) {
-        tdpi.value = getitem(idMap, tdpi.value);
+        tdpi.value = getOrThrow(idMap, tdpi.value);
       }
     }
     const pyIdta = pyDup._idta;
@@ -284,7 +284,7 @@ describe("TestDuplicateAgainstAE", () => {
         if (["CCId", "CLId"].includes(chunk.chunkType)) {
           const ref = asInstance(chunk, U4Chunk);
           if (idMap.has(ref.value)) {
-            ref.value = getitem(idMap, ref.value);
+            ref.value = getOrThrow(idMap, ref.value);
           }
         }
       }
@@ -315,7 +315,7 @@ describe("TestDuplicateAgainstAE", () => {
     const pyChildren = pyDup._itemList.chunks;
     expect(len(aeChildren)).toBe(len(pyChildren));
     for (const [i, [a, p]] of enumerate(zip(aeChildren, pyChildren))) {
-      pyAssert(pyEq(_chunkBytes(a), _chunkBytes(p)), `child ${i} differs`);
+      assert(valueEquals(_chunkBytes(a), _chunkBytes(p)), `child ${i} differs`);
     }
   });
 
@@ -332,14 +332,14 @@ describe("TestDuplicateAgainstAE", () => {
     const b_ = next(dup.layers, (la) => la.name === "B");
     expect(b_.parent).toBe(a);
     expect(a._ldta.matteLayerId).toBe(b_.id);
-    expect(pyBool(a.transform.property("ADBE Opacity").expressionEnabled)).toBe(true);
+    expect(truthy(a.transform.property("ADBE Opacity").expressionEnabled)).toBe(true);
     const innerLayer = next(dup.layers, (la) => la.name === "Inner");
     const overrides = asInstance(
       next(innerLayer.properties, (p) => p.matchName === "ADBE Layer Overrides"),
       PropertyGroup,
     );
-    expect(pyEq(overrides.properties.map((p) => asInstance(p, Property).value), [42.0])).toBe(true);
-    expect(pyEq(dup.motionGraphicsControllers.map((c) => c.sourceCompId), [dup.id])).toBe(true);
+    expect(valueEquals(overrides.properties.map((p) => asInstance(p, Property).value), [42.0])).toBe(true);
+    expect(valueEquals(dup.motionGraphicsControllers.map((c) => c.sourceCompId), [dup.id])).toBe(true);
     const ids = _allIds(project2);
     expect(len(ids)).toBe(len(new Set(ids)));
     expect(project2._head.nextItemId > max(ids)).toBe(true);
@@ -353,7 +353,7 @@ describe("TestDuplicateEdgeCases", () => {
     // comp) - shared with the original, never remapped.
     const project = parseProjectFresh(EG_SAMPLE);
     const host = _comp(project, "image_with_alpha 2");
-    const original = next(host.layers, (la) => pyBool(la.essentialPropertyUuids));
+    const original = next(host.layers, (la) => truthy(la.essentialPropertyUuids));
     const origAlt = asInstance(
       at(
         asInstance(next(original.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties,
@@ -361,7 +361,7 @@ describe("TestDuplicateEdgeCases", () => {
       ),
       Property,
     );
-    pyAssert(origAlt.alternateSource != null);
+    assert(origAlt.alternateSource != null);
 
     const dup = host.duplicate();
     const out = tmpPath.div("dup.aep");
@@ -369,14 +369,14 @@ describe("TestDuplicateEdgeCases", () => {
 
     const project2 = parseProjectFresh(out);
     const dup2 = _comp(project2, dup.name);
-    const layer = next(dup2.layers, (la) => pyBool(la.essentialPropertyUuids));
-    expect(pyEq(layer.essentialPropertyUuids, original.essentialPropertyUuids)).toBe(true);
+    const layer = next(dup2.layers, (la) => truthy(la.essentialPropertyUuids));
+    expect(valueEquals(layer.essentialPropertyUuids, original.essentialPropertyUuids)).toBe(true);
     const alt = asInstance(
       at(asInstance(next(layer.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties, 0),
       Property,
     );
     expect(alt.canSetAlternateSource).toBe(true);
-    pyAssert(alt.alternateSource != null);
+    assert(alt.alternateSource != null);
     expect(alt.alternateSource.id).toBe(origAlt.alternateSource.id);
   });
 
@@ -384,7 +384,7 @@ describe("TestDuplicateEdgeCases", () => {
     // Pre-AE23 ldta has no matte_layer_id (None) - duplicate must not
     // materialize the optional field.
     const project = parseProjectFresh(AE2018_SAMPLE);
-    const src = next(project.compositions, (c) => pyBool(c.layers));
+    const src = next(project.compositions, (c) => truthy(c.layers));
     const dup = src.duplicate();
     expect(dup.numLayers).toBe(src.numLayers);
     expect(_ldtaInOrder(dup).every((ld) => ld.matteLayerId == null)).toBe(true);

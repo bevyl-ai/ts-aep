@@ -19,7 +19,7 @@ import { AVItem } from "./av_item.ts";
 import {
   Path,
   ValueError,
-  pyAssert,
+  assert,
   repr,
   sorted,
   tkey,
@@ -215,7 +215,7 @@ export class FootageItem extends AVItem {
   set name(value: string) {
     validateName(value);
     // A footage item always carries a Utf8 name chunk (see parse_item).
-    pyAssert(this._nameUtf8 != null);
+    assert(this._nameUtf8 != null);
     // The display name has to be written where `_resolveName` reads it
     // back from. AE keeps a solid's or placeholder's name in the source
     // `opti` chunk and leaves the item-level Utf8 empty; only file
@@ -393,7 +393,7 @@ export class FootageItem extends AVItem {
     // re-reading the media, so leaving one is harmless.
     const source = this.useProxy ? this._proxySource : this._mainSource;
     if (source instanceof FileSource) {
-      pyAssert(this._idta != null);
+      assert(this._idta != null);
       this._idta.modifiedTime = source._sspc.sourceModified;
     }
   }
@@ -655,7 +655,7 @@ export class FootageItem extends AVItem {
     this._mainSource = source;
     source._joinProject(this._project);
 
-    pyAssert(this._idta != null);
+    assert(this._idta != null);
     this._idta.isFootage = true;
     this._idta.isSolid = isSolid;
     if (source instanceof FileSource) {
@@ -668,7 +668,7 @@ export class FootageItem extends AVItem {
     // re-derives from the new source, a user-assigned one survives.
     // A solid or placeholder carries its name in the new `opti` chunk
     // instead, so the Utf8 goes back to empty.
-    pyAssert(this._nameUtf8 != null);
+    assert(this._nameUtf8 != null);
     if (source.constructor._ownsName) {
       this._nameUtf8.value = "";
     }

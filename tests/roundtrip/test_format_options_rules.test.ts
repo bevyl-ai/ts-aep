@@ -11,7 +11,7 @@ import { expect, test } from "bun:test";
 
 import {
   dictPop,
-  pyAssert,
+  assert,
   int,
   Path,
   RuntimeError,
@@ -73,7 +73,7 @@ test("test_parent_om_backref_survives_apply_template", () => {
   const foBefore = om.formatOptions;
   const rqi = asInstance(project.renderQueue, RenderQueue).items[0];
   om._formatOptions = parseFormatOptions(rqi._lom.chunks);
-  pyAssert(om._formatOptions != null);
+  assert(om._formatOptions != null);
   om._formatOptions._parentOm = om; // what _apply_output_template does
   expect(om.formatOptions).not.toBe(foBefore);
   expect(om.formatOptions?._parentOm).toBe(om);

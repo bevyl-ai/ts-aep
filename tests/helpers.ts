@@ -50,8 +50,8 @@ import {
   len,
   lruCache,
   Path,
-  pyAssert,
-  pyBool,
+  assert,
+  truthy,
   repr,
   struct,
   ValueError,
@@ -447,7 +447,7 @@ export function asInstance<T>(value: unknown, cls: abstract new (...args: never[
 
 /** Get the first layer from the first composition that has layers. */
 export function getFirstLayer(project: Project): Layer {
-  pyAssert(len(project.compositions) >= 1);
+  assert(len(project.compositions) >= 1);
   for (const comp of project.compositions) {
     if (len(comp.layers) >= 1) return comp.layers[0];
   }
@@ -456,7 +456,7 @@ export function getFirstLayer(project: Project): Layer {
 
 /** Get the first footage item. */
 export function getFirstFootage(project: Project): FootageItem | null {
-  if (pyBool(project.footages)) return project.footages[0];
+  if (truthy(project.footages)) return project.footages[0];
   return null;
 }
 
@@ -476,7 +476,7 @@ export function getComp(project: Project, name: string): CompItem {
 /** Get the first layer from a named composition. */
 export function getLayer(project: Project, compName: string): Layer {
   const comp = getComp(project, compName);
-  if (!pyBool(comp.layers)) {
+  if (!truthy(comp.layers)) {
     throw new ValueError(`Composition '${compName}' has no layers`);
   }
   return comp.layers[0];
@@ -542,7 +542,7 @@ export function getCompFromJsonByName(expected: ExpectedProject, name: string): 
 /** Get first layer from a named composition in JSON. */
 export function getLayerFromJsonByComp(expected: ExpectedProject, compName: string): ExpectedLayer | EmptyJson {
   const comp = getCompFromJsonByName(expected, compName);
-  if (_jsonTruthy(comp) && "layers" in comp && pyBool(comp.layers)) {
+  if (_jsonTruthy(comp) && "layers" in comp && truthy(comp.layers)) {
     return comp.layers[0];
   }
   return {};
@@ -568,7 +568,7 @@ export function getFolderFromJsonByName(expected: ExpectedProject, name: string)
 export function getCompMarkerFromJsonByName(expected: ExpectedProject, compName: string): ExpectedMarker | EmptyJson {
   const comp = getCompFromJsonByName(expected, compName);
   const markers = _jget(comp, "markers", []);
-  if (Array.isArray(markers) && pyBool(markers)) return markers[0];
+  if (Array.isArray(markers) && truthy(markers)) return markers[0];
   return {};
 }
 
@@ -581,7 +581,7 @@ export function getLayerMarkerFromJsonByComp(expected: ExpectedProject, compName
         if (prop.matchName === "ADBE Marker") {
           const kfs = prop.keyframes ?? [];
           // An `ADBE Marker` keyframe's value is always a marker record.
-          if (pyBool(kfs)) {
+          if (truthy(kfs)) {
             const value = kfs[0].value;
             if (typeof value === "object" && value !== null && "cuePointName" in value) return value;
           }

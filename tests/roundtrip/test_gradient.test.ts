@@ -6,7 +6,7 @@ import { parse } from "../../src/py_aep/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
 import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { hasattr, pyEq, StopIteration } from "../../src/pyrt/index.ts";
+import { hasattr, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import type { Item } from "../../src/py_aep/models/items/item.ts";
 import { asInstance } from "../helpers.ts";
@@ -254,7 +254,7 @@ test("test_gradient_value_write_through", () => {
 
   // Re-read from the Utf8 chunk to confirm write-through
   const reparsed = parseGradientXml(gradient._utf8);
-  expect(pyEq(reparsed, gradient)).toBe(true);
+  expect(valueEquals(reparsed, gradient)).toBe(true);
 });
 
 test("test_gradient_binary_roundtrip", () => {

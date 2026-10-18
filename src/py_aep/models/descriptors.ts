@@ -13,7 +13,7 @@ import {
   ValueError,
   getattr,
   int,
-  pyBool,
+  truthy,
   repr,
   hasInstanceDict,
   instanceDict,
@@ -376,7 +376,7 @@ export class ChunkField<
       instanceDict(obj).set(this.publicName, value);
       return;
     }
-    if (pyBool(getattr(body, "synthetic", false))) {
+    if (truthy(getattr(body, "synthetic", false))) {
       const owner: ChunkOwner = obj;
       if (owner._ensureMaterialized == null) {
         throw new AttributeError(`'${typeName(owner)}' object has no attribute '_ensure_materialized'`);

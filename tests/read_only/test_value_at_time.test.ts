@@ -14,14 +14,14 @@
 import { describe, expect, test } from "bun:test";
 import { raises } from "../../src/pyrt/pytest.ts";
 import {
-  dictGet,
+  getOr,
   float,
   format,
   max,
   NotImplementedError,
   Path,
-  pyAssert,
-  pyEq,
+  assert,
+  valueEquals,
   zip,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -55,10 +55,10 @@ function _getProp(baseName: string): Property {
   const aep = SAMPLES_DIR.div(`${baseName}.aep`);
   const layer = getFirstLayer(parseProject(aep));
   const [matchName] = _loadVat(baseName);
-  const finder = dictGet(_FINDERS, matchName);
-  pyAssert(finder != null, `No finder for ${matchName}`);
+  const finder = getOr(_FINDERS, matchName);
+  assert(finder != null, `No finder for ${matchName}`);
   const prop = finder(layer);
-  pyAssert(prop != null, `Property ${matchName} not found`);
+  assert(prop != null, `Property ${matchName} not found`);
   return prop;
 }
 
@@ -134,7 +134,7 @@ describe("TestValueAtTimeNonSpatial", () => {
     const prop = _getProp(sample);
     const [, frames] = _loadVat(sample);
     const maxErr = _maxError(prop, frames);
-    pyAssert(maxErr < 0.001, `${sample}: max error ${format(maxErr, ".6f")}`);
+    assert(maxErr < 0.001, `${sample}: max error ${format(maxErr, ".6f")}`);
   });
 });
 
@@ -152,16 +152,16 @@ describe("TestValueAtTimeSpatial", () => {
     const prop = _getProp(sample);
     const [, frames] = _loadVat(sample);
     const maxErr = _maxError(prop, frames);
-    pyAssert(maxErr < 1e-9, `${sample}: max error ${format(maxErr, ".3e")}`);
+    assert(maxErr < 1e-9, `${sample}: max error ${format(maxErr, ".3e")}`);
   });
 
   test("test_eased_roving_run_times", () => {
     /** The roving keys' derived times are the ticks AE stored. */
     const prop = _getProp("keyframe_roving_eased");
     const stored = prop.keyframes.map((kf) => kf._ldatItem.timeUnits);
-    expect(pyEq(stored, [0, 56852, 74884, 122880])).toBe(true);
+    expect(valueEquals(stored, [0, 56852, 74884, 122880])).toBe(true);
     prop._redistributeRovingKeyframes();
-    expect(pyEq(prop.keyframes.map((kf) => kf._ldatItem.timeUnits), stored)).toBe(true);
+    expect(valueEquals(prop.keyframes.map((kf) => kf._ldatItem.timeUnits), stored)).toBe(true);
   });
 });
 

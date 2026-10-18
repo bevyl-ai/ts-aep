@@ -9,7 +9,7 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { KeyframeEase, KeyframeInterpolationType, Property, PropertyGroup, type Application, type AVLayer, type CompItem } from "../../src/py_aep/index.ts";
-import { at, getattr, len, max, min, pyAssert, pyBool, StopIteration, sum, zip } from "../../src/pyrt/index.ts";
+import { at, getattr, len, max, min, assert, truthy, StopIteration, sum, zip } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
@@ -296,7 +296,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
         for (const prop of [...layer.transform].filter((p) => p instanceof Property)) {
-          if (!pyBool(getattr(prop, "keyframes", null)) || len(prop.keyframes) < 2) {
+          if (!truthy(getattr(prop, "keyframes", null)) || len(prop.keyframes) < 2) {
             continue;
           }
           if (prop.isSpatial) {
@@ -315,7 +315,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
         }
       }
     }
-    pyAssert(checked, "no property exercised");
+    assert(checked, "no property exercised");
   });
 
   /**
@@ -380,7 +380,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
     const prop = app.project.compositions
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
-      .find((p) => pyBool(getattr(p, "keyframes", null)) && len(p.keyframes) === 2);
+      .find((p) => truthy(getattr(p, "keyframes", null)) && len(p.keyframes) === 2);
     if (prop == null) throw new StopIteration();
 
     const index = prop.addKey(2.5);
@@ -429,7 +429,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
       .find(
         (p) =>
-          pyBool(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
+          truthy(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
       );
     if (prop == null) throw new StopIteration();
     const times = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0];

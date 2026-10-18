@@ -14,7 +14,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, pyEq, struct } from "../../src/pyrt/index.ts";
+import { Path, b, bytes_, len, valueEquals, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse, type Project } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
@@ -72,7 +72,7 @@ describe("TestNoOpSyncIsIdentity", () => {
       expect(opts.formatCode).toBe(formatCode);
       const before = opts._body.data;
       opts._syncXml(); // no semantic change whatsoever
-      expect(pyEq(opts._body.data, before)).toBe(true);
+      expect(valueEquals(opts._body.data, before)).toBe(true);
     });
   }
 

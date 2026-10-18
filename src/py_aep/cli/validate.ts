@@ -19,13 +19,13 @@ import {
   attrsHas,
   decode,
   descriptorsOf,
-  dictGet,
+  getOr,
   fields,
-  getitem,
+  getOrThrow,
   isclose,
   len,
-  pyBool,
-  pyEq,
+  truthy,
+  valueEquals,
   repr,
   setdefault,
   sorted,
@@ -356,7 +356,7 @@ export function compareValues(expected: ToDictValue, parsed: ToDictValue, tolera
     if (expected.length !== parsed.length) return false;
     return expected.every((e, i) => compareValues(e, parsed[i], tolerance));
   }
-  return pyEq(expected, parsed);
+  return valueEquals(expected, parsed);
 }
 
 export class ValidationResult {
@@ -421,7 +421,7 @@ export function _compareFields(
     if (className) result.definedFields.add(`${className}.${parsedKey}`);
     if (expected.has(expKey)) {
       const expVal = expected.get(expKey);
-      if (expVal instanceof Map && pyBool(expVal.get("_undefined"))) continue;
+      if (expVal instanceof Map && truthy(expVal.get("_undefined"))) continue;
       if (className) result.comparedFields.add(`${className}.${parsedKey}`);
       const parsedVal = getEnumValue(parsed.get(parsedKey) ?? null);
       if (!compareValues(expVal, parsedVal)) {
@@ -466,7 +466,7 @@ export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: 
   /** Compare proxySource on an AVItem (comp or footage). */
   const expProxy = expectedItem.get("proxySource") ?? null;
   const parsedProxy = parsedItem.get("proxySource") ?? null;
-  if (pyBool(expProxy) && pyBool(parsedProxy)) {
+  if (truthy(expProxy) && truthy(parsedProxy)) {
     const proxyPath = `${path}.proxySource`;
     const sourceMappings = {
       alphaMode: "alphaMode",
@@ -483,9 +483,9 @@ export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: 
       color: "color",
     };
     _compareFields(expProxy, parsedProxy, sourceMappings, proxyPath, "footage", result, "FootageSource");
-  } else if (pyBool(expProxy) && !pyBool(parsedProxy)) {
+  } else if (truthy(expProxy) && !truthy(parsedProxy)) {
     result.addDiff(`${path}.proxySource`, "present", "None", "footage");
-  } else if (!pyBool(expProxy) && pyBool(parsedProxy)) {
+  } else if (!truthy(expProxy) && truthy(parsedProxy)) {
     result.addDiff(`${path}.proxySource`, "None", "present", "footage");
   }
 }
@@ -506,16 +506,16 @@ export function _compareChildrenByMatchName(
   // can fall back to positional matching within each match_name group.
   const parsedByMatchName = new Map<string, Dict[]>();
   for (const p of parsedProps) {
-    const mn = dictGet(p, "matchName", "");
-    if (pyBool(mn)) setdefault(parsedByMatchName, mn, []).push(p);
+    const mn = getOr(p, "matchName", "");
+    if (truthy(mn)) setdefault(parsedByMatchName, mn, []).push(p);
   }
 
   // Track how many of each match_name we have consumed.
   const matchNameIdx = new Map<string, number>();
 
   for (const [i, expProp] of expectedProps.entries()) {
-    const expMatchName = dictGet(expProp, "matchName", "");
-    const expName = dictGet(expProp, "name", `[${i}]`);
+    const expMatchName = getOr(expProp, "matchName", "");
+    const expName = getOr(expProp, "name", `[${i}]`);
     const childPath = `${path}.${expName}`;
 
     const candidates = parsedByMatchName.get(expMatchName);
@@ -576,14 +576,14 @@ export function compareMarker(
   // Calculate time from frame_time if available
   let parsedTime: number | null = null;
   if (parsedMarker.get("frameTime") != null) {
-    parsedTime = truediv(getitem(parsedMarker, "frameTime"), frameRate);
+    parsedTime = truediv(getOrThrow(parsedMarker, "frameTime"), frameRate);
   }
 
   // Compare time
   result.trackField("Marker", "time", expectedMarker.has("time"));
   if (expectedMarker.has("time")) {
-    const expVal = getitem(expectedMarker, "time");
-    if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
+    const expVal = getOrThrow(expectedMarker, "time");
+    if (!(expVal instanceof Map) || !truthy(expVal.get("_undefined"))) {
       if (!compareValues(expVal, parsedTime)) {
         result.addDiff(`${path}.time`, expVal, parsedTime, "markers");
       }
@@ -672,7 +672,7 @@ export function compareLayer(
   result.trackField("Layer", "index", expectedLayer.has("index"));
   result.trackField("Layer", "light_source_id", expectedLayer.has("lightSource"));
   if (expectedLayer.has("index")) {
-    const expIndex = getitem(expectedLayer, "index");
+    const expIndex = getOrThrow(expectedLayer, "index");
     const parsedIndex = parsedLayer.get("index") ?? null;
     if (parsedIndex != null && expIndex !== parsedIndex + 1) {
       result.addDiff(`${path}.index`, expIndex, parsedIndex + 1, "layers");
@@ -681,8 +681,8 @@ export function compareLayer(
 
   // Compare lightSource (Layer reference -> compare by layer index)
   if (expectedLayer.has("lightSource")) {
-    const expLs = getitem(expectedLayer, "lightSource");
-    const parsedLsId = dictGet(parsedLayer, "_lightSourceId", 0);
+    const expLs = getOrThrow(expectedLayer, "lightSource");
+    const parsedLsId = getOr(parsedLayer, "_lightSourceId", 0);
     if (expLs == null) {
       if (parsedLsId !== 0) {
         result.addDiff(`${path}.lightSource`, null, parsedLsId, "layers");
@@ -697,8 +697,8 @@ export function compareLayer(
 
   // Compare all property groups via the properties list.
   _compareChildrenByMatchName(
-    dictGet(expectedLayer, "properties", []),
-    dictGet(parsedLayer, "properties", []),
+    getOr(expectedLayer, "properties", []),
+    getOr(parsedLayer, "properties", []),
     path,
     result,
   );
@@ -751,17 +751,17 @@ export function compareProperty(
   result.trackField(
     "Property",
     "minValue",
-    expectedProp.has("hasMin") && pyBool(expectedProp.get("hasMin")),
+    expectedProp.has("hasMin") && truthy(expectedProp.get("hasMin")),
   );
   result.trackField(
     "Property",
     "maxValue",
-    expectedProp.has("hasMax") && pyBool(expectedProp.get("hasMax")),
+    expectedProp.has("hasMax") && truthy(expectedProp.get("hasMax")),
   );
 
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
   if (expectedProp.has("propertyIndex")) {
-    const expPi = getitem(expectedProp, "propertyIndex");
+    const expPi = getOrThrow(expectedProp, "propertyIndex");
     const parsedPi = parsedProp.get("propertyIndex") ?? null;
     if (parsedPi != null && expPi !== parsedPi + 1) {
       result.addDiff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
@@ -770,9 +770,9 @@ export function compareProperty(
 
   // Compare value
   if (expectedProp.has("value")) {
-    const expVal = getitem(expectedProp, "value");
+    const expVal = getOrThrow(expectedProp, "value");
     const parsedVal = parsedProp.get("value") ?? null;
-    if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
+    if (!(expVal instanceof Map) || !truthy(expVal.get("_undefined"))) {
       if (parsedVal == null) {
         result.addDiff(`${path}.value`, expVal, parsedVal, "properties");
       } else if (!compareValues(expVal, parsedVal)) {
@@ -783,17 +783,17 @@ export function compareProperty(
 
   // Compare numKeys vs len(keyframes)
   if (expectedProp.has("numKeys")) {
-    const expNumKeys = getitem(expectedProp, "numKeys");
-    const parsedKeyframes = dictGet(parsedProp, "keyframes", []);
-    const parsedNumKeys = pyBool(parsedKeyframes) ? len(parsedKeyframes) : 0;
+    const expNumKeys = getOrThrow(expectedProp, "numKeys");
+    const parsedKeyframes = getOr(parsedProp, "keyframes", []);
+    const parsedNumKeys = truthy(parsedKeyframes) ? len(parsedKeyframes) : 0;
     if (expNumKeys !== parsedNumKeys) {
       result.addDiff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
     }
   }
 
   // Compare individual keyframes
-  const expKeyframes = dictGet(expectedProp, "keyframes", []);
-  const parsedKeyframes = dictGet(parsedProp, "keyframes", []);
+  const expKeyframes = getOr(expectedProp, "keyframes", []);
+  const parsedKeyframes = getOr(parsedProp, "keyframes", []);
   for (const [ki, [expKf, parsedKf]] of zip(expKeyframes, parsedKeyframes).entries()) {
     compareKeyframe(expKf, parsedKf, `${path}.keyframes[${ki}]`, result);
   }
@@ -803,15 +803,15 @@ export function compareProperty(
   // which the value comparisons below cannot (they only run when ES reports
   // the bound present).
   if (expectedProp.has("hasMin")) {
-    const expHasMin = pyBool(getitem(expectedProp, "hasMin"));
-    const parsedHasMin = pyBool(parsedProp.get("hasMin"));
+    const expHasMin = truthy(getOrThrow(expectedProp, "hasMin"));
+    const parsedHasMin = truthy(parsedProp.get("hasMin"));
     if (expHasMin !== parsedHasMin) {
       result.addDiff(`${path}.hasMin`, expHasMin, parsedHasMin, "properties");
     }
   }
   if (expectedProp.has("hasMax")) {
-    const expHasMax = pyBool(getitem(expectedProp, "hasMax"));
-    const parsedHasMax = pyBool(parsedProp.get("hasMax"));
+    const expHasMax = truthy(getOrThrow(expectedProp, "hasMax"));
+    const parsedHasMax = truthy(parsedProp.get("hasMax"));
     if (expHasMax !== parsedHasMax) {
       result.addDiff(`${path}.hasMax`, expHasMax, parsedHasMax, "properties");
     }
@@ -821,9 +821,9 @@ export function compareProperty(
   // The presence check above already flags an under-reported bound; gating
   // the value comparison on the parsed side too avoids a redundant second
   // diff (.minValue: 0 vs None) for the same root cause.
-  if (pyBool(expectedProp.get("hasMin")) && pyBool(parsedProp.get("hasMin"))) {
+  if (truthy(expectedProp.get("hasMin")) && truthy(parsedProp.get("hasMin"))) {
     if (expectedProp.has("minValue")) {
-      const expMin = getitem(expectedProp, "minValue");
+      const expMin = getOrThrow(expectedProp, "minValue");
       const parsedMin = parsedProp.get("minValue") ?? null;
       if (!compareValues(expMin, parsedMin)) {
         result.addDiff(`${path}.minValue`, expMin, parsedMin, "properties");
@@ -831,9 +831,9 @@ export function compareProperty(
     }
   }
 
-  if (pyBool(expectedProp.get("hasMax")) && pyBool(parsedProp.get("hasMax"))) {
+  if (truthy(expectedProp.get("hasMax")) && truthy(parsedProp.get("hasMax"))) {
     if (expectedProp.has("maxValue")) {
-      const expMax = getitem(expectedProp, "maxValue");
+      const expMax = getOrThrow(expectedProp, "maxValue");
       const parsedMax = parsedProp.get("maxValue") ?? null;
       if (!compareValues(expMax, parsedMax)) {
         result.addDiff(`${path}.maxValue`, expMax, parsedMax, "properties");
@@ -845,7 +845,7 @@ export function compareProperty(
   if (expectedProp.has("textDocument")) {
     const parsedValue = parsedProp.get("value") ?? null;
     if (parsedValue instanceof Map) {
-      compareTextDocument(getitem(expectedProp, "textDocument"), parsedValue, `${path}.textDocument`, result);
+      compareTextDocument(getOrThrow(expectedProp, "textDocument"), parsedValue, `${path}.textDocument`, result);
     }
   }
 
@@ -853,7 +853,7 @@ export function compareProperty(
   if (expectedProp.has("shapeValue")) {
     const parsedValue = parsedProp.get("value") ?? null;
     if (parsedValue instanceof Map) {
-      compareShapeValue(getitem(expectedProp, "shapeValue"), parsedValue, `${path}.shapeValue`, result);
+      compareShapeValue(getOrThrow(expectedProp, "shapeValue"), parsedValue, `${path}.shapeValue`, result);
     }
   }
 
@@ -862,7 +862,7 @@ export function compareProperty(
   // binary blsi item id, the strongest invariant) then name.
   result.trackField("Property", "alternateSource", expectedProp.has("alternateSource"));
   if (expectedProp.has("alternateSource")) {
-    const expAlt = getitem(expectedProp, "alternateSource");
+    const expAlt = getOrThrow(expectedProp, "alternateSource");
     const parsedAlt = parsedProp.get("alternateSource") ?? null;
     if (expAlt == null) {
       if (parsedAlt != null) {
@@ -874,7 +874,7 @@ export function compareProperty(
         result.addDiff(`${path}.alternateSource`, expAlt, null, "properties");
       } else {
         for (const key of ["id", "name"]) {
-          if (!pyEq(expAlt.get(key) ?? null, parsedAlt.get(key) ?? null)) {
+          if (!valueEquals(expAlt.get(key) ?? null, parsedAlt.get(key) ?? null)) {
             result.addDiff(
               `${path}.alternateSource.${key}`,
               expAlt.get(key) ?? null,
@@ -895,7 +895,7 @@ export function compareProperty(
   // is compared on matchName.
   result.trackField("Property", "essentialPropertySource", expectedProp.has("essentialPropertySource"));
   if (expectedProp.has("essentialPropertySource")) {
-    const expEps = getitem(expectedProp, "essentialPropertySource");
+    const expEps = getOrThrow(expectedProp, "essentialPropertySource");
     const parsedEps = parsedProp.get("essentialPropertySource") ?? null;
     if (expEps == null) {
       if (parsedEps != null) {
@@ -904,25 +904,25 @@ export function compareProperty(
       }
     } else if (!(parsedEps instanceof Map)) {
       result.addDiff(`${path}.essentialPropertySource`, expEps, null, "properties");
-    } else if (dictGet(expEps, "sourceType") === "AVLayer") {
-      if (!pyEq(dictGet(expEps, "name"), parsedEps.get("name") ?? null)) {
+    } else if (getOr(expEps, "sourceType") === "AVLayer") {
+      if (!valueEquals(getOr(expEps, "name"), parsedEps.get("name") ?? null)) {
         result.addDiff(
           `${path}.essentialPropertySource.name`,
-          dictGet(expEps, "name"),
+          getOr(expEps, "name"),
           parsedEps.get("name") ?? null,
           "properties",
         );
       }
-      const expIdx = dictGet<string, ToDictValue>(expEps, "index");
+      const expIdx = getOr<string, ToDictValue>(expEps, "index");
       const parsedIdx = parsedEps.get("index") ?? null;
       if (expIdx != null && parsedIdx != null && expIdx !== parsedIdx + 1) {
         result.addDiff(`${path}.essentialPropertySource.index`, expIdx, parsedIdx + 1, "properties");
       }
-    } else if (dictGet(expEps, "sourceType") === "Property") {
-      if (!pyEq(dictGet(expEps, "matchName"), parsedEps.get("matchName") ?? null)) {
+    } else if (getOr(expEps, "sourceType") === "Property") {
+      if (!valueEquals(getOr(expEps, "matchName"), parsedEps.get("matchName") ?? null)) {
         result.addDiff(
           `${path}.essentialPropertySource.matchName`,
-          dictGet(expEps, "matchName"),
+          getOr(expEps, "matchName"),
           parsedEps.get("matchName") ?? null,
           "properties",
         );
@@ -964,12 +964,12 @@ export function compareShapeValue(
     featherTensions: "tension",
     featherRelCornerAngles: "relCornerAngle",
   };
-  const parsedFps: Dict[] = dictGet(parsedShape, "featherPoints", []);
+  const parsedFps: Dict[] = getOr(parsedShape, "featherPoints", []);
   for (const [expKey, fpAttr] of Object.entries(featherFieldMap)) {
     result.definedFields.add(`Shape.${fpAttr}`);
     if (expectedShape.has(expKey)) {
       const expVal = expectedShape.get(expKey);
-      if (expVal instanceof Map && pyBool(expVal.get("_undefined"))) continue;
+      if (expVal instanceof Map && truthy(expVal.get("_undefined"))) continue;
       result.comparedFields.add(`Shape.${fpAttr}`);
       const parsedVal = parsedFps.map((fp) => fp.get(fpAttr) ?? null);
       if (!compareValues(expVal, parsedVal)) {
@@ -1001,8 +1001,8 @@ export function compareKeyframe(
   // Compare value. The exporter writes None for a key value ExtendScript
   // cannot read (a Curves key's, which aborts the script).
   if (expectedKf.get("value") != null && parsedKf.get("value") != null) {
-    const expVal = getitem(expectedKf, "value");
-    const parsedVal = getitem(parsedKf, "value");
+    const expVal = getOrThrow(expectedKf, "value");
+    const parsedVal = getOrThrow(parsedKf, "value");
     if (expVal instanceof Map && expVal.has("vertices")) {
       // Shape keyframe value - compare as shape
       if (parsedVal instanceof Map) {
@@ -1017,7 +1017,7 @@ export function compareKeyframe(
           result.addDiff(`${path}.value.${key}`, nval, pval, "keyframes");
         }
       }
-    } else if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
+    } else if (!(expVal instanceof Map) || !truthy(expVal.get("_undefined"))) {
       if (!compareValues(expVal, parsedVal)) {
         result.addDiff(`${path}.value`, expVal, parsedVal, "keyframes");
       }
@@ -1048,7 +1048,7 @@ export function compareKeyframe(
   ]) {
     if (expectedKf.has(easeKey)) {
       const expEase = expectedKf.get(easeKey);
-      const parsedEase = dictGet(parsedKf, parsedKey, []);
+      const parsedEase = getOr(parsedKf, parsedKey, []);
       if (len(expEase) !== len(parsedEase)) {
         result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
       }
@@ -1199,7 +1199,7 @@ export function comparePropertyGroup(
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
   result.trackField("PropertyGroup", "propertyIndex", expectedGroup.has("propertyIndex"));
   if (expectedGroup.has("propertyIndex")) {
-    const expPi = getitem(expectedGroup, "propertyIndex");
+    const expPi = getOrThrow(expectedGroup, "propertyIndex");
     const parsedPi = parsedGroup.get("propertyIndex") ?? null;
     if (parsedPi != null && expPi !== parsedPi + 1) {
       result.addDiff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
@@ -1208,8 +1208,8 @@ export function comparePropertyGroup(
 
   // Compare child properties
   _compareChildrenByMatchName(
-    dictGet(expectedGroup, "properties", []),
-    dictGet(parsedGroup, "properties", []),
+    getOr(expectedGroup, "properties", []),
+    getOr(parsedGroup, "properties", []),
     path,
     result,
   );
@@ -1261,30 +1261,30 @@ export function compareCompItem(
   _compareFields(expectedItem, parsedComp, compMappings, path, "composition", result, "CompItem");
 
   // Compare layer counts
-  const expLayers = dictGet(expectedItem, "layers", []);
-  const parsedLayers = dictGet(parsedComp, "layers", []);
+  const expLayers = getOr(expectedItem, "layers", []);
+  const parsedLayers = getOr(parsedComp, "layers", []);
   if (expLayers.length !== parsedLayers.length) {
     result.addDiff(`${path}.numLayers`, expLayers.length, parsedLayers.length, "composition");
   }
 
   // Compare each layer
-  const compDuration = dictGet(expectedItem, "duration", 60.0);
-  const frameRate = dictGet(expectedItem, "frameRate", 24.0);
+  const compDuration = getOr(expectedItem, "duration", 60.0);
+  const frameRate = getOr(expectedItem, "frameRate", 24.0);
   for (const [i, [expLayer, parsedLayer]] of zip(expLayers, parsedLayers).entries()) {
     compareLayer(expLayer, parsedLayer, `${path}.layers[${i}]`, compDuration, frameRate, result);
   }
 
   // Compare markers
   _compareMarkers(
-    dictGet(expectedItem, "markers", []),
-    dictGet(parsedComp, "markers", []),
+    getOr(expectedItem, "markers", []),
+    getOr(parsedComp, "markers", []),
     path,
-    dictGet(expectedItem, "frameRate", 24.0),
+    getOr(expectedItem, "frameRate", 24.0),
     result,
   );
 
   // Compare guides
-  _compareGuides(dictGet(expectedItem, "guides", []), dictGet(parsedComp, "guides", []), path, result);
+  _compareGuides(getOr(expectedItem, "guides", []), getOr(parsedComp, "guides", []), path, result);
 
   // Compare proxySource
   _compareProxySource(expectedItem, parsedComp, path, result);
@@ -1299,13 +1299,13 @@ export function compareFolderHierarchy(
   const expectedFolders = new Map<number, Dict>();
   for (const item of expectedItems) {
     if ((item.get("itemType") ?? null) === "FolderItem") {
-      expectedFolders.set(getitem(item, "id"), item);
+      expectedFolders.set(getOrThrow(item, "id"), item);
     }
   }
 
   const parsedFolders = new Map<number, Dict>();
   for (const [itemId, item] of parsedItems) {
-    if (dictGet(item, "typeName") === "Folder") {
+    if (getOr(item, "typeName") === "Folder") {
       parsedFolders.set(itemId, item);
     }
   }
@@ -1313,12 +1313,12 @@ export function compareFolderHierarchy(
   for (const [folderId, expFolder] of expectedFolders) {
     const parsedFolder = parsedFolders.get(folderId);
     if (parsedFolder === undefined) {
-      result.addDiff(`Folder[${getitem(expFolder, "name")}]`, "exists", "missing", "folders");
+      result.addDiff(`Folder[${getOrThrow(expFolder, "name")}]`, "exists", "missing", "folders");
     } else {
-      if (!pyEq(getitem(expFolder, "name"), parsedFolder.get("name") ?? null)) {
+      if (!valueEquals(getOrThrow(expFolder, "name"), parsedFolder.get("name") ?? null)) {
         result.addDiff(
           `Folder[id=${folderId}].name`,
-          getitem(expFolder, "name"),
+          getOrThrow(expFolder, "name"),
           parsedFolder.get("name") ?? null,
           "folders",
         );
@@ -1362,7 +1362,7 @@ export function compareFootageItem(
   // Compare mainSource (FootageSource fields)
   const expSource = expectedItem.get("mainSource") ?? null;
   const parsedSource = parsedItem.get("mainSource") ?? null;
-  if (pyBool(expSource) && pyBool(parsedSource)) {
+  if (truthy(expSource) && truthy(parsedSource)) {
     const sourcePath = `${path}.mainSource`;
 
     const sourceMappings = {
@@ -1384,12 +1384,12 @@ export function compareFootageItem(
 
     // AE returns native_frame_rate when conformFrameRate is 0
     result.trackField("FootageSource", "conformFrameRate", expSource.has("conformFrameRate"));
-    const expCfr = dictGet<string, ToDictValue>(expSource, "conformFrameRate");
-    const parsedCfr = dictGet<string, ToDictValue, number>(parsedSource, "conformFrameRate", 0);
+    const expCfr = getOr<string, ToDictValue>(expSource, "conformFrameRate");
+    const parsedCfr = getOr<string, ToDictValue, number>(parsedSource, "conformFrameRate", 0);
     if (expCfr != null) {
       if (!compareValues(expCfr, parsedCfr)) {
         // When parsed conform is 0, AE may report native_frame_rate
-        const native = dictGet<string, ToDictValue, number>(parsedSource, "nativeFrameRate", 0);
+        const native = getOr<string, ToDictValue, number>(parsedSource, "nativeFrameRate", 0);
         if (parsedCfr === 0 && compareValues(expCfr, native)) {
           // AE reported native rate as conform rate
         } else {
@@ -1403,8 +1403,8 @@ export function compareFootageItem(
     result.trackField("FootageSource", "missingFootagePath", expSource.has("missingFootagePath"));
     // FileSource-specific fields
     if (expSource.has("filePath")) {
-      const expFile = getitem<string, string | null>(expSource, "filePath");
-      const parsedFile = dictGet<string, string | null, string>(parsedSource, "file", "");
+      const expFile = getOrThrow<string, string | null>(expSource, "filePath");
+      const parsedFile = getOr<string, string | null, string>(parsedSource, "file", "");
       // Compare only the filename portion. PureWindowsPath splits on
       // both / and \ on every host OS (AE stores Windows-style paths,
       // and a parsed sequence frame path mixes the two); plain Path
@@ -1419,9 +1419,9 @@ export function compareFootageItem(
     }
 
     if (expSource.has("missingFootagePath")) {
-      const expMissing = getitem<string, ToDictValue>(expSource, "missingFootagePath");
-      const parsedMissing = dictGet<string, ToDictValue, string>(parsedSource, "missingFootagePath", "");
-      if (pyBool(expMissing) && !pyEq(expMissing, parsedMissing)) {
+      const expMissing = getOrThrow<string, ToDictValue>(expSource, "missingFootagePath");
+      const parsedMissing = getOr<string, ToDictValue, string>(parsedSource, "missingFootagePath", "");
+      if (truthy(expMissing) && !valueEquals(expMissing, parsedMissing)) {
         result.addDiff(`${sourcePath}.missingFootagePath`, expMissing, parsedMissing, "footage");
       }
     }
@@ -1529,8 +1529,8 @@ export function compareRenderQueue(
   verbose = false,
 ): void {
   /** Compare render queue items. */
-  const expectedItems: Dict[] = dictGet(expectedRq, "items", []);
-  const parsedItems: Dict[] = dictGet(parsedRq, "items", []);
+  const expectedItems: Dict[] = getOr(expectedRq, "items", []);
+  const parsedItems: Dict[] = getOr(parsedRq, "items", []);
 
   if (expectedItems.length !== parsedItems.length) {
     result.addDiff("RenderQueue.numItems", expectedItems.length, parsedItems.length, "renderqueue");
@@ -1568,12 +1568,12 @@ export function compareRenderQueue(
 
     // Compare render settings
     if (expItem.has("settings")) {
-      compareSettings(getitem(expItem, "settings"), parsedItem.get("settings") ?? null, `${path}.settings`, result);
+      compareSettings(getOrThrow(expItem, "settings"), parsedItem.get("settings") ?? null, `${path}.settings`, result);
     }
 
     // Compare output modules
-    const expOms: Dict[] = dictGet(expItem, "outputModules", []);
-    const parsedOms: Dict[] = dictGet(parsedItem, "outputModules", []);
+    const expOms: Dict[] = getOr(expItem, "outputModules", []);
+    const parsedOms: Dict[] = getOr(parsedItem, "outputModules", []);
 
     if (expOms.length !== parsedOms.length) {
       result.addDiff(`${path}.numOutputModules`, expOms.length, parsedOms.length, "renderqueue");
@@ -1599,9 +1599,9 @@ export function compareRenderQueue(
       // Compare output module file (path comparison)
       result.trackField("OutputModule", "file", expOm.has("file"));
       if (expOm.has("file")) {
-        const expFile = getitem(expOm, "file");
-        const parsedFile = dictGet(parsedOm, "file", "");
-        if (expFile && pyBool(parsedFile)) {
+        const expFile = getOrThrow(expOm, "file");
+        const parsedFile = getOr(parsedOm, "file", "");
+        if (expFile && truthy(parsedFile)) {
           // See the footage-source note: PureWindowsPath keeps
           // basename extraction host-OS-independent.
           const expName = new PureWindowsPath(expFile).name;
@@ -1615,8 +1615,8 @@ export function compareRenderQueue(
       // Compare output module settings
       if (expOm.has("settings")) {
         compareOutputModuleSettings(
-          getitem(expOm, "settings"),
-          getitem(parsedOm, "settings"),
+          getOrThrow(expOm, "settings"),
+          getOrThrow(parsedOm, "settings"),
           `${omPath}.settings`,
           result,
         );
@@ -1642,8 +1642,8 @@ export function compareViewer(
   };
   _compareFields(expectedViewer, parsedViewer, viewerMappings, "Viewer", "viewer", result, "Viewer");
 
-  const expViews: Dict[] = dictGet(expectedViewer, "views", []);
-  const parsedViews: Dict[] = dictGet(parsedViewer, "views", []);
+  const expViews: Dict[] = getOr(expectedViewer, "views", []);
+  const parsedViews: Dict[] = getOr(parsedViewer, "views", []);
   if (expViews.length !== parsedViews.length) {
     result.addDiff("Viewer.views.length", expViews.length, parsedViews.length, "viewer");
   }
@@ -1651,8 +1651,8 @@ export function compareViewer(
   for (const [i, [expView, parsedView]] of zip(expViews, parsedViews).entries()) {
     const path = `Viewer.views[${i}]`;
 
-    const expOpts = dictGet(expView, "options", new Map());
-    const parsedOpts = dictGet(parsedView, "options", new Map());
+    const expOpts = getOr(expView, "options", new Map());
+    const parsedOpts = getOr(parsedView, "options", new Map());
     const optsPath = `${path}.options`;
     const optsMappings: Record<string, string> = {
       channels: "channels",
@@ -1703,7 +1703,7 @@ export function validateAep(
   compareProjectLevel(expected, parsed, result);
 
   // Get expected items
-  const expectedItems: Dict[] = dictGet(expected, "items", []);
+  const expectedItems: Dict[] = getOr(expected, "items", []);
   const comps = expectedItems.filter((i: Dict) => (i.get("itemType") ?? null) === "CompItem");
 
   // Compare compositions
@@ -1711,8 +1711,8 @@ export function validateAep(
   const parsedById = new Map<number, Dict>(project.compositions.map((comp) => [comp.id, toDict(comp)]));
 
   for (const expItem of comps) {
-    const itemId = getitem(expItem, "id");
-    const itemName = getitem(expItem, "name");
+    const itemId = getOrThrow(expItem, "id");
+    const itemName = getOrThrow(expItem, "name");
 
     if (!parsedById.has(itemId)) {
       result.addDiff(`Comp[${itemName}]`, "exists", "missing", "composition");
@@ -1720,7 +1720,7 @@ export function validateAep(
       continue;
     }
 
-    const parsedComp = getitem(parsedById, itemId);
+    const parsedComp = getOrThrow(parsedById, itemId);
     const beforeCount = result.length;
     compareCompItem(expItem, parsedComp, `Comp[${itemName}]`, result);
 
@@ -1736,20 +1736,20 @@ export function validateAep(
 
   // Compare folder hierarchy
   if (verbose) console.log("\n=== Comparing Folder Hierarchy ===");
-  compareFolderHierarchy(expectedItems, dictGet(parsed, "items", new Map()), result);
+  compareFolderHierarchy(expectedItems, getOr(parsed, "items", new Map()), result);
 
   // Compare footage items
   if (verbose) console.log("\n=== Comparing Footage Items ===");
   const expectedFootage = expectedItems.filter((i: Dict) => (i.get("itemType") ?? null) === "FootageItem");
-  const parsedItemsDict: Map<number, Dict> = dictGet(parsed, "items", new Map());
+  const parsedItemsDict: Map<number, Dict> = getOr(parsed, "items", new Map());
   const parsedFootageById = new Map<number, Dict>();
   for (const [itemId, item] of parsedItemsDict) {
-    if (dictGet(item, "typeName") === "Footage") parsedFootageById.set(itemId, item);
+    if (getOr(item, "typeName") === "Footage") parsedFootageById.set(itemId, item);
   }
 
   for (const expFi of expectedFootage) {
-    const fiId = getitem(expFi, "id");
-    const fiName = getitem(expFi, "name");
+    const fiId = getOrThrow(expFi, "id");
+    const fiName = getOrThrow(expFi, "name");
 
     const parsedFi = parsedFootageById.get(fiId) ?? null;
     if (parsedFi == null) {
@@ -1773,8 +1773,8 @@ export function validateAep(
 
   // Compare render queue
   if (verbose) console.log("\n=== Comparing Render Queue ===");
-  const expectedRq = dictGet(expected, "renderQueue", new Map());
-  compareRenderQueue(expectedRq, dictGet(parsed, "renderQueue", new Map()), result, verbose);
+  const expectedRq = getOr(expected, "renderQueue", new Map());
+  compareRenderQueue(expectedRq, getOr(parsed, "renderQueue", new Map()), result, verbose);
 
   // Compare active viewer
   const expectedViewer = expected.get("activeViewer") ?? null;

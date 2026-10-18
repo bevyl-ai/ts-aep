@@ -5,7 +5,7 @@ the same writes) unless a comment says otherwise.
 */
 
 import { describe, expect, test } from "bun:test";
-import { at, getattr, getitem, len, Path, pyBool, pyEq, round, setattr, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, getattr, getOrThrow, len, Path, truthy, valueEquals, round, setattr, sorted, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { MarkerValue } from "../../src/py_aep/index.ts";
@@ -52,8 +52,8 @@ describe("TestFrameNumbers", () => {
     const frameTimes = new Map<number, number>(
       project.compositions.map((c): [number, number] => [c.id, c.frameTime]),
     );
-    expect(getitem(frameTimes, 11516)).toBe(-1244);
-    expect(getitem(frameTimes, 155)).toBe(-1221);
+    expect(getOrThrow(frameTimes, 11516)).toBe(-1244);
+    expect(getOrThrow(frameTimes, 155)).toBe(-1221);
   });
 });
 
@@ -68,7 +68,7 @@ describe("TestFrameRateChangeRetimesCompMarkers", () => {
     const again = at(_reparse(fresh._project, tmpPath, "b.aep").compositions, 0);
     for (const c of [fresh, again]) {
       if (c.markerProperty == null) throw new Error("comp has no marker property");
-      expect(pyEq(c.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
+      expect(valueEquals(c.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
       expect(c.markerProperty._tdb4._timeBase).toBe(25600);
     }
   });
@@ -80,7 +80,7 @@ describe("TestFrameRateChangeRetimesCompMarkers", () => {
     const dup = comp.duplicate();
     dup.frameRate = 25;
     if (dup.markerProperty == null) throw new Error("duplicate has no marker property");
-    expect(pyEq(dup.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
+    expect(valueEquals(dup.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
   });
 });
 
@@ -92,7 +92,7 @@ describe("TestDurationKeepsTimesInside", () => {
     comp.workAreaStart = 5;
     comp.workAreaDuration = 3;
     comp.duration = 7;
-    expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [5.0, 2.0])).toBe(true);
+    expect(valueEquals([comp.workAreaStart, comp.workAreaDuration], [5.0, 2.0])).toBe(true);
     expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
   });
 
@@ -119,7 +119,7 @@ describe("TestDurationKeepsTimesInside", () => {
     comp.workAreaStart = 2;
     comp.workAreaDuration = 3;
     comp.duration = 5;
-    expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [2.0, 3.0])).toBe(true);
+    expect(valueEquals([comp.workAreaStart, comp.workAreaDuration], [2.0, 3.0])).toBe(true);
     expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
   });
 
@@ -135,7 +135,7 @@ describe("TestFrameRateChangeKeepsTimesInside", () => {
     const [_, comp] = _newComp();
     comp.workAreaStart = 9.9;
     comp.frameRate = 1;
-    expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [9.0, 1.0])).toBe(true);
+    expect(valueEquals([comp.workAreaStart, comp.workAreaDuration], [9.0, 1.0])).toBe(true);
   });
 
   test("test_work_area_start_rounding_to_the_end", () => {
@@ -144,7 +144,7 @@ describe("TestFrameRateChangeKeepsTimesInside", () => {
     comp.duration = 1;
     comp.workAreaStart = 98 / 99;
     comp.frameRate = 1;
-    expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [0.0, 1.0])).toBe(true);
+    expect(valueEquals([comp.workAreaStart, comp.workAreaDuration], [0.0, 1.0])).toBe(true);
   });
 
   test("test_time_and_pinned_end_on_the_end", () => {
@@ -220,9 +220,9 @@ describe("TestNewItemOutputPath", () => {
       expect(at(item.outputModules, 0).fileTemplate).toBe(template);
       expect(at(item.outputModules, 0).file).toBe("C:\\out\\c_[#####].tif");
       expect(item.status).toBe(RQItemStatus.QUEUED);
-      expect(pyBool(item._ldat.renderChecked)).toBe(true);
+      expect(truthy(item._ldat.renderChecked)).toBe(true);
       // AE ignores an output path record without this bit.
-      expect(pyBool(at(item.outputModules, 0)._omLdat.hasOutputFile)).toBe(true);
+      expect(truthy(at(item.outputModules, 0)._omLdat.hasOutputFile)).toBe(true);
     }
   });
 });
@@ -235,7 +235,7 @@ describe("TestTimeSpanWrites", () => {
     raises(ValueError, () => {
       rqi.timeSpanDuration = bad;
     });
-    expect(pyEq(projectBytes(project), before)).toBe(true);
+    expect(valueEquals(projectBytes(project), before)).toBe(true);
   });
 
   test("test_string_rejected", () => {
@@ -310,7 +310,7 @@ describe("TestNullNaming", () => {
     const project = py_aep.newProject().project;
     const a = project.rootFolder.addComp("A", 64, 64, 1.0, 10.0, 24);
     const b = project.rootFolder.addComp("B", 64, 64, 1.0, 10.0, 24);
-    expect(pyEq([a.addNull().name, b.addNull().name], ["Null 1", "Null 2"])).toBe(true);
+    expect(valueEquals([a.addNull().name, b.addNull().name], ["Null 1", "Null 2"])).toBe(true);
     project.rootFolder.addFolder("Null 20");
     expect(a.addNull().name).toBe("Null 21");
   });
@@ -324,9 +324,9 @@ describe("TestRenderQueueItemIds", () => {
     const first = rq.add(comp);
     const second = rq.add(comp);
     const dup = first.duplicate();
-    expect(pyEq([first._ldat.itemId, second._ldat.itemId, dup._ldat.itemId], [2, 3, 4])).toBe(true);
+    expect(valueEquals([first._ldat.itemId, second._ldat.itemId, dup._ldat.itemId], [2, 3, 4])).toBe(true);
     expect(
-      pyEq(
+      valueEquals(
         sorted(asInstance(_reparse(project, tmpPath).renderQueue, RenderQueue).items.map((i) => i._ldat.itemId)),
         [2, 3, 4],
       ),
@@ -402,7 +402,7 @@ describe("TestTinySvgCanvas", () => {
     const again = _reparse(project, tmpPath).compositions.find((c) => c.name === "tiny.svg");
     if (again == null) throw new StopIteration();
     for (const c of [asInstance(comp, CompItem), again]) {
-      expect(pyEq([c.width, c.height], size)).toBe(true);
+      expect(valueEquals([c.width, c.height], size)).toBe(true);
       expect(len(c.layers)).toBe(1);
       expect(c.frameRate).toBe(30.0);
     }
@@ -467,8 +467,8 @@ describe("TestStretchedLayerKeyTimes", () => {
       const layer = _stretchedLayer(comp, -150.0, 1.3);
       const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
       for (const lyr of [layer, again]) {
-        expect(pyEq(_startRatio(lyr), startRatio)).toBe(true);
-        expect(pyEq(_ticks(lyr), ticks)).toBe(true);
+        expect(valueEquals(_startRatio(lyr), startRatio)).toBe(true);
+        expect(valueEquals(_ticks(lyr), ticks)).toBe(true);
         const got = lyr.transform.opacity.keyframes.map((kf: Keyframe) => kf.time);
         expect(approx(got, times, { abs: 1e-12 })).toBe(true);
       }
@@ -489,7 +489,7 @@ describe("TestStretchedLayerKeyTimes", () => {
     for (const lyr of [layer, again]) {
       const prop = lyr.transform.opacity;
       expect(prop._tdb4._timeBase).toBe(115200);
-      expect(pyEq(_startRatio(lyr), [149760, 115200])).toBe(true);
+      expect(valueEquals(_startRatio(lyr), [149760, 115200])).toBe(true);
       expect(approx(at(prop.keyframes, 0).time, keyTime, { abs: 1e-12 })).toBe(true);
     }
   });
@@ -499,9 +499,9 @@ describe("TestStretchedLayerKeyTimes", () => {
     // and keys tick -62221 (the nearest tick to the exact layer time is
     // a tie, which round-half-even sent to -62222).
     const [_project, comp] = _newComp(77.777);
-    expect(pyEq(_ticks(_stretchedLayer(comp, 100.0, 1.3)), [-62221, 0, 54444, 209998, 462773])).toBe(true);
+    expect(valueEquals(_ticks(_stretchedLayer(comp, 100.0, 1.3)), [-62221, 0, 54444, 209998, 462773])).toBe(true);
     // -50 %: AE keyed 124416 at 0.5 s, one tick off the nearest.
-    expect(pyEq(_ticks(_stretchedLayer(comp, -50.0, 1.3)), [-925572, -420022, -108914, -26, 124416])).toBe(true);
+    expect(valueEquals(_ticks(_stretchedLayer(comp, -50.0, 1.3)), [-925572, -420022, -108914, -26, 124416])).toBe(true);
   });
 });
 
@@ -523,7 +523,7 @@ describe("TestLayerStartTime", () => {
     layer.startTime = start;
     const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
     for (const lyr of [layer, again]) {
-      expect(pyEq(_startRatio(lyr), ratio)).toBe(true);
+      expect(valueEquals(_startRatio(lyr), ratio)).toBe(true);
       expect(lyr.startTime).toBe(ratio[0] / ratio[1]);
     }
   });
@@ -553,11 +553,11 @@ describe("TestLayerStartTime", () => {
     const layer = comp.addSolid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 10.0);
     layer.startTime = 1.3;
     layer.stretch = 150.0;
-    expect(pyEq(_startRatio(layer), [31949, 24576])).toBe(true);
+    expect(valueEquals(_startRatio(layer), [31949, 24576])).toBe(true);
     layer.stretch = 100.0;
     layer.startTime = 1.3;
     layer.stretch = -150.0;
-    expect(pyEq(_startRatio(layer), [31949, 24576])).toBe(true);
+    expect(valueEquals(_startRatio(layer), [31949, 24576])).toBe(true);
   });
 
   test("test_start_past_the_field_is_rejected", () => {
@@ -581,7 +581,7 @@ describe("TestLayerStartTime", () => {
       },
       "must be >=",
     );
-    expect(pyEq(_startRatio(layer), before)).toBe(true);
+    expect(valueEquals(_startRatio(layer), before)).toBe(true);
   });
 });
 
@@ -596,7 +596,7 @@ describe("TestRetimeRoundsHalfUp", () => {
       [15, -13, -15, 13].map((u) => u / 24576),
     );
     layer.stretch = 150.0;
-    expect(pyEq(_ticks(layer), [-22, -19, 20, 23])).toBe(true);
+    expect(valueEquals(_ticks(layer), [-22, -19, 20, 23])).toBe(true);
   });
 
   test("test_frame_rate_change", () => {
@@ -607,10 +607,10 @@ describe("TestRetimeRoundsHalfUp", () => {
     const plain = _stretchedLayer(comp, 100.0, 0.0, times);
     const capped = _stretchedLayer(comp, 100.0, 0.0, times);
     capped.stretch = 500.0;
-    expect(pyEq(_ticks(capped), [-394, -169, 56, 281, 115200])).toBe(true);
+    expect(valueEquals(_ticks(capped), [-394, -169, 56, 281, 115200])).toBe(true);
     comp.frameRate = 25.0;
-    expect(pyEq(_ticks(plain), [-87, -37, 13, 63, 25600])).toBe(true);
-    expect(pyEq(_ticks(capped), [-394, -169, 56, 281, 115200])).toBe(true);
+    expect(valueEquals(_ticks(plain), [-87, -37, 13, 63, 25600])).toBe(true);
+    expect(valueEquals(_ticks(capped), [-394, -169, 56, 281, 115200])).toBe(true);
   });
 });
 
@@ -626,7 +626,7 @@ describe("TestStretchStorage", () => {
     layer.stretch = 133.33;
     const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
     for (const lyr of [layer, again]) {
-      expect(pyEq(_stretchRatio(lyr), [11184531, 8388608])).toBe(true);
+      expect(valueEquals(_stretchRatio(lyr), [11184531, 8388608])).toBe(true);
       expect(lyr.stretch).toBe((11184531 * 100) / 8388608);
     }
   });
@@ -636,8 +636,8 @@ describe("TestStretchStorage", () => {
     // key set at 4.0 s landed one tick short of AE's 209996.
     const [_project, comp] = _newComp(77.777);
     const layer = _stretchedLayer(comp, 133.33, 1.3);
-    expect(pyEq(_startRatio(layer), [134809, 103699])).toBe(true);
-    expect(pyEq(_ticks(layer), [-62221, 0, 54443, 209996, 462768])).toBe(true);
+    expect(valueEquals(_startRatio(layer), [134809, 103699])).toBe(true);
+    expect(valueEquals(_ticks(layer), [-62221, 0, 54443, 209996, 462768])).toBe(true);
     const got = sorted(layer.transform.property("ADBE Opacity").keyframes.map((kf: Keyframe) => kf.time));
     expect(
       approx(
@@ -660,7 +660,7 @@ describe("TestStretchStorage", () => {
     const [_project, comp] = _newComp(24.0);
     const layer = comp.addSolid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 10.0);
     layer.stretch = percent;
-    expect(pyEq(_stretchRatio(layer), ratio)).toBe(true);
+    expect(valueEquals(_stretchRatio(layer), ratio)).toBe(true);
     expect(Math.abs(layer.stretch)).toBe(0.99945068359375);
   });
 
@@ -670,9 +670,9 @@ describe("TestStretchStorage", () => {
     const [project, comp] = _newComp(24.0);
     const layer = comp.addSolid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 10.0);
     layer.stretch = 1e6;
-    expect(pyEq(_stretchRatio(layer), [10000, 1])).toBe(true);
+    expect(valueEquals(_stretchRatio(layer), [10000, 1])).toBe(true);
     layer.stretch = 2147483520 * 100.0;
-    expect(pyEq(_stretchRatio(layer), [2147483520, 1])).toBe(true);
+    expect(valueEquals(_stretchRatio(layer), [2147483520, 1])).toBe(true);
     raises(
       ValueError,
       () => {
@@ -687,7 +687,7 @@ describe("TestStretchStorage", () => {
       },
       "must be >=",
     );
-    expect(pyEq(_stretchRatio(layer), [2147483520, 1])).toBe(true);
+    expect(valueEquals(_stretchRatio(layer), [2147483520, 1])).toBe(true);
     _reparse(project, tmpPath);
   });
 });
@@ -754,7 +754,7 @@ describe("TestFrameGridPastTheCap", () => {
     const tmpPath = makeTmpPath();
     const [project, comp] = _newComp(rate, 3.3);
     const cdta = comp._cdta;
-    expect(pyEq([cdta.internalTimebase, round(cdta.timeScale * 256)], grid)).toBe(true);
+    expect(valueEquals([cdta.internalTimebase, round(cdta.timeScale * 256)], grid)).toBe(true);
     const got = new Map<string, number | number[]>([["dur0", comp.duration]]);
     comp.duration = 1.0001;
     got.set("dur", comp.duration);
@@ -775,7 +775,7 @@ describe("TestFrameGridPastTheCap", () => {
     );
     for (const [key, value] of expected.entries()) {
       // The Python assertion message names the key; bun's expect takes no message.
-      expect(approx(getitem(got, key), value, { abs: 1e-11 })).toBe(true);
+      expect(approx(getOrThrow(got, key), value, { abs: 1e-11 })).toBe(true);
     }
     const again = at(_reparse(project, tmpPath).compositions, 0);
     expect(again.time).toBe(comp.time);
@@ -845,7 +845,7 @@ describe("TestReversedInOutPoints", () => {
     const reversedLayers = project.compositions
       .flatMap((c) => c.layers)
       .filter((lyr) => lyr.stretch < 0);
-    expect(pyBool(reversedLayers)).toBe(true);
+    expect(truthy(reversedLayers)).toBe(true);
     for (const lyr of reversedLayers) {
       expect(approx(lyr.inPoint, -1 / 3000, { abs: 1e-12 })).toBe(true);
       expect(approx(lyr.outPoint, -60 - 1 / 3000, { abs: 1e-12 })).toBe(true);

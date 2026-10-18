@@ -34,11 +34,11 @@ import {
   ValueError,
   deepcopy,
   float,
-  getitem,
+  getOrThrow,
   max,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   round,
   sorted,
@@ -60,7 +60,7 @@ import { validateBool, validateEnum, validateFontName, validateNormalizedFloat, 
 import { FontObject } from "./font_object.ts";
 import type { TextDocument } from "./text_document.ts";
 
-export const bool = (x: CosNode): boolean => pyBool(x);
+export const bool = (x: CosNode): boolean => truthy(x);
 
 // AE's exact error strings (AE 26.3, English locale); py_aep raises these
 // from ValueError so behavior parity does not depend on hosting AE.
@@ -368,7 +368,7 @@ export function _registerFontAt(
   const entry = _buildFontEntry(postScriptName);
   const fontEntry = entry.get("0");
   const fontData = fontEntry instanceof Map ? fontEntry.get("0") : null;
-  pyAssert(fontEntry instanceof Map && fontData instanceof Map);
+  assert(fontEntry instanceof Map && fontData instanceof Map);
   const version = fontVersionString(postScriptName);
   if (version != null) fontData.set("5", version);
   cosInsert(fontArray, index, entry);
@@ -382,7 +382,7 @@ export function _registerFontAt(
 
   const state = cosGetOr(cos, "1", new Map());
   const entryDocs = cosGetOr(state, "1", []);
-  for (const entryDoc of cosIter(pyBool(entryDocs) ? entryDocs : [])) {
+  for (const entryDoc of cosIter(truthy(entryDocs) ? entryDocs : [])) {
     const runs = cosGet(entryDoc, "0", "6", "0");
     if (!Array.isArray(runs)) continue;
     for (const run of runs) {
@@ -622,7 +622,7 @@ export function _mergeAdjacentRuns(runs: CosNode[]): void {
   let i = 0;
   while (i + 1 < runs.length) {
     const here = cosDict(runs[i], "get").get("0") ?? null;
-    if (pyEq(here, cosDict(runs[i + 1], "get").get("0") ?? null)) {
+    if (valueEquals(here, cosDict(runs[i + 1], "get").get("0") ?? null)) {
       cosSetitem(runs[i], "1", pyAdd(_runCount(runs[i]), _runCount(runs[i + 1])));
       runs.splice(i + 1, 1);
     } else {
@@ -1299,13 +1299,13 @@ export class CharacterRange extends _TextRange {
   _resolveMixed<T>(kind: RangeKind, key: string, transform: (raw: CosNode) => T, default_: T | null, gate: string | null): T | null {
     let payloads = this._overlapping(this._spansFor(kind));
     if (gate != null) {
-      payloads = payloads.filter((p) => pyBool(p.get(gate) ?? null));
+      payloads = payloads.filter((p) => truthy(p.get(gate) ?? null));
       if (!payloads.length) return null;
     }
     if (!payloads.length) return default_;
     const values = payloads.map((payload) => _extract(payload, key, transform, default_));
     const first = values[0];
-    return values.slice(1).every((value) => pyEq(value, first)) ? first : null;
+    return values.slice(1).every((value) => valueEquals(value, first)) ? first : null;
   }
 
   _propagate(): void {
@@ -1369,7 +1369,7 @@ export class CharacterRange extends _TextRange {
     const entries: CosNode[] = [];
     let pos: PyNum = 0;
     const srcRuns = cosGet(srcDoc._doc, "0", "6", "0");
-    for (const run of cosIter(pyBool(srcRuns) ? srcRuns : [])) {
+    for (const run of cosIter(truthy(srcRuns) ? srcRuns : [])) {
       const runEnd = pyAdd(pos, _runCount(run));
       // `max(pos, src_start)` / `min(run_end, src_end)` keep the winning
       // operand itself, so a float position stays a float.
@@ -1408,7 +1408,7 @@ export class CharacterRange extends _TextRange {
         if (style instanceof Map) {
           const index = read(charStyle, style, "0");
           const name = index != null ? needed.get(Number(index)) : undefined;
-          if (name !== undefined) style.set("0", getitem(targetIndex, name));
+          if (name !== undefined) style.set("0", getOrThrow(targetIndex, name));
         }
       }
     }

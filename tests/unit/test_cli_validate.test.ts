@@ -11,7 +11,7 @@ import { ValidationResult, _getFieldNames, _getPropertyNames, compareMarker, com
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { AssertionError, Path, getitem, len, pyAssert, pyEq, range, repr, sorted, str, strip } from "../../src/pyrt/index.ts";
+import { AssertionError, Path, getOrThrow, len, assert, valueEquals, range, repr, sorted, str, strip } from "../../src/pyrt/index.ts";
 import { makeTmpPath, skip } from "../../src/pyrt/pytest.ts";
 
 /** Path(__file__).parent.parent.parent / "samples" */
@@ -82,8 +82,8 @@ describe("TestValidationResult", () => {
   test("test_empty", () => {
     const result = new ValidationResult();
     expect(len(result)).toBe(0);
-    expect(pyEq(result.differences, [])).toBe(true);
-    expect(pyEq(result.warnings, [])).toBe(true);
+    expect(valueEquals(result.differences, [])).toBe(true);
+    expect(valueEquals(result.warnings, [])).toBe(true);
   });
 
   test("test_add_diff", () => {
@@ -91,7 +91,7 @@ describe("TestValidationResult", () => {
     result.addDiff("test.field", 1, 2, "test");
     expect(len(result)).toBe(1);
     expect(result.differences[0].includes("test.field")).toBe(true);
-    expect(getitem(result.categories, "test")).toBe(1);
+    expect(getOrThrow(result.categories, "test")).toBe(1);
   });
 
   test("test_add_warning", () => {
@@ -152,13 +152,13 @@ describe("TestTraversalOrder", () => {
     expect(names != null).toBe(true);
     expect(Array.isArray(names)).toBe(true);
     if (names == null) throw new AssertionError("KeyframeEase has no field names");
-    expect(pyEq([...names], sorted(names))).toBe(true);
+    expect(valueEquals([...names], sorted(names))).toBe(true);
   });
 
   test("test_property_names_are_ordered", () => {
     const names = _getPropertyNames(Property);
     expect(Array.isArray(names)).toBe(true);
-    expect(pyEq([...names], sorted(names))).toBe(true);
+    expect(valueEquals([...names], sorted(names))).toBe(true);
   });
 
   /** The reported differences must not vary between runs. */
@@ -179,7 +179,7 @@ describe("TestTraversalOrder", () => {
     // rejects here, as CalledProcessError raises in Python.
     const runs = await Promise.all([...range(3)].map(() => promisify(execFile)(process.execPath, ["-e", script])));
     const counts = new Set(runs.map((r) => strip(r.stdout)));
-    pyAssert(len(counts) === 1, `validate_aep is not deterministic: ${repr([...counts])}`);
+    assert(len(counts) === 1, `validate_aep is not deterministic: ${repr([...counts])}`);
  }, 120_000);
 });
 

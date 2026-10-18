@@ -12,7 +12,7 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { GradientPaint, SolidPaint, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
 import { parseColor } from "../../src/py_aep/svg/colors.ts";
 import { IDENTITY, parseTransform } from "../../src/py_aep/svg/transform.ts";
-import { at, encode, max, min, pyAssert, pyEq, zip, type Path } from "../../src/pyrt/index.ts";
+import { at, encode, max, min, assert, valueEquals, zip, type Path } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -116,7 +116,7 @@ describe("TestBoundingBoxGradients", () => {
         "<stop offset='0.3' stop-color='blue'/></linearGradient>",
     );
     expect(
-      pyEq(
+      valueEquals(
         paint.stops.map((s) => [s.offset, s.color.slice(0, 3)]),
         [
           [0.6, [1.0, 0.0, 0.0]],
@@ -130,17 +130,17 @@ describe("TestBoundingBoxGradients", () => {
 describe("TestMalformedInput", () => {
   test("test_wrong_arity_transform_is_ignored", () => {
     // AE 2026 imports a `matrix(1 0 0 1)` group untransformed.
-    expect(pyEq([...parseTransform("matrix(1 0 0 1)")], [...IDENTITY])).toBe(true);
-    expect(pyEq([...parseTransform("translate(5) skewX()")], [...IDENTITY])).toBe(true);
+    expect(valueEquals([...parseTransform("matrix(1 0 0 1)")], [...IDENTITY])).toBe(true);
+    expect(valueEquals([...parseTransform("translate(5) skewX()")], [...IDENTITY])).toBe(true);
     const bbox = _bbox(
       _svg("<g transform='matrix(1 0 0 1)'><rect x='3' width='10' height='10'/></g>"),
     );
-    expect(pyEq(bbox, [3.0, 0.0, 13.0, 10.0])).toBe(true);
+    expect(valueEquals(bbox, [3.0, 0.0, 13.0, 10.0])).toBe(true);
   });
 
   test("test_non_finite_transform_is_ignored", () => {
-    expect(pyEq([...parseTransform("rotate(1e400)")], [...IDENTITY])).toBe(true);
-    expect(pyEq([...parseTransform("skewY(1e400)")], [...IDENTITY])).toBe(true);
+    expect(valueEquals([...parseTransform("rotate(1e400)")], [...IDENTITY])).toBe(true);
+    expect(valueEquals([...parseTransform("skewY(1e400)")], [...IDENTITY])).toBe(true);
   });
 
   test("test_unknown_transform_still_raises", () => {
@@ -199,7 +199,7 @@ describe("TestLengths", () => {
     const stroke = readSvg(
       _svg("<rect width='10' height='10' stroke='red' stroke-width='5%'/>"),
     ).drawables[0].stroke;
-    pyAssert(stroke != null);
+    assert(stroke != null);
     expect(approx(stroke.width, 0.05 * Math.sqrt((200 ** 2 + 100 ** 2) / 2))).toBe(true);
   });
 
@@ -238,7 +238,7 @@ describe("TestCascadeAndViewports", () => {
           "<rect style='fill:blue' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(pyEq(asInstance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(valueEquals(asInstance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_inline_important_beats_important_rule", () => {
@@ -248,7 +248,7 @@ describe("TestCascadeAndViewports", () => {
           "<rect style='fill:blue !important' width='10' height='10'/>",
       ),
     ).drawables[0].fill;
-    expect(pyEq(asInstance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
+    expect(valueEquals(asInstance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
   });
 
   test("test_nested_svg_maps_its_viewbox", () => {
@@ -317,7 +317,7 @@ describe("TestRadialRotation", () => {
 
 describe("TestColors", () => {
   test("test_hsl_clamps_saturation_and_lightness_first", () => {
-    expect(pyEq(parseColor("hsl(400, 150%, -5%)"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
-    expect(pyEq(parseColor("hsl(120, 100%, 25%)"), [0.0, 0.5, 0.0, 1.0])).toBe(true);
+    expect(valueEquals(parseColor("hsl(400, 150%, -5%)"), [0.0, 0.0, 0.0, 1.0])).toBe(true);
+    expect(valueEquals(parseColor("hsl(120, 100%, 25%)"), [0.0, 0.5, 0.0, 1.0])).toBe(true);
   });
 });

@@ -17,7 +17,7 @@ import {
   IndexError,
   KeyError,
   ValueError,
-  pyBool,
+  truthy,
   pyfloat,
   repr,
   round,
@@ -216,7 +216,7 @@ export type CosFieldExtras<D extends InstanceValue, O> = Partial<Pick<CosFieldOp
 
 /** Options of a boolean flag field: `transform=bool`, `reverse=bool`. */
 export function boolField<D extends boolean | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<boolean | D, O> {
-  return { transform: pyBool, reverse: pyBool, accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"), ...kw };
+  return { transform: truthy, reverse: truthy, accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"), ...kw };
 }
 
 /**

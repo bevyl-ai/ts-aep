@@ -16,14 +16,14 @@ import { describe, expect, test } from "bun:test";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import {
   AssertionError,
-  dictGet,
+  getOr,
   float,
   getattr,
   len,
   Path,
-  pyAssert,
-  pyEq,
-  pyOr,
+  assert,
+  valueEquals,
+  truthyOr,
   sorted,
   StopIteration,
   ValueError,
@@ -61,7 +61,7 @@ function _doc(project: Project, compName: string, layerName: string): TextDocume
   if (comp === undefined) throw new StopIteration();
   const layer = comp.layers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
-  pyAssert(layer instanceof TextLayer);
+  assert(layer instanceof TextLayer);
   const text = layer.text;
   if (text == null) throw new AssertionError(`text layer ${layerName} has no text properties`);
   return text.property("ADBE Text Document").value;
@@ -86,24 +86,24 @@ describe("TestBaselineLocs", () => {
   test("test_empty_line_is_float_max", () => {
     // "Hello\rWorld line two\r\rAfter empty": the third line is empty.
     const locs = _doc(parseProject(BASELINES_AEP), "PROBE_MAIN", "text_point").baselineLocs;
-    expect(pyEq(locs.slice(8, 12), Array(4).fill(FLT_MAX))).toBe(true);
+    expect(valueEquals(locs.slice(8, 12), Array(4).fill(FLT_MAX))).toBe(true);
   });
 
   test("test_box_text_offset_by_box_pos", () => {
     // A box's cached origins are box-relative; layer coordinates add
     // box_text_pos (AE: -110/-70 for a centered 220x140 box).
     const doc = _doc(parseProject(BASELINES_AEP), "PROBE_MAIN", "text_box");
-    expect(pyEq(doc.boxTextPos, [-110.0, -70.0])).toBe(true);
+    expect(valueEquals(doc.boxTextPos, [-110.0, -70.0])).toBe(true);
     expect(approx(doc.baselineLocs[0], -110.0)).toBe(true);
   });
 
   test("test_four_floats_per_composed_line", () => {
     const doc = _doc(parseProject(BASELINES_AEP), "PROBE_MAIN", "text_box");
-    expect(len(doc.baselineLocs)).toBe(4 * pyOr(doc.composedLineCount, 0));
+    expect(len(doc.baselineLocs)).toBe(4 * truthyOr(doc.composedLineCount, 0));
   });
 
   test("test_detached_document_is_empty", () => {
-    expect(pyEq(new TextDocument("hi").baselineLocs, [])).toBe(true);
+    expect(valueEquals(new TextDocument("hi").baselineLocs, [])).toBe(true);
   });
 });
 
@@ -130,21 +130,21 @@ describe("TestUsedFonts", () => {
   test("test_matches_ae", () => {
     const expected = _fixture("used_fonts_probe.json").value;
     const project = parseProject(BASELINES_AEP);
-    expect(pyEq(self._snapshot(project), self._expected(expected))).toBe(true);
+    expect(valueEquals(self._snapshot(project), self._expected(expected))).toBe(true);
   });
 
   test("test_mixed_and_keyframed_fonts_match_ae", () => {
     // Four fonts, a mixed-font document, and a font-keyframed layer.
     const expected = _fixture("replace_font_probe.json").before.usedFonts.value;
     const project = parseProject(REPLACE_FONT_AEP);
-    expect(pyEq(self._snapshot(project), self._expected(expected))).toBe(true);
+    expect(valueEquals(self._snapshot(project), self._expected(expected))).toBe(true);
   });
 
   test("test_sorted_by_post_script_name", () => {
     const names = parseProject(REPLACE_FONT_AEP).usedFonts.map(
       (e) => e.font.postScriptName,
     );
-    expect(pyEq(names, sorted(names))).toBe(true);
+    expect(valueEquals(names, sorted(names))).toBe(true);
   });
 });
 
@@ -157,16 +157,16 @@ class TestReplaceFont {
       const layer = comp.layers.find((ly) => ly.name === name);
       if (layer === undefined) throw new StopIteration();
       const text = layer.text;
-      pyAssert(text != null);
+      assert(text != null);
       const prop = text.property("ADBE Text Document");
-      const docs = pyOr(
+      const docs = truthyOr(
         prop.keyframes.map((kf) => kf.value),
         [prop.value],
       );
       state.set(name, [
         docs[0]._fonts.map((f) => f.postScriptName),
         docs.map((d) =>
-          _charRunSpans(d).map(([s, e, style]) => [s, e, dictGet(style, "0")]),
+          _charRunSpans(d).map(([s, e, style]) => [s, e, getOr(style, "0")]),
         ),
       ]);
     }
@@ -184,7 +184,7 @@ describe("TestReplaceFont", () => {
     // AE inserts the replacement directly after the replaced font and
     // keeps the old entry; unaffected runs are untouched.
     expect(
-      pyEq(self._layer_state(project), self._layer_state(parseProject(REPLACE_FONT_AFTER_AEP))),
+      valueEquals(self._layer_state(project), self._layer_state(parseProject(REPLACE_FONT_AFTER_AEP))),
     ).toBe(true);
   });
 
@@ -200,14 +200,14 @@ describe("TestReplaceFont", () => {
       r.font.postScriptName,
       r.usedAt.map((u) => [u.layerID, float(u.layerTimeD)]),
     ]);
-    expect(pyEq(got, want)).toBe(true);
+    expect(valueEquals(got, want)).toBe(true);
   });
 
   test("test_same_font_is_noop", () => {
     const project = parseProjectFresh(REPLACE_FONT_AEP);
     const before = self._layer_state(project);
     expect(project.replaceFont("Verdana", "Verdana")).toBe(false);
-    expect(pyEq(self._layer_state(project), before)).toBe(true);
+    expect(valueEquals(self._layer_state(project), before)).toBe(true);
   });
 
   test("test_unused_font_returns_false", () => {
@@ -283,9 +283,9 @@ describe("TestResetStyles", () => {
       const got = getattr(doc, pyKey);
       const want = expected[aeKey];
       if (typeof want === "boolean" || typeof want === "string") {
-        pyAssert(pyEq(got, want), pyKey);
+        assert(valueEquals(got, want), pyKey);
       } else {
-        pyAssert(approx(float(got), float(want), { abs: 1e-3 }), pyKey);
+        assert(approx(float(got), float(want), { abs: 1e-3 }), pyKey);
       }
     }
   });
@@ -305,9 +305,9 @@ describe("TestResetStyles", () => {
       const got = getattr(doc, pyKey);
       const want = expected[aeKey];
       if (typeof want === "boolean") {
-        pyAssert(pyEq(got, want), pyKey);
+        assert(valueEquals(got, want), pyKey);
       } else {
-        pyAssert(approx(float(got), float(want), { abs: 1e-3 }), pyKey);
+        assert(approx(float(got), float(want), { abs: 1e-3 }), pyKey);
       }
     }
   });
@@ -370,7 +370,7 @@ describe("TestFuzzRegressions", () => {
     const comp = project.compositions[0];
     const doc = _doc(project, comp.name, "M_LIGA");
     const locs = doc.baselineLocs;
-    expect(len(locs)).toBe(4 * pyOr(doc.composedLineCount, 0));
+    expect(len(locs)).toBe(4 * truthyOr(doc.composedLineCount, 0));
     // Line 0 is "affinity " - the extent excludes the trailing space.
     expect(approx(locs[2], locs[0] + 104.292, { abs: 5e-3 })).toBe(true);
   });
@@ -413,17 +413,17 @@ describe("TestFuzzRegressions", () => {
     const project = parseProjectFresh(REPLACE_FONT_AEP);
     const doc = _doc(project, "RESET", "reset_para");
     const names = doc._fonts.map((f) => f.postScriptName);
-    pyAssert(
+    assert(
       names.filter((n) => n === "MyriadPro-Regular").length === 2,
       "sample lost its duplicate",
     );
-    expect(pyEq(doc._usedFontObjects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
+    expect(valueEquals(doc._usedFontObjects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
       true,
     );
 
     expect(project.replaceFont("MyriadPro-Regular", "Georgia")).toBe(true);
 
-    expect(pyEq(doc._usedFontObjects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
+    expect(valueEquals(doc._usedFontObjects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
     expect(
       project.usedFonts
         .map((e) => e.font.postScriptName)

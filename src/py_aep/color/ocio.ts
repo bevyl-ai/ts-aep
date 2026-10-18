@@ -24,12 +24,12 @@ import {
   AttributeError,
   OSError,
   ValueError,
-  getitem,
-  pyBool,
+  getOrThrow,
+  truthy,
   pyIter,
   str,
   typeName,
-  pyOr,
+  truthyOr,
   tkey,
   setdefault,
   sorted,
@@ -146,7 +146,7 @@ export const _loadConfigCached = lruCache(
       });
     } catch (e) {
       // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
-      if (!(e instanceof OSError || e instanceof dep("yaml").YAMLError || (e instanceof Error && "code" in e && pyBool(e.code)))) {
+      if (!(e instanceof OSError || e instanceof dep("yaml").YAMLError || (e instanceof Error && "code" in e && truthy(e.code)))) {
         throw e;
       }
       return null;
@@ -163,7 +163,7 @@ export function _configStamp(configPath: Path): [bigint, number] | null {
     st = host.fs.statSync(configPath.path, { bigint: true });
   } catch (e) {
     // `except OSError`: node fs errors carry a `code`.
-    if (!(e instanceof Error && "code" in e && pyBool(e.code))) throw e;
+    if (!(e instanceof Error && "code" in e && truthy(e.code))) throw e;
     return null;
   }
   return [st.mtimeNs, Number(st.size)];
@@ -201,7 +201,7 @@ export function listConfigColorSpaces(configPath: Path): string[] {
   if (doc == null) return [];
   const names: string[] = [];
   for (const key of ["colorspaces", "display_colorspaces"] as const) {
-    for (const entry of pyIter(pyOr(doc.get(key), []))) {
+    for (const entry of pyIter(truthyOr(doc.get(key), []))) {
       if (entry instanceof Map) {
         const name = entry.get("name") ?? null;
         if (typeof name === "string") names.push(name);
@@ -210,7 +210,7 @@ export function listConfigColorSpaces(configPath: Path): string[] {
   }
   // `set(...)`: a list, dict or set member is unhashable.
   const inactive = new Set<OcioValue>();
-  for (const n of pyIter(pyOr(doc.get("inactive_colorspaces"), []))) {
+  for (const n of pyIter(truthyOr(doc.get("inactive_colorspaces"), []))) {
     if (Array.isArray(n) || n instanceof Map || n instanceof Set) {
       throw new TypeError(`unhashable type: '${typeName(n)}'`);
     }
@@ -377,26 +377,26 @@ export const _configIndexCached = lruCache(
     const families = new Map<string, OcioValue>();
     const aliases = new Map<string, OcioValue>();
     for (const key of ["colorspaces", "display_colorspaces"] as const) {
-      for (const cs of pyIter(pyOr(doc.get(key), []))) {
+      for (const cs of pyIter(truthyOr(doc.get(key), []))) {
         if (!(cs instanceof Map)) continue;
         const name = cs.get("name");
         if (typeof name === "string") {
-          const family = pyOr(cs.get("family"), "");
+          const family = truthyOr(cs.get("family"), "");
           families.set(name, family);
-          for (const alias of pyIter(pyOr(cs.get("aliases"), []))) {
+          for (const alias of pyIter(truthyOr(cs.get("aliases"), []))) {
             if (typeof alias === "string") aliases.set(alias, family);
           }
         }
       }
     }
     const roles = new Map<OcioValue, string>();
-    for (const [r, t] of _items(pyOr(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
+    for (const [r, t] of _items(truthyOr(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
       if (typeof t === "string") roles.set(r, t);
     }
     const displays = new Map<OcioValue, string[]>();
-    for (const [display, items] of _items(pyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
+    for (const [display, items] of _items(truthyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
       const views: string[] = [];
-      for (const item of pyIter(pyOr(items, []))) {
+      for (const item of pyIter(truthyOr(items, []))) {
         // `!<Views> [name, ..]` (shared views) or `!<View> {name: ..}`; the
         // OCIO loader strips the tags to a list or a dict respectively.
         if (Array.isArray(item)) {
@@ -436,12 +436,12 @@ export function _items(x: OcioValue): [OcioValue, OcioValue][] {
 export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
   // Only a string can be a color-space or alias name; any YAML key a role.
   if (typeof colorSpace === "string" && index.families.has(colorSpace)) {
-    const family = getitem(index.families, colorSpace);
-    const name = pyBool(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+    const family = getOrThrow(index.families, colorSpace);
+    const name = truthy(family) ? `${str(family)}/${colorSpace}` : colorSpace;
     return [name, _compact({ colorSpace1: colorSpace })];
   }
   if (index.roles.has(colorSpace)) {
-    const target = getitem(index.roles, colorSpace);
+    const target = getOrThrow(index.roles, colorSpace);
     return [target, _compact({ colorSpace1: target, ocioColorSpaceType: 2 })];
   }
   if (typeof colorSpace === "string" && index.aliases.has(colorSpace)) {
@@ -700,14 +700,14 @@ export function ocioInputEnvelope(configPath: Path, filePath: string): string | 
   if (doc == null) return null;
   const index = _configIndex(configPath);
   const rules = doc.get("file_rules") ?? null;
-  if (pyBool(rules)) {
+  if (truthy(rules)) {
     for (const rule of pyIter(rules)) {
       if (!(rule instanceof Map) || !_ruleMatches(rule, filePath)) continue;
       const colorSpace = rule.get("colorspace") ?? null;
       if (typeof colorSpace !== "string") return null;
       const target = index.roles.get(colorSpace) ?? colorSpace;
-      const family = pyOr(pyOr(index.families.get(target) ?? null, index.aliases.get(target) ?? null), "");
-      const name = pyBool(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+      const family = truthyOr(truthyOr(index.families.get(target) ?? null, index.aliases.get(target) ?? null), "");
+      const name = truthy(family) ? `${str(family)}/${colorSpace}` : colorSpace;
       return buildOcioEnvelope(name, _compact({ colorSpace1: colorSpace }));
     }
     return null;

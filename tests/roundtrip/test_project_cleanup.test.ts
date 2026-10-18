@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getitem, len, Path, pyBool, pyEq, StopIteration } from "../../src/pyrt/index.ts";
+import { getOrThrow, len, Path, truthy, valueEquals, StopIteration } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
@@ -22,19 +22,19 @@ describe("TestRemoveUnusedFootage", () => {
   test("test_removes_all_unused", () => {
     const project = parseAep(FOOTAGE_MISC).project;
     expect(len(project.footages)).toBe(7);
-    expect(project.footages.every((f) => !pyBool(f.usedIn))).toBe(true);
+    expect(project.footages.every((f) => !truthy(f.usedIn))).toBe(true);
 
     const removed = project.removeUnusedFootage();
 
     expect(removed).toBe(7);
-    expect(pyEq(project.footages, [])).toBe(true);
+    expect(valueEquals(project.footages, [])).toBe(true);
   });
 
   test("test_keeps_used_footage", () => {
     const project = parseAep(SOLID_COLORS).project;
     const usedCount = len(project.footages);
     expect(usedCount > 0).toBe(true);
-    expect(project.footages.every((f) => pyBool(f.usedIn))).toBe(true);
+    expect(project.footages.every((f) => truthy(f.usedIn))).toBe(true);
 
     const removed = project.removeUnusedFootage();
 
@@ -51,7 +51,7 @@ describe("TestRemoveUnusedFootage", () => {
 
     expect(removed).toBe(1);
     expect(project.items.has(placeholder.id)).toBe(false);
-    expect(pyEq(new Set(project.footages.map((f) => f.id)), usedIds)).toBe(true);
+    expect(valueEquals(new Set(project.footages.map((f) => f.id)), usedIds)).toBe(true);
   });
 
   test("test_roundtrip", () => {
@@ -64,7 +64,7 @@ describe("TestRemoveUnusedFootage", () => {
     project.save(out);
     const reparsed = parseAep(out).project;
 
-    expect(reparsed.footages.every((f) => pyBool(f.usedIn))).toBe(true);
+    expect(reparsed.footages.every((f) => truthy(f.usedIn))).toBe(true);
   });
 });
 
@@ -116,7 +116,7 @@ describe("TestReduceProject", () => {
     const removed = project.reduceProject([]);
 
     expect(removed > 0).toBe(true);
-    expect(pyEq(new Set(project.items.keys()), new Set([0]))).toBe(true);
+    expect(valueEquals(new Set(project.items.keys()), new Set([0]))).toBe(true);
   });
 
   test("test_roundtrip", () => {
@@ -130,7 +130,7 @@ describe("TestReduceProject", () => {
     project.save(out);
     const reparsed = parseAep(out).project;
 
-    expect(pyEq(reparsed.compositions.map((c) => c.name), [keptName])).toBe(true);
+    expect(valueEquals(reparsed.compositions.map((c) => c.name), [keptName])).toBe(true);
   });
 });
 
@@ -148,12 +148,12 @@ describe("TestConsolidateFootage", () => {
   test("test_merges_identical_sources", () => {
     const project = parseAep(FOOTAGE_MISC).project;
     // footages 5 and 6 reference the same file and differ only by loop.
-    const first = asInstance(getitem(project.items, 5), FootageItem);
-    const second = asInstance(getitem(project.items, 6), FootageItem);
+    const first = asInstance(getOrThrow(project.items, 5), FootageItem);
+    const second = asInstance(getOrThrow(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
-    expect(pyEq(first._consolidationKey(), second._consolidationKey())).toBe(true);
+    expect(valueEquals(first._consolidationKey(), second._consolidationKey())).toBe(true);
     const before = len(project.footages);
 
     const removed = project.consolidateFootage();
@@ -164,8 +164,8 @@ describe("TestConsolidateFootage", () => {
 
   test("test_retargets_layers", () => {
     const project = parseAep(FOOTAGE_MISC).project;
-    const first = asInstance(getitem(project.items, 5), FootageItem);
-    const second = asInstance(getitem(project.items, 6), FootageItem);
+    const first = asInstance(getOrThrow(project.items, 5), FootageItem);
+    const second = asInstance(getOrThrow(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
@@ -178,13 +178,13 @@ describe("TestConsolidateFootage", () => {
     const removed = project.consolidateFootage();
 
     expect(removed).toBe(1);
-    expect(pyEq(new Set(comp.avLayers.map((layer) => layer._sourceId)), new Set([survivorId]))).toBe(true);
+    expect(valueEquals(new Set(comp.avLayers.map((layer) => layer._sourceId)), new Set([survivorId]))).toBe(true);
   });
 
   test("test_retargets_cached_layer_source", () => {
     const project = parseAep(FOOTAGE_MISC).project;
-    const first = asInstance(getitem(project.items, 5), FootageItem);
-    const second = asInstance(getitem(project.items, 6), FootageItem);
+    const first = asInstance(getOrThrow(project.items, 5), FootageItem);
+    const second = asInstance(getOrThrow(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
@@ -213,8 +213,8 @@ describe("TestConsolidateFootage", () => {
   test("test_roundtrip", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(FOOTAGE_MISC).project;
-    const first = asInstance(getitem(project.items, 5), FootageItem);
-    const second = asInstance(getitem(project.items, 6), FootageItem);
+    const first = asInstance(getOrThrow(project.items, 5), FootageItem);
+    const second = asInstance(getOrThrow(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;

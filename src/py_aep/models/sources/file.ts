@@ -41,10 +41,10 @@ import {
   format,
   getattr,
   setattr,
-  getitem,
+  getOrThrow,
   int,
-  pyBool,
-  pyOr,
+  truthy,
+  truthyOr,
   repr,
   round,
   sorted,
@@ -1244,7 +1244,7 @@ export class FileSource extends FootageSource {
         layerId: leaf.layerId,
         layerIndex: leaf.recordIndex,
         dataSize: footage.dataSize,
-        reservedC8: getitem(PSD_LAYER_STYLES_C8, styles),
+        reservedC8: getOrThrow(PSD_LAYER_STYLES_C8, styles),
         embeddedProfileName: namedMediaProfile(fmt.sourceFormat, info),
         colorMode: info.colorMode,
         windows,
@@ -1424,7 +1424,7 @@ export class FileSource extends FootageSource {
     const fileCount = fileNames != null ? fileNames.length : frames.length;
     const firstPath = file.parent.div(firstFrame);
     const info = probeMedia(firstPath);
-    const frameRate = pyOr(info.frameRate, defaultFrameRate);
+    const frameRate = truthyOr(info.frameRate, defaultFrameRate);
     let duration: number;
     if (info.duration !== 0) {
       // A first frame with a timeline of its own (an animated GIF) sets
@@ -1548,7 +1548,7 @@ export class FileSource extends FootageSource {
         path,
         fmt,
         alphabetical,
-        pyOr(sspc.nativeFrameRate, 30.0),
+        truthyOr(sspc.nativeFrameRate, 30.0),
         { windows: this._windows, rangeStart, rangeEnd },
       );
       // The duration as frames over rate, unreduced, as the import writes

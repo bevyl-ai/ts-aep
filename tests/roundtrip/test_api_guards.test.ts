@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, NotImplementedError, OSError, Path, pyAssert, pyBool, pyEq, RuntimeError, setattr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+import { at, NotImplementedError, OSError, Path, assert, truthy, valueEquals, RuntimeError, setattr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, Property, type Application } from "../../src/py_aep/index.ts";
 import * as project_mod from "../../src/py_aep/models/project.ts";
@@ -36,7 +36,7 @@ describe("TestValueSetterOnKeyframedProperty", () => {
     const comp = app.project.compositions[0];
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
-      .find((p) => pyBool(p.keyframes));
+      .find((p) => truthy(p.keyframes));
     if (prop == null) throw new Error("no keyframed transform property");
     raises(
       ValueError,
@@ -51,7 +51,7 @@ describe("TestValueSetterOnKeyframedProperty", () => {
     const app = parseAep(SAMPLES_DIR.div("property", "all_animated.aep"));
     const comp = app.project.compositions[0];
     const rot = comp.avLayers[0].transform.property("ADBE Rotate Z");
-    expect(pyBool(rot.keyframes)).toBe(false);
+    expect(truthy(rot.keyframes)).toBe(false);
     rot.value = 45.0;
     expect(rot.value).toBe(45.0);
   });
@@ -64,7 +64,7 @@ describe("TestSetAlternateSource", () => {
   const _overrideLeaf = (app: Application): [Layer, Property] => {
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
-    const layer = host.layers.find((la) => pyBool(la.essentialPropertyUuids));
+    const layer = host.layers.find((la) => truthy(la.essentialPropertyUuids));
     if (layer == null) throw new StopIteration();
     const overrides = asInstance(
       layer.properties.find((p) => p.matchName === "ADBE Layer Overrides"),
@@ -109,10 +109,10 @@ describe("TestSetAlternateSource", () => {
     const app2 = parseAep(out);
     const [, alt2] = _overrideLeaf(app2);
     const wrapper = alt2.alternateSource;
-    pyAssert(wrapper instanceof CompItem);
+    assert(wrapper instanceof CompItem);
     expect(wrapper.name).toBe("image_with_alpha.png_sequence");
     expect(wrapper.parentFolder?.name).toBe("Media Replacement Comps");
-    expect(pyEq([wrapper.width, wrapper.height], [host.width, host.height])).toBe(true);
+    expect(valueEquals([wrapper.width, wrapper.height], [host.width, host.height])).toBe(true);
     expect(wrapper.duration).toBe(host.duration);
     // cdta cloned from the host comp (not add_comp's fresh skeleton).
     expect(wrapper._cdta.shutterPhase).toBe(host._cdta.shutterPhase);
@@ -182,17 +182,17 @@ describe("TestSetAlternateSource", () => {
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
     const solid = host.addSolid([0.0, 1.0, 0.0], "Guard Solid 2").source;
-    pyAssert(solid != null);
+    assert(solid != null);
     // Snapshot after add_solid (which legitimately adds the solid and
     // AE's `Solids` folder) so this measures only the failed assignment.
-    pyAssert(alt._blsi != null);
+    assert(alt._blsi != null);
     const beforeBlsi = alt._blsi.value;
     const beforeItems = new Set(app.project.items.keys());
     raises(ValueError, () => {
       alt.alternateSource = solid;
     });
-    expect(pyEq(alt._blsi?.value, beforeBlsi)).toBe(true);
-    expect(pyEq(new Set(app.project.items.keys()), beforeItems)).toBe(true); // no wrapper leaked
+    expect(valueEquals(alt._blsi?.value, beforeBlsi)).toBe(true);
+    expect(valueEquals(new Set(app.project.items.keys()), beforeItems)).toBe(true); // no wrapper leaked
   });
 });
 
@@ -265,7 +265,7 @@ describe("TestParentValidation", () => {
     );
     // Python's loop keeps the last match.
     const last = matches.length ? matches[matches.length - 1] : null;
-    pyAssert(last != null);
+    assert(last != null);
     const [comp, lyr] = last;
     const anchor = lyr.transform.property("ADBE Anchor Point");
     anchor.setValueAtTime(0.0, [10.0, 20.0, 0.0]);
@@ -279,7 +279,7 @@ describe("TestParentValidation", () => {
     lyr.parent = null_;
 
     // Anchor keyframes are in layer-source space; AE never touches them.
-    expect(pyEq(anchor.keyframes.map((k) => k.value), [
+    expect(valueEquals(anchor.keyframes.map((k) => k.value), [
       [10.0, 20.0, 0.0],
       [70.0, 80.0, 0.0],
     ])).toBe(true);
@@ -294,11 +294,11 @@ describe("TestParentValidation", () => {
     }
     const scale = lyr.transform.property("ADBE Scale");
     const rot = lyr.transform.property("ADBE Rotate Z");
-    expect(pyEq(scale.keyframes.map((k) => k.value), [
+    expect(valueEquals(scale.keyframes.map((k) => k.value), [
       [50.0, 50.0, 100.0],
       [150.0, 150.0, 100.0],
     ])).toBe(true);
-    expect(pyEq(rot.keyframes.map((k) => k.value), [0.0, 90.0])).toBe(true);
+    expect(valueEquals(rot.keyframes.map((k) => k.value), [0.0, 90.0])).toBe(true);
   });
 });
 
@@ -379,7 +379,7 @@ describe("TestLongKeyframeTimes", () => {
     const comp = app.project.compositions[0];
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
-      .find((p) => pyBool(p.keyframes));
+      .find((p) => truthy(p.keyframes));
     if (prop == null) throw new Error("no keyframed transform property");
     prop.setValueAtTime(9999.0, prop.keyframes[0].value);
     const out = tmpPath.div("far.aep");
@@ -388,7 +388,7 @@ describe("TestLongKeyframeTimes", () => {
     const comp2 = app2.project.compositions[0];
     const prop2 = comp2.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
-      .find((p) => pyBool(p.keyframes));
+      .find((p) => truthy(p.keyframes));
     if (prop2 == null) throw new Error("no keyframed transform property after save");
     expect(approx(at(prop2.keyframes, -1).time, 9999.0)).toBe(true);
   });
@@ -399,7 +399,7 @@ describe("TestLongKeyframeTimes", () => {
     const comp = app.project.compositions[0];
     const prop = comp.layers
       .flatMap((lyr) => [...lyr.transform].filter((p) => p instanceof Property))
-      .find((p) => pyBool(p.keyframes));
+      .find((p) => truthy(p.keyframes));
     if (prop == null) throw new Error("no keyframed transform property");
     prop.setValueAtTime(2.0, prop.keyframes[0].value);
     app.project.save(tmpPath.div("ok.aep"));
@@ -422,7 +422,7 @@ describe("TestTextRangeNumericValidation", () => {
     const layer = comp.textLayers.find((ly) => ly.name === name);
     if (layer == null) throw new StopIteration();
     const text = layer.text;
-    pyAssert(text != null);
+    assert(text != null);
     return text.sourceText.value;
   };
 

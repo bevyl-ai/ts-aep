@@ -44,9 +44,9 @@ import {
   islower,
   max,
   OSError,
-  pyBool,
-  pyEq,
-  pyOr,
+  truthy,
+  valueEquals,
+  truthyOr,
   repr,
   rstrip,
   split,
@@ -333,9 +333,9 @@ export class _CharStyle {
     this.size = cosFloat(cosGetOr(style, "1", 36.0));
     this.tracking = cosFloat(cosGetOr(style, "8", 0.0));
     this.hscale = cosFloat(cosGetOr(style, "6", 1.0));
-    this.fauxbold = pyBool(cosGetOr(style, "2", false));
+    this.fauxbold = truthy(cosGetOr(style, "2", false));
     this.caps = cosInt(cosGetOr(style, "12", 0)); // 0 normal, 1 small, 2 all
-    if (pyBool(cosGetOr(style, "4", true))) {
+    if (truthy(cosGetOr(style, "4", true))) {
       this.leading = _AUTO_LEADING_FACTOR * this.size;
     } else {
       this.leading = cosFloat(cosGetOr(style, "5", _AUTO_LEADING_FACTOR * this.size));
@@ -355,11 +355,11 @@ export function _checkEnvelope(doc: TextDocument, raw: string): void {
     );
   }
   const orientation = cosGet(doc._cosData, "0", "8", "0", 0, "0", "2", "1");
-  if (!(orientation == null || pyEq(orientation, 0))) {
+  if (!(orientation == null || valueEquals(orientation, 0))) {
     throw new CompositionUnsupported("vertical text");
   }
   const textDict = cosGet(doc._doc, "0");
-  if (cosContains(pyBool(textDict) ? textDict : new Map(), "8")) {
+  if (cosContains(truthy(textDict) ? textDict : new Map(), "8")) {
     throw new CompositionUnsupported("manual kerning");
   }
   // Box-frame inputs the composer does not model: the matrix fixture
@@ -396,7 +396,7 @@ export function _checkEnvelope(doc: TextDocument, raw: string): void {
     }
   }
   for (const [_start, _end, style] of runSpans(doc._doc, "6", "6")) {
-    if (pyBool(style.get("18") ?? null)) {
+    if (truthy(style.get("18") ?? null)) {
       throw new CompositionUnsupported("ligatures enabled");
     }
     if (cosFloat(cosGetOr(style, "36", 0.0)) !== 0.0) {
@@ -412,7 +412,7 @@ export function _checkEnvelope(doc: TextDocument, raw: string): void {
       // for text AE lays out unkerned.
       throw new CompositionUnsupported("auto kerning disabled");
     }
-    if (pyBool(style.get("52") ?? null)) {
+    if (truthy(style.get("52") ?? null)) {
       throw new CompositionUnsupported("no-break attribute");
     }
     if (cosFloat(cosGetOr(style, "9", 0.0)) !== 0.0) {
@@ -423,7 +423,7 @@ export function _checkEnvelope(doc: TextDocument, raw: string): void {
     }
   }
   for (const [_start, _end, style] of runSpans(doc._doc, "5", "5")) {
-    if (pyBool(style.get("29") ?? null)) {
+    if (truthy(style.get("29") ?? null)) {
       throw new CompositionUnsupported("every-line composer");
     }
     // NOTE auto-hyphenate (para key "9") is AE's DEFAULT and is inert
@@ -614,7 +614,7 @@ export function _breakParagraph(
  * `uharfbuzz` is unavailable (Python 3.7).
  */
 export function composeLines(doc: TextDocument): ComposedLines {
-  const raw = str(pyOr(cosGet(doc._doc, "0", "0"), ""));
+  const raw = str(truthyOr(cosGet(doc._doc, "0", "0"), ""));
   const boxSize = doc.boxTextSize;
   if (boxSize == null) {
     throw new CompositionUnsupported("not a box-text document");
@@ -661,7 +661,7 @@ export function composeLines(doc: TextDocument): ComposedLines {
   const baselines: number[] = [];
   let y = 0.0;
   for (const [lineNo, [start, end]] of spans.entries()) {
-    const lineStyles = pyOr(styles.slice(start, Math.min(end, styles.length)), [at(styles, -1)]);
+    const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [at(styles, -1)]);
     if (lineNo === 0) {
       y += max(
         lineStyles.map(
@@ -699,7 +699,7 @@ export function calibrate(
     if (!(e instanceof CompositionUnsupported)) throw e;
     return false;
   }
-  if (!pyEq(composed.spans, [...cachedSpans])) {
+  if (!valueEquals(composed.spans, [...cachedSpans])) {
     return false;
   }
   for (const [computed, cached] of zip(composed.baselines, cachedBaselines)) {

@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AttributeError, AssertionError, Path, pyAssert, pyEq, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
+import { AttributeError, AssertionError, Path, assert, valueEquals, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
@@ -94,7 +94,7 @@ function _findProperty(layer: Layer, matchName: string): Property | null {
 function _findSynthesizedEffectProp(layer: Layer, effectIndex: number, matchName: string): Property {
   if (layer.effects == null) throw new Error("layer has no effects group");
   const effect = layer.effects.properties[effectIndex];
-  pyAssert(effect instanceof PropertyGroup);
+  assert(effect instanceof PropertyGroup);
   for (const prop of effect.properties) {
     if (prop instanceof Property && prop.matchName === matchName) {
       return prop;
@@ -116,7 +116,7 @@ describe("TestByteIdentityRoundtrip", () => {
       app.project.save(out);
       const roundtripBytes = out.readBytes();
 
-      expect(pyEq(roundtripBytes, originalBytes)).toBe(true);
+      expect(valueEquals(roundtripBytes, originalBytes)).toBe(true);
     },
   );
 });

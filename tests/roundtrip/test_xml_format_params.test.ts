@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 
-import { getattr, Path, pyAssert, setattr, ValueError } from "../../src/pyrt/index.ts";
+import { getattr, Path, assert, setattr, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
@@ -19,7 +19,7 @@ import { AudioInterleave, MPEGAudioFormat, MPEGAudioLayer } from "../../src/py_a
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "format_options");
 
 function _fo(project: Project): XmlFormatOptions {
-  pyAssert(project.renderQueue != null);
+  assert(project.renderQueue != null);
   return asInstance(project.renderQueue.items[0].outputModules[0].formatOptions, XmlFormatOptions);
 }
 

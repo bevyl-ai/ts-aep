@@ -5,7 +5,7 @@ import {
   ValueError,
   deferred,
   mod,
-  pyAssert,
+  assert,
   floordiv,
   min,
   max,
@@ -249,7 +249,7 @@ export class Shape {
     if (inTangents.length !== count || outTangents.length !== count) {
       throw new ValueError("inTangents and outTangents must match the number of vertices");
     }
-    pyAssert(this._shph != null && this._points != null);
+    assert(this._shph != null && this._points != null);
     if (3 * count !== this._points.length && !this._detached) {
       throw new ValueError(
         `this path has ${floordiv(this._points.length, 3)} vertices; to change ` +
@@ -402,7 +402,7 @@ export class Shape {
   _denormalizePoint(pt: ShapePoint): number[] {
     /** Convert a normalized [0,1] shape point to absolute coordinates. */
     const shph = this._shph;
-    pyAssert(shph != null);
+    assert(shph != null);
     const x = shph.topLeftX * (1 - pt.x) + shph.bottomRightX * pt.x;
     const y = shph.topLeftY * (1 - pt.y) + shph.bottomRightY * pt.y;
     return [x, y];
@@ -411,7 +411,7 @@ export class Shape {
   _normalizePoint(x: number, y: number): [number, number] {
     /** Convert absolute coordinates back to normalized [0,1]. */
     const shph = this._shph;
-    pyAssert(shph != null);
+    assert(shph != null);
     const dx = shph.bottomRightX - shph.topLeftX;
     const dy = shph.bottomRightY - shph.topLeftY;
     const nx = dx !== 0 ? truediv(x - shph.topLeftX, dx) : 0.0;

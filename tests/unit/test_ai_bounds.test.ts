@@ -10,7 +10,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx as pytestApprox, raises, warns } from "../../src/pyrt/pytest.ts";
-import { b, bytes_, encode, getitem, len, pyAssert, pyEq, range, sorted } from "../../src/pyrt/index.ts";
+import { b, bytes_, encode, getOrThrow, len, assert, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
 import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
@@ -74,7 +74,7 @@ function buildPdf(...args: Array<string | PdfKw>): Uint8Array {
 
   let out = "%PDF-1.5\n";
   for (const number of sorted(objs.keys())) {
-    out += `${number} 0 obj\n${getitem(objs, number)}\nendobj\n`;
+    out += `${number} 0 obj\n${getOrThrow(objs, number)}\nendobj\n`;
   }
   out += extra_objects;
   // A cross-reference section is required: the COS lexer treats `xref` as
@@ -266,7 +266,7 @@ describe("TestState", () => {
 
   test("test_saturates_at_the_fixed_point_range", () => {
     const box = measure("40000 40000 5000 5000 re f");
-    pyAssert(box != null);
+    assert(box != null);
     const limit = (2 ** 31 - 1) / 65536;
     expect(pytestApprox(box[2], limit, { abs: 1e-4 })).toBe(true);
     expect(pytestApprox(box[3], limit, { abs: 1e-4 })).toBe(true);
@@ -351,21 +351,21 @@ describe("TestText", () => {
   test("test_vertical_extent_is_the_font_bbox_not_ascent_descent", () => {
     // 1.4 em tall (the FontBBox), not 1.0 em (Ascent minus Descent).
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    pyAssert(box != null);
+    assert(box != null);
     expect(pytestApprox(box[3] - box[1], 33.6, { abs: 1e-3 })).toBe(true);
     expect(pytestApprox(box[1], 100 - 0.4 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_horizontal_extent_is_the_full_advance", () => {
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    pyAssert(box != null);
+    assert(box != null);
     expect(pytestApprox(box[2] - box[0], 2 * 0.6 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_character_spacing_widens_the_cell", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const spaced = _probe("BT /F1 24 Tf 5 Tc 40 100 Td (Hg) Tj ET");
-    pyAssert(plain != null && spaced != null);
+    assert(plain != null && spaced != null);
     expect(
       pytestApprox((spaced[2] - spaced[0]) - (plain[2] - plain[0]), 10.0, { abs: 1e-3 }),
     ).toBe(true);
@@ -374,7 +374,7 @@ describe("TestText", () => {
   test("test_horizontal_scaling_widens_only_the_advance", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const scaled = _probe("BT /F1 24 Tf 200 Tz 40 100 Td (Hg) Tj ET");
-    pyAssert(plain != null && scaled != null);
+    assert(plain != null && scaled != null);
     expect(pytestApprox(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(
       true,
     );
@@ -390,7 +390,7 @@ describe("TestText", () => {
   test("test_stroking_render_mode_grows_the_cell", () => {
     const box = _probe("BT /F1 24 Tf 1 Tr 10 w 40 100 Td (Hg) Tj ET");
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    pyAssert(box != null && plain != null);
+    assert(box != null && plain != null);
     expect(pytestApprox(box[0], plain[0] - 5.0, { abs: 1e-3 })).toBe(true);
     expect(pytestApprox(box[2], plain[2] + 5.0, { abs: 1e-3 })).toBe(true);
   });
@@ -401,12 +401,12 @@ describe("TestText", () => {
       // That the *values* are right is what the AE fixture in
       // tests/read_only proves; this is the plumbing - a font dictionary
       // with no descriptor reaches the table at all, for every face.
-      const [ymin, ymax] = getitem(STD14_EXTENT, font);
+      const [ymin, ymax] = getOrThrow(STD14_EXTENT, font);
       const box = measure("BT /F1 50 Tf 40 300 Td (H) Tj ET", {
         extra_objects: _bareFont(font),
         resources: _RES,
       });
-      pyAssert(box != null);
+      assert(box != null);
       expect(pytestApprox(box[1], 300.0 + ymin / 20.0)).toBe(true);
       expect(pytestApprox(box[3], 300.0 + ymax / 20.0)).toBe(true);
     },
@@ -416,12 +416,12 @@ describe("TestText", () => {
     "test_built_in_widths_set_the_advance[%#]",
     (font: string) => {
       // Code 72 is "H"; the table is indexed from STD14_FIRST_CODE.
-      const expected = getitem(STD14_WIDTHS, font)[72 - STD14_FIRST_CODE];
+      const expected = getOrThrow(STD14_WIDTHS, font)[72 - STD14_FIRST_CODE];
       const box = measure("BT /F1 50 Tf 40 300 Td <48> Tj ET", {
         extra_objects: _bareFont(font),
         resources: _RES,
       });
-      pyAssert(box != null);
+      assert(box != null);
       expect(pytestApprox(box[0], 40.0)).toBe(true);
       expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
     },
@@ -431,8 +431,8 @@ describe("TestText", () => {
     // Codes 39 and 96 are the only two in the tabulated range where
     // WinAnsiEncoding and the fonts' built-in StandardEncoding disagree,
     // and After Effects honours whichever the file declares.
-    const [quote39, _quote96] = getitem(STD14_STANDARD_QUOTES, "Times-Roman");
-    const winansi = getitem(STD14_WIDTHS, "Times-Roman")[39 - STD14_FIRST_CODE];
+    const [quote39, _quote96] = getOrThrow(STD14_STANDARD_QUOTES, "Times-Roman");
+    const winansi = getOrThrow(STD14_WIDTHS, "Times-Roman")[39 - STD14_FIRST_CODE];
     expect(quote39).not.toBe(winansi);
     const cases: Array<[string, number]> = [
       ["", quote39],
@@ -443,7 +443,7 @@ describe("TestText", () => {
         extra_objects: _bareFont("Times-Roman", encoding),
         resources: _RES,
       });
-      pyAssert(box != null);
+      assert(box != null);
       expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
     }
   });
@@ -475,7 +475,7 @@ describe("TestText", () => {
     const plain = show("HH");
     expectApprox(show("H" + SOLIDUS + eol + "H"), approx(plain));
     // A `SOLIDUS n` escape is a real linefeed character, still measured.
-    expect(!pyEq(show("H" + SOLIDUS + "nH"), plain)).toBe(true);
+    expect(!valueEquals(show("H" + SOLIDUS + "nH"), plain)).toBe(true);
   });
 
   test("test_font_outside_the_table_uses_the_generic_extent", () => {
@@ -484,7 +484,7 @@ describe("TestText", () => {
       extra_objects: _bareFont("Verdana"),
       resources: _RES,
     });
-    pyAssert(box != null);
+    assert(box != null);
     expect(pytestApprox([box[1], box[3]], [287.5, 337.5])).toBe(true);
   });
 
@@ -565,12 +565,12 @@ describe("TestFootageSize", () => {
   /** `footage_size`, the pixel size After Effects derives from a box. */
 
   test("test_empty_layer_floors_at_one_pixel", () => {
-    expect(pyEq(footageSize(null), [1, 1])).toBe(true);
-    expect(pyEq(footageSize(EMPTY_BOX), [1, 1])).toBe(true);
+    expect(valueEquals(footageSize(null), [1, 1])).toBe(true);
+    expect(valueEquals(footageSize(EMPTY_BOX), [1, 1])).toBe(true);
   });
 
   test("test_a_fractional_extent_ceils", () => {
-    expect(pyEq(footageSize([112.748, 239.5073, 593.931, 675.999]), [482, 437])).toBe(true);
+    expect(valueEquals(footageSize([112.748, 239.5073, 593.931, 675.999]), [482, 437])).toBe(true);
   });
 
   test.each([0.0, 1e-12, -1e-12])(
@@ -578,7 +578,7 @@ describe("TestFootageSize", () => {
     (noise: number) => {
       // The box reaches AE as signed 16.16, so the extent is quantized
       // before it is ceilinged: 80 + 1e-12 must not measure 81 pixels.
-      expect(pyEq(footageSize([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
+      expect(valueEquals(footageSize([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
     },
   );
 });

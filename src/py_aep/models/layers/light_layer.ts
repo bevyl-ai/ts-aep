@@ -6,13 +6,13 @@ import {ChunkField, type EffectParamDefs} from "../descriptors.ts";
 import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import { _UNDEFINED_ID, Layer, _noSourceId, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
-import { AttributeError, ValueError, descriptor, pyCmp } from "../../../pyrt/index.ts";
+import { AttributeError, ValueError, descriptor, compare } from "../../../pyrt/index.ts";
 import type { CompItem } from "../items/composition.ts";
 
 export function _requireEnvironmentLights(comp: CompItem, what: string): void {
   /** Environment lights and their light source arrived in AE 24.3. */
   const head = comp._project._head;
-  if (pyCmp([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
+  if (compare([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
     throw new AttributeError(
       `${what} requires AE 24.3+ file format (file is AE ` +
         `${head.aeVersionMajor}.${head.aeVersionMinor}).`,

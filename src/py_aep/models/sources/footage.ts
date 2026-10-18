@@ -7,7 +7,7 @@ import {
   bytesEq,
   descriptor,
   floatRepr,
-  pyCmp,
+  compare,
   repr,
   round,
   type ClassAttributes,
@@ -438,7 +438,7 @@ export class FootageSource {
     const head = project._head;
     const version = [head.fileFormatVersion, head._formatSubversion];
     const dropped = new Set(
-      _CLRS_RECORDS_SINCE.filter(([, since]) => pyCmp(version, since) < 0).map(
+      _CLRS_RECORDS_SINCE.filter(([, since]) => compare(version, since) < 0).map(
         ([marker]) => marker,
       ),
     );

@@ -21,7 +21,7 @@ import {
   getattr,
   int,
   lstrip,
-  pyBool,
+  truthy,
   struct,
   ValueError,
   type Attribute,
@@ -291,7 +291,7 @@ export function asciiField<V extends string | null = string>(n: number, kw: FmtF
 
 /** 1-byte boolean field (`struct.unpack("B")`, coerced to `bool`). */
 export function boolField(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean> {
-  return fmtField("B", { ...kw, coerce: pyBool });
+  return fmtField("B", { ...kw, coerce: truthy });
 }
 
 export function _structInfoUncached(cls: Function): _StructInfo | null {

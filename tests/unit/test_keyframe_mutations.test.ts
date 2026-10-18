@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { len, Path, pyEq, ValueError, zip } from "../../src/pyrt/index.ts";
+import { len, Path, valueEquals, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 // Python's `from py_aep.models.properties.shape import Shape` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
@@ -45,7 +45,7 @@ describe("TestShapeFromScratch", () => {
 
   test("test_empty_shape", () => {
     const s = new Shape();
-    expect(pyEq(s.vertices, [])).toBe(true);
+    expect(valueEquals(s.vertices, [])).toBe(true);
     expect(s.closed).toBe(true);
   });
 

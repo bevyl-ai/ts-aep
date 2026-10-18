@@ -31,7 +31,7 @@
  */
 
 import { AudioBitDepth, AudioChannels, AudioCodec, FormatKind, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, VideoCodec } from "../enums/index.ts";
-import { contains, getitem, pyEq, setdefault } from "../../pyrt/index.ts";
+import { contains, getOrThrow, valueEquals, setdefault } from "../../pyrt/index.ts";
 
 /**
  * One conditional rule: (conditions, constraints). Every condition must
@@ -188,7 +188,7 @@ export const _FORMAT_RULES = new Map<OutputFormat, Constraints>([
 
 // Format-option fields each format's dialog offers (member sets for the
 // codec/container dropdowns and the MP3 bitrate list).
-getitem(_FORMAT_RULES, OutputFormat.AVI).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.AVI).set(
   "Video Codec",
   new Set([
     VideoCodec.NONE,
@@ -200,20 +200,20 @@ getitem(_FORMAT_RULES, OutputFormat.AVI).set(
     VideoCodec.DV_PAL,
   ]),
 );
-getitem(_FORMAT_RULES, OutputFormat.AVI).set("Audio Codec", new Set([AudioCodec.UNCOMPRESSED]));
-getitem(_FORMAT_RULES, OutputFormat.H264).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.AVI).set("Audio Codec", new Set([AudioCodec.UNCOMPRESSED]));
+getOrThrow(_FORMAT_RULES, OutputFormat.H264).set(
   "Audio Codec",
   new Set([AudioCodec.AAC, AudioCodec.AAC_PLUS_V1, AudioCodec.AAC_PLUS_V2]),
 );
-getitem(_FORMAT_RULES, OutputFormat.H264).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.H264).set(
   "Multiplexer",
   new Set([MPEGMultiplexer.MP4, MPEGMultiplexer.THREEGPP, MPEGMultiplexer.NONE]),
 );
-getitem(_FORMAT_RULES, OutputFormat.MP3).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.MP3).set(
   "BitRate",
   new Set([16, 18, 20, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]),
 );
-getitem(_FORMAT_RULES, OutputFormat.WAV).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.WAV).set(
   "Audio Codec",
   new Set([
     AudioCodec.UNCOMPRESSED,
@@ -224,7 +224,7 @@ getitem(_FORMAT_RULES, OutputFormat.WAV).set(
     AudioCodec.GSM_6_10,
   ]),
 );
-getitem(_FORMAT_RULES, OutputFormat.QUICKTIME).set(
+getOrThrow(_FORMAT_RULES, OutputFormat.QUICKTIME).set(
   "Video Codec",
   new Set([
     VideoCodec.ANIMATION,
@@ -521,7 +521,7 @@ export const _CONDITIONAL_RULES = new Map<OutputFormat, Rule[]>([
 
 // The container gates which audio families exist; the MPEG layer gates
 // the kbps ladder (transcribed literally - the ladders are irregular).
-getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(
+getOrThrow(_CONDITIONAL_RULES, OutputFormat.H264).push(
   [
     new Map<string, RuleValue | RuleValue[]>([["Multiplexer", MPEGMultiplexer.MP4]]),
     new Map<string, ReadonlySet<RuleValue>>([["Audio Format", new Set([MPEGAudioFormat.AAC, MPEGAudioFormat.MPEG])]]),
@@ -569,7 +569,7 @@ getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(
     new Map<string, ReadonlySet<RuleValue>>([["Audio Channels", new Set([AudioChannels.STEREO])]]),
   ],
 );
-getitem(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aacBitrateRows());
+getOrThrow(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aacBitrateRows());
 
 // NOTE: Targa's bits-per-pixel radio is NOT coupled to the OM channels
 // in the binary: AE-saved files hold RGB + 32 bpp (targa/base.aep) AND
@@ -631,7 +631,7 @@ export function _conditionsMatch(conditions: Map<string, RuleValue | RuleValue[]
     if (actual == null) return false;
     if (Array.isArray(expected)) {
       if (!contains(expected, actual)) return false;
-    } else if (!pyEq(actual, expected)) {
+    } else if (!valueEquals(actual, expected)) {
       return false;
     }
   }
@@ -645,7 +645,7 @@ export function _conditionsMatch(conditions: Map<string, RuleValue | RuleValue[]
  * outside this set are unconstrained for the format and never checked.
  */
 export function constrainedKeys(fmt: OutputFormat): ReadonlySet<string> {
-  const keys = new Set<string>(getitem(_KIND_RULES, OutputFormat.kind(fmt)).keys());
+  const keys = new Set<string>(getOrThrow(_KIND_RULES, OutputFormat.kind(fmt)).keys());
   for (const k of (_FORMAT_RULES.get(fmt) ?? new Map<string, ReadonlySet<RuleValue>>()).keys()) keys.add(k);
   for (const [, constraints] of (_CONDITIONAL_RULES.get(fmt) ?? [])) {
     for (const k of constraints.keys()) keys.add(k);
@@ -669,7 +669,7 @@ export function allowedValues(
   context: ReadonlyMap<string, RuleValue> | null = null,
 ): ReadonlySet<RuleValue> | null {
   const rules = new Map<string, ReadonlySet<RuleValue>>();
-  for (const [k, v] of getitem(_KIND_RULES, OutputFormat.kind(fmt))) rules.set(k, v);
+  for (const [k, v] of getOrThrow(_KIND_RULES, OutputFormat.kind(fmt))) rules.set(k, v);
   for (const [k, v] of (_FORMAT_RULES.get(fmt) ?? new Map<string, ReadonlySet<RuleValue>>())) rules.set(k, v);
   if (context == null) context = new Map<string, RuleValue>();
   for (const [conditions, constraints] of (_CONDITIONAL_RULES.get(fmt) ?? [])) {

@@ -8,7 +8,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { listConfigColorSpaces, resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
-import { Path, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { Path, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 const CONFIG = new Path(import.meta.dir, "..", "..", "samples", "assets", "config.ocio");
@@ -37,12 +37,12 @@ describe("TestListConfigColorSpaces", () => {
   test("test_custom_ocio_tags_do_not_break_parsing", () => {
     // The config is full of `!<ColorSpace>`/`!<View>`/`!<Rule>` tags; a
     // successful non-empty parse proves the tag-ignoring loader works.
-    expect(pyBool(listConfigColorSpaces(CONFIG))).toBe(true);
+    expect(truthy(listConfigColorSpaces(CONFIG))).toBe(true);
   });
 
   test("test_missing_file_returns_empty", () => {
     const tmpPath = makeTmpPath();
-    expect(pyEq(listConfigColorSpaces(tmpPath.div("nope.ocio")), [])).toBe(true);
+    expect(valueEquals(listConfigColorSpaces(tmpPath.div("nope.ocio")), [])).toBe(true);
   });
 });
 

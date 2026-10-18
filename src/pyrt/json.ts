@@ -8,7 +8,7 @@
 
 import { AttributeError, KeyError, ValueError } from "./errors.ts";
 import { float, floatRepr, int, PyFloat, pyfloat } from "./num.ts";
-import { pyCmp, repr, typeName } from "./builtins.ts";
+import { compare, repr, typeName } from "./builtins.ts";
 import { decode } from "./codecs.ts";
 
 /** `json.JSONDecodeError` (a `ValueError`) with CPython's message and position fields. */
@@ -382,7 +382,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     } else {
       items = o instanceof Map ? [...o] : Object.entries(o);
       if (items.length === 0) return "{}";
-      if (sortKeys) items = [...items].sort((a, b) => pyCmp(a[0], b[0]));
+      if (sortKeys) items = [...items].sort((a, b) => compare(a[0], b[0]));
     }
     markers.add(o);
     let open = isList ? "[" : "{";

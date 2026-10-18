@@ -1,6 +1,6 @@
 // Port of py_aep/models/layers/shape_layer.py
 
-import { getitem } from "../../../pyrt/index.ts";
+import { getOrThrow } from "../../../pyrt/index.ts";
 import { LayerType } from "../../enums/index.ts";
 import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
@@ -57,7 +57,7 @@ export class ShapeLayer extends AVLayer {
     });
     layer._ldta.layerType = LayerType.SHAPE;
     // The base factory named the layer from the AV type it started with.
-    layer._matchName = getitem(
+    layer._matchName = getOrThrow(
       layer.constructor._LAYER_MATCH_NAMES,
       LayerType.SHAPE,
     );

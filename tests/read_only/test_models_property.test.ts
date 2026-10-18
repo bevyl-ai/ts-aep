@@ -9,14 +9,14 @@ import {
   StopIteration,
   float,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   len,
   pyAnd,
-  pyAssert,
-  pyBool,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
   range,
   repr,
   setdefault,
@@ -60,7 +60,7 @@ function _findProperty(layer: Layer, matchName: string): Property | null {
 function _getJsonTransformProperties(expected: ExpectedProject, compName = ""): ExpectedProperty[] {
   for (const item of expected["items"]) {
     if ("layers" in item) {
-      if (pyBool(compName) && item["name"] !== compName) {
+      if (truthy(compName) && item["name"] !== compName) {
         continue;
       }
       for (const group of item["layers"][0]["properties"]) {
@@ -182,7 +182,7 @@ describe("TestKeyframeLabel", () => {
     const opacity = _findProperty(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError("opacity is None");
-    expect(pyEq(opacity.keyframes.map((kf) => int(kf.label)), [1, 5, 16, 0, 0])).toBe(true);
+    expect(valueEquals(opacity.keyframes.map((kf) => int(kf.label)), [1, 5, 16, 0, 0])).toBe(true);
   });
 });
 
@@ -203,8 +203,8 @@ describe("TestKeyframes", () => {
     for (const kf of position.keyframes) {
       expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
     }
-    expect(pyEq(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
-    expect(pyEq(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
   });
 
   /** Position has 2 BEZIER keyframes with values [0,50,0] and [100,50,0]. */
@@ -221,8 +221,8 @@ describe("TestKeyframes", () => {
     for (const kf of position.keyframes) {
       expect(kf.outInterpolationType).toBe(KeyframeInterpolationType.BEZIER);
     }
-    expect(pyEq(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
-    expect(pyEq(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(position.keyframes[0].value, [0.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(position.keyframes[1].value, [100.0, 50.0, 0.0])).toBe(true);
   });
 
   /** Opacity has 3 keyframes, second is HOLD, values 1.0/0.0/1.0. */
@@ -249,7 +249,7 @@ describe("TestPropertyStructure", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     // All transform properties should be at depth 2
     for (const prop of layer.transform.properties) {
-      pyAssert(prop.propertyDepth === 2, `${prop.matchName} has depth ${prop.propertyDepth}, expected 2`);
+      assert(prop.propertyDepth === 2, `${prop.matchName} has depth ${prop.propertyDepth}, expected 2`);
     }
   });
 
@@ -262,7 +262,7 @@ describe("TestPropertyStructure", () => {
     const effect = asInstance(layer.effects.properties[0], PropertyGroup);
     expect(effect.propertyDepth).toBe(2);
     for (const prop of effect.properties) {
-      pyAssert(prop.propertyDepth === 3, `${prop.matchName} has depth ${prop.propertyDepth}, expected 3`);
+      assert(prop.propertyDepth === 3, `${prop.matchName} has depth ${prop.propertyDepth}, expected 3`);
     }
   });
 
@@ -291,7 +291,7 @@ describe("TestPropertyStructure", () => {
     const rotateX = _findProperty(layer, "ADBE Rotate X");
     expect(rotateX).not.toBeNull();
     if (rotateX === null) throw new AssertionError("rotate_x is None");
-    expect(pyBool(rotateX._animated)).toBe(false);
+    expect(truthy(rotateX._animated)).toBe(false);
     expect(rotateX.isTimeVarying).toBe(false);
   });
 });
@@ -412,7 +412,7 @@ describe("TestOrientation", () => {
     const orientation = _findProperty(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError("orientation is None");
-    expect(pyEq(orientation.value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.value, [0.0, 0.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
 
@@ -422,7 +422,7 @@ describe("TestOrientation", () => {
     const orientation = _findProperty(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError("orientation is None");
-    expect(pyEq(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
     expect(orientation.isSpatial).toBe(true);
   });
@@ -433,7 +433,7 @@ describe("TestOrientation", () => {
     const orientation = _findProperty(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError("orientation is None");
-    expect(pyEq(orientation.value, [0.0, 279.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.value, [0.0, 279.0, 0.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
 
@@ -443,7 +443,7 @@ describe("TestOrientation", () => {
     const orientation = _findProperty(layer, "ADBE Orientation");
     expect(orientation).not.toBeNull();
     if (orientation === null) throw new AssertionError("orientation is None");
-    expect(pyEq(orientation.value, [0.0, 0.0, 5.0])).toBe(true);
+    expect(valueEquals(orientation.value, [0.0, 0.0, 5.0])).toBe(true);
     expect(orientation.dimensions).toBe(3);
   });
 
@@ -457,7 +457,7 @@ describe("TestOrientation", () => {
     expect(orientation.matchName).toBe("ADBE Orientation");
     expect(orientation.isSpatial).toBe(true);
     expect(orientation._vector).toBe(true);
-    expect(pyBool(orientation._animated)).toBe(false);
+    expect(truthy(orientation._animated)).toBe(false);
   });
 
   /** Animated orientation keyframes carry 3-component values from otda. */
@@ -468,8 +468,8 @@ describe("TestOrientation", () => {
     if (orientation === null) throw new AssertionError("orientation is None");
     expect(orientation._animated).toBe(true);
     expect(len(orientation.keyframes)).toBe(2);
-    expect(pyEq(orientation.keyframes[0].value, [5.0, 0.0, 0.0])).toBe(true);
-    expect(pyEq(orientation.keyframes[1].value, [0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.keyframes[0].value, [5.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.keyframes[1].value, [0.0, 0.0, 0.0])).toBe(true);
   });
 
   /** Animated orientation keyframes have correct frame times. */
@@ -491,7 +491,7 @@ describe("TestOrientation", () => {
     expect(orientation.dimensions).toBe(3);
     expect(orientation.isSpatial).toBe(true);
     expect(orientation._vector).toBe(true);
-    expect(pyEq(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(orientation.value, [5.0, 0.0, 0.0])).toBe(true);
   });
 });
 
@@ -630,16 +630,16 @@ describe("TestEffectProperties", () => {
           }
           for (const matchName of ["S_BlurDirectional-0063", "S_BlurDirectional-0068"]) {
             const prop = asInstance(effect.property(matchName), Property);
-            expect(pyEq(prop.value, getitem(jsonValues, matchName))).toBe(true);
+            expect(valueEquals(prop.value, getOrThrow(jsonValues, matchName))).toBe(true);
             expect(prop.isModified).toBe(false);
             checked += 1;
           }
         }
       }
     }
-    expect(getitem(jsonValues, "S_BlurDirectional-0063")).toBe(3);
-    expect(getitem(jsonValues, "S_BlurDirectional-0068")).toBe(2);
-    expect(pyBool(checked)).toBe(true);
+    expect(getOrThrow(jsonValues, "S_BlurDirectional-0063")).toBe(3);
+    expect(getOrThrow(jsonValues, "S_BlurDirectional-0068")).toBe(2);
+    expect(truthy(checked)).toBe(true);
   });
 
   /**
@@ -652,7 +652,7 @@ describe("TestEffectProperties", () => {
   test.skipIf(!CANVARY_DIR.isDir())("test_omitted_point_takes_pard_default", () => {
     const project = parseProject(CANVARY_DIR.div("effects_canvary.aep"));
     const expected = loadExpected(CANVARY_DIR, "effects_canvary");
-    expect(pyEq(getitem(_jsonValuesByMatchName(expected), "ADBE Path Text-0020"), [80, 50])).toBe(true);
+    expect(valueEquals(getOrThrow(_jsonValuesByMatchName(expected), "ADBE Path Text-0020"), [80, 50])).toBe(true);
     const layer = getLayer(project, "type_null");
     expect(layer.effects).not.toBeNull();
     if (layer.effects === null) throw new AssertionError("layer.effects is None");
@@ -660,7 +660,7 @@ describe("TestEffectProperties", () => {
       asInstance(layer.effects.property("ADBE Path Text"), PropertyGroup).property("ADBE Path Text-0020"),
       Property,
     );
-    expect(pyEq(prop.value, [80.0, 50.0])).toBe(true);
+    expect(valueEquals(prop.value, [80.0, 50.0])).toBe(true);
     expect(prop.isModified).toBe(false);
   });
 
@@ -713,7 +713,7 @@ describe("TestEffectProperties", () => {
     const project = parseProject(BUGS_DIR.div("29.97_fps_time_scale_3.125.aep"));
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
-        for (const effect of pyOr(layer.effects, [])) {
+        for (const effect of truthyOr(layer.effects, [])) {
           if (effect.matchName !== "S_BlurDirectional") {
             continue;
           }
@@ -786,7 +786,7 @@ describe("TestMasks", () => {
   /** Layer without masks has an empty (falsy) mask parade. */
   test("test_no_masks", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
-    expect(pyBool(layer.masks)).toBe(false);
+    expect(truthy(layer.masks)).toBe(false);
   });
 
   /** Mask children have parent_property pointing to mask parade. */
@@ -1005,7 +1005,7 @@ describe("TestIsModified", () => {
     ]) {
       const prop = _findProperty(layer, matchName);
       if (prop != null) {
-        pyAssert(
+        assert(
           prop.isModified === false,
           `${matchName}: expected is_modified=False, value=${repr(prop.value)}, default=${repr(prop.defaultValue)}`,
         );
@@ -1019,13 +1019,13 @@ describe("TestIsModified", () => {
     const posX = _findProperty(layer, "ADBE Position_0");
     const posY = _findProperty(layer, "ADBE Position_1");
     if (posX != null) {
-      pyAssert(
+      assert(
         posX.isModified === true,
         `X Position value=${str(posX.value)}, default=${str(posX.defaultValue)}`,
       );
     }
     if (posY != null) {
-      pyAssert(
+      assert(
         posY.isModified === true,
         `Y Position value=${str(posY.value)}, default=${str(posY.defaultValue)}`,
       );
@@ -1088,7 +1088,7 @@ describe("TestIsModified", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     const scale = _findProperty(layer, "ADBE Scale");
     if (scale != null && scale.defaultValue != null) {
-      pyAssert(
+      assert(
         scale.isModified === false,
         `Scale value=${str(scale.value)}, default=${str(scale.defaultValue)}`,
       );
@@ -1105,7 +1105,7 @@ describe("TestIsModified", () => {
       for (const prop of effect.properties) {
         if (prop instanceof Property && prop.defaultValue != null) {
           // In this sample all effect params are at defaults
-          pyAssert(
+          assert(
             prop.isModified === false,
             `${prop.matchName}: value=${repr(prop.value)}, default=${repr(prop.defaultValue)}`,
           );
@@ -1143,8 +1143,8 @@ describe("TestIsModified", () => {
     // Check a property that might not have a default
     for (const prop of layer.transform.properties) {
       if (prop instanceof Property && prop.defaultValue == null) {
-        if (!prop._animated && !pyBool(pyAnd(prop.expression, prop.expressionEnabled))) {
-          pyAssert(prop.isModified === false, `${prop.matchName} with no default should be False`);
+        if (!prop._animated && !truthy(pyAnd(prop.expression, prop.expressionEnabled))) {
+          assert(prop.isModified === false, `${prop.matchName} with no default should be False`);
         }
       }
     }
@@ -1180,7 +1180,7 @@ describe("TestSeparation", () => {
       ["_2", 2],
     ] as const) {
       const prop = _findProperty(layer, `ADBE Position${suffix}`);
-      pyAssert(prop != null, `ADBE Position${suffix} not found`);
+      assert(prop != null, `ADBE Position${suffix} not found`);
       expect(prop.isSeparationFollower).toBe(true);
       expect(prop.isSeparationLeader).toBe(false);
       expect(prop.separationDimension).toBe(dim);
@@ -1195,7 +1195,7 @@ describe("TestSeparation", () => {
     if (pos === null) throw new AssertionError("pos is None");
     for (const dim of range(3)) {
       const follower = pos.getSeparationFollower(dim);
-      pyAssert(follower != null, `follower dim ${dim} is None`);
+      assert(follower != null, `follower dim ${dim} is None`);
       expect(follower.matchName).toBe(`ADBE Position_${dim}`);
     }
   });
@@ -1293,7 +1293,7 @@ describe("TestTransformSynthesis", () => {
   test("test_canonical_order", () => {
     const layer = getFirstLayer(parseProject(SAMPLES_DIR.div("is_modified_false.aep")));
     const matchNames = layer.transform.properties.map((p) => p.matchName);
-    expect(pyEq(matchNames, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
+    expect(valueEquals(matchNames, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
   });
 
   /** Orientation always present with correct defaults. */
@@ -1324,7 +1324,7 @@ describe("TestTransformSynthesis", () => {
     // be at that default (the sample only animates Opacity).
     for (const prop of layer.transform.properties) {
       if (prop instanceof Property && !prop._animated) {
-        pyAssert(prop.defaultValue != null, `${prop.matchName} should have a default_value`);
+        assert(prop.defaultValue != null, `${prop.matchName} should have a default_value`);
       }
     }
 
@@ -1348,9 +1348,9 @@ describe("TestTransformSynthesis", () => {
       const prop = _findProperty(layer, matchName);
       expect(prop).not.toBeNull();
       if (prop === null) throw new AssertionError("prop is None");
-      pyAssert(!prop._animated, `${matchName} should not be animated`);
+      assert(!prop._animated, `${matchName} should not be animated`);
       expect(prop.expression).toBe("");
-      expect(pyEq(prop.keyframes, [])).toBe(true);
+      expect(valueEquals(prop.keyframes, [])).toBe(true);
     }
   });
 
@@ -1358,7 +1358,7 @@ describe("TestTransformSynthesis", () => {
   test("test_synthesized_parent_property", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("property_types.aep")), "property_1D_opacity");
     for (const prop of layer.transform.properties) {
-      pyAssert(prop.parentProperty === layer.transform, `${prop.matchName} parent should be transform group`);
+      assert(prop.parentProperty === layer.transform, `${prop.matchName} parent should be transform group`);
     }
   });
 
@@ -1380,7 +1380,7 @@ describe("TestTransformSynthesis", () => {
     expect(layer.transform).not.toBeNull();
     expect(len(layer.transform.properties)).toBe(12);
     const matchNames = layer.transform.properties.map((p) => p.matchName);
-    expect(pyEq(matchNames, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
+    expect(valueEquals(matchNames, TestTransformSynthesis._CANONICAL_ORDER)).toBe(true);
   });
 });
 
@@ -1453,8 +1453,8 @@ describe("TestUnitsText", () => {
     const layer = getFirstLayer(parseProject(SAMPLES_DIR.div("transform_separated.aep")));
     for (const mn of ["ADBE Position_0", "ADBE Position_1"]) {
       const prop = _findProperty(layer, mn);
-      pyAssert(prop != null, `${mn} missing`);
-      pyAssert(prop.unitsText === "pixels", `${mn} wrong units`);
+      assert(prop != null, `${mn} missing`);
+      assert(prop.unitsText === "pixels", `${mn} wrong units`);
     }
   });
 
@@ -1522,7 +1522,7 @@ describe("TestUnitsText", () => {
     for (const item of layer.effects) {
       const effect = asInstance(item, PropertyGroup);
       const compOpts = effect.property("ADBE Effect Built In Params");
-      pyAssert(compOpts != null, `Effect ${repr(effect.name)} missing Compositing Options`);
+      assert(compOpts != null, `Effect ${repr(effect.name)} missing Compositing Options`);
       expect(compOpts.name).toBe("Compositing Options");
       const childMns = asInstance(compOpts, PropertyGroup).properties.map((c) => c.matchName);
       expect(childMns.includes("ADBE Effect Mask Parade")).toBe(true);
@@ -1911,7 +1911,7 @@ describe("TestShapeValue", () => {
     expect(shape.closed).toBe(true);
     expect(len(shape.vertices)).toBe(4);
     expect(
-      pyEq(shape.vertices, [
+      valueEquals(shape.vertices, [
         [100.0, 100.0],
         [100.0, 300.0],
         [300.0, 300.0],
@@ -1925,7 +1925,7 @@ describe("TestShapeValue", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_basic.aep")), "shape_closed_square");
     const shape = _getMaskShape(layer).value;
     for (const t of [...shape.inTangents, ...shape.outTangents]) {
-      expect(pyEq(t, [0, 0])).toBe(true);
+      expect(valueEquals(t, [0, 0])).toBe(true);
     }
   });
 
@@ -1933,7 +1933,7 @@ describe("TestShapeValue", () => {
   test("test_closed_square_no_feather", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_basic.aep")), "shape_closed_square");
     const shape = _getMaskShape(layer).value;
-    expect(pyEq(shape.featherPoints, [])).toBe(true);
+    expect(valueEquals(shape.featherPoints, [])).toBe(true);
   });
 
   /** Closed oval mask has non-zero tangents. */
@@ -1944,7 +1944,7 @@ describe("TestShapeValue", () => {
     expect(len(shape.vertices)).toBe(4);
     // Tangents should be non-zero (bezier curves)
     for (const t of [...shape.inTangents, ...shape.outTangents]) {
-      expect(!pyEq(t, [0, 0])).toBe(true);
+      expect(!valueEquals(t, [0, 0])).toBe(true);
     }
   });
 
@@ -1983,12 +1983,12 @@ describe("TestShapeValue", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_feather.aep")), "shape_feather_inner_hold");
     const shape = _getMaskShape(layer).value;
     expect(len(shape.featherPoints)).toBe(4);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.segLoc), [0, 1, 2, 3])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.radius), [50.0, -30.0, 80.0, -20.0])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.type), [0, 1, 0, 1])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.interp), [0, 0, 1, 1])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.tension), [0.0, 0.5, 1.0, 0.25])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.relCornerAngle), [0.0, 0.0, 0.0, 0.0])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.segLoc), [0, 1, 2, 3])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.radius), [50.0, -30.0, 80.0, -20.0])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.type), [0, 1, 0, 1])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.interp), [0, 0, 1, 1])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.tension), [0.0, 0.5, 1.0, 0.25])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.relCornerAngle), [0.0, 0.0, 0.0, 0.0])).toBe(true);
   });
 
   /** Animated mask shape has 2 keyframes with different vertices. */
@@ -1999,7 +1999,7 @@ describe("TestShapeValue", () => {
     const kf0 = prop.keyframes[0].value;
     const kf1 = prop.keyframes[1].value;
     expect(
-      pyEq(kf0.vertices, [
+      valueEquals(kf0.vertices, [
         [100.0, 100.0],
         [100.0, 300.0],
         [300.0, 300.0],
@@ -2007,7 +2007,7 @@ describe("TestShapeValue", () => {
       ]),
     ).toBe(true);
     expect(
-      pyEq(kf1.vertices, [
+      valueEquals(kf1.vertices, [
         [150.0, 150.0],
         [150.0, 250.0],
         [250.0, 250.0],
@@ -2021,8 +2021,8 @@ describe("TestShapeValue", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_misc.aep")), "shape_many_points");
     const shape = _getMaskShape(layer).value;
     expect(len(shape.vertices)).toBe(300);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.segLoc), [0, 128, 255, 256, 270, 299])).toBe(true);
-    expect(pyEq(shape.featherPoints.map((fp) => fp.radius), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.segLoc), [0, 128, 255, 256, 270, 299])).toBe(true);
+    expect(valueEquals(shape.featherPoints.map((fp) => fp.radius), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0])).toBe(true);
   });
 });
 
@@ -2053,25 +2053,25 @@ describe("TestTextAnimatorPool", () => {
     const children = props.properties;
     expect(len(children)).toBe(103);
     const byMn = new Map(children.map((c) => [c.matchName, c] as const));
-    expect(getitem(byMn, "ADBE Text Position 3D").name).toBe("Position");
-    expect(getitem(byMn, "ADBE Text Rotation").name).toBe("Rotation");
-    expect(getitem(byMn, "ADBE 3DText Front RGB").name).toBe("Front Color");
+    expect(getOrThrow(byMn, "ADBE Text Position 3D").name).toBe("Position");
+    expect(getOrThrow(byMn, "ADBE Text Rotation").name).toBe("Rotation");
+    expect(getOrThrow(byMn, "ADBE 3DText Front RGB").name).toBe("Front Color");
     // Variable-font axis props have empty display names.
-    expect(getitem(byMn, "ADBE Text VF Axis 1").name).toBe("");
+    expect(getOrThrow(byMn, "ADBE Text VF Axis 1").name).toBe("");
   });
 
   test("test_pool_values_and_units", () => {
     const props = TestTextAnimatorPool._props(parseAep(TestTextAnimatorPool.AEP));
     const byMn = new Map(props.properties.map((c) => [c.matchName, c] as const));
-    const opacity = asInstance(getitem(byMn, "ADBE Text Opacity"), Property);
+    const opacity = asInstance(getOrThrow(byMn, "ADBE Text Opacity"), Property);
     expect(opacity instanceof Property).toBe(true);
     expect(opacity.value).toBe(100);
     expect(opacity.minValue).toBe(0);
     expect(opacity.maxValue).toBe(100);
     expect(opacity.unitsText).toBe("percent");
-    const scale = asInstance(getitem(byMn, "ADBE Text Scale 3D"), Property);
+    const scale = asInstance(getOrThrow(byMn, "ADBE Text Scale 3D"), Property);
     expect(scale instanceof Property).toBe(true);
-    expect(pyEq(scale.value, [100.0, 100.0, 100.0])).toBe(true);
+    expect(valueEquals(scale.value, [100.0, 100.0, 100.0])).toBe(true);
     expect(scale.unitsText).toBe("percent");
   });
 
@@ -2196,13 +2196,13 @@ describe("TestEffectMetadata", () => {
     const fill = asInstance(layer.property("ADBE Effect Parade").property("ADBE Fill"), PropertyGroup);
     const allMasks = asInstance(fill.property("ADBE Fill-0007"), Property);
     expect(allMasks.canVaryOverTime).toBe(false);
-    expect(pyEq([allMasks.hasMin, allMasks.minValue, allMasks.maxValue], [true, 0, 1])).toBe(true);
+    expect(valueEquals([allMasks.hasMin, allMasks.minValue, allMasks.maxValue], [true, 0, 1])).toBe(true);
     layer = getLayer(parseProject(SAMPLES_DIR.div("effects.aep")), "effect_puppet");
     const puppet = asInstance(layer.property("ADBE Effect Parade").property("ADBE FreePin3"), PropertyGroup);
     const onTransparent = asInstance(puppet.property("ADBE FreePin3 On Transparent"), Property);
-    expect(pyEq([onTransparent.hasMin, onTransparent.hasMax], [false, false])).toBe(true);
+    expect(valueEquals([onTransparent.hasMin, onTransparent.hasMax], [false, false])).toBe(true);
     const autoRotate = asInstance(puppet.property("ADBE FreePin3 Auto Rotate Pins"), Property);
-    expect(pyEq([autoRotate.hasMin, autoRotate.hasMax], [true, true])).toBe(true);
+    expect(valueEquals([autoRotate.hasMin, autoRotate.hasMax], [true, true])).toBe(true);
   });
 });
 
@@ -2231,7 +2231,7 @@ class TestMaterialOptionsByVersion {
     const comp = getComp(parseProject(VERSIONS_DIR.div(version, "complete.aep")), "DropFrame_Comp");
     const layer = comp.layers.find((ly) => ly.name === "DF_Solid");
     if (layer === undefined) throw new StopIteration();
-    pyAssert(asInstance(layer, AVLayer).threeDLayer === false);
+    assert(asInstance(layer, AVLayer).threeDLayer === false);
     return layer.property("ADBE Material Options Group");
   }
 }
@@ -2273,8 +2273,8 @@ describe("TestCanSetExpression", () => {
     const layer = TestCanSetExpression._get_main_comp_layer(0);
     for (const mn of ["ADBE Position", "ADBE Scale", "ADBE Opacity", "ADBE Rotate Z"]) {
       const prop = _findProperty(layer, mn);
-      pyAssert(prop != null, `${mn} not found`);
-      pyAssert(prop.canSetExpression === true, mn);
+      assert(prop != null, `${mn} not found`);
+      assert(prop.canSetExpression === true, mn);
     }
   });
 
@@ -2283,8 +2283,8 @@ describe("TestCanSetExpression", () => {
     const layer = TestCanSetExpression._get_main_comp_layer(0);
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y"]) {
       const prop = _findProperty(layer, mn);
-      pyAssert(prop != null, `${mn} not found`);
-      pyAssert(prop.canSetExpression === false, mn);
+      assert(prop != null, `${mn} not found`);
+      assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2293,8 +2293,8 @@ describe("TestCanSetExpression", () => {
     const layer = TestCanSetExpression._get_main_comp_layer(11);
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y"]) {
       const prop = _findProperty(layer, mn);
-      pyAssert(prop != null, `${mn} not found`);
-      pyAssert(prop.canSetExpression === true, mn);
+      assert(prop != null, `${mn} not found`);
+      assert(prop.canSetExpression === true, mn);
     }
   });
 
@@ -2303,8 +2303,8 @@ describe("TestCanSetExpression", () => {
     const layer = TestCanSetExpression._get_main_comp_layer(0);
     for (const mn of ["ADBE Position_0", "ADBE Position_1"]) {
       const prop = _findProperty(layer, mn);
-      pyAssert(prop != null, `${mn} not found`);
-      pyAssert(prop.canSetExpression === false, mn);
+      assert(prop != null, `${mn} not found`);
+      assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2332,8 +2332,8 @@ describe("TestCanSetExpression", () => {
       const layer = TestCanSetExpression._get_main_comp_layer(idx);
       for (const mn of ["ADBE Scale", "ADBE Opacity"]) {
         const prop = _findProperty(layer, mn);
-        pyAssert(prop != null, `layer[${idx}] ${mn} not found`);
-        pyAssert(prop.canSetExpression === false, `layer[${idx}] ${mn}`);
+        assert(prop != null, `layer[${idx}] ${mn} not found`);
+        assert(prop.canSetExpression === false, `layer[${idx}] ${mn}`);
       }
     }
   });
@@ -2347,8 +2347,8 @@ describe("TestCanSetExpression", () => {
     const light = getComp(project, "lightType_PARALLEL").layers[0];
     for (const mn of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Z"]) {
       const prop = _findProperty(light, mn);
-      pyAssert(prop != null, `${mn} not found`);
-      pyAssert(prop.canSetExpression === false, mn);
+      assert(prop != null, `${mn} not found`);
+      assert(prop.canSetExpression === false, mn);
     }
   });
 
@@ -2554,7 +2554,7 @@ class TestEffectPointSpeed {
     const comp = getComp(project, "EffectPoint");
     const effect = asInstance(asInstance(comp.layers[0].effects, PropertyGroup).property(0), PropertyGroup);
     const prop = effect.property(TestEffectPointSpeed.MATCH_NAME);
-    pyAssert(prop instanceof Property);
+    assert(prop instanceof Property);
     return prop;
   }
 
@@ -2587,7 +2587,7 @@ class TestEffectPointSpeed {
     };
 
     const node = walk(expected);
-    pyAssert(typeof node === "object" && node !== null && !Array.isArray(node));
+    assert(typeof node === "object" && node !== null && !Array.isArray(node));
     return node["keyframes"];
   }
 }
@@ -2608,7 +2608,7 @@ describe("TestEffectPointSpeed", () => {
     // ExtendScript reports 120 / 260, i.e. exactly height (300) - the same
     // scalar for both directions, and independent of the width.
     const prop = TestEffectPointSpeed._ramp_start(parseProject(TestEffectPointSpeed.SAMPLE));
-    expect(pyEq(prop._effectScale, [400.0, 300.0])).toBe(true);
+    expect(valueEquals(prop._effectScale, [400.0, 300.0])).toBe(true);
     expect(prop._effectPointSpeedFactor).toBe(300.0);
     const middle = prop.keyframes[1];
     expect(approx(asInstance(middle._ldatItem.kfData, KfPosition).inSpeed, 0.4)).toBe(true);
@@ -2670,7 +2670,7 @@ describe("TestEffectPointSpeed", () => {
     const prop = TestEffectPointSpeed._ramp_start(parseProject(TestEffectPointSpeed.SAMPLE));
     const first = prop.keyframes.map((kf) => kf.outTemporalEase[0].speed);
     const second = prop.keyframes.map((kf) => kf.outTemporalEase[0].speed);
-    expect(pyEq(first, second)).toBe(true);
+    expect(valueEquals(first, second)).toBe(true);
   });
 
   /**
@@ -2682,16 +2682,16 @@ describe("TestEffectPointSpeed", () => {
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
         const stack: (Property | PropertyGroup)[] = [...layer.properties];
-        while (pyBool(stack)) {
+        while (truthy(stack)) {
           const child = stack.shift();
           if (child instanceof PropertyGroup) {
             stack.push(...child.properties);
           } else if (
             child instanceof Property &&
             child.matchName === "ADBE Geometry2-0001" &&
-            pyBool(child.keyframes)
+            truthy(child.keyframes)
           ) {
-            expect(pyEq(child._effectScale, [2356.0, 1002.0])).toBe(true);
+            expect(valueEquals(child._effectScale, [2356.0, 1002.0])).toBe(true);
             expect(approx(child.keyframes[0].outTemporalEase[0].speed, 29.151890878813)).toBe(true);
             expect(approx(child.keyframes[1].inTemporalEase[0].speed, 29.151890878813)).toBe(true);
             return;
@@ -2720,8 +2720,8 @@ describe("TestEffectPointNormalization", () => {
     const project = parseAep(LAYER_SAMPLES_DIR.div("geometry_probe.aep")).project;
     const comp = getComp(project, "PROBE_MAIN");
     const layer = asInstance(comp.layers.find((lay) => lay.name === "solid_default"), AVLayer);
-    expect(pyEq([comp.width, comp.height], [1920, 1080])).toBe(true);
-    expect(pyEq([layer.width, layer.height], [200, 100])).toBe(true);
+    expect(valueEquals([comp.width, comp.height], [1920, 1080])).toBe(true);
+    expect(valueEquals([layer.width, layer.height], [200, 100])).toBe(true);
 
     if (layer.effects === null) throw new AssertionError("layer.effects is None");
     const point = asInstance(
@@ -2734,7 +2734,7 @@ describe("TestEffectPointNormalization", () => {
     expect(point._isLive()).toBe(false);
     // AE's default is the layer centre; the composition centre would be
     // [960, 540] - what py_aep reported before the layer was threaded in.
-    expect(pyEq(point.value, [100.0, 50.0])).toBe(true);
+    expect(valueEquals(point.value, [100.0, 50.0])).toBe(true);
   });
 
   /**
@@ -2754,11 +2754,11 @@ describe("TestEffectPointNormalization", () => {
         .find((child) => child.name === "3D Point"),
       Property,
     );
-    expect(pyEq(point.value, [100.0, 50.0, 0.0])).toBe(true);
+    expect(valueEquals(point.value, [100.0, 50.0, 0.0])).toBe(true);
     // The fixture's Z is 0, which every divisor reproduces, so assert the
     // divisor itself: [width, height, height], not [width, height, 1] or
     // the comp size.
-    expect(pyEq(point._effectScale, [200.0, 100.0, 100.0])).toBe(true);
+    expect(valueEquals(point._effectScale, [200.0, 100.0, 100.0])).toBe(true);
   });
 });
 
@@ -2828,7 +2828,7 @@ describe("TestMaskLayerSpace", () => {
     ] as const) {
       const got = getattr(shape, attr).flatMap((point) => [...point]);
       const want = expected[name].flatMap((point) => [...point]);
-      pyAssert(approx(got, want, { abs: 1e-4 }), attr);
+      assert(approx(got, want, { abs: 1e-4 }), attr);
     }
   });
 });
@@ -2885,10 +2885,10 @@ describe("TestRotoBezierTangents", () => {
       const entry = _loadRotobezierProbe(stem)[maskName];
       let expected: JsonMaskShape;
       if (_isStaticEntry(entry)) {
-        pyAssert(sample == null, maskName);
+        assert(sample == null, maskName);
         expected = entry;
       } else {
-        pyAssert(sample != null, maskName);
+        assert(sample != null, maskName);
         expected = entry[sample];
       }
       const comp = getComp(parseProject(SAMPLES_DIR.div(`${stem}.aep`)), "ROTO");
@@ -2921,7 +2921,7 @@ describe("TestRotoBezierTangents", () => {
       ] as const) {
         const got = getattr(shape, attr).flatMap((point) => [...point]);
         const want = expected[name].flatMap((point) => [...point]);
-        pyAssert(approx(got, want, { abs: 1e-3 }), attr);
+        assert(approx(got, want, { abs: 1e-3 }), attr);
       }
     },
   );

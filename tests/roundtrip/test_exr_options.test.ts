@@ -16,7 +16,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { bytes_, getitem, len, Path, pyEq, sorted } from "../../src/pyrt/index.ts";
+import { bytes_, getOrThrow, len, Path, valueEquals, sorted } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProject } from "../helpers.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
@@ -60,15 +60,15 @@ function _import(name: string): Uint8Array {
 const _NAMES = sorted(_aeOptis().keys());
 
 test.each(_NAMES)("test_import_writes_after_effects_exr_header[%#]", (name: string) => {
-  const ae = getitem(_aeOptis(), name);
+  const ae = getOrThrow(_aeOptis(), name);
   const ours = _import(name);
   expect(len(ours)).toBe(len(ae));
   expect(len(ae)).toBe(9750);
   // Magic, length, compression (0x0E), channel count across parts (0x12)
   // and channels + named layers (0x2E).
-  expect(pyEq(bytes_.slice(ours, 0, 0x30), bytes_.slice(ae, 0, 0x30))).toBe(true);
+  expect(valueEquals(bytes_.slice(ours, 0, 0x30), bytes_.slice(ae, 0, 0x30))).toBe(true);
   // AE's remaining bytes vary from import to import; zeros render the same.
-  expect(pyEq(bytes_.slice(ours, 0x30), new Uint8Array(len(ours) - 0x30))).toBe(true);
+  expect(valueEquals(bytes_.slice(ours, 0x30), new Uint8Array(len(ours) - 0x30))).toBe(true);
 });
 
 test("test_alpha_is_premultiplied_with_its_flag", () => {
@@ -83,8 +83,8 @@ test("test_alpha_is_premultiplied_with_its_flag", () => {
   const project = parseAep(BASE, { platform: "windows" }).project;
   const ours = asInstance(project.importFile(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))), FootageItem);
   const sspc = ours.mainSource._sspc;
-  expect(pyEq([sspc.alphaModeRaw, sspc._alphaFlags], [ae.alphaModeRaw, ae._alphaFlags])).toBe(true);
-  expect(pyEq([ae.alphaModeRaw, ae._alphaFlags], [1, 1])).toBe(true);
+  expect(valueEquals([sspc.alphaModeRaw, sspc._alphaFlags], [ae.alphaModeRaw, ae._alphaFlags])).toBe(true);
+  expect(valueEquals([ae.alphaModeRaw, ae._alphaFlags], [1, 1])).toBe(true);
 });
 
 test("test_reload_refreshes_the_exr_header", () => {
@@ -96,9 +96,9 @@ test("test_reload_refreshes_the_exr_header", () => {
   fs.copyFileSync(ASSETS.div("exr", "layered.exr").toString(), media.toString());
   asInstance(item.mainSource, FileSource).reload();
   expect(
-    pyEq(
+    valueEquals(
       bytes_.slice(item.mainSource._opti.tobytes(), 0, 0x30),
-      bytes_.slice(getitem(_aeOptis(), "layered.exr"), 0, 0x30),
+      bytes_.slice(getOrThrow(_aeOptis(), "layered.exr"), 0, 0x30),
     ),
   ).toBe(true);
 });

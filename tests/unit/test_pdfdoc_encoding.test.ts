@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { BytesIO, b, concat, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { BytesIO, b, concat, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { CosParser, decodePdfTextString } from "../../src/py_aep/cos/index.ts";
 import { CosString } from "../../src/py_aep/cos/cos.ts";
 
@@ -75,7 +75,7 @@ test.each([
     */
     const token = new CosParser(new BytesIO(concat(literal, b(")")))).lexString();
     const value = token.value;
-    pyAssert(value instanceof Uint8Array || value instanceof CosString);
-    expect(pyEq(decodePdfTextString(value), expected)).toBe(true);
+    assert(value instanceof Uint8Array || value instanceof CosString);
+    expect(valueEquals(decodePdfTextString(value), expected)).toBe(true);
   },
 );

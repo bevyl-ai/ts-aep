@@ -20,7 +20,7 @@ import type { Project } from "../../src/py_aep/models/project.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { Path, pyAssert, setattr } from "../../src/pyrt/index.ts";
+import { Path, assert, setattr } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / "samples" / ...` in Python is the
@@ -31,7 +31,7 @@ const LIGHT_SAMPLE = SAMPLES_DIR.div("light_default_position.aep");
 
 function _prop(layer: Layer, group: string, matchName: string): Property {
   const prop = asInstance(layer.property(group), PropertyGroup).property(matchName);
-  pyAssert(prop instanceof Property);
+  assert(prop instanceof Property);
   return prop;
 }
 
@@ -46,14 +46,14 @@ function _reopened(project: Project, tmpPath: Path, compName: string, layerName:
 }
 
 function _assertWritten(prop: Property, value: number[] | number): void {
-  pyAssert(prop._tdsb != null);
+  assert(prop._tdsb != null);
   expect(prop._tdsb.synthetic).toBe(false);
   expect(approx(prop.value, value)).toBe(true);
   expect(prop.isModified).toBe(true);
 }
 
 function _assertLeftOut(prop: Property, value: number[] | number): void {
-  pyAssert(prop._tdsb != null);
+  assert(prop._tdsb != null);
   expect(prop._tdsb.synthetic).toBe(true);
   expect(approx(prop.value, value)).toBe(true);
   expect(prop.isModified).toBe(false);

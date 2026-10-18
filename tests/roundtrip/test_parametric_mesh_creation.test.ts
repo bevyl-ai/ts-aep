@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { getattr, getitem, Path, setattr } from "../../src/pyrt/index.ts";
+import { getattr, getOrThrow, Path, setattr } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import { LayerType, ParametricMeshType } from "../../src/py_aep/enums/index.ts";
@@ -45,7 +45,7 @@ describe("TestAddParametricMesh", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
     const layer = comp.addParametricMesh(`M ${ParametricMeshType.nameOf(meshType)}`, { meshType: meshType });
-    const field = getitem(_FIRST_FIELD, meshType);
+    const field = getOrThrow(_FIRST_FIELD, meshType);
     setattr(layer.parametricMeshOptions, field, 321.0);
 
     const fresh = _saveReparse(project, tmpPath);

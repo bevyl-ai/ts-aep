@@ -16,7 +16,7 @@ import {
   BytesIO,
   Path,
   ValueError,
-  getitem,
+  getOrThrow,
   b,
   bytes_,
   bytesEq,
@@ -211,7 +211,7 @@ export function readAiLayerOcgs(
       ? [...order]
           .reverse()
           .filter((n) => listed.has(n))
-          .map((n) => getitem(listed, n))
+          .map((n) => getOrThrow(listed, n))
       : [...listed.values()];
     for (const ref of refs) {
       const ocg = _resolve(ref, data, offsets);

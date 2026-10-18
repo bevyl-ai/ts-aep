@@ -6,9 +6,9 @@ import {
   deferred,
   getattr,
   max,
-  pyAssert,
-  pyEq,
-  pyOr,
+  assert,
+  valueEquals,
+  truthyOr,
   repr,
   split,
 } from "../../../pyrt/index.ts";
@@ -36,7 +36,7 @@ const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parse
 
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
 export function listIndex<T>(xs: readonly T[], x: T): number {
-  const i = xs.findIndex((y) => pyEq(y, x));
+  const i = xs.findIndex((y) => valueEquals(y, x));
   if (i < 0) throw new ValueError(`${repr(x)} is not in list`);
   return i;
 }
@@ -270,7 +270,7 @@ export class PropertyBase {
       pos = chunks.length;
       for (let i = chunks.length - 1; i >= 0; i--) {
         const c = chunks[i];
-        if (c.chunkType === "tdmn" && "value" in c && pyEq(c.value, "ADBE Group End")) {
+        if (c.chunkType === "tdmn" && "value" in c && valueEquals(c.value, "ADBE Group End")) {
           pos = i;
           break;
         }
@@ -396,7 +396,7 @@ export class PropertyBase {
 
     this._ensureMaterialized();
     this._name = value;
-    pyAssert(this._nameUtf8 != null);
+    assert(this._nameUtf8 != null);
     this._nameUtf8.value = value;
   }
 
@@ -531,8 +531,8 @@ export class PropertyBase {
    * `LIST:sspc`), this returns the sspc chunk.
    */
   _backingListChunk(parentTdgp: ListChunk): ListChunk {
-    const chunk: ListChunk | null = pyOr(getattr(this, "_tdbs", null), getattr(this, "_tdgp", null));
-    pyAssert(chunk != null);
+    const chunk: ListChunk | null = truthyOr(getattr(this, "_tdbs", null), getattr(this, "_tdgp", null));
+    assert(chunk != null);
     // Identity check - attrs __eq__ is structural, so .index() / `in`
     // would give false positives for chunks with identical fields.
     if (parentTdgp.chunks.some((c) => c === chunk)) return chunk;

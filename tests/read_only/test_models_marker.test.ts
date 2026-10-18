@@ -5,7 +5,7 @@
 // `math.isclose` is the pyrt `isclose` (num.ts).
 
 import { describe, expect, test } from "bun:test";
-import { isclose, len, pyAssert, Path } from "../../src/pyrt/index.ts";
+import { isclose, len, assert, Path } from "../../src/pyrt/index.ts";
 import { getComp, getCompMarkerFromJsonByName, getLayerMarkerFromJsonByComp, loadExpected, parseProject } from "../conftest.ts";
 import type { MarkerValue, Project } from "../../src/py_aep/index.ts";
 
@@ -19,10 +19,10 @@ function getFirstCompMarker(project: Project, compName: string | null = null): M
   if (compName) {
     comp = getComp(project, compName);
   } else {
-    pyAssert(len(project.compositions) >= 1);
+    assert(len(project.compositions) >= 1);
     comp = project.compositions[0];
   }
-  pyAssert(len(comp.markers) >= 1);
+  assert(len(comp.markers) >= 1);
   return comp.markers[0];
 }
 
@@ -32,12 +32,12 @@ function getFirstLayerMarker(project: Project, compName: string | null = null): 
   if (compName) {
     comp = getComp(project, compName);
   } else {
-    pyAssert(len(project.compositions) >= 1);
+    assert(len(project.compositions) >= 1);
     comp = project.compositions[0];
   }
-  pyAssert(len(comp.layers) >= 1);
+  assert(len(comp.layers) >= 1);
   const layer = comp.layers[0];
-  pyAssert(len(layer.markers) >= 1);
+  assert(len(layer.markers) >= 1);
   return layer.markers[0];
 }
 

@@ -8,9 +8,9 @@ import {
   isclose,
   len,
   Path,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
@@ -29,10 +29,10 @@ function getFirstCompMarker(project: Project, compName: string | null = null): M
   if (compName) {
     comp = getComp(project, compName);
   } else {
-    pyAssert(len(project.compositions) >= 1);
+    assert(len(project.compositions) >= 1);
     comp = project.compositions[0];
   }
-  pyAssert(len(comp.markers) >= 1);
+  assert(len(comp.markers) >= 1);
   return comp.markers[0];
 }
 
@@ -42,12 +42,12 @@ function getFirstLayerMarker(project: Project, compName: string | null = null): 
   if (compName) {
     comp = getComp(project, compName);
   } else {
-    pyAssert(len(project.compositions) >= 1);
+    assert(len(project.compositions) >= 1);
     comp = project.compositions[0];
   }
-  pyAssert(len(comp.layers) >= 1);
+  assert(len(comp.layers) >= 1);
   const layer = comp.layers[0];
-  pyAssert(len(layer.markers) >= 1);
+  assert(len(layer.markers) >= 1);
   return layer.markers[0];
 }
 
@@ -145,7 +145,7 @@ describe("TestRoundtripMarkerDuration", () => {
     const new_ = comp2.markers.find((m) => m.comment === "w_new");
     if (new_ === undefined) throw new StopIteration();
     expect(
-      pyEq(bytes_.slice(new_._nmhd.tobytes(), 8, 16), bytes_.fromhex("000005dc00000258")),
+      valueEquals(bytes_.slice(new_._nmhd.tobytes(), 8, 16), bytes_.fromhex("000005dc00000258")),
     ).toBe(true);
     expect(new_.duration).toBe(2.5);
   });
@@ -295,11 +295,11 @@ describe("TestMarkerParams", () => {
   /** Tests for MarkerValue cue-point params. */
   test("test_constructor_params", () => {
     const marker = new MarkerValue("c", undefined, undefined, undefined, undefined, new Map([["k1", "v1"], ["k2", "v2"]]));
-    expect(pyEq(marker.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    expect(valueEquals(marker.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
   });
 
   test("test_constructor_params_default_empty", () => {
-    expect(pyEq(new MarkerValue().params, new Map())).toBe(true);
+    expect(valueEquals(new MarkerValue().params, new Map())).toBe(true);
   });
 
   test("test_constructor_params_invalid", () => {
@@ -329,7 +329,7 @@ describe("TestMarkerParams", () => {
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "with params");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
-    expect(pyEq(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    expect(valueEquals(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
     expect(marker2._nmhd.numParams).toBe(2);
   });
@@ -338,14 +338,14 @@ describe("TestMarkerParams", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(SAMPLES_DIR.div("layer_marker.aep"));
     const marker = getFirstLayerMarker(project, "layer_multiple_markers");
-    expect(pyEq(marker.params, new Map())).toBe(true);
+    expect(valueEquals(marker.params, new Map())).toBe(true);
 
     marker.params = new Map([["k1", "v1"], ["k2", "v2"]]);
     const out = tmpPath.div("marker_params_grow.aep");
     project.save(out);
     const project2 = parseProjectFresh(out);
     const marker2 = getFirstLayerMarker(project2, "layer_multiple_markers");
-    expect(pyEq(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    expect(valueEquals(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
     expect(marker2._nmhd.numParams).toBe(2);
 
@@ -354,14 +354,14 @@ describe("TestMarkerParams", () => {
     project2.save(out2);
     const project3 = parseProjectFresh(out2);
     const marker3 = getFirstLayerMarker(project3, "layer_multiple_markers");
-    expect(pyEq(marker3.params, new Map([["k1", "x"]]))).toBe(true);
+    expect(valueEquals(marker3.params, new Map([["k1", "x"]]))).toBe(true);
     expect(marker3._nmhd.numParams).toBe(1);
 
     marker3.params = new Map();
     const out3 = tmpPath.div("marker_params_clear.aep");
     project3.save(out3);
     const marker4 = getFirstLayerMarker(parseProjectFresh(out3), "layer_multiple_markers");
-    expect(pyEq(marker4.params, new Map())).toBe(true);
+    expect(valueEquals(marker4.params, new Map())).toBe(true);
     expect(marker4._nmhd.numParams).toBe(0);
   });
 
@@ -382,7 +382,7 @@ describe("TestMarkerParams", () => {
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "late");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
-    expect(pyEq(marker2.params, new Map([["a", "1"], ["b", "2"]]))).toBe(true);
+    expect(valueEquals(marker2.params, new Map([["a", "1"], ["b", "2"]]))).toBe(true);
   });
 
   test("test_params_set_on_unbound_marker", () => {
@@ -392,7 +392,7 @@ describe("TestMarkerParams", () => {
     const mp = comp.layers[0].property("ADBE Marker");
     const marker = new MarkerValue("unbound");
     marker.params = new Map([["p", "q"]]);
-    expect(pyEq(marker.params, new Map([["p", "q"]]))).toBe(true);
+    expect(valueEquals(marker.params, new Map([["p", "q"]]))).toBe(true);
     mp.setValueAtTime(at(mp.keyframes, -1).time + 1.0, marker);
     const out = tmpPath.div("marker_params_unbound.aep");
     project.save(out);
@@ -401,7 +401,7 @@ describe("TestMarkerParams", () => {
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "unbound");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
-    expect(pyEq(marker2.params, new Map([["p", "q"]]))).toBe(true);
+    expect(valueEquals(marker2.params, new Map([["p", "q"]]))).toBe(true);
   });
 });
 
@@ -421,7 +421,7 @@ describe("TestMarkerLazyParseRoundtrip", () => {
     }
     const out = tmpPath.div("out.aep");
     project.save(out);
-    expect(pyEq(out.readBytes(), src)).toBe(true);
+    expect(valueEquals(out.readBytes(), src)).toBe(true);
   });
 });
 
@@ -431,14 +431,14 @@ describe("TestRemoveAllMarkers", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(SAMPLES_DIR.div("comp_marker.aep"));
     const comp = getComp(project, "comment");
-    expect(pyBool(comp.markers)).toBe(true);
+    expect(truthy(comp.markers)).toBe(true);
 
     comp.removeAllMarkers();
-    expect(pyEq(comp.markers, [])).toBe(true);
+    expect(valueEquals(comp.markers, [])).toBe(true);
     const out = tmpPath.div("no_comp_markers.aep");
     project.save(out);
     const comp2 = getComp(parseProjectFresh(out), "comment");
-    expect(pyEq(comp2.markers, [])).toBe(true);
+    expect(valueEquals(comp2.markers, [])).toBe(true);
   });
 
   test("test_layer_remove_all_markers", () => {
@@ -446,14 +446,14 @@ describe("TestRemoveAllMarkers", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("layer_marker.aep"));
     const comp = getComp(project, "layer_multiple_markers");
     const layer = comp.layers[0];
-    expect(pyBool(layer.markers)).toBe(true);
+    expect(truthy(layer.markers)).toBe(true);
 
     layer.removeAllMarkers();
-    expect(pyEq(layer.markers, [])).toBe(true);
+    expect(valueEquals(layer.markers, [])).toBe(true);
     const out = tmpPath.div("no_layer_markers.aep");
     project.save(out);
     const comp2 = getComp(parseProjectFresh(out), "layer_multiple_markers");
-    expect(pyEq(comp2.layers[0].markers, [])).toBe(true);
+    expect(valueEquals(comp2.layers[0].markers, [])).toBe(true);
   });
 
   test("test_remove_all_markers_noop_without_markers", () => {
@@ -463,9 +463,9 @@ describe("TestRemoveAllMarkers", () => {
     // The comp itself has no markers; layers keep an empty marker
     // property after draining. Both cases must be no-ops.
     comp.removeAllMarkers();
-    expect(pyEq(comp.markers, [])).toBe(true);
+    expect(valueEquals(comp.markers, [])).toBe(true);
     layer.removeAllMarkers();
     layer.removeAllMarkers();
-    expect(pyEq(layer.markers, [])).toBe(true);
+    expect(valueEquals(layer.markers, [])).toBe(true);
   });
 });

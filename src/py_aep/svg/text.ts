@@ -22,7 +22,7 @@ import type { Subpath } from "./types.ts";
 import {
   type Path,
   fspath,
-  pyEq,
+  valueEquals,
   sum,
   zip,
   hypot,
@@ -167,7 +167,7 @@ export class _CubicContourPen {
   }
 
   _closePath(): void {
-    if (!pyEq(this._cur, this._start)) {
+    if (!valueEquals(this._cur, this._start)) {
       const [x0, y0] = this._cur;
       const [x1, y1] = this._start;
       this._segs.push([x0, y0, x0, y0, x1, y1, x1, y1]);

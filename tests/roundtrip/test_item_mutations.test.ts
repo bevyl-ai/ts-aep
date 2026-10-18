@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, StopIteration, ValueError, contains, dictGet, getitem, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, ValueError, contains, getOr, getOrThrow, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -37,7 +37,7 @@ describe("TestAddFolder", () => {
     const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("NewFolder");
-    expect(getitem(app.project.items, folder.id) === folder).toBe(true);
+    expect(getOrThrow(app.project.items, folder.id) === folder).toBe(true);
   });
 
   test("test_add_folder_unique_id", () => {
@@ -84,7 +84,7 @@ describe("TestAddFolder", () => {
     const app2 = parseAep(tmpPath.div("out.aep"));
 
     expect(app2.project.items.has(folderId)).toBe(true);
-    const found = getitem(app2.project.items, folderId);
+    const found = getOrThrow(app2.project.items, folderId);
     expect(found.name).toBe("RoundTripFolder");
     expect(found.typeName).toBe("Folder");
   });
@@ -101,8 +101,8 @@ describe("TestAddFolder", () => {
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const parent2 = getitem(app2.project.items, parentId);
-    const child2 = getitem(app2.project.items, childId);
+    const parent2 = getOrThrow(app2.project.items, parentId);
+    const child2 = getOrThrow(app2.project.items, childId);
     expect(parent2.name).toBe("Parent");
     expect(child2.name).toBe("Child");
     expect(child2.parentFolder === parent2).toBe(true);
@@ -204,7 +204,7 @@ describe("TestAddComp", () => {
     const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("RegComp", 1920, 1080, 1.0, 10.0, 24.0);
-    expect(getitem(app.project.items, comp.id) === comp).toBe(true);
+    expect(getOrThrow(app.project.items, comp.id) === comp).toBe(true);
     expect(contains(app.project.compositions, comp)).toBe(true);
   });
 
@@ -228,7 +228,7 @@ describe("TestAddComp", () => {
     const app2 = parseAep(tmpPath.div("out.aep"));
 
     expect(app2.project.items.has(compId)).toBe(true);
-    const comp2 = getitem(app2.project.items, compId);
+    const comp2 = getOrThrow(app2.project.items, compId);
     expect(comp2.name).toBe("RTComp");
     expect(comp2.typeName).toBe("Composition");
   });
@@ -243,7 +243,7 @@ describe("TestAddComp", () => {
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp2 = asInstance(getitem(app2.project.items, compId), CompItem);
+    const comp2 = asInstance(getOrThrow(app2.project.items, compId), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.width).toBe(3840);
     expect(comp2.height).toBe(2160);
@@ -269,7 +269,7 @@ describe("TestAddComp", () => {
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp2 = asInstance(getitem(app2.project.items, compId), CompItem);
+    const comp2 = asInstance(getOrThrow(app2.project.items, compId), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.name).toBe("Scratch");
     expect(comp2.width).toBe(1280);
@@ -341,8 +341,8 @@ describe("TestItemRemove", () => {
     // First check if any comp is used as a layer source
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        if (layer instanceof AVLayer && pyBool(layer._sourceId)) {
-          const sourceItem = dictGet(app.project.items, layer._sourceId);
+        if (layer instanceof AVLayer && truthy(layer._sourceId)) {
+          const sourceItem = getOr(app.project.items, layer._sourceId);
           if (sourceItem instanceof CompItem) {
             // Found a comp used as a layer source
             const sourceId = sourceItem.id;
@@ -403,7 +403,7 @@ describe("TestItemRemove", () => {
     expect(app2.project.items.has(compId)).toBe(true);
 
     // Remove and save again
-    getitem(app2.project.items, compId).remove();
+    getOrThrow(app2.project.items, compId).remove();
     app2.project.save(tmpPath.div("without_comp.aep"));
     const app3 = parseAep(tmpPath.div("without_comp.aep"));
     expect(app3.project.items.has(compId)).toBe(false);
@@ -460,7 +460,7 @@ describe("TestParentFolderSetter", () => {
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp12 = getitem(app2.project.items, comp1Id);
+    const comp12 = getOrThrow(app2.project.items, comp1Id);
     const empty2 = app2.project.rootFolder.folders.find((f) => f.name === "EmptyFolder");
     if (empty2 === undefined) throw new StopIteration();
     const fwi2 = app2.project.rootFolder.folders.find((f) => f.name === "FolderWithItems");
@@ -496,7 +496,7 @@ describe("TestParentFolderSetter", () => {
     level2.parentFolder = root;
     expect(contains(root.items, level2)).toBe(true);
     expect(contains(level1.items, level2)).toBe(false);
-    expect(pyEq(level2.folders.map((f) => f.name), childNames)).toBe(true);
+    expect(valueEquals(level2.folders.map((f) => f.name), childNames)).toBe(true);
   });
 
   test("test_same_parent_noop", () => {
@@ -627,7 +627,7 @@ describe("TestImportPlaceholder", () => {
   test("test_import_placeholder_registered_in_project", () => {
     const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
-    expect(getitem(app.project.items, item.id) === item).toBe(true);
+    expect(getOrThrow(app.project.items, item.id) === item).toBe(true);
     expect(contains(app.project.footages, item)).toBe(true);
   });
 
@@ -663,7 +663,7 @@ describe("TestImportPlaceholder", () => {
     const app2 = parseAep(tmpPath.div("out.aep"));
 
     expect(app2.project.items.has(itemId)).toBe(true);
-    const item2 = asInstance(getitem(app2.project.items, itemId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, itemId), FootageItem);
     expect(item2.name).toBe("RTPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -692,7 +692,7 @@ describe("TestReplaceWithPlaceholder", () => {
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
-    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, footageId), FootageItem);
     expect(item2.name).toBe("RtPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -737,7 +737,7 @@ describe("TestReplaceWithSolid", () => {
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
-    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, footageId), FootageItem);
     expect(item2.name).toBe("GreenSolid");
     expect(item2.width).toBe(960);
     expect(item2.height).toBe(540);
@@ -775,7 +775,7 @@ describe("TestSetProxyToNone", () => {
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
-    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource == null).toBe(true);
   });
 });
@@ -798,7 +798,7 @@ describe("TestSetProxyWithPlaceholder", () => {
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
-    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource != null).toBe(true);
   });
 
@@ -829,7 +829,7 @@ describe("TestSetProxyWithSolid", () => {
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
-    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
+    const item2 = asInstance(getOrThrow(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource != null).toBe(true);
   });
 

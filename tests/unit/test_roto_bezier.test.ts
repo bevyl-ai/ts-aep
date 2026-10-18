@@ -6,7 +6,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx } from "../../src/pyrt/pytest.ts";
-import { pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { DEFAULT_TENSION, keyframeTensions, rotoBezierTangents } from "../../src/py_aep/resolvers/roto_bezier.ts";
 
 function _flat(points: number[][]): number[] {
@@ -86,7 +86,7 @@ describe("TestRotoBezierTangents", () => {
         1.0,
       );
       expect(
-        [..._flat(ins), ..._flat(outs)].some((x) => pyBool(x)),
+        [..._flat(ins), ..._flat(outs)].some((x) => truthy(x)),
       ).toBe(false);
     },
   );
@@ -95,7 +95,7 @@ describe("TestRotoBezierTangents", () => {
 describe("TestKeyframeTensions", () => {
   test("test_stored_tensions_are_kept", () => {
     expect(
-      pyEq(
+      valueEquals(
         keyframeTensions([0.5, 0.25], [[0, 0], [1, 2]], [[0, 0], [3, 4]]),
         [0.5, 0.25],
       ),
@@ -108,6 +108,6 @@ describe("TestKeyframeTensions", () => {
       [[-30, 10], [0, 0], [0, 0]],
       [[40, -20], [0, 0], [0, 5]],
     );
-    expect(pyEq(tensions, [DEFAULT_TENSION, 1.0, DEFAULT_TENSION])).toBe(true);
+    expect(valueEquals(tensions, [DEFAULT_TENSION, 1.0, DEFAULT_TENSION])).toBe(true);
   });
 });

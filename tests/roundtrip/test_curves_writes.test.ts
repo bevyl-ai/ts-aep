@@ -7,7 +7,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { at, BytesIO, getitem, Path, pyAssert, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { at, BytesIO, getOrThrow, Path, assert, truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { type Chunk, writeChunk } from "../../src/py_aep/binary/chunk.ts";
@@ -32,14 +32,14 @@ function _curves(layer: Layer, index = 0): Property {
   const prop = asInstance(layer.property("ADBE Effect Parade").properties[index], PropertyGroup).property(
     "ADBE CurvesCustom-0001",
   );
-  pyAssert(prop instanceof Property);
+  assert(prop instanceof Property);
   return prop;
 }
 
 function _bytes(...chunks: (Chunk | null)[]): Uint8Array[] {
   const out: Uint8Array[] = [];
   for (const chunk of chunks) {
-    pyAssert(chunk != null);
+    assert(chunk != null);
     const buf = new BytesIO();
     writeChunk(buf, chunk);
     out.push(buf.getvalue());
@@ -64,12 +64,12 @@ test("test_add_property_writes_an_untouched_curves", () => {
   const added = _curves(_layer(reopened, "keyed"), 1);
   const untouched = _curves(_layer(reopened, "untouched"));
 
-  expect(pyBool(added.keyframes)).toBe(false);
+  expect(truthy(added.keyframes)).toBe(false);
   expect(added.isModified).toBe(false);
   const curves = added.value;
   expect(curves instanceof Curves).toBe(true);
   expect(curves.isIdentity).toBe(true);
-  expect(pyEq(_stream(added), _stream(untouched))).toBe(true);
+  expect(valueEquals(_stream(added), _stream(untouched))).toBe(true);
 });
 
 test("test_moving_a_key_moves_its_curves", () => {
@@ -80,7 +80,7 @@ test("test_moving_a_key_moves_its_curves", () => {
   const project = parseProjectFresh(SAMPLE);
   const prop = _curves(_layer(project, "keyed"));
   const first = prop.keyframes[0].value;
-  pyAssert(first instanceof Curves);
+  assert(first instanceof Curves);
   prop.keyframes[0].time = 3.0;
   const out = tmpPath.div("out.aep");
   project.save(out);
@@ -88,6 +88,6 @@ test("test_moving_a_key_moves_its_curves", () => {
   const keys = _curves(_layer(parseAep(out).project, "keyed")).keyframes;
   const moved = at(keys, -1).value;
   expect(at(keys, -1).time).toBe(3.0);
-  pyAssert(moved instanceof Curves);
-  expect(pyEq(getitem(moved.channels, "rgb").points, getitem(first.channels, "rgb").points)).toBe(true);
+  assert(moved instanceof Curves);
+  expect(valueEquals(getOrThrow(moved.channels, "rgb").points, getOrThrow(first.channels, "rgb").points)).toBe(true);
 });

@@ -5,7 +5,7 @@
 // module-level helpers stay module-level functions.
 
 import { describe, expect, test } from "bun:test";
-import { Path, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { Path, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { VariableFontSpacing } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
@@ -30,31 +30,31 @@ function _animatorProps(layer: Layer): PropertyGroup {
 /** The font of a text layer's Source Text. */
 function _fontObject(layer: Layer): FontObject | null {
   const text = layer.text;
-  pyAssert(text != null);
+  assert(text != null);
   return text.sourceText.value.fontObject;
 }
 
 describe("TestFontObjectVariable", () => {
   test("test_design_vector_default_instance", () => {
     const font = _fontObject(_vfLayer("variable_font_static.aep"));
-    pyAssert(font != null);
-    expect(pyEq(font.designVector, [400.0, 100.0])).toBe(true);
+    assert(font != null);
+    expect(valueEquals(font.designVector, [400.0, 100.0])).toBe(true);
     expect(font.hasDesignAxes).toBe(true);
     expect(font.familyPrefix).toBe("Bahnschrift");
   });
 
   test("test_design_vector_named_instance", () => {
     const font = _fontObject(_vfLayer("variable_font_instance.aep"));
-    pyAssert(font != null);
+    assert(font != null);
     expect(font.postScriptName).toBe("Bahnschrift-BoldSemiCondensed");
-    expect(pyEq(font.designVector, [700.0, 87.5])).toBe(true);
+    expect(valueEquals(font.designVector, [700.0, 87.5])).toBe(true);
     expect(font.familyPrefix).toBe("Bahnschrift");
   });
 
   test("test_non_variable_font", () => {
     const project = parseProject(SAMPLES_DIR.div("threeDPerChar_on.aep"));
     const font = _fontObject(project.compositions[0].layers[0]);
-    pyAssert(font != null);
+    assert(font != null);
     expect(font.designVector).toBe(null);
     expect(font.hasDesignAxes).toBe(false);
     expect(font.familyPrefix).toBe(null);
@@ -75,7 +75,7 @@ describe("TestVariableFontAxisProperty", () => {
   test("test_animated_axis_scalar_keyframes", () => {
     const props = _animatorProps(_vfLayer("variable_font_axis_animated.aep"));
     const wght = asInstance(props.property("ADBE Text VF Axis 1"), Property);
-    expect(pyEq(wght.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
+    expect(valueEquals(wght.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
     expect(wght.axisTag).toBe("wght");
     const wdth = asInstance(props.property("ADBE Text VF Axis 2"), Property);
     expect(wdth.value).toBe(80.0);

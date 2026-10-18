@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, bytes_, decode, encode, getattr, len, pyAssert, round, descriptor, ValueError } from "../../pyrt/index.ts";
+import { define, field, b, bytes_, decode, encode, getattr, len, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -105,7 +105,7 @@ export class PrdaChunk extends Chunk {
     const { chunkType = "", rendererMatchName = "" } = kw;
     if (this !== PrdaChunk) {
       const result = super.read(fp, size, { chunkType });
-      pyAssert(result instanceof PrdaChunk);
+      assert(result instanceof PrdaChunk);
       return result;
     }
     const variant = _PRDA_VARIANTS.get(rendererMatchName);
@@ -586,7 +586,7 @@ export class PardChunk extends Chunk {
     const { chunkType = "" } = kw;
     if (this !== PardChunk) {
       const result = super.read(fp, size, { chunkType });
-      pyAssert(result instanceof PardChunk);
+      assert(result instanceof PardChunk);
       return result;
     }
     if (size < 56) return new this({ chunkType, data: readBytes(fp, size) });

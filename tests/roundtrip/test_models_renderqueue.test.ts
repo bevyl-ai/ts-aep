@@ -17,13 +17,13 @@ import {
   fields,
   fspath,
   getattr,
-  getitem,
+  getOrThrow,
   int,
   len,
-  pyAssert,
-  pyBool,
-  pyEq,
-  pyOr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
   repr,
   sorted,
   StopIteration,
@@ -84,11 +84,11 @@ function _assertRoutConsistent(app: Application): void {
   const rq = renderQueueOf(app.project); // type: ignore[attr-defined]
   const rout = rq._rout;
   const expected = len(rq.items) * ROUT_ITEMS_PER_RQ_ITEM;
-  pyAssert(
+  assert(
     len(rout.items) === expected,
     `expected ${expected} Rout items for ${len(rq.items)} RQ items, got ${len(rout.items)}`,
   );
-  pyAssert(
+  assert(
     rout.count === len(rout.items),
     `Rout.count=${rout.count} != len(items)=${len(rout.items)}`,
   );
@@ -332,7 +332,7 @@ describe("TestSetSetting", () => {
     const out = tmpPath.div("resolution.aep");
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "base");
-    expect(pyEq(rqi2.settings.get("Resolution"), [2, 2])).toBe(true);
+    expect(valueEquals(rqi2.settings.get("Resolution"), [2, 2])).toBe(true);
   });
 
   test("test_set_skip_existing_files", () => {
@@ -500,7 +500,7 @@ describe("TestRoundtripFileTemplate", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
     const om = rqi.outputModules[0];
-    expect(pyBool(om.fileTemplate)).toBe(true); // should be non-empty
+    expect(truthy(om.fileTemplate)).toBe(true); // should be non-empty
   });
 
   test("test_file_template_roundtrip", () => {
@@ -511,7 +511,7 @@ describe("TestRoundtripFileTemplate", () => {
     const rqi = getRqi(project, "base");
     const om = rqi.outputModules[0];
     const original = om.fileTemplate;
-    expect(pyBool(original)).toBe(true); // non-empty
+    expect(truthy(original)).toBe(true); // non-empty
 
     // Replace the filename portion with a custom template
     const sep = original.includes("\\") ? "\\" : "/";
@@ -568,7 +568,7 @@ describe("TestRoundtripSkipFrames", () => {
     const got = getRqi(saved, "skip_frames_0");
     const want = getRqi(saved, `skip_frames_${n}`);
     expect(
-      pyEq(got.outputModules[0]._roou.tobytes(), want.outputModules[0]._roou.tobytes()),
+      valueEquals(got.outputModules[0]._roou.tobytes(), want.outputModules[0]._roou.tobytes()),
     ).toBe(true);
     expect(got.skipFrames).toBe(0);
   });
@@ -624,13 +624,13 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(FO_SAMPLES_DIR.div("png", "png_rgba.aep")).project;
     const om = renderQueueOf(project).items[0].outputModules[0];
-    expect(pyEq(bytes_.slice(om._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
+    expect(valueEquals(bytes_.slice(om._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
     om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
 
     const out = tmpPath.div("depth.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(bytes_.slice(om2._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520040"))).toBe(true);
+    expect(valueEquals(bytes_.slice(om2._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520040"))).toBe(true);
     expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
   });
 
@@ -643,15 +643,15 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     expect(rouu instanceof RouuChunk).toBe(true);
     expect(rouu.depth).toBe(OutputColorDepth.FLOATING_POINT_GRAY);
     expect(OutputColorDepth.FLOATING_POINT_GRAY).toBe(-32);
-    expect(pyEq(rouu.tobytes(), new Uint8Array(body))).toBe(true);
+    expect(valueEquals(rouu.tobytes(), new Uint8Array(body))).toBe(true);
   });
 
   test("test_frame_rate_setter_writes_16_16", () => {
     const rouu = new RouuChunk();
     rouu.frameRate = 29.97;
-    expect(pyEq(bytes_.slice(rouu.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
+    expect(valueEquals(bytes_.slice(rouu.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
     rouu.frameRate = 7.5;
-    expect(pyEq(bytes_.slice(rouu.tobytes(), 0x42, 0x46), bytes_.fromhex("00078000"))).toBe(true);
+    expect(valueEquals(bytes_.slice(rouu.tobytes(), 0x42, 0x46), bytes_.fromhex("00078000"))).toBe(true);
   });
 
   test("test_width_and_height_are_4_bytes", () => {
@@ -682,7 +682,7 @@ describe("TestRoundtripPreserveRgb", () => {
     const got = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
     const want = renderQueueOf(parseAep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0]
       .outputModules[0];
-    expect(pyEq(got._omLdat.tobytes(), want._omLdat.tobytes())).toBe(true);
+    expect(valueEquals(got._omLdat.tobytes(), want._omLdat.tobytes())).toBe(true);
     expect(got.settings.get("Preserve RGB")).toBe(true);
   });
 });
@@ -772,27 +772,27 @@ describe("TestRoundtripSettingsResolution", () => {
     const out = tmpPath.div("res_asymmetric.aep");
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "base");
-    expect(pyEq(rqi2.settings.get("Resolution"), [7, 3])).toBe(true);
+    expect(valueEquals(rqi2.settings.get("Resolution"), [7, 3])).toBe(true);
   });
 
   test("test_resolution_full_to_custom_roundtrip", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(SAMPLES_DIR.div("resolution.aep")).project;
     const rqi = getRqi(project, "resolution_custom_7x3");
-    expect(pyEq(rqi.settings.get("Resolution"), [7, 3])).toBe(true);
+    expect(valueEquals(rqi.settings.get("Resolution"), [7, 3])).toBe(true);
 
     rqi.settings.set("Resolution", [1, 1]);
     const out = tmpPath.div("res_full.aep");
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "resolution_custom_7x3");
-    expect(pyEq(rqi2.settings.get("Resolution"), [1, 1])).toBe(true);
+    expect(valueEquals(rqi2.settings.get("Resolution"), [1, 1])).toBe(true);
 
     // And back to a different custom value
     rqi2.settings.set("Resolution", [8, 3]);
     const out2 = tmpPath.div("res_custom_again.aep");
     rqi2._project.save(out2);
     const rqi3 = getRqi(parseAep(out2).project, "resolution_custom_7x3");
-    expect(pyEq(rqi3.settings.get("Resolution"), [8, 3])).toBe(true);
+    expect(valueEquals(rqi3.settings.get("Resolution"), [8, 3])).toBe(true);
   });
 });
 
@@ -856,7 +856,7 @@ describe("TestRoundtripSettingsMultiWrite", () => {
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "base");
     expect(rqi2.settings.get("Quality")).toBe(RenderQuality.DRAFT);
-    expect(pyEq(rqi2.settings.get("Resolution"), [3, 3])).toBe(true);
+    expect(valueEquals(rqi2.settings.get("Resolution"), [3, 3])).toBe(true);
     expect(rqi2.settings.get("Motion Blur")).toBe(MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
     expect(rqi2.settings.get("Field Render")).toBe(FieldRender.UPPER_FIELD_FIRST);
   });
@@ -894,7 +894,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "base");
     expect(rqi2.settings.get("Quality")).toBe(RenderQuality.WIREFRAME);
-    expect(pyEq(rqi2.settings.get("Resolution"), [4, 4])).toBe(true);
+    expect(valueEquals(rqi2.settings.get("Resolution"), [4, 4])).toBe(true);
     expect(rqi2.settings.get("Skip Existing Files")).toBe(true);
   });
 
@@ -918,7 +918,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     project.save(out);
     const items2 = renderQueueOf(parseAep(out).project).items;
     expect(items2[1].settings.get("Quality")).toBe(RenderQuality.DRAFT);
-    expect(pyEq(items2[1].settings.get("Resolution"), [2, 2])).toBe(true);
+    expect(valueEquals(items2[1].settings.get("Resolution"), [2, 2])).toBe(true);
   });
 
   /** Bulk assignment should surface read-only setting errors. */
@@ -975,13 +975,13 @@ describe("TestRoundtripOutputModuleResize", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
     const om = renderQueueOf(project).items[0].outputModules[0];
-    expect(pyEq(om.settings.get("Resize to"), [960, 540])).toBe(true);
+    expect(valueEquals(om.settings.get("Resize to"), [960, 540])).toBe(true);
 
     om.settings.set("Resize to", [1280, 720]);
     const out = tmpPath.div("resize_720p.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(om2.settings.get("Resize to"), [1280, 720])).toBe(true);
+    expect(valueEquals(om2.settings.get("Resize to"), [1280, 720])).toBe(true);
   });
 
   test("test_resize_roundtrip_back", () => {
@@ -993,13 +993,13 @@ describe("TestRoundtripOutputModuleResize", () => {
     const out = tmpPath.div("resize_4k.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(om2.settings.get("Resize to"), [3840, 2160])).toBe(true);
+    expect(valueEquals(om2.settings.get("Resize to"), [3840, 2160])).toBe(true);
 
     om2.settings.set("Resize to", [640, 480]);
     const out2 = tmpPath.div("resize_vga.aep");
     om2._project.save(out2);
     const om3 = renderQueueOf(parseAep(out2).project).items[0].outputModules[0];
-    expect(pyEq(om3.settings.get("Resize to"), [640, 480])).toBe(true);
+    expect(valueEquals(om3.settings.get("Resize to"), [640, 480])).toBe(true);
   });
 
   test("test_resize_string_form_fallback", () => {
@@ -1010,13 +1010,13 @@ describe("TestRoundtripOutputModuleResize", () => {
     const om = renderQueueOf(project).items[0].outputModules[0];
 
     om.settings.set("Resize to", [1920, 1080]);
-    expect(getitem(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe(
+    expect(getOrThrow(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe(
       "HD  •  1920x1080 • 24 fps",
     );
     expect(om.getSetting("Resize to")).toBe("HD  •  1920x1080 • 24 fps");
 
     om.settings.set("Resize to", [960, 540]);
-    expect(getitem(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe("Custom");
+    expect(getOrThrow(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe("Custom");
   });
 });
 
@@ -1174,7 +1174,7 @@ describe("TestIterationWhileRemoving", () => {
       rqItem.remove();
     }
 
-    expect(pyEq([...rq], [])).toBe(true);
+    expect(valueEquals([...rq], [])).toBe(true);
     expect(rq.numItems).toBe(0);
 
     const out = tmpPath.div("out.aep");
@@ -1191,7 +1191,7 @@ describe("TestIterationWhileRemoving", () => {
       layer.remove();
     }
 
-    expect(pyEq([...comp], [])).toBe(true);
+    expect(valueEquals([...comp], [])).toBe(true);
     expect(len(comp.layers)).toBe(0);
   });
 });
@@ -1345,7 +1345,7 @@ describe("TestRQItemDuplicate", () => {
 });
 
 /** Tests for RenderQueue.add(). */
-describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRQAdd", () => {
+describe.skipIf(!truthy(AE_PREFS_DIR))("TestRQAdd", () => {
   test("test_add_to_existing", () => {
     const tmpPath = makeTmpPath();
     /** Adding a comp to RQ with existing items increases count. */
@@ -1424,9 +1424,9 @@ describe("TestRQAddWithoutPreferences", () => {
     // hdrm, Utf8x3. The Ropt is the 602-byte TIFF format options.
     const app = parseAep(SAMPLES_DIR.div("custom.aep"));
     const rqi = renderQueueOf(app.project).add(app.project.compositions[0]);
-    const lomTypes = rqi._lom.chunks.map((c) => pyOr(getattr(c, "listType", null), c.chunkType));
+    const lomTypes = rqi._lom.chunks.map((c) => truthyOr(getattr(c, "listType", null), c.chunkType));
     expect(contains(lomTypes, "Als2")).toBe(false);
-    expect(pyEq(lomTypes, ["Roou", "Ropt", "hdrm", "Utf8", "Utf8", "Utf8"])).toBe(true);
+    expect(valueEquals(lomTypes, ["Roou", "Ropt", "hdrm", "Utf8", "Utf8", "Utf8"])).toBe(true);
     const ropt = rqi._lom.chunks.find((c) => c.chunkType === "Ropt");
     if (ropt === undefined) throw new StopIteration();
     expect(ropt instanceof TiffRoptChunk).toBe(true);
@@ -1483,7 +1483,7 @@ describe("TestRQAddWithoutPreferences", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), src.readBytes())).toBe(true);
+    expect(valueEquals(out.readBytes(), src.readBytes())).toBe(true);
   });
 
   test("test_add_to_empty_queue_reparse_links_comp", () => {
@@ -1519,15 +1519,15 @@ describe("TestRQAddWithoutPreferences", () => {
     expect(len(rouu.tobytes())).toBe(154);
 
     const rs = new RenderSettingsItem();
-    expect(pyEq(rs._reserved00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
-    expect(pyEq(rs._reserved06, b("\x00\x03\x00\x00"))).toBe(true);
+    expect(valueEquals(rs._reserved00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
+    expect(valueEquals(rs._reserved06, b("\x00\x03\x00\x00"))).toBe(true);
     expect(
-      pyEq(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8))),
+      valueEquals(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8))),
     ).toBe(true);
-    expect(pyEq(rs._reserved45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
-    expect(pyEq(rs._reservedEnd, bytes_.repeat(b("\x00"), 16))).toBe(true);
+    expect(valueEquals(rs._reserved45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
+    expect(valueEquals(rs._reservedEnd, bytes_.repeat(b("\x00"), 16))).toBe(true);
     expect(rs.itemId).toBe(2);
-    expect(pyEq(rs._remaining, concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)))).toBe(true);
+    expect(valueEquals(rs._remaining, concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)))).toBe(true);
 
     const om = new OutputModuleSettingsItem();
     expect(om.convertToLinearLight).toBe(2);
@@ -1542,7 +1542,7 @@ describe("TestRQAddWithoutPreferences", () => {
     new TiffRoptChunk().write(buf);
     const data = buf.getvalue();
     expect(len(data)).toBe(602);
-    expect(pyEq(bytes_.slice(data, 0, 4), b("TIF "))).toBe(true);
+    expect(valueEquals(bytes_.slice(data, 0, 4), b("TIF "))).toBe(true);
     expect(new TiffRoptChunk().chunkSize).toBe(602);
   });
 
@@ -1559,12 +1559,12 @@ describe("TestRQAddWithoutPreferences", () => {
     ];
     for (const [cls, code, size] of cases) {
       const data = new cls().tobytes();
-      pyAssert(len(data) === size, repr(code));
-      pyAssert(pyEq(bytes_.slice(data, 0, 4), code), repr(code));
+      assert(len(data) === size, repr(code));
+      assert(valueEquals(bytes_.slice(data, 0, 4), code), repr(code));
       // RoptChunk dispatch re-parses the bytes to the same variant + bytes
       const parsed = RoptChunk.frombytes(data, { chunkType: "Ropt" });
-      pyAssert(parsed instanceof cls, repr(code));
-      pyAssert(pyEq(parsed.tobytes(), data), repr(code));
+      assert(parsed instanceof cls, repr(code));
+      assert(valueEquals(parsed.tobytes(), data), repr(code));
     }
   });
 
@@ -1592,8 +1592,8 @@ describe("TestRQAddWithoutPreferences", () => {
     const info = _parseIdHexSection(text, "Output File Info Preference Section", "Output File Info");
     const opts = _parseIdHexSection(text, "Output File Options Preference Section", "Output File Options");
     // Info entry stops at the section boundary (no Options bytes leak in).
-    expect(pyEq(getitem(info, 0), b("AB\x00CD\x01EF"))).toBe(true);
-    expect(pyEq(getitem(opts, 0), b("XY\xff"))).toBe(true);
+    expect(valueEquals(getOrThrow(info, 0), b("AB\x00CD\x01EF"))).toBe(true);
+    expect(valueEquals(getOrThrow(opts, 0), b("XY\xff"))).toBe(true);
   });
 });
 
@@ -1613,7 +1613,7 @@ describe("TestOMRemove", () => {
 });
 
 /** Tests for RenderQueue.add(). */
-describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
+describe.skipIf(!truthy(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
   test("test_add_returns_rq_item", () => {
     // RenderQueue.add() returns a RenderQueueItem.
     const app = parseAep(SAMPLES_DIR.div("custom.aep"), { aePreferencesDir: AE_PREFS_DIR });
@@ -1747,7 +1747,7 @@ describe("TestOMRemoveIdenticalModules", () => {
 });
 
 /** apply_template targets only the module it is called on. */
-describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
+describe.skipIf(!truthy(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
   test("test_apply_template_leaves_sibling_untouched", () => {
     // Applying a template to module 1 must not rewrite module 0's Ropt
     // (the shared LOm list holds both modules' chunks back to back).
@@ -1766,7 +1766,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     expect(om0._roou.formatId).toBe(om0FormatBefore);
     const om0FoAfter = om0.formatOptions;
     if (om0FoAfter == null) throw new AssertionError("output module 0 has no format_options");
-    expect(pyEq(om0FoAfter._body.tobytes(), om0RoptBefore)).toBe(true);
+    expect(valueEquals(om0FoAfter._body.tobytes(), om0RoptBefore)).toBe(true);
   });
 
   test("test_apply_template_refreshes_format_options", () => {
@@ -1885,7 +1885,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const app = parseAep(stripped);
     const rq = renderQueueOf(app.project);
     expect(rq.numItems).toBe(0);
-    expect(pyEq([...rq], [])).toBe(true);
+    expect(valueEquals([...rq], [])).toBe(true);
   });
 
   test("test_untouched_roundtrip_is_byte_identical", () => {
@@ -1895,7 +1895,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const app = parseAep(stripped);
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), stripped.readBytes())).toBe(true);
+    expect(valueEquals(out.readBytes(), stripped.readBytes())).toBe(true);
   });
 });
 
@@ -1924,7 +1924,7 @@ describe("TestRenderQueueNoLRdr", () => {
     const app = parseAep(_stripLrdr(tmpPath));
     const rq = renderQueueOf(app.project);
     expect(rq.numItems).toBe(0);
-    expect(pyEq([...rq], [])).toBe(true);
+    expect(valueEquals([...rq], [])).toBe(true);
   });
 
   test("test_untouched_roundtrip_is_byte_identical", () => {
@@ -1934,7 +1934,7 @@ describe("TestRenderQueueNoLRdr", () => {
     const app = parseAep(stripped);
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.readBytes(), stripped.readBytes())).toBe(true);
+    expect(valueEquals(out.readBytes(), stripped.readBytes())).toBe(true);
   });
 
   test("test_add_reparse_links_comp", () => {
@@ -1977,7 +1977,7 @@ describe("TestRoundtripOutputColorSpace", () => {
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
     expect(om2.outputColorSpace).toBe(name);
     // output_profile_id is the catalogued ID (matches AE ground truth).
-    expect(pyEq(om2._omLdat.outputProfileId, profileIdForName(name))).toBe(true);
+    expect(valueEquals(om2._omLdat.outputProfileId, profileIdForName(name))).toBe(true);
     expect(om2._omLdat.outputColorSpaceWorking).toBe(0);
   });
 
@@ -2016,7 +2016,7 @@ describe("TestRoundtripOutputColorSpace", () => {
     // "ACEScc yo" - AE's own Guid for it is the committed aces_acescc_yo id.
     om.outputColorSpace = "ACEScc yo";
     const expected = bytes_.fromhex("596cbde737d61ec5a84b8008888dd03f");
-    expect(pyEq(om._omLdat.outputProfileId, expected)).toBe(true);
+    expect(valueEquals(om._omLdat.outputProfileId, expected)).toBe(true);
     expect(om._omLdat.outputColorSpaceWorking).toBe(0);
     // the id reverse-maps back to the color-space name (read/write symmetry).
     expect(om.outputColorSpace).toBe("ACEScc yo");
@@ -2024,7 +2024,7 @@ describe("TestRoundtripOutputColorSpace", () => {
     const out = tmpPath.div("modified.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(om2._omLdat.outputProfileId, expected)).toBe(true);
+    expect(valueEquals(om2._omLdat.outputProfileId, expected)).toBe(true);
     expect(om2.outputColorSpace).toBe("ACEScc yo");
   });
 
@@ -2156,7 +2156,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
     "test_audio_edit_writes_after_effects_bytes[%#]",
     (case_: string) => {
       const tmpPath = makeTmpPath();
-      const [start, steps] = getitem(_AUDIO_CHAINS, case_);
+      const [start, steps] = getOrThrow(_AUDIO_CHAINS, case_);
       const project = parseAep(MATRIX).project;
       const om = _omByFileStem(project, start);
       for (const step of steps) {
@@ -2176,8 +2176,8 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
       const saved = parseAep(out).project;
       const got = _omByFileStem(saved, start);
       const want = _omByFileStem(saved, case_);
-      expect(pyEq(got._roou.tobytes(), want._roou.tobytes())).toBe(true);
-      expect(pyEq(asdict(got._omLdat), asdict(want._omLdat))).toBe(true);
+      expect(valueEquals(got._roou.tobytes(), want._roou.tobytes())).toBe(true);
+      expect(valueEquals(asdict(got._omLdat), asdict(want._omLdat))).toBe(true);
     },
   );
 
@@ -2193,6 +2193,6 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
     raises(ValueError, () => {
       om.settings = new Map<string, SettingValue>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
     }, "24-bit");
-    expect(pyEq(om._roou.tobytes(), before)).toBe(true);
+    expect(valueEquals(om._roou.tobytes(), before)).toBe(true);
   });
 });

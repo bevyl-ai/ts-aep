@@ -15,9 +15,9 @@ import {
   ValueError,
   isclose,
   len,
-  pyAssert,
-  pyBool,
-  pyEq,
+  assert,
+  truthy,
+  valueEquals,
   repr,
   zip,
 } from "../../src/pyrt/index.ts";
@@ -548,7 +548,7 @@ describe("TestTrackMatte", () => {
       }
     }
     expect(mattedLayer != null).toBe(true);
-    pyAssert(expectedLayer != null);
+    assert(expectedLayer != null);
     expect(asInstance(mattedLayer, AVLayer).trackMatteType).toBe(expectedLayer["trackMatteType"]);
   });
 
@@ -569,7 +569,7 @@ describe("TestTrackMatte", () => {
       }
     }
     expect(mattedLayer != null).toBe(true);
-    pyAssert(expectedLayer != null);
+    assert(expectedLayer != null);
     expect(asInstance(mattedLayer, AVLayer).trackMatteType).toBe(expectedLayer["trackMatteType"]);
   });
 
@@ -584,7 +584,7 @@ describe("TestTrackMatte", () => {
         break;
       }
     }
-    pyAssert(expectedLayers != null);
+    assert(expectedLayers != null);
     for (const [layer, exp] of zip(comp.layers, expectedLayers)) {
       expect(asInstance(layer, AVLayer).hasTrackMatte).toBe(exp["hasTrackMatte"]);
     }
@@ -618,7 +618,7 @@ describe("TestTrackMatte", () => {
         break;
       }
     }
-    pyAssert(expectedLayers != null);
+    assert(expectedLayers != null);
     for (const [layer, exp] of zip(comp.layers, expectedLayers)) {
       expect(asInstance(layer, AVLayer).isTrackMatte).toBe(exp["isTrackMatte"]);
     }
@@ -710,8 +710,8 @@ describe("TestAudio", () => {
     const anchorJson = jsonField(transformJson, "properties").find((p) => p.matchName === "ADBE Anchor Point");
     if (anchorJson === undefined) throw new StopIteration();
     const anchor = layer.property("ADBE Transform Group").property("ADBE Anchor Point");
-    expect(pyEq(anchor.value, jsonField(anchorJson, "value"))).toBe(true);
-    expect(pyEq(jsonField(anchorJson, "value"), [0.5, 0.5, 0])).toBe(true);
+    expect(valueEquals(anchor.value, jsonField(anchorJson, "value"))).toBe(true);
+    expect(valueEquals(jsonField(anchorJson, "value"), [0.5, 0.5, 0])).toBe(true);
   });
 });
 
@@ -787,7 +787,7 @@ describe("TestActiveAtTime", () => {
     const project = parseProject(SAMPLES_DIR.div("layer_switches.aep"));
     const comp = getComp(project, "solo_true");
     const nonSoloLayers = comp.layers.filter((lyr) => !lyr.solo);
-    if (pyBool(nonSoloLayers)) {
+    if (truthy(nonSoloLayers)) {
       const layer = nonSoloLayers[0];
       const midpoint = (layer.inPoint + layer.outPoint) / 2;
       expect(layer.activeAtTime(midpoint)).toBe(false);
@@ -902,7 +902,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
     // but holds no children, so it is falsy.
     expect(layer.effects != null).toBe(true);
     expect(len(layer.effects)).toBe(0);
-    expect(pyBool(layer.effects)).toBe(false);
+    expect(truthy(layer.effects)).toBe(false);
   });
 
   /** Layer.numProperties returns the count of top-level property groups. */
@@ -921,9 +921,9 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** Two Layer objects are only equal when they are the same object. */
   test("test_identity_equality", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    expect(pyEq(layer, layer)).toBe(true);
+    expect(valueEquals(layer, layer)).toBe(true);
     // A copy (different object) should not be equal
-    expect(!pyEq(layer, {})).toBe(true); // Python `object()`
+    expect(!valueEquals(layer, {})).toBe(true); // Python `object()`
   });
 
   /** Layer.transform returns the same PropertyGroup as in properties list. */
@@ -1129,7 +1129,7 @@ describe("TestTopLevelGroupOrder", () => {
     const matchNames = layer.properties.map((p) => p.matchName);
     // Canonical groups first, then non-canonical tail (Camera Options)
     expect(
-      pyEq(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Camera Options Group"]),
+      valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Camera Options Group"]),
     ).toBe(true);
   });
 
@@ -1140,7 +1140,7 @@ describe("TestTopLevelGroupOrder", () => {
     expect(layer instanceof LightLayer).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
     expect(
-      pyEq(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Light Options Group"]),
+      valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Light Options Group"]),
     ).toBe(true);
   });
 
@@ -1149,7 +1149,7 @@ describe("TestTopLevelGroupOrder", () => {
     expect(layer instanceof ShapeLayer).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
     expect(
-      pyEq(matchNames, [
+      valueEquals(matchNames, [
         "ADBE Marker",
         "ADBE Root Vectors Group",
         "ADBE Mask Parade",
@@ -1169,7 +1169,7 @@ describe("TestTopLevelGroupOrder", () => {
     expect(layer instanceof TextLayer).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
     expect(
-      pyEq(matchNames, [
+      valueEquals(matchNames, [
         "ADBE Marker",
         "ADBE Text Properties",
         "ADBE Mask Parade",
@@ -1187,10 +1187,10 @@ describe("TestTopLevelGroupOrder", () => {
   test("test_regular_av_layer", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
     expect(layer instanceof AVLayer).toBe(true);
-    expect(pyBool(asInstance(layer, AVLayer).threeDLayer)).toBe(false);
+    expect(truthy(asInstance(layer, AVLayer).threeDLayer)).toBe(false);
     const matchNames = layer.properties.map((p) => p.matchName);
     expect(
-      pyEq(matchNames, [
+      valueEquals(matchNames, [
         "ADBE Marker",
         "ADBE Time Remapping",
         "ADBE MTrackers",
@@ -1213,10 +1213,10 @@ describe("TestTopLevelGroupOrder", () => {
   test("test_three_d_av_layer", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("avlayer_flags.aep")), "threeDLayer_true");
     expect(layer instanceof AVLayer).toBe(true);
-    expect(pyBool(asInstance(layer, AVLayer).threeDLayer)).toBe(true);
+    expect(truthy(asInstance(layer, AVLayer).threeDLayer)).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
     expect(
-      pyEq(matchNames, [
+      valueEquals(matchNames, [
         "ADBE Marker",
         "ADBE Time Remapping",
         "ADBE MTrackers",
@@ -1279,7 +1279,7 @@ describe("TestTopLevelSpecialCases", () => {
   test("test_all_canonical_groups_depth_one", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
     for (const prop of layer.properties) {
-      pyAssert(prop.propertyDepth === 1, `${prop.matchName} has depth ${prop.propertyDepth}`);
+      assert(prop.propertyDepth === 1, `${prop.matchName} has depth ${prop.propertyDepth}`);
     }
   });
 
@@ -1305,7 +1305,7 @@ describe("TestTopLevelSpecialCases", () => {
     ]);
     for (const prop of layer.properties) {
       if (expectedNames.has(prop.matchName)) {
-        pyAssert(
+        assert(
           prop.name === expectedNames.get(prop.matchName),
           `${prop.matchName}: expected name ${repr(expectedNames.get(prop.matchName))}, ` +
             `got ${repr(prop.name)}`,
@@ -1338,7 +1338,7 @@ describe("TestLayerStylesEnabled", () => {
     // No individual style is enabled
     for (const child of layerStyles.properties) {
       if (child instanceof PropertyGroup && child.matchName !== "ADBE Blend Options Group") {
-        pyAssert(child.enabled === false, `${child.matchName} should be disabled`);
+        assert(child.enabled === false, `${child.matchName} should be disabled`);
       }
     }
   });
@@ -1380,7 +1380,7 @@ describe("TestLayerStylesEnabled", () => {
         expect(child.canSetEnabled).toBe(true);
       } else {
         // phantom styles + Blending Options
-        pyAssert(child.canSetEnabled === false, mn);
+        assert(child.canSetEnabled === false, mn);
       }
     }
   });

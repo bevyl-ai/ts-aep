@@ -9,7 +9,7 @@
 import { afterEach, expect, test } from "bun:test";
 
 import { approx, makeTmpPath, warns } from "../../src/pyrt/pytest.ts";
-import { KeyError, NotImplementedError, Path, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { KeyError, NotImplementedError, Path, assert, valueEquals } from "../../src/pyrt/index.ts";
 import * as reader_mod from "../../src/py_aep/svg/reader.ts";
 import { SolidPaint, readSvg, type Subpath, type SvgDocument } from "../../src/py_aep/svg/index.ts";
 import { parsePath } from "../../src/py_aep/svg/path_data.ts";
@@ -119,8 +119,8 @@ test("test_glyph_outline_geometry", () => {
   const sp = subs[0];
   expect(sp.closed).toBe(true);
   expect(sp.vertices.length).toBe(4);
-  expect(pyEq(_xrange(sp), [10.0, 50.0])).toBe(true);
-  expect(pyEq(_yrange(sp), [-70.0, 0.0])).toBe(true);
+  expect(valueEquals(_xrange(sp), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_yrange(sp), [-70.0, 0.0])).toBe(true);
 });
 
 test("test_advance_layout", () => {
@@ -128,21 +128,21 @@ test("test_advance_layout", () => {
   // Two glyphs in one run; advance 600 * 0.1 = 60, so 'B' shifts right by 60.
   const [subs] = outlineRuns([new TextRun("AB", testFont, 100.0)], 0.0, 0.0, IDENTITY);
   expect(subs.length).toBe(2);
-  expect(pyEq(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
-  expect(pyEq(_xrange(subs[1]), [70.0, 110.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[1]), [70.0, 110.0])).toBe(true);
 });
 
 test("test_anchor_end_shifts_left", () => {
   const testFont = fixtureTestFont();
   // Run width 60; text-anchor=end shifts the whole run left by its width.
   const [subs] = outlineRuns([new TextRun("A", testFont, 100.0)], 0.0, 0.0, IDENTITY, "end");
-  expect(pyEq(_xrange(subs[0]), [-50.0, -10.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [-50.0, -10.0])).toBe(true);
 });
 
 test("test_anchor_middle_centers", () => {
   const testFont = fixtureTestFont();
   const [subs] = outlineRuns([new TextRun("A", testFont, 100.0)], 0.0, 0.0, IDENTITY, "middle");
-  expect(pyEq(_xrange(subs[0]), [-20.0, 20.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [-20.0, 20.0])).toBe(true);
 });
 
 test("test_reader_outlines_text", () => {
@@ -156,7 +156,7 @@ test("test_reader_outlines_text", () => {
   const d = doc.drawables[0];
   expect(d.subpaths.length).toBe(2);
   expect(d.fill != null).toBe(true);
-  expect(pyEq(Array.from(asInstance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(valueEquals(Array.from(asInstance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_tspan_per_run_fill", () => {
@@ -169,8 +169,8 @@ test("test_reader_tspan_per_run_fill", () => {
     '<tspan fill="#ff0000">B</tspan></text></svg>';
   const doc = readSvg(svg);
   expect(doc.drawables.length).toBe(2);
-  expect(pyEq(Array.from(asInstance(doc.drawables[0].fill, SolidPaint).color.slice(0, 3)), [0.0, 0.0, 0.0])).toBe(true);
-  expect(pyEq(Array.from(asInstance(doc.drawables[1].fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(valueEquals(Array.from(asInstance(doc.drawables[0].fill, SolidPaint).color.slice(0, 3)), [0.0, 0.0, 0.0])).toBe(true);
+  expect(valueEquals(Array.from(asInstance(doc.drawables[1].fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_tspan_inherits_font_size", () => {
@@ -184,7 +184,7 @@ test("test_reader_tspan_inherits_font_size", () => {
   const doc = readSvg(svg);
   expect(doc.drawables.length).toBe(2);
   const b = doc.drawables[1].subpaths[0];
-  expect(pyEq(_xrange(b), [70.0, 110.0])).toBe(true);
+  expect(valueEquals(_xrange(b), [70.0, 110.0])).toBe(true);
 });
 
 test("test_reader_text_skipped_without_font", () => {
@@ -192,7 +192,7 @@ test("test_reader_text_skipped_without_font", () => {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
     '<text x="0" y="50">hi</text></svg>';
-  expect(pyEq(readSvg(svg).drawables, [])).toBe(true);
+  expect(valueEquals(readSvg(svg).drawables, [])).toBe(true);
 });
 
 test("test_letter_spacing", () => {
@@ -204,8 +204,8 @@ test("test_letter_spacing", () => {
     0.0,
     IDENTITY,
   );
-  expect(pyEq(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
-  expect(pyEq(_xrange(subs[1]), [90.0, 130.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[1]), [90.0, 130.0])).toBe(true);
 });
 
 test("test_reader_text_stroke", () => {
@@ -220,8 +220,8 @@ test("test_reader_text_stroke", () => {
   expect(doc.drawables.length).toBe(1);
   const d = doc.drawables[0];
   expect(d.fill == null).toBe(true);
-  pyAssert(d.stroke != null);
-  expect(pyEq(Array.from(asInstance(d.stroke.paint, SolidPaint).color.slice(0, 3)), [0.0, 1.0, 0.0])).toBe(true);
+  assert(d.stroke != null);
+  expect(valueEquals(Array.from(asInstance(d.stroke.paint, SolidPaint).color.slice(0, 3)), [0.0, 1.0, 0.0])).toBe(true);
   expect(d.stroke.width).toBe(4.0);
 });
 
@@ -232,9 +232,9 @@ test("test_textpath_horizontal_matches_inline", () => {
   const path = parsePath("M0,100 L300,100");
   const subs = outlineTextPath("AB", path, testFont, 100.0, IDENTITY);
   expect(subs.length).toBe(2);
-  expect(pyEq(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
-  expect(pyEq(_yrange(subs[0]), [30.0, 100.0])).toBe(true);
-  expect(pyEq(_xrange(subs[1]), [70.0, 110.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_yrange(subs[0]), [30.0, 100.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[1]), [70.0, 110.0])).toBe(true);
 });
 
 test("test_textpath_offpath_glyphs_dropped", () => {
@@ -243,7 +243,7 @@ test("test_textpath_offpath_glyphs_dropped", () => {
   const path = parsePath("M0,100 L80,100");
   const subs = outlineTextPath("AB", path, testFont, 100.0, IDENTITY);
   expect(subs.length).toBe(1);
-  expect(pyEq(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
 });
 
 test("test_reader_textpath", () => {
@@ -259,7 +259,7 @@ test("test_reader_textpath", () => {
   expect(doc.drawables.length).toBe(1);
   const d = doc.drawables[0];
   expect(d.subpaths.length).toBe(2);
-  expect(pyEq(Array.from(asInstance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(valueEquals(Array.from(asInstance(d.fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_textpath_applies_path_transform", () => {
@@ -276,8 +276,8 @@ test("test_reader_textpath_applies_path_transform", () => {
   const doc = readSvg(svg);
   expect(doc.drawables.length).toBe(1);
   const sp = doc.drawables[0].subpaths[0];
-  expect(pyEq(_xrange(sp), [10.0, 50.0])).toBe(true);
-  expect(pyEq(_yrange(sp), [30.0, 100.0])).toBe(true);
+  expect(valueEquals(_xrange(sp), [10.0, 50.0])).toBe(true);
+  expect(valueEquals(_yrange(sp), [30.0, 100.0])).toBe(true);
 });
 
 test("test_reader_image_skipped_with_warning", () => {
@@ -289,8 +289,8 @@ test("test_reader_image_skipped_with_warning", () => {
   warns(() => {
     doc = readSvg(svg);
   }, "image");
-  pyAssert(doc != null);
-  expect(pyEq(doc.drawables, [])).toBe(true);
+  assert(doc != null);
+  expect(valueEquals(doc.drawables, [])).toBe(true);
 });
 
 test("test_reader_image_does_not_block_vectors", () => {
@@ -304,7 +304,7 @@ test("test_reader_image_does_not_block_vectors", () => {
   warns(() => {
     doc = readSvg(svg);
   });
-  pyAssert(doc != null);
+  assert(doc != null);
   expect(doc.drawables.length).toBe(1);
 });
 
@@ -341,8 +341,8 @@ test("test_glyphs_handles_font_without_unicode_cmap", () => {
   // crash with AttributeError, taking down the whole read_svg(). It must now
   // map every char to no glyph so the run is simply dropped.
   const [names, advances, upm, _] = _glyphs(new _NoCmapFont(), "AB");
-  expect(pyEq(names, [null, null])).toBe(true);
-  expect(pyEq(advances, [0.0, 0.0])).toBe(true);
+  expect(valueEquals(names, [null, null])).toBe(true);
+  expect(valueEquals(advances, [0.0, 0.0])).toBe(true);
 });
 
 test("test_reader_collapses_indentation_whitespace", () => {
@@ -374,9 +374,9 @@ test("test_per_chunk_anchor_ignores_abs_x_run_width", () => {
   ];
   const [a, b] = outlineRuns(runs, 0.0, 0.0, IDENTITY);
   // Chunk "A": advance 60 end-anchored at 0 -> glyph box [-50, -10].
-  expect(pyEq(_xrange(a[0]), [-50.0, -10.0])).toBe(true);
+  expect(valueEquals(_xrange(a[0]), [-50.0, -10.0])).toBe(true);
   // Chunk "B": advance 60 end-anchored at 200 -> glyph box [150, 190].
-  expect(pyEq(_xrange(b[0]), [150.0, 190.0])).toBe(true);
+  expect(valueEquals(_xrange(b[0]), [150.0, 190.0])).toBe(true);
 });
 
 test("test_reader_per_tspan_text_anchor", () => {
@@ -390,8 +390,8 @@ test("test_reader_per_tspan_text_anchor", () => {
     '<tspan x="300" text-anchor="end">B</tspan></text></svg>';
   const doc = readSvg(svg);
   expect(doc.drawables.length).toBe(2);
-  expect(pyEq(_xrange(doc.drawables[0].subpaths[0]), [10.0, 50.0])).toBe(true); // A at origin
-  expect(pyEq(_xrange(doc.drawables[1].subpaths[0]), [250.0, 290.0])).toBe(true); // B ends at 300
+  expect(valueEquals(_xrange(doc.drawables[0].subpaths[0]), [10.0, 50.0])).toBe(true); // A at origin
+  expect(valueEquals(_xrange(doc.drawables[1].subpaths[0]), [250.0, 290.0])).toBe(true); // B ends at 300
 });
 
 test("test_resolve_font_finds_ttc_secondary_face", () => {
@@ -422,6 +422,6 @@ test("test_resolve_font_finds_ttc_secondary_face", () => {
 
   monkeypatchSetattr(fonts_mod, "_font_dirs", () => [tmpPath]);
   monkeypatchSetattr(fonts_mod, "_index", null);
-  expect(pyEq(fonts_mod.resolveFont("PrimaryFam"), [ttc, 0])).toBe(true);
-  expect(pyEq(fonts_mod.resolveFont("SecondaryFam"), [ttc, 1])).toBe(true);
+  expect(valueEquals(fonts_mod.resolveFont("PrimaryFam"), [ttc, 0])).toBe(true);
+  expect(valueEquals(fonts_mod.resolveFont("SecondaryFam"), [ttc, 1])).toBe(true);
 });

@@ -10,7 +10,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { PROFILE_TYPE_ICC, PROFILE_TYPE_OCIO, buildIccEnvelope, buildOcioColorspaceEnvelope, buildOcioDisplayEnvelope, parseEnvelope } from "../../src/py_aep/color/envelope.ts";
-import { b, concat, pyEq, range } from "../../src/pyrt/index.ts";
+import { b, concat, valueEquals, range } from "../../src/pyrt/index.ts";
 
 // Verbatim AE output.
 const WORKING_ACESCG =
@@ -48,7 +48,7 @@ describe("TestRoundTrip", () => {
     expect(prof.name).toBe("ACEScg");
     expect(prof.profileType).toBe(PROFILE_TYPE_OCIO);
     expect(prof.isOcio).toBe(true);
-    expect(pyEq(prof.ocioColorSpaces, ["ACEScg"])).toBe(true);
+    expect(valueEquals(prof.ocioColorSpaces, ["ACEScg"])).toBe(true);
     expect(buildOcioColorspaceEnvelope(prof.name)).toBe(env);
   });
 
@@ -56,7 +56,7 @@ describe("TestRoundTrip", () => {
     const env = buildOcioDisplayEnvelope("ACES", "sRGB");
     const prof = parseEnvelope(env);
     expect(prof.name).toBe("ACES/sRGB");
-    expect(pyEq(prof.ocioColorSpaces, ["ACES", "sRGB"])).toBe(true);
+    expect(valueEquals(prof.ocioColorSpaces, ["ACES", "sRGB"])).toBe(true);
     const [display, view] = prof.ocioColorSpaces;
     expect(buildOcioDisplayEnvelope(display, view)).toBe(env);
   });
@@ -69,8 +69,8 @@ describe("TestRoundTrip", () => {
     expect(prof.profileType).toBe(PROFILE_TYPE_ICC);
     expect(prof.isIcc).toBe(true);
     expect(prof.isOcio).toBe(false);
-    expect(pyEq(prof.data, icc)).toBe(true);
-    expect(pyEq(prof.ocioColorSpaces, [])).toBe(true);
+    expect(valueEquals(prof.data, icc)).toBe(true);
+    expect(valueEquals(prof.ocioColorSpaces, [])).toBe(true);
   });
 });
 
@@ -96,6 +96,6 @@ describe("TestKeyOrderAndSeparators", () => {
     const name = "sRGB Encoded Rec.709 (sRGB)";
     const prof = parseEnvelope(buildOcioColorspaceEnvelope(name));
     expect(prof.name).toBe(name);
-    expect(pyEq(prof.ocioColorSpaces, [name])).toBe(true);
+    expect(valueEquals(prof.ocioColorSpaces, [name])).toBe(true);
   });
 });

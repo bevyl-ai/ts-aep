@@ -11,7 +11,7 @@ import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_mo
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
-import { int, Path, pyEq, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
+import { int, Path, valueEquals, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("format_options");
@@ -71,7 +71,7 @@ test("test_invalid_final_state_rolls_back_everything", () => {
   // One error, every violation listed.
   expect(excinfo.message.includes("Audio Sample Rate")).toBe(true);
   expect(excinfo.message.includes("Audio Channels")).toBe(true);
-  expect(pyEq(om.getSettings(), before)).toBe(true);
+  expect(valueEquals(om.getSettings(), before)).toBe(true);
   expect(_fo(om).audioCodec).toBe(beforeCodec);
 });
 
@@ -106,7 +106,7 @@ test("test_rollback_restores_byte_identical_save", () => {
 
   const untouched = tmpPath.div("untouched.aep").readBytes();
   const rolledBack = tmpPath.div("rolled_back.aep").readBytes();
-  expect(pyEq(rolledBack, untouched)).toBe(true);
+  expect(valueEquals(rolledBack, untouched)).toBe(true);
 });
 
 test("test_stale_untouched_dependent_is_flagged", () => {
@@ -148,7 +148,7 @@ test("test_depth_and_channels_converge_in_any_order", () => {
   }
   // The channels change re-pairs 48 -> 64 at exit in both orders.
   expect(
-    pyEq(results, [OutputColorDepth.TRILLIONS_OF_COLORS_PLUS, OutputColorDepth.TRILLIONS_OF_COLORS_PLUS]),
+    valueEquals(results, [OutputColorDepth.TRILLIONS_OF_COLORS_PLUS, OutputColorDepth.TRILLIONS_OF_COLORS_PLUS]),
   ).toBe(true);
 });
 
@@ -201,5 +201,5 @@ test("test_batch_on_removed_module_raises_clearly", () => {
 
 test("test_validate_state_clean_on_parsed_sample", () => {
   const project = parseProjectFresh(FORMAT_DIR.div("wav", "audio_codec_gsm_6.10.aep"));
-  expect(pyEq(_om(project).validateState(), [])).toBe(true);
+  expect(valueEquals(_om(project).validateState(), [])).toBe(true);
 });

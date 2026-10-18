@@ -7,7 +7,7 @@
 
 import { TEXT_ANIMATOR_POOL } from "../data/text_animator_pool.ts";
 import { PropertyValueType } from "../enums/index.ts";
-import { pyEq } from "../../pyrt/index.ts";
+import { valueEquals } from "../../pyrt/index.ts";
 
 /** Sentinel indicating `PropSpec.defaultValue` should mirror `value`. */
 export const _USE_VALUE: unique symbol = Symbol("_USE_VALUE");
@@ -134,7 +134,7 @@ export class PropSpec {
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
   equals(other: Iterable<PropSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
-    return pyEq([...this], [...other]);
+    return valueEquals([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<PropSpecField> {
@@ -186,7 +186,7 @@ export class GroupSpec {
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
   equals(other: Iterable<GroupSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
-    return pyEq([...this], [...other]);
+    return valueEquals([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<GroupSpecField> {

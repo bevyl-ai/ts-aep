@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { BytesIO, NotImplementedError, Path, ValueError, b, bytes_, concat, decode, encode, floordiv, pyEq, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, NotImplementedError, Path, ValueError, b, bytes_, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import { _FILE_FORMATS } from "../../src/py_aep/data/file_formats.ts";
 import { _PARSERS, _probeBmp, _probeDpxCineon, _probeGif, _probeHdr, _probeHeif, _probeMgjson, _probeMov, _probeMp3, _probeTiff, probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
@@ -50,13 +50,13 @@ describe("TestMediaProbe", () => {
     ["old_exr.00004.exr", 2356, 1002, true],
   ])("test_exr[%#]", (name: string, width: number, height: number, hasAlpha: boolean) => {
     const info = probeMedia(ASSETS.div(name));
-    expect(pyEq([info.width, info.height], [width, height])).toBe(true);
+    expect(valueEquals([info.width, info.height], [width, height])).toBe(true);
     expect(info.hasAlpha).toBe(hasAlpha);
   });
 
   test.each(["8bits.psd", "8bits.psb"])("test_psd_metadata[%#]", (name: string) => {
     const info = probeMedia(ASSETS.div(name));
-    expect(pyEq([info.width, info.height], [25, 26])).toBe(true);
+    expect(valueEquals([info.width, info.height], [25, 26])).toBe(true);
     expect(info.bitDepth).toBe(8);
     expect(info.layerCount).toBe(2);
   });
@@ -87,7 +87,7 @@ describe("TestMediaProbe", () => {
       pixelAspect: number,
     ) => {
       const info = probeMedia(ASSETS.div(name));
-      expect(pyEq([info.width, info.height], [width, height])).toBe(true);
+      expect(valueEquals([info.width, info.height], [width, height])).toBe(true);
       expect(approx(info.frameRate, fps, { abs: 1e-3 })).toBe(true);
       expect(info.hasAudio).toBe(hasAudio);
       expect(info.hasAlpha).toBe(hasAlpha);
@@ -98,7 +98,7 @@ describe("TestMediaProbe", () => {
   test("test_m4v", () => {
     // MP4 video shares the QuickTime atom tree, so _probe_mov parses it.
     const info = probeMedia(ASSETS.div("m4v.m4v"));
-    expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
+    expect(valueEquals([info.width, info.height], [640, 360])).toBe(true);
     expect(approx(info.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
     expect(info.hasAudio).toBe(false);
     expect(approx(info.duration, 13.3467, { abs: 1e-3 })).toBe(true);
@@ -116,7 +116,7 @@ describe("TestMediaProbe", () => {
   test("test_mp4_h264", () => {
     // avc1 video + AAC audio, moov ahead of mdat. Values are AE 2026's.
     const info = probeMedia(ASSETS.div("mp4_5s-360p.mp4"));
-    expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
+    expect(valueEquals([info.width, info.height], [640, 360])).toBe(true);
     expect(approx(info.frameRate, 30.0, { abs: 1e-3 })).toBe(true);
     // The video track's duration wins over the longer mvhd/audio duration.
     expect(approx(info.duration, 5.7, { abs: 1e-4 })).toBe(true);
@@ -127,7 +127,7 @@ describe("TestMediaProbe", () => {
   test("test_mp4_moov_after_mdat", () => {
     // This file stores moov at the end, so the probe must scan past mdat.
     const info = probeMedia(ASSETS.div("mp4_640x360.mp4"));
-    expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
+    expect(valueEquals([info.width, info.height], [640, 360])).toBe(true);
     expect(approx(info.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
     expect(approx(info.duration, 13.3467, { abs: 1e-3 })).toBe(true);
     expect(info.hasAudio).toBe(false);
@@ -139,7 +139,7 @@ describe("TestMediaProbe", () => {
     // track instead makes AE report the footage MISSING on open
     // (measured), so the probe must drop it exactly as AE does.
     const info = probeMedia(ASSETS.div("mp4_av1_with_audio.mp4"));
-    expect(pyEq([info.width, info.height], [0, 0])).toBe(true);
+    expect(valueEquals([info.width, info.height], [0, 0])).toBe(true);
     expect(info.frameRate).toBe(0.0);
     expect(info.hasAudio).toBe(true);
     // Audio-only duration comes from the edit list, matching AE's 1.0.
@@ -223,7 +223,7 @@ describe("TestProbeFormatVariants", () => {
       struct.pack("<HH", 1, 24), // planes, bpp
     );
     const info = _probeBmp(new BytesIO(data));
-    expect(pyEq([info.width, info.height], [100, 50])).toBe(true);
+    expect(valueEquals([info.width, info.height], [100, 50])).toBe(true);
     expect(info.hasAlpha).toBe(true);
   });
 
@@ -231,7 +231,7 @@ describe("TestProbeFormatVariants", () => {
     /** BigTIFF (magic 43) is not a classic TIFF; probe returns no dims. */
     const data = concat(b("II"), struct.pack("<H", 43), struct.pack("<H", 8), bytes_.repeat(b("\x00"), 16));
     const info = _probeTiff(new BytesIO(data));
-    expect(pyEq([info.width, info.height], [0, 0])).toBe(true);
+    expect(valueEquals([info.width, info.height], [0, 0])).toBe(true);
   });
 
   test("test_mp3_mpeg2_cbr_duration", () => {
@@ -252,7 +252,7 @@ describe("TestProbeFormatVariants", () => {
     // "+X 640 -Y 426" (X-major) must still yield width=640, height=426.
     const data = b("#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n+X 640 -Y 426\n");
     const info = _probeHdr(new BytesIO(data));
-    expect(pyEq([info.width, info.height], [640, 426])).toBe(true);
+    expect(valueEquals([info.width, info.height], [640, 426])).toBe(true);
   });
 
   test("test_hdr_malformed_resolution_line_raises_valueerror", () => {
@@ -275,7 +275,7 @@ describe("TestProbeFormatVariants", () => {
     expect(bytes_.count(data, record)).toBe(1);
     const rotated = bytes_.replace(data, record, struct.pack("<IIfi", 1536, 1024, 1.0, rotation));
     const info = probeMedia(ASSETS.div("crw.crw"), rotated);
-    expect(pyEq([info.width, info.height], size)).toBe(true);
+    expect(valueEquals([info.width, info.height], size)).toBe(true);
   });
 
   test("test_crw_bad_signature_raises_valueerror", () => {
@@ -322,7 +322,7 @@ describe("TestTiffOpti", () => {
   test("test_build_tiff_opti_data", () => {
     const data = buildTiffOptiData(25, 26, 16, 2, 1, 1);
     expect(data.length).toBe(602);
-    expect(pyEq(data.slice(0, 4), b("TIF "))).toBe(true);
+    expect(valueEquals(data.slice(0, 4), b("TIF "))).toBe(true);
     expect(data[0x1e]).toBe(2); // channels: gray + alpha
     expect(struct.unpackFrom("<I", data, 32)[0]).toBe(26); // height
     expect(struct.unpackFrom("<I", data, 36)[0]).toBe(25); // width
@@ -349,7 +349,7 @@ describe("TestTiffOpti", () => {
     // The colour mode and layer count AE records for a TIFF
     // (footage_depth.aep, AE 2026).
     const info = probeMedia(ASSETS.div(name));
-    expect(pyEq([info.colorMode, info.layerCount], [colorMode, layerCount])).toBe(true);
+    expect(valueEquals([info.colorMode, info.layerCount], [colorMode, layerCount])).toBe(true);
   });
 });
 
@@ -359,8 +359,8 @@ describe("TestPsdOpti", () => {
   test("test_build_psd_opti_data", () => {
     const data = buildPsdOptiData(25, 26, 8, 4, 3, 2);
     expect(data.length).toBe(602);
-    expect(pyEq(data.slice(0, 4), b("8BPS"))).toBe(true);
-    expect(pyEq(data.slice(0x12, 0x16), b("SPB8"))).toBe(true); // reversed code
+    expect(valueEquals(data.slice(0, 4), b("8BPS"))).toBe(true);
+    expect(valueEquals(data.slice(0x12, 0x16), b("SPB8"))).toBe(true); // reversed code
     expect(data[0x1e]).toBe(4); // channels: RGB + alpha
     expect(struct.unpackFrom("<I", data, 0x20)[0]).toBe(26); // height
     expect(struct.unpackFrom("<I", data, 0x24)[0]).toBe(25); // width
@@ -373,7 +373,7 @@ describe("TestPsdOpti", () => {
     // A flattened gray PSD: one channel, grayscale, 0 layers (AE 2026,
     // footage_depth.aep psd_gray16_flat.psd).
     const data = buildPsdOptiData(8, 8, 16, 1, 1, 0);
-    expect(pyEq([data[0x1e], data[0x2a], data[0x30]], [1, 1, 0])).toBe(true);
+    expect(valueEquals([data[0x1e], data[0x2a], data[0x30]], [1, 1, 0])).toBe(true);
   });
 
   test.each([
@@ -402,30 +402,30 @@ describe("TestGapOptiBuilders", () => {
   test("test_build_dpx_opti_data", () => {
     const data = buildDpxOptiData();
     expect(data.length).toBe(48);
-    expect(pyEq(data.slice(0, 4), b("sDPX"))).toBe(true);
+    expect(valueEquals(data.slice(0, 4), b("sDPX"))).toBe(true);
   });
 
   test("test_build_rhdr_opti_data", () => {
     const data = buildRhdrOptiData();
     expect(data.length).toBe(30);
-    expect(pyEq(data.slice(0, 4), b("RHDR"))).toBe(true);
+    expect(valueEquals(data.slice(0, 4), b("RHDR"))).toBe(true);
   });
 
   test("test_build_craw_opti_data", () => {
     // What AE 2026 writes back for a camera raw file without develop
     // settings (its heap-address tail zeroed).
     expect(
-      pyEq(buildCrawOptiData(), concat(b("Craw\x00\x2e\x00\x00\x00\x1e"), bytes_.repeat(b("\x00"), 20))),
+      valueEquals(buildCrawOptiData(), concat(b("Craw\x00\x2e\x00\x00\x00\x1e"), bytes_.repeat(b("\x00"), 20))),
     ).toBe(true);
   });
 
   test("test_build_text_opti_data", () => {
     const data = buildTextOptiData(612, 792);
     expect(data.length).toBe(596);
-    expect(pyEq(data.slice(0, 4), b("TEXT"))).toBe(true);
+    expect(valueEquals(data.slice(0, 4), b("TEXT"))).toBe(true);
     expect(struct.unpackFrom(">H", data, 24)[0]).toBe(612); // width
     expect(struct.unpackFrom(">H", data, 28)[0]).toBe(792); // height
-    expect(pyEq(data.slice(40, 44), b("\xff\xff\xff\xff"))).toBe(true);
+    expect(valueEquals(data.slice(40, 44), b("\xff\xff\xff\xff"))).toBe(true);
   });
 
   test("test_build_ai_document_opti_data", () => {
@@ -434,8 +434,8 @@ describe("TestGapOptiBuilders", () => {
     const data = buildAiDocumentOptiData(612, 792, 2);
     expect(data.length).toBe(596);
     expect(struct.unpackFrom(">I", data, 0x30)[0]).toBe(2);
-    expect(pyEq([data[0x3c], data[0x3d]], [1, 0])).toBe(true);
+    expect(valueEquals([data[0x3c], data[0x3d]], [1, 0])).toBe(true);
     expect(data[0x44]).toBe(0); // no layer name
-    expect(pyEq(struct.unpackFrom(">HxxH", data, 0x248), [792, 612])).toBe(true);
+    expect(valueEquals(struct.unpackFrom(">HxxH", data, 0x248), [792, 612])).toBe(true);
   });
 });

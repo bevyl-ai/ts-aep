@@ -14,7 +14,7 @@ import { FileSource, FootageItem, ImportOptions, parse as parseAep, type Project
 import { asInstance } from "../helpers.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { UNDEFINED_FRAME, findByListType } from "../../src/py_aep/binary/utils.ts";
-import { Path, ValueError, b, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { Path, ValueError, b, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
@@ -77,7 +77,7 @@ describe("TestAlphabeticalSequence", () => {
   test.each(["a_001.png", "b.png", "D.PNG"])("test_takes_every_file_of_the_type[%#]", (picked) => {
     const tmpPath = makeTmpPath();
     const [, item] = _import(TestAlphabeticalSequence._mixed(tmpPath).div(picked), { alphabetical: true });
-    expect(pyEq(asInstance(item.mainSource, FileSource).fileNames, TestAlphabeticalSequence.ORDER)).toBe(true);
+    expect(valueEquals(asInstance(item.mainSource, FileSource).fileNames, TestAlphabeticalSequence.ORDER)).toBe(true);
     // The first file in order, whichever one was picked.
     expect(new Path(asInstance(item.mainSource, FileSource).file).name).toBe("a_001.png");
     expect(item.name).toBe("shots");
@@ -91,22 +91,22 @@ describe("TestAlphabeticalSequence", () => {
     const source = asInstance(reparsed.mainSource, FileSource);
     const sspc = source._sspc;
     expect(
-      pyEq([sspc.startFrame, sspc.endFrame, sspc.framePadding], [UNDEFINED_FRAME, UNDEFINED_FRAME, 0]),
+      valueEquals([sspc.startFrame, sspc.endFrame, sspc.framePadding], [UNDEFINED_FRAME, UNDEFINED_FRAME, 0]),
     ).toBe(true);
     expect(
-      pyEq(
+      valueEquals(
         [sspc._reservedA8, sspc._reservedB8, sspc._reservedBa],
         [b("\x00\x00\x00\x01"), b("\x00"), b("\x00\x00")],
       ),
     ).toBe(true);
     expect(sspc._sourceStamp[0]).toBe(1);
-    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [7, 30])).toBe(true);
+    expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [7, 30])).toBe(true);
     const stvc = findByListType(source._pin.chunks, "StVc");
     const stvs = stvc.chunks[0];
-    pyAssert(stvs instanceof U4LeChunk);
+    assert(stvs instanceof U4LeChunk);
     expect(stvs.chunkType).toBe("StVS");
     expect(stvs.value).toBe(7);
-    expect(pyEq(source.fileNames, TestAlphabeticalSequence.ORDER)).toBe(true);
+    expect(valueEquals(source.fileNames, TestAlphabeticalSequence.ORDER)).toBe(true);
     expect(reparsed.name).toBe("shots");
   });
 
@@ -133,7 +133,7 @@ describe("TestAlphabeticalSequence", () => {
     item.replaceWithSequence(TestAlphabeticalSequence._mixed(tmpPath).div("a_001.png"), true);
     expect(item.name).toBe("shots");
     const sspc = item.mainSource._sspc;
-    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [7, 24])).toBe(true);
+    expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [7, 24])).toBe(true);
   });
 
   test("test_reload_relists_the_folder", () => {
@@ -143,7 +143,7 @@ describe("TestAlphabeticalSequence", () => {
     folder.div("zz.png").writeBytes(folder.div("b.png").readBytes());
     asInstance(item.mainSource, FileSource).reload();
     const source = asInstance(item.mainSource, FileSource);
-    expect(pyEq(source.fileNames, [...TestAlphabeticalSequence.ORDER, "zz.png"])).toBe(true);
+    expect(valueEquals(source.fileNames, [...TestAlphabeticalSequence.ORDER, "zz.png"])).toBe(true);
     expect(item.duration).toBe(8 / 30);
     const stvc = findByListType(source._pin.chunks, "StVc");
     expect(asInstance(stvc.chunks[0], U4LeChunk).value).toBe(8);
@@ -197,7 +197,7 @@ describe("TestSequencePadding", () => {
       expect(reparsed.name).toBe(name);
       expect(new Path(asInstance(reparsed.mainSource, FileSource).file).name).toBe(first);
       expect(reparsed.mainSource._sspc.framePadding).toBe(padding);
-      expect(pyEq(reparsed.mainSource._sspc._reservedB8, zeroPadded)).toBe(true);
+      expect(valueEquals(reparsed.mainSource._sspc._reservedB8, zeroPadded)).toBe(true);
     },
   );
 });
@@ -215,7 +215,7 @@ describe("TestSequenceConformFrameRate", () => {
       const [, item] = _import(folder.div("shot_0001.png"), { alphabetical: false });
       item.mainSource.conformFrameRate = rate;
       const sspc = item.mainSource._sspc;
-      expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [dividend, divisor])).toBe(true);
+      expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [dividend, divisor])).toBe(true);
       expect(sspc.conformFrameRate).toBe(0.0);
     },
   );
@@ -244,7 +244,7 @@ describe("TestAnimatedGifSequence", () => {
     expect(item.frameRate).toBe(10.0);
     expect(item.duration).toBe(1.4);
     const sspc = item.mainSource._sspc;
-    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [14, 10])).toBe(true);
+    expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [14, 10])).toBe(true);
   });
 
   test.each(["placeholder", "sequence", "conformed movie"])("test_a_replace_keeps_its_rate[%#]", (old) => {

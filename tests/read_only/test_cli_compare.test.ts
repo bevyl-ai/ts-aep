@@ -7,7 +7,7 @@
 
 import { describe, test, expect } from "bun:test";
 import { parseAepChunks } from "../../src/py_aep/cli/compare.ts";
-import { at, Path, pyAssert } from "../../src/pyrt/index.ts";
+import { at, Path, assert } from "../../src/pyrt/index.ts";
 
 // Python: Path(__file__).parent.parent.parent / "samples"
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -26,7 +26,7 @@ describe("TestLeafOnlyChunks", () => {
       const base = finalSegment.split("[")[0];
       // LIST chunks should only appear as path prefixes, never as
       // the leaf chunk itself (their raw data duplicates children).
-      pyAssert(!base.startsWith("LIST:"), `LIST chunk found in leaf output: ${path}`);
+      assert(!base.startsWith("LIST:"), `LIST chunk found in leaf output: ${path}`);
     }
   });
 
@@ -36,7 +36,7 @@ describe("TestLeafOnlyChunks", () => {
     const chunks = parseAepChunks(aepPath);
     expect(chunks.size).toBeGreaterThan(0);
     for (const [path, data] of chunks) {
-      pyAssert(data instanceof Uint8Array, `Non-bytes data for ${path}`);
+      assert(data instanceof Uint8Array, `Non-bytes data for ${path}`);
     }
   });
 });

@@ -9,7 +9,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import { describe, expect, test } from "bun:test";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
-import { Path, pyEq, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { Path, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { asInstance, getComp } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -48,7 +48,7 @@ describe("TestPrecomposeMove", () => {
     const newComp = comp.precompose([0, 1], "Pre-comp 1");
 
     expect(newComp.name).toBe("Pre-comp 1");
-    expect(pyEq(newComp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(valueEquals(newComp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
     expect(comp.layers.length).toBe(1);
     const repl = asInstance(comp.layers[0], AVLayer);
     expect(repl.source).toBe(newComp);
@@ -58,7 +58,7 @@ describe("TestPrecomposeMove", () => {
     const app2 = parseAep(String(out));
     const comp2 = getComp(app2.project, "Comp 1");
     const nc2 = getComp(app2.project, "Pre-comp 1");
-    expect(pyEq(nc2.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(valueEquals(nc2.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
     expect(asInstance(comp2.layers[0], AVLayer).source).toBe(nc2);
   });
 
@@ -70,21 +70,21 @@ describe("TestPrecomposeMove", () => {
     expect(newComp.height).toBe(comp.height);
     expect(newComp.duration).toBe(comp.duration);
     expect(newComp.frameRate).toBe(comp.frameRate);
-    expect(pyEq(newComp.bgColor, comp.bgColor)).toBe(true);
+    expect(valueEquals(newComp.bgColor, comp.bgColor)).toBe(true);
   });
 
   test("test_replacement_at_topmost_moved_index", () => {
     const tmpPath = makeTmpPath();
     const app = _fresh("property/all_animated.aep");
     const comp = getComp(app.project, "type_camera");
-    expect(pyEq(comp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
     comp.precompose([1, 2], "PC mid");
-    expect(pyEq(comp.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
 
     const out = tmpPath.div("mid.aep");
     app.project.save(out);
     const comp2 = getComp(parseAep(String(out)).project, "type_camera");
-    expect(pyEq(comp2.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
+    expect(valueEquals(comp2.layers.map((ly) => ly.name), ["Hello", "PC mid", "CameraLayer"])).toBe(true);
   });
 
   test("test_new_comp_stored_alphabetically", () => {
@@ -94,14 +94,14 @@ describe("TestPrecomposeMove", () => {
     const names = app.project.rootFolder.items.map((item) => item.name);
     // AE stores folder children in display order; the new comp lands
     // between 'Comp 1' and 'Solids'.
-    expect(pyEq(names, ["Comp 1", "PC alpha", "Solids"])).toBe(true);
+    expect(valueEquals(names, ["Comp 1", "PC alpha", "Solids"])).toBe(true);
   });
 
   test("test_indices_deduped_and_sorted", () => {
     const app = _fresh("layer/gray_solid_1_above.aep");
     const comp = getComp(app.project, "Comp 1");
     const newComp = comp.precompose([1, 0, 1], "PC dup");
-    expect(pyEq(newComp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
+    expect(valueEquals(newComp.layers.map((ly) => ly.name), ["Gray Solid 1", "Gray Solid 2"])).toBe(true);
   });
 
   test("test_parent_link_inside_set_remapped", () => {
@@ -154,10 +154,10 @@ describe("TestPrecomposeMove", () => {
     const newComp = comp.precompose([0], "PC copy");
     // AE copies the unmoved matte layer below its user; the original
     // stays untouched in the parent comp.
-    expect(pyEq(newComp.layers.map((ly) => ly.name), ["Gray Solid 2", "Gray Solid 1"])).toBe(true);
+    expect(valueEquals(newComp.layers.map((ly) => ly.name), ["Gray Solid 2", "Gray Solid 1"])).toBe(true);
     const [user, copy] = newComp.layers;
     expect(user._ldta.matteLayerId).toBe(copy.id);
-    expect(pyEq(comp.layers.map((ly) => ly.name), ["PC copy", "Gray Solid 1"])).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.name), ["PC copy", "Gray Solid 1"])).toBe(true);
 
     const out = tmpPath.div("mattecopy.aep");
     app.project.save(out);
@@ -183,8 +183,8 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("property/all_animated.aep");
     const comp = getComp(app.project, "type_camera");
     const newComp = comp.precompose([0, 1, 2, 3], "PC all");
-    expect(pyEq(newComp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
-    expect(pyEq(comp.layers.map((ly) => ly.name), ["PC all"])).toBe(true);
+    expect(valueEquals(newComp.layers.map((ly) => ly.name), ["Hello", "Shape Layer 1", "XF", "CameraLayer"])).toBe(true);
+    expect(valueEquals(comp.layers.map((ly) => ly.name), ["PC all"])).toBe(true);
 
     const out = tmpPath.div("allkinds.aep");
     app.project.save(out);
@@ -207,7 +207,7 @@ describe("TestPrecomposeLeaveAttributes", () => {
     // The retained layer object survives with its source swapped.
     expect(comp.layers[1]).toBe(retained);
     expect(retained.source).toBe(newComp);
-    expect(pyEq(newComp.layers.map((ly) => asInstance(ly, AVLayer).source), [originalSource])).toBe(true);
+    expect(valueEquals(newComp.layers.map((ly) => asInstance(ly, AVLayer).source), [originalSource])).toBe(true);
 
     const out = tmpPath.div("leave.aep");
     app.project.save(out);
@@ -223,7 +223,7 @@ describe("TestPrecomposeLeaveAttributes", () => {
     const comp = getComp(app.project, "Comp 1");
     const solid = comp.addSolid([1.0, 0.0, 0.0], "SmallRed", 400, 300);
     const newComp = comp.precompose([0], "PC small", false);
-    expect(pyEq([newComp.width, newComp.height], [400, 300])).toBe(true);
+    expect(valueEquals([newComp.width, newComp.height], [400, 300])).toBe(true);
     // Duration / frame rate stay inherited from the parent comp.
     expect(newComp.duration).toBe(comp.duration);
     expect(newComp.frameRate).toBe(comp.frameRate);

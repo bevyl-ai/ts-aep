@@ -26,7 +26,7 @@ import {
   type Layout,
 } from "../../src/py_aep/cos/schema.ts";
 import { getCosTemplate } from "../../src/py_aep/cos/text.ts";
-import { BytesIO, pyAssert } from "../../src/pyrt/index.ts";
+import { BytesIO, assert } from "../../src/pyrt/index.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { LineOrientation, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
 
@@ -121,7 +121,7 @@ describe("btdk schema", () => {
   test("trees py_aep writes conform", () => {
     const app = parse("samples/models/text/text_writes.aep");
     const docs = app.project.compositions[0].textLayers.map((layer) => {
-      pyAssert(layer.text != null);
+      assert(layer.text != null);
       return layer.text.property("ADBE Text Document").value;
     });
     expect(docs.length).toBeGreaterThan(0);

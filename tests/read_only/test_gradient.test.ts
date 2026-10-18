@@ -2,7 +2,7 @@
 
 import { expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { Path, StopIteration, hasattr, len, pyEq } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, hasattr, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -274,7 +274,7 @@ test("test_g_fill_synthesized_properties", () => {
     "ADBE Vector Fill Opacity",
   ];
   const actual = gfill.properties.map((p) => p.matchName);
-  expect(pyEq(actual, expectedMatchNames)).toBe(true);
+  expect(valueEquals(actual, expectedMatchNames)).toBe(true);
 });
 
 /** G-Stroke has all expected properties from synthesis specs. */
@@ -305,7 +305,7 @@ test("test_g_stroke_synthesized_properties", () => {
     "ADBE Vector Stroke Wave",
   ];
   const actual = gstroke.properties.map((p) => p.matchName);
-  expect(pyEq(actual, expectedMatchNames)).toBe(true);
+  expect(valueEquals(actual, expectedMatchNames)).toBe(true);
 });
 
 /** Re-serializing a parsed (AE-written) gradient reproduces its bytes. */
@@ -320,5 +320,5 @@ test("test_reserialize_matches_ae_bytes", () => {
 
   const original = gradient._utf8.value;
   gradient._serialize();
-  expect(pyEq(gradient._utf8.value, original)).toBe(true);
+  expect(valueEquals(gradient._utf8.value, original)).toBe(true);
 });

@@ -24,10 +24,10 @@ import {
   deferred,
   descriptor,
   float,
-  getitem,
+  getOrThrow,
   int,
-  pyAssert,
-  pyBool,
+  assert,
+  truthy,
   repr,
   round,
   sorted,
@@ -421,7 +421,7 @@ export function _rewriteEgIdentity(
         if (!uuidMap.has(uuidUtf8.value)) {
           uuidMap.set(uuidUtf8.value, uuid4());
         }
-        uuidUtf8.value = getitem(uuidMap, uuidUtf8.value);
+        uuidUtf8.value = getOrThrow(uuidMap, uuidUtf8.value);
       }
       for (const chunk of cctl.chunks) {
         // AE zeroes the controller's cached value/default in the
@@ -440,7 +440,7 @@ export function _rewriteEgIdentity(
       }
       for (const clid of filterByType(cprp.chunks, "CLId")) {
         if (idMap.has(clid.value)) {
-          clid.value = getitem(idMap, clid.value);
+          clid.value = getOrThrow(idMap, clid.value);
         }
       }
     }
@@ -1120,7 +1120,7 @@ export class CompItem extends AVItem {
   remove(): void {
     /** Remove this composition, including any render-queue items targeting it. */
     const rq = this._project.renderQueue;
-    pyAssert(rq != null);
+    assert(rq != null);
     const compId = this.id;
     for (const rqi of [...rq.items]) {
       if (rqi.comp === this) {
@@ -1156,7 +1156,7 @@ export class CompItem extends AVItem {
      */
     const project = this._project;
     const parent = this._parentFolder;
-    pyAssert(parent != null);
+    assert(parent != null);
     const container = parent._childrenContainer;
 
     // Clone the comp's whole block: LIST:Item + trailing view chunks.
@@ -1187,9 +1187,9 @@ export class CompItem extends AVItem {
       idMap.set(ldta.layerId, project._allocateId());
     }
     for (const ldta of ldtaChunks) {
-      ldta.layerId = getitem(idMap, ldta.layerId);
+      ldta.layerId = getOrThrow(idMap, ldta.layerId);
       if (idMap.has(ldta.parentId)) {
-        ldta.parentId = getitem(idMap, ldta.parentId);
+        ldta.parentId = getOrThrow(idMap, ldta.parentId);
       }
       // matte_layer_id is absent (None) in pre-AE23 files.
       const matte = ldta.matteLayerId;
@@ -1225,7 +1225,7 @@ export class CompItem extends AVItem {
     container.splice(end, 0, ...clonedBlock);
     const newComp = _item().parseItem(clonedItem, project, parent);
     // The clone keeps this comp's idta item type.
-    pyAssert(newComp instanceof CompItem);
+    assert(newComp instanceof CompItem);
     parent.items.splice(parent.items.indexOf(this) + 1, 0, newComp);
 
     // Register the duplicate on its layer sources' used_in if linking
@@ -1289,7 +1289,7 @@ export class CompItem extends AVItem {
     }
 
     const deferred = this._deferredLayers;
-    pyAssert(deferred != null);
+    assert(deferred != null);
 
     // Clear deferred state first to avoid duplicate work if any nested
     // access re-enters this method.
@@ -1575,7 +1575,7 @@ export class CompItem extends AVItem {
       return buildCheckboxCctl(
         name,
         uuidStr,
-        pyBool(prop.value),
+        truthy(prop.value),
         compId,
         layerId,
         plan.pathJson,
@@ -1686,7 +1686,7 @@ export class CompItem extends AVItem {
       return false;
     }
     const source = layer.source;
-    pyAssert(source != null); // guaranteed by can_add_layer
+    assert(source != null); // guaranteed by can_add_layer
     const display = name != null ? name : layer.name;
     validateName(display);
     const uuidStr = uuid4();
@@ -1741,7 +1741,7 @@ export class CompItem extends AVItem {
 
   set renderer(value: string) {
     _validateRenderer(value);
-    const binaryName = getitem(_RENDERER_EXTENDSCRIPT_TO_BINARY, value);
+    const binaryName = getOrThrow(_RENDERER_EXTENDSCRIPT_TO_BINARY, value);
     if (binaryName === this._prin.matchName) {
       // If comp is already set to the requested renderer,
       // preserve renderer options instead of replacing with defaults
@@ -1749,9 +1749,9 @@ export class CompItem extends AVItem {
     }
     // Otherwise update match name and display name
     this._prin.matchName = binaryName;
-    this._prin.displayName = getitem(_RENDERER_DISPLAY_NAMES, binaryName);
+    this._prin.displayName = getOrThrow(_RENDERER_DISPLAY_NAMES, binaryName);
     // Create a fresh prda chunk using requested renderer's default settings
-    const newPrda = new (getitem(_PRDA_VARIANTS, binaryName)[0])();
+    const newPrda = new (getOrThrow(_PRDA_VARIANTS, binaryName)[0])();
     // Replace the existing prda chunk
     const prinChunks = this.prinList.chunks;
     prinChunks[indexByIdentity(prinChunks, this._prda)] = newPrda;
@@ -2393,7 +2393,7 @@ export class CompItem extends AVItem {
      * item is stored at the alphabetical position AE uses.
      */
     const folder = this.parentFolder;
-    pyAssert(folder != null);
+    assert(folder != null);
     const newComp = folder.addComp(
       name,
       width,
@@ -2419,7 +2419,7 @@ export class CompItem extends AVItem {
      * which holds one fresh layer referencing the original source.
      */
     const source = layer.source;
-    pyAssert(source != null);
+    assert(source != null);
     const newComp = this._createPrecompItem(name, source.width, source.height);
     newComp.add(source);
     layer.replaceSource(newComp);
@@ -2861,7 +2861,7 @@ export class CompItem extends AVItem {
 {
   const d = Object.getOwnPropertyDescriptor(CompItem.prototype, "motionGraphicsTemplateName");
   const set = d?.set;
-  pyAssert(set !== undefined);
+  assert(set !== undefined);
   // A setter's own name is "set <prop>"; Python's error names the method.
   Object.defineProperty(set, "name", { value: "motionGraphicsTemplateName" });
   Object.defineProperty(CompItem.prototype, "motionGraphicsTemplateName", {

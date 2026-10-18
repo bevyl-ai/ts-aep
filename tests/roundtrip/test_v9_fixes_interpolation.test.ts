@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, ValueError, float, getattr, getitem, hasattr, pyAssert, pyEq, setattr } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, ValueError, float, getattr, getOrThrow, hasattr, assert, valueEquals, setattr } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, type ApproxOperand } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
@@ -94,7 +94,7 @@ function _verts(shape: Shape): number[] {
 /** `kf._stored_value[2]`: the stored Z of a 3-D key. */
 function _storedZ(kf: Keyframe): number {
   const stored = kf._storedValue;
-  pyAssert(Array.isArray(stored));
+  assert(Array.isArray(stored));
   return stored[2];
 }
 
@@ -224,7 +224,7 @@ describe("TestInterpolationTypeWinsOverAutoBezier", () => {
     const kf = angle.keyframes[2];
     kf.temporalAutoBezier = true;
     _types(kf, BEZ, LIN);
-    expect(pyEq([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
+    expect(valueEquals([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
     expect(_eqApprox(kf.inTemporalEase[0].speed, _approx(0.0))).toBe(true);
     expect(_eqApprox(angle.valueAtTime(1.583333333), _approx(147.93916302166082))).toBe(true);
   });
@@ -354,8 +354,8 @@ describe("TestRejectedWritesDoNotMutate", () => {
     raises(ValueError, () => {
       rot.setValueAtTime(1.0, float("nan"));
     });
-    expect(pyEq(projectBytes(app.project), before)).toBe(true);
-    expect(pyEq(rot.keyframes, []) && rot.value === 45.0).toBe(true);
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(rot.keyframes, []) && rot.value === 45.0).toBe(true);
   });
 
   test("test_add_key_at_overshoot_stores_clamped", () => {
@@ -375,7 +375,7 @@ describe("TestRejectedWritesDoNotMutate", () => {
     expect(_eqApprox(_speeds(new_.outTemporalEase), _approx([[179.03961789599282, 61.1377297149683]]))).toBe(true);
     expect(_eqApprox(_speeds(op.keyframes[0].outTemporalEase), _approx([[300.0, 35.131134850035764]]))).toBe(true);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Opacity");
-    expect(pyEq(again.keyframes.map((k) => k.value), [10.0, 100.0, 90.0])).toBe(true);
+    expect(valueEquals(again.keyframes.map((k) => k.value), [10.0, 100.0, 90.0])).toBe(true);
   });
 });
 
@@ -390,7 +390,7 @@ describe("TestEaseAndTangentWrites", () => {
     ]);
     _ease(op.keyframes[0], [[0, 75]], [[0, 75]]);
     const kf = op.keyframes[0];
-    expect(pyEq([kf.inInterpolationType, kf.outInterpolationType], [BEZ, BEZ])).toBe(true);
+    expect(valueEquals([kf.inInterpolationType, kf.outInterpolationType], [BEZ, BEZ])).toBe(true);
     expect(_eqApprox(_speeds(kf.outTemporalEase), _approx([[0.0, 75.0]]))).toBe(true);
     expect(_eqApprox(op.valueAtTime(0.625), _approx(14.649138906616496))).toBe(true);
     expect(_eqApprox(_speeds(op.keyframes[1].inTemporalEase), _approx([[40.0, 100 / 6]]))).toBe(true);
@@ -406,7 +406,7 @@ describe("TestEaseAndTangentWrites", () => {
     const kf = rot.keyframes[1];
     kf.temporalAutoBezier = true;
     _ease(kf, [[30, 50]], [[30, 50]]);
-    expect(pyEq([kf.temporalAutoBezier, kf.temporalContinuous], [false, true])).toBe(true);
+    expect(valueEquals([kf.temporalAutoBezier, kf.temporalContinuous], [false, true])).toBe(true);
     expect(_eqApprox(_speeds(kf.inTemporalEase), _approx([[30.0, 50.0]]))).toBe(true);
     expect(_eqApprox(rot.valueAtTime(0.5), _approx(65.31929354403154))).toBe(true);
   });
@@ -505,7 +505,7 @@ describe("TestRovingRunAfterHoldAnchor", () => {
     _types(pos.keyframes[0], HOLD, HOLD);
     const k = pos.keyframes;
     expect(_eqApprox([1, 2].map((i) => k[i].time), _approx([3.90625e-05, 7.8125e-05]))).toBe(true);
-    expect(pyEq([1, 2, 3].map((i) => k[i].inTemporalEase[0].speed), Array(3).fill(0.0))).toBe(true);
+    expect(valueEquals([1, 2, 3].map((i) => k[i].inTemporalEase[0].speed), Array(3).fill(0.0))).toBe(true);
     for (const i of [1, 2]) {
       expect(_eqApprox(k[i].outTemporalEase[0].speed, _approx(204.14457215491265, 1e-4))).toBe(true);
     }
@@ -584,9 +584,9 @@ describe("TestTwoDimensionalLayerZ", () => {
     expect(_eqApprox(_storedZ(pos.keyframes[1]), _approx(5.0005441476708805))).toBe(true);
     const anchor = null_.property(TG).property("ADBE Anchor Point");
     anchor.value = [30, 20, 15];
-    expect(pyEq(anchor.value, [30.0, 20.0, 0.0])).toBe(true);
+    expect(valueEquals(anchor.value, [30.0, 20.0, 0.0])).toBe(true);
     const again = _reparse(app, tmpPath).property(TG);
-    expect(pyEq(again.property("ADBE Anchor Point")._storedStaticValue(), [30, 20, 15])).toBe(true);
+    expect(valueEquals(again.property("ADBE Anchor Point")._storedStaticValue(), [30, 20, 15])).toBe(true);
     const stored = again.property("ADBE Position").keyframes.map((k) => _storedZ(k));
     expect(_eqApprox(stored, _approx([40.0, 5.0005441476708805, -30.0]))).toBe(true);
   });
@@ -595,7 +595,7 @@ describe("TestTwoDimensionalLayerZ", () => {
     const [_app, comp] = _comp();
     const pos = _solid(comp, undefined, undefined, true).property(TG).property("ADBE Position");
     pos.value = [100, 120, 40];
-    expect(pyEq(pos.value, [100.0, 120.0, 40.0])).toBe(true);
+    expect(valueEquals(pos.value, [100.0, 120.0, 40.0])).toBe(true);
   });
 });
 
@@ -620,7 +620,7 @@ describe("TestAddKeyOnMixedSegment", () => {
     const before = slider.valueAtTime(1.0);
     slider.addKey(0.7);
     const [k0, new_, k2] = slider.keyframes;
-    expect(pyEq([k0.inInterpolationType, k0.outInterpolationType], [LIN, BEZ])).toBe(true);
+    expect(valueEquals([k0.inInterpolationType, k0.outInterpolationType], [LIN, BEZ])).toBe(true);
     expect(_eqApprox(_speeds(k0.outTemporalEase), _approx([[50.0, 20.98365339077507]]))).toBe(true);
     expect(_eqApprox(new_.time, _approx(0.6999916583249917))).toBe(true);
     expect(_eqApprox(new_.value, _approx(45.426218155783275))).toBe(true);
@@ -643,7 +643,7 @@ describe("TestAddKeyOnMixedSegment", () => {
     expect(_eqApprox(new_.value, _approx(20.83860947763496))).toBe(true);
     expect(_eqApprox(_speeds(new_.inTemporalEase), _approx([[39.64385120503754, 30.454616112180773]]))).toBe(true);
     expect(_eqApprox(_speeds(new_.outTemporalEase), _approx([[39.643851205037365, 61.613775791779005]]))).toBe(true);
-    expect(pyEq([k2.inInterpolationType, k2.outInterpolationType], [BEZ, LIN])).toBe(true);
+    expect(valueEquals([k2.inInterpolationType, k2.outInterpolationType], [BEZ, LIN])).toBe(true);
     expect(_eqApprox(slider.valueAtTime(1.0), _approx(34.040679048187606))).toBe(true);
   });
 });
@@ -705,22 +705,22 @@ describe("TestParallelAddKeyTypes", () => {
       [0, TRI0],
       [2, TRI1],
     ]);
-    _types(path.keyframes[0], LIN, getitem(_T, leftOut));
-    _types(path.keyframes[1], getitem(_T, rightIn), LIN);
+    _types(path.keyframes[0], LIN, getOrThrow(_T, leftOut));
+    _types(path.keyframes[1], getOrThrow(_T, rightIn), LIN);
     path.addKey(0.6);
     const [k0, new_, k2] = path.keyframes;
     expect(
-      pyEq(
+      valueEquals(
         [new_.inInterpolationType, new_.outInterpolationType],
-        [getitem(_T, newTypes[0]), getitem(_T, newTypes[1])],
+        [getOrThrow(_T, newTypes[0]), getOrThrow(_T, newTypes[1])],
       ),
     ).toBe(true);
     expect(new_.temporalContinuous).toBe(continuous);
-    expect(k0.outInterpolationType).toBe(getitem(_T, leftOut));
-    expect(k2.inInterpolationType).toBe(getitem(_T, rightIn));
+    expect(k0.outInterpolationType).toBe(getOrThrow(_T, leftOut));
+    expect(k2.inInterpolationType).toBe(getOrThrow(_T, rightIn));
     if (continuous) {
       const data = asInstance(new_._ldatItem.kfData, KfNoValue);
-      expect(pyEq([data.inSpeed, data.outSpeed], [1.0, 1.0])).toBe(true);
+      expect(valueEquals([data.inSpeed, data.outSpeed], [1.0, 1.0])).toBe(true);
       expect(_eqApprox(data.inInfluence, _approx(1 / 6))).toBe(true);
     }
   });
@@ -733,7 +733,7 @@ describe("TestParallelAddKeyTypes", () => {
     for (const kf of path.keyframes) _types(kf, BEZ, BEZ);
     path.addKey(0.4);
     const new_ = path.keyframes[0];
-    expect(pyEq([new_.inInterpolationType, new_.outInterpolationType], [BEZ, BEZ])).toBe(true);
+    expect(valueEquals([new_.inInterpolationType, new_.outInterpolationType], [BEZ, BEZ])).toBe(true);
     expect(new_.temporalContinuous).toBe(true);
     expect(_eqApprox(_speeds(new_.outTemporalEase), _approx([0.0, 100 / 6]))).toBe(true);
     const held = _path([
@@ -743,7 +743,7 @@ describe("TestParallelAddKeyTypes", () => {
     _types(held.keyframes[1], HOLD, HOLD);
     held.addKey(2.0);
     const last = held.keyframes[2];
-    expect(pyEq([last.inInterpolationType, last.outInterpolationType], [HOLD, HOLD])).toBe(true);
+    expect(valueEquals([last.inInterpolationType, last.outInterpolationType], [HOLD, HOLD])).toBe(true);
   });
 
   test("test_orientation", () => {
@@ -757,11 +757,11 @@ describe("TestParallelAddKeyTypes", () => {
     _ease(orient.keyframes[0], [[0, 30]], [[0, 70]]);
     orient.addKey(0.6);
     const new_ = orient.keyframes[1];
-    expect(pyEq([new_.inInterpolationType, new_.temporalContinuous], [BEZ, true])).toBe(true);
+    expect(valueEquals([new_.inInterpolationType, new_.temporalContinuous], [BEZ, true])).toBe(true);
     expect(_eqApprox(_speeds(new_.inTemporalEase), _approx([1.0, 100 / 6]))).toBe(true);
     expect(_eqApprox(_speeds(orient.keyframes[0].outTemporalEase), _approx([0.0, 70.0]))).toBe(true);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Orientation").keyframes[1];
-    expect(pyEq([again.outInterpolationType, again.temporalContinuous], [BEZ, true])).toBe(true);
+    expect(valueEquals([again.outInterpolationType, again.temporalContinuous], [BEZ, true])).toBe(true);
   });
 });
 
@@ -853,11 +853,11 @@ describe("TestSetValueAtTimeIntoLinearSegment", () => {
     rot.setValueAtTime(0.8, 70.0);
     const kf = rot.keyframes[1];
     _types(kf, BEZ, BEZ);
-    expect(pyEq(_speeds(kf.inTemporalEase), [0.0, 0.0])).toBe(true);
-    expect(pyEq(_speeds(kf.outTemporalEase), [0.0, 0.0])).toBe(true);
+    expect(valueEquals(_speeds(kf.inTemporalEase), [0.0, 0.0])).toBe(true);
+    expect(valueEquals(_speeds(kf.outTemporalEase), [0.0, 0.0])).toBe(true);
     expect(_eqApprox(rot.keyframes[0].outTemporalEase[0].speed, _approx(87.49908763880924, 1e-6))).toBe(true);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Rotate Z");
-    expect(pyEq(_speeds(again.keyframes[1].inTemporalEase), [0.0, 0.0])).toBe(true);
+    expect(valueEquals(_speeds(again.keyframes[1].inTemporalEase), [0.0, 0.0])).toBe(true);
   });
 });
 
@@ -906,18 +906,18 @@ describe("TestShapeBoundHints", () => {
       for (const layer of comp.layers) {
         for (const prop of _leaves(layer)) {
           if (prop.matchName === "ADBE Vector Stroke Width") {
-            expect(pyEq([prop.hasMin, prop.minValue], [true, 0])).toBe(true);
-            expect(pyEq([prop.hasMax, prop.maxValue], [false, null])).toBe(true);
+            expect(valueEquals([prop.hasMin, prop.minValue], [true, 0])).toBe(true);
+            expect(valueEquals([prop.hasMax, prop.maxValue], [false, null])).toBe(true);
             seen.add(prop.matchName);
           } else if (prop.matchName === "ADBE Vector Stroke Miter Limit") {
-            expect(pyEq([prop.hasMin, prop.minValue], [true, 1])).toBe(true);
-            expect(pyEq([prop.hasMax, prop.maxValue], [false, null])).toBe(true);
+            expect(valueEquals([prop.hasMin, prop.minValue], [true, 1])).toBe(true);
+            expect(valueEquals([prop.hasMax, prop.maxValue], [false, null])).toBe(true);
             seen.add(prop.matchName);
           }
         }
       }
     }
-    expect(pyEq(seen, new Set(["ADBE Vector Stroke Width", "ADBE Vector Stroke Miter Limit"]))).toBe(true);
+    expect(valueEquals(seen, new Set(["ADBE Vector Stroke Width", "ADBE Vector Stroke Miter Limit"]))).toBe(true);
   });
 });
 
@@ -938,12 +938,12 @@ describe("TestSynthesizedBoundChunks", () => {
           return [tdum.chunkType, [tdum.values, tdum.isInteger]];
         }),
     );
-    expect(pyEq(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
+    expect(valueEquals(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
     const again = asInstance(
       asInstance(getattr(_reparse(app, tmpPath).effects, "properties")[0], PropertyGroup).properties[0],
       Property,
     );
-    expect(pyEq([again.minValue, again.maxValue], [-1000000, 1000000])).toBe(true);
+    expect(valueEquals([again.minValue, again.maxValue], [-1000000, 1000000])).toBe(true);
     expect(again.value).toBe(7.0);
   });
 });
@@ -958,7 +958,7 @@ describe("TestValidation", () => {
     raises(TypeError, () => {
       slider.setValueAtTime(1.0, null);
     });
-    expect(pyEq(slider.keyframes, []) && pyEq(projectBytes(app.project), before)).toBe(true);
+    expect(valueEquals(slider.keyframes, []) && valueEquals(projectBytes(app.project), before)).toBe(true);
   });
 
   test("test_non_numeric_time", () => {
@@ -1030,14 +1030,14 @@ describe("TestTemporalContinuityFlags", () => {
     const kf = _rot();
     kf.temporalAutoBezier = true;
     kf.temporalContinuous = true;
-    expect(pyEq([kf.temporalAutoBezier, kf.temporalContinuous], [false, true])).toBe(true);
+    expect(valueEquals([kf.temporalAutoBezier, kf.temporalContinuous], [false, true])).toBe(true);
   });
 
   test("test_auto_bezier_key_stays_continuous", () => {
     const kf = _rot();
     kf.temporalAutoBezier = true;
     kf.temporalContinuous = false;
-    expect(pyEq([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
+    expect(valueEquals([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
   });
 
   test("test_auto_bezier_back_on_bezier_sides", () => {
@@ -1045,7 +1045,7 @@ describe("TestTemporalContinuityFlags", () => {
     kf.temporalAutoBezier = true;
     _types(kf, LIN, LIN);
     _types(kf, BEZ, BEZ);
-    expect(pyEq([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
+    expect(valueEquals([kf.temporalAutoBezier, kf.temporalContinuous], [true, true])).toBe(true);
   });
 
   test("test_flags_survive_save", () => {
@@ -1060,6 +1060,6 @@ describe("TestTemporalContinuityFlags", () => {
     kf.temporalAutoBezier = true;
     _types(kf, LIN, BEZ);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Rotate Z").keyframes[1];
-    expect(pyEq([again.temporalAutoBezier, again.temporalContinuous], [true, true])).toBe(true);
+    expect(valueEquals([again.temporalAutoBezier, again.temporalContinuous], [true, true])).toBe(true);
   });
 });
