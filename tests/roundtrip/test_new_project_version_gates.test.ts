@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { BytesIO, Bytes, getMember, getOrThrow, len, lruCache, Path, assert, truthy, valueEquals, getOrInsert, StopIteration, compositeKey } from "../../src/pyrt/index.ts";
+import { ByteStream, Bytes, getMember, getOrThrow, len, lruCache, Path, assert, truthy, valueEquals, getOrInsert, StopIteration, compositeKey } from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/index.ts";
@@ -198,7 +198,7 @@ class _Structure {
 }
 
 function _read(path: Path): ListChunk {
-  const [rifx, _xmp] = readAep(new BytesIO(path.readBytes()));
+  const [rifx, _xmp] = readAep(new ByteStream(path.readBytes()));
   return rifx;
 }
 

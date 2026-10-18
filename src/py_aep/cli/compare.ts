@@ -24,7 +24,7 @@ import { CdatChunk } from "../binary/property_chunks.ts";
 import { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import { chunkLabel, extractLeafChunks, extractLeafChunksTyped } from "./_chunk_helpers.ts";
 import {
-  BytesIO,
+  ByteStream,
   Path,
   bytesEqual,
   deepcopy,
@@ -437,8 +437,8 @@ export function _compareStructureRecursive(c1: Chunk, c2: Chunk, path: string, d
 export function compareStructure(file1: Path, file2: Path): StructuralDifference[] {
   // `with open(file, "rb") as f: read_aep(f)` is modelled by reading the
   // whole file first; read_aep consumes all of it, so the handle can close.
-  const [rifx1] = readAep(new BytesIO(file1.readBytes()));
-  const [rifx2] = readAep(new BytesIO(file2.readBytes()));
+  const [rifx1] = readAep(new ByteStream(file1.readBytes()));
+  const [rifx2] = readAep(new ByteStream(file2.readBytes()));
   const diffs: StructuralDifference[] = [];
   _compareStructureRecursive(rifx1, rifx2, "", diffs);
   return diffs;

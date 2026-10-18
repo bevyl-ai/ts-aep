@@ -13,7 +13,7 @@
 
 import * as zlib from "../../pyrt/zlib.ts";
 import {
-  BytesIO,
+  ByteStream,
   Path,
   ValueError,
   getOrThrow,
@@ -100,7 +100,7 @@ export function _objectOffsets(data: Uint8Array): Map<number, number> {
  * @throws {@link UnsupportedAiLayersError} If the object is malformed or truncated.
  */
 export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
-  const parser = new CosParser(new BytesIO(data.slice(offset)));
+  const parser = new CosParser(new ByteStream(data.slice(offset)));
   try {
     parser.lex();
     const value = parser.parseValue();
@@ -183,7 +183,7 @@ export function readAiLayerOcgs(
   // cannot be read, which callers handle as this module's own error.
   try {
     const parser = new CosParser(
-      new BytesIO(data.slice(marker + ascii("/OCProperties").length)),
+      new ByteStream(data.slice(marker + ascii("/OCProperties").length)),
     );
     parser.lex();
     const ocProperties = _resolve(parser.parseValue(), data, offsets);

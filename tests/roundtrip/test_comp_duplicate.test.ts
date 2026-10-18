@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, at, b, BytesIO, Bytes, contains, getOr, getOrThrow, len, Path, assert, truthy, valueEquals, StopIteration, zip } from "../../src/pyrt/index.ts";
+import { AssertionError, at, b, ByteStream, Bytes, contains, getOr, getOrThrow, len, Path, assert, truthy, valueEquals, StopIteration, zip } from "../../src/pyrt/index.ts";
 
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
@@ -128,9 +128,9 @@ function _cctls(comp: CompItem): ListChunk[] {
 }
 
 function _chunkBytes(chunk: Chunk): Uint8Array {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   chunk.write(buf);
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 describe("TestDuplicateAgainstAE", () => {

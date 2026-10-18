@@ -17,7 +17,7 @@ import type { Gradient } from "../models/properties/gradient.ts";
 import { parseGradientXml } from "./gradient.ts";
 import { parseProperty } from "./property_value.ts";
 import { parseBtdkCos } from "./text.ts";
-import { BytesIO, OverflowError, ValueError, warn, zip, instanceDict } from "../../pyrt/index.ts";
+import { ByteStream, OverflowError, ValueError, warn, zip, instanceDict } from "../../pyrt/index.ts";
 import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
@@ -234,7 +234,7 @@ export function parseTextDocument(
   try {
     btdkChunk = findByListType(btdsChunk.chunks, "btdk");
     // btdk is a ListChunk with list_type="btdk"; raw data stored in .data
-    const parser = new CosParser(new BytesIO(btdkChunk.data), btdkChunk.data.length);
+    const parser = new CosParser(new ByteStream(btdkChunk.data), btdkChunk.data.length);
     cosData = parser.parse();
   } catch (e) {
     if (

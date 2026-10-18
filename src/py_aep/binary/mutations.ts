@@ -5,7 +5,7 @@ import { uuid4Bytes } from "../../pyrt/uuid.ts";
 
 import {
   Bytes,
-  BytesIO,
+  ByteStream,
   copy,
   encode,
   getOrThrow,
@@ -240,7 +240,7 @@ export function stripSynthetic(chunk: Chunk): void {
  */
 export function cloneChunkTree<T extends Chunk>(chunk: T): T extends ListChunk ? ListChunk : T;
 export function cloneChunkTree(chunk: Chunk): Chunk {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   const size = writeChunk(buf, chunk);
   buf.seek(0);
   return readChunks(buf, size)[0];
@@ -918,7 +918,7 @@ export function buildDefaultMaskShape(
 ): [TdmnChunk, ListChunk] {
   const { aspect, rotoBezier = false } = kw;
   const raw = Bytes.fromHex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
-  const oms = readChunks(new BytesIO(raw), raw.length)[0];
+  const oms = readChunks(new ByteStream(raw), raw.length)[0];
   assert(oms instanceof ListChunk);
   const tdbs = oms.chunks[0];
   assert(tdbs instanceof ListChunk);
@@ -1083,7 +1083,7 @@ export function buildExpressionControl(
   },
 ): [TdmnChunk, ListChunk] {
   const { tdsnName, timeBase, layerId, layerParamName = null } = kw;
-  const part = readChunks(new BytesIO(partBytes), partBytes.length)[0];
+  const part = readChunks(new ByteStream(partBytes), partBytes.length)[0];
 
   function paramTdbs(name: string, enableFlags: number): ListChunk {
     const tdb4 = new Tdb4Chunk({

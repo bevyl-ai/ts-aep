@@ -61,7 +61,7 @@ import {
   KeyError,
   NotImplementedError,
   Bytes,
-  BytesIO,
+  ByteStream,
   Path,
   decode,
   fspath,
@@ -2142,7 +2142,7 @@ export class Project {
     // Serialize in memory: the writer seeks back to fill in each chunk's
     // length, and on a network share every seek is a round trip (a 29 MB
     // project took minutes to write there, under a second in one call).
-    const buffer = new BytesIO();
+    const buffer = new ByteStream();
     try {
       moduleGlobals.writeAep(buffer, this._rifx, this._xmp);
     } finally {
@@ -2163,7 +2163,7 @@ export class Project {
       const fd = host.fs.openSync(tmpPath.path, "wx");
       try {
         // `getbuffer()`: the written bytes without copying the whole file once more.
-        host.fs.writeSync(fd, buffer.getbuffer());
+        host.fs.writeSync(fd, buffer.view());
       } finally {
         host.fs.closeSync(fd);
       }

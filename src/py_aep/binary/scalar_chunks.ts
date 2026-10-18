@@ -10,7 +10,7 @@
  */
 
 import { define, field, decode, encode } from "../../pyrt/index.ts";
-import type { ClassAttributes, IO } from "../../pyrt/index.ts";
+import type { ClassAttributes, ByteStream } from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
 import { f8Field, s2Field, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
@@ -28,7 +28,7 @@ export class _StringChunkBase extends Chunk {
   declare value: string;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): _StringChunkBase {
@@ -38,7 +38,7 @@ export class _StringChunkBase extends Chunk {
     return new cls({ chunkType, value: decode(raw, cls._ENCODING) });
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     return writeBytes(
       fp,
       encode(this.value, this.constructor._ENCODING),

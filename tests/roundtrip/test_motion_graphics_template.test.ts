@@ -5,7 +5,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AssertionError, BytesIO, Path, StopIteration, getMember, getOrThrow, len, assert, truthy, valueEquals, repr } from "../../src/pyrt/index.ts";
+import { AssertionError, ByteStream, Path, StopIteration, getMember, getOrThrow, len, assert, truthy, valueEquals, repr } from "../../src/pyrt/index.ts";
 
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -59,9 +59,9 @@ function _cif3Cctls(comp: CompItem): ListChunk[] {
 }
 
 function _chunkBytes(chunk: ListChunk): Uint8Array {
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   writeChunk(buf, chunk);
-  return buf.getvalue();
+  return buf.toBytes();
 }
 
 /** Number of CCtl children per CIF container of a comp. */

@@ -24,7 +24,7 @@ import type { Chunk } from "../binary/chunk.ts";
 import { filterByListType } from "../binary/utils.ts";
 import { chunkLabel, extractLeafChunks, formatHexDump, walkChunks } from "./_chunk_helpers.ts";
 import {
-  BytesIO,
+  ByteStream,
   Path,
   at,
   getOrThrow,
@@ -84,7 +84,7 @@ export function printTree(chunk: Chunk, depth: number = 0, maxDepth: number = -1
  * @returns Exit code (0 on success, 1 on error).
  */
 export function _inspectItem(path: Path, index: number): number {
-  const fp = new BytesIO(path.readBytes());
+  const fp = new ByteStream(path.readBytes());
   const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
@@ -138,7 +138,7 @@ export function _inspectItem(path: Path, index: number): number {
  * @returns Exit code.
  */
 export function _itemSummary(path: Path): number {
-  const fp = new BytesIO(path.readBytes());
+  const fp = new ByteStream(path.readBytes());
   const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
@@ -171,7 +171,7 @@ export function _itemSummary(path: Path): number {
  * @returns Exit code.
  */
 export function _listChunks(path: Path): number {
-  const fp = new BytesIO(path.readBytes());
+  const fp = new ByteStream(path.readBytes());
   const [rifx, _xmp] = readAep(fp);
 
   print(`\nChunk tree: ${path.name}\n`);
@@ -285,7 +285,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   }
 
   if (args.tree) {
-    const fp = new BytesIO(path.readBytes());
+    const fp = new ByteStream(path.readBytes());
     const [rifx, _] = readAep(fp);
     printTree(rifx, undefined, args.depth);
     return 0;

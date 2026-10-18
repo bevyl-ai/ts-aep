@@ -10,7 +10,7 @@
 import "../binary/_register.ts";
 import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { BytesIO, getOrThrow, ValueError } from "../../pyrt/index.ts";
+import { ByteStream, getOrThrow, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /**
@@ -147,7 +147,7 @@ export function extractLeafChunksTyped(
 ): [Map<string, Uint8Array>, Map<string, Chunk>] {
   // `with open(file_path, "rb") as f:` - the file is read whole, then parsed
   // from memory (same pattern as compare.ts / inspect.ts).
-  const f = new BytesIO(filePath.readBytes());
+  const f = new ByteStream(filePath.readBytes());
   const [rifx, _xmp] = readAep(f);
   const result = new Map<string, Uint8Array>();
   const typed = new Map<string, Chunk>();

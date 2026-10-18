@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { BytesIO, NotImplementedError, Path, ValueError, b, Bytes, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { ByteStream, NotImplementedError, Path, ValueError, b, Bytes, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
 
 import { _FILE_FORMATS } from "../../src/py_aep/data/file_formats.ts";
 import { _PARSERS, _probeBmp, _probeDpxCineon, _probeGif, _probeHdr, _probeHeif, _probeMgjson, _probeMov, _probeMp3, _probeTiff, probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
@@ -160,7 +160,7 @@ describe("TestMediaProbe", () => {
     // through AE's QuickTime importer, which decodes a wider set - so the
     // ungated probe must still read both files' real video track.
     for (const name of ["mp4_av1_with_audio.mp4", "mp4_vp9_no_audio.mp4"]) {
-      const fp = new BytesIO(ASSETS.div(name).readBytes());
+      const fp = new ByteStream(ASSETS.div(name).readBytes());
       const info = _probeMov(fp);
       expect([name, [info.width, info.height]]).toEqual([name, [64, 64]]);
     }
@@ -195,23 +195,23 @@ describe("TestProbeFormatVariants", () => {
   /** Spec-derived edge cases not covered by the samples/assets/ files. */
 
   test("test_gif_bad_signature_raises", () => {
-    raises(ValueError, () => _probeGif(new BytesIO(b("NOTGIFdata"))), "GIF");
+    raises(ValueError, () => _probeGif(new ByteStream(b("NOTGIFdata"))), "GIF");
   });
 
   test("test_dpx_bad_signature_raises", () => {
-    raises(ValueError, () => _probeDpxCineon(new BytesIO(Bytes.repeat(b("NOTDPXdata"), 150))), "DPX/Cineon");
+    raises(ValueError, () => _probeDpxCineon(new ByteStream(Bytes.repeat(b("NOTDPXdata"), 150))), "DPX/Cineon");
   });
 
   test("test_dpx_truncated_header_raises", () => {
-    raises(ValueError, () => _probeDpxCineon(new BytesIO(b("SDPX\x00\x00\x08\x00"))), "too short");
+    raises(ValueError, () => _probeDpxCineon(new ByteStream(b("SDPX\x00\x00\x08\x00"))), "too short");
   });
 
   test("test_heif_bad_ftyp_raises", () => {
-    raises(ValueError, () => _probeHeif(new BytesIO(b("\x00\x00\x00\x14ftypmp41\x00\x00\x00\x00mp41"))), "HEIF");
+    raises(ValueError, () => _probeHeif(new ByteStream(b("\x00\x00\x00\x14ftypmp41\x00\x00\x00\x00mp41"))), "HEIF");
   });
 
   test("test_heif_truncated_raises", () => {
-    raises(ValueError, () => _probeHeif(new BytesIO(b("\x00\x00\x00\x08"))), "too short");
+    raises(ValueError, () => _probeHeif(new ByteStream(b("\x00\x00\x00\x08"))), "too short");
   });
 
   test("test_bmp_os2_core_header", () => {
@@ -223,7 +223,7 @@ describe("TestProbeFormatVariants", () => {
       struct.pack("<HH", 100, 50), // width, height (u2)
       struct.pack("<HH", 1, 24), // planes, bpp
     );
-    const info = _probeBmp(new BytesIO(data));
+    const info = _probeBmp(new ByteStream(data));
     expect(valueEquals([info.width, info.height], [100, 50])).toBe(true);
     expect(info.hasAlpha).toBe(true);
   });
@@ -231,7 +231,7 @@ describe("TestProbeFormatVariants", () => {
   test("test_tiff_bigtiff_returns_unknown", () => {
     /** BigTIFF (magic 43) is not a classic TIFF; probe returns no dims. */
     const data = concat(b("II"), struct.pack("<H", 43), struct.pack("<H", 8), Bytes.repeat(b("\x00"), 16));
-    const info = _probeTiff(new BytesIO(data));
+    const info = _probeTiff(new ByteStream(data));
     expect(valueEquals([info.width, info.height], [0, 0])).toBe(true);
   });
 
@@ -242,7 +242,7 @@ describe("TestProbeFormatVariants", () => {
     const header = b("\xff\xf3\x80\x00");
     const frameSize = floordiv(72 * 64000, 22050); // 208 (the 144 bug computes ~2x this)
     const raw = concat(header, Bytes.repeat(b("\x00"), 100 * frameSize - header.length));
-    const info = _probeMp3(new BytesIO(raw));
+    const info = _probeMp3(new ByteStream(raw));
     // 100 frames * 576 samples / 22050 Hz; the 144 coefficient halved this.
     expect(approx(info.duration, (100 * 576) / 22050, { abs: 1e-3 })).toBe(true);
     expect(info.audioSampleRate).toBe(22050.0);
@@ -252,7 +252,7 @@ describe("TestProbeFormatVariants", () => {
     /** An X-major Radiance resolution line must not transpose dims. */
     // "+X 640 -Y 426" (X-major) must still yield width=640, height=426.
     const data = b("#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n+X 640 -Y 426\n");
-    const info = _probeHdr(new BytesIO(data));
+    const info = _probeHdr(new ByteStream(data));
     expect(valueEquals([info.width, info.height], [640, 426])).toBe(true);
   });
 
@@ -260,7 +260,7 @@ describe("TestProbeFormatVariants", () => {
     /** A resolution line missing an axis must raise ValueError, not KeyError. */
     // No Y axis ("+X 640 +X 480") - must not leak a bare KeyError.
     const data = b("#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n+X 640 +X 480\n");
-    raises(ValueError, () => _probeHdr(new BytesIO(data)));
+    raises(ValueError, () => _probeHdr(new ByteStream(data)));
   });
 
   test.each([
@@ -309,7 +309,7 @@ describe("TestProbeFormatVariants", () => {
         },
       ],
     };
-    const info = _probeMgjson(new BytesIO(encode(JSON.stringify(doc), "utf-8")));
+    const info = _probeMgjson(new ByteStream(encode(JSON.stringify(doc), "utf-8")));
     // Both samples parse (5.0s - 0.123s span + one 30fps frame); if either
     // timestamp had failed to parse the span would collapse to ~0.03s.
     expect(info.duration != null).toBe(true);

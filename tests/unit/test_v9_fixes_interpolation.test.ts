@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 
 import { TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { _timebaseUnits } from "../../src/py_aep/models/properties/keyframe.ts";
-import { BytesIO, struct, valueEquals } from "../../src/pyrt/index.ts";
+import { ByteStream, struct, valueEquals } from "../../src/pyrt/index.ts";
 
 // AE 2026's frame grid: the rate to the thousandth as p/q, q * 2**k
 // units a frame (12.3456 fps -> 24692 units a second, 2000 a frame).
@@ -26,10 +26,10 @@ describe("TestIntegerFlaggedBounds", () => {
 
   test("test_eight_byte_body_is_a_double", () => {
     const raw = struct.pack(">d", 100.0);
-    const chunk = TdumChunk.read(new BytesIO(raw), 8, { chunkType: "tduM", isInteger: true });
+    const chunk = TdumChunk.read(new ByteStream(raw), 8, { chunkType: "tduM", isInteger: true });
     expect(valueEquals(chunk.values, [100.0])).toBe(true);
-    const out = new BytesIO();
+    const out = new ByteStream();
     chunk.write(out);
-    expect(valueEquals(out.getvalue(), raw)).toBe(true);
+    expect(valueEquals(out.toBytes(), raw)).toBe(true);
   });
 });

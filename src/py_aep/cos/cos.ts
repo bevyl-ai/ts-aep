@@ -20,7 +20,7 @@ import {
   UnicodeDecodeError,
   ValueError,
 } from "../../pyrt/index.ts";
-import type { EnumValue, IO, BoxedFloat } from "../../pyrt/index.ts";
+import type { EnumValue, ByteStream, BoxedFloat } from "../../pyrt/index.ts";
 import { is, pyInt } from "./kinds.ts";
 
 // io.SEEK_CUR
@@ -353,11 +353,11 @@ export class Stream {
 }
 
 export class CosParser {
-  declare file: IO;
+  declare file: ByteStream;
   declare maxPos: number | null;
   declare lookahead: Token;
 
-  constructor(file: IO, maxPos: number | null = null) {
+  constructor(file: ByteStream, maxPos: number | null = null) {
     this.file = file;
     this.maxPos = maxPos;
     this.lookahead = new Token(TokenType.Eof);

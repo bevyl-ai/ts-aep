@@ -7,7 +7,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { at, BytesIO, getOrThrow, Path, assert, truthy, valueEquals } from "../../src/pyrt/index.ts";
+import { at, ByteStream, getOrThrow, Path, assert, truthy, valueEquals } from "../../src/pyrt/index.ts";
 
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { type Chunk, writeChunk } from "../../src/py_aep/binary/chunk.ts";
@@ -41,9 +41,9 @@ function _bytes(...chunks: (Chunk | null)[]): Uint8Array[] {
   const out: Uint8Array[] = [];
   for (const chunk of chunks) {
     assert(chunk != null);
-    const buf = new BytesIO();
+    const buf = new ByteStream();
     writeChunk(buf, chunk);
-    out.push(buf.getvalue());
+    out.push(buf.toBytes());
   }
   return out;
 }

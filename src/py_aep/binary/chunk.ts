@@ -6,29 +6,7 @@
  */
 
 import { INSPECT, describe } from "../../pyrt/index.ts";
-import {
-  AttrsBase,
-  BytesIO,
-  ContextVar,
-  Factory,
-  NO_INIT,
-  OSError,
-  StopIteration,
-  ValueError,
-  attrsEq,
-  Bytes,
-  decode,
-  define,
-  encode,
-  field,
-  fields,
-  getMember,
-  valueEquals,
-  literal,
-  struct,
-  type ClassAttributes,
-  type IO,
-} from "../../pyrt/index.ts";
+import { AttrsBase, ByteStream, ContextVar, Factory, NO_INIT, OSError, StopIteration, ValueError, attrsEq, Bytes, decode, define, encode, field, fields, getMember, valueEquals, literal, struct, type ClassAttributes } from "../../pyrt/index.ts";
 import { _structFor, readBytes, readFmt, readPad, writeBytes, writePad } from "./bin_utils.ts";
 import { _decodeFields, _encodeValue, _fieldEncoder, _structInfo, type Coerce, type FieldKwargs, type FieldValue, type FmtAttribute, type FmtItem, type InitKwargs } from "./fmt_field.ts";
 import { CHUNK_TYPES, register, registered } from "./registry.ts";
@@ -106,7 +84,7 @@ export class Chunk extends AttrsBase {
   /** Whether `read` takes the nesting context `readChunks` passes. */
   static _nests = false;
 
-  static read(fp: IO, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
+  static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
     const { chunkType = "" } = kwargs;
     const cls = this;
     // Get fields
@@ -238,7 +216,7 @@ export class Chunk extends AttrsBase {
     return instance;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     const info = _structInfo(this.constructor);
     if (info == null) return writeBytes(fp, this.data);
     const [
@@ -302,15 +280,15 @@ export class Chunk extends AttrsBase {
 
   /** Parse a chunk body from raw bytes. */
   static frombytes(data: Uint8Array, kwargs: ChunkReadKwargs = {}): Chunk {
-    const f = new BytesIO(data);
+    const f = new ByteStream(data);
     return this.read(f, data.length, kwargs);
   }
 
   /** Serialize the chunk body to bytes. */
   tobytes(): Uint8Array {
-    const f = new BytesIO();
+    const f = new ByteStream();
     this.write(f);
-    return f.getvalue();
+    return f.toBytes();
   }
 
   equals(other: unknown): boolean {
@@ -348,7 +326,7 @@ export class ListChunk extends Chunk {
   static _nests = true;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): ListChunk {
@@ -390,7 +368,7 @@ export class ListChunk extends Chunk {
     return this.chunks.length;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     let written = writeBytes(fp, _typeBytes(this.listType));
     if (this.listType === "btdk") {
       written += writeBytes(fp, this.data);
@@ -470,7 +448,7 @@ export class DeferredListChunk extends ListChunk {
     return this._parsedChunks != null;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     let written = writeBytes(fp, encode(this.listType, "ASCII"));
     if (this._parsedChunks == null) {
       // Never accessed - write raw bytes directly (fast path).
@@ -494,7 +472,7 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
     if (parsed == null) {
       const body = this._rawBody;
       const ctx = this._rawCtx || EMPTY_CTX;
-      parsed = readChunks(new BytesIO(body), body.length, {
+      parsed = readChunks(new ByteStream(body), body.length, {
         ctx,
         deferListTypes: _deferredChildren(this.listType, ctx.grandparentListType),
       });
@@ -529,7 +507,7 @@ export class ContainerChunk extends Chunk {
   static _nests = true;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): ContainerChunk {
@@ -551,7 +529,7 @@ export class ContainerChunk extends Chunk {
    * it in a `Utf8` child. The bytes are kept to be written back as they
    * were; the string is a synthetic `Utf8` child, for the readers.
    */
-  static _readLegacy(fp: IO, size: number, kwargs: { chunkType: string }): ContainerChunk {
+  static _readLegacy(fp: ByteStream, size: number, kwargs: { chunkType: string }): ContainerChunk {
     const { chunkType } = kwargs;
     const data = readBytes(fp, size);
     // Registry lookup instead of a deferred import: scalar_chunks imports Chunk
@@ -585,7 +563,7 @@ export class ContainerChunk extends Chunk {
     return this.chunks.length;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     if (this.data?.length > 0 || (_legacyNames.get() && _LEGACY_NAME_TYPES.has(this.chunkType))) {
       return writeBytes(fp, this._legacyBody());
     }
@@ -674,7 +652,7 @@ export function _legacyText(data: Uint8Array): string {
  * name (`Fill`, `Glow`) reads as a `Fill` chunk of length 0 followed by
  * NUL padding. The body is walked by seeking; `fp` is left where it was.
  */
-export function _tilesAsChunks(fp: IO, size: number): boolean {
+export function _tilesAsChunks(fp: ByteStream, size: number): boolean {
   const start = fp.tell();
   let pos = 0;
   try {
@@ -836,7 +814,7 @@ const _LEN_BODY = new struct.Struct(">I");
 const _LEN_VALUE: struct.PackValue[] = [0];
 
 /** Read the 8-byte chunk header: (chunk_type, len_body). */
-export function readHeader(fp: IO): [string, number] {
+export function readHeader(fp: ByteStream): [string, number] {
   const header = fp.unpack(_HEADER_CODES);
   if (header === null) {
     const got = fp.read(8).length;
@@ -869,7 +847,7 @@ function _typeName(code: number): string {
  *
  * Backpatches len_body after the body is written.
  */
-export function writeChunk(fp: IO, chunk: Chunk): number {
+export function writeChunk(fp: ByteStream, chunk: Chunk): number {
   let written = writeBytes(fp, _typeBytes(chunk.chunkType));
   const lenPos = fp.tell();
   fp.seek(4, 1); // skip 4 bytes for len_body placeholder
@@ -897,7 +875,7 @@ export function writeChunk(fp: IO, chunk: Chunk): number {
 
 /** Read child chunks until `size` bytes are consumed. */
 export function readChunks(
-  fp: IO,
+  fp: ByteStream,
   size: number,
   kwargs: { ctx?: ReadContext; deferListTypes?: ReadonlySet<string> | null } = {},
 ): Chunk[] {
@@ -937,7 +915,7 @@ export function readChunks(
 
 /** Read an AEP file: RIFX root chunk + trailing XMP packet. */
 export function readAep(
-  fp: IO,
+  fp: ByteStream,
   kwargs: { deferListTypes?: ReadonlySet<string> | null } = {},
 ): [ListChunk, string] {
   const { deferListTypes = null } = kwargs;
@@ -956,7 +934,7 @@ export function readAep(
 }
 
 /** Write an AEP file: RIFX root chunk + trailing XMP packet. */
-export function writeAep(fp: IO, rifx: ListChunk, xmp: string): number {
+export function writeAep(fp: ByteStream, rifx: ListChunk, xmp: string): number {
   const head = rifx.chunks.find((c): c is HeadChunk => c.chunkType === "head");
   if (head == null) throw new StopIteration();
   const token = _legacyNames.set(head.fileFormatVersion < LEGACY_NAME_FORMAT);

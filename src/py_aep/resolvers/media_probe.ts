@@ -13,7 +13,7 @@ import * as datetime from "../../pyrt/datetime.ts";
 import * as zlib from "../../pyrt/zlib.ts";
 import {
   AttributeError,
-  BytesIO,
+  ByteStream,
   Fraction,
   IndexError,
   NotImplementedError,
@@ -29,15 +29,15 @@ import {
   literal,
   struct,
   compositeKey,
-  type FileReader,
+  type FileStream,
   jsonGet,
   jsonLoads,
   type JsonValue,
-  openRb,
+  openFile,
   typeName, compare, ascii } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
-/** Read/seek surface shared by `BytesIO` and `_BoundedReader`. */
+/** Read/seek surface shared by `ByteStream` and `_BoundedReader`. */
 export interface ProbeStream {
   read(size?: number | null): Uint8Array;
   readline(size?: number | null): Uint8Array;
@@ -217,7 +217,7 @@ export function _imageDepth(hasAlpha: boolean, bits: number, kw: { gray?: boolea
 }
 
 export class _BoundedReader {
-  private readonly _fp: FileReader;
+  private readonly _fp: FileStream;
   private readonly _size: number;
 
   /**
@@ -227,9 +227,9 @@ export class _BoundedReader {
    * A file object allocates the size it is asked for before reading, so a
    * corrupt size field (`0xFFFFFFF0` in a 36-byte EXR) made `read(size)`
    * allocate 4 GB. Clamped, every probe's memory stays proportional to the
-   * file. A seek before the start raises `ValueError`, as `io.BytesIO` does.
+   * file. A seek before the start raises `ValueError`, as `io.ByteStream` does.
    */
-  constructor(fp: FileReader) {
+  constructor(fp: FileStream) {
     this._fp = fp;
     this._size = fp.seek(0, SEEK_END);
     fp.seek(0);
@@ -296,8 +296,8 @@ export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInf
   // otherwise surface as a raw struct.error / IndexError from deep inside
   // one of them.
   try {
-    if (data != null) return parser(new BytesIO(data));
-    const fp = openRb(file.path);
+    if (data != null) return parser(new ByteStream(data));
+    const fp = openFile(file.path);
     try {
       return parser(new _BoundedReader(fp));
     } finally {

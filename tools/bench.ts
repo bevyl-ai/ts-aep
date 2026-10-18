@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as py_aep from "../src/py_aep/index.ts";
 import { writeAep } from "../src/py_aep/binary/chunk.ts";
-import { BytesIO } from "../src/pyrt/bytesio.ts";
+import { ByteStream } from "../src/pyrt/bytesio.ts";
 import { CosParser } from "../src/py_aep/cos/cos.ts";
 import { serialize } from "../src/py_aep/cos/serializer.ts";
 import { recursiveFind } from "../src/py_aep/binary/utils.ts";
@@ -31,9 +31,9 @@ function saveToMemory(app: py_aep.Application): Uint8Array {
       for (const layer of comp.layers) layer._writeOutMovedDefaults();
     }
   }
-  const buf = new BytesIO();
+  const buf = new ByteStream();
   writeAep(buf, project._rifx, project._xmp);
-  return buf.getbuffer();
+  return buf.view();
 }
 
 /** Read every leaf property's value and every keyframe's time, value and eases. */
@@ -98,7 +98,7 @@ for (let run = 0; run < runs; run++) {
     saveToMemory(app);
     const t4 = performance.now();
     const trees = recursiveFind(app.project._rifx.chunks, null, "btdk").map((c) =>
-      new CosParser(new BytesIO(c.data), c.data.length).parse(),
+      new CosParser(new ByteStream(c.data), c.data.length).parse(),
     );
     const t5 = performance.now();
     for (const tree of trees) serialize(tree);

@@ -19,7 +19,7 @@ import {
   field,
   OverflowError,
   struct, ascii } from "../../pyrt/index.ts";
-import type { IO } from "../../pyrt/index.ts";
+import type { ByteStream } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET, readBytes, toDividendDivisor, toFixed1616, truncateUtf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -916,8 +916,8 @@ type _OptiReadKw = ChunkReadKwargs;
 export class OptiChunk extends Chunk {
   declare chunkType: string;
 
-  static read(fp: IO, size: number, kw?: _OptiReadKw): OptiChunk;
-  static read(fp: IO, size: number, kw: _OptiReadKw = {}): Chunk {
+  static read(fp: ByteStream, size: number, kw?: _OptiReadKw): OptiChunk;
+  static read(fp: ByteStream, size: number, kw: _OptiReadKw = {}): Chunk {
     const { chunkType = "" } = kw;
     if (this !== OptiChunk) {
       // Variant subclass - use its own read

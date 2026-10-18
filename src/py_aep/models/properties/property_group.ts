@@ -1,6 +1,6 @@
 import {
   AttributeError,
-  BytesIO,
+  ByteStream,
   KeyError,
   NotImplementedError,
   ValueError,
@@ -112,7 +112,7 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
   }
   const [display, blob] = entry;
   const raw = Bytes.fromHex(blob);
-  const sspc = readChunks(new BytesIO(raw), raw.length)[0];
+  const sspc = readChunks(new ByteStream(raw), raw.length)[0];
   assert(sspc instanceof ListChunk);
   return [matchName, display, sspc];
 }

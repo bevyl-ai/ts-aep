@@ -1,7 +1,7 @@
 /** pyrt shims checked against CPython 3.12 results (tests/pyrt/cpython_fixtures.ts). */
 
 import { describe, expect, test } from "bun:test";
-import { BytesIO, JSONDecodeError, PurePosixPath, PureWindowsPath, Bytes, decode, encode, float, floatRepr, hypot, int, jsonDumps, jsonGetitem, jsonLoads, patternMatch, assert, valueEquals, pyRe, boxFloat, reEscape, repr, struct, truediv, typeName, ZeroDivisionError } from "../../src/pyrt/index.ts";
+import { ByteStream, JSONDecodeError, PurePosixPath, PureWindowsPath, Bytes, decode, encode, float, floatRepr, hypot, int, jsonDumps, jsonGetitem, jsonLoads, patternMatch, assert, valueEquals, pyRe, boxFloat, reEscape, repr, struct, truediv, typeName, ZeroDivisionError } from "../../src/pyrt/index.ts";
 
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import * as datetime from "../../src/pyrt/datetime.ts";
@@ -203,8 +203,8 @@ describe("builtins", () => {
   });
 
   test("typeName", () => {
-    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
-      "number", "number", "number", "bigint", "string", "Uint8Array", "Array", "Map", "Set", "null", "boolean", "BytesIO",
+    expect([1, 1.5, boxFloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new ByteStream()].map(typeName)).toEqual([
+      "number", "number", "number", "bigint", "string", "Uint8Array", "Array", "Map", "Set", "null", "boolean", "ByteStream",
     ]);
   });
 
@@ -229,7 +229,7 @@ describe("bytes and io", () => {
   });
 
   test("readline", () => {
-    const fp = new BytesIO(encode("ab\ncd", "utf-8"));
+    const fp = new ByteStream(encode("ab\ncd", "utf-8"));
     expect(Bytes.toHex(fp.readline())).toBe("61620a");
     expect(Bytes.toHex(fp.readline(1))).toBe("63");
     expect(Bytes.toHex(fp.readline())).toBe("64");

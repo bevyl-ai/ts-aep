@@ -15,7 +15,7 @@ import {
   compositeKey,
   ValueError,
 } from "../../pyrt/index.ts";
-import type { EnumValue, IO } from "../../pyrt/index.ts";
+import type { EnumValue, ByteStream } from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -525,7 +525,7 @@ export class LdatChunk extends Chunk {
   declare itemSize: number;
 
   static read(
-    fp: IO,
+    fp: ByteStream,
     size: number,
     kw: ChunkReadKwargs = {},
   ): LdatChunk {
@@ -563,7 +563,7 @@ export class LdatChunk extends Chunk {
     return instance;
   }
 
-  write(fp: IO): number {
+  write(fp: ByteStream): number {
     if (!this.items?.length) {
       return writeBytes(fp, this.data);
     }

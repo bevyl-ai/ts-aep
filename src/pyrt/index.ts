@@ -8,7 +8,7 @@ export * as struct from "./struct.ts";
 export * as Bytes from "./bytes.ts";
 export { ascii, ascii as b, concat, equals as bytesEqual } from "./bytes.ts";
 export { decode, encode, ord } from "./codecs.ts";
-export { BytesIO, FileReader, openRb, type IO } from "./bytesio.ts";
+export { ByteStream, FileStream, openFile } from "./bytesio.ts";
 export { Fraction } from "./fraction.ts";
 export { ContextVar } from "./contextvar.ts";
 export { define, field, fields, has as attrsHas, Factory, AttrsBase, NO_INIT, attrsInit, attrsEq, initName, type Attribute, type FieldSpec } from "./attrs.ts";

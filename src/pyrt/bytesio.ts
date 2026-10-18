@@ -1,4 +1,4 @@
-// `io.BytesIO`, the `IO[bytes]` every chunk reader/writer takes, plus
+// `io.ByteStream`, the `IO[bytes]` every chunk reader/writer takes, plus
 // `io.StringIO` and a read-only `open(path, "rb")`.
 
 import { fs } from "./host.ts";
@@ -7,7 +7,7 @@ import type { PackValue, Struct, Unpacked } from "./struct.ts";
 
 const PACK_SCRATCH = new Uint8Array(64);
 
-export class BytesIO {
+export class ByteStream {
   private buf: Uint8Array;
   private len: number;
   private pos = 0;
@@ -124,12 +124,12 @@ export class BytesIO {
     return this.pos;
   }
 
-  getvalue(): Uint8Array {
+  toBytes(): Uint8Array {
     return this.buf.slice(0, this.len);
   }
 
   /** `getbuffer()` - a view without copying. */
-  getbuffer(): Uint8Array {
+  view(): Uint8Array {
     this.own();
     return this.buf.subarray(0, this.len);
   }
@@ -142,7 +142,6 @@ export class BytesIO {
   close(): void {}
 }
 
-export type IO = BytesIO;
 
 /**
  * `open(path, "rb")`: a read-only binary file over `node:fs` with the
@@ -150,7 +149,7 @@ export type IO = BytesIO;
  * tell, close). Missing files raise `FileNotFoundError` with CPython's text;
  * other OS failures raise `OSError`.
  */
-export class FileReader {
+export class FileStream {
   private readonly fd: number;
   private pos = 0;
   private readonly _size: number;
@@ -235,6 +234,6 @@ export class FileReader {
 }
 
 /** `open(path, "rb")` */
-export function openRb(path: string | { toString(): string }): FileReader {
-  return new FileReader(String(path));
+export function openFile(path: string | { toString(): string }): FileStream {
+  return new FileStream(String(path));
 }

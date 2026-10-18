@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, BytesIO, at, contains, getMember, getOrThrow, len, Path, truthy, valueEquals, assert, pySlice, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError, ByteStream, at, contains, getMember, getOrThrow, len, Path, truthy, valueEquals, assert, pySlice, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
@@ -38,9 +38,9 @@ function _fresh(name: string): Application {
 function _roundtrip(app: Application, tmpPath: Path): Application {
   const out = tmpPath.div("out.aep");
   // `with out.open("wb") as f:` - serialize to memory, then write the file in one go.
-  const f = new BytesIO();
+  const f = new ByteStream();
   writeAep(f, app.project._rifx, app.project._xmp);
-  out.writeBytes(f.getvalue());
+  out.writeBytes(f.toBytes());
   return parseAep(out);
 }
 

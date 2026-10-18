@@ -10,7 +10,7 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { BytesIO, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { ByteStream, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
 
 import { asInstance } from "../helpers.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
@@ -146,7 +146,7 @@ test("test_read_psd_layers_huge_canvas_is_rejected", () => {
 test("test_cos_lexer_stops_at_end_of_data", () => {
   // `read(1)` returns b"" at the end of the data; the lexer treated it as
   // a character and looped forever on a truncated name.
-  const parser = new CosParser(new BytesIO(b("<</Order 8 0 R/")));
+  const parser = new CosParser(new ByteStream(b("<</Order 8 0 R/")));
   const [result] = _run(() => [parser.lex(), parser.parseValue()]);
   expect(Array.isArray(result) || result instanceof SyntaxError).toBe(true);
 });
@@ -156,7 +156,7 @@ test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (maxP
   // the import's colour-profile lookup now does for every .ai/.pdf.
   const body = concat(Bytes.repeat(b("x"), 3_000_000), b("endstrea"), Bytes.repeat(b("y"), 1000));
   const data = concat(b("<</Length 1>>stream\n"), body, b("endstream\nendobj 7"));
-  const parser = new CosParser(new BytesIO(data), maxPos);
+  const parser = new CosParser(new ByteStream(data), maxPos);
   const [result] = _run(() => [parser.lex(), parser.parseValue()], 5.0);
   expect(result instanceof Error).toBe(false);
   assert(Array.isArray(result));
