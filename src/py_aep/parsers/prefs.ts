@@ -143,7 +143,9 @@ export function decode_pref_string(raw: string): string {
 export function decode_pref_number(raw: string): number {
   if (raw.includes('"')) return parse_number_text(decode_pref_string(raw));
   const data = parse_hex_value(raw);
-  // TODO(port): pyrt int_from_bytes returns a JS number, so unquoted hex values wider than 2^53 (more than 6 significant bytes) lose precision; Python's int is arbitrary-precision.
+  // TODO(port): Python's int is exact; get_pref_as_number's public return type is number, so an
+  // unquoted hex value of 7+ significant bytes (or quoted integer text) beyond 2^53 rounds to the
+  // nearest double. decode_pref_bool stays exact: no nonzero integer rounds to 0.
   return bytes_.int_from_bytes(data, "big");
 }
 

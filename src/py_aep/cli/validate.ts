@@ -1867,11 +1867,15 @@ export const _CATEGORY_CHOICES: readonly string[] = [
 ];
 
 export const _USAGE =
-  "usage: validate.py [-h] [-v] [-c {project,composition,layers,properties,markers,folders,footage,keyframes,textdocument,renderqueue,viewer}] [--coverage] aep_file json_file";
+  "usage: validate.py [-h] [-v]\n" +
+  `                   [-c {${_CATEGORY_CHOICES.join(",")}}]\n` +
+  "                   [--coverage]\n" +
+  "                   aep_file json_file";
 
-// TODO(port): no argparse in TS. _HELP is a hand-written copy of argparse's help layout
-// (differs from argparse only if the terminal COLUMNS wraps it), and combined short flags
-// (`-vc layers`) are rejected as unrecognized; long-option prefixes (`--verb`) are handled.
+// TODO(port): no argparse shim. _USAGE/_HELP are argparse's layout for its default 80-column
+// (non-tty) width (argparse wraps to COLUMNS or the terminal width) and for prog "validate.py"
+// (argparse uses basename(sys.argv[0]), e.g. "aep-validate"); combined short flags (`-vc layers`)
+// are rejected as unrecognized; long-option prefixes (`--verb`) are handled.
 export const _HELP = `${_USAGE}
 
 Validate parsed AEP values against expected JSON from ExtendScript export.
@@ -1885,7 +1889,8 @@ options:
   -v, --verbose         Print detailed progress
   -c {${_CATEGORY_CHOICES.join(",")}}, --category {${_CATEGORY_CHOICES.join(",")}}
                         Filter differences by category
-  --coverage            Print field coverage report (compared vs not-compared fields)`;
+  --coverage            Print field coverage report (compared vs not-compared
+                        fields)`;
 
 /** `parser.error(message)`: usage and message to stderr, then exit status 2. */
 export function _parser_error(message: string): never {
@@ -1917,7 +1922,7 @@ export function _parse_args(argv: string[]): {
         const hits = long_options.filter((o) => o.startsWith(name));
         if (hits.length === 1) a = hits[0] + (eq === -1 ? "" : a.slice(eq));
         else if (hits.length > 1) {
-          _parser_error(`ambiguous option: ${name} could match ${hits.join(", ")}`);
+          _parser_error(`ambiguous option: ${a} could match ${hits.join(", ")}`);
         }
       }
     }
@@ -1940,12 +1945,17 @@ export function _parse_args(argv: string[]): {
       } else if (a.startsWith("-c") && !a.startsWith("--") && a.length > 2) {
         value = a.slice(2);
       } else {
-        if (i + 1 >= argv.length) _parser_error("argument -c/--category: expected one argument");
-        value = argv[++i];
+        // argparse never takes an option-like string as the value.
+        const next = argv[i + 1];
+        if (next === undefined || (next.startsWith("-") && next !== "-" && !/^-\d+$|^-\d*\.\d+$/.test(next))) {
+          _parser_error("argument -c/--category: expected one argument");
+        }
+        value = next;
+        i += 1;
       }
       if (!_CATEGORY_CHOICES.includes(value)) {
         _parser_error(
-          `argument -c/--category: invalid choice: '${value}' (choose from ${_CATEGORY_CHOICES.map((c) => `'${c}'`).join(", ")})`,
+          `argument -c/--category: invalid choice: ${repr(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
         );
       }
       category = value;

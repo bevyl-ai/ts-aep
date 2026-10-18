@@ -32,6 +32,12 @@ export interface HostDirent {
   isDirectory(): boolean;
 }
 
+/** An open directory (`fs.opendirSync`): entries in the OS's readdir order, then null. */
+export interface HostDir {
+  readSync(): HostDirent | null;
+  closeSync(): void;
+}
+
 /** The sync `node:fs` subset py_aep uses. */
 /** Text encodings the port writes with (a host-neutral subset of Node's `BufferEncoding`). */
 export type HostEncoding = "utf8" | "utf-8" | "latin1" | "ascii";
@@ -46,6 +52,7 @@ export interface HostFs {
   mkdirSync(path: string, opts?: { recursive?: boolean }): void;
   readdirSync(path: string): string[];
   readdirSync(path: string, opts: { withFileTypes: true }): HostDirent[];
+  opendirSync(path: string): HostDir;
   unlinkSync(path: string): void;
   renameSync(from: string, to: string): void;
   mkdtempSync(prefix: string): string;
@@ -297,6 +304,12 @@ export class MemoryFs implements HostFs {
     });
   }
 
+  opendirSync(p: string): HostDir {
+    const entries = this.readdirSync(p, { withFileTypes: true });
+    let i = 0;
+    return { readSync: () => entries[i++] ?? null, closeSync: () => {} };
+  }
+
   unlinkSync(p: string): void {
     const k = this.key(p);
     if (!this.files.delete(k)) throw _fs_error(this._is_dir(k) ? "EISDIR" : "ENOENT", "unlink", k);
@@ -420,6 +433,21 @@ export const fs: HostFs = new Proxy({} as HostFs, {
     return typeof v === "function" ? v.bind(target) : v;
   },
 });
+
+/**
+ * `os.scandir(path)`: the entries in the OS's readdir order, which Python's
+ * listings keep (`readdirSync` sorts them on Node; a directory handle does not).
+ */
+export function scandir(p: string): HostDirent[] {
+  const dir = fs.opendirSync(p);
+  const out: HostDirent[] = [];
+  try {
+    for (let ent = dir.readSync(); ent !== null; ent = dir.readSync()) out.push(ent);
+  } finally {
+    dir.closeSync();
+  }
+  return out;
+}
 
 /**
  * Move bytes in and out of the in-memory file system (the backend in

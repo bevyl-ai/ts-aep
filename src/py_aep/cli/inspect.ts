@@ -237,12 +237,11 @@ export function _dump_chunk(path: Path, chunk_path: string): number {
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 
-// TODO(port): argparse has no pyrt shim; this hand-written subset covers only what main()
-// declares (one positional, store_true flags, typed value options, exit status 2 on error).
-// Gaps: -h/--help and usage text layout/line wrapping/column alignment differ from argparse's
-// HelpFormatter, "invalid <type> value" errors say plain "invalid value", and abbreviated long
-// options (--ver for --verbose) and combined short flags are not accepted. Parsed values and exit
-// codes are identical; only help/usage/error text on stdout/stderr differs.
+// TODO(port): no argparse shim; this subset covers what main() declares (one positional,
+// store_true flags, typed value options, long-option prefixes, exit status 2 on error). Help and
+// usage follow argparse's layout for its default 80-column (non-tty) width only (argparse wraps to
+// COLUMNS or the terminal width), `--help=x` is "unrecognized" rather than "ignored explicit
+// argument", and an unrecognized option errors before missing positionals are reported.
 export const NEGATIVE_NUMBER = /^-\d+$|^-\d*\.\d+$/;
 
 /** A parsed-argument value: what an argument converter returns or defaults to
@@ -309,24 +308,64 @@ export class ArgumentParser<T extends Namespace = Namespace> {
     process.exit(2);
   }
 
+  /** argparse's usage at its default 78-column width: wrapped options, then positionals. */
   format_usage(): string {
-    const options = this.specs.filter((s) => !s.positional);
-    const positionals = this.specs.filter((s) => s.positional);
-    const parts = [
-      ...options.map((s) => (s.store_true ? `[${s.flag}]` : `[${s.flag} ${s.metavar ?? s.dest.toUpperCase()}]`)),
-      ...positionals.map((s) => s.dest),
+    const width = 78;
+    const prefix = "usage: ";
+    const opt_parts = [
+      "[-h]",
+      ...this.specs
+        .filter((s) => !s.positional)
+        .map((s) => (s.store_true ? `[${s.flag}]` : `[${s.flag} ${s.metavar ?? s.dest.toUpperCase()}]`)),
     ];
-    return `usage: ${this.prog} [-h] ${parts.join(" ")}`;
+    const pos_parts = this.specs.filter((s) => s.positional).map((s) => s.dest);
+    const one_line = [this.prog, ...opt_parts, ...pos_parts].join(" ");
+    if (prefix.length + one_line.length <= width) return prefix + one_line;
+    // HelpFormatter._format_usage's get_lines, with the parts indented under the prog.
+    const indent = " ".repeat(prefix.length + this.prog.length + 1);
+    const get_lines = (parts: string[], first_len: number | null): string[] => {
+      const lines: string[] = [];
+      let line: string[] = [];
+      let line_len = first_len ?? indent.length - 1;
+      for (const part of parts) {
+        if (line_len + 1 + part.length > width && line.length) {
+          lines.push(indent + line.join(" "));
+          line = [];
+          line_len = indent.length - 1;
+        }
+        line.push(part);
+        line_len += part.length + 1;
+      }
+      if (line.length) lines.push(indent + line.join(" "));
+      if (first_len !== null) lines[0] = lines[0].slice(indent.length);
+      return lines;
+    };
+    const lines = [...get_lines([this.prog, ...opt_parts], prefix.length - 1), ...get_lines(pos_parts, null)];
+    return prefix + lines.join("\n");
   }
 
+  /** argparse's help: each invocation padded to the help column (help texts fit the width). */
   format_help(): string {
-    const options = this.specs.filter((s) => !s.positional);
-    const positionals = this.specs.filter((s) => s.positional);
-    const lines = [this.format_usage(), "", this.description, "", "positional arguments:"];
-    for (const s of positionals) lines.push(`  ${s.dest}  ${s.help}`);
-    lines.push("", "options:", "  -h, --help  show this help message and exit");
-    for (const s of options) lines.push(`  ${s.flag}  ${s.help}`);
-    return lines.join("\n") + this.epilog.replaceAll("%(prog)s", this.prog);
+    const invocation = (s: ArgSpec): string =>
+      s.positional ? s.dest : s.store_true ? (s.flag ?? "") : `${s.flag} ${s.metavar ?? s.dest.toUpperCase()}`;
+    const rows: [string, string][] = [["-h, --help", "show this help message and exit"]];
+    for (const s of this.specs) if (!s.positional) rows.push([invocation(s), s.help]);
+    const positionals: [string, string][] = this.specs.filter((s) => s.positional).map((s) => [invocation(s), s.help]);
+    const help_position = Math.min(Math.max(...[...rows, ...positionals].map(([inv]) => inv.length + 2)) + 2, 24);
+    const row = ([inv, help]: [string, string]): string =>
+      inv.length + 2 <= help_position - 2 ? `  ${inv.padEnd(help_position - 4)}  ${help}` : `  ${inv}\n${" ".repeat(help_position)}${help}`;
+    const lines = [this.format_usage(), "", this.description, "", "positional arguments:", ...positionals.map(row)];
+    lines.push("", "options:", ...rows.map(row));
+    return lines.join("\n") + "\n" + this.epilog.replaceAll("%(prog)s", this.prog);
+  }
+
+  /** argparse's allow_abbrev: an unambiguous prefix of a long option names it. */
+  resolve(arg: string, name: string): string {
+    const flags = ["--help", ...this.specs.filter((s) => !s.positional).map((s) => s.flag ?? "")];
+    if (!name.startsWith("--") || flags.includes(name)) return name;
+    const hits = flags.filter((f) => f.startsWith(name));
+    if (hits.length > 1) this.error(`ambiguous option: ${arg} could match ${hits.join(", ")}`);
+    return hits.length === 1 ? hits[0] : name;
   }
 
   parse_args(argv?: string[]): T;
@@ -336,12 +375,12 @@ export class ArgumentParser<T extends Namespace = Namespace> {
     const rest: string[] = [];
     for (let i = 0; i < argv.length; i++) {
       const a = argv[i];
-      if (a === "-h" || a === "--help") {
+      const eq = a.indexOf("=");
+      const name = this.resolve(a, a.startsWith("--") && eq >= 0 ? a.slice(0, eq) : a);
+      if (name === "-h" || (name === "--help" && eq < 0)) {
         print(this.format_help());
         process.exit(0);
       }
-      const eq = a.indexOf("=");
-      const name = a.startsWith("--") && eq >= 0 ? a.slice(0, eq) : a;
       const spec = this.specs.find((s) => !s.positional && s.flag === name);
       if (spec == null) {
         if (a.startsWith("-") && a !== "-" && !NEGATIVE_NUMBER.test(a)) this.error(`unrecognized arguments: ${a}`);
@@ -349,12 +388,12 @@ export class ArgumentParser<T extends Namespace = Namespace> {
         continue;
       }
       if (spec.store_true) {
-        if (name !== a) this.error(`argument ${spec.flag}: ignored explicit argument ${repr(a.slice(eq + 1))}`);
+        if (eq >= 0) this.error(`argument ${spec.flag}: ignored explicit argument ${repr(a.slice(eq + 1))}`);
         out[spec.dest] = true;
         continue;
       }
       let value: string;
-      if (name !== a) {
+      if (eq >= 0 && a.startsWith("--")) {
         value = a.slice(eq + 1);
       } else if (i + 1 < argv.length && (!argv[i + 1].startsWith("-") || NEGATIVE_NUMBER.test(argv[i + 1]))) {
         value = argv[++i];
@@ -368,7 +407,7 @@ export class ArgumentParser<T extends Namespace = Namespace> {
           out[spec.dest] = spec.type_(value);
         } catch (e) {
           if (!(e instanceof ValueError)) throw e;
-          this.error(`argument ${spec.flag}: invalid value: ${repr(value)}`);
+          this.error(`argument ${spec.flag}: invalid ${spec.type_.name} value: ${repr(value)}`);
         }
       }
     }
@@ -425,13 +464,13 @@ export function main(): number {
   parser.add_argument("file", { type: (s: string) => new Path(s), help: "AEP file to inspect" });
   parser.add_argument("--tree", { action: "store_true", help: "Print full chunk tree" });
   parser.add_argument("--depth", {
-    type: (s: string) => int(s),
+    type: int,
     default: -1,
     metavar: "N",
     help: "Max tree depth (-1 for unlimited, use with --tree)",
   });
   parser.add_argument("--item", {
-    type: (s: string) => int(s),
+    type: int,
     default: null,
     metavar: "N",
     help: "Inspect Item[N] (0-based) in LIST:Fold",

@@ -526,8 +526,8 @@ export function format_json(node: Node, output: TextIO, max_depth: number | null
 
 export const PROG = "aep-visualize";
 
-export const USAGE = `usage: aep-visualize [-h] [--format {text,dot,mermaid,json}]
-                     [--depth DEPTH] [--no-properties] [--output OUTPUT]
+export const USAGE = `usage: aep-visualize [-h] [--format {text,dot,mermaid,json}] [--depth DEPTH]
+                     [--no-properties] [--output OUTPUT]
                      aep_file
 `;
 
@@ -554,6 +554,7 @@ Examples:
   aep-visualize project.aep --format dot > project.dot
   aep-visualize project.aep --format mermaid
   aep-visualize project.aep --depth 2 --no-properties
+        
 `;
 
 export type Args = {
@@ -564,11 +565,16 @@ export type Args = {
   output: string | null;
 };
 
+/** The long options, in argparse's registration order (which orders an ambiguity error's matches). */
+export const LONG_OPTIONS = ["--help", "--format", "--depth", "--no-properties", "--output"];
+
 /**
- * TODO(port): no argparse shim: abbreviated long options (`--for` for `--format`) are rejected and error/usage text is hand-copied, so only unusual argv (abbreviations, ambiguous-prefix errors) differs. Minimal local parser for exactly the
- * options this CLI declares (long and short forms, `--opt=value`, `-fVALUE`,
- * `--`). argparse's prefix matching and exact error/help layout are not
- * reproduced; the help text is hand-copied from argparse's output.
+ * argparse's `parse_args` for exactly the options this CLI declares: long and
+ * short forms, unambiguous long-option prefixes, `--opt=value`, `-fVALUE`, `--`.
+ *
+ * TODO(port): no argparse shim. HELP/USAGE are argparse's layout for its default 80-column
+ * (non-tty) width (argparse wraps to COLUMNS or the terminal width), and an unrecognized option
+ * or extra positional errors at once where argparse first reports a missing aep_file.
  */
 export function parse_args(argv: string[]): Args {
   const fail = (msg: string): never => {
@@ -583,7 +589,7 @@ export function parse_args(argv: string[]): Args {
   const apply = (long: string, value: string): void => {
     if (long === "--format") {
       if (!choices.includes(value)) {
-        fail(`argument --format/-f: invalid choice: ${repr(value)} (choose from ${choices.map((c) => repr(c)).join(", ")})`);
+        fail(`argument --format/-f: invalid choice: ${repr(value)} (choose from ${choices.join(", ")})`);
       }
       args.format = value;
     } else if (long === "--depth") {
@@ -601,8 +607,13 @@ export function parse_args(argv: string[]): Args {
   let only_positional = false;
   const take_value = (label: string, inline: string | null): string => {
     if (inline != null) return inline;
-    if (i < argv.length) return argv[i++];
-    return fail(`argument ${label}: expected one argument`);
+    // argparse never takes an option-like string as the value.
+    const next = argv[i];
+    if (next === undefined || (next.startsWith("-") && next !== "-" && !/^-\d+$|^-\d*\.\d+$/.test(next))) {
+      return fail(`argument ${label}: expected one argument`);
+    }
+    i += 1;
+    return next;
   };
 
   while (i < argv.length) {
@@ -611,8 +622,11 @@ export function parse_args(argv: string[]): Args {
       only_positional = true;
     } else if (!only_positional && a.startsWith("--")) {
       const eq = a.indexOf("=");
-      const flag = eq >= 0 ? a.slice(0, eq) : a;
+      const prefix = eq >= 0 ? a.slice(0, eq) : a;
       const inline = eq >= 0 ? a.slice(eq + 1) : null;
+      const hits = LONG_OPTIONS.includes(prefix) ? [prefix] : LONG_OPTIONS.filter((o) => o.startsWith(prefix));
+      if (hits.length > 1) fail(`ambiguous option: ${a} could match ${hits.join(", ")}`);
+      const flag = hits.length === 1 ? hits[0] : prefix;
       if (flag === "--help") {
         process.stdout.write(HELP);
         process.exit(0);
