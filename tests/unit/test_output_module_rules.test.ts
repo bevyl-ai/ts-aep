@@ -107,7 +107,7 @@ test("test_no_empty_allowed_sets", () => {
 /** Check the channels<->depth pairing closure for one rule branch. */
 function _depthClosureOk(channels: ReadonlySet<RuleValue>, depths: ReadonlySet<RuleValue>): [boolean, string] {
   const depthRepr = (ds: Iterable<RuleValue>) =>
-    `[${[...sorted(ds)].map((d) => `<OutputColorDepth.${OutputColorDepth.name_of(OutputColorDepth.of(d))}: ${d}>`).join(", ")}]`;
+    `[${[...sorted(ds)].map((d) => `<OutputColorDepth.${OutputColorDepth.nameOf(OutputColorDepth.of(d))}: ${d}>`).join(", ")}]`;
   if (channels.has(OutputChannels.RGBA)) {
     for (const depth of depths) {
       const base = int(depth);
@@ -128,11 +128,11 @@ function _depthClosureOk(channels: ReadonlySet<RuleValue>, depths: ReadonlySet<R
 }
 
 // ids=lambda f: f.name
-test.each(OutputFormat.members().map((fmt): [string, OutputFormat] => [OutputFormat.name_of(fmt), fmt]))(
+test.each(OutputFormat.members().map((fmt): [string, OutputFormat] => [OutputFormat.nameOf(fmt), fmt]))(
   "test_depth_pairing_closed_under_channel_sync[%s]",
   (_id: string, fmt: OutputFormat) => {
     /**
-     * `_sync_after_channels` can never write an out-of-table depth.
+     * `_syncAfterChannels` can never write an out-of-table depth.
      *
      * For every rule branch (format level and each conditional entry), any
      * depth reachable through the RGBA pairing maps (`_DEPTH_PLUS/_MINUS`)
@@ -156,7 +156,7 @@ test.each(OutputFormat.members().map((fmt): [string, OutputFormat] => [OutputFor
         channels = new Set([...channels].filter((c) => new Set(condList).has(c)));
       }
       const [ok, why] = _depthClosureOk(channels, depths);
-      pyAssert(ok, `${OutputFormat.name_of(fmt)}: ${why}`);
+      pyAssert(ok, `${OutputFormat.nameOf(fmt)}: ${why}`);
     }
   },
 );

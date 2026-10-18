@@ -63,35 +63,35 @@ describe("TestIccProfileId", () => {
 describe("TestLibraryErrors", () => {
   test("test_missing_profile_raises_with_context", () => {
     const lib = new IccProfileLibrary([]); // nothing to scan
-    const exc = raises(ColorProfileNotFoundError, () => lib.bytes_for("ProPhoto RGB"));
+    const exc = raises(ColorProfileNotFoundError, () => lib.bytesFor("ProPhoto RGB"));
     expect(exc.message.includes("ProPhoto RGB")).toBe(true);
-    expect(exc.profile_name).toBe("ProPhoto RGB");
+    expect(exc.profileName).toBe("ProPhoto RGB");
   });
 
   test("test_hash_for_uses_catalogue_without_disk", () => {
     // Even with no directories, a catalogued name resolves via the mapping.
     const lib = new IccProfileLibrary([]);
     expect(
-      pyEq(lib.hash_for("Apple RGB"), bytes_.fromhex("47ae2b5f4c143df9d07b5dc78036b5a8")),
+      pyEq(lib.hashFor("Apple RGB"), bytes_.fromhex("47ae2b5f4c143df9d07b5dc78036b5a8")),
     ).toBe(true);
   });
 
   test("test_hash_for_unknown_raises", () => {
     const lib = new IccProfileLibrary([]);
     raises(ColorProfileNotFoundError, () => {
-      lib.hash_for("Definitely Not Catalogued XYZ");
+      lib.hashFor("Definitely Not Catalogued XYZ");
     });
   });
 });
 
 // Disk discovery depends on an Adobe installation; skip cleanly when absent.
-const _DISCOVERABLE = defaultIccDirectories().some((d) => d.is_dir());
+const _DISCOVERABLE = defaultIccDirectories().some((d) => d.isDir());
 
 // skipif reason: "Adobe Color dirs not installed"
 describe.skipIf(!_DISCOVERABLE)("TestDiscovery", () => {
   test("test_discovered_bytes_hash_to_catalogued_id", () => {
     const lib = new IccProfileLibrary();
-    const data = lib.bytes_for("sRGB IEC61966-2.1");
+    const data = lib.bytesFor("sRGB IEC61966-2.1");
     expect(pyEq(bytes_.slice(data, 36, 40), b("acsp"))).toBe(true);
     expect(pyEq(iccProfileId(data), profileIdForName("sRGB IEC61966-2.1"))).toBe(true);
   });

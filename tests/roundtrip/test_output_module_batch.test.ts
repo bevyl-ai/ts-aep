@@ -104,8 +104,8 @@ test("test_rollback_restores_byte_identical_save", () => {
   });
   project2.save(tmpPath.div("rolled_back.aep"));
 
-  const untouched = tmpPath.div("untouched.aep").read_bytes();
-  const rolledBack = tmpPath.div("rolled_back.aep").read_bytes();
+  const untouched = tmpPath.div("untouched.aep").readBytes();
+  const rolledBack = tmpPath.div("rolled_back.aep").readBytes();
   expect(pyEq(rolledBack, untouched)).toBe(true);
 });
 
@@ -187,8 +187,8 @@ test("test_nested_batches_validate_at_outermost", () => {
 test("test_batch_on_removed_module_raises_clearly", () => {
   const project = parseProjectFresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
-  const lomChunks = om._parent_rqi._lom.chunks;
-  const [start, end] = om._block_span(lomChunks);
+  const lomChunks = om._parentRqi._lom.chunks;
+  const [start, end] = om._blockSpan(lomChunks);
   lomChunks.splice(start, end - start); // what remove() does to the chunk block
   raises(
     RuntimeError,

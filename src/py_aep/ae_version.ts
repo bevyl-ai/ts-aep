@@ -62,18 +62,18 @@ export function aeWrites(part: string, major: number): boolean {
 /**
  * Navigate from a model object to the AE version major number.
  *
- * Supports Layer (via `containing_comp`), Item (via `_project`),
+ * Supports Layer (via `containingComp`), Item (via `_project`),
  * ViewOptions (via `_item`), Property / PropertyGroup (via
- * `_containing_layer`), and Project (via `_head`).
+ * `_containingLayer`), and Project (via `_head`).
  */
 export function getAeVersionMajor(obj: any): number {
   // Layer -> CompItem -> Project -> HeadChunk
-  if (hasattr(obj, "_containing_comp")) {
-    return int(obj._containing_comp._project._head.ae_version_major);
+  if (hasattr(obj, "_containingComp")) {
+    return int(obj._containingComp._project._head.ae_version_major);
   }
   // Property / PropertyGroup -> owning Layer (parent_property chain)
-  if (hasattr(obj, "_containing_layer")) {
-    return getAeVersionMajor(obj._containing_layer);
+  if (hasattr(obj, "_containingLayer")) {
+    return getAeVersionMajor(obj._containingLayer);
   }
   // Item / RenderQueueItem -> Project -> HeadChunk
   if (hasattr(obj, "_project")) {

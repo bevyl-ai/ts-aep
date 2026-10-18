@@ -72,12 +72,12 @@ export function _parseController(cctlChunk: ListChunk): EssentialGraphicsControl
   }
 
   return new EssentialGraphicsController({
-    _name_utf8: nameUtf8,
+    _nameUtf8: nameUtf8,
     _ctyp: ctyp,
     uuid,
-    source_property_path: sourcePropertyPath,
-    source_comp_id: sourceCompId,
-    source_layer_id: sourceLayerId,
+    sourcePropertyPath: sourcePropertyPath,
+    sourceCompId: sourceCompId,
+    sourceLayerId: sourceLayerId,
   });
 }
 

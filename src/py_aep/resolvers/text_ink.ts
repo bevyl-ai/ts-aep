@@ -157,9 +157,9 @@ export function _lineInk(
   let i = 0;
   while (i < text.length) {
     const style = styles[offset + i];
-    const key = style.stretch_key();
+    const key = style.stretchKey();
     let j = i;
-    while (j < text.length && styles[offset + j].stretch_key() === key) {
+    while (j < text.length && styles[offset + j].stretchKey() === key) {
       j += 1;
     }
     const stretch = text.slice(i, j);
@@ -171,7 +171,7 @@ export function _lineInk(
     }
     const [font, isCff, glyphBounds] = _fontOutlines(style.font);
     const inkScale = scale * (isCff ? _CFF_INK_SCALE : 1.0);
-    for (const [info, pos] of zip<[{ codepoint: number; cluster: number }[], { x_advance: number; y_advance: number; x_offset: number; y_offset: number }[]]>(buf.glyph_infos, buf.glyph_positions)) {
+    for (const [info, pos] of zip<[{ codepoint: number; cluster: number }[], { xAdvance: number; yAdvance: number; xOffset: number; yOffset: number }[]]>(buf.glyphInfos, buf.glyphPositions)) {
       // fontkit addresses glyphs by id, which HarfBuzz reports as the codepoint.
       const name = info.codepoint;
       if (!glyphBounds.has(name)) {
@@ -180,8 +180,8 @@ export function _lineInk(
       const bounds = glyphBounds.get(name);
       if (bounds == null) continue;
       const [xMin, yMin, xMax, yMax] = bounds;
-      const gx = pens[info.cluster] + pos.x_offset * scale;
-      const gy = baseline - pos.y_offset * scale;
+      const gx = pens[info.cluster] + pos.xOffset * scale;
+      const gy = baseline - pos.yOffset * scale;
       const grow = strokes[offset + i + info.cluster];
       box.add(
         gx + xMin * inkScale - grow,
@@ -209,7 +209,7 @@ export function _justifiedOrigin(
   if (justification === ParagraphJustification.RIGHT_JUSTIFY) {
     return -width;
   }
-  throw _refuse(`${ParagraphJustification.name_of(justification)} paragraphs`);
+  throw _refuse(`${ParagraphJustification.nameOf(justification)} paragraphs`);
 }
 
 /**

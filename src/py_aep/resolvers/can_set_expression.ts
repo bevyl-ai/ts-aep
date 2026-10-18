@@ -79,7 +79,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
       return false;
     }
     if (prop.separationDimension === 2) {
-      return prop._containing_layer.is3d;
+      return prop._containingLayer.is3d;
     }
     return true;
   }
@@ -93,7 +93,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
   if (
     parent != null &&
     parent.matchName === "ADBE Text Animator Properties" &&
-    !prop._is_live()
+    !prop._isLive()
   ) {
     return false;
   }
@@ -105,7 +105,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
 
   if (mn === "ADBE Time Remapping") {
     // Only AV layers have one.
-    const layer = prop._containing_layer;
+    const layer = prop._containingLayer;
     if (!(layer instanceof _avLayer().AVLayer)) {
       // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
       throw new AttributeError(`'${layer.constructor.name}' has no property 'timeRemapEnabled'`);
@@ -121,7 +121,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     return false;
   }
 
-  if (prop._is_in_effect()) {
+  if (prop._isInEffect()) {
     // What the plugin hides: AE's stored flag, then the parameter's
     // PF_PUI_INVISIBLE flag, all a synthesized parameter has.
     const tdsb = prop._tdsb;
@@ -129,7 +129,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     if (storedHidden && !_HIDDEN_BUT_EXPRESSIONABLE.has(mn)) {
       return false;
     }
-    if (prop._expressions_disabled) {
+    if (prop._expressionsDisabled) {
       return false;
     }
     return !_NON_EXPRESSION_PARAM_TYPES.has(prop.propertyControlType);
@@ -139,7 +139,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     return false;
   }
 
-  const layer = prop._containing_layer;
+  const layer = prop._containingLayer;
   const layerType = layer._ldta.layer_type;
 
   // Parametric mesh layers have their own expression rules.

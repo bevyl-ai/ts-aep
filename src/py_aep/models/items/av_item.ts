@@ -156,8 +156,8 @@ export function _syncProxyActive(obj: AVItem): void {
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
   pyAssert(obj._idta != null);
-  obj._idta._proxy_active = int(obj._proxy_source != null);
-  obj._sync_modified_time();
+  obj._idta._proxy_active = int(obj._proxySource != null);
+  obj._syncModifiedTime();
 }
 
 /**
@@ -200,9 +200,9 @@ export class AVItem extends Item {
   /** The height of the item in pixels. Read / Write. */
   /** The pixel aspect ratio of the item (1.0 is square). Read / Write. */
   /** The width of the item in pixels. Read / Write. */
-  declare _pin_chunks: ListChunk[];
-  declare _proxy_source: FileSource | SolidSource | PlaceholderSource | null;
-  declare _used_in: _IdHashSet<CompItem>;
+  declare _pinChunks: ListChunk[];
+  declare _proxySource: FileSource | SolidSource | PlaceholderSource | null;
+  declare _usedIn: _IdHashSet<CompItem>;
   declare _viewer: Viewer | null;
 
   /**
@@ -215,32 +215,32 @@ export class AVItem extends Item {
 
   constructor(kw: {
     _idta: IdtaChunk;
-    _name_utf8: Utf8Chunk;
+    _nameUtf8: Utf8Chunk;
     _cmta: CmtaChunk | null;
-    _item_list: ListChunk;
+    _itemList: ListChunk;
     _gide: ListChunk | null;
-    _pin_chunks: ListChunk[];
+    _pinChunks: ListChunk[];
     project: Project;
-    parent_folder: FolderItem;
-    type_name: string;
-    proxy_source: FileSource | SolidSource | PlaceholderSource | null;
+    parentFolder: FolderItem;
+    typeName: string;
+    proxySource: FileSource | SolidSource | PlaceholderSource | null;
   }) {
     super({
       _idta: kw._idta,
-      _name_utf8: kw._name_utf8,
+      _nameUtf8: kw._nameUtf8,
       _cmta: kw._cmta,
-      _item_list: kw._item_list,
+      _itemList: kw._itemList,
       _gide: kw._gide,
       project: kw.project,
-      parent_folder: kw.parent_folder,
-      type_name: kw.type_name,
+      parentFolder: kw.parentFolder,
+      typeName: kw.typeName,
     });
-    this._pin_chunks = kw._pin_chunks;
-    this._proxy_source = kw.proxy_source;
-    if (kw.proxy_source != null) {
-      kw.proxy_source._project = kw.project;
+    this._pinChunks = kw._pinChunks;
+    this._proxySource = kw.proxySource;
+    if (kw.proxySource != null) {
+      kw.proxySource._project = kw.project;
     }
-    this._used_in = new _IdHashSet<CompItem>();
+    this._usedIn = new _IdHashSet<CompItem>();
     this._viewer = null;
   }
 
@@ -249,19 +249,19 @@ export class AVItem extends Item {
     const itemId = this.id;
     for (const comp of this.usedIn) {
       for (const layer of [...comp.avLayers]) {
-        if (layer._source_id === itemId) {
+        if (layer._sourceId === itemId) {
           layer.remove();
         }
       }
     }
     if (this._viewer != null) {
-      pyAssert(this._parent_folder != null);
+      pyAssert(this._parentFolder != null);
       // NOTE(port): Python `list.remove` uses `==`; `Viewer` defines no `__eq__` (viewer.py), so identity matches.
-      const idx = this._parent_folder._viewers.indexOf(this._viewer);
+      const idx = this._parentFolder._viewers.indexOf(this._viewer);
       if (idx < 0) {
         throw new ValueError("list.remove(x): x not in list");
       }
-      this._parent_folder._viewers.splice(idx, 1);
+      this._parentFolder._viewers.splice(idx, 1);
       this._viewer = null;
     }
     super.remove();
@@ -275,7 +275,7 @@ export class AVItem extends Item {
    * `set_proxy_with_solid()`, or `set_proxy_with_placeholder()`.
    */
   get proxySource(): FileSource | SolidSource | PlaceholderSource | null {
-    return this._proxy_source;
+    return this._proxySource;
   }
 
   /**
@@ -283,7 +283,7 @@ export class AVItem extends Item {
    *
    * In a {@link CompItem}, the value is linked to the composition.
    * In a {@link FootageItem | FootageItem},
-   * the value is linked to the `main_source` or `proxy_source` object.
+   * the value is linked to the `mainSource` or `proxySource` object.
    */
   get hasAudio(): boolean {
     return false;
@@ -309,7 +309,7 @@ export class AVItem extends Item {
    *
    * Always `false` for a {@link CompItem}; a
    * {@link FootageItem | FootageItem} reports the
-   * state of its `main_source` (see the `FootageItem` override).
+   * state of its `mainSource` (see the `FootageItem` override).
    */
   get footageMissing(): boolean {
     return false;
@@ -331,8 +331,8 @@ export class AVItem extends Item {
   /**
    * The current time of the item when it is being previewed directly
    * from the Project panel. This value is a number of seconds. It is an
-   * error to set this value for a {@link FootageItem} whose `main_source` or
-   * `proxy_source` is still.
+   * error to set this value for a {@link FootageItem} whose `mainSource` or
+   * `proxySource` is still.
    */
   get time(): number {
     return 0.0;
@@ -348,18 +348,18 @@ export class AVItem extends Item {
 
   /** All the compositions that use this AVItem. */
   get usedIn(): CompItem[] {
-    this._project._ensure_used_in_linked();
-    return [...this._used_in];
+    this._project._ensureUsedInLinked();
+    return [...this._usedIn];
   }
 
   /**
-   * Index of the proxy `LIST:Pin` within `_pin_chunks`.
+   * Index of the proxy `LIST:Pin` within `_pinChunks`.
    *
    * Footage items carry a main-source pin at index 0 and the proxy at
    * index 1; composition items have no main-source pin, so the proxy
    * lives at index 0. Overridden by {@link CompItem}.
    */
-  get _proxy_pin_index(): number {
+  get _proxyPinIndex(): number {
     return 1;
   }
 
@@ -370,18 +370,18 @@ export class AVItem extends Item {
    * last edit (measured on AE 2026, also with a proxy in use), which
    * py_aep does not track.
    */
-  _sync_modified_time(): void {}
+  _syncModifiedTime(): void {}
 
   /** Remove the proxy source from this item. */
   setProxyToNone(): void {
-    if (this._proxy_source) {
-      const proxyPin = this._pin_chunks[this._proxy_pin_index];
-      this._item_list.chunks.splice(
-        indexByIdentity(this._item_list.chunks, proxyPin),
+    if (this._proxySource) {
+      const proxyPin = this._pinChunks[this._proxyPinIndex];
+      this._itemList.chunks.splice(
+        indexByIdentity(this._itemList.chunks, proxyPin),
         1,
       );
-      this._pin_chunks.splice(this._proxy_pin_index, 1);
-      this._proxy_source = null;
+      this._pinChunks.splice(this._proxyPinIndex, 1);
+      this._proxySource = null;
     }
     this.useProxy = false;
   }
@@ -410,7 +410,7 @@ export class AVItem extends Item {
     }
 
     const source = PlaceholderSource._new(name, width, height, frameRate, duration);
-    this._set_proxy(source);
+    this._setProxy(source);
   }
 
   /**
@@ -432,26 +432,26 @@ export class AVItem extends Item {
   ): void {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      const solidName = SolidSource._color_name(color[0], color[1], color[2]);
+      const solidName = SolidSource._colorName(color[0], color[1], color[2]);
       name = autoName(solidName, existing);
     } else if (name === "") {
       name = "????";
     }
 
     const source = SolidSource._new(name, color, width, height, pixelAspect);
-    this._set_proxy(source);
+    this._setProxy(source);
   }
 
   /**
    * Sets a file as the proxy of this AVItem.
    *
    * Loads the specified file into a new `FileSource` object, sets this as the value
-   * of the `proxy_source` attribute, and sets `use_proxy` to true.
+   * of the `proxySource` attribute, and sets `use_proxy` to true.
    *
    * It does not preserve the interpretation parameters, instead using the user
    * preferences.
    *
-   * This differs from setting a `FootageItem`'s `main_source`, but both actions are
+   * This differs from setting a `FootageItem`'s `mainSource`, but both actions are
    * performed as in the user interface.
    *
    * **Note:** Unlike ExtendScript, if the specified file has an unlabeled alpha channel,
@@ -463,13 +463,13 @@ export class AVItem extends Item {
    *   not implemented for this format.
    */
   setProxy(file: PathLike): void {
-    this._set_proxy(FileSource._from_file(file, { windows: this._project._windows }));
+    this._setProxy(FileSource._fromFile(file, { windows: this._project._windows }));
   }
 
   /**
    * Sets a sequence of files as the proxy of this `AVItem`, with the option of
    * forcing alphabetical order. Loads the specified file sequence into a new
-   * `FileSource` object, sets this as the value of the `proxy_source` attribute, and
+   * `FileSource` object, sets this as the value of the `proxySource` attribute, and
    * sets `use_proxy` to true.
    *
    * It does not preserve the interpretation parameters, instead using the user
@@ -491,12 +491,12 @@ export class AVItem extends Item {
     file: PathLike,
     forceAlphabetical: boolean = false,
   ): void {
-    this._set_proxy(
-      FileSource._from_file(file, {
+    this._setProxy(
+      FileSource._fromFile(file, {
         sequence: true,
-        force_alphabetical: forceAlphabetical,
+        forceAlphabetical: forceAlphabetical,
         windows: this._project._windows,
-        default_sequence_fps: defaultSequenceFps(this._project._preferences),
+        defaultSequenceFps: defaultSequenceFps(this._project._preferences),
       }),
     );
   }
@@ -508,7 +508,7 @@ export class AVItem extends Item {
    * and any sequence prefix/ext); solid/placeholder sources are built
    * from sspc+opti.
    */
-  static _pin_for_source(
+  static _pinForSource(
     source: FileSource | SolidSource | PlaceholderSource,
   ): ListChunk {
     if (source instanceof FileSource) {
@@ -525,26 +525,26 @@ export class AVItem extends Item {
   }
 
   /** Replace or append a LIST:Pin chunk at the given index. */
-  _replace_pin(pinIndex: number, newPin: ListChunk): void {
-    if (pinIndex < this._pin_chunks.length) {
-      const oldPin = this._pin_chunks[pinIndex];
-      const idx = indexByIdentity(this._item_list.chunks, oldPin);
-      this._item_list.chunks[idx] = newPin;
-      this._pin_chunks[pinIndex] = newPin;
+  _replacePin(pinIndex: number, newPin: ListChunk): void {
+    if (pinIndex < this._pinChunks.length) {
+      const oldPin = this._pinChunks[pinIndex];
+      const idx = indexByIdentity(this._itemList.chunks, oldPin);
+      this._itemList.chunks[idx] = newPin;
+      this._pinChunks[pinIndex] = newPin;
     } else {
-      this._item_list.chunks.push(newPin);
-      this._pin_chunks.push(newPin);
+      this._itemList.chunks.push(newPin);
+      this._pinChunks.push(newPin);
     }
   }
 
   /** Set a proxy LIST:Pin chunk (add or replace). */
-  _set_proxy(source: FileSource | SolidSource | PlaceholderSource): void {
-    this._replace_pin(
-      this._proxy_pin_index,
-      this.constructor._pin_for_source(source),
+  _setProxy(source: FileSource | SolidSource | PlaceholderSource): void {
+    this._replacePin(
+      this._proxyPinIndex,
+      this.constructor._pinForSource(source),
     );
-    this._proxy_source = source;
-    source._join_project(this._project);
+    this._proxySource = source;
+    source._joinProject(this._project);
     this.useProxy = true;
   }
 }
@@ -554,6 +554,6 @@ descriptor(
   "useProxy",
   ChunkField.bool("_idta", "use_proxy", {
     validate: _validateUseProxy,
-    post_set: _syncProxyActive,
+    postSet: _syncProxyActive,
   }),
 );

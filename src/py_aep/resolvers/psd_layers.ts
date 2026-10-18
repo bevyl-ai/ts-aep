@@ -64,13 +64,13 @@ export class PsdStyleBlocks {
   readonly effects: Uint8Array | null;
 
   /** `iOpa` fill opacity byte (0-255), or `null` when absent. */
-  readonly fill_opacity: number | null;
+  readonly fillOpacity: number | null;
 
   /** `infx` "Blend Interior Effects as Group" flag, or `null` when absent. */
-  readonly blend_interior: boolean | null;
+  readonly blendInterior: boolean | null;
 
   /** `brst` channel-restrictions block body (empty when absent). */
-  readonly channel_restrictions: Uint8Array;
+  readonly channelRestrictions: Uint8Array;
 
   constructor(
     effects: Uint8Array | null,
@@ -79,24 +79,24 @@ export class PsdStyleBlocks {
     channelRestrictions: Uint8Array,
   ) {
     this.effects = effects;
-    this.fill_opacity = fillOpacity;
-    this.blend_interior = blendInterior;
-    this.channel_restrictions = channelRestrictions;
+    this.fillOpacity = fillOpacity;
+    this.blendInterior = blendInterior;
+    this.channelRestrictions = channelRestrictions;
   }
 
   *[Symbol.iterator]() {
     yield this.effects;
-    yield this.fill_opacity;
-    yield this.blend_interior;
-    yield this.channel_restrictions;
+    yield this.fillOpacity;
+    yield this.blendInterior;
+    yield this.channelRestrictions;
   }
 
-  static readonly _fields = ["effects", "fill_opacity", "blend_interior", "channel_restrictions"] as const satisfies readonly (keyof PsdStyleBlocks)[];
+  static readonly _fields = ["effects", "fillOpacity", "blendInterior", "channelRestrictions"] as const satisfies readonly (keyof PsdStyleBlocks)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdStyleBlocks>): PsdStyleBlocks {
     const f = { ...this, ...kw };
-    return new PsdStyleBlocks(f.effects, f.fill_opacity, f.blend_interior, f.channel_restrictions);
+    return new PsdStyleBlocks(f.effects, f.fillOpacity, f.blendInterior, f.channelRestrictions);
   }
 
   _asdict(): Record<string, PsdStyleBlocks[(typeof PsdStyleBlocks._fields)[number]]> {
@@ -119,7 +119,7 @@ export class PsdLayer {
    * Photoshop layer id (`lyid`); when the file stores none, the record
    * index + 2, as After Effects numbers such layers.
    */
-  readonly layer_id: number;
+  readonly layerId: number;
 
   /** Content bounding box as `(left, top, right, bottom)` in canvas pixels. */
   readonly bounds: [number, number, number, number];
@@ -129,19 +129,19 @@ export class PsdLayer {
    * list (counting group divider/header records), used as AE's opti layer
    * index.
    */
-  readonly record_index: number;
+  readonly recordIndex: number;
 
   /**
    * `true` when the layer is an adjustment layer (Levels, Hue/Saturation,
    * ...).
    */
-  readonly is_adjustment: boolean;
+  readonly isAdjustment: boolean;
 
   /**
    * Raw layer-style tagged blocks, or `null` when the record carries no
    * effects descriptor.
    */
-  readonly style_blocks: PsdStyleBlocks | null;
+  readonly styleBlocks: PsdStyleBlocks | null;
 
   /**
    * Raw `vmsk`/`vsms` vector-mask block body (path records), or `null`
@@ -149,7 +149,7 @@ export class PsdLayer {
    * imports both as an AE mask on the comp layer. Decoded by
    * `resolvers.psd_paths`.
    */
-  readonly vector_mask: Uint8Array | null;
+  readonly vectorMask: Uint8Array | null;
 
   /**
    * `true` when the layer is clipped to the layer below (the record's
@@ -163,7 +163,7 @@ export class PsdLayer {
    * `SoCo`/`GdFl`/`PtFl` blocks; a shape layer is one). Its content is
    * unbounded: the record's pixels are only Photoshop's rasterized preview.
    */
-  readonly is_fill: boolean;
+  readonly isFill: boolean;
 
   /**
    * Where the layer shows through its enabled raster layer mask, as
@@ -171,13 +171,13 @@ export class PsdLayer {
    * whose alpha and mask are both non-zero, over the record bounds (over the
    * canvas for a fill layer). `null` when the layer has no such mask.
    */
-  readonly mask_box: [number, number, number, number] | null;
+  readonly maskBox: [number, number, number, number] | null;
 
   /**
    * `false` when the record has no transparency channel: Photoshop's
    * Background layer, which After Effects imports without alpha.
    */
-  readonly has_transparency: boolean;
+  readonly hasTransparency: boolean;
 
   /**
    * `false` when the layer is hidden in Photoshop; After Effects imports
@@ -200,51 +200,51 @@ export class PsdLayer {
     visible: boolean = true,
   ) {
     this.name = name;
-    this.layer_id = layerId;
+    this.layerId = layerId;
     this.bounds = bounds;
-    this.record_index = recordIndex;
-    this.is_adjustment = isAdjustment;
-    this.style_blocks = styleBlocks;
-    this.vector_mask = vectorMask;
+    this.recordIndex = recordIndex;
+    this.isAdjustment = isAdjustment;
+    this.styleBlocks = styleBlocks;
+    this.vectorMask = vectorMask;
     this.clipped = clipped;
-    this.is_fill = isFill;
-    this.mask_box = maskBox;
-    this.has_transparency = hasTransparency;
+    this.isFill = isFill;
+    this.maskBox = maskBox;
+    this.hasTransparency = hasTransparency;
     this.visible = visible;
   }
 
   *[Symbol.iterator]() {
     yield this.name;
-    yield this.layer_id;
+    yield this.layerId;
     yield this.bounds;
-    yield this.record_index;
-    yield this.is_adjustment;
-    yield this.style_blocks;
-    yield this.vector_mask;
+    yield this.recordIndex;
+    yield this.isAdjustment;
+    yield this.styleBlocks;
+    yield this.vectorMask;
     yield this.clipped;
-    yield this.is_fill;
-    yield this.mask_box;
-    yield this.has_transparency;
+    yield this.isFill;
+    yield this.maskBox;
+    yield this.hasTransparency;
     yield this.visible;
   }
 
-  static readonly _fields = ["name", "layer_id", "bounds", "record_index", "is_adjustment", "style_blocks", "vector_mask", "clipped", "is_fill", "mask_box", "has_transparency", "visible"] as const satisfies readonly (keyof PsdLayer)[];
+  static readonly _fields = ["name", "layerId", "bounds", "recordIndex", "isAdjustment", "styleBlocks", "vectorMask", "clipped", "isFill", "maskBox", "hasTransparency", "visible"] as const satisfies readonly (keyof PsdLayer)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdLayer>): PsdLayer {
     const f = { ...this, ...kw };
     return new PsdLayer(
       f.name,
-      f.layer_id,
+      f.layerId,
       f.bounds,
-      f.record_index,
-      f.is_adjustment,
-      f.style_blocks,
-      f.vector_mask,
+      f.recordIndex,
+      f.isAdjustment,
+      f.styleBlocks,
+      f.vectorMask,
       f.clipped,
-      f.is_fill,
-      f.mask_box,
-      f.has_transparency,
+      f.isFill,
+      f.maskBox,
+      f.hasTransparency,
       f.visible,
     );
   }
@@ -263,7 +263,7 @@ export class PsdLayer {
 /**
  * A layer group; AE imports it as a nested composition.
  *
- * `style_blocks` carries the styles Photoshop allows on the GROUP itself;
+ * `styleBlocks` carries the styles Photoshop allows on the GROUP itself;
  * the import does not apply them (a warning surfaces the drop).
  */
 export class PsdGroup {
@@ -271,7 +271,7 @@ export class PsdGroup {
   readonly name: string;
 
   /** Photoshop layer id (`lyid`) of the group header. */
-  readonly layer_id: number;
+  readonly layerId: number;
 
   /** The group's contents, bottom layer first. */
   readonly children: PsdNode[];
@@ -280,7 +280,7 @@ export class PsdGroup {
    * Raw layer-style tagged blocks of the group header record, or `null`
    * when the group carries no effects descriptor.
    */
-  readonly style_blocks: PsdStyleBlocks | null;
+  readonly styleBlocks: PsdStyleBlocks | null;
 
   /** `false` when the group is hidden in Photoshop. */
   readonly visible: boolean;
@@ -293,26 +293,26 @@ export class PsdGroup {
     visible: boolean = true,
   ) {
     this.name = name;
-    this.layer_id = layerId;
+    this.layerId = layerId;
     this.children = children;
-    this.style_blocks = styleBlocks;
+    this.styleBlocks = styleBlocks;
     this.visible = visible;
   }
 
   *[Symbol.iterator]() {
     yield this.name;
-    yield this.layer_id;
+    yield this.layerId;
     yield this.children;
-    yield this.style_blocks;
+    yield this.styleBlocks;
     yield this.visible;
   }
 
-  static readonly _fields = ["name", "layer_id", "children", "style_blocks", "visible"] as const satisfies readonly (keyof PsdGroup)[];
+  static readonly _fields = ["name", "layerId", "children", "styleBlocks", "visible"] as const satisfies readonly (keyof PsdGroup)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdGroup>): PsdGroup {
     const f = { ...this, ...kw };
-    return new PsdGroup(f.name, f.layer_id, f.children, f.style_blocks, f.visible);
+    return new PsdGroup(f.name, f.layerId, f.children, f.styleBlocks, f.visible);
   }
 
   _asdict(): Record<string, PsdGroup[(typeof PsdGroup._fields)[number]]> {
@@ -373,17 +373,17 @@ export const _MAX_INFLATION = 1032;
 /** One raw layer record, before the group tree is rebuilt. */
 export class _Record {
   readonly name: string;
-  readonly layer_id: number;
+  readonly layerId: number;
   readonly bounds: [number, number, number, number];
-  readonly record_index: number;
-  readonly section_divider: number;
-  readonly is_adjustment: boolean;
-  readonly style_blocks: PsdStyleBlocks | null;
-  readonly vector_mask: Uint8Array | null;
+  readonly recordIndex: number;
+  readonly sectionDivider: number;
+  readonly isAdjustment: boolean;
+  readonly styleBlocks: PsdStyleBlocks | null;
+  readonly vectorMask: Uint8Array | null;
   readonly clipped: boolean;
-  readonly is_fill: boolean;
-  readonly mask_box: [number, number, number, number] | null;
-  readonly has_transparency: boolean;
+  readonly isFill: boolean;
+  readonly maskBox: [number, number, number, number] | null;
+  readonly hasTransparency: boolean;
   readonly visible: boolean;
 
   constructor(
@@ -402,17 +402,17 @@ export class _Record {
     visible: boolean = true,
   ) {
     this.name = name;
-    this.layer_id = layerId;
+    this.layerId = layerId;
     this.bounds = bounds;
-    this.record_index = recordIndex;
-    this.section_divider = sectionDivider;
-    this.is_adjustment = isAdjustment;
-    this.style_blocks = styleBlocks;
-    this.vector_mask = vectorMask;
+    this.recordIndex = recordIndex;
+    this.sectionDivider = sectionDivider;
+    this.isAdjustment = isAdjustment;
+    this.styleBlocks = styleBlocks;
+    this.vectorMask = vectorMask;
     this.clipped = clipped;
-    this.is_fill = isFill;
-    this.mask_box = maskBox;
-    this.has_transparency = hasTransparency;
+    this.isFill = isFill;
+    this.maskBox = maskBox;
+    this.hasTransparency = hasTransparency;
     this.visible = visible;
   }
 
@@ -421,34 +421,34 @@ export class _Record {
     const f = { ...this, ...kw };
     return new _Record(
       f.name,
-      f.layer_id,
+      f.layerId,
       f.bounds,
-      f.record_index,
-      f.section_divider,
-      f.is_adjustment,
-      f.style_blocks,
-      f.vector_mask,
+      f.recordIndex,
+      f.sectionDivider,
+      f.isAdjustment,
+      f.styleBlocks,
+      f.vectorMask,
       f.clipped,
-      f.is_fill,
-      f.mask_box,
-      f.has_transparency,
+      f.isFill,
+      f.maskBox,
+      f.hasTransparency,
       f.visible,
     );
   }
 
   *[Symbol.iterator]() {
     yield this.name;
-    yield this.layer_id;
+    yield this.layerId;
     yield this.bounds;
-    yield this.record_index;
-    yield this.section_divider;
-    yield this.is_adjustment;
-    yield this.style_blocks;
-    yield this.vector_mask;
+    yield this.recordIndex;
+    yield this.sectionDivider;
+    yield this.isAdjustment;
+    yield this.styleBlocks;
+    yield this.vectorMask;
     yield this.clipped;
-    yield this.is_fill;
-    yield this.mask_box;
-    yield this.has_transparency;
+    yield this.isFill;
+    yield this.maskBox;
+    yield this.hasTransparency;
     yield this.visible;
   }
 }
@@ -458,19 +458,19 @@ export class _Record {
  * Photoshop renders from a vector mask).
  */
 export class _UserMask {
-  readonly channel_id: number;
+  readonly channelId: number;
   readonly bounds: [number, number, number, number];
   // `default` is a reserved word in TS; the field keeps Python's name with a suffix.
   readonly default_: number;
 
   constructor(channelId: number, bounds: [number, number, number, number], default_: number) {
-    this.channel_id = channelId;
+    this.channelId = channelId;
     this.bounds = bounds;
     this.default_ = default_;
   }
 
   *[Symbol.iterator]() {
-    yield this.channel_id;
+    yield this.channelId;
     yield this.bounds;
     yield this.default_;
   }
@@ -481,7 +481,7 @@ export class _UserMask {
  *
  * @param file - Path to a `.psd` or `.psb` file.
  * @param kw - Keyword arguments:
- * - `mask_boxes`: Decode each raster layer mask's channel data for `PsdLayer.mask_box` (a full
+ * - `maskBoxes`: Decode each raster layer mask's channel data for `PsdLayer.mask_box` (a full
  *     decode of the masked layers' pixels). `false` leaves it `null`, for callers that only need
  *     names and indices.
  * @returns Top-level nodes bottom-first: {@link PsdLayer} leaves and {@link PsdGroup} groups
@@ -490,8 +490,8 @@ export class _UserMask {
  * @throws {@link FlattenedPsdError} If the file has no layer records (a flattened document) - a
  *   subclass of `UnsupportedPsdLayersError`.
  */
-export function readPsdLayers(file: PathLike, kw: { mask_boxes?: boolean } = {}): PsdNode[] {
-  const { mask_boxes = true } = kw;
+export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}): PsdNode[] {
+  const { maskBoxes: mask_boxes = true } = kw;
   const name = new Path(file).name;
   const flattened = new FlattenedPsdError(`${name}: flattened document (no layer records).`);
   // Declared out here because the parse fills them and the tree is built after the try.
@@ -508,7 +508,7 @@ export function readPsdLayers(file: PathLike, kw: { mask_boxes?: boolean } = {})
     // Read only up to the Layer Info block: the layer records precede the
     // channel image data, which dominates a PSD's size.
     // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a BytesIO here, so parsed results are identical (only peak memory differs).
-    const fp = new BytesIO(new Path(file).read_bytes());
+    const fp = new BytesIO(new Path(file).readBytes());
     const header = fp.read(26);
     if (!bytesEq(bytes_.slice(header, 0, 4), b("8BPS"))) {
       throw new UnsupportedPsdLayersError(`${name}: not a valid PSD/PSB file.`);
@@ -606,18 +606,18 @@ export function readPsdLayers(file: PathLike, kw: { mask_boxes?: boolean } = {})
         spans.set(channelId, [off, off + length]);
         off += length;
       }
-      if (mask == null || rec.is_adjustment || rec.section_divider) continue;
-      const region: [number, number, number, number] = rec.is_fill ? [0, 0, canvasW, canvasH] : rec.bounds;
+      if (mask == null || rec.isAdjustment || rec.sectionDivider) continue;
+      const region: [number, number, number, number] = rec.isFill ? [0, 0, canvasW, canvasH] : rec.bounds;
       if (region[2] <= region[0] || region[3] <= region[1]) continue;
       const area = (region[2] - region[0]) * (region[3] - region[1]);
-      const source = rec.is_fill ? data.length : sum(channels.map(([, n]) => n));
+      const source = rec.isFill ? data.length : sum(channels.map(([, n]) => n));
       if (area > _MAX_INFLATION * source) {
         throw new UnsupportedPsdLayersError(`${name}: layer ${repr(rec.name)} is larger than its pixel data.`);
       }
-      const alpha = rec.is_fill ? null : spans.get(-1) ?? null;
-      const maskSpan = spans.get(mask.channel_id);
+      const alpha = rec.isFill ? null : spans.get(-1) ?? null;
+      const maskSpan = spans.get(mask.channelId);
       records[index] = rec._replace({
-        mask_box: _visibleBox(
+        maskBox: _visibleBox(
           region,
           alpha == null ? null : bytes_.slice(data, alpha[0], alpha[1]),
           mask,
@@ -851,27 +851,27 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
   const root: PsdNode[] = [];
   const stack: PsdNode[][] = [root];
   for (const rec of records) {
-    if (rec.section_divider === 3) {
+    if (rec.sectionDivider === 3) {
       stack.push([]);
-    } else if (rec.section_divider === 1 || rec.section_divider === 2) {
+    } else if (rec.sectionDivider === 1 || rec.sectionDivider === 2) {
       const children = stack.length > 1 ? stack.splice(-1)[0] : [];
       stack[stack.length - 1].push(
-        new PsdGroup(rec.name, rec.layer_id, children, rec.style_blocks, rec.visible),
+        new PsdGroup(rec.name, rec.layerId, children, rec.styleBlocks, rec.visible),
       );
     } else {
       stack[stack.length - 1].push(
         new PsdLayer(
           rec.name,
-          rec.layer_id,
+          rec.layerId,
           rec.bounds,
-          rec.record_index,
-          rec.is_adjustment,
-          rec.style_blocks,
-          rec.vector_mask,
+          rec.recordIndex,
+          rec.isAdjustment,
+          rec.styleBlocks,
+          rec.vectorMask,
           rec.clipped,
-          rec.is_fill,
-          rec.mask_box,
-          rec.has_transparency,
+          rec.isFill,
+          rec.maskBox,
+          rec.hasTransparency,
           rec.visible,
         ),
       );
@@ -889,13 +889,13 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
  * Extract `(name, layer_id, section_divider, is_adjustment, style_blocks, vector_mask, is_fill, mask_data)`; `layer_id` is `null` without an `lyid`
  * block.
  *
- * `section_divider` is the `lsct` value: 0 (or absent) for a normal layer,
+ * `sectionDivider` is the `lsct` value: 0 (or absent) for a normal layer,
  * 1/2 for an open/closed group header, 3 for the hidden bounding divider that
- * ends a group. `is_adjustment` is `true` when an adjustment-type key is
- * present. `style_blocks` carries the raw layer-style tagged blocks, `null`
- * when the record has no effects descriptor. `vector_mask` is the raw
+ * ends a group. `isAdjustment` is `true` when an adjustment-type key is
+ * present. `styleBlocks` carries the raw layer-style tagged blocks, `null`
+ * when the record has no effects descriptor. `vectorMask` is the raw
  * `vmsk`/`vsms` block body, `null` when the layer has no vector mask.
- * `is_fill` is `true` when a fill-layer key is present. `mask_data` is the
+ * `isFill` is `true` when a fill-layer key is present. `mask_data` is the
  * layer mask data sub-block body (empty when the layer has no mask).
  */
 export function _parseLayerExtra(
@@ -1040,7 +1040,7 @@ export function joinAll(parts: Uint8Array[]): Uint8Array {
 
 /**
  * `zlib.decompressobj().decompress(body, max_length)`: the inflated stream,
- * at most `max_length` bytes. Z_SYNC_FLUSH keeps a truncated stream from
+ * at most `maxLength` bytes. Z_SYNC_FLUSH keeps a truncated stream from
  * throwing, as Python's partial decompress does.
  */
 // TODO(port): CPython's decompressobj stops inflating once max_length bytes are out, so a fault

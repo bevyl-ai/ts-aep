@@ -61,7 +61,7 @@ function _reparseMask(app: py_aep.Application, tmpPath: Path): MaskPropertyGroup
 }
 
 function _tensions(pathProp: Property<Shape>): number[][] {
-  const container = pathProp._kf_value_container;
+  const container = pathProp._kfValueContainer;
   pyAssert(container != null, "no keyframe value container");
   const shaps = filterByListType(container.chunks, "shap");
   return shaps.map((s) =>
@@ -115,7 +115,7 @@ describe("TestRotoBezierTensions", () => {
     const drawnOut = [[0.0, 0.0], [21.432, 19.05], [0.0, 0.0], [0.0, 0.0]];
     expect(pyEq(_round(path.value.inTangents), drawnIn)).toBe(true);
     expect(pyEq(_round(path.value.outTangents), drawnOut)).toBe(true);
-    expect(pyEq(_round(path.value._stored_tangents(-1)), drawnIn)).toBe(true);
+    expect(pyEq(_round(path.value._storedTangents(-1)), drawnIn)).toBe(true);
   });
 
   test("test_value_set_on_a_roto_mask_has_tension_one", () => {
@@ -430,7 +430,7 @@ describe("TestFeatherPoints", () => {
     expect(len(expected)).toBe(4);
     path.value = new Shape(value.vertices, value.inTangents, value.outTangents, {
       closed: value.closed,
-      feather_points: value.featherPoints,
+      featherPoints: value.featherPoints,
     });
     const out = tmpPath.div("feather.aep");
     app.project.save(out);
@@ -451,7 +451,7 @@ describe("TestFeatherPoints", () => {
     raises(
       TypeError_,
       // @ts-expect-error deliberately passes a non-list feather_points to check runtime validation
-      () => new Shape([[0, 0]], undefined, undefined, { feather_points: "x" }),
+      () => new Shape([[0, 0]], undefined, undefined, { featherPoints: "x" }),
     );
   });
 });

@@ -122,8 +122,8 @@ describe("TestImportOptions", () => {
           ? expected.has(t) && t !== ImportAsType.PROJECT && (t !== ImportAsType.COMP_CROPPED_LAYERS || croppedOk)
           : false;
         // Labeled so a failing row names its extension and type, as pytest's message does.
-        expect({ label: `${ext} / ${ImportAsType.name_of(t)}`, got: opts.canImportAs(t) }).toEqual({
-          label: `${ext} / ${ImportAsType.name_of(t)}`,
+        expect({ label: `${ext} / ${ImportAsType.nameOf(t)}`, got: opts.canImportAs(t) }).toEqual({
+          label: `${ext} / ${ImportAsType.nameOf(t)}`,
           got: want,
         });
       }

@@ -35,7 +35,7 @@ export const Label = intEnum("Label", {
   DARK_GREEN: 16,
 }, {
   /** Convert binary value to Label. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return this.of(int(value));
   },
 });
@@ -79,11 +79,11 @@ export const ParametricMeshType = intEnum("ParametricMeshType", {
   CYLINDER: 14617,
 }, {
   /** Convert the ldta value (0-5) to ParametricMeshType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return this.of(value + 14612);
   },
   /** Convert ParametricMeshType to the ldta value (0-5). */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 14612;
   },
 });
@@ -100,11 +100,11 @@ export const AlphaMode = intEnum("AlphaMode", {
   PREMULTIPLIED: 5414,
 }, {
   /** Convert binary value to AlphaMode. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _ALPHA_MODE_BINARY_MAP.get(value) ?? this.IGNORE;
   },
   /** Convert AlphaMode to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_ALPHA_MODE_TO_BINARY, self);
   },
 });
@@ -130,11 +130,11 @@ export const BitsPerChannel = intEnum("BitsPerChannel", {
   THIRTY_TWO: 32,
 }, {
   /** Convert binary value to BitsPerChannel. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _BITS_PER_CHANNEL_BINARY_MAP.get(value) ?? this.EIGHT;
   },
   /** Convert BitsPerChannel to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_BITS_PER_CHANNEL_TO_BINARY, self);
   },
 });
@@ -161,11 +161,11 @@ export const AutoOrientType = intEnum("AutoOrientType", {
   CHARACTERS_TOWARD_CAMERA: 4215,
 }, {
   /** Convert binary value (0-3) to AutoOrientType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return this.of(int(value) + 4212);
   },
   /** Convert AutoOrientType to binary value (0-3). */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 4212;
   },
 });
@@ -217,7 +217,7 @@ export const BlendingMode = intEnum("BlendingMode", {
   DIVIDE: 5249,
 }, {
   /** Convert binary blending mode value to BlendingMode. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _BLENDING_MODE_BINARY_MAP.get(value) ?? this.NORMAL;
   },
   /**
@@ -227,7 +227,7 @@ export const BlendingMode = intEnum("BlendingMode", {
    * distinguished by a flag bit in the layer's `ldta`, set by
    * `AVLayer.blendingMode`, not by this value.
    */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_BLENDING_MODE_TO_BINARY, self);
   },
 });
@@ -306,11 +306,11 @@ export const ChannelType = intEnum("ChannelType", {
   CHANNEL_ALPHA_BOUNDARY: 7822,
 }, {
   /** Convert binary value to ChannelType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 7812) ?? this.CHANNEL_RGB;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 7812) ?? this.CHANNEL_RGB;
   },
   /** Convert ChannelType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 7812;
   },
 });
@@ -355,7 +355,7 @@ export const FastPreviewType = intEnum("FastPreviewType", {
   FP_WIREFRAME: 8016,
 }, {
   /** Convert binary value to FastPreviewType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     try {
       return this.of(int(value) + 8012);
     } catch (e) {
@@ -364,7 +364,7 @@ export const FastPreviewType = intEnum("FastPreviewType", {
     }
   },
   /** Convert FastPreviewType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 8012;
   },
 });
@@ -380,12 +380,12 @@ export const FeetFramesFilmType = intEnum("FeetFramesFilmType", {
   MM35: 2413,
 }, {
   /** Convert binary value (0-1) to FeetFramesFilmType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     // Binary 0 = MM35 (2413), Binary 1 = MM16 (2412)
     return this.of(2413 - value);
   },
   /** Convert FeetFramesFilmType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return 2413 - int(self);
   },
 });
@@ -402,11 +402,11 @@ export const FieldSeparationType = intEnum("FieldSeparationType", {
   LOWER_FIELD_FIRST: 5614,
 }, {
   /** Convert binary value to FieldSeparationType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _FIELD_SEP_BINARY_MAP.get(value) ?? this.OFF;
   },
   /** Convert FieldSeparationType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_FIELD_SEP_TO_BINARY, self);
   },
 });
@@ -431,11 +431,11 @@ export const FootageTimecodeDisplayStartType = intEnum("FootageTimecodeDisplaySt
   FTCS_START_0: 2213,
 }, {
   /** Convert binary value to FootageTimecodeDisplayStartType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _FOOTAGE_TIMECODE_BINARY_MAP.get(value) ?? this.FTCS_START_0;
   },
   /** Convert FootageTimecodeDisplayStartType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_FOOTAGE_TIMECODE_TO_BINARY, self);
   },
 });
@@ -460,11 +460,11 @@ export const FrameBlendingType = intEnum("FrameBlendingType", {
   PIXEL_MOTION: 4014,
 }, {
   /** Convert binary value (0-2) to FrameBlendingType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return this.of(int(value) + 4012);
   },
   /** Convert FrameBlendingType to binary value (0-2). */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 4012;
   },
 });
@@ -481,11 +481,11 @@ export const FramesCountType = intEnum("FramesCountType", {
   FC_TIMECODE_CONVERSION: 2614,
 }, {
   /** Convert binary value to FramesCountType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 2612) ?? this.FC_START_0;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 2612) ?? this.FC_START_0;
   },
   /** Convert FramesCountType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 2612;
   },
 });
@@ -509,7 +509,7 @@ export const GpuAccelType = intEnum("GpuAccelType", {
    *
    * Returns the UUID string itself if the UUID is not recognized.
    */
-  from_binary(uuid: string): number | string {
+  fromBinary(uuid: string): number | string {
     const result = _GPU_UUID_TO_ENUM.get(uuid) ?? null;
     return result != null ? result : uuid;
   },
@@ -522,15 +522,15 @@ export const GpuAccelType = intEnum("GpuAccelType", {
    * @throws {@link ValueError} If the enum member has no known UUID mapping, or if a string value
    *   is not a valid UUID.
    */
-  to_binary(this: EnumHelpers<GpuAccelType>, value: number | string): string {
+  toBinary(this: EnumHelpers<GpuAccelType>, value: number | string): string {
     if (this.has(value)) {
       const uuid = _GPU_ENUM_TO_UUID.get(value) ?? null;
       if (uuid == null) {
         const known = [..._GPU_UUID_TO_ENUM]
-          .map(([u, e]) => `${this.name_of(e)} (${u})`)
+          .map(([u, e]) => `${this.nameOf(e)} (${u})`)
           .join(", ");
         throw new ValueError(
-          `no known UUID for GpuAccelType.${this.name_of(value)}. ` +
+          `no known UUID for GpuAccelType.${this.nameOf(value)}. ` +
             `Known values: ${known}. ` +
             `Set a UUID string directly if you know it.`,
         );
@@ -575,11 +575,11 @@ export const GuideOrientationType = intEnum("GuideOrientationType", {
   VERTICAL: 1,
 }, {
   /** Convert binary value to GuideOrientationType. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _GUIDE_ORIENTATION_BINARY_MAP.get(value) ?? this.HORIZONTAL;
   },
   /** Convert GuideOrientationType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_GUIDE_ORIENTATION_TO_BINARY, self);
   },
 });
@@ -636,11 +636,11 @@ export const LayerQuality = intEnum("LayerQuality", {
   BEST: 4614,
 }, {
   /** Convert binary value to LayerQuality. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 4612) ?? this.BEST;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 4612) ?? this.BEST;
   },
   /** Convert LayerQuality to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 4612;
   },
 });
@@ -656,11 +656,11 @@ export const LayerSamplingQuality = intEnum("LayerSamplingQuality", {
   BICUBIC: 4813,
 }, {
   /** Convert binary value to LayerSamplingQuality. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 4812) ?? this.BILINEAR;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 4812) ?? this.BILINEAR;
   },
   /** Convert LayerSamplingQuality to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 4812;
   },
 });
@@ -679,11 +679,11 @@ export const LightType = intEnum("LightType", {
   ENVIRONMENT: 4416,
 }, {
   /** Convert binary value to LightType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 4412) ?? this.PARALLEL;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 4412) ?? this.PARALLEL;
   },
   /** Convert LightType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 4412;
   },
 });
@@ -703,11 +703,11 @@ export const LinearLightMode = intEnum("LinearLightMode", {
   ON_FOR_32BPC: 2,
 }, {
   /** Convert binary value to LinearLightMode. */
-  from_binary(value: number) {
-    return this.of_or_null(value) ?? this.OFF;
+  fromBinary(value: number) {
+    return this.ofOrNull(value) ?? this.OFF;
   },
   /** Convert LinearLightMode to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self);
   },
 });
@@ -731,11 +731,11 @@ export const MaskFeatherFalloff = intEnum("MaskFeatherFalloff", {
   FFO_LINEAR: 7213,
 }, {
   /** Convert binary value to MaskFeatherFalloff. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 7212) ?? this.FFO_SMOOTH;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 7212) ?? this.FFO_SMOOTH;
   },
   /** Convert MaskFeatherFalloff to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return self - 7212;
   },
 });
@@ -756,11 +756,11 @@ export const MaskMode = intEnum("MaskMode", {
   DIFFERENCE: 6818,
 }, {
   /** Convert binary mask mode value to MaskMode. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 6812) ?? this.NONE;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 6812) ?? this.NONE;
   },
   /** Convert MaskMode to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return self - 6812;
   },
 });
@@ -782,11 +782,11 @@ export const MaskMotionBlur = intEnum("MaskMotionBlur", {
    * **Note:** binary 1 = Off and binary 2 = On (swapped relative
    * to enum integer order where ON = 7013 \< OFF = 7014).
    */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _MASK_MOTION_BLUR_BINARY_MAP.get(value) ?? this.SAME_AS_LAYER;
   },
   /** Convert MaskMotionBlur to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_MASK_MOTION_BLUR_TO_BINARY, self);
   },
 });
@@ -870,11 +870,11 @@ export const PulldownPhase = intEnum("PulldownPhase", {
   WWWWS_24P_ADVANCE: 5822,
 }, {
   /** Convert binary value to PulldownPhase. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     return _PULLDOWN_BINARY_MAP.get(value) ?? this.OFF;
   },
   /** Convert PulldownPhase to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return getitem(_PULLDOWN_TO_BINARY, self);
   },
 });
@@ -932,11 +932,11 @@ export const TimeDisplayType = intEnum("TimeDisplayType", {
   FRAMES: 2013,
 }, {
   /** Convert binary value to TimeDisplayType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 2012) ?? this.TIMECODE;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 2012) ?? this.TIMECODE;
   },
   /** Convert TimeDisplayType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 2012;
   },
 });
@@ -1003,11 +1003,11 @@ export const TrackMatteType = intEnum("TrackMatteType", {
   LUMA_INVERTED: 5016,
 }, {
   /** Convert binary value to TrackMatteType. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 5012) ?? this.NO_TRACK_MATTE;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 5012) ?? this.NO_TRACK_MATTE;
   },
   /** Convert TrackMatteType to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 5012;
   },
 });
@@ -1033,7 +1033,7 @@ export const ViewerType = intEnum("ViewerType", {
    *
    * @throws {@link ValueError} If the label is not recognized.
    */
-  from_string(label: string | null): ViewerType {
+  fromString(label: string | null): ViewerType {
     if (!label) label = "";
     const viewerType = _VIEWER_STRING_MAP.get(label);
     if (viewerType === undefined) throw new ValueError(`Unknown viewer type label: ${repr(label)}`);

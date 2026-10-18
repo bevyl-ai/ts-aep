@@ -34,7 +34,7 @@ export const _PROPERTY_MIN_MAX: Map<string, readonly [number, number]> = new Map
 // bounds, but whose binary carries an all-zero `[0.0]` tdum/tduM placeholder
 // (AE writes these for Scale and the separated-Position followers). The
 // placeholder bytes are preserved on disk for round-trip fidelity; they are
-// suppressed only when surfacing `min_value`/`max_value` so `has_min`/
+// suppressed only when surfacing `minValue`/`maxValue` so `has_min`/
 // `has_max` match ExtendScript.
 //
 // `ADBE Time Remapping` also carries a `[0.0]` placeholder, but ExtendScript
@@ -65,8 +65,8 @@ export const _PLACEHOLDER_UNBOUNDED: ReadonlySet<string> = new Set<string>([
 // AND hasMax=False) but for which a synthesis spec sets a min/max fallback
 // (a UI range AE does not expose via the scripting bounds API). The bounds are
 // suppressed on read so `has_min`/`has_max` and the value setter match
-// ExtendScript; `is_modified`/`default_value` (which read the spec directly,
-// not `min_value`) are unaffected.
+// ExtendScript; `is_modified`/`defaultValue` (which read the spec directly,
+// not `minValue`) are unaffected.
 export const _UNBOUNDED_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
   "ADBE R Channel Blend",
   "ADBE G Channel Blend",

@@ -33,7 +33,7 @@ describe("TestAddParametricMesh", () => {
   test.each(ParametricMeshType.members().map((m) => [m]))("test_creates_correct_type[%#]", (meshType: ParametricMeshType) => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(undefined, { mesh_type: meshType });
+    const layer = comp.addParametricMesh(undefined, { meshType: meshType });
     expect(layer instanceof ParametricMeshLayer).toBe(true);
     expect(layer.parametricMeshType).toBe(meshType);
     expect(layer._ldta.layer_type).toBe(LayerType.PARAMETRIC_MESH);
@@ -44,13 +44,13 @@ describe("TestAddParametricMesh", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(`M ${ParametricMeshType.name_of(meshType)}`, { mesh_type: meshType });
+    const layer = comp.addParametricMesh(`M ${ParametricMeshType.nameOf(meshType)}`, { meshType: meshType });
     const field = getitem(_FIRST_FIELD, meshType);
     setattr(layer.parametricMeshOptions, field, 321.0);
 
     const fresh = _saveReparse(project, tmpPath);
     const freshLayer = asInstance(
-      fresh.compositions[0].layers.find((lyr) => lyr.name === `M ${ParametricMeshType.name_of(meshType)}`),
+      fresh.compositions[0].layers.find((lyr) => lyr.name === `M ${ParametricMeshType.nameOf(meshType)}`),
       ParametricMeshLayer,
     );
     expect(freshLayer.parametricMeshType).toBe(meshType);
@@ -60,7 +60,7 @@ describe("TestAddParametricMesh", () => {
   test("test_auto_name_clears_name_set", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(undefined, { mesh_type: ParametricMeshType.CUBE });
+    const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
     // AE leaves the ldta name bit clear for an auto-generated name.
     expect(layer._ldta.name_set).toBe(false);
   });
@@ -89,7 +89,7 @@ describe("TestAddParametricMesh", () => {
   test("test_explicit_name_sets_name_bit", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh("My Cube", { mesh_type: ParametricMeshType.CUBE });
+    const layer = comp.addParametricMesh("My Cube", { meshType: ParametricMeshType.CUBE });
     expect(layer.name).toBe("My Cube");
     expect(layer._ldta.name_set).toBe(true);
   });
@@ -97,7 +97,7 @@ describe("TestAddParametricMesh", () => {
   test("test_ldta_uses_comp_timebase", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(undefined, { mesh_type: ParametricMeshType.CUBE });
+    const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
     const timeBase = comp._cdta.internal_timebase;
     expect(layer._ldta.out_point_divisor).toBe(timeBase);
     expect(layer._ldta.in_point_divisor).toBe(timeBase);
@@ -106,7 +106,7 @@ describe("TestAddParametricMesh", () => {
   test("test_effects_active_cleared", () => {
     const project = parseAep(BASE_AEP).project;
     const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(undefined, { mesh_type: ParametricMeshType.CUBE });
+    const layer = comp.addParametricMesh(undefined, { meshType: ParametricMeshType.CUBE });
     expect(layer._ldta.effects_active).toBe(false);
   });
 });

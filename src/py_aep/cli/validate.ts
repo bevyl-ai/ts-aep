@@ -364,15 +364,15 @@ export class ValidationResult {
   declare differences: string[];
   declare warnings: string[];
   declare categories: Map<string, number>;
-  declare defined_fields: Set<string>;
-  declare compared_fields: Set<string>;
+  declare definedFields: Set<string>;
+  declare comparedFields: Set<string>;
 
   constructor() {
     this.differences = [];
     this.warnings = [];
     this.categories = new Map();
-    this.defined_fields = new Set();
-    this.compared_fields = new Set();
+    this.definedFields = new Set();
+    this.comparedFields = new Set();
   }
 
   get length(): number {
@@ -380,21 +380,21 @@ export class ValidationResult {
   }
 
   /** Add a difference. */
-  add_diff(path: string, expected: ToDictValue, parsed: ToDictValue, category = "other"): void {
+  addDiff(path: string, expected: ToDictValue, parsed: ToDictValue, category = "other"): void {
     this.differences.push(`${path}: expected ${repr(expected)}, got ${repr(parsed)}`);
     this.categories.set(category, (this.categories.get(category) ?? 0) + 1);
   }
 
   /** Add a warning. */
-  add_warning(message: string): void {
+  addWarning(message: string): void {
     this.warnings.push(message);
   }
 
   /** Register a field for coverage tracking. */
-  track_field(className: string, attr: string, wasCompared: boolean): void {
+  trackField(className: string, attr: string, wasCompared: boolean): void {
     const key = `${className}.${attr}`;
-    this.defined_fields.add(key);
-    if (wasCompared) this.compared_fields.add(key);
+    this.definedFields.add(key);
+    if (wasCompared) this.comparedFields.add(key);
   }
 }
 
@@ -418,14 +418,14 @@ export function _compareFields(
   className = "",
 ): void {
   for (const [expKey, parsedKey] of Object.entries(mappings)) {
-    if (className) result.defined_fields.add(`${className}.${parsedKey}`);
+    if (className) result.definedFields.add(`${className}.${parsedKey}`);
     if (expected.has(expKey)) {
       const expVal = expected.get(expKey);
       if (expVal instanceof Map && pyBool(expVal.get("_undefined"))) continue;
-      if (className) result.compared_fields.add(`${className}.${parsedKey}`);
+      if (className) result.comparedFields.add(`${className}.${parsedKey}`);
       const parsedVal = getEnumValue(parsed.get(parsedKey) ?? null);
       if (!compareValues(expVal, parsedVal)) {
-        result.add_diff(`${path}.${expKey}`, expVal, parsedVal, category);
+        result.addDiff(`${path}.${expKey}`, expVal, parsedVal, category);
       }
     }
   }
@@ -440,7 +440,7 @@ export function _compareMarkers(
 ): void {
   /** Compare a list of markers (used by both layers and compositions). */
   if (expectedMarkers.length !== parsedMarkers.length) {
-    result.add_diff(`${path}.numMarkers`, expectedMarkers.length, parsedMarkers.length, "markers");
+    result.addDiff(`${path}.numMarkers`, expectedMarkers.length, parsedMarkers.length, "markers");
   }
   for (const [i, [expMarker, parsedMarker]] of zip(expectedMarkers, parsedMarkers).entries()) {
     compareMarker(expMarker, parsedMarker, `${path}.markers[${i}]`, frameRate, result);
@@ -450,7 +450,7 @@ export function _compareMarkers(
 export function _compareGuides(expectedGuides: Dict[], parsedGuides: Dict[], path: string, result: ValidationResult): void {
   /** Compare a list of guides. */
   if (expectedGuides.length !== parsedGuides.length) {
-    result.add_diff(`${path}.numGuides`, expectedGuides.length, parsedGuides.length, "composition");
+    result.addDiff(`${path}.numGuides`, expectedGuides.length, parsedGuides.length, "composition");
   }
   const guideMappings = {
     orientationType: "orientationType",
@@ -484,9 +484,9 @@ export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: 
     };
     _compareFields(expProxy, parsedProxy, sourceMappings, proxyPath, "footage", result, "FootageSource");
   } else if (pyBool(expProxy) && !pyBool(parsedProxy)) {
-    result.add_diff(`${path}.proxySource`, "present", "None", "footage");
+    result.addDiff(`${path}.proxySource`, "present", "None", "footage");
   } else if (!pyBool(expProxy) && pyBool(parsedProxy)) {
-    result.add_diff(`${path}.proxySource`, "None", "present", "footage");
+    result.addDiff(`${path}.proxySource`, "None", "present", "footage");
   }
 }
 
@@ -498,7 +498,7 @@ export function _compareChildrenByMatchName(
 ): void {
   /** Match expected/parsed property children by matchName, then recurse. */
   if (expectedProps.length !== parsedProps.length) {
-    result.add_diff(`${path}.numProperties`, expectedProps.length, parsedProps.length, "properties");
+    result.addDiff(`${path}.numProperties`, expectedProps.length, parsedProps.length, "properties");
   }
 
   // Build match-name lookup.  When multiple children share the same
@@ -520,7 +520,7 @@ export function _compareChildrenByMatchName(
 
     const candidates = parsedByMatchName.get(expMatchName);
     if (!candidates?.length) {
-      result.add_diff(childPath, "exists", "missing", "properties");
+      result.addDiff(childPath, "exists", "missing", "properties");
       continue;
     }
 
@@ -580,12 +580,12 @@ export function compareMarker(
   }
 
   // Compare time
-  result.track_field("Marker", "time", expectedMarker.has("time"));
+  result.trackField("Marker", "time", expectedMarker.has("time"));
   if (expectedMarker.has("time")) {
     const expVal = getitem(expectedMarker, "time");
     if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
       if (!compareValues(expVal, parsedTime)) {
-        result.add_diff(`${path}.time`, expVal, parsedTime, "markers");
+        result.addDiff(`${path}.time`, expVal, parsedTime, "markers");
       }
     }
   }
@@ -661,7 +661,7 @@ export function compareLayer(
     threeDLayer: "threeDLayer",
     timeRemapEnabled: "timeRemapEnabled",
     trackMatteType: "trackMatteType",
-    sourceId: "_source_id",
+    sourceId: "_sourceId",
     lightType: "lightType",
     threeDPerChar: "threeDPerChar",
   };
@@ -669,28 +669,28 @@ export function compareLayer(
   _compareFields(expectedLayer, parsedLayer, layerMappings, path, "layers", result, "Layer");
 
   // Compare index (ExtendScript is 1-based, parsed is 0-based)
-  result.track_field("Layer", "index", expectedLayer.has("index"));
-  result.track_field("Layer", "light_source_id", expectedLayer.has("lightSource"));
+  result.trackField("Layer", "index", expectedLayer.has("index"));
+  result.trackField("Layer", "light_source_id", expectedLayer.has("lightSource"));
   if (expectedLayer.has("index")) {
     const expIndex = getitem(expectedLayer, "index");
     const parsedIndex = parsedLayer.get("index") ?? null;
     if (parsedIndex != null && expIndex !== parsedIndex + 1) {
-      result.add_diff(`${path}.index`, expIndex, parsedIndex + 1, "layers");
+      result.addDiff(`${path}.index`, expIndex, parsedIndex + 1, "layers");
     }
   }
 
   // Compare lightSource (Layer reference -> compare by layer index)
   if (expectedLayer.has("lightSource")) {
     const expLs = getitem(expectedLayer, "lightSource");
-    const parsedLsId = dictGet(parsedLayer, "_light_source_id", 0);
+    const parsedLsId = dictGet(parsedLayer, "_lightSourceId", 0);
     if (expLs == null) {
       if (parsedLsId !== 0) {
-        result.add_diff(`${path}.lightSource`, null, parsedLsId, "layers");
+        result.addDiff(`${path}.lightSource`, null, parsedLsId, "layers");
       }
     } else if (expLs instanceof Map) {
       const expLsIndex = expLs.get("index") ?? null;
       if (expLsIndex != null && parsedLsId === 0) {
-        result.add_diff(`${path}.lightSource`, expLsIndex, null, "layers");
+        result.addDiff(`${path}.lightSource`, expLsIndex, null, "layers");
       }
     }
   }
@@ -745,15 +745,15 @@ export function compareProperty(
   _compareFields(expectedProp, parsedProp, propertyMappings, path, "properties", result, "Property");
 
   // Track manually-compared fields
-  result.track_field("Property", "propertyIndex", expectedProp.has("propertyIndex"));
-  result.track_field("Property", "value", expectedProp.has("value"));
-  result.track_field("Property", "keyframes", expectedProp.has("numKeys"));
-  result.track_field(
+  result.trackField("Property", "propertyIndex", expectedProp.has("propertyIndex"));
+  result.trackField("Property", "value", expectedProp.has("value"));
+  result.trackField("Property", "keyframes", expectedProp.has("numKeys"));
+  result.trackField(
     "Property",
     "minValue",
     expectedProp.has("hasMin") && pyBool(expectedProp.get("hasMin")),
   );
-  result.track_field(
+  result.trackField(
     "Property",
     "maxValue",
     expectedProp.has("hasMax") && pyBool(expectedProp.get("hasMax")),
@@ -764,7 +764,7 @@ export function compareProperty(
     const expPi = getitem(expectedProp, "propertyIndex");
     const parsedPi = parsedProp.get("propertyIndex") ?? null;
     if (parsedPi != null && expPi !== parsedPi + 1) {
-      result.add_diff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
+      result.addDiff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
     }
   }
 
@@ -774,9 +774,9 @@ export function compareProperty(
     const parsedVal = parsedProp.get("value") ?? null;
     if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
       if (parsedVal == null) {
-        result.add_diff(`${path}.value`, expVal, parsedVal, "properties");
+        result.addDiff(`${path}.value`, expVal, parsedVal, "properties");
       } else if (!compareValues(expVal, parsedVal)) {
-        result.add_diff(`${path}.value`, expVal, parsedVal, "properties");
+        result.addDiff(`${path}.value`, expVal, parsedVal, "properties");
       }
     }
   }
@@ -787,7 +787,7 @@ export function compareProperty(
     const parsedKeyframes = dictGet(parsedProp, "keyframes", []);
     const parsedNumKeys = pyBool(parsedKeyframes) ? len(parsedKeyframes) : 0;
     if (expNumKeys !== parsedNumKeys) {
-      result.add_diff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
+      result.addDiff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
     }
   }
 
@@ -806,14 +806,14 @@ export function compareProperty(
     const expHasMin = pyBool(getitem(expectedProp, "hasMin"));
     const parsedHasMin = pyBool(parsedProp.get("hasMin"));
     if (expHasMin !== parsedHasMin) {
-      result.add_diff(`${path}.hasMin`, expHasMin, parsedHasMin, "properties");
+      result.addDiff(`${path}.hasMin`, expHasMin, parsedHasMin, "properties");
     }
   }
   if (expectedProp.has("hasMax")) {
     const expHasMax = pyBool(getitem(expectedProp, "hasMax"));
     const parsedHasMax = pyBool(parsedProp.get("hasMax"));
     if (expHasMax !== parsedHasMax) {
-      result.add_diff(`${path}.hasMax`, expHasMax, parsedHasMax, "properties");
+      result.addDiff(`${path}.hasMax`, expHasMax, parsedHasMax, "properties");
     }
   }
 
@@ -826,7 +826,7 @@ export function compareProperty(
       const expMin = getitem(expectedProp, "minValue");
       const parsedMin = parsedProp.get("minValue") ?? null;
       if (!compareValues(expMin, parsedMin)) {
-        result.add_diff(`${path}.minValue`, expMin, parsedMin, "properties");
+        result.addDiff(`${path}.minValue`, expMin, parsedMin, "properties");
       }
     }
   }
@@ -836,7 +836,7 @@ export function compareProperty(
       const expMax = getitem(expectedProp, "maxValue");
       const parsedMax = parsedProp.get("maxValue") ?? null;
       if (!compareValues(expMax, parsedMax)) {
-        result.add_diff(`${path}.maxValue`, expMax, parsedMax, "properties");
+        result.addDiff(`${path}.maxValue`, expMax, parsedMax, "properties");
       }
     }
   }
@@ -860,22 +860,22 @@ export function compareProperty(
   // Compare alternateSource (Media Replacement wrapper reference). to_dict
   // serializes the AVItem fully, so id/name are available; compare on id (the
   // binary blsi item id, the strongest invariant) then name.
-  result.track_field("Property", "alternateSource", expectedProp.has("alternateSource"));
+  result.trackField("Property", "alternateSource", expectedProp.has("alternateSource"));
   if (expectedProp.has("alternateSource")) {
     const expAlt = getitem(expectedProp, "alternateSource");
     const parsedAlt = parsedProp.get("alternateSource") ?? null;
     if (expAlt == null) {
       if (parsedAlt != null) {
         const pid = parsedAlt instanceof Map ? parsedAlt.get("id") ?? null : parsedAlt;
-        result.add_diff(`${path}.alternateSource`, null, pid, "properties");
+        result.addDiff(`${path}.alternateSource`, null, pid, "properties");
       }
     } else if (expAlt instanceof Map) {
       if (!(parsedAlt instanceof Map)) {
-        result.add_diff(`${path}.alternateSource`, expAlt, null, "properties");
+        result.addDiff(`${path}.alternateSource`, expAlt, null, "properties");
       } else {
         for (const key of ["id", "name"]) {
           if (!pyEq(expAlt.get(key) ?? null, parsedAlt.get(key) ?? null)) {
-            result.add_diff(
+            result.addDiff(
               `${path}.alternateSource.${key}`,
               expAlt.get(key) ?? null,
               parsedAlt.get(key) ?? null,
@@ -893,20 +893,20 @@ export function compareProperty(
   // 1-based, parsed is 0-based; the containing-comp name is not serialized by
   // to_dict - circular-ref guard - so comp is not compared). A Property source
   // is compared on matchName.
-  result.track_field("Property", "essentialPropertySource", expectedProp.has("essentialPropertySource"));
+  result.trackField("Property", "essentialPropertySource", expectedProp.has("essentialPropertySource"));
   if (expectedProp.has("essentialPropertySource")) {
     const expEps = getitem(expectedProp, "essentialPropertySource");
     const parsedEps = parsedProp.get("essentialPropertySource") ?? null;
     if (expEps == null) {
       if (parsedEps != null) {
         const pname = parsedEps instanceof Map ? parsedEps.get("name") ?? null : parsedEps;
-        result.add_diff(`${path}.essentialPropertySource`, null, pname, "properties");
+        result.addDiff(`${path}.essentialPropertySource`, null, pname, "properties");
       }
     } else if (!(parsedEps instanceof Map)) {
-      result.add_diff(`${path}.essentialPropertySource`, expEps, null, "properties");
+      result.addDiff(`${path}.essentialPropertySource`, expEps, null, "properties");
     } else if (dictGet(expEps, "sourceType") === "AVLayer") {
       if (!pyEq(dictGet(expEps, "name"), parsedEps.get("name") ?? null)) {
-        result.add_diff(
+        result.addDiff(
           `${path}.essentialPropertySource.name`,
           dictGet(expEps, "name"),
           parsedEps.get("name") ?? null,
@@ -916,11 +916,11 @@ export function compareProperty(
       const expIdx = dictGet<string, ToDictValue>(expEps, "index");
       const parsedIdx = parsedEps.get("index") ?? null;
       if (expIdx != null && parsedIdx != null && expIdx !== parsedIdx + 1) {
-        result.add_diff(`${path}.essentialPropertySource.index`, expIdx, parsedIdx + 1, "properties");
+        result.addDiff(`${path}.essentialPropertySource.index`, expIdx, parsedIdx + 1, "properties");
       }
     } else if (dictGet(expEps, "sourceType") === "Property") {
       if (!pyEq(dictGet(expEps, "matchName"), parsedEps.get("matchName") ?? null)) {
-        result.add_diff(
+        result.addDiff(
           `${path}.essentialPropertySource.matchName`,
           dictGet(expEps, "matchName"),
           parsedEps.get("matchName") ?? null,
@@ -966,14 +966,14 @@ export function compareShapeValue(
   };
   const parsedFps: Dict[] = dictGet(parsedShape, "featherPoints", []);
   for (const [expKey, fpAttr] of Object.entries(featherFieldMap)) {
-    result.defined_fields.add(`Shape.${fpAttr}`);
+    result.definedFields.add(`Shape.${fpAttr}`);
     if (expectedShape.has(expKey)) {
       const expVal = expectedShape.get(expKey);
       if (expVal instanceof Map && pyBool(expVal.get("_undefined"))) continue;
-      result.compared_fields.add(`Shape.${fpAttr}`);
+      result.comparedFields.add(`Shape.${fpAttr}`);
       const parsedVal = parsedFps.map((fp) => fp.get(fpAttr) ?? null);
       if (!compareValues(expVal, parsedVal)) {
-        result.add_diff(`${path}.${expKey}`, expVal, parsedVal, "shape");
+        result.addDiff(`${path}.${expKey}`, expVal, parsedVal, "shape");
       }
     }
   }
@@ -994,9 +994,9 @@ export function compareKeyframe(
    * @param result - ValidationResult to accumulate differences.
    */
   // Track manually-compared fields
-  result.track_field("Keyframe", "value", expectedKf.has("value"));
-  result.track_field("Keyframe", "inTemporalEase", expectedKf.has("inTemporalEase"));
-  result.track_field("Keyframe", "outTemporalEase", expectedKf.has("outTemporalEase"));
+  result.trackField("Keyframe", "value", expectedKf.has("value"));
+  result.trackField("Keyframe", "inTemporalEase", expectedKf.has("inTemporalEase"));
+  result.trackField("Keyframe", "outTemporalEase", expectedKf.has("outTemporalEase"));
 
   // Compare value. The exporter writes None for a key value ExtendScript
   // cannot read (a Curves key's, which aborts the script).
@@ -1014,12 +1014,12 @@ export function compareKeyframe(
       for (const [key, nval] of normalized) {
         const pval = parsedVal.get(key) ?? null;
         if (pval != null && !compareValues(nval, pval)) {
-          result.add_diff(`${path}.value.${key}`, nval, pval, "keyframes");
+          result.addDiff(`${path}.value.${key}`, nval, pval, "keyframes");
         }
       }
     } else if (!(expVal instanceof Map) || !pyBool(expVal.get("_undefined"))) {
       if (!compareValues(expVal, parsedVal)) {
-        result.add_diff(`${path}.value`, expVal, parsedVal, "keyframes");
+        result.addDiff(`${path}.value`, expVal, parsedVal, "keyframes");
       }
     }
   }
@@ -1050,7 +1050,7 @@ export function compareKeyframe(
       const expEase = expectedKf.get(easeKey);
       const parsedEase = dictGet(parsedKf, parsedKey, []);
       if (len(expEase) !== len(parsedEase)) {
-        result.add_diff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
+        result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
       }
       for (const [ei, [expE, parsedE]] of zip(expEase, parsedEase).entries()) {
         const expSpeed = expE instanceof Map ? expE.get("speed") ?? null : null;
@@ -1058,10 +1058,10 @@ export function compareKeyframe(
         const parsedSpeed = parsedE instanceof Map ? parsedE.get("speed") ?? null : null;
         const parsedInfluence = parsedE instanceof Map ? parsedE.get("influence") ?? null : null;
         if (!compareValues(expSpeed, parsedSpeed)) {
-          result.add_diff(`${path}.${easeKey}[${ei}].speed`, expSpeed, parsedSpeed, "keyframes");
+          result.addDiff(`${path}.${easeKey}[${ei}].speed`, expSpeed, parsedSpeed, "keyframes");
         }
         if (!compareValues(expInfluence, parsedInfluence)) {
-          result.add_diff(`${path}.${easeKey}[${ei}].influence`, expInfluence, parsedInfluence, "keyframes");
+          result.addDiff(`${path}.${easeKey}[${ei}].influence`, expInfluence, parsedInfluence, "keyframes");
         }
       }
     }
@@ -1197,12 +1197,12 @@ export function comparePropertyGroup(
   _compareFields(expectedGroup, parsedGroup, groupMappings, path, "properties", result, "PropertyGroup");
 
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
-  result.track_field("PropertyGroup", "propertyIndex", expectedGroup.has("propertyIndex"));
+  result.trackField("PropertyGroup", "propertyIndex", expectedGroup.has("propertyIndex"));
   if (expectedGroup.has("propertyIndex")) {
     const expPi = getitem(expectedGroup, "propertyIndex");
     const parsedPi = parsedGroup.get("propertyIndex") ?? null;
     if (parsedPi != null && expPi !== parsedPi + 1) {
-      result.add_diff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
+      result.addDiff(`${path}.propertyIndex`, expPi, parsedPi + 1, "properties");
     }
   }
 
@@ -1264,7 +1264,7 @@ export function compareCompItem(
   const expLayers = dictGet(expectedItem, "layers", []);
   const parsedLayers = dictGet(parsedComp, "layers", []);
   if (expLayers.length !== parsedLayers.length) {
-    result.add_diff(`${path}.numLayers`, expLayers.length, parsedLayers.length, "composition");
+    result.addDiff(`${path}.numLayers`, expLayers.length, parsedLayers.length, "composition");
   }
 
   // Compare each layer
@@ -1313,10 +1313,10 @@ export function compareFolderHierarchy(
   for (const [folderId, expFolder] of expectedFolders) {
     const parsedFolder = parsedFolders.get(folderId);
     if (parsedFolder === undefined) {
-      result.add_diff(`Folder[${getitem(expFolder, "name")}]`, "exists", "missing", "folders");
+      result.addDiff(`Folder[${getitem(expFolder, "name")}]`, "exists", "missing", "folders");
     } else {
       if (!pyEq(getitem(expFolder, "name"), parsedFolder.get("name") ?? null)) {
-        result.add_diff(
+        result.addDiff(
           `Folder[id=${folderId}].name`,
           getitem(expFolder, "name"),
           parsedFolder.get("name") ?? null,
@@ -1383,7 +1383,7 @@ export function compareFootageItem(
     _compareFields(expSource, parsedSource, sourceMappings, sourcePath, "footage", result, "FootageSource");
 
     // AE returns native_frame_rate when conformFrameRate is 0
-    result.track_field("FootageSource", "conformFrameRate", expSource.has("conformFrameRate"));
+    result.trackField("FootageSource", "conformFrameRate", expSource.has("conformFrameRate"));
     const expCfr = dictGet<string, ToDictValue>(expSource, "conformFrameRate");
     const parsedCfr = dictGet<string, ToDictValue, number>(parsedSource, "conformFrameRate", 0);
     if (expCfr != null) {
@@ -1393,14 +1393,14 @@ export function compareFootageItem(
         if (parsedCfr === 0 && compareValues(expCfr, native)) {
           // AE reported native rate as conform rate
         } else {
-          result.add_diff(`${sourcePath}.conformFrameRate`, expCfr, parsedCfr, "footage");
+          result.addDiff(`${sourcePath}.conformFrameRate`, expCfr, parsedCfr, "footage");
         }
       }
     }
 
     // Track manually-compared fields
-    result.track_field("FootageSource", "file", expSource.has("filePath"));
-    result.track_field("FootageSource", "missingFootagePath", expSource.has("missingFootagePath"));
+    result.trackField("FootageSource", "file", expSource.has("filePath"));
+    result.trackField("FootageSource", "missingFootagePath", expSource.has("missingFootagePath"));
     // FileSource-specific fields
     if (expSource.has("filePath")) {
       const expFile = getitem<string, string | null>(expSource, "filePath");
@@ -1413,7 +1413,7 @@ export function compareFootageItem(
         const expName = new PureWindowsPath(expFile).name;
         const parsedName = new PureWindowsPath(parsedFile).name;
         if (expName !== parsedName) {
-          result.add_diff(`${sourcePath}.fileName`, expName, parsedName, "footage");
+          result.addDiff(`${sourcePath}.fileName`, expName, parsedName, "footage");
         }
       }
     }
@@ -1422,7 +1422,7 @@ export function compareFootageItem(
       const expMissing = getitem<string, ToDictValue>(expSource, "missingFootagePath");
       const parsedMissing = dictGet<string, ToDictValue, string>(parsedSource, "missingFootagePath", "");
       if (pyBool(expMissing) && !pyEq(expMissing, parsedMissing)) {
-        result.add_diff(`${sourcePath}.missingFootagePath`, expMissing, parsedMissing, "footage");
+        result.addDiff(`${sourcePath}.missingFootagePath`, expMissing, parsedMissing, "footage");
       }
     }
   }
@@ -1443,7 +1443,7 @@ export function compareSettings(
    * Render settings are now stored as raw integer values with ExtendScript keys.
    */
   if (parsedSettings == null) {
-    result.add_diff(`${path}`, "exists", "missing", "renderqueue");
+    result.addDiff(`${path}`, "exists", "missing", "renderqueue");
     return;
   }
 
@@ -1489,7 +1489,7 @@ export function compareOutputModuleSettings(
    */
   if (expectedSettings == null) return;
   if (parsedSettings == null) {
-    result.add_diff(`${path}`, "exists", "missing", "renderqueue");
+    result.addDiff(`${path}`, "exists", "missing", "renderqueue");
     return;
   }
 
@@ -1533,7 +1533,7 @@ export function compareRenderQueue(
   const parsedItems: Dict[] = dictGet(parsedRq, "items", []);
 
   if (expectedItems.length !== parsedItems.length) {
-    result.add_diff("RenderQueue.numItems", expectedItems.length, parsedItems.length, "renderqueue");
+    result.addDiff("RenderQueue.numItems", expectedItems.length, parsedItems.length, "renderqueue");
     if (verbose) {
       console.log(
         `  Item count mismatch: expected ${expectedItems.length}, got ${parsedItems.length}`,
@@ -1544,7 +1544,7 @@ export function compareRenderQueue(
   // Compare each render queue item
   for (const [i, expItem] of expectedItems.entries()) {
     if (i >= parsedItems.length) {
-      result.add_diff(`RenderQueueItem[${i}]`, "exists", "missing", "renderqueue");
+      result.addDiff(`RenderQueueItem[${i}]`, "exists", "missing", "renderqueue");
       continue;
     }
 
@@ -1576,12 +1576,12 @@ export function compareRenderQueue(
     const parsedOms: Dict[] = dictGet(parsedItem, "outputModules", []);
 
     if (expOms.length !== parsedOms.length) {
-      result.add_diff(`${path}.numOutputModules`, expOms.length, parsedOms.length, "renderqueue");
+      result.addDiff(`${path}.numOutputModules`, expOms.length, parsedOms.length, "renderqueue");
     }
 
     for (const [j, expOm] of expOms.entries()) {
       if (j >= parsedOms.length) {
-        result.add_diff(`${path}.outputModule[${j}]`, "exists", "missing", "renderqueue");
+        result.addDiff(`${path}.outputModule[${j}]`, "exists", "missing", "renderqueue");
         continue;
       }
 
@@ -1597,7 +1597,7 @@ export function compareRenderQueue(
       _compareFields(expOm, parsedOm, omMappings, omPath, "renderqueue", result, "OutputModule");
 
       // Compare output module file (path comparison)
-      result.track_field("OutputModule", "file", expOm.has("file"));
+      result.trackField("OutputModule", "file", expOm.has("file"));
       if (expOm.has("file")) {
         const expFile = getitem(expOm, "file");
         const parsedFile = dictGet(parsedOm, "file", "");
@@ -1607,7 +1607,7 @@ export function compareRenderQueue(
           const expName = new PureWindowsPath(expFile).name;
           const parsedName = new PureWindowsPath(str(parsedFile)).name;
           if (expName !== parsedName) {
-            result.add_diff(`${omPath}.fileName`, expName, parsedName, "renderqueue");
+            result.addDiff(`${omPath}.fileName`, expName, parsedName, "renderqueue");
           }
         }
       }
@@ -1645,7 +1645,7 @@ export function compareViewer(
   const expViews: Dict[] = dictGet(expectedViewer, "views", []);
   const parsedViews: Dict[] = dictGet(parsedViewer, "views", []);
   if (expViews.length !== parsedViews.length) {
-    result.add_diff("Viewer.views.length", expViews.length, parsedViews.length, "viewer");
+    result.addDiff("Viewer.views.length", expViews.length, parsedViews.length, "viewer");
   }
 
   for (const [i, [expView, parsedView]] of zip(expViews, parsedViews).entries()) {
@@ -1694,7 +1694,7 @@ export function validateAep(
 
   // Load expected JSON
   // Python `open(encoding="utf-8")`: bytes are decoded without dropping a BOM.
-  const loaded = jsonLoads(decode(jsonPath.read_bytes(), "utf-8"));
+  const loaded = jsonLoads(decode(jsonPath.readBytes(), "utf-8"));
   if (!(loaded instanceof Map)) throw new AttributeError(`'${typeName(loaded)}' object has no attribute 'get'`);
   const expected: Dict = loaded;
 
@@ -1715,7 +1715,7 @@ export function validateAep(
     const itemName = getitem(expItem, "name");
 
     if (!parsedById.has(itemId)) {
-      result.add_diff(`Comp[${itemName}]`, "exists", "missing", "composition");
+      result.addDiff(`Comp[${itemName}]`, "exists", "missing", "composition");
       if (verbose) console.log(`  ${itemName} (id=${itemId}): MISSING!`);
       continue;
     }
@@ -1753,7 +1753,7 @@ export function validateAep(
 
     const parsedFi = parsedFootageById.get(fiId) ?? null;
     if (parsedFi == null) {
-      result.add_diff(`Footage[${fiName}]`, "exists", "missing", "footage");
+      result.addDiff(`Footage[${fiName}]`, "exists", "missing", "footage");
       if (verbose) console.log(`  ${fiName} (id=${fiId}): MISSING!`);
       continue;
     }
@@ -1836,8 +1836,8 @@ export function printResults(
 
 export function printCoverage(result: ValidationResult): void {
   /** Print field coverage report. */
-  const compared = sorted(result.compared_fields);
-  const notCompared = sorted([...result.defined_fields].filter((x) => !result.compared_fields.has(x)));
+  const compared = sorted(result.comparedFields);
+  const notCompared = sorted([...result.definedFields].filter((x) => !result.comparedFields.has(x)));
 
   console.log(`\n${"=".repeat(60)}`);
   console.log("FIELD COVERAGE REPORT");
@@ -1900,8 +1900,8 @@ export function _parserError(message: string): never {
 
 /** `parser.parse_args(args)` for the flags this tool declares. */
 export function _parseArgs(argv: string[]): {
-  aep_file: Path;
-  json_file: Path;
+  aepFile: Path;
+  jsonFile: Path;
   verbose: boolean;
   category: string | null;
   coverage: boolean;
@@ -1965,14 +1965,14 @@ export function _parseArgs(argv: string[]): {
     }
   }
   if (positionals.length < 2) {
-    _parserError(`the following arguments are required: ${["aep_file", "json_file"].slice(positionals.length).join(", ")}`);
+    _parserError(`the following arguments are required: ${["aepFile", "jsonFile"].slice(positionals.length).join(", ")}`);
   }
   if (positionals.length > 2) {
     _parserError(`unrecognized arguments: ${positionals.slice(2).join(" ")}`);
   }
   return {
-    aep_file: new Path(positionals[0]),
-    json_file: new Path(positionals[1]),
+    aepFile: new Path(positionals[0]),
+    jsonFile: new Path(positionals[1]),
     verbose,
     category,
     coverage,
@@ -1983,20 +1983,20 @@ export function _parseArgs(argv: string[]): {
 export function main(args: string[] | null = null): number {
   const parsedArgs = _parseArgs(args ?? process.argv.slice(2));
 
-  if (!parsedArgs.aep_file.exists()) {
-    console.log(`Error: AEP file not found: ${parsedArgs.aep_file}`);
+  if (!parsedArgs.aepFile.exists()) {
+    console.log(`Error: AEP file not found: ${parsedArgs.aepFile}`);
     return 1;
   }
 
-  if (!parsedArgs.json_file.exists()) {
-    console.log(`Error: JSON file not found: ${parsedArgs.json_file}`);
+  if (!parsedArgs.jsonFile.exists()) {
+    console.log(`Error: JSON file not found: ${parsedArgs.jsonFile}`);
     return 1;
   }
 
-  console.log(`Validating: ${parsedArgs.aep_file.name}`);
-  console.log(`Expected:   ${parsedArgs.json_file.name}`);
+  console.log(`Validating: ${parsedArgs.aepFile.name}`);
+  console.log(`Expected:   ${parsedArgs.jsonFile.name}`);
 
-  const result = validateAep(parsedArgs.aep_file, parsedArgs.json_file, parsedArgs.verbose, parsedArgs.category);
+  const result = validateAep(parsedArgs.aepFile, parsedArgs.jsonFile, parsedArgs.verbose, parsedArgs.category);
 
   printResults(result, parsedArgs.verbose, parsedArgs.category);
 

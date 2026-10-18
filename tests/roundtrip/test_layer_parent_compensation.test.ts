@@ -149,11 +149,11 @@ describe("TestParentCameraIsAlwaysThreeD", () => {
     // A camera's world is its rig (position + rotations): its point of
     // interest sits in the Anchor Point slot and AE 2026 remaps it into
     // the new parent's space too, so it is no anchor to subtract.
-    const before = buildWorldMatrix(camera, null, false, { as_parent: true });
+    const before = buildWorldMatrix(camera, null, false, { asParent: true });
 
     camera.parent = target;
 
-    expect(_worldDelta(before, buildWorldMatrix(camera, null, false, { as_parent: true }))).toBeLessThan(1e-9);
+    expect(_worldDelta(before, buildWorldMatrix(camera, null, false, { asParent: true }))).toBeLessThan(1e-9);
   });
 
   test("test_camera_compensates_through_orientation", () => {
@@ -569,7 +569,7 @@ describe("TestParentScaledParentKeyframes", () => {
 
   test("test_non_uniform_scale_divides_per_axis", () => {
     const [, parent, scale] = _setup([200.0, 50.0, 100.0]);
-    const child = scale._containing_layer;
+    const child = scale._containingLayer;
 
     child.parent = parent;
 
@@ -653,7 +653,7 @@ describe("TestParentAcrossTheTwoDThreeDBoundary", () => {
 const TRANSFORM_FIXTURES = new Path(import.meta.path).parent.parent.parent.div("samples", "unused", "transforms");
 
 // Skipped unless samples/unused is present: "samples/unused is not committed".
-describe.skipIf(!TRANSFORM_FIXTURES.is_dir())("TestUnparentAgainstAeFixtures", () => {
+describe.skipIf(!TRANSFORM_FIXTURES.isDir())("TestUnparentAgainstAeFixtures", () => {
   /**
    * Replay AE 25.6's own un-parenting pairs.
    *

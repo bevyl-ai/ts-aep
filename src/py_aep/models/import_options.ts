@@ -51,26 +51,26 @@ export const CURRENT_VALUE = new _CurrentValue();
  */
 export class ImportOptions {
   _file: Path;
-  _import_as: ImportAsType;
+  _importAs: ImportAsType;
   _sequence: boolean;
-  _force_alphabetical: boolean;
-  _layer_index: number | null;
-  _layer_dimensions: string | null;
-  _layer_styles: string | null;
-  _range_start: number;
-  _range_end: number;
+  _forceAlphabetical: boolean;
+  _layerIndex: number | null;
+  _layerDimensions: string | null;
+  _layerStyles: string | null;
+  _rangeStart: number;
+  _rangeEnd: number;
 
   constructor(file: string | PathLike) {
     validatePath(file);
     this._file = new Path(file);
-    this._import_as = ImportAsType.FOOTAGE;
+    this._importAs = ImportAsType.FOOTAGE;
     this._sequence = false;
-    this._force_alphabetical = false;
-    this._layer_index = null;
-    this._layer_dimensions = null;
-    this._layer_styles = null;
-    this._range_start = 0;
-    this._range_end = 0;
+    this._forceAlphabetical = false;
+    this._layerIndex = null;
+    this._layerDimensions = null;
+    this._layerStyles = null;
+    this._rangeStart = 0;
+    this._rangeEnd = 0;
   }
 
   /**
@@ -90,7 +90,7 @@ export class ImportOptions {
    *   layers (see `list_layers`).
    */
   get layerIndex(): number | null {
-    return this._layer_index;
+    return this._layerIndex;
   }
 
   set layerIndex(value: number | null | _CurrentValue) {
@@ -101,7 +101,7 @@ export class ImportOptions {
       );
     }
     if (value != null) validatePositiveInt(value);
-    this._layer_index = value;
+    this._layerIndex = value;
   }
 
   /**
@@ -110,7 +110,7 @@ export class ImportOptions {
    * "Footage Dimensions" option of AE's import dialog. `null` (the
    * default) follows the machine's sticky "Footage Dimensions" preference
    * for a `.psd`/`.psb` import when the project was parsed with an
-   * `ae_preferences_dir`, and imports at document size otherwise (always,
+   * `aePreferencesDir`, and imports at document size otherwise (always,
    * for `.ai`/`.pdf`). Read / Write.
    *
    * py_aep extension: ExtendScript exposes no layer-selection API.
@@ -124,12 +124,12 @@ export class ImportOptions {
    * and emits a `UserWarning`.
    */
   get layerDimensions(): string | null {
-    return this._layer_dimensions;
+    return this._layerDimensions;
   }
 
   set layerDimensions(value: string | null) {
     if (value != null) validateOneOf(["document", "layer"])(value);
-    this._layer_dimensions = value;
+    this._layerDimensions = value;
   }
 
   /**
@@ -138,7 +138,7 @@ export class ImportOptions {
    * `"editable"` (Editable Layer Styles), `"merge"` (Merge Layer Styles
    * into Footage) or `"ignore"` (Ignore Layer Styles). `null` (the
    * default) follows the machine's sticky "Layer Options" preference when
-   * the project was parsed with an `ae_preferences_dir`, falling back to
+   * the project was parsed with an `aePreferencesDir`, falling back to
    * AE's dialog default for the context: `"editable"` for a COMP /
    * COMP_CROPPED_LAYERS import, `"merge"` for a FOOTAGE import of a single
    * layer. Read / Write.
@@ -162,7 +162,7 @@ export class ImportOptions {
    *   above), or if the file is not `.psd`/`.psb`.
    */
   get layerStyles(): string | null {
-    return this._layer_styles;
+    return this._layerStyles;
   }
 
   set layerStyles(value: string | null | _CurrentValue) {
@@ -173,7 +173,7 @@ export class ImportOptions {
       );
     }
     if (value != null) validateOneOf(["editable", "merge", "ignore"])(value);
-    this._layer_styles = value;
+    this._layerStyles = value;
   }
 
   /**
@@ -191,12 +191,12 @@ export class ImportOptions {
 
   /** How to import the file. Read / Write. */
   get importAs(): ImportAsType {
-    return this._import_as;
+    return this._importAs;
   }
 
   set importAs(value: ImportAsType) {
     validateEnum(ImportAsType)(value);
-    this._import_as = ImportAsType.of(value);
+    this._importAs = ImportAsType.of(value);
   }
 
   /**
@@ -225,70 +225,70 @@ export class ImportOptions {
    * an alphabetical sequence cannot carry a frame range).
    */
   get forceAlphabetical(): boolean {
-    return this._force_alphabetical;
+    return this._forceAlphabetical;
   }
 
   set forceAlphabetical(value: boolean) {
     validateBool(value);
-    this._force_alphabetical = value;
+    this._forceAlphabetical = value;
     if (value) {
-      this._range_start = 0;
-      this._range_end = 0;
+      this._rangeStart = 0;
+      this._rangeEnd = 0;
     }
   }
 
   /**
    * The first frame number of the clipping range for a numbered
-   * image sequence import, inclusive. 0 (with `range_end` 0) imports
+   * image sequence import, inclusive. 0 (with `rangeEnd` 0) imports
    * every frame. Read / Write.
    *
    * Frame numbers refer to the digits in the filenames, not ordinal
    * positions. Has no effect unless {@link ImportOptions.sequence | sequence}
-   * is `true`. A `range_end` of 0 with a non-zero `range_start` is
+   * is `true`. A `rangeEnd` of 0 with a non-zero `rangeStart` is
    * rejected at import time, as is `range_end < range_start` (both
    * matching After Effects).
    *
-   * @throws {@link ValueError} If set while `force_alphabetical` is `true` (After Effects: "You
+   * @throws {@link ValueError} If set while `forceAlphabetical` is `true` (After Effects: "You
    *   cannot set sequence range start for an alphabetical sequence"), or if the value does not fit
    *   the `sspc` `start_frame` field (a `u4`: 0..4294967295).
    */
   get rangeStart(): number {
-    return this._range_start;
+    return this._rangeStart;
   }
 
   set rangeStart(value: number) {
     validateU4(value);
-    if (this._force_alphabetical) {
+    if (this._forceAlphabetical) {
       throw new ValueError("cannot set a sequence range start for an alphabetical sequence");
     }
-    this._range_start = value;
+    this._rangeStart = value;
   }
 
   /**
    * The last frame number of the clipping range for a numbered
-   * image sequence import, inclusive. 0 (with `range_start` 0) imports
+   * image sequence import, inclusive. 0 (with `rangeStart` 0) imports
    * every frame. Read / Write.
    *
-   * A `range_end` beyond the last existing frame keeps the range:
+   * A `rangeEnd` beyond the last existing frame keeps the range:
    * After Effects treats the missing tail frames as implied (rendered
    * as placeholder bars), and py_aep writes the same
    * `start_frame`/`end_frame` bounds. The resulting footage duration is
    * not clamped to After Effects' 3-hour ceiling - AE 2026 opens a
    * longer ranged sequence without complaint.
    *
-   * @throws {@link ValueError} If set while `force_alphabetical` is `true`, or if the value does
+   * @throws {@link ValueError} If set while `forceAlphabetical` is `true`, or if the value does
    *   not fit the `sspc` `end_frame` field (a `u4`: 0..4294967295).
    */
   get rangeEnd(): number {
-    return this._range_end;
+    return this._rangeEnd;
   }
 
   set rangeEnd(value: number) {
     validateU4(value);
-    if (this._force_alphabetical) {
+    if (this._forceAlphabetical) {
       throw new ValueError("cannot set a sequence range end for an alphabetical sequence");
     }
-    this._range_end = value;
+    this._rangeEnd = value;
   }
 
   /**
@@ -357,7 +357,7 @@ export class ImportOptions {
     // NOTE(port): CPython prints `PosixPath('...')` for `{self._file!r}` on POSIX; spelled out here.
     return (
       `ImportOptions(file=PosixPath(${repr(this._file.toString())}), ` +
-      `import_as=${ImportAsType.name_of(this._import_as)}, ` +
+      `import_as=${ImportAsType.nameOf(this._importAs)}, ` +
       `sequence=${repr(this._sequence)})`
     );
   }

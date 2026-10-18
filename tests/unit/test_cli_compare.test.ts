@@ -23,20 +23,20 @@ describe("TestByteDifference", () => {
   test("test_single_bit_difference_detected", () => {
     // Bit 0 differs (0x00 vs 0x01)
     const diff = new ByteDifference("test", 0, 0x00, 0x01);
-    expect(diff.bit_position).toBe(7); // Bit 0 from right = bit 7 from left
+    expect(diff.bitPosition).toBe(7); // Bit 0 from right = bit 7 from left
   });
 
   /** Test that multiple bit differences don't have a bit position. */
   test("test_multiple_bit_difference_no_position", () => {
     // Multiple bits differ (0x00 vs 0xFF)
     const diff = new ByteDifference("test", 0, 0x00, 0xff);
-    expect(diff.bit_position == null).toBe(true);
+    expect(diff.bitPosition == null).toBe(true);
   });
 
   /** Test format_diff output includes bit position when applicable. */
   test("test_format_diff_with_bit_position", () => {
     const diff = new ByteDifference("test", 10, 0x80, 0x00);
-    const formatted = diff.format_diff();
+    const formatted = diff.formatDiff();
     expect(formatted).toContain("bit 0"); // MSB is bit 0
     expect(formatted).toContain("0x80");
     expect(formatted).toContain("0x00");
@@ -47,19 +47,19 @@ describe("TestMultiFileDifference", () => {
   /** Bit position is set when exactly two distinct values differ by 1 bit. */
   test("test_single_bit_two_distinct_values", () => {
     const diff = new MultiFileDifference("test", 0, [0x00, 0x80, 0x00, 0x80]);
-    expect(diff.bit_position).toBe(0); // MSB
+    expect(diff.bitPosition).toBe(0); // MSB
   });
 
   /** No bit position when values differ by more than one bit. */
   test("test_multiple_bits_no_position", () => {
     const diff = new MultiFileDifference("test", 0, [0x00, 0xff, 0x00]);
-    expect(diff.bit_position == null).toBe(true);
+    expect(diff.bitPosition == null).toBe(true);
   });
 
   /** No bit position when more than two distinct values. */
   test("test_three_distinct_values_no_position", () => {
     const diff = new MultiFileDifference("test", 0, [0x00, 0x01, 0x02]);
-    expect(diff.bit_position == null).toBe(true);
+    expect(diff.bitPosition == null).toBe(true);
   });
 });
 

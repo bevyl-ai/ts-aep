@@ -140,12 +140,12 @@ export function pyObject<T extends object>(self: T): T {
  * A write to an own field or to an accessor above the proxy skips
  * `__setattr__`, so this is exact only for a `__setattr__` that lets every
  * existing attribute through (as `object.__setattr__` would) and rules on
- * new names alone. `setattr_passes_private`: `__setattr__` (on every
+ * new names alone. `setattrPassesPrivate`: `__setattr__` (on every
  * subclass too) hands `_`-prefixed names straight to `object.__setattr__`,
  * so a constructor's private fields skip it.
  */
-export function pyClassHooks(cls: Function, kw: { setattr_passes_private?: boolean } = {}): void {
-  const privatePass = kw.setattr_passes_private ?? false;
+export function pyClassHooks(cls: Function, kw: { setattrPassesPrivate?: boolean } = {}): void {
+  const privatePass = kw.setattrPassesPrivate ?? false;
   // An empty target over the base prototype: the proxy then reports that prototype as its
   // own, so `instanceof Base` still finds it in the chain.
   const base: object = Object.create(Object.getPrototypeOf(cls.prototype));

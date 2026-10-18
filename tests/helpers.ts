@@ -397,7 +397,7 @@ export function projectBytes(project: Project): Uint8Array {
 }
 
 function _expectedText(samplesDir: string, sampleName: string): string {
-  return decode(new Path(samplesDir).div(`${sampleName}.json`).read_bytes(), "utf-8");
+  return decode(new Path(samplesDir).div(`${sampleName}.json`).readBytes(), "utf-8");
 }
 
 // Python `Path` hashes by value; `lru_cache` here keys by identity, so key on the path string.

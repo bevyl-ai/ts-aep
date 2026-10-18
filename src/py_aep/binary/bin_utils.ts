@@ -58,7 +58,7 @@ export function toDividendDivisor(value: number): [number, number] {
   // |dividend| ~= |value| * denominator, so capping the denominator at
   // INT32_MAX // (|value| + 2) keeps the dividend strictly inside int32.
   const maxDenominator = Math.max(1, floordiv(_INT32_MAX, int(Math.abs(value)) + 2));
-  const frac = new Fraction(value).limit_denominator(Math.min(1_000_000, maxDenominator));
+  const frac = new Fraction(value).limitDenominator(Math.min(1_000_000, maxDenominator));
   return [frac.numerator, frac.denominator];
 }
 
@@ -72,7 +72,7 @@ export function toDividendDivisor(value: number): [number, number] {
  * 330/396000001.
  */
 export function toFloat32Ratio(value: number): [number, number] {
-  const frac = new Fraction(toF4(value)).limit_denominator(_INT32_MAX);
+  const frac = new Fraction(toF4(value)).limitDenominator(_INT32_MAX);
   return [frac.numerator, frac.denominator];
 }
 
@@ -213,6 +213,6 @@ export function writePad(fp: IO, size: number): number {
 /** Consume a pad byte if `size` is odd. */
 export function readPad(fp: IO, size: number): void {
   if (size % 2 !== 0) {
-    fp.read_byte();
+    fp.readByte();
   }
 }

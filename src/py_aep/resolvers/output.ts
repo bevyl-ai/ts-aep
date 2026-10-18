@@ -402,12 +402,12 @@ export function resolveTimeSpan(
   rqSettings: Pick<SettingsView<RenderSettingValues>, "get">,
   effectiveFrameRate: number,
 ): {
-  start_frame: number;
-  end_frame: number;
-  duration_frames: number;
-  start_time: number;
-  end_time: number;
-  duration_time: number;
+  startFrame: number;
+  endFrame: number;
+  durationFrames: number;
+  startTime: number;
+  endTime: number;
+  durationTime: number;
 } {
   const timeSpanMode = rqSettings.get("Time Span");
 
@@ -436,11 +436,11 @@ export function resolveTimeSpan(
   const endFrame = firstRenderedFrame + durationFrames;
 
   return {
-    start_frame: startFrame,
-    end_frame: endFrame,
-    duration_frames: durationFrames,
-    start_time: comp.displayStartTime + timeSpanStart,
-    end_time: comp.displayStartTime + timeSpanEnd,
-    duration_time: durationTime,
+    startFrame: startFrame,
+    endFrame: endFrame,
+    durationFrames: durationFrames,
+    startTime: comp.displayStartTime + timeSpanStart,
+    endTime: comp.displayStartTime + timeSpanEnd,
+    durationTime: durationTime,
   };
 }

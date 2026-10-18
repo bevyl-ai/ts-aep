@@ -222,7 +222,7 @@ describe("TestNewItemOutputPath", () => {
       expect(item.status).toBe(RQItemStatus.QUEUED);
       expect(pyBool(item._ldat.render_checked)).toBe(true);
       // AE ignores an output path record without this bit.
-      expect(pyBool(at(item.outputModules, 0)._om_ldat.has_output_file)).toBe(true);
+      expect(pyBool(at(item.outputModules, 0)._omLdat.has_output_file)).toBe(true);
     }
   });
 });
@@ -394,7 +394,7 @@ describe("TestTinySvgCanvas", () => {
     // AE 2026 imports these as 3x100, 1x1 and 2x5 comps (1 frame, 30 fps,
     // one shape layer), although its addComp refuses under 4 px.
     const svg = tmpPath.div("tiny.svg");
-    svg.write_text(`<svg ${_SVG_NS} ${attrs}><rect width='1' height='1'/></svg>`);
+    svg.writeText(`<svg ${_SVG_NS} ${attrs}><rect width='1' height='1'/></svg>`);
     const project = py_aep.new().project;
     const opts = new py_aep.ImportOptions(svg);
     opts.importAs = py_aep.ImportAsType.COMP_CROPPED_LAYERS;
@@ -543,7 +543,7 @@ describe("TestLayerStartTime", () => {
     const [_project, comp] = _newComp(32.0);
     const layer = comp.addSolid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 10.0);
     layer.stretch = stretch;
-    const base = layer.transform.property("ADBE Opacity")._layer_timebase;
+    const base = layer.transform.property("ADBE Opacity")._layerTimebase;
     layer.startTime = ticks / base;
     expect(layer._ldta.start_time_dividend).toBe(expected);
   });

@@ -134,7 +134,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   } else if (typeof source === "string" && lstrip(source).startsWith("<")) {
     data = encode(source, "utf-8");
   } else {
-    data = new Path(fspath(source)).read_bytes();
+    data = new Path(fspath(source)).readBytes();
   }
   let root: Element;
   try {
@@ -156,7 +156,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   // the inherited base for all children.
   const rootStyle = resolveProperties(new Map(), "svg", root.attrib, reader._css);
   rootTf = rootTf.multiply(parseTransform(root.get("transform", "")));
-  reader._root_ctm = rootTf;
+  reader._rootCtm = rootTf;
   reader._viewport = [width, height];
   const rootOpacity = parseRatio(rootStyle.get("opacity") ?? null, 1.0);
   const drawables = reader.walk(root, rootTf, rootStyle, rootOpacity);
@@ -166,34 +166,34 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
 export class _Reader {
   _gradients: Map<string, GradientDef>;
   _css: CssRule[];
-  _by_id: Map<string, Element>;
+  _byId: Map<string, Element>;
   _root: Element;
   // Child -> parent map for reconstructing a by-id element's accumulated
   // transform (ElementTree has no parent links). Built lazily on first
   // _element_ctm call - only <textPath> needs it, so the common SVG with
-  // no text path never pays for the whole-tree walk. `_root_ctm` is the
+  // no text path never pays for the whole-tree walk. `_rootCtm` is the
   // base (viewBox + root transform), set by read_svg before the walk.
   _parents: Map<Element, Element> | null;
-  _root_ctm: Affine;
+  _rootCtm: Affine;
   _viewport: [number, number];
-  _use_stack: string[];
+  _useStack: string[];
 
   constructor(root: Element) {
     this._gradients = collectGradients(root);
-    this._css = _Reader._collect_css(root);
-    this._by_id = new Map();
+    this._css = _Reader._collectCss(root);
+    this._byId = new Map();
     for (const elem of root.iter()) {
       const eid = elem.get("id");
-      if (eid) this._by_id.set(eid, elem);
+      if (eid) this._byId.set(eid, elem);
     }
     this._root = root;
     this._parents = null;
-    this._root_ctm = new Affine();
+    this._rootCtm = new Affine();
     this._viewport = [0.0, 0.0];
-    this._use_stack = [];
+    this._useStack = [];
   }
 
-  static _collect_css(root: Element): CssRule[] {
+  static _collectCss(root: Element): CssRule[] {
     const rules: CssRule[] = [];
     for (const elem of root.iter()) {
       if (localName(elem.tag) === "style" && elem.text) {
@@ -203,7 +203,7 @@ export class _Reader {
     return rules;
   }
 
-  _element_ctm(elem: Element): Affine {
+  _elementCtm(elem: Element): Affine {
     /**
      * Accumulated transform of `elem`: the root base (viewBox + root
      * transform) composed with every ancestor's `transform` down to and
@@ -221,7 +221,7 @@ export class _Reader {
       chain.push(cur);
       cur = this._parents.get(cur) ?? null;
     }
-    let ctm = this._root_ctm;
+    let ctm = this._rootCtm;
     for (const node of [...chain].reverse()) {
       ctm = ctm.multiply(parseTransform(node.get("transform", "")));
     }
@@ -271,7 +271,7 @@ export class _Reader {
     const effOpacity = opacity * parseRatio(style.get("opacity") ?? null, 1.0);
 
     if (tag === "svg") {
-      this._visit_viewport(elem, localTf, style, effOpacity, out, depth);
+      this._visitViewport(elem, localTf, style, effOpacity, out, depth);
       return;
     }
     if (_CONTAINER_TAGS.has(tag)) {
@@ -279,15 +279,15 @@ export class _Reader {
       return;
     }
     if (tag === "use") {
-      this._visit_use(elem, localTf, style, effOpacity, out, depth);
+      this._visitUse(elem, localTf, style, effOpacity, out, depth);
       return;
     }
     if (tag === "text") {
-      this._visit_text(elem, localTf, style, effOpacity, out);
+      this._visitText(elem, localTf, style, effOpacity, out);
       return;
     }
     if (_DRAWABLE_TAGS.has(tag)) {
-      const drawable = this._build_drawable(tag, elem, localTf, style, effOpacity);
+      const drawable = this._buildDrawable(tag, elem, localTf, style, effOpacity);
       if (drawable != null) out.push(drawable);
       return;
     }
@@ -310,7 +310,7 @@ export class _Reader {
     return new LengthContext(this._viewport[0], this._viewport[1], fontSize);
   }
 
-  _visit_viewport(
+  _visitViewport(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -324,12 +324,12 @@ export class _Reader {
      * AE 2026 imports it. Its content is not clipped (AE clips it).
      */
     const ctx = this._ctx(style);
-    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.font_size);
-    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.font_size);
-    this._walk_viewport(elem, elem, ctm, style, opacity, out, depth, x, y);
+    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.fontSize);
+    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.fontSize);
+    this._walkViewport(elem, elem, ctm, style, opacity, out, depth, x, y);
   }
 
-  _walk_viewport(
+  _walkViewport(
     viewport: Element,
     sizing: Element,
     ctm: Affine,
@@ -351,13 +351,13 @@ export class _Reader {
       sizing.get("width") || viewport.get("width"),
       ctx.width,
       ctx.width,
-      ctx.font_size,
+      ctx.fontSize,
     );
     const height = parseLength(
       sizing.get("height") || viewport.get("height"),
       ctx.height,
       ctx.height,
-      ctx.font_size,
+      ctx.fontSize,
     );
     const [tf, size] = viewportTransform(
       viewport.get("viewBox"),
@@ -376,7 +376,7 @@ export class _Reader {
     }
   }
 
-  _visit_use(
+  _visitUse(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -387,31 +387,31 @@ export class _Reader {
     const ref = elem.get("href") || elem.get("{http://www.w3.org/1999/xlink}href");
     if (!ref || !ref.startsWith("#")) return;
     const targetId = ref.slice(1);
-    if (this._use_stack.includes(targetId)) {
+    if (this._useStack.includes(targetId)) {
       throw new UnsupportedSVGError(`Recursive <use> reference: #${targetId}`);
     }
-    const target = this._by_id.get(targetId) ?? null;
+    const target = this._byId.get(targetId) ?? null;
     if (target == null) return;
     const ctx = this._ctx(style);
-    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.font_size);
-    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.font_size);
+    const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.fontSize);
+    const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.fontSize);
     const useTf = ctm.multiply(new Affine(1.0, 0.0, 0.0, 1.0, x, y));
-    this._use_stack.push(targetId);
+    this._useStack.push(targetId);
     try {
       const tTag = localName(target.tag);
       if (tTag === "symbol" || tTag === "svg") {
         // The instance is a viewport sized by the <use> (AE 2026
         // maps a 10 x 10 symbol viewBox onto `width="50"`).
-        this._walk_viewport(target, elem, useTf, style, opacity, out, depth, 0.0, 0.0);
+        this._walkViewport(target, elem, useTf, style, opacity, out, depth, 0.0, 0.0);
       } else {
         this._visit(target, useTf, style, opacity, out, depth);
       }
     } finally {
-      this._use_stack.pop();
+      this._useStack.pop();
     }
   }
 
-  _visit_text(
+  _visitText(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -425,7 +425,7 @@ export class _Reader {
     if ((style.get("visibility") ?? null) === "hidden") return;
     const runs: [TextRun, Map<string, string>][] = [];
     if (elem.text && strip(elem.text)) {
-      const run = this._make_run(elem.text, style, null);
+      const run = this._makeRun(elem.text, style, null);
       if (run != null) runs.push([run, style]);
     }
     for (const child of elem) {
@@ -433,16 +433,16 @@ export class _Reader {
       if (ctag === "tspan") {
         const cstyle = resolveProperties(style, "tspan", child.attrib, this._css);
         if (child.text && strip(child.text)) {
-          const run = this._make_run(child.text, cstyle, child);
+          const run = this._makeRun(child.text, cstyle, child);
           if (run != null) runs.push([run, cstyle]);
         }
       } else if (ctag === "textPath") {
-        this._add_text_path(elem, child, style, opacity, out);
+        this._addTextPath(elem, child, style, opacity, out);
       }
       // Text after a child element (its `tail`) belongs to the parent.
       const tail = child.tail;
       if (tail && strip(tail)) {
-        const run = this._make_run(tail, style, null);
+        const run = this._makeRun(tail, style, null);
         if (run != null) runs.push([run, style]);
       } else if (tail && !strip(tail) && runs.length > 0) {
         // A whitespace-only tail between two runs (e.g.
@@ -478,7 +478,7 @@ export class _Reader {
     }
   }
 
-  _make_run(text: string, style: Map<string, string>, elem: Element | null): TextRun | null {
+  _makeRun(text: string, style: Map<string, string>, elem: Element | null): TextRun | null {
     // Font is resolved from the cascaded/inherited style; position
     // attributes (x/y/dx/dy) come from the run's own element.
     text = _collapseWs(text);
@@ -512,7 +512,7 @@ export class _Reader {
     );
   }
 
-  _add_text_path(
+  _addTextPath(
     textElem: Element,
     tpElem: Element,
     parentStyle: Map<string, string>,
@@ -523,13 +523,13 @@ export class _Reader {
     // path's own coordinate space (its accumulated transform).
     const href = tpElem.get("href") || tpElem.get("{http://www.w3.org/1999/xlink}href");
     if (!href || !href.startsWith("#")) return;
-    const target = this._by_id.get(href.slice(1)) ?? null;
+    const target = this._byId.get(href.slice(1)) ?? null;
     if (target == null || !(!!tpElem.text && !!strip(tpElem.text))) {
       return;
     }
-    const ctm = this._element_ctm(target);
+    const ctm = this._elementCtm(target);
     const style = resolveProperties(parentStyle, "textPath", tpElem.attrib, this._css);
-    const run = this._make_run(tpElem.text, style, null);
+    const run = this._makeRun(tpElem.text, style, null);
     if (run == null) return;
     let path: RawSubpath[];
     try {
@@ -551,21 +551,21 @@ export class _Reader {
     const subpaths = outlineTextPath(
       strip(_collapseWs(tpElem.text)),
       path,
-      run.font_path,
-      run.font_size,
+      run.fontPath,
+      run.fontSize,
       ctm,
       {
-        font_number: run.font_number,
-        start_offset: offAbs,
-        start_offset_frac: offFrac,
-        letter_spacing: run.letter_spacing,
+        fontNumber: run.fontNumber,
+        startOffset: offAbs,
+        startOffsetFrac: offFrac,
+        letterSpacing: run.letterSpacing,
       },
     );
     if (!subpaths?.length) return;
     out.push(this._emit(subpaths, style, ctm, textElem.get("id"), opacity));
   }
 
-  _build_drawable(
+  _buildDrawable(
     tag: string,
     elem: Element,
     ctm: Affine,
@@ -601,7 +601,7 @@ export class _Reader {
   ): SvgDrawable {
     if (
       !subpaths.every((sp) =>
-        [sp.vertices, sp.in_tangents, sp.out_tangents].every((points) =>
+        [sp.vertices, sp.inTangents, sp.outTangents].every((points) =>
           points.every((point) => point.every((c) => Math.abs(c) <= FLOAT32_MAX)),
         ),
       )
@@ -662,8 +662,8 @@ export class _Reader {
     // A percentage width refers to the viewport's normalized diagonal
     // (AE 2026: 5 % of a 200 x 100 viewBox is 7.906).
     const width =
-      parseLength(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.font_size) *
-      ctm.mean_scale;
+      parseLength(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.fontSize) *
+      ctm.meanScale;
     if (width <= 0) return null;
     if (!Number.isFinite(width)) throw new UnsupportedSVGError("SVG stroke-width is out of range");
     const cap = _CAP.get(strip(style.get("stroke-linecap") || "")) ?? 1;
@@ -674,7 +674,7 @@ export class _Reader {
     const dashes = strip(style.get("stroke-dasharray") || "")
       .split(new RegExp(`[,${_PY_WS}]+`))
       .filter((t) => !!t && t !== "none")
-      .map((t) => parseNumber(t) * ctm.mean_scale);
+      .map((t) => parseNumber(t) * ctm.meanScale);
     return new StrokeStyle(paint, width, cap, join, miter, dashes);
   }
 }

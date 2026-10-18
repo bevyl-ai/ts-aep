@@ -24,14 +24,14 @@ describe("TestResolveEffectValue", () => {
   test.each([
     // enum_default_is_1_based
     [
-      { property_control_type: PropertyControlType.ENUM, default_value: 1 },
+      { propertyControlType: PropertyControlType.ENUM, defaultValue: 1 },
       PropertyControlType.ENUM,
       [1, 1],
     ],
     // enum_default_over_cached_value
     // S_BlurDirectional Edge Mode: ExtendScript reports 3.
     [
-      { property_control_type: PropertyControlType.ENUM, default_value: 3, last_value: 1, nb_options: 3 },
+      { propertyControlType: PropertyControlType.ENUM, defaultValue: 3, lastValue: 1, nbOptions: 3 },
       PropertyControlType.ENUM,
       [3, 3],
     ],
@@ -39,43 +39,43 @@ describe("TestResolveEffectValue", () => {
     // OCIO Look Transform: a plug-in-managed id, which
     // ExtendScript reports.
     [
-      { property_control_type: PropertyControlType.ENUM, default_value: 1, last_value: 459, nb_options: 1 },
+      { propertyControlType: PropertyControlType.ENUM, defaultValue: 1, lastValue: 459, nbOptions: 1 },
       PropertyControlType.ENUM,
       [459, 459],
     ],
     // boolean_default_value
     [
-      { property_control_type: PropertyControlType.BOOLEAN, default_value: 1 },
+      { propertyControlType: PropertyControlType.BOOLEAN, defaultValue: 1 },
       PropertyControlType.BOOLEAN,
       [1, 1],
     ],
     // boolean_falls_back_to_last_value
     [
-      { property_control_type: PropertyControlType.BOOLEAN, last_value: 0 },
+      { propertyControlType: PropertyControlType.BOOLEAN, lastValue: 0 },
       PropertyControlType.BOOLEAN,
       [0, 0],
     ],
     // general_prefers_the_default
     [
-      { property_control_type: PropertyControlType.SCALAR, last_value: 42.0, default_value: 10.0 },
+      { propertyControlType: PropertyControlType.SCALAR, lastValue: 42.0, defaultValue: 10.0 },
       PropertyControlType.SCALAR,
       [10.0, 10.0],
     ],
     // general_falls_back_to_default
     [
-      { property_control_type: PropertyControlType.SCALAR, default_value: 10.0 },
+      { propertyControlType: PropertyControlType.SCALAR, defaultValue: 10.0 },
       PropertyControlType.SCALAR,
       [10.0, 10.0],
     ],
     // general_no_values_returns_none
     [
-      { property_control_type: PropertyControlType.SCALAR },
+      { propertyControlType: PropertyControlType.SCALAR },
       PropertyControlType.SCALAR,
       [null, null],
     ],
     // general_last_value_only_without_a_default
     [
-      { property_control_type: PropertyControlType.SCALAR, last_value: 7.0 },
+      { propertyControlType: PropertyControlType.SCALAR, lastValue: 7.0 },
       PropertyControlType.SCALAR,
       [7.0, 7.0],
     ],
@@ -108,7 +108,7 @@ describe("TestTdsnWithoutUtf8", () => {
       null,
       new TdmnChunk({ value: "ADBE Transform Group" }),
     );
-    expect(group._name_utf8 == null).toBe(true);
+    expect(group._nameUtf8 == null).toBe(true);
     expect(group.name).toBe("Transform");
   });
 });

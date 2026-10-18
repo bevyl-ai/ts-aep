@@ -42,7 +42,7 @@ export class BytesIO {
   }
 
   /** `fp.read(1)[0]` without allocating, or -1 at the end of the data. */
-  read_byte(): number {
+  readByte(): number {
     return this.pos < this.len ? this.buf[this.pos++] : -1;
   }
 
@@ -52,7 +52,7 @@ export class BytesIO {
    */
   unpack<F extends string>(s: Struct<F>): Unpacked<F> | null {
     if (this.pos + s.size > this.len) return null;
-    const out = s.unpack_from(this.buf, this.pos);
+    const out = s.unpackFrom(this.buf, this.pos);
     this.pos += s.size;
     return out;
   }
@@ -87,7 +87,7 @@ export class BytesIO {
     if (this.pos < this.len) {
       if (end > this.len || s.size > PACK_SCRATCH.length) return this.write(s.pack(...values));
       // Overwrite via scratch: a failed pack must leave the visible bytes alone.
-      s.pack_to(PACK_SCRATCH, 0, values);
+      s.packTo(PACK_SCRATCH, 0, values);
       this.own();
       for (let i = 0; i < s.size; i++) this.buf[this.pos + i] = PACK_SCRATCH[i];
       this.pos = end;
@@ -95,7 +95,7 @@ export class BytesIO {
     }
     // Bytes past `len` are never observable, so a failed pack leaves no trace.
     this.reserve(end);
-    s.pack_to(this.buf, this.pos, values);
+    s.packTo(this.buf, this.pos, values);
     this.pos = this.len = end;
     return s.size;
   }

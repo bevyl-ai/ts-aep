@@ -59,12 +59,12 @@ export class Affine {
   }
 
   /** Map a direction/offset (ignores translation). */
-  apply_vector(x: number, y: number): [number, number] {
+  applyVector(x: number, y: number): [number, number] {
     return [this.a * x + this.c * y, this.b * x + this.d * y];
   }
 
   /** Geometric-mean scale factor (for scaling stroke widths). */
-  get mean_scale(): number {
+  get meanScale(): number {
     const det = Math.abs(this.a * this.d - this.b * this.c);
     return det > 0 ? Math.sqrt(det) : 1.0;
   }

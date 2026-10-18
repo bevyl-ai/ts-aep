@@ -60,7 +60,7 @@ export function _f(
 ): number {
   if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
   const ref = getattr(ctx, _PERCENT_AXIS[key]);
-  return parseLength(attrs.get(key) ?? null, default_, ref, ctx.font_size);
+  return parseLength(attrs.get(key) ?? null, default_, ref, ctx.fontSize);
 }
 
 /** An absent or `auto` corner radius, which takes the other radius. */

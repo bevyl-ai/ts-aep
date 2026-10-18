@@ -109,7 +109,7 @@ import type { PsdNode } from "../resolvers/psd_layers.ts";
  * tests replace with `monkeypatch.setattr(project_mod, name, ...)` are read
  * through this holder instead.
  */
-export const moduleGlobals: { write_aep: typeof _writeAep } = { write_aep: _writeAep };
+export const moduleGlobals: { writeAep: typeof _writeAep } = { writeAep: _writeAep };
 import { effectDefinitionEntries } from "../parsers/effect.ts";
 import { parseOutputTemplates, parseRenderTemplates } from "../parsers/templates.ts";
 import { PlaceholderSource } from "./sources/placeholder.ts";
@@ -142,7 +142,7 @@ export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project
   /** Accept a `GpuAccelType` or a renderer UUID string (what the getter
    * returns for an id it does not recognise). */
   if (typeof value === "string") {
-    GpuAccelType.to_binary(value);
+    GpuAccelType.toBinary(value);
   } else {
     validateEnum(GpuAccelType)(value);
   }
@@ -186,13 +186,13 @@ export const _setExpressionEngine = requiresVersion(16)(function expression_engi
   value: string,
 ): void {
   _validateExpressionEngine(value);
-  if (this._exen_utf8 != null) {
-    this._exen_utf8.value = value;
+  if (this._exenUtf8 != null) {
+    this._exenUtf8.value = value;
   } else {
     const utf8 = new Utf8Chunk({ value });
     const exen = new ListChunk({ list_type: "ExEn", chunks: [utf8] });
     this._rifx.chunks.push(exen);
-    this._exen_utf8 = utf8;
+    this._exenUtf8 = utf8;
   }
 });
 
@@ -201,7 +201,7 @@ export const _setColorManagementSystem = requiresVersion(24)(function color_mana
   value: ColorManagementSystem | number,
 ): void {
   validateEnum(ColorManagementSystem)(value);
-  this._update_cms_setting("colorManagementSystem", int(value));
+  this._updateCmsSetting("colorManagementSystem", int(value));
 });
 
 export const _setLutInterpolationMethod = requiresVersion(24)(function lut_interpolation_method(
@@ -209,7 +209,7 @@ export const _setLutInterpolationMethod = requiresVersion(24)(function lut_inter
   value: LutInterpolationMethod | number,
 ): void {
   validateEnum(LutInterpolationMethod)(value);
-  this._update_cms_setting("lutInterpolationMethod", int(value));
+  this._updateCmsSetting("lutInterpolationMethod", int(value));
 });
 
 export const _setOcioConfigurationFile = requiresVersion(24)(function ocio_configuration_file(
@@ -217,7 +217,7 @@ export const _setOcioConfigurationFile = requiresVersion(24)(function ocio_confi
   value: PathLike,
 ): void {
   validatePath(value);
-  this._update_cms_setting("ocioConfigurationFile", fspath(value));
+  this._updateCmsSetting("ocioConfigurationFile", fspath(value));
 });
 
 /**
@@ -271,7 +271,7 @@ export class Project {
    * The Default Base value in the Time Display Style section of
    * the Project Settings dialog, under Timecode. Read/Write.
    */
-  declare _timecode_default_base: number;
+  declare _timecodeDefaultBase: number;
 
   /**
    * The Frame Count menu setting in the Project Settings dialog box.
@@ -358,11 +358,11 @@ export class Project {
   declare _acer: U1Chunk;
   declare _adfr: F8Chunk;
   declare _dwga: DwgaChunk;
-  declare _gpug_utf8: Utf8Chunk;
-  declare _exen_utf8: Utf8Chunk | null;
-  declare _cms_utf8: Utf8Chunk | null;
-  declare _ws_utf8: Utf8Chunk | null;
-  declare _dcs_utf8: Utf8Chunk | null;
+  declare _gpugUtf8: Utf8Chunk;
+  declare _exenUtf8: Utf8Chunk | null;
+  declare _cmsUtf8: Utf8Chunk | null;
+  declare _wsUtf8: Utf8Chunk | null;
+  declare _dcsUtf8: Utf8Chunk | null;
   declare _rifx: ListChunk;
   declare _xmp: string;
   declare _aep: Project;
@@ -370,22 +370,22 @@ export class Project {
   // Read-only attributes
   declare _file: string;
   declare _items: Map<number, Item>;
-  declare _render_queue: RenderQueue | null;
-  declare _active_item: Item | null;
-  declare _effect_param_defs: EffectParamDefs;
-  declare _effect_definitions_cache: [string, string, ListChunk][] | null;
-  declare _used_in_linked: boolean;
-  declare _id_counter_reconciled: boolean;
-  declare _ae_preferences_dir: Path | null;
+  declare _renderQueue: RenderQueue | null;
+  declare _activeItem: Item | null;
+  declare _effectParamDefs: EffectParamDefs;
+  declare _effectDefinitionsCache: [string, string, ListChunk][] | null;
+  declare _usedInLinked: boolean;
+  declare _idCounterReconciled: boolean;
+  declare _aePreferencesDir: Path | null;
   declare _preferences: Preferences;
   declare _platform: string;
   // ICC profile discovery for Adobe-CMS working-space writes. `None`
   // dirs = auto-discover the standard Adobe Color directories.
-  declare _icc_profile_dirs: Path[] | null;
-  declare _icc_library: IccProfileLibrary | null;
-  declare _render_templates_cache: RenderSettingsItem[] | null;
-  declare _output_templates_cache: OutputModuleTemplate[] | null;
-  declare _default_render_template_index: number | null;
+  declare _iccProfileDirs: Path[] | null;
+  declare _iccLibrary: IccProfileLibrary | null;
+  declare _renderTemplatesCache: RenderSettingsItem[] | null;
+  declare _outputTemplatesCache: OutputModuleTemplate[] | null;
+  declare _defaultRenderTemplateIndex: number | null;
 
   constructor(kw: {
     _nhed: NhedChunk;
@@ -394,17 +394,17 @@ export class Project {
     _acer: U1Chunk;
     _adfr: F8Chunk;
     _dwga: DwgaChunk;
-    _gpug_utf8: Utf8Chunk;
-    _exen_utf8: Utf8Chunk | null;
-    _cms_utf8: Utf8Chunk | null;
-    _ws_utf8: Utf8Chunk | null;
-    _dcs_utf8: Utf8Chunk | null;
+    _gpugUtf8: Utf8Chunk;
+    _exenUtf8: Utf8Chunk | null;
+    _cmsUtf8: Utf8Chunk | null;
+    _wsUtf8: Utf8Chunk | null;
+    _dcsUtf8: Utf8Chunk | null;
     _rifx: ListChunk;
     _xmp: string;
     file: string;
     items: Map<number, Item>;
-    render_queue: RenderQueue | null;
-    ae_preferences_dir?: Path | null;
+    renderQueue: RenderQueue | null;
+    aePreferencesDir?: Path | null;
   }) {
     const {
       _nhed,
@@ -413,17 +413,17 @@ export class Project {
       _acer,
       _adfr,
       _dwga,
-      _gpug_utf8,
-      _exen_utf8,
-      _cms_utf8,
-      _ws_utf8,
-      _dcs_utf8,
+      _gpugUtf8: _gpug_utf8,
+      _exenUtf8: _exen_utf8,
+      _cmsUtf8: _cms_utf8,
+      _wsUtf8: _ws_utf8,
+      _dcsUtf8: _dcs_utf8,
       _rifx,
       _xmp,
       file,
       items,
-      render_queue,
-      ae_preferences_dir = null,
+      renderQueue: render_queue,
+      aePreferencesDir: ae_preferences_dir = null,
     } = kw;
     // Chunk body references for descriptors
     this._nhed = _nhed;
@@ -432,11 +432,11 @@ export class Project {
     this._acer = _acer;
     this._adfr = _adfr;
     this._dwga = _dwga;
-    this._gpug_utf8 = _gpug_utf8;
-    this._exen_utf8 = _exen_utf8;
-    this._cms_utf8 = _cms_utf8;
-    this._ws_utf8 = _ws_utf8;
-    this._dcs_utf8 = _dcs_utf8;
+    this._gpugUtf8 = _gpug_utf8;
+    this._exenUtf8 = _exen_utf8;
+    this._cmsUtf8 = _cms_utf8;
+    this._wsUtf8 = _ws_utf8;
+    this._dcsUtf8 = _dcs_utf8;
     this._rifx = _rifx;
     this._xmp = _xmp;
     this._aep = this;
@@ -444,24 +444,24 @@ export class Project {
     // Read-only attributes
     this._file = file;
     this._items = items;
-    this._render_queue = render_queue;
-    this._active_item = null;
-    this._effect_param_defs = new Map();
-    this._effect_definitions_cache = null;
-    this._used_in_linked = false;
+    this._renderQueue = render_queue;
+    this._activeItem = null;
+    this._effectParamDefs = new Map();
+    this._effectDefinitionsCache = null;
+    this._usedInLinked = false;
 
-    this._id_counter_reconciled = false; // lazily done on first allocation
-    this._ae_preferences_dir = ae_preferences_dir;
+    this._idCounterReconciled = false; // lazily done on first allocation
+    this._aePreferencesDir = ae_preferences_dir;
     this._preferences = new Preferences(ae_preferences_dir);
     // Class attribute read through the instance until `_new` assigns one.
     this._platform = this.constructor._platform;
     // ICC profile discovery for Adobe-CMS working-space writes. `None`
     // dirs = auto-discover the standard Adobe Color directories.
-    this._icc_profile_dirs = null;
-    this._icc_library = null;
-    this._render_templates_cache = null;
-    this._output_templates_cache = null;
-    this._default_render_template_index = null;
+    this._iccProfileDirs = null;
+    this._iccLibrary = null;
+    this._renderTemplatesCache = null;
+    this._outputTemplatesCache = null;
+    this._defaultRenderTemplateIndex = null;
   }
 
   // Color-management settings JSON AE 2026 writes for a new project.
@@ -469,7 +469,7 @@ export class Project {
   // via color_management_system / lut_interpolation_method / etc.
   static _NEW_PROJECT_CMS_JSON: string = '{"lutInterpolationMethod":1}';
 
-  _effect_definitions(): [string, string, ListChunk][] {
+  _effectDefinitions(): [string, string, ListChunk][] {
     /**
      * `LIST:EfdG` effect definitions, walked once and cached.
      *
@@ -477,10 +477,10 @@ export class Project {
      * its sspc template into the layer rather than editing EfdG), so the
      * walk is computed lazily on first lookup and reused across adds.
      */
-    if (this._effect_definitions_cache == null) {
-      this._effect_definitions_cache = effectDefinitionEntries(this._rifx.chunks);
+    if (this._effectDefinitionsCache == null) {
+      this._effectDefinitionsCache = effectDefinitionEntries(this._rifx.chunks);
     }
-    return this._effect_definitions_cache;
+    return this._effectDefinitionsCache;
   }
 
   /**
@@ -492,7 +492,7 @@ export class Project {
    * inherits them. Missing or malformed values leave the AE-factory
    * chunk defaults untouched.
    */
-  static _apply_project_settings_prefs(
+  static _applyProjectSettingsPrefs(
     preferences: Preferences,
     nhed: NhedChunk,
     nnhd: NnhdChunk,
@@ -505,7 +505,7 @@ export class Project {
       nhed.bits_per_channel = int(depth);
       nnhd.bits_per_channel = int(depth);
     }
-    const blob = preferences._get_bytes(
+    const blob = preferences._getBytes(
       "Project Pref Section",
       "Project Settings Time Display Format",
       PREFType.PREF_Type_MACHINE_SPECIFIC,
@@ -529,7 +529,7 @@ export class Project {
    * Constructs the minimal root chunk skeleton AE accepts - the large
    * workspace blobs AE regenerates on open (`LSIf/AFsi`, `PTRE/ftwd`)
    * are omitted - stamps `version` into the head chunk, and wires the
-   * model the same way `parse_project` does. `ae_preferences_dir` is
+   * model the same way `parse_project` does. `aePreferencesDir` is
    * stored for render-queue template lookup. `platform` (default: the
    * running operating system) selects the header stamps AE writes on
    * that platform. See {@link Application} and `py_aep.new`.
@@ -563,7 +563,7 @@ export class Project {
     const svap = new SvapChunk({ build_number: head.ae_build_number });
     const nhed = new NhedChunk();
     const nnhd = new NnhdChunk();
-    this._apply_project_settings_prefs(preferences, nhed, nnhd);
+    this._applyProjectSettingsPrefs(preferences, nhed, nnhd);
     nnhd._saving_platform = macos ? 0x08 : 0;
     if (macos) {
       nnhd._system_code_page = 0x0100;
@@ -577,7 +577,7 @@ export class Project {
     // A new project takes the platform's GPU renderer: AE's File > New
     // on Windows writes CUDA (emptier.aep), macOS files carry Metal.
     const gpugUtf8 = new Utf8Chunk({
-      value: GpuAccelType.to_binary(macos ? GpuAccelType.METAL : GpuAccelType.CUDA),
+      value: GpuAccelType.toBinary(macos ? GpuAccelType.METAL : GpuAccelType.CUDA),
     });
     const fold = new ListChunk({ list_type: "Fold", chunks: [new FdtaChunk()] });
     // AE stamps the "New Project Solids Folder" preference into the
@@ -653,17 +653,17 @@ export class Project {
       _acer: acer,
       _adfr: adfr,
       _dwga: dwga,
-      _gpug_utf8: gpugUtf8,
-      _exen_utf8: exenUtf8,
-      _cms_utf8: cmsUtf8,
-      _ws_utf8: null,
-      _dcs_utf8: null,
+      _gpugUtf8: gpugUtf8,
+      _exenUtf8: exenUtf8,
+      _cmsUtf8: cmsUtf8,
+      _wsUtf8: null,
+      _dcsUtf8: null,
       _rifx: rifx,
       _xmp: "",
       file: "",
       items: new Map(),
-      render_queue: null,
-      ae_preferences_dir: aePreferencesDir,
+      renderQueue: null,
+      aePreferencesDir: aePreferencesDir,
     });
     project._platform = platform;
 
@@ -671,23 +671,23 @@ export class Project {
     // Fold chunk list is its own children container).
     const rootFolder = new FolderItem({
       _idta: null,
-      _name_utf8: null,
+      _nameUtf8: null,
       _cmta: null,
-      _item_list: fold,
+      _itemList: fold,
       _gide: null,
-      _children_container: fold.chunks,
+      _childrenContainer: fold.chunks,
       project,
-      parent_folder: null,
+      parentFolder: null,
     });
     instanceDict(rootFolder).set("name", "root");
     project.items.set(0, rootFolder);
-    project._active_item = rootFolder;
+    project._activeItem = rootFolder;
 
     // Empty render queue (LIST:LRdr appended after the loose root chunks,
     // matching AE's ordering).
     const renderQueue = RenderQueue._new(project);
     rifx.chunks.push(renderQueue._lrdr);
-    project._render_queue = renderQueue;
+    project._renderQueue = renderQueue;
 
     return project;
   }
@@ -711,14 +711,14 @@ export class Project {
    * Deferred until the first `used_in` read or mutation that
    * needs the back-references for correctness (e.g. cycle detection).
    */
-  _ensure_used_in_linked(): void {
-    if (this._used_in_linked) return;
-    this._used_in_linked = true;
+  _ensureUsedInLinked(): void {
+    if (this._usedInLinked) return;
+    this._usedInLinked = true;
     for (const composition of this.compositions) {
-      for (const sourceId of composition._source_ids_for_linking()) {
+      for (const sourceId of composition._sourceIdsForLinking()) {
         const source = this.items.get(sourceId) ?? null;
         if (source instanceof AVItem) {
-          source._used_in.add(composition);
+          source._usedIn.add(composition);
         }
       }
     }
@@ -736,7 +736,7 @@ export class Project {
 
   /** The Render Queue of the project. Read-only. */
   get renderQueue(): RenderQueue | null {
-    return this._render_queue;
+    return this._renderQueue;
   }
 
   /**
@@ -745,7 +745,7 @@ export class Project {
    * selected. Read-only.
    */
   get activeItem(): Item | null {
-    return this._active_item;
+    return this._activeItem;
   }
 
   /**
@@ -757,10 +757,10 @@ export class Project {
    * selected), but `parse()` cannot resolve the id. AE itself writes
    * `fcid = 0` once the active item is deleted.
    */
-  _clear_active_item(removed: Item): void {
-    if (this._active_item !== removed) return;
-    this._active_item = null;
-    const fcid = findByTypeOrNull(this._root_chunks, "fcid");
+  _clearActiveItem(removed: Item): void {
+    if (this._activeItem !== removed) return;
+    this._activeItem = null;
+    const fcid = findByTypeOrNull(this._rootChunks, "fcid");
     if (fcid !== null) fcid.value = 0;
   }
 
@@ -773,23 +773,23 @@ export class Project {
     return getitem(this._items, 0) as FolderItem;
   }
 
-  get _root_chunks(): Chunk[] {
+  get _rootChunks(): Chunk[] {
     return this._rifx.chunks;
   }
 
-  _sync_nhed_field(fieldName: string): void {
+  _syncNhedField(fieldName: string): void {
     setattr(this._nhed, fieldName, getattr(this._nnhd, fieldName));
   }
 
-  _sync_nhed_timecode_default_base(): void {
+  _syncNhedTimecodeDefaultBase(): void {
     // nhed matches nnhd in every sample, none above 255; what AE writes
     // in its u1 for a larger base is unmeasured, so it is left as is.
     if (this._nnhd.timecode_default_base <= 0xff) {
-      this._sync_nhed_field("timecode_default_base");
+      this._syncNhedField("timecode_default_base");
     }
   }
 
-  _ensure_materialized(): void {
+  _ensureMaterialized(): void {
     /**
      * Keep the stand-ins for root chunks older projects lack synthetic.
      *
@@ -797,7 +797,7 @@ export class Project {
      * synthetic ones (see `parse_project`), which `ChunkField` writes land
      * on. They stay out of the file: an nnhd setting persists through the
      * nhed it syncs to, and the settings with no older counterpart
-     * (`working_gamma`, `gpu_accel_type`) are gated by `min_version`
+     * (`working_gamma`, `gpu_accel_type`) are gated by `minVersion`
      * instead of being dropped on save.
      */
   }
@@ -807,7 +807,7 @@ export class Project {
    * the standard blending mode is used. Read / Write.
    */
   get linearBlending(): boolean {
-    return this._root_chunks.some((c) => c.chunk_type === "lnrb");
+    return this._rootChunks.some((c) => c.chunk_type === "lnrb");
   }
 
   set linearBlending(value: boolean) {
@@ -822,7 +822,7 @@ export class Project {
    * operations. Read / Write.
    */
   get linearizeWorkingSpace(): boolean {
-    return this._root_chunks.some((c) => c.chunk_type === "lnrp");
+    return this._rootChunks.some((c) => c.chunk_type === "lnrp");
   }
 
   set linearizeWorkingSpace(value: boolean) {
@@ -834,7 +834,7 @@ export class Project {
    * ("extendscript" or "javascript-1.0"). Read / Write.
    */
   get expressionEngine(): string {
-    if (this._exen_utf8 != null) return this._exen_utf8.value;
+    if (this._exenUtf8 != null) return this._exenUtf8.value;
     return "extendscript";
   }
 
@@ -844,7 +844,7 @@ export class Project {
 
   /** The names of all effects used in the project. Read-only. */
   get effectNames(): string[] {
-    return _getEffectNames(this._root_chunks);
+    return _getEffectNames(this._rootChunks);
   }
 
   /**
@@ -868,12 +868,12 @@ export class Project {
    * no longer the working space stays in that list.
    */
   get workingSpace(): string {
-    if (this._ws_utf8 != null) return envelopeProfileName(this._ws_utf8.value);
-    if (!this._root_chunks.some((c) => c.chunk_type === "pcms")) {
+    if (this._wsUtf8 != null) return envelopeProfileName(this._wsUtf8.value);
+    if (!this._rootChunks.some((c) => c.chunk_type === "pcms")) {
       // Before AE 22 the working space is the `LIST:CPPl` profile
       // whose ICC profile id `cpid` holds (all 0xFF: None).
       const profileId = this._cpid.data;
-      const cppl = findByListType(this._root_chunks, "CPPl");
+      const cppl = findByListType(this._rootChunks, "CPPl");
       for (const pprf of filterByType(cppl.chunks, "pprf")) {
         if (bytesEq(iccProfileId(pprf.data), profileId)) {
           return iccProfileDescription(pprf.data) || "None";
@@ -885,14 +885,14 @@ export class Project {
 
   set workingSpace(value: string) {
     validateString(value);
-    if (!this._root_chunks.some((c) => c.chunk_type === "pcms")) {
-      this._set_cppl_working_space(value);
+    if (!this._rootChunks.some((c) => c.chunk_type === "pcms")) {
+      this._setCpplWorkingSpace(value);
       return;
     }
     let envelope: string;
     let profileId: Uint8Array;
     if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
-      envelope = this._ocio_envelope(value);
+      envelope = this._ocioEnvelope(value);
       profileId = bytes_.repeat(b("\xff"), 16);
     } else if (value === "None") {
       // No working space, which the getter reports as "None": AE 2026
@@ -903,11 +903,11 @@ export class Project {
     } else {
       // bytes_for already raises ColorProfileNotFoundError for an
       // unknown Adobe profile name, so no separate name check is needed.
-      const icc = this._icc_lib().bytes_for(value);
+      const icc = this._iccLib().bytesFor(value);
       envelope = buildIccEnvelope(value, icc);
       profileId = iccProfileId(icc);
     }
-    this._ws_utf8 = this._rewrite_color_profile("PwCs", envelope);
+    this._wsUtf8 = this._rewriteColorProfile("PwCs", envelope);
     // AE 2026 rewrites `cpid` to the new profile's id when a script sets
     // workingSpace; OCIO projects store all 0xFF.
     this._cpid.data = profileId;
@@ -922,14 +922,14 @@ export class Project {
    * nothing uses anymore, so a new profile is inserted in order and a
    * replaced one stays.
    */
-  _set_cppl_working_space(value: string): void {
+  _setCpplWorkingSpace(value: string): void {
     if (value === "None") {
       this._cpid.data = bytes_.repeat(b("\xff"), 16);
       return;
     }
-    const icc = this._icc_lib().bytes_for(value);
+    const icc = this._iccLib().bytesFor(value);
     const profileId = iccProfileId(icc);
-    const cppl = findByListType(this._root_chunks, "CPPl");
+    const cppl = findByListType(this._rootChunks, "CPPl");
     // The first profile whose id is not below the new one: the same
     // profile (reused) or the one the new profile goes before.
     const at = cppl.chunks.findIndex((pprf) => pyCmp(iccProfileId(pprf.data), profileId) >= 0);
@@ -942,7 +942,7 @@ export class Project {
   }
 
   get _cpid(): CpidChunk {
-    return findByType(this._root_chunks, "cpid");
+    return findByType(this._rootChunks, "cpid");
   }
 
   /** Whether the project is for After Effects on Windows (`_platform`). */
@@ -956,7 +956,7 @@ export class Project {
    * `ocio_color_profile_envelope` raises for a name the config does not
    * contain, so no separate membership check is needed.
    */
-  _ocio_envelope(name: string): string {
+  _ocioEnvelope(name: string): string {
     const config = requireOcioConfig(
       this.ocioConfigurationFile,
       `build the color-profile envelope for ${repr(name)}`,
@@ -971,7 +971,7 @@ export class Project {
    * `.icm` files to override (e.g. for a non-default install or CI).
    */
   get iccProfileDirs(): Path[] | null {
-    return this._icc_profile_dirs;
+    return this._iccProfileDirs;
   }
 
   set iccProfileDirs(value: PathLike[] | null) {
@@ -984,15 +984,15 @@ export class Project {
       }
       for (const p of value) validatePathExists(p);
     }
-    this._icc_profile_dirs = value != null ? value.map((p: PathLike) => new Path(p)) : null;
-    this._icc_library = null; // rebuild on next use
+    this._iccProfileDirs = value != null ? value.map((p: PathLike) => new Path(p)) : null;
+    this._iccLibrary = null; // rebuild on next use
   }
 
-  _icc_lib(): IccProfileLibrary {
-    if (this._icc_library == null) {
-      this._icc_library = new IccProfileLibrary(this._icc_profile_dirs);
+  _iccLib(): IccProfileLibrary {
+    if (this._iccLibrary == null) {
+      this._iccLibrary = new IccProfileLibrary(this._iccProfileDirs);
     }
-    return this._icc_library;
+    return this._iccLibrary;
   }
 
   /**
@@ -1010,7 +1010,7 @@ export class Project {
    * **Note:** Not exposed in ExtendScript
    */
   get displayColorSpace(): string {
-    if (this._dcs_utf8 != null) return envelopeProfileName(this._dcs_utf8.value);
+    if (this._dcsUtf8 != null) return envelopeProfileName(this._dcsUtf8.value);
     return "None";
   }
 
@@ -1047,7 +1047,7 @@ export class Project {
     validateString(display);
     validateString(view);
     const envelope = buildOcioDisplayEnvelope(display, view);
-    this._dcs_utf8 = this._rewrite_color_profile("pdvc", envelope);
+    this._dcsUtf8 = this._rewriteColorProfile("pdvc", envelope);
   }
 
   /**
@@ -1062,8 +1062,8 @@ export class Project {
    *   in this project (a brand-new project, or one from a pre-2022 After Effects, has no
    *   color-profile chunk to rewrite).
    */
-  _rewrite_color_profile(marker: string, envelope: string): Utf8Chunk {
-    const root = this._root_chunks;
+  _rewriteColorProfile(marker: string, envelope: string): Utf8Chunk {
+    const root = this._rootChunks;
     for (const [i, chunk] of root.entries()) {
       if (chunk.chunk_type === marker) {
         const utf8 = findByTypeOrNull(root.slice(i + 1, i + 2), "Utf8");
@@ -1087,7 +1087,7 @@ export class Project {
    * Available in CC 2024 and later. Read / Write.
    */
   get colorManagementSystem(): ColorManagementSystem {
-    const settings = this._get_cms_settings();
+    const settings = this._getCmsSettings();
     return ColorManagementSystem.of(jsonInt(getitem(settings, "colorManagementSystem")));
   }
 
@@ -1100,7 +1100,7 @@ export class Project {
    * Tetrahedral). Read / Write.
    */
   get lutInterpolationMethod(): LutInterpolationMethod {
-    const settings = this._get_cms_settings();
+    const settings = this._getCmsSettings();
     return LutInterpolationMethod.of(jsonInt(getitem(settings, "lutInterpolationMethod")));
   }
 
@@ -1113,7 +1113,7 @@ export class Project {
    * color_management_system is OCIO. Read / Write.
    */
   get ocioConfigurationFile(): string {
-    const settings = this._get_cms_settings();
+    const settings = this._getCmsSettings();
     return str(getitem(settings, "ocioConfigurationFile"));
   }
 
@@ -1206,12 +1206,12 @@ export class Project {
     }
 
     const source = PlaceholderSource._new(name, width, height, frameRate, duration);
-    const item = FootageItem._new(source, { project: this, parent_folder: this.rootFolder });
+    const item = FootageItem._new(source, { project: this, parentFolder: this.rootFolder });
 
     // Insert into root folder's chunk tree and register
-    const container = this.rootFolder._children_container;
-    container.push(item._item_list);
-    container.push(...item._view_data);
+    const container = this.rootFolder._childrenContainer;
+    container.push(item._itemList);
+    container.push(...item._viewData);
     this.items.set(item.id, item);
     this.rootFolder.items.push(item);
     return item;
@@ -1300,13 +1300,13 @@ export class Project {
     }
     if (options.importAs === ImportAsType.COMP_CROPPED_LAYERS) {
       if (suffix === ".svg") {
-        return this._import_svg_cropped(options.file);
+        return this._importSvgCropped(options.file);
       }
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
-        return this._import_psd_layered(options.file, true, this._resolve_comp_layer_styles(options));
+        return this._importPsdLayered(options.file, true, this._resolveCompLayerStyles(options));
       }
       if (AI_COMP_EXTENSIONS.has(suffix)) {
-        return this._import_ai_layered(options.file, { cropped: true });
+        return this._importAiLayered(options.file, { cropped: true });
       }
       throw new ValueError(
         "importFile supports COMP_CROPPED_LAYERS for SVG and layered " +
@@ -1315,13 +1315,13 @@ export class Project {
     }
     if (options.importAs === ImportAsType.COMP) {
       if (AI_COMP_EXTENSIONS.has(suffix)) {
-        return this._import_ai_layered(options.file);
+        return this._importAiLayered(options.file);
       }
       if (EPS_COMP_EXTENSIONS.has(suffix)) {
-        return this._import_eps_comp(options.file);
+        return this._importEpsComp(options.file);
       }
       if (PSD_COMP_EXTENSIONS.has(suffix)) {
-        return this._import_psd_layered(options.file, false, this._resolve_comp_layer_styles(options));
+        return this._importPsdLayered(options.file, false, this._resolveCompLayerStyles(options));
       }
       throw new ValueError(`importFile does not support COMP import for ${repr(suffix)}`);
     }
@@ -1335,7 +1335,7 @@ export class Project {
         "importFile supports ImportAsType.FOOTAGE, COMP (layered " +
           ".ai/.pdf/.psd/.psb), and COMP_CROPPED_LAYERS (SVG, " +
           ".ai/.pdf/.psd/.psb), " +
-          `got ${ImportAsType.name_of(options.importAs)}`,
+          `got ${ImportAsType.nameOf(options.importAs)}`,
       );
     }
 
@@ -1360,26 +1360,26 @@ export class Project {
         if (styles == null) styles = psdFootageLayerStyles(this._preferences);
         if (dimensions == null) dimensions = psdFootageDimensions(this._preferences);
       }
-      source = FileSource._from_layer(options.file, options.layerIndex, {
+      source = FileSource._fromLayer(options.file, options.layerIndex, {
         dimensions,
-        layer_styles: styles,
+        layerStyles: styles,
         windows: this._windows,
       });
     } else {
-      source = FileSource._from_file(options.file, {
+      source = FileSource._fromFile(options.file, {
         sequence: options.sequence,
-        force_alphabetical: options.forceAlphabetical,
+        forceAlphabetical: options.forceAlphabetical,
         windows: this._windows,
-        default_sequence_fps: defaultSequenceFps(this._preferences),
-        range_start: options.sequence ? options.rangeStart : 0,
-        range_end: options.sequence ? options.rangeEnd : 0,
+        defaultSequenceFps: defaultSequenceFps(this._preferences),
+        rangeStart: options.sequence ? options.rangeStart : 0,
+        rangeEnd: options.sequence ? options.rangeEnd : 0,
       });
     }
 
-    const item = FootageItem._new(source, { project: this, parent_folder: this.rootFolder });
-    const container = this.rootFolder._children_container;
-    container.push(item._item_list);
-    container.push(...item._view_data);
+    const item = FootageItem._new(source, { project: this, parentFolder: this.rootFolder });
+    const container = this.rootFolder._childrenContainer;
+    container.push(item._itemList);
+    container.push(...item._viewData);
     this.items.set(item.id, item);
     this.rootFolder.items.push(item);
     return item;
@@ -1390,13 +1390,13 @@ export class Project {
    * the machine's sticky PSD-comp import preference. `null` (no preference,
    * or no preferences directory) keeps AE's `editable` dialog default.
    */
-  _resolve_comp_layer_styles(options: ImportOptions): string | null {
+  _resolveCompLayerStyles(options: ImportOptions): string | null {
     if (options.layerStyles != null) return options.layerStyles;
     return psdCompLayerStyles(this._preferences);
   }
 
   /** Import an SVG as a cropped comp (one shape layer of its art). */
-  _import_svg_cropped(file: Path): CompItem {
+  _importSvgCropped(file: Path): CompItem {
     const doc = readSvg(file);
     // AE truncates the canvas to whole pixels (2434.9 -> 2434).
     const width = int(doc.width);
@@ -1413,8 +1413,8 @@ export class Project {
     }
     // AE creates a 1-frame, 30 fps comp named after the file.
     // (add_comp front-inserts the comp to match AE's import ordering.)
-    const comp = this.rootFolder._add_comp(file.name, width, height, 1.0, 1.0 / 30.0, 30.0, {
-      min_dimension: 1,
+    const comp = this.rootFolder._addComp(file.name, width, height, 1.0, 1.0 / 30.0, 30.0, {
+      minDimension: 1,
     });
     const layer = comp.addShape();
     layer.name = file.name;
@@ -1437,7 +1437,7 @@ export class Project {
    * aspect - AE 2026 gives a 4:3 PSD a 4:3 comp - at AE's default
    * timing).
    */
-  _new_layered_comp(
+  _newLayeredComp(
     parentFolder: FolderItem,
     name: string,
     width: number,
@@ -1476,7 +1476,7 @@ export class Project {
    * @param info - The probed media info for `file` (canvas size, alpha, ...).
    * @param embeddedProfileName - Optional ICC profile name for the sources.
    */
-  _import_layered_comp(
+  _importLayeredComp(
     file: Path,
     sourceFormat: string,
     layerSpecs: (LayerSpec | LayerGroupSpec)[],
@@ -1486,19 +1486,19 @@ export class Project {
     // Before anything is added: every layer's footage spans the canvas.
     checkFootageSize(file.name, info.width, info.height);
     const folder = this.rootFolder.addFolder(`${file.stem} Layers`);
-    const comp = this._new_layered_comp(this.rootFolder, file.stem, info.width, info.height, info.pixel_aspect);
-    this._add_layered_specs(comp, folder, layerSpecs, file, sourceFormat, info, embeddedProfileName);
+    const comp = this._newLayeredComp(this.rootFolder, file.stem, info.width, info.height, info.pixelAspect);
+    this._addLayeredSpecs(comp, folder, layerSpecs, file, sourceFormat, info, embeddedProfileName);
     // AE stores the `<stem> Layers` folder's Sfdr in the Project-panel
     // alphabetical order, not the document order the items are built in
     // (verified against the grouped_layers / layer_bounds AE fixtures).
-    folder._sort_children_by_name();
+    folder._sortChildrenByName();
     // AE places the `<stem> Layers` folder immediately after the comp (before
     // the project's pre-existing items); add_folder appended it, so move it
     // into position to match AE's Fold ordering.
-    const container = this.rootFolder._children_container;
-    container.splice(indexByIdentity(container, folder._item_list), 1);
-    const compIdx = indexByIdentity(container, comp._item_list);
-    container.splice(compIdx + 1 + comp._view_data.length, 0, folder._item_list);
+    const container = this.rootFolder._childrenContainer;
+    container.splice(indexByIdentity(container, folder._itemList), 1);
+    const compIdx = indexByIdentity(container, comp._itemList);
+    container.splice(compIdx + 1 + comp._viewData.length, 0, folder._itemList);
     return comp;
   }
 
@@ -1508,7 +1508,7 @@ export class Project {
    * Leaf footage items and nested group comps both live in `folder`,
    * matching AE's flat `<stem> Layers` folder.
    */
-  _add_layered_specs(
+  _addLayeredSpecs(
     comp: CompItem,
     folder: FolderItem,
     specs: (LayerSpec | LayerGroupSpec)[],
@@ -1519,14 +1519,14 @@ export class Project {
   ): void {
     for (const spec of specs) {
       if (spec instanceof LayerGroupSpec) {
-        const nested = this._new_layered_comp(
+        const nested = this._newLayeredComp(
           folder,
-          spec.comp_name != null ? spec.comp_name : spec.name,
+          spec.compName != null ? spec.compName : spec.name,
           info.width,
           info.height,
-          info.pixel_aspect,
+          info.pixelAspect,
         );
-        this._add_layered_specs(nested, folder, spec.children, file, sourceFormat, info, embeddedProfileName);
+        this._addLayeredSpecs(nested, folder, spec.children, file, sourceFormat, info, embeddedProfileName);
         // AE imports a PSD group as a collapsed precomp and leaves the
         // layer name empty (it inherits the nested comp's name), so
         // `name_set` stays off - matching avoids both deltas. A
@@ -1535,39 +1535,39 @@ export class Project {
         const groupLayer = comp.add(nested);
         if (spec.collapsed) groupLayer.collapseTransformation = true;
         if (!spec.enabled) groupLayer.enabled = false;
-        if (spec.layer_name != null) {
-          groupLayer.name = spec.layer_name;
+        if (spec.layerName != null) {
+          groupLayer.name = spec.layerName;
           groupLayer._ldta.name_set = false;
         }
         _serializeImportLayerStyles(groupLayer, null, file.name);
         continue;
       }
-      const hasAlpha = spec.has_alpha == null ? info.has_alpha : spec.has_alpha;
+      const hasAlpha = spec.hasAlpha == null ? info.hasAlpha : spec.hasAlpha;
       const depth = spec.depth == null ? info.depth : spec.depth;
       const source = FileSource._new(file, {
-        source_format: sourceFormat,
+        sourceFormat: sourceFormat,
         width: spec.width,
         height: spec.height,
         duration: 0.0,
-        frame_rate: 0.0,
-        pixel_aspect: info.pixel_aspect,
-        icc_profile: info.icc_profile,
-        has_alpha: hasAlpha,
+        frameRate: 0.0,
+        pixelAspect: info.pixelAspect,
+        iccProfile: info.iccProfile,
+        hasAlpha: hasAlpha,
         depth,
-        opti_data: spec.opti_data,
-        embedded_profile_name: embeddedProfileName,
-        full_frame: spec.full_frame,
-        layer_name: spec.layer_index != null ? spec.name : "",
-        layer_id: spec.layer_id,
-        layer_index: spec.layer_index,
-        data_size: spec.data_size,
-        reserved_c8: spec.reserved_c8,
-        color_mode: info.color_mode,
+        optiData: spec.optiData,
+        embeddedProfileName: embeddedProfileName,
+        fullFrame: spec.fullFrame,
+        layerName: spec.layerIndex != null ? spec.name : "",
+        layerId: spec.layerId,
+        layerIndex: spec.layerIndex,
+        dataSize: spec.dataSize,
+        reservedC8: spec.reservedC8,
+        colorMode: info.colorMode,
         windows: this._windows,
       });
-      const footage = FootageItem._new(source, { project: this, parent_folder: folder });
-      folder._children_container.push(footage._item_list);
-      folder._children_container.push(...footage._view_data);
+      const footage = FootageItem._new(source, { project: this, parentFolder: folder });
+      folder._childrenContainer.push(footage._itemList);
+      folder._childrenContainer.push(...footage._viewData);
       this.items.set(footage.id, footage);
       folder.items.push(footage);
       const layer = comp.add(footage);
@@ -1581,8 +1581,8 @@ export class Project {
         transform.property("ADBE Anchor Point").value = [anchorX, anchorY, 0.0];
         transform.property("ADBE Position").value = [positionX, positionY, 0.0];
       }
-      if (spec.is_adjustment) layer.adjustmentLayer = true;
-      if (spec.preserve_transparency) layer.preserveTransparency = true;
+      if (spec.isAdjustment) layer.adjustmentLayer = true;
+      if (spec.preserveTransparency) layer.preserveTransparency = true;
       if (spec.masks?.length > 0) {
         // A PSD vector-mask/shape-layer path: AE creates one mask
         // per subpath (psd_vector_mask* fixtures).
@@ -1603,16 +1603,16 @@ export class Project {
    * takes its "Layer Size" artwork box (`resolvers.ai_bounds`) and the
    * comp layer is placed where that box sits on the page.
    */
-  _import_ai_layered(file: Path, kw: { cropped?: boolean } = {}): CompItem {
+  _importAiLayered(file: Path, kw: { cropped?: boolean } = {}): CompItem {
     const { cropped = false } = kw;
     // Read once: the probe, the ICC scan and the layer scan all consume
     // the same bytes.
-    const data = file.read_bytes();
+    const data = file.readBytes();
     let info = probeMedia(file, data);
     // The page's RGB profile is embedded like a raster file's; a non-RGB
     // one is recorded by name.
     const [icc, profileName] = aiDocumentProfile(file, data);
-    info = new MediaInfo({ ...info, icc_profile: icc }); // info._replace(icc_profile=icc)
+    info = new MediaInfo({ ...info, iccProfile: icc }); // info._replace(icc_profile=icc)
     const layers = readAiLayerOcgs(file, data);
     const boxes = cropped ? readAiLayerBounds(file, data) : null;
     const specs: (LayerSpec | LayerGroupSpec)[] = [];
@@ -1647,7 +1647,7 @@ export class Project {
         ),
       );
     }
-    return this._import_layered_comp(file, "TEXT", specs, info, profileName);
+    return this._importLayeredComp(file, "TEXT", specs, info, profileName);
   }
 
   /**
@@ -1666,10 +1666,10 @@ export class Project {
    * is a general color-management-on-import default py_aep does not yet apply
    * to any no-embedded-profile import, not an EPS-specific gap.
    */
-  _import_eps_comp(file: Path): CompItem {
+  _importEpsComp(file: Path): CompItem {
     const info = probeMedia(file);
     const spec = new LayerSpec(file.name, buildTextOptiData(info.width, info.height), info.width, info.height);
-    return this._import_layered_comp(file, "TEXT", [spec], info, null);
+    return this._importLayeredComp(file, "TEXT", [spec], info, null);
   }
 
   /**
@@ -1678,7 +1678,7 @@ export class Project {
    * Layer groups become nested compositions (recursively); adjustment
    * layers are flagged. With `cropped`, each leaf layer is cropped to its
    * content box (`COMP_CROPPED_LAYERS`); otherwise the full canvas is kept
-   * (`COMP`). `layer_styles` is the dialog's Layer Options choice
+   * (`COMP`). `layerStyles` is the dialog's Layer Options choice
    * (`"editable"`, the default, or `"merge"`; see
    * `ImportOptions.layerStyles`).
    *
@@ -1687,7 +1687,7 @@ export class Project {
    * folder holding one footage item that references the file, and a comp
    * with a single full-canvas layer named after the file.
    */
-  _import_psd_layered(file: Path, cropped = false, layerStyles: string | null = null): CompItem {
+  _importPsdLayered(file: Path, cropped = false, layerStyles: string | null = null): CompItem {
     const info = probeMedia(file);
     let nodes: PsdNode[];
     try {
@@ -1696,8 +1696,8 @@ export class Project {
       if (!(e instanceof FlattenedPsdError)) throw e;
       const spec = new LayerSpec(
         file.name,
-        buildPsdFlattenedOptiData(info.width, info.height, info.bit_depth, info.pixel_channels, {
-          color_mode: info.color_mode,
+        buildPsdFlattenedOptiData(info.width, info.height, info.bitDepth, info.pixelChannels, {
+          color_mode: info.colorMode,
         }),
         info.width,
         info.height,
@@ -1709,12 +1709,12 @@ export class Project {
         undefined,
         undefined,
         undefined,
-        pixelBufferSize(info.width, info.height, info.pixel_channels, info.bit_depth),
+        pixelBufferSize(info.width, info.height, info.pixelChannels, info.bitDepth),
       );
-      return this._import_layered_comp(file, "8BPS", [spec], info, namedMediaProfile("8BPS", info));
+      return this._importLayeredComp(file, "8BPS", [spec], info, namedMediaProfile("8BPS", info));
     }
     const resolvedStyles = layerStyles == null ? "editable" : layerStyles;
-    const specs = this._psd_layer_specs(
+    const specs = this._psdLayerSpecs(
       nodes,
       file,
       info,
@@ -1724,7 +1724,7 @@ export class Project {
       // rather than per recursion level (one file scan per group).
       readGlobalLight(file),
     );
-    return this._import_layered_comp(file, "8BPS", specs, info, namedMediaProfile("8BPS", info));
+    return this._importLayeredComp(file, "8BPS", specs, info, namedMediaProfile("8BPS", info));
   }
 
   /**
@@ -1735,7 +1735,7 @@ export class Project {
    * document-wide (AE names them `"<stem> (n)"`); `group_clipping=False`
    * disables run detection while building a run's own children.
    */
-  _psd_layer_specs(
+  _psdLayerSpecs(
     nodes: PsdNode[],
     file: Path,
     info: MediaInfo,
@@ -1767,7 +1767,7 @@ export class Project {
         specs.push(
           new LayerGroupSpec(
             node.name,
-            this._psd_layer_specs(node.children, file, info, cropped, layerStyles, globalLight, clipCounter),
+            this._psdLayerSpecs(node.children, file, info, cropped, layerStyles, globalLight, clipCounter),
             undefined,
             undefined,
             undefined,
@@ -1793,7 +1793,7 @@ export class Project {
           specs.push(
             new LayerGroupSpec(
               node.name,
-              this._psd_layer_specs(run, file, info, cropped, layerStyles, globalLight, clipCounter, false),
+              this._psdLayerSpecs(run, file, info, cropped, layerStyles, globalLight, clipCounter, false),
               `${file.stem} (${clipCounter.next().value})`,
               node.name,
               false,
@@ -1808,8 +1808,8 @@ export class Project {
       const footage = psdLayerFootage(info, node, layerStyles, globalLight[0]);
       const [left, top, right, bottom] = footage.box;
       let masks: Shape[] = [];
-      if (node.vector_mask != null) {
-        masks = parseVectorMask(node.vector_mask, canvasW, canvasH);
+      if (node.vectorMask != null) {
+        masks = parseVectorMask(node.vectorMask, canvasW, canvasH);
       }
       if (cropped) {
         // An empty layer (degenerate content box) is kept at FULL
@@ -1850,9 +1850,9 @@ export class Project {
             cropH,
             transform,
             false,
-            node.is_adjustment,
-            node.layer_id,
-            node.record_index,
+            node.isAdjustment,
+            node.layerId,
+            node.recordIndex,
             // Empty layers have no pixels: data_size stays 0 (from
             // the real bounds), even though the layer is full-canvas.
             footage.dataSize,
@@ -1874,9 +1874,9 @@ export class Project {
             canvasH,
             undefined,
             undefined,
-            node.is_adjustment,
-            node.layer_id,
-            node.record_index,
+            node.isAdjustment,
+            node.layerId,
+            node.recordIndex,
             footage.dataSize,
             reservedC8,
             styles,
@@ -1892,7 +1892,7 @@ export class Project {
     return specs;
   }
 
-  *_iter_text_source_properties(): Generator<[Layer, Property<TextDocument>]> {
+  *_iterTextSourceProperties(): Generator<[Layer, Property<TextDocument>]> {
     /** Yield `(layer, source_text)` for every text layer in the project. */
     for (const comp of this.compositions) {
       for (const layer of comp.layers) {
@@ -1909,23 +1909,23 @@ export class Project {
    * and the Text Layers and times on which they appear in the current
    * Project. Read-only.
    *
-   * Each entry is `{"font": FontObject, "used_at": [...]}`, where every
-   * `used_at` record is `{"layer_id": int, "layer_time": float}` - one
+   * Each entry is `{"font": FontObject, "usedAt": [...]}`, where every
+   * `usedAt` record is `{"layer_id": int, "layerTime": float}` - one
    * per source-text keyframe whose document references that font (a
    * single record at time 0 for an unanimated document). A document
    * with several fonts contributes one record per distinct font.
    * Entries are sorted by PostScript name, matching After Effects.
    *
-   * **Note:** `layer_time` is in LAYER time, not composition time - After
+   * **Note:** `layerTime` is in LAYER time, not composition time - After
    * Effects names it `layerTimeD` because `Source Text`'s
    * `value_at_time` expects layer time, unlike other properties.
    */
-  get usedFonts(): { font: FontObject; used_at: { layer_id: number; layer_time: number }[] }[] {
+  get usedFonts(): { font: FontObject; usedAt: { layerId: number; layerTime: number }[] }[] {
     const records = new Map<
       string,
-      { name: string; font: FontObject; used_at: { layer_id: number; layer_time: number }[] }
+      { name: string; font: FontObject; usedAt: { layerId: number; layerTime: number }[] }
     >();
-    for (const [layer, sourceText] of this._iter_text_source_properties()) {
+    for (const [layer, sourceText] of this._iterTextSourceProperties()) {
       let entries: [TextDocument, number][];
       if (sourceText.keyframes?.length > 0) {
         entries = sourceText.keyframes.map(
@@ -1936,19 +1936,19 @@ export class Project {
       }
       for (const [doc, layerTime] of entries) {
         if (doc == null) continue;
-        for (const font of doc._used_font_objects()) {
+        for (const font of doc._usedFontObjects()) {
           const vector = font.designVector;
           const key = tkey(font.postScriptName, font.version, vector != null ? [...vector] : null);
           let record = records.get(key);
           if (record == null) {
-            record = { name: font.postScriptName, font, used_at: [] };
+            record = { name: font.postScriptName, font, usedAt: [] };
             records.set(key, record);
           }
-          record.used_at.push({ layer_id: layer.id, layer_time: layerTime });
+          record.usedAt.push({ layerId: layer.id, layerTime: layerTime });
         }
       }
     }
-    return sorted([...records.values()], (r) => r.name).map((r) => ({ font: r.font, used_at: r.used_at }));
+    return sorted([...records.values()], (r) => r.name).map((r) => ({ font: r.font, usedAt: r.usedAt }));
   }
 
   /**
@@ -1977,7 +1977,7 @@ export class Project {
     if (fromName === toName) return false;
 
     let changed = false;
-    for (const [, sourceText] of this._iter_text_source_properties()) {
+    for (const [, sourceText] of this._iterTextSourceProperties()) {
       let docs = sourceText.keyframes.map((kf) => kf.value);
       if (!docs?.length) docs = [sourceText.value];
       docs = docs.filter((doc) => doc != null);
@@ -2016,7 +2016,7 @@ export class Project {
 
     for (const comp of this.compositions) {
       for (const layer of comp.layers) {
-        for (const prop of layer._leaf_properties()) {
+        for (const prop of layer._leafProperties()) {
           const expression = prop.expression;
           if (!expression || !prop.expressionEnabled) continue;
           // Python `str.replace` replaces every occurrence and takes no
@@ -2071,7 +2071,7 @@ export class Project {
         parent = parent.parentFolder;
       }
       if (item instanceof CompItem) {
-        for (const sourceId of item._source_ids_for_linking()) {
+        for (const sourceId of item._sourceIdsForLinking()) {
           const source = this.items.get(sourceId) ?? null;
           if (source != null) queue.push(source);
         }
@@ -2100,7 +2100,7 @@ export class Project {
   consolidateFootage(): number {
     const groups = new Map<string, FootageItem[]>();
     for (const footage of this.footages) {
-      const key = footage._consolidation_key();
+      const key = footage._consolidationKey();
       if (key == null) continue;
       setdefault(groups, key, []).push(footage);
     }
@@ -2111,13 +2111,13 @@ export class Project {
       for (const dup of duplicates.slice(1)) {
         for (const comp of dup.usedIn) {
           for (const layer of comp.avLayers) {
-            if (layer._source_id === dup.id) {
-              layer._source_id = kept.id;
+            if (layer._sourceId === dup.id) {
+              layer._sourceId = kept.id;
               // Refresh the layer's cached source so a prior
               // `layer.source` access doesn't keep returning
               // the removed duplicate.
               layer._source = kept;
-              kept._used_in.add(comp);
+              kept._usedIn.add(comp);
             }
           }
         }
@@ -2140,15 +2140,15 @@ export class Project {
     validatePathDoesNotExist(path);
     for (const comp of this.compositions) {
       // A comp whose layers were never loaded has had nothing moved.
-      if (comp._layers_loaded) {
+      if (comp._layersLoaded) {
         for (const layer of comp.layers) {
-          layer._write_out_moved_defaults();
+          layer._writeOutMovedDefaults();
         }
       }
     }
     const pathObj = new Path(path);
-    pathObj.parent.mkdir({ parents: true, exist_ok: true });
-    const filled = this._fill_relative_path_counts(
+    pathObj.parent.mkdir({ parents: true, existOk: true });
+    const filled = this._fillRelativePathCounts(
       platformPath(host.path.resolve(String(pathObj)), { windows: this._windows }),
     );
     // Serialize in memory: the writer seeks back to fill in each chunk's
@@ -2156,7 +2156,7 @@ export class Project {
     // project took minutes to write there, under a second in one call).
     const buffer = new BytesIO();
     try {
-      moduleGlobals.write_aep(buffer, this._rifx, this._xmp);
+      moduleGlobals.writeAep(buffer, this._rifx, this._xmp);
     } finally {
       // Back to pending, so a later save computes them for its own
       // location.
@@ -2169,7 +2169,7 @@ export class Project {
     // unique and created exclusively: a fixed one would overwrite, then
     // move away, any file of the user's carrying it. A failed rename (a
     // scanner still holding the temp file on Windows) removes it too.
-    const tmpPath = pathObj.with_name(`${pathObj.name}.${uuid4().replace(/-/g, "")}.tmp`);
+    const tmpPath = pathObj.withName(`${pathObj.name}.${uuid4().replace(/-/g, "")}.tmp`);
     try {
       // `tmp_path.open("xb")`: created exclusively before anything is written.
       const fd = host.fs.openSync(tmpPath.path, "wx");
@@ -2196,7 +2196,7 @@ export class Project {
    * skipped: no layer holds a path record. Returns each filled record
    * with its previous text.
    */
-  _fill_relative_path_counts(projectFile: string): [Utf8Chunk, string][] {
+  _fillRelativePathCounts(projectFile: string): [Utf8Chunk, string][] {
     const filled: [Utf8Chunk, string][] = [];
     for (const chunk of recursiveFind(this._rifx.chunks, "alas", undefined, true)) {
       const alas = chunk;
@@ -2205,7 +2205,7 @@ export class Project {
       if (!(data instanceof Map)) throw new AttributeError(`'${typeName(data)}' object has no attribute 'get'`);
       if (!pyEq(dictGet(data, "ascendcount_base"), PENDING_ASCENDCOUNT)) continue;
       const counts = relativePathCounts(projectFile, alasFullpath(data), {
-        target_is_folder: pyBool(dictGet(data, "target_is_folder")),
+        targetIsFolder: pyBool(dictGet(data, "target_is_folder")),
       });
       data.set("ascendcount_base", counts[0]);
       data.set("ascendcount_target", counts[1]);
@@ -2216,8 +2216,8 @@ export class Project {
   }
 
   /** Return the AE preferences directory or raise if none was given. */
-  _require_prefs_dir(label: string): Path {
-    if (this._ae_preferences_dir == null) {
+  _requirePrefsDir(label: string): Path {
+    if (this._aePreferencesDir == null) {
       throw new ValueError(
         "No 'ae_preferences_dir' provided to parse(); " +
           `${label} templates are required for adding items ` +
@@ -2226,7 +2226,7 @@ export class Project {
           "C:/Users/<user>/AppData/Roaming/Adobe/After Effects/26.0)",
       );
     }
-    return this._ae_preferences_dir;
+    return this._aePreferencesDir;
   }
 
   /**
@@ -2235,14 +2235,14 @@ export class Project {
    * @throws {@link ValueError} If no preferences directory was provided to `parse()`. Render
    *   settings templates are required for adding items to the render queue.
    */
-  _get_render_templates(): RenderSettingsItem[] {
-    if (this._render_templates_cache != null) return this._render_templates_cache;
+  _getRenderTemplates(): RenderSettingsItem[] {
+    if (this._renderTemplatesCache != null) return this._renderTemplatesCache;
 
-    const prefsDir = this._require_prefs_dir("render settings");
+    const prefsDir = this._requirePrefsDir("render settings");
     const [templates, defaultIndex] = parseRenderTemplates(prefsDir);
-    this._default_render_template_index = defaultIndex;
+    this._defaultRenderTemplateIndex = defaultIndex;
 
-    this._render_templates_cache = templates;
+    this._renderTemplatesCache = templates;
     return templates;
   }
 
@@ -2254,14 +2254,14 @@ export class Project {
    * @throws {@link ValueError} If no preferences directory was provided to `parse()`. Output module
    *   templates are required for adding items to the render queue.
    */
-  _get_output_templates(): OutputModuleTemplate[] {
-    if (this._output_templates_cache != null) return this._output_templates_cache;
+  _getOutputTemplates(): OutputModuleTemplate[] {
+    if (this._outputTemplatesCache != null) return this._outputTemplatesCache;
 
-    const prefsDir = this._require_prefs_dir("output module");
+    const prefsDir = this._requirePrefsDir("output module");
     const [templates] = parseOutputTemplates(prefsDir);
 
-    this._output_templates_cache = templates;
-    return this._output_templates_cache;
+    this._outputTemplatesCache = templates;
+    return this._outputTemplatesCache;
   }
 
   /**
@@ -2276,11 +2276,11 @@ export class Project {
    * once against every live id, then
    * strictly counter-driven. ID 0 is reserved for the root folder.
    */
-  _allocate_id(): number {
-    if (!this._id_counter_reconciled) {
+  _allocateId(): number {
+    if (!this._idCounterReconciled) {
       const layerIds: number[] = [];
       for (const comp of this.compositions) {
-        for (const ldta of recursiveFind(comp._item_list.chunks, "ldta")) {
+        for (const ldta of recursiveFind(comp._itemList.chunks, "ldta")) {
           layerIds.push(ldta.layer_id);
         }
       }
@@ -2290,7 +2290,7 @@ export class Project {
       if (this._head.next_item_id < floor) {
         this._head.next_item_id = floor;
       }
-      this._id_counter_reconciled = true;
+      this._idCounterReconciled = true;
     }
     const newId = this._head.next_item_id;
     this._head.next_item_id = newId + 1;
@@ -2303,7 +2303,7 @@ export class Project {
    * AE stamps the "New Project Solids Folder" preference into `sfnm`
    * when the project is created and uses the stored name from then on.
    */
-  get _solids_folder_name(): string {
+  get _solidsFolderName(): string {
     const sfnm = findByListTypeOrNull(this._rifx.chunks, "sfnm");
     const utf8 = sfnm === null ? null : findByTypeOrNull(sfnm.chunks, "Utf8");
     return utf8?.value || "Solids";
@@ -2315,7 +2315,7 @@ export class Project {
   }
 
   /** The item id of the Solids folder recorded in `sfid` (0 for none). */
-  get _solids_folder_id(): number {
+  get _solidsFolderId(): number {
     const sfid = this._sfid;
     return sfid != null ? sfid.value : 0;
   }
@@ -2328,12 +2328,12 @@ export class Project {
    * Solids name (the id stays unset); else a new one, whose id is
    * recorded.
    */
-  get _solids_folder(): FolderItem {
+  get _solidsFolder(): FolderItem {
     const sfid = this._sfid;
     const recorded = sfid != null ? sfid.value : 0;
     const folder = recorded ? this.items.get(recorded) ?? null : null;
     if (folder instanceof FolderItem) return folder;
-    const name = this._solids_folder_name;
+    const name = this._solidsFolderName;
     for (const existing of this.rootFolder.folders) {
       if (existing.name === name) return existing;
     }
@@ -2349,10 +2349,10 @@ export class Project {
   };
 
   /** Return the color profile settings Map. */
-  _get_cms_settings(): Map<string, JsonValue> {
+  _getCmsSettings(): Map<string, JsonValue> {
     const merged = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
-    if (this._cms_utf8 != null) {
-      const cmsData = jsonLoads(this._cms_utf8.value);
+    if (this._cmsUtf8 != null) {
+      const cmsData = jsonLoads(this._cmsUtf8.value);
       if (!(cmsData instanceof Map)) throw new TypeError_(`'${typeName(cmsData)}' object is not a mapping`);
       for (const [k, v] of cmsData) merged.set(k, v);
     }
@@ -2360,18 +2360,18 @@ export class Project {
   }
 
   /** Update a single key in the CMS settings JSON chunk. */
-  _update_cms_setting(key: string, value: number | string): void {
-    if (this._cms_utf8 != null) {
-      const data = jsonLoads(this._cms_utf8.value);
+  _updateCmsSetting(key: string, value: number | string): void {
+    if (this._cmsUtf8 != null) {
+      const data = jsonLoads(this._cmsUtf8.value);
       if (!(data instanceof Map)) throw new TypeError_(`'${typeName(data)}' object does not support item assignment`);
       data.set(key, value);
-      this._cms_utf8.value = jsonDumps(data);
+      this._cmsUtf8.value = jsonDumps(data);
     } else {
       const data = new Map<string, JsonValue>(Object.entries(this.constructor._CMS_DEFAULTS));
       data.set(key, value);
       const chunk = new Utf8Chunk({ value: jsonDumps(data) });
       this._rifx.chunks.push(chunk);
-      this._cms_utf8 = chunk;
+      this._cmsUtf8 = chunk;
     }
   }
 }
@@ -2381,7 +2381,7 @@ descriptor(
   Project,
   "bitsPerChannel",
   ChunkField.enum(BitsPerChannel, "_nnhd", "bits_per_channel", {
-    post_set: (obj: Project) => obj._sync_nhed_field("bits_per_channel"),
+    postSet: (obj: Project) => obj._syncNhedField("bits_per_channel"),
   }),
 );
 
@@ -2389,7 +2389,7 @@ descriptor(
   Project,
   "feetFramesFilmType",
   ChunkField.enum(FeetFramesFilmType, "_nnhd", "feet_frames_film_type", {
-    post_set: (obj: Project) => obj._sync_nhed_field("_display_byte"),
+    postSet: (obj: Project) => obj._syncNhedField("_display_byte"),
   }),
 );
 
@@ -2397,13 +2397,13 @@ descriptor(
   Project,
   "footageTimecodeDisplayStartType",
   ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footage_timecode_display_start_type", {
-    post_set: (obj: Project) => obj._sync_nhed_field("footage_timecode_display_start_type"),
+    postSet: (obj: Project) => obj._syncNhedField("footage_timecode_display_start_type"),
   }),
 );
 
 descriptor(
   Project,
-  "_timecode_default_base",
+  "_timecodeDefaultBase",
   new ChunkField("_nnhd", "timecode_default_base", {
     // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
     // synthetic stand-in) persists at most 255.
@@ -2412,7 +2412,7 @@ descriptor(
       max: (obj: Project) => (obj._nnhd.synthetic ? 255 : 999),
       integer: true,
     }),
-    post_set: (obj: Project) => obj._sync_nhed_timecode_default_base(),
+    postSet: (obj: Project) => obj._syncNhedTimecodeDefaultBase(),
   }),
 );
 
@@ -2420,7 +2420,7 @@ descriptor(
   Project,
   "framesCountType",
   ChunkField.enum(FramesCountType, "_nnhd", "frames_count_type", {
-    post_set: (obj: Project) => obj._sync_nhed_field("frames_count_type"),
+    postSet: (obj: Project) => obj._syncNhedField("frames_count_type"),
   }),
 );
 
@@ -2429,7 +2429,7 @@ descriptor(
   "displayStartFrame",
   new ChunkField("_nnhd", "display_start_frame", {
     validate: validateOneOf([0, 1]),
-    post_set: (obj: Project) => obj._sync_nhed_field("frames_count_type"),
+    postSet: (obj: Project) => obj._syncNhedField("frames_count_type"),
   }),
 );
 
@@ -2437,7 +2437,7 @@ descriptor(
   Project,
   "framesUseFeetFrames",
   ChunkField.bool("_nnhd", "frames_use_feet_frames", {
-    post_set: (obj: Project) => obj._sync_nhed_field("_feet_byte"),
+    postSet: (obj: Project) => obj._syncNhedField("_feet_byte"),
   }),
 );
 
@@ -2445,7 +2445,7 @@ descriptor(
   Project,
   "timeDisplayType",
   ChunkField.enum(TimeDisplayType, "_nnhd", "time_display_type", {
-    post_set: (obj: Project) => obj._sync_nhed_field("_display_byte"),
+    postSet: (obj: Project) => obj._syncNhedField("_display_byte"),
   }),
 );
 
@@ -2453,7 +2453,7 @@ descriptor(
   Project,
   "transparencyGridThumbnails",
   ChunkField.bool("_nnhd", "transparency_grid_thumbnails", {
-    post_set: (obj: Project) => obj._sync_nhed_field("transparency_grid_thumbnails"),
+    postSet: (obj: Project) => obj._syncNhedField("transparency_grid_thumbnails"),
   }),
 );
 
@@ -2465,7 +2465,7 @@ descriptor(
   ChunkField.bool("_acer", "value", {
     transform: (v: number) => v !== 0,
     reverse: (v: boolean) => int(v),
-    min_version: 16,
+    minVersion: 16,
   }),
 );
 
@@ -2483,17 +2483,17 @@ descriptor(
   new ChunkField("_dwga", "working_gamma", {
     validate: validateOneOf([2.2, 2.4]),
     // A CC 12.0 project has no dwga to keep it in.
-    min_version: 13,
+    minVersion: 13,
   }),
 );
 
 descriptor(
   Project,
   "gpuAccelType",
-  ChunkField.enum(GpuAccelType, "_gpug_utf8", "value", {
-    allow_out_of_enum_values: true,
+  ChunkField.enum(GpuAccelType, "_gpugUtf8", "value", {
+    allowOutOfEnumValues: true,
     validate: _validateGpuAccelType,
-    min_version: 13,
+    minVersion: 13,
   }),
 );
 
@@ -2613,11 +2613,11 @@ export function _stampStyleTdb4(leaf: Property, matchName: string, timebase: num
 export const _STYLE_SPEC_DEFAULTS = new Map<string, number | number[]>();
 for (const specList of _LAYER_STYLE_CHILD_SPECS.values()) {
   for (const spec of specList) {
-    if (spec.value != null) _STYLE_SPEC_DEFAULTS.set(spec.match_name, spec.value);
+    if (spec.value != null) _STYLE_SPEC_DEFAULTS.set(spec.matchName, spec.value);
   }
 }
 for (const spec of [..._BLEND_OPTIONS_SPECS, ..._ADV_BLEND_SPECS]) {
-  if (spec instanceof PropSpec && spec.value != null) _STYLE_SPEC_DEFAULTS.set(spec.match_name, spec.value);
+  if (spec instanceof PropSpec && spec.value != null) _STYLE_SPEC_DEFAULTS.set(spec.matchName, spec.value);
 }
 
 /** Map of match name -\> leaf under `group`, first-in-tree-order. */
@@ -2654,9 +2654,9 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   // enabled OR the layer carries blend-options data (a Photoshop Fill
   // slider away from 100% enables the chain with zero styles - the
   // psd_fill_opacity fixture).
-  const styled = styles != null && pyBool(styles.enabled?.length > 0 ? styles.enabled : styles.blend_options);
+  const styled = styles != null && pyBool(styles.enabled?.length > 0 ? styles.enabled : styles.blendOptions);
   const containerFlags = styled ? 1 : 3;
-  container._ensure_materialized();
+  container._ensureMaterialized();
   pyAssert(container._tdsb != null);
   container._tdsb._enable_flags = containerFlags;
   // The synthesis pass stamped derived `enabled` overrides while every
@@ -2665,14 +2665,14 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   instanceDict(container).set("enabled", styled);
   for (const child of container.properties) {
     if (!(child instanceof PropertyGroup)) continue;
-    child._ensure_materialized();
+    child._ensureMaterialized();
     pyAssert(child._tdsb != null);
     if (child.matchName === "ADBE Blend Options Group") {
       child._tdsb._enable_flags = containerFlags;
       instanceDict(child).set("enabled", styled);
       for (const sub of child.properties) {
         if (sub instanceof PropertyGroup) {
-          sub._ensure_materialized();
+          sub._ensureMaterialized();
           pyAssert(sub._tdsb != null);
           // AE writes the Advanced Blending subgroup enabled on
           // EVERY import, plain skeletons included (pinned by the

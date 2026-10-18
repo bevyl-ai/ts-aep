@@ -29,7 +29,7 @@ export class Viewer {
   declare _foac: U1Chunk;
   declare _fiac: U1Chunk;
   declare _views: View[];
-  declare _active_view_index: number;
+  declare _activeViewIndex: number;
 
   constructor(kw: { _fitt: AsciiChunk; _foac: U1Chunk; _fiac: U1Chunk }) {
     const { _fitt, _foac, _fiac } = kw;
@@ -37,7 +37,7 @@ export class Viewer {
     this._foac = _foac;
     this._fiac = _fiac;
     this._views = [];
-    this._active_view_index = 0;
+    this._activeViewIndex = 0;
   }
 
   /**
@@ -57,7 +57,7 @@ export class Viewer {
    * `View.setActive()` to change which view is active.
    */
   get activeViewIndex(): number {
-    return this._active_view_index;
+    return this._activeViewIndex;
   }
 
   set activeViewIndex(value: number) {
@@ -66,7 +66,7 @@ export class Viewer {
     // rejecting every value including 0).
     const maxIndex = this._views.length > 0 ? this._views.length - 1 : 0;
     _validateNumber({ min: 0, max: maxIndex, integer: true })(value);
-    this._active_view_index = value;
+    this._activeViewIndex = value;
   }
 
   /**
@@ -82,7 +82,7 @@ descriptor(
   Viewer,
   "type",
   ChunkField.enum(ViewerType, "_fitt", "value", {
-    transform: (v: string) => ViewerType.from_string(v),
-    read_only: true,
+    transform: (v: string) => ViewerType.fromString(v),
+    readOnly: true,
   }),
 );

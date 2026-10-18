@@ -169,7 +169,7 @@ export class PrefsFile {
   }
 
   /** Parse preference file text into a `PrefsFile`. */
-  static from_text(text: string): PrefsFile {
+  static fromText(text: string): PrefsFile {
     const sections: Map<string, Map<string, string>> = new Map();
     let current: Map<string, string> | null = null;
     for (const line of collapseContinuationLines(text)) {
@@ -187,14 +187,14 @@ export class PrefsFile {
   }
 
   /** Read and parse a preference file from disk. */
-  static from_path(path: Path): PrefsFile {
+  static fromPath(path: Path): PrefsFile {
     // Python text mode reads with universal newlines: `\r\n` and lone `\r` both become `\n`.
-    const text = decode(path.read_bytes(), "utf-8", "replace").replace(/\r\n?/g, "\n");
-    return this.from_text(text);
+    const text = decode(path.readBytes(), "utf-8", "replace").replace(/\r\n?/g, "\n");
+    return this.fromText(text);
   }
 
   /** Return the raw text value for `section`/`key`, or None. */
-  get_raw(section: string, key: string): string | null {
+  getRaw(section: string, key: string): string | null {
     return (this._sections.get(section) ?? new Map<string, string>()).get(key) ?? null;
   }
 

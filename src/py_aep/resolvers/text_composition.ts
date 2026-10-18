@@ -130,7 +130,7 @@ class _HbBlob {
   constructor(data: Uint8Array) {
     this.data = data;
   }
-  static from_file_path(path: string): _HbBlob {
+  static fromFilePath(path: string): _HbBlob {
     return new _HbBlob(new Uint8Array(host.fs.readFileSync(path)));
   }
 }
@@ -157,19 +157,19 @@ class _HbBuffer {
   constructor() {
     this._buf = _hb().createBuffer();
   }
-  add_str(text: string): void {
+  addStr(text: string): void {
     this._buf.addText(text);
   }
-  guess_segment_properties(): void {
+  guessSegmentProperties(): void {
     this._buf.guessSegmentProperties();
   }
-  get glyph_infos(): { codepoint: number; cluster: number }[] {
+  get glyphInfos(): { codepoint: number; cluster: number }[] {
     return this._buf.json().map((g) => ({ codepoint: g.g, cluster: g.cl }));
   }
-  get glyph_positions(): { x_advance: number; y_advance: number; x_offset: number; y_offset: number }[] {
+  get glyphPositions(): { xAdvance: number; yAdvance: number; xOffset: number; yOffset: number }[] {
     return this._buf
       .json()
-      .map((g) => ({ x_advance: g.ax, y_advance: g.ay, x_offset: g.dx, y_offset: g.dy }));
+      .map((g) => ({ xAdvance: g.ax, yAdvance: g.ay, xOffset: g.dx, yOffset: g.dy }));
   }
 }
 
@@ -254,7 +254,7 @@ export function _hbFont(psName: string): [_HbFont, number] {
   if (cached === undefined) {
     let face: _HbFace;
     try {
-      const blob = hb.Blob.from_file_path(path.toString());
+      const blob = hb.Blob.fromFilePath(path.toString());
       face = new hb.Face(blob, faceIndex);
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
@@ -341,7 +341,7 @@ export class _CharStyle {
     }
   }
 
-  stretch_key(): string {
+  stretchKey(): string {
     return tkey(this.font, this.size, this.tracking, this.hscale, this.fauxbold, this.caps);
   }
 }
@@ -353,7 +353,7 @@ export function _checkEnvelope(doc: TextDocument, raw: string): void {
       "composition requires uharfbuzz, which is unavailable on Python 3.7",
     );
   }
-  const orientation = cosGet(doc._cos_data, "0", "8", "0", 0, "0", "2", "1");
+  const orientation = cosGet(doc._cosData, "0", "8", "0", 0, "0", "2", "1");
   if (!(orientation == null || pyEq(orientation, 0))) {
     throw new CompositionUnsupported("vertical text");
   }
@@ -476,10 +476,10 @@ export function _shapeGlyphs(text: string, style: _CharStyle): [_HbBuffer, numbe
     throw new CompositionUnsupported("case mapping changes the text length");
   }
   const buf = new hb.Buffer();
-  buf.add_str(shapedText);
-  buf.guess_segment_properties();
+  buf.addStr(shapedText);
+  buf.guessSegmentProperties();
   hb.shape(font, buf, { liga: false, clig: false });
-  for (const info of buf.glyph_infos) {
+  for (const info of buf.glyphInfos) {
     if (info.codepoint === 0) {
       throw new CompositionUnsupported(
         `glyph missing from ${repr(style.font)} for a character in ${repr(text)}`,
@@ -500,8 +500,8 @@ export function _glyphAdvances(text: string, style: _CharStyle, buf: _HbBuffer, 
   // Text here is BMP-only (`_check_envelope` refuses astral characters
   // first), so UTF-16 indexing matches Python's code-point indexing.
   const perCluster: number[] = new Array<number>(text.length).fill(0.0);
-  for (const [info, pos] of zip<[_HbBuffer["glyph_infos"], _HbBuffer["glyph_positions"]]>(buf.glyph_infos, buf.glyph_positions)) {
-    perCluster[info.cluster] += pos.x_advance * scale;
+  for (const [info, pos] of zip<[_HbBuffer["glyphInfos"], _HbBuffer["glyphPositions"]]>(buf.glyphInfos, buf.glyphPositions)) {
+    perCluster[info.cluster] += pos.xAdvance * scale;
   }
   const advances: number[] = [];
   for (let [i, advance] of perCluster.entries()) {
@@ -521,9 +521,9 @@ export function _advances(text: string, styles: _CharStyle[], offset: number): n
   const out: number[] = [];
   let i = 0;
   while (i < text.length) {
-    const key = styles[offset + i].stretch_key();
+    const key = styles[offset + i].stretchKey();
     let j = i;
-    while (j < text.length && styles[offset + j].stretch_key() === key) {
+    while (j < text.length && styles[offset + j].stretchKey() === key) {
       j += 1;
     }
     for (const advance of _shapeStretch(text.slice(i, j), styles[offset + i])) {

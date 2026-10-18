@@ -53,7 +53,7 @@ export class Fraction {
   }
 
   /** CPython's `Fraction.limit_denominator`. */
-  limit_denominator(maxDenominator: number | bigint = 1000000): Fraction {
+  limitDenominator(maxDenominator: number | bigint = 1000000): Fraction {
     const max = BigInt(maxDenominator);
     if (max < 1n) throw new ValueError("max_denominator should be at least 1");
     if (this.d <= max) return new Fraction(this.n, this.d);

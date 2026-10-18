@@ -100,28 +100,28 @@ const _INDEP_COMP_PREFS = `# Text File Version 1.1
 
 /** Fixture `prefs_dir`: writes the three preference files into `tmp_path`. */
 function prefsDirFixture(tmpPath: Path): Path {
-  tmpPath.div("Adobe After Effects 26.0 Prefs.txt").write_text(_MACHINE_PREFS);
-  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-general.txt").write_text(_INDEP_PREFS);
-  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").write_text(_INDEP_COMP_PREFS);
+  tmpPath.div("Adobe After Effects 26.0 Prefs.txt").writeText(_MACHINE_PREFS);
+  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-general.txt").writeText(_INDEP_PREFS);
+  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").writeText(_INDEP_COMP_PREFS);
   return tmpPath;
 }
 
 describe("TestPrefsFileParsing", () => {
   test("test_sections_and_keys", () => {
-    const prefs = PrefsFile.from_text(_MACHINE_PREFS);
-    expect(prefs.get_raw("Renderer Preference Section", "New Composition Default")).toBe('"ADBE Calder"');
-    expect(prefs.get_raw("Numbers Section", "Raw Byte")).toBe("01");
+    const prefs = PrefsFile.fromText(_MACHINE_PREFS);
+    expect(prefs.getRaw("Renderer Preference Section", "New Composition Default")).toBe('"ADBE Calder"');
+    expect(prefs.getRaw("Numbers Section", "Raw Byte")).toBe("01");
   });
 
   test("test_missing_returns_none", () => {
-    const prefs = PrefsFile.from_text(_MACHINE_PREFS);
-    expect(prefs.get_raw("Numbers Section", "Nope") == null).toBe(true);
-    expect(prefs.get_raw("Nope Section", "Quoted Int") == null).toBe(true);
+    const prefs = PrefsFile.fromText(_MACHINE_PREFS);
+    expect(prefs.getRaw("Numbers Section", "Nope") == null).toBe(true);
+    expect(prefs.getRaw("Nope Section", "Quoted Int") == null).toBe(true);
   });
 
   test("test_continuation_lines", () => {
-    const prefs = PrefsFile.from_text(_INDEP_PREFS);
-    const raw = prefs.get_raw("Strings Section", "Long Value");
+    const prefs = PrefsFile.fromText(_INDEP_PREFS);
+    const raw = prefs.getRaw("Strings Section", "Long Value");
     expect(raw != null).toBe(true);
     if (raw == null) throw new Error("no raw 'Long Value' pref");
     expect(decodePrefString(raw)).toBe("part one and part two");
@@ -265,11 +265,11 @@ describe("TestPreferences", () => {
   test("test_overrides_never_touch_disk", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
     const target = prefsDir.div("Adobe After Effects 26.0 Prefs.txt");
-    const before = target.read_bytes();
+    const before = target.readBytes();
     const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     prefs.deletePref("Numbers Section", "Raw Byte");
-    expect(pyEq(target.read_bytes(), before)).toBe(true);
+    expect(pyEq(target.readBytes(), before)).toBe(true);
   });
 
   test("test_delete_pref_masks_file_value", () => {
@@ -309,7 +309,7 @@ describe("TestPreferences", () => {
 describe("TestApplicationPreferences", () => {
   test("test_app_preferences_object", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     expect(app.preferences instanceof py_aep.Preferences).toBe(true);
     expect(app.preferences).toBe(app.project._preferences);
   });
@@ -319,7 +319,7 @@ describe("TestApplicationPreferences", () => {
 describe("TestCreationWiring", () => {
   test("test_labels_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     expect(asInstance(comp._idta, IdtaChunk).label).toBe(9);
     expect(asInstance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(12);
@@ -351,7 +351,7 @@ describe("TestCreationWiring", () => {
 
   test("test_label_override", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     app.preferences.setPrefAsNumber("Label Preference Indices Section 5", "Comp Label Index 2", 16, INDEP);
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     expect(asInstance(comp._idta, IdtaChunk).label).toBe(16);
@@ -359,8 +359,8 @@ describe("TestCreationWiring", () => {
 
   test("test_solids_folder_name_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
-    expect(app.project._solids_folder_name).toBe("Solides");
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    expect(app.project._solidsFolderName).toBe("Solides");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0]);
     expect(pyEq(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
@@ -371,16 +371,16 @@ describe("TestCreationWiring", () => {
     // (without any prefs dir) reads the stored name back.
     const tmpPath = makeTmpPath();
     const prefsDir = prefsDirFixture(tmpPath);
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const reparsed = py_aep.parse(out);
-    expect(reparsed.project._solids_folder_name).toBe("Solides");
+    expect(reparsed.project._solidsFolderName).toBe("Solides");
   });
 
   test("test_solids_folder_name_factory_default", () => {
     const app = py_aep.new();
-    expect(app.project._solids_folder_name).toBe("Solids");
+    expect(app.project._solidsFolderName).toBe("Solids");
   });
 });
 
@@ -453,7 +453,7 @@ describe("TestCompositionPresets", () => {
 
   test("test_add_comp_from_preset", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "1440x1080", 5.0);
     expect(pyEq([comp.width, comp.height], [1440, 1080])).toBe(true);
     expect(approx(comp.pixelAspect, 4 / 3)).toBe(true);
@@ -464,20 +464,20 @@ describe("TestCompositionPresets", () => {
 
   test("test_add_comp_from_preset_ntsc_rate", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "29.97", 5.0);
     expect(approx(comp.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_add_comp_from_preset_ambiguous", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "1920x1080", 5.0), "matched 2");
   });
 
   test("test_add_comp_from_preset_unknown", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "8K", 5.0), "matched 0");
   });
 
@@ -521,7 +521,7 @@ describe("TestResizeToStrings", () => {
     const tmpPath = makeTmpPath();
     const prefs = tmpPath.div("prefs");
     prefs.mkdir();
-    prefs.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").write_text(_TIE_COMP_PREFS);
+    prefs.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").writeText(_TIE_COMP_PREFS);
     const resize = buildResizeToStrings(new py_aep.Preferences(prefs));
     expect(getitem(resize, tkey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
   });
@@ -561,7 +561,7 @@ describe("TestOutputNameTemplatePresets", () => {
 describe("TestNewProjectSettings", () => {
   test("test_depth_and_time_display_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const project = py_aep.new(undefined, { ae_preferences_dir: prefsDir }).project;
+    const project = py_aep.new(undefined, { aePreferencesDir: prefsDir }).project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
     for (const chunk of [project._nnhd, project._nhed]) {
       expect(chunk.time_display_type).toBe(1);
@@ -589,7 +589,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
     // AE 2026 probed: start = in = comp.time, out shifted by the same
     // amount, for every scripted layer-creation method.
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -602,7 +602,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
 
   test("test_no_shift_at_time_zero", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
     expect(approx(solid.startTime, 0.0)).toBe(true);
@@ -621,7 +621,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
     // AE 2026 probed: duplicate() keeps the source layer's timing and
     // does not re-anchor at the current time.
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -641,7 +641,7 @@ describe("TestDefaultOutPoints", () => {
   function outpointPrefsDir(tmpPath: Path): Path {
     tmpPath
       .div("Adobe After Effects 26.0 Prefs-indep-general.txt")
-      .write_text(
+      .writeText(
         '["Main Pref Section v2"]\n' +
           '\t"Pref_DEFAULT_STILL_OUT_POINT v2" = "75/25"\n' +
           '\t"Pref_DEFAULT_SYNTHETIC_OUT_POINT v2" = "50/25"\n',
@@ -651,7 +651,7 @@ describe("TestDefaultOutPoints", () => {
 
   test("test_synthetic_layers_follow_pref", () => {
     const outpointPrefs = outpointPrefsDir(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: outpointPrefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     expect(approx(comp.addSolid([1.0, 0.0, 0.0]).outPoint, 2.0)).toBe(true);
     expect(approx(comp.addNull().outPoint, 2.0)).toBe(true);
@@ -665,7 +665,7 @@ describe("TestDefaultOutPoints", () => {
     // py_aep honors an explicit duration argument, overriding the
     // synthetic out-point preference (AE's addSolid ignores it).
     const outpointPrefs = outpointPrefsDir(makeTmpPath());
-    const app = py_aep.new(undefined, { ae_preferences_dir: outpointPrefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0], undefined, undefined, undefined, undefined, 8.0);
     expect(approx(solid.outPoint, 8.0)).toBe(true);
@@ -726,13 +726,13 @@ const _FACTORY_TEXT_STYLE = `# Text File Version 1.1
 
 function _textStyleDir(tmpPath: Path, sheet: string): Path {
   const prefs = tmpPath.div("prefs");
-  prefs.mkdir({ exist_ok: true });
-  prefs.div("Adobe After Effects 26.0 Prefs-text.txt").write_text(sheet);
+  prefs.mkdir({ existOk: true });
+  prefs.div("Adobe After Effects 26.0 Prefs-text.txt").writeText(sheet);
   return prefs;
 }
 
 function _btdkBytes(layer: Layer): Uint8Array {
-  const matches = recursiveFind(layer._layer_list.chunks, undefined, "btdk");
+  const matches = recursiveFind(layer._layerList.chunks, undefined, "btdk");
   pyAssert(matches.length === 1);
   const buf = new BytesIO();
   matches[0].write(buf);
@@ -747,7 +747,7 @@ describe("TestTextStyleSheet", () => {
   test("test_add_text_honors_style_sheet", () => {
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
     if (text == null) throw new Error("text layer has no text group");
@@ -769,7 +769,7 @@ describe("TestTextStyleSheet", () => {
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const layerBytes = _btdkBytes(comp.addText("probe"));
     const buf = new BytesIO();
-    new py_aep.TextDocument("probe")._btdk_body.write(buf);
+    new py_aep.TextDocument("probe")._btdkBody.write(buf);
     expect(pyEq(layerBytes, buf.getvalue())).toBe(true);
   });
 
@@ -784,7 +784,7 @@ describe("TestTextStyleSheet", () => {
       .join("\n");
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, sheet);
-    const appPrefs = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const appPrefs = py_aep.new(undefined, { aePreferencesDir: prefs });
     const compPrefs = appPrefs.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const appPlain = py_aep.new();
     const compPlain = appPlain.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
@@ -797,7 +797,7 @@ describe("TestTextStyleSheet", () => {
     // applying the factory sheet is a no-op that stays on AE's values.
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _FACTORY_TEXT_STYLE);
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
     if (text == null) throw new Error("text layer has no text group");
@@ -811,7 +811,7 @@ describe("TestTextStyleSheet", () => {
   test("test_box_text_honors_style_sheet", () => {
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addBoxText([80.0, 40.0], "boxed").text;
     if (text == null) throw new Error("text layer has no text group");

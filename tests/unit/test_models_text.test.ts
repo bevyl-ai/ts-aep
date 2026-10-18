@@ -50,10 +50,10 @@ describe("TestParseTextDocument", () => {
 
   test("test_ignores_malformed_cos_payload", () => {
     /** Malformed COS data should keep the property but skip the value. */
-    const prop: { keyframes: never[]; value: null; _property_value_type: PropertyValueType | null } = {
+    const prop: { keyframes: never[]; value: null; _propertyValueType: PropertyValueType | null } = {
       keyframes: [],
       value: null,
-      _property_value_type: null,
+      _propertyValueType: null,
     };
     const tdbsChunk = { chunks: [] };
     const btdkChunk = { data: b("bad") };
@@ -88,16 +88,16 @@ describe("TestParseTextDocument", () => {
     );
 
     expect<unknown>(result).toBe(prop);
-    expect(prop._property_value_type).toBe(PropertyValueType.TEXT_DOCUMENT);
+    expect(prop._propertyValueType).toBe(PropertyValueType.TEXT_DOCUMENT);
     expect(prop.value == null).toBe(true);
   });
 
   test("test_raises_unexpected_cos_errors", () => {
     /** Unexpected bugs in COS conversion should still surface. */
-    const prop: { keyframes: never[]; value: null; _property_value_type: PropertyValueType | null } = {
+    const prop: { keyframes: never[]; value: null; _propertyValueType: PropertyValueType | null } = {
       keyframes: [],
       value: null,
-      _property_value_type: null,
+      _propertyValueType: null,
     };
     const tdbsChunk = { chunks: [] };
     const btdkChunk = { data: b("ok") };

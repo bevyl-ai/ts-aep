@@ -84,7 +84,7 @@ function _comp(project: Project, name: string): CompItem {
 }
 
 function _ldtaInOrder(comp: CompItem): LdtaChunk[] {
-  return recursiveFind(comp._item_list.chunks, "ldta");
+  return recursiveFind(comp._itemList.chunks, "ldta");
 }
 
 function _allIds(project: Project): number[] {
@@ -113,7 +113,7 @@ function _graph(comp: CompItem): Map<string, unknown> {
       ]),
     );
   }
-  const tdpi = recursiveFind(comp._item_list.chunks, "tdpi").map((c) => {
+  const tdpi = recursiveFind(comp._itemList.chunks, "tdpi").map((c) => {
     const v = c.value;
     return dictGet(pos, v, ["ext", v]);
   });
@@ -135,7 +135,7 @@ function _graph(comp: CompItem): Map<string, unknown> {
 /** Every LIST:CCtl across the CIFO/CIF2/CIF3 containers, in order. */
 function _cctls(comp: CompItem): ListChunk[] {
   const out: ListChunk[] = [];
-  for (const cif of comp._item_list.chunks) {
+  for (const cif of comp._itemList.chunks) {
     if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.list_type)) {
       out.push(...filterByListType(cif.chunks, "CCtl"));
     }
@@ -223,10 +223,10 @@ describe("TestDuplicateAgainstAE", () => {
       ),
     ).toBe(true);
     // used_in gains the duplicate on every shared source.
-    project._ensure_used_in_linked();
+    project._ensureUsedInLinked();
     const inner = _comp(project, "Inner");
     const dup2 = src.duplicate();
-    expect(contains(inner._used_in, dup2)).toBe(true);
+    expect(contains(inner._usedIn, dup2)).toBe(true);
   });
 
   test("test_normalized_byte_parity_with_ae", () => {
@@ -260,7 +260,7 @@ describe("TestDuplicateAgainstAE", () => {
         ld.matte_layer_id = getitem(idMap, matte);
       }
     }
-    for (const tdpi of recursiveFind(pyDup._item_list.chunks, "tdpi")) {
+    for (const tdpi of recursiveFind(pyDup._itemList.chunks, "tdpi")) {
       if (idMap.has(tdpi.value)) {
         tdpi.value = getitem(idMap, tdpi.value);
       }
@@ -268,7 +268,7 @@ describe("TestDuplicateAgainstAE", () => {
     const pyIdta = pyDup._idta;
     if (pyIdta == null) throw new AssertionError_("duplicate has no idta chunk");
     pyIdta.item_id = aeDup.id;
-    for (const chunk of pyDup._item_list.chunks) {
+    for (const chunk of pyDup._itemList.chunks) {
       if (chunk.chunk_type === "iide") {
         asInstance(chunk, U4LeChunk).value = aeDup.id;
       }
@@ -295,24 +295,24 @@ describe("TestDuplicateAgainstAE", () => {
     pyDup._cdta.time_divisor = aeDup._cdta.time_divisor;
     // Documented family 2: AE zeroes the stale viewer-pseudo-layer
     // expression-flags byte; AE's own resave zeroes it everywhere.
-    const aeFlags = recursiveFind(aeDup._item_list.chunks, "tdb4").map(
+    const aeFlags = recursiveFind(aeDup._itemList.chunks, "tdb4").map(
       (t) => t._expr_flags,
     )[Symbol.iterator]();
-    for (const t of recursiveFind(pyDup._item_list.chunks, "tdb4")) {
+    for (const t of recursiveFind(pyDup._itemList.chunks, "tdb4")) {
       t._expr_flags = next(aeFlags);
     }
     // Documented family 3: AE strips layer-level parT effect param
     // defs (redundant with EfdG); py keeps them - they are the only
     // param source for uninstalled effects. Align for the comparison.
-    const pyPart = recursiveFind(pyDup._item_list.chunks, null, "parT");
-    const aePart = recursiveFind(aeDup._item_list.chunks, null, "parT");
+    const pyPart = recursiveFind(pyDup._itemList.chunks, null, "parT");
+    const aePart = recursiveFind(aeDup._itemList.chunks, null, "parT");
     expect(len(pyPart)).toBe(len(aePart));
     for (const [pyP, aeP] of zip(pyPart, aePart)) {
       asInstance(pyP, ListChunk).chunks = [...asInstance(aeP, ListChunk).chunks];
     }
 
-    const aeChildren = aeDup._item_list.chunks;
-    const pyChildren = pyDup._item_list.chunks;
+    const aeChildren = aeDup._itemList.chunks;
+    const pyChildren = pyDup._itemList.chunks;
     expect(len(aeChildren)).toBe(len(pyChildren));
     for (const [i, [a, p]] of enumerate(zip(aeChildren, pyChildren))) {
       pyAssert(pyEq(_chunkBytes(a), _chunkBytes(p)), `child ${i} differs`);

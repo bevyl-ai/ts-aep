@@ -49,7 +49,7 @@ export function parseFormatOptions(chunks: Chunk[]): FormatOptions | null {
     const hdr10Utf8 = findByTypeOrNull(chunks, "Utf8");
     return new PngFormatOptions({
       _body: roptChunk,
-      _hdr10_utf8: hdr10Utf8,
+      _hdr10Utf8: hdr10Utf8,
     });
   }
   if (_XML_FORMAT_CODES.has(formatCode)) {

@@ -39,10 +39,10 @@ export type InstanceValidator<O> = (value: unknown, instance: O) => void;
 /** A bound: a number, or computed from the model instance being validated. */
 export type NumBound<O> = number | ((instance: O) => number | null) | null;
 /** Keyword arguments of `_validate_number`; a callable bound reads the model instance `O`. */
-export type NumberKw<O> = { min?: NumBound<O>; max?: NumBound<O>; integer?: boolean; exclusive_min?: boolean };
+export type NumberKw<O> = { min?: NumBound<O>; max?: NumBound<O>; integer?: boolean; exclusiveMin?: boolean };
 /** Keyword arguments of `validate_sequence`. */
 export type SequenceKw<O> = NumberKw<O> & { length?: NumBound<O> };
-type StaticNumberKw = { min?: number | null; max?: number | null; integer?: boolean; exclusive_min?: boolean };
+type StaticNumberKw = { min?: number | null; max?: number | null; integer?: boolean; exclusiveMin?: boolean };
 type StaticSequenceKw = StaticNumberKw & { length?: number | null };
 
 /**
@@ -50,18 +50,18 @@ type StaticSequenceKw = StaticNumberKw & { length?: number | null };
  *
  * @param kw - Keyword arguments:
  * - `min`: Minimum allowed value. May be a static number or a callable `(instance) -> float` for
- *     dynamic bounds. Inclusive unless `exclusive_min` is set.
+ *     dynamic bounds. Inclusive unless `exclusiveMin` is set.
  * - `max`: Maximum allowed value (inclusive). May be a static number or a callable
  *     `(instance) -> float` for dynamic bounds.
  * - `integer`: When `true`, reject non-`int` values.
- * - `exclusive_min`: When `true`, the value must be strictly greater than `min` (e.g. a
+ * - `exclusiveMin`: When `true`, the value must be strictly greater than `min` (e.g. a
  *     positive-but-non-zero size).
  */
 // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); error messages print whole-number bounds without Python's trailing ".0".
 export function _validateNumber(kw?: StaticNumberKw): Validator;
 export function _validateNumber<O>(kw: NumberKw<O>): InstanceValidator<O>;
 export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidator<O> {
-  const { min: min_ = null, max: max_ = null, integer = false, exclusive_min = false } = kw;
+  const { min: min_ = null, max: max_ = null, integer = false, exclusiveMin: exclusive_min = false } = kw;
   const typeLabel = integer ? "an integer" : "a number";
 
   return function _validator(value: unknown, instance: O | null = null): void {
@@ -113,19 +113,19 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
  * - `length`: Required number of elements. When `null`, any length is accepted. May be a callable
  *     `(instance) -> int` for dynamic bounds.
  * - `min`: Minimum allowed value per element. May be a static number or a callable
- *     `(instance) -> float` for dynamic bounds. Inclusive unless `exclusive_min` is set.
+ *     `(instance) -> float` for dynamic bounds. Inclusive unless `exclusiveMin` is set.
  * - `max`: Maximum allowed value per element (inclusive). May be a static number or a callable
  *     `(instance) -> float` for dynamic bounds.
  * - `integer`: When `true`, reject non-`int` elements.
- * - `exclusive_min`: When `true`, each element must be strictly greater than `min` (e.g. a
+ * - `exclusiveMin`: When `true`, each element must be strictly greater than `min` (e.g. a
  *     non-zero-area box size).
  */
 export function validateSequence(kw?: StaticSequenceKw): Validator;
 export function validateSequence<O>(kw: SequenceKw<O>): InstanceValidator<O>;
 export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceValidator<O> {
-  const { length = null, min: min_ = null, max: max_ = null, integer = false, exclusive_min = false } = kw;
+  const { length = null, min: min_ = null, max: max_ = null, integer = false, exclusiveMin: exclusive_min = false } = kw;
   const typeLabel = integer ? "an integer" : "a number";
-  const _elementValidator = _validateNumber({ min: min_, max: max_, integer, exclusive_min });
+  const _elementValidator = _validateNumber({ min: min_, max: max_, integer, exclusiveMin: exclusive_min });
 
   return function _validator(value: unknown, instance: O | null = null): void {
     const n = typeof length === "function" ? length(instance) : length;
@@ -186,7 +186,7 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
       throw new TypeError_(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && Number.isInteger(value)) {
-      if (enumCls.of_or_null(value) === null) {
+      if (enumCls.ofOrNull(value) === null) {
         throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__} value`);
       }
       return;
@@ -222,17 +222,17 @@ export const validatePlatform = validateOneOf(["windows", "macos"]);
  * Return a validator that checks a string value.
  *
  * @param kw - Keyword arguments:
- * - `allow_empty`: When `false`, reject empty strings.
- * - `max_length`: Maximum allowed character count.
- * - `max_bytes`: Maximum allowed UTF-8 byte count, for a value stored in a fixed-width chunk field
+ * - `allowEmpty`: When `false`, reject empty strings.
+ * - `maxLength`: Maximum allowed character count.
+ * - `maxBytes`: Maximum allowed UTF-8 byte count, for a value stored in a fixed-width chunk field
  *     (where `struct.pack` would otherwise truncate silently, mid-character for multi-byte text).
- * - `allow_null`: When `false`, reject strings containing a NUL (`\x00`) character, which corrupt
+ * - `allowNull`: When `false`, reject strings containing a NUL (`\x00`) character, which corrupt
  *     the COS/text blobs AE reads.
  */
 export function _validateStr(
-  kw: { allow_empty?: boolean; max_length?: number | null; max_bytes?: number | null; allow_null?: boolean } = {},
+  kw: { allowEmpty?: boolean; maxLength?: number | null; maxBytes?: number | null; allowNull?: boolean } = {},
 ): Validator {
-  const { allow_empty = true, max_length = null, max_bytes = null, allow_null = true } = kw;
+  const { allowEmpty: allow_empty = true, maxLength: max_length = null, maxBytes: max_bytes = null, allowNull: allow_null = true } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
     // `_NulTailStr` (a `str` subclass) arrives as a String object.
@@ -260,16 +260,16 @@ export function _validateStr(
  * Return a validator that checks a filesystem path.
  *
  * @param kw - Keyword arguments:
- * - `must_exist`: When `true`, reject paths that don't exist (`ValueError`). When `false`, reject
+ * - `mustExist`: When `true`, reject paths that don't exist (`ValueError`). When `false`, reject
  *     paths that do exist (`FileExistsError`). When `null`, allow both.
- * - `must_be_file`: When `true`, also reject an existing path that is not a regular file. Without
- *     this a directory passes `must_exist` and only fails later, deep in a reader, as an
+ * - `mustBeFile`: When `true`, also reject an existing path that is not a regular file. Without
+ *     this a directory passes `mustExist` and only fails later, deep in a reader, as an
  *     OS-specific error (`PermissionError` on Windows, `IsADirectoryError` elsewhere).
  */
 export function _validatePath(
-  kw: { must_exist?: boolean | null; must_be_file?: boolean } = {},
+  kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {},
 ): Validator {
-  const { must_exist = null, must_be_file = false } = kw;
+  const { mustExist: must_exist = null, mustBeFile: must_be_file = false } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!(typeof value === "string" || value instanceof String || value instanceof Path)) {
@@ -278,7 +278,7 @@ export function _validatePath(
     const path = new Path(String(value));
     if (must_exist === true) {
       if (!path.exists()) throw new ValueError(`path does not exist: ${path}`);
-      if (must_be_file && !path.is_file()) throw new ValueError(`path is not a file: ${path}`);
+      if (must_be_file && !path.isFile()) throw new ValueError(`path is not a file: ${path}`);
     } else if (must_exist === false) {
       if (path.exists()) throw new FileExistsError(`path already exists: ${path}`);
     }
@@ -366,35 +366,35 @@ export const validateRgbColor = validateSequence({ length: 3, min: 0.0, max: 1.0
 
 export const validateString = _validateStr();
 
-export const validateName = _validateStr({ allow_empty: false });
+export const validateName = _validateStr({ allowEmpty: false });
 
 // A solid or placeholder name lives in a 256-byte NUL-padded UTF-8 field of the
 // `opti` chunk, leaving 255 usable bytes. AE 2026 silently truncates a longer
 // name to those same 255 bytes on assignment.
-export const validateOptiName = _validateStr({ allow_empty: false, max_bytes: 255 });
+export const validateOptiName = _validateStr({ allowEmpty: false, maxBytes: 255 });
 
 // Strictly positive (non-zero) size, e.g. font size or stroke width.
-export const validatePositiveNonzeroNumber = _validateNumber({ min: 0.0, exclusive_min: true });
+export const validatePositiveNonzeroNumber = _validateNumber({ min: 0.0, exclusiveMin: true });
 
 // A font PostScript name must be a non-empty, NUL-free string.
-export const validateFontName = _validateStr({ allow_empty: false, allow_null: false });
+export const validateFontName = _validateStr({ allowEmpty: false, allowNull: false });
 
 // Text content may be empty but must not contain NUL bytes (they corrupt the
 // COS text blob AE reads).
-export const validateText = _validateStr({ allow_null: false });
+export const validateText = _validateStr({ allowNull: false });
 
 // A box-text size needs a strictly positive width and height (a zero-area box
 // has nothing to lay text into).
-export const validateBoxSize = validateSequence({ length: 2, min: 0.0, exclusive_min: true });
+export const validateBoxSize = validateSequence({ length: 2, min: 0.0, exclusiveMin: true });
 
 export const validatePath = _validatePath();
 
-export const validatePathExists = _validatePath({ must_exist: true });
+export const validatePathExists = _validatePath({ mustExist: true });
 
 // For media paths: a directory must be refused here, not by the format reader.
-export const validateFileExists = _validatePath({ must_exist: true, must_be_file: true });
+export const validateFileExists = _validatePath({ mustExist: true, mustBeFile: true });
 
-export const validatePathDoesNotExist = _validatePath({ must_exist: false });
+export const validatePathDoesNotExist = _validatePath({ mustExist: false });
 
 // 3D renderer options validators
 export const validateAdvancedQuality = _validateNumber({ min: 1, max: 125, integer: true });

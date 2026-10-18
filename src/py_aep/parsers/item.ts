@@ -70,7 +70,7 @@ export function parseItem(
       gide,
       project,
       parentFolder,
-      project._effect_param_defs,
+      project._effectParamDefs,
     );
   } else {
     throw new ValueError(`Unknown item type: ${itemType}`);
@@ -119,13 +119,13 @@ export function parseFolder(
 
   const folder = new FolderItem({
     _idta,
-    _name_utf8: _nameUtf8,
+    _nameUtf8: _nameUtf8,
     _cmta,
-    _item_list: _itemList,
+    _itemList: _itemList,
     _gide,
-    _children_container: childrenContainer,
+    _childrenContainer: childrenContainer,
     project,
-    parent_folder: parentFolder,
+    parentFolder: parentFolder,
   });
   if (isRoot) {
     // Avoid mutating chunk fields

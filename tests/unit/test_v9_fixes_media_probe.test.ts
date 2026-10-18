@@ -51,21 +51,21 @@ function _run(fn: () => unknown, timeout = 20.0): [unknown, number] {
 // IndexError from inside a parser (v9 fuzz, area C).
 const _TRUNCATED: Map<string, Uint8Array> = new Map<string, Uint8Array>([
   ["psd_header_only.psd", _PSD_HEADER],
-  ["png_trunc.png", ASSETS.div("image_with_alpha.png").read_bytes().slice(0, 24)],
+  ["png_trunc.png", ASSETS.div("image_with_alpha.png").readBytes().slice(0, 24)],
   ["tif_ifd_past_eof.tif", concat(b("II*\x00"), struct.pack("<I", 1000))],
   ["bmp_short.bmp", concat(b("BM"), bytes_.repeat(b("\x00"), 10))],
   ["gif_short.gif", b("GIF89a\x01")],
   ["jpg_short.jpg", b("\xff\xd8\xff\xc0")],
-  ["crw_short.crw", ASSETS.div("crw.crw").read_bytes().slice(0, 16)],
-  ["aif_short.aif", ASSETS.div("aif.aif").read_bytes().slice(0, 26)],
+  ["crw_short.crw", ASSETS.div("crw.crw").readBytes().slice(0, 16)],
+  ["aif_short.aif", ASSETS.div("aif.aif").readBytes().slice(0, 26)],
   ["tga_short.tga", b("\x00\x00\x02")],
-  ["exr_magic_only.exr", ASSETS.div("exr").div("rgb_full.exr").read_bytes().slice(0, 4)],
+  ["exr_magic_only.exr", ASSETS.div("exr").div("rgb_full.exr").readBytes().slice(0, 4)],
 ]);
 
 test.each(sorted(Array.from(_TRUNCATED.keys())).map((n) => [n]))("test_truncated_media_raises_value_error[%#]", (name: string) => {
   const tmpPath = makeTmpPath();
   const path = tmpPath.div(name);
-  path.write_bytes(getitem(_TRUNCATED, name));
+  path.writeBytes(getitem(_TRUNCATED, name));
   for (const data of [null, getitem(_TRUNCATED, name)]) {
     raises(ValueError, () => probeMedia(path, data));
   }
@@ -75,9 +75,9 @@ test("test_corrupt_exr_attribute_size_does_not_allocate", () => {
   const tmpPath = makeTmpPath();
   // An attribute declaring 0xFFFFFFF0 bytes in a 36-byte file used to make
   // read(size) allocate 4 GB before reading.
-  const exr = ASSETS.div("exr").div("rgb_full.exr").read_bytes().slice(0, 8);
+  const exr = ASSETS.div("exr").div("rgb_full.exr").readBytes().slice(0, 8);
   const path = tmpPath.div("huge_attr.exr");
-  path.write_bytes(concat(exr, b("channels\x00chlist\x00"), struct.pack("<I", 0xFFFFFFF0)));
+  path.writeBytes(concat(exr, b("channels\x00chlist\x00"), struct.pack("<I", 0xFFFFFFF0)));
   const [, peak] = _run(() => probeMedia(path));
   expect(peak).toBeLessThan(50_000_000);
 });
@@ -85,7 +85,7 @@ test("test_corrupt_exr_attribute_size_does_not_allocate", () => {
 test("test_corrupt_psd_resource_length_does_not_allocate", () => {
   const tmpPath = makeTmpPath();
   const path = tmpPath.div("huge_resources.psd");
-  path.write_bytes(concat(_PSD_HEADER, struct.pack(">II", 0, 0xFFFFFFF0), b("8BIM")));
+  path.writeBytes(concat(_PSD_HEADER, struct.pack(">II", 0, 0xFFFFFFF0), b("8BIM")));
   const [, peak] = _run(() => probeMedia(path));
   expect(peak).toBeLessThan(50_000_000);
 });
@@ -99,7 +99,7 @@ test("test_psd_header_fields_are_validated", () => {
   // so the packed bytes are written at offset 22 directly.
   header.set(struct.pack(">H", 300), 22);
   const path = tmpPath.div("bad_depth.psd");
-  path.write_bytes(concat(header, struct.pack(">III", 0, 0, 0)));
+  path.writeBytes(concat(header, struct.pack(">III", 0, 0, 0)));
   raises(ValueError, () => probeMedia(path), "Not a valid PSD/PSB file");
 });
 
@@ -116,7 +116,7 @@ test("test_tiff_bits_per_sample_is_validated", () => {
     ifd = concat(ifd, struct.pack("<HHIHH", tag, typ, count, value, 0));
   }
   const path = tmpPath.div("bad_bits.tif");
-  path.write_bytes(concat(b("II*\x00"), struct.pack("<I", 8), ifd, b("\x00\x00\x00\x00")));
+  path.writeBytes(concat(b("II*\x00"), struct.pack("<I", 8), ifd, b("\x00\x00\x00\x00")));
   raises(ValueError, () => probeMedia(path), "bits per sample");
 });
 
@@ -124,18 +124,18 @@ test("test_read_psd_layers_truncated_records_raise_documented_error", () => {
   const tmpPath = makeTmpPath();
   // Cut inside the layer records: an IndexError escaped before.
   const path = tmpPath.div("cut.psd");
-  path.write_bytes(ASSETS.div("choose_layer.psd").read_bytes().slice(0, 200));
+  path.writeBytes(ASSETS.div("choose_layer.psd").readBytes().slice(0, 200));
   const [result] = _run(() => readPsdLayers(path));
   expect(result).toBeInstanceOf(UnsupportedPsdLayersError);
 });
 
 test("test_read_psd_layers_huge_canvas_is_rejected", () => {
   const tmpPath = makeTmpPath();
-  const header = new Uint8Array(ASSETS.div("layer_bounds.psd").read_bytes());
+  const header = new Uint8Array(ASSETS.div("layer_bounds.psd").readBytes());
   // Python: struct.pack_into(">II", header, 14, ...) - written via set() at offset 14.
   header.set(struct.pack(">II", 0xFFFFFFF0, 0xFFFFFFF0), 14);
   const path = tmpPath.div("huge_canvas.psd");
-  path.write_bytes(header);
+  path.writeBytes(header);
   const [result, peak] = _run(() => readPsdLayers(path));
   expect(result).toBeInstanceOf(UnsupportedPsdLayersError);
   expect(peak).toBeLessThan(50_000_000);
@@ -145,7 +145,7 @@ test("test_cos_lexer_stops_at_end_of_data", () => {
   // `read(1)` returns b"" at the end of the data; the lexer treated it as
   // a character and looped forever on a truncated name.
   const parser = new CosParser(new BytesIO(b("<</Order 8 0 R/")));
-  const [result] = _run(() => [parser.lex(), parser.parse_value()]);
+  const [result] = _run(() => [parser.lex(), parser.parseValue()]);
   expect(Array.isArray(result) || result instanceof SyntaxError_).toBe(true);
 });
 
@@ -155,12 +155,12 @@ test.each([[null], [10_000_100]])("test_cos_stream_is_read_in_blocks[%#]", (maxP
   const body = concat(bytes_.repeat(b("x"), 3_000_000), b("endstrea"), bytes_.repeat(b("y"), 1000));
   const data = concat(b("<</Length 1>>stream\n"), body, b("endstream\nendobj 7"));
   const parser = new CosParser(new BytesIO(data), maxPos);
-  const [result] = _run(() => [parser.lex(), parser.parse_value()], 5.0);
+  const [result] = _run(() => [parser.lex(), parser.parseValue()], 5.0);
   expect(result instanceof Error).toBe(false);
   pyAssert(Array.isArray(result));
   const stream = asInstance(result[1], Stream);
   expect(pyEq(stream.data, body)).toBe(true);
-  expect(TokenType.name_of(parser.lookahead.type)).toBe("IndirectObjectEnd");
+  expect(TokenType.nameOf(parser.lookahead.type)).toBe("IndirectObjectEnd");
 });
 
 test.each([
@@ -169,7 +169,7 @@ test.each([
 ])("test_malformed_ai_layers_raise_documented_error[%#]", (data: Uint8Array) => {
   const tmpPath = makeTmpPath();
   const path = tmpPath.div("bad.ai");
-  path.write_bytes(data);
+  path.writeBytes(data);
   const [result] = _run(() => readAiLayers(path));
   expect(result).toBeInstanceOf(UnsupportedAiLayersError);
 });

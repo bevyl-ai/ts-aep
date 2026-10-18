@@ -99,7 +99,7 @@ describe("TestSynthesizedPropertyInvisibility", () => {
     /** Synthesized effect properties exist in model but not in output. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("2_gaussian.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -112,14 +112,14 @@ describe("TestSynthesizedPropertyInvisibility", () => {
     // Save WITHOUT mutating anything
     const out = tmpPath.div("untouched.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_top_level_groups_invisible", () => {
     /** Synthesized top-level groups (Effects, Masks) don't affect output. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("keyframe_1D.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -132,7 +132,7 @@ describe("TestSynthesizedPropertyInvisibility", () => {
     // Save without mutation
     const out = tmpPath.div("untouched.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 });
 
@@ -145,7 +145,7 @@ describe("TestParameterizedBodyRoundtrip", () => {
     /** LE cdat inside LIST:otst survives round-trip. */
     const tmpPath = makeTmpPath();
     const aepPath = LAYER_DIR.div("orientation_with_keyframes.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -156,14 +156,14 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_spatial_2d_ldat", () => {
     /** 2D spatial ldat with tangent arrays survives round-trip. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("keyframe_spatial.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getLayer(app.project, "keyframe_spatial_bezier_arc");
@@ -175,14 +175,14 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_spatial_3d_ldat", () => {
     /** 3D spatial ldat (promoted via tdb4.isSpatial) survives round-trip. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("keyframe_spatial_bezier_3D.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -194,14 +194,14 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_tdum_with_effects", () => {
     /** tdum/tduM min/max chunks with multiple value types survive round-trip. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("effects.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -211,14 +211,14 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 
   test("test_nonspatial_1d_ldat", () => {
     /** Non-spatial 1D keyframes - simplest ldat pattern. */
     const tmpPath = makeTmpPath();
     const aepPath = PROPERTY_DIR.div("keyframe_1D.aep");
-    const originalBytes = aepPath.read_bytes();
+    const originalBytes = aepPath.readBytes();
 
     const app = parseAep(aepPath);
     const layer = getFirstLayer(app.project);
@@ -230,6 +230,6 @@ describe("TestParameterizedBodyRoundtrip", () => {
 
     const out = tmpPath.div("roundtrip.aep");
     app.project.save(out);
-    expect(pyEq(out.read_bytes(), originalBytes)).toBe(true);
+    expect(pyEq(out.readBytes(), originalBytes)).toBe(true);
   });
 });

@@ -257,7 +257,7 @@ const isSpans = (v: InstanceValue): v is [number, number][] =>
  * write invalidates it via `TextDocument._mark_layout_dirty`.
  */
 export function _freshComposedSpans(doc: TextDocument): [number, number][] | null {
-  if (doc._composition_calibrated !== true) return null;
+  if (doc._compositionCalibrated !== true) return null;
   if (doc.__dict__.has("_composed_cache")) {
     const memo = doc.__dict__.get("_composed_cache") ?? null;
     return memo != null && isSpans(memo) ? memo : null;
@@ -290,7 +290,7 @@ export function _composedLineSpans(doc: TextDocument): [number, number][] | null
     if (!para.length) return null;
     return para.map(([start, end]): [number, number] => [start, end]);
   }
-  if (doc._layout_dirty) {
+  if (doc._layoutDirty) {
     const fresh = _freshComposedSpans(doc);
     if (fresh != null) return fresh;
   }
@@ -344,7 +344,7 @@ export function _buildFontEntry(postScriptName: string): CosDict {
  *
  * Every reference at or after `index` is bumped by one. Font indices live
  * in the char-run styles of every keyframe document sharing this
- * `_cos_data`, the document-default character style at `cos["1"]["2"]`,
+ * `_cosData`, the document-default character style at `cos["1"]["2"]`,
  * the typography settings at `cos["1"]["0"]`, the used-font records at
  * `cos["1"]["5"][*]["4"]` (which also gain a record for the new font) and
  * the header style presets at `cos["0"]["5"]["0"]`; the layout cache holds
@@ -361,10 +361,10 @@ export function _registerFontAt(
   doc: TextDocument,
   postScriptName: string,
   index = 0,
-  kw: { used_record?: boolean } = {},
+  kw: { usedRecord?: boolean } = {},
 ): number {
-  const { used_record = true } = kw;
-  const cos = doc._cos_data;
+  const { usedRecord: used_record = true } = kw;
+  const cos = doc._cosData;
   const fontArray = cosSetdefault(cosSetdefault(cosSetdefault(cos, "0", new Map()), "1", new Map()), "0", []);
   const entry = _buildFontEntry(postScriptName);
   const fontEntry = entry.get("0");
@@ -419,7 +419,7 @@ export function _registerFontAt(
       }
     }
   }
-  doc._fonts.splice(index, 0, new FontObject({ _font_data: fontData, _font_entry: fontEntry }));
+  doc._fonts.splice(index, 0, new FontObject({ _fontData: fontData, _fontEntry: fontEntry }));
   return index;
 }
 
@@ -461,7 +461,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
     // Inserting past the LAST matching entry leaves every from-index
     // unshifted (`_register_font_at` only bumps references at or after
     // the insertion point).
-    toIndex = _registerFontAt(first, toName, max(fromIndices) + 1, { used_record: false });
+    toIndex = _registerFontAt(first, toName, max(fromIndices) + 1, { usedRecord: false });
   }
 
   for (const doc of docs) {
@@ -470,7 +470,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
     }
   }
   _repointUsedFontRecord(first, fromIndices, toIndex, toName);
-  first._propagate_cos();
+  first._propagateCos();
   return true;
 }
 
@@ -488,7 +488,7 @@ export function _repointUsedFontRecord(
   toName: string,
 ): void {
   const version = fontVersionString(toName);
-  const sessions = cosGet(doc._cos_data, "1", "5");
+  const sessions = cosGet(doc._cosData, "1", "5");
   if (!Array.isArray(sessions)) return;
   for (const session of sessions) {
     const records = session instanceof Map ? session.get("4") ?? null : null;
@@ -525,13 +525,13 @@ export const _NON_LAYOUT_CHAR_KEYS: ReadonlySet<string> = new Set(["53", "54", "
  * without the hook are skipped.
  */
 export function _markLayoutDirty(doc: TextDocument): void {
-  // Python `getattr(doc, "_mark_layout_dirty", None)`: duck-typed test
+  // Python `getattr(doc, "_markLayoutDirty", None)`: duck-typed test
   // documents may lack the hook.
-  if (typeof doc._mark_layout_dirty === "function") doc._mark_layout_dirty();
+  if (typeof doc._markLayoutDirty === "function") doc._markLayoutDirty();
 }
 
 /**
- * Re-point `_char_style` / `_para_style` at the current first runs.
+ * Re-point `_charStyle` / `_paraStyle` at the current first runs.
  *
  * TextDocument's document-level accessors alias the first run's style
  * dict by object identity; merges can replace that object, so every
@@ -539,9 +539,9 @@ export function _markLayoutDirty(doc: TextDocument): void {
  */
 export function _refreshStyleAliases(doc: TextDocument): void {
   const char = cosGet(doc._doc, "0", "6", "0", 0, "0", "0", "6");
-  if (char instanceof Map) doc._char_style = char;
+  if (char instanceof Map) doc._charStyle = char;
   const para = cosGet(doc._doc, "0", "5", "0", 0, "0", "0", "5");
-  if (para instanceof Map) doc._para_style = para;
+  if (para instanceof Map) doc._paraStyle = para;
 }
 
 /**
@@ -583,7 +583,7 @@ function _runCount(run: CosNode): PyNum {
  *
  * The original entry keeps its identity as the LEFT fragment, so run
  * 0's payload object only ever narrows (never detaches) and the
- * `_char_style` alias stays inside the serialized tree.
+ * `_charStyle` alias stays inside the serialized tree.
  */
 export function _splitRunArray(runs: CosNode[], offsets: Set<number>): void {
   const cuts = sorted(offsets);
@@ -818,7 +818,7 @@ export function _spliceText(
     for (const [i, part] of parts.entries()) {
       const entry = donorEntry(pos2);
       // Keep the first run's object identity when it stays first
-      // (aliased by `_para_style`); clone everything else.
+      // (aliased by `_paraStyle`); clone everything else.
       const clone = i === 0 && entry === paraRuns[0] ? entry : deepcopy(entry);
       const partLen = u16Len(part) + 1;
       cosSetitem(clone, "1", partLen);
@@ -837,8 +837,8 @@ export function _spliceText(
   }
 
   cosSetitem(inner, "0", newRaw);
-  // Python `getattr(doc, "_rebuild_line_count_runs", None)`: duck-typed test documents may lack it.
-  if (typeof doc._rebuild_line_count_runs === "function") doc._rebuild_line_count_runs(parts);
+  // Python `getattr(doc, "_rebuildLineCountRuns", None)`: duck-typed test documents may lack it.
+  if (typeof doc._rebuildLineCountRuns === "function") doc._rebuildLineCountRuns(parts);
   _refreshStyleAliases(doc);
 }
 
@@ -880,7 +880,7 @@ export interface RangeFieldOptions<T extends InstanceValue> {
   gate?: string | null;
   reverse?: ((value: NonNullable<T>) => CosNode) | null;
   validate?: InstanceValidator<TextDocument> | null;
-  read_only?: boolean;
+  readOnly?: boolean;
 }
 
 /** The options a `RangeField` factory leaves to its caller. */
@@ -901,7 +901,7 @@ type RangeFieldExtras<T extends InstanceValue> = Partial<Omit<RangeFieldOptions<
  * the key into the covered runs and re-merge adjacent identical runs,
  * mirroring AE's probed behavior.
  * Fields whose writes need coupled side effects (kerning runs,
- * leading/auto-leading) stay `read_only` until their phase lands.
+ * leading/auto-leading) stay `readOnly` until their phase lands.
  *
  * @param kind - `"char"` or `"para"` - which run array to resolve over.
  * @param key - String key into each run's style dict.
@@ -926,7 +926,7 @@ export class RangeField<T extends InstanceValue> {
   declare publicName: string;
 
   constructor(kind: RangeKind, key: string, kw: RangeFieldOptions<T>) {
-    const { transform, default: default_ = null, gate = null, reverse = null, validate = null, read_only = false } = kw;
+    const { transform, default: default_ = null, gate = null, reverse = null, validate = null, readOnly: read_only = false } = kw;
     this.kind = kind;
     this.key = key;
     this.transform = transform;
@@ -943,21 +943,21 @@ export class RangeField<T extends InstanceValue> {
 
   __get__(obj: CharacterRange | null, objtype?: Function | null): T | null | this {
     if (obj == null) return this;
-    return obj._resolve_mixed(this.kind, this.key, this.transform, this.default_, this.gate);
+    return obj._resolveMixed(this.kind, this.key, this.transform, this.default_, this.gate);
   }
 
   __set__(obj: CharacterRange, value: T | null): void {
     if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     let raw: CosNode = null;
     if (value != null) {
-      if (this.validate != null) this.validate(value, obj._doc_ref);
+      if (this.validate != null) this.validate(value, obj._docRef);
       // Every writable field declares its reverse; only read-only ones omit it.
       if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
       raw = this.reverse(value);
     }
     const [start, end] = obj._bounds();
-    if (this.kind === "char") _applyCharKey(obj._doc_ref, start, end, this.key, raw);
-    else _applyParaKey(obj._doc_ref, start, end, this.key, raw);
+    if (this.kind === "char") _applyCharKey(obj._docRef, start, end, this.key, raw);
+    else _applyParaKey(obj._docRef, start, end, this.key, raw);
     obj._propagate();
   }
 
@@ -987,13 +987,13 @@ export class RangeField<T extends InstanceValue> {
   /**
    * Create a RangeField for IntEnum-backed style keys. Writes reject
    * out-of-enum ints (ExtendScript parity); reads stay tolerant via
-   * `from_binary`. Without the check a stray int serializes a value
+   * `fromBinary`. Without the check a stray int serializes a value
    * that reads back as `None`/undefined.
    */
   static enum<V extends number>(enumCls: CosEnum<V>, kind: RangeKind, key: string, kwargs: RangeFieldExtras<V> = {}): RangeField<V> {
     return new RangeField<V>(kind, key, {
       transform: (raw: CosNode) => enumFromCos(enumCls, raw),
-      reverse: (value: V) => enumCls.to_binary(value),
+      reverse: (value: V) => enumCls.toBinary(value),
       validate: validateEnum(enumCls),
       ...kwargs,
     });
@@ -1001,7 +1001,7 @@ export class RangeField<T extends InstanceValue> {
 }
 
 /** A `TextDocument` style dict attribute. */
-type StyleAttr = "_char_style" | "_para_style";
+type StyleAttr = "_charStyle" | "_paraStyle";
 
 /**
  * A {@link CosField | CosField} whose writes style the whole
@@ -1017,7 +1017,7 @@ type StyleAttr = "_char_style" | "_para_style";
  */
 export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, StyleAttr, TextDocument> {
   __set__(obj: TextDocument, value: T | null): void {
-    const isChar = this.dictAttr === "_char_style";
+    const isChar = this.dictAttr === "_charStyle";
     const backing = obj[this.dictAttr];
     let runs: CosNode = null;
     if (backing != null) {
@@ -1029,13 +1029,13 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
       super.__set__(obj, value);
       return;
     }
-    this._check_writable(obj);
+    this._checkWritable(obj);
     obj.__dict__.delete(this.publicName);
     const rawValue = value == null ? null : this._coerce(obj, value);
     const total = u16Len(_rawText(obj));
     if (isChar) _applyCharKey(obj, 0, total, this.key, rawValue);
     else _applyParaKey(obj, 0, total, this.key, rawValue);
-    if (typeof obj._propagate_cos === "function") obj._propagate_cos();
+    if (typeof obj._propagateCos === "function") obj._propagateCos();
   }
 
   /** `CosField.bool`: a boolean flag on the document's first char / para style. */
@@ -1057,7 +1057,7 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
    * `CosField.enum`, rejecting out-of-enum ints on write (ExtendScript
    * parity). Mirrors `RangeField.enum`; the base `CosField.enum` does
    * not validate, so a stray int would serialize a value that reads back
-   * as `null`/undefined. Reads stay tolerant via `from_binary`.
+   * as `null`/undefined. Reads stay tolerant via `fromBinary`.
    */
   static enum<V extends number, D extends V | null>(enumCls: CosEnum<V>, dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<V | D> {
     return new DocumentWideCosField(dictAttr, key, enumField(enumCls, { validate: validateEnum(enumCls), ...kw }));
@@ -1071,21 +1071,21 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
 /**
  * Shared boundary/validity/repr behavior for the text range views.
  *
- * Subclasses store `_doc_ref`, `_start` and `_signed_end`, and
+ * Subclasses store `_docRef`, `_start` and `_signedEnd`, and
  * implement `_bounds()` (returning the current
  * `(character_start, character_end)` and raising `ValueError` when the
  * range is out of bounds). The public accessors and string forms below
  * are shared across all three range types.
  */
 export class _TextRange {
-  declare _doc_ref: TextDocument;
+  declare _docRef: TextDocument;
   declare _start: number;
-  declare _signed_end: number;
+  declare _signedEnd: number;
 
   constructor(doc: TextDocument, start: number, signedEnd: number) {
-    this._doc_ref = doc;
+    this._docRef = doc;
     this._start = start;
-    this._signed_end = signedEnd;
+    this._signedEnd = signedEnd;
     // AE validates at creation time and raises immediately.
     this._bounds();
   }
@@ -1116,11 +1116,11 @@ export class _TextRange {
   }
 
   toString(): string {
-    return `${this.constructor.name}(${this._start},${this._signed_end})`;
+    return `${this.constructor.name}(${this._start},${this._signedEnd})`;
   }
 
   [INSPECT](): string {
-    return `<py_aep.${this.constructor.name}(${this._start},${this._signed_end})>`;
+    return `<py_aep.${this.constructor.name}(${this._start},${this._signedEnd})>`;
   }
 }
 
@@ -1140,7 +1140,7 @@ export class _IndexRange extends _TextRange {
    */
   characterRange(): CharacterRange {
     const [start, end] = this._bounds();
-    return new CharacterRange(this._doc_ref, start, end);
+    return new CharacterRange(this._docRef, start, end);
   }
 }
 
@@ -1206,8 +1206,8 @@ export class CharacterRange extends _TextRange {
    * @throws {@link ValueError} When the range is outside the document bounds.
    */
   _bounds(): [number, number] {
-    const visible = _visibleLength(this._doc_ref);
-    const end = this._signed_end === -1 ? visible : this._signed_end;
+    const visible = _visibleLength(this._docRef);
+    const end = this._signedEnd === -1 ? visible : this._signedEnd;
     if (this._start < 0 || this._start > visible || end < this._start || end > visible) {
       throw new ValueError(CHARACTER_RANGE_OOB);
     }
@@ -1238,10 +1238,10 @@ export class CharacterRange extends _TextRange {
     return out;
   }
 
-  _spans_for(kind: RangeKind): [number, number, CosDict][] {
-    if (kind === "char") return _charRunSpans(this._doc_ref);
-    if (kind === "para") return _paraRunSpans(this._doc_ref);
-    return _kernRunSpans(this._doc_ref);
+  _spansFor(kind: RangeKind): [number, number, CosDict][] {
+    if (kind === "char") return _charRunSpans(this._docRef);
+    if (kind === "para") return _paraRunSpans(this._docRef);
+    return _kernRunSpans(this._docRef);
   }
 
   /**
@@ -1250,8 +1250,8 @@ export class CharacterRange extends _TextRange {
    * Uniform value -\> that value; disagreement -\> `null`; every run
    * gated out -\> `null`.
    */
-  _resolve_mixed<T>(kind: RangeKind, key: string, transform: (raw: CosNode) => T, default_: T | null, gate: string | null): T | null {
-    let payloads = this._overlapping(this._spans_for(kind));
+  _resolveMixed<T>(kind: RangeKind, key: string, transform: (raw: CosNode) => T, default_: T | null, gate: string | null): T | null {
+    let payloads = this._overlapping(this._spansFor(kind));
     if (gate != null) {
       payloads = payloads.filter((p) => pyBool(p.get(gate) ?? null));
       if (!payloads.length) return null;
@@ -1263,8 +1263,8 @@ export class CharacterRange extends _TextRange {
   }
 
   _propagate(): void {
-    // Python `getattr(self._doc_ref, "_propagate_cos", None)`: duck-typed test documents may lack it.
-    if (typeof this._doc_ref._propagate_cos === "function") this._doc_ref._propagate_cos();
+    // Python `getattr(self._doc_ref, "_propagateCos", None)`: duck-typed test documents may lack it.
+    if (typeof this._docRef._propagateCos === "function") this._docRef._propagateCos();
   }
 
   // -- Content ---------------------------------------------------------------
@@ -1281,12 +1281,12 @@ export class CharacterRange extends _TextRange {
    */
   get text(): string {
     const [start, end] = this._bounds();
-    return u16Slice(_rawText(this._doc_ref), start, end).replaceAll("\r", "\n");
+    return u16Slice(_rawText(this._docRef), start, end).replaceAll("\r", "\n");
   }
 
   set text(value: string) {
     validateText(value);
-    const doc = this._doc_ref;
+    const doc = this._docRef;
     const raw = _rawText(doc);
     let [start, end] = this._bounds();
     [start, end] = _snapToPairs(raw, start, end);
@@ -1313,8 +1313,8 @@ export class CharacterRange extends _TextRange {
     if (!(sourceRange instanceof CharacterRange)) {
       throw new TypeError_("pasteFrom expects a CharacterRange");
     }
-    const doc = this._doc_ref;
-    const srcDoc = sourceRange._doc_ref;
+    const doc = this._docRef;
+    const srcDoc = sourceRange._docRef;
     const srcRaw = _rawText(srcDoc);
     let [srcStart, srcEnd] = sourceRange._bounds();
     [srcStart, srcEnd] = _snapToPairs(srcRaw, srcStart, srcEnd);
@@ -1404,15 +1404,15 @@ export class CharacterRange extends _TextRange {
    * AE's sentinel (probed `X_AL_SET`).
    */
   get autoLeading(): boolean | null {
-    return this._resolve_mixed("char", "4", bool, true, null);
+    return this._resolveMixed("char", "4", bool, true, null);
   }
 
   set autoLeading(value: boolean) {
     validateBool(value);
     const [start, end] = this._bounds();
-    _applyCharKey(this._doc_ref, start, end, "4", value);
+    _applyCharKey(this._docRef, start, end, "4", value);
     if (value) {
-      _applyCharKey(this._doc_ref, start, end, "5", pyfloat(0.01));
+      _applyCharKey(this._docRef, start, end, "5", pyfloat(0.01));
     }
     this._propagate();
   }
@@ -1425,19 +1425,19 @@ export class CharacterRange extends _TextRange {
    * values remain (probed `X_AKT_SET`).
    */
   get autoKernType(): AutoKernType | null {
-    return this._resolve_mixed("char", "11", (raw) => enumFromCos(AutoKernType, raw), AutoKernType.NO_AUTO_KERN, null);
+    return this._resolveMixed("char", "11", (raw) => enumFromCos(AutoKernType, raw), AutoKernType.NO_AUTO_KERN, null);
   }
 
   set autoKernType(value: AutoKernType) {
     validateEnum(AutoKernType)(value);
-    const doc = this._doc_ref;
+    const doc = this._docRef;
     const [start, end] = _snapToPairs(_rawText(doc), ...this._bounds());
     if (start === end) {
       // Zero-span writes are no-ops (W_ZERO_STYLE); guard before
       // the kern-clearing side effects below.
       return;
     }
-    _applyCharKey(doc, start, end, "11", AutoKernType.to_binary(AutoKernType.of(value)));
+    _applyCharKey(doc, start, end, "11", AutoKernType.toBinary(AutoKernType.of(value)));
     if (value !== AutoKernType.NO_AUTO_KERN) {
       const values = _kernValues(doc);
       for (let i = start; i < Math.min(end, values.length); i++) values[i] = null;
@@ -1464,7 +1464,7 @@ export class CharacterRange extends _TextRange {
 
   set font(value: string) {
     validateFontName(value);
-    const doc = this._doc_ref;
+    const doc = this._docRef;
     const [start, end] = _snapToPairs(_rawText(doc), ...this._bounds());
     if (start === end) {
       // Zero-span writes are no-ops (W_ZERO_STYLE); guard before
@@ -1485,8 +1485,8 @@ export class CharacterRange extends _TextRange {
 
   /** The range's {@link FontObject}; `null` when mixed. Read-only. */
   get fontObject(): FontObject | null {
-    const idx = this._resolve_mixed("char", "0", (raw) => raw, null, null);
-    const fonts = this._doc_ref._fonts;
+    const idx = this._resolveMixed("char", "0", (raw) => raw, null, null);
+    const fonts = this._docRef._fonts;
     if (is(pyInt, idx) && 0 <= Number(idx) && Number(idx) < fonts.length) {
       return fonts[Number(idx)];
     }
@@ -1506,17 +1506,17 @@ export class CharacterRange extends _TextRange {
   get leading(): number | null {
     const auto = this.autoLeading;
     if (auto == null || auto) return null;
-    return this._resolve_mixed("char", "5", cosFloat, null, null);
+    return this._resolveMixed("char", "5", cosFloat, null, null);
   }
 
   set leading(value: number | null) {
     if (value != null) validatePositiveNumber(value);
     const [start, end] = this._bounds();
     if (value == null) {
-      _applyCharKey(this._doc_ref, start, end, "5", null);
+      _applyCharKey(this._docRef, start, end, "5", null);
     } else {
-      _applyCharKey(this._doc_ref, start, end, "5", pyfloat(value));
-      _applyCharKey(this._doc_ref, start, end, "4", false);
+      _applyCharKey(this._docRef, start, end, "5", pyfloat(value));
+      _applyCharKey(this._docRef, start, end, "4", false);
     }
     this._propagate();
   }
@@ -1536,18 +1536,18 @@ export class CharacterRange extends _TextRange {
    */
   get kerning(): number | boolean | null {
     if (this.autoKernType !== AutoKernType.NO_AUTO_KERN) return null;
-    const value = this._resolve_mixed("kern", "0", (raw) => raw, null, null);
+    const value = this._resolveMixed("kern", "0", (raw) => raw, null, null);
     return is(pyInt, value) ? value : null;
   }
 
   set kerning(value: number | boolean | null) {
-    validateS4(value, this._doc_ref);
+    validateS4(value, this._docRef);
     // `validate_s4` accepts a float (see its definition): round it on
     // write, matching the sibling `tracking` field, whose `RangeField.int`
     // sets `reverse=round`. `round` also normalizes bools (a subclass of
     // int) so the serializer emits an integer, not a `true`/`false` token.
     const rounded = round(cosNum(value));
-    const doc = this._doc_ref;
+    const doc = this._docRef;
     const raw = _rawText(doc);
     let [start, end] = this._bounds();
     [start, end] = _snapToPairs(raw, start, end);
@@ -1567,7 +1567,7 @@ export class CharacterRange extends _TextRange {
       // leading-edge value at doc["0"]["7"], created after key "8".
       cosSetitem(cosSetdefault(doc._doc, "0", new Map()), "7", rounded);
     }
-    _applyCharKey(doc, kernStart, end, "11", AutoKernType.to_binary(AutoKernType.NO_AUTO_KERN));
+    _applyCharKey(doc, kernStart, end, "11", AutoKernType.toBinary(AutoKernType.NO_AUTO_KERN));
     this._propagate();
   }
 
@@ -1601,7 +1601,7 @@ export class CharacterRange extends _TextRange {
 
   /** The document's composer engine (document-wide). Read-only. */
   get composerEngine(): ComposerEngine | null {
-    return this._doc_ref.composerEngine;
+    return this._docRef.composerEngine;
   }
 }
 
@@ -1626,13 +1626,13 @@ export class ParagraphRange extends _IndexRange {
    * @throws {@link ValueError} When the paragraph indices are out of bounds.
    */
   _bounds(): [number, number] {
-    const spans = _paraRunSpans(this._doc_ref);
+    const spans = _paraRunSpans(this._docRef);
     const count = spans.length;
-    const end = this._signed_end === -1 ? count : this._signed_end;
+    const end = this._signedEnd === -1 ? count : this._signedEnd;
     if (this._start < 0 || this._start >= count || end <= this._start || end > count) {
       throw new ValueError(PARAGRAPH_RANGE_OOB);
     }
-    const visible = _visibleLength(this._doc_ref);
+    const visible = _visibleLength(this._docRef);
     return [Math.min(spans[this._start][0], visible), Math.min(spans[end - 1][1], visible)];
   }
 }
@@ -1660,14 +1660,14 @@ export class ComposedLineRange extends _IndexRange {
    *   wholly outside the current text.
    */
   _bounds(): [number, number] {
-    const spans = _composedLineSpans(this._doc_ref);
+    const spans = _composedLineSpans(this._docRef);
     if (spans == null) throw new ValueError(COMPOSED_LINE_OOB);
     const count = spans.length;
-    const end = this._signed_end === -1 ? count : this._signed_end;
+    const end = this._signedEnd === -1 ? count : this._signedEnd;
     if (this._start < 0 || this._start >= count || end <= this._start || end > count) {
       throw new ValueError(COMPOSED_LINE_OOB);
     }
-    const visible = _visibleLength(this._doc_ref);
+    const visible = _visibleLength(this._docRef);
     const startChar = spans[this._start][0];
     // A stale cached line lying wholly beyond the current text raises;
     // a line starting exactly at the end is a valid zero-span (e.g. the
@@ -1681,7 +1681,7 @@ export class ComposedLineRange extends _IndexRange {
 // Descriptor-backed CharacterRange fields (class-body RangeField assignments)
 // ---------------------------------------------------------------------------
 
-/** `font_size`: the range's font size in pixels; `null` when mixed. Read / Write. */
+/** `fontSize`: the range's font size in pixels; `null` when mixed. Read / Write. */
 descriptor(CharacterRange, "fontSize", RangeField.float("char", "1", { validate: validatePositiveNonzeroNumber }));
 
 /** `faux_bold`: `true` if faux bold is enabled across the range. Read / Write. */
@@ -1792,7 +1792,7 @@ descriptor(
 );
 
 /**
- * `fill_color`: the range's fill color as `[r, g, b]`. Read / Write.
+ * `fillColor`: the range's fill color as `[r, g, b]`. Read / Write.
  *
  * Only characters with `apply_fill` participate in the read; `null`
  * when no character in the range has a fill or the colors are mixed.
@@ -1811,7 +1811,7 @@ descriptor(
 );
 
 /**
- * `stroke_color`: the range's stroke color as `[r, g, b]`. Read / Write.
+ * `strokeColor`: the range's stroke color as `[r, g, b]`. Read / Write.
  *
  * Only characters with `apply_stroke` participate in the read; `null`
  * when no character in the range has a stroke or the colors are

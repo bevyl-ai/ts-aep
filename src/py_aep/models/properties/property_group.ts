@@ -203,14 +203,14 @@ export function _resetToDefaultValues(group: PropertyGroup): void {
     if (child._arbs != null) {
       // The Curves effect's curves are arbitrary data, with no pard
       // default to reset to.
-      child._reset_curves();
-      child._clear_expression();
+      child._resetCurves();
+      child._clearExpression();
       continue;
     }
     // Clearing the keyframes reverts the leaf to a static value, so
     // the value setter (which rejects keyframed properties) can run.
     child.removeAllKeys();
-    child._clear_expression();
+    child._clearExpression();
     const dflt = child.defaultValue;
     if (dflt != null && !_valuesEqual(child.value, dflt)) {
       // Use the parse-path writer, not the public `value` setter: an
@@ -218,7 +218,7 @@ export function _resetToDefaultValues(group: PropertyGroup): void {
       // (e.g. a no-selection 0 with min=1), which the validating setter
       // would reject - here we are restoring AE's own default, not taking
       // user input, so validation must not run.
-      child._cache_value(dflt);
+      child._cacheValue(dflt);
     }
   }
 }
@@ -229,9 +229,9 @@ export function _reorderAndFill(
   childDepth: number,
   kw: {
     skip?: ReadonlySet<string>;
-    value_overrides?: Map<string, [number | number[], number | number[]]> | null;
-    tail_mode?: "none" | "groups" | "all";
-    ae_major: number;
+    valueOverrides?: Map<string, [number | number[], number | number[]]> | null;
+    tailMode?: "none" | "groups" | "all";
+    aeMajor: number;
   },
 ): void {
   /**
@@ -242,9 +242,9 @@ export function _reorderAndFill(
    * (for `PropSpec`) or as empty `PropertyGroup` instances (for `GroupSpec`).
    *
    * @param container - Object whose `.properties` list is reordered/filled. Also set as
-   *   `parent_property` on synthesized children.
+   *   `parentProperty` on synthesized children.
    * @param specs - Full canonical spec list (NOT pre-filtered by `skip`).
-   * @param child_depth - `property_depth` for synthesized children.
+   * @param child_depth - `propertyDepth` for synthesized children.
    * @param skip - Match names to skip synthesis for. Checked only when the match name is **not**
    *   already in the container - existing children are always preserved in canonical position.
    * @param value_overrides - `{match_name: (value, default_value)}` for overriding synthesized
@@ -252,7 +252,7 @@ export function _reorderAndFill(
    * @param tail_mode - What non-spec children to append after the canonical entries: `"groups"`
    *   (only `PropertyGroup`), `"all"` (everything), or `"none"` (nothing).
    */
-  const { skip = new Set<string>(), value_overrides = null, tail_mode = "groups", ae_major } = kw;
+  const { skip = new Set<string>(), valueOverrides: value_overrides = null, tailMode: tail_mode = "groups", aeMajor: ae_major } = kw;
 
   const existing = new Map<string, Property | PropertyGroup>();
   for (const child of container.properties) {
@@ -261,59 +261,59 @@ export function _reorderAndFill(
 
   const ordered: (Property | PropertyGroup)[] = [];
   for (const spec of specs) {
-    const mn = spec.match_name;
+    const mn = spec.matchName;
     const child = existing.get(mn);
     if (child !== undefined) {
-      child._auto_name = spec.auto_name;
+      child._autoName = spec.autoName;
       if (!(spec instanceof GroupSpec) && child instanceof Property) {
         // Only where the stored flag disagrees: an override is an
         // instance-dict key (see the class defaults of `Property`).
         if (child._color !== spec.color) instanceDict(child).set("_color", spec.color);
-        if (spec.chunk_bounds_are_hints) {
+        if (spec.chunkBoundsAreHints) {
           // tdum/tduM hold UI slider hints, not real bounds:
           // the spec is authoritative (None = unbounded).
-          child._min_value_fallback = spec.min_value;
-          child._max_value_fallback = spec.max_value;
+          child._minValueFallback = spec.minValue;
+          child._maxValueFallback = spec.maxValue;
         } else {
-          if (spec.min_value != null) {
-            child._min_value_fallback = spec.min_value;
+          if (spec.minValue != null) {
+            child._minValueFallback = spec.minValue;
           }
-          if (spec.max_value != null) {
-            child._max_value_fallback = spec.max_value;
+          if (spec.maxValue != null) {
+            child._maxValueFallback = spec.maxValue;
           }
         }
-        if (spec.can_vary_over_time != null) {
-          child._can_vary_over_time = spec.can_vary_over_time;
+        if (spec.canVaryOverTime != null) {
+          child._canVaryOverTime = spec.canVaryOverTime;
         }
-        if (spec.units_text != null) {
-          child._units_text = spec.units_text;
+        if (spec.unitsText != null) {
+          child._unitsText = spec.unitsText;
         }
         if (child.defaultValue == null) {
           const dv =
-            spec.default_value === _USE_VALUE
+            spec.defaultValue === _USE_VALUE
               ? spec.value
-              : spec.default_value;
+              : spec.defaultValue;
           if (dv != null) child.defaultValue = dv;
         }
       }
       ordered.push(child);
     } else if (skip.has(mn)) {
       continue;
-    } else if (spec.min_major != null && spec.min_major > ae_major) {
+    } else if (spec.minMajor != null && spec.minMajor > ae_major) {
       continue;
     } else if (spec instanceof GroupSpec) {
-      const group = PropertyGroup._new(spec.match_name, spec.auto_name, childDepth, {
-        parent_property: container,
+      const group = PropertyGroup._new(spec.matchName, spec.autoName, childDepth, {
+        parentProperty: container,
         synthetic: true,
-        enable_flags: spec.enable_flags,
+        enableFlags: spec.enableFlags,
       });
       ordered.push(group);
     } else {
       const [v, d] = dictGet<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(value_overrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
       const prop = Property._new(spec, childDepth, {
-        parent_property: container,
+        parentProperty: container,
         value: v,
-        default_value: d,
+        defaultValue: d,
         synthetic: true,
       });
       ordered.push(prop);
@@ -321,7 +321,7 @@ export function _reorderAndFill(
   }
 
   if (tail_mode !== "none") {
-    const specMatchNames = new Set(specs.map((s) => s.match_name));
+    const specMatchNames = new Set(specs.map((s) => s.matchName));
     for (const child of container.properties) {
       if (!specMatchNames.has(child.matchName)) {
         if (tail_mode === "all" || child instanceof PropertyGroup) ordered.push(child);
@@ -330,22 +330,22 @@ export function _reorderAndFill(
   }
 
   container._properties = ordered;
-  for (const child of ordered) child._parent_property = container;
+  for (const child of ordered) child._parentProperty = container;
 }
 
 export function _applyBounds(prop: Property): void {
   /** Apply min/max override from `_PROPERTY_MIN_MAX` if one exists. */
   const bounds = _PROPERTY_MIN_MAX.get(prop.matchName);
   if (bounds != null) {
-    prop._min_value_fallback = bounds[0];
-    prop._max_value_fallback = bounds[1];
+    prop._minValueFallback = bounds[0];
+    prop._maxValueFallback = bounds[1];
   }
 }
 
 export function _deriveLayerStylesEnabled(
   group: PropertyGroup,
   aeMajor: number,
-  kw: { synthesize_subgroups: boolean },
+  kw: { synthesizeSubgroups: boolean },
 ): void {
   /**
    * Derive the collapsed `enabled` state for Layer Styles.
@@ -354,14 +354,14 @@ export function _deriveLayerStylesEnabled(
    * individual style is enabled, and Blend Options mirrors the parent.
    * Synthesized (not in binary) style groups default to disabled.
    */
-  const { synthesize_subgroups } = kw;
+  const { synthesizeSubgroups: synthesize_subgroups } = kw;
   let anyStyleEnabled = false;
   let blendOptions: PropertyGroup | null = null;
   for (const child of group.properties) {
     if (!(child instanceof PropertyGroup)) continue;
     const childSpecs = _LAYER_STYLE_CHILD_SPECS.get(child.matchName) ?? null;
     if (childSpecs != null && synthesize_subgroups) {
-      _reorderAndFill(child, childSpecs, child.propertyDepth + 1, { ae_major: aeMajor });
+      _reorderAndFill(child, childSpecs, child.propertyDepth + 1, { aeMajor: aeMajor });
     }
     if (child.matchName === "ADBE Blend Options Group") {
       blendOptions = child;
@@ -416,7 +416,7 @@ export class PropertyGroup extends PropertyBase {
    * The child list as stored, WITHOUT running deferred child synthesis.
    *
    * Read it directly only where skipping synthesis is the point - during
-   * construction, inside `_run_deferred_synthesis` itself, or when
+   * construction, inside `_runDeferredSynthesis` itself, or when
    * materializing chunks (`_materialize_layer`), where forcing synthesis
    * would write children AE omits. Everywhere else use `properties`, which
    * synthesizes first; reading the raw list from a public method silently
@@ -425,8 +425,8 @@ export class PropertyGroup extends PropertyBase {
   declare _properties: (Property | PropertyGroup)[];
   declare _tdmn: TdmnChunk | null;
   declare _tdgp: ListChunk | null;
-  declare _fnam_utf8: Utf8Chunk | null;
-  declare _deferred_ae_major: number | null;
+  declare _fnamUtf8: Utf8Chunk | null;
+  declare _deferredAeMajor: number | null;
 
   /**
    * Create a synthetic empty PropertyGroup with backing chunks.
@@ -435,9 +435,9 @@ export class PropertyGroup extends PropertyBase {
    * @param autoName - The display name for the group.
    * @param propertyDepth - The depth of the group in the tree.
    * @param kw - Keyword arguments:
-   * - `parent_property`: The container that owns the synthesized group.
+   * - `parentProperty`: The container that owns the synthesized group.
    * - `synthetic`: If True, mark backing chunks as synthetic (skipped during serialization).
-   * - `enable_flags`: `tdsb` enable-flags byte (bit 0 enabled, bit 1 collapsed). Defaults to `1`
+   * - `enableFlags`: `tdsb` enable-flags byte (bit 0 enabled, bit 1 collapsed). Defaults to `1`
    *     (enabled); pass `2` for a group AE leaves disabled (e.g. an unused layer style).
    */
   static _new(
@@ -445,12 +445,12 @@ export class PropertyGroup extends PropertyBase {
     autoName: string,
     propertyDepth: number,
     kw: {
-      parent_property?: PropertyGroup | null;
+      parentProperty?: PropertyGroup | null;
       synthetic?: boolean;
-      enable_flags?: number;
+      enableFlags?: number;
     } = {},
   ): PropertyGroup {
-    const { parent_property = null, synthetic = false, enable_flags = 1 } = kw;
+    const { parentProperty: parent_property = null, synthetic = false, enableFlags: enable_flags = 1 } = kw;
     const _tdsb = new TdsbChunk({ synthetic });
     _tdsb._enable_flags = enable_flags;
     // AE writes the unnamed sentinel; the display name resolves
@@ -482,12 +482,12 @@ export class PropertyGroup extends PropertyBase {
       _tdmn,
       _tdsb,
       _tdgp,
-      _name_utf8: nameUtf8,
-      match_name: matchName,
-      auto_name: autoName,
-      property_depth: propertyDepth,
+      _nameUtf8: nameUtf8,
+      matchName: matchName,
+      autoName: autoName,
+      propertyDepth: propertyDepth,
       properties: [],
-      parent_property,
+      parentProperty: parent_property,
     });
   }
 
@@ -495,44 +495,44 @@ export class PropertyGroup extends PropertyBase {
     _tdmn?: TdmnChunk | null;
     _tdgp?: ListChunk | null;
     _tdsb: TdsbChunk | null;
-    _name_utf8?: Utf8Chunk | null;
-    _fnam_utf8?: Utf8Chunk | null;
-    parent_property?: PropertyGroup | null;
-    match_name: string;
-    property_depth: number;
+    _nameUtf8?: Utf8Chunk | null;
+    _fnamUtf8?: Utf8Chunk | null;
+    parentProperty?: PropertyGroup | null;
+    matchName: string;
+    propertyDepth: number;
     properties: (Property | PropertyGroup)[];
-    auto_name?: string | null;
+    autoName?: string | null;
   }) {
     const {
       _tdmn = null,
       _tdgp = null,
       _tdsb,
-      _name_utf8 = null,
-      _fnam_utf8 = null,
-      parent_property = null,
-      match_name,
-      property_depth,
+      _nameUtf8: _name_utf8 = null,
+      _fnamUtf8: _fnam_utf8 = null,
+      parentProperty: parent_property = null,
+      matchName: match_name,
+      propertyDepth: property_depth,
       properties,
-      auto_name = null,
+      autoName: auto_name = null,
     } = kw;
     super({
       _tdsb,
-      _name_utf8,
-      parent_property,
-      match_name,
-      property_depth,
-      auto_name,
+      _nameUtf8: _name_utf8,
+      parentProperty: parent_property,
+      matchName: match_name,
+      propertyDepth: property_depth,
+      autoName: auto_name,
     });
 
     this._tdmn = _tdmn;
     this._tdgp = _tdgp;
-    this._fnam_utf8 = _fnam_utf8;
-    this._deferred_ae_major = null;
+    this._fnamUtf8 = _fnam_utf8;
+    this._deferredAeMajor = null;
 
     this._properties = properties;
 
     if (_INDEXED_GROUP_MATCH_NAMES.has(match_name)) {
-      this._property_type = PropertyType.INDEXED_GROUP;
+      this._propertyType = PropertyType.INDEXED_GROUP;
     }
 
     if (
@@ -550,15 +550,15 @@ export class PropertyGroup extends PropertyBase {
       this._elided = true;
     }
     for (const child of this._properties) {
-      child._parent_property = this;
+      child._parentProperty = this;
     }
   }
 
   /** The automatic (display) name derived from `match_name`. */
   get autoName(): string {
-    if (this._auto_name != null) return this._auto_name;
-    if (this._fnam_utf8 != null) {
-      const name: string = split(this._fnam_utf8.value, "\0")[0];
+    if (this._autoName != null) return this._autoName;
+    if (this._fnamUtf8 != null) {
+      const name: string = split(this._fnamUtf8.value, "\0")[0];
       return name;
     }
     return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
@@ -571,11 +571,11 @@ export class PropertyGroup extends PropertyBase {
    * to a synthesized group. After this method, the group is
    * indistinguishable from one that was parsed from binary.
    */
-  _ensure_materialized(): void {
+  _ensureMaterialized(): void {
     if (this._tdsb == null || !this._tdsb.synthetic) return;
 
     const parent = this.parentProperty;
-    if (parent != null) parent._ensure_materialized();
+    if (parent != null) parent._ensureMaterialized();
 
     // Flip synthetic flags on tdmn + group-owned chunks (not children).
     if (this._tdmn != null) this._tdmn.synthetic = false;
@@ -583,8 +583,8 @@ export class PropertyGroup extends PropertyBase {
     const tdgp = this._tdgp;
     tdgp.synthetic = false;
     this._tdsb.synthetic = false;
-    if (this._name_utf8 != null) {
-      this._name_utf8.synthetic = false;
+    if (this._nameUtf8 != null) {
+      this._nameUtf8.synthetic = false;
       // Also unflag tdsn container if present
       for (const c of tdgp.chunks) {
         if (c.chunk_type === "tdsn") {
@@ -601,22 +601,22 @@ export class PropertyGroup extends PropertyBase {
       }
     }
 
-    this._reposition_canonically();
+    this._repositionCanonically();
   }
 
-  _chunk_body(): ListChunk | null {
+  _chunkBody(): ListChunk | null {
     return this._tdgp;
   }
 
-  _ensure_children_synthesized(): void {
+  _ensureChildrenSynthesized(): void {
     /** Run deferred child synthesis exactly once, on first access. */
-    const aeMajor = this._deferred_ae_major;
+    const aeMajor = this._deferredAeMajor;
     if (aeMajor == null) return;
-    this._deferred_ae_major = null;
-    this._run_deferred_synthesis(aeMajor);
+    this._deferredAeMajor = null;
+    this._runDeferredSynthesis(aeMajor);
   }
 
-  _run_deferred_synthesis(aeMajor: number): void {
+  _runDeferredSynthesis(aeMajor: number): void {
     /**
      * Perform full child synthesis for this group.
      *
@@ -626,25 +626,25 @@ export class PropertyGroup extends PropertyBase {
     const specs = _GROUP_CHILD_SPECS.get(this.matchName) ?? null;
     if (specs != null) {
       _reorderAndFill(this, specs, this.propertyDepth + 1, {
-        ae_major: aeMajor,
-        value_overrides: this._synthesis_value_overrides(),
+        aeMajor: aeMajor,
+        valueOverrides: this._synthesisValueOverrides(),
       });
     }
 
     if (this.matchName === "ADBE Layer Styles") {
-      _deriveLayerStylesEnabled(this, aeMajor, { synthesize_subgroups: true });
+      _deriveLayerStylesEnabled(this, aeMajor, { synthesizeSubgroups: true });
     }
 
     for (const child of this._properties) {
       if (child instanceof PropertyGroup) {
-        child._deferred_ae_major = aeMajor;
+        child._deferredAeMajor = aeMajor;
       } else if (child instanceof Property) {
         _applyBounds(child);
       }
     }
   }
 
-  _synthesis_value_overrides(): Map<string, [number | number[], number | number[]]> | null {
+  _synthesisValueOverrides(): Map<string, [number | number[], number | number[]]> | null {
     /**
      * Comp-dependent default values for synthesized children.
      *
@@ -657,8 +657,8 @@ export class PropertyGroup extends PropertyBase {
     let zoom: number;
     try {
       // `None._default_zoom` / a layer without it is an AttributeError in Python.
-      const layer = this._containing_layer;
-      zoom = getattr(layer, "_default_zoom").call(layer);
+      const layer = this._containingLayer;
+      zoom = getattr(layer, "_defaultZoom").call(layer);
     } catch (e) {
       if (e instanceof ValueError || e instanceof AttributeError) return null;
       throw e;
@@ -671,7 +671,7 @@ export class PropertyGroup extends PropertyBase {
 
   /** List of properties in this group. Read-only. */
   get properties(): (Property | PropertyGroup)[] {
-    this._ensure_children_synthesized();
+    this._ensureChildrenSynthesized();
     return this._properties;
   }
 
@@ -691,11 +691,11 @@ export class PropertyGroup extends PropertyBase {
     return this.properties.length;
   }
 
-  *_leaf_properties(): Generator<Property> {
+  *_leafProperties(): Generator<Property> {
     /** Every leaf `Property` under this group, depth-first. */
     for (const child of this) {
       if (child instanceof PropertyGroup) {
-        yield* child._leaf_properties();
+        yield* child._leafProperties();
       } else if (child instanceof Property) {
         yield child;
       }
@@ -793,7 +793,7 @@ export class PropertyGroup extends PropertyBase {
       return at(this.properties, key);
     }
     if (typeof key === "string") {
-      const prop = this._child_or_null(key);
+      const prop = this._childOrNull(key);
       if (prop === null) throw new KeyError(repr(key));
       return prop;
     }
@@ -801,9 +801,9 @@ export class PropertyGroup extends PropertyBase {
   }
 
   /** The child whose display name, match name or snake_case name is `name`, or `null`. */
-  _child_or_null<K extends keyof MatchNameTypes>(name: K): MatchNameTypes[K] | null;
-  _child_or_null(name: string): Property | PropertyGroup | null;
-  _child_or_null(name: string): Property | PropertyGroup | null {
+  _childOrNull<K extends keyof MatchNameTypes>(name: K): MatchNameTypes[K] | null;
+  _childOrNull(name: string): Property | PropertyGroup | null;
+  _childOrNull(name: string): Property | PropertyGroup | null {
     for (const prop of this.properties) {
       // The match name first: `name` is derived, not stored.
       if (prop.matchName === name) return prop;
@@ -884,7 +884,7 @@ export class PropertyGroup extends PropertyBase {
      * @param name - A match name or display name to check.
      */
     if (_canAddProperty(this.matchName, this.propertyType, name)) return true;
-    return this._installed_effect_def(name) != null;
+    return this._installedEffectDef(name) != null;
   }
 
   /**
@@ -929,7 +929,7 @@ export class PropertyGroup extends PropertyBase {
       // The .aep stores only the PostScript name; its prefix is the
       // variable font's family (FontObject.familyPrefix semantics).
       // Python `layer.text.sourceText.value`: only a text layer has the group.
-      const text = this._containing_layer.text;
+      const text = this._containingLayer.text;
       if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
       const textDoc = text.property("ADBE Text Document").value;
       const psName: string = pyOr(textDoc.font, "");
@@ -951,7 +951,7 @@ export class PropertyGroup extends PropertyBase {
     }
 
     const slots = this.properties.filter(
-      (p): p is Property => p instanceof Property && p._is_vf_axis,
+      (p): p is Property => p instanceof Property && p._isVfAxis,
     );
     for (const p of slots) {
       if (p.axisTag === axisTag) return p;
@@ -959,18 +959,18 @@ export class PropertyGroup extends PropertyBase {
     const slot = slots.find((p) => p.axisTag == null) ?? null;
     if (slot == null) throw new ValueError("All 8 variable-font axis slots are in use.");
 
-    slot._ensure_materialized();
+    slot._ensureMaterialized();
     const tagRaw = _vfTagFromStr(axisTag);
     const tdbs = slot._tdbs;
     tdb4ApplyVfAxisTemplate(slot._tdb4);
     pyAssert(slot._cdat != null);
     // AE writes [value, tag] plus eight zero-padding slots.
-    slot._cdat.values = [axis.default_value, tagRaw, ...new Array(8).fill(0)];
+    slot._cdat.values = [axis.defaultValue, tagRaw, ...new Array(8).fill(0)];
     slot._value = null;
     // Axis bounds come from the font's range (single-component).
     for (const [attr, chunkType, bound] of [
-      ["_tdum", "tdum", axis.min_value],
-      ["_tduM", "tduM", axis.max_value],
+      ["_tdum", "tdum", axis.minValue],
+      ["_tduM", "tduM", axis.maxValue],
     ] as const) {
       const existing = getattr(slot, attr);
       if (existing == null) {
@@ -987,7 +987,7 @@ export class PropertyGroup extends PropertyBase {
     const tdgp = this._tdgp;
     tdgp.chunks.splice(indexByIdentity(tdgp.chunks, tdbs) + 1, 0, vfdn);
     slot._vfdn = vfdn;
-    slot._vf_tag_cache = tagRaw;
+    slot._vfTagCache = tagRaw;
     return slot;
   }
 
@@ -1020,25 +1020,25 @@ export class PropertyGroup extends PropertyBase {
     if (result == null) {
       // Effect Parade: any effect already defined in the project's
       // EfdG (re-applied by cloning its stored definition).
-      const installed = this._installed_effect_def(name);
-      if (installed != null) return this._add_installed_effect(...installed);
+      const installed = this._installedEffectDef(name);
+      if (installed != null) return this._addInstalledEffect(...installed);
       throw new ValueError(`Cannot add property '${name}' to group '${this.matchName}'`);
     }
     const [resolved, kind] = result;
-    if (kind === AddableKind.MASK) return this._add_mask_atom();
-    if (kind === AddableKind.EXPRESSION_CONTROL) return this._add_expression_control(resolved);
-    if (kind === AddableKind.DROPDOWN) return this._add_dropdown_control();
-    if (kind === AddableKind.SHAPE) return this._add_vector_element(resolved);
-    if (kind === AddableKind.TEXT_SELECTOR) return this._add_text_selector(resolved);
-    if (kind === AddableKind.TEXT_ANIMATOR) return this._add_text_animator();
-    if (kind === AddableKind.ANIMATOR_PROPERTY) return this._add_animator_property(resolved);
+    if (kind === AddableKind.MASK) return this._addMaskAtom();
+    if (kind === AddableKind.EXPRESSION_CONTROL) return this._addExpressionControl(resolved);
+    if (kind === AddableKind.DROPDOWN) return this._addDropdownControl();
+    if (kind === AddableKind.SHAPE) return this._addVectorElement(resolved);
+    if (kind === AddableKind.TEXT_SELECTOR) return this._addTextSelector(resolved);
+    if (kind === AddableKind.TEXT_ANIMATOR) return this._addTextAnimator();
+    if (kind === AddableKind.ANIMATOR_PROPERTY) return this._addAnimatorProperty(resolved);
     // Exhaustiveness guard: resolve_addable returns one of the seven
     // AddableKind members, each handled above. Reached only if a new
     // kind is added without a dispatch arm.
     throw new NotImplementedError(`no addProperty builder for '${resolved}'`);
   }
 
-  _free_numbered_name(base: string, start: number): string {
+  _freeNumberedName(base: string, start: number): string {
     /**
      * `'{base} {n}'` with `n >= start`, skipping any number already
      * used by a sibling so a new instance never duplicates an existing
@@ -1052,7 +1052,7 @@ export class PropertyGroup extends PropertyBase {
     return `${base} ${n}`;
   }
 
-  _effect_instance_name(display: string, sameType: number): string {
+  _effectInstanceName(display: string, sameType: number): string {
     /**
      * The tdsn name for a new effect instance: the first instance uses
      * the unnamed sentinel (so it shows the effect's own name); later ones
@@ -1061,12 +1061,12 @@ export class PropertyGroup extends PropertyBase {
      * for the Dropdown Control).
      */
     if (sameType === 0) return TDSN_SENTINEL;
-    return this._free_numbered_name(display, sameType + 1);
+    return this._freeNumberedName(display, sameType + 1);
   }
 
-  _add_mask_atom(): MaskPropertyGroup {
+  _addMaskAtom(): MaskPropertyGroup {
     /** Add a new default mask atom to this Masks parade group. */
-    this._ensure_materialized();
+    this._ensureMaterialized();
     // AE assigns a monotonic per-layer mask id (highest existing + 1),
     // not a positional count: len+1 collides after a mid-parade mask is
     // removed, or on a parsed layer whose mask ids are non-contiguous.
@@ -1083,23 +1083,23 @@ export class PropertyGroup extends PropertyBase {
     // new mask is id 3 "Mask 2"; beside "Mask 1" and "Mask 3", "Mask 4").
     const mask = _maskPropertyGroup().MaskPropertyGroup._new(this, this.propertyDepth + 1, {
       name: _nextMaskName(existing.map((m) => m.name)),
-      mask_id: nextId,
+      maskId: nextId,
     });
     this._properties.push(mask);
     return mask;
   }
 
-  _add_expression_control(matchName: string): PropertyGroup {
+  _addExpressionControl(matchName: string): PropertyGroup {
     /** Add a fresh expression-control effect to this Effect Parade. */
     const skeleton = getitem(EXPRESSION_CONTROLS, matchName);
-    this._ensure_materialized();
-    const comp = this._containing_layer.containingComp;
+    this._ensureMaterialized();
+    const comp = this._containingLayer.containingComp;
 
     // AE names the first instance after the effect (unnamed tdsn
     // sentinel) and later instances "Name N" with a baked tdsn.
     const display: string = skeleton.name;
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
-    const tdsnName = this._effect_instance_name(display, sameType);
+    const tdsnName = this._effectInstanceName(display, sameType);
 
     const [tdmn, sspc] = buildExpressionControl(
       matchName,
@@ -1108,14 +1108,14 @@ export class PropertyGroup extends PropertyBase {
       {
         tdsn_name: tdsnName,
         time_base: comp._cdta.internal_timebase,
-        layer_id: this._containing_layer.id,
-        layer_param_name: skeleton.layer_param,
+        layer_id: this._containingLayer.id,
+        layer_param_name: skeleton.layerParam,
       },
     );
-    return this._attach_effect(tdmn, sspc, matchName);
+    return this._attachEffect(tdmn, sspc, matchName);
   }
 
-  _add_dropdown_control(): PropertyGroup {
+  _addDropdownControl(): PropertyGroup {
     /**
      * Add a fresh Dropdown Menu Control to this Effect Parade.
      *
@@ -1123,24 +1123,24 @@ export class PropertyGroup extends PropertyBase {
      * generated match name, so AE's "Name N" numbering counts existing
      * dropdowns by the `Pseudo/` namespace rather than by match name.
      */
-    this._ensure_materialized();
-    const comp = this._containing_layer.containingComp;
+    this._ensureMaterialized();
+    const comp = this._containingLayer.containingComp;
 
     const display: string = DROPDOWN_CONTROL.name;
     const sameType = this.properties.filter((p) =>
       p.matchName.startsWith("Pseudo/@@"),
     ).length;
-    const tdsnName = this._effect_instance_name(display, sameType);
+    const tdsnName = this._effectInstanceName(display, sameType);
 
     const [tdmn, sspc] = buildDropdownControl({
       tdsn_name: tdsnName,
       time_base: comp._cdta.internal_timebase,
-      layer_id: this._containing_layer.id,
+      layer_id: this._containingLayer.id,
     });
-    return this._attach_effect(tdmn, sspc, tdmn.value);
+    return this._attachEffect(tdmn, sspc, tdmn.value);
   }
 
-  _installed_effect_def(name: string): [string, string, ListChunk] | null {
+  _installedEffectDef(name: string): [string, string, ListChunk] | null {
     /**
      * Resolve `name` to an effect template.
      *
@@ -1154,13 +1154,13 @@ export class PropertyGroup extends PropertyBase {
      * Returns `(match_name, display_name, def_sspc)`, else `null`.
      */
     if (this.matchName !== "ADBE Effect Parade") return null;
-    const project = this._containing_layer.containingComp._project;
-    const found = _effect().matchEffectDefinition(project._effect_definitions(), name);
+    const project = this._containingLayer.containingComp._project;
+    const found = _effect().matchEffectDefinition(project._effectDefinitions(), name);
     if (found != null) return found;
     return _bakedEffectDef(name);
   }
 
-  _add_installed_effect(
+  _addInstalledEffect(
     matchName: string,
     display: string,
     defSspc: ListChunk,
@@ -1183,24 +1183,24 @@ export class PropertyGroup extends PropertyBase {
      * one, and the parameter's keyframe times are then read against the
      * wrong base.
      */
-    this._ensure_materialized();
+    this._ensureMaterialized();
     const sspc = cloneChunkTree(defSspc);
     pyAssert(sspc instanceof ListChunk);
-    rewriteOwnerTdpi(sspc, this._containing_layer.id);
-    const comp = this._containing_layer.containingComp;
+    rewriteOwnerTdpi(sspc, this._containingLayer.id);
+    const comp = this._containingLayer.containingComp;
     rewriteTimeBase(sspc, comp._cdta.internal_timebase);
 
     // Name the instance: the first uses the unnamed tdsn sentinel
     // (so it shows the effect's fnam name); later ones get "Name N".
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
-    const tdsnName = this._effect_instance_name(display, sameType);
+    const tdsnName = this._effectInstanceName(display, sameType);
     _setEffectInstanceName(sspc, tdsnName);
 
     const engv =
       matchName === "ADBE FreePin3"
         ? new Chunk({ chunk_type: "engv", data: _PUPPET_ENGINE_VERSION })
         : null;
-    const effect = this._attach_effect(
+    const effect = this._attachEffect(
       new TdmnChunk({ value: matchName }),
       sspc,
       matchName,
@@ -1210,7 +1210,7 @@ export class PropertyGroup extends PropertyBase {
     return effect;
   }
 
-  _attach_effect(
+  _attachEffect(
     tdmn: TdmnChunk,
     sspc: ListChunk,
     matchName: string,
@@ -1224,7 +1224,7 @@ export class PropertyGroup extends PropertyBase {
      * `engv` is the engine-version atom AE stores between an effect's
      * `tdmn` and its `sspc` (Puppet only).
      */
-    const layer = this._containing_layer;
+    const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
     pyAssert(parentTdgp != null);
@@ -1232,7 +1232,7 @@ export class PropertyGroup extends PropertyBase {
     if (engv != null) _insertBeforeGroupEnd(parentTdgp, engv);
     _insertBeforeGroupEnd(parentTdgp, sspc);
 
-    const effectParamDefs = comp._project._effect_param_defs;
+    const effectParamDefs = comp._project._effectParamDefs;
     const effect = _effect().parseEffect(
       sspc,
       matchName,
@@ -1242,22 +1242,22 @@ export class PropertyGroup extends PropertyBase {
       tdmn,
       layer,
     );
-    effect._parent_property = this;
-    effect._deferred_ae_major = getAeVersionMajor(layer);
+    effect._parentProperty = this;
+    effect._deferredAeMajor = getAeVersionMajor(layer);
     this._properties.push(effect);
     return effect;
   }
 
-  _attach_group(tdmn: TdmnChunk, tdgp: ListChunk, matchName: string): PropertyGroup {
+  _attachGroup(tdmn: TdmnChunk, tdgp: ListChunk, matchName: string): PropertyGroup {
     /**
      * Insert a built group's chunks, parse, wire the model, append.
      *
      * `parse_property_group` is the canonical chunks-\>model path for
      * added groups (mandatory subgroups, the Path element's om-s,
      * deferred child synthesis); the shape, selector and animator
-     * builders share it, as `_attach_effect` does for effects.
+     * builders share it, as `_attachEffect` does for effects.
      */
-    const layer = this._containing_layer;
+    const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
     pyAssert(parentTdgp != null);
@@ -1268,21 +1268,21 @@ export class PropertyGroup extends PropertyBase {
       tdgp,
       matchName,
       this.propertyDepth + 1,
-      comp._project._effect_param_defs,
+      comp._project._effectParamDefs,
       comp,
       tdmn,
       layer,
     );
-    group._parent_property = this;
-    group._deferred_ae_major = getAeVersionMajor(layer);
+    group._parentProperty = this;
+    group._deferredAeMajor = getAeVersionMajor(layer);
     this._properties.push(group);
     return group;
   }
 
-  _add_vector_element(matchName: string): PropertyGroup {
+  _addVectorElement(matchName: string): PropertyGroup {
     /** Add a fresh shape element to this contents group. */
-    this._ensure_materialized();
-    const comp = this._containing_layer.containingComp;
+    this._ensureMaterialized();
+    const comp = this._containingLayer.containingComp;
 
     // AE bakes a per-container, per-type numbered name into the tdsn.
     const base = _VECTOR_CREATION_NAMES.get(matchName) || (MATCH_NAME_TO_AUTO_NAME.get(matchName) ?? matchName);
@@ -1291,16 +1291,16 @@ export class PropertyGroup extends PropertyBase {
       matchName === "ADBE Vector Shape - Group" ? comp._cdta.internal_timebase : null;
     const [tdmn, tdgp] = buildVectorElement(
       matchName,
-      this._free_numbered_name(base, sameType + 1),
+      this._freeNumberedName(base, sameType + 1),
       {
         subgroups: _VECTOR_SUBGROUPS.get(matchName) ?? [],
         path_time_base: pathTimeBase,
       },
     );
-    return this._attach_group(tdmn, tdgp, matchName);
+    return this._attachGroup(tdmn, tdgp, matchName);
   }
 
-  _add_animator_property(matchName: string): Property | PropertyGroup {
+  _addAnimatorProperty(matchName: string): Property | PropertyGroup {
     /**
      * Apply an animator property from the fixed pool (the
      * named-group exception).
@@ -1314,11 +1314,11 @@ export class PropertyGroup extends PropertyBase {
     const prop = this.properties.find((p) => p.matchName === matchName) ?? null;
     // resolve_addable returns only pool match names, so the member exists.
     pyAssert(prop != null);
-    prop._ensure_materialized();
+    prop._ensureMaterialized();
     return prop;
   }
 
-  _add_text_animator(): PropertyGroup {
+  _addTextAnimator(): PropertyGroup {
     /**
      * Add a fresh animator to this Text Animators group.
      *
@@ -1326,17 +1326,17 @@ export class PropertyGroup extends PropertyBase {
      * container; its (empty) Selectors group and the 103-property
      * Properties pool are synthesized on parse.
      */
-    this._ensure_materialized();
+    this._ensureMaterialized();
     const sameType = this.properties.filter(
       (p) => p.matchName === "ADBE Text Animator",
     ).length;
     const [tdmn, tdgp] = buildTextAnimator(
-      this._free_numbered_name("Animator", sameType + 1),
+      this._freeNumberedName("Animator", sameType + 1),
     );
-    return this._attach_group(tdmn, tdgp, "ADBE Text Animator");
+    return this._attachGroup(tdmn, tdgp, "ADBE Text Animator");
   }
 
-  _add_text_selector(matchName: string): PropertyGroup {
+  _addTextSelector(matchName: string): PropertyGroup {
     /**
      * Add a fresh selector to this text animator's Selectors group.
      *
@@ -1344,22 +1344,22 @@ export class PropertyGroup extends PropertyBase {
      * value children are synthesized; the Range Selector additionally
      * carries an empty `ADBE Text Range Advanced` subgroup in binary.
      */
-    this._ensure_materialized();
+    this._ensureMaterialized();
     const base = getitem(_TEXT_SELECTOR_NAMES, matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
     const [tdmn, tdgp] = buildTextSelector(
       matchName,
-      this._free_numbered_name(base, sameType + 1),
+      this._freeNumberedName(base, sameType + 1),
       { has_advanced: matchName === "ADBE Text Selector" },
     );
-    return this._attach_group(tdmn, tdgp, matchName);
+    return this._attachGroup(tdmn, tdgp, matchName);
   }
 }
 
 // `__getattr__` (child lookup by attribute name) and `__setattr__` without a proxy
 // around each group. Exact here: `__setattr__` (this one and `Layer`'s) passes every
 // existing attribute through and only refuses new public names.
-pyClassHooks(PropertyGroup, { setattr_passes_private: true });
+pyClassHooks(PropertyGroup, { setattrPassesPrivate: true });
 
 // Python `@requires_version(26)` on `add_variable_font_axis`: the
 // decorator wraps the method once the class body has been evaluated.

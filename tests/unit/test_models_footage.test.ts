@@ -111,16 +111,16 @@ describe("TestSequenceFrameBoundsDerivation", () => {
    */
   function _sequenceWithStvc(names: string[]): FileSource {
     const source = FileSource._new(new Path("C:/footage/render/render.0101.exr"), {
-      source_format: "oEXR",
+      sourceFormat: "oEXR",
       width: 1920,
       height: 1080,
       duration: 2.0,
-      frame_rate: 24.0,
-      sequence_prefix: "render.",
-      sequence_ext: ".exr",
-      start_frame: 101,
-      end_frame: 148,
-      frame_padding: 4,
+      frameRate: 24.0,
+      sequencePrefix: "render.",
+      sequenceExt: ".exr",
+      startFrame: 101,
+      endFrame: 148,
+      framePadding: 4,
       windows: true,
     });
     const sspc = source._sspc;
@@ -145,14 +145,14 @@ describe("TestSequenceFrameBoundsDerivation", () => {
 
   test("test_bounds_derived_from_stvc_filenames", () => {
     const source = _sequenceWithStvc(["render.0101.exr", "render.0102.exr", "render.0148.exr"]);
-    expect(source._start_frame).toBe(101);
-    expect(source._end_frame).toBe(148);
+    expect(source._startFrame).toBe(101);
+    expect(source._endFrame).toBe(148);
   });
 
   test("test_derivation_does_not_write_the_chunk", () => {
     const source = _sequenceWithStvc(["render.0101.exr", "render.0102.exr", "render.0148.exr"]);
-    expect(source._start_frame).toBe(101);
-    expect(source._end_frame).toBe(148);
+    expect(source._startFrame).toBe(101);
+    expect(source._endFrame).toBe(148);
     // The chunk keeps AE's undefined sentinel, so a save reproduces the
     // original bytes.
     expect(source._sspc.start_frame).toBe(UNDEFINED_FRAME);
@@ -163,27 +163,27 @@ describe("TestSequenceFrameBoundsDerivation", () => {
     const source = _sequenceWithStvc(["render.0101.exr", "render.0148.exr"]);
     source._sspc.start_frame = 7;
     source._sspc.end_frame = 9;
-    expect(pyEq([source._start_frame, source._end_frame], [7, 9])).toBe(true);
+    expect(pyEq([source._startFrame, source._endFrame], [7, 9])).toBe(true);
   });
 
   test("test_undefined_without_stvc_stays_undefined", () => {
     const source = FileSource._new(new Path("C:/footage/render/render.0101.exr"), {
-      source_format: "oEXR",
+      sourceFormat: "oEXR",
       width: 1920,
       height: 1080,
       duration: 2.0,
-      frame_rate: 24.0,
-      sequence_prefix: "render.",
-      sequence_ext: ".exr",
-      start_frame: 101,
-      end_frame: 148,
-      frame_padding: 4,
+      frameRate: 24.0,
+      sequencePrefix: "render.",
+      sequenceExt: ".exr",
+      startFrame: 101,
+      endFrame: 148,
+      framePadding: 4,
       windows: true,
     });
     source._sspc.start_frame = UNDEFINED_FRAME;
     source._sspc.end_frame = UNDEFINED_FRAME;
-    expect(source._start_frame).toBe(UNDEFINED_FRAME);
-    expect(source._end_frame).toBe(UNDEFINED_FRAME);
+    expect(source._startFrame).toBe(UNDEFINED_FRAME);
+    expect(source._endFrame).toBe(UNDEFINED_FRAME);
   });
 });
 
@@ -273,11 +273,11 @@ describe("TestSourceModifiedStamp", () => {
 
   test("test_unreadable_media_stays_unstamped", () => {
     const source = FileSource._new(new Path("C:/nowhere/render.0001.exr"), {
-      source_format: "oEXR",
+      sourceFormat: "oEXR",
       width: 64,
       height: 64,
       duration: 0.0,
-      frame_rate: 0.0,
+      frameRate: 0.0,
       windows: true,
     });
     expect(source._sspc.source_modified).toBe(0);
@@ -297,7 +297,7 @@ describe("TestSourceModifiedStamp", () => {
  */
 function _requireProfile(name: string): boolean {
   try {
-    defaultIccLibrary().bytes_for(name);
+    defaultIccLibrary().bytesFor(name);
   } catch (e) {
     if (!(e instanceof ColorProfileNotFoundError)) throw e;
     skip(`ICC profile ${repr(name)} not installed`);
@@ -338,7 +338,7 @@ describe("TestMediaColorProfileRecord", () => {
   test("test_embedded_profile_is_recorded_by_id", () => {
     const source = _import("image_with_alpha.png");
     const epid = findByType(asInstance(source._clrs, ListChunk).chunks, "epid");
-    const blob = probeMedia(SAMPLES.parent.div("assets", "image_with_alpha.png")).icc_profile;
+    const blob = probeMedia(SAMPLES.parent.div("assets", "image_with_alpha.png")).iccProfile;
     expect(blob != null).toBe(true);
     if (blob == null) throw new Error("image_with_alpha.png has no ICC profile");
     expect(pyEq(epid.data, iccProfileId(blob))).toBe(true);
@@ -385,10 +385,10 @@ describe("TestMediaColorProfileRecord", () => {
      */
     if (!_requireProfile("sRGB IEC61966-2.1")) return;
     const source = _import("8bits.tif");
-    const blob = probeMedia(SAMPLES.parent.div("assets", "8bits.tif")).icc_profile;
+    const blob = probeMedia(SAMPLES.parent.div("assets", "8bits.tif")).iccProfile;
     expect(blob != null).toBe(true);
     if (blob == null) throw new Error("8bits.tif has no ICC profile");
-    const catalogued = defaultIccLibrary().bytes_for("sRGB IEC61966-2.1");
+    const catalogued = defaultIccLibrary().bytesFor("sRGB IEC61966-2.1");
     expect(pyEq(blob, catalogued)).toBe(false); // the file's copy differs...
     expect(pyEq(iccProfileId(blob), iccProfileId(catalogued))).toBe(true); // ...but not in id
     const epid = findByType(asInstance(source._clrs, ListChunk).chunks, "epid");

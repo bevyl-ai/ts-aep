@@ -78,29 +78,29 @@ export interface MediaInfoFields {
   /** Raw media duration in seconds (0 for a still image). */
   duration: number;
   /** Native frame rate in fps (0 for stills and audio-only media). */
-  frame_rate: number;
-  has_alpha: boolean;
-  has_audio: boolean;
-  audio_sample_rate: number;
-  pixel_aspect: number;
+  frameRate: number;
+  hasAlpha: boolean;
+  hasAudio: boolean;
+  audioSampleRate: number;
+  pixelAspect: number;
   /**
    * Bits per channel (8, 16, 32). Read for PSD/PSB, TIFF, DPX/Cineon and
    * HEIF.
    */
-  bit_depth: number;
+  bitDepth: number;
   /**
    * Number of layers as After Effects counts them: a PSD/PSB's layer
    * records (0 for a flattened document); for a TIFF the layers of its
    * Photoshop layer data (tag 37724), else 1 when it has an alpha sample and
    * 0 when it has none (AE 2026).
    */
-  layer_count: number;
+  layerCount: number;
   /**
    * The Photoshop colour mode of a PSD/PSB, or the one a TIFF reads as
    * (PSD/PSB and TIFF only): 0 bitmap, 1 grayscale, 2 indexed, 3 RGB,
    * 4 CMYK, 9 Lab.
    */
-  color_mode: number;
+  colorMode: number;
   /**
    * Channels in the pixel buffer whose size AE caches (PSD/PSB and TIFF):
    * the colour channels, plus one for the transparency of a PSD's layers, or
@@ -108,14 +108,14 @@ export interface MediaInfoFields {
    * gray PSD, 4 for CMYK; a flattened PSD's alpha channel does not count).
    * 0 for other formats.
    */
-  pixel_channels: number;
+  pixelChannels: number;
   /**
    * The ICC color profile the file embeds, for the formats that can carry
    * one (PNG, JPEG, TIFF, PSD/PSB). After Effects records it in the footage
    * `LIST:CLRS` and shows it as "Embedded"; `null` means the file carries
    * none, and AE assigns a profile instead.
    */
-  icc_profile: Uint8Array | null;
+  iccProfile: Uint8Array | null;
   /**
    * The pixel depth After Effects caches for the footage (`sspc` byte 0x3E,
    * see `SspcChunk.depth`); 0 for media without video.
@@ -127,26 +127,26 @@ export interface MediaInfoFields {
    * OpenEXR only: every channel, those of a named part of a multi-part
    * file prefixed with the part's name (`"Z.A"`).
    */
-  channel_names: readonly string[];
+  channelNames: readonly string[];
 }
 
 export const MEDIA_INFO_DEFAULTS: MediaInfoFields = {
   width: 0,
   height: 0,
   duration: 0.0,
-  frame_rate: 0.0,
-  has_alpha: false,
-  has_audio: false,
-  audio_sample_rate: 0.0,
-  pixel_aspect: 1.0,
-  bit_depth: 8,
-  layer_count: 0,
-  color_mode: 0,
-  pixel_channels: 0,
-  icc_profile: null,
+  frameRate: 0.0,
+  hasAlpha: false,
+  hasAudio: false,
+  audioSampleRate: 0.0,
+  pixelAspect: 1.0,
+  bitDepth: 8,
+  layerCount: 0,
+  colorMode: 0,
+  pixelChannels: 0,
+  iccProfile: null,
   depth: 0,
   compression: 0,
-  channel_names: [],
+  channelNames: [],
 };
 
 /** Footage metadata read from a media-file header. Built from keyword fields, defaults as in Python. */
@@ -154,19 +154,19 @@ export class MediaInfo implements MediaInfoFields {
   declare readonly width: number;
   declare readonly height: number;
   declare readonly duration: number;
-  declare readonly frame_rate: number;
-  declare readonly has_alpha: boolean;
-  declare readonly has_audio: boolean;
-  declare readonly audio_sample_rate: number;
-  declare readonly pixel_aspect: number;
-  declare readonly bit_depth: number;
-  declare readonly layer_count: number;
-  declare readonly color_mode: number;
-  declare readonly pixel_channels: number;
-  declare readonly icc_profile: Uint8Array | null;
+  declare readonly frameRate: number;
+  declare readonly hasAlpha: boolean;
+  declare readonly hasAudio: boolean;
+  declare readonly audioSampleRate: number;
+  declare readonly pixelAspect: number;
+  declare readonly bitDepth: number;
+  declare readonly layerCount: number;
+  declare readonly colorMode: number;
+  declare readonly pixelChannels: number;
+  declare readonly iccProfile: Uint8Array | null;
   declare readonly depth: number;
   declare readonly compression: number;
-  declare readonly channel_names: readonly string[];
+  declare readonly channelNames: readonly string[];
 
   constructor(kw: Partial<MediaInfoFields> = {}) {
     Object.assign(this, MEDIA_INFO_DEFAULTS, kw);
@@ -187,19 +187,19 @@ export class MediaInfo implements MediaInfoFields {
     yield this.width;
     yield this.height;
     yield this.duration;
-    yield this.frame_rate;
-    yield this.has_alpha;
-    yield this.has_audio;
-    yield this.audio_sample_rate;
-    yield this.pixel_aspect;
-    yield this.bit_depth;
-    yield this.layer_count;
-    yield this.color_mode;
-    yield this.pixel_channels;
-    yield this.icc_profile;
+    yield this.frameRate;
+    yield this.hasAlpha;
+    yield this.hasAudio;
+    yield this.audioSampleRate;
+    yield this.pixelAspect;
+    yield this.bitDepth;
+    yield this.layerCount;
+    yield this.colorMode;
+    yield this.pixelChannels;
+    yield this.iccProfile;
     yield this.depth;
     yield this.compression;
-    yield this.channel_names;
+    yield this.channelNames;
   }
 }
 
@@ -354,8 +354,8 @@ export function _probePng(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width,
     height,
-    has_alpha: hasAlpha || hasTrns,
-    icc_profile: iccProfile,
+    hasAlpha: hasAlpha || hasTrns,
+    iccProfile: iccProfile,
     depth,
   });
 }
@@ -456,8 +456,8 @@ export function _probeWav(fp: ProbeStream): MediaInfo {
   const duration = byteRate ? dataSize / byteRate : 0.0;
   return new MediaInfo({
     duration,
-    has_audio: true,
-    audio_sample_rate: sampleRate,
+    hasAudio: true,
+    audioSampleRate: sampleRate,
   });
 }
 
@@ -494,14 +494,14 @@ export function _probeAiff(fp: ProbeStream): MediaInfo {
       const duration = sampleRate ? numFrames / sampleRate : 0.0;
       return new MediaInfo({
         duration,
-        has_audio: true,
-        audio_sample_rate: sampleRate,
+        hasAudio: true,
+        audioSampleRate: sampleRate,
       });
     }
     // AIFF chunks are word-aligned (an odd size has a trailing pad byte).
     fp.seek(chunkSize + (chunkSize & 1), SEEK_CUR);
   }
-  return new MediaInfo({ has_audio: true });
+  return new MediaInfo({ hasAudio: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -547,12 +547,12 @@ export function _probeExr(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width: first.width ?? 0,
     height: first.height ?? 0,
-    has_alpha: hasAlpha,
-    pixel_aspect: first.pixel_aspect ?? 1.0,
-    frame_rate: first.frame_rate ?? 0.0,
+    hasAlpha: hasAlpha,
+    pixelAspect: first.pixelAspect ?? 1.0,
+    frameRate: first.frameRate ?? 0.0,
     depth: luminanceOnly ? getitem(_GRAY_DEPTHS, 32) : _colorDepth(hasAlpha, 32),
     compression: first.compression ?? 0,
-    channel_names: channelNames,
+    channelNames: channelNames,
   });
 }
 
@@ -563,8 +563,8 @@ export interface ExrHeader {
   compression?: number;
   channels?: string[];
   name?: string;
-  pixel_aspect?: number;
-  frame_rate?: number;
+  pixelAspect?: number;
+  frameRate?: number;
 }
 
 /** The attributes `_probe_exr` uses from one EXR part header. */
@@ -589,10 +589,10 @@ export function _readExrHeader(fp: ProbeStream): ExrHeader {
     } else if (bytesEq(name, b("name"))) {
       out.name = decode(bytes_.rstrip(value, b("\x00")), "utf-8", "replace");
     } else if (bytesEq(name, b("pixelAspectRatio"))) {
-      out.pixel_aspect = struct.unpack("<f", value)[0];
+      out.pixelAspect = struct.unpack("<f", value)[0];
     } else if (bytesEq(name, b("framesPerSecond"))) {
       const [num, den] = struct.unpack("<ii", value);
-      out.frame_rate = den ? num / den : 0.0;
+      out.frameRate = den ? num / den : 0.0;
     }
   }
 }
@@ -702,7 +702,7 @@ export function _tiffPhotoshopLayerCount(fp: ProbeStream, en: "<" | ">", offset:
  * AE 2026 gives a TIFF alpha for a sample beyond its colour channels, or for
  * Photoshop layer data (whose layers can be transparent), and not otherwise.
  * Without alpha a grayscale TIFF stays gray (bilevel: depth 0) and a palette
- * stays indexed; CMYK and YCbCr read as RGB. `pixel_channels` counts the
+ * stays indexed; CMYK and YCbCr read as RGB. `pixelChannels` counts the
  * colour channels plus one for an extra sample marked as alpha
  * (`extra_alpha`: ExtraSamples 1 or 2, not 0 = unspecified) or for
  * Photoshop layer data. `photoshop_layers` is the layer count of that data
@@ -753,13 +753,13 @@ export function _tiffMediaInfo(
   return new MediaInfo({
     width,
     height,
-    has_alpha: hasAlpha,
-    icc_profile: iccProfile,
+    hasAlpha: hasAlpha,
+    iccProfile: iccProfile,
     depth,
-    bit_depth: bits,
-    layer_count: photoshopLayers || (countedAlpha ? 1 : 0),
-    color_mode: bits === 1 ? 0 : _TIFF_COLOR_MODES.get(photometric) ?? 3,
-    pixel_channels: countedAlpha || layered ? base + 1 : base,
+    bitDepth: bits,
+    layerCount: photoshopLayers || (countedAlpha ? 1 : 0),
+    colorMode: bits === 1 ? 0 : _TIFF_COLOR_MODES.get(photometric) ?? 3,
+    pixelChannels: countedAlpha || layered ? base + 1 : base,
   });
 }
 
@@ -905,8 +905,8 @@ export function _probeJpeg(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width,
     height,
-    has_alpha: false,
-    icc_profile: iccProfile,
+    hasAlpha: false,
+    iccProfile: iccProfile,
     depth: _colorDepth(false, 8),
   });
 }
@@ -929,7 +929,7 @@ export function _probeTga(fp: ProbeStream): MediaInfo {
   if (imageType === 1 || imageType === 9) depth = bitsPerPixel;
   else if (imageType === 3 || imageType === 11) depth = _GRAY_DEPTHS.get(bitsPerPixel) ?? 0;
   else depth = _colorDepth(hasAlpha, 8);
-  return new MediaInfo({ width, height, has_alpha: hasAlpha, depth });
+  return new MediaInfo({ width, height, hasAlpha: hasAlpha, depth });
 }
 
 export function _probeBmp(fp: ProbeStream): MediaInfo {
@@ -946,7 +946,7 @@ export function _probeBmp(fp: ProbeStream): MediaInfo {
     height = Math.abs(struct.unpack("<i", fp.read(4))[0]);
   }
   // AE allocates an alpha channel for BMP regardless of bit depth.
-  return new MediaInfo({ width, height, has_alpha: true, depth: _colorDepth(true, 8) });
+  return new MediaInfo({ width, height, hasAlpha: true, depth: _colorDepth(true, 8) });
 }
 
 // ---------------------------------------------------------------------------
@@ -1012,7 +1012,7 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
   if (packed & 0x80) fp.seek(3 * (1 << ((packed & 0x07) + 1)), SEEK_CUR); // global colour table
   let [frames, delay] = _gifFrameTiming(fp);
   const depth = _colorDepth(true, 8); // AE reads every GIF as RGBA
-  if (frames < 2) return new MediaInfo({ width, height, has_alpha: true, depth }); // a still
+  if (frames < 2) return new MediaInfo({ width, height, hasAlpha: true, depth }); // a still
   if (delay === 0) {
     // Nothing in the file says how fast an all-zero-delay GIF should run.
     // AE stretches it to roughly two seconds, giving every frame the same
@@ -1025,8 +1025,8 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
     width,
     height,
     duration,
-    frame_rate: round(frames / duration, 3),
-    has_alpha: true,
+    frameRate: round(frames / duration, 3),
+    hasAlpha: true,
     depth,
   });
 }
@@ -1191,7 +1191,7 @@ export function _psdImageResources(fp: ProbeStream): [number, Uint8Array | null]
   fp.seek(start);
   // A corrupt resource can decode to NaN/inf, which Fraction() rejects.
   if (ratio <= 0 || !Number.isFinite(ratio)) return [1.0, iccProfile];
-  return [new Fraction(ratio).limit_denominator(100).valueOf(), iccProfile];
+  return [new Fraction(ratio).limitDenominator(100).valueOf(), iccProfile];
 }
 
 export function _probePsd(fp: ProbeStream): MediaInfo {
@@ -1231,15 +1231,15 @@ export function _probePsd(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width,
     height,
-    has_alpha: hasAlpha,
-    bit_depth: bitDepth,
-    layer_count: layerCount,
-    color_mode: colorMode,
+    hasAlpha: hasAlpha,
+    bitDepth: bitDepth,
+    layerCount: layerCount,
+    colorMode: colorMode,
     // The alpha channel of a flattened document is not counted (AE 2026,
     // photoshop_modes.aep: psd_rgb8_flat_alpha.psd caches 3 channels).
-    pixel_channels: bottomTransparent ? baseChannels + 1 : baseChannels,
-    pixel_aspect: pixelAspect,
-    icc_profile: iccProfile,
+    pixelChannels: bottomTransparent ? baseChannels + 1 : baseChannels,
+    pixelAspect: pixelAspect,
+    iccProfile: iccProfile,
     depth,
   });
 }
@@ -1264,8 +1264,8 @@ export function _psdRecordHasTransparency(fp: ProbeStream, isPsb: boolean): bool
  * does (AE 2026: `psd_rgb8_bg_layer.psd` / `psd_rgb16_bg_layer.psd`).
  */
 export function psdLayerDepth(info: MediaInfo, hasTransparency: boolean): number {
-  if (hasTransparency) return _colorDepth(true, info.bit_depth);
-  if (info.has_alpha) return _colorDepth(false, info.bit_depth);
+  if (hasTransparency) return _colorDepth(true, info.bitDepth);
+  if (info.hasAlpha) return _colorDepth(false, info.bitDepth);
   return info.depth;
 }
 
@@ -1276,7 +1276,7 @@ export function psdLayerDepth(info: MediaInfo, hasTransparency: boolean): number
  * layer 2).
  */
 export function psdLayerChannels(info: MediaInfo, hasTransparency: boolean): number {
-  const colour = _PSD_BASE_CHANNELS.get(info.color_mode) ?? 3;
+  const colour = _PSD_BASE_CHANNELS.get(info.colorMode) ?? 3;
   return colour + (hasTransparency ? 1 : 0);
 }
 
@@ -1554,11 +1554,11 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
         // depth and pixel aspect are only meaningful for a visual
         // sample entry (reading them from an audio stsd gives garbage).
         if (entry.depth === 32) hasAlpha = true;
-        videoBits = entry.bits_per_channel;
-        if (entry.pixel_aspect) {
+        videoBits = entry.bitsPerChannel;
+        if (entry.pixelAspect) {
           // A quarter turn maps x onto y, so the sample aspect
           // turns with the axes.
-          pixelAspect = swapAxes ? 1 / entry.pixel_aspect : entry.pixel_aspect;
+          pixelAspect = swapAxes ? 1 / entry.pixelAspect : entry.pixelAspect;
         }
         if (!samples) {
           // fragmented: the durations live in the moofs
@@ -1590,11 +1590,11 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
     width,
     height,
     duration,
-    frame_rate: frameRate,
-    has_alpha: hasAlpha,
-    has_audio: hasAudio,
-    audio_sample_rate: audioSampleRate,
-    pixel_aspect: pixelAspect,
+    frameRate: frameRate,
+    hasAlpha: hasAlpha,
+    hasAudio: hasAudio,
+    audioSampleRate: audioSampleRate,
+    pixelAspect: pixelAspect,
     depth: width ? _colorDepth(hasAlpha, videoBits) : 0,
   });
 }
@@ -1605,11 +1605,11 @@ export class _VideoSampleEntry {
   declare readonly width: number;
   declare readonly height: number;
   declare readonly depth: number;
-  declare readonly pixel_aspect: number;
+  declare readonly pixelAspect: number;
   /** The bits per channel AE decodes the codec at. */
-  declare readonly bits_per_channel: number;
+  declare readonly bitsPerChannel: number;
 
-  constructor(kw: Partial<{ codec: Uint8Array; width: number; height: number; depth: number; pixel_aspect: number; bits_per_channel: number }> = {}) {
+  constructor(kw: Partial<{ codec: Uint8Array; width: number; height: number; depth: number; pixelAspect: number; bitsPerChannel: number }> = {}) {
     Object.assign(
       this,
       { codec: new Uint8Array(0), width: 0, height: 0, depth: 0, pixel_aspect: 0.0, bits_per_channel: 8 },
@@ -1681,7 +1681,7 @@ export function _parseStsd(data: Uint8Array, body: number, end: number): _VideoS
       bitsPerChannel = 16;
     }
   }
-  return new _VideoSampleEntry({ codec, width, height, depth, pixel_aspect: pixelAspect, bits_per_channel: bitsPerChannel });
+  return new _VideoSampleEntry({ codec, width, height, depth, pixelAspect: pixelAspect, bitsPerChannel: bitsPerChannel });
 }
 
 /**
@@ -1717,7 +1717,7 @@ export const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set([b("vp09"), 
  */
 export function _probeMp4(fp: ProbeStream): MediaInfo {
   const info = _probeMov(fp, _MP4_UNDECODABLE_CODECS);
-  if (info.width || info.has_audio) return info;
+  if (info.width || info.hasAudio) return info;
   // Nothing survived. Re-probe ungated to tell an undecodable codec (AE
   // refuses the file) from a file whose atom tree we simply could not read,
   // so the error names the right problem.
@@ -1745,8 +1745,8 @@ export function _probeFbx(fp: ProbeStream): MediaInfo {
     width: 1920,
     height: 1080,
     duration: 30.0,
-    frame_rate: 30.0,
-    has_alpha: true,
+    frameRate: 30.0,
+    hasAlpha: true,
     depth: _colorDepth(true, 8),
   });
 }
@@ -1843,7 +1843,7 @@ export function _probeMgjson(fp: ProbeStream): MediaInfo {
       }
     }
   }
-  if (!times.length) return new MediaInfo({ frame_rate: 30.0 });
+  if (!times.length) return new MediaInfo({ frameRate: 30.0 });
   // Ordering a naive and an aware datetime raises, as max()/min() do.
   if (times.some((x) => x.aware !== times[0].aware)) {
     throw new TypeError_("can't compare offset-naive and offset-aware datetimes");
@@ -1851,7 +1851,7 @@ export function _probeMgjson(fp: ProbeStream): MediaInfo {
   const us = times.map((x) => x.us);
   const span = (max(us) - min(us)) / 1e6;
   // AE imports mgjson at a fixed 30 fps and reports the span plus one frame.
-  return new MediaInfo({ duration: span + 1.0 / 30.0, frame_rate: 30.0 });
+  return new MediaInfo({ duration: span + 1.0 / 30.0, frameRate: 30.0 });
 }
 
 // ---------------------------------------------------------------------------
@@ -1944,7 +1944,7 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
   // amount of leading garbage escapes the search.
   const window = fp.read(65536);
   const offset = _findMp3Frame(window);
-  if (offset < 0) return new MediaInfo({ has_audio: true });
+  if (offset < 0) return new MediaInfo({ hasAudio: true });
   audioStart += offset;
   // Frame header (4) + max side info (32) + a Xing or VBRI tag; VBRI's frame
   // count is the furthest field, ending 54 bytes into the frame.
@@ -1983,7 +1983,7 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
     const frameSize = _mp3FrameSize(h);
     duration = (floordiv(fileSize - audioStart, frameSize) * spf) / sr;
   }
-  return new MediaInfo({ duration, has_audio: true, audio_sample_rate: sr });
+  return new MediaInfo({ duration, hasAudio: true, audioSampleRate: sr });
 }
 
 // ---------------------------------------------------------------------------
@@ -2053,7 +2053,7 @@ export function _probeAac(fp: ProbeStream): MediaInfo {
     }
     pos += 1;
   }
-  if (!found) return new MediaInfo({ has_audio: true });
+  if (!found) return new MediaInfo({ hasAudio: true });
   const srI = (window[pos + 2] >> 2) & 0xf;
   const sr = srI < _AAC_SR.length ? _AAC_SR[srI] : 0;
   // Walk the stream header-to-header, seeking over the audio payloads so
@@ -2069,7 +2069,7 @@ export function _probeAac(fp: ProbeStream): MediaInfo {
     fp.seek(frameLen - 7, SEEK_CUR);
   }
   const duration = sr ? totalSamples / sr : 0.0;
-  return new MediaInfo({ duration, has_audio: true, audio_sample_rate: sr });
+  return new MediaInfo({ duration, hasAudio: true, audioSampleRate: sr });
 }
 
 // ---------------------------------------------------------------------------
@@ -2124,8 +2124,8 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
     width,
     height,
     duration,
-    frame_rate: frameRate,
-    has_alpha: true,
+    frameRate: frameRate,
+    hasAlpha: true,
     depth: _colorDepth(true, 8),
   });
 }
@@ -2257,9 +2257,9 @@ export function _probeMpeg(fp: ProbeStream): MediaInfo {
     width,
     height,
     duration,
-    frame_rate: fps,
-    has_audio: hasAudio,
-    pixel_aspect: pixelAspect,
+    frameRate: fps,
+    hasAudio: hasAudio,
+    pixelAspect: pixelAspect,
     depth: _colorDepth(false, 8),
   });
 }
@@ -2371,7 +2371,7 @@ export const _VECTOR_DEPTH = _colorDepth(true, 8);
 
 export function _probePdf(fp: ProbeStream): MediaInfo {
   const m = _MEDIABOX_RE.exec(_latin1(fp.read()));
-  if (m == null) return new MediaInfo({ has_alpha: true, depth: _VECTOR_DEPTH });
+  if (m == null) return new MediaInfo({ hasAlpha: true, depth: _VECTOR_DEPTH });
   const x0 = float(m[1]);
   const y0 = float(m[2]);
   const x1 = float(m[3]);
@@ -2379,7 +2379,7 @@ export function _probePdf(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width: round(x1 - x0),
     height: round(y1 - y0),
-    has_alpha: true,
+    hasAlpha: true,
     depth: _VECTOR_DEPTH,
   });
 }
@@ -2412,7 +2412,7 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
       break;
     }
   }
-  return new MediaInfo({ width, height, has_alpha: true, depth: _VECTOR_DEPTH });
+  return new MediaInfo({ width, height, hasAlpha: true, depth: _VECTOR_DEPTH });
 }
 
 /** AI/EPS/PDF dimensions: PDF uses /MediaBox, EPS/PostScript %%BoundingBox. */
@@ -2567,15 +2567,15 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
     width,
     height,
     duration,
-    frame_rate: frameRate,
-    has_audio: hasAudio,
-    audio_sample_rate: audioSampleRate,
-    pixel_aspect: pixelAspect,
+    frameRate: frameRate,
+    hasAudio: hasAudio,
+    audioSampleRate: audioSampleRate,
+    pixelAspect: pixelAspect,
     depth: width ? _colorDepth(false, 8) : 0,
   });
 }
 
-/** `_color_depth` for a file of `bit_depth` bits per channel: AE decodes anything deeper than 8 bits at 16 (AE 2026: 10- and 12-bit DPX are 48). */
+/** `_colorDepth` for a file of `bit_depth` bits per channel: AE decodes anything deeper than 8 bits at 16 (AE 2026: 10- and 12-bit DPX are 48). */
 export function _deepColorDepth(hasAlpha: boolean, bitDepth: number): number {
   return _colorDepth(hasAlpha, bitDepth <= 8 ? 8 : 16);
 }
@@ -2616,8 +2616,8 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
     return new MediaInfo({
       width,
       height,
-      bit_depth: bitDepth,
-      has_alpha: hasAlpha,
+      bitDepth: bitDepth,
+      hasAlpha: hasAlpha,
       depth: _deepColorDepth(hasAlpha, bitDepth),
     });
   }
@@ -2645,8 +2645,8 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
     return new MediaInfo({
       width,
       height,
-      bit_depth: bitDepth,
-      has_alpha: hasAlpha,
+      bitDepth: bitDepth,
+      hasAlpha: hasAlpha,
       depth: _deepColorDepth(hasAlpha, bitDepth),
     });
   }
@@ -2716,8 +2716,8 @@ export function _probeHeif(fp: ProbeStream): MediaInfo {
   return new MediaInfo({
     width,
     height,
-    bit_depth: bitDepth,
-    has_alpha: hasAlpha,
+    bitDepth: bitDepth,
+    hasAlpha: hasAlpha,
     depth: _deepColorDepth(hasAlpha, bitDepth),
   });
 }

@@ -147,7 +147,7 @@ export const _TXT = PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT;
 export const _SCALE_PERCENT = 100.0;
 
 // AE's factory Character/Paragraph panel values, used when the preference
-// file is unavailable (a project parsed without an `ae_preferences_dir`).
+// file is unavailable (a project parsed without an `aePreferencesDir`).
 export const _FACTORY_CHAR_STYLE = {
   font: "MyriadPro-Regular",
   font_size: 36.0,
@@ -447,7 +447,7 @@ export function defaultSyntheticOutPoint(preferences: Preferences): number | nul
  * ```ts
  * import { parse, PREFType } from "@bevyl-ai/ts-aep";
  *
- * const app = parse("project.aep", { ae_preferences_dir: "..." });
+ * const app = parse("project.aep", { aePreferencesDir: "..." });
  * const fps = app.preferences.getPrefAsNumber(
  *   "Import Options Preference Section",
  *   "Import Options Default Sequence FPS",
@@ -457,12 +457,12 @@ export function defaultSyntheticOutPoint(preferences: Preferences): number | nul
 
  */
 export class Preferences {
-  declare _prefs_dir: Path | null;
+  declare _prefsDir: Path | null;
   declare _files: Map<PREFType, PrefsFile | null>;
   declare _overrides: Map<string, PrefValue | typeof _DELETED>;
 
   constructor(prefsDir: PathLike | null = null) {
-    this._prefs_dir = prefsDir != null ? new Path(prefsDir) : null;
+    this._prefsDir = prefsDir != null ? new Path(prefsDir) : null;
     this._files = new Map();
     this._overrides = new Map();
   }
@@ -470,8 +470,8 @@ export class Preferences {
   /** Lazily parse the preference file for `pref_type` (None if absent). */
   _file(prefType: PREFType): PrefsFile | null {
     if (!this._files.has(prefType)) {
-      const path = this._prefs_dir != null ? findPrefsFile(this._prefs_dir, prefType) : null;
-      this._files.set(prefType, path ? PrefsFile.from_path(path) : null);
+      const path = this._prefsDir != null ? findPrefsFile(this._prefsDir, prefType) : null;
+      this._files.set(prefType, path ? PrefsFile.fromPath(path) : null);
     }
     return getitem(this._files, prefType);
   }
@@ -479,7 +479,7 @@ export class Preferences {
   _raw(sectionName: string, keyName: string, prefType: PREFType): string | null {
     const prefsFile = this._file(prefType);
     if (prefsFile == null) return null;
-    return prefsFile.get_raw(sectionName, keyName);
+    return prefsFile.getRaw(sectionName, keyName);
   }
 
   /**
@@ -505,7 +505,7 @@ export class Preferences {
 
   _missing(sectionName: string, keyName: string, prefType: PREFType): KeyError {
     return new KeyError(
-      `no preference ${repr(keyName)} in section ${repr(sectionName)} (${PREFType.name_of(PREFType.of(prefType))})`,
+      `no preference ${repr(keyName)} in section ${repr(sectionName)} (${PREFType.nameOf(PREFType.of(prefType))})`,
     );
   }
 
@@ -717,9 +717,9 @@ export class Preferences {
    * File layer only - `set_pref_as_*` overrides are not consulted
    * (binary blobs cannot be expressed through the typed setters).
    */
-  _get_bytes(sectionName: string, keyName: string, prefType: PREFType): Uint8Array | null {
+  _getBytes(sectionName: string, keyName: string, prefType: PREFType): Uint8Array | null {
     const prefsFile = this._file(prefType);
-    const raw = prefsFile ? prefsFile.get_raw(sectionName, keyName) : null;
+    const raw = prefsFile ? prefsFile.getRaw(sectionName, keyName) : null;
     return raw != null ? parseHexValue(raw) : null;
   }
 

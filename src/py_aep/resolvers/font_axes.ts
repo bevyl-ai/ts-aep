@@ -16,24 +16,24 @@ export class FontDesignAxis {
   /** The axis display name from the font's name table (e.g. `Weight`). */
   readonly name: string;
 
-  readonly min_value: number;
-  readonly default_value: number;
-  readonly max_value: number;
+  readonly minValue: number;
+  readonly defaultValue: number;
+  readonly maxValue: number;
 
   constructor(tag: string, name: string, minValue: number, defaultValue: number, maxValue: number) {
     this.tag = tag;
     this.name = name;
-    this.min_value = minValue;
-    this.default_value = defaultValue;
-    this.max_value = maxValue;
+    this.minValue = minValue;
+    this.defaultValue = defaultValue;
+    this.maxValue = maxValue;
   }
 
   *[Symbol.iterator](): Generator<string | number> {
     yield this.tag;
     yield this.name;
-    yield this.min_value;
-    yield this.default_value;
-    yield this.max_value;
+    yield this.minValue;
+    yield this.defaultValue;
+    yield this.maxValue;
   }
 }
 

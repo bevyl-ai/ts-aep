@@ -47,9 +47,9 @@ function _positionFrom(project: Project): Property {
   return prop;
 }
 
-/** Stored (sub-frame) keyframe times, which `frame_time` would round. */
+/** Stored (sub-frame) keyframe times, which `frameTime` would round. */
 function _times(prop: Property): number[] {
-  return prop.keyframes.map((kf) => kf._ldat_item.time_units);
+  return prop.keyframes.map((kf) => kf._ldatItem.time_units);
 }
 
 describe("TestRoundtripRovingRetimesToAEValues", () => {
@@ -59,7 +59,7 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
     const prop = _position("keyframe_roving.aep");
     expect(pyEq(prop.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
     const expected = _times(prop);
-    prop._redistribute_roving_keyframes();
+    prop._redistributeRovingKeyframes();
     expect(pyEq(_times(prop), expected)).toBe(true);
   });
 
@@ -67,7 +67,7 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
     const prop = _position("keyframe_roving.aep");
     const expected = _times(prop);
     for (const index of [1, 2]) {
-      prop.keyframes[index]._ldat_item.time_units = 1234 * index;
+      prop.keyframes[index]._ldatItem.time_units = 1234 * index;
     }
     // Touching one member re-times the whole run it belongs to.
     prop.keyframes[1].roving = true;
@@ -154,7 +154,7 @@ describe("TestRoundtripRovingTriggers", () => {
   test("test_roved_times_are_not_whole_frames", () => {
     const prop = _position("keyframe_roving.aep");
     prop.keyframes[3].frameTime = 199;
-    const unitsPerFrame = frameGrid(prop.keyframes[0]._frame_rate)[1];
+    const unitsPerFrame = frameGrid(prop.keyframes[0]._frameRate)[1];
     // A whole-frame-only implementation could not produce a remainder.
     pyAssert(
       _times(prop).slice(1, 3).some((time) => mod(time, unitsPerFrame) !== 0),
@@ -223,7 +223,7 @@ describe("TestRoundtripRovingPersistence", () => {
   /**
    * A re-timed roved keyframe survives `Project.save()` -> re-parse.
    *
-   * `_redistribute_roving_keyframes` writes straight to `_ldat_item.timeUnits`
+   * `_redistributeRovingKeyframes` writes straight to `_ldat_item.timeUnits`
    * (`Keyframe.frameTime` would quantise a sub-frame roved tick to a whole
    * frame, per its own docstring), so this is the check that the raw value
    * actually round-trips through the binary writer, not just through the
@@ -239,7 +239,7 @@ describe("TestRoundtripRovingPersistence", () => {
     // test_rederived_from_clobbered_times, so the saved value is
     // provably the model's own answer and not just the untouched byte
     // AE originally wrote.
-    prop.keyframes[1]._ldat_item.time_units = 4321;
+    prop.keyframes[1]._ldatItem.time_units = 4321;
     prop.keyframes[1].roving = true;
     const inMemory = _times(prop);
 
@@ -261,9 +261,9 @@ describe("TestRoundtripRovingPersistence", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("keyframe_bounce_pattern.aep"));
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     pyAssert(prop != null);
-    const beforeTimes = prop.keyframes.map((kf) => kf._ldat_item.time_units);
+    const beforeTimes = prop.keyframes.map((kf) => kf._ldatItem.time_units);
 
-    prop.keyframes[3]._ldat_item.roving = true;
+    prop.keyframes[3]._ldatItem.roving = true;
 
     const out = tmpPath.div("keyframe_bounce_pattern_saved.aep");
     project.save(out);
@@ -272,7 +272,7 @@ describe("TestRoundtripRovingPersistence", () => {
     const reparsedProp = reparsed.compositions[0].layers[0].transform.property("ADBE Opacity");
     pyAssert(reparsedProp != null);
     expect(reparsedProp.keyframes[3].roving).toBe(true);
-    expect(pyEq(reparsedProp.keyframes.map((kf) => kf._ldat_item.time_units), beforeTimes)).toBe(true);
+    expect(pyEq(reparsedProp.keyframes.map((kf) => kf._ldatItem.time_units), beforeTimes)).toBe(true);
   });
 });
 
@@ -299,10 +299,10 @@ describe("TestOrientationInert", () => {
       prop.setValueAtTime(time, [0.0, 0.0, z]);
     }
     const keyframes = prop.keyframes;
-    keyframes[1]._ldat_item.roving = true;
-    const before = keyframes.map((k) => k._ldat_item.time_units);
-    prop._redistribute_roving_keyframes();
-    expect(pyEq(keyframes.map((k) => k._ldat_item.time_units), before)).toBe(true);
+    keyframes[1]._ldatItem.roving = true;
+    const before = keyframes.map((k) => k._ldatItem.time_units);
+    prop._redistributeRovingKeyframes();
+    expect(pyEq(keyframes.map((k) => k._ldatItem.time_units), before)).toBe(true);
     expect(keyframes[1].roving).toBe(true);
   });
 });

@@ -98,7 +98,7 @@ export class PsdLayerStyles {
    * (`iOpa`/`infx`/`brst`). AE enables the container + Blend Options chain
    * (`tdsb` 0x01) for these layers even when no style is enabled.
    */
-  blend_options: boolean;
+  blendOptions: boolean;
 
   constructor(
     values: Map<string, StyleValue>,
@@ -111,7 +111,7 @@ export class PsdLayerStyles {
     this.enabled = enabled;
     this.dropped = dropped;
     this.disabled = disabled;
-    this.blend_options = blendOptions;
+    this.blendOptions = blendOptions;
   }
 
   *[Symbol.iterator](): Generator<Map<string, StyleValue> | readonly string[] | boolean> {
@@ -119,7 +119,7 @@ export class PsdLayerStyles {
     yield this.enabled;
     yield this.dropped;
     yield this.disabled;
-    yield this.blend_options;
+    yield this.blendOptions;
   }
 }
 
@@ -433,18 +433,18 @@ export function _gradient(value: _Value): Gradient {
 }
 
 export class _Param {
-  descriptor_key: string;
+  descriptorKey: string;
   suffix: string;
   convert: (value: _Value) => StyleValue;
 
   constructor(descriptorKey: string, suffix: string, convert: (value: _Value) => StyleValue) {
-    this.descriptor_key = descriptorKey;
+    this.descriptorKey = descriptorKey;
     this.suffix = suffix;
     this.convert = convert;
   }
 
   *[Symbol.iterator](): Generator<string | ((value: _Value) => StyleValue)> {
-    yield this.descriptor_key;
+    yield this.descriptorKey;
     yield this.suffix;
     yield this.convert;
   }
@@ -637,7 +637,7 @@ export function _convertStyle(
 ): Map<string, StyleValue> {
   const values = new Map<string, StyleValue>();
   for (const param of params) {
-    const value = instance.get(param.descriptor_key);
+    const value = instance.get(param.descriptorKey);
     if (value === undefined) continue;
     try {
       values.set(
@@ -725,17 +725,17 @@ export function _blendOptionsValues(
     ["ADBE Global Angle2", angle],
     ["ADBE Global Altitude2", altitude],
   ]);
-  if (blocks.fill_opacity != null) {
-    values.set("ADBE Layer Fill Opacity2", round((blocks.fill_opacity * 100) / 255));
+  if (blocks.fillOpacity != null) {
+    values.set("ADBE Layer Fill Opacity2", round((blocks.fillOpacity * 100) / 255));
   }
-  if (blocks.blend_interior != null) {
-    values.set("ADBE Blend Interior", _bool01(blocks.blend_interior));
+  if (blocks.blendInterior != null) {
+    values.set("ADBE Blend Interior", _bool01(blocks.blendInterior));
   }
   // `brst` lists the channels EXCLUDED from blending as big-endian u4
   // indices (0=R, 1=G, 2=B); an absent/empty block keeps all channels on.
   const restricted = new Set<number>();
-  for (let off = 0, n = blocks.channel_restrictions.length - 3; off < n; off += 4) {
-    restricted.add(struct.unpack(">I", bytes_.slice(blocks.channel_restrictions, off, off + 4))[0]);
+  for (let off = 0, n = blocks.channelRestrictions.length - 3; off < n; off += 4) {
+    restricted.add(struct.unpack(">I", bytes_.slice(blocks.channelRestrictions, off, off + 4))[0]);
   }
   for (const [index, name] of ["R", "G", "B"].entries()) {
     values.set(`ADBE ${name} Channel Blend`, restricted.has(index) ? 0.0 : 1.0);
@@ -760,16 +760,16 @@ export function parseLayerStyles(
    *   its descriptor cannot be decoded (the layer then keeps the plain disabled skeleton; a warning
    *   is emitted so the style loss is visible).
    */
-  const blocks = leaf.style_blocks;
+  const blocks = leaf.styleBlocks;
   if (blocks == null) return null;
   // Photoshop writes an `infx` block (value 0) on every ordinary layer;
   // only a USER deviation activates AE's blend-options chain: a Fill
   // slider away from 100% (`iOpa`), Blend Interior checked (`infx` true)
   // or a channel restriction (`brst`).
   const blendData =
-    blocks.fill_opacity != null ||
-    !!blocks.blend_interior ||
-    blocks.channel_restrictions?.length > 0;
+    blocks.fillOpacity != null ||
+    !!blocks.blendInterior ||
+    blocks.channelRestrictions?.length > 0;
   let descriptor = new Map<string, _Value>();
   if (blocks.effects != null) {
     try {
@@ -834,7 +834,7 @@ export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
    * `merged_styles_bounds`). An undecodable descriptor counts as styled
    * (the conservative answer).
    */
-  const blocks = node.style_blocks;
+  const blocks = node.styleBlocks;
   if (blocks == null || blocks.effects == null) return false;
   let descriptor: Map<string, _Value>;
   try {
@@ -1001,7 +1001,7 @@ export function mergedStylesBounds(node: PsdLayer, globalAngle: number): _Box {
    *   are not known, or its styles cannot be decoded.
    */
   const bounds = node.bounds;
-  const blocks = node.style_blocks;
+  const blocks = node.styleBlocks;
   if (blocks == null || blocks.effects == null) return bounds;
   let descriptor: Map<string, _Value>;
   try {

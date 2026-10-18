@@ -147,7 +147,7 @@ export function extractLeafChunksTyped(
 ): [Map<string, Uint8Array>, Map<string, Chunk>] {
   // `with open(file_path, "rb") as f:` - the file is read whole, then parsed
   // from memory (same pattern as compare.ts / inspect.ts).
-  const f = new BytesIO(filePath.read_bytes());
+  const f = new BytesIO(filePath.readBytes());
   const [rifx, _xmp] = readAep(f);
   const result = new Map<string, Uint8Array>();
   const typed = new Map<string, Chunk>();

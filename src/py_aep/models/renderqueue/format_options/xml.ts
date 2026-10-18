@@ -85,12 +85,12 @@ export function _dictItems(args: DictSource[]): Iterable<[string, string]> {
 /** Descriptor for XML enum parameters (read/write). */
 export class _EnumParam {
   declare _key: string;
-  declare _enum_cls: EnumHelpers<number>;
+  declare _enumCls: EnumHelpers<number>;
   declare _name: string;
 
   constructor(key: string, enumCls: EnumHelpers<number>) {
     this._key = key;
-    this._enum_cls = enumCls;
+    this._enumCls = enumCls;
   }
 
   __set_name__(owner: Function, name: string): void {
@@ -99,11 +99,11 @@ export class _EnumParam {
 
   __get__(obj: XmlFormatOptions | null, objtype?: Function | null): number | null | this {
     if (obj == null) return this;
-    return obj._enum_param(this._key, this._enum_cls);
+    return obj._enumParam(this._key, this._enumCls);
   }
 
   __set__(obj: XmlFormatOptions, value: number | null): void {
-    obj._set_enum_param(this._key, value, this._enum_cls);
+    obj._setEnumParam(this._key, value, this._enumCls);
   }
 }
 
@@ -141,9 +141,9 @@ export class _ScalarParam {
   __set__(obj: XmlFormatOptions, value: number | null): void {
     if (value == null) return;
     validateInt(value);
-    obj._check_param_rule(this._key, value);
-    obj._set_param(this._key, str(value));
-    obj._clamp_after_param(this._key);
+    obj._checkParamRule(this._key, value);
+    obj._setParam(this._key, str(value));
+    obj._clampAfterParam(this._key);
   }
 }
 
@@ -193,7 +193,7 @@ export function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): num
     if (!(e instanceof ValueError)) throw e;
     return null;
   }
-  return enumCls.of_or_null(rawValue) ?? rawValue;
+  return enumCls.ofOrNull(rawValue) ?? rawValue;
 }
 
 /**
@@ -215,14 +215,14 @@ export class ParamsDict extends Map<string, string> {
 
   set(key: string, value: string): this {
     super.set(key, value);
-    if (this._owner != null) this._owner._on_param_changed(key, value);
+    if (this._owner != null) this._owner._onParamChanged(key, value);
     return this;
   }
 
   delete(key: string): boolean {
     if (!super.has(key)) throw new KeyError(repr(key));
     super.delete(key);
-    if (this._owner != null) this._owner._on_param_removed(key);
+    if (this._owner != null) this._owner._onParamRemoved(key);
     return true;
   }
 
@@ -254,7 +254,7 @@ export class ParamsDict extends Map<string, string> {
     const key = keys[keys.length - 1];
     const value = getitem(this, key);
     super.delete(key);
-    if (this._owner != null) this._owner._on_param_removed(key);
+    if (this._owner != null) this._owner._onParamRemoved(key);
     return [key, value];
   }
 
@@ -313,10 +313,10 @@ export class XmlFormatOptions extends FormatOptionsBase {
    */
   declare params: ParamsDict;
   declare _body: RoptChunk;
-  declare _xml_root: ETElement | null;
-  declare _xml_header: Uint8Array | null;
-  declare _val_elements: Map<string, ETElement>;
-  declare _param_elements: Map<string, ETElement>;
+  declare _xmlRoot: ETElement | null;
+  declare _xmlHeader: Uint8Array | null;
+  declare _valElements: Map<string, ETElement>;
+  declare _paramElements: Map<string, ETElement>;
 
   constructor(kw: { _body: RoptChunk }) {
     super();
@@ -324,20 +324,20 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._body = _body;
 
     const raw = _body.data;
-    this._xml_root = null;
-    this._xml_header = null;
-    this._val_elements = new Map();
-    this._param_elements = new Map();
+    this._xmlRoot = null;
+    this._xmlHeader = null;
+    this._valElements = new Map();
+    this._paramElements = new Map();
     this.params = new ParamsDict();
     this.params._owner = null;
     const xmlStart = bytes_.find(raw, b("<?xml"));
     if (xmlStart >= 0) {
-      this._xml_header = raw.slice(0, xmlStart);
+      this._xmlHeader = raw.slice(0, xmlStart);
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
-      this._xml_root = ET.fromstring(xmlText);
-      const [data, valElements, paramElements] = _extractParams(this._xml_root);
-      this._val_elements = valElements;
-      this._param_elements = paramElements;
+      this._xmlRoot = ET.fromstring(xmlText);
+      const [data, valElements, paramElements] = _extractParams(this._xmlRoot);
+      this._valElements = valElements;
+      this._paramElements = paramElements;
       this.params.update(data);
     }
     this.params._owner = this;
@@ -353,24 +353,24 @@ export class XmlFormatOptions extends FormatOptionsBase {
   // -- write helpers -----------------------------------------------------
 
   /** Update a parameter in the XML tree and sync to the raw body. */
-  _set_param(key: string, strValue: string): void {
+  _setParam(key: string, strValue: string): void {
     this.params.set(key, strValue);
   }
 
   /** Sync a param change to the XML tree and raw body. */
-  _on_param_changed(key: string, strValue: string): void {
+  _onParamChanged(key: string, strValue: string): void {
     // Every `params` mutation funnels through here by design, so this is
     // where a detached wrapper's raw-dict writes are caught - `params`
     // is a `__setitem__` surface, which `__setattr__` cannot see.
-    this._check_attached();
-    if (this._xml_root == null) return;
-    const valElem = this._val_elements.get(key);
+    this._checkAttached();
+    if (this._xmlRoot == null) return;
+    const valElem = this._valElements.get(key);
     if (valElem != null) {
       valElem.text = strValue;
-      this._sync_xml();
+      this._syncXml();
       return;
     }
-    const paramElem = this._param_elements.get(key);
+    const paramElem = this._paramElements.get(key);
     if (paramElem != null) {
       // An existing but UNSET param: restore its value in place rather
       // than appending a duplicate element. AE writes `ParamValue` as
@@ -381,16 +381,16 @@ export class XmlFormatOptions extends FormatOptionsBase {
       val.text = strValue;
       val.tail = paramElem.text;
       paramElem.insert(0, val);
-      this._val_elements.set(key, val);
+      this._valElements.set(key, val);
     } else {
-      const ep = ET.SubElement(this._xml_root, "ExporterParam");
+      const ep = ET.SubElement(this._xmlRoot, "ExporterParam");
       ET.SubElement(ep, "ParamIdentifier").text = key;
       const val = ET.SubElement(ep, "ParamValue");
       val.text = strValue;
-      this._val_elements.set(key, val);
-      this._param_elements.set(key, ep);
+      this._valElements.set(key, val);
+      this._paramElements.set(key, ep);
     }
-    this._sync_xml();
+    this._syncXml();
   }
 
   /**
@@ -403,19 +403,19 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * either way), so only a raw-XML comparison against an AE-saved
    * `Baseline` module distinguishes them.
    */
-  _on_param_removed(key: string): void {
-    this._check_attached();
-    if (this._xml_root == null) return;
-    this._val_elements.delete(key);
-    const paramElem = this._param_elements.get(key);
+  _onParamRemoved(key: string): void {
+    this._checkAttached();
+    if (this._xmlRoot == null) return;
+    this._valElements.delete(key);
+    const paramElem = this._paramElements.get(key);
     if (paramElem == null) return;
     const val = paramElem.find("ParamValue");
     if (val != null) paramElem.remove(val);
-    this._sync_xml();
+    this._syncXml();
   }
 
   /** Set an Adobe parameter from an enum or int value. */
-  _set_enum_param(key: string, value: number | null, enumCls: EnumHelpers<number> | null = null): void {
+  _setEnumParam(key: string, value: number | null, enumCls: EnumHelpers<number> | null = null): void {
     if (value == null) return;
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral float such as 2.0 is accepted where Python raises TypeError.
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
@@ -426,7 +426,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     if (enumCls != null && !enumCls.has(intValue)) {
       const members = enumCls
         .members()
-        .map((m: number) => `${enumCls.name_of(m)} (${m})`)
+        .map((m: number) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
         `Invalid value ${repr(value)} for ${repr(key)}. ` +
@@ -434,23 +434,23 @@ export class XmlFormatOptions extends FormatOptionsBase {
       );
     }
     const checked = enumCls != null ? enumCls.of(intValue) : intValue;
-    this._check_param_rule(key, checked);
-    this._set_param(key, str(intValue));
+    this._checkParamRule(key, checked);
+    this._setParam(key, str(intValue));
     // NOTE: Rouu.videoCodec is NOT synced here - it holds a constant
     // per-output-plugin handler tag ('DOVT' for QuickTime, 'CTXF' for
     // AVI/H.264), not the codec 4cc; every corpus sample confirms it
     // never varies with the selected codec.
-    this._clamp_after_param(key);
+    this._clampAfterParam(key);
   }
 
   /**
    * The owning output module. A format options object always belongs
    * to one; a missing back-reference is a wiring bug, not a permissive
    * case. (Detachment is a separate condition, caught by
-   * `_check_attached` on every write path.)
+   * `_checkAttached` on every write path.)
    */
-  _require_om(): OutputModule {
-    const om = this._parent_om;
+  _requireOm(): OutputModule {
+    const om = this._parentOm;
     if (om == null) {
       // Explicit raise (not assert) so the wiring bug stays loud
       // under `python -O` too.
@@ -464,17 +464,17 @@ export class XmlFormatOptions extends FormatOptionsBase {
    *
    * Params outside `_PARAM_RULE_KEYS` are not format-gated.
    */
-  _check_param_rule(paramKey: string, value: number): void {
+  _checkParamRule(paramKey: string, value: number): void {
     const ruleKey = _PARAM_RULE_KEYS.get(paramKey) ?? null;
     if (ruleKey == null) return;
-    this._require_om()._check_format_rule(ruleKey, value);
+    this._requireOm()._checkFormatRule(ruleKey, value);
   }
 
   /** Re-resolve dependent settings after a context param write. */
-  _clamp_after_param(paramKey: string): void {
+  _clampAfterParam(paramKey: string): void {
     const ruleKey = _PARAM_RULE_KEYS.get(paramKey) ?? null;
     if (ruleKey == null) return;
-    this._require_om()._apply_singleton_clamps(CLAMP_DEPENDENTS.get(ruleKey) ?? []);
+    this._requireOm()._applySingletonClamps(CLAMP_DEPENDENTS.get(ruleKey) ?? []);
   }
 
   /**
@@ -497,16 +497,16 @@ export class XmlFormatOptions extends FormatOptionsBase {
    * only the bytes differ from AE's. Parsing and saving without a
    * write never calls this, so round-trip idempotency is unaffected.
    */
-  _sync_xml(): void {
-    if (this._xml_root == null || this._xml_header == null) return;
-    const text0 = ET.tostring(this._xml_root, "unicode");
+  _syncXml(): void {
+    if (this._xmlRoot == null || this._xmlHeader == null) return;
+    const text0 = ET.tostring(this._xmlRoot, "unicode");
     // `ET` writes `<Foo a="1" />`; AE writes `<Foo a="1"/>`.
     const text1 = text0.replaceAll(" />", "/>");
     // `ET` self-closes every empty element; AE only does so when the
     // element has attributes, and expands the attribute-less ones.
     const text = text1.replace(_EMPTY_ELEMENT_RE, "<$1></$1>");
     const xmlBytes = concat(_XML_DECLARATION, encode(text, "utf-8"), _XML_TERMINATOR);
-    const body = new Uint8Array(concat(this._xml_header, xmlBytes));
+    const body = new Uint8Array(concat(this._xmlHeader, xmlBytes));
     // Back-patch the two self-describing lengths AE honours (a stale one
     // silently truncates the XML). These stay here rather than becoming
     // an `XmlRoptChunk` in `binary/render_chunks.py` alongside the other
@@ -527,7 +527,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
    *
    * Returns `null` when the param is absent or non-numeric.
    */
-  _enum_param(key: string, enumCls: EnumHelpers<number>): number | null {
+  _enumParam(key: string, enumCls: EnumHelpers<number>): number | null {
     const raw = dictGet(this.params, key, "");
     if (!raw) return null;
     return _tryEnumOrInt(enumCls, raw);
@@ -576,7 +576,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     _validateNumber({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
     const ticks = round(_ADOBE_TICKS_PER_SECOND / value);
     // BigInt keeps Python's exact int spelling for ticks >= 1e21.
-    this._set_param("ADBEVideoFPS", BigInt(ticks).toString());
+    this._setParam("ADBEVideoFPS", BigInt(ticks).toString());
   }
 
   /**
@@ -645,7 +645,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
       this.params.pop("ADBEVideoMPEGProfile", "");
       return;
     }
-    this._set_param("ADBEVideoMPEGProfile", str(int(value)));
+    this._setParam("ADBEVideoMPEGProfile", str(int(value)));
   }
 
   /**
@@ -696,7 +696,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
 
 // Descriptors assigned in the class body above, installed on the prototype
 // in the Python class-body order (`__set_name__` runs inside `descriptor`).
-descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "format_code", { read_only: true }));
+descriptor(XmlFormatOptions, "formatCode", new ChunkField("_body", "format_code", { readOnly: true }));
 descriptor(XmlFormatOptions, "videoCodec", new _EnumParam("ADBEVideoCodec", VideoCodec));
 descriptor(XmlFormatOptions, "audioCodec", new _EnumParam("ADBEAudioCodec", AudioCodec));
 descriptor(XmlFormatOptions, "mpegAudioFormat", new _EnumParam("ADBEMPEGAudioFormat", MPEGAudioFormat));

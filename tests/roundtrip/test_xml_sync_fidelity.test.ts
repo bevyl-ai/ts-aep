@@ -3,7 +3,7 @@
  *
  * The `Ropt` header restates the body's own sizes and **After Effects honours
  * them**: it reads exactly `len(body)` bytes from offset 6 and discards the
- * rest. `_sync_xml` used to copy the header verbatim while re-serializing a
+ * rest. `_syncXml` used to copy the header verbatim while re-serializing a
  * longer XML, so AE silently truncated the block mid-element on open and
  * re-saved the corruption - no error, no exception (probed on AE 26.3: an
  * 87-byte-longer body was cut back to the stale length, losing the closing
@@ -71,7 +71,7 @@ describe("TestNoOpSyncIsIdentity", () => {
       expect(opts instanceof XmlFormatOptions).toBe(true);
       expect(opts.formatCode).toBe(formatCode);
       const before = opts._body.data;
-      opts._sync_xml(); // no semantic change whatsoever
+      opts._syncXml(); // no semantic change whatsoever
       expect(pyEq(opts._body.data, before)).toBe(true);
     });
   }
@@ -82,7 +82,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     const before = len(opts._body.data);
-    opts._sync_xml();
+    opts._syncXml();
     const body = opts._body.data;
     expect(len(body)).toBe(before);
     expect(_headerLengths(body)[0]).toBe(len(body));
@@ -94,8 +94,8 @@ describe("TestNoOpSyncIsIdentity", () => {
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     const body = opts._body.data;
-    expect(opts._xml_header != null).toBe(true);
-    const xmlLen = len(body) - len(opts._xml_header);
+    expect(opts._xmlHeader != null).toBe(true);
+    const xmlLen = len(body) - len(opts._xmlHeader);
     const [bodyLenField, xmlLenField] = _headerLengths(body);
     expect(bodyLenField).toBe(len(body));
     expect(xmlLenField).toBe(xmlLen - 2);
@@ -111,8 +111,8 @@ describe("TestWriteKeepsHeaderConsistent", () => {
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts.params.set("ADBEPyAepFidelityProbe", "1234567890");
     const body = opts._body.data;
-    expect(opts._xml_header != null).toBe(true);
-    const xmlLen = len(body) - len(opts._xml_header);
+    expect(opts._xmlHeader != null).toBe(true);
+    const xmlLen = len(body) - len(opts._xmlHeader);
     const [bodyLenField, xmlLenField] = _headerLengths(body);
     expect(bodyLenField).toBe(len(body));
     expect(xmlLenField).toBe(xmlLen - 2);
@@ -150,14 +150,14 @@ describe("TestSerializerMatchesAeStyle", () => {
   test("test_declaration_is_double_quoted", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
-    opts._sync_xml();
+    opts._syncXml();
     expect(bytes_.contains(opts._body.data, b('<?xml version="1.0" encoding="UTF-8"?>'))).toBe(true);
   });
 
   test("test_self_closing_tags_have_no_space", () => {
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
-    opts._sync_xml();
+    opts._syncXml();
     expect(bytes_.contains(opts._body.data, b(" />"))).toBe(false);
     expect(bytes_.contains(opts._body.data, b("/>"))).toBe(true);
   });
@@ -166,7 +166,7 @@ describe("TestSerializerMatchesAeStyle", () => {
     // AE self-closes `<Foo ObjectRef="1"/>` but expands `<ParamName></ParamName>`.
     const [, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
-    opts._sync_xml();
+    opts._syncXml();
     expect(bytes_.contains(opts._body.data, b("<ParamName></ParamName>"))).toBe(true);
     expect(bytes_.contains(opts._body.data, b("<ParamName/>"))).toBe(false);
   });

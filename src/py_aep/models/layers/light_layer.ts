@@ -46,11 +46,11 @@ export function _validateLightType(value: number, obj: LightLayer): void {
  * @see https://ae-scripting.docsforadobe.dev/layer/lightlayer/
  */
 export class LightLayer extends Layer {
-  static _auto_name: string = "Light";
-  static _fov_rad: number = (39.5978 * Math.PI) / 180;
+  static _autoName: string = "Light";
+  static _fovRad: number = (39.5978 * Math.PI) / 180;
   // AE's default 50mm camera: zoom = width / 0.72 exactly
   // (2 * tan(fov/2) rounds to 0.72; AE uses the exact ratio).
-  static _zoom_dividend: number = 0.72;
+  static _zoomDividend: number = 0.72;
 
   static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [
     ...Layer._LIVE_DEFAULTS,
@@ -67,7 +67,7 @@ export class LightLayer extends Layer {
    * at fixed fractions of the comp's default camera zoom rather than any
    * camera's. Measured on AE 2026 for every light type, at 1920x1080,
    * 1440x1620, 2880x810, 810x1440 and a 2:1 pixel aspect. */
-  _default_position(): number[] {
+  _defaultPosition(): number[] {
     const comp = this.containingComp;
     const zoom = defaultCameraZoom(comp.width, comp.pixelAspect);
     return [
@@ -81,33 +81,33 @@ export class LightLayer extends Layer {
   declare lightType: LightType;
 
   /** The ID of the layer used as a light source. `0` if none. */
-  declare _light_source_id: number;
+  declare _lightSourceId: number;
 
   static _new(kw: {
     name: string;
-    layer_id: number;
+    layerId: number;
     duration: number;
-    containing_comp: CompItem;
-    light_type?: number;
-    effect_param_defs?: EffectParamDefs | null;
+    containingComp: CompItem;
+    lightType?: number;
+    effectParamDefs?: EffectParamDefs | null;
   }): LightLayer;
   static _new(...args: never[]): never;
   static _new(kw: {
     name: string;
-    layer_id: number;
+    layerId: number;
     duration: number;
-    containing_comp: CompItem;
-    light_type?: number;
-    effect_param_defs?: EffectParamDefs | null;
+    containingComp: CompItem;
+    lightType?: number;
+    effectParamDefs?: EffectParamDefs | null;
   }): LightLayer {
     // NOTE(port): Python `# type: ignore[override]` is type-only; the `never` overload above keeps Layer._new's signatures uncallable.
     const {
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      light_type = 1,
-      effect_param_defs = null,
+      containingComp: containing_comp,
+      lightType: light_type = 1,
+      effectParamDefs: effect_param_defs = null,
     } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
@@ -129,13 +129,13 @@ export class LightLayer extends Layer {
     return super._new<LightLayer>({
       ldta: ldta,
       name: name,
-      containing_comp: containing_comp,
-      effect_param_defs: effect_param_defs,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs,
     });
   }
 
   /**
-   * The layer used as a light source when `light_type` is
+   * The layer used as a light source when `lightType` is
    * `LightType.ENVIRONMENT`. Returns `null` if no source is assigned.
    * Read / Write.
    *
@@ -149,10 +149,10 @@ export class LightLayer extends Layer {
    * Added in After Effects 24.3.
    */
   get lightSource(): Layer | null {
-    if (this._light_source_id === 0) {
+    if (this._lightSourceId === 0) {
       return null;
     }
-    return this.containingComp.layersById.get(this._light_source_id) ?? null;
+    return this.containingComp.layersById.get(this._lightSourceId) ?? null;
   }
 
   set lightSource(value: Layer | null) {
@@ -185,7 +185,7 @@ export class LightLayer extends Layer {
           "cannot be used as a light source.",
       );
     }
-    this._light_source_id = value.id;
+    this._lightSourceId = value.id;
   }
 }
 
@@ -199,7 +199,7 @@ descriptor(
 
 descriptor(
   LightLayer,
-  "_light_source_id",
+  "_lightSourceId",
   new ChunkField("_ldta", "source_id", {
     transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
     reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),

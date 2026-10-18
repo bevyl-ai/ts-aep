@@ -88,7 +88,7 @@ test.each<[string, string, boolean, [number, number]]>([
   "test_counts[%#]",
   (project: string, target: string, isFolder: boolean, expected: [number, number]) => {
     expect(
-      pyEq(relativePathCounts(project, target, { target_is_folder: isFolder }), expected),
+      pyEq(relativePathCounts(project, target, { targetIsFolder: isFolder }), expected),
     ).toBe(true);
   },
 );
@@ -103,7 +103,7 @@ test.each([
   ["C:\\p\\a.aep", "relative\\b.png"],
 ])("test_no_relative_path[%#]", (project: string, target: string) => {
   expect(
-    pyEq(relativePathCounts(project, target, { target_is_folder: false }), [0, 0]),
+    pyEq(relativePathCounts(project, target, { targetIsFolder: false }), [0, 0]),
   ).toBe(true);
 });
 
@@ -115,11 +115,11 @@ test("test_counts_survive_the_platform_mapping", () => {
     [SHOT + "\\work\\p.aep", SHOT + "\\preview\\x.mov"],
   ];
   for (const [project, target] of pairs) {
-    const host = relativePathCounts(project, target, { target_is_folder: false });
+    const host = relativePathCounts(project, target, { targetIsFolder: false });
     const mapped = relativePathCounts(
       platformPath(project, { windows: false }),
       platformPath(target, { windows: false }),
-      { target_is_folder: false },
+      { targetIsFolder: false },
     );
     expect(pyEq(mapped, host)).toBe(true);
   }

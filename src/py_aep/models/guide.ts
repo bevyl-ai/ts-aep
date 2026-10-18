@@ -42,10 +42,10 @@ export class Guide {
   /** The position type of the guide. Always 0 (pixels). Read / Write. */
   declare positionType: number;
 
-  declare _guide_item: GuideItem;
+  declare _guideItem: GuideItem;
 
   constructor(_guideItem: GuideItem) {
-    this._guide_item = _guideItem;
+    this._guideItem = _guideItem;
   }
 
   /**
@@ -59,10 +59,10 @@ export class Guide {
    * @returns A new `Guide` instance backed by a freshly created `GuideItem`.
    */
   static _new(orientationType: number, position: number): Guide {
-    const orientation = GuideOrientationType.from_binary(orientationType);
+    const orientation = GuideOrientationType.fromBinary(orientationType);
     validateF8(position);
     const item = new GuideItem({
-      orientation_type: GuideOrientationType.to_binary(orientation),
+      orientation_type: GuideOrientationType.toBinary(orientation),
       position_type: 0,
       position,
     });
@@ -83,7 +83,7 @@ descriptor(
   "orientationType",
   ChunkField.enum(
     GuideOrientationType,
-    "_guide_item",
+    "_guideItem",
     "orientation_type",
   ),
 );
@@ -91,11 +91,11 @@ descriptor(
 descriptor(
   Guide,
   "position",
-  new ChunkField("_guide_item", "position", { validate: validateF8 }),
+  new ChunkField("_guideItem", "position", { validate: validateF8 }),
 );
 
 descriptor(
   Guide,
   "positionType",
-  new ChunkField("_guide_item", "position_type"),
+  new ChunkField("_guideItem", "position_type"),
 );

@@ -115,7 +115,7 @@ describe("TestFixedStringTail", () => {
     }
     const second = tmpPath.div("second.aep");
     reparsed.project.save(second);
-    expect(pyEq(second.read_bytes(), first.read_bytes())).toBe(true);
+    expect(pyEq(second.readBytes(), first.readBytes())).toBe(true);
   });
 });
 
@@ -132,7 +132,7 @@ describe("TestTdb4KeyFlagsByte", () => {
   test("test_reading_layers_keeps_the_byte", () => {
     const tmpPath = makeTmpPath();
     const source = SAMPLES.div("models", "property", "effect_point_speed.aep");
-    const data = new Uint8Array(source.read_bytes());
+    const data = new Uint8Array(source.readBytes());
     const targets = _leaves(new Uint8Array(data), b("Layr"))
       .filter(([ctype, body]) => ctype === "tdb4" && data[body + 0x4F] === 1)
       .map(([, body]) => body + 0x4F);
@@ -140,7 +140,7 @@ describe("TestTdb4KeyFlagsByte", () => {
     const target = targets[0];
     data[target] = 0x07;
     const patched = tmpPath.div("patched.aep");
-    patched.write_bytes(new Uint8Array(data));
+    patched.writeBytes(new Uint8Array(data));
     const app = parse(patched);
     const before = createHash("sha1").update(projectBytes(app.project)).digest("hex");
     _readEveryLayer(app.project);
@@ -161,7 +161,7 @@ describe("TestDataFootageSourceCode", () => {
     }
     const out = tmpPath.div("data.aep");
     app.project.save(out);
-    const data = out.read_bytes();
+    const data = out.readBytes();
     // Byte strings compared by their hex spelling (a JS Set holds bytes by identity).
     const codes = new Set(
       _leaves(data)

@@ -103,5 +103,5 @@ test("test_parsed_records_are_kept", () => {
   const project = parseAep(path).project;
   const out = tmpPath.div("same.aep");
   project.save(out);
-  expect(pyEq(out.read_bytes(), path.read_bytes())).toBe(true);
+  expect(pyEq(out.readBytes(), path.readBytes())).toBe(true);
 });

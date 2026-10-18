@@ -117,13 +117,13 @@ export class Application {
 
   declare _head: HeadChunk;
   declare _project: Project;
-  declare _active_viewer: Viewer | null;
+  declare _activeViewer: Viewer | null;
 
-  constructor(kw: { _head: HeadChunk; project: Project; active_viewer?: Viewer | null }) {
-    const { _head, project, active_viewer = null } = kw;
+  constructor(kw: { _head: HeadChunk; project: Project; activeViewer?: Viewer | null }) {
+    const { _head, project, activeViewer: active_viewer = null } = kw;
     this._head = _head;
     this._project = project;
-    this._active_viewer = active_viewer;
+    this._activeViewer = active_viewer;
   }
 
   /**
@@ -133,7 +133,7 @@ export class Application {
    */
   static _new(version: string, aePreferencesDir: Path | null = null, platform: string | null = null): Application {
     const project = Project._new(version, aePreferencesDir, platform);
-    return new this({ _head: project._head, project, active_viewer: null });
+    return new this({ _head: project._head, project, activeViewer: null });
   }
 
   [INSPECT](): string {
@@ -151,12 +151,12 @@ export class Application {
    * are open. Read-only.
    */
   get activeViewer(): Viewer | null {
-    return this._active_viewer;
+    return this._activeViewer;
   }
 
   /**
    * The {@link Preferences} object, providing access to the After Effects
-   * preference files (requires `ae_preferences_dir` to read values from
+   * preference files (requires `aePreferencesDir` to read values from
    * disk; overrides work without it). Read-only.
    */
   get preferences(): Preferences {
@@ -195,7 +195,7 @@ descriptor(
   "version",
   new ChunkField("_head", "version", {
     validate: _validateVersion,
-    post_set: (obj: Application) => obj._head.sync_file_format_version(),
+    postSet: (obj: Application) => obj._head.sync_file_format_version(),
   }),
 );
 

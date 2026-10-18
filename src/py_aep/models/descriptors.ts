@@ -29,7 +29,7 @@ import { validateBool, validateEnum } from "./validators.ts";
 export type ChunkTransform<R = FieldValue> = (value: FieldValue) => R;
 
 /**
- * The names of `O`'s methods that take no arguments (`pre_set` / `post_set`
+ * The names of `O`'s methods that take no arguments (`preSet` / `postSet`
  * hooks); any name when the owner is not known (`O` is `object`).
  */
 export type HookName<O> = object extends O
@@ -57,7 +57,7 @@ type RawField<O, A extends string, F extends string> = F extends keyof ChunkBody
  * define (Python duck typing).
  */
 export interface ChunkOwner {
-  _ensure_materialized?(): void;
+  _ensureMaterialized?(): void;
 }
 
 /** Effect match name → parameter match name → pard field bag. */
@@ -77,12 +77,12 @@ export type ChunkFieldOptions<T, O> = {
    */
   transform?: { read(value: FieldValue): T }["read"] | null;
   reverse?: ((value: NoInfer<T>) => FieldValue) | null;
-  read_only?: boolean;
+  readOnly?: boolean;
   validate?: ((value: NoInfer<T>, obj: NoInfer<O>) => void) | null;
   default?: NoInfer<T>;
-  pre_set?: HookName<NoInfer<O>> | null;
-  post_set?: ((obj: NoInfer<O>) => void) | HookName<NoInfer<O>> | null;
-  min_version?: number | null;
+  preSet?: HookName<NoInfer<O>> | null;
+  postSet?: ((obj: NoInfer<O>) => void) | HookName<NoInfer<O>> | null;
+  minVersion?: number | null;
 };
 
 /**
@@ -95,7 +95,7 @@ type ChunkFieldKw<T, O, Raw> = object extends O
   : Omit<ChunkFieldOptions<T, O>, "transform"> &
       ([Raw] extends [T] ? { transform?: ((value: Raw) => T) | null } : { transform: (value: Raw) => T });
 
-/** `ChunkField.enum` options: `transform` reads the chunk field's real type and defaults to the enum's `from_binary`. */
+/** `ChunkField.enum` options: `transform` reads the chunk field's real type and defaults to the enum's `fromBinary`. */
 type ChunkFieldEnumKw<T, O, Raw> = Omit<ChunkFieldOptions<T, O>, "transform"> & { transform?: ((value: Raw) => T) | null };
 
 export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
@@ -103,7 +103,7 @@ export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 // While a parser runs this is set to False so that `ChunkField.__set__`
 // rejects writes: parsers must not mutate chunk data through descriptors
 // (round-trip idempotency). Parsers cache values via `__dict__` overrides
-// or the private `_cache_value` helpers instead. Outside parsing the
+// or the private `_cacheValue` helpers instead. Outside parsing the
 // default (True) lets end-user writes through.
 export const _materializationAllowed = new ContextVar<boolean>("_materialization_allowed", {
   default: true,
@@ -153,7 +153,7 @@ export function isEnum(x: unknown): x is EnumHelpers<number> {
 /**
  * Return the IntEnum class behind `transform`, if any.
  *
- * Detects a `from_binary` classmethod (via `__self__`) or a direct
+ * Detects a `fromBinary` classmethod (via `__self__`) or a direct
  * enum class reference.
  */
 export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
@@ -226,7 +226,7 @@ export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown
     if (!enumCls.has(key)) {
       const members = enumCls
         .members()
-        .map((m) => `${enumCls.name_of(m)} (${m})`)
+        .map((m) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
         `Invalid value ${repr(value)} for ${repr(publicName)}. ` +
@@ -273,7 +273,7 @@ export class ChunkField<
   declare preSet: string | null;
   declare postSet: ((obj: O) => void) | string | null;
   declare minVersion: number | null;
-  declare _enum_cls: EnumHelpers<number> | null;
+  declare _enumCls: EnumHelpers<number> | null;
   declare publicName: string;
 
   /**
@@ -291,12 +291,12 @@ export class ChunkField<
     const {
       transform = null,
       reverse = null,
-      read_only = false,
+      readOnly: read_only = false,
       validate = null,
       default: default_ = _SENTINEL,
-      pre_set = null,
-      post_set = null,
-      min_version = null,
+      preSet: pre_set = null,
+      postSet: post_set = null,
+      minVersion: min_version = null,
     } = kw;
     this.chunkAttr = chunkAttr;
     this.field = field;
@@ -310,7 +310,7 @@ export class ChunkField<
     this.minVersion = min_version;
     // Derived once so __set__ validates membership without
     // re-inspecting the transform on every write.
-    this._enum_cls = _enumClass(transform);
+    this._enumCls = _enumClass(transform);
   }
 
   __set_name__(owner: Function, name: string): void {
@@ -362,14 +362,14 @@ export class ChunkField<
           `parse-time overrides.`,
       );
     }
-    // Validate BEFORE touching anything. `_ensure_materialized` flips
+    // Validate BEFORE touching anything. `_ensureMaterialized` flips
     // synthetic chunks to real, so a rejected write that reached it
     // would mutate the tree and break the byte-identical round-trip
     // (`parse()` -> `save()`). A field with no backing chunk body must
     // validate too, or its `__dict__` fallback below would accept a
     // value the chunk-backed path rejects.
     if (this.validate) this.validate(value, obj);
-    if (this._enum_cls != null) _validateEnumMember(this._enum_cls, value, this.publicName);
+    if (this._enumCls != null) _validateEnumMember(this._enumCls, value, this.publicName);
     if (this.preSet != null) getattr(obj, this.preSet).call(obj);
     instanceDict(obj).delete(this.publicName);
     let body = getattr(obj, this.chunkAttr);
@@ -379,10 +379,10 @@ export class ChunkField<
     }
     if (pyBool(getattr(body, "synthetic", false))) {
       const owner: ChunkOwner = obj;
-      if (owner._ensure_materialized == null) {
+      if (owner._ensureMaterialized == null) {
         throw new AttributeError(`'${typeName(owner)}' object has no attribute '_ensure_materialized'`);
       }
-      owner._ensure_materialized();
+      owner._ensureMaterialized();
       body = getattr(obj, this.chunkAttr);
     }
     if (this.reverse != null) body[this.field] = this.reverse(value);
@@ -426,14 +426,14 @@ export class ChunkField<
   /**
    * Create a ChunkField for IntEnum-backed fields.
    *
-   * Auto-detects `from_binary`/`to_binary` on the enum class. If
-   * the enum has a `from_binary` classmethod it is used as
+   * Auto-detects `fromBinary`/`toBinary` on the enum class. If
+   * the enum has a `fromBinary` classmethod it is used as
    * `transform`; otherwise the class itself is used. If the enum
-   * has a `to_binary` method it is used as `reverse`; otherwise
+   * has a `toBinary` method it is used as `reverse`; otherwise
    * `int` is used.
    *
    * @param kw - Keyword arguments:
-   * - `allow_out_of_enum_values`: When `true`, a stored value outside the enum reads back raw
+   * - `allowOutOfEnumValues`: When `true`, a stored value outside the enum reads back raw
    *     instead of raising - real `.aep` files hold them (an unlabelled output depth, a format id
    *     from a third-party output plugin) and the binary is trusted. Wrapping the transform hides
    *     the enum class from `_enum_class`, so write-side membership strictness is restored via
@@ -452,7 +452,7 @@ export class ChunkField<
     enumCls: E,
     chunkAttr: A & NoInfer<AttrName<O>>,
     field: F,
-    kw: ChunkFieldEnumKw<EnumValue<E> | Raw, O, RawField<O, A, F>> & { allow_out_of_enum_values: true },
+    kw: ChunkFieldEnumKw<EnumValue<E> | Raw, O, RawField<O, A, F>> & { allowOutOfEnumValues: true },
   ): ChunkField<EnumValue<E> | Raw, O>;
   static enum<
     E extends EnumHelpers<number>,
@@ -463,23 +463,23 @@ export class ChunkField<
     enumCls: E,
     chunkAttr: A & NoInfer<AttrName<O>>,
     field: string & F,
-    kw?: ChunkFieldEnumKw<EnumValue<E>, O, RawField<O, A, F>> & { allow_out_of_enum_values?: false },
+    kw?: ChunkFieldEnumKw<EnumValue<E>, O, RawField<O, A, F>> & { allowOutOfEnumValues?: false },
   ): ChunkField<EnumValue<E>, O>;
   static enum<V extends number, R extends V>(
     enumCls: EnumHelpers<V>,
     chunkAttr: string,
     field: string,
-    kw: { allow_out_of_enum_values?: boolean } & ChunkFieldEnumKw<V, object, R> = {},
+    kw: { allowOutOfEnumValues?: boolean } & ChunkFieldEnumKw<V, object, R> = {},
   ): ChunkField<V> {
-    const { allow_out_of_enum_values = false, ...kwargs } = kw;
-    if (!("transform" in kwargs)) kwargs.transform = boundEnumMethod(enumCls, "from_binary", enumCls);
-    if (!("reverse" in kwargs)) kwargs.reverse = boundEnumMethod(enumCls, "to_binary", int);
+    const { allowOutOfEnumValues: allow_out_of_enum_values = false, ...kwargs } = kw;
+    if (!("transform" in kwargs)) kwargs.transform = boundEnumMethod(enumCls, "fromBinary", enumCls);
+    if (!("reverse" in kwargs)) kwargs.reverse = boundEnumMethod(enumCls, "toBinary", int);
     if (allow_out_of_enum_values) {
       // A stored value outside the enum reads back raw instead of raising;
       // the overloads require the raw field type to fit the declared one.
       const transform = kwargs.transform;
       if (transform != null) kwargs.transform = enumOrRaw(transform);
-      if (!kwargs.read_only && !("validate" in kwargs)) kwargs.validate = validateEnum(enumCls);
+      if (!kwargs.readOnly && !("validate" in kwargs)) kwargs.validate = validateEnum(enumCls);
     }
     return new this(chunkAttr, field, kwargs);
   }

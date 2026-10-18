@@ -55,7 +55,7 @@ test.each(_CORPUS.map((p) => [_relId(p), p]))(
     for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
       for (const om of rqi.outputModules) {
         if (om.formatOptions != null) {
-          expect(om.formatOptions._parent_om).toBe(om);
+          expect(om.formatOptions._parentOm).toBe(om);
         }
       }
     }
@@ -72,11 +72,11 @@ test("test_parent_om_backref_survives_apply_template", () => {
   const om = _om(project);
   const foBefore = om.formatOptions;
   const rqi = asInstance(project.renderQueue, RenderQueue).items[0];
-  om._format_options = parseFormatOptions(rqi._lom.chunks);
-  pyAssert(om._format_options != null);
-  om._format_options._parent_om = om; // what _apply_output_template does
+  om._formatOptions = parseFormatOptions(rqi._lom.chunks);
+  pyAssert(om._formatOptions != null);
+  om._formatOptions._parentOm = om; // what _apply_output_template does
   expect(om.formatOptions).not.toBe(foBefore);
-  expect(om.formatOptions?._parent_om).toBe(om);
+  expect(om.formatOptions?._parentOm).toBe(om);
 });
 
 // -- detachment on rebind ----------------------------------------------------
@@ -121,7 +121,7 @@ test("test_stale_options_reject_field_write", () => {
 
 test("test_stale_xml_options_reject_typed_and_raw_writes", () => {
   // Both surfaces, not just the rules-gated params: `frame_rate` writes
-  // through `_set_param` and `params` is the raw escape hatch, so neither
+  // through `_setParam` and `params` is the raw escape hatch, so neither
   // passes through the format-rule check.
   const project = parseProjectFresh(FORMAT_DIR.div("h.264", "base.aep"));
   const [, stale] = _staleOptions(project);

@@ -68,8 +68,8 @@ export function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): vo
     const pathGroup = _grp(inner.addProperty("ADBE Vector Shape - Group"));
     _leaf(pathGroup, "ADBE Vector Shape").value = new Shape(
       subpath.vertices.map((v) => [v[0] - cx, v[1] - cy]),
-      subpath.in_tangents.map((t) => [...t]),
-      subpath.out_tangents.map((t) => [...t]),
+      subpath.inTangents.map((t) => [...t]),
+      subpath.outTangents.map((t) => [...t]),
       { closed: subpath.closed },
     );
   }
@@ -100,7 +100,7 @@ export function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): vo
 export function _bboxCenter(drawable: SvgDrawable): [number, number] {
   const points: [number, number][] = [];
   for (const sp of drawable.subpaths) {
-    for (const [v, tIn, tOut] of zip(sp.vertices, sp.in_tangents, sp.out_tangents)) {
+    for (const [v, tIn, tOut] of zip(sp.vertices, sp.inTangents, sp.outTangents)) {
       for (const t of [[0.0, 0.0], tIn, tOut]) {
         points.push([v[0] + t[0], v[1] + t[1]]);
       }
@@ -206,7 +206,7 @@ export function _applyPaint(
 export function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void {
   _setOptional(sg, "ADBE Vector Stroke Line Cap", stroke.cap, 1.0);
   _setOptional(sg, "ADBE Vector Stroke Line Join", stroke.join, 1.0);
-  _setOptional(sg, "ADBE Vector Stroke Miter Limit", stroke.miter_limit, 4.0);
+  _setOptional(sg, "ADBE Vector Stroke Miter Limit", stroke.miterLimit, 4.0);
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
  * Image-sequence import details, measured against AE 2026.
  *
- * Alphabetical sequences (`force_alphabetical`), frame-number padding and the
+ * Alphabetical sequences (`forceAlphabetical`), frame-number padding and the
  * duration a sequence's conform rate rewrites. Every expected value is what
  * AE 2026 wrote for the same folder and call.
  */
@@ -22,11 +22,11 @@ const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder"
 
 /** A folder named `shots` holding a copy of one still per name. */
 function _folder(tmpPath: Path, ...names: string[]): Path {
-  const frame = ASSETS.div("image_with_alpha.png").read_bytes();
+  const frame = ASSETS.div("image_with_alpha.png").readBytes();
   const folder = tmpPath.div("shots");
   folder.mkdir();
   for (const name of names) {
-    folder.div(name).write_bytes(frame);
+    folder.div(name).writeBytes(frame);
   }
   return folder;
 }
@@ -50,7 +50,7 @@ function _reparsed(project: Project, item: FootageItem, tmpPath: Path): FootageI
 
 class TestAlphabeticalSequence {
   /**
-   * `force_alphabetical` takes every file of the type in the folder.
+   * `forceAlphabetical` takes every file of the type in the folder.
    *
    * Every .png, case-insensitively by name (n_10 before n_2); x.jpg and the
    * subfolder's file are left out.
@@ -68,7 +68,7 @@ class TestAlphabeticalSequence {
   static _mixed(tmpPath: Path): Path {
     const folder = _folder(tmpPath, ...this.ORDER, "x.jpg");
     folder.div("sub").mkdir();
-    folder.div("sub").div("z.png").write_bytes(folder.div("b.png").read_bytes());
+    folder.div("sub").div("z.png").writeBytes(folder.div("b.png").readBytes());
     return folder;
   }
 }
@@ -140,7 +140,7 @@ describe("TestAlphabeticalSequence", () => {
     const tmpPath = makeTmpPath();
     const folder = TestAlphabeticalSequence._mixed(tmpPath);
     const [, item] = _import(folder.div("a_001.png"), { alphabetical: true });
-    folder.div("zz.png").write_bytes(folder.div("b.png").read_bytes());
+    folder.div("zz.png").writeBytes(folder.div("b.png").readBytes());
     asInstance(item.mainSource, FileSource).reload();
     const source = asInstance(item.mainSource, FileSource);
     expect(pyEq(source.fileNames, [...TestAlphabeticalSequence.ORDER, "zz.png"])).toBe(true);
@@ -230,8 +230,8 @@ class TestAnimatedGifSequence {
   static _gifs(tmpPath: Path, first = "gif.gif"): Path {
     const folder = tmpPath.div("gifs");
     folder.mkdir();
-    folder.div("m_001.gif").write_bytes(ASSETS.div(first).read_bytes());
-    folder.div("m_002.gif").write_bytes(ASSETS.div("gif.gif").read_bytes());
+    folder.div("m_001.gif").writeBytes(ASSETS.div(first).readBytes());
+    folder.div("m_002.gif").writeBytes(ASSETS.div("gif.gif").readBytes());
     return folder.div("m_001.gif");
   }
 }

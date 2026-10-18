@@ -143,7 +143,7 @@ descriptor(
   CineonFormatOptions,
   "fileFormat",
   ChunkField.enum(CineonFileFormat, "_body", "file_format", {
-    allow_out_of_enum_values: true,
+    allowOutOfEnumValues: true,
   }),
 );
 

@@ -71,8 +71,8 @@ export const _validateStretch = _validateNumber({
 
 // The start time is a signed 32-bit count of the layer's timebase ticks.
 export const _validateStartTime = _validateNumber({
-  min: (layer: Layer) => -0x80000000 / layer._layer_timebase(),
-  max: (layer: Layer) => 0x7fffffff / layer._layer_timebase(),
+  min: (layer: Layer) => -0x80000000 / layer._layerTimebase(),
+  max: (layer: Layer) => 0x7fffffff / layer._layerTimebase(),
 });
 
 /** Sentinel value indicating an undefined source id in the binary format. */
@@ -112,7 +112,7 @@ export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
 /** World matrix a child of `parent` is placed in, at comp `time`. */
 export function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
   if (parent == null) return Mat4.identity();
-  return buildWorldMatrix(parent, time, !childIs3d, { as_parent: true });
+  return buildWorldMatrix(parent, time, !childIs3d, { asParent: true });
 }
 
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
@@ -141,18 +141,18 @@ export type LiveDefaultProperty = "ADBE Position" | "ADBE Anchor Point" | "ADBE 
 type LayerNewKw = {
   ldta: LdtaChunk;
   name: string;
-  containing_comp: CompItem;
-  root_tdgp_extra?: Chunk[] | null;
-  effect_param_defs?: EffectParamDefs | null;
+  containingComp: CompItem;
+  rootTdgpExtra?: Chunk[] | null;
+  effectParamDefs?: EffectParamDefs | null;
 };
 
 /** Keyword arguments of the `Layer` constructor. */
 type LayerInitKw = {
   _ldta: LdtaChunk;
   _cmta: CmtaChunk | null;
-  _name_utf8: Utf8Chunk;
-  _layer_list: ListChunk;
-  containing_comp: CompItem;
+  _nameUtf8: Utf8Chunk;
+  _layerList: ListChunk;
+  containingComp: CompItem;
 };
 
 /**
@@ -194,12 +194,12 @@ export class Layer extends PropertyGroup {
   ]);
 
   // The (group, property) match names whose default follows other state,
-  // which `_write_out_moved_defaults` writes once that state moves it.
+  // which `_writeOutMovedDefaults` writes once that state moves it.
   static _LIVE_DEFAULTS: ReadonlyArray<readonly [LiveDefaultGroup, LiveDefaultProperty]> = [
     ["ADBE Transform Group", "ADBE Position"],
   ];
 
-  _comp_centre(): number[] {
+  _compCentre(): number[] {
     const comp = this.containingComp;
     return [comp.width / 2.0, comp.height / 2.0, 0.0];
   }
@@ -209,8 +209,8 @@ export class Layer extends PropertyGroup {
    * where it was when the comp is resized, and AE writes it: measured on
    * AE 2026 for a solid, a text, a shape and a null layer.
    */
-  _default_position(): number[] {
-    return this._comp_centre();
+  _defaultPosition(): number[] {
+    return this._compCentre();
   }
 
   /**
@@ -242,7 +242,7 @@ export class Layer extends PropertyGroup {
   declare nullLayer: boolean;
 
   /** The ID of the layer's parent layer. `0` if the layer has no parent. */
-  declare _parent_id: number;
+  declare _parentId: number;
 
   /**
    * When `true`, the layer is "shy", meaning that it is hidden in the
@@ -260,12 +260,12 @@ export class Layer extends PropertyGroup {
    */
   declare autoOrient: AutoOrientType;
 
-  declare _essential_property_uuids: string[] | null;
+  declare _essentialPropertyUuids: string[] | null;
 
   declare _ldta: LdtaChunk;
   declare _cmta: CmtaChunk | null;
-  declare _layer_list: ListChunk;
-  declare _containing_comp: CompItem;
+  declare _layerList: ListChunk;
+  declare _containingComp: CompItem;
   declare _stretch: number;
 
   /**
@@ -284,7 +284,7 @@ export class Layer extends PropertyGroup {
 
   set startTime(value: number) {
     _validateStartTime(value, this);
-    const timebase = this._layer_timebase();
+    const timebase = this._layerTimebase();
     const ldta = this._ldta;
     ldta.start_time_dividend = Math.floor(value * timebase + 0.5);
     ldta.start_time_divisor = timebase;
@@ -322,32 +322,32 @@ export class Layer extends PropertyGroup {
     if (Math.abs(value) < 1.0) {
       value = value < 0 ? -_MIN_STRETCH : _MIN_STRETCH;
     }
-    const old = this._layer_timebase();
+    const old = this._layerTimebase();
     this._stretch = value;
-    this._retime_to_layer_timebase(old, this._layer_timebase());
+    this._retimeToLayerTimebase(old, this._layerTimebase());
   }
 
   /**
    * Keyframe units per second of this layer's own time, in its
    * composition or one of `internal_timebase`.
    */
-  _layer_timebase(internalTimebase: number | null = null): number {
+  _layerTimebase(internalTimebase: number | null = null): number {
     if (internalTimebase == null) {
       internalTimebase = this.containingComp._cdta.internal_timebase;
     }
-    return layerTimebase(internalTimebase, this._stretch_factor);
+    return layerTimebase(internalTimebase, this._stretchFactor);
   }
 
   /**
    * Hold every keyframe at the same LAYER time across a stretch change
    * (`rescale_ticks`).
    */
-  _retime_to_layer_timebase(old: number, new_: number): void {
+  _retimeToLayerTimebase(old: number, new_: number): void {
     if (new_ === old || old <= 0) return;
-    for (const prop of this._leaf_properties()) {
-      if (prop._is_live()) prop._ensure_time_base();
+    for (const prop of this._leafProperties()) {
+      if (prop._isLive()) prop._ensureTimeBase();
       for (const keyframe of prop.keyframes) {
-        const item = keyframe._ldat_item;
+        const item = keyframe._ldatItem;
         item.time_units = rescaleTicks(item.time_units, old, new_);
       }
     }
@@ -371,14 +371,14 @@ export class Layer extends PropertyGroup {
     const {
       _ldta,
       _cmta,
-      _name_utf8,
-      _layer_list,
-      containing_comp,
+      _nameUtf8: _name_utf8,
+      _layerList: _layer_list,
+      containingComp: containing_comp,
     } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
     const layerTypeRaw = _ldta.layer_type;
-    const layerType = LayerType.of_or_null(layerTypeRaw);
+    const layerType = LayerType.ofOrNull(layerTypeRaw);
     let matchName = layerType === null ? undefined : new.target._LAYER_MATCH_NAMES.get(layerType);
     if (matchName === undefined) {
       logger.warning(
@@ -389,20 +389,20 @@ export class Layer extends PropertyGroup {
 
     super({
       _tdsb: null,
-      _name_utf8,
-      match_name: matchName,
-      auto_name: "",
-      property_depth: 0,
+      _nameUtf8: _name_utf8,
+      matchName: matchName,
+      autoName: "",
+      propertyDepth: 0,
       properties: [],
     });
 
     this._ldta = _ldta;
     this._cmta = _cmta;
-    this._layer_list = _layer_list;
+    this._layerList = _layer_list;
     // Read from the root tdgp on first access.
-    this._essential_property_uuids = null;
+    this._essentialPropertyUuids = null;
 
-    this._containing_comp = containing_comp;
+    this._containingComp = containing_comp;
   }
 
   /** Build a layer from a fresh ldta chunk (`Layer._new`). */
@@ -411,9 +411,9 @@ export class Layer extends PropertyGroup {
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T;
   static _new(...args: never[]): never;
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T {
-    const { ldta, name, containing_comp } = kw;
-    const rootTdgpExtra = kw.root_tdgp_extra ?? null;
-    const effectParamDefs = kw.effect_param_defs ?? null;
+    const { ldta, name, containingComp: containing_comp } = kw;
+    const rootTdgpExtra = kw.rootTdgpExtra ?? null;
+    const effectParamDefs = kw.effectParamDefs ?? null;
 
     validateString(name);
 
@@ -438,12 +438,12 @@ export class Layer extends PropertyGroup {
     const layer = new this({
       _ldta: ldta,
       _cmta: null,
-      _name_utf8: nameUtf8,
-      _layer_list: layerList,
-      containing_comp,
+      _nameUtf8: nameUtf8,
+      _layerList: layerList,
+      containingComp: containing_comp,
     });
     layer._tdgp = rootTdgp;
-    layer._build_property_tree(pyOr(effectParamDefs, new Map()));
+    layer._buildPropertyTree(pyOr(effectParamDefs, new Map()));
     return layer;
   }
 
@@ -455,12 +455,12 @@ export class Layer extends PropertyGroup {
   // its first read lands in `__getattr__`; after that it is a plain
   // attribute, with nothing to check on each access.
   // NOTE(port): a Python class attribute, installed on the prototype below the class.
-  declare _tree_param_defs: EffectParamDefs | null;
+  declare _treeParamDefs: EffectParamDefs | null;
 
   __getattr__(name: string): Property | PropertyGroup {
     // A public name may be a child looked up by attribute: build first.
-    if (this._tree_param_defs != null && (name === "_properties" || !name.startsWith("_"))) {
-      this._load_property_tree();
+    if (this._treeParamDefs != null && (name === "_properties" || !name.startsWith("_"))) {
+      this._loadPropertyTree();
       // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
       return getattr(this, name);
     }
@@ -468,21 +468,21 @@ export class Layer extends PropertyGroup {
   }
 
   /** Build the property tree of a parsed layer, if not built yet. */
-  _load_property_tree(): void {
+  _loadPropertyTree(): void {
     _suppressMaterialization().run(() => {
-      const effectParamDefs = this._tree_param_defs;
+      const effectParamDefs = this._treeParamDefs;
       if (effectParamDefs == null) return;
       // Cleared first, with an empty tree in place as during an eager
       // parse: parsing and synthesis read the layer's own properties.
-      this._tree_param_defs = null;
+      this._treeParamDefs = null;
       this._properties = [];
       try {
-        this._build_property_tree(effectParamDefs);
+        this._buildPropertyTree(effectParamDefs);
       } catch (e) {
         // Unbuilt again, so the next read raises too rather than seeing
         // a partial tree.
         Reflect.deleteProperty(this, "_properties");
-        this._tree_param_defs = effectParamDefs;
+        this._treeParamDefs = effectParamDefs;
         throw e;
       }
     });
@@ -492,7 +492,7 @@ export class Layer extends PropertyGroup {
    * Parse the root tdgp into this layer's properties and synthesize
    * the ones the file leaves out.
    */
-  _build_property_tree(effectParamDefs: EffectParamDefs): void {
+  _buildPropertyTree(effectParamDefs: EffectParamDefs): void {
     pyAssert(this._tdgp != null);
     const props = parseProperties(
       getMatchNameRuns(this._tdgp),
@@ -502,7 +502,7 @@ export class Layer extends PropertyGroup {
       this,
     );
     this._properties = props;
-    for (const child of props) child._parent_property = this;
+    for (const child of props) child._parentProperty = this;
     _synthesisCore().synthesizeLayerProperties(this);
   }
 
@@ -513,11 +513,11 @@ export class Layer extends PropertyGroup {
    * the source composition's Essential Graphics panel.
    */
   get essentialPropertyUuids(): string[] {
-    if (this._essential_property_uuids == null) {
+    if (this._essentialPropertyUuids == null) {
       pyAssert(this._tdgp != null);
-      this._essential_property_uuids = _parseOvg2Uuids(this._tdgp.chunks);
+      this._essentialPropertyUuids = _parseOvg2Uuids(this._tdgp.chunks);
     }
-    return this._essential_property_uuids;
+    return this._essentialPropertyUuids;
   }
 
   [INSPECT](): string {
@@ -566,7 +566,7 @@ export class Layer extends PropertyGroup {
     if (!value) {
       // AE drops the chunk and the flag rather than store "".
       if (this._cmta != null) {
-        const chunks = this._layer_list.chunks;
+        const chunks = this._layerList.chunks;
         chunks.splice(indexByIdentity(chunks, this._cmta), 1);
         this._cmta = null;
       }
@@ -579,7 +579,7 @@ export class Layer extends PropertyGroup {
     } else {
       const chunk = new CmtaChunk({});
       chunk.value = value;
-      const chunks = this._layer_list.chunks;
+      const chunks = this._layerList.chunks;
       // AE 15 writes the comment before the LIST:OvdG closing a layer.
       const endsWithOvdg = listTypeOf(chunks.at(-1)) === "OvdG";
       chunks.splice(endsWithOvdg ? chunks.length - 1 : chunks.length, 0, chunk);
@@ -589,7 +589,7 @@ export class Layer extends PropertyGroup {
 
   /** The composition that contains this layer. Read-only. */
   get containingComp(): CompItem {
-    return this._containing_comp;
+    return this._containingComp;
   }
 
   /**
@@ -606,7 +606,7 @@ export class Layer extends PropertyGroup {
    * (seconds). Read-only.
    */
   get time(): number {
-    return this._containing_comp.time;
+    return this._containingComp.time;
   }
 
   /**
@@ -614,7 +614,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read-only.
    */
   get frameTime(): number {
-    return this._containing_comp.frameTime;
+    return this._containingComp.frameTime;
   }
 
   /**
@@ -635,7 +635,7 @@ export class Layer extends PropertyGroup {
    * {@link AVLayer}, and a camera or light has neither, so nothing
    * normalized against a layer sits on one.
    */
-  get _pixel_size(): [number, number] | null {
+  get _pixelSize(): [number, number] | null {
     return null;
   }
 
@@ -645,7 +645,7 @@ export class Layer extends PropertyGroup {
    * `getattr(layer, "source", null)` would search the layer's properties
    * for a child of that name.
    */
-  get _source_item(): AVItem | null {
+  get _sourceItem(): AVItem | null {
     return null;
   }
 
@@ -658,15 +658,15 @@ export class Layer extends PropertyGroup {
    * 30 / 1920, 40 / 1080, and defaults it to the comp's centre (as AE
    * 15.1 does).
    */
-  get _effect_point_size(): [number, number] | null {
+  get _effectPointSize(): [number, number] | null {
     if (this.adjustmentLayer) {
       const comp = this.containingComp;
       return [comp.width, comp.height];
     }
-    return this._pixel_size;
+    return this._pixelSize;
   }
 
-  get _stretch_factor(): number {
+  get _stretchFactor(): number {
     const stretch = this.stretch;
     return stretch !== 0.0 ? stretch / 100.0 : 1.0;
   }
@@ -680,8 +680,8 @@ export class Layer extends PropertyGroup {
    * 2026 at -50 / -100 / -150 / -200 % on solid, null, text and
    * precomp layers, starts 1.3 and -0.7 s, and 24 / 25 / 30 fps).
    */
-  get _time_origin(): number {
-    const factor = this._stretch_factor;
+  get _timeOrigin(): number {
+    const factor = this._stretchFactor;
     if (factor >= 0) return this.startTime;
     return this.startTime + factor / 3000.0;
   }
@@ -695,12 +695,12 @@ export class Layer extends PropertyGroup {
    * -150 % layer starting at 1.3 s), as After Effects reports it.
    */
   get inPoint(): number {
-    return this._time_origin + this._ldta.in_point * this._stretch_factor;
+    return this._timeOrigin + this._ldta.in_point * this._stretchFactor;
   }
 
   set inPoint(value: number) {
     validateNumber(value);
-    this._set_raw_in_point(value);
+    this._setRawInPoint(value);
   }
 
   /**
@@ -711,12 +711,12 @@ export class Layer extends PropertyGroup {
    * {@link inPoint}).
    */
   get outPoint(): number {
-    return this._time_origin + this._ldta.out_point * this._stretch_factor;
+    return this._timeOrigin + this._ldta.out_point * this._stretchFactor;
   }
 
   set outPoint(value: number) {
     validateNumber(value);
-    this._set_raw_out_point(value);
+    this._setRawOutPoint(value);
   }
 
   /**
@@ -815,7 +815,7 @@ export class Layer extends PropertyGroup {
    * `null` when the layer has no markers.
    */
   get marker(): Property<MarkerValue | null> | null {
-    return this._child_or_null("ADBE Marker");
+    return this._childOrNull("ADBE Marker");
   }
 
   /**
@@ -879,7 +879,7 @@ export class Layer extends PropertyGroup {
    * AE gives no Effects group; every other layer kind always has one.
    */
   get effects(): PropertyGroup | null {
-    return this._optional_group("ADBE Effect Parade");
+    return this._optionalGroup("ADBE Effect Parade");
   }
 
   /**
@@ -894,7 +894,7 @@ export class Layer extends PropertyGroup {
    * {@link LightLayer}, which AE gives no Masks group.
    */
   get masks(): PropertyGroup | null {
-    return this._optional_group("ADBE Mask Parade");
+    return this._optionalGroup("ADBE Mask Parade");
   }
 
   /**
@@ -908,7 +908,7 @@ export class Layer extends PropertyGroup {
    * other layer kinds because AE does not expose it on them.
    */
   get text(): MatchNameTypes["ADBE Text Properties"] | null {
-    return this._optional_group("ADBE Text Properties");
+    return this._optionalGroup("ADBE Text Properties");
   }
 
   /**
@@ -920,8 +920,8 @@ export class Layer extends PropertyGroup {
    * no such group at all, not that the `.aep` merely omitted an empty
    * one (AE writes the Effect / Mask Parade only once it has content).
    */
-  _optional_group<K extends keyof MatchNameTypes>(matchName: K): (MatchNameTypes[K] & PropertyGroup) | null {
-    const group = this._child_or_null(matchName);
+  _optionalGroup<K extends keyof MatchNameTypes>(matchName: K): (MatchNameTypes[K] & PropertyGroup) | null {
+    const group = this._childOrNull(matchName);
     return group instanceof PropertyGroup ? group : null;
   }
 
@@ -929,7 +929,7 @@ export class Layer extends PropertyGroup {
    * Whether the file leaves out one of `_LIVE_DEFAULTS`, read from the
    * chunks so that the tree stays unbuilt when none is.
    */
-  _leaves_out_live_defaults(): boolean {
+  _leavesOutLiveDefaults(): boolean {
     pyAssert(this._tdgp != null);
     const groups = getChunksByMatchName(this._tdgp);
     for (const [groupName, matchName] of this.constructor._LIVE_DEFAULTS) {
@@ -951,8 +951,8 @@ export class Layer extends PropertyGroup {
    * it would reopen at the new default instead (measured on AE 2026).
    * Run on save, so every way of changing the state is covered.
    */
-  _write_out_moved_defaults(): void {
-    if (this._tree_param_defs != null) {
+  _writeOutMovedDefaults(): void {
+    if (this._treeParamDefs != null) {
       // Never built, so nothing moved (`CompItem._build_live_defaults`).
       return;
     }
@@ -960,7 +960,7 @@ export class Layer extends PropertyGroup {
       const group = this.property(groupName);
       const prop = group.property(matchName);
       if (prop._tdsb == null || !prop._tdsb.synthetic) continue;
-      if (prop.isModified) prop._ensure_materialized();
+      if (prop.isModified) prop._ensureMaterialized();
     }
   }
 
@@ -969,7 +969,7 @@ export class Layer extends PropertyGroup {
    * another comp, the layer itself, or any of its own descendants
    * (which would create a parenting cycle).
    */
-  _validate_parent(newParent: Layer | null): void {
+  _validateParent(newParent: Layer | null): void {
     if (newParent == null) return;
     if (!(newParent instanceof Layer)) {
       throw new ValueError("parent must be a Layer or None");
@@ -1013,12 +1013,12 @@ export class Layer extends PropertyGroup {
    * Read / Write.
    */
   get parent(): Layer | null {
-    if (this._parent_id === 0) return null;
-    return this.containingComp.layersById.get(this._parent_id) ?? null;
+    if (this._parentId === 0) return null;
+    return this.containingComp.layersById.get(this._parentId) ?? null;
   }
 
   set parent(value: Layer | null) {
-    this._validate_parent(value);
+    this._validateParent(value);
     const oldParent = this.parent;
     if (oldParent === value) return;
 
@@ -1031,7 +1031,7 @@ export class Layer extends PropertyGroup {
     // matrices the same way keeps our answer on AE's.
     const is3d = this.is3d;
     const comp = this.containingComp;
-    this._compensate_reparent(
+    this._compensateReparent(
       value,
       buildWorldMatrix(this, time, !is3d),
       _parentWorld(oldParent, time, is3d),
@@ -1053,7 +1053,7 @@ export class Layer extends PropertyGroup {
    * live in square pixels, so the matrices are squared before they are
    * decomposed.
    */
-  _compensate_reparent(
+  _compensateReparent(
     newParent: Layer | null,
     childWorld: Mat4,
     oldParentWorld: Mat4,
@@ -1069,10 +1069,10 @@ export class Layer extends PropertyGroup {
       if (!(e instanceof ValueError)) throw e;
       // A parent scaled to 0 has no inverse; AE 2026 parents to it
       // anyway and leaves the child's values untouched.
-      this._parent_id = newParent != null ? newParent.id : 0;
+      this._parentId = newParent != null ? newParent.id : 0;
       return;
     }
-    this._parent_id = newParent != null ? newParent.id : 0;
+    this._parentId = newParent != null ? newParent.id : 0;
     const is3d = this.is3d;
     const newSpace = newAspects[1];
     const ownAspect = layerSourceAspect(this);
@@ -1148,7 +1148,7 @@ export class Layer extends PropertyGroup {
           const time = keyframe.time;
           let point: number[] | null = remapped.get(time) ?? null;
           if (point == null) {
-            point = remap.transform_point(leader.valueAtTime(time));
+            point = remap.transformPoint(leader.valueAtTime(time));
             remapped.set(time, point);
           }
           updates.push([keyframe, point[dimension]]);
@@ -1188,7 +1188,7 @@ export class Layer extends PropertyGroup {
     // ExtendScript remaps every POSITION keyframe into the new parent's
     // space (measured in AE 2026).
     const pos = transform.property("ADBE Position");
-    const separated = pos._separation_followers();
+    const separated = pos._separationFollowers();
     if (separated != null) {
       // AE refuses `setValue` on a separated leader, but compensates
       // the followers itself on a reparent (measured on AE 2026: a
@@ -1197,18 +1197,18 @@ export class Layer extends PropertyGroup {
       if (separated.some((follower) => follower.keyframes?.length > 0)) {
         remapSeparatedKeyframes(pos, separated);
       } else {
-        pos._set_separated_value(newPos, separated);
+        pos._setSeparatedValue(newPos, separated);
       }
     } else if (pos.keyframes?.length > 0) {
       const remap = parentRemap;
       for (const kf of pos.keyframes) {
         const kfValue = kf.value;
         const dims = kfValue.length;
-        kf.value = remap.transform_point(kfValue).slice(0, dims);
+        kf.value = remap.transformPoint(kfValue).slice(0, dims);
         for (const tangentAttr of ["inSpatialTangent", "outSpatialTangent"]) {
           const tangent = getattr(kf, tangentAttr);
           if (pyBool(tangent)) {
-            setattr(kf, tangentAttr, remap.transform_vector(tangent).slice(0, tangent.length));
+            setattr(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
           }
         }
       }
@@ -1226,10 +1226,10 @@ export class Layer extends PropertyGroup {
       if (poi.keyframes?.length > 0) {
         for (const kf of poi.keyframes) {
           const kfValue = kf.value;
-          kf.value = parentRemap.transform_point(kfValue).slice(0, kfValue.length);
+          kf.value = parentRemap.transformPoint(kfValue).slice(0, kfValue.length);
         }
       } else {
-        const remapped = parentRemap.transform_point(anchor).slice(0, anchor.length);
+        const remapped = parentRemap.transformPoint(anchor).slice(0, anchor.length);
         if (!pyEq(remapped, anchor)) poi.value = remapped;
       }
       if (rigAimsAtPoi(this)) {
@@ -1308,8 +1308,8 @@ export class Layer extends PropertyGroup {
    *   layer in another composition.
    */
   setParentWithJump(newParent: Layer | null): void {
-    this._validate_parent(newParent);
-    this._parent_id = newParent != null ? newParent.id : 0;
+    this._validateParent(newParent);
+    this._parentId = newParent != null ? newParent.id : 0;
   }
 
   /**
@@ -1344,20 +1344,20 @@ export class Layer extends PropertyGroup {
    * (measured on AE 2026: 2.5 / 24576 s becomes 3 / 24576 s on a 24 fps
    * layer, 1 / 36864 s stays put at 150 %).
    */
-  _layer_relative(value: number): number {
-    const timebase = this._layer_timebase();
+  _layerRelative(value: number): number {
+    const timebase = this._layerTimebase();
     const snapped = Math.floor(value * timebase + 0.5) / timebase;
-    return (snapped - this._time_origin) / this._stretch_factor;
+    return (snapped - this._timeOrigin) / this._stretchFactor;
   }
 
   /** Write a new in_point (comp time) to the binary chunk. */
-  _set_raw_in_point(value: number): void {
-    this._ldta.in_point = this._layer_relative(value);
+  _setRawInPoint(value: number): void {
+    this._ldta.in_point = this._layerRelative(value);
   }
 
   /** Write a new out_point (comp time) to the binary chunk. */
-  _set_raw_out_point(value: number): void {
-    this._ldta.out_point = this._layer_relative(value);
+  _setRawOutPoint(value: number): void {
+    this._ldta.out_point = this._layerRelative(value);
   }
 
   // ------------------------------------------------------------------
@@ -1379,7 +1379,7 @@ export class Layer extends PropertyGroup {
     // Unparent children - triggers transform recalculation via the
     // parent setter so the child doesn't visually jump.
     for (const layer of comp.layers) {
-      if (layer !== this && layer._parent_id === removedId) {
+      if (layer !== this && layer._parentId === removedId) {
         layer.parent = null;
       }
     }
@@ -1395,20 +1395,20 @@ export class Layer extends PropertyGroup {
     }
 
     // Update source _used_in if this layer references a source item
-    comp._project._ensure_used_in_linked();
-    const source = this._source_item;
-    if (source != null && "_used_in" in source) {
+    comp._project._ensureUsedInLinked();
+    const source = this._sourceItem;
+    if (source != null && "_usedIn" in source) {
       _avLayer()._unregisterSourceUsage(source, comp, { exclude: this });
     }
 
     // Remove chunk block from comp's chunk list
-    const [start, end] = comp._layer_block_slice(this);
-    const removed = comp._item_list.chunks.splice(start, end - start);
+    const [start, end] = comp._layerBlockSlice(this);
+    const removed = comp._itemList.chunks.splice(start, end - start);
     rehomeEffectDefinitions(comp._project, _effectInstances(removed));
 
     // Remove from model list and rebuild caches
     _listRemove(comp._layers, this);
-    comp._invalidate_layer_cache();
+    comp._invalidateLayerCache();
   }
 
   /**
@@ -1420,7 +1420,7 @@ export class Layer extends PropertyGroup {
    * @returns The newly created {@link Layer}.
    */
   duplicate(): Layer {
-    return this._clone_into(this.containingComp, { duplicate: true });
+    return this._cloneInto(this.containingComp, { duplicate: true });
   }
 
   /**
@@ -1445,7 +1445,7 @@ export class Layer extends PropertyGroup {
     if (!(intoComp instanceof _composition().CompItem)) {
       throw new ValueError("Target composition must be a CompItem.");
     }
-    return this._clone_into(intoComp, { duplicate: false });
+    return this._cloneInto(intoComp, { duplicate: false });
   }
 
   /**
@@ -1453,13 +1453,13 @@ export class Layer extends PropertyGroup {
    * a {@link duplicate} (directly above, references kept) or a
    * {@link copyToComp} (on top, references cleared).
    */
-  _clone_into(intoComp: CompItem, kw: { duplicate: boolean }): Layer {
+  _cloneInto(intoComp: CompItem, kw: { duplicate: boolean }): Layer {
     const { duplicate } = kw;
 
     const sameComp = intoComp === this.containingComp;
     // Names before the copy joins the comp: it only clashes with others.
     const existing = new Set<string>(intoComp.layers.map((lyr) => lyr.name));
-    const oldTimebase = this._layer_timebase();
+    const oldTimebase = this._layerTimebase();
     // The copy keeps its place without its parent: AE bakes the parent's
     // transform at time 0 into it, whatever the playhead (measured on
     // AE 2026: a child at [960, 540] under a parent at [100, 100] with
@@ -1477,16 +1477,16 @@ export class Layer extends PropertyGroup {
     }
 
     // Clone the full layer block (LIST:Layr + trailing view chunks)
-    const [srcStart, srcEnd] = this.containingComp._layer_block_slice(this);
-    const srcBlock = this.containingComp._item_list.chunks.slice(srcStart, srcEnd);
+    const [srcStart, srcEnd] = this.containingComp._layerBlockSlice(this);
+    const srcBlock = this.containingComp._itemList.chunks.slice(srcStart, srcEnd);
     // The block starts at this layer's own LIST:Layr.
-    const clonedList = cloneChunkTree(this._layer_list);
+    const clonedList = cloneChunkTree(this._layerList);
     const clonedBlock = [clonedList, ...srcBlock.slice(1).map((c) => cloneChunkTree(c))];
 
     // Patch layer ID
     const clonedLdta = findByType(clonedList.chunks, "ldta");
     // Layer IDs are unique project-wide, not per-comp.
-    clonedLdta.layer_id = intoComp._project._allocate_id();
+    clonedLdta.layer_id = intoComp._project._allocateId();
     // AE points every effect's hidden -0000 param tdpi at the owning
     // layer; retarget the clones at the fresh id (layer-reference
     // tdpi values keep pointing at the originally referenced layer).
@@ -1520,37 +1520,37 @@ export class Layer extends PropertyGroup {
       // tdb4 carries the comp the property was written in; AE restamps
       // the copy to the destination comp (measured: copyToComp from a
       // 25 fps comp into a 24 fps one writes 24576, not 25600). The
-      // layer's own stretch scales it, exactly as `_layer_timebase`
+      // layer's own stretch scales it, exactly as `_layerTimebase`
       // derives it - a 200 % layer counts ticks against twice the
       // comp's base.
       rewriteTimeBase(
         clonedList,
-        this._layer_timebase(intoComp._cdta.internal_timebase),
+        this._layerTimebase(intoComp._cdta.internal_timebase),
       );
       modelIdx = 0;
       if (intoComp.layers.length > 0) {
         chunkIdx = indexByIdentity(
-          intoComp._item_list.chunks,
-          intoComp.layers[0]._layer_list,
+          intoComp._itemList.chunks,
+          intoComp.layers[0]._layerList,
         );
       } else {
-        chunkIdx = intoComp._find_first_layer_position();
+        chunkIdx = intoComp._findFirstLayerPosition();
       }
     }
-    intoComp._item_list.chunks.splice(chunkIdx, 0, ...clonedBlock);
+    intoComp._itemList.chunks.splice(chunkIdx, 0, ...clonedBlock);
 
     // Re-parse cloned chunks into a model instance
-    const effectDefs = intoComp._project._effect_param_defs;
+    const effectDefs = intoComp._project._effectParamDefs;
     const newLayer = _layer().parseLayer(clonedList, intoComp, effectDefs);
 
     intoComp._layers.splice(modelIdx, 0, newLayer);
 
     if (!sameComp) {
-      this._carry_comp_relative_transform(newLayer);
+      this._carryCompRelativeTransform(newLayer);
       // Keyframe ticks count against the layer's timebase; keep every
       // key (markers included) at the same second, as AE does (a key
       // at 1 s copied from 25 to 24 fps stays at 1 s).
-      newLayer._retime_to_layer_timebase(oldTimebase, newLayer._layer_timebase());
+      newLayer._retimeToLayerTimebase(oldTimebase, newLayer._layerTimebase());
     }
     if (unparent != null) {
       // Unparented as in the source comp: the copy carries those values
@@ -1558,7 +1558,7 @@ export class Layer extends PropertyGroup {
       // copying into a 2:1 comp).
       const [childWorld, parentWorld, oldAspects] = unparent;
       const sourceAspect = oldAspects[0];
-      newLayer._compensate_reparent(
+      newLayer._compensateReparent(
         null,
         childWorld,
         parentWorld,
@@ -1574,13 +1574,13 @@ export class Layer extends PropertyGroup {
       newLayer.name = autoName(newLayer.name, existing);
     }
 
-    intoComp._invalidate_layer_cache();
+    intoComp._invalidateLayerCache();
 
     // Register source _used_in for the cloned layer
-    intoComp._project._ensure_used_in_linked();
-    const newSource = newLayer._source_item;
-    if (newSource != null && "_used_in" in newSource) {
-      newSource._used_in.add(intoComp);
+    intoComp._project._ensureUsedInLinked();
+    const newSource = newLayer._sourceItem;
+    if (newSource != null && "_usedIn" in newSource) {
+      newSource._usedIn.add(intoComp);
     }
 
     return newLayer;
@@ -1608,7 +1608,7 @@ export class Layer extends PropertyGroup {
    * 400x300 solid at position 400,300 copied into a 200x100 comp still
    * reads 400,300, with `ADBE Position` now a real cdat).
    */
-  _carry_comp_relative_transform(copy: Layer): void {
+  _carryCompRelativeTransform(copy: Layer): void {
     const srcTransform = this.transform;
     const dstTransform = copy.transform;
     if (srcTransform == null || dstTransform == null) return;
@@ -1649,7 +1649,7 @@ export class Layer extends PropertyGroup {
     const targetIdx = _listIndex(comp._layers, layer);
     // After self is removed, target shifts left by 1 if self was before it
     const effective = targetIdx - (selfIdx < targetIdx ? 1 : 0);
-    this._move_to(effective + 1);
+    this._moveTo(effective + 1);
   }
 
   /**
@@ -1668,17 +1668,17 @@ export class Layer extends PropertyGroup {
     const selfIdx = _listIndex(comp._layers, this);
     const targetIdx = _listIndex(comp._layers, layer);
     const effective = targetIdx - (selfIdx < targetIdx ? 1 : 0);
-    this._move_to(effective);
+    this._moveTo(effective);
   }
 
   /** Moves this layer to the topmost position of the composition. */
   moveToBeginning(): void {
-    this._move_to(0);
+    this._moveTo(0);
   }
 
   /** Moves this layer to the bottommost position of the composition. */
   moveToEnd(): void {
-    this._move_to(this.containingComp.layers.length);
+    this._moveTo(this.containingComp.layers.length);
   }
 
   /**
@@ -1688,13 +1688,13 @@ export class Layer extends PropertyGroup {
    * `remove()`, so parent and track matte connections on other
    * layers are preserved.
    */
-  _move_to(targetIndex: number): void {
+  _moveTo(targetIndex: number): void {
     const comp = this.containingComp;
 
     // Extract and remove chunk block
-    const [start, end] = comp._layer_block_slice(this);
-    const block = comp._item_list.chunks.slice(start, end);
-    comp._item_list.chunks.splice(start, end - start);
+    const [start, end] = comp._layerBlockSlice(this);
+    const block = comp._itemList.chunks.slice(start, end);
+    comp._itemList.chunks.splice(start, end - start);
 
     _listRemove(comp._layers, this);
 
@@ -1705,36 +1705,36 @@ export class Layer extends PropertyGroup {
     let chunkIdx: number;
     if (targetIndex < comp._layers.length) {
       chunkIdx = indexByIdentity(
-        comp._item_list.chunks,
-        comp._layers[targetIndex]._layer_list,
+        comp._itemList.chunks,
+        comp._layers[targetIndex]._layerList,
       );
     } else if (comp._layers.length > 0) {
-      const [, lastEnd] = comp._layer_block_slice(comp._layers[comp._layers.length - 1]);
+      const [, lastEnd] = comp._layerBlockSlice(comp._layers[comp._layers.length - 1]);
       chunkIdx = lastEnd;
     } else {
-      chunkIdx = comp._find_first_layer_position();
+      chunkIdx = comp._findFirstLayerPosition();
     }
 
     // Insert block and model entry
-    comp._item_list.chunks.splice(chunkIdx, 0, ...block);
+    comp._itemList.chunks.splice(chunkIdx, 0, ...block);
     comp._layers.splice(targetIndex, 0, this);
 
-    comp._invalidate_layer_cache();
+    comp._invalidateLayerCache();
   }
 }
 
 // `_tree_param_defs: ... = None` in the class body: on the prototype, so
 // `__getattr__` finds it before the instance sets its own.
-Layer.prototype._tree_param_defs = null;
+Layer.prototype._treeParamDefs = null;
 
 // Descriptors assigned in the class body (`enabled = ChunkField.bool(...)`)
 // are installed on the prototype after the class is defined.
 descriptor(Layer, "enabled", ChunkField.bool("_ldta", "enabled"));
-descriptor(Layer, "id", new ChunkField("_ldta", "layer_id", { read_only: true }));
+descriptor(Layer, "id", new ChunkField("_ldta", "layer_id", { readOnly: true }));
 descriptor(Layer, "label", ChunkField.enum(Label, "_ldta", "label"));
 descriptor(Layer, "locked", ChunkField.bool("_ldta", "locked"));
-descriptor(Layer, "nullLayer", new ChunkField("_ldta", "null_layer", { read_only: true }));
-descriptor(Layer, "_parent_id", new ChunkField("_ldta", "parent_id"));
+descriptor(Layer, "nullLayer", new ChunkField("_ldta", "null_layer", { readOnly: true }));
+descriptor(Layer, "_parentId", new ChunkField("_ldta", "parent_id"));
 descriptor(Layer, "shy", ChunkField.bool("_ldta", "shy"));
 descriptor(Layer, "solo", ChunkField.bool("_ldta", "solo"));
 descriptor(Layer, "_stretch", new ChunkField("_ldta", "stretch"));

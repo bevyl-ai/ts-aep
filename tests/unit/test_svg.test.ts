@@ -53,7 +53,7 @@ describe("TestTransform", () => {
   });
 
   test("test_mean_scale", () => {
-    expect(approx(parseTransform("scale(2,8)").mean_scale, 4.0)).toBe(true);
+    expect(approx(parseTransform("scale(2,8)").meanScale, 4.0)).toBe(true);
   });
 
   test("test_unknown_transform_raises", () => {
@@ -152,7 +152,7 @@ describe("TestShapes", () => {
     if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
     expect(pyEq(sp.vertices, [[0, 0], [4, 0], [4, 2], [0, 2]])).toBe(true);
-    expect(sp.out_tangents.every((t) => pyEq(t, [0.0, 0.0]))).toBe(true);
+    expect(sp.outTangents.every((t) => pyEq(t, [0.0, 0.0]))).toBe(true);
   });
 
   test("test_rect_rounded_has_bezier_corners", () => {
@@ -163,7 +163,7 @@ describe("TestShapes", () => {
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.vertices.length).toBe(8);
-    expect(sp.in_tangents.some((t) => !pyEq(t, [0.0, 0.0]))).toBe(true);
+    expect(sp.inTangents.some((t) => !pyEq(t, [0.0, 0.0]))).toBe(true);
   });
 
   test("test_ellipse_four_vertices", () => {
@@ -179,7 +179,7 @@ describe("TestShapes", () => {
     // clockwise (top, right, bottom, left), out tangent pointing right.
     expect(_approx(sp.vertices[0], [0.0, -5.0])).toBe(true);
     expect(_approx(sp.vertices[1], [10.0, 0.0])).toBe(true);
-    expect(_approx(sp.out_tangents[0], [10.0 * 0.5522847498307936, 0.0])).toBe(true);
+    expect(_approx(sp.outTangents[0], [10.0 * 0.5522847498307936, 0.0])).toBe(true);
   });
 
   test("test_polygon_closed", () => {

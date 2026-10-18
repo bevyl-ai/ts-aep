@@ -91,7 +91,7 @@ export function printTree(chunk: Chunk, depth: number = 0, maxDepth: number = -1
  * @returns Exit code (0 on success, 1 on error).
  */
 export function _inspectItem(path: Path, index: number): number {
-  const fp = new BytesIO(path.read_bytes());
+  const fp = new BytesIO(path.readBytes());
   const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
@@ -145,7 +145,7 @@ export function _inspectItem(path: Path, index: number): number {
  * @returns Exit code.
  */
 export function _itemSummary(path: Path): number {
-  const fp = new BytesIO(path.read_bytes());
+  const fp = new BytesIO(path.readBytes());
   const [rifx, _] = readAep(fp);
 
   let fold: ListChunk | null = null;
@@ -178,7 +178,7 @@ export function _itemSummary(path: Path): number {
  * @returns Exit code.
  */
 export function _listChunks(path: Path): number {
-  const fp = new BytesIO(path.read_bytes());
+  const fp = new BytesIO(path.readBytes());
   const [rifx, _xmp] = readAep(fp);
 
   print(`\nChunk tree: ${path.name}\n`);
@@ -252,7 +252,7 @@ export type ArgSpec = {
   dest: string;
   flag: string | null;
   positional: boolean;
-  store_true: boolean;
+  storeTrue: boolean;
   type_: ((s: string) => ArgValue) | null;
   default_: ArgValue;
   metavar: string | null;
@@ -271,8 +271,8 @@ export type ArgumentOptions = {
 export type Namespace = Record<string, ArgValue>;
 
 /**
- * `T` is the namespace of one command (`InspectArgs`): the `parse_args`
- * result, whose keys and value types the `add_argument` calls declare at
+ * `T` is the namespace of one command (`InspectArgs`): the `parseArgs`
+ * result, whose keys and value types the `addArgument` calls declare at
  * runtime.
  */
 export class ArgumentParser<T extends Namespace = Namespace> {
@@ -281,20 +281,20 @@ export class ArgumentParser<T extends Namespace = Namespace> {
   private readonly epilog: string;
   private readonly specs: ArgSpec[] = [];
 
-  constructor(kwargs: { prog?: string; description?: string; epilog?: string; formatter_class?: string } = {}) {
+  constructor(kwargs: { prog?: string; description?: string; epilog?: string; formatterClass?: string } = {}) {
     this.prog = kwargs.prog ?? "";
     this.description = kwargs.description ?? "";
     this.epilog = kwargs.epilog ?? "";
   }
 
-  add_argument(name: string, kwargs: ArgumentOptions = {}): void {
+  addArgument(name: string, kwargs: ArgumentOptions = {}): void {
     const positional = !name.startsWith("-");
-    const storeTrue = kwargs.action === "store_true";
+    const storeTrue = kwargs.action === "storeTrue";
     this.specs.push({
       dest: positional ? name : name.replace(/^--/, "").replace(/-/g, "_"),
       flag: positional ? null : name,
       positional,
-      store_true: storeTrue,
+      storeTrue: storeTrue,
       type_: kwargs.type ?? null,
       default_: kwargs.default ?? (storeTrue ? false : null),
       metavar: kwargs.metavar ?? null,
@@ -303,20 +303,20 @@ export class ArgumentParser<T extends Namespace = Namespace> {
   }
 
   error(message: string): never {
-    print(this.format_usage(), { file: sys.stderr });
+    print(this.formatUsage(), { file: sys.stderr });
     print(`${this.prog}: error: ${message}`, { file: sys.stderr });
     process.exit(2);
   }
 
   /** argparse's usage at its default 78-column width: wrapped options, then positionals. */
-  format_usage(): string {
+  formatUsage(): string {
     const width = 78;
     const prefix = "usage: ";
     const optParts = [
       "[-h]",
       ...this.specs
         .filter((s) => !s.positional)
-        .map((s) => (s.store_true ? `[${s.flag}]` : `[${s.flag} ${s.metavar ?? s.dest.toUpperCase()}]`)),
+        .map((s) => (s.storeTrue ? `[${s.flag}]` : `[${s.flag} ${s.metavar ?? s.dest.toUpperCase()}]`)),
     ];
     const posParts = this.specs.filter((s) => s.positional).map((s) => s.dest);
     const oneLine = [this.prog, ...optParts, ...posParts].join(" ");
@@ -345,16 +345,16 @@ export class ArgumentParser<T extends Namespace = Namespace> {
   }
 
   /** argparse's help: each invocation padded to the help column (help texts fit the width). */
-  format_help(): string {
+  formatHelp(): string {
     const invocation = (s: ArgSpec): string =>
-      s.positional ? s.dest : s.store_true ? (s.flag ?? "") : `${s.flag} ${s.metavar ?? s.dest.toUpperCase()}`;
+      s.positional ? s.dest : s.storeTrue ? (s.flag ?? "") : `${s.flag} ${s.metavar ?? s.dest.toUpperCase()}`;
     const rows: [string, string][] = [["-h, --help", "show this help message and exit"]];
     for (const s of this.specs) if (!s.positional) rows.push([invocation(s), s.help]);
     const positionals: [string, string][] = this.specs.filter((s) => s.positional).map((s) => [invocation(s), s.help]);
     const helpPosition = Math.min(Math.max(...[...rows, ...positionals].map(([inv]) => inv.length + 2)) + 2, 24);
     const row = ([inv, help]: [string, string]): string =>
       inv.length + 2 <= helpPosition - 2 ? `  ${inv.padEnd(helpPosition - 4)}  ${help}` : `  ${inv}\n${" ".repeat(helpPosition)}${help}`;
-    const lines = [this.format_usage(), "", this.description, "", "positional arguments:", ...positionals.map(row)];
+    const lines = [this.formatUsage(), "", this.description, "", "positional arguments:", ...positionals.map(row)];
     lines.push("", "options:", ...rows.map(row));
     return lines.join("\n") + "\n" + this.epilog.replaceAll("%(prog)s", this.prog);
   }
@@ -368,8 +368,8 @@ export class ArgumentParser<T extends Namespace = Namespace> {
     return hits.length === 1 ? hits[0] : name;
   }
 
-  parse_args(argv?: string[]): T;
-  parse_args(argv: string[] = process.argv.slice(2)): Namespace {
+  parseArgs(argv?: string[]): T;
+  parseArgs(argv: string[] = process.argv.slice(2)): Namespace {
     const out: Namespace = {};
     for (const s of this.specs) out[s.dest] = s.default_;
     const rest: string[] = [];
@@ -378,7 +378,7 @@ export class ArgumentParser<T extends Namespace = Namespace> {
       const eq = a.indexOf("=");
       const name = this.resolve(a, a.startsWith("--") && eq >= 0 ? a.slice(0, eq) : a);
       if (name === "-h" || (name === "--help" && eq < 0)) {
-        print(this.format_help());
+        print(this.formatHelp());
         process.exit(0);
       }
       const spec = this.specs.find((s) => !s.positional && s.flag === name);
@@ -387,7 +387,7 @@ export class ArgumentParser<T extends Namespace = Namespace> {
         rest.push(a);
         continue;
       }
-      if (spec.store_true) {
+      if (spec.storeTrue) {
         if (eq >= 0) this.error(`argument ${spec.flag}: ignored explicit argument ${repr(a.slice(eq + 1))}`);
         out[spec.dest] = true;
         continue;
@@ -448,7 +448,7 @@ export function main(): number {
   const parser = new argparse.ArgumentParser<InspectArgs>({
     prog: "aep-inspect",
     description: "Inspect After Effects project file (.aep) structure.",
-    formatter_class: argparse.RawDescriptionHelpFormatter,
+    formatterClass: argparse.RawDescriptionHelpFormatter,
     epilog: [
       "",
       "Examples:",
@@ -461,29 +461,29 @@ export function main(): number {
       "        ",
     ].join("\n"),
   });
-  parser.add_argument("file", { type: (s: string) => new Path(s), help: "AEP file to inspect" });
-  parser.add_argument("--tree", { action: "store_true", help: "Print full chunk tree" });
-  parser.add_argument("--depth", {
+  parser.addArgument("file", { type: (s: string) => new Path(s), help: "AEP file to inspect" });
+  parser.addArgument("--tree", { action: "storeTrue", help: "Print full chunk tree" });
+  parser.addArgument("--depth", {
     type: int,
     default: -1,
     metavar: "N",
     help: "Max tree depth (-1 for unlimited, use with --tree)",
   });
-  parser.add_argument("--item", {
+  parser.addArgument("--item", {
     type: int,
     default: null,
     metavar: "N",
     help: "Inspect Item[N] (0-based) in LIST:Fold",
   });
-  parser.add_argument("--list", { action: "store_true", help: "List all chunk paths and sizes" });
-  parser.add_argument("--dump", {
+  parser.addArgument("--list", { action: "storeTrue", help: "List all chunk paths and sizes" });
+  parser.addArgument("--dump", {
     type: str,
     default: null,
     metavar: "PATH",
     help: 'Hex-dump a specific chunk (e.g. "LIST:Fold/ftts")',
   });
 
-  const args = parser.parse_args();
+  const args = parser.parseArgs();
   const path: Path = args.file;
 
   if (!path.exists()) {
@@ -492,7 +492,7 @@ export function main(): number {
   }
 
   if (args.tree) {
-    const fp = new BytesIO(path.read_bytes());
+    const fp = new BytesIO(path.readBytes());
     const [rifx, _] = readAep(fp);
     printTree(rifx, undefined, args.depth);
     return 0;

@@ -71,20 +71,20 @@ export const parseProperty = _suppressMaterialization().decorate(function parse_
     _tdmn: tdmn,
     _tdsb: tdsbChunk,
     _tdb4: tdb4Chunk,
-    _expression_utf8: expressionUtf8,
-    _name_utf8: nameUtf8,
+    _expressionUtf8: expressionUtf8,
+    _nameUtf8: nameUtf8,
     _tdbs: tdbsChunk,
     _tdum: tdum,
     _tduM: tduM,
     _cdat: cdat,
     _tdpi: tdpi,
     _composition: composition,
-    match_name: matchName,
-    property_depth: propertyDepth,
+    matchName: matchName,
+    propertyDepth: propertyDepth,
     keyframes,
     // Read lazily from the chunks (`Property._stored_static_value`).
     value: null,
-    property_value_type: propertyValueType,
+    propertyValueType: propertyValueType,
   });
 
   return prop;
@@ -106,5 +106,5 @@ export function _parseKeyframes(tdbsChildChunks: Chunk[], frameRate: number): Ke
 
   const kfItems = ldat.items;
 
-  return kfItems.map((kf) => new Keyframe({ _ldat_item: kf, _frame_rate: frameRate }));
+  return kfItems.map((kf) => new Keyframe({ _ldatItem: kf, _frameRate: frameRate }));
 }

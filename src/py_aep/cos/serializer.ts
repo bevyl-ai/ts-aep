@@ -31,7 +31,7 @@ export function serialize(data: CosNode): Uint8Array {
   const buf = new BytesIO();
   // AE's btdk blob begins with a leading space before the first token.
   buf.write(SPACE);
-  _writeValue(buf, data, { top_level: true });
+  _writeValue(buf, data, { topLevel: true });
   return buf.getvalue();
 }
 
@@ -40,14 +40,14 @@ export function _space(buf: BytesIO): void {
   const pos = buf.tell();
   if (pos === 0) return;
   buf.seek(pos - 1);
-  const last = buf.read_byte();
+  const last = buf.readByte();
   // b" \t\n\r"
   if (!(last === 0x20 || last === 0x09 || last === 0x0a || last === 0x0d)) buf.write(SPACE);
 }
 
 /** Dispatch `value` to the appropriate serialization handler. */
-export function _writeValue(buf: BytesIO, value: CosNode, kw: { top_level?: boolean } = {}): void {
-  const { top_level = false } = kw;
+export function _writeValue(buf: BytesIO, value: CosNode, kw: { topLevel?: boolean } = {}): void {
+  const { topLevel: top_level = false } = kw;
   if (value instanceof Map) {
     if (top_level) {
       _writeDictContent(buf, value);
@@ -186,7 +186,7 @@ export function _writeIdentifier(buf: BytesIO, name: string): void {
  */
 export function _writeString(buf: BytesIO, s: string | CosString): void {
   let raw: Uint8Array;
-  if (!(s instanceof CosString) || s.cos_utf16) {
+  if (!(s instanceof CosString) || s.cosUtf16) {
     raw = concat(b("\xfe\xff"), encode(String(s), "utf-16-be"));
   } else {
     raw = encode(String(s), "utf-8");
@@ -226,9 +226,9 @@ export function _writeHexString(buf: BytesIO, data: Uint8Array): void {
 
 /** Write `N G obj <data> endobj`. */
 export function _writeIndirectObject(buf: BytesIO, obj: IndirectObject): void {
-  buf.write(encode(`${obj.object_number}`, "ascii"));
+  buf.write(encode(`${obj.objectNumber}`, "ascii"));
   buf.write(b(" "));
-  buf.write(encode(`${obj.generation_number}`, "ascii"));
+  buf.write(encode(`${obj.generationNumber}`, "ascii"));
   buf.write(b(" obj"));
   _writeValue(buf, obj.data);
   buf.write(b(" endobj"));
@@ -236,9 +236,9 @@ export function _writeIndirectObject(buf: BytesIO, obj: IndirectObject): void {
 
 /** Write `N G R`. */
 export function _writeIndirectReference(buf: BytesIO, ref: IndirectReference): void {
-  buf.write(encode(`${ref.object_number}`, "ascii"));
+  buf.write(encode(`${ref.objectNumber}`, "ascii"));
   buf.write(b(" "));
-  buf.write(encode(`${ref.generation_number}`, "ascii"));
+  buf.write(encode(`${ref.generationNumber}`, "ascii"));
   buf.write(b(" R"));
 }
 

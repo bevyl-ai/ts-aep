@@ -21,7 +21,7 @@ const _CORPUS_ROOTS = [
 ];
 
 const _CORPUS: Path[] = sorted(
-  _CORPUS_ROOTS.filter((root) => root.is_dir()).flatMap((root) => root.rglob("*.aep")),
+  _CORPUS_ROOTS.filter((root) => root.isDir()).flatMap((root) => root.rglob("*.aep")),
   (path: Path) => path.parts,
 );
 

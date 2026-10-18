@@ -58,9 +58,9 @@ export const _OM_PREFS_ITEM_SIZE = 128;
 export class OutputModuleTemplate {
   settings: OutputModuleSettingsItem;
   name: string;
-  format_info: Uint8Array | null;
-  format_options: Uint8Array | null;
-  format_options_xml: string | null;
+  formatInfo: Uint8Array | null;
+  formatOptions: Uint8Array | null;
+  formatOptionsXml: string | null;
 
   constructor(
     settings: OutputModuleSettingsItem,
@@ -71,9 +71,9 @@ export class OutputModuleTemplate {
   ) {
     this.settings = settings;
     this.name = name;
-    this.format_info = formatInfo;
-    this.format_options = formatOptions;
-    this.format_options_xml = formatOptionsXml;
+    this.formatInfo = formatInfo;
+    this.formatOptions = formatOptions;
+    this.formatOptionsXml = formatOptionsXml;
   }
 }
 
@@ -111,7 +111,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
   }
 
   // Python read_text(errors="replace"); pathlib shim has no errors= parameter.
-  const text = decode(renderFiles[0].read_bytes(), "utf-8", "replace");
+  const text = decode(renderFiles[0].readBytes(), "utf-8", "replace");
   const lines = collapseContinuationLines(text);
 
   const raw = _extractSectionValue(lines, "Render Settings List");
@@ -177,7 +177,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
   }
 
   // Python read_text(errors="replace"); pathlib shim has no errors= parameter.
-  const text = decode(outputFiles[0].read_bytes(), "utf-8", "replace");
+  const text = decode(outputFiles[0].readBytes(), "utf-8", "replace");
   const lines = collapseContinuationLines(text);
 
   const raw = _extractSectionValue(lines, "Output Module List v28");

@@ -175,8 +175,8 @@ describe("TestCosParserIndirect", () => {
   test("test_parse_indirect_object", () => {
     const result = _parse(b("1 0 obj 42 endobj"));
     pyAssert(result instanceof IndirectObject);
-    expect(result.object_number).toBe(1);
-    expect(result.generation_number).toBe(0);
+    expect(result.objectNumber).toBe(1);
+    expect(result.generationNumber).toBe(0);
     expect(result.data).toBe(42);
   });
 
@@ -263,10 +263,10 @@ describe("TestCosParserSaveRestore", () => {
     const f = new BytesIO(b("42 99"));
     const parser = new CosParser(f);
     parser.lex();
-    const state = parser.save_state();
+    const state = parser.saveState();
     parser.lex();
     expect(parser.lookahead.value).toBe(99);
-    parser.restore_state(state);
+    parser.restoreState(state);
     expect(parser.lookahead.value).toBe(42);
   });
 });

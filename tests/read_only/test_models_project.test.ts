@@ -185,8 +185,8 @@ describe("TestGpuAccelType", () => {
       ["cd99cfc1-bf65-4cb7-ab70-a8f5ea50e8f4", GpuAccelType.DIRECTX],
     ]);
     for (const [guid, accel] of ids) {
-      expect(GpuAccelType.from_binary(guid)).toBe(accel);
-      expect(GpuAccelType.to_binary(accel)).toBe(guid);
+      expect(GpuAccelType.fromBinary(guid)).toBe(accel);
+      expect(GpuAccelType.toBinary(accel)).toBe(guid);
     }
   });
 });
@@ -224,12 +224,12 @@ describe("TestColorManagement", () => {
 
   test("test_colorManagementSystem_adobe", () => {
     const project = parseProject(SAMPLES_DIR.div("colorManagementSystem_adobe.aep"));
-    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("ADOBE");
+    expect(ColorManagementSystem.nameOf(project.colorManagementSystem)).toBe("ADOBE");
   });
 
   test("test_colorManagementSystem_ocio", () => {
     const project = parseProject(SAMPLES_DIR.div("colorManagementSystem_ocio.aep"));
-    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("OCIO");
+    expect(ColorManagementSystem.nameOf(project.colorManagementSystem)).toBe("OCIO");
   });
 
   // `project.lutInterpolationMethod.TRILINEAR` is a class attribute read
@@ -306,7 +306,7 @@ describe("TestListColorProfiles", () => {
     // This sample's stored ocioConfigurationFile path no longer exists; the
     // method degrades gracefully to an empty list.
     const project = parseProject(SAMPLES_DIR.div("colorManagementSystem_ocio.aep"));
-    expect(ColorManagementSystem.name_of(project.colorManagementSystem)).toBe("OCIO");
+    expect(ColorManagementSystem.nameOf(project.colorManagementSystem)).toBe("OCIO");
     expect(pyEq(project.listColorProfiles(), [])).toBe(true);
   });
 });

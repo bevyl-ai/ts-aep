@@ -5,7 +5,7 @@
  */
 
 // NOTE(port): Python IntEnum members are plain numbers here, so instance
-// `@property`s (`label`, `kind`, `to_format_id`, `to_binary`) are enum methods
+// `@property`s (`label`, `kind`, `toFormatId`, `toBinary`) are enum methods
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.
 
@@ -192,7 +192,7 @@ export const OutputFormat = intEnum("OutputFormat", {
    *   `"png!"`).
    * @throws {@link ValueError} If the format identifier is not recognised.
    */
-  from_format_id(formatId: string | Uint8Array): OutputFormat {
+  fromFormatId(formatId: string | Uint8Array): OutputFormat {
     if (formatId instanceof Uint8Array) {
       formatId = decode(formatId, "ascii");
     }
@@ -202,7 +202,7 @@ export const OutputFormat = intEnum("OutputFormat", {
   },
 
   /** Convert OutputFormat to a Roou 4-char format identifier. */
-  to_format_id(self: number): string {
+  toFormatId(self: number): string {
     return getitem(_OUTPUT_FORMAT_TO_FORMAT_ID, self);
   },
 });
@@ -294,7 +294,7 @@ export const AudioBitDepth = intEnum("AudioBitDepth", {
   },
 
   /** Convert binary value to AudioBitDepth. */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     if (this.has(value)) {
       return this.of(value);
     }
@@ -327,7 +327,7 @@ export const AudioChannels = intEnum("AudioChannels", {
   },
 
   /** Convert binary value to AudioChannels (0 or unknown defaults to STEREO). */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     if (value === 1) {
       return this.MONO;
     }
@@ -408,7 +408,7 @@ export const AudioSampleRate = intEnum("AudioSampleRate", {
    * Unknown or negative values (e.g. `-1` when audio is disabled)
    * are mapped to `OFF`.
    */
-  from_binary(value: number) {
+  fromBinary(value: number) {
     const intValue = round(value);
     if (this.has(intValue)) {
       return this.of(intValue);
@@ -417,7 +417,7 @@ export const AudioSampleRate = intEnum("AudioSampleRate", {
   },
 
   /** Convert to binary float for the `f8` field. */
-  to_binary(value: number): number {
+  toBinary(value: number): number {
     return round(value);
   },
 });
@@ -460,12 +460,12 @@ export const PostRenderAction = intEnum("PostRenderAction", {
   SET_PROXY: 3615,
 }, {
   /** Convert binary value to PostRenderAction. */
-  from_binary(value: number) {
-    return this.of_or_null(value + 3612) ?? this.NONE;
+  fromBinary(value: number) {
+    return this.ofOrNull(value + 3612) ?? this.NONE;
   },
 
   /** Convert PostRenderAction to binary value. */
-  to_binary(self: number): number {
+  toBinary(self: number): number {
     return int(self) - 3612;
   },
 });

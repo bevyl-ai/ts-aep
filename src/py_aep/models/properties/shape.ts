@@ -162,12 +162,12 @@ descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "corner_angle")
  */
 export class Shape {
   declare _shph: ShphChunk | null;
-  declare _is_mask: boolean;
+  declare _isMask: boolean;
   declare _layer: Layer | null;
   declare _omtn: OmtnChunk | null;
-  declare _mask_path: Property | null;
+  declare _maskPath: Property | null;
   declare _tensions: number[] | null;
-  declare _closed_fallback: boolean;
+  declare _closedFallback: boolean;
   declare _detached: boolean;
   declare _points: ShapePoint[] | null;
 
@@ -197,9 +197,9 @@ export class Shape {
     vertices: number[][] | null = null,
     inTangents: number[][] | null = null,
     outTangents: number[][] | null = null,
-    kw: { closed?: boolean; feather_points?: FeatherPoint[] | null } = {},
+    kw: { closed?: boolean; featherPoints?: FeatherPoint[] | null } = {},
   ) {
-    const { closed = true, feather_points = null } = kw;
+    const { closed = true, featherPoints: feather_points = null } = kw;
     validateBool(closed);
     if (
       feather_points != null &&
@@ -209,12 +209,12 @@ export class Shape {
     }
     this._shph = new ShphChunk();
     this._shph.open = !closed;
-    this._is_mask = false;
+    this._isMask = false;
     this._layer = null;
     this._omtn = null;
-    this._mask_path = null;
+    this._maskPath = null;
     this._tensions = null;
-    this._closed_fallback = closed;
+    this._closedFallback = closed;
     // A shape built here owns its points, so a different vertex count
     // can rebuild them; a parsed one shares them with its file chunks.
     this._detached = true;
@@ -227,10 +227,10 @@ export class Shape {
     const outT = outTangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
     // Three points per vertex: vertex, out-tangent, in-tangent-of-next.
     this._points = [];
-    this._write_geometry(verts, inT, outT);
+    this._writeGeometry(verts, inT, outT);
   }
 
-  _write_geometry(vertices: number[][], inTangents: number[][], outTangents: number[][]): void {
+  _writeGeometry(vertices: number[][], inTangents: number[][], outTangents: number[][]): void {
     /**
      * Store `vertices` (absolute) and their relative tangents.
      *
@@ -259,7 +259,7 @@ export class Shape {
           "the vertex count assign a new Shape to the property",
       );
     }
-    const maskSize = this._is_mask ? this._comp_size : null;
+    const maskSize = this._isMask ? this._compSize : null;
     const [sx, sy] = maskSize ?? [1.0, 1.0];
     const verts = vertices.map(([x, y]) => [truediv(x, sx), truediv(y, sy)]);
     const ins = verts.map(([vx, vy], i) => {
@@ -295,72 +295,72 @@ export class Shape {
         [(i - 1 + total) % total, ins[j]],
       ];
       for (const [index, [x, y]] of targets) {
-        const [nx, ny] = this._normalize_point(x, y);
+        const [nx, ny] = this._normalizePoint(x, y);
         this._points[index].x = nx;
         this._points[index].y = ny;
       }
     }
   }
 
-  static _from_binary(kw: {
+  static _fromBinary(kw: {
     _shph: ShphChunk;
     _points: ShapePoint[];
-    _is_mask?: boolean;
+    _isMask?: boolean;
     _layer?: Layer | null;
     _omtn?: OmtnChunk | null;
-    _mask_path?: Property | null;
-    feather_points?: FeatherPoint[] | null;
+    _maskPath?: Property | null;
+    featherPoints?: FeatherPoint[] | null;
   }): Shape {
     /**
      * Wrap parsed shape chunks as a `Shape` view.
      *
-     * `_mask_path` is the owning Mask Path: its mask's RotoBezier switch
+     * `_maskPath` is the owning Mask Path: its mask's RotoBezier switch
      * decides which tangents the shape reports.
      */
     const {
       _shph,
       _points,
-      _is_mask = false,
+      _isMask: _is_mask = false,
       _layer = null,
       _omtn = null,
-      _mask_path = null,
-      feather_points = null,
+      _maskPath: _mask_path = null,
+      featherPoints: feather_points = null,
     } = kw;
     const obj: Shape = Object.create(this.prototype);
     obj._shph = _shph;
     obj._points = _points;
-    obj._is_mask = _is_mask;
+    obj._isMask = _is_mask;
     obj._layer = _layer;
     obj._omtn = _omtn;
-    obj._mask_path = _mask_path;
+    obj._maskPath = _mask_path;
     obj._tensions = null;
     obj._detached = false;
     obj.featherPoints = feather_points ?? [];
     return obj;
   }
 
-  _is_roto_bezier(): boolean {
+  _isRotoBezier(): boolean {
     /** Whether this is the path of a mask whose RotoBezier switch is on. */
-    const prop = this._mask_path;
+    const prop = this._maskPath;
     if (prop == null || prop._tdb4 == null) return false;
-    const mask = prop._parent_property;
-    return mask != null && mask._is_mask && mask instanceof _maskPropertyGroup().MaskPropertyGroup && mask.rotoBezier;
+    const mask = prop._parentProperty;
+    return mask != null && mask._isMask && mask instanceof _maskPropertyGroup().MaskPropertyGroup && mask.rotoBezier;
   }
 
-  _roto_tangents(): [number[][], number[][]] | null {
+  _rotoTangents(): [number[][], number[][]] | null {
     /**
      * The tangents AE draws the path with when its mask is RotoBezier
      * (`resolvers.rotoBezier`), or `null` for any other shape.
      */
-    const prop = this._mask_path;
-    if (prop == null || !this._is_roto_bezier()) return null;
-    const layer = prop._containing_layer;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-    const [width, height] = layer._mask_scale;
+    const prop = this._maskPath;
+    if (prop == null || !this._isRotoBezier()) return null;
+    const layer = prop._containingLayer;
+    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    const [width, height] = layer._maskScale;
     const vertices = this.vertices;
     let tensions = this._tensions;
     if (tensions == null || tensions.length !== vertices.length) {
-      tensions = this._own_tensions();
+      tensions = this._ownTensions();
       if (tensions.length !== vertices.length) {
         tensions = new Array<number>(vertices.length).fill(DEFAULT_TENSION);
       }
@@ -374,13 +374,13 @@ export class Shape {
     );
   }
 
-  _own_tensions(): number[] {
+  _ownTensions(): number[] {
     /** The tensions stored with this shape value (the `omtn` chunk). */
     if (this._omtn == null) return [];
     return this._omtn.tensions.map((item) => item.value);
   }
 
-  _set_tensions(tensions: number[]): void {
+  _setTensions(tensions: number[]): void {
     /** Store per-vertex RotoBezier tensions in this value's `omtn`. */
     if (this._omtn != null) {
       this._omtn.tensions = tensions.map((t) => new TensionItem({ value: t }));
@@ -396,13 +396,13 @@ export class Shape {
    * `AVLayer._mask_scale`). Read on demand rather than snapshotted at
    * parse time, so it follows the layer if its source is later replaced.
    */
-  get _comp_size(): [number, number] | null {
+  get _compSize(): [number, number] | null {
     if (this._layer == null) return null;
-    if (!(this._layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
-    return this._layer._mask_scale;
+    if (!(this._layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    return this._layer._maskScale;
   }
 
-  _denormalize_point(pt: ShapePoint): number[] {
+  _denormalizePoint(pt: ShapePoint): number[] {
     /** Convert a normalized [0,1] shape point to absolute coordinates. */
     const shph = this._shph;
     pyAssert(shph != null);
@@ -411,7 +411,7 @@ export class Shape {
     return [x, y];
   }
 
-  _normalize_point(x: number, y: number): [number, number] {
+  _normalizePoint(x: number, y: number): [number, number] {
     /** Convert absolute coordinates back to normalized [0,1]. */
     const shph = this._shph;
     pyAssert(shph != null);
@@ -436,9 +436,9 @@ export class Shape {
     if (this._points == null || this._shph == null) return [];
     let result: number[][] = [];
     for (let i = 0; i < this._points.length; i += 3) {
-      result.push(this._denormalize_point(this._points[i]));
+      result.push(this._denormalizePoint(this._points[i]));
     }
-    const maskSize = this._is_mask ? this._comp_size : null;
+    const maskSize = this._isMask ? this._compSize : null;
     if (maskSize != null) {
       const [w, h] = maskSize;
       result = result.map(([x, y]) => [x * w, y * h]);
@@ -459,13 +459,13 @@ export class Shape {
     let inT: number[][];
     let outT: number[][];
     if (value.length === floordiv(this._points.length, 3)) {
-      inT = this._stored_tangents(-1);
-      outT = this._stored_tangents(1);
+      inT = this._storedTangents(-1);
+      outT = this._storedTangents(1);
     } else {
       // A new vertex count: the old tangents belonged to other vertices.
       inT = outT = new Array<number[]>(value.length).fill([0.0, 0.0]);
     }
-    this._write_geometry([...value], inT, outT);
+    this._writeGeometry([...value], inT, outT);
   }
 
   /**
@@ -480,8 +480,8 @@ export class Shape {
    * tangents are automatically calculated.
    */
   get inTangents(): number[][] {
-    const roto = this._roto_tangents();
-    return roto !== null ? roto[0] : this._stored_tangents(-1);
+    const roto = this._rotoTangents();
+    return roto !== null ? roto[0] : this._storedTangents(-1);
   }
 
   set inTangents(value: number[][]) {
@@ -489,10 +489,10 @@ export class Shape {
     if (!Array.isArray(value)) {
       throw new ValueError("inTangents must be a list of [x,y] pairs");
     }
-    this._write_geometry(this.vertices, [...value], this._stored_tangents(1));
+    this._writeGeometry(this.vertices, [...value], this._storedTangents(1));
   }
 
-  _stored_tangents(offset: number): number[][] {
+  _storedTangents(offset: number): number[][] {
     /**
      * The stored handles (which a RotoBezier mask ignores): the
      * incoming ones for `offset` -1, the outgoing ones for +1 (each handle
@@ -501,11 +501,11 @@ export class Shape {
     if (this._points == null || this._shph == null) return [];
     let result: number[][] = [];
     for (let i = 0; i < this._points.length; i += 3) {
-      const v = this._denormalize_point(this._points[i]);
-      const t = this._denormalize_point(this._points[mod(i + offset, this._points.length)]);
+      const v = this._denormalizePoint(this._points[i]);
+      const t = this._denormalizePoint(this._points[mod(i + offset, this._points.length)]);
       result.push([t[0] - v[0], t[1] - v[1]]);
     }
-    const maskSize = this._is_mask ? this._comp_size : null;
+    const maskSize = this._isMask ? this._compSize : null;
     if (maskSize != null) {
       const [w, h] = maskSize;
       result = result.map(([x, y]) => [x * w, y * h]);
@@ -525,8 +525,8 @@ export class Shape {
    * tangents are automatically calculated.
    */
   get outTangents(): number[][] {
-    const roto = this._roto_tangents();
-    return roto !== null ? roto[1] : this._stored_tangents(1);
+    const roto = this._rotoTangents();
+    return roto !== null ? roto[1] : this._storedTangents(1);
   }
 
   set outTangents(value: number[][]) {
@@ -534,7 +534,7 @@ export class Shape {
     if (!Array.isArray(value)) {
       throw new ValueError("outTangents must be a list of [x,y] pairs");
     }
-    this._write_geometry(this.vertices, this._stored_tangents(-1), [...value]);
+    this._writeGeometry(this.vertices, this._storedTangents(-1), [...value]);
   }
 
   /**
@@ -543,7 +543,7 @@ export class Shape {
    */
   get closed(): boolean {
     if (this._shph != null) return !this._shph.open;
-    return this._closed_fallback;
+    return this._closedFallback;
   }
 
   set closed(value: boolean) {
@@ -551,7 +551,7 @@ export class Shape {
     if (this._shph != null) {
       this._shph.open = !value;
     } else {
-      this._closed_fallback = value;
+      this._closedFallback = value;
     }
   }
 }

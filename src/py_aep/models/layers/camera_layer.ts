@@ -28,11 +28,11 @@ import type {EffectParamDefs} from "../descriptors.ts";
  * @see https://ae-scripting.docsforadobe.dev/layer/cameralayer/
  */
 export class CameraLayer extends Layer {
-  static _auto_name: string = "Camera";
-  static _fov_rad: number = (39.5978 * Math.PI) / 180;
+  static _autoName: string = "Camera";
+  static _fovRad: number = (39.5978 * Math.PI) / 180;
   // AE's default 50mm camera: zoom = width / 0.72 exactly
   // (2 * tan(fov/2) rounds to 0.72; AE uses the exact ratio).
-  static _zoom_dividend: number = 0.72;
+  static _zoomDividend: number = 0.72;
 
   /** Always `true`: a camera / light layer only exists in 3D space.
    * Read-only. */
@@ -56,7 +56,7 @@ export class CameraLayer extends Layer {
    * keyframed or given an expression, and on a layer started, trimmed or
    * stretched away from the comp's time 0).
    */
-  _default_position(): number[] {
+  _defaultPosition(): number[] {
     const comp = this.containingComp;
     const options = this.property("ADBE Camera Options Group");
     const zoom = options.property("ADBE Camera Zoom");
@@ -66,7 +66,7 @@ export class CameraLayer extends Layer {
   }
 
   /** AE's default Zoom and Focus Distance: the comp's 50mm-lens zoom. */
-  _default_zoom(): number {
+  _defaultZoom(): number {
     const comp = this.containingComp;
     // AE rounds the zoom to 8 decimals before storing it.
     return round(defaultCameraZoom(comp.width, comp.pixelAspect), 8);
@@ -75,25 +75,25 @@ export class CameraLayer extends Layer {
   // Python `# type: ignore[override]`: keyword shape differs from Layer._new's.
   static _new(kw: {
     name: string;
-    layer_id: number;
+    layerId: number;
     duration: number;
-    containing_comp: CompItem;
-    effect_param_defs?: EffectParamDefs | null;
+    containingComp: CompItem;
+    effectParamDefs?: EffectParamDefs | null;
   }): CameraLayer;
   static _new(...args: never[]): never;
   static _new(kw: {
     name: string;
-    layer_id: number;
+    layerId: number;
     duration: number;
-    containing_comp: CompItem;
-    effect_param_defs?: EffectParamDefs | null;
+    containingComp: CompItem;
+    effectParamDefs?: EffectParamDefs | null;
   }): CameraLayer {
     const {
       name,
-      layer_id,
+      layerId: layer_id,
       duration,
-      containing_comp,
-      effect_param_defs = null,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs = null,
     } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
@@ -113,8 +113,8 @@ export class CameraLayer extends Layer {
     return super._new<CameraLayer>({
       ldta,
       name,
-      containing_comp,
-      effect_param_defs,
+      containingComp: containing_comp,
+      effectParamDefs: effect_param_defs,
     });
   }
 }

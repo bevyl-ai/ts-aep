@@ -92,7 +92,7 @@ describe("TestWriteEnginePrimitives", () => {
       ["0", [new CosString("s", { utf16: false })]],
     ]);
     const clone = deepcopy(nested);
-    expect(asInstance(cosAt(cosItem(clone, "0"), 0), CosString).cos_utf16).toBe(false);
+    expect(asInstance(cosAt(cosItem(clone, "0"), 0), CosString).cosUtf16).toBe(false);
     expect(str(cosItem(clone, "99"))).toBe("X");
   });
 
@@ -358,8 +358,8 @@ describe("TestUnassociatedDocuments", () => {
 describe("TestSpecConsistency", () => {
   // RangeField declarations must agree with TextDocument's CosFields.
   const KIND_TO_DICT_ATTR = new Map<string, string>([
-    ["char", "_char_style"],
-    ["para", "_para_style"],
+    ["char", "_charStyle"],
+    ["para", "_paraStyle"],
   ]);
 
   test("test_rangefields_match_cosfields", () => {

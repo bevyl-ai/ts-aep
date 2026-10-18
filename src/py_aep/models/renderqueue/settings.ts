@@ -248,11 +248,11 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
     throw new TypeError_(`Expected ${enumClass.__name__}, int, or str, got bool`);
   }
   if (typeof value === "number" && Number.isInteger(value)) {
-    const member = enumClass.of_or_null(value);
+    const member = enumClass.ofOrNull(value);
     if (member === null) {
       const members = enumClass
         .members()
-        .map((m) => `${enumClass.name_of(m)} (${int(m)})`)
+        .map((m) => `${enumClass.nameOf(m)} (${int(m)})`)
         .join(", ");
       throw new ValueError(
         `Invalid int value ${repr(value)} for ${enumClass.__name__}. ` +

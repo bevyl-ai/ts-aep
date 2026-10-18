@@ -122,7 +122,7 @@ describe("TestParseLayerStyles", () => {
 
   test("test_no_styles_returns_none", () => {
     const leaf = asInstance(getitem(_leaves(ASSETS.div("choose_layer.psd")), "solo"), PsdLayer);
-    expect(leaf.style_blocks == null).toBe(true);
+    expect(leaf.styleBlocks == null).toBe(true);
     expect(parseLayerStyles(leaf, [120.0, 30.0]) == null).toBe(true);
   });
 
@@ -167,18 +167,18 @@ describe("TestParseLayerStyles", () => {
     expect(contains(styles.enabled, "dropShadow")).toBe(false);
     expect(getitem(styles.values, "dropShadow/distance")).toBe(7.0);
     expect(getitem(styles.values, "ADBE Layer Fill Opacity2")).toBe(60.0);
-    expect(styles.blend_options).toBe(true);
+    expect(styles.blendOptions).toBe(true);
   });
 
   test("test_fill_opacity_without_styles", () => {
     // A Fill slider away from 100% imports alone: no lfx2 block at all,
     // yet AE enables the blend-options chain and writes the leaf.
     const leaf = asInstance(getitem(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill only"), PsdLayer);
-    pyAssert(leaf.style_blocks != null);
-    expect(leaf.style_blocks.effects == null).toBe(true);
+    pyAssert(leaf.styleBlocks != null);
+    expect(leaf.styleBlocks.effects == null).toBe(true);
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
     pyAssert(styles != null);
-    expect(styles.blend_options).toBe(true);
+    expect(styles.blendOptions).toBe(true);
     expect(pyEq(styles.enabled, [])).toBe(true);
     expect(getitem(styles.values, "ADBE Layer Fill Opacity2")).toBe(40.0);
   });

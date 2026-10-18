@@ -25,7 +25,7 @@ const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "ver
 /** Every keyframed property in `comp`, paired with its layer's name. */
 function* _keyed(comp: CompItem): Generator<[string, Property]> {
   for (const layer of comp.layers) {
-    for (const prop of layer._leaf_properties()) {
+    for (const prop of layer._leafProperties()) {
       if (pyBool(prop.keyframes)) {
         yield [layer.name, prop];
       }

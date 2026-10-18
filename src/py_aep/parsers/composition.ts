@@ -40,17 +40,17 @@ export function parseComposition(
   const proxySource = pinChunks?.length > 0 ? parseSource(pinChunks[0]) : null;
 
   return new CompItem({
-    _child_chunks: childChunks,
+    _childChunks: childChunks,
     _cmta,
     _idta,
-    _item_list: _itemList,
+    _itemList: _itemList,
     _gide,
-    _pin_chunks: pinChunks,
-    _name_utf8: _nameUtf8,
+    _pinChunks: pinChunks,
+    _nameUtf8: _nameUtf8,
     project,
-    parent_folder: parentFolder,
-    effect_param_defs: effectParamDefs,
-    proxy_source: proxySource,
+    parentFolder: parentFolder,
+    effectParamDefs: effectParamDefs,
+    proxySource: proxySource,
   });
 }
 

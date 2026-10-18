@@ -24,7 +24,7 @@ export class FormatOptionsBase {
    * is building the wrapper, before `OutputModule` wires it up - which
    * is why detachment needs its own flag rather than reusing `is None`.
    */
-  declare _parent_om: OutputModule | null;
+  declare _parentOm: OutputModule | null;
 
   /** Set when the owning module has replaced this wrapper's chunk. */
   declare _detached: boolean;
@@ -33,7 +33,7 @@ export class FormatOptionsBase {
     return pyObject(this);
   }
 
-  _check_attached(): void {
+  _checkAttached(): void {
     if (this._detached) {
       throw new RuntimeError(
         "format options are detached from their output module: the " +
@@ -48,12 +48,12 @@ export class FormatOptionsBase {
     // the detach itself writes `_detached`, both before/while there is
     // anything to guard.
     if (!name.startsWith("_")) {
-      this._check_attached();
+      this._checkAttached();
     }
     objectSetattr(this, name, value);
   }
 }
 
 // Class-level defaults, as in Python: instances fall back to the prototype until assigned.
-FormatOptionsBase.prototype._parent_om = null;
+FormatOptionsBase.prototype._parentOm = null;
 FormatOptionsBase.prototype._detached = false;

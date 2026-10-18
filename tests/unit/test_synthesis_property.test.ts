@@ -70,12 +70,12 @@ for (const [_key, _specs] of _LAYER_STYLE_CHILD_SPECS.entries()) {
 const _ALL_PROP_SPECS: [string, PropSpec][] = _NAMED_SPEC_LISTS.flatMap(([listName, specs]) =>
   specs
     .filter((spec): spec is PropSpec => spec instanceof PropSpec)
-    .map((spec): [string, PropSpec] => [`${listName}/${spec.match_name}`, spec]),
+    .map((spec): [string, PropSpec] => [`${listName}/${spec.matchName}`, spec]),
 );
 
 // Flat list of all specs (both types) with readable IDs.
 const _ALL_SPECS: [string, PropSpec | GroupSpec][] = _NAMED_SPEC_LISTS.flatMap(([listName, specs]) =>
-  specs.map((spec): [string, PropSpec | GroupSpec] => [`${listName}/${spec.match_name}`, spec]),
+  specs.map((spec): [string, PropSpec | GroupSpec] => [`${listName}/${spec.matchName}`, spec]),
 );
 
 // Expected dimensions for each PropertyValueType.
@@ -104,7 +104,7 @@ describe("TestPropSpecFieldConsistency", () => {
     if (expected != null) {
       pyAssert(
         spec.dimensions === expected,
-        `${specId}: pvt=${PropertyValueType.name_of(spec.pvt)} requires dimensions=${expected}, got ${spec.dimensions}`,
+        `${specId}: pvt=${PropertyValueType.nameOf(spec.pvt)} requires dimensions=${expected}, got ${spec.dimensions}`,
       );
     }
   });
@@ -113,15 +113,15 @@ describe("TestPropSpecFieldConsistency", () => {
     const isColorPvt = spec.pvt === PropertyValueType.COLOR;
     pyAssert(
       spec.color === isColorPvt,
-      `${specId}: color=${repr(spec.color)} but pvt=${PropertyValueType.name_of(spec.pvt)}`,
+      `${specId}: color=${repr(spec.color)} but pvt=${PropertyValueType.nameOf(spec.pvt)}`,
     );
   });
 
   test.each(_ALL_PROP_SPECS)("test_spatial_pvt_requires_is_spatial[%#]", (specId: string, spec: PropSpec) => {
     if (_SPATIAL_PVTS.has(spec.pvt)) {
       pyAssert(
-        spec.is_spatial,
-        `${specId}: pvt=${PropertyValueType.name_of(spec.pvt)} requires is_spatial=True`,
+        spec.isSpatial,
+        `${specId}: pvt=${PropertyValueType.nameOf(spec.pvt)} requires is_spatial=True`,
       );
     }
   });
@@ -149,20 +149,20 @@ describe("TestPropSpecFieldConsistency", () => {
   test.each(_ALL_PROP_SPECS)("test_color_specs_have_bounds[%#]", (specId: string, spec: PropSpec) => {
     if (spec.pvt !== PropertyValueType.COLOR) return;
     pyAssert(
-      spec.min_value === _COLOR_MIN,
+      spec.minValue === _COLOR_MIN,
       `${specId}: COLOR spec missing min_value=_COLOR_MIN`,
     );
     pyAssert(
-      spec.max_value === _COLOR_MAX,
+      spec.maxValue === _COLOR_MAX,
       `${specId}: COLOR spec missing max_value=_COLOR_MAX`,
     );
   });
 
   test.each(_ALL_PROP_SPECS)("test_min_max_ordering[%#]", (specId: string, spec: PropSpec) => {
-    if (spec.min_value != null && spec.max_value != null) {
+    if (spec.minValue != null && spec.maxValue != null) {
       pyAssert(
-        spec.min_value <= spec.max_value,
-        `${specId}: min_value=${repr(spec.min_value)} > max_value=${repr(spec.max_value)}`,
+        spec.minValue <= spec.maxValue,
+        `${specId}: min_value=${repr(spec.minValue)} > max_value=${repr(spec.maxValue)}`,
       );
     }
   });
@@ -170,23 +170,23 @@ describe("TestPropSpecFieldConsistency", () => {
 
 describe("TestSpecStringFields", () => {
   test.each(_ALL_SPECS)("test_non_empty_match_name[%#]", (specId: string, spec: PropSpec | GroupSpec) => {
-    expect(typeof spec.match_name === "string" && pyBool(spec.match_name)).toBe(true);
+    expect(typeof spec.matchName === "string" && pyBool(spec.matchName)).toBe(true);
   });
 
   test.each(_ALL_SPECS)("test_non_empty_auto_name[%#]", (specId: string, spec: PropSpec | GroupSpec) => {
     // Variable-font axis properties have empty display names in AE
     // (they are populated dynamically from the font's named axes).
-    if (spec.match_name.startsWith("ADBE Text VF Axis")) {
-      expect(spec.auto_name).toBe("");
+    if (spec.matchName.startsWith("ADBE Text VF Axis")) {
+      expect(spec.autoName).toBe("");
       return;
     }
-    expect(typeof spec.auto_name === "string" && pyBool(spec.auto_name)).toBe(true);
+    expect(typeof spec.autoName === "string" && pyBool(spec.autoName)).toBe(true);
   });
 });
 
 describe("TestSpecListUniqueness", () => {
   test.each(_NAMED_SPEC_LISTS)("test_unique_match_names[%#]", (listName: string, specs: (PropSpec | GroupSpec)[]) => {
-    const matchNames = specs.map((s) => s.match_name);
+    const matchNames = specs.map((s) => s.matchName);
     const duplicates = matchNames.filter((mn) => matchNames.filter((x) => x === mn).length > 1);
     pyAssert(
       !pyBool(duplicates),
@@ -215,15 +215,15 @@ const _KNOWN_DIVERGENCES: Map<string, string> = new Map<string, string>([
 ]);
 
 const _REGISTRY_SPECS: [string, PropSpec | GroupSpec][] = _ALL_SPECS.filter(
-  ([sid, s]) => MATCH_NAME_TO_AUTO_NAME.has(s.match_name) && !_KNOWN_DIVERGENCES.has(s.match_name),
+  ([sid, s]) => MATCH_NAME_TO_AUTO_NAME.has(s.matchName) && !_KNOWN_DIVERGENCES.has(s.matchName),
 );
 
 describe("TestSpecNamesMatchRegistry", () => {
   test.each(_REGISTRY_SPECS)("test_name_matches_registry[%#]", (specId: string, spec: PropSpec | GroupSpec) => {
-    const expected = getitem(MATCH_NAME_TO_AUTO_NAME, spec.match_name);
+    const expected = getitem(MATCH_NAME_TO_AUTO_NAME, spec.matchName);
     pyAssert(
-      spec.auto_name === expected,
-      `${specId}: spec auto_name ${repr(spec.auto_name)} != registry ${repr(expected)}`,
+      spec.autoName === expected,
+      `${specId}: spec auto_name ${repr(spec.autoName)} != registry ${repr(expected)}`,
     );
   });
 

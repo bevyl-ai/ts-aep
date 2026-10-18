@@ -419,7 +419,7 @@ describe("TestRovingRedistributionUnderStretch", () => {
       expect(
         position.keyframes.slice(1, 3).every((kf) => low <= kf.time && kf.time <= high),
       ).toBe(true);
-      const layerTimes = position.keyframes.map((kf) => kf._layer_time);
+      const layerTimes = position.keyframes.map((kf) => kf._layerTime);
       expect(pyEq(layerTimes, sorted(layerTimes))).toBe(true);
     },
   );

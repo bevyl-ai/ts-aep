@@ -64,7 +64,7 @@ function _tdpiByParamSuffix(layer: Layer): Map<string, number[]> {
     }
   }
 
-  walk(layer._layer_list);
+  walk(layer._layerList);
   return result;
 }
 
@@ -314,7 +314,7 @@ describe("TestRoundtripAVLayerFlags", () => {
     project.save(out);
     const scale = getComp(parseAep(out).project, "crystal").layers[1].transform.property("ADBE Scale");
     expect(pyEq(scale.value, [50.0, 60.0, 100.0])).toBe(true);
-    const raw = scale._read_cdat_raw();
+    const raw = scale._readCdatRaw();
     expect(Array.isArray(raw) && approx(raw[2], 0.4)).toBe(true);
   });
 
@@ -832,7 +832,7 @@ describe("TestSetTrackMatte", () => {
     matted.setTrackMatte(matte, TrackMatteType.ALPHA);
 
     expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
-    expect(matted._matte_layer_id).toBe(matte.id);
+    expect(matted._matteLayerId).toBe(matte.id);
     expect(matted.trackMatteLayer).toBe(matte);
     expect(matte.enabled).toBe(false);
   });
@@ -854,7 +854,7 @@ describe("TestSetTrackMatte", () => {
     const matte2 = comp2.layers[1];
 
     expect(matted2.trackMatteType).toBe(TrackMatteType.LUMA);
-    expect(matted2._matte_layer_id).toBe(matte2.id);
+    expect(matted2._matteLayerId).toBe(matte2.id);
     expect(matte2.enabled).toBe(false);
   });
 
@@ -884,7 +884,7 @@ describe("TestSetTrackMatte", () => {
     matted.setTrackMatte(null, TrackMatteType.ALPHA);
 
     expect(matted.trackMatteType).toBe(TrackMatteType.ALPHA);
-    expect(matted._matte_layer_id).toBe(0);
+    expect(matted._matteLayerId).toBe(0);
     expect(matted.trackMatteLayer == null).toBe(true);
     // Old matte re-enabled
     expect(matte.enabled).toBe(true);
@@ -901,7 +901,7 @@ describe("TestSetTrackMatte", () => {
     matted.setTrackMatte(matte, TrackMatteType.NO_TRACK_MATTE);
 
     expect(matted.trackMatteType).toBe(originalType);
-    expect(matted._matte_layer_id).toBe(0);
+    expect(matted._matteLayerId).toBe(0);
     expect(matte.enabled).toBe(true);
   });
 
@@ -943,7 +943,7 @@ describe("TestRemoveTrackMatte", () => {
 
     matted.removeTrackMatte();
 
-    expect(matted._matte_layer_id).toBe(0);
+    expect(matted._matteLayerId).toBe(0);
     expect(matted.trackMatteLayer == null).toBe(true);
     expect(matte.enabled).toBe(true);
   });
@@ -970,7 +970,7 @@ describe("TestRemoveTrackMatte", () => {
 
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = app2.project.compositions[0];
-    expect(asInstance(comp2.layers[0], AVLayer)._matte_layer_id).toBe(0);
+    expect(asInstance(comp2.layers[0], AVLayer)._matteLayerId).toBe(0);
     expect(comp2.layers[1].enabled).toBe(true);
   });
 
@@ -999,7 +999,7 @@ describe("TestReplaceSource", () => {
     layer.replaceSource(newSource);
 
     expect(layer.source).toBe(newSource);
-    expect(layer._source_id).toBe(newSource.id);
+    expect(layer._sourceId).toBe(newSource.id);
   });
 
   test("test_roundtrip", () => {
@@ -1016,7 +1016,7 @@ describe("TestReplaceSource", () => {
 
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "Main_Comp");
-    expect(asInstance(comp2.layers[0], AVLayer)._source_id).toBe(newId);
+    expect(asInstance(comp2.layers[0], AVLayer)._sourceId).toBe(newId);
   });
 
   test("test_updates_used_in", () => {
@@ -1026,19 +1026,19 @@ describe("TestReplaceSource", () => {
     const layer = asInstance(comp.layers[0], AVLayer);
     const oldSource = asInstance(layer.source, AVItem);
     const newSource = asInstance(
-      app.project.footages.find((item) => item !== oldSource && "_used_in" in item),
+      app.project.footages.find((item) => item !== oldSource && "_usedIn" in item),
       FootageItem,
     );
 
     layer.replaceSource(newSource);
 
-    expect(newSource._used_in.has(comp)).toBe(true);
+    expect(newSource._usedIn.has(comp)).toBe(true);
     // old_source removed if no other layer in comp uses it
     const stillUsed = comp.layers.some(
-      (ly) => "_source_id" in ly && ly !== layer && ly._source_id === oldSource.id,
+      (ly) => "_sourceId" in ly && ly !== layer && ly._sourceId === oldSource.id,
     );
     if (!stillUsed) {
-      expect(oldSource._used_in.has(comp)).toBe(false);
+      expect(oldSource._usedIn.has(comp)).toBe(false);
     }
   });
 
@@ -1153,9 +1153,9 @@ describe("TestLayerRemove", () => {
     const app = parseAep(SAMPLES_DIR.div("layer_misc.aep"));
     const comp = getComp(app.project, "parent");
     const child = comp.layers[0]; // ChildLayer, parent_id=57
-    expect(child._parent_id).toBe(57);
+    expect(child._parentId).toBe(57);
     comp.layers[1].remove(); // Remove ParentNull (id=57)
-    expect(child._parent_id).toBe(0);
+    expect(child._parentId).toBe(0);
   });
 
   test("test_remove_cleans_matte_refs", () => {
@@ -1212,7 +1212,7 @@ describe("TestLayerRemove", () => {
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "parent");
     const child = comp2.layers[0];
-    expect(child._parent_id).toBe(0);
+    expect(child._parentId).toBe(0);
   });
 
   test("test_remove_parent_preserves_world_position", () => {
@@ -1319,7 +1319,7 @@ describe("TestParentSetter", () => {
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "parent");
     const child2 = comp2.layers[0];
-    expect(child2._parent_id).toBe(0);
+    expect(child2._parentId).toBe(0);
     const pos = child2.transform.property("ADBE Position").value;
     expect(Math.abs(pos[0] - parentPos[0]) < 0.01).toBe(true);
     expect(Math.abs(pos[1] - parentPos[1]) < 0.01).toBe(true);
@@ -1381,7 +1381,7 @@ describe("TestLayerMove", () => {
     const child = comp.layers[0]; // ChildLayer, parent_id=57
     const parent = comp.layers[1]; // ParentNull, id=57
     parent.moveToBeginning();
-    expect(child._parent_id).toBe(57);
+    expect(child._parentId).toBe(57);
   });
 
   test("test_move_preserves_matte", () => {
@@ -1450,7 +1450,7 @@ describe("TestSetParentWithJump", () => {
 
     // Unparent without transform compensation
     child.setParentWithJump(null);
-    expect(child._parent_id).toBe(0);
+    expect(child._parentId).toBe(0);
     expect(child.parent == null).toBe(true);
     // Local position should NOT change (no compensation)
     expect(pyEq(child.transform.property("ADBE Position").value, [0.0, 0.0, 0.0])).toBe(true);
@@ -1464,7 +1464,7 @@ describe("TestSetParentWithJump", () => {
     const parent = comp.layers[1];
     child.setParentWithJump(null);
     child.setParentWithJump(parent);
-    expect(child._parent_id).toBe(parent.id);
+    expect(child._parentId).toBe(parent.id);
     expect(child.parent).toBe(parent);
   });
 
@@ -1479,7 +1479,7 @@ describe("TestSetParentWithJump", () => {
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "parent");
-    expect(comp2.layers[0]._parent_id).toBe(0);
+    expect(comp2.layers[0]._parentId).toBe(0);
   });
 });
 
@@ -1596,9 +1596,9 @@ describe("TestLayerDuplicate", () => {
     const app = parseAep(SAMPLES_DIR.div("layer_misc.aep"));
     const comp = getComp(app.project, "parent");
     const child = comp.layers[0]; // ChildLayer, has parent
-    expect(child._parent_id).not.toBe(0);
+    expect(child._parentId).not.toBe(0);
     const dup = child.duplicate();
-    expect(dup._parent_id).toBe(child._parent_id);
+    expect(dup._parentId).toBe(child._parentId);
   });
 
   test("test_duplicate_preserves_matte", () => {
@@ -1735,9 +1735,9 @@ describe("TestCopyToComp", () => {
     const srcComp = getComp(app.project, "parent");
     const dstComp = getComp(app.project, "comment");
     const child = srcComp.layers[0]; // ChildLayer, has parent
-    expect(child._parent_id).not.toBe(0);
+    expect(child._parentId).not.toBe(0);
     child.copyToComp(dstComp);
-    expect(dstComp.layers[0]._parent_id).toBe(0);
+    expect(dstComp.layers[0]._parentId).toBe(0);
   });
 
   test("test_same_comp_duplicates", () => {
@@ -2141,7 +2141,7 @@ describe("TestLazyPropertyTree", () => {
         // (A missing attribute would search the children by name.)
         void layer.source;
       }
-      expect(layer._tree_param_defs != null).toBe(true);
+      expect(layer._treeParamDefs != null).toBe(true);
       // Times may decode the root tdgp (Time Remapping), not its groups.
       const root = asInstance(layer._tdgp, DeferredListChunk);
       const groups = (root.is_parsed ? root.chunks : []).filter(
@@ -2154,7 +2154,7 @@ describe("TestLazyPropertyTree", () => {
   test("test_first_access_builds_the_tree", () => {
     const layer = _layers(parseProjectFresh(SAMPLE))[0];
     expect(layer.transform != null).toBe(true);
-    expect(layer._tree_param_defs == null).toBe(true);
+    expect(layer._treeParamDefs == null).toBe(true);
     expect(layer.properties.every((p) => p.parentProperty === layer)).toBe(true);
   });
 
@@ -2163,7 +2163,7 @@ describe("TestLazyPropertyTree", () => {
     for (const layer of _layers(project)) {
       void [layer.inPoint, layer.outPoint];
     }
-    expect(pyEq(projectBytes(project), SAMPLE.read_bytes())).toBe(true);
+    expect(pyEq(projectBytes(project), SAMPLE.readBytes())).toBe(true);
   });
 
   const mutations: [string, (comp: CompItem, layer: Layer) => void][] = [
@@ -2197,7 +2197,7 @@ describe("TestLazyPropertyTree", () => {
         // `save`, which writes out the moved left-out defaults.
         const out = tmpPath.div(`built_${buildFirst ? "True" : "False"}.aep`);
         project.save(out);
-        saved.push(out.read_bytes());
+        saved.push(out.readBytes());
       }
       expect(pyEq(saved[0], saved[1])).toBe(true);
     },
@@ -2265,8 +2265,8 @@ describe("TestLazyPropertyTree", () => {
     const layer = _layers(parseProjectFresh(SAMPLE))[0];
 
     // NOTE(port): Python monkeypatches `layer.parse_properties`; ESM bindings are read-only, so the
-    // instance's `_build_property_tree` (whose first call is `parse_properties`) fails instead.
-    layer._build_property_tree = () => {
+    // instance's `_buildPropertyTree` (whose first call is `parse_properties`) fails instead.
+    layer._buildPropertyTree = () => {
       throw new RuntimeError("corrupt layer");
     };
     for (let i = 0; i < 2; i++) {
@@ -2274,7 +2274,7 @@ describe("TestLazyPropertyTree", () => {
         void layer.properties;
       }, "corrupt layer");
     }
-    Reflect.deleteProperty(layer, "_build_property_tree");
+    Reflect.deleteProperty(layer, "_buildPropertyTree");
     expect(layer.transform != null).toBe(true);
   });
 
@@ -2300,7 +2300,7 @@ describe("TestLazyPropertyTree", () => {
     const project = parseProjectFresh(SAMPLE);
     const layers = _layers(project).filter((la) => la instanceof AVLayer);
     const flags = layers.map((la) => la.timeRemapEnabled);
-    expect(layers.every((la) => la._tree_param_defs != null)).toBe(true);
+    expect(layers.every((la) => la._treeParamDefs != null)).toBe(true);
     // The same answer as the property it is read from.
     expect(flags).toEqual(
       layers.map((la) =>
@@ -2318,6 +2318,6 @@ describe("TestLazyPropertyTree", () => {
     );
     const main = getComp(project, "main");
     expect(main.layers.filter((la) => la.essentialPropertyUuids.length === 3).length).toBe(1);
-    expect(main.layers.every((la) => la._tree_param_defs != null)).toBe(true);
+    expect(main.layers.every((la) => la._treeParamDefs != null)).toBe(true);
   });
 });

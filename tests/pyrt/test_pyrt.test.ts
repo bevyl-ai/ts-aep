@@ -229,7 +229,7 @@ describe("builtins", () => {
     expect(values.map(repr)).toEqual([...CPY.repr]);
   });
 
-  test("type_name", () => {
+  test("typeName", () => {
     expect([1, 1.5, pyfloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
       "int", "float", "float", "int", "str", "bytes", "list", "dict", "set", "NoneType", "bool", "BytesIO",
     ]);

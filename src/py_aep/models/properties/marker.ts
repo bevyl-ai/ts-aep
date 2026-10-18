@@ -39,15 +39,15 @@ export function _validateParams(value: Map<string, string>): void {
  */
 export class MarkerValue {
   declare _nmhd: NmhdChunk;
-  declare _comment_utf8: Utf8Chunk;
-  declare _chapter_utf8: Utf8Chunk;
-  declare _url_utf8: Utf8Chunk;
-  declare _frame_target_utf8: Utf8Chunk;
-  declare _cue_point_name_utf8: Utf8Chunk;
+  declare _commentUtf8: Utf8Chunk;
+  declare _chapterUtf8: Utf8Chunk;
+  declare _urlUtf8: Utf8Chunk;
+  declare _frameTargetUtf8: Utf8Chunk;
+  declare _cuePointNameUtf8: Utf8Chunk;
   declare _keyframe: Keyframe | null;
   declare _nmrd: ListChunk | null;
-  declare _frame_time: number;
-  declare _param_utf8s: Utf8Chunk[];
+  declare _frameTime: number;
+  declare _paramUtf8s: Utf8Chunk[];
 
   declare duration: number;
   declare label: Label;
@@ -72,70 +72,70 @@ export class MarkerValue {
     }
     if (params != null) _validateParams(params);
     this._nmhd = new NmhdChunk();
-    this._comment_utf8 = new Utf8Chunk({ value: comment });
-    this._chapter_utf8 = new Utf8Chunk({ value: chapter });
-    this._url_utf8 = new Utf8Chunk({ value: url });
-    this._frame_target_utf8 = new Utf8Chunk({ value: frameTarget });
-    this._cue_point_name_utf8 = new Utf8Chunk({ value: cuePointName });
+    this._commentUtf8 = new Utf8Chunk({ value: comment });
+    this._chapterUtf8 = new Utf8Chunk({ value: chapter });
+    this._urlUtf8 = new Utf8Chunk({ value: url });
+    this._frameTargetUtf8 = new Utf8Chunk({ value: frameTarget });
+    this._cuePointNameUtf8 = new Utf8Chunk({ value: cuePointName });
     this._keyframe = null;
     this._nmrd = null;
-    this._frame_time = 0;
-    this._param_utf8s = [];
+    this._frameTime = 0;
+    this._paramUtf8s = [];
     if (params != null && params.size > 0) {
       for (const [key, val] of params) {
-        this._param_utf8s.push(new Utf8Chunk({ value: key }));
-        this._param_utf8s.push(new Utf8Chunk({ value: val }));
+        this._paramUtf8s.push(new Utf8Chunk({ value: key }));
+        this._paramUtf8s.push(new Utf8Chunk({ value: val }));
       }
       this._nmhd.num_params = params.size;
     }
   }
 
   /** Wrap parsed marker chunks as a `MarkerValue`. */
-  static _from_binary(kw: {
+  static _fromBinary(kw: {
     _nmhd: NmhdChunk;
-    _comment_utf8: Utf8Chunk;
-    _chapter_utf8: Utf8Chunk;
-    _url_utf8: Utf8Chunk;
-    _frame_target_utf8: Utf8Chunk;
-    _cue_point_name_utf8: Utf8Chunk;
+    _commentUtf8: Utf8Chunk;
+    _chapterUtf8: Utf8Chunk;
+    _urlUtf8: Utf8Chunk;
+    _frameTargetUtf8: Utf8Chunk;
+    _cuePointNameUtf8: Utf8Chunk;
     _keyframe?: Keyframe | null;
-    frame_time?: number;
-    _param_utf8s?: Utf8Chunk[] | null;
+    frameTime?: number;
+    _paramUtf8s?: Utf8Chunk[] | null;
     _nmrd?: ListChunk | null;
   }): MarkerValue {
     const {
       _nmhd,
-      _comment_utf8,
-      _chapter_utf8,
-      _url_utf8,
-      _frame_target_utf8,
-      _cue_point_name_utf8,
+      _commentUtf8: _comment_utf8,
+      _chapterUtf8: _chapter_utf8,
+      _urlUtf8: _url_utf8,
+      _frameTargetUtf8: _frame_target_utf8,
+      _cuePointNameUtf8: _cue_point_name_utf8,
       _keyframe = null,
-      frame_time = 0,
-      _param_utf8s = null,
+      frameTime: frame_time = 0,
+      _paramUtf8s: _param_utf8s = null,
       _nmrd = null,
     } = kw;
     // `cls.__new__(cls)`: skip the constructor, the chunks are supplied.
     const obj: MarkerValue = Object.create(this.prototype);
     obj._nmhd = _nmhd;
-    obj._comment_utf8 = _comment_utf8;
-    obj._chapter_utf8 = _chapter_utf8;
-    obj._url_utf8 = _url_utf8;
-    obj._frame_target_utf8 = _frame_target_utf8;
-    obj._cue_point_name_utf8 = _cue_point_name_utf8;
+    obj._commentUtf8 = _comment_utf8;
+    obj._chapterUtf8 = _chapter_utf8;
+    obj._urlUtf8 = _url_utf8;
+    obj._frameTargetUtf8 = _frame_target_utf8;
+    obj._cuePointNameUtf8 = _cue_point_name_utf8;
     obj._keyframe = _keyframe;
     obj._nmrd = _nmrd;
-    obj._frame_time = frame_time;
-    obj._param_utf8s = pyOr(_param_utf8s, []);
+    obj._frameTime = frame_time;
+    obj._paramUtf8s = pyOr(_param_utf8s, []);
     return obj;
   }
 
   /** Key-value pairs for Flash Video cue-point parameters. Read / Write. */
   get params(): Map<string, string> {
     const result = new Map<string, string>();
-    for (let i = 0; i < this._param_utf8s.length - 1; i += 2) {
-      const key = this._param_utf8s[i].value;
-      const val = this._param_utf8s[i + 1].value;
+    for (let i = 0; i < this._paramUtf8s.length - 1; i += 2) {
+      const key = this._paramUtf8s[i].value;
+      const val = this._paramUtf8s[i + 1].value;
       result.set(key, val);
     }
     return result;
@@ -143,7 +143,7 @@ export class MarkerValue {
 
   set params(value: Map<string, string>) {
     _validateParams(value);
-    const old = this._param_utf8s;
+    const old = this._paramUtf8s;
     const new_: Utf8Chunk[] = [];
     for (const [i, [key, val]] of [...value].entries()) {
       if (2 * i + 1 < old.length) {
@@ -169,7 +169,7 @@ export class MarkerValue {
       }
       if (added.length > 0) {
         const kept = new_.slice(0, new_.length - added.length);
-        const anchor = kept.length > 0 ? kept[kept.length - 1] :this._cue_point_name_utf8;
+        const anchor = kept.length > 0 ? kept[kept.length - 1] :this._cuePointNameUtf8;
         let pos: number;
         try {
           pos = indexByIdentity(chunks, anchor);
@@ -180,7 +180,7 @@ export class MarkerValue {
         chunks.splice(pos + 1, 0, ...added);
       }
     }
-    this._param_utf8s = new_;
+    this._paramUtf8s = new_;
     this._nmhd.num_params = value.size;
   }
 
@@ -189,7 +189,7 @@ export class MarkerValue {
     if (this._keyframe != null) {
       return this._keyframe.frameTime;
     }
-    return this._frame_time;
+    return this._frameTime;
   }
 
   set frameTime(value: number) {
@@ -197,7 +197,7 @@ export class MarkerValue {
     if (this._keyframe != null) {
       this._keyframe.frameTime = value;
     } else {
-      this._frame_time = value;
+      this._frameTime = value;
     }
   }
 
@@ -208,22 +208,22 @@ export class MarkerValue {
    *   composition frame rate.
    */
   get frameDuration(): number {
-    return round(this.duration * this._frame_rate());
+    return round(this.duration * this._frameRate());
   }
 
   set frameDuration(value: number) {
     validateU4(value);
-    this.duration = value / this._frame_rate();
+    this.duration = value / this._frameRate();
   }
 
-  _frame_rate(): number {
+  _frameRate(): number {
     if (this._keyframe == null) {
       throw new ValueError(
         "frameDuration needs the composition frame rate: set the " +
           "MarkerValue on a marker property first",
       );
     }
-    return this._keyframe._frame_rate;
+    return this._keyframe._frameRate;
   }
 
   /**
@@ -260,23 +260,23 @@ descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protected_r
  * A text comment for this marker. This comment appears in the Timeline panel
  * next to the layer marker. Read / Write.
  */
-descriptor(MarkerValue, "comment", new ChunkField("_comment_utf8", "value"));
+descriptor(MarkerValue, "comment", new ChunkField("_commentUtf8", "value"));
 
 /**
  * A text chapter link for this marker. Chapter links initiate a jump to a
  * chapter in a QuickTime movie or in other formats that support chapter
  * marks. Read / Write.
  */
-descriptor(MarkerValue, "chapter", new ChunkField("_chapter_utf8", "value"));
+descriptor(MarkerValue, "chapter", new ChunkField("_chapterUtf8", "value"));
 
 /** A URL for this marker. This URL is an automatic link to a Web page. Read / Write. */
-descriptor(MarkerValue, "url", new ChunkField("_url_utf8", "value"));
+descriptor(MarkerValue, "url", new ChunkField("_urlUtf8", "value"));
 
 /**
  * A text frame target for this marker. Together with the URL value, this
  * targets a specific frame within a Web page. Read / Write.
  */
-descriptor(MarkerValue, "frameTarget", new ChunkField("_frame_target_utf8", "value"));
+descriptor(MarkerValue, "frameTarget", new ChunkField("_frameTargetUtf8", "value"));
 
 /** The Flash Video cue point name, as shown in the Marker dialog box. Read / Write. */
-descriptor(MarkerValue, "cuePointName", new ChunkField("_cue_point_name_utf8", "value"));
+descriptor(MarkerValue, "cuePointName", new ChunkField("_cuePointNameUtf8", "value"));

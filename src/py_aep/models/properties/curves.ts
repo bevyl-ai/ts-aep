@@ -121,7 +121,7 @@ export class CurvesChannel {
   declare _points: Array<[number, number]>;
   declare _map: Uint8Array;
   declare _selected: number;
-  declare _uses_points: boolean;
+  declare _usesPoints: boolean;
   declare _spline: _NaturalSpline;
 
   constructor(
@@ -136,7 +136,7 @@ export class CurvesChannel {
     this._map = lut;
     // AE leaves junk here at times (0x9200FF with 3 points).
     this._selected = 0 <= selected && selected < points.length ? selected : -1;
-    this._uses_points = usesPoints;
+    this._usesPoints = usesPoints;
     /**
      * The natural cubic spline through the points, in 0..255 on both axes.
      */
@@ -179,7 +179,7 @@ export class CurvesChannel {
    */
   get isIdentity(): boolean {
     const mapIsIdentity = this._map.every((v, i) => v === i);
-    if (!this._uses_points) return mapIsIdentity;
+    if (!this._usesPoints) return mapIsIdentity;
     return mapIsIdentity && this._points.every(([x, y]) => x === y);
   }
 
@@ -187,8 +187,8 @@ export class CurvesChannel {
    * Whether this curve is `other`'s: the same points when both go
    * through theirs, else the same map (what a pencil curve renders).
    */
-  _same_curve(other: CurvesChannel): boolean {
-    if (this._uses_points && other._uses_points) return pyEq(this._points, other._points);
+  _sameCurve(other: CurvesChannel): boolean {
+    if (this._usesPoints && other._usesPoints) return pyEq(this._points, other._points);
     return bytesEq(this._map, other._map);
   }
 
@@ -213,7 +213,7 @@ export class Curves {
   /**
    * Build the curves from a Curves effect's aRbp layout.
    */
-  static _from_binary(chunk: CurvesArbpChunk): Curves {
+  static _fromBinary(chunk: CurvesArbpChunk): Curves {
     // `cls.__new__(cls)`: an instance without running `__init__`.
     const obj: Curves = Object.create(this.prototype);
     obj._version = chunk.version;
@@ -241,9 +241,9 @@ export class Curves {
    * Whether these curves are `other`'s, channel by channel (the
    * bytes differ by the stale points and junk AE leaves).
    */
-  _same_curves(other: Curves): boolean {
+  _sameCurves(other: Curves): boolean {
     return Array.from(this._channels).every(([name, ch]) =>
-      ch._same_curve(getitem(other._channels, name)),
+      ch._sameCurve(getitem(other._channels, name)),
     );
   }
 

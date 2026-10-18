@@ -41,7 +41,7 @@ describe("TestMediaProbe", () => {
     const info = probeMedia(ASSETS.div(name));
     expect(info.width).toBe(width);
     expect(info.height).toBe(height);
-    expect(info.has_alpha).toBe(hasAlpha);
+    expect(info.hasAlpha).toBe(hasAlpha);
     expect(info.duration).toBe(0.0);
   });
 
@@ -51,22 +51,22 @@ describe("TestMediaProbe", () => {
   ])("test_exr[%#]", (name: string, width: number, height: number, hasAlpha: boolean) => {
     const info = probeMedia(ASSETS.div(name));
     expect(pyEq([info.width, info.height], [width, height])).toBe(true);
-    expect(info.has_alpha).toBe(hasAlpha);
+    expect(info.hasAlpha).toBe(hasAlpha);
   });
 
   test.each(["8bits.psd", "8bits.psb"])("test_psd_metadata[%#]", (name: string) => {
     const info = probeMedia(ASSETS.div(name));
     expect(pyEq([info.width, info.height], [25, 26])).toBe(true);
-    expect(info.bit_depth).toBe(8);
-    expect(info.layer_count).toBe(2);
+    expect(info.bitDepth).toBe(8);
+    expect(info.layerCount).toBe(2);
   });
 
   test("test_wav", () => {
     const info = probeMedia(ASSETS.div("wav.wav"));
     expect(info.width).toBe(0);
     expect(info.height).toBe(0);
-    expect(info.has_audio).toBe(true);
-    expect(info.audio_sample_rate).toBe(44100.0);
+    expect(info.hasAudio).toBe(true);
+    expect(info.audioSampleRate).toBe(44100.0);
     expect(approx(info.duration, 5.9431746, { abs: 1e-4 })).toBe(true);
   });
 
@@ -88,10 +88,10 @@ describe("TestMediaProbe", () => {
     ) => {
       const info = probeMedia(ASSETS.div(name));
       expect(pyEq([info.width, info.height], [width, height])).toBe(true);
-      expect(approx(info.frame_rate, fps, { abs: 1e-3 })).toBe(true);
-      expect(info.has_audio).toBe(hasAudio);
-      expect(info.has_alpha).toBe(hasAlpha);
-      expect(approx(info.pixel_aspect, pixelAspect, { abs: 1e-4 })).toBe(true);
+      expect(approx(info.frameRate, fps, { abs: 1e-3 })).toBe(true);
+      expect(info.hasAudio).toBe(hasAudio);
+      expect(info.hasAlpha).toBe(hasAlpha);
+      expect(approx(info.pixelAspect, pixelAspect, { abs: 1e-4 })).toBe(true);
     },
   );
 
@@ -99,8 +99,8 @@ describe("TestMediaProbe", () => {
     // MP4 video shares the QuickTime atom tree, so _probe_mov parses it.
     const info = probeMedia(ASSETS.div("m4v.m4v"));
     expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
-    expect(approx(info.frame_rate, 29.97, { abs: 1e-3 })).toBe(true);
-    expect(info.has_audio).toBe(false);
+    expect(approx(info.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
+    expect(info.hasAudio).toBe(false);
     expect(approx(info.duration, 13.3467, { abs: 1e-3 })).toBe(true);
   });
 
@@ -108,8 +108,8 @@ describe("TestMediaProbe", () => {
     const info = probeMedia(ASSETS.div("aif.aif"));
     expect(info.width).toBe(0);
     expect(info.height).toBe(0);
-    expect(info.has_audio).toBe(true);
-    expect(info.audio_sample_rate).toBe(44100.0);
+    expect(info.hasAudio).toBe(true);
+    expect(info.audioSampleRate).toBe(44100.0);
     expect(approx(info.duration, 0.5, { abs: 1e-5 })).toBe(true);
   });
 
@@ -117,20 +117,20 @@ describe("TestMediaProbe", () => {
     // avc1 video + AAC audio, moov ahead of mdat. Values are AE 2026's.
     const info = probeMedia(ASSETS.div("mp4_5s-360p.mp4"));
     expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
-    expect(approx(info.frame_rate, 30.0, { abs: 1e-3 })).toBe(true);
+    expect(approx(info.frameRate, 30.0, { abs: 1e-3 })).toBe(true);
     // The video track's duration wins over the longer mvhd/audio duration.
     expect(approx(info.duration, 5.7, { abs: 1e-4 })).toBe(true);
-    expect(info.has_audio).toBe(true);
-    expect(info.audio_sample_rate).toBe(44100.0);
+    expect(info.hasAudio).toBe(true);
+    expect(info.audioSampleRate).toBe(44100.0);
   });
 
   test("test_mp4_moov_after_mdat", () => {
     // This file stores moov at the end, so the probe must scan past mdat.
     const info = probeMedia(ASSETS.div("mp4_640x360.mp4"));
     expect(pyEq([info.width, info.height], [640, 360])).toBe(true);
-    expect(approx(info.frame_rate, 29.97, { abs: 1e-3 })).toBe(true);
+    expect(approx(info.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
     expect(approx(info.duration, 13.3467, { abs: 1e-3 })).toBe(true);
-    expect(info.has_audio).toBe(false);
+    expect(info.hasAudio).toBe(false);
   });
 
   test("test_mp4_undecodable_codec_reports_audio_only", () => {
@@ -140,8 +140,8 @@ describe("TestMediaProbe", () => {
     // (measured), so the probe must drop it exactly as AE does.
     const info = probeMedia(ASSETS.div("mp4_av1_with_audio.mp4"));
     expect(pyEq([info.width, info.height], [0, 0])).toBe(true);
-    expect(info.frame_rate).toBe(0.0);
-    expect(info.has_audio).toBe(true);
+    expect(info.frameRate).toBe(0.0);
+    expect(info.hasAudio).toBe(true);
     // Audio-only duration comes from the edit list, matching AE's 1.0.
     expect(approx(info.duration, 1.0, { abs: 1e-3 })).toBe(true);
   });
@@ -159,7 +159,7 @@ describe("TestMediaProbe", () => {
     // through AE's QuickTime importer, which decodes a wider set - so the
     // ungated probe must still read both files' real video track.
     for (const name of ["mp4_av1_with_audio.mp4", "mp4_vp9_no_audio.mp4"]) {
-      const fp = new BytesIO(ASSETS.div(name).read_bytes());
+      const fp = new BytesIO(ASSETS.div(name).readBytes());
       const info = _probeMov(fp);
       expect([name, [info.width, info.height]]).toEqual([name, [64, 64]]);
     }
@@ -169,8 +169,8 @@ describe("TestMediaProbe", () => {
     const info = probeMedia(ASSETS.div("click.aiff"));
     expect(info.width).toBe(0);
     expect(info.height).toBe(0);
-    expect(info.has_audio).toBe(true);
-    expect(info.audio_sample_rate).toBe(44100.0);
+    expect(info.hasAudio).toBe(true);
+    expect(info.audioSampleRate).toBe(44100.0);
     expect(approx(info.duration, 0.1274376, { abs: 1e-5 })).toBe(true);
   });
 
@@ -224,7 +224,7 @@ describe("TestProbeFormatVariants", () => {
     );
     const info = _probeBmp(new BytesIO(data));
     expect(pyEq([info.width, info.height], [100, 50])).toBe(true);
-    expect(info.has_alpha).toBe(true);
+    expect(info.hasAlpha).toBe(true);
   });
 
   test("test_tiff_bigtiff_returns_unknown", () => {
@@ -244,7 +244,7 @@ describe("TestProbeFormatVariants", () => {
     const info = _probeMp3(new BytesIO(raw));
     // 100 frames * 576 samples / 22050 Hz; the 144 coefficient halved this.
     expect(approx(info.duration, (100 * 576) / 22050, { abs: 1e-3 })).toBe(true);
-    expect(info.audio_sample_rate).toBe(22050.0);
+    expect(info.audioSampleRate).toBe(22050.0);
   });
 
   test("test_hdr_x_major_resolution_line", () => {
@@ -270,7 +270,7 @@ describe("TestProbeFormatVariants", () => {
   ])("test_crw_image_info_rotation[%#]", (rotation: number, size: number[]) => {
     /** Camera Raw develops a CRW turned by its ImageInfo rotation: AE 2026
      * reports the sample marked 90 or 270 degrees as 1024x1536. */
-    const data = ASSETS.div("crw.crw").read_bytes();
+    const data = ASSETS.div("crw.crw").readBytes();
     const record = struct.pack("<IIfi", 1536, 1024, 1.0, 0);
     expect(bytes_.count(data, record)).toBe(1);
     const rotated = bytes_.replace(data, record, struct.pack("<IIfi", 1536, 1024, 1.0, rotation));
@@ -349,7 +349,7 @@ describe("TestTiffOpti", () => {
     // The colour mode and layer count AE records for a TIFF
     // (footage_depth.aep, AE 2026).
     const info = probeMedia(ASSETS.div(name));
-    expect(pyEq([info.color_mode, info.layer_count], [colorMode, layerCount])).toBe(true);
+    expect(pyEq([info.colorMode, info.layerCount], [colorMode, layerCount])).toBe(true);
   });
 });
 
@@ -381,7 +381,7 @@ describe("TestPsdOpti", () => {
     ["depth/psd_cmyk8_flat.psd", 4],
     ["8bits.psd", 3],
   ])("test_probe_reads_the_color_mode[%#]", (name: string, colorMode: number) => {
-    expect(probeMedia(ASSETS.div(name)).color_mode).toBe(colorMode);
+    expect(probeMedia(ASSETS.div(name)).colorMode).toBe(colorMode);
   });
 
   test("test_layer_name_truncates_on_utf8_boundary", () => {

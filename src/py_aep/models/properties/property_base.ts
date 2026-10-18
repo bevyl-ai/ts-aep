@@ -88,8 +88,8 @@ export function _validateEnabled(value: boolean, obj: PropertyBase): void {
 export function _renumberMaskAutoNames(parent: PropertyGroup): void {
   let i = 1;
   for (const child of parent._properties) {
-    if (child._is_mask) {
-      child._auto_name = `Mask ${i}`;
+    if (child._isMask) {
+      child._autoName = `Mask ${i}`;
       i += 1;
     }
   }
@@ -105,12 +105,12 @@ export function _renumberMaskAutoNames(parent: PropertyGroup): void {
  */
 export function _clearMaskReferences(mask: MaskPropertyGroup): void {
   const maskId = mask._mkif.mask_id;
-  for (const prop of mask._containing_layer._leaf_properties()) {
+  for (const prop of mask._containingLayer._leafProperties()) {
     if (prop.propertyValueType !== PropertyValueType.MASK_INDEX) continue;
-    const tdli = prop._tdli_chunk();
+    const tdli = prop._tdliChunk();
     if (tdli == null || tdli.value !== maskId) continue;
     tdli.value = 0;
-    if (!prop.expression) prop._revert_to_synthetic();
+    if (!prop.expression) prop._revertToSynthetic();
   }
 }
 
@@ -130,7 +130,7 @@ export function _assignDuplicateMaskIdentity(
   parent: PropertyGroup,
 ): void {
   const siblings = parent._properties
-    .filter((m) => m._is_mask && m !== newMask)
+    .filter((m) => m._isMask && m !== newMask)
     .filter((m) => m instanceof _maskPropertyGroup().MaskPropertyGroup);
   const newId = max(siblings.map((m) => m._mkif.mask_id), null, 0) + 1;
   newMask._mkif.mask_id = newId;
@@ -154,51 +154,51 @@ export class PropertyBase {
   declare enabled: boolean;
 
   declare _tdsb: TdsbChunk | null;
-  declare _name_utf8: Utf8Chunk | null;
-  declare _match_name: string;
-  declare _auto_name: string | null;
-  declare _property_depth: number;
+  declare _nameUtf8: Utf8Chunk | null;
+  declare _matchName: string;
+  declare _autoName: string | null;
+  declare _propertyDepth: number;
   declare _tdmn: TdmnChunk | null;
   declare _name: string | null;
   declare _elided: boolean;
-  declare _is_effect: boolean;
-  declare _is_mask: boolean;
-  declare _parent_property: PropertyGroup | null;
-  declare _property_type: PropertyType;
+  declare _isEffect: boolean;
+  declare _isMask: boolean;
+  declare _parentProperty: PropertyGroup | null;
+  declare _propertyType: PropertyType;
 
   constructor(kw: {
     _tdsb: TdsbChunk | null;
-    _name_utf8?: Utf8Chunk | null;
-    parent_property?: PropertyGroup | null;
-    match_name: string;
-    property_depth: number;
-    auto_name?: string | null;
+    _nameUtf8?: Utf8Chunk | null;
+    parentProperty?: PropertyGroup | null;
+    matchName: string;
+    propertyDepth: number;
+    autoName?: string | null;
   }) {
     const {
       _tdsb,
-      _name_utf8 = null,
-      parent_property = null,
-      match_name,
-      property_depth,
-      auto_name = null,
+      _nameUtf8: _name_utf8 = null,
+      parentProperty: parent_property = null,
+      matchName: match_name,
+      propertyDepth: property_depth,
+      autoName: auto_name = null,
     } = kw;
     this._tdsb = _tdsb;
-    this._name_utf8 = _name_utf8;
-    this._match_name = match_name;
-    this._auto_name = auto_name;
-    this._property_depth = property_depth;
+    this._nameUtf8 = _name_utf8;
+    this._matchName = match_name;
+    this._autoName = auto_name;
+    this._propertyDepth = property_depth;
     this._tdmn = null;
 
     this._name = null;
 
     this._elided = false;
-    this._is_effect = false;
-    this._is_mask = false;
-    this._parent_property = parent_property;
-    this._property_type = PropertyType.NAMED_GROUP;
+    this._isEffect = false;
+    this._isMask = false;
+    this._parentProperty = parent_property;
+    this._propertyType = PropertyType.NAMED_GROUP;
   }
 
-  _ensure_materialized(): void {
+  _ensureMaterialized(): void {
     // No-op on `PropertyBase`. Overridden by `Property` and
     // `PropertyGroup` to flip synthetic flags on backing chunks on
     // first user write.
@@ -210,12 +210,12 @@ export class PropertyBase {
    * `tdbs` for a {@link Property}, `tdgp` for a {@link PropertyGroup}.
    * Overridden by subclasses; `null` on the base.
    */
-  _chunk_body(): Chunk | null {
+  _chunkBody(): Chunk | null {
     return null;
   }
 
   /** Whether this property's chunks are serialized (not synthetic). */
-  _is_live(): boolean {
+  _isLive(): boolean {
     return this._tdsb == null || !this._tdsb.synthetic;
   }
 
@@ -240,12 +240,12 @@ export class PropertyBase {
    * identical to a sibling's, so `.remove()`/`.index()` would act on
    * the wrong chunk.
    */
-  _reposition_canonically(): void {
-    const parent = this._parent_property;
+  _repositionCanonically(): void {
+    const parent = this._parentProperty;
     if (parent == null) return;
     const tdgp = getattr(parent, "_tdgp", null);
     const tdmn = this._tdmn;
-    const body = this._chunk_body();
+    const body = this._chunkBody();
     if (tdgp == null || tdmn == null || body == null) return;
     const chunks = tdgp.chunks;
     if (!chunks.some((c) => c === tdmn) || !chunks.some((c) => c === body)) return;
@@ -257,7 +257,7 @@ export class PropertyBase {
     let pos: number | null = null;
     // Insert right before the nearest following live sibling's tdmn.
     for (const sib of siblings.slice(idx + 1)) {
-      if (sib._is_live() && sib._tdmn != null) {
+      if (sib._isLive() && sib._tdmn != null) {
         const sibPos = chunks.findIndex((c) => c === sib._tdmn);
         if (sibPos >= 0) {
           pos = sibPos;
@@ -297,7 +297,7 @@ export class PropertyBase {
    * Read-only.
    */
   get matchName(): string {
-    return this._match_name;
+    return this._matchName;
   }
 
   /**
@@ -306,7 +306,7 @@ export class PropertyBase {
    * Read-only.
    */
   get propertyDepth(): number {
-    return this._property_depth;
+    return this._propertyDepth;
   }
 
   /**
@@ -323,7 +323,7 @@ export class PropertyBase {
    * Read-only.
    */
   get isEffect(): boolean {
-    return this._is_effect;
+    return this._isEffect;
   }
 
   /**
@@ -331,7 +331,7 @@ export class PropertyBase {
    * Read-only.
    */
   get isMask(): boolean {
-    return this._is_mask;
+    return this._isMask;
   }
 
   /**
@@ -340,7 +340,7 @@ export class PropertyBase {
    * Read-only.
    */
   get propertyType(): PropertyType {
-    return this._property_type;
+    return this._propertyType;
   }
 
   /**
@@ -348,12 +348,12 @@ export class PropertyBase {
    * top-level layer property groups. Read-only.
    */
   get parentProperty(): PropertyGroup | null {
-    return this._parent_property;
+    return this._parentProperty;
   }
 
   /** The automatic (display) name derived from `match_name`. */
   get autoName(): string {
-    if (this._auto_name != null) return this._auto_name;
+    if (this._autoName != null) return this._autoName;
     return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
   }
 
@@ -368,8 +368,8 @@ export class PropertyBase {
    */
   get name(): string {
     if (this._name != null) return this._name;
-    if (this._name_utf8 != null) {
-      const text: string = split(this._name_utf8.value, "\0")[0];
+    if (this._nameUtf8 != null) {
+      const text: string = split(this._nameUtf8.value, "\0")[0];
       if (text && text !== TDSN_SENTINEL) return text;
     }
     return this.autoName;
@@ -380,7 +380,7 @@ export class PropertyBase {
     // A Layer is a PropertyBase but its name is a layer attribute, not a
     // property name - `Layer.name` extends this setter and is always
     // writable.
-    const parent = this._parent_property;
+    const parent = this._parentProperty;
     if (!("_ldta" in this) && (parent == null || parent.propertyType !== PropertyType.INDEXED_GROUP)) {
       // Materializing a synthetic property just to hold a name AE
       // would not accept writes a truncated LIST:tdbs (no cdat, no
@@ -394,17 +394,17 @@ export class PropertyBase {
       );
     }
 
-    this._ensure_materialized();
+    this._ensureMaterialized();
     this._name = value;
-    pyAssert(this._name_utf8 != null);
-    this._name_utf8.value = value;
+    pyAssert(this._nameUtf8 != null);
+    this._nameUtf8.value = value;
   }
 
   /** `true` if the name has been explicitly set by the user. Read-only. */
   get isNameSet(): boolean {
     if (this._name != null) return true;
-    if (this._name_utf8 != null) {
-      const text: string = split(this._name_utf8.value, "\0")[0];
+    if (this._nameUtf8 != null) {
+      const text: string = split(this._nameUtf8.value, "\0")[0];
       return !!text && text !== TDSN_SENTINEL;
     }
     return false;
@@ -474,7 +474,7 @@ export class PropertyBase {
    * Returns the Layer object (detected by having `_ldta`), or raises
    * a ValueError if the property is not attached to a layer.
    */
-  get _containing_layer(): Layer {
+  get _containingLayer(): Layer {
     let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
       if ("_ldta" in node && node instanceof _layer().Layer) return node;
@@ -484,7 +484,7 @@ export class PropertyBase {
   }
 
   /** Check if this property is inside an effect PropertyGroup. */
-  _is_in_effect(): boolean {
+  _isInEffect(): boolean {
     let node: PropertyBase | null = this.parentProperty;
     while (node != null) {
       if (node.isEffect) return true;
@@ -513,8 +513,8 @@ export class PropertyBase {
    * Only children of indexed groups (effects, masks, shape contents,
    * text animators) can be removed/moved/duplicated.
    */
-  _can_mutate(): [PropertyGroup, ListChunk] {
-    const parent = this._parent_property;
+  _canMutate(): [PropertyGroup, ListChunk] {
+    const parent = this._parentProperty;
     if (parent == null) throw new ValueError("Cannot mutate a root property");
     if (parent.propertyType !== PropertyType.INDEXED_GROUP) {
       throw new ValueError(`Cannot mutate property in non-indexed group '${parent.matchName}'`);
@@ -530,7 +530,7 @@ export class PropertyBase {
    * For effects (where the model's `_tdgp` is inside a wrapping
    * `LIST:sspc`), this returns the sspc chunk.
    */
-  _backing_list_chunk(parentTdgp: ListChunk): ListChunk {
+  _backingListChunk(parentTdgp: ListChunk): ListChunk {
     const chunk: ListChunk | null = pyOr(getattr(this, "_tdbs", null), getattr(this, "_tdgp", null));
     pyAssert(chunk != null);
     // Identity check - attrs __eq__ is structural, so .index() / `in`
@@ -555,9 +555,9 @@ export class PropertyBase {
    * `mkif` for masks), and the backing LIST chunk itself. The span
    * is suitable for slice deletion.
    */
-  _find_chunk_span(parentTdgp: ListChunk): [number, number] {
+  _findChunkSpan(parentTdgp: ListChunk): [number, number] {
     const start = indexByIdentity(parentTdgp.chunks, this._tdmn);
-    const backing = this._backing_list_chunk(parentTdgp);
+    const backing = this._backingListChunk(parentTdgp);
     const end = indexByIdentity(parentTdgp.chunks, backing);
     return [start, end + 1];
   }
@@ -571,18 +571,18 @@ export class PropertyBase {
    * @throws {@link ValueError} If this property is not in an indexed group.
    */
   remove(): void {
-    const [parent, parentTdgp] = this._can_mutate();
-    if (this._is_mask && this instanceof _maskPropertyGroup().MaskPropertyGroup) _clearMaskReferences(this);
-    const [start, end] = this._find_chunk_span(parentTdgp);
+    const [parent, parentTdgp] = this._canMutate();
+    if (this._isMask && this instanceof _maskPropertyGroup().MaskPropertyGroup) _clearMaskReferences(this);
+    const [start, end] = this._findChunkSpan(parentTdgp);
     const removed = parentTdgp.chunks.splice(start, end - start);
     _effect().rehomeEffectDefinitions(
-      this._containing_layer.containingComp._project,
+      this._containingLayer.containingComp._project,
       removed
         .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
         .map((chunk): [string, ListChunk] => [this.matchName, chunk]),
     );
     listRemove<PropertyBase>(parent.properties, this);
-    if (this._is_mask) _renumberMaskAutoNames(parent);
+    if (this._isMask) _renumberMaskAutoNames(parent);
   }
 
   /**
@@ -595,7 +595,7 @@ export class PropertyBase {
    * @throws {@link IndexError} If `new_index` is out of range.
    */
   moveTo(newIndex: number): void {
-    const [parent, parentTdgp] = this._can_mutate();
+    const [parent, parentTdgp] = this._canMutate();
 
     const numProps = parent.properties.length;
     if (!(0 <= newIndex && newIndex < numProps)) {
@@ -607,7 +607,7 @@ export class PropertyBase {
     if (currentIndex === newIndex) return;
 
     // Extract chunk span
-    const [start, end] = this._find_chunk_span(parentTdgp);
+    const [start, end] = this._findChunkSpan(parentTdgp);
     const chunkSpan = parentTdgp.chunks.slice(start, end);
     parentTdgp.chunks.splice(start, end - start);
 
@@ -620,13 +620,13 @@ export class PropertyBase {
       parent.properties.push(child);
     } else {
       const target = parent.properties[newIndex];
-      const [targetStart] = target._find_chunk_span(parentTdgp);
+      const [targetStart] = target._findChunkSpan(parentTdgp);
       for (const [i, c] of chunkSpan.entries()) {
         parentTdgp.chunks.splice(targetStart + i, 0, c);
       }
       parent.properties.splice(newIndex, 0, child);
     }
-    if (this._is_mask) _renumberMaskAutoNames(parent);
+    if (this._isMask) _renumberMaskAutoNames(parent);
   }
 
   /**
@@ -639,11 +639,11 @@ export class PropertyBase {
    * @throws {@link ValueError} If this property is not in an indexed group.
    */
   duplicate(): PropertyBase {
-    const [parent, parentTdgp] = this._can_mutate();
+    const [parent, parentTdgp] = this._canMutate();
 
     // Clone the full chunk span: tdmn, auxiliary chunks (e.g. mkif
     // for masks) and the backing LIST chunk.
-    const [start, end] = this._find_chunk_span(parentTdgp);
+    const [start, end] = this._findChunkSpan(parentTdgp);
     const cloned = parentTdgp.chunks.slice(start, end).map((c) => cloneChunkTree(c));
 
     // Insert after original in parent's chunk list
@@ -652,13 +652,13 @@ export class PropertyBase {
     }
 
     // Re-parse the cloned chunks into a model
-    const newProp = this._parse_clone(cloned, parent);
+    const newProp = this._parseClone(cloned, parent);
 
     // Insert in model list after original
     const modelIdx = listIndex<PropertyBase>(parent.properties, this);
     parent.properties.splice(modelIdx + 1, 0, newProp);
 
-    if (this._is_mask && newProp instanceof _maskPropertyGroup().MaskPropertyGroup) {
+    if (this._isMask && newProp instanceof _maskPropertyGroup().MaskPropertyGroup) {
       _assignDuplicateMaskIdentity(this, newProp, parent);
       _renumberMaskAutoNames(parent);
     }
@@ -675,39 +675,39 @@ export class PropertyBase {
    *   auxiliary chunks (e.g. `mkif`) in between.
    * @param parent - The parent group of the clone.
    */
-  _parse_clone(cloned: Chunk[], parent: PropertyGroup): Property | PropertyGroup {
+  _parseClone(cloned: Chunk[], parent: PropertyGroup): Property | PropertyGroup {
     // Determine the composition context
-    const layer = this._containing_layer;
+    const layer = this._containingLayer;
     const comp = layer.containingComp;
 
     // Get effect param defs from the project
     let effectParamDefs: EffectParamDefs = new Map();
     const project = comp._project;
     if (project != null) {
-      effectParamDefs = project._effect_param_defs;
+      effectParamDefs = project._effectParamDefs;
     }
 
     const tdmn = cloned[0] as TdmnChunk;
     const listChunk = cloned.at(-1) as ListChunk;
     let result: Property | PropertyGroup;
-    if (this._is_mask) {
+    if (this._isMask) {
       const mkif = findByType(cloned, "mkif");
       result = _property()._parseMaskAtom(
         listChunk,
         mkif,
-        this._property_depth,
+        this._propertyDepth,
         effectParamDefs,
         comp,
         tdmn,
         layer,
       );
     } else if (listChunk.list_type === "tdbs") {
-      result = _propertyValue().parseProperty(listChunk, this._match_name, comp, this._property_depth, tdmn);
+      result = _propertyValue().parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
     } else if (listChunk.list_type === "sspc") {
       result = _effect().parseEffect(
         listChunk,
-        this._match_name,
-        this._property_depth,
+        this._matchName,
+        this._propertyDepth,
         effectParamDefs,
         comp,
         tdmn,
@@ -716,8 +716,8 @@ export class PropertyBase {
     } else if (listChunk.list_type === "tdgp") {
       result = _property().parsePropertyGroup(
         listChunk,
-        this._match_name,
-        this._property_depth,
+        this._matchName,
+        this._propertyDepth,
         effectParamDefs,
         comp,
         tdmn,
@@ -730,9 +730,9 @@ export class PropertyBase {
     // (e.g. Mask Feather/Opacity) are missing from the clone; re-arm
     // deferred synthesis to fill them on first access, like a fresh parse.
     if (result instanceof _propertyGroup().PropertyGroup) {
-      result._deferred_ae_major = getAeVersionMajor(comp);
+      result._deferredAeMajor = getAeVersionMajor(comp);
     }
-    result._parent_property = parent;
+    result._parentProperty = parent;
     return result;
   }
 }

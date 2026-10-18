@@ -232,7 +232,7 @@ describe("TestNewVersion", () => {
     const reread = py_aep.parse(path).project;
     const newComp = reread.compositions.find((c) => c.name === "Depth");
     if (newComp == null) throw new StopIteration();
-    const records = recursiveFind(newComp._item_list.chunks, "ldta");
+    const records = recursiveFind(newComp._itemList.chunks, "ldta");
     expect(
       pyEq(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize])),
     ).toBe(true);
@@ -310,18 +310,18 @@ describe("TestNewMutations", () => {
 
   test("test_ae_preferences_dir_threaded", () => {
     const tmpPath = makeTmpPath();
-    const app = py_aep.new(undefined, { ae_preferences_dir: tmpPath });
-    expect(String(app.project._ae_preferences_dir)).toBe(String(tmpPath));
+    const app = py_aep.new(undefined, { aePreferencesDir: tmpPath });
+    expect(String(app.project._aePreferencesDir)).toBe(String(tmpPath));
   });
 });
 
 /** Newest installed AE preferences directory, or None (for CI). */
 function _aePrefsDir(): Path | null {
   const base = Path.home().div("AppData", "Roaming", "Adobe", "After Effects");
-  if (!base.is_dir()) return null;
+  if (!base.isDir()) return null;
   // NOTE(port): sibling paths share a parent, so sorting by name matches Path ordering (only Windows case-folding differs; AE version dirs are digits).
   const dirs = sorted(
-    base.iterdir().filter((d) => d.is_dir() && isdigit(d.name.slice(0, 1))),
+    base.iterdir().filter((d) => d.isDir() && isdigit(d.name.slice(0, 1))),
     (d) => d.name,
   );
   return pyBool(dirs) ? dirs[dirs.length - 1] : null;
@@ -332,12 +332,12 @@ describe("TestNewRenderQueue", () => {
     const tmpPath = makeTmpPath();
     const prefs = _aePrefsDir();
     if (prefs == null) return skip("no AE preferences dir (render templates unavailable)");
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
     asInstance(app.project.renderQueue, RenderQueue).add(comp);
     const path = tmpPath.div("rq.aep");
     app.project.save(path);
-    const proj = py_aep.parse(path, { ae_preferences_dir: prefs }).project;
+    const proj = py_aep.parse(path, { aePreferencesDir: prefs }).project;
     expect(len(asInstance(proj.renderQueue, RenderQueue).items)).toBe(1);
     expect(asInstance(proj.renderQueue, RenderQueue).items[0].comp.name).toBe("Comp 1");
   });

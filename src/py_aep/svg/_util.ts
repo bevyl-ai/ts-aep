@@ -32,18 +32,18 @@ export const DEFAULT_FONT_SIZE = 16.0;
 export class LengthContext {
   readonly width: number;
   readonly height: number;
-  readonly font_size: number;
+  readonly fontSize: number;
 
   constructor(width: number, height: number, fontSize: number = DEFAULT_FONT_SIZE) {
     this.width = width;
     this.height = height;
-    this.font_size = fontSize;
+    this.fontSize = fontSize;
   }
 
   *[Symbol.iterator](): Generator<number> {
     yield this.width;
     yield this.height;
-    yield this.font_size;
+    yield this.fontSize;
   }
 
   /**
@@ -82,7 +82,7 @@ export function parseNumber(text: string | null, default_: number = 0.0): number
 
 /**
  * An SVG length in user units: CSS absolute units (`mm`, `pt`, `in`,
- * ...) at 96 px per inch, `em` / `ex` from `font_size`, a percentage of
+ * ...) at 96 px per inch, `em` / `ex` from `fontSize`, a percentage of
  * `percent_of` (the bare number when `null`); a unitless number or an
  * unknown unit is taken as px. `default` when absent or non-numeric.
  */

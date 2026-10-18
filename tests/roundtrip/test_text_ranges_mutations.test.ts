@@ -133,7 +133,7 @@ describe("TestRecomposition", () => {
     const reason = _requireComposer(doc);
     if (reason != null) return skip(reason);
     doc.text = "tiny";
-    expect(doc._composition_calibrated).toBe(true);
+    expect(doc._compositionCalibrated).toBe(true);
     expect(doc.compositionStale).toBe(false);
     expect(doc.composedLineCount).toBe(1); // AE-verified
     const rng = doc.composedLineRange(0);
@@ -247,7 +247,7 @@ describe("TestRecomposition", () => {
     // document must not leave the sibling serving its pre-resize
     // cache as fresh.
     docA.boxTextSize = [220.0, 90.0];
-    expect(docB._layout_dirty).toBe(true);
+    expect(docB._layoutDirty).toBe(true);
     expect(docB.compositionStale).toBe(false);
     expect(docA.composedLineCount).toBe(docB.composedLineCount);
   });
@@ -275,7 +275,7 @@ describe("TestStaleComposedLines", () => {
     doc.text = "tiny";
     // Force the composer-less path: an uncalibrated document keeps
     // the stale cache (AE-parity clamp semantics).
-    doc._composition_calibrated = false;
+    doc._compositionCalibrated = false;
 
     // The cached count stays (ExtendScript behavior on an un-reapplied
     // value object); line 0 clamps, deeper lines raise at creation.

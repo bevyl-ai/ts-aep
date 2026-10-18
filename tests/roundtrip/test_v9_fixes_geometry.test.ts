@@ -67,7 +67,7 @@ const CPTS = [[500.0, 400.0], [120.0, 60.0]];
 // only and never iterated for their keys (except the sorted() calls below,
 // whose keys are non-numeric).
 function _json(name: string) {
-  return JSON.parse(LAYER_DIR.div(name).read_text("utf-8"));
+  return JSON.parse(LAYER_DIR.div(name).readText("utf-8"));
 }
 
 const GEOMETRY_TRUTH = _json("geometry_v9_probe.json");
@@ -144,7 +144,7 @@ describe("TestComment", () => {
     expect(layer._cmta == null).toBe(true);
     expect(!layer._ldta.has_comment).toBe(true);
     expect(
-      layer._layer_list.chunks.every((c) => getattr(c, "chunk_type", "") !== "cmta"),
+      layer._layerList.chunks.every((c) => getattr(c, "chunk_type", "") !== "cmta"),
     ).toBe(true);
   });
 

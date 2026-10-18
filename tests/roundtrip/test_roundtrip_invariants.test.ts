@@ -109,12 +109,12 @@ describe("TestByteIdentityRoundtrip", () => {
     "test_roundtrip[%s]",
     (_id, aepPath) => {
       const tmpPath = makeTmpPath();
-      const originalBytes = aepPath.read_bytes();
+      const originalBytes = aepPath.readBytes();
 
       const app = parseAep(aepPath);
       const out = tmpPath.div("roundtrip.aep");
       app.project.save(out);
-      const roundtripBytes = out.read_bytes();
+      const roundtripBytes = out.readBytes();
 
       expect(pyEq(roundtripBytes, originalBytes)).toBe(true);
     },

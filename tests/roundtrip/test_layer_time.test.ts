@@ -81,7 +81,7 @@ describe("TestStretchedLayerTimebase", () => {
     const [_layer, op] = _opacityWithKeys(comp, 150.0);
 
     // comp second 1 -> layer second 1/1.5, at 36864 units per layer second
-    expect(op.keyframes[0]._ldat_item.time_units).toBe(24576);
+    expect(op.keyframes[0]._ldatItem.time_units).toBe(24576);
   });
 
   test("test_ae_authored_stretched_layer_reads_back", () => {
@@ -128,12 +128,12 @@ describe("TestStretchRetimesKeyframes", () => {
 
   test("test_ticks_and_timebase_match_after_effects", () => {
     const [_app, layer, op] = _animated();
-    expect(pyEq(op.keyframes.map((kf) => kf._ldat_item.time_units), [24576, 122880])).toBe(true);
+    expect(pyEq(op.keyframes.map((kf) => kf._ldatItem.time_units), [24576, 122880])).toBe(true);
 
     layer.stretch = 200.0;
 
     expect(op._tdb4._time_base).toBe(49152);
-    expect(pyEq(op.keyframes.map((kf) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
+    expect(pyEq(op.keyframes.map((kf) => kf._ldatItem.time_units), [49152, 245760])).toBe(true);
     expect(approx(op.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
   });
 
@@ -155,7 +155,7 @@ describe("TestStretchRetimesKeyframes", () => {
 
     const op2 = asInstance(asInstance(parseAppFresh(out).project.compositions[0].layers[0].property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
     expect(approx(op2.keyframes.map((kf) => kf.time), [2.0, 10.0])).toBe(true);
-    expect(pyEq(op2.keyframes.map((kf) => kf._ldat_item.time_units), [49152, 245760])).toBe(true);
+    expect(pyEq(op2.keyframes.map((kf) => kf._ldatItem.time_units), [49152, 245760])).toBe(true);
   });
 });
 

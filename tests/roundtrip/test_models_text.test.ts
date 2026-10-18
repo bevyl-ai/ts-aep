@@ -223,7 +223,7 @@ describe("TestRegisterFont", () => {
   test("test_new_font_tag_is_cos_name", () => {
     const [_project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
     doc.font = "Arial-BoldMT"; // not in the template -> _register_font
-    const newEntry = cosAt(cosItem(cosItem(cosItem(doc._cos_data, "0"), "1"), "0"), -1);
+    const newEntry = cosAt(cosItem(cosItem(cosItem(doc._cosData, "0"), "1"), "0"), -1);
     expect(cosItem(cosItem(newEntry, "0"), "99") instanceof CosName).toBe(true);
   });
 
@@ -253,8 +253,8 @@ describe("TestColorAndLeadingNone", () => {
     expect(doc.fillColor != null).toBe(true);
 
     doc.fillColor = null;
-    expect(doc._char_style != null).toBe(true);
-    expect(contains(doc._char_style, "53")).toBe(false);
+    expect(doc._charStyle != null).toBe(true);
+    expect(contains(doc._charStyle, "53")).toBe(false);
     expect(doc.fillColor == null).toBe(true);
 
     const out = tmpPath.div("modified.aep");
@@ -268,8 +268,8 @@ describe("TestColorAndLeadingNone", () => {
     expect(doc.strokeColor != null).toBe(true);
 
     doc.strokeColor = null;
-    expect(doc._char_style != null).toBe(true);
-    expect(contains(doc._char_style, "54")).toBe(false);
+    expect(doc._charStyle != null).toBe(true);
+    expect(contains(doc._charStyle, "54")).toBe(false);
     expect(doc.strokeColor == null).toBe(true);
   });
 

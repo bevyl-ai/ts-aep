@@ -131,46 +131,46 @@ describe("TestCompItemLazyLayerParsing", () => {
   test("test_layers_parsed_on_first_access", () => {
     const comp = getComp(parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
 
-    expect(comp._layers_loaded).toBe(false);
-    expect(comp._deferred_layers != null).toBe(true);
-    pyAssert(comp._deferred_layers != null);
-    expect(len(comp._deferred_layers[0])).toBe(1);
+    expect(comp._layersLoaded).toBe(false);
+    expect(comp._deferredLayers != null).toBe(true);
+    pyAssert(comp._deferredLayers != null);
+    expect(len(comp._deferredLayers[0])).toBe(1);
 
     // Non-layer attributes should not trigger layer parsing.
     void comp.width;
-    expect(comp._layers_loaded).toBe(false);
+    expect(comp._layersLoaded).toBe(false);
 
     const layers = comp.layers;
-    expect(comp._layers_loaded).toBe(true);
+    expect(comp._layersLoaded).toBe(true);
     expect(len(layers)).toBe(1);
-    expect(comp._deferred_layers == null).toBe(true);
+    expect(comp._deferredLayers == null).toBe(true);
   });
 
   test("test_markers_are_eager_without_loading_layers", () => {
     const comp = getComp(parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
 
-    expect(comp._layers_loaded).toBe(false);
+    expect(comp._layersLoaded).toBe(false);
 
     const markers = comp.markers;
     expect(pyEq(markers, [])).toBe(true);
 
     // Reading comp markers must not force regular layer parsing.
-    expect(comp._layers_loaded).toBe(false);
+    expect(comp._layersLoaded).toBe(false);
   });
 
   test("test_source_used_in_linking_without_layer_parse", () => {
     const project = parseAep(FOOTAGE_SAMPLES_DIR.div("footage_not_missing.aep")).project;
     const comp = at(project.compositions, 0);
 
-    expect(comp._layers_loaded).toBe(false);
-    expect(comp._deferred_layers != null).toBe(true);
+    expect(comp._layersLoaded).toBe(false);
+    expect(comp._deferredLayers != null).toBe(true);
 
     // Trigger lazy linking via used_in - source IDs are extracted
     // on-demand from DeferredListChunk raw bytes.
-    const footageItems = [...project.items.values()].filter((it) => hasattr(it, "_used_in"));
+    const footageItems = [...project.items.values()].filter((it) => hasattr(it, "_usedIn"));
     const linked = footageItems.filter((it) => contains(asInstance(it, AVItem).usedIn, comp));
     expect(pyBool(linked)).toBe(true);
-    expect(comp._layers_loaded).toBe(false);
+    expect(comp._layersLoaded).toBe(false);
   });
 });
 
@@ -1553,8 +1553,8 @@ describe("TestRoundtripEssentialGraphics", () => {
     const project = parseAep(EG_SAMPLES_DIR.div("base.aep")).project;
     const comp = next_(project.compositions.find((c) => c.name === "main"));
     // Force deferred EG parsing, then clear to simulate from-scratch.
-    comp._ensure_comp_parsed();
-    comp._eg_template_name_utf8 = null;
+    comp._ensureCompParsed();
+    comp._egTemplateNameUtf8 = null;
     expect(comp.motionGraphicsTemplateName == null).toBe(true);
 
     comp.motionGraphicsTemplateName = "Created Template";
@@ -1575,7 +1575,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
 
   // Python @staticmethod `_keyed`; plain generator function since the describe block is the class.
   function* _keyed(comp: CompItem): Generator<Property> {
-    for (const prop of comp._walk_properties()) {
+    for (const prop of comp._walkProperties()) {
       if (pyBool(prop.keyframes)) yield prop;
     }
   }
@@ -1628,7 +1628,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp.frameRate).toBe(25.0);
     expect(comp._cdta.internal_timebase).toBe(25600);
     const before = new Map(
-      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldat_item.time_units)] as const),
+      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.time_units)] as const),
     );
 
     comp.frameRate = 30.0;
@@ -1639,7 +1639,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp2._cdta.internal_timebase).toBe(30720);
     for (const prop of _keyed(comp2)) {
       const expected = getitem(before, prop.matchName).map((u) => round((u * 30720) / 25600));
-      expect(pyEq(prop.keyframes.map((k) => k._ldat_item.time_units), expected)).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.time_units), expected)).toBe(true);
     }
   });
 
@@ -1654,7 +1654,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const comp = at(project.compositions, 0);
     comp.frameRate = 30.0;
     const unitsAt30 = new Map(
-      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldat_item.time_units)] as const),
+      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.time_units)] as const),
     );
     const secondsAt30 = new Map(
       Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
@@ -1669,7 +1669,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp2.timeScale).toBe(2.0);
     for (const prop of _keyed(comp2)) {
       const name = prop.matchName;
-      expect(pyEq(prop.keyframes.map((k) => k._ldat_item.time_units), getitem(unitsAt30, name))).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.time_units), getitem(unitsAt30, name))).toBe(true);
       expect(pyEq(prop.keyframes.map((k) => k.time), getitem(secondsAt30, name))).toBe(true);
     }
   });
@@ -1690,8 +1690,8 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const timebase = comp2._cdta.internal_timebase;
     expect(timebase).toBe(30720);
     const stamps = new Set(
-      [...comp2._walk_properties()]
-        .filter((p) => p._tdb4 != null && p._is_live())
+      [...comp2._walkProperties()]
+        .filter((p) => p._tdb4 != null && p._isLive())
         .map((p) => p._tdb4._time_base),
     );
     expect(pyEq(stamps, new Set([timebase]))).toBe(true);
@@ -1777,7 +1777,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     comp.duration = 253.0 / 24.0;
     const beforeDuration = comp.duration;
     const beforeUnits = Array.from(_keyed(comp)).flatMap((p) =>
-      p.keyframes.map((k) => k._ldat_item.time_units),
+      p.keyframes.map((k) => k._ldatItem.time_units),
     );
 
     comp.frameRate = comp.frameRate;
@@ -1785,7 +1785,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp.duration).toBe(beforeDuration);
     expect(
       pyEq(
-        Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldat_item.time_units)),
+        Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldatItem.time_units)),
         beforeUnits,
       ),
     ).toBe(true);

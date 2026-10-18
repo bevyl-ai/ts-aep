@@ -92,7 +92,7 @@ describe("TestCameraCompResize", () => {
 
     project.save(tmpPath.div("out.aep"));
 
-    expect(getComp(project, "moved")._layers_loaded).toBe(false);
+    expect(getComp(project, "moved")._layersLoaded).toBe(false);
   });
 });
 

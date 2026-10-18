@@ -55,14 +55,14 @@ describe("TestSortChildrenByName", () => {
       folder.addComp(name, 100, 100, 1.0, 1.0, 30.0);
     }
 
-    folder._sort_children_by_name();
+    folder._sortChildrenByName();
 
     const expected = ["alpha", "beta", "Mango", "zebra"];
     expect(pyEq(folder.items.map((item) => item.name), expected)).toBe(true);
     // The backing Sfdr item_list chunks are reordered to match.
     // id() keys are object identity, so the Map is keyed by the chunk objects.
-    const idToName = new Map<object, string>(folder.items.map((item): [object, string] => [item._item_list, item.name]));
-    const chunkOrder = folder._children_container
+    const idToName = new Map<object, string>(folder.items.map((item): [object, string] => [item._itemList, item.name]));
+    const chunkOrder = folder._childrenContainer
       .filter((chunk) => idToName.has(chunk))
       .map((chunk) => getitem(idToName, chunk));
     expect(pyEq(chunkOrder, expected)).toBe(true);
