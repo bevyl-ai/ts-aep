@@ -2,14 +2,14 @@
  * New items and layers carry the chunk set of the project's AE version.
  *
  * Each AE release writes a slightly different chunk set for a new comp,
- * folder, footage item or layer. These tests build `py_aep.new(<version>)`
+ * folder, footage item or layer. These tests build `newProject(<version>)`
  * plus one item / layer of each kind and compare what py writes against the
  * `samples/versions/aeYYYY/complete.aep` project that same After Effects
  * release saved. AE 2022-2026 write the same structures for freshly created
  * items and layers (measured headlessly: `addComp`, `addFolder`, `addSolid`,
  * `addNull`, `addCamera`, `addLight`, `addText`, `addShape`, `importFile` +
- * `layers.add` on an opened `py_aep.new()` project). AE 15 (CC 2018) cannot
- * run scripts headless; its resave of a `py_aep.new("15.1x69")` composition
+ * `layers.add` on an opened `newProject()` project). AE 15 (CC 2018) cannot
+ * run scripts headless; its resave of a `newProject("15.1x69")` composition
  * agrees with its sample on the item and layer chunk lists.
  */
 
@@ -224,7 +224,7 @@ const _afterEffects = lruCache(
  * probe built them.
  */
 function _newProject(version: string): py_aep.Application {
-  const app = py_aep.new(version);
+  const app = py_aep.newProject(version);
   const project = app.project;
   const comp = project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
   project.rootFolder.addFolder("Folder 1");
@@ -334,7 +334,7 @@ test("test_layer_comment_written_before_ovdg", () => {
       commented.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
   }
-  const app = py_aep.new(RELEASES.ae2018);
+  const app = py_aep.newProject(RELEASES.ae2018);
   const comp = app.project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
   comp.addSolid([1.0, 0.0, 0.0], "Red", 320, 240).comment = "note";
   const path = tmpPath.div("comment.aep");

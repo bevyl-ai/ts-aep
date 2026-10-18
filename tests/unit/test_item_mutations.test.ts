@@ -48,7 +48,7 @@ describe("TestAutoName", () => {
 /** FolderItem._sort_children_by_name (used by the layered-import path). */
 describe("TestSortChildrenByName", () => {
   test("test_orders_items_and_sfdr_blocks_alphabetically", () => {
-    const folder = py_aep.new().project.rootFolder.addFolder("Layers");
+    const folder = py_aep.newProject().project.rootFolder.addFolder("Layers");
     // add_comp front-inserts, so document order != stored order; mixed case
     // and a non-alphabetical sequence exercise the case-insensitive sort.
     for (const name of ["zebra", "alpha", "Mango", "beta"]) {

@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { at, bytesEq, getattr, pyAssert, pyBool, pyEq, round, sorted, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
-import { ImportAsType, ImportOptions, new as new_, parse, type Application } from "../../src/py_aep/index.ts";
+import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { ShapeLayer } from "../../src/py_aep/models/layers/shape_layer.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
@@ -148,7 +148,7 @@ describe("TestSvgImportGradients", () => {
     // gradients render as circles instead of tall ellipses. Import into a
     // fresh (2026) project so the Grad Scale / Grad Rotation leaves exist.
 
-    const app = new_();
+    const app = newProject();
     const opts = new ImportOptions(ASSETS.div("butterfly.svg"));
     opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
     const comp = asInstance(app.project.importFile(opts), CompItem);
@@ -180,7 +180,7 @@ function _importText(tmpPath: Path, body: string): PropertyGroup[] {
   svg.writeText(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${body}</svg>`);
   const opts = new ImportOptions(svg);
   opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
-  const comp = asInstance(new_().project.importFile(opts), CompItem);
+  const comp = asInstance(newProject().project.importFile(opts), CompItem);
   const contents = comp.layers[0].property("ADBE Root Vectors Group");
   expect(contents instanceof PropertyGroup).toBe(true);
   return contents.properties.filter(
@@ -325,7 +325,7 @@ describe("TestSvgImportByteFidelity", () => {
         '<rect x="50" width="40" height="40" fill="url(#g)"/>' +
         "</svg>",
     );
-    const app = new_();
+    const app = newProject();
     const opts = new ImportOptions(svg);
     opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
     const comp = asInstance(app.project.importFile(opts), CompItem);

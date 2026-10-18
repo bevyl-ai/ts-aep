@@ -2,7 +2,7 @@
  * Regression tests for the v9 fuzz findings on new projects, versions,
  * working space and saving.
  *
- * After Effects 2026 (26.0x67) evidence: `py_aep.new()` projects stamped with a
+ * After Effects 2026 (26.0x67) evidence: `newProject()` projects stamped with a
  * major that was never an AE release opened as "missing data in file"
  * (21.0x1), "internal verification failure" (0.0x0), or with every mask,
  * effect and shape-element name read as "Utf8" (12, 13, 14, 19 and 20).
@@ -41,7 +41,7 @@ describe("TestVersionValidation", () => {
     "26.0x67",
     "26.15x255",
   ])("test_releases_accepted[%#]", (version: string) => {
-    expect(py_aep.new(version).version).toBe(version);
+    expect(py_aep.newProject(version).version).toBe(version);
   });
 
   test.each([
@@ -53,7 +53,7 @@ describe("TestVersionValidation", () => {
     "21.0x1",
     "256.0x1",
   ])("test_unknown_major_rejected[%#]", (version: string) => {
-    raises(ValueError, () => py_aep.new(version));
+    raises(ValueError, () => py_aep.newProject(version));
   });
 
   test.each(["27.0x67", "185.0x67", "255.0x67"])(
@@ -61,30 +61,30 @@ describe("TestVersionValidation", () => {
     (version: string) => {
       // No stamp to take for a release after 26: the AE 2026 project and
       // stamp, which AE 2026 opens. Only the version differs.
-      const app = py_aep.new(version);
+      const app = py_aep.newProject(version);
       expect(app.version).toBe(version);
       const head = app._head;
       expect(pyEq([head.fileFormatVersion, head._formatSubversion], [97, 2])).toBe(true);
       app.version = "26.0x67";
-      expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.new().project))).toBe(true);
+      expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.newProject().project))).toBe(true);
     },
   );
 
   test.each(["26.16x1", "26.0x256", "26.99x1"])("test_field_overflow_rejected[%#]", (version: string) => {
     // The head chunk holds the minor in 4 bits and the build in 8: these
     // used to wrap to 26.0x1, 26.0x0 and 26.3x1.
-    raises(ValueError, () => py_aep.new(version));
+    raises(ValueError, () => py_aep.newProject(version));
   });
 
   test.each([26, null, "26.0", " 26.0x67"])("test_malformed_rejected[%#]", (version) => {
     _raisesAny([TypeError_, ValueError], () =>
       // @ts-expect-error deliberately passes non-string versions to check runtime validation
-      py_aep.new(version),
+      py_aep.newProject(version),
     );
   });
 
   test.each(["21.0x1", "26.16x3", "300.0x1"])("test_setter_rejects_without_mutation[%#]", (version: string) => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const before = projectBytes(app.project);
     raises(ValueError, () => {
       app.version = version;
@@ -103,7 +103,7 @@ describe("TestVersionValidation", () => {
     ["23.0x1", "26.0x67"],
     ["26.0x67", "23.0x1"],
   ])("test_relabel_within_a_layout[%#]", (source: string, target: string) => {
-    const app = py_aep.new(source);
+    const app = py_aep.newProject(source);
     app.version = target;
     expect(app.version).toBe(target);
   });
@@ -117,7 +117,7 @@ describe("TestVersionValidation", () => {
     ["26.0x67", "15.1x2"],
     ["18.0x1", "26.0x67"],
   ])("test_relabel_across_a_layout_rejected[%#]", (source: string, target: string) => {
-    const app = py_aep.new(source);
+    const app = py_aep.newProject(source);
     const before = projectBytes(app.project);
     raises(ValueError, () => {
       app.version = target;
@@ -126,7 +126,7 @@ describe("TestVersionValidation", () => {
   });
 
   test.each([256, -1, "67"])("test_build_number_range[%#]", (build) => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     _raisesAny([TypeError_, ValueError], () => {
       // @ts-expect-error deliberately assigns a string build number to check runtime validation
       app.buildNumber = build;
@@ -140,7 +140,7 @@ describe("TestWorkingSpaceNone", () => {
     const tmpPath = makeTmpPath();
     // AE 2026 accepts workingSpace = "None": `PwCs` keeps `{}` and `cpid`
     // is all 0xFF, as in a new project.
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const before = projectBytes(app.project);
     app.project.workingSpace = app.project.workingSpace;
     expect(app.project.workingSpace).toBe("None");
@@ -149,7 +149,7 @@ describe("TestWorkingSpaceNone", () => {
 
   test("test_none_after_a_profile", () => {
     const tmpPath = makeTmpPath();
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const cpid = app.project._cpid.data;
     const utf8 = app.project._wsUtf8;
     app.project._wsUtf8 = app.project._rewriteColorProfile(
@@ -174,7 +174,7 @@ describe("TestSaveTempFile", () => {
     const tmpPath = makeTmpPath();
     const keep = tmpPath.div("out.aep.tmp");
     keep.writeBytes(b("user data"));
-    py_aep.new().project.save(tmpPath.div("out.aep"));
+    py_aep.newProject().project.save(tmpPath.div("out.aep"));
     expect(bytesEq(keep.readBytes(), b("user data"))).toBe(true);
     expect(parse(tmpPath.div("out.aep")).version).toBe("26.0x67");
     expect(pyEq(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);

@@ -164,7 +164,7 @@ export class TextDocument {
   // Python instance `__dict__`: overrides for fields without COS backing.
   // `_override` reads it directly, so it must stay separate from accessors.
   // Shared with CosField.__get__ via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
-  __dict__: Map<string, InstanceValue> = instanceDict(this);
+  _overrides: Map<string, InstanceValue> = instanceDict(this);
 
   // COS backing, assigned by `__init__` / `_fromBinary`. The style dicts
   // alias the first runs' styles (`null` when a run carries none); `_doc`
@@ -201,7 +201,7 @@ export class TextDocument {
      * composer + installed fonts for this document.
      */
     // Every layout write invalidates the memoized composition.
-    this.__dict__.delete("_composed_cache");
+    this._overrides.delete("_composed_cache");
     if (this._layoutDirty) return;
     if (this.boxText && this._compositionCalibrated == null) {
       const cached = _cachedLineData(this);
@@ -265,7 +265,7 @@ export class TextDocument {
 
   set autoKernType(value: AutoKernType) {
     validateEnum(AutoKernType)(value);
-    this.__dict__.delete("autoKernType");
+    this._overrides.delete("autoKernType");
     if (this._charStyle == null) {
       this._setOverride("autoKernType", AutoKernType.of(value));
       return;
@@ -344,7 +344,7 @@ export class TextDocument {
 
   set autoLeading(value: boolean) {
     validateBool(value);
-    this.__dict__.delete("autoLeading");
+    this._overrides.delete("autoLeading");
     if (this._charStyle == null) {
       this._setOverride("autoLeading", value);
       return;
@@ -497,7 +497,7 @@ export class TextDocument {
     ]);
     for (const [k, v] of Object.entries(kwargs)) overrides.set(k, v);
     for (const [key, val] of overrides) {
-      if (val != null) obj.__dict__.set(key, val);
+      if (val != null) obj._overrides.set(key, val);
     }
     return obj;
   }
@@ -509,7 +509,7 @@ export class TextDocument {
      * Set by `_fromBinary` fallback kwargs and by setters when the
      * backing style dict is `null`. Returns `null` when absent.
      */
-    return this.__dict__.get(name) ?? null;
+    return this._overrides.get(name) ?? null;
   }
 
   /** {@link TextDocument._override} when it holds a `T` (the setters only store their own type). */
@@ -520,7 +520,7 @@ export class TextDocument {
 
   _setOverride(name: string, value: InstanceValue): void {
     /** Store an instance override for a field without COS backing. */
-    this.__dict__.set(name, value);
+    this._overrides.set(name, value);
   }
 
   // -- Computed properties -----------------------------------------------
@@ -543,7 +543,7 @@ export class TextDocument {
 
   set text(value: string) {
     validateText(value);
-    this.__dict__.delete("text");
+    this._overrides.delete("text");
     this._markLayoutDirty();
     const inner = cosSetdefault(this._doc, "0", new Map());
     // AE stores every line break and the run terminator as CR (\r);
@@ -663,8 +663,8 @@ export class TextDocument {
     let idx = this._fontIndex(value);
     if (idx == null) idx = this._registerFont(value);
     _applyCharKey(this, 0, u16Len(_rawText(this)), "0", idx);
-    this.__dict__.delete("font");
-    this.__dict__.delete("fontObject");
+    this._overrides.delete("font");
+    this._overrides.delete("fontObject");
     this._propagateCos();
   }
 
@@ -731,7 +731,7 @@ export class TextDocument {
 
   set fillColor(value: number[] | null) {
     if (value != null) validateRgbColor(value);
-    this.__dict__.delete("fillColor");
+    this._overrides.delete("fillColor");
     if (this._charStyle != null) {
       const payload = value != null ? _buildColorPaint(value) : null;
       _applyCharKey(this, 0, u16Len(_rawText(this)), "53", payload);
@@ -753,7 +753,7 @@ export class TextDocument {
 
   set strokeColor(value: number[] | null) {
     if (value != null) validateRgbColor(value);
-    this.__dict__.delete("strokeColor");
+    this._overrides.delete("strokeColor");
     if (this._charStyle != null) {
       const payload = value != null ? _buildColorPaint(value) : null;
       _applyCharKey(this, 0, u16Len(_rawText(this)), "54", payload);
@@ -789,7 +789,7 @@ export class TextDocument {
 
   set leading(value: number | null) {
     if (value != null) validatePositiveNumber(value);
-    this.__dict__.delete("leading");
+    this._overrides.delete("leading");
     if (this._charStyle != null && value != null) {
       // Setting an explicit leading turns auto-leading off, matching AE.
       const total = u16Len(_rawText(this));

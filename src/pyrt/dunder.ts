@@ -211,23 +211,30 @@ export function objectGetattr(self: object, name: string): any {
   return Reflect.get(target, name, self);
 }
 
+const INSTANCE_DICT: unique symbol = Symbol("instanceDict");
+
 /**
- * `obj.__dict__`: a per-instance `Map` of instance attributes that bypass
- * descriptors (parse-time overrides that `ChunkField` / `CosField.__get__`
- * read first). Stored as an own, non-enumerable `__dict__` property, so
- * `deepcopy` copies it with the instance and `Object.assign` / spreads skip
- * it; writable and configurable so a class field named `__dict__` may alias it.
+ * Python's `obj.__dict__`: a per-instance `Map` of attributes that bypass
+ * descriptors (parse-time overrides that `ChunkField` / `CosField` read
+ * first). Stored under a private symbol, non-enumerable, so `deepcopy` copies
+ * it with the instance while `Object.assign` / spreads and property listings
+ * skip it.
  */
 export function instanceDict(obj: object): Map<string, any> {
-  if (!Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
-    Object.defineProperty(obj, "__dict__", {
+  if (!Object.prototype.hasOwnProperty.call(obj, INSTANCE_DICT)) {
+    Object.defineProperty(obj, INSTANCE_DICT, {
       value: new Map<string, unknown>(),
       enumerable: false,
       writable: true,
       configurable: true,
     });
   }
-  return Reflect.get(obj, "__dict__");
+  return Reflect.get(obj, INSTANCE_DICT);
+}
+
+/** Whether `obj` already holds per-instance overrides (a read never creates them). */
+export function hasInstanceDict(obj: object): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, INSTANCE_DICT);
 }
 
 /** The JS protocol methods pyrt's builtins probe for in place of Python's special methods. */

@@ -28,7 +28,7 @@ import { max, min, pyEq, range, sorted } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 function _newComp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
-  const app = py_aep.new();
+  const app = py_aep.newProject();
   const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
   return [app, comp];
 }

@@ -17,7 +17,7 @@ import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 
 function _newComp(width = 800, height = 400, fps = 24.0): [Application, CompItem] {
-  const app = py_aep.new();
+  const app = py_aep.newProject();
   const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
   return [app, comp];
 }

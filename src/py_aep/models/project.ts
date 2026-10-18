@@ -346,7 +346,7 @@ export class Project {
   // then getattr(self, "_xmp") -> the raw XMP string.
   /**
    * The XMP packet for the project, containing metadata. `null` when the
-   * project has no XMP packet (e.g. projects created via `py_aep.new()`).
+   * project has no XMP packet (e.g. projects created via `newProject()`).
    * Read / Write.
    */
   declare xmpPacket: Element | null;

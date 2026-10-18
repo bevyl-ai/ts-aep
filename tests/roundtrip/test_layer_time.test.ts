@@ -41,7 +41,7 @@ function _opacityWithKeys(comp: py_aep.CompItem, stretch: number): [py_aep.AVLay
 
 describe("TestStretchedLayerTimebase", () => {
   test.each([[50.0], [101.0], [150.0], [300.0]])("test_timebase_scales_with_stretch[%#]", (stretch: number) => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const [_layer, op] = _opacityWithKeys(comp, stretch);
 
@@ -50,7 +50,7 @@ describe("TestStretchedLayerTimebase", () => {
   });
 
   test("test_three_hundred_percent_needs_more_than_sixteen_bits", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const [_layer, op] = _opacityWithKeys(comp, 300.0);
 
@@ -61,7 +61,7 @@ describe("TestStretchedLayerTimebase", () => {
   test.each([[50.0], [150.0], [300.0]])("test_key_times_survive_a_roundtrip[%#]", (stretch: number) => {
     /** Keys written at composition time must read back at the same time. */
     const tmpPath = makeTmpPath();
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const [_layer, op] = _opacityWithKeys(comp, stretch);
     expect(approx(op.keyframes.map((kf) => kf.time), [1.0, 4.0, 7.0])).toBe(true);
@@ -76,7 +76,7 @@ describe("TestStretchedLayerTimebase", () => {
 
   test("test_ticks_are_layer_time", () => {
     /** A 150 % layer stores half as many ticks per composition second. */
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const [_layer, op] = _opacityWithKeys(comp, 150.0);
 
@@ -117,7 +117,7 @@ describe("TestStretchRetimesKeyframes", () => {
    */
 
   function _animated(fps = 24.0): [py_aep.Application, py_aep.AVLayer, py_aep.Property<number>] {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, fps);
     const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
@@ -184,7 +184,7 @@ describe("TestNegativeStretchOffset", () => {
   );
 
   test.each(rows)("test_key_times_match_after_effects[%#]", (stretch: number, fps: number) => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 60.0, fps);
     const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
@@ -199,7 +199,7 @@ describe("TestNegativeStretchOffset", () => {
   });
 
   test("test_positive_stretch_has_no_offset", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 60.0, 24.0);
     const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
@@ -218,7 +218,7 @@ describe("TestValueAtTimeRejectsNaN", () => {
    */
 
   function _animated(): py_aep.Property<number> {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 200, 200, 1.0, 10.0, 24.0);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);

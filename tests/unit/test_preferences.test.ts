@@ -309,7 +309,7 @@ describe("TestPreferences", () => {
 describe("TestApplicationPreferences", () => {
   test("test_app_preferences_object", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     expect(app.preferences instanceof py_aep.Preferences).toBe(true);
     expect(app.preferences).toBe(app.project._preferences);
   });
@@ -319,7 +319,7 @@ describe("TestApplicationPreferences", () => {
 describe("TestCreationWiring", () => {
   test("test_labels_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     expect(asInstance(comp._idta, IdtaChunk).label).toBe(9);
     expect(asInstance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(12);
@@ -335,7 +335,7 @@ describe("TestCreationWiring", () => {
 
   test("test_labels_factory_defaults", () => {
     // Probed in AE 2026 with factory label preferences.
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     expect(asInstance(comp._idta, IdtaChunk).label).toBe(15);
     expect(asInstance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(2);
@@ -351,7 +351,7 @@ describe("TestCreationWiring", () => {
 
   test("test_label_override", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     app.preferences.setPrefAsNumber("Label Preference Indices Section 5", "Comp Label Index 2", 16, INDEP);
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     expect(asInstance(comp._idta, IdtaChunk).label).toBe(16);
@@ -359,7 +359,7 @@ describe("TestCreationWiring", () => {
 
   test("test_solids_folder_name_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     expect(app.project._solidsFolderName).toBe("Solides");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0]);
@@ -371,7 +371,7 @@ describe("TestCreationWiring", () => {
     // (without any prefs dir) reads the stored name back.
     const tmpPath = makeTmpPath();
     const prefsDir = prefsDirFixture(tmpPath);
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const reparsed = py_aep.parse(out);
@@ -379,7 +379,7 @@ describe("TestCreationWiring", () => {
   });
 
   test("test_solids_folder_name_factory_default", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     expect(app.project._solidsFolderName).toBe("Solids");
   });
 });
@@ -453,7 +453,7 @@ describe("TestCompositionPresets", () => {
 
   test("test_add_comp_from_preset", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "1440x1080", 5.0);
     expect(pyEq([comp.width, comp.height], [1440, 1080])).toBe(true);
     expect(approx(comp.pixelAspect, 4 / 3)).toBe(true);
@@ -464,25 +464,25 @@ describe("TestCompositionPresets", () => {
 
   test("test_add_comp_from_preset_ntsc_rate", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "29.97", 5.0);
     expect(approx(comp.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_add_comp_from_preset_ambiguous", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "1920x1080", 5.0), "matched 2");
   });
 
   test("test_add_comp_from_preset_unknown", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "8K", 5.0), "matched 0");
   });
 
   test("test_add_comp_from_preset_without_prefs", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "HD", 5.0), "no composition presets");
   });
 });
@@ -557,11 +557,11 @@ describe("TestOutputNameTemplatePresets", () => {
   });
 });
 
-/** py_aep.new() inherits the last-used Project Settings preferences. */
+/** newProject() inherits the last-used Project Settings preferences. */
 describe("TestNewProjectSettings", () => {
   test("test_depth_and_time_display_from_prefs", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const project = py_aep.new(undefined, { aePreferencesDir: prefsDir }).project;
+    const project = py_aep.newProject(undefined, { aePreferencesDir: prefsDir }).project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
     for (const chunk of [project._nnhd, project._nhed]) {
       expect(chunk.timeDisplayType).toBe(1);
@@ -573,7 +573,7 @@ describe("TestNewProjectSettings", () => {
   });
 
   test("test_factory_defaults_without_prefs", () => {
-    const project = py_aep.new().project;
+    const project = py_aep.newProject().project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.EIGHT);
     for (const chunk of [project._nnhd, project._nhed]) {
       expect(chunk.timeDisplayType).toBe(0);
@@ -589,7 +589,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
     // AE 2026 probed: start = in = comp.time, out shifted by the same
     // amount, for every scripted layer-creation method.
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -602,7 +602,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
 
   test("test_no_shift_at_time_zero", () => {
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
     expect(approx(solid.startTime, 0.0)).toBe(true);
@@ -610,7 +610,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
 
   test("test_pref_on_keeps_layers_at_zero", () => {
     // Factory default (no prefs dir): layers start at time zero.
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -621,7 +621,7 @@ describe("TestCreateLayersAtCurrentTime", () => {
     // AE 2026 probed: duplicate() keeps the source layer's timing and
     // does not re-anchor at the current time.
     const prefsDir = prefsDirFixture(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: prefsDir });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -651,7 +651,7 @@ describe("TestDefaultOutPoints", () => {
 
   test("test_synthetic_layers_follow_pref", () => {
     const outpointPrefs = outpointPrefsDir(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: outpointPrefs });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     expect(approx(comp.addSolid([1.0, 0.0, 0.0]).outPoint, 2.0)).toBe(true);
     expect(approx(comp.addNull().outPoint, 2.0)).toBe(true);
@@ -665,14 +665,14 @@ describe("TestDefaultOutPoints", () => {
     // py_aep honors an explicit duration argument, overriding the
     // synthetic out-point preference (AE's addSolid ignores it).
     const outpointPrefs = outpointPrefsDir(makeTmpPath());
-    const app = py_aep.new(undefined, { aePreferencesDir: outpointPrefs });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0], undefined, undefined, undefined, undefined, 8.0);
     expect(approx(solid.outPoint, 8.0)).toBe(true);
   });
 
   test("test_factory_defaults_span_comp_duration", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     // No preferences and no explicit duration: the default span is the
     // composition duration.
@@ -747,7 +747,7 @@ describe("TestTextStyleSheet", () => {
   test("test_add_text_honors_style_sheet", () => {
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
-    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
     if (text == null) throw new Error("text layer has no text group");
@@ -765,7 +765,7 @@ describe("TestTextStyleSheet", () => {
   test("test_no_prefs_is_byte_identical_to_template", () => {
     // Without a prefs dir, add_text must not change a single byte of
     // the baked COS template (btdk is byte-format-sensitive).
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const layerBytes = _btdkBytes(comp.addText("probe"));
     const buf = new BytesIO();
@@ -784,9 +784,9 @@ describe("TestTextStyleSheet", () => {
       .join("\n");
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, sheet);
-    const appPrefs = py_aep.new(undefined, { aePreferencesDir: prefs });
+    const appPrefs = py_aep.newProject(undefined, { aePreferencesDir: prefs });
     const compPrefs = appPrefs.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
-    const appPlain = py_aep.new();
+    const appPlain = py_aep.newProject();
     const compPlain = appPlain.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     expect(pyEq(_btdkBytes(compPrefs.addText("probe")), _btdkBytes(compPlain.addText("probe")))).toBe(true);
   });
@@ -797,7 +797,7 @@ describe("TestTextStyleSheet", () => {
     // applying the factory sheet is a no-op that stays on AE's values.
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _FACTORY_TEXT_STYLE);
-    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
     if (text == null) throw new Error("text layer has no text group");
@@ -811,7 +811,7 @@ describe("TestTextStyleSheet", () => {
   test("test_box_text_honors_style_sheet", () => {
     const tmpPath = makeTmpPath();
     const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
-    const app = py_aep.new(undefined, { aePreferencesDir: prefs });
+    const app = py_aep.newProject(undefined, { aePreferencesDir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addBoxText([80.0, 40.0], "boxed").text;
     if (text == null) throw new Error("text layer has no text group");

@@ -170,7 +170,7 @@ test("test_a_legacy_fnam_too_long_for_its_buffer_raises", () => {
  * dwga, a head of AE 12.
  */
 function _asCc12Project(): py_aep.Project {
-  const project = py_aep.new("15.0x1").project;
+  const project = py_aep.newProject("15.0x1").project;
   project._nnhd = _nnhdFromNhed(project._nhed);
   project._dwga = new DwgaChunk({ synthetic: true });
   // @ts-expect-error SimpleNamespace stand-in for the head chunk
@@ -253,7 +253,7 @@ test("test_new_names_in_an_older_project_are_written_as_strings", () => {
 
 test("test_names_edited_in_an_older_project_read_back", () => {
   const tmpPath = makeTmpPath();
-  const project = py_aep.new("15.0x1").project;
+  const project = py_aep.newProject("15.0x1").project;
   const comp = project.rootFolder.addComp("comp", 100, 100, 1.0, 1.0, 24.0);
   const solid = comp.addSolid([1, 0, 0], "solid", 100, 100, 1.0);
   solid.property("ADBE Mask Parade").addProperty("ADBE Mask Atom").name = "mask";
@@ -286,7 +286,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
 });
 
 test("test_an_older_project_cannot_be_relabelled", () => {
-  const app = py_aep.new("15.0x1");
+  const app = py_aep.newProject("15.0x1");
   app._head.fileFormatVersion = 91;
   raises(ValueError, () => {
     app.version = "16.0x1";

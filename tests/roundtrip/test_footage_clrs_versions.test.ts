@@ -70,7 +70,7 @@ test.each(importRows)("test_import_writes_the_versions_color_records[%#]", (year
       (item) => [item.name, item.mainSource] as const,
     ),
   );
-  const project = py_aep.new(getitem(_VERSIONS, year), { platform: "windows" }).project;
+  const project = py_aep.newProject(getitem(_VERSIONS, year), { platform: "windows" }).project;
   const item = project.importFile(new ImportOptions(getitem(_FILES, label)));
   const out = tmpPath.div("clrs.aep");
   project.save(out);
@@ -85,7 +85,7 @@ test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_re
     .footages.map((item) => item.mainSource)
     .find((source) => source instanceof SolidSource);
   if (ae === undefined) throw new StopIteration();
-  const project = py_aep.new(getitem(_VERSIONS, year), { platform: "windows" }).project;
+  const project = py_aep.newProject(getitem(_VERSIONS, year), { platform: "windows" }).project;
   const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 25.0);
   const solid = comp.addSolid([1.0, 0.0, 0.0]).source;
   if (solid == null) throw new Error("solid layer has no source");

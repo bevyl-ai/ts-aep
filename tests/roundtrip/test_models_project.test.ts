@@ -772,7 +772,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
 
   test("test_new_15_project_settings_round_trip", () => {
     const tmpPath = makeTmpPath();
-    const project = py_aep.new("15.1x69").project;
+    const project = py_aep.newProject("15.1x69").project;
     project.iccProfileDirs = [C._icc_dir(tmpPath)];
     project.bitsPerChannel = BitsPerChannel.THIRTY_TWO;
     project.timeDisplayType = TimeDisplayType.FRAMES;
@@ -803,7 +803,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
 
   test("test_new_profile_is_inserted_in_id_order", () => {
     const tmpPath = makeTmpPath();
-    const project = py_aep.new("15.1x69").project;
+    const project = py_aep.newProject("15.1x69").project;
     project.iccProfileDirs = [C._icc_dir(tmpPath)];
     project.workingSpace = "SDTV NTSC";
     project.workingSpace = C.SRGB;
@@ -854,7 +854,7 @@ describe("TestRoundtripPre22WorkingSpace", () => {
 
   test("test_unknown_profile_leaves_project_unchanged", () => {
     const tmpPath = makeTmpPath();
-    const project = py_aep.new("15.1x69").project;
+    const project = py_aep.newProject("15.1x69").project;
     project.iccProfileDirs = [C._icc_dir(tmpPath)];
     const before = projectBytes(project);
     raises(ColorProfileNotFoundError, () => {

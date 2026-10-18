@@ -22,7 +22,7 @@ import type { Keyframe } from "../../src/py_aep/models/properties/keyframe.ts";
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 
 function _newComp(rate: number = 24.0, duration: number = 10.0, platform: string | null = null): [Project, CompItem] {
-  const project = py_aep.new(undefined, { platform }).project;
+  const project = py_aep.newProject(undefined, { platform }).project;
   return [project, project.rootFolder.addComp("c", 640, 360, 1.0, duration, rate)];
 }
 
@@ -307,7 +307,7 @@ describe("TestNullNaming", () => {
   test("test_numbered_across_the_project", () => {
     // AE 2026: nulls take the next "Null N" over every project item
     // (solids, comps, folders), whatever comp they are added to.
-    const project = py_aep.new().project;
+    const project = py_aep.newProject().project;
     const a = project.rootFolder.addComp("A", 64, 64, 1.0, 10.0, 24);
     const b = project.rootFolder.addComp("B", 64, 64, 1.0, 10.0, 24);
     expect(pyEq([a.addNull().name, b.addNull().name], ["Null 1", "Null 2"])).toBe(true);
@@ -395,7 +395,7 @@ describe("TestTinySvgCanvas", () => {
     // one shape layer), although its addComp refuses under 4 px.
     const svg = tmpPath.div("tiny.svg");
     svg.writeText(`<svg ${_SVG_NS} ${attrs}><rect width='1' height='1'/></svg>`);
-    const project = py_aep.new().project;
+    const project = py_aep.newProject().project;
     const opts = new py_aep.ImportOptions(svg);
     opts.importAs = py_aep.ImportAsType.COMP_CROPPED_LAYERS;
     const comp = project.importFile(opts);
@@ -410,7 +410,7 @@ describe("TestTinySvgCanvas", () => {
 
   test("test_add_comp_keeps_its_floor", () => {
     // AE 2026 addComp: "Value 3 out of range 4 to 30000".
-    const project = py_aep.new().project;
+    const project = py_aep.newProject().project;
     raises(
       ValueError,
       () => {

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { ImportAsType, ImportOptions, new as new_ } from "../../src/py_aep/index.ts";
+import { ImportAsType, ImportOptions, newProject } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { GradientPaint, SolidPaint, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
@@ -37,7 +37,7 @@ function _import(tmpPath: Path, markup: string): CompItem {
   const svg = tmpPath.div("probe.svg");
   // encoding="utf-8" is the default of pyrt Path.write_text.
   svg.writeText(markup);
-  const app = new_();
+  const app = newProject();
   const opts = new ImportOptions(svg);
   opts.importAs = ImportAsType.COMP_CROPPED_LAYERS;
   const comp = app.project.importFile(opts);

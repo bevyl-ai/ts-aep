@@ -16,6 +16,7 @@ import {
   int,
   pyBool,
   repr,
+  hasInstanceDict,
   instanceDict,
   typeName,
 } from "../../pyrt/index.ts";
@@ -320,11 +321,10 @@ export class ChunkField<
   __get__(obj: O | null, objtype?: Function | null): T | ChunkField<T, O> {
     if (obj == null) return this;
     // Parse-time overrides (e.g. ExtendScript-compatible values that
-    // differ from the binary) are stored in __dict__ and take priority
-    // over the chunk body.
-    // Only an instance that already has a `__dict__` can hold one: a read
-    // does not create it (shaped for speed: every model field read lands here).
-    if (Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
+    // differ from the binary) are stored in the instance dict and take
+    // priority over the chunk body. A read never creates the dict (shaped
+    // for speed: every model field read lands here).
+    if (hasInstanceDict(obj)) {
       const overrides = instanceDict(obj);
       if (overrides.has(this.publicName)) return overrides.get(this.publicName);
     }
@@ -358,7 +358,7 @@ export class ChunkField<
     if (!_materializationAllowed.get()) {
       throw new RuntimeError(
         `Cannot write ${repr(this.publicName)} via descriptor during ` +
-          `parsing. Use obj.__dict__[${repr(this.publicName)}] for ` +
+          `parsing. Use instanceDict(obj).set(${repr(this.publicName)}, value) for ` +
           `parse-time overrides.`,
       );
     }

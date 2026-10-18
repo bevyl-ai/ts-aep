@@ -258,8 +258,8 @@ const isSpans = (v: InstanceValue): v is [number, number][] =>
  */
 export function _freshComposedSpans(doc: TextDocument): [number, number][] | null {
   if (doc._compositionCalibrated !== true) return null;
-  if (doc.__dict__.has("_composed_cache")) {
-    const memo = doc.__dict__.get("_composed_cache") ?? null;
+  if (doc._overrides.has("_composed_cache")) {
+    const memo = doc._overrides.get("_composed_cache") ?? null;
     return memo != null && isSpans(memo) ? memo : null;
   }
   let spans: [number, number][] | null;
@@ -269,7 +269,7 @@ export function _freshComposedSpans(doc: TextDocument): [number, number][] | nul
     if (!(e instanceof CompositionUnsupported)) throw e;
     spans = null;
   }
-  doc.__dict__.set("_composed_cache", spans);
+  doc._overrides.set("_composed_cache", spans);
   return spans;
 }
 
@@ -1030,7 +1030,7 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
       return;
     }
     this._checkWritable(obj);
-    obj.__dict__.delete(this.publicName);
+    obj._overrides.delete(this.publicName);
     const rawValue = value == null ? null : this._coerce(obj, value);
     const total = u16Len(_rawText(obj));
     if (isChar) _applyCharKey(obj, 0, total, this.key, rawValue);

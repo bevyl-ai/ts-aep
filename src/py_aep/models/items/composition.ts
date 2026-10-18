@@ -1036,8 +1036,8 @@ export class CompItem extends AVItem {
 
   declare _layers: Layer[];
   declare _layersById: Map<number, Layer> | null;
-  declare __typeCache: LayerTypeCache | null;
-  declare __layerIdToIndex: Map<number, number> | null;
+  declare _layerTypes: LayerTypeCache | null;
+  declare _layerIndexById: Map<number, number> | null;
   declare _cdta: CdtaChunk;
   declare _cdrp: U1Chunk | null;
   declare prinList: ListChunk;
@@ -1081,8 +1081,8 @@ export class CompItem extends AVItem {
 
     this._layers = [];
     this._layersById = null;
-    this.__typeCache = null;
-    this.__layerIdToIndex = null;
+    this._layerTypes = null;
+    this._layerIndexById = null;
 
     this._cdta = findByType(kw._childChunks, "cdta");
     this._cdrp = findByTypeOrNull(kw._childChunks, "cdrp");
@@ -1385,15 +1385,15 @@ export class CompItem extends AVItem {
       threeDModel,
       parametricMesh,
     };
-    this.__typeCache = cache;
+    this._layerTypes = cache;
     return cache;
   }
 
   _invalidateLayerCache(): void {
     /** Reset layer caches after structural mutations. */
-    this.__typeCache = null;
+    this._layerTypes = null;
     this._layersById = null;
-    this.__layerIdToIndex = null;
+    this._layerIndexById = null;
   }
 
   _layerBlockSlice(layer: Layer): [number, number] {
@@ -1447,12 +1447,12 @@ export class CompItem extends AVItem {
 
   /** Map of layer ID to 0-based index. */
   get _layerIdToIndex(): Map<number, number> {
-    if (this.__layerIdToIndex == null) {
-      this.__layerIdToIndex = new Map(
+    if (this._layerIndexById == null) {
+      this._layerIndexById = new Map(
         [...this.layers.entries()].map(([idx, layer]) => [layer.id, idx] as const),
       );
     }
-    return this.__layerIdToIndex;
+    return this._layerIndexById;
   }
 
   /** The composition's marker property. Read-only. */
@@ -1902,7 +1902,7 @@ export class CompItem extends AVItem {
 
   /** Cached layer type lists for O(1) access. */
   get _typeCache(): LayerTypeCache {
-    return this.__typeCache != null ? this.__typeCache : this._buildTypeCache();
+    return this._layerTypes != null ? this._layerTypes : this._buildTypeCache();
   }
 
   /** An array of all {@link AVLayer} objects in this composition. */

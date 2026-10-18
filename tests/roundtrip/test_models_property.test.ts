@@ -31,7 +31,7 @@ import {
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { asInstance, getComp, getFirstLayer, getLayer, parseProjectFresh } from "../helpers.ts";
 
-import { parse as parseAep, new as pyAepNew, Project } from "../../src/py_aep/index.ts";
+import { parse as parseAep, newProject as pyAepNew, Project } from "../../src/py_aep/index.ts";
 import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
 import { AVLayer, Application, CompItem, FootageItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyBase, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import { ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
