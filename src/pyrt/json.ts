@@ -36,7 +36,7 @@ function countNl(s: string, end: number): number {
   return n;
 }
 
-export type LoadsOptions = {
+export type ParseJsonOptions = {
   /** `parseFloat`: called with the number's text; default boxes it as `BoxedFloat`. */
   parseFloat?: (text: string) => JsonValue;
   /** `parseInt`: called with the number's text; default `number`, or `bigint` past 2**53. */
@@ -80,14 +80,14 @@ const ESC: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f
  * NOTE: bytes decode strictly; CPython's `surrogatepass` (encoded surrogates) is not modelled.
  */
 /**
- * A value `jsonLoads` produces with its default hooks: objects are `Map`s
+ * A value `parseJson` produces with its default hooks: objects are `Map`s
  * (insertion-ordered, like a Python dict), fractional and exponent numbers
  * are boxed `BoxedFloat`s, integers past 2**53 are `bigint`s.
  */
 export type JsonValue = null | boolean | number | bigint | BoxedFloat | string | JsonValue[] | Map<string, JsonValue>;
 
 /** Python `x[key]` on a decoded JSON value: `KeyError` when absent, `TypeError` when `x` is no object. */
-export function jsonGetitem(x: JsonValue, key: string): JsonValue {
+export function jsonRequire(x: JsonValue, key: string): JsonValue {
   if (x instanceof Map) {
     const value = x.get(key);
     if (value === undefined) throw new KeyError(repr(key));
@@ -122,7 +122,7 @@ export function jsonFloat(x: JsonValue): number {
 }
 
 /** `json.loads(s)`. */
-export function jsonLoads(s: string | Uint8Array, opts: LoadsOptions = {}): JsonValue {
+export function parseJson(s: string | Uint8Array, opts: ParseJsonOptions = {}): JsonValue {
   let text: string;
   if (s instanceof Uint8Array) {
     const enc = detectEncoding(s);
@@ -255,7 +255,7 @@ export function jsonLoads(s: string | Uint8Array, opts: LoadsOptions = {}): Json
   return r[0];
 }
 
-export type DumpsOptions = {
+export type StringifyJsonOptions = {
   ensureAscii?: boolean;
   allowNan?: boolean;
   sortKeys?: boolean;
@@ -320,7 +320,7 @@ function intRepr(x: number): string {
  * plain object is a JSON object, an array a JSON array, an integral `number` or a
  * `bigint` an int, a non-integral `number` or a `BoxedFloat` a float.
  */
-export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
+export function stringifyJson(obj: unknown, opts: StringifyJsonOptions = {}): string {
   const { ensureAscii = true, allowNan = true, sortKeys = false, skipkeys = false } = opts;
   const default_ = opts.default_ ?? null;
   const indent = typeof opts.indent === "number" ? " ".repeat(opts.indent) : (opts.indent ?? null);

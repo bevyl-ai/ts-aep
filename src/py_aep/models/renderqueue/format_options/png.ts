@@ -3,8 +3,8 @@
 import {
   ValueError,
   descriptor,
-  jsonDumps,
-  jsonLoads,
+  stringifyJson,
+  parseJson,
   truthy,
   jsonFloat,
   jsonInt,
@@ -57,7 +57,7 @@ export class PngFormatOptions extends FormatOptionsBase {
     this._hdr10Meta = new Map();
     if (_hdr10Utf8 != null) {
       try {
-        const parsed = jsonLoads(_hdr10Utf8.value);
+        const parsed = parseJson(_hdr10Utf8.value);
         if (parsed instanceof Map) this._hdr10Meta = parsed;
       } catch (e) {
         // Python: `except (json.JSONDecodeError, ValueError): pass`
@@ -90,7 +90,7 @@ export class PngFormatOptions extends FormatOptionsBase {
   /** Serialize `_hdr10Meta` back to the Utf8 chunk body. */
   _syncHdr10(): void {
     if (this._hdr10Utf8 != null) {
-      this._hdr10Utf8.value = jsonDumps(this._hdr10Meta, { separators: [",", ":"] });
+      this._hdr10Utf8.value = stringifyJson(this._hdr10Meta, { separators: [",", ":"] });
     }
   }
 

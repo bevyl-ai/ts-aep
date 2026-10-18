@@ -29,7 +29,7 @@ import {
   getOrInsert,
   zip,
   isReal,
-  jsonLoads,
+  parseJson,
   truediv,
   PureWindowsPath,
   type BoxedFloat, compare } from "../../pyrt/index.ts";
@@ -1691,7 +1691,7 @@ export function validateAep(
 
   // Load expected JSON
   // Python `open(encoding="utf-8")`: bytes are decoded without dropping a BOM.
-  const loaded = jsonLoads(decode(jsonPath.readBytes(), "utf-8"));
+  const loaded = parseJson(decode(jsonPath.readBytes(), "utf-8"));
   if (!(loaded instanceof Map)) throw new AttributeError(`'${typeName(loaded)}' object has no attribute 'get'`);
   const expected: Dict = loaded;
 

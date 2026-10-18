@@ -29,7 +29,7 @@ import {
   RuntimeError,
   literal,
   str,
-  jsonDumps,
+  stringifyJson,
   boxFloat,
   type BoxedFloat,
 } from "../../pyrt/index.ts";
@@ -512,7 +512,7 @@ export function formatJson(node: Node, output: TextIO, maxDepth: number | null =
   }
 
   const filtered = filterDepth(node);
-  output.write(jsonDumps(filtered, { indent: 2, default_: str }));
+  output.write(stringifyJson(filtered, { indent: 2, default_: str }));
   output.write("\n");
 }
 

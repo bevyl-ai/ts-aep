@@ -30,7 +30,7 @@ import {
   deepcopy,
   getOrThrow,
   valueEquals,
-  jsonDumps, compare } from "../../pyrt/index.ts";
+  stringifyJson, compare } from "../../pyrt/index.ts";
 import { intOption, parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 export function print(...args: string[]): void {
@@ -947,7 +947,7 @@ export function main(): number {
   // Output results
   if (args.json) {
     const output = toJsonOutput(file1, file2, diffs, only1, only2, suppressed.length);
-    print(jsonDumps(output, { indent: 2 }));
+    print(stringifyJson(output, { indent: 2 }));
   } else {
     printResults(file1, file2, diffs, only1, only2, args.context, ctx1, ctx2, structDiffs);
   }

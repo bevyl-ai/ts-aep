@@ -17,5 +17,5 @@ export { Path, PurePath, PurePosixPath, PureWindowsPath, fspath, type PathLike }
 export { descriptor, getDescriptor, descriptorsOf, pyObject, pyClassHooks, objectSetattr, objectGetattr, instanceDict, hasInstanceDict, type ClassAttributes, type Descriptor } from "./dunder.ts";
 export * as etree from "./etree.ts";
 export { hypot } from "./math.ts";
-export { jsonLoads, jsonDumps, jsonFloat, jsonGet, jsonGetitem, jsonInt, JSONDecodeError, type JsonValue, encodeBasestring, encodeBasestringAscii, type LoadsOptions, type DumpsOptions } from "./json.ts";
+export { parseJson, stringifyJson, jsonFloat, jsonGet, jsonRequire, jsonInt, JSONDecodeError, type JsonValue, encodeBasestring, encodeBasestringAscii, type ParseJsonOptions, type StringifyJsonOptions } from "./json.ts";
 export { pyRe, reSearch, reMatch, reEscape, reFlags, patternMatch, PyReError } from "./re.ts";

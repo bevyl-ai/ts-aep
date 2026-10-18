@@ -31,7 +31,7 @@ import {
   compositeKey,
   type FileStream,
   jsonGet,
-  jsonLoads,
+  parseJson,
   type JsonValue,
   openFile,
   typeName, compare, ascii } from "../../pyrt/index.ts";
@@ -1818,7 +1818,7 @@ export function _jsonIter(x: JsonValue): JsonValue[] {
 }
 
 export function _probeMgjson(fp: ProbeStream): MediaInfo {
-  const doc = jsonLoads(fp.read());
+  const doc = parseJson(fp.read());
   const times: { us: number; aware: boolean }[] = [];
   for (const stream of _jsonIter(jsonGet(doc, "dataDynamicSamples", []))) {
     for (const sample of _jsonIter(jsonGet(stream, "samples", []))) {

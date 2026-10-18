@@ -5,8 +5,8 @@ import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 import {
   AepError,
   ValueError,
-  jsonDumps,
-  jsonLoads,
+  stringifyJson,
+  parseJson,
   typeName,
   type JsonValue,
 } from "../../pyrt/index.ts";
@@ -272,7 +272,7 @@ export function parseAlasData(parentChunks: Chunk[]): AlasData {
   const alasText = alasChunk.value;
   // `value` may be a `_NulTailStr` (String object), which py_bool would call truthy.
   if (alasText == null || String(alasText).length === 0) return new Map();
-  const result = jsonLoads(String(alasText));
+  const result = parseJson(String(alasText));
   return result instanceof Map ? result : new Map();
 }
 
@@ -318,7 +318,7 @@ export function alasPlatform(fullpath: string): number {
  * keys, no whitespace.
  */
 export function dumpAlas(data: AlasData): string {
-  return jsonDumps(data, { sortKeys: true, separators: [",", ":"] });
+  return stringifyJson(data, { sortKeys: true, separators: [",", ":"] });
 }
 
 /**
