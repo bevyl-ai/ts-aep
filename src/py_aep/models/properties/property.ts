@@ -1832,7 +1832,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new ValueError(
         `cannot set the value of ${repr(this.matchName)} while its ` +
           "dimensions are separated; write its X / Y / Z followers " +
-          "instead (get_separation_follower)",
+          "instead (getSeparationFollower)",
       );
     }
     this._set_own_value(value);
@@ -1932,7 +1932,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // ExtendScript: "Can not call setValue() on a property with
       // keyframes." Writing a static value alongside keyframe data
       // produces a file AE refuses to open.
-      throw new ValueError("Cannot set value on a property with keyframes. " + "Use set_value_at_time() instead.");
+      throw new ValueError("Cannot set value on a property with keyframes. " + "Use setValueAtTime() instead.");
     }
     _validate_value(this, value);
     if (this._unstored_mask_path() && _same_path(value as Shape, this.value)) {
@@ -2172,7 +2172,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const effect = this._parent_property;
     if (!(this.isDropdownEffect && effect != null && effect.matchName.startsWith("Pseudo/"))) {
       throw new ValueError(
-        "property_parameters can only be set on the Menu property " + "of a Dropdown Menu Control.",
+        "propertyParameters can only be set on the Menu property " + "of a Dropdown Menu Control.",
       );
     }
     if (!Array.isArray(items) || !items?.length) {
@@ -2336,7 +2336,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // AE silently ignores this on a non-leader; raising keeps a
       // caller's mistake visible instead of swallowing the write.
       throw new ValueError(
-        `dimensions_separated is only settable on the separation ` + `leader, not ${repr(this.matchName)}`,
+        `dimensionsSeparated is only settable on the separation ` + `leader, not ${repr(this.matchName)}`,
       );
     }
     if (value === this.dimensionsSeparated) {
@@ -2990,7 +2990,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   set alternateSource(source: AVItem) {
     if (!this.canSetAlternateSource || this._blsi == null) {
       throw new ValueError(
-        "This property does not support media replacement " + "(can_set_alternate_source is False).",
+        "This property does not support media replacement " + "(canSetAlternateSource is False).",
       );
     }
     if (!(source instanceof AVItem)) {
@@ -3004,7 +3004,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (!source.isMediaReplacementCompatible) {
       throw new ValueError(
         `Item ${repr(source.name)} (id=${source.id}) cannot be used as an ` +
-          "alternate source (is_media_replacement_compatible is False).",
+          "alternate source (isMediaReplacementCompatible is False).",
       );
     }
     if (source instanceof FootageItem) {
@@ -4387,7 +4387,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new ValueError(
         `cannot set a value on ${repr(this.matchName)} while its ` +
           "dimensions are separated; key its X / Y / Z followers " +
-          "instead (get_separation_follower)",
+          "instead (getSeparationFollower)",
       );
     }
     const kind = this._parallel_kind();

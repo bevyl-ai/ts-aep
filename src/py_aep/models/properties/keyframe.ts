@@ -1070,7 +1070,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     validate_bool(value);
     const kf_data = this._ldat_item.kf_data;
     if (!("spatial_auto_bezier" in kf_data)) {
-      throw new ValueError("spatial_auto_bezier can only be set on spatial keyframes");
+      throw new ValueError("spatialAutoBezier can only be set on spatial keyframes");
     }
     kf_data.spatial_auto_bezier = value;
     if (!value) {
@@ -1106,7 +1106,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     validate_bool(value);
     const kf_data = this._ldat_item.kf_data;
     if (!("spatial_continuous" in kf_data)) {
-      throw new ValueError("spatial_continuous can only be set on spatial keyframes");
+      throw new ValueError("spatialContinuous can only be set on spatial keyframes");
     }
     kf_data.spatial_continuous = value;
   }

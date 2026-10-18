@@ -132,7 +132,7 @@ export function _out_of_range(
   names: string[],
 ): ValueError {
   return new ValueError(
-    `${new Path(file).name}: layer_index ${layer_index} out of range; the ` +
+    `${new Path(file).name}: layerIndex ${layer_index} out of range; the ` +
       `file has ${names.length} selectable layers (top first): ${repr(names)}`,
   );
 }

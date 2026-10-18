@@ -295,7 +295,7 @@ export function alas_target_is_folder(data: AlasData): boolean {
   const stored = data.get("target_is_folder");
   const target_is_folder = stored === undefined ? false : stored;
   if (typeof target_is_folder !== "boolean") {
-    throw new TypeError_(`alas target_is_folder must be a bool, not '${type_name(target_is_folder)}'`);
+    throw new TypeError_(`alas targetIsFolder must be a bool, not '${type_name(target_is_folder)}'`);
   }
   return target_is_folder;
 }

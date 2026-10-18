@@ -128,6 +128,6 @@ describe("TestResolveAiLayer", () => {
   });
 
   test("test_out_of_range_raises", () => {
-    raises(ValueError, () => resolve_ai_layer(ASSETS.div("ai.ai"), 2), "layer_index 2 out of range");
+    raises(ValueError, () => resolve_ai_layer(ASSETS.div("ai.ai"), 2), "layerIndex 2 out of range");
   });
 });

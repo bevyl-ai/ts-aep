@@ -37,8 +37,8 @@ export class FormatOptionsBase {
     if (this._detached) {
       throw new RuntimeError(
         "format options are detached from their output module: the " +
-          "module replaced them (apply_template, or a rolled-back " +
-          "batch_edit). Re-fetch `output_module.format_options`.",
+          "module replaced them (applyTemplate, or a rolled-back " +
+          "batchEdit). Re-fetch `output_module.formatOptions`.",
       );
     }
   }

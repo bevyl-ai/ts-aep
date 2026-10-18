@@ -164,13 +164,13 @@ export class LightLayer extends Layer {
     _require_environment_lights(comp, "light_source");
 
     if (!(value instanceof Layer)) {
-      throw new ValueError("light_source must be a Layer or None");
+      throw new ValueError("lightSource must be a Layer or None");
     }
     if (!(value instanceof AVLayer)) {
       throw new ValueError("Can't set a non-AV layer as a light source.");
     }
     if (value.containingComp !== comp) {
-      throw new ValueError("light_source must be a layer in the same composition");
+      throw new ValueError("lightSource must be a layer in the same composition");
     }
     if (this.lightType === LightType.SPOT || this.lightType === LightType.POINT) {
       // AE 2026 refuses these two ("Invalid light source specified")

@@ -1792,7 +1792,7 @@ export class CompItem extends AVItem {
   set rendererOptions(value: Map<string, SettingValue> | SettingsView) {
     // A Python Mapping: a dict, or another comp's renderer options view.
     if (!(value instanceof Map || value instanceof SettingsView)) {
-      throw new ValueError("renderer_options must be a mapping of key-value pairs");
+      throw new ValueError("rendererOptions must be a mapping of key-value pairs");
     }
     const view = this.rendererOptions;
     for (const [key, option] of value instanceof Map ? value.entries() : value.items()) {

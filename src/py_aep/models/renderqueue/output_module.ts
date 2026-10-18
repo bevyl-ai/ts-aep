@@ -573,10 +573,10 @@ export class OutputModule {
 
   set postRenderTargetComp(comp: CompItem) {
     if (!(comp instanceof CompItem)) {
-      throw new ValueError("post_render_target_comp must be a CompItem");
+      throw new ValueError("postRenderTargetComp must be a CompItem");
     }
     if (!this._project.items.has(comp.id)) {
-      throw new ValueError("post_render_target_comp must be an item in the project");
+      throw new ValueError("postRenderTargetComp must be an item in the project");
     }
     this._om_ldat.post_render_target_comp_id = comp.id;
   }
@@ -987,7 +987,7 @@ export class OutputModule {
             `${key}: ${_name_or_str(key, value)} not in ` + `{${sorted([...allowed].map((v) => _name_or_str(key, v))).join(", ")}}`,
         )
         .join("; ");
-      throw new ValueError(`batch_edit rolled back, invalid final state: ${details}`);
+      throw new ValueError(`batchEdit rolled back, invalid final state: ${details}`);
     }
     return this;
   }

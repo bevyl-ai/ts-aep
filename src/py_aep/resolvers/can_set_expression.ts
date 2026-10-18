@@ -108,7 +108,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
     const layer = prop._containing_layer;
     if (!(layer instanceof _av_layer().AVLayer)) {
       // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
-      throw new AttributeError(`'${layer.constructor.name}' has no property 'time_remap_enabled'`);
+      throw new AttributeError(`'${layer.constructor.name}' has no property 'timeRemapEnabled'`);
     }
     return layer.timeRemapEnabled;
   }
