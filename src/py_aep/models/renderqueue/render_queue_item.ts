@@ -125,9 +125,9 @@ export const RENDER_SETTINGS: SettingsSpec = new Map([
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const rq_item = app.project.renderQueue.items[0];
- * console.log(rq_item.status);
- * for (const output_module of rq_item) {
+ * const rqItem = app.project.renderQueue.items[0];
+ * console.log(rqItem.status);
+ * for (const outputModule of rqItem) {
  *   // ...
  * }
  * ```
@@ -212,25 +212,25 @@ export class RenderQueueItem {
     const {
       _ldat,
       _litm,
-      _listChunk: _list_chunk,
+      _listChunk,
       _lom,
       _rcom = null,
-      _rcomUtf8: _rcom_utf8 = null,
-      _routItems: _rout_items,
+      _rcomUtf8 = null,
+      _routItems,
       parent,
       comp,
-      outputModules: output_modules,
+      outputModules,
     } = kw;
     this._ldat = _ldat;
     this._litm = _litm;
-    this._listChunk = _list_chunk;
+    this._listChunk = _listChunk;
     this._lom = _lom;
     this._rcom = _rcom;
-    this._rcomUtf8 = _rcom_utf8;
-    this._routItems = _rout_items;
+    this._rcomUtf8 = _rcomUtf8;
+    this._routItems = _routItems;
     this._parentRq = parent;
     this._comp = comp;
-    this._outputModules = output_modules;
+    this._outputModules = outputModules;
     this._skipFrames = 0;
   }
 

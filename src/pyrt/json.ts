@@ -54,7 +54,7 @@ function defaultInt(text: string): number | bigint {
 }
 
 const defaultFloat = (text: string): PyFloat => pyfloat(Number(text));
-const CONSTANTS: Record<string, number> = { NaN: NaN, Infinity: Infinity, "-Infinity": -Infinity };
+const CONSTANTS: Record<string, number> = { NaN, Infinity, "-Infinity": -Infinity };
 
 /** `json.detect_encoding(b)` */
 function detectEncoding(b: Uint8Array): string {
@@ -321,11 +321,11 @@ function intRepr(x: number): string {
  * `bigint` an int, a non-integral `number` or a `PyFloat` a float.
  */
 export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
-  const { ensureAscii: ensure_ascii = true, allowNan: allow_nan = true, sortKeys: sort_keys = false, skipkeys = false } = opts;
+  const { ensureAscii = true, allowNan = true, sortKeys = false, skipkeys = false } = opts;
   const default_ = opts.default_ ?? null;
   const indent = typeof opts.indent === "number" ? " ".repeat(opts.indent) : (opts.indent ?? null);
   const [itemSep, keySep] = opts.separators ?? (indent !== null ? [",", ": "] : [", ", ": "]);
-  const enc = ensure_ascii ? encodeBasestringAscii : encodeBasestring;
+  const enc = ensureAscii ? encodeBasestringAscii : encodeBasestring;
   const markers = new Set<unknown>();
 
   const floatstr = (x: number): string => {
@@ -334,7 +334,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     else if (x === Infinity) text = "Infinity";
     else if (x === -Infinity) text = "-Infinity";
     else return floatRepr(x);
-    if (!allow_nan) throw new ValueError(`Out of range float values are not JSON compliant: ${floatRepr(x)}`);
+    if (!allowNan) throw new ValueError(`Out of range float values are not JSON compliant: ${floatRepr(x)}`);
     return text;
   };
 
@@ -382,7 +382,7 @@ export function jsonDumps(obj: unknown, opts: DumpsOptions = {}): string {
     } else {
       items = o instanceof Map ? [...o] : Object.entries(o);
       if (items.length === 0) return "{}";
-      if (sort_keys) items = [...items].sort((a, b) => pyCmp(a[0], b[0]));
+      if (sortKeys) items = [...items].sort((a, b) => pyCmp(a[0], b[0]));
     }
     markers.add(o);
     let open = isList ? "[" : "{";

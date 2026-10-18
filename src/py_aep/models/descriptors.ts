@@ -291,23 +291,23 @@ export class ChunkField<
     const {
       transform = null,
       reverse = null,
-      readOnly: read_only = false,
+      readOnly = false,
       validate = null,
       default: default_ = _SENTINEL,
-      preSet: pre_set = null,
-      postSet: post_set = null,
-      minVersion: min_version = null,
+      preSet = null,
+      postSet = null,
+      minVersion = null,
     } = kw;
     this.chunkAttr = chunkAttr;
     this.field = field;
     this.transform = transform;
     this.reverse = reverse;
-    this.readOnly = read_only;
+    this.readOnly = readOnly;
     this.validate = validate;
     this.default = default_;
-    this.preSet = pre_set;
-    this.postSet = post_set;
-    this.minVersion = min_version;
+    this.preSet = preSet;
+    this.postSet = postSet;
+    this.minVersion = minVersion;
     // Derived once so __set__ validates membership without
     // re-inspecting the transform on every write.
     this._enumCls = _enumClass(transform);
@@ -471,10 +471,10 @@ export class ChunkField<
     field: string,
     kw: { allowOutOfEnumValues?: boolean } & ChunkFieldEnumKw<V, object, R> = {},
   ): ChunkField<V> {
-    const { allowOutOfEnumValues: allow_out_of_enum_values = false, ...kwargs } = kw;
+    const { allowOutOfEnumValues = false, ...kwargs } = kw;
     if (!("transform" in kwargs)) kwargs.transform = boundEnumMethod(enumCls, "fromBinary", enumCls);
     if (!("reverse" in kwargs)) kwargs.reverse = boundEnumMethod(enumCls, "toBinary", int);
-    if (allow_out_of_enum_values) {
+    if (allowOutOfEnumValues) {
       // A stored value outside the enum reads back raw instead of raising;
       // the overloads require the raw field type to fit the declared one.
       const transform = kwargs.transform;

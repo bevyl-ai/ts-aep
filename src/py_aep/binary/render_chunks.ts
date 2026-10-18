@@ -177,21 +177,21 @@ export class RoptChunk extends Chunk {
   }
 
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): RoptChunk {
-    const { chunkType: chunk_type = "" } = kw;
+    const { chunkType = "" } = kw;
     if (this !== RoptChunk) {
       // Variant subclass - use standard fmt_field parsing
-      const result = super.read(fp, size, { chunkType: chunk_type });
+      const result = super.read(fp, size, { chunkType });
       pyAssert(result instanceof RoptChunk);
       return result;
     }
-    if (size < 4) return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
+    if (size < 4) return new this({ chunkType, data: readBytes(fp, size) });
     // Peek at discriminator (first 4 bytes = format_code)
     const discRaw = readBytes(fp, 4);
     const formatCode = decode(discRaw, "ascii");
     fp.seek(-4, 1);
     const variantCls = _ROPT_VARIANTS.get(formatCode) ?? RoptChunk;
-    if (variantCls === RoptChunk) return new this({ chunkType: chunk_type, data: readBytes(fp, size) });
-    return variantCls.read(fp, size, { chunkType: chunk_type });
+    if (variantCls === RoptChunk) return new this({ chunkType, data: readBytes(fp, size) });
+    return variantCls.read(fp, size, { chunkType });
   }
 }
 

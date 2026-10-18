@@ -78,11 +78,11 @@ export class FontObject {
     postScriptName?: string | null;
     version?: string | null;
   }) {
-    const { _fontData: _font_data, _fontEntry: _font_entry = null, postScriptName: post_script_name = null, version = null } = kw;
-    this._fontData = _font_data;
-    this._fontEntry = _font_entry;
-    if (post_script_name != null) {
-      instanceDict(this).set("postScriptName", post_script_name);
+    const { _fontData, _fontEntry = null, postScriptName = null, version = null } = kw;
+    this._fontData = _fontData;
+    this._fontEntry = _fontEntry;
+    if (postScriptName != null) {
+      instanceDict(this).set("postScriptName", postScriptName);
     }
     if (version != null) {
       instanceDict(this).set("version", version);

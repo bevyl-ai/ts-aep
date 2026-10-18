@@ -118,8 +118,8 @@ export class TextDocument {
    *
    * const app = parse("project.aep");
    * const comp = app.project.compositions[0];
-   * const text_doc = comp.textLayers[0].text.sourceText.value;
-   * console.log(text_doc.text);
+   * const textDoc = comp.textLayers[0].text.sourceText.value;
+   * console.log(textDoc.text);
    * ```
    *
    * @example
@@ -461,39 +461,39 @@ export class TextDocument {
   }): TextDocument {
     /** Wrap parsed COS data as a `TextDocument`. */
     const {
-      _charStyle: _char_style = null,
-      _paraStyle: _para_style = null,
+      _charStyle = null,
+      _paraStyle = null,
       _doc,
       _fonts,
-      _cosData: _cos_data,
-      _btdkBody: _btdk_body,
+      _cosData,
+      _btdkBody,
       text = null,
       font = null,
-      fontObject: font_object = null,
-      fillColor: fill_color = null,
-      strokeColor: stroke_color = null,
-      paragraphCount: paragraph_count = null,
+      fontObject = null,
+      fillColor = null,
+      strokeColor = null,
+      paragraphCount = null,
       ...kwargs
     } = kw;
     // `cls.__new__(cls)` skips `__init__`; the field initializers restate
     // the class-level defaults.
     const obj = new TextDocument(_NEW);
-    obj._charStyle = _char_style;
-    obj._paraStyle = _para_style;
+    obj._charStyle = _charStyle;
+    obj._paraStyle = _paraStyle;
     obj._doc = _doc;
     obj._fonts = _fonts;
-    obj._cosData = _cos_data;
-    obj._btdkBody = _btdk_body;
+    obj._cosData = _cosData;
+    obj._btdkBody = _btdkBody;
     obj._associated = true;
     // Instance overrides for non-descriptor fields, plus any
     // CosField-backed kwargs
     const overrides = new Map<string, InstanceValue | undefined>([
       ["text", text],
       ["font", font],
-      ["fontObject", font_object],
-      ["fillColor", fill_color],
-      ["strokeColor", stroke_color],
-      ["paragraphCount", paragraph_count],
+      ["fontObject", fontObject],
+      ["fillColor", fillColor],
+      ["strokeColor", strokeColor],
+      ["paragraphCount", paragraphCount],
     ]);
     for (const [k, v] of Object.entries(kwargs)) overrides.set(k, v);
     for (const [key, val] of overrides) {

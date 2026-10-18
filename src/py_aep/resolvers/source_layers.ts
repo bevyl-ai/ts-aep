@@ -32,7 +32,7 @@ export function psdLeafLayers(
   file: PathLike,
   kw: { maskBoxes?: boolean } = {},
 ): PsdLayer[] {
-  const { maskBoxes: mask_boxes = true } = kw;
+  const { maskBoxes = true } = kw;
   const leaves: PsdLayer[] = [];
 
   const _walk = (nodes: PsdNode[]): void => {
@@ -45,7 +45,7 @@ export function psdLeafLayers(
     }
   };
 
-  _walk(readPsdLayers(file, { maskBoxes: mask_boxes }));
+  _walk(readPsdLayers(file, { maskBoxes }));
   leaves.splice(
     0,
     leaves.length,

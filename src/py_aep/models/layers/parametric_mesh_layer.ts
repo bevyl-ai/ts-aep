@@ -84,33 +84,33 @@ export class ParametricMeshLayer extends AVLayer {
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer;
   static _new(...args: never[]): never;
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer {
-    const { name, layerId: layer_id, duration, containingComp: containing_comp, meshType: mesh_type, effectParamDefs: effect_param_defs = null } = kw;
+    const { name, layerId, duration, containingComp, meshType, effectParamDefs = null } = kw;
     const layer = super._new<ParametricMeshLayer>({
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs,
+      containingComp,
+      effectParamDefs,
     });
     layer._ldta.layerType = LayerType.PARAMETRIC_MESH;
-    layer._ldta.label = labelIndex(containing_comp._project._preferences, "Parametrics Label Index", 9);
+    layer._ldta.label = labelIndex(containingComp._project._preferences, "Parametrics Label Index", 9);
     layer._ldta.threeDLayer = true;
     layer._ldta.collapseTransformation = true;
     // AE writes flags2=0x83 for mesh layers: effects are not applicable.
     layer._ldta.effectsActive = false;
     // AE expresses the layer's time fields in the comp's internal
     // timebase (e.g. 23976 for 29.97 fps), not a reduced rational.
-    const timeBase = containing_comp._cdta.internalTimebase;
+    const timeBase = containingComp._cdta.internalTimebase;
     layer._ldta.startTimeDivisor = timeBase;
     layer._ldta.inPointDivisor = timeBase;
     layer._ldta.outPointDividend = round(duration * timeBase);
     layer._ldta.outPointDivisor = timeBase;
-    layer.parametricMeshType = mesh_type;
+    layer.parametricMeshType = meshType;
     // AE writes the active mesh type's option/bevel groups expanded
     // (tdsb=1) while the other mesh groups stay collapsed (tdsb=3, the
     // synthesized default). Override the active groups before the layer
     // is materialized so the written tdsb matches AE.
-    const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.toBinary(mesh_type)) ?? [];
+    const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.toBinary(meshType)) ?? [];
     for (const child of layer.properties) {
       if (activeGroups.includes(child.matchName) && child._tdsb != null) {
         child._tdsb._enableFlags = 1;

@@ -113,29 +113,29 @@ export class EssentialGraphicsController {
     sourceLayerId?: number | null;
   }) {
     const {
-      _nameUtf8: _name_utf8,
+      _nameUtf8,
       _ctyp,
       uuid,
-      sourcePropertyPath: source_property_path,
-      sourceCompId: source_comp_id = null,
-      sourceLayerId: source_layer_id = null,
+      sourcePropertyPath,
+      sourceCompId = null,
+      sourceLayerId = null,
     } = kw;
-    this._nameUtf8 = _name_utf8;
+    this._nameUtf8 = _nameUtf8;
     this._ctyp = _ctyp;
     this.uuid = uuid;
     /** The unique identifier for this controller. */
-    this.sourcePropertyPath = source_property_path;
+    this.sourcePropertyPath = sourcePropertyPath;
     /**
      * The path (root to leaf) to the source-composition property this
      * controller exposes, as `SourcePropertyRef` nodes. Empty when the
      * path is not stored. Read-only.
      */
-    this.sourceCompId = source_comp_id;
+    this.sourceCompId = sourceCompId;
     /**
      * The item id of the source composition that owns the controlled
      * property (the `CCId` chunk), or `null` when not stored. Read-only.
      */
-    this.sourceLayerId = source_layer_id;
+    this.sourceLayerId = sourceLayerId;
     /**
      * The `layer_id` of the source layer that owns the controlled
      * property (the `CLId` chunk), or `null` when not stored. Read-only.

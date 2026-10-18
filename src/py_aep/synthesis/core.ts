@@ -89,7 +89,7 @@ export function _synthesizeMissingTopLevelGroups(layer: Layer, aeMajor: number):
     skipGroups = _SKIP_FOR_REGULAR_AV;
   }
 
-  _reorderAndFill(layer, specs, 1, { skip: skipGroups, tailMode: "all", aeMajor: aeMajor });
+  _reorderAndFill(layer, specs, 1, { skip: skipGroups, tailMode: "all", aeMajor });
 
   // Post-processing: Layer Sets elided flag and depth fixup.
   const canonicalMns = new Set<string>(specs.map((s) => s.matchName));
@@ -227,7 +227,7 @@ export function _setTransformDefaults(layer: Layer, aeMajor: number): void {
   _reorderAndFill(transform, _TRANSFORM_SPECS, 2, {
     valueOverrides: overrides,
     tailMode: "none",
-    aeMajor: aeMajor,
+    aeMajor,
   });
 
   // A null's Opacity defaults to 0: left out, it reads 0, while a written
@@ -364,7 +364,7 @@ export function _flattenScaleZ(scaleProp: Property): void {
  * describing.
  */
 export function applyDimensionalityNaming(layer: Layer, kw: { resetScaleZ?: boolean } = {}): void {
-  const { resetScaleZ: reset_scale_z = false } = kw;
+  const { resetScaleZ = false } = kw;
   const transform = layer.transform;
   if (transform == null) return;
   const rotateZ = transform.property("ADBE Rotate Z");
@@ -376,7 +376,7 @@ export function applyDimensionalityNaming(layer: Layer, kw: { resetScaleZ?: bool
     if (rotateZ != null) {
       rotateZ._autoName = null;
     }
-    if (reset_scale_z && scaleProp instanceof Property && scaleProp._scaleZOverride != null) {
+    if (resetScaleZ && scaleProp instanceof Property && scaleProp._scaleZOverride != null) {
       // The layer is arriving from 2-D, where its Z was dead. AE writes
       // the 100 it was showing into the chunk, so there is nothing left
       // to mask - and a later write to Z then actually sticks. Drop the
@@ -390,7 +390,7 @@ export function applyDimensionalityNaming(layer: Layer, kw: { resetScaleZ?: bool
     rotateZ._autoName = "Rotation";
   }
   if (scaleProp instanceof Property) {
-    if (reset_scale_z) {
+    if (resetScaleZ) {
       // Leaving 3-D discards the Z outright, keyframes included.
       scaleProp._scaleZOverride = null;
       _flattenScaleZ(scaleProp);

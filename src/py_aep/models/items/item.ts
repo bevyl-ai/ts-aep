@@ -92,15 +92,15 @@ export class Item {
     parentFolder: FolderItem | null;
     typeName: string;
   }) {
-    const { _idta, _nameUtf8: _name_utf8, _cmta, _itemList: _item_list, _gide = null, project, parentFolder: parent_folder, typeName: type_name } = kw;
+    const { _idta, _nameUtf8, _cmta, _itemList, _gide = null, project, parentFolder, typeName } = kw;
     this._idta = _idta;
-    this._nameUtf8 = _name_utf8;
+    this._nameUtf8 = _nameUtf8;
     this._cmta = _cmta;
-    this._itemList = _item_list;
+    this._itemList = _itemList;
     this._gide = _gide;
     this._project = project;
-    this._parentFolder = parent_folder;
-    this._typeName = type_name;
+    this._parentFolder = parentFolder;
+    this._typeName = typeName;
     this._guides = [];
 
     if (this._gide == null) {

@@ -272,10 +272,10 @@ export class KfMultiDimensional extends AttrsBase {
   declare outInfluence: number[];
 
   static frombytes(data: Uint8Array, kw: { numValue: number }): KfMultiDimensional {
-    const { numValue: num_value } = kw;
-    const count = 5 * num_value;
+    const { numValue } = kw;
+    const count = 5 * numValue;
     const vals = struct.unpack(">" + "d".repeat(count), data.slice(0, count * 8));
-    const n = num_value;
+    const n = numValue;
     return new this({
       value: vals.slice(0, n),
       inSpeed: vals.slice(n, 2 * n),
@@ -321,12 +321,12 @@ export class KfPosition extends AttrsBase {
   declare spatialContinuous: boolean;
 
   static frombytes(data: Uint8Array, kw: { numValue: number }): KfPosition {
-    const { numValue: num_value } = kw;
+    const { numValue } = kw;
     const pad1 = data.slice(0, 3);
     const flags = at(data, 3);
     const pad2 = data.slice(4, 8);
     // 5 fixed doubles + 3*num_value array doubles
-    const totalDoubles = 5 + 3 * num_value;
+    const totalDoubles = 5 + 3 * numValue;
     const vals = struct.unpack(">" + "d".repeat(totalDoubles), data.slice(8, 8 + totalDoubles * 8));
     return new this({
       pad1,
@@ -337,9 +337,9 @@ export class KfPosition extends AttrsBase {
       inInfluence: vals[2],
       outSpeed: vals[3],
       outInfluence: vals[4],
-      value: vals.slice(5, 5 + num_value),
-      inSpatialTangents: vals.slice(5 + num_value, 5 + 2 * num_value),
-      outSpatialTangents: vals.slice(5 + 2 * num_value, 5 + 3 * num_value),
+      value: vals.slice(5, 5 + numValue),
+      inSpatialTangents: vals.slice(5 + numValue, 5 + 2 * numValue),
+      outSpatialTangents: vals.slice(5 + 2 * numValue, 5 + 3 * numValue),
     });
   }
 
@@ -421,19 +421,19 @@ export class LdatItem extends AttrsBase {
   }
 
   static frombytes(data: Uint8Array, kw: { itemType: LdatItemType }): LdatItem {
-    const { itemType: item_type } = kw;
+    const { itemType } = kw;
     // 8-byte header
     const [timeUnits, inInterp, outInterp, keyFlags] = struct.unpack(">iBBH", data.slice(0, 8));
 
     const payload = data.slice(8);
-    const numValue = _NUM_VALUE.get(item_type) ?? null;
+    const numValue = _NUM_VALUE.get(itemType) ?? null;
     let kfData: KfData;
     let trailing: Uint8Array;
 
-    if (item_type === LdatItemType.color) {
+    if (itemType === LdatItemType.color) {
       kfData = KfColor.frombytes(payload);
       trailing = payload.slice(144);
-    } else if (item_type === LdatItemType.no_value || item_type === LdatItemType.orientation) {
+    } else if (itemType === LdatItemType.no_value || itemType === LdatItemType.orientation) {
       // An orientation keyframe keeps its angles in the sibling
       // `otky` container, so its item carries the same valueless
       // 48-byte ease prefix as a shape or gradient key - measured on
@@ -444,15 +444,15 @@ export class LdatItem extends AttrsBase {
       // a speed and lost the influence entirely.
       kfData = KfNoValue.frombytes(payload);
       trailing = payload.slice(48);
-    } else if (item_type === LdatItemType.three_d_spatial || item_type === LdatItemType.two_d_spatial) {
+    } else if (itemType === LdatItemType.three_d_spatial || itemType === LdatItemType.two_d_spatial) {
       pyAssert(numValue != null);
-      kfData = KfPosition.frombytes(payload, { numValue: numValue });
+      kfData = KfPosition.frombytes(payload, { numValue });
       // prefix(8) + fixed_doubles(5*8) + arrays(3*num_value*8)
       const expected = 8 + 5 * 8 + 3 * numValue * 8;
       trailing = payload.slice(expected);
     } else if (numValue != null) {
       // three_d, two_d, one_d
-      kfData = KfMultiDimensional.frombytes(payload, { numValue: numValue });
+      kfData = KfMultiDimensional.frombytes(payload, { numValue });
       const expected = 5 * numValue * 8;
       trailing = payload.slice(expected);
     } else {
@@ -462,11 +462,11 @@ export class LdatItem extends AttrsBase {
     }
 
     return new this({
-      timeUnits: timeUnits,
+      timeUnits,
       inInterpolationType: inInterp,
       outInterpolationType: outInterp,
-      keyFlags: keyFlags,
-      kfData: kfData,
+      keyFlags,
+      kfData,
       trailing,
     });
   }
@@ -510,7 +510,7 @@ export function _readItem(data: Uint8Array, itemType: LdatItemType): FmtItem | L
   if (itemType === LdatItemType.litm) return OutputModuleSettingsItem.frombytes(data);
   if (itemType === LdatItemType.shape) return ShapePoint.frombytes(data);
   if (itemType === LdatItemType.gide) return GuideItem.frombytes(data);
-  return LdatItem.frombytes(data, { itemType: itemType });
+  return LdatItem.frombytes(data, { itemType });
 }
 
 /** Keyframe / shape / settings data items. */
@@ -525,33 +525,33 @@ export class LdatChunk extends Chunk {
     size: number,
     kw: ChunkReadKwargs = {},
   ): LdatChunk {
-    let { chunkType: chunk_type = "", itemType: item_type = LdatItemType.unknown, itemSize: item_size = 0, count = 0, isSpatial: is_spatial = false } = kw;
+    let { chunkType = "", itemType = LdatItemType.unknown, itemSize = 0, count = 0, isSpatial = false } = kw;
     // Spatial promotion: three_d -> three_d_spatial
-    if (item_type === LdatItemType.three_d && is_spatial) {
-      item_type = LdatItemType.three_d_spatial;
+    if (itemType === LdatItemType.three_d && isSpatial) {
+      itemType = LdatItemType.three_d_spatial;
     }
 
-    if (item_size === 0 || count === 0) {
+    if (itemSize === 0 || count === 0) {
       const data = readBytes(fp, size);
       return new this({
-        chunkType: chunk_type,
+        chunkType,
         data,
-        itemType: item_type,
-        itemSize: item_size,
+        itemType,
+        itemSize,
       });
     }
     const items: (FmtItem | LdatItem)[] = [];
     for (let i = 0, n = count; i < n; i++) {
-      const itemData = readBytes(fp, item_size);
-      items.push(_readItem(itemData, item_type));
+      const itemData = readBytes(fp, itemSize);
+      items.push(_readItem(itemData, itemType));
     }
-    const remaining = size - count * item_size;
+    const remaining = size - count * itemSize;
     const trailing = remaining > 0 ? readBytes(fp, remaining) : b("");
     const instance = new this({
-      chunkType: chunk_type,
+      chunkType,
       items,
-      itemType: item_type,
-      itemSize: item_size,
+      itemType,
+      itemSize,
     });
     if (trailing?.length > 0) {
       instance._trailing = trailing;

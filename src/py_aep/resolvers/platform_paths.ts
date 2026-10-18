@@ -109,14 +109,14 @@ export function relativePathCounts(
   target: string,
   kw: { targetIsFolder: boolean },
 ): [number, number] {
-  const { targetIsFolder: target_is_folder } = kw;
+  const { targetIsFolder } = kw;
   const base = _purePath(projectFile);
   let goal = _purePath(target);
   // `type(base) is type(goal)`
   if (base == null || goal == null || base.constructor !== goal.constructor) {
     return [0, 0];
   }
-  if (target_is_folder) {
+  if (targetIsFolder) {
     goal = goal.div("_");
   }
   // Windows paths compare case-insensitively.

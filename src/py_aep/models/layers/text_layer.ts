@@ -34,8 +34,8 @@ type TextLayerNewKw = {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const text_layer = comp.textLayers[0];
- * console.log(text_layer.text);
+ * const textLayer = comp.textLayers[0];
+ * console.log(textLayer.text);
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/textlayer/
  */
@@ -48,13 +48,13 @@ export class TextLayer extends AVLayer {
   static _new(kw: TextLayerNewKw): TextLayer {
     const {
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
+      containingComp,
       btds,
       btgu,
       tdmn,
-      effectParamDefs: effect_param_defs = null,
+      effectParamDefs = null,
     } = kw;
     const textPropsTdmn = new TdmnChunk({ value: "ADBE Text Properties" });
     const textPropsTdgp = new ListChunk({
@@ -73,11 +73,11 @@ export class TextLayer extends AVLayer {
 
     const layer = super._new<TextLayer>({
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
+      containingComp,
       rootTdgpExtra: [textPropsTdmn, textPropsTdgp],
-      effectParamDefs: effect_param_defs,
+      effectParamDefs,
     });
     layer._ldta.layerType = LayerType.TEXT;
     // The base factory named the layer from the AV type it started with.
@@ -88,7 +88,7 @@ export class TextLayer extends AVLayer {
     // AE labels scripted text layers with the "Text Label Index"
     // preference (factory value 1, probed in AE 2026).
     layer._ldta.label = labelIndex(
-      containing_comp._project._preferences,
+      containingComp._project._preferences,
       "Text Label Index",
       1,
     );

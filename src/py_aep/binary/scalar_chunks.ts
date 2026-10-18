@@ -32,10 +32,10 @@ export class _StringChunkBase extends Chunk {
     size: number,
     kwargs: ChunkReadKwargs = {},
   ): _StringChunkBase {
-    const { chunkType: chunk_type = "" } = kwargs;
+    const { chunkType = "" } = kwargs;
     const cls = this;
     const raw = readBytes(fp, size);
-    return new cls({ chunkType: chunk_type, value: decode(raw, cls._ENCODING) });
+    return new cls({ chunkType, value: decode(raw, cls._ENCODING) });
   }
 
   write(fp: IO): number {

@@ -491,7 +491,7 @@ export class _UserMask {
  *   subclass of `UnsupportedPsdLayersError`.
  */
 export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}): PsdNode[] {
-  const { maskBoxes: mask_boxes = true } = kw;
+  const { maskBoxes = true } = kw;
   const name = new Path(file).name;
   const flattened = new FlattenedPsdError(`${name}: flattened document (no layer records).`);
   // Declared out here because the parse fills them and the tree is built after the try.
@@ -564,7 +564,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
         isFill,
         maskData,
       ] = _parseLayerExtra(extra, isPsb);
-      userMasks.push(mask_boxes ? _userMask(maskData, name, layerName) : null);
+      userMasks.push(maskBoxes ? _userMask(maskData, name, layerName) : null);
       const hasTransparency = channels.some(([cid]) => cid === -1);
       if (index === 0 && !hasTransparency && !sectionDivider) {
         // Photoshop's Background layer (the bottom record, with no

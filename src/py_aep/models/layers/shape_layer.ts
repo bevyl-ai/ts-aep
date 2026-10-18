@@ -30,8 +30,8 @@ type ShapeLayerNewKw = {
  *
  * const app = parse("project.aep");
  * const comp = app.project.compositions[0];
- * const shape_layer = comp.shapeLayers[0];
- * console.log(shape_layer.property("ADBE Root Vectors Group"));
+ * const shapeLayer = comp.shapeLayers[0];
+ * console.log(shapeLayer.property("ADBE Root Vectors Group"));
  * ```
  * @see https://ae-scripting.docsforadobe.dev/layer/shapelayer/
  */
@@ -43,17 +43,17 @@ export class ShapeLayer extends AVLayer {
   static _new(kw: ShapeLayerNewKw): ShapeLayer {
     const {
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs = null,
+      containingComp,
+      effectParamDefs = null,
     } = kw;
     const layer = super._new<ShapeLayer>({
       name,
-      layerId: layer_id,
+      layerId,
       duration,
-      containingComp: containing_comp,
-      effectParamDefs: effect_param_defs,
+      containingComp,
+      effectParamDefs,
     });
     layer._ldta.layerType = LayerType.SHAPE;
     // The base factory named the layer from the AV type it started with.
@@ -62,7 +62,7 @@ export class ShapeLayer extends AVLayer {
       LayerType.SHAPE,
     );
     layer._ldta.label = labelIndex(
-      containing_comp._project._preferences,
+      containingComp._project._preferences,
       "Shape Label Index 2",
       8,
     );

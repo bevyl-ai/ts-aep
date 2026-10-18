@@ -371,9 +371,9 @@ export class Layer extends PropertyGroup {
     const {
       _ldta,
       _cmta,
-      _nameUtf8: _name_utf8,
-      _layerList: _layer_list,
-      containingComp: containing_comp,
+      _nameUtf8,
+      _layerList,
+      containingComp,
     } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
@@ -382,15 +382,15 @@ export class Layer extends PropertyGroup {
     let matchName = layerType === null ? undefined : new.target._LAYER_MATCH_NAMES.get(layerType);
     if (matchName === undefined) {
       logger.warning(
-        `Unknown layer type ${layerTypeRaw} for layer '${_name_utf8.value}' in comp '${containing_comp.name}'. Defaulting to 'ADBE AV Layer'.`,
+        `Unknown layer type ${layerTypeRaw} for layer '${_nameUtf8.value}' in comp '${containingComp.name}'. Defaulting to 'ADBE AV Layer'.`,
       );
       matchName = "ADBE AV Layer";
     }
 
     super({
       _tdsb: null,
-      _nameUtf8: _name_utf8,
-      matchName: matchName,
+      _nameUtf8,
+      matchName,
       autoName: "",
       propertyDepth: 0,
       properties: [],
@@ -398,11 +398,11 @@ export class Layer extends PropertyGroup {
 
     this._ldta = _ldta;
     this._cmta = _cmta;
-    this._layerList = _layer_list;
+    this._layerList = _layerList;
     // Read from the root tdgp on first access.
     this._essentialPropertyUuids = null;
 
-    this._containingComp = containing_comp;
+    this._containingComp = containingComp;
   }
 
   /** Build a layer from a fresh ldta chunk (`Layer._new`). */
@@ -411,7 +411,7 @@ export class Layer extends PropertyGroup {
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T;
   static _new(...args: never[]): never;
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T {
-    const { ldta, name, containingComp: containing_comp } = kw;
+    const { ldta, name, containingComp } = kw;
     const rootTdgpExtra = kw.rootTdgpExtra ?? null;
     const effectParamDefs = kw.effectParamDefs ?? null;
 
@@ -425,7 +425,7 @@ export class Layer extends PropertyGroup {
     // file"). Synthesized children are inserted before this marker.
     tdgpChunks.push(new TdmnChunk({ value: "ADBE Group End" }));
     const rootTdgp = new ListChunk({ listType: "tdgp", chunks: tdgpChunks });
-    const aeMajor = containing_comp._project._head.aeVersionMajor;
+    const aeMajor = containingComp._project._head.aeVersionMajor;
     // The ldta matte-layer field (164- instead of 160-byte records).
     ldta.matteLayerId = aeWrites("matte layer id", aeMajor) ? 0 : null;
     const [gide, _lhd3, _inner] = buildGideList();
@@ -440,7 +440,7 @@ export class Layer extends PropertyGroup {
       _cmta: null,
       _nameUtf8: nameUtf8,
       _layerList: layerList,
-      containingComp: containing_comp,
+      containingComp,
     });
     layer._tdgp = rootTdgp;
     layer._buildPropertyTree(pyOr(effectParamDefs, new Map()));

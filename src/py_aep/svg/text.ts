@@ -411,10 +411,10 @@ export function outlineTextPath(
   } = {},
 ): Subpath[] {
   const {
-    fontNumber: font_number = 0,
-    startOffset: start_offset = 0.0,
-    startOffsetFrac: start_offset_frac = null,
-    letterSpacing: letter_spacing = 0.0,
+    fontNumber = 0,
+    startOffset = 0.0,
+    startOffsetFrac = null,
+    letterSpacing = 0.0,
   } = kw;
   if (!path?.length) return [];
   const pts = _polyline(path[0]);
@@ -422,16 +422,16 @@ export function outlineTextPath(
   const cum = _arcLengths(pts);
   const total = cum[cum.length - 1];
   const [names, advances, unitsPerEm, glyphSet] = _glyphs(
-    _loadFont(fontPath, font_number),
+    _loadFont(fontPath, fontNumber),
     text,
   );
   const scale = fontSize / unitsPerEm;
 
-  let dist = start_offset_frac != null ? start_offset_frac * total : start_offset;
+  let dist = startOffsetFrac != null ? startOffsetFrac * total : startOffset;
   const subpaths: Subpath[] = [];
   for (const [k, gname] of names.entries()) {
     const advance = advances[k];
-    const advanceUser = advance * scale + letter_spacing;
+    const advanceUser = advance * scale + letterSpacing;
     const mid = dist + advanceUser / 2.0;
     if (gname != null && _inGlyphSet(glyphSet, gname) && 0.0 <= mid && mid <= total) {
       const [px, py, angle] = _pointAt(pts, cum, mid);

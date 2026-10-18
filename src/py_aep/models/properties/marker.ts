@@ -105,28 +105,28 @@ export class MarkerValue {
   }): MarkerValue {
     const {
       _nmhd,
-      _commentUtf8: _comment_utf8,
-      _chapterUtf8: _chapter_utf8,
-      _urlUtf8: _url_utf8,
-      _frameTargetUtf8: _frame_target_utf8,
-      _cuePointNameUtf8: _cue_point_name_utf8,
+      _commentUtf8,
+      _chapterUtf8,
+      _urlUtf8,
+      _frameTargetUtf8,
+      _cuePointNameUtf8,
       _keyframe = null,
-      frameTime: frame_time = 0,
-      _paramUtf8s: _param_utf8s = null,
+      frameTime = 0,
+      _paramUtf8s = null,
       _nmrd = null,
     } = kw;
     // `cls.__new__(cls)`: skip the constructor, the chunks are supplied.
     const obj: MarkerValue = Object.create(this.prototype);
     obj._nmhd = _nmhd;
-    obj._commentUtf8 = _comment_utf8;
-    obj._chapterUtf8 = _chapter_utf8;
-    obj._urlUtf8 = _url_utf8;
-    obj._frameTargetUtf8 = _frame_target_utf8;
-    obj._cuePointNameUtf8 = _cue_point_name_utf8;
+    obj._commentUtf8 = _commentUtf8;
+    obj._chapterUtf8 = _chapterUtf8;
+    obj._urlUtf8 = _urlUtf8;
+    obj._frameTargetUtf8 = _frameTargetUtf8;
+    obj._cuePointNameUtf8 = _cuePointNameUtf8;
     obj._keyframe = _keyframe;
     obj._nmrd = _nmrd;
-    obj._frameTime = frame_time;
-    obj._paramUtf8s = pyOr(_param_utf8s, []);
+    obj._frameTime = frameTime;
+    obj._paramUtf8s = pyOr(_paramUtf8s, []);
     return obj;
   }
 

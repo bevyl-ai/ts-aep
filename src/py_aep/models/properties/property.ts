@@ -507,7 +507,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       controlType?: PropertyControlType | null;
     },
   ): Property {
-    const { parentProperty: parent_property, value = _USE_VALUE, defaultValue: default_value = _USE_VALUE, synthetic = false, controlType: control_type = null } = kw;
+    const { parentProperty, value = _USE_VALUE, defaultValue = _USE_VALUE, synthetic = false, controlType = null } = kw;
     const finalValue = value === _USE_VALUE ? spec.value : value;
     const noValue = spec.pvt === PropertyValueType.NO_VALUE;
     let canVary: boolean;
@@ -593,7 +593,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       value: spec.matchName,
       synthetic,
     });
-    const tdgp = parent_property._tdgp;
+    const tdgp = parentProperty._tdgp;
     if (tdgp != null) {
       _propertyGroup()._insertBeforeGroupEnd(tdgp, _tdmn);
       _propertyGroup()._insertBeforeGroupEnd(tdgp, _tdbs);
@@ -609,16 +609,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       keyframes: [],
       matchName: spec.matchName,
       autoName: spec.autoName,
-      parentProperty: parent_property,
-      propertyControlType: control_type || PropertyControlType.UNKNOWN,
-      propertyDepth: propertyDepth,
+      parentProperty,
+      propertyControlType: controlType || PropertyControlType.UNKNOWN,
+      propertyDepth,
       propertyValueType: spec.pvt,
       value: finalValue,
       canVaryOverTime: spec.canVaryOverTime,
       unitsText: spec.unitsText,
     });
-    if (default_value !== _USE_VALUE) {
-      prop.defaultValue = default_value;
+    if (defaultValue !== _USE_VALUE) {
+      prop.defaultValue = defaultValue;
     } else {
       prop.defaultValue = spec.defaultValue === _USE_VALUE ? finalValue : spec.defaultValue;
     }
@@ -761,39 +761,39 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       _tdmn,
       _tdsb,
       _tdb4,
-      _expressionUtf8: _expression_utf8 = null,
-      _nameUtf8: _name_utf8,
+      _expressionUtf8 = null,
+      _nameUtf8,
       _tdbs,
       _tdum = null,
       _tduM = null,
       _cdat = null,
       _tdpi = null,
       _composition = null,
-      parentProperty: parent_property = null,
-      matchName: match_name,
-      propertyDepth: property_depth,
-      autoName: auto_name = null,
+      parentProperty = null,
+      matchName,
+      propertyDepth,
+      autoName = null,
       keyframes,
       value,
-      propertyControlType: property_control_type = null,
-      propertyValueType: property_value_type = null,
-      unitsText: units_text = null,
-      canVaryOverTime: can_vary_over_time = null,
+      propertyControlType = null,
+      propertyValueType = null,
+      unitsText = null,
+      canVaryOverTime = null,
     } = kw;
     super({
       _tdsb,
-      _nameUtf8: _name_utf8,
-      parentProperty: parent_property,
-      matchName: match_name,
-      autoName: auto_name,
-      propertyDepth: property_depth,
+      _nameUtf8,
+      parentProperty,
+      matchName,
+      autoName,
+      propertyDepth,
     });
     // py-aep keeps these as class defaults, set on an instance only when it
     // has a value (CPython instance-dict sizing); here every instance starts
     // at the same defaults.
-    this._expressionUtf8 = _expression_utf8;
+    this._expressionUtf8 = _expressionUtf8;
     this._tdpi = _tdpi;
-    this._unitsText = units_text;
+    this._unitsText = unitsText;
     this.expressionError = "";
     this.nbOptions = null;
     this._dimensionsSeparated = null;
@@ -821,9 +821,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this.keyframes = keyframes;
     this._linkKeyframes();
 
-    this._propertyControlType = property_control_type;
+    this._propertyControlType = propertyControlType;
 
-    this._propertyValueType = property_value_type;
+    this._propertyValueType = propertyValueType;
 
     this._value = _ownList(value);
 
@@ -837,7 +837,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._tdum = _tdum;
     this._tduM = _tduM;
     this._composition = _composition;
-    this._canVaryOverTime = can_vary_over_time;
+    this._canVaryOverTime = canVaryOverTime;
     this._boundChunksHint = false;
     this._hintBounds = null;
     this._typesMemo = null;
@@ -1802,9 +1802,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * const app = parse("project.aep");
    * const prop = app.project.compositions[0].layers[0].transform.property("ADBE Position") as Property;
-   * const text_doc = prop.value;
-   * text_doc.fontSize = 72; // persists automatically
-   * // prop.value = text_doc; // unnecessary - same object
+   * const textDoc = prop.value;
+   * textDoc.fontSize = 72; // persists automatically
+   * // prop.value = textDoc; // unnecessary - same object
    * ```
    *
    * So does item assignment on a list value, one component at a time

@@ -371,13 +371,13 @@ export function tdb4ApplyStaticTemplate(
   t: Tdb4Chunk,
   kw: { inInterpolation: number; outInterpolation: number; spatialFlags: number },
 ): void {
-  const { inInterpolation: in_interpolation, outInterpolation: out_interpolation, spatialFlags: spatial_flags } = kw;
+  const { inInterpolation, outInterpolation, spatialFlags } = kw;
   t.static = true;
   t.animated = false;
   t._spatialMarker = (t._spatialStaticFlags & 0x02) !== 0;
-  t._reserved4c = in_interpolation;
-  t._reserved4d = out_interpolation;
-  t._pad50 = spatial_flags;
+  t._reserved4c = inInterpolation;
+  t._reserved4d = outInterpolation;
+  t._pad50 = spatialFlags;
 }
 
 /**
@@ -421,18 +421,18 @@ export class CdatChunk extends Chunk {
     size: number,
     kw: ChunkReadKwargs = {},
   ): CdatChunk {
-    const { chunkType: chunk_type = "", isLe: is_le = false } = kw;
+    const { chunkType = "", isLe = false } = kw;
     const count = floordiv(size, 8);
     if (count === 0) {
       const pad = size > 0 ? readBytes(fp, size) : b("");
-      return new this({ chunkType: chunk_type, isLe: is_le, pad });
+      return new this({ chunkType, isLe, pad });
     }
-    const fmt = `${is_le ? "<" : ">"}${count}d`;
+    const fmt = `${isLe ? "<" : ">"}${count}d`;
     const raw = readBytes(fp, count * 8);
     const vals = struct.unpack(fmt, raw);
     const rest = size - count * 8;
     const pad = rest > 0 ? readBytes(fp, rest) : b("");
-    return new this({ chunkType: chunk_type, values: vals, isLe: is_le, pad });
+    return new this({ chunkType, values: vals, isLe, pad });
   }
 
   write(fp: IO): number {
@@ -482,30 +482,30 @@ export class TdumChunk extends Chunk {
     size: number,
     kw: ChunkReadKwargs = {},
   ): TdumChunk {
-    const { chunkType: chunk_type = "", isColor: is_color = false } = kw;
-    let { isInteger: is_integer = false } = kw;
+    const { chunkType = "", isColor = false } = kw;
+    let { isInteger = false } = kw;
     const raw = readBytes(fp, size);
     let vals: number[];
     let trailing: Uint8Array;
-    if (is_color) {
+    if (isColor) {
       vals = struct.unpack(">4f", raw.slice(0, 16));
       trailing = raw.slice(16);
-    } else if (is_integer && size < 8) {
+    } else if (isInteger && size < 8) {
       const [v] = struct.unpack(">I", raw.slice(0, 4));
       vals = [v];
       trailing = raw.slice(4);
     } else {
       // Read as a u4, a double's high word turned 100.0 into 1079574528.
-      is_integer = false;
+      isInteger = false;
       const count = floordiv(size, 8);
       vals = struct.unpack(`>${count}d`, raw.slice(0, count * 8));
       trailing = raw.slice(count * 8);
     }
     const instance = new this({
-      chunkType: chunk_type,
+      chunkType,
       values: vals,
-      isColor: is_color,
-      isInteger: is_integer,
+      isColor,
+      isInteger,
     });
     if (trailing?.length > 0) {
       objectSetattr(instance, "_trailing", trailing);
@@ -546,12 +546,12 @@ export class OtdaChunk extends Chunk {
   declare values: number[];
 
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
-    const { chunkType: chunk_type = "" } = kw;
+    const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
     const n = floordiv(size, 8);
     const vals = struct.unpack(`>${n}d`, raw.slice(0, n * 8));
     const trailing = raw.slice(n * 8);
-    const instance = new this({ chunkType: chunk_type, values: vals });
+    const instance = new this({ chunkType, values: vals });
     if (trailing.length > 0) {
       objectSetattr(instance, "_trailing", trailing);
     }
@@ -583,9 +583,9 @@ export class TdmnChunk extends _StringChunkBase {
   static _ENCODING = "UTF-8";
 
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
-    const { chunkType: chunk_type = "" } = kw;
+    const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
-    return new this({ chunkType: chunk_type, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
+    return new this({ chunkType, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
   }
 
   write(fp: IO): number {

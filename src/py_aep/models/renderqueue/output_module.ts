@@ -452,21 +452,21 @@ export class OutputModule {
     parent: RenderQueueItem;
     formatOptions: OutputModule["_formatOptions"];
   }) {
-    const { _omLdat: _om_ldat, _roou, _alasUtf8: _alas_utf8, _fileNameUtf8: _file_name_utf8, _nameUtf8: _name_utf8, _renderSettingsLdat: _render_settings_ldat, parent, formatOptions: format_options } = kw;
-    this._omLdat = _om_ldat;
+    const { _omLdat, _roou, _alasUtf8, _fileNameUtf8, _nameUtf8, _renderSettingsLdat, parent, formatOptions } = kw;
+    this._omLdat = _omLdat;
     this._roou = _roou;
-    this._alasUtf8 = _alas_utf8;
-    this._fileNameUtf8 = _file_name_utf8;
-    this._nameUtf8 = _name_utf8;
-    this._renderSettingsLdat = _render_settings_ldat;
+    this._alasUtf8 = _alasUtf8;
+    this._fileNameUtf8 = _fileNameUtf8;
+    this._nameUtf8 = _nameUtf8;
+    this._renderSettingsLdat = _renderSettingsLdat;
     this._parentRqi = parent;
-    this._formatOptions = format_options;
+    this._formatOptions = formatOptions;
     // Format options validate their writes against this module's
     // format rules; the back-reference is (re)assigned here and in
     // _apply_output_template - the only two places an OM gains a
     // format-options object.
-    if (format_options != null) {
-      format_options._parentOm = this;
+    if (formatOptions != null) {
+      formatOptions._parentOm = this;
     }
     // Non-zero while inside batch_edit(): per-write format rules and
     // clamps are deferred to the batch exit.
@@ -489,7 +489,7 @@ export class OutputModule {
    * @returns A tuple of (OutputModule model, list of chunks for LIST:LOm).
    */
   static _new(kw: { renderSettingsLdat: RenderSettingsItem; parent: RenderQueueItem }): [OutputModule, Chunk[]] {
-    const { renderSettingsLdat: render_settings_ldat, parent } = kw;
+    const { renderSettingsLdat, parent } = kw;
     const omLdatItem = new OutputModuleSettingsItem();
     const roou = new RouuChunk(); // defaults reproduce AE's fresh image-sequence Rouu
     const ropt = new TiffRoptChunk(); // AE's exact 602-byte TIFF format options
@@ -508,7 +508,7 @@ export class OutputModule {
       _alasUtf8: null,
       _fileNameUtf8: fileNameUtf8,
       _nameUtf8: nameUtf8,
-      _renderSettingsLdat: render_settings_ldat,
+      _renderSettingsLdat: renderSettingsLdat,
       parent,
       formatOptions: null,
     });

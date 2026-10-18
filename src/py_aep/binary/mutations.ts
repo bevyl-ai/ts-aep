@@ -266,11 +266,11 @@ export function buildKeyframeList(
   itemSize: number,
 ): [ListChunk, Lhd3Chunk, LdatChunk] {
   const lhd3 = new Lhd3Chunk({
-    itemSize: itemSize,
+    itemSize,
     itemTypeRaw: _KEYFRAME_ITEM_TYPE_RAW,
     counterB: 4,
   });
-  const ldat = new LdatChunk({ items: [], itemType: itemType, itemSize: itemSize });
+  const ldat = new LdatChunk({ items: [], itemType, itemSize });
   const inner = new ListChunk({ listType: "list", chunks: [lhd3, ldat] });
   return [inner, lhd3, ldat];
 }
@@ -295,7 +295,7 @@ export function buildRqSettingsList(
   const { synthetic = false } = kw;
   const lhd3 = new Lhd3Chunk({ itemSize: 2246, itemTypeRaw: 1, counterB: 1 });
   const ldat = new LdatChunk({ synthetic: true });
-  const inner = new ListChunk({ listType: "list", synthetic: synthetic, chunks: [lhd3, ldat] });
+  const inner = new ListChunk({ listType: "list", synthetic, chunks: [lhd3, ldat] });
   return [inner, lhd3, ldat];
 }
 
@@ -336,7 +336,7 @@ export function buildLdatItem(kfData: KfColor | KfPosition | KfNoValue | KfMulti
     inInterpolationType: 1,
     outInterpolationType: 1,
     keyFlags: spatial ? 7 : 0,
-    kfData: kfData,
+    kfData,
   });
 }
 
@@ -388,7 +388,7 @@ export function buildParallelLdatItem(
     inInterpolationType: interp,
     outInterpolationType: interp,
     keyFlags: flags,
-    kfData: kfData,
+    kfData,
     trailing: bytes_.repeat(b("\x00"), itemSize - bodyLen),
   });
   if (itemType === LdatItemType.orientation && orientationValues != null) {
@@ -414,9 +414,9 @@ export function buildShap(
     featherPoints?: FeatherPointItem[] | null;
   },
 ): ListChunk {
-  const { openPath: open_path, points, tensions = null, featherPoints: feather_points = null } = kw;
+  const { openPath, points, tensions = null, featherPoints = null } = kw;
   const shph = new ShphChunk();
-  shph.open = open_path;
+  shph.open = openPath;
   [shph.topLeftX, shph.topLeftY, shph.bottomRightX, shph.bottomRightY] = bbox;
   const nVerts = floordiv(points.length, 3);
   const lhd3 = new Lhd3Chunk({
@@ -437,11 +437,11 @@ export function buildShap(
     tensions: pyOr(tensions, []).map((t) => new TensionItem({ value: t })),
   });
   const chunks: Chunk[] = [shph, inner, omtn];
-  if (feather_points != null && feather_points.length > 0) {
+  if (featherPoints != null && featherPoints.length > 0) {
     // NOTE(port): FeatherPointItem has plain int/float fields and no converters, so a shallow copy equals attrs.evolve(fp).
-    chunks.push(new Fth5Chunk({ points: feather_points.map((fp) => copy(fp)) }));
+    chunks.push(new Fth5Chunk({ points: featherPoints.map((fp) => copy(fp)) }));
   }
-  return new ListChunk({ listType: "shap", chunks: chunks });
+  return new ListChunk({ listType: "shap", chunks });
 }
 
 /**
@@ -589,8 +589,8 @@ export function buildColorCctl(
 ): [ListChunk, Utf8Chunk, U4Chunk] {
   const data = struct.pack(">4f", ...rgba);
   const valueChunks: Chunk[] = [
-    new Chunk({ chunkType: "CVal", data: data }),
-    new Chunk({ chunkType: "CDef", data: data }),
+    new Chunk({ chunkType: "CVal", data }),
+    new Chunk({ chunkType: "CDef", data }),
   ];
   return _buildCctl(name, uuidStr, 4, valueChunks, compId, layerId, pathJson);
 }
@@ -727,38 +727,38 @@ export function buildPinList(
   } = {},
 ): ListChunk {
   const {
-    isSolid: is_solid = false,
-    pathChunks: path_chunks = null,
-    embeddedProfileName: embedded_profile_name = null,
-    embeddedProfile: embedded_profile = null,
-    assignedProfile: assigned_profile = null,
-    colorManaged: color_managed = false,
-    layerName: layer_name = "",
+    isSolid = false,
+    pathChunks = null,
+    embeddedProfileName = null,
+    embeddedProfile = null,
+    assignedProfile = null,
+    colorManaged = false,
+    layerName = "",
   } = kw;
   const epid = new EpidChunk();
   const apid = new ApidChunk();
-  const ipws = new IpwsChunk({ value: color_managed ? 0 : 1 });
+  const ipws = new IpwsChunk({ value: colorManaged ? 0 : 1 });
   let mediaChunks: Chunk[] = [];
   let embeddedEnvelope = "";
   let assignedEnvelope = "";
-  if (embedded_profile != null) {
-    epid.data = embedded_profile.profileId;
-    embeddedEnvelope = embedded_profile.envelope;
+  if (embeddedProfile != null) {
+    epid.data = embeddedProfile.profileId;
+    embeddedEnvelope = embeddedProfile.envelope;
     // AE stores the embedded profile twice: once behind a lowercase
     // `mcsp` marker and again behind the `Mcsp` flag below.
     mediaChunks = [
       new Chunk({ chunkType: "mcsp", data: b("\x01") }),
       new Utf8Chunk({ value: embeddedEnvelope }),
     ];
-  } else if (assigned_profile != null) {
-    apid.data = assigned_profile.profileId;
-    assignedEnvelope = assigned_profile.envelope;
+  } else if (assignedProfile != null) {
+    apid.data = assignedProfile.profileId;
+    assignedEnvelope = assignedProfile.envelope;
   }
 
   const clrsChunks: Chunk[] = [epid, apid];
-  if (embedded_profile_name != null) {
+  if (embeddedProfileName != null) {
     clrsChunks.push(new EmpdChunk());
-    clrsChunks.push(new Utf8Chunk({ value: embedded_profile_name }));
+    clrsChunks.push(new Utf8Chunk({ value: embeddedProfileName }));
   }
   clrsChunks.push(
     new LinlChunk(),
@@ -766,7 +766,7 @@ export function buildPinList(
     ipws,
     ...mediaChunks,
   );
-  if (is_solid) {
+  if (isSolid) {
     clrsChunks.push(new DcuiChunk());
     clrsChunks.push(new PrgbChunk());
   }
@@ -789,8 +789,8 @@ export function buildPinList(
     listType: "Pin ",
     chunks: [
       sspc,
-      new Utf8Chunk({ value: layer_name }),
-      ...pyOr(path_chunks, []),
+      new Utf8Chunk({ value: layerName }),
+      ...pyOr(pathChunks, []),
       opti,
       PguiChunk.new_(),
       clrs,
@@ -845,7 +845,7 @@ export function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] 
     pad2a: 1,
     valueHintType: 2,
     cvotFlags: 7,
-    timeBase: timeBase,
+    timeBase,
     noValueFlags: 1,
     typeFlags: 8,
     spatialMarker: true,
@@ -921,7 +921,7 @@ export function buildDefaultMaskShape(
   timeBase: number,
   kw: { aspect: number; rotoBezier?: boolean },
 ): [TdmnChunk, ListChunk] {
-  const { aspect, rotoBezier: roto_bezier = false } = kw;
+  const { aspect, rotoBezier = false } = kw;
   const raw = bytes_.fromhex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
   const oms = readChunks(new BytesIO(raw), raw.length)[0];
   pyAssert(oms instanceof ListChunk);
@@ -932,7 +932,7 @@ export function buildDefaultMaskShape(
       c._timeBase = timeBase;
       c.pixelAspect = aspect;
     } else if (c instanceof TdsbChunk) {
-      c.rotoBezier = roto_bezier;
+      c.rotoBezier = rotoBezier;
     }
   }
   return [new TdmnChunk({ value: "ADBE Mask Shape" }), oms];
@@ -963,10 +963,10 @@ export function buildVectorElement(
     pathTimeBase?: number | null;
   } = {},
 ): [TdmnChunk, ListChunk] {
-  const { subgroups = [], pathTimeBase: path_time_base = null } = kw;
+  const { subgroups = [], pathTimeBase = null } = kw;
   const chunks: Chunk[] = [new TdsbChunk(), TdsnChunk.new_(name)];
-  if (path_time_base != null) {
-    chunks.push(...buildDefaultPathShape(path_time_base));
+  if (pathTimeBase != null) {
+    chunks.push(...buildDefaultPathShape(pathTimeBase));
   }
   for (const [subMatchName, lockFlags, enableFlags] of subgroups) {
     chunks.push(new TdmnChunk({ value: subMatchName }));
@@ -974,7 +974,7 @@ export function buildVectorElement(
       new ListChunk({
         listType: "tdgp",
         chunks: [
-          new TdsbChunk({ lockFlags: lockFlags, enableFlags: enableFlags }),
+          new TdsbChunk({ lockFlags, enableFlags }),
           TdsnChunk.new_(TDSN_SENTINEL),
           new TdmnChunk({ value: "ADBE Group End" }),
         ],
@@ -982,7 +982,7 @@ export function buildVectorElement(
     );
   }
   chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-  return [new TdmnChunk({ value: matchName }), new ListChunk({ listType: "tdgp", chunks: chunks })];
+  return [new TdmnChunk({ value: matchName }), new ListChunk({ listType: "tdgp", chunks })];
 }
 
 /**
@@ -1003,9 +1003,9 @@ export function buildTextSelector(
   name: string,
   kw: { hasAdvanced: boolean },
 ): [TdmnChunk, ListChunk] {
-  const { hasAdvanced: has_advanced } = kw;
+  const { hasAdvanced } = kw;
   const chunks: Chunk[] = [new TdsbChunk(), TdsnChunk.new_(name)];
-  if (has_advanced) {
+  if (hasAdvanced) {
     chunks.push(new TdmnChunk({ value: "ADBE Text Range Advanced" }));
     chunks.push(
       new ListChunk({
@@ -1019,7 +1019,7 @@ export function buildTextSelector(
     );
   }
   chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-  return [new TdmnChunk({ value: matchName }), new ListChunk({ listType: "tdgp", chunks: chunks })];
+  return [new TdmnChunk({ value: matchName }), new ListChunk({ listType: "tdgp", chunks })];
 }
 
 /**
@@ -1087,13 +1087,13 @@ export function buildExpressionControl(
     layerParamName?: string | null;
   },
 ): [TdmnChunk, ListChunk] {
-  const { tdsnName: tdsn_name, timeBase: time_base, layerId: layer_id, layerParamName: layer_param_name = null } = kw;
+  const { tdsnName, timeBase, layerId, layerParamName = null } = kw;
   const part = readChunks(new BytesIO(partBytes), partBytes.length)[0];
 
   function paramTdbs(name: string, enableFlags: number): ListChunk {
     const tdb4 = new Tdb4Chunk({
       valueHintType: 1,
-      timeBase: time_base,
+      timeBase,
       typeFlags: 4,
       propertyCategory: 4,
       reserved48: 0x80000000,
@@ -1101,11 +1101,11 @@ export function buildExpressionControl(
     return new ListChunk({
       listType: "tdbs",
       chunks: [
-        new TdsbChunk({ enableFlags: enableFlags }),
+        new TdsbChunk({ enableFlags }),
         TdsnChunk.new_(name),
         tdb4,
         new CdatChunk({ values: [0.0, 0.0, 0.0, 0.0, 0.0] }),
-        new S4Chunk({ chunkType: "tdpi", value: layer_id }),
+        new S4Chunk({ chunkType: "tdpi", value: layerId }),
         new S4Chunk({ chunkType: "tdps" }),
       ],
     });
@@ -1113,14 +1113,14 @@ export function buildExpressionControl(
 
   const tdgpChunks: Chunk[] = [
     new TdsbChunk(),
-    TdsnChunk.new_(tdsn_name),
+    TdsnChunk.new_(tdsnName),
     new TdmnChunk({ value: matchName + "-0000" }),
     paramTdbs("", 3),
   ];
-  if (layer_param_name != null) {
+  if (layerParamName != null) {
     tdgpChunks.push(
       new TdmnChunk({ value: matchName + "-0001" }),
-      paramTdbs(layer_param_name, 1),
+      paramTdbs(layerParamName, 1),
     );
   }
   tdgpChunks.push(
@@ -1175,7 +1175,7 @@ export function buildDropdownControl(kw: {
   timeBase: number;
   layerId: number;
 }): [TdmnChunk, ListChunk] {
-  const { tdsnName: tdsn_name, timeBase: time_base, layerId: layer_id } = kw;
+  const { tdsnName, timeBase, layerId } = kw;
   // uuid4().bytes is 16 random bytes; base64 of those, padding stripped.
   const matchName =
     "Pseudo/@@" + rstrip(b64encode(uuid4Bytes()), "=");
@@ -1185,8 +1185,8 @@ export function buildDropdownControl(kw: {
     encode(matchName, "ascii"),
   );
   return buildExpressionControl(matchName, DROPDOWN_CONTROL.name, partBytes, {
-    tdsnName: tdsn_name,
-    timeBase: time_base,
-    layerId: layer_id,
+    tdsnName,
+    timeBase,
+    layerId,
   });
 }

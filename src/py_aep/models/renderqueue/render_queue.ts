@@ -37,8 +37,8 @@ export function _ensureMaterialized(chunk: Chunk): void {
  * import { parse } from "@bevyl-ai/ts-aep";
  *
  * const app = parse("project.aep");
- * const render_queue = app.project.renderQueue;
- * for (const rq_item of render_queue) {
+ * const renderQueue = app.project.renderQueue;
+ * for (const rqItem of renderQueue) {
  *   // ...
  * }
  * ```
@@ -66,10 +66,10 @@ export class RenderQueue {
     parent: Project;
     items: RenderQueueItem[];
   }) {
-    const { _lrdr, _rsLhd3: _rs_lhd3, _rsLdat: _rs_ldat, _rout, _litm, _arsi, parent, items } = kw;
+    const { _lrdr, _rsLhd3, _rsLdat, _rout, _litm, _arsi, parent, items } = kw;
     this._lrdr = _lrdr;
-    this._rsLhd3 = _rs_lhd3;
-    this._rsLdat = _rs_ldat;
+    this._rsLhd3 = _rsLhd3;
+    this._rsLdat = _rsLdat;
     this._rout = _rout;
     this._litm = _litm;
     this._arsi = _arsi;
