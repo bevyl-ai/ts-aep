@@ -514,8 +514,21 @@ export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "s
   }
 }
 
+const ASCII_SAFE_LABELS = new Set(["utf-8", "UTF-8", "utf8", "ascii", "ASCII", "latin-1", "latin1"]);
+
 /** Python `text.encode(encoding, errors)`. */
 export function encode(text: string, encoding = "utf-8", errors: Errors = "strict"): Uint8Array {
+  // Short ASCII text under the common labels encodes the same everywhere: skip the label lookup.
+  if (text.length <= 64 && ASCII_SAFE_LABELS.has(encoding)) {
+    const out = new Uint8Array(text.length);
+    let i = 0;
+    for (; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      if (c >= 0x80) break;
+      out[i] = c;
+    }
+    if (i === text.length) return out;
+  }
   switch (encoding === "utf-8" ? encoding : norm(encoding)) {
     case "utf-8":
       return encodeUtf8(text, errors);

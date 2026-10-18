@@ -396,7 +396,7 @@ export class ListChunk extends Chunk {
   }
 
   write(fp: IO): number {
-    let written = writeBytes(fp, encode(this.listType, "ASCII"));
+    let written = writeBytes(fp, _typeBytes(this.listType));
     if (this.listType === "btdk") {
       written += writeBytes(fp, this.data);
     } else {
@@ -829,6 +829,13 @@ const _TYPE_NAMES = new Map<number, string>();
 
 /** Encoded chunk types; `write_bytes` copies them out, never in. */
 const _TYPE_BYTES = new Map<string, Uint8Array>();
+
+/** A chunk or LIST type's ASCII bytes, encoded once per type (read-only: `write` copies them). */
+function _typeBytes(type: string): Uint8Array {
+  let bytes = _TYPE_BYTES.get(type);
+  if (bytes === undefined) _TYPE_BYTES.set(type, (bytes = encode(type, "ASCII")));
+  return bytes;
+}
 const _LEN_BODY = new struct.Struct(">I");
 /** `write_chunk`'s backpatch value; `pack` reads it before returning. */
 const _LEN_VALUE: struct.PackValue[] = [0];
@@ -868,9 +875,7 @@ function _typeName(code: number): string {
  * Backpatches len_body after the body is written.
  */
 export function writeChunk(fp: IO, chunk: Chunk): number {
-  let typeBytes = _TYPE_BYTES.get(chunk.chunkType);
-  if (typeBytes === undefined) _TYPE_BYTES.set(chunk.chunkType, (typeBytes = encode(chunk.chunkType, "ASCII")));
-  let written = writeBytes(fp, typeBytes);
+  let written = writeBytes(fp, _typeBytes(chunk.chunkType));
   const lenPos = fp.tell();
   fp.seek(4, 1); // skip 4 bytes for len_body placeholder
   written += 4;
