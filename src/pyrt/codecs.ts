@@ -201,7 +201,7 @@ function decode_utf8_slow(data: Uint8Array, errors: Errors): string {
 
 const UTF8_ENCODER = new TextEncoder();
 /** `String.prototype.isWellFormed` (ES2024, newer than the lib this builds against); absent on older hosts. */
-const IS_WELL_FORMED: unknown = Reflect.get(String.prototype, "isWellFormed");
+const IS_WELL_FORMED: ((this: string) => boolean) | undefined = Reflect.get(String.prototype, "isWellFormed");
 
 function encode_utf8(text: string, errors: Errors): Uint8Array {
   // TextEncoder would turn a lone surrogate into U+FFFD; those go byte-wise.
