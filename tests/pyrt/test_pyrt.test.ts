@@ -12,31 +12,31 @@ import {
   dict,
   encode,
   float,
-  float_repr,
+  floatRepr,
   hypot,
   int,
-  json_dumps,
-  json_getitem,
-  json_loads,
-  list_mul,
-  pattern_findall,
-  pattern_match,
-  py_assert,
-  py_eq,
-  py_re,
+  jsonDumps,
+  jsonGetitem,
+  jsonLoads,
+  listMul,
+  patternFindall,
+  patternMatch,
+  pyAssert,
+  pyEq,
+  pyRe,
   pyfloat,
-  re_escape,
+  reEscape,
   repr,
   struct,
   truediv,
-  type_name,
+  typeName,
   ZeroDivisionError,
 } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import * as unicodedata from "../../src/pyrt/unicodedata.ts";
 import * as datetime from "../../src/pyrt/datetime.ts";
 import { Path } from "../../src/pyrt/pathlib.ts";
-import { fs, memfs, use_host_fs, use_memory_fs } from "../../src/pyrt/host.ts";
+import { fs, memfs, useHostFs, useMemoryFs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
@@ -45,7 +45,7 @@ function fromhex(s: string): number {
   if (s === "-inf") return -Infinity;
   if (s === "nan") return NaN;
   const m = /^(-?)0x([01])\.([0-9a-f]+)p([+-]\d+)$/.exec(s);
-  py_assert(m != null);
+  pyAssert(m != null);
   const mant = Number(BigInt("0x" + m[2] + m[3]));
   const e = Number(m[4]) - 4 * m[3].length;
   const v = e >= -1022 ? mant * 2 ** e : mant * 2 ** (e + 600) * 2 ** -600;
@@ -69,21 +69,21 @@ describe("math", () => {
 
 describe("json", () => {
   test.each(CPY.dumps.map((r) => [...r]))("dumps(loads(%j), %j)", (text, opts, out) => {
-    expect(json_dumps(json_loads(text), { ...opts })).toBe(out);
+    expect(jsonDumps(jsonLoads(text), { ...opts })).toBe(out);
   });
 
   test.each(CPY.errs.map((r) => [...r]))("loads(%j) error", (text, msg) => {
-    expect(raises(JSONDecodeError, () => json_loads(text)).message).toBe(msg);
+    expect(raises(JSONDecodeError, () => jsonLoads(text)).message).toBe(msg);
   });
 
   test("python types", () => {
-    const d = json_loads('{"2": 1.0, "1": 12345678901234567890, "x": -0}');
+    const d = jsonLoads('{"2": 1.0, "1": 12345678901234567890, "x": -0}');
     if (!(d instanceof Map)) throw new Error("expected a JSON object");
     expect([...d.keys()]).toEqual(["2", "1", "x"]);
-    expect(type_name(d.get("2"))).toBe("float");
+    expect(typeName(d.get("2"))).toBe("float");
     expect(d.get("1")).toBe(12345678901234567890n);
     expect(Object.is(d.get("x"), 0)).toBe(true);
-    expect(json_getitem(json_loads(encode('{"a": 1}', "utf-32")), "a")).toBe(1);
+    expect(jsonGetitem(jsonLoads(encode('{"a": 1}', "utf-32")), "a")).toBe(1);
   });
 });
 
@@ -93,7 +93,7 @@ describe("num", () => {
   });
 
   test.each(CPY.float.map((r) => [...r]))("float(%j)", (s, out) => {
-    expect(run(() => float_repr(float(s)))).toBe(out);
+    expect(run(() => floatRepr(float(s)))).toBe(out);
   });
 
   test("truediv", () => {
@@ -106,19 +106,19 @@ describe("num", () => {
 
 describe("re", () => {
   test.each(CPY.re.map((r) => [...r]))("search(%j, %j, %d)", (p, s, f, exp) => {
-    const m = py_re(p, f).exec(s);
+    const m = pyRe(p, f).exec(s);
     const span: readonly number[] | null = m == null ? null : [Array.from(s.slice(0, m.index)).length, Array.from(s.slice(0, m.index + m[0].length)).length];
     expect(span).toEqual(exp);
   });
 
   test.each(CPY.re_escape.map((r) => [...r]))("escape(%j)", (s, out) => {
-    expect(re_escape(s)).toBe(out);
-    expect(pattern_match(py_re(re_escape(s)), s)?.[0]).toBe(s);
+    expect(reEscape(s)).toBe(out);
+    expect(patternMatch(pyRe(reEscape(s)), s)?.[0]).toBe(s);
   });
 
   test("findall groups", () => {
-    expect(pattern_findall(py_re(String.raw`\d+`), "a1b22")).toEqual(["1", "22"]);
-    expect(pattern_findall(py_re(String.raw`(\w)=(\d)?`), "a=1 b=")).toEqual([["a", "1"], ["b", ""]]);
+    expect(patternFindall(pyRe(String.raw`\d+`), "a1b22")).toEqual(["1", "22"]);
+    expect(patternFindall(pyRe(String.raw`(\w)=(\d)?`), "a=1 b=")).toEqual([["a", "1"], ["b", ""]]);
   });
 });
 
@@ -195,7 +195,7 @@ describe("pathlib", () => {
   test("rglob order", () => {
     // CPython 3.12 lists each directory of walk() in turn; walk() names a directory's
     // subdirectories as it lists it, then descends depth first.
-    use_memory_fs();
+    useMemoryFs();
     try {
       memfs.write("/rg/a/x/f1", new Uint8Array(0));
       memfs.write("/rg/b/g", new Uint8Array(0));
@@ -204,7 +204,7 @@ describe("pathlib", () => {
       const names = new Path("/rg").rglob("*").map((p) => p.path.slice("/rg/".length));
       expect(names).toEqual(["a", "b", "c", "a/x", "a/y", "b/g", "a/x/f1"]);
     } finally {
-      use_host_fs();
+      useHostFs();
     }
   });
 
@@ -230,17 +230,17 @@ describe("builtins", () => {
   });
 
   test("type_name", () => {
-    expect([1, 1.5, pyfloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(type_name)).toEqual([
+    expect([1, 1.5, pyfloat(1), 1n, "s", new Uint8Array(), [], new Map(), new Set(), null, true, new BytesIO()].map(typeName)).toEqual([
       "int", "float", "float", "int", "str", "bytes", "list", "dict", "set", "NoneType", "bool", "BytesIO",
     ]);
   });
 
   test("list_mul and dict", () => {
-    expect(list_mul([0, 1], 2)).toEqual([0, 1, 0, 1]);
-    expect(list_mul([0], -1)).toEqual([]);
+    expect(listMul([0, 1], 2)).toEqual([0, 1, 0, 1]);
+    expect(listMul([0], -1)).toEqual([]);
     const view = { keys: () => ["a", "b"], get: (k: string) => k.toUpperCase() };
-    expect(py_eq(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
-    expect(py_eq(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);
+    expect(pyEq(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
+    expect(pyEq(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);
   });
 });
 
@@ -251,9 +251,9 @@ describe("bytes and io", () => {
 
   test("pack_into", () => {
     const buf = new Uint8Array(8);
-    struct.pack_into("<I", buf, -4, 0x01020304);
+    struct.packInto("<I", buf, -4, 0x01020304);
     expect([...buf.slice(4)]).toEqual([4, 3, 2, 1]);
-    const errs = [6, -2, -9].map((off) => run(() => (struct.pack_into("<I", buf, off, 1), "")));
+    const errs = [6, -2, -9].map((off) => run(() => (struct.packInto("<I", buf, off, 1), "")));
     expect(errs.map((e) => e.replace(/^StructError/, "error"))).toEqual([...CPY.pack_into_err]);
   });
 

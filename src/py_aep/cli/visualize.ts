@@ -30,11 +30,11 @@ import {
   format,
   int,
   len,
-  py_bool,
+  pyBool,
   repr,
   round,
   str,
-  json_dumps,
+  jsonDumps,
   pyfloat,
   type PyFloat,
 } from "../../pyrt/index.ts";
@@ -67,7 +67,7 @@ export type Node = {
 // =============================================================================
 
 /** Build the root project node. */
-export function build_project_node(app: Application, include_properties: boolean = true): Node {
+export function buildProjectNode(app: Application, includeProperties: boolean = true): Node {
   const project = app.project;
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["version", app.version],
@@ -80,7 +80,7 @@ export function build_project_node(app: Application, include_properties: boolean
   const children: Node[] = [];
   const root = project.rootFolder;
   for (const item of root) {
-    children.push(build_item_node(item, project, include_properties));
+    children.push(buildItemNode(item, project, includeProperties));
   }
 
   // Add render queue if it has items
@@ -88,7 +88,7 @@ export function build_project_node(app: Application, include_properties: boolean
     throw new RuntimeError("Project renderQueue should not be None");
   }
   if (project.renderQueue.items?.length > 0) {
-    children.push(build_render_queue_node(project));
+    children.push(buildRenderQueueNode(project));
   }
 
   return {
@@ -100,13 +100,13 @@ export function build_project_node(app: Application, include_properties: boolean
 }
 
 /** Build a node for any item type. */
-export function build_item_node(item: Item, project: Project, include_properties: boolean = true): Node {
+export function buildItemNode(item: Item, project: Project, includeProperties: boolean = true): Node {
   if (item instanceof FolderItem) {
-    return build_folder_node(item, project, include_properties);
+    return buildFolderNode(item, project, includeProperties);
   } else if (item instanceof CompItem) {
-    return build_comp_node(item, project, include_properties);
+    return buildCompNode(item, project, includeProperties);
   } else if (item instanceof FootageItem) {
-    return build_footage_node(item);
+    return buildFootageNode(item);
   } else {
     return {
       type: "Item",
@@ -118,10 +118,10 @@ export function build_item_node(item: Item, project: Project, include_properties
 }
 
 /** Build a folder node with its children. */
-export function build_folder_node(folder: FolderItem, project: Project, include_properties: boolean = true): Node {
+export function buildFolderNode(folder: FolderItem, project: Project, includeProperties: boolean = true): Node {
   const children: Node[] = [];
   for (const item of folder) {
-    children.push(build_item_node(item, project, include_properties));
+    children.push(buildItemNode(item, project, includeProperties));
   }
 
   return {
@@ -135,7 +135,7 @@ export function build_folder_node(folder: FolderItem, project: Project, include_
 }
 
 /** Build a composition node with layers. */
-export function build_comp_node(comp: CompItem, project: Project, include_properties: boolean = true): Node {
+export function buildCompNode(comp: CompItem, project: Project, includeProperties: boolean = true): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["size", `${comp.width}x${comp.height}`],
     ["duration", `${format(comp.duration, ".2f")}s`],
@@ -146,7 +146,7 @@ export function build_comp_node(comp: CompItem, project: Project, include_proper
 
   const children: Node[] = [];
   for (const layer of comp.layers) {
-    children.push(build_layer_node(layer, project, include_properties));
+    children.push(buildLayerNode(layer, project, includeProperties));
   }
 
   return {
@@ -158,7 +158,7 @@ export function build_comp_node(comp: CompItem, project: Project, include_proper
 }
 
 /** Build a footage item node. */
-export function build_footage_node(footage: FootageItem): Node {
+export function buildFootageNode(footage: FootageItem): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["asset_type", footage.assetType],
     ["size", `${footage.width}x${footage.height}`],
@@ -175,7 +175,7 @@ export function build_footage_node(footage: FootageItem): Node {
 }
 
 /** Build a layer node with properties. */
-export function build_layer_node(layer: Layer, project: Project, include_properties: boolean = true): Node {
+export function buildLayerNode(layer: Layer, project: Project, includeProperties: boolean = true): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([
     ["type", layer.layerType],
     ["enabled", layer.enabled],
@@ -187,16 +187,16 @@ export function build_layer_node(layer: Layer, project: Project, include_propert
   if (layer.markers?.length > 0) attrs.set("markers", layer.markers.length);
 
   const children: Node[] = [];
-  if (include_properties) {
+  if (includeProperties) {
     // Transform properties
-    if (layer.transform.length > 0) children.push(build_property_group_node(layer.transform));
+    if (layer.transform.length > 0) children.push(buildPropertyGroupNode(layer.transform));
 
     // Effects
     const effects = layer.effects;
-    if (effects != null && effects.length > 0) children.push(build_property_group_node(effects));
+    if (effects != null && effects.length > 0) children.push(buildPropertyGroupNode(effects));
 
     // Text properties
-    if (layer.text instanceof PropertyGroup) children.push(build_property_group_node(layer.text));
+    if (layer.text instanceof PropertyGroup) children.push(buildPropertyGroupNode(layer.text));
   }
 
   return {
@@ -208,11 +208,11 @@ export function build_layer_node(layer: Layer, project: Project, include_propert
 }
 
 /** Build a property group node. */
-export function build_property_group_node(group: PropertyGroup): Node {
+export function buildPropertyGroupNode(group: PropertyGroup): Node {
   const attrs: Map<string, boolean> = new Map<string, boolean>();
   if (group.isEffect) attrs.set("effect", true);
 
-  const children = group.properties.map((p) => build_property_or_group_node(p));
+  const children = group.properties.map((p) => buildPropertyOrGroupNode(p));
 
   return {
     type: "PropertyGroup",
@@ -223,13 +223,13 @@ export function build_property_group_node(group: PropertyGroup): Node {
 }
 
 /** Build a property or property group node. */
-export function build_property_or_group_node(prop: Property | PropertyGroup): Node {
-  if (prop instanceof PropertyGroup) return build_property_group_node(prop);
-  return build_property_node(prop);
+export function buildPropertyOrGroupNode(prop: Property | PropertyGroup): Node {
+  if (prop instanceof PropertyGroup) return buildPropertyGroupNode(prop);
+  return buildPropertyNode(prop);
 }
 
 /** Build a property node. */
-export function build_property_node(prop: Property): Node {
+export function buildPropertyNode(prop: Property): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>();
   if (prop._animated) {
     attrs.set("animated", true);
@@ -257,7 +257,7 @@ export function build_property_node(prop: Property): Node {
 }
 
 /** Build a render queue node with its items. */
-export function build_render_queue_node(project: Project): Node {
+export function buildRenderQueueNode(project: Project): Node {
   if (project.renderQueue == null) {
     throw new RuntimeError("Project renderQueue should not be None");
   }
@@ -265,7 +265,7 @@ export function build_render_queue_node(project: Project): Node {
 
   const children: Node[] = [];
   for (const [i, item] of project.renderQueue.items.entries()) {
-    children.push(build_render_queue_item_node(item, i + 1, project));
+    children.push(buildRenderQueueItemNode(item, i + 1, project));
   }
 
   return {
@@ -277,7 +277,7 @@ export function build_render_queue_node(project: Project): Node {
 }
 
 /** Build a render queue item node with output modules. */
-export function build_render_queue_item_node(item: RenderQueueItem, index: number, project: Project): Node {
+export function buildRenderQueueItemNode(item: RenderQueueItem, index: number, project: Project): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["output_modules", item.outputModules.length]]);
 
   // Try to find the comp name
@@ -286,7 +286,7 @@ export function build_render_queue_item_node(item: RenderQueueItem, index: numbe
 
   const children: Node[] = [];
   for (const om of item.outputModules) {
-    children.push(build_output_module_node(om));
+    children.push(buildOutputModuleNode(om));
   }
 
   return {
@@ -298,7 +298,7 @@ export function build_render_queue_item_node(item: RenderQueueItem, index: numbe
 }
 
 /** Build an output module node. */
-export function build_output_module_node(om: OutputModule): Node {
+export function buildOutputModuleNode(om: OutputModule): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>();
   if (om.file) attrs.set("file", new Path(om.file).name);
   if (om.fileTemplate) attrs.set("name_template", om.fileTemplate);
@@ -316,22 +316,22 @@ export function build_output_module_node(om: OutputModule): Node {
 // =============================================================================
 
 /** Output as ASCII tree. */
-export function format_text(
+export function formatText(
   node: Node,
   output: TextIO,
   prefix: string = "",
-  is_last: boolean = true,
-  max_depth: number | null = null,
-  current_depth: number = 0,
+  isLast: boolean = true,
+  maxDepth: number | null = null,
+  currentDepth: number = 0,
 ): void {
-  if (max_depth != null && current_depth > max_depth) return;
+  if (maxDepth != null && currentDepth > maxDepth) return;
 
   // Determine connector
-  let connector = is_last ? "└── " : "├── ";
-  if (current_depth === 0) connector = "";
+  let connector = isLast ? "└── " : "├── ";
+  if (currentDepth === 0) connector = "";
 
   // Format node line
-  const type_icon = new Map<string, string>([
+  const typeIcon = new Map<string, string>([
     ["Project", "📦"],
     ["Folder", "📁"],
     ["Composition", "🎬"],
@@ -344,54 +344,54 @@ export function format_text(
     ["RenderQueueItem", "📋"],
     ["OutputModule", "💾"],
   ]);
-  const icon = type_icon.get(node.type) ?? "•";
+  const icon = typeIcon.get(node.type) ?? "•";
 
-  let attrs_str = "";
+  let attrsStr = "";
   if (node.attrs?.size > 0) {
     // Filter out None values
     const filtered = new Map<string, AttrValue>([...node.attrs].filter(([, v]) => v != null));
     if (filtered.size > 0) {
-      attrs_str = " " + repr(filtered);
+      attrsStr = " " + repr(filtered);
     }
   }
 
-  output.write(`${prefix}${connector}${icon} ${node.name}${attrs_str}\n`);
+  output.write(`${prefix}${connector}${icon} ${node.name}${attrsStr}\n`);
 
   // Process children
   const children = node.children;
-  let child_prefix = prefix + (is_last ? "    " : "│   ");
-  if (current_depth === 0) child_prefix = "";
+  let childPrefix = prefix + (isLast ? "    " : "│   ");
+  if (currentDepth === 0) childPrefix = "";
 
   for (const [i, child] of children.entries()) {
-    const is_last_child = i === children.length - 1;
-    format_text(child, output, child_prefix, is_last_child, max_depth, current_depth + 1);
+    const isLastChild = i === children.length - 1;
+    formatText(child, output, childPrefix, isLastChild, maxDepth, currentDepth + 1);
   }
 }
 
 /** Output as Graphviz DOT format. */
-export function format_dot(node: Node, output: TextIO, max_depth: number | null = null): void {
+export function formatDot(node: Node, output: TextIO, maxDepth: number | null = null): void {
   output.write("digraph AEProject {\n");
   output.write("    rankdir=TB;\n");
   output.write('    node [shape=record, fontname="Helvetica", fontsize=10];\n');
   output.write("    edge [fontsize=8];\n");
   output.write("\n");
 
-  const node_id = [0]; // Use array for mutable counter in nested function
+  const nodeId = [0]; // Use array for mutable counter in nested function
 
-  function get_node_id(): string {
-    node_id[0] += 1;
-    return `n${node_id[0]}`;
+  function getNodeId(): string {
+    nodeId[0] += 1;
+    return `n${nodeId[0]}`;
   }
 
   /** Escape special characters for DOT labels. */
-  function escape_dot(s: string): string {
+  function escapeDot(s: string): string {
     return s.replaceAll('"', '\\"').replaceAll("<", "\\<").replaceAll(">", "\\>").replaceAll("|", "\\|");
   }
 
-  function write_node(n: Node, parent_id: string | null = null, depth: number = 0): string {
-    if (max_depth != null && depth > max_depth) return "";
+  function writeNode(n: Node, parentId: string | null = null, depth: number = 0): string {
+    if (maxDepth != null && depth > maxDepth) return "";
 
-    const nid = get_node_id();
+    const nid = getNodeId();
 
     // Color based on type
     const colors = new Map<string, string>([
@@ -407,71 +407,71 @@ export function format_dot(node: Node, output: TextIO, max_depth: number | null 
     const color = colors.get(n.type) ?? "#cccccc";
 
     // Build label
-    const name = escape_dot(n.name);
+    const name = escapeDot(n.name);
     const attrs = n.attrs;
-    const attrs_lines: string[] = [];
+    const attrsLines: string[] = [];
     for (const [k, v] of attrs) {
-      if (v != null) attrs_lines.push(`${k}: ${escape_dot(str(v))}`);
+      if (v != null) attrsLines.push(`${k}: ${escapeDot(str(v))}`);
     }
 
     let label: string;
-    if (attrs_lines.length > 0) {
-      label = "{{" + n.type + "|" + name + "|" + attrs_lines.join("\\l") + "\\l}}";
+    if (attrsLines.length > 0) {
+      label = "{{" + n.type + "|" + name + "|" + attrsLines.join("\\l") + "\\l}}";
     } else {
       label = "{{" + n.type + "|" + name + "}}";
     }
 
     output.write(`    ${nid} [label="${label}", style=filled, fillcolor="${color}"];\n`);
 
-    if (parent_id) {
-      output.write(`    ${parent_id} -> ${nid};\n`);
+    if (parentId) {
+      output.write(`    ${parentId} -> ${nid};\n`);
     }
 
     for (const child of n.children) {
-      write_node(child, nid, depth + 1);
+      writeNode(child, nid, depth + 1);
     }
 
     return nid;
   }
 
-  write_node(node);
+  writeNode(node);
   output.write("}\n");
 }
 
 /** Output as Mermaid flowchart. */
-export function format_mermaid(node: Node, output: TextIO, max_depth: number | null = null): void {
+export function formatMermaid(node: Node, output: TextIO, maxDepth: number | null = null): void {
   output.write("```mermaid\nflowchart TD\n");
 
-  const node_id = [0];
+  const nodeId = [0];
 
-  function get_node_id(): string {
-    node_id[0] += 1;
-    return `n${node_id[0]}`;
+  function getNodeId(): string {
+    nodeId[0] += 1;
+    return `n${nodeId[0]}`;
   }
 
   /** Escape special characters for Mermaid. */
-  function escape_mermaid(s: string): string {
+  function escapeMermaid(s: string): string {
     return s.replaceAll('"', "'").replaceAll("<", "‹").replaceAll(">", "›");
   }
 
-  function write_node(n: Node, parent_id: string | null = null, depth: number = 0): string {
-    if (max_depth != null && depth > max_depth) return "";
+  function writeNode(n: Node, parentId: string | null = null, depth: number = 0): string {
+    if (maxDepth != null && depth > maxDepth) return "";
 
-    const nid = get_node_id();
-    const name = escape_mermaid(n.name);
-    const node_type = n.type;
+    const nid = getNodeId();
+    const name = escapeMermaid(n.name);
+    const nodeType = n.type;
 
     // Different shapes for different types
     let shape: string;
-    if (node_type === "Project") {
+    if (nodeType === "Project") {
       shape = `${nid}[["🎬 ${name}"]]`;
-    } else if (node_type === "Folder") {
+    } else if (nodeType === "Folder") {
       shape = `${nid}[/"📁 ${name}"/]`;
-    } else if (node_type === "Composition") {
+    } else if (nodeType === "Composition") {
       shape = `${nid}[("🎬 ${name}")]`;
-    } else if (node_type === "Footage") {
+    } else if (nodeType === "Footage") {
       shape = `${nid}[("🎞️ ${name}")]`;
-    } else if (node_type === "Layer") {
+    } else if (nodeType === "Layer") {
       shape = `${nid}["📄 ${name}"]`;
     } else {
       shape = `${nid}("${name}")`;
@@ -479,44 +479,44 @@ export function format_mermaid(node: Node, output: TextIO, max_depth: number | n
 
     output.write(`    ${shape}\n`);
 
-    if (parent_id) {
-      output.write(`    ${parent_id} --> ${nid}\n`);
+    if (parentId) {
+      output.write(`    ${parentId} --> ${nid}\n`);
     }
 
     for (const child of n.children) {
-      write_node(child, nid, depth + 1);
+      writeNode(child, nid, depth + 1);
     }
 
     return nid;
   }
 
-  write_node(node);
+  writeNode(node);
   output.write("```\n");
 }
 
-/** A {@link Node} as {@link format_json} emits it: children past `max_depth` collapse to a summary string. */
+/** A {@link Node} as {@link formatJson} emits it: children past `max_depth` collapse to a summary string. */
 type JsonNode = Omit<Node, "children"> & { children: JsonNode[] | string };
 
 /** Output as JSON. */
-export function format_json(node: Node, output: TextIO, max_depth: number | null = null): void {
-  function filter_depth(n: Node, depth: number = 0): JsonNode {
-    if (max_depth != null && depth >= max_depth) {
+export function formatJson(node: Node, output: TextIO, maxDepth: number | null = null): void {
+  function filterDepth(n: Node, depth: number = 0): JsonNode {
+    if (maxDepth != null && depth >= maxDepth) {
       const result: JsonNode = { ...n };
-      if (py_bool(n.children)) {
+      if (pyBool(n.children)) {
         result.children = `[${len(n.children)} children omitted]`;
       }
       return result;
     }
 
     const result: JsonNode = { ...n };
-    if (py_bool(n.children)) {
-      result.children = n.children.map((c) => filter_depth(c, depth + 1));
+    if (pyBool(n.children)) {
+      result.children = n.children.map((c) => filterDepth(c, depth + 1));
     }
     return result;
   }
 
-  const filtered = filter_depth(node);
-  output.write(json_dumps(filtered, { indent: 2, default_: str }));
+  const filtered = filterDepth(node);
+  output.write(jsonDumps(filtered, { indent: 2, default_: str }));
   output.write("\n");
 }
 
@@ -576,7 +576,7 @@ export const LONG_OPTIONS = ["--help", "--format", "--depth", "--no-properties",
  * (non-tty) width (argparse wraps to COLUMNS or the terminal width), and an unrecognized option
  * or extra positional errors at once where argparse first reports a missing aep_file.
  */
-export function parse_args(argv: string[]): Args {
+export function parseArgs(argv: string[]): Args {
   const fail = (msg: string): never => {
     process.stderr.write(`${USAGE}${PROG}: error: ${msg}\n`);
     process.exit(2);
@@ -604,8 +604,8 @@ export function parse_args(argv: string[]): Args {
   };
 
   let i = 0;
-  let only_positional = false;
-  const take_value = (label: string, inline: string | null): string => {
+  let onlyPositional = false;
+  const takeValue = (label: string, inline: string | null): string => {
     if (inline != null) return inline;
     // argparse never takes an option-like string as the value.
     const next = argv[i];
@@ -618,9 +618,9 @@ export function parse_args(argv: string[]): Args {
 
   while (i < argv.length) {
     const a = argv[i++];
-    if (!only_positional && a === "--") {
-      only_positional = true;
-    } else if (!only_positional && a.startsWith("--")) {
+    if (!onlyPositional && a === "--") {
+      onlyPositional = true;
+    } else if (!onlyPositional && a.startsWith("--")) {
       const eq = a.indexOf("=");
       const prefix = eq >= 0 ? a.slice(0, eq) : a;
       const inline = eq >= 0 ? a.slice(eq + 1) : null;
@@ -634,26 +634,26 @@ export function parse_args(argv: string[]): Args {
         if (inline != null) fail(`argument --no-properties: ignored explicit argument ${repr(inline)}`);
         args.no_properties = true;
       } else if (flag === "--format") {
-        apply("--format", take_value("--format/-f", inline));
+        apply("--format", takeValue("--format/-f", inline));
       } else if (flag === "--depth") {
-        apply("--depth", take_value("--depth/-d", inline));
+        apply("--depth", takeValue("--depth/-d", inline));
       } else if (flag === "--output") {
-        apply("--output", take_value("--output/-o", inline));
+        apply("--output", takeValue("--output/-o", inline));
       } else {
         fail(`unrecognized arguments: ${a}`);
       }
-    } else if (!only_positional && a.length > 1 && a.startsWith("-") && !/^-\d/.test(a)) {
+    } else if (!onlyPositional && a.length > 1 && a.startsWith("-") && !/^-\d/.test(a)) {
       const flag = a.slice(0, 2);
       const rest = a.slice(2);
       if (flag === "-h") {
         process.stdout.write(HELP);
         process.exit(0);
       } else if (flag === "-f") {
-        apply("--format", take_value("--format/-f", rest.length ? rest : null));
+        apply("--format", takeValue("--format/-f", rest.length ? rest : null));
       } else if (flag === "-d") {
-        apply("--depth", take_value("--depth/-d", rest.length ? rest : null));
+        apply("--depth", takeValue("--depth/-d", rest.length ? rest : null));
       } else if (flag === "-o") {
-        apply("--output", take_value("--output/-o", rest.length ? rest : null));
+        apply("--output", takeValue("--output/-o", rest.length ? rest : null));
       } else {
         fail(`unrecognized arguments: ${a}`);
       }
@@ -670,44 +670,44 @@ export function parse_args(argv: string[]): Args {
 
 /** CLI entry point for aep-visualize command. */
 export function main(): number {
-  const args = parse_args(process.argv.slice(2));
+  const args = parseArgs(process.argv.slice(2));
 
-  const aep_path = new Path(args.aep_file);
-  if (!aep_path.exists()) {
-    process.stderr.write(`Error: File not found: ${aep_path}\n`);
+  const aepPath = new Path(args.aep_file);
+  if (!aepPath.exists()) {
+    process.stderr.write(`Error: File not found: ${aepPath}\n`);
     return 1;
   }
 
-  const app = parse(aep_path);
+  const app = parse(aepPath);
 
-  const include_properties = !args.no_properties;
-  const root_node = build_project_node(app, include_properties);
+  const includeProperties = !args.no_properties;
+  const rootNode = buildProjectNode(app, includeProperties);
 
   // Output using context manager (get_output): a file when --output is given, else stdout.
-  const output_path = args.output ? new Path(args.output) : null;
+  const outputPath = args.output ? new Path(args.output) : null;
 
   // @contextlib.contextmanager: returns [output, close] (the `with` enter/exit pair).
-  function get_output(): [TextIO, () => void] {
-    if (output_path) {
-      const fd = host.fs.openSync(output_path.path, "w");
+  function getOutput(): [TextIO, () => void] {
+    if (outputPath) {
+      const fd = host.fs.openSync(outputPath.path, "w");
       return [{ write: (s: string) => host.fs.writeSync(fd, s) }, () => host.fs.closeSync(fd)];
     }
     return [{ write: (s: string) => process.stdout.write(s) }, () => {}];
   }
 
-  const [output, close_output] = get_output();
+  const [output, closeOutput] = getOutput();
   try {
     if (args.format === "text") {
-      format_text(root_node, output, undefined, undefined, args.depth);
+      formatText(rootNode, output, undefined, undefined, args.depth);
     } else if (args.format === "dot") {
-      format_dot(root_node, output, args.depth);
+      formatDot(rootNode, output, args.depth);
     } else if (args.format === "mermaid") {
-      format_mermaid(root_node, output, args.depth);
+      formatMermaid(rootNode, output, args.depth);
     } else if (args.format === "json") {
-      format_json(root_node, output, args.depth);
+      formatJson(rootNode, output, args.depth);
     }
   } finally {
-    close_output();
+    closeOutput();
   }
 
   return 0;

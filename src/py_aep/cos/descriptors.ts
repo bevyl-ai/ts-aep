@@ -18,17 +18,17 @@ import {
   KeyError,
   TypeError_,
   ValueError,
-  py_bool,
+  pyBool,
   pyfloat,
   repr,
   round,
-  instance_dict,
+  instanceDict,
 } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
-import { get_ae_version_major } from "../ae_version.ts";
+import { getAeVersionMajor } from "../ae_version.ts";
 import type { InstanceValidator } from "../models/validators.ts";
 import type { CosDict, CosNode } from "./cos.ts";
-import { cos_float, cos_int, cos_num } from "./kinds.ts";
+import { cosFloat, cosInt, cosNum } from "./kinds.ts";
 
 /**
  * Read `key` from a COS dict with the descriptors' fault-tolerant
@@ -61,8 +61,8 @@ export type CosEnum<V> = EnumHelpers<V> & {
  * `E.from_binary(raw)` on a COS value: Python's `raw + offset`
  * (`TypeError` when `raw` is not a number) and the enum lookup.
  */
-export function enum_from_cos<V>(E: CosEnum<V>, raw: CosNode): V {
-  return E.of(E.from_binary(cos_num(raw)));
+export function enumFromCos<V>(E: CosEnum<V>, raw: CosNode): V {
+  return E.of(E.from_binary(cosNum(raw)));
 }
 
 /** A model whose `A` attribute holds the COS sub-dict a field reads (`null` without COS backing). */
@@ -120,9 +120,9 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   declare minVersion: number | null;
   declare publicName: string;
 
-  constructor(dict_attr: A, key: string, kw: CosFieldOptions<T, O>) {
+  constructor(dictAttr: A, key: string, kw: CosFieldOptions<T, O>) {
     const { transform, accepts, reverse = null, read_only = false, validate = null, default: default_, min_version = null } = kw;
-    this.dictAttr = dict_attr;
+    this.dictAttr = dictAttr;
     this.key = key;
     this.transform = transform;
     this.accepts = accepts;
@@ -143,7 +143,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    * parser's fallback kwargs) from values of the field's own type.
    */
   _override(obj: O): { value: T } | null {
-    const idict: Map<string, InstanceValue> = instance_dict(obj);
+    const idict: Map<string, InstanceValue> = instanceDict(obj);
     if (!idict.has(this.publicName)) return null;
     const value = idict.get(this.publicName) ?? null;
     return this.accepts(value) ? { value } : null;
@@ -168,7 +168,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
       throw new AttributeError(`${repr(this.publicName)} is read-only.`);
     }
     if (this.minVersion != null) {
-      if (get_ae_version_major(obj) < this.minVersion) {
+      if (getAeVersionMajor(obj) < this.minVersion) {
         throw new AttributeError(`${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
@@ -188,11 +188,11 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   __set__(obj: O, value: T | null): void {
     this._check_writable(obj);
     // Clear any instance-dict override
-    instance_dict(obj).delete(this.publicName);
+    instanceDict(obj).delete(this.publicName);
     const d = obj[this.dictAttr];
     if (d == null) {
       // No backing dict - store as instance override
-      instance_dict(obj).set(this.publicName, value);
+      instanceDict(obj).set(this.publicName, value);
       return;
     }
     // `None` clears the key (an optional field is being unset); there is
@@ -216,8 +216,8 @@ export type CosFieldExtras<D extends InstanceValue, O> = Partial<Pick<CosFieldOp
 };
 
 /** Options of a boolean flag field: `transform=bool`, `reverse=bool`. */
-export function bool_field<D extends boolean | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<boolean | D, O> {
-  return { transform: py_bool, reverse: py_bool, accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"), ...kw };
+export function boolField<D extends boolean | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<boolean | D, O> {
+  return { transform: pyBool, reverse: pyBool, accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"), ...kw };
 }
 
 /**
@@ -228,9 +228,9 @@ export function bool_field<D extends boolean | null, O>(kw: CosFieldExtras<D, O>
  * decimal marker. The stored value is a Python float, so it is boxed to
  * keep `1.0` from serializing as `1`.
  */
-export function float_field<D extends number | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<number | D, O> {
+export function floatField<D extends number | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<number | D, O> {
   return {
-    transform: cos_float,
+    transform: cosFloat,
     reverse: (x: number) => pyfloat(x),
     accepts: (v): v is number | D => (v === null ? kw.default === null : typeof v === "number"),
     ...kw,
@@ -244,9 +244,9 @@ export function float_field<D extends number | null, O>(kw: CosFieldExtras<D, O>
  * `3276800`, probed AE 2026), so the write-side coercion matters for
  * fidelity.
  */
-export function int_field<D extends number | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<number | D, O> {
+export function intField<D extends number | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<number | D, O> {
   return {
-    transform: cos_int,
+    transform: cosInt,
     reverse: (x: number) => round(x),
     accepts: (v): v is number | D => (v === null ? kw.default === null : typeof v === "number"),
     ...kw,
@@ -258,9 +258,9 @@ export function int_field<D extends number | null, O>(kw: CosFieldExtras<D, O>):
  * `raw + offset`, so a non-number raises `TypeError`), `to_binary` on
  * write.
  */
-export function enum_field<V extends number, D extends V | null, O>(E: CosEnum<V>, kw: CosFieldExtras<D, O>): CosFieldOptions<V | D, O> {
+export function enumField<V extends number, D extends V | null, O>(E: CosEnum<V>, kw: CosFieldExtras<D, O>): CosFieldOptions<V | D, O> {
   return {
-    transform: (x: CosNode) => enum_from_cos(E, x),
+    transform: (x: CosNode) => enumFromCos(E, x),
     reverse: (v: V) => E.to_binary(v),
     accepts: (v): v is V | D => (v === null ? kw.default === null : E.has(v)),
     ...kw,

@@ -9,8 +9,8 @@
  * points, type, and color stops AE writes for an SVG import.
  */
 
-import { max, min, py_eq, zip } from "../../pyrt/index.ts";
-import { to_f4 } from "../binary/bin_utils.ts";
+import { max, min, pyEq, zip } from "../../pyrt/index.ts";
+import { toF4 } from "../binary/bin_utils.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
 import { Shape } from "../models/properties/shape.ts";
 import { GradientPaint, type SolidPaint, type StrokeStyle, type SvgDrawable } from "./types.ts";
@@ -30,8 +30,8 @@ export const _GRAD_TYPE = new Map<string, number>([
 ]);
 
 /** Return a child leaf property (narrowed from `Property | PropertyGroup`). */
-export function _leaf<K extends _LeafName>(group: PropertyGroup, match_name: K): MatchNameTypes[K] {
-  return group.property(match_name);
+export function _leaf<K extends _LeafName>(group: PropertyGroup, matchName: K): MatchNameTypes[K] {
+  return group.property(matchName);
 }
 
 /** Narrow an `add_property` / child result to `PropertyGroup`. */
@@ -46,16 +46,16 @@ export function _grp(prop: PropertyGroup): PropertyGroup {
  * @param drawables - Drawables in SVG document order; added in reverse so
  *     the document's last-painted shape ends up on top.
  */
-export function build_shape_layer_contents(
+export function buildShapeLayerContents(
   contents: PropertyGroup,
   drawables: SvgDrawable[],
 ): void {
   for (const drawable of [...drawables].reverse()) {
-    _add_drawable(contents, drawable);
+    _addDrawable(contents, drawable);
   }
 }
 
-export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): void {
+export function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): void {
   const group = _grp(contents.addProperty("ADBE Vector Group"));
   const inner = _grp(group.property("ADBE Vectors Group"));
 
@@ -63,10 +63,10 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
   // and tangent handles and puts the offset in the group's Vector Position
   // (verified against AE's own SVG import). Mirror that so the output
   // matches AE byte-for-byte.
-  const [cx, cy] = _bbox_center(drawable);
+  const [cx, cy] = _bboxCenter(drawable);
   for (const subpath of drawable.subpaths) {
-    const path_group = _grp(inner.addProperty("ADBE Vector Shape - Group"));
-    _leaf(path_group, "ADBE Vector Shape").value = new Shape(
+    const pathGroup = _grp(inner.addProperty("ADBE Vector Shape - Group"));
+    _leaf(pathGroup, "ADBE Vector Shape").value = new Shape(
       subpath.vertices.map((v) => [v[0] - cx, v[1] - cy]),
       subpath.in_tangents.map((t) => [...t]),
       subpath.out_tangents.map((t) => [...t]),
@@ -86,10 +86,10 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
   // AE flattens an SVG group/element opacity into the paint's Fill/Stroke
   // Opacity (verified against AE's own import), so pass it through.
   if (drawable.stroke != null) {
-    _add_stroke(inner, drawable.stroke, cx, cy, drawable.opacity);
+    _addStroke(inner, drawable.stroke, cx, cy, drawable.opacity);
   }
   if (drawable.fill != null) {
-    _add_fill(inner, drawable.fill, cx, cy, drawable.opacity);
+    _addFill(inner, drawable.fill, cx, cy, drawable.opacity);
   }
 
   const transform = _grp(group.property("ADBE Vector Transform Group"));
@@ -97,11 +97,11 @@ export function _add_drawable(contents: PropertyGroup, drawable: SvgDrawable): v
 }
 
 /** Centre of the box of all the drawable's vertices and tangent handles. */
-export function _bbox_center(drawable: SvgDrawable): [number, number] {
+export function _bboxCenter(drawable: SvgDrawable): [number, number] {
   const points: [number, number][] = [];
   for (const sp of drawable.subpaths) {
-    for (const [v, t_in, t_out] of zip(sp.vertices, sp.in_tangents, sp.out_tangents)) {
-      for (const t of [[0.0, 0.0], t_in, t_out]) {
+    for (const [v, tIn, tOut] of zip(sp.vertices, sp.in_tangents, sp.out_tangents)) {
+      for (const t of [[0.0, 0.0], tIn, tOut]) {
         points.push([v[0] + t[0], v[1] + t[1]]);
       }
     }
@@ -123,12 +123,12 @@ export function _bbox_center(drawable: SvgDrawable): [number, number] {
  * 0.5 -\> 50.196). Returns `null` when fully opaque, since AE omits the
  * default 100%.
  */
-export function _opacity_pct(alpha: number): number | null {
-  const a8 = Math.floor(to_f4(alpha) * 255.0 + 0.5);
+export function _opacityPct(alpha: number): number | null {
+  const a8 = Math.floor(toF4(alpha) * 255.0 + 0.5);
   if (a8 >= 255) {
     return null;
   }
-  return to_f4((a8 / 255.0) * 100.0);
+  return toF4((a8 / 255.0) * 100.0);
 }
 
 /**
@@ -144,40 +144,40 @@ export function _opacity_pct(alpha: number): number | null {
  * AE reads the SVG opacity as float32 before scaling, so quantize to f4
  * first to match its exact byte (e.g. `0.3 -> 30.000001907`, not `30.0`).
  */
-export function _grad_opacity_pct(opacity: number): number | null {
+export function _gradOpacityPct(opacity: number): number | null {
   if (opacity >= 1.0) {
     return null;
   }
-  return to_f4(to_f4(opacity) * 100.0);
+  return toF4(toF4(opacity) * 100.0);
 }
 
-export function _add_fill(
+export function _addFill(
   inner: PropertyGroup,
   paint: SolidPaint | GradientPaint,
   cx: number,
   cy: number,
   opacity: number,
 ): void {
-  _apply_paint(inner, paint, "Fill", cx, cy, opacity);
+  _applyPaint(inner, paint, "Fill", cx, cy, opacity);
 }
 
-export function _add_stroke(
+export function _addStroke(
   inner: PropertyGroup,
   stroke: StrokeStyle,
   cx: number,
   cy: number,
   opacity: number,
 ): void {
-  const sg = _apply_paint(inner, stroke.paint, "Stroke", cx, cy, opacity);
+  const sg = _applyPaint(inner, stroke.paint, "Stroke", cx, cy, opacity);
   _leaf(sg, "ADBE Vector Stroke Width").value = stroke.width;
-  _apply_stroke_style(sg, stroke);
+  _applyStrokeStyle(sg, stroke);
 }
 
 /**
  * Add a paint group ("Fill"/"Stroke" match-name stem `kind`) and set
  * its gradient-or-solid color and opacity. Returns the added group.
  */
-export function _apply_paint(
+export function _applyPaint(
   inner: PropertyGroup,
   paint: SolidPaint | GradientPaint,
   kind: "Fill" | "Stroke",
@@ -189,13 +189,13 @@ export function _apply_paint(
   let pct: number | null;
   if (paint instanceof GradientPaint) {
     grp = _grp(inner.addProperty(`ADBE Vector Graphic - G-${kind}`));
-    _apply_gradient(grp, paint, cx, cy);
-    pct = _grad_opacity_pct(opacity);
+    _applyGradient(grp, paint, cx, cy);
+    pct = _gradOpacityPct(opacity);
   } else {
     grp = _grp(inner.addProperty(`ADBE Vector Graphic - ${kind}`));
     const c = paint.color;
     _leaf(grp, `ADBE Vector ${kind} Color`).value = [c[0], c[1], c[2], 1.0];
-    pct = _opacity_pct(c[3] * opacity);
+    pct = _opacityPct(c[3] * opacity);
   }
   if (pct != null) {
     _leaf(grp, `ADBE Vector ${kind} Opacity`).value = pct;
@@ -203,10 +203,10 @@ export function _apply_paint(
   return grp;
 }
 
-export function _apply_stroke_style(sg: PropertyGroup, stroke: StrokeStyle): void {
-  _set_optional(sg, "ADBE Vector Stroke Line Cap", stroke.cap, 1.0);
-  _set_optional(sg, "ADBE Vector Stroke Line Join", stroke.join, 1.0);
-  _set_optional(sg, "ADBE Vector Stroke Miter Limit", stroke.miter_limit, 4.0);
+export function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void {
+  _setOptional(sg, "ADBE Vector Stroke Line Cap", stroke.cap, 1.0);
+  _setOptional(sg, "ADBE Vector Stroke Line Join", stroke.join, 1.0);
+  _setOptional(sg, "ADBE Vector Stroke Miter Limit", stroke.miter_limit, 4.0);
 }
 
 /**
@@ -215,7 +215,7 @@ export function _apply_stroke_style(sg: PropertyGroup, stroke: StrokeStyle): voi
  * Start/end points are stored relative to the group centre `(cx, cy)`,
  * matching the centred vertex encoding.
  */
-export function _apply_gradient(
+export function _applyGradient(
   group: PropertyGroup,
   paint: GradientPaint,
   cx: number,
@@ -230,54 +230,54 @@ export function _apply_gradient(
     paint.end[0] - cx,
     paint.end[1] - cy,
   ];
-  _leaf(group, "ADBE Vector Grad Colors").value = _gradient_value(paint);
+  _leaf(group, "ADBE Vector Grad Colors").value = _gradientValue(paint);
   // A radial gradientTransform's vertical stretch and rotation live in Grad
   // Scale / Grad Rotation (the start/end points only encode the x-radius);
   // AE writes a 360-degree baseline rotation on every radial gradient. These
   // leaves are AE 2026-only, so they are absent when importing into an
   // older project - in which case AE itself can only render the circular
   // approximation, so skipping them matches AE's pre-2026 behaviour.
-  if (!py_eq(paint.scale, [100.0, 100.0])) {
-    _set_if_present(group, "ADBE Vector Grad Scale", [paint.scale[0], paint.scale[1]]);
+  if (!pyEq(paint.scale, [100.0, 100.0])) {
+    _setIfPresent(group, "ADBE Vector Grad Scale", [paint.scale[0], paint.scale[1]]);
   }
   if (paint.rotation !== 0) {
-    _set_if_present(group, "ADBE Vector Grad Rotation", paint.rotation);
+    _setIfPresent(group, "ADBE Vector Grad Rotation", paint.rotation);
   }
 }
 
 /** Convert reader gradient stops to an AE `Gradient` (color + alpha). */
-export function _gradient_value(paint: GradientPaint): Gradient {
+export function _gradientValue(paint: GradientPaint): Gradient {
   const stops = paint.stops?.length > 0 ? paint.stops : [];
   if (!stops?.length) {
     return new Gradient();
   }
-  const color_stops = stops.map(
+  const colorStops = stops.map(
     (s) => new GradientColorStop(s.offset, 0.5, [s.color[0], s.color[1], s.color[2]]),
   );
   // AE writes one alpha stop for consecutive stops sharing offset and
   // opacity (it keeps every colour stop).
-  const alpha_stops: GradientAlphaStop[] = [];
+  const alphaStops: GradientAlphaStop[] = [];
   for (const s of stops) {
-    const prev = alpha_stops.length ? alpha_stops.at(-1) : null;
-    if (prev == null || !py_eq([prev.offset, prev.alpha], [s.offset, s.color[3]])) {
-      alpha_stops.push(new GradientAlphaStop(s.offset, 0.5, s.color[3]));
+    const prev = alphaStops.length ? alphaStops.at(-1) : null;
+    if (prev == null || !pyEq([prev.offset, prev.alpha], [s.offset, s.color[3]])) {
+      alphaStops.push(new GradientAlphaStop(s.offset, 0.5, s.color[3]));
     }
   }
-  return new Gradient(color_stops, alpha_stops);
+  return new Gradient(colorStops, alphaStops);
 }
 
 /**
  * Set a leaf only when it differs from its AE default (keeps the
  * output minimal, matching AE which writes only non-defaults).
  */
-export function _set_optional<K extends _LeafName>(
+export function _setOptional<K extends _LeafName>(
   group: PropertyGroup,
-  match_name: K,
+  matchName: K,
   value: number,
   default_: number,
 ): void {
   if (value !== default_) {
-    _leaf(group, match_name).value = value;
+    _leaf(group, matchName).value = value;
   }
 }
 
@@ -287,13 +287,13 @@ export function _set_optional<K extends _LeafName>(
  * Some leaves (e.g. the AE 2026 Grad Scale / Grad Rotation) are absent
  * when importing into an older project; skip them rather than raise.
  */
-export function _set_if_present<K extends _LeafName>(
+export function _setIfPresent<K extends _LeafName>(
   group: PropertyGroup,
-  match_name: K,
+  matchName: K,
   value: _LeafValue<K>,
 ): void {
-  if (group.properties.some((p) => p.matchName === match_name)) {
-    const leaf: Property = _leaf(group, match_name);
+  if (group.properties.some((p) => p.matchName === matchName)) {
+    const leaf: Property = _leaf(group, matchName);
     leaf.value = value;
   }
 }

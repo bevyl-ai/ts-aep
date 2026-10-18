@@ -1,13 +1,13 @@
 /** Tests for the Curves effect's value (ADBE CurvesCustom-0001). */
 
 import { expect, test } from "bun:test";
-import { b, bytes_, dict_get, float, getitem, isclose, len, py_eq, range, struct, ValueError } from "../../src/pyrt/index.ts";
+import { b, bytes_, dictGet, float, getitem, isclose, len, pyEq, range, struct, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 // Python's `import py_aep.binary.chunk` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
 import { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { CurvesArbpChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { to_dict, type Dict } from "../../src/py_aep/cli/validate.ts";
+import { toDict, type Dict } from "../../src/py_aep/cli/validate.ts";
 import { CURVES_CHANNELS, Curves } from "../../src/py_aep/models/properties/curves.ts";
 
 /** A Curves aRbp as After Effects writes it, the maps left identity. */
@@ -18,19 +18,19 @@ function _blob(
   selected = -1,
 ): Uint8Array {
   const out = new Uint8Array(4 + 5 * 256 + 5 * 72);
-  struct.pack_into(">HH", out, 0, 1, mode);
+  struct.packInto(">HH", out, 0, 1, mode);
   for (const [c, name] of CURVES_CHANNELS.entries()) {
-    const pts = dict_get(points, name, [[0, 0], [255, 255]]);
+    const pts = dictGet(points, name, [[0, 0], [255, 255]]);
     out.set(Uint8Array.from(range(256)), 4 + 256 * c);
     const offset = 4 + 5 * 256 + 72 * c;
     for (const [i, [x, y]] of pts.entries()) {
-      struct.pack_into(">hh", out, offset + 4 * i, x, y);
+      struct.packInto(">hh", out, offset + 4 * i, x, y);
     }
     if (stale) {
       // After Effects leaves old points past the count.
-      struct.pack_into(">hh", out, offset + 4 * len(pts), 5440, 8193);
+      struct.packInto(">hh", out, offset + 4 * len(pts), 5440, 8193);
     }
-    struct.pack_into(">Ii", out, offset + 64, len(pts), selected);
+    struct.packInto(">Ii", out, offset + 64, len(pts), selected);
   }
   return new Uint8Array(out);
 }
@@ -45,8 +45,8 @@ test("test_decodes_points_in_channel_order", () => {
     _blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]), 1, true),
   );
   expect(curves.usesPoints).toBe(true);
-  expect(py_eq(getitem(curves.channels, "rgb").points, [[0, 0], [168, 93], [255, 246]])).toBe(true);
-  expect(py_eq(getitem(curves.channels, "red").points, [[0, 0], [255, 255]])).toBe(true);
+  expect(pyEq(getitem(curves.channels, "rgb").points, [[0, 0], [168, 93], [255, 246]])).toBe(true);
+  expect(pyEq(getitem(curves.channels, "red").points, [[0, 0], [255, 255]])).toBe(true);
   expect(getitem(curves.channels, "red").isIdentity).toBe(true);
   expect(getitem(curves.channels, "rgb").isIdentity).toBe(false);
   expect(curves.isIdentity).toBe(false);
@@ -95,14 +95,14 @@ test("test_pencil_mode_reads_the_maps", () => {
 });
 
 test("test_to_dict_emits_the_curves", () => {
-  const data = to_dict(_curves(_blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]))));
+  const data = toDict(_curves(_blob(new Map([["rgb", [[0, 0], [168, 93], [255, 246]]]]))));
   expect(getitem(data, "mode")).toBe(1);
   expect(getitem(data, "version")).toBe(1);
   expect(getitem(data, "isIdentity")).toBe(false);
   const channels: Dict = getitem(data, "channels");
   const rgb: Dict = getitem(channels, "rgb");
-  expect(py_eq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
-  expect(py_eq(getitem(rgb, "map"), [...range(256)])).toBe(true);
+  expect(pyEq(getitem(rgb, "points"), [[0, 0], [168, 93], [255, 246]])).toBe(true);
+  expect(pyEq(getitem(rgb, "map"), [...range(256)])).toBe(true);
   expect<number>(getitem(rgb, "selected")).toBe(-1);
 });
 
@@ -134,13 +134,13 @@ test("test_same_curves_compares_points_not_bytes", () => {
   expect(stale._same_curves(_curves(_blob(new Map())))).toBe(false);
 });
 
-const evaluate_rejects_rows: [string, number][] = [
+const evaluateRejectsRows: [string, number][] = [
   ["luma", 0.5],
   ["rgb", float("nan")],
   ["rgb", float("inf")],
 ];
 
-test.each(evaluate_rejects_rows)("test_evaluate_rejects_bad_input[%#]", (channel, x) => {
+test.each(evaluateRejectsRows)("test_evaluate_rejects_bad_input[%#]", (channel, x) => {
   raises(ValueError, () => _curves(_blob(new Map())).evaluate(channel, x));
 });
 

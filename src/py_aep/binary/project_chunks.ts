@@ -10,7 +10,7 @@
 
 import { b, bytes_, define, encode, field } from "../../pyrt/index.ts";
 import { Chunk } from "./chunk.ts";
-import { bytes_field, s2_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { bytesField, s2Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -31,8 +31,8 @@ export class SvapChunk extends Chunk {
 }
 define(SvapChunk, {
   chunk_type: field({ default: "svap" }),
-  _prefix: bytes_field(3, { default: b("\x0f\x10\x06"), repr: false }),
-  build_number: u1_field({ default: 0x43 }),
+  _prefix: bytesField(3, { default: b("\x0f\x10\x06"), repr: false }),
+  build_number: u1Field({ default: 0x43 }),
 });
 register("svap")(SvapChunk);
 
@@ -74,8 +74,8 @@ export class FdtaChunk extends Chunk {
 }
 define(FdtaChunk, {
   chunk_type: field({ default: "fdta" }),
-  _reserved_00: bytes_field(10, { repr: false }),
-  _tail: bytes_field(4, { default: b("\x1f\x44\x84\x00"), repr: false }),
+  _reserved_00: bytesField(10, { repr: false }),
+  _tail: bytesField(4, { default: b("\x1f\x44\x84\x00"), repr: false }),
 });
 register("fdta")(FdtaChunk);
 
@@ -95,16 +95,16 @@ export class RhedChunk extends Chunk {
 }
 define(RhedChunk, {
   chunk_type: field({ default: "Rhed" }),
-  _a: u2_field({ default: 1, repr: false }),
-  _b: u2_field({ default: 2, repr: false }),
-  _c: u4_field({ repr: false }),
-  _d: u4_field({ repr: false }),
+  _a: u2Field({ default: 1, repr: false }),
+  _b: u2Field({ default: 2, repr: false }),
+  _c: u4Field({ repr: false }),
+  _d: u4Field({ repr: false }),
   // Render-queue identity captured from one empty project. The fixed default
   // is intentional: it keeps py_aep.new() output deterministic, and AE
   // rewrites render-queue state on save - so every generated file sharing
   // this value is inert (it is not a cross-file item/project id).
-  _uid: u4_field({ default: 0x03e2076c, repr: false }),
-  _e: u4_field({ default: 1, repr: false }),
+  _uid: u4Field({ default: 0x03e2076c, repr: false }),
+  _e: u4Field({ default: 1, repr: false }),
 });
 register("Rhed")(RhedChunk);
 
@@ -124,7 +124,7 @@ export class WsnsChunk extends Chunk {
 }
 define(WsnsChunk, {
   chunk_type: field({ default: "wsns" }),
-  value: s2_field({ default: 14 }),
+  value: s2Field({ default: 14 }),
 });
 register("wsns")(WsnsChunk);
 

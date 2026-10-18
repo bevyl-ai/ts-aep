@@ -3,15 +3,15 @@
 import { describe, expect, test } from "bun:test";
 
 import { raises } from "../../src/pyrt/pytest.ts";
-import { Path, TypeError_, ValueError, int, py_eq, repr } from "../../src/pyrt/index.ts";
+import { Path, TypeError_, ValueError, int, pyEq, repr } from "../../src/pyrt/index.ts";
 import { ImportAsType } from "../../src/py_aep/enums/index.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/index.ts";
-import { COMP_CONVERSION_EXTENSIONS, get_file_format } from "../../src/py_aep/data/file_formats.ts";
+import { COMP_CONVERSION_EXTENSIONS, getFileFormat } from "../../src/py_aep/data/file_formats.ts";
 
 describe("TestImportOptions", () => {
   test("test_constructor", () => {
     const opts = new ImportOptions(new Path("footage/shot.png"));
-    expect(py_eq(opts.file, new Path("footage/shot.png"))).toBe(true);
+    expect(pyEq(opts.file, new Path("footage/shot.png"))).toBe(true);
     expect(opts.importAs).toBe(ImportAsType.FOOTAGE);
     expect(opts.sequence).toBe(false);
     expect(opts.forceAlphabetical).toBe(false);
@@ -25,7 +25,7 @@ describe("TestImportOptions", () => {
   test("test_file_setter", () => {
     const opts = new ImportOptions(new Path("a.png"));
     opts.file = new Path("b.psd");
-    expect(py_eq(opts.file, new Path("b.psd"))).toBe(true);
+    expect(pyEq(opts.file, new Path("b.psd"))).toBe(true);
   });
 
   test("test_import_as_setter", () => {
@@ -89,7 +89,7 @@ describe("TestImportOptions", () => {
   ]);
 
   test("test_can_import_as_matches_matrix", () => {
-    const all_types = [
+    const allTypes = [
       ImportAsType.FOOTAGE,
       ImportAsType.COMP,
       ImportAsType.COMP_CROPPED_LAYERS,
@@ -105,7 +105,7 @@ describe("TestImportOptions", () => {
         implemented = true;
       } else {
         try {
-          get_file_format(ext);
+          getFileFormat(ext);
           implemented = true;
         } catch (e) {
           if (!(e instanceof ValueError)) throw e;
@@ -113,13 +113,13 @@ describe("TestImportOptions", () => {
         }
       }
       const opts = new ImportOptions(new Path("asset" + ext));
-      for (const t of all_types) {
+      for (const t of allTypes) {
         // PROJECT import is unimplemented for every format, so
         // can_import_as never returns True for it (even where AE can);
         // a cropped import is implemented for SVG and PSD/PSB only.
-        const cropped_ok = COMP_CONVERSION_EXTENSIONS.has(ext) || [".psd", ".psb"].includes(ext);
+        const croppedOk = COMP_CONVERSION_EXTENSIONS.has(ext) || [".psd", ".psb"].includes(ext);
         const want = implemented
-          ? expected.has(t) && t !== ImportAsType.PROJECT && (t !== ImportAsType.COMP_CROPPED_LAYERS || cropped_ok)
+          ? expected.has(t) && t !== ImportAsType.PROJECT && (t !== ImportAsType.COMP_CROPPED_LAYERS || croppedOk)
           : false;
         // Labeled so a failing row names its extension and type, as pytest's message does.
         expect({ label: `${ext} / ${ImportAsType.name_of(t)}`, got: opts.canImportAs(t) }).toEqual({
@@ -147,29 +147,29 @@ describe("TestImportOptions", () => {
 
   test("test_numbered_filename", () => {
     const opts = new ImportOptions(new Path("frame001.png"));
-    const [is_numbered, first] = opts.isFileNameNumbered();
-    expect(is_numbered).toBe(true);
+    const [isNumbered, first] = opts.isFileNameNumbered();
+    expect(isNumbered).toBe(true);
     expect(first).toBe(1);
   });
 
   test("test_numbered_filename_large", () => {
     const opts = new ImportOptions(new Path("shot_1234.exr"));
-    const [is_numbered, first] = opts.isFileNameNumbered();
-    expect(is_numbered).toBe(true);
+    const [isNumbered, first] = opts.isFileNameNumbered();
+    expect(isNumbered).toBe(true);
     expect(first).toBe(1234);
   });
 
   test("test_not_numbered_filename", () => {
     const opts = new ImportOptions(new Path("background.png"));
-    const [is_numbered, first] = opts.isFileNameNumbered();
-    expect(is_numbered).toBe(false);
+    const [isNumbered, first] = opts.isFileNameNumbered();
+    expect(isNumbered).toBe(false);
     expect(first).toBe(0);
   });
 
   test("test_numbered_no_prefix", () => {
     const opts = new ImportOptions(new Path("0042.tiff"));
-    const [is_numbered, first] = opts.isFileNameNumbered();
-    expect(is_numbered).toBe(true);
+    const [isNumbered, first] = opts.isFileNameNumbered();
+    expect(isNumbered).toBe(true);
     expect(first).toBe(42);
   });
 

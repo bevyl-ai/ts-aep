@@ -13,11 +13,11 @@
  * re-reads its own XML happily. These tests compare against AE's own bytes.
  */
 import { describe, expect, test } from "bun:test";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, py_eq, struct } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { Path, b, bytes_, len, pyEq, struct } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parse, type Project } from "../../src/py_aep/index.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _LEN_BODY_OFFSET, _LEN_XML_OFFSET, _XML_TERMINATOR } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
@@ -39,14 +39,14 @@ const PER_FORMAT: [Path, string][] = [
 
 function _options(path: Path): [Project, XmlFormatOptions] {
   const project = parse(path).project;
-  const opts = as_instance(as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
+  const opts = asInstance(asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
   return [project, opts];
 }
 
-function _header_lengths(body: Uint8Array): [number, number] {
+function _headerLengths(body: Uint8Array): [number, number] {
   return [
-    struct.unpack_from(">I", body, _LEN_BODY_OFFSET)[0],
-    struct.unpack_from(">I", body, _LEN_XML_OFFSET)[0],
+    struct.unpackFrom(">I", body, _LEN_BODY_OFFSET)[0],
+    struct.unpackFrom(">I", body, _LEN_XML_OFFSET)[0],
   ];
 }
 
@@ -65,18 +65,18 @@ describe("TestNoOpSyncIsIdentity", () => {
   // @pytest.mark.skipif(not _ATTR_ORDER_PRESERVED, reason="py3.7 ET.tostring sorts attributes; bytes differ, semantics do not")
   // NOTE(port): bun's test.skip takes no reason; the reason is the comment above, and the gate is never taken on 3.12.
   // bun types `test.skipIf` without `.each`, so the parametrized rows are spelled out with the same names.
-  for (const [index, [sample, format_code]] of PER_FORMAT.entries()) {
+  for (const [index, [sample, formatCode]] of PER_FORMAT.entries()) {
     test.skipIf(!_ATTR_ORDER_PRESERVED)(`test_no_op_sync_is_byte_identical[${index}]`, () => {
       const [, opts] = _options(sample);
       expect(opts instanceof XmlFormatOptions).toBe(true);
-      expect(opts.formatCode).toBe(format_code);
+      expect(opts.formatCode).toBe(formatCode);
       const before = opts._body.data;
       opts._sync_xml(); // no semantic change whatsoever
-      expect(py_eq(opts._body.data, before)).toBe(true);
+      expect(pyEq(opts._body.data, before)).toBe(true);
     });
   }
 
-  test.each(PER_FORMAT)("test_no_op_sync_preserves_length_on_every_python[%#]", (sample, format_code) => {
+  test.each(PER_FORMAT)("test_no_op_sync_preserves_length_on_every_python[%#]", (sample, formatCode) => {
     // The part AE honours holds even on 3.7, where attribute reordering
     // costs byte-identity: same length, still self-consistent.
     const [, opts] = _options(sample);
@@ -85,52 +85,52 @@ describe("TestNoOpSyncIsIdentity", () => {
     opts._sync_xml();
     const body = opts._body.data;
     expect(len(body)).toBe(before);
-    expect(_header_lengths(body)[0]).toBe(len(body));
+    expect(_headerLengths(body)[0]).toBe(len(body));
     expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
   });
 
-  test.each(PER_FORMAT)("test_ae_body_is_self_consistent[%#]", (sample, format_code) => {
+  test.each(PER_FORMAT)("test_ae_body_is_self_consistent[%#]", (sample, formatCode) => {
     // The invariant the fix maintains, as AE itself writes it.
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     const body = opts._body.data;
     expect(opts._xml_header != null).toBe(true);
-    const xml_len = len(body) - len(opts._xml_header);
-    const [body_len_field, xml_len_field] = _header_lengths(body);
-    expect(body_len_field).toBe(len(body));
-    expect(xml_len_field).toBe(xml_len - 2);
+    const xmlLen = len(body) - len(opts._xml_header);
+    const [bodyLenField, xmlLenField] = _headerLengths(body);
+    expect(bodyLenField).toBe(len(body));
+    expect(xmlLenField).toBe(xmlLen - 2);
     expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
   });
 });
 
 /** A real param write must repatch the lengths, or AE truncates. */
 describe("TestWriteKeepsHeaderConsistent", () => {
-  test.each(PER_FORMAT)("test_param_write_updates_length_fields[%#]", (sample, format_code) => {
+  test.each(PER_FORMAT)("test_param_write_updates_length_fields[%#]", (sample, formatCode) => {
     // A param that exists on every XML format and changes the length.
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);
     opts.params.set("ADBEPyAepFidelityProbe", "1234567890");
     const body = opts._body.data;
     expect(opts._xml_header != null).toBe(true);
-    const xml_len = len(body) - len(opts._xml_header);
-    const [body_len_field, xml_len_field] = _header_lengths(body);
-    expect(body_len_field).toBe(len(body));
-    expect(xml_len_field).toBe(xml_len - 2);
+    const xmlLen = len(body) - len(opts._xml_header);
+    const [bodyLenField, xmlLenField] = _headerLengths(body);
+    expect(bodyLenField).toBe(len(body));
+    expect(xmlLenField).toBe(xmlLen - 2);
     expect(bytes_.endswith(body, _XML_TERMINATOR)).toBe(true);
   });
 
   test("test_growing_write_updates_length", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const [project, opts] = _options(FORMAT_DIR.div("h.264", "base.aep"));
     expect(opts instanceof XmlFormatOptions).toBe(true);
     const original = len(opts._body.data);
     opts.params.set("ADBEPyAepFidelityProbe", "x".repeat(400));
     expect(len(opts._body.data) > original).toBe(true);
-    expect(_header_lengths(opts._body.data)[0]).toBe(len(opts._body.data));
-    project.save(tmp_path.div("out.aep"));
-    const [, reparsed] = _options(tmp_path.div("out.aep"));
+    expect(_headerLengths(opts._body.data)[0]).toBe(len(opts._body.data));
+    project.save(tmpPath.div("out.aep"));
+    const [, reparsed] = _options(tmpPath.div("out.aep"));
     expect(reparsed instanceof XmlFormatOptions).toBe(true);
-    expect(_header_lengths(reparsed._body.data)[0]).toBe(len(reparsed._body.data));
+    expect(_headerLengths(reparsed._body.data)[0]).toBe(len(reparsed._body.data));
   });
 
   test("test_shrinking_write_updates_length", () => {
@@ -141,7 +141,7 @@ describe("TestWriteKeepsHeaderConsistent", () => {
     const grown = len(opts._body.data);
     opts.params.delete("ADBEPyAepFidelityProbe");
     expect(len(opts._body.data) < grown).toBe(true);
-    expect(_header_lengths(opts._body.data)[0]).toBe(len(opts._body.data));
+    expect(_headerLengths(opts._body.data)[0]).toBe(len(opts._body.data));
   });
 });
 

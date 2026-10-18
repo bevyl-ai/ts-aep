@@ -19,13 +19,13 @@ import {
   getitem,
   b,
   bytes_,
-  bytes_eq,
+  bytesEq,
   int,
   type PathLike,
 } from "../../pyrt/index.ts";
-import { CosParser, IndirectObject, IndirectReference, decode_pdf_text_string } from "../cos/index.ts";
+import { CosParser, IndirectObject, IndirectReference, decodePdfTextString } from "../cos/index.ts";
 import { SyntaxError_, type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
-import { is, py_str } from "../cos/kinds.ts";
+import { is, pyStr } from "../cos/kinds.ts";
 
 /** Raised when a `.ai`/`.pdf` file's layers cannot be enumerated. */
 export class UnsupportedAiLayersError extends ValueError {}
@@ -65,11 +65,11 @@ export const _OBJ_HEADER_WINDOW = 64;
  * byte offsets of the Python `bytes` patterns (`rb"..."`).
  */
 export function latin1(data: Uint8Array): string {
-  return bytes_.latin1_str(data);
+  return bytes_.latin1Str(data);
 }
 
 // TODO(port): Python's RecursionError (CPython limit 1000 frames) maps to V8's stack-overflow RangeError, which fires at an engine/stack-size dependent depth; PDF objects nested between the two limits parse in one runtime and are reported malformed (or not) in the other. No pyrt RecursionError exists and V8 gives no fixed depth to emulate.
-export function is_malformed(exc: unknown): boolean {
+export function isMalformed(exc: unknown): boolean {
   return (
     exc instanceof SyntaxError_ ||
     (exc instanceof RangeError && /call stack/.test(exc.message))
@@ -82,16 +82,16 @@ export function is_malformed(exc: unknown): boolean {
  * pattern led by the header's digits would be tried at every digit in the
  * file's content streams, tens of times slower on a large document.
  */
-export function _object_offsets(data: Uint8Array): Map<number, number> {
+export function _objectOffsets(data: Uint8Array): Map<number, number> {
   const offsets = new Map<number, number>();
   const text = latin1(data);
   for (const keyword of text.matchAll(_OBJ_KEYWORD_RE)) {
     const end = keyword.index;
-    const window_start = Math.max(0, end - _OBJ_HEADER_WINDOW);
+    const windowStart = Math.max(0, end - _OBJ_HEADER_WINDOW);
     // `search(data, pos, endpos)` with `\Z` at `endpos`: match within the slice.
-    const header = _OBJ_HEADER_RE.exec(text.slice(window_start, end));
+    const header = _OBJ_HEADER_RE.exec(text.slice(windowStart, end));
     if (header != null) {
-      offsets.set(int(header[1]), window_start + header.index);
+      offsets.set(int(header[1]), windowStart + header.index);
     }
   }
   return offsets;
@@ -102,14 +102,14 @@ export function _object_offsets(data: Uint8Array): Map<number, number> {
  *
  * @throws {@link UnsupportedAiLayersError} If the object is malformed or truncated.
  */
-export function _parse_object_at(data: Uint8Array, offset: number): CosNode {
+export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
   const parser = new CosParser(new BytesIO(bytes_.slice(data, offset)));
   try {
     parser.lex();
     const value = parser.parse_value();
     return value instanceof IndirectObject ? value.data : value;
   } catch (exc) {
-    if (!is_malformed(exc)) throw exc;
+    if (!isMalformed(exc)) throw exc;
     throw Object.assign(
       new UnsupportedAiLayersError(`malformed PDF object at byte ${offset}`),
       { cause: exc },
@@ -121,7 +121,7 @@ export function _parse_object_at(data: Uint8Array, offset: number): CosNode {
 export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
   if (value instanceof IndirectReference) {
     const offset = offsets.get(value.object_number) ?? null;
-    return offset == null ? null : _parse_object_at(data, offset);
+    return offset == null ? null : _parseObjectAt(data, offset);
   }
   return value;
 }
@@ -129,10 +129,10 @@ export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, 
 /** Collect the OCG object numbers a `/D` `/Order` (or `/OFF`) tree
  * references, depth first, each once.
  */
-export function _order_object_numbers(value: CosNode, out: number[]): number[] {
+export function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
   if (Array.isArray(value)) {
     for (const entry of value) {
-      _order_object_numbers(entry, out);
+      _orderObjectNumbers(entry, out);
     }
   } else if (value instanceof IndirectReference && !out.includes(value.object_number)) {
     out.push(value.object_number);
@@ -161,7 +161,7 @@ export function _order_object_numbers(value: CosNode, out: number[]): number[] {
  * @throws UnsupportedAiLayersError If the file is not a PDF-compatible document
  *     or has no Optional Content Groups (layers).
  */
-export function read_ai_layer_ocgs(
+export function readAiLayerOcgs(
   file: PathLike,
   data: Uint8Array | null = null,
 ): AiLayer[] {
@@ -179,7 +179,7 @@ export function read_ai_layer_ocgs(
       `${name}: no layers (the file has no PDF Optional Content Groups).`,
     );
   }
-  const offsets = _object_offsets(data);
+  const offsets = _objectOffsets(data);
   const layers: AiLayer[] = [];
   // The COS lexer reports malformed or truncated objects as SyntaxError (and
   // a pathologically nested one as RecursionError); either means the layers
@@ -189,20 +189,20 @@ export function read_ai_layer_ocgs(
       new BytesIO(bytes_.slice(data, marker + b("/OCProperties").length)),
     );
     parser.lex();
-    const oc_properties = _resolve(parser.parse_value(), data, offsets);
-    if (!(oc_properties instanceof Map)) {
+    const ocProperties = _resolve(parser.parse_value(), data, offsets);
+    if (!(ocProperties instanceof Map)) {
       throw new UnsupportedAiLayersError(`${name}: unreadable /OCProperties.`);
     }
-    const config_ref = _resolve(oc_properties.get("D") ?? null, data, offsets);
-    const config: CosDict = config_ref instanceof Map ? config_ref : new Map();
-    const order = _order_object_numbers(
+    const configRef = _resolve(ocProperties.get("D") ?? null, data, offsets);
+    const config: CosDict = configRef instanceof Map ? configRef : new Map();
+    const order = _orderObjectNumbers(
       _resolve(config.get("Order") ?? null, data, offsets),
       [],
     );
     const hidden = new Set(
-      _order_object_numbers(_resolve(config.get("OFF") ?? null, data, offsets), []),
+      _orderObjectNumbers(_resolve(config.get("OFF") ?? null, data, offsets), []),
     );
-    const ocgs = _resolve(oc_properties.get("OCGs") ?? null, data, offsets);
+    const ocgs = _resolve(ocProperties.get("OCGs") ?? null, data, offsets);
     const listed = new Map<number, IndirectReference>();
     for (const ref of Array.isArray(ocgs) ? ocgs : []) {
       if (ref instanceof IndirectReference) listed.set(ref.object_number, ref);
@@ -216,19 +216,19 @@ export function read_ai_layer_ocgs(
     for (const ref of refs) {
       const ocg = _resolve(ref, data, offsets);
       if (!(ocg instanceof Map)) continue;
-      const layer_name = ocg.get("Name");
-      if (is_str_or_bytes(layer_name)) {
+      const layerName = ocg.get("Name");
+      if (isStrOrBytes(layerName)) {
         layers.push(
           new AiLayer(
             ref.object_number,
-            decode_pdf_text_string(layer_name),
+            decodePdfTextString(layerName),
             !hidden.has(ref.object_number),
           ),
         );
       }
     }
   } catch (exc) {
-    if (!is_malformed(exc)) throw exc;
+    if (!isMalformed(exc)) throw exc;
     throw Object.assign(
       new UnsupportedAiLayersError(`${name}: malformed PDF objects.`),
       { cause: exc },
@@ -243,8 +243,8 @@ export function read_ai_layer_ocgs(
 /** `isinstance(x, (str, bytes))`. A `CosString` is a `str` subclass in Python,
  * so it is a `String` object here, not a primitive.
  */
-export function is_str_or_bytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
-  return is(py_str, x) || x instanceof Uint8Array;
+export function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
+  return is(pyStr, x) || x instanceof Uint8Array;
 }
 
 /**
@@ -258,18 +258,18 @@ export function is_str_or_bytes(x: CosNode | undefined): x is string | CosString
  * @throws UnsupportedAiLayersError If the file is not a PDF-compatible
  *     document or has no Optional Content Groups (layers).
  */
-export function read_ai_layers(
+export function readAiLayers(
   file: PathLike,
   data: Uint8Array | null = null,
 ): string[] {
-  return read_ai_layer_ocgs(file, data).map((layer) => layer.name);
+  return readAiLayerOcgs(file, data).map((layer) => layer.name);
 }
 
 export const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
 
-export function inflate_or_null(body: string): Uint8Array | null {
+export function inflateOrNull(body: string): Uint8Array | null {
   try {
-    return zlib.decompress(bytes_.latin1_bytes(body));
+    return zlib.decompress(bytes_.latin1Bytes(body));
   } catch (e) {
     if (e instanceof zlib.error) return null;
     throw e;
@@ -282,15 +282,15 @@ export function inflate_or_null(body: string): Uint8Array | null {
  * profile (`acsp` signature at offset 36). `null` when the file is not
  * PDF-compatible or has no embedded profile.
  */
-export function _find_ai_icc(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
+export function _findAiIcc(file: PathLike, data: Uint8Array | null = null): Uint8Array | null {
   if (data == null) data = new Path(file).read_bytes();
   if (!bytes_.startswith(data, b("%PDF"))) return null;
   for (const match of latin1(data).matchAll(_STREAM_RE)) {
     const body = match[1];
     if (body.length > 8_000_000) continue;
-    const profile = inflate_or_null(body);
+    const profile = inflateOrNull(body);
     if (profile == null) continue;
-    if (profile.length >= 132 && bytes_eq(bytes_.slice(profile, 36, 40), b("acsp"))) {
+    if (profile.length >= 132 && bytesEq(bytes_.slice(profile, 36, 40), b("acsp"))) {
       return profile;
     }
   }

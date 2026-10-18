@@ -12,13 +12,13 @@ import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { project_bytes } from "../helpers.ts";
-import { b, bytes_, bytes_eq, py_eq, sorted, TypeError_, ValueError } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { projectBytes } from "../helpers.ts";
+import { b, bytes_, bytesEq, pyEq, sorted, TypeError_, ValueError } from "../../src/pyrt/index.ts";
+import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 // NOTE(port): `raises()` takes a single class; this local helper implements the
 // Python `pytest.raises((A, B))` tuple form (isinstance any-match, rethrow otherwise).
-function _raises_any(classes: Array<abstract new (...a: never[]) => Error>, fn: () => unknown): Error {
+function _raisesAny(classes: Array<abstract new (...a: never[]) => Error>, fn: () => unknown): Error {
   try {
     fn();
   } catch (e) {
@@ -64,9 +64,9 @@ describe("TestVersionValidation", () => {
       const app = py_aep.new(version);
       expect(app.version).toBe(version);
       const head = app._head;
-      expect(py_eq([head.file_format_version, head._format_subversion], [97, 2])).toBe(true);
+      expect(pyEq([head.file_format_version, head._format_subversion], [97, 2])).toBe(true);
       app.version = "26.0x67";
-      expect(bytes_eq(project_bytes(app.project), project_bytes(py_aep.new().project))).toBe(true);
+      expect(bytesEq(projectBytes(app.project), projectBytes(py_aep.new().project))).toBe(true);
     },
   );
 
@@ -77,7 +77,7 @@ describe("TestVersionValidation", () => {
   });
 
   test.each([26, null, "26.0", " 26.0x67"])("test_malformed_rejected[%#]", (version) => {
-    _raises_any([TypeError_, ValueError], () =>
+    _raisesAny([TypeError_, ValueError], () =>
       // @ts-expect-error deliberately passes non-string versions to check runtime validation
       py_aep.new(version),
     );
@@ -85,11 +85,11 @@ describe("TestVersionValidation", () => {
 
   test.each(["21.0x1", "26.16x3", "300.0x1"])("test_setter_rejects_without_mutation[%#]", (version: string) => {
     const app = py_aep.new();
-    const before = project_bytes(app.project);
+    const before = projectBytes(app.project);
     raises(ValueError, () => {
       app.version = version;
     });
-    expect(bytes_eq(project_bytes(app.project), before)).toBe(true);
+    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
     expect(app.version).toBe("26.0x67");
   });
 
@@ -118,16 +118,16 @@ describe("TestVersionValidation", () => {
     ["18.0x1", "26.0x67"],
   ])("test_relabel_across_a_layout_rejected[%#]", (source: string, target: string) => {
     const app = py_aep.new(source);
-    const before = project_bytes(app.project);
+    const before = projectBytes(app.project);
     raises(ValueError, () => {
       app.version = target;
     });
-    expect(bytes_eq(project_bytes(app.project), before)).toBe(true);
+    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
   });
 
   test.each([256, -1, "67"])("test_build_number_range[%#]", (build) => {
     const app = py_aep.new();
-    _raises_any([TypeError_, ValueError], () => {
+    _raisesAny([TypeError_, ValueError], () => {
       // @ts-expect-error deliberately assigns a string build number to check runtime validation
       app.buildNumber = build;
     });
@@ -137,18 +137,18 @@ describe("TestVersionValidation", () => {
 
 describe("TestWorkingSpaceNone", () => {
   test("test_none_round_trips", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // AE 2026 accepts workingSpace = "None": `PwCs` keeps `{}` and `cpid`
     // is all 0xFF, as in a new project.
     const app = py_aep.new();
-    const before = project_bytes(app.project);
+    const before = projectBytes(app.project);
     app.project.workingSpace = app.project.workingSpace;
     expect(app.project.workingSpace).toBe("None");
-    expect(bytes_eq(project_bytes(app.project), before)).toBe(true);
+    expect(bytesEq(projectBytes(app.project), before)).toBe(true);
   });
 
   test("test_none_after_a_profile", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.new();
     const cpid = app.project._cpid.data;
     const utf8 = app.project._ws_utf8;
@@ -159,11 +159,11 @@ describe("TestWorkingSpaceNone", () => {
     app.project._cpid.data = bytes_.repeat(b("\x01"), 16);
     app.project.workingSpace = "None";
     expect(app.project.workingSpace).toBe("None");
-    expect(bytes_eq(app.project._cpid.data, cpid)).toBe(true);
-    expect(bytes_eq(cpid, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(bytesEq(app.project._cpid.data, cpid)).toBe(true);
+    expect(bytesEq(cpid, bytes_.repeat(b("\xff"), 16))).toBe(true);
     expect(app.project._ws_utf8 != null && String(app.project._ws_utf8.value) === "{}").toBe(true);
     expect(utf8 == null).toBe(true);
-    const path = tmp_path.div("ws.aep");
+    const path = tmpPath.div("ws.aep");
     app.project.save(path);
     expect(parse(path).project.workingSpace).toBe("None");
   });
@@ -171,12 +171,12 @@ describe("TestWorkingSpaceNone", () => {
 
 describe("TestSaveTempFile", () => {
   test("test_unrelated_tmp_file_survives", () => {
-    const tmp_path = make_tmp_path();
-    const keep = tmp_path.div("out.aep.tmp");
+    const tmpPath = makeTmpPath();
+    const keep = tmpPath.div("out.aep.tmp");
     keep.write_bytes(b("user data"));
-    py_aep.new().project.save(tmp_path.div("out.aep"));
-    expect(bytes_eq(keep.read_bytes(), b("user data"))).toBe(true);
-    expect(parse(tmp_path.div("out.aep")).version).toBe("26.0x67");
-    expect(py_eq(sorted(tmp_path.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
+    py_aep.new().project.save(tmpPath.div("out.aep"));
+    expect(bytesEq(keep.read_bytes(), b("user data"))).toBe(true);
+    expect(parse(tmpPath.div("out.aep")).version).toBe("26.0x67");
+    expect(pyEq(sorted(tmpPath.iterdir().map((p) => p.name)), ["out.aep", "out.aep.tmp"])).toBe(true);
   });
 });

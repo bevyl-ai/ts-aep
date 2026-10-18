@@ -18,13 +18,13 @@ function num(x: number | bigint): any {
   return x;
 }
 
-function public_names(obj: any): string[] {
+function publicNames(obj: any): string[] {
   const names = new Set<string>();
   // A container's `length` / `size` getter is the JS spelling of Python's `len()`, not an attribute.
-  const len_getters = typeof obj[Symbol.iterator] === "function" ? ["length", "size"] : [];
+  const lenGetters = typeof obj[Symbol.iterator] === "function" ? ["length", "size"] : [];
   for (let p = Object.getPrototypeOf(obj); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(p))) {
-      if (name.startsWith("_") || name === "constructor" || len_getters.includes(name)) continue;
+      if (name.startsWith("_") || name === "constructor" || lenGetters.includes(name)) continue;
       if (d.get) names.add(name);
     }
   }
@@ -36,11 +36,11 @@ function public_names(obj: any): string[] {
       if ("value" in d && typeof d.value !== "function") names.add(k);
     }
   }
-  return [...names].sort(py_order);
+  return [...names].sort(pyOrder);
 }
 
 /** Python sorts str by code point; JS default sort by UTF-16 unit (same for these ASCII names). */
-function py_order(a: string, b: string): number {
+function pyOrder(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
@@ -49,20 +49,20 @@ const PY_EXCEPTIONS: Record<string, string> = { is3d: "is_3d", inE1d: "in_e_1d",
 const TS_EXCEPTIONS = Object.fromEntries(Object.entries(PY_EXCEPTIONS).map(([t, p]) => [p, t]));
 
 /** py-aep's name for a TS member (`frameRate` -> `frame_rate`). */
-export function py_name(ts: string): string {
+export function pyName(ts: string): string {
   return PY_EXCEPTIONS[ts] ?? ts.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
 }
 
 /** The TS member for a py-aep name (`frame_rate` -> `frameRate`). */
-export function ts_name(py: string): string {
+export function tsName(py: string): string {
   return TS_EXCEPTIONS[py] ?? py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
 }
 
-function is_container(obj: any): boolean {
+function isContainer(obj: any): boolean {
   return typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number");
 }
 
-export function err_name(e: any): string {
+export function errName(e: any): string {
   const n: string = e?.constructor?.name ?? "Error";
   return n.endsWith("_") ? n.slice(0, -1) : n;
 }
@@ -120,23 +120,23 @@ export class Dumper {
     }
     this.emit(path, { $obj: cls });
     if (depth >= MAX_DEPTH) return;
-    for (const name of public_names(value)) {
+    for (const name of publicNames(value)) {
       let v: any;
       try {
         v = value[name];
       } catch (e) {
-        this.emit(`${path}.${py_name(name)}`, { $err: err_name(e) });
+        this.emit(`${path}.${pyName(name)}`, { $err: errName(e) });
         continue;
       }
       if (typeof v === "function" && !/^[A-Z]/.test(v.name ?? "")) continue;
-      this.walk(`${path}.${py_name(name)}`, v, depth + 1);
+      this.walk(`${path}.${pyName(name)}`, v, depth + 1);
     }
-    if (is_container(value)) {
+    if (isContainer(value)) {
       let items: any[];
       try {
         items = [...value];
       } catch (e) {
-        this.emit(`${path}[*]`, { $err: err_name(e) });
+        this.emit(`${path}[*]`, { $err: errName(e) });
         return;
       }
       this.emit(`${path}[*]`, { $len: items.length });
@@ -146,17 +146,17 @@ export class Dumper {
 }
 
 if (import.meta.main) {
-  const [out_dir, ...samples] = process.argv.slice(2);
-  fs.mkdirSync(out_dir, { recursive: true });
+  const [outDir, ...samples] = process.argv.slice(2);
+  fs.mkdirSync(outDir, { recursive: true });
   for (const sample of samples) {
-    const fd = fs.openSync(`${out_dir}/${sample.replaceAll("/", "__")}.jsonl`, "w");
+    const fd = fs.openSync(`${outDir}/${sample.replaceAll("/", "__")}.jsonl`, "w");
     const d = new Dumper((line) => fs.writeSync(fd, line));
     try {
       let app: any;
       try {
         app = py_aep.parse(sample);
       } catch (e) {
-        d.emit("$parse", { $err: err_name(e) });
+        d.emit("$parse", { $err: errName(e) });
         continue;
       }
       d.walk("app", app);

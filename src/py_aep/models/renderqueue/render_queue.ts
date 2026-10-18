@@ -1,6 +1,6 @@
 import { ListChunk, Chunk } from "../../binary/chunk.ts";
-import { LHD3_BLOCK_SINGLE, set_lhd3_count, type LdatChunk, type Lhd3Chunk } from "../../binary/ldat_chunks.ts";
-import { build_rq_settings_list } from "../../binary/mutations.ts";
+import { LHD3_BLOCK_SINGLE, setLhd3Count, type LdatChunk, type Lhd3Chunk } from "../../binary/ldat_chunks.ts";
+import { buildRqSettingsList } from "../../binary/mutations.ts";
 import { RhedChunk } from "../../binary/project_chunks.ts";
 import { ArsiChunk, RoutChunk } from "../../binary/render_chunks.ts";
 import { TypeError_ } from "../../../pyrt/index.ts";
@@ -18,11 +18,11 @@ import { RenderQueueItem } from "./render_queue_item.ts";
  * subtree so the populated queue is serialized. A no-op for a normal AE file
  * whose `LRdr` is already fully present and non-synthetic.
  */
-export function _ensure_materialized(chunk: Chunk): void {
+export function _ensureMaterialized(chunk: Chunk): void {
   chunk.synthetic = false;
   if (chunk instanceof ListChunk) {
     for (const child of chunk.chunks) {
-      _ensure_materialized(child);
+      _ensureMaterialized(child);
     }
   }
 }
@@ -89,7 +89,7 @@ export class RenderQueue {
   static _new(parent: Project): RenderQueue {
     const rhed = new RhedChunk({});
     const rout = new RoutChunk({});
-    const [settings, rs_lhd3, rs_ldat] = build_rq_settings_list();
+    const [settings, rsLhd3, rsLdat] = buildRqSettingsList();
     const litm = new ListChunk({ list_type: "LItm" });
     const arsi = new ArsiChunk({});
     const lrdr = new ListChunk({
@@ -104,8 +104,8 @@ export class RenderQueue {
     });
     return new this({
       _lrdr: lrdr,
-      _rs_lhd3: rs_lhd3,
-      _rs_ldat: rs_ldat,
+      _rs_lhd3: rsLhd3,
+      _rs_ldat: rsLdat,
       _rout: rout,
       _litm: litm,
       _arsi: arsi,
@@ -164,14 +164,14 @@ export class RenderQueue {
     // Materialize any synthesized scaffold the parser left synthetic (an
     // empty-queue ldat, or - for a queue-less file - the whole LRdr tree),
     // so the populated queue is actually written. No-op for a normal file.
-    _ensure_materialized(this._lrdr);
+    _ensureMaterialized(this._lrdr);
 
     // Append render settings to LRdr's ldat and keep the lhd3 capacity
     // counters in sync with the new item count - AE keeps _count_b /
     // _counter_a / _counter_b equal to `count` for this list and rejects
     // the file ("Invalid read length") when they go stale.
     this._rs_ldat.items.push(rqi._ldat);
-    set_lhd3_count(this._rs_lhd3, this._rs_lhd3.count + 1, LHD3_BLOCK_SINGLE);
+    setLhd3Count(this._rs_lhd3, this._rs_lhd3.count + 1, LHD3_BLOCK_SINGLE);
 
     // Append Rout items (5 per RQ item) and update header
     for (const ri of rqi._rout_items) {

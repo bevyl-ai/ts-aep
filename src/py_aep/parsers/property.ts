@@ -5,19 +5,19 @@ import type { Chunk } from "../binary/chunk.ts";
 import type { MkifChunk } from "../binary/misc_chunks.ts";
 import type { TdmnChunk, TdsbChunk } from "../binary/property_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { ChunkNotFoundError, filter_by_list_type, filter_by_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { ChunkNotFoundError, filterByListType, filterByType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { VF_AXIS_PREFIX } from "../data/match_names.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { MaskPropertyGroup } from "../models/properties/mask_property_group.ts";
 import { PropertyGroup } from "../models/properties/property_group.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
-import { parse_effect } from "./effect.ts";
+import { parseEffect } from "./effect.ts";
 import type { ParamDef } from "./effect.ts";
-import { parse_markers } from "./marker.ts";
-import { parse_property } from "./property_value.ts";
-import { parse_gradient, parse_orientation, parse_shape, parse_text_document } from "./specialized_properties.ts";
-import { get_chunks_by_match_name, get_match_name_runs } from "./utils.ts";
+import { parseMarkers } from "./marker.ts";
+import { parseProperty } from "./property_value.ts";
+import { parseGradient, parseOrientation, parseShape, parseTextDocument } from "./specialized_properties.ts";
+import { getChunksByMatchName, getMatchNameRuns } from "./utils.ts";
 import { warn, zip } from "../../pyrt/index.ts";
 import { Property, _EssentialOverrideProperty } from "../models/properties/property.ts";
 
@@ -63,19 +63,19 @@ export class _ParseContext {
   readonly layer: Layer | null;
 
   constructor(
-    match_name: string,
+    matchName: string,
     chunks: Chunk[],
-    first_chunk: ListChunk,
-    child_depth: number,
-    effect_param_defs: Map<string, Map<string, ParamDef>>,
+    firstChunk: ListChunk,
+    childDepth: number,
+    effectParamDefs: Map<string, Map<string, ParamDef>>,
     composition: CompItem,
     layer: Layer | null = null,
   ) {
-    this.match_name = match_name;
+    this.match_name = matchName;
     this.chunks = chunks;
-    this.first_chunk = first_chunk;
-    this.child_depth = child_depth;
-    this.effect_param_defs = effect_param_defs;
+    this.first_chunk = firstChunk;
+    this.child_depth = childDepth;
+    this.effect_param_defs = effectParamDefs;
     this.composition = composition;
     this.layer = layer;
   }
@@ -96,7 +96,7 @@ export class _ParseContext {
 
   /** The group's first match-name chunk. */
   get tdmn(): TdmnChunk {
-    return find_by_type(this.chunks, "tdmn");
+    return findByType(this.chunks, "tdmn");
   }
 }
 
@@ -104,13 +104,13 @@ export const _PROPERTY_PARSERS: Map<string, (ctx: _ParseContext) => (Property | 
   new Map();
 
 /** Register a property parser for the given LIST subtype. */
-export function _property_parser(
-  list_type: string,
+export function _propertyParser(
+  listType: string,
 ): (
   func: (ctx: _ParseContext) => (Property | PropertyGroup)[],
 ) => (ctx: _ParseContext) => (Property | PropertyGroup)[] {
   return function decorator(func) {
-    _PROPERTY_PARSERS.set(list_type, func);
+    _PROPERTY_PARSERS.set(listType, func);
     return func;
   };
 }
@@ -121,45 +121,45 @@ export function _property_parser(
  * Iterates each match-name run, finds the first LIST chunk, and
  * dispatches to the appropriate parser based on its list type.
  *
- * @param match_name_runs - Sub-property chunks grouped into ordered match-name runs (from
+ * @param matchNameRuns - Sub-property chunks grouped into ordered match-name runs (from
  *   `get_match_name_runs`).
- * @param child_depth - The property depth for parsed child properties.
- * @param effect_param_defs - Project-level effect parameter definitions.
+ * @param childDepth - The property depth for parsed child properties.
+ * @param effectParamDefs - Project-level effect parameter definitions.
  * @param composition - The parent composition.
  * @param layer - The owning layer, for mask paths and effect point denormalization.
  * @returns Ordered list of parsed properties and property groups.
  */
-export function parse_properties(
-  match_name_runs: [string, Chunk[]][],
-  child_depth: number,
-  effect_param_defs: Map<string, Map<string, ParamDef>>,
+export function parseProperties(
+  matchNameRuns: [string, Chunk[]][],
+  childDepth: number,
+  effectParamDefs: Map<string, Map<string, ParamDef>>,
   composition: CompItem,
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
   const properties: (Property | PropertyGroup)[] = [];
-  for (const [match_name, sub_prop_chunks] of match_name_runs) {
+  for (const [matchName, subPropChunks] of matchNameRuns) {
     // Find the first LIST chunk; non-LIST chunks (e.g. mkif for masks)
     // are auxiliary data that we skip when determining the property type.
-    let first_chunk: ListChunk | null = null;
-    for (const c of sub_prop_chunks) {
+    let firstChunk: ListChunk | null = null;
+    for (const c of subPropChunks) {
       if (c instanceof ListChunk) {
-        first_chunk = c;
+        firstChunk = c;
         break;
       }
     }
-    if (first_chunk == null) continue;
+    if (firstChunk == null) continue;
 
-    const list_type = first_chunk.list_type;
-    const handler = _PROPERTY_PARSERS.get(list_type);
+    const listType = firstChunk.list_type;
+    const handler = _PROPERTY_PARSERS.get(listType);
     if (handler != null) {
       properties.push(
         ...handler(
           new _ParseContext(
-            match_name,
-            sub_prop_chunks,
-            first_chunk,
-            child_depth,
-            effect_param_defs,
+            matchName,
+            subPropChunks,
+            firstChunk,
+            childDepth,
+            effectParamDefs,
             composition,
             layer,
           ),
@@ -167,7 +167,7 @@ export function parse_properties(
       );
     } else {
       logger.warning(
-        `Skipping unsupported property list type '${list_type}' (match name '${match_name}')`,
+        `Skipping unsupported property list type '${listType}' (match name '${matchName}')`,
       );
     }
   }
@@ -175,13 +175,13 @@ export function parse_properties(
   return properties;
 }
 
-export function _dispatch_sspc(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchSspc(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse effect chunks - iterates all sspc LISTs for the match name. */
-  const tdmns = filter_by_type(ctx.chunks, "tdmn");
-  const sspcs = filter_by_list_type(ctx.chunks, "sspc");
+  const tdmns = filterByType(ctx.chunks, "tdmn");
+  const sspcs = filterByListType(ctx.chunks, "sspc");
   const results: (Property | PropertyGroup)[] = [];
   for (const [tdmn, sspc] of zip(tdmns, sspcs)) {
-    const effect = parse_effect(
+    const effect = parseEffect(
       sspc,
       ctx.match_name,
       ctx.child_depth,
@@ -194,19 +194,19 @@ export function _dispatch_sspc(ctx: _ParseContext): (Property | PropertyGroup)[]
   }
   return results;
 }
-_property_parser("sspc")(_dispatch_sspc);
+_propertyParser("sspc")(_dispatchSspc);
 
-export function _dispatch_tdgp(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchTdgp(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse property group chunks - handles masks and indexed groups. */
-  const tdmns = filter_by_type(ctx.chunks, "tdmn");
+  const tdmns = filterByType(ctx.chunks, "tdmn");
   if (ctx.match_name === "ADBE Mask Atom") {
-    const tdgps = [...filter_by_list_type(ctx.chunks, "tdgp")];
-    const mkifs = [...filter_by_type(ctx.chunks, "mkif")];
+    const tdgps = [...filterByListType(ctx.chunks, "tdgp")];
+    const mkifs = [...filterByType(ctx.chunks, "mkif")];
     const masks: (Property | PropertyGroup)[] = [];
-    for (const [i, [tdmn, tdgp_c, mkif_c]] of zip(tdmns, tdgps, mkifs).entries()) {
-      const mask = _parse_mask_atom(
-        tdgp_c,
-        mkif_c,
+    for (const [i, [tdmn, tdgpC, mkifC]] of zip(tdmns, tdgps, mkifs).entries()) {
+      const mask = _parseMaskAtom(
+        tdgpC,
+        mkifC,
         ctx.child_depth,
         ctx.effect_param_defs,
         ctx.composition,
@@ -218,11 +218,11 @@ export function _dispatch_tdgp(ctx: _ParseContext): (Property | PropertyGroup)[]
     }
     return masks;
   }
-  const tdgps = [...filter_by_list_type(ctx.chunks, "tdgp")];
+  const tdgps = [...filterByListType(ctx.chunks, "tdgp")];
   const results: (Property | PropertyGroup)[] = [];
-  for (const [tdmn, tdgp_c] of zip(tdmns, tdgps)) {
-    const group = parse_property_group(
-      tdgp_c,
+  for (const [tdmn, tdgpC] of zip(tdmns, tdgps)) {
+    const group = parsePropertyGroup(
+      tdgpC,
       ctx.match_name,
       ctx.child_depth,
       ctx.effect_param_defs,
@@ -234,11 +234,11 @@ export function _dispatch_tdgp(ctx: _ParseContext): (Property | PropertyGroup)[]
   }
   return results;
 }
-_property_parser("tdgp")(_dispatch_tdgp);
+_propertyParser("tdgp")(_dispatchTdgp);
 
-export function _dispatch_tdbs(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchTdbs(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse a leaf property from a tdbs chunk. */
-  const prop = parse_property(
+  const prop = parseProperty(
     ctx.first_chunk,
     ctx.match_name,
     ctx.composition,
@@ -250,10 +250,10 @@ export function _dispatch_tdbs(ctx: _ParseContext): (Property | PropertyGroup)[]
   // `can_set_alternate_source` / `alternate_source`. Gated on the match name
   // so the scans do not run for every leaf on the hot parse path.
   if (ctx.match_name === "ADBE Layer Source Alternate") {
-    const blsi = filter_by_type(ctx.chunks, "blsi");
+    const blsi = filterByType(ctx.chunks, "blsi");
     if (blsi?.length > 0) {
       prop._blsi = blsi[0];
-      const blsv = filter_by_type(ctx.chunks, "blsv");
+      const blsv = filterByType(ctx.chunks, "blsv");
       if (blsv?.length > 0) {
         prop._blsv = blsv[0];
       }
@@ -262,7 +262,7 @@ export function _dispatch_tdbs(ctx: _ParseContext): (Property | PropertyGroup)[]
   // AE 26+ writes a vfdn sibling (the axis display name from the font)
   // after an active variable-font axis slot's tdbs.
   if (ctx.match_name.startsWith(VF_AXIS_PREFIX)) {
-    const vfdn = filter_by_type(ctx.chunks, "vfdn");
+    const vfdn = filterByType(ctx.chunks, "vfdn");
     if (vfdn?.length > 0) {
       prop._vfdn = vfdn[0];
     }
@@ -271,18 +271,18 @@ export function _dispatch_tdbs(ctx: _ParseContext): (Property | PropertyGroup)[]
   // LIST:aRbs after the tdbs (whose cdat holds nothing of them): one per
   // keyframe when the curves are keyed.
   if (ctx.match_name === "ADBE CurvesCustom-0001") {
-    const arbs = filter_by_list_type(ctx.chunks, "aRbs");
+    const arbs = filterByListType(ctx.chunks, "aRbs");
     if (arbs?.length > 0) {
       prop._arbs = arbs[0];
     }
   }
   return [prop];
 }
-_property_parser("tdbs")(_dispatch_tdbs);
+_propertyParser("tdbs")(_dispatchTdbs);
 
-export function _dispatch_otst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchOtst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse an orientation property from an otst chunk. */
-  const prop = parse_orientation(
+  const prop = parseOrientation(
     ctx.first_chunk,
     ctx.match_name,
     ctx.child_depth,
@@ -291,11 +291,11 @@ export function _dispatch_otst(ctx: _ParseContext): (Property | PropertyGroup)[]
   );
   return [prop];
 }
-_property_parser("otst")(_dispatch_otst);
+_propertyParser("otst")(_dispatchOtst);
 
-export function _dispatch_btds(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchBtds(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse a text document property from a btds chunk. */
-  const prop = parse_text_document(
+  const prop = parseTextDocument(
     ctx.first_chunk,
     ctx.match_name,
     ctx.child_depth,
@@ -304,11 +304,11 @@ export function _dispatch_btds(ctx: _ParseContext): (Property | PropertyGroup)[]
   );
   return [prop];
 }
-_property_parser("btds")(_dispatch_btds);
+_propertyParser("btds")(_dispatchBtds);
 
-export function _dispatch_oms(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchOms(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse a shape/mask-path property from an om-s chunk. */
-  const prop = parse_shape(
+  const prop = parseShape(
     ctx.first_chunk,
     ctx.match_name,
     ctx.child_depth,
@@ -318,11 +318,11 @@ export function _dispatch_oms(ctx: _ParseContext): (Property | PropertyGroup)[] 
   );
   return [prop];
 }
-_property_parser("om-s")(_dispatch_oms);
+_propertyParser("om-s")(_dispatchOms);
 
-export function _dispatch_gcst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchGcst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse a gradient color property from a GCst chunk. */
-  const prop = parse_gradient(
+  const prop = parseGradient(
     ctx.first_chunk,
     ctx.match_name,
     ctx.child_depth,
@@ -331,16 +331,16 @@ export function _dispatch_gcst(ctx: _ParseContext): (Property | PropertyGroup)[]
   );
   return [prop];
 }
-_property_parser("GCst")(_dispatch_gcst);
+_propertyParser("GCst")(_dispatchGcst);
 
-export function _dispatch_mrst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchMrst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /** Parse markers from a mrst chunk. */
-  const prop = parse_markers(ctx.first_chunk, ctx.composition, ctx.child_depth, ctx.tdmn);
+  const prop = parseMarkers(ctx.first_chunk, ctx.composition, ctx.child_depth, ctx.tdmn);
   return [prop];
 }
-_property_parser("mrst")(_dispatch_mrst);
+_propertyParser("mrst")(_dispatchMrst);
 
-export function _dispatch_ovg2(ctx: _ParseContext): (Property | PropertyGroup)[] {
+export function _dispatchOvg2(ctx: _ParseContext): (Property | PropertyGroup)[] {
   /**
    * Parse the Essential Properties override group ("ADBE Layer Overrides").
    *
@@ -355,9 +355,9 @@ export function _dispatch_ovg2(ctx: _ParseContext): (Property | PropertyGroup)[]
    * is_modified) reflects the Essential Graphics source property rather than the
    * override leaf's own partial-copy chunks - the leaf's `value` stays its own.
    */
-  const tdgps = [...filter_by_list_type(ctx.chunks, "tdgp")];
+  const tdgps = [...filterByListType(ctx.chunks, "tdgp")];
   if (tdgps.length === 0) return [];
-  const group = parse_property_group(
+  const group = parsePropertyGroup(
     tdgps[0],
     ctx.match_name,
     ctx.child_depth,
@@ -366,20 +366,20 @@ export function _dispatch_ovg2(ctx: _ParseContext): (Property | PropertyGroup)[]
     ctx.tdmn,
     ctx.layer,
   );
-  _reclass_override_leaves(group);
+  _reclassOverrideLeaves(group);
   return [group];
 }
-_property_parser("OvG2")(_dispatch_ovg2);
+_propertyParser("OvG2")(_dispatchOvg2);
 
 /**
  * Re-class the leaf `Property` children of an override group to
  * `_EssentialOverrideProperty`. Group nodes recurse; any `Property` subclass
  * (e.g. a specialized property) is left as-is - only plain leaves convert.
  */
-export function _reclass_override_leaves(group: PropertyGroup): void {
+export function _reclassOverrideLeaves(group: PropertyGroup): void {
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
-      _reclass_override_leaves(child);
+      _reclassOverrideLeaves(child);
     } else if (child.constructor === Property) {
       // NOTE(port): setPrototypeOf is the JS twin of `child.__class__ = ...`; same semantics, only a V8 perf cost.
       Object.setPrototypeOf(child, _EssentialOverrideProperty.prototype);
@@ -403,48 +403,48 @@ export function _reclass_override_leaves(group: PropertyGroup): void {
  * @param composition - The parent composition.
  * @param tdmn - The TDMN chunk for this property group.
  */
-export const parse_property_group = _suppress_materialization().decorate(function parse_property_group(
-  tdgp_chunk: ListChunk,
-  group_match_name: string,
-  property_depth: number,
-  effect_param_defs: Map<string, Map<string, ParamDef>>,
+export const parsePropertyGroup = _suppressMaterialization().decorate(function parse_property_group(
+  tdgpChunk: ListChunk,
+  groupMatchName: string,
+  propertyDepth: number,
+  effectParamDefs: Map<string, Map<string, ParamDef>>,
   composition: CompItem,
   tdmn: TdmnChunk,
   layer: Layer | null = null,
 ): PropertyGroup {
-  const properties = parse_properties(
-    get_match_name_runs(tdgp_chunk),
-    property_depth + 1,
-    effect_param_defs,
+  const properties = parseProperties(
+    getMatchNameRuns(tdgpChunk),
+    propertyDepth + 1,
+    effectParamDefs,
     composition,
     layer,
   );
 
   // Try to read the group-level tdsb chunk.
   // Leaf properties always have a tdsb; groups may or may not.
-  const group_tdsb = find_by_type_or_null(tdgp_chunk.chunks, "tdsb");
+  const groupTdsb = findByTypeOrNull(tdgpChunk.chunks, "tdsb");
 
   // Resolve _name_utf8 from the tdgp's tdsn child
-  let name_utf8: Utf8Chunk | null;
+  let nameUtf8: Utf8Chunk | null;
   try {
-    const tdsn = find_by_type(tdgp_chunk.chunks, "tdsn");
-    name_utf8 = tdsn.utf8;
+    const tdsn = findByType(tdgpChunk.chunks, "tdsn");
+    nameUtf8 = tdsn.utf8;
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
-    name_utf8 = null;
+    nameUtf8 = null;
   }
 
-  const prop_group = new PropertyGroup({
+  const propGroup = new PropertyGroup({
     _tdmn: tdmn,
-    _tdgp: tdgp_chunk,
-    _tdsb: group_tdsb,
-    _name_utf8: name_utf8,
-    match_name: group_match_name,
-    property_depth,
+    _tdgp: tdgpChunk,
+    _tdsb: groupTdsb,
+    _name_utf8: nameUtf8,
+    match_name: groupMatchName,
+    property_depth: propertyDepth,
     properties,
   });
 
-  return prop_group;
+  return propGroup;
 });
 
 /**
@@ -462,50 +462,50 @@ export const parse_property_group = _suppress_materialization().decorate(functio
  * @param composition - The parent composition.
  * @param tdmn - The TDMN chunk for this mask atom.
  */
-export const _parse_mask_atom = _suppress_materialization().decorate(function _parse_mask_atom(
-  tdgp_chunk: ListChunk,
-  mkif_chunk: MkifChunk,
-  property_depth: number,
-  effect_param_defs: Map<string, Map<string, ParamDef>>,
+export const _parseMaskAtom = _suppressMaterialization().decorate(function _parse_mask_atom(
+  tdgpChunk: ListChunk,
+  mkifChunk: MkifChunk,
+  propertyDepth: number,
+  effectParamDefs: Map<string, Map<string, ParamDef>>,
   composition: CompItem,
   tdmn: TdmnChunk,
   layer: Layer | null = null,
 ): MaskPropertyGroup {
-  const base = parse_property_group(
-    tdgp_chunk,
+  const base = parsePropertyGroup(
+    tdgpChunk,
     "ADBE Mask Atom",
-    property_depth,
-    effect_param_defs,
+    propertyDepth,
+    effectParamDefs,
     composition,
     tdmn,
     layer,
   );
 
   // Extract the mask shape's tdsb for the roto_bezier descriptor.
-  let mask_shape_tdsb: TdsbChunk | null = null;
-  const chunks_by_mn = get_chunks_by_match_name(tdgp_chunk);
-  const mask_shape_chunks = chunks_by_mn.get("ADBE Mask Shape") ?? [];
-  for (const chunk of mask_shape_chunks) {
+  let maskShapeTdsb: TdsbChunk | null = null;
+  const chunksByMn = getChunksByMatchName(tdgpChunk);
+  const maskShapeChunks = chunksByMn.get("ADBE Mask Shape") ?? [];
+  for (const chunk of maskShapeChunks) {
     if (chunk instanceof ListChunk && chunk.list_type === "om-s") {
-      const tdbs = find_by_list_type_or_null(chunk.chunks, "tdbs");
-      const tdsb = tdbs === null ? null : find_by_type_or_null(tdbs.chunks, "tdsb");
-      if (tdsb !== null) mask_shape_tdsb = tdsb;
+      const tdbs = findByListTypeOrNull(chunk.chunks, "tdbs");
+      const tdsb = tdbs === null ? null : findByTypeOrNull(tdbs.chunks, "tdsb");
+      if (tdsb !== null) maskShapeTdsb = tdsb;
       break;
     }
   }
 
-  const mask_group = new MaskPropertyGroup({
+  const maskGroup = new MaskPropertyGroup({
     _tdmn: tdmn,
-    _tdgp: tdgp_chunk,
+    _tdgp: tdgpChunk,
     _tdsb: base._tdsb,
     _name_utf8: base._name_utf8,
-    _mkif: mkif_chunk,
-    _mask_shape_tdsb: mask_shape_tdsb,
+    _mkif: mkifChunk,
+    _mask_shape_tdsb: maskShapeTdsb,
     match_name: base.matchName,
     property_depth: base.propertyDepth,
     properties: base.properties,
   });
-  mask_group._property_type = base.propertyType;
-  mask_group._is_mask = true;
-  return mask_group;
+  maskGroup._property_type = base.propertyType;
+  maskGroup._is_mask = true;
+  return maskGroup;
 });

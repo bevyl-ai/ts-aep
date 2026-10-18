@@ -14,15 +14,15 @@
 // NOTE(port): importorskip only skips when uharfbuzz is absent; harfbuzzjs is a hard dependency, so the skip can never fire.
 
 import { expect, test } from "bun:test";
-import { Path, getitem, format, py_assert, py_bool, py_eq, repr, zip } from "../../src/pyrt/index.ts";
+import { Path, getitem, format, pyAssert, pyBool, pyEq, repr, zip } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_project } from "../helpers.ts";
+import { parseProject } from "../helpers.ts";
 import type { CosNode } from "../../src/py_aep/cos/cos.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
-import { _cached_line_data } from "../../src/py_aep/models/text/ranges.ts";
-import { CompositionUnsupported, _CharStyle, _shape_stretch, compose_lines } from "../../src/py_aep/resolvers/text_composition.ts";
-import { resolve_postscript } from "../../src/py_aep/svg/fonts.ts";
+import { _cachedLineData } from "../../src/py_aep/models/text/ranges.ts";
+import { CompositionUnsupported, _CharStyle, _shapeStretch, composeLines } from "../../src/py_aep/resolvers/text_composition.ts";
+import { resolvePostscript } from "../../src/py_aep/svg/fonts.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
@@ -43,7 +43,7 @@ const FIXTURE_FONTS = [
 
 // Python `pytest.skip(..., allow_module_level=True)` skips the whole module.
 // Each test carries the same skip condition here.
-const module_skip = !FIXTURE_FONTS.every((name) => resolve_postscript(name) != null);
+const moduleSkip = !FIXTURE_FONTS.every((name) => resolvePostscript(name) != null);
 
 /**
  * Layers the composer must refuse (unsupported features). Auto-hyphenate
@@ -65,14 +65,14 @@ const REFUSED = new Map<string, string>([
 const _cache: { docs?: Map<string, TextDocument> } = {};
 
 /** `@pytest.fixture(scope="module") def docs()`: layer name -> source text. */
-function docs_fixture(): Map<string, TextDocument> {
+function docsFixture(): Map<string, TextDocument> {
   if (_cache.docs === undefined) {
-    const project = parse_project(FIXTURE);
+    const project = parseProject(FIXTURE);
     const comp = project.compositions[0];
     _cache.docs = new Map(
       comp.textLayers.map((layer) => {
         const text = layer.text;
-        py_assert(text != null);
+        pyAssert(text != null);
         return [layer.name, text.sourceText.value] as const;
       }),
     );
@@ -80,70 +80,70 @@ function docs_fixture(): Map<string, TextDocument> {
   return _cache.docs;
 }
 
-test.skipIf(module_skip)("test_every_matrix_layer_composes_or_refuses", () => {
-  const docs = docs_fixture();
+test.skipIf(moduleSkip)("test_every_matrix_layer_composes_or_refuses", () => {
+  const docs = docsFixture();
   const mismatches: string[] = [];
-  let composed_count = 0;
+  let composedCount = 0;
   for (const [name, doc] of docs) {
     if (REFUSED.has(name)) {
       raises(CompositionUnsupported, () => {
-        compose_lines(doc);
+        composeLines(doc);
       });
       continue;
     }
-    const cached = _cached_line_data(doc);
-    py_assert(cached != null, name);
-    const [cached_spans, cached_baselines] = cached;
+    const cached = _cachedLineData(doc);
+    pyAssert(cached != null, name);
+    const [cachedSpans, cachedBaselines] = cached;
     let composed;
     try {
-      composed = compose_lines(doc);
+      composed = composeLines(doc);
     } catch (exc) {
       if (!(exc instanceof CompositionUnsupported)) throw exc;
       mismatches.push(`${name}: refused: ${exc.message}`);
       continue;
     }
-    if (!py_eq(composed.spans, cached_spans)) {
+    if (!pyEq(composed.spans, cachedSpans)) {
       mismatches.push(
-        `${name}: spans ${repr(composed.spans.slice(0, 3))}... != ${repr(cached_spans.slice(0, 3))}...`,
+        `${name}: spans ${repr(composed.spans.slice(0, 3))}... != ${repr(cachedSpans.slice(0, 3))}...`,
       );
       continue;
     }
-    for (const [computed, expected] of zip(composed.baselines, cached_baselines)) {
+    for (const [computed, expected] of zip(composed.baselines, cachedBaselines)) {
       if (expected != null && Math.abs(computed - expected) > 0.05) {
         mismatches.push(`${name}: baseline ${format(computed, ".4f")} != ${format(expected, ".4f")}`);
         break;
       }
     }
-    composed_count += 1;
+    composedCount += 1;
   }
-  py_assert(!py_bool(mismatches), mismatches.join("\n"));
+  pyAssert(!pyBool(mismatches), mismatches.join("\n"));
   // The matrix must keep exercising the full in-envelope surface.
-  expect(composed_count >= 37).toBe(true);
+  expect(composedCount >= 37).toBe(true);
 });
 
-test.skipIf(module_skip)("test_refusal_reasons_are_specific", () => {
-  const docs = docs_fixture();
+test.skipIf(moduleSkip)("test_refusal_reasons_are_specific", () => {
+  const docs = docsFixture();
   for (const [name, needle] of REFUSED) {
     raises(
       CompositionUnsupported,
       () => {
-        compose_lines(getitem(docs, name));
+        composeLines(getitem(docs, name));
       },
       needle,
     );
   }
 });
 
-test.skipIf(module_skip)("test_overflow_matches_probe", () => {
-  const docs = docs_fixture();
+test.skipIf(moduleSkip)("test_overflow_matches_probe", () => {
+  const docs = docsFixture();
   // The height-sweep layers overflow (600px of text in small boxes).
   for (const name of ["M_H40", "M_H55", "M_H70", "M_H90", "M_H120"]) {
-    expect(compose_lines(getitem(docs, name)).overflow).toBe(true);
+    expect(composeLines(getitem(docs, name)).overflow).toBe(true);
   }
-  expect(compose_lines(getitem(docs, "M_W300")).overflow).toBe(false);
+  expect(composeLines(getitem(docs, "M_W300")).overflow).toBe(false);
 });
 
-test.skipIf(module_skip)("test_length_changing_case_map_is_refused", () => {
+test.skipIf(moduleSkip)("test_length_changing_case_map_is_refused", () => {
   // 'straße'.upper() == 'STRASSE': clusters no longer map 1:1 onto the
   // source characters, so both caps modes must refuse, not crash.
   for (const caps of [1, 2]) {
@@ -151,7 +151,7 @@ test.skipIf(module_skip)("test_length_changing_case_map_is_refused", () => {
     raises(
       CompositionUnsupported,
       () => {
-        _shape_stretch("straße", style);
+        _shapeStretch("straße", style);
       },
       "case mapping",
     );

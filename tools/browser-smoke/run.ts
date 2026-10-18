@@ -16,16 +16,16 @@ const samples = n > 0 && n < all.length ? Array.from({ length: n }, (_, i) => al
 
 const saved = globalThis.process;
 (globalThis as any).process = undefined;
-let py_aep: any;
+let pyAep: any;
 try {
-  py_aep = await import(path.join(root, "dist/browser/index.js"));
+  pyAep = await import(path.join(root, "dist/browser/index.js"));
 } finally {
   (globalThis as any).process = saved;
 }
-if (py_aep.fs_backend() !== "memory") throw new Error("bundle did not pick the memory fs");
+if (pyAep.fs_backend() !== "memory") throw new Error("bundle did not pick the memory fs");
 
 const read = async (name: string) => new Uint8Array(fs.readFileSync(path.join(root, name)));
-const result = await smoke(py_aep, read, samples, () => {});
+const result = await smoke(pyAep, read, samples, () => {});
 console.log(JSON.stringify({ ...result, problems: result.problems.length }));
 for (const p of result.problems) console.log(p);
 process.exit(result.identical === result.total ? 0 : 1);

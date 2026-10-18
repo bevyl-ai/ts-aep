@@ -3,7 +3,7 @@
 import { descriptor } from "../../../../pyrt/index.ts";
 import { OpenExrCompression } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { validate_positive_number } from "../../validators.ts";
+import { validatePositiveNumber } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
 import type { OpenExrRoptChunk } from "../../../binary/render_chunks.ts";
 
@@ -68,7 +68,7 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
   }
 
   set dwaCompressionLevel(value: number) {
-    validate_positive_number(value);
+    validatePositiveNumber(value);
     this._body.dwa_compression_level = value;
   }
 }

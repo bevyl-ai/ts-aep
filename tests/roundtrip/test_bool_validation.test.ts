@@ -14,14 +14,14 @@ import {
   getattr,
   len,
   Path,
-  py_bool,
+  pyBool,
   setattr,
   StopIteration,
   str,
   TypeError_,
 } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { as_instance, parse_app_fresh, parse_project_fresh } from "../helpers.ts";
+import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { asInstance, parseAppFresh, parseProjectFresh } from "../helpers.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
@@ -33,8 +33,8 @@ const FOOTAGE = SAMPLES.div("models", "essential_graphics", "media_replacement.a
 const MASK = SAMPLES.div("models", "essential_graphics", "indexed_group_controllers.aep");
 const VIEW = SAMPLES.div("models", "view", "grid_on.aep");
 
-function _file_source(): FootageSource {
-  const project = parse_project_fresh(FOOTAGE);
+function _fileSource(): FootageSource {
+  const project = parseProjectFresh(FOOTAGE);
   const footage = project.footages.find(
     (f) => getattr(f, "mainSource", null)?.constructor?.name === "FileSource",
   );
@@ -42,13 +42,13 @@ function _file_source(): FootageSource {
   return footage.mainSource;
 }
 
-function _first_mask(): MaskPropertyGroup {
-  const project = parse_project_fresh(MASK);
+function _firstMask(): MaskPropertyGroup {
+  const project = parseProjectFresh(MASK);
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
       const masks = getattr(layer, "masks", null);
-      if (masks != null && py_bool(masks) && len(masks) > 0) {
-        return as_instance(masks.property(0), MaskPropertyGroup);
+      if (masks != null && pyBool(masks) && len(masks) > 0) {
+        return asInstance(masks.property(0), MaskPropertyGroup);
       }
     }
   }
@@ -59,33 +59,33 @@ function _first_mask(): MaskPropertyGroup {
 const CASES: [string, () => object, string][] = [
   [
     "comp.motion_blur",
-    () => parse_project_fresh(LAYER).compositions[0],
+    () => parseProjectFresh(LAYER).compositions[0],
     "motionBlur",
   ],
   [
     "comp.frame_blending",
-    () => parse_project_fresh(LAYER).compositions[0],
+    () => parseProjectFresh(LAYER).compositions[0],
     "frameBlending",
   ],
   [
     "layer.enabled",
-    () => parse_project_fresh(LAYER).compositions[0].layers[0],
+    () => parseProjectFresh(LAYER).compositions[0].layers[0],
     "enabled",
   ],
   [
     "layer.solo",
-    () => parse_project_fresh(LAYER).compositions[0].layers[0],
+    () => parseProjectFresh(LAYER).compositions[0].layers[0],
     "solo",
   ],
-  ["layer.shy", () => parse_project_fresh(LAYER).compositions[0].layers[0], "shy"],
+  ["layer.shy", () => parseProjectFresh(LAYER).compositions[0].layers[0], "shy"],
   [
     "project.frames_use_feet_frames",
-    () => parse_project_fresh(LAYER),
+    () => parseProjectFresh(LAYER),
     "framesUseFeetFrames",
   ],
-  ["footage.invert_alpha", _file_source, "invertAlpha"],
-  ["mask.inverted", _first_mask, "inverted"],
-  ["view.grid", () => as_instance(parse_app_fresh(VIEW).activeViewer, Viewer).views[0].options, "grid"],
+  ["footage.invert_alpha", _fileSource, "invertAlpha"],
+  ["mask.inverted", _firstMask, "inverted"],
+  ["view.grid", () => asInstance(parseAppFresh(VIEW).activeViewer, Viewer).views[0].options, "grid"],
   ["import.sequence", () => new ImportOptions(str(LAYER)), "sequence"],
   [
     "import.force_alphabetical",
@@ -126,16 +126,16 @@ describe("TestStrictBool", () => {
 /** A validated bool still serializes through a disk round-trip. */
 describe("TestBoolPersists", () => {
   test("test_comp_and_layer_flags_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(LAYER);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(LAYER);
     const comp = project.compositions[0];
     const layer = comp.layers[0];
     comp.motionBlur = true;
     layer.solo = true;
-    const out = tmp_path.div("bools.aep");
+    const out = tmpPath.div("bools.aep");
     project.save(out);
 
-    const project2 = parse_project_fresh(out);
+    const project2 = parseProjectFresh(out);
     const comp2 = project2.compositions[0];
     expect(comp2.motionBlur).toBe(true);
     expect(comp2.layers[0].solo).toBe(true);

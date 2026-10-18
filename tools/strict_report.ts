@@ -14,20 +14,20 @@ export const LAYERS: [string, RegExp][] = [
   ["6 cli+entry", /^src\/py_aep\/(cli\/|index\.ts|_modules\.ts)/],
   ["7 tests", /^tests\//],
 ];
-const layer_of = (f: string) => LAYERS.find(([, re]) => re.test(f))?.[0] ?? "other";
+const layerOf = (f: string) => LAYERS.find(([, re]) => re.test(f))?.[0] ?? "other";
 
 const cfg = ts.getParsedCommandLineOfConfigFile(path.join(ROOT, "tsconfig.json"), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} })!;
 const program = ts.createProgram(cfg.fileNames, { ...cfg.options, strict: true, noImplicitAny: true, strictNullChecks: true });
 const rows = new Map<string, { strict: number; any: number; unknown: number; casts: number; files: number }>();
-const files_of = new Map<string, string[]>();
+const filesOf = new Map<string, string[]>();
 const bump = (l: string) => rows.get(l) ?? (rows.set(l, { strict: 0, any: 0, unknown: 0, casts: 0, files: 0 }), rows.get(l)!);
 for (const sf of program.getSourceFiles()) {
   const rel = path.relative(ROOT, sf.fileName);
   if (!rel.startsWith("src/") && !rel.startsWith("tests/")) continue;
-  const l = layer_of(rel);
+  const l = layerOf(rel);
   const r = bump(l);
   r.files++;
-  (files_of.get(l) ?? (files_of.set(l, []), files_of.get(l)!)).push(rel);
+  (filesOf.get(l) ?? (filesOf.set(l, []), filesOf.get(l)!)).push(rel);
   r.strict += ts.getPreEmitDiagnostics(program, sf).filter((d) => d.file === sf).length;
   const visit = (n: ts.Node) => {
     if (n.kind === ts.SyntaxKind.AnyKeyword) r.any++;
@@ -39,7 +39,7 @@ for (const sf of program.getSourceFiles()) {
 }
 if (process.argv.includes("--files")) {
   const want = process.argv[process.argv.indexOf("--files") + 1];
-  console.log(JSON.stringify(files_of.get([...files_of.keys()].find((k) => k.startsWith(want))!)));
+  console.log(JSON.stringify(filesOf.get([...filesOf.keys()].find((k) => k.startsWith(want))!)));
 } else if (process.argv.includes("--json")) console.log(JSON.stringify(Object.fromEntries(rows)));
 else {
   console.log("layer                   files  strict-errors    any  unknown  casts");

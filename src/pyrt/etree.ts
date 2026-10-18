@@ -16,7 +16,7 @@
 // declaration-time char-ref expansion and a re-entrant content parser over replacement text.
 // External and parameter entities are ignored (expat without a resolver also skips them).
 
-import { latin1_bytes, latin1_str } from "./bytes.ts";
+import { latin1Bytes, latin1Str } from "./bytes.ts";
 import { decode, ord } from "./codecs.ts";
 import { IndexError, KeyError, SyntaxError_, ValueError } from "./errors.ts";
 
@@ -27,7 +27,7 @@ export class ParseError extends SyntaxError_ {
 
 type AttribInit = Map<string, string> | Record<string, string> | null | undefined;
 
-function to_attrib_map(attrib: AttribInit, extra?: Record<string, string>): Map<string, string> {
+function toAttribMap(attrib: AttribInit, extra?: Record<string, string>): Map<string, string> {
   const m = new Map<string, string>();
   if (attrib instanceof Map) for (const [k, v] of attrib) m.set(k, v);
   else if (attrib != null) for (const [k, v] of Object.entries(attrib)) m.set(k, v);
@@ -44,7 +44,7 @@ export class Element {
 
   constructor(tag: string, attrib: AttribInit = null, extra?: Record<string, string>) {
     this.tag = tag;
-    this.attrib = to_attrib_map(attrib, extra);
+    this.attrib = toAttribMap(attrib, extra);
   }
 
   /** Direct children (the live list). */
@@ -184,7 +184,7 @@ export function SubElement(
 
 export type NsMap = Map<string | null, string> | Record<string, string> | null | undefined;
 
-function ns_get(ns: NsMap, key: string | null): string | undefined {
+function nsGet(ns: NsMap, key: string | null): string | undefined {
   if (!ns) return undefined;
   if (ns instanceof Map) return ns.get(key);
   return key === null ? undefined : ns[key];
@@ -201,7 +201,7 @@ class SelectorContext {
   }
 }
 
-function get_parent_map(context: SelectorContext): Map<Element, Element> {
+function getParentMap(context: SelectorContext): Map<Element, Element> {
   if (context.parent_map === null) {
     const pm = new Map<Element, Element>();
     for (const p of context.root.iter()) for (const c of p) pm.set(c, p);
@@ -210,14 +210,14 @@ function get_parent_map(context: SelectorContext): Map<Element, Element> {
   return context.parent_map;
 }
 
-const xpath_tokenizer_re =
+const xpathTokenizerRe =
   /('[^']*'|"[^"]*"|::|\/\/?|\.\.|\(\)|!=|[/.*:[\]()@=])|((?:\{[^}]+\})?[^/[\]()@!=\s]+)|\s+/g;
 
-function xpath_tokenizer(pattern: string, namespaces: NsMap): Token[] {
+function xpathTokenizer(pattern: string, namespaces: NsMap): Token[] {
   const out: Token[] = [];
-  const default_namespace = ns_get(namespaces, null);
-  let parsing_attribute = false;
-  for (const m of pattern.matchAll(xpath_tokenizer_re)) {
+  const defaultNamespace = nsGet(namespaces, null);
+  let parsingAttribute = false;
+  for (const m of pattern.matchAll(xpathTokenizerRe)) {
     const ttype = m[1] ?? "";
     const tag = m[2] ?? "";
     if (tag && tag[0] !== "{") {
@@ -225,18 +225,18 @@ function xpath_tokenizer(pattern: string, namespaces: NsMap): Token[] {
         const i = tag.indexOf(":");
         const prefix = tag.slice(0, i);
         const uri = tag.slice(i + 1);
-        const ns = namespaces ? ns_get(namespaces, prefix) : undefined;
+        const ns = namespaces ? nsGet(namespaces, prefix) : undefined;
         if (ns === undefined) throw new SyntaxError_(`prefix '${prefix}' not found in prefix map`);
         out.push([ttype, `{${ns}}${uri}`]);
-      } else if (default_namespace && !parsing_attribute) {
-        out.push([ttype, `{${default_namespace}}${tag}`]);
+      } else if (defaultNamespace && !parsingAttribute) {
+        out.push([ttype, `{${defaultNamespace}}${tag}`]);
       } else {
         out.push([ttype, tag]);
       }
-      parsing_attribute = false;
+      parsingAttribute = false;
     } else {
       out.push([ttype, tag]);
-      parsing_attribute = ttype === "@";
+      parsingAttribute = ttype === "@";
     }
   }
   return out;
@@ -252,7 +252,7 @@ class TokenStream {
 }
 class StopIter extends Error {}
 
-function _prepare_tag(tag: string): (t: string) => boolean {
+function _prepareTag(tag: string): (t: string) => boolean {
   if (tag === "{*}*") return () => true;
   if (tag === "{}*") return (t) => !t.startsWith("{");
   if (tag.startsWith("{*}")) {
@@ -270,26 +270,26 @@ function _prepare_tag(tag: string): (t: string) => boolean {
   return (t) => t === tag;
 }
 
-function prepare_child(_next: () => Token, token: Token): Select {
-  const match = _prepare_tag(token[1]);
+function prepareChild(_next: () => Token, token: Token): Select {
+  const match = _prepareTag(token[1]);
   return function* (_c, result) {
     for (const elem of result) for (const e of elem) if (match(e.tag)) yield e;
   };
 }
 
-function prepare_star(): Select {
+function prepareStar(): Select {
   return function* (_c, result) {
     for (const elem of result) yield* elem;
   };
 }
 
-function prepare_self(): Select {
+function prepareSelf(): Select {
   return function* (_c, result) {
     yield* result;
   };
 }
 
-function prepare_descendant(next: () => Token): Select {
+function prepareDescendant(next: () => Token): Select {
   let token: Token;
   try {
     token = next();
@@ -306,18 +306,18 @@ function prepare_descendant(next: () => Token): Select {
       for (const elem of result) for (const e of elem.iter()) if (e !== elem) yield e;
     };
   }
-  const match = _prepare_tag(tag);
+  const match = _prepareTag(tag);
   return function* (_c, result) {
     for (const elem of result) for (const e of elem.iter()) if (e !== elem && match(e.tag)) yield e;
   };
 }
 
-function prepare_parent(): Select {
+function prepareParent(): Select {
   return function* (context, result) {
-    const parent_map = get_parent_map(context);
+    const parentMap = getParentMap(context);
     const seen = new Set<Element>();
     for (const elem of result) {
-      const parent = parent_map.get(elem);
+      const parent = parentMap.get(elem);
       if (parent !== undefined && !seen.has(parent)) {
         seen.add(parent);
         yield parent;
@@ -328,18 +328,18 @@ function prepare_parent(): Select {
 
 const INT_RE = /^-?\d+$/;
 
-function prepare_predicate(next: () => Token): Select {
-  const signature_parts: string[] = [];
+function preparePredicate(next: () => Token): Select {
+  const signatureParts: string[] = [];
   const predicate: string[] = [];
   for (;;) {
     let token = next();
     if (token[0] === "]") break;
     if (token[0] === "" && token[1] === "") continue;
     if (token[0] && "'\"".includes(token[0][0])) token = ["'", token[0].slice(1, -1)];
-    signature_parts.push(token[0] || "-");
+    signatureParts.push(token[0] || "-");
     predicate.push(token[1]);
   }
-  const signature = signature_parts.join("");
+  const signature = signatureParts.join("");
   if (signature === "@-") {
     const key = predicate[1];
     return function* (_c, result) {
@@ -408,9 +408,9 @@ function prepare_predicate(next: () => Token): Select {
       }
     }
     return function* (context, result) {
-      const parent_map = get_parent_map(context);
+      const parentMap = getParentMap(context);
       for (const elem of result) {
-        const parent = parent_map.get(elem);
+        const parent = parentMap.get(elem);
         if (parent === undefined) continue;
         const elems = [...iterfind(parent, elem.tag, null)];
         const j = index < 0 ? elems.length + index : index;
@@ -422,12 +422,12 @@ function prepare_predicate(next: () => Token): Select {
 }
 
 const ops: Record<string, (next: () => Token, token: Token) => Select> = {
-  "": prepare_child,
-  "*": prepare_star,
-  ".": prepare_self,
-  "..": prepare_parent,
-  "//": prepare_descendant,
-  "[": prepare_predicate,
+  "": prepareChild,
+  "*": prepareStar,
+  ".": prepareSelf,
+  "..": prepareParent,
+  "//": prepareDescendant,
+  "[": preparePredicate,
 };
 
 const _cache = new Map<string, Select[]>();
@@ -437,17 +437,17 @@ const PLAIN_TAG = /^[A-Za-z_][\w.-]*$/;
 
 export function* iterfind(elem: Element, path: string, namespaces: NsMap = null): Generator<Element> {
   if (path.slice(-1) === "/") path = path + "*";
-  const ns_key =
+  const nsKey =
     namespaces instanceof Map
       ? JSON.stringify([...namespaces.entries()])
       : namespaces
         ? JSON.stringify(Object.entries(namespaces))
         : "";
-  const cache_key = path + "\u0000" + ns_key;
-  let selector = _cache.get(cache_key);
+  const cacheKey = path + "\u0000" + nsKey;
+  let selector = _cache.get(cacheKey);
   if (selector === undefined) {
     if (path.slice(0, 1) === "/") throw new SyntaxError_("cannot use absolute path on element");
-    const stream = new TokenStream(xpath_tokenizer(path, namespaces));
+    const stream = new TokenStream(xpathTokenizer(path, namespaces));
     const next = () => stream.next();
     let token: Token;
     try {
@@ -475,7 +475,7 @@ export function* iterfind(elem: Element, path: string, namespaces: NsMap = null)
       }
     }
     if (_cache.size > 100) _cache.clear();
-    _cache.set(cache_key, selector);
+    _cache.set(cacheKey, selector);
   }
   let result: Iterable<Element> = [elem];
   const context = new SelectorContext(elem);
@@ -487,7 +487,7 @@ export function* iterfind(elem: Element, path: string, namespaces: NsMap = null)
 // Serialization
 // ---------------------------------------------------------------------------
 
-const _namespace_map = new Map<string, string>([
+const _namespaceMap = new Map<string, string>([
   ["http://www.w3.org/XML/1998/namespace", "xml"],
   ["http://www.w3.org/1999/xhtml", "html"],
   ["http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf"],
@@ -497,11 +497,11 @@ const _namespace_map = new Map<string, string>([
   ["http://purl.org/dc/elements/1.1/", "dc"],
 ]);
 
-function _escape_cdata(text: string): string {
+function _escapeCdata(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function _escape_attrib(text: string): string {
+function _escapeAttrib(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -512,24 +512,24 @@ function _escape_attrib(text: string): string {
     .replace(/\t/g, "&#09;");
 }
 
-function _namespaces(elem: Element, default_namespace: string | null): [Map<string, string | null>, Map<string, string>] {
+function _namespaces(elem: Element, defaultNamespace: string | null): [Map<string, string | null>, Map<string, string>] {
   const qnames = new Map<string, string | null>();
   const namespaces = new Map<string, string>();
-  if (default_namespace) namespaces.set(default_namespace, "");
-  const add_qname = (qname: string): void => {
+  if (defaultNamespace) namespaces.set(defaultNamespace, "");
+  const addQname = (qname: string): void => {
     if (qname[0] === "{") {
       const close = qname.lastIndexOf("}");
       const uri = qname.slice(1, close);
       const tag = qname.slice(close + 1);
       let prefix = namespaces.get(uri);
       if (prefix === undefined) {
-        prefix = _namespace_map.get(uri);
+        prefix = _namespaceMap.get(uri);
         if (prefix === undefined) prefix = `ns${namespaces.size}`;
         if (prefix !== "xml") namespaces.set(uri, prefix);
       }
       qnames.set(qname, prefix ? `${prefix}:${tag}` : tag);
     } else {
-      if (default_namespace) {
+      if (defaultNamespace) {
         throw new ValueError("cannot use non-qualified names with default_namespace option");
       }
       qnames.set(qname, qname);
@@ -537,24 +537,24 @@ function _namespaces(elem: Element, default_namespace: string | null): [Map<stri
   };
   for (const e of elem.iter()) {
     if (typeof e.tag !== "string") throw new TypeError(`cannot serialize ${String(e.tag)} (type ${typeof e.tag})`);
-    if (!qnames.has(e.tag)) add_qname(e.tag);
-    for (const key of e.attrib.keys()) if (!qnames.has(key)) add_qname(key);
+    if (!qnames.has(e.tag)) addQname(e.tag);
+    for (const key of e.attrib.keys()) if (!qnames.has(key)) addQname(key);
   }
   return [qnames, namespaces];
 }
 
-function _serialize_xml(
+function _serializeXml(
   write: (s: string) => void,
   elem: Element,
   qnames: Map<string, string | null>,
   namespaces: Map<string, string> | null,
-  short_empty_elements: boolean,
+  shortEmptyElements: boolean,
 ): void {
   const tag = qnames.get(elem.tag) ?? null;
   const text = elem.text;
   if (tag === null) {
-    if (text) write(_escape_cdata(text));
-    for (const e of elem) _serialize_xml(write, e, qnames, null, short_empty_elements);
+    if (text) write(_escapeCdata(text));
+    for (const e of elem) _serializeXml(write, e, qnames, null, shortEmptyElements);
   } else {
     write("<" + tag);
     const items = elem.items();
@@ -563,26 +563,26 @@ function _serialize_xml(
         const sorted = [...namespaces.entries()].sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
         for (const [v, k0] of sorted) {
           const k = k0 ? ":" + k0 : "";
-          write(` xmlns${k}="${_escape_attrib(v)}"`);
+          write(` xmlns${k}="${_escapeAttrib(v)}"`);
         }
       }
-      for (const [k, v] of items) write(` ${qnames.get(k)}="${_escape_attrib(v)}"`);
+      for (const [k, v] of items) write(` ${qnames.get(k)}="${_escapeAttrib(v)}"`);
     }
-    if (text || elem.length || !short_empty_elements) {
+    if (text || elem.length || !shortEmptyElements) {
       write(">");
-      if (text) write(_escape_cdata(text));
-      for (const e of elem) _serialize_xml(write, e, qnames, null, short_empty_elements);
+      if (text) write(_escapeCdata(text));
+      for (const e of elem) _serializeXml(write, e, qnames, null, shortEmptyElements);
       write("</" + tag + ">");
     } else {
       write(" />");
     }
   }
-  if (elem.tail) write(_escape_cdata(elem.tail));
+  if (elem.tail) write(_escapeCdata(elem.tail));
 }
 
-function _serialize_text(write: (s: string) => void, elem: Element): void {
+function _serializeText(write: (s: string) => void, elem: Element): void {
   if (elem.text) write(elem.text);
-  for (const e of elem) _serialize_text(write, e);
+  for (const e of elem) _serializeText(write, e);
   if (elem.tail) write(elem.tail);
 }
 
@@ -593,17 +593,17 @@ export interface ToStringOptions {
   short_empty_elements?: boolean;
 }
 
-function _tostring_unicode(element: Element, opts: ToStringOptions): string {
+function _tostringUnicode(element: Element, opts: ToStringOptions): string {
   const method = opts.method ?? "xml";
   const out: string[] = [];
   const write = (s: string): void => {
     out.push(s);
   };
   if (method === "text") {
-    _serialize_text(write, element);
+    _serializeText(write, element);
   } else if (method === "xml") {
     const [qnames, namespaces] = _namespaces(element, opts.default_namespace ?? null);
-    _serialize_xml(write, element, qnames, namespaces, opts.short_empty_elements ?? true);
+    _serializeXml(write, element, qnames, namespaces, opts.short_empty_elements ?? true);
   } else {
     throw new ValueError(`unknown serialization method '${method}'`);
   }
@@ -618,7 +618,7 @@ export function tostring(
   opts: ToStringOptions = {},
 ): string | Uint8Array {
   const enc = encoding ?? "us-ascii";
-  const body = _tostring_unicode(element, opts);
+  const body = _tostringUnicode(element, opts);
   if (enc === "unicode") {
     const decl = opts.xml_declaration === true ? "<?xml version='1.0'?>\n" : "";
     return decl + body;
@@ -635,7 +635,7 @@ export function tostring(
       const cp = ord(ch);
       s += cp < 128 ? ch : `&#${cp};`;
     }
-    return latin1_bytes(s);
+    return latin1Bytes(s);
   }
   if (lower === "utf-8" || lower === "utf8") return new TextEncoder().encode(text); // lone surrogates -> U+FFFD (unchanged from the node encoder used before)
   throw new ValueError(`unsupported tostring encoding ${enc}`);
@@ -663,11 +663,11 @@ const PREDEFINED: Record<string, string> = { lt: "<", gt: ">", amp: "&", quot: '
 const XML_NS = "http://www.w3.org/XML/1998/namespace";
 const EXPANSION_LIMIT = 10_000_000;
 
-function is_ws(c: string): boolean {
+function isWs(c: string): boolean {
   return c === " " || c === "\t" || c === "\n" || c === "\r";
 }
 
-function is_ws_code(c: number): boolean {
+function isWsCode(c: number): boolean {
   return c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d;
 }
 
@@ -692,7 +692,7 @@ class _Parser {
 
   skip_ws(): boolean {
     const start = this.pos;
-    while (this.pos < this.s.length && is_ws_code(this.s.charCodeAt(this.pos))) this.pos++;
+    while (this.pos < this.s.length && isWsCode(this.s.charCodeAt(this.pos))) this.pos++;
     return this.pos > start;
   }
 
@@ -809,7 +809,7 @@ class _Parser {
 
   parse_internal_subset(): void {
     const s = this.s;
-    const entity_re = new RegExp(`<!ENTITY\\s+(%\\s+)?([${NAME_START}][${NAME_CHAR}]*)\\s+(?:"([^"]*)"|'([^']*)')\\s*>`, "uy");
+    const entityRe = new RegExp(`<!ENTITY\\s+(%\\s+)?([${NAME_START}][${NAME_CHAR}]*)\\s+(?:"([^"]*)"|'([^']*)')\\s*>`, "uy");
     for (;;) {
       this.skip_ws();
       if (this.pos >= s.length) this.err("unclosed token");
@@ -826,11 +826,11 @@ class _Parser {
         if (e < 0) this.err("unclosed token");
         this.pos = e + 2;
       } else if (s.startsWith("<!ENTITY", this.pos)) {
-        entity_re.lastIndex = this.pos;
-        const m = entity_re.exec(s);
+        entityRe.lastIndex = this.pos;
+        const m = entityRe.exec(s);
         if (m !== null) {
           if (!m[1] && !this.entities.has(m[2])) this.entities.set(m[2], m[3] ?? m[4]);
-          this.pos = entity_re.lastIndex;
+          this.pos = entityRe.lastIndex;
         } else {
           this.skip_decl();
         }
@@ -891,7 +891,7 @@ class _Parser {
     }
     const e = s.indexOf("?>", this.pos);
     if (e < 0) this.err("unclosed token");
-    if (this.pos < e && !is_ws(s[this.pos])) this.err("processing instruction not well-formed", this.pos);
+    if (this.pos < e && !isWs(s[this.pos])) this.err("processing instruction not well-formed", this.pos);
     this.check_chars(s.slice(this.pos, e), this.pos);
     this.pos = e + 2;
   }
@@ -963,10 +963,10 @@ class _Parser {
       else top._children[top._children.length - 1].tail = text;
     };
 
-    const resolve = (raw: string, is_attr: boolean, sc: Map<string, string>, at: number): string => {
+    const resolve = (raw: string, isAttr: boolean, sc: Map<string, string>, at: number): string => {
       const i = raw.indexOf(":");
       if (i < 0) {
-        if (!is_attr) {
+        if (!isAttr) {
           const d = sc.get("");
           if (d) return `{${d}}${raw}`;
         }
@@ -980,15 +980,15 @@ class _Parser {
       return `{${uri}}${local}`;
     };
 
-    const start_tag = (): Element => {
-      const tag_at = this.pos;
+    const startTag = (): Element => {
+      const tagAt = this.pos;
       this.pos++;
       const raw = this.read_name();
-      const raw_attrs: [string, string][] = [];
-      let has_decls = false;
-      let self_close = false;
+      const rawAttrs: [string, string][] = [];
+      let hasDecls = false;
+      let selfClose = false;
       for (;;) {
-        const had_ws = this.skip_ws();
+        const hadWs = this.skip_ws();
         if (this.pos >= s.length) this.err("unclosed token");
         const c = s[this.pos];
         if (c === ">") {
@@ -999,10 +999,10 @@ class _Parser {
           if (this.pos + 1 >= s.length) this.err("unclosed token");
           if (s[this.pos + 1] !== ">") this.err("not well-formed (invalid token)");
           this.pos += 2;
-          self_close = true;
+          selfClose = true;
           break;
         }
-        if (!had_ws) this.err("not well-formed (invalid token)");
+        if (!hadWs) this.err("not well-formed (invalid token)");
         const at = this.pos;
         const name = this.read_name();
         this.skip_ws();
@@ -1014,23 +1014,23 @@ class _Parser {
         const q = s[this.pos];
         if (q !== '"' && q !== "'") this.err("not well-formed (invalid token)");
         const value = this.parse_attr_value(q);
-        for (const [n] of raw_attrs) if (n === name) this.err("duplicate attribute", at);
-        if (name === "xmlns" || name.startsWith("xmlns:")) has_decls = true;
-        raw_attrs.push([name, value]);
+        for (const [n] of rawAttrs) if (n === name) this.err("duplicate attribute", at);
+        if (name === "xmlns" || name.startsWith("xmlns:")) hasDecls = true;
+        rawAttrs.push([name, value]);
       }
       let sc = stack.length ? stack[stack.length - 1].scope : scope;
-      if (has_decls) {
+      if (hasDecls) {
         sc = new Map(sc);
-        for (const [n, v] of raw_attrs) {
+        for (const [n, v] of rawAttrs) {
           if (n === "xmlns" || n.startsWith("xmlns:")) sc.set(n === "xmlns" ? "" : n.slice(6), v);
         }
       }
-      const tag = resolve(raw, false, sc, tag_at + 1);
+      const tag = resolve(raw, false, sc, tagAt + 1);
       const el = new Element(tag);
-      for (const [n, v] of raw_attrs) {
+      for (const [n, v] of rawAttrs) {
         if (n === "xmlns" || n.startsWith("xmlns:")) continue;
-        const k = resolve(n, true, sc, tag_at);
-        if (el.attrib.has(k)) this.err("duplicate attribute", tag_at);
+        const k = resolve(n, true, sc, tagAt);
+        if (el.attrib.has(k)) this.err("duplicate attribute", tagAt);
         el.attrib.set(k, v);
       }
       if (stack.length) {
@@ -1038,11 +1038,11 @@ class _Parser {
         stack[stack.length - 1].el._children.push(el);
       }
       // an empty element: nothing pending belongs to it
-      if (!self_close) stack.push({ el, raw, scope: sc });
+      if (!selfClose) stack.push({ el, raw, scope: sc });
       return el;
     };
 
-    const root = start_tag();
+    const root = startTag();
     if (stack.length === 0) return this.epilog(root);
 
     while (stack.length) {
@@ -1073,7 +1073,7 @@ class _Parser {
         } else if (next === 0x21) {
           this.err("not well-formed (invalid token)");
         } else {
-          start_tag();
+          startTag();
         }
       } else if (c === 0x26) {
         pending += this.reference(0);
@@ -1102,7 +1102,7 @@ class _Parser {
   }
 }
 
-function decode_xml_bytes(data: Uint8Array): string {
+function decodeXmlBytes(data: Uint8Array): string {
   let enc = "utf-8";
   let start = 0;
   if (data.length >= 3 && data[0] === 0xef && data[1] === 0xbb && data[2] === 0xbf) {
@@ -1114,7 +1114,7 @@ function decode_xml_bytes(data: Uint8Array): string {
     enc = "utf-16-be";
     start = 2;
   } else {
-    const head = latin1_str(data.subarray(0, 200));
+    const head = latin1Str(data.subarray(0, 200));
     const m = /^<\?xml[^>]*?encoding\s*=\s*["']([A-Za-z][A-Za-z0-9._-]*)["']/.exec(head);
     if (m !== null) enc = m[1];
   }
@@ -1135,10 +1135,10 @@ function decode_xml_bytes(data: Uint8Array): string {
     "windows-1252": "cp1252",
     cp1252: "cp1252",
   };
-  const py_enc = known[lower];
-  if (py_enc === undefined) throw new ParseError("unknown encoding: line 1, column 0");
+  const pyEnc = known[lower];
+  if (pyEnc === undefined) throw new ParseError("unknown encoding: line 1, column 0");
   try {
-    return decode(data.subarray(start), py_enc, "strict");
+    return decode(data.subarray(start), pyEnc, "strict");
   } catch (e) {
     if (e instanceof ParseError) throw e;
     throw new ParseError("not well-formed (invalid token): line 1, column 0");
@@ -1146,7 +1146,7 @@ function decode_xml_bytes(data: Uint8Array): string {
 }
 
 export function fromstring(text: string | Uint8Array): Element {
-  let s = typeof text === "string" ? text : decode_xml_bytes(text);
+  let s = typeof text === "string" ? text : decodeXmlBytes(text);
   if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
   s = s.replace(/\r\n?/g, "\n");
   return new _Parser(s).parse();

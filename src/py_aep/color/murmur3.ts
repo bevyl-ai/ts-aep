@@ -43,7 +43,7 @@ export function _fmix64(k: bigint): bigint {
  * {@link GUID_SEED | GUID_SEED}). The output is `h1` then `h2`,
  * each little-endian - the byte order After Effects stores in a `Guid`.
  */
-export function murmurhash3_x64_128(data: Uint8Array, seed: number | bigint = 0): Uint8Array {
+export function murmurhash3X64128(data: Uint8Array, seed: number | bigint = 0): Uint8Array {
   let h1 = BigInt(seed) & _MASK;
   let h2 = BigInt(seed) & _MASK;
   const length = data.length;
@@ -126,13 +126,13 @@ export function murmurhash3_x64_128(data: Uint8Array, seed: number | bigint = 0)
   h2 = _fmix64(h2);
   h1 = (h1 + h2) & _MASK;
   h2 = (h2 + h1) & _MASK;
-  return concat(bytes_.int_to_bytes(h1, 8, "little"), bytes_.int_to_bytes(h2, 8, "little"));
+  return concat(bytes_.intToBytes(h1, 8, "little"), bytes_.intToBytes(h2, 8, "little"));
 }
 
 /**
  * Return the 16-byte After Effects `Guid` for `data` (MurmurHash3 x64 128
  * with After Effects' {@link GUID_SEED | GUID_SEED}).
  */
-export function ae_guid(data: Uint8Array): Uint8Array {
-  return murmurhash3_x64_128(data, GUID_SEED);
+export function aeGuid(data: Uint8Array): Uint8Array {
+  return murmurhash3X64128(data, GUID_SEED);
 }

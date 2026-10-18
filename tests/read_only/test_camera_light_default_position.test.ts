@@ -30,10 +30,10 @@
 
 import { describe, expect, test } from "bun:test";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { getitem, Path, py_assert, range, StopIteration } from "../../src/pyrt/index.ts";
+import { getitem, Path, pyAssert, range, StopIteration } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { json_field, type ExpectedProperty } from "../helpers.ts";
+import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
+import { jsonField, type ExpectedProperty } from "../helpers.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 
@@ -65,56 +65,56 @@ const _LIGHT_LAYERS = [
   "Point Separated",
 ];
 // pytest: the decorator nearest the function (comp_name) varies fastest.
-const _LIGHT_ROWS: string[][] = _LIGHT_LAYERS.flatMap((layer_name) =>
-  _LIGHT_COMPS.map((comp_name) => [comp_name, layer_name]),
+const _LIGHT_ROWS: string[][] = _LIGHT_LAYERS.flatMap((layerName) =>
+  _LIGHT_COMPS.map((compName) => [compName, layerName]),
 );
 
-function _layer(sample: string, comp_name: string, layer_name: string): Layer {
-  const comp = get_comp(parse_project(SAMPLES_DIR.div(`${sample}.aep`)), comp_name);
-  const layer = comp.layers.find((ly) => ly.name === layer_name);
+function _layer(sample: string, compName: string, layerName: string): Layer {
+  const comp = getComp(parseProject(SAMPLES_DIR.div(`${sample}.aep`)), compName);
+  const layer = comp.layers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
   return layer;
 }
 
-function _position(layer: Layer, match_name = "ADBE Position"): Property {
-  const prop = layer.transform.property(match_name);
-  py_assert(prop instanceof Property);
+function _position(layer: Layer, matchName = "ADBE Position"): Property {
+  const prop = layer.transform.property(matchName);
+  pyAssert(prop instanceof Property);
   return prop;
 }
 
 /** `{match name: property record}` for the layer's ADBE Transform Group in the ExtendScript JSON. */
-function _expected_transform(sample: string, comp_name: string, layer_name: string): Map<string, ExpectedProperty> {
-  const expected = load_expected(SAMPLES_DIR, sample);
-  const comp_json = get_comp_from_json_by_name(expected, comp_name);
-  const layer_json = comp_json["layers"].find((ly) => ly["name"] === layer_name);
-  if (layer_json === undefined) throw new StopIteration();
-  const group = layer_json["properties"].find((p) => p["matchName"] === "ADBE Transform Group");
+function _expectedTransform(sample: string, compName: string, layerName: string): Map<string, ExpectedProperty> {
+  const expected = loadExpected(SAMPLES_DIR, sample);
+  const compJson = getCompFromJsonByName(expected, compName);
+  const layerJson = compJson["layers"].find((ly) => ly["name"] === layerName);
+  if (layerJson === undefined) throw new StopIteration();
+  const group = layerJson["properties"].find((p) => p["matchName"] === "ADBE Transform Group");
   if (group === undefined) throw new StopIteration();
-  return new Map(json_field(group, "properties").map((p) => [p["matchName"], p]));
+  return new Map(jsonField(group, "properties").map((p) => [p["matchName"], p]));
 }
 
-function _assert_matches_json(sample: string, comp_name: string, layer_name: string): void {
-  const layer = _layer(sample, comp_name, layer_name);
-  const expected = _expected_transform(sample, comp_name, layer_name);
-  for (const match_name of _POSITION_MATCH_NAMES) {
-    const prop = _position(layer, match_name);
-    const prop_json = getitem(expected, match_name);
-    py_assert(approx(prop.value, prop_json["value"]), match_name);
-    py_assert(prop.isModified === prop_json["isModified"], match_name);
+function _assertMatchesJson(sample: string, compName: string, layerName: string): void {
+  const layer = _layer(sample, compName, layerName);
+  const expected = _expectedTransform(sample, compName, layerName);
+  for (const matchName of _POSITION_MATCH_NAMES) {
+    const prop = _position(layer, matchName);
+    const propJson = getitem(expected, matchName);
+    pyAssert(approx(prop.value, propJson["value"]), matchName);
+    pyAssert(prop.isModified === propJson["isModified"], matchName);
   }
-  const leader_json = getitem(expected, "ADBE Position");
-  expect(_position(layer).dimensionsSeparated).toBe(json_field(leader_json, "dimensionsSeparated"));
+  const leaderJson = getitem(expected, "ADBE Position");
+  expect(_position(layer).dimensionsSeparated).toBe(jsonField(leaderJson, "dimensionsSeparated"));
 }
 
 describe("TestCameraDefaultPosition", () => {
-  test.each(_CAMERA_COMPS)("test_position_and_followers_match_json[%#]", (comp_name) => {
-    _assert_matches_json("camera_default_position", comp_name, "Camera");
+  test.each(_CAMERA_COMPS)("test_position_and_followers_match_json[%#]", (compName) => {
+    _assertMatchesJson("camera_default_position", compName, "Camera");
   });
 
-  test.each(["zoom_1000", "zoom_keyed", "zoom_1000_separated"])("test_default_follows_zoom[%#]", (comp_name) => {
+  test.each(["zoom_1000", "zoom_keyed", "zoom_1000_separated"])("test_default_follows_zoom[%#]", (compName) => {
     // AE places a dropped Position from the camera's Zoom at time 0, not
     // the comp's default zoom (-2000), also once the Zoom is keyed.
-    const camera = _layer("camera_default_position", comp_name, "Camera");
+    const camera = _layer("camera_default_position", compName, "Camera");
     expect(approx(_position(camera).defaultValue, [720.0, 405.0, -1000.0])).toBe(true);
   });
 
@@ -134,7 +134,7 @@ describe("TestCameraDefaultPosition", () => {
     // Zoom and Position are both absent here; the 1920x107 comp's 10:11
     // pixel aspect makes the default zoom 2424.24 rather than 2666.67.
     // ExtendScript: [960, 53.5, -2424.24242418], isModified false.
-    const comp = get_comp(parse_project(VIEW_DIR.div("draft3d_false.aep")), "Comp 1");
+    const comp = getComp(parseProject(VIEW_DIR.div("draft3d_false.aep")), "Comp 1");
     const camera = comp.layers.find((layer) => layer.name === "Camera 1");
     if (camera === undefined) throw new StopIteration();
     const position = _position(camera);
@@ -144,12 +144,12 @@ describe("TestCameraDefaultPosition", () => {
 });
 
 describe("TestLightDefaultPosition", () => {
-  test.each(_LIGHT_ROWS)("test_position_and_followers_match_json[%#]", (comp_name, layer_name) => {
-    _assert_matches_json("light_default_position", comp_name, layer_name);
+  test.each(_LIGHT_ROWS)("test_position_and_followers_match_json[%#]", (compName, layerName) => {
+    _assertMatchesJson("light_default_position", compName, layerName);
   });
 
-  test.each(_LIGHT_COMPS)("test_default_value[%#]", (comp_name) => {
-    const light = _layer("light_default_position", comp_name, "Point");
+  test.each(_LIGHT_COMPS)("test_default_value[%#]", (compName) => {
+    const light = _layer("light_default_position", compName, "Point");
     const comp = light.containingComp;
     const zoom = (comp.width * comp.pixelAspect) / 0.72;
     const expected = [
@@ -160,8 +160,8 @@ describe("TestLightDefaultPosition", () => {
     expect(approx(_position(light).defaultValue, expected)).toBe(true);
   });
 
-  test.each(_LIGHT_COMPS)("test_separated_followers_default_to_leader[%#]", (comp_name) => {
-    const light = _layer("light_default_position", comp_name, "Point Separated");
+  test.each(_LIGHT_COMPS)("test_separated_followers_default_to_leader[%#]", (compName) => {
+    const light = _layer("light_default_position", compName, "Point Separated");
     const defaults = Array.from(range(3), (dim) => _position(light, `ADBE Position_${dim}`).defaultValue);
     expect(approx(defaults, _position(light).defaultValue)).toBe(true);
   });
@@ -169,7 +169,7 @@ describe("TestLightDefaultPosition", () => {
   test("test_environment_light_stored_at_default", () => {
     // This light's Position is stored at its default rather than left out;
     // ExtendScript reports it unmodified all the same.
-    const comp = get_comp(parse_project(SAMPLES_DIR.div("light_source_default.aep")), "crystal");
+    const comp = getComp(parseProject(SAMPLES_DIR.div("light_source_default.aep")), "crystal");
     const light = comp.layers.find((ly) => ly.name === "Environment Light 1");
     if (light === undefined) throw new StopIteration();
     const position = _position(light);

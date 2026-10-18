@@ -1,8 +1,8 @@
 import { warn } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
-import { find_by_list_type, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { findByListType, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { LayerType } from "../enums/index.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { AVLayer } from "../models/layers/av_layer.ts";
 import { CameraLayer } from "../models/layers/camera_layer.ts";
 import { LightLayer } from "../models/layers/light_layer.ts";
@@ -38,37 +38,37 @@ export const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof 
  * @returns An {@link AVLayer} for most layers, a {@link LightLayer} for light layers, or a
  *   {@link ParametricMeshLayer} for parametric mesh layers.
  */
-export const parse_layer = _suppress_materialization().decorate(function parse_layer(
-  layer_chunk: ListChunk,
+export const parseLayer = _suppressMaterialization().decorate(function parse_layer(
+  layerChunk: ListChunk,
   composition: CompItem,
-  effect_param_defs: Map<string, Map<string, ParamDef>>,
+  effectParamDefs: Map<string, Map<string, ParamDef>>,
 ): Layer {
-  const child_chunks = layer_chunk.chunks;
+  const childChunks = layerChunk.chunks;
 
-  const cmta = find_by_type_or_null(child_chunks, "cmta");
+  const cmta = findByTypeOrNull(childChunks, "cmta");
 
-  const ldta = find_by_type(child_chunks, "ldta");
-  const name_utf8 = find_by_type(child_chunks, "Utf8");
+  const ldta = findByType(childChunks, "ldta");
+  const nameUtf8 = findByType(childChunks, "Utf8");
 
-  const layer_type = ldta.layer_type;
+  const layerType = ldta.layer_type;
 
-  let layer_cls = _LAYER_CLASSES.get(layer_type);
-  if (layer_cls === undefined) {
+  let layerCls = _LAYER_CLASSES.get(layerType);
+  if (layerCls === undefined) {
     // NOTE(port): Python passes stacklevel=2; pyrt warn() only records the message, which is all that is observable.
-    warn(`Failed to create layer type ${layer_type}, falling back to AVLayer`);
-    layer_cls = AVLayer;
+    warn(`Failed to create layer type ${layerType}, falling back to AVLayer`);
+    layerCls = AVLayer;
   }
 
-  const layer = new layer_cls({
+  const layer = new layerCls({
     _ldta: ldta,
     _cmta: cmta,
-    _name_utf8: name_utf8,
-    _layer_list: layer_chunk,
+    _name_utf8: nameUtf8,
+    _layer_list: layerChunk,
     containing_comp: composition,
   });
-  layer._tdgp = find_by_list_type(child_chunks, "tdgp");
+  layer._tdgp = findByListType(childChunks, "tdgp");
   // The property tree is built on first access (`Layer._tree_param_defs`).
   Reflect.deleteProperty(layer, "_properties");
-  layer._tree_param_defs = effect_param_defs;
+  layer._tree_param_defs = effectParamDefs;
   return layer;
 });

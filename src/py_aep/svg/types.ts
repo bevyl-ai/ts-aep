@@ -34,10 +34,10 @@ export class Subpath {
   /** Whether the subpath closes back to its first vertex. */
   declare closed: boolean;
 
-  constructor(vertices: number[][], in_tangents: number[][], out_tangents: number[][], closed: boolean) {
+  constructor(vertices: number[][], inTangents: number[][], outTangents: number[][], closed: boolean) {
     this.vertices = vertices;
-    this.in_tangents = in_tangents;
-    this.out_tangents = out_tangents;
+    this.in_tangents = inTangents;
+    this.out_tangents = outTangents;
     this.closed = closed;
   }
 }
@@ -140,14 +140,14 @@ export class StrokeStyle {
     width: number,
     cap: number = 1,
     join: number = 1,
-    miter_limit: number = 4.0,
+    miterLimit: number = 4.0,
     dashes: number[] = [],
   ) {
     this.paint = paint;
     this.width = width;
     this.cap = cap;
     this.join = join;
-    this.miter_limit = miter_limit;
+    this.miter_limit = miterLimit;
     this.dashes = dashes;
   }
 }

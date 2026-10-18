@@ -70,7 +70,7 @@ export function descriptor<D extends Descriptor>(cls: Function, name: string, d:
 }
 
 /** `type(obj).__dict__[name]` / `getattr(Cls, name)` for a descriptor (walks the MRO). */
-export function get_descriptor(cls: Function, name: string): Descriptor | undefined {
+export function getDescriptor(cls: Function, name: string): Descriptor | undefined {
   for (let c: Function | null = cls; c && c !== Function.prototype; c = Object.getPrototypeOf(c)) {
     const d = DESCRIPTORS.get(c)?.get(name);
     if (d) return d;
@@ -79,7 +79,7 @@ export function get_descriptor(cls: Function, name: string): Descriptor | undefi
 }
 
 /** All descriptors visible on `cls`, base-first then overridden by subclasses (like `vars()` over the MRO). */
-export function descriptors_of(cls: Function): Map<string, Descriptor> {
+export function descriptorsOf(cls: Function): Map<string, Descriptor> {
   const chain: Function[] = [];
   for (let c: Function | null = cls; c && c !== Function.prototype; c = Object.getPrototypeOf(c)) chain.unshift(c);
   const out = new Map<string, Descriptor>();
@@ -90,11 +90,11 @@ export function descriptors_of(cls: Function): Map<string, Descriptor> {
 // `py_object` proxy -> the instance it wraps.
 const PROXY_TARGETS = new WeakMap<object, object>();
 
-function _has_getattr(x: object): x is { __getattr__(name: string): unknown } {
+function _hasGetattr(x: object): x is { __getattr__(name: string): unknown } {
   return "__getattr__" in x && typeof x.__getattr__ === "function";
 }
 
-function _has_setattr(x: object): x is { __setattr__(name: string, value: unknown): void } {
+function _hasSetattr(x: object): x is { __setattr__(name: string, value: unknown): void } {
   return "__setattr__" in x && typeof x.__setattr__ === "function";
 }
 
@@ -102,24 +102,24 @@ function _has_setattr(x: object): x is { __setattr__(name: string, value: unknow
  * Wrap a freshly constructed instance so `__getattr__` runs for missing
  * attributes and `__setattr__` for every assignment, as in Python.
  */
-export function py_object<T extends object>(self: T): T {
-  const has_getattr = _has_getattr(self);
-  const has_setattr = _has_setattr(self);
-  if (!has_getattr && !has_setattr) return self;
+export function pyObject<T extends object>(self: T): T {
+  const hasGetattr = _hasGetattr(self);
+  const hasSetattr = _hasSetattr(self);
+  if (!hasGetattr && !hasSetattr) return self;
   const proxy = new Proxy(self, {
     get(target, key, receiver) {
-      if (typeof key === "symbol" || key in target || !has_getattr) return Reflect.get(target, key, receiver);
+      if (typeof key === "symbol" || key in target || !hasGetattr) return Reflect.get(target, key, receiver);
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
       // Python looks special methods (`__bool__`, `__eq__`, `__len__`, ...) up on the type,
       // never through `__getattr__`; pyrt probes them as property reads, so a miss is undefined.
-      if (_is_special(key)) return undefined;
-      if (_has_getattr(receiver)) return receiver.__getattr__(key);
+      if (_isSpecial(key)) return undefined;
+      if (_hasGetattr(receiver)) return receiver.__getattr__(key);
     },
     set(target, key, value, receiver) {
-      if (typeof key === "symbol" || !has_setattr || in_setattr.has(target)) {
+      if (typeof key === "symbol" || !hasSetattr || inSetattr.has(target)) {
         return Reflect.set(target, key, value, receiver);
       }
-      if (_has_setattr(receiver)) receiver.__setattr__(key, value);
+      if (_hasSetattr(receiver)) receiver.__setattr__(key, value);
       return true;
     },
   });
@@ -144,8 +144,8 @@ export function py_object<T extends object>(self: T): T {
  * subclass too) hands `_`-prefixed names straight to `object.__setattr__`,
  * so a constructor's private fields skip it.
  */
-export function py_class_hooks(cls: Function, kw: { setattr_passes_private?: boolean } = {}): void {
-  const private_pass = kw.setattr_passes_private ?? false;
+export function pyClassHooks(cls: Function, kw: { setattr_passes_private?: boolean } = {}): void {
+  const privatePass = kw.setattr_passes_private ?? false;
   // An empty target over the base prototype: the proxy then reports that prototype as its
   // own, so `instanceof Base` still finds it in the chain.
   const base: object = Object.create(Object.getPrototypeOf(cls.prototype));
@@ -154,12 +154,12 @@ export function py_class_hooks(cls: Function, kw: { setattr_passes_private?: boo
       if (typeof key === "symbol" || key in target) return Reflect.get(target, key, receiver);
       if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
       // Special methods are looked up on the type, never through `__getattr__` (see `py_object`).
-      if (_is_special(key)) return undefined;
-      if (_has_getattr(receiver)) return receiver.__getattr__(key);
+      if (_isSpecial(key)) return undefined;
+      if (_hasGetattr(receiver)) return receiver.__getattr__(key);
       return undefined;
     },
     set(target, key, value, receiver) {
-      if (typeof key === "symbol" || (private_pass && key.startsWith("_")) || receiver === setattr_target || !_has_setattr(receiver)) {
+      if (typeof key === "symbol" || (privatePass && key.startsWith("_")) || receiver === setattrTarget || !_hasSetattr(receiver)) {
         return Reflect.set(target, key, value, receiver);
       }
       // `__setattr__` passes an existing name on to `object.__setattr__`, which reports no
@@ -172,40 +172,40 @@ export function py_class_hooks(cls: Function, kw: { setattr_passes_private?: boo
   Object.setPrototypeOf(cls.prototype, hooks);
 }
 
-const in_setattr = new WeakSet<object>();
+const inSetattr = new WeakSet<object>();
 // The object `object_setattr` is writing to (a `py_class_hooks` instance), if any.
-let setattr_target: object | null = null;
+let setattrTarget: object | null = null;
 
 /** The object a `py_object` proxy wraps (`self` itself when it is not one). */
-function target_of(self: object): object {
+function targetOf(self: object): object {
   return PROXY_TARGETS.get(self) ?? self;
 }
 
 /** `object.__setattr__(self, name, value)` - bypasses `__setattr__`, still runs descriptors. */
-export function object_setattr(self: object, name: string, value: unknown): void {
-  const target = target_of(self);
+export function objectSetattr(self: object, name: string, value: unknown): void {
+  const target = targetOf(self);
   if (target === self) {
     // Not a `py_object` proxy: only a `py_class_hooks` proxy can see this write.
-    const outer = setattr_target;
-    setattr_target = self;
+    const outer = setattrTarget;
+    setattrTarget = self;
     try {
       Reflect.set(self, name, value);
     } finally {
-      setattr_target = outer;
+      setattrTarget = outer;
     }
     return;
   }
-  in_setattr.add(target);
+  inSetattr.add(target);
   try {
     Reflect.set(target, name, value, self);
   } finally {
-    in_setattr.delete(target);
+    inSetattr.delete(target);
   }
 }
 
 /** `object.__getattribute__(self, name)` - no `__getattr__` fallback. */
-export function object_getattr(self: object, name: string): any {
-  const target = target_of(self);
+export function objectGetattr(self: object, name: string): any {
+  const target = targetOf(self);
   if (!(name in target)) {
     throw new AttributeError(`'${target.constructor?.name}' object has no attribute '${name}'`);
   }
@@ -219,7 +219,7 @@ export function object_getattr(self: object, name: string): any {
  * `deepcopy` copies it with the instance and `Object.assign` / spreads skip
  * it; writable and configurable so a class field named `__dict__` may alias it.
  */
-export function instance_dict(obj: object): Map<string, any> {
+export function instanceDict(obj: object): Map<string, any> {
   if (!Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
     Object.defineProperty(obj, "__dict__", {
       value: new Map<string, unknown>(),
@@ -235,6 +235,6 @@ export function instance_dict(obj: object): Map<string, any> {
 const PROTOCOL = new Set(["equals", "has"]);
 
 /** Python looks special methods up on the type, never through `__getattr__`. */
-function _is_special(key: string): boolean {
+function _isSpecial(key: string): boolean {
   return (key.length > 4 && key.startsWith("__") && key.endsWith("__")) || PROTOCOL.has(key);
 }

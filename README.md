@@ -111,8 +111,8 @@ const saved: Uint8Array = py_aep.memfs.read("/out.aep");
 
 `memfs` also has `exists`, `list`, `remove` and `clear`. Footage, fonts, ICC
 profiles or OCIO configs a project refers to are only found if you write them
-into `memfs` at the paths the project expects. `use_memory_fs()` forces the
-in-memory backend where `node:fs` exists too; `fs_backend()` reports which one
+into `memfs` at the paths the project expects. `useMemoryFs()` forces the
+in-memory backend where `node:fs` exists too; `fsBackend()` reports which one
 is active.
 
 Host caveats:
@@ -128,7 +128,7 @@ Host caveats:
 - Cloudflare Workers refuse to compile wasm from fetched bytes, so shaping is
   unavailable there; everything else works. With the `nodejs_compat` flag,
   `process.getBuiltinModule("node:fs")` returns Workers' own virtual fs (only
-  `/tmp` is writable, per request); call `use_memory_fs()` to use `memfs`
+  `/tmp` is writable, per request); call `useMemoryFs()` to use `memfs`
   instead. Parse and save are synchronous and CPU-bound: large projects can hit
   the Workers CPU-time limit.
 - Without a host, `platform` is `"browser"`, so a new project's default

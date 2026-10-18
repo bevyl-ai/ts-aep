@@ -7,10 +7,10 @@
 
 import { ZeroDivisionError, define, descriptor } from "../../pyrt/index.ts";
 import { LayerType } from "../enums/index.ts";
-import { to_dividend_divisor, to_float32_ratio } from "./bin_utils.ts";
+import { toDividendDivisor, toFloat32Ratio } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
-import { bytes_field, f8_field, s4_field, str_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { bytesField, f8Field, s4Field, strField, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // Offset of source_id (u4 big-endian) within a LIST:Layr raw body:
@@ -159,7 +159,7 @@ export class LdtaChunk extends Chunk {
   }
 
   set in_point(value: number) {
-    [this.in_point_dividend, this.in_point_divisor] = to_dividend_divisor(value);
+    [this.in_point_dividend, this.in_point_divisor] = toDividendDivisor(value);
   }
 
   /** Out point in seconds (dividend / divisor). */
@@ -169,7 +169,7 @@ export class LdtaChunk extends Chunk {
   }
 
   set out_point(value: number) {
-    [this.out_point_dividend, this.out_point_divisor] = to_dividend_divisor(value);
+    [this.out_point_dividend, this.out_point_divisor] = toDividendDivisor(value);
   }
 
   /** Stretch as percentage (100 = no stretch). */
@@ -187,7 +187,7 @@ export class LdtaChunk extends Chunk {
     } else {
       // AE stores the factor as a float32, as an exact ratio: 133.33 %
       // is 11184531 / 8388608, not 13333 / 10000.
-      [this.stretch_dividend, this.stretch_divisor] = to_float32_ratio(value / 100.0);
+      [this.stretch_dividend, this.stretch_divisor] = toFloat32Ratio(value / 100.0);
     }
   }
 
@@ -212,9 +212,9 @@ export class LdtaChunk extends Chunk {
 
   set auto_orient(value: number) {
     this.auto_orient_along_path = value === 1;
-    const is_poi_rig = this.layer_type === LayerType.CAMERA || this.layer_type === LayerType.LIGHT;
-    this.camera_or_poi_auto_orient = value === 2 && !is_poi_rig;
-    this.poi_auto_orient = value === 2 && is_poi_rig;
+    const isPoiRig = this.layer_type === LayerType.CAMERA || this.layer_type === LayerType.LIGHT;
+    this.camera_or_poi_auto_orient = value === 2 && !isPoiRig;
+    this.poi_auto_orient = value === 2 && isPoiRig;
     this.characters_toward_camera = value === 3;
     // Per-character 3D is a precondition of chars_toward_camera (the
     // getter needs both bits), but it is an independent layer switch
@@ -247,56 +247,56 @@ define(LdtaChunk, {
   chunk_type: { default: "ldta" },
 
   // -- Identity / timing (bytes 0-35) ------------------------------------
-  layer_id: u4_field(),
-  quality: u2_field(),
-  _reserved_06: bytes_field(2, { repr: false }),
-  stretch_dividend: s4_field({ default: 1 }),
-  start_time_dividend: s4_field(),
-  start_time_divisor: u4_field({ default: 1 }),
-  in_point_dividend: s4_field(),
-  in_point_divisor: u4_field({ default: 1 }),
-  out_point_dividend: s4_field(),
-  out_point_divisor: u4_field({ default: 1 }),
+  layer_id: u4Field(),
+  quality: u2Field(),
+  _reserved_06: bytesField(2, { repr: false }),
+  stretch_dividend: s4Field({ default: 1 }),
+  start_time_dividend: s4Field(),
+  start_time_divisor: u4Field({ default: 1 }),
+  in_point_dividend: s4Field(),
+  in_point_divisor: u4Field({ default: 1 }),
+  out_point_dividend: s4Field(),
+  out_point_divisor: u4Field({ default: 1 }),
 
   // -- Flag bytes (bytes 36-39) ------------------------------------------
-  _reserved_24: bytes_field(1, { repr: false }),
-  _layer_flags_0: u1_field({ repr: false }),
-  _layer_flags_1: u1_field({ repr: false }),
-  _layer_flags_2: u1_field({ default: 0x07, repr: false }),
+  _reserved_24: bytesField(1, { repr: false }),
+  _layer_flags_0: u1Field({ repr: false }),
+  _layer_flags_1: u1Field({ repr: false }),
+  _layer_flags_2: u1Field({ default: 0x07, repr: false }),
 
   // -- Source / label (bytes 40-63) --------------------------------------
-  source_id: u4_field(),
-  _reserved_2c: bytes_field(15, { repr: false }),
-  _reserved_3b: u1_field({ repr: false }),
-  _reserved_3c: u1_field({ repr: false }),
-  label: u1_field(),
-  _reserved_3e: bytes_field(2, { repr: false }),
+  source_id: u4Field(),
+  _reserved_2c: bytesField(15, { repr: false }),
+  _reserved_3b: u1Field({ repr: false }),
+  _reserved_3c: u1Field({ repr: false }),
+  label: u1Field(),
+  _reserved_3e: bytesField(2, { repr: false }),
 
   // -- Layer name (bytes 64-95, 32-byte UTF-8 strz) ---------------
-  layer_name: str_field(32, { default: "", encoding: "utf-8" }),
+  layer_name: strField(32, { default: "", encoding: "utf-8" }),
 
   // -- Post-name fields (bytes 96-159) -----------------------------------
-  _reserved_60: bytes_field(3, { repr: false }),
-  blending_mode: u1_field(),
-  _reserved_64: bytes_field(3, { repr: false }),
-  _transfer_flags: u1_field({ repr: false }),
-  _reserved_68: bytes_field(3, { repr: false }),
-  track_matte_type: u1_field(),
-  stretch_divisor: u4_field({ default: 1 }),
-  _reserved_70: f8_field({ repr: false }),
-  _reserved_78: f8_field({ repr: false }),
-  _reserved_80: bytes_field(3, { repr: false }),
-  layer_type: u1_field(),
-  parent_id: u4_field(),
-  _reserved_88: bytes_field(3, { repr: false }),
-  light_and_mesh_type: u1_field(),
-  _reserved_8c: u4_field({ repr: false }),
-  _reserved_90: u4_field({ repr: false }),
-  _reserved_94: u4_field({ repr: false }),
-  _reserved_98: f8_field({ repr: false }),
+  _reserved_60: bytesField(3, { repr: false }),
+  blending_mode: u1Field(),
+  _reserved_64: bytesField(3, { repr: false }),
+  _transfer_flags: u1Field({ repr: false }),
+  _reserved_68: bytesField(3, { repr: false }),
+  track_matte_type: u1Field(),
+  stretch_divisor: u4Field({ default: 1 }),
+  _reserved_70: f8Field({ repr: false }),
+  _reserved_78: f8Field({ repr: false }),
+  _reserved_80: bytesField(3, { repr: false }),
+  layer_type: u1Field(),
+  parent_id: u4Field(),
+  _reserved_88: bytesField(3, { repr: false }),
+  light_and_mesh_type: u1Field(),
+  _reserved_8c: u4Field({ repr: false }),
+  _reserved_90: u4Field({ repr: false }),
+  _reserved_94: u4Field({ repr: false }),
+  _reserved_98: f8Field({ repr: false }),
 
   // -- Optional field (bytes 160-163, AE >= 23) --------------------------
-  matte_layer_id: u4_field({ default: null, optional: true }),
+  matte_layer_id: u4Field({ default: null, optional: true }),
 });
 
 // -- BitField descriptors (not attrs fields) -----------------------------

@@ -3,18 +3,18 @@
 import {
   ValueError,
   descriptor,
-  dict_get,
+  dictGet,
   int,
-  json_dumps,
-  json_loads,
-  py_bool,
-  json_float,
-  json_int,
+  jsonDumps,
+  jsonLoads,
+  pyBool,
+  jsonFloat,
+  jsonInt,
   type JsonValue,
 } from "../../../../pyrt/index.ts";
 import { Hdr10ColorPrimaries, PngCompression } from "../../../enums/index.ts";
-import { ChunkField, enum_or_raw } from "../../descriptors.ts";
-import { validate_enum, validate_one_of, validate_positive_number } from "../../validators.ts";
+import { ChunkField, enumOrRaw } from "../../descriptors.ts";
+import { validateEnum, validateOneOf, validatePositiveNumber } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
 import type { PngRoptChunk } from "../../../binary/render_chunks.ts";
 import type { Utf8Chunk } from "../../../binary/scalar_chunks.ts";
@@ -59,7 +59,7 @@ export class PngFormatOptions extends FormatOptionsBase {
     this._hdr10_meta = new Map();
     if (_hdr10_utf8 != null) {
       try {
-        const parsed = json_loads(_hdr10_utf8.value);
+        const parsed = jsonLoads(_hdr10_utf8.value);
         if (parsed instanceof Map) this._hdr10_meta = parsed;
       } catch (e) {
         // Python: `except (json.JSONDecodeError, ValueError): pass`
@@ -92,7 +92,7 @@ export class PngFormatOptions extends FormatOptionsBase {
   /** Serialize `_hdr10_meta` back to the Utf8 chunk body. */
   _sync_hdr10(): void {
     if (this._hdr10_utf8 != null) {
-      this._hdr10_utf8.value = json_dumps(this._hdr10_meta, { separators: [",", ":"] });
+      this._hdr10_utf8.value = jsonDumps(this._hdr10_meta, { separators: [",", ":"] });
     }
   }
 
@@ -102,7 +102,7 @@ export class PngFormatOptions extends FormatOptionsBase {
    * Options dialog. Only available for 16-bit output. Read / Write.
    */
   get includeHdr10Metadata(): boolean {
-    return py_bool(dict_get(this._hdr10_meta, "colorMetadataPresent", false));
+    return pyBool(dictGet(this._hdr10_meta, "colorMetadataPresent", false));
   }
 
   set includeHdr10Metadata(value: boolean) {
@@ -120,11 +120,11 @@ export class PngFormatOptions extends FormatOptionsBase {
   get colorPrimaries(): Hdr10ColorPrimaries | JsonValue {
     const raw = this._hdr10_meta.get("displayPrimaries") ?? null;
     if (raw == null) return Hdr10ColorPrimaries.P3_D65;
-    return enum_or_raw((v: JsonValue) => Hdr10ColorPrimaries.of(json_int(v)))(raw);
+    return enumOrRaw((v: JsonValue) => Hdr10ColorPrimaries.of(jsonInt(v)))(raw);
   }
 
   set colorPrimaries(value: Hdr10ColorPrimaries) {
-    validate_enum(Hdr10ColorPrimaries)(value);
+    validateEnum(Hdr10ColorPrimaries)(value);
     this._hdr10_meta.set("displayPrimaries", int(value));
     this._sync_hdr10();
   }
@@ -136,14 +136,14 @@ export class PngFormatOptions extends FormatOptionsBase {
    */
   get luminanceMin(): number | null {
     const raw = this._hdr10_meta.get("minLuminance") ?? null;
-    return raw != null ? json_float(raw) : null;
+    return raw != null ? jsonFloat(raw) : null;
   }
 
   set luminanceMin(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("minLuminance");
     } else {
-      validate_positive_number(value);
+      validatePositiveNumber(value);
       this._hdr10_meta.set("minLuminance", value);
     }
     this._sync_hdr10();
@@ -156,14 +156,14 @@ export class PngFormatOptions extends FormatOptionsBase {
    */
   get luminanceMax(): number | null {
     const raw = this._hdr10_meta.get("maxLuminance") ?? null;
-    return raw != null ? json_float(raw) : null;
+    return raw != null ? jsonFloat(raw) : null;
   }
 
   set luminanceMax(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxLuminance");
     } else {
-      validate_positive_number(value);
+      validatePositiveNumber(value);
       this._hdr10_meta.set("maxLuminance", value);
     }
     this._sync_hdr10();
@@ -176,14 +176,14 @@ export class PngFormatOptions extends FormatOptionsBase {
    */
   get contentLightMax(): number | null {
     const raw = this._hdr10_meta.get("maxContentLightLevel") ?? null;
-    return raw != null ? json_float(raw) : null;
+    return raw != null ? jsonFloat(raw) : null;
   }
 
   set contentLightMax(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxContentLightLevel");
     } else {
-      validate_positive_number(value);
+      validatePositiveNumber(value);
       this._hdr10_meta.set("maxContentLightLevel", value);
     }
     this._sync_hdr10();
@@ -196,14 +196,14 @@ export class PngFormatOptions extends FormatOptionsBase {
    */
   get contentLightAverage(): number | null {
     const raw = this._hdr10_meta.get("maxFrameAverageLightLevel") ?? null;
-    return raw != null ? json_float(raw) : null;
+    return raw != null ? jsonFloat(raw) : null;
   }
 
   set contentLightAverage(value: number | null) {
     if (value == null) {
       this._hdr10_meta.delete("maxFrameAverageLightLevel");
     } else {
-      validate_positive_number(value);
+      validatePositiveNumber(value);
       this._hdr10_meta.set("maxFrameAverageLightLevel", value);
     }
     this._sync_hdr10();
@@ -215,7 +215,7 @@ descriptor(PngFormatOptions, "height", new ChunkField("_body", "height", { read_
 descriptor(
   PngFormatOptions,
   "bitDepth",
-  new ChunkField("_body", "bit_depth", { validate: validate_one_of([8, 16]) }),
+  new ChunkField("_body", "bit_depth", { validate: validateOneOf([8, 16]) }),
 );
 descriptor(
   PngFormatOptions,

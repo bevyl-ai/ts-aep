@@ -4,8 +4,8 @@ import { expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
-import { parse_gradient_xml } from "../../src/py_aep/parsers/gradient.ts";
-import { len, py_assert, py_eq, py_slice, range, sorted } from "../../src/pyrt/index.ts";
+import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
+import { len, pyAssert, pyEq, pySlice, range, sorted } from "../../src/pyrt/index.ts";
 
 /** Minimal stand-in for Utf8Chunk in parser unit tests. */
 class _FakeUtf8 {
@@ -217,17 +217,17 @@ const DEFAULT_AE_GRADIENT_XML =
 
 test("test_parse_gradient_xml_color_stops", () => {
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  const result = parse_gradient_xml(new _FakeUtf8(SAMPLE_XML));
-  py_assert(result != null);
+  const result = parseGradientXml(new _FakeUtf8(SAMPLE_XML));
+  pyAssert(result != null);
   expect(len(result.colorStops)).toBe(2);
   expect(
-    py_eq(
+    pyEq(
       result.colorStops[0],
       new GradientColorStop(0.0, 0.5, [1.0, 0.0, 0.0]),
     ),
   ).toBe(true);
   expect(
-    py_eq(
+    pyEq(
       result.colorStops[1],
       new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0]),
     ),
@@ -236,28 +236,28 @@ test("test_parse_gradient_xml_color_stops", () => {
 
 test("test_parse_gradient_xml_alpha_stops", () => {
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  const result = parse_gradient_xml(new _FakeUtf8(SAMPLE_XML));
-  py_assert(result != null);
+  const result = parseGradientXml(new _FakeUtf8(SAMPLE_XML));
+  pyAssert(result != null);
   expect(len(result.alphaStops)).toBe(2);
-  expect(py_eq(result.alphaStops[0], new GradientAlphaStop(0.0, 0.5, 1.0))).toBe(true);
-  expect(py_eq(result.alphaStops[1], new GradientAlphaStop(1.0, 0.5, 1.0))).toBe(true);
+  expect(pyEq(result.alphaStops[0], new GradientAlphaStop(0.0, 0.5, 1.0))).toBe(true);
+  expect(pyEq(result.alphaStops[1], new GradientAlphaStop(1.0, 0.5, 1.0))).toBe(true);
 });
 
 test("test_parse_gradient_xml_version", () => {
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  const result = parse_gradient_xml(new _FakeUtf8(SAMPLE_XML));
-  py_assert(result != null);
+  const result = parseGradientXml(new _FakeUtf8(SAMPLE_XML));
+  pyAssert(result != null);
   expect(result.version).toBe("1.0");
 });
 
 test("test_parse_gradient_xml_empty", () => {
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  expect(parse_gradient_xml(new _FakeUtf8(""))).toBe(null);
+  expect(parseGradientXml(new _FakeUtf8(""))).toBe(null);
 });
 
 test("test_parse_gradient_xml_invalid", () => {
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  expect(parse_gradient_xml(new _FakeUtf8("<not valid/>"))).toBe(null);
+  expect(parseGradientXml(new _FakeUtf8("<not valid/>"))).toBe(null);
 });
 
 /** serialize > parse produces identical gradient data. */
@@ -268,8 +268,8 @@ test("test_serialize_gradient_xml_roundtrip", () => {
     "1.0",
   );
   // @ts-expect-error _FakeUtf8 is a structural stand-in, not a Utf8Chunk (type: ignore[arg-type])
-  const result = parse_gradient_xml(new _FakeUtf8(original._utf8.value));
-  expect(py_eq(result, original)).toBe(true);
+  const result = parseGradientXml(new _FakeUtf8(original._utf8.value));
+  expect(pyEq(result, original)).toBe(true);
 });
 
 /** Gradient() serializes to AE's default gradient XML, byte for byte. */
@@ -283,18 +283,18 @@ test("test_default_gradient_matches_ae_bytes", () => {
  * stops. The values must stay paired with their (numeric) stop index.
  */
 test("test_gradient_stops_serialized_in_lexicographic_key_order", () => {
-  const color_stops = Array.from(range(12), (i) => new GradientColorStop(i / 11.0, 0.5, [i / 11.0, 0.0, 0.0]));
-  const grad = new Gradient(color_stops);
+  const colorStops = Array.from(range(12), (i) => new GradientColorStop(i / 11.0, 0.5, [i / 11.0, 0.0, 0.0]));
+  const grad = new Gradient(colorStops);
   const xml = grad._utf8.value;
   // NOTE(port): split("\n") matches str.splitlines() here; the serialized XML uses only "\n" line endings.
   const keys = xml
     .split("\n")
     .filter((ln) => ln.startsWith("<key>Stop-"))
-    .map((ln) => py_slice(ln, len("<key>Stop-"), -len("</key>")));
+    .map((ln) => pySlice(ln, len("<key>Stop-"), -len("</key>")));
   // XML emits 2 default alpha stops first, then the 12 color stops;
   // check the color block's key ordering.
-  const color_keys = py_slice(keys, -12, null);
-  expect(py_eq(color_keys, sorted(color_keys))).toBe(true); // lexicographic, not numeric
-  expect(py_eq(color_keys.slice(0, 4), ["0", "1", "10", "11"])).toBe(true);
-  expect(color_keys.at(-1)).toBe("9");
+  const colorKeys = pySlice(keys, -12, null);
+  expect(pyEq(colorKeys, sorted(colorKeys))).toBe(true); // lexicographic, not numeric
+  expect(pyEq(colorKeys.slice(0, 4), ["0", "1", "10", "11"])).toBe(true);
+  expect(colorKeys.at(-1)).toBe("9");
 });

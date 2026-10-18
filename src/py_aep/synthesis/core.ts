@@ -20,7 +20,7 @@
  * than static spec tables.
  */
 
-import { get_ae_version_major } from "../ae_version.ts";
+import { getAeVersionMajor } from "../ae_version.ts";
 import { AVLayer } from "../models/layers/av_layer.ts";
 import { CameraLayer } from "../models/layers/camera_layer.ts";
 import { LightLayer } from "../models/layers/light_layer.ts";
@@ -29,8 +29,8 @@ import { ShapeLayer } from "../models/layers/shape_layer.ts";
 import { TextLayer } from "../models/layers/text_layer.ts";
 import { ThreeDModelLayer } from "../models/layers/three_d_model_layer.ts";
 import { Property } from "../models/properties/property.ts";
-import { PropertyGroup, _apply_bounds, _derive_layer_styles_enabled, _reorder_and_fill } from "../models/properties/property_group.ts";
-import { _bind_point_default } from "../parsers/effect.ts";
+import { PropertyGroup, _applyBounds, _deriveLayerStylesEnabled, _reorderAndFill } from "../models/properties/property_group.ts";
+import { _bindPointDefault } from "../parsers/effect.ts";
 import { _PARAMETRIC_MESH_TOP_LEVEL_SPECS, _SKIP_FOR_CAMERA, _SKIP_FOR_LIGHT, _SKIP_FOR_REGULAR_AV, _SKIP_FOR_SHAPE, _SKIP_FOR_TEXT, _TOP_LEVEL_SPECS, _TRANSFORM_FIXED_DEFAULTS, _TRANSFORM_SPECS } from "./property.ts";
 import type { GroupSpec, PropSpec } from "./property.ts";
 import type { Layer } from "../models/layers/layer.ts";
@@ -46,11 +46,11 @@ import type { Layer } from "../models/layers/layer.ts";
  * `properties` are first accessed. Layer Styles keeps its collapsed
  * `enabled` state eagerly derived to preserve existing behavior.
  */
-export function synthesize_children(group: PropertyGroup, ae_major: number): void {
+export function synthesizeChildren(group: PropertyGroup, aeMajor: number): void {
   if (group.matchName === "ADBE Layer Styles") {
-    _derive_layer_styles_enabled(group, ae_major, { synthesize_subgroups: false });
+    _deriveLayerStylesEnabled(group, aeMajor, { synthesize_subgroups: false });
   }
-  group._deferred_ae_major = ae_major;
+  group._deferred_ae_major = aeMajor;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,37 +65,37 @@ export function synthesize_children(group: PropertyGroup, ae_major: number): voi
  * groups that contain data.  This function synthesizes the missing empty
  * groups and reorders all groups to match the canonical ExtendScript order.
  */
-export function _synthesize_missing_top_level_groups(layer: Layer, ae_major: number): void {
+export function _synthesizeMissingTopLevelGroups(layer: Layer, aeMajor: number): void {
   let specs: ReadonlyArray<PropSpec | GroupSpec> = _TOP_LEVEL_SPECS;
-  let skip_groups: ReadonlySet<string>;
+  let skipGroups: ReadonlySet<string>;
   if (layer instanceof CameraLayer) {
-    skip_groups = _SKIP_FOR_CAMERA;
+    skipGroups = _SKIP_FOR_CAMERA;
   } else if (layer instanceof LightLayer) {
-    skip_groups = _SKIP_FOR_LIGHT;
+    skipGroups = _SKIP_FOR_LIGHT;
   } else if (!(layer instanceof AVLayer)) {
     return;
   } else if (layer instanceof TextLayer) {
-    skip_groups = _SKIP_FOR_TEXT;
+    skipGroups = _SKIP_FOR_TEXT;
   } else if (layer instanceof ShapeLayer) {
-    skip_groups = _SKIP_FOR_SHAPE;
+    skipGroups = _SKIP_FOR_SHAPE;
   } else if (layer instanceof ParametricMeshLayer) {
     // Mesh layers expose a different group set AND order (Geometry
     // Options / Essential Properties after Material Assignment), so
     // they use their own full spec list instead of a skip set.
     specs = _PARAMETRIC_MESH_TOP_LEVEL_SPECS;
-    skip_groups = new Set<string>();
+    skipGroups = new Set<string>();
   } else {
     // AVLayer
-    skip_groups = _SKIP_FOR_REGULAR_AV;
+    skipGroups = _SKIP_FOR_REGULAR_AV;
   }
 
-  _reorder_and_fill(layer, specs, 1, { skip: skip_groups, tail_mode: "all", ae_major });
+  _reorderAndFill(layer, specs, 1, { skip: skipGroups, tail_mode: "all", ae_major: aeMajor });
 
   // Post-processing: Layer Sets elided flag and depth fixup.
-  const canonical_mns = new Set<string>(specs.map((s) => s.match_name));
+  const canonicalMns = new Set<string>(specs.map((s) => s.match_name));
   for (const child of layer.properties) {
     if (child.matchName === "ADBE Layer Sets") child._elided = true;
-    if (child instanceof PropertyGroup && canonical_mns.has(child.matchName)) {
+    if (child instanceof PropertyGroup && canonicalMns.has(child.matchName)) {
       child._property_depth = 1;
     }
   }
@@ -127,17 +127,17 @@ export function _synthesize_missing_top_level_groups(layer: Layer, ae_major: num
  * on a camera zoom - and are computed here; all other defaults are fixed
  * constants defined in `_TRANSFORM_FIXED_DEFAULTS`.
  */
-export function _set_transform_defaults(layer: Layer, ae_major: number): void {
+export function _setTransformDefaults(layer: Layer, aeMajor: number): void {
   const transform = layer.transform;
   if (transform == null) return;
 
   // Anchor Point is relative to the layer itself (source dimensions),
   // while Position is relative to the containing composition.
-  const comp_w = layer.containingComp.width;
-  const comp_h = layer.containingComp.height;
-  let anchor_w: number;
-  let anchor_h: number;
-  let source_backed = false;
+  const compW = layer.containingComp.width;
+  const compH = layer.containingComp.height;
+  let anchorW: number;
+  let anchorH: number;
+  let sourceBacked = false;
   if (layer instanceof AVLayer) {
     if (
       layer instanceof TextLayer ||
@@ -149,17 +149,17 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       // Source-less AVLayers: anchor defaults to origin. So does a 3D
       // model layer, whose anchor is in model space (AE 2026 reports
       // [0, 0, 0] for an untouched one).
-      anchor_w = 0;
-      anchor_h = 0;
+      anchorW = 0;
+      anchorH = 0;
     } else {
       // The centre of the source, at its current size: set by
       // `follow_source_anchor` below.
-      anchor_w = anchor_h = 0;
-      source_backed = true;
+      anchorW = anchorH = 0;
+      sourceBacked = true;
     }
   } else {
-    anchor_w = comp_w;
-    anchor_h = comp_h;
+    anchorW = compW;
+    anchorH = compH;
   }
 
   const position = layer._default_position();
@@ -167,8 +167,8 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   // Spatial defaults depend on layer dimensions. The X / Y / Z followers
   // default to the leader's components: separating a camera or light
   // Position left at its default reads all three unmodified in AE 2026.
-  const spatial_defaults = new Map<string, number[] | number>([
-    ["ADBE Anchor Point", [anchor_w / 2.0, anchor_h / 2.0, 0.0]],
+  const spatialDefaults = new Map<string, number[] | number>([
+    ["ADBE Anchor Point", [anchorW / 2.0, anchorH / 2.0, 0.0]],
     ["ADBE Position", position],
     ["ADBE Position_0", position[0]],
     ["ADBE Position_1", position[1]],
@@ -190,7 +190,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
       // plain property, so the `__dict__` write was discarded.)
       if (prop.defaultValue != null) continue; // already set (e.g. by effect param defs)
       let default_: number | number[] | null = _TRANSFORM_FIXED_DEFAULTS.get(prop.matchName) ?? null;
-      if (default_ == null) default_ = spatial_defaults.get(prop.matchName) ?? null;
+      if (default_ == null) default_ = spatialDefaults.get(prop.matchName) ?? null;
       if (default_ != null) {
         // When the parser stores a vector property as a scalar
         // (e.g. Orientation parsed as 0.0 instead of [0,0,0]),
@@ -216,7 +216,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   for (const spec of _TRANSFORM_SPECS) {
     const mn = spec.match_name;
     let default_: number | number[] | null = _TRANSFORM_FIXED_DEFAULTS.get(mn) ?? null;
-    if (default_ == null) default_ = spatial_defaults.get(mn) ?? null;
+    if (default_ == null) default_ = spatialDefaults.get(mn) ?? null;
     let value: number | number[] | null = _INACTIVE_FOLLOWER_VALUE.get(mn) ?? null;
     if (value == null) value = default_;
     if (value == null) value = spec.dimensions > 1 ? Array(spec.dimensions).fill(0.0) : 0.0;
@@ -224,10 +224,10 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
     overrides.set(mn, [value, default_]);
   }
 
-  _reorder_and_fill(transform, _TRANSFORM_SPECS, 2, {
+  _reorderAndFill(transform, _TRANSFORM_SPECS, 2, {
     value_overrides: overrides,
     tail_mode: "none",
-    ae_major,
+    ae_major: aeMajor,
   });
 
   // A null's Opacity defaults to 0: left out, it reads 0, while a written
@@ -240,12 +240,12 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
     }
   }
 
-  if (source_backed) {
-    follow_source_anchor(transform.property("ADBE Anchor Point"));
+  if (sourceBacked) {
+    followSourceAnchor(transform.property("ADBE Anchor Point"));
   }
 
   // --- Phase 3: context-dependent naming ----------------------------------
-  apply_dimensionality_naming(layer);
+  applyDimensionalityNaming(layer);
 
   // Camera and Light layers show "Point of Interest" instead of
   // "Anchor Point" in the Transform group.
@@ -259,7 +259,7 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
   // --- Phase 4: set min/max on transform properties -----------------------
   for (const child of transform.properties) {
     if (child instanceof Property) {
-      _apply_bounds(child);
+      _applyBounds(child);
     }
   }
 }
@@ -274,13 +274,13 @@ export function _set_transform_defaults(layer: Layer, ae_major: number): void {
  * or a precomp resize. An audio-only source has no pixels to scale by, so
  * the fraction reads as is: AE 2026 reports [0.5, 0.5, 0].
  */
-export function follow_source_anchor(anchor: Property): void {
+export function followSourceAnchor(anchor: Property): void {
   const cdat = anchor._cdat;
   if (!anchor._is_live() && cdat != null) {
     cdat.values = [0.5, 0.5, 0.0];
     anchor._value = null;
   }
-  _bind_point_default(anchor, [50.0, 50.0, 0.0]);
+  _bindPointDefault(anchor, [50.0, 50.0, 0.0]);
 }
 
 /** One component of the vector `source` returns, read on each call. */
@@ -289,7 +289,7 @@ export function _component(source: () => number[], dim: number): () => number {
 }
 
 /**
- * Make the defaults that follow other state read it as it changes.
+ * Make the defaults that follow other state read it changes.
  *
  * A layer's Position follows its comp's size, and a camera's its Zoom too;
  * a camera or light's Point of Interest follows the comp's centre; a
@@ -297,7 +297,7 @@ export function _component(source: () => number[], dim: number): () => number {
  * aspect. `Layer._write_out_moved_defaults` writes them once moved (AE
  * 2026 keeps a Point of Interest where it was, modified, on a resize).
  */
-export function _follow_live_defaults(layer: Layer): void {
+export function _followLiveDefaults(layer: Layer): void {
   const transform = layer.transform;
   const position = transform.property("ADBE Position");
   position._default_value_source = () => layer._default_position();
@@ -311,8 +311,8 @@ export function _follow_live_defaults(layer: Layer): void {
   }
   if (layer instanceof CameraLayer) {
     const options = layer.property("ADBE Camera Options Group");
-    for (const match_name of ["ADBE Camera Zoom", "ADBE Camera Focus Distance"] as const) {
-      const prop = options.property(match_name);
+    for (const matchName of ["ADBE Camera Zoom", "ADBE Camera Focus Distance"] as const) {
+      const prop = options.property(matchName);
       prop._default_value_source = () => layer._default_zoom();
     }
   }
@@ -328,9 +328,9 @@ export function _follow_live_defaults(layer: Layer): void {
  * A 2-D layer's Z is dead data; AE normalizes it to 100 whenever it touches
  * the layer rather than leaving a stale number behind.
  */
-export function _flatten_scale_z(scale_prop: Property): void {
-  if (scale_prop.keyframes?.length > 0) {
-    for (const kf of scale_prop.keyframes) {
+export function _flattenScaleZ(scaleProp: Property): void {
+  if (scaleProp.keyframes?.length > 0) {
+    for (const kf of scaleProp.keyframes) {
       const value = kf.value;
       if (Array.isArray(value) && value.length >= 3) {
         kf.value = [value[0], value[1], 100.0];
@@ -338,9 +338,9 @@ export function _flatten_scale_z(scale_prop: Property): void {
     }
     return;
   }
-  const current = scale_prop.value;
+  const current = scaleProp.value;
   if (Array.isArray(current) && current.length >= 3) {
-    scale_prop.value = [current[0], current[1], 100.0];
+    scaleProp.value = [current[0], current[1], 100.0];
   }
 }
 
@@ -363,46 +363,46 @@ export function _flatten_scale_z(scale_prop: Property): void {
  * Only the setter passes it - synthesis must not touch the bytes it is
  * describing.
  */
-export function apply_dimensionality_naming(layer: Layer, kw: { reset_scale_z?: boolean } = {}): void {
+export function applyDimensionalityNaming(layer: Layer, kw: { reset_scale_z?: boolean } = {}): void {
   const { reset_scale_z = false } = kw;
   const transform = layer.transform;
   if (transform == null) return;
-  const rotate_z = transform.property("ADBE Rotate Z");
-  const scale_prop = transform.property("ADBE Scale");
+  const rotateZ = transform.property("ADBE Rotate Z");
+  const scaleProp = transform.property("ADBE Scale");
   if (layer.is3d) {
     // _reorder_and_fill set _auto_name="Rotation" from the spec;
     // undo it so the sentinel _name_utf8 falls through to
     // MATCH_NAME_TO_AUTO_NAME -> "Z Rotation".
-    if (rotate_z != null) {
-      rotate_z._auto_name = null;
+    if (rotateZ != null) {
+      rotateZ._auto_name = null;
     }
-    if (reset_scale_z && scale_prop instanceof Property && scale_prop._scale_z_override != null) {
+    if (reset_scale_z && scaleProp instanceof Property && scaleProp._scale_z_override != null) {
       // The layer is arriving from 2-D, where its Z was dead. AE writes
       // the 100 it was showing into the chunk, so there is nothing left
       // to mask - and a later write to Z then actually sticks. Drop the
       // override FIRST or the write reads back its own 100 and no-ops.
-      scale_prop._scale_z_override = null;
-      _flatten_scale_z(scale_prop);
+      scaleProp._scale_z_override = null;
+      _flattenScaleZ(scaleProp);
     }
     return;
   }
-  if (rotate_z != null) {
-    rotate_z._auto_name = "Rotation";
+  if (rotateZ != null) {
+    rotateZ._auto_name = "Rotation";
   }
-  if (scale_prop instanceof Property) {
+  if (scaleProp instanceof Property) {
     if (reset_scale_z) {
       // Leaving 3-D discards the Z outright, keyframes included.
-      scale_prop._scale_z_override = null;
-      _flatten_scale_z(scale_prop);
+      scaleProp._scale_z_override = null;
+      _flattenScaleZ(scaleProp);
     }
     // For parsed properties (cdat path), _resolve_value applies
     // the override; for synthesized properties (_value path),
     // fix the user-facing value directly.
-    scale_prop._scale_z_override = 100.0;
-    if (Array.isArray(scale_prop._value) && scale_prop._value.length >= 3) {
-      scale_prop._value[2] = 100.0;
+    scaleProp._scale_z_override = 100.0;
+    if (Array.isArray(scaleProp._value) && scaleProp._value.length >= 3) {
+      scaleProp._value[2] = 100.0;
     }
-    for (const kf of scale_prop.keyframes) {
+    for (const kf of scaleProp.keyframes) {
       const raw = kf._extract_raw_value();
       if (Array.isArray(raw) && raw.length >= 3) {
         kf._value = raw;
@@ -424,11 +424,11 @@ export function apply_dimensionality_naming(layer: Layer, kw: { reset_scale_z?: 
  *
  * @param layer - The layer whose property tree should be finalized.
  */
-export function synthesize_layer_properties(layer: Layer): void {
-  const ae_major: number = get_ae_version_major(layer);
+export function synthesizeLayerProperties(layer: Layer): void {
+  const aeMajor: number = getAeVersionMajor(layer);
 
   // --- Synthesize missing top-level groups --------------------------------
-  _synthesize_missing_top_level_groups(layer, ae_major);
+  _synthesizeMissingTopLevelGroups(layer, aeMajor);
 
   // --- Synthesize children & apply min/max (single recursive pass) --------
   for (const group of layer.properties) {
@@ -436,9 +436,9 @@ export function synthesize_layer_properties(layer: Layer): void {
       if (group.matchName === "ADBE Transform Group") {
         continue; // handled by _set_transform_defaults below
       }
-      synthesize_children(group, ae_major);
+      synthesizeChildren(group, aeMajor);
     } else if (group instanceof Property) {
-      _apply_bounds(group);
+      _applyBounds(group);
       // Time Remap max defaults to 0 when no _tduM chunk provides the
       // actual source duration.
       if (group.matchName === "ADBE Time Remapping" && group._tduM == null) {
@@ -449,6 +449,6 @@ export function synthesize_layer_properties(layer: Layer): void {
 
   // After the pass: a camera's default Position reads its Zoom, which is
   // only synthesized (when AE left it out) once its group is registered.
-  _set_transform_defaults(layer, ae_major);
-  _follow_live_defaults(layer);
+  _setTransformDefaults(layer, aeMajor);
+  _followLiveDefaults(layer);
 }

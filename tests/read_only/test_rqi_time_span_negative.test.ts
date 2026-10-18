@@ -10,10 +10,10 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { as_instance, parse_project, parse_project_fresh } from "../helpers.ts";
+import { asInstance, parseProject, parseProjectFresh } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { Path, py_eq } from "../../src/pyrt/index.ts";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
+import { Path, pyEq } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is the directory of
 // this file (`__file__.parent`), so two more `.parent` reach the package root.
@@ -22,27 +22,27 @@ const SAMPLE = new Path(import.meta.dir)
 
 describe("TestNegativeTimeSpanDecode", () => {
   test("test_negative_start_decodes_signed", () => {
-    const project = parse_project(SAMPLE);
-    const rqi = as_instance(project.renderQueue, RenderQueue).items[0];
+    const project = parseProject(SAMPLE);
+    const rqi = asInstance(project.renderQueue, RenderQueue).items[0];
     expect(rqi.timeSpanStart).toBe(-5.0);
     expect(rqi.timeSpanDuration).toBe(15.0);
   });
 
   test("test_negative_duration_decodes_signed", () => {
-    const project = parse_project(SAMPLE);
-    const rqi = as_instance(project.renderQueue, RenderQueue).items[1];
+    const project = parseProject(SAMPLE);
+    const rqi = asInstance(project.renderQueue, RenderQueue).items[1];
     expect(rqi.timeSpanStart).toBe(110.0);
     expect(rqi.timeSpanDuration).toBe(-100.0);
   });
 
   test("test_roundtrip_stays_byte_identical", () => {
-    const tmp_path = make_tmp_path();
-    const out = tmp_path.div("time_span_negative.aep");
-    const out2 = tmp_path.div("time_span_negative_2.aep");
+    const tmpPath = makeTmpPath();
+    const out = tmpPath.div("time_span_negative.aep");
+    const out2 = tmpPath.div("time_span_negative_2.aep");
 
-    parse_project_fresh(SAMPLE).save(out);
-    parse_project_fresh(out).save(out2);
+    parseProjectFresh(SAMPLE).save(out);
+    parseProjectFresh(out).save(out2);
 
-    expect(py_eq(out.read_bytes(), out2.read_bytes())).toBe(true);
+    expect(pyEq(out.read_bytes(), out2.read_bytes())).toBe(true);
   });
 });

@@ -7,7 +7,7 @@
 
 import { TEXT_ANIMATOR_POOL } from "../data/text_animator_pool.ts";
 import { PropertyValueType } from "../enums/index.ts";
-import { py_eq } from "../../pyrt/index.ts";
+import { pyEq } from "../../pyrt/index.ts";
 
 /** Sentinel indicating `PropSpec.defaultValue` should mirror `value`. */
 export const _USE_VALUE: unique symbol = Symbol("_USE_VALUE");
@@ -134,7 +134,7 @@ export class PropSpec {
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
   equals(other: Iterable<PropSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
-    return py_eq([...this], [...other]);
+    return pyEq([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<PropSpecField> {
@@ -186,7 +186,7 @@ export class GroupSpec {
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
   equals(other: Iterable<GroupSpecField> | null | undefined): boolean {
     if (other == null || typeof other[Symbol.iterator] !== "function" || typeof other === "string") return false;
-    return py_eq([...this], [...other]);
+    return pyEq([...this], [...other]);
   }
 
   *[Symbol.iterator](): Generator<GroupSpecField> {
@@ -214,20 +214,20 @@ export const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number
  * `pvt` via `_PVT_KIND` unless given explicitly.
  */
 export function _spec(
-  match_name: string,
-  auto_name: string,
+  matchName: string,
+  autoName: string,
   value: number | number[] | null,
   pvt: PropertyValueType,
   kwargs: Partial<PropSpec> = {},
 ): PropSpec {
   const kind = _PVT_KIND.get(pvt);
   if (kind !== undefined) {
-    const [dimensions, is_spatial, color] = kind;
-    kwargs = { dimensions, is_spatial, color, ...kwargs };
+    const [dimensions, isSpatial, color] = kind;
+    kwargs = { dimensions, is_spatial: isSpatial, color, ...kwargs };
   }
   return new PropSpec(
-    match_name,
-    auto_name,
+    matchName,
+    autoName,
     value,
     pvt,
     kwargs.dimensions,
@@ -1292,7 +1292,7 @@ export const _VECTOR_TRANSFORM_SPECS: PropSpec[] = [
 ];
 
 /** Return 12 material property specs for one face (Front/Bevel/Side/Back). */
-export function _vec3d_face_specs(face: string): PropSpec[] {
+export function _vec3dFaceSpecs(face: string): PropSpec[] {
   return [
     _spec(`ADBE Vec3D ${face} RGB`, `${face} Color`, [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
       min_value: _COLOR_MIN,
@@ -1347,7 +1347,7 @@ export function _vec3d_face_specs(face: string): PropSpec[] {
 
 // Canonical children of "ADBE Vector Materials Group" (shape material options).
 export const _VECTOR_MATERIALS_SPECS: PropSpec[] = ["Front", "Bevel", "Side", "Back"].flatMap((face) =>
-  _vec3d_face_specs(face),
+  _vec3dFaceSpecs(face),
 );
 
 // Canonical children of "ADBE Vector Shape - Ellipse".
@@ -1759,7 +1759,7 @@ export const _ADV_BLEND_SPECS: PropSpec[] = [
  * synthesizes it so the group matches ExtendScript. Units are carried
  * on the spec (`units_text`) to keep the bulk table self-contained.
  */
-export function _build_text_animator_pool_specs(): PropSpec[] {
+export function _buildTextAnimatorPoolSpecs(): PropSpec[] {
   const specs: PropSpec[] = [];
   for (const e of TEXT_ANIMATOR_POOL) {
     const pvt = PropertyValueType.of(e.pvt);
@@ -1768,7 +1768,7 @@ export function _build_text_animator_pool_specs(): PropSpec[] {
     // even though ExtendScript exposes no min/max; a materialized one
     // that lacks them is rejected ("missing data in file"). Bounded 1D
     // entries already get the bounds via _bound_chunks_hint.
-    const unbounded_1d = pvt === PropertyValueType.OneD && e.min == null && e.max == null && e.cv !== false;
+    const unbounded1d = pvt === PropertyValueType.OneD && e.min == null && e.max == null && e.cv !== false;
     specs.push(
       _spec(e.mn, e.name, e.value, pvt, {
         // dimensions/is_spatial/color derive from pvt (_PVT_KIND).
@@ -1777,14 +1777,14 @@ export function _build_text_animator_pool_specs(): PropSpec[] {
         // canVary defaults True for the pool; only record False.
         can_vary_over_time: e.cv === false ? false : null,
         units_text: e.units,
-        bound_chunks: unbounded_1d ? true : null,
+        bound_chunks: unbounded1d ? true : null,
       }),
     );
   }
   return specs;
 }
 
-export const _TEXT_ANIMATOR_POOL_SPECS: PropSpec[] = _build_text_animator_pool_specs();
+export const _TEXT_ANIMATOR_POOL_SPECS: PropSpec[] = _buildTextAnimatorPoolSpecs();
 
 // Canonical children for Layer Styles sub-groups.
 
@@ -2200,7 +2200,7 @@ export const _STYLE_HINT_BOUNDS_EXCEPTIONS: Map<string, [number, number]> = new 
 ]);
 
 /** Stamp the AE materialization canon onto a Layer Styles leaf spec. */
-export function _style_leaf_canon(spec: PropSpec): PropSpec {
+export function _styleLeafCanon(spec: PropSpec): PropSpec {
   const suffix = spec.match_name.slice(spec.match_name.lastIndexOf("/") + 1);
   if (spec.color) return spec._replace({ pad2a: 1 });
   if (_STYLE_ENUM_SUFFIXES.has(suffix)) return spec._replace({ integer: true, value_hint_type: 1 });
@@ -2210,22 +2210,22 @@ export function _style_leaf_canon(spec: PropSpec): PropSpec {
   return spec;
 }
 
-export function _style_canon_list(specs: PropSpec[]): PropSpec[] {
-  return specs.map((spec) => _style_leaf_canon(spec));
+export function _styleCanonList(specs: PropSpec[]): PropSpec[] {
+  return specs.map((spec) => _styleLeafCanon(spec));
 }
 
 // Layer Styles sub-group specs (keyed by sub-group match name).
 export const _LAYER_STYLE_CHILD_SPECS: Map<string, PropSpec[]> = new Map<string, PropSpec[]>([
-  ["dropShadow/enabled", _style_canon_list(_DROP_SHADOW_SPECS)],
-  ["innerShadow/enabled", _style_canon_list(_INNER_SHADOW_SPECS)],
-  ["outerGlow/enabled", _style_canon_list(_OUTER_GLOW_SPECS)],
-  ["innerGlow/enabled", _style_canon_list(_INNER_GLOW_SPECS)],
-  ["bevelEmboss/enabled", _style_canon_list(_BEVEL_EMBOSS_SPECS)],
-  ["chromeFX/enabled", _style_canon_list(_SATIN_SPECS)],
-  ["solidFill/enabled", _style_canon_list(_COLOR_OVERLAY_SPECS)],
-  ["gradientFill/enabled", _style_canon_list(_GRADIENT_OVERLAY_SPECS)],
-  ["patternFill/enabled", _style_canon_list(_PATTERN_OVERLAY_SPECS)],
-  ["frameFX/enabled", _style_canon_list(_STROKE_SPECS)],
+  ["dropShadow/enabled", _styleCanonList(_DROP_SHADOW_SPECS)],
+  ["innerShadow/enabled", _styleCanonList(_INNER_SHADOW_SPECS)],
+  ["outerGlow/enabled", _styleCanonList(_OUTER_GLOW_SPECS)],
+  ["innerGlow/enabled", _styleCanonList(_INNER_GLOW_SPECS)],
+  ["bevelEmboss/enabled", _styleCanonList(_BEVEL_EMBOSS_SPECS)],
+  ["chromeFX/enabled", _styleCanonList(_SATIN_SPECS)],
+  ["solidFill/enabled", _styleCanonList(_COLOR_OVERLAY_SPECS)],
+  ["gradientFill/enabled", _styleCanonList(_GRADIENT_OVERLAY_SPECS)],
+  ["patternFill/enabled", _styleCanonList(_PATTERN_OVERLAY_SPECS)],
+  ["frameFX/enabled", _styleCanonList(_STROKE_SPECS)],
 ]);
 
 // Canonical children of "ADBE Layer Styles" (Blending Options + 10 styles).
@@ -2500,16 +2500,16 @@ export const _SKIP_FOR_REGULAR_AV: ReadonlySet<string> = new Set<string>([
 ]);
 
 /** Cameras/lights expose only Marker, Transform and their own options. */
-export function _camera_light_skip(own_options: string): ReadonlySet<string> {
+export function _cameraLightSkip(ownOptions: string): ReadonlySet<string> {
   return new Set<string>(
-    _TOP_LEVEL_SPECS.filter((s) => !["ADBE Marker", "ADBE Transform Group", own_options].includes(s.match_name)).map(
+    _TOP_LEVEL_SPECS.filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.match_name)).map(
       (s) => s.match_name,
     ),
   );
 }
 
-export const _SKIP_FOR_CAMERA: ReadonlySet<string> = _camera_light_skip("ADBE Camera Options Group");
-export const _SKIP_FOR_LIGHT: ReadonlySet<string> = _camera_light_skip("ADBE Light Options Group");
+export const _SKIP_FOR_CAMERA: ReadonlySet<string> = _cameraLightSkip("ADBE Camera Options Group");
+export const _SKIP_FOR_LIGHT: ReadonlySet<string> = _cameraLightSkip("ADBE Light Options Group");
 
 // Empty groups AE omits from a freshly created layer (it writes them only
 // once they have content).

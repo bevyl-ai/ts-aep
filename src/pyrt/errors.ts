@@ -45,12 +45,12 @@ export class SystemExit extends Error {
 }
 
 /** `e.code` of a thrown host error (`"ENOENT"`, fflate's number), or undefined. */
-export function error_code(e: unknown): unknown {
+export function errorCode(e: unknown): unknown {
   return typeof e === "object" && e !== null && "code" in e ? e.code : undefined;
 }
 
 /** Python's `assert cond, msg`. */
-export function py_assert(cond: unknown, message = ""): asserts cond {
+export function pyAssert(cond: unknown, message = ""): asserts cond {
   if (!cond) throw new AssertionError_(message);
 }
 

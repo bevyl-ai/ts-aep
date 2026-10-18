@@ -20,25 +20,25 @@ import {
   getattr,
   getitem,
   len,
-  lru_cache,
+  lruCache,
   Path,
-  py_assert,
-  py_bool,
-  py_eq,
+  pyAssert,
+  pyBool,
+  pyEq,
   setdefault,
   sorted,
   StopIteration,
   tkey,
 } from "../../src/pyrt/index.ts";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/index.ts";
-import { ListChunk, read_aep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
+import { ListChunk, readAep, type Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { TdmnChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const VERSIONS = SAMPLES.div("versions");
@@ -74,7 +74,7 @@ function _tag(chunk: Chunk): string {
   }
   if (chunk.chunk_type === "tdmn") {
     // `value` exists only on the tdmn chunk subclass.
-    return `tdmn=${as_instance(chunk, TdmnChunk).value}`;
+    return `tdmn=${asInstance(chunk, TdmnChunk).value}`;
   }
   return chunk.chunk_type;
 }
@@ -104,7 +104,7 @@ function* _walk(chunk: ListChunk): Generator<[ListChunk, number, Chunk]> {
 }
 
 /** Python `a <= b` on sets: every member of `a` is in `b`. */
-function set_le<T>(a: Set<T>, b: Set<T>): boolean {
+function setLe<T>(a: Set<T>, b: Set<T>): boolean {
   return [...a].every((x) => b.has(x));
 }
 
@@ -171,12 +171,12 @@ class _Structure {
       if (["LIST:Layr", "LIST:Ewst"].includes(tag) || _VIEW_SEPTET.includes(tag)) {
         continue;
       }
-      if (!py_bool(tags) || tags.at(-1) !== tag) {
+      if (!pyBool(tags) || tags.at(-1) !== tag) {
         tags.push(tag);
       }
     }
-    const item_type = as_instance(idta, IdtaChunk).item_type;
-    setdefault(this.items, item_type, new Set<string>()).add(tags.join(" "));
+    const itemType = asInstance(idta, IdtaChunk).item_type;
+    setdefault(this.items, itemType, new Set<string>()).add(tags.join(" "));
   }
 
   _add_view_layer(view: ListChunk): void {
@@ -189,7 +189,7 @@ class _Structure {
   }
 
   _add_layer(layer: ListChunk): void {
-    const ldta = as_instance(layer.chunks[0], LdtaChunk);
+    const ldta = asInstance(layer.chunks[0], LdtaChunk);
     this.layers.add(
       layer.chunks
         .filter((c) => c.chunk_type !== "cmta")
@@ -198,7 +198,7 @@ class _Structure {
     );
     const tdgp = layer.chunks.find((c) => _tag(c) === "LIST:tdgp");
     if (tdgp === undefined) throw new StopIteration();
-    const groups = as_instance(tdgp, ListChunk).chunks
+    const groups = asInstance(tdgp, ListChunk).chunks
       // A new shape layer has no contents yet; AE's samples have some.
       .filter((c) => c.chunk_type === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
       .map((c) => _tag(c));
@@ -211,11 +211,11 @@ class _Structure {
 }
 
 function _read(path: Path): ListChunk {
-  const [rifx, _xmp] = read_aep(new BytesIO(path.read_bytes()));
+  const [rifx, _xmp] = readAep(new BytesIO(path.read_bytes()));
   return rifx;
 }
 
-const _after_effects = lru_cache(
+const _afterEffects = lruCache(
   (year: string): _Structure => new _Structure(_read(VERSIONS.div(year, "complete.aep"))),
 );
 
@@ -223,7 +223,7 @@ const _after_effects = lru_cache(
  * `new(version)` plus one new item / layer of each kind, as the AE
  * probe built them.
  */
-function _new_project(version: string): py_aep.Application {
+function _newProject(version: string): py_aep.Application {
   const app = py_aep.new(version);
   const project = app.project;
   const comp = project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
@@ -239,89 +239,89 @@ function _new_project(version: string): py_aep.Application {
 }
 
 // Module-scoped fixture `written`: one saved-and-reread project per year.
-const written = lru_cache((year: string): _Structure => {
-  const dir = make_tmp_path().div(year);
+const written = lruCache((year: string): _Structure => {
+  const dir = makeTmpPath().div(year);
   dir.mkdir({ parents: true, exist_ok: true });
   const path = dir.div("new.aep");
-  _new_project(RELEASES[year]).project.save(path);
+  _newProject(RELEASES[year]).project.save(path);
   return new _Structure(_read(path));
 });
 
 describe("TestNewItemsMatchTheRelease", () => {
-  test.each(ITEM_ROWS)("test_item_chunks[%#]", (year, item_type, kind) => {
+  test.each(ITEM_ROWS)("test_item_chunks[%#]", (year, itemType, kind) => {
     // iide / idpc (all items) and comr, CIF3 and the Default view layer
     // (comps) are absent from AE 15 files.
-    py_assert(
-      set_le(getitem(written(year).items, item_type), getitem(_after_effects(year).items, item_type)),
+    pyAssert(
+      setLe(getitem(written(year).items, itemType), getitem(_afterEffects(year).items, itemType)),
       kind,
     );
   });
 
   test.each(YEAR_ROWS)("test_comp_view_data[%#]", (year) => {
     // The FEE list after a comp item holds ppSn, except in AE 15.
-    expect(py_eq(written(year).fee, _after_effects(year).fee)).toBe(true);
+    expect(pyEq(written(year).fee, _afterEffects(year).fee)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_view_layers[%#]", (year) => {
     // Same viewer pseudo-layers, each with the chunk tree that release
     // writes (AE 15 adds a layer-level OvdG and lacks Layer Sets; AE 15-23
     // leave 11 Material Options properties out of the Markers layer).
-    const expected = _after_effects(year).view_layers;
+    const expected = _afterEffects(year).view_layers;
     const actual = written(year).view_layers;
-    expect(py_eq(new Set(actual.keys()), new Set(expected.keys()))).toBe(true);
+    expect(pyEq(new Set(actual.keys()), new Set(expected.keys()))).toBe(true);
     for (const [key, signature] of actual) {
-      py_assert(py_eq(signature, getitem(expected, key)), key);
+      pyAssert(pyEq(signature, getitem(expected, key)), key);
     }
   });
 
   test.each(YEAR_ROWS)("test_view_layer_ldta_tail[%#]", (year) => {
     // Only AE 26 stamps 1 / 102.047... at 0x94 / 0x98 of the viewer
     // layers' records.
-    expect(py_eq(written(year).view_ldta_tails, _after_effects(year).view_ldta_tails)).toBe(true);
+    expect(pyEq(written(year).view_ldta_tails, _afterEffects(year).view_ldta_tails)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_markers_shadow_color[%#]", (year) => {
     // AE 24 writes the Markers layer's Shadow Color alpha as 0, AE 25+
     // as 255; earlier releases do not write the property.
-    expect(py_eq(written(year).shadow_colors, _after_effects(year).shadow_colors)).toBe(true);
+    expect(pyEq(written(year).shadow_colors, _afterEffects(year).shadow_colors)).toBe(true);
   });
 
   test.each(YEAR_ROWS)("test_layer_chunks[%#]", (year) => {
     // AE 15 closes every layer with a LIST:OvdG.
-    py_assert(set_le(written(year).layers, _after_effects(year).layers));
+    pyAssert(setLe(written(year).layers, _afterEffects(year).layers));
   });
 
   test.each(YEAR_ROWS)("test_layer_groups[%#]", (year) => {
     // AE 15 layers have no Layer Sets and no Source Options group.
-    const expected = _after_effects(year).groups;
-    for (const [layer_type, groups] of written(year).groups) {
-      py_assert(set_le(groups, getitem(expected, layer_type)), String(layer_type));
+    const expected = _afterEffects(year).groups;
+    for (const [layerType, groups] of written(year).groups) {
+      pyAssert(setLe(groups, getitem(expected, layerType)), String(layerType));
     }
   });
 
   test.each(YEAR_ROWS)("test_source_alternate[%#]", (year) => {
     // AE 22 writes the Layer Source Alternate match name and its
     // blsv/blsi pair but no value (tdbs); AE 23+ write the value.
-    py_assert(set_le(written(year).source_options, _after_effects(year).source_options));
+    pyAssert(setLe(written(year).source_options, _afterEffects(year).source_options));
   });
 
   test.each(YEAR_ROWS)("test_light_source_id[%#]", (year) => {
     // AE 15-22 store 0 as a light layer's source id, AE 23+ 0xFFFFFFFF.
-    expect(py_eq(written(year).light_source_ids, _after_effects(year).light_source_ids)).toBe(true);
+    expect(pyEq(written(year).light_source_ids, _afterEffects(year).light_source_ids)).toBe(true);
   });
 });
 
 test.each(RELEASE_VERSIONS)("test_gated_project_round_trips[%#]", (version) => {
-  const tmp_path = make_tmp_path();
-  const first = tmp_path.div("first.aep");
-  const second = tmp_path.div("second.aep");
-  _new_project(version).project.save(first);
+  const tmpPath = makeTmpPath();
+  const first = tmpPath.div("first.aep");
+  const second = tmpPath.div("second.aep");
+  _newProject(version).project.save(first);
   py_aep.parse(first).project.save(second);
-  expect(py_eq(first.read_bytes(), second.read_bytes())).toBe(true);
+  expect(pyEq(first.read_bytes(), second.read_bytes())).toBe(true);
 });
 
 test("test_layer_comment_written_before_ovdg", () => {
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   // AE 15 keeps a layer's comment ahead of the LIST:OvdG closing the layer.
   const sample = _read(VERSIONS.div("ae2018", "complete.aep"));
   const commented = new Set<string>();
@@ -337,7 +337,7 @@ test("test_layer_comment_written_before_ovdg", () => {
   const app = py_aep.new(RELEASES.ae2018);
   const comp = app.project.rootFolder.addComp("Comp 1", 320, 240, 1.0, 2.0, 25.0);
   comp.addSolid([1.0, 0.0, 0.0], "Red", 320, 240).comment = "note";
-  const path = tmp_path.div("comment.aep");
+  const path = tmpPath.div("comment.aep");
   app.project.save(path);
   const saved = new Set<string>();
   for (const [_parent, _i, chunk] of _walk(_read(path))) {
@@ -345,5 +345,5 @@ test("test_layer_comment_written_before_ovdg", () => {
       saved.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
   }
-  expect(py_eq(saved, commented)).toBe(true);
+  expect(pyEq(saved, commented)).toBe(true);
 });

@@ -1,18 +1,18 @@
 /** Font object model for After Effects text layers. */
 
-import { descriptor, split, str, instance_dict } from "../../../pyrt/index.ts";
+import { descriptor, split, str, instanceDict } from "../../../pyrt/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
 import { CosField, type InstanceValue } from "../../cos/descriptors.ts";
-import { cos_iter, cos_num } from "../../cos/kinds.ts";
+import { cosIter, cosNum } from "../../cos/kinds.ts";
 
 /** Decode the COS design vector (16.16 fixed-point ints) to floats. */
-export function _design_vector_from_cos(raw: CosNode): number[] {
-  return cos_iter(raw).map((v) => cos_num(v) / 65536.0);
+export function _designVectorFromCos(raw: CosNode): number[] {
+  return cosIter(raw).map((v) => cosNum(v) / 65536.0);
 }
 
-const is_string = (v: InstanceValue): v is string => typeof v === "string";
-const is_string_or_null = (v: InstanceValue): v is string | null => v == null || typeof v === "string";
-const is_number_list = (v: InstanceValue): v is number[] | null =>
+const isString = (v: InstanceValue): v is string => typeof v === "string";
+const isStringOrNull = (v: InstanceValue): v is string | null => v == null || typeof v === "string";
+const isNumberList = (v: InstanceValue): v is number[] | null =>
   v == null || (Array.isArray(v) && v.every((x) => typeof x === "number"));
 
 /**
@@ -82,10 +82,10 @@ export class FontObject {
     this._font_data = _font_data;
     this._font_entry = _font_entry;
     if (post_script_name != null) {
-      instance_dict(this).set("postScriptName", post_script_name);
+      instanceDict(this).set("postScriptName", post_script_name);
     }
     if (version != null) {
-      instance_dict(this).set("version", version);
+      instanceDict(this).set("version", version);
     }
   }
 }
@@ -95,7 +95,7 @@ descriptor(
   "postScriptName",
   new CosField<string, "_font_data", FontObject>("_font_data", "0", {
     transform: str,
-    accepts: is_string,
+    accepts: isString,
     reverse: (x: string) => x,
     default: "",
   }),
@@ -105,7 +105,7 @@ descriptor(
   "version",
   new CosField<string | null, "_font_data", FontObject>("_font_data", "5", {
     transform: str,
-    accepts: is_string_or_null,
+    accepts: isStringOrNull,
     reverse: (x: string) => x,
     default: null,
   }),
@@ -114,8 +114,8 @@ descriptor(
   FontObject,
   "designVector",
   new CosField<number[] | null, "_font_data", FontObject>("_font_data", "4", {
-    transform: _design_vector_from_cos,
-    accepts: is_number_list,
+    transform: _designVectorFromCos,
+    accepts: isNumberList,
     read_only: true,
     default: null,
   }),

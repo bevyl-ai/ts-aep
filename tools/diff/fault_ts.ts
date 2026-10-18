@@ -7,7 +7,7 @@
 import * as fs from "node:fs";
 import { createHash } from "node:crypto";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { Dumper, err_name, ts_name } from "./dump_ts.ts";
+import { Dumper, errName, tsName } from "./dump_ts.ts";
 import { AttributeError } from "../../src/pyrt/index.ts";
 
 const WRITES: [string, string, any][] = [
@@ -28,13 +28,13 @@ const WRITES: [string, string, any][] = [
 ];
 
 /** `obj.name` with Python's AttributeError on `None` (the TS twin would raise a JS TypeError). */
-function attr_of(obj: any, name: string): any {
+function attrOf(obj: any, name: string): any {
   if (obj == null) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
-  const ts = ts_name(name);
+  const ts = tsName(name);
   return obj[ts in Object(obj) ? ts : name].bind(obj);
 }
 
-function text_documents(app: any): [string, any][] {
+function textDocuments(app: any): [string, any][] {
   const out: [string, any][] = [];
   app.project.compositions.forEach((comp: any, ci: number) => {
     comp.textLayers.forEach((layer: any, li: number) => {
@@ -47,32 +47,32 @@ function text_documents(app: any): [string, any][] {
   return out;
 }
 
-function run_case(out: string, id: string): any {
+function runCase(out: string, id: string): any {
   const lines: string[] = [];
   const d = new Dumper((line) => lines.push(line.replace(/\n$/, "")));
   let app: any;
   try {
     app = py_aep.parse(`${out}/cases/${id}.aep`);
   } catch (e) {
-    return { parse: err_name(e) };
+    return { parse: errName(e) };
   }
-  const docs = text_documents(app);
+  const docs = textDocuments(app);
   const writes: string[] = [];
   for (const [path, holder] of docs) {
     let doc: any;
     try {
       doc = holder.value;
     } catch (e) {
-      d.emit(path, { $err: err_name(e) });
+      d.emit(path, { $err: errName(e) });
       continue;
     }
     d.walk(path, doc);
     for (const [name, args] of [["character_range", [0, -1]], ["paragraph_range", [0]], ["composed_line_range", [0]]] as const) {
       let r: any;
       try {
-        r = attr_of(doc, name)(...args);
+        r = attrOf(doc, name)(...args);
       } catch (e) {
-        d.emit(`${path}.${name}()`, { $err: err_name(e) });
+        d.emit(`${path}.${name}()`, { $err: errName(e) });
         continue;
       }
       d.walk(`${path}.${name}()`, r);
@@ -83,12 +83,12 @@ function run_case(out: string, id: string): any {
     for (const [target, name, value] of WRITES) {
       try {
         const doc = holder.value;
-        const obj = target === "doc" ? doc : attr_of(doc, "character_range")(0, 1);
+        const obj = target === "doc" ? doc : attrOf(doc, "character_range")(0, 1);
         if (obj == null) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
         obj[name] = value;
         writes.push("ok");
       } catch (e) {
-        writes.push(err_name(e));
+        writes.push(errName(e));
       }
     }
   }
@@ -99,7 +99,7 @@ function run_case(out: string, id: string): any {
     result.save = createHash("sha1").update(fs.readFileSync(buf)).digest("hex");
     fs.unlinkSync(buf);
   } catch (e) {
-    result.save = { $err: err_name(e) };
+    result.save = { $err: errName(e) };
   }
   return result;
 }
@@ -111,5 +111,5 @@ for (const line of fs.readFileSync(`${out}/cases.jsonl`, "utf8").split("\n")) {
   if (!line) continue;
   const { id } = JSON.parse(line);
   if (want.size && !want.has(id)) continue;
-  fs.writeFileSync(`${out}/ts/${id}.json`, JSON.stringify(run_case(out, id)));
+  fs.writeFileSync(`${out}/ts/${id}.json`, JSON.stringify(runCase(out, id)));
 }

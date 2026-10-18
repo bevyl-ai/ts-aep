@@ -3,7 +3,7 @@
 import { descriptor } from "../../../../pyrt/index.ts";
 import { JpegFormatType } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { _validate_number, validate_one_of } from "../../validators.ts";
+import { _validateNumber, validateOneOf } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
 import type { RoptChunk } from "../../../binary/render_chunks.ts";
 
@@ -56,7 +56,7 @@ descriptor(
   JpegFormatOptions,
   "quality",
   new ChunkField("_body", "quality", {
-    validate: _validate_number({ min: 0, max: 10, integer: true }),
+    validate: _validateNumber({ min: 0, max: 10, integer: true }),
   }),
 );
 
@@ -74,6 +74,6 @@ descriptor(
   new ChunkField("_body", "scans", {
     transform: (x: number) => x + 2,
     reverse: (x: number) => x - 2,
-    validate: validate_one_of([3, 4, 5]),
+    validate: validateOneOf([3, 4, 5]),
   }),
 );

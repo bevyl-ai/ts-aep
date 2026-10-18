@@ -7,10 +7,10 @@
  */
 
 import { define, descriptor, divmod, field, floordiv, Fraction, round } from "../../pyrt/index.ts";
-import { to_dividend_divisor, to_fixed_16_16, to_float32_ratio } from "./bin_utils.ts";
+import { toDividendDivisor, toFixed1616, toFloat32Ratio } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
-import { FmtItem, bytes_field, s4_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { FmtItem, bytesField, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // The largest internal timebase AE picks a units-per-frame for: 99.99 fps
@@ -27,23 +27,23 @@ export const _MAX_TIMEBASE = 115200;
 export const WORK_AREA_TO_END = 0xffffffff;
 
 // NOTE(port): the Fraction shim has no operators; these exact bigint n/d helpers (reduced by the constructor) equal Python's Fraction *, /, <, >, floor in frame_grid.
-export function frac_mul(a: Fraction, b: Fraction): Fraction {
+export function fracMul(a: Fraction, b: Fraction): Fraction {
   return new Fraction(a.n * b.n, a.d * b.d);
 }
 
-export function frac_div(a: Fraction, k: number): Fraction {
+export function fracDiv(a: Fraction, k: number): Fraction {
   return new Fraction(a.n, a.d * BigInt(k));
 }
 
-export function frac_lt(a: Fraction, k: number): boolean {
+export function fracLt(a: Fraction, k: number): boolean {
   return a.n < BigInt(k) * a.d;
 }
 
-export function frac_gt(a: Fraction, k: number): boolean {
+export function fracGt(a: Fraction, k: number): boolean {
   return a.n > BigInt(k) * a.d;
 }
 
-export function frac_floor(a: Fraction): number {
+export function fracFloor(a: Fraction): number {
   let q = a.n / a.d;
   if (a.n < 0n && q * a.d !== a.n) q -= 1n;
   return Number(q);
@@ -68,16 +68,16 @@ export function frac_floor(a: Fraction): number {
  * 500), a 120 fps grid; 333.333 -\> (83333, 250); 998.999 -\> (62437, 62),
  * from 62.5 units a frame (measured on AE 2026 over 12 such rates).
  */
-export function frame_grid(fps: number): [number, number] {
+export function frameGrid(fps: number): [number, number] {
   const rate = new Fraction(Math.floor(fps * 1000 + 0.5), 1000);
-  let units_per_frame = new Fraction(rate.denominator);
-  while (frac_lt(frac_mul(frac_mul(rate, units_per_frame), new Fraction(2)), _TIMEBASE_LIMIT)) {
-    units_per_frame = frac_mul(units_per_frame, new Fraction(2));
+  let unitsPerFrame = new Fraction(rate.denominator);
+  while (fracLt(fracMul(fracMul(rate, unitsPerFrame), new Fraction(2)), _TIMEBASE_LIMIT)) {
+    unitsPerFrame = fracMul(unitsPerFrame, new Fraction(2));
   }
-  while (frac_gt(frac_mul(rate, units_per_frame), _MAX_TIMEBASE)) {
-    units_per_frame = frac_div(units_per_frame, 2);
+  while (fracGt(fracMul(rate, unitsPerFrame), _MAX_TIMEBASE)) {
+    unitsPerFrame = fracDiv(unitsPerFrame, 2);
   }
-  return [frac_floor(frac_mul(rate, units_per_frame)), frac_floor(units_per_frame)];
+  return [fracFloor(fracMul(rate, unitsPerFrame)), fracFloor(unitsPerFrame)];
 }
 
 /**
@@ -93,10 +93,10 @@ export function frame_grid(fps: number): [number, number] {
  * 500 % at 24 fps 115200 rather than 122880, like every stretch past the
  * cap. The layer's start time and keyframe ticks use this timebase.
  */
-export function layer_timebase(internal_timebase: number, stretch: number): number {
+export function layerTimebase(internalTimebase: number, stretch: number): number {
   const fixed = Math.floor(Math.abs(stretch) * 65536 + 0.5);
-  if (fixed <= 65536) return internal_timebase;
-  return Math.min(floordiv(internal_timebase * fixed, 65536), _MAX_TIMEBASE);
+  if (fixed <= 65536) return internalTimebase;
+  return Math.min(floordiv(internalTimebase * fixed, 65536), _MAX_TIMEBASE);
 }
 
 /**
@@ -105,7 +105,7 @@ export function layer_timebase(internal_timebase: number, stretch: number): numb
  * become 23 and -19 going from 100 to 150 %, 12 and -84 become 13 and -87
  * going from 24 to 25 fps).
  */
-export function rescale_ticks(ticks: number, old: number, new_: number): number {
+export function rescaleTicks(ticks: number, old: number, new_: number): number {
   return floordiv(2 * ticks * new_ + old, 2 * old);
 }
 
@@ -228,7 +228,7 @@ export class CdtaChunk extends Chunk {
   }
 
   set frame_rate(value: number) {
-    [this.frame_rate_integer, this.frame_rate_fractional] = to_fixed_16_16(value);
+    [this.frame_rate_integer, this.frame_rate_fractional] = toFixed1616(value);
     this._update_timebase(value);
   }
 
@@ -242,9 +242,9 @@ export class CdtaChunk extends Chunk {
    * 256) for a new frame rate (see `frame_grid`).
    */
   _update_timebase(fps: number): void {
-    const [internal_timebase, units_per_frame] = frame_grid(fps);
-    this.internal_timebase = internal_timebase;
-    [this.time_scale_integer, this.time_scale_fractional] = divmod(units_per_frame, 256);
+    const [internalTimebase, unitsPerFrame] = frameGrid(fps);
+    this.internal_timebase = internalTimebase;
+    [this.time_scale_integer, this.time_scale_fractional] = divmod(unitsPerFrame, 256);
   }
 
   /** Pixel aspect ratio from dividend/divisor. */
@@ -253,7 +253,7 @@ export class CdtaChunk extends Chunk {
   }
 
   set pixel_aspect(value: number) {
-    [this.pixel_aspect_dividend, this.pixel_aspect_divisor] = to_dividend_divisor(value);
+    [this.pixel_aspect_dividend, this.pixel_aspect_divisor] = toDividendDivisor(value);
   }
 
   /** Duration in seconds from dividend/divisor. */
@@ -267,7 +267,7 @@ export class CdtaChunk extends Chunk {
   }
 
   set display_start_time(value: number) {
-    [this.display_start_time_dividend, this.display_start_time_divisor] = to_float32_ratio(value);
+    [this.display_start_time_dividend, this.display_start_time_divisor] = toFloat32Ratio(value);
   }
 
   /** Work area start in seconds from dividend/divisor. */
@@ -341,46 +341,46 @@ export class CdtaChunk extends Chunk {
 }
 define(CdtaChunk, {
   chunk_type: field({ default: "cdta" }),
-  resolution_factor_h: u2_field({ default: 1 }),
-  resolution_factor_v: u2_field({ default: 1 }),
-  _reserved_04: bytes_field(1, { repr: false }),
-  time_scale_integer: u2_field({ default: 4 }),
-  time_scale_fractional: u1_field(),
-  internal_timebase: u4_field({ default: 24576 }),
-  _reserved_0c: bytes_field(4, { repr: false }),
-  standard_timebase: u4_field({ default: 600 }),
-  time_dividend: s4_field({ default: 1 }),
-  time_divisor: u4_field({ default: 1 }),
-  work_area_start_dividend: s4_field({ default: 1 }),
-  work_area_start_divisor: u4_field({ default: 1 }),
-  work_area_end_dividend: u4_field({ default: WORK_AREA_TO_END }),
-  work_area_end_divisor: u4_field({ default: 1 }),
-  duration_dividend: u4_field({ default: 1 }),
-  duration_divisor: u4_field({ default: 1 }),
-  bg_color_r: u1_field(),
-  bg_color_g: u1_field(),
-  bg_color_b: u1_field(),
-  _reserved_37: bytes_field(83, { repr: false }),
-  _comp_flags_0: u1_field({ repr: false }),
-  _comp_flags_1: u1_field({ repr: false }),
-  width: u2_field(),
-  height: u2_field(),
-  pixel_aspect_dividend: u4_field({ default: 1 }),
-  pixel_aspect_divisor: u4_field({ default: 1 }),
-  _reserved_98: bytes_field(4, { repr: false }),
-  frame_rate_integer: u2_field(),
-  frame_rate_fractional: u2_field(),
-  _reserved_a0: bytes_field(4, { repr: false }),
-  display_start_time_dividend: s4_field({ default: 1 }),
-  display_start_time_divisor: u4_field({ default: 1 }),
-  _reserved_ac: bytes_field(2, { repr: false }),
-  shutter_angle: u2_field({ default: 180 }),
-  _reserved_b0: u4_field({ default: 360, repr: false }),
-  shutter_phase: s4_field(),
-  _reserved_b8: u4_field({ default: 360, repr: false }),
-  _reserved_bc: bytes_field(8, { repr: false }),
-  motion_blur_adaptive_sample_limit: s4_field({ default: 128 }),
-  motion_blur_samples_per_frame: s4_field({ default: 16 }),
+  resolution_factor_h: u2Field({ default: 1 }),
+  resolution_factor_v: u2Field({ default: 1 }),
+  _reserved_04: bytesField(1, { repr: false }),
+  time_scale_integer: u2Field({ default: 4 }),
+  time_scale_fractional: u1Field(),
+  internal_timebase: u4Field({ default: 24576 }),
+  _reserved_0c: bytesField(4, { repr: false }),
+  standard_timebase: u4Field({ default: 600 }),
+  time_dividend: s4Field({ default: 1 }),
+  time_divisor: u4Field({ default: 1 }),
+  work_area_start_dividend: s4Field({ default: 1 }),
+  work_area_start_divisor: u4Field({ default: 1 }),
+  work_area_end_dividend: u4Field({ default: WORK_AREA_TO_END }),
+  work_area_end_divisor: u4Field({ default: 1 }),
+  duration_dividend: u4Field({ default: 1 }),
+  duration_divisor: u4Field({ default: 1 }),
+  bg_color_r: u1Field(),
+  bg_color_g: u1Field(),
+  bg_color_b: u1Field(),
+  _reserved_37: bytesField(83, { repr: false }),
+  _comp_flags_0: u1Field({ repr: false }),
+  _comp_flags_1: u1Field({ repr: false }),
+  width: u2Field(),
+  height: u2Field(),
+  pixel_aspect_dividend: u4Field({ default: 1 }),
+  pixel_aspect_divisor: u4Field({ default: 1 }),
+  _reserved_98: bytesField(4, { repr: false }),
+  frame_rate_integer: u2Field(),
+  frame_rate_fractional: u2Field(),
+  _reserved_a0: bytesField(4, { repr: false }),
+  display_start_time_dividend: s4Field({ default: 1 }),
+  display_start_time_divisor: u4Field({ default: 1 }),
+  _reserved_ac: bytesField(2, { repr: false }),
+  shutter_angle: u2Field({ default: 180 }),
+  _reserved_b0: u4Field({ default: 360, repr: false }),
+  shutter_phase: s4Field(),
+  _reserved_b8: u4Field({ default: 360, repr: false }),
+  _reserved_bc: bytesField(8, { repr: false }),
+  motion_blur_adaptive_sample_limit: s4Field({ default: 128 }),
+  motion_blur_samples_per_frame: s4Field({ default: 16 }),
 });
 descriptor(CdtaChunk, "draft3d", new BitField("_comp_flags_0", 7));
 descriptor(CdtaChunk, "preserve_nested_resolution", new BitField("_comp_flags_1", 7));
@@ -401,7 +401,7 @@ export class CsctChunk extends Chunk {
 }
 define(CsctChunk, {
   chunk_type: field({ default: "CsCt" }),
-  value: u4_field({ default: 1, endian: "<" }),
+  value: u4Field({ default: 1, endian: "<" }),
 });
 register("CsCt")(CsctChunk);
 
@@ -437,10 +437,10 @@ export class CompPresetItem extends FmtItem {
   }
 }
 define(CompPresetItem, {
-  width: u2_field(),
-  height: u2_field(),
-  frame_rate_integer: u2_field(),
-  frame_rate_fractional: u2_field(),
-  pixel_aspect_dividend: u4_field({ default: 1 }),
-  pixel_aspect_divisor: u4_field({ default: 1 }),
+  width: u2Field(),
+  height: u2Field(),
+  frame_rate_integer: u2Field(),
+  frame_rate_fractional: u2Field(),
+  pixel_aspect_dividend: u4Field({ default: 1 }),
+  pixel_aspect_divisor: u4Field({ default: 1 }),
 });

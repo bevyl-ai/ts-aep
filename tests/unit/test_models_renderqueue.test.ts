@@ -7,13 +7,13 @@
 // `_register.ts` to do the same.
 
 import { describe, expect, test } from "bun:test";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, py_eq } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { Path, b, bytes_, len, pyEq } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../../src/py_aep/binary/render_chunks.ts";
 import { OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
-import { parse_output_templates, parse_render_templates } from "../../src/py_aep/parsers/templates.ts";
-import { resolve_output_filename } from "../../src/py_aep/resolvers/output.ts";
+import { parseOutputTemplates, parseRenderTemplates } from "../../src/py_aep/parsers/templates.ts";
+import { resolveOutputFilename } from "../../src/py_aep/resolvers/output.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
@@ -35,7 +35,7 @@ const OCS_SAMPLES_DIR = new Path(
  * positionally, so each one is placed at its signature slot. A missing key is
  * `undefined`, which triggers the TS default exactly like omitting the argument.
  */
-type ResolveOutputFilenameParams = Parameters<typeof resolve_output_filename>;
+type ResolveOutputFilenameParams = Parameters<typeof resolveOutputFilename>;
 interface ResolveOutputFilenameKwargs {
   project_name?: ResolveOutputFilenameParams[1];
   comp_name?: ResolveOutputFilenameParams[2];
@@ -60,9 +60,9 @@ interface ResolveOutputFilenameKwargs {
 }
 
 /** `resolve_output_filename(template, **kwargs)` */
-function resolve_output_filename_kw(file_template: string, kwargs: ResolveOutputFilenameKwargs): string {
-  return resolve_output_filename(
-    file_template,
+function resolveOutputFilenameKw(fileTemplate: string, kwargs: ResolveOutputFilenameKwargs): string {
+  return resolveOutputFilename(
+    fileTemplate,
     kwargs.project_name,
     kwargs.comp_name,
     kwargs.render_settings_name,
@@ -93,7 +93,7 @@ test("test_output_module_preserves_noncanonical_true_byte", () => {
   const settings = OutputModuleSettingsItem.frombytes(new Uint8Array(raw));
 
   expect(settings.include_project_link).toBe(true);
-  expect(py_eq(settings.tobytes(), raw)).toBe(true);
+  expect(pyEq(settings.tobytes(), raw)).toBe(true);
 });
 
 test("test_output_module_template_copy_preserves_include_project_link_byte", () => {
@@ -111,7 +111,7 @@ describe("TestResolveOutputFilename", () => {
   /** Unit tests for resolve_output_filename(). */
 
   test("test_empty_template", () => {
-    expect(resolve_output_filename("")).toBe("");
+    expect(resolveOutputFilename("")).toBe("");
   });
 
   test.each([
@@ -130,11 +130,11 @@ describe("TestResolveOutputFilename", () => {
     ["[compressor]", { compressor: "H.264" }, "H.264"],
     ["[COMPNAME]", { comp_name: "MyComp" }, "MyComp"],
   ])("test_single_token[%#]", (template: string, kwargs: ResolveOutputFilenameKwargs, expected: string) => {
-    expect(resolve_output_filename_kw(template, kwargs)).toBe(expected);
+    expect(resolveOutputFilenameKw(template, kwargs)).toBe(expected);
   });
 
   test("test_aspect_ratio", () => {
-    const result = resolve_output_filename_kw("[aspectRatio]", { width: 1920, height: 1080 });
+    const result = resolveOutputFilenameKw("[aspectRatio]", { width: 1920, height: 1080 });
     expect(result).toBe("16x9");
   });
 
@@ -143,7 +143,7 @@ describe("TestResolveOutputFilename", () => {
     [OutputChannels.RGBA, "RGBA"],
     [OutputChannels.ALPHA, "Alpha"],
   ])("test_channels[%#]", (channels: OutputChannels, expected: string) => {
-    expect(resolve_output_filename_kw("[channels]", { channels })).toBe(expected);
+    expect(resolveOutputFilenameKw("[channels]", { channels })).toBe(expected);
   });
 
   test.each([
@@ -151,7 +151,7 @@ describe("TestResolveOutputFilename", () => {
     [16, "16bit"],
     [32, "32bit"],
   ])("test_project_color_depth[%#]", (depth: number, expected: string) => {
-    expect(resolve_output_filename_kw("[projectColorDepth]", { project_color_depth: depth })).toBe(expected);
+    expect(resolveOutputFilenameKw("[projectColorDepth]", { project_color_depth: depth })).toBe(expected);
   });
 
   test.each([
@@ -161,12 +161,12 @@ describe("TestResolveOutputFilename", () => {
     [OutputColorDepth.TRILLIONS_OF_COLORS_PLUS, "Trillions+"],
     [OutputColorDepth.FLOATING_POINT, "Floating Point"],
     [OutputColorDepth.FLOATING_POINT_PLUS, "Floating Point+"],
-  ])("test_output_color_depth[%#]", (color_depth: OutputColorDepth, expected: string) => {
-    expect(resolve_output_filename_kw("[outputColorDepth]", { output_color_depth: color_depth })).toBe(expected);
+  ])("test_output_color_depth[%#]", (colorDepth: OutputColorDepth, expected: string) => {
+    expect(resolveOutputFilenameKw("[outputColorDepth]", { output_color_depth: colorDepth })).toBe(expected);
   });
 
   test("test_file_extension", () => {
-    const result = resolve_output_filename_kw("[compName].[fileExtension]", {
+    const result = resolveOutputFilenameKw("[compName].[fileExtension]", {
       comp_name: "MyComp",
       file_extension: "mp4",
     });
@@ -174,7 +174,7 @@ describe("TestResolveOutputFilename", () => {
   });
 
   test("test_combined_template", () => {
-    const result = resolve_output_filename_kw("[projectName]_[compName]_[width]x[height].[fileExtension]", {
+    const result = resolveOutputFilenameKw("[projectName]_[compName]_[width]x[height].[fileExtension]", {
       project_name: "Proj",
       comp_name: "Comp1",
       width: 1920,
@@ -189,11 +189,11 @@ describe("TestResolveOutputFilename", () => {
     ["[endTimecode]", { end_time: 10.0, frame_rate: 24.0 }, "0-00-10-00"],
     ["[durationTimecode]", { duration_time: 5.0, frame_rate: 24.0 }, "0-00-05-00"],
   ])("test_timecode[%#]", (template: string, kwargs: ResolveOutputFilenameKwargs, expected: string) => {
-    expect(resolve_output_filename_kw(template, kwargs)).toBe(expected);
+    expect(resolveOutputFilenameKw(template, kwargs)).toBe(expected);
   });
 
   test("test_project_folder_empty", () => {
-    const result = resolve_output_filename_kw("[projectFolder][compName]", { comp_name: "MyComp" });
+    const result = resolveOutputFilenameKw("[projectFolder][compName]", { comp_name: "MyComp" });
     expect(result).toBe("MyComp");
   });
 });
@@ -207,13 +207,13 @@ class TestRenderTemplatesDefaultIndex {
    * the default shifted the selection to the wrong template.
    */
 
-  static _write_render_prefs(prefs_dir: Path, default_idx: number, names: string[]): void {
+  static _write_render_prefs(prefsDir: Path, defaultIdx: number, names: string[]): void {
     // The prefs item is the 2246-byte AEP layout minus the last 64 bytes.
     let raw = bytes_.repeat(b("\x00"), 32);
     for (const name of names) {
       raw = bytes_.concat(raw, bytes_.slice(new RenderSettingsItem({ template_name: name }).tobytes(), 0, 2182));
     }
-    prefs_dir
+    prefsDir
       .div("Adobe After Effects 26.0 Prefs-indep-render.txt")
       .write_text(
         '["Render Settings Preference Section"]\n' +
@@ -221,12 +221,12 @@ class TestRenderTemplatesDefaultIndex {
           bytes_.hex(raw) +
           "\n" +
           '\t"Default RS Index" = "' +
-          String(default_idx) +
+          String(defaultIdx) +
           '"\n',
       );
   }
 
-  static _write_output_prefs(prefs_dir: Path, default_idx: number, names: string[]): void {
+  static _write_output_prefs(prefsDir: Path, defaultIdx: number, names: string[]): void {
     const raw = bytes_.concat(
       bytes_.repeat(b("\x00"), 32),
       bytes_.repeat(new OutputModuleSettingsItem().tobytes(), len(names)),
@@ -234,12 +234,12 @@ class TestRenderTemplatesDefaultIndex {
     const lines = [
       '["Output Module Preference Section"]',
       '\t"Output Module List v28" = ' + bytes_.hex(raw),
-      '\t"Default OM Index" = "' + String(default_idx) + '"',
+      '\t"Default OM Index" = "' + String(defaultIdx) + '"',
     ];
     for (const [i, name] of names.entries()) {
       lines.push(`\t"Output Module Spec Strings Name #${i}" = "${name}"`);
     }
-    prefs_dir.div("Adobe After Effects 26.0 Prefs-indep-output.txt").write_text(lines.join("\n") + "\n");
+    prefsDir.div("Adobe After Effects 26.0 Prefs-indep-output.txt").write_text(lines.join("\n") + "\n");
   }
 }
 
@@ -253,30 +253,30 @@ describe("TestRenderTemplatesDefaultIndex", () => {
    */
 
   test("test_render_default_shifts_past_filtered_entry", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // Empty-named entry at raw index 0; raw default index 2 ("Best").
-    TestRenderTemplatesDefaultIndex._write_render_prefs(tmp_path, 2, ["", "Draft", "Best"]);
-    const [templates, default_] = parse_render_templates(tmp_path);
-    expect(py_eq(templates.map((t) => t.clean_template_name), ["Draft", "Best"])).toBe(true);
+    TestRenderTemplatesDefaultIndex._write_render_prefs(tmpPath, 2, ["", "Draft", "Best"]);
+    const [templates, default_] = parseRenderTemplates(tmpPath);
+    expect(pyEq(templates.map((t) => t.clean_template_name), ["Draft", "Best"])).toBe(true);
     expect(default_).toBe(1);
     if (default_ == null) throw new Error("no default render template");
     expect(templates[default_].clean_template_name).toBe("Best");
   });
 
   test("test_render_default_filtered_out_yields_none", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // The default entry itself has an empty name -> no default.
-    TestRenderTemplatesDefaultIndex._write_render_prefs(tmp_path, 0, ["", "Draft", "Best"]);
-    const [_templates, default_] = parse_render_templates(tmp_path);
+    TestRenderTemplatesDefaultIndex._write_render_prefs(tmpPath, 0, ["", "Draft", "Best"]);
+    const [_templates, default_] = parseRenderTemplates(tmpPath);
     expect(default_ == null).toBe(true);
   });
 
   test("test_output_default_shifts_past_hidden_entry", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // _HIDDEN entry at raw index 0; raw default index 1 ("Lossless").
-    TestRenderTemplatesDefaultIndex._write_output_prefs(tmp_path, 1, ["_HIDDEN X", "Lossless", "TIFF"]);
-    const [templates, default_] = parse_output_templates(tmp_path);
-    expect(py_eq(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
+    TestRenderTemplatesDefaultIndex._write_output_prefs(tmpPath, 1, ["_HIDDEN X", "Lossless", "TIFF"]);
+    const [templates, default_] = parseOutputTemplates(tmpPath);
+    expect(pyEq(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
     expect(default_).toBe(0);
     if (default_ == null) throw new Error("no default output template");
     expect(templates[default_].name).toBe("Lossless");

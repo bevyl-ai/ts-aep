@@ -17,11 +17,11 @@ import {
   max,
   min,
   mod,
-  py_eq,
+  pyEq,
   radians,
   repr,
   hypot,
-  pattern_match,
+  patternMatch,
 } from "../../pyrt/index.ts";
 
 /** A cubic segment: start, control 1, control 2, end. */
@@ -89,7 +89,7 @@ export function _tokenize(d: string): string[] {
       i += c.length;
       continue;
     }
-    const m = pattern_match(NUMBER_RE, d, i);
+    const m = patternMatch(NUMBER_RE, d, i);
     if (m && m[0]) {
       tokens.push(m[0]);
       if (argc !== 0) arg += 1;
@@ -111,7 +111,7 @@ export function _tokenize(d: string): string[] {
  *   closed flag.
  * @throws UnsupportedSVGError For malformed data or unknown commands.
  */
-export function parse_path(d: string): RawSubpath[] {
+export function parsePath(d: string): RawSubpath[] {
   const tokens = _tokenize(d);
   const parser = new _PathParser(tokens);
   return parser.run();
@@ -195,7 +195,7 @@ export class _PathParser {
   _close(): void {
     if (this._segs?.length > 0) {
       // Add the closing straight segment back to the subpath start.
-      if (!py_eq([this.cx, this.cy], [this.sx, this.sy])) {
+      if (!pyEq([this.cx, this.cy], [this.sx, this.sy])) {
         this._segs.push([this.cx, this.cy, this.cx, this.cy, this.sx, this.sy, this.sx, this.sy]);
       }
       this._subpaths.push(new RawSubpath(this._segs, true));
@@ -292,7 +292,7 @@ export class _PathParser {
   _arc_to(
     rx: number,
     ry: number,
-    phi_deg: number,
+    phiDeg: number,
     large: boolean,
     sweep: boolean,
     x: number,
@@ -307,13 +307,13 @@ export class _PathParser {
     }
     rx = Math.abs(rx);
     ry = Math.abs(ry);
-    const phi = radians(mod(phi_deg, 360.0));
-    const cos_p = Math.cos(phi);
-    const sin_p = Math.sin(phi);
+    const phi = radians(mod(phiDeg, 360.0));
+    const cosP = Math.cos(phi);
+    const sinP = Math.sin(phi);
     const dx = (x1 - x) / 2.0;
     const dy = (y1 - y) / 2.0;
-    const x1p = cos_p * dx + sin_p * dy;
-    const y1p = -sin_p * dx + cos_p * dy;
+    const x1p = cosP * dx + sinP * dy;
+    const y1p = -sinP * dx + cosP * dy;
     // Correct out-of-range radii. hypot of the ratios, not a sum of
     // squares over rx * rx: a tiny radius (1e-200) would underflow the
     // square to 0.
@@ -336,8 +336,8 @@ export class _PathParser {
     }
     const cxp = (co * rx * y1p) / ry;
     const cyp = (-co * ry * x1p) / rx;
-    const cx_ = cos_p * cxp - sin_p * cyp + (x1 + x) / 2.0;
-    const cy_ = sin_p * cxp + cos_p * cyp + (y1 + y) / 2.0;
+    const cx_ = cosP * cxp - sinP * cyp + (x1 + x) / 2.0;
+    const cy_ = sinP * cxp + cosP * cyp + (y1 + y) / 2.0;
 
     const angle = (ux: number, uy: number, vx: number, vy: number): number => {
       const dot = ux * vx + uy * vy;
@@ -354,35 +354,35 @@ export class _PathParser {
       dtheta += 2 * Math.PI;
     }
 
-    const n_segs = max([1, int(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)))]);
-    const delta = dtheta / n_segs;
+    const nSegs = max([1, int(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)))]);
+    const delta = dtheta / nSegs;
     const t = (4.0 / 3.0) * Math.tan(delta / 4.0);
     let theta = theta1;
-    for (let i = 0; i < n_segs; i++) {
+    for (let i = 0; i < nSegs; i++) {
       const cos1 = Math.cos(theta);
       const sin1 = Math.sin(theta);
       const cos2 = Math.cos(theta + delta);
       const sin2 = Math.sin(theta + delta);
-      let ep_x: number, ep_y: number;
-      if (i === n_segs - 1) {
+      let epX: number, epY: number;
+      if (i === nSegs - 1) {
         // The arc ends on the given end point, not on its evaluation.
-        ep_x = x;
-        ep_y = y;
+        epX = x;
+        epY = y;
       } else {
-        ep_x = cos_p * rx * cos2 - sin_p * ry * sin2 + cx_;
-        ep_y = sin_p * rx * cos2 + cos_p * ry * sin2 + cy_;
+        epX = cosP * rx * cos2 - sinP * ry * sin2 + cx_;
+        epY = sinP * rx * cos2 + cosP * ry * sin2 + cy_;
       }
       const d1x = -rx * sin1;
       const d1y = ry * cos1;
       const d2x = -rx * sin2;
       const d2y = ry * cos2;
-      const c1x = this.cx + t * (cos_p * d1x - sin_p * d1y);
-      const c1y = this.cy + t * (sin_p * d1x + cos_p * d1y);
-      const c2x = ep_x - t * (cos_p * d2x - sin_p * d2y);
-      const c2y = ep_y - t * (sin_p * d2x + cos_p * d2y);
-      this._segs.push([this.cx, this.cy, c1x, c1y, c2x, c2y, ep_x, ep_y]);
-      this.cx = ep_x;
-      this.cy = ep_y;
+      const c1x = this.cx + t * (cosP * d1x - sinP * d1y);
+      const c1y = this.cy + t * (sinP * d1x + cosP * d1y);
+      const c2x = epX - t * (cosP * d2x - sinP * d2y);
+      const c2y = epY - t * (sinP * d2x + cosP * d2y);
+      this._segs.push([this.cx, this.cy, c1x, c1y, c2x, c2y, epX, epY]);
+      this.cx = epX;
+      this.cy = epY;
       theta += delta;
     }
   }

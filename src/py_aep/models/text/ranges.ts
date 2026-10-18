@@ -37,9 +37,9 @@ import {
   float,
   getitem,
   max,
-  py_assert,
-  py_bool,
-  py_eq,
+  pyAssert,
+  pyBool,
+  pyEq,
   repr,
   round,
   sorted,
@@ -48,20 +48,20 @@ import {
   descriptor,
   pyfloat,
 } from "../../../pyrt/index.ts";
-import { CosField, CosName, cos_get, run_spans } from "../../cos/index.ts";
+import { CosField, CosName, cosGet, runSpans } from "../../cos/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
-import { _extract, bool_field, enum_field, float_field, int_field, enum_from_cos, type CosEnum, type CosFieldExtras, type InstanceValue } from "../../cos/descriptors.ts";
-import { cos_dict, cos_float, cos_get_or, cos_in, cos_insert, cos_int, cos_iter, cos_num, cos_pop, cos_setdefault, cos_setitem, is, py_add, py_int, py_num, py_number, py_sub, type PyNum } from "../../cos/kinds.ts";
-import { cache_line, char_style, font_ref, read } from "../../cos/schema.ts";
+import { _extract, boolField, enumField, floatField, intField, enumFromCos, type CosEnum, type CosFieldExtras, type InstanceValue } from "../../cos/descriptors.ts";
+import { cosDict, cosFloat, cosGetOr, cosIn, cosInsert, cosInt, cosIter, cosNum, cosPop, cosSetdefault, cosSetitem, is, pyAdd, pyInt, pyNum, pyNumber, pySub, type PyNum } from "../../cos/kinds.ts";
+import { cacheLine, charStyle, fontRef, read } from "../../cos/schema.ts";
 import { AutoKernType, BaselineDirection, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, ParagraphDirection, ParagraphJustification } from "../../enums/index.ts";
 import type { ComposerEngine } from "../../enums/index.ts";
-import { CompositionUnsupported, compose_lines } from "../../resolvers/text_composition.ts";
-import { font_version_string } from "../../svg/fonts.ts";
-import { validate_bool, validate_enum, validate_font_name, validate_normalized_float, validate_number, validate_positive_nonzero_number, validate_positive_number, validate_rgb_color, validate_s4, validate_text, type InstanceValidator } from "../validators.ts";
+import { CompositionUnsupported, composeLines } from "../../resolvers/text_composition.ts";
+import { fontVersionString } from "../../svg/fonts.ts";
+import { validateBool, validateEnum, validateFontName, validateNormalizedFloat, validateNumber, validatePositiveNonzeroNumber, validatePositiveNumber, validateRgbColor, validateS4, validateText, type InstanceValidator } from "../validators.ts";
 import { FontObject } from "./font_object.ts";
 import type { TextDocument } from "./text_document.ts";
 
-export const bool = (x: CosNode): boolean => py_bool(x);
+export const bool = (x: CosNode): boolean => pyBool(x);
 
 // AE's exact error strings (AE 26.3, English locale); py_aep raises these
 // from ValueError so behavior parity does not depend on hosting AE.
@@ -80,7 +80,7 @@ export const NOT_ASSOCIATED = "Unable to set value as it is not associated with 
  * JS strings already index UTF-16 code units, so this is `s.length`; the
  * Python version counts astral characters twice on top of `len(s)`.
  */
-export function u16_len(s: string): number {
+export function u16Len(s: string): number {
   return s.length;
 }
 
@@ -90,7 +90,7 @@ export function u16_len(s: string): number {
  * A slice that splits a surrogate pair yields a lone surrogate, exactly
  * as AE does (JS keeps lone surrogates in a string, as `surrogatepass` does).
  */
-export function u16_slice(s: string, start: number, end: number): string {
+export function u16Slice(s: string, start: number, end: number): string {
   return s.slice(start, end);
 }
 
@@ -99,8 +99,8 @@ export function u16_slice(s: string, start: number, end: number): string {
 // ---------------------------------------------------------------------------
 
 /** The stored text, including the terminator `\r`. */
-export function _raw_text(doc: TextDocument): string {
-  const val = cos_get(doc._doc, "0", "0");
+export function _rawText(doc: TextDocument): string {
+  const val = cosGet(doc._doc, "0", "0");
   return val != null ? str(val) : "";
 }
 
@@ -111,26 +111,26 @@ export function _raw_text(doc: TextDocument): string {
  * ExtendScript's indices never expose; everything user-facing is
  * clamped to this length.
  */
-export function _visible_length(doc: TextDocument): number {
-  const raw = _raw_text(doc);
-  const n = u16_len(raw);
+export function _visibleLength(doc: TextDocument): number {
+  const raw = _rawText(doc);
+  const n = u16Len(raw);
   if (raw.endsWith("\r")) return n - 1;
   return n;
 }
 
 /** Character style-run spans. */
-export function _char_run_spans(doc: TextDocument): [number, number, CosDict][] {
-  return run_spans(doc._doc, "6", "6");
+export function _charRunSpans(doc: TextDocument): [number, number, CosDict][] {
+  return runSpans(doc._doc, "6", "6");
 }
 
 /** Paragraph style-run spans (one run per paragraph). */
-export function _para_run_spans(doc: TextDocument): [number, number, CosDict][] {
-  return run_spans(doc._doc, "5", "5");
+export function _paraRunSpans(doc: TextDocument): [number, number, CosDict][] {
+  return runSpans(doc._doc, "5", "5");
 }
 
 /** Manual-kerning run spans; payload key `"0"` holds the value. */
-export function _kern_run_spans(doc: TextDocument): [number, number, CosDict][] {
-  return run_spans(doc._doc, "8", null);
+export function _kernRunSpans(doc: TextDocument): [number, number, CosDict][] {
+  return runSpans(doc._doc, "8", null);
 }
 
 /**
@@ -140,8 +140,8 @@ export function _kern_run_spans(doc: TextDocument): [number, number, CosDict][] 
  * collected depth-first through the nested `"6"` arrays. Empty when the
  * document has no cache.
  */
-export function _cached_line_nodes(doc: TextDocument): CosDict[] {
-  const entries = cos_get(doc._doc, "1", "2");
+export function _cachedLineNodes(doc: TextDocument): CosDict[] {
+  const entries = cosGet(doc._doc, "1", "2");
   if (!Array.isArray(entries)) return [];
   const lines: CosDict[] = [];
 
@@ -168,8 +168,8 @@ export function _cached_line_nodes(doc: TextDocument): CosDict[] {
  * the `/L` nodes should fetch them once with `_cached_line_nodes` and
  * use `_line_data_from_nodes` to avoid a second cache walk.
  */
-export function _cached_line_data(doc: TextDocument): [[number, number][], (number | null)[]] | null {
-  return _line_data_from_nodes(_cached_line_nodes(doc));
+export function _cachedLineData(doc: TextDocument): [[number, number][], (number | null)[]] | null {
+  return _lineDataFromNodes(_cachedLineNodes(doc));
 }
 
 /**
@@ -179,7 +179,7 @@ export function _cached_line_data(doc: TextDocument): [[number, number][], (numb
  * (`seg["15"]["0"]`) and its baseline is the `/L` `"10"` value. Returns
  * `null` for an empty node list (no cache).
  */
-export function _line_data_from_nodes(nodes: CosDict[]): [[number, number][], (number | null)[]] | null {
+export function _lineDataFromNodes(nodes: CosDict[]): [[number, number][], (number | null)[]] | null {
   const lengths: number[] = [];
   const baselines: (number | null)[] = [];
   for (const node of nodes) {
@@ -187,12 +187,12 @@ export function _line_data_from_nodes(nodes: CosDict[]): [[number, number][], (n
     const children = node.get("6") ?? null;
     if (Array.isArray(children)) {
       for (const seg of children) {
-        const count = cos_get(seg, "15", "0");
-        if (is(py_int, count)) total += Number(count);
+        const count = cosGet(seg, "15", "0");
+        if (is(pyInt, count)) total += Number(count);
       }
     }
     lengths.push(total);
-    const baseline = read(cache_line, node, "10");
+    const baseline = read(cacheLine, node, "10");
     baselines.push(baseline != null ? float(baseline) : null);
   }
   if (!lengths.length) return null;
@@ -211,10 +211,10 @@ export function _line_data_from_nodes(nodes: CosDict[]): [[number, number][], (n
  * Stored at `/L "0" "0"`; AE omits it on the first line (origin `(0, 0)`),
  * where the baseline key `"10"` is absent too.
  */
-export function _line_origin(node: CosDict): [number, number] {
-  const origin = cos_get(node, "0", "0");
-  if (Array.isArray(origin) && origin.length >= 2) return [cos_float(origin[0]), cos_float(origin[1])];
-  const baseline = read(cache_line, node, "10");
+export function _lineOrigin(node: CosDict): [number, number] {
+  const origin = cosGet(node, "0", "0");
+  if (Array.isArray(origin) && origin.length >= 2) return [cosFloat(origin[0]), cosFloat(origin[1])];
+  const baseline = read(cacheLine, node, "10");
   const y = baseline != null ? float(baseline) : 0.0;
   return [0.0, y];
 }
@@ -228,23 +228,23 @@ export function _line_origin(node: CosDict): [number, number] {
  * advances are cumulative from the line start. Multiple segments are
  * chained by carrying the running total forward.
  */
-export function _line_advances(node: CosDict): number[] {
+export function _lineAdvances(node: CosDict): number[] {
   const out: number[] = [];
   let base = 0.0;
   const children = node.get("6") ?? null;
   if (!Array.isArray(children)) return out;
   for (const seg of children) {
-    const advances = cos_get(seg, "15", "7", "7");
+    const advances = cosGet(seg, "15", "7", "7");
     if (!Array.isArray(advances)) continue;
     for (const advance of advances) {
-      if (is(py_number, advance)) out.push(base + float(advance));
+      if (is(pyNumber, advance)) out.push(base + float(advance));
     }
     if (out.length) base = out[out.length - 1];
   }
   return out;
 }
 
-const is_spans = (v: InstanceValue): v is [number, number][] =>
+const isSpans = (v: InstanceValue): v is [number, number][] =>
   Array.isArray(v) && v.every((span) => Array.isArray(span) && span.length === 2);
 
 /**
@@ -256,15 +256,15 @@ const is_spans = (v: InstanceValue): v is [number, number][] =>
  * or the refusal) is cached on the document; every layout-affecting
  * write invalidates it via `TextDocument._mark_layout_dirty`.
  */
-export function _fresh_composed_spans(doc: TextDocument): [number, number][] | null {
+export function _freshComposedSpans(doc: TextDocument): [number, number][] | null {
   if (doc._composition_calibrated !== true) return null;
   if (doc.__dict__.has("_composed_cache")) {
     const memo = doc.__dict__.get("_composed_cache") ?? null;
-    return memo != null && is_spans(memo) ? memo : null;
+    return memo != null && isSpans(memo) ? memo : null;
   }
   let spans: [number, number][] | null;
   try {
-    spans = compose_lines(doc).spans;
+    spans = composeLines(doc).spans;
   } catch (e) {
     if (!(e instanceof CompositionUnsupported)) throw e;
     spans = null;
@@ -284,25 +284,25 @@ export function _fresh_composed_spans(doc: TextDocument): [number, number][] | n
  * succeeded, otherwise the stale cache (with
  * the AE-parity clamp semantics) remains.
  */
-export function _composed_line_spans(doc: TextDocument): [number, number][] | null {
+export function _composedLineSpans(doc: TextDocument): [number, number][] | null {
   if (!doc.boxText) {
-    const para = _para_run_spans(doc);
+    const para = _paraRunSpans(doc);
     if (!para.length) return null;
     return para.map(([start, end]): [number, number] => [start, end]);
   }
   if (doc._layout_dirty) {
-    const fresh = _fresh_composed_spans(doc);
+    const fresh = _freshComposedSpans(doc);
     if (fresh != null) return fresh;
   }
-  const cached = _cached_line_data(doc);
+  const cached = _cachedLineData(doc);
   return cached != null ? cached[0] : null;
 }
 
 /** Extract `[R, G, B]` from a COS SimplePaint structure. */
-export function _parse_color(paint: CosNode): number[] | null {
-  const argb = cos_get(paint, "0", "1");
+export function _parseColor(paint: CosNode): number[] | null {
+  const argb = cosGet(paint, "0", "1");
   if (Array.isArray(argb) && argb.length >= 4) {
-    return [cos_float(argb[1]), cos_float(argb[2]), cos_float(argb[3])];
+    return [cosFloat(argb[1]), cosFloat(argb[2]), cosFloat(argb[3])];
   }
   return null;
 }
@@ -313,7 +313,7 @@ export function _parse_color(paint: CosNode): number[] | null {
  * The 4-float array is `[alpha, R, G, B]`; AE stores a fully opaque
  * alpha of `1.0`.
  */
-export function _build_color_paint(rgb: number[]): CosDict {
+export function _buildColorPaint(rgb: number[]): CosDict {
   return new Map<string, CosNode>([
     ["99", new CosName("SimplePaint")],
     [
@@ -327,13 +327,13 @@ export function _build_color_paint(rgb: number[]): CosDict {
 }
 
 /** Build a COS CoolTypeFont entry for a font PostScript name. */
-export function _build_font_entry(post_script_name: string): CosDict {
+export function _buildFontEntry(postScriptName: string): CosDict {
   return new Map<string, CosNode>([
     [
       "0",
       new Map<string, CosNode>([
         ["99", new CosName("CoolTypeFont")],
-        ["0", new Map<string, CosNode>([["0", post_script_name], ["2", 1]])],
+        ["0", new Map<string, CosNode>([["0", postScriptName], ["2", 1]])],
       ]),
     ],
   ]);
@@ -357,54 +357,54 @@ export function _build_font_entry(post_script_name: string): CosDict {
  * `used_record=False` because a replacement repoints the used-font
  * record of the font it replaces rather than adding one. Returns `index`.
  */
-export function _register_font_at(
+export function _registerFontAt(
   doc: TextDocument,
-  post_script_name: string,
+  postScriptName: string,
   index = 0,
   kw: { used_record?: boolean } = {},
 ): number {
   const { used_record = true } = kw;
   const cos = doc._cos_data;
-  const font_array = cos_setdefault(cos_setdefault(cos_setdefault(cos, "0", new Map()), "1", new Map()), "0", []);
-  const entry = _build_font_entry(post_script_name);
-  const font_entry = entry.get("0");
-  const font_data = font_entry instanceof Map ? font_entry.get("0") : null;
-  py_assert(font_entry instanceof Map && font_data instanceof Map);
-  const version = font_version_string(post_script_name);
-  if (version != null) font_data.set("5", version);
-  cos_insert(font_array, index, entry);
+  const fontArray = cosSetdefault(cosSetdefault(cosSetdefault(cos, "0", new Map()), "1", new Map()), "0", []);
+  const entry = _buildFontEntry(postScriptName);
+  const fontEntry = entry.get("0");
+  const fontData = fontEntry instanceof Map ? fontEntry.get("0") : null;
+  pyAssert(fontEntry instanceof Map && fontData instanceof Map);
+  const version = fontVersionString(postScriptName);
+  if (version != null) fontData.set("5", version);
+  cosInsert(fontArray, index, entry);
 
   const bump = (holder: CosDict): void => {
-    const current = read(font_ref, holder, "0");
+    const current = read(fontRef, holder, "0");
     if (current != null && Number(current) >= index) {
       holder.set("0", Number(current) + 1);
     }
   };
 
-  const state = cos_get_or(cos, "1", new Map());
-  const entry_docs = cos_get_or(state, "1", []);
-  for (const entry_doc of cos_iter(py_bool(entry_docs) ? entry_docs : [])) {
-    const runs = cos_get(entry_doc, "0", "6", "0");
+  const state = cosGetOr(cos, "1", new Map());
+  const entryDocs = cosGetOr(state, "1", []);
+  for (const entryDoc of cosIter(pyBool(entryDocs) ? entryDocs : [])) {
+    const runs = cosGet(entryDoc, "0", "6", "0");
     if (!Array.isArray(runs)) continue;
     for (const run of runs) {
-      const style = cos_get(run, "0", "0", "6");
+      const style = cosGet(run, "0", "0", "6");
       if (style instanceof Map) bump(style);
     }
   }
-  const default_char = cos_get(cos, "1", "2");
-  if (default_char instanceof Map) bump(default_char);
-  const typography = cos_get(cos, "1", "0", "0");
+  const defaultChar = cosGet(cos, "1", "2");
+  if (defaultChar instanceof Map) bump(defaultChar);
+  const typography = cosGet(cos, "1", "0", "0");
   if (typography instanceof Map) bump(typography);
-  const presets = cos_get(cos, "0", "5", "0");
+  const presets = cosGet(cos, "0", "5", "0");
   if (Array.isArray(presets)) {
     for (const preset of presets) {
-      const style = cos_get(preset, "0", "6");
+      const style = cosGet(preset, "0", "6");
       if (style instanceof Map) bump(style);
     }
   }
-  const sessions = cos_get(cos, "1", "5");
-  const new_record: CosDict = new Map([["0", index]]);
-  if (version != null) new_record.set("1", version);
+  const sessions = cosGet(cos, "1", "5");
+  const newRecord: CosDict = new Map([["0", index]]);
+  if (version != null) newRecord.set("1", version);
   if (Array.isArray(sessions)) {
     let appended = false;
     for (const session of sessions) {
@@ -414,12 +414,12 @@ export function _register_font_at(
         if (record instanceof Map) bump(record);
       }
       if (used_record && !appended) {
-        records.push(new_record);
+        records.push(newRecord);
         appended = true;
       }
     }
   }
-  doc._fonts.splice(index, 0, new FontObject({ _font_data: font_data, _font_entry: font_entry }));
+  doc._fonts.splice(index, 0, new FontObject({ _font_data: fontData, _font_entry: fontEntry }));
   return index;
 }
 
@@ -438,38 +438,38 @@ export function _register_font_at(
  * carrying `from_name` is matched - taking only the first would silently
  * skip layers whose runs point at a later duplicate.
  */
-export function _replace_layer_font(docs: TextDocument[], from_name: string, to_name: string): boolean {
+export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName: string): boolean {
   const first = docs[0];
-  const from_indices = new Set<number>();
+  const fromIndices = new Set<number>();
   for (const [i, font] of first._fonts.entries()) {
-    if (font.postScriptName === from_name) from_indices.add(i);
+    if (font.postScriptName === fromName) fromIndices.add(i);
   }
-  if (!from_indices.size) return false;
+  if (!fromIndices.size) return false;
   const referenced = docs.some((doc) =>
-    _char_run_spans(doc).some(([, , style]) => cos_in(style.get("0"), from_indices)),
+    _charRunSpans(doc).some(([, , style]) => cosIn(style.get("0"), fromIndices)),
   );
   if (!referenced) return false;
 
-  let to_index: number | null = null;
+  let toIndex: number | null = null;
   for (const [i, font] of first._fonts.entries()) {
-    if (font.postScriptName === to_name) {
-      to_index = i;
+    if (font.postScriptName === toName) {
+      toIndex = i;
       break;
     }
   }
-  if (to_index == null) {
+  if (toIndex == null) {
     // Inserting past the LAST matching entry leaves every from-index
     // unshifted (`_register_font_at` only bumps references at or after
     // the insertion point).
-    to_index = _register_font_at(first, to_name, max(from_indices) + 1, { used_record: false });
+    toIndex = _registerFontAt(first, toName, max(fromIndices) + 1, { used_record: false });
   }
 
   for (const doc of docs) {
-    for (const [, , style] of _char_run_spans(doc)) {
-      if (cos_in(style.get("0"), from_indices)) style.set("0", to_index);
+    for (const [, , style] of _charRunSpans(doc)) {
+      if (cosIn(style.get("0"), fromIndices)) style.set("0", toIndex);
     }
   }
-  _repoint_used_font_record(first, from_indices, to_index, to_name);
+  _repointUsedFontRecord(first, fromIndices, toIndex, toName);
   first._propagate_cos();
   return true;
 }
@@ -481,21 +481,21 @@ export function _replace_layer_font(docs: TextDocument[], from_name: string, to_
  * version - rather than appending one and leaving the now-unused font
  * behind (probed AE 2026: Verdana's record becomes Georgia's).
  */
-export function _repoint_used_font_record(
+export function _repointUsedFontRecord(
   doc: TextDocument,
-  from_indices: Set<number>,
-  to_index: number,
-  to_name: string,
+  fromIndices: Set<number>,
+  toIndex: number,
+  toName: string,
 ): void {
-  const version = font_version_string(to_name);
-  const sessions = cos_get(doc._cos_data, "1", "5");
+  const version = fontVersionString(toName);
+  const sessions = cosGet(doc._cos_data, "1", "5");
   if (!Array.isArray(sessions)) return;
   for (const session of sessions) {
     const records = session instanceof Map ? session.get("4") ?? null : null;
     if (!Array.isArray(records)) continue;
     for (const record of records) {
-      if (!(record instanceof Map) || !cos_in(record.get("0"), from_indices)) continue;
-      record.set("0", to_index);
+      if (!(record instanceof Map) || !cosIn(record.get("0"), fromIndices)) continue;
+      record.set("0", toIndex);
       if (version == null) record.delete("1");
       else record.set("1", version);
     }
@@ -524,7 +524,7 @@ export const _NON_LAYOUT_CHAR_KEYS: ReadonlySet<string> = new Set(["53", "54", "
  * `TextDocument._mark_layout_dirty`). Duck-typed test documents
  * without the hook are skipped.
  */
-export function _mark_layout_dirty(doc: TextDocument): void {
+export function _markLayoutDirty(doc: TextDocument): void {
   // Python `getattr(doc, "_mark_layout_dirty", None)`: duck-typed test
   // documents may lack the hook.
   if (typeof doc._mark_layout_dirty === "function") doc._mark_layout_dirty();
@@ -537,10 +537,10 @@ export function _mark_layout_dirty(doc: TextDocument): void {
  * dict by object identity; merges can replace that object, so every
  * structural op must end here.
  */
-export function _refresh_style_aliases(doc: TextDocument): void {
-  const char = cos_get(doc._doc, "0", "6", "0", 0, "0", "0", "6");
+export function _refreshStyleAliases(doc: TextDocument): void {
+  const char = cosGet(doc._doc, "0", "6", "0", 0, "0", "0", "6");
   if (char instanceof Map) doc._char_style = char;
-  const para = cos_get(doc._doc, "0", "5", "0", 0, "0", "0", "5");
+  const para = cosGet(doc._doc, "0", "5", "0", 0, "0", "0", "5");
   if (para instanceof Map) doc._para_style = para;
 }
 
@@ -552,30 +552,30 @@ export function _refresh_style_aliases(doc: TextDocument): void {
  * past the pair instead, so caret writes stay zero-span no-ops
  * (`W_ZERO_STYLE`) rather than covering (or deleting) the glyph.
  */
-export function _snap_to_pairs(raw: string, start: number, end: number): [number, number] {
+export function _snapToPairs(raw: string, start: number, end: number): [number, number] {
   // No surrogate code units -> no pairs to split, so snapping is a no-op.
   // Skips the repeated scans below on the common (BMP) path.
   if (!/[\uD800-\uDFFF]/.test(raw)) return [start, end];
 
-  const mid_pair = (index: number): boolean => {
-    if (index <= 0 || index >= u16_len(raw)) return false;
-    const before = u16_slice(raw, index - 1, index).charCodeAt(0);
-    const after = u16_slice(raw, index, index + 1).charCodeAt(0);
+  const midPair = (index: number): boolean => {
+    if (index <= 0 || index >= u16Len(raw)) return false;
+    const before = u16Slice(raw, index - 1, index).charCodeAt(0);
+    const after = u16Slice(raw, index, index + 1).charCodeAt(0);
     return 0xd800 <= before && before <= 0xdbff && 0xdc00 <= after && after <= 0xdfff;
   };
 
   if (start === end) {
-    if (mid_pair(start)) return [start + 1, end + 1];
+    if (midPair(start)) return [start + 1, end + 1];
     return [start, end];
   }
-  if (mid_pair(start)) start -= 1;
-  if (mid_pair(end)) end += 1;
+  if (midPair(start)) start -= 1;
+  if (midPair(end)) end += 1;
   return [start, end];
 }
 
 /** A run entry's count, `run.get("1", 0)`, as a Python number (`TypeError` for other kinds). */
-function _run_count(run: CosNode): PyNum {
-  return py_num(cos_get_or(run, "1", 0));
+function _runCount(run: CosNode): PyNum {
+  return pyNum(cosGetOr(run, "1", 0));
 }
 
 /**
@@ -585,27 +585,27 @@ function _run_count(run: CosNode): PyNum {
  * 0's payload object only ever narrows (never detaches) and the
  * `_char_style` alias stays inside the serialized tree.
  */
-export function _split_run_array(runs: CosNode[], offsets: Set<number>): void {
+export function _splitRunArray(runs: CosNode[], offsets: Set<number>): void {
   const cuts = sorted(offsets);
   let pos: PyNum = 0;
   let i = 0;
   while (i < runs.length) {
-    const run_end = py_add(pos, _run_count(runs[i]));
+    const runEnd = pyAdd(pos, _runCount(runs[i]));
     let cut: number | null = null;
     for (const offset of cuts) {
-      if (float(pos) < offset && offset < float(run_end)) {
+      if (float(pos) < offset && offset < float(runEnd)) {
         cut = offset;
         break;
       }
     }
     if (cut == null) {
-      pos = run_end;
+      pos = runEnd;
       i += 1;
       continue;
     }
     const clone = deepcopy(runs[i]);
-    cos_setitem(runs[i], "1", py_sub(cut, pos));
-    cos_setitem(clone, "1", py_sub(run_end, cut));
+    cosSetitem(runs[i], "1", pySub(cut, pos));
+    cosSetitem(clone, "1", pySub(runEnd, cut));
     runs.splice(i + 1, 0, clone);
     pos = cut;
     i += 1;
@@ -619,12 +619,12 @@ export function _split_run_array(runs: CosNode[], offsets: Set<number>): void {
  * no-op set leaves a uniform document at one run (`W_NOOP`). The first
  * run of each merged group keeps its object (aliasing, key order).
  */
-export function _merge_adjacent_runs(runs: CosNode[]): void {
+export function _mergeAdjacentRuns(runs: CosNode[]): void {
   let i = 0;
   while (i + 1 < runs.length) {
-    const here = cos_dict(runs[i], "get").get("0") ?? null;
-    if (py_eq(here, cos_dict(runs[i + 1], "get").get("0") ?? null)) {
-      cos_setitem(runs[i], "1", py_add(_run_count(runs[i]), _run_count(runs[i + 1])));
+    const here = cosDict(runs[i], "get").get("0") ?? null;
+    if (pyEq(here, cosDict(runs[i + 1], "get").get("0") ?? null)) {
+      cosSetitem(runs[i], "1", pyAdd(_runCount(runs[i]), _runCount(runs[i + 1])));
       runs.splice(i + 1, 1);
     } else {
       i += 1;
@@ -639,36 +639,36 @@ export function _merge_adjacent_runs(runs: CosNode[]): void {
  * at the visible length extends through the raw terminator
  * (`W_MERGE_SAME`); `value=None` clears the key.
  */
-export function _apply_char_key(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
-  const raw = _raw_text(doc);
-  [start, end] = _snap_to_pairs(raw, start, end);
+export function _applyCharKey(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
+  const raw = _rawText(doc);
+  [start, end] = _snapToPairs(raw, start, end);
   if (start === end) return;
-  if (!_NON_LAYOUT_CHAR_KEYS.has(key)) _mark_layout_dirty(doc);
-  if (end === _visible_length(doc)) end = u16_len(raw);
-  const runs = cos_get(doc._doc, "0", "6", "0");
+  if (!_NON_LAYOUT_CHAR_KEYS.has(key)) _markLayoutDirty(doc);
+  if (end === _visibleLength(doc)) end = u16Len(raw);
+  const runs = cosGet(doc._doc, "0", "6", "0");
   if (!Array.isArray(runs) || !runs.length) return;
-  _split_run_array(runs, new Set([start, end]));
+  _splitRunArray(runs, new Set([start, end]));
   let pos: PyNum = 0;
   for (const run of runs) {
-    const run_end = py_add(pos, _run_count(run));
-    if (float(pos) >= start && float(run_end) <= end) {
-      const style = cos_get(run, "0", "0", "6");
+    const runEnd = pyAdd(pos, _runCount(run));
+    if (float(pos) >= start && float(runEnd) <= end) {
+      const style = cosGet(run, "0", "0", "6");
       if (style instanceof Map) {
         if (value == null) style.delete(key);
         else style.set(key, value);
       }
     }
-    pos = run_end;
+    pos = runEnd;
   }
-  _merge_adjacent_runs(runs);
-  _refresh_style_aliases(doc);
+  _mergeAdjacentRuns(runs);
+  _refreshStyleAliases(doc);
 }
 
 /** Per-character manual-kern values decoded from the kern runs (the stored values; `null` where none). */
-export function _kern_values(doc: TextDocument): CosNode[] {
-  const total = u16_len(_raw_text(doc));
+export function _kernValues(doc: TextDocument): CosNode[] {
+  const total = u16Len(_rawText(doc));
   const values: CosNode[] = new Array<CosNode>(total).fill(null);
-  for (const [start, end, payload] of _kern_run_spans(doc)) {
+  for (const [start, end, payload] of _kernRunSpans(doc)) {
     const value = payload.get("0") ?? null;
     if (value != null) {
       for (let i = start; i < Math.min(end, total); i++) values[i] = value;
@@ -686,15 +686,15 @@ export function _kern_values(doc: TextDocument): CosNode[] {
  * dict is kept in place when it exists so `doc["0"]`'s key order is
  * preserved; a fresh key is appended, like AE's creation order.
  */
-export function _rebuild_kern_runs(doc: TextDocument, values: CosNode[]): void {
-  const inner = cos_setdefault(doc._doc, "0", new Map());
-  const has_value = values.some((v) => v != null);
-  if (!has_value) {
+export function _rebuildKernRuns(doc: TextDocument, values: CosNode[]): void {
+  const inner = cosSetdefault(doc._doc, "0", new Map());
+  const hasValue = values.some((v) => v != null);
+  if (!hasValue) {
     // AE drops the array entirely once no manual values remain
     // (probed `X_AKT_SET`); the leading-edge value at "7" only
     // exists alongside the array, so it goes too.
-    cos_pop(inner, "8");
-    cos_pop(inner, "7");
+    cosPop(inner, "8");
+    cosPop(inner, "7");
     return;
   }
   const runs: CosNode[] = [];
@@ -711,11 +711,11 @@ export function _rebuild_kern_runs(doc: TextDocument, values: CosNode[]): void {
       i += 1;
     }
   }
-  const holder = cos_dict(inner, "get").get("8");
+  const holder = cosDict(inner, "get").get("8");
   if (holder instanceof Map) {
     holder.set("0", runs);
   } else {
-    cos_setitem(inner, "8", new Map([["0", runs]]));
+    cosSetitem(inner, "8", new Map([["0", runs]]));
   }
 }
 
@@ -730,116 +730,116 @@ export function _rebuild_kern_runs(doc: TextDocument, values: CosNode[]): void {
  * (`W_TEXT_*`, `X_TEXT_KERN`, `X_TEXT_END`). `insert_runs` /
  * `insert_kern` override the donor styling for paste transplants.
  */
-export function _splice_text(
+export function _spliceText(
   doc: TextDocument,
   start: number,
   end: number,
-  new_text: string,
-  insert_runs: CosNode[] | null = null,
-  insert_kern: CosNode[] | null = null,
+  newText: string,
+  insertRuns: CosNode[] | null = null,
+  insertKern: CosNode[] | null = null,
 ): void {
-  const raw = _raw_text(doc);
-  const total = u16_len(raw);
-  const insert_len = u16_len(new_text);
-  if (start === end && insert_len === 0 && insert_runs == null) return;
-  _mark_layout_dirty(doc);
-  const kern_values = _kern_values(doc);
-  const new_raw = u16_slice(raw, 0, start) + new_text + u16_slice(raw, end, total);
-  let parts = split(new_raw, "\r");
+  const raw = _rawText(doc);
+  const total = u16Len(raw);
+  const insertLen = u16Len(newText);
+  if (start === end && insertLen === 0 && insertRuns == null) return;
+  _markLayoutDirty(doc);
+  const kernValues = _kernValues(doc);
+  const newRaw = u16Slice(raw, 0, start) + newText + u16Slice(raw, end, total);
+  let parts = split(newRaw, "\r");
   if (parts[parts.length - 1] === "") parts = parts.slice(0, -1);
-  const inner = cos_setdefault(doc._doc, "0", new Map());
+  const inner = cosSetdefault(doc._doc, "0", new Map());
 
-  const runs = cos_get(inner, "6", "0");
+  const runs = cosGet(inner, "6", "0");
   if (Array.isArray(runs) && runs.length) {
-    let insert_entries: CosNode[];
-    if (insert_runs == null) {
+    let insertEntries: CosNode[];
+    if (insertRuns == null) {
       let donor: CosNode | undefined;
       let pos: PyNum = 0;
       for (const run of runs) {
-        const run_end = py_add(pos, _run_count(run));
-        if (float(pos) <= start && start < float(run_end)) {
+        const runEnd = pyAdd(pos, _runCount(run));
+        if (float(pos) <= start && start < float(runEnd)) {
           donor = deepcopy(run);
           break;
         }
-        pos = run_end;
+        pos = runEnd;
       }
       if (donor === undefined) donor = deepcopy(runs[runs.length - 1]);
-      cos_setitem(donor, "1", insert_len);
-      insert_entries = insert_len ? [donor] : [];
+      cosSetitem(donor, "1", insertLen);
+      insertEntries = insertLen ? [donor] : [];
     } else {
-      insert_entries = insert_runs;
+      insertEntries = insertRuns;
     }
-    _split_run_array(runs, new Set([start, end]));
+    _splitRunArray(runs, new Set([start, end]));
     const rebuilt: CosNode[] = [];
     let pos: PyNum = 0;
     let inserted = false;
     for (const run of runs) {
-      const run_end = py_add(pos, _run_count(run));
-      if (float(run_end) <= start) {
+      const runEnd = pyAdd(pos, _runCount(run));
+      if (float(runEnd) <= start) {
         rebuilt.push(run);
       } else if (float(pos) >= end) {
         if (!inserted) {
-          rebuilt.push(...insert_entries);
+          rebuilt.push(...insertEntries);
           inserted = true;
         }
         rebuilt.push(run);
       }
-      pos = run_end;
+      pos = runEnd;
     }
-    if (!inserted) rebuilt.push(...insert_entries);
+    if (!inserted) rebuilt.push(...insertEntries);
     runs.splice(0, runs.length, ...rebuilt);
-    _merge_adjacent_runs(runs);
+    _mergeAdjacentRuns(runs);
   }
 
-  const para_runs = cos_get(inner, "5", "0");
-  if (Array.isArray(para_runs) && para_runs.length) {
-    const old_spans: [number, number, CosNode][] = [];
+  const paraRuns = cosGet(inner, "5", "0");
+  if (Array.isArray(paraRuns) && paraRuns.length) {
+    const oldSpans: [number, number, CosNode][] = [];
     let pos: PyNum = 0;
-    for (const entry of para_runs) {
-      const length = _run_count(entry);
-      old_spans.push([float(pos), float(py_add(pos, length)), entry]);
-      pos = py_add(pos, length);
+    for (const entry of paraRuns) {
+      const length = _runCount(entry);
+      oldSpans.push([float(pos), float(pyAdd(pos, length)), entry]);
+      pos = pyAdd(pos, length);
     }
 
-    const donor_entry = (new_pos: number): CosNode => {
-      let old_pos: number;
-      if (new_pos < start) old_pos = new_pos;
-      else if (new_pos >= start + insert_len) old_pos = new_pos - insert_len + (end - start);
-      else old_pos = start;
-      old_pos = total ? Math.min(old_pos, total - 1) : 0;
-      for (const [span_start, span_end, entry] of old_spans) {
-        if (span_start <= old_pos && old_pos < span_end) return entry;
+    const donorEntry = (newPos: number): CosNode => {
+      let oldPos: number;
+      if (newPos < start) oldPos = newPos;
+      else if (newPos >= start + insertLen) oldPos = newPos - insertLen + (end - start);
+      else oldPos = start;
+      oldPos = total ? Math.min(oldPos, total - 1) : 0;
+      for (const [spanStart, spanEnd, entry] of oldSpans) {
+        if (spanStart <= oldPos && oldPos < spanEnd) return entry;
       }
-      return old_spans[old_spans.length - 1][2];
+      return oldSpans[oldSpans.length - 1][2];
     };
 
-    const new_para_runs: CosNode[] = [];
+    const newParaRuns: CosNode[] = [];
     let pos2 = 0;
     for (const [i, part] of parts.entries()) {
-      const entry = donor_entry(pos2);
+      const entry = donorEntry(pos2);
       // Keep the first run's object identity when it stays first
       // (aliased by `_para_style`); clone everything else.
-      const clone = i === 0 && entry === para_runs[0] ? entry : deepcopy(entry);
-      const part_len = u16_len(part) + 1;
-      cos_setitem(clone, "1", part_len);
-      new_para_runs.push(clone);
-      pos2 += part_len;
+      const clone = i === 0 && entry === paraRuns[0] ? entry : deepcopy(entry);
+      const partLen = u16Len(part) + 1;
+      cosSetitem(clone, "1", partLen);
+      newParaRuns.push(clone);
+      pos2 += partLen;
     }
-    para_runs.splice(0, para_runs.length, ...new_para_runs);
+    paraRuns.splice(0, paraRuns.length, ...newParaRuns);
   }
 
-  if (insert_kern == null) insert_kern = new Array<CosNode>(insert_len).fill(null);
-  _rebuild_kern_runs(doc, [...kern_values.slice(0, start), ...insert_kern, ...kern_values.slice(end)]);
+  if (insertKern == null) insertKern = new Array<CosNode>(insertLen).fill(null);
+  _rebuildKernRuns(doc, [...kernValues.slice(0, start), ...insertKern, ...kernValues.slice(end)]);
   if (start === 0) {
     // Replacing the leading edge invalidates the pair-0 kern value
     // (AE-unprobed; dropping it mirrors the auto_kern_type setter).
-    cos_pop(inner, "7");
+    cosPop(inner, "7");
   }
 
-  cos_setitem(inner, "0", new_raw);
+  cosSetitem(inner, "0", newRaw);
   // Python `getattr(doc, "_rebuild_line_count_runs", None)`: duck-typed test documents may lack it.
   if (typeof doc._rebuild_line_count_runs === "function") doc._rebuild_line_count_runs(parts);
-  _refresh_style_aliases(doc);
+  _refreshStyleAliases(doc);
 }
 
 /**
@@ -847,22 +847,22 @@ export function _splice_text(
  * range (paragraph runs are structural: never split, never merged -
  * `W_PARA_PARTIAL` styles the whole containing paragraph).
  */
-export function _apply_para_key(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
+export function _applyParaKey(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
   if (start === end) return;
-  _mark_layout_dirty(doc);
-  const runs = cos_get(doc._doc, "0", "5", "0");
+  _markLayoutDirty(doc);
+  const runs = cosGet(doc._doc, "0", "5", "0");
   if (!Array.isArray(runs)) return;
   let pos: PyNum = 0;
   for (const run of runs) {
-    const run_end = py_add(pos, _run_count(run));
-    if (float(pos) < end && float(run_end) > start) {
-      const style = cos_get(run, "0", "0", "5");
+    const runEnd = pyAdd(pos, _runCount(run));
+    if (float(pos) < end && float(runEnd) > start) {
+      const style = cosGet(run, "0", "0", "5");
       if (style instanceof Map) {
         if (value == null) style.delete(key);
         else style.set(key, value);
       }
     }
-    pos = run_end;
+    pos = runEnd;
   }
 }
 
@@ -956,8 +956,8 @@ export class RangeField<T extends InstanceValue> {
       raw = this.reverse(value);
     }
     const [start, end] = obj._bounds();
-    if (this.kind === "char") _apply_char_key(obj._doc_ref, start, end, this.key, raw);
-    else _apply_para_key(obj._doc_ref, start, end, this.key, raw);
+    if (this.kind === "char") _applyCharKey(obj._doc_ref, start, end, this.key, raw);
+    else _applyParaKey(obj._doc_ref, start, end, this.key, raw);
     obj._propagate();
   }
 
@@ -969,7 +969,7 @@ export class RangeField<T extends InstanceValue> {
   /** Create a RangeField that coerces to float. */
   static float(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
     // The stored value is a Python float, so box it to keep `1.0` from serializing as `1`.
-    return new RangeField<number>(kind, key, { transform: cos_float, reverse: (x: number) => pyfloat(x), ...kwargs });
+    return new RangeField<number>(kind, key, { transform: cosFloat, reverse: (x: number) => pyfloat(x), ...kwargs });
   }
 
   /**
@@ -981,7 +981,7 @@ export class RangeField<T extends InstanceValue> {
    * probed AE 2026).
    */
   static int(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
-    return new RangeField<number>(kind, key, { transform: cos_int, reverse: (x: number) => round(x), ...kwargs });
+    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => round(x), ...kwargs });
   }
 
   /**
@@ -990,11 +990,11 @@ export class RangeField<T extends InstanceValue> {
    * `from_binary`. Without the check a stray int serializes a value
    * that reads back as `None`/undefined.
    */
-  static enum<V extends number>(enum_cls: CosEnum<V>, kind: RangeKind, key: string, kwargs: RangeFieldExtras<V> = {}): RangeField<V> {
+  static enum<V extends number>(enumCls: CosEnum<V>, kind: RangeKind, key: string, kwargs: RangeFieldExtras<V> = {}): RangeField<V> {
     return new RangeField<V>(kind, key, {
-      transform: (raw: CosNode) => enum_from_cos(enum_cls, raw),
-      reverse: (value: V) => enum_cls.to_binary(value),
-      validate: validate_enum(enum_cls),
+      transform: (raw: CosNode) => enumFromCos(enumCls, raw),
+      reverse: (value: V) => enumCls.to_binary(value),
+      validate: validateEnum(enumCls),
       ...kwargs,
     });
   }
@@ -1017,11 +1017,11 @@ type StyleAttr = "_char_style" | "_para_style";
  */
 export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, StyleAttr, TextDocument> {
   __set__(obj: TextDocument, value: T | null): void {
-    const is_char = this.dictAttr === "_char_style";
+    const isChar = this.dictAttr === "_char_style";
     const backing = obj[this.dictAttr];
     let runs: CosNode = null;
     if (backing != null) {
-      runs = cos_get(obj._doc, "0", is_char ? "6" : "5", "0");
+      runs = cosGet(obj._doc, "0", isChar ? "6" : "5", "0");
     }
     if (!Array.isArray(runs) || !runs.length) {
       // Single style dict (or a parser fallback with no runs): the
@@ -1031,26 +1031,26 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
     }
     this._check_writable(obj);
     obj.__dict__.delete(this.publicName);
-    const raw_value = value == null ? null : this._coerce(obj, value);
-    const total = u16_len(_raw_text(obj));
-    if (is_char) _apply_char_key(obj, 0, total, this.key, raw_value);
-    else _apply_para_key(obj, 0, total, this.key, raw_value);
+    const rawValue = value == null ? null : this._coerce(obj, value);
+    const total = u16Len(_rawText(obj));
+    if (isChar) _applyCharKey(obj, 0, total, this.key, rawValue);
+    else _applyParaKey(obj, 0, total, this.key, rawValue);
     if (typeof obj._propagate_cos === "function") obj._propagate_cos();
   }
 
   /** `CosField.bool`: a boolean flag on the document's first char / para style. */
-  static bool<D extends boolean | null>(dict_attr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<boolean | D> {
-    return new DocumentWideCosField(dict_attr, key, bool_field(kw));
+  static bool<D extends boolean | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<boolean | D> {
+    return new DocumentWideCosField(dictAttr, key, boolField(kw));
   }
 
   /** `CosField.float`: a float style key, coerced to float in both directions. */
-  static float<D extends number | null>(dict_attr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
-    return new DocumentWideCosField(dict_attr, key, float_field(kw));
+  static float<D extends number | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
+    return new DocumentWideCosField(dictAttr, key, floatField(kw));
   }
 
   /** `CosField.int`: an integer-stored style key. */
-  static int<D extends number | null>(dict_attr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
-    return new DocumentWideCosField(dict_attr, key, int_field(kw));
+  static int<D extends number | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
+    return new DocumentWideCosField(dictAttr, key, intField(kw));
   }
 
   /**
@@ -1059,8 +1059,8 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
    * not validate, so a stray int would serialize a value that reads back
    * as `null`/undefined. Reads stay tolerant via `from_binary`.
    */
-  static enum<V extends number, D extends V | null>(enum_cls: CosEnum<V>, dict_attr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<V | D> {
-    return new DocumentWideCosField(dict_attr, key, enum_field(enum_cls, { validate: validate_enum(enum_cls), ...kw }));
+  static enum<V extends number, D extends V | null>(enumCls: CosEnum<V>, dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<V | D> {
+    return new DocumentWideCosField(dictAttr, key, enumField(enumCls, { validate: validateEnum(enumCls), ...kw }));
   }
 }
 
@@ -1082,10 +1082,10 @@ export class _TextRange {
   declare _start: number;
   declare _signed_end: number;
 
-  constructor(doc: TextDocument, start: number, signed_end: number) {
+  constructor(doc: TextDocument, start: number, signedEnd: number) {
     this._doc_ref = doc;
     this._start = start;
-    this._signed_end = signed_end;
+    this._signed_end = signedEnd;
     // AE validates at creation time and raises immediately.
     this._bounds();
   }
@@ -1206,7 +1206,7 @@ export class CharacterRange extends _TextRange {
    * @throws {@link ValueError} When the range is outside the document bounds.
    */
   _bounds(): [number, number] {
-    const visible = _visible_length(this._doc_ref);
+    const visible = _visibleLength(this._doc_ref);
     const end = this._signed_end === -1 ? visible : this._signed_end;
     if (this._start < 0 || this._start > visible || end < this._start || end > visible) {
       throw new ValueError(CHARACTER_RANGE_OOB);
@@ -1226,22 +1226,22 @@ export class CharacterRange extends _TextRange {
   _overlapping(spans: [number, number, CosDict][]): CosDict[] {
     const [start, end] = this._bounds();
     if (start === end) {
-      for (const [run_start, run_end, payload] of spans) {
-        if (run_start <= start && start < run_end) return [payload];
+      for (const [runStart, runEnd, payload] of spans) {
+        if (runStart <= start && start < runEnd) return [payload];
       }
       return spans.length ? [spans[spans.length - 1][2]] : [];
     }
     const out: CosDict[] = [];
-    for (const [run_start, run_end, payload] of spans) {
-      if (run_start < end && run_end > start) out.push(payload);
+    for (const [runStart, runEnd, payload] of spans) {
+      if (runStart < end && runEnd > start) out.push(payload);
     }
     return out;
   }
 
   _spans_for(kind: RangeKind): [number, number, CosDict][] {
-    if (kind === "char") return _char_run_spans(this._doc_ref);
-    if (kind === "para") return _para_run_spans(this._doc_ref);
-    return _kern_run_spans(this._doc_ref);
+    if (kind === "char") return _charRunSpans(this._doc_ref);
+    if (kind === "para") return _paraRunSpans(this._doc_ref);
+    return _kernRunSpans(this._doc_ref);
   }
 
   /**
@@ -1253,13 +1253,13 @@ export class CharacterRange extends _TextRange {
   _resolve_mixed<T>(kind: RangeKind, key: string, transform: (raw: CosNode) => T, default_: T | null, gate: string | null): T | null {
     let payloads = this._overlapping(this._spans_for(kind));
     if (gate != null) {
-      payloads = payloads.filter((p) => py_bool(p.get(gate) ?? null));
+      payloads = payloads.filter((p) => pyBool(p.get(gate) ?? null));
       if (!payloads.length) return null;
     }
     if (!payloads.length) return default_;
     const values = payloads.map((payload) => _extract(payload, key, transform, default_));
     const first = values[0];
-    return values.slice(1).every((value) => py_eq(value, first)) ? first : null;
+    return values.slice(1).every((value) => pyEq(value, first)) ? first : null;
   }
 
   _propagate(): void {
@@ -1281,17 +1281,17 @@ export class CharacterRange extends _TextRange {
    */
   get text(): string {
     const [start, end] = this._bounds();
-    return u16_slice(_raw_text(this._doc_ref), start, end).replaceAll("\r", "\n");
+    return u16Slice(_rawText(this._doc_ref), start, end).replaceAll("\r", "\n");
   }
 
   set text(value: string) {
-    validate_text(value);
+    validateText(value);
     const doc = this._doc_ref;
-    const raw = _raw_text(doc);
+    const raw = _rawText(doc);
     let [start, end] = this._bounds();
-    [start, end] = _snap_to_pairs(raw, start, end);
+    [start, end] = _snapToPairs(raw, start, end);
     const normalized = value.replaceAll("\r\n", "\r").replaceAll("\n", "\r");
-    _splice_text(doc, start, end, normalized);
+    _spliceText(doc, start, end, normalized);
     this._propagate();
   }
 
@@ -1306,89 +1306,89 @@ export class CharacterRange extends _TextRange {
    * prepending missing fonts like AE. This range keeps its creation
    * indices and may become invalid when the pasted text is shorter.
    *
-   * @param source_range - The {@link CharacterRange} to copy from (may belong to another document
+   * @param sourceRange - The {@link CharacterRange} to copy from (may belong to another document
    *   or project).
    */
-  pasteFrom(source_range: CharacterRange): void {
-    if (!(source_range instanceof CharacterRange)) {
+  pasteFrom(sourceRange: CharacterRange): void {
+    if (!(sourceRange instanceof CharacterRange)) {
       throw new TypeError_("pasteFrom expects a CharacterRange");
     }
     const doc = this._doc_ref;
-    const src_doc = source_range._doc_ref;
-    const src_raw = _raw_text(src_doc);
-    let [src_start, src_end] = source_range._bounds();
-    [src_start, src_end] = _snap_to_pairs(src_raw, src_start, src_end);
-    const text_slice = u16_slice(src_raw, src_start, src_end);
+    const srcDoc = sourceRange._doc_ref;
+    const srcRaw = _rawText(srcDoc);
+    let [srcStart, srcEnd] = sourceRange._bounds();
+    [srcStart, srcEnd] = _snapToPairs(srcRaw, srcStart, srcEnd);
+    const textSlice = u16Slice(srcRaw, srcStart, srcEnd);
 
     const entries: CosNode[] = [];
     let pos: PyNum = 0;
-    const src_runs = cos_get(src_doc._doc, "0", "6", "0");
-    for (const run of cos_iter(py_bool(src_runs) ? src_runs : [])) {
-      const run_end = py_add(pos, _run_count(run));
+    const srcRuns = cosGet(srcDoc._doc, "0", "6", "0");
+    for (const run of cosIter(pyBool(srcRuns) ? srcRuns : [])) {
+      const runEnd = pyAdd(pos, _runCount(run));
       // `max(pos, src_start)` / `min(run_end, src_end)` keep the winning
       // operand itself, so a float position stays a float.
-      const overlap_start: PyNum = src_start > float(pos) ? src_start : pos;
-      const overlap_end: PyNum = src_end < float(run_end) ? src_end : run_end;
-      if (float(overlap_end) > float(overlap_start)) {
+      const overlapStart: PyNum = srcStart > float(pos) ? srcStart : pos;
+      const overlapEnd: PyNum = srcEnd < float(runEnd) ? srcEnd : runEnd;
+      if (float(overlapEnd) > float(overlapStart)) {
         const clone = deepcopy(run);
-        cos_setitem(clone, "1", py_sub(overlap_end, overlap_start));
+        cosSetitem(clone, "1", pySub(overlapEnd, overlapStart));
         entries.push(clone);
       }
-      pos = run_end;
+      pos = runEnd;
     }
 
-    if (src_doc !== doc) {
+    if (srcDoc !== doc) {
       const needed = new Map<number, string>();
       for (const clone of entries) {
-        const style = cos_get(clone, "0", "0", "6");
+        const style = cosGet(clone, "0", "0", "6");
         if (style instanceof Map) {
-          const index = read(char_style, style, "0");
-          if (index != null && 0 <= Number(index) && Number(index) < src_doc._fonts.length) {
-            needed.set(Number(index), src_doc._fonts[Number(index)].postScriptName);
+          const index = read(charStyle, style, "0");
+          if (index != null && 0 <= Number(index) && Number(index) < srcDoc._fonts.length) {
+            needed.set(Number(index), srcDoc._fonts[Number(index)].postScriptName);
           }
         }
       }
       const existing = new Set<string>(doc._fonts.map((f) => f.postScriptName));
       for (const name of needed.values()) {
         if (!existing.has(name)) {
-          _register_font_at(doc, name);
+          _registerFontAt(doc, name);
           existing.add(name);
         }
       }
-      const target_index = new Map<string, number>();
-      for (const [i, f] of doc._fonts.entries()) target_index.set(f.postScriptName, i);
+      const targetIndex = new Map<string, number>();
+      for (const [i, f] of doc._fonts.entries()) targetIndex.set(f.postScriptName, i);
       for (const clone of entries) {
-        const style = cos_get(clone, "0", "0", "6");
+        const style = cosGet(clone, "0", "0", "6");
         if (style instanceof Map) {
-          const index = read(char_style, style, "0");
+          const index = read(charStyle, style, "0");
           const name = index != null ? needed.get(Number(index)) : undefined;
-          if (name !== undefined) style.set("0", getitem(target_index, name));
+          if (name !== undefined) style.set("0", getitem(targetIndex, name));
         }
       }
     }
 
-    const kern_slice = _kern_values(src_doc).slice(src_start, src_end);
-    let src_edge: number | boolean | null = null;
-    if (src_start === 0) {
-      const edge = cos_get(src_doc._doc, "0", "7");
-      if (is(py_int, edge)) src_edge = edge;
+    const kernSlice = _kernValues(srcDoc).slice(srcStart, srcEnd);
+    let srcEdge: number | boolean | null = null;
+    if (srcStart === 0) {
+      const edge = cosGet(srcDoc._doc, "0", "7");
+      if (is(pyInt, edge)) srcEdge = edge;
     }
-    const raw = _raw_text(doc);
+    const raw = _rawText(doc);
     let [start, end] = this._bounds();
-    [start, end] = _snap_to_pairs(raw, start, end);
-    _splice_text(doc, start, end, text_slice, entries, kern_slice);
-    if (src_edge != null) {
+    [start, end] = _snapToPairs(raw, start, end);
+    _spliceText(doc, start, end, textSlice, entries, kernSlice);
+    if (srcEdge != null) {
       // The source's leading-edge kern value (pair before char 0)
       // follows the paste: it stays the leading edge when pasting at
       // 0, otherwise it becomes the pair value between the preceding
       // character and the pasted text (probed Y_PASTE_EDGE0/_MID).
       if (start === 0) {
-        cos_setitem(cos_setdefault(doc._doc, "0", new Map()), "7", src_edge);
+        cosSetitem(cosSetdefault(doc._doc, "0", new Map()), "7", srcEdge);
       } else {
-        const values = _kern_values(doc);
+        const values = _kernValues(doc);
         if (start - 1 < values.length) {
-          values[start - 1] = src_edge;
-          _rebuild_kern_runs(doc, values);
+          values[start - 1] = srcEdge;
+          _rebuildKernRuns(doc, values);
         }
       }
     }
@@ -1408,11 +1408,11 @@ export class CharacterRange extends _TextRange {
   }
 
   set autoLeading(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     const [start, end] = this._bounds();
-    _apply_char_key(this._doc_ref, start, end, "4", value);
+    _applyCharKey(this._doc_ref, start, end, "4", value);
     if (value) {
-      _apply_char_key(this._doc_ref, start, end, "5", pyfloat(0.01));
+      _applyCharKey(this._doc_ref, start, end, "5", pyfloat(0.01));
     }
     this._propagate();
   }
@@ -1425,25 +1425,25 @@ export class CharacterRange extends _TextRange {
    * values remain (probed `X_AKT_SET`).
    */
   get autoKernType(): AutoKernType | null {
-    return this._resolve_mixed("char", "11", (raw) => enum_from_cos(AutoKernType, raw), AutoKernType.NO_AUTO_KERN, null);
+    return this._resolve_mixed("char", "11", (raw) => enumFromCos(AutoKernType, raw), AutoKernType.NO_AUTO_KERN, null);
   }
 
   set autoKernType(value: AutoKernType) {
-    validate_enum(AutoKernType)(value);
+    validateEnum(AutoKernType)(value);
     const doc = this._doc_ref;
-    const [start, end] = _snap_to_pairs(_raw_text(doc), ...this._bounds());
+    const [start, end] = _snapToPairs(_rawText(doc), ...this._bounds());
     if (start === end) {
       // Zero-span writes are no-ops (W_ZERO_STYLE); guard before
       // the kern-clearing side effects below.
       return;
     }
-    _apply_char_key(doc, start, end, "11", AutoKernType.to_binary(AutoKernType.of(value)));
+    _applyCharKey(doc, start, end, "11", AutoKernType.to_binary(AutoKernType.of(value)));
     if (value !== AutoKernType.NO_AUTO_KERN) {
-      const values = _kern_values(doc);
+      const values = _kernValues(doc);
       for (let i = start; i < Math.min(end, values.length); i++) values[i] = null;
-      _rebuild_kern_runs(doc, values);
+      _rebuildKernRuns(doc, values);
       if (start === 0) {
-        cos_pop(cos_get_or(doc._doc, "0", new Map()), "7");
+        cosPop(cosGetOr(doc._doc, "0", new Map()), "7");
       }
     }
     this._propagate();
@@ -1458,28 +1458,28 @@ export class CharacterRange extends _TextRange {
    * it and reindexes existing references, matching AE.
    */
   get font(): string | null {
-    const font_obj = this.fontObject;
-    return font_obj != null ? font_obj.postScriptName : null;
+    const fontObj = this.fontObject;
+    return fontObj != null ? fontObj.postScriptName : null;
   }
 
   set font(value: string) {
-    validate_font_name(value);
+    validateFontName(value);
     const doc = this._doc_ref;
-    const [start, end] = _snap_to_pairs(_raw_text(doc), ...this._bounds());
+    const [start, end] = _snapToPairs(_rawText(doc), ...this._bounds());
     if (start === end) {
       // Zero-span writes are no-ops (W_ZERO_STYLE); guard before
       // registering the font, which mutates the whole document.
       return;
     }
     let index: number | null = null;
-    for (const [i, font_obj] of doc._fonts.entries()) {
-      if (font_obj.postScriptName === value) {
+    for (const [i, fontObj] of doc._fonts.entries()) {
+      if (fontObj.postScriptName === value) {
         index = i;
         break;
       }
     }
-    if (index == null) index = _register_font_at(doc, value);
-    _apply_char_key(doc, start, end, "0", index);
+    if (index == null) index = _registerFontAt(doc, value);
+    _applyCharKey(doc, start, end, "0", index);
     this._propagate();
   }
 
@@ -1487,7 +1487,7 @@ export class CharacterRange extends _TextRange {
   get fontObject(): FontObject | null {
     const idx = this._resolve_mixed("char", "0", (raw) => raw, null, null);
     const fonts = this._doc_ref._fonts;
-    if (is(py_int, idx) && 0 <= Number(idx) && Number(idx) < fonts.length) {
+    if (is(pyInt, idx) && 0 <= Number(idx) && Number(idx) < fonts.length) {
       return fonts[Number(idx)];
     }
     return null;
@@ -1506,17 +1506,17 @@ export class CharacterRange extends _TextRange {
   get leading(): number | null {
     const auto = this.autoLeading;
     if (auto == null || auto) return null;
-    return this._resolve_mixed("char", "5", cos_float, null, null);
+    return this._resolve_mixed("char", "5", cosFloat, null, null);
   }
 
   set leading(value: number | null) {
-    if (value != null) validate_positive_number(value);
+    if (value != null) validatePositiveNumber(value);
     const [start, end] = this._bounds();
     if (value == null) {
-      _apply_char_key(this._doc_ref, start, end, "5", null);
+      _applyCharKey(this._doc_ref, start, end, "5", null);
     } else {
-      _apply_char_key(this._doc_ref, start, end, "5", pyfloat(value));
-      _apply_char_key(this._doc_ref, start, end, "4", false);
+      _applyCharKey(this._doc_ref, start, end, "5", pyfloat(value));
+      _applyCharKey(this._doc_ref, start, end, "4", false);
     }
     this._propagate();
   }
@@ -1537,37 +1537,37 @@ export class CharacterRange extends _TextRange {
   get kerning(): number | boolean | null {
     if (this.autoKernType !== AutoKernType.NO_AUTO_KERN) return null;
     const value = this._resolve_mixed("kern", "0", (raw) => raw, null, null);
-    return is(py_int, value) ? value : null;
+    return is(pyInt, value) ? value : null;
   }
 
   set kerning(value: number | boolean | null) {
-    validate_s4(value, this._doc_ref);
+    validateS4(value, this._doc_ref);
     // `validate_s4` accepts a float (see its definition): round it on
     // write, matching the sibling `tracking` field, whose `RangeField.int`
     // sets `reverse=round`. `round` also normalizes bools (a subclass of
     // int) so the serializer emits an integer, not a `true`/`false` token.
-    const rounded = round(cos_num(value));
+    const rounded = round(cosNum(value));
     const doc = this._doc_ref;
-    const raw = _raw_text(doc);
+    const raw = _rawText(doc);
     let [start, end] = this._bounds();
-    [start, end] = _snap_to_pairs(raw, start, end);
+    [start, end] = _snapToPairs(raw, start, end);
     if (start === end) return;
     // Kern runs mutate before the auto-kern flag write reaches
     // _apply_char_key, so mark (and calibrate) here first.
-    _mark_layout_dirty(doc);
+    _markLayoutDirty(doc);
     // No visible-end extension here: AE never kerns the raw `\r`
     // terminator (every probed kern fixture leaves it in an empty
     // run); `_apply_char_key` below re-extends the style write.
-    const kern_start = Math.max(0, start - 1);
-    const values = _kern_values(doc);
-    for (let i = kern_start; i < Math.min(end, values.length); i++) values[i] = rounded;
-    _rebuild_kern_runs(doc, values);
+    const kernStart = Math.max(0, start - 1);
+    const values = _kernValues(doc);
+    for (let i = kernStart; i < Math.min(end, values.length); i++) values[i] = rounded;
+    _rebuildKernRuns(doc, values);
     if (start === 0) {
       // Pair position 0 (before the first character): AE stores the
       // leading-edge value at doc["0"]["7"], created after key "8".
-      cos_setitem(cos_setdefault(doc._doc, "0", new Map()), "7", rounded);
+      cosSetitem(cosSetdefault(doc._doc, "0", new Map()), "7", rounded);
     }
-    _apply_char_key(doc, kern_start, end, "11", AutoKernType.to_binary(AutoKernType.NO_AUTO_KERN));
+    _applyCharKey(doc, kernStart, end, "11", AutoKernType.to_binary(AutoKernType.NO_AUTO_KERN));
     this._propagate();
   }
 
@@ -1626,13 +1626,13 @@ export class ParagraphRange extends _IndexRange {
    * @throws {@link ValueError} When the paragraph indices are out of bounds.
    */
   _bounds(): [number, number] {
-    const spans = _para_run_spans(this._doc_ref);
+    const spans = _paraRunSpans(this._doc_ref);
     const count = spans.length;
     const end = this._signed_end === -1 ? count : this._signed_end;
     if (this._start < 0 || this._start >= count || end <= this._start || end > count) {
       throw new ValueError(PARAGRAPH_RANGE_OOB);
     }
-    const visible = _visible_length(this._doc_ref);
+    const visible = _visibleLength(this._doc_ref);
     return [Math.min(spans[this._start][0], visible), Math.min(spans[end - 1][1], visible)];
   }
 }
@@ -1660,20 +1660,20 @@ export class ComposedLineRange extends _IndexRange {
    *   wholly outside the current text.
    */
   _bounds(): [number, number] {
-    const spans = _composed_line_spans(this._doc_ref);
+    const spans = _composedLineSpans(this._doc_ref);
     if (spans == null) throw new ValueError(COMPOSED_LINE_OOB);
     const count = spans.length;
     const end = this._signed_end === -1 ? count : this._signed_end;
     if (this._start < 0 || this._start >= count || end <= this._start || end > count) {
       throw new ValueError(COMPOSED_LINE_OOB);
     }
-    const visible = _visible_length(this._doc_ref);
-    const start_char = spans[this._start][0];
+    const visible = _visibleLength(this._doc_ref);
+    const startChar = spans[this._start][0];
     // A stale cached line lying wholly beyond the current text raises;
     // a line starting exactly at the end is a valid zero-span (e.g. the
     // trailing empty paragraph's line).
-    if (start_char > visible) throw new ValueError(COMPOSED_LINE_OOB);
-    return [start_char, Math.min(spans[end - 1][1], visible)];
+    if (startChar > visible) throw new ValueError(COMPOSED_LINE_OOB);
+    return [startChar, Math.min(spans[end - 1][1], visible)];
   }
 }
 
@@ -1682,7 +1682,7 @@ export class ComposedLineRange extends _IndexRange {
 // ---------------------------------------------------------------------------
 
 /** `font_size`: the range's font size in pixels; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "fontSize", RangeField.float("char", "1", { validate: validate_positive_nonzero_number }));
+descriptor(CharacterRange, "fontSize", RangeField.float("char", "1", { validate: validatePositiveNonzeroNumber }));
 
 /** `faux_bold`: `true` if faux bold is enabled across the range. Read / Write. */
 descriptor(CharacterRange, "fauxBold", RangeField.bool("char", "2"));
@@ -1691,16 +1691,16 @@ descriptor(CharacterRange, "fauxBold", RangeField.bool("char", "2"));
 descriptor(CharacterRange, "fauxItalic", RangeField.bool("char", "3"));
 
 /** `horizontal_scale`: the range's horizontal scale; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "horizontalScale", RangeField.float("char", "6", { validate: validate_number }));
+descriptor(CharacterRange, "horizontalScale", RangeField.float("char", "6", { validate: validateNumber }));
 
 /** `vertical_scale`: the range's vertical scale; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "verticalScale", RangeField.float("char", "7", { validate: validate_number }));
+descriptor(CharacterRange, "verticalScale", RangeField.float("char", "7", { validate: validateNumber }));
 
 /** `tracking`: the range's spacing between characters; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "tracking", RangeField.int("char", "8", { validate: validate_s4 }));
+descriptor(CharacterRange, "tracking", RangeField.int("char", "8", { validate: validateS4 }));
 
 /** `baseline_shift`: the range's baseline shift in pixels; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "baselineShift", RangeField.float("char", "9", { validate: validate_number }));
+descriptor(CharacterRange, "baselineShift", RangeField.float("char", "9", { validate: validateNumber }));
 
 /** `font_caps_option`: the range's font caps option; `null` when mixed. Read / Write. */
 descriptor(CharacterRange, "fontCapsOption", RangeField.enum(FontCapsOption, "char", "12"));
@@ -1722,7 +1722,7 @@ descriptor(
 descriptor(
   CharacterRange,
   "tsume",
-  RangeField.float("char", "36", { default: 0.0, validate: validate_normalized_float }),
+  RangeField.float("char", "36", { default: 0.0, validate: validateNormalizedFloat }),
 );
 
 /** `no_break`: `true` when no-break is applied across the range. Read / Write. */
@@ -1748,7 +1748,7 @@ descriptor(
 descriptor(
   CharacterRange,
   "strokeWidth",
-  RangeField.float("char", "63", { default: 1.0, validate: validate_positive_nonzero_number }),
+  RangeField.float("char", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }),
 );
 
 /** `digit_set`: the range's digit set option; `null` when mixed. Read / Write. */
@@ -1758,19 +1758,19 @@ descriptor(CharacterRange, "digitSet", RangeField.enum(DigitSet, "char", "70", {
 descriptor(CharacterRange, "justification", RangeField.enum(ParagraphJustification, "para", "0"));
 
 /** `first_line_indent`: the paragraphs' first line indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validateNumber }));
 
 /** `start_indent`: the paragraphs' start indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "startIndent", RangeField.float("para", "2", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "startIndent", RangeField.float("para", "2", { default: 0.0, validate: validateNumber }));
 
 /** `end_indent`: the paragraphs' end indent; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validateNumber }));
 
 /** `space_before`: the paragraphs' space before; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validateNumber }));
 
 /** `space_after`: the paragraphs' space after; `null` when mixed. Read / Write. */
-descriptor(CharacterRange, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validate_number }));
+descriptor(CharacterRange, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validateNumber }));
 
 /** `leading_type`: the paragraphs' leading type; `null` when mixed. Read / Write. */
 descriptor(CharacterRange, "leadingType", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
@@ -1803,10 +1803,10 @@ descriptor(
   CharacterRange,
   "fillColor",
   new RangeField("char", "53", {
-    transform: _parse_color,
+    transform: _parseColor,
     gate: "56",
-    reverse: _build_color_paint,
-    validate: validate_rgb_color,
+    reverse: _buildColorPaint,
+    validate: validateRgbColor,
   }),
 );
 
@@ -1823,9 +1823,9 @@ descriptor(
   CharacterRange,
   "strokeColor",
   new RangeField("char", "54", {
-    transform: _parse_color,
+    transform: _parseColor,
     gate: "57",
-    reverse: _build_color_paint,
-    validate: validate_rgb_color,
+    reverse: _buildColorPaint,
+    validate: validateRgbColor,
   }),
 );

@@ -8,10 +8,10 @@
  * in/out tangents.
  */
 
-import { NUMBER_RE, parse_length } from "./_util.ts";
+import { NUMBER_RE, parseLength } from "./_util.ts";
 import type { LengthContext } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
-import { RawSubpath, parse_path } from "./path_data.ts";
+import { RawSubpath, parsePath } from "./path_data.ts";
 import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
@@ -20,8 +20,8 @@ import {
   getattr,
   max,
   min,
-  py_eq,
-  py_slice,
+  pyEq,
+  pySlice,
   strip,
   zip,
 } from "../../pyrt/index.ts";
@@ -58,13 +58,13 @@ export function _f(
   ctx: LengthContext | null,
   default_: number = 0.0,
 ): number {
-  if (ctx == null) return parse_length(attrs.get(key) ?? null, default_);
+  if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
   const ref = getattr(ctx, _PERCENT_AXIS[key]);
-  return parse_length(attrs.get(key) ?? null, default_, ref, ctx.font_size);
+  return parseLength(attrs.get(key) ?? null, default_, ref, ctx.font_size);
 }
 
 /** An absent or `auto` corner radius, which takes the other radius. */
-export function _is_auto(raw: string | null): boolean {
+export function _isAuto(raw: string | null): boolean {
   return raw == null || ["", "auto"].includes(strip(raw));
 }
 
@@ -78,13 +78,13 @@ export function _is_auto(raw: string | null): boolean {
  *
  * @throws UnsupportedSVGError For an element that is not a basic shape.
  */
-export function element_subpaths(
+export function elementSubpaths(
   tag: string,
   attrs: Map<string, string>,
   ctx: LengthContext | null = null,
 ): RawSubpath[] {
   if (tag === "path") {
-    return parse_path(attrs.get("d") ?? "");
+    return parsePath(attrs.get("d") ?? "");
   }
   if (tag === "rect") {
     return _rect(attrs, ctx);
@@ -111,10 +111,10 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   }
   let rx = _f(attrs, "rx", ctx);
   let ry = _f(attrs, "ry", ctx);
-  if (_is_auto(attrs.get("rx") ?? null)) {
+  if (_isAuto(attrs.get("rx") ?? null)) {
     rx = ry;
   }
-  if (_is_auto(attrs.get("ry") ?? null)) {
+  if (_isAuto(attrs.get("ry") ?? null)) {
     ry = rx;
   }
   rx = min([max([rx, 0.0]), w / 2.0]);
@@ -137,8 +137,8 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   }
   // Rounded rect: straight edges + quarter-ellipse corners (clockwise
   // from the top edge, starting after the top-left corner).
-  const cx_k = rx * _KAPPA;
-  const cy_k = ry * _KAPPA;
+  const cxK = rx * _KAPPA;
+  const cyK = ry * _KAPPA;
   const x2 = x + w;
   const y2 = y + h;
   const segs: CubicSeg[] = [];
@@ -154,13 +154,13 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   }
 
   line([x + rx, y], [x2 - rx, y]);
-  arc([x2 - rx, y], [x2 - rx + cx_k, y], [x2, y + ry - cy_k], [x2, y + ry]);
+  arc([x2 - rx, y], [x2 - rx + cxK, y], [x2, y + ry - cyK], [x2, y + ry]);
   line([x2, y + ry], [x2, y2 - ry]);
-  arc([x2, y2 - ry], [x2, y2 - ry + cy_k], [x2 - rx + cx_k, y2], [x2 - rx, y2]);
+  arc([x2, y2 - ry], [x2, y2 - ry + cyK], [x2 - rx + cxK, y2], [x2 - rx, y2]);
   line([x2 - rx, y2], [x + rx, y2]);
-  arc([x + rx, y2], [x + rx - cx_k, y2], [x, y2 - ry + cy_k], [x, y2 - ry]);
+  arc([x + rx, y2], [x + rx - cxK, y2], [x, y2 - ry + cyK], [x, y2 - ry]);
   line([x, y2 - ry], [x, y + ry]);
-  arc([x, y + ry], [x, y + ry - cy_k], [x + rx - cx_k, y], [x + rx, y]);
+  arc([x, y + ry], [x, y + ry - cyK], [x + rx - cxK, y], [x + rx, y]);
   return [new RawSubpath(segs, true)];
 }
 
@@ -210,7 +210,7 @@ export function _ellipse(
 
 export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
   const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => float(n[0]));
-  const pts = zip(py_slice(nums, 0, null, 2), py_slice(nums, 1, null, 2));
+  const pts = zip(pySlice(nums, 0, null, 2), pySlice(nums, 1, null, 2));
   if (pts.length < 2) {
     return [];
   }
@@ -223,7 +223,7 @@ export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[]
   if (closed) {
     const p0 = pts[pts.length - 1];
     const p3 = pts[0];
-    if (!py_eq(p0, p3)) {
+    if (!pyEq(p0, p3)) {
       segs.push([p0[0], p0[1], p0[0], p0[1], p3[0], p3[1], p3[0], p3[1]]);
     }
   }
@@ -235,7 +235,7 @@ export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[]
  *
  * Returns `null` for an empty subpath.
  */
-export function cubics_to_subpath(raw: RawSubpath, transform: Affine): Subpath | null {
+export function cubicsToSubpath(raw: RawSubpath, transform: Affine): Subpath | null {
   const segs = raw.segments;
   if (!segs?.length) {
     return null;
@@ -251,8 +251,8 @@ export function cubics_to_subpath(raw: RawSubpath, transform: Affine): Subpath |
   }
 
   const vertices: number[][] = [];
-  const in_t: number[][] = [];
-  const out_t: number[][] = [];
+  const inT: number[][] = [];
+  const outT: number[][] = [];
 
   if (raw.closed) {
     const n = tsegs.length;
@@ -260,28 +260,28 @@ export function cubics_to_subpath(raw: RawSubpath, transform: Affine): Subpath |
       const vx = tsegs[i][0];
       const vy = tsegs[i][1];
       vertices.push([vx, vy]);
-      out_t.push([tsegs[i][2] - vx, tsegs[i][3] - vy]);
+      outT.push([tsegs[i][2] - vx, tsegs[i][3] - vy]);
       const prev = tsegs[i === 0 ? n - 1 : i - 1];
-      in_t.push([prev[4] - vx, prev[5] - vy]);
+      inT.push([prev[4] - vx, prev[5] - vy]);
     }
   } else {
     // N segments -> N+1 vertices.
     const first = tsegs[0];
     vertices.push([first[0], first[1]]);
-    out_t.push([first[2] - first[0], first[3] - first[1]]);
-    in_t.push([0.0, 0.0]);
+    outT.push([first[2] - first[0], first[3] - first[1]]);
+    inT.push([0.0, 0.0]);
     for (const [i, seg] of tsegs.entries()) {
       const vx = seg[6];
       const vy = seg[7];
       vertices.push([vx, vy]);
-      in_t.push([seg[4] - vx, seg[5] - vy]);
+      inT.push([seg[4] - vx, seg[5] - vy]);
       if (i + 1 < tsegs.length) {
         const nxt = tsegs[i + 1];
-        out_t.push([nxt[2] - vx, nxt[3] - vy]);
+        outT.push([nxt[2] - vx, nxt[3] - vy]);
       } else {
-        out_t.push([0.0, 0.0]);
+        outT.push([0.0, 0.0]);
       }
     }
   }
-  return new Subpath(vertices, in_t, out_t, raw.closed);
+  return new Subpath(vertices, inT, outT, raw.closed);
 }

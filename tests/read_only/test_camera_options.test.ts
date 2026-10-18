@@ -9,10 +9,10 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, len, py_assert } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, len, pyAssert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { parse_project } from "../conftest.ts";
+import { parseProject } from "../conftest.ts";
 import { CameraLayer, type Layer } from "../../src/py_aep/models/layers/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 
@@ -20,9 +20,9 @@ const SAMPLES_DIR = new Path(import.meta.dir).div("..", "..", "samples", "models
 const CAMERAS_AEP = SAMPLES_DIR.div("camera_rigs.aep");
 const TYPE_AEP = SAMPLES_DIR.div("type.aep");
 
-function _camera(comp_name: string): CameraLayer {
-  const project = parse_project(CAMERAS_AEP);
-  const comp = project.compositions.find((c) => c.name === comp_name);
+function _camera(compName: string): CameraLayer {
+  const project = parseProject(CAMERAS_AEP);
+  const comp = project.compositions.find((c) => c.name === compName);
   if (comp === undefined) throw new StopIteration();
   const cam = comp.layers.find((ly) => ly instanceof CameraLayer);
   if (cam === undefined) throw new StopIteration();
@@ -30,10 +30,10 @@ function _camera(comp_name: string): CameraLayer {
 }
 
 describe("TestCameraOptionDefaults", () => {
-  const _opt = (cam: CameraLayer, match_name: string): Property => {
-    const prop = cam.property("ADBE Camera Options Group").property(match_name);
+  const _opt = (cam: CameraLayer, matchName: string): Property => {
+    const prop = cam.property("ADBE Camera Options Group").property(matchName);
     expect(prop instanceof Property).toBe(true);
-    py_assert(prop instanceof Property);
+    pyAssert(prop instanceof Property);
     return prop;
   };
 
@@ -70,23 +70,23 @@ describe("TestCameraOptionDefaults", () => {
 
   test("test_new_option_metadata_matches_ae", () => {
     const cam = _camera("CAM_ONE");
-    const focus_area = _opt(cam, "ADBE Camera Focus Area Width");
-    expect(approx(focus_area.value, 0.0)).toBe(true);
-    expect(focus_area.hasMin).toBe(true);
-    expect(focus_area.hasMax).toBe(false);
-    expect(focus_area.canSetExpression).toBe(false);
+    const focusArea = _opt(cam, "ADBE Camera Focus Area Width");
+    expect(approx(focusArea.value, 0.0)).toBe(true);
+    expect(focusArea.hasMin).toBe(true);
+    expect(focusArea.hasMax).toBe(false);
+    expect(focusArea.canSetExpression).toBe(false);
 
-    const split_blur = _opt(cam, "ADBE Camera Split Blur Level");
-    expect(approx(Array.from(split_blur.value), [100.0, 100.0])).toBe(true);
-    expect(split_blur.hasMax).toBe(false);
-    expect(split_blur.canSetExpression).toBe(false);
-    expect(split_blur.unitsText).toBe("percent");
+    const splitBlur = _opt(cam, "ADBE Camera Split Blur Level");
+    expect(approx(Array.from(splitBlur.value), [100.0, 100.0])).toBe(true);
+    expect(splitBlur.hasMax).toBe(false);
+    expect(splitBlur.canSetExpression).toBe(false);
+    expect(splitBlur.unitsText).toBe("percent");
   });
 
   test("test_ae25_gate_keeps_thirteen_options", () => {
     // type.aep is authored by AE 25, which predates the two 2026
     // additions; min_major=26 gating must keep it at 13 options.
-    const project = parse_project(TYPE_AEP);
+    const project = parseProject(TYPE_AEP);
     expect(project._head.ae_version_major).toBe(25);
     const cam = project.compositions
       .flatMap((c) => c.layers)
@@ -115,7 +115,7 @@ describe("TestCameraOptionDefaults", () => {
 describe("TestCameraLightTransformMetadata", () => {
   const GEOMETRY_AEP = SAMPLES_DIR.div("geometry_probe.aep");
 
-  const _z_follower = (layer: Layer): Property => {
+  const _zFollower = (layer: Layer): Property => {
     const prop = layer.transform.property("ADBE Position_2");
     expect(prop instanceof Property).toBe(true);
     // These probes assume the leader is NOT dimension-separated.
@@ -126,21 +126,21 @@ describe("TestCameraLightTransformMetadata", () => {
   };
 
   test("test_camera_z_position_follower_is_modified", () => {
-    for (const comp_name of ["CAM_ONE", "CAM_TWO"]) {
-      const cam = _camera(comp_name);
+    for (const compName of ["CAM_ONE", "CAM_TWO"]) {
+      const cam = _camera(compName);
       // Compared as [name, value] so a failure names the comp, like the Python message.
-      expect([comp_name, _z_follower(cam).isModified]).toEqual([comp_name, true]);
+      expect([compName, _zFollower(cam).isModified]).toEqual([compName, true]);
     }
   });
 
   test("test_regular_layer_z_follower_not_modified", () => {
     // Non-regression: a normal 3D layer keeps Z follower isModified False.
-    const project = parse_project(GEOMETRY_AEP);
+    const project = parseProject(GEOMETRY_AEP);
     const comp = project.compositions.find((c) => c.name === "PROBE_MAIN");
     if (comp === undefined) throw new StopIteration();
     const solid = comp.layers.find((ly) => ly.name === "solid_3d");
     if (solid === undefined) throw new StopIteration();
-    expect(_z_follower(solid).isModified).toBe(false);
+    expect(_zFollower(solid).isModified).toBe(false);
   });
 
   test("test_two_node_camera_poi_expressionable", () => {

@@ -26,13 +26,13 @@ export { Element, ParseError, fromstring };
  * @param utf8 - The Utf8 chunk containing the gradient XML.
  * @returns Parsed gradient data, or null if parsing fails.
  */
-export function parse_gradient_xml(utf8: Utf8Chunk): Gradient | null {
+export function parseGradientXml(utf8: Utf8Chunk): Gradient | null {
   // String(): the value may be a `_NulTailStr` (String object), whose truthiness py_bool cannot see.
-  const xml_text = String(utf8.value);
-  if (!xml_text) return null;
+  const xmlText = String(utf8.value);
+  if (!xmlText) return null;
   let root: Element;
   try {
-    root = fromstring(xml_text);
+    root = fromstring(xmlText);
   } catch (e) {
     if (!(e instanceof ParseError)) throw e;
     logger.warning("Invalid gradient XML");
@@ -40,23 +40,23 @@ export function parse_gradient_xml(utf8: Utf8Chunk): Gradient | null {
   }
 
   // Navigate: prop.map > prop.list
-  const prop_list = root.find("prop.list");
-  if (prop_list == null) return null;
+  const propList = root.find("prop.list");
+  if (propList == null) return null;
 
-  const pairs = _get_pairs(prop_list);
-  const gradient_data = pairs.get("Gradient Color Data") ?? null;
-  const version_str = _get_string_value(pairs.get("Gradient Colors") ?? null);
+  const pairs = _getPairs(propList);
+  const gradientData = pairs.get("Gradient Color Data") ?? null;
+  const versionStr = _getStringValue(pairs.get("Gradient Colors") ?? null);
 
-  if (gradient_data == null) return null;
+  if (gradientData == null) return null;
 
-  const data_pairs = _get_pairs(gradient_data);
-  const color_stops = _parse_color_stops(data_pairs.get("Color Stops") ?? null);
-  const alpha_stops = _parse_alpha_stops(data_pairs.get("Alpha Stops") ?? null);
+  const dataPairs = _getPairs(gradientData);
+  const colorStops = _parseColorStops(dataPairs.get("Color Stops") ?? null);
+  const alphaStops = _parseAlphaStops(dataPairs.get("Alpha Stops") ?? null);
 
   return Gradient._from_binary({
-    color_stops,
-    alpha_stops,
-    version: version_str || "1.0",
+    color_stops: colorStops,
+    alpha_stops: alphaStops,
+    version: versionStr || "1.0",
     _utf8: utf8,
   });
 }
@@ -67,46 +67,46 @@ export function parse_gradient_xml(utf8: Utf8Chunk): Gradient | null {
  * Returns a dict mapping key text to the value element (the second
  * child of each prop.pair).
  */
-export function _get_pairs(prop_list_elem: Element): Map<string, Element> {
+export function _getPairs(propListElem: Element): Map<string, Element> {
   const pairs = new Map<string, Element>();
-  for (const pair of prop_list_elem.findall("prop.pair")) {
-    const key_elem = pair.find("key");
-    if (key_elem == null || key_elem.text == null) continue;
+  for (const pair of propListElem.findall("prop.pair")) {
+    const keyElem = pair.find("key");
+    if (keyElem == null || keyElem.text == null) continue;
     // Value is the second child (after key)
     const children = [...pair];
     if (children.length >= 2) {
-      pairs.set(key_elem.text, children[1]);
+      pairs.set(keyElem.text, children[1]);
     }
   }
   return pairs;
 }
 
 /** Get text content from a \<string\> element. */
-export function _get_string_value(elem: Element | null): string | null {
+export function _getStringValue(elem: Element | null): string | null {
   if (elem == null) return null;
   if (elem.tag === "string") return elem.text;
   return null;
 }
 
 /** Parse the 'Color Stops' prop.list into GradientColorStop objects. */
-export function _parse_color_stops(color_stops_elem: Element | null): GradientColorStop[] {
-  if (color_stops_elem == null) return [];
+export function _parseColorStops(colorStopsElem: Element | null): GradientColorStop[] {
+  if (colorStopsElem == null) return [];
 
-  const pairs = _get_pairs(color_stops_elem);
-  const stops_list_elem = pairs.get("Stops List") ?? null;
-  if (stops_list_elem == null) return [];
+  const pairs = _getPairs(colorStopsElem);
+  const stopsListElem = pairs.get("Stops List") ?? null;
+  if (stopsListElem == null) return [];
 
   const stops: GradientColorStop[] = [];
   // Each stop is a prop.pair with key "Stop-N"
-  const stop_pairs = _get_pairs(stops_list_elem);
-  for (let i = 0, n = stop_pairs.size; i < n; i++) {
+  const stopPairs = _getPairs(stopsListElem);
+  for (let i = 0, n = stopPairs.size; i < n; i++) {
     const key = `Stop-${i}`;
-    const stop_elem = stop_pairs.get(key) ?? null;
-    if (stop_elem == null) break;
-    const stop_inner = _get_pairs(stop_elem);
-    const array_elem = stop_inner.get("Stops Color") ?? null;
-    if (array_elem == null) continue;
-    const floats = _parse_float_array(array_elem);
+    const stopElem = stopPairs.get(key) ?? null;
+    if (stopElem == null) break;
+    const stopInner = _getPairs(stopElem);
+    const arrayElem = stopInner.get("Stops Color") ?? null;
+    if (arrayElem == null) continue;
+    const floats = _parseFloatArray(arrayElem);
     if (floats.length >= 5) {
       stops.push(
         new GradientColorStop(floats[0], floats[1], [floats[2], floats[3], floats[4]]),
@@ -117,23 +117,23 @@ export function _parse_color_stops(color_stops_elem: Element | null): GradientCo
 }
 
 /** Parse the 'Alpha Stops' prop.list into GradientAlphaStop objects. */
-export function _parse_alpha_stops(alpha_stops_elem: Element | null): GradientAlphaStop[] {
-  if (alpha_stops_elem == null) return [];
+export function _parseAlphaStops(alphaStopsElem: Element | null): GradientAlphaStop[] {
+  if (alphaStopsElem == null) return [];
 
-  const pairs = _get_pairs(alpha_stops_elem);
-  const stops_list_elem = pairs.get("Stops List") ?? null;
-  if (stops_list_elem == null) return [];
+  const pairs = _getPairs(alphaStopsElem);
+  const stopsListElem = pairs.get("Stops List") ?? null;
+  if (stopsListElem == null) return [];
 
   const stops: GradientAlphaStop[] = [];
-  const stop_pairs = _get_pairs(stops_list_elem);
-  for (let i = 0, n = stop_pairs.size; i < n; i++) {
+  const stopPairs = _getPairs(stopsListElem);
+  for (let i = 0, n = stopPairs.size; i < n; i++) {
     const key = `Stop-${i}`;
-    const stop_elem = stop_pairs.get(key) ?? null;
-    if (stop_elem == null) break;
-    const stop_inner = _get_pairs(stop_elem);
-    const array_elem = stop_inner.get("Stops Alpha") ?? null;
-    if (array_elem == null) continue;
-    const floats = _parse_float_array(array_elem);
+    const stopElem = stopPairs.get(key) ?? null;
+    if (stopElem == null) break;
+    const stopInner = _getPairs(stopElem);
+    const arrayElem = stopInner.get("Stops Alpha") ?? null;
+    if (arrayElem == null) continue;
+    const floats = _parseFloatArray(arrayElem);
     if (floats.length >= 3) {
       stops.push(new GradientAlphaStop(floats[0], floats[1], floats[2]));
     }
@@ -142,9 +142,9 @@ export function _parse_alpha_stops(alpha_stops_elem: Element | null): GradientAl
 }
 
 /** Parse an \<array\> element containing \<float\> children. */
-export function _parse_float_array(array_elem: Element): number[] {
+export function _parseFloatArray(arrayElem: Element): number[] {
   const floats: number[] = [];
-  for (const child of array_elem) {
+  for (const child of arrayElem) {
     if (child.tag === "float" && child.text != null) {
       try {
         floats.push(float(child.text));

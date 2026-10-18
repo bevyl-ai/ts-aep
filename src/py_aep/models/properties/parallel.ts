@@ -13,10 +13,10 @@
  * output pairs (`aep-compare` ground-truth workflow).
  */
 
-import { b, deferred, NotImplementedError, TypeError_, instance_dict } from "../../../pyrt/index.ts";
+import { b, deferred, NotImplementedError, TypeError_, instanceDict } from "../../../pyrt/index.ts";
 import { type Chunk, ListChunk } from "../../binary/chunk.ts";
 import { LdatItemType, type LdatItem } from "../../binary/ldat_chunks.ts";
-import { build_parallel_ldat_item, clone_chunk_tree, set_orientation_item_values } from "../../binary/mutations.ts";
+import { buildParallelLdatItem, cloneChunkTree, setOrientationItemValues } from "../../binary/mutations.ts";
 import { CdatChunk, OtdaChunk } from "../../binary/property_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import { PropertyControlType, PropertyValueType } from "../../enums/index.ts";
@@ -27,8 +27,8 @@ import type { Keyframe, PropertyValue } from "./keyframe.ts";
 import type { Property } from "./property.ts";
 
 const _marker = deferred<typeof import("../../parsers/marker.ts")>("py_aep/parsers/marker");
-const _specialized_properties = deferred<typeof import("../../parsers/specialized_properties.ts")>("py_aep/parsers/specialized_properties");
-import { parse_gradient_xml } from "../../parsers/gradient.ts";
+const _specializedProperties = deferred<typeof import("../../parsers/specialized_properties.ts")>("py_aep/parsers/specialized_properties");
+import { parseGradientXml } from "../../parsers/gradient.ts";
 
 export const _EMPTY_CDAT_PAD = b("\x00\x00\x00\x00");
 
@@ -112,7 +112,7 @@ export class ParallelKind {
    * a newly added keyframe can be edited in place (the source model
    * passed to `build_value_chunk` is backed by a different chunk).
    */
-  wrapValueChunk(prop: Property, value_chunk: Chunk): PropertyValue {
+  wrapValueChunk(prop: Property, valueChunk: Chunk): PropertyValue {
     return null;
   }
 
@@ -121,14 +121,14 @@ export class ParallelKind {
 
   /** Build the keyframe header ldat item for `value`. */
   buildHeaderItem(value: PropertyValue): LdatItem {
-    return build_parallel_ldat_item(this.headerItemType);
+    return buildParallelLdatItem(this.headerItemType);
   }
 
   /** Refresh value data mirrored into an existing header item. */
   updateHeaderItem(item: LdatItem, value: PropertyValue): void {}
 
   /** The cdat AE writes when the property reverts to static. */
-  staticCdat(removed_value: PropertyValue): CdatChunk {
+  staticCdat(removedValue: PropertyValue): CdatChunk {
     return new CdatChunk({ pad: _EMPTY_CDAT_PAD });
   }
 
@@ -155,7 +155,7 @@ export class _OrientationKind extends ParallelKind {
   }
 
   buildHeaderItem(value: PropertyValue): LdatItem {
-    return build_parallel_ldat_item(
+    return buildParallelLdatItem(
       this.headerItemType,
       Array.isArray(value) ? value : null,
     );
@@ -163,15 +163,15 @@ export class _OrientationKind extends ParallelKind {
 
   updateHeaderItem(item: LdatItem, value: PropertyValue): void {
     if (Array.isArray(value)) {
-      set_orientation_item_values(item, value);
+      setOrientationItemValues(item, value);
     }
   }
 
-  staticCdat(removed_value: PropertyValue): CdatChunk {
+  staticCdat(removedValue: PropertyValue): CdatChunk {
     // Inside an otst the cdat doubles are little-endian and hold the
     // actual angles.
-    if (Array.isArray(removed_value)) {
-      return new CdatChunk({ values: removed_value.slice(0, 3), is_le: true });
+    if (Array.isArray(removedValue)) {
+      return new CdatChunk({ values: removedValue.slice(0, 3), is_le: true });
     }
     return new CdatChunk({ pad: _EMPTY_CDAT_PAD });
   }
@@ -184,8 +184,8 @@ export class _OrientationKind extends ParallelKind {
   applyModelMetadata(prop: Property): void {
     prop._property_control_type = PropertyControlType.ANGLE;
     prop._property_value_type = PropertyValueType.ThreeD_SPATIAL;
-    instance_dict(prop).set("dimensions", 3);
-    instance_dict(prop).set("_vector", true);
+    instanceDict(prop).set("dimensions", 3);
+    instanceDict(prop).set("_vector", true);
   }
 
   onWrap(prop: Property): void {
@@ -236,11 +236,11 @@ export class _MarkerKind extends ParallelKind {
       value._cue_point_name_utf8,
       ...value._param_utf8s,
     ];
-    return new ListChunk({ list_type: "Nmrd", chunks: source.map((c) => clone_chunk_tree(c)) });
+    return new ListChunk({ list_type: "Nmrd", chunks: source.map((c) => cloneChunkTree(c)) });
   }
 
-  wrapValueChunk(prop: Property, value_chunk: ListChunk): PropertyValue {
-    return _marker().parse_marker(value_chunk);
+  wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
+    return _marker().parseMarker(valueChunk);
   }
 
   bindKeyframe(value: PropertyValue, kf: Keyframe): void {
@@ -292,9 +292,9 @@ export class _ShapeKind extends ParallelKind {
     return prop._build_shap_chunk(value);
   }
 
-  wrapValueChunk(prop: Property, value_chunk: ListChunk): PropertyValue {
-    return _specialized_properties()._parse_shape_shap(
-      value_chunk,
+  wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
+    return _specializedProperties()._parseShapeShap(
+      valueChunk,
       prop._containing_layer,
       prop.matchName === "ADBE Mask Shape" ? prop : null,
     );
@@ -321,8 +321,8 @@ export class _GradientKind extends ParallelKind {
     return new Utf8Chunk({ value: value._utf8.value });
   }
 
-  wrapValueChunk(prop: Property, value_chunk: Utf8Chunk): PropertyValue {
-    return parse_gradient_xml(value_chunk);
+  wrapValueChunk(prop: Property, valueChunk: Utf8Chunk): PropertyValue {
+    return parseGradientXml(valueChunk);
   }
 
   onWrap(prop: Property): void {

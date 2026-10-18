@@ -8,7 +8,7 @@
 // Python's `from ..binary.chunk import ...` runs py_aep/__init__ first, which
 // registers every chunk type. Standalone CLI runs need the same registration.
 import "../binary/_register.ts";
-import { ListChunk, read_aep } from "../binary/chunk.ts";
+import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { BytesIO, bytes_, floordiv, format, getitem, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
@@ -19,12 +19,12 @@ import type { Path } from "../../pyrt/index.ts";
  * @param chunk - A parsed chunk object.
  * @returns `LIST:<list_type>` for list chunks, otherwise the chunk type string.
  */
-export function chunk_label(chunk: Chunk): string {
-  const chunk_type = chunk.chunk_type;
-  if (chunk_type === "LIST" && "list_type" in chunk) {
+export function chunkLabel(chunk: Chunk): string {
+  const chunkType = chunk.chunk_type;
+  if (chunkType === "LIST" && "list_type" in chunk) {
     return `LIST:${chunk.list_type}`;
   }
-  return chunk_type;
+  return chunkType;
 }
 
 /**
@@ -33,58 +33,58 @@ export function chunk_label(chunk: Chunk): string {
  * Tracks how many times each identifier has been seen at a given level
  * and appends `[N]` when a duplicate is encountered.
  *
- * @param parent_path - Parent chunk path prefix.
+ * @param parentPath - Parent chunk path prefix.
  * @param identifier - Chunk identifier (e.g. `ldta`, `LIST:Fold`).
  * @param counters - Mutable counter dict tracking duplicates at this level.
  * @returns Full chunk path string.
  */
-export function build_chunk_path(
-  parent_path: string,
+export function buildChunkPath(
+  parentPath: string,
   identifier: string,
   counters: Map<string, number>,
 ): string {
-  const counter_key = parent_path ? parent_path + "/" + identifier : identifier;
+  const counterKey = parentPath ? parentPath + "/" + identifier : identifier;
 
-  const count = counters.get(counter_key);
+  const count = counters.get(counterKey);
   if (count === undefined) {
-    counters.set(counter_key, 0);
+    counters.set(counterKey, 0);
   } else {
-    counters.set(counter_key, count + 1);
+    counters.set(counterKey, count + 1);
   }
 
-  if (getitem(counters, counter_key) > 0) {
-    return parent_path
-      ? `${parent_path}/${identifier}[${getitem(counters, counter_key)}]`
-      : `${identifier}[${getitem(counters, counter_key)}]`;
+  if (getitem(counters, counterKey) > 0) {
+    return parentPath
+      ? `${parentPath}/${identifier}[${getitem(counters, counterKey)}]`
+      : `${identifier}[${getitem(counters, counterKey)}]`;
   }
-  return parent_path ? `${parent_path}/${identifier}` : identifier;
+  return parentPath ? `${parentPath}/${identifier}` : identifier;
 }
 
 /**
  * Walk a chunk tree yielding metadata for each node.
  *
  * @param chunks - List of chunk objects.
- * @param parent_path - Parent chunk path prefix.
+ * @param parentPath - Parent chunk path prefix.
  * @param depth - Current nesting depth.
  * @returns An iterator yielding Tuples of `(full_path, identifier, raw_data_size, depth, is_list)`.
  */
-export function* walk_chunks(
+export function* walkChunks(
   chunks: Chunk[],
-  parent_path = "",
+  parentPath = "",
   depth = 0,
 ): Generator<[string, string, number, number, boolean]> {
   const counters = new Map<string, number>();
 
   for (const chunk of chunks) {
-    const identifier = chunk_label(chunk);
-    const current_path = build_chunk_path(parent_path, identifier, counters);
+    const identifier = chunkLabel(chunk);
+    const currentPath = buildChunkPath(parentPath, identifier, counters);
 
     const size = chunk.chunk_type !== "LIST" ? chunk.tobytes().length : 0;
-    const is_list = chunk instanceof ListChunk && chunk.chunks != null;
-    yield [current_path, identifier, size, depth, is_list];
+    const isList = chunk instanceof ListChunk && chunk.chunks != null;
+    yield [currentPath, identifier, size, depth, isList];
 
     if (chunk instanceof ListChunk && chunk.chunks != null) {
-      yield* walk_chunks(chunk.chunks, current_path, depth + 1);
+      yield* walkChunks(chunk.chunks, currentPath, depth + 1);
     }
   }
 }
@@ -98,9 +98,9 @@ export function* walk_chunks(
  * is provided, the decoded leaf `Chunk` objects are stored alongside the
  * raw bytes (used for float-tolerant comparison).
  */
-export function _extract_chunks_recursive(
+export function _extractChunksRecursive(
   chunks: Chunk[],
-  parent_path: string,
+  parentPath: string,
   result: Map<string, Uint8Array>,
   counters: Map<string, number> | null = null,
   typed: Map<string, Chunk> | null = null,
@@ -108,19 +108,19 @@ export function _extract_chunks_recursive(
   if (counters == null) counters = new Map<string, number>();
 
   for (const chunk of chunks) {
-    const identifier = chunk_label(chunk);
-    const current_path = build_chunk_path(parent_path, identifier, counters);
+    const identifier = chunkLabel(chunk);
+    const currentPath = buildChunkPath(parentPath, identifier, counters);
 
     if (chunk instanceof ListChunk) {
       if (chunk.chunks?.length > 0) {
-        const child_counters = new Map<string, number>();
-        _extract_chunks_recursive(chunk.chunks, current_path, result, child_counters, typed);
+        const childCounters = new Map<string, number>();
+        _extractChunksRecursive(chunk.chunks, currentPath, result, childCounters, typed);
       }
     } else {
       // Store all leaf chunks, including empty ones, so missing
       // empty chunks (e.g. Utf8 with no content) are detected
-      result.set(current_path, chunk.tobytes());
-      if (typed != null) typed.set(current_path, chunk);
+      result.set(currentPath, chunk.tobytes());
+      if (typed != null) typed.set(currentPath, chunk);
     }
   }
 }
@@ -128,12 +128,12 @@ export function _extract_chunks_recursive(
 /**
  * Parse an AEP file and extract leaf chunk data with paths.
  *
- * @param file_path - Path to the `.aep` file.
+ * @param filePath - Path to the `.aep` file.
  * @returns Map mapping chunk paths to their raw binary data. Only leaf chunks (non-LIST) are
  *   included.
  */
-export function extract_leaf_chunks(file_path: Path): Map<string, Uint8Array> {
-  return extract_leaf_chunks_typed(file_path)[0];
+export function extractLeafChunks(filePath: Path): Map<string, Uint8Array> {
+  return extractLeafChunksTyped(filePath)[0];
 }
 
 /**
@@ -142,16 +142,16 @@ export function extract_leaf_chunks(file_path: Path): Map<string, Uint8Array> {
  * @returns A tuple `(raw_bytes_by_path, typed_chunk_by_path)`. The typed chunks let callers compare
  *   numeric fields (e.g. float coordinates) with tolerance instead of byte-exactly.
  */
-export function extract_leaf_chunks_typed(
-  file_path: Path,
+export function extractLeafChunksTyped(
+  filePath: Path,
 ): [Map<string, Uint8Array>, Map<string, Chunk>] {
   // `with open(file_path, "rb") as f:` - the file is read whole, then parsed
   // from memory (same pattern as compare.ts / inspect.ts).
-  const f = new BytesIO(file_path.read_bytes());
-  const [rifx, _xmp] = read_aep(f);
+  const f = new BytesIO(filePath.read_bytes());
+  const [rifx, _xmp] = readAep(f);
   const result = new Map<string, Uint8Array>();
   const typed = new Map<string, Chunk>();
-  _extract_chunks_recursive(rifx.chunks, "", result, undefined, typed);
+  _extractChunksRecursive(rifx.chunks, "", result, undefined, typed);
   return [result, typed];
 }
 
@@ -159,29 +159,29 @@ export function extract_leaf_chunks_typed(
  * Format binary data as a hex dump with ASCII representation.
  *
  * @param data - Raw bytes to format.
- * @param bytes_per_line - Number of bytes per output line.
+ * @param bytesPerLine - Number of bytes per output line.
  * @returns Multi-line hex dump string.
  */
-export function format_hex_dump(data: Uint8Array, bytes_per_line = 16): string {
+export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
   const lines: string[] = [];
-  const mid = floordiv(bytes_per_line, 2);
+  const mid = floordiv(bytesPerLine, 2);
 
-  if (bytes_per_line === 0) throw new ValueError("range() arg 3 must not be zero");
-  for (let i = 0; bytes_per_line > 0 && i < data.length; i += bytes_per_line) {
-    const chunk = bytes_.slice(data, i, i + bytes_per_line);
+  if (bytesPerLine === 0) throw new ValueError("range() arg 3 must not be zero");
+  for (let i = 0; bytesPerLine > 0 && i < data.length; i += bytesPerLine) {
+    const chunk = bytes_.slice(data, i, i + bytesPerLine);
 
-    const left_bytes = bytes_.slice(chunk, null, mid);
-    const right_bytes = bytes_.slice(chunk, mid);
-    const left = Array.from(left_bytes, (b) => format(b, "02X")).join(" ");
-    const right = Array.from(right_bytes, (b) => format(b, "02X")).join(" ");
+    const leftBytes = bytes_.slice(chunk, null, mid);
+    const rightBytes = bytes_.slice(chunk, mid);
+    const left = Array.from(leftBytes, (b) => format(b, "02X")).join(" ");
+    const right = Array.from(rightBytes, (b) => format(b, "02X")).join(" ");
 
     const joined = right ? `${left}  ${right}` : left;
 
-    const full_width = (mid * 3 - 1) + 2 + (mid * 3 - 1);
-    const hex_str = joined.padEnd(full_width);
+    const fullWidth = (mid * 3 - 1) + 2 + (mid * 3 - 1);
+    const hexStr = joined.padEnd(fullWidth);
 
-    const ascii_str = Array.from(chunk, (b) => (0x20 <= b && b <= 0x7e ? String.fromCodePoint(b) : ".")).join("");
-    lines.push(`${format(i, "04X")}: ${hex_str}  ${ascii_str}`);
+    const asciiStr = Array.from(chunk, (b) => (0x20 <= b && b <= 0x7e ? String.fromCodePoint(b) : ".")).join("");
+    lines.push(`${format(i, "04X")}: ${hexStr}  ${asciiStr}`);
   }
 
   return lines.join("\n");

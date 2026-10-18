@@ -12,13 +12,13 @@ import {
   decode,
   float,
   int,
-  is_real,
+  isReal,
   unbox,
   IndexError,
   OverflowError,
-  py_assert,
-  py_enum,
-  py_eq,
+  pyAssert,
+  pyEnum,
+  pyEq,
   pyfloat,
   repr,
   str,
@@ -28,7 +28,7 @@ import {
   ValueError,
 } from "../../pyrt/index.ts";
 import type { EnumValue, IO, PyFloat } from "../../pyrt/index.ts";
-import { is, py_int } from "./kinds.ts";
+import { is, pyInt } from "./kinds.ts";
 
 export { SyntaxError_ };
 
@@ -36,17 +36,17 @@ export { SyntaxError_ };
 export const SEEK_CUR = 1 as const;
 
 // Python bytes.isspace() on one byte: ASCII whitespace only (space, \t, \n, \x0b, \x0c, \r).
-export function isspace_b(c: number): boolean {
+export function isspaceB(c: number): boolean {
   return c === 0x20 || (c >= 0x09 && c <= 0x0d);
 }
 
 // Python bytes.isdigit() on one byte: ASCII digits only.
-export function isdigit_b(c: number): boolean {
+export function isdigitB(c: number): boolean {
   return c >= 0x30 && c <= 0x39;
 }
 
 // Python bytes.isalpha() on one byte: ASCII letters only.
-export function isalpha_b(c: number): boolean {
+export function isalphaB(c: number): boolean {
   return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
 }
 
@@ -83,24 +83,24 @@ const STRING_ESCAPES: ReadonlyMap<number, number> = new Map([
 
 // Python's dataclass repr uses repr() on each field; dicts and lists need to
 // recurse so nested Maps print like Python dicts.
-export function repr_field(x: CosNode): string {
+export function reprField(x: CosNode): string {
   if (x instanceof Map) {
-    return `{${[...x].map(([k, v]) => `${repr_field(k)}: ${repr_field(v)}`).join(", ")}}`;
+    return `{${[...x].map(([k, v]) => `${reprField(k)}: ${reprField(v)}`).join(", ")}}`;
   }
-  if (Array.isArray(x)) return `[${x.map((y) => repr_field(y)).join(", ")}]`;
-  if (x instanceof Uint8Array) return repr_bytes(x);
+  if (Array.isArray(x)) return `[${x.map((y) => reprField(y)).join(", ")}]`;
+  if (x instanceof Uint8Array) return reprBytes(x);
   return repr(x);
 }
 
 // CPython `repr(bytes)`: double quotes when the content has `'` but no `"`.
-export function repr_bytes(x: Uint8Array): string {
-  let has_single = false;
-  let has_double = false;
+export function reprBytes(x: Uint8Array): string {
+  let hasSingle = false;
+  let hasDouble = false;
   for (const c of x) {
-    if (c === 0x27) has_single = true;
-    else if (c === 0x22) has_double = true;
+    if (c === 0x27) hasSingle = true;
+    else if (c === 0x22) hasDouble = true;
   }
-  const quote = has_single && !has_double ? 0x22 : 0x27;
+  const quote = hasSingle && !hasDouble ? 0x22 : 0x27;
   let s = "";
   for (const c of x) {
     if (c === quote || c === 0x5c) s += "\\" + String.fromCharCode(c);
@@ -121,12 +121,12 @@ interface NamedEnum {
 }
 
 // `str(member)` / `repr(member)` for an Enum member.
-export function enum_str(E: NamedEnum, v: number): string {
+export function enumStr(E: NamedEnum, v: number): string {
   return `${E.__name__}.${E.name_of(v)}`;
 }
 
-export function enum_repr(E: NamedEnum, v: number): string {
-  return `<${enum_str(E, v)}: ${v}>`;
+export function enumRepr(E: NamedEnum, v: number): string {
+  return `<${enumStr(E, v)}: ${v}>`;
 }
 
 /**
@@ -140,7 +140,7 @@ export function enum_repr(E: NamedEnum, v: number): string {
  *
  * cos_get(data, "1", "1", 0, "0", "0")  // -\> text string
  */
-export function cos_get(data: CosNode | undefined, ...keys: (string | number)[]): CosNode {
+export function cosGet(data: CosNode | undefined, ...keys: (string | number)[]): CosNode {
   let cur: CosNode = data ?? null;
   for (const key of keys) {
     if (cur == null) return null;
@@ -170,25 +170,25 @@ export function cos_get(data: CosNode | undefined, ...keys: (string | number)[])
  * range models (models/text/ranges.py) and the composed-line resolver
  * (resolvers/text_composition.py).
  */
-export function run_spans(doc: CosNode, doc_key: string, style_key: string | null): [number, number, CosDict][] {
-  const runs = cos_get(doc, "0", doc_key, "0");
+export function runSpans(doc: CosNode, docKey: string, styleKey: string | null): [number, number, CosDict][] {
+  const runs = cosGet(doc, "0", docKey, "0");
   const spans: [number, number, CosDict][] = [];
   if (!Array.isArray(runs)) return spans;
   let pos = 0;
   for (const run of runs) {
     const length = run instanceof Map ? run.get("1") ?? null : null;
     // Python `isinstance(True, int)` is True, so booleans count as lengths 1/0.
-    if (!is(py_int, length)) continue;
+    if (!is(pyInt, length)) continue;
     const n = Number(length);
     if (n < 0) continue;
-    const payload = style_key == null ? cos_get(run, "0") : cos_get(run, "0", "0", style_key);
+    const payload = styleKey == null ? cosGet(run, "0") : cosGet(run, "0", "0", styleKey);
     spans.push([pos, pos + n, payload instanceof Map ? payload : new Map()]);
     pos += n;
   }
   return spans;
 }
 
-export const TokenType = py_enum("TokenType", {
+export const TokenType = pyEnum("TokenType", {
   Identifier: auto(), // /foo
   Number: auto(), // 123
   String: auto(), // (foo)
@@ -243,11 +243,11 @@ export class Token {
   }
 
   [INSPECT](): string {
-    return `Token(type=${enum_repr(TokenType, this.type)}, value=${repr_field(this.value)})`;
+    return `Token(type=${enumRepr(TokenType, this.type)}, value=${reprField(this.value)})`;
   }
 
   equals(other: Token): boolean {
-    return other instanceof Token && this.type === other.type && py_eq(this.value, other.value);
+    return other instanceof Token && this.type === other.type && pyEq(this.value, other.value);
   }
 }
 
@@ -257,14 +257,14 @@ export class IndirectObject {
   declare generation_number: number;
   declare data: CosNode;
 
-  constructor(object_number: number, generation_number: number, data: CosNode) {
-    this.object_number = object_number;
-    this.generation_number = generation_number;
+  constructor(objectNumber: number, generationNumber: number, data: CosNode) {
+    this.object_number = objectNumber;
+    this.generation_number = generationNumber;
     this.data = data;
   }
 
   [INSPECT](): string {
-    return `IndirectObject(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)}, data=${repr_field(this.data)})`;
+    return `IndirectObject(object_number=${repr(this.object_number)}, generation_number=${repr(this.generation_number)}, data=${reprField(this.data)})`;
   }
 
   equals(other: IndirectObject): boolean {
@@ -272,7 +272,7 @@ export class IndirectObject {
       other instanceof IndirectObject &&
       this.object_number === other.object_number &&
       this.generation_number === other.generation_number &&
-      py_eq(this.data, other.data)
+      pyEq(this.data, other.data)
     );
   }
 }
@@ -282,9 +282,9 @@ export class IndirectReference {
   declare object_number: number;
   declare generation_number: number;
 
-  constructor(object_number: number, generation_number: number) {
-    this.object_number = object_number;
-    this.generation_number = generation_number;
+  constructor(objectNumber: number, generationNumber: number) {
+    this.object_number = objectNumber;
+    this.generation_number = generationNumber;
   }
 
   [INSPECT](): string {
@@ -366,11 +366,11 @@ export class Stream {
   }
 
   [INSPECT](): string {
-    return `Stream(dictionary=${repr_field(this.dictionary)}, data=${repr_bytes(this.data)})`;
+    return `Stream(dictionary=${reprField(this.dictionary)}, data=${reprBytes(this.data)})`;
   }
 
   equals(other: Stream): boolean {
-    return other instanceof Stream && py_eq(this.dictionary, other.dictionary) && py_eq(this.data, other.data);
+    return other instanceof Stream && pyEq(this.dictionary, other.dictionary) && pyEq(this.data, other.data);
   }
 }
 
@@ -379,9 +379,9 @@ export class CosParser {
   declare max_pos: number | null;
   declare lookahead: Token;
 
-  constructor(file: IO, max_pos: number | null = null) {
+  constructor(file: IO, maxPos: number | null = null) {
     this.file = file;
-    this.max_pos = max_pos;
+    this.max_pos = maxPos;
     this.lookahead = new Token(TokenType.Eof);
   }
 
@@ -398,7 +398,7 @@ export class CosParser {
   parse_value(): CosNode {
     if (this.lookahead.type === TokenType.Identifier) {
       const name = this.lookahead.value;
-      py_assert(typeof name === "string");
+      pyAssert(typeof name === "string");
       const val = new CosName(name);
       this.lex();
       return val;
@@ -418,11 +418,11 @@ export class CosParser {
 
     if (this.lookahead.type === TokenType.Number) {
       const val = this.lookahead.value;
-      py_assert(is_real(val));
+      pyAssert(isReal(val));
       this.lex();
       if (this.lookahead.type === TokenType.Number) {
         const gen = this.lookahead.value;
-        py_assert(is_real(gen));
+        pyAssert(isReal(gen));
         const state = this.save_state();
         this.lex();
         if (this.lookahead.type === TokenType.IndirectObjectStart) {
@@ -449,7 +449,7 @@ export class CosParser {
       this.lex();
       if (this.lookahead.type === TokenType.Stream) {
         const data = this.lookahead.value;
-        py_assert(data instanceof Uint8Array);
+        pyAssert(data instanceof Uint8Array);
         this.lex();
         return new Stream(dictionary, data);
       }
@@ -472,8 +472,8 @@ export class CosParser {
   }
 
   restore_state(state: [number | null, number, Token]): void {
-    const [max_pos, pos, lookahead] = state;
-    this.max_pos = max_pos;
+    const [maxPos, pos, lookahead] = state;
+    this.max_pos = maxPos;
     this.lookahead = lookahead;
     this.file.seek(pos);
   }
@@ -487,7 +487,7 @@ export class CosParser {
 
       this.expect(TokenType.Identifier);
       const key = this.lookahead.value;
-      py_assert(typeof key === "string");
+      pyAssert(typeof key === "string");
       this.lex();
       const val = this.parse_value();
       value.set(key, val);
@@ -507,9 +507,9 @@ export class CosParser {
     return value;
   }
 
-  expect(token_type: TokenType): void {
-    if (this.lookahead.type !== token_type) {
-      throw new SyntaxError_(`Expected ${enum_str(TokenType, token_type)}, got ${str(this.lookahead)}`);
+  expect(tokenType: TokenType): void {
+    if (this.lookahead.type !== tokenType) {
+      throw new SyntaxError_(`Expected ${enumStr(TokenType, tokenType)}, got ${str(this.lookahead)}`);
     }
   }
 
@@ -528,22 +528,22 @@ export class CosParser {
         return new Token(TokenType.Eof);
       } else if (char === PERCENT) {
         this.lex_comment();
-      } else if (!isspace_b(char)) {
+      } else if (!isspaceB(char)) {
         break;
       }
     }
 
     // <<
     if (char === LT) {
-      const next_char = this.get_char();
-      if (next_char === LT) {
+      const nextChar = this.get_char();
+      if (nextChar === LT) {
         return new Token(TokenType.ObjectStart);
-      } else if (next_char == null) {
+      } else if (nextChar == null) {
         return this.raise_lex(b("<"));
-      } else if (this.is_hex(next_char)) {
-        return this.lex_hex_string(next_char);
+      } else if (this.is_hex(nextChar)) {
+        return this.lex_hex_string(nextChar);
       } else {
-        return this.raise_lex(Uint8Array.of(LT, next_char));
+        return this.raise_lex(Uint8Array.of(LT, nextChar));
       }
     }
 
@@ -574,12 +574,12 @@ export class CosParser {
     }
 
     // Keyword
-    if (isalpha_b(char)) {
+    if (isalphaB(char)) {
       return this.lex_keyword(char);
     }
 
     // Number
-    if (isdigit_b(char) || char === DOT || char === PLUS || char === MINUS) {
+    if (isdigitB(char) || char === DOT || char === PLUS || char === MINUS) {
       return this.lex_number(char);
     }
 
@@ -594,8 +594,8 @@ export class CosParser {
   }
 
   raise_lex(token: Uint8Array, exp: Uint8Array | null = null): never {
-    let msg = `Unknown COS token ${repr_bytes(token)}`;
-    if (exp != null) msg += `, expected ${repr_bytes(exp)}`;
+    let msg = `Unknown COS token ${reprBytes(token)}`;
+    if (exp != null) msg += `, expected ${reprBytes(exp)}`;
     throw new SyntaxError_(msg);
   }
 
@@ -644,7 +644,7 @@ export class CosParser {
         break;
       } else if (char === DOT) {
         return this.lex_num_fract(this.get_char(), head + ".");
-      } else if (isdigit_b(char)) {
+      } else if (isdigitB(char)) {
         head += String.fromCharCode(char);
         char = this.get_char();
       } else {
@@ -673,7 +673,7 @@ export class CosParser {
     while (true) {
       if (char == null) {
         break;
-      } else if (isdigit_b(char)) {
+      } else if (isdigitB(char)) {
         head += String.fromCharCode(char);
         char = this.get_char();
       } else {
@@ -689,11 +689,11 @@ export class CosParser {
     // Keywords are ASCII letters only (`isalpha_b`), so a latin1 string holds them exactly.
     let kw = String.fromCharCode(char);
     while (true) {
-      const next_char = this.get_char();
-      if (next_char == null) {
+      const nextChar = this.get_char();
+      if (nextChar == null) {
         break;
-      } else if (isalpha_b(next_char)) {
-        kw += String.fromCharCode(next_char);
+      } else if (isalphaB(nextChar)) {
+        kw += String.fromCharCode(nextChar);
       } else {
         this.unget();
         break;
@@ -717,7 +717,7 @@ export class CosParser {
     } else if (kw === "xref") {
       return new Token(TokenType.Eof);
     } else {
-      throw new SyntaxError_(`Unknown keyword ${repr_bytes(b(kw))}`);
+      throw new SyntaxError_(`Unknown keyword ${reprBytes(b(kw))}`);
     }
   }
 
@@ -734,24 +734,24 @@ export class CosParser {
     // `stream` is a bytearray: a buffer we own, grown by doubling.
     const marker = b("endstream");
     let stream = new Uint8Array(65536);
-    let stream_len = 0;
+    let streamLen = 0;
     while (true) {
       const size = this.max_pos == null ? 65536 : Math.min(65536, this.max_pos);
       const block = size > 0 ? this.file.read(size) : bytes_.EMPTY;
       if (!block.length) throw new SyntaxError_("Unterminated stream");
       if (this.max_pos != null) this.max_pos -= block.length;
-      const search_from = Math.max(0, stream_len - marker.length + 1);
-      if (stream_len + block.length > stream.length) {
-        const grown = new Uint8Array(Math.max(stream_len + block.length, stream.length * 2));
-        grown.set(stream.subarray(0, stream_len));
+      const searchFrom = Math.max(0, streamLen - marker.length + 1);
+      if (streamLen + block.length > stream.length) {
+        const grown = new Uint8Array(Math.max(streamLen + block.length, stream.length * 2));
+        grown.set(stream.subarray(0, streamLen));
         stream = grown;
       }
-      stream.set(block, stream_len);
-      stream_len += block.length;
-      const end = bytes_.find(stream.subarray(0, stream_len), marker, search_from);
+      stream.set(block, streamLen);
+      streamLen += block.length;
+      const end = bytes_.find(stream.subarray(0, streamLen), marker, searchFrom);
       if (end >= 0) {
         // Give back what was read past the marker.
-        const extra = stream_len - end - marker.length;
+        const extra = streamLen - end - marker.length;
         this.file.seek(-extra, SEEK_CUR);
         if (this.max_pos != null) this.max_pos += extra;
         return new Token(TokenType.Stream, stream.slice(0, end));
@@ -771,7 +771,7 @@ export class CosParser {
 
     // Default to UTF-8 encoding
     let encoding = "utf-8";
-    let no_bom = false;
+    let noBom = false;
 
     // Check for BOM at the start of the string and remove it
     if (bytes_.startswith(string, b("\xef\xbb\xbf"))) {
@@ -786,7 +786,7 @@ export class CosParser {
       string = bytes_.slice(string, 2);
       encoding = "utf-16-le";
     } else {
-      no_bom = true;
+      noBom = true;
     }
 
     let decoded: string;
@@ -800,7 +800,7 @@ export class CosParser {
       TokenType.String,
       new CosString(decoded, {
         utf16: encoding === "utf-16-be",
-        raw: no_bom ? string : null,
+        raw: noBom ? string : null,
       }),
     );
   }
@@ -832,14 +832,14 @@ export class CosParser {
     } else if (this.is_octal(char)) {
       let octal = char - 0x30; // ord(b"0")
       for (let k = 0; k < 2; k++) {
-        const next_char = this.get_char();
-        if (next_char == null) {
+        const nextChar = this.get_char();
+        if (nextChar == null) {
           break;
-        } else if (!this.is_octal(next_char)) {
+        } else if (!this.is_octal(nextChar)) {
           this.unget();
           break;
         }
-        octal = octal * 8 + next_char - 0x30;
+        octal = octal * 8 + nextChar - 0x30;
       }
       // Python's `octal.to_bytes(1, "big")`: values past one byte overflow.
       if (octal > 255) throw new OverflowError("int too big to convert");
@@ -854,11 +854,11 @@ export class CosParser {
   }
 
   is_hex(char: number): boolean {
-    return isdigit_b(char) || (char >= 0x61 && char <= 0x66) || (char >= 0x41 && char <= 0x46);
+    return isdigitB(char) || (char >= 0x61 && char <= 0x66) || (char >= 0x41 && char <= 0x46);
   }
 
-  lex_hex_string(hstr_first: number): Token {
-    let hstr = String.fromCharCode(hstr_first);
+  lex_hex_string(hstrFirst: number): Token {
+    let hstr = String.fromCharCode(hstrFirst);
     while (true) {
       const char = this.get_char();
       if (char == null) {
@@ -867,8 +867,8 @@ export class CosParser {
         hstr += String.fromCharCode(char);
       } else if (char === GT) {
         break;
-      } else if (!isspace_b(char)) {
-        throw new SyntaxError_(`Invalid character in hex string: ${repr_bytes(Uint8Array.of(char))}`);
+      } else if (!isspaceB(char)) {
+        throw new SyntaxError_(`Invalid character in hex string: ${reprBytes(Uint8Array.of(char))}`);
       }
     }
 

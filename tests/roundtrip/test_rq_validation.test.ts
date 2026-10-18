@@ -14,9 +14,9 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, py_eq } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { as_instance, parse_project_fresh } from "../helpers.ts";
+import { Path, TypeError_, ValueError, pyEq } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import type { RenderQueueItem } from "../../src/py_aep/models/renderqueue/render_queue_item.ts";
@@ -25,12 +25,12 @@ const SAMPLE = new Path(import.meta.path)
   .parent.parent.parent.div("samples", "models", "output_module", "file.aep");
 
 function _rqi(project: Project): RenderQueueItem {
-  return as_instance(project.renderQueue, RenderQueue).items[0];
+  return asInstance(project.renderQueue, RenderQueue).items[0];
 }
 
 describe("TestStrictBools", () => {
   test("test_rqi_bool_settings_reject_non_bool", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     // NOTE(port): Python `settings[k] = v` is SettingsView.__setitem__ (item assignment on a __setitem__ class).
     raises(TypeError_, () => {
       rqi.settings.set("Skip Existing Files", "no");
@@ -44,7 +44,7 @@ describe("TestStrictBools", () => {
   });
 
   test("test_om_bool_settings_reject_non_bool", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     const om = rqi.outputModules[0];
     for (const key of [
       "Crop",
@@ -69,7 +69,7 @@ describe("TestStrictBools", () => {
 
 describe("TestSkipFramesBounds", () => {
   test("test_ae_range_0_to_99", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     rqi.skipFrames = 0;
     raises(ValueError, () => {
       rqi.skipFrames = 100;
@@ -82,13 +82,13 @@ describe("TestSkipFramesBounds", () => {
 
 describe("TestResolutionBounds", () => {
   test("test_zero_is_current_settings", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     rqi.settings.set("Resolution", [0, 0]);
-    expect(py_eq(rqi.settings.get("Resolution"), [0, 0])).toBe(true);
+    expect(pyEq(rqi.settings.get("Resolution"), [0, 0])).toBe(true);
   });
 
   test("test_components_0_to_99", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     rqi.settings.set("Resolution", [99, 99]);
     raises(ValueError, () => {
       rqi.settings.set("Resolution", [100, 100]);
@@ -101,24 +101,24 @@ describe("TestResolutionBounds", () => {
 
 describe("TestTimeSpanSemantics", () => {
   test("test_start_keeps_end", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLE);
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLE);
     const rqi = _rqi(project);
     const end = rqi.timeSpanStart + rqi.timeSpanDuration;
-    const new_start = end / 2;
-    rqi.timeSpanStart = new_start;
-    expect(approx(rqi.timeSpanStart, new_start)).toBe(true);
+    const newStart = end / 2;
+    rqi.timeSpanStart = newStart;
+    expect(approx(rqi.timeSpanStart, newStart)).toBe(true);
     expect(approx(rqi.timeSpanStart + rqi.timeSpanDuration, end)).toBe(true);
 
-    const out = tmp_path.div("span.aep");
+    const out = tmpPath.div("span.aep");
     project.save(out);
-    const rqi2 = _rqi(parse_project_fresh(out));
-    expect(approx(rqi2.timeSpanStart, new_start)).toBe(true);
+    const rqi2 = _rqi(parseProjectFresh(out));
+    expect(approx(rqi2.timeSpanStart, newStart)).toBe(true);
     expect(approx(rqi2.timeSpanStart + rqi2.timeSpanDuration, end)).toBe(true);
   });
 
   test("test_duration_keeps_start", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     rqi.timeSpanStart = 0.5;
     const start = rqi.timeSpanStart;
     rqi.timeSpanDuration = 1.0;
@@ -127,7 +127,7 @@ describe("TestTimeSpanSemantics", () => {
   });
 
   test("test_degenerate_spans_rejected", () => {
-    const rqi = _rqi(parse_project_fresh(SAMPLE));
+    const rqi = _rqi(parseProjectFresh(SAMPLE));
     const end = rqi.timeSpanStart + rqi.timeSpanDuration;
     raises(ValueError, () => {
       rqi.timeSpanStart = -5;
@@ -135,10 +135,10 @@ describe("TestTimeSpanSemantics", () => {
     raises(ValueError, () => {
       rqi.timeSpanStart = end + 1; // would leave a negative duration
     });
-    const one_frame = 1.0 / rqi.comp.frameRate;
+    const oneFrame = 1.0 / rqi.comp.frameRate;
     raises(ValueError, () => {
-      rqi.timeSpanDuration = one_frame / 2; // below AE's one-frame bound
+      rqi.timeSpanDuration = oneFrame / 2; // below AE's one-frame bound
     });
-    rqi.timeSpanDuration = one_frame; // exactly one frame is legal
+    rqi.timeSpanDuration = oneFrame; // exactly one frame is legal
   });
 });

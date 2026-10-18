@@ -6,9 +6,9 @@ import "../../src/py_aep/binary/_register.ts";
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import { TdmnChunk, TdsnChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
-import { _resolve_effect_value, type ParamDef } from "../../src/py_aep/parsers/effect.ts";
-import { parse_property_group } from "../../src/py_aep/parsers/property.ts";
-import { Path, py_eq } from "../../src/pyrt/index.ts";
+import { _resolveEffectValue, type ParamDef } from "../../src/py_aep/parsers/effect.ts";
+import { parsePropertyGroup } from "../../src/py_aep/parsers/property.ts";
+import { Path, pyEq } from "../../src/pyrt/index.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
 const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");
@@ -79,9 +79,9 @@ describe("TestResolveEffectValue", () => {
       PropertyControlType.SCALAR,
       [7.0, 7.0],
     ],
-  ])("test_resolve_effect_value[%#]", (param_def: Partial<ParamDef>, control_type: PropertyControlType, expected: unknown) => {
-    const result = _resolve_effect_value("TEST-0001", param_def, control_type);
-    expect(py_eq(result, expected)).toBe(true);
+  ])("test_resolve_effect_value[%#]", (paramDef: Partial<ParamDef>, controlType: PropertyControlType, expected: unknown) => {
+    const result = _resolveEffectValue("TEST-0001", paramDef, controlType);
+    expect(pyEq(result, expected)).toBe(true);
   });
 });
 
@@ -99,7 +99,7 @@ describe("TestTdsnWithoutUtf8", () => {
       list_type: "tdgp",
       chunks: [new TdsnChunk({ chunks: [] })], // no Utf8 child
     });
-    const group = parse_property_group(
+    const group = parsePropertyGroup(
       tdgp,
       "ADBE Transform Group",
       1,

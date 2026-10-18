@@ -19,13 +19,13 @@
  */
 
 import { AttributeError, deferred } from "../../pyrt/index.ts";
-import { get_ae_version_major } from "../ae_version.ts";
+import { getAeVersionMajor } from "../ae_version.ts";
 import { LayerType, PropertyControlType, PropertyValueType } from "../enums/index.ts";
 import { _CAMERA_NO_EXPRESSION, _CANSETEXPR_2D_ONLY, _CANSETEXPR_3D_ONLY, _CANSETEXPR_EXTRUSION_DEPTHS, _CANSETEXPR_FALSE_OVERRIDES, _CANSETEXPR_RENDERER_3D_ONLY, _LIGHT_AMBIENT_NO_EXPRESSION, _LIGHT_ENVIRONMENT_NO_EXPRESSION, _LIGHT_NO_EXPRESSION, _LIGHT_PARALLEL_NO_EXPRESSION, _LIGHT_POINT_NO_EXPRESSION, _LIGHT_SPOT_NO_EXPRESSION, _MATERIAL_COEFFICIENTS, _MODEL_LAYER_HIDDEN_MATERIALS, _PARAMETRIC_MESH_CHECKBOX_STREAMS, _PARAMETRIC_MESH_GROUP_TYPE, _PARAMETRIC_MESH_NO_EXPRESSION } from "../models/properties/overrides.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { Layer } from "../models/layers/layer.ts";
 
-const _av_layer = deferred<typeof import("../models/layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+const _avLayer = deferred<typeof import("../models/layers/av_layer.ts")>("py_aep/models/layers/av_layer");
 
 // PVT sets where can_set_expression is always True / False regardless
 // of other signals.
@@ -66,7 +66,7 @@ export const _MITER_JOIN = 1;
  * @param prop - The property to evaluate.
  * @returns Whether an expression can be set on this property.
  */
-export function resolve_can_set_expression(prop: Property): boolean {
+export function resolveCanSetExpression(prop: Property): boolean {
   const mn = prop.matchName;
 
   // Separation moves expressibility from the leader to its followers.
@@ -106,7 +106,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
   if (mn === "ADBE Time Remapping") {
     // Only AV layers have one.
     const layer = prop._containing_layer;
-    if (!(layer instanceof _av_layer().AVLayer)) {
+    if (!(layer instanceof _avLayer().AVLayer)) {
       // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
       throw new AttributeError(`'${layer.constructor.name}' has no property 'timeRemapEnabled'`);
     }
@@ -125,8 +125,8 @@ export function resolve_can_set_expression(prop: Property): boolean {
     // What the plugin hides: AE's stored flag, then the parameter's
     // PF_PUI_INVISIBLE flag, all a synthesized parameter has.
     const tdsb = prop._tdsb;
-    const stored_hidden = tdsb != null && !tdsb.synthetic && tdsb.hidden;
-    if (stored_hidden && !_HIDDEN_BUT_EXPRESSIONABLE.has(mn)) {
+    const storedHidden = tdsb != null && !tdsb.synthetic && tdsb.hidden;
+    if (storedHidden && !_HIDDEN_BUT_EXPRESSIONABLE.has(mn)) {
       return false;
     }
     if (prop._expressions_disabled) {
@@ -140,13 +140,13 @@ export function resolve_can_set_expression(prop: Property): boolean {
   }
 
   const layer = prop._containing_layer;
-  const layer_type = layer._ldta.layer_type;
+  const layerType = layer._ldta.layer_type;
 
   // Parametric mesh layers have their own expression rules.
-  if (layer_type === LayerType.PARAMETRIC_MESH) {
-    const mesh_result = _can_set_expression_parametric_mesh(prop, layer, mn);
-    if (mesh_result != null) {
-      return mesh_result;
+  if (layerType === LayerType.PARAMETRIC_MESH) {
+    const meshResult = _canSetExpressionParametricMesh(prop, layer, mn);
+    if (meshResult != null) {
+      return meshResult;
     }
   }
 
@@ -155,7 +155,7 @@ export function resolve_can_set_expression(prop: Property): boolean {
   }
 
   // Camera layers cannot set expressions on Scale/Opacity
-  if (layer_type === LayerType.CAMERA) {
+  if (layerType === LayerType.CAMERA) {
     // Point of Interest (the camera's anchor point) is expressionable
     // only on a two-node camera (orient towards POI); a one-node camera
     // leaves the POI inactive (probed AE 2026). poi_auto_orient is the
@@ -167,15 +167,15 @@ export function resolve_can_set_expression(prop: Property): boolean {
   }
 
   // Light layers have complex rules depending on light type
-  if (layer_type === LayerType.LIGHT) {
-    return _can_set_expression_light(layer, mn);
+  if (layerType === LayerType.LIGHT) {
+    return _canSetExpressionLight(layer, mn);
   }
 
-  const three_d = !!layer._ldta.three_d_layer;
+  const threeD = !!layer._ldta.three_d_layer;
   const renderer = layer.containingComp.renderer;
 
   if (
-    layer_type === LayerType.THREE_D_MODEL &&
+    layerType === LayerType.THREE_D_MODEL &&
     _MODEL_LAYER_HIDDEN_MATERIALS.has(mn) &&
     parent != null &&
     parent.matchName === "ADBE Material Options Group"
@@ -189,13 +189,13 @@ export function resolve_can_set_expression(prop: Property): boolean {
   if (
     (_MATERIAL_COEFFICIENTS.has(mn) || mn === "ADBE Light Transmission") &&
     renderer === _CLASSIC_3D &&
-    get_ae_version_major(layer) <= 23
+    getAeVersionMajor(layer) <= 23
   ) {
     return true;
   }
 
   if (_CANSETEXPR_3D_ONLY.has(mn)) {
-    return three_d;
+    return threeD;
   }
 
   // A mesh or model layer's own Shadow Color, under Compositing Options,
@@ -208,23 +208,23 @@ export function resolve_can_set_expression(prop: Property): boolean {
     return true;
   }
 
-  const only_under = _CANSETEXPR_RENDERER_3D_ONLY.get(mn) ?? null;
-  if (only_under != null) {
-    return three_d && renderer === only_under;
+  const onlyUnder = _CANSETEXPR_RENDERER_3D_ONLY.get(mn) ?? null;
+  if (onlyUnder != null) {
+    return threeD && renderer === onlyUnder;
   }
 
-  const classic_3d = three_d && renderer === _CLASSIC_3D;
+  const classic3d = threeD && renderer === _CLASSIC_3D;
   if (_CANSETEXPR_2D_ONLY.has(mn)) {
     return (
       layer.nullLayer ||
-      layer_type === LayerType.THREE_D_MODEL ||
-      layer_type === LayerType.PARAMETRIC_MESH ||
-      !classic_3d
+      layerType === LayerType.THREE_D_MODEL ||
+      layerType === LayerType.PARAMETRIC_MESH ||
+      !classic3d
     );
   }
 
   if (_CANSETEXPR_EXTRUSION_DEPTHS.has(mn)) {
-    return !(classic_3d && (layer_type === LayerType.TEXT || layer_type === LayerType.SHAPE));
+    return !(classic3d && (layerType === LayerType.TEXT || layerType === LayerType.SHAPE));
   }
 
   // AE shows a stroke's miter limit only while it joins by miter.
@@ -237,24 +237,24 @@ export function resolve_can_set_expression(prop: Property): boolean {
 }
 
 /** Determine can_set_expression for a property on a light layer. */
-export function _can_set_expression_light(layer: Layer, mn: string): boolean {
+export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
   if (_LIGHT_NO_EXPRESSION.has(mn)) {
     return false;
   }
-  const light_type = layer._ldta.light_and_mesh_type;
-  if (light_type === 3) {
+  const lightType = layer._ldta.light_and_mesh_type;
+  if (lightType === 3) {
     // AMBIENT
     return !_LIGHT_AMBIENT_NO_EXPRESSION.has(mn);
   }
-  if (light_type === 1) {
+  if (lightType === 1) {
     // SPOT
     return !_LIGHT_SPOT_NO_EXPRESSION.has(mn);
   }
-  if (light_type === 0) {
+  if (lightType === 0) {
     // PARALLEL
     return !_LIGHT_PARALLEL_NO_EXPRESSION.has(mn);
   }
-  if (light_type === 4) {
+  if (lightType === 4) {
     // ENVIRONMENT
     return !_LIGHT_ENVIRONMENT_NO_EXPRESSION.has(mn);
   }
@@ -273,7 +273,7 @@ export function _can_set_expression_light(layer: Layer, mn: string): boolean {
  *   to the layer's ACTIVE mesh type; checkbox toggles (caps / invert
  *   slice) are expressionable regardless of active type.
  */
-export function _can_set_expression_parametric_mesh(
+export function _canSetExpressionParametricMesh(
   prop: Property,
   layer: Layer,
   mn: string,
@@ -282,13 +282,13 @@ export function _can_set_expression_parametric_mesh(
     return false;
   }
   const parent = prop.parentProperty;
-  const group_mn = parent != null ? parent.matchName : "";
-  const group_type = _PARAMETRIC_MESH_GROUP_TYPE.get(group_mn) ?? null;
-  if (group_type != null) {
+  const groupMn = parent != null ? parent.matchName : "";
+  const groupType = _PARAMETRIC_MESH_GROUP_TYPE.get(groupMn) ?? null;
+  if (groupType != null) {
     if (_PARAMETRIC_MESH_CHECKBOX_STREAMS.has(mn)) {
       return true;
     }
-    return !!(group_type === layer._ldta.light_and_mesh_type);
+    return !!(groupType === layer._ldta.light_and_mesh_type);
   }
   return null;
 }

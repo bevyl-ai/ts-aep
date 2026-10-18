@@ -35,9 +35,9 @@ export const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Func
  * Falls back to an empty `RendererOptionsBase` for an unrecognised chunk,
  * so a future renderer reads as "no options exposed" rather than raising.
  */
-export function renderer_options_for(body: Chunk, comp: CompItem): RendererOptions {
-  const wrapper_cls = _WRAPPERS.get(body.constructor) ?? RendererOptionsBase;
-  return new wrapper_cls({ body, comp });
+export function rendererOptionsFor(body: Chunk, comp: CompItem): RendererOptions {
+  const wrapperCls = _WRAPPERS.get(body.constructor) ?? RendererOptionsBase;
+  return new wrapperCls({ body, comp });
 }
 
 export { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, RendererOptionsBase };

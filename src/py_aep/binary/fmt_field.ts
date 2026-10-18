@@ -21,14 +21,14 @@ import {
   getattr,
   int,
   lstrip,
-  py_bool,
+  pyBool,
   struct,
   TypeError_,
   ValueError,
   type Attribute,
   type FieldSpec,
 } from "../../pyrt/index.ts";
-import { _struct_for } from "./bin_utils.ts";
+import { _structFor } from "./bin_utils.ts";
 
 const _chunk = deferred<typeof import("./chunk.ts")>("py_aep/binary/chunk");
 
@@ -64,11 +64,11 @@ export type FmtAttribute = Attribute & { readonly metadata: { readonly fmt: stri
 /** An `items_field`, which always stores the item class and size. */
 type ItemsAttribute = Attribute & { readonly metadata: { readonly item_cls: typeof FmtItem; readonly item_size: number } };
 
-function _is_fmt_field(f: Attribute): f is FmtAttribute {
+function _isFmtField(f: Attribute): f is FmtAttribute {
   return f.metadata["fmt"] != null;
 }
 
-function _is_items_field(f: Attribute): f is ItemsAttribute {
+function _isItemsField(f: Attribute): f is ItemsAttribute {
   return !!f.metadata["items"];
 }
 
@@ -110,7 +110,7 @@ export class _NulTailStr extends String {
 
 /** Decode a fixed-size string field up to its first NUL, keeping the
  * raw bytes when a non-zero tail follows it. */
-export function _decode_fixed_str(value: Uint8Array, encoding: string): string | _NulTailStr {
+export function _decodeFixedStr(value: Uint8Array, encoding: string): string | _NulTailStr {
   const nul = value.indexOf(0);
   // surrogateescape keeps byte-exact round-trips even for legacy
   // non-UTF-8 bytes in old files.
@@ -130,11 +130,11 @@ export type FixedStrConverter = <T>(value: T) => T | string | _NulTailStr;
 /** attrs converter for a fixed-size string field: a value holding a NUL
  * is stored as those field bytes, so it reads back as a re-parse of the
  * written file would (the text up to the NUL). */
-export function _fixed_str_converter(encoding: string, size: number): FixedStrConverter {
+export function _fixedStrConverter(encoding: string, size: number): FixedStrConverter {
   function convert<T>(value: T): T | string | _NulTailStr {
     if (typeof value === "string" && value.includes("\x00")) {
       const raw = encode(value, encoding, "surrogateescape").slice(0, size);
-      return _decode_fixed_str(bytes_.ljust(raw, size, 0), encoding);
+      return _decodeFixedStr(bytes_.ljust(raw, size, 0), encoding);
     }
     return value;
   }
@@ -172,17 +172,17 @@ export type FmtFieldOptions<V extends FieldValue = FieldValue> = {
  * - `coerce`: Type callable applied after unpacking (e.g. `bool`). On write, the inverse is applied
  *     (e.g. `int` for `bool`).
  */
-export function fmt_field<V extends FieldValue>(fmt: string, kw?: FmtFieldOptions<V>): FieldSpec<V>;
-export function fmt_field(fmt: string, kw: FmtFieldOptions = {}) {
+export function fmtField<V extends FieldValue>(fmt: string, kw?: FmtFieldOptions<V>): FieldSpec<V>;
+export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
   const {
-    default: default_given = _UNSET,
+    default: defaultGiven = _UNSET,
     repr = true,
     encoding = null,
     optional = false,
     endian = null,
     coerce = null,
   } = kw;
-  let default_ = default_given;
+  let default_ = defaultGiven;
   if (default_ === _UNSET) {
     if (encoding != null) {
       default_ = "";
@@ -199,7 +199,7 @@ export function fmt_field(fmt: string, kw: FmtFieldOptions = {}) {
   let converter: FixedStrConverter | null = null;
   if (encoding != null) {
     md["encoding"] = encoding;
-    converter = _fixed_str_converter(encoding, struct.calcsize(">" + fmt));
+    converter = _fixedStrConverter(encoding, struct.calcsize(">" + fmt));
   }
   if (optional) md["optional"] = true;
   if (endian === "<") md["endian"] = endian;
@@ -215,14 +215,14 @@ export function fmt_field(fmt: string, kw: FmtFieldOptions = {}) {
  * and `encoding` as needed) so that `_struct_info()` can auto-serialize
  * them.
  *
- * @param item_cls - Class used to deserialize each item.
- * @param item_size - Fixed byte size of each serialized item.
+ * @param itemCls - Class used to deserialize each item.
+ * @param itemSize - Fixed byte size of each serialized item.
  */
-export function items_field<T extends FmtItem>(item_cls: (new (kw: InitKwargs) => T) & typeof FmtItem, item_size: number): FieldSpec<T[]> {
+export function itemsField<T extends FmtItem>(itemCls: (new (kw: InitKwargs) => T) & typeof FmtItem, itemSize: number): FieldSpec<T[]> {
   const md = {
     items: true,
-    item_cls,
-    item_size,
+    item_cls: itemCls,
+    item_size: itemSize,
   };
   return field({ default: Factory(() => []), metadata: md });
 }
@@ -232,70 +232,70 @@ export function items_field<T extends FmtItem>(item_cls: (new (kw: InitKwargs) =
 // ---------------------------------------------------------------------------
 
 /** Unsigned 1-byte integer field (`struct.unpack("B")`). */
-export function u1_field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("B", kw);
+export function u1Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("B", kw);
 }
 
 /** Unsigned 2-byte integer field (`struct.unpack("H")`). */
-export function u2_field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("H", kw);
+export function u2Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("H", kw);
 }
 
 /** Unsigned 4-byte integer field (`struct.unpack("I")`). */
-export function u4_field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("I", kw);
+export function u4Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("I", kw);
 }
 
 /** Unsigned 8-byte integer field (`struct.unpack("Q")`). */
-export function u8_field<V extends number | bigint | null = number | bigint>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("Q", kw);
+export function u8Field<V extends number | bigint | null = number | bigint>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("Q", kw);
 }
 
 /** Signed 2-byte integer field (`struct.unpack("h")`). */
-export function s2_field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("h", kw);
+export function s2Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("h", kw);
 }
 
 /** Signed 4-byte integer field (`struct.unpack("i")`). */
-export function s4_field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("i", kw);
+export function s4Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("i", kw);
 }
 
 /** 4-byte IEEE 754 float field (`struct.unpack("f")`). */
-export function f4_field<V extends number | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("f", kw);
+export function f4Field<V extends number | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("f", kw);
 }
 
 /** 8-byte IEEE 754 double field (`struct.unpack("d")`). */
-export function f8_field<V extends number | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field("d", kw);
+export function f8Field<V extends number | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField("d", kw);
 }
 
 /** Fixed-size raw bytes field (`struct.unpack("Ns")`). */
-export function bytes_field<V extends Uint8Array | null = Uint8Array>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field(`${n}s`, kw);
+export function bytesField<V extends Uint8Array | null = Uint8Array>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField(`${n}s`, kw);
 }
 
 /** Fixed-size string field, decoded via `encoding`. */
-export function str_field<V extends string | null = string>(
+export function strField<V extends string | null = string>(
   n: number,
   kw: FmtFieldOptions<V> & { encoding?: string } = {},
 ): FieldSpec<NoInfer<V>> {
   const { encoding = "utf-8", ...rest } = kw;
-  return fmt_field(`${n}s`, { ...rest, encoding });
+  return fmtField(`${n}s`, { ...rest, encoding });
 }
 
 /** Fixed-size ASCII string field. */
-export function ascii_field<V extends string | null = string>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
-  return fmt_field(`${n}s`, { ...kw, encoding: "ascii" });
+export function asciiField<V extends string | null = string>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+  return fmtField(`${n}s`, { ...kw, encoding: "ascii" });
 }
 
 /** 1-byte boolean field (`struct.unpack("B")`, coerced to `bool`). */
-export function bool_field(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean> {
-  return fmt_field("B", { ...kw, coerce: py_bool });
+export function boolField(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean> {
+  return fmtField("B", { ...kw, coerce: pyBool });
 }
 
-export function _struct_info_uncached(cls: Function): _StructInfo | null {
+export function _structInfoUncached(cls: Function): _StructInfo | null {
   /**
    * Derive struct layout metadata for a chunk class.
    *
@@ -314,93 +314,93 @@ export function _struct_info_uncached(cls: Function): _StructInfo | null {
    *   and trailing-bytes handling.
    * - `expected_size`: pre-computed `struct.calcsize('>' + fmt)`.
    */
-  const base_names: ReadonlySet<string> =
+  const baseNames: ReadonlySet<string> =
     cls === _chunk().Chunk || _chunk().Chunk.isPrototypeOf(cls)
       ? new Set(fields(_chunk().Chunk).map((f) => f.name))
       : new Set();
-  const fmt_parts: string[] = [];
-  const data_fields: FmtAttribute[] = [];
+  const fmtParts: string[] = [];
+  const dataFields: FmtAttribute[] = [];
   const encodings = new Map<number, string>();
   const endians = new Map<number, string>();
   const coerces = new Map<number, Coerce>();
-  let optional_start: number | null = null;
-  let items_info: [string, typeof FmtItem, number] | null = null;
+  let optionalStart: number | null = null;
+  let itemsInfo: [string, typeof FmtItem, number] | null = null;
 
   for (const f of fields(cls)) {
-    if (base_names.has(f.name)) continue;
-    if (_is_items_field(f)) {
-      items_info = [_init_name(f.name), f.metadata["item_cls"], f.metadata["item_size"]];
+    if (baseNames.has(f.name)) continue;
+    if (_isItemsField(f)) {
+      itemsInfo = [_initName(f.name), f.metadata["item_cls"], f.metadata["item_size"]];
       continue;
     }
-    if (_is_fmt_field(f)) {
-      const fmt_char = f.metadata["fmt"];
-      const is_opt = f.metadata["optional"] ?? false;
-      if (is_opt) {
-        if (optional_start == null) optional_start = data_fields.length;
-      } else if (optional_start != null) {
+    if (_isFmtField(f)) {
+      const fmtChar = f.metadata["fmt"];
+      const isOpt = f.metadata["optional"] ?? false;
+      if (isOpt) {
+        if (optionalStart == null) optionalStart = dataFields.length;
+      } else if (optionalStart != null) {
         throw new ValueError(`${cls.name}.${f.name}: required field after optional`);
       }
       const enc = f.metadata["encoding"];
-      if (enc != null) encodings.set(data_fields.length, enc);
+      if (enc != null) encodings.set(dataFields.length, enc);
       const end = f.metadata["endian"];
-      if (end != null) endians.set(data_fields.length, end);
+      if (end != null) endians.set(dataFields.length, end);
       const crc = f.metadata["coerce"];
-      if (crc != null) coerces.set(data_fields.length, crc);
-      fmt_parts.push(fmt_char);
-      data_fields.push(f);
+      if (crc != null) coerces.set(dataFields.length, crc);
+      fmtParts.push(fmtChar);
+      dataFields.push(f);
     }
   }
 
-  if (fmt_parts.length === 0 && items_info == null) return null;
+  if (fmtParts.length === 0 && itemsInfo == null) return null;
 
-  if (optional_start == null) optional_start = data_fields.length;
+  if (optionalStart == null) optionalStart = dataFields.length;
 
   let combined = "";
-  if (fmt_parts.length > 0) {
+  if (fmtParts.length > 0) {
     // Validate format/field count match at cache time
-    combined = fmt_parts.join("");
-    const n_values = struct
+    combined = fmtParts.join("");
+    const nValues = struct
       .unpack(">" + combined, new Uint8Array(struct.calcsize(">" + combined)))
       .length;
-    if (n_values !== data_fields.length) {
+    if (nValues !== dataFields.length) {
       throw new ValueError(
-        `${cls.name}: struct format yields ${n_values} values ` +
-          `but has ${data_fields.length} fmt_field fields`,
+        `${cls.name}: struct format yields ${nValues} values ` +
+          `but has ${dataFields.length} fmt_field fields`,
       );
     }
   }
 
-  const init_names = data_fields.map((f) => _init_name(f.name));
+  const initNames = dataFields.map((f) => _initName(f.name));
   // Simple chunks have no string encodings, endian overrides, optional
   // fields, or items. Coerces are handled inline in the fast path.
   const simple =
     encodings.size === 0 &&
     endians.size === 0 &&
-    items_info == null &&
-    optional_start === data_fields.length;
-  const expected_size = combined ? struct.calcsize(">" + combined) : 0;
+    itemsInfo == null &&
+    optionalStart === dataFields.length;
+  const expectedSize = combined ? struct.calcsize(">" + combined) : 0;
 
   return [
     combined,
-    [...data_fields],
+    [...dataFields],
     encodings,
-    optional_start,
+    optionalStart,
     endians,
-    items_info,
+    itemsInfo,
     coerces,
-    init_names,
+    initNames,
     simple,
-    expected_size,
+    expectedSize,
   ];
 }
 
 const _STRUCT_INFO = new Map<Function, _StructInfo | null>();
 
 /** `_struct_info_uncached`, cached per class (Python: `functools.lru_cache`). */
-export function _struct_info(cls: Function): _StructInfo | null {
+export function _structInfo(cls: Function): _StructInfo | null {
   let info = _STRUCT_INFO.get(cls);
   if (info === undefined) {
-    info = _struct_info_uncached(cls);
+    info = _structInfoUncached(cls);
     _STRUCT_INFO.set(cls, info);
   }
   return info;
@@ -412,7 +412,7 @@ export function _struct_info(cls: Function): _StructInfo | null {
  * attrs strips the leading underscore from private field names for
  * the `__init__` signature: `_trailing` -\> `trailing=`.
  */
-export function _init_name(name: string): string {
+export function _initName(name: string): string {
   return name.startsWith("_") ? lstrip(name, "_") : name;
 }
 
@@ -425,17 +425,17 @@ const _DECODERS = new WeakMap<readonly string[], DecodeKw | null>();
  * literal, so each class's kwargs keep a single shape. Null where
  * `new Function` is refused (Workers, strict CSP) or names repeat.
  */
-function _compile_decoder(
-  init_names: readonly string[],
+function _compileDecoder(
+  initNames: readonly string[],
   encodings: ReadonlyMap<number, string>,
   coerces: ReadonlyMap<number, Coerce>,
 ): DecodeKw | null {
-  if (new Set(init_names).size !== init_names.length) return null;
+  if (new Set(initNames).size !== initNames.length) return null;
   const encs: string[] = [];
   const fns: Coerce[] = [];
   const body = ["let x;"];
   const props: string[] = [];
-  init_names.forEach((name, i) => {
+  initNames.forEach((name, i) => {
     body.push(`x = v[${i}];`);
     const enc = encodings.get(i);
     if (enc != null) body.push(`if (x != null) x = D(x, E[${encs.push(enc) - 1}]);`);
@@ -446,7 +446,7 @@ function _compile_decoder(
   });
   body.push(`return { ${props.join(", ")} };`);
   try {
-    return new Function("D", "E", "C", `return (v) => {\n${body.join("\n")}\n};`)(_decode_fixed_str, encs, fns);
+    return new Function("D", "E", "C", `return (v) => {\n${body.join("\n")}\n};`)(_decodeFixedStr, encs, fns);
   } catch {
     return null;
   }
@@ -460,12 +460,12 @@ const _ENCODERS = new Map<_StructInfo, EncodeFields | null>();
  * straight-line code per class (big-endian fields only). Null where
  * `new Function` is refused (Workers, strict CSP).
  */
-export function _field_encoder(info: _StructInfo): EncodeFields | null {
-  let encode_fields = _ENCODERS.get(info);
-  if (encode_fields === undefined) {
-    const [, data_fields, encodings, , , , coerces] = info;
+export function _fieldEncoder(info: _StructInfo): EncodeFields | null {
+  let encodeFields = _ENCODERS.get(info);
+  if (encodeFields === undefined) {
+    const [, dataFields, encodings, , , , coerces] = info;
     const fmts: string[] = [];
-    const exprs = data_fields.map((f, i) => {
+    const exprs = dataFields.map((f, i) => {
       const name = JSON.stringify(f.name);
       const value = `(${name} in self ? self[${name}] : G(self, ${name}))`;
       if (!encodings.has(i) && !coerces.has(i)) return value;
@@ -475,7 +475,7 @@ export function _field_encoder(info: _StructInfo): EncodeFields | null {
     try {
       compiled = new Function("G", "X", "E", "C", "F", `return (self) => [${exprs.join(", ")}];`)(
         getattr,
-        _encode_value,
+        _encodeValue,
         encodings,
         coerces,
         fmts,
@@ -483,9 +483,9 @@ export function _field_encoder(info: _StructInfo): EncodeFields | null {
     } catch {
       compiled = null;
     }
-    _ENCODERS.set(info, (encode_fields = compiled));
+    _ENCODERS.set(info, (encodeFields = compiled));
   }
-  return encode_fields;
+  return encodeFields;
 }
 
 /**
@@ -498,30 +498,30 @@ export function _field_encoder(info: _StructInfo): EncodeFields | null {
  * `values` is `struct`'s untyped result for the runtime format: an encoded
  * field's value is bytes only because its format is `Ns`.
  */
-export function _decode_fields(
-  data_fields: readonly FmtAttribute[],
+export function _decodeFields(
+  dataFields: readonly FmtAttribute[],
   values: struct.Unpacked<string>,
   encodings: Map<number, string>,
   coerces: Map<number, Coerce>,
-  init_names: readonly string[] | null = null,
+  initNames: readonly string[] | null = null,
 ): FieldKwargs {
-  if (init_names != null && values.length === init_names.length && init_names.length === data_fields.length) {
-    let decode_kw = _DECODERS.get(init_names);
-    if (decode_kw === undefined) {
-      decode_kw = _compile_decoder(init_names, encodings, coerces);
-      _DECODERS.set(init_names, decode_kw);
+  if (initNames != null && values.length === initNames.length && initNames.length === dataFields.length) {
+    let decodeKw = _DECODERS.get(initNames);
+    if (decodeKw === undefined) {
+      decodeKw = _compileDecoder(initNames, encodings, coerces);
+      _DECODERS.set(initNames, decodeKw);
     }
-    if (decode_kw !== null) return decode_kw(values);
+    if (decodeKw !== null) return decodeKw(values);
   }
   const kw: FieldKwargs = {};
-  const n = Math.min(data_fields.length, values.length);
+  const n = Math.min(dataFields.length, values.length);
   for (let i = 0; i < n; i++) {
     let value = values[i];
     const enc = encodings.get(i) ?? null;
-    if (enc != null && value != null) value = _decode_fixed_str(value, enc);
+    if (enc != null && value != null) value = _decodeFixedStr(value, enc);
     const crc = coerces.get(i);
     if (crc != null && value != null) value = crc(value);
-    kw[init_names != null ? init_names[i] : _init_name(data_fields[i].name)] = value;
+    kw[initNames != null ? initNames[i] : _initName(dataFields[i].name)] = value;
   }
   return kw;
 }
@@ -536,22 +536,22 @@ export function _decode_fields(
  * `value` is the field read by name, so it is untyped: only the field's
  * format makes it packable as is, or `int()`-able when it is coerced.
  */
-export function _encode_value(
+export function _encodeValue(
   value: any,
   idx: number,
   encodings: Map<number, string>,
   coerces: Map<number, Coerce>,
   endian: string,
-  fmt_str: string,
+  fmtStr: string,
 ): struct.PackValue {
   const enc = encodings.get(idx) ?? null;
   if (enc != null) {
-    const field_size = _struct_for(fmt_str, endian).size;
-    if (value instanceof _NulTailStr && value.raw.length === field_size) return value.raw;
+    const fieldSize = _structFor(fmtStr, endian).size;
+    if (value instanceof _NulTailStr && value.raw.length === fieldSize) return value.raw;
     // `String(value)` unwraps a `_NulTailStr` (a String object) to its text.
     const encoded = encode(String(value), enc, "surrogateescape");
-    const out = new Uint8Array(field_size);
-    out.set(encoded.length > field_size ? encoded.subarray(0, field_size) : encoded);
+    const out = new Uint8Array(fieldSize);
+    out.set(encoded.length > fieldSize ? encoded.subarray(0, fieldSize) : encoded);
     return out;
   }
   if (coerces.has(idx)) return int(value);
@@ -562,17 +562,17 @@ export function _encode_value(
 export class FmtItem extends AttrsBase {
   /** Construct an item from bytes using its `_struct_info` metadata. */
   static frombytes<T extends FmtItem>(this: (new (kw: InitKwargs) => T) & typeof FmtItem, data: Uint8Array): T {
-    const info = _struct_info(this);
+    const info = _structInfo(this);
     if (info == null) throw new TypeError_(`${this.name} has no fmt_field metadata`);
     const [
       fmt,
-      data_fields,
+      dataFields,
       encodings,
-      _optional_start,
+      _optionalStart,
       endians,
-      _items_info,
+      _itemsInfo,
       coerces,
-      init_names,
+      initNames,
       simple,
       expected,
     ] = info;
@@ -580,68 +580,68 @@ export class FmtItem extends AttrsBase {
     if (endians?.size > 0) {
       values = [];
       let pos = 0;
-      for (const [i, f] of data_fields.entries()) {
+      for (const [i, f] of dataFields.entries()) {
         const fe = endians.get(i) ?? ">";
         const ff = f.metadata["fmt"];
-        const s = _struct_for(ff, fe);
-        const f_size = s.size;
-        const [v] = s.unpack(data.subarray(pos, pos + f_size));
+        const s = _structFor(ff, fe);
+        const fSize = s.size;
+        const [v] = s.unpack(data.subarray(pos, pos + fSize));
         values.push(v);
-        pos += f_size;
+        pos += fSize;
       }
     } else {
-      values = _struct_for(fmt).unpack(data.subarray(0, expected));
+      values = _structFor(fmt).unpack(data.subarray(0, expected));
     }
     let kw: FieldKwargs;
     if (simple) {
       kw = {};
-      for (let i = 0; i < Math.min(init_names.length, values.length); i++) kw[init_names[i]] = values[i];
+      for (let i = 0; i < Math.min(initNames.length, values.length); i++) kw[initNames[i]] = values[i];
       for (const [i, crc] of coerces) {
-        const name = init_names[i];
+        const name = initNames[i];
         kw[name] = crc(kw[name]);
       }
     } else {
-      kw = _decode_fields(data_fields, values, encodings, coerces, init_names);
+      kw = _decodeFields(dataFields, values, encodings, coerces, initNames);
     }
     return new this(kw);
   }
 
   /** Serialize an item to bytes using its `_struct_info` metadata. */
   tobytes(): Uint8Array {
-    const info = _struct_info(this.constructor);
+    const info = _structInfo(this.constructor);
     if (info == null) {
       throw new TypeError_(`${this.constructor.name} has no fmt_field metadata`);
     }
     const [
       fmt,
-      data_fields,
+      dataFields,
       encodings,
-      _optional_start,
+      _optionalStart,
       endians,
-      _items_info,
+      _itemsInfo,
       coerces,
-      _init_names,
+      _initNames,
       _simple,
       _expected,
     ] = info;
     if (endians?.size > 0) {
       const parts: Uint8Array[] = [];
-      for (const [i, f] of data_fields.entries()) {
+      for (const [i, f] of dataFields.entries()) {
         const fe = endians.get(i) ?? ">";
         let value = getattr(this, f.name);
-        value = _encode_value(value, i, encodings, coerces, fe, f.metadata["fmt"]);
-        parts.push(_struct_for(f.metadata["fmt"], fe).pack(value));
+        value = _encodeValue(value, i, encodings, coerces, fe, f.metadata["fmt"]);
+        parts.push(_structFor(f.metadata["fmt"], fe).pack(value));
       }
       return bytes_.join(parts);
     }
-    const encode_fields = _field_encoder(info);
-    if (encode_fields !== null) return _struct_for(fmt).pack(...encode_fields(this));
+    const encodeFields = _fieldEncoder(info);
+    if (encodeFields !== null) return _structFor(fmt).pack(...encodeFields(this));
     const values: struct.PackValue[] = [];
-    for (const [i, f] of data_fields.entries()) {
+    for (const [i, f] of dataFields.entries()) {
       let value = getattr(this, f.name);
-      value = _encode_value(value, i, encodings, coerces, ">", f.metadata["fmt"]);
+      value = _encodeValue(value, i, encodings, coerces, ">", f.metadata["fmt"]);
       values.push(value);
     }
-    return _struct_for(fmt).pack(...values);
+    return _structFor(fmt).pack(...values);
   }
 }

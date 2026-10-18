@@ -1,11 +1,11 @@
 // Port of py_aep/models/application.py.
 
 import { INSPECT } from "../../pyrt/index.ts";
-import { ae_writes } from "../ae_version.ts";
+import { aeWrites } from "../ae_version.ts";
 import { LEGACY_NAME_FORMAT } from "../binary/chunk.ts";
 import type { HeadChunk } from "../binary/item_chunks.ts";
 import { ChunkField } from "./descriptors.ts";
-import { validate_ae_version, validate_u1 } from "./validators.ts";
+import { validateAeVersion, validateU1 } from "./validators.ts";
 import type { Preferences } from "./preferences.ts";
 import type { Viewer } from "./viewer/viewer.ts";
 import { descriptor, int, repr, split, str, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
@@ -20,8 +20,8 @@ import { Project } from "./project.ts";
 export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] as const;
 
 /** A version whose file layout matches the project's. */
-export function _validate_version(value: string, obj: Application): void {
-  validate_ae_version(value);
+export function _validateVersion(value: string, obj: Application): void {
+  validateAeVersion(value);
   const current = obj._head.ae_version_major;
   const target = int(split(str(value), ".", 1)[0]);
   if (obj._head.file_format_version < LEGACY_NAME_FORMAT) {
@@ -35,7 +35,7 @@ export function _validate_version(value: string, obj: Application): void {
     );
   }
   for (const part of _LAYOUT_PARTS) {
-    if (ae_writes(part, current) !== ae_writes(part, target)) {
+    if (aeWrites(part, current) !== aeWrites(part, target)) {
       throw new ValueError(
         `cannot relabel an After Effects ${current} project as ` +
           `${target}: the releases lay out the ${part} differently and ` +
@@ -131,8 +131,8 @@ export class Application {
    *
    * See `py_aep.new`.
    */
-  static _new(version: string, ae_preferences_dir: Path | null = null, platform: string | null = null): Application {
-    const project = Project._new(version, ae_preferences_dir, platform);
+  static _new(version: string, aePreferencesDir: Path | null = null, platform: string | null = null): Application {
+    const project = Project._new(version, aePreferencesDir, platform);
     return new this({ _head: project._head, project, active_viewer: null });
   }
 
@@ -186,7 +186,7 @@ descriptor(
   "buildNumber",
   new ChunkField("_head", "ae_build_number", {
     // An 8-bit field of the head chunk: a larger build would wrap.
-    validate: validate_u1,
+    validate: validateU1,
   }),
 );
 
@@ -194,7 +194,7 @@ descriptor(
   Application,
   "version",
   new ChunkField("_head", "version", {
-    validate: _validate_version,
+    validate: _validateVersion,
     post_set: (obj: Application) => obj._head.sync_file_format_version(),
   }),
 );

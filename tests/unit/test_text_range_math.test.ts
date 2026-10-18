@@ -12,24 +12,24 @@ import { raises } from "../../src/pyrt/pytest.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { CosField, CosName } from "../../src/py_aep/cos/index.ts";
 import { CosString, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
-import { cos_at, cos_item, cos_iter, cos_num, cos_setitem } from "../../src/py_aep/cos/kinds.ts";
-import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composed_line_spans, _merge_adjacent_runs, _snap_to_pairs, _split_run_array, u16_len, u16_slice } from "../../src/py_aep/models/text/ranges.ts";
+import { cosAt, cosItem, cosIter, cosNum, cosSetitem } from "../../src/py_aep/cos/kinds.ts";
+import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composedLineSpans, _mergeAdjacentRuns, _snapToPairs, _splitRunArray, u16Len, u16Slice } from "../../src/py_aep/models/text/ranges.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
   TypeError_,
   ValueError,
   deepcopy,
-  descriptors_of,
-  dict_get,
-  get_descriptor,
-  py_eq,
-  py_or,
+  descriptorsOf,
+  dictGet,
+  getDescriptor,
+  pyEq,
+  pyOr,
   repr,
   setattr,
   str,
   sum,
 } from "../../src/pyrt/index.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const EMOJI = "\u{1f600}";
 
@@ -43,14 +43,14 @@ describe("TestWriteEnginePrimitives", () => {
       ]),
     ];
     const original = runs[0];
-    _split_run_array(runs, new Set([3, 7]));
-    expect(py_eq(runs.map((r) => cos_item(r, "1")), [3, 4, 3])).toBe(true);
+    _splitRunArray(runs, new Set([3, 7]));
+    expect(pyEq(runs.map((r) => cosItem(r, "1")), [3, 4, 3])).toBe(true);
     // Run 0 keeps its object (and its style dict) as the left piece.
     expect(runs[0]).toBe(original);
-    expect(cos_item(cos_item(cos_item(runs[0], "0"), "0"), "6")).toBe(style);
+    expect(cosItem(cosItem(cosItem(runs[0], "0"), "0"), "6")).toBe(style);
     // Fragments are independent copies.
-    cos_setitem(cos_item(cos_item(cos_item(runs[1], "0"), "0"), "6"), "1", 72.0);
-    expect(cos_item(cos_item(cos_item(cos_item(runs[0], "0"), "0"), "6"), "1")).toBe(36.0);
+    cosSetitem(cosItem(cosItem(cosItem(runs[1], "0"), "0"), "6"), "1", 72.0);
+    expect(cosItem(cosItem(cosItem(cosItem(runs[0], "0"), "0"), "6"), "1")).toBe(36.0);
   });
 
   test("test_merge_keeps_first_object", () => {
@@ -67,21 +67,21 @@ describe("TestWriteEnginePrimitives", () => {
       ["1", 4],
     ]);
     const runs: CosNode[] = [a, b, c];
-    _merge_adjacent_runs(runs);
-    expect(py_eq(runs, [a, c])).toBe(true);
+    _mergeAdjacentRuns(runs);
+    expect(pyEq(runs, [a, c])).toBe(true);
     expect(runs[0]).toBe(a);
-    expect(cos_item(runs[0], "1")).toBe(7);
+    expect(cosItem(runs[0], "1")).toBe(7);
   });
 
   test("test_snap_to_pairs", () => {
     const raw = `ab${EMOJI}cd\r`;
-    expect(py_eq(_snap_to_pairs(raw, 3, 5), [2, 5])).toBe(true);
-    expect(py_eq(_snap_to_pairs(raw, 2, 3), [2, 4])).toBe(true);
-    expect(py_eq(_snap_to_pairs(raw, 0, 2), [0, 2])).toBe(true);
+    expect(pyEq(_snapToPairs(raw, 3, 5), [2, 5])).toBe(true);
+    expect(pyEq(_snapToPairs(raw, 2, 3), [2, 4])).toBe(true);
+    expect(pyEq(_snapToPairs(raw, 0, 2), [0, 2])).toBe(true);
     // A mid-pair caret moves past the pair but stays zero-span, so
     // caret writes remain no-ops instead of covering the glyph.
-    expect(py_eq(_snap_to_pairs(raw, 3, 3), [4, 4])).toBe(true);
-    expect(py_eq(_snap_to_pairs(raw, 1, 1), [1, 1])).toBe(true);
+    expect(pyEq(_snapToPairs(raw, 3, 3), [4, 4])).toBe(true);
+    expect(pyEq(_snapToPairs(raw, 1, 1), [1, 1])).toBe(true);
   });
 
   test("test_deepcopy_preserves_cos_scalars", () => {
@@ -92,22 +92,22 @@ describe("TestWriteEnginePrimitives", () => {
       ["0", [new CosString("s", { utf16: false })]],
     ]);
     const clone = deepcopy(nested);
-    expect(as_instance(cos_at(cos_item(clone, "0"), 0), CosString).cos_utf16).toBe(false);
-    expect(str(cos_item(clone, "99"))).toBe("X");
+    expect(asInstance(cosAt(cosItem(clone, "0"), 0), CosString).cos_utf16).toBe(false);
+    expect(str(cosItem(clone, "99"))).toBe("X");
   });
 
   test("test_range_write_on_synthetic_doc", () => {
-    const doc = make_doc("abcdefghij\r");
+    const doc = makeDoc("abcdefghij\r");
     new CharacterRange(doc, 3, 7).fontSize = 72;
-    const lengths = cos_iter(cos_item(cos_item(cos_item(doc._doc, "0"), "6"), "0")).map((r) => cos_item(r, "1"));
-    expect(py_eq(lengths, [3, 4, 4])).toBe(true);
+    const lengths = cosIter(cosItem(cosItem(cosItem(doc._doc, "0"), "6"), "0")).map((r) => cosItem(r, "1"));
+    expect(pyEq(lengths, [3, 4, 4])).toBe(true);
     expect(new CharacterRange(doc, 3, 7).fontSize).toBe(72.0);
     // key absent -> default
     expect(new CharacterRange(doc, 0, 3).fontSize).toBeNull();
   });
 
   test("test_range_write_validation", () => {
-    const doc = make_doc("abcdefghij\r");
+    const doc = makeDoc("abcdefghij\r");
     raises(ValueError, () => {
       new CharacterRange(doc, 0, 5).fontSize = 0;
     });
@@ -125,53 +125,53 @@ describe("TestWriteEnginePrimitives", () => {
   test("test_kerning_write_skips_terminator", () => {
     // AE never kerns the raw \r terminator: a range ending at the
     // visible length must leave the final unit in an empty run.
-    const doc = make_doc("AVAW\r");
+    const doc = makeDoc("AVAW\r");
     new CharacterRange(doc, 2, 4).kerning = 100;
-    const runs = cos_item(cos_item(cos_item(doc._doc, "0"), "8"), "0");
-    expect(py_eq(cos_at(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
-    expect(sum(cos_iter(runs).map((r) => cos_num(cos_item(r, "1"))))).toBe(5);
+    const runs = cosItem(cosItem(cosItem(doc._doc, "0"), "8"), "0");
+    expect(pyEq(cosAt(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
+    expect(sum(cosIter(runs).map((r) => cosNum(cosItem(r, "1"))))).toBe(5);
   });
 });
 
 /** Build a duck-typed document from `(length, style)` run pairs. */
-function make_doc(
+function makeDoc(
   raw: string,
-  char_runs: [number, CosDict][] | null = null,
-  para_runs: [number, CosDict][] | null = null,
-  line_cache: CosNode[] | null = null,
+  charRuns: [number, CosDict][] | null = null,
+  paraRuns: [number, CosDict][] | null = null,
+  lineCache: CosNode[] | null = null,
 ): TextDocument {
-  const run_array = (runs: [number, CosDict][], style_key: string): CosDict =>
+  const runArray = (runs: [number, CosDict][], styleKey: string): CosDict =>
     new Map<string, CosNode>([
       [
         "0",
         runs.map(
           ([length, style]) =>
             new Map<string, CosNode>([
-              ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([[style_key, style]])]])],
+              ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([[styleKey, style]])]])],
               ["1", length],
             ]),
         ),
       ],
     ]);
 
-  const total = u16_len(raw);
+  const total = u16Len(raw);
   const doc = new Map<string, CosNode>([["0", new Map<string, CosNode>([["0", raw]])]]);
-  cos_setitem(cos_item(doc, "0"), "6", run_array(py_or(char_runs, [[total, new Map<string, CosNode>()]]), "6"));
-  cos_setitem(cos_item(doc, "0"), "5", run_array(py_or(para_runs, [[total, new Map<string, CosNode>()]]), "5"));
-  if (line_cache != null) doc.set("1", new Map<string, CosNode>([["2", line_cache]]));
+  cosSetitem(cosItem(doc, "0"), "6", runArray(pyOr(charRuns, [[total, new Map<string, CosNode>()]]), "6"));
+  cosSetitem(cosItem(doc, "0"), "5", runArray(pyOr(paraRuns, [[total, new Map<string, CosNode>()]]), "5"));
+  if (lineCache != null) doc.set("1", new Map<string, CosNode>([["2", lineCache]]));
   // Docs carrying a line cache act as box text (point text derives its
   // composed lines from the paragraphs and never reads the cache).
   // @ts-expect-error duck-typed document (Python SimpleNamespace), not a TextDocument
-  return { _doc: doc, _fonts: [], boxText: line_cache != null };
+  return { _doc: doc, _fonts: [], boxText: lineCache != null };
 }
 
-function line(...segment_counts: number[]): CosDict {
+function line(...segmentCounts: number[]): CosDict {
   /** A synthetic `/L` record with one `/S` per count. */
   return new Map<string, CosNode>([
     ["99", new CosName("L")],
     [
       "6",
-      segment_counts.map(
+      segmentCounts.map(
         (count) =>
           new Map<string, CosNode>([
             ["99", new CosName("S")],
@@ -184,28 +184,28 @@ function line(...segment_counts: number[]): CosDict {
 
 describe("TestU16Helpers", () => {
   test("test_len_bmp", () => {
-    expect(u16_len("hello")).toBe(5);
-    expect(u16_len("")).toBe(0);
+    expect(u16Len("hello")).toBe(5);
+    expect(u16Len("")).toBe(0);
   });
 
   test("test_len_astral", () => {
-    expect(u16_len(EMOJI)).toBe(2);
-    expect(u16_len(`ab${EMOJI}cd`)).toBe(6);
+    expect(u16Len(EMOJI)).toBe(2);
+    expect(u16Len(`ab${EMOJI}cd`)).toBe(6);
   });
 
   test("test_slice_bmp", () => {
-    expect(u16_slice("hello", 1, 3)).toBe("el");
+    expect(u16Slice("hello", 1, 3)).toBe("el");
   });
 
   test("test_slice_astral", () => {
-    expect(u16_slice(`ab${EMOJI}cd`, 2, 4)).toBe(EMOJI);
-    expect(u16_slice(`ab${EMOJI}cd`, 0, 6)).toBe(`ab${EMOJI}cd`);
+    expect(u16Slice(`ab${EMOJI}cd`, 2, 4)).toBe(EMOJI);
+    expect(u16Slice(`ab${EMOJI}cd`, 0, 6)).toBe(`ab${EMOJI}cd`);
   });
 
   test("test_slice_splits_surrogate_pair", () => {
     // AE allows the split and yields a lone surrogate; so do we.
-    expect(u16_slice(`ab${EMOJI}cd`, 2, 3)).toBe("\ud83d");
-    expect(u16_slice(`ab${EMOJI}cd`, 0, 3)).toBe("ab\ud83d");
+    expect(u16Slice(`ab${EMOJI}cd`, 2, 3)).toBe("\ud83d");
+    expect(u16Slice(`ab${EMOJI}cd`, 0, 3)).toBe("ab\ud83d");
   });
 });
 
@@ -218,8 +218,8 @@ describe("TestComposedLineSpans", () => {
         ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(3, 2), line(4)]]])]],
       ]),
     ];
-    const doc = make_doc("abcdefgh\r", null, null, cache);
-    expect(py_eq(_composed_line_spans(doc), [[0, 5], [5, 9]])).toBe(true);
+    const doc = makeDoc("abcdefgh\r", null, null, cache);
+    expect(pyEq(_composedLineSpans(doc), [[0, 5], [5, 9]])).toBe(true);
   });
 
   test("test_multiple_frames", () => {
@@ -235,24 +235,24 @@ describe("TestComposedLineSpans", () => {
         ],
       ]),
     ];
-    const doc = make_doc("abcdefgh\r", null, null, cache);
-    expect(py_eq(_composed_line_spans(doc), [[0, 4], [4, 9]])).toBe(true);
+    const doc = makeDoc("abcdefgh\r", null, null, cache);
+    expect(pyEq(_composedLineSpans(doc), [[0, 4], [4, 9]])).toBe(true);
   });
 
   test("test_box_without_cache", () => {
-    const doc = make_doc("abcd\r");
+    const doc = makeDoc("abcd\r");
     setattr(doc, "boxText", true);
-    expect(_composed_line_spans(doc)).toBeNull();
+    expect(_composedLineSpans(doc)).toBeNull();
   });
 
   test("test_point_text_lines_are_the_paragraphs", () => {
     // Point text never wraps; its composed lines derive from the
     // paragraph runs and stay fresh without any cache.
-    const doc = make_doc("ab\rcd\r", null, [
+    const doc = makeDoc("ab\rcd\r", null, [
       [3, new Map<string, CosNode>()],
       [3, new Map<string, CosNode>()],
     ]);
-    expect(py_eq(_composed_line_spans(doc), [[0, 3], [3, 6]])).toBe(true);
+    expect(pyEq(_composedLineSpans(doc), [[0, 3], [3, 6]])).toBe(true);
   });
 
   test("test_stale_cache_clamps_and_raises", () => {
@@ -263,33 +263,33 @@ describe("TestComposedLineSpans", () => {
         ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(5), line(4)]]])]],
       ]),
     ];
-    const doc = make_doc("ab\r", null, null, cache);
+    const doc = makeDoc("ab\r", null, null, cache);
     const first = new ComposedLineRange(doc, 0, 1);
-    expect(py_eq([first.characterStart, first.characterEnd], [0, 2])).toBe(true);
+    expect(pyEq([first.characterStart, first.characterEnd], [0, 2])).toBe(true);
     raises(ValueError, () => new ComposedLineRange(doc, 1, 2), "ComposedLine index range");
   });
 });
 
 describe("TestCharacterRangeMath", () => {
   test("test_dynamic_minus_one_end", () => {
-    const doc = make_doc("hello\r");
+    const doc = makeDoc("hello\r");
     const rng = new CharacterRange(doc, 0, -1);
     expect(rng.characterEnd).toBe(5);
-    cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
+    cosSetitem(cosItem(doc._doc, "0"), "0", "hi\r");
     expect(rng.characterEnd).toBe(2);
   });
 
   test("test_shrink_invalidates_fixed_end", () => {
-    const doc = make_doc("hello\r");
+    const doc = makeDoc("hello\r");
     const rng = new CharacterRange(doc, 0, 5);
     expect(rng.isRangeValid).toBe(true);
-    cos_setitem(cos_item(doc._doc, "0"), "0", "hi\r");
+    cosSetitem(cosItem(doc._doc, "0"), "0", "hi\r");
     expect(rng.isRangeValid).toBe(false);
     raises(ValueError, () => rng.characterStart, CHARACTER_RANGE_OOB.slice(0, 20));
   });
 
   test("test_creation_bounds", () => {
-    const doc = make_doc("hello\r");
+    const doc = makeDoc("hello\r");
     for (const [start, end] of [
       [6, 7],
       [0, 6],
@@ -303,7 +303,7 @@ describe("TestCharacterRangeMath", () => {
 
   test("test_sparse_runs_mix_with_default", () => {
     // Defensive path: a run lacking the key contributes the default.
-    const doc = make_doc("abcdef\r", [
+    const doc = makeDoc("abcdef\r", [
       [3, new Map<string, CosNode>([["2", true]])],
       [4, new Map<string, CosNode>()],
     ]);
@@ -321,18 +321,18 @@ describe("TestCharacterRangeMath", () => {
       ["99", new CosName("SimplePaint")],
       ["0", new Map<string, CosNode>([["0", 1], ["1", [1.0, 0.0, 0.0, 0.0]]])],
     ]);
-    const doc = make_doc("abcdef\r", [
+    const doc = makeDoc("abcdef\r", [
       [3, new Map<string, CosNode>([["57", false], ["54", black]])],
       [4, new Map<string, CosNode>([["57", true], ["54", red]])],
     ]);
     // Only the applyStroke run participates: uniform red, not mixed.
-    expect(py_eq(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
+    expect(pyEq(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
     // A range over non-stroked runs only reads None.
     expect(new CharacterRange(doc, 0, 3).strokeColor).toBeNull();
   });
 
   test("test_zero_span_uses_containing_run", () => {
-    const doc = make_doc("abcdef\r", [
+    const doc = makeDoc("abcdef\r", [
       [3, new Map<string, CosNode>([["1", 72.0]])],
       [4, new Map<string, CosNode>([["1", 36.0]])],
     ]);
@@ -365,27 +365,27 @@ describe("TestSpecConsistency", () => {
   test("test_rangefields_match_cosfields", () => {
     const mismatches: string[] = [];
     // vars(CharacterRange).items(): descriptors declared on the class.
-    for (const [name, field] of descriptors_of(CharacterRange)) {
+    for (const [name, field] of descriptorsOf(CharacterRange)) {
       if (!(field instanceof RangeField)) continue;
       // NOTE(port): TextDocument has no base class, so the MRO walk in get_descriptor equals TextDocument.__dict__.get(name).
-      const cos_field = get_descriptor(TextDocument, name);
-      if (!(cos_field instanceof CosField)) continue;
-      if (field.key !== cos_field.key) {
+      const cosField = getDescriptor(TextDocument, name);
+      if (!(cosField instanceof CosField)) continue;
+      if (field.key !== cosField.key) {
         mismatches.push(
-          `${name}: RangeField key ${repr(field.key)} != CosField key ${repr(cos_field.key)}`,
+          `${name}: RangeField key ${repr(field.key)} != CosField key ${repr(cosField.key)}`,
         );
       }
-      const expected_dict_attr = dict_get(KIND_TO_DICT_ATTR, field.kind);
-      if (cos_field.dictAttr !== expected_dict_attr) {
+      const expectedDictAttr = dictGet(KIND_TO_DICT_ATTR, field.kind);
+      if (cosField.dictAttr !== expectedDictAttr) {
         mismatches.push(
           `${name}: RangeField kind ${repr(field.kind)} vs CosField dict ` +
-            `${repr(cos_field.dictAttr)}`,
+            `${repr(cosField.dictAttr)}`,
         );
       }
-      if (!field.readOnly && field.validate !== cos_field.validate) {
+      if (!field.readOnly && field.validate !== cosField.validate) {
         mismatches.push(
           `${name}: RangeField validate ${repr(field.validate)} != ` +
-            `CosField validate ${repr(cos_field.validate)}`,
+            `CosField validate ${repr(cosField.validate)}`,
         );
       }
     }

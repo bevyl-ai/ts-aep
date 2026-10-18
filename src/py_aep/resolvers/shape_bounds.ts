@@ -35,7 +35,7 @@ import {
   NotImplementedError,
   ZeroDivisionError,
   deferred,
-  float_repr,
+  floatRepr,
   int,
   max,
   min,
@@ -46,7 +46,7 @@ import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
 
-const _property_group = deferred<typeof import("../models/properties/property_group.ts")>("py_aep/models/properties/property_group");
+const _propertyGroup = deferred<typeof import("../models/properties/property_group.ts")>("py_aep/models/properties/property_group");
 
 declare module "../models/properties/match_name_types.ts" {
   interface MatchNameTypes {
@@ -156,11 +156,11 @@ export class BoxAccumulator {
 
 export function _value<K extends _VectorProp>(
   group: PropertyGroup,
-  match_name: K,
+  matchName: K,
   time: number,
 ): MatchNameTypes[K] extends Property<infer V> ? V : never;
-export function _value(group: PropertyGroup, match_name: _VectorProp, time: number) {
-  return group.property(match_name).valueAtTime(time);
+export function _value(group: PropertyGroup, matchName: _VectorProp, time: number) {
+  return group.property(matchName).valueAtTime(time);
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ export function _rotation(degrees: number): Affine {
   return new Affine(Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0.0, 0.0);
 }
 
-export function _map_path(m: Affine, path: _Path): _Path {
+export function _mapPath(m: Affine, path: _Path): _Path {
   return path.map(([p0, p1, p2, p3]): _Segment => [
     m.apply(...p0),
     m.apply(...p1),
@@ -181,7 +181,7 @@ export function _map_path(m: Affine, path: _Path): _Path {
   ]);
 }
 
-export function _group_matrix(transform: PropertyGroup, time: number): Affine {
+export function _groupMatrix(transform: PropertyGroup, time: number): Affine {
   const anchor = _value(transform, "ADBE Vector Anchor", time);
   const position = _value(transform, "ADBE Vector Position", time);
   const scale = _value(transform, "ADBE Vector Scale", time);
@@ -202,7 +202,7 @@ export function _group_matrix(transform: PropertyGroup, time: number): Affine {
 // ---------------------------------------------------------------------------
 
 /** Cubic segments from vertices and handles relative to them. */
-export function _closed_path(
+export function _closedPath(
   vertices: _Point[],
   ins: _Point[],
   outs: _Point[],
@@ -225,7 +225,7 @@ export function _closed_path(
   return path;
 }
 
-export function _rect_path(item: PropertyGroup, time: number): _Path {
+export function _rectPath(item: PropertyGroup, time: number): _Path {
   const [w, h] = _value(item, "ADBE Vector Rect Size", time);
   const [x, y] = _value(item, "ADBE Vector Rect Position", time);
   const r = min([
@@ -250,7 +250,7 @@ export function _rect_path(item: PropertyGroup, time: number): _Path {
       [0.0, 0.0],
       [0.0, 0.0],
     ];
-    return _closed_path(corners, zero, zero, true);
+    return _closedPath(corners, zero, zero, true);
   }
   const k = r * _KAPPA;
   const vertices: _Point[] = [
@@ -261,10 +261,10 @@ export function _rect_path(item: PropertyGroup, time: number): _Path {
   ]; // fmt: skip
   const outs: _Point[] = [[0, 0], [k, 0], [0, 0], [0, k], [0, 0], [-k, 0], [0, 0], [0, -k]];
   const ins: _Point[] = [[-k, 0], [0, 0], [0, -k], [0, 0], [k, 0], [0, 0], [0, k], [0, 0]];
-  return _closed_path(vertices, ins, outs, true);
+  return _closedPath(vertices, ins, outs, true);
 }
 
-export function _ellipse_path(item: PropertyGroup, time: number): _Path {
+export function _ellipsePath(item: PropertyGroup, time: number): _Path {
   const [w, h] = _value(item, "ADBE Vector Ellipse Size", time);
   const [x, y] = _value(item, "ADBE Vector Ellipse Position", time);
   const rx = w / 2,
@@ -289,26 +289,26 @@ export function _ellipse_path(item: PropertyGroup, time: number): _Path {
     [kx, 0.0],
     [0.0, ky],
   ];
-  return _closed_path(vertices, ins, outs, true);
+  return _closedPath(vertices, ins, outs, true);
 }
 
-export function _polystar_path(item: PropertyGroup, time: number): _Path {
+export function _polystarPath(item: PropertyGroup, time: number): _Path {
   let points = _value(item, "ADBE Vector Star Points", time);
   if (points !== int(points)) {
     throw new NotImplementedError(
       "sourceRectAtTime does not model a polystar with a fractional " +
-        `number of points (${float_repr(points)})`,
+        `number of points (${floatRepr(points)})`,
     );
   }
   points = int(points);
   const star = _value(item, "ADBE Vector Star Type", time) === 1;
   const [x, y] = _value(item, "ADBE Vector Star Position", time);
   const outer = _value(item, "ADBE Vector Star Outer Radius", time);
-  const outer_round = _value(item, "ADBE Vector Star Outer Roundess", time) / 100;
+  const outerRound = _value(item, "ADBE Vector Star Outer Roundess", time) / 100;
   const inner = star ? _value(item, "ADBE Vector Star Inner Radius", time) : outer;
-  const inner_round = star
+  const innerRound = star
     ? _value(item, "ADBE Vector Star Inner Roundess", time) / 100
-    : outer_round;
+    : outerRound;
   const count = star ? points * 2 : points;
   if (points === 0) {
     throw new ZeroDivisionError("float division by zero");
@@ -320,7 +320,7 @@ export function _polystar_path(item: PropertyGroup, time: number): _Path {
   const outs: _Point[] = [];
   for (let i = 0; i < count; i++) {
     const [radius, roundness] =
-      i % 2 === 0 || !star ? [outer, outer_round] : [inner, inner_round];
+      i % 2 === 0 || !star ? [outer, outerRound] : [inner, innerRound];
     const cos = Math.cos(angle),
       sin = Math.sin(angle);
     const length = radius * roundness * handle;
@@ -330,10 +330,10 @@ export function _polystar_path(item: PropertyGroup, time: number): _Path {
     outs.push([-sin * length, cos * length]);
     angle += (2 * Math.PI) / count;
   }
-  return _closed_path(vertices, ins, outs, true);
+  return _closedPath(vertices, ins, outs, true);
 }
 
-export function _bezier_path(item: PropertyGroup, time: number): _Path {
+export function _bezierPath(item: PropertyGroup, time: number): _Path {
   const shape = item.property("ADBE Vector Shape").valueAtTime(
     time,
   );
@@ -341,7 +341,7 @@ export function _bezier_path(item: PropertyGroup, time: number): _Path {
   if (vertices.length === 0) {
     return [];
   }
-  return _closed_path(
+  return _closedPath(
     vertices,
     shape.inTangents.map((t): _Point => [t[0], t[1]]),
     shape.outTangents.map((t): _Point => [t[0], t[1]]),
@@ -350,14 +350,14 @@ export function _bezier_path(item: PropertyGroup, time: number): _Path {
 }
 
 export const _PATH_BUILDERS = new Map<string, (item: PropertyGroup, time: number) => _Path>([
-  ["ADBE Vector Shape - Rect", _rect_path],
-  ["ADBE Vector Shape - Ellipse", _ellipse_path],
-  ["ADBE Vector Shape - Star", _polystar_path],
-  ["ADBE Vector Shape - Group", _bezier_path],
+  ["ADBE Vector Shape - Rect", _rectPath],
+  ["ADBE Vector Shape - Ellipse", _ellipsePath],
+  ["ADBE Vector Shape - Star", _polystarPath],
+  ["ADBE Vector Shape - Group", _bezierPath],
 ]);
 
 /** The exact range of one cubic coordinate over `t` in `[0, 1]`. */
-export function cubic_range(a: number, b: number, c: number, d: number): [number, number] {
+export function cubicRange(a: number, b: number, c: number, d: number): [number, number] {
   let low = min([a, d]),
     high = max([a, d]);
   const qa = -a + 3 * b - 3 * c + d;
@@ -386,17 +386,17 @@ export function cubic_range(a: number, b: number, c: number, d: number): [number
   return [low, high];
 }
 
-export function _path_box(path: _Path): BoxAccumulator {
+export function _pathBox(path: _Path): BoxAccumulator {
   const box = new BoxAccumulator();
   for (const [p0, p1, p2, p3] of path) {
-    const [left, right] = cubic_range(p0[0], p1[0], p2[0], p3[0]);
-    const [top, bottom] = cubic_range(p0[1], p1[1], p2[1], p3[1]);
+    const [left, right] = cubicRange(p0[0], p1[0], p2[0], p3[0]);
+    const [top, bottom] = cubicRange(p0[1], p1[1], p2[1], p3[1]);
     box.add(left, top, right, bottom);
   }
   return box;
 }
 
-export function _stroke_reach(item: PropertyGroup, time: number): number {
+export function _strokeReach(item: PropertyGroup, time: number): number {
   let reach = _value(item, "ADBE Vector Stroke Width", time) / 2;
   if (_value(item, "ADBE Vector Stroke Line Join", time) === _MITER_JOIN) {
     reach *= _value(item, "ADBE Vector Stroke Miter Limit", time) + 1;
@@ -415,7 +415,7 @@ export function _stroke_reach(item: PropertyGroup, time: number): number {
 export function _walk(
   contents: PropertyGroup,
   time: number,
-  to_layer: Affine,
+  toLayer: Affine,
   geometry: BoxAccumulator,
   extents: BoxAccumulator,
 ): _Path[] {
@@ -427,34 +427,34 @@ export function _walk(
     if (!item.enabled) {
       continue;
     }
-    const match_name = item.matchName;
+    const matchName = item.matchName;
     // Every match name dispatched below names a group (see MatchNameTypes).
-    const group = item instanceof _property_group().PropertyGroup ? item : null;
-    const path_builder = _PATH_BUILDERS.get(match_name);
-    if (match_name === "ADBE Vector Group" && group != null) {
-      const local = _group_matrix(
+    const group = item instanceof _propertyGroup().PropertyGroup ? item : null;
+    const pathBuilder = _PATH_BUILDERS.get(matchName);
+    if (matchName === "ADBE Vector Group" && group != null) {
+      const local = _groupMatrix(
         group.property("ADBE Vector Transform Group"),
         time,
       );
       const children = _walk(
         group.property("ADBE Vectors Group"),
         time,
-        to_layer.multiply(local),
+        toLayer.multiply(local),
         geometry,
         extents,
       );
       for (const path of children) {
-        pending.push(_map_path(local, path));
+        pending.push(_mapPath(local, path));
       }
-    } else if (path_builder !== undefined && group != null) {
-      pending.push(path_builder(group, time));
-    } else if (_FILLS.has(match_name) || _STROKES.has(match_name)) {
-      const reach = _STROKES.has(match_name) && group != null
-        ? _stroke_reach(group, time)
+    } else if (pathBuilder !== undefined && group != null) {
+      pending.push(pathBuilder(group, time));
+    } else if (_FILLS.has(matchName) || _STROKES.has(matchName)) {
+      const reach = _STROKES.has(matchName) && group != null
+        ? _strokeReach(group, time)
         : null;
       for (const path of pending.slice(painted)) {
         if (path?.length > 0) {
-          geometry.add_box(_path_box(_map_path(to_layer, path)));
+          geometry.add_box(_pathBox(_mapPath(toLayer, path)));
         }
       }
       painted = pending.length;
@@ -463,14 +463,14 @@ export function _walk(
       }
       for (const path of pending) {
         if (path?.length > 0) {
-          const local_box = _path_box(path);
+          const localBox = _pathBox(path);
           const corners: _Point[] = [
-            [local_box.left - reach, local_box.top - reach],
-            [local_box.right + reach, local_box.top - reach],
-            [local_box.right + reach, local_box.bottom + reach],
-            [local_box.left - reach, local_box.bottom + reach],
+            [localBox.left - reach, localBox.top - reach],
+            [localBox.right + reach, localBox.top - reach],
+            [localBox.right + reach, localBox.bottom + reach],
+            [localBox.left - reach, localBox.bottom + reach],
           ];
-          const mapped = corners.map((corner) => to_layer.apply(...corner));
+          const mapped = corners.map((corner) => toLayer.apply(...corner));
           extents.add(
             min(mapped.map((p) => p[0])),
             min(mapped.map((p) => p[1])),
@@ -479,7 +479,7 @@ export function _walk(
           );
         }
       }
-    } else if (match_name.startsWith("ADBE Vector Filter") && !_BOX_NEUTRAL_FILTERS.has(match_name)) {
+    } else if (matchName.startsWith("ADBE Vector Filter") && !_BOX_NEUTRAL_FILTERS.has(matchName)) {
       throw new NotImplementedError(
         `sourceRectAtTime does not model the ${repr(item.name)} path operation`,
       );
@@ -498,16 +498,16 @@ export function _walk(
  * @throws NotImplementedError For a path operation other than Trim Paths
  *   and Repeater, or a polystar with a fractional number of points.
  */
-export function shape_layer_rect(
+export function shapeLayerRect(
   root: PropertyGroup,
   time: number,
   extents: boolean,
 ): { top: number; left: number; width: number; height: number } {
   const geometry = new BoxAccumulator();
-  const stroke_boxes = new BoxAccumulator();
-  _walk(root, time, IDENTITY, geometry, stroke_boxes);
+  const strokeBoxes = new BoxAccumulator();
+  _walk(root, time, IDENTITY, geometry, strokeBoxes);
   if (extents) {
-    geometry.add_box(stroke_boxes);
+    geometry.add_box(strokeBoxes);
   }
   return geometry.rect();
 }

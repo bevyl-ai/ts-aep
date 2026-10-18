@@ -80,18 +80,18 @@ export const _OVERRIDES: Map<number, number> = new Map<number, number>([
  *
  * @param raw - The string object read from the PDF.
  */
-export function decode_pdf_text_string(raw: Uint8Array | string | CosString): string {
+export function decodePdfTextString(raw: Uint8Array | string | CosString): string {
   if (raw instanceof Uint8Array) {
-    return _from_bytes(raw);
+    return _fromBytes(raw);
   }
   if (raw instanceof CosString && raw.cos_raw != null) {
-    return _from_bytes(raw.cos_raw);
+    return _fromBytes(raw.cos_raw);
   }
   // A decoded CosString passes through with its text.
   return String(raw);
 }
 
-export function _from_bytes(raw: Uint8Array): string {
+export function _fromBytes(raw: Uint8Array): string {
   // Latin-1 maps every byte to the same code point, and `str.translate`
   // leaves the ones absent from the table alone - which is exactly the
   // passthrough the other 215 bytes need.

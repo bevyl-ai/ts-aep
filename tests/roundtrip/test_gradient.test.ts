@@ -4,12 +4,12 @@ import { expect, test } from "bun:test";
 
 import { parse } from "../../src/py_aep/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../../src/py_aep/models/properties/gradient.ts";
-import { parse_gradient_xml } from "../../src/py_aep/parsers/gradient.ts";
-import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { hasattr, py_eq, StopIteration } from "../../src/pyrt/index.ts";
+import { parseGradientXml } from "../../src/py_aep/parsers/gradient.ts";
+import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { hasattr, pyEq, StopIteration } from "../../src/pyrt/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import type { Item } from "../../src/py_aep/models/items/item.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const SAMPLE = "samples/models/property/gradient.aep";
 const SAMPLE_XML = `<prop.map version="4">
@@ -215,24 +215,24 @@ const DEFAULT_AE_GRADIENT_XML =
  * takes a local `gradient_comp` holding this fixture's return value.
  * Tests call it at the top instead of receiving it as a parameter.
  */
-function gradient_comp_fixture(): CompItem {
+function gradientCompFixture(): CompItem {
   const app = parse(SAMPLE);
-  return next_with_layers(app.project.items.values());
+  return nextWithLayers(app.project.items.values());
 }
 
 /** `next(v for v in items if hasattr(v, "layers"))`. */
-function next_with_layers(values: Iterable<Item>): CompItem {
+function nextWithLayers(values: Iterable<Item>): CompItem {
   for (const v of values) {
-    if (hasattr(v, "layers")) return as_instance(v, CompItem);
+    if (hasattr(v, "layers")) return asInstance(v, CompItem);
   }
   throw new StopIteration();
 }
 
 test("test_gradient_value_write_through", () => {
   /** Mutating a Gradient auto-serializes to the Utf8 chunk. */
-  const gradient_comp = gradient_comp_fixture();
+  const gradientComp = gradientCompFixture();
 
-  const layer = gradient_comp.layers[0];
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
@@ -253,15 +253,15 @@ test("test_gradient_value_write_through", () => {
   ];
 
   // Re-read from the Utf8 chunk to confirm write-through
-  const reparsed = parse_gradient_xml(gradient._utf8);
-  expect(py_eq(reparsed, gradient)).toBe(true);
+  const reparsed = parseGradientXml(gradient._utf8);
+  expect(pyEq(reparsed, gradient)).toBe(true);
 });
 
 test("test_gradient_binary_roundtrip", () => {
   /** Modified gradient survives a full binary roundtrip. */
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   const app = parse(SAMPLE);
-  const comp = next_with_layers(app.project.items.values());
+  const comp = nextWithLayers(app.project.items.values());
   const layer = comp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
@@ -280,11 +280,11 @@ test("test_gradient_binary_roundtrip", () => {
   ];
 
   // Save and re-parse
-  const out = tmp_path.div("roundtrip.aep");
+  const out = tmpPath.div("roundtrip.aep");
   app.project.save(out);
 
   const app2 = parse(out);
-  const comp2 = next_with_layers(app2.project.items.values());
+  const comp2 = nextWithLayers(app2.project.items.values());
   const layer2 = comp2.layers[0];
   const contents2 = layer2.property("ADBE Root Vectors Group");
   const gfill2 = contents2.property("ADBE Vector Graphic - G-Fill");
@@ -296,42 +296,42 @@ test("test_gradient_binary_roundtrip", () => {
 
 test("test_gradient_add_color_stop_serializes", () => {
   /** Adding a stop via add_color_stop auto-serializes. */
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
 
   const gradient = colors.value;
   expect(gradient instanceof Gradient).toBe(true);
-  const original_count = gradient.colorStops.length;
+  const originalCount = gradient.colorStops.length;
 
   gradient.addColorStop(0.5, 0.5, [1.0, 1.0, 0.0]);
 
   // Re-parse from utf8 to confirm serialization
-  const reparsed = parse_gradient_xml(gradient._utf8);
+  const reparsed = parseGradientXml(gradient._utf8);
   expect(reparsed != null).toBe(true);
   if (reparsed == null) throw new Error("gradient XML did not reparse");
-  expect(reparsed.colorStops.length).toBe(original_count + 1);
+  expect(reparsed.colorStops.length).toBe(originalCount + 1);
 });
 
 test("test_gradient_remove_color_stop_serializes", () => {
   /** Removing a stop via remove_color_stop auto-serializes. */
-  const gradient_comp = gradient_comp_fixture();
-  const layer = gradient_comp.layers[0];
+  const gradientComp = gradientCompFixture();
+  const layer = gradientComp.layers[0];
   const contents = layer.property("ADBE Root Vectors Group");
   const gfill = contents.property("ADBE Vector Graphic - G-Fill");
   const colors = gfill.property("ADBE Vector Grad Colors");
 
   const gradient = colors.value;
   expect(gradient instanceof Gradient).toBe(true);
-  const original_count = gradient.colorStops.length;
+  const originalCount = gradient.colorStops.length;
 
   gradient.removeColorStop(0);
 
-  expect(gradient.colorStops.length).toBe(original_count - 1);
-  const reparsed = parse_gradient_xml(gradient._utf8);
+  expect(gradient.colorStops.length).toBe(originalCount - 1);
+  const reparsed = parseGradientXml(gradient._utf8);
   expect(reparsed != null).toBe(true);
   if (reparsed == null) throw new Error("gradient XML did not reparse");
-  expect(reparsed.colorStops.length).toBe(original_count - 1);
+  expect(reparsed.colorStops.length).toBe(originalCount - 1);
 });

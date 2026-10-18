@@ -9,9 +9,9 @@
  */
 
 import { expect, test } from "bun:test";
-import { as_instance, parse_app, SAMPLES_DIR } from "../helpers.ts";
+import { asInstance, parseApp, SAMPLES_DIR } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { Path, py_eq, sorted } from "../../src/pyrt/index.ts";
+import { Path, pyEq, sorted } from "../../src/pyrt/index.ts";
 
 const _CORPUS_ROOTS = [
   SAMPLES_DIR.div("models", "format_options"),
@@ -29,11 +29,11 @@ const _CORPUS: Path[] = sorted(
 
 // pytest `ids=` are sample paths relative to SAMPLES_DIR; carried as the `%s` row label.
 const _SAMPLES_PREFIX = `${String(SAMPLES_DIR)}/`;
-test.each(_CORPUS.map((p) => [String(p).slice(_SAMPLES_PREFIX.length), p] as const))("test_ae_written_state_passes_our_tables[%s]", (_id: string, aep_path: Path) => {
-  const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+test.each(_CORPUS.map((p) => [String(p).slice(_SAMPLES_PREFIX.length), p] as const))("test_ae_written_state_passes_our_tables[%s]", (_id: string, aepPath: Path) => {
+  const app = parseApp(aepPath);
+  for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
     for (const om of rqi.outputModules) {
-      expect(py_eq(om.validateState(), [])).toBe(true);
+      expect(pyEq(om.validateState(), [])).toBe(true);
     }
   }
 });

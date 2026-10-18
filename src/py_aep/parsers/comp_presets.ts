@@ -13,8 +13,8 @@
  */
 
 import { CompPresetItem } from "../binary/composition_chunks.ts";
-import { PrefsFile, decode_pref_string, parse_hex_value } from "./prefs.ts";
-import { getitem, py_assert, sorted } from "../../pyrt/index.ts";
+import { PrefsFile, decodePrefString, parseHexValue } from "./prefs.ts";
+import { getitem, pyAssert, sorted } from "../../pyrt/index.ts";
 
 export const _NAMES_SECTION = "Composition Preset Names Section v11";
 export const _PRESETS_SECTION = "Composition Presets Section v11";
@@ -38,12 +38,12 @@ export class CompPreset {
   pixelAspect: number;
   frameRate: number;
 
-  constructor(name: string, width: number, height: number, pixel_aspect: number, frame_rate: number) {
+  constructor(name: string, width: number, height: number, pixelAspect: number, frameRate: number) {
     this.name = name;
     this.width = width;
     this.height = height;
-    this.pixelAspect = pixel_aspect;
-    this.frameRate = frame_rate;
+    this.pixelAspect = pixelAspect;
+    this.frameRate = frameRate;
   }
 }
 
@@ -52,18 +52,18 @@ export class CompPreset {
  *
  * Menu separators (`"-"` names, all-zero entries) are skipped.
  */
-export function parse_comp_presets(prefs_file: PrefsFile): CompPreset[] {
-  const names = prefs_file.section(_NAMES_SECTION);
-  const entries = prefs_file.section(_PRESETS_SECTION);
+export function parseCompPresets(prefsFile: PrefsFile): CompPreset[] {
+  const names = prefsFile.section(_NAMES_SECTION);
+  const entries = prefsFile.section(_PRESETS_SECTION);
   const presets: CompPreset[] = [];
   for (const key of sorted(entries.keys())) {
-    const raw_name = names.get(key) ?? null;
-    if (raw_name == null) continue;
-    const name = decode_pref_string(raw_name);
-    const data = parse_hex_value(getitem(entries, key));
+    const rawName = names.get(key) ?? null;
+    if (rawName == null) continue;
+    const name = decodePrefString(rawName);
+    const data = parseHexValue(getitem(entries, key));
     if (name === "-" || data.length !== _PRESET_SIZE) continue;
     const item = CompPresetItem.frombytes(data);
-    py_assert(item instanceof CompPresetItem);
+    pyAssert(item instanceof CompPresetItem);
     if (item.width === 0 || item.pixel_aspect_divisor === 0) continue;
     presets.push(
       new CompPreset(

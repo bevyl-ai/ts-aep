@@ -24,10 +24,10 @@ import {
   struct,
 } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
-import { MAC_EPOCH_OFFSET, read_bytes, to_dividend_divisor, to_fixed_16_16, truncate_utf8 } from "./bin_utils.ts";
+import { MAC_EPOCH_OFFSET, readBytes, toDividendDivisor, toFixed1616, truncateUtf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { ascii_field, bool_field, bytes_field, f4_field, f8_field, s2_field, s4_field, str_field, u1_field, u2_field, u4_field, u8_field } from "./fmt_field.ts";
+import { asciiField, boolField, bytesField, f4Field, f8Field, s2Field, s4Field, strField, u1Field, u2Field, u4Field, u8Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { CineonRoptChunk } from "./render_chunks.ts";
 
@@ -245,7 +245,7 @@ export class SspcChunk extends Chunk {
   }
 
   set native_frame_rate(value: number) {
-    [this.native_frame_rate_integer, this.native_frame_rate_fractional] = to_fixed_16_16(value);
+    [this.native_frame_rate_integer, this.native_frame_rate_fractional] = toFixed1616(value);
     this._update_display_frame_rate();
   }
 
@@ -255,7 +255,7 @@ export class SspcChunk extends Chunk {
   }
 
   set conform_frame_rate(value: number) {
-    [this.conform_frame_rate_integer, this.conform_frame_rate_fractional] = to_fixed_16_16(value);
+    [this.conform_frame_rate_integer, this.conform_frame_rate_fractional] = toFixed1616(value);
     this._update_display_frame_rate();
   }
 
@@ -269,7 +269,7 @@ export class SspcChunk extends Chunk {
    * importer records the display window).
    */
   get source_modified(): number {
-    const stamp = bytes_.int_from_bytes(bytes_.slice(this._source_stamp, 2, 6), "big");
+    const stamp = bytes_.intFromBytes(bytes_.slice(this._source_stamp, 2, 6), "big");
     return stamp ? stamp - MAC_EPOCH_OFFSET : 0;
   }
 
@@ -278,7 +278,7 @@ export class SspcChunk extends Chunk {
     // int.to_bytes raises OverflowError (not ValueError) when the value does not fit
     if (stamp < 0) throw new OverflowError("can't convert negative int to unsigned");
     if (stamp >= 2 ** 32) throw new OverflowError("int too big to convert");
-    this._source_stamp = concat(b("\x00\x00"), bytes_.int_to_bytes(stamp, 4, "big"), bytes_.repeat(b("\x00"), 3));
+    this._source_stamp = concat(b("\x00\x00"), bytes_.intToBytes(stamp, 4, "big"), bytes_.repeat(b("\x00"), 3));
   }
 
   /** Duration in seconds (dividend / divisor). */
@@ -290,7 +290,7 @@ export class SspcChunk extends Chunk {
   }
 
   set duration(value: number) {
-    [this.duration_dividend, this.duration_divisor] = to_dividend_divisor(value);
+    [this.duration_dividend, this.duration_divisor] = toDividendDivisor(value);
   }
 
   /** Pixel aspect ratio (dividend / divisor). */
@@ -302,7 +302,7 @@ export class SspcChunk extends Chunk {
   }
 
   set pixel_aspect(value: number) {
-    [this.pixel_aspect_dividend, this.pixel_aspect_divisor] = to_dividend_divisor(value);
+    [this.pixel_aspect_dividend, this.pixel_aspect_divisor] = toDividendDivisor(value);
   }
 
   /** Premultiply color as [R, G, B] in 0.0-1.0 range. */
@@ -357,7 +357,7 @@ export class SspcChunk extends Chunk {
   }
 
   set display_frame_rate(value: number) {
-    [this.display_frame_rate_integer, this.display_frame_rate_fractional] = to_fixed_16_16(value);
+    [this.display_frame_rate_integer, this.display_frame_rate_fractional] = toFixed1616(value);
   }
 
   /** Recompute and store display_frame_rate from current settings. */
@@ -372,113 +372,113 @@ define(SspcChunk, {
   chunk_type: field({ default: "sspc" }),
 
   // -- Reserved (bytes 0-21) ---------------------------------------------
-  _reserved_00: bytes_field(22, { repr: false }),
+  _reserved_00: bytesField(22, { repr: false }),
 
   // -- Source format (bytes 22-31) ---------------------------------------
-  source_format_type: ascii_field(4),
+  source_format_type: asciiField(4),
 
-  _reserved_1a: bytes_field(6, { repr: false }),
+  _reserved_1a: bytesField(6, { repr: false }),
 
   // -- Dimensions / duration (bytes 32-45) -------------------------------
-  width: u2_field(),
-  _reserved_22: bytes_field(2, { repr: false }),
-  height: u2_field(),
-  duration_dividend: u4_field({ default: 1 }),
-  duration_divisor: u4_field({ default: 1 }),
+  width: u2Field(),
+  _reserved_22: bytesField(2, { repr: false }),
+  height: u2Field(),
+  duration_dividend: u4Field({ default: 1 }),
+  duration_divisor: u4Field({ default: 1 }),
 
   // -- Frame rate (bytes 46-68) ------------------------------------------
-  _reserved_2e: bytes_field(6, { repr: false }),
-  _time_base: u2_field({ default: 600 }),
-  _reserved_36: bytes_field(2, { repr: false }),
-  native_frame_rate_integer: u4_field(),
-  native_frame_rate_fractional: u2_field(),
-  depth: s2_field(),
+  _reserved_2e: bytesField(6, { repr: false }),
+  _time_base: u2Field({ default: 600 }),
+  _reserved_36: bytesField(2, { repr: false }),
+  native_frame_rate_integer: u4Field(),
+  native_frame_rate_fractional: u2Field(),
+  depth: s2Field(),
 
-  _reserved_40: bytes_field(2, { repr: false }),
+  _reserved_40: bytesField(2, { repr: false }),
 
-  _reserved_42: bytes_field(3, { repr: false }),
+  _reserved_42: bytesField(3, { repr: false }),
 
   // -- Alpha flags (byte 69) ---------------------------------------------
-  _alpha_flags: u1_field({ repr: false }),
+  _alpha_flags: u1Field({ repr: false }),
 
   // -- Premul color / alpha mode (bytes 70-73) ---------------------------
-  premul_color_r: u1_field(),
-  premul_color_g: u1_field(),
-  premul_color_b: u1_field(),
-  alpha_mode_raw: u1_field(),
+  premul_color_r: u1Field(),
+  premul_color_g: u1Field(),
+  premul_color_b: u1Field(),
+  alpha_mode_raw: u1Field(),
 
   // -- Field separation (bytes 74-87) ------------------------------------
-  _reserved_4a: bytes_field(5, { repr: false }),
+  _reserved_4a: bytesField(5, { repr: false }),
 
-  from_file: bool_field(),
+  from_file: boolField(),
 
-  _reserved_50: bytes_field(3, { repr: false }),
-  field_separation_type_raw: u1_field(),
+  _reserved_50: bytesField(3, { repr: false }),
+  field_separation_type_raw: u1Field(),
 
-  _reserved_54: bytes_field(3, { repr: false }),
+  _reserved_54: bytesField(3, { repr: false }),
 
-  field_order: u1_field(),
+  field_order: u1Field(),
 
   // -- Reserved / footage state (bytes 88-128) ---------------------------
-  _reserved_58: bytes_field(17, { repr: false }),
-  _is_synthetic_a: u1_field({ default: 1, repr: false }),
-  _reserved_6b: bytes_field(3, { repr: false }),
-  _is_synthetic_b: u1_field({ default: 1, repr: false }),
-  _reserved_6e: bytes_field(2, { repr: false }),
-  _flags_70: u1_field({ repr: false }),
+  _reserved_58: bytesField(17, { repr: false }),
+  _is_synthetic_a: u1Field({ default: 1, repr: false }),
+  _reserved_6b: bytesField(3, { repr: false }),
+  _is_synthetic_b: u1Field({ default: 1, repr: false }),
+  _reserved_6e: bytesField(2, { repr: false }),
+  _flags_70: u1Field({ repr: false }),
 
-  _reserved_71: bytes_field(2, { repr: false }),
-  _flags_73: u1_field({ repr: false }),
+  _reserved_71: bytesField(2, { repr: false }),
+  _flags_73: u1Field({ repr: false }),
 
-  _source_stamp: bytes_field(9, { repr: false }),
+  _source_stamp: bytesField(9, { repr: false }),
 
-  _depth_flag: u1_field({ default: 0x0c, repr: false }),
+  _depth_flag: u1Field({ default: 0x0c, repr: false }),
 
   // -- Loop / pixel ratio (bytes 126-146) --------------------------------
-  loop: u4_field({ default: 1 }),
+  loop: u4Field({ default: 1 }),
 
-  _reserved_82: bytes_field(4, { repr: false }),
-  _is_synthetic_c: u1_field({ default: 1, repr: false }),
-  _reserved_87: bytes_field(1, { repr: false }),
-  pixel_aspect_dividend: u4_field({ default: 1 }),
-  pixel_aspect_divisor: u4_field({ default: 1 }),
-  _reserved_90: bytes_field(3, { repr: false }),
+  _reserved_82: bytesField(4, { repr: false }),
+  _is_synthetic_c: u1Field({ default: 1, repr: false }),
+  _reserved_87: bytesField(1, { repr: false }),
+  pixel_aspect_dividend: u4Field({ default: 1 }),
+  pixel_aspect_divisor: u4Field({ default: 1 }),
+  _reserved_90: bytesField(3, { repr: false }),
 
   // -- Pulldown / conform (bytes 147-158) --------------------------------
-  _remove_pulldown_value: u1_field({ repr: false }),
+  _remove_pulldown_value: u1Field({ repr: false }),
 
-  conform_frame_rate_integer: u2_field(),
+  conform_frame_rate_integer: u2Field(),
 
-  conform_frame_rate_fractional: u2_field(),
-  display_frame_rate_integer: u2_field(),
-  display_frame_rate_fractional: u2_field(),
-  _reserved_9c: bytes_field(3, { repr: false }),
-  _flags_9f: u1_field({ repr: false }),
+  conform_frame_rate_fractional: u2Field(),
+  display_frame_rate_integer: u2Field(),
+  display_frame_rate_fractional: u2Field(),
+  _reserved_9c: bytesField(3, { repr: false }),
+  _flags_9f: u1Field({ repr: false }),
 
   // -- Audio / sequence (bytes 160-183) ----------------------------------
-  audio_sample_rate: f8_field(),
+  audio_sample_rate: f8Field(),
 
-  _reserved_a8: bytes_field(4, { repr: false }),
-  start_frame: u4_field(),
-  end_frame: u4_field(),
-  frame_padding: u4_field(),
+  _reserved_a8: bytesField(4, { repr: false }),
+  start_frame: u4Field(),
+  end_frame: u4Field(),
+  frame_padding: u4Field(),
 
   // -- Extended settings (bytes 184-221) ---------------------------------
-  _reserved_b8: bytes_field(1, { repr: false }),
-  frame_range_set: bool_field(),
+  _reserved_b8: bytesField(1, { repr: false }),
+  frame_range_set: boolField(),
 
-  _reserved_ba: bytes_field(2, { repr: false }),
-  layer_id: u4_field({ default: 0xffffffff }),
+  _reserved_ba: bytesField(2, { repr: false }),
+  layer_id: u4Field({ default: 0xffffffff }),
 
-  layer_index: u4_field({ default: 0xffffffff }),
+  layer_index: u4Field({ default: 0xffffffff }),
 
-  _reserved_c4: bytes_field(3, { repr: false }),
-  full_frame: bool_field(),
+  _reserved_c4: bytesField(3, { repr: false }),
+  full_frame: boolField(),
 
-  _reserved_c8: bytes_field(2, { repr: false }),
-  _reserved_ca: bytes_field(2, { repr: false }),
-  data_size: u8_field(),
-  _reserved_d4: bytes_field(10, { default: concat(b("\x01"), bytes_.repeat(b("\x00"), 9)), repr: false }),
+  _reserved_c8: bytesField(2, { repr: false }),
+  _reserved_ca: bytesField(2, { repr: false }),
+  data_size: u8Field(),
+  _reserved_d4: bytesField(10, { default: concat(b("\x01"), bytes_.repeat(b("\x00"), 9)), repr: false }),
 });
 
 // -- BitField descriptors (not attrs fields) -------------------------------
@@ -510,15 +510,15 @@ register("sspc")(SspcChunk);
  * **Note:** TIFF sequences use `build_tiff_opti_data` instead (AE 2026
  * measured); PSD sequences use an empty opti via `PsdOptiChunk`.
  *
- * @param source_format - 4-char `sspc` source-format code.
+ * @param sourceFormat - 4-char `sspc` source-format code.
  * @param kw - Keyword arguments:
  * - `sequence`: `true` for an image sequence.
  */
-export function build_generic_opti_data(source_format: string, kw: { sequence?: boolean } = {}): Uint8Array {
+export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: boolean } = {}): Uint8Array {
   const { sequence = false } = kw;
-  const code = bytes_.ljust(bytes_.slice(encode(source_format, "ascii"), 0, 4), 4, 0x20);
+  const code = bytes_.ljust(bytes_.slice(encode(sourceFormat, "ascii"), 0, 4), 4, 0x20);
   let block: Uint8Array;
-  if (sequence && ["IMIO", "STIL"].includes(source_format)) {
+  if (sequence && ["IMIO", "STIL"].includes(sourceFormat)) {
     block = bytes_.repeat(b("\x00"), 16);
   } else {
     block = concat(Uint8Array.from(code).reverse(), b("\xff\xff\xff\xff"), bytes_.repeat(b("\x00"), 4), b("\x01\x00\x00\x00"));
@@ -545,19 +545,19 @@ export function build_generic_opti_data(source_format: string, kw: { sequence?: 
  *
  * @param width - Image width in pixels.
  * @param height - Image height in pixels.
- * @param bit_depth - Bits per sample (1 for a bilevel image).
+ * @param bitDepth - Bits per sample (1 for a bilevel image).
  * @param channels - Colour channels, plus one for an alpha sample or Photoshop layer data
  *   (`MediaInfo.pixel_channels`).
- * @param color_mode - The Photoshop colour mode the image reads as (`MediaInfo.color_mode`).
- * @param layer_count - The layer count AE records (see `FileSource`'s `_opti_data`).
+ * @param colorMode - The Photoshop colour mode the image reads as (`MediaInfo.color_mode`).
+ * @param layerCount - The layer count AE records (see `FileSource`'s `_opti_data`).
  */
-export function build_tiff_opti_data(
+export function buildTiffOptiData(
   width: number,
   height: number,
-  bit_depth: number,
+  bitDepth: number,
   channels: number,
-  color_mode: number,
-  layer_count: number,
+  colorMode: number,
+  layerCount: number,
 ): Uint8Array {
   const chunk = new PsdOptiChunk({
     asset_type: "TIF ",
@@ -565,9 +565,9 @@ export function build_tiff_opti_data(
     psd_channels: channels,
     psd_canvas_width: width,
     psd_canvas_height: height,
-    psd_bit_depth: bit_depth,
-    psd_color_mode: color_mode,
-    psd_layer_count: layer_count,
+    psd_bit_depth: bitDepth,
+    psd_color_mode: colorMode,
+    psd_layer_count: layerCount,
   });
   chunk.psd_group_name = "";
   return chunk.tobytes();
@@ -583,27 +583,27 @@ export function build_tiff_opti_data(
  *
  * @param width - Full PSD canvas width in pixels.
  * @param height - Full PSD canvas height in pixels.
- * @param bit_depth - Bits per channel (1, 8, 16, or 32).
+ * @param bitDepth - Bits per channel (1, 8, 16, or 32).
  * @param channels - The document's colour channels, plus one when it has alpha
  *   (`MediaInfo.pixel_channels`).
- * @param color_mode - The document's Photoshop colour mode.
- * @param layer_count - Number of layers in the PSD (0 for a flattened one).
+ * @param colorMode - The document's Photoshop colour mode.
+ * @param layerCount - Number of layers in the PSD (0 for a flattened one).
  */
-export function build_psd_opti_data(
+export function buildPsdOptiData(
   width: number,
   height: number,
-  bit_depth: number,
+  bitDepth: number,
   channels: number,
-  color_mode: number,
-  layer_count: number,
+  colorMode: number,
+  layerCount: number,
 ): Uint8Array {
   const chunk = new PsdOptiChunk({
     psd_channels: channels,
     psd_canvas_width: width,
     psd_canvas_height: height,
-    psd_bit_depth: bit_depth,
-    psd_color_mode: color_mode,
-    psd_layer_count: layer_count,
+    psd_bit_depth: bitDepth,
+    psd_color_mode: colorMode,
+    psd_layer_count: layerCount,
   });
   chunk.psd_group_name = "";
   return chunk.tobytes();
@@ -620,15 +620,15 @@ export function build_psd_opti_data(
  *
  * @param width - Canvas width in pixels.
  * @param height - Canvas height in pixels.
- * @param bit_depth - Bits per channel.
+ * @param bitDepth - Bits per channel.
  * @param channels - The document's channel count (3 for RGB).
  * @param kw - Keyword arguments:
  * - `color_mode`: The document's Photoshop colour mode (3 = RGB).
  */
-export function build_psd_flattened_opti_data(
+export function buildPsdFlattenedOptiData(
   width: number,
   height: number,
-  bit_depth: number,
+  bitDepth: number,
   channels: number,
   kw: { color_mode?: number } = {},
 ): Uint8Array {
@@ -638,7 +638,7 @@ export function build_psd_flattened_opti_data(
     psd_channels: channels,
     psd_canvas_width: width,
     psd_canvas_height: height,
-    psd_bit_depth: bit_depth,
+    psd_bit_depth: bitDepth,
     psd_color_mode: color_mode,
     psd_layer_count: 0,
   });
@@ -678,16 +678,16 @@ export function build_psd_flattened_opti_data(
  * `COMP`/`COMP_CROPPED_LAYERS` import of `8bits.psd`/`.psb` and a margined
  * 3-layer PSD.
  *
- * @param canvas_width - Full document width in pixels.
- * @param canvas_height - Full document height in pixels.
- * @param bit_depth - Bits per channel.
- * @param layer_count - Total layers in the document.
- * @param layer_index - 0-based document index of this layer (bottom first).
- * @param layer_id - Photoshop layer id (`lyid`).
- * @param layer_name - Layer name.
+ * @param canvasWidth - Full document width in pixels.
+ * @param canvasHeight - Full document height in pixels.
+ * @param bitDepth - Bits per channel.
+ * @param layerCount - Total layers in the document.
+ * @param layerIndex - 0-based document index of this layer (bottom first).
+ * @param layerId - Photoshop layer id (`lyid`).
+ * @param layerName - Layer name.
  * @param bounds - The layer's content box as `(left, top, right, bottom)`.
- * @param is_adjustment - Whether the layer is an adjustment layer.
- * @param has_vector_mask - Whether the layer has a vector mask.
+ * @param isAdjustment - Whether the layer is an adjustment layer.
+ * @param hasVectorMask - Whether the layer has a vector mask.
  * @param kw - Keyword arguments:
  * - `channels`: The document's colour channels, plus one when it has alpha
  *     (`MediaInfo.pixel_channels`); 4 for an RGB document with transparency.
@@ -695,30 +695,30 @@ export function build_psd_flattened_opti_data(
  * - `layer_channels`: The layer's channels when it is a raster layer; 4 for an RGB layer with
  *     transparency.
  */
-export function build_psd_layer_opti_data(
-  canvas_width: number,
-  canvas_height: number,
-  bit_depth: number,
-  layer_count: number,
-  layer_index: number,
-  layer_id: number,
-  layer_name: string,
+export function buildPsdLayerOptiData(
+  canvasWidth: number,
+  canvasHeight: number,
+  bitDepth: number,
+  layerCount: number,
+  layerIndex: number,
+  layerId: number,
+  layerName: string,
   bounds: [number, number, number, number],
-  is_adjustment = false,
-  has_vector_mask = false,
+  isAdjustment = false,
+  hasVectorMask = false,
   kw: { channels?: number; color_mode?: number; layer_channels?: number } = {},
 ): Uint8Array {
   const { channels = 4, color_mode = 3, layer_channels = 4 } = kw;
   const [left, top, right, bottom] = bounds;
   const chunk = new PsdOptiChunk({
-    psd_vector_or_merged: has_vector_mask,
-    psd_layer_index: layer_index,
+    psd_vector_or_merged: hasVectorMask,
+    psd_layer_index: layerIndex,
     psd_channels: channels,
-    psd_canvas_width: canvas_width,
-    psd_canvas_height: canvas_height,
-    psd_bit_depth: bit_depth,
+    psd_canvas_width: canvasWidth,
+    psd_canvas_height: canvasHeight,
+    psd_bit_depth: bitDepth,
     psd_color_mode: color_mode,
-    psd_layer_count: Math.max(layer_count, 1),
+    psd_layer_count: Math.max(layerCount, 1),
     psd_layer_top: top,
     psd_layer_left: left,
     psd_layer_bottom: bottom,
@@ -728,10 +728,10 @@ export function build_psd_layer_opti_data(
     // for an adjustment layer, which has no pixel channels
     // (grouped_layers "hue/sat adj"). AE 2026 measured; the empty content
     // box alone does NOT drop the channels.
-    psd_layer_channels: is_adjustment ? 0 : layer_channels,
-    psd_layer_id: layer_id,
+    psd_layer_channels: isAdjustment ? 0 : layer_channels,
+    psd_layer_id: layerId,
   });
-  chunk.psd_group_name = layer_name;
+  chunk.psd_group_name = layerName;
   return chunk.tobytes();
 }
 
@@ -742,7 +742,7 @@ export function build_psd_layer_opti_data(
  * render-options layout. Verified: AE 2026 media_gap_formats.aep fixture
  * writes this exact 48-byte body for every DPX and Cineon item.
  */
-export function build_dpx_opti_data(): Uint8Array {
+export function buildDpxOptiData(): Uint8Array {
   return new CineonRoptChunk().tobytes();
 }
 
@@ -762,15 +762,15 @@ export const _OEXR_OPTI_SIZE = 9750;
  * import; zeros render the same (verified against AE's own imports,
  * exr_options.aep).
  */
-export function build_exr_opti_data(compression: number, channel_names: readonly string[]): Uint8Array {
+export function buildExrOptiData(compression: number, channelNames: readonly string[]): Uint8Array {
   const layers = new Set(
-    channel_names.filter((name) => name.includes(".")).map((name) => name.slice(0, name.lastIndexOf("."))),
+    channelNames.filter((name) => name.includes(".")).map((name) => name.slice(0, name.lastIndexOf("."))),
   );
   const body = new Uint8Array(_OEXR_OPTI_SIZE);
   body.set(b("oEXR"), 0);
-  struct.pack_into(">HI", body, 4, 1, _OEXR_OPTI_SIZE);
-  struct.pack_into("<HHHHH", body, 0x0a, 1, 0, compression, 1, channel_names.length);
-  struct.pack_into("<H", body, 0x2e, channel_names.length + layers.size);
+  struct.packInto(">HI", body, 4, 1, _OEXR_OPTI_SIZE);
+  struct.packInto("<HHHHH", body, 0x0a, 1, 0, compression, 1, channelNames.length);
+  struct.packInto("<H", body, 0x2e, channelNames.length + layers.size);
   return body;
 }
 
@@ -784,7 +784,7 @@ export function build_exr_opti_data(compression: number, channel_names: readonly
  * AE's own opti carries a file-system fingerprint in the trailing 8 bytes
  * that AE re-derives on a cache miss, so it is left zero here.
  */
-export function build_rhdr_opti_data(): Uint8Array {
+export function buildRhdrOptiData(): Uint8Array {
   return concat(
     b("RHDR"),
     b("\x00\x2e"),
@@ -803,7 +803,7 @@ export function build_rhdr_opti_data(): Uint8Array {
  * base64 XMP after the header instead, which renders the same image
  * (compared frame by frame). The dimensions live in `sspc`.
  */
-export function build_craw_opti_data(): Uint8Array {
+export function buildCrawOptiData(): Uint8Array {
   return concat(b("Craw"), b("\x00\x2e"), struct.pack(">I", 30), bytes_.repeat(b("\x00"), 20));
 }
 
@@ -815,7 +815,7 @@ export function build_craw_opti_data(): Uint8Array {
  * tail, which an Illustrator/PDF document carries
  * (`build_ai_document_opti_data`). The layout lives on `TextOptiChunk`.
  */
-export function build_text_opti_data(width: number, height: number): Uint8Array {
+export function buildTextOptiData(width: number, height: number): Uint8Array {
   return new TextOptiChunk({ text_width: width, text_height: height }).tobytes();
 }
 
@@ -831,11 +831,11 @@ export function build_text_opti_data(width: number, height: number): Uint8Array 
  *
  * @param width - Page width in points.
  * @param height - Page height in points.
- * @param layer_count - How many layers the document has (0 when it has none py_aep can read, as AE
+ * @param layerCount - How many layers the document has (0 when it has none py_aep can read, as AE
  *   writes for a file without Optional Content Groups).
  */
-export function build_ai_document_opti_data(width: number, height: number, layer_count: number): Uint8Array {
-  return build_ai_layer_opti_data(width, height, "", layer_count, undefined, false);
+export function buildAiDocumentOptiData(width: number, height: number, layerCount: number): Uint8Array {
+  return buildAiLayerOptiData(width, height, "", layerCount, undefined, false);
 }
 
 /**
@@ -870,38 +870,38 @@ export function build_ai_document_opti_data(width: number, height: number, layer
  *
  * @param width - Document width in points.
  * @param height - Document height in points.
- * @param layer_name - The referenced layer's name.
- * @param layer_count - How many layers the source document has.
- * @param artwork_bounds - The layer's artwork box `(x0, y0, x1, y1)` in page points for a Layer
+ * @param layerName - The referenced layer's name.
+ * @param layerCount - How many layers the source document has.
+ * @param artworkBounds - The layer's artwork box `(x0, y0, x1, y1)` in page points for a Layer
  *   Size import; `null` keeps the full-page box (Document Size and comp imports).
  * @param visible - The layer's visibility in the source document
  *   (`resolvers.ai_layers.AiLayer.visible`).
  */
-export function build_ai_layer_opti_data(
+export function buildAiLayerOptiData(
   width: number,
   height: number,
-  layer_name: string,
-  layer_count: number,
-  artwork_bounds: [number, number, number, number] | null = null,
+  layerName: string,
+  layerCount: number,
+  artworkBounds: [number, number, number, number] | null = null,
   visible = true,
 ): Uint8Array {
   const chunk = new TextOptiChunk({
     text_width: width,
     text_height: height,
-    text_document_layers: layer_count,
+    text_document_layers: layerCount,
     text_element_count: 1,
     text_layer_visible: visible,
-    text_layer_name: decode(truncate_utf8(layer_name, 255), "utf-8"),
+    text_layer_name: decode(truncateUtf8(layerName, 255), "utf-8"),
     text_page_height: height,
     text_page_width: width,
   });
   const buf = new Uint8Array(chunk.tobytes());
-  if (artwork_bounds != null) {
+  if (artworkBounds != null) {
     // Layer Size import: overlay the layer's artwork box as four signed
     // BE 16.16 values, replacing the full-page x0/y0/x1/y1 that the typed
     // fields wrote (the fractional/offset bytes live in TextOptiChunk
     // padding, so a parse round-trip stays byte-faithful).
-    struct.pack_into(">4i", buf, 0x10, ...artwork_bounds.map((v) => round(v * 65536)));
+    struct.packInto(">4i", buf, 0x10, ...artworkBounds.map((v) => round(v * 65536)));
   }
   return buf;
 }
@@ -926,23 +926,23 @@ export class OptiChunk extends Chunk {
       return super.read(fp, size, { chunk_type }); // returns Self
     }
     if (size < 6) {
-      return new this({ chunk_type, data: read_bytes(fp, size) });
+      return new this({ chunk_type, data: readBytes(fp, size) });
     }
     // Peek at discriminator (first 4 bytes = asset_type)
-    const disc_raw = read_bytes(fp, 6);
-    const nul = bytes_.find(disc_raw, b("\x00"), 0, 4);
-    const asset_type = decode(bytes_.slice(disc_raw, 0, nul >= 0 ? nul : 4), "ascii");
-    const asset_type_int = struct.unpack(">H", bytes_.slice(disc_raw, 4, 6))[0];
+    const discRaw = readBytes(fp, 6);
+    const nul = bytes_.find(discRaw, b("\x00"), 0, 4);
+    const assetType = decode(bytes_.slice(discRaw, 0, nul >= 0 ? nul : 4), "ascii");
+    const assetTypeInt = struct.unpack(">H", bytes_.slice(discRaw, 4, 6))[0];
     fp.seek(-6, 1);
     // Placeholder: asset_type is empty but asset_type_int == 2
-    if (!asset_type && asset_type_int === 2) {
+    if (!assetType && assetTypeInt === 2) {
       return PlaceholderOptiChunk.read(fp, size, { chunk_type });
     }
-    const variant_cls = _OPTI_VARIANTS.get(asset_type) ?? OptiChunk;
-    if (variant_cls === OptiChunk) {
-      return new this({ chunk_type, data: read_bytes(fp, size) });
+    const variantCls = _OPTI_VARIANTS.get(assetType) ?? OptiChunk;
+    if (variantCls === OptiChunk) {
+      return new this({ chunk_type, data: readBytes(fp, size) });
     }
-    return variant_cls.read(fp, size, { chunk_type });
+    return variantCls.read(fp, size, { chunk_type });
   }
 }
 
@@ -983,13 +983,13 @@ export class SoliOptiChunk extends OptiChunk {
 }
 
 define(SoliOptiChunk, {
-  asset_type: ascii_field(4, { default: "Soli" }),
-  asset_type_int: u2_field({ default: 9 }),
-  _pad: bytes_field(8, { default: b("\x00\x00\x01\x1a\x3f\x80\x00\x00"), repr: false }),
-  color_r: f4_field(),
-  color_g: f4_field(),
-  color_b: f4_field(),
-  solid_name: str_field(256, { default: "", encoding: "utf-8" }),
+  asset_type: asciiField(4, { default: "Soli" }),
+  asset_type_int: u2Field({ default: 9 }),
+  _pad: bytesField(8, { default: b("\x00\x00\x01\x1a\x3f\x80\x00\x00"), repr: false }),
+  color_r: f4Field(),
+  color_g: f4Field(),
+  color_b: f4Field(),
+  solid_name: strField(256, { default: "", encoding: "utf-8" }),
 });
 
 /**
@@ -1091,49 +1091,49 @@ export class PsdOptiChunk extends OptiChunk {
   set psd_group_name(value: string) {
     // AE writes a fixed 602-byte opti: keep the trailing name block
     // NUL-padded to 258 bytes so the chunk size is preserved.
-    this._trailing = bytes_.ljust(truncate_utf8(value, 255), 258, 0);
+    this._trailing = bytes_.ljust(truncateUtf8(value, 255), 258, 0);
   }
 }
 
 define(PsdOptiChunk, {
-  asset_type: ascii_field(4, { default: "8BPS" }),
-  asset_type_int: u2_field({ default: 265 }),
-  _total_length: u4_field({ default: 602, repr: false }),
+  asset_type: asciiField(4, { default: "8BPS" }),
+  asset_type_int: u2Field({ default: 265 }),
+  _total_length: u4Field({ default: 602, repr: false }),
 
-  psd_vector_or_merged: bool_field(),
+  psd_vector_or_merged: boolField(),
 
-  _pad_0b: bytes_field(3, { default: b("\x00\x01\x01"), repr: false }),
-  psd_layer_index: u4_field({ default: 0xffffffff }),
+  _pad_0b: bytesField(3, { default: b("\x00\x01\x01"), repr: false }),
+  psd_layer_index: u4Field({ default: 0xffffffff }),
 
-  _pad_12: bytes_field(12, { default: concat(b("SPB8\x01"), bytes_.repeat(b("\x00"), 7)), repr: false }),
-  psd_channels: u1_field({ default: 4 }),
+  _pad_12: bytesField(12, { default: concat(b("SPB8\x01"), bytes_.repeat(b("\x00"), 7)), repr: false }),
+  psd_channels: u1Field({ default: 4 }),
 
-  _pad_1f: bytes_field(1, { repr: false }),
-  psd_canvas_height: u4_field({ endian: "<" }),
+  _pad_1f: bytesField(1, { repr: false }),
+  psd_canvas_height: u4Field({ endian: "<" }),
 
-  psd_canvas_width: u4_field({ endian: "<" }),
+  psd_canvas_width: u4Field({ endian: "<" }),
 
-  psd_bit_depth: u1_field({ default: 8 }),
+  psd_bit_depth: u1Field({ default: 8 }),
 
-  _pad_29: bytes_field(1, { repr: false }),
-  psd_color_mode: u1_field({ default: 3 }),
+  _pad_29: bytesField(1, { repr: false }),
+  psd_color_mode: u1Field({ default: 3 }),
 
-  _pad_2b: bytes_field(5, { repr: false }),
-  psd_layer_count: u2_field({ default: 1, endian: "<" }),
+  _pad_2b: bytesField(5, { repr: false }),
+  psd_layer_count: u2Field({ default: 1, endian: "<" }),
 
-  _pad_32: bytes_field(28, { repr: false }),
-  psd_layer_top: s4_field({ endian: "<" }),
+  _pad_32: bytesField(28, { repr: false }),
+  psd_layer_top: s4Field({ endian: "<" }),
 
-  psd_layer_left: s4_field({ endian: "<" }),
+  psd_layer_left: s4Field({ endian: "<" }),
 
-  psd_layer_bottom: s4_field({ endian: "<" }),
+  psd_layer_bottom: s4Field({ endian: "<" }),
 
-  psd_layer_right: s4_field({ endian: "<" }),
+  psd_layer_right: s4Field({ endian: "<" }),
 
-  psd_layer_channels: u1_field(),
+  psd_layer_channels: u1Field(),
 
-  _pad_5f: bytes_field(245, { repr: false }),
-  psd_layer_id: u4_field({ endian: "<" }),
+  _pad_5f: bytesField(245, { repr: false }),
+  psd_layer_id: u4Field({ endian: "<" }),
 });
 
 /**
@@ -1217,36 +1217,36 @@ export class TextOptiChunk extends OptiChunk {
 }
 
 define(TextOptiChunk, {
-  asset_type: ascii_field(4, { default: "TEXT" }),
-  asset_type_int: u2_field({ default: 8 }),
-  _total_length: u4_field({ default: 596, repr: false }),
+  asset_type: asciiField(4, { default: "TEXT" }),
+  asset_type_int: u2Field({ default: 8 }),
+  _total_length: u4Field({ default: 596, repr: false }),
 
-  _pad_0a: bytes_field(14, { repr: false }),
-  text_width: u2_field(),
+  _pad_0a: bytesField(14, { repr: false }),
+  text_width: u2Field(),
 
-  _pad_1a: bytes_field(2, { repr: false }),
-  text_height: u2_field(),
+  _pad_1a: bytesField(2, { repr: false }),
+  text_height: u2Field(),
 
-  _pad_1e: bytes_field(10, { repr: false }),
-  _pad_28: bytes_field(4, { default: b("\xff\xff\xff\xff"), repr: false }),
-  _pad_2c: bytes_field(4, { repr: false }),
-  text_document_layers: u4_field(),
+  _pad_1e: bytesField(10, { repr: false }),
+  _pad_28: bytesField(4, { default: b("\xff\xff\xff\xff"), repr: false }),
+  _pad_2c: bytesField(4, { repr: false }),
+  text_document_layers: u4Field(),
 
-  _pad_34: bytes_field(8, { repr: false }),
-  text_element_count: u1_field(),
+  _pad_34: bytesField(8, { repr: false }),
+  text_element_count: u1Field(),
 
-  text_layer_visible: bool_field(),
+  text_layer_visible: boolField(),
 
-  _pad_3e: bytes_field(6, { repr: false }),
-  text_layer_name: str_field(256),
+  _pad_3e: bytesField(6, { repr: false }),
+  text_layer_name: strField(256),
 
-  _pad_144: bytes_field(260, { repr: false }),
-  text_page_height: u2_field(),
+  _pad_144: bytesField(260, { repr: false }),
+  text_page_height: u2Field(),
 
-  _pad_24a: bytes_field(2, { repr: false }),
-  text_page_width: u2_field(),
+  _pad_24a: bytesField(2, { repr: false }),
+  text_page_width: u2Field(),
 
-  _pad_24e: bytes_field(6, { repr: false }),
+  _pad_24e: bytesField(6, { repr: false }),
 });
 
 /** Placeholder footage asset (asset_type_int=2). */
@@ -1259,10 +1259,10 @@ export class PlaceholderOptiChunk extends OptiChunk {
 }
 
 define(PlaceholderOptiChunk, {
-  asset_type: ascii_field(4, { default: "" }),
-  asset_type_int: u2_field({ default: 2 }),
-  _pad: bytes_field(4, { default: b("\x00\x00\x01\x0a"), repr: false }),
-  placeholder_name: str_field(256, { default: "", encoding: "utf-8" }),
+  asset_type: asciiField(4, { default: "" }),
+  asset_type_int: u2Field({ default: 2 }),
+  _pad: bytesField(4, { default: b("\x00\x00\x01\x0a"), repr: false }),
+  placeholder_name: strField(256, { default: "", encoding: "utf-8" }),
 });
 
 export const _OPTI_VARIANTS = new Map<string, typeof OptiChunk>([

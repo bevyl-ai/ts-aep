@@ -12,22 +12,22 @@ import {
   isclose,
   len,
   Path,
-  py_assert,
-  py_bool,
-  py_eq,
+  pyAssert,
+  pyBool,
+  pyEq,
   round,
   StopIteration,
   TypeError_,
   ValueError,
 } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { AdvancedRendererOptions, AVItem, ClassicRendererOptions, parse as parse_aep } from "../../src/py_aep/index.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { AdvancedRendererOptions, AVItem, ClassicRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
 import { GuideOrientationType, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { LdatChunk, Lhd3Chunk } from "../../src/py_aep/binary/ldat_chunks.ts";
-import { as_instance, get_comp, parse_project_fresh } from "../helpers.ts";
+import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "composition");
 const LAYER_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
@@ -45,45 +45,45 @@ describe("TestRoundtripRenderer", () => {
   /** Roundtrip tests for CompItem.renderer. */
 
   test("test_modify_renderer_to_advanced", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
     expect(comp.renderer).toBe("ADBE Advanced 3d");
 
     comp.renderer = "ADBE Calder";
-    const out = tmp_path.div("modified_renderer.aep");
+    const out = tmpPath.div("modified_renderer.aep");
     project.save(out);
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Calder");
   });
 
   test("test_modify_renderer_to_cinema_4d", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
 
     comp.renderer = "ADBE Ernst";
-    const out = tmp_path.div("modified_renderer_c4d.aep");
+    const out = tmpPath.div("modified_renderer_c4d.aep");
     project.save(out);
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Ernst");
   });
 
   test("test_modify_renderer_back_to_classic", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("renderer_advanced_3d.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("renderer_advanced_3d.aep")).project;
     const comp = at(project.compositions, 0);
     expect(comp.renderer).toBe("ADBE Calder");
 
     comp.renderer = "ADBE Advanced 3d";
-    const out = tmp_path.div("modified_renderer_classic.aep");
+    const out = tmpPath.div("modified_renderer_classic.aep");
     project.save(out);
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2.renderer).toBe("ADBE Advanced 3d");
   });
 
   test("test_renderer_validation_rejects_invalid", () => {
-    const comp = at(parse_project_fresh(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions, 0);
+    const comp = at(parseProjectFresh(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions, 0);
     raises(ValueError, () => {
       comp.renderer = "Not A Renderer";
     }, "must be one of");
@@ -98,30 +98,30 @@ describe("TestRoundtripRenderer", () => {
      * misread field-by-field (a Classic Shadow Map Resolution index
      * came back as Advanced 3D's Quality).
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
-    expect(as_instance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
+    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
 
     comp.renderer = "ADBE Calder";
-    const out = tmp_path.div("switched_renderer.aep");
+    const out = tmpPath.div("switched_renderer.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
-    expect(py_eq(comp2._prin.display_name, "Advanced 3D")).toBe(true);
+    const comp2 = at(parseAep(out).project.compositions, 0);
+    expect(pyEq(comp2._prin.display_name, "Advanced 3D")).toBe(true);
     const opts = comp2.rendererOptions;
     expect(opts instanceof AdvancedRendererOptions).toBe(true);
     // Advanced 3D defaults, not Classic leftovers read as Quality.
-    expect(as_instance(opts, AdvancedRendererOptions).quality).toBe(8);
+    expect(asInstance(opts, AdvancedRendererOptions).quality).toBe(8);
   });
 
   test("test_renderer_reassign_same_value_keeps_options", () => {
-    const project = parse_aep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
+    const project = parseAep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
 
     comp.renderer = "ADBE Advanced 3d"; // already Classic 3D
 
-    expect(as_instance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
+    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
   });
 });
 
@@ -129,11 +129,11 @@ describe("TestCompItemLazyLayerParsing", () => {
   /** Tests for deferred composition layer parsing. */
 
   test("test_layers_parsed_on_first_access", () => {
-    const comp = get_comp(parse_aep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
+    const comp = getComp(parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
 
     expect(comp._layers_loaded).toBe(false);
     expect(comp._deferred_layers != null).toBe(true);
-    py_assert(comp._deferred_layers != null);
+    pyAssert(comp._deferred_layers != null);
     expect(len(comp._deferred_layers[0])).toBe(1);
 
     // Non-layer attributes should not trigger layer parsing.
@@ -147,19 +147,19 @@ describe("TestCompItemLazyLayerParsing", () => {
   });
 
   test("test_markers_are_eager_without_loading_layers", () => {
-    const comp = get_comp(parse_aep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
+    const comp = getComp(parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project, "type_text");
 
     expect(comp._layers_loaded).toBe(false);
 
     const markers = comp.markers;
-    expect(py_eq(markers, [])).toBe(true);
+    expect(pyEq(markers, [])).toBe(true);
 
     // Reading comp markers must not force regular layer parsing.
     expect(comp._layers_loaded).toBe(false);
   });
 
   test("test_source_used_in_linking_without_layer_parse", () => {
-    const project = parse_aep(FOOTAGE_SAMPLES_DIR.div("footage_not_missing.aep")).project;
+    const project = parseAep(FOOTAGE_SAMPLES_DIR.div("footage_not_missing.aep")).project;
     const comp = at(project.compositions, 0);
 
     expect(comp._layers_loaded).toBe(false);
@@ -167,9 +167,9 @@ describe("TestCompItemLazyLayerParsing", () => {
 
     // Trigger lazy linking via used_in - source IDs are extracted
     // on-demand from DeferredListChunk raw bytes.
-    const footage_items = [...project.items.values()].filter((it) => hasattr(it, "_used_in"));
-    const linked = footage_items.filter((it) => contains(as_instance(it, AVItem).usedIn, comp));
-    expect(py_bool(linked)).toBe(true);
+    const footageItems = [...project.items.values()].filter((it) => hasattr(it, "_used_in"));
+    const linked = footageItems.filter((it) => contains(asInstance(it, AVItem).usedIn, comp));
+    expect(pyBool(linked)).toBe(true);
     expect(comp._layers_loaded).toBe(false);
   });
 });
@@ -178,17 +178,17 @@ describe("TestRoundtripBgColor", () => {
   /** Roundtrip tests for CompItem.bgColor. */
 
   test("test_modify_bg_color", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("bgColor.aep")).project;
-    const comp = get_comp(project, "bgColor_red");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("bgColor.aep")).project;
+    const comp = getComp(project, "bgColor_red");
 
     // Modify
     comp.bgColor = [0.1, 0.2, 0.3];
 
     // Save and re-parse
-    const out = tmp_path.div("modified_bg.aep");
+    const out = tmpPath.div("modified_bg.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "bgColor_red");
+    const comp2 = getComp(parseAep(out).project, "bgColor_red");
 
     expect(isclose(comp2.bgColor[0], 0.1, 1e-9, 0.005)).toBe(true);
     expect(isclose(comp2.bgColor[1], 0.2, 1e-9, 0.005)).toBe(true);
@@ -196,14 +196,14 @@ describe("TestRoundtripBgColor", () => {
   });
 
   test("test_bg_color_validation_rejects_bad_length", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
     raises(ValueError, () => {
       comp.bgColor = [0.1, 0.2];
     }, "expected 3 elements");
   });
 
   test("test_bg_color_validation_rejects_out_of_range", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
     raises(ValueError, () => {
       comp.bgColor = [1.5, 0.0, 0.0];
     }, "must be <= 1(\\.0)?");
@@ -214,33 +214,33 @@ describe("TestRoundtripFrameRate", () => {
   /** Roundtrip tests for CompItem.frameRate. */
 
   test("test_modify_frame_rate_integer", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("frameRate.aep")).project;
-    const comp = get_comp(project, "frameRate_30");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("frameRate.aep")).project;
+    const comp = getComp(project, "frameRate_30");
     expect(isclose(comp.frameRate, 30.0, 0.001)).toBe(true);
 
     comp.frameRate = 24.0;
-    const out = tmp_path.div("modified_fps.aep");
+    const out = tmpPath.div("modified_fps.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "frameRate_30");
+    const comp2 = getComp(parseAep(out).project, "frameRate_30");
     expect(isclose(comp2.frameRate, 24.0, 0.001)).toBe(true);
   });
 
   test("test_modify_frame_rate_fractional", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("frameRate.aep")).project;
-    const comp = get_comp(project, "frameRate_30");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("frameRate.aep")).project;
+    const comp = getComp(project, "frameRate_30");
 
     comp.frameRate = 29.97;
-    const out = tmp_path.div("modified_fps29.97.aep");
+    const out = tmpPath.div("modified_fps29.97.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "frameRate_30");
+    const comp2 = getComp(parseAep(out).project, "frameRate_30");
     expect(isclose(comp2.frameRate, 29.97, 0.001)).toBe(true);
   });
 
   test("test_frame_rate_validation_rejects_zero", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("frameRate.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
       "frameRate_30",
     );
     raises(ValueError, () => {
@@ -249,8 +249,8 @@ describe("TestRoundtripFrameRate", () => {
   });
 
   test("test_frame_rate_validation_rejects_too_high", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("frameRate.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
       "frameRate_30",
     );
     // AE 2026's range is 1 to 999 ("out of range 1 to 999").
@@ -264,21 +264,21 @@ describe("TestRoundtripPixelAspect", () => {
   /** Roundtrip tests for CompItem.pixelAspect. */
 
   test("test_modify_pixel_aspect", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("pixelAspect.aep")).project;
-    const comp = get_comp(project, "pixelAspect_2");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("pixelAspect.aep")).project;
+    const comp = getComp(project, "pixelAspect_2");
     expect(isclose(comp.pixelAspect, 2.0, 0.01)).toBe(true);
 
     comp.pixelAspect = 1.0;
-    const out = tmp_path.div("modified_par.aep");
+    const out = tmpPath.div("modified_par.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "pixelAspect_2");
+    const comp2 = getComp(parseAep(out).project, "pixelAspect_2");
     expect(isclose(comp2.pixelAspect, 1.0, 0.01)).toBe(true);
   });
 
   test("test_pixel_aspect_validation_rejects_invalid", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("pixelAspect.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("pixelAspect.aep")),
       "pixelAspect_2",
     );
     raises(ValueError, () => {
@@ -291,37 +291,37 @@ describe("TestRoundtripSize", () => {
   /** Roundtrip tests for CompItem.width and .height. */
 
   test("test_modify_width_and_height", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("size.aep")).project;
-    const comp = get_comp(project, "size_1920x1080");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("size.aep")).project;
+    const comp = getComp(project, "size_1920x1080");
     expect(comp.width).toBe(1920);
     expect(comp.height).toBe(1080);
 
     comp.width = 3840;
     comp.height = 2160;
-    const out = tmp_path.div("modified_size.aep");
+    const out = tmpPath.div("modified_size.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "size_1920x1080");
+    const comp2 = getComp(parseAep(out).project, "size_1920x1080");
     expect(comp2.width).toBe(3840);
     expect(comp2.height).toBe(2160);
   });
 
   test("test_width_validation_rejects_too_small", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     raises(ValueError, () => {
       comp.width = 3;
     }, "must be >= 4");
   });
 
   test("test_width_validation_rejects_too_large", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     raises(ValueError, () => {
       comp.width = 30001;
     }, "must be <= 30000");
   });
 
   test("test_width_validation_rejects_non_int", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
     raises(TypeError_, () => {
       comp.width = 1920.5;
@@ -329,14 +329,14 @@ describe("TestRoundtripSize", () => {
   });
 
   test("test_height_validation_rejects_too_small", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     raises(ValueError, () => {
       comp.height = 0;
     }, "must be >= 4");
   });
 
   test("test_height_validation_rejects_too_large", () => {
-    const comp = get_comp(parse_project_fresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     raises(ValueError, () => {
       comp.height = 30001;
     }, "must be <= 30000");
@@ -347,41 +347,41 @@ describe("TestRoundtripFlags", () => {
   /** Roundtrip tests for boolean CompItem flags. */
 
   test("test_toggle_motion_blur", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "motionBlur_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "motionBlur_true");
     expect(comp.motionBlur).toBe(true);
 
     comp.motionBlur = false;
-    const out = tmp_path.div("modified_mb.aep");
+    const out = tmpPath.div("modified_mb.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "motionBlur_true");
+    const comp2 = getComp(parseAep(out).project, "motionBlur_true");
     expect(comp2.motionBlur).toBe(false);
   });
 
   test("test_toggle_frame_blending", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "frameBlending_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "frameBlending_true");
     expect(comp.frameBlending).toBe(true);
 
     comp.frameBlending = false;
-    const out = tmp_path.div("modified_fb.aep");
+    const out = tmpPath.div("modified_fb.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "frameBlending_true");
+    const comp2 = getComp(parseAep(out).project, "frameBlending_true");
     expect(comp2.frameBlending).toBe(false);
   });
 
   test("test_toggle_hide_shy_layers", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "hideShyLayers_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "hideShyLayers_true");
     expect(comp.hideShyLayers).toBe(true);
 
     comp.hideShyLayers = false;
-    const out = tmp_path.div("modified_shy.aep");
+    const out = tmpPath.div("modified_shy.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "hideShyLayers_true");
+    const comp2 = getComp(parseAep(out).project, "hideShyLayers_true");
     expect(comp2.hideShyLayers).toBe(false);
   });
 });
@@ -390,20 +390,20 @@ describe("TestRoundtripShutter", () => {
   /** Roundtrip tests for shutter settings. */
 
   test("test_modify_shutter_angle", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("shutterAngle.aep")).project;
-    const comp = get_comp(project, "shutterAngle_180");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("shutterAngle.aep")).project;
+    const comp = getComp(project, "shutterAngle_180");
 
     comp.shutterAngle = 360;
-    const out = tmp_path.div("modified_shutter.aep");
+    const out = tmpPath.div("modified_shutter.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "shutterAngle_180");
+    const comp2 = getComp(parseAep(out).project, "shutterAngle_180");
     expect(comp2.shutterAngle).toBe(360);
   });
 
   test("test_shutter_angle_validation_rejects_negative", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("shutterAngle.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
       "shutterAngle_180",
     );
     raises(ValueError, () => {
@@ -412,8 +412,8 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_angle_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("shutterAngle.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
       "shutterAngle_180",
     );
     raises(ValueError, () => {
@@ -422,8 +422,8 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_angle_validation_rejects_non_int", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("shutterAngle.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
       "shutterAngle_180",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
@@ -433,20 +433,20 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_modify_shutter_phase", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "shutterPhase_minus90");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "shutterPhase_minus90");
 
     comp.shutterPhase = -180;
-    const out = tmp_path.div("modified_phase.aep");
+    const out = tmpPath.div("modified_phase.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "shutterPhase_minus90");
+    const comp2 = getComp(parseAep(out).project, "shutterPhase_minus90");
     expect(comp2.shutterPhase).toBe(-180);
   });
 
   test("test_shutter_phase_validation_rejects_too_small", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "shutterPhase_minus90",
     );
     raises(ValueError, () => {
@@ -455,8 +455,8 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_phase_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "shutterPhase_minus90",
     );
     raises(ValueError, () => {
@@ -465,8 +465,8 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_phase_validation_rejects_non_int", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "shutterPhase_minus90",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
@@ -480,15 +480,15 @@ describe("TestRoundtripResolution", () => {
   /** Roundtrip tests for CompItem.resolutionFactor. */
 
   test("test_modify_resolution_factor", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("resolutionFactor.aep")).project;
-    const comp = get_comp(project, "resolutionFactor_half");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("resolutionFactor.aep")).project;
+    const comp = getComp(project, "resolutionFactor_half");
 
     comp.resolutionFactor = [1, 1];
-    const out = tmp_path.div("modified_res.aep");
+    const out = tmpPath.div("modified_res.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "resolutionFactor_half");
-    expect(py_eq(comp2.resolutionFactor, [1, 1])).toBe(true);
+    const comp2 = getComp(parseAep(out).project, "resolutionFactor_half");
+    expect(pyEq(comp2.resolutionFactor, [1, 1])).toBe(true);
   });
 });
 
@@ -496,8 +496,8 @@ describe("TestTimeScaleReadOnly", () => {
   /** Test that time_scale is read-only. */
 
   test("test_time_scale_is_read_only", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("frameRate.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
       "frameRate_30",
     );
     raises(AttributeError, () => {
@@ -510,20 +510,20 @@ describe("TestRoundtripDerivedTimes", () => {
   /** Roundtrip tests: changing frame_rate affects derived time fields. */
 
   test("test_frame_rate_change_updates_frame_duration", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("frameRate.aep")).project;
-    const comp = get_comp(project, "frameRate_30");
-    const original_frame_duration = comp.frameDuration;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("frameRate.aep")).project;
+    const comp = getComp(project, "frameRate_30");
+    const originalFrameDuration = comp.frameDuration;
 
     comp.frameRate = 60.0;
-    const out = tmp_path.div("modified_fps60b.aep");
+    const out = tmpPath.div("modified_fps60b.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "frameRate_30");
+    const comp2 = getComp(parseAep(out).project, "frameRate_30");
 
     // Duration in seconds should be the same
     expect(isclose(comp2.duration, comp.duration, 0.01)).toBe(true);
     // Frame duration should be roughly double at 60fps
-    expect(comp2.frameDuration > original_frame_duration).toBe(true);
+    expect(comp2.frameDuration > originalFrameDuration).toBe(true);
   });
 });
 
@@ -531,18 +531,18 @@ describe("TestRoundtripCombined", () => {
   /** Test multiple modifications at once. */
 
   test("test_multiple_fields_at_once", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("size.aep")).project;
-    const comp = get_comp(project, "size_1920x1080");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("size.aep")).project;
+    const comp = getComp(project, "size_1920x1080");
 
     comp.width = 1280;
     comp.height = 720;
     comp.bgColor = [0.0, 0.0, 0.0];
     comp.frameRate = 25.0;
 
-    const out = tmp_path.div("modified_multi.aep");
+    const out = tmpPath.div("modified_multi.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "size_1920x1080");
+    const comp2 = getComp(parseAep(out).project, "size_1920x1080");
 
     expect(comp2.width).toBe(1280);
     expect(comp2.height).toBe(720);
@@ -557,20 +557,20 @@ describe("TestRoundtripDisplayStartTime", () => {
   /** Roundtrip tests for CompItem.displayStartTime. */
 
   test("test_modify_display_start_time", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("displayStart.aep")).project;
-    const comp = get_comp(project, "displayStartTime_10");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("displayStart.aep")).project;
+    const comp = getComp(project, "displayStartTime_10");
 
     comp.displayStartTime = 5.0;
-    const out = tmp_path.div("modified_dst.aep");
+    const out = tmpPath.div("modified_dst.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "displayStartTime_10");
+    const comp2 = getComp(parseAep(out).project, "displayStartTime_10");
     expect(isclose(comp2.displayStartTime, 5.0, 1e-9, 0.01)).toBe(true);
   });
 
   test("test_display_start_time_validation_rejects_too_small", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("displayStart.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")),
       "displayStartTime_10",
     );
     raises(ValueError, () => {
@@ -579,8 +579,8 @@ describe("TestRoundtripDisplayStartTime", () => {
   });
 
   test("test_display_start_time_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("displayStart.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")),
       "displayStartTime_10",
     );
     // AE 2026's range is -10800 to 86400.
@@ -594,34 +594,34 @@ describe("TestRoundtripDuration", () => {
   /** Roundtrip tests for CompItem.duration and .frameDuration. */
 
   test("test_modify_duration", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_misc.aep")).project;
-    const comp = get_comp(project, "duration_60");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_misc.aep")).project;
+    const comp = getComp(project, "duration_60");
 
     comp.duration = 120.0;
-    const out = tmp_path.div("modified_dur.aep");
+    const out = tmpPath.div("modified_dur.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "duration_60");
+    const comp2 = getComp(parseAep(out).project, "duration_60");
     expect(isclose(comp2.duration, 120.0, 0.01)).toBe(true);
   });
 
   test("test_modify_frame_duration", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_misc.aep")).project;
-    const comp = get_comp(project, "duration_60");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_misc.aep")).project;
+    const comp = getComp(project, "duration_60");
     const fps = comp.frameRate;
 
     comp.frameDuration = 300;
-    const out = tmp_path.div("modified_fdur.aep");
+    const out = tmpPath.div("modified_fdur.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "duration_60");
+    const comp2 = getComp(parseAep(out).project, "duration_60");
     expect(comp2.frameDuration).toBe(300);
     expect(isclose(comp2.duration, 300 / fps, 0.01)).toBe(true);
   });
 
   test("test_duration_validation_rejects_negative", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     raises(ValueError, () => {
@@ -630,8 +630,8 @@ describe("TestRoundtripDuration", () => {
   });
 
   test("test_duration_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     raises(ValueError, () => {
@@ -640,8 +640,8 @@ describe("TestRoundtripDuration", () => {
   });
 
   test("test_frame_duration_validation_rejects_zero", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     raises(ValueError, () => {
@@ -665,21 +665,21 @@ describe("TestRoundtripDuration", () => {
   ])(
     "test_duration_snaps_to_nearest_frame[%#]",
     (fps: number, frames: number, dividend: number, divisor: number) => {
-      const tmp_path = make_tmp_path();
-      const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+      const tmpPath = makeTmpPath();
+      const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
       const comp = project.rootFolder.addComp("snapped", 100, 100, 1.0, 10.0, fps);
       comp.duration = frames / fps;
-      const out = tmp_path.div("snapped.aep");
+      const out = tmpPath.div("snapped.aep");
       project.save(out);
-      const cdta = get_comp(parse_aep(out).project, "snapped")._cdta;
-      expect(py_eq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
+      const cdta = getComp(parseAep(out).project, "snapped")._cdta;
+      expect(pyEq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
     },
   );
 
   test("test_duration_snaps_on_a_parsed_comp", () => {
     /** The reported case: an out point 52.0479 frames in at 24 fps. */
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     const fps = comp.frameRate;
@@ -689,7 +689,7 @@ describe("TestRoundtripDuration", () => {
 
   test("test_duration_under_half_a_frame_keeps_one_frame", () => {
     // AE stores a zero-length composition here; py_aep keeps one frame.
-    const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     const comp = project.rootFolder.addComp("short", 100, 100, 1.0, 10.0, 24.0);
     comp.duration = 0.3 / 24;
     expect(comp.duration).toBe(1 / 24);
@@ -697,14 +697,14 @@ describe("TestRoundtripDuration", () => {
 
   test("test_add_comp_rounds_half_a_frame_up", () => {
     // AE 2026: addComp with 52.5 frames of duration makes a 53-frame comp.
-    const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     const comp = project.rootFolder.addComp("half", 100, 100, 1.0, 52.5 / 24, 24.0);
-    expect(py_eq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [54272, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [54272, 24576])).toBe(true);
   });
 
   test("test_frame_duration_validation_rejects_non_int", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
@@ -715,8 +715,8 @@ describe("TestRoundtripDuration", () => {
 
   test("test_frame_duration_validation_rejects_too_large", () => {
     // The bound is the 3-hour duration limit, not the current duration.
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     raises(ValueError, () => {
@@ -727,21 +727,21 @@ describe("TestRoundtripDuration", () => {
   test("test_frame_duration_counts_every_frame_at_ntsc", () => {
     // 52 frames at 23.976 fps: duration x the 16.16 stored rate is
     // 51.999995, which truncation would make 51.
-    const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     const comp = project.rootFolder.addComp("ntsc", 100, 100, 1.0, 10.0, 23.976);
     comp.duration = 52 / 23.976;
     expect(comp.frameDuration).toBe(52);
   });
 
   test("test_frame_duration_can_grow", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
       "duration_60",
     );
     comp.frameDuration = 2000;
     expect(comp.frameDuration).toBe(2000);
     // Stored in timebase units, like AE's own durations.
-    expect(py_eq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [2000 * 1024, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [2000 * 1024, 24576])).toBe(true);
   });
 });
 
@@ -755,7 +755,7 @@ describe("TestCompTimeWrites", () => {
 
   // Python @staticmethod `_comp`; a plain function here since the describe block is the class.
   function _comp(fps: number = 24.0): CompItem {
-    const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     return project.rootFolder.addComp("timed", 100, 100, 1.0, 10.0, fps);
   }
 
@@ -768,9 +768,9 @@ describe("TestCompTimeWrites", () => {
     const comp = _comp();
     comp.workAreaStart = frames / 24;
     const cdta = comp._cdta;
-    expect(py_eq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [units, 24576])).toBe(true);
+    expect(pyEq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [units, 24576])).toBe(true);
     // A work area that ran to the end of the comp still does.
-    expect(py_eq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [0xFFFFFFFF, 24576])).toBe(true);
+    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [0xFFFFFFFF, 24576])).toBe(true);
   });
 
   test.each([
@@ -784,7 +784,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaStart = 12 / 24;
     comp.workAreaDuration = frames / 24;
     const cdta = comp._cdta;
-    expect(py_eq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [end, 24576])).toBe(true);
+    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [end, 24576])).toBe(true);
   });
 
   test("test_work_area_start_keeps_the_duration", () => {
@@ -813,7 +813,7 @@ describe("TestCompTimeWrites", () => {
   ])("test_time[%#]", (frames: number, units: number) => {
     const comp = _comp();
     comp.time = frames / 24;
-    expect(py_eq([comp._cdta.time_dividend, comp._cdta.time_divisor], [units, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.time_dividend, comp._cdta.time_divisor], [units, 24576])).toBe(true);
   });
 
   test("test_time_may_precede_the_display_start", () => {
@@ -831,7 +831,7 @@ describe("TestCompTimeWrites", () => {
     comp.time = 52.5 / 23.976;
     const cdta = comp._cdta;
     expect(
-      py_eq(
+      pyEq(
         [cdta.work_area_start_dividend, cdta.work_area_end_dividend, cdta.time_dividend],
         [53000, 78000, 53000],
       ),
@@ -866,11 +866,11 @@ describe("TestCompTimeWrites", () => {
     comp.displayStartTime = seconds;
     const cdta = comp._cdta;
     expect(
-      py_eq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
+      pyEq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
     ).toBe(true);
     // AE re-stores the work area start and current time over the
     // timebase alongside.
-    expect(py_eq([cdta.work_area_start_divisor, cdta.time_divisor], [24576, 24576])).toBe(true);
+    expect(pyEq([cdta.work_area_start_divisor, cdta.time_divisor], [24576, 24576])).toBe(true);
   });
 
   test.each<[number, number, [number, number]]>([
@@ -881,7 +881,7 @@ describe("TestCompTimeWrites", () => {
     comp.displayStartFrame = frames;
     const cdta = comp._cdta;
     expect(
-      py_eq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
+      pyEq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
     ).toBe(true);
     expect(comp.displayStartFrame).toBe(frames);
   });
@@ -892,7 +892,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaDurationFrame = 25;
     comp.frameTime = 53;
     expect(
-      py_eq(
+      pyEq(
         [comp.workAreaStartFrame, comp.workAreaDurationFrame, comp.frameTime],
         [52, 25, 53],
       ),
@@ -905,20 +905,20 @@ describe("TestRoundtripMotionBlurSamples", () => {
   /** Roundtrip tests for motion blur sample settings. */
 
   test("test_modify_samples_per_frame", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "motionBlurSamplesPerFrame_32");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "motionBlurSamplesPerFrame_32");
 
     comp.motionBlurSamplesPerFrame = 16;
-    const out = tmp_path.div("modified_spf.aep");
+    const out = tmpPath.div("modified_spf.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "motionBlurSamplesPerFrame_32");
+    const comp2 = getComp(parseAep(out).project, "motionBlurSamplesPerFrame_32");
     expect(comp2.motionBlurSamplesPerFrame).toBe(16);
   });
 
   test("test_samples_per_frame_validation_rejects_too_small", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurSamplesPerFrame_32",
     );
     raises(ValueError, () => {
@@ -927,8 +927,8 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_samples_per_frame_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurSamplesPerFrame_32",
     );
     raises(ValueError, () => {
@@ -937,8 +937,8 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_samples_per_frame_validation_rejects_non_int", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurSamplesPerFrame_32",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
@@ -948,20 +948,20 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_modify_adaptive_sample_limit", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "motionBlurAdaptiveSampleLimit_256");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "motionBlurAdaptiveSampleLimit_256");
 
     comp.motionBlurAdaptiveSampleLimit = 128;
-    const out = tmp_path.div("modified_asl.aep");
+    const out = tmpPath.div("modified_asl.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "motionBlurAdaptiveSampleLimit_256");
+    const comp2 = getComp(parseAep(out).project, "motionBlurAdaptiveSampleLimit_256");
     expect(comp2.motionBlurAdaptiveSampleLimit).toBe(128);
   });
 
   test("test_adaptive_sample_limit_validation_rejects_too_small", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurAdaptiveSampleLimit_256",
     );
     raises(ValueError, () => {
@@ -970,8 +970,8 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_adaptive_sample_limit_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurAdaptiveSampleLimit_256",
     );
     raises(ValueError, () => {
@@ -980,8 +980,8 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_adaptive_sample_limit_validation_rejects_non_int", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurAdaptiveSampleLimit_256",
     );
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
@@ -991,8 +991,8 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_adaptive_sample_limit_rejects_below_samples_per_frame", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("comp_flags.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
       "motionBlurAdaptiveSampleLimit_256",
     );
     // samples_per_frame is 16, so 8 must be rejected
@@ -1007,32 +1007,32 @@ describe("TestRoundtripWorkAreaStart", () => {
   /** Roundtrip tests for CompItem.workAreaStart. */
 
   test("test_modify_work_area_start", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("workArea.aep")).project;
-    const comp = get_comp(project, "workAreaStart_5");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("workArea.aep")).project;
+    const comp = getComp(project, "workAreaStart_5");
 
     comp.workAreaStart = 2.0;
-    const out = tmp_path.div("modified_was.aep");
+    const out = tmpPath.div("modified_was.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "workAreaStart_5");
+    const comp2 = getComp(parseAep(out).project, "workAreaStart_5");
     expect(isclose(comp2.workAreaStart, 2.0, 1e-9, 0.01)).toBe(true);
   });
 
   test("test_modify_work_area_start_frame", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("workArea.aep")).project;
-    const comp = get_comp(project, "workAreaStart_5");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("workArea.aep")).project;
+    const comp = getComp(project, "workAreaStart_5");
 
     comp.workAreaStartFrame = 48;
-    const out = tmp_path.div("modified_wasf.aep");
+    const out = tmpPath.div("modified_wasf.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "workAreaStart_5");
+    const comp2 = getComp(parseAep(out).project, "workAreaStart_5");
     expect(comp2.workAreaStartFrame).toBe(48);
   });
 
   test("test_work_area_start_validation_rejects_negative", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaStart_5",
     );
     raises(ValueError, () => {
@@ -1041,8 +1041,8 @@ describe("TestRoundtripWorkAreaStart", () => {
   });
 
   test("test_work_area_start_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaStart_5",
     );
     raises(ValueError, () => {
@@ -1051,8 +1051,8 @@ describe("TestRoundtripWorkAreaStart", () => {
   });
 
   test("test_work_area_start_frame_validation_rejects_negative", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaStart_5",
     );
     raises(ValueError, () => {
@@ -1061,8 +1061,8 @@ describe("TestRoundtripWorkAreaStart", () => {
   });
 
   test("test_work_area_start_frame_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaStart_5",
     );
     raises(ValueError, () => {
@@ -1075,32 +1075,32 @@ describe("TestRoundtripWorkAreaDuration", () => {
   /** Roundtrip tests for CompItem.workAreaDuration. */
 
   test("test_modify_work_area_duration", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("workArea.aep")).project;
-    const comp = get_comp(project, "workAreaDuration_10");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("workArea.aep")).project;
+    const comp = getComp(project, "workAreaDuration_10");
 
     comp.workAreaDuration = 5.0;
-    const out = tmp_path.div("modified_wad.aep");
+    const out = tmpPath.div("modified_wad.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "workAreaDuration_10");
+    const comp2 = getComp(parseAep(out).project, "workAreaDuration_10");
     expect(isclose(comp2.workAreaDuration, 5.0, 1e-9, 0.01)).toBe(true);
   });
 
   test("test_modify_work_area_duration_frame", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("workArea.aep")).project;
-    const comp = get_comp(project, "workAreaDuration_10");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("workArea.aep")).project;
+    const comp = getComp(project, "workAreaDuration_10");
 
     comp.workAreaDurationFrame = 120;
-    const out = tmp_path.div("modified_wadf.aep");
+    const out = tmpPath.div("modified_wadf.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "workAreaDuration_10");
+    const comp2 = getComp(parseAep(out).project, "workAreaDuration_10");
     expect(comp2.workAreaDurationFrame).toBe(120);
   });
 
   test("test_work_area_duration_validation_rejects_too_small", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaDuration_10",
     );
     raises(ValueError, () => {
@@ -1109,8 +1109,8 @@ describe("TestRoundtripWorkAreaDuration", () => {
   });
 
   test("test_work_area_duration_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaDuration_10",
     );
     raises(ValueError, () => {
@@ -1119,8 +1119,8 @@ describe("TestRoundtripWorkAreaDuration", () => {
   });
 
   test("test_work_area_duration_frame_validation_rejects_zero", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaDuration_10",
     );
     raises(ValueError, () => {
@@ -1129,8 +1129,8 @@ describe("TestRoundtripWorkAreaDuration", () => {
   });
 
   test("test_work_area_duration_frame_validation_rejects_too_large", () => {
-    const comp = get_comp(
-      parse_project_fresh(SAMPLES_DIR.div("workArea.aep")),
+    const comp = getComp(
+      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
       "workAreaDuration_10",
     );
     raises(ValueError, () => {
@@ -1143,27 +1143,27 @@ describe("TestRoundtripGuides", () => {
   /** Roundtrip tests for CompItem.guides. */
 
   test("test_modify_guide_position", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     comp.guides[0].position = 100.0;
 
-    const out = tmp_path.div("modified_guide.aep");
+    const out = tmpPath.div("modified_guide.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
     expect(comp2.guides[0].position).toBe(100.0);
   });
 
   test("test_modify_guide_orientation", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     expect(comp.guides[0].orientationType).toBe(0);
     comp.guides[0].orientationType = 1;
 
-    const out = tmp_path.div("modified_orient.aep");
+    const out = tmpPath.div("modified_orient.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
     expect(comp2.guides[0].orientationType).toBe(1);
   });
 });
@@ -1180,22 +1180,22 @@ describe("TestValidateGuidePosition", () => {
      * position -0.5), and the backing field is a signed f8, so neither
      * the format nor After Effects justifies a `>= 0` bound.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     comp.guides[0].position = -100.0;
     const idx = comp.addGuide(1, -0.5);
 
-    const out = tmp_path.div("negative_guides.aep");
+    const out = tmpPath.div("negative_guides.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
     expect(comp2.guides[0].position).toBe(-100.0);
     expect(comp2.guides[idx].position).toBe(-0.5);
   });
 
   test("test_position_rejects_non_numeric", () => {
-    const comp = get_comp(
-      parse_aep(SAMPLES_DIR.div("guides.aep")).project,
+    const comp = getComp(
+      parseAep(SAMPLES_DIR.div("guides.aep")).project,
       "guides_horizontal",
     );
     // type: ignore[assignment] in Python; the TS setter receives the string as-is.
@@ -1210,80 +1210,80 @@ describe("TestAddGuide", () => {
   /** Tests for Item.addGuide(). */
 
   test("test_add_guide_to_existing", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
-    const original_count = len(comp.guides);
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
+    const originalCount = len(comp.guides);
 
     const idx = comp.addGuide(0, 500);
-    expect(idx).toBe(original_count);
-    expect(len(comp.guides)).toBe(original_count + 1);
+    expect(idx).toBe(originalCount);
+    expect(len(comp.guides)).toBe(originalCount + 1);
     expect(comp.guides[idx].orientationType).toBe(GuideOrientationType.HORIZONTAL);
     expect(comp.guides[idx].position).toBe(500.0);
 
-    const out = tmp_path.div("add_guide.aep");
+    const out = tmpPath.div("add_guide.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_both");
-    expect(len(comp2.guides)).toBe(original_count + 1);
+    const comp2 = getComp(parseAep(out).project, "guides_both");
+    expect(len(comp2.guides)).toBe(originalCount + 1);
     expect(comp2.guides[idx].orientationType).toBe(GuideOrientationType.HORIZONTAL);
     expect(comp2.guides[idx].position).toBe(500.0);
   });
 
   test("test_add_guide_vertical", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
 
     const idx = comp.addGuide(1, 200);
     expect(comp.guides[idx].orientationType).toBe(GuideOrientationType.VERTICAL);
     expect(comp.guides[idx].position).toBe(200.0);
 
-    const out = tmp_path.div("add_vert.aep");
+    const out = tmpPath.div("add_vert.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
     expect(comp2.guides[idx].orientationType).toBe(GuideOrientationType.VERTICAL);
     expect(comp2.guides[idx].position).toBe(200.0);
   });
 
   test("test_add_guide_to_empty_comp", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_none");
-    expect(py_eq(comp.guides, [])).toBe(true);
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_none");
+    expect(pyEq(comp.guides, [])).toBe(true);
 
     const idx = comp.addGuide(0, 300);
     expect(idx).toBe(0);
     expect(len(comp.guides)).toBe(1);
     expect(comp.guides[0].position).toBe(300.0);
 
-    const out = tmp_path.div("bootstrap_guide.aep");
+    const out = tmpPath.div("bootstrap_guide.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_none");
+    const comp2 = getComp(parseAep(out).project, "guides_none");
     expect(len(comp2.guides)).toBe(1);
     expect(comp2.guides[0].orientationType).toBe(GuideOrientationType.HORIZONTAL);
     expect(comp2.guides[0].position).toBe(300.0);
   });
 
   test("test_add_guide_returns_index", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_none");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_none");
     expect(comp.addGuide(0, 100)).toBe(0);
     expect(comp.addGuide(1, 200)).toBe(1);
     expect(comp.addGuide(0, 300)).toBe(2);
   });
 
   test("test_add_guide_invalid_orientation_defaults_horizontal", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_none");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_none");
     comp.addGuide(99, 100);
     expect(comp.guides[0].orientationType).toBe(GuideOrientationType.HORIZONTAL);
   });
 
   test("test_add_guide_invariant", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
     comp.addGuide(0, 123);
-    expect(len(as_instance(comp._ldat, LdatChunk).items)).toBe(as_instance(comp._lhd3, Lhd3Chunk).count);
+    expect(len(asInstance(comp._ldat, LdatChunk).items)).toBe(asInstance(comp._lhd3, Lhd3Chunk).count);
   });
 });
 
@@ -1291,48 +1291,48 @@ describe("TestRemoveGuide", () => {
   /** Tests for Item.removeGuide(). */
 
   test("test_remove_guide_first", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
-    const original_count = len(comp.guides);
-    const second_guide_pos = comp.guides[1].position;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
+    const originalCount = len(comp.guides);
+    const secondGuidePos = comp.guides[1].position;
 
     comp.removeGuide(0);
-    expect(len(comp.guides)).toBe(original_count - 1);
-    expect(comp.guides[0].position).toBe(second_guide_pos);
+    expect(len(comp.guides)).toBe(originalCount - 1);
+    expect(comp.guides[0].position).toBe(secondGuidePos);
 
-    const out = tmp_path.div("remove_first.aep");
+    const out = tmpPath.div("remove_first.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_both");
-    expect(len(comp2.guides)).toBe(original_count - 1);
-    expect(comp2.guides[0].position).toBe(second_guide_pos);
+    const comp2 = getComp(parseAep(out).project, "guides_both");
+    expect(len(comp2.guides)).toBe(originalCount - 1);
+    expect(comp2.guides[0].position).toBe(secondGuidePos);
   });
 
   test("test_remove_guide_last_remaining", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     expect(len(comp.guides)).toBe(1);
 
     comp.removeGuide(0);
-    expect(py_eq(comp.guides, [])).toBe(true);
+    expect(pyEq(comp.guides, [])).toBe(true);
     // After Effects always keeps an (empty) LIST:Gide for an item even with
     // zero guides; deleting the container entirely leaves a project AE opens
     // but cannot re-save. The container stays with count 0 and no ldat.
     expect(comp._gide != null).toBe(true);
-    py_assert(comp._lhd3 != null);
+    pyAssert(comp._lhd3 != null);
     expect(comp._lhd3.count).toBe(0);
     expect(comp._ldat == null).toBe(true);
 
-    const out = tmp_path.div("remove_last.aep");
+    const out = tmpPath.div("remove_last.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
-    expect(py_eq(comp2.guides, [])).toBe(true);
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
+    expect(pyEq(comp2.guides, [])).toBe(true);
   });
 
   test("test_remove_guide_invalid_index_raises", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     raises(IndexError, () => {
       comp.removeGuide(5);
     });
@@ -1342,26 +1342,26 @@ describe("TestRemoveGuide", () => {
   });
 
   test("test_remove_guide_invariant", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
     comp.removeGuide(0);
-    expect(len(as_instance(comp._ldat, LdatChunk).items)).toBe(as_instance(comp._lhd3, Lhd3Chunk).count);
+    expect(len(asInstance(comp._ldat, LdatChunk).items)).toBe(asInstance(comp._lhd3, Lhd3Chunk).count);
   });
 
   test("test_remove_all_then_add", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_horizontal");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_horizontal");
     comp.removeGuide(0);
-    expect(py_eq(comp.guides, [])).toBe(true);
+    expect(pyEq(comp.guides, [])).toBe(true);
 
     const idx = comp.addGuide(1, 400);
     expect(idx).toBe(0);
     expect(comp.guides[0].orientationType).toBe(GuideOrientationType.VERTICAL);
 
-    const out = tmp_path.div("remove_add.aep");
+    const out = tmpPath.div("remove_add.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_horizontal");
+    const comp2 = getComp(parseAep(out).project, "guides_horizontal");
     expect(len(comp2.guides)).toBe(1);
     expect(comp2.guides[0].orientationType).toBe(GuideOrientationType.VERTICAL);
     expect(comp2.guides[0].position).toBe(400.0);
@@ -1372,36 +1372,36 @@ describe("TestRemoveAllGuides", () => {
   /** Tests for Item.removeAllGuides(). */
 
   test("test_remove_all_guides", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
     expect(len(comp.guides) > 1).toBe(true);
 
     comp.removeAllGuides();
-    expect(py_eq(comp.guides, [])).toBe(true);
+    expect(pyEq(comp.guides, [])).toBe(true);
     // Same end state as removing the last guide by index: the empty
     // LIST:Gide stays, its ldat is dropped.
-    py_assert(comp._lhd3 != null);
+    pyAssert(comp._lhd3 != null);
     expect(comp._lhd3.count).toBe(0);
     expect(comp._ldat == null).toBe(true);
 
-    const out = tmp_path.div("remove_all_guides.aep");
+    const out = tmpPath.div("remove_all_guides.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "guides_both");
-    expect(py_eq(comp2.guides, [])).toBe(true);
+    const comp2 = getComp(parseAep(out).project, "guides_both");
+    expect(pyEq(comp2.guides, [])).toBe(true);
   });
 
   test("test_remove_all_guides_noop", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_none");
-    expect(py_eq(comp.guides, [])).toBe(true);
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_none");
+    expect(pyEq(comp.guides, [])).toBe(true);
     comp.removeAllGuides();
-    expect(py_eq(comp.guides, [])).toBe(true);
+    expect(pyEq(comp.guides, [])).toBe(true);
   });
 
   test("test_remove_all_then_add", () => {
-    const project = parse_aep(SAMPLES_DIR.div("guides.aep")).project;
-    const comp = get_comp(project, "guides_both");
+    const project = parseAep(SAMPLES_DIR.div("guides.aep")).project;
+    const comp = getComp(project, "guides_both");
     comp.removeAllGuides();
     expect(comp.addGuide(1, 250)).toBe(0);
     expect(comp.guides[0].position).toBe(250.0);
@@ -1412,26 +1412,26 @@ describe("TestRoundtripDraft3d", () => {
   /** Roundtrip tests for CompItem.draft3d. */
 
   test("test_toggle_draft3d", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("renderer_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
 
     comp.draft3d = true;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2.draft3d).toBe(true);
 
     comp2.draft3d = false;
-    const out2 = tmp_path.div("toggled.aep");
-    parse_aep(out).project.save(out2);
+    const out2 = tmpPath.div("toggled.aep");
+    parseAep(out).project.save(out2);
     // Re-parse to check original state preserved
-    const project3 = parse_aep(out).project;
+    const project3 = parseAep(out).project;
     const comp3 = at(project3.compositions, 0);
     comp3.draft3d = false;
-    const out3 = tmp_path.div("toggled_back.aep");
+    const out3 = tmpPath.div("toggled_back.aep");
     project3.save(out3);
-    const comp4 = at(parse_aep(out3).project.compositions, 0);
+    const comp4 = at(parseAep(out3).project.compositions, 0);
     expect(comp4.draft3d).toBe(false);
   });
 });
@@ -1440,28 +1440,28 @@ describe("TestRoundtripPreserveNested", () => {
   /** Roundtrip tests for CompItem.preserve_nested_*. */
 
   test("test_toggle_preserve_nested_frame_rate", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "preserveNestedFrameRate_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "preserveNestedFrameRate_true");
     expect(comp.preserveNestedFrameRate).toBe(true);
 
     comp.preserveNestedFrameRate = false;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "preserveNestedFrameRate_true");
+    const comp2 = getComp(parseAep(out).project, "preserveNestedFrameRate_true");
     expect(comp2.preserveNestedFrameRate).toBe(false);
   });
 
   test("test_toggle_preserve_nested_resolution", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("comp_flags.aep")).project;
-    const comp = get_comp(project, "preserveNestedResolution_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("comp_flags.aep")).project;
+    const comp = getComp(project, "preserveNestedResolution_true");
     expect(comp.preserveNestedResolution).toBe(true);
 
     comp.preserveNestedResolution = false;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "preserveNestedResolution_true");
+    const comp2 = getComp(parseAep(out).project, "preserveNestedResolution_true");
     expect(comp2.preserveNestedResolution).toBe(false);
   });
 });
@@ -1470,15 +1470,15 @@ describe("TestRoundtripDropFrame", () => {
   /** Roundtrip tests for CompItem.dropFrame. */
 
   test("test_toggle_drop_frame", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SAMPLES_DIR.div("dropFrame.aep")).project;
-    const comp = get_comp(project, "dropFrame_true");
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SAMPLES_DIR.div("dropFrame.aep")).project;
+    const comp = getComp(project, "dropFrame_true");
     expect(comp.dropFrame).toBe(true);
 
     comp.dropFrame = false;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = get_comp(parse_aep(out).project, "dropFrame_true");
+    const comp2 = getComp(parseAep(out).project, "dropFrame_true");
     expect(comp2.dropFrame).toBe(false);
   });
 });
@@ -1487,41 +1487,41 @@ describe("TestRoundtripEssentialGraphics", () => {
   /** Roundtrip tests for Essential Graphics panel. */
 
   test("test_rename_template", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
     // Python `next(c for c in ... if ...)`; `next_(....find(...))` is the TS twin.
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
     expect(comp.motionGraphicsTemplateName).toBe("Untitled");
 
     comp.motionGraphicsTemplateName = "My New Name";
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
+    const comp2 = next_(parseAep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motionGraphicsTemplateName).toBe("My New Name");
   });
 
   test("test_rename_controller", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(EG_SAMPLES_DIR.div("fill_color_added.aep")).project;
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
     expect(comp.motionGraphicsControllers[0].name).toBe("Fill Color");
 
     comp.motionGraphicsControllers[0].name = "New Controller Name";
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
+    const comp2 = next_(parseAep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motionGraphicsControllers[0].name).toBe("New Controller Name");
   });
 
   test("test_rename_multiple_controllers", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(EG_SAMPLES_DIR.div("multiple_controllers.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(EG_SAMPLES_DIR.div("multiple_controllers.aep")).project;
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
 
     comp.motionGraphicsControllers[1].name = "Renamed Opacity";
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "primary"));
+    const comp2 = next_(parseAep(out).project.compositions.find((c) => c.name === "primary"));
     expect(comp2.motionGraphicsControllers[0].name).toBe("Brightness");
     expect(comp2.motionGraphicsControllers[1].name).toBe("Renamed Opacity");
     expect(comp2.motionGraphicsControllers[2].name).toBe("Background Color");
@@ -1532,16 +1532,16 @@ describe("TestRoundtripEssentialGraphics", () => {
      * Setting motion_graphics_template_name on a comp without EG
      * creates the CIF3 chunk structure and roundtrips correctly.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(EG_SAMPLES_DIR.div("base.aep")).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(EG_SAMPLES_DIR.div("base.aep")).project;
     const comp = next_(project.compositions.find((c) => c.name === "main"));
     expect(comp.motionGraphicsTemplateName).toBe("Untitled");
 
     // Overwrite existing template name
     comp.motionGraphicsTemplateName = "Brand New Template";
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
-    const comp2 = next_(parse_aep(out).project.compositions.find((c) => c.name === "main"));
+    const comp2 = next_(parseAep(out).project.compositions.find((c) => c.name === "main"));
     expect(comp2.motionGraphicsTemplateName).toBe("Brand New Template");
   });
 
@@ -1550,7 +1550,7 @@ describe("TestRoundtripEssentialGraphics", () => {
      * Setting motion_graphics_template_name when _eg_template_name_utf8
      * is None creates a new CIF3 chunk structure in memory.
      */
-    const project = parse_aep(EG_SAMPLES_DIR.div("base.aep")).project;
+    const project = parseAep(EG_SAMPLES_DIR.div("base.aep")).project;
     const comp = next_(project.compositions.find((c) => c.name === "main"));
     // Force deferred EG parsing, then clear to simulate from-scratch.
     comp._ensure_comp_parsed();
@@ -1576,15 +1576,15 @@ describe("TestRoundtripFrameRateRetiming", () => {
   // Python @staticmethod `_keyed`; plain generator function since the describe block is the class.
   function* _keyed(comp: CompItem): Generator<Property> {
     for (const prop of comp._walk_properties()) {
-      if (py_bool(prop.keyframes)) yield prop;
+      if (pyBool(prop.keyframes)) yield prop;
     }
   }
 
   // Python @staticmethod `_layer_marker`; plain function since the describe block is the class.
-  function _layer_marker(comp: CompItem): Property {
+  function _layerMarker(comp: CompItem): Property {
     for (const layer of comp.layers) {
       for (const child of layer) {
-        if (getattr(child, "matchName", "") === "ADBE Marker") return as_instance(child, Property);
+        if (getattr(child, "matchName", "") === "ADBE Marker") return asInstance(child, Property);
       }
     }
     // Python next(...) with no default raises StopIteration here.
@@ -1597,24 +1597,24 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * drifted to [0, 2.4, 4.8, 7.2]: the frame indices were preserved
      * instead of the times.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
     const before = new Map(
       Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
     );
-    expect(py_eq(getitem(before, "ADBE Scale"), [0.0, 3.0, 6.0, 9.0])).toBe(true);
+    expect(pyEq(getitem(before, "ADBE Scale"), [0.0, 3.0, 6.0, 9.0])).toBe(true);
 
     comp.frameRate = 30.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     const after = new Map(
       Array.from(_keyed(comp2), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
     );
     expect(comp2.frameRate).toBe(30.0);
-    expect(py_eq(after, before)).toBe(true);
+    expect(pyEq(after, before)).toBe(true);
   });
 
   test("test_time_units_rescale_by_timebase_ratio", () => {
@@ -1622,8 +1622,8 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * 25 -> 30 moves internal_timebase 25600 -> 30720, so every stored
      * unit count scales by 1.2.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("effect_point_speed.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("effect_point_speed.aep"));
     const comp = at(project.compositions, 0);
     expect(comp.frameRate).toBe(25.0);
     expect(comp._cdta.internal_timebase).toBe(25600);
@@ -1632,14 +1632,14 @@ describe("TestRoundtripFrameRateRetiming", () => {
     );
 
     comp.frameRate = 30.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2._cdta.internal_timebase).toBe(30720);
     for (const prop of _keyed(comp2)) {
       const expected = getitem(before, prop.matchName).map((u) => round((u * 30720) / 25600));
-      expect(py_eq(prop.keyframes.map((k) => k._ldat_item.time_units), expected)).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldat_item.time_units), expected)).toBe(true);
     }
   });
 
@@ -1649,28 +1649,28 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * the stored unit counts must NOT change. The seconds must not drift
      * either, which needs the cached conversion factors refreshed.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
     comp.frameRate = 30.0;
-    const units_at_30 = new Map(
+    const unitsAt30 = new Map(
       Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldat_item.time_units)] as const),
     );
-    const seconds_at_30 = new Map(
+    const secondsAt30 = new Map(
       Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
     );
 
     comp.frameRate = 60.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(comp2._cdta.internal_timebase).toBe(30720);
     expect(comp2.timeScale).toBe(2.0);
     for (const prop of _keyed(comp2)) {
       const name = prop.matchName;
-      expect(py_eq(prop.keyframes.map((k) => k._ldat_item.time_units), getitem(units_at_30, name))).toBe(true);
-      expect(py_eq(prop.keyframes.map((k) => k.time), getitem(seconds_at_30, name))).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldat_item.time_units), getitem(unitsAt30, name))).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k.time), getitem(secondsAt30, name))).toBe(true);
     }
   });
 
@@ -1679,14 +1679,14 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * AE writes cdta.internal_timebase into every property tdb4 and
      * rejects the file when the copy is wrong.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
     comp.frameRate = 30.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     const timebase = comp2._cdta.internal_timebase;
     expect(timebase).toBe(30720);
     const stamps = new Set(
@@ -1694,7 +1694,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
         .filter((p) => p._tdb4 != null && p._is_live())
         .map((p) => p._tdb4._time_base),
     );
-    expect(py_eq(stamps, new Set([timebase]))).toBe(true);
+    expect(pyEq(stamps, new Set([timebase]))).toBe(true);
   });
 
   test("test_duration_requantizes_by_rounding", () => {
@@ -1702,16 +1702,16 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * A 253-frame 24 fps comp is 263.54 frames at 25 fps. AE rounds to
      * 264 (10.56 s); truncating would give 263 (10.52 s).
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
     comp.duration = 253.0 / 24.0;
 
     comp.frameRate = 25.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const comp2 = at(parse_aep(out).project.compositions, 0);
+    const comp2 = at(parseAep(out).project.compositions, 0);
     expect(approx(comp2.duration, 10.56)).toBe(true);
     expect(round(comp2.duration * 25.0)).toBe(264);
   });
@@ -1723,21 +1723,21 @@ describe("TestRoundtripFrameRateRetiming", () => {
        * Markers are keyframes on a marker property, so they ride the same
        * rescale, on the comp and on the layer alike.
        */
-      const tmp_path = make_tmp_path();
-      const on_comp = sample.startsWith("comp");
-      const project = parse_project_fresh(MARKER_SAMPLES_DIR.div(sample));
+      const tmpPath = makeTmpPath();
+      const onComp = sample.startsWith("comp");
+      const project = parseProjectFresh(MARKER_SAMPLES_DIR.div(sample));
       const comp = at(project.compositions, 0);
-      const marker = on_comp ? comp.markerProperty : _layer_marker(comp);
-      py_assert(marker != null);
+      const marker = onComp ? comp.markerProperty : _layerMarker(comp);
+      pyAssert(marker != null);
       marker.keyframes[0].time = 3.0;
 
       comp.frameRate = 30.0;
-      const out = tmp_path.div("modified.aep");
+      const out = tmpPath.div("modified.aep");
       project.save(out);
 
-      const comp2 = at(parse_aep(out).project.compositions, 0);
-      const marker2 = on_comp ? comp2.markerProperty : _layer_marker(comp2);
-      py_assert(marker2 != null);
+      const comp2 = at(parseAep(out).project.compositions, 0);
+      const marker2 = onComp ? comp2.markerProperty : _layerMarker(comp2);
+      pyAssert(marker2 != null);
       expect(marker2.keyframes[0].time).toBe(3.0);
     },
   );
@@ -1747,19 +1747,19 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * Changing the outer frame rate leaves a precomp source alone: its
      * own rate, duration and timebase all hold.
      */
-    const tmp_path = make_tmp_path();
-    const project = parse_project_fresh(SAMPLES_DIR.div("duplicate.aep"));
-    const outer = get_comp(project, "DupSrc");
-    const inner = get_comp(project, "Inner");
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLES_DIR.div("duplicate.aep"));
+    const outer = getComp(project, "DupSrc");
+    const inner = getComp(project, "Inner");
     const before = [inner.frameRate, inner.duration, inner._cdta.internal_timebase];
 
     outer.frameRate = 60.0;
-    const out = tmp_path.div("modified.aep");
+    const out = tmpPath.div("modified.aep");
     project.save(out);
 
-    const inner2 = get_comp(parse_aep(out).project, "Inner");
+    const inner2 = getComp(parseAep(out).project, "Inner");
     expect(
-      py_eq(
+      pyEq(
         [inner2.frameRate, inner2.duration, inner2._cdta.internal_timebase],
         before,
       ),
@@ -1772,21 +1772,21 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * tooling that echoes values back would requantize timings that are
      * legitimately off-grid.
      */
-    const project = parse_project_fresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
+    const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
     comp.duration = 253.0 / 24.0;
-    const before_duration = comp.duration;
-    const before_units = Array.from(_keyed(comp)).flatMap((p) =>
+    const beforeDuration = comp.duration;
+    const beforeUnits = Array.from(_keyed(comp)).flatMap((p) =>
       p.keyframes.map((k) => k._ldat_item.time_units),
     );
 
     comp.frameRate = comp.frameRate;
 
-    expect(comp.duration).toBe(before_duration);
+    expect(comp.duration).toBe(beforeDuration);
     expect(
-      py_eq(
+      pyEq(
         Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldat_item.time_units)),
-        before_units,
+        beforeUnits,
       ),
     ).toBe(true);
   });
@@ -1802,16 +1802,16 @@ describe("TestRoundtripFrameRateRetiming", () => {
     [24.0, 12, 30.0, 15360, 30720],
   ])(
     "test_duration_snaps_like_ae[%#]",
-    (fps: number, frames: number, new_fps: number, dividend: number, divisor: number) => {
-      const tmp_path = make_tmp_path();
-      const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    (fps: number, frames: number, newFps: number, dividend: number, divisor: number) => {
+      const tmpPath = makeTmpPath();
+      const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
       const comp = project.rootFolder.addComp("retimed", 100, 100, 1.0, 10.0, fps);
       comp.duration = frames / fps;
-      comp.frameRate = new_fps;
-      const out = tmp_path.div("retimed.aep");
+      comp.frameRate = newFps;
+      const out = tmpPath.div("retimed.aep");
       project.save(out);
-      const cdta = get_comp(parse_aep(out).project, "retimed")._cdta;
-      expect(py_eq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
+      const cdta = getComp(parseAep(out).project, "retimed")._cdta;
+      expect(pyEq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
     },
   );
 
@@ -1822,7 +1822,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
      * not the 64 they would round to alone - and the current time snaps
      * with them. The display start is left alone.
      */
-    const project = parse_project_fresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     const comp = project.rootFolder.addComp("retimed", 100, 100, 1.0, 10.0, 24.0);
     comp.workAreaStart = 12 / 24;
     comp.workAreaDuration = 61 / 24;
@@ -1830,9 +1830,9 @@ describe("TestRoundtripFrameRateRetiming", () => {
     comp.time = 12 / 24;
     comp.frameRate = 25.0;
     const cdta = comp._cdta;
-    expect(py_eq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [13312, 25600])).toBe(true);
-    expect(py_eq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [77824, 25600])).toBe(true);
-    expect(py_eq([cdta.time_dividend, cdta.time_divisor], [13312, 25600])).toBe(true);
+    expect(pyEq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [13312, 25600])).toBe(true);
+    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [77824, 25600])).toBe(true);
+    expect(pyEq([cdta.time_dividend, cdta.time_divisor], [13312, 25600])).toBe(true);
     expect(approx(comp.workAreaDuration, 2.52)).toBe(true);
     expect(comp.displayStartTime).toBe(0.5);
   });

@@ -1,5 +1,5 @@
 import { float, getattr, setattr } from "../../../pyrt/index.ts";
-import { _validate_number, validate_f8 } from "../validators.ts";
+import { _validateNumber, validateF8 } from "../validators.ts";
 
 /**
  * The `KeyframeEase` object encapsulates the keyframe ease settings of a
@@ -30,10 +30,10 @@ export class KeyframeEase {
   declare _influence: number;
 
   constructor(speed: number = 0.0, influence: number = 0.0) {
-    validate_f8(speed);
+    validateF8(speed);
     // The setter enforces the 0.1-100 user range, but 0.0 is the
     // "no ease" sentinel the parser constructs with, so allow it here.
-    _validate_number({ min: 0.0, max: 100.0 })(influence);
+    _validateNumber({ min: 0.0, max: 100.0 })(influence);
     this._kf_data = null;
     this._dimension_index = 0;
     this._direction = "";
@@ -45,23 +45,23 @@ export class KeyframeEase {
   /**
    * Wrap binary keyframe data as a `KeyframeEase` view.
    *
-   * @param kf_data - The backing keyframe-data chunk body.
-   * @param dimension_index - Index into per-dimension speed/influence arrays.
+   * @param kfData - The backing keyframe-data chunk body.
+   * @param dimensionIndex - Index into per-dimension speed/influence arrays.
    * @param direction - Either `"in"` or `"out"`.
-   * @param speed_factor - Unit-conversion factor applied to the raw speed.
+   * @param speedFactor - Unit-conversion factor applied to the raw speed.
    */
   static _from_binary(
-    kf_data: object | null,
-    dimension_index: number,
+    kfData: object | null,
+    dimensionIndex: number,
     direction: string,
-    speed_factor: number = 1.0,
+    speedFactor: number = 1.0,
   ): KeyframeEase {
     // `cls.__new__(cls)`: skip `__init__`, the backing data is supplied.
     const obj: KeyframeEase = Object.create(this.prototype);
-    obj._kf_data = kf_data;
-    obj._dimension_index = dimension_index;
+    obj._kf_data = kfData;
+    obj._dimension_index = dimensionIndex;
     obj._direction = direction;
-    obj._speed_factor = speed_factor;
+    obj._speed_factor = speedFactor;
     return obj;
   }
 
@@ -75,21 +75,21 @@ export class KeyframeEase {
   _write_from(other: KeyframeEase): void {
     const speed = other.speed;
     const influence = other.influence;
-    validate_f8(speed);
-    _validate_number({ min: 0.0, max: 100.0 })(influence);
+    validateF8(speed);
+    _validateNumber({ min: 0.0, max: 100.0 })(influence);
     if (this._kf_data == null) {
       this._speed = speed;
       this._influence = influence;
       return;
     }
-    const raw_speed = this._speed_factor ? speed / this._speed_factor : speed;
-    const raw_influence = influence / 100;
+    const rawSpeed = this._speed_factor ? speed / this._speed_factor : speed;
+    const rawInfluence = influence / 100;
     if (this._is_array()) {
-      getattr(this._kf_data, `${this._direction}_speed`)[this._dimension_index] = raw_speed;
-      getattr(this._kf_data, `${this._direction}_influence`)[this._dimension_index] = raw_influence;
+      getattr(this._kf_data, `${this._direction}_speed`)[this._dimension_index] = rawSpeed;
+      getattr(this._kf_data, `${this._direction}_influence`)[this._dimension_index] = rawInfluence;
     } else {
-      setattr(this._kf_data, `${this._direction}_speed`, raw_speed);
-      setattr(this._kf_data, `${this._direction}_influence`, raw_influence);
+      setattr(this._kf_data, `${this._direction}_speed`, rawSpeed);
+      setattr(this._kf_data, `${this._direction}_influence`, rawInfluence);
     }
   }
 
@@ -115,17 +115,17 @@ export class KeyframeEase {
   }
 
   set speed(value: number) {
-    validate_f8(value);
+    validateF8(value);
     if (this._kf_data == null) {
       this._speed = value;
       return;
     }
-    const field_name = `${this._direction}_speed`;
-    const binary_value = this._speed_factor ? value / this._speed_factor : value;
+    const fieldName = `${this._direction}_speed`;
+    const binaryValue = this._speed_factor ? value / this._speed_factor : value;
     if (this._is_array()) {
-      getattr(this._kf_data, field_name)[this._dimension_index] = binary_value;
+      getattr(this._kf_data, fieldName)[this._dimension_index] = binaryValue;
     } else {
-      setattr(this._kf_data, field_name, binary_value);
+      setattr(this._kf_data, fieldName, binaryValue);
     }
   }
 
@@ -151,17 +151,17 @@ export class KeyframeEase {
     // per side, which is 0.0833 for a 12 s segment (measured on AE
     // 2026). Bounding by the UI limit would reject a value AE itself
     // stores, so this bounds by what the f8 field can mean instead.
-    _validate_number({ min: 0.0, max: 100.0 })(value);
+    _validateNumber({ min: 0.0, max: 100.0 })(value);
     if (this._kf_data == null) {
       this._influence = value;
       return;
     }
-    const field_name = `${this._direction}_influence`;
-    const binary_value = value / 100;
+    const fieldName = `${this._direction}_influence`;
+    const binaryValue = value / 100;
     if (this._is_array()) {
-      getattr(this._kf_data, field_name)[this._dimension_index] = binary_value;
+      getattr(this._kf_data, fieldName)[this._dimension_index] = binaryValue;
     } else {
-      setattr(this._kf_data, field_name, binary_value);
+      setattr(this._kf_data, fieldName, binaryValue);
     }
   }
 }

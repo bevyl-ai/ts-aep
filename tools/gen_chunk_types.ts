@@ -86,7 +86,7 @@ for (const file of files) {
   source.set(file, ts.createSourceFile(file, fs.readFileSync(path.join(BINARY, file), "utf8"), ts.ScriptTarget.Latest, true));
 }
 
-const prop_name = (name: ts.PropertyName): string | null => {
+const propName = (name: ts.PropertyName): string | null => {
   if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
   return null;
 };
@@ -110,7 +110,7 @@ for (const [file, sf] of source) {
     const getters = new Map<string, string>();
     const declared = new Map<string, string>();
     for (const m of st.members) {
-      const name = m.name && prop_name(m.name);
+      const name = m.name && propName(m.name);
       if (!name) continue;
       if (ts.isGetAccessor(m) || ts.isSetAccessor(m) || ts.isMethodDeclaration(m)) accessors.add(name);
       if (ts.isGetAccessor(m) && m.type) getters.set(name, m.type.getText(sf).replace(/\s+/g, " ").trim());
@@ -122,26 +122,26 @@ for (const [file, sf] of source) {
     classes.set(`${file}:${st.name.text}`, { name: st.name.text, file, base, accessors, getters, declared });
   }
 }
-const find_class = (name: string, from: string): ClassInfo | undefined =>
+const findClass = (name: string, from: string): ClassInfo | undefined =>
   classes.get(`${from}:${name}`) ?? [...classes.values()].find((c) => c.name === name);
 
-const has_accessor = (info: ClassInfo, field: string): boolean => {
-  for (let c: ClassInfo | undefined = info; c; c = c.base ? find_class(c.base, c.file) : undefined) {
+const hasAccessor = (info: ClassInfo, field: string): boolean => {
+  for (let c: ClassInfo | undefined = info; c; c = c.base ? findClass(c.base, c.file) : undefined) {
     if (c.accessors.has(field)) return true;
   }
   return false;
 };
 
-const obj_prop = (obj: ts.ObjectLiteralExpression, name: string): ts.Expression | undefined => {
+const objProp = (obj: ts.ObjectLiteralExpression, name: string): ts.Expression | undefined => {
   for (const p of obj.properties) {
-    if (!ts.isPropertyAssignment(p) || prop_name(p.name) !== name) continue;
+    if (!ts.isPropertyAssignment(p) || propName(p.name) !== name) continue;
     return p.initializer;
   }
   return undefined;
 };
 
 /** Type a struct format stands for. `encoding` decodes `s`/`p`/`c` to string; `coerce` replaces the unpacked type. */
-function type_of_fmt(fmt: string, encoding: string | null, coerce: string | null, optional: boolean): string {
+function typeOfFmt(fmt: string, encoding: string | null, coerce: string | null, optional: boolean): string {
   let base: string;
   if (coerce === "py_bool") base = "boolean";
   else if (coerce) base = coerce;
@@ -165,15 +165,15 @@ function type_of_fmt(fmt: string, encoding: string | null, coerce: string | null
  * The type of one `define()` field, or null when the property is not a struct
  * field (`field({ default })`, a raw `chunk_type`, ...).
  */
-function field_type(init: ts.Expression): { type: string; refs: string[] } | null {
+function fieldType(init: ts.Expression): { type: string; refs: string[] } | null {
   if (!ts.isCallExpression(init) || !ts.isIdentifier(init.expression)) return null;
   const helper = init.expression.text;
   const opt = init.arguments.find((a): a is ts.ObjectLiteralExpression => ts.isObjectLiteralExpression(a));
-  const optional = !!opt && obj_prop(opt, "optional")?.kind === ts.SyntaxKind.TrueKeyword;
-  const enc_node = opt && obj_prop(opt, "encoding");
-  const encoding = enc_node && ts.isStringLiteral(enc_node) ? enc_node.text : enc_node ? "" : null;
-  const coerce_node = opt && obj_prop(opt, "coerce");
-  const coerce = coerce_node && ts.isIdentifier(coerce_node) ? coerce_node.text : null;
+  const optional = !!opt && objProp(opt, "optional")?.kind === ts.SyntaxKind.TrueKeyword;
+  const encNode = opt && objProp(opt, "encoding");
+  const encoding = encNode && ts.isStringLiteral(encNode) ? encNode.text : encNode ? "" : null;
+  const coerceNode = opt && objProp(opt, "coerce");
+  const coerce = coerceNode && ts.isIdentifier(coerceNode) ? coerceNode.text : null;
   if (helper === "items_field") {
     const cls = init.arguments[0];
     if (!cls || !ts.isIdentifier(cls)) {
@@ -211,7 +211,7 @@ function field_type(init: ts.Expression): { type: string; refs: string[] } | nul
   else return null;
   // An enum coerce names the enum type (`coerce: SomeEnum` -> `SomeEnum`).
   const refs = crc && crc !== "py_bool" ? [crc] : [];
-  return { type: type_of_fmt(fmt, enc, crc, optional), refs };
+  return { type: typeOfFmt(fmt, enc, crc, optional), refs };
 }
 
 type OwnedFields = { cls: string; file: string; fields: { name: string; type: string }[]; refs: Set<string> };
@@ -221,46 +221,46 @@ for (const [file, sf] of source) {
     if (!ts.isExpressionStatement(st) || !ts.isCallExpression(st.expression)) continue;
     const call = st.expression;
     if (!ts.isIdentifier(call.expression) || call.expression.text !== "define") continue;
-    const cls_node = call.arguments[0];
+    const clsNode = call.arguments[0];
     const spec = call.arguments[1];
-    if (!cls_node || !ts.isIdentifier(cls_node) || !spec || !ts.isObjectLiteralExpression(spec)) {
+    if (!clsNode || !ts.isIdentifier(clsNode) || !spec || !ts.isObjectLiteralExpression(spec)) {
       errors.push(`${file}: define() is not define(Class, { ... })`);
       continue;
     }
-    const info = find_class(cls_node.text, file);
+    const info = findClass(clsNode.text, file);
     if (!info) {
-      errors.push(`${file}: define() on unknown class ${cls_node.text}`);
+      errors.push(`${file}: define() on unknown class ${clsNode.text}`);
       continue;
     }
     const fields: { name: string; type: string }[] = [];
     const refs = new Set<string>();
     for (const p of spec.properties) {
       if (!ts.isPropertyAssignment(p)) continue;
-      const name = prop_name(p.name);
+      const name = propName(p.name);
       if (!name) {
-        errors.push(`${file}: ${cls_node.text} has a computed field name`);
+        errors.push(`${file}: ${clsNode.text} has a computed field name`);
         continue;
       }
-      const parsed = field_type(p.initializer);
+      const parsed = fieldType(p.initializer);
       if (!parsed) continue;
-      if (has_accessor(info, name)) continue;
+      if (hasAccessor(info, name)) continue;
       // A hand-written enum annotation wins over the unpacked integer (`declare status: RQItemStatus`).
       const declared = info.declared.get(name);
-      const enum_name = declared && /^[A-Z][A-Za-z0-9_]*$/.test(declared) && parsed.type === "number" ? declared : null;
+      const enumName = declared && /^[A-Z][A-Za-z0-9_]*$/.test(declared) && parsed.type === "number" ? declared : null;
       // An integer field the code also stores a boolean in (`_spatial_marker = false`) keeps
       // `number | boolean`: writing `0`/`1` instead would change the value held on the object.
-      const bool_union =
+      const boolUnion =
         declared === `${parsed.type} | boolean` || declared === `boolean | ${parsed.type}` ? declared : null;
       // `q`/`Q` unpack to bigint, but the field default and every writer pass a number
       // (`sspc.data_size = size`). Storing `0n` instead is a different value, so the field
       // holds both.
       const big = parsed.type === "bigint" ? "number | bigint" : null;
-      const type = enum_name ?? bool_union ?? big ?? parsed.type;
-      if (enum_name) refs.add(enum_name);
+      const type = enumName ?? boolUnion ?? big ?? parsed.type;
+      if (enumName) refs.add(enumName);
       for (const r of parsed.refs) refs.add(r);
       fields.push({ name, type });
     }
-    if (fields.length) owned.push({ cls: cls_node.text, file, fields, refs });
+    if (fields.length) owned.push({ cls: clsNode.text, file, fields, refs });
   }
 }
 if (errors.length) {
@@ -273,72 +273,72 @@ if (errors.length) {
 // same way is added there (`body.solid_name`). A field the variants type
 // differently stays on the variant only.
 const NO_VARIANT = new Set(["Chunk", "ContainerChunk", "ListChunk", "FmtItem", "AttrsBase"]);
-const variant_kids = new Map<string, ClassInfo[]>();
+const variantKids = new Map<string, ClassInfo[]>();
 for (const info of classes.values()) {
-  const parent = info.base ? find_class(info.base, info.file) : undefined;
+  const parent = info.base ? findClass(info.base, info.file) : undefined;
   if (!parent || NO_VARIANT.has(parent.name)) continue;
   const key = `${parent.file}:${parent.name}`;
-  const list = variant_kids.get(key);
+  const list = variantKids.get(key);
   if (list) list.push(info);
-  else variant_kids.set(key, [info]);
+  else variantKids.set(key, [info]);
 }
-const owned_by = new Map(owned.map((o) => [`${o.file}:${o.cls}`, o]));
-for (const [key, list] of variant_kids) {
+const ownedBy = new Map(owned.map((o) => [`${o.file}:${o.cls}`, o]));
+for (const [key, list] of variantKids) {
   const parent = classes.get(key);
   if (!parent) continue;
-  const types_by_name = new Map<string, Set<string>>();
+  const typesByName = new Map<string, Set<string>>();
   const add = (name: string, type: string) => {
     if (parent.accessors.has(name)) return;
     const declared = parent.declared.get(name);
     if (declared != null && declared !== type) return;
-    const set = types_by_name.get(name);
+    const set = typesByName.get(name);
     if (set) set.add(type);
-    else types_by_name.set(name, new Set([type]));
+    else typesByName.set(name, new Set([type]));
   };
   for (const child of list) {
-    const child_owned = owned_by.get(`${child.file}:${child.name}`);
-    if (child_owned) for (const f of child_owned.fields) add(f.name, f.type);
+    const childOwned = ownedBy.get(`${child.file}:${child.name}`);
+    if (childOwned) for (const f of childOwned.fields) add(f.name, f.type);
     for (const [name, type] of child.getters) add(name, type);
   }
   const extra: { name: string; type: string }[] = [];
-  for (const [name, set] of types_by_name) {
+  for (const [name, set] of typesByName) {
     if (set.size !== 1) continue;
     const type = [...set][0];
     if (type == null) continue;
     if (parent.declared.get(name) === type) continue;
-    if (owned_by.get(key)?.fields.some((f) => f.name === name)) continue;
+    if (ownedBy.get(key)?.fields.some((f) => f.name === name)) continue;
     extra.push({ name, type });
   }
   if (!extra.length) continue;
-  const entry = owned_by.get(key);
+  const entry = ownedBy.get(key);
   if (entry) entry.fields.push(...extra);
   else {
     const created: OwnedFields = { cls: parent.name, file: parent.file, fields: extra, refs: new Set() };
     owned.push(created);
-    owned_by.set(key, created);
+    ownedBy.set(key, created);
   }
 }
-const by_file = new Map<string, Set<string>>([["chunk.ts", new Set(["Chunk"])]]);
-const add_import = (file: string, name: string) => {
-  const set = by_file.get(file);
+const byFile = new Map<string, Set<string>>([["chunk.ts", new Set(["Chunk"])]]);
+const addImport = (file: string, name: string) => {
+  const set = byFile.get(file);
   if (set) set.add(name);
-  else by_file.set(file, new Set([name]));
+  else byFile.set(file, new Set([name]));
 };
-const sorted_types = [...types].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-for (const { cls, file } of types.values()) add_import(file, cls);
+const sortedTypes = [...types].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+for (const { cls, file } of types.values()) addImport(file, cls);
 // An item class declared in the augmented module resolves inside `declare module` without an import.
-for (const { file, refs } of owned) for (const r of refs) if (!classes.has(`${file}:${r}`)) add_import(file, r);
+for (const { file, refs } of owned) for (const r of refs) if (!classes.has(`${file}:${r}`)) addImport(file, r);
 const ident = (name: string) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name));
-const by_module = new Map<string, OwnedFields[]>();
-const module_group = (file: string): OwnedFields[] => {
-  const group = by_module.get(file);
+const byModule = new Map<string, OwnedFields[]>();
+const moduleGroup = (file: string): OwnedFields[] => {
+  const group = byModule.get(file);
   if (group) return group;
   const created: OwnedFields[] = [];
-  by_module.set(file, created);
+  byModule.set(file, created);
   return created;
 };
-for (const o of owned) module_group(o.file).push(o);
-const augmentations = [...by_module]
+for (const o of owned) moduleGroup(o.file).push(o);
+const augmentations = [...byModule]
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([file, groups]) => {
     const body = groups
@@ -355,18 +355,18 @@ const out = [
   "// Generated by tools/gen_chunk_types.ts; do not edit.",
   "// The class each chunk_type is registered to (`register(...)(Cls)`); type-only.",
   "",
-  ...[...by_file]
+  ...[...byFile]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([file, classes]) => `import type { ${[...classes].sort().join(", ")} } from "./${file}";`),
   "",
   "/** Registered chunk class by `chunk_type`. */",
   "export interface ChunkTypes {",
-  ...sorted_types.map(([t, { cls }]) => `  ${key(t)}: ${cls};`),
+  ...sortedTypes.map(([t, { cls }]) => `  ${key(t)}: ${cls};`),
   "}",
   "",
   "/** Registered chunk class (the constructor) by `chunk_type`: what `CHUNK_TYPES.get` returns. */",
   "export interface ChunkClasses {",
-  ...sorted_types.map(([t, { cls }]) => `  ${key(t)}: typeof ${cls};`),
+  ...sortedTypes.map(([t, { cls }]) => `  ${key(t)}: typeof ${cls};`),
   "}",
   "",
   "/** The class a chunk of type `K` is read as: its registered class, else `Chunk`. */",

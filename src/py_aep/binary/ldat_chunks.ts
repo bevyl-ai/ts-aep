@@ -10,18 +10,18 @@ import {
   concat,
   define,
   descriptor,
-  int_enum,
-  py_assert,
+  intEnum,
+  pyAssert,
   struct,
   tkey,
   ValueError,
   at,
 } from "../../pyrt/index.ts";
 import type { EnumValue, IO } from "../../pyrt/index.ts";
-import { read_bytes, write_bytes } from "./bin_utils.ts";
+import { readBytes, writeBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { FmtItem, bytes_field, f4_field, f8_field, u1_field, u4_field, u8_field } from "./fmt_field.ts";
+import { FmtItem, bytesField, f4Field, f8Field, u1Field, u4Field, u8Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "./render_chunks.ts";
 
@@ -30,7 +30,7 @@ import { OutputModuleSettingsItem, RenderSettingsItem } from "./render_chunks.ts
 // ---------------------------------------------------------------------------
 
 /** Keyframe / list data item type, derived from lhd3 raw type + size. */
-export const LdatItemType = int_enum("LdatItemType", {
+export const LdatItemType = intEnum("LdatItemType", {
   unknown: 0,
   color: 1,
   three_d_spatial: 2,
@@ -109,15 +109,15 @@ export class Lhd3Chunk extends Chunk {
 }
 define(Lhd3Chunk, {
   chunk_type: { default: "lhd3" },
-  _prefix: bytes_field(8, { default: b("\x00\xd0\x0b\xee\x00\x00\x00\x00"), repr: false }),
-  count: u4_field(),
-  _count_b: u4_field({ default: 1, repr: false }),
-  item_size: u4_field(),
-  _gap2: bytes_field(3, { default: b("\x00\x00\x00"), repr: false }),
-  item_type_raw: u1_field(),
-  _counter_a: u4_field({ default: 1, repr: false }),
-  _counter_b: u4_field({ default: 2, repr: false }),
-  _trailing_pad: bytes_field(20, { default: bytes_.repeat(b("\x00"), 20), optional: true, repr: false }),
+  _prefix: bytesField(8, { default: b("\x00\xd0\x0b\xee\x00\x00\x00\x00"), repr: false }),
+  count: u4Field(),
+  _count_b: u4Field({ default: 1, repr: false }),
+  item_size: u4Field(),
+  _gap2: bytesField(3, { default: b("\x00\x00\x00"), repr: false }),
+  item_type_raw: u1Field(),
+  _counter_a: u4Field({ default: 1, repr: false }),
+  _counter_b: u4Field({ default: 2, repr: false }),
+  _trailing_pad: bytesField(20, { default: bytes_.repeat(b("\x00"), 20), optional: true, repr: false }),
 });
 register("lhd3")(Lhd3Chunk);
 
@@ -140,7 +140,7 @@ export const LHD3_BLOCK_SINGLE = 1;
  * one step because AE validates them together on load; a count written
  * without the derived counters makes AE reject the file.
  */
-export function set_lhd3_count(lhd3: Lhd3Chunk, count: number, block: number): void {
+export function setLhd3Count(lhd3: Lhd3Chunk, count: number, block: number): void {
   lhd3.count = count;
   const n = Math.max(1, Math.ceil(count / block));
   lhd3._count_b = n;
@@ -158,8 +158,8 @@ export class ShapePoint extends FmtItem {
   declare y: number;
 }
 define(ShapePoint, {
-  x: f4_field(),
-  y: f4_field(),
+  x: f4Field(),
+  y: f4Field(),
 });
 
 /** A single composition guide (ruler line). */
@@ -169,9 +169,9 @@ export class GuideItem extends FmtItem {
   declare position: number;
 }
 define(GuideItem, {
-  orientation_type: u4_field(),
-  position_type: u4_field(),
-  position: f8_field(),
+  orientation_type: u4Field(),
+  position_type: u4Field(),
+  position: f8Field(),
 });
 
 /** Guide container data chunk (8 bytes, all zeros). */
@@ -199,12 +199,12 @@ export class KfNoValue extends FmtItem {
   declare out_influence: number;
 }
 define(KfNoValue, {
-  _unknown1: u8_field(),
-  _unknown2: f8_field(),
-  in_speed: f8_field(),
-  in_influence: f8_field(),
-  out_speed: f8_field(),
-  out_influence: f8_field(),
+  _unknown1: u8Field(),
+  _unknown2: f8Field(),
+  in_speed: f8Field(),
+  in_influence: f8Field(),
+  out_speed: f8Field(),
+  out_influence: f8Field(),
 });
 
 /**
@@ -243,24 +243,24 @@ export class KfColor extends FmtItem {
   }
 }
 define(KfColor, {
-  _unknown1: u8_field(),
-  _unknown2: f8_field(),
-  in_speed: f8_field(),
-  in_influence: f8_field(),
-  out_speed: f8_field(),
-  out_influence: f8_field(),
-  a: f8_field(),
-  r: f8_field(),
-  g: f8_field(),
-  b: f8_field(),
-  _uf0: f8_field(),
-  _uf1: f8_field(),
-  _uf2: f8_field(),
-  _uf3: f8_field(),
-  _uf4: f8_field(),
-  _uf5: f8_field(),
-  _uf6: f8_field(),
-  _uf7: f8_field(),
+  _unknown1: u8Field(),
+  _unknown2: f8Field(),
+  in_speed: f8Field(),
+  in_influence: f8Field(),
+  out_speed: f8Field(),
+  out_influence: f8Field(),
+  a: f8Field(),
+  r: f8Field(),
+  g: f8Field(),
+  b: f8Field(),
+  _uf0: f8Field(),
+  _uf1: f8Field(),
+  _uf2: f8Field(),
+  _uf3: f8Field(),
+  _uf4: f8Field(),
+  _uf5: f8Field(),
+  _uf6: f8Field(),
+  _uf7: f8Field(),
 });
 
 /** Keyframe data for non-spatial multi-dimensional properties. */
@@ -286,14 +286,14 @@ export class KfMultiDimensional extends AttrsBase {
   }
 
   tobytes(): Uint8Array {
-    const all_vals = [
+    const allVals = [
       ...this.value,
       ...this.in_speed,
       ...this.in_influence,
       ...this.out_speed,
       ...this.out_influence,
     ];
-    return struct.pack(">" + "d".repeat(all_vals.length), ...all_vals);
+    return struct.pack(">" + "d".repeat(allVals.length), ...allVals);
   }
 }
 define(KfMultiDimensional, {
@@ -326,8 +326,8 @@ export class KfPosition extends AttrsBase {
     const flags = at(data, 3);
     const pad2 = data.slice(4, 8);
     // 5 fixed doubles + 3*num_value array doubles
-    const total_doubles = 5 + 3 * num_value;
-    const vals = struct.unpack(">" + "d".repeat(total_doubles), data.slice(8, 8 + total_doubles * 8));
+    const totalDoubles = 5 + 3 * num_value;
+    const vals = struct.unpack(">" + "d".repeat(totalDoubles), data.slice(8, 8 + totalDoubles * 8));
     return new this({
       pad1,
       spatial_flags: flags,
@@ -344,7 +344,7 @@ export class KfPosition extends AttrsBase {
   }
 
   tobytes(): Uint8Array {
-    const all_vals = [
+    const allVals = [
       this._unknown_header,
       this.in_speed,
       this.in_influence,
@@ -358,7 +358,7 @@ export class KfPosition extends AttrsBase {
       this._pad1,
       struct.pack(">B", this._spatial_flags),
       this._pad2,
-      struct.pack(">" + "d".repeat(all_vals.length), ...all_vals),
+      struct.pack(">" + "d".repeat(allVals.length), ...allVals),
     );
   }
 }
@@ -423,15 +423,15 @@ export class LdatItem extends AttrsBase {
   static frombytes(data: Uint8Array, kw: { item_type: LdatItemType }): LdatItem {
     const { item_type } = kw;
     // 8-byte header
-    const [time_units, in_interp, out_interp, key_flags] = struct.unpack(">iBBH", data.slice(0, 8));
+    const [timeUnits, inInterp, outInterp, keyFlags] = struct.unpack(">iBBH", data.slice(0, 8));
 
     const payload = data.slice(8);
-    const num_value = _NUM_VALUE.get(item_type) ?? null;
-    let kf_data: KfData;
+    const numValue = _NUM_VALUE.get(item_type) ?? null;
+    let kfData: KfData;
     let trailing: Uint8Array;
 
     if (item_type === LdatItemType.color) {
-      kf_data = KfColor.frombytes(payload);
+      kfData = KfColor.frombytes(payload);
       trailing = payload.slice(144);
     } else if (item_type === LdatItemType.no_value || item_type === LdatItemType.orientation) {
       // An orientation keyframe keeps its angles in the sibling
@@ -442,31 +442,31 @@ export class LdatItem extends AttrsBase {
       // Reading it as a 1-D value item shifted every ease field by
       // one slot, so `in/out_temporal_ease` reported the duration as
       // a speed and lost the influence entirely.
-      kf_data = KfNoValue.frombytes(payload);
+      kfData = KfNoValue.frombytes(payload);
       trailing = payload.slice(48);
     } else if (item_type === LdatItemType.three_d_spatial || item_type === LdatItemType.two_d_spatial) {
-      py_assert(num_value != null);
-      kf_data = KfPosition.frombytes(payload, { num_value });
+      pyAssert(numValue != null);
+      kfData = KfPosition.frombytes(payload, { num_value: numValue });
       // prefix(8) + fixed_doubles(5*8) + arrays(3*num_value*8)
-      const expected = 8 + 5 * 8 + 3 * num_value * 8;
+      const expected = 8 + 5 * 8 + 3 * numValue * 8;
       trailing = payload.slice(expected);
-    } else if (num_value != null) {
+    } else if (numValue != null) {
       // three_d, two_d, one_d
-      kf_data = KfMultiDimensional.frombytes(payload, { num_value });
-      const expected = 5 * num_value * 8;
+      kfData = KfMultiDimensional.frombytes(payload, { num_value: numValue });
+      const expected = 5 * numValue * 8;
       trailing = payload.slice(expected);
     } else {
       // marker, unknown - raw bytes
-      kf_data = payload;
+      kfData = payload;
       trailing = b("");
     }
 
     return new this({
-      time_units,
-      in_interpolation_type: in_interp,
-      out_interpolation_type: out_interp,
-      key_flags,
-      kf_data,
+      time_units: timeUnits,
+      in_interpolation_type: inInterp,
+      out_interpolation_type: outInterp,
+      key_flags: keyFlags,
+      kf_data: kfData,
       trailing,
     });
   }
@@ -505,12 +505,12 @@ descriptor(LdatItem, "temporal_continuous", new BitField("_key_flags", 3));
 // ---------------------------------------------------------------------------
 
 /** Dispatch item reading by type. */
-export function _read_item(data: Uint8Array, item_type: LdatItemType): FmtItem | LdatItem {
-  if (item_type === LdatItemType.lrdr) return RenderSettingsItem.frombytes(data);
-  if (item_type === LdatItemType.litm) return OutputModuleSettingsItem.frombytes(data);
-  if (item_type === LdatItemType.shape) return ShapePoint.frombytes(data);
-  if (item_type === LdatItemType.gide) return GuideItem.frombytes(data);
-  return LdatItem.frombytes(data, { item_type });
+export function _readItem(data: Uint8Array, itemType: LdatItemType): FmtItem | LdatItem {
+  if (itemType === LdatItemType.lrdr) return RenderSettingsItem.frombytes(data);
+  if (itemType === LdatItemType.litm) return OutputModuleSettingsItem.frombytes(data);
+  if (itemType === LdatItemType.shape) return ShapePoint.frombytes(data);
+  if (itemType === LdatItemType.gide) return GuideItem.frombytes(data);
+  return LdatItem.frombytes(data, { item_type: itemType });
 }
 
 /** Keyframe / shape / settings data items. */
@@ -532,7 +532,7 @@ export class LdatChunk extends Chunk {
     }
 
     if (item_size === 0 || count === 0) {
-      const data = read_bytes(fp, size);
+      const data = readBytes(fp, size);
       return new this({
         chunk_type,
         data,
@@ -542,11 +542,11 @@ export class LdatChunk extends Chunk {
     }
     const items: (FmtItem | LdatItem)[] = [];
     for (let i = 0, n = count; i < n; i++) {
-      const item_data = read_bytes(fp, item_size);
-      items.push(_read_item(item_data, item_type));
+      const itemData = readBytes(fp, item_size);
+      items.push(_readItem(itemData, item_type));
     }
     const remaining = size - count * item_size;
-    const trailing = remaining > 0 ? read_bytes(fp, remaining) : b("");
+    const trailing = remaining > 0 ? readBytes(fp, remaining) : b("");
     const instance = new this({
       chunk_type,
       items,
@@ -561,18 +561,18 @@ export class LdatChunk extends Chunk {
 
   write(fp: IO): number {
     if (!this.items?.length) {
-      return write_bytes(fp, this.data);
+      return writeBytes(fp, this.data);
     }
     let written = 0;
     for (const item of this.items) {
       if (item instanceof Uint8Array) {
-        written += write_bytes(fp, item);
+        written += writeBytes(fp, item);
       } else {
-        written += write_bytes(fp, item.tobytes());
+        written += writeBytes(fp, item.tobytes());
       }
     }
     if (this._trailing?.length > 0) {
-      written += write_bytes(fp, this._trailing);
+      written += writeBytes(fp, this._trailing);
     }
     return written;
   }

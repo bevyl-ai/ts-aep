@@ -1,21 +1,21 @@
 // Python: src/py_aep/models/items/av_item.py (`from __future__ import annotations`: dropped)
 
 import type { ListChunk } from "../../binary/chunk.ts";
-import { build_pin_list } from "../../binary/mutations.ts";
+import { buildPinList } from "../../binary/mutations.ts";
 import type { CmtaChunk, IdtaChunk } from "../../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { find_by_list_type, find_by_type, index_by_identity } from "../../binary/utils.ts";
+import { findByListType, findByType, indexByIdentity } from "../../binary/utils.ts";
 import { ChunkField } from "../descriptors.ts";
-import { auto_name } from "../naming.ts";
-import { default_sequence_fps } from "../preferences.ts";
-import { validate_bool } from "../validators.ts";
+import { autoName } from "../naming.ts";
+import { defaultSequenceFps } from "../preferences.ts";
+import { validateBool } from "../validators.ts";
 import { Item } from "./item.ts";
 import {
   AttributeError,
   ValueError,
   descriptor,
   int,
-  py_assert,
+  pyAssert,
   type PathLike,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -142,8 +142,8 @@ export class _IdHashSet<T extends { id: number }> {
   }
 }
 
-export function _validate_use_proxy(value: boolean, obj: AVItem): void {
-  validate_bool(value);
+export function _validateUseProxy(value: boolean, obj: AVItem): void {
+  validateBool(value);
   if (obj.proxySource == null && value) {
     throw new AttributeError(
       "Cannot set useProxy to True when there is no proxy source.",
@@ -151,11 +151,11 @@ export function _validate_use_proxy(value: boolean, obj: AVItem): void {
   }
 }
 
-export function _sync_proxy_active(obj: AVItem): void {
+export function _syncProxyActive(obj: AVItem): void {
   // idta 0x38 records that a proxy is assigned, not that it is in use:
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
-  py_assert(obj._idta != null);
+  pyAssert(obj._idta != null);
   obj._idta._proxy_active = int(obj._proxy_source != null);
   obj._sync_modified_time();
 }
@@ -246,16 +246,16 @@ export class AVItem extends Item {
 
   /** Remove this AV item, its referencing layers, and viewer. */
   remove(): void {
-    const item_id = this.id;
+    const itemId = this.id;
     for (const comp of this.usedIn) {
       for (const layer of [...comp.avLayers]) {
-        if (layer._source_id === item_id) {
+        if (layer._source_id === itemId) {
           layer.remove();
         }
       }
     }
     if (this._viewer != null) {
-      py_assert(this._parent_folder != null);
+      pyAssert(this._parent_folder != null);
       // NOTE(port): Python `list.remove` uses `==`; `Viewer` defines no `__eq__` (viewer.py), so identity matches.
       const idx = this._parent_folder._viewers.indexOf(this._viewer);
       if (idx < 0) {
@@ -375,9 +375,9 @@ export class AVItem extends Item {
   /** Remove the proxy source from this item. */
   setProxyToNone(): void {
     if (this._proxy_source) {
-      const proxy_pin = this._pin_chunks[this._proxy_pin_index];
+      const proxyPin = this._pin_chunks[this._proxy_pin_index];
       this._item_list.chunks.splice(
-        index_by_identity(this._item_list.chunks, proxy_pin),
+        indexByIdentity(this._item_list.chunks, proxyPin),
         1,
       );
       this._pin_chunks.splice(this._proxy_pin_index, 1);
@@ -393,14 +393,14 @@ export class AVItem extends Item {
    *   `Placeholder`.
    * @param width - Width in pixels (4-30000).
    * @param height - Height in pixels (4-30000).
-   * @param frame_rate - Frame rate in fps (1.0-99.0).
+   * @param frameRate - Frame rate in fps (1.0-99.0).
    * @param duration - Duration in seconds (\> 0, \<= 10800).
    */
   setProxyWithPlaceholder(
     name: string | null,
     width: number,
     height: number,
-    frame_rate: number,
+    frameRate: number,
     duration: number,
   ): void {
     if (name == null) {
@@ -409,7 +409,7 @@ export class AVItem extends Item {
       name = "Placeholder";
     }
 
-    const source = PlaceholderSource._new(name, width, height, frame_rate, duration);
+    const source = PlaceholderSource._new(name, width, height, frameRate, duration);
     this._set_proxy(source);
   }
 
@@ -421,24 +421,24 @@ export class AVItem extends Item {
    *   `Red Solid 1`). An empty string becomes `????`.
    * @param width - Width in pixels (1-30000).
    * @param height - Height in pixels (1-30000).
-   * @param pixel_aspect - Pixel aspect ratio (0.01-100.0).
+   * @param pixelAspect - Pixel aspect ratio (0.01-100.0).
    */
   setProxyWithSolid(
     color: number[],
     name: string | null,
     width: number,
     height: number,
-    pixel_aspect: number = 1.0,
+    pixelAspect: number = 1.0,
   ): void {
     if (name == null) {
       const existing = new Set([...this._project.items.values()].map((item) => item.name));
-      const solid_name = SolidSource._color_name(color[0], color[1], color[2]);
-      name = auto_name(solid_name, existing);
+      const solidName = SolidSource._color_name(color[0], color[1], color[2]);
+      name = autoName(solidName, existing);
     } else if (name === "") {
       name = "????";
     }
 
-    const source = SolidSource._new(name, color, width, height, pixel_aspect);
+    const source = SolidSource._new(name, color, width, height, pixelAspect);
     this._set_proxy(source);
   }
 
@@ -480,7 +480,7 @@ export class AVItem extends Item {
    *
    * @param file - Path to a representative frame; sibling frames in the same folder are gathered
    *   into the sequence.
-   * @param force_alphabetical - Take every file of the same type in the folder, in alphabetical
+   * @param forceAlphabetical - Take every file of the same type in the folder, in alphabetical
    *   order, rather than the numbered frames (see `ImportOptions.forceAlphabetical`).
    * @throws {@link ValueError} If the extension is not a supported footage format, or one After
    *   Effects does not import as a sequence (movies, audio, HEIC, FBX, data files).
@@ -489,14 +489,14 @@ export class AVItem extends Item {
    */
   setProxyWithSequence(
     file: PathLike,
-    force_alphabetical: boolean = false,
+    forceAlphabetical: boolean = false,
   ): void {
     this._set_proxy(
       FileSource._from_file(file, {
         sequence: true,
-        force_alphabetical,
+        force_alphabetical: forceAlphabetical,
         windows: this._project._windows,
-        default_sequence_fps: default_sequence_fps(this._project._preferences),
+        default_sequence_fps: defaultSequenceFps(this._project._preferences),
       }),
     );
   }
@@ -514,26 +514,26 @@ export class AVItem extends Item {
     if (source instanceof FileSource) {
       return source._pin;
     }
-    const pin = build_pin_list(source._sspc, source._opti, {
+    const pin = buildPinList(source._sspc, source._opti, {
       is_solid: source instanceof SolidSource,
     });
     // Link the source to its color record, as parsing does, so the
     // version fit and the color-management setters reach it.
-    source._clrs = find_by_list_type(pin.chunks, "CLRS");
-    source._linl = find_by_type(source._clrs.chunks, "linl");
+    source._clrs = findByListType(pin.chunks, "CLRS");
+    source._linl = findByType(source._clrs.chunks, "linl");
     return pin;
   }
 
   /** Replace or append a LIST:Pin chunk at the given index. */
-  _replace_pin(pin_index: number, new_pin: ListChunk): void {
-    if (pin_index < this._pin_chunks.length) {
-      const old_pin = this._pin_chunks[pin_index];
-      const idx = index_by_identity(this._item_list.chunks, old_pin);
-      this._item_list.chunks[idx] = new_pin;
-      this._pin_chunks[pin_index] = new_pin;
+  _replace_pin(pinIndex: number, newPin: ListChunk): void {
+    if (pinIndex < this._pin_chunks.length) {
+      const oldPin = this._pin_chunks[pinIndex];
+      const idx = indexByIdentity(this._item_list.chunks, oldPin);
+      this._item_list.chunks[idx] = newPin;
+      this._pin_chunks[pinIndex] = newPin;
     } else {
-      this._item_list.chunks.push(new_pin);
-      this._pin_chunks.push(new_pin);
+      this._item_list.chunks.push(newPin);
+      this._pin_chunks.push(newPin);
     }
   }
 
@@ -553,7 +553,7 @@ descriptor(
   AVItem,
   "useProxy",
   ChunkField.bool("_idta", "use_proxy", {
-    validate: _validate_use_proxy,
-    post_set: _sync_proxy_active,
+    validate: _validateUseProxy,
+    post_set: _syncProxyActive,
   }),
 );

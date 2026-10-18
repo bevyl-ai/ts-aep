@@ -4,7 +4,7 @@ import { getitem } from "../../../pyrt/index.ts";
 import { ListChunk } from "../../binary/chunk.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { LayerType } from "../../enums/index.ts";
-import { label_index } from "../preferences.ts";
+import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { EffectParamDefs } from "../descriptors.ts";
@@ -56,8 +56,8 @@ export class TextLayer extends AVLayer {
       tdmn,
       effect_param_defs = null,
     } = kw;
-    const text_props_tdmn = new TdmnChunk({ value: "ADBE Text Properties" });
-    const text_props_tdgp = new ListChunk({
+    const textPropsTdmn = new TdmnChunk({ value: "ADBE Text Properties" });
+    const textPropsTdgp = new ListChunk({
       list_type: "tdgp",
       chunks: [
         new TdsbChunk({}),
@@ -76,7 +76,7 @@ export class TextLayer extends AVLayer {
       layer_id,
       duration,
       containing_comp,
-      root_tdgp_extra: [text_props_tdmn, text_props_tdgp],
+      root_tdgp_extra: [textPropsTdmn, textPropsTdgp],
       effect_param_defs,
     });
     layer._ldta.layer_type = LayerType.TEXT;
@@ -87,7 +87,7 @@ export class TextLayer extends AVLayer {
     );
     // AE labels scripted text layers with the "Text Label Index"
     // preference (factory value 1, probed in AE 2026).
-    layer._ldta.label = label_index(
+    layer._ldta.label = labelIndex(
       containing_comp._project._preferences,
       "Text Label Index",
       1,

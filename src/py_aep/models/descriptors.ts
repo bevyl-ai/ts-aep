@@ -14,16 +14,16 @@ import {
   ValueError,
   getattr,
   int,
-  py_bool,
+  pyBool,
   repr,
-  instance_dict,
-  type_name,
+  instanceDict,
+  typeName,
 } from "../../pyrt/index.ts";
 import type { EnumHelpers, EnumValue } from "../../pyrt/enum.ts";
 import type { FieldValue } from "../binary/fmt_field.ts";
 import type { ParamDef } from "../parsers/effect.ts";
-import { get_ae_version_major } from "../ae_version.ts";
-import { validate_bool, validate_enum } from "./validators.ts";
+import { getAeVersionMajor } from "../ae_version.ts";
+import { validateBool, validateEnum } from "./validators.ts";
 
 /** Callable applied to a chunk value on read (`transform`) or write (`reverse`). */
 export type ChunkTransform<R = FieldValue> = (value: FieldValue) => R;
@@ -105,17 +105,17 @@ export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 // (round-trip idempotency). Parsers cache values via `__dict__` overrides
 // or the private `_cache_value` helpers instead. Outside parsing the
 // default (True) lets end-user writes through.
-export const _materialization_allowed = new ContextVar<boolean>("_materialization_allowed", {
+export const _materializationAllowed = new ContextVar<boolean>("_materialization_allowed", {
   default: true,
 });
 
 /** Run `body` with descriptor writes forbidden; restores the previous state after. */
-export function _run_suppressed<R>(body: () => R): R {
-  const token = _materialization_allowed.set(false);
+export function _runSuppressed<R>(body: () => R): R {
+  const token = _materializationAllowed.set(false);
   try {
     return body();
   } finally {
-    _materialization_allowed.reset(token);
+    _materializationAllowed.reset(token);
   }
 }
 
@@ -131,22 +131,22 @@ export function _run_suppressed<R>(body: () => R): R {
  * `_suppress_materialization().run(() => body)`, and
  * `@_suppress_materialization()` becomes `.decorate(fn)`.
  */
-export function _suppress_materialization() {
+export function _suppressMaterialization() {
   function decorate<T, A extends unknown[], R>(fn: (this: T, ...args: A) => R): (this: T, ...args: A) => R {
     return function (this: T, ...args: A) {
-      return _run_suppressed(() => fn.apply(this, args));
+      return _runSuppressed(() => fn.apply(this, args));
     };
   }
   // Callable (`@_suppress_materialization()` applied as `_suppress_materialization()(fn)`),
   // and also exposes `.decorate(fn)` / `.run(body)`.
-  return Object.assign(decorate, { run: _run_suppressed, decorate });
+  return Object.assign(decorate, { run: _runSuppressed, decorate });
 }
 
 /**
  * Python `isinstance(x, IntEnum)` for a py_enum object (pyrt/enum.ts).
  */
 // NOTE(port): int_enum === py_enum in pyrt, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
-export function is_enum(x: unknown): x is EnumHelpers<number> {
+export function isEnum(x: unknown): x is EnumHelpers<number> {
   return x != null && typeof x === "object" && "__members__" in x && "has" in x && typeof x.has === "function";
 }
 
@@ -156,11 +156,11 @@ export function is_enum(x: unknown): x is EnumHelpers<number> {
  * Detects a `from_binary` classmethod (via `__self__`) or a direct
  * enum class reference.
  */
-export function _enum_class<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
+export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
   if (transform == null) return null;
-  let enum_cls = getattr(transform, "__self__", null);
-  if (enum_cls == null && is_enum(transform)) enum_cls = transform;
-  if (is_enum(enum_cls)) return enum_cls;
+  let enumCls = getattr(transform, "__self__", null);
+  if (enumCls == null && isEnum(transform)) enumCls = transform;
+  if (isEnum(enumCls)) return enumCls;
   return null;
 }
 
@@ -169,17 +169,17 @@ export function _enum_class<R>(transform: ChunkTransform<R> | null | undefined):
  * bound to the enum (its `__self__`); a py_enum method needs `this` bound
  * the same way, and `_enum_class` finds the enum through `__self__`.
  */
-export function bound_enum_method<V, R extends number>(
-  enum_cls: EnumHelpers<number>,
+export function boundEnumMethod<V, R extends number>(
+  enumCls: EnumHelpers<number>,
   name: string,
   dflt: EnumHelpers<R> | ((value: V) => R),
 ): (value: V) => R {
-  const m = getattr(enum_cls, name, dflt);
+  const m = getattr(enumCls, name, dflt);
   // Python's default is the enum class itself, which is callable (`E(v)`); a
   // py_enum object is not, so use `E.of` and keep `__self__` for `_enum_class`.
-  if (m === dflt) return is_enum(dflt) ? Object.assign((v: V) => dflt.of(v), { __self__: dflt }) : dflt;
+  if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { __self__: dflt }) : dflt;
   if (typeof m !== "function") return m;
-  return Object.assign(m.bind(enum_cls), { __self__: enum_cls });
+  return Object.assign(m.bind(enumCls), { __self__: enumCls });
 }
 
 /**
@@ -197,7 +197,7 @@ export function bound_enum_method<V, R extends number>(
  * is for the read paths that are not `ChunkField`s (e.g. a `@property`
  * over decoded JSON).
  */
-export function enum_or_raw<V, R>(convert: (value: V) => R): (value: V) => R | V {
+export function enumOrRaw<V, R>(convert: (value: V) => R): (value: V) => R | V {
   function _transform(value: V): R | V {
     try {
       return convert(value);
@@ -217,24 +217,24 @@ export function enum_or_raw<V, R>(convert: (value: V) => R): (value: V) => R | V
  * Raw ints must appear in the enum's value map; any other type must
  * already be an instance of the enum.
  */
-export function _validate_enum_member(enum_cls: EnumHelpers<number>, value: unknown, public_name: string): void {
-  if (enum_cls.has(value)) return;
+export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown, publicName: string): void {
+  if (enumCls.has(value)) return;
   // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integer-valued float such as 2.0 takes the int branch and gets the "Invalid value" message instead of "is not a valid".
   // A Python bool is an int that hashes like 0/1, so it is checked as its int value.
   if (typeof value === "boolean" || (typeof value === "number" && Number.isInteger(value))) {
     const key = typeof value === "boolean" ? Number(value) : value;
-    if (!enum_cls.has(key)) {
-      const members = enum_cls
+    if (!enumCls.has(key)) {
+      const members = enumCls
         .members()
-        .map((m) => `${enum_cls.name_of(m)} (${m})`)
+        .map((m) => `${enumCls.name_of(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${repr(value)} for ${repr(public_name)}. ` +
-          `Valid ${enum_cls.__name__} values: ${members}`,
+        `Invalid value ${repr(value)} for ${repr(publicName)}. ` +
+          `Valid ${enumCls.__name__} values: ${members}`,
       );
     }
   } else {
-    throw new ValueError(`${repr(value)} is not a valid ${enum_cls.__name__}`);
+    throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__}`);
   }
 }
 
@@ -283,11 +283,11 @@ export class ChunkField<
    * returns when the stored type is wider.
    */
   constructor(
-    chunk_attr: A & NoInfer<AttrName<O>>,
+    chunkAttr: A & NoInfer<AttrName<O>>,
     field: F,
     kw?: ChunkFieldKw<T, O, RawField<O, A, F>>,
   );
-  constructor(chunk_attr: string, field: string, kw: ChunkFieldOptions<T, O> = {}) {
+  constructor(chunkAttr: string, field: string, kw: ChunkFieldOptions<T, O> = {}) {
     const {
       transform = null,
       reverse = null,
@@ -298,7 +298,7 @@ export class ChunkField<
       post_set = null,
       min_version = null,
     } = kw;
-    this.chunkAttr = chunk_attr;
+    this.chunkAttr = chunkAttr;
     this.field = field;
     this.transform = transform;
     this.reverse = reverse;
@@ -310,7 +310,7 @@ export class ChunkField<
     this.minVersion = min_version;
     // Derived once so __set__ validates membership without
     // re-inspecting the transform on every write.
-    this._enum_cls = _enum_class(transform);
+    this._enum_cls = _enumClass(transform);
   }
 
   __set_name__(owner: Function, name: string): void {
@@ -325,7 +325,7 @@ export class ChunkField<
     // Only an instance that already has a `__dict__` can hold one: a read
     // does not create it (shaped for speed: every model field read lands here).
     if (Object.prototype.hasOwnProperty.call(obj, "__dict__")) {
-      const overrides = instance_dict(obj);
+      const overrides = instanceDict(obj);
       if (overrides.has(this.publicName)) return overrides.get(this.publicName);
     }
     const body = getattr(obj, this.chunkAttr);
@@ -342,7 +342,7 @@ export class ChunkField<
     if (this.minVersion != null) {
       let major: number | null;
       try {
-        major = get_ae_version_major(obj);
+        major = getAeVersionMajor(obj);
       } catch (e) {
         if (!(e instanceof TypeError_)) throw e;
         // Version undeterminable (e.g. a ViewOptions whose viewer
@@ -355,7 +355,7 @@ export class ChunkField<
         );
       }
     }
-    if (!_materialization_allowed.get()) {
+    if (!_materializationAllowed.get()) {
       throw new RuntimeError(
         `Cannot write ${repr(this.publicName)} via descriptor during ` +
           `parsing. Use obj.__dict__[${repr(this.publicName)}] for ` +
@@ -369,18 +369,18 @@ export class ChunkField<
     // validate too, or its `__dict__` fallback below would accept a
     // value the chunk-backed path rejects.
     if (this.validate) this.validate(value, obj);
-    if (this._enum_cls != null) _validate_enum_member(this._enum_cls, value, this.publicName);
+    if (this._enum_cls != null) _validateEnumMember(this._enum_cls, value, this.publicName);
     if (this.preSet != null) getattr(obj, this.preSet).call(obj);
-    instance_dict(obj).delete(this.publicName);
+    instanceDict(obj).delete(this.publicName);
     let body = getattr(obj, this.chunkAttr);
     if (body == null) {
-      instance_dict(obj).set(this.publicName, value);
+      instanceDict(obj).set(this.publicName, value);
       return;
     }
-    if (py_bool(getattr(body, "synthetic", false))) {
+    if (pyBool(getattr(body, "synthetic", false))) {
       const owner: ChunkOwner = obj;
       if (owner._ensure_materialized == null) {
-        throw new AttributeError(`'${type_name(owner)}' object has no attribute '_ensure_materialized'`);
+        throw new AttributeError(`'${typeName(owner)}' object has no attribute '_ensure_materialized'`);
       }
       owner._ensure_materialized();
       body = getattr(obj, this.chunkAttr);
@@ -413,14 +413,14 @@ export class ChunkField<
    * `U1Chunk.value`) add `transform=bool, reverse=int`.
    */
   static bool<O extends object = object, A extends AttrName<O> = AttrName<O>, F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>>(
-    chunk_attr: A & NoInfer<AttrName<O>>,
+    chunkAttr: A & NoInfer<AttrName<O>>,
     field: F,
     kwargs?: ChunkFieldKw<boolean, O, RawField<O, A, F>>,
   ): ChunkField<boolean, O>;
-  static bool(chunk_attr: string, field: string, kwargs: ChunkFieldOptions<boolean, object> = {}): ChunkField<boolean> {
+  static bool(chunkAttr: string, field: string, kwargs: ChunkFieldOptions<boolean, object> = {}): ChunkField<boolean> {
     kwargs = { ...kwargs };
-    if (!("validate" in kwargs)) kwargs.validate = validate_bool;
-    return new this(chunk_attr, field, kwargs);
+    if (!("validate" in kwargs)) kwargs.validate = validateBool;
+    return new this(chunkAttr, field, kwargs);
   }
 
   /**
@@ -449,8 +449,8 @@ export class ChunkField<
     A extends AttrName<O> = AttrName<O>,
     F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>,
   >(
-    enum_cls: E,
-    chunk_attr: A & NoInfer<AttrName<O>>,
+    enumCls: E,
+    chunkAttr: A & NoInfer<AttrName<O>>,
     field: F,
     kw: ChunkFieldEnumKw<EnumValue<E> | Raw, O, RawField<O, A, F>> & { allow_out_of_enum_values: true },
   ): ChunkField<EnumValue<E> | Raw, O>;
@@ -460,27 +460,27 @@ export class ChunkField<
     A extends AttrName<O> = AttrName<O>,
     F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>,
   >(
-    enum_cls: E,
-    chunk_attr: A & NoInfer<AttrName<O>>,
+    enumCls: E,
+    chunkAttr: A & NoInfer<AttrName<O>>,
     field: string & F,
     kw?: ChunkFieldEnumKw<EnumValue<E>, O, RawField<O, A, F>> & { allow_out_of_enum_values?: false },
   ): ChunkField<EnumValue<E>, O>;
   static enum<V extends number, R extends V>(
-    enum_cls: EnumHelpers<V>,
-    chunk_attr: string,
+    enumCls: EnumHelpers<V>,
+    chunkAttr: string,
     field: string,
     kw: { allow_out_of_enum_values?: boolean } & ChunkFieldEnumKw<V, object, R> = {},
   ): ChunkField<V> {
     const { allow_out_of_enum_values = false, ...kwargs } = kw;
-    if (!("transform" in kwargs)) kwargs.transform = bound_enum_method(enum_cls, "from_binary", enum_cls);
-    if (!("reverse" in kwargs)) kwargs.reverse = bound_enum_method(enum_cls, "to_binary", int);
+    if (!("transform" in kwargs)) kwargs.transform = boundEnumMethod(enumCls, "from_binary", enumCls);
+    if (!("reverse" in kwargs)) kwargs.reverse = boundEnumMethod(enumCls, "to_binary", int);
     if (allow_out_of_enum_values) {
       // A stored value outside the enum reads back raw instead of raising;
       // the overloads require the raw field type to fit the declared one.
       const transform = kwargs.transform;
-      if (transform != null) kwargs.transform = enum_or_raw(transform);
-      if (!kwargs.read_only && !("validate" in kwargs)) kwargs.validate = validate_enum(enum_cls);
+      if (transform != null) kwargs.transform = enumOrRaw(transform);
+      if (!kwargs.read_only && !("validate" in kwargs)) kwargs.validate = validateEnum(enumCls);
     }
-    return new this(chunk_attr, field, kwargs);
+    return new this(chunkAttr, field, kwargs);
   }
 }

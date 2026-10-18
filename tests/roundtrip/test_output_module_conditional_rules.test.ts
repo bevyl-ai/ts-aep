@@ -9,8 +9,8 @@
 import { expect, test } from "bun:test";
 
 import { int, Path, ValueError } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { as_instance, parse_project_fresh } from "../helpers.ts";
+import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { asInstance, parseProjectFresh } from "../helpers.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
@@ -25,7 +25,7 @@ const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "model
 const AVI_NONE_SAMPLE = FORMAT_DIR.div("avi", "video_codec_none.aep");
 
 function _om(project: Project): OutputModule {
-  return as_instance(project.renderQueue, RenderQueue).items[0].outputModules[0];
+  return asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 }
 
 const REJECTS: [string, string, SettingValue][] = [
@@ -53,7 +53,7 @@ const REJECTS: [string, string, SettingValue][] = [
 test.each(REJECTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
   "test_disallowed_under_codec_context[%s]",
   (_id: string, sample: string, key: string, value: SettingValue) => {
-    const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
+    const project = parseProjectFresh(FORMAT_DIR.div(`${sample}.aep`));
     // NOTE(port): `settings[key] = value` is Python __setitem__; called explicitly, same validation path.
     raises(ValueError, () => {
       _om(project).settings.set(key, value);
@@ -75,32 +75,32 @@ const ACCEPTS: [string, string, SettingValue][] = [
 test.each(ACCEPTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
   "test_allowed_under_codec_context[%s]",
   (_id: string, sample: string, key: string, value: SettingValue) => {
-    const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
-    const tmp_path = make_tmp_path();
+    const project = parseProjectFresh(FORMAT_DIR.div(`${sample}.aep`));
+    const tmpPath = makeTmpPath();
     const om = _om(project);
     om.settings.set(key, value);
-    project.save(tmp_path.div("out.aep"));
-    expect(_om(parse_project_fresh(tmp_path.div("out.aep"))).settings.get(key)).toBe(value);
+    project.save(tmpPath.div("out.aep"));
+    expect(_om(parseProjectFresh(tmpPath.div("out.aep"))).settings.get(key)).toBe(value);
   },
 );
 
 test("test_avi_none_codec_allows_rgba", () => {
-  const tmp_path = make_tmp_path();
-  const project = parse_project_fresh(AVI_NONE_SAMPLE);
+  const tmpPath = makeTmpPath();
+  const project = parseProjectFresh(AVI_NONE_SAMPLE);
   const om = _om(project);
   om.settings.set("Channels", OutputChannels.RGBA);
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
-  project.save(tmp_path.div("out.aep"));
-  const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
+  project.save(tmpPath.div("out.aep"));
+  const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 /** Changing the FO bitrate narrows the rate to the new singleton. */
 test("test_mp3_bitrate_change_revalidates_rate", () => {
-  const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
+  const project = parseProjectFresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
-  as_instance(om.formatOptions, XmlFormatOptions).bitrate = 320;
+  asInstance(om.formatOptions, XmlFormatOptions).bitrate = 320;
   raises(ValueError, () => {
     om.settings.set("Audio Sample Rate", 44100);
   });
@@ -113,7 +113,7 @@ test("test_mp3_bitrate_change_revalidates_rate", () => {
  * which only MP3 mono at 18/20 kbps can store (AE-saved evidence).
  */
 test("test_mp3_mono_rows_from_binary_evidence", () => {
-  let project = parse_project_fresh(FORMAT_DIR.div("mp3", "mp3_mono_18.aep"));
+  let project = parseProjectFresh(FORMAT_DIR.div("mp3", "mp3_mono_18.aep"));
   let om = _om(project);
   expect(int(om.settings.get("Audio Sample Rate"))).toBe(12000); // RATE_12000 decode
   raises(ValueError, () => {
@@ -121,7 +121,7 @@ test("test_mp3_mono_rows_from_binary_evidence", () => {
   });
   om.settings.set("Audio Sample Rate", 12000);
 
-  project = parse_project_fresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
+  project = parseProjectFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
   om = _om(project);
   raises(ValueError, () => {
     om.settings.set("Audio Sample Rate", 48000); // stereo@320, not mono@320
@@ -142,7 +142,7 @@ test("test_modern_ae_depth_low_byte_decodes", () => {
     ["cineon", "dpx_fido", OutputColorDepth.TRILLIONS_OF_COLORS],
   ];
   for (const [subdir, name, expected] of cases) {
-    const project = parse_project_fresh(FORMAT_DIR.div(subdir, `${name}.aep`));
+    const project = parseProjectFresh(FORMAT_DIR.div(subdir, `${name}.aep`));
     const om = _om(project);
     expect([name, om.settings.get("Depth")]).toEqual([name, expected]);
     expect([name, om.validateState()]).toEqual([name, []]);
@@ -151,8 +151,8 @@ test("test_modern_ae_depth_low_byte_decodes", () => {
 
 test("test_dnx_alpha_type_decodes", () => {
   const qt = FORMAT_DIR.div("quicktime");
-  const compressed = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_Compressed.aep"));
-  expect(as_instance(_om(compressed).formatOptions, XmlFormatOptions).dnxAlphaType).toBe(1);
-  const none = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_None.aep"));
-  expect(as_instance(_om(none).formatOptions, XmlFormatOptions).dnxAlphaType == null).toBe(true);
+  const compressed = parseProjectFresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_Compressed.aep"));
+  expect(asInstance(_om(compressed).formatOptions, XmlFormatOptions).dnxAlphaType).toBe(1);
+  const none = parseProjectFresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_None.aep"));
+  expect(asInstance(_om(none).formatOptions, XmlFormatOptions).dnxAlphaType == null).toBe(true);
 });

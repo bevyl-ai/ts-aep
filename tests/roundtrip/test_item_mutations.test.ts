@@ -2,9 +2,9 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, StopIteration, TypeError_, ValueError, contains, dict_get, getitem, len, py_bool, py_eq } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
+import { Path, StopIteration, TypeError_, ValueError, contains, dictGet, getitem, len, pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
+import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { FolderItem } from "../../src/py_aep/models/items/folder.ts";
@@ -12,21 +12,21 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { PlaceholderSource } from "../../src/py_aep/models/sources/placeholder.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 
 /** Tests for FolderItem.addFolder(). */
 describe("TestAddFolder", () => {
   test("test_add_folder_returns_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("NewFolder");
     expect(folder.name).toBe("NewFolder");
   });
 
   test("test_add_folder_adds_to_items", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const n = len(root.items);
     root.addFolder("NewFolder");
@@ -34,22 +34,22 @@ describe("TestAddFolder", () => {
   });
 
   test("test_add_folder_registers_in_project", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("NewFolder");
     expect(getitem(app.project.items, folder.id) === folder).toBe(true);
   });
 
   test("test_add_folder_unique_id", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
-    const existing_ids = new Set(app.project.items.keys());
+    const existingIds = new Set(app.project.items.keys());
     const folder = root.addFolder("NewFolder");
-    expect(existing_ids.has(folder.id)).toBe(false);
+    expect(existingIds.has(folder.id)).toBe(false);
   });
 
   test("test_add_folder_parent_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("NewFolder");
     expect(folder.parentFolder === root).toBe(true);
@@ -57,7 +57,7 @@ describe("TestAddFolder", () => {
 
   /** Add a folder inside a non-root folder. */
   test("test_add_folder_nested", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const parent = root.addFolder("Parent");
     const child = parent.addFolder("Child");
@@ -67,49 +67,49 @@ describe("TestAddFolder", () => {
   });
 
   test("test_add_folder_empty", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("EmptyNew");
     expect(folder.numItems).toBe(0);
   });
 
   test("test_add_folder_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("RoundTripFolder");
-    const folder_id = folder.id;
+    const folderId = folder.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    expect(app2.project.items.has(folder_id)).toBe(true);
-    const found = getitem(app2.project.items, folder_id);
+    expect(app2.project.items.has(folderId)).toBe(true);
+    const found = getitem(app2.project.items, folderId);
     expect(found.name).toBe("RoundTripFolder");
     expect(found.typeName).toBe("Folder");
   });
 
   test("test_add_folder_nested_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const parent = root.addFolder("Parent");
     const child = parent.addFolder("Child");
-    const parent_id = parent.id;
-    const child_id = child.id;
+    const parentId = parent.id;
+    const childId = child.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const parent2 = getitem(app2.project.items, parent_id);
-    const child2 = getitem(app2.project.items, child_id);
+    const parent2 = getitem(app2.project.items, parentId);
+    const child2 = getitem(app2.project.items, childId);
     expect(parent2.name).toBe("Parent");
     expect(child2.name).toBe("Child");
     expect(child2.parentFolder === parent2).toBe(true);
   });
 
   test("test_add_multiple_folders", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const n = len(root.items);
     const f1 = root.addFolder("A");
@@ -123,7 +123,7 @@ describe("TestAddFolder", () => {
 /** Tests for FolderItem.addComp(). */
 describe("TestAddComp", () => {
   test("test_add_comp_returns_compitem", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("NewComp", 1920, 1080, 1.0, 10.0, 24.0);
     expect(comp instanceof CompItem).toBe(true);
@@ -132,7 +132,7 @@ describe("TestAddComp", () => {
   test("test_add_comp_inserts_at_front", () => {
     // AE 2026 places a new comp at the FRONT of the root folder, right
     // after the `fdta` header (verified via headless script addComp).
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("NewComp", 1920, 1080, 1.0, 10.0, 24.0);
     const container = root._children_container;
@@ -143,14 +143,14 @@ describe("TestAddComp", () => {
   });
 
   test("test_add_comp_name", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("TestComp", 1920, 1080, 1.0, 5.0, 30.0);
     expect(comp.name).toBe("TestComp");
   });
 
   test("test_add_comp_dimensions", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("DimComp", 3840, 2160, 1.0, 10.0, 24.0);
     expect(comp.width).toBe(3840);
@@ -158,50 +158,50 @@ describe("TestAddComp", () => {
   });
 
   test("test_add_comp_frame_rate", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("FpsComp", 1920, 1080, 1.0, 10.0, 29.97);
     expect(Math.abs(comp.frameRate - 29.97) < 0.01).toBe(true);
   });
 
   test("test_add_comp_duration", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("DurComp", 1920, 1080, 1.0, 15.5, 24.0);
     expect(Math.abs(comp.duration - 15.5) < 0.01).toBe(true);
   });
 
   test("test_add_comp_pixel_aspect", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("PAComp", 720, 480, 0.9091, 10.0, 29.97);
     expect(Math.abs(comp.pixelAspect - 0.9091) < 0.001).toBe(true);
   });
 
   test("test_add_comp_no_layers", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("EmptyComp", 1920, 1080, 1.0, 10.0, 24.0);
     expect(len(comp.layers)).toBe(0);
   });
 
   test("test_add_comp_unique_id", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
-    const existing_ids = new Set(app.project.items.keys());
+    const existingIds = new Set(app.project.items.keys());
     const comp = root.addComp("IDComp", 1920, 1080, 1.0, 10.0, 24.0);
-    expect(existing_ids.has(comp.id)).toBe(false);
+    expect(existingIds.has(comp.id)).toBe(false);
   });
 
   test("test_add_comp_parent_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("ParentComp", 1920, 1080, 1.0, 10.0, 24.0);
     expect(comp.parentFolder === root).toBe(true);
   });
 
   test("test_add_comp_registered_in_project", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("RegComp", 1920, 1080, 1.0, 10.0, 24.0);
     expect(getitem(app.project.items, comp.id) === comp).toBe(true);
@@ -209,7 +209,7 @@ describe("TestAddComp", () => {
   });
 
   test("test_add_comp_in_subfolder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("SubFolder");
     const comp = folder.addComp("SubComp", 1280, 720, 1.0, 5.0, 25.0);
@@ -218,32 +218,32 @@ describe("TestAddComp", () => {
   });
 
   test("test_add_comp_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("RTComp", 1920, 1080, 1.0, 10.0, 24.0);
-    const comp_id = comp.id;
+    const compId = comp.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    expect(app2.project.items.has(comp_id)).toBe(true);
-    const comp2 = getitem(app2.project.items, comp_id);
+    expect(app2.project.items.has(compId)).toBe(true);
+    const comp2 = getitem(app2.project.items, compId);
     expect(comp2.name).toBe("RTComp");
     expect(comp2.typeName).toBe("Composition");
   });
 
   test("test_add_comp_roundtrip_preserves_settings", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("Settings", 3840, 2160, 1.0, 30.0, 60.0);
-    const comp_id = comp.id;
+    const compId = comp.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp2 = as_instance(getitem(app2.project.items, comp_id), CompItem);
+    const comp2 = asInstance(getitem(app2.project.items, compId), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.width).toBe(3840);
     expect(comp2.height).toBe(2160);
@@ -253,8 +253,8 @@ describe("TestAddComp", () => {
 
   /** Test add_comp when no existing comp to clone from (folder-only project). */
   test("test_add_comp_from_scratch_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     // Remove all comps from project to force from-scratch path
     for (const comp of [...app.project.compositions]) {
@@ -264,12 +264,12 @@ describe("TestAddComp", () => {
     expect(len(app.project.compositions)).toBe(0);
 
     const comp = root.addComp("Scratch", 1280, 720, 1.0, 5.0, 25.0);
-    const comp_id = comp.id;
+    const compId = comp.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp2 = as_instance(getitem(app2.project.items, comp_id), CompItem);
+    const comp2 = asInstance(getitem(app2.project.items, compId), CompItem);
     expect(comp2 instanceof CompItem).toBe(true);
     expect(comp2.name).toBe("Scratch");
     expect(comp2.width).toBe(1280);
@@ -280,37 +280,37 @@ describe("TestAddComp", () => {
 /** Tests for Item.remove(). */
 describe("TestItemRemove", () => {
   test("test_remove_folder_from_root", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const n = len(root.items);
     // Find the first folder
     const folder = root.items.find((i) => i instanceof FolderItem);
     if (folder === undefined) throw new StopIteration();
-    const folder_id = folder.id;
+    const folderId = folder.id;
     folder.remove();
     expect(len(root.items)).toBe(n - 1);
-    expect(app.project.items.has(folder_id)).toBe(false);
+    expect(app.project.items.has(folderId)).toBe(false);
   });
 
   test("test_remove_root_folder_raises", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     raises(ValueError, () => app.project.rootFolder.remove(), "Cannot remove the root folder");
   });
 
   test("test_remove_comp_from_project", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = app.project.compositions[0];
-    const comp_id = comp.id;
-    const n_items = len(root.items);
+    const compId = comp.id;
+    const nItems = len(root.items);
     comp.remove();
-    expect(len(root.items)).toBe(n_items - 1);
-    expect(app.project.items.has(comp_id)).toBe(false);
+    expect(len(root.items)).toBe(nItems - 1);
+    expect(app.project.items.has(compId)).toBe(false);
   });
 
   /** Remove a folder that was just added. */
   test("test_remove_added_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const n = len(root.items);
     const folder = root.addFolder("Temp");
@@ -321,37 +321,37 @@ describe("TestItemRemove", () => {
 
   /** Removing a folder should recursively remove its children. */
   test("test_remove_folder_recursive", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     // Create nested structure
     const parent = root.addFolder("Parent");
     const child = parent.addFolder("Child");
-    const parent_id = parent.id;
-    const child_id = child.id;
+    const parentId = parent.id;
+    const childId = child.id;
 
     parent.remove();
-    expect(app.project.items.has(parent_id)).toBe(false);
-    expect(app.project.items.has(child_id)).toBe(false);
+    expect(app.project.items.has(parentId)).toBe(false);
+    expect(app.project.items.has(childId)).toBe(false);
   });
 
   /** Removing a comp that is used as a layer source should clean up layers. */
   test("test_remove_comp_cleans_layers", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     // Find a comp that is nested in another comp
     // First check if any comp is used as a layer source
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        if (layer instanceof AVLayer && py_bool(layer._source_id)) {
-          const source_item = dict_get(app.project.items, layer._source_id);
-          if (source_item instanceof CompItem) {
+        if (layer instanceof AVLayer && pyBool(layer._source_id)) {
+          const sourceItem = dictGet(app.project.items, layer._source_id);
+          if (sourceItem instanceof CompItem) {
             // Found a comp used as a layer source
-            const source_id = source_item.id;
-            const parent_comp = comp;
-            source_item.remove();
+            const sourceId = sourceItem.id;
+            const parentComp = comp;
+            sourceItem.remove();
             // Layer referencing the removed comp should be gone
-            for (const remaining_layer of parent_comp.layers) {
-              if (remaining_layer instanceof AVLayer) {
-                expect(remaining_layer._source_id !== source_id).toBe(true);
+            for (const remainingLayer of parentComp.layers) {
+              if (remainingLayer instanceof AVLayer) {
+                expect(remainingLayer._source_id !== sourceId).toBe(true);
               }
             }
             return;
@@ -363,50 +363,50 @@ describe("TestItemRemove", () => {
   });
 
   test("test_remove_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     // Add and remove a folder
     const folder = root.addFolder("ToDelete");
-    const folder_id = folder.id;
+    const folderId = folder.id;
     folder.remove();
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    expect(app2.project.items.has(folder_id)).toBe(false);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    expect(app2.project.items.has(folderId)).toBe(false);
   });
 
   test("test_remove_comp_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const comp = app.project.compositions[0];
-    const comp_id = comp.id;
+    const compId = comp.id;
     comp.remove();
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    expect(app2.project.items.has(comp_id)).toBe(false);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    expect(app2.project.items.has(compId)).toBe(false);
     expect(len(app2.project.compositions)).toBe(0);
   });
 
   /** Add a comp, save, verify it's there, remove it, save again, verify gone. */
   test("test_add_and_remove_comp_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("composition", "bgColor_custom.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("Ephemeral", 1920, 1080, 1.0, 5.0, 24.0);
-    const comp_id = comp.id;
+    const compId = comp.id;
 
     // Save with the new comp
-    app.project.save(tmp_path.div("with_comp.aep"));
-    const app2 = parse_aep(tmp_path.div("with_comp.aep"));
-    expect(app2.project.items.has(comp_id)).toBe(true);
+    app.project.save(tmpPath.div("with_comp.aep"));
+    const app2 = parseAep(tmpPath.div("with_comp.aep"));
+    expect(app2.project.items.has(compId)).toBe(true);
 
     // Remove and save again
-    getitem(app2.project.items, comp_id).remove();
-    app2.project.save(tmp_path.div("without_comp.aep"));
-    const app3 = parse_aep(tmp_path.div("without_comp.aep"));
-    expect(app3.project.items.has(comp_id)).toBe(false);
+    getitem(app2.project.items, compId).remove();
+    app2.project.save(tmpPath.div("without_comp.aep"));
+    const app3 = parseAep(tmpPath.div("without_comp.aep"));
+    expect(app3.project.items.has(compId)).toBe(false);
   });
 });
 
@@ -422,7 +422,7 @@ describe("TestParentFolderSetter", () => {
   }
 
   test("test_move_updates_parent_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
@@ -431,7 +431,7 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_move_removes_from_old_items", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
@@ -440,7 +440,7 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_move_adds_to_new_items", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
@@ -449,29 +449,29 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_move_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const [, fwi, empty] = _folders(app);
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
-    const comp1_id = comp1.id;
+    const comp1Id = comp1.id;
     comp1.parentFolder = empty;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    const comp1_2 = getitem(app2.project.items, comp1_id);
+    const comp12 = getitem(app2.project.items, comp1Id);
     const empty2 = app2.project.rootFolder.folders.find((f) => f.name === "EmptyFolder");
     if (empty2 === undefined) throw new StopIteration();
     const fwi2 = app2.project.rootFolder.folders.find((f) => f.name === "FolderWithItems");
     if (fwi2 === undefined) throw new StopIteration();
-    expect(comp1_2.parentFolder === empty2).toBe(true);
-    expect(contains(empty2.items, comp1_2)).toBe(true);
-    expect(contains(fwi2.items, comp1_2)).toBe(false);
+    expect(comp12.parentFolder === empty2).toBe(true);
+    expect(contains(empty2.items, comp12)).toBe(true);
+    expect(contains(fwi2.items, comp12)).toBe(false);
   });
 
   test("test_move_to_root", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const fwi = root.folders.find((f) => f.name === "FolderWithItems");
     if (fwi === undefined) throw new StopIteration();
@@ -485,22 +485,22 @@ describe("TestParentFolderSetter", () => {
 
   /** Moving a folder relocates its whole subtree. */
   test("test_move_subtree_keeps_children", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
-    const root_folder = root.folders.find((f) => f.name === "RootFolder");
-    if (root_folder === undefined) throw new StopIteration();
-    const level1 = root_folder.folders[0];
+    const rootFolder = root.folders.find((f) => f.name === "RootFolder");
+    if (rootFolder === undefined) throw new StopIteration();
+    const level1 = rootFolder.folders[0];
     const level2 = level1.folders[0];
-    const child_names = level2.folders.map((f) => f.name);
+    const childNames = level2.folders.map((f) => f.name);
 
     level2.parentFolder = root;
     expect(contains(root.items, level2)).toBe(true);
     expect(contains(level1.items, level2)).toBe(false);
-    expect(py_eq(level2.folders.map((f) => f.name), child_names)).toBe(true);
+    expect(pyEq(level2.folders.map((f) => f.name), childNames)).toBe(true);
   });
 
   test("test_same_parent_noop", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
     if (empty === undefined) throw new StopIteration();
@@ -511,7 +511,7 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_self_move_raises", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
     if (empty === undefined) throw new StopIteration();
@@ -521,18 +521,18 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_move_into_descendant_raises", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
-    const root_folder = root.folders.find((f) => f.name === "RootFolder");
-    if (root_folder === undefined) throw new StopIteration();
-    const level2 = root_folder.folders[0].folders[0];
+    const rootFolder = root.folders.find((f) => f.name === "RootFolder");
+    if (rootFolder === undefined) throw new StopIteration();
+    const level2 = rootFolder.folders[0].folders[0];
     raises(ValueError, () => {
-      root_folder.parentFolder = level2;
+      rootFolder.parentFolder = level2;
     }, "cannot be moved inside itself");
   });
 
   test("test_move_root_raises", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
     if (empty === undefined) throw new StopIteration();
@@ -542,7 +542,7 @@ describe("TestParentFolderSetter", () => {
   });
 
   test("test_non_folder_target_raises", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const fwi = root.folders.find((f) => f.name === "FolderWithItems");
     if (fwi === undefined) throw new StopIteration();
@@ -556,7 +556,7 @@ describe("TestParentFolderSetter", () => {
 
   /** An item's open-panel viewer moves with it between folders. */
   test("test_move_relocates_viewer", () => {
-    const app = parse_aep(SAMPLES_DIR.div("composition", "selection_both_layers.aep"));
+    const app = parseAep(SAMPLES_DIR.div("composition", "selection_both_layers.aep"));
     const root = app.project.rootFolder;
     const comp = root.compositions.find((c) => c._viewer != null && contains(root.items, c));
     if (comp === undefined) throw new StopIteration();
@@ -573,97 +573,97 @@ describe("TestParentFolderSetter", () => {
 /** Tests for Project.importPlaceholder(). */
 describe("TestImportPlaceholder", () => {
   test("test_import_placeholder_returns_footage", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
     expect(item instanceof FootageItem).toBe(true);
   });
 
   test("test_import_placeholder_name", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("MyPlaceholder", 1920, 1080, 30.0, 10.0);
     expect(item.name).toBe("MyPlaceholder");
   });
 
   test("test_import_placeholder_dimensions", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 3840, 2160, 24.0, 5.0);
     expect(item.width).toBe(3840);
     expect(item.height).toBe(2160);
   });
 
   test("test_import_placeholder_frame_rate", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 29.97, 10.0);
     expect(Math.abs(item.frameRate - 29.97) < 0.01).toBe(true);
   });
 
   test("test_import_placeholder_duration", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 7.5);
     expect(Math.abs(item.duration - 7.5) < 0.01).toBe(true);
   });
 
   test("test_import_placeholder_is_placeholder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
     expect(item.mainSource instanceof PlaceholderSource).toBe(true);
     expect(item.assetType).toBe("placeholder");
   });
 
   test("test_import_placeholder_unique_id", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
-    const existing_ids = new Set(app.project.items.keys());
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const existingIds = new Set(app.project.items.keys());
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
-    expect(existing_ids.has(item.id)).toBe(false);
+    expect(existingIds.has(item.id)).toBe(false);
   });
 
   test("test_import_placeholder_in_root_folder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
     expect(item.parentFolder === app.project.rootFolder).toBe(true);
     expect(contains(app.project.rootFolder.items, item)).toBe(true);
   });
 
   test("test_import_placeholder_registered_in_project", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
     expect(getitem(app.project.items, item.id) === item).toBe(true);
     expect(contains(app.project.footages, item)).toBe(true);
   });
 
   test("test_import_placeholder_invalid_width", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     raises(ValueError, () => app.project.importPlaceholder("PH", 2, 1080, 30.0, 10.0), "must be >= 4");
   });
 
   test("test_import_placeholder_invalid_height", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     raises(ValueError, () => app.project.importPlaceholder("PH", 1920, 0, 30.0, 10.0), "must be >= 4");
   });
 
   test("test_import_placeholder_invalid_frame_rate", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     raises(ValueError, () => app.project.importPlaceholder("PH", 1920, 1080, 0.5, 10.0), "must be >= 1");
   });
 
   test("test_import_placeholder_invalid_duration", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     // A zero duration has no frames; validate_duration rejects it (its
     // minimum is one frame at the maximum 99 fps).
     raises(ValueError, () => app.project.importPlaceholder("PH", 1920, 1080, 30.0, 0.0), "must be >=");
   });
 
   test("test_import_placeholder_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("RTPH", 1280, 720, 25.0, 8.0);
-    const item_id = item.id;
+    const itemId = item.id;
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
 
-    expect(app2.project.items.has(item_id)).toBe(true);
-    const item2 = as_instance(getitem(app2.project.items, item_id), FootageItem);
+    expect(app2.project.items.has(itemId)).toBe(true);
+    const item2 = asInstance(getitem(app2.project.items, itemId), FootageItem);
     expect(item2.name).toBe("RTPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -674,7 +674,7 @@ describe("TestImportPlaceholder", () => {
 /** Tests for FootageItem.replaceWithPlaceholder(). */
 describe("TestReplaceWithPlaceholder", () => {
   test("test_replace_with_placeholder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithPlaceholder("NewPH", 1920, 1080, 30.0, 10.0);
     expect(footage.mainSource instanceof PlaceholderSource).toBe(true);
@@ -684,15 +684,15 @@ describe("TestReplaceWithPlaceholder", () => {
   });
 
   test("test_replace_with_placeholder_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
-    const footage_id = footage.id;
+    const footageId = footage.id;
     footage.replaceWithPlaceholder("RtPH", 1280, 720, 24.0, 5.0);
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
     expect(item2.name).toBe("RtPH");
     expect(item2.width).toBe(1280);
     expect(item2.height).toBe(720);
@@ -703,7 +703,7 @@ describe("TestReplaceWithPlaceholder", () => {
 /** Tests for FootageItem.replaceWithSolid(). */
 describe("TestReplaceWithSolid", () => {
   test("test_replace_with_solid", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "placeholder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "placeholder.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithSolid([1.0, 0.0, 0.0], "RedSolid", 1920, 1080, 1.0);
     expect(footage.mainSource instanceof SolidSource).toBe(true);
@@ -713,31 +713,31 @@ describe("TestReplaceWithSolid", () => {
   });
 
   test("test_replace_with_solid_color", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "placeholder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "placeholder.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithSolid([0.5, 0.25, 0.75], "ColorSolid", 1920, 1080, 1.0);
-    const color = as_instance(footage.mainSource, SolidSource).color;
+    const color = asInstance(footage.mainSource, SolidSource).color;
     expect(Math.abs(color[0] - 0.5) < 0.01).toBe(true);
     expect(Math.abs(color[1] - 0.25) < 0.01).toBe(true);
     expect(Math.abs(color[2] - 0.75) < 0.01).toBe(true);
   });
 
   test("test_replace_with_solid_invalid_color", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "placeholder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "placeholder.aep"));
     const footage = app.project.footages[0];
     raises(ValueError, () => footage.replaceWithSolid([1.5, 0.0, 0.0], "Bad", 1920, 1080, 1.0), "must be <= 1");
   });
 
   test("test_replace_with_solid_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("footage", "placeholder.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("footage", "placeholder.aep"));
     const footage = app.project.footages[0];
-    const footage_id = footage.id;
+    const footageId = footage.id;
     footage.replaceWithSolid([0.0, 1.0, 0.0], "GreenSolid", 960, 540, 1.0);
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
     expect(item2.name).toBe("GreenSolid");
     expect(item2.width).toBe(960);
     expect(item2.height).toBe(540);
@@ -748,7 +748,7 @@ describe("TestReplaceWithSolid", () => {
 /** Tests for AVItem.setProxyToNone(). */
 describe("TestSetProxyToNone", () => {
   test("test_set_proxy_to_none_removes_proxy", () => {
-    const app = parse_aep(SAMPLES_DIR.div("item", "proxy.aep"));
+    const app = parseAep(SAMPLES_DIR.div("item", "proxy.aep"));
     // Find an item that has a proxy
     const footage = app.project.footages.find((f) => f.proxySource != null) ?? null;
     if (footage == null) return skip("No item with proxy found in sample");
@@ -758,7 +758,7 @@ describe("TestSetProxyToNone", () => {
 
   /** Calling set_proxy_to_none when there's no proxy is a no-op. */
   test("test_set_proxy_to_none_noop", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     // Import a placeholder (which has no proxy)
     const item = app.project.importPlaceholder("PH", 1920, 1080, 30.0, 10.0);
     item.setProxyToNone();
@@ -766,16 +766,16 @@ describe("TestSetProxyToNone", () => {
   });
 
   test("test_set_proxy_to_none_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("item", "proxy.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("item", "proxy.aep"));
     const footage = app.project.footages.find((f) => f.proxySource != null) ?? null;
     if (footage == null) return skip("No item with proxy found in sample");
-    const footage_id = footage.id;
+    const footageId = footage.id;
     footage.setProxyToNone();
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource == null).toBe(true);
   });
 });
@@ -783,27 +783,27 @@ describe("TestSetProxyToNone", () => {
 /** Tests for AVItem.setProxyWithPlaceholder(). */
 describe("TestSetProxyWithPlaceholder", () => {
   test("test_set_proxy_with_placeholder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithPlaceholder("ProxyPH", 960, 540, 30.0, 10.0);
     expect(footage.proxySource instanceof PlaceholderSource).toBe(true);
   });
 
   test("test_set_proxy_with_placeholder_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
-    const footage_id = footage.id;
+    const footageId = footage.id;
     footage.setProxyWithPlaceholder("ProxyPH", 960, 540, 30.0, 10.0);
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource != null).toBe(true);
   });
 
   test("test_set_proxy_replaces_existing", () => {
-    const app = parse_aep(SAMPLES_DIR.div("item", "proxy.aep"));
+    const app = parseAep(SAMPLES_DIR.div("item", "proxy.aep"));
     const footage = app.project.footages.find((f) => f.proxySource != null) ?? null;
     if (footage == null) return skip("No item with proxy found in sample");
     footage.setProxyWithPlaceholder("NewProxy", 640, 480, 25.0, 5.0);
@@ -814,27 +814,27 @@ describe("TestSetProxyWithPlaceholder", () => {
 /** Tests for AVItem.setProxyWithSolid(). */
 describe("TestSetProxyWithSolid", () => {
   test("test_set_proxy_with_solid", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithSolid([1.0, 0.0, 0.0], "RedProxy", 960, 540, 1.0);
     expect(footage.proxySource instanceof SolidSource).toBe(true);
   });
 
   test("test_set_proxy_with_solid_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
-    const footage_id = footage.id;
+    const footageId = footage.id;
     footage.setProxyWithSolid([0.0, 0.0, 1.0], "BlueProxy", 960, 540, 1.0);
 
-    app.project.save(tmp_path.div("out.aep"));
-    const app2 = parse_aep(tmp_path.div("out.aep"));
-    const item2 = as_instance(getitem(app2.project.items, footage_id), FootageItem);
+    app.project.save(tmpPath.div("out.aep"));
+    const app2 = parseAep(tmpPath.div("out.aep"));
+    const item2 = asInstance(getitem(app2.project.items, footageId), FootageItem);
     expect(item2.proxySource != null).toBe(true);
   });
 
   test("test_set_proxy_then_remove", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithSolid([1.0, 1.0, 0.0], "YProxy", 640, 480, 1.0);
     expect(footage.proxySource != null).toBe(true);
@@ -846,14 +846,14 @@ describe("TestSetProxyWithSolid", () => {
 /** Tests for add_folder with None name. */
 describe("TestAutoNameFolder", () => {
   test("test_none_generates_untitled", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder(null);
     expect(folder.name.startsWith("Untitled ")).toBe(true);
   });
 
   test("test_none_increments", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const f1 = root.addFolder(null);
     const f2 = root.addFolder(null);
@@ -861,14 +861,14 @@ describe("TestAutoNameFolder", () => {
   });
 
   test("test_none_default_arg", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder();
     expect(folder.name.startsWith("Untitled ")).toBe(true);
   });
 
   test("test_empty_string_allowed", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const folder = root.addFolder("");
     expect(folder.name).toBe("");
@@ -878,14 +878,14 @@ describe("TestAutoNameFolder", () => {
 /** Tests for add_comp with None name. */
 describe("TestAutoNameComp", () => {
   test("test_none_generates_comp", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp(null, 1920, 1080, 1.0, 10.0, 24.0);
     expect(comp.name.startsWith("Comp ")).toBe(true);
   });
 
   test("test_empty_string_allowed", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const root = app.project.rootFolder;
     const comp = root.addComp("", 1920, 1080, 1.0, 10.0, 24.0);
     expect(comp.name).toBe("");
@@ -895,13 +895,13 @@ describe("TestAutoNameComp", () => {
 /** Tests for import_placeholder with None/empty name. */
 describe("TestAutoNamePlaceholder", () => {
   test("test_none_becomes_missing_name", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder(null, 1920, 1080, 24.0, 10.0);
     expect(item.name).toBe("Missing Name");
   });
 
   test("test_empty_becomes_placeholder", () => {
-    const app = parse_aep(SAMPLES_DIR.div("folder", "folder.aep"));
+    const app = parseAep(SAMPLES_DIR.div("folder", "folder.aep"));
     const item = app.project.importPlaceholder("", 1920, 1080, 24.0, 10.0);
     expect(item.name).toBe("Placeholder");
   });
@@ -910,28 +910,28 @@ describe("TestAutoNamePlaceholder", () => {
 /** Tests for replace_with_solid with None/empty name. */
 describe("TestAutoNameSolid", () => {
   test("test_none_auto_names_from_color", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithSolid([1.0, 0.0, 0.0], null, 1920, 1080);
     expect(footage.name.includes("Red Solid")).toBe(true);
   });
 
   test("test_empty_becomes_question_marks", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithSolid([1.0, 0.0, 0.0], "", 1920, 1080);
     expect(footage.name).toBe("????");
   });
 
   test("test_replace_with_placeholder_none", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithPlaceholder(null, 1920, 1080, 24.0, 10.0);
     expect(footage.name).toBe("Missing Name");
   });
 
   test("test_replace_with_placeholder_empty", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.replaceWithPlaceholder("", 1920, 1080, 24.0, 10.0);
     expect(footage.name).toBe("Placeholder");
@@ -941,28 +941,28 @@ describe("TestAutoNameSolid", () => {
 /** Tests for proxy methods with None/empty name. */
 describe("TestAutoNameProxy", () => {
   test("test_proxy_placeholder_none", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithPlaceholder(null, 1920, 1080, 24.0, 10.0);
     expect(footage.proxySource != null).toBe(true);
   });
 
   test("test_proxy_placeholder_empty", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithPlaceholder("", 1920, 1080, 24.0, 10.0);
     expect(footage.proxySource != null).toBe(true);
   });
 
   test("test_proxy_solid_none", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithSolid([0.0, 1.0, 0.0], null, 960, 540);
     expect(footage.proxySource != null).toBe(true);
   });
 
   test("test_proxy_solid_empty", () => {
-    const app = parse_aep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
+    const app = parseAep(SAMPLES_DIR.div("footage", "solid_colors.aep"));
     const footage = app.project.footages[0];
     footage.setProxyWithSolid([0.0, 1.0, 0.0], "", 960, 540);
     expect(footage.proxySource != null).toBe(true);

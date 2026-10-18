@@ -7,7 +7,7 @@
  */
 
 import { expect, test } from "bun:test";
-import { as_instance, parse_app, SAMPLES_DIR } from "../helpers.ts";
+import { asInstance, parseApp, SAMPLES_DIR } from "../helpers.ts";
 import { GetSettingsFormat, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
@@ -28,9 +28,9 @@ const _CORPUS: Path[] = sorted(
 /** pytest `ids=[str(p.relative_to(SAMPLES_DIR)) for p in _CORPUS]` */
 const _IDS = _CORPUS.map((p) => p.path.slice(SAMPLES_DIR.path.length + 1));
 
-test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_settings_and_format_options_reads_never_raise[%s]", (_id: string, aep_path: Path) => {
-  const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_settings_and_format_options_reads_never_raise[%s]", (_id: string, aepPath: Path) => {
+  const app = parseApp(aepPath);
+  for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
     for (const om of rqi.outputModules) {
       om.getSettings(GetSettingsFormat.STRING);
       om.getSettings(GetSettingsFormat.NUMBER);
@@ -48,12 +48,12 @@ test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_settings_and_forma
   }
 });
 
-test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_rouu_depth_and_frame_rate_decode[%s]", (_id: string, aep_path: Path) => {
+test.each(_CORPUS.map((p, i) => [_IDS[i], p] as const))("test_rouu_depth_and_frame_rate_decode[%s]", (_id: string, aepPath: Path) => {
   // Every AE-written `Rouu` holds a listed depth and a positive output
   // frame rate, including the 29.97 fps modules whose rate fraction sits
   // right before the depth.
-  const app = parse_app(aep_path);
-  for (const rqi of as_instance(app.project.renderQueue, RenderQueue).items) {
+  const app = parseApp(aepPath);
+  for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
     for (const om of rqi.outputModules) {
       expect(OutputColorDepth.has(om._roou.depth)).toBe(true);
       expect(om._roou.frame_rate > 0).toBe(true);

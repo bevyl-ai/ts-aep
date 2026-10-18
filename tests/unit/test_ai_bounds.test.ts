@@ -9,10 +9,10 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { approx as pytest_approx, raises, warns } from "../../src/pyrt/pytest.ts";
-import { b, bytes_, encode, getitem, len, py_assert, py_eq, range, sorted } from "../../src/pyrt/index.ts";
+import { approx as pytestApprox, raises, warns } from "../../src/pyrt/pytest.ts";
+import { b, bytes_, encode, getitem, len, pyAssert, pyEq, range, sorted } from "../../src/pyrt/index.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
-import { EMPTY_BOX, footage_size, read_ai_layer_bounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
+import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
 
 const PAGE = 600;
@@ -37,21 +37,21 @@ type Approx = { expected: Box | null; opts: { abs: number } };
  *
  * Python's `*layers` plus keyword-only options: the trailing object carries them.
  */
-function build_pdf(...args: Array<string | PdfKw>): Uint8Array {
+function buildPdf(...args: Array<string | PdfKw>): Uint8Array {
   const last = args.at(-1);
   const kw: PdfKw = typeof last === "object" ? last : {};
   const layers = args.filter((arg) => typeof arg === "string");
   const { extra_objects = "", resources = "" } = kw;
 
   const count = len(layers);
-  const ocg_first = 5;
+  const ocgFirst = 5;
   const objs = new Map<number, string>();
-  const refs = [...range(count)].map((i) => `${ocg_first + i} 0 R`).join(" ");
+  const refs = [...range(count)].map((i) => `${ocgFirst + i} 0 R`).join(" ");
   // Like Illustrator: `/Order` lists the layers top first, the reverse of
   // `/OCGs`, so layer i is document index i (bottom first).
   const order = [...range(count)]
     .reverse()
-    .map((i) => `${ocg_first + i} 0 R`)
+    .map((i) => `${ocgFirst + i} 0 R`)
     .join(" ");
   objs.set(
     1,
@@ -59,7 +59,7 @@ function build_pdf(...args: Array<string | PdfKw>): Uint8Array {
       `/D << /ON [${refs}] /Order [${order}] >> >> >>`,
   );
   objs.set(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-  const props = [...range(count)].map((i) => `/MC${i} ${ocg_first + i} 0 R`).join(" ");
+  const props = [...range(count)].map((i) => `/MC${i} ${ocgFirst + i} 0 R`).join(" ");
   objs.set(
     3,
     `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE} ${PAGE}] ` +
@@ -69,7 +69,7 @@ function build_pdf(...args: Array<string | PdfKw>): Uint8Array {
   const body = layers.map((content, i) => `/OC /MC${i} BDC\n${content}\nEMC\n`).join("");
   objs.set(4, `<< /Length ${len(body)} >>\nstream\n${body}\nendstream`);
   for (const i of range(count)) {
-    objs.set(ocg_first + i, `<< /Type /OCG /Name (L${i}) >>`);
+    objs.set(ocgFirst + i, `<< /Type /OCG /Name (L${i}) >>`);
   }
 
   let out = "%PDF-1.5\n";
@@ -87,7 +87,7 @@ function build_pdf(...args: Array<string | PdfKw>): Uint8Array {
 
 /** The artwork box of a single-layer PDF built from `content`. */
 function measure(content: string, kw: PdfKw = {}): Box | null {
-  return read_ai_layer_bounds("probe.pdf", build_pdf(content, kw))[0];
+  return readAiLayerBounds("probe.pdf", buildPdf(content, kw))[0];
 }
 
 /** `pytest.approx(box)` with a couple of 1/65536 quanta of tolerance. */
@@ -98,22 +98,22 @@ function approx(box: Box | null): Approx {
 }
 
 /** The Python `actual == approx(...)` assertion. */
-function expect_approx(actual: Box | null, ap: Approx): void {
-  expect(pytest_approx(actual, ap.expected, ap.opts)).toBe(true);
+function expectApprox(actual: Box | null, ap: Approx): void {
+  expect(pytestApprox(actual, ap.expected, ap.opts)).toBe(true);
 }
 
 describe("TestFills", () => {
   test("test_rect_fill_expands_by_a_quarter_point", () => {
-    expect_approx(measure("50 200 100 80 re f"), approx([49.75, 199.75, 150.25, 280.25]));
+    expectApprox(measure("50 200 100 80 re f"), approx([49.75, 199.75, 150.25, 280.25]));
   });
 
   test("test_even_odd_fill_matches_non_zero", () => {
     const nonzero = measure("50 200 100 80 re f");
-    expect_approx(measure("50 200 100 80 re f*"), approx(nonzero));
+    expectApprox(measure("50 200 100 80 re f*"), approx(nonzero));
   });
 
   test("test_open_subpath_fill_is_measured", () => {
-    expect_approx(
+    expectApprox(
       measure("400 300 m 460 300 l 460 360 l f"),
       approx([399.75, 299.75, 460.25, 360.25]),
     );
@@ -126,14 +126,14 @@ describe("TestFills", () => {
   test("test_control_point_hull_not_curve_bounds", () => {
     // The cubic peaks 112.5 above its ends; its control points sit 150
     // above, and After Effects measures the control points.
-    expect_approx(
+    expectApprox(
       measure("40 480 m 240 630 -60 630 140 480 c f"),
       approx([-60.25, 479.75, 240.25, 630.25]),
     );
   });
 
   test("test_contributions_union", () => {
-    expect_approx(
+    expectApprox(
       measure("20 160 40 40 re f 200 560 30 30 re f"),
       approx([19.75, 159.75, 230.25, 590.25]),
     );
@@ -142,14 +142,14 @@ describe("TestFills", () => {
 
 describe("TestStrokes", () => {
   test("test_single_straight_segment_has_no_join_term", () => {
-    expect_approx(
+    expectApprox(
       measure("10 w 50 250 m 150 250 l S"),
       approx([45.0, 245.0, 155.0, 255.0]),
     );
   });
 
   test.each([0, 1, 2])("test_cap_style_is_ignored[%#]", (cap) => {
-    expect_approx(
+    expectApprox(
       measure(`10 w ${cap} J 50 250 m 150 250 l S`),
       approx([45.0, 245.0, 155.0, 255.0]),
     );
@@ -157,7 +157,7 @@ describe("TestStrokes", () => {
 
   test.each([0, 1, 2])("test_join_style_is_ignored[%#]", (join) => {
     // All three joins expand by the same worst-case miter term.
-    expect_approx(
+    expectApprox(
       measure(`10 w 4 M ${join} j 40 400 m 70 440 l 100 400 l S`),
       approx([30.0, 390.0, 110.0, 450.0]),
     );
@@ -168,19 +168,19 @@ describe("TestStrokes", () => {
     [4, [30.0, 390.0, 110.0, 450.0]],
   ])("test_joined_stroke_scales_with_the_miter_limit[%#]", (miter: number, expected: Box) => {
     // A joined path expands by (lw / 2) * (miter limit / 2).
-    expect_approx(measure(`10 w ${miter} M 40 400 m 70 440 l 100 400 l S`), approx(expected));
+    expectApprox(measure(`10 w ${miter} M 40 400 m 70 440 l 100 400 l S`), approx(expected));
   });
 
   test("test_stroked_rectangle_takes_the_exact_right_angle_miter", () => {
     // sqrt(2) * lw / 2, not the worst-case miter-limit expansion.
-    expect_approx(
+    expectApprox(
       measure("10 w 10 M 480 40 60 40 re S"),
       approx([472.9289, 32.9289, 547.0711, 87.0711]),
     );
   });
 
   test("test_line_width_scales_with_the_matrix", () => {
-    expect_approx(
+    expectApprox(
       measure("q 2 0 0 2 0 0 cm 10 w 10 280 m 40 280 l S Q"),
       approx([10.0, 550.0, 90.0, 570.0]),
     );
@@ -189,7 +189,7 @@ describe("TestStrokes", () => {
   test("test_expansion_is_per_axis_not_a_single_scale", () => {
     // A 4x/1x matrix expands x by 20 and y by 5; a geometric-mean scale
     // would give 10 for both.
-    expect_approx(
+    expectApprox(
       measure("q 4 0 0 1 0 0 cm 10 w 5 500 m 35 500 l S Q"),
       approx([0.0, 495.0, 160.0, 505.0]),
     );
@@ -198,7 +198,7 @@ describe("TestStrokes", () => {
   test("test_fill_and_stroke_uses_the_stroke_rule_outright", () => {
     // The 0.25 fill pad is not also applied and no max() is taken: at
     // lw 0.04 with miter 4 the expansion is 0.04, well under 0.25.
-    expect_approx(
+    expectApprox(
       measure("0.04 w 4 M 400 200 m 460 200 l 460 260 l h B"),
       approx([399.96, 199.96, 460.04, 260.04]),
     );
@@ -217,7 +217,7 @@ describe("TestShadings", () => {
   }
 
   test("test_shading_paints_the_clip_region", () => {
-    expect_approx(_shade("q 0 0 20 20 re W n /Sh0 sh Q"), approx([-0.25, -0.25, 20.25, 20.25]));
+    expectApprox(_shade("q 0 0 20 20 re W n /Sh0 sh Q"), approx([-0.25, -0.25, 20.25, 20.25]));
   });
 
   test.each([
@@ -227,11 +227,11 @@ describe("TestShadings", () => {
     "q 0 0 20 20 re W n q 0 0 100 100 re W n /Sh0 sh Q Q",
     "q 0 0 100 100 re W n q 0 0 20 20 re W n /Sh0 sh Q Q",
   ])("test_a_further_clip_intersects_rather_than_replaces[%#]", (content: string) => {
-    expect_approx(_shade(content), approx([-0.25, -0.25, 20.25, 20.25]));
+    expectApprox(_shade(content), approx([-0.25, -0.25, 20.25, 20.25]));
   });
 
   test("test_a_clip_restored_by_Q_widens_again", () => {
-    expect_approx(
+    expectApprox(
       _shade("q 0 0 100 100 re W n q 0 0 20 20 re W n Q /Sh0 sh Q"),
       approx([-0.25, -0.25, 100.25, 100.25]),
     );
@@ -242,23 +242,23 @@ describe("TestState", () => {
   test("test_graphics_state_spans_layer_boundaries", () => {
     // A `q` pushed in one layer is popped by the next layer's `Q`, so the
     // measurer has to run one state machine over the whole stream.
-    const boxes = read_ai_layer_bounds(
+    const boxes = readAiLayerBounds(
       "probe.pdf",
-      build_pdf("q 1 0 0 1 100 100 cm 0 0 40 40 re f", "Q 0 0 40 40 re f"),
+      buildPdf("q 1 0 0 1 100 100 cm 0 0 40 40 re f", "Q 0 0 40 40 re f"),
     );
-    expect_approx(boxes[0], approx([99.75, 99.75, 140.25, 140.25]));
-    expect_approx(boxes[1], approx([-0.25, -0.25, 40.25, 40.25]));
+    expectApprox(boxes[0], approx([99.75, 99.75, 140.25, 140.25]));
+    expectApprox(boxes[1], approx([-0.25, -0.25, 40.25, 40.25]));
   });
 
   test("test_line_width_persists_across_layers", () => {
-    const boxes = read_ai_layer_bounds("probe.pdf", build_pdf("10 w", "50 250 m 150 250 l S"));
-    expect_approx(boxes[1], approx([45.0, 245.0, 155.0, 255.0]));
+    const boxes = readAiLayerBounds("probe.pdf", buildPdf("10 w", "50 250 m 150 250 l S"));
+    expectApprox(boxes[1], approx([45.0, 245.0, 155.0, 255.0]));
   });
 
   test("test_clip_is_ignored_except_for_shadings", () => {
     // Illustrator pre-trims the geometry it writes, and After Effects
     // measures straight through a residual clip.
-    expect_approx(
+    expectApprox(
       measure("q 0 0 10 10 re W n 50 200 100 80 re f Q"),
       approx([49.75, 199.75, 150.25, 280.25]),
     );
@@ -266,11 +266,11 @@ describe("TestState", () => {
 
   test("test_saturates_at_the_fixed_point_range", () => {
     const box = measure("40000 40000 5000 5000 re f");
-    py_assert(box != null);
+    pyAssert(box != null);
     const limit = (2 ** 31 - 1) / 65536;
-    expect(pytest_approx(box[2], limit, { abs: 1e-4 })).toBe(true);
-    expect(pytest_approx(box[3], limit, { abs: 1e-4 })).toBe(true);
-    expect(pytest_approx(box[2] - box[0], 0.25, { abs: 1e-3 })).toBe(true);
+    expect(pytestApprox(box[2], limit, { abs: 1e-4 })).toBe(true);
+    expect(pytestApprox(box[3], limit, { abs: 1e-4 })).toBe(true);
+    expect(pytestApprox(box[2] - box[0], 0.25, { abs: 1e-3 })).toBe(true);
   });
 });
 
@@ -285,14 +285,14 @@ describe("TestXObjects", () => {
   const _RES = "/XObject << /Fm0 20 0 R /Im0 21 0 R >>";
 
   test("test_form_bbox_through_matrix_and_ctm_unpadded", () => {
-    expect_approx(
+    expectApprox(
       measure("q 1 0 0 1 20 20 cm /Fm0 Do Q", { extra_objects: _FORM, resources: _RES }),
       approx([20.0, 20.0, 100.0, 80.0]),
     );
   });
 
   test("test_image_unit_square_through_ctm_unpadded", () => {
-    expect_approx(
+    expectApprox(
       measure("q 50 0 0 40 200 40 cm /Im0 Do Q", { extra_objects: _IMAGE, resources: _RES }),
       approx([200.0, 40.0, 250.0, 80.0]),
     );
@@ -303,8 +303,8 @@ describe("TestXObjects", () => {
     // XObject, spelled inline, so it contributes the same unit square.
     const ctm = "q 40 0 0 30 100 100 cm";
     const inline = measure(`${ctm} BI /W 1 /H 1 /CS /G /BPC 8 ID \x00 EI Q`);
-    expect_approx(inline, approx([100.0, 100.0, 140.0, 130.0]));
-    expect_approx(
+    expectApprox(inline, approx([100.0, 100.0, 140.0, 130.0]));
+    expectApprox(
       inline,
       approx(measure(`${ctm} /Im0 Do Q`, { extra_objects: _IMAGE, resources: _RES })),
     );
@@ -312,7 +312,7 @@ describe("TestXObjects", () => {
 
   test("test_a_layer_may_mix_padded_and_unpadded_contributions", () => {
     // The expansion is applied per contribution, never to the union.
-    expect_approx(
+    expectApprox(
       measure("100 100 40 40 re f q 1 0 0 1 300 300 cm /Fm0 Do Q", {
         extra_objects: _FORM,
         resources: _RES,
@@ -323,7 +323,7 @@ describe("TestXObjects", () => {
 });
 
 /** A font dictionary with neither `/Widths` nor a `/FontDescriptor`. */
-function _bare_font(name: string, encoding = ""): string {
+function _bareFont(name: string, encoding = ""): string {
   return (
     `20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /${name}` +
     `${encoding} >>\nendobj\n`
@@ -351,48 +351,48 @@ describe("TestText", () => {
   test("test_vertical_extent_is_the_font_bbox_not_ascent_descent", () => {
     // 1.4 em tall (the FontBBox), not 1.0 em (Ascent minus Descent).
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    py_assert(box != null);
-    expect(pytest_approx(box[3] - box[1], 33.6, { abs: 1e-3 })).toBe(true);
-    expect(pytest_approx(box[1], 100 - 0.4 * 24, { abs: 1e-3 })).toBe(true);
+    pyAssert(box != null);
+    expect(pytestApprox(box[3] - box[1], 33.6, { abs: 1e-3 })).toBe(true);
+    expect(pytestApprox(box[1], 100 - 0.4 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_horizontal_extent_is_the_full_advance", () => {
     const box = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    py_assert(box != null);
-    expect(pytest_approx(box[2] - box[0], 2 * 0.6 * 24, { abs: 1e-3 })).toBe(true);
+    pyAssert(box != null);
+    expect(pytestApprox(box[2] - box[0], 2 * 0.6 * 24, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_character_spacing_widens_the_cell", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const spaced = _probe("BT /F1 24 Tf 5 Tc 40 100 Td (Hg) Tj ET");
-    py_assert(plain != null && spaced != null);
+    pyAssert(plain != null && spaced != null);
     expect(
-      pytest_approx((spaced[2] - spaced[0]) - (plain[2] - plain[0]), 10.0, { abs: 1e-3 }),
+      pytestApprox((spaced[2] - spaced[0]) - (plain[2] - plain[0]), 10.0, { abs: 1e-3 }),
     ).toBe(true);
   });
 
   test("test_horizontal_scaling_widens_only_the_advance", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const scaled = _probe("BT /F1 24 Tf 200 Tz 40 100 Td (Hg) Tj ET");
-    py_assert(plain != null && scaled != null);
-    expect(pytest_approx(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(
+    pyAssert(plain != null && scaled != null);
+    expect(pytestApprox(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(
       true,
     );
-    expect(pytest_approx(scaled[3] - scaled[1], plain[3] - plain[1], { abs: 1e-3 })).toBe(true);
+    expect(pytestApprox(scaled[3] - scaled[1], plain[3] - plain[1], { abs: 1e-3 })).toBe(true);
   });
 
   test("test_invisible_render_mode_is_still_measured", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const hidden = _probe("BT /F1 24 Tf 3 Tr 40 100 Td (Hg) Tj ET");
-    expect_approx(hidden, approx(plain));
+    expectApprox(hidden, approx(plain));
   });
 
   test("test_stroking_render_mode_grows_the_cell", () => {
     const box = _probe("BT /F1 24 Tf 1 Tr 10 w 40 100 Td (Hg) Tj ET");
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
-    py_assert(box != null && plain != null);
-    expect(pytest_approx(box[0], plain[0] - 5.0, { abs: 1e-3 })).toBe(true);
-    expect(pytest_approx(box[2], plain[2] + 5.0, { abs: 1e-3 })).toBe(true);
+    pyAssert(box != null && plain != null);
+    expect(pytestApprox(box[0], plain[0] - 5.0, { abs: 1e-3 })).toBe(true);
+    expect(pytestApprox(box[2], plain[2] + 5.0, { abs: 1e-3 })).toBe(true);
   });
 
   test.each(["Courier", "Courier-Bold", "Times-Bold", "Symbol", "Arial"])(
@@ -403,12 +403,12 @@ describe("TestText", () => {
       // with no descriptor reaches the table at all, for every face.
       const [ymin, ymax] = getitem(STD14_EXTENT, font);
       const box = measure("BT /F1 50 Tf 40 300 Td (H) Tj ET", {
-        extra_objects: _bare_font(font),
+        extra_objects: _bareFont(font),
         resources: _RES,
       });
-      py_assert(box != null);
-      expect(pytest_approx(box[1], 300.0 + ymin / 20.0)).toBe(true);
-      expect(pytest_approx(box[3], 300.0 + ymax / 20.0)).toBe(true);
+      pyAssert(box != null);
+      expect(pytestApprox(box[1], 300.0 + ymin / 20.0)).toBe(true);
+      expect(pytestApprox(box[3], 300.0 + ymax / 20.0)).toBe(true);
     },
   );
 
@@ -418,12 +418,12 @@ describe("TestText", () => {
       // Code 72 is "H"; the table is indexed from STD14_FIRST_CODE.
       const expected = getitem(STD14_WIDTHS, font)[72 - STD14_FIRST_CODE];
       const box = measure("BT /F1 50 Tf 40 300 Td <48> Tj ET", {
-        extra_objects: _bare_font(font),
+        extra_objects: _bareFont(font),
         resources: _RES,
       });
-      py_assert(box != null);
-      expect(pytest_approx(box[0], 40.0)).toBe(true);
-      expect(pytest_approx(box[2], 40.0 + expected / 20.0)).toBe(true);
+      pyAssert(box != null);
+      expect(pytestApprox(box[0], 40.0)).toBe(true);
+      expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
     },
   );
 
@@ -431,20 +431,20 @@ describe("TestText", () => {
     // Codes 39 and 96 are the only two in the tabulated range where
     // WinAnsiEncoding and the fonts' built-in StandardEncoding disagree,
     // and After Effects honours whichever the file declares.
-    const [quote_39, _quote_96] = getitem(STD14_STANDARD_QUOTES, "Times-Roman");
+    const [quote39, _quote96] = getitem(STD14_STANDARD_QUOTES, "Times-Roman");
     const winansi = getitem(STD14_WIDTHS, "Times-Roman")[39 - STD14_FIRST_CODE];
-    expect(quote_39).not.toBe(winansi);
+    expect(quote39).not.toBe(winansi);
     const cases: Array<[string, number]> = [
-      ["", quote_39],
+      ["", quote39],
       [" /Encoding /WinAnsiEncoding", winansi],
     ];
     for (const [encoding, expected] of cases) {
       const box = measure("BT /F1 50 Tf 40 300 Td <27> Tj ET", {
-        extra_objects: _bare_font("Times-Roman", encoding),
+        extra_objects: _bareFont("Times-Roman", encoding),
         resources: _RES,
       });
-      py_assert(box != null);
-      expect(pytest_approx(box[2], 40.0 + expected / 20.0)).toBe(true);
+      pyAssert(box != null);
+      expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
     }
   });
 
@@ -459,7 +459,7 @@ describe("TestText", () => {
           resources: _RES,
         });
 
-      expect_approx(show(shown), approx(show(shown.replaceAll("<48>", "(H)"))));
+      expectApprox(show(shown), approx(show(shown.replaceAll("<48>", "(H)"))));
     },
   );
 
@@ -473,19 +473,19 @@ describe("TestText", () => {
       });
 
     const plain = show("HH");
-    expect_approx(show("H" + SOLIDUS + eol + "H"), approx(plain));
+    expectApprox(show("H" + SOLIDUS + eol + "H"), approx(plain));
     // A `SOLIDUS n` escape is a real linefeed character, still measured.
-    expect(!py_eq(show("H" + SOLIDUS + "nH"), plain)).toBe(true);
+    expect(!pyEq(show("H" + SOLIDUS + "nH"), plain)).toBe(true);
   });
 
   test("test_font_outside_the_table_uses_the_generic_extent", () => {
     // A face After Effects can resolve but py_aep has no metrics for.
     const box = measure("BT /F1 50 Tf 40 300 Td (H) Tj ET", {
-      extra_objects: _bare_font("Verdana"),
+      extra_objects: _bareFont("Verdana"),
       resources: _RES,
     });
-    py_assert(box != null);
-    expect(pytest_approx([box[1], box[3]], [287.5, 337.5])).toBe(true);
+    pyAssert(box != null);
+    expect(pytestApprox([box[1], box[3]], [287.5, 337.5])).toBe(true);
   });
 
   test("test_standard_14_metrics_without_widths_or_descriptor", () => {
@@ -495,7 +495,7 @@ describe("TestText", () => {
       extra_objects: _HELVETICA,
       resources: _RES,
     });
-    expect_approx(box, approx([40.0, 294.6, 70.672, 322.344]));
+    expectApprox(box, approx([40.0, 294.6, 70.672, 322.344]));
   });
 });
 
@@ -503,7 +503,7 @@ describe("TestUnsupported", () => {
   test("test_not_a_pdf_raises", () => {
     raises(
       UnsupportedAiLayersError,
-      () => read_ai_layer_bounds("probe.ai", b("not a pdf at all")),
+      () => readAiLayerBounds("probe.ai", b("not a pdf at all")),
       "PDF-compatible",
     );
   });
@@ -511,18 +511,18 @@ describe("TestUnsupported", () => {
   test("test_no_layers_raises", () => {
     raises(
       UnsupportedAiLayersError,
-      () => read_ai_layer_bounds("probe.pdf", b("%PDF-1.5\nnothing here\n")),
+      () => readAiLayerBounds("probe.pdf", b("%PDF-1.5\nnothing here\n")),
       "no layers",
     );
   });
 
   test("test_object_streams_raise", () => {
-    const data = build_pdf("50 200 100 80 re f", {
+    const data = buildPdf("50 200 100 80 re f", {
       extra_objects: "9 0 obj\n<< /Type /ObjStm >>\nendobj\n",
     });
     raises(
       UnsupportedAiLayersError,
-      () => read_ai_layer_bounds("probe.pdf", data),
+      () => readAiLayerBounds("probe.pdf", data),
       "object streams",
     );
   });
@@ -530,11 +530,11 @@ describe("TestUnsupported", () => {
   test("test_encrypted_raises", () => {
     // NOTE(port): pyrt bytes_.replace has no count argument; the pattern occurs once in build_pdf output, so replace-all equals Python's `.replace(..., 1)`.
     const data = bytes_.replace(
-      build_pdf("50 200 100 80 re f"),
+      buildPdf("50 200 100 80 re f"),
       b("trailer\n<< /Size 99"),
       b("trailer\n<< /Encrypt 9 0 R /Size 99"),
     );
-    raises(UnsupportedAiLayersError, () => read_ai_layer_bounds("probe.pdf", data), "encrypted");
+    raises(UnsupportedAiLayersError, () => readAiLayerBounds("probe.pdf", data), "encrypted");
   });
 });
 
@@ -546,7 +546,7 @@ describe("TestMultipleArtboards", () => {
     // NOTE(port): warns() matches the message only; "artboards" is emitted solely by py_aep's UserWarning in ai_bounds, so the category check adds nothing here.
     // NOTE(port): pyrt bytes_.replace has no count argument; the pattern occurs once in build_pdf output, so replace-all equals Python's `.replace(..., 1)`.
     const data = bytes_.replace(
-      build_pdf("50 200 100 80 re f", {
+      buildPdf("50 200 100 80 re f", {
         extra_objects:
           "30 0 obj\n<< /Type /Page /Parent 2 0 R " + "/MediaBox [0 0 200 200] >>\nendobj\n",
       }),
@@ -555,9 +555,9 @@ describe("TestMultipleArtboards", () => {
     );
     let boxes: Array<Box | null> = [];
     warns(() => {
-      boxes = read_ai_layer_bounds("probe.pdf", data);
+      boxes = readAiLayerBounds("probe.pdf", data);
     }, "artboards");
-    expect_approx(boxes[0], approx([49.75, 199.75, 150.25, 280.25]));
+    expectApprox(boxes[0], approx([49.75, 199.75, 150.25, 280.25]));
   });
 });
 
@@ -565,12 +565,12 @@ describe("TestFootageSize", () => {
   /** `footage_size`, the pixel size After Effects derives from a box. */
 
   test("test_empty_layer_floors_at_one_pixel", () => {
-    expect(py_eq(footage_size(null), [1, 1])).toBe(true);
-    expect(py_eq(footage_size(EMPTY_BOX), [1, 1])).toBe(true);
+    expect(pyEq(footageSize(null), [1, 1])).toBe(true);
+    expect(pyEq(footageSize(EMPTY_BOX), [1, 1])).toBe(true);
   });
 
   test("test_a_fractional_extent_ceils", () => {
-    expect(py_eq(footage_size([112.748, 239.5073, 593.931, 675.999]), [482, 437])).toBe(true);
+    expect(pyEq(footageSize([112.748, 239.5073, 593.931, 675.999]), [482, 437])).toBe(true);
   });
 
   test.each([0.0, 1e-12, -1e-12])(
@@ -578,7 +578,7 @@ describe("TestFootageSize", () => {
     (noise: number) => {
       // The box reaches AE as signed 16.16, so the extent is quantized
       // before it is ceilinged: 80 + 1e-12 must not measure 81 pixels.
-      expect(py_eq(footage_size([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
+      expect(pyEq(footageSize([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
     },
   );
 });

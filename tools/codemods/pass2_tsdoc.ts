@@ -26,7 +26,7 @@ const report = { comments: 0, changed: 0, params: 0, unmatched: [] as string[], 
 type Signature = { params: Set<string>; kw: Map<string, string> };
 
 /** Parameter names of the function-like node a doc comment documents. */
-function signature_of(node: ts.Node): Signature | null {
+function signatureOf(node: ts.Node): Signature | null {
   let fn: ts.SignatureDeclarationBase | undefined;
   if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || ts.isGetAccessorDeclaration(node)) fn = node;
   else if (ts.isVariableStatement(node)) {
@@ -49,7 +49,7 @@ function signature_of(node: ts.Node): Signature | null {
   return { params, kw };
 }
 
-function ts_param(py: string, sig: Signature | null): string {
+function tsParam(py: string, sig: Signature | null): string {
   const bare = py.replace(/^\*+/, "");
   if (!sig) return bare;
   if (sig.params.has(bare)) return bare;
@@ -75,7 +75,7 @@ function links(text: string): string {
 }
 
 /** Lines of a section body: everything indented deeper than the header, plus blank lines between. */
-function take_section(lines: string[], start: number, indent: number): { body: string[]; next: number } {
+function takeSection(lines: string[], start: number, indent: number): { body: string[]; next: number } {
   const body: string[] = [];
   let i = start;
   while (i < lines.length) {
@@ -98,10 +98,10 @@ function take_section(lines: string[], start: number, indent: number): { body: s
 function entries(body: string[]): string[][] {
   const nonblank = body.filter((l) => l.trim());
   if (!nonblank.length) return [];
-  const item_indent = Math.min(...nonblank.map((l) => l.search(/\S/)));
+  const itemIndent = Math.min(...nonblank.map((l) => l.search(/\S/)));
   const out: string[][] = [];
   for (const l of body) {
-    if (l.trim() && l.search(/\S/) === item_indent) out.push([l.trim()]);
+    if (l.trim() && l.search(/\S/) === itemIndent) out.push([l.trim()]);
     else if (out.length) out.at(-1)!.push(l.trim());
   }
   return out;
@@ -143,19 +143,19 @@ function convert(content: string[], sig: Signature | null, where: string): strin
     }
     const kind = m[1].toLowerCase();
     const indent = line.search(/\S/);
-    const { body, next } = take_section(content, i + 1, indent);
+    const { body, next } = takeSection(content, i + 1, indent);
     const inline = m[2].trim();
     i = next;
     changed = true;
     if (kind === "args" || kind === "arguments" || kind === "parameters") {
-      const kw_items = new Map<string, string[]>();
+      const kwItems = new Map<string, string[]>();
       for (const e of entries(body)) {
         const em = /^(\*{0,2}[A-Za-z_]\w*)(?:\s*\(([^)]*)\))?\s*:\s*(.*)$/.exec(e[0]);
         if (!em) {
           tags.push(`@param ${join(e)}`);
           continue;
         }
-        const name = ts_param(em[1], sig);
+        const name = tsParam(em[1], sig);
         if (sig && !sig.params.has(name.split(".")[0])) report.unmatched.push(`${where}: ${em[1]}`);
         report.params++;
         const text = join([em[3], ...e.slice(1)]);
@@ -164,11 +164,11 @@ function convert(content: string[], sig: Signature | null, where: string): strin
         else {
           // TSDoc @param names cannot be dotted: keyword-only args become one options param.
           const holder = name.slice(0, dot);
-          if (!kw_items.has(holder)) kw_items.set(holder, []);
-          kw_items.get(holder)!.push(`- \`${name.slice(dot + 1)}\`: ${text}`);
+          if (!kwItems.has(holder)) kwItems.set(holder, []);
+          kwItems.get(holder)!.push(`- \`${name.slice(dot + 1)}\`: ${text}`);
         }
       }
-      for (const [holder, items] of kw_items) tags.push([`@param ${holder} - Keyword arguments:`, ...items].join("\n"));
+      for (const [holder, items] of kwItems) tags.push([`@param ${holder} - Keyword arguments:`, ...items].join("\n"));
     } else if (kind === "returns" || kind === "return") {
       tags.push(`@returns ${join([inline, ...body.map((l) => l.trim())])}`);
     } else if (kind === "yields") {
@@ -195,14 +195,14 @@ function convert(content: string[], sig: Signature | null, where: string): strin
       else desc.push(`**${label}:** ${text[0] ?? ""}`, ...text.slice(1));
     }
   }
-  const linked_desc = desc.map(links);
-  const linked_tags = tags.map((t) => (t.startsWith("@example") ? t : links(t)));
-  if (!changed && linked_desc.join("\n") === desc.join("\n")) return null;
-  while (linked_desc.length && !linked_desc.at(-1)!.trim()) linked_desc.pop();
-  const out = [...linked_desc];
-  if (linked_tags.length) {
+  const linkedDesc = desc.map(links);
+  const linkedTags = tags.map((t) => (t.startsWith("@example") ? t : links(t)));
+  if (!changed && linkedDesc.join("\n") === desc.join("\n")) return null;
+  while (linkedDesc.length && !linkedDesc.at(-1)!.trim()) linkedDesc.pop();
+  const out = [...linkedDesc];
+  if (linkedTags.length) {
     if (out.length) out.push("");
-    for (const t of linked_tags) out.push(...t.split("\n"));
+    for (const t of linkedTags) out.push(...t.split("\n"));
   }
   return out;
 }
@@ -214,7 +214,7 @@ const TSDOC_TAGS = new Set([
 ]);
 
 /** Dotted `@param kw.x …` lines (TSDoc names cannot be dotted) -> one `@param kw` with a bullet per option. */
-function group_dotted_params(lines: string[]): string[] {
+function groupDottedParams(lines: string[]): string[] {
   const out: string[] = [];
   for (let i = 0; i < lines.length; ) {
     const m = /^@param\s+([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\s*(?:-\s*)?(.*)$/.exec(lines[i]);
@@ -244,7 +244,7 @@ function group_dotted_params(lines: string[]): string[] {
 }
 
 /** Join a line whose `code span` is left open with the following lines (TSDoc spans cannot cross lines). */
-function close_spans(lines: string[]): string[] {
+function closeSpans(lines: string[]): string[] {
   const out: string[] = [];
   let fence = false;
   for (let i = 0; i < lines.length; i++) {
@@ -262,7 +262,7 @@ function close_spans(lines: string[]): string[] {
 
 /** TSDoc hygiene for any comment body: hyphens, dotted params, code spans, escapes outside code. */
 function normalize(input: string[]): string[] {
-  const lines = close_spans(group_dotted_params(input.map((l) => l.replace(/``([^`\n]+)``/g, "`$1`"))));
+  const lines = closeSpans(groupDottedParams(input.map((l) => l.replace(/``([^`\n]+)``/g, "`$1`"))));
   let fence = false;
   return lines.map((l) => {
     if (/^\s*```/.test(l)) {
@@ -278,15 +278,15 @@ function normalize(input: string[]): string[] {
         return part
           .replace(/(?<!\\)([<>{}])/g, "\\$1")
           .replace(/(?<!\\)@([A-Za-z]\w*)?/g, (m, word: string | undefined, off: number, whole: string) => {
-            const at_line_start = whole.slice(0, off).trim() === "" && off === whole.indexOf("@");
-            return at_line_start && word && TSDOC_TAGS.has(word) ? m : `\\${m}`;
+            const atLineStart = whole.slice(0, off).trim() === "" && off === whole.indexOf("@");
+            return atLineStart && word && TSDOC_TAGS.has(word) ? m : `\\${m}`;
           });
       })
       .join("");
   });
 }
 
-function rewrite_file(file: string, sf: ts.SourceFile): number {
+function rewriteFile(file: string, sf: ts.SourceFile): number {
   const text = sf.text;
   // Doc comment start -> the declaration it documents.
   const owners = new Map<number, ts.Node>();
@@ -303,8 +303,8 @@ function rewrite_file(file: string, sf: ts.SourceFile): number {
     report.comments++;
     const start = m.index!;
     const raw = m[0];
-    const line_start = text.lastIndexOf("\n", start) + 1;
-    const lead = text.slice(line_start, start);
+    const lineStart = text.lastIndexOf("\n", start) + 1;
+    const lead = text.slice(lineStart, start);
     if (/\S/.test(lead) || !raw.includes("\n")) {
       // One-line or trailing comments: links and escapes only.
       const l = `/** ${normalize([links(raw.slice(3, -2).trim())])[0]} */`;
@@ -318,7 +318,7 @@ function rewrite_file(file: string, sf: ts.SourceFile): number {
     while (content.length && content.at(-1)!.trim() === "") content.pop();
     const owner = owners.get(start);
     const where = `${path.relative(ROOT, file)}:${text.slice(0, start).split("\n").length}`;
-    const converted = convert(content, owner ? signature_of(owner) : null, where);
+    const converted = convert(content, owner ? signatureOf(owner) : null, where);
     const width = Math.max(60, 100 - lead.length - 3);
     const wrapped = (converted ?? content).flatMap((l) =>
       /^@(param|returns|throws) /.test(l) && l.length > width ? wrap(l, width) : /^- `/.test(l) && l.length > width ? wrap(l, width, "    ") : [l],
@@ -342,7 +342,7 @@ const files = (fs.readdirSync(path.join(ROOT, "src/py_aep"), { recursive: true }
 let touched = 0;
 for (const file of files) {
   const sf = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
-  if (rewrite_file(file, sf)) touched++;
+  if (rewriteFile(file, sf)) touched++;
 }
 console.log(JSON.stringify({ files_touched: touched, comments_seen: report.comments, comments_changed: report.changed, params: report.params, links: report.links, unmatched_params: report.unmatched.length }));
 if (REPORT) for (const u of report.unmatched) console.log("unmatched", u);

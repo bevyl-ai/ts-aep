@@ -2,7 +2,7 @@
 
 import { INSPECT } from "./inspect.ts";
 import { fs, homedir, path as nodepath, scandir, type HostDirent, type HostStats } from "./host.ts";
-import { error_code, FileNotFoundError } from "./errors.ts";
+import { errorCode, FileNotFoundError } from "./errors.ts";
 
 export class Path {
   readonly path: string;
@@ -85,7 +85,7 @@ export class Path {
       const data = fs.readFileSync(this.path);
       return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
     } catch (e: unknown) {
-      if (error_code(e) === "ENOENT") throw new FileNotFoundError(`[Errno 2] No such file or directory: '${this.path}'`);
+      if (errorCode(e) === "ENOENT") throw new FileNotFoundError(`[Errno 2] No such file or directory: '${this.path}'`);
       throw e;
     }
   }
@@ -141,7 +141,7 @@ export class Path {
       try {
         return scandir(dir);
       } catch (e) {
-        if (error_code(e) === undefined) throw e;
+        if (errorCode(e) === undefined) throw e;
         return [];
       }
     };
@@ -181,7 +181,7 @@ export function fspath(p: PathLike): string {
 }
 
 /** `ntpath.splitroot` (CPython 3.12). */
-function nt_splitroot(p: string): [string, string, string] {
+function ntSplitroot(p: string): [string, string, string] {
   const normp = p.replace(/\//g, "\\");
   if (normp.slice(0, 1) === "\\") {
     if (normp.slice(1, 2) === "\\") {
@@ -203,42 +203,42 @@ function nt_splitroot(p: string): [string, string, string] {
 }
 
 /** `posixpath.splitroot` (CPython 3.12). */
-function posix_splitroot(p: string): [string, string, string] {
+function posixSplitroot(p: string): [string, string, string] {
   if (p.slice(0, 1) !== "/") return ["", "", p];
   if (p.slice(1, 2) !== "/" || p.slice(2, 3) === "/") return ["", "/", p.slice(1)];
   return ["", p.slice(0, 2), p.slice(2)];
 }
 
 /** `ntpath.join` (CPython 3.12). */
-function nt_join(path: string, ...paths: string[]): string {
-  let [result_drive, result_root, result_path] = nt_splitroot(path);
+function ntJoin(path: string, ...paths: string[]): string {
+  let [resultDrive, resultRoot, resultPath] = ntSplitroot(path);
   for (const p of paths) {
-    const [p_drive, p_root, p_path] = nt_splitroot(p);
-    if (p_root) {
-      if (p_drive || !result_drive) result_drive = p_drive;
-      result_root = p_root;
-      result_path = p_path;
+    const [pDrive, pRoot, pPath] = ntSplitroot(p);
+    if (pRoot) {
+      if (pDrive || !resultDrive) resultDrive = pDrive;
+      resultRoot = pRoot;
+      resultPath = pPath;
       continue;
-    } else if (p_drive && p_drive !== result_drive) {
-      if (p_drive.toLowerCase() !== result_drive.toLowerCase()) {
-        result_drive = p_drive;
-        result_root = p_root;
-        result_path = p_path;
+    } else if (pDrive && pDrive !== resultDrive) {
+      if (pDrive.toLowerCase() !== resultDrive.toLowerCase()) {
+        resultDrive = pDrive;
+        resultRoot = pRoot;
+        resultPath = pPath;
         continue;
       }
-      result_drive = p_drive;
+      resultDrive = pDrive;
     }
-    if (result_path && !"\\/".includes(result_path.slice(-1))) result_path += "\\";
-    result_path += p_path;
+    if (resultPath && !"\\/".includes(resultPath.slice(-1))) resultPath += "\\";
+    resultPath += pPath;
   }
-  if (result_path && !result_root && result_drive && !":\\/".includes(result_drive.slice(-1))) {
-    return result_drive + "\\" + result_path;
+  if (resultPath && !resultRoot && resultDrive && !":\\/".includes(resultDrive.slice(-1))) {
+    return resultDrive + "\\" + resultPath;
   }
-  return result_drive + result_root + result_path;
+  return resultDrive + resultRoot + resultPath;
 }
 
 /** `posixpath.join` */
-function posix_join(a: string, ...p: string[]): string {
+function posixJoin(a: string, ...p: string[]): string {
   let path = a;
   for (const b of p) {
     if (b.startsWith("/")) path = b;
@@ -256,8 +256,8 @@ type Flavour = {
   casefold: boolean;
 };
 
-const POSIX: Flavour = { sep: "/", altsep: null, splitroot: posix_splitroot, join: posix_join, casefold: false };
-const WINDOWS: Flavour = { sep: "\\", altsep: "/", splitroot: nt_splitroot, join: nt_join, casefold: true };
+const POSIX: Flavour = { sep: "/", altsep: null, splitroot: posixSplitroot, join: posixJoin, casefold: false };
+const WINDOWS: Flavour = { sep: "\\", altsep: "/", splitroot: ntSplitroot, join: ntJoin, casefold: true };
 
 /**
  * `pathlib.PurePath` (CPython 3.12) for the flavours `PurePosixPath` and
@@ -293,8 +293,8 @@ export class PurePath {
       let rel: string;
       [drv, root, rel] = f.splitroot(path);
       if (!root && drv.startsWith(f.sep) && !drv.endsWith(f.sep)) {
-        const drv_parts = drv.split(f.sep);
-        if ((drv_parts.length === 4 && !"?.".includes(drv_parts[2])) || drv_parts.length === 6) root = f.sep;
+        const drvParts = drv.split(f.sep);
+        if ((drvParts.length === 4 && !"?.".includes(drvParts[2])) || drvParts.length === 6) root = f.sep;
       }
       tail = rel.split(f.sep).filter((x) => x && x !== ".");
     }

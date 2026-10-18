@@ -6,7 +6,7 @@
  * `transparent` and `currentColor`.
  */
 
-import { float, int, mod, rstrip, strip, ValueError, pattern_match, py_re, re_flags } from "../../pyrt/index.ts";
+import { float, int, mod, rstrip, strip, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -167,8 +167,8 @@ export const _NAMED = new Map<string, readonly [number, number, number]>([
   ["yellowgreen", [154, 205, 50]],
 ]);
 
-export const _RGB_RE = py_re(String.raw`rgba?\(([^)]*)\)`, re_flags.IGNORECASE);
-export const _HSL_RE = py_re(String.raw`hsla?\(([^)]*)\)`, re_flags.IGNORECASE);
+export const _RGB_RE = pyRe(String.raw`rgba?\(([^)]*)\)`, reFlags.IGNORECASE);
+export const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
 
 export function _component(token: string, scale: number = 255.0): number {
   token = strip(token);
@@ -183,14 +183,14 @@ export function _component(token: string, scale: number = 255.0): number {
  * @param current - Value substituted for `currentColor`.
  * @returns RGBA tuple, or `null` for `none`/`transparent`/unparseable/empty.
  */
-export function parse_color(value: string | null, current: Rgba = [0.0, 0.0, 0.0, 1.0]): Rgba | null {
+export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0, 1.0]): Rgba | null {
   if (!value) return null;
   const v = strip(value).toLowerCase();
   if (v === "none" || v === "transparent") return null;
   if (v === "currentcolor") return current;
-  if (v.startsWith("#")) return _parse_hex(v.slice(1));
+  if (v.startsWith("#")) return _parseHex(v.slice(1));
   if (v.startsWith("rgb")) {
-    const m = pattern_match(_RGB_RE, v);
+    const m = patternMatch(_RGB_RE, v);
     if (m) {
       const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
       if (parts.length >= 3) {
@@ -203,13 +203,13 @@ export function parse_color(value: string | null, current: Rgba = [0.0, 0.0, 0.0
     }
     return null;
   }
-  if (v.startsWith("hsl")) return _parse_hsl(v);
+  if (v.startsWith("hsl")) return _parseHsl(v);
   const rgb = _NAMED.get(v);
   if (rgb != null) return [rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0, 1.0];
   return null;
 }
 
-export function _parse_hex(h: string): Rgba | null {
+export function _parseHex(h: string): Rgba | null {
   // Python `len` and `h[i:j]` count code points, so work on code points here.
   let cps = Array.from(h);
   if (cps.length === 3 || cps.length === 4) cps = cps.flatMap((c) => [c, c]);
@@ -231,8 +231,8 @@ export function _parse_hex(h: string): Rgba | null {
   return [r, g, b, a];
 }
 
-export function _parse_hsl(v: string): Rgba | null {
-  const m = pattern_match(_HSL_RE, v);
+export function _parseHsl(v: string): Rgba | null {
+  const m = patternMatch(_HSL_RE, v);
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
   if (parts.length < 3) return null;

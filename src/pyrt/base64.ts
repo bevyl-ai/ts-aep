@@ -40,41 +40,41 @@ export function b64decode(s: string | Uint8Array): Uint8Array {
   const n = s.length;
   const out = new Uint8Array(Math.floor((n * 3) / 4) + 3);
   let o = 0,
-    quad_pos = 0,
+    quadPos = 0,
     leftchar = 0,
     pads = 0;
   for (let i = 0; i < n; i++) {
     const ch = at(i);
     if (ch === 0x3d) {
-      if (quad_pos >= 2 && quad_pos + ++pads >= 4) return out.slice(0, o);
+      if (quadPos >= 2 && quadPos + ++pads >= 4) return out.slice(0, o);
       continue;
     }
     const v = _TABLE[ch];
     if (v < 0) continue;
     pads = 0;
-    switch (quad_pos) {
+    switch (quadPos) {
       case 0:
-        quad_pos = 1;
+        quadPos = 1;
         leftchar = v;
         break;
       case 1:
-        quad_pos = 2;
+        quadPos = 2;
         out[o++] = (leftchar << 2) | (v >> 4);
         leftchar = v & 0x0f;
         break;
       case 2:
-        quad_pos = 3;
+        quadPos = 3;
         out[o++] = ((leftchar << 4) | (v >> 2)) & 0xff;
         leftchar = v & 0x03;
         break;
       default:
-        quad_pos = 0;
+        quadPos = 0;
         out[o++] = ((leftchar << 6) | v) & 0xff;
         leftchar = 0;
     }
   }
-  if (quad_pos !== 0) {
-    if (quad_pos === 1) {
+  if (quadPos !== 0) {
+    if (quadPos === 1) {
       throw new BinasciiError(
         `Invalid base64-encoded string: number of data characters (${Math.floor(o / 3) * 4 + 1}) cannot be 1 more than a multiple of 4`,
       );

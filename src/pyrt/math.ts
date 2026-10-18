@@ -4,7 +4,7 @@ const _f64 = new Float64Array(1);
 const _u64 = new BigUint64Array(_f64.buffer);
 
 /** `math.frexp(x)[1]` for a finite non-zero `x`. */
-function frexp_exp(x: number): number {
+function frexpExp(x: number): number {
   _f64[0] = x;
   const e = Number((_u64[0] >> 52n) & 0x7ffn);
   if (e !== 0) return e - 1022;
@@ -31,7 +31,7 @@ function exact(x: number): [bigint, number] {
 }
 
 /** The double nearest `m * 2**e` (ties to even), for an exact BigInt `m`. */
-function round_exact(m: bigint, e: number): number {
+function roundExact(m: bigint, e: number): number {
   if (m === 0n) return 0;
   const neg = m < 0n;
   let q = neg ? -m : m;
@@ -62,11 +62,11 @@ function fma(x: number, y: number, z: number): number {
   const e = Math.min(ep, ez);
   const sum = ((mx * my) << BigInt(ep - e)) + (mz << BigInt(ez - e));
   if (sum === 0n) return x * y + z;
-  return round_exact(sum, e);
+  return roundExact(sum, e);
 }
 
 /** Error-free `x * y` (`dl_mul`): `[hi, lo]` with `hi + lo == x * y`. */
-function dl_mul(x: number, y: number): [number, number] {
+function dlMul(x: number, y: number): [number, number] {
   const z = x * y;
   // Dekker's product equals fma(x, y, -z) whenever no partial product underflows.
   const ax = Math.abs(x);
@@ -87,35 +87,35 @@ function dl_mul(x: number, y: number): [number, number] {
 const DBL_MIN = 2.2250738585072014e-308;
 
 /** CPython 3.12 `vector_norm` (Modules/mathmodule.c) over |coordinates|. */
-function vector_norm(vec: number[], max: number, found_nan: boolean): number {
+function vectorNorm(vec: number[], max: number, foundNan: boolean): number {
   if (max === Infinity) return max;
-  if (found_nan) return NaN;
+  if (foundNan) return NaN;
   if (max === 0.0 || vec.length <= 1) return max;
-  const max_e = frexp_exp(max);
-  if (max_e < -1023) {
+  const maxE = frexpExp(max);
+  if (maxE < -1023) {
     // When max_e < -1023, ldexp(1.0, -max_e) would overflow.
-    return DBL_MIN * vector_norm(vec.map((v) => v / DBL_MIN), max / DBL_MIN, found_nan);
+    return DBL_MIN * vectorNorm(vec.map((v) => v / DBL_MIN), max / DBL_MIN, foundNan);
   }
-  const scale = pow2(-max_e);
+  const scale = pow2(-maxE);
   let csum = 1.0;
   let frac1 = 0.0;
   let frac2 = 0.0;
   for (const v of vec) {
     const x = v * scale; // lossless scaling
-    const [hi, lo] = dl_mul(x, x); // lossless squaring
+    const [hi, lo] = dlMul(x, x); // lossless squaring
     const s = csum + hi; // dl_fast_sum(csum, hi), lossless
-    const s_lo = hi - (s - csum);
+    const sLo = hi - (s - csum);
     csum = s;
     frac1 += lo;
-    frac2 += s_lo;
+    frac2 += sLo;
   }
   let h = Math.sqrt(csum - 1.0 + (frac1 + frac2));
-  const [phi, plo] = dl_mul(-h, h);
+  const [phi, plo] = dlMul(-h, h);
   const s = csum + phi;
-  const s_lo = phi - (s - csum);
+  const sLo = phi - (s - csum);
   csum = s;
   frac1 += plo;
-  frac2 += s_lo;
+  frac2 += sLo;
   const x = csum - 1.0 + (frac1 + frac2);
   h += x / (2.0 * h); // differential correction
   return h / scale;
@@ -124,12 +124,12 @@ function vector_norm(vec: number[], max: number, found_nan: boolean): number {
 /** `math.hypot(*coordinates)` with CPython 3.12's rounding (not `Math.hypot`'s). */
 export function hypot(...coordinates: number[]): number {
   let max = 0.0;
-  let found_nan = false;
+  let foundNan = false;
   const vec = coordinates.map((c) => {
     const x = Math.abs(+c);
-    if (Number.isNaN(x)) found_nan = true;
+    if (Number.isNaN(x)) foundNan = true;
     else if (x > max) max = x;
     return x;
   });
-  return vector_norm(vec, max, found_nan);
+  return vectorNorm(vec, max, foundNan);
 }

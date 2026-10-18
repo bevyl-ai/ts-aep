@@ -7,8 +7,8 @@
 
 import { expect, test } from "bun:test";
 
-import { BytesIO, b, concat, py_assert, py_eq } from "../../src/pyrt/index.ts";
-import { CosParser, decode_pdf_text_string } from "../../src/py_aep/cos/index.ts";
+import { BytesIO, b, concat, pyAssert, pyEq } from "../../src/pyrt/index.ts";
+import { CosParser, decodePdfTextString } from "../../src/py_aep/cos/index.ts";
 import { CosString } from "../../src/py_aep/cos/cos.ts";
 
 const _REPLACEMENT = String.fromCodePoint(0xfffd);
@@ -36,13 +36,13 @@ test.each([
   [b("Layer 1"), "Layer 1"],
   [b(""), ""],
 ])("test_decodes_like_after_effects[%#]", (raw: Uint8Array, expected: string) => {
-  expect(decode_pdf_text_string(raw)).toBe(expected);
+  expect(decodePdfTextString(raw)).toBe(expected);
 });
 
 test("test_already_decoded_strings_pass_through", () => {
   // The COS lexer decodes a BOM-prefixed UTF-16 string itself.
   const already = String.fromCodePoint(0xdc) + "n" + String.fromCodePoint(0xef) + "code";
-  expect(decode_pdf_text_string(already)).toBe(already);
+  expect(decodePdfTextString(already)).toBe(already);
 });
 
 test.each([
@@ -75,7 +75,7 @@ test.each([
     */
     const token = new CosParser(new BytesIO(concat(literal, b(")")))).lex_string();
     const value = token.value;
-    py_assert(value instanceof Uint8Array || value instanceof CosString);
-    expect(py_eq(decode_pdf_text_string(value), expected)).toBe(true);
+    pyAssert(value instanceof Uint8Array || value instanceof CosString);
+    expect(pyEq(decodePdfTextString(value), expected)).toBe(true);
   },
 );

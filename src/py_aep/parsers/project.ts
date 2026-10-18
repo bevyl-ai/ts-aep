@@ -6,13 +6,13 @@ import { NhedChunk, NnhdChunk } from "../binary/item_chunks.ts";
 import { DwgaChunk } from "../binary/misc_chunks.ts";
 import { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
-import { ChunkNotFoundError, filter_by_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { ChunkNotFoundError, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { GpuAccelType } from "../enums/index.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { Project } from "../models/project.ts";
-import { parse_effect_definitions } from "./effect.ts";
-import { parse_folder } from "./item.ts";
-import { parse_render_queue } from "./render_queue.ts";
+import { parseEffectDefinitions } from "./effect.ts";
+import { parseFolder } from "./item.ts";
+import { parseRenderQueue } from "./render_queue.ts";
 
 /**
  * The color-profile `Utf8` AE writes immediately after `marker`.
@@ -27,10 +27,10 @@ import { parse_render_queue } from "./render_queue.ts";
  * @returns The `Utf8Chunk` holding the profile envelope, or `null` when the marker is absent or its
  *   slot is unset.
  */
-export function _color_profile_utf8(root_chunks: Chunk[], marker: string): Utf8Chunk | null {
-  for (const [i, chunk] of root_chunks.entries()) {
-    if (chunk.chunk_type !== marker || i + 1 >= root_chunks.length) continue;
-    const following = root_chunks[i + 1];
+export function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chunk | null {
+  for (const [i, chunk] of rootChunks.entries()) {
+    if (chunk.chunk_type !== marker || i + 1 >= rootChunks.length) continue;
+    const following = rootChunks[i + 1];
     if (following.chunk_type !== "Utf8" || !(following instanceof Utf8Chunk)) continue;
     if (following.value.includes("baseColorProfile")) return following;
   }
@@ -52,13 +52,13 @@ export const _NHED_SETTINGS = [
 type _NhedSettings = Pick<NhedChunk, (typeof _NHED_SETTINGS)[number]>;
 
 /** A synthetic nnhd carrying the settings of a project that has only nhed. */
-export function _nnhd_from_nhed(nhed: NhedChunk): NnhdChunk {
+export function _nnhdFromNhed(nhed: NhedChunk): NnhdChunk {
   const nnhd = new NnhdChunk({ synthetic: true });
   // setattr(nnhd, name, getattr(nhed, name)) with a computed name
-  const copy_setting = <K extends keyof _NhedSettings>(dst: _NhedSettings, name: K): void => {
+  const copySetting = <K extends keyof _NhedSettings>(dst: _NhedSettings, name: K): void => {
     dst[name] = getattr(nhed, name);
   };
-  for (const name of _NHED_SETTINGS) copy_setting(nnhd, name);
+  for (const name of _NHED_SETTINGS) copySetting(nnhd, name);
   return nnhd;
 }
 
@@ -70,44 +70,44 @@ export function _nnhd_from_nhed(nhed: NhedChunk): NnhdChunk {
  * @param file_path - Path to the `.aep` file (stored on the Project).
  * @param ae_preferences_dir - Optional path to the AE preferences directory for template lookup.
  */
-export const parse_project = _suppress_materialization()(function parse_project(
+export const parseProject = _suppressMaterialization()(function parse_project(
   rifx: ListChunk,
   xmp: string,
-  file_path: string,
-  ae_preferences_dir: Path | null = null,
+  filePath: string,
+  aePreferencesDir: Path | null = null,
 ): Project {
-  const root_chunks = rifx.chunks;
+  const rootChunks = rifx.chunks;
 
-  const root_folder_chunk = find_by_list_type(root_chunks, "Fold");
-  const head_chunk = find_by_type(root_chunks, "head");
-  const nhed_chunk = find_by_type(root_chunks, "nhed");
-  const acer_chunk = find_by_type(root_chunks, "acer");
-  const adfr_chunk = find_by_type(root_chunks, "adfr");
+  const rootFolderChunk = findByListType(rootChunks, "Fold");
+  const headChunk = findByType(rootChunks, "head");
+  const nhedChunk = findByType(rootChunks, "nhed");
+  const acerChunk = findByType(rootChunks, "acer");
+  const adfrChunk = findByType(rootChunks, "adfr");
   // Older projects (AE CC 12.0) have none of nnhd, dwga and gpuG: their
   // settings come from nhed, and the others take their defaults. The
   // stand-ins are synthetic, so the file is written back without them.
-  const nnhd_chunk = find_by_type_or_null(root_chunks, "nnhd") ?? _nnhd_from_nhed(nhed_chunk);
-  const dwga_chunk = find_by_type_or_null(root_chunks, "dwga") ?? new DwgaChunk({ synthetic: true });
-  let gpug_utf8: Utf8Chunk;
+  const nnhdChunk = findByTypeOrNull(rootChunks, "nnhd") ?? _nnhdFromNhed(nhedChunk);
+  const dwgaChunk = findByTypeOrNull(rootChunks, "dwga") ?? new DwgaChunk({ synthetic: true });
+  let gpugUtf8: Utf8Chunk;
   try {
-    const gpug_chunk = find_by_list_type(root_chunks, "gpuG");
-    gpug_utf8 = find_by_type(gpug_chunk.chunks, "Utf8");
+    const gpugChunk = findByListType(rootChunks, "gpuG");
+    gpugUtf8 = findByType(gpugChunk.chunks, "Utf8");
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
     // AE 2026 reports SOFTWARE for a CC 12.0 project.
-    gpug_utf8 = new Utf8Chunk({
+    gpugUtf8 = new Utf8Chunk({
       value: GpuAccelType.to_binary(GpuAccelType.SOFTWARE),
       synthetic: true,
     });
   }
 
   // Expression engine: LIST:ExEn > Utf8
-  const exen_chunk = find_by_list_type_or_null(root_chunks, "ExEn");
-  const exen_utf8 = exen_chunk === null ? null : find_by_type_or_null(exen_chunk.chunks, "Utf8");
+  const exenChunk = findByListTypeOrNull(rootChunks, "ExEn");
+  const exenUtf8 = exenChunk === null ? null : findByTypeOrNull(exenChunk.chunks, "Utf8");
 
   // CMS settings JSON
-  let cms_utf8: Utf8Chunk | null = null;
-  for (const c of filter_by_type(root_chunks, "Utf8")) {
+  let cmsUtf8: Utf8Chunk | null = null;
+  for (const c of filterByType(rootChunks, "Utf8")) {
     const content = c.value;
     // The color-management settings JSON is fragmented across AE versions:
     // some files store `{"colorManagementSystem":..,"ocioConfigurationFile":..}`,
@@ -115,62 +115,62 @@ export const parse_project = _suppress_materialization()(function parse_project(
     // the `colorManagementSystem` chunk (so OCIO projects are detected), but
     // fall back to a `lutInterpolationMethod`-only chunk when there is none.
     if (content.includes("colorManagementSystem")) {
-      cms_utf8 = c;
-    } else if (cms_utf8 == null && content.includes("lutInterpolationMethod")) {
-      cms_utf8 = c;
+      cmsUtf8 = c;
+    } else if (cmsUtf8 == null && content.includes("lutInterpolationMethod")) {
+      cmsUtf8 = c;
     }
   }
 
-  const ws_utf8 = _color_profile_utf8(root_chunks, "PwCs");
-  const dcs_utf8 = _color_profile_utf8(root_chunks, "pdvc");
+  const wsUtf8 = _colorProfileUtf8(rootChunks, "PwCs");
+  const dcsUtf8 = _colorProfileUtf8(rootChunks, "pdvc");
 
   const project = new Project({
-    _nhed: nhed_chunk,
-    _nnhd: nnhd_chunk,
-    _head: head_chunk,
-    _acer: acer_chunk,
-    _adfr: adfr_chunk,
-    _dwga: dwga_chunk,
-    _gpug_utf8: gpug_utf8,
-    _exen_utf8: exen_utf8,
-    _cms_utf8: cms_utf8,
-    _ws_utf8: ws_utf8,
-    _dcs_utf8: dcs_utf8,
+    _nhed: nhedChunk,
+    _nnhd: nnhdChunk,
+    _head: headChunk,
+    _acer: acerChunk,
+    _adfr: adfrChunk,
+    _dwga: dwgaChunk,
+    _gpug_utf8: gpugUtf8,
+    _exen_utf8: exenUtf8,
+    _cms_utf8: cmsUtf8,
+    _ws_utf8: wsUtf8,
+    _dcs_utf8: dcsUtf8,
     _rifx: rifx,
     _xmp: xmp,
-    file: file_path,
+    file: filePath,
     items: new Map(),
     render_queue: null,
-    ae_preferences_dir: ae_preferences_dir,
+    ae_preferences_dir: aePreferencesDir,
   });
 
-  project._effect_param_defs = parse_effect_definitions(
-    root_chunks,
-    nnhd_chunk._system_code_page,
+  project._effect_param_defs = parseEffectDefinitions(
+    rootChunks,
+    nnhdChunk._system_code_page,
   );
 
-  const root_folder = parse_folder(
+  const rootFolder = parseFolder(
     true, // is_root
-    root_folder_chunk.chunks, // child_chunks
+    rootFolderChunk.chunks, // child_chunks
     project, // project
     null, // _idta
     null, // _name_utf8
     null, // _cmta
-    root_folder_chunk, // _item_list
+    rootFolderChunk, // _item_list
     null, // _gide
     null, // parent_folder
   );
-  project.items.set(0, root_folder);
+  project.items.set(0, rootFolder);
 
-  project._render_queue = parse_render_queue(root_chunks, project);
+  project._render_queue = parseRenderQueue(rootChunks, project);
 
-  const fcid_chunk = find_by_type_or_null(root_chunks, "fcid");
-  if (fcid_chunk !== null) {
+  const fcidChunk = findByTypeOrNull(rootChunks, "fcid");
+  if (fcidChunk !== null) {
     // `fcid` can name an item that no longer exists (After Effects leaves
     // the id behind when the active item is deleted outside its own
     // bookkeeping, and opens such a file with nothing selected). Treat a
     // dangling id as "no active item" rather than failing the parse.
-    project._active_item = project.items.get(fcid_chunk.value) ?? null;
+    project._active_item = project.items.get(fcidChunk.value) ?? null;
     }
 
   return project;

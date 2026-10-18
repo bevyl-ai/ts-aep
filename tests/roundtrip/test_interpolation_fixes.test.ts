@@ -9,42 +9,42 @@
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { KeyframeEase, KeyframeInterpolationType, Property, PropertyGroup, type Application, type AVLayer, type CompItem } from "../../src/py_aep/index.ts";
-import { at, getattr, len, max, min, py_assert, py_bool, StopIteration, sum, zip } from "../../src/pyrt/index.ts";
+import { at, getattr, len, max, min, pyAssert, pyBool, StopIteration, sum, zip } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { SAMPLES_DIR, as_instance, parse_app_fresh } from "../helpers.ts";
+import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
 
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 
-function _new_comp(width = 800, height = 400, fps = 24.0): [Application, CompItem] {
+function _newComp(width = 800, height = 400, fps = 24.0): [Application, CompItem] {
   const app = py_aep.new();
   const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
   return [app, comp];
 }
 
-function _position_with(
+function _positionWith(
   comp: CompItem,
   name: string,
   keys: [number, number[]][],
-  out_tan: number[] | null = null,
-  in_tan: number[] | null = null,
+  outTan: number[] | null = null,
+  inTan: number[] | null = null,
   eases: [KeyframeEase, KeyframeEase] | null = null,
 ): [AVLayer, Property] {
   const layer = comp.addSolid([1, 0, 0], name, 100, 100, 1.0);
-  const pos = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
+  const pos = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
   for (const [t, value] of keys) {
     pos.setValueAtTime(t, value);
   }
-  if (out_tan != null) {
-    pos.keyframes[0].outSpatialTangent = out_tan;
+  if (outTan != null) {
+    pos.keyframes[0].outSpatialTangent = outTan;
   }
-  if (in_tan != null) {
-    at(pos.keyframes, -1).inSpatialTangent = in_tan;
+  if (inTan != null) {
+    at(pos.keyframes, -1).inSpatialTangent = inTan;
   }
   if (eases != null) {
-    const [out_ease, in_ease] = eases;
-    pos.keyframes[0].outTemporalEase = [out_ease];
-    at(pos.keyframes, -1).inTemporalEase = [in_ease];
+    const [outEase, inEase] = eases;
+    pos.keyframes[0].outTemporalEase = [outEase];
+    at(pos.keyframes, -1).inTemporalEase = [inEase];
   }
   return [layer, pos];
 }
@@ -67,9 +67,9 @@ describe("TestFlatBezierSegment", () => {
   ]);
 
   function _build(): [Application, Property] {
-    const [app, comp] = _new_comp(200, 200);
+    const [app, comp] = _newComp(200, 200);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const op = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     op.setValueAtTime(0.0, 50.0);
     op.setValueAtTime(2.0, 50.0);
     for (const kf of op.keyframes) {
@@ -96,9 +96,9 @@ describe("TestFlatBezierSegment", () => {
 
   /** The absolute and normalized forms agree whenever `v1 != v0`. */
   test("test_still_linear_when_the_values_differ", () => {
-    const [app, comp] = _new_comp(200, 200);
+    const [app, comp] = _newComp(200, 200);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const op = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     op.setValueAtTime(0.0, 0.0);
     op.setValueAtTime(2.0, 100.0);
     for (const kf of op.keyframes) {
@@ -124,8 +124,8 @@ describe("TestLinearSideKeepsTheMotionPath", () => {
   ]);
 
   test("test_follows_the_cubic", () => {
-    const [_app, comp] = _new_comp(400, 400);
-    const [_layer, pos] = _position_with(
+    const [_app, comp] = _newComp(400, 400);
+    const [_layer, pos] = _positionWith(
       comp,
       "LinearOut",
       [
@@ -156,8 +156,8 @@ describe("TestLinearSideKeepsTheMotionPath", () => {
    * only through that fraction).
    */
   test("test_a_tangentless_linear_segment_is_still_a_line", () => {
-    const [_app, comp] = _new_comp(400, 400);
-    const [_layer, pos] = _position_with(comp, "Plain", [
+    const [_app, comp] = _newComp(400, 400);
+    const [_layer, pos] = _positionWith(comp, "Plain", [
       [0.0, [0.0, 0.0, 0.0]],
       [2.0, [100.0, 200.0, 0.0]],
     ]);
@@ -188,8 +188,8 @@ describe("TestSpatialEaseDivisorAndClamp", () => {
   ]);
 
   test("test_overshooting_handle_keeps_its_speed", () => {
-    const [_app, comp] = _new_comp(800, 400);
-    const [_layer, pos] = _position_with(
+    const [_app, comp] = _newComp(800, 400);
+    const [_layer, pos] = _positionWith(
       comp,
       "Overshoot",
       [
@@ -205,8 +205,8 @@ describe("TestSpatialEaseDivisorAndClamp", () => {
       kf.outInterpolationType = KeyframeInterpolationType.BEZIER;
     }
 
-    for (const [t, want_x] of AE) {
-      expect(approx(pos.valueAtTime(t)[0], want_x, { abs: 1e-6 })).toBe(true);
+    for (const [t, wantX] of AE) {
+      expect(approx(pos.valueAtTime(t)[0], wantX, { abs: 1e-6 })).toBe(true);
     }
   });
 });
@@ -227,9 +227,9 @@ describe("TestRovingRunIsOneEasedSpan", () => {
   ]);
 
   function _build(): Property<number[]> {
-    const [_app, comp] = _new_comp(800, 400);
+    const [_app, comp] = _newComp(800, 400);
     const layer = comp.addSolid([0, 0, 1], "Roving", 100, 100, 1.0);
-    const pos = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
+    const pos = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Position"), Property);
     const keys: [number, number[]][] = [
       [0.0, [50.0, 200.0, 0.0]],
       [2.0, [250.0, 100.0, 0.0]],
@@ -290,21 +290,21 @@ describe("TestAddKeyPreservesTheCurve", () => {
   ];
 
   test.each(SAMPLES)("test_curve_is_unchanged[%#]", (sample: string) => {
-    const app = parse_app_fresh(PROPERTY_DIR.div(sample));
+    const app = parseAppFresh(PROPERTY_DIR.div(sample));
     const times = [0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0];
     let checked = 0;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
         for (const prop of [...layer.transform].filter((p) => p instanceof Property)) {
-          if (!py_bool(getattr(prop, "keyframes", null)) || len(prop.keyframes) < 2) {
+          if (!pyBool(getattr(prop, "keyframes", null)) || len(prop.keyframes) < 2) {
             continue;
           }
           if (prop.isSpatial) {
             continue; // covered by the AE-measured cases above
           }
-          const key_times = prop.keyframes.map((kf) => kf.time);
-          const mid = (key_times[0] + key_times[1]) / 2.0;
-          if (key_times.some((t) => Math.abs(mid - t) < 1e-6)) {
+          const keyTimes = prop.keyframes.map((kf) => kf.time);
+          const mid = (keyTimes[0] + keyTimes[1]) / 2.0;
+          if (keyTimes.some((t) => Math.abs(mid - t) < 1e-6)) {
             continue;
           }
           const before = times.map((t) => prop.valueAtTime(t));
@@ -315,7 +315,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
         }
       }
     }
-    py_assert(checked, "no property exercised");
+    pyAssert(checked, "no property exercised");
   });
 
   /**
@@ -332,7 +332,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
       );
     }
 
-    function distance_to(p: number[], a: number[], b: number[]): number {
+    function distanceTo(p: number[], a: number[], b: number[]): number {
       const ab = zip(a, b).map(([x, y]) => y - x);
       const ap = zip(a, p).map(([x, y]) => y - x);
       const length = sum(ab.map((v) => v * v));
@@ -342,17 +342,17 @@ describe("TestAddKeyPreservesTheCurve", () => {
       return Math.sqrt(sum(zip(p, q).map(([x, y]) => (x - y) ** 2)));
     }
 
-    const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_spatial_bezier_arc.aep"));
+    const app = parseAppFresh(PROPERTY_DIR.div("keyframe_spatial_bezier_arc.aep"));
     const pos = app.project.compositions[0].layers[0].transform.property("ADBE Position");
     const k0 = pos.keyframes[0];
     const k1 = pos.keyframes[1];
-    const out_tangent = k0.outSpatialTangent;
-    const in_tangent = k1.inSpatialTangent;
-    if (out_tangent == null || in_tangent == null) throw new Error("spatial keyframe has no tangents");
+    const outTangent = k0.outSpatialTangent;
+    const inTangent = k1.inSpatialTangent;
+    if (outTangent == null || inTangent == null) throw new Error("spatial keyframe has no tangents");
     const curve = [
       k0.value,
-      zip(k0.value, out_tangent).map(([v, t]) => v + t),
-      zip(k1.value, in_tangent).map(([v, t]) => v + t),
+      zip(k0.value, outTangent).map(([v, t]) => v + t),
+      zip(k1.value, inTangent).map(([v, t]) => v + t),
       k1.value,
     ];
     const path = Array.from({ length: 2001 }, (_, i) => point(curve, i / 2000));
@@ -366,7 +366,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
       const p = pos.valueAtTime(t0 + (t1 - t0) * i / 50);
       worst = max([
         worst,
-        min(zip(path, path.slice(1)).map(([a, b]) => distance_to(p, a, b))),
+        min(zip(path, path.slice(1)).map(([a, b]) => distanceTo(p, a, b))),
       ]);
     }
     expect(worst < 1e-4).toBe(true);
@@ -377,10 +377,10 @@ describe("TestAddKeyPreservesTheCurve", () => {
    * key of value 50 with 80.0 / 12.5 on both sides.
    */
   test("test_bezier_split_matches_after_effects", () => {
-    const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
+    const app = parseAppFresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
     const prop = app.project.compositions
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
-      .find((p) => py_bool(getattr(p, "keyframes", null)) && len(p.keyframes) === 2);
+      .find((p) => pyBool(getattr(p, "keyframes", null)) && len(p.keyframes) === 2);
     if (prop == null) throw new StopIteration();
 
     const index = prop.addKey(2.5);
@@ -404,9 +404,9 @@ describe("TestAddKeyPreservesTheCurve", () => {
    * influence), so the value never ramps.
    */
   test("test_hold_segment_stays_held", () => {
-    const [app, comp] = _new_comp(200, 200);
+    const [app, comp] = _newComp(200, 200);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
-    const op = as_instance(as_instance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
+    const op = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     op.setValueAtTime(0.0, 100.0);
     op.setValueAtTime(4.0, 0.0);
     for (const kf of op.keyframes) {
@@ -423,13 +423,13 @@ describe("TestAddKeyPreservesTheCurve", () => {
   });
 
   test("test_add_then_remove_restores_the_keyframes", () => {
-    const tmp_path: Path = make_tmp_path();
-    const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
+    const tmpPath: Path = makeTmpPath();
+    const app = parseAppFresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
     const prop = app.project.compositions
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
       .find(
         (p) =>
-          py_bool(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
+          pyBool(getattr(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
       );
     if (prop == null) throw new StopIteration();
     const times = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0];

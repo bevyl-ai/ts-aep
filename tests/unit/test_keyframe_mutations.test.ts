@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { len, Path, py_eq, ValueError, zip } from "../../src/pyrt/index.ts";
+import { len, Path, pyEq, ValueError, zip } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 // Python's `from py_aep.models.properties.shape import Shape` loads the whole package, which registers every chunk type.
 import "../../src/py_aep/binary/_register.ts";
@@ -17,9 +17,9 @@ const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples", "
 const SAMPLES_ROOT = new Path(import.meta.path).parent.parent.parent.div("samples");
 
 /** Compare two lists of [x, y] pairs within tolerance. */
-function _approx_points(actual: number[][], expected: number[][], abs_tol = 1e-2): boolean {
+function _approxPoints(actual: number[][], expected: number[][], absTol = 1e-2): boolean {
   if (len(actual) !== len(expected)) return false;
-  return zip(actual, expected).every(([a, e]) => approx(a, e, { abs: abs_tol }));
+  return zip(actual, expected).every(([a, e]) => approx(a, e, { abs: absTol }));
 }
 
 describe("TestShapeFromScratch", () => {
@@ -27,9 +27,9 @@ describe("TestShapeFromScratch", () => {
     const verts = [[0, 0], [100, 0], [50, 80]];
     const s = new Shape(verts);
     expect(s.closed).toBe(true);
-    expect(_approx_points(s.vertices, verts)).toBe(true);
-    expect(_approx_points(s.inTangents, Array(3).fill([0, 0]))).toBe(true);
-    expect(_approx_points(s.outTangents, Array(3).fill([0, 0]))).toBe(true);
+    expect(_approxPoints(s.vertices, verts)).toBe(true);
+    expect(_approxPoints(s.inTangents, Array(3).fill([0, 0]))).toBe(true);
+    expect(_approxPoints(s.outTangents, Array(3).fill([0, 0]))).toBe(true);
   });
 
   test("test_open_path_with_tangents", () => {
@@ -38,14 +38,14 @@ describe("TestShapeFromScratch", () => {
     const outs = [[10, 0], [20, 5]];
     const s = new Shape(verts, ins, outs, { closed: false });
     expect(s.closed).toBe(false);
-    expect(_approx_points(s.vertices, verts)).toBe(true);
-    expect(_approx_points(s.inTangents, ins)).toBe(true);
-    expect(_approx_points(s.outTangents, outs)).toBe(true);
+    expect(_approxPoints(s.vertices, verts)).toBe(true);
+    expect(_approxPoints(s.inTangents, ins)).toBe(true);
+    expect(_approxPoints(s.outTangents, outs)).toBe(true);
   });
 
   test("test_empty_shape", () => {
     const s = new Shape();
-    expect(py_eq(s.vertices, [])).toBe(true);
+    expect(pyEq(s.vertices, [])).toBe(true);
     expect(s.closed).toBe(true);
   });
 
@@ -57,6 +57,6 @@ describe("TestShapeFromScratch", () => {
     const s = new Shape([[0, 0], [100, 0], [50, 80]]);
     const new_ = [[0, 0], [300, 0], [150, 240]];
     s.vertices = new_;
-    expect(_approx_points(s.vertices, new_)).toBe(true);
+    expect(_approxPoints(s.vertices, new_)).toBe(true);
   });
 });

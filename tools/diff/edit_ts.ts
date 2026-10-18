@@ -5,9 +5,9 @@
 
 import * as fs from "node:fs";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { ts_name } from "./dump_ts.ts";
+import { tsName } from "./dump_ts.ts";
 
-function err_name(e: any): string {
+function errName(e: any): string {
   const n: string = e?.constructor?.name ?? "Error";
   return n.endsWith("_") ? n.slice(0, -1) : n;
 }
@@ -19,7 +19,7 @@ function decode(spec: Record<string, any>): any {
 
 /** The TS member for a py-aep name on `obj`: camelCase on models, the raw name on binary chunks. */
 function member(obj: any, py: string): string {
-  const name = ts_name(py);
+  const name = tsName(py);
   return obj != null && name !== py && !(name in Object(obj)) ? py : name;
 }
 
@@ -46,14 +46,14 @@ for (const sample of samples) {
       obj[attr] = decode(e.value);
       outcomes.push("ok");
     } catch (ex) {
-      outcomes.push(err_name(ex));
+      outcomes.push(errName(ex));
     }
   }
   let save = "ok";
   try {
     app.project.save(`${out}/${name}.ts.aep`);
   } catch (ex) {
-    save = err_name(ex);
+    save = errName(ex);
   }
   fs.writeFileSync(`${out}/${name}.ts.json`, JSON.stringify({ outcomes, save }));
 }

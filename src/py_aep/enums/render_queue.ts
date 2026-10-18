@@ -4,14 +4,14 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { int, int_enum, type EnumValue } from "../../pyrt/index.ts";
+import { int, intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Format for getting render settings.
  *
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/outputmodule/#outputmodulegetsettings
  */
-export const GetSettingsFormat = int_enum("GetSettingsFormat", {
+export const GetSettingsFormat = intEnum("GetSettingsFormat", {
   SPEC: 3412,
   NUMBER: 3413,
   NUMBER_SETTABLE: 3414,
@@ -25,7 +25,7 @@ export type GetSettingsFormat = EnumValue<typeof GetSettingsFormat>;
  *
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/renderqueueitem/#renderqueueitemlogtype
  */
-export const LogType = int_enum("LogType", {
+export const LogType = intEnum("LogType", {
   ERRORS_ONLY: 3212,
   ERRORS_AND_SETTINGS: 3213,
   ERRORS_AND_PER_FRAME_INFO: 3214,
@@ -47,7 +47,7 @@ export type LogType = EnumValue<typeof LogType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/renderqueueitem/#renderqueueitemstatus
  */
-export const RQItemStatus = int_enum("RQItemStatus", {
+export const RQItemStatus = intEnum("RQItemStatus", {
   WILL_CONTINUE: 3012,
   NEEDS_OUTPUT: 3013,
   UNQUEUED: 3014,

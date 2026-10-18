@@ -14,9 +14,9 @@
  * they never touch the shared cached instances.
  */
 
-import { parse as _parse_aep, type Application, type Project } from "../src/py_aep/index.ts";
+import { parse as _parseAep, type Application, type Project } from "../src/py_aep/index.ts";
 import "../src/py_aep/binary/_register.ts";
-import { write_aep } from "../src/py_aep/binary/chunk.ts";
+import { writeAep } from "../src/py_aep/binary/chunk.ts";
 import type {
   AlphaMode,
   AutoOrientType,
@@ -42,16 +42,16 @@ import {
   b,
   BytesIO,
   bytes_,
-  bytes_eq,
+  bytesEq,
   decode,
   fspath,
   getattr,
   KeyError,
   len,
-  lru_cache,
+  lruCache,
   Path,
-  py_assert,
-  py_bool,
+  pyAssert,
+  pyBool,
   repr,
   struct,
   ValueError,
@@ -314,14 +314,14 @@ function _jget<T extends object, K extends keyof T, D>(d: T, k: K, dflt: D): T[K
  * Python `record[key]` for a field the export writes on only some records
  * (a group's `properties`, a leaf's `value`): `KeyError` when it is absent.
  */
-export function json_field<T extends object, K extends keyof T & string>(record: T, key: K): T[K] & ({} | null) {
+export function jsonField<T extends object, K extends keyof T & string>(record: T, key: K): T[K] & ({} | null) {
   const value = record[key];
   if (value === undefined) throw new KeyError(repr(key));
   return value;
 }
 
 /** Python truthiness for a JSON record (a plain object): true when it has keys. */
-function _json_truthy(d: object): boolean {
+function _jsonTruthy(d: object): boolean {
   return Object.keys(d).length > 0;
 }
 
@@ -333,15 +333,15 @@ function _json_truthy(d: object): boolean {
  * at offset 0x10 and the layer name a NUL-terminated string at 0x44. Neither
  * is reachable through ExtendScript, hence the raw read.
  */
-export function ai_layer_opti_boxes(project: Project): Map<string, [number[], number, number]> {
+export function aiLayerOptiBoxes(project: Project): Map<string, [number[], number, number]> {
   const out = new Map<string, [number[], number, number]>();
   for (const item of project.items.values()) {
     const source = getattr(item, "mainSource", null);
     const opti = getattr(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
-    if (len(body) < 0x250 || !bytes_eq(bytes_.slice(body, 0, 4), b("TEXT"))) continue;
-    const box: number[] = struct.unpack_from(">4i", body, 0x10).map((v: number) => v / 65536);
+    if (len(body) < 0x250 || !bytesEq(bytes_.slice(body, 0, 4), b("TEXT"))) continue;
+    const box: number[] = struct.unpackFrom(">4i", body, 0x10).map((v: number) => v / 65536);
     const end = bytes_.index(body, new Uint8Array([0]), 0x44);
     const name = decode(bytes_.slice(body, 0x44, end), "utf-8");
     out.set(name, [box, (item as CompItem | FootageItem).width, (item as CompItem | FootageItem).height]);
@@ -349,15 +349,15 @@ export function ai_layer_opti_boxes(project: Project): Map<string, [number[], nu
   return out;
 }
 
-const _parse_app_cached = lru_cache((aep_file_path: string): Application => _parse_aep(aep_file_path));
+const _parseAppCached = lruCache((aepFilePath: string): Application => _parseAep(aepFilePath));
 
 /**
  * Parse an AEP file and return the (cached) Application object.
  *
  * The result is shared across read-only tests; never mutate it.
  */
-export function parse_app(aep_file_path: PathLike): Application {
-  return _parse_app_cached(fspath(aep_file_path));
+export function parseApp(aepFilePath: PathLike): Application {
+  return _parseAppCached(fspath(aepFilePath));
 }
 
 /**
@@ -365,8 +365,8 @@ export function parse_app(aep_file_path: PathLike): Application {
  *
  * The result is shared across read-only tests; never mutate it.
  */
-export function parse_project(aep_file_path: PathLike): Project {
-  return parse_app(aep_file_path).project;
+export function parseProject(aepFilePath: PathLike): Project {
+  return parseApp(aepFilePath).project;
 }
 
 /**
@@ -375,8 +375,8 @@ export function parse_project(aep_file_path: PathLike): Project {
  * Use this in roundtrip/mutation tests so each test gets its own
  * object to mutate without affecting any cached read-only instance.
  */
-export function parse_app_fresh(aep_file_path: PathLike): Application {
-  return _parse_aep(fspath(aep_file_path));
+export function parseAppFresh(aepFilePath: PathLike): Application {
+  return _parseAep(fspath(aepFilePath));
 }
 
 /**
@@ -385,34 +385,34 @@ export function parse_app_fresh(aep_file_path: PathLike): Application {
  * Use this in roundtrip/mutation tests so each test gets its own
  * object to mutate without affecting any cached read-only instance.
  */
-export function parse_project_fresh(aep_file_path: PathLike): Project {
-  return parse_app_fresh(aep_file_path).project;
+export function parseProjectFresh(aepFilePath: PathLike): Project {
+  return parseAppFresh(aepFilePath).project;
 }
 
 /** Serialize `project` to `.aep` bytes in memory, as `save()` writes it. */
-export function project_bytes(project: Project): Uint8Array {
+export function projectBytes(project: Project): Uint8Array {
   const buf = new BytesIO();
-  write_aep(buf, project._rifx, project._xmp);
+  writeAep(buf, project._rifx, project._xmp);
   return buf.getvalue();
 }
 
-function _expected_text(samples_dir: string, sample_name: string): string {
-  return decode(new Path(samples_dir).div(`${sample_name}.json`).read_bytes(), "utf-8");
+function _expectedText(samplesDir: string, sampleName: string): string {
+  return decode(new Path(samplesDir).div(`${sampleName}.json`).read_bytes(), "utf-8");
 }
 
 // Python `Path` hashes by value; `lru_cache` here keys by identity, so key on the path string.
-const _load_expected_cached = lru_cache(
-  (samples_dir: string, sample_name: string): ExpectedProject => JSON.parse(_expected_text(samples_dir, sample_name)),
+const _loadExpectedCached = lruCache(
+  (samplesDir: string, sampleName: string): ExpectedProject => JSON.parse(_expectedText(samplesDir, sampleName)),
 );
 
 /** Load the expected JSON for a sample. */
-export function load_expected(samples_dir: Path, sample_name: string): ExpectedProject {
-  return _load_expected_cached(String(samples_dir), sample_name);
+export function loadExpected(samplesDir: Path, sampleName: string): ExpectedProject {
+  return _loadExpectedCached(String(samplesDir), sampleName);
 }
 
-const _load_expected_value_at_time_cached = lru_cache(
-  (samples_dir: string, sample_name: string): ExpectedValueAtTime =>
-    JSON.parse(_expected_text(samples_dir, sample_name)),
+const _loadExpectedValueAtTimeCached = lruCache(
+  (samplesDir: string, sampleName: string): ExpectedValueAtTime =>
+    JSON.parse(_expectedText(samplesDir, sampleName)),
 );
 
 /**
@@ -422,14 +422,14 @@ const _load_expected_value_at_time_cached = lru_cache(
  * different document (`comps` of sampled frames, not a project export), so
  * the port gives them their own typed loader.
  */
-export function load_expected_value_at_time(samples_dir: Path, sample_name: string): ExpectedValueAtTime {
-  return _load_expected_value_at_time_cached(String(samples_dir), sample_name);
+export function loadExpectedValueAtTime(samplesDir: Path, sampleName: string): ExpectedValueAtTime {
+  return _loadExpectedValueAtTimeCached(String(samplesDir), sampleName);
 }
 
 /** Get all .aep stems in a samples directory. */
-export function get_sample_files(samples_dir: Path): string[] {
-  if (!samples_dir.exists()) return [];
-  return samples_dir.glob("*.aep").map((f) => f.stem);
+export function getSampleFiles(samplesDir: Path): string[] {
+  if (!samplesDir.exists()) return [];
+  return samplesDir.glob("*.aep").map((f) => f.stem);
 }
 
 /**
@@ -438,7 +438,7 @@ export function get_sample_files(samples_dir: Path): string[] {
  * here the read narrows first, so a wrong kind fails loudly instead of
  * reading `undefined`.
  */
-export function as_instance<T>(value: unknown, cls: abstract new (...args: never[]) => T): T {
+export function asInstance<T>(value: unknown, cls: abstract new (...args: never[]) => T): T {
   if (!(value instanceof cls)) {
     throw new AssertionError_(`expected a ${cls.name}, got ${value === null ? "null" : typeof value === "object" ? value.constructor.name : typeof value}`);
   }
@@ -446,8 +446,8 @@ export function as_instance<T>(value: unknown, cls: abstract new (...args: never
 }
 
 /** Get the first layer from the first composition that has layers. */
-export function get_first_layer(project: Project): Layer {
-  py_assert(len(project.compositions) >= 1);
+export function getFirstLayer(project: Project): Layer {
+  pyAssert(len(project.compositions) >= 1);
   for (const comp of project.compositions) {
     if (len(comp.layers) >= 1) return comp.layers[0];
   }
@@ -455,15 +455,15 @@ export function get_first_layer(project: Project): Layer {
 }
 
 /** Get the first footage item. */
-export function get_first_footage(project: Project): FootageItem | null {
-  if (py_bool(project.footages)) return project.footages[0];
+export function getFirstFootage(project: Project): FootageItem | null {
+  if (pyBool(project.footages)) return project.footages[0];
   return null;
 }
 
 // ---- Name-based lookup helpers for consolidated samples ----
 
 /** Get a composition by name from a project. */
-export function get_comp(project: Project, name: string): CompItem {
+export function getComp(project: Project, name: string): CompItem {
   for (const comp of project.compositions) {
     if (comp.name === name) return comp;
   }
@@ -474,16 +474,16 @@ export function get_comp(project: Project, name: string): CompItem {
 }
 
 /** Get the first layer from a named composition. */
-export function get_layer(project: Project, comp_name: string): Layer {
-  const comp = get_comp(project, comp_name);
-  if (!py_bool(comp.layers)) {
-    throw new ValueError(`Composition '${comp_name}' has no layers`);
+export function getLayer(project: Project, compName: string): Layer {
+  const comp = getComp(project, compName);
+  if (!pyBool(comp.layers)) {
+    throw new ValueError(`Composition '${compName}' has no layers`);
   }
   return comp.layers[0];
 }
 
 /** Get a footage item by name. */
-export function get_footage(project: Project, name: string): FootageItem {
+export function getFootage(project: Project, name: string): FootageItem {
   for (const item of project.footages) {
     if (item.name === name) return item;
   }
@@ -493,7 +493,7 @@ export function get_footage(project: Project, name: string): FootageItem {
 }
 
 /** Get a folder by name. */
-export function get_folder(project: Project, name: string): FolderItem {
+export function getFolder(project: Project, name: string): FolderItem {
   for (const folder of project.folders) {
     if (folder.name === name) return folder;
   }
@@ -503,18 +503,18 @@ export function get_folder(project: Project, name: string): FolderItem {
 }
 
 /** Get a render queue item by its composition name. */
-export function get_rqi(project: Project, comp_name: string): RenderQueueItem {
+export function getRqi(project: Project, compName: string): RenderQueueItem {
   if (project.renderQueue === null) throw new AssertionError_("project.render_queue is None");
   for (const rqi of project.renderQueue.items) {
-    if (rqi.comp.name === comp_name) return rqi;
+    if (rqi.comp.name === compName) return rqi;
   }
-  throw new ValueError(`RQI for comp '${comp_name}' not found`);
+  throw new ValueError(`RQI for comp '${compName}' not found`);
 }
 
 // ---- First-item JSON helpers (for non-consolidated single-comp samples) ----
 
 /** Extract first composition from expected JSON. */
-export function get_comp_from_json(expected: ExpectedProject): ExpectedComp | EmptyJson {
+export function getCompFromJson(expected: ExpectedProject): ExpectedComp | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Composition") return item;
   }
@@ -522,7 +522,7 @@ export function get_comp_from_json(expected: ExpectedProject): ExpectedComp | Em
 }
 
 /** Extract first layer from expected JSON. */
-export function get_layer_from_json(expected: ExpectedProject): ExpectedLayer | EmptyJson {
+export function getLayerFromJson(expected: ExpectedProject): ExpectedLayer | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if ("layers" in item && len(item.layers) > 0) return item.layers[0];
   }
@@ -532,7 +532,7 @@ export function get_layer_from_json(expected: ExpectedProject): ExpectedLayer | 
 // ---- Name-based JSON lookup helpers ----
 
 /** Get a specific composition from JSON by name. */
-export function get_comp_from_json_by_name(expected: ExpectedProject, name: string): ExpectedComp | EmptyJson {
+export function getCompFromJsonByName(expected: ExpectedProject, name: string): ExpectedComp | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Composition" && item.name === name) return item;
   }
@@ -540,16 +540,16 @@ export function get_comp_from_json_by_name(expected: ExpectedProject, name: stri
 }
 
 /** Get first layer from a named composition in JSON. */
-export function get_layer_from_json_by_comp(expected: ExpectedProject, comp_name: string): ExpectedLayer | EmptyJson {
-  const comp = get_comp_from_json_by_name(expected, comp_name);
-  if (_json_truthy(comp) && "layers" in comp && py_bool(comp.layers)) {
+export function getLayerFromJsonByComp(expected: ExpectedProject, compName: string): ExpectedLayer | EmptyJson {
+  const comp = getCompFromJsonByName(expected, compName);
+  if (_jsonTruthy(comp) && "layers" in comp && pyBool(comp.layers)) {
     return comp.layers[0];
   }
   return {};
 }
 
 /** Get a specific footage item from JSON by name. */
-export function get_footage_from_json_by_name(expected: ExpectedProject, name: string): ExpectedFootage | EmptyJson {
+export function getFootageFromJsonByName(expected: ExpectedProject, name: string): ExpectedFootage | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Footage" && item.name === name) return item;
   }
@@ -557,7 +557,7 @@ export function get_footage_from_json_by_name(expected: ExpectedProject, name: s
 }
 
 /** Get a specific folder from JSON by name. */
-export function get_folder_from_json_by_name(expected: ExpectedProject, name: string): ExpectedFolder | EmptyJson {
+export function getFolderFromJsonByName(expected: ExpectedProject, name: string): ExpectedFolder | EmptyJson {
   for (const item of _jget(expected, "items", [])) {
     if (item.typeName === "Folder" && item.name === name) return item;
   }
@@ -565,23 +565,23 @@ export function get_folder_from_json_by_name(expected: ExpectedProject, name: st
 }
 
 /** Get first composition marker from a named composition in JSON. */
-export function get_comp_marker_from_json_by_name(expected: ExpectedProject, comp_name: string): ExpectedMarker | EmptyJson {
-  const comp = get_comp_from_json_by_name(expected, comp_name);
+export function getCompMarkerFromJsonByName(expected: ExpectedProject, compName: string): ExpectedMarker | EmptyJson {
+  const comp = getCompFromJsonByName(expected, compName);
   const markers = _jget(comp, "markers", []);
-  if (Array.isArray(markers) && py_bool(markers)) return markers[0];
+  if (Array.isArray(markers) && pyBool(markers)) return markers[0];
   return {};
 }
 
 /** Get first layer marker value from a named composition in JSON. */
-export function get_layer_marker_from_json_by_comp(expected: ExpectedProject, comp_name: string): ExpectedMarker | EmptyJson {
-  const comp = get_comp_from_json_by_name(expected, comp_name);
-  if (_json_truthy(comp) && "layers" in comp) {
+export function getLayerMarkerFromJsonByComp(expected: ExpectedProject, compName: string): ExpectedMarker | EmptyJson {
+  const comp = getCompFromJsonByName(expected, compName);
+  if (_jsonTruthy(comp) && "layers" in comp) {
     for (const layer of comp.layers) {
       for (const prop of _jget(layer, "properties", [])) {
         if (prop.matchName === "ADBE Marker") {
           const kfs = prop.keyframes ?? [];
           // An `ADBE Marker` keyframe's value is always a marker record.
-          if (py_bool(kfs)) {
+          if (pyBool(kfs)) {
             const value = kfs[0].value;
             if (typeof value === "object" && value !== null && "cuePointName" in value) return value;
           }

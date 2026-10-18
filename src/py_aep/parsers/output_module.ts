@@ -1,9 +1,9 @@
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { filter_by_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
-import { _suppress_materialization } from "../models/descriptors.ts";
+import { filterByType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import { _suppressMaterialization } from "../models/descriptors.ts";
 import { OutputModule } from "../models/renderqueue/output_module.ts";
 import type { RenderQueueItem } from "../models/renderqueue/render_queue_item.ts";
-import { parse_format_options } from "./format_options.ts";
+import { parseFormatOptions } from "./format_options.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import type { OutputModuleSettingsItem } from "../binary/render_chunks.ts";
 
@@ -31,41 +31,41 @@ import type { OutputModuleSettingsItem } from "../binary/render_chunks.ts";
  * @param render_queue_item - The parent render queue item.
  * @returns OutputModule with parsed attributes.
  */
-export const parse_output_module = _suppress_materialization().decorate(
+export const parseOutputModule = _suppressMaterialization().decorate(
   function parse_output_module(
     chunks: Chunk[],
-    om_ldat_data: OutputModuleSettingsItem,
-    render_queue_item: RenderQueueItem,
+    omLdatData: OutputModuleSettingsItem,
+    renderQueueItem: RenderQueueItem,
   ): OutputModule {
-    const roou_chunk = find_by_type(chunks, "Roou");
+    const roouChunk = findByType(chunks, "Roou");
 
     // The alas (output file path) is present only once a file is set.
-    const als2_chunk = find_by_list_type_or_null(chunks, "Als2");
-    const alas_utf8 = als2_chunk === null ? null : find_by_type_or_null(als2_chunk.chunks, "alas");
+    const als2Chunk = findByListTypeOrNull(chunks, "Als2");
+    const alasUtf8 = als2Chunk === null ? null : findByTypeOrNull(als2Chunk.chunks, "alas");
 
     // Format name + file-name template are the last two top-level Utf8 chunks.
-    const om_utf8 = filter_by_type(chunks, "Utf8");
-    let name_utf8: Utf8Chunk | null;
-    let file_name_utf8: Utf8Chunk | null;
-    if (om_utf8.length >= 2) {
-      name_utf8 = om_utf8[om_utf8.length - 2];
-      file_name_utf8 = om_utf8[om_utf8.length - 1];
+    const omUtf8 = filterByType(chunks, "Utf8");
+    let nameUtf8: Utf8Chunk | null;
+    let fileNameUtf8: Utf8Chunk | null;
+    if (omUtf8.length >= 2) {
+      nameUtf8 = omUtf8[omUtf8.length - 2];
+      fileNameUtf8 = omUtf8[omUtf8.length - 1];
     } else {
-      name_utf8 = null;
-      file_name_utf8 = null;
+      nameUtf8 = null;
+      fileNameUtf8 = null;
     }
 
-    const format_options = parse_format_options(chunks);
+    const formatOptions = parseFormatOptions(chunks);
 
     return new OutputModule({
-      _om_ldat: om_ldat_data,
-      _roou: roou_chunk,
-      _alas_utf8: alas_utf8,
-      _file_name_utf8: file_name_utf8,
-      _name_utf8: name_utf8,
-      _render_settings_ldat: render_queue_item._ldat,
-      parent: render_queue_item,
-      format_options: format_options,
+      _om_ldat: omLdatData,
+      _roou: roouChunk,
+      _alas_utf8: alasUtf8,
+      _file_name_utf8: fileNameUtf8,
+      _name_utf8: nameUtf8,
+      _render_settings_ldat: renderQueueItem._ldat,
+      parent: renderQueueItem,
+      format_options: formatOptions,
     });
   },
 );

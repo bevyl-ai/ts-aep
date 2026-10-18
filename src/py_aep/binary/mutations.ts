@@ -1,7 +1,7 @@
 /** Chunk tree mutation helpers for the binary I/O layer. */
 
 import { b64encode } from "../../pyrt/base64.ts";
-import { uuid4_bytes } from "../../pyrt/uuid.ts";
+import { uuid4Bytes } from "../../pyrt/uuid.ts";
 
 import {
   b,
@@ -15,12 +15,12 @@ import {
   rstrip,
   struct,
   ValueError,
-  py_assert,
-  py_or,
+  pyAssert,
+  pyOr,
 } from "../../pyrt/index.ts";
-import { ae_writes } from "../ae_version.ts";
+import { aeWrites } from "../ae_version.ts";
 import { DROPDOWN_CONTROL } from "../data/dropdown_control.ts";
-import { Chunk, ContainerChunk, ListChunk, read_chunks, write_chunk } from "./chunk.ts";
+import { Chunk, ContainerChunk, ListChunk, readChunks, writeChunk } from "./chunk.ts";
 import { CsctChunk } from "./composition_chunks.ts";
 import { IdpcChunk } from "./item_chunks.ts";
 import { GdtaChunk, KfColor, KfMultiDimensional, KfNoValue, KfPosition, LdatChunk, LdatItem, LdatItemType, Lhd3Chunk } from "./ldat_chunks.ts";
@@ -30,7 +30,7 @@ import type { FeatherPointItem } from "./misc_chunks.ts";
 import { TDSN_SENTINEL, CdatChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk } from "./property_chunks.ts";
 import { RoutItem } from "./render_chunks.ts";
 import { F8Chunk, S4Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { filter_by_type, is_chunk_type, recursive_find } from "./utils.ts";
+import { filterByType, isChunkType, recursiveFind } from "./utils.ts";
 
 // Keyframe ldat items always use raw type 4; the effective LdatItemType is
 // disambiguated by item_size (and spatial context on re-read).
@@ -51,15 +51,15 @@ export const ITEM_SIZE_BY_TYPE: Map<LdatItemType, number> = new Map<LdatItemType
 ]);
 
 /** `[0.0] * n` (Python list repetition; no pyrt shim for lists). */
-export function zeros_list(n: number): number[] {
+export function zerosList(n: number): number[] {
   return Array.from({ length: n }, () => 0.0);
 }
 
 /** Remove all chunks of `chunk_type` from the list in-place. */
-export function remove_chunks_by_type(chunks: Chunk[], chunk_type: string): void {
+export function removeChunksByType(chunks: Chunk[], chunkType: string): void {
   let i = chunks.length - 1;
   while (i >= 0) {
-    if (chunks[i].chunk_type === chunk_type) {
+    if (chunks[i].chunk_type === chunkType) {
       chunks.splice(i, 1);
     }
     i -= 1;
@@ -73,35 +73,35 @@ export function remove_chunks_by_type(chunks: Chunk[], chunk_type: string): void
  * `factory()` to create one and append it. When false, remove all
  * matching chunks.
  */
-export function toggle_flag_chunk(
+export function toggleFlagChunk(
   chunks: Chunk[],
-  chunk_type: string,
+  chunkType: string,
   enable: boolean,
   factory: () => Chunk,
 ): void {
-  const has = chunks.some((c) => c.chunk_type === chunk_type);
+  const has = chunks.some((c) => c.chunk_type === chunkType);
   if (enable && !has) {
     chunks.push(factory());
   } else if (!enable && has) {
-    remove_chunks_by_type(chunks, chunk_type);
+    removeChunksByType(chunks, chunkType);
   }
 }
 
 /** Clear the `synthetic` flag on tdmn chunks adjacent to `target`. */
-export function _unflag_markers(parent_chunks: Chunk[], target: ListChunk): void {
+export function _unflagMarkers(parentChunks: Chunk[], target: ListChunk): void {
   let idx: number | null = null;
-  for (const [i, c] of parent_chunks.entries()) {
+  for (const [i, c] of parentChunks.entries()) {
     if (c === target) {
       idx = i;
       break;
     }
   }
   if (idx == null) return;
-  if (idx > 0 && parent_chunks[idx - 1].chunk_type === "tdmn") {
-    parent_chunks[idx - 1].synthetic = false;
+  if (idx > 0 && parentChunks[idx - 1].chunk_type === "tdmn") {
+    parentChunks[idx - 1].synthetic = false;
   }
-  if (idx + 1 < parent_chunks.length && parent_chunks[idx + 1].chunk_type === "tdmn") {
-    parent_chunks[idx + 1].synthetic = false;
+  if (idx + 1 < parentChunks.length && parentChunks[idx + 1].chunk_type === "tdmn") {
+    parentChunks[idx + 1].synthetic = false;
   }
 }
 
@@ -113,22 +113,22 @@ export function _unflag_markers(parent_chunks: Chunk[], target: ListChunk): void
  * Layer-reference tdpi values (regular value params) keep pointing at
  * the referenced layer and are left untouched.
  */
-export function rewrite_owner_tdpi(chunk: Chunk, layer_id: number): void {
+export function rewriteOwnerTdpi(chunk: Chunk, layerId: number): void {
   if (!(chunk instanceof ListChunk)) return;
   const chunks = chunk.chunks;
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      is_chunk_type(c, "tdmn") &&
+      isChunkType(c, "tdmn") &&
       c.value.endsWith("-0000") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk
     ) {
-      for (const tdpi of filter_by_type(next.chunks, "tdpi")) {
-        tdpi.value = layer_id;
+      for (const tdpi of filterByType(next.chunks, "tdpi")) {
+        tdpi.value = layerId;
       }
     } else if (c instanceof ListChunk) {
-      rewrite_owner_tdpi(c, layer_id);
+      rewriteOwnerTdpi(c, layerId);
     }
   }
 }
@@ -138,26 +138,26 @@ export function rewrite_owner_tdpi(chunk: Chunk, layer_id: number): void {
  * The hidden `-0000` owner params are excluded: those name the owning
  * layer, not a reference (see `rewrite_owner_tdpi`).
  */
-export function collect_layer_ref_tdpi_ids(chunk: Chunk, out: Set<number> | null = null): Set<number> {
+export function collectLayerRefTdpiIds(chunk: Chunk, out: Set<number> | null = null): Set<number> {
   if (out == null) out = new Set<number>();
   if (!(chunk instanceof ListChunk)) return out;
   const chunks = chunk.chunks;
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      is_chunk_type(c, "tdmn") &&
+      isChunkType(c, "tdmn") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk &&
       !c.value.endsWith("-0000")
     ) {
-      for (const tdpi of filter_by_type(next.chunks, "tdpi")) {
+      for (const tdpi of filterByType(next.chunks, "tdpi")) {
         if (tdpi.value) {
           out.add(tdpi.value);
         }
       }
     }
     if (c instanceof ListChunk) {
-      collect_layer_ref_tdpi_ids(c, out);
+      collectLayerRefTdpiIds(c, out);
     }
   }
   return out;
@@ -175,25 +175,25 @@ export function collect_layer_ref_tdpi_ids(chunk: Chunk, out: Set<number> | null
  * writes for a copy whose reference did not travel with it. The hidden
  * `-0000` owner params are skipped - `rewrite_owner_tdpi` owns those.
  */
-export function remap_layer_ref_tdpi(chunk: Chunk, id_map: Map<number, number>): void {
+export function remapLayerRefTdpi(chunk: Chunk, idMap: Map<number, number>): void {
   if (!(chunk instanceof ListChunk)) return;
   const chunks = chunk.chunks;
   for (const [i, c] of chunks.entries()) {
     const next = chunks[i + 1];
     if (
-      is_chunk_type(c, "tdmn") &&
+      isChunkType(c, "tdmn") &&
       i + 1 < chunks.length &&
       next instanceof ListChunk
     ) {
       if (c.value.endsWith("-0000")) continue;
-      for (const tdpi of filter_by_type(next.chunks, "tdpi")) {
+      for (const tdpi of filterByType(next.chunks, "tdpi")) {
         if (tdpi.value) {
-          tdpi.value = id_map.get(tdpi.value) ?? 0;
+          tdpi.value = idMap.get(tdpi.value) ?? 0;
         }
       }
     }
     if (c instanceof ListChunk) {
-      remap_layer_ref_tdpi(c, id_map);
+      remapLayerRefTdpi(c, idMap);
     }
   }
 }
@@ -210,11 +210,11 @@ export function remap_layer_ref_tdpi(chunk: Chunk, id_map: Map<number, number>):
  * lazily (see `Property._ensure_time_base`), and a zero there is the
  * "not yet stamped" state, not a 0 fps timebase.
  */
-export function rewrite_time_base(chunk: Chunk, time_base: number): void {
-  for (const found of recursive_find([chunk], "tdb4")) {
+export function rewriteTimeBase(chunk: Chunk, timeBase: number): void {
+  for (const found of recursiveFind([chunk], "tdb4")) {
     const tdb4 = found;
     if (tdb4._time_base) {
-      tdb4._time_base = time_base;
+      tdb4._time_base = timeBase;
     }
   }
 }
@@ -230,11 +230,11 @@ export function rewrite_time_base(chunk: Chunk, time_base: number): void {
  * disagrees with the file it just wrote. Removing them lets synthesis run
  * again on the far side, exactly as it does when the file is re-opened.
  */
-export function strip_synthetic(chunk: Chunk): void {
+export function stripSynthetic(chunk: Chunk): void {
   if (!(chunk instanceof ListChunk)) return;
   chunk.chunks.splice(0, chunk.chunks.length, ...chunk.chunks.filter((c) => !c.synthetic));
   for (const child of chunk.chunks) {
-    strip_synthetic(child);
+    stripSynthetic(child);
   }
 }
 
@@ -243,12 +243,12 @@ export function strip_synthetic(chunk: Chunk): void {
  * Synthetic chunks are excluded during serialization, so the clone
  * contains only real (non-synthetic) chunks.
  */
-export function clone_chunk_tree<T extends Chunk>(chunk: T): T extends ListChunk ? ListChunk : T;
-export function clone_chunk_tree(chunk: Chunk): Chunk {
+export function cloneChunkTree<T extends Chunk>(chunk: T): T extends ListChunk ? ListChunk : T;
+export function cloneChunkTree(chunk: Chunk): Chunk {
   const buf = new BytesIO();
-  const size = write_chunk(buf, chunk);
+  const size = writeChunk(buf, chunk);
   buf.seek(0);
-  return read_chunks(buf, size)[0];
+  return readChunks(buf, size)[0];
 }
 
 /**
@@ -261,16 +261,16 @@ export function clone_chunk_tree(chunk: Chunk): Chunk {
  * @returns `(inner, lhd3, ldat)` - the `LIST:list`, its header, and the (empty) data chunk. Callers
  *   append `LdatItem`s to `ldat.items` and keep `lhd3.count` in sync.
  */
-export function build_keyframe_list(
-  item_type: LdatItemType,
-  item_size: number,
+export function buildKeyframeList(
+  itemType: LdatItemType,
+  itemSize: number,
 ): [ListChunk, Lhd3Chunk, LdatChunk] {
   const lhd3 = new Lhd3Chunk({
-    item_size: item_size,
+    item_size: itemSize,
     item_type_raw: _KEYFRAME_ITEM_TYPE_RAW,
     counter_b: 4,
   });
-  const ldat = new LdatChunk({ items: [], item_type: item_type, item_size: item_size });
+  const ldat = new LdatChunk({ items: [], item_type: itemType, item_size: itemSize });
   const inner = new ListChunk({ list_type: "list", chunks: [lhd3, ldat] });
   return [inner, lhd3, ldat];
 }
@@ -289,7 +289,7 @@ export const LRDR_CHILD_ORDER = ["Rhed", "Rout", "list", "LItm", "LSIf"] as cons
  *
  * @returns `(inner, lhd3, ldat)` - the `LIST:list`, its header, and the data chunk.
  */
-export function build_rq_settings_list(
+export function buildRqSettingsList(
   kw: { synthetic?: boolean } = {},
 ): [ListChunk, Lhd3Chunk, LdatChunk] {
   const { synthetic = false } = kw;
@@ -304,39 +304,39 @@ export function build_rq_settings_list(
  * Speed / influence are seeded to zero (LINEAR defaults). The caller
  * sets the actual value afterwards (e.g. via `Keyframe.value`).
  */
-export function build_kf_data(item_type: LdatItemType, num_value: number): KfColor | KfPosition | KfNoValue | KfMultiDimensional {
-  if (item_type === LdatItemType.color) {
+export function buildKfData(itemType: LdatItemType, numValue: number): KfColor | KfPosition | KfNoValue | KfMultiDimensional {
+  if (itemType === LdatItemType.color) {
     return new KfColor();
   }
-  if (item_type === LdatItemType.two_d_spatial || item_type === LdatItemType.three_d_spatial) {
+  if (itemType === LdatItemType.two_d_spatial || itemType === LdatItemType.three_d_spatial) {
     return new KfPosition({
-      value: zeros_list(num_value),
-      in_spatial_tangents: zeros_list(num_value),
-      out_spatial_tangents: zeros_list(num_value),
+      value: zerosList(numValue),
+      in_spatial_tangents: zerosList(numValue),
+      out_spatial_tangents: zerosList(numValue),
       spatial_flags: 1,
     });
   }
-  if (item_type === LdatItemType.no_value) {
+  if (itemType === LdatItemType.no_value) {
     return new KfNoValue();
   }
   return new KfMultiDimensional({
-    value: zeros_list(num_value),
-    in_speed: zeros_list(num_value),
-    in_influence: zeros_list(num_value),
-    out_speed: zeros_list(num_value),
-    out_influence: zeros_list(num_value),
+    value: zerosList(numValue),
+    in_speed: zerosList(numValue),
+    in_influence: zerosList(numValue),
+    out_speed: zerosList(numValue),
+    out_influence: zerosList(numValue),
   });
 }
 
 /** Wrap a keyframe-data payload in an `LdatItem` with LINEAR defaults. */
-export function build_ldat_item(kf_data: KfColor | KfPosition | KfNoValue | KfMultiDimensional | Uint8Array, kw: { spatial: boolean }): LdatItem {
+export function buildLdatItem(kfData: KfColor | KfPosition | KfNoValue | KfMultiDimensional | Uint8Array, kw: { spatial: boolean }): LdatItem {
   const { spatial } = kw;
   return new LdatItem({
     time_units: 0,
     in_interpolation_type: 1,
     out_interpolation_type: 1,
     key_flags: spatial ? 7 : 0,
-    kf_data: kf_data,
+    kf_data: kfData,
   });
 }
 
@@ -345,7 +345,7 @@ export function build_ldat_item(kf_data: KfColor | KfPosition | KfNoValue | KfMu
  * AE stores a copy of the otda angles after the ease data of each
  * orientation keyframe item: 3 little-endian doubles.
  */
-export function set_orientation_item_values(item: LdatItem, values: number[]): void {
+export function setOrientationItemValues(item: LdatItem, values: number[]): void {
   item._trailing = struct.pack("<3d", ...values.slice(0, 3));
 }
 
@@ -356,43 +356,43 @@ export function set_orientation_item_values(item: LdatItem, values: number[]): v
  * btdk); this header item carries only timing/ease plus type-specific
  * padding. Layouts reverse-engineered from AE 2026 output.
  */
-export function build_parallel_ldat_item(
-  item_type: LdatItemType,
-  orientation_values: number[] | null = null,
+export function buildParallelLdatItem(
+  itemType: LdatItemType,
+  orientationValues: number[] | null = null,
 ): LdatItem {
-  const item_size = getitem(ITEM_SIZE_BY_TYPE, item_type);
+  const itemSize = getitem(ITEM_SIZE_BY_TYPE, itemType);
   // Orientation shares the valueless 48-byte ease prefix with shape and
   // gradient keys; only the trailing padding (which holds a copy of the
   // angles) differs.
-  let kf_data: KfNoValue | Uint8Array;
+  let kfData: KfNoValue | Uint8Array;
   let interp: number;
   let flags: number;
-  if (item_type === LdatItemType.orientation || item_type === LdatItemType.no_value) {
-    kf_data = new KfNoValue();
+  if (itemType === LdatItemType.orientation || itemType === LdatItemType.no_value) {
+    kfData = new KfNoValue();
     interp = 1;
     flags = 1;
-  } else if (item_type === LdatItemType.marker) {
+  } else if (itemType === LdatItemType.marker) {
     // marker, text (HOLD - no interpolation)
-    kf_data = bytes_.repeat(b("\x00"), 8);
+    kfData = bytes_.repeat(b("\x00"), 8);
     interp = 3;
     flags = 0;
   } else {
     // CPython 3.12 repr of an IntEnum member: <LdatItemType.name: value>
     throw new ValueError(
-      `unsupported parallel item type <LdatItemType.${LdatItemType.name_of(item_type)}: ${item_type}>`,
+      `unsupported parallel item type <LdatItemType.${LdatItemType.name_of(itemType)}: ${itemType}>`,
     );
   }
-  const body_len = 8 + (kf_data instanceof Uint8Array ? kf_data.length : len(kf_data.tobytes()));
+  const bodyLen = 8 + (kfData instanceof Uint8Array ? kfData.length : len(kfData.tobytes()));
   const item = new LdatItem({
     time_units: 0,
     in_interpolation_type: interp,
     out_interpolation_type: interp,
     key_flags: flags,
-    kf_data: kf_data,
-    trailing: bytes_.repeat(b("\x00"), item_size - body_len),
+    kf_data: kfData,
+    trailing: bytes_.repeat(b("\x00"), itemSize - bodyLen),
   });
-  if (item_type === LdatItemType.orientation && orientation_values != null) {
-    set_orientation_item_values(item, orientation_values);
+  if (itemType === LdatItemType.orientation && orientationValues != null) {
+    setOrientationItemValues(item, orientationValues);
   }
   return item;
 }
@@ -405,7 +405,7 @@ export function build_parallel_ldat_item(
  * `tensions` the per-vertex RotoBezier tensions (empty `omtn` when
  * `null`); `feather_points` are copied, so the source keeps its own.
  */
-export function build_shap(
+export function buildShap(
   bbox: [number, number, number, number],
   kw: {
     open_path: boolean;
@@ -418,14 +418,14 @@ export function build_shap(
   const shph = new ShphChunk();
   shph.open = open_path;
   [shph.top_left_x, shph.top_left_y, shph.bottom_right_x, shph.bottom_right_y] = bbox;
-  const n_verts = floordiv(points.length, 3);
+  const nVerts = floordiv(points.length, 3);
   const lhd3 = new Lhd3Chunk({
     count: points.length,
     item_size: 8,
     item_type_raw: 4,
-    count_b: n_verts,
+    count_b: nVerts,
     counter_a: 1,
-    counter_b: 4 * n_verts,
+    counter_b: 4 * nVerts,
   });
   const ldat = new LdatChunk({
     items: [...points],
@@ -434,7 +434,7 @@ export function build_shap(
   });
   const inner = new ListChunk({ list_type: "list", chunks: [lhd3, ldat] });
   const omtn = new OmtnChunk({
-    tensions: py_or(tensions, []).map((t) => new TensionItem({ value: t })),
+    tensions: pyOr(tensions, []).map((t) => new TensionItem({ value: t })),
   });
   const chunks: Chunk[] = [shph, inner, omtn];
   if (feather_points != null && feather_points.length > 0) {
@@ -450,7 +450,7 @@ export function build_shap(
  * @returns (gide, lhd3, inner) - the outer Gide list, header chunk, and inner `LIST:list`. Callers
  *   can append an `LdatChunk` to *inner* when guide data is needed.
  */
-export function build_gide_list(): [ListChunk, Lhd3Chunk, ListChunk] {
+export function buildGideList(): [ListChunk, Lhd3Chunk, ListChunk] {
   const lhd3 = new Lhd3Chunk({ item_size: 16, item_type_raw: 2 });
   const inner = new ListChunk({ list_type: "list", chunks: [lhd3] });
   const gide = new ListChunk({ list_type: "Gide", chunks: [new GdtaChunk(), inner] });
@@ -459,28 +459,28 @@ export function build_gide_list(): [ListChunk, Lhd3Chunk, ListChunk] {
 
 /** Build the `LIST:OvG2(CprC)` block AE writes after a Layer
  * Overrides tdmn. */
-export function build_ovg2(): ListChunk {
+export function buildOvg2(): ListChunk {
   return new ListChunk({ list_type: "OvG2", chunks: [new S4Chunk({ chunk_type: "CprC" })] });
 }
 
 /** Build the empty `LIST:OvdG(CprC)` AE 15 writes at the end of every
  * layer (see `ae_writes("layer OvdG")`). */
-export function build_ovdg(): ListChunk {
+export function buildOvdg(): ListChunk {
   return new ListChunk({ list_type: "OvdG", chunks: [new S4Chunk({ chunk_type: "CprC" })] });
 }
 
 /** Build the `iide` / `idpc` pair that opens a new item's `LIST:Item`,
  * or nothing for a release that does not write them. */
-export function build_item_id_chunks(item_id: number, ae_major: number): Chunk[] {
-  if (!ae_writes("item ids", ae_major)) {
+export function buildItemIdChunks(itemId: number, aeMajor: number): Chunk[] {
+  if (!aeWrites("item ids", aeMajor)) {
     return [];
   }
-  return [new U4LeChunk({ chunk_type: "iide", value: item_id }), new IdpcChunk()];
+  return [new U4LeChunk({ chunk_type: "iide", value: itemId }), new IdpcChunk()];
 }
 
 /** Build the `blsv`/`blsi` pair AE writes after a Layer Source
  * Alternate tdmn. */
-export function build_source_alternate_extras(): Chunk[] {
+export function buildSourceAlternateExtras(): Chunk[] {
   return [
     new U4Chunk({ chunk_type: "blsv", value: 1 }),
     new U4Chunk({ chunk_type: "blsi" }),
@@ -498,31 +498,31 @@ export function build_source_alternate_extras(): Chunk[] {
  * Returns `(cctl, name_utf8, ctyp)` so callers can bind the editable
  * chunks to the controller model.
  */
-export function _build_cctl(
+export function _buildCctl(
   name: string,
-  uuid_str: string,
-  controller_type: number,
-  value_chunks: Chunk[],
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  uuidStr: string,
+  controllerType: number,
+  valueChunks: Chunk[],
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
-  const name_utf8 = new Utf8Chunk({ value: name });
+  const nameUtf8 = new Utf8Chunk({ value: name });
   const cps2 = new ListChunk({
     list_type: "CpS2",
-    chunks: [new CsctChunk(), name_utf8, new Utf8Chunk({ value: "en_US" })],
+    chunks: [new CsctChunk(), nameUtf8, new Utf8Chunk({ value: "en_US" })],
   });
   const caps = new ListChunk({
     list_type: "CapS",
     chunks: [new CsctChunk(), new U4Chunk({ chunk_type: "CapL" }), new Utf8Chunk({ value: name })],
   });
-  const ctyp = new U4Chunk({ chunk_type: "CTyp", value: controller_type });
+  const ctyp = new U4Chunk({ chunk_type: "CTyp", value: controllerType });
   const cprp = new ListChunk({
     list_type: "CPrp",
     chunks: [
-      new U4Chunk({ chunk_type: "CCId", value: comp_id }),
-      new U4Chunk({ chunk_type: "CLId", value: layer_id }),
-      new Utf8Chunk({ value: path_json }),
+      new U4Chunk({ chunk_type: "CCId", value: compId }),
+      new U4Chunk({ chunk_type: "CLId", value: layerId }),
+      new Utf8Chunk({ value: pathJson }),
     ],
   });
   const cctl = new ListChunk({
@@ -530,69 +530,69 @@ export function _build_cctl(
     chunks: [
       cps2,
       caps,
-      new Utf8Chunk({ value: uuid_str }),
+      new Utf8Chunk({ value: uuidStr }),
       ctyp,
-      ...value_chunks,
+      ...valueChunks,
       new S4Chunk({ chunk_type: "CprC", value: 1 }),
       cprp,
     ],
   });
-  return [cctl, name_utf8, ctyp];
+  return [cctl, nameUtf8, ctyp];
 }
 
 /** Build a Slider (CTyp 2) controller. `CVal`/`CDef` both take the
  * property's value at add time, matching AE. */
-export function build_slider_cctl(
+export function buildSliderCctl(
   name: string,
-  uuid_str: string,
+  uuidStr: string,
   value: number,
-  slider_min: number,
-  slider_max: number,
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  sliderMin: number,
+  sliderMax: number,
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
-  const value_chunks: Chunk[] = [
+  const valueChunks: Chunk[] = [
     new Chunk({ chunk_type: "CVal", data: struct.pack(">d", value) }),
     new Chunk({ chunk_type: "CDef", data: struct.pack(">d", value) }),
-    new F8Chunk({ chunk_type: "Smin", value: slider_min }),
-    new F8Chunk({ chunk_type: "Smax", value: slider_max }),
+    new F8Chunk({ chunk_type: "Smin", value: sliderMin }),
+    new F8Chunk({ chunk_type: "Smax", value: sliderMax }),
   ];
-  return _build_cctl(name, uuid_str, 2, value_chunks, comp_id, layer_id, path_json);
+  return _buildCctl(name, uuidStr, 2, valueChunks, compId, layerId, pathJson);
 }
 
 /** Build a Checkbox (CTyp 1) controller. */
-export function build_checkbox_cctl(
+export function buildCheckboxCctl(
   name: string,
-  uuid_str: string,
+  uuidStr: string,
   value: boolean,
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
   const byte = value ? b("\x01") : b("\x00");
-  const value_chunks: Chunk[] = [
+  const valueChunks: Chunk[] = [
     new Chunk({ chunk_type: "CVal", data: byte }),
     new Chunk({ chunk_type: "CDef", data: byte }),
   ];
-  return _build_cctl(name, uuid_str, 1, value_chunks, comp_id, layer_id, path_json);
+  return _buildCctl(name, uuidStr, 1, valueChunks, compId, layerId, pathJson);
 }
 
 /** Build a Color (CTyp 4) controller. `rgba` is 4 floats in 0-1. */
-export function build_color_cctl(
+export function buildColorCctl(
   name: string,
-  uuid_str: string,
+  uuidStr: string,
   rgba: number[],
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
   const data = struct.pack(">4f", ...rgba);
-  const value_chunks: Chunk[] = [
+  const valueChunks: Chunk[] = [
     new Chunk({ chunk_type: "CVal", data: data }),
     new Chunk({ chunk_type: "CDef", data: data }),
   ];
-  return _build_cctl(name, uuid_str, 4, value_chunks, comp_id, layer_id, path_json);
+  return _buildCctl(name, uuidStr, 4, valueChunks, compId, layerId, pathJson);
 }
 
 /** Build a Source Text (CTyp 6) controller.
@@ -601,26 +601,26 @@ export function build_color_cctl(
  * of `font_caps_json` (all disabled); the second JSON is the
  * no-alternate-source reference AE writes for a fresh controller.
  */
-export function build_text_cctl(
+export function buildTextCctl(
   name: string,
-  uuid_str: string,
+  uuidStr: string,
   text: string,
-  font_caps_json: string,
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  fontCapsJson: string,
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
-  const value_chunks: Chunk[] = [
+  const valueChunks: Chunk[] = [
     new Utf8Chunk({ value: text }),
     new Utf8Chunk({ value: text }),
     new Chunk({ chunk_type: "CFEd", data: b("\x00") }),
     new Chunk({ chunk_type: "CSEd", data: b("\x00") }),
     new Chunk({ chunk_type: "CFEd", data: b("\x00") }),
-    new Utf8Chunk({ value: font_caps_json }),
+    new Utf8Chunk({ value: fontCapsJson }),
     new Utf8Chunk({ value: '{"compId":-1,"isEnabled":false,"layerId":-1}' }),
     new Chunk({ chunk_type: "CTov", data: b("\x07\x00\x00\x00") }),
   ];
-  return _build_cctl(name, uuid_str, 6, value_chunks, comp_id, layer_id, path_json);
+  return _buildCctl(name, uuidStr, 6, valueChunks, compId, layerId, pathJson);
 }
 
 export const _NULL_UUID = "00000000-0000-0000-0000-000000000000";
@@ -636,33 +636,33 @@ export const _NULL_UUID = "00000000-0000-0000-0000-000000000000";
  * `CSMd` are written as the constants AE emits for a fresh controller;
  * their semantics are undecoded.
  */
-export function build_media_cctl(
+export function buildMediaCctl(
   name: string,
-  uuid_str: string,
+  uuidStr: string,
   width: number,
   height: number,
-  in_units: number,
-  out_units: number,
+  inUnits: number,
+  outUnits: number,
   timebase: number,
-  thumbnail_name: string,
-  comp_id: number,
-  layer_id: number,
-  path_json: string,
+  thumbnailName: string,
+  compId: number,
+  layerId: number,
+  pathJson: string,
 ): [ListChunk, Utf8Chunk, U4Chunk] {
-  const value_chunks: Chunk[] = [
+  const valueChunks: Chunk[] = [
     new Utf8Chunk({ value: _NULL_UUID }),
     new Utf8Chunk({ value: _NULL_UUID }),
     new U4Chunk({ chunk_type: "CSMw", value: width }),
     new U4Chunk({ chunk_type: "CSMh", value: height }),
-    new U4Chunk({ chunk_type: "CSMs", value: in_units }),
-    new U4Chunk({ chunk_type: "CSMe", value: out_units }),
+    new U4Chunk({ chunk_type: "CSMs", value: inUnits }),
+    new U4Chunk({ chunk_type: "CSMe", value: outUnits }),
     new U4Chunk({ chunk_type: "CSMt", value: timebase }),
     new Chunk({ chunk_type: "CSMp", data: b("\x00\x00\x00\x00\x00\x00\x00\x01") }),
     new Chunk({ chunk_type: "CCEx", data: b("\x01") }),
-    new Utf8Chunk({ value: thumbnail_name }),
+    new Utf8Chunk({ value: thumbnailName }),
     new U4Chunk({ chunk_type: "CSMd", value: 2 }),
   ];
-  return _build_cctl(name, uuid_str, 14, value_chunks, comp_id, layer_id, path_json);
+  return _buildCctl(name, uuidStr, 14, valueChunks, compId, layerId, pathJson);
 }
 
 /** An ICC profile as `LIST:CLRS` records it. */
@@ -673,8 +673,8 @@ export class ColorProfileRecord {
   /** The JSON envelope carrying the profile's bytes and name. */
   readonly envelope: string;
 
-  constructor(profile_id: Uint8Array, envelope: string) {
-    this.profile_id = profile_id;
+  constructor(profileId: Uint8Array, envelope: string) {
+    this.profile_id = profileId;
     this.envelope = envelope;
   }
 
@@ -713,7 +713,7 @@ export class ColorProfileRecord {
  * no profile. Without it the source falls back to the working space, which
  * is what AE writes for a solid.
  */
-export function build_pin_list(
+export function buildPinList(
   sspc: Chunk,
   opti: Chunk,
   kw: {
@@ -738,47 +738,47 @@ export function build_pin_list(
   const epid = new EpidChunk();
   const apid = new ApidChunk();
   const ipws = new IpwsChunk({ value: color_managed ? 0 : 1 });
-  let media_chunks: Chunk[] = [];
-  let embedded_envelope = "";
-  let assigned_envelope = "";
+  let mediaChunks: Chunk[] = [];
+  let embeddedEnvelope = "";
+  let assignedEnvelope = "";
   if (embedded_profile != null) {
     epid.data = embedded_profile.profile_id;
-    embedded_envelope = embedded_profile.envelope;
+    embeddedEnvelope = embedded_profile.envelope;
     // AE stores the embedded profile twice: once behind a lowercase
     // `mcsp` marker and again behind the `Mcsp` flag below.
-    media_chunks = [
+    mediaChunks = [
       new Chunk({ chunk_type: "mcsp", data: b("\x01") }),
-      new Utf8Chunk({ value: embedded_envelope }),
+      new Utf8Chunk({ value: embeddedEnvelope }),
     ];
   } else if (assigned_profile != null) {
     apid.data = assigned_profile.profile_id;
-    assigned_envelope = assigned_profile.envelope;
+    assignedEnvelope = assigned_profile.envelope;
   }
 
-  const clrs_chunks: Chunk[] = [epid, apid];
+  const clrsChunks: Chunk[] = [epid, apid];
   if (embedded_profile_name != null) {
-    clrs_chunks.push(new EmpdChunk());
-    clrs_chunks.push(new Utf8Chunk({ value: embedded_profile_name }));
+    clrsChunks.push(new EmpdChunk());
+    clrsChunks.push(new Utf8Chunk({ value: embedded_profile_name }));
   }
-  clrs_chunks.push(
+  clrsChunks.push(
     new LinlChunk(),
     new EmbpChunk(),
     ipws,
-    ...media_chunks,
+    ...mediaChunks,
   );
   if (is_solid) {
-    clrs_chunks.push(new DcuiChunk());
-    clrs_chunks.push(new PrgbChunk());
+    clrsChunks.push(new DcuiChunk());
+    clrsChunks.push(new PrgbChunk());
   }
-  clrs_chunks.push(
+  clrsChunks.push(
     new McspChunk(),
-    new Utf8Chunk({ value: embedded_envelope }),
+    new Utf8Chunk({ value: embeddedEnvelope }),
     new OcspChunk(),
-    new Utf8Chunk({ value: assigned_envelope }),
+    new Utf8Chunk({ value: assignedEnvelope }),
     new HdrmChunk(),
     new Utf8Chunk({ value: "{}" }),
   );
-  const clrs = new ListChunk({ list_type: "CLRS", chunks: clrs_chunks });
+  const clrs = new ListChunk({ list_type: "CLRS", chunks: clrsChunks });
 
   const mnfo = new ListChunk({
     list_type: "mnfo",
@@ -790,7 +790,7 @@ export function build_pin_list(
     chunks: [
       sspc,
       new Utf8Chunk({ value: layer_name }),
-      ...py_or(path_chunks, []),
+      ...pyOr(path_chunks, []),
       opti,
       PguiChunk.new_(),
       clrs,
@@ -806,7 +806,7 @@ export function build_pin_list(
  * `state` is a position-dependent slot type code: 0x11 at positions
  * 0/1/3, 0x7B at position 2, 0x88 at position 4.
  */
-export function build_rout_block(): RoutItem[] {
+export function buildRoutBlock(): RoutItem[] {
   return [
     new RoutItem({ flags: 0x40, state: 0x11 }),
     new RoutItem({ flags: 0x80, state: 0x11 }),
@@ -822,7 +822,7 @@ export function build_rout_block(): RoutItem[] {
  * `count_b`/`counter_a`/`counter_b` stay at 1 to match real files; only
  * `count` tracks the output module count.
  */
-export function build_om_container(): ListChunk {
+export function buildOmContainer(): ListChunk {
   const lhd3 = new Lhd3Chunk({ count: 0, item_size: 128, item_type_raw: 1, counter_b: 1 });
   const ldat = new LdatChunk({ items: [], item_type: LdatItemType.litm, item_size: 128 });
   return new ListChunk({ list_type: "list", chunks: [lhd3, ldat] });
@@ -837,15 +837,15 @@ export function build_om_container(): ListChunk {
  * layout mirrors a static mask path (`tdbs` with empty `cdat` plus
  * the `omks > shap` value container).
  *
- * @param time_base - The comp's internal timebase (`cdta.internal_timebase`).
+ * @param timeBase - The comp's internal timebase (`cdta.internal_timebase`).
  */
-export function build_default_path_shape(time_base: number): [TdmnChunk, ListChunk] {
+export function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] {
   const tdb4 = new Tdb4Chunk({
     spatial_static_flags: 7,
     pad2a: 1,
     value_hint_type: 2,
     cvot_flags: 7,
-    time_base: time_base,
+    time_base: timeBase,
     no_value_flags: 1,
     type_flags: 8,
     spatial_marker: true,
@@ -909,7 +909,7 @@ export const _DEFAULT_ROTO_MASK_SHAPE_OMS =
  * normalized, so only the comp's internal timebase and the layer's
  * aspect vary.
  *
- * @param time_base - The comp's internal timebase (`cdta.internal_timebase`).
+ * @param timeBase - The comp's internal timebase (`cdta.internal_timebase`).
  * @param kw - Keyword arguments:
  * - `aspect`: The tdb4 X multiplier AE stamps on a mask path: the layer's mask space in display
  *     pixels, width / height.
@@ -917,19 +917,19 @@ export const _DEFAULT_ROTO_MASK_SHAPE_OMS =
  *     from an enable-rotoBezier capture (flag on); a plain bezier path write clears it, matching AE
  *     (psd_vector_mask fixtures).
  */
-export function build_default_mask_shape(
-  time_base: number,
+export function buildDefaultMaskShape(
+  timeBase: number,
   kw: { aspect: number; roto_bezier?: boolean },
 ): [TdmnChunk, ListChunk] {
   const { aspect, roto_bezier = false } = kw;
   const raw = bytes_.fromhex(_DEFAULT_ROTO_MASK_SHAPE_OMS);
-  const oms = read_chunks(new BytesIO(raw), raw.length)[0];
-  py_assert(oms instanceof ListChunk);
+  const oms = readChunks(new BytesIO(raw), raw.length)[0];
+  pyAssert(oms instanceof ListChunk);
   const tdbs = oms.chunks[0];
-  py_assert(tdbs instanceof ListChunk);
+  pyAssert(tdbs instanceof ListChunk);
   for (const c of tdbs.chunks) {
     if (c instanceof Tdb4Chunk) {
-      c._time_base = time_base;
+      c._time_base = timeBase;
       c.pixel_aspect = aspect;
     } else if (c instanceof TdsbChunk) {
       c.roto_bezier = roto_bezier;
@@ -947,7 +947,7 @@ export function build_default_mask_shape(
  * written to binary. `subgroups` lists the mandatory empty subgroups
  * some elements carry as `(match_name, tdsb lock flags)` pairs.
  *
- * @param match_name - The element match name (e.g. `ADBE Vector Shape - Rect`).
+ * @param matchName - The element match name (e.g. `ADBE Vector Shape - Rect`).
  * @param name - The instance name AE bakes into the tdsn (`"Base N"`).
  * @param kw - Keyword arguments:
  * - `subgroups`: Mandatory empty subgroups to write inside the element, as
@@ -955,8 +955,8 @@ export function build_default_mask_shape(
  * - `path_time_base`: For the Path element (`ADBE Vector Shape - Group`), the comp's internal
  *     timebase; adds the default empty `ADBE Vector Shape` bezier property.
  */
-export function build_vector_element(
-  match_name: string,
+export function buildVectorElement(
+  matchName: string,
   name: string,
   kw: {
     subgroups?: ReadonlyArray<readonly [string, number, number]>;
@@ -966,15 +966,15 @@ export function build_vector_element(
   const { subgroups = [], path_time_base = null } = kw;
   const chunks: Chunk[] = [new TdsbChunk(), TdsnChunk.new_(name)];
   if (path_time_base != null) {
-    chunks.push(...build_default_path_shape(path_time_base));
+    chunks.push(...buildDefaultPathShape(path_time_base));
   }
-  for (const [sub_match_name, lock_flags, enable_flags] of subgroups) {
-    chunks.push(new TdmnChunk({ value: sub_match_name }));
+  for (const [subMatchName, lockFlags, enableFlags] of subgroups) {
+    chunks.push(new TdmnChunk({ value: subMatchName }));
     chunks.push(
       new ListChunk({
         list_type: "tdgp",
         chunks: [
-          new TdsbChunk({ lock_flags: lock_flags, enable_flags: enable_flags }),
+          new TdsbChunk({ lock_flags: lockFlags, enable_flags: enableFlags }),
           TdsnChunk.new_(TDSN_SENTINEL),
           new TdmnChunk({ value: "ADBE Group End" }),
         ],
@@ -982,7 +982,7 @@ export function build_vector_element(
     );
   }
   chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-  return [new TdmnChunk({ value: match_name }), new ListChunk({ list_type: "tdgp", chunks: chunks })];
+  return [new TdmnChunk({ value: matchName }), new ListChunk({ list_type: "tdgp", chunks: chunks })];
 }
 
 /**
@@ -993,13 +993,13 @@ export function build_vector_element(
  * Range Selector additionally carries an empty `ADBE Text Range Advanced` subgroup in binary (its children are synthesized too);
  * Wiggly and Expression selectors do not.
  *
- * @param match_name - The selector match name (e.g. `ADBE Text Selector`).
+ * @param matchName - The selector match name (e.g. `ADBE Text Selector`).
  * @param name - The instance name AE bakes into the tdsn (`"Base N"`).
  * @param kw - Keyword arguments:
  * - `has_advanced`: Whether to write the empty Advanced subgroup (Range Selector only).
  */
-export function build_text_selector(
-  match_name: string,
+export function buildTextSelector(
+  matchName: string,
   name: string,
   kw: { has_advanced: boolean },
 ): [TdmnChunk, ListChunk] {
@@ -1019,7 +1019,7 @@ export function build_text_selector(
     );
   }
   chunks.push(new TdmnChunk({ value: "ADBE Group End" }));
-  return [new TdmnChunk({ value: match_name }), new ListChunk({ list_type: "tdgp", chunks: chunks })];
+  return [new TdmnChunk({ value: matchName }), new ListChunk({ list_type: "tdgp", chunks: chunks })];
 }
 
 /**
@@ -1032,8 +1032,8 @@ export function build_text_selector(
  *
  * @param name - The instance name AE bakes into the tdsn (`"Animator N"`).
  */
-export function build_text_animator(name: string): [TdmnChunk, ListChunk] {
-  const properties_tdgp = new ListChunk({
+export function buildTextAnimator(name: string): [TdmnChunk, ListChunk] {
+  const propertiesTdgp = new ListChunk({
     list_type: "tdgp",
     chunks: [
       new TdsbChunk(),
@@ -1047,7 +1047,7 @@ export function build_text_animator(name: string): [TdmnChunk, ListChunk] {
       new TdsbChunk(),
       TdsnChunk.new_(name),
       new TdmnChunk({ value: "ADBE Text Animator Properties" }),
-      properties_tdgp,
+      propertiesTdgp,
       new TdmnChunk({ value: "ADBE Group End" }),
     ],
   });
@@ -1065,9 +1065,9 @@ export function build_text_animator(name: string): [TdmnChunk, ListChunk] {
  * parameters stay at their defaults and are omitted from binary,
  * except the Layer Control's, which AE always writes.
  *
- * @param match_name - The effect match name (e.g. `ADBE Slider Control`).
- * @param display_name - The default effect name, written to `fnam`.
- * @param part_bytes - This control's serialized `LIST:parT` chunk.
+ * @param matchName - The effect match name (e.g. `ADBE Slider Control`).
+ * @param displayName - The default effect name, written to `fnam`.
+ * @param partBytes - This control's serialized `LIST:parT` chunk.
  * @param kw - Keyword arguments:
  * - `tdsn_name`: The instance name for the effect tdsn - the unnamed sentinel for a first instance,
  *     `"Name N"` for later ones.
@@ -1076,10 +1076,10 @@ export function build_text_animator(name: string): [TdmnChunk, ListChunk] {
  * - `layer_param_name`: When set, also write the `-0001` value parameter to the tdgp, with this
  *     tdsn display name.
  */
-export function build_expression_control(
-  match_name: string,
-  display_name: string,
-  part_bytes: Uint8Array,
+export function buildExpressionControl(
+  matchName: string,
+  displayName: string,
+  partBytes: Uint8Array,
   kw: {
     tdsn_name: string;
     time_base: number;
@@ -1088,9 +1088,9 @@ export function build_expression_control(
   },
 ): [TdmnChunk, ListChunk] {
   const { tdsn_name, time_base, layer_id, layer_param_name = null } = kw;
-  const part = read_chunks(new BytesIO(part_bytes), part_bytes.length)[0];
+  const part = readChunks(new BytesIO(partBytes), partBytes.length)[0];
 
-  function param_tdbs(name: string, enable_flags: number): ListChunk {
+  function paramTdbs(name: string, enableFlags: number): ListChunk {
     const tdb4 = new Tdb4Chunk({
       value_hint_type: 1,
       time_base: time_base,
@@ -1101,7 +1101,7 @@ export function build_expression_control(
     return new ListChunk({
       list_type: "tdbs",
       chunks: [
-        new TdsbChunk({ enable_flags: enable_flags }),
+        new TdsbChunk({ enable_flags: enableFlags }),
         TdsnChunk.new_(name),
         tdb4,
         new CdatChunk({ values: [0.0, 0.0, 0.0, 0.0, 0.0] }),
@@ -1111,19 +1111,19 @@ export function build_expression_control(
     });
   }
 
-  const tdgp_chunks: Chunk[] = [
+  const tdgpChunks: Chunk[] = [
     new TdsbChunk(),
     TdsnChunk.new_(tdsn_name),
-    new TdmnChunk({ value: match_name + "-0000" }),
-    param_tdbs("", 3),
+    new TdmnChunk({ value: matchName + "-0000" }),
+    paramTdbs("", 3),
   ];
   if (layer_param_name != null) {
-    tdgp_chunks.push(
-      new TdmnChunk({ value: match_name + "-0001" }),
-      param_tdbs(layer_param_name, 1),
+    tdgpChunks.push(
+      new TdmnChunk({ value: matchName + "-0001" }),
+      paramTdbs(layer_param_name, 1),
     );
   }
-  tdgp_chunks.push(
+  tdgpChunks.push(
     new TdmnChunk({ value: "ADBE Effect Built In Params" }),
     new ListChunk({
       list_type: "tdgp",
@@ -1144,14 +1144,14 @@ export function build_expression_control(
     chunks: [
       new ContainerChunk({
         chunk_type: "fnam",
-        chunks: [new Utf8Chunk({ value: display_name })],
+        chunks: [new Utf8Chunk({ value: displayName })],
       }),
       part,
-      new ListChunk({ list_type: "tdgp", chunks: tdgp_chunks }),
+      new ListChunk({ list_type: "tdgp", chunks: tdgpChunks }),
       pgui,
     ],
   });
-  return [new TdmnChunk({ value: match_name }), sspc];
+  return [new TdmnChunk({ value: matchName }), sspc];
 }
 
 /**
@@ -1170,21 +1170,21 @@ export function build_expression_control(
  * - `time_base`: The comp's internal timebase.
  * - `layer_id`: Id of the layer the effect is applied to.
  */
-export function build_dropdown_control(kw: {
+export function buildDropdownControl(kw: {
   tdsn_name: string;
   time_base: number;
   layer_id: number;
 }): [TdmnChunk, ListChunk] {
   const { tdsn_name, time_base, layer_id } = kw;
   // uuid4().bytes is 16 random bytes; base64 of those, padding stripped.
-  const match_name =
-    "Pseudo/@@" + rstrip(b64encode(uuid4_bytes()), "=");
-  const part_bytes = bytes_.replace(
+  const matchName =
+    "Pseudo/@@" + rstrip(b64encode(uuid4Bytes()), "=");
+  const partBytes = bytes_.replace(
     bytes_.fromhex(DROPDOWN_CONTROL.part),
     encode(DROPDOWN_CONTROL.placeholder, "ascii"),
-    encode(match_name, "ascii"),
+    encode(matchName, "ascii"),
   );
-  return build_expression_control(match_name, DROPDOWN_CONTROL.name, part_bytes, {
+  return buildExpressionControl(matchName, DROPDOWN_CONTROL.name, partBytes, {
     tdsn_name: tdsn_name,
     time_base: time_base,
     layer_id: layer_id,

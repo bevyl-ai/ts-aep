@@ -2,7 +2,7 @@
 // come back as numbers (py_aep only ever stores them in 32-bit fields).
 
 import { ValueError, ZeroDivisionError } from "./errors.ts";
-import { float_as_ratio } from "./num.ts";
+import { floatAsRatio } from "./num.ts";
 
 function gcd(a: bigint, b: bigint): bigint {
   a = a < 0n ? -a : a;
@@ -28,7 +28,7 @@ export class Fraction {
       else if (Number.isInteger(numerator)) [n, d] = [BigInt(numerator), 1n];
       else {
         if (!Number.isFinite(numerator)) throw new ValueError(`cannot convert ${numerator} to Fraction`);
-        [n, d] = float_as_ratio(numerator);
+        [n, d] = floatAsRatio(numerator);
       }
     } else {
       n = BigInt(numerator);
@@ -53,8 +53,8 @@ export class Fraction {
   }
 
   /** CPython's `Fraction.limit_denominator`. */
-  limit_denominator(max_denominator: number | bigint = 1000000): Fraction {
-    const max = BigInt(max_denominator);
+  limit_denominator(maxDenominator: number | bigint = 1000000): Fraction {
+    const max = BigInt(maxDenominator);
     if (max < 1n) throw new ValueError("max_denominator should be at least 1");
     if (this.d <= max) return new Fraction(this.n, this.d);
     let [p0, q0, p1, q1] = [0n, 1n, 1n, 0n];

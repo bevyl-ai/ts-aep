@@ -7,12 +7,12 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getitem, len, Path, py_bool, py_eq, StopIteration } from "../../src/pyrt/index.ts";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { getitem, len, Path, pyBool, pyEq, StopIteration } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
+import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
 const FOOTAGE_MISC = SAMPLES_DIR.div("footage", "footage_misc.aep");
@@ -20,69 +20,69 @@ const SOLID_COLORS = SAMPLES_DIR.div("footage", "solid_colors.aep");
 
 describe("TestRemoveUnusedFootage", () => {
   test("test_removes_all_unused", () => {
-    const project = parse_aep(FOOTAGE_MISC).project;
+    const project = parseAep(FOOTAGE_MISC).project;
     expect(len(project.footages)).toBe(7);
-    expect(project.footages.every((f) => !py_bool(f.usedIn))).toBe(true);
+    expect(project.footages.every((f) => !pyBool(f.usedIn))).toBe(true);
 
     const removed = project.removeUnusedFootage();
 
     expect(removed).toBe(7);
-    expect(py_eq(project.footages, [])).toBe(true);
+    expect(pyEq(project.footages, [])).toBe(true);
   });
 
   test("test_keeps_used_footage", () => {
-    const project = parse_aep(SOLID_COLORS).project;
-    const used_count = len(project.footages);
-    expect(used_count > 0).toBe(true);
-    expect(project.footages.every((f) => py_bool(f.usedIn))).toBe(true);
+    const project = parseAep(SOLID_COLORS).project;
+    const usedCount = len(project.footages);
+    expect(usedCount > 0).toBe(true);
+    expect(project.footages.every((f) => pyBool(f.usedIn))).toBe(true);
 
     const removed = project.removeUnusedFootage();
 
     expect(removed).toBe(0);
-    expect(len(project.footages)).toBe(used_count);
+    expect(len(project.footages)).toBe(usedCount);
   });
 
   test("test_removes_only_unused", () => {
-    const project = parse_aep(SOLID_COLORS).project;
-    const used_ids = new Set(project.footages.map((f) => f.id));
+    const project = parseAep(SOLID_COLORS).project;
+    const usedIds = new Set(project.footages.map((f) => f.id));
     const placeholder = project.importPlaceholder("unused", 100, 100, 25.0, 5.0);
 
     const removed = project.removeUnusedFootage();
 
     expect(removed).toBe(1);
     expect(project.items.has(placeholder.id)).toBe(false);
-    expect(py_eq(new Set(project.footages.map((f) => f.id)), used_ids)).toBe(true);
+    expect(pyEq(new Set(project.footages.map((f) => f.id)), usedIds)).toBe(true);
   });
 
   test("test_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SOLID_COLORS).project;
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SOLID_COLORS).project;
     project.importPlaceholder("unused", 100, 100, 25.0, 5.0);
     project.removeUnusedFootage();
 
-    const out = tmp_path.div("out.aep");
+    const out = tmpPath.div("out.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project;
+    const reparsed = parseAep(out).project;
 
-    expect(reparsed.footages.every((f) => py_bool(f.usedIn))).toBe(true);
+    expect(reparsed.footages.every((f) => pyBool(f.usedIn))).toBe(true);
   });
 });
 
 describe("TestReduceProject", () => {
   test("test_keeps_specified_comp_and_sources", () => {
-    const project = parse_aep(SOLID_COLORS).project;
+    const project = parseAep(SOLID_COLORS).project;
     const comps = project.compositions;
     expect(len(comps)).toBe(4);
-    const kept_comp = comps[0];
-    const kept_source_ids = kept_comp._source_ids_for_linking();
+    const keptComp = comps[0];
+    const keptSourceIds = keptComp._source_ids_for_linking();
 
     const before = new Set(project.items.keys());
-    const removed = project.reduceProject([kept_comp]);
+    const removed = project.reduceProject([keptComp]);
     const after = new Set(project.items.keys());
 
     expect(removed).toBe(len(before) - len(after));
-    expect(after.has(kept_comp.id)).toBe(true);
-    for (const sid of kept_source_ids) {
+    expect(after.has(keptComp.id)).toBe(true);
+    for (const sid of keptSourceIds) {
       expect(after.has(sid)).toBe(true);
     }
     // The other three comps are gone.
@@ -93,50 +93,50 @@ describe("TestReduceProject", () => {
     // ExtendScript reduceProject keeping one comp on solid_colors removes 6
     // items (3 comps + 3 solids), keeping the comp, its solid and the
     // parent folder. Validated against AfterFX 2025.
-    const project = parse_aep(SOLID_COLORS).project;
-    const kept_comp = project.compositions[0];
+    const project = parseAep(SOLID_COLORS).project;
+    const keptComp = project.compositions[0];
 
-    const removed = project.reduceProject([kept_comp]);
+    const removed = project.reduceProject([keptComp]);
 
     expect(removed).toBe(6);
   });
 
   test("test_root_always_kept", () => {
-    const project = parse_aep(SOLID_COLORS).project;
-    const kept_comp = project.compositions[0];
+    const project = parseAep(SOLID_COLORS).project;
+    const keptComp = project.compositions[0];
 
-    project.reduceProject([kept_comp]);
+    project.reduceProject([keptComp]);
 
     expect(project.items.has(0)).toBe(true);
   });
 
   test("test_empty_keep_removes_all_but_root", () => {
-    const project = parse_aep(SOLID_COLORS).project;
+    const project = parseAep(SOLID_COLORS).project;
 
     const removed = project.reduceProject([]);
 
     expect(removed > 0).toBe(true);
-    expect(py_eq(new Set(project.items.keys()), new Set([0]))).toBe(true);
+    expect(pyEq(new Set(project.items.keys()), new Set([0]))).toBe(true);
   });
 
   test("test_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(SOLID_COLORS).project;
-    const kept_comp = project.compositions[0];
-    const kept_name = kept_comp.name;
-    project.reduceProject([kept_comp]);
+    const tmpPath = makeTmpPath();
+    const project = parseAep(SOLID_COLORS).project;
+    const keptComp = project.compositions[0];
+    const keptName = keptComp.name;
+    project.reduceProject([keptComp]);
 
-    const out = tmp_path.div("out.aep");
+    const out = tmpPath.div("out.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project;
+    const reparsed = parseAep(out).project;
 
-    expect(py_eq(reparsed.compositions.map((c) => c.name), [kept_name])).toBe(true);
+    expect(pyEq(reparsed.compositions.map((c) => c.name), [keptName])).toBe(true);
   });
 });
 
 describe("TestConsolidateFootage", () => {
   test("test_no_duplicates_is_noop", () => {
-    const project = parse_aep(FOOTAGE_MISC).project;
+    const project = parseAep(FOOTAGE_MISC).project;
     const before = len(project.footages);
 
     const removed = project.consolidateFootage();
@@ -146,14 +146,14 @@ describe("TestConsolidateFootage", () => {
   });
 
   test("test_merges_identical_sources", () => {
-    const project = parse_aep(FOOTAGE_MISC).project;
+    const project = parseAep(FOOTAGE_MISC).project;
     // footages 5 and 6 reference the same file and differ only by loop.
-    const first = as_instance(getitem(project.items, 5), FootageItem);
-    const second = as_instance(getitem(project.items, 6), FootageItem);
+    const first = asInstance(getitem(project.items, 5), FootageItem);
+    const second = asInstance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
-    expect(py_eq(first._consolidation_key(), second._consolidation_key())).toBe(true);
+    expect(pyEq(first._consolidation_key(), second._consolidation_key())).toBe(true);
     const before = len(project.footages);
 
     const removed = project.consolidateFootage();
@@ -163,9 +163,9 @@ describe("TestConsolidateFootage", () => {
   });
 
   test("test_retargets_layers", () => {
-    const project = parse_aep(FOOTAGE_MISC).project;
-    const first = as_instance(getitem(project.items, 5), FootageItem);
-    const second = as_instance(getitem(project.items, 6), FootageItem);
+    const project = parseAep(FOOTAGE_MISC).project;
+    const first = asInstance(getitem(project.items, 5), FootageItem);
+    const second = asInstance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
@@ -174,17 +174,17 @@ describe("TestConsolidateFootage", () => {
     comp.add(first);
     comp.add(second);
 
-    const survivor_id = first.id;
+    const survivorId = first.id;
     const removed = project.consolidateFootage();
 
     expect(removed).toBe(1);
-    expect(py_eq(new Set(comp.avLayers.map((layer) => layer._source_id)), new Set([survivor_id]))).toBe(true);
+    expect(pyEq(new Set(comp.avLayers.map((layer) => layer._source_id)), new Set([survivorId]))).toBe(true);
   });
 
   test("test_retargets_cached_layer_source", () => {
-    const project = parse_aep(FOOTAGE_MISC).project;
-    const first = as_instance(getitem(project.items, 5), FootageItem);
-    const second = as_instance(getitem(project.items, 6), FootageItem);
+    const project = parseAep(FOOTAGE_MISC).project;
+    const first = asInstance(getitem(project.items, 5), FootageItem);
+    const second = asInstance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
@@ -192,18 +192,18 @@ describe("TestConsolidateFootage", () => {
     const comp = project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.add(first);
     comp.add(second);
-    const dup_layer = comp.avLayers.find((ly) => ly._source_id === second.id);
-    if (dup_layer === undefined) throw new StopIteration();
+    const dupLayer = comp.avLayers.find((ly) => ly._source_id === second.id);
+    if (dupLayer === undefined) throw new StopIteration();
     // Populate the layer's source cache before consolidating.
-    expect(dup_layer.source === second).toBe(true);
+    expect(dupLayer.source === second).toBe(true);
 
     project.consolidateFootage();
 
-    expect(dup_layer.source === first).toBe(true);
+    expect(dupLayer.source === first).toBe(true);
   });
 
   test("test_solids_not_consolidated", () => {
-    const project = parse_aep(SOLID_COLORS).project;
+    const project = parseAep(SOLID_COLORS).project;
 
     const removed = project.consolidateFootage();
 
@@ -211,18 +211,18 @@ describe("TestConsolidateFootage", () => {
   });
 
   test("test_roundtrip", () => {
-    const tmp_path = make_tmp_path();
-    const project = parse_aep(FOOTAGE_MISC).project;
-    const first = as_instance(getitem(project.items, 5), FootageItem);
-    const second = as_instance(getitem(project.items, 6), FootageItem);
+    const tmpPath = makeTmpPath();
+    const project = parseAep(FOOTAGE_MISC).project;
+    const first = asInstance(getitem(project.items, 5), FootageItem);
+    const second = asInstance(getitem(project.items, 6), FootageItem);
     expect(first instanceof FootageItem).toBe(true);
     expect(second instanceof FootageItem).toBe(true);
     first.mainSource.loop = second.mainSource.loop;
     project.consolidateFootage();
 
-    const out = tmp_path.div("out.aep");
+    const out = tmpPath.div("out.aep");
     project.save(out);
-    const reparsed = parse_aep(out).project;
+    const reparsed = parseAep(out).project;
 
     expect(len(reparsed.footages)).toBe(6);
   });

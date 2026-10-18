@@ -2,9 +2,9 @@
 
 import { PREFType } from "../enums/general.ts";
 import { AutoKernType, ParagraphJustification } from "../enums/text_document.ts";
-import { parse_comp_presets, type CompPreset } from "../parsers/comp_presets.ts";
-import { PrefsFile, decode_pref_bool, decode_pref_number, decode_pref_string, find_prefs_file, parse_hex_value, parse_number_text } from "../parsers/prefs.ts";
-import { validate_bool, validate_enum, validate_name, validate_number } from "./validators.ts";
+import { parseCompPresets, type CompPreset } from "../parsers/comp_presets.ts";
+import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile, parseHexValue, parseNumberText } from "../parsers/prefs.ts";
+import { validateBool, validateEnum, validateName, validateNumber } from "./validators.ts";
 import type { TextDocument } from "./text/text_document.ts";
 import {
   Path,
@@ -26,11 +26,11 @@ import {
   strip,
   tkey,
   zip,
-  type_name,
-  py_or,
+  typeName,
+  pyOr,
 } from "../../pyrt/index.ts";
 
-export const _validate_pref_type = validate_enum(PREFType);
+export const _validatePrefType = validateEnum(PREFType);
 
 // Tombstone marking a key removed by delete_pref (masks the file value).
 export const _DELETED: unique symbol = Symbol("_DELETED");
@@ -48,7 +48,7 @@ export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
  * @param default_ - AE's factory value, used when no preferences directory was provided or the key
  *   is absent.
  */
-export function label_index(preferences: Preferences, key: string, default_: number): number {
+export function labelIndex(preferences: Preferences, key: string, default_: number): number {
   const value = preferences.getPrefAsNumber(
     _LABEL_INDICES_SECTION,
     key,
@@ -64,7 +64,7 @@ export function label_index(preferences: Preferences, key: string, default_: num
  * The frame rate AE assigns to imported image sequences (formats with
  * no native rate). AE's factory value is 30.
  */
-export function default_sequence_fps(preferences: Preferences): number {
+export function defaultSequenceFps(preferences: Preferences): number {
   const value = preferences.getPrefAsNumber(
     "Import Options Preference Section",
     "Import Options Default Sequence FPS",
@@ -99,7 +99,7 @@ export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, stri
  * Resolve a `Choose Layer Dialog` popup index to its string value, or
  * `null` when the preference is unset (or holds an unknown index).
  */
-export function _choose_layer_pref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
+export function _chooseLayerPref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
   if (!preferences.havePref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
     return null;
   }
@@ -114,8 +114,8 @@ export function _choose_layer_pref(preferences: Preferences, key: string, mappin
  * Mirrors the "PSD Comp Layer Styles Option v2" import-dialog preference
  * that AE's own `importFile` follows.
  */
-export function psd_comp_layer_styles(preferences: Preferences): string | null {
-  return _choose_layer_pref(preferences, "PSD Comp Layer Styles Option v2", _PSD_COMP_LAYER_STYLES);
+export function psdCompLayerStyles(preferences: Preferences): string | null {
+  return _chooseLayerPref(preferences, "PSD Comp Layer Styles Option v2", _PSD_COMP_LAYER_STYLES);
 }
 
 /**
@@ -124,8 +124,8 @@ export function psd_comp_layer_styles(preferences: Preferences): string | null {
  *
  * Mirrors the "PSD Footage Layer Styles Option" import-dialog preference.
  */
-export function psd_footage_layer_styles(preferences: Preferences): string | null {
-  return _choose_layer_pref(preferences, "PSD Footage Layer Styles Option", _PSD_FOOTAGE_LAYER_STYLES);
+export function psdFootageLayerStyles(preferences: Preferences): string | null {
+  return _chooseLayerPref(preferences, "PSD Footage Layer Styles Option", _PSD_FOOTAGE_LAYER_STYLES);
 }
 
 /**
@@ -134,8 +134,8 @@ export function psd_footage_layer_styles(preferences: Preferences): string | nul
  *
  * Mirrors the "PSD Dimensions Popup" import-dialog preference.
  */
-export function psd_footage_dimensions(preferences: Preferences): string | null {
-  return _choose_layer_pref(preferences, "PSD Dimensions Popup", _PSD_FOOTAGE_DIMENSIONS);
+export function psdFootageDimensions(preferences: Preferences): string | null {
+  return _chooseLayerPref(preferences, "PSD Dimensions Popup", _PSD_FOOTAGE_DIMENSIONS);
 }
 
 export const _TEXT_STYLE_SECTION = "Text Style Sheet";
@@ -195,7 +195,7 @@ export const _JUSTIFICATION_BY_PREF: Map<string, ParagraphJustification> = new M
 ]);
 
 /** Build `(number, flag)` readers over one machine-specific text sheet. */
-export function _sheet_readers(
+export function _sheetReaders(
   preferences: Preferences,
   section: string,
 ): [(key: string, fallback: number) => number, (key: string, fallback: boolean) => boolean] {
@@ -219,8 +219,8 @@ export function _sheet_readers(
  * style `addText` gives a new layer. Keys map to `TextDocument`
  * attributes. Missing preferences fall back to AE's factory values.
  */
-export function default_character_style(preferences: Preferences) {
-  const [number, flag] = _sheet_readers(preferences, _TEXT_STYLE_SECTION);
+export function defaultCharacterStyle(preferences: Preferences) {
+  const [number, flag] = _sheetReaders(preferences, _TEXT_STYLE_SECTION);
   const factory = _FACTORY_CHAR_STYLE;
   const fill = [
     number("Fill Red", factory.fill_color[0]),
@@ -267,13 +267,13 @@ export function default_character_style(preferences: Preferences) {
  * Note that hyphenation has no entry in this sheet, which is why After
  * Effects leaves `auto_hyphenate` untouched on a reset.
  */
-export function default_paragraph_style(preferences: Preferences) {
-  const [number, flag] = _sheet_readers(preferences, _PARA_SHEET_SECTION);
+export function defaultParagraphStyle(preferences: Preferences) {
+  const [number, flag] = _sheetReaders(preferences, _PARA_SHEET_SECTION);
   const factory = _FACTORY_PARA_STYLE;
-  const raw_justification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+  const rawJustification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
     default: "Left",
   });
-  const justification = _JUSTIFICATION_BY_PREF.get(strip(split(raw_justification, "|")[0])) ?? factory.justification;
+  const justification = _JUSTIFICATION_BY_PREF.get(strip(split(rawJustification, "|")[0])) ?? factory.justification;
   return {
     justification,
     first_line_indent: number("First Line Indent", factory.first_line_indent),
@@ -293,14 +293,14 @@ export function default_paragraph_style(preferences: Preferences) {
  * value), meaning "composition duration". Semantics probed in AE 2026:
  * `75/25` gives new layers a 3-second span.
  */
-export function _default_out_point(preferences: Preferences, key: string): number | null {
+export function _defaultOutPoint(preferences: Preferences, key: string): number | null {
   const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });
   const parts = split(raw, "/");
   if (parts.length !== 2) return null;
   // try/except ValueError around float(): None when either half is malformed.
-  const value_scale = (() => {
+  const valueScale = (() => {
     try {
       return [float(parts[0]), float(parts[1])] as const;
     } catch (e) {
@@ -308,8 +308,8 @@ export function _default_out_point(preferences: Preferences, key: string): numbe
       throw e;
     }
   })();
-  if (value_scale == null) return null;
-  const [value, scale] = value_scale;
+  if (valueScale == null) return null;
+  const [value, scale] = valueScale;
   if (scale === 0 || value <= 0) return null;
   return value / scale;
 }
@@ -329,7 +329,7 @@ export function _default_out_point(preferences: Preferences, key: string): numbe
  * falls back to Myriad Pro when it is incoherent; a sheet written by
  * AE is coherent by construction).
  */
-export function apply_text_style_prefs(document: TextDocument, preferences: Preferences): void {
+export function applyTextStylePrefs(document: TextDocument, preferences: Preferences): void {
   function number(key: string): number | null {
     if (!preferences.havePref(_TEXT_STYLE_SECTION, key, _TXT)) return null;
     return preferences.getPrefAsNumber(_TEXT_STYLE_SECTION, key, _TXT);
@@ -356,8 +356,8 @@ export function apply_text_style_prefs(document: TextDocument, preferences: Pref
 
   const fill = [number("Fill Red"), number("Fill Green"), number("Fill Blue")];
   if (fill.every((n) => n !== null)) {
-    const current_fill = py_or(document.fillColor, [0.0, 0.0, 0.0]);
-    if (zip(current_fill, fill).some(([c, n]) => differs(c, n))) {
+    const currentFill = pyOr(document.fillColor, [0.0, 0.0, 0.0]);
+    if (zip(currentFill, fill).some(([c, n]) => differs(c, n))) {
       document.fillColor = [...fill];
     }
   }
@@ -368,34 +368,34 @@ export function apply_text_style_prefs(document: TextDocument, preferences: Pref
     document.tracking = round(tracking);
   }
 
-  const baseline_shift = number("Baseline Shift");
-  if (baseline_shift != null && differs(document.baselineShift, baseline_shift)) {
-    document.baselineShift = baseline_shift;
+  const baselineShift = number("Baseline Shift");
+  if (baselineShift != null && differs(document.baselineShift, baselineShift)) {
+    document.baselineShift = baselineShift;
   }
 
   if (preferences.havePref(_TEXT_STYLE_SECTION, "Render Fill", _TXT)) {
-    const apply_fill = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Fill", _TXT);
-    if (!!document.applyFill !== apply_fill) {
-      document.applyFill = apply_fill;
+    const applyFill = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Fill", _TXT);
+    if (!!document.applyFill !== applyFill) {
+      document.applyFill = applyFill;
     }
   }
 
   if (preferences.havePref(_TEXT_STYLE_SECTION, "Render Stroke", _TXT)) {
-    const apply_stroke = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Stroke", _TXT);
-    if (!!document.applyStroke !== apply_stroke) {
-      document.applyStroke = apply_stroke;
+    const applyStroke = preferences.getPrefAsBool(_TEXT_STYLE_SECTION, "Render Stroke", _TXT);
+    if (!!document.applyStroke !== applyStroke) {
+      document.applyStroke = applyStroke;
     }
     // Stroke width/color were probed only with the stroke rendered;
     // leave them untouched when the sheet keeps the stroke off so the
     // factory sheet stays byte-identical to the baked template.
-    if (apply_stroke) {
-      const stroke_width = number("Stroke Width");
-      if (stroke_width != null && differs(document.strokeWidth, stroke_width)) {
-        document.strokeWidth = stroke_width;
+    if (applyStroke) {
+      const strokeWidth = number("Stroke Width");
+      if (strokeWidth != null && differs(document.strokeWidth, strokeWidth)) {
+        document.strokeWidth = strokeWidth;
       }
       const stroke = [number("Stroke Red"), number("Stroke Green"), number("Stroke Blue")];
       if (stroke.every((n) => n !== null)) {
-        const current = py_or(document.strokeColor, [0.0, 0.0, 0.0]);
+        const current = pyOr(document.strokeColor, [0.0, 0.0, 0.0]);
         if (zip(current, stroke).some(([c, n]) => differs(c, n))) {
           document.strokeColor = [...stroke];
         }
@@ -409,8 +409,8 @@ export function apply_text_style_prefs(document: TextDocument, preferences: Pref
  *
  * None means "composition duration" (the factory `0/0` sentinel).
  */
-export function default_still_out_point(preferences: Preferences): number | null {
-  return _default_out_point(preferences, "Pref_DEFAULT_STILL_OUT_POINT v2");
+export function defaultStillOutPoint(preferences: Preferences): number | null {
+  return _defaultOutPoint(preferences, "Pref_DEFAULT_STILL_OUT_POINT v2");
 }
 
 /**
@@ -419,8 +419,8 @@ export function default_still_out_point(preferences: Preferences): number | null
  *
  * None means "composition duration" (the factory `0/0` sentinel).
  */
-export function default_synthetic_out_point(preferences: Preferences): number | null {
-  return _default_out_point(preferences, "Pref_DEFAULT_SYNTHETIC_OUT_POINT v2");
+export function defaultSyntheticOutPoint(preferences: Preferences): number | null {
+  return _defaultOutPoint(preferences, "Pref_DEFAULT_SYNTHETIC_OUT_POINT v2");
 }
 
 /**
@@ -461,25 +461,25 @@ export class Preferences {
   declare _files: Map<PREFType, PrefsFile | null>;
   declare _overrides: Map<string, PrefValue | typeof _DELETED>;
 
-  constructor(prefs_dir: PathLike | null = null) {
-    this._prefs_dir = prefs_dir != null ? new Path(prefs_dir) : null;
+  constructor(prefsDir: PathLike | null = null) {
+    this._prefs_dir = prefsDir != null ? new Path(prefsDir) : null;
     this._files = new Map();
     this._overrides = new Map();
   }
 
   /** Lazily parse the preference file for `pref_type` (None if absent). */
-  _file(pref_type: PREFType): PrefsFile | null {
-    if (!this._files.has(pref_type)) {
-      const path = this._prefs_dir != null ? find_prefs_file(this._prefs_dir, pref_type) : null;
-      this._files.set(pref_type, path ? PrefsFile.from_path(path) : null);
+  _file(prefType: PREFType): PrefsFile | null {
+    if (!this._files.has(prefType)) {
+      const path = this._prefs_dir != null ? findPrefsFile(this._prefs_dir, prefType) : null;
+      this._files.set(prefType, path ? PrefsFile.from_path(path) : null);
     }
-    return getitem(this._files, pref_type);
+    return getitem(this._files, prefType);
   }
 
-  _raw(section_name: string, key_name: string, pref_type: PREFType): string | null {
-    const prefs_file = this._file(pref_type);
-    if (prefs_file == null) return null;
-    return prefs_file.get_raw(section_name, key_name);
+  _raw(sectionName: string, keyName: string, prefType: PREFType): string | null {
+    const prefsFile = this._file(prefType);
+    if (prefsFile == null) return null;
+    return prefsFile.get_raw(sectionName, keyName);
   }
 
   /**
@@ -488,24 +488,24 @@ export class Preferences {
    * `value` is a typed value when `is_override` is `true`,
    * otherwise the raw pref-file text (AE's mixed hex/ASCII encoding).
    */
-  _resolve(section_name: string, key_name: string, pref_type: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
-    validate_name(section_name);
-    validate_name(key_name);
-    _validate_pref_type(pref_type);
-    const key = [PREFType.of(pref_type), section_name, key_name] as const;
+  _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
+    validateName(sectionName);
+    validateName(keyName);
+    _validatePrefType(prefType);
+    const key = [PREFType.of(prefType), sectionName, keyName] as const;
     if (this._overrides.has(tkey(...key))) {
       const value = getitem(this._overrides, tkey(...key));
       if (value === _DELETED) return [false, null, false];
       return [true, value, true];
     }
-    const raw = this._raw(section_name, key_name, key[0]);
+    const raw = this._raw(sectionName, keyName, key[0]);
     if (raw == null) return [false, null, false];
     return [true, raw, false];
   }
 
-  _missing(section_name: string, key_name: string, pref_type: PREFType): KeyError {
+  _missing(sectionName: string, keyName: string, prefType: PREFType): KeyError {
     return new KeyError(
-      `no preference ${repr(key_name)} in section ${repr(section_name)} (${PREFType.name_of(PREFType.of(pref_type))})`,
+      `no preference ${repr(keyName)} in section ${repr(sectionName)} (${PREFType.name_of(PREFType.of(prefType))})`,
     );
   }
 
@@ -515,79 +515,79 @@ export class Preferences {
    * Merges ExtendScript's `getPrefAsLong` and `getPrefAsFloat`:
    * integral values return `int`, others `float`.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
-   * @param pref_type - The preference file the preference is read from.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
+   * @param prefType - The preference file the preference is read from.
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
   getPrefAsNumber(
-    section_name: string,
-    key_name: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
     kw: { default?: number | null } = {},
   ): number {
     const { default: default_ = null } = kw;
-    const [found, value, is_override] = this._resolve(section_name, key_name, pref_type);
+    const [found, value, isOverride] = this._resolve(sectionName, keyName, prefType);
     if (!found) {
       if (default_ != null) return default_;
-      throw this._missing(section_name, key_name, pref_type);
+      throw this._missing(sectionName, keyName, prefType);
     }
-    if (is_override === false) return decode_pref_number(value);
+    if (isOverride === false) return decodePrefNumber(value);
     if (typeof value === "boolean") return int(value);
     if (typeof value === "number") return value;
-    return parse_number_text(value);
+    return parseNumberText(value);
   }
 
   /**
    * The value of the given preference as a boolean.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
-   * @param pref_type - The preference file the preference is read from.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
+   * @param prefType - The preference file the preference is read from.
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
   getPrefAsBool(
-    section_name: string,
-    key_name: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
     kw: { default?: boolean | null } = {},
   ): boolean {
     const { default: default_ = null } = kw;
-    const [found, value, is_override] = this._resolve(section_name, key_name, pref_type);
+    const [found, value, isOverride] = this._resolve(sectionName, keyName, prefType);
     if (!found) {
       if (default_ != null) return default_;
-      throw this._missing(section_name, key_name, pref_type);
+      throw this._missing(sectionName, keyName, prefType);
     }
-    if (is_override === false) return decode_pref_bool(value);
+    if (isOverride === false) return decodePrefBool(value);
     if (typeof value === "boolean") return value;
     if (typeof value === "number") return value !== 0;
-    return parse_number_text(value) !== 0;
+    return parseNumberText(value) !== 0;
   }
 
   /**
    * The value of the given preference as a string.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
-   * @param pref_type - The preference file the preference is read from.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
+   * @param prefType - The preference file the preference is read from.
    * @param kw - Keyword arguments:
    * - `default`: Returned when the key is absent (otherwise a missing key raises `KeyError`).
    */
   getPrefAsString(
-    section_name: string,
-    key_name: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
     kw: { default?: string | null } = {},
   ): string {
     const { default: default_ = null } = kw;
-    const [found, value, is_override] = this._resolve(section_name, key_name, pref_type);
+    const [found, value, isOverride] = this._resolve(sectionName, keyName, prefType);
     if (!found) {
       if (default_ != null) return default_;
-      throw this._missing(section_name, key_name, pref_type);
+      throw this._missing(sectionName, keyName, prefType);
     }
-    if (is_override === false) return decode_pref_string(value);
+    if (isOverride === false) return decodePrefString(value);
     if (typeof value === "boolean") return str(int(value));
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float override such as 30.0 returns "30" where Python returns "30.0".
     if (typeof value === "number") return str(value);
@@ -601,26 +601,26 @@ export class Preferences {
    * never modified. Merges ExtendScript's `savePrefAsLong` and
    * `savePrefAsFloat`.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
    * @param value - The new numeric value.
-   * @param pref_type - The preference file the preference belongs to.
+   * @param prefType - The preference file the preference belongs to.
    */
   setPrefAsNumber(
-    section_name: string,
-    key_name: string,
+    sectionName: string,
+    keyName: string,
     value: number,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
   ): void {
-    validate_name(section_name);
-    validate_name(key_name);
-    _validate_pref_type(pref_type);
+    validateName(sectionName);
+    validateName(keyName);
+    _validatePrefType(prefType);
     // NOTE(port): matches Python: isinstance(value, (int, float)) admits bool, and so does this check.
     if (typeof value !== "number" && typeof value !== "boolean") {
-      throw new TypeError_(`expected a number, got ${type_name(value)}`);
+      throw new TypeError_(`expected a number, got ${typeName(value)}`);
     }
-    validate_number(value); // rejects NaN/inf
-    this._overrides.set(tkey(PREFType.of(pref_type), section_name, key_name), value);
+    validateNumber(value); // rejects NaN/inf
+    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
@@ -629,22 +629,22 @@ export class Preferences {
    * The override is in-memory only; the preference file on disk is
    * never modified.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
    * @param value - The new boolean value.
-   * @param pref_type - The preference file the preference belongs to.
+   * @param prefType - The preference file the preference belongs to.
    */
   setPrefAsBool(
-    section_name: string,
-    key_name: string,
+    sectionName: string,
+    keyName: string,
     value: boolean,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
   ): void {
-    validate_name(section_name);
-    validate_name(key_name);
-    _validate_pref_type(pref_type);
-    validate_bool(value);
-    this._overrides.set(tkey(PREFType.of(pref_type), section_name, key_name), value);
+    validateName(sectionName);
+    validateName(keyName);
+    _validatePrefType(prefType);
+    validateBool(value);
+    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
@@ -653,39 +653,39 @@ export class Preferences {
    * The override is in-memory only; the preference file on disk is
    * never modified.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
    * @param value - The new string value.
-   * @param pref_type - The preference file the preference belongs to.
+   * @param prefType - The preference file the preference belongs to.
    */
   setPrefAsString(
-    section_name: string,
-    key_name: string,
+    sectionName: string,
+    keyName: string,
     value: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
   ): void {
-    validate_name(section_name);
-    validate_name(key_name);
-    _validate_pref_type(pref_type);
+    validateName(sectionName);
+    validateName(keyName);
+    _validatePrefType(prefType);
     if (typeof value !== "string") {
-      throw new TypeError_(`expected a string, got ${type_name(value)}`);
+      throw new TypeError_(`expected a string, got ${typeName(value)}`);
     }
-    this._overrides.set(tkey(PREFType.of(pref_type), section_name, key_name), value);
+    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), value);
   }
 
   /**
    * Whether the given preference exists (override or file value).
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
-   * @param pref_type - The preference file the preference is read from.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
+   * @param prefType - The preference file the preference is read from.
    */
   havePref(
-    section_name: string,
-    key_name: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
   ): boolean {
-    const [found] = this._resolve(section_name, key_name, pref_type);
+    const [found] = this._resolve(sectionName, keyName, prefType);
     return found;
   }
 
@@ -696,19 +696,19 @@ export class Preferences {
    * {@link havePref} returns `false` and getters fall back to their
    * `default` afterwards.
    *
-   * @param section_name - The name of a preferences section.
-   * @param key_name - The key name of the preference.
-   * @param pref_type - The preference file the preference belongs to.
+   * @param sectionName - The name of a preferences section.
+   * @param keyName - The key name of the preference.
+   * @param prefType - The preference file the preference belongs to.
    */
   deletePref(
-    section_name: string,
-    key_name: string,
-    pref_type: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
   ): void {
-    validate_name(section_name);
-    validate_name(key_name);
-    _validate_pref_type(pref_type);
-    this._overrides.set(tkey(PREFType.of(pref_type), section_name, key_name), _DELETED);
+    validateName(sectionName);
+    validateName(keyName);
+    _validatePrefType(prefType);
+    this._overrides.set(tkey(PREFType.of(prefType), sectionName, keyName), _DELETED);
   }
 
   /**
@@ -717,10 +717,10 @@ export class Preferences {
    * File layer only - `set_pref_as_*` overrides are not consulted
    * (binary blobs cannot be expressed through the typed setters).
    */
-  _get_bytes(section_name: string, key_name: string, pref_type: PREFType): Uint8Array | null {
-    const prefs_file = this._file(pref_type);
-    const raw = prefs_file ? prefs_file.get_raw(section_name, key_name) : null;
-    return raw != null ? parse_hex_value(raw) : null;
+  _get_bytes(sectionName: string, keyName: string, prefType: PREFType): Uint8Array | null {
+    const prefsFile = this._file(prefType);
+    const raw = prefsFile ? prefsFile.get_raw(sectionName, keyName) : null;
+    return raw != null ? parseHexValue(raw) : null;
   }
 
   /** Reload preferences from disk, discarding in-memory overrides. */
@@ -739,9 +739,9 @@ export class Preferences {
    * preferences directory was provided.
    */
   compositionPresets(): CompPreset[] {
-    const prefs_file = this._file(PREFType.PREF_Type_MACHINE_INDEPENDENT_COMPOSITION);
-    if (prefs_file == null) return [];
-    return parse_comp_presets(prefs_file);
+    const prefsFile = this._file(PREFType.PREF_Type_MACHINE_INDEPENDENT_COMPOSITION);
+    if (prefsFile == null) return [];
+    return parseCompPresets(prefsFile);
   }
 
   /**
@@ -754,14 +754,14 @@ export class Preferences {
    * consulted. Empty when no preferences directory was provided.
    */
   outputNameTemplatePresets(): Map<string, string> {
-    const prefs_file = this._file(PREFType.PREF_Type_MACHINE_SPECIFIC);
-    if (prefs_file == null) return new Map();
-    const section = prefs_file.section("Output File Name Template Presets Section v6");
+    const prefsFile = this._file(PREFType.PREF_Type_MACHINE_SPECIFIC);
+    if (prefsFile == null) return new Map();
+    const section = prefsFile.section("Output File Name Template Presets Section v6");
     const presets = new Map<string, string>();
     for (const key of sorted([...section.keys()])) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = bytes_.split(parse_hex_value(getitem(section, key)), b("\x00")).filter((p) => p?.length > 0);
+      const parts = bytes_.split(parseHexValue(getitem(section, key)), b("\x00")).filter((p) => p?.length > 0);
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

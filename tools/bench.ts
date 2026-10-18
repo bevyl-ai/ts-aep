@@ -4,11 +4,11 @@
 // usage: bun tools/bench.ts [--runs N] [--top N] [--filter substr]
 import * as fs from "node:fs";
 import * as py_aep from "../src/py_aep/index.ts";
-import { write_aep } from "../src/py_aep/binary/chunk.ts";
+import { writeAep } from "../src/py_aep/binary/chunk.ts";
 import { BytesIO } from "../src/pyrt/bytesio.ts";
 import { CosParser } from "../src/py_aep/cos/cos.ts";
 import { serialize } from "../src/py_aep/cos/serializer.ts";
-import { recursive_find } from "../src/py_aep/binary/utils.ts";
+import { recursiveFind } from "../src/py_aep/binary/utils.ts";
 
 const args = process.argv.slice(2);
 const opt = (name: string, dflt: string): string => {
@@ -24,7 +24,7 @@ const files = fs.globSync("samples/**/*.aep").filter((f) => f.includes(filter)).
 for (const f of files) fs.readFileSync(f);
 
 /** `Project.save` up to the file write. */
-function save_to_memory(app: py_aep.Application): Uint8Array {
+function saveToMemory(app: py_aep.Application): Uint8Array {
   const project = app.project;
   for (const comp of project.compositions) {
     if (comp._layers_loaded) {
@@ -32,12 +32,12 @@ function save_to_memory(app: py_aep.Application): Uint8Array {
     }
   }
   const buf = new BytesIO();
-  write_aep(buf, project._rifx, project._xmp);
+  writeAep(buf, project._rifx, project._xmp);
   return buf.getbuffer();
 }
 
 /** Read every leaf property's value and every keyframe's time, value and eases. */
-function read_all(app: py_aep.Application): number {
+function readAll(app: py_aep.Application): number {
   let n = 0;
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
@@ -62,7 +62,7 @@ function read_all(app: py_aep.Application): number {
 }
 
 /** Write every layer's transform values back (opacity, position) and every keyframe's value. */
-function edit_all(app: py_aep.Application): void {
+function editAll(app: py_aep.Application): void {
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       for (const prop of layer.transform) {
@@ -91,23 +91,23 @@ for (let run = 0; run < runs; run++) {
     const t0 = performance.now();
     const app = py_aep.parse(f);
     const t1 = performance.now();
-    save_to_memory(app);
+    saveToMemory(app);
     const t2 = performance.now();
     for (const comp of app.project.compositions) for (const layer of comp.layers) void layer.properties;
     const t3 = performance.now();
-    save_to_memory(app);
+    saveToMemory(app);
     const t4 = performance.now();
-    const trees = recursive_find(app.project._rifx.chunks, null, "btdk").map((c) =>
+    const trees = recursiveFind(app.project._rifx.chunks, null, "btdk").map((c) =>
       new CosParser(new BytesIO(c.data), c.data.length).parse(),
     );
     const t5 = performance.now();
     for (const tree of trees) serialize(tree);
     const t6 = performance.now();
-    read_all(app);
+    readAll(app);
     const t7 = performance.now();
-    edit_all(app);
+    editAll(app);
     const t8 = performance.now();
-    save_to_memory(app);
+    saveToMemory(app);
     const t9 = performance.now();
     const took: Record<Phase, number> = {
       parse: t1 - t0, save: t2 - t1, load: t3 - t2, save_loaded: t4 - t3, cos: t6 - t5,

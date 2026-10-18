@@ -16,19 +16,19 @@ import {
   type PathLike,
 } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../data/file_formats.ts";
-import { read_ai_layer_ocgs, read_ai_layers, type AiLayer } from "./ai_layers.ts";
-import { PsdGroup, read_psd_layers, type PsdLayer, type PsdNode } from "./psd_layers.ts";
+import { readAiLayerOcgs, readAiLayers, type AiLayer } from "./ai_layers.ts";
+import { PsdGroup, readPsdLayers, type PsdLayer, type PsdNode } from "./psd_layers.ts";
 
 /**
  * Return a PSD's leaf layers in document order (bottom layer first).
  *
- * Flattens the {@link read_psd_layers} group tree to the layers AE's
+ * Flattens the {@link readPsdLayers} group tree to the layers AE's
  * chooser offers (groups excluded).
  *
  * @throws {@link UnsupportedPsdLayersError} If the file is not a valid PSD/PSB.
  * @throws {@link FlattenedPsdError} If the document has no layer records.
  */
-export function psd_leaf_layers(
+export function psdLeafLayers(
   file: PathLike,
   kw: { mask_boxes?: boolean } = {},
 ): PsdLayer[] {
@@ -45,7 +45,7 @@ export function psd_leaf_layers(
     }
   };
 
-  _walk(read_psd_layers(file, { mask_boxes }));
+  _walk(readPsdLayers(file, { mask_boxes }));
   leaves.splice(
     0,
     leaves.length,
@@ -66,17 +66,17 @@ export function psd_leaf_layers(
  *   be enumerated (`UnsupportedPsdLayersError` / `UnsupportedAiLayersError`, both `ValueError`
  *   subclasses).
  */
-export function list_layers(file: PathLike): string[] {
+export function listLayers(file: PathLike): string[] {
   const suffix = new Path(file).suffix.toLowerCase();
   if (PSD_COMP_EXTENSIONS.has(suffix)) {
-    const leaves = psd_leaf_layers(file, { mask_boxes: false });
+    const leaves = psdLeafLayers(file, { mask_boxes: false });
     return [...leaves].reverse().map((leaf) => leaf.name);
   }
   if (AI_COMP_EXTENSIONS.has(suffix)) {
-    return [...read_ai_layers(file)].reverse();
+    return [...readAiLayers(file)].reverse();
   }
   throw new ValueError(
-    `list_layers supports layered .psd/.psb/.ai/.pdf files, got ${repr(suffix)}`,
+    `listLayers supports layered .psd/.psb/.ai/.pdf files, got ${repr(suffix)}`,
   );
 }
 
@@ -92,33 +92,33 @@ export function list_layers(file: PathLike): string[] {
  * @throws {@link ValueError} If the extension is not a layered format, or no selectable layer of
  *   `file` has that stored index.
  */
-export function layer_index_for_stored(
+export function layerIndexForStored(
   file: PathLike,
-  stored_index: number,
+  storedIndex: number,
 ): number {
   const suffix = new Path(file).suffix.toLowerCase();
   if (PSD_COMP_EXTENSIONS.has(suffix)) {
-    const leaves = psd_leaf_layers(file, { mask_boxes: false });
+    const leaves = psdLeafLayers(file, { mask_boxes: false });
     for (const [i, leaf] of [...leaves].reverse().entries()) {
-      if (leaf.record_index === stored_index) {
+      if (leaf.record_index === storedIndex) {
         return i;
       }
     }
     throw new ValueError(
       `${new Path(file).name}: no selectable layer has stored index ` +
-        `${stored_index} (leaf record indices: ` +
+        `${storedIndex} (leaf record indices: ` +
         `${repr(leaves.map((leaf) => leaf.record_index))})`,
     );
   }
   if (AI_COMP_EXTENSIONS.has(suffix)) {
-    const names = read_ai_layers(file);
-    if (!(0 <= stored_index && stored_index < names.length)) {
+    const names = readAiLayers(file);
+    if (!(0 <= storedIndex && storedIndex < names.length)) {
       throw new ValueError(
         `${new Path(file).name}: no layer has stored (document) index ` +
-          `${stored_index}; the file has ${names.length} layers`,
+          `${storedIndex}; the file has ${names.length} layers`,
       );
     }
-    return names.length - 1 - stored_index;
+    return names.length - 1 - storedIndex;
   }
   throw new ValueError(
     `layer_index_for_stored supports layered .psd/.psb/.ai/.pdf ` +
@@ -126,13 +126,13 @@ export function layer_index_for_stored(
   );
 }
 
-export function _out_of_range(
+export function _outOfRange(
   file: PathLike,
-  layer_index: number,
+  layerIndex: number,
   names: string[],
 ): ValueError {
   return new ValueError(
-    `${new Path(file).name}: layerIndex ${layer_index} out of range; the ` +
+    `${new Path(file).name}: layerIndex ${layerIndex} out of range; the ` +
       `file has ${names.length} selectable layers (top first): ${repr(names)}`,
   );
 }
@@ -144,26 +144,26 @@ export function _out_of_range(
  * @throws {@link ValueError} If `layer_index` is out of range.
  * @throws {@link UnsupportedPsdLayersError} If the file's layers cannot be read.
  */
-export function resolve_psd_layer(
+export function resolvePsdLayer(
   file: PathLike,
-  layer_index: number,
+  layerIndex: number,
 ): PsdLayer {
-  const leaves = psd_leaf_layers(file);
-  if (!(0 <= layer_index && layer_index < leaves.length)) {
-    throw _out_of_range(
+  const leaves = psdLeafLayers(file);
+  if (!(0 <= layerIndex && layerIndex < leaves.length)) {
+    throw _outOfRange(
       file,
-      layer_index,
+      layerIndex,
       [...leaves].reverse().map((leaf) => leaf.name),
     );
   }
-  return leaves[leaves.length - 1 - layer_index];
+  return leaves[leaves.length - 1 - layerIndex];
 }
 
 /**
  * Resolve an AI/PDF layer chosen by `list_layers` position.
  *
  * @param file - Path to a `.ai` or `.pdf` file.
- * @param layer_index - The layer's index in `list_layers` order (top first).
+ * @param layerIndex - The layer's index in `list_layers` order (top first).
  * @param data - The file's bytes, if the caller already read them.
  * @returns A `(layers, document_index)` tuple: the file's layers in document order (bottom layer
  *   first) and the chosen layer's position in them, which is the index the binary stores. The whole
@@ -171,18 +171,18 @@ export function resolve_psd_layer(
  * @throws {@link ValueError} If `layer_index` is out of range.
  * @throws {@link UnsupportedAiLayersError} If the file's layers cannot be read.
  */
-export function resolve_ai_layer(
+export function resolveAiLayer(
   file: PathLike,
-  layer_index: number,
+  layerIndex: number,
   data: Uint8Array | null = null,
 ): [AiLayer[], number] {
-  const layers = read_ai_layer_ocgs(file, data);
-  if (!(0 <= layer_index && layer_index < layers.length)) {
-    throw _out_of_range(
+  const layers = readAiLayerOcgs(file, data);
+  if (!(0 <= layerIndex && layerIndex < layers.length)) {
+    throw _outOfRange(
       file,
-      layer_index,
+      layerIndex,
       [...layers].reverse().map((layer) => layer.name),
     );
   }
-  return [layers, layers.length - 1 - layer_index];
+  return [layers, layers.length - 1 - layerIndex];
 }

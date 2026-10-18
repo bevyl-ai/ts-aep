@@ -13,10 +13,10 @@
 
 import { test, expect } from "bun:test";
 
-import { Path, StopIteration, contains, getitem, py_bool, py_assert } from "../../src/pyrt/index.ts";
+import { Path, StopIteration, contains, getitem, pyBool, pyAssert } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { get_comp, get_comp_from_json_by_name, load_expected, parse_project } from "../conftest.ts";
-import { as_instance, json_field, type ExpectedProperty } from "../helpers.ts";
+import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
+import { asInstance, jsonField, type ExpectedProperty } from "../helpers.ts";
 
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -35,29 +35,29 @@ const _CASES: [string, string][] = [
   ["points", "point3d untouched"],
 ];
 
-function _effect_props(comp_name: string, layer_name: string): Property[] {
-  const comp = get_comp(parse_project(SAMPLES_DIR.div(`${SAMPLE}.aep`)), comp_name);
-  const layer = comp.layers.find((ly) => ly.name === layer_name);
+function _effectProps(compName: string, layerName: string): Property[] {
+  const comp = getComp(parseProject(SAMPLES_DIR.div(`${SAMPLE}.aep`)), compName);
+  const layer = comp.layers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
-  py_assert(layer.effects != null);
-  return as_instance(layer.effects.property(0), PropertyGroup).properties.filter(
+  pyAssert(layer.effects != null);
+  return asInstance(layer.effects.property(0), PropertyGroup).properties.filter(
     (p): p is Property => p instanceof Property,
   );
 }
 
-function _expected_props(comp_name: string, layer_name: string): Map<string, ExpectedProperty> {
-  const comp = get_comp_from_json_by_name(load_expected(SAMPLES_DIR, SAMPLE), comp_name);
-  const layer = comp.layers.find((ly) => ly.name === layer_name);
+function _expectedProps(compName: string, layerName: string): Map<string, ExpectedProperty> {
+  const comp = getCompFromJsonByName(loadExpected(SAMPLES_DIR, SAMPLE), compName);
+  const layer = comp.layers.find((ly) => ly.name === layerName);
   if (layer === undefined) throw new StopIteration();
   const parade = layer.properties.find((p) => p.matchName === "ADBE Effect Parade");
   if (parade === undefined) throw new StopIteration();
-  return new Map(json_field(json_field(parade, "properties")[0], "properties").map((p) => [p.matchName, p]));
+  return new Map(jsonField(jsonField(parade, "properties")[0], "properties").map((p) => [p.matchName, p]));
 }
 
-test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, layer_name: string) => {
-  const expected = _expected_props(comp_name, layer_name);
+test.each(_CASES)("test_points_and_popups_match_json[%#]", (compName: string, layerName: string) => {
+  const expected = _expectedProps(compName, layerName);
   let checked = 0;
-  for (const prop of _effect_props(comp_name, layer_name)) {
+  for (const prop of _effectProps(compName, layerName)) {
     if (
       !contains(
         [PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.ENUM],
@@ -66,13 +66,13 @@ test.each(_CASES)("test_points_and_popups_match_json[%#]", (comp_name: string, l
     ) {
       continue;
     }
-    const prop_json = getitem(expected, prop.matchName);
+    const propJson = getitem(expected, prop.matchName);
     // NOTE(port): Python's `, prop.name` is only a failure message; bun's expect has no message arg, pass/fail is identical.
-    expect(approx(prop.value, prop_json.value)).toBe(true);
-    expect(prop.isModified).toBe(prop_json.isModified);
+    expect(approx(prop.value, propJson.value)).toBe(true);
+    expect(prop.isModified).toBe(propJson.isModified);
     checked += 1;
   }
-  expect(py_bool(checked)).toBe(true);
+  expect(pyBool(checked)).toBe(true);
 });
 
 test.each([
@@ -86,8 +86,8 @@ test.each([
   ["points", "point3d untouched", "ADBE Point3D Control-0001", [150, 100, 0]],
 ])(
   "test_point_default_is_a_percentage_of_the_layer[%#]",
-  (comp_name: string, layer_name: string, match_name: string, default_: number[]) => {
-    const prop = _effect_props(comp_name, layer_name).find((p) => p.matchName === match_name);
+  (compName: string, layerName: string, matchName: string, default_: number[]) => {
+    const prop = _effectProps(compName, layerName).find((p) => p.matchName === matchName);
     if (prop === undefined) throw new StopIteration();
     expect(approx(prop.defaultValue, default_, { abs: 1e-9 })).toBe(true);
   },
@@ -105,18 +105,18 @@ test.each<[string, number[]]>([
    * the adjustment layer's points against the comp, and centres their
    * defaults on it.
    */
-  (layer_name, center) => {
-    const comp = get_comp(parse_project(SAMPLES_DIR.div("effect_point_adjustment.aep")), "coverage");
-    const layer = comp.layers.find((ly) => ly.name === layer_name);
+  (layerName, center) => {
+    const comp = getComp(parseProject(SAMPLES_DIR.div("effect_point_adjustment.aep")), "coverage");
+    const layer = comp.layers.find((ly) => ly.name === layerName);
     if (layer === undefined) throw new StopIteration();
-    py_assert(layer.effects != null);
-    const transform = as_instance(layer.effects.property("ADBE Geometry2"), PropertyGroup);
+    pyAssert(layer.effects != null);
+    const transform = asInstance(layer.effects.property("ADBE Geometry2"), PropertyGroup);
     const points: [string, number[]][] = [
       ["ADBE Geometry2-0001", [30.0, 40.0]],
       ["ADBE Geometry2-0002", [10.0, 20.0]],
     ];
-    for (const [match_name, value] of points) {
-      const prop = as_instance(transform.property(match_name), Property);
+    for (const [matchName, value] of points) {
+      const prop = asInstance(transform.property(matchName), Property);
       expect(approx(prop.value, value)).toBe(true);
       expect(approx(prop.defaultValue, center)).toBe(true);
     }

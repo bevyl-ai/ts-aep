@@ -9,14 +9,14 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { CdtaChunk, frame_grid, layer_timebase } from "../../src/py_aep/binary/composition_chunks.ts";
+import { CdtaChunk, frameGrid, layerTimebase } from "../../src/py_aep/binary/composition_chunks.ts";
 import { SspcChunk } from "../../src/py_aep/binary/footage_chunks.ts";
 import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { RenderSettingsItem, RouuChunk } from "../../src/py_aep/binary/render_chunks.ts";
-import { _frame_number } from "../../src/py_aep/models/items/composition.ts";
-import { Fraction, getitem, py_eq, py_bool, sorted, struct } from "../../src/pyrt/index.ts";
+import { _frameNumber } from "../../src/py_aep/models/items/composition.ts";
+import { Fraction, getitem, pyEq, pyBool, sorted, struct } from "../../src/pyrt/index.ts";
 import { approx } from "../../src/pyrt/pytest.ts";
-import { as_instance } from "../helpers.ts";
+import { asInstance } from "../helpers.ts";
 
 // rate -> (internal timebase, timebase units per frame), AE 2026 addComp.
 const _AE_TIMEBASES = new Map<number, [number, number]>([
@@ -66,18 +66,18 @@ describe("TestTimebaseRule", () => {
   test.each(sorted(Array.from(_AE_TIMEBASES.keys())).map((rate) => [rate]))(
     "test_timebase_matches_after_effects[%#]",
     (rate: number) => {
-      const [timebase, units_per_frame] = getitem(_AE_TIMEBASES, rate);
-      expect(py_eq(frame_grid(rate), [timebase, units_per_frame])).toBe(true);
+      const [timebase, unitsPerFrame] = getitem(_AE_TIMEBASES, rate);
+      expect(pyEq(frameGrid(rate), [timebase, unitsPerFrame])).toBe(true);
       const cdta = new CdtaChunk();
       cdta.frame_rate = rate;
       expect(cdta.internal_timebase).toBe(timebase);
-      expect(cdta.time_scale * 256).toBe(units_per_frame);
+      expect(cdta.time_scale * 256).toBe(unitsPerFrame);
     },
   );
 });
 
 /** The float32 time ratio AE stores for `displayStartTime = value`. */
-function _f32_ratio(value: number): [number, number] {
+function _f32Ratio(value: number): [number, number] {
   const frac = new Fraction(struct.unpack(">f", struct.pack(">f", value))[0]);
   return [frac.numerator, frac.denominator];
 }
@@ -98,8 +98,8 @@ describe("TestFrameNumber", () => {
     [29.97, -1244],
   ])("test_whole_frames_in_timebase_units[%#]", (rate: number, frames: number) => {
     // The frames AE's displayStartFrame setter stores (units / timebase).
-    const [timebase, units_per_frame] = frame_grid(rate);
-    expect(_frame_number(_cdta(rate), frames * units_per_frame, timebase)).toBe(frames);
+    const [timebase, unitsPerFrame] = frameGrid(rate);
+    expect(_frameNumber(_cdta(rate), frames * unitsPerFrame, timebase)).toBe(frames);
   });
 
   test.each([
@@ -115,7 +115,7 @@ describe("TestFrameNumber", () => {
     [7.3, 13 / 7.3, 14],
   ])("test_float32_display_starts[%#]", (rate: number, seconds: number, expected: number) => {
     const cdta = _cdta(rate);
-    expect(_frame_number(cdta, ..._f32_ratio(seconds))).toBe(expected);
+    expect(_frameNumber(cdta, ..._f32Ratio(seconds))).toBe(expected);
   });
 });
 
@@ -128,7 +128,7 @@ describe("TestFrameGridFollowsTheRate", () => {
     cdta.internal_timebase = 23976;
     cdta.time_scale_integer = 3;
     cdta.time_scale_fractional = 32;
-    expect(_frame_number(cdta, 5 * 23976, 23976)).toBe(120);
+    expect(_frameNumber(cdta, 5 * 23976, 23976)).toBe(120);
   });
 });
 
@@ -140,20 +140,20 @@ describe("TestFixedPointRates", () => {
   test("test_cdta", () => {
     const cdta = new CdtaChunk();
     cdta.frame_rate = 23.99999999;
-    expect(py_eq([cdta.frame_rate_integer, cdta.frame_rate_fractional], [24, 0])).toBe(true);
+    expect(pyEq([cdta.frame_rate_integer, cdta.frame_rate_fractional], [24, 0])).toBe(true);
     expect(cdta.tobytes().length).toBe(new CdtaChunk().tobytes().length);
   });
 
   test("test_render_settings", () => {
     const item = new RenderSettingsItem();
     item.frame_rate = 29.9999999;
-    expect(py_eq([item.frame_rate_integer, item.frame_rate_fractional], [30, 0])).toBe(true);
+    expect(pyEq([item.frame_rate_integer, item.frame_rate_fractional], [30, 0])).toBe(true);
   });
 
   test("test_output_module", () => {
     const roou = new RouuChunk();
     roou.frame_rate = 1.99999999;
-    expect(py_eq([roou.frame_rate_integer, roou.frame_rate_fractional], [2, 0])).toBe(true);
+    expect(pyEq([roou.frame_rate_integer, roou.frame_rate_fractional], [2, 0])).toBe(true);
   });
 
   test("test_footage_rates", () => {
@@ -163,7 +163,7 @@ describe("TestFixedPointRates", () => {
     expect(sspc.native_frame_rate).toBe(24.0);
     expect(sspc.conform_frame_rate).toBe(30.0);
     expect(sspc.display_frame_rate).toBe(30.0);
-    expect(py_bool(sspc.tobytes())).toBe(true);
+    expect(pyBool(sspc.tobytes())).toBe(true);
   });
 });
 
@@ -173,7 +173,7 @@ describe("TestSignedWorkAreaStart", () => {
     const cdta = new CdtaChunk();
     cdta.work_area_start_dividend = -1024;
     cdta.work_area_start_divisor = 24576;
-    const again = as_instance(CdtaChunk.frombytes(cdta.tobytes()), CdtaChunk);
+    const again = asInstance(CdtaChunk.frombytes(cdta.tobytes()), CdtaChunk);
     expect(again instanceof CdtaChunk).toBe(true);
     expect(approx(again.work_area_start, -1 / 24)).toBe(true);
   });
@@ -201,8 +201,8 @@ describe("TestLayerTimebase", () => {
     [24576, 99.0, 115200],
     [77777, 1.5, 115200],
     [30720, 4.0, 115200],
-  ])("test_matches_ae[%#]", (comp_timebase: number, stretch: number, expected: number) => {
-    expect(layer_timebase(comp_timebase, stretch)).toBe(expected);
+  ])("test_matches_ae[%#]", (compTimebase: number, stretch: number, expected: number) => {
+    expect(layerTimebase(compTimebase, stretch)).toBe(expected);
   });
 });
 
@@ -219,6 +219,6 @@ describe("TestStretchEncoding", () => {
   ])("test_float32_ratio[%#]", (percent: number, ratio: [number, number]) => {
     const ldta = new LdtaChunk();
     ldta.stretch = percent;
-    expect(py_eq([ldta.stretch_dividend, ldta.stretch_divisor], ratio)).toBe(true);
+    expect(pyEq([ldta.stretch_dividend, ldta.stretch_divisor], ratio)).toBe(true);
   });
 });

@@ -52,26 +52,26 @@ export type EnumHelpers<V> = {
 
 export type EnumValue<E> = E extends EnumHelpers<infer V> ? V : never;
 
-export function py_enum<const M extends Record<string, unknown>, X extends Record<string, unknown> = {}>(
+export function pyEnum<const M extends Record<string, unknown>, X extends Record<string, unknown> = {}>(
   name: string,
   members: M,
   methods?: X & ThisType<Resolved<M> & EnumHelpers<Resolved<M>[keyof M]> & X>,
 ): Resolved<M> & EnumHelpers<Resolved<M>[keyof M]> & X {
   type V = Resolved<M>[keyof M];
-  const by_name = new Map<string, V>();
-  const by_value = new Map<unknown, string>();
+  const byName = new Map<string, V>();
+  const byValue = new Map<unknown, string>();
   const canonical: V[] = [];
   let last = 0;
   for (const [k, raw] of Object.entries(members)) {
     const v = (raw === AUTO ? last + 1 : raw) as V;
     if (typeof v === "number") last = v;
-    by_name.set(k, v);
-    if (!by_value.has(v)) {
-      by_value.set(v, k);
+    byName.set(k, v);
+    if (!byValue.has(v)) {
+      byValue.set(v, k);
       canonical.push(v);
     }
   }
-  const self = Object.fromEntries(by_name);
+  const self = Object.fromEntries(byName);
   const helpers: EnumHelpers<V> = {
     __name__: name,
     of(value: unknown): V {
@@ -85,22 +85,22 @@ export function py_enum<const M extends Record<string, unknown>, X extends Recor
       return null;
     },
     name_of(value: V): string {
-      const n = by_value.get(value);
+      const n = byValue.get(value);
       if (n === undefined) throw new ValueError(`${String(value)} is not a valid ${name}`);
       return n;
     },
     has(value: unknown): value is V {
-      return by_value.has(value);
+      return byValue.has(value);
     },
     members(): V[] {
       return [...canonical];
     },
     by_name(n: string): V {
-      const v = by_name.get(n);
+      const v = byName.get(n);
       if (v === undefined) throw new KeyError(`'${n}'`);
       return v;
     },
-    __members__: by_name,
+    __members__: byName,
   };
   for (const [k, v] of Object.entries(helpers)) Object.defineProperty(self, k, { value: v, enumerable: false });
   if (methods) {
@@ -112,4 +112,4 @@ export function py_enum<const M extends Record<string, unknown>, X extends Recor
 }
 
 /** `class X(IntEnum)` */
-export const int_enum = py_enum;
+export const intEnum = pyEnum;

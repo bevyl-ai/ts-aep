@@ -6,6 +6,6 @@
  * computation.
  */
 
-export { resolve_output_filename } from "./output.ts";
+export { resolveOutputFilename } from "./output.ts";
 
 export const __all__ = ["resolve_output_filename"] as const;

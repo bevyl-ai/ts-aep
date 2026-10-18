@@ -9,11 +9,11 @@
 import { INSPECT } from "../../pyrt/index.ts";
 import { descriptor, repr } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
-import { validate_name } from "./validators.ts";
+import { validateName } from "./validators.ts";
 import type { U4Chunk, Utf8Chunk } from "../binary/scalar_chunks.ts";
 
 /** Whether `x` has a callable `[Symbol.iterator]`, the check spreading `x` makes. */
-function _is_iterable(x: unknown): x is Iterable<unknown> {
+function _isIterable(x: unknown): x is Iterable<unknown> {
   return (
     (typeof x === "object" || typeof x === "function") &&
     x !== null &&
@@ -36,9 +36,9 @@ export class SourcePropertyRef {
   readonly matchName: string;
   readonly propIndex: number | null;
 
-  constructor(match_name: string, prop_index: number | null) {
-    this.matchName = match_name;
-    this.propIndex = prop_index;
+  constructor(matchName: string, propIndex: number | null) {
+    this.matchName = matchName;
+    this.propIndex = propIndex;
   }
 
   /** NamedTuple `_replace(**kw)`: a copy with the given fields changed. */
@@ -49,7 +49,7 @@ export class SourcePropertyRef {
 
   /** NamedTuple equality: elementwise over the fields (also against a plain tuple). */
   equals(other: unknown): boolean {
-    if (other == null || typeof other === "string" || !_is_iterable(other)) return false;
+    if (other == null || typeof other === "string" || !_isIterable(other)) return false;
     const o = [...other];
     return o.length === 2 && o[0] === this.matchName && o[1] === this.propIndex;
   }
@@ -154,7 +154,7 @@ export class EssentialGraphicsController {
 descriptor(
   EssentialGraphicsController,
   "name",
-  new ChunkField("_name_utf8", "value", { validate: validate_name }),
+  new ChunkField("_name_utf8", "value", { validate: validateName }),
 );
 descriptor(
   EssentialGraphicsController,

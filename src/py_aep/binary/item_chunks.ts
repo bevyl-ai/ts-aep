@@ -8,7 +8,7 @@
 
 import {
   and,
-  and_not,
+  andNot,
   b,
   bytes_,
   decode,
@@ -20,18 +20,18 @@ import {
   int,
   lshift,
   mod,
-  object_setattr,
+  objectSetattr,
   or,
   repr,
   rshift,
   split,
   ValueError,
-  py_re,
+  pyRe,
 } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
-import { FmtItem, bool_field, bytes_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { FmtItem, boolField, bytesField, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -86,18 +86,18 @@ export class IdtaChunk extends Chunk {
 }
 define(IdtaChunk, {
   chunk_type: field({ default: "idta" }),
-  item_type: u2_field(),
-  _reserved_02: bytes_field(14, { repr: false }),
-  item_id: u4_field(),
-  _flags_14: bytes_field(2, { repr: false }),
-  _proxy_flags: u1_field({ repr: false }),
-  _flags_17: u1_field({ repr: false }),
-  _reserved_18: bytes_field(32, { repr: false }),
-  _proxy_active: u1_field({ repr: false }),
-  _reserved_39: bytes_field(1, { repr: false }),
-  label: u1_field(),
-  _reserved_3c: bytes_field(21, { repr: false }),
-  _modified_stamp: u4_field({ repr: false }),
+  item_type: u2Field(),
+  _reserved_02: bytesField(14, { repr: false }),
+  item_id: u4Field(),
+  _flags_14: bytesField(2, { repr: false }),
+  _proxy_flags: u1Field({ repr: false }),
+  _flags_17: u1Field({ repr: false }),
+  _reserved_18: bytesField(32, { repr: false }),
+  _proxy_active: u1Field({ repr: false }),
+  _reserved_39: bytesField(1, { repr: false }),
+  label: u1Field(),
+  _reserved_3c: bytesField(21, { repr: false }),
+  _modified_stamp: u4Field({ repr: false }),
 });
 register("idta")(IdtaChunk);
 // -- BitField descriptors (not attrs fields) ---------------------------
@@ -156,7 +156,7 @@ export const FORMAT_VERSIONS: Map<number, [number, number]> = new Map<number, [n
 ]);
 
 /** An After Effects version string, `"{major}.{minor}x{build}"`. */
-export const AE_VERSION_RE = py_re(String.raw`^(\d+)\.(\d+)x(\d+)$`);
+export const AE_VERSION_RE = pyRe(String.raw`^(\d+)\.(\d+)x(\d+)$`);
 
 export class HeadChunk extends Chunk {
   declare chunk_type: string;
@@ -185,7 +185,7 @@ export class HeadChunk extends Chunk {
   }
 
   set ae_version_major_a(value: number) {
-    this._version_word = or(and_not(this._version_word, lshift(0x1f, 26)), lshift(and(value, 0x1f), 26));
+    this._version_word = or(andNot(this._version_word, lshift(0x1f, 26)), lshift(and(value, 0x1f), 26));
   }
 
   get ae_version_major_b(): number {
@@ -193,7 +193,7 @@ export class HeadChunk extends Chunk {
   }
 
   set ae_version_major_b(value: number) {
-    this._version_word = or(and_not(this._version_word, lshift(0x07, 19)), lshift(and(value, 0x07), 19));
+    this._version_word = or(andNot(this._version_word, lshift(0x07, 19)), lshift(and(value, 0x07), 19));
   }
 
   get ae_version_minor(): number {
@@ -201,7 +201,7 @@ export class HeadChunk extends Chunk {
   }
 
   set ae_version_minor(value: number) {
-    this._version_word = or(and_not(this._version_word, lshift(0x0f, 15)), lshift(and(value, 0x0f), 15));
+    this._version_word = or(andNot(this._version_word, lshift(0x0f, 15)), lshift(and(value, 0x0f), 15));
   }
 
   /** Raw flag: False=beta, True=release. */
@@ -213,7 +213,7 @@ export class HeadChunk extends Chunk {
     if (value) {
       this._version_word = or(this._version_word, 1 << 9);
     } else {
-      this._version_word = and_not(this._version_word, 1 << 9);
+      this._version_word = andNot(this._version_word, 1 << 9);
     }
   }
 
@@ -222,7 +222,7 @@ export class HeadChunk extends Chunk {
   }
 
   set ae_build_number(value: number) {
-    this._version_word = or(and_not(this._version_word, 0xff), and(value, 0xff));
+    this._version_word = or(andNot(this._version_word, 0xff), and(value, 0xff));
   }
 
   /** OS code (bits 25-22); 12 for Windows in saved files. */
@@ -231,7 +231,7 @@ export class HeadChunk extends Chunk {
   }
 
   set ae_version_os(value: number) {
-    this._version_word = or(and_not(this._version_word, lshift(0x0f, 22)), lshift(and(value, 0x0f), 22));
+    this._version_word = or(andNot(this._version_word, lshift(0x0f, 22)), lshift(and(value, 0x0f), 22));
   }
 
   /** Full major version (e.g. 25). */
@@ -278,14 +278,14 @@ export class HeadChunk extends Chunk {
 define(HeadChunk, {
   chunk_type: field({ default: "head" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved_00a: bytes_field(1, { repr: false }),
-  file_format_version: u1_field({ default: 0x61 }),
-  _reserved_00c: bytes_field(1, { repr: false }),
-  _format_subversion: u1_field({ default: 0x02, repr: false }),
-  _version_word: u4_field({ default: (12 << 22) | (1 << 10) | (1 << 9), repr: false }),
-  _reserved_08: bytes_field(4, { default: b("\x80\x00\x00\x00"), repr: false }),
-  next_item_id: u4_field({ default: 1, repr: false }),
-  file_revision: u4_field({ default: 1 }),
+  _reserved_00a: bytesField(1, { repr: false }),
+  file_format_version: u1Field({ default: 0x61 }),
+  _reserved_00c: bytesField(1, { repr: false }),
+  _format_subversion: u1Field({ default: 0x02, repr: false }),
+  _version_word: u4Field({ default: (12 << 22) | (1 << 10) | (1 << 9), repr: false }),
+  _reserved_08: bytesField(4, { default: b("\x80\x00\x00\x00"), repr: false }),
+  next_item_id: u4Field({ default: 1, repr: false }),
+  file_revision: u4Field({ default: 1 }),
 });
 register("head")(HeadChunk);
 
@@ -337,17 +337,17 @@ export class NhedChunk extends Chunk {
 define(NhedChunk, {
   chunk_type: field({ default: "nhed" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved_00: bytes_field(8, { default: bytes_.concat(bytes_.repeat(b("\x00"), 7), b("\x05")), repr: false }),
-  _display_byte: u1_field({ repr: false }),
-  footage_timecode_display_start_type: u1_field({ default: 1 }),
-  _reserved_0a: bytes_field(1, { default: b("\x01"), repr: false }),
-  _feet_byte: u1_field({ repr: false }),
-  timecode_default_base: u1_field({ default: 30 }),
-  _reserved_0d: bytes_field(1, { default: b("\x10"), repr: false }),
-  frames_count_type: u1_field({ default: 2 }),
-  bits_per_channel: u1_field(),
-  transparency_grid_thumbnails: bool_field(),
-  _reserved_11: bytes_field(15, { repr: false }),
+  _reserved_00: bytesField(8, { default: bytes_.concat(bytes_.repeat(b("\x00"), 7), b("\x05")), repr: false }),
+  _display_byte: u1Field({ repr: false }),
+  footage_timecode_display_start_type: u1Field({ default: 1 }),
+  _reserved_0a: bytesField(1, { default: b("\x01"), repr: false }),
+  _feet_byte: u1Field({ repr: false }),
+  timecode_default_base: u1Field({ default: 30 }),
+  _reserved_0d: bytesField(1, { default: b("\x10"), repr: false }),
+  frames_count_type: u1Field({ default: 2 }),
+  bits_per_channel: u1Field(),
+  transparency_grid_thumbnails: boolField(),
+  _reserved_11: bytesField(15, { repr: false }),
 });
 register("nhed")(NhedChunk);
 descriptor(NhedChunk, "feet_frames_film_type", new BitField("_display_byte", 7));
@@ -417,22 +417,22 @@ export class NnhdChunk extends Chunk {
 define(NnhdChunk, {
   chunk_type: field({ default: "nnhd" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved_00: bytes_field(2, { repr: false }),
-  _saving_platform: u1_field({ repr: false }),
-  _reserved_03: bytes_field(5, { default: bytes_.concat(bytes_.repeat(b("\x00"), 4), b("\x05")), repr: false }),
-  _display_byte: u1_field({ repr: false }),
-  footage_timecode_display_start_type: u1_field({ default: 1 }),
-  _reserved_0a: u1_field({ default: 1, repr: false }),
-  _feet_byte: u1_field({ repr: false }),
-  _reserved_0c: bytes_field(2, { repr: false }),
-  timecode_default_base: u2_field({ default: 30 }),
-  _unknown_10: bytes_field(4, { default: b("\x00\x00\x00\x10"), repr: false }),
-  frames_count_type: u1_field({ default: 2 }),
-  _reserved_15: bytes_field(3, { repr: false }),
-  bits_per_channel: u1_field(),
-  transparency_grid_thumbnails: bool_field(),
-  _system_code_page: u2_field({ repr: false }),
-  _unknown_1c: bytes_field(12, { repr: false }),
+  _reserved_00: bytesField(2, { repr: false }),
+  _saving_platform: u1Field({ repr: false }),
+  _reserved_03: bytesField(5, { default: bytes_.concat(bytes_.repeat(b("\x00"), 4), b("\x05")), repr: false }),
+  _display_byte: u1Field({ repr: false }),
+  footage_timecode_display_start_type: u1Field({ default: 1 }),
+  _reserved_0a: u1Field({ default: 1, repr: false }),
+  _feet_byte: u1Field({ repr: false }),
+  _reserved_0c: bytesField(2, { repr: false }),
+  timecode_default_base: u2Field({ default: 30 }),
+  _unknown_10: bytesField(4, { default: b("\x00\x00\x00\x10"), repr: false }),
+  frames_count_type: u1Field({ default: 2 }),
+  _reserved_15: bytesField(3, { repr: false }),
+  bits_per_channel: u1Field(),
+  transparency_grid_thumbnails: boolField(),
+  _system_code_page: u2Field({ repr: false }),
+  _unknown_1c: bytesField(12, { repr: false }),
 });
 register("nnhd")(NnhdChunk);
 // -- Bit-level accessors (not attrs fields) ----------------------------
@@ -463,13 +463,13 @@ export class TimeDisplayPrefItem extends FmtItem {
   declare frames_count_type: number;
 }
 define(TimeDisplayPrefItem, {
-  display_byte: u1_field(),
-  footage_timecode_display_start_type: u1_field({ default: 1 }),
-  _reserved_02: u1_field({ default: 1, repr: false }),
-  feet_byte: u1_field(),
-  timecode_default_base: u4_field({ default: 30, endian: "<" }),
-  _reserved_08: u4_field({ default: 16, endian: "<", repr: false }),
-  frames_count_type: u4_field({ default: 2, endian: "<" }),
+  display_byte: u1Field(),
+  footage_timecode_display_start_type: u1Field({ default: 1 }),
+  _reserved_02: u1Field({ default: 1, repr: false }),
+  feet_byte: u1Field(),
+  timecode_default_base: u4Field({ default: 30, endian: "<" }),
+  _reserved_08: u4Field({ default: 16, endian: "<", repr: false }),
+  frames_count_type: u4Field({ default: 2, endian: "<" }),
 });
 
 // ---------------------------------------------------------------------------
@@ -494,7 +494,7 @@ export class CmtaChunk extends Chunk {
   set value(text: string) {
     // AE always writes a double-null terminator inside the chunk data.
     const encoded = encode(text.replaceAll("\n", "\r\n") + "\x00\x00", "UTF-8");
-    object_setattr(this, "data", encoded);
+    objectSetattr(this, "data", encoded);
   }
 }
 define(CmtaChunk, {

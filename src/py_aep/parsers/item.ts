@@ -2,13 +2,13 @@ import { ValueError } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { filter_by_list_type, find_by_list_type, find_by_list_type_or_null, find_by_type, find_by_type_or_null } from "../binary/utils.ts";
+import { filterByListType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { ItemType } from "../enums/index.ts";
 import { Guide } from "../models/guide.ts";
 import { FolderItem } from "../models/items/folder.ts";
-import { parse_composition } from "./composition.ts";
-import { parse_footage } from "./footage.ts";
-import { parse_viewers } from "./view.ts";
+import { parseComposition } from "./composition.ts";
+import { parseFootage } from "./footage.ts";
+import { parseViewers } from "./view.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { FootageItem } from "../models/items/footage.ts";
@@ -17,66 +17,66 @@ import type { Project } from "../models/project.ts";
 /**
  * Parse an item (composition, footage or folder).
  *
- * @param item_chunk - The LIST chunk to parse.
+ * @param itemChunk - The LIST chunk to parse.
  * @param project - The project.
- * @param parent_folder - The parent folder.
+ * @param parentFolder - The parent folder.
  */
-export function parse_item(
-  item_chunk: ListChunk,
+export function parseItem(
+  itemChunk: ListChunk,
   project: Project,
-  parent_folder: FolderItem,
+  parentFolder: FolderItem,
 ): CompItem | FolderItem | FootageItem {
-  const child_chunks = item_chunk.chunks;
+  const childChunks = itemChunk.chunks;
 
-  const idta = find_by_type(child_chunks, "idta");
-  const name_utf8 = find_by_type(child_chunks, "Utf8");
-  const cmta = find_by_type_or_null(child_chunks, "cmta");
+  const idta = findByType(childChunks, "idta");
+  const nameUtf8 = findByType(childChunks, "Utf8");
+  const cmta = findByTypeOrNull(childChunks, "cmta");
 
-  const gide = find_by_list_type_or_null(item_chunk.chunks, "Gide");
+  const gide = findByListTypeOrNull(itemChunk.chunks, "Gide");
 
-  const item_type = idta.item_type;
+  const itemType = idta.item_type;
 
   let item: FolderItem | FootageItem | CompItem;
-  if (item_type === ItemType.FOLDER) {
-    item = parse_folder(
+  if (itemType === ItemType.FOLDER) {
+    item = parseFolder(
       false,
-      child_chunks,
+      childChunks,
       project,
       idta,
-      name_utf8,
+      nameUtf8,
       cmta,
-      item_chunk,
+      itemChunk,
       gide,
-      parent_folder,
+      parentFolder,
     );
-  } else if (item_type === ItemType.FOOTAGE) {
-    item = parse_footage(
-      child_chunks,
+  } else if (itemType === ItemType.FOOTAGE) {
+    item = parseFootage(
+      childChunks,
       idta,
-      name_utf8,
+      nameUtf8,
       cmta,
-      item_chunk,
+      itemChunk,
       gide,
       project,
-      parent_folder,
+      parentFolder,
     );
-  } else if (item_type === ItemType.COMPOSITION) {
-    item = parse_composition(
-      child_chunks,
+  } else if (itemType === ItemType.COMPOSITION) {
+    item = parseComposition(
+      childChunks,
       idta,
-      name_utf8,
+      nameUtf8,
       cmta,
-      item_chunk,
+      itemChunk,
       gide,
       project,
-      parent_folder,
+      parentFolder,
       project._effect_param_defs,
     );
   } else {
-    throw new ValueError(`Unknown item type: ${item_type}`);
+    throw new ValueError(`Unknown item type: ${itemType}`);
   }
 
-  item._guides = _parse_guides(child_chunks);
+  item._guides = _parseGuides(childChunks);
   project.items.set(item.id, item);
 
   return item;
@@ -85,49 +85,49 @@ export function parse_item(
 /**
  * Parse a folder item.
  *
- * @param is_root - Whether the folder is the root folder (ID 0).
- * @param child_chunks - child chunks of the folder LIST chunk.
+ * @param isRoot - Whether the folder is the root folder (ID 0).
+ * @param childChunks - child chunks of the folder LIST chunk.
  * @param project - The project.
  * @param _idta - The idta chunk (None for the root folder).
- * @param _name_utf8 - The Utf8 chunk containing the folder name.
+ * @param _nameUtf8 - The Utf8 chunk containing the folder name.
  * @param _cmta - The cmta chunk (None if no comment).
- * @param _item_list - The LIST chunk for creating new chunks.
+ * @param _itemList - The LIST chunk for creating new chunks.
  * @param _gide - The LIST chunk for guides (None if no guides).
- * @param parent_folder - The folder's parent folder.
+ * @param parentFolder - The folder's parent folder.
  */
-export function parse_folder(
-  is_root: boolean,
-  child_chunks: Chunk[],
+export function parseFolder(
+  isRoot: boolean,
+  childChunks: Chunk[],
   project: Project,
   _idta: IdtaChunk | null,
-  _name_utf8: Utf8Chunk | null,
+  _nameUtf8: Utf8Chunk | null,
   _cmta: CmtaChunk | null,
-  _item_list: ListChunk,
+  _itemList: ListChunk,
   _gide: ListChunk | null,
-  parent_folder: FolderItem | null,
+  parentFolder: FolderItem | null,
 ): FolderItem {
-  let folder_chunks: Chunk[];
-  let children_container: Chunk[];
-  if (is_root) {
-    folder_chunks = child_chunks;
-    children_container = _item_list.chunks;
+  let folderChunks: Chunk[];
+  let childrenContainer: Chunk[];
+  if (isRoot) {
+    folderChunks = childChunks;
+    childrenContainer = _itemList.chunks;
   } else {
-    const sfdr_chunk = find_by_list_type(child_chunks, "Sfdr");
-    folder_chunks = sfdr_chunk.chunks;
-    children_container = sfdr_chunk.chunks;
+    const sfdrChunk = findByListType(childChunks, "Sfdr");
+    folderChunks = sfdrChunk.chunks;
+    childrenContainer = sfdrChunk.chunks;
   }
 
   const folder = new FolderItem({
     _idta,
-    _name_utf8,
+    _name_utf8: _nameUtf8,
     _cmta,
-    _item_list,
+    _item_list: _itemList,
     _gide,
-    _children_container: children_container,
+    _children_container: childrenContainer,
     project,
-    parent_folder,
+    parent_folder: parentFolder,
   });
-  if (is_root) {
+  if (isRoot) {
     // Avoid mutating chunk fields
     // Python writes folder.__dict__["name"] to bypass the property; defining an own
     // property on the instance does the same.
@@ -138,13 +138,13 @@ export function parse_folder(
       configurable: true,
     });
   }
-  const child_item_chunks = filter_by_list_type(folder_chunks, "Item");
-  for (const child_item_chunk of child_item_chunks) {
-    const child_item = parse_item(child_item_chunk, project, folder);
-    folder.items.push(child_item);
+  const childItemChunks = filterByListType(folderChunks, "Item");
+  for (const childItemChunk of childItemChunks) {
+    const childItem = parseItem(childItemChunk, project, folder);
+    folder.items.push(childItem);
   }
 
-  folder._viewers = parse_viewers(folder_chunks, folder.items);
+  folder._viewers = parseViewers(folderChunks, folder.items);
 
   return folder;
 }
@@ -152,19 +152,19 @@ export function parse_folder(
 /**
  * Parse composition guides from the LIST:Gide chunk.
  *
- * @param child_chunks - child chunks of the item LIST chunk.
+ * @param childChunks - child chunks of the item LIST chunk.
  * @returns List of Guide objects, empty if no guides are defined.
  */
-export function _parse_guides(child_chunks: Chunk[]): Guide[] {
-  const gide_list = find_by_list_type_or_null(child_chunks, "Gide");
-  if (gide_list === null) return [];
+export function _parseGuides(childChunks: Chunk[]): Guide[] {
+  const gideList = findByListTypeOrNull(childChunks, "Gide");
+  if (gideList === null) return [];
 
-  const list_chunk = find_by_list_type(gide_list.chunks, "list");
-  const lhd3 = find_by_type(list_chunk.chunks, "lhd3");
+  const listChunk = findByListType(gideList.chunks, "list");
+  const lhd3 = findByType(listChunk.chunks, "lhd3");
   if (lhd3.count === 0) {
     return [];
   }
 
-  const ldat = find_by_type(list_chunk.chunks, "ldat");
+  const ldat = findByType(listChunk.chunks, "ldat");
   return ldat.items.map((item) => new Guide(item));
 }

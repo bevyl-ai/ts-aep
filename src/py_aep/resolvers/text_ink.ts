@@ -37,8 +37,8 @@ import {
   NotImplementedError,
   at,
   max,
-  py_bool,
-  py_or,
+  pyBool,
+  pyOr,
   repr,
   rstrip,
   split,
@@ -47,10 +47,10 @@ import {
   zip,
 } from "../../pyrt/index.ts";
 import type { TextDocument } from "../models/text/text_document.ts";
-import { cos_get, run_spans } from "../cos/index.ts";
+import { cosGet, runSpans } from "../cos/index.ts";
 import type { CosDict } from "../cos/cos.ts";
-import { enum_from_cos } from "../cos/descriptors.ts";
-import { cos_float, cos_get_or, cos_int } from "../cos/kinds.ts";
+import { enumFromCos } from "../cos/descriptors.ts";
+import { cosFloat, cosGetOr, cosInt } from "../cos/kinds.ts";
 import { ParagraphJustification } from "../enums/index.ts";
 import * as tc from "./text_composition.ts";
 import { BoxAccumulator } from "./shape_bounds.ts";
@@ -59,50 +59,50 @@ import { BoxAccumulator } from "./shape_bounds.ts";
 // NOTE(port): keyed by glyph id (HarfBuzz codepoint); Python's glyph name is order[gid], a 1:1 map, so the cache is equivalent.
 export type _GlyphBounds = Map<number, [number, number, number, number] | null>;
 
-export type _CharStyle = ReturnType<typeof tc._char_styles>[number];
+export type _CharStyle = ReturnType<typeof tc._charStyles>[number];
 
 export const _CFF_INK_SCALE = 1031.25 / 1024;
 
-export const _glyph_cache = new Map<string, [fontkit.Font, boolean, _GlyphBounds]>();
+export const _glyphCache = new Map<string, [fontkit.Font, boolean, _GlyphBounds]>();
 
-export function _is_os_error(exc: Error | null): boolean {
+export function _isOsError(exc: Error | null): boolean {
   // Python catches OSError (a missing or unreadable file). Node reports those
   // as errors carrying a string `code`.
   return exc instanceof Error && "code" in exc && typeof exc.code === "string";
 }
 
-export function _open_face(path: string, face_index: number): fontkit.Font {
+export function _openFace(path: string, faceIndex: number): fontkit.Font {
   // NOTE(port): fontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
   // fontkit exposes collection faces through `.fonts`; a plain font is its own face.
   const opened = fontkit.create(host.fs.readFileSync(path));
-  return opened.fonts ? at(opened.fonts, face_index) : opened;
+  return opened.fonts ? at(opened.fonts, faceIndex) : opened;
 }
 
 /** `(font, is_cff, outline bounds by glyph id)` for a PostScript name, cached; the bounds fill in as glyphs are measured. */
-export function _font_outlines(ps_name: string): [fontkit.Font, boolean, _GlyphBounds] {
-  const [path, face_index] = tc._resolve_face(ps_name);
-  const key = tkey(path.toString(), face_index);
-  let cached = _glyph_cache.get(key);
+export function _fontOutlines(psName: string): [fontkit.Font, boolean, _GlyphBounds] {
+  const [path, faceIndex] = tc._resolveFace(psName);
+  const key = tkey(path.toString(), faceIndex);
+  let cached = _glyphCache.get(key);
   if (cached === undefined) {
     let font: fontkit.Font;
     try {
-      font = _open_face(path.toString(), face_index);
+      font = _openFace(path.toString(), faceIndex);
     } catch (exc) {
-      if (!(exc instanceof Error) || !_is_os_error(exc)) throw exc;
+      if (!(exc instanceof Error) || !_isOsError(exc)) throw exc;
       throw Object.assign(
-        new NotImplementedError(`font file for ${repr(ps_name)} is unreadable: ${path.toString()}`),
+        new NotImplementedError(`font file for ${repr(psName)} is unreadable: ${path.toString()}`),
         { cause: exc },
       );
     }
     const tables = font.directory.tables;
     cached = [font, "CFF " in tables || "CFF2" in tables, new Map()];
-    _glyph_cache.set(key, cached);
+    _glyphCache.set(key, cached);
   }
   return cached;
 }
 
 /** fontTools `BoundsPen` for one glyph: `null` when it draws nothing. */
-export function _pen_bounds(font: fontkit.Font, gid: number): [number, number, number, number] | null {
+export function _penBounds(font: fontkit.Font, gid: number): [number, number, number, number] | null {
   // TODO(port): fontkit vs fontTools outline decoding. fontkit's Path.bbox is
   // exact (curve extrema) like BoundsPen, but fontkit builds the path itself
   // (TrueType implied on-curve points, CFF/CFF2 charstring interpretation), so
@@ -118,12 +118,12 @@ export function _refuse(reason: string): NotImplementedError {
   return new NotImplementedError(`sourceRectAtTime does not model text with ${reason}`);
 }
 
-export function _check_styles(doc: TextDocument): void {
-  for (const [_start, _end, style] of run_spans(doc._doc, "6", "6")) {
-    if (py_bool(style.get("2") ?? null)) throw _refuse("faux bold");
-    if (py_bool(style.get("3") ?? null)) throw _refuse("faux italic");
-    if (cos_int(cos_get_or(style, "12", 0)) !== 0) throw _refuse("small or all caps");
-    if (cos_float(cos_get_or(style, "6", 1.0)) !== 1.0 || cos_float(cos_get_or(style, "7", 1.0)) !== 1.0) {
+export function _checkStyles(doc: TextDocument): void {
+  for (const [_start, _end, style] of runSpans(doc._doc, "6", "6")) {
+    if (pyBool(style.get("2") ?? null)) throw _refuse("faux bold");
+    if (pyBool(style.get("3") ?? null)) throw _refuse("faux italic");
+    if (cosInt(cosGetOr(style, "12", 0)) !== 0) throw _refuse("small or all caps");
+    if (cosFloat(cosGetOr(style, "6", 1.0)) !== 1.0 || cosFloat(cosGetOr(style, "7", 1.0)) !== 1.0) {
       throw _refuse("horizontal or vertical scale");
     }
   }
@@ -133,9 +133,9 @@ export function _check_styles(doc: TextDocument): void {
  * The stroke a character's run draws, 0 when it has none (the width
  * defaults to 1, as `TextDocument.strokeWidth` reads it).
  */
-export function _stroke_width(style: CosDict): number {
-  if (!py_bool(cos_get_or(style, "57", false))) return 0.0;
-  return cos_float(cos_get_or(style, "63", 1.0));
+export function _strokeWidth(style: CosDict): number {
+  if (!pyBool(cosGetOr(style, "57", false))) return 0.0;
+  return cosFloat(cosGetOr(style, "63", 1.0));
 }
 
 /**
@@ -144,16 +144,16 @@ export function _stroke_width(style: CosDict): number {
  * Glyphs are placed by the composer's own shaping and advances
  * (`text_composition`), the ones that break and justify the lines.
  */
-export function _line_ink(
+export function _lineInk(
   text: string,
   styles: _CharStyle[],
   strokes: number[],
   offset: number,
-  origin_x: number,
+  originX: number,
   baseline: number,
   box: BoxAccumulator,
 ): void {
-  let x = origin_x;
+  let x = originX;
   let i = 0;
   while (i < text.length) {
     const style = styles[offset + i];
@@ -163,31 +163,31 @@ export function _line_ink(
       j += 1;
     }
     const stretch = text.slice(i, j);
-    const [buf, scale] = tc._shape_glyphs(stretch, style);
+    const [buf, scale] = tc._shapeGlyphs(stretch, style);
     const pens: number[] = [];
-    for (const advance of tc._glyph_advances(stretch, style, buf, scale)) {
+    for (const advance of tc._glyphAdvances(stretch, style, buf, scale)) {
       pens.push(x);
       x += advance;
     }
-    const [font, is_cff, glyph_bounds] = _font_outlines(style.font);
-    const ink_scale = scale * (is_cff ? _CFF_INK_SCALE : 1.0);
+    const [font, isCff, glyphBounds] = _fontOutlines(style.font);
+    const inkScale = scale * (isCff ? _CFF_INK_SCALE : 1.0);
     for (const [info, pos] of zip<[{ codepoint: number; cluster: number }[], { x_advance: number; y_advance: number; x_offset: number; y_offset: number }[]]>(buf.glyph_infos, buf.glyph_positions)) {
       // fontkit addresses glyphs by id, which HarfBuzz reports as the codepoint.
       const name = info.codepoint;
-      if (!glyph_bounds.has(name)) {
-        glyph_bounds.set(name, _pen_bounds(font, name));
+      if (!glyphBounds.has(name)) {
+        glyphBounds.set(name, _penBounds(font, name));
       }
-      const bounds = glyph_bounds.get(name);
+      const bounds = glyphBounds.get(name);
       if (bounds == null) continue;
-      const [x_min, y_min, x_max, y_max] = bounds;
+      const [xMin, yMin, xMax, yMax] = bounds;
       const gx = pens[info.cluster] + pos.x_offset * scale;
       const gy = baseline - pos.y_offset * scale;
       const grow = strokes[offset + i + info.cluster];
       box.add(
-        gx + x_min * ink_scale - grow,
-        gy - y_max * ink_scale - grow,
-        gx + x_max * ink_scale + grow,
-        gy - y_min * ink_scale + grow,
+        gx + xMin * inkScale - grow,
+        gy - yMax * inkScale - grow,
+        gx + xMax * inkScale + grow,
+        gy - yMin * inkScale + grow,
       );
     }
     i = j;
@@ -195,7 +195,7 @@ export function _line_ink(
 }
 
 /** Where a point-text line that is not left-justified starts its pen, from its advance width. */
-export function _justified_origin(
+export function _justifiedOrigin(
   justification: ParagraphJustification,
   width: number,
   text: string,
@@ -218,29 +218,29 @@ export function _justified_origin(
  * @throws NotImplementedError Outside the measured envelope (module
  *   docstring), or when a font is not installed.
  */
-export function text_ink_rect(doc: TextDocument): { top: number; left: number; width: number; height: number } {
-  const raw = str(py_or(cos_get(doc._doc, "0", "0"), ""));
-  _check_styles(doc);
+export function textInkRect(doc: TextDocument): { top: number; left: number; width: number; height: number } {
+  const raw = str(pyOr(cosGet(doc._doc, "0", "0"), ""));
+  _checkStyles(doc);
   let styles: _CharStyle[];
   try {
-    tc._check_envelope(doc, raw);
-    styles = tc._char_styles(doc, raw);
+    tc._checkEnvelope(doc, raw);
+    styles = tc._charStyles(doc, raw);
   } catch (exc) {
     if (!(exc instanceof tc.CompositionUnsupported)) throw exc;
     throw Object.assign(_refuse(exc.message), { cause: exc });
   }
   const strokes: number[] = [];
-  for (const [start, end, style] of run_spans(doc._doc, "6", "6")) {
-    const width = _stroke_width(style);
+  for (const [start, end, style] of runSpans(doc._doc, "6", "6")) {
+    const width = _strokeWidth(style);
     for (let k = 0; k < end - start; k++) strokes.push(width);
   }
-  const paragraph_styles = run_spans(doc._doc, "5", "5").map(([_s, _e, style]) => style);
+  const paragraphStyles = runSpans(doc._doc, "5", "5").map(([_s, _e, style]) => style);
   const box = new BoxAccumulator();
   try {
     if (doc.boxTextSize != null) {
-      _box_text_ink(doc, raw, styles, strokes, paragraph_styles, box);
+      _boxTextInk(doc, raw, styles, strokes, paragraphStyles, box);
     } else {
-      _point_text_ink(raw, styles, strokes, paragraph_styles, box);
+      _pointTextInk(raw, styles, strokes, paragraphStyles, box);
     }
   } catch (exc) {
     if (!(exc instanceof tc.CompositionUnsupported)) throw exc;
@@ -249,32 +249,32 @@ export function text_ink_rect(doc: TextDocument): { top: number; left: number; w
   return box.rect();
 }
 
-export function _justification(paragraph_style: CosDict): ParagraphJustification {
-  return enum_from_cos(ParagraphJustification, cos_int(cos_get_or(paragraph_style, "0", 0)));
+export function _justification(paragraphStyle: CosDict): ParagraphJustification {
+  return enumFromCos(ParagraphJustification, cosInt(cosGetOr(paragraphStyle, "0", 0)));
 }
 
-export function _point_text_ink(
+export function _pointTextInk(
   raw: string,
   styles: _CharStyle[],
   strokes: number[],
-  paragraph_styles: CosDict[],
+  paragraphStyles: CosDict[],
   box: BoxAccumulator,
 ): void {
   const body = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
   const paragraphs = split(body, "\r");
-  if (paragraph_styles.length !== paragraphs.length) {
+  if (paragraphStyles.length !== paragraphs.length) {
     throw _refuse("paragraph runs that do not cover the paragraphs");
   }
   let offset = 0;
   let baseline = 0.0;
   for (const [index, paragraph] of paragraphs.entries()) {
-    let line_styles = styles.slice(offset, offset + paragraph.length + 1);
-    if (line_styles.length === 0) line_styles = [at(styles, -1)];
+    let lineStyles = styles.slice(offset, offset + paragraph.length + 1);
+    if (lineStyles.length === 0) lineStyles = [at(styles, -1)];
     if (index > 0) {
-      baseline += max(line_styles.map((s) => s.leading));
+      baseline += max(lineStyles.map((s) => s.leading));
     }
     if (paragraph) {
-      const style = paragraph_styles[index];
+      const style = paragraphStyles[index];
       const justification = _justification(style);
       let origin = 0.0;
       if (justification !== ParagraphJustification.LEFT_JUSTIFY) {
@@ -286,59 +286,59 @@ export function _point_text_ink(
         const last = styles[offset + paragraph.length - 1];
         const width =
           tc._width(paragraph, styles, offset) - (last.tracking / 1000.0) * last.size;
-        origin = _justified_origin(justification, width, paragraph);
+        origin = _justifiedOrigin(justification, width, paragraph);
       }
       // A point-text paragraph is one line, its first: AE 2026 moves it
       // by the first-line indent whatever the justification, plus the
       // start indent when left-justified or minus the end indent when
       // right-justified (a centered line ignores both).
-      origin += cos_float(cos_get_or(style, "1", 0.0));
+      origin += cosFloat(cosGetOr(style, "1", 0.0));
       if (justification === ParagraphJustification.LEFT_JUSTIFY) {
-        origin += cos_float(cos_get_or(style, "2", 0.0));
+        origin += cosFloat(cosGetOr(style, "2", 0.0));
       } else if (justification === ParagraphJustification.RIGHT_JUSTIFY) {
-        origin -= cos_float(cos_get_or(style, "3", 0.0));
+        origin -= cosFloat(cosGetOr(style, "3", 0.0));
       }
-      _line_ink(paragraph, styles, strokes, offset, origin, baseline, box);
+      _lineInk(paragraph, styles, strokes, offset, origin, baseline, box);
     }
     offset += paragraph.length + 1;
   }
 }
 
-export function _box_text_ink(
+export function _boxTextInk(
   doc: TextDocument,
   raw: string,
   styles: _CharStyle[],
   strokes: number[],
-  paragraph_styles: CosDict[],
+  paragraphStyles: CosDict[],
   box: BoxAccumulator,
 ): void {
-  const composed = tc.compose_lines(doc);
+  const composed = tc.composeLines(doc);
   const position = doc.boxTextPos;
   if (position == null) {
     throw _refuse("a text box without a position");
   }
-  const left = cos_float(position[0]);
-  const top = cos_float(position[1]);
+  const left = cosFloat(position[0]);
+  const top = cosFloat(position[1]);
   const inset = doc.boxInsetSpacing;
   // Map each character to its paragraph for the justification and indents.
-  const paragraph_of: number[] = [];
-  for (const [index, [start, end]] of run_spans(doc._doc, "5", "5").entries()) {
-    for (let k = 0; k < end - start; k++) paragraph_of.push(index);
+  const paragraphOf: number[] = [];
+  for (const [index, [start, end]] of runSpans(doc._doc, "5", "5").entries()) {
+    for (let k = 0; k < end - start; k++) paragraphOf.push(index);
   }
   for (const [[start, end], baseline] of zip(composed.spans, composed.baselines)) {
     const text = rstrip(raw.slice(start, end), "\r");
     if (!text) continue;
-    const style = paragraph_styles[paragraph_of[start]];
+    const style = paragraphStyles[paragraphOf[start]];
     if (_justification(style) !== ParagraphJustification.LEFT_JUSTIFY) {
       throw _refuse("non-left-justified box text");
     }
-    const first_line = start === 0 || raw[start - 1] === "\r";
-    let origin = left + inset + cos_float(cos_get_or(style, "2", 0.0));
-    if (first_line) {
-      origin += cos_float(cos_get_or(style, "1", 0.0));
+    const firstLine = start === 0 || raw[start - 1] === "\r";
+    let origin = left + inset + cosFloat(cosGetOr(style, "2", 0.0));
+    if (firstLine) {
+      origin += cosFloat(cosGetOr(style, "1", 0.0));
     }
     // The inset pads the box on every side, the top included (AE 2026:
     // an inset of 8 or 20 lowers the ink by exactly that much).
-    _line_ink(text, styles, strokes, start, origin, top + inset + baseline, box);
+    _lineInk(text, styles, strokes, start, origin, top + inset + baseline, box);
   }
 }

@@ -8,7 +8,7 @@
 import { expect, test } from "bun:test";
 import { BytesIO, TypeError_, encode } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
-import { _probe_mgjson } from "../../src/py_aep/resolvers/media_probe.ts";
+import { _probeMgjson } from "../../src/py_aep/resolvers/media_probe.ts";
 
 function mgjson(times: string[]): BytesIO {
   const doc = { dataDynamicSamples: [{ samples: times.map((time) => ({ time })) }] };
@@ -23,9 +23,9 @@ test.each<[string[], number]>([
   // Aware datetimes (an offset the trailing-offset strip leaves) compare in UTC.
   [["2020-01-01T00:00:00+05", "2020-01-01T00:00:00+04"], 3600.0333333333333],
 ])("test_mgjson_sample_times[%#]", (times, duration) => {
-  expect(_probe_mgjson(mgjson(times)).duration).toBe(duration);
+  expect(_probeMgjson(mgjson(times)).duration).toBe(duration);
 });
 
 test("test_mgjson_naive_and_aware_times", () => {
-  raises(TypeError_, () => _probe_mgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])), "can't compare offset-naive and offset-aware datetimes");
+  raises(TypeError_, () => _probeMgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])), "can't compare offset-naive and offset-aware datetimes");
 });

@@ -11,16 +11,16 @@
 import { describe, expect, test } from "bun:test";
 
 import { raises } from "../../src/pyrt/pytest.ts";
-import { encode, py_eq } from "../../src/pyrt/index.ts";
-import { AiLayer, UnsupportedAiLayersError, read_ai_layer_ocgs, read_ai_layers } from "../../src/py_aep/resolvers/ai_layers.ts";
+import { encode, pyEq } from "../../src/pyrt/index.ts";
+import { AiLayer, UnsupportedAiLayersError, readAiLayerOcgs, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 
 /** A minimal PDF body whose catalog carries `oc_properties`. */
-function _pdf(oc_properties: string): Uint8Array {
+function _pdf(ocProperties: string): Uint8Array {
   return encode(
     "%PDF-1.5\n" +
       "1 0 obj\n" +
       "<</Type/Catalog/OCProperties" +
-      oc_properties +
+      ocProperties +
       ">>\n" +
       "endobj\n" +
       "10 0 obj\n<</Type/OCG/Name(Stale)>>\nendobj\n" +
@@ -34,7 +34,7 @@ function _pdf(oc_properties: string): Uint8Array {
 }
 
 // NOTE(port): AiLayer is a NamedTuple, so Python's `==` compares its fields; the TS class has no `__eq__`, so compare the iterated fields (same result).
-function as_fields(layers: AiLayer[]): (number | string | boolean)[][] {
+function asFields(layers: AiLayer[]): (number | string | boolean)[][] {
   return layers.map((layer) => [...layer]);
 }
 
@@ -47,9 +47,9 @@ describe("TestStaleGroups", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]>>>>");
 
     expect(
-      py_eq(
-        as_fields(read_ai_layer_ocgs("probe.ai", data)),
-        as_fields([new AiLayer(11, "Hidden", true), new AiLayer(12, "Visible", true)]),
+      pyEq(
+        asFields(readAiLayerOcgs("probe.ai", data)),
+        asFields([new AiLayer(11, "Hidden", true), new AiLayer(12, "Visible", true)]),
       ),
     ).toBe(true);
   });
@@ -58,20 +58,20 @@ describe("TestStaleGroups", () => {
   test("test_order_decides_membership_not_order", () => {
     const data = _pdf("<</OCGs[12 0 R 11 0 R]/D<</Order[11 0 R 12 0 R]>>>>");
 
-    expect(py_eq(read_ai_layers("probe.ai", data), ["Visible", "Hidden"])).toBe(true);
+    expect(pyEq(readAiLayers("probe.ai", data), ["Visible", "Hidden"])).toBe(true);
   });
 
   /** Illustrator sublayers nest, with an optional label string first. */
   test("test_nested_order_entries_count_as_members", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</Order[(Set)[12 0 R] 11 0 R]>>>>");
 
-    expect(py_eq(read_ai_layers("probe.ai", data), ["Hidden", "Visible"])).toBe(true);
+    expect(pyEq(readAiLayers("probe.ai", data), ["Hidden", "Visible"])).toBe(true);
   });
 
   test("test_a_file_without_order_keeps_every_group", () => {
     const data = _pdf("<</OCGs[10 0 R 11 0 R 12 0 R]/D<</BaseState/ON>>>>");
 
-    expect(py_eq(read_ai_layers("probe.ai", data), ["Stale", "Hidden", "Visible"])).toBe(true);
+    expect(pyEq(readAiLayers("probe.ai", data), ["Stale", "Hidden", "Visible"])).toBe(true);
   });
 
   test("test_no_group_survives_the_filter_raises", () => {
@@ -80,7 +80,7 @@ describe("TestStaleGroups", () => {
     raises(
       UnsupportedAiLayersError,
       () => {
-        read_ai_layers("probe.ai", data);
+        readAiLayers("probe.ai", data);
       },
       "no named layers",
     );
@@ -93,9 +93,9 @@ describe("TestVisibility", () => {
     const data = _pdf("<</OCGs[11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]/OFF[11 0 R]>>>>");
 
     expect(
-      py_eq(
-        as_fields(read_ai_layer_ocgs("probe.ai", data)),
-        as_fields([new AiLayer(11, "Hidden", false), new AiLayer(12, "Visible", true)]),
+      pyEq(
+        asFields(readAiLayerOcgs("probe.ai", data)),
+        asFields([new AiLayer(11, "Hidden", false), new AiLayer(12, "Visible", true)]),
       ),
     ).toBe(true);
   });
@@ -104,8 +104,8 @@ describe("TestVisibility", () => {
     const data = _pdf("<</OCGs[11 0 R 12 0 R]/D<</Order[12 0 R 11 0 R]>>>>");
 
     expect(
-      py_eq(
-        read_ai_layer_ocgs("probe.ai", data).map((layer) => layer.visible),
+      pyEq(
+        readAiLayerOcgs("probe.ai", data).map((layer) => layer.visible),
         [true, true],
       ),
     ).toBe(true);

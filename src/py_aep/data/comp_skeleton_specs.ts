@@ -99,13 +99,13 @@ export const _TDB4_SPATIAL: SpecFields = {
 // Shared property nodes
 // ---------------------------------------------------------------------------
 
-export function _bool_prop(
-  match_name: string,
+export function _boolProp(
+  matchName: string,
   value: number,
 ): PropNode {
   return [
     "prop",
-    match_name,
+    matchName,
     {
       tdsb: { enable_flags: 3 },
       tdsn: "-_0_/-",
@@ -116,13 +116,13 @@ export function _bool_prop(
 }
 
 /** Material-options slider with 0-100 bounds. */
-export function _coefficient_prop(
-  match_name: string,
+export function _coefficientProp(
+  matchName: string,
   value: number,
 ): PropNode {
   return [
     "prop",
-    match_name,
+    matchName,
     {
       tdsb: { enable_flags: 3 },
       tdsn: "-_0_/-",
@@ -145,7 +145,7 @@ export const _ANCHOR_POINT: SpecNode = [
   },
 ];
 
-export function _position_prop(
+export function _positionProp(
   x: number | string,
   y: number | string,
   z: number | string,
@@ -215,7 +215,7 @@ export const _OPACITY: SpecNode = [
   },
 ];
 
-export const _ENVIR_APPEAR: SpecNode = _bool_prop(
+export const _ENVIR_APPEAR: SpecNode = _boolProp(
   "ADBE Envir Appear in Reflect",
   1.0,
 );
@@ -225,8 +225,8 @@ export function _gated(
   node: PropNode,
   gate: string,
 ): PropNode {
-  const [kind, match_name, body] = node;
-  return [kind, match_name, { ...body, gate }];
+  const [kind, matchName, body] = node;
+  return [kind, matchName, { ...body, gate }];
 }
 
 // ---------------------------------------------------------------------------
@@ -234,8 +234,8 @@ export function _gated(
 // Custom View 1-3)
 // ---------------------------------------------------------------------------
 
-export function _view_layer(
-  list_type: string,
+export function _viewLayer(
+  listType: string,
   name: string,
   position: [number | string, number | string, number | string] | null,
   kw: { has_scale: boolean },
@@ -243,7 +243,7 @@ export function _view_layer(
   const { has_scale } = kw;
   const children: SpecNode[] = [_ANCHOR_POINT];
   if (position != null) {
-    children.push(_position_prop(...position));
+    children.push(_positionProp(...position));
   }
   children.push(..._SPLIT_POSITIONS);
   if (has_scale) {
@@ -251,9 +251,9 @@ export function _view_layer(
   }
   children.push(_ROTATE_Z, _OPACITY, _ENVIR_APPEAR);
   // reserved_8c marks the six secondary (SLay) views.
-  const secondary = list_type === "SLay" ? 1 : 0;
+  const secondary = listType === "SLay" ? 1 : 0;
   return {
-    list_type,
+    list_type: listType,
     name,
     ldta: {
       start_time_divisor: 600,
@@ -446,10 +446,10 @@ export const _MARKERS_LAYER: LayerSpec = {
         {
           children: [
             ...([
-              _bool_prop("ADBE Casts Shadows", 0.0),
-              _coefficient_prop("ADBE Light Transmission", 0.0),
-              _bool_prop("ADBE Accepts Shadows", 1.0),
-              _bool_prop("ADBE Accepts Lights", 1.0),
+              _boolProp("ADBE Casts Shadows", 0.0),
+              _coefficientProp("ADBE Light Transmission", 0.0),
+              _boolProp("ADBE Accepts Shadows", 1.0),
+              _boolProp("ADBE Accepts Lights", 1.0),
               [
                 "prop",
                 "ADBE Shadow Color",
@@ -471,21 +471,21 @@ export const _MARKERS_LAYER: LayerSpec = {
                 },
               ],
             ] satisfies PropNode[]).map((node) => _gated(node, "markers material")),
-            _bool_prop("ADBE Appears in Reflections", 1.0),
+            _boolProp("ADBE Appears in Reflections", 1.0),
             ...([
               ["ADBE Ambient Coefficient", 100.0],
               ["ADBE Diffuse Coefficient", 50.0],
               ["ADBE Specular Coefficient", 50.0],
               ["ADBE Shininess Coefficient", 5.0],
               ["ADBE Metal Coefficient", 100.0],
-            ] satisfies [string, number][]).map(([match_name, value]) =>
-              _gated(_coefficient_prop(match_name, value), "markers material"),
+            ] satisfies [string, number][]).map(([matchName, value]) =>
+              _gated(_coefficientProp(matchName, value), "markers material"),
             ),
-            _coefficient_prop("ADBE Reflection Coefficient", 0.0),
-            _coefficient_prop("ADBE Glossiness Coefficient", 100.0),
-            _coefficient_prop("ADBE Fresnel Coefficient", 0.0),
-            _coefficient_prop("ADBE Transparency Coefficient", 0.0),
-            _coefficient_prop("ADBE Transp Rolloff", 0.0),
+            _coefficientProp("ADBE Reflection Coefficient", 0.0),
+            _coefficientProp("ADBE Glossiness Coefficient", 100.0),
+            _coefficientProp("ADBE Fresnel Coefficient", 0.0),
+            _coefficientProp("ADBE Transparency Coefficient", 0.0),
+            _coefficientProp("ADBE Transp Rolloff", 0.0),
             [
               "prop",
               "ADBE Index of Refraction",
@@ -528,25 +528,25 @@ export const _MARKERS_LAYER: LayerSpec = {
 
 export const COMP_VIEW_LAYER_SPECS: LayerSpec[] = [
   {
-    ..._view_layer("DLay", "Default", null, { has_scale: true }),
+    ..._viewLayer("DLay", "Default", null, { has_scale: true }),
     gate: "default view layer",
   },
-  _view_layer("SLay", "Front", ["$W2", "$H2", -5000.0], { has_scale: false }),
-  _view_layer("SLay", "Left", ["$W2 - 5000", "$H2", 0.0], { has_scale: false }),
-  _view_layer("SLay", "Top", ["$W2", "$H2 - 5000", 0.0], { has_scale: false }),
-  _view_layer("SLay", "Back", ["$W2", "$H2", 5000.0], { has_scale: false }),
-  _view_layer("SLay", "Right", ["$W2 + 5000", "$H2", 0.0], { has_scale: false }),
-  _view_layer("SLay", "Bottom", ["$W2", "$H2 + 5000", 0.0], { has_scale: false }),
-  _view_layer(
+  _viewLayer("SLay", "Front", ["$W2", "$H2", -5000.0], { has_scale: false }),
+  _viewLayer("SLay", "Left", ["$W2 - 5000", "$H2", 0.0], { has_scale: false }),
+  _viewLayer("SLay", "Top", ["$W2", "$H2 - 5000", 0.0], { has_scale: false }),
+  _viewLayer("SLay", "Back", ["$W2", "$H2", 5000.0], { has_scale: false }),
+  _viewLayer("SLay", "Right", ["$W2 + 5000", "$H2", 0.0], { has_scale: false }),
+  _viewLayer("SLay", "Bottom", ["$W2", "$H2 + 5000", 0.0], { has_scale: false }),
+  _viewLayer(
     "CLay",
     "Custom View 1",
     ["$W2 - ZV", "$H2 - ZV", "$-ZV"],
     { has_scale: true },
   ),
-  _view_layer("CLay", "Custom View 2", ["$W2", "$H2 - ZV", "$-ZV"], {
+  _viewLayer("CLay", "Custom View 2", ["$W2", "$H2 - ZV", "$-ZV"], {
     has_scale: true,
   }),
-  _view_layer(
+  _viewLayer(
     "CLay",
     "Custom View 3",
     ["$W2 + ZV", "$H2 - ZV", "$-ZV"],

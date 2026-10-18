@@ -4,27 +4,27 @@ import { describe, expect, test } from "bun:test";
 import {
   AssertionError_,
   bytes_,
-  bytes_eq,
+  bytesEq,
   getitem,
   isdigit,
   len,
   Path,
-  py_bool,
-  py_eq,
-  py_or,
+  pyBool,
+  pyEq,
+  pyOr,
   getattr,
   sorted,
   split,
   StopIteration,
   ValueError,
 } from "../../src/pyrt/index.ts";
-import { make_tmp_path, raises, skip } from "../../src/pyrt/pytest.ts";
+import { makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { find_by_type, recursive_find } from "../../src/py_aep/binary/utils.ts";
+import { findByType, recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
-import { to_dict } from "../../src/py_aep/cli/validate.ts";
+import { toDict } from "../../src/py_aep/cli/validate.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { as_instance, project_bytes } from "../helpers.ts";
+import { asInstance, projectBytes } from "../helpers.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 
 const EMPTIER = new Path(import.meta.path).parent.parent.parent.div(
@@ -43,7 +43,7 @@ describe("TestNewEmpty", () => {
     expect(app.buildNumber).toBe(67);
     expect(proj.numItems).toBe(1); // only the root folder
     expect(proj.rootFolder.name).toBe("root");
-    expect(py_eq([...proj.items.keys()], [0])).toBe(true);
+    expect(pyEq([...proj.items.keys()], [0])).toBe(true);
     expect(proj._head.next_item_id).toBe(1);
     expect(proj.revision).toBe(1);
   });
@@ -83,7 +83,7 @@ describe("TestNewEmpty", () => {
   test("test_to_dict_no_crash", () => {
     // aep-validate walks every attribute (incl. xmp_packet) via to_dict;
     // it must not crash on a new()-based project with no XMP packet.
-    const result = to_dict(py_aep.new().project);
+    const result = toDict(py_aep.new().project);
     expect(getitem(result, "xmpPacket") == null).toBe(true);
   });
 
@@ -94,14 +94,14 @@ describe("TestNewEmpty", () => {
     ["macos", GpuAccelType.METAL, 14, 0x08, "0100"],
   ])(
     "test_platform_stamps[%#]",
-    (platform, gpu, os_code, nnhd_byte, code_page) => {
+    (platform, gpu, osCode, nnhdByte, codePage) => {
       const project = py_aep.new("26.0x67", { platform }).project;
       expect(project._platform).toBe(platform);
       expect(project.gpuAccelType).toBe(gpu);
-      expect(project._head.ae_version_os).toBe(os_code);
-      expect(project._nnhd._saving_platform).toBe(nnhd_byte);
-      expect(bytes_.hex(bytes_.int_to_bytes(project._nnhd._system_code_page, 2, "big"))).toBe(
-        code_page,
+      expect(project._head.ae_version_os).toBe(osCode);
+      expect(project._nnhd._saving_platform).toBe(nnhdByte);
+      expect(bytes_.hex(bytes_.intToBytes(project._nnhd._system_code_page, 2, "big"))).toBe(
+        codePage,
       );
     },
   );
@@ -133,7 +133,7 @@ describe("TestNewVersion", () => {
   test("test_svap_build_number", () => {
     // svap's last byte tracks the AE build number.
     const app = py_aep.new("25.6x101");
-    const svap = find_by_type(app.project._rifx.chunks, "svap");
+    const svap = findByType(app.project._rifx.chunks, "svap");
     expect(svap.build_number).toBe(101);
   });
 
@@ -154,7 +154,7 @@ describe("TestNewVersion", () => {
     (version: string, present: Set<string>, absent: Set<string>) => {
       const chunks = py_aep.new(version).project._rifx.chunks;
       const types = new Set(
-        chunks.map((c) => py_or(getattr(c, "list_type", ""), c.chunk_type)),
+        chunks.map((c) => pyOr(getattr(c, "list_type", ""), c.chunk_type)),
       );
       expect([...present].every((t) => types.has(t))).toBe(true);
       expect([...absent].some((t) => types.has(t))).toBe(false);
@@ -162,9 +162,9 @@ describe("TestNewVersion", () => {
   );
 
   test("test_gated_down_reparses", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     // A gated-down skeleton (no ExEn/CMS) must still round-trip.
-    const path = tmp_path.div("old.aep");
+    const path = tmpPath.div("old.aep");
     py_aep.new("15.1x69").project.save(path);
     const proj = py_aep.parse(path).project;
     expect(proj.numItems).toBe(1);
@@ -186,7 +186,7 @@ describe("TestNewVersion", () => {
     // rules of its (format, minor) pair, so new(version) stamps the pair
     // After Effects writes for that release.
     const head = py_aep.new(version).project._head;
-    expect(py_eq([head.file_format_version, head._format_subversion], stamp)).toBe(true);
+    expect(pyEq([head.file_format_version, head._format_subversion], stamp)).toBe(true);
   });
 
   test.each(["ae2018", "ae2023", "ae2024", "ae2025", "ae2026"])(
@@ -196,7 +196,7 @@ describe("TestNewVersion", () => {
       const head = py_aep.new(sample.version).project._head;
       const saved = sample.project._head;
       expect(
-        py_eq(
+        pyEq(
           [head.file_format_version, head._format_subversion],
           [saved.file_format_version, saved._format_subversion],
         ),
@@ -207,17 +207,17 @@ describe("TestNewVersion", () => {
   test.each([
     ["17.0x1", true],
     ["16.0x1", false],
-  ])("test_mrid_from_ae_17[%#]", (version: string, has_mrid: boolean) => {
+  ])("test_mrid_from_ae_17[%#]", (version: string, hasMrid: boolean) => {
     const chunks = py_aep.new(version).project._rifx.chunks;
-    expect(chunks.some((c) => c.chunk_type === "mrid")).toBe(has_mrid);
+    expect(chunks.some((c) => c.chunk_type === "mrid")).toBe(hasMrid);
   });
 
   test.each([
     ["new 22", 160],
     ["ae2022 sample", 160],
     ["new 23", 164],
-  ])("test_new_comp_layer_records_fit_the_release[%#]", (source: string, ldta_size: number) => {
-    const tmp_path = make_tmp_path();
+  ])("test_new_comp_layer_records_fit_the_release[%#]", (source: string, ldtaSize: number) => {
+    const tmpPath = makeTmpPath();
     // AE 22 writes 160-byte layer records (samples/versions/ae2022); the
     // matte-layer field that makes them 164 arrived with AE 23. AE refuses
     // a 22-format file holding the longer record ("chunk in file too big").
@@ -227,47 +227,47 @@ describe("TestNewVersion", () => {
         : py_aep.new(split(source, null)[1] + ".0x1");
     const comp = app.project.rootFolder.addComp("Depth", 320, 240, 1.0, 2.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0], "Red", 320, 240);
-    const path = tmp_path.div("comp.aep");
+    const path = tmpPath.div("comp.aep");
     app.project.save(path);
     const reread = py_aep.parse(path).project;
-    const new_comp = reread.compositions.find((c) => c.name === "Depth");
-    if (new_comp == null) throw new StopIteration();
-    const records = recursive_find(new_comp._item_list.chunks, "ldta");
+    const newComp = reread.compositions.find((c) => c.name === "Depth");
+    if (newComp == null) throw new StopIteration();
+    const records = recursiveFind(newComp._item_list.chunks, "ldta");
     expect(
-      py_eq(new Set(records.map((record) => len(record.tobytes()))), new Set([ldta_size])),
+      pyEq(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize])),
     ).toBe(true);
   });
 
   test("test_layer_copied_across_comps_keeps_a_22_record", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.parse(VERSIONS.div("ae2022", "complete.aep"));
     const source = app.project.rootFolder.addComp("Source", 320, 240, 1.0, 2.0, 25.0);
     const target = app.project.rootFolder.addComp("Target", 320, 240, 1.0, 2.0, 25.0);
     source.addSolid([1.0, 0.0, 0.0], "Red", 320, 240).copyToComp(target);
-    const path = tmp_path.div("copy.aep");
+    const path = tmpPath.div("copy.aep");
     app.project.save(path);
     const reread = py_aep.parse(path).project;
-    const target_comp = reread.compositions.find((c) => c.name === "Target");
-    if (target_comp == null) throw new StopIteration();
-    const copied = target_comp.layers[0];
+    const targetComp = reread.compositions.find((c) => c.name === "Target");
+    if (targetComp == null) throw new StopIteration();
+    const copied = targetComp.layers[0];
     expect(len(copied._ldta.tobytes())).toBe(160);
   });
 });
 
 describe("TestNewRoundTrip", () => {
   test("test_byte_stable", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.new();
-    const original = project_bytes(app.project);
-    const path = tmp_path.div("empty.aep");
+    const original = projectBytes(app.project);
+    const path = tmpPath.div("empty.aep");
     app.project.save(path);
     const reparsed = py_aep.parse(path);
-    expect(bytes_eq(project_bytes(reparsed.project), original)).toBe(true);
+    expect(bytesEq(projectBytes(reparsed.project), original)).toBe(true);
   });
 
   test("test_reparse_empty", () => {
-    const tmp_path = make_tmp_path();
-    const path = tmp_path.div("empty.aep");
+    const tmpPath = makeTmpPath();
+    const path = tmpPath.div("empty.aep");
     py_aep.new().project.save(path);
     const proj = py_aep.parse(path).project;
     expect(proj.numItems).toBe(1);
@@ -277,46 +277,46 @@ describe("TestNewRoundTrip", () => {
 
 describe("TestNewMutations", () => {
   test("test_add_comp", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.new();
     app.project.rootFolder.addComp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
-    const path = tmp_path.div("comp.aep");
+    const path = tmpPath.div("comp.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(py_eq(proj.compositions.map((c) => c.name), ["Comp 1"])).toBe(true);
+    expect(pyEq(proj.compositions.map((c) => c.name), ["Comp 1"])).toBe(true);
     const comp = proj.compositions[0];
-    expect(py_eq([comp.width, comp.height], [1920, 1080])).toBe(true);
+    expect(pyEq([comp.width, comp.height], [1920, 1080])).toBe(true);
   });
 
   test("test_add_folder", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.new();
     app.project.rootFolder.addFolder("Assets");
-    const path = tmp_path.div("folder.aep");
+    const path = tmpPath.div("folder.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
     expect(proj.folders.map((f) => f.name).includes("Assets")).toBe(true);
   });
 
   test("test_import_placeholder", () => {
-    const tmp_path = make_tmp_path();
+    const tmpPath = makeTmpPath();
     const app = py_aep.new();
     app.project.importPlaceholder("PH", 640, 480, 25.0, 5.0);
-    const path = tmp_path.div("ph.aep");
+    const path = tmpPath.div("ph.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(py_eq(proj.footages.map((f) => f.name), ["PH"])).toBe(true);
+    expect(pyEq(proj.footages.map((f) => f.name), ["PH"])).toBe(true);
   });
 
   test("test_ae_preferences_dir_threaded", () => {
-    const tmp_path = make_tmp_path();
-    const app = py_aep.new(undefined, { ae_preferences_dir: tmp_path });
-    expect(String(app.project._ae_preferences_dir)).toBe(String(tmp_path));
+    const tmpPath = makeTmpPath();
+    const app = py_aep.new(undefined, { ae_preferences_dir: tmpPath });
+    expect(String(app.project._ae_preferences_dir)).toBe(String(tmpPath));
   });
 });
 
 /** Newest installed AE preferences directory, or None (for CI). */
-function _ae_prefs_dir(): Path | null {
+function _aePrefsDir(): Path | null {
   const base = Path.home().div("AppData", "Roaming", "Adobe", "After Effects");
   if (!base.is_dir()) return null;
   // NOTE(port): sibling paths share a parent, so sorting by name matches Path ordering (only Windows case-folding differs; AE version dirs are digits).
@@ -324,21 +324,21 @@ function _ae_prefs_dir(): Path | null {
     base.iterdir().filter((d) => d.is_dir() && isdigit(d.name.slice(0, 1))),
     (d) => d.name,
   );
-  return py_bool(dirs) ? dirs[dirs.length - 1] : null;
+  return pyBool(dirs) ? dirs[dirs.length - 1] : null;
 }
 
 describe("TestNewRenderQueue", () => {
   test("test_render_queue_add", () => {
-    const tmp_path = make_tmp_path();
-    const prefs = _ae_prefs_dir();
+    const tmpPath = makeTmpPath();
+    const prefs = _aePrefsDir();
     if (prefs == null) return skip("no AE preferences dir (render templates unavailable)");
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.rootFolder.addComp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
-    as_instance(app.project.renderQueue, RenderQueue).add(comp);
-    const path = tmp_path.div("rq.aep");
+    asInstance(app.project.renderQueue, RenderQueue).add(comp);
+    const path = tmpPath.div("rq.aep");
     app.project.save(path);
     const proj = py_aep.parse(path, { ae_preferences_dir: prefs }).project;
-    expect(len(as_instance(proj.renderQueue, RenderQueue).items)).toBe(1);
-    expect(as_instance(proj.renderQueue, RenderQueue).items[0].comp.name).toBe("Comp 1");
+    expect(len(asInstance(proj.renderQueue, RenderQueue).items)).toBe(1);
+    expect(asInstance(proj.renderQueue, RenderQueue).items[0].comp.name).toBe("Comp 1");
   });
 });

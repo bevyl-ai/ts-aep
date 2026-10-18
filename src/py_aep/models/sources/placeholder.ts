@@ -1,6 +1,6 @@
-import { ValueError, num_str } from "../../../pyrt/index.ts";
+import { ValueError, numStr } from "../../../pyrt/index.ts";
 import { PlaceholderOptiChunk, SspcChunk } from "../../binary/footage_chunks.ts";
-import { validate_duration, validate_footage_dimension, validate_frame_rate, validate_opti_name } from "../validators.ts";
+import { validateDuration, validateFootageDimension, validateFrameRate, validateOptiName } from "../validators.ts";
 import { FootageSource } from "./footage.ts";
 
 import type { ListChunk } from "../../binary/chunk.ts";
@@ -56,24 +56,24 @@ export class PlaceholderSource extends FootageSource {
    * @param name - The placeholder name.
    * @param width - Width in pixels (4-30000).
    * @param height - Height in pixels (4-30000).
-   * @param frame_rate - Frame rate in fps (1.0-99.0).
+   * @param frameRate - Frame rate in fps (1.0-99.0).
    * @param duration - Duration in seconds (\> 0, \<= 10800).
    */
   static _new(
     name: string,
     width: number,
     height: number,
-    frame_rate: number,
+    frameRate: number,
     duration: number,
   ): PlaceholderSource {
-    validate_opti_name(name);
-    validate_footage_dimension(width);
-    validate_footage_dimension(height);
-    validate_frame_rate(frame_rate);
-    validate_duration(duration);
+    validateOptiName(name);
+    validateFootageDimension(width);
+    validateFootageDimension(height);
+    validateFrameRate(frameRate);
+    validateDuration(duration);
     if (duration <= 0.0) {
       // NOTE(port): unreachable; validate_duration (min 1/99) already rejects duration <= 0, so the int/float repr is never shown.
-      throw new ValueError(`duration must be > 0, got ${num_str(duration)}`);
+      throw new ValueError(`duration must be > 0, got ${numStr(duration)}`);
     }
 
     const sspc = new SspcChunk({
@@ -83,7 +83,7 @@ export class PlaceholderSource extends FootageSource {
       layer_index: 0xfffffffe,
     });
     sspc.footage_missing_at_save = true;
-    sspc.native_frame_rate = frame_rate;
+    sspc.native_frame_rate = frameRate;
     sspc.duration = duration;
 
     const opti = new PlaceholderOptiChunk({ placeholder_name: name });
@@ -100,12 +100,12 @@ export class PlaceholderSource extends FootageSource {
     return this._sspc.duration * this._sspc.loop;
   }
 
-  _resolve_name(raw_name: string): string {
+  _resolve_name(rawName: string): string {
     return this._opti.placeholder_name;
   }
 
   _store_name(value: string): void {
-    validate_opti_name(value);
+    validateOptiName(value);
     this._opti.placeholder_name = value;
   }
 }

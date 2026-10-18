@@ -6,8 +6,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx } from "../../src/pyrt/pytest.ts";
-import { py_bool, py_eq } from "../../src/pyrt/index.ts";
-import { DEFAULT_TENSION, keyframe_tensions, roto_bezier_tangents } from "../../src/py_aep/resolvers/roto_bezier.ts";
+import { pyBool, pyEq } from "../../src/pyrt/index.ts";
+import { DEFAULT_TENSION, keyframeTensions, rotoBezierTangents } from "../../src/py_aep/resolvers/roto_bezier.ts";
 
 function _flat(points: number[][]): number[] {
   return points.flatMap((point) => point);
@@ -19,7 +19,7 @@ describe("TestRotoBezierTangents", () => {
     // the measuring space pixel space: each tangent is k times the
     // distance to its neighbour, along next - prev.
     const vertices = [[100, 100], [900, 120], [800, 700], [150, 600]];
-    const [ins, outs] = roto_bezier_tangents(
+    const [ins, outs] = rotoBezierTangents(
       vertices,
       true,
       new Array(4).fill(DEFAULT_TENSION),
@@ -35,7 +35,7 @@ describe("TestRotoBezierTangents", () => {
     // rectangle as a unit square: AE reports +-452.548 / 254.558 on a
     // 1920x1080 layer (the mask_rotobezier_on sample).
     const vertices = [[0, 0], [0, 1080], [1920, 1080], [1920, 0]];
-    const [ins, outs] = roto_bezier_tangents(
+    const [ins, outs] = rotoBezierTangents(
       vertices,
       true,
       new Array(4).fill(DEFAULT_TENSION),
@@ -47,7 +47,7 @@ describe("TestRotoBezierTangents", () => {
   });
 
   test("test_open_path_ends_aim_at_the_neighbouring_handle", () => {
-    const [ins, outs] = roto_bezier_tangents(
+    const [ins, outs] = rotoBezierTangents(
       [[100, 100], [500, 500], [900, 100]],
       false,
       new Array(3).fill(0.0),
@@ -64,7 +64,7 @@ describe("TestRotoBezierTangents", () => {
 
   test("test_two_vertex_open_path", () => {
     // The last end is aimed first, while the first end's handle is 0.
-    const [ins, outs] = roto_bezier_tangents(
+    const [ins, outs] = rotoBezierTangents(
       [[100, 100], [500, 300]],
       false,
       [0.0, 0.0],
@@ -78,7 +78,7 @@ describe("TestRotoBezierTangents", () => {
   test.each([[[[100, 100], [500, 300]]], [[[300, 300]]]])(
     "test_degenerate_closed_paths_have_no_tangents[%#]",
     (vertices: number[][]) => {
-      const [ins, outs] = roto_bezier_tangents(
+      const [ins, outs] = rotoBezierTangents(
         vertices,
         true,
         new Array(vertices.length).fill(0.0),
@@ -86,7 +86,7 @@ describe("TestRotoBezierTangents", () => {
         1.0,
       );
       expect(
-        [..._flat(ins), ..._flat(outs)].some((x) => py_bool(x)),
+        [..._flat(ins), ..._flat(outs)].some((x) => pyBool(x)),
       ).toBe(false);
     },
   );
@@ -95,19 +95,19 @@ describe("TestRotoBezierTangents", () => {
 describe("TestKeyframeTensions", () => {
   test("test_stored_tensions_are_kept", () => {
     expect(
-      py_eq(
-        keyframe_tensions([0.5, 0.25], [[0, 0], [1, 2]], [[0, 0], [3, 4]]),
+      pyEq(
+        keyframeTensions([0.5, 0.25], [[0, 0], [1, 2]], [[0, 0], [3, 4]]),
         [0.5, 0.25],
       ),
     ).toBe(true);
   });
 
   test("test_missing_tensions_follow_the_stored_handles", () => {
-    const tensions = keyframe_tensions(
+    const tensions = keyframeTensions(
       [],
       [[-30, 10], [0, 0], [0, 0]],
       [[40, -20], [0, 0], [0, 5]],
     );
-    expect(py_eq(tensions, [DEFAULT_TENSION, 1.0, DEFAULT_TENSION])).toBe(true);
+    expect(pyEq(tensions, [DEFAULT_TENSION, 1.0, DEFAULT_TENSION])).toBe(true);
   });
 });

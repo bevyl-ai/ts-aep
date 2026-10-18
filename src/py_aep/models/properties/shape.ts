@@ -6,7 +6,7 @@ import {
   TypeError_,
   deferred,
   mod,
-  py_assert,
+  pyAssert,
   floordiv,
   min,
   max,
@@ -16,21 +16,21 @@ import {
 import { ShapePoint } from "../../binary/ldat_chunks.ts";
 import { ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
 import type { FeatherPointItem, OmtnChunk } from "../../binary/misc_chunks.ts";
-import { DEFAULT_TENSION, roto_bezier_tangents } from "../../resolvers/roto_bezier.ts";
+import { DEFAULT_TENSION, rotoBezierTangents } from "../../resolvers/roto_bezier.ts";
 import { ChunkField } from "../descriptors.ts";
-import { validate_bool, validate_f4_point, validate_normalized_float, validate_positive_int } from "../validators.ts";
+import { validateBool, validateF4Point, validateNormalizedFloat, validatePositiveInt } from "../validators.ts";
 import type { Layer } from "../layers/layer.ts";
 import type { Property } from "./property.ts";
 
-const _av_layer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
-const _mask_property_group = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
+const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 
-export function _interp_transform(raw: number): number {
+export function _interpTransform(raw: number): number {
   /** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
   return raw === 2 ? 1 : 0;
 }
 
-export function _interp_reverse(value: number): number {
+export function _interpReverse(value: number): number {
   /** Map ExtendScript interpolation (0/1) back to binary (0/2). */
   return value === 1 ? 2 : 0;
 }
@@ -100,15 +100,15 @@ export class FeatherPoint {
   }
 }
 
-descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "seg_loc", { validate: validate_positive_int }));
-descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "rel_seg_loc", { validate: validate_normalized_float }));
+descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "seg_loc", { validate: validatePositiveInt }));
+descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "rel_seg_loc", { validate: validateNormalizedFloat }));
 descriptor(FeatherPoint, "radius", new ChunkField("_fp", "radius"));
 descriptor(
   FeatherPoint,
   "interp",
-  new ChunkField("_fp", "interp_raw", { transform: _interp_transform, reverse: _interp_reverse }),
+  new ChunkField("_fp", "interp_raw", { transform: _interpTransform, reverse: _interpReverse }),
 );
-descriptor(FeatherPoint, "tension", new ChunkField("_fp", "tension", { validate: validate_normalized_float }));
+descriptor(FeatherPoint, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
 descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "corner_angle"));
 
 /**
@@ -182,9 +182,9 @@ export class Shape {
    * property normalizes the coordinates to the layer.
    *
    * @param vertices - Anchor points as `[x, y]` pairs.
-   * @param in_tangents - Incoming tangent offsets relative to each vertex, same length as
+   * @param inTangents - Incoming tangent offsets relative to each vertex, same length as
    *   `vertices`. Defaults to `[0, 0]` (straight line in) for every vertex.
-   * @param out_tangents - Outgoing tangent offsets relative to each vertex, same length as
+   * @param outTangents - Outgoing tangent offsets relative to each vertex, same length as
    *   `vertices`. Defaults to `[0, 0]` (straight line out) for every vertex.
    * @param kw - Keyword arguments:
    * - `closed`: When `true`, the first and last vertices are connected.
@@ -195,12 +195,12 @@ export class Shape {
    */
   constructor(
     vertices: number[][] | null = null,
-    in_tangents: number[][] | null = null,
-    out_tangents: number[][] | null = null,
+    inTangents: number[][] | null = null,
+    outTangents: number[][] | null = null,
     kw: { closed?: boolean; feather_points?: FeatherPoint[] | null } = {},
   ) {
     const { closed = true, feather_points = null } = kw;
-    validate_bool(closed);
+    validateBool(closed);
     if (
       feather_points != null &&
       !(Array.isArray(feather_points) && feather_points.every((fp) => fp instanceof FeatherPoint))
@@ -223,14 +223,14 @@ export class Shape {
 
     const verts = vertices ?? [];
     const n = verts.length;
-    const in_t = in_tangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
-    const out_t = out_tangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
+    const inT = inTangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
+    const outT = outTangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
     // Three points per vertex: vertex, out-tangent, in-tangent-of-next.
     this._points = [];
-    this._write_geometry(verts, in_t, out_t);
+    this._write_geometry(verts, inT, outT);
   }
 
-  _write_geometry(vertices: number[][], in_tangents: number[][], out_tangents: number[][]): void {
+  _write_geometry(vertices: number[][], inTangents: number[][], outTangents: number[][]): void {
     /**
      * Store `vertices` (absolute) and their relative tangents.
      *
@@ -240,39 +240,39 @@ export class Shape {
      * an axis it has no extent in (a flat or single-point path would keep
      * its old values). Everything is validated before anything is written.
      */
-    for (const coords of [vertices, in_tangents, out_tangents]) {
+    for (const coords of [vertices, inTangents, outTangents]) {
       if (!Array.isArray(coords)) {
         throw new ValueError("vertices and tangents must be lists of [x, y] pairs");
       }
       for (const pt of coords) {
-        validate_f4_point(pt);
+        validateF4Point(pt);
       }
     }
     const count = vertices.length;
-    if (in_tangents.length !== count || out_tangents.length !== count) {
+    if (inTangents.length !== count || outTangents.length !== count) {
       throw new ValueError("inTangents and outTangents must match the number of vertices");
     }
-    py_assert(this._shph != null && this._points != null);
+    pyAssert(this._shph != null && this._points != null);
     if (3 * count !== this._points.length && !this._detached) {
       throw new ValueError(
         `this path has ${floordiv(this._points.length, 3)} vertices; to change ` +
           "the vertex count assign a new Shape to the property",
       );
     }
-    const mask_size = this._is_mask ? this._comp_size : null;
-    const [sx, sy] = mask_size ?? [1.0, 1.0];
+    const maskSize = this._is_mask ? this._comp_size : null;
+    const [sx, sy] = maskSize ?? [1.0, 1.0];
     const verts = vertices.map(([x, y]) => [truediv(x, sx), truediv(y, sy)]);
     const ins = verts.map(([vx, vy], i) => {
-      const [x, y] = in_tangents[i];
+      const [x, y] = inTangents[i];
       return [vx + truediv(x, sx), vy + truediv(y, sy)];
     });
     const outs = verts.map(([vx, vy], i) => {
-      const [x, y] = out_tangents[i];
+      const [x, y] = outTangents[i];
       return [vx + truediv(x, sx), vy + truediv(y, sy)];
     });
     for (const pt of [...ins, ...outs]) {
       // A vertex plus its tangent can overflow even when both fit.
-      validate_f4_point(pt);
+      validateF4Point(pt);
     }
     if (3 * count !== this._points.length) {
       this._points.splice(0, this._points.length, ...Array.from({ length: 3 * count }, () => new ShapePoint()));
@@ -344,7 +344,7 @@ export class Shape {
     const prop = this._mask_path;
     if (prop == null || prop._tdb4 == null) return false;
     const mask = prop._parent_property;
-    return mask != null && mask._is_mask && mask instanceof _mask_property_group().MaskPropertyGroup && mask.rotoBezier;
+    return mask != null && mask._is_mask && mask instanceof _maskPropertyGroup().MaskPropertyGroup && mask.rotoBezier;
   }
 
   _roto_tangents(): [number[][], number[][]] | null {
@@ -355,7 +355,7 @@ export class Shape {
     const prop = this._mask_path;
     if (prop == null || !this._is_roto_bezier()) return null;
     const layer = prop._containing_layer;
-    if (!(layer instanceof _av_layer().AVLayer)) throw new AttributeError("_mask_scale");
+    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
     const [width, height] = layer._mask_scale;
     const vertices = this.vertices;
     let tensions = this._tensions;
@@ -365,7 +365,7 @@ export class Shape {
         tensions = new Array<number>(vertices.length).fill(DEFAULT_TENSION);
       }
     }
-    return roto_bezier_tangents(
+    return rotoBezierTangents(
       vertices,
       this.closed,
       tensions,
@@ -398,14 +398,14 @@ export class Shape {
    */
   get _comp_size(): [number, number] | null {
     if (this._layer == null) return null;
-    if (!(this._layer instanceof _av_layer().AVLayer)) throw new AttributeError("_mask_scale");
+    if (!(this._layer instanceof _avLayer().AVLayer)) throw new AttributeError("_mask_scale");
     return this._layer._mask_scale;
   }
 
   _denormalize_point(pt: ShapePoint): number[] {
     /** Convert a normalized [0,1] shape point to absolute coordinates. */
     const shph = this._shph;
-    py_assert(shph != null);
+    pyAssert(shph != null);
     const x = shph.top_left_x * (1 - pt.x) + shph.bottom_right_x * pt.x;
     const y = shph.top_left_y * (1 - pt.y) + shph.bottom_right_y * pt.y;
     return [x, y];
@@ -414,7 +414,7 @@ export class Shape {
   _normalize_point(x: number, y: number): [number, number] {
     /** Convert absolute coordinates back to normalized [0,1]. */
     const shph = this._shph;
-    py_assert(shph != null);
+    pyAssert(shph != null);
     const dx = shph.bottom_right_x - shph.top_left_x;
     const dy = shph.bottom_right_y - shph.top_left_y;
     const nx = dx !== 0 ? truediv(x - shph.top_left_x, dx) : 0.0;
@@ -438,9 +438,9 @@ export class Shape {
     for (let i = 0; i < this._points.length; i += 3) {
       result.push(this._denormalize_point(this._points[i]));
     }
-    const mask_size = this._is_mask ? this._comp_size : null;
-    if (mask_size != null) {
-      const [w, h] = mask_size;
+    const maskSize = this._is_mask ? this._comp_size : null;
+    if (maskSize != null) {
+      const [w, h] = maskSize;
       result = result.map(([x, y]) => [x * w, y * h]);
     }
     return result;
@@ -456,16 +456,16 @@ export class Shape {
       // element(s)".
       throw new ValueError("vertices needs at least one [x, y] pair");
     }
-    let in_t: number[][];
-    let out_t: number[][];
+    let inT: number[][];
+    let outT: number[][];
     if (value.length === floordiv(this._points.length, 3)) {
-      in_t = this._stored_tangents(-1);
-      out_t = this._stored_tangents(1);
+      inT = this._stored_tangents(-1);
+      outT = this._stored_tangents(1);
     } else {
       // A new vertex count: the old tangents belonged to other vertices.
-      in_t = out_t = new Array<number[]>(value.length).fill([0.0, 0.0]);
+      inT = outT = new Array<number[]>(value.length).fill([0.0, 0.0]);
     }
-    this._write_geometry([...value], in_t, out_t);
+    this._write_geometry([...value], inT, outT);
   }
 
   /**
@@ -505,9 +505,9 @@ export class Shape {
       const t = this._denormalize_point(this._points[mod(i + offset, this._points.length)]);
       result.push([t[0] - v[0], t[1] - v[1]]);
     }
-    const mask_size = this._is_mask ? this._comp_size : null;
-    if (mask_size != null) {
-      const [w, h] = mask_size;
+    const maskSize = this._is_mask ? this._comp_size : null;
+    if (maskSize != null) {
+      const [w, h] = maskSize;
       result = result.map(([x, y]) => [x * w, y * h]);
     }
     return result;
@@ -547,7 +547,7 @@ export class Shape {
   }
 
   set closed(value: boolean) {
-    validate_bool(value);
+    validateBool(value);
     if (this._shph != null) {
       this._shph.open = !value;
     } else {

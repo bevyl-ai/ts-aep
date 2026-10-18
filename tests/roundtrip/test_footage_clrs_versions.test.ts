@@ -14,15 +14,15 @@
 
 import "../../src/py_aep/binary/_register.ts";
 import { expect, test } from "bun:test";
-import { as_instance, parse_project } from "../helpers.ts";
+import { asInstance, parseProject } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parseAep } from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import type { FootageSource } from "../../src/py_aep/models/sources/footage.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
-import { getitem, Path, py_assert, py_eq, sorted, StopIteration } from "../../src/pyrt/index.ts";
-import { make_tmp_path } from "../../src/pyrt/pytest.ts";
+import { getitem, Path, pyAssert, pyEq, sorted, StopIteration } from "../../src/pyrt/index.ts";
+import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / "samples"`: `import.meta.dir` is already
 // the directory of this file (tests/roundtrip), so two `.parent` reach the package root.
@@ -50,38 +50,38 @@ const _FILES = new Map<string, Path>([
 ]);
 
 function _shape(source: FootageSource): string[] {
-  py_assert(source._clrs != null);
+  pyAssert(source._clrs != null);
   return source._clrs.chunks.map((chunk) => chunk.chunk_type);
 }
 
 // Stacked `@pytest.mark.parametrize` decorators: the cartesian product of
 // years and labels, one `test.each` row per pair.
-const import_rows: [number, string][] = [];
+const importRows: [number, string][] = [];
 for (const year of sorted(_VERSIONS.keys())) {
   for (const label of sorted(_FILES.keys())) {
-    import_rows.push([year, label]);
+    importRows.push([year, label]);
   }
 }
 
-test.each(import_rows)("test_import_writes_the_versions_color_records[%#]", (year, label) => {
-  const tmp_path = make_tmp_path();
+test.each(importRows)("test_import_writes_the_versions_color_records[%#]", (year, label) => {
+  const tmpPath = makeTmpPath();
   const ae = new Map(
-    parse_project(IMPORT_DIR.div(`clrs_ae${year}.aep`)).footages.map(
+    parseProject(IMPORT_DIR.div(`clrs_ae${year}.aep`)).footages.map(
       (item) => [item.name, item.mainSource] as const,
     ),
   );
   const project = py_aep.new(getitem(_VERSIONS, year), { platform: "windows" }).project;
   const item = project.importFile(new ImportOptions(getitem(_FILES, label)));
-  const out = tmp_path.div("clrs.aep");
+  const out = tmpPath.div("clrs.aep");
   project.save(out);
-  const ours = as_instance(getitem(parse_aep(out).project.items, item.id), FootageItem).mainSource;
-  expect(py_eq(_shape(ours), _shape(getitem(ae, label)))).toBe(true);
+  const ours = asInstance(getitem(parseAep(out).project.items, item.id), FootageItem).mainSource;
+  expect(pyEq(_shape(ours), _shape(getitem(ae, label)))).toBe(true);
 });
 
 test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_records[%#]", (year) => {
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   // `next(...)` over a generator: the first footage whose source is a solid.
-  const ae = parse_project(SAMPLES.div("versions", `ae${year}`, "complete.aep"))
+  const ae = parseProject(SAMPLES.div("versions", `ae${year}`, "complete.aep"))
     .footages.map((item) => item.mainSource)
     .find((source) => source instanceof SolidSource);
   if (ae === undefined) throw new StopIteration();
@@ -89,19 +89,19 @@ test.each(sorted(_VERSIONS.keys()))("test_new_solid_writes_the_versions_color_re
   const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 25.0);
   const solid = comp.addSolid([1.0, 0.0, 0.0]).source;
   if (solid == null) throw new Error("solid layer has no source");
-  const out = tmp_path.div("solid.aep");
+  const out = tmpPath.div("solid.aep");
   project.save(out);
-  const ours = as_instance(getitem(parse_aep(out).project.items, solid.id), FootageItem).mainSource;
-  expect(py_eq(_shape(ours), _shape(ae))).toBe(true);
+  const ours = asInstance(getitem(parseAep(out).project.items, solid.id), FootageItem).mainSource;
+  expect(pyEq(_shape(ours), _shape(ae))).toBe(true);
 });
 
 test("test_parsed_records_are_kept", () => {
-  const tmp_path = make_tmp_path();
+  const tmpPath = makeTmpPath();
   // Only a source built for the project is cut to its version: an AE 2022
   // project's own footage round-trips as AE wrote it.
   const path = IMPORT_DIR.div("clrs_ae2022.aep");
-  const project = parse_aep(path).project;
-  const out = tmp_path.div("same.aep");
+  const project = parseAep(path).project;
+  const out = tmpPath.div("same.aep");
   project.save(out);
-  expect(py_eq(out.read_bytes(), path.read_bytes())).toBe(true);
+  expect(pyEq(out.read_bytes(), path.read_bytes())).toBe(true);
 });

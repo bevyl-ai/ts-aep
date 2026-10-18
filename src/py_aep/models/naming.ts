@@ -17,7 +17,7 @@ export function isdigit(s: string): boolean {
 }
 
 /** `int(tail)` for a str that passed isdigit(): Unicode Nd digits, arbitrary precision. */
-export function _int_digits(tail: string): bigint {
+export function _intDigits(tail: string): bigint {
   const cps = Array.from(tail);
   let out = "";
   for (const ch of cps) {
@@ -35,7 +35,7 @@ export function _int_digits(tail: string): bigint {
 // also matches before one trailing "\n", hence the lookahead.
 export const _TRAILING_NUMBER_RE = /(\p{Nd}+)(?=\n?$)/u;
 
-export function _next_suffix(prefix: string, existing_names: Set<string>): number | bigint {
+export function _nextSuffix(prefix: string, existingNames: Set<string>): number | bigint {
   /**
    * Return the next available numeric suffix for `{prefix}{N}`.
    *
@@ -43,26 +43,26 @@ export function _next_suffix(prefix: string, existing_names: Set<string>): numbe
    * If any name matches `prefix` (with or without a digit suffix),
    * suffix 1 is skipped - returns at least 2.
    */
-  let max_suffix = 0n;
-  for (const name of existing_names) {
+  let maxSuffix = 0n;
+  for (const name of existingNames) {
     if (name.startsWith(prefix)) {
       const tail = name.slice(prefix.length);
       if (isdigit(tail)) {
-        const n = _int_digits(tail);
+        const n = _intDigits(tail);
         const m = n > 0n ? n : 1n;
-        max_suffix = m > max_suffix ? m : max_suffix;
+        maxSuffix = m > maxSuffix ? m : maxSuffix;
       } else {
-        max_suffix = 1n > max_suffix ? 1n : max_suffix;
+        maxSuffix = 1n > maxSuffix ? 1n : maxSuffix;
       }
     } else if (name === rstrip(prefix)) {
-      max_suffix = 1n > max_suffix ? 1n : max_suffix;
+      maxSuffix = 1n > maxSuffix ? 1n : maxSuffix;
     }
   }
-  const result = max_suffix + 1n;
+  const result = maxSuffix + 1n;
   return result <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(result) : result;
 }
 
-export function auto_name(name: string, existing_names: Set<string>): string {
+export function autoName(name: string, existingNames: Set<string>): string {
   /**
    * Find the next available incremented name.
    *
@@ -80,6 +80,6 @@ export function auto_name(name: string, existing_names: Set<string>): string {
   } else {
     prefix = `${name} `;
   }
-  const suffix = _next_suffix(prefix, existing_names);
+  const suffix = _nextSuffix(prefix, existingNames);
   return `${prefix}${suffix}`;
 }

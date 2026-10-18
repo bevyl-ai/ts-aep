@@ -6,23 +6,23 @@
  */
 
 import { b64decode } from "../../pyrt/base64.ts";
-import { gzip_decompress } from "../../pyrt/zlib.ts";
-import { BytesIO, bytes_, py_assert } from "../../pyrt/index.ts";
+import { gzipDecompress } from "../../pyrt/zlib.ts";
+import { BytesIO, bytes_, pyAssert } from "../../pyrt/index.ts";
 import { CosParser, type CosDict } from "./cos.ts";
-import { decode_btdk } from "./schema.ts";
+import { decodeBtdk } from "./schema.ts";
 
 export let _COS_TEMPLATE_CACHE: CosDict | null = null;
 
 /** Parse and cache the COS template from the gzip blob. */
-export function get_cos_template(): CosDict {
+export function getCosTemplate(): CosDict {
   if (_COS_TEMPLATE_CACHE != null) {
     return _COS_TEMPLATE_CACHE;
   }
 
-  const raw = bytes_.lstrip(gzip_decompress(b64decode(POINT_TEXT_COS_TEMPLATE)));
+  const raw = bytes_.lstrip(gzipDecompress(b64decode(POINT_TEXT_COS_TEMPLATE)));
   const parser = new CosParser(new BytesIO(raw), raw.length);
-  const result = decode_btdk(parser.parse());
-  py_assert(result != null);
+  const result = decodeBtdk(parser.parse());
+  pyAssert(result != null);
   _COS_TEMPLATE_CACHE = result;
   return result;
 }

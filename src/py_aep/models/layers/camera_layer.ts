@@ -1,8 +1,8 @@
 import { round } from "../../../pyrt/index.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
 import { LayerType } from "../../enums/index.ts";
-import { default_camera_zoom } from "../../resolvers/transform.ts";
-import { label_index } from "../preferences.ts";
+import { defaultCameraZoom } from "../../resolvers/transform.ts";
+import { labelIndex } from "../preferences.ts";
 import { Layer, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
 import type { CompItem } from "../items/composition.ts";
 import type {EffectParamDefs} from "../descriptors.ts";
@@ -69,7 +69,7 @@ export class CameraLayer extends Layer {
   _default_zoom(): number {
     const comp = this.containingComp;
     // AE rounds the zoom to 8 decimals before storing it.
-    return round(default_camera_zoom(comp.width, comp.pixelAspect), 8);
+    return round(defaultCameraZoom(comp.width, comp.pixelAspect), 8);
   }
 
   // Python `# type: ignore[override]`: keyword shape differs from Layer._new's.
@@ -95,18 +95,18 @@ export class CameraLayer extends Layer {
       containing_comp,
       effect_param_defs = null,
     } = kw;
-    const name_cps = Array.from(name);
-    const layer_name = name_cps.length > 31 ? name_cps.slice(0, 31).join("") : name;
+    const nameCps = Array.from(name);
+    const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
       layer_id,
-      label: label_index(
+      label: labelIndex(
         containing_comp._project._preferences,
         "Camera Label Index 2",
         4,
       ),
       layer_type: LayerType.CAMERA,
       layer_flags_2: 0x01,
-      layer_name,
+      layer_name: layerName,
     });
     ldta.out_point = duration;
     ldta.three_d_layer = true;

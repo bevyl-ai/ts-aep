@@ -37,19 +37,19 @@ if (proc.exitCode !== 0) throw new Error("CPython dump failed");
 const py: { version: string; bidirectional: [number[], string[]]; combining: [number[], number[]] } = JSON.parse(proc.stdout.toString());
 
 const b36 = (xs: number[]): string => xs.map((x) => x.toString(36)).join(",");
-const [bidi_lengths, bidi_values] = py.bidirectional;
-const classes = [...new Set(bidi_values)];
-const [ccc_lengths, ccc_values] = py.combining;
+const [bidiLengths, bidiValues] = py.bidirectional;
+const classes = [...new Set(bidiValues)];
+const [cccLengths, cccValues] = py.combining;
 
 const text = [
   `// Generated from CPython 3.12's unicodedata (Unicode ${py.version}) by tools/gen_unicodedata.ts; do not edit by hand.`,
   "// Runs over U+0000..U+10FFFF: run lengths and run values, comma-separated base 36.",
   `export const UNIDATA_VERSION = ${JSON.stringify(py.version)};`,
   `export const BIDI_CLASSES: readonly string[] = ${JSON.stringify(classes)};`,
-  `export const BIDI_LENGTHS = ${JSON.stringify(b36(bidi_lengths))};`,
-  `export const BIDI_VALUES = ${JSON.stringify(b36(bidi_values.map((v) => classes.indexOf(v))))};`,
-  `export const COMBINING_LENGTHS = ${JSON.stringify(b36(ccc_lengths))};`,
-  `export const COMBINING_VALUES = ${JSON.stringify(b36(ccc_values))};`,
+  `export const BIDI_LENGTHS = ${JSON.stringify(b36(bidiLengths))};`,
+  `export const BIDI_VALUES = ${JSON.stringify(b36(bidiValues.map((v) => classes.indexOf(v))))};`,
+  `export const COMBINING_LENGTHS = ${JSON.stringify(b36(cccLengths))};`,
+  `export const COMBINING_VALUES = ${JSON.stringify(b36(cccValues))};`,
   "",
 ].join("\n");
 

@@ -1,4 +1,4 @@
-import { RuntimeError, object_setattr, py_object } from "../../../../pyrt/index.ts";
+import { RuntimeError, objectSetattr, pyObject } from "../../../../pyrt/index.ts";
 import type { OutputModule } from "../output_module.ts";
 
 
@@ -30,7 +30,7 @@ export class FormatOptionsBase {
   declare _detached: boolean;
 
   constructor() {
-    return py_object(this);
+    return pyObject(this);
   }
 
   _check_attached(): void {
@@ -50,7 +50,7 @@ export class FormatOptionsBase {
     if (!name.startsWith("_")) {
       this._check_attached();
     }
-    object_setattr(this, name, value);
+    objectSetattr(this, name, value);
   }
 }
 

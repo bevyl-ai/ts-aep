@@ -4,18 +4,18 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { BytesIO, KeyError, TypeError_, ValueError, getitem, py_assert, py_bool, py_eq, tkey } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { BytesIO, KeyError, TypeError_, ValueError, getitem, pyAssert, pyBool, pyEq, tkey } from "../../src/pyrt/index.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
-import { psd_comp_layer_styles, psd_footage_dimensions, psd_footage_layer_styles } from "../../src/py_aep/models/preferences.ts";
-import { recursive_find } from "../../src/py_aep/binary/utils.ts";
+import { psdCompLayerStyles, psdFootageDimensions, psdFootageLayerStyles } from "../../src/py_aep/models/preferences.ts";
+import { recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
-import { as_instance } from "../helpers.ts";
-import { _RESIZE_TO_STRINGS, build_resize_to_strings } from "../../src/py_aep/models/renderqueue/settings.ts";
-import { PrefsFile, decode_pref_bool, decode_pref_number, decode_pref_string, find_prefs_file } from "../../src/py_aep/parsers/prefs.ts";
+import { asInstance } from "../helpers.ts";
+import { _RESIZE_TO_STRINGS, buildResizeToStrings } from "../../src/py_aep/models/renderqueue/settings.ts";
+import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile } from "../../src/py_aep/parsers/prefs.ts";
 
 const MACHINE = PREFType.PREF_Type_MACHINE_SPECIFIC;
 const INDEP = PREFType.PREF_Type_MACHINE_INDEPENDENT;
@@ -99,11 +99,11 @@ const _INDEP_COMP_PREFS = `# Text File Version 1.1
 `;
 
 /** Fixture `prefs_dir`: writes the three preference files into `tmp_path`. */
-function prefs_dir_fixture(tmp_path: Path): Path {
-  tmp_path.div("Adobe After Effects 26.0 Prefs.txt").write_text(_MACHINE_PREFS);
-  tmp_path.div("Adobe After Effects 26.0 Prefs-indep-general.txt").write_text(_INDEP_PREFS);
-  tmp_path.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").write_text(_INDEP_COMP_PREFS);
-  return tmp_path;
+function prefsDirFixture(tmpPath: Path): Path {
+  tmpPath.div("Adobe After Effects 26.0 Prefs.txt").write_text(_MACHINE_PREFS);
+  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-general.txt").write_text(_INDEP_PREFS);
+  tmpPath.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").write_text(_INDEP_COMP_PREFS);
+  return tmpPath;
 }
 
 describe("TestPrefsFileParsing", () => {
@@ -124,51 +124,51 @@ describe("TestPrefsFileParsing", () => {
     const raw = prefs.get_raw("Strings Section", "Long Value");
     expect(raw != null).toBe(true);
     if (raw == null) throw new Error("no raw 'Long Value' pref");
-    expect(decode_pref_string(raw)).toBe("part one and part two");
+    expect(decodePrefString(raw)).toBe("part one and part two");
   });
 
   test("test_find_prefs_file", () => {
-    const tmp_path = make_tmp_path();
-    const prefs_dir = prefs_dir_fixture(tmp_path);
-    const machine = find_prefs_file(prefs_dir, MACHINE);
+    const tmpPath = makeTmpPath();
+    const prefsDir = prefsDirFixture(tmpPath);
+    const machine = findPrefsFile(prefsDir, MACHINE);
     expect(machine != null && machine.name.endsWith(" Prefs.txt")).toBe(true);
-    const indep = find_prefs_file(prefs_dir, INDEP);
+    const indep = findPrefsFile(prefsDir, INDEP);
     expect(indep != null && indep.name.endsWith("-indep-general.txt")).toBe(true);
-    expect(find_prefs_file(prefs_dir, PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT) == null).toBe(true);
+    expect(findPrefsFile(prefsDir, PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT) == null).toBe(true);
   });
 });
 
 describe("TestValueDecoding", () => {
   test("test_number_forms", () => {
-    expect(decode_pref_number('"999"')).toBe(999);
+    expect(decodePrefNumber('"999"')).toBe(999);
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); this isinstance(int) check cannot distinguish 999 from 999.0.
-    expect(typeof decode_pref_number('"999"') === "number" && Number.isInteger(decode_pref_number('"999"'))).toBe(true);
-    expect(approx(decode_pref_number('"30.000000"'), 30.0)).toBe(true);
-    expect(decode_pref_number("01")).toBe(1);
-    expect(decode_pref_number("00FF")).toBe(255);
+    expect(typeof decodePrefNumber('"999"') === "number" && Number.isInteger(decodePrefNumber('"999"'))).toBe(true);
+    expect(approx(decodePrefNumber('"30.000000"'), 30.0)).toBe(true);
+    expect(decodePrefNumber("01")).toBe(1);
+    expect(decodePrefNumber("00FF")).toBe(255);
   });
 
   test("test_bool_forms", () => {
-    expect(decode_pref_bool("01")).toBe(true);
-    expect(decode_pref_bool("00")).toBe(false);
-    expect(decode_pref_bool('"1"')).toBe(true);
-    expect(decode_pref_bool('"0"')).toBe(false);
+    expect(decodePrefBool("01")).toBe(true);
+    expect(decodePrefBool("00")).toBe(false);
+    expect(decodePrefBool('"1"')).toBe(true);
+    expect(decodePrefBool('"0"')).toBe(false);
   });
 
   test("test_string_hex_escapes", () => {
     // AE writes non-ASCII characters as hex escapes outside quotes.
-    expect(decode_pref_string('"HD  "E280A2"  1920x1080"')).toBe("HD  •  1920x1080");
+    expect(decodePrefString('"HD  "E280A2"  1920x1080"')).toBe("HD  •  1920x1080");
   });
 
   test("test_string_backslashes_preserved", () => {
-    expect(decode_pref_string('"C:\\Users\\test\\Documents"')).toBe("C:\\Users\\test\\Documents");
+    expect(decodePrefString('"C:\\Users\\test\\Documents"')).toBe("C:\\Users\\test\\Documents");
   });
 });
 
 describe("TestPreferences", () => {
   test("test_get_number", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     expect(prefs.getPrefAsNumber("Numbers Section", "Quoted Int")).toBe(999);
     expect(
       approx(
@@ -179,8 +179,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_get_bool", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     const section = "Import Options Preference Section";
     expect(prefs.getPrefAsBool(section, "Quoted True", INDEP)).toBe(true);
     expect(prefs.getPrefAsBool(section, "Quoted False", INDEP)).toBe(false);
@@ -189,18 +189,18 @@ describe("TestPreferences", () => {
   });
 
   test("test_get_string", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     expect(prefs.getPrefAsString("Renderer Preference Section", "New Composition Default")).toBe("ADBE Calder");
     expect(prefs.getPrefAsString("Auto Save", "Auto Save Folder", INDEP)).toBe("C:\\Users\\test\\Documents");
   });
 
   test("test_pref_type_routing", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     // The key exists in the composition file only.
     expect(
-      py_bool(
+      pyBool(
         prefs.getPrefAsBool(
           "Composition Pref Section",
           "Composition Settings - Constrain Proportions",
@@ -218,8 +218,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_missing_key_raises_or_defaults", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     raises(KeyError, () => prefs.getPrefAsNumber("Numbers Section", "Nope"));
     expect(prefs.getPrefAsNumber("Numbers Section", "Nope", undefined, { default: 7 })).toBe(7);
     expect(prefs.getPrefAsString("Numbers Section", "Nope", undefined, { default: "x" })).toBe("x");
@@ -227,8 +227,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_have_pref", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     expect(prefs.havePref("Numbers Section", "Quoted Int")).toBe(true);
     expect(prefs.havePref("Numbers Section", "Nope")).toBe(false);
   });
@@ -244,8 +244,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_overrides_take_precedence", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     expect(prefs.getPrefAsNumber("Numbers Section", "Quoted Int")).toBe(5);
     prefs.setPrefAsString("Renderer Preference Section", "New Composition Default", "ADBE Escher");
@@ -255,26 +255,26 @@ describe("TestPreferences", () => {
   });
 
   test("test_override_cross_type_reads", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     expect(prefs.getPrefAsString("Numbers Section", "Quoted Int")).toBe("5");
     expect(prefs.getPrefAsBool("Numbers Section", "Quoted Int")).toBe(true);
   });
 
   test("test_overrides_never_touch_disk", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const target = prefs_dir.div("Adobe After Effects 26.0 Prefs.txt");
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const target = prefsDir.div("Adobe After Effects 26.0 Prefs.txt");
     const before = target.read_bytes();
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     prefs.deletePref("Numbers Section", "Raw Byte");
-    expect(py_eq(target.read_bytes(), before)).toBe(true);
+    expect(pyEq(target.read_bytes(), before)).toBe(true);
   });
 
   test("test_delete_pref_masks_file_value", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     prefs.deletePref("Numbers Section", "Quoted Int");
     expect(prefs.havePref("Numbers Section", "Quoted Int")).toBe(false);
     raises(KeyError, () => prefs.getPrefAsNumber("Numbers Section", "Quoted Int"));
@@ -282,8 +282,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_reload_discards_overrides", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     prefs.setPrefAsNumber("Numbers Section", "Quoted Int", 5);
     prefs.deletePref("Numbers Section", "Raw Byte");
     prefs.reload();
@@ -292,8 +292,8 @@ describe("TestPreferences", () => {
   });
 
   test("test_validation", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const prefs = new py_aep.Preferences(prefs_dir);
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const prefs = new py_aep.Preferences(prefsDir);
     raises(ValueError, () => prefs.getPrefAsNumber("", "Quoted Int"));
     // @ts-expect-error deliberately passes a number that is not a PREFType to check runtime validation
     raises(ValueError, () => prefs.getPrefAsNumber("Numbers Section", "Quoted Int", 1234));
@@ -308,8 +308,8 @@ describe("TestPreferences", () => {
 
 describe("TestApplicationPreferences", () => {
   test("test_app_preferences_object", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     expect(app.preferences instanceof py_aep.Preferences).toBe(true);
     expect(app.preferences).toBe(app.project._preferences);
   });
@@ -318,14 +318,14 @@ describe("TestApplicationPreferences", () => {
 /** Creation defaults resolve from prefs, with AE factory fallbacks. */
 describe("TestCreationWiring", () => {
   test("test_labels_from_prefs", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(as_instance(comp._idta, IdtaChunk).label).toBe(9);
-    expect(as_instance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(12);
+    expect(asInstance(comp._idta, IdtaChunk).label).toBe(9);
+    expect(asInstance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(12);
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
     expect(solid._ldta.label).toBe(4);
-    expect(as_instance(as_instance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(4);
+    expect(asInstance(asInstance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(4);
     expect(comp.addNull()._ldta.label).toBe(6);
     expect(comp.addText("hi")._ldta.label).toBe(3);
     expect(comp.addShape()._ldta.label).toBe(13);
@@ -337,11 +337,11 @@ describe("TestCreationWiring", () => {
     // Probed in AE 2026 with factory label preferences.
     const app = py_aep.new();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(as_instance(comp._idta, IdtaChunk).label).toBe(15);
-    expect(as_instance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(2);
+    expect(asInstance(comp._idta, IdtaChunk).label).toBe(15);
+    expect(asInstance(app.project.rootFolder.addFolder("F")._idta, IdtaChunk).label).toBe(2);
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
     expect(solid._ldta.label).toBe(1);
-    expect(as_instance(as_instance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(1);
+    expect(asInstance(asInstance(solid.source, AVItem)._idta, IdtaChunk).label).toBe(1);
     expect(comp.addNull()._ldta.label).toBe(1);
     expect(comp.addText("hi")._ldta.label).toBe(1);
     expect(comp.addShape()._ldta.label).toBe(8);
@@ -350,29 +350,29 @@ describe("TestCreationWiring", () => {
   });
 
   test("test_label_override", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     app.preferences.setPrefAsNumber("Label Preference Indices Section 5", "Comp Label Index 2", 16, INDEP);
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
-    expect(as_instance(comp._idta, IdtaChunk).label).toBe(16);
+    expect(asInstance(comp._idta, IdtaChunk).label).toBe(16);
   });
 
   test("test_solids_folder_name_from_prefs", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     expect(app.project._solids_folder_name).toBe("Solides");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0]);
-    expect(py_eq(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
+    expect(pyEq(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
   });
 
   test("test_solids_folder_name_stamped_in_saved_file", () => {
     // The pref is stamped into the sfnm chunk at new(); a fresh parse
     // (without any prefs dir) reads the stored name back.
-    const tmp_path = make_tmp_path();
-    const prefs_dir = prefs_dir_fixture(tmp_path);
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
-    const out = tmp_path.div("out.aep");
+    const tmpPath = makeTmpPath();
+    const prefsDir = prefsDirFixture(tmpPath);
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
+    const out = tmpPath.div("out.aep");
     app.project.save(out);
     const reparsed = py_aep.parse(out);
     expect(reparsed.project._solids_folder_name).toBe("Solides");
@@ -393,69 +393,69 @@ describe("TestImportChoicePrefs", () => {
 
   test("test_unset_returns_none", () => {
     const prefs = new py_aep.Preferences();
-    expect(psd_comp_layer_styles(prefs) == null).toBe(true);
-    expect(psd_footage_layer_styles(prefs) == null).toBe(true);
-    expect(psd_footage_dimensions(prefs) == null).toBe(true);
+    expect(psdCompLayerStyles(prefs) == null).toBe(true);
+    expect(psdFootageLayerStyles(prefs) == null).toBe(true);
+    expect(psdFootageDimensions(prefs) == null).toBe(true);
   });
 
   test("test_comp_layer_styles_mapping", () => {
     const prefs = new py_aep.Preferences();
     prefs.setPrefAsNumber(SECTION, "PSD Comp Layer Styles Option v2", 0);
-    expect(psd_comp_layer_styles(prefs)).toBe("editable");
+    expect(psdCompLayerStyles(prefs)).toBe("editable");
     prefs.setPrefAsNumber(SECTION, "PSD Comp Layer Styles Option v2", 1);
-    expect(psd_comp_layer_styles(prefs)).toBe("merge");
+    expect(psdCompLayerStyles(prefs)).toBe("merge");
   });
 
   test("test_footage_layer_styles_mapping", () => {
     const prefs = new py_aep.Preferences();
     prefs.setPrefAsNumber(SECTION, "PSD Footage Layer Styles Option", 0);
-    expect(psd_footage_layer_styles(prefs)).toBe("merge");
+    expect(psdFootageLayerStyles(prefs)).toBe("merge");
     prefs.setPrefAsNumber(SECTION, "PSD Footage Layer Styles Option", 1);
-    expect(psd_footage_layer_styles(prefs)).toBe("ignore");
+    expect(psdFootageLayerStyles(prefs)).toBe("ignore");
   });
 
   test("test_footage_dimensions_mapping", () => {
     const prefs = new py_aep.Preferences();
     prefs.setPrefAsNumber(SECTION, "PSD Dimensions Popup", 0);
-    expect(psd_footage_dimensions(prefs)).toBe("layer");
+    expect(psdFootageDimensions(prefs)).toBe("layer");
     prefs.setPrefAsNumber(SECTION, "PSD Dimensions Popup", 1);
-    expect(psd_footage_dimensions(prefs)).toBe("document");
+    expect(psdFootageDimensions(prefs)).toBe("document");
   });
 
   test("test_unknown_index_returns_none", () => {
     const prefs = new py_aep.Preferences();
     prefs.setPrefAsNumber(SECTION, "PSD Dimensions Popup", 7);
-    expect(psd_footage_dimensions(prefs) == null).toBe(true);
+    expect(psdFootageDimensions(prefs) == null).toBe(true);
   });
 });
 
 /** Composition presets parsed from the AE preferences, and the New Composition helpers. */
 describe("TestCompositionPresets", () => {
   test("test_parse_presets", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const presets = new py_aep.Preferences(prefs_dir).compositionPresets();
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const presets = new py_aep.Preferences(prefsDir).compositionPresets();
     // The "-" separator entry is skipped.
     expect(presets.length).toBe(3);
     const [hd24, hd2997, hdv] = presets;
     expect(hd24.name.includes("1920x1080") && hd24.name.includes("24 fps")).toBe(true);
-    expect(py_eq([hd24.width, hd24.height], [1920, 1080])).toBe(true);
+    expect(pyEq([hd24.width, hd24.height], [1920, 1080])).toBe(true);
     expect(approx(hd24.frameRate, 24.0)).toBe(true);
     expect(approx(hd24.pixelAspect, 1.0)).toBe(true);
     expect(approx(hd2997.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
-    expect(py_eq([hdv.width, hdv.height], [1440, 1080])).toBe(true);
+    expect(pyEq([hdv.width, hdv.height], [1440, 1080])).toBe(true);
     expect(approx(hdv.frameRate, 25.0)).toBe(true);
     expect(approx(hdv.pixelAspect, 4 / 3)).toBe(true);
   });
 
   test("test_no_prefs_dir", () => {
-    expect(py_eq(new py_aep.Preferences().compositionPresets(), [])).toBe(true);
+    expect(pyEq(new py_aep.Preferences().compositionPresets(), [])).toBe(true);
   });
 
   test("test_add_comp_from_preset", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "1440x1080", 5.0);
-    expect(py_eq([comp.width, comp.height], [1440, 1080])).toBe(true);
+    expect(pyEq([comp.width, comp.height], [1440, 1080])).toBe(true);
     expect(approx(comp.pixelAspect, 4 / 3)).toBe(true);
     expect(approx(comp.frameRate, 25.0)).toBe(true);
     expect(approx(comp.duration, 5.0)).toBe(true);
@@ -463,21 +463,21 @@ describe("TestCompositionPresets", () => {
   });
 
   test("test_add_comp_from_preset_ntsc_rate", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addCompFromPreset("C", "29.97", 5.0);
     expect(approx(comp.frameRate, 29.97, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_add_comp_from_preset_ambiguous", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "1920x1080", 5.0), "matched 2");
   });
 
   test("test_add_comp_from_preset_unknown", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     raises(ValueError, () => app.project.rootFolder.addCompFromPreset("C", "8K", 5.0), "matched 0");
   });
 
@@ -510,24 +510,24 @@ const _TIE_COMP_PREFS = `# Text File Version 1.1
  */
 describe("TestResizeToStrings", () => {
   test("test_derives_lowest_fps_per_resolution", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
+    const prefsDir = prefsDirFixture(makeTmpPath());
     // Fixture presets: HD 1920x1080 @ 24 and @ 29.97 - lowest wins.
-    const resize = build_resize_to_strings(new py_aep.Preferences(prefs_dir));
+    const resize = buildResizeToStrings(new py_aep.Preferences(prefsDir));
     expect(getitem(resize, tkey(1920, 1080))).toBe("HD  •  1920x1080 • 24 fps");
     expect(getitem(resize, tkey(1440, 1080))).toBe("HDV  •  1440x1080 (1.33) • 25 fps");
   });
 
   test("test_tie_break_prefers_later_preset", () => {
-    const tmp_path = make_tmp_path();
-    const prefs = tmp_path.div("prefs");
+    const tmpPath = makeTmpPath();
+    const prefs = tmpPath.div("prefs");
     prefs.mkdir();
     prefs.div("Adobe After Effects 26.0 Prefs-indep-composition.txt").write_text(_TIE_COMP_PREFS);
-    const resize = build_resize_to_strings(new py_aep.Preferences(prefs));
+    const resize = buildResizeToStrings(new py_aep.Preferences(prefs));
     expect(getitem(resize, tkey(1440, 1080))).toBe("Second  •  1440x1080 • 25 fps");
   });
 
   test("test_fallback_without_prefs", () => {
-    expect(build_resize_to_strings(new py_aep.Preferences()) === _RESIZE_TO_STRINGS).toBe(true);
+    expect(buildResizeToStrings(new py_aep.Preferences()) === _RESIZE_TO_STRINGS).toBe(true);
   });
 
   test("test_fallback_holds_ae_verified_collision_labels", () => {
@@ -539,10 +539,10 @@ describe("TestResizeToStrings", () => {
 
 describe("TestOutputNameTemplatePresets", () => {
   test("test_parse", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const presets = new py_aep.Preferences(prefs_dir).outputNameTemplatePresets();
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const presets = new py_aep.Preferences(prefsDir).outputNameTemplatePresets();
     expect(
-      py_eq(
+      pyEq(
         presets,
         new Map([
           ["Comp Name", "[compName].[fileExtension]"],
@@ -553,20 +553,20 @@ describe("TestOutputNameTemplatePresets", () => {
   });
 
   test("test_no_prefs_dir", () => {
-    expect(py_eq(new py_aep.Preferences().outputNameTemplatePresets(), new Map())).toBe(true);
+    expect(pyEq(new py_aep.Preferences().outputNameTemplatePresets(), new Map())).toBe(true);
   });
 });
 
 /** py_aep.new() inherits the last-used Project Settings preferences. */
 describe("TestNewProjectSettings", () => {
   test("test_depth_and_time_display_from_prefs", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const project = py_aep.new(undefined, { ae_preferences_dir: prefs_dir }).project;
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const project = py_aep.new(undefined, { ae_preferences_dir: prefsDir }).project;
     expect(project.bitsPerChannel).toBe(BitsPerChannel.SIXTEEN);
     for (const chunk of [project._nnhd, project._nhed]) {
       expect(chunk.time_display_type).toBe(1);
       expect(chunk.footage_timecode_display_start_type).toBe(0);
-      expect(py_bool(chunk.frames_use_feet_frames)).toBe(true);
+      expect(pyBool(chunk.frames_use_feet_frames)).toBe(true);
       expect(chunk.timecode_default_base).toBe(24);
       expect(chunk.frames_count_type).toBe(1);
     }
@@ -588,8 +588,8 @@ describe("TestCreateLayersAtCurrentTime", () => {
   test("test_layers_anchor_at_comp_time", () => {
     // AE 2026 probed: start = in = comp.time, out shifted by the same
     // amount, for every scripted layer-creation method.
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -601,8 +601,8 @@ describe("TestCreateLayersAtCurrentTime", () => {
   });
 
   test("test_no_shift_at_time_zero", () => {
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
     expect(approx(solid.startTime, 0.0)).toBe(true);
@@ -620,8 +620,8 @@ describe("TestCreateLayersAtCurrentTime", () => {
   test("test_duplicate_keeps_source_timing", () => {
     // AE 2026 probed: duplicate() keeps the source layer's timing and
     // does not re-anchor at the current time.
-    const prefs_dir = prefs_dir_fixture(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: prefs_dir });
+    const prefsDir = prefsDirFixture(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: prefsDir });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     comp.time = 2.0;
     const solid = comp.addSolid([1.0, 0.0, 0.0]);
@@ -638,20 +638,20 @@ describe("TestCreateLayersAtCurrentTime", () => {
  */
 describe("TestDefaultOutPoints", () => {
   /** Fixture `outpoint_prefs_dir`. */
-  function outpoint_prefs_dir(tmp_path: Path): Path {
-    tmp_path
+  function outpointPrefsDir(tmpPath: Path): Path {
+    tmpPath
       .div("Adobe After Effects 26.0 Prefs-indep-general.txt")
       .write_text(
         '["Main Pref Section v2"]\n' +
           '\t"Pref_DEFAULT_STILL_OUT_POINT v2" = "75/25"\n' +
           '\t"Pref_DEFAULT_SYNTHETIC_OUT_POINT v2" = "50/25"\n',
       );
-    return tmp_path;
+    return tmpPath;
   }
 
   test("test_synthetic_layers_follow_pref", () => {
-    const outpoint_prefs = outpoint_prefs_dir(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: outpoint_prefs });
+    const outpointPrefs = outpointPrefsDir(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     expect(approx(comp.addSolid([1.0, 0.0, 0.0]).outPoint, 2.0)).toBe(true);
     expect(approx(comp.addNull().outPoint, 2.0)).toBe(true);
@@ -664,8 +664,8 @@ describe("TestDefaultOutPoints", () => {
   test("test_solid_duration_arg_honored", () => {
     // py_aep honors an explicit duration argument, overriding the
     // synthetic out-point preference (AE's addSolid ignores it).
-    const outpoint_prefs = outpoint_prefs_dir(make_tmp_path());
-    const app = py_aep.new(undefined, { ae_preferences_dir: outpoint_prefs });
+    const outpointPrefs = outpointPrefsDir(makeTmpPath());
+    const app = py_aep.new(undefined, { ae_preferences_dir: outpointPrefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const solid = comp.addSolid([1.0, 0.0, 0.0], undefined, undefined, undefined, undefined, 8.0);
     expect(approx(solid.outPoint, 8.0)).toBe(true);
@@ -724,16 +724,16 @@ const _FACTORY_TEXT_STYLE = `# Text File Version 1.1
 \t"Tracking" = "0"
 `;
 
-function _text_style_dir(tmp_path: Path, sheet: string): Path {
-  const prefs = tmp_path.div("prefs");
+function _textStyleDir(tmpPath: Path, sheet: string): Path {
+  const prefs = tmpPath.div("prefs");
   prefs.mkdir({ exist_ok: true });
   prefs.div("Adobe After Effects 26.0 Prefs-text.txt").write_text(sheet);
   return prefs;
 }
 
-function _btdk_bytes(layer: Layer): Uint8Array {
-  const matches = recursive_find(layer._layer_list.chunks, undefined, "btdk");
-  py_assert(matches.length === 1);
+function _btdkBytes(layer: Layer): Uint8Array {
+  const matches = recursiveFind(layer._layer_list.chunks, undefined, "btdk");
+  pyAssert(matches.length === 1);
   const buf = new BytesIO();
   matches[0].write(buf);
   return buf.getvalue();
@@ -745,8 +745,8 @@ function _btdk_bytes(layer: Layer): Uint8Array {
  */
 describe("TestTextStyleSheet", () => {
   test("test_add_text_honors_style_sheet", () => {
-    const tmp_path = make_tmp_path();
-    const prefs = _text_style_dir(tmp_path, _CUSTOM_TEXT_STYLE);
+    const tmpPath = makeTmpPath();
+    const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
@@ -767,10 +767,10 @@ describe("TestTextStyleSheet", () => {
     // the baked COS template (btdk is byte-format-sensitive).
     const app = py_aep.new();
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
-    const layer_bytes = _btdk_bytes(comp.addText("probe"));
+    const layerBytes = _btdkBytes(comp.addText("probe"));
     const buf = new BytesIO();
     new py_aep.TextDocument("probe")._btdk_body.write(buf);
-    expect(py_eq(layer_bytes, buf.getvalue())).toBe(true);
+    expect(pyEq(layerBytes, buf.getvalue())).toBe(true);
   });
 
   test("test_identity_fields_are_not_rewritten", () => {
@@ -782,21 +782,21 @@ describe("TestTextStyleSheet", () => {
       .split("\n")
       .filter((line) => !line.includes("Font") && !line.includes("Fill"))
       .join("\n");
-    const tmp_path = make_tmp_path();
-    const prefs = _text_style_dir(tmp_path, sheet);
-    const app_prefs = py_aep.new(undefined, { ae_preferences_dir: prefs });
-    const comp_prefs = app_prefs.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
-    const app_plain = py_aep.new();
-    const comp_plain = app_plain.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
-    expect(py_eq(_btdk_bytes(comp_prefs.addText("probe")), _btdk_bytes(comp_plain.addText("probe")))).toBe(true);
+    const tmpPath = makeTmpPath();
+    const prefs = _textStyleDir(tmpPath, sheet);
+    const appPrefs = py_aep.new(undefined, { ae_preferences_dir: prefs });
+    const compPrefs = appPrefs.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
+    const appPlain = py_aep.new();
+    const compPlain = appPlain.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
+    expect(pyEq(_btdkBytes(compPrefs.addText("probe")), _btdkBytes(compPlain.addText("probe")))).toBe(true);
   });
 
   test("test_factory_sheet_matches_ae_addtext", () => {
     // The template now matches AE 2026's own factory addText output
     // (MyriadPro-Regular, size 36, fill 0.921569, no stroke), so
     // applying the factory sheet is a no-op that stays on AE's values.
-    const tmp_path = make_tmp_path();
-    const prefs = _text_style_dir(tmp_path, _FACTORY_TEXT_STYLE);
+    const tmpPath = makeTmpPath();
+    const prefs = _textStyleDir(tmpPath, _FACTORY_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addText("probe").text;
@@ -805,12 +805,12 @@ describe("TestTextStyleSheet", () => {
     expect(td.font).toBe("MyriadPro-Regular");
     expect(approx(td.fontSize, 36.0)).toBe(true);
     expect(approx(td.fillColor, [0.921569, 0.921569, 0.921569], { abs: 1e-5 })).toBe(true);
-    expect(!py_bool(td.applyStroke)).toBe(true);
+    expect(!pyBool(td.applyStroke)).toBe(true);
   });
 
   test("test_box_text_honors_style_sheet", () => {
-    const tmp_path = make_tmp_path();
-    const prefs = _text_style_dir(tmp_path, _CUSTOM_TEXT_STYLE);
+    const tmpPath = makeTmpPath();
+    const prefs = _textStyleDir(tmpPath, _CUSTOM_TEXT_STYLE);
     const app = py_aep.new(undefined, { ae_preferences_dir: prefs });
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 5.0, 25.0);
     const text = comp.addBoxText([80.0, 40.0], "boxed").text;

@@ -1,10 +1,10 @@
-import { requires_version } from "../../ae_version.ts";
+import { requiresVersion } from "../../ae_version.ts";
 import type { Chunk, ListChunk } from "../../binary/chunk.ts";
 import { CmtaChunk, type IdtaChunk } from "../../binary/item_chunks.ts";
-import { LHD3_BLOCK_GUIDES, LdatChunk, LdatItemType, type Lhd3Chunk, set_lhd3_count } from "../../binary/ldat_chunks.ts";
-import { build_gide_list } from "../../binary/mutations.ts";
+import { LHD3_BLOCK_GUIDES, LdatChunk, LdatItemType, type Lhd3Chunk, setLhd3Count } from "../../binary/ldat_chunks.ts";
+import { buildGideList } from "../../binary/mutations.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { block_slice, find_by_list_type, find_by_type, find_by_type_or_null, index_by_identity } from "../../binary/utils.ts";
+import { blockSlice, findByListType, findByType, findByTypeOrNull, indexByIdentity } from "../../binary/utils.ts";
 import { Label } from "../../enums/index.ts";
 import {
   IndexError,
@@ -12,16 +12,16 @@ import {
   ValueError,
   deferred,
   descriptor,
-  dict_pop,
+  dictPop,
   format,
   getattr,
-  py_assert,
-  py_eq,
+  pyAssert,
+  pyEq,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { ChunkField } from "../descriptors.ts";
 import { Guide } from "../guide.ts";
-import { validate_name, validate_string } from "../validators.ts";
+import { validateName, validateString } from "../validators.ts";
 import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 
@@ -31,8 +31,8 @@ const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parse
 
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
-export function list_remove<T>(xs: T[], x: T): void {
-  const i = xs.findIndex((y) => py_eq(y, x));
+export function listRemove<T>(xs: T[], x: T): void {
+  const i = xs.findIndex((y) => pyEq(y, x));
   if (i < 0) throw new ValueError("list.remove(x): x not in list");
   xs.splice(i, 1);
 }
@@ -108,9 +108,9 @@ export class Item {
       this._lhd3 = null;
       this._ldat = null;
     } else {
-      this._inner = find_by_list_type(this._gide.chunks, "list");
-      this._lhd3 = find_by_type(this._inner.chunks, "lhd3");
-      this._ldat = find_by_type_or_null(this._inner.chunks, "ldat");
+      this._inner = findByListType(this._gide.chunks, "list");
+      this._lhd3 = findByType(this._inner.chunks, "lhd3");
+      this._ldat = findByTypeOrNull(this._inner.chunks, "ldat");
     }
   }
 
@@ -130,7 +130,7 @@ export class Item {
   }
 
   set comment(value: string) {
-    validate_string(value);
+    validateString(value);
     if (this._cmta != null) {
       this._cmta.value = value;
     } else if (value) {
@@ -169,10 +169,10 @@ export class Item {
   }
 
   set parentFolder(value: FolderItem | null) {
-    const old_parent = this._parent_folder;
-    if (old_parent == null) throw new ValueError("Cannot move the root folder");
+    const oldParent = this._parent_folder;
+    if (oldParent == null) throw new ValueError("Cannot move the root folder");
     if (!(value instanceof _folder().FolderItem)) throw new TypeError_("parentFolder must be a FolderItem");
-    if (value === old_parent) return;
+    if (value === oldParent) return;
     // A folder cannot become its own descendant. Walking up from the
     // target also covers value is self and value under the root.
     for (let ancestor: Item | null = value; ancestor != null; ancestor = ancestor._parent_folder) {
@@ -182,13 +182,13 @@ export class Item {
     const block = this._remove_from_parent_chunks();
     value._children_container.push(...block);
 
-    list_remove(old_parent.items, this);
+    listRemove(oldParent.items, this);
     value.items.push(this);
 
     // Relocate the item's open-panel viewer (AVItem only).
     const viewer = getattr(this, "_viewer", null);
     if (viewer != null) {
-      list_remove(old_parent._viewers, viewer);
+      listRemove(oldParent._viewers, viewer);
       value._viewers.push(viewer);
     }
 
@@ -229,40 +229,40 @@ export class Item {
    * Any `orientation_type` value other than 0 (horizontal) or 1 (vertical)
    * defaults to horizontal.
    *
-   * @param orientation_type - 0 for horizontal, 1 for vertical.
+   * @param orientationType - 0 for horizontal, 1 for vertical.
    * @param position - The pixel position of the guide. May be negative or fractional - guides sit
    *   anywhere on the ruler, inside the composition bounds or outside them.
    * @returns The index of the new guide.
    */
-  addGuide(orientation_type: number, position: number): number {
+  addGuide(orientationType: number, position: number): number {
     this._ensure_guides_container();
-    py_assert(this._lhd3 != null);
-    py_assert(this._ldat != null);
-    const guide = Guide._new(orientation_type, position);
+    pyAssert(this._lhd3 != null);
+    pyAssert(this._ldat != null);
+    const guide = Guide._new(orientationType, position);
     this._guides.push(guide);
     this._ldat.items.push(guide._guide_item);
-    set_lhd3_count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
+    setLhd3Count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
     return this._lhd3.count - 1;
   }
 
   /**
    * Removes an existing guide by index.
    *
-   * @param guide_index - The 0-based index of the guide to remove.
+   * @param guideIndex - The 0-based index of the guide to remove.
    * @throws {@link IndexError} If `guide_index` is out of range.
    */
-  removeGuide(guide_index: number): void {
+  removeGuide(guideIndex: number): void {
     if (this._guides.length === 0) throw new IndexError("No guides to remove");
-    if (!(0 <= guide_index && guide_index < this._guides.length)) {
+    if (!(0 <= guideIndex && guideIndex < this._guides.length)) {
       throw new IndexError(
-        `Guide index ${guide_index} out of range [0, ${this._guides.length - 1}]`,
+        `Guide index ${guideIndex} out of range [0, ${this._guides.length - 1}]`,
       );
     }
-    py_assert(this._lhd3 != null);
-    py_assert(this._ldat != null);
-    this._ldat.items.splice(guide_index, 1);
-    this._guides.splice(guide_index, 1);
-    set_lhd3_count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
+    pyAssert(this._lhd3 != null);
+    pyAssert(this._ldat != null);
+    this._ldat.items.splice(guideIndex, 1);
+    this._guides.splice(guideIndex, 1);
+    setLhd3Count(this._lhd3, this._ldat.items.length, LHD3_BLOCK_GUIDES);
     if (this._lhd3.count === 0) this._empty_guides_container();
   }
 
@@ -287,11 +287,11 @@ export class Item {
       item_size: 16,
     });
     if (this._lhd3 == null) {
-      [this._gide, this._lhd3, this._inner] = build_gide_list();
+      [this._gide, this._lhd3, this._inner] = buildGideList();
       this._inner.chunks.push(this._ldat);
       this._item_list.chunks.push(this._gide);
     } else {
-      py_assert(this._inner != null);
+      pyAssert(this._inner != null);
       this._inner.chunks.push(this._ldat);
     }
   }
@@ -307,7 +307,7 @@ export class Item {
   _empty_guides_container(): void {
     if (this._gide == null) return;
     if (this._ldat != null && this._inner != null) {
-      this._inner.chunks.splice(index_by_identity(this._inner.chunks, this._ldat), 1);
+      this._inner.chunks.splice(indexByIdentity(this._inner.chunks, this._ldat), 1);
     }
     this._ldat = null;
   }
@@ -327,12 +327,12 @@ export class Item {
   remove(): void {
     // Remove from parent folder's binary chunks
     const removed = this._remove_from_parent_chunks();
-    _effect().rehome_effect_definitions(this._project, _effect()._effect_instances(removed));
+    _effect().rehomeEffectDefinitions(this._project, _effect()._effectInstances(removed));
 
     // Remove from model collections
-    py_assert(this._parent_folder != null);
-    list_remove(this._parent_folder.items, this);
-    dict_pop(this._project.items, this.id);
+    pyAssert(this._parent_folder != null);
+    listRemove(this._parent_folder.items, this);
+    dictPop(this._project.items, this.id);
     this._project._clear_active_item(this);
   }
 
@@ -347,9 +347,9 @@ export class Item {
    */
   _remove_from_parent_chunks(): Chunk[] {
     const parent = this._parent_folder;
-    py_assert(parent != null);
+    pyAssert(parent != null);
     const container = parent._children_container;
-    const [start, end] = block_slice(
+    const [start, end] = blockSlice(
       container,
       this._item_list,
       this.constructor._ITEM_BOUNDARY_LIST_TYPES,
@@ -368,11 +368,11 @@ descriptor(
   ChunkField.enum(Label, "_idta", "label", { default: Label.NONE }),
 );
 descriptor(Item, "id", new ChunkField("_idta", "item_id", { read_only: true, default: 0 }));
-descriptor(Item, "name", new ChunkField("_name_utf8", "value", { validate: validate_name }));
+descriptor(Item, "name", new ChunkField("_name_utf8", "value", { validate: validateName }));
 
 // `@requires_version(16)` on add_guide, remove_guide and remove_all_guides:
 // Python applies these decorators while the class body runs; here they wrap
 // the finished class.
-Item.prototype.addGuide = requires_version(16)(Item.prototype.addGuide);
-Item.prototype.removeGuide = requires_version(16)(Item.prototype.removeGuide);
-Item.prototype.removeAllGuides = requires_version(16)(Item.prototype.removeAllGuides);
+Item.prototype.addGuide = requiresVersion(16)(Item.prototype.addGuide);
+Item.prototype.removeGuide = requiresVersion(16)(Item.prototype.removeGuide);
+Item.prototype.removeAllGuides = requiresVersion(16)(Item.prototype.removeAllGuides);

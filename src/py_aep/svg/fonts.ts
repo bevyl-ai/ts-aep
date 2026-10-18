@@ -76,21 +76,21 @@ export const _GENERIC_FALLBACKS = new Map<string, readonly string[]>([
 ]);
 
 /**
- * NOTE(port): pytest `monkeypatch.setattr(fonts_mod, "_font_dirs"/"_index", ...)`
+ * NOTE(port): pytest `monkeypatch.setattr(fonts_mod, "_fontDirs"/"_index", ...)`
  * cannot rebind ESM exports; tests use these hooks instead (same effect).
  */
-export function _set_font_dirs(fn: (() => Path[]) | null): void {
-  _font_dirs_override = fn;
+export function _setFontDirs(fn: (() => Path[]) | null): void {
+  _fontDirsOverride = fn;
 }
-export function _set_index(v: Map<string, Map<string, [Path, number]>> | null): void {
+export function _setIndex(v: Map<string, Map<string, [Path, number]>> | null): void {
   _index = v;
 }
-export let _font_dirs_override: (() => Path[]) | null = null;
+export let _fontDirsOverride: (() => Path[]) | null = null;
 
 /** The standard OS font directories that exist on this machine. */
-export function _font_dirs(): Path[] {
-  if (_font_dirs_override != null) {
-    return _font_dirs_override();
+export function _fontDirs(): Path[] {
+  if (_fontDirsOverride != null) {
+    return _fontDirsOverride();
   }
   const dirs: Path[] = [];
   if (host.platform === "win32") {
@@ -147,11 +147,11 @@ export function _name(font: fontkit.Font, ...ids: number[]): string | null {
     return null;
   }
   for (const nid of ids) {
-    const name_key = NAME_KEYS.get(nid);
-    if (name_key === undefined) {
+    const nameKey = NAME_KEYS.get(nid);
+    if (nameKey === undefined) {
       continue;
     }
-    const value = font.getName(name_key);
+    const value = font.getName(nameKey);
     if (value) {
       return value;
     }
@@ -164,7 +164,7 @@ export function _name(font: fontkit.Font, ...ids: number[]): string | null {
  * Activated Adobe fonts live here as suffix-less OpenType files; AE
  * resolves text-layer fonts against them.
  */
-export function _adobe_font_dirs(): Path[] {
+export function _adobeFontDirs(): Path[] {
   const dirs: Path[] = [];
   if (host.platform === "win32") {
     const appdata = host.env.APPDATA;
@@ -193,7 +193,7 @@ export function _adobe_font_dirs(): Path[] {
  * PostScript name (name ID 6, lowercased) -\>
  * (font file path, face index, version string from name ID 5 or `null`).
  */
-export let _ps_index: Map<string, [Path, number, string | null]> | null = null;
+export let _psIndex: Map<string, [Path, number, string | null]> | null = null;
 
 /**
  * Yield `(face index, opened font)` for each face in a font file,
@@ -201,7 +201,7 @@ export let _ps_index: Map<string, [Path, number, string | null]> | null = null;
  *
  * Corrupt/unsupported files yield nothing rather than fail discovery.
  */
-export function* _iter_faces(path: Path): Generator<[number, fontkit.Font]> {
+export function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
   let fonts: fontkit.Font[];
   try {
     const opened = fontkit.create(
@@ -228,16 +228,16 @@ export function* _iter_faces(path: Path): Generator<[number, fontkit.Font]> {
   }
 }
 
-export function _index_postscript(
+export function _indexPostscript(
   path: Path,
   idx: Map<string, [Path, number, string | null]>,
 ): void {
-  for (const [face, font] of _iter_faces(path)) {
-    const ps_name = _name(font, 6);
-    if (!ps_name) {
+  for (const [face, font] of _iterFaces(path)) {
+    const psName = _name(font, 6);
+    if (!psName) {
       continue;
     }
-    const key = ps_name.toLowerCase();
+    const key = psName.toLowerCase();
     const existing = idx.get(key);
     if (existing == null) {
       idx.set(key, [path, face, _name(font, 5)]);
@@ -257,8 +257,8 @@ export function _index_postscript(
  * Yield every font file under the OS font directories. Both index
  * builders (`_build_index`, `_postscript_index`) walk the same tree.
  */
-export function* _walk_font_files(): Generator<Path> {
-  for (const directory of _font_dirs()) {
+export function* _walkFontFiles(): Generator<Path> {
+  for (const directory of _fontDirs()) {
     for (const path of directory.rglob("*")) {
       if (_FONT_SUFFIXES.includes(path.suffix.toLowerCase())) {
         yield path;
@@ -271,22 +271,22 @@ export function* _walk_font_files(): Generator<Path> {
  * The lazily built, cached PostScript-name index (one walk over the
  * OS and Adobe CoreSync font directories).
  */
-export function _postscript_index(): Map<string, [Path, number, string | null]> {
-  if (_ps_index == null) {
+export function _postscriptIndex(): Map<string, [Path, number, string | null]> {
+  if (_psIndex == null) {
     const idx = new Map<string, [Path, number, string | null]>();
-    for (const path of _walk_font_files()) {
-      _index_postscript(path, idx);
+    for (const path of _walkFontFiles()) {
+      _indexPostscript(path, idx);
     }
-    for (const directory of _adobe_font_dirs()) {
+    for (const directory of _adobeFontDirs()) {
       for (const path of directory.rglob("*")) {
         if (path.is_file()) {
-          _index_postscript(path, idx);
+          _indexPostscript(path, idx);
         }
       }
     }
-    _ps_index = idx;
+    _psIndex = idx;
   }
-  return _ps_index;
+  return _psIndex;
 }
 
 /**
@@ -297,10 +297,10 @@ export function _postscript_index(): Map<string, [Path, number, string | null]> 
  * installed. This mirrors how AE's text engine identifies fonts, so
  * the composed-line resolver uses it for measurement.
  */
-export function resolve_postscript(
-  post_script_name: string,
+export function resolvePostscript(
+  postScriptName: string,
 ): [Path, number] | null {
-  const entry = _postscript_index().get(strip(post_script_name).toLowerCase());
+  const entry = _postscriptIndex().get(strip(postScriptName).toLowerCase());
   if (entry == null) {
     return null;
   }
@@ -316,22 +316,22 @@ export function resolve_postscript(
  * `W_FONT` write fixture); matching it keeps py-written files
  * byte-identical to AE's output on the same machine.
  */
-export function font_version_string(post_script_name: string): string | null {
-  const entry = _postscript_index().get(strip(post_script_name).toLowerCase());
+export function fontVersionString(postScriptName: string): string | null {
+  const entry = _postscriptIndex().get(strip(postScriptName).toLowerCase());
   if (entry == null) {
     return null;
   }
   return entry[2];
 }
 
-export function _index_file(
+export function _indexFile(
   path: Path,
   idx: Map<string, Map<string, [Path, number]>>,
 ): void {
   // A .ttc bundles several faces (e.g. cambria.ttc -> Cambria + Cambria
   // Math); index each by its own face number so a family that ships only
   // as a secondary face is still resolvable and loads the right face.
-  for (const [face, font] of _iter_faces(path)) {
+  for (const [face, font] of _iterFaces(path)) {
     // Typographic family (16) preferred over the legacy family (1); same
     // for the subfamily (17 over 2).
     const family = _name(font, 16, 1);
@@ -346,10 +346,10 @@ export function _index_file(
   }
 }
 
-export function _build_index(): Map<string, Map<string, [Path, number]>> {
+export function _buildIndex(): Map<string, Map<string, [Path, number]>> {
   const idx = new Map<string, Map<string, [Path, number]>>();
-  for (const path of _walk_font_files()) {
-    _index_file(path, idx);
+  for (const path of _walkFontFiles()) {
+    _indexFile(path, idx);
   }
   return idx;
 }
@@ -392,9 +392,9 @@ export function _pick(
  * different font would be wrong (e.g. reading variable-font axes).
  * Returns `(font file path, face index)`.
  */
-export function resolve_font_exact(family: string): [Path, number] | null {
+export function resolveFontExact(family: string): [Path, number] | null {
   if (_index == null) {
-    _index = _build_index();
+    _index = _buildIndex();
   }
   const styles = _index.get(strip(strip(family), "'\"").toLowerCase()) ?? null;
   if (!styles?.size) {
@@ -411,13 +411,13 @@ export function resolve_font_exact(family: string): [Path, number] | null {
  * selects a face within a `.ttc` collection (0 for a single-face file) - or
  * `null` when no listed family is found.
  */
-export function resolve_font(
+export function resolveFont(
   family: string,
   kw: { bold?: boolean; italic?: boolean } = {},
 ): [Path, number] | null {
   const { bold = false, italic = false } = kw;
   if (_index == null) {
-    _index = _build_index();
+    _index = _buildIndex();
   }
   let generic: string | null = null;
   for (const raw of split(family, ",")) {

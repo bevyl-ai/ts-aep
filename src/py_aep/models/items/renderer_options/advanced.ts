@@ -2,7 +2,7 @@
 
 import { EnvironmentLightShadowResolution } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { validate_advanced_quality, validate_casting_box_center, validate_casting_box_size, validate_shadow_smoothness } from "../../validators.ts";
+import { validateAdvancedQuality, validateCastingBoxCenter, validateCastingBoxSize, validateShadowSmoothness } from "../../validators.ts";
 import { RendererOptionsBase } from "./renderer_options_base.ts";
 import { descriptor } from "../../../../pyrt/index.ts";
 import type { AdvancedPrdaChunk } from "../../../binary/misc_chunks.ts";
@@ -52,7 +52,7 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
   }
 
   set castingBoxSize(value: number) {
-    validate_casting_box_size(value);
+    validateCastingBoxSize(value);
     const fraction = value / this._comp.width;
     this._body.casting_box_size_x = fraction;
     this._body.casting_box_size_y = fraction;
@@ -74,7 +74,7 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
   }
 
   set castingBoxCenter(value: number[]) {
-    validate_casting_box_center(value);
+    validateCastingBoxCenter(value);
     const width = this._comp.width;
     const height = this._comp.height;
     const [x, y, z] = value;
@@ -90,7 +90,7 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
 descriptor(
   AdvancedRendererOptions,
   "quality",
-  new ChunkField("_body", "quality", { validate: validate_advanced_quality }),
+  new ChunkField("_body", "quality", { validate: validateAdvancedQuality }),
 );
 
 /** Environment light shadow resolution. Read / Write. */
@@ -104,5 +104,5 @@ descriptor(
 descriptor(
   AdvancedRendererOptions,
   "smoothness",
-  new ChunkField("_body", "smoothness", { validate: validate_shadow_smoothness }),
+  new ChunkField("_body", "smoothness", { validate: validateShadowSmoothness }),
 );

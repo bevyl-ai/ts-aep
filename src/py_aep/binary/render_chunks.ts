@@ -6,12 +6,12 @@
  * RoutChunk uses `items_field()` for repeating render-flag entries.
  */
 
-import { b, bytes_, decode, define, descriptor, fields, getattr, len, py_assert, py_bool, setattr, strip } from "../../pyrt/index.ts";
+import { b, bytes_, decode, define, descriptor, fields, getattr, len, pyAssert, pyBool, setattr, strip } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
-import { read_bytes, to_dividend_divisor, to_fixed_16_16 } from "./bin_utils.ts";
+import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { FmtItem, ascii_field, bool_field, bytes_field, f4_field, f8_field, items_field, s2_field, s4_field, str_field, u1_field, u2_field, u4_field } from "./fmt_field.ts";
+import { FmtItem, asciiField, boolField, bytesField, f4Field, f8Field, itemsField, s2Field, s4Field, strField, u1Field, u2Field, u4Field } from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -108,40 +108,40 @@ export class RouuChunk extends Chunk {
   }
 
   set frame_rate(value: number) {
-    [this.frame_rate_integer, this.frame_rate_fractional] = to_fixed_16_16(value);
+    [this.frame_rate_integer, this.frame_rate_fractional] = toFixed1616(value);
   }
 }
 
 define(RouuChunk, {
   chunk_type: { default: "Roou" },
-  _magic: bytes_field(4, { default: b("FXTC"), repr: false }),
-  video_codec: ascii_field(4, { default: "FXTC" }),
-  _reserved_08: bytes_field(8, { default: b("\x0f\x10\x06\x43\x80\x00\x00\x00"), repr: false }),
-  starting_number: u4_field(),
-  _reserved_14: bytes_field(6, { default: b("\xff\xff\xff\xff\x01\x00"), repr: false }),
-  format_id: ascii_field(4, { default: "TIF " }),
-  _reserved_1e: bytes_field(4, { repr: false }),
-  width: u4_field({ default: 100 }),
-  height: u4_field({ default: 100 }),
-  _reserved_2a: bytes_field(15, { repr: false }),
-  applied_marker: u1_field({ default: 1 }),
-  _reserved_3a: bytes_field(8, { repr: false }),
-  frame_rate_integer: u2_field({ default: 30 }),
-  frame_rate_fractional: u2_field(),
-  depth: s2_field({ default: 32 }),
-  _reserved_48: bytes_field(5, { default: b("\x01\x01\x00\x00\x00"), repr: false }),
-  color_premultiplied: u1_field({ default: 1 }),
-  _reserved_4e: bytes_field(3, { repr: false }),
-  color_matted: u1_field({ default: 1 }),
-  _reserved_52: bytes_field(18, {
+  _magic: bytesField(4, { default: b("FXTC"), repr: false }),
+  video_codec: asciiField(4, { default: "FXTC" }),
+  _reserved_08: bytesField(8, { default: b("\x0f\x10\x06\x43\x80\x00\x00\x00"), repr: false }),
+  starting_number: u4Field(),
+  _reserved_14: bytesField(6, { default: b("\xff\xff\xff\xff\x01\x00"), repr: false }),
+  format_id: asciiField(4, { default: "TIF " }),
+  _reserved_1e: bytesField(4, { repr: false }),
+  width: u4Field({ default: 100 }),
+  height: u4Field({ default: 100 }),
+  _reserved_2a: bytesField(15, { repr: false }),
+  applied_marker: u1Field({ default: 1 }),
+  _reserved_3a: bytesField(8, { repr: false }),
+  frame_rate_integer: u2Field({ default: 30 }),
+  frame_rate_fractional: u2Field(),
+  depth: s2Field({ default: 32 }),
+  _reserved_48: bytesField(5, { default: b("\x01\x01\x00\x00\x00"), repr: false }),
+  color_premultiplied: u1Field({ default: 1 }),
+  _reserved_4e: bytesField(3, { repr: false }),
+  color_matted: u1Field({ default: 1 }),
+  _reserved_52: bytesField(18, {
     default: bytes_.concat(b("FIEL\x00\x01"), bytes_.repeat(b("\x00"), 12)),
     repr: false,
   }),
-  audio_sample_rate: f8_field({ default: -1.0 }),
-  audio_encoding: u2_field({ default: 0xffff }),
-  audio_bit_depth: u2_field({ default: 0xffff }),
-  audio_channels: u2_field(),
-  _reserved_72: bytes_field(40, {
+  audio_sample_rate: f8Field({ default: -1.0 }),
+  audio_encoding: u2Field({ default: 0xffff }),
+  audio_bit_depth: u2Field({ default: 0xffff }),
+  audio_channels: u2Field(),
+  _reserved_72: bytesField(40, {
     default: bytes_.concat(
       bytes_.repeat(b("\x00"), 13),
       b("\x01"),
@@ -181,17 +181,17 @@ export class RoptChunk extends Chunk {
     if (this !== RoptChunk) {
       // Variant subclass - use standard fmt_field parsing
       const result = super.read(fp, size, { chunk_type });
-      py_assert(result instanceof RoptChunk);
+      pyAssert(result instanceof RoptChunk);
       return result;
     }
-    if (size < 4) return new this({ chunk_type, data: read_bytes(fp, size) });
+    if (size < 4) return new this({ chunk_type, data: readBytes(fp, size) });
     // Peek at discriminator (first 4 bytes = format_code)
-    const disc_raw = read_bytes(fp, 4);
-    const format_code = decode(disc_raw, "ascii");
+    const discRaw = readBytes(fp, 4);
+    const formatCode = decode(discRaw, "ascii");
     fp.seek(-4, 1);
-    const variant_cls = _ROPT_VARIANTS.get(format_code) ?? RoptChunk;
-    if (variant_cls === RoptChunk) return new this({ chunk_type, data: read_bytes(fp, size) });
-    return variant_cls.read(fp, size, { chunk_type });
+    const variantCls = _ROPT_VARIANTS.get(formatCode) ?? RoptChunk;
+    if (variantCls === RoptChunk) return new this({ chunk_type, data: readBytes(fp, size) });
+    return variantCls.read(fp, size, { chunk_type });
   }
 }
 
@@ -237,18 +237,18 @@ export class CineonRoptChunk extends RoptChunk {
 }
 
 define(CineonRoptChunk, {
-  format_code: ascii_field(4, { default: "sDPX" }),
-  _pad: bytes_field(10, { default: bytes_.fromhex("00030000003000000000"), repr: false }),
-  ten_bit_black_point: u2_field(),
-  ten_bit_white_point: u2_field({ default: 1023 }),
-  converted_black_point: f8_field({ default: 0.0 }),
-  converted_white_point: f8_field({ default: 1.0 }),
-  current_gamma: f8_field({ default: 1.0 }),
-  highlight_expansion: u2_field(),
-  logarithmic_conversion: bool_field(),
-  file_format: u1_field({ default: 1 }),
-  bit_depth: u1_field({ default: 10 }),
-  _pad_end: bytes_field(1, { repr: false }),
+  format_code: asciiField(4, { default: "sDPX" }),
+  _pad: bytesField(10, { default: bytes_.fromhex("00030000003000000000"), repr: false }),
+  ten_bit_black_point: u2Field(),
+  ten_bit_white_point: u2Field({ default: 1023 }),
+  converted_black_point: f8Field({ default: 0.0 }),
+  converted_white_point: f8Field({ default: 1.0 }),
+  current_gamma: f8Field({ default: 1.0 }),
+  highlight_expansion: u2Field(),
+  logarithmic_conversion: boolField(),
+  file_format: u1Field({ default: 1 }),
+  bit_depth: u1Field({ default: 10 }),
+  _pad_end: bytesField(1, { repr: false }),
 });
 
 /**
@@ -265,11 +265,11 @@ export class JpegRoptChunk extends RoptChunk {
 }
 
 define(JpegRoptChunk, {
-  format_code: ascii_field(4, { default: "JPEG" }),
-  _pad: bytes_field(48, { default: _JPEG_PAD, repr: false }),
-  quality: u2_field({ default: 5 }),
-  format_type: u2_field(),
-  scans: u2_field({ default: 1 }),
+  format_code: asciiField(4, { default: "JPEG" }),
+  _pad: bytesField(48, { default: _JPEG_PAD, repr: false }),
+  quality: u2Field({ default: 5 }),
+  format_type: u2Field(),
+  scans: u2Field({ default: 1 }),
 });
 
 /**
@@ -289,14 +289,14 @@ export class OpenExrRoptChunk extends RoptChunk {
 }
 
 define(OpenExrRoptChunk, {
-  format_code: ascii_field(4, { default: "oEXR" }),
-  _pad_04: bytes_field(10, { default: bytes_.fromhex("00010000004e01000000"), repr: false }),
-  compression: u1_field({ default: 2 }),
-  thirty_two_bit_float: bool_field(),
-  luminance_chroma: bool_field(),
-  _pad_11: bytes_field(1, { repr: false }),
-  dwa_compression_level: f4_field({ default: 45.0, endian: "<" }),
-  _pad_end: bytes_field(56, { repr: false }),
+  format_code: asciiField(4, { default: "oEXR" }),
+  _pad_04: bytesField(10, { default: bytes_.fromhex("00010000004e01000000"), repr: false }),
+  compression: u1Field({ default: 2 }),
+  thirty_two_bit_float: boolField(),
+  luminance_chroma: boolField(),
+  _pad_11: bytesField(1, { repr: false }),
+  dwa_compression_level: f4Field({ default: 45.0, endian: "<" }),
+  _pad_end: bytesField(56, { repr: false }),
 });
 
 /**
@@ -314,12 +314,12 @@ export class TargaRoptChunk extends RoptChunk {
 }
 
 define(TargaRoptChunk, {
-  format_code: ascii_field(4, { default: "TPIC" }),
-  _pad: bytes_field(73, { default: _TARGA_PAD, repr: false }),
-  bits_per_pixel: u1_field({ default: 24 }),
-  _pad2: bytes_field(4, { default: b("TimS"), repr: false }),
-  rle_compression: bool_field(),
-  _pad_end: bytes_field(1, { repr: false }),
+  format_code: asciiField(4, { default: "TPIC" }),
+  _pad: bytesField(73, { default: _TARGA_PAD, repr: false }),
+  bits_per_pixel: u1Field({ default: 24 }),
+  _pad2: bytesField(4, { default: b("TimS"), repr: false }),
+  rle_compression: boolField(),
+  _pad_end: bytesField(1, { repr: false }),
 });
 
 /**
@@ -340,15 +340,15 @@ export class TiffRoptChunk extends RoptChunk {
 }
 
 define(TiffRoptChunk, {
-  format_code: ascii_field(4, { default: "TIF " }),
-  _pad_04: bytes_field(4, { default: Uint8Array.from([1, 9, 0, 0]), repr: false }),
-  chunk_size: u2_field({ default: 602 }),
-  _pad_0a: bytes_field(590, {
+  format_code: asciiField(4, { default: "TIF " }),
+  _pad_04: bytesField(4, { default: Uint8Array.from([1, 9, 0, 0]), repr: false }),
+  chunk_size: u2Field({ default: 602 }),
+  _pad_0a: bytesField(590, {
     default: bytes_.concat(Uint8Array.from([0, 0, 1, 1]), bytes_.repeat(b("\x00"), 586)),
     repr: false,
   }),
-  ibm_pc_byte_order: bool_field(),
-  lzw_compression: bool_field(),
+  ibm_pc_byte_order: boolField(),
+  lzw_compression: boolField(),
 });
 
 /**
@@ -376,18 +376,18 @@ export class PngRoptChunk extends RoptChunk {
 }
 
 define(PngRoptChunk, {
-  format_code: ascii_field(4, { default: "png!" }),
-  _pad: bytes_field(14, { default: bytes_.fromhex("0001000001420100000000000001"), repr: false }),
-  width: u4_field({ default: 320 }),
-  height: u4_field({ default: 240 }),
-  _pad2: bytes_field(2, { repr: false }),
-  bit_depth: u2_field({ default: 16 }),
-  compression: u4_field(),
+  format_code: asciiField(4, { default: "png!" }),
+  _pad: bytesField(14, { default: bytes_.fromhex("0001000001420100000000000001"), repr: false }),
+  width: u4Field({ default: 320 }),
+  height: u4Field({ default: 240 }),
+  _pad2: bytesField(2, { repr: false }),
+  bit_depth: u2Field({ default: 16 }),
+  compression: u4Field(),
   /** Bit 2 = `has_alpha`; bit 1 is always set. */
-  _flags: u4_field({ default: 6, repr: false }),
-  _reserved_26: bytes_field(8, { repr: false }),
-  channel_count: u4_field({ default: 4 }),
-  _pad_end: bytes_field(272, { repr: false }),
+  _flags: u4Field({ default: 6, repr: false }),
+  _reserved_26: bytesField(8, { repr: false }),
+  channel_count: u4Field({ default: 4 }),
+  _pad_end: bytesField(272, { repr: false }),
 });
 /** Python `BitField` descriptors are class attributes with no annotation, so attrs skips them. */
 descriptor(PngRoptChunk, "has_alpha", new BitField("_flags", 2));
@@ -421,9 +421,9 @@ export class RoutItem extends FmtItem {
 }
 
 define(RoutItem, {
-  _flags: u1_field({ repr: false }),
-  _pad: bytes_field(2, { default: b("\x00\x00"), repr: false }),
-  _state: u1_field({ repr: false }),
+  _flags: u1Field({ repr: false }),
+  _pad: bytesField(2, { default: b("\x00\x00"), repr: false }),
+  _state: u1Field({ repr: false }),
 });
 descriptor(RoutItem, "render", new BitField("_flags", 6));
 
@@ -563,7 +563,7 @@ export class RenderSettingsItem extends FmtItem {
   }
 
   set frame_rate(value: number) {
-    [this.frame_rate_integer, this.frame_rate_fractional] = to_fixed_16_16(value);
+    [this.frame_rate_integer, this.frame_rate_fractional] = toFixed1616(value);
   }
 
   /** Time span start in seconds (dividend / divisor). */
@@ -573,7 +573,7 @@ export class RenderSettingsItem extends FmtItem {
   }
 
   set time_span_start(value: number) {
-    [this.time_span_start_dividend, this.time_span_start_divisor] = to_dividend_divisor(value);
+    [this.time_span_start_dividend, this.time_span_start_divisor] = toDividendDivisor(value);
   }
 
   /** Time span duration in seconds (dividend / divisor). */
@@ -583,69 +583,69 @@ export class RenderSettingsItem extends FmtItem {
   }
 
   set time_span_duration(value: number) {
-    [this.time_span_duration_dividend, this.time_span_duration_divisor] = to_dividend_divisor(value);
+    [this.time_span_duration_dividend, this.time_span_duration_divisor] = toDividendDivisor(value);
   }
 }
 
 define(RenderSettingsItem, {
-  _reserved_00: bytes_field(7, { default: b("\x00\x01\x00\x00\x00\x00\x00"), repr: false }),
-  _flag_byte: u1_field({ repr: false }),
-  comp_id: u4_field(),
-  status: s4_field({ default: 2 }), // RQItemStatus.QUEUED (-1 = WILL_CONTINUE)
-  _reserved_06: bytes_field(4, { default: b("\x00\x03\x00\x00"), repr: false }),
-  time_span_start_dividend: s4_field(),
-  time_span_start_divisor: u4_field({ default: 1 }),
-  time_span_duration_dividend: s4_field(),
-  time_span_duration_divisor: u4_field({ default: 1 }),
-  _reserved_11: bytes_field(8, { repr: false }),
-  frame_rate_integer: u2_field(),
-  frame_rate_fractional: u2_field(),
-  _reserved_14: bytes_field(2, { repr: false }),
-  field_render: u2_field(),
-  _reserved_16: bytes_field(2, { repr: false }),
-  pulldown: u2_field(),
-  quality: u2_field({ default: 2 }), // RenderQuality.BEST
-  resolution_x: u2_field({ default: 1 }),
-  resolution_y: u2_field({ default: 1 }),
-  _reserved_21: bytes_field(2, { repr: false }),
-  effects: u2_field({ default: 2 }), // EffectsSetting.CURRENT_SETTINGS
-  _reserved_23: bytes_field(2, { repr: false }),
-  proxy_use: u2_field(),
-  _reserved_25: bytes_field(2, { repr: false }),
-  motion_blur: u2_field({ default: 1 }), // MotionBlurSetting.ON_FOR_CHECKED_LAYERS
-  _reserved_27: bytes_field(2, { repr: false }),
-  frame_blending: u2_field({ default: 1 }), // FrameBlendingSetting.ON_FOR_CHECKED_LAYERS
-  _reserved_29: bytes_field(2, { repr: false }),
-  log_type: u2_field(),
-  _reserved_31: bytes_field(2, { repr: false }),
-  skip_existing_files: u2_field({ coerce: py_bool }),
-  _reserved_33: bytes_field(4, { repr: false }),
+  _reserved_00: bytesField(7, { default: b("\x00\x01\x00\x00\x00\x00\x00"), repr: false }),
+  _flag_byte: u1Field({ repr: false }),
+  comp_id: u4Field(),
+  status: s4Field({ default: 2 }), // RQItemStatus.QUEUED (-1 = WILL_CONTINUE)
+  _reserved_06: bytesField(4, { default: b("\x00\x03\x00\x00"), repr: false }),
+  time_span_start_dividend: s4Field(),
+  time_span_start_divisor: u4Field({ default: 1 }),
+  time_span_duration_dividend: s4Field(),
+  time_span_duration_divisor: u4Field({ default: 1 }),
+  _reserved_11: bytesField(8, { repr: false }),
+  frame_rate_integer: u2Field(),
+  frame_rate_fractional: u2Field(),
+  _reserved_14: bytesField(2, { repr: false }),
+  field_render: u2Field(),
+  _reserved_16: bytesField(2, { repr: false }),
+  pulldown: u2Field(),
+  quality: u2Field({ default: 2 }), // RenderQuality.BEST
+  resolution_x: u2Field({ default: 1 }),
+  resolution_y: u2Field({ default: 1 }),
+  _reserved_21: bytesField(2, { repr: false }),
+  effects: u2Field({ default: 2 }), // EffectsSetting.CURRENT_SETTINGS
+  _reserved_23: bytesField(2, { repr: false }),
+  proxy_use: u2Field(),
+  _reserved_25: bytesField(2, { repr: false }),
+  motion_blur: u2Field({ default: 1 }), // MotionBlurSetting.ON_FOR_CHECKED_LAYERS
+  _reserved_27: bytesField(2, { repr: false }),
+  frame_blending: u2Field({ default: 1 }), // FrameBlendingSetting.ON_FOR_CHECKED_LAYERS
+  _reserved_29: bytesField(2, { repr: false }),
+  log_type: u2Field(),
+  _reserved_31: bytesField(2, { repr: false }),
+  skip_existing_files: u2Field({ coerce: pyBool }),
+  _reserved_33: bytesField(4, { repr: false }),
   // Defaults mirror AE's factory "Best Settings" render template, so a fresh
   // item is valid even when parse() had no ae_preferences_dir to read from.
-  template_name: str_field(64, { default: "Best Settings", encoding: "windows-1252" }),
-  _reserved_35: bytes_field(1987, { repr: false }),
-  settings_written: u1_field(),
-  _reserved_36: bytes_field(2, { repr: false }),
-  use_this_frame_rate: u2_field(),
-  _reserved_37: bytes_field(2, { repr: false }),
-  time_span_source: u2_field(),
-  _reserved_39: bytes_field(14, {
+  template_name: strField(64, { default: "Best Settings", encoding: "windows-1252" }),
+  _reserved_35: bytesField(1987, { repr: false }),
+  settings_written: u1Field(),
+  _reserved_36: bytesField(2, { repr: false }),
+  use_this_frame_rate: u2Field(),
+  _reserved_37: bytesField(2, { repr: false }),
+  time_span_source: u2Field(),
+  _reserved_39: bytesField(14, {
     default: bytes_.concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8)),
     repr: false,
   }),
-  solo_switches: u2_field({ default: 2 }), // SoloSwitchesSetting.CURRENT_SETTINGS
-  _reserved_41: bytes_field(2, { repr: false }),
-  disk_cache: u2_field(),
-  _reserved_43: bytes_field(2, { repr: false }),
-  guide_layers: u2_field(),
-  _reserved_45: bytes_field(6, { default: b("\x00\x00\x00\x02\xff\xff"), repr: false }),
-  color_depth: u2_field({ default: 0xffff }), // current/project depth
-  _reserved_47: bytes_field(16, { repr: false }),
-  start_time: u4_field(),
-  elapsed_seconds: u4_field(),
-  _reserved_end: bytes_field(16, { repr: false }),
-  item_id: u4_field({ default: 2 }),
-  _remaining: bytes_field(20, {
+  solo_switches: u2Field({ default: 2 }), // SoloSwitchesSetting.CURRENT_SETTINGS
+  _reserved_41: bytesField(2, { repr: false }),
+  disk_cache: u2Field(),
+  _reserved_43: bytesField(2, { repr: false }),
+  guide_layers: u2Field(),
+  _reserved_45: bytesField(6, { default: b("\x00\x00\x00\x02\xff\xff"), repr: false }),
+  color_depth: u2Field({ default: 0xffff }), // current/project depth
+  _reserved_47: bytesField(16, { repr: false }),
+  start_time: u4Field(),
+  elapsed_seconds: u4Field(),
+  _reserved_end: bytesField(16, { repr: false }),
+  item_id: u4Field({ default: 2 }),
+  _remaining: bytesField(20, {
     default: bytes_.concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)),
     repr: false,
   }),
@@ -700,7 +700,7 @@ export class OutputModuleSettingsItem extends FmtItem {
   declare _reserved_24: Uint8Array;
   /** 1 when Output Audio is On or Auto. */
   declare output_audio: number;
-  /** 1 for Auto. Switching Output Audio Off leaves it as it was. */
+  /** 1 for Auto. Switching Output Audio Off leaves it was. */
   declare output_audio_auto: number;
 
   declare _reserved_26: Uint8Array;
@@ -787,46 +787,46 @@ export class OutputModuleSettingsItem extends FmtItem {
 }
 
 define(OutputModuleSettingsItem, {
-  _reserved_00: bytes_field(7, { default: b("\x00\x05\x00\x00\x00\x00\x00"), repr: false }),
+  _reserved_00: bytesField(7, { default: b("\x00\x05\x00\x00\x00\x00\x00"), repr: false }),
   /**
    * Byte 7: bit 6=include_source_xmp, bit 5=has_output_file,
    * bit 4=use_region_of_interest, bit 3=use_comp_frame_number.
    */
-  _flag_byte_07: u1_field({ default: 8, repr: false }),
-  post_render_target_comp_id: u4_field(),
-  _reserved_08: bytes_field(4, { default: b("\x00\x00\x00\x01"), repr: false }),
-  _reserved_09: bytes_field(3, { repr: false }),
-  channels: u1_field({ default: 1 }),
-  _reserved_11: bytes_field(3, { repr: false }),
-  resize_quality: u1_field({ default: 1 }),
-  _reserved_13: bytes_field(3, { default: b("\x00\x01\x00"), repr: false }),
-  resize: bool_field(),
-  _reserved_15: bytes_field(1, { repr: false }),
-  lock_aspect_ratio: bool_field({ default: true }),
-  _reserved_17: bytes_field(1, { repr: false }),
+  _flag_byte_07: u1Field({ default: 8, repr: false }),
+  post_render_target_comp_id: u4Field(),
+  _reserved_08: bytesField(4, { default: b("\x00\x00\x00\x01"), repr: false }),
+  _reserved_09: bytesField(3, { repr: false }),
+  channels: u1Field({ default: 1 }),
+  _reserved_11: bytesField(3, { repr: false }),
+  resize_quality: u1Field({ default: 1 }),
+  _reserved_13: bytesField(3, { default: b("\x00\x01\x00"), repr: false }),
+  resize: boolField(),
+  _reserved_15: bytesField(1, { repr: false }),
+  lock_aspect_ratio: boolField({ default: true }),
+  _reserved_17: bytesField(1, { repr: false }),
   /** Byte 22: bit 0=crop. */
-  _flag_byte_22: u1_field({ repr: false }),
-  crop_top: s2_field(),
-  crop_left: s2_field(),
-  crop_bottom: s2_field(),
-  crop_right: s2_field(),
-  _reserved_24: bytes_field(1, { repr: false }),
+  _flag_byte_22: u1Field({ repr: false }),
+  crop_top: s2Field(),
+  crop_left: s2Field(),
+  crop_bottom: s2Field(),
+  crop_right: s2Field(),
+  _reserved_24: bytesField(1, { repr: false }),
   /** 1 when Output Audio is On or Auto. */
-  output_audio: u1_field(),
-  /** 1 for Auto. Switching Output Audio Off leaves it as it was. */
-  output_audio_auto: u1_field({ default: 1 }),
-  _reserved_26: bytes_field(4, { repr: false }),
-  _include_project_link: u1_field({ repr: false }),
-  post_render_action: u4_field(),
-  post_render_use_comp: u4_field(),
-  _reserved_30: bytes_field(16, { default: bytes_.repeat(b("\xff"), 16), repr: false }),
-  output_profile_id: bytes_field(16, { default: bytes_.repeat(b("\xff"), 16) }),
-  _reserved_32: bytes_field(3, { repr: false }),
-  convert_to_linear_light: u1_field({ default: 2 }),
-  _prev_byte_34: bytes_field(1, { default: b("\x01"), repr: false }),
-  output_color_space_working: u1_field({ default: 1 }),
-  preserve_rgb: bool_field(),
-  _reserved_5f: bytes_field(33, { repr: false }),
+  output_audio: u1Field(),
+  /** 1 for Auto. Switching Output Audio Off leaves it was. */
+  output_audio_auto: u1Field({ default: 1 }),
+  _reserved_26: bytesField(4, { repr: false }),
+  _include_project_link: u1Field({ repr: false }),
+  post_render_action: u4Field(),
+  post_render_use_comp: u4Field(),
+  _reserved_30: bytesField(16, { default: bytes_.repeat(b("\xff"), 16), repr: false }),
+  output_profile_id: bytesField(16, { default: bytes_.repeat(b("\xff"), 16) }),
+  _reserved_32: bytesField(3, { repr: false }),
+  convert_to_linear_light: u1Field({ default: 2 }),
+  _prev_byte_34: bytesField(1, { default: b("\x01"), repr: false }),
+  output_color_space_working: u1Field({ default: 1 }),
+  preserve_rgb: boolField(),
+  _reserved_5f: bytesField(33, { repr: false }),
 });
 /** Python `BitField` descriptors are class attributes with no annotation, so attrs skips them. */
 descriptor(OutputModuleSettingsItem, "include_source_xmp", new BitField("_flag_byte_07", 6));
@@ -863,8 +863,8 @@ export class RoutChunk extends Chunk {
 
 define(RoutChunk, {
   chunk_type: { default: "Rout" },
-  count: u4_field(),
-  items: items_field(RoutItem, 4),
+  count: u4Field(),
+  items: itemsField(RoutItem, 4),
 });
 register("Rout")(RoutChunk);
 
@@ -900,10 +900,10 @@ export class ArsiChunk extends Chunk {
 
 define(ArsiChunk, {
   chunk_type: { default: "ARsi" },
-  _reserved_00: bytes_field(3, { repr: false }),
-  queue_nonempty: u1_field(),
-  _reserved_04: bytes_field(375, { repr: false }),
-  active_slot_state: u1_field(),
-  _reserved_180: bytes_field(1492, { repr: false }),
+  _reserved_00: bytesField(3, { repr: false }),
+  queue_nonempty: u1Field(),
+  _reserved_04: bytesField(375, { repr: false }),
+  active_slot_state: u1Field(),
+  _reserved_180: bytesField(1492, { repr: false }),
 });
 register("ARsi")(ArsiChunk);

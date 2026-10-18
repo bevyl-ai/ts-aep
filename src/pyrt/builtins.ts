@@ -1,7 +1,7 @@
 // Python builtins whose JS spelling differs in behavior, not just syntax.
 
 import { AttributeError, IndexError, KeyError, TypeError_, ValueError } from "./errors.ts";
-import { float_repr, PyFloat } from "./num.ts";
+import { floatRepr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
 import { INSPECT } from "./inspect.ts";
 
@@ -24,7 +24,7 @@ function _probeable(x: unknown): x is DunderProbe {
  * custom truthiness via `__bool__`) are false. JS treats `[]` and an empty
  * Uint8Array as true - never use bare `if (x)` on a container.
  */
-export function py_bool(x: unknown): boolean {
+export function pyBool(x: unknown): boolean {
   if (x == null) return false;
   if (x instanceof PyFloat) return x.value !== 0;
   if (typeof x === "boolean") return x;
@@ -36,7 +36,7 @@ export function py_bool(x: unknown): boolean {
   if (x instanceof Map || x instanceof Set) return x.size > 0;
   if (_probeable(x)) {
     if (typeof x.__bool__ === "function") return x.__bool__();
-    const n = _sized_length(x);
+    const n = _sizedLength(x);
     if (n !== null) return n > 0;
   }
   return true;
@@ -46,14 +46,14 @@ export function py_bool(x: unknown): boolean {
 export type Falsy = null | undefined | false | 0 | "" | 0n;
 
 /** `a or b` with Python truthiness (returns the operand, not a boolean). */
-export function py_or<A, B>(a: A, b: B): Exclude<A, Falsy> | B;
-export function py_or<A, B>(a: A, b: B): A | B {
-  return py_bool(a) ? a : b;
+export function pyOr<A, B>(a: A, b: B): Exclude<A, Falsy> | B;
+export function pyOr<A, B>(a: A, b: B): A | B {
+  return pyBool(a) ? a : b;
 }
 
 /** `a and b` with Python truthiness. */
-export function py_and<A, B>(a: A, b: B): A | B {
-  return py_bool(a) ? b : a;
+export function pyAnd<A, B>(a: A, b: B): A | B {
+  return pyBool(a) ? b : a;
 }
 
 /** `len(x)` */
@@ -61,7 +61,7 @@ export function len(x: unknown): number {
   if (typeof x === "string" || Array.isArray(x)) return x.length;
   if (ArrayBuffer.isView(x) && "length" in x && typeof x.length === "number") return x.length;
   if (x instanceof Map || x instanceof Set) return x.size;
-  const n = _probeable(x) ? _sized_length(x) : null;
+  const n = _probeable(x) ? _sizedLength(x) : null;
   if (n !== null) return n;
   throw new TypeError(`object of type '${x?.constructor?.name}' has no len()`);
 }
@@ -95,11 +95,11 @@ export function* enumerate<T>(xs: Iterable<T>, start = 0): Generator<[number, T]
 }
 
 /** Python ordering of numbers, strings, bools, and tuples/lists (lexicographic). */
-export function py_cmp(a: unknown, b: unknown): number {
+export function pyCmp(a: unknown, b: unknown): number {
   if (Array.isArray(a) && Array.isArray(b)) {
     const n = Math.min(a.length, b.length);
     for (let i = 0; i < n; i++) {
-      const c = py_cmp(a[i], b[i]);
+      const c = pyCmp(a[i], b[i]);
       if (c) return c;
     }
     return a.length - b.length;
@@ -108,9 +108,9 @@ export function py_cmp(a: unknown, b: unknown): number {
     // Python compares code points; JS `<` compares UTF-16 units.
     const ca = Array.from(a, ord);
     const cb = Array.from(b, ord);
-    return py_cmp(ca, cb);
+    return pyCmp(ca, cb);
   }
-  if (a instanceof Uint8Array && b instanceof Uint8Array) return py_cmp(Array.from(a), Array.from(b));
+  if (a instanceof Uint8Array && b instanceof Uint8Array) return pyCmp(Array.from(a), Array.from(b));
   if (a == null || b == null) throw new TypeError("'<' not supported between instances of 'NoneType'");
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -121,7 +121,7 @@ export function sorted<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, revers
   const k: (x: T) => K | T = key ?? ((x: T) => x);
   const decorated = arr.map((x, i) => [k(x), i, x] as const);
   decorated.sort((p, q) => {
-    const c = py_cmp(p[0], q[0]);
+    const c = pyCmp(p[0], q[0]);
     return (reverse ? -c : c) || p[1] - q[1];
   });
   return decorated.map((d) => d[2]);
@@ -132,7 +132,7 @@ export function min<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: 
   let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
-    if (best === null || py_cmp(k, best.k) < 0) best = { x, k };
+    if (best === null || pyCmp(k, best.k) < 0) best = { x, k };
   }
   if (best === null) {
     if (dflt.length) return dflt[0];
@@ -146,7 +146,7 @@ export function max<T, K>(xs: Iterable<T>, key?: ((x: T) => K) | null, ...dflt: 
   let best: { x: T; k: K | T } | null = null;
   for (const x of xs) {
     const k = key ? key(x) : x;
-    if (best === null || py_cmp(k, best.k) > 0) best = { x, k };
+    if (best === null || pyCmp(k, best.k) > 0) best = { x, k };
   }
   if (best === null) {
     if (dflt.length) return dflt[0];
@@ -181,21 +181,21 @@ type IterItem<X> = X extends string | String
  * string's characters (code points), a bytes object's ints; `TypeError` for
  * every other kind.
  */
-export function py_iter<X>(x: X): IterItem<X>[];
-export function py_iter(x: unknown): unknown[] {
+export function pyIter<X>(x: X): IterItem<X>[];
+export function pyIter(x: unknown): unknown[] {
   if (Array.isArray(x)) return x;
   if (x instanceof Map) return [...x.keys()];
   if (x instanceof Set) return [...x];
   if (typeof x === "string" || x instanceof String) return Array.from(String(x));
   if (x instanceof Uint8Array) return Array.from(x);
-  throw new TypeError_(`'${type_name(x)}' object is not iterable`);
+  throw new TypeError_(`'${typeName(x)}' object is not iterable`);
 }
 
 type Sliceable = { slice(s: number, e: number): Sliceable; length: number; readonly [i: number]: unknown };
 
 /** `xs[start:end]` for arrays and strings with Python's clamping. */
-export function py_slice<T extends Sliceable>(xs: T, start?: number | null, end?: number | null, step?: number | null): T;
-export function py_slice(xs: Sliceable, start?: number | null, end?: number | null, step?: number | null): unknown {
+export function pySlice<T extends Sliceable>(xs: T, start?: number | null, end?: number | null, step?: number | null): T;
+export function pySlice(xs: Sliceable, start?: number | null, end?: number | null, step?: number | null): unknown {
   const n = xs.length;
   if (step != null && step !== 1) {
     const out: unknown[] = [];
@@ -223,9 +223,9 @@ export function getitem<K, V>(d: Pick<ReadonlyMap<K, V>, "get">, k: K): V {
 }
 
 /** `d.get(k, default)` on a Map (None, not undefined, when absent). */
-export function dict_get<K, V>(d: Map<K, V>, k: K): V | null;
-export function dict_get<K, V, D>(d: Map<K, V>, k: K, dflt: D): V | D;
-export function dict_get<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D | null {
+export function dictGet<K, V>(d: Map<K, V>, k: K): V | null;
+export function dictGet<K, V, D>(d: Map<K, V>, k: K, dflt: D): V | D;
+export function dictGet<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D | null {
   const v = d.get(k);
   return v !== undefined ? v : dflt;
 }
@@ -239,7 +239,7 @@ export function setdefault<K, V>(d: Map<K, V>, k: K, v: V): V {
 }
 
 /** `d.pop(k, default)` */
-export function dict_pop<K, V>(d: Map<K, V>, k: K, ...dflt: [] | [V]): V {
+export function dictPop<K, V>(d: Map<K, V>, k: K, ...dflt: [] | [V]): V {
   const v = d.get(k);
   if (v !== undefined) {
     d.delete(k);
@@ -294,13 +294,13 @@ export function hasattr(obj: unknown, name: string): boolean {
 export function contains(container: unknown, x: unknown): boolean {
   if (typeof container === "string") return container.includes(String(x));
   if (container instanceof Map || container instanceof Set) return container.has(x);
-  if (Array.isArray(container)) return container.some((y) => py_eq(y, x));
+  if (Array.isArray(container)) return container.some((y) => pyEq(y, x));
   if (_probeable(container) && typeof container.has === "function") return container.has(x);
   throw new TypeError("argument of type is not iterable");
 }
 
 /** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `equals`). */
-export function py_eq(a: unknown, b: unknown): boolean {
+export function pyEq(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a instanceof PyFloat) a = a.value;
   if (b instanceof PyFloat) b = b.value;
@@ -313,13 +313,13 @@ export function py_eq(a: unknown, b: unknown): boolean {
   }
   if (a == null || b == null) return false;
   if (a instanceof String || b instanceof String) return String(a) === String(b);
-  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => py_eq(x, b[i]));
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => pyEq(x, b[i]));
   if (a instanceof Uint8Array && b instanceof Uint8Array) {
     return a.length === b.length && a.every((x, i) => x === b[i]);
   }
   if (a instanceof Map && b instanceof Map) {
     if (a.size !== b.size) return false;
-    for (const [k, v] of a) if (!b.has(k) || !py_eq(v, b.get(k))) return false;
+    for (const [k, v] of a) if (!b.has(k) || !pyEq(v, b.get(k))) return false;
     return true;
   }
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => b.has(x));
@@ -334,8 +334,8 @@ const NON_PRINTABLE = /^[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]$/u;
 export function repr(x: unknown): string {
   if (x == null) return "None";
   if (typeof x === "boolean") return x ? "True" : "False";
-  if (typeof x === "number") return Number.isInteger(x) ? String(x) : float_repr(x);
-  if (x instanceof PyFloat) return float_repr(x.value);
+  if (typeof x === "number") return Number.isInteger(x) ? String(x) : floatRepr(x);
+  if (x instanceof PyFloat) return floatRepr(x.value);
   if (typeof x === "bigint") return x.toString();
   if (typeof x === "string" || x instanceof String) {
     const s = String(x);
@@ -381,7 +381,7 @@ export function repr(x: unknown): string {
  * int-valued float from an int unless it is a boxed `PyFloat`; class
  * instances report their constructor name, which equals the Python class name.
  */
-export function type_name(x: unknown): string {
+export function typeName(x: unknown): string {
   if (x == null) return "NoneType";
   if (typeof x === "boolean") return "bool";
   if (x instanceof PyFloat) return "float";
@@ -397,7 +397,7 @@ export function type_name(x: unknown): string {
 }
 
 /** `[x, ...] * n` (list repetition; `n <= 0` gives an empty list). */
-export function list_mul<T>(xs: readonly T[], n: number): T[] {
+export function listMul<T>(xs: readonly T[], n: number): T[] {
   const out: T[] = [];
   for (let i = 0; i < n; i++) out.push(...xs);
   return out;
@@ -407,7 +407,7 @@ export function list_mul<T>(xs: readonly T[], n: number): T[] {
 export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
 type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
 
-function is_keyed_mapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
+function isKeyedMapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
   return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "get") === "function";
 }
 
@@ -415,13 +415,13 @@ function is_keyed_mapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is 
  * `mapping.items()` over the Mapping protocol: a `Map`'s entries, an
  * object's own `items()`, or `keys()` + `get()`.
  */
-export function mapping_items<K, V>(m: Mapping<K, V>): [K, V][] {
+export function mappingItems<K, V>(m: Mapping<K, V>): [K, V][] {
   if (m instanceof Map) return [...m.entries()];
   if ("items" in m && typeof m.items === "function") return [...m.items()];
   if ("keys" in m && typeof m.keys === "function" && typeof m.get === "function") {
     return [...m.keys()].map((k): [K, V] => [k, m.get(k)]);
   }
-  throw new TypeError_(`'${type_name(m)}' object is not a mapping`);
+  throw new TypeError_(`'${typeName(m)}' object is not a mapping`);
 }
 
 /**
@@ -432,7 +432,7 @@ export function dict<K, V>(arg?: KeyedMapping<K, V> | Map<K, V> | Iterable<[K, V
   if (arg == null) return new Map();
   if (arg instanceof Map) return new Map(arg);
   // CPython: anything with `keys()` is a mapping, read through `keys()` + `get()`.
-  if (is_keyed_mapping(arg)) {
+  if (isKeyedMapping(arg)) {
     return new Map([...arg.keys()].map((k): [K, V] => [k, arg.get(k)]));
   }
   const out = new Map<K, V>();
@@ -451,7 +451,7 @@ export function dict<K, V>(arg?: KeyedMapping<K, V> | Map<K, V> | Iterable<[K, V
 export function str(x: unknown): string {
   if (typeof x === "string") return x;
   if (x instanceof String) return String(x);
-  if (_has_own_to_string(x)) return x.toString();
+  if (_hasOwnToString(x)) return x.toString();
   return repr(x);
 }
 
@@ -567,7 +567,7 @@ export function copy(x: unknown): unknown {
 }
 
 /** `functools.lru_cache(maxsize=None)` for functions of primitive / object-identity arguments. */
-export function lru_cache<A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) & { cache_clear(): void } {
+export function lruCache<A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) & { cache_clear(): void } {
   /** One argument position of the cache trie; `result` is set once a call ends here. */
   type Node = { next: Map<A[number], Node>; result?: { value: R } };
   const root: Node = { next: new Map() };
@@ -597,7 +597,7 @@ export function lru_cache<A extends unknown[], R>(fn: (...args: A) => R): ((...a
 }
 
 /** A class instance whose own `toString` (not Object's, Array's or Error's) is its `str()`. */
-function _has_own_to_string(x: unknown): x is { toString(): string } {
+function _hasOwnToString(x: unknown): x is { toString(): string } {
   if (x === null || typeof x !== "object" || x instanceof Error || Array.isArray(x) || ArrayBuffer.isView(x)) return false;
   for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     if (Object.prototype.hasOwnProperty.call(p, "toString")) return true;
@@ -606,7 +606,7 @@ function _has_own_to_string(x: unknown): x is { toString(): string } {
 }
 
 /** A class's container size: a `length` or `size` getter on its prototype chain (Python's `__len__`). */
-function _sized_length(x: object): number | null {
+function _sizedLength(x: object): number | null {
   for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const name of ["length", "size"]) {
       const get = Object.getOwnPropertyDescriptor(p, name)?.get;

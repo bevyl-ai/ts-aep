@@ -54,17 +54,17 @@ export class FileFormat {
   readonly media_flag: boolean;
 
   constructor(
-    source_format: string,
-    alpha_premultiplied: boolean,
+    sourceFormat: string,
+    alphaPremultiplied: boolean,
     opti: string,
     sequence: boolean = true,
-    media_flag: boolean = false,
+    mediaFlag: boolean = false,
   ) {
-    this.source_format = source_format;
-    this.alpha_premultiplied = alpha_premultiplied;
+    this.source_format = sourceFormat;
+    this.alpha_premultiplied = alphaPremultiplied;
     this.opti = opti;
     this.sequence = sequence;
-    this.media_flag = media_flag;
+    this.media_flag = mediaFlag;
   }
 
   *[Symbol.iterator]() {
@@ -96,7 +96,7 @@ export const GENERIC_STILL_FORMATS = { macos: "IMIO", windows: "STIL" } as const
  * @param kw - Keyword arguments:
  * - `windows`: `true` to tag the source for AE on Windows (see `GENERIC_STILL_FORMATS`).
  */
-export function platform_source_format(fmt: FileFormat, kw: { windows: boolean }): string {
+export function platformSourceFormat(fmt: FileFormat, kw: { windows: boolean }): string {
   const { windows } = kw;
   if (windows && fmt.source_format === GENERIC_STILL_FORMATS["macos"]) {
     return GENERIC_STILL_FORMATS["windows"];
@@ -271,7 +271,7 @@ export const EPS_COMP_EXTENSIONS: ReadonlySet<string> = new Set<string>([".eps"]
  * @returns The set of accepted import types, or an empty set for an extension with no recorded
  *   import support.
  */
-export function get_import_as_types(suffix: string): ReadonlySet<ImportAsType> {
+export function getImportAsTypes(suffix: string): ReadonlySet<ImportAsType> {
   return _IMPORT_AS_TYPES.get(suffix.toLowerCase()) ?? new Set<ImportAsType>();
 }
 
@@ -281,7 +281,7 @@ export function get_import_as_types(suffix: string): ReadonlySet<ImportAsType> {
  * @param suffix - The file extension including the leading dot.
  * @throws {@link ValueError} If the extension is not a supported footage format.
  */
-export function get_file_format(suffix: string): FileFormat {
+export function getFileFormat(suffix: string): FileFormat {
   const fmt = _FILE_FORMATS.get(suffix.toLowerCase()) ?? null;
   if (fmt == null) throw new ValueError(`Unsupported footage format: ${repr(suffix)}`);
   return fmt;

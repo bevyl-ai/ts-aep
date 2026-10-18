@@ -161,9 +161,9 @@ export class FontBuilder {
     const cps = [...this.cmap.keys()].sort((a, b) => a - b);
     const segs: [number, number, number][] = [];
     for (const cp of cps) {
-      const glyph_name = this.cmap.get(cp);
-      if (glyph_name == null) throw new Error(`no glyph mapped to ${cp}`);
-      const gid = this.glyphOrder.indexOf(glyph_name);
+      const glyphName = this.cmap.get(cp);
+      if (glyphName == null) throw new Error(`no glyph mapped to ${cp}`);
+      const gid = this.glyphOrder.indexOf(glyphName);
       const last = segs[segs.length - 1];
       if (last && last[1] + 1 === cp && (gid - cp) % 65536 === last[2]) last[1] = cp;
       else segs.push([cp, cp, (gid - cp) & 0xffff]);

@@ -2,7 +2,7 @@
  * Property-related After Effects enumerations.
  */
 
-import { int, int_enum, type EnumValue } from "../../pyrt/index.ts";
+import { int, intEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * The type of effect control for a property.
@@ -12,7 +12,7 @@ import { int, int_enum, type EnumValue } from "../../pyrt/index.ts";
  * Values match the AE SDK `PF_ParamType` enum (SDK name in comments
  * where it differs).
  */
-export const PropertyControlType = int_enum("PropertyControlType", {
+export const PropertyControlType = intEnum("PropertyControlType", {
   LAYER: 0,
   INTEGER: 1, // PF_Param_SLIDER (obsolete integer slider)
   SCALAR: 2, // PF_Param_FIX_SLIDER (16.16 fixed-point slider)
@@ -41,7 +41,7 @@ export type PropertyControlType = EnumValue<typeof PropertyControlType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/property/#propertypropertyvaluetype
  */
-export const PropertyValueType = int_enum("PropertyValueType", {
+export const PropertyValueType = intEnum("PropertyValueType", {
   UNKNOWN: 0,
   NO_VALUE: 6412,
   ThreeD_SPATIAL: 6413,
@@ -69,7 +69,7 @@ export type PropertyValueType = EnumValue<typeof PropertyValueType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/property/#propertysetinterpolationtypeatkey
  */
-export const KeyframeInterpolationType = int_enum("KeyframeInterpolationType", {
+export const KeyframeInterpolationType = intEnum("KeyframeInterpolationType", {
   LINEAR: 6612,
   BEZIER: 6613,
   HOLD: 6614,

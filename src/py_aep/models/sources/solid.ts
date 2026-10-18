@@ -1,8 +1,8 @@
 import { descriptor } from "../../../pyrt/index.ts";
 import { SoliOptiChunk, SspcChunk } from "../../binary/footage_chunks.ts";
-import { solid_color_name } from "../../resolvers/solid.ts";
+import { solidColorName } from "../../resolvers/solid.ts";
 import { ChunkField } from "../descriptors.ts";
-import { validate_opti_name, validate_pixel_aspect, validate_rgb_color, validate_solid_dimension } from "../validators.ts";
+import { validateOptiName, validatePixelAspect, validateRgbColor, validateSolidDimension } from "../validators.ts";
 import { FootageSource } from "./footage.ts";
 
 import type { ListChunk } from "../../binary/chunk.ts";
@@ -63,7 +63,7 @@ export class SolidSource extends FootageSource {
    * @param b - Blue channel in `[0.0, 1.0]`.
    */
   static _color_name(r: number, g: number, b: number): string {
-    return solid_color_name(r, g, b);
+    return solidColorName(r, g, b);
   }
 
   /**
@@ -73,20 +73,20 @@ export class SolidSource extends FootageSource {
    * @param name - The solid name.
    * @param width - Width in pixels (1-30000).
    * @param height - Height in pixels (1-30000).
-   * @param pixel_aspect - Pixel aspect ratio (0.01-100.0).
+   * @param pixelAspect - Pixel aspect ratio (0.01-100.0).
    */
   static _new(
     name: string,
     color: number[] = [0.0, 0.0, 0.0],
     width: number = 100,
     height: number = 100,
-    pixel_aspect: number = 1.0,
+    pixelAspect: number = 1.0,
   ): SolidSource {
-    validate_opti_name(name);
-    validate_solid_dimension(width);
-    validate_solid_dimension(height);
-    validate_pixel_aspect(pixel_aspect);
-    validate_rgb_color(color);
+    validateOptiName(name);
+    validateSolidDimension(width);
+    validateSolidDimension(height);
+    validatePixelAspect(pixelAspect);
+    validateRgbColor(color);
 
     const sspc = new SspcChunk({
       width,
@@ -95,7 +95,7 @@ export class SolidSource extends FootageSource {
       alpha_mode_raw: 3,
       duration_dividend: 0,
     });
-    sspc.pixel_aspect = pixel_aspect;
+    sspc.pixel_aspect = pixelAspect;
 
     const opti = new SoliOptiChunk({
       color_r: color[0],
@@ -107,12 +107,12 @@ export class SolidSource extends FootageSource {
     return new this({ _sspc: sspc, _opti: opti });
   }
 
-  _resolve_name(raw_name: string): string {
+  _resolve_name(rawName: string): string {
     return this._opti.solid_name;
   }
 
   _store_name(value: string): void {
-    validate_opti_name(value);
+    validateOptiName(value);
     this._opti.solid_name = value;
   }
 }
@@ -121,6 +121,6 @@ descriptor(
   SolidSource,
   "color",
   new ChunkField("_opti", "color", {
-    validate: validate_rgb_color,
+    validate: validateRgbColor,
   }),
 );

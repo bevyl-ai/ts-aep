@@ -5,16 +5,16 @@ import { LayerType, ParametricMeshType } from "../../enums/index.ts";
 import { _PARAMETRIC_MESH_ACTIVE_GROUPS } from "../../synthesis/property.ts";
 import {
   AttributeError,
-  type_name,
+  typeName,
   descriptor,
-  descriptors_of,
+  descriptorsOf,
   getattr,
   round,
   str,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
-import { label_index } from "../preferences.ts";
+import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import type { CompItem } from "../items/composition.ts";
 import { Property } from "../properties/property.ts";
@@ -27,7 +27,7 @@ import { PropertyGroup } from "../properties/property_group.ts";
  */
 export const NoneType = Symbol("NoneType");
 
-export function _type_of(x: { constructor: Function } | null | undefined): Function | symbol {
+export function _typeOf(x: { constructor: Function } | null | undefined): Function | symbol {
   return x == null ? NoneType : x.constructor;
 }
 
@@ -93,26 +93,26 @@ export class ParametricMeshLayer extends AVLayer {
       effect_param_defs,
     });
     layer._ldta.layer_type = LayerType.PARAMETRIC_MESH;
-    layer._ldta.label = label_index(containing_comp._project._preferences, "Parametrics Label Index", 9);
+    layer._ldta.label = labelIndex(containing_comp._project._preferences, "Parametrics Label Index", 9);
     layer._ldta.three_d_layer = true;
     layer._ldta.collapse_transformation = true;
     // AE writes flags2=0x83 for mesh layers: effects are not applicable.
     layer._ldta.effects_active = false;
     // AE expresses the layer's time fields in the comp's internal
     // timebase (e.g. 23976 for 29.97 fps), not a reduced rational.
-    const time_base = containing_comp._cdta.internal_timebase;
-    layer._ldta.start_time_divisor = time_base;
-    layer._ldta.in_point_divisor = time_base;
-    layer._ldta.out_point_dividend = round(duration * time_base);
-    layer._ldta.out_point_divisor = time_base;
+    const timeBase = containing_comp._cdta.internal_timebase;
+    layer._ldta.start_time_divisor = timeBase;
+    layer._ldta.in_point_divisor = timeBase;
+    layer._ldta.out_point_dividend = round(duration * timeBase);
+    layer._ldta.out_point_divisor = timeBase;
     layer.parametricMeshType = mesh_type;
     // AE writes the active mesh type's option/bevel groups expanded
     // (tdsb=1) while the other mesh groups stay collapsed (tdsb=3, the
     // synthesized default). Override the active groups before the layer
     // is materialized so the written tdsb matches AE.
-    const active_groups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.to_binary(mesh_type)) ?? [];
+    const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.to_binary(mesh_type)) ?? [];
     for (const child of layer.properties) {
-      if (active_groups.includes(child.matchName) && child._tdsb != null) {
+      if (activeGroups.includes(child.matchName) && child._tdsb != null) {
         child._tdsb._enable_flags = 1;
       }
     }
@@ -124,21 +124,21 @@ export class ParametricMeshLayer extends AVLayer {
     // Plain instance attributes, read as own properties (Python's
     // `__dict__`): `getattr` on a missing one would search the layer's
     // properties for that name.
-    const options_cls = OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_options = Object.hasOwn(this, "parametricMeshOptions") ? this.parametricMeshOptions : null;
-    if (_type_of(old_options) !== options_cls) {
+    const optionsCls = OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
+    const oldOptions = Object.hasOwn(this, "parametricMeshOptions") ? this.parametricMeshOptions : null;
+    if (_typeOf(oldOptions) !== optionsCls) {
       Reflect.deleteProperty(this, "parametricMeshOptions");
-      if (options_cls != null) {
-        this.parametricMeshOptions = new options_cls(this);
+      if (optionsCls != null) {
+        this.parametricMeshOptions = new optionsCls(this);
       }
     }
 
-    const bevel_cls = BEVEL_OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
-    const old_bevel = Object.hasOwn(this, "parametricBevelOptions") ? this.parametricBevelOptions : null;
-    if (_type_of(old_bevel) !== bevel_cls) {
+    const bevelCls = BEVEL_OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
+    const oldBevel = Object.hasOwn(this, "parametricBevelOptions") ? this.parametricBevelOptions : null;
+    if (_typeOf(oldBevel) !== bevelCls) {
       Reflect.deleteProperty(this, "parametricBevelOptions");
-      if (bevel_cls != null) {
-        this.parametricBevelOptions = new bevel_cls(this);
+      if (bevelCls != null) {
+        this.parametricBevelOptions = new bevelCls(this);
       }
     }
   }
@@ -172,18 +172,18 @@ export const OPTION_TYPES: Map<number, typeof ParametricMeshOptions> = new Map()
 export const BEVEL_OPTION_TYPES: Map<number, typeof ParametricBevelOptions> = new Map();
 
 /** Decorator that registers a ParametricMeshOptions subclass for one mesh_type. */
-export function register(mesh_type: ParametricMeshType) {
+export function register(meshType: ParametricMeshType) {
   function decorator<M extends typeof ParametricMeshOptions>(cls: M): M {
-    OPTION_TYPES.set(ParametricMeshType.to_binary(mesh_type), cls);
+    OPTION_TYPES.set(ParametricMeshType.to_binary(meshType), cls);
     return cls;
   }
   return decorator;
 }
 
 /** Decorator that registers a ParametricBevelOptions subclass for one mesh_type. */
-export function register_bevel(mesh_type: ParametricMeshType) {
+export function registerBevel(meshType: ParametricMeshType) {
   function decorator<B extends typeof ParametricBevelOptions>(cls: B): B {
-    BEVEL_OPTION_TYPES.set(ParametricMeshType.to_binary(mesh_type), cls);
+    BEVEL_OPTION_TYPES.set(ParametricMeshType.to_binary(meshType), cls);
     return cls;
   }
   return decorator;
@@ -197,8 +197,8 @@ export function register_bevel(mesh_type: ParametricMeshType) {
 export class ParaMeshField<T extends number | boolean = number> {
   declare _property_name: string;
 
-  constructor(property_name: string) {
-    this._property_name = property_name;
+  constructor(propertyName: string) {
+    this._property_name = propertyName;
   }
 
   __get__(obj: ParametricMeshOptions | ParametricBevelOptions | null, objtype: Function): T | this {
@@ -235,18 +235,18 @@ export class ParametricMeshOptions {
     // Python casts both lookups; a wrong kind fails at its next attribute read.
     if (this._group == null) {
       const group = this._layer.property(this.constructor._match_name);
-      if (!(group instanceof PropertyGroup)) throw new AttributeError(`'${type_name(group)}' object has no attribute 'property'`);
+      if (!(group instanceof PropertyGroup)) throw new AttributeError(`'${typeName(group)}' object has no attribute 'property'`);
       this._group = group;
     }
     const child = this._group.property(name);
-    if (!(child instanceof Property)) throw new AttributeError(`'${type_name(child)}' object has no attribute 'value'`);
+    if (!(child instanceof Property)) throw new AttributeError(`'${typeName(child)}' object has no attribute 'value'`);
     return child;
   }
 
   [INSPECT](): string {
     const result = new Map<string, number | boolean>();
     // NOTE(port): descriptors_of walks the MRO but vars(cls) is the class's own dict; same result because no base class declares descriptors.
-    for (const [name] of descriptors_of(this.constructor)) {
+    for (const [name] of descriptorsOf(this.constructor)) {
       result.set(name, getattr(this, name));
     }
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float-valued option of 1.0 prints as "1" here where Python prints "1.0" (repr string only, never saved).
@@ -389,7 +389,7 @@ export class CubeBevelOptions extends ParametricBevelOptions {
 }
 descriptor(CubeBevelOptions, "radius", new ParaMeshField<number>("Radius"));
 descriptor(CubeBevelOptions, "sides", new ParaMeshField<number>("Sides"));
-register_bevel(ParametricMeshType.CUBE)(CubeBevelOptions);
+registerBevel(ParametricMeshType.CUBE)(CubeBevelOptions);
 
 export class ConeBevelOptions extends ParametricBevelOptions {
   static _match_name = "ADBE ConeBevelBevelSGrp";
@@ -403,7 +403,7 @@ descriptor(ConeBevelOptions, "topRadius", new ParaMeshField<number>("Top Radius"
 descriptor(ConeBevelOptions, "topSides", new ParaMeshField<number>("Top Sides"));
 descriptor(ConeBevelOptions, "bottomRadius", new ParaMeshField<number>("Bottom Radius"));
 descriptor(ConeBevelOptions, "bottomSides", new ParaMeshField<number>("Bottom Sides"));
-register_bevel(ParametricMeshType.CONE)(ConeBevelOptions);
+registerBevel(ParametricMeshType.CONE)(ConeBevelOptions);
 
 export class CylinderBevelOptions extends ParametricBevelOptions {
   static _match_name = "ADBE CylinderBevelOptionsSGrp";
@@ -413,4 +413,4 @@ export class CylinderBevelOptions extends ParametricBevelOptions {
 }
 descriptor(CylinderBevelOptions, "radius", new ParaMeshField<number>("Radius"));
 descriptor(CylinderBevelOptions, "sides", new ParaMeshField<number>("Sides"));
-register_bevel(ParametricMeshType.CYLINDER)(CylinderBevelOptions);
+registerBevel(ParametricMeshType.CYLINDER)(CylinderBevelOptions);

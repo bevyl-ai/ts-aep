@@ -9,7 +9,7 @@
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.
 
-import { ValueError, getitem, round, int, decode, repr, format, int_enum } from "../../pyrt/index.ts";
+import { ValueError, getitem, round, int, decode, repr, format, intEnum } from "../../pyrt/index.ts";
 import type { EnumValue } from "../../pyrt/index.ts";
 
 /**
@@ -19,7 +19,7 @@ import type { EnumValue } from "../../pyrt/index.ts";
  *
  * Not documented in AE scripting reference.
  */
-export const OutputChannels = int_enum("OutputChannels", {
+export const OutputChannels = intEnum("OutputChannels", {
   RGB: 0,
   RGBA: 1,
   ALPHA: 2,
@@ -48,7 +48,7 @@ export const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> =
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorDepth = int_enum("OutputColorDepth", {
+export const OutputColorDepth = intEnum("OutputColorDepth", {
   FLOATING_POINT_GRAY: -32, // 32 bpc gray (single channel float)
   COLORS_256: 8, // 8 bpc indexed (256 colors)
   MILLIONS_OF_COLORS: 24, // 8 bpc RGB (24 bpp)
@@ -85,7 +85,7 @@ export const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, strin
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorMode = int_enum("OutputColorMode", {
+export const OutputColorMode = intEnum("OutputColorMode", {
   STRAIGHT_UNMATTED: 0,
   PREMULTIPLIED: 1,
 }, {
@@ -108,7 +108,7 @@ export const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>
  *
  * Not documented in AE scripting reference.
  */
-export const OutputAudio = int_enum("OutputAudio", {
+export const OutputAudio = intEnum("OutputAudio", {
   OFF: 1,
   ON: 2,
   AUTO: 3,
@@ -137,7 +137,7 @@ export const _OUTPUT_AUDIO_LABELS: Readonly<Record<OutputAudio, string>> = {
  *
  * Not available in ExtendScript.
  */
-export const FormatKind = int_enum("FormatKind", {
+export const FormatKind = intEnum("FormatKind", {
   /** Audio stream only (AIFF, MP3, WAV): video output is always off. */
   AUDIO: 1,
   /** Single movie file, video and/or audio (AVI, H.264, QuickTime). */
@@ -154,7 +154,7 @@ export type FormatKind = EnumValue<typeof FormatKind>;
  *
  * Not documented in AE scripting reference.
  */
-export const OutputFormat = int_enum("OutputFormat", {
+export const OutputFormat = intEnum("OutputFormat", {
   AIFF: 0,
   AVI: 1,
   DPX_CINEON_SEQUENCE: 2,
@@ -188,16 +188,16 @@ export const OutputFormat = int_enum("OutputFormat", {
   /**
    * Convert a Roou 4-char format identifier to OutputFormat.
    *
-   * @param format_id - The 4-char format identifier from the Roou chunk (e.g. `"H264"`, `"TIF "`,
+   * @param formatId - The 4-char format identifier from the Roou chunk (e.g. `"H264"`, `"TIF "`,
    *   `"png!"`).
    * @throws {@link ValueError} If the format identifier is not recognised.
    */
-  from_format_id(format_id: string | Uint8Array): OutputFormat {
-    if (format_id instanceof Uint8Array) {
-      format_id = decode(format_id, "ascii");
+  from_format_id(formatId: string | Uint8Array): OutputFormat {
+    if (formatId instanceof Uint8Array) {
+      formatId = decode(formatId, "ascii");
     }
-    const format = _FORMAT_ID_TO_OUTPUT_FORMAT.get(format_id);
-    if (format === undefined) throw new ValueError(`Unknown output format identifier: ${repr(format_id)}`);
+    const format = _FORMAT_ID_TO_OUTPUT_FORMAT.get(formatId);
+    if (format === undefined) throw new ValueError(`Unknown output format identifier: ${repr(formatId)}`);
     return format;
   },
 
@@ -278,7 +278,7 @@ export const _OUTPUT_FORMAT_TO_FORMAT_ID: Map<number, string> = new Map<number, 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioBitDepth = int_enum("AudioBitDepth", {
+export const AudioBitDepth = intEnum("AudioBitDepth", {
   EIGHT_BIT: 1,
   SIXTEEN_BIT: 2,
   /**
@@ -317,7 +317,7 @@ export const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioChannels = int_enum("AudioChannels", {
+export const AudioChannels = intEnum("AudioChannels", {
   MONO: 1,
   STEREO: 2,
 }, {
@@ -348,7 +348,7 @@ export const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const ResizeQuality = int_enum("ResizeQuality", {
+export const ResizeQuality = intEnum("ResizeQuality", {
   LOW: 0,
   HIGH: 1,
 }, {
@@ -374,7 +374,7 @@ export const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const AudioSampleRate = int_enum("AudioSampleRate", {
+export const AudioSampleRate = intEnum("AudioSampleRate", {
   OFF: -1,
   RATE_8000: 8000,
   RATE_11025: 11025,
@@ -409,9 +409,9 @@ export const AudioSampleRate = int_enum("AudioSampleRate", {
    * are mapped to `OFF`.
    */
   from_binary(value: number) {
-    const int_value = round(value);
-    if (this.has(int_value)) {
-      return this.of(int_value);
+    const intValue = round(value);
+    if (this.has(intValue)) {
+      return this.of(intValue);
     }
     return this.OFF;
   },
@@ -434,7 +434,7 @@ export type AudioSampleRate = EnumValue<typeof AudioSampleRate>;
  *
  * Not documented in AE scripting reference.
  */
-export const ConvertToLinearLight = int_enum("ConvertToLinearLight", {
+export const ConvertToLinearLight = intEnum("ConvertToLinearLight", {
   OFF: 0,
   ON: 1,
   ON_FOR_32_BPC: 2,
@@ -453,7 +453,7 @@ export const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLig
 };
 
 /** Action after rendering completes. */
-export const PostRenderAction = int_enum("PostRenderAction", {
+export const PostRenderAction = intEnum("PostRenderAction", {
   NONE: 3612,
   IMPORT: 3613,
   IMPORT_AND_REPLACE_USAGE: 3614,

@@ -14,14 +14,14 @@ import {
   ValueError,
   getattr,
   int,
-  py_eq,
+  pyEq,
   repr,
   setattr,
   sorted,
   str,
   tkey,
-  mapping_items,
-  type_name,
+  mappingItems,
+  typeName,
 } from "../../../pyrt/index.ts";
 import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { CompPreset } from "../../parsers/comp_presets.ts";
@@ -42,8 +42,8 @@ export const IntEnum = {
 /** An `int_enum` class that also defines a `label(member)` method. */
 export type LabeledEnum = EnumHelpers<number> & { label(member: number): string };
 
-export function enum_label(enum_class: LabeledEnum, member: number): string {
-  return enum_class.label(member);
+export function enumLabel(enumClass: LabeledEnum, member: number): string {
+  return enumClass.label(member);
 }
 
 /** Type alias for a settings spec: (attribute_name, optional_enum_class). */
@@ -88,8 +88,8 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   get<K extends string>(key: K): V[K] {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) throw new KeyError(repr(key));
-    const [attr_name] = spec;
-    return getattr(this._owner, attr_name);
+    const [attrName] = spec;
+    return getattr(this._owner, attrName);
   }
 
   // -- writes ------------------------------------------------------------
@@ -100,18 +100,18 @@ export class SettingsView<V extends SettingValues = SettingValues> {
       const valid = sorted(this._specs.keys());
       throw new KeyError(`Unknown setting ${repr(key)}. Valid keys: ${repr(valid)}`);
     }
-    const [attr_name, enum_class] = spec;
-    if (enum_class != null) value = _coerce_enum(enum_class, value);
+    const [attrName, enumClass] = spec;
+    if (enumClass != null) value = _coerceEnum(enumClass, value);
     try {
-      setattr(this._owner, attr_name, value);
+      setattr(this._owner, attrName, value);
     } catch (e) {
       // A getter-only JS accessor throws a native TypeError in strict mode;
       // Python's property without a setter raises AttributeError.
-      const native_readonly =
+      const nativeReadonly =
         e instanceof Error &&
         e.constructor === TypeError &&
         /readonly property|only a getter|read-only/i.test(e.message);
-      if (!(e instanceof AttributeError) && !native_readonly) throw e;
+      if (!(e instanceof AttributeError) && !nativeReadonly) throw e;
       throw new AttributeError(`Setting ${repr(key)} is read-only.`);
     }
   }
@@ -225,7 +225,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
-      return py_eq(new Map(this.items()), new Map(mapping_items(other)));
+      return pyEq(new Map(this.items()), new Map(mappingItems(other)));
     }
     // NOTE(port): Python returns NotImplemented; no builtin reflected __eq__ ever answers True for a non-mapping, so the final `==` is False.
     return false;
@@ -240,43 +240,43 @@ export class SettingsView<V extends SettingValues = SettingValues> {
  *     - An int matching an enum member's value
  *     - A string matching an enum member's label
  */
-export function _coerce_enum(enum_class: LabeledEnum, value: SettingValue | null): number {
-  if (enum_class.has(value)) return value;
+export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null): number {
+  if (enumClass.has(value)) return value;
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
     // coerce to OutputAudio.OFF (== 1). Reject rather than surprise.
-    throw new TypeError_(`Expected ${enum_class.__name__}, int, or str, got bool`);
+    throw new TypeError_(`Expected ${enumClass.__name__}, int, or str, got bool`);
   }
   if (typeof value === "number" && Number.isInteger(value)) {
-    const member = enum_class.of_or_null(value);
+    const member = enumClass.of_or_null(value);
     if (member === null) {
-      const members = enum_class
+      const members = enumClass
         .members()
-        .map((m) => `${enum_class.name_of(m)} (${int(m)})`)
+        .map((m) => `${enumClass.name_of(m)} (${int(m)})`)
         .join(", ");
       throw new ValueError(
-        `Invalid int value ${repr(value)} for ${enum_class.__name__}. ` +
+        `Invalid int value ${repr(value)} for ${enumClass.__name__}. ` +
           `Valid members: ${members}`,
       );
     }
     return member;
   }
   if (typeof value === "string") {
-    const by_label = new Map<string, number>();
-    for (const m of enum_class.members()) by_label.set(enum_label(enum_class, m), m);
-    const member = by_label.get(value);
+    const byLabel = new Map<string, number>();
+    for (const m of enumClass.members()) byLabel.set(enumLabel(enumClass, m), m);
+    const member = byLabel.get(value);
     if (member !== undefined) return member;
-    const labels = enum_class
+    const labels = enumClass
       .members()
-      .map((m) => repr(enum_label(enum_class, m)))
+      .map((m) => repr(enumLabel(enumClass, m)))
       .join(", ");
     throw new ValueError(
-      `Invalid string ${repr(value)} for ${enum_class.__name__}. ` +
+      `Invalid string ${repr(value)} for ${enumClass.__name__}. ` +
         `Valid labels: ${labels}`,
     );
   }
   throw new TypeError_(
-    `Expected ${enum_class.__name__}, int, or str, got ${type_name(value)}`,
+    `Expected ${enumClass.__name__}, int, or str, got ${typeName(value)}`,
   );
 }
 
@@ -324,7 +324,7 @@ export const _RESIZE_TO_STRINGS: Map<string, string> = new Map<string, string>([
  * broken by the later preset). Falls back to {@link _RESIZE_TO_STRINGS} (AE's
  * factory-preset labels) when no preferences directory was provided.
  */
-export function build_resize_to_strings(preferences: Preferences): Map<string, string> {
+export function buildResizeToStrings(preferences: Preferences): Map<string, string> {
   const presets = preferences.compositionPresets();
   if (!presets?.length) return _RESIZE_TO_STRINGS;
   const best = new Map<string, CompPreset>();
@@ -342,15 +342,15 @@ export function build_resize_to_strings(preferences: Preferences): Map<string, s
  * IntEnum values are unwrapped to their integer value.
  * All other types pass through unchanged.
  */
-export function _to_number_value(value: SettingValue): SettingValue {
+export function _toNumberValue(value: SettingValue): SettingValue {
   if (IntEnum.has(value)) return int(value);
   return value;
 }
 
 /** `tuple(value)` as a dict key; a scalar raises what Python's `tuple()` raises. */
-function _tuple_key(value: SettingValue): string {
+function _tupleKey(value: SettingValue): string {
   if (typeof value === "number" || typeof value === "boolean") {
-    throw new TypeError_(`'${type_name(value)}' object is not iterable`);
+    throw new TypeError_(`'${typeName(value)}' object is not iterable`);
   }
   return tkey(...value);
 }
@@ -360,42 +360,42 @@ function _tuple_key(value: SettingValue): string {
  *
  * @param key - The settings key name.
  * @param value - The settings value.
- * @param resize_map - Resolution -\> label map for the "Resize to" key (the AE-preference-derived
+ * @param resizeMap - Resolution -\> label map for the "Resize to" key (the AE-preference-derived
  *   map, or the factory fallback).
  */
-export function _to_string_value(
+export function _toStringValue(
   key: string,
   value: string,
-  resize_map?: Map<string, string>,
-  enum_class?: LabeledEnum | null,
+  resizeMap?: Map<string, string>,
+  enumClass?: LabeledEnum | null,
 ): string;
-export function _to_string_value(
+export function _toStringValue(
   key: string,
   value: SettingValue,
-  resize_map?: Map<string, string>,
-  enum_class?: LabeledEnum | null,
+  resizeMap?: Map<string, string>,
+  enumClass?: LabeledEnum | null,
 ): string | Map<string, string>;
-export function _to_string_value(
+export function _toStringValue(
   key: string,
   value: SettingValue,
-  resize_map: Map<string, string> = _RESIZE_TO_STRINGS,
-  enum_class: LabeledEnum | null = null,
+  resizeMap: Map<string, string> = _RESIZE_TO_STRINGS,
+  enumClass: LabeledEnum | null = null,
 ): string | Map<string, string> {
   if (value instanceof Map) {
     // NOTE(port): Python annotates `-> str` and ignores the nested dict this branch returns.
-    return new Map([...value.entries()].map(([k, v]): [string, string] => [k, _to_string_value(k, v, resize_map)]));
+    return new Map([...value.entries()].map(([k, v]): [string, string] => [k, _toStringValue(k, v, resizeMap)]));
   }
   // `isinstance(value, IntEnum)`: the spec's enum class stands in for the member's owning class.
-  if (enum_class != null && enum_class.has(value)) return enum_label(enum_class, value);
-  if (key === "Resolution") return _RESOLUTION_STRINGS.get(_tuple_key(value)) ?? "Custom";
-  if (key === "Resize to") return resize_map.get(_tuple_key(value)) ?? "Custom";
+  if (enumClass != null && enumClass.has(value)) return enumLabel(enumClass, value);
+  if (key === "Resolution") return _RESOLUTION_STRINGS.get(_tupleKey(value)) ?? "Custom";
+  if (key === "Resize to") return resizeMap.get(_tupleKey(value)) ?? "Custom";
   if (typeof value === "boolean") return str(value).toLowerCase();
   // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float getter value such as 30.0 (Time Span Duration, Use comp's frame rate) renders "30" here where Python gives "30.0" (returned string only, never saved).
   return str(value);
 }
 
 /** `settings.items()` of a dict or a settings view. */
-function _setting_items(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Array<[string, SettingValue]> {
+function _settingItems(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Array<[string, SettingValue]> {
   return settings instanceof Map ? [...settings.entries()] : settings.items();
 }
 
@@ -407,9 +407,9 @@ function _setting_items(settings: Map<string, SettingValue> | SettingsView<Setti
  *
  * @param settings - The typed settings map.
  */
-export function settings_to_number(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Map<string, SettingValue> {
+export function settingsToNumber(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Map<string, SettingValue> {
   return new Map<string, SettingValue>(
-    _setting_items(settings).map(([k, v]): [string, SettingValue] => [k, _to_number_value(v)]),
+    _settingItems(settings).map(([k, v]): [string, SettingValue] => [k, _toNumberValue(v)]),
   );
 }
 
@@ -419,19 +419,19 @@ export function settings_to_number(settings: Map<string, SettingValue> | Setting
  * All values are converted to their ExtendScript STRING representation.
  *
  * @param settings - The typed settings map.
- * @param resize_map - Resolution -\> label map for the "Resize to" key (from
- *   {@link build_resize_to_strings}); defaults to the factory fallback table.
+ * @param resizeMap - Resolution -\> label map for the "Resize to" key (from
+ *   {@link buildResizeToStrings}); defaults to the factory fallback table.
  */
-export function settings_to_string(
+export function settingsToString(
   settings: Map<string, SettingValue> | SettingsView<SettingValues>,
-  resize_map: Map<string, string> = _RESIZE_TO_STRINGS,
+  resizeMap: Map<string, string> = _RESIZE_TO_STRINGS,
 ): Map<string, string | Map<string, string>> {
   return new Map<string, string | Map<string, string>>(
-    _setting_items(settings).map((
+    _settingItems(settings).map((
       [k, v],
     ): [string, string | Map<string, string>] => [
       k,
-      _to_string_value(k, v, resize_map, settings instanceof SettingsView ? (settings._specs.get(k) ?? null)?.[1] : null),
+      _toStringValue(k, v, resizeMap, settings instanceof SettingsView ? (settings._specs.get(k) ?? null)?.[1] : null),
     ]),
   );
 }

@@ -4,13 +4,13 @@ const _S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
 const _K = Array.from({ length: 64 }, (_, i) => Math.floor(Math.abs(Math.sin(i + 1)) * 2 ** 32) >>> 0);
 
 export function md5(data: Uint8Array): Uint8Array {
-  const bit_len = data.length * 8;
+  const bitLen = data.length * 8;
   const padded = new Uint8Array((((data.length + 8) >> 6) + 1) << 6);
   padded.set(data);
   padded[data.length] = 0x80;
   const dv = new DataView(padded.buffer);
-  dv.setUint32(padded.length - 8, bit_len >>> 0, true);
-  dv.setUint32(padded.length - 4, Math.floor(bit_len / 2 ** 32), true);
+  dv.setUint32(padded.length - 8, bitLen >>> 0, true);
+  dv.setUint32(padded.length - 4, Math.floor(bitLen / 2 ** 32), true);
   let a0 = 0x67452301,
     b0 = 0xefcdab89,
     c0 = 0x98badcfe,

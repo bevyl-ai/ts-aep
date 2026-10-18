@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
+import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { KeyframeInterpolationType } from "../../src/py_aep/enums/property.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
@@ -9,13 +9,13 @@ import {
   Path,
   ValueError,
   len,
-  py_assert,
-  py_bool,
-  py_or,
+  pyAssert,
+  pyBool,
+  pyOr,
   range,
 } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { as_instance } from "../helpers.ts";
+import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
+import { asInstance } from "../helpers.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import type { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 
@@ -28,9 +28,9 @@ function _leaves(app: Application, predicate: (p: Property) => boolean): Propert
   for (const comp of app.project.compositions) {
     for (const layer of comp.layers) {
       const stack: PropertyGroup[] = [layer];
-      while (py_bool(stack)) {
+      while (pyBool(stack)) {
         const group = stack.pop();
-        py_assert(group != null);
+        pyAssert(group != null);
         for (const child of group) {
           if ("keyframes" in child) {
             if (predicate(child)) found.push(child);
@@ -45,9 +45,9 @@ function _leaves(app: Application, predicate: (p: Property) => boolean): Propert
   return found;
 }
 
-function _first_leaf(app: Application, predicate: (p: Property) => boolean): Property {
+function _firstLeaf(app: Application, predicate: (p: Property) => boolean): Property {
   const hits = _leaves(app, predicate);
-  py_assert(py_bool(hits), "no property matched");
+  pyAssert(pyBool(hits), "no property matched");
   return hits[0];
 }
 
@@ -64,23 +64,23 @@ describe("TestPropertyNameGuard", () => {
   const PT = SAMPLES_DIR.div("property", "property_types.aep");
 
   test("test_marker_property_rename_rejected", () => {
-    const app = parse_aep(PT);
-    const marker = _first_leaf(app, (p) => p.matchName === "ADBE Marker");
+    const app = parseAep(PT);
+    const marker = _firstLeaf(app, (p) => p.matchName === "ADBE Marker");
     raises(ValueError, () => {
       marker.name = "my markers";
     }, "indexed group");
   });
 
   test("test_layer_style_no_value_rename_rejected", () => {
-    const app = parse_aep(PT);
-    const gradient = _first_leaf(app, (p) => p.matchName.endsWith("outerGlow/gradient"));
+    const app = parseAep(PT);
+    const gradient = _firstLeaf(app, (p) => p.matchName.endsWith("outerGlow/gradient"));
     raises(ValueError, () => {
       gradient.name = "grad";
     }, "indexed group");
   });
 
   test("test_transform_group_rename_rejected", () => {
-    const app = parse_aep(PT);
+    const app = parseAep(PT);
     const group = app.project.compositions[0].layers[0].property("ADBE Transform Group");
     raises(ValueError, () => {
       group.name = "Xform";
@@ -88,41 +88,41 @@ describe("TestPropertyNameGuard", () => {
   });
 
   test("test_transform_leaf_rename_rejected", () => {
-    const app = parse_aep(PT);
-    const prop = _first_leaf(app, (p) => p.matchName === "ADBE Opacity");
+    const app = parseAep(PT);
+    const prop = _firstLeaf(app, (p) => p.matchName === "ADBE Opacity");
     raises(ValueError, () => {
       prop.name = "Alpha";
     }, "indexed group");
   });
 
   test("test_mask_rename_still_round_trips", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("property", "mask.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("property", "mask.aep"));
     let renamed = 0;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        for (const mask of py_or(layer.masks, [])) {
+        for (const mask of pyOr(layer.masks, [])) {
           mask.name = "Kept Mask";
           renamed += 1;
         }
       }
     }
-    expect(py_bool(renamed)).toBe(true);
-    const out = tmp_path.div("mask_rename.aep");
+    expect(pyBool(renamed)).toBe(true);
+    const out = tmpPath.div("mask_rename.aep");
     app.project.save(out);
-    const names = parse_aep(out).project.compositions.flatMap((comp) =>
-      comp.layers.flatMap((layer) => [...py_or(layer.masks, [])].map((mask) => mask.name)),
+    const names = parseAep(out).project.compositions.flatMap((comp) =>
+      comp.layers.flatMap((layer) => [...pyOr(layer.masks, [])].map((mask) => mask.name)),
     );
-    expect(py_bool(names) && names.every((name) => name === "Kept Mask")).toBe(true);
+    expect(pyBool(names) && names.every((name) => name === "Kept Mask")).toBe(true);
   });
 
   test("test_effect_rename_still_round_trips", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("property", "effects.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("property", "effects.aep"));
     let effect: Property | PropertyGroup | null = null;
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
-        for (const candidate of py_or(layer.effects, [])) {
+        for (const candidate of pyOr(layer.effects, [])) {
           effect = candidate;
           break;
         }
@@ -130,24 +130,24 @@ describe("TestPropertyNameGuard", () => {
       }
       if (effect != null) break;
     }
-    py_assert(effect != null);
+    pyAssert(effect != null);
     effect.name = "Renamed Effect";
-    const out = tmp_path.div("effect_rename.aep");
+    const out = tmpPath.div("effect_rename.aep");
     app.project.save(out);
-    const names = parse_aep(out).project.compositions.flatMap((comp) =>
-      comp.layers.flatMap((layer) => [...py_or(layer.effects, [])]),
+    const names = parseAep(out).project.compositions.flatMap((comp) =>
+      comp.layers.flatMap((layer) => [...pyOr(layer.effects, [])]),
     ).map((fx) => fx.name);
     expect(names.includes("Renamed Effect")).toBe(true);
   });
 
   /** A Layer is a PropertyBase but its name is a layer attribute. */
   test("test_layer_rename_unaffected", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(PT);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(PT);
     app.project.compositions[0].layers[0].name = "Still Renameable";
-    const out = tmp_path.div("layer_rename.aep");
+    const out = tmpPath.div("layer_rename.aep");
     app.project.save(out);
-    const renamed = parse_aep(out).project.compositions[0].layers[0].name;
+    const renamed = parseAep(out).project.compositions[0].layers[0].name;
     expect(renamed).toBe("Still Renameable");
   });
 });
@@ -162,8 +162,8 @@ describe("TestPropertyNameGuard", () => {
  */
 describe("TestDimensionsReadOnly", () => {
   test("test_dimensions_rejects_write", () => {
-    const app = parse_aep(SAMPLES_DIR.div("property", "property_2D_position.aep"));
-    const pos = _first_leaf(app, (p) => p.matchName === "ADBE Position");
+    const app = parseAep(SAMPLES_DIR.div("property", "property_2D_position.aep"));
+    const pos = _firstLeaf(app, (p) => p.matchName === "ADBE Position");
     const before = pos.dimensions;
     raises(AttributeError, () => {
       pos.dimensions = 5;
@@ -184,36 +184,36 @@ describe("TestExpressionEnabledGuard", () => {
   const PT = SAMPLES_DIR.div("property", "property_types.aep");
 
   test("test_rejected_when_expressions_impossible", () => {
-    const app = parse_aep(PT);
-    const target = _first_leaf(app, (p) => !p.canSetExpression);
+    const app = parseAep(PT);
+    const target = _firstLeaf(app, (p) => !p.canSetExpression);
     raises(ValueError, () => {
       target.expressionEnabled = true;
     }, "cannot take an expression");
   });
 
   test("test_allowed_when_expressions_possible", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(SAMPLES_DIR.div("property", "all_animated.aep"));
+    const tmpPath = makeTmpPath();
+    const app = parseAep(SAMPLES_DIR.div("property", "all_animated.aep"));
     const comp = app.project.compositions[0];
     // NOTE(port): next(gen) → Array.find; on a miss Python raises StopIteration, TS fails at the next line - the test errors either way
-    const rot = as_instance(Array.from(comp.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const rot = asInstance(Array.from(comp.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
     expect(rot.canSetExpression).toBe(true);
     rot.expression = "time * 2";
     rot.expressionEnabled = true;
-    const out = tmp_path.div("expr_enabled.aep");
+    const out = tmpPath.div("expr_enabled.aep");
     app.project.save(out);
-    const comp2 = parse_aep(out).project.compositions[0];
-    const rot2 = as_instance(Array.from(comp2.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const comp2 = parseAep(out).project.compositions[0];
+    const rot2 = asInstance(Array.from(comp2.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
     expect(rot2.expressionEnabled).toBe(true);
   });
 
   /** Turning it off is legal whatever the property. */
   test("test_disabling_never_raises", () => {
-    const app = parse_aep(PT);
+    const app = parseAep(PT);
     for (const comp of app.project.compositions) {
       for (const layer of comp.layers) {
         for (const prop of layer.transform) {
-          as_instance(prop, Property).expressionEnabled = false;
+          asInstance(prop, Property).expressionEnabled = false;
         }
       }
     }
@@ -232,29 +232,29 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
   const BEZ = SAMPLES_DIR.div("property", "keyframe_bezier_multi_ease_1D.aep");
 
   function _animated(app: Application): Property {
-    return _first_leaf(app, (p) => py_bool(p.keyframes));
+    return _firstLeaf(app, (p) => pyBool(p.keyframes));
   }
 
   test("test_middle_keyframe_round_trips", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(BEZ);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(BEZ);
     const prop = _animated(app);
     const keyframe = prop.keyframes[1];
     const count = len(keyframe.inTemporalEase);
     keyframe.inTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 66.0));
     keyframe.outTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 12.0));
 
-    const out = tmp_path.div("ease_middle.aep");
+    const out = tmpPath.div("ease_middle.aep");
     app.project.save(out);
-    const reparsed = _animated(parse_aep(out)).keyframes[1];
+    const reparsed = _animated(parseAep(out)).keyframes[1];
     expect(approx(reparsed.inTemporalEase[0].influence, 66.0)).toBe(true);
     expect(approx(reparsed.outTemporalEase[0].influence, 12.0)).toBe(true);
   });
 
   /** The getter returns computed copies here; the write must not. */
   test("test_boundary_keyframe_round_trips", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(BEZ);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(BEZ);
     const prop = _animated(app);
     const first = prop.keyframes[0];
     first.inInterpolationType = KeyframeInterpolationType.BEZIER;
@@ -262,28 +262,28 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     const count = len(first.outTemporalEase);
     first.outTemporalEase = Array.from(range(count), () => new KeyframeEase(0.0, 44.0));
 
-    const out = tmp_path.div("ease_boundary.aep");
+    const out = tmpPath.div("ease_boundary.aep");
     app.project.save(out);
-    const reparsed = _animated(parse_aep(out)).keyframes[0];
+    const reparsed = _animated(parseAep(out)).keyframes[0];
     expect(approx(reparsed.outTemporalEase[0].influence, 44.0)).toBe(true);
   });
 
   test("test_speed_round_trips", () => {
-    const tmp_path = make_tmp_path();
-    const app = parse_aep(BEZ);
+    const tmpPath = makeTmpPath();
+    const app = parseAep(BEZ);
     const prop = _animated(app);
     const keyframe = prop.keyframes[1];
     const count = len(keyframe.inTemporalEase);
     keyframe.inTemporalEase = Array.from(range(count), () => new KeyframeEase(25.0, 50.0));
 
-    const out = tmp_path.div("ease_speed.aep");
+    const out = tmpPath.div("ease_speed.aep");
     app.project.save(out);
-    const reparsed = _animated(parse_aep(out)).keyframes[1];
+    const reparsed = _animated(parseAep(out)).keyframes[1];
     expect(approx(reparsed.inTemporalEase[0].speed, 25.0)).toBe(true);
   });
 
   test("test_wrong_length_rejected", () => {
-    const app = parse_aep(BEZ);
+    const app = parseAep(BEZ);
     const keyframe = _animated(app).keyframes[1];
     raises(ValueError, () => {
       keyframe.inTemporalEase = new Array(99).fill(new KeyframeEase(0.0, 5.0));
@@ -291,7 +291,7 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
   });
 
   test("test_non_ease_value_rejected", () => {
-    const app = parse_aep(BEZ);
+    const app = parseAep(BEZ);
     const keyframe = _animated(app).keyframes[1];
     raises(ValueError, () => {
       // @ts-expect-error deliberately wrong-typed element (Python `# type: ignore[list-item]`)
@@ -311,7 +311,7 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
   const EG = SAMPLES_DIR.div("essential_graphics", "base.aep");
 
   test("test_every_addable_property_actually_adds", () => {
-    const app = parse_aep(EG);
+    const app = parseAep(EG);
     let checked = 0;
     for (const comp of app.project.compositions) {
       for (const prop of _leaves(app, (p) => true)) {
@@ -321,13 +321,13 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
         }
       }
     }
-    expect(py_bool(checked)).toBe(true);
+    expect(pyBool(checked)).toBe(true);
   });
 
   test("test_value_less_slider_is_not_addable", () => {
-    const app = parse_aep(EG);
+    const app = parseAep(EG);
     const targets = _leaves(app, (p) => p.matchName === "ADBE Layer Source Alternate");
-    expect(py_bool(targets)).toBe(true);
+    expect(pyBool(targets)).toBe(true);
     const comp = app.project.compositions[0];
     for (const prop of targets) {
       expect(prop.value == null).toBe(true);
