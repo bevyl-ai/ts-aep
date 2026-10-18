@@ -120,7 +120,22 @@ function chars(data: Uint8Array): string {
 // decoder below applies the error handler.
 const UTF8_FATAL = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
+/** A short all-ASCII byte string as text, or `null`: TextDecoder's per-call cost dominates tiny inputs. */
+function shortAscii(data: Uint8Array): string | null {
+  const n = data.length;
+  if (n > 64) return null;
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    const b = data[i];
+    if (b >= 0x80) return null;
+    out += String.fromCharCode(b);
+  }
+  return out;
+}
+
 function decodeUtf8(data: Uint8Array, errors: Errors): string {
+  const ascii = shortAscii(data);
+  if (ascii !== null) return ascii;
   try {
     return UTF8_FATAL.decode(data);
   } catch {
@@ -245,6 +260,8 @@ function encodeUtf8Slow(text: string, errors: Errors): Uint8Array {
 
 function decodeSingleByte(data: Uint8Array, errors: Errors, limit: number, enc: string, table?: readonly number[]): string {
   if (limit === 0x100) return chars(data);
+  const ascii = shortAscii(data);
+  if (ascii !== null) return ascii;
   if (isAscii(data)) return UTF8_FATAL.decode(data);
   const out: string[] = [];
   for (let i = 0; i < data.length; i++) {
