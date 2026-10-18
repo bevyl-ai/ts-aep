@@ -9,7 +9,6 @@
         "fontkit": "2.0.4",
         "harfbuzzjs": "0.4.7",
         "yaml": "2.6.0",
-        "zod": "4.6.5",
       },
       "devDependencies": {
         "@microsoft/tsdoc": "0.15.1",
@@ -66,7 +65,5 @@
     "unicode-trie": ["unicode-trie@2.0.0", "", { "dependencies": { "pako": "^0.2.5", "tiny-inflate": "^1.0.0" } }, "sha512-x7bc76x0bm4prf1VLg79uhAzKw8DVboClSN5VxJuQ+LKDOVEW9CdH+VY7SP+vX7xCYQqzzgQpFqz15zeLvAtZQ=="],
 
     "yaml": ["yaml@2.6.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-a6ae//JvKDEra2kdi1qzCyrJW/WZCgFi8ydDV+eXExl95t+5R+ijnqHJbz9tmMh8FUjx3iv2fCQ4dclAQlO2UQ=="],
-
-    "zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
   }
 }
