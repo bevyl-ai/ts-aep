@@ -12,7 +12,7 @@
     "1 binary+enums+data": {
       "any": 3,
       "unknown": 3,
-      "casts": 10
+      "casts": 0
     },
     "2 cos+color": {
       "any": 0,
@@ -35,7 +35,7 @@
       "casts": 6
     },
     "6 cli+entry": {
-      "any": 2,
+      "any": 1,
       "unknown": 0,
       "casts": 0
     },
