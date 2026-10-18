@@ -47,7 +47,7 @@ export function join(parts: Iterable<Uint8Array>): Uint8Array {
 }
 
 /** `a == b` */
-export function bytesEq(a: Uint8Array | null | undefined, b: Uint8Array | null | undefined): boolean {
+export function equals(a: Uint8Array | null | undefined, b: Uint8Array | null | undefined): boolean {
   if (a == null || b == null) return a == b;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
@@ -68,7 +68,7 @@ function asNeedle(sub: Uint8Array | number): Uint8Array {
 }
 
 /** `data.find(sub, start)` */
-export function find(data: Uint8Array, sub: Uint8Array | number, start = 0, end?: number): number {
+export function indexOf(data: Uint8Array, sub: Uint8Array | number, start = 0, end?: number): number {
   const needle = asNeedle(sub);
   const stop = (end ?? data.length) - needle.length;
   outer: for (let i = Math.max(0, start); i <= stop; i++) {
@@ -79,36 +79,36 @@ export function find(data: Uint8Array, sub: Uint8Array | number, start = 0, end?
 }
 
 /** `data.index(sub)` */
-export function index(data: Uint8Array, sub: Uint8Array | number, start = 0): number {
-  const i = find(data, sub, start);
+export function indexOrThrow(data: Uint8Array, sub: Uint8Array | number, start = 0): number {
+  const i = indexOf(data, sub, start);
   if (i < 0) throw new ValueError("subsection not found");
   return i;
 }
 
 /** `sub in data` */
-export function contains(data: Uint8Array, sub: Uint8Array | number): boolean {
-  return find(data, sub) >= 0;
+export function includes(data: Uint8Array, sub: Uint8Array | number): boolean {
+  return indexOf(data, sub) >= 0;
 }
 
 /** `data.count(sub)` */
 export function count(data: Uint8Array, sub: Uint8Array | number): number {
   const needle = asNeedle(sub);
   let n = 0;
-  let i = find(data, needle);
+  let i = indexOf(data, needle);
   while (i >= 0) {
     n++;
-    i = find(data, needle, i + Math.max(1, needle.length));
+    i = indexOf(data, needle, i + Math.max(1, needle.length));
   }
   return n;
 }
 
-export function startswith(data: Uint8Array, prefix: Uint8Array): boolean {
+export function startsWith(data: Uint8Array, prefix: Uint8Array): boolean {
   if (prefix.length > data.length) return false;
   for (let i = 0; i < prefix.length; i++) if (data[i] !== prefix[i]) return false;
   return true;
 }
 
-export function endswith(data: Uint8Array, suffix: Uint8Array): boolean {
+export function endsWith(data: Uint8Array, suffix: Uint8Array): boolean {
   const o = data.length - suffix.length;
   if (o < 0) return false;
   for (let i = 0; i < suffix.length; i++) if (data[o + i] !== suffix[i]) return false;
@@ -118,11 +118,11 @@ export function endswith(data: Uint8Array, suffix: Uint8Array): boolean {
 const WS = b(" \t\n\r\x0b\x0c");
 
 /** `data.strip(chars)` (whitespace when `chars` is omitted). */
-export function strip(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
-  return rstrip(lstrip(data, chars), chars);
+export function trim(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
+  return trimEnd(trimStart(data, chars), chars);
 }
 
-export function lstrip(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
+export function trimStart(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
   let s = 0;
   if (chars.length === 1) {
     const c = chars[0];
@@ -131,7 +131,7 @@ export function lstrip(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
   return data.slice(s);
 }
 
-export function rstrip(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
+export function trimEnd(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
   let e = data.length;
   if (chars.length === 1) {
     const c = chars[0];
@@ -141,7 +141,7 @@ export function rstrip(data: Uint8Array, chars: Uint8Array = WS): Uint8Array {
 }
 
 /** `data.ljust(width, fill)` */
-export function ljust(data: Uint8Array, width: number, fill = 0): Uint8Array {
+export function padEnd(data: Uint8Array, width: number, fill = 0): Uint8Array {
   if (data.length >= width) return data.slice();
   const out = new Uint8Array(width).fill(fill);
   out.set(data);
@@ -153,11 +153,11 @@ export function split(data: Uint8Array, sep?: Uint8Array | null, maxsplit = -1):
   if (sep == null) return splitWhitespace(data, maxsplit);
   const out: Uint8Array[] = [];
   let s = 0;
-  let i = find(data, sep);
+  let i = indexOf(data, sep);
   while (i >= 0 && (maxsplit < 0 || out.length < maxsplit)) {
     out.push(data.slice(s, i));
     s = i + sep.length;
-    i = find(data, sep, s);
+    i = indexOf(data, sep, s);
   }
   out.push(data.slice(s));
   return out;
@@ -176,12 +176,12 @@ function* intersperse(parts: Uint8Array[], sep: Uint8Array): Generator<Uint8Arra
 }
 
 /** `data.hex()` */
-export function hex(data: Uint8Array, sep = ""): string {
+export function toHex(data: Uint8Array, sep = ""): string {
   return Array.from(data, (x) => x.toString(16).padStart(2, "0")).join(sep);
 }
 
 /** `bytes.fromhex(text)` */
-export function fromhex(text: string): Uint8Array {
+export function fromHex(text: string): Uint8Array {
   const clean = text.replace(/\s+/g, "");
   if (clean.length % 2) throw new ValueError("non-hexadecimal number found in fromhex() arg");
   const out = new Uint8Array(clean.length / 2);

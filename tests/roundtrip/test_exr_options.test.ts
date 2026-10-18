@@ -16,7 +16,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { bytes_, getOrThrow, len, Path, valueEquals, sorted } from "../../src/pyrt/index.ts";
+import { Bytes, getOrThrow, len, Path, valueEquals, sorted } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProject } from "../helpers.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
@@ -66,9 +66,9 @@ test.each(_NAMES)("test_import_writes_after_effects_exr_header[%#]", (name: stri
   expect(len(ae)).toBe(9750);
   // Magic, length, compression (0x0E), channel count across parts (0x12)
   // and channels + named layers (0x2E).
-  expect(valueEquals(bytes_.slice(ours, 0, 0x30), bytes_.slice(ae, 0, 0x30))).toBe(true);
+  expect(valueEquals(Bytes.slice(ours, 0, 0x30), Bytes.slice(ae, 0, 0x30))).toBe(true);
   // AE's remaining bytes vary from import to import; zeros render the same.
-  expect(valueEquals(bytes_.slice(ours, 0x30), new Uint8Array(len(ours) - 0x30))).toBe(true);
+  expect(valueEquals(Bytes.slice(ours, 0x30), new Uint8Array(len(ours) - 0x30))).toBe(true);
 });
 
 test("test_alpha_is_premultiplied_with_its_flag", () => {
@@ -97,8 +97,8 @@ test("test_reload_refreshes_the_exr_header", () => {
   asInstance(item.mainSource, FileSource).reload();
   expect(
     valueEquals(
-      bytes_.slice(item.mainSource._opti.tobytes(), 0, 0x30),
-      bytes_.slice(getOrThrow(_aeOptis(), "layered.exr"), 0, 0x30),
+      Bytes.slice(item.mainSource._opti.tobytes(), 0, 0x30),
+      Bytes.slice(getOrThrow(_aeOptis(), "layered.exr"), 0, 0x30),
     ),
   ).toBe(true);
 });

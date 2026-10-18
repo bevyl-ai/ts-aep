@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { BytesIO, NotImplementedError, Path, ValueError, b, bytes_, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, NotImplementedError, Path, ValueError, b, Bytes, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
 import { approx, raises } from "../../src/pyrt/pytest.ts";
 import { _FILE_FORMATS } from "../../src/py_aep/data/file_formats.ts";
 import { _PARSERS, _probeBmp, _probeDpxCineon, _probeGif, _probeHdr, _probeHeif, _probeMgjson, _probeMov, _probeMp3, _probeTiff, probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
@@ -198,7 +198,7 @@ describe("TestProbeFormatVariants", () => {
   });
 
   test("test_dpx_bad_signature_raises", () => {
-    raises(ValueError, () => _probeDpxCineon(new BytesIO(bytes_.repeat(b("NOTDPXdata"), 150))), "DPX/Cineon");
+    raises(ValueError, () => _probeDpxCineon(new BytesIO(Bytes.repeat(b("NOTDPXdata"), 150))), "DPX/Cineon");
   });
 
   test("test_dpx_truncated_header_raises", () => {
@@ -217,7 +217,7 @@ describe("TestProbeFormatVariants", () => {
     /** Legacy OS/2 BITMAPCOREHEADER (size 12) stores dims as u2. */
     const data = concat(
       b("BM"),
-      bytes_.repeat(b("\x00"), 12), // rest of the 14-byte BITMAPFILEHEADER
+      Bytes.repeat(b("\x00"), 12), // rest of the 14-byte BITMAPFILEHEADER
       struct.pack("<I", 12), // BITMAPCOREHEADER size
       struct.pack("<HH", 100, 50), // width, height (u2)
       struct.pack("<HH", 1, 24), // planes, bpp
@@ -229,7 +229,7 @@ describe("TestProbeFormatVariants", () => {
 
   test("test_tiff_bigtiff_returns_unknown", () => {
     /** BigTIFF (magic 43) is not a classic TIFF; probe returns no dims. */
-    const data = concat(b("II"), struct.pack("<H", 43), struct.pack("<H", 8), bytes_.repeat(b("\x00"), 16));
+    const data = concat(b("II"), struct.pack("<H", 43), struct.pack("<H", 8), Bytes.repeat(b("\x00"), 16));
     const info = _probeTiff(new BytesIO(data));
     expect(valueEquals([info.width, info.height], [0, 0])).toBe(true);
   });
@@ -240,7 +240,7 @@ describe("TestProbeFormatVariants", () => {
     // (64 kbps), sample-rate index 0 (22050 Hz), stereo.
     const header = b("\xff\xf3\x80\x00");
     const frameSize = floordiv(72 * 64000, 22050); // 208 (the 144 bug computes ~2x this)
-    const raw = concat(header, bytes_.repeat(b("\x00"), 100 * frameSize - header.length));
+    const raw = concat(header, Bytes.repeat(b("\x00"), 100 * frameSize - header.length));
     const info = _probeMp3(new BytesIO(raw));
     // 100 frames * 576 samples / 22050 Hz; the 144 coefficient halved this.
     expect(approx(info.duration, (100 * 576) / 22050, { abs: 1e-3 })).toBe(true);
@@ -272,15 +272,15 @@ describe("TestProbeFormatVariants", () => {
      * reports the sample marked 90 or 270 degrees as 1024x1536. */
     const data = ASSETS.div("crw.crw").readBytes();
     const record = struct.pack("<IIfi", 1536, 1024, 1.0, 0);
-    expect(bytes_.count(data, record)).toBe(1);
-    const rotated = bytes_.replace(data, record, struct.pack("<IIfi", 1536, 1024, 1.0, rotation));
+    expect(Bytes.count(data, record)).toBe(1);
+    const rotated = Bytes.replace(data, record, struct.pack("<IIfi", 1536, 1024, 1.0, rotation));
     const info = probeMedia(ASSETS.div("crw.crw"), rotated);
     expect(valueEquals([info.width, info.height], size)).toBe(true);
   });
 
   test("test_crw_bad_signature_raises_valueerror", () => {
     raises(ValueError, () =>
-      probeMedia(new Path("x.crw"), concat(b("II\x1a\x00\x00\x00NOTACIFF"), bytes_.repeat(b("\x00"), 16))),
+      probeMedia(new Path("x.crw"), concat(b("II\x1a\x00\x00\x00NOTACIFF"), Bytes.repeat(b("\x00"), 16))),
     );
   });
 
@@ -391,7 +391,7 @@ describe("TestPsdOpti", () => {
     const name = "\u{1f600}".repeat(120);
     const data = buildPsdLayerOptiData(100, 100, 8, 2, 0, 1, name, [0, 0, 100, 100]);
     const raw = data.slice(0x158);
-    const decoded = decode(raw.slice(0, bytes_.index(raw, 0)), "utf-8"); // must not raise
+    const decoded = decode(raw.slice(0, Bytes.indexOrThrow(raw, 0)), "utf-8"); // must not raise
     expect(decoded).toBe("\u{1f600}".repeat(floordiv(255, 4)));
   });
 });
@@ -415,7 +415,7 @@ describe("TestGapOptiBuilders", () => {
     // What AE 2026 writes back for a camera raw file without develop
     // settings (its heap-address tail zeroed).
     expect(
-      valueEquals(buildCrawOptiData(), concat(b("Craw\x00\x2e\x00\x00\x00\x1e"), bytes_.repeat(b("\x00"), 20))),
+      valueEquals(buildCrawOptiData(), concat(b("Craw\x00\x2e\x00\x00\x00\x1e"), Bytes.repeat(b("\x00"), 20))),
     ).toBe(true);
   });
 

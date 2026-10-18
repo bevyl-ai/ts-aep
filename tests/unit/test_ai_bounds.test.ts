@@ -10,7 +10,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx as pytestApprox, raises, warns } from "../../src/pyrt/pytest.ts";
-import { b, bytes_, encode, getOrThrow, len, assert, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
+import { b, Bytes, encode, getOrThrow, len, assert, valueEquals, range, sorted } from "../../src/pyrt/index.ts";
 import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
 import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
@@ -529,7 +529,7 @@ describe("TestUnsupported", () => {
 
   test("test_encrypted_raises", () => {
     // NOTE(port): pyrt bytes_.replace has no count argument; the pattern occurs once in build_pdf output, so replace-all equals Python's `.replace(..., 1)`.
-    const data = bytes_.replace(
+    const data = Bytes.replace(
       buildPdf("50 200 100 80 re f"),
       b("trailer\n<< /Size 99"),
       b("trailer\n<< /Encrypt 9 0 R /Size 99"),
@@ -545,7 +545,7 @@ describe("TestMultipleArtboards", () => {
     // rather than discarding artwork.
     // NOTE(port): warns() matches the message only; "artboards" is emitted solely by py_aep's UserWarning in ai_bounds, so the category check adds nothing here.
     // NOTE(port): pyrt bytes_.replace has no count argument; the pattern occurs once in build_pdf output, so replace-all equals Python's `.replace(..., 1)`.
-    const data = bytes_.replace(
+    const data = Bytes.replace(
       buildPdf("50 200 100 80 re f", {
         extra_objects:
           "30 0 obj\n<< /Type /Page /Parent 2 0 R " + "/MediaBox [0 0 200 200] >>\nendobj\n",

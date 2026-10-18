@@ -430,7 +430,13 @@ export const fs: HostFs = new Proxy({} as HostFs, {
   get(_t, name: string) {
     const target: HostFs = _active ?? _nodeFs ?? _memory;
     const v: unknown = Reflect.get(target, name);
-    return typeof v === "function" ? v.bind(target) : v;
+    if (typeof v !== "function") return v;
+    if (name !== "readFileSync") return v.bind(target);
+    // A Node `Buffer` slices to views; hand out a plain Uint8Array so `slice` copies.
+    return (...args: unknown[]) => {
+      const out: unknown = v.apply(target, args);
+      return out instanceof Uint8Array && out.constructor !== Uint8Array ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength) : out;
+    };
   },
 });
 

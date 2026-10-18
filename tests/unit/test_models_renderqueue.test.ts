@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
-import { Path, b, bytes_, len, valueEquals } from "../../src/pyrt/index.ts";
+import { Path, b, Bytes, len, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../../src/py_aep/binary/render_chunks.ts";
 import { OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
@@ -209,16 +209,16 @@ class TestRenderTemplatesDefaultIndex {
 
   static _write_render_prefs(prefsDir: Path, defaultIdx: number, names: string[]): void {
     // The prefs item is the 2246-byte AEP layout minus the last 64 bytes.
-    let raw = bytes_.repeat(b("\x00"), 32);
+    let raw = Bytes.repeat(b("\x00"), 32);
     for (const name of names) {
-      raw = bytes_.concat(raw, bytes_.slice(new RenderSettingsItem({ templateName: name }).tobytes(), 0, 2182));
+      raw = Bytes.concat(raw, Bytes.slice(new RenderSettingsItem({ templateName: name }).tobytes(), 0, 2182));
     }
     prefsDir
       .div("Adobe After Effects 26.0 Prefs-indep-render.txt")
       .writeText(
         '["Render Settings Preference Section"]\n' +
           '\t"Render Settings List" = ' +
-          bytes_.hex(raw) +
+          Bytes.toHex(raw) +
           "\n" +
           '\t"Default RS Index" = "' +
           String(defaultIdx) +
@@ -227,13 +227,13 @@ class TestRenderTemplatesDefaultIndex {
   }
 
   static _write_output_prefs(prefsDir: Path, defaultIdx: number, names: string[]): void {
-    const raw = bytes_.concat(
-      bytes_.repeat(b("\x00"), 32),
-      bytes_.repeat(new OutputModuleSettingsItem().tobytes(), len(names)),
+    const raw = Bytes.concat(
+      Bytes.repeat(b("\x00"), 32),
+      Bytes.repeat(new OutputModuleSettingsItem().tobytes(), len(names)),
     );
     const lines = [
       '["Output Module Preference Section"]',
-      '\t"Output Module List v28" = ' + bytes_.hex(raw),
+      '\t"Output Module List v28" = ' + Bytes.toHex(raw),
       '\t"Default OM Index" = "' + String(defaultIdx) + '"',
     ];
     for (const [i, name] of names.entries()) {

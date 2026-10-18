@@ -41,7 +41,7 @@ import {
   AssertionError,
   b,
   BytesIO,
-  bytes_,
+  Bytes,
   bytesEq,
   decode,
   fspath,
@@ -340,10 +340,10 @@ export function aiLayerOptiBoxes(project: Project): Map<string, [number[], numbe
     const opti = getattr(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
-    if (len(body) < 0x250 || !bytesEq(bytes_.slice(body, 0, 4), b("TEXT"))) continue;
+    if (len(body) < 0x250 || !bytesEq(Bytes.slice(body, 0, 4), b("TEXT"))) continue;
     const box: number[] = struct.unpackFrom(">4i", body, 0x10).map((v: number) => v / 65536);
-    const end = bytes_.index(body, new Uint8Array([0]), 0x44);
-    const name = decode(bytes_.slice(body, 0x44, end), "utf-8");
+    const end = Bytes.indexOrThrow(body, new Uint8Array([0]), 0x44);
+    const name = decode(Bytes.slice(body, 0x44, end), "utf-8");
     out.set(name, [box, (item as CompItem | FootageItem).width, (item as CompItem | FootageItem).height]);
   }
   return out;

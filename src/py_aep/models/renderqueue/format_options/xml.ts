@@ -6,7 +6,7 @@ import {
   RuntimeError,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   concat,
   decode,
   descriptor,
@@ -358,7 +358,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     this._ownTree = null;
     this.params = new ParamsDict();
     this.params._owner = null;
-    const xmlStart = bytes_.find(raw, b("<?xml"));
+    const xmlStart = Bytes.indexOf(raw, b("<?xml"));
     if (xmlStart >= 0) {
       this._xmlHeader = raw.slice(0, xmlStart);
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
@@ -563,8 +563,8 @@ export class XmlFormatOptions extends FormatOptionsBase {
     // which is `eq=False` - two modules with different render settings
     // would then compare equal, and any missed `.data` write would drop
     // the payload silently.
-    body.set(bytes_.intToBytes(body.length, 4, "big"), _LEN_BODY_OFFSET);
-    body.set(bytes_.intToBytes(xmlBytes.length - _XML_NULS.length, 4, "big"), _LEN_XML_OFFSET);
+    body.set(Bytes.intToBytes(body.length, 4, "big"), _LEN_BODY_OFFSET);
+    body.set(Bytes.intToBytes(xmlBytes.length - _XML_NULS.length, 4, "big"), _LEN_XML_OFFSET);
     this._body.data = new Uint8Array(body);
   }
 

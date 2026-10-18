@@ -14,7 +14,7 @@ import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 // NOTE(port): Python re-imports UNDEFINED_FRAME via models.sources.file; it is the same constant from binary/utils.ts
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
-import { AttributeError, ValueError, Path, b, bytes_, int, valueEquals, repr } from "../../src/pyrt/index.ts";
+import { AttributeError, ValueError, Path, b, Bytes, int, valueEquals, repr } from "../../src/pyrt/index.ts";
 import { approx, raises, skip } from "../../src/pyrt/pytest.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -353,7 +353,7 @@ describe("TestMediaColorProfileRecord", () => {
     const source = _import("mov_480.mov");
     const clrs = asInstance(source._clrs, ListChunk);
     expect(asInstance(findByType(clrs.chunks, "ipws"), IpwsChunk).value).toBe(0);
-    expect(valueEquals(findByType(clrs.chunks, "apid").data, bytes_.repeat(b("\xff"), 16))).toBe(true);
+    expect(valueEquals(findByType(clrs.chunks, "apid").data, Bytes.repeat(b("\xff"), 16))).toBe(true);
     expect(source.mediaColorSpace).toBe("Embedded");
   });
 

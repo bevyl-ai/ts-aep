@@ -3,7 +3,7 @@ import {
   NotImplementedError,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   descriptor,
   floatRepr,
@@ -30,7 +30,7 @@ import type { IccProfileLibrary } from "../../color/icc.ts";
 import type { Project } from "../project.ts";
 
 /** `apid` value meaning "no profile assigned" (the media's own profile wins). */
-export const _UNASSIGNED_PROFILE = bytes_.repeat(b("\xff"), 16);
+export const _UNASSIGNED_PROFILE = Bytes.repeat(b("\xff"), 16);
 
 /**
  * `LIST:CLRS` records and the first file version (format, minor) that has
@@ -594,14 +594,14 @@ export class FootageSource {
     if (value === "Working Color Space") {
       // AE sets ipws, clears the override id, and empties the ocsp Utf8.
       ipwsChunk.value = 1;
-      apidChunk.data = bytes_.repeat(b("\xff"), 16);
+      apidChunk.data = Bytes.repeat(b("\xff"), 16);
       this._writeOcsp("");
       return;
     }
     ipwsChunk.value = 0;
     if (value === "Embedded") {
       // Revert to the file's embedded profile (mirrored in the Mcsp Utf8).
-      apidChunk.data = bytes_.repeat(b("\xff"), 16);
+      apidChunk.data = Bytes.repeat(b("\xff"), 16);
       this._writeOcsp(this._embeddedEnvelope());
       return;
     }
@@ -619,7 +619,7 @@ export class FootageSource {
     // Treat any other name as an OCIO color space (no ICC, apid unmanaged).
     // The envelope depends on the SELECTION KIND, so the config is
     // required - AE-verified against a direct-pick and a role-pick sample.
-    apidChunk.data = bytes_.repeat(b("\xff"), 16);
+    apidChunk.data = Bytes.repeat(b("\xff"), 16);
     this._writeOcsp(this._ocioEnvelope(value));
   }
 

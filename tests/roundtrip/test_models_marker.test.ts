@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
   at,
-  bytes_,
+  Bytes,
   isclose,
   len,
   Path,
@@ -145,7 +145,7 @@ describe("TestRoundtripMarkerDuration", () => {
     const new_ = comp2.markers.find((m) => m.comment === "w_new");
     if (new_ === undefined) throw new StopIteration();
     expect(
-      valueEquals(bytes_.slice(new_._nmhd.tobytes(), 8, 16), bytes_.fromhex("000005dc00000258")),
+      valueEquals(Bytes.slice(new_._nmhd.tobytes(), 8, 16), Bytes.fromHex("000005dc00000258")),
     ).toBe(true);
     expect(new_.duration).toBe(2.5);
   });

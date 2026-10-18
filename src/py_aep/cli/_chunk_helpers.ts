@@ -10,7 +10,7 @@
 import "../binary/_register.ts";
 import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { BytesIO, bytes_, floordiv, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
+import { BytesIO, floordiv, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /**
@@ -168,10 +168,10 @@ export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
 
   if (bytesPerLine === 0) throw new ValueError("range() arg 3 must not be zero");
   for (let i = 0; bytesPerLine > 0 && i < data.length; i += bytesPerLine) {
-    const chunk = bytes_.slice(data, i, i + bytesPerLine);
+    const chunk = data.slice(i, i + bytesPerLine);
 
-    const leftBytes = bytes_.slice(chunk, null, mid);
-    const rightBytes = bytes_.slice(chunk, mid);
+    const leftBytes = chunk.slice(0, mid);
+    const rightBytes = chunk.slice(mid);
     const left = Array.from(leftBytes, (b) => format(b, "02X")).join(" ");
     const right = Array.from(rightBytes, (b) => format(b, "02X")).join(" ");
 

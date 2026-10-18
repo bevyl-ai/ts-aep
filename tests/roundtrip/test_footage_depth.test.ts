@@ -1,7 +1,7 @@
 import "../../src/py_aep/binary/_register.ts";
 import * as fs from "node:fs";
 import { expect, test } from "bun:test";
-import { bytes_, fspath, getOrThrow, lshift, Path, valueEquals, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+import { Bytes, fspath, getOrThrow, lshift, Path, valueEquals, sorted, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { asInstance, parseProject } from "../helpers.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
@@ -80,7 +80,7 @@ function _asset(name: string): Path {
  * on macOS and on Windows, so it is not compared here.)
  */
 function _depthBytes(source: FileSource): [Uint8Array, boolean] {
-  return [bytes_.slice(source._sspc.tobytes(), 0x3e, 0x45), source.hasAlpha];
+  return [Bytes.slice(source._sspc.tobytes(), 0x3e, 0x45), source.hasAlpha];
 }
 
 test.each(sorted(_aeSources().keys()))("test_import_caches_after_effects_depth[%#]", (name) => {
@@ -353,6 +353,6 @@ test("test_audio_and_data_files_have_no_depth", () => {
   const sources = _aeSources();
   for (const name of ["wav.wav", "mp3.mp3", "csv.csv", "mp4_av1_with_audio.mp4"]) {
     expect(getOrThrow(sources, name)._sspc.depth).toBe(0);
-    expect(valueEquals(bytes_.slice(getOrThrow(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01]))).toBe(true);
+    expect(valueEquals(Bytes.slice(getOrThrow(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01]))).toBe(true);
   }
 });

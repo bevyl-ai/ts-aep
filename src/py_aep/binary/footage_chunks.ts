@@ -11,7 +11,7 @@
 
 import {
   b,
-  bytes_,
+  Bytes,
   concat,
   decode,
   define,
@@ -269,7 +269,7 @@ export class SspcChunk extends Chunk {
    * importer records the display window).
    */
   get sourceModified(): number {
-    const stamp = bytes_.intFromBytes(bytes_.slice(this._sourceStamp, 2, 6), "big");
+    const stamp = Bytes.intFromBytes(this._sourceStamp.slice(2, 6), "big");
     return stamp ? stamp - MAC_EPOCH_OFFSET : 0;
   }
 
@@ -278,7 +278,7 @@ export class SspcChunk extends Chunk {
     // int.to_bytes raises OverflowError (not ValueError) when the value does not fit
     if (stamp < 0) throw new OverflowError("can't convert negative int to unsigned");
     if (stamp >= 2 ** 32) throw new OverflowError("int too big to convert");
-    this._sourceStamp = concat(b("\x00\x00"), bytes_.intToBytes(stamp, 4, "big"), bytes_.repeat(b("\x00"), 3));
+    this._sourceStamp = concat(b("\x00\x00"), Bytes.intToBytes(stamp, 4, "big"), Bytes.repeat(b("\x00"), 3));
   }
 
   /** Duration in seconds (dividend / divisor). */
@@ -488,7 +488,7 @@ define(SspcChunk, {
   _reservedC8: bytesField(2, { repr: false }),
   _reservedCa: bytesField(2, { repr: false }),
   dataSize: u8Field(),
-  _reservedD4: bytesField(10, { default: concat(b("\x01"), bytes_.repeat(b("\x00"), 9)), repr: false }),
+  _reservedD4: bytesField(10, { default: concat(b("\x01"), Bytes.repeat(b("\x00"), 9)), repr: false }),
 });
 
 register("sspc")(SspcChunk);
@@ -518,21 +518,21 @@ register("sspc")(SspcChunk);
  */
 export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: boolean } = {}): Uint8Array {
   const { sequence = false } = kw;
-  const code = bytes_.ljust(bytes_.slice(encode(sourceFormat, "ascii"), 0, 4), 4, 0x20);
+  const code = Bytes.padEnd(encode(sourceFormat, "ascii").slice(0, 4), 4, 0x20);
   let block: Uint8Array;
   if (sequence && ["IMIO", "STIL"].includes(sourceFormat)) {
-    block = bytes_.repeat(b("\x00"), 16);
+    block = Bytes.repeat(b("\x00"), 16);
   } else {
-    block = concat(Uint8Array.from(code).reverse(), b("\xff\xff\xff\xff"), bytes_.repeat(b("\x00"), 4), b("\x01\x00\x00\x00"));
+    block = concat(Uint8Array.from(code).reverse(), b("\xff\xff\xff\xff"), Bytes.repeat(b("\x00"), 4), b("\x01\x00\x00\x00"));
   }
   return concat(
     code,
     b("\x00\x05"),
     b("\x00\x00\x00\x3a"), // 58 = total length
-    bytes_.repeat(b("\x00"), 20),
+    Bytes.repeat(b("\x00"), 20),
     block,
     b("\x01"),
-    bytes_.repeat(b("\x00"), 11),
+    Bytes.repeat(b("\x00"), 11),
   );
 }
 
@@ -563,7 +563,7 @@ export function buildTiffOptiData(
 ): Uint8Array {
   const chunk = new PsdOptiChunk({
     assetType: "TIF ",
-    pad12: concat(b(" FIT\x01"), bytes_.repeat(b("\x00"), 7)),
+    pad12: concat(b(" FIT\x01"), Bytes.repeat(b("\x00"), 7)),
     psdChannels: channels,
     psdCanvasWidth: width,
     psdCanvasHeight: height,
@@ -792,7 +792,7 @@ export function buildRhdrOptiData(): Uint8Array {
     b("\x00\x2e"),
     struct.pack(">I", 30), // total length (big-endian)
     b("\x02\x00"),
-    bytes_.repeat(b("\x00"), 18),
+    Bytes.repeat(b("\x00"), 18),
   );
 }
 
@@ -806,7 +806,7 @@ export function buildRhdrOptiData(): Uint8Array {
  * (compared frame by frame). The dimensions live in `sspc`.
  */
 export function buildCrawOptiData(): Uint8Array {
-  return concat(b("Craw"), b("\x00\x2e"), struct.pack(">I", 30), bytes_.repeat(b("\x00"), 20));
+  return concat(b("Craw"), b("\x00\x2e"), struct.pack(">I", 30), Bytes.repeat(b("\x00"), 20));
 }
 
 /**
@@ -932,9 +932,9 @@ export class OptiChunk extends Chunk {
     }
     // Peek at discriminator (first 4 bytes = asset_type)
     const discRaw = readBytes(fp, 6);
-    const nul = bytes_.find(discRaw, b("\x00"), 0, 4);
-    const assetType = decode(bytes_.slice(discRaw, 0, nul >= 0 ? nul : 4), "ascii");
-    const assetTypeInt = struct.unpack(">H", bytes_.slice(discRaw, 4, 6))[0];
+    const nul = Bytes.indexOf(discRaw, b("\x00"), 0, 4);
+    const assetType = decode(discRaw.slice(0, nul >= 0 ? nul : 4), "ascii");
+    const assetTypeInt = struct.unpack(">H", discRaw.slice(4, 6))[0];
     fp.seek(-6, 1);
     // Placeholder: asset_type is empty but asset_type_int == 2
     if (!assetType && assetTypeInt === 2) {
@@ -1087,13 +1087,13 @@ export class PsdOptiChunk extends OptiChunk {
    * Empty for a merged import, where the trailing region is all-NUL.
    */
   get psdGroupName(): string {
-    return decode(bytes_.split(this._trailing, b("\x00"), 1)[0], "utf-8");
+    return decode(Bytes.split(this._trailing, b("\x00"), 1)[0], "utf-8");
   }
 
   set psdGroupName(value: string) {
     // AE writes a fixed 602-byte opti: keep the trailing name block
     // NUL-padded to 258 bytes so the chunk size is preserved.
-    this._trailing = bytes_.ljust(truncateUtf8(value, 255), 258, 0);
+    this._trailing = Bytes.padEnd(truncateUtf8(value, 255), 258, 0);
   }
 }
 
@@ -1107,7 +1107,7 @@ define(PsdOptiChunk, {
   _pad0b: bytesField(3, { default: b("\x00\x01\x01"), repr: false }),
   psdLayerIndex: u4Field({ default: 0xffffffff }),
 
-  _pad12: bytesField(12, { default: concat(b("SPB8\x01"), bytes_.repeat(b("\x00"), 7)), repr: false }),
+  _pad12: bytesField(12, { default: concat(b("SPB8\x01"), Bytes.repeat(b("\x00"), 7)), repr: false }),
   psdChannels: u1Field({ default: 4 }),
 
   _pad1f: bytesField(1, { repr: false }),

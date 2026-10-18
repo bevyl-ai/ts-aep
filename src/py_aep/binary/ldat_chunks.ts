@@ -6,7 +6,7 @@ import {
   AttrsBase,
   Factory,
   b,
-  bytes_,
+  Bytes,
   concat,
   define,
   descriptor,
@@ -117,7 +117,7 @@ define(Lhd3Chunk, {
   itemTypeRaw: u1Field(),
   _counterA: u4Field({ default: 1, repr: false }),
   _counterB: u4Field({ default: 2, repr: false }),
-  _trailingPad: bytesField(20, { default: bytes_.repeat(b("\x00"), 20), optional: true, repr: false }),
+  _trailingPad: bytesField(20, { default: Bytes.repeat(b("\x00"), 20), optional: true, repr: false }),
 });
 register("lhd3")(Lhd3Chunk);
 
@@ -181,7 +181,7 @@ export class GdtaChunk extends Chunk {
 }
 define(GdtaChunk, {
   chunkType: { default: "gdta" },
-  data: { default: bytes_.repeat(b("\x00"), 8) },
+  data: { default: Bytes.repeat(b("\x00"), 8) },
 });
 register("gdta")(GdtaChunk);
 

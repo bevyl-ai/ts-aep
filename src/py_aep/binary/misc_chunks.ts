@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, bytes_, decode, encode, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
+import { define, field, b, Bytes, decode, encode, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -634,14 +634,14 @@ export class PardChunk extends Chunk {
   get name(): string {
     const raw: Uint8Array = "_rawName" in this ? this._rawName : b("");
     if (!raw.length) return "";
-    const nul = bytes_.find(raw, 0x00);
-    if (nul >= 0) return decode(bytes_.slice(raw, 0, nul), "utf-8", "surrogateescape");
+    const nul = Bytes.indexOf(raw, 0x00);
+    if (nul >= 0) return decode(raw.slice(0, nul), "utf-8", "surrogateescape");
     return decode(raw, "utf-8", "surrogateescape");
   }
 
   set name(value: string) {
-    const encoded = bytes_.slice(encode(value, "utf-8", "surrogateescape"), 0, 31);
-    this._rawName = bytes_.concat(encoded, bytes_.repeat(b("\x00"), 32 - encoded.length));
+    const encoded = encode(value, "utf-8", "surrogateescape").slice(0, 31);
+    this._rawName = Bytes.concat(encoded, Bytes.repeat(b("\x00"), 32 - encoded.length));
   }
 }
 define(PardChunk, {
@@ -1274,7 +1274,7 @@ export class ApidChunk extends Chunk {
 }
 define(ApidChunk, {
   chunkType: field({ default: "apid" }),
-  data: field({ default: bytes_.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
 });
 register("apid")(ApidChunk);
 
@@ -1285,7 +1285,7 @@ export class EpidChunk extends Chunk {
 }
 define(EpidChunk, {
   chunkType: field({ default: "epid" }),
-  data: field({ default: bytes_.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
 });
 register("epid")(EpidChunk);
 

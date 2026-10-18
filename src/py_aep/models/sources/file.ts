@@ -34,7 +34,6 @@ import {
   ValueError,
   at,
   b,
-  bytes_,
   bytesEq,
   concat,
   floordiv,
@@ -393,7 +392,7 @@ export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
 export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string | null {
   if (!_CATALOGUED_PROFILE_FORMATS.has(sourceFormat)) return null;
   if (info.iccProfile != null) {
-    if (bytesEq(bytes_.slice(info.iccProfile, 16, 20), b("RGB "))) return null;
+    if (bytesEq(info.iccProfile.slice(16, 20), b("RGB "))) return null;
     return iccProfileDescription(info.iccProfile);
   }
   if (info.colorMode === 1 && info.bitDepth === 32) {
@@ -416,7 +415,7 @@ export function aiDocumentProfile(
 ): [Uint8Array | null, string | null] {
   const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
-  if (bytesEq(bytes_.slice(icc, 16, 20), b("RGB "))) return [icc, null];
+  if (bytesEq(icc.slice(16, 20), b("RGB "))) return [icc, null];
   return [null, iccProfileDescription(icc)];
 }
 
@@ -993,7 +992,7 @@ export class FileSource extends FootageSource {
       sspc._reservedA8 = b("\x00\x00\x00\x01");
       sspc._reservedB8 = b("\x00");
       sspc._reservedBa = b("\x00\x00");
-      sspc._sourceStamp = concat(b("\x01"), bytes_.slice(sspc._sourceStamp, 1));
+      sspc._sourceStamp = concat(b("\x01"), sspc._sourceStamp.slice(1));
     } else if (isSequence) {
       sspc.startFrame = startFrame;
       sspc.endFrame = endFrame;

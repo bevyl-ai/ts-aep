@@ -10,7 +10,6 @@ import {
   Fraction,
   OSError,
   ValueError,
-  bytes_,
   b,
   decode,
   divmod,
@@ -187,7 +186,7 @@ export function writeBytes(fp: IO, data: Uint8Array): number {
  * AEP name fields.
  */
 export function truncateUtf8(value: string, maxBytes: number): Uint8Array {
-  return encode(decode(bytes_.slice(encode(value, "utf-8"), 0, maxBytes), "utf-8", "ignore"), "utf-8");
+  return encode(decode(encode(value, "utf-8").slice(0, maxBytes), "utf-8", "ignore"), "utf-8");
 }
 
 /** Check if `size` bytes can be read without consuming them. */

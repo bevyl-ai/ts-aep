@@ -24,7 +24,7 @@ import {
   BytesIO,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   concat,
   decode,
   encode,
@@ -56,7 +56,7 @@ function _write(chunks: Chunk[]): Uint8Array {
 test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
   const data = concat(
     _chunk("tdsn", b("\x00")),
-    _chunk("tdmn", bytes_.ljust(b("ADBE Transform Group"), 40, 0)),
+    _chunk("tdmn", Bytes.padEnd(b("ADBE Transform Group"), 40, 0)),
   );
   const chunks = _read(data);
   expect(valueEquals(chunks.map((c) => c.chunkType), ["tdsn", "tdmn"])).toBe(true);
@@ -69,7 +69,7 @@ test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
 });
 
 test("test_a_legacy_fnam_reads_its_string", () => {
-  const body = bytes_.slice(
+  const body = Bytes.slice(
     concat(b("Color Control\x00ol\x00\x00"), Uint8Array.from(range(1, 32))),
     0,
     48,
@@ -85,11 +85,11 @@ test("test_a_legacy_fnam_reads_its_string", () => {
 });
 
 test("test_a_renamed_legacy_fnam_keeps_its_buffer", () => {
-  const body = bytes_.ljust(b("Color Control"), 48, 0);
+  const body = Bytes.padEnd(b("Color Control"), 48, 0);
   const fnam = asInstance(_read(_chunk("fnam", body))[0], ContainerChunk);
   asInstance(fnam.chunks[0], Utf8Chunk).value = "Text Color";
   const written = _write([fnam]);
-  expect(valueEquals(written, _chunk("fnam", bytes_.ljust(b("Text Color"), 48, 0)))).toBe(true);
+  expect(valueEquals(written, _chunk("fnam", Bytes.padEnd(b("Text Color"), 48, 0)))).toBe(true);
 });
 
 test("test_a_modern_fnam_is_unchanged", () => {
@@ -122,7 +122,7 @@ test("test_a_legacy_fnam_with_a_four_letter_name_reads_its_string", () => {
   // "Fill" then NUL padding also reads as a `Fill` header of length 0; the
   // NUL headers after it are not chunks.
   for (const name of [b("Fill"), b("Glow"), b("Tint"), b("Blur")]) {
-    const data = _chunk("fnam", bytes_.ljust(name, 48, 0));
+    const data = _chunk("fnam", Bytes.padEnd(name, 48, 0));
     const fnam = asInstance(_read(data)[0], ContainerChunk);
     const utf8 = asInstance(fnam.chunks[0], Utf8Chunk);
     expect(valueEquals(utf8.value, decode(name))).toBe(true);
@@ -158,7 +158,7 @@ test("test_a_renamed_legacy_pdnm_grows_to_its_items", () => {
 });
 
 test("test_a_legacy_fnam_too_long_for_its_buffer_raises", () => {
-  const fnam = asInstance(_read(_chunk("fnam", bytes_.ljust(b("Glow"), 48, 0)))[0], ContainerChunk);
+  const fnam = asInstance(_read(_chunk("fnam", Bytes.padEnd(b("Glow"), 48, 0)))[0], ContainerChunk);
   asInstance(fnam.chunks[0], Utf8Chunk).value = "x".repeat(48);
   raises(ValueError, () => {
     _write([fnam]);
@@ -241,14 +241,14 @@ test("test_new_names_in_an_older_project_are_written_as_strings", () => {
   );
   names.push(new TdsnChunk({ chunks: [new Utf8Chunk({ value: TDSN_SENTINEL })] }));
   const data = _olderProjectBytes(names, 91);
-  expect(bytes_.contains(data, b("Utf8"))).toBe(false);
-  expect(bytes_.contains(data, _chunk("fnam", bytes_.ljust(b("Glow"), 48, 0)))).toBe(true);
-  expect(bytes_.contains(data, _chunk("pdnm", b("On|Off\x00")))).toBe(true);
-  expect(bytes_.contains(data, _chunk("RCom", b("note\x00")))).toBe(true);
-  expect(bytes_.contains(data, _chunk("tdsn", b("\x00")))).toBe(true);
+  expect(Bytes.includes(data, b("Utf8"))).toBe(false);
+  expect(Bytes.includes(data, _chunk("fnam", Bytes.padEnd(b("Glow"), 48, 0)))).toBe(true);
+  expect(Bytes.includes(data, _chunk("pdnm", b("On|Off\x00")))).toBe(true);
+  expect(Bytes.includes(data, _chunk("RCom", b("note\x00")))).toBe(true);
+  expect(Bytes.includes(data, _chunk("tdsn", b("\x00")))).toBe(true);
   // The same containers in a format 92 file keep their `Utf8` children.
   const modern = _olderProjectBytes(names, 92);
-  expect(bytes_.count(modern, b("Utf8"))).toBe(4);
+  expect(Bytes.count(modern, b("Utf8"))).toBe(4);
 });
 
 test("test_names_edited_in_an_older_project_read_back", () => {

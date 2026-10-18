@@ -5,7 +5,7 @@ import {
   NotImplementedError,
   ValueError,
   at,
-  bytes_,
+  Bytes,
   deferred,
   getOr,
   getattr,
@@ -95,7 +95,7 @@ export const _TEXT_SELECTOR_NAMES = new Map<string, string>([
 // its EfdG definition, and an AE 15 project's stored 1 on resave). Without
 // the atom AE loads the instance with the Legacy engine: Puppet Engine reads 1
 // and the Advanced-only parameters are hidden.
-export const _PUPPET_ENGINE_VERSION = bytes_.intToBytes(2, 4, "big");
+export const _PUPPET_ENGINE_VERSION = Bytes.intToBytes(2, 4, "big");
 
 /**
  * Resolve `name` against the baked built-in effect templates.
@@ -117,7 +117,7 @@ export function _bakedEffectDef(name: string): [string, string, ListChunk] | nul
     entry = found[1];
   }
   const [display, blob] = entry;
-  const raw = bytes_.fromhex(blob);
+  const raw = Bytes.fromHex(blob);
   const sspc = readChunks(new BytesIO(raw), raw.length)[0];
   assert(sspc instanceof ListChunk);
   return [matchName, display, sspc];
@@ -1104,7 +1104,7 @@ export class PropertyGroup extends PropertyBase {
     const [tdmn, sspc] = buildExpressionControl(
       matchName,
       display,
-      bytes_.fromhex(skeleton.part),
+      Bytes.fromHex(skeleton.part),
       {
         tdsnName,
         timeBase: comp._cdta.internalTimebase,

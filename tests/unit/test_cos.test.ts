@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { approx, raises } from "../../src/pyrt/pytest.ts";
-import { BytesIO, b, bytes_, assert, valueEquals } from "../../src/pyrt/index.ts";
+import { BytesIO, b, Bytes, assert, valueEquals } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
 import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { serialize } from "../../src/py_aep/cos/serializer.ts";
@@ -299,21 +299,21 @@ describe("TestCosSerializer", () => {
   });
 
   test("test_serialize_none", () => {
-    expect(bytes_.contains(serialize(null), b("null"))).toBe(true);
+    expect(Bytes.includes(serialize(null), b("null"))).toBe(true);
   });
 
   test("test_serialize_bool", () => {
-    expect(bytes_.contains(serialize(true), b("true"))).toBe(true);
-    expect(bytes_.contains(serialize(false), b("false"))).toBe(true);
+    expect(Bytes.includes(serialize(true), b("true"))).toBe(true);
+    expect(Bytes.includes(serialize(false), b("false"))).toBe(true);
   });
 
   test("test_serialize_int", () => {
-    expect(bytes_.contains(serialize(42), b("42"))).toBe(true);
+    expect(Bytes.includes(serialize(42), b("42"))).toBe(true);
   });
 
   test("test_serialize_float", () => {
     const result = serialize(3.14);
-    expect(bytes_.contains(result, b("3.14"))).toBe(true);
+    expect(Bytes.includes(result, b("3.14"))).toBe(true);
   });
 });
 

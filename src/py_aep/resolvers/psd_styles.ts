@@ -33,7 +33,6 @@ import {
   OSError,
   ValueError,
   b,
-  bytes_,
   bytesEq,
   copysign,
   decode,
@@ -136,7 +135,7 @@ export class _Reader {
   }
 
   raw(n: number): Uint8Array {
-    const value = bytes_.slice(this.data, this.pos, this.pos + n);
+    const value = this.data.slice(this.pos, this.pos + n);
     if (value.length !== n) throw new ValueError("truncated descriptor");
     this.pos += n;
     return value;
@@ -697,9 +696,9 @@ export function readGlobalLight(file: PathLike): [number, number] {
   fp.seek(26);
   for (const [resourceId, body] of iterImageResources(fp)) {
     if (resourceId === 1037 && body.length >= 4) {
-      angle = struct.unpack(">i", bytes_.slice(body, 0, 4))[0];
+      angle = struct.unpack(">i", body.slice(0, 4))[0];
     } else if (resourceId === 1049 && body.length >= 4) {
-      altitude = struct.unpack(">i", bytes_.slice(body, 0, 4))[0];
+      altitude = struct.unpack(">i", body.slice(0, 4))[0];
     }
   }
   return [angle, altitude];
@@ -724,7 +723,7 @@ export function _blendOptionsValues(
   // indices (0=R, 1=G, 2=B); an absent/empty block keeps all channels on.
   const restricted = new Set<number>();
   for (let off = 0, n = blocks.channelRestrictions.length - 3; off < n; off += 4) {
-    restricted.add(struct.unpack(">I", bytes_.slice(blocks.channelRestrictions, off, off + 4))[0]);
+    restricted.add(struct.unpack(">I", blocks.channelRestrictions.slice(off, off + 4))[0]);
   }
   for (const [index, name] of ["R", "G", "B"].entries()) {
     values.set(`ADBE ${name} Channel Blend`, restricted.has(index) ? 0.0 : 1.0);

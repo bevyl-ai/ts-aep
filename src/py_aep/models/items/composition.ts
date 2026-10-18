@@ -19,7 +19,7 @@ import {
   at,
   Fraction,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   deferred,
   descriptor,
@@ -428,7 +428,7 @@ export function _rewriteEgIdentity(
         // duplicate and re-derives them from the source property
         // (probed in AE 2026 on a slider controller).
         if (["CVal", "CDef"].includes(chunk.chunkType) && chunk.data?.length > 0) {
-          chunk.data = bytes_.repeat(b("\x00"), chunk.data.length);
+          chunk.data = Bytes.repeat(b("\x00"), chunk.data.length);
         }
       }
       const cprp = findByListTypeOrNull(cctl.chunks, "CPrp");
@@ -1253,10 +1253,10 @@ export class CompItem extends AVItem {
           const raw = lc._rawBody;
           if (
             raw.length >= _LDTA_SOURCE_ID_END &&
-            bytesEq(bytes_.slice(raw, 0, 4), b("ldta"))
+            bytesEq(raw.slice(0, 4), b("ldta"))
           ) {
-            const sid = bytes_.intFromBytes(
-              bytes_.slice(raw, _LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END),
+            const sid = Bytes.intFromBytes(
+              raw.slice(_LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END),
               "big",
             );
             if (sid !== 0) {

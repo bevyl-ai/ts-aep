@@ -5,7 +5,7 @@ import {
   AssertionError,
   b,
   BytesIO,
-  bytes_,
+  Bytes,
   concat,
   encode,
   enumerate,
@@ -1525,7 +1525,7 @@ function _threeLayerPdf(path: Path, order: number[]): void {
   out = concat(out, b("xref\n0 8\n0000000000 65535 f \n"));
   out = concat(
     out,
-    bytes_.join([1, 2, 3, 4, 5, 6, 7].map((n) => encode(`${String(getOrThrow(offsets, n)).padStart(10, "0")} 00000 n \n`))),
+    Bytes.join([1, 2, 3, 4, 5, 6, 7].map((n) => encode(`${String(getOrThrow(offsets, n)).padStart(10, "0")} 00000 n \n`))),
   );
   out = concat(out, encode(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`));
   path.writeBytes(out);
@@ -2722,7 +2722,7 @@ describe("TestChooseLayerImport", () => {
     const [name, sspc, _opti, utf8] = _footageParts(parseAep(out).project);
     expect(name).toBe("inner/choose_layer.psd");
     expect(utf8).toBe("inner");
-    expect(valueEquals(sspc.slice(0xbc, 0xc4), bytes_.fromhex("0000000600000003"))).toBe(true);
+    expect(valueEquals(sspc.slice(0xbc, 0xc4), Bytes.fromHex("0000000600000003"))).toBe(true);
   });
 });
 

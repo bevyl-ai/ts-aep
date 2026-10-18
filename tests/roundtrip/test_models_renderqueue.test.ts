@@ -10,7 +10,7 @@ import {
   Path,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   concat,
   contains,
   dictPop,
@@ -624,13 +624,13 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(FO_SAMPLES_DIR.div("png", "png_rgba.aep")).project;
     const om = renderQueueOf(project).items[0].outputModules[0];
-    expect(valueEquals(bytes_.slice(om._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
+    expect(valueEquals(Bytes.slice(om._roou.tobytes(), 0x42, 0x48), Bytes.fromHex("001DF8520020"))).toBe(true);
     om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
 
     const out = tmpPath.div("depth.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(valueEquals(bytes_.slice(om2._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520040"))).toBe(true);
+    expect(valueEquals(Bytes.slice(om2._roou.tobytes(), 0x42, 0x48), Bytes.fromHex("001DF8520040"))).toBe(true);
     expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
   });
 
@@ -649,9 +649,9 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
   test("test_frame_rate_setter_writes_16_16", () => {
     const rouu = new RouuChunk();
     rouu.frameRate = 29.97;
-    expect(valueEquals(bytes_.slice(rouu.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
+    expect(valueEquals(Bytes.slice(rouu.tobytes(), 0x42, 0x48), Bytes.fromHex("001DF8520020"))).toBe(true);
     rouu.frameRate = 7.5;
-    expect(valueEquals(bytes_.slice(rouu.tobytes(), 0x42, 0x46), bytes_.fromhex("00078000"))).toBe(true);
+    expect(valueEquals(Bytes.slice(rouu.tobytes(), 0x42, 0x46), Bytes.fromHex("00078000"))).toBe(true);
   });
 
   test("test_width_and_height_are_4_bytes", () => {
@@ -660,7 +660,7 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     // would see a valid 4464 x 1080): the size fields are 4 bytes.
     const body = new Uint8Array(new RouuChunk().tobytes());
     body.set(
-      concat(bytes_.intToBytes(70000, 4, "big"), bytes_.intToBytes(66616, 4, "big")),
+      concat(Bytes.intToBytes(70000, 4, "big"), Bytes.intToBytes(66616, 4, "big")),
       0x22,
     );
     const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunkType: "Roou" }), RouuChunk);
@@ -1522,12 +1522,12 @@ describe("TestRQAddWithoutPreferences", () => {
     expect(valueEquals(rs._reserved00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
     expect(valueEquals(rs._reserved06, b("\x00\x03\x00\x00"))).toBe(true);
     expect(
-      valueEquals(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8))),
+      valueEquals(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), Bytes.repeat(b("\x00"), 8))),
     ).toBe(true);
     expect(valueEquals(rs._reserved45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
-    expect(valueEquals(rs._reservedEnd, bytes_.repeat(b("\x00"), 16))).toBe(true);
+    expect(valueEquals(rs._reservedEnd, Bytes.repeat(b("\x00"), 16))).toBe(true);
     expect(rs.itemId).toBe(2);
-    expect(valueEquals(rs._remaining, concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)))).toBe(true);
+    expect(valueEquals(rs._remaining, concat(b("\x00\x00\x00\x0f"), Bytes.repeat(b("\x00"), 16)))).toBe(true);
 
     const om = new OutputModuleSettingsItem();
     expect(om.convertToLinearLight).toBe(2);
@@ -1542,7 +1542,7 @@ describe("TestRQAddWithoutPreferences", () => {
     new TiffRoptChunk().write(buf);
     const data = buf.getvalue();
     expect(len(data)).toBe(602);
-    expect(valueEquals(bytes_.slice(data, 0, 4), b("TIF "))).toBe(true);
+    expect(valueEquals(Bytes.slice(data, 0, 4), b("TIF "))).toBe(true);
     expect(new TiffRoptChunk().chunkSize).toBe(602);
   });
 
@@ -1560,7 +1560,7 @@ describe("TestRQAddWithoutPreferences", () => {
     for (const [cls, code, size] of cases) {
       const data = new cls().tobytes();
       assert(len(data) === size, repr(code));
-      assert(valueEquals(bytes_.slice(data, 0, 4), code), repr(code));
+      assert(valueEquals(Bytes.slice(data, 0, 4), code), repr(code));
       // RoptChunk dispatch re-parses the bytes to the same variant + bytes
       const parsed = RoptChunk.frombytes(data, { chunkType: "Ropt" });
       assert(parsed instanceof cls, repr(code));
@@ -2015,7 +2015,7 @@ describe("TestRoundtripOutputColorSpace", () => {
     const om = renderQueueOf(project).items[0].outputModules[0];
     // "ACEScc yo" - AE's own Guid for it is the committed aces_acescc_yo id.
     om.outputColorSpace = "ACEScc yo";
-    const expected = bytes_.fromhex("596cbde737d61ec5a84b8008888dd03f");
+    const expected = Bytes.fromHex("596cbde737d61ec5a84b8008888dd03f");
     expect(valueEquals(om._omLdat.outputProfileId, expected)).toBe(true);
     expect(om._omLdat.outputColorSpaceWorking).toBe(0);
     // the id reverse-maps back to the color-space name (read/write symmetry).

@@ -23,7 +23,7 @@ import {
   OSError,
   Path,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   decode,
   literal,
@@ -70,33 +70,33 @@ export function iccProfileId(data: Uint8Array): Uint8Array {
  */
 export function iccProfileDescription(data: Uint8Array): string | null {
   if (data.length < 132) return null;
-  const tagCount = bytes_.intFromBytes(bytes_.slice(data, 128, 132), "big");
+  const tagCount = Bytes.intFromBytes(data.slice(128, 132), "big");
   let offset = 132;
   for (let i = 0; i < tagCount; i++) {
     if (offset + 12 > data.length) return null;
-    const sig = bytes_.slice(data, offset, offset + 4);
-    const tagOffset = bytes_.intFromBytes(bytes_.slice(data, offset + 4, offset + 8), "big");
+    const sig = data.slice(offset, offset + 4);
+    const tagOffset = Bytes.intFromBytes(data.slice(offset + 4, offset + 8), "big");
     if (bytesEq(sig, b("desc"))) {
       if (tagOffset + 12 > data.length) return null;
-      const typeSig = bytes_.slice(data, tagOffset, tagOffset + 4);
+      const typeSig = data.slice(tagOffset, tagOffset + 4);
       if (bytesEq(typeSig, b("desc"))) {
         // ICCv2 textDescriptionType
-        const strLen = bytes_.intFromBytes(bytes_.slice(data, tagOffset + 8, tagOffset + 12), "big");
+        const strLen = Bytes.intFromBytes(data.slice(tagOffset + 8, tagOffset + 12), "big");
         const end = Math.min(tagOffset + 12 + strLen, data.length);
-        const raw = bytes_.slice(data, tagOffset + 12, end);
-        return decode(bytes_.rstrip(raw, b("\x00")), "ascii", "replace");
+        const raw = data.slice(tagOffset + 12, end);
+        return decode(Bytes.trimEnd(raw, b("\x00")), "ascii", "replace");
       }
       if (bytesEq(typeSig, b("mluc"))) {
         // ICCv4 multiLocalizedUnicodeType
         if (tagOffset + 16 > data.length) return null;
-        const recCount = bytes_.intFromBytes(bytes_.slice(data, tagOffset + 8, tagOffset + 12), "big");
+        const recCount = Bytes.intFromBytes(data.slice(tagOffset + 8, tagOffset + 12), "big");
         if (recCount === 0) return null;
         const recOff = tagOffset + 16;
-        const sLen = bytes_.intFromBytes(bytes_.slice(data, recOff + 4, recOff + 8), "big");
-        const sOffset = bytes_.intFromBytes(bytes_.slice(data, recOff + 8, recOff + 12), "big");
+        const sLen = Bytes.intFromBytes(data.slice(recOff + 4, recOff + 8), "big");
+        const sOffset = Bytes.intFromBytes(data.slice(recOff + 8, recOff + 12), "big");
         const absOff = tagOffset + sOffset;
         const end = Math.min(absOff + sLen, data.length);
-        const raw16 = bytes_.slice(data, absOff, end);
+        const raw16 = data.slice(absOff, end);
         // pyrt decode() keeps lone surrogates and drops a trailing odd byte; CPython emits U+FFFD for each.
         const dec16 = decode(raw16, "utf-16-be", "replace");
         const oddAfterHigh = raw16.length % 2 === 1 && /[\uD800-\uDBFF]$/.test(dec16);
@@ -208,7 +208,7 @@ export class IccProfileLibrary {
             if (!(e instanceof OSError || (hasCode && typeof e.code === "string"))) throw e;
             continue;
           }
-          if (data.length < 132 || !bytesEq(bytes_.slice(data, 36, 40), b("acsp"))) continue;
+          if (data.length < 132 || !bytesEq(data.slice(36, 40), b("acsp"))) continue;
           const desc = iccProfileDescription(data);
           // First directory wins (MPProfiles is the canonical set).
           if (desc && !byName.has(desc)) byName.set(desc, f);

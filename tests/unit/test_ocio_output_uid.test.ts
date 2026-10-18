@@ -8,7 +8,7 @@
 
 import { expect, test } from "bun:test";
 
-import { Path, ValueError, b, bytes_, valueEquals } from "../../src/pyrt/index.ts";
+import { Path, ValueError, b, Bytes, valueEquals } from "../../src/pyrt/index.ts";
 import { raises } from "../../src/pyrt/pytest.ts";
 import { GUID_SEED, murmurhash3X64128 } from "../../src/py_aep/color/murmur3.ts";
 import { ocioColorSpaceForProfileId, ocioOutputProfileId } from "../../src/py_aep/color/ocio.ts";
@@ -19,7 +19,7 @@ const CONFIG = new Path(import.meta.dir)
 
 test("test_murmurhash3_empty_is_zero", () => {
   // Standard MurmurHash3_x64_128 of an empty input with seed 0 is all zeros.
-  expect(valueEquals(murmurhash3X64128(b(""), 0), bytes_.repeat(b("\x00"), 16))).toBe(true);
+  expect(valueEquals(murmurhash3X64128(b(""), 0), Bytes.repeat(b("\x00"), 16))).toBe(true);
 });
 
 test("test_guid_seed", () => {
@@ -44,7 +44,7 @@ const ocioOutputProfileIdRows: [string, string][] = [
 test.each(ocioOutputProfileIdRows)(
   "test_ocio_output_profile_id_matches_ae[%#]",
   (colorSpace: string, expected: string) => {
-    expect(bytes_.hex(ocioOutputProfileId(CONFIG, colorSpace))).toBe(expected);
+    expect(Bytes.toHex(ocioOutputProfileId(CONFIG, colorSpace))).toBe(expected);
   },
 );
 
@@ -60,5 +60,5 @@ test("test_reverse_map_round_trips", () => {
 });
 
 test("test_reverse_map_unknown_id_is_none", () => {
-  expect(ocioColorSpaceForProfileId(CONFIG, bytes_.repeat(b("\x00"), 16))).toBe(null);
+  expect(ocioColorSpaceForProfileId(CONFIG, Bytes.repeat(b("\x00"), 16))).toBe(null);
 });

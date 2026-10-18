@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, BytesIO, bytes_, getattr, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import { at, BytesIO, Bytes, getattr, Path, valueEquals, repr, round, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -22,7 +22,7 @@ import { Property } from "../../src/py_aep/models/properties/property.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models");
 // default 3D render-options blob (Classic)
-const PRDA_CLASSIC_DEFAULT = bytes_.fromhex("000000010000000000000000");
+const PRDA_CLASSIC_DEFAULT = Bytes.fromHex("000000010000000000000000");
 
 function _savedRifx(app: Application, tmpPath: Path): ListChunk {
   const out = tmpPath.div("out.aep");

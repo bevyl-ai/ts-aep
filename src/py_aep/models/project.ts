@@ -60,7 +60,7 @@ import {
   ValueError,
   KeyError,
   NotImplementedError,
-  bytes_,
+  Bytes,
   b,
   BytesIO,
   Path,
@@ -891,13 +891,13 @@ export class Project {
     let profileId: Uint8Array;
     if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
       envelope = this._ocioEnvelope(value);
-      profileId = bytes_.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(b("\xff"), 16);
     } else if (value === "None") {
       // No working space, which the getter reports as "None": AE 2026
       // saves `workingSpace = "None"` as an empty `{}` profile after
       // `PwCs` and an all-0xFF `cpid`, like a new project.
       envelope = "{}";
-      profileId = bytes_.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(b("\xff"), 16);
     } else {
       // bytes_for already raises ColorProfileNotFoundError for an
       // unknown Adobe profile name, so no separate name check is needed.
@@ -922,7 +922,7 @@ export class Project {
    */
   _setCpplWorkingSpace(value: string): void {
     if (value === "None") {
-      this._cpid.data = bytes_.repeat(b("\xff"), 16);
+      this._cpid.data = Bytes.repeat(b("\xff"), 16);
       return;
     }
     const icc = this._iccLib().bytesFor(value);

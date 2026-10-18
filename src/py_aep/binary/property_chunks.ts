@@ -12,7 +12,7 @@ import {
   Factory,
   ValueError,
   b,
-  bytes_,
+  Bytes,
   decode,
   define,
   descriptor,
@@ -591,12 +591,12 @@ export class TdmnChunk extends _StringChunkBase {
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
-    return new this({ chunkType, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
+    return new this({ chunkType, value: decode(Bytes.trimEnd(raw, b("\x00")), "UTF-8") });
   }
 
   write(fp: IO): number {
     const encoded = encode(this.value, "UTF-8").slice(0, 40);
-    const padded = bytes_.ljust(encoded, 40);
+    const padded = Bytes.padEnd(encoded, 40);
     return writeBytes(fp, padded);
   }
 }

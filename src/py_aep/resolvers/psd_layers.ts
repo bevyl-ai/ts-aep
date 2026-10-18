@@ -17,7 +17,7 @@ import {
   and,
   at,
   b,
-  bytes_,
+  Bytes,
   bytesEq,
   decode,
   floordiv,
@@ -350,11 +350,11 @@ export const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
     "thrs",
     "grdm",
     "selc",
-  ].map((k) => bytes_.hex(b(k))),
+  ].map((k) => Bytes.toHex(b(k))),
 );
 
 // Fill-layer additional-info keys: solid color, gradient and pattern fills.
-export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => bytes_.hex(b(k))));
+export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(b(k))));
 
 // Maps every byte to 0 (zero) or 1 (non-zero), so rows of samples can be
 // combined with integer AND / OR.
@@ -510,12 +510,12 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
     // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a BytesIO here, so parsed results are identical (only peak memory differs).
     const fp = new BytesIO(new Path(file).readBytes());
     const header = fp.read(26);
-    if (!bytesEq(bytes_.slice(header, 0, 4), b("8BPS"))) {
+    if (!bytesEq(header.slice(0, 4), b("8BPS"))) {
       throw new UnsupportedPsdLayersError(`${name}: not a valid PSD/PSB file.`);
     }
-    const isPsb = struct.unpack(">H", bytes_.slice(header, 4, 6))[0] === 2;
-    const [canvasH, canvasW] = struct.unpack(">II", bytes_.slice(header, 14, 22));
-    const depth = struct.unpack(">H", bytes_.slice(header, 22, 24))[0];
+    const isPsb = struct.unpack(">H", header.slice(4, 6))[0] === 2;
+    const [canvasH, canvasW] = struct.unpack(">II", header.slice(14, 22));
+    const depth = struct.unpack(">H", header.slice(22, 24))[0];
     if (!(0 < canvasW && canvasW <= _MAX_EXTENT && 0 < canvasH && canvasH <= _MAX_EXTENT)) {
       throw new UnsupportedPsdLayersError(`${name}: invalid canvas size ${canvasW}x${canvasH}.`);
     }
@@ -531,14 +531,14 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
     channelLists = [];
     userMasks = [];
     for (let index = 0; index < recordCount; index++) {
-      let [top, left, bottom, right] = struct.unpack(">iiii", bytes_.slice(data, off, off + 16));
+      let [top, left, bottom, right] = struct.unpack(">iiii", data.slice(off, off + 16));
       off += 16;
-      const numChannels = struct.unpack(">H", bytes_.slice(data, off, off + 2))[0];
+      const numChannels = struct.unpack(">H", data.slice(off, off + 2))[0];
       off += 2;
       const channels: [number, number][] = [];
       for (let _ = 0; _ < numChannels; _++) {
-        const channelId = struct.unpack(">h", bytes_.slice(data, off, off + 2))[0];
-        const length = bytes_.intFromBytes(bytes_.slice(data, off + 2, off + 2 + chanLenSize), "big");
+        const channelId = struct.unpack(">h", data.slice(off, off + 2))[0];
+        const length = Bytes.intFromBytes(data.slice(off + 2, off + 2 + chanLenSize), "big");
         channels.push([channelId, length]);
         off += 2 + chanLenSize;
       }
@@ -550,9 +550,9 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       // hidden_layer.psd, COMP and COMP_CROPPED_LAYERS).
       const visible = !(at(data, off + 2) & 0x02);
       off += 4;
-      const extraLen = struct.unpack(">I", bytes_.slice(data, off, off + 4))[0];
+      const extraLen = struct.unpack(">I", data.slice(off, off + 4))[0];
       off += 4;
-      const extra = bytes_.slice(data, off, off + extraLen);
+      const extra = data.slice(off, off + extraLen);
       off += extraLen;
       let [
         layerName,
@@ -619,9 +619,9 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       records[index] = rec._replace({
         maskBox: _visibleBox(
           region,
-          alpha == null ? null : bytes_.slice(data, alpha[0], alpha[1]),
+          alpha == null ? null : data.slice(alpha[0], alpha[1]),
           mask,
-          maskSpan == null ? null : bytes_.slice(data, maskSpan[0], maskSpan[1]),
+          maskSpan == null ? null : data.slice(maskSpan[0], maskSpan[1]),
           depth,
           isPsb,
         ),
@@ -646,7 +646,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
  */
 export function _userMask(mask: Uint8Array, fileName: string, layerName: string): _UserMask | null {
   if (mask.length < 18) return null;
-  let [top, left, bottom, right] = struct.unpack(">iiii", bytes_.slice(mask, 0, 16));
+  let [top, left, bottom, right] = struct.unpack(">iiii", mask.slice(0, 16));
   const default_ = mask[16];
   const flags = mask[17];
   let pos = 18;
@@ -666,7 +666,7 @@ export function _userMask(mask: Uint8Array, fileName: string, layerName: string)
   if (mask.length - pos >= 18) {
     const realFlags = mask[pos];
     const realDefault = mask[pos + 1];
-    [top, left, bottom, right] = struct.unpack(">iiii", bytes_.slice(mask, pos + 2, pos + 18));
+    [top, left, bottom, right] = struct.unpack(">iiii", mask.slice(pos + 2, pos + 18));
     if (realFlags & 0x02) return null;
     return new _UserMask(-3, [left, top, right, bottom], realDefault);
   }
@@ -698,7 +698,7 @@ export function _visibleBox(
     maskData != null && mr > ml && mb > mt ? _channelFlags(maskData, mr - ml, mb - mt, depth, isPsb) : [];
   const alphaRows: Uint8Array[] | null =
     alpha != null ? _channelFlags(alpha, width, rb - rt, depth, isPsb) : null;
-  const defaultRow = bytes_.repeat(b(mask.default_ ? "\x01" : "\x00"), width);
+  const defaultRow = Bytes.repeat(b(mask.default_ ? "\x01" : "\x00"), width);
   // Outside its rectangle the mask takes its default color, so with a black
   // default only the rectangle's rows can show.
   const [y0, y1] = mask.default_ ? [rt, rb] : [Math.max(rt, mt), Math.min(rb, mb)];
@@ -711,7 +711,7 @@ export function _visibleBox(
   for (let y = y0; y < y1; y++) {
     const row = defaultRow.slice();
     if (maskRows.length > 0 && mt <= y && y < mb && x0 < x1) {
-      row.set(bytes_.slice(maskRows[y - mt], x0 - ml, x1 - ml), x0 - rl);
+      row.set(maskRows[y - mt].slice(x0 - ml, x1 - ml), x0 - rl);
     }
     let visible = intFromBytesBig(row);
     if (alphaRows != null) {
@@ -746,13 +746,13 @@ export function _channelFlags(
   depth: number,
   isPsb: boolean,
 ): Uint8Array[] {
-  const compression = struct.unpack(">H", bytes_.slice(chunk, 0, 2))[0];
+  const compression = struct.unpack(">H", chunk.slice(0, 2))[0];
   const sample = Math.max(floordiv(depth, 8), 1);
   const rowLen = width * sample;
   if (width > _MAX_EXTENT || height > _MAX_EXTENT || rowLen * height > _MAX_INFLATION * chunk.length) {
     throw new UnsupportedPsdLayersError(`channel data (${chunk.length} bytes) too short for ${width}x${height}`);
   }
-  const body = bytes_.slice(chunk, 2);
+  const body = chunk.slice(2);
   let raw: Uint8Array;
   if (compression === 1) {
     const countSize = isPsb ? 4 : 2;
@@ -760,8 +760,8 @@ export function _channelFlags(
     let pos = countsEnd;
     const parts: Uint8Array[] = [];
     for (let y = 0; y < height; y++) {
-      const n = bytes_.intFromBytes(bytes_.slice(body, y * countSize, (y + 1) * countSize), "big");
-      parts.push(_unpackBits(bytes_.slice(body, pos, pos + n), rowLen));
+      const n = Bytes.intFromBytes(body.slice(y * countSize, (y + 1) * countSize), "big");
+      parts.push(_unpackBits(body.slice(pos, pos + n), rowLen));
       pos += n;
     }
     raw = joinAll(parts);
@@ -773,7 +773,7 @@ export function _channelFlags(
   }
   const rows: Uint8Array[] = [];
   for (let y = 0; y < height; y++) {
-    let row = bytes_.slice(raw, y * rowLen, (y + 1) * rowLen);
+    let row: Uint8Array = raw.slice(y * rowLen, (y + 1) * rowLen);
     if (compression === 3) row = _undoPrediction(row, width, sample);
     if (sample === 1) {
       rows.push(translate(row, _NONZERO));
@@ -783,13 +783,13 @@ export function _channelFlags(
     // for 16-bit, byte planes (after prediction) for 32-bit.
     const planes: Uint8Array[] =
       compression === 3 && sample === 4
-        ? Array.from({ length: sample }, (_, i) => bytes_.slice(row, i * width, (i + 1) * width))
+        ? Array.from({ length: sample }, (_, i) => row.slice(i * width, (i + 1) * width))
         : Array.from({ length: sample }, (_, i) => strided(row, i, sample));
     let combined = 0n;
     for (const plane of planes) {
       combined |= intFromBytesBig(translate(plane, _NONZERO));
     }
-    rows.push(bytes_.intToBytes(combined, width, "big"));
+    rows.push(Bytes.intToBytes(combined, width, "big"));
   }
   return rows;
 }
@@ -801,17 +801,17 @@ export function _unpackBits(data: Uint8Array, size: number): Uint8Array {
     const n = data[i];
     i += 1;
     if (n < 128) {
-      for (const c of bytes_.slice(data, i, i + n + 1)) out.push(c);
+      for (const c of data.slice(i, i + n + 1)) out.push(c);
       i += n + 1;
     } else if (n > 128) {
-      const v = bytes_.slice(data, i, i + 1);
+      const v = data.slice(i, i + 1);
       for (let k = 0; k < 257 - n; k++) {
         for (const c of v) out.push(c);
       }
       i += 1;
     }
   }
-  return bytes_.ljust(Uint8Array.from(out.slice(0, size)), size, 0);
+  return Bytes.padEnd(Uint8Array.from(out.slice(0, size)), size, 0);
 }
 
 /**
@@ -904,13 +904,13 @@ export function _parseLayerExtra(
 ): [string, number | null, number, boolean, PsdStyleBlocks | null, Uint8Array | null, boolean, Uint8Array] {
   let pos = 0;
   // Layer mask data and blending-ranges sub-blocks (4-byte lengths in both).
-  const maskLen = struct.unpack(">I", bytes_.slice(extra, pos, pos + 4))[0];
-  const maskData = bytes_.slice(extra, pos + 4, pos + 4 + maskLen);
+  const maskLen = struct.unpack(">I", extra.slice(pos, pos + 4))[0];
+  const maskData = extra.slice(pos + 4, pos + 4 + maskLen);
   pos += 4 + maskLen;
-  pos += 4 + struct.unpack(">I", bytes_.slice(extra, pos, pos + 4))[0];
+  pos += 4 + struct.unpack(">I", extra.slice(pos, pos + 4))[0];
   // Legacy Pascal name, padded so (1 + length) is a multiple of 4.
   const pascalLen = at(extra, pos);
-  const pascal = decode(bytes_.slice(extra, pos + 1, pos + 1 + pascalLen), "latin-1");
+  const pascal = decode(extra.slice(pos + 1, pos + 1 + pascalLen), "latin-1");
   pos += 1 + pascalLen;
   pos += (4 - ((1 + pascalLen) % 4)) % 4;
   // Remaining bytes are additional layer info blocks.
@@ -928,29 +928,29 @@ export function _parseLayerExtra(
   let vmsk: Uint8Array | null = null;
   let vsms: Uint8Array | null = null;
   while (pos + 12 <= extra.length) {
-    const signature = bytes_.slice(extra, pos, pos + 4);
+    const signature = extra.slice(pos, pos + 4);
     if (!bytesEq(signature, b("8BIM")) && !bytesEq(signature, b("8B64"))) break;
-    const key = bytes_.slice(extra, pos + 4, pos + 8);
+    const key = extra.slice(pos + 4, pos + 8);
     let blockLen: number;
     let blockStart: number;
-    if (isPsb && _PSB_8BYTE_KEYS.has(bytes_.hex(key))) {
-      blockLen = Number(struct.unpack(">Q", bytes_.slice(extra, pos + 8, pos + 16))[0]);
+    if (isPsb && _PSB_8BYTE_KEYS.has(Bytes.toHex(key))) {
+      blockLen = Number(struct.unpack(">Q", extra.slice(pos + 8, pos + 16))[0]);
       blockStart = pos + 16;
     } else {
-      blockLen = struct.unpack(">I", bytes_.slice(extra, pos + 8, pos + 12))[0];
+      blockLen = struct.unpack(">I", extra.slice(pos + 8, pos + 12))[0];
       blockStart = pos + 12;
     }
-    const block = bytes_.slice(extra, blockStart, blockStart + blockLen);
+    const block = extra.slice(blockStart, blockStart + blockLen);
     if (bytesEq(key, b("luni"))) {
-      const charCount = struct.unpack(">I", bytes_.slice(block, 0, 4))[0];
-      unicodeName = rstrip(decode(bytes_.slice(block, 4, 4 + charCount * 2), "utf-16-be"), "\x00");
+      const charCount = struct.unpack(">I", block.slice(0, 4))[0];
+      unicodeName = rstrip(decode(block.slice(4, 4 + charCount * 2), "utf-16-be"), "\x00");
     } else if (bytesEq(key, b("lyid"))) {
-      layerId = struct.unpack(">I", bytes_.slice(block, 0, 4))[0];
+      layerId = struct.unpack(">I", block.slice(0, 4))[0];
     } else if (bytesEq(key, b("lsct")) && blockLen >= 4) {
-      sectionDivider = struct.unpack(">I", bytes_.slice(block, 0, 4))[0];
-    } else if (_ADJUSTMENT_KEYS.has(bytes_.hex(key))) {
+      sectionDivider = struct.unpack(">I", block.slice(0, 4))[0];
+    } else if (_ADJUSTMENT_KEYS.has(Bytes.toHex(key))) {
       isAdjustment = true;
-    } else if (_FILL_KEYS.has(bytes_.hex(key))) {
+    } else if (_FILL_KEYS.has(Bytes.toHex(key))) {
       isFill = true;
     } else if (bytesEq(key, b("lfx2"))) {
       lfx2 = block;
@@ -1017,7 +1017,7 @@ export function strided(row: Uint8Array, start: number, step: number): Uint8Arra
 
 // NOTE(port): int.from_bytes(data, "big") as an exact bigint; pyrt's int_from_bytes returns a Number and loses bits past 2^53.
 export function intFromBytesBig(data: Uint8Array): bigint {
-  return data.length ? BigInt("0x" + bytes_.hex(data)) : 0n;
+  return data.length ? BigInt("0x" + Bytes.toHex(data)) : 0n;
 }
 
 // Only called on positive values.

@@ -10,7 +10,7 @@
 import {
   AttrsBase,
   Factory,
-  bytes_,
+  Bytes,
   deferred,
   decode,
   encode,
@@ -131,7 +131,7 @@ export function _fixedStrConverter(encoding: string, size: number): FixedStrConv
   function convert<T>(value: T): T | string | _NulTailStr {
     if (typeof value === "string" && value.includes("\x00")) {
       const raw = encode(value, encoding, "surrogateescape").slice(0, size);
-      return _decodeFixedStr(bytes_.ljust(raw, size, 0), encoding);
+      return _decodeFixedStr(Bytes.padEnd(raw, size, 0), encoding);
     }
     return value;
   }
@@ -629,7 +629,7 @@ export class FmtItem extends AttrsBase {
         value = _encodeValue(value, i, encodings, coerces, fe, f.metadata["fmt"]);
         parts.push(_structFor(f.metadata["fmt"], fe).pack(value));
       }
-      return bytes_.join(parts);
+      return Bytes.join(parts);
     }
     const encodeFields = _fieldEncoder(info);
     if (encodeFields !== null) return _structFor(fmt).pack(...encodeFields(this));

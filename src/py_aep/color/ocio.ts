@@ -39,7 +39,7 @@ import {
   decode,
   b,
   concat,
-  bytes_,
+  Bytes,
   reSearch,
 } from "../../pyrt/index.ts";
 import { _compact, buildOcioEnvelope } from "./envelope.ts";
@@ -330,7 +330,7 @@ export function _colorSpaceGuid(profileName: string, profileData: string): Uint8
     concat(
       b("DVAColorSpace"),
       inner,
-      bytes_.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
+      Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
       b("\x00"),
     ),
   );
