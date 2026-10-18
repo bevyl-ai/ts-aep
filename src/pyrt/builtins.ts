@@ -251,8 +251,8 @@ export function dictPop<K, V>(d: Map<K, V>, k: K, ...dflt: [] | [V]): V {
 }
 
 /**
- * Key for a Map/Set keyed by a Python tuple (or any hashable compound
- * value): `tkey(a, b)` stands for `(a, b)`.
+ * One string key for a Map or Set keyed by several values:
+ * `compositeKey(a, b)` matches `compositeKey(c, d)` when a = c and b = d.
  */
 export function compositeKey(...parts: unknown[]): string {
   return JSON.stringify(parts, (_k, v) => (typeof v === "bigint" ? `${v}n` : v instanceof Uint8Array ? Array.from(v) : v));
