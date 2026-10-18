@@ -202,7 +202,7 @@ export class IccProfileLibrary {
           let data: Uint8Array;
           try {
             data = f.read_bytes();
-          } catch (e: unknown) {
+          } catch (e) {
             // pyrt Path.read_bytes rethrows non-ENOENT Node errors (EACCES, EISDIR, ...) unwrapped.
             const has_code = (typeof e === "object" || typeof e === "function") && e !== null && "code" in e;
             if (!(e instanceof OSError || (has_code && typeof e.code === "string"))) throw e;
